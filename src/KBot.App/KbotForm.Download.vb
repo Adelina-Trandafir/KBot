@@ -149,7 +149,7 @@ Partial Public Class KbotForm
                 ' what the workflow runs, so it must be known before it starts. `Nothing` = the
                 ' operator closed the form -- then nothing is downloaded, because giving up the
                 ' question is giving up the download, not a default download.
-                Dim sarite As List(Of Date) = Await AlegeReceptiileDeSaritAsync(cod)
+                Dim sarite As ReceptiiSarite = Await AlegeReceptiileDeSaritAsync(cod)
                 If sarite Is Nothing Then Return
 
                 busyBar.Running = True

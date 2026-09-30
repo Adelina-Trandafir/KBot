@@ -122,6 +122,8 @@ Public Class OrdView
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
+        ' Slice 0078-08: no new row while a document is still opening in Adobe (AdobeOpenGate).
+        AdobeOpenGate.LockWhileOpening(tree)
         _apiClient = apiClient
         _withReauth = withReauth
         _session = session

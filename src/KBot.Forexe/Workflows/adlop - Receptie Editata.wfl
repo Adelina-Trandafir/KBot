@@ -17,8 +17,11 @@
       {{RECEPTIE_TINTA}} = zz/ll/aaaa  an EDITED one: the row(s) with that date - the date
                                        the page read from the form (or from the row whose
                                        eye was pressed). Two receptions of the same day are
-                                       both read: the whole pipeline names a reception by its
-                                       date (see WorkflowCatalog.ListaDatelorSarite).
+                                       both read: the page does not say which of them was
+                                       saved. That is harmless since 30.09.2026 (sliceless):
+                                       K-BOT stamps every row with its rank within the day
+                                       (WorkflowResultStore.CuPozitiaReceptiilor) and the
+                                       server matches each row to its own reception by it.
     Every other row keeps «Citita» = 0 and K-BOT drops it before anything goes to the
     server (WorkflowResultStore.DoarReceptiileCitite): a row sent without its detail would
     make the server update the header sum without the lines.

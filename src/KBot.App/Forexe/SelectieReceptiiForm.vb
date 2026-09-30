@@ -23,13 +23,14 @@ Imports KBot.Forexe
 ''' (<c>GET /api/forexe/receptii</c>). O recepție care există în FOREXE dar nu și aici NU e în
 ''' listă și se descarcă întotdeauna — n-ai cum să sari peste ceva ce nu știi că există.</para>
 '''
-''' <para><b>Recepția se numește prin DATA ei</b>, fiindcă exact așa o numește tot restul
-''' conductei: serverul potrivește un rând de sarcină utilă cu o recepție stocată pe
-''' <c>DATE(DataR)</c> și ia primul candidat (<c>step4b_receptii_prelucrare</c>), iar felia
-''' 0058 o numește operatorului tot prin dată și valoare. De aici vine și singura ciudățenie a
-''' machetei: <b>două recepții din aceeași zi nu se pot deosebi pe fir</b>. Dacă una e bifată
-''' și cealaltă nu, ziua aceea se descarcă ÎNTREAGĂ, iar rândul de jos spune asta cu voce tare
-''' — o alegere care nu se poate duce la capăt nu are voie să treacă tăcut.</para>
+''' <para><b>A reception is named by its date AND its rank within that date</b> (sliceless,
+''' 30.09.2026; before that by date only, and two receptions of one day could not be told
+''' apart). A day with nothing ticked goes to the robot, which skips its detail. The unticked
+''' receptions of a PARTLY ticked day are read by the robot with the rest of the day and
+''' dropped by K-BOT by date + rank (<see cref="ReceptiiDeSarit"/>). Only a partly ticked day
+''' with a reception that has no rank yet (never downloaded since the column exists) is still
+''' downloaded whole, and the bottom line says so -- a choice that cannot be carried out must
+''' not pass silently.</para>
 '''
 ''' <para>Deschiderea cu totul bifat sau cu totul nebifat e a lui
 ''' <see cref="FeatureSwitches.ReceptiiBifateLaDeschidere"/>, nu a formularului: comutatorul e
@@ -56,6 +57,8 @@ Public Class SelectieReceptiiForm
     Friend NotInheritable Class RandReceptie
         Public Property Idrr As Integer
         Public Property NrCrt As Integer?
+        ''' <summary>Rank among the receptions of its date in FOREXE; Nothing before the first stamping download.</summary>
+        Public Property RangZi As Integer?
         Public Property Data As Date?
         Public Property Suma As Double
         Public Property Antete As Integer
@@ -67,10 +70,10 @@ Public Class SelectieReceptiiForm
     Private ReadOnly _randuri As List(Of RandReceptie)
 
     ''' <summary>
-    ''' Datele recepțiilor pe care operatorul le-a LĂSAT NEBIFATE și care se pot sări în
-    ''' siguranță. Gol = se descarcă tot.
+    ''' The receptions the operator left UNTICKED and that can be skipped safely: whole days for
+    ''' the robot, single receptions of a partly ticked day for K-BOT. Empty = download all.
     ''' </summary>
-    Public ReadOnly Property DateDeSarit As New List(Of Date)()
+    Public ReadOnly Property Sarite As New ReceptiiSarite()
 
     ''' <summary>Câte recepții au rămas bifate — pentru linia de stare a gazdei.</summary>
     Public ReadOnly Property BifateCount As Integer
@@ -107,6 +110,7 @@ Public Class SelectieReceptiiForm
                 rand = New RandReceptie With {
                     .Idrr = r.Idrr,
                     .NrCrt = r.NrCrtR,
+                    .RangZi = r.RangZiR,
                     .Data = r.DataR,
                     .Suma = r.SumaAntet,
                     .Reconstituit = r.Reconstituit,
@@ -125,6 +129,7 @@ Public Class SelectieReceptiiForm
         Next
 
         Return iesire.OrderBy(Function(x) If(x.Data, Date.MaxValue)).
+                      ThenBy(Function(x) If(x.RangZi, Integer.MaxValue)).
                       ThenBy(Function(x) If(x.NrCrt, Integer.MaxValue)).
                       ThenBy(Function(x) x.Idrr).ToList()
     End Function
@@ -243,7 +248,39 @@ Public Class SelectieReceptiiForm
         Return iesire
     End Function
 
-    ''' <summary>Zilele în care o parte din recepții sunt bifate și o parte nu.</summary>
+    ''' <summary>
+    ''' The unticked receptions of a PARTLY ticked day, named by date + rank within the day
+    ''' (sliceless, 30.09.2026). The robot reads such a day whole; K-BOT drops these rows after.
+    ''' </summary>
+    ''' <remarks>
+    ''' Only for a day where EVERY reception has its rank (<c>RangZi</c>, stamped by the first
+    ''' download after the column was added). A day with an unranked reception stays in
+    ''' <see cref="ZileAmestecate"/> and is downloaded whole, as before -- skipping the wrong
+    ''' one of two would look exactly like a successful download.
+    ''' </remarks>
+    Friend Shared Function ReceptiiDeSarit(toate As IEnumerable(Of RandReceptie),
+                                           bifate As IEnumerable(Of RandReceptie)) As List(Of ReceptieSarita)
+        Dim iesire As New List(Of ReceptieSarita)()
+        If toate Is Nothing Then Return iesire
+        Dim bifat As New HashSet(Of Integer)(
+            If(bifate, Enumerable.Empty(Of RandReceptie)()).Select(Function(r) r.Idrr))
+
+        For Each grup In toate.Where(Function(r) r.Data.HasValue).
+                               GroupBy(Function(r) r.Data.Value.Date)
+            Dim cuBifa As Integer = grup.Where(Function(r) bifat.Contains(r.Idrr)).Count()
+            If cuBifa = 0 OrElse cuBifa = grup.Count() Then Continue For
+            If grup.Any(Function(r) Not r.RangZi.HasValue) Then Continue For
+            For Each r As RandReceptie In grup.Where(Function(x) Not bifat.Contains(x.Idrr))
+                iesire.Add(New ReceptieSarita With {.Data = grup.Key, .RangZi = r.RangZi.Value})
+            Next
+        Next
+        Return iesire
+    End Function
+
+    ''' <summary>
+    ''' Partly ticked days that CANNOT be split: at least one reception of the day has no rank
+    ''' yet. They are downloaded whole.
+    ''' </summary>
     Friend Shared Function ZileAmestecate(toate As IEnumerable(Of RandReceptie),
                                           bifate As IEnumerable(Of RandReceptie)) As List(Of Date)
         Dim iesire As New List(Of Date)()
@@ -254,7 +291,8 @@ Public Class SelectieReceptiiForm
         For Each grup In toate.Where(Function(r) r.Data.HasValue).
                                GroupBy(Function(r) r.Data.Value.Date)
             Dim cuBifa As Integer = grup.Where(Function(r) bifat.Contains(r.Idrr)).Count()
-            If cuBifa > 0 AndAlso cuBifa < grup.Count() Then iesire.Add(grup.Key)
+            If cuBifa > 0 AndAlso cuBifa < grup.Count() AndAlso
+               grup.Any(Function(r) Not r.RangZi.HasValue) Then iesire.Add(grup.Key)
         Next
         Return iesire
     End Function
@@ -276,8 +314,8 @@ Public Class SelectieReceptiiForm
 
         If amestecate.Count > 0 Then
             text &= " ⚠ " & String.Join(", ", amestecate.Select(Function(d) d.ToString("dd.MM.yyyy", _roCulture))) &
-                    ": în ziua asta sunt mai multe recepții, iar ele se pot deosebi doar după dată — " &
-                    "se descarcă toate."
+                    ": în ziua asta sunt mai multe recepții, iar K-BOT nu le poate încă deosebi " &
+                    "(nu au fost descărcate de la ultima actualizare) — se descarcă toate."
         End If
         lblTotal.Text = text
     End Sub
@@ -285,8 +323,10 @@ Public Class SelectieReceptiiForm
     Private Sub btnDescarca_Click(sender As Object, e As EventArgs) Handles btnDescarca.Click
         Try
             Dim bifate As List(Of RandReceptie) = Bifatele()
-            DateDeSarit.Clear()
-            DateDeSarit.AddRange(ZileDeSarit(_randuri, bifate))
+            Sarite.Zile.Clear()
+            Sarite.Zile.AddRange(ZileDeSarit(_randuri, bifate))
+            Sarite.Receptii.Clear()
+            Sarite.Receptii.AddRange(ReceptiiDeSarit(_randuri, bifate))
             _BifateCount = bifate.Count
             DialogResult = DialogResult.OK
             Close()

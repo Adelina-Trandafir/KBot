@@ -354,6 +354,19 @@ Partial Public NotInheritable Class ForexeController
         End Try
     End Function
 
+    ''' <summary>The skipped receptions, for the download journal: whole days, then single ones as date#rank.</summary>
+    Private Shared Function DescrieSarite(sarite As ReceptiiSarite) As String
+        Dim parti As New List(Of String)()
+        Dim zile As String = WorkflowCatalog.ListaDatelorSarite(sarite.Zile)
+        If zile <> String.Empty Then parti.Add("zile: " & zile)
+        If sarite.Receptii.Count > 0 Then
+            parti.Add("receptii: " & String.Join(",", sarite.Receptii.Select(
+                Function(r) r.Data.ToString(WorkflowCatalog.DataReceptieFormat,
+                                            Globalization.CultureInfo.InvariantCulture) & "#" & r.RangZi)))
+        End If
+        Return String.Join("; ", parti)
+    End Function
+
     ''' <summary>
     ''' Descarcă un angajament întreg. Oglindește Access <c>FX_Angajament_InfoComplete</c>:
     ''' fără istoric local rulează «Prelucrare Completa», iar cu istoric rulează varianta
@@ -369,7 +382,7 @@ Partial Public NotInheritable Class ForexeController
     ''' </param>
     Public Async Function DownloadNodeAsync(cod As String,
                                             citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo)),
-                                            Optional receptiiSarite As IReadOnlyList(Of Date) = Nothing) As Task(Of PrelucrareRezultat)
+                                            Optional receptiiSarite As ReceptiiSarite = Nothing) As Task(Of PrelucrareRezultat)
         ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
         Dim jurnal As New ForexeRunDump("PrelucrareCompleta", cod, _session)
         Try
@@ -397,18 +410,18 @@ Partial Public NotInheritable Class ForexeController
                                $"REVERSE de la {ultimaData.Value:yyyy-MM-dd HH:mm:ss}",
                                "fara istoric local -> prelucrare completa"))
 
-                If receptiiSarite IsNot Nothing AndAlso receptiiSarite.Count > 0 Then
+                If receptiiSarite IsNot Nothing AndAlso Not receptiiSarite.EsteGol Then
                     jurnal.Note("receptii_sarite",
-                                WorkflowCatalog.ListaDatelorSarite(receptiiSarite))
+                                DescrieSarite(receptiiSarite))
                 End If
 
                 Dim job As JobRequest
                 If ultimaData.HasValue Then
                     RaporteazaStare($"Descarc «{cod}» (REVERSE, de la {ultimaData.Value:dd.MM.yyyy HH:mm:ss})...")
-                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value, receptiiSarite)
+                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value, receptiiSarite?.Zile)
                 Else
                     RaporteazaStare($"Descarc «{cod}» (prelucrare completă)...")
-                    job = JobBuilder.BuildPrelucrareCompleta(cod, receptiiSarite)
+                    job = JobBuilder.BuildPrelucrareCompleta(cod, receptiiSarite?.Zile)
                 End If
                 jurnal.NoteRequest(job)
 
@@ -478,9 +491,9 @@ Partial Public NotInheritable Class ForexeController
     ''' </param>
     Public Async Function DownloadReceptiiAsync(
             cod As String,
-            receptiiSarite As IReadOnlyList(Of Date)) As Task(Of PrelucrareRezultat)
+            receptiiSarite As ReceptiiSarite) As Task(Of PrelucrareRezultat)
         Try
-            Dim job As JobRequest = JobBuilder.BuildReceptiiAngajament(cod, receptiiSarite)
+            Dim job As JobRequest = JobBuilder.BuildReceptiiAngajament(cod, receptiiSarite?.Zile)
             Return Await DescarcaPartialAsync(
                 cod, "Receptii", "recepțiile",
                 Function() Task.FromResult(job),
@@ -583,7 +596,7 @@ Partial Public NotInheritable Class ForexeController
     Private Async Function DescarcaPartialAsync(
             cod As String, eticheta As String, familie As String,
             construiesteJob As Func(Of Task(Of JobRequest)),
-            receptiiSarite As IReadOnlyList(Of Date),
+            receptiiSarite As ReceptiiSarite,
             Optional transforma As Func(Of PrelucrareRezultat, PrelucrareRezultat) = Nothing) As Task(Of PrelucrareRezultat)
         ' Cutia neagră a descărcării (felia 0054) — vezi DownloadListaAsync.
         Dim jurnal As New ForexeRunDump(eticheta, cod, _session)
@@ -767,11 +780,13 @@ Partial Public NotInheritable Class ForexeController
 
     ''' <summary>
     ''' Slice 0097 -- closes the live FOREXE session (the unit switch in the caption bar). The
-    ''' certificate is forgotten too: the next unit may need another one, so the next connection
-    ''' asks again. Nothing to do without a session. Refused (InvalidOperationException) while an
-    ''' operation is running -- the caller checks <see cref="IsBusy"/> first.
+    ''' remembered certificate (the one «Conectare» uses without asking) is kept, unless
+    ''' <paramref name="forgetCertificate"/> -- the operator's switch in «Setari → FOREXE», off by
+    ''' default -- asks for it to be forgotten, so the next connection asks for one. Refused
+    ''' (InvalidOperationException) while an operation is running -- the caller checks
+    ''' <see cref="IsBusy"/> first.
     ''' </summary>
-    Public Async Function DisconnectAsync() As Task
+    Public Async Function DisconnectAsync(Optional forgetCertificate As Boolean = False) As Task
         Try
             If _busy Then Throw New InvalidOperationException("O operație FOREXE este în curs.")
             Dim deconectare As IForexeDisconnect = TryCast(_runner, IForexeDisconnect)
@@ -779,7 +794,9 @@ Partial Public NotInheritable Class ForexeController
                 Throw New InvalidOperationException("The FOREXE runner does not implement IForexeDisconnect.")
             End If
             If IsConnected Then Await deconectare.DisconnectAsync()
+            ' The session's certificate goes with the session; the REMEMBERED one only on request.
             _certificat = Nothing
+            If forgetCertificate Then CertificateService.ForgetLastUsedCertificate()
             RaporteazaStare("Deconectat de la FOREXE.")
             RaiseEvent StateChanged(Me, EventArgs.Empty)
         Catch ex As Exception

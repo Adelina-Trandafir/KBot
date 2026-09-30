@@ -140,6 +140,9 @@ Public NotInheritable Class WorkflowResultStore
     ''' <summary>Numele coloanei de data din «ListaReceptii», asa cum o scrie site-ul.</summary>
     Private Const COL_DATA_RECEPTIE As String = "Data"
 
+    ''' <summary>The sum column of «ListaReceptii», as the site writes it.</summary>
+    Private Const COL_SUMA_RECEPTIE As String = "Suma"
+
     ''' <summary>Numele tabelului de receptii din pachet.</summary>
     Private Const TABEL_RECEPTII As String = "ListaReceptii"
 
@@ -275,13 +278,15 @@ Public NotInheritable Class WorkflowResultStore
     ''' pe care operatorul a cerut-o.</para>
     ''' </remarks>
     Public Shared Function FaraReceptiileSarite(rezultat As PrelucrareRezultat,
-                                                dateSarite As IEnumerable(Of Date)) As PrelucrareRezultat
+                                                sarite As ReceptiiSarite) As PrelucrareRezultat
         Try
             If rezultat Is Nothing OrElse rezultat.Tabele Is Nothing Then Return rezultat
-            If dateSarite Is Nothing Then Return rezultat
+            If sarite Is Nothing OrElse sarite.EsteGol Then Return rezultat
 
-            Dim desarit As New HashSet(Of Date)(dateSarite.Select(Function(d) d.Date))
-            If desarit.Count = 0 Then Return rezultat
+            Dim desarit As New HashSet(Of Date)(sarite.Zile.Select(Function(d) d.Date))
+            ' Sliceless, 30.09.2026: single receptions of a partly ticked day, by date + rank.
+            Dim receptiiDeSarit As New HashSet(Of (Date, Integer))(
+                sarite.Receptii.Select(Function(r) (r.Data.Date, r.RangZi)))
 
             ' Slice 0076: BOTH tables. Until then only the raw «ListaReceptii» was cut, but the
             ' server reads «ListaReceptii_results» (TABLE_RECEPTII in prelucrare_pasi.py), the
@@ -294,7 +299,7 @@ Public NotInheritable Class WorkflowResultStore
                 If Not rezultat.Tabele.TryGetValue(nume, receptii) OrElse receptii Is Nothing Then Continue For
                 Dim pastrate As New TabelRezultat()
                 For Each rand As RandTabel In receptii
-                    If Not EDeSarit(rand, desarit) Then pastrate.Adauga(rand)
+                    If Not EDeSarit(rand, desarit, receptiiDeSarit) Then pastrate.Adauga(rand)
                 Next
                 If pastrate.Count = receptii.Count Then Continue For
                 tabele(nume) = pastrate
@@ -321,7 +326,8 @@ Public NotInheritable Class WorkflowResultStore
     ''' pe care il cere si serverul in <c>fx_receptii_parse_ro_date</c>. O celula care nu se
     ''' poate citi intoarce False, deci randul ramane.
     ''' </summary>
-    Private Shared Function EDeSarit(rand As RandTabel, desarit As HashSet(Of Date)) As Boolean
+    Private Shared Function EDeSarit(rand As RandTabel, desarit As HashSet(Of Date),
+                                     receptiiDeSarit As HashSet(Of (Date, Integer))) As Boolean
         If rand Is Nothing Then Return False
         Dim celula As CelulaTabel = Nothing
         If Not rand.TryGetValue(COL_DATA_RECEPTIE, celula) OrElse celula Is Nothing Then Return False
@@ -331,7 +337,11 @@ Public NotInheritable Class WorkflowResultStore
         If Not Date.TryParseExact(text, WorkflowCatalog.DataReceptieFormat,
                                   Globalization.CultureInfo.InvariantCulture,
                                   Globalization.DateTimeStyles.None, data) Then Return False
-        Return desarit.Contains(data.Date)
+        If desarit.Contains(data.Date) Then Return True
+        ' A row without a readable rank stays: «not sure which one» never becomes «skip it».
+        Dim rang As Integer
+        If Not Integer.TryParse(TextCelula(rand, COL_RANG_ZI), rang) Then Return False
+        Return receptiiDeSarit.Contains((data.Date, rang))
     End Function
 
     ''' <summary>Folderul de ieșire (creat la nevoie).</summary>
@@ -396,17 +406,105 @@ Public NotInheritable Class WorkflowResultStore
                 If Not rezultat.Tables.ContainsKey(kvp.Key) Then scalari(kvp.Key) = kvp.Value
             Next
 
+            Dim tabele As New Dictionary(Of String, TabelRezultat)(rezultat.Tables)
+            CuPozitiaReceptiilor(tabele)
+
             Return New PrelucrareRezultat With {
                 .CodAngajament = If(cod, String.Empty),
                 .Moment = DateTime.Now,
                 .Workflow = If(rezultat.Message, String.Empty),
                 .Scalari = scalari,
-                .Tabele = New Dictionary(Of String, TabelRezultat)(rezultat.Tables)
+                .Tabele = tabele
             }
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowResultStore.DinJobResult", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>The row's 1-based position in the FOREXE receptions list.</summary>
+    Public Const COL_NRCRT_FOREXE As String = "NrCrtForexe"
+
+    ''' <summary>The row's 1-based rank among the receptions of the same date, in list order.</summary>
+    Public Const COL_RANG_ZI As String = "RangZi"
+
+    ''' <summary>
+    ''' Stamps every reception row with its place in FOREXE (sliceless, 30.09.2026): position in
+    ''' the list (<see cref="COL_NRCRT_FOREXE"/>) and rank among the receptions of its date
+    ''' (<see cref="COL_RANG_ZI"/>). Replaces the rows in <paramref name="tabele"/>; the robot's
+    ''' own rows are not touched.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para><b>Why.</b> Step 4b matched a row to a stored reception by date only, so two
+    ''' receptions of one day collapsed into one. The rank within the day is the tie breaker the
+    ''' server now matches on (<c>_potriveste_ziua</c>).</para>
+    ''' <para><b>Why here and not in the .wfl files.</b> Every flow scrapes the WHOLE list in site
+    ''' order, and rows only disappear later, in K-BOT (unticked receptions, rows the edited-
+    ''' reception flow did not open). Stamped here -- the first thing after the robot -- a row
+    ''' keeps its true place whatever is dropped afterwards, in all four flows at once.</para>
+    ''' <para><b>The raw list is the ruler.</b> Places are counted on «ListaReceptii» (the
+    ''' scraped table, every row). The collected «ListaReceptii_results» is what the server
+    ''' reads; its rows are matched onto the raw ones in order by date + sum, since a row with an
+    ''' empty first field is not collected. A collected row that finds no raw partner stays
+    ''' unstamped -- the server then falls back to the payload order.</para>
+    ''' </remarks>
+    Friend Shared Sub CuPozitiaReceptiilor(tabele As Dictionary(Of String, TabelRezultat))
+        If tabele Is Nothing Then Return
+        Dim brut As TabelRezultat = Nothing
+        Dim colectat As TabelRezultat = Nothing
+        tabele.TryGetValue(TABEL_RECEPTII, brut)
+        tabele.TryGetValue(TABEL_RECEPTII_COLECTAT, colectat)
+        Dim rigla As TabelRezultat = If(brut, colectat)
+        If rigla Is Nothing OrElse rigla.Count = 0 Then Return
+
+        ' Place of each ruler row: (date text, sum text, position, rank).
+        Dim locuri As New List(Of (Data As String, Suma As String, Pozitie As Integer, Rang As Integer))()
+        Dim peZi As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+        For i As Integer = 0 To rigla.Count - 1
+            Dim data As String = TextCelula(rigla(i), COL_DATA_RECEPTIE)
+            Dim rang As Integer = 1
+            If peZi.TryGetValue(data, rang) Then rang += 1 Else rang = 1
+            peZi(data) = rang
+            locuri.Add((data, TextCelula(rigla(i), COL_SUMA_RECEPTIE), i + 1, rang))
+        Next
+
+        tabele(If(brut IsNot Nothing, TABEL_RECEPTII, TABEL_RECEPTII_COLECTAT)) =
+            New TabelRezultat(Enumerable.Range(0, rigla.Count).Select(
+                Function(i) Stampilat(rigla(i), locuri(i).Pozitie, locuri(i).Rang)))
+
+        If brut Is Nothing OrElse colectat Is Nothing Then Return
+
+        ' The collected rows are a subsequence of the raw ones: walk both in order.
+        Dim stampilate As New TabelRezultat()
+        Dim j As Integer = 0
+        For Each rand As RandTabel In colectat
+            Dim data As String = TextCelula(rand, COL_DATA_RECEPTIE)
+            Dim suma As String = TextCelula(rand, COL_SUMA_RECEPTIE)
+            Dim k As Integer = j
+            While k < locuri.Count AndAlso Not (locuri(k).Data = data AndAlso locuri(k).Suma = suma)
+                k += 1
+            End While
+            If k < locuri.Count Then
+                stampilate.Adauga(Stampilat(rand, locuri(k).Pozitie, locuri(k).Rang))
+                j = k + 1
+            Else
+                stampilate.Adauga(rand)
+            End If
+        Next
+        tabele(TABEL_RECEPTII_COLECTAT) = stampilate
+    End Sub
+
+    Private Shared Function Stampilat(rand As RandTabel, pozitie As Integer, rang As Integer) As RandTabel
+        Dim nou As New RandTabel(rand)
+        nou.Pune(COL_NRCRT_FOREXE, CelulaTabel.DinText(pozitie.ToString(Globalization.CultureInfo.InvariantCulture)))
+        nou.Pune(COL_RANG_ZI, CelulaTabel.DinText(rang.ToString(Globalization.CultureInfo.InvariantCulture)))
+        Return nou
+    End Function
+
+    Private Shared Function TextCelula(rand As RandTabel, coloana As String) As String
+        Dim c As CelulaTabel = Nothing
+        If rand Is Nothing OrElse Not rand.TryGetValue(coloana, c) OrElse c Is Nothing Then Return String.Empty
+        Return c.TextSau(String.Empty).Trim()
     End Function
 
     ' Scrierea propriu-zisă. Frontieră de I/O: logăm și rearuncăm (regula casei) — un

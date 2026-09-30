@@ -44,7 +44,7 @@ pe o lună sau pe rădăcină, și **doar dacă niciuna de sub ea nu e semnată*
 subsolul arborelui face același lucru ca «Adaugă ordonanțare…».
 
 ## Documentul și semnarea
-<!-- slice: 0078, 0041, 0000-14 -->
+<!-- slice: 0078, 0041, 0000-14, 0078-08 -->
 
 Pe pagina **Document**:
 
@@ -52,6 +52,8 @@ Pe pagina **Document**:
   salvate.
 - Documentul se semnează în Adobe, chiar în fereastra K-BOT. După fiecare semnătură, K-BOT îl
   urcă pe server.
+- Cât Adobe încă deschide documentul, arborele din stânga nu primește alt rând — așteaptă câteva
+  secunde ([Cât se deschide un document](topic:contabil.liste)).
 - **Un document semnat nu se mai generează niciodată din nou** — ajunge o singură semnătură.
   «Generează» pe o ordonanțare semnată răspunde «Documentul are cel puțin o semnătură, deci nu se
   mai generează din nou.»

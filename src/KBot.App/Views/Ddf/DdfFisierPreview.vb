@@ -159,6 +159,7 @@ Public Class DdfFisierPreview
             _caleCeruta = Nothing
             lblTitlu.Text = String.Empty
             InchideContainerele(DdfContainer.Niciunul)
+            SeteazaOcupat(False)
             ArataMesaj("Selectează un fișier din listă.")
         Catch ex As Exception
             GlobalErrorLog.Write("DdfFisierPreview.Clear", ex)
@@ -169,7 +170,22 @@ Public Class DdfFisierPreview
     Private Sub SeteazaOcupat(valoare As Boolean)
         If _ocupat = valoare Then Return
         _ocupat = valoare
+        ' Slice 0078-08: the application's trees are locked too while a file opens here.
+        If valoare Then
+            AdobeOpenGate.Enter(Me)
+        Else
+            AdobeOpenGate.Leave(Me)
+        End If
         RaiseEvent OcupatChanged(valoare)
+    End Sub
+
+    ' Host event, UI thread: Adobe finished opening the PDF (slice 0078-08). UI boundary.
+    Private Sub OnAdobeDocumentReady()
+        Try
+            SeteazaOcupat(False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfFisierPreview.OnAdobeDocumentReady", ex)
+        End Try
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -246,6 +262,8 @@ Public Class DdfFisierPreview
     ' It also OWNS the busy flag from the moment ShowAttachment hands over -- the Finally below is
     ' the only thing that lets the grid back on, so it must not be able to be skipped.
     Private Async Sub ArataPdfAsync(cale As String)
+        ' Slice 0078-08: once hosted, the busy flag stays until Adobe says the document is done.
+        Dim asteaptaAdobe As Boolean = False
         Try
             Dim gazda As AdobeReaderHost = AsiguraAdobe()
             Dim rezultat As AdobeHostResult = Await gazda.ShowDocumentAsync(cale).ConfigureAwait(True)
@@ -256,6 +274,7 @@ Public Class DdfFisierPreview
             Select Case rezultat.Status
                 Case AdobeHostStatus.Hosted
                     ArataSuprafata(pnlGazda)
+                    asteaptaAdobe = Not gazda.IsDocumentReady
                 Case AdobeHostStatus.Superseded
                     ' A newer request took over; it owns the pane now.
                 Case Else
@@ -265,7 +284,7 @@ Public Class DdfFisierPreview
             GlobalErrorLog.Write("DdfFisierPreview.ArataPdfAsync", ex)
             ArataMesaj("Documentul nu a putut fi afișat. Detalii în jurnalul de erori.")
         Finally
-            SeteazaOcupat(False)
+            If Not asteaptaAdobe Then SeteazaOcupat(False)
         End Try
     End Sub
 
@@ -287,6 +306,7 @@ Public Class DdfFisierPreview
         If _adobe IsNot Nothing Then Return _adobe
 
         _adobe = New AdobeReaderHost(pnlGazda, AddressOf AdobeHostLog.Write)
+        AddHandler _adobe.DocumentReady, AddressOf OnAdobeDocumentReady
         ' Detach mode: the operator's (slice 0072), same line as ReaderHostPreview.
         AdobeHostSettings.ApplyTo(_adobe, AddressOf AdobeHostLog.Write)
 
@@ -333,6 +353,7 @@ Public Class DdfFisierPreview
                 If pastreaza = DdfContainer.Adobe Then
                     _adobe.Detach()
                 Else
+                    RemoveHandler _adobe.DocumentReady, AddressOf OnAdobeDocumentReady
                     _adobe.Dispose()
                     _adobe = Nothing
                 End If
@@ -349,6 +370,7 @@ Public Class DdfFisierPreview
     ''' <summary>Everything goes. Called from <c>Dispose</c> (see the Designer).</summary>
     Friend Sub EliberezaGazdele()
         InchideContainerele(DdfContainer.Niciunul)
+        SeteazaOcupat(False)
     End Sub
 
     ''' <summary>

@@ -96,3 +96,30 @@ destructive and needs no login or connection.
 - **The bench's controller stays subscribed to `ThemeManager.ThemeChanged`** after the bench
   closes. The controller has no unsubscribe method, so it is kept alive until the harness exits.
   This is harmless.
+
+## Follow-up (same day): the queue window opens by itself only above one action
+
+The operator said: "the queue form should appear only when MORE THAN one action is being
+performed through forexe".
+
+- **The fault.** The shell opened the window whenever the waiting list was not empty.
+  - One click passes through the waiting list for a moment before the queue picks it up.
+  - It stays there longer while a robot operation started outside the queue finishes.
+  - So a single action could open the window.
+- **The fix.** New `RobotQueue.ActionCount(robotBusy)`: the waiting tasks plus one for the
+  running task. When no queued task runs, a robot operation started outside the queue
+  (`ForexeController.IsBusy`) counts as that one.
+  - `KbotForm.RobotQueue_Changed` opens the window only when the count is above 1.
+  - The bench follows the same rule. It no longer opens the window when it starts.
+  - The footer button «Coadă N» still opens it at any time.
+- **A build break found on the way.** Visual Studio had created two blank template `.resx`
+  files, `KbotForm.RobotQueue.resx` and `KbotForm.AsociereGuard.resx`. That happens when a
+  partial file of `KbotForm` is opened in the designer.
+  - Both map to the same resource name as the real `KbotForm.resx`, so the build failed with
+    MSB3577.
+  - Both held only the template's sample entries. They were **moved** out of the repo (not
+    deleted) to the session scratch folder.
+  - `Forexe/RobotQueueForm.resx` (also new, created by the designer) was left in place.
+- **Build:** Debug and Release, 0 warnings, 0 errors. Not run.
+- **Files:** `src/KBot.App/Forexe/RobotQueue.vb`, `src/KBot.App/KbotForm.RobotQueue.vb`,
+  `src/KBot.App/HarnessTests/RobotQueueHarnessForm.vb`.

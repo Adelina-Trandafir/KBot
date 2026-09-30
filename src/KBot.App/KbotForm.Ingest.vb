@@ -231,9 +231,9 @@ Partial Public Class KbotForm
     ''' <para>An angajament with no local receptie opens nothing: it would have nothing to show,
     ''' and an empty window with a «Descarca» button is a question with no substance.</para>
     ''' </remarks>
-    Private Async Function AlegeReceptiileDeSaritAsync(cod As String) As Task(Of List(Of Date))
+    Private Async Function AlegeReceptiileDeSaritAsync(cod As String) As Task(Of ReceptiiSarite)
         Try
-            If String.IsNullOrWhiteSpace(cod) Then Return New List(Of Date)()
+            If String.IsNullOrWhiteSpace(cod) Then Return New ReceptiiSarite()
 
             Dim info As ReceptiiInfo
             busyBar.Running = True
@@ -245,15 +245,19 @@ Partial Public Class KbotForm
             End Try
 
             Dim randuri As List(Of ReceptieRow) = info?.Receptii
-            If randuri Is Nothing OrElse randuri.Count = 0 Then Return New List(Of Date)()
+            If randuri Is Nothing OrElse randuri.Count = 0 Then Return New ReceptiiSarite()
 
             Using dlg As New SelectieReceptiiForm(randuri, cod)
                 If dlg.ShowDialog(Me) <> DialogResult.OK Then Return Nothing
-                If dlg.DateDeSarit.Count > 0 Then
-                    _controller.SpuneStare($"«{cod}»: {dlg.DateDeSarit.Count} zile de recepții sar " &
+                If dlg.Sarite.Zile.Count > 0 Then
+                    _controller.SpuneStare($"«{cod}»: {dlg.Sarite.Zile.Count} zile de recepții sar " &
                                        "peste citirea detaliului (alegerea operatorului).")
                 End If
-                Return New List(Of Date)(dlg.DateDeSarit)
+                If dlg.Sarite.Receptii.Count > 0 Then
+                    _controller.SpuneStare($"«{cod}»: {dlg.Sarite.Receptii.Count} recepții dintr-o zi cu mai multe " &
+                                       "se citesc, dar nu se salvează (alegerea operatorului).")
+                End If
+                Return dlg.Sarite
             End Using
         Catch ex As Exception
             ' UI boundary: without a list EVERYTHING is downloaded. Never the other way round --
@@ -262,7 +266,7 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.AlegeReceptiileDeSaritAsync", ex)
             _controller.SpuneStare($"Nu s-a putut citi lista de recepții a lui «{cod}» ({ex.Message}) — " &
                                "se descarcă toate.")
-            Return New List(Of Date)()
+            Return New ReceptiiSarite()
         End Try
     End Function
 
@@ -296,7 +300,7 @@ Partial Public Class KbotForm
     Private Async Function ReimprospateazaReceptiiAsync(cod As String) As Task
         Try
             If Not Await AsocierePermiteAsync(cod, "Reîmprospătarea recepțiilor") Then Return
-            Dim sarite As List(Of Date) = Await AlegeReceptiileDeSaritAsync(cod)
+            Dim sarite As ReceptiiSarite = Await AlegeReceptiileDeSaritAsync(cod)
             If sarite Is Nothing Then Return   ' gave up
 
             Dim pachet As PrelucrareRezultat
@@ -369,10 +373,13 @@ Partial Public Class KbotForm
                 busyBar.Running = False
             End Try
             Dim zileTaiate As HashSet(Of Date) = taiate.Select(Function(t) t.DataR.Date).ToHashSet()
-            Dim sarite As List(Of Date) =
+            ' Whole days only: a day holding a cut reception is read whole (its other receptions
+            ' too), which costs a page or two and never drops the one that was asked for.
+            Dim sarite As New ReceptiiSarite()
+            sarite.Zile.AddRange(
                 If(info?.Receptii, New List(Of ReceptieRow)()).
                     Where(Function(r) r.DataR.HasValue AndAlso Not zileTaiate.Contains(r.DataR.Value.Date)).
-                    Select(Function(r) r.DataR.Value.Date).Distinct().ToList()
+                    Select(Function(r) r.DataR.Value.Date).Distinct())
 
             Dim pachet As PrelucrareRezultat
             busyBar.Running = True

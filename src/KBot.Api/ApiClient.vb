@@ -649,7 +649,8 @@ Public Class ApiClient
                                 .Denumire = If(r.denumire, String.Empty),
                                 .NrCrtInd = r.nrcrt_ind,
                                 .Valoare = r.valoare,
-                                .Dif = r.dif
+                                .Dif = r.dif,
+                                .RangZiR = r.rang_zi_r
                             })
                         Next
                     End If

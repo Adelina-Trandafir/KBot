@@ -35,11 +35,13 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 «Ieșire» nu salvează nimic în plus: operațiunile rămân în K-BOT și le reiei data viitoare.
 
 ## Vederea «Note corecție»
-<!-- slice: 0088, 0097, 0000-14 -->
+<!-- slice: 0088, 0097, 0000-14, 0078-08 -->
 
 Apare doar pe un angajament pentru care s-a făcut cel puțin o notă de corecție (altfel e gri).
 Lupa din capul arborelui caută o notă; butonul de strângere din subsol («Note») îngustează arborele.
 Arată notele care privesc angajamentul selectat: arborele cu notele, rândurile lor și pagina
 **Document**, unde documentul se generează cât timp nu e semnat și se descarcă după ce e semnat.
+Cât Adobe încă deschide documentul, arborele nu primește altă notă —
+[Cât se deschide un document](topic:contabil.liste).
 
 <!-- capture: note-corectie | caption: Vederea «Note corecție» | goto: view:notecab | prepare: Selectați un angajament pentru care s-a făcut o notă de corecție. -->

@@ -24,6 +24,12 @@ Public NotInheritable Class ReceptieRow
     Public Property Idrr As Integer
     ''' <summary>NRCRT al receptiei — cheia principala de ordonare a radacinilor.</summary>
     Public Property NrCrtR As Integer?
+    ''' <summary>
+    ''' Rank (1..n) among the receptions of the same date, in FOREXE list order
+    ''' (<c>FX_Receptii_R.RangZi</c>, sliceless 30.09.2026). Nothing until the first download
+    ''' after the column was added. Tells two receptions of one day apart.
+    ''' </summary>
+    Public Property RangZiR As Integer?
     Public Property DataR As Date?
     Public Property SumaAntet As Double
     ''' <summary>Receptie incarcata -> iconita „sus". Vezi si <see cref="Preluat"/>.</summary>

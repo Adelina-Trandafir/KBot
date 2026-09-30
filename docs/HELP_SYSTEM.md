@@ -128,6 +128,9 @@ actualizat», name the topic ids (and capture ids) the change makes stale. One l
 - Headers ASCII (rule 0); only `title` and the body carry diacritics.
 - **Left out on purpose** (operator's decisions):
   - how the custom controls work inside, the browser's internal logic;
+  - **how K-BOT works inside** (operator, 30.09.2026: «the help is meant for users only»): keys
+    K-BOT presses for the user (Ctrl+H, Ctrl+2...), how it places or watches the Adobe window,
+    log lines, timers, internal checks. Describe only what the user sees and does;
   - the capture mode itself (it is a tool for the operator, not for clients);
   - the clicks inside the FOREXE page — the help describes what K-BOT does, not FOREXE's own pages;
   - the ORD's next step after signing (turned into a recepție and uploaded to the FOREXE CAB

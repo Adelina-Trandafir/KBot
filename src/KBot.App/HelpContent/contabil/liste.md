@@ -36,6 +36,15 @@ arată și se poartă la fel peste tot; butoanele proprii fiecărei vederi sunt 
 
 <!-- capture: liste-subsol-arbore | caption: Subsolul unui arbore, cu butonul de strângere și iconița din dreapta | goto: view:ord | prepare: Selectați un angajament cu ordonanțări; ținteți doar subsolul arborelui. -->
 
+## Cât se deschide un document
+<!-- slice: 0078-08 -->
+
+Când alegi un rând care deschide un document PDF (în arborele angajamentelor, în Fundamentare,
+Ordonanțare, Note corecție sau în lista «Fișiere»), cât timp Adobe încă îl deschide **nu poți
+alege alt rând**: clicul și săgețile nu fac nimic, iar cursorul arată că programul lucrează.
+Arborele se deblochează singur când Adobe a terminat — de obicei în câteva secunde, cel mult într-un
+minut. Derularea, lupa și butoanele din cap și din subsol merg în continuare.
+
 ## Capul tabelului: pâlnia fiecărei coloane
 <!-- slice: 0028-03, 0029, 0030 -->
 

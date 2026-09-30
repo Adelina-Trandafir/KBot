@@ -23,7 +23,7 @@ cu altă valoare decât a ei, descărcarea **nu pornește** și ți se oferă fe
 [Cazuri speciale](topic:contabil.asocieri.cazuri).
 
 ## Înainte de descărcare: ce recepții se citesc din nou
-<!-- slice: 0060, 0072, 0000-14 -->
+<!-- slice: 0060, 0072, 0000-14, fara-felie -->
 
 Partea lungă a unei descărcări sunt recepțiile: robotul deschide în FOREXE pagina **fiecăreia**. De
 obicei te interesează doar una sau două — cele la care s-a schimbat ceva pe site. De aceea, înainte
@@ -44,8 +44,10 @@ care le are deja pentru acest angajament:
 - Recepțiile care există în FOREXE, dar **nu și în K-BOT**, se descarcă **întotdeauna**: nu au cum
   să fie în listă.
 - Rândul de jos spune ce se va întâmpla, de exemplu «2 din 14 recepții se reîmprospătează».
-- **Două recepții din aceeași zi** nu se pot deosebi decât după dată: dacă bifezi doar una, ziua se
-  descarcă întreagă, iar rândul de jos te avertizează cu ⚠.
+- **Mai multe recepții din aceeași zi** se deosebesc după ordinea lor în lista din FOREXE. Dacă bifezi
+  doar una, robotul citește toată ziua, dar K-BOT le păstrează doar pe cele bifate. Excepție: dacă
+  una dintre ele nu a mai fost descărcată de la actualizarea K-BOT, K-BOT nu le poate încă deosebi —
+  ziua se descarcă întreagă, iar rândul de jos te avertizează cu ⚠.
 
 **«Descarcă»** pornește robotul; **«Renunță»** închide fereastra și **nu descarcă nimic**. Dacă
 angajamentul nu are încă nicio recepție în K-BOT, fereastra nu se deschide și se descarcă tot.

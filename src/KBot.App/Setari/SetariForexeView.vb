@@ -51,6 +51,7 @@ Public Class SetariForexeView
             Try
                 chkHideChrome.Checked = AppSettings.Current.ForexeHideBrowserChrome
                 chkDevTools.Checked = AppSettings.Current.ForexeDevToolsAllowed
+                chkUitaCertificatLaUnitate.Checked = AppSettings.Current.ForexeForgetCertificateOnUnitSwitch
                 UmpleCapturile()
                 UmpleMultiplicatorul()
                 ArataViteza()
@@ -131,6 +132,22 @@ Public Class SetariForexeView
             GlobalErrorLog.Write("SetariForexeView.ActualizeazaCertificatulMemorat", ex)
             lblCertMemorat.Text = "Nu s-a putut citi certificatul memorat. Detalii în jurnalul de erori."
             btnUitaCertificat.Enabled = True
+        End Try
+    End Sub
+
+    ' Slice 0097: forget the remembered certificate on a unit switch too (off by default).
+    Private Sub ChkUitaCertificatLaUnitate_CheckedChanged(sender As Object, e As EventArgs) Handles chkUitaCertificatLaUnitate.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeForgetCertificateOnUnitSwitch = chkUitaCertificatLaUnitate.Checked
+            copie.Save()
+            RaiseEvent StatusChanged(If(chkUitaCertificatLaUnitate.Checked,
+                "La schimbarea unității se uită și certificatul memorat; «Conectare» îl cere din nou.",
+                "La schimbarea unității certificatul memorat rămâne; «Conectare» îl folosește tot pe el."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkUitaCertificatLaUnitate_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
         End Try
     End Sub
 

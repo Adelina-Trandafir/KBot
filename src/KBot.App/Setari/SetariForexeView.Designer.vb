@@ -28,6 +28,7 @@ Partial Class SetariForexeView
         lblCertificat = New Label()
         lblTitluCertificat = New Label()
         tlyCertificat = New KBotTableLayoutPanel()
+        chkUitaCertificatLaUnitate = New CheckBox()
         lblCertMemoratCaption = New Label()
         lblCertMemorat = New Label()
         btnUitaCertificat = New Button()
@@ -211,14 +212,30 @@ Partial Class SetariForexeView
         tlyCertificat.Controls.Add(lblCertMemoratCaption, 0, 0)
         tlyCertificat.Controls.Add(lblCertMemorat, 1, 0)
         tlyCertificat.Controls.Add(btnUitaCertificat, 2, 0)
+        tlyCertificat.Controls.Add(chkUitaCertificatLaUnitate, 0, 1)
         tlyCertificat.Dock = DockStyle.Top
         tlyCertificat.Location = New Point(28, 186)
         tlyCertificat.Margin = New Padding(4, 0, 4, 24)
         tlyCertificat.Name = "tlyCertificat"
-        tlyCertificat.RowCount = 1
+        tlyCertificat.RowCount = 2
+        tlyCertificat.RowStyles.Add(New RowStyle())
         tlyCertificat.RowStyles.Add(New RowStyle())
         tlyCertificat.Size = New Size(904, 50)
         tlyCertificat.TabIndex = 3
+        '
+        ' chkUitaCertificatLaUnitate
+        '
+        chkUitaCertificatLaUnitate.AutoSize = True
+        tlyCertificat.SetColumnSpan(chkUitaCertificatLaUnitate, 3)
+        chkUitaCertificatLaUnitate.Location = New Point(4, 60)
+        chkUitaCertificatLaUnitate.Margin = New Padding(4, 10, 4, 0)
+        chkUitaCertificatLaUnitate.Name = "chkUitaCertificatLaUnitate"
+        chkUitaCertificatLaUnitate.Size = New Size(420, 29)
+        chkUitaCertificatLaUnitate.TabIndex = 3
+        chkUitaCertificatLaUnitate.Text = "Uită certificatul memorat când schimb unitatea din bara de titlu"
+        tips.SetToolTipHeader(chkUitaCertificatLaUnitate, "Certificatul la schimbarea unității")
+        tips.SetToolTipText(chkUitaCertificatLaUnitate, "La schimbarea unității, conexiunea FOREXE se închide oricum." & vbLf & "Bifată: se uită și certificatul memorat, iar «Conectare» ți-l cere din nou" & vbLf & "(folositoare când unitățile au certificate diferite).")
+        chkUitaCertificatLaUnitate.UseVisualStyleBackColor = True
         '
         ' lblCertMemoratCaption
         '
@@ -740,6 +757,7 @@ Partial Class SetariForexeView
     Friend WithEvents lblCertificat As Label
     Friend WithEvents lblTitluCertificat As Label
     Friend WithEvents tlyCertificat As KBotTableLayoutPanel
+    Friend WithEvents chkUitaCertificatLaUnitate As CheckBox
     Friend WithEvents lblCertMemoratCaption As Label
     Friend WithEvents lblCertMemorat As Label
     Friend WithEvents btnUitaCertificat As Button

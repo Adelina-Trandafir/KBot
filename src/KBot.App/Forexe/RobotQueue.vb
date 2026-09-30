@@ -77,6 +77,19 @@ Public NotInheritable Class RobotQueue
         End Get
     End Property
 
+    ''' <summary>
+    ''' How many FOREXE actions there are right now: the waiting tasks, plus the running one --
+    ''' or, when no queued task runs, a robot operation started outside the queue
+    ''' (<paramref name="robotBusy"/> = <c>ForexeController.IsBusy</c>). The queue window opens by
+    ''' itself only above ONE (operator, 30.09.2026).
+    ''' </summary>
+    ''' <remarks>A single click can sit in the waiting list for a moment (the queue has not picked
+    ''' it up yet, or it waits for an operation outside the queue) -- counting only the waiting
+    ''' list opened the window for one action.</remarks>
+    Public Function ActionCount(robotBusy As Boolean) As Integer
+        Return _waiting.Count + If(_current IsNot Nothing OrElse robotBusy, 1, 0)
+    End Function
+
     Public ReadOnly Property IsPaused As Boolean
         Get
             Return _paused

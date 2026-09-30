@@ -179,5 +179,17 @@
     <Compile Update="KbotForm.Nomenclatoare.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
+	  <Compile Update="KbotForm.AsociereGuard.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.CabNotes.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.RobotQueue.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Units.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
   </ItemGroup>
 </Project>

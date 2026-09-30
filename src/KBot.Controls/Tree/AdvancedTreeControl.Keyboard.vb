@@ -21,6 +21,7 @@
       Try
         MyBase.OnKeyDown(e)
         If Not Me.Enabled Then Return
+        If _selectionLocked Then Return              ' slice 0078-08: a document is still opening
 
         Dim visible As List(Of TreeItem) = GetVisibleItems()
         If visible.Count = 0 Then Return

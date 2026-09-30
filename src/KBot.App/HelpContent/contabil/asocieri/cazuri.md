@@ -115,6 +115,19 @@ continuă singur operația cerută. Dacă închizi fereastra fără să salvezi,
 Motivul: fără verificarea asta, descărcarea rula până la capăt și abia salvarea ei era refuzată cu
 «... Lanțul nu se închide.», iar o ordonanțare s-ar fi făcut pe cifre greșite ale recepțiilor.
 
+### Două recepții din aceeași zi, adunate într-una
+
+Până la actualizarea din 30.09.2026, K-BOT deosebea recepțiile doar după dată, așa că două recepții
+din **aceeași zi** ajungeau în K-BOT ca **una singură**, cu instantaneele amândurora pe ea. Acum le
+deosebește după ordinea lor în lista din FOREXE. Ca să le desparți:
+
+1. În fereastra de asociere (se deschide din mesajul de blocare sau din vederea Recepții), trage
+   **în coș** instantaneele celeilalte recepții din ziua aceea — de obicei cele cu valoarea ei — până
+   când ultimul instantaneu rămas are valoarea recepției din K-BOT. Apasă «Salvează legăturile»:
+   aici salvarea e permisă și cu instantanee rămase în coș.
+2. Reîmprospătează recepțiile angajamentului: K-BOT creează recepția care lipsea.
+3. Deschide din nou fereastra de asociere și trage instantaneele din coș pe recepția nouă.
+
 ## Dacă altcineva a lucrat între timp
 <!-- slice: 0048-04 -->
 

@@ -57,9 +57,17 @@ document under it is signed; the re-login interval acts **at session expiry**, n
      `KbotForm.Units.vb` loads the list after the tree, and on a pick: switch → session → the unit
      remembered (`LastLoginStore`) → combos, tree and views reset → periods + tree + «operațiuni
      necorelate» mark, as after login.
-   - **Refused** while FOREXE is connected or busy (the browser session belongs to the current
-     unit and downloads write into the session's database), and for a unit where the role is
-     «Director» (that one is the signing window, not the shell).
+   - A live FOREXE session is **closed first, silently** (operator, 30.09.2026: «se deconectează
+     și apoi se schimbă unitatea»): the browser session belongs to the unit being left, and
+     downloads write into the session's database. New `IForexeDisconnect` (KBot.Forexe, apart from
+     `IForexeRunner` so the test doubles stay as they are) → `ForexeRunner.DisconnectAsync` (the
+     same teardown a new connection does) → `ForexeController.DisconnectAsync(forgetCertificate)`.
+     The REMEMBERED certificate (the one «Conectare» uses without asking,
+     `CertificateService.LastUsedCertificate`) is forgotten **only** when the operator ticks the new
+     switch «Setări → FOREXE → Uită certificatul memorat când schimb unitatea din bara de titlu»
+     (`AppSettings.ForexeForgetCertificateOnUnitSwitch`, **off by default**, operator 30.09.2026).
+     **Refused** only while a FOREXE operation is running, and for a unit where the role is
+     «Director» (that one is the signing window).
 
 ### Setări → Autentificare + login window
 8. New section «În timpul lucrului (sesiunea expirată)»:
@@ -94,6 +102,9 @@ document under it is signed; the re-login interval acts **at session expiry**, n
 - `src/KBot.Common/AppSettings.vb`, **new** `KBot.Common/SessionCredentials.vb`
 - `src/KBot.Api/IAuthApi.vb`, `AuthApi.vb`, `ApiClient.vb`, `UpsertAngajamenteRequest.vb`
 - `src/KBot.Domain/AngajamentTreeInfo.vb`, `Auth/UnitInfo.vb`
+- `src/KBot.Forexe/ForexeRunner.vb`, **new** `KBot.Forexe/IForexeDisconnect.vb`,
+  `src/KBot.App/Forexe/ForexeController.vb`, `src/KBot.App/Setari/SetariForexeView.vb`,
+  `SetariForexeView.Designer.vb`
 - `PYTHON/routes/forexe/tree.py`; `PYTHON/routes/auth/auth.py` (**gitignored — deploy by hand**)
 
 ## Test results
@@ -115,8 +126,8 @@ document under it is signed; the re-login interval acts **at session expiry**, n
 - ORD group delete leaves the «ord» nav entry on after every ordonanțare is gone (same as the
   single delete: corrected on the next tree reload).
 - Unit switch: open secondary windows (Nomenclatoare, Extrase de cont, …) are not closed; they
-  keep the previous unit's data until reopened. The FOREXE connection has no «disconnect», so
-  after connecting the unit can only be changed by restarting.
+  keep the previous unit's data until reopened. The FOREXE disconnect on a switch was never run:
+  whether the docked «Browser FOREXE» view empties cleanly is unverified.
 - The re-login window still lets the operator pick another unit (existing behaviour); the caption
   follows the session afterwards.
 - FileVersion of KBot.App / KBot.Controls / KBot.Common / KBot.Api / KBot.Domain not bumped

@@ -35,7 +35,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 
 |         Slice | Name                                                                                                                     | Status (short)                                | File                                        |
 | ------------: | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------- |
-|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…15 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
+|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…17 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0001 | Auth                                                                                                                     | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0002 | Split-brain 401 fix + reason codes                                                                                       | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0003 | Redis session backend                                                                                                    | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
@@ -168,6 +168,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0078-05 | Fereastra găzduită fără poziționare / ascundere (Ctrl+H) + proba ordinii «Salvare ca» → scriere → încărcare  | GATA pe cod, nerulat (+ §8: acțiune unică ActiveX→fereastră, opțiune «ecran întreg la închidere») | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-06 | Secțiunea B inserată în DDF-ul semnat pe A, în fluxul real (angajament nou)                | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-07 | Fereastra Adobe găzduită care se mărește singură: urmărită și readusă la panou              | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-08 | Arborele blocat cât Adobe încă deschide documentul (semnal de la Adobe, nu cronometru)        | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0079 | Jurnalul semnăturilor (FX_PDF_SEMNATURI)                                                                                 | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0080-01 | `IdClsf` = `Clasificatii.IDClsf` pe șapte tabele FX\_ + `FX_Extrase.DataDoc` → DATE                                      | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |       0080-02 | Vederea «Extrase» + pagina «Setări → Extrase»                                                                            | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |

@@ -87,7 +87,11 @@ Partial Public Class KbotForm
             Try
                 ' The FOREXE session belongs to the unit being left: closed first, silently (operator,
                 ' 30.09.2026 -- «se deconectează și apoi se schimbă unitatea»).
-                If _controller.IsConnected Then Await _controller.DisconnectAsync()
+                ' The remembered certificate is forgotten only when the operator asked for it
+                ' («Setari → FOREXE», off by default).
+                If _controller.IsConnected Then
+                    Await _controller.DisconnectAsync(AppSettings.Current.ForexeForgetCertificateOnUnitSwitch)
+                End If
 
                 Dim dc As String = tinta.DC
                 Dim result As LoginResult = Await WithReauth(Of LoginResult)(

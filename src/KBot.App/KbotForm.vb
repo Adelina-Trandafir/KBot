@@ -105,6 +105,8 @@ Partial Public Class KbotForm
                    forexe As ForexeController, setariFactory As Func(Of SetariForm),
                    capturiApi As IForexeCapturiApi)
         InitializeComponent()
+        ' Slice 0078-08: no new row while a document is still opening in Adobe (AdobeOpenGate).
+        AdobeOpenGate.LockWhileOpening(tree)
         _forexeRunner = forexeRunner
         _session = session
         _apiClient = apiClient

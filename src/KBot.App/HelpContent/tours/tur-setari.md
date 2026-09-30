@@ -22,10 +22,10 @@ goto: setari:aplicatie
 Comutatoarele de zi cu zi și opțiunile listei de angajamente: sortarea și ce coloane se văd.
 
 ## FOREXE
-<!-- slice: 0072, 0091 -->
+<!-- slice: 0072, 0091, 0097 -->
 target: SetariForm.navViews
 goto: setari:forexe
-Starea robotului, certificatul memorat, testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
+Starea robotului, certificatul memorat (și dacă se uită la schimbarea unității), testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
 
 ## Autentificare
 <!-- slice: 0063, 0072, 0097 -->

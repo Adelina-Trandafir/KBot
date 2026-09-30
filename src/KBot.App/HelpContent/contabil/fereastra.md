@@ -21,9 +21,11 @@ Fereastra principală are cinci zone.
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0034, 0080-03, 0095-02 -->
+<!-- slice: 0009, 0777, 0034, 0080-03, 0095-02, 0078-08 -->
 
-- Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui.
+- Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
+  deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
+  angajament — [Cât se deschide un document](topic:contabil.liste).
 - **Lupa** din capul listei deschide căutarea; **Esc** o golește și o închide. Toate butoanele comune
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
 - **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
@@ -50,11 +52,15 @@ Setări › Autentificare e bifată «Ține minte și unitatea aleasă»).
 
 <!-- capture: unitate-selector | caption: Alegerea unității din bara de titlu | goto: view:sumar | prepare: Conectați-vă cu un utilizator care are acces la cel puțin două unități, apoi faceți clic pe numele unității din bara de titlu. -->
 
+Dacă ești **conectat la FOREXE**, K-BOT închide singur conexiunea înainte să treacă pe unitatea
+nouă: conexiunea aparține unității pe care o părăsești, iar ce descarcă robotul se scrie în baza
+ei. Pe unitatea nouă apeși din nou «Conectare»; ea folosește certificatul memorat, afară de cazul
+în care ai bifat în Setări › FOREXE «Uită certificatul memorat când schimb unitatea din bara de
+titlu» — atunci ți-l cere din nou (vezi [Setări și aspect](topic:contabil.setari)).
+
 Schimbarea **nu se poate face**:
 
-- cât timp ești **conectat la FOREXE** — conexiunea aparține unității curente, iar ce descarcă
-  robotul se scrie în baza ei. Schimbi unitatea înainte de «Conectare» sau după o repornire a
-  K-BOT;
+- cât timp robotul **lucrează** (o descărcare sau o trimitere în curs) — aștepți să termine;
 - spre o unitate pe care ai rolul **«Director»** — ea se deschide în fereastra de semnare, după o
   conectare nouă.
 

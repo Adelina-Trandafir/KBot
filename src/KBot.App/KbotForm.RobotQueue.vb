@@ -22,16 +22,18 @@ Partial Public Class KbotForm
         RemoveHandler _robotQueue.Changed, AddressOf RobotQueue_Changed
     End Sub
 
-    ' The window opens by itself the moment a task has to WAIT behind another one: that is when
-    ' the operator needs to see the order (and may want to take something out).
+    ' The window opens by itself only when MORE THAN ONE FOREXE action is under way (operator,
+    ' 30.09.2026): that is when there is an order to see and something to take out. One action
+    ' alone never opens it; the footer button still does.
     Private Sub RobotQueue_Changed(sender As Object, e As EventArgs)
         Try
             If IsDisposed OrElse Disposing Then Return
+            Dim actions As Integer = _robotQueue.ActionCount(_controller.IsBusy)
             If _robotQueue.Current Is Nothing AndAlso _robotQueue.Waiting.Count = 0 Then
                 _queueFormDismissed = False
                 Return
             End If
-            If _robotQueue.Waiting.Count > 0 AndAlso Not _queueFormDismissed Then ShowRobotQueue(activate:=False)
+            If actions > 1 AndAlso Not _queueFormDismissed Then ShowRobotQueue(activate:=False)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.RobotQueue_Changed", ex)
         End Try

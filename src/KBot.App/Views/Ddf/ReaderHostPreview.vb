@@ -84,6 +84,7 @@ Public Class ReaderHostPreview
         AddHandler _host.SaveTrapFailed, AddressOf OnSaveTrapFailed
         AddHandler _host.SaveNotSent, AddressOf OnSaveNotSent
         AddHandler _host.SaveKeysSent, AddressOf OnSaveKeysSent
+        AddHandler _host.DocumentReady, AddressOf OnDocumentReady
         ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
         ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
         ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
@@ -193,10 +194,12 @@ Public Class ReaderHostPreview
             If UsesActiveX() AndAlso AppSettings.Current.AcroPdfFreshControl Then _acro?.Clear()
 
             If String.IsNullOrWhiteSpace(pdfPath) Then
+                SetOpening(False)
                 ShowMessage("Selectați o revizie din arbore.")
                 Return
             End If
             If Not exists Then
+                SetOpening(False)
                 ShowMissing()
                 Return
             End If
@@ -211,11 +214,14 @@ Public Class ReaderHostPreview
             ' gazdă NU se arată acum: fereastra Adobe încă nu există, iar un dreptunghi gol nu spune
             ' nimic operatorului.
             ShowLoading()
+            ' Slice 0078-08: from here until Adobe reports the document done, the trees are locked.
+            SetOpening(True)
             ' Fire-and-forget deliberat: metoda își tratează singură TOATE erorile (același tipar ca
             ' LoadAsync din vederi — apelantul e un handler sincron, nu există cine să aștepte).
             EmbedAsync(pdfPath)
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.ShowDocument", ex)
+            SetOpening(False)
             ShowMessage("Documentul nu a putut fi afișat. Detalii în jurnalul de erori.")
         End Try
     End Sub
@@ -225,7 +231,12 @@ Public Class ReaderHostPreview
     Private Async Sub EmbedAsync(pdfPath As String)
         Try
             If UsesActiveX() Then
-                Await EmbedWithActiveXAsync(pdfPath).ConfigureAwait(True)
+                Try
+                    Await EmbedWithActiveXAsync(pdfPath).ConfigureAwait(True)
+                Finally
+                    ' The ActiveX load returns when the document is loaded and laid out.
+                    If String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then SetOpening(False)
+                End Try
                 Return
             End If
 
@@ -240,13 +251,18 @@ Public Class ReaderHostPreview
                     ' Notă discretă doar când versiunea Adobe nu a fost recunoscută.
                     lblNote.Text = result.Message
                     lblNote.Visible = result.Message.Length > 0
+                    ' Slice 0078-08: the trees stay locked until DocumentReady (OnDocumentReady) --
+                    ' unless it already came while this continuation waited.
+                    If _host.IsDocumentReady Then SetOpening(False)
                 Case AdobeHostStatus.Superseded
                     ' Nimic de arătat: o cerere mai nouă a preluat controlul.
                 Case Else
+                    SetOpening(False)
                     ShowMessage(result.Message)
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.EmbedAsync", ex)
+            SetOpening(False)
             ShowMessage("Documentul nu a putut fi afișat. Detalii în jurnalul de erori.")
         End Try
     End Sub
@@ -354,6 +370,31 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ' ── Opening gate (slice 0078-08) ────────────────────────────────────────────
+
+    ' True from the moment a document is sent to Adobe until Adobe reports it done; the application's
+    ' trees do not take a new row meanwhile (AdobeOpenGate).
+    Private _opening As Boolean
+
+    Private Sub SetOpening(value As Boolean)
+        If _opening = value Then Return
+        _opening = value
+        If value Then
+            AdobeOpenGate.Enter(Me)
+        Else
+            AdobeOpenGate.Leave(Me)
+        End If
+    End Sub
+
+    ' Host event, UI thread: Adobe finished opening the document. UI boundary: log and swallow.
+    Private Sub OnDocumentReady()
+        Try
+            SetOpening(False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnDocumentReady", ex)
+        End Try
+    End Sub
+
     Private Sub pnlHost_SizeChanged(sender As Object, e As EventArgs) Handles pnlHost.SizeChanged
         Try
             ' Raised inside InitializeComponent (docking / autoscale), before the constructor has
@@ -372,6 +413,7 @@ Public Class ReaderHostPreview
         Try
             _host?.Dispose()
             DisposeAcro()
+            SetOpening(False)
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.DetachReader", ex)
         End Try
@@ -403,6 +445,7 @@ Public Class ReaderHostPreview
             _requestedPath = Nothing
             _host.Detach()
             _acro?.Clear()
+            SetOpening(False)
             ShowMessage("Selectați o revizie din arbore.")
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.Clear", ex)

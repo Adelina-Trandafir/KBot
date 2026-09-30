@@ -107,8 +107,15 @@ Public NotInheritable Class AdobeReaderHost
     Private _startedPid As Integer = 0
     ' A newer ShowDocument invalidates an in-flight one.
     Private _generation As Integer = 0
-    ' Slice 0078-07: notices Adobe resizing the hosted window by itself (see AdobeSizeWatcher).
-    Private ReadOnly _sizeWatcher As New AdobeSizeWatcher()
+    ' Slice 0078-07/08: notices Adobe resizing the hosted window by itself, and Adobe going quiet
+    ' (see AdobeWindowWatcher).
+    Private ReadOnly _windowWatcher As New AdobeWindowWatcher()
+    ' Slice 0078-08: DocumentReady was raised for the document hosted now.
+    Private _documentReady As Boolean
+    ' Slice 0078-08: the latest a DocumentReady may come after hosting -- a safety net, so a document
+    ' Adobe never finishes (an error box, a window that closed) cannot keep the trees locked.
+    Private ReadOnly _readyDeadline As New System.Windows.Forms.Timer()
+    Private Const ReadyDeadlineMs As Integer = 60000
     ' When K-BOT put the window back after Adobe changed it; too many in a short time = a fight.
     Private ReadOnly _sizeFixes As New List(Of DateTime)()
     Private _sizeWatchGaveUp As Boolean
@@ -137,8 +144,27 @@ Public NotInheritable Class AdobeReaderHost
         AddHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
         _readModeTimer.Interval = ReadModeTickMs
         AddHandler _readModeTimer.Tick, AddressOf OnReadModeTick
-        AddHandler _sizeWatcher.Changed, AddressOf OnAdobeResized
+        AddHandler _windowWatcher.HostedWindowMoved, AddressOf OnAdobeResized
+        AddHandler _windowWatcher.Quiet, AddressOf OnAdobeQuiet
+        _readyDeadline.Interval = ReadyDeadlineMs
+        AddHandler _readyDeadline.Tick, AddressOf OnReadyDeadline
     End Sub
+
+    ''' <summary>
+    ''' Slice 0078-08: raised (UI thread) ONCE per hosted document, when Adobe has finished opening
+    ''' it: the page is laid out, no script messages are running, the keys K-BOT sends on opening
+    ''' (Ctrl+H, Ctrl+2) are sent or given up, and none of Adobe's windows changed for
+    ''' <see cref="AdobeWindowWatcher.QuietMs"/>. At the latest <see cref="ReadyDeadlineMs"/> after
+    ''' hosting (logged). Not raised when the document is released first (<see cref="Detach"/>).
+    ''' </summary>
+    Public Event DocumentReady As Action
+
+    ''' <summary>Slice 0078-08: DocumentReady was already raised for the document hosted now.</summary>
+    Public ReadOnly Property IsDocumentReady As Boolean
+        Get
+            Return IsHosting AndAlso _documentReady
+        End Get
+    End Property
 
     ''' <summary>
     ''' Slice 0078: raised (UI thread) after Adobe saved the hosted document through a trapped
@@ -384,10 +410,18 @@ Public NotInheritable Class AdobeReaderHost
         Fill("Poziție (a doua trecere)")
 
         ' Slice 0078-07: from here on, a size Adobe gives its window by itself is put back to the panel.
+        ' Slice 0078-08: the same watch says when Adobe has gone quiet (DocumentReady).
         _sizeFixes.Clear()
         _sizeWatchGaveUp = False
-        If Not _sizeWatcher.Start(_hostedWindow, _hostedPid) Then
-            Report("ATENȚIE: nu pot urmări dimensiunea ferestrei Adobe (Windows a refuzat); dacă Adobe o mărește singur, K-BOT nu o readuce.")
+        _documentReady = False
+        _readyDeadline.Stop()
+        _readyDeadline.Start()
+        If _windowWatcher.Start(_hostedWindow, _hostedPid) Then
+            ' Adobe may be done already: then no event would ever come.
+            _windowWatcher.Poke()
+        Else
+            Report("ATENȚIE: nu pot urmări ferestrele Adobe (Windows a refuzat): dimensiunea nu se mai readuce singură, " &
+                   $"iar documentul se consideră deschis abia după {ReadyDeadlineMs \ 1000} s.")
         End If
 
         If ReadModeEnabled Then ArmReadMode()
@@ -423,7 +457,7 @@ Public NotInheritable Class AdobeReaderHost
     End Sub
 
     ''' <summary>
-    ''' Slice 0078-07: Adobe moved or resized the hosted window by itself (AdobeSizeWatcher, UI
+    ''' Slice 0078-07: Adobe moved or resized the hosted window by itself (AdobeWindowWatcher, UI
     ''' thread). Put back to the panel and logged, with whether the window still carries the
     ''' «maximized» flag. When Adobe keeps changing it (5 times in 3 s), K-BOT stops fighting until
     ''' the next panel resize, and says so. UI boundary: log and swallow.
@@ -571,10 +605,62 @@ Public NotInheritable Class AdobeReaderHost
     Private Sub OnScriptBurstEnded()
         Try
             If _readModeTimer.Enabled Then TrySendPendingKeys()
+            ' The alert boxes closing make events of their own; Quiet follows them.
+            _windowWatcher.Poke()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.OnScriptBurstEnded", ex)
         End Try
     End Sub
+
+    ' ── Document ready (slice 0078-08) ──────────────────────────────────────────
+
+    ' Watcher event, UI thread: Adobe's windows stopped changing. UI boundary: log and swallow.
+    Private Sub OnAdobeQuiet()
+        Try
+            If Not IsHosting OrElse _documentReady Then Return
+            ' Ctrl+H / Ctrl+2 still to go: Adobe will move again. Not waited for while the panel is hidden
+            ' (K-BOT shows another page): the keys wait for the panel, the document itself is done.
+            Dim onScreen As Boolean = _host.Handle <> IntPtr.Zero AndAlso AdobeNativeMethods.IsWindowVisible(_host.Handle)
+            If _pendingKeys.Count > 0 AndAlso onScreen Then Return
+            If _saveTrap.InScriptBurst Then Return
+            If FindPageView(ownVisibility:=True) = IntPtr.Zero Then Return     ' the page is not laid out yet
+            MarkDocumentReady($"pagina așezată, ferestrele Adobe nu s-au mai schimbat de {AdobeWindowWatcher.QuietMs} ms")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnAdobeQuiet", ex)
+        End Try
+    End Sub
+
+    ' Safety net: Adobe never reported the document done. UI boundary: log and swallow.
+    Private Sub OnReadyDeadline(sender As Object, e As EventArgs)
+        Try
+            _readyDeadline.Stop()
+            If Not IsHosting OrElse _documentReady Then Return
+            MarkDocumentReady($"ATENȚIE: Adobe nu a terminat în {ReadyDeadlineMs \ 1000} s — documentul se consideră deschis")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnReadyDeadline", ex)
+        End Try
+    End Sub
+
+    Private Sub MarkDocumentReady(why As String)
+        _documentReady = True
+        _readyDeadline.Stop()
+        Report($"Document gata în Adobe ({why}).")
+        RaiseEvent DocumentReady()
+    End Sub
+
+    ' The laid-out page view («AVPageView», visible, with a size) of the hosted window, or Zero.
+    ' ownVisibility (slice 0078-08): look at the view's OWN visible flag, so a document counts as
+    ' done also while K-BOT shows another page and the panel is hidden; the keys need it on screen.
+    Private Function FindPageView(Optional ownVisibility As Boolean = False) As IntPtr
+        For Each h As IntPtr In AdobeNativeMethods.Descendants(_hostedWindow)
+            If Not String.Equals(AdobeNativeMethods.GetTitle(h), PageViewTitle, StringComparison.Ordinal) Then Continue For
+            Dim visible As Boolean = If(ownVisibility, AdobeNativeMethods.IsVisibleStyleSet(h), AdobeNativeMethods.IsWindowVisible(h))
+            If Not visible Then Continue For
+            Dim r As Rectangle = AdobeNativeMethods.RectInParent(h)
+            If r.Width > 0 AndAlso r.Height > 0 Then Return h
+        Next
+        Return IntPtr.Zero
+    End Function
 
     ' Timer: log and swallow.
     Private Sub OnReadModeTick(sender As Object, e As EventArgs)
@@ -673,21 +759,15 @@ Public NotInheritable Class AdobeReaderHost
                 GiveUp(vk, $"ATENȚIE — {KeyName(vk)} nu a putut fi trimis ({sent}/{keys.Length} taste, eroarea {err}).")
             End If
         Next
+        ' Slice 0078-08: Adobe re-lays out after the keys; DocumentReady waits for that to settle.
+        _windowWatcher.Poke()
     End Sub
 
     ' Nothing when the pending keys may be sent now; otherwise why not (Romanian, for the log).
     Private Function ReadModeBlocker(ByRef page As IntPtr) As String
         page = IntPtr.Zero
         If _host.Handle = IntPtr.Zero OrElse Not AdobeNativeMethods.IsWindowVisible(_host.Handle) Then Return "panoul nu e pe ecran"
-        For Each h As IntPtr In AdobeNativeMethods.Descendants(_hostedWindow)
-            If Not String.Equals(AdobeNativeMethods.GetTitle(h), PageViewTitle, StringComparison.Ordinal) Then Continue For
-            If Not AdobeNativeMethods.IsWindowVisible(h) Then Continue For
-            Dim r As Rectangle = AdobeNativeMethods.RectInParent(h)
-            If r.Width > 0 AndAlso r.Height > 0 Then
-                page = h
-                Exit For
-            End If
-        Next
+        page = FindPageView()
         If page = IntPtr.Zero Then Return "pagina nu e încă așezată"
         If _saveTrap.InScriptBurst Then Return "mesaje de script în curs"
         Dim form As IntPtr = AdobeNativeMethods.GetAncestor(_host.Handle, AdobeNativeMethods.GA_ROOT)
@@ -726,7 +806,9 @@ Public NotInheritable Class AdobeReaderHost
     ''' </summary>
     Public Sub Detach()
         Try
-            _sizeWatcher.Stop()
+            _windowWatcher.Stop()
+            _readyDeadline.Stop()
+            _documentReady = False
             DisarmReadMode()
             _hook.Remove()
             ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
@@ -795,7 +877,9 @@ Public NotInheritable Class AdobeReaderHost
     Private Sub ReleaseAtScreenSize()
         Try
             If Not _options.RestoreScreenSizeOnExit OrElse Not IsHosting Then Return
-            _sizeWatcher.Stop()
+            _windowWatcher.Stop()
+            _readyDeadline.Stop()
+            _documentReady = False
             DisarmReadMode()
             _hook.Remove()
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
@@ -828,8 +912,11 @@ Public NotInheritable Class AdobeReaderHost
             ReleaseAtScreenSize()
             Detach()
             _readModeTimer.Dispose()
-            RemoveHandler _sizeWatcher.Changed, AddressOf OnAdobeResized
-            _sizeWatcher.Dispose()
+            RemoveHandler _windowWatcher.HostedWindowMoved, AddressOf OnAdobeResized
+            RemoveHandler _windowWatcher.Quiet, AddressOf OnAdobeQuiet
+            _windowWatcher.Dispose()
+            RemoveHandler _readyDeadline.Tick, AddressOf OnReadyDeadline
+            _readyDeadline.Dispose()
             _hook.Dispose()
             RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
             RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed

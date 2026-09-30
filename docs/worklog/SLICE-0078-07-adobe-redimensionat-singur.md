@@ -60,3 +60,5 @@ de crescut la publicare (`push-update.ps1` întreabă).
 3. Ctrl+2 se trimite o singură dată, la deschidere: după o readucere la panou (sau o redimensionare
    a panoului) Adobe poate păstra zoom-ul vechi, nepotrivit la noua lățime.
 4. Readucerea poate retrimite Adobe-ului o reașezare care anulează modul citire (Ctrl+H) — de văzut.
+
+> 30.09.2026: `AdobeSizeWatcher` a fost redenumit `AdobeWindowWatcher` și lărgit în 0078-08 (vezi `SLICE-0078-08-arbore-blocat-cat-se-deschide-pdf.md`).

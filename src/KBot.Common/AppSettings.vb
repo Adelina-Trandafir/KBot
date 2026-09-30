@@ -139,6 +139,13 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property ForexeValidateTwice As Boolean = False
 
+    ''' <summary>
+    ''' Slice 0097: a unit switch in the caption bar closes the FOREXE session; with this ON it also
+    ''' forgets the remembered certificate, so the next «Conectare» asks for one (the new unit may
+    ''' have another). Off by default (operator, 30.09.2026).
+    ''' </summary>
+    Public Property ForexeForgetCertificateOnUnitSwitch As Boolean = False
+
     ''' <summary>The last speed measured through fast.com, Mb/s. Nothing = never measured.</summary>
     Public Property ForexeSpeedMbps As Double?
 
@@ -474,6 +481,7 @@ Public NotInheritable Class AppSettings
             .ForexeCapturaPaginaOriginala = ForexeCapturaPaginaOriginala,
             .ForexeTimeoutMultiplier = ForexeTimeoutMultiplier,
             .ForexeValidateTwice = ForexeValidateTwice,
+            .ForexeForgetCertificateOnUnitSwitch = ForexeForgetCertificateOnUnitSwitch,
             .ForexeSpeedMbps = ForexeSpeedMbps,
             .ForexeSpeedTestedAt = ForexeSpeedTestedAt,
             .AdobeDetachMode = AdobeDetachMode,
@@ -518,6 +526,7 @@ Public NotInheritable Class AppSettings
             s.ForexeTimeoutMultiplier = dto.ForexeTimeoutMultiplier.Value
         End If
         If dto.ForexeValidateTwice.HasValue Then s.ForexeValidateTwice = dto.ForexeValidateTwice.Value
+        If dto.ForexeForgetCertificateOnUnitSwitch.HasValue Then s.ForexeForgetCertificateOnUnitSwitch = dto.ForexeForgetCertificateOnUnitSwitch.Value
         If dto.ForexeSpeedMbps.HasValue AndAlso dto.ForexeSpeedMbps.Value > 0 Then s.ForexeSpeedMbps = dto.ForexeSpeedMbps
         s.ForexeSpeedTestedAt = dto.ForexeSpeedTestedAt
         If dto.ForexePageStyles IsNot Nothing Then
@@ -580,6 +589,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeCapturaPaginaOriginala As Boolean?
     Public Property ForexeTimeoutMultiplier As Double?
     Public Property ForexeValidateTwice As Boolean?
+    Public Property ForexeForgetCertificateOnUnitSwitch As Boolean?
     Public Property ForexeSpeedMbps As Double?
     Public Property ForexeSpeedTestedAt As DateTime?
     Public Property AdobeDetachMode As String

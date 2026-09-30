@@ -213,6 +213,9 @@ Public NotInheritable Class GetReceptieRow
     Public Property nrcrt_ind As Integer?
     Public Property valoare As Double
     Public Property dif As Double
+    ' Rank among the receptions of the same date in FOREXE (sliceless, 30.09.2026). Null
+    ' until the first download after the column was added.
+    Public Property rang_zi_r As Integer?
 End Class
 
 Public NotInheritable Class GetReceptiePlata

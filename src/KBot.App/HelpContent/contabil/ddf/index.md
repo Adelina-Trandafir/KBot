@@ -44,7 +44,7 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 > începe alta pe același angajament.
 
 ## Vederea «Fundamentare»
-<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14 -->
+<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08 -->
 
 - **Arborele**: rădăcina **«Toate reviziile»** (clic pe ea = tot documentul), lunile, apoi
   reviziile. **Clic dreapta** pe o revizie oferă, după stare: «Trimite în FOREXE» / «Reia trimiterea
@@ -59,3 +59,5 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
   arborele — [Arborii și tabelele](topic:contabil.liste).
 - Paginile din dreapta: **Vizualizare** (valorile reviziei), **Document PDF** (documentul, unde
   se și semnează) și **Fișiere** (atașamentele, inclusiv capturile venite din FOREXE).
+- Cât Adobe încă deschide documentul unei revizii (sau un fișier din «Fișiere»), arborele și lista
+  de fișiere nu primesc alt rând — [Cât se deschide un document](topic:contabil.liste).

@@ -160,9 +160,11 @@
            pana la server neaplatizata. -->
 
         <!-- ═══ SELECȚIA OPERATORULUI (felia 0060) ═══════════════════════════
-             {{RECEPTII_SARITE}} = datele recepțiilor pe care operatorul NU le-a bifat în
-             macheta de reîmprospătare, zz/ll/aaaa, separate prin virgulă. GOL = nu se sare
-             peste niciuna, adică exact comportamentul dinainte de felia asta.
+             {{RECEPTII_SARITE}} = the DAYS on which the operator ticked NO reception in the
+             refresh window, dd/mm/yyyy, comma separated. EMPTY = nothing is skipped.
+             Since 30.09.2026 (sliceless) a day with several receptions of which only some
+             are ticked is NOT in this list: the whole day is read here, and K-BOT drops the
+             unticked ones by date + rank within the day (WorkflowResultStore.CuPozitiaReceptiilor).
 
              Se sare peste DETALIUL recepției, nu peste rândul ei: rândul rămâne în
              «ListaReceptii» fiindcă ScrapeTable l-a citit deja, iar clientul îl scoate

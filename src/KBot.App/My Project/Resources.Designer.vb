@@ -63,6 +63,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property _stop() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("stop", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property application() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("application", resourceCulture)
@@ -703,6 +713,16 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property minus_red() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("minus_red", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized", resourceCulture)
@@ -716,6 +736,16 @@ Namespace My.Resources
         Friend ReadOnly Property Papirus_Team_Papirus_Apps_Preferences_desktop_theme_24() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property pause() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("pause", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property
@@ -766,6 +796,16 @@ Namespace My.Resources
         Friend ReadOnly Property settings__1_() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("settings (1)", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property stop_round() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("stop_round", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property

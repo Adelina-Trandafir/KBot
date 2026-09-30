@@ -165,6 +165,10 @@ Partial Public Class AdvancedTreeControl
             End If
         End If
 
+        ' Slice 0078-08: a document is still opening -- the rows do not take a new selection.
+        _pressWhileLocked = _selectionLocked
+        If _pressWhileLocked Then Return
+
         Dim it = HitTestItem(e.Location)
 
         ' Se reține DE UNDE s-ar putea porni o tragere (felia 0048-04). Nu pornește nimic:
@@ -402,6 +406,12 @@ Partial Public Class AdvancedTreeControl
         ' Apăsarea s-a terminat fără să se depărteze: nu mai e nimic de tras de aici.
         _dragCandidate = Nothing
 
+        ' Slice 0078-08: the release of a press that was refused goes with it.
+        If _pressWhileLocked Then
+            _pressWhileLocked = False
+            Return
+        End If
+
         ' Un clic simplu in interiorul unui grup il stringe la randul apasat — ABIA acum, ca
         ' apasarea sa fi putut porni o tragere a intregului grup (vezi partiala .MultiSelect).
         SettlePendingSelection()
@@ -468,6 +478,7 @@ Partial Public Class AdvancedTreeControl
     Protected Overrides Sub OnMouseDoubleClick(e As MouseEventArgs)
       Try
         MyBase.OnMouseDoubleClick(e)
+        If _selectionLocked Then Return              ' slice 0078-08
         Dim it = HitTestItem(e.Location)
         If it Is Nothing Then Return
 

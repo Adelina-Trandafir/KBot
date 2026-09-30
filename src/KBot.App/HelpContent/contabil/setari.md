@@ -5,7 +5,7 @@ part: contabil
 order: 80
 parent: contabil
 screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
-keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate
+keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate
 ---
 <!-- slice: 0072, 0072-01 -->
 Butonul cu **rotița** din bara de titlu a ferestrei principale deschide **Setări...** și
@@ -17,12 +17,26 @@ Butonul cu **rotița** din bara de titlu a ferestrei principale deschide **Setă
 |--------|------------|
 | **Informații** | datele sesiunii (utilizator, unitate, an, versiunile K-BOT), **schimbarea parolei** și «Caută actualizări» |
 | **Aplicație** | comutatoarele de zi cu zi și opțiunile listei de angajamente (sortare, coloane) |
-| **FOREXE** | testul de viteză și timpii de așteptare ai robotului |
+| **FOREXE** | certificatul memorat, testul de viteză și timpii de așteptare ai robotului — mai jos |
 | **Extrase** | coloanele grilelor de extrase — vezi [Extrase de cont](topic:contabil.vederi.extrase) |
 | **Autentificare** | ce ține minte fereastra de conectare, ce se întâmplă când expiră sesiunea și adresa serverului K-BOT — mai jos |
 | **Jurnal** | jurnalele K-BOT, pentru când ceva nu merge |
 
 Setările se salvează pe măsură ce le schimbi.
+
+## Pagina «FOREXE»: certificatul memorat
+<!-- slice: 0072, 0097 -->
+
+**«Certificatul memorat»** arată certificatul pe care «Conectare» îl folosește fără să te mai
+întrebe. **«Uită certificatul»** îl șterge; la următoarea conectare îl alegi din nou.
+
+**«Uită certificatul memorat când schimb unitatea din bara de titlu»** — **debifată la început.**
+Când treci pe altă unitate din bara de titlu (vezi [Fereastra principală](topic:contabil.fereastra)),
+conexiunea FOREXE se închide oricum:
+
+- **debifată** — certificatul memorat rămâne; pe unitatea nouă, «Conectare» îl folosește tot pe el;
+- **bifată** — certificatul memorat se uită odată cu conexiunea, iar «Conectare» ți-l cere din nou.
+  Bifeaz-o dacă unitățile tale au certificate diferite.
 
 ## Pagina «Autentificare»
 <!-- slice: 0063, 0072, 0097 -->

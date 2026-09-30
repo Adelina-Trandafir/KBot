@@ -71,6 +71,7 @@ Public Class RobotQueueHarnessForm
         AddHandler _gate.StateChanged, AddressOf Gate_StateChanged
         AddHandler _controller.StateChanged, AddressOf Controller_StateChanged
         AddHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
+        AddHandler _queue.Changed, AddressOf Queue_Changed
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)
@@ -80,7 +81,7 @@ Public Class RobotQueueHarnessForm
             AplicaSetarile()
             Scrie("Banc pornit. FOREXE și serverul sunt SIMULATE; nimic nu pleacă de pe PC.")
             Scrie("Fișierele obișnuite ale descărcării se scriu totuși pe disc, pe codurile PROBA-*.")
-            DeschideCoada(activate:=False)
+            Scrie("Fereastra cozii se deschide singură doar peste o acțiune FOREXE (ca în aplicație); butonul o deschide oricând.")
         Catch ex As Exception
             GlobalErrorLog.Write("RobotQueueHarnessForm.OnShown", ex)
         End Try
@@ -108,6 +109,7 @@ Public Class RobotQueueHarnessForm
                 RemoveHandler _controller.StateChanged, AddressOf Controller_StateChanged
                 RemoveHandler _controller.StatusChanged, AddressOf Controller_StatusChanged
             End If
+            If _queue IsNot Nothing Then RemoveHandler _queue.Changed, AddressOf Queue_Changed
             _http?.Dispose()
         Catch ex As Exception
             GlobalErrorLog.Write("RobotQueueHarnessForm.OnFormClosed", ex)
@@ -354,6 +356,17 @@ Public Class RobotQueueHarnessForm
             PeUi(Sub() lblRobot.Text = If(_controller.IsBusy, "Robot: LUCREAZĂ", "Robot: liber"))
         Catch ex As Exception
             GlobalErrorLog.Write("RobotQueueHarnessForm.Controller_StateChanged", ex)
+        End Try
+    End Sub
+
+    ' The same rule as the shell (KbotForm.RobotQueue_Changed): the window opens by itself only
+    ' when MORE THAN ONE FOREXE action is under way.
+    Private Sub Queue_Changed(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Disposing Then Return
+            If _queue.ActionCount(_controller.IsBusy) > 1 Then DeschideCoada(activate:=False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RobotQueueHarnessForm.Queue_Changed", ex)
         End Try
     End Sub
 
