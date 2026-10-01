@@ -92,7 +92,10 @@ Public Class HelpCaptureForm
         _store = New HelpCaptureStore(library)
         Dim all As List(Of HelpCapture) = library.Captures
         Dim done As Integer = all.Where(Function(c) _store.Exists(c)).Count()
+        ' Slice 0000-34: pictures taken before the screen changed (the red rows).
+        Dim stale As Integer = all.Where(Function(c) c.NeedsRedo(_store.TakenAt(c))).Count()
         lblSumar.Text = done & " din " & all.Count & " imagini făcute" &
+                        If(stale > 0, "   ·   " & stale & " de refăcut (rândurile roșii)", String.Empty) &
                         If(library.Problems.Count > 0, "   ·   " & library.Problems.Count & " probleme în paginile de ajutor (vezi jurnalul de erori)", String.Empty)
         lblDosar.Text = "Se salvează în: " & _store.RuntimeFolder &
                         If(_store.SourceFolder IsNot Nothing, "   și în sursă: " & _store.SourceFolder, String.Empty)
@@ -109,7 +112,9 @@ Public Class HelpCaptureForm
                 row(ColTopic) = c.TopicTitle
                 row(ColCaption) = c.Caption
                 row(ColPrepare) = If(c.Prepare, String.Empty)
-                row(ColState) = If(taken.HasValue, "făcută " & taken.Value.ToString("dd.MM HH:mm"), "lipsă")
+                row(ColState) = If(taken.HasValue,
+                                   "făcută " & taken.Value.ToString("dd.MM HH:mm") & If(c.NeedsRedo(taken), " · de refăcut", String.Empty),
+                                   "lipsă")
                 row(ColShoot) = If(taken.HasValue, "Refă", "Fă poza")
                 row(ColView) = "Vezi"
                 row(ColLoad) = "Încarcă"
@@ -152,6 +157,10 @@ Public Class HelpCaptureForm
         Dim capture As HelpCapture = _rows(idx)
         txtImagine.Text = capture.Caption
         txtPregatire.Text = If(capture.Prepare, String.Empty)
+        ' Slice 0000-34: why the picture is red, ahead of what to set up.
+        If capture.NeedsRedo(_store.TakenAt(capture)) Then
+            txtPregatire.Text = "DE REFĂCUT — " & capture.RedoWhy & If(txtPregatire.Text.Length > 0, Environment.NewLine & txtPregatire.Text, String.Empty)
+        End If
         If Not _store.Exists(capture) Then Return
         Try
             ' Copied into a fresh bitmap so the file stays free (GDI+ holds a file open).
@@ -172,6 +181,20 @@ Public Class HelpCaptureForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         MyBase.OnFormClosed(e)
         ClearPreview()
+    End Sub
+
+    ' Slice 0000-34: a picture that predates the change marked on its tag is painted red (the theme's
+    ' error colour), so the rows to re-shoot stand out; retaking the picture clears it.
+    Private Sub Grid_RowFormatting(sender As Object, e As KBotRowFormattingEventArgs) Handles grid.RowFormatting
+        Try
+            If _store Is Nothing OrElse e.RowIndex < 0 OrElse e.RowIndex >= _rows.Count Then Return
+            If _rows(e.RowIndex).NeedsRedo(_store.TakenAt(_rows(e.RowIndex))) Then
+                e.ForeColor = ThemeManager.Current.Palette.ErrorColor
+            End If
+        Catch ex As Exception
+            ' Paint boundary: logging at every repaint would flood the journal; paint the row as it is.
+            GlobalErrorLog.Write("HelpCaptureForm.Grid_RowFormatting", ex)
+        End Try
     End Sub
 
     Private Sub ChkDoarLipsa_CheckedChanged(sender As Object, e As EventArgs) Handles chkDoarLipsa.CheckedChanged

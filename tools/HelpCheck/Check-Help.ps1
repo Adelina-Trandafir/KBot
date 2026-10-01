@@ -101,7 +101,7 @@ foreach ($t in $topics) {
             $c = $p.IndexOf(':')
             if ($c -lt 0) { Add-Err "$($t.__file): capture '$cid' has a part without 'key:'"; continue }
             $k = $p.Substring(0, $c).Trim(); $v = $p.Substring($c + 1).Trim()
-            if (@('caption', 'goto', 'prepare') -notcontains $k) { Add-Err "$($t.__file): capture '$cid' unknown key '$k'" }
+            if (@('caption', 'goto', 'prepare', 'redo', 'why') -notcontains $k) { Add-Err "$($t.__file): capture '$cid' unknown key '$k'" }
             if ($k -eq 'goto' -and $v -notmatch $GotoPrefix) { Add-Err "$($t.__file): capture '$cid' goto '$v' has an unknown form" }
         }
     }
