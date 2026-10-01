@@ -153,6 +153,7 @@ Public Class SetariJurnalView
         Try
             AplicaCulorileJetoanelor()
             PotrivesteTipuriCuClientul()
+            ArataCombinatiileDeTip(_api IsNot Nothing AndAlso AppSettings.Current.AdvancedOptions)
             If Not _pornit Then
                 _pornit = True
                 ConstruiesteListaFisiere()
@@ -484,9 +485,18 @@ Public Class SetariJurnalView
     ''' Lists the journal kinds this page can serve. Without an API client only «Jurnale locale»
     ''' exists: a choice that cannot work must not be offered. The client arrives after the
     ''' constructor (designer-built page), so this runs again at activation.
+    '''
+    ''' <para>The server journals also hang off the advanced options switch
+    ''' (<see cref="AppSettings.AdvancedOptions"/>, operator): with it off they do not exist, and
+    ''' with only «Jurnale locale» left the two combos (kind and sessions) have nothing to choose,
+    ''' so they are hidden and their columns collapse (<see cref="ArataCombinatiileDeTip"/>, called
+    ''' from <see cref="Activated"/> only: the column widths are read AFTER the designer's DPI
+    ''' scaling, never in the constructor). The switch lives on another page, so it can only have
+    ''' changed while this one was away -- activation is where it is read.</para>
     ''' </summary>
     Private Sub PotrivesteTipuriCuClientul()
-        Dim dorite As Integer = If(_api IsNot Nothing, TIPURI.Length, 1)
+        Dim serverPermis As Boolean = _api IsNot Nothing AndAlso AppSettings.Current.AdvancedOptions
+        Dim dorite As Integer = If(serverPermis, TIPURI.Length, 1)
         If CmbTipJurnal.Items.Count = dorite AndAlso CmbTipJurnal.SelectedIndex >= 0 Then Return
         _suprimaEvenimente = True
         Try
@@ -499,6 +509,22 @@ Public Class SetariJurnalView
         Finally
             _suprimaEvenimente = False
         End Try
+    End Sub
+
+    ' The widths the designer gave the first two filter columns, remembered the first time they
+    ' are collapsed (they are device pixels, already scaled), so showing them again restores them.
+    Private _latimeColTip As Single = -1
+    Private _latimeColSesiuni As Single = -1
+
+    Private Sub ArataCombinatiileDeTip(arata As Boolean)
+        If _latimeColTip < 0 Then
+            _latimeColTip = tlyFilterActual.ColumnStyles(0).Width
+            _latimeColSesiuni = tlyFilterActual.ColumnStyles(1).Width
+        End If
+        CmbTipJurnal.Visible = arata
+        cmbSesiuni.Visible = arata
+        tlyFilterActual.ColumnStyles(0).Width = If(arata, _latimeColTip, 0F)
+        tlyFilterActual.ColumnStyles(1).Width = If(arata, _latimeColSesiuni, 0F)
     End Sub
 
     ''' <summary>Index into <see cref="TIPURI"/> of the chosen kind (the combo lists them in that order).</summary>

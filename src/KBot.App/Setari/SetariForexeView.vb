@@ -26,7 +26,14 @@ Public Class SetariForexeView
 
     Public Sub New(controller As ForexeController)
         ArgumentNullException.ThrowIfNull(controller)
-        InitializeComponent()
+        ' The designer sets Checked / CheckState / SelectedIndex while it builds the page, which
+        ' raises the change handlers before _controller is assigned. Keep them quiet until then.
+        _suppress = True
+        Try
+            InitializeComponent()
+        Finally
+            _suppress = False
+        End Try
         _controller = controller
         AddHandler _controller.StateChanged, AddressOf Controller_StateChanged
         ' The controller is a singleton and outlives the page: unhook, or it keeps us alive.
