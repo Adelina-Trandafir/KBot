@@ -4,17 +4,17 @@ title: Fereastra principală
 part: contabil
 order: 20
 parent: contabil
-screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.cboAn, KbotForm.cboSs, KbotForm.btnInfo, InternalInfoForm
+screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.btnInfo, InternalInfoForm
 keywords: arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, adaugare angajamente, fereastra marita, tot ecranul, maximizat, la pornire
 ---
-<!-- slice: 0006, 0086 -->
+<!-- slice: 0006, 0086, 0097-03 -->
 Fereastra principală are cinci zone.
 
 <!-- capture: fereastra-zone | caption: Zonele ferestrei principale | goto: view:sumar | prepare: Selectați un angajament cu date, ca toate zonele să fie pline. -->
 
 | Zona | Ce este |
 |------|---------|
-| **Sus** | bara de titlu cu **unitatea** (sau alegerea ei), butonul **MENIU**, anul, sursa/sectorul și utilizatorul conectat |
+| **Sus** | bara de titlu cu **unitatea** (sau alegerea ei), **anul** și **sursa/sectorul**, apoi butonul **MENIU** și utilizatorul conectat |
 | **Stânga** | bara de **vederi** (Sumar, Istoric, Rezervări...) |
 | **Mijloc** | **Lista angajamentelor** — alegi aici angajamentul pe care lucrezi |
 | **Dreapta** | vederea aleasă, pentru angajamentul selectat |
@@ -29,7 +29,7 @@ Fereastra principală are cinci zone.
 - **Lupa** din capul listei deschide căutarea; **Esc** o golește și o închide. Toate butoanele comune
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
 - **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
-- Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de sus se ascunde; reapare la sortarea după nume.
+- Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
 - Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
   existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).
 - Iconița **din stânga, jos** deschide fereastra **Extrase de cont** — [Extrase](topic:contabil.vederi.extrase).
@@ -56,6 +56,14 @@ O vedere apare doar dacă angajamentul selectat are date de acel fel; altfel but
 | Note corecție | s-a făcut cel puțin o notă de corecție pe angajament |
 
 Alege în listă alt angajament sau rezolvă condiția și butonul apare singur. Turul ghidat al ferestrei (din «?») îți arată și vederile care lipsesc acum, cu o notă care spune că le vezi doar pentru tur.
+
+## Anul și sursa/sectorul
+<!-- slice: 0097-03 -->
+
+În **bara de titlu**, după unitate, sunt două liste: **An Date** (anul de lucru) și **Sursă/Sector**
+(de exemplu 02A). Un clic pe ele arată alegerile; schimbarea oricăreia reîncarcă lista de
+angajamente și toate ecranele. Sursa/sectorul se ține minte pentru data viitoare. Când lista de
+angajamente e sortată după dată, **Sursă/Sector** nu se vede.
 
 ## Unitatea de lucru
 <!-- slice: 0097 -->

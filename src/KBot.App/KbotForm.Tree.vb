@@ -31,17 +31,18 @@ Partial Public Class KbotForm
     ''' by forexecab's). Wins over <paramref name="pastreazaSelectia"/>.</param>
     Private Async Function LoadTreeAsync(Optional pastreazaSelectia As Boolean = False,
                                          Optional codDeSelectat As String = Nothing) As Task
-        ' No year/SS, no query to run (empty combos = periods not read).
-        If cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then
+        ' No year/SS, no query to run (nothing chosen = periods not read).
+        Dim anCheie As Integer? = AnulAles()
+        Dim ssCheie As String = SsAles()
+        If Not anCheie.HasValue OrElse String.IsNullOrEmpty(ssCheie) Then
             Return
         End If
 
-        Dim an As Integer = CInt(cboAn.SelectedItem)
-        cboSs.Visible = Not AppSettings.Current.TreeSortIsDate
-        lblSs.Visible = Not AppSettings.Current.TreeSortIsDate
+        Dim an As Integer = anCheie.Value
+        capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, Not AppSettings.Current.TreeSortIsDate)
         ' Sorted by date the tree is a timeline of the whole year: every source, not only the
-        ' SS in the combo (operator, 23.09.2026 -- slice 0777).
-        Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, CStr(cboSs.SelectedItem))
+        ' SS in the bar's selector (operator, 23.09.2026 -- slice 0777).
+        Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, ssCheie)
         busyBar.Running = True
         Try
             Dim ct As CancellationToken = CancellationToken.None

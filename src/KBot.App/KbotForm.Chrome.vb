@@ -24,8 +24,6 @@ Partial Public Class KbotForm
 
             ' Secondary labels -> dim text; titles stay on the full TextColor.
             lblOperator.ForeColor = p.TextDimColor
-            lblAn.ForeColor = p.TextDimColor
-            lblSs.ForeColor = p.TextDimColor
             lblTree.ForeColor = p.TextColor
 
             ' Slice 0086: «Angajament nou» is the header's primary action.

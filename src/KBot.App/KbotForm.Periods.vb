@@ -1,20 +1,33 @@
 Imports System.Threading
 Imports KBot.Api
 Imports KBot.Common
+Imports KBot.Controls
 Imports KBot.Domain
 
 ''' <summary>
-''' The shell's year / SS / CodProgram combos (slice 0086 split out of KbotForm.vb). The
-''' catalogue comes from /api/auth/periods; the chosen period is fixed on the session, where
-''' JobBuilder reads it, and the SS is remembered on the server.
+''' The shell's year / SS / CodProgram choice (slice 0086 split out of KbotForm.vb; slice 0097-03
+''' moved the year and SS drop-downs from the header band into the caption bar, where they sit
+''' beside the unit selector). The catalogue comes from /api/auth/periods; the chosen period is
+''' fixed on the session, where JobBuilder reads it, and the SS is remembered on the server.
 ''' </summary>
 Partial Public Class KbotForm
 
+    ' The year / SS chosen in the caption bar (Nothing / empty = not read yet).
+    Private Function AnulAles() As Integer?
+        Dim key As String = capBar.GetSelectorKey(KBotCaptionBar.SelectorYear)
+        Dim an As Integer
+        Return If(Integer.TryParse(key, an), CType(an, Integer?), Nothing)
+    End Function
+
+    Private Function SsAles() As String
+        Return capBar.GetSelectorKey(KBotCaptionBar.SelectorSector)
+    End Function
+
     ''' <summary>
     ''' Fetches the year / SS / CodProgram catalogue of the current database and fills the
-    ''' combos. The default year is the highest; the SS starts from LastSS (when valid in that
-    ''' year), otherwise the first one. A read failure does not block the window -- it only
-    ''' disables the combos.
+    ''' caption bar's selectors. The default year is the highest; the SS starts from LastSS (when
+    ''' valid in that year), otherwise the first one. A read failure does not block the window --
+    ''' it only leaves the selectors out of the bar.
     ''' </summary>
     Private Async Function LoadPeriodsAsync() As Task
         Try
@@ -22,11 +35,11 @@ Partial Public Class KbotForm
                 _periods = Await _authApi.GetPeriodsAsync(_session.Token, _session.DbName, CancellationToken.None)
             Catch ex As Exception
                 ' The window is not blocked, but nothing is swallowed silently: the operator is
-                ' told WHY the year/SS combos are disabled (the server's Romanian message, not
+                ' told WHY the year/SS selectors are missing (the server's Romanian message, not
                 ' raw JSON). The full detail goes to the shell's error log, not the FOREXE console.
                 GlobalErrorLog.Write("MainForm.LoadPeriodsAsync.GetPeriods", ex)
-                cboAn.Enabled = False
-                cboSs.Enabled = False
+                capBar.ClearSelector(KBotCaptionBar.SelectorYear)
+                capBar.ClearSelector(KBotCaptionBar.SelectorSector)
                 KBotMessage.Show(Me,
                     "Nu s-au putut citi perioadele (an/SS): " & ex.Message,
                     "Perioade", MessageBoxButtons.OK, MessageBoxIcon.Warning)
@@ -35,18 +48,17 @@ Partial Public Class KbotForm
 
             If _periods Is Nothing OrElse _periods.Count = 0 Then
                 ' The unit has no configured periods -- not an error, a missing configuration.
-                ' The disabled combos show it; it is not the FOREXE console's business.
-                cboAn.Enabled = False
-                cboSs.Enabled = False
+                ' The bar without the selectors shows it; it is not the FOREXE console's business.
+                capBar.ClearSelector(KBotCaptionBar.SelectorYear)
+                capBar.ClearSelector(KBotCaptionBar.SelectorSector)
                 Return
             End If
 
-            _suppressPeriodEvents = True
-            Dim years = _periods.Select(Function(p) p.AN).Distinct().OrderByDescending(Function(y) y).ToList()
-            cboAn.Items.Clear()
-            cboAn.Items.AddRange(years)
-            cboAn.SelectedIndex = 0            ' the highest year
-            _suppressPeriodEvents = False
+            Dim years As List(Of Integer) = _periods.Select(Function(p) p.AN).Distinct().OrderByDescending(Function(y) y).ToList()
+            ' The highest year is the first one, and the one selected.
+            capBar.SetSelectorItems(KBotCaptionBar.SelectorYear,
+                years.Select(Function(y) New KeyValuePair(Of String, String)(CStr(y), CStr(y))),
+                CStr(years(0)))
 
             LoadSsForSelectedYear()
         Catch ex As Exception
@@ -58,17 +70,20 @@ Partial Public Class KbotForm
     ' Fills the SSs of the selected year; preselects LastSS when it exists in that year.
     Private Sub LoadSsForSelectedYear()
         Try
-            If _periods Is Nothing OrElse cboAn.SelectedItem Is Nothing Then Return
-            Dim an As Integer = CInt(cboAn.SelectedItem)
-            Dim ssList = _periods.Where(Function(p) p.AN = an).
-                                  Select(Function(p) p.SS).Distinct().ToList()
+            Dim anAles As Integer? = AnulAles()
+            If _periods Is Nothing OrElse Not anAles.HasValue Then Return
+            Dim an As Integer = anAles.Value
+            Dim ssList As List(Of String) = _periods.Where(Function(p) p.AN = an).
+                                                     Select(Function(p) p.SS).Distinct().ToList()
 
-            _suppressPeriodEvents = True
-            cboSs.Items.Clear()
-            cboSs.Items.AddRange(ssList)
-            Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
-            cboSs.SelectedIndex = If(idx >= 0, idx, If(ssList.Count > 0, 0, -1))
-            _suppressPeriodEvents = False
+            If ssList.Count = 0 Then
+                capBar.ClearSelector(KBotCaptionBar.SelectorSector)
+            Else
+                Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
+                capBar.SetSelectorItems(KBotCaptionBar.SelectorSector,
+                    ssList.Select(Function(s) New KeyValuePair(Of String, String)(s, s)),
+                    ssList(If(idx >= 0, idx, 0)))
+            End If
 
             ApplySelectedPeriod(persist:=False)   ' the value already remembered is not saved again
         Catch ex As Exception
@@ -80,9 +95,10 @@ Partial Public Class KbotForm
     ' Fixes the period on the session from the current selection; optionally remembers it on the server.
     Private Sub ApplySelectedPeriod(persist As Boolean)
         Try
-            If _periods Is Nothing OrElse cboAn.SelectedItem Is Nothing OrElse cboSs.SelectedItem Is Nothing Then Return
-            Dim an As Integer = CInt(cboAn.SelectedItem)
-            Dim ss As String = CStr(cboSs.SelectedItem)
+            Dim anAles As Integer? = AnulAles()
+            Dim ss As String = SsAles()
+            If _periods Is Nothing OrElse Not anAles.HasValue OrElse String.IsNullOrEmpty(ss) Then Return
+            Dim an As Integer = anAles.Value
             Dim row As PeriodInfo = _periods.FirstOrDefault(Function(p) p.AN = an AndAlso p.SS = ss)
             If row Is Nothing Then Return
 
@@ -106,27 +122,27 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
-    ' A year change rebuilds the year's SSs (which fixes the period) and RE-READS the tree:
-    ' the year is a server-side filter, so the old data is no longer valid.
-    Private Async Sub CboAn_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboAn.SelectedIndexChanged, cboAn.SelectedIndexChanged
+    ' The operator picked another year or SS in the caption bar. A year change rebuilds the
+    ' year's SSs (which fixes the period) and RE-READS the tree: the year is a server-side filter,
+    ' so the old data is no longer valid. The same for the SS (a server-side filter, through EXISTS
+    ' on FX_Indicatori.SS). The unit selector is handled in KbotForm.Units.vb.
+    ' Nothing here can fail on the server before the tree read, so the selector moves at once.
+    Private Async Sub CapBar_PeriodChanged(sender As Object, e As CaptionSelectorChangedEventArgs) Handles capBar.SelectorChanged
         Try
-            If _suppressPeriodEvents Then Return
-            LoadSsForSelectedYear()
-            Await LoadTreeAsync()
+            If e Is Nothing OrElse _schimbaUnitatea Then Return
+            Select Case e.Selector
+                Case KBotCaptionBar.SelectorYear
+                    capBar.SetSelectorKey(KBotCaptionBar.SelectorYear, e.Key)
+                    LoadSsForSelectedYear()
+                    Await LoadTreeAsync()
+                Case KBotCaptionBar.SelectorSector
+                    capBar.SetSelectorKey(KBotCaptionBar.SelectorSector, e.Key)
+                    ApplySelectedPeriod(persist:=True)
+                    Await LoadTreeAsync()
+            End Select
         Catch ex As Exception
             ' UI boundary: a handler cannot re-throw (it would bring the process down) -- log and swallow.
-            GlobalErrorLog.Write("MainForm.cboAn_SelectedIndexChanged", ex)
-        End Try
-    End Sub
-
-    ' The same for the SS (a server-side filter, through EXISTS on FX_Indicatori.SS).
-    Private Async Sub CboSs_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSs.SelectedIndexChanged, cboSs.SelectedIndexChanged
-        Try
-            If _suppressPeriodEvents Then Return
-            ApplySelectedPeriod(persist:=True)
-            Await LoadTreeAsync()
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.cboSs_SelectedIndexChanged", ex)
+            GlobalErrorLog.Write("MainForm.CapBar_PeriodChanged", ex)
         End Try
     End Sub
 End Class

@@ -161,7 +161,7 @@ foreach ($t in $topics) {
 $PartsByType = @{
     'AdvancedTreeControl' = @('header', 'header.search', 'header.right', 'columns', 'node.icon', 'footer', 'footer.left', 'footer.right', 'footer.collapse')
     'KBotDataView'        = @('header', 'header.filter', 'rows', 'footer', 'footer.left', 'footer.right', 'footer.collapse')
-    'KBotCaptionBar'      = @('icon', 'title', 'unit', 'options', 'theme', 'help', 'minimize', 'maximize', 'close')
+    'KBotCaptionBar'      = @('icon', 'title', 'unit', 'year', 'ss', 'options', 'theme', 'help', 'minimize', 'maximize', 'close')
     'KBotNavList'         = @('collapse')   # plus item:<Key>
 }
 function Test-Part([string]$target, [string]$part, [string]$where) {

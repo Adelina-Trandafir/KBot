@@ -54,8 +54,6 @@ Partial Class KbotForm
         btnInfo = New Button()
         btnSort = New Button()
         btnOpt = New Button()
-        cboAn = New KBotComboBox()
-        cboSs = New KBotComboBox()
         btnMeniu = New Button()
         menuNou = New KBotDropDownMenu(components)
         pnlRoot = New Panel()
@@ -72,8 +70,6 @@ Partial Class KbotForm
         pnlHeader = New Panel()
         tlyHeader = New KBotTableLayoutPanel()
         lblOperator = New Label()
-        lblSs = New Label()
-        lblAn = New Label()
         busyBar = New KBotBusyBar()
         capBar = New KBotCaptionBar()
         pnlRoot.SuspendLayout()
@@ -131,34 +127,6 @@ Partial Class KbotForm
         tips.SetToolTipHeader(btnOpt, "Opțiuni")
         tips.SetToolTipText(btnOpt, "Meniul de opțiuni al arborelui:" & vbLf & "arată/ascunde rândurile ascunse, jurnale, temă.")
         btnOpt.UseVisualStyleBackColor = True
-        ' 
-        ' cboAn
-        ' 
-        cboAn.BorderColor = Color.Transparent
-        cboAn.CornerRadius = 0
-        cboAn.Dock = DockStyle.Fill
-        cboAn.Font = New Font("Calibri", 9F)
-        cboAn.Location = New Point(340, 1)
-        cboAn.Margin = New Padding(0)
-        cboAn.Name = "cboAn"
-        cboAn.Size = New Size(109, 37)
-        cboAn.TabIndex = 3
-        tips.SetToolTipHeader(cboAn, "An")
-        tips.SetToolTipText(cboAn, "Anul de lucru." & vbLf & "Schimbarea lui reîncarcă arborele și toate ecranele.")
-        ' 
-        ' cboSs
-        ' 
-        cboSs.BorderColor = Color.Transparent
-        cboSs.CornerRadius = 0
-        cboSs.Dock = DockStyle.Fill
-        cboSs.Font = New Font("Calibri", 9F)
-        cboSs.Location = New Point(595, 1)
-        cboSs.Margin = New Padding(0)
-        cboSs.Name = "cboSs"
-        cboSs.Size = New Size(114, 37)
-        cboSs.TabIndex = 5
-        tips.SetToolTipHeader(cboSs, "Sursă / sector")
-        tips.SetToolTipText(cboSs, "Sursa și sectorul (de exemplu 02A) din anul ales." & vbLf & "Schimbarea lor reîncarcă arborele și toate ecranele." & vbLf & "Ultima alegere se ține minte pentru data viitoare.")
         ' 
         ' btnMeniu
         ' 
@@ -514,20 +482,10 @@ Partial Class KbotForm
         tlyHeader.BackColor = Color.Transparent
         tlyHeader.CellBorderColor = Color.Transparent
         tlyHeader.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single
-        tlyHeader.ColumnCount = 7
+        tlyHeader.ColumnCount = 2
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 97F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 109F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 11F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 132F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 114F))
         tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20F))
-        tlyHeader.Controls.Add(lblOperator, 6, 0)
-        tlyHeader.Controls.Add(cboSs, 5, 0)
-        tlyHeader.Controls.Add(lblSs, 4, 0)
-        tlyHeader.Controls.Add(cboAn, 2, 0)
-        tlyHeader.Controls.Add(lblAn, 1, 0)
+        tlyHeader.Controls.Add(lblOperator, 1, 0)
         tlyHeader.Controls.Add(btnMeniu, 0, 0)
         tlyHeader.Dock = DockStyle.Fill
         tlyHeader.Location = New Point(0, 0)
@@ -551,34 +509,6 @@ Partial Class KbotForm
         lblOperator.TabIndex = 6
         lblOperator.Text = "Operator"
         lblOperator.TextAlign = ContentAlignment.MiddleRight
-        ' 
-        ' lblSs
-        ' 
-        lblSs.AutoSize = True
-        lblSs.Dock = DockStyle.Fill
-        lblSs.FlatStyle = FlatStyle.Flat
-        lblSs.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblSs.Location = New Point(466, 1)
-        lblSs.Margin = New Padding(4, 0, 4, 0)
-        lblSs.Name = "lblSs"
-        lblSs.Size = New Size(124, 42)
-        lblSs.TabIndex = 4
-        lblSs.Text = "Sursă/Sector"
-        lblSs.TextAlign = ContentAlignment.MiddleRight
-        ' 
-        ' lblAn
-        ' 
-        lblAn.AutoSize = True
-        lblAn.Dock = DockStyle.Fill
-        lblAn.FlatStyle = FlatStyle.Flat
-        lblAn.Font = New Font("Calibri", 9.75F, FontStyle.Bold)
-        lblAn.Location = New Point(246, 1)
-        lblAn.Margin = New Padding(4, 0, 4, 0)
-        lblAn.Name = "lblAn"
-        lblAn.Size = New Size(89, 42)
-        lblAn.TabIndex = 2
-        lblAn.Text = "An Date"
-        lblAn.TextAlign = ContentAlignment.MiddleRight
         ' 
         ' busyBar
         ' 
@@ -658,10 +588,6 @@ Partial Class KbotForm
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents tlyHeader As KBotTableLayoutPanel
     Friend WithEvents lblOperator As Label
-    Friend WithEvents cboSs As KBotComboBox
-    Friend WithEvents lblSs As Label
-    Friend WithEvents cboAn As KBotComboBox
-    Friend WithEvents lblAn As Label
     Friend WithEvents btnMeniu As Button
     Friend WithEvents menuNou As KBotDropDownMenu
 End Class

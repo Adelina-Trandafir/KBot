@@ -25,9 +25,9 @@ viitoare scrii doar parola. Ce se ține minte alegi în **Setări › Autentific
 > documentelor care așteaptă semnătura ta (vezi partea a treia a ajutorului).
 
 ## După conectare: anul și sursa/sectorul
-<!-- slice: 0001, 0086, 0097 -->
+<!-- slice: 0001, 0086, 0097, 0097-03 -->
 
-În bara de sus a ferestrei principale alegi **An Date** (anul de lucru) și **Sursă/Sector**
+În bara de titlu a ferestrei principale alegi **An Date** (anul de lucru) și **Sursă/Sector**
 (de exemplu 02A). Schimbarea lor reîncarcă lista de angajamente și toate ecranele. Ultima
 alegere se ține minte pentru data viitoare.
 

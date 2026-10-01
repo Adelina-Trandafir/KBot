@@ -64,9 +64,6 @@ Partial Public Class KbotForm
 
     ' The year / SS / CodProgram catalogue of the current database (from /api/auth/periods).
     Private _periods As IReadOnlyList(Of PeriodInfo)
-    ' Suppresses the SelectedIndexChanged logic while the combos are filled from code
-    ' (setting DataSource / SelectedIndex raises the events).
-    Private _suppressPeriodEvents As Boolean
 
     ' Lazily created views (key -> instance); only one is visible.
     Private ReadOnly _views As New Dictionary(Of String, IAngajamentView)()
@@ -328,7 +325,7 @@ Partial Public Class KbotForm
             ' come from AppSettings and follow its changes (slice 0777, KbotForm.TreeOptions.vb).
             LeagaOptiunileArborelui()
 
-            ' The year / SS combos AND the list are filled only with an authenticated session
+            ' The year / SS selectors (caption bar) AND the list are filled only with an authenticated session
             ' (the Release path goes through login; the Debug harness can open the window
             ' without one).
             If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
@@ -343,9 +340,7 @@ Partial Public Class KbotForm
                 PornesteTurulInitial()
             Else
                 ' No session (possible only in the Debug harness): no data, no silent sample --
-                ' the list stays empty, honestly. The disabled combos already tell the story.
-                cboAn.Enabled = False
-                cboSs.Enabled = False
+                ' the list stays empty, honestly. The bar with no year / SS selector tells the story.
             End If
 
         Catch ex As Exception

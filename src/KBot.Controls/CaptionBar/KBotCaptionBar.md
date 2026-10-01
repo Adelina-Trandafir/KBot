@@ -3,7 +3,7 @@
 Title bar for borderless forms (`FormBorderStyle.None`): icon + title on the left, control
 box on the right, window drag from the free area. All colours from the active scheme.
 
-`CaptionBar/KBotCaptionBar.vb` (+ `.ThemeButton.vb`, `ThemeSchemeChangedEventArgs.vb`)
+`CaptionBar/KBotCaptionBar.vb` (+ `.ThemeButton.vb`, `.Selectors.vb`, `ThemeSchemeChangedEventArgs.vb`)
 `Control` · sealed · partial · Toolbox · `IThemedControl`, `IPopupAnchor`
 Conventions: [C1..C9](../CONTROLS.md).
 Status: covered by `KBotCaptionBarOptionButtonTests`, `KBotCaptionBarThemeButtonTests`.
@@ -34,6 +34,13 @@ Second icon button, left of the control box, that drops the scheme menu.
 
 The menu builds itself here, not in the host: `MainForm` used to own ~100 lines of it that
 a second bordered form would have had to copy.
+
+## API — title selectors (`KBotCaptionBar.Selectors.vb`, slices 0097 / 0097-03)
+Painted drop-downs after the title, addressed by name: `SelectorUnit` (drawn with 2+ choices),
+`SelectorYear`, `SelectorSector` (1+ choices; each has a dim label before the box).
+- `SetSelectorItems(selector, items, key)`, `ClearSelector(selector)` (overloads without a name = unit)
+- `GetSelectorKey`, `SetSelectorKey` (does not raise the event), `SetSelectorShown` (host hides one)
+- `SelectorChanged` — `Selector` + `Key`; the selector moves only when the host sets the key.
 
 ## Behaviour
 - The host does NOT re-apply the theme after a choice — `ThemeManager.SetScheme` broadcasts

@@ -80,8 +80,7 @@ Partial Public Class KbotForm
         Try
             Dim s As AppSettings = AppSettings.Current
             ' By date the tree shows every source of the year, so the SS choice means nothing.
-            cboSs.Visible = Not s.TreeSortIsDate
-            lblSs.Visible = Not s.TreeSortIsDate
+            capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, Not s.TreeSortIsDate)
             Dim sortChanged As Boolean = Not Nullable.Equals(_appliedSortIsDate, s.TreeSortIsDate)
             Dim colsChanged As Boolean = Not Nullable.Equals(_appliedShowCod, s.TreeShowCod) OrElse
                                          Not Nullable.Equals(_appliedShowSurse, s.TreeShowSurse) OrElse

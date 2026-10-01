@@ -18,16 +18,6 @@ De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct
 
 Două rânduri apar doar uneori. «(!) Operațiuni necorelate» se vede doar când ai operațiuni necorelate de rezolvat; atunci și butonul poartă semnul (!). «Jurnal activitate» (jurnalele K-BOT) se vede doar cât e bifat în Setări › Aplicație «Rândul «Jurnal activitate» în meniul MENIU...».
 
-## Anul de lucru
-<!-- slice: 0001, 0086 -->
-target: KbotForm.cboAn
-Anul pentru care lucrezi. Schimbarea lui reîncarcă lista de angajamente și toate ecranele.
-
-## Sursa și sectorul
-<!-- slice: 0001, 0086 -->
-target: KbotForm.cboSs
-Sursa și sectorul (de exemplu 02A). Ultima alegere se ține minte pentru data viitoare.
-
 ## Lista angajamentelor
 <!-- slice: 0009, 0777, 0034, 0080-03 -->
 target: KbotForm.tree
@@ -145,7 +135,7 @@ target: KbotForm.forexeFooter
 Conectarea la FOREXE, certificatul, progresul robotului și ultimul lui mesaj. Turul «Legătura cu FOREXE» o arată pe larg.
 
 ## Bara de titlu
-<!-- slice: 0028-09, 0000-01, 0097, 0000-20, 0000-29 -->
+<!-- slice: 0028-09, 0000-01, 0097, 0000-20, 0000-29, 0097-03 -->
 target: KbotForm.capBar
 Bara de sus a ferestrei. O tragi cu mouse-ul ca să muți fereastra; dublu clic pe ea o mărește sau o readuce. Urmează, pe rând, ce are pe ea.
 
@@ -154,6 +144,18 @@ Bara de sus a ferestrei. O tragi cu mouse-ul ca să muți fereastra; dublu clic 
 target: KbotForm.capBar
 part: unit
 Unitatea pe care lucrezi. Dacă ai acces la mai multe, un clic pe ea te lasă să treci pe alta, fără parolă; conexiunea FOREXE, dacă e deschisă, se închide singură. Cu o singură unitate, numele ei e scris în titlu și nu se apasă.
+
+## Bara de titlu › Anul de lucru
+<!-- slice: 0001, 0086, 0097-03 -->
+target: KbotForm.capBar
+part: year
+Anul pentru care lucrezi. Un clic pe el arată anii unității; schimbarea lui reîncarcă lista de angajamente și toate ecranele.
+
+## Bara de titlu › Sursa și sectorul
+<!-- slice: 0001, 0086, 0097-03 -->
+target: KbotForm.capBar
+part: ss
+Sursa și sectorul (de exemplu 02A) din anul ales. Ultima alegere se ține minte pentru data viitoare. Cât lista e sortată după dată, alegerea se ascunde: lista cuprinde atunci toate sursele anului.
 
 ## Bara de titlu › Temă
 <!-- slice: 0028-09, 0036, 0000-23 -->

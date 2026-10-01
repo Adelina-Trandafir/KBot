@@ -66,6 +66,8 @@ Partial Public Class KbotForm
     Private Async Sub CapBar_SelectorChanged(sender As Object, e As CaptionSelectorChangedEventArgs) Handles capBar.SelectorChanged
         Try
             If _schimbaUnitatea OrElse e Is Nothing Then Return
+            ' The year / SS selectors of the same bar raise the same event (KbotForm.Periods.vb).
+            If Not String.Equals(e.Selector, KBotCaptionBar.SelectorUnit, StringComparison.Ordinal) Then Return
             Dim tinta As UnitInfo = _unitati?.FirstOrDefault(Function(u) String.Equals(u.DC, e.Key, StringComparison.Ordinal))
             If tinta Is Nothing Then Return
 
@@ -135,15 +137,9 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Async Function DeschideUnitateaCurentaAsync() As Task
         Try
-            _suppressPeriodEvents = True
-            Try
-                cboAn.Items.Clear()
-                cboSs.Items.Clear()
-                cboAn.Enabled = True
-                cboSs.Enabled = True
-            Finally
-                _suppressPeriodEvents = False
-            End Try
+            ' The old unit's year / SS leave the bar until the new catalogue is read.
+            capBar.ClearSelector(KBotCaptionBar.SelectorYear)
+            capBar.ClearSelector(KBotCaptionBar.SelectorSector)
             _periods = Nothing
             _treeRows = Array.Empty(Of AngajamentTreeInfo)()
             _formularNouActiv = False   ' another unit: the «Angajament nou» form state does not carry over

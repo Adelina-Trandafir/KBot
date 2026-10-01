@@ -8,8 +8,8 @@ Imports KBot.Theming
 ''' Slice 0000-23: the caption bar as seen by the help.
 ''' <list type="bullet">
 ''' <item><see cref="IKBotHelpParts"/> -- parts <c>icon</c>, <c>title</c>, <c>unit</c> (the unit
-''' selector), <c>options</c>, <c>theme</c>, <c>help</c>, <c>minimize</c>, <c>maximize</c>,
-''' <c>close</c>. All are drawn without the mouse: no demo.</item>
+''' selector), <c>year</c>, <c>ss</c> (slice 0097-03), <c>options</c>, <c>theme</c>, <c>help</c>,
+''' <c>minimize</c>, <c>maximize</c>, <c>close</c>. All are drawn without the mouse: no demo.</item>
 ''' <item><see cref="IKBotCaptureRedaction"/> -- the unit selector always (it shows a unit's name),
 ''' and the part of the title that is sensitive.</item>
 ''' </list>
@@ -24,7 +24,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property SelectorTexts As IReadOnlyList(Of String)
         Get
-            Return _selectorItems.Select(Function(p) If(p.Value, String.Empty)).ToList()
+            Return Sel(SelectorUnit).Items.Select(Function(p) If(p.Value, String.Empty)).ToList()
         End Get
     End Property
 
@@ -32,7 +32,9 @@ Partial Public NotInheritable Class KBotCaptionBar
         Select Case part
             Case "icon" : Return IconRect()
             Case "title" : Return TitleRect()
-            Case "unit" : Return If(SelectorVisible, _selectorRect, Rectangle.Empty)
+            Case "unit" : Return If(Sel(SelectorUnit).Visible, Sel(SelectorUnit).Rect, Rectangle.Empty)
+            Case "year" : Return If(Sel(SelectorYear).Visible, Sel(SelectorYear).Rect, Rectangle.Empty)
+            Case "ss" : Return If(Sel(SelectorSector).Visible, Sel(SelectorSector).Rect, Rectangle.Empty)
             Case "options" : Return If(_showOptionsButton, OptionButtonRect(), Rectangle.Empty)
             Case "theme" : Return If(_showThemeButton, ThemeButtonRect(), Rectangle.Empty)
             Case "help" : Return HelpButtonBounds
@@ -78,7 +80,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     Public Function SensitiveRegions(isSensitive As Func(Of String, String, Boolean)) As IEnumerable(Of Rectangle) Implements IKBotCaptureRedaction.SensitiveRegions
         ArgumentNullException.ThrowIfNull(isSensitive)
         Dim result As New List(Of Rectangle)()
-        If SelectorVisible AndAlso Not _selectorTextRect.IsEmpty Then result.Add(TextBand(_selectorTextRect))
+        Dim unit As TitleSelector = Sel(SelectorUnit)
+        If unit.Visible AndAlso Not unit.TextRect.IsEmpty Then result.Add(TextBand(unit.TextRect))
         Dim text As String = If(Me.Text, String.Empty)
         Dim title As Rectangle = TitleRect()
         If Not title.IsEmpty Then title = TextBand(title)
