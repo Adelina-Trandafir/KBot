@@ -20,6 +20,10 @@ Imports KBot.Controls
 '   «Sectiunea B» = frmFX_DDF_REV_SECT_B   (read-only; recomputed from A)
 '   «Descriere»   = the long description, on the ported VBA_DDF_INFO editor
 '   «Fisiere»     = frmFX_DDF_ATT
+' A FIFTH PAGE, ALIGNED TO THE RIGHT (slice 0094-02):
+'   «Parteneri»   = every partner associated with the document (FX_DDF_Parteneri). The header
+'                   combo (cmbPartener) stays the document's MAIN partner -- most documents have
+'                   just that one -- and this page holds the others as well.
 '
 ' COMPARTMENT: ONE control, one value -- `cmbComp`, with `Editable = True` and
 ' `LimitToList = False`. The operator has to be able to TYPE a compartment that is not in the
@@ -59,6 +63,7 @@ Partial Class DdfEditForm
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         txtCual = New KBotTextField()
         dtpDataCreare = New KBotDatePicker()
@@ -571,10 +576,16 @@ Partial Class DdfEditForm
         KBotNavItem4.Image = My.Resources.Resources.binvoice
         KBotNavItem4.Key = "fisiere"
         KBotNavItem4.Text = "Fișiere"
+        KBotNavItem5.Align = KBotNavAlign.Far
+        KBotNavItem5.AutoSize = True
+        KBotNavItem5.Image = My.Resources.Resources.binvoice
+        KBotNavItem5.Key = "parteneri"
+        KBotNavItem5.Text = "Parteneri"
         navSub.Items.Add(KBotNavItem1)
         navSub.Items.Add(KBotNavItem2)
         navSub.Items.Add(KBotNavItem3)
         navSub.Items.Add(KBotNavItem4)
+        navSub.Items.Add(KBotNavItem5)
         navSub.Location = New Point(0, 261)
         navSub.Margin = New Padding(0)
         navSub.Name = "navSub"

@@ -95,6 +95,9 @@ Public Class RezervariView
     Private _info As AngajamentTreeInfo
     ''' <summary>The option the icon offers now; None = the icon is hidden.</summary>
     Private _optiune As RezervariMenuOption = RezervariMenuOption.None
+    ''' <summary>True while the tree holds a leaf with the "+" (a reservation still to bring from
+    ''' FOREXE into K-BOT); the footer left icon stays hidden until none is left.</summary>
+    Private _areFrunzaCuPlus As Boolean
 
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
@@ -112,6 +115,7 @@ Public Class RezervariView
         _citesteDdf = citesteDdf
         _actiuneMeniu = actiuneMeniu
         _iconitaMeniu = tree.FooterLeftIcon
+        tree.HelpDemoFooterLeftIcon = _iconitaMeniu   ' slice 0000-30: the tour shows it while the view hides it
         If _reimprospateaza Is Nothing Then
             tree.FooterRightIcon = Nothing
             tree.FooterRightIconTooltip = String.Empty
@@ -151,7 +155,10 @@ Public Class RezervariView
         _optiune = optiune
         ' «Reanalizeaza» is offered whenever an angajament is shown and the host runs menu actions,
         ' so the icon hides only when there is nothing at all to pick.
-        If _actiuneMeniu Is Nothing OrElse _info Is Nothing OrElse String.IsNullOrWhiteSpace(_info.CodAngajament) Then
+        ' Operator, 01.10.2026: while a leaf still carries the "+" (to be added from FOREXE), the
+        ' footer icon is hidden -- the "+" is the only thing to do first.
+        If _actiuneMeniu Is Nothing OrElse _info Is Nothing OrElse _areFrunzaCuPlus OrElse
+           String.IsNullOrWhiteSpace(_info.CodAngajament) Then
             tree.FooterLeftIcon = Nothing
             tree.FooterLeftIconTooltip = String.Empty
         Else
@@ -405,6 +412,10 @@ Public Class RezervariView
                 plusDate = treeDay(firstEligible)
                 plusTip = firstEligible.Tip
             End If
+            _areFrunzaCuPlus = firstEligible IsNot Nothing
+            ' Slice 0000-30: the guided tour shows the «+» (and the footer menu icon, set in the
+            ' constructor) even when no leaf has it now.
+            tree.HelpDemoRightIcon = PlusIconOf(RezervareTip.Initiala, palette)
 
             ' Rădăcina: toate rezervările angajamentului, cu totalul lor. Stă deschisă; lunile
             ' de sub ea își păstrează regula proprie (doar cea cu «+» se desface).

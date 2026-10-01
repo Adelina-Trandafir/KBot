@@ -66,6 +66,24 @@ Friend NotInheritable Class HelpWindowNative
         Return found
     End Function
 
+    ''' <summary>
+    ''' Slice 0000-32: true when this thread has a visible, enabled top-level window other than
+    ''' <paramref name="except"/>. While a dialog is being opened every window of the thread is
+    ''' disabled and the dialog itself is not on screen yet, so this is False until it shows.
+    ''' </summary>
+    Public Shared Function AnyEnabledWindow(except As IntPtr) As Boolean
+        Dim found As Boolean = False
+        Dim cb As EnumThreadWndProc =
+            Function(h As IntPtr, l As IntPtr) As Boolean
+                If h = except OrElse Not IsWindowVisible(h) OrElse Not NativeIsWindowEnabled(h) Then Return True
+                found = True
+                Return False
+            End Function
+        EnumThreadWindows(GetCurrentThreadId(), cb, IntPtr.Zero)
+        GC.KeepAlive(cb)
+        Return found
+    End Function
+
     ' ── Slice 0000-24: no Windows 11 frame around a shaped window ─────────────────────
 
     Private Const DWMWA_WINDOW_CORNER_PREFERENCE As Integer = 33

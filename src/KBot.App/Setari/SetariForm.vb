@@ -77,7 +77,7 @@ Public Class SetariForm
     End Function
 
     ''' <summary>
-    ''' Brings a page to the front by its nav key ("jurnal" from the shell's «Arată jurnal»
+    ''' Brings a page to the front by its nav key ("jurnal" from the shell's «Jurnal activitate»
     ''' row). Unknown key -> ArgumentException, from the nav list itself: a row added to the
     ''' menu and forgotten here must be seen, not swallowed.
     ''' </summary>
@@ -221,6 +221,7 @@ Public Class SetariForm
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
                 Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}
+                Case "istoric" : Return New SetariIstoricView()
                 Case "foldere" : Return New SetariFolder()
                 Case Else
                     Throw New ArgumentException($"Pagină de setări necunoscută: '{key}'.", NameOf(key))

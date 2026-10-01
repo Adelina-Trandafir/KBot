@@ -11,7 +11,7 @@ keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, 
 <!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. -->
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
-<!-- slice: 0048-04, 0056, 0059, 0062, 0065 -->
+<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065 -->
 
 Câte un rând pe **recepție**: data recepției, valoarea de azi și, în paranteză, câte instantanee are
 lanțul ei. Sub fiecare recepție, **lanțul**: instantaneele ei, în ordinea orei.
@@ -29,8 +29,10 @@ Semnele de pe rândul recepției:
 lanț sau că e ceva în plus.
 
 Semnele de pe rândul unui instantaneu: data și ora salvării, totalul, plus **[ștergere]** (rândul în
-care recepția a fost ștearsă, scris înclinat) sau **[fără schimbare]**. Un instantaneu scris stins
-este **blocat**: pe el se sprijină deja o ordonanțare sau o plată, se vede, dar nu se mai poate muta.
+care recepția a fost ștearsă, scris înclinat) sau **[fără schimbare]**. Un instantaneu scris stins,
+cu lacăt, este **blocat**: angajamentul are o ordonanțare din ziua lui sau de după ea; se vede, dar
+nu se mai poate muta. Toate celelalte se pot muta — și după o descărcare, inclusiv cele care erau
+așezate dinainte ([Legături blocate](topic:contabil.asocieri.cazuri)).
 
 **Grila de sub arbore** arată indicatorii instantaneului (sau ai recepției) aleși: indicator, cod SSI,
 credit bugetar, valoare.
@@ -66,12 +68,12 @@ ecranul — bună la angajamentele cu multe recepții.
 <!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». -->
 
 ## Butoanele
-<!-- slice: 0048-04, 0058 -->
+<!-- slice: 0048-04, 0058, 0056-02 -->
 
 | Buton | Ce face |
 |-------|---------|
-| **Salvează legăturile** | scrie ce ai hotărât. După o descărcare se aprinde abia când **fiecare** instantaneu are o hotărâre. |
-| **Golește așezările** | doar după o descărcare: pune înapoi în coș tot ce a adus descărcarea și anulează marcajele tale; legăturile care erau deja pe server nu se ating |
+| **Salvează legăturile** | scrie ce ai hotărât. După o descărcare se aprinde abia când **fiecare** instantaneu adus de descărcare are o hotărâre; legăturile vechi se scriu doar dacă le-ai mutat. |
+| **Golește așezările** | doar după o descărcare: pune înapoi în coș tot ce a adus descărcarea și anulează marcajele tale; legăturile vechi pe care le-ai mutat revin la cum sunt pe server |
 | **Renunță** | închide fără să scrie nimic (vezi mai jos ce înseamnă după o descărcare) |
 
 Banda de mesaje de sus spune mereu cât mai e de făcut, de exemplu «Mai sunt 3 instantanee

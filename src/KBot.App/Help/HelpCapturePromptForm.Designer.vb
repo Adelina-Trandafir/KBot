@@ -114,7 +114,7 @@ Partial Class HelpCapturePromptForm
         btnCaptureaza.TabIndex = 0
         btnCaptureaza.Text = "Capturează"
         tips.SetToolTipHeader(btnCaptureaza, "Capturează")
-        tips.SetToolTipText(btnCaptureaza, "Îngheață ecranul. Apoi trage un dreptunghi, fă clic pe o fereastră" & vbLf & "sau Ctrl + clic pe un control. Esc renunță.")
+        tips.SetToolTipText(btnCaptureaza, "Scurtătură: Ctrl + ` (nu închide meniurile deschise)." & vbLf & "Îngheață ecranul. Apoi trage un dreptunghi, fă clic pe o fereastră" & vbLf & "sau Ctrl + clic pe un control. Esc renunță.")
         btnCaptureaza.UseVisualStyleBackColor = True
         '
         ' btnRenunta

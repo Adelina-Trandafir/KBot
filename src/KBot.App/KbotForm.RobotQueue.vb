@@ -31,11 +31,24 @@ Partial Public Class KbotForm
             Dim actions As Integer = _robotQueue.ActionCount(_controller.IsBusy)
             If _robotQueue.Current Is Nothing AndAlso _robotQueue.Waiting.Count = 0 Then
                 _queueFormDismissed = False
+                ' Done with the queue: the window closes by itself (operator, 01.10.2026). Closed
+                ' later, in a message of its own, so the queue can start its next task meanwhile.
+                If IsHandleCreated Then BeginInvoke(New Action(AddressOf CloseRobotQueueIfIdle))
                 Return
             End If
             If actions > 1 AndAlso Not _queueFormDismissed Then ShowRobotQueue(activate:=False)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.RobotQueue_Changed", ex)
+        End Try
+    End Sub
+
+    Private Sub CloseRobotQueueIfIdle()
+        Try
+            If IsDisposed OrElse Disposing Then Return
+            If _robotQueue.Current IsNot Nothing OrElse _robotQueue.Waiting.Count > 0 Then Return
+            If _queueForm IsNot Nothing AndAlso Not _queueForm.IsDisposed Then _queueForm.Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.CloseRobotQueueIfIdle", ex)
         End Try
     End Sub
 

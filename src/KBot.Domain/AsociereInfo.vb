@@ -57,10 +57,11 @@ Public Enum ActiuneAsociere
     ''' Instantaneul se rupe de recepția pe care sta acum si ramane neasezat
     ''' (<c>IDRR = NULL</c>, <c>Sters = 0</c>).
     '''
-    ''' EXISTA DOAR IN EDITORUL DE ORICAND (felia 0048-04, <c>ComandaAsociere</c>).
-    ''' Contractul in doua faze nu o are, fiindca acolo nimic nu e inca atasat si deci nu
-    ''' e nimic de desprins; <c>ApiClient.NumeActiune</c> o refuza pe calea de ingestie,
-    ''' iar asta e purtarea corecta, nu o scapare. E <c>btnDel_Click</c> din
+    ''' In the anytime editor (slice 0048-04, <c>ComandaAsociere</c>) and, since 01.10.2026,
+    ''' on a CORRECTION sent with a download: a decision anchored on
+    ''' <see cref="DecizieAsociere.Idrh"/>, i.e. a snapshot that already had a link. On a
+    ''' snapshot still to be placed it has no meaning — nothing is attached yet — and
+    ''' <c>ApiClient.CatreFir</c> refuses it there. E <c>btnDel_Click</c> din
     ''' <c>frmFX_DUBII_LISTA_HA</c>.
     ''' </summary>
     Desprins = 4
@@ -105,8 +106,9 @@ Public NotInheritable Class PrelucrarePropunere
 
     ''' <summary>
     ''' RESTUL instantaneelor angajamentului: cele deja legate si cele marcate «fara nicio
-    ''' schimbare». CONTEXT — se arata, nu se decid, si toate vin cu
-    ''' <see cref="InstantaneuLegat.Blocat"/> pus.
+    ''' schimbare». CONTEXT — no decision is owed for them. Since 01.10.2026 the operator
+    ''' may move them while placing the download; <see cref="InstantaneuLegat.Blocat"/>
+    ''' comes set only on the ones an ordonantare freezes (or that cannot be named).
     '''
     ''' <para><b>De ce sunt aici</b> (08.09.2026). Fara ele, o recepție al carei lant era
     ''' deja legat sosea pe ecran goala: nicio linie in grafic, niciun marcaj pe banda,
@@ -116,9 +118,8 @@ Public NotInheritable Class PrelucrarePropunere
     ''' nu vedea ce vede vetoul.</para>
     '''
     ''' <para>Ancora lor e <c>IDRH</c>, cheia reala — nu un indice de rand. In formular
-    ''' primesc chei NEGATIVE (<c>-IDRH</c>), ca sa spuna dintr-o privire ca nu poarta o
-    ''' hotarare si sa nu se ciocneasca cu cheile pozitive ale celor din
-    ''' <see cref="Instantanee"/>; vezi <c>AsociereStare.DinPropunere</c>.</para>
+    ''' primesc chei NEGATIVE (<c>-IDRH</c>), ca sa nu se ciocneasca cu cheile pozitive ale
+    ''' celor din <see cref="Instantanee"/>; vezi <c>AsociereStare.DinPropunere</c>.</para>
     ''' </summary>
     Public Property InstantaneeAsezate As New List(Of InstantaneuLegat)
 
@@ -349,8 +350,18 @@ Public NotInheritable Class DecizieAsociere
     ''' <summary>Ancora F34: <c>FX_Istoric.ID</c>, cand randul nu e in descarcare. Vezi <see cref="AncoraAsociere"/>.</summary>
     Public Property Idh As Integer?
 
-    ''' <summary>Ancora, ca text: vezi <see cref="AncoraAsociere.Cheie"/>.</summary>
+    ''' <summary>
+    ''' The third anchor (01.10.2026): <c>FX_Receptii_H.IDRH</c> of a snapshot written BEFORE
+    ''' the current download, which the operator moved while placing it — a CORRECTION.
+    ''' The key is real and existed before phase one, so the rollback does not touch it.
+    ''' When set, <see cref="RandIstoric"/> and <see cref="Idh"/> are not sent, and
+    ''' <see cref="ActiuneAsociere.Desprins"/> is allowed.
+    ''' </summary>
+    Public Property Idrh As Integer?
+
+    ''' <summary>Ancora, ca text: vezi <see cref="AncoraAsociere.Cheie"/>; <c>idrh:N</c> for a correction.</summary>
     Public Function Ancora() As String
+        If Idrh.HasValue Then Return "idrh:" & Idrh.Value.ToString(Globalization.CultureInfo.InvariantCulture)
         Return AncoraAsociere.Cheie(RandIstoric, Idh)
     End Function
 

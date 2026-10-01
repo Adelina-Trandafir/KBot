@@ -358,6 +358,22 @@ Public Class KBotDropDownMenu
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 0000-31: the screen rectangle that holds every open menu window (the guided tour rings
+    ''' it); Empty when the menu is closed.
+    ''' </summary>
+    <Browsable(False)>
+    Public ReadOnly Property OpenBounds As Rectangle
+        Get
+            Dim r As Rectangle = Rectangle.Empty
+            For Each w As KBotMenuWindow In _windows
+                If Not w.IsHandleCreated OrElse w.IsDisposed Then Continue For
+                r = If(r.IsEmpty, w.Bounds, Rectangle.Union(r, w.Bounds))
+            Next
+            Return r
+        End Get
+    End Property
+
     ''' <summary>Opens the menu under <paramref name="anchor"/> (flipped above when there is no room below).</summary>
     Public Sub ShowBelow(anchor As Control)
         Try
@@ -525,10 +541,19 @@ Public Class KBotDropDownMenu
 
     Private Sub HostForm_Deactivate(sender As Object, e As EventArgs)
         Try
+            ' Slice 0000-31: held open (help capture tool, guided tour); closes when the guard is released.
+            If KBotPopupGuard.KeepOpen Then
+                KBotPopupGuard.CloseOnRelease(AddressOf CloseAll)
+                Return
+            End If
             CloseFrom(0)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDropDownMenu.HostForm_Deactivate", ex)
         End Try
+    End Sub
+
+    Private Sub CloseAll()
+        CloseFrom(0)
     End Sub
 
     Private Function IsInDesigner() As Boolean

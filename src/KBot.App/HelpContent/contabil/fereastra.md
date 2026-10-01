@@ -21,7 +21,7 @@ Fereastra principală are cinci zone.
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0034, 0080-03, 0095-02, 0078-08 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0077-3, 0098, 0000-31 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -29,15 +29,33 @@ Fereastra principală are cinci zone.
 - **Lupa** din capul listei deschide căutarea; **Esc** o golește și o închide. Toate butoanele comune
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
 - **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
+- Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de sus se ascunde; reapare la sortarea după nume.
 - Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
   existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).
 - Iconița **din stânga, jos** deschide fereastra **Extrase de cont** — [Extrase](topic:contabil.vederi.extrase).
+- Angajamentele descărcate sau actualizate de la pornirea programului sunt **subliniate** în listă. Sublinierea dispare când închideți programul.
+- Dacă apăsați reîmprospătarea pe mai multe angajamente cât timp se descarcă deja unul, pentru ele nu se mai deschide fereastra de alegere a recepțiilor: se descarcă toate.
+- Când mai multe acțiuni FOREXE așteaptă una după alta, se deschide fereastra **Coada robotului**; ea se închide singură după ce coada s-a golit. Butonul **«Coadă N»** din banda FOREXE o deschide oricând, dar se vede doar cât coada are ceva în ea — [Coada robotului](topic:contabil.forexe.coada).
 
 ## Vederile
-<!-- slice: 0018, 0074, 0088, 0097 -->
+<!-- slice: 0018, 0074, 0088, 0097, 0000-30, 0000-31 -->
 
-O vedere e disponibilă doar dacă angajamentul are date de acel fel (de exemplu «Plăți» e gri
-cât timp angajamentul nu are plăți, iar «Note corecție» cât timp nu s-a făcut nicio notă pe el). «Browser FOREXE» apare doar cât timp ești conectat la FOREXE.
+O vedere apare doar dacă angajamentul selectat are date de acel fel; altfel butonul ei **nu se vede** în bara vederilor (nu e gri, lipsește). Când nu ai ales niciun angajament, se văd doar «Sumar» și, cât ești conectat la FOREXE, «Browser FOREXE». Ce trebuie să fie adevărat ca să apară fiecare:
+
+| Vederea | Apare când |
+|---------|------------|
+| Sumar | mereu; lipsește doar cât lucrezi în formularul gol «Angajament nou» din pagina FOREXE |
+| Istoric | angajamentul are rânduri de istoric |
+| Rezervări | angajamentul are rezervări |
+| Recepții | angajamentul are recepții |
+| Plăți | angajamentul are plăți |
+| Extrase | angajamentul are operațiuni în extrasele de cont |
+| Browser FOREXE | ești conectat la FOREXE (butonul «Conectare» din banda de jos) |
+| Fundamentare | angajamentul are document de fundamentare (se face din «Rezervări», cu semnul «+») |
+| Ordonanțare | angajamentul are ordonanțări (se fac din «Plăți», cu semnul «+») |
+| Note corecție | s-a făcut cel puțin o notă de corecție pe angajament |
+
+Alege în listă alt angajament sau rezolvă condiția și butonul apare singur. Turul ghidat al ferestrei (din «?») îți arată și vederile care lipsesc acum, cu o notă care spune că le vezi doar pentru tur.
 
 ## Unitatea de lucru
 <!-- slice: 0097 -->
@@ -68,7 +86,7 @@ Schimbarea **nu se poate face**:
 > și deschide-le din nou după ce ai trecut pe altă unitate.
 
 ## MENIU
-<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02 -->
+<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02, 0000-29, 0000-31, fara-felie -->
 
 - **Adăugare angajamente...** — un dosar cu două rânduri:
   - **Angajament nou** — îl faci în K-BOT și îl trimiți apoi în FOREXE — [Angajament nou](topic:contabil.ddf.nou);
@@ -76,6 +94,8 @@ Schimbarea **nu se poate face**:
 - **(!) Operațiuni necorelate** — apare doar când există — [Operațiuni necorelate](topic:contabil.notecab)
 - **Extrase** — fereastra «Extrase de cont»
 - **Nomenclatoare › Clasificații bugetare / Parteneri** — [Nomenclatoare](topic:contabil.nomenclatoare)
+- **Jurnal activitate** — jurnalele K-BOT; rândul lipsește dacă l-ai ascuns din Setări › Aplicație — [Setări și aspect](topic:contabil.setari)
+- **Configurare K-BOT** — fereastra de setări — [Setări și aspect](topic:contabil.setari)
 
 Când există operațiuni necorelate, butonul MENIU poartă semnul **(!)**.
 

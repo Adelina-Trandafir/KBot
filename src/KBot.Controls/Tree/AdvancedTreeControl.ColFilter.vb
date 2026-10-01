@@ -141,9 +141,18 @@ Partial Public Class AdvancedTreeControl
             End Try
         End Sub
 
+        Private Sub CloseDismissed()
+            If Not IsDisposed Then Me.Close()
+        End Sub
+
         Protected Overrides Sub OnDeactivate(e As EventArgs)
             Try
                 MyBase.OnDeactivate(e)
+                ' Slice 0000-31: held open (help capture tool); closes when the guard is released.
+                If KBot.Theming.KBotPopupGuard.KeepOpen Then
+                    KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDismissed)
+                    Return
+                End If
                 Me.Close()
             Catch ex As Exception
                 GlobalErrorLog.Write("ColFilterPopup.OnDeactivate", ex)

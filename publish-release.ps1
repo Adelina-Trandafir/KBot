@@ -666,6 +666,25 @@ $SetupBaseName = "KBot_Setup_$Stamp"
 $SetupExe      = Join-Path $ArtifactsDir "$SetupBaseName.exe"
 if (Test-Path -LiteralPath $SetupExe) { Remove-Item -LiteralPath $SetupExe -Force }
 
+# The installer's first page shows the notes of the last 3 versions (ReleaseNotes.ps1
+#  -Action Installer), so this version's notes must exist BEFORE Setup is compiled:
+#  the wait that used to be last (step 11) is here. Step 11 only reports.
+$NewsInc = Join-Path $ArtifactsDir "news_$Stamp.inc"
+$notesWritten = $null
+if ($ReleaseNotes -eq 'Ask') {
+    Write-Host ""
+    try {
+        $notesWritten = & $ReleaseNotesTool -Action Wait -Version $ReleaseVersion.ToString()
+    } catch {
+        Write-Warning "[notes] Reading the release notes failed: $($_.Exception.Message)"
+    }
+}
+try {
+    & $ReleaseNotesTool -Action Installer -Version $ReleaseVersion.ToString() -OutFile $NewsInc
+} catch {
+    Write-Warning "[notes] The installer news page failed: $($_.Exception.Message) Setup gets no news page."
+}
+
 $isccArgs = @(
     "/DSourceDir=$PublishDir",
     "/DAppVersion=$AppVersion",
@@ -683,10 +702,12 @@ if ($innoSign) {
 } else {
     Write-SignWarn "No usable signing setup -- installer and uninstaller will be UNSIGNED."
 }
+if (Test-Path -LiteralPath $NewsInc) { $isccArgs += "/DNewsInc=$NewsInc" }
 $isccArgs += $IssFile
 
 Write-Host "Compiling installer (Inno Setup) -> $SetupExe" -ForegroundColor Cyan
 & $Iscc @isccArgs
+if (Test-Path -LiteralPath $NewsInc) { Remove-Item -LiteralPath $NewsInc -Force }
 if ($LASTEXITCODE -ne 0) { throw "ISCC failed (ExitCode=$LASTEXITCODE)." }
 if (-not (Test-Path -LiteralPath $SetupExe)) { throw "ISCC reported success but $SetupExe is missing." }
 $SetupSizeMB = [Math]::Round((Get-Item -LiteralPath $SetupExe).Length / 1MB, 1)
@@ -726,17 +747,8 @@ if (-not $script:SigningEnabled) {
     Write-Host "  Signing  : disabled (no thumbprint provided). Artifacts are UNSIGNED." -ForegroundColor Yellow
 }
 
-# --- 11. Release notes: wait for the section asked for in step 1c ---------------
-#  Last on purpose: everything is built, so waiting here costs nothing. The notes
-#  are not inside the package; push-update.ps1 reads them from NOUTATI.md.
-if ($ReleaseNotes -eq 'Ask') {
+# --- 11. Release notes: report (the wait happened before the installer, step 7b) ---
+if ($ReleaseNotes -eq 'Ask' -and -not $notesWritten) {
     Write-Host ""
-    try {
-        $notesWritten = & $ReleaseNotesTool -Action Wait -Version $ReleaseVersion.ToString()
-        if (-not $notesWritten) {
-            Write-Host "  Notes    : NONE for $ReleaseVersion (docs\release-notes\NOUTATI.md)." -ForegroundColor Yellow
-        }
-    } catch {
-        Write-Warning "[notes] Reading the release notes failed: $($_.Exception.Message)"
-    }
+    Write-Host "  Notes    : NONE for $ReleaseVersion (docselease-notesNOUTATI.md)." -ForegroundColor Yellow
 }

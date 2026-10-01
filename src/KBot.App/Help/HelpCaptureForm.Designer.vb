@@ -25,6 +25,7 @@ Partial Class HelpCaptureForm
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         pnlRoot = New Panel()
         grid = New KBotDataView()
@@ -35,14 +36,24 @@ Partial Class HelpCaptureForm
         btnDosar = New Button()
         lblDosar = New Label()
         capBar = New KBotCaptionBar()
+        tlyDetaliu = New KBotTableLayoutPanel()
+        lblImagineTitlu = New Label()
+        lblPregatireTitlu = New Label()
+        lblPreviewTitlu = New Label()
+        txtImagine = New TextBox()
+        txtPregatire = New TextBox()
+        picPreview = New PictureBox()
         pnlRoot.SuspendLayout()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyBara.SuspendLayout()
+        tlyDetaliu.SuspendLayout()
+        CType(picPreview, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         '
         ' pnlRoot
         '
         pnlRoot.Controls.Add(grid)
+        pnlRoot.Controls.Add(tlyDetaliu)
         pnlRoot.Controls.Add(lblDosar)
         pnlRoot.Controls.Add(tlyBara)
         pnlRoot.Controls.Add(capBar)
@@ -110,6 +121,15 @@ Partial Class HelpCaptureForm
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.Resizable = False
         KBotDataColumn7.Width = 90
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.ColumnType = KBotColumnType.Button
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = ""
+        KBotDataColumn8.Key = "vezi"
+        KBotDataColumn8.MinWidth = 90
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.Resizable = False
+        KBotDataColumn8.Width = 90
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.ColumnFillMode = KBotFillMode.SpecificColumn
         grid.Columns.Add(KBotDataColumn1)
@@ -118,6 +138,7 @@ Partial Class HelpCaptureForm
         grid.Columns.Add(KBotDataColumn4)
         grid.Columns.Add(KBotDataColumn5)
         grid.Columns.Add(KBotDataColumn6)
+        grid.Columns.Add(KBotDataColumn8)
         grid.Columns.Add(KBotDataColumn7)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "imagine"
@@ -196,6 +217,85 @@ Partial Class HelpCaptureForm
         tips.SetToolTipText(btnDosar, "Deschide dosarul în care se salvează pozele.")
         btnDosar.UseVisualStyleBackColor = True
         '
+        ' tlyDetaliu
+        '
+        tlyDetaliu.ColumnCount = 3
+        tlyDetaliu.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
+        tlyDetaliu.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
+        tlyDetaliu.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40F))
+        tlyDetaliu.Controls.Add(lblImagineTitlu, 0, 0)
+        tlyDetaliu.Controls.Add(lblPregatireTitlu, 1, 0)
+        tlyDetaliu.Controls.Add(lblPreviewTitlu, 2, 0)
+        tlyDetaliu.Controls.Add(txtImagine, 0, 1)
+        tlyDetaliu.Controls.Add(txtPregatire, 1, 1)
+        tlyDetaliu.Controls.Add(picPreview, 2, 1)
+        tlyDetaliu.Dock = DockStyle.Bottom
+        tlyDetaliu.Location = New Point(10, 440)
+        tlyDetaliu.Margin = New Padding(0)
+        tlyDetaliu.Name = "tlyDetaliu"
+        tlyDetaliu.RowCount = 2
+        tlyDetaliu.RowStyles.Add(New RowStyle(SizeType.Absolute, 22F))
+        tlyDetaliu.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyDetaliu.Size = New Size(1078, 150)
+        tlyDetaliu.TabIndex = 4
+        '
+        ' lblImagineTitlu
+        '
+        lblImagineTitlu.Dock = DockStyle.Fill
+        lblImagineTitlu.Margin = New Padding(0)
+        lblImagineTitlu.Name = "lblImagineTitlu"
+        lblImagineTitlu.TabIndex = 0
+        lblImagineTitlu.Text = "Imagine"
+        lblImagineTitlu.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblPregatireTitlu
+        '
+        lblPregatireTitlu.Dock = DockStyle.Fill
+        lblPregatireTitlu.Margin = New Padding(0)
+        lblPregatireTitlu.Name = "lblPregatireTitlu"
+        lblPregatireTitlu.TabIndex = 1
+        lblPregatireTitlu.Text = "Ce pregătești"
+        lblPregatireTitlu.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' lblPreviewTitlu
+        '
+        lblPreviewTitlu.Dock = DockStyle.Fill
+        lblPreviewTitlu.Margin = New Padding(0)
+        lblPreviewTitlu.Name = "lblPreviewTitlu"
+        lblPreviewTitlu.TabIndex = 2
+        lblPreviewTitlu.Text = "Imaginea făcută"
+        lblPreviewTitlu.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtImagine
+        '
+        txtImagine.Dock = DockStyle.Fill
+        txtImagine.Margin = New Padding(0, 0, 6, 0)
+        txtImagine.Multiline = True
+        txtImagine.Name = "txtImagine"
+        txtImagine.ReadOnly = True
+        txtImagine.ScrollBars = ScrollBars.Vertical
+        txtImagine.TabIndex = 3
+        '
+        ' txtPregatire
+        '
+        txtPregatire.Dock = DockStyle.Fill
+        txtPregatire.Margin = New Padding(0, 0, 6, 0)
+        txtPregatire.Multiline = True
+        txtPregatire.Name = "txtPregatire"
+        txtPregatire.ReadOnly = True
+        txtPregatire.ScrollBars = ScrollBars.Vertical
+        txtPregatire.TabIndex = 4
+        '
+        ' picPreview
+        '
+        picPreview.BorderStyle = BorderStyle.FixedSingle
+        picPreview.Dock = DockStyle.Fill
+        picPreview.Margin = New Padding(0)
+        picPreview.Name = "picPreview"
+        picPreview.SizeMode = PictureBoxSizeMode.Zoom
+        picPreview.TabIndex = 5
+        picPreview.TabStop = False
+        '
         ' lblDosar
         '
         lblDosar.AutoEllipsis = True
@@ -228,7 +328,7 @@ Partial Class HelpCaptureForm
         '
         AutoScaleDimensions = New SizeF(96F, 96F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1100, 620)
+        ClientSize = New Size(1100, 700)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None
         MinimumSize = New Size(700, 360)
@@ -239,6 +339,9 @@ Partial Class HelpCaptureForm
         pnlRoot.ResumeLayout(False)
         CType(grid, ComponentModel.ISupportInitialize).EndInit()
         tlyBara.ResumeLayout(False)
+        tlyDetaliu.ResumeLayout(False)
+        tlyDetaliu.PerformLayout()
+        CType(picPreview, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
@@ -252,4 +355,11 @@ Partial Class HelpCaptureForm
     Friend WithEvents btnDosar As Button
     Friend WithEvents lblDosar As Label
     Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents tlyDetaliu As KBotTableLayoutPanel
+    Friend WithEvents lblImagineTitlu As Label
+    Friend WithEvents lblPregatireTitlu As Label
+    Friend WithEvents lblPreviewTitlu As Label
+    Friend WithEvents txtImagine As TextBox
+    Friend WithEvents txtPregatire As TextBox
+    Friend WithEvents picPreview As PictureBox
 End Class

@@ -15,7 +15,7 @@ Partial Public Class CustomPopup
         ArgumentNullException.ThrowIfNull(isSensitive)
         Dim result As New List(Of Rectangle)()
         Dim viewport As New Rectangle(0, 0, ClientSize.Width, ClientSize.Height)
-        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, PadXLogical)
+        Dim padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
         Dim gutter As Integer = IconGutter()
         For i As Integer = 0 To Items.Count - 1
             Dim item As CustomPopupItem = Items(i)

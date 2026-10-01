@@ -384,10 +384,19 @@ Partial Friend NotInheritable Class KBotFilterPopup
             ' While a child is open (the conditions submenu), losing activation does not mean the
             ' operator clicked elsewhere -- it means they are looking at the child.
             If _suppressDeactivate OrElse _closing Then Return
+            ' Slice 0000-31: held open (help capture tool); closes when the guard is released.
+            If KBot.Theming.KBotPopupGuard.KeepOpen Then
+                KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDismissed)
+                Return
+            End If
             Close()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotFilterPopup.OnDeactivate", ex)
         End Try
+    End Sub
+
+    Private Sub CloseDismissed()
+        If Not IsDisposed AndAlso Not _closing Then Close()
     End Sub
 
     ' Esc closes leaving nothing behind; Enter hands the filter over. KeyPreview is set in the

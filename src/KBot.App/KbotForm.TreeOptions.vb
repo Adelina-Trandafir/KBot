@@ -79,6 +79,9 @@ Partial Public Class KbotForm
     Private Sub ApplyTreeOptionsFromStore()
         Try
             Dim s As AppSettings = AppSettings.Current
+            ' By date the tree shows every source of the year, so the SS choice means nothing.
+            cboSs.Visible = Not s.TreeSortIsDate
+            lblSs.Visible = Not s.TreeSortIsDate
             Dim sortChanged As Boolean = Not Nullable.Equals(_appliedSortIsDate, s.TreeSortIsDate)
             Dim colsChanged As Boolean = Not Nullable.Equals(_appliedShowCod, s.TreeShowCod) OrElse
                                          Not Nullable.Equals(_appliedShowSurse, s.TreeShowSurse) OrElse
@@ -245,7 +248,7 @@ Partial Public Class KbotForm
     ''' <summary>The right icon of the tree's header opens the tree options menu under it.</summary>
     Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
         Try
-            ' A second press on the icon CLOSES the menu -- see CapBar_OptionButtonClick.
+            ' A second press on the icon CLOSES the menu (the press already closed it, so without this guard it would reopen at once).
             If CustomPopup.ClosedJustNow Then Return
             Dim ancora As Rectangle = tree.HeaderRightIconRect
             If ancora.IsEmpty Then Return

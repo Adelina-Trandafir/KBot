@@ -11,7 +11,7 @@ Imports KBot.Theming
 ''' and not a page: the harness («Jurnale» button, <c>ILogViewerLauncher</c>) and the startup
 ''' launcher's «Jurnale» choice, which runs without a shell and without a login.
 '''
-''' <para>The shell no longer opens this form: its «Arată jurnal» row opens the settings
+''' <para>The shell no longer opens this form: its «Jurnal activitate» row opens the settings
 ''' window on the «Jurnal» page (<c>KbotForm.ShowLog</c>), so there is one log surface, not
 ''' two that could drift apart.</para>
 '''

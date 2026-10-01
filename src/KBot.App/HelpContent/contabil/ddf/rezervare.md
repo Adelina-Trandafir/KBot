@@ -7,10 +7,11 @@ parent: contabil.ddf
 keywords: adauga rezervare, definitiveaza, deruleaza, genereaza pdf final, revizie noua, indicatori existenti
 open: view:rezervari
 ---
-<!-- slice: 0081-02, 0078-06 -->
+<!-- slice: 0081-02, 0078-06, 0000-30 -->
 Iconița din **stânga, jos, a arborelui din vederea Rezervări** deschide acțiunile documentului
 de fundamentare pentru angajamentul selectat. Meniul arată **o singură** acțiune, cea potrivită
-stării angajamentului; iconița e gri când nu e nimic de făcut.
+stării angajamentului. Iconița **se vede doar** când în arbore nu mai e nicio rezervare cu «+» (o rezervare
+de adus din FOREXE în K-BOT); până apeși «+» pe ele, iconița lipsește.
 
 <!-- capture: rezervari-meniu-ddf | caption: Meniul DDF din subsolul arborelui de rezervări | goto: view:rezervari | prepare: Selectați un angajament «În derulare» și apăsați iconița din stânga, jos, a arborelui. -->
 

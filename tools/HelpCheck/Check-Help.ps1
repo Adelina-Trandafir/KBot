@@ -186,6 +186,15 @@ function Test-Part([string]$target, [string]$part, [string]$where) {
 }
 foreach ($tr in $tours) {
     foreach ($m in [regex]::Matches($tr.__body, '(?m)^target:\s*(.+)$')) { Test-Key $m.Groups[1].Value.Trim() $tr.__file }
+    # Slice 0000-31: reveal: opens something before the step points (only 'menu' = the MENIU menu of the main window).
+    foreach ($stepText in ($tr.__body -split '(?m)^## ')) {
+        $rm = [regex]::Match($stepText, '(?m)^reveal:\s*(.+)$')
+        if (-not $rm.Success) { continue }
+        $rv = $rm.Groups[1].Value.Trim()
+        $tm2 = [regex]::Match($stepText, '(?m)^target:\s*(.+)$')
+        if ($rv -ne 'menu') { Add-Err "$($tr.__file): unknown reveal '$rv' (known: menu)" }
+        elseif (-not $tm2.Success -or $tm2.Groups[1].Value.Trim() -ne 'KbotForm.btnMeniu') { Add-Err "$($tr.__file): reveal: menu needs target: KbotForm.btnMeniu" }
+    }
     # Slice 0000-23: part: belongs to the target: of the same step.
     foreach ($stepText in ($tr.__body -split '(?m)^## ')) {
         $pm = [regex]::Match($stepText, '(?m)^part:\s*(.+)$')

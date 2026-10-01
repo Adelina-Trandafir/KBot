@@ -81,6 +81,12 @@ Partial Public Class KbotForm
     ' change of sort re-lays the tree without asking for them again. The order and the
     ' columns themselves live in AppSettings (slice 0777, KbotForm.TreeOptions.vb).
     Private _treeRows As IReadOnlyList(Of AngajamentTreeInfo)
+    ' Angajamente whose download / refresh was SAVED during this run of the program: their tree
+    ' row is underlined. Not persisted -- it starts empty on every start.
+    Private ReadOnly _descarcateInSesiune As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+    ' Angajamente queued while another FOREXE action was already under way: their receptii are
+    ' all downloaded, without the selection window (the operator is clicking through several).
+    Private ReadOnly _descarcareFaraIntrebare As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
     ' The modeless «Informatii interne» window (the Are* flags of the selected node).
     ' Nothing / IsDisposed = closed; reopened on demand.
     Private _infoForm As InternalInfoForm

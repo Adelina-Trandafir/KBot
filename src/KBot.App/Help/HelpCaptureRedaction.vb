@@ -34,6 +34,8 @@ Friend NotInheritable Class HelpCaptureRedaction
     Private Shared ReadOnly EmailPattern As New Regex("[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", RegexOptions.CultureInvariant)
     ' +40 / 0040 / 0, then 2, 3 or 7 and eight more digits; spaces, dots or dashes between groups.
     Private Shared ReadOnly PhonePattern As New Regex("(?<![\d+])(?:\+40|0040|0)[ .\-]?[237](?:[ .\-]?\d){8}(?!\d)", RegexOptions.CultureInvariant)
+    ' A classification code: seven dot-separated pairs of digits (e.g. 20.01.01.03.00.00.00).
+    Private Shared ReadOnly ClassificationPattern As New Regex("(?<![\d.])\d{2}(?:\.\d{2}){6}(?![\d.])", RegexOptions.CultureInvariant)
     ' A field or column that holds a fiscal code, once its name / header is split and lower-cased.
     Private Shared ReadOnly FiscalContextPattern As New Regex("\b(cod ?fiscal|cui|cif)\b", RegexOptions.CultureInvariant)
     ' What a fiscal code looks like on its own (with or without RO).
@@ -71,8 +73,10 @@ Friend NotInheritable Class HelpCaptureRedaction
     ''' </summary>
     Public Function IsSensitive(context As String, text As String) As Boolean
         If String.IsNullOrWhiteSpace(text) Then Return False
-        If AccountPattern.IsMatch(text) OrElse CnpPattern.IsMatch(text) OrElse
-           EmailPattern.IsMatch(text) OrElse PhonePattern.IsMatch(text) Then Return True
+        ' Budget classifications are public and must stay readable (the phone pattern would take them).
+        Dim scanned As String = ClassificationPattern.Replace(text, " ")
+        If AccountPattern.IsMatch(scanned) OrElse CnpPattern.IsMatch(scanned) OrElse
+           EmailPattern.IsMatch(scanned) OrElse PhonePattern.IsMatch(scanned) Then Return True
         If FiscalValuePattern.IsMatch(text) AndAlso IsFiscalContext(context) Then Return True
         For Each t As String In _terms
             If text.IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0 Then Return True

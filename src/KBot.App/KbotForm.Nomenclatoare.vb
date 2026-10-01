@@ -82,6 +82,10 @@ Partial Public Class KbotForm
                 Case HelpCaptureMenuKey
                     ' Slice 0000-02: the help screenshot list (KbotForm.HelpCapture.vb).
                     DeschideCapturileAjutorului()
+                Case "jurnal"
+                    ShowLog()
+                Case "setari"
+                    ShowSettings()
                 Case UncorrelatedMenuKey
                     ' Slice 0088: every stored ERR operation no note covers yet.
                     OpenUncorrelatedFromMenu()

@@ -35,7 +35,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 
 |         Slice | Name                                                                                                                     | Status (short)                                | File                                        |
 | ------------: | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------- |
-|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…25 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
+|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…32 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0001 | Auth                                                                                                                     | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0002 | Split-brain 401 fix + reason codes                                                                                       | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0003 | Redis session backend                                                                                                    | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
@@ -130,6 +130,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0054 | Cutia neagră a descărcătorului FOREXE                                                                                    | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
 |          0055 | Ingestia legată de buton                                                                                                 | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
 |          0056 | Tabloul întreg al propunerii                                                                                             | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
+|       0056-02 | Legăturile vechi se pot corecta la așezarea unei descărcări, dacă nu le blochează o ordonanțare (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, netestat, nerulat; server nedeployat) | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
 |          0057 | FOREXE: lista pe butonul din dreapta, oprirea pe «nu există în listă», extrasele SNM                                     | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
 |          0058 | Așezarea recepțiilor: cache la descărcare, buton de golire, tăcere pe data recepției, lag pe benzi                       | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
 |       0058-02 | Jurnalul asocierii (`asociere.log`)                                                                                      | GATA pe cod                                   | [0050-0059](state/KBOT_STATUS_0050-0059.md) |
@@ -163,6 +164,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 | 0075-00 rev.1 | `Clasificatii.Sursa` devine coloană scrisă                                                                               | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0076 | Editările din «Browser FOREXE»: recepția salvată, rezervările ținute în memorie, marcajele de id                         | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0777 | Arborele principal: sortare + coloanele CODANGAJAMENT / SURSE; «Aplicație» primește file                                 | GATA pe cod, build curat                      | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0777-02 | Arbore: subliniat pentru descărcatele din sesiune; fără fereastra de recepții la actualizări multiple; coada se închide singură | GATA pe cod, build curat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0078 | Semnarea DDF / ORD în vizualizatorul Adobe din K-BOT (absoarbe 0021)                                                     | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-03 | Jurnal de diagnostic exhaustiv pentru vizualizatorul ActiveX                                                             | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-04 | Secțiunea B după A pe DDF: sesiunea de semnare refăcută când suma de pe server se schimbă + proba pe banc             | PROBAT pe banc A→B→Ordonator; erori JS în vizualizator | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
@@ -191,6 +193,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0083 | `KBotComboBox.OfferNewItem` (cererea operatorului, 26.09.2026)                                                           | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0084 | «Operațiuni necorectate» după conectarea FOREXE (cererea operatorului, 26.09.2026)                                       | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |       0084/01 | Indicatorii la reîmprospătare + redenumirea `FX_Indicatori.Prevedere_Bugetara_Initiala` → `Credit_Bugetar` (operator, 2… | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
+|       0084/02 | Butonul «Asociază parteneri» din Sumar + tabela `FX_DDF_Parteneri` (mai mulți parteneri pe un DDF; fără DDF nu există asociere) (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nerulat, nevăzut; SQL + server nedeployate) | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0085 | `KBotDataView`: editorul arată ca celula, editare la un clic, Sus/Jos prin coloană (cererea operatorului, 26.09.2026)    | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0086 | `KbotForm` împărțit în clase parțiale + «Angajament nou» buton primar (cererea operatorului, 26.09.2026)                 | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |          0087 | «Clasificații bugetare», «Parteneri», `KBotDropDownMenu`, meniul din antet (cererea operatorului, 26.09.2026)            | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
@@ -201,6 +204,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0092 | Rezervarea inițială = un singur eveniment, pe ultima zi inițială (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0093 | Parteneri: doar Tip 1 cu cod fiscal (nu al unității, neascunși), unul pe cod fiscal; Tip scos, «Alte detalii» → «Adresa»; ANAF la codul fiscal; banca din IBAN (BIC); cod fiscal unic la salvare (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0094 | `KBotComboBox` rescris pe `Control` (fără `ComboBox`, fără `DataSource`), o singură listă (săgeată = toate, tastare = potrivite); editorul de combo din `KBotDataView` (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|       0094-02 | Editorul DDF: pagina «Parteneri» (aliniată la dreapta); combo-ul din antet rămâne partenerul principal (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nerulat, nevăzut; SQL + server nedeployate) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0095 | Istoric: nod rădăcină «Tot istoricul» în arbore (toate rândurile, ca la încărcare) (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |       0095-02 | Subsolul arborelui descarcă direct extrasele; «Extrase de cont» din «Meniu → Extrase»; `btnMeniu` urmează lățimea lui `navViews` strâns (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0096 | Extrase: meniu de afișare în antetul arborelui — «antet + operații» / «operații + detalii» (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
@@ -238,6 +242,19 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
   procedure: `docs/release-notes/README.md`).
 - Same day: slice 0097-02 (second corrective pass) and its help, 0000-25
   ([0090-0099](state/KBOT_STATUS_0090-0099.md), [0000-0009](state/KBOT_STATUS_0000-0009.md)).
+- Same day: slice 0056-02, old links can be corrected while placing a download, and its help,
+  0000-26 ([0050-0059](state/KBOT_STATUS_0050-0059.md)).
+- Same day: slice 0000-27, the «?» popup lists tours only for the window whose «?» was pressed and
+  its views only ([0000-0009](state/KBOT_STATUS_0000-0009.md)).
+- Same day: slices 0084/02 (Sumar button «Asociază parteneri» + table `FX_DDF_Parteneri`) and 0094-02
+  (DDF editor page «Parteneri»), and their help + the guided tour of the DDF editor, 0000-28
+  ([0080-0089](state/KBOT_STATUS_0080-0089.md), [0090-0099](state/KBOT_STATUS_0090-0099.md),
+  [0000-0009](state/KBOT_STATUS_0000-0009.md)). Deploy order: the DDL first.
+- Same day (no slice): the «Setări» button left the main caption bar; «Jurnal activitate» and «Configurare K-BOT» in the MENIU menu, and their help, 0000-29
+  ([SLICELESS](state/KBOT_STATUS_SLICELESS.md), [0000-0009](state/KBOT_STATUS_0000-0009.md)).
+- Same day: slice 0000-32, the help window is one continuous page (the tree follows the scroll),
+  «Imprimă» and «Exportă» each with a menu of how much, and the freeze on «Exportă»
+  ([0000-0009](state/KBOT_STATUS_0000-0009.md)). Not run, not seen on screen.
 - Earlier (28.09.2026): slice 0090, this file split ([0090-0099](state/KBOT_STATUS_0090-0099.md));
   slices 0088 and 0089 ([0080-0089](state/KBOT_STATUS_0080-0089.md)), plus
   the sliceless «silent FOREXE downloads + FOREXE page pictures» work, whose cause is still NOT

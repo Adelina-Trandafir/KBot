@@ -89,7 +89,8 @@ A picture the help needs is written as ONE line, where the picture should appear
 - `goto:` where K-BOT goes before the shot (optional):
   `view:<navViews key>` (sumar, istoric, rezervari, receptii, plati, extrase, browser, ddf, ord,
   notecab) · `menu:<header menu key>` (angajament_nou, extrase, clasificatii, parteneri,
-  operatiuni_necorelate; `angajament_forexe` exists too but starts the robot -- do not use it
+  operatiuni_necorelate; `jurnal` and `setari` exist too, but open the settings window -- use
+  `setari:<page>` instead; `angajament_forexe` exists too but starts the robot -- do not use it
   for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, pagina, extrase, tema,
   autentificare, foldere, jurnal) · `help` (this topic) / `help:<topic id>`.
 - `prepare:` Romanian, what the operator sets up by hand before «Capturează» (optional).
@@ -115,6 +116,7 @@ screens: KbotForm            # optional (slice 0000-20): where the «?» popup o
 ## Butonul MENIU             # one '## ' per step: the bubble's heading
 target: KbotForm.btnMeniu    # optional: TypeName or TypeName.controlName to ring
 part: footer.right           # optional (slice 0000-23): one painted piece of the target, see below
+reveal: menu                 # optional (slice 0000-31): opens the MENIU menu first (only on KbotForm.btnMeniu)
 goto: view:sumar             # optional: same values as a capture's goto
 Text of the bubble. Plain text; **bold** marks are dropped; a blank line starts a paragraph,
 lines starting with '- ' become bullets.
@@ -140,9 +142,25 @@ whole view) gets the bubble inside it, pointing up at its top edge.
 
 - `node.icon` that normally appears only under the mouse (the main list's refresh) is **shown for
   the step** on the selected row (else the first row on screen that has one), then hidden again.
-- **A part that is not on screen when its step comes is skipped** (in the direction the operator
-  is going): a view without that button, an empty tree, a hidden page. So a tour may list every
-  button a control can have; write only the ones the designer really sets, though.
+- **Hidden by state is SHOWN for the step (slice 0000-30).** What the app hides because of data, a
+  connection or a setting (a nav button the angajament has no data for, «Browser FOREXE» while not
+  connected, a footer button of the FOREXE band, the «+» of a tree row, the footer-left menu icon,
+  a view's own button) is shown while its step is on and put back when the step changes; the bubble
+  adds the note «Il vezi acum doar pentru tur...». **The step's text MUST say what makes it appear for
+  real** (the data, the connection, the setting with its caption). How it works: the runner
+  (`HelpTourRunner`) tries, in order, the part's own bounds; a control whose own `Visible` is False
+  under a visible parent (`target: View.control`, no `part:`) -> it is shown; else `IKBotHelpReveal`
+  (`KBot.ThemingKBotHelp.vb`), asked of the target and every control above it: `KBotNavList` shows a
+  hidden item (`part: item:<Key>`), `AdvancedTreeControl` shows `node.icon` / `footer.left` from the
+  pictures the VIEW gives it (`HelpDemoRightIcon`, `HelpDemoFooterLeftIcon`). A new hidden button =
+  nothing to do for a plain control (name it as `target:`); for a painted tree icon the view sets the
+  picture. The MENIU menu: `reveal: menu` on `target: KbotForm.btnMeniu` (slice 0000-31) opens it with
+  its sometimes-hidden rows and holds it open (`KBotPopupGuard`, so the bubble taking the focus does not
+  close it); the ring covers button + menu (`IKBotHelpReveal.HelpReveal` returns the area). A view that
+  is hidden as a whole (no data) stays unreachable, the step's note says to pick an angajament that has it.
+- **A part that is still not on screen after that is skipped** (in the direction the operator is
+  going): an empty tree, a hidden page. So a tour may list every button a control can have; write
+  only the ones the designer really sets, though.
 - The convention: one step for the control as a whole («Lista angajamentelor»), then one step per
   part, titled «Lista › Lupa», «Tabel › TOTALURI»...
 - `Check-Help.ps1` checks each `part:` against the table above (the type is read from the

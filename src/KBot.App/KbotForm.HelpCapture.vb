@@ -22,10 +22,17 @@ Partial Public Class KbotForm
     Private Sub MenuNou_Opening(sender As Object, e As ComponentModel.CancelEventArgs) Handles menuNou.Opening
         Try
             Dim shown As Boolean = HelpCaptureModeOn
+            Dim logShown As Boolean = FeatureSwitches.VizualizatorJurnaleActiv
             For Each item As KBotMenuItem In menuNou.Items
                 If String.Equals(item.Key, HelpCaptureMenuKey, StringComparison.Ordinal) OrElse
                    String.Equals(item.Key, HelpCaptureMenuSeparatorKey, StringComparison.Ordinal) Then
                     item.Visible = shown
+                End If
+                If String.Equals(item.Key, "jurnal", StringComparison.Ordinal) Then item.Visible = logShown OrElse _helpMenuReveal
+                ' Slice 0000-31: the tour shows the rows that appear only sometimes.
+                If _helpMenuReveal AndAlso String.Equals(item.Key, UncorrelatedMenuKey, StringComparison.Ordinal) Then
+                    _helpUncorrelatedWas = item.Visible
+                    item.Visible = True
                 End If
             Next
         Catch ex As Exception

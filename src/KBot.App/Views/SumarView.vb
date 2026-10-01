@@ -41,13 +41,19 @@ Public Class SumarView
     ' angajament sub antetul altuia.
     Private _requestedCod As String
 
+    ' Slice 0084-02: the 401 net of the «Asociaza parteneri» window. Optional: a host without it
+    ' simply never shows the button.
+    Private ReadOnly _partnersReauth As SumarPartnersReauth
+
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo)))
+                   withReauth As Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo)),
+                   Optional partnersReauth As SumarPartnersReauth = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
+        _partnersReauth = partnersReauth
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
@@ -95,6 +101,7 @@ Public Class SumarView
             If String.IsNullOrWhiteSpace(cod) Then
                 ' Invalidează orice răspuns aflat în zbor (vezi _requestedCod).
                 _requestedCod = Nothing
+                btnPartners.Visible = False
                 ClearHeader()
                 grid.ClearRows()
                 ShowEmpty("Selectați un angajament din arbore.")
@@ -102,6 +109,10 @@ Public Class SumarView
             End If
 
             _requestedCod = cod
+
+            ' Slice 0084-02: the partners are associated with the angajament's DDF, so an
+            ' angajament that has none has nothing to associate with and the button is not shown.
+            btnPartners.Visible = _partnersReauth IsNot Nothing AndAlso info.AreDDF
 
             ' THE HEADER IS FILLED NOW, from the tree row (operator, 08.09.2026).
             ' An angajament that is only in the list -- added by the footer's right icon, with a
@@ -291,9 +302,33 @@ Public Class SumarView
 
             lblEmpty.ForeColor = scheme.Palette.TextDimColor
             lblEmpty.BackColor = scheme.Palette.SurfaceAltColor
+
+            ' Slice 0084-02: the traversal does not carry the generic button rules into the
+            ' children of an IThemedControl, so the house style is applied by hand.
+            ButtonStyles.ApplySecondary(btnPartners, scheme)
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.
             GlobalErrorLog.Write("SumarView.ApplyTheme", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0084-02: opens the window that associates the angajament with one or more partners.
+    ''' The partners are written on its DDF; nothing on this view changes, so there is nothing to
+    ''' reload afterwards.
+    ''' </summary>
+    Private Sub btnPartners_Click(sender As Object, e As EventArgs) Handles btnPartners.Click
+        Try
+            Dim cod As String = _requestedCod
+            If String.IsNullOrWhiteSpace(cod) OrElse _partnersReauth Is Nothing Then Return
+            Using f As New SumarPartnersForm(_apiClient, cod, _partnersReauth)
+                f.ShowDialog(FindForm())
+            End Using
+        Catch ex As Exception
+            ' Boundary UI (button): logged and said.
+            GlobalErrorLog.Write("SumarView.btnPartners_Click", ex)
+            KBotMessage.Show(FindForm(), "Fereastra de asociere a partenerilor nu s-a putut deschide. Detalii în jurnalul de erori.",
+                             "Asociază parteneri", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 

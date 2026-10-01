@@ -10,12 +10,11 @@ Option Strict On
 Public Module FeatureSwitches
 
     ''' <summary>
-    ''' Are operatorul acces la vizualizatorul de jurnale (meniul butonului de opțiuni din bara de
-    ''' titlu a shell-ului, rândul «Arată jurnal»)?
+    ''' Are operatorul acces la vizualizatorul de jurnale (rândul «Jurnal activitate» din
+    ''' meniul antetului shell-ului)?
     '''
-    ''' <para><b>Azi: mereu True</b> — oricine poate deschide jurnalele. Când e False, meniul NU se
-    ''' deschide deloc: fiind singurul rând, un meniu cu el stins ar fi o fereastră goală care se
-    ''' agață de buton degeaba. Vezi <c>MainForm.CapBar_OptionButtonClick</c>.</para>
+    ''' <para>Când e False, rândul e ascuns la fiecare deschidere a meniului. Vezi
+    ''' <c>KbotForm.MenuNou_Opening</c>.</para>
     ''' </summary>
     Public ReadOnly Property VizualizatorJurnaleActiv As Boolean
         Get

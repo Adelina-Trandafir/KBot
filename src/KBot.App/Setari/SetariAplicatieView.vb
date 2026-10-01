@@ -274,7 +274,7 @@ Public Class SetariAplicatieView
 
     Private Sub ChkLogViewer_CheckedChanged(sender As Object, e As EventArgs) Handles chkLogViewer.CheckedChanged
         SalveazaComutator(Sub(s) s.LogViewerEnabled = chkLogViewer.Checked,
-                          If(chkLogViewer.Checked, "Rândul «Arată jurnal» este oferit.", "Rândul «Arată jurnal» este ascuns."))
+                          If(chkLogViewer.Checked, "Rândul «Jurnal activitate» este oferit.", "Rândul «Jurnal activitate» este ascuns."))
     End Sub
 
     Private Sub ChkShowBrowser_CheckedChanged(sender As Object, e As EventArgs) Handles chkShowBrowser.CheckedChanged

@@ -5,6 +5,12 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 01.10.2026) — the «Setări» button leaves the main caption bar; its two rows move
+  into the header menu (MENIU).** `capBar.ShowOptionsButton` off; `menuNou` rows `setari`
+  («Configurare K-BOT») and `jurnal` («Jurnal activitate») wired in `MenuNou_ItemClicked`; the log row
+  follows `FeatureSwitches.VizualizatorJurnaleActiv`. Build clean, nothing run. Help in 0000-29
+  (`SLICE-0000-29-meniu-jurnal-setari.md`).
+
 - **No slice (operator, 30.09.2026) — «Reanalizează rezervările».** Route `POST /api/forexe/rezervari/reanaliza` + footer-menu entry: replays FX_Istoric to fix Rez_Ord/TipRand/Val_Rezervare_Ant/Dif and R_Anterioara/R_Valoare. Code done, nothing run. See `SLICELESS-rezervari-reanaliza.md`.
 - **MOVED TO SLICE 0091 (same day)** — the cause turned out to be a cut `Detaliu` scrape, see
   `SLICE-0091-detaliu-taiat-viteza-asteptari.md`; the note below is kept as it was written.

@@ -36,6 +36,7 @@ Partial Class KbotForm
         Dim KBotMenuItem10 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem11 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem13 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -180,54 +181,59 @@ Partial Class KbotForm
         ' menuNou
         ' 
         menuNou.DropDownButton = btnMeniu
-        KBotMenuItem11.Image = My.Resources.Resources.plus_green
-        KBotMenuItem11.Key = "angajament_nou"
-        KBotMenuItem11.Text = "Angajament nou"
-        KBotMenuItem12.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
-        KBotMenuItem12.Key = "angajament_forexe"
-        KBotMenuItem12.Text = "Creează angajament în FOREXE"
         KBotMenuItem1.Image = My.Resources.Resources.plus_green
-        KBotMenuItem1.Items.Add(KBotMenuItem11)
-        KBotMenuItem1.Items.Add(KBotMenuItem12)
+        KBotMenuItem2.Image = My.Resources.Resources.plus_green
+        KBotMenuItem2.Key = "angajament_nou"
+        KBotMenuItem2.Text = "Angajament nou"
+        KBotMenuItem3.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotMenuItem3.Key = "angajament_forexe"
+        KBotMenuItem3.Text = "Creează angajament în FOREXE"
+        KBotMenuItem1.Items.Add(KBotMenuItem2)
+        KBotMenuItem1.Items.Add(KBotMenuItem3)
         KBotMenuItem1.Key = "adaugare_angajamente"
         KBotMenuItem1.Text = "<b>Adăugare angajamente...</b>"
-        KBotMenuItem2.Image = My.Resources.Resources.FX_RED_16
-        KBotMenuItem2.Key = "operatiuni_necorelate"
-        KBotMenuItem2.Text = "<b>(!) Operațiuni necorelate</b>"
-        KBotMenuItem2.Visible = False
-        KBotMenuItem3.IsSeparator = True
-        KBotMenuItem3.Key = Nothing
-        KBotMenuItem4.Image = My.Resources.Resources.binvoice
-        KBotMenuItem4.Key = "extrase"
-        KBotMenuItem4.Text = "Extrase"
-        KBotMenuItem5.IsSeparator = True
-        KBotMenuItem5.Key = Nothing
-        KBotMenuItem6.Image = My.Resources.Resources.folder_open
-        KBotMenuItem7.Image = My.Resources.Resources.cells
-        KBotMenuItem7.Key = "clasificatii"
-        KBotMenuItem7.Text = "Clasificații bugetare"
-        KBotMenuItem8.Image = My.Resources.Resources.binvoice
-        KBotMenuItem8.Key = "parteneri"
-        KBotMenuItem8.Text = "Parteneri"
-        KBotMenuItem6.Items.Add(KBotMenuItem7)
-        KBotMenuItem6.Items.Add(KBotMenuItem8)
-        KBotMenuItem6.Key = "nomenclatoare"
-        KBotMenuItem6.Text = "Nomenclatoare"
-        menuNou.Items.Add(KBotMenuItem1)
-        menuNou.Items.Add(KBotMenuItem2)
-        menuNou.Items.Add(KBotMenuItem3)
-        menuNou.Items.Add(KBotMenuItem4)
-        menuNou.Items.Add(KBotMenuItem5)
-        KBotMenuItem9.IsSeparator = True
-        KBotMenuItem9.Key = "capturi_ajutor_sep"
-        KBotMenuItem9.Visible = False
-        KBotMenuItem10.Image = My.Resources.Resources.folder_open
-        KBotMenuItem10.Key = "capturi_ajutor"
-        KBotMenuItem10.Text = "Capturi pentru ajutor"
+        KBotMenuItem4.Image = My.Resources.Resources.folder_open
+        KBotMenuItem5.Image = My.Resources.Resources.cells
+        KBotMenuItem5.Key = "clasificatii"
+        KBotMenuItem5.Text = "Clasificații bugetare"
+        KBotMenuItem6.Image = My.Resources.Resources.binvoice
+        KBotMenuItem6.Key = "parteneri"
+        KBotMenuItem6.Text = "Parteneri"
+        KBotMenuItem4.Items.Add(KBotMenuItem5)
+        KBotMenuItem4.Items.Add(KBotMenuItem6)
+        KBotMenuItem4.Key = "nomenclatoare"
+        KBotMenuItem4.Text = "<b>Nomenclatoare</b>"
+        KBotMenuItem7.IsSeparator = True
+        KBotMenuItem7.Key = Nothing
+        KBotMenuItem8.Image = My.Resources.Resources.FX_RED_16
+        KBotMenuItem8.Key = "operatiuni_necorelate"
+        KBotMenuItem8.Text = "<b>(!) Operațiuni necorelate</b>"
+        KBotMenuItem8.Visible = False
+        KBotMenuItem9.Image = My.Resources.Resources.binvoice
+        KBotMenuItem9.Key = "extrase"
+        KBotMenuItem9.Text = "Extrase"
+        KBotMenuItem10.IsSeparator = True
+        KBotMenuItem10.Key = "capturi_ajutor_sep"
         KBotMenuItem10.Visible = False
-        menuNou.Items.Add(KBotMenuItem6)
+        KBotMenuItem11.Image = My.Resources.Resources.folder_open
+        KBotMenuItem11.Key = "capturi_ajutor"
+        KBotMenuItem11.Text = "Capturi pentru ajutor"
+        KBotMenuItem11.Visible = False
+        KBotMenuItem12.Image = My.Resources.Resources.Folder_blue_24
+        KBotMenuItem12.Key = "jurnal"
+        KBotMenuItem12.Text = "Jurnal activitate"
+        KBotMenuItem13.Image = My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32
+        KBotMenuItem13.Key = "setari"
+        KBotMenuItem13.Text = "<b><i>Configurare K-BOT</i></b>"
+        menuNou.Items.Add(KBotMenuItem1)
+        menuNou.Items.Add(KBotMenuItem4)
+        menuNou.Items.Add(KBotMenuItem7)
+        menuNou.Items.Add(KBotMenuItem8)
         menuNou.Items.Add(KBotMenuItem9)
         menuNou.Items.Add(KBotMenuItem10)
+        menuNou.Items.Add(KBotMenuItem11)
+        menuNou.Items.Add(KBotMenuItem12)
+        menuNou.Items.Add(KBotMenuItem13)
         ' 
         ' pnlRoot
         ' 
@@ -591,17 +597,15 @@ Partial Class KbotForm
         capBar.Location = New Point(0, 0)
         capBar.Margin = New Padding(4, 5, 4, 5)
         capBar.Name = "capBar"
-        capBar.OptionButtonImage = My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32
-        capBar.OptionButtonPadding = 2
+        capBar.OptionButtonImage = Nothing
+        capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
-        capBar.ShowOptionsButton = True
         capBar.ShowThemeButton = True
         capBar.Size = New Size(1920, 57)
         capBar.TabIndex = 4
         capBar.TabStop = False
         capBar.Text = "K-BOT"
-        capBar.TintOptionButtonImage = False
         ' 
         ' KbotForm
         ' 

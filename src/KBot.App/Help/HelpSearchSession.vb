@@ -163,6 +163,10 @@ Friend NotInheritable Class HelpSearchSession
                 End Select
                 Return True
             End If
+            If TypeOf row.Tag Is HelpService.WhatsNewMarker Then
+                UpdateOfferForm.ShowRecent(_service.MainWindow())
+                Return True
+            End If
             Dim topic As HelpTopic = TryCast(row.Tag, HelpTopic)
             If topic IsNot Nothing Then
                 _service.ShowTopic(topic.Id)

@@ -10,6 +10,11 @@ target: SumarView.pnlHeader
 goto: view:sumar
 Sus stau datele angajamentului selectat în arbore: codul, data din FOREXE, data creării și a definitivării, starea, dacă a fost încărcat sau preluat și descrierea.
 
+## Asociază parteneri
+<!-- slice: 0084-02, 0000-28, 0000-30 -->
+target: SumarView.btnPartners
+Butonul apare doar când angajamentul are un document de fundamentare (se face din vederea «Rezervări», cu semnul «+»); altfel nu se vede. Deschide fereastra în care asociezi angajamentul cu unul sau mai mulți parteneri: îi alegi din listă, apeși «Asociază», apoi «Salvează».
+
 ## Indicatorii
 <!-- slice: 0011, 0000-20 -->
 target: SumarView.grid

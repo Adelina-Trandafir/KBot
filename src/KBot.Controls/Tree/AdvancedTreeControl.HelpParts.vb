@@ -16,10 +16,40 @@ Imports KBot.Theming
 ''' </list>
 ''' </summary>
 Partial Public Class AdvancedTreeControl
-    Implements IKBotHelpParts, IKBotCaptureRedaction
+    Implements IKBotHelpParts, IKBotHelpReveal, IKBotCaptureRedaction
 
     ' The row whose right icon the tour shows although the mouse is not on it (Nothing = none).
     Private _helpDemoItem As TreeItem
+
+    ' Slice 0000-30: what the tour shows when the view hides the button (nothing to do yet): the
+    ' view hands over the picture of its row button / footer-left button, the tree draws it for the
+    ' step. Nothing = this tree has nothing to show there.
+    Private _helpDemoRightIcon As Image
+    Private _helpDemoFooterLeftIcon As Image
+    Private _helpRevealedRow As TreeItem
+    Private _helpRevealedFooterLeft As Boolean
+
+    <System.ComponentModel.Browsable(False)>
+    <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property HelpDemoRightIcon As Image
+        Get
+            Return _helpDemoRightIcon
+        End Get
+        Set(value As Image)
+            _helpDemoRightIcon = value
+        End Set
+    End Property
+
+    <System.ComponentModel.Browsable(False)>
+    <System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property HelpDemoFooterLeftIcon As Image
+        Get
+            Return _helpDemoFooterLeftIcon
+        End Get
+        Set(value As Image)
+            _helpDemoFooterLeftIcon = value
+        End Set
+    End Property
 
     Public Function HelpPartBounds(part As String) As Rectangle Implements IKBotHelpParts.HelpPartBounds
         Select Case part
@@ -67,6 +97,53 @@ Partial Public Class AdvancedTreeControl
             _helpDemoItem = If(candidates.Contains(pSelectedItem), pSelectedItem, candidates.FirstOrDefault())
         End If
         Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0000-30: <c>node.icon</c> when no visible row has a button (the view shows it only
+    ''' when there is something to do): the view's picture goes on the selected row, else the first
+    ''' row without children, else the first row. <c>footer.left</c> when the view hides it: the
+    ''' view's picture takes its place. Nothing when the view gave no picture.
+    ''' </summary>
+    Public Function HelpReveal(target As Control, part As String, ByRef area As Rectangle, ByRef note As String) As Boolean Implements IKBotHelpReveal.HelpReveal
+        If Not ReferenceEquals(target, Me) Then Return False
+        Select Case part
+            Case "node.icon"
+                If _helpDemoRightIcon Is Nothing OrElse _helpRevealedRow IsNot Nothing Then Return False
+                Dim rows As List(Of TreeItem) = GetVisibleItems().Where(Function(it) RowOnScreen(GetItemY(it), _itemHeight)).ToList()
+                If rows.Any(Function(it) it.RightIcon IsNot Nothing) Then Return False
+                Dim pick As TreeItem = Nothing
+                If pSelectedItem IsNot Nothing AndAlso rows.Contains(pSelectedItem) AndAlso pSelectedItem.Children.Count = 0 Then
+                    pick = pSelectedItem
+                Else
+                    pick = rows.FirstOrDefault(Function(it) it.Children.Count = 0)
+                    If pick Is Nothing Then pick = rows.FirstOrDefault()
+                End If
+                If pick Is Nothing Then Return False
+                pick.RightIcon = _helpDemoRightIcon
+                _helpRevealedRow = pick
+                Invalidate()
+                Return True
+            Case "footer.left"
+                If _helpDemoFooterLeftIcon Is Nothing OrElse FooterLeftIcon IsNot Nothing OrElse _helpRevealedFooterLeft Then Return False
+                FooterLeftIcon = _helpDemoFooterLeftIcon
+                _helpRevealedFooterLeft = True
+                Return True
+            Case Else
+                Return False
+        End Select
+    End Function
+
+    Public Sub HelpRevealEnd() Implements IKBotHelpReveal.HelpRevealEnd
+        If _helpRevealedRow IsNot Nothing Then
+            _helpRevealedRow.RightIcon = Nothing
+            _helpRevealedRow = Nothing
+            Invalidate()
+        End If
+        If _helpRevealedFooterLeft Then
+            _helpRevealedFooterLeft = False
+            FooterLeftIcon = Nothing
+        End If
     End Sub
 
     ' A row band [top, top + height) lies inside the rows area (below the bands at the top,

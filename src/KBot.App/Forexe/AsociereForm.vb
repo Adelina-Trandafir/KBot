@@ -31,6 +31,12 @@ Imports KBot.Theming
 ''' (<c>routes/forexe/asociere.py</c>, <c>_BLOCAJE_SQL</c>); here it is only shown and refused
 ''' up front, so the operator never reaches an error message after dragging.</para>
 '''
+''' <para><b>The same rule in proposal mode</b> (operator, 01.10.2026). Until then every link
+''' written before the download arrived frozen there, whatever the ordonantari said, so a wrong
+''' old link could not be corrected while placing the new snapshots. Now the old links
+''' (<c>InstantaneuLegat.Context</c>) move like any other row unless the server marked them
+''' blocked; a moved one is sent with the save, an untouched one is not sent at all.</para>
+'''
 ''' <para><b>O singură salvare, la sfârșit</b> (D-H). Tragerile schimbă doar tabloul local;
 ''' nimic nu pleacă spre server până la buton. Comenzile trimise sunt DOAR cele care diferă de
 ''' ce s-a citit — o legătură neatinsă nu se rescrie, iar tăcerea înseamnă «las-o cum e».</para>
@@ -2670,10 +2676,11 @@ Public Class AsociereForm
         If instantanee Is Nothing Then Return 0
         Dim ramase As Integer = 0
         For Each i As InstantaneuLegat In instantanee
-            ' `Not i.Blocat`: rândurile de CONTEXT (felia 0056) nu poartă hotărâri, deci nu au
-            ' cum să lipsească din ele. Unul neașezat printre ele — cel al cărui rând de istoric
-            ' nu e în descărcarea asta — ar stinge butonul pentru totdeauna.
-            If i.Blocat Then Continue For
+            ' CONTEXT rows (slice 0056) owe no decision, so none can be missing: for a link
+            ' written before this download, silence means «leave it as it is» — also now
+            ' that the operator may move them (01.10.2026). An unplaced one among them would
+            ' otherwise keep the button off for good. A blocked row cannot be decided at all.
+            If i.Blocat OrElse i.Context Then Continue For
             Dim idrr As Integer = i.Idrr
             If pozitie IsNot Nothing AndAlso pozitie.ContainsKey(i.Idrh) Then idrr = pozitie(i.Idrh)
             Dim eIgnorat As Boolean = ignorat IsNot Nothing AndAlso
@@ -2735,9 +2742,8 @@ Public Class AsociereForm
         Dim out As New List(Of DecizieAsociere)()
 
         For Each inst As InstantaneuLegat In instantanee
-            ' Rândurile de CONTEXT nu poartă hotărâri: acoperirea cerută de server e exact
-            ' mulțimea de așezat, iar o decizie pentru un rând din afara ei e respinsă cu 400
-            ' — și pe drept, ar rescrie tăcut legături vechi la fiecare descărcare.
+            ' A blocked row carries nothing: an ordonantare froze its link, or it has no name
+            ' the save could use.
             If inst.Blocat Then Continue For
 
             Dim idrr As Integer = inst.Idrr
@@ -2746,6 +2752,39 @@ Public Class AsociereForm
                                       ignorat.ContainsKey(inst.Idrh) AndAlso ignorat(inst.Idrh)
             Dim eStergere As Boolean = stergere IsNot Nothing AndAlso
                                        stergere.ContainsKey(inst.Idrh) AndAlso stergere(inst.Idrh)
+
+            If inst.Context Then
+                ' A row written BEFORE this download (01.10.2026). A missing dictionary entry
+                ' means «as on the server», not False: the shell calls this with empty
+                ' dictionaries, and an old «no change» mark must not read as a change.
+                If ignorat Is Nothing OrElse Not ignorat.ContainsKey(inst.Idrh) Then eIgnorat = inst.Ignorat
+                If stergere Is Nothing OrElse Not stergere.ContainsKey(inst.Idrh) Then eStergere = inst.Stergere
+                ' Untouched = nothing sent. Silence means «leave it as it is»; resending it
+                ' would rewrite old links at every download.
+                If idrr = inst.Idrr AndAlso eIgnorat = inst.Ignorat AndAlso eStergere = inst.Stergere Then Continue For
+
+                ' A CORRECTION: anchored on the real IDRH (the key here is its negative).
+                Dim c As New DecizieAsociere() With {.Idrh = -inst.Idrh, .DataH = inst.DataH}
+                If idrr = 0 Then
+                    ' Unplaced: marked «no change», or simply taken off its reception. The
+                    ' two write different things (`Sters = 1` against `Sters = 0`).
+                    c.Actiune = If(eIgnorat, ActiuneAsociere.Ignorat, ActiuneAsociere.Desprins)
+                ElseIf idrr < 0 Then
+                    Dim capeteleEi As CapeteLant = Nothing
+                    capete.TryGetValue(idrr, capeteleEi)
+                    c.Actiune = ActiuneaPeReceptieNoua(inst.Idrh, capeteleEi, eStergere)
+                    c.ReceptieNoua = EtichetaTrimisa(idrr)
+                Else
+                    c.Actiune = If(eStergere, ActiuneAsociere.Stergere, ActiuneAsociere.Asociat)
+                    If ancora.ContainsKey(idrr) Then
+                        c.RandReceptie = ancora(idrr)
+                    Else
+                        c.Idrr = idrr
+                    End If
+                End If
+                out.Add(c)
+                Continue For
+            End If
 
             ' Ancora pleacă exact cum a venit din propunere (F24 / F34): indicele rândului
             ' de istoric, sau — când rândul nu e în această descărcare — id-ul lui de
@@ -2925,12 +2964,15 @@ Public Class AsociereForm
     ''' server is left untouched.
     ''' </summary>
     ''' <remarks>
-    ''' <para><b>The dividing line is not a list kept on the side, it is <c>Blocat</c>.</b> In
-    ''' proposal mode the server marks <c>Blocat = True</c> on EVERY context row — that is, on
-    ''' everything already linked in the database — and <c>False</c> on exactly the set to be
-    ''' decided in this run (see <c>AsociereStare.DinPropunere</c>). The same line is what
-    ''' <see cref="NehotarateleCount"/> and <see cref="DeciziiDin"/> read, so this button cannot
-    ''' end up believing something different from the rest of the form.</para>
+    ''' <para><b>The dividing line is not a list kept on the side, it is <c>Context</c>.</b> In
+    ''' proposal mode every row written before this download carries it (see
+    ''' <c>AsociereStare.DinPropunere</c>); the rest is exactly the set to be decided in this
+    ''' run. The same line is what <see cref="NehotarateleCount"/> and <see cref="DeciziiDin"/>
+    ''' read, so this button cannot end up believing something different from the rest of the
+    ''' form. Until 01.10.2026 the line was <c>Blocat</c>, which then meant the same thing.</para>
+    ''' <para><b>Old links go back to how the server has them.</b> Since they can be moved here,
+    ''' «starting over» has to undo those moves too — otherwise the button would leave behind
+    ''' half of what the operator did since the window opened.</para>
     ''' <para><b>It empties to UNPLACED, it does not restore the automatic suggestion.</b> The
     ''' button exists to wipe everything decided since the window opened; going back to the
     ''' suggestion would leave behind decisions the operator never took, which is exactly what
@@ -2942,8 +2984,14 @@ Public Class AsociereForm
         Try
             If _stare Is Nothing Then Return
             Dim deGolit As List(Of InstantaneuLegat) =
-                _stare.Instantanee.Where(Function(i) Not i.Blocat).ToList()
-            If deGolit.Count = 0 Then
+                _stare.Instantanee.Where(Function(i) Not i.Blocat AndAlso Not i.Context).ToList()
+            ' Old links the operator moved in this window: they go back to the server's state.
+            Dim deReadus As List(Of InstantaneuLegat) =
+                _stare.Instantanee.Where(Function(i) i.Context AndAlso
+                                             (PozitiaLui(i) <> i.Idrr OrElse
+                                              EsteIgnorat(i.Idrh) <> i.Ignorat OrElse
+                                              EsteStergere(i.Idrh) <> i.Stergere)).ToList()
+            If deGolit.Count = 0 AndAlso deReadus.Count = 0 Then
                 ntfMesaj.Show("Descărcarea asta n-a adus niciun instantaneu de așezat — " &
                               "nu e nimic de golit.", NoticeKind.Warning)
                 Return
@@ -2954,7 +3002,10 @@ Public Class AsociereForm
                 $"Se pun înapoi în «Neașezate» toate cele {deGolit.Count} instantanee aduse de " &
                 "descărcarea curentă, iar ștergerile și marcajele «fără schimbare» puse de " &
                 "dumneavoastră se anulează." & Environment.NewLine &
-                "Legăturile care erau deja pe server NU se ating." & Environment.NewLine &
+                If(deReadus.Count = 0,
+                   "Legăturile care erau deja pe server NU se ating.",
+                   $"Cele {deReadus.Count} legături vechi pe care le-ați mutat aici revin la cum " &
+                   "sunt pe server.") & Environment.NewLine &
                 "Goliți așezările?",
                 "K-BOT — Așezarea recepțiilor descărcate",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2)
@@ -2964,6 +3015,11 @@ Public Class AsociereForm
                 _pozitie(inst.Idrh) = 0
                 _ignorat(inst.Idrh) = False
                 _stergere(inst.Idrh) = False
+            Next
+            For Each inst As InstantaneuLegat In deReadus
+                _pozitie(inst.Idrh) = inst.Idrr
+                _ignorat(inst.Idrh) = inst.Ignorat
+                _stergere(inst.Idrh) = inst.Stergere
             Next
             _receptieSelectata = Nothing
             gridLant.ClearRows()

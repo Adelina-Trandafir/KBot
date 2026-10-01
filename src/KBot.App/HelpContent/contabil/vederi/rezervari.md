@@ -26,7 +26,7 @@ Rezervările de credite ale angajamentului, pe luni și zile.
 | Unde | Ce face |
 |------|---------|
 | capul arborelui, dreapta | **Graficul rezervărilor**: evoluția rezervărilor și totalurile pe luni, într-o fereastră separată |
-| subsol, stânga | **acțiunile documentului de fundamentare** pe acest angajament (Adaugă rezervare / Definitivează / Derulează / Generează PDF final) — vezi [Adaugă rezervare, Definitivează, Derulează](topic:contabil.ddf.rezervare); plus **«Reanalizează rezervările»**, care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare: îți arată întâi cifrele și scrie doar după ce confirmi |
+| subsol, stânga | **acțiunile documentului de fundamentare** pe acest angajament (Adaugă rezervare / Definitivează / Derulează / Generează PDF final) — vezi [Adaugă rezervare, Definitivează, Derulează](topic:contabil.ddf.rezervare); iconița apare doar când în arbore nu mai e nicio rezervare cu «+» (de adus din FOREXE în K-BOT); plus **«Reanalizează rezervările»**, care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare: îți arată întâi cifrele și scrie doar după ce confirmi |
 | subsol, dreapta | reîmprospătează din FOREXE doar rezervările (antet, indicatori, istoric) |
 
 <!-- capture: grafic-rezervari | caption: Graficul rezervărilor | goto: view:rezervari | prepare: Apăsați iconița din capul arborelui de rezervări, ca să se deschidă graficul. -->

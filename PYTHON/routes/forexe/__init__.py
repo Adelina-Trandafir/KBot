@@ -89,6 +89,10 @@ from . import ord_edit  # noqa: E402,F401
 # Fisier separat, ca ddf.py (citirea vederii 0020) sa ramana neatins; `routes/ddf/*` —
 # clientul Access legacy pe X-Api-Key — nu se atinge deloc.
 from . import ddf_edit  # noqa: E402,F401
+# ddf_parteneri.py = partenerii asociati unui DDF (FX_DDF_Parteneri): GET/POST
+# /api/forexe/ddf/parteneri-asociati (butonul din Sumar, felia 0084-02) + functiile pe care le
+# cheama ddf_edit.py la citire / salvare (pagina «Parteneri» a editorului, felia 0094-02).
+from . import ddf_parteneri  # noqa: E402,F401
 from . import pdf  # noqa: E402,F401
 from . import prelucrare  # noqa: E402,F401
 from . import asociere  # noqa: E402,F401

@@ -5,10 +5,10 @@ part: contabil
 topic: contabil.notecab
 ---
 ## Notele angajamentului
-<!-- slice: 0088, 0097, 0000-20 -->
+<!-- slice: 0088, 0097, 0000-20, 0000-30 -->
 target: NoteCabView.tree
 goto: view:notecab
-Notele de corecție CAB care privesc angajamentul selectat. Vederea apare doar pe un angajament pentru care s-a făcut cel puțin o notă; altfel butonul ei e gri.
+Notele de corecție CAB care privesc angajamentul selectat. Vederea apare doar pe un angajament pentru care s-a făcut cel puțin o notă; altfel butonul ei nu se vede. Dacă acum nu e deschisă, alege în listă un angajament cu note și pornește turul din nou.
 
 ## Arbore › Lupa
 <!-- slice: 0027, 0000-23 -->
@@ -46,6 +46,7 @@ part: item:recipisa
 Recipisa primită din FOREXE pentru încărcarea notei. O notă fără recipisă arată butonul «Validează documentul».
 
 ## Unde faci o notă nouă
-<!-- slice: 0084, 0088, 0000-20 -->
+<!-- slice: 0084, 0088, 0000-20, 0000-30, 0000-31 -->
 target: KbotForm.btnMeniu
-O notă nouă se face din MENIU › (!) Operațiuni necorelate. Intrarea apare doar când există operațiuni necorelate; atunci și butonul MENIU poartă semnul (!).
+reveal: menu
+O notă nouă se face din MENIU › (!) Operațiuni necorelate. Meniul se deschide cu un clic pe buton; în tur îl vezi deschis. Intrarea apare doar când există operațiuni necorelate; atunci și butonul MENIU poartă semnul (!), iar fără ele intrarea lipsește.

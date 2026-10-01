@@ -132,7 +132,7 @@ Partial Public Class KbotForm
     ''' <c>/api/forexe/angajamente/upsert</c>, with <c>WithReauth</c> on the HTTP call. It is
     ''' the flow of the old <c>btnSinc</c>. With no DbName (no login, possible only in the Debug
     ''' harness) it stops after the download -- the data is saved locally by the coordinator
-    ''' anyway. Unreachable from the shell since 20.09.2026 (see <c>CapBar_OptionButtonClick</c>).
+    ''' anyway. Unreachable from the shell since 20.09.2026 (it left the options menu, which is now the header menu).
     ''' </summary>
     Private Async Function SincronizeazaAsync() As Task
         busyBar.Running = True

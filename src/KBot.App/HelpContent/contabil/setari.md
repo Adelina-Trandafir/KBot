@@ -8,9 +8,10 @@ screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, Seta
 keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
-<!-- slice: 0072, 0072-01 -->
-Butonul cu **rotița** din bara de titlu a ferestrei principale deschide **Setări...** și
-**Arată jurnal**.
+<!-- slice: 0072, 0072-01, 0000-29, fara-felie -->
+Butonul **MENIU** al ferestrei principale are două rânduri pentru această fereastră:
+**Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
+(rândul se poate ascunde din pagina **Aplicație**).
 
 <!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie -->
 

@@ -250,6 +250,7 @@ Partial Public Class AdvancedTreeControl
             Dim nodeStyle As FontStyle = Me.Font.Style
             If it.Bold Then nodeStyle = nodeStyle Or FontStyle.Bold
             If it.Italic Then nodeStyle = nodeStyle Or FontStyle.Italic
+            If it.Underline Then nodeStyle = nodeStyle Or FontStyle.Underline
 
             If nodeStyle <> Me.Font.Style Then
                 nodeFont = New Font(Me.Font, nodeStyle)

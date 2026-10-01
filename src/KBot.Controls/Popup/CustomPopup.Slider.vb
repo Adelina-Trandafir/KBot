@@ -136,9 +136,9 @@ Partial Public Class CustomPopup
         Dim r As Rectangle = RowBounds(index)
         If r.IsEmpty Then Return Rectangle.Empty
 
-        Dim padX As Integer = ThemeShapes.ScaleDpi(Me, PadXLogical)
-        Dim gap As Integer = ThemeShapes.ScaleDpi(Me, SliderGapLogical)
-        Dim valW As Integer = ThemeShapes.ScaleDpi(Me, SliderValueWidthLogical)
+        Dim padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
+        Dim gap As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderGapLogical)
+        Dim valW As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderValueWidthLogical)
         Dim eticheta As Integer = SliderLabelWidth(index)
 
         Dim stanga As Integer = r.Left + padX + IconGutter() + eticheta + gap
@@ -146,7 +146,7 @@ Partial Public Class CustomPopup
         Dim latime As Integer = dreapta - stanga
         If latime <= 0 Then Return Rectangle.Empty
 
-        Dim h As Integer = ThemeShapes.ScaleDpi(Me, SliderTrackHeightLogical)
+        Dim h As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderTrackHeightLogical)
         Return New Rectangle(stanga, r.Top + (r.Height - h) \ 2, latime, h)
     End Function
 
@@ -168,7 +168,7 @@ Partial Public Class CustomPopup
         Dim sina As Rectangle = SliderTrackBounds(index)
         If sina.IsEmpty Then Return Items(index).SliderValue
 
-        Dim deget As Integer = ThemeShapes.ScaleDpi(Me, SliderThumbWidthLogical)
+        Dim deget As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderThumbWidthLogical)
         Dim utila As Integer = sina.Width - deget
         If utila <= 0 Then Return Items(index).SliderValue
 
@@ -186,7 +186,7 @@ Partial Public Class CustomPopup
     ' X-ul (în client) al unei valori pe șină — inversa lui SliderValueAt, pentru liniuțele de
     ' oprire și pentru deget, ca amândouă să stea pe același calcul.
     Private Function SliderXForValue(it As CustomPopupItem, sina As Rectangle, value As Integer) As Integer
-        Dim deget As Integer = ThemeShapes.ScaleDpi(Me, SliderThumbWidthLogical)
+        Dim deget As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderThumbWidthLogical)
         Dim utila As Integer = Math.Max(0, sina.Width - deget)
         Dim interval As Integer = it.SliderMaximum - it.SliderMinimum
         Dim fractie As Double = If(interval <= 0, 0.0, (value - it.SliderMinimum) / CDbl(interval))
@@ -195,8 +195,8 @@ Partial Public Class CustomPopup
 
     ' Poziția (în client) a degetului pentru valoarea curentă.
     Private Function SliderThumbRect(index As Integer, sina As Rectangle) As Rectangle
-        Dim latime As Integer = ThemeShapes.ScaleDpi(Me, SliderThumbWidthLogical)
-        Dim inaltime As Integer = ThemeShapes.ScaleDpi(Me, SliderThumbHeightLogical)
+        Dim latime As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderThumbWidthLogical)
+        Dim inaltime As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderThumbHeightLogical)
         ' Degetul nu are voie să iasă din rând: cu un font mic și un rând strâns, înălțimea lui
         ' logică (16) poate depăși slotul, iar el s-ar picta peste rândurile vecine.
         Dim rand As Rectangle = RowBounds(index)
@@ -353,7 +353,7 @@ Partial Public Class CustomPopup
             ' să concureze cu șina. Cele de sub deget sunt acoperite de el, ceea ce e și intenția.
             Dim puncte As Integer() = it.SliderSnapPoints
             If puncte IsNot Nothing AndAlso puncte.Length > 0 Then
-                Dim inaltimeLiniuta As Integer = Math.Max(deget.Height, sina.Height + ThemeShapes.ScaleDpi(Me, 6))
+                Dim inaltimeLiniuta As Integer = Math.Max(deget.Height, sina.Height + ThemeShapes.ScaleDpi(ScaleRef, 6))
                 Dim sus As Integer = sina.Top + sina.Height \ 2 - inaltimeLiniuta \ 2
                 Using pen As New Pen(EffectiveBorderColor)
                     For Each p As Integer In puncte
@@ -376,7 +376,7 @@ Partial Public Class CustomPopup
 
             ' Degetul: aceeași umplere «modern» ca a rândului evidențiat, deci se potrivește cu
             ' restul meniului fără să introducă o culoare a lui.
-            Dim razaDeget As Integer = Math.Max(2, ThemeShapes.ScaleDpi(Me, 3))
+            Dim razaDeget As Integer = Math.Max(2, ThemeShapes.ScaleDpi(ScaleRef, 3))
             Using path As GraphicsPath = ThemeShapes.RoundedRect(deget, razaDeget)
                 ThemeShapes.FillModern(g, path, deget,
                                        If(it.Enabled, EffectiveHighlightBackColor, EffectiveSeparatorColor),
@@ -389,7 +389,7 @@ Partial Public Class CustomPopup
         End If
 
         ' Valoarea, la dreapta, aliniată la dreapta ca cifrele să nu joace de la un pas la altul.
-        Dim valW As Integer = ThemeShapes.ScaleDpi(Me, SliderValueWidthLogical)
+        Dim valW As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderValueWidthLogical)
         Dim vr As New Rectangle(r.Right - padX - valW, r.Top, valW, r.Height)
         TextRenderer.DrawText(g, SliderValueText(it), Font, vr, fore,
                               TextFormatFlags.Right Or TextFormatFlags.VerticalCenter Or

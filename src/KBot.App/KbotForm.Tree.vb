@@ -37,6 +37,8 @@ Partial Public Class KbotForm
         End If
 
         Dim an As Integer = CInt(cboAn.SelectedItem)
+        cboSs.Visible = Not AppSettings.Current.TreeSortIsDate
+        lblSs.Visible = Not AppSettings.Current.TreeSortIsDate
         ' Sorted by date the tree is a timeline of the whole year: every source, not only the
         ' SS in the combo (operator, 23.09.2026 -- slice 0777).
         Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, CStr(cboSs.SelectedItem))
@@ -124,6 +126,7 @@ Partial Public Class KbotForm
                 node.Cells(COL_SURSE) = New AdvancedTreeControl.TreeItem.CellData With {
                     .Value = FormatSurse(info.Surse)}
                 node.Bold = info.AreIndicatori   ' legacy: bold = has sources (indicatori)
+                node.Underline = _descarcateInSesiune.Contains(cod)   ' saved during this run
                 node.Tooltip = TooltipFor(info)
                 'node.ShowRightIconOnHover = True
 

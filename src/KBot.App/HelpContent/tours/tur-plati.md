@@ -17,10 +17,10 @@ part: header.search
 Caută în arbore o lună sau o zi. Esc golește căutarea și închide banda.
 
 ## Arbore › Semnul «+»
-<!-- slice: 0049-01, 0000-23 -->
+<!-- slice: 0049-01, 0000-23, 0000-30 -->
 target: PlatiView.tree
 part: node.icon
-Stă pe zilele și pe lunile care au plăți neordonanțate. Pe o zi face o ordonanțare din plățile ei; pe o lună, câte una pentru fiecare zi a lunii. Dacă nu există plăți neordonanțate, semnul nu apare și pasul acesta se sare.
+Stă pe zilele și pe lunile care au plăți neordonanțate. Pe o zi face o ordonanțare din plățile ei; pe o lună, câte una pentru fiecare zi a lunii. Când nu mai există plăți neordonanțate, semnul nu se vede; apare din nou când intră o plată nouă, încă neordonanțată (de exemplu după o descărcare din FOREXE).
 
 ## Plățile nodului ales
 <!-- slice: 0017 -->

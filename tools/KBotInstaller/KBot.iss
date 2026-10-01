@@ -7,6 +7,8 @@
 ;    /DAppVersion=<KBot.App FileVersion>        required (x.x.x.x)
 ;    /DOutputDir=<artifacts dir>                required
 ;    /DOutputBaseFilename=KBot_Setup_<stamp>    required
+;    /DNewsInc=<file>                           optional: "what is new" page (last 3 versions),
+;                                               written by ReleaseNotes.ps1 -Action Installer
 ;    /DSIGN=1 /Skbotsign="<signtool cmd> $f"    optional: signs Setup + uninstaller
 ;
 ;  Operator-visible text is Romanian (with diacritics). Everything else is English
@@ -48,6 +50,9 @@
 #define RuntimeSetup     "prereq\windowsdesktop-runtime-8-win-x64.exe"
 #define RomanianIsl      "Romanian.isl"
 
+#ifdef NewsInc
+  #define HAVE_NEWS
+#endif
 #if FileExists(AddBackslash(SourcePath) + RuntimeSetup)
   #define HAVE_RUNTIME
 #endif
@@ -77,7 +82,12 @@ DisableDirPage=auto
 DirExistsWarning=no
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
+#ifdef HAVE_NEWS
+; The news page below is the first page (same text as the in-app update box).
+DisableWelcomePage=yes
+#else
 DisableWelcomePage=no
+#endif
 
 OutputDir={#OutputDir}
 OutputBaseFilename={#OutputBaseFilename}
@@ -166,6 +176,11 @@ Filename: "{app}\{#MyAppExe}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; W
 Type: filesandordirs; Name: "{app}\Logs"
 
 [Code]
+#ifdef HAVE_NEWS
+// NewsText: the notes of the newest versions (generated include, see header).
+#include NewsInc
+#endif
+
 // .NET Desktop Runtime 8 (x64) is a prerequisite: the app is published
 // framework-dependent. The runtime installer records versions under the 32-bit
 // registry view even on x64 (verified: HKLM\SOFTWARE\WOW6432Node\dotnet\...).
@@ -215,6 +230,9 @@ var
   InstalledSource: String;    // 'exe' or 'registry', for the log
   IsUpgrade: Boolean;
   IsReinstall: Boolean;       // same version, operator said yes
+#ifdef HAVE_NEWS
+  NewsPage: TOutputMsgMemoWizardPage;
+#endif
 
 // "a.b.c.d" -> packed number. Missing parts are 0, so "1.0.31" = "1.0.31.0"
 // (UpdatePolicy.Normalize). False on anything that is not 1..4 numeric parts.
@@ -406,8 +424,17 @@ end;
 // in-app offer uses -- and the destination is pinned to the folder the app is in.
 procedure InitializeWizard;
 var
-  What: String;
+  What, Intro: String;
 begin
+#ifdef HAVE_NEWS
+  // First page (the welcome page is switched off): what is new, like the update box.
+  if IsUpgrade then
+    Intro := 'Pe acest calculator este instalat {#MyAppName} ' + InstalledVersion + '. Acest program instalează versiunea {#AppVersion}.'
+  else
+    Intro := 'Acest program va instala {#MyAppName} {#AppVersion}.';
+  NewsPage := CreateOutputMsgMemoPage(wpWelcome, 'Noutăți {#MyAppName}',
+    'Ce s-a schimbat în ultimele versiuni', Intro, NewsText);
+#endif
   if not IsUpgrade then
     Exit;
   if IsReinstall then

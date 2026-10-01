@@ -120,6 +120,9 @@ Partial Public Class KbotForm
                 End Using
             End If
 
+            ' Underlined in the tree from now on (until the program closes).
+            _descarcateInSesiune.Add(cod)
+
             ' Written: the tree has other Are* flags (istoric, receptii, plati appear now), and
             ' the open view shows old figures. Both are re-read -- BUT the node stays selected
             ' (operator, 10.09.2026): a reload that clears the selection throws the operator
@@ -235,6 +238,12 @@ Partial Public Class KbotForm
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return New ReceptiiSarite()
 
+            ' Queued behind other FOREXE actions: no question, every reception is read.
+            If _descarcareFaraIntrebare.Remove(cod) Then
+                _controller.SpuneStare($"«{cod}»: se descarcă toate recepțiile (mai multe actualizări în același timp).")
+                Return New ReceptiiSarite()
+            End If
+
             Dim info As ReceptiiInfo
             busyBar.Running = True
             Try
@@ -284,6 +293,7 @@ Partial Public Class KbotForm
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return
 
+            MarcheazaDescarcareaFaraIntrebare(cod)
             ' Slice 0098: through the robot queue, in the order the operator asked.
             Await _robotQueue.RunAsync("receptii|" & cod, $"Reîmprospătare recepții «{cod}»",
                                        Function() ReimprospateazaReceptiiAsync(cod))

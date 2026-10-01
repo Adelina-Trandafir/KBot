@@ -2291,23 +2291,30 @@ Public Class ApiClient
     ' server (care respinge cu 400); aici se trimite doar ce a fost pus, fara sa se
     ' fabrice nimic: `Idrr = 0` inseamna «niciuna» si devine null, nu zero.
     Private Shared Function CatreFir(d As DecizieAsociere) As PostPrelucrareDecizie
-        ' `Desprins` exista doar in editorul de oricand (felia 0048-04): in ingestie nimic
-        ' nu e inca atasat, deci nu e nimic de desprins, iar serverul nici nu cunoaste
-        ' numele pe calea aceea. Se refuza aici, nu la server, ca mesajul sa spuna DE CE.
-        If d.Actiune = ActiuneAsociere.Desprins Then
+        ' `Desprins` has a meaning only on a snapshot that already has a link: the anytime
+        ' editor, or a CORRECTION here (anchored on `Idrh`, 01.10.2026). On a snapshot
+        ' still to be placed nothing is attached yet, and the server does not accept the
+        ' name there. Se refuza aici, nu la server, ca mesajul sa spuna DE CE.
+        Dim corectura As Boolean = d.Idrh.HasValue
+        If d.Actiune = ActiuneAsociere.Desprins AndAlso Not corectura Then
             Throw New ArgumentException(
-                "Acțiunea «desprins» nu are sens în ingestie: acolo niciun instantaneu " &
-                "nu este încă atașat. Ea aparține editorului de asociere.", NameOf(d))
+                "Acțiunea «desprins» nu are sens pe un instantaneu încă neașezat: " &
+                "nu este atașat de nimic.", NameOf(d))
         End If
-        ' ANCORA pleaca exact cum a venit din propunere: indicele (F24) sau id-ul de istoric
-        ' (F34), niciodata amandoua. Nu se fabrica nimic aici; o decizie fara niciun nume e
-        ' respinsa de server cu 400, cu motivul, nu tradusa in tacere intr-un rand zero.
+        ' ANCORA pleaca exact cum a venit din propunere: indicele (F24), id-ul de istoric
+        ' (F34) or, for a correction, the real IDRH -- exactly one of the three. Nu se
+        ' fabrica nimic aici; o decizie fara niciun nume e respinsa de server cu 400, cu
+        ' motivul, nu tradusa in tacere intr-un rand zero.
         Dim pe As New PostPrelucrareDecizie() With {
-            .rand_istoric = d.RandIstoric,
-            .idh = If(d.RandIstoric.HasValue, Nothing, d.Idh),
             .data_h = d.DataH.ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.InvariantCulture),
             .actiune = NumeActiune(d.Actiune)
         }
+        If corectura Then
+            pe.idrh = d.Idrh
+        Else
+            pe.rand_istoric = d.RandIstoric
+            pe.idh = If(d.RandIstoric.HasValue, Nothing, d.Idh)
+        End If
         ' Ordinea conteaza: `RandReceptie` are intaietate fiindca e singurul nume valid
         ' al unei recepții nascute de rularea curenta. `Idrr` e pus si pe ele — e cheia
         ' locala a tabloului —, deci trimise amandoua serverul ar raspunde 400 «exact una».
@@ -2321,9 +2328,10 @@ Public Class ApiClient
     End Function
 
     ' Numele de pe fir sunt ASCII pe amandoua laturile (regula 0). Primele patru sunt cele
-    ' pe care le accepta routes/forexe/prelucrare_asociere.py; a cincea, «desprins»,
-    ' traieste doar in routes/forexe/asociere.py si e refuzata in `CatreFir`, pe calea de
-    ' ingestie. O valoare necunoscuta de enum ridica — fara implicit tacut.
+    ' pe care le accepta routes/forexe/prelucrare_asociere.py pe orice decizie; a cincea,
+    ' «desprins», e a editorului de oricand (routes/forexe/asociere.py) si, pe calea de
+    ' ingestie, doar a unei corecturi (`CatreFir`). O valoare necunoscuta de enum ridica —
+    ' fara implicit tacut.
     Private Shared Function NumeActiune(a As ActiuneAsociere) As String
         Select Case a
             Case ActiuneAsociere.Asociat : Return "asociat"
@@ -3311,6 +3319,16 @@ Public Class ApiClient
             Next
         End If
 
+        If payload.parteneri IsNot Nothing Then
+            For Each p As DdfDraftPartenerDto In payload.parteneri
+                If p Is Nothing OrElse String.IsNullOrWhiteSpace(p.cod_fiscal) Then Continue For
+                d.Parteneri.Add(New DdfPartenerAsociat() With {
+                    .CodFiscal = p.cod_fiscal,
+                    .NumePartener = If(p.nume_partener, String.Empty),
+                    .DinAntet = p.din_antet})
+            Next
+        End If
+
         If payload.avertismente IsNot Nothing Then d.Avertismente.AddRange(payload.avertismente)
         Return d
     End Function
@@ -3379,6 +3397,13 @@ Public Class ApiClient
                 .nume_fisier = t.NumeFisier, .cale_fisier = t.CaleFisier,
                 .tip_mime = t.TipMime, .dimensiune = t.Dimensiune,
                 .sha256 = t.Sha256, .prt_scr = t.PrtScr})
+        Next
+
+        ' Slice 0094-02: always the COMPLETE list (see DdfDraftDto.parteneri).
+        dto.parteneri = New List(Of DdfDraftPartenerDto)()
+        For Each p As DdfPartenerAsociat In d.Parteneri
+            dto.parteneri.Add(New DdfDraftPartenerDto() With {
+                .cod_fiscal = p.CodFiscal, .nume_partener = p.NumePartener, .din_antet = p.DinAntet})
         Next
 
         Return dto

@@ -10,6 +10,9 @@ Imports KBot.Domain
 ''' </summary>
 Partial Public Class KbotForm
 
+    ' Slice 0097-02: «Creeaza angajament in FOREXE» is in force -- no selection, only the browser.
+    Private _formularNouActiv As Boolean
+
     Private Sub NavViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
         Try
             ActivateView(key)
@@ -51,7 +54,11 @@ Partial Public Class KbotForm
             Select Case key
                 ' The first real view (slice 0011). It gets the API client + the shell's 401
                 ' net, so the re-login policy stays in one place.
-                Case "sumar" : Return New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op))
+                ' Slice 0084-02: plus the 401 net of the «Asociaza parteneri» window.
+                Case "sumar" : Return New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op),
+                                                    New SumarPartnersReauth(
+                                                        Function(op) WithReauth(Of List(Of DdfPartener))(op),
+                                                        Function(op) WithReauth(Of DdfParteneriAsociati)(op)))
                 Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
                 Case "istoric" : Return New IstoricView(_apiClient, Function(op) WithReauth(Of IstoricInfo)(op))
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")
@@ -113,6 +120,11 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Sub ApplyViewGating(info As AngajamentTreeInfo)
         Try
+            ' Slice 0097-02: while the empty «Angajament nou» form of FOREXE is the subject there
+            ' is no angajament, so «Sumar» has nothing to show either; any selection ends that
+            ' state, and so does the loss of the FOREXE session (nothing else would be left).
+            If info IsNot Nothing OrElse Not BrowserDisponibil() Then _formularNouActiv = False
+            navViews.SetItemVisible("sumar", Not _formularNouActiv)
             'navViews.SetItemVisible("indicatori", info IsNot Nothing AndAlso info.AreIndicatori)
             navViews.SetItemVisible("istoric", info IsNot Nothing AndAlso info.AreIstoric)
             'navViews.SetItemVisible("revizii", info IsNot Nothing AndAlso info.AreRevizii)
@@ -132,8 +144,9 @@ Partial Public Class KbotForm
 
             ' If the active view has just closed, fall back to «sumar» (always enabled) so the
             ' shell does not stay on a page the operator can no longer leave.
-            If Not IsViewEnabled(navViews.SelectedKey, info) Then
-                navViews.SelectedKey = "sumar"
+            If Not IsViewEnabled(navViews.SelectedKey, info) OrElse
+               (_formularNouActiv AndAlso navViews.SelectedKey = "sumar") Then
+                navViews.SelectedKey = If(_formularNouActiv, "browser", "sumar")
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ApplyViewGating", ex)

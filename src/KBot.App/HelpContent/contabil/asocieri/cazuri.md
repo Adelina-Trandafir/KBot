@@ -64,11 +64,16 @@ salvează.
 > Marcajul rămâne, ca o cifră care nu se leagă peste luni să poată fi urmărită până aici.
 
 ## Legături blocate
-<!-- slice: 0048-04, 0058-02 -->
+<!-- slice: 0048-04, 0058-02, 0056-02 -->
 
-Un instantaneu pe care se sprijină deja o **ordonanțare** sau o **plată** se vede stins și nu se mai
-poate muta; clicul dreapta spune «Această legătură nu se mai poate modifica» și motivul. Ca să-l
-muți, trebuie întâi schimbată ordonanțarea care îl folosește.
+Singurul lucru care blochează o legătură este o **ordonanțare**: dacă angajamentul are o ordonanțare
+din ziua instantaneului sau de după ea, instantaneul se vede stins, cu lacăt, și nu se mai poate
+muta. Clicul dreapta spune «Această legătură nu se mai poate modifica» și motivul (numărul și data
+ordonanțării). Ca să-l muți, trebuie întâi schimbată sau ștearsă ordonanțarea. O simplă plată nu
+blochează nimic.
+
+Regula e aceeași **oricând** deschizi fereastra, deci și **după o descărcare**: orice legătură
+fără ordonanțare se poate corecta, fie că e veche, fie că abia a venit.
 
 ## Refuzuri la tragere
 <!-- slice: 0048-07, 0065 -->
@@ -86,12 +91,23 @@ muți, trebuie întâi schimbată ordonanțarea care îl folosește.
 - **«Instantaneul este deja pe această recepție.»** — nimic de făcut.
 
 ## După o descărcare: salvare sau renunțare
-<!-- slice: 0055, 0058 -->
+<!-- slice: 0055, 0058, 0056-02 -->
 
 - **Salvarea** se poate face abia când fiecare instantaneu adus de descărcare are o hotărâre:
   așezat, «fără schimbare» sau pe o recepție nouă.
+- **Legăturile vechi se pot corecta tot aici.** Instantaneele care erau deja așezate (sau în coș)
+  înainte de descărcare se mută la fel ca cele noi: le tragi pe altă recepție, în coș, le marchezi
+  din meniul de clic dreapta. Nu ești obligat să le atingi — pe cele nemutate K-BOT le lasă exact
+  cum sunt și scrie doar ce ai schimbat. Rămân pe loc numai cele blocate de o ordonanțare (vezi
+  «Legături blocate», mai sus).
+- De ce contează: dacă un instantaneu vechi stă pe recepția greșită, lanțul ei nu se mai închide și
+  salvarea descărcării e refuzată cu «... Lanțul nu se închide.» Acum îl muți pe recepția lui în
+  aceeași fereastră și salvezi, fără să renunți la descărcare.
+- Dacă iei un instantaneu de pe o recepție și nu pui altul în loc, iar lanțul ei rămâne neînchis,
+  K-BOT salvează și te **avertizează** după salvare; nu refuză.
 - **«Golește așezările»** te duce înapoi la început: tot ce a adus descărcarea trece în coș, iar
-  marcajele tale se anulează. Legăturile vechi, de pe server, nu se ating.
+  marcajele tale se anulează. Legăturile vechi pe care le-ai mutat aici revin la cum sunt pe
+  server; cele neatinse nu se schimbă.
 - **Renunțarea** (sau închiderea ferestrei) **aruncă toată descărcarea**: nimic nu ajunge în tabele —
   nici recepțiile, nici plățile, nici istoricul. K-BOT întreabă întâi; descărcarea va trebui reluată.
 

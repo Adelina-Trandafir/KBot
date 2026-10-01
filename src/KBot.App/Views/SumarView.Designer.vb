@@ -15,6 +15,7 @@ Partial Class SumarView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New ComponentModel.Container()
         Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
@@ -23,6 +24,8 @@ Partial Class SumarView
         Dim KBotDataColumn6 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn7 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn8 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        tips = New KBot.Controls.KBotToolTip(components)
+        btnPartners = New Button()
         pnlHeader = New Panel()
         tblHeader = New Controls.KBotTableLayoutPanel()
         lblCodCaption = New Label()
@@ -46,6 +49,20 @@ Partial Class SumarView
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
+        ' btnPartners
+        ' 
+        btnPartners.Dock = DockStyle.Fill
+        btnPartners.Location = New Point(1112, 4)
+        btnPartners.Margin = New Padding(14, 4, 4, 4)
+        btnPartners.Name = "btnPartners"
+        btnPartners.Size = New Size(220, 76)
+        btnPartners.TabIndex = 14
+        btnPartners.Text = "Asociază parteneri"
+        tips.SetToolTipHeader(btnPartners, "Asociază parteneri")
+        tips.SetToolTipText(btnPartners, "Asociază angajamentul cu unul sau mai mulți parteneri." & vbLf & "Asocierea se scrie pe documentul de fundamentare; un partener deja asociat nu se adaugă a doua oară.")
+        btnPartners.UseVisualStyleBackColor = True
+        btnPartners.Visible = False
+        ' 
         ' pnlHeader
         ' 
         pnlHeader.BackColor = SystemColors.Window
@@ -60,11 +77,12 @@ Partial Class SumarView
         ' 
         ' tblHeader
         ' 
-        tblHeader.ColumnCount = 4
+        tblHeader.ColumnCount = 5
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 186F))
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 186F))
         tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tblHeader.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240F))
         tblHeader.Controls.Add(lblCodCaption, 0, 0)
         tblHeader.Controls.Add(lblCod, 1, 0)
         tblHeader.Controls.Add(lblDataFxCaption, 2, 0)
@@ -79,6 +97,7 @@ Partial Class SumarView
         tblHeader.Controls.Add(lblStatus, 3, 2)
         tblHeader.Controls.Add(lblDescriereCaption, 0, 3)
         tblHeader.Controls.Add(lblDescriere, 1, 3)
+        tblHeader.Controls.Add(btnPartners, 4, 0)
         tblHeader.Dock = DockStyle.Fill
         tblHeader.Location = New Point(18, 18)
         tblHeader.Margin = New Padding(4, 5, 4, 5)
@@ -88,6 +107,7 @@ Partial Class SumarView
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         tblHeader.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
+        tblHeader.SetRowSpan(btnPartners, 2)
         tblHeader.ScaleAbsoluteStyles = False
         tblHeader.Size = New Size(1106, 172)
         tblHeader.TabIndex = 0
@@ -435,6 +455,8 @@ Partial Class SumarView
         ResumeLayout(False)
     End Sub
 
+    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
+    Friend WithEvents btnPartners As Button
     Friend WithEvents pnlHeader As Panel
     Friend WithEvents tblHeader As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblCodCaption As Label

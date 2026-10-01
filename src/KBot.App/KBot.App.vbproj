@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.0.6</FileVersion>
+    <FileVersion>1.1.1.1</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -98,6 +98,12 @@
        <AppDir>\Help\ (build and publish), where HelpLibrary reads them. -->
   <ItemGroup>
     <None Include="HelpContent\**\*" Link="Help\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- 01.10.2026: the release notes of every version, shipped as <AppDir>\Noutati\NOUTATI.md for
+       «Setari -> Istoric versiuni» and the «Ce e nou?» row of the help popup. -->
+  <ItemGroup>
+    <None Include="..\..\docs\release-notes\NOUTATI.md" Link="Noutati\NOUTATI.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- Banc de probă (Dev Harness): referit DOAR pe Debug → zero amprentă în Release. -->

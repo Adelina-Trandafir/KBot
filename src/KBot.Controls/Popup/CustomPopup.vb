@@ -91,6 +91,17 @@ Public Class CustomPopup
     Private _closing As Boolean = False
     ''' <summary>Controlul care a desfășurat meniul, dacă știe să rămână aprins (vezi <see cref="IPopupAnchor"/>).</summary>
     Private _anchor As IPopupAnchor
+    ' The control the scale is read from. A popup has no window handle until it is shown, and a
+    ' handle-less form reports DeviceDpi = 96 (or the primary screen), so on a 150%+ screen the
+    ' rows and paddings were measured at the wrong scale. The host that opens us has a handle.
+    Private _scaleSource As Control
+
+    Private ReadOnly Property ScaleRef As Control
+        Get
+            If _scaleSource IsNot Nothing AndAlso Not _scaleSource.IsDisposed Then Return _scaleSource
+            Return Me
+        End Get
+    End Property
 
     ''' <summary>Popup gol; elementele se adaugă în <see cref="Items"/>.</summary>
     Public Sub New()
@@ -564,6 +575,8 @@ Public Class CustomPopup
             ' Fontul ambiant al gazdei: meniul e o fereastră de sine stătătoare, deci nu-l
             ' moștenește singur, iar un meniu cu alt font decât formularul se vede imediat.
             If anchor.Font IsNot Nothing Then MyBase.Font = anchor.Font
+            _scaleSource = anchor
+            InvalidateLayout()
 
             EnsureLayout()
             Dim wa As Rectangle = Screen.FromPoint(at).WorkingArea
@@ -671,7 +684,16 @@ Public Class CustomPopup
     Protected Overrides Sub OnDeactivate(e As EventArgs)
         MyBase.OnDeactivate(e)
         If IsCommittingSlider Then Return
+        ' Slice 0000-31: held open (help capture tool, guided tour); closes when the guard is released.
+        If KBot.Theming.KBotPopupGuard.KeepOpen Then
+            KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDismissed)
+            Return
+        End If
         CloseWith(Nothing, -1)
+    End Sub
+
+    Private Sub CloseDismissed()
+        If Not IsDisposed Then CloseWith(Nothing, -1)
     End Sub
 
     ' Momentul ultimei închideri. STATIC, și e în regulă: un CustomPopup se închide de îndată ce
@@ -733,7 +755,32 @@ Public Class CustomPopup
     Friend Sub InvalidateLayout()
         _layoutDirty = True
         If _selectedIndex >= _items.Count Then _selectedIndex = -1
+        RefitToContent()
         Invalidate()
+    End Sub
+
+    ' The window size is fixed at ShowCore; if the font, the scale or the items change AFTER that
+    ' (the host rewrites fonts, a DPI change), the content outgrows the window and is cut at the
+    ' edge. Re-measure and resize in place, keeping the left/top corner where it fits.
+    Private _refitting As Boolean
+    Private Sub RefitToContent()
+        If _refitting OrElse Not IsHandleCreated OrElse Not Visible Then Return
+        _refitting = True
+        Try
+            EnsureLayout()
+            Dim wa As Rectangle = Screen.FromControl(Me).WorkingArea
+            Dim fit As Rectangle = FitToWorkArea(_naturalSize, Location, Bounds.Right, Bounds.Bottom, wa)
+            If fit <> Bounds Then Bounds = fit
+        Catch ex As Exception
+            GlobalErrorLog.Write("CustomPopup.RefitToContent", ex)
+        Finally
+            _refitting = False
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        RefitToContent()
     End Sub
 
     ''' <summary>Mărimea de care ar avea nevoie meniul ca să încapă tot (înainte de strângerea la ecran).</summary>
@@ -814,11 +861,11 @@ Public Class CustomPopup
         Try
             _layoutDirty = False
 
-            Dim padX As Integer = ThemeShapes.ScaleDpi(Me, PadXLogical)
-            Dim padY As Integer = ThemeShapes.ScaleDpi(Me, PadYLogical)
+            Dim padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
+            Dim padY As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadYLogical)
             Dim gutter As Integer = IconGutter()
             Dim rowH As Integer = EffectiveRowHeight()
-            Dim sepH As Integer = ThemeShapes.ScaleDpi(Me, SeparatorLogical)
+            Dim sepH As Integer = ThemeShapes.ScaleDpi(ScaleRef, SeparatorLogical)
 
             Dim textW As Integer = 0
             For Each it As CustomPopupItem In _items
@@ -831,7 +878,7 @@ Public Class CustomPopup
                 ' cele trei adunate aici, meniul s-ar croi pe cel mai lat TEXT, iar șina ar primi
                 ' ce rămâne — adică, într-un meniu cu etichete scurte, aproape nimic.
                 If it.IsSlider Then
-                    latime += ThemeShapes.ScaleDpi(Me, SliderGapLogical * 2 +
+                    latime += ThemeShapes.ScaleDpi(ScaleRef, SliderGapLogical * 2 +
                                                        SliderValueWidthLogical +
                                                        SliderMinTrackLogical)
                 End If
@@ -839,8 +886,8 @@ Public Class CustomPopup
             Next
 
             Dim w As Integer = BorderThickness * 2 + padX + gutter + textW + CheckBand() + padX
-            w = Math.Max(w, ThemeShapes.ScaleDpi(Me, _minimumPopupWidth))
-            w = Math.Min(w, ThemeShapes.ScaleDpi(Me, _maximumPopupWidth))
+            w = Math.Max(w, ThemeShapes.ScaleDpi(ScaleRef, _minimumPopupWidth))
+            w = Math.Min(w, ThemeShapes.ScaleDpi(ScaleRef, _maximumPopupWidth))
 
             If _items.Count = 0 Then
                 _rows = Array.Empty(Of Rectangle)()
@@ -865,11 +912,11 @@ Public Class CustomPopup
 
     ''' <summary>Lățimea benzii de pictograme (0 = niciun element n-are pictogramă).</summary>
     Friend Function IconGutter() As Integer
-        Dim side As Integer = ThemeShapes.ScaleDpi(Me, _imageSize)
+        Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, _imageSize)
         If side <= 0 Then Return 0
         For Each it As CustomPopupItem In _items
             If Not it.IsSeparator AndAlso it.Image IsNot Nothing Then
-                Return side + ThemeShapes.ScaleDpi(Me, IconGapLogical)
+                Return side + ThemeShapes.ScaleDpi(ScaleRef, IconGapLogical)
             End If
         Next
         Return 0
@@ -882,7 +929,7 @@ Public Class CustomPopup
     Friend Function CheckBand() As Integer
         For Each it As CustomPopupItem In _items
             If Not it.IsSeparator AndAlso Not it.IsSlider AndAlso it.Checked Then
-                Return ThemeShapes.ScaleDpi(Me, CheckMarkLogical + IconGapLogical)
+                Return ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical + IconGapLogical)
             End If
         Next
         Return 0
@@ -890,9 +937,9 @@ Public Class CustomPopup
 
     ''' <summary>Înălțimea unui rând: cea cerută, altfel fontul + aer, dar niciodată sub pictogramă.</summary>
     Friend Function EffectiveRowHeight() As Integer
-        If _itemHeight > 0 Then Return ThemeShapes.ScaleDpi(Me, _itemHeight)
-        Return Math.Max(Font.Height + ThemeShapes.ScaleDpi(Me, RowAirLogical),
-                        ThemeShapes.ScaleDpi(Me, _imageSize + 4))
+        If _itemHeight > 0 Then Return ThemeShapes.ScaleDpi(ScaleRef, _itemHeight)
+        Return Math.Max(Font.Height + ThemeShapes.ScaleDpi(ScaleRef, RowAirLogical),
+                        ThemeShapes.ScaleDpi(ScaleRef, _imageSize + 4))
     End Function
 
     ''' <summary>Se poate evidenția rândul ăsta? Separatorii și cei dezactivați nu.</summary>
@@ -933,7 +980,7 @@ Public Class CustomPopup
 
     Friend Function EffectiveRadius() As Integer
         Dim logical As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
-        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
+        Return ThemeShapes.ScaleDpi(ScaleRef, Math.Max(0, logical))
     End Function
 
     ''' <summary>

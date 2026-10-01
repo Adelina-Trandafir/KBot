@@ -617,6 +617,9 @@ Public NotInheritable Class PostPrelucrareDecizie
     ' nepusa iese null, iar serverul citeste null ca ABSENTA -- un 0 ar fi randul zero.
     Public Property rand_istoric As Integer?
     Public Property idh As Integer?
+    ' The third anchor (01.10.2026): FX_Receptii_H.IDRH of a snapshot written before this
+    ' download -- a correction. Exactly one of the three is sent.
+    Public Property idrh As Integer?
     Public Property data_h As String
     Public Property actiune As String
     ' Nullable: serverul cere EXACT una dintre `idrr` si `receptie_noua` pentru asociat si

@@ -21,6 +21,13 @@ Public NotInheritable Class HelpTourStep
     ''' </summary>
     Public Property Part As String = String.Empty
 
+    ''' <summary>
+    ''' Slice 0000-31: something the step opens before it points (<c>menu</c> = the MENIU menu of the
+    ''' main window), asked of <see cref="KBot.Theming.IKBotHelpReveal"/> on the target and what is above
+    ''' it. Empty = nothing to open. Put back when the step changes.
+    ''' </summary>
+    Public Property Reveal As String = String.Empty
+
     ''' <summary>Where K-BOT goes first; same values as a capture's <c>goto</c>. Empty = stay.</summary>
     Public Property GoToTarget As String = String.Empty
 
@@ -124,6 +131,10 @@ Public NotInheritable Class HelpTour
                 End If
                 If t.StartsWith("part:", StringComparison.OrdinalIgnoreCase) Then
                     current.Part = t.Substring(5).Trim()
+                    Continue While
+                End If
+                If t.StartsWith("reveal:", StringComparison.OrdinalIgnoreCase) Then
+                    current.Reveal = t.Substring(7).Trim()
                     Continue While
                 End If
                 If t.Length = 0 Then Continue While

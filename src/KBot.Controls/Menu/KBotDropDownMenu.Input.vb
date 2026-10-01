@@ -63,12 +63,19 @@ Partial Class KBotDropDownMenu
             Try
                 Select Case m.Msg
                     Case WM_KEYDOWN, WM_SYSKEYDOWN
+                        ' Slice 0000-31: a held menu is a still picture; the keys belong to whoever has the focus.
+                        If KBot.Theming.KBotPopupGuard.KeepOpen Then Return False
                         Return _menu.HandleKey(CType(CInt(m.WParam.ToInt64() And &HFFFF), Keys))
                     Case WM_CHAR, WM_SYSCHAR
-                        Return _menu.IsOpen
+                        Return _menu.IsOpen AndAlso Not KBot.Theming.KBotPopupGuard.KeepOpen
                     Case WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_MBUTTONDOWN,
                          WM_NCLBUTTONDOWN, WM_NCRBUTTONDOWN, WM_NCMBUTTONDOWN
                         If _menu.OwnsWindow(m.HWnd) Then Return False
+                        ' Slice 0000-31: a click away does not close a held menu.
+                        If KBot.Theming.KBotPopupGuard.KeepOpen Then
+                            KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf _menu.CloseAll)
+                            Return False
+                        End If
                         ' A press on the button that opened the menu only closes it: letting the
                         ' click through would open it again at once.
                         Dim onButton As Boolean = _menu.IsDropDownButton(m.HWnd)

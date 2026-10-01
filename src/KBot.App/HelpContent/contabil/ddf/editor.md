@@ -4,8 +4,8 @@ title: Editorul DDF
 part: contabil
 order: 30
 parent: contabil.ddf
-screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescrierePage, DdfEditFisierePage, DdfEditLinieAForm
-keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, fisiere, salveaza
+screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescrierePage, DdfEditFisierePage, DdfEditPartnersPage, DdfPartnersView, DdfEditLinieAForm
+keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, parteneri, asociere, mai multi parteneri, fisiere, salveaza
 open: view:ddf
 ---
 <!-- slice: 0051, 0081-02 -->
@@ -14,7 +14,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 <!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. -->
 
 ## Antetul
-<!-- slice: 0081-09, 0081-10 -->
+<!-- slice: 0081-09, 0081-10, 0094-02 -->
 
 | Câmp | Ce e de știut |
 |------|---------------|
@@ -23,7 +23,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 | **Obiectul documentului** | se scrie și în descrierea angajamentului (peste 255 de caractere se scurtează) |
 | **Program** | programul documentului |
 | **Compartiment** | alegi unul folosit pe documentele anterioare sau scrii altul |
-| **Partener asociat** | bifat, leagă tot documentul de un singur partener; partenerul se scrie pe toate rândurile din A și B |
+| **Partener asociat** | bifat, leagă documentul de un partener principal, ales în câmpul de lângă; el se scrie pe toate rândurile din A și B. Pentru mai mulți parteneri vezi pagina «Parteneri» |
 | **Număr revizie** | rezervat pe server; revizia inițială e 0 |
 | **Data reviziei** | nu poate fi mai veche decât ultima revizie a angajamentului |
 | **Descriere scurtă** | motivul revizuirii; descrierea lungă primește același text, rescris apoi pe pagina «Descriere» |
@@ -47,12 +47,31 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 <!-- capture: ddf-rand-nou | caption: Fereastra «Rând nou în secțiunea A» | prepare: Apăsați «Adaugă rând» în Secțiunea A și alegeți o clasificație. -->
 
 ## Secțiunea B, Descriere, Fișiere
-<!-- slice: 0081-02 -->
+<!-- slice: 0081-02, 0000-30 -->
 
-- **Secțiunea B** se calculează din Secțiunea A și **nu se editează**.
+- **Secțiunea B** se calculează din Secțiunea A și **nu se editează**. Pagina se vede abia după ce revizia a fost trimisă în FOREXE (din meniul reviziei, «Trimite în FOREXE»); până atunci butonul ei lipsește.
 - **Descriere** are descrierea scurtă și pe cea lungă (starea de fapt și de drept).
 - **Fișiere**: atașezi imagini, documente sau tabele. Se încarcă pe server după salvarea
   documentului. Capturile venite din FOREXE nu se pot șterge de aici, dar se pot salva pe disc.
+
+## Parteneri
+<!-- slice: 0094-02, 0084-02, 0000-28 -->
+Pagina **Parteneri**, în dreapta barei cu pagini, arată toți partenerii asociați documentului.
+Majoritatea documentelor au un singur partener și pentru ele ajunge câmpul din antet; pagina e
+pentru documentele cu mai mulți.
+
+- **Principal** e partenerul ales în antet. Apare mereu primul în listă și se schimbă din antet, nu
+  de aici.
+- Pentru încă un partener, îl alegi din listă (scrii începutul numelui sau al codului fiscal) și
+  apeși **Asociază**. Un partener deja asociat nu mai apare în listă.
+- **Scoate din asociere** scoate partenerul selectat; pe cel principal nu îl poți scoate.
+- Lista se salvează odată cu documentul, cu **Salvează documentul**.
+- Dacă debifezi «Partener asociat», partenerul principal dispare din listă; ceilalți rămân.
+
+> Doar partenerul principal se scrie pe rândurile din secțiunile A și B. Ceilalți rămân asociați
+> documentului.
+
+Poți asocia parteneri și din vederea «Sumar» — [Sumar](topic:contabil.vederi.sumar).
 
 ## Salvarea
 <!-- slice: 0051, 0081-12 -->

@@ -157,7 +157,16 @@ Public NotInheritable Class KBotCalendarPopup
     ''' <summary>A click anywhere else dismisses the calendar — what every drop-down does.</summary>
     Protected Overrides Sub OnDeactivate(e As EventArgs)
         MyBase.OnDeactivate(e)
+        ' Slice 0000-31: held open (help capture tool); closes when the guard is released.
+        If KBot.Theming.KBotPopupGuard.KeepOpen Then
+            KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDismissed)
+            Return
+        End If
         CloseWith(Nothing)
+    End Sub
+
+    Private Sub CloseDismissed()
+        If Not IsDisposed Then CloseWith(Nothing)
     End Sub
 
     ''' <summary>Esc dismisses. The rest of the keyboard belongs to the calendar.</summary>

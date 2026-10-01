@@ -56,7 +56,7 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property VerboseLogging As Boolean?
 
-    ''' <summary>The «Arata jurnal» row of the shell's options menu is offered.</summary>
+    ''' <summary>The «Jurnal activitate» row of the shell's header menu is offered.</summary>
     Public Property LogViewerEnabled As Boolean = True
 
     ' ── FOREXE ───────────────────────────────────────────────────────────
@@ -575,6 +575,7 @@ Public NotInheritable Class AppSettings
                 Where(Function(r) r IsNot Nothing).
                 Select(Function(r) New PageStyleRule(r.Note, r.Selector, r.Css, r.Page) With {
                     .Enabled = If(r.Enabled, True)}).ToList()
+            PageStyleRule.AddNewFormRulesIfMissing(s.ForexePageStyles)   ' saved before 01.10.2026
         End If
         If Not String.IsNullOrWhiteSpace(dto.AdobeDetachMode) Then s.AdobeDetachMode = dto.AdobeDetachMode.Trim()
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value

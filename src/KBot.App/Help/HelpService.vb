@@ -214,14 +214,15 @@ Public NotInheritable Class HelpService
 
     ''' <summary>
     ''' Slice 0000-20: the «?» button. A popup under the button: search, the topic of the focused
-    ''' control of that window, the tours of the visible windows, «Deschide ajutorul complet» (the
+    ''' control of that window, the tours of that window only (its views, no other window), «Deschide ajutorul complet» (the
     ''' same as F1). One popup at a time.
     ''' </summary>
     Public Sub ShowHelpMenu(origin As Control, anchorScreenRect As Rectangle) Implements IKBotHelpProvider.ShowHelpMenu
         Try
             If _popup IsNot Nothing AndAlso Not _popup.IsDisposed Then _popup.Close()
             Dim keys As List(Of String) = ScreenKeys(origin)
-            Dim session As New HelpSearchSession(Me, HelpSearchSession.WherePopup, Function() PopupHomeRows(keys))
+            Dim rootWindow As Form = origin.FindForm()
+            Dim session As New HelpSearchSession(Me, HelpSearchSession.WherePopup, Function() PopupHomeRows(keys, rootWindow))
             Dim popup As New KBotHelpPopup(session)
             AddHandler popup.FullHelpRequested,
                 Sub()
@@ -253,10 +254,10 @@ Public NotInheritable Class HelpService
 
     ''' <summary>
     ''' The popup's rows for an empty box: «Pe ecranul acesta» (the topic F1 would open), then the
-    ''' tours of the visible windows -- listed directly when one window has tours, one folder per
+    ''' tours of the window whose «?» was pressed (its views only) -- listed directly when one window has tours, one folder per
     ''' window (titled with its caption, the top one open) when several have.
     ''' </summary>
-    Private Function PopupHomeRows(keys As List(Of String)) As IList(Of KBotHelpRow)
+    Private Function PopupHomeRows(keys As List(Of String), rootWindow As Form) As IList(Of KBotHelpRow)
         Dim rows As New List(Of KBotHelpRow)()
         Dim parts As List(Of HelpPart) = VisibleParts()
         Dim topic As HelpTopic = TopicForKeys(keys, parts)
@@ -265,7 +266,7 @@ Public NotInheritable Class HelpService
             rows.Add(New KBotHelpRow(KBotHelpRowKind.Topic, topic.Title) With {
                 .Tag = topic, .ToolTipText = "Deschide pagina de ajutor despre ce ai pe ecran."})
         End If
-        Dim groups As List(Of HelpPopupTours.WindowTours) = HelpPopupTours.Collect(Library, parts)
+        Dim groups As List(Of HelpPopupTours.WindowTours) = HelpPopupTours.Collect(Library, parts, rootWindow)
         If groups.Count > 0 Then
             rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tururi ghidate"))
             If groups.Count = 1 Then
@@ -279,8 +280,19 @@ Public NotInheritable Class HelpService
                 Next
             End If
         End If
+        ' Always the last row (operator, 01.10.2026): what the last versions changed.
+        rows.Add(New KBotHelpRow(KBotHelpRowKind.Topic, "Ce e nou?") With {
+            .Tag = WhatsNewMarker.Instance,
+            .ToolTipText = "Arată ce s-a schimbat în ultimele " & ReleaseNotesText.RecentVersions & " versiuni."})
         Return rows
     End Function
+
+    ''' <summary>The tag of the popup's «Ce e nou?» row.</summary>
+    Friend NotInheritable Class WhatsNewMarker
+        Friend Shared ReadOnly Instance As New WhatsNewMarker()
+        Private Sub New()
+        End Sub
+    End Class
 
     Private Shared Function TourRow(t As HelpTour) As KBotHelpRow
         Return New KBotHelpRow(KBotHelpRowKind.Tour, t.Title) With {
@@ -396,30 +408,36 @@ Public NotInheritable Class HelpService
     End Sub
 
     ''' <summary>
-    ''' Writes the manual (every part in <see cref="ManualParts"/>) to one HTML file the operator
-    ''' picks, then opens it in the default browser, from where it prints or saves as PDF.
+    ''' Writes <paramref name="scope"/> to one HTML file the operator picks, then opens it in the
+    ''' default browser, from where it prints or saves as PDF. Everything
+    ''' (<see cref="HelpScopeKind.All"/>) is the manual, with every part in
+    ''' <see cref="ManualParts"/>; anything less (slice 0000-32) is just those topics.
     ''' </summary>
-    Public Sub ExportManual(owner As IWin32Window)
+    Friend Sub Export(owner As IWin32Window, scope As HelpScope)
         Try
+            ArgumentNullException.ThrowIfNull(scope)
+            Dim whole As Boolean = scope.Kind = HelpScopeKind.All
             Using dlg As New SaveFileDialog()
-                dlg.Title = "Salvează manualul K-BOT"
+                dlg.Title = If(whole, "Salvează manualul K-BOT", "Salvează din ajutorul K-BOT")
                 dlg.Filter = "Pagină web (*.html)|*.html"
-                dlg.FileName = "Manual_KBOT_" & DateTime.Now.ToString("yyyyMMdd") & ".html"
+                dlg.FileName = scope.FileStem & "_" & DateTime.Now.ToString("yyyyMMdd") & ".html"
                 dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 If dlg.ShowDialog(owner) <> DialogResult.OK Then Return
-                Dim html As String = HelpHtml.Manual(Library, ManualParts(), AppUpdateService.CurrentVersion.ToString())
+                Dim version As String = AppUpdateService.CurrentVersion.ToString()
+                Dim html As String = If(whole, HelpHtml.Manual(Library, ManualParts(), version),
+                                        HelpHtml.Excerpt(Library, scope.Topics, version))
                 File.WriteAllText(dlg.FileName, html, New UTF8Encoding(True))
                 Process.Start(New ProcessStartInfo(dlg.FileName) With {.UseShellExecute = True})?.Dispose()
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("HelpService.ExportManual", ex)
+            GlobalErrorLog.Write("HelpService.Export", ex)
             Throw
         End Try
     End Sub
 
     ' A window disabled by a modal dialog opened after it cannot be used: a fresh one is enabled.
     ' (Control.Enabled does not see a modal dialog's EnableWindow; Windows' own flag does.)
-    ' The pages seen so far stay in History, so the new window's «Înapoi» still works.
+    ' The pages seen so far stay in History, so the new window's Back button still works.
     Private Function EnsureWindow() As HelpForm
         If _form IsNot Nothing AndAlso
            (_form.IsDisposed OrElse Not _form.Enabled OrElse

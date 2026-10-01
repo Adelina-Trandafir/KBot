@@ -97,6 +97,12 @@ Public NotInheritable Class DdfDraftFactory
             .NumePartener = ultima.NumePartener,
             .Nou = False,
             .RevizieNoua = True}
+        ' Slice 0094-02: the partners belong to the document, so a new revision carries them (the
+        ' save writes the list it holds; an empty one would drop them).
+        For Each p As DdfPartenerAsociat In ultima.Parteneri
+            d.Parteneri.Add(New DdfPartenerAsociat() With {
+                .CodFiscal = p.CodFiscal, .NumePartener = p.NumePartener, .DinAntet = p.DinAntet})
+        Next
         d.Revizie = New DdfDraftRevizie() With {
             .Iddf = ultima.Iddf,
             .CodAngajament = ultima.CodAngajament,

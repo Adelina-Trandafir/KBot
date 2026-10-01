@@ -150,21 +150,33 @@ Partial Public Class KbotForm
 
             ' The selection goes FIRST: the view records the tree's selection when it is shown and
             ' would send the robot after that angajament the moment the browser is docked.
-            _currentInfo = Nothing
-            tree.SelectedNode = Nothing
+            _formularNouActiv = True
+            GolesteSelectiaPentruFormularNou()
             navViews.SetItemVisible("browser", True)   ' the StateChanged of a fresh connect may still be on its way
             navViews.SelectedKey = "browser"
-            ApplyViewGating(Nothing)
-            _activeView?.SetContext(Nothing)           ' the view was already open: SelectedKey changed nothing
-            RefreshInfoForm()
+            GolesteSelectiaPentruFormularNou()         ' the view was already open: SelectedKey changed nothing
 
             If _browserView Is Nothing Then Throw New InvalidOperationException("The «Browser FOREXE» view was not created.")
             Await _browserView.CereAngajamentNouAsync().ConfigureAwait(True)
+            ' A reload of the tree or a page report that landed while the form was opening must not
+            ' have put a node (and its views) back.
+            If _formularNouActiv AndAlso _currentInfo Is Nothing Then GolesteSelectiaPentruFormularNou()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.CreeazaAngajamentInForexe", ex)
             KBotMessage.Show(Me, "Formularul de angajament nou nu a putut fi deschis în FOREXE: " & ex.Message,
                              caption, MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
+    End Sub
+
+    ' Nothing selected in the tree, no context in the active view, the nav reduced to what needs no
+    ' angajament (ApplyViewGating with the flag on).
+    Private Sub GolesteSelectiaPentruFormularNou()
+        _currentInfo = Nothing
+        tree.SelectedNode = Nothing
+        tree.Invalidate()
+        ApplyViewGating(Nothing)
+        _activeView?.SetContext(Nothing)
+        RefreshInfoForm()
     End Sub
 
     ''' <summary>

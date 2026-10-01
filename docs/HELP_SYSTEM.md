@@ -27,23 +27,46 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   the hit used and a 1-5 star rating, is sent to the server WITHOUT anything about who or where
   (see §7).
 - The **help window**: contents tree, the search box above it (its results take the tree's place
-  while it has text), Back / Forward, «Istoric ▾», «A−» / «A+», guided tours, «Exportă
-  manualul...» (one HTML file, printable to PDF). Slice 0000-23:
+  while it has text), Back / Forward, «Istoric», text smaller / larger, guided tours, «Imprimă»,
+  «Exportă». Slice 0000-32:
+  - **one page, the whole help**: the browser holds ONE document (`HelpHtml.Book`: the start page,
+    then every visible topic in contents order, each in a `<div class='sec'>` with an id). Opening
+    a topic scrolls to its section; scrolling by hand walks into the next topic and the contents
+    tree follows (`HelpForm.tmrScroll`, 250 ms: one hit-test at the top of the view, only after the
+    page has moved). A topic reached by scrolling becomes the page on screen but gets no line in
+    «Istoric». Page names are unchanged (`home`, `t:<id>`, `t:<id>#<section>`) plus `p:<part>`;
+    section ids in the document are `t-<id>--<section>`. Only a topic the login may not read still
+    replaces the document with a message page;
+  - **«Imprimă»** prints that same document from the window (`WebBrowser.ShowPrintDialog`): its
+    `@media print` rules are the paper look, and the sections outside the chosen scope get the
+    class `noprint`. **«Exportă»** saves an HTML file that opens in the browser (printable to PDF
+    there). Both open a menu of scopes (`HelpScope`): everything / the topic on screen / the topic
+    with what is under it / its parent chapter. Printing everything, or more than
+    `HelpScope.LargeTopicCount` topics, carries «(!)» and is asked about first;
+  - **its own dialogs go inside `Using OwnDialog()`** (messages, «Save as», print): see «always on
+    top» below -- without it the window can close under its own dialog and K-BOT freezes.
+
+  Slice 0000-23:
   - **history per run**: Back / Forward and «Istoric» (every page seen, newest first, 25 at most)
     live in `HelpService.History` (`HelpHistory`), not in the window, so they survive closing and
     reopening it; nothing goes to disk;
   - **text size**: `AppSettings.HelpTextPercent` (80…200 %, on top of the K-BOT text size), used by
-    `HelpHtml.PageHead`; «A−»/«A+» change the page on screen in place (scroll kept);
+    `HelpHtml.PageHead`; the two magnifier buttons change the page on screen in place (the text
+    that was at the top of the view is brought back there);
   - **always on top** (`TopMost`), and **closes itself when another window's modal dialog disables
     it** (a disabled top-most window would hide that dialog): `WM_ENABLE(false)` starts a 150 ms
-    check (`HelpForm.TmrModal_Tick`); it stays open when the dialog is its own (owner chain,
-    `HelpWindowNative.OwnsEnabledWindow`: the manual's «Save as», the capture tool) or when it is
-    minimized (a tour or a capture moved it aside via `HelpService.StepAside`).
+    check (`HelpForm.TmrModal_Tick`); it stays open when the dialog is its own (opened inside
+    `OwnDialog()`, or found by owner chain, `HelpWindowNative.OwnsEnabledWindow`) or when it is
+    minimized (a tour or a capture moved it aside via `HelpService.StepAside`). Slice 0000-32: a
+    check that finds NO dialog on screen yet (`HelpWindowNative.AnyEnabledWindow`) looks again
+    instead of closing -- a dialog that is slow to appear is not somebody else's dialog.
 - **Guided tours**: a coloured ring around a control plus a bubble with Înapoi / Înainte / Închide.
   Slice 0000-23: the bubble is a **callout** (a `Region` with a triangle whose point touches the
   ring), and a step can name one **part** of a tree / grid / caption bar / nav list (`part:`,
   `IKBotHelpParts` in `KBot.Theming\KBotHelp.vb`, implemented in `KBot.Controls\*\*.HelpParts.vb`);
-  a part not on screen is skipped. Names and rules: `HelpContent/README.md`, «Guided tours».
+  a part not on screen is skipped -- unless it is only HIDDEN by state, data or a setting: then (slice
+  0000-30) it is shown for the step, with a note, and its text says how to get it for real
+  (`IKBotHelpReveal`, `HelpContent/README.md`). Names and rules: `HelpContent/README.md`, «Guided tours».
 - **The initial tour** (slice 0097-02): the main window's tour (`HelpService.InitialTourId` =
   `tur-fereastra`) also starts by itself, once `KbotForm` has loaded its data
   (`HelpService.StartInitialTour`), at every start while `AppSettings.ShowInitialTour` is on. Its
@@ -69,7 +92,9 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   | 2 «Opțiuni avansate» | `avansat` | non-director users, only while the advanced options are on |
   | 3 «Director» | `director` | only a login with role `Director` (and it sees ONLY this part) |
 
-- **Screenshots** are taken by the operator with the capture tool (below), never by Claude.
+- **Screenshots** are taken with the capture tool (below), by the operator or, when the operator asks
+  and has started K-BOT and logged in, by Claude driving that same tool (so the capture blur still
+  applies; never a raw screen grab). Classic theme only for now; no dark variants yet.
 
 ## 2. Where everything is
 
@@ -97,15 +122,16 @@ The updater writes only the files in its package, so pictures shot on a client P
 
 | File | Job |
 |------|-----|
-| `HelpService.vb` | installs the provider + the F1 key filter; who sees which part (`VisibleParts`); F1 → topic; `Navigate` for captures and tours; manual export |
+| `HelpService.vb` | installs the provider + the F1 key filter; who sees which part (`VisibleParts`); F1 → topic; `Navigate` for captures and tours; `Export` (the manual, or the topics of a `HelpScope`) |
 | `HelpLibrary.vb` | loads and checks the topic files; tree, `Search` (→ `HelpSearch`), `FindByScreen`, `HelpVersion` |
 | `HelpSearch.vb` | 0000-18: `HelpHit`, the section index built at load, stop words, stems, scoring, snippets, section anchors |
 | `HelpSearchSession.vb` | 0000-20/21: what one search panel searches in (popup / window): hits → rows, row actions, the question being asked |
-| `HelpPopupTours.vb` | 0000-20: which tours the popup offers, per visible window, top first |
+| `HelpPopupTours.vb` | 0000-20/0000-27: which tours the popup offers -- only those of the window whose «?» was pressed (itself and its views, never another window) |
 | `HelpQuestionLog.vb` | 0000-21: `HelpQuestion` + the local waiting list and its batched sending |
 | `HelpTopic.vb` | `HelpPart` enum + `HelpTopic` |
-| `HelpHtml.vb` | Markdown → HTML (Markdig), pages, the manual; capture tags → pictures / «Imagine lipsă» |
-| `HelpForm.vb` | the help window |
+| `HelpHtml.vb` | Markdown → HTML (Markdig): the window's document (`Book`, 0000-32), the manual, an excerpt (`Excerpt`); screen and paper CSS; capture tags → pictures / «Imagine lipsă» |
+| `HelpForm.vb` | the help window: scrolling to a place of the book, the tree that follows the scroll, print, export |
+| `HelpScope.vb` | 0000-32: how much a print / an export takes (everything, a topic, a topic with what is under it, its parent chapter) and the menu row for it |
 | `HelpHistory.vb` | 0000-23: Back / Forward / «Istoric» for the whole run (owned by `HelpService`) |
 | `HelpWindowNative.vb` | 0000-23: whose modal dialog disabled the help window |
 | `HelpCapture*.vb`, `IHelpCaptureNavigator.vb` | capture tags, the capture list («Fă poza» / «Încarcă»), the screen freeze + rectangle, saving; `HelpCaptureRedaction.vb` (0000-23) = what is blurred and the blur |
@@ -188,6 +214,10 @@ actualizat», name the topic ids (and capture ids) the change makes stale. One l
 
 - **Romanian, «tu» form, plain words**, short sentences. Write for an accountant, not a developer.
 - On-screen text exactly as the operator reads it, in «» or **bold**.
+- **Anything that is not always on screen (a view, button, row or page that waits for data, a
+  connection or a setting) is described WITH its condition, in the topic and in the tour step**:
+  what makes it appear, and where the operator does it (slice 0000-30). Never «gri» for a thing the
+  app really hides; check `SetItemVisible` / `.Visible =` in the code.
 - Say what to do and what happens; one fact once — link to the topic that owns it
   (`[text](topic:id)`) instead of repeating it.
 - Headers ASCII (rule 0); only `title` and the body carry diacritics.

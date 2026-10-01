@@ -268,6 +268,11 @@ Partial Public Class KBotComboBox
     End Sub
 
     Private Sub ListHost_Changed(sender As Object, e As EventArgs)
+        ' Slice 0000-31: held open (help capture tool); closes when the guard is released.
+        If KBot.Theming.KBotPopupGuard.KeepOpen Then
+            KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDropDown)
+            Return
+        End If
         CloseDropDown()
     End Sub
 
@@ -285,6 +290,10 @@ Partial Public Class KBotComboBox
                 If ReferenceEquals(target, Me) OrElse Contains(target) Then Return
             End If
             If _dropDownAnchorProvider IsNot Nothing AndAlso AnchorRect().Contains(MousePosition) Then Return
+            If KBot.Theming.KBotPopupGuard.KeepOpen Then
+                KBot.Theming.KBotPopupGuard.CloseOnRelease(AddressOf CloseDropDown)
+                Return
+            End If
             CloseDropDown()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotComboBox.OnMousePressAnywhere", ex)

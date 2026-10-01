@@ -135,6 +135,7 @@ Public Class HelpTourBubble
     ''' </summary>
     Public Sub PlaceNear(target As Rectangle)
         Try
+            _lastTarget = target
             ResetArrow()
             Dim body As Size = Size
             Dim area As Rectangle = If(target.IsEmpty, Screen.FromPoint(Cursor.Position), Screen.FromRectangle(target)).WorkingArea
@@ -234,6 +235,26 @@ Public Class HelpTourBubble
 
     Private Sub PlainFrame()
         If IsHandleCreated AndAlso Not IsDisposed Then HelpWindowNative.PlainFrame(Handle)
+    End Sub
+
+    ' The first step is measured and placed before the form's first Show; the theme and the text
+    ' size / DPI zoom are applied only in Load, which grows the labels and the window and leaves
+    ' the size and the callout Region of that first step too small for its text. Measure and place
+    ' again once Load is done (the later steps already run on a loaded form).
+    Private _lastTarget As Rectangle
+    Private _loadedOnce As Boolean
+
+    Protected Overrides Sub OnLoad(e As EventArgs)
+        MyBase.OnLoad(e)
+        Try
+            If _loadedOnce Then Return
+            _loadedOnce = True
+            ResetArrow()
+            FitToText()
+            PlaceNear(_lastTarget)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpTourBubble.OnLoad", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnShown(e As EventArgs)

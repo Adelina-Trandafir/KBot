@@ -297,6 +297,14 @@ Public NotInheritable Class HelpLibrary
         Next
     End Sub
 
+    ''' <summary>Slice 0000-32: a topic and everything under it, depth first, in contents order.</summary>
+    Public Function Branch(topic As HelpTopic) As List(Of HelpTopic)
+        ArgumentNullException.ThrowIfNull(topic)
+        Dim result As New List(Of HelpTopic) From {topic}
+        AddDepthFirst(topic.Part, topic.Id, result)
+        Return result
+    End Function
+
     ''' <summary>Depth of a topic under its part (0 = root).</summary>
     Public Function Depth(topic As HelpTopic) As Integer
         Dim d As Integer = 0

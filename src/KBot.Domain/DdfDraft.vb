@@ -412,6 +412,15 @@ Public NotInheritable Class DdfDraft
     ''' <summary>What the server had to say without stopping the generation.</summary>
     Public ReadOnly Property Avertismente As New List(Of String)()
 
+    ''' <summary>
+    ''' Slice 0094-02: EVERY partner associated with the document (<c>FX_DDF_Parteneri</c>), the
+    ''' header partner included. <c>FX_DDF</c> has one pair of columns for the partner, so the
+    ''' header (<see cref="CodFiscal"/> / <see cref="NumePartener"/>) stays the document's MAIN
+    ''' partner -- the one on every line -- and this list is the whole set. Kept in step with the
+    ''' header by <see cref="SyncHeaderPartner"/>.
+    ''' </summary>
+    Public ReadOnly Property Parteneri As New List(Of DdfPartenerAsociat)()
+
     ''' <summary>Shorthand for the one revision's section A.</summary>
     Public ReadOnly Property LiniiA As List(Of DdfDraftLinieA)
         Get
@@ -506,6 +515,65 @@ Public NotInheritable Class DdfDraft
         ' Section B mirrors section A's partner, so it is rebuilt rather than patched.
         If filled > 0 Then Revizie.RecalculeazaSectiuneaB()
         Return filled
+    End Function
+
+    ''' <summary>
+    ''' Slice 0094-02: puts the header partner at the head of <see cref="Parteneri"/>, flagged
+    ''' <see cref="DdfPartenerAsociat.DinAntet"/>. Run after every change of the header partner
+    ''' (the combo, the «Partener asociat» flag) and once when the document opens.
+    '''
+    ''' <para>The header partner is the document's MAIN partner, so changing it REPLACES the
+    ''' previous main one -- the combo is a single choice. A partner the operator added as an
+    ''' extra stays. A document with no header partner has no main entry.</para>
+    ''' </summary>
+    Public Sub SyncHeaderPartner()
+        Dim headerKey As String = If(PartAng AndAlso Not String.IsNullOrWhiteSpace(CodFiscal),
+                                     DdfPartenerAsociat.Cheie(CodFiscal), String.Empty)
+        ' The previous main partner leaves with the change.
+        Parteneri.RemoveAll(Function(p) p.DinAntet AndAlso
+                                        Not String.Equals(DdfPartenerAsociat.Cheie(p.CodFiscal), headerKey,
+                                                          StringComparison.Ordinal))
+        For Each existing As DdfPartenerAsociat In Parteneri
+            existing.DinAntet = False
+        Next
+        If headerKey.Length = 0 Then Return
+
+        Dim i As Integer = Parteneri.FindIndex(
+            Function(p) String.Equals(DdfPartenerAsociat.Cheie(p.CodFiscal), headerKey, StringComparison.Ordinal))
+        Dim principal As DdfPartenerAsociat
+        If i >= 0 Then
+            principal = Parteneri(i)
+            Parteneri.RemoveAt(i)
+        Else
+            principal = New DdfPartenerAsociat()
+        End If
+        principal.CodFiscal = CodFiscal.Trim()
+        If Not String.IsNullOrWhiteSpace(NumePartener) Then principal.NumePartener = NumePartener.Trim()
+        principal.DinAntet = True
+        Parteneri.Insert(0, principal)
+    End Sub
+
+    ''' <summary>Slice 0094-02: associates one more partner. False when its fiscal code is
+    ''' already in the list (compared as digits) or empty.</summary>
+    Public Function AddAssociatedPartner(codFiscal As String, numePartener As String) As Boolean
+        If String.IsNullOrWhiteSpace(codFiscal) Then Return False
+        Dim key As String = DdfPartenerAsociat.Cheie(codFiscal)
+        If Parteneri.Any(Function(p) String.Equals(DdfPartenerAsociat.Cheie(p.CodFiscal), key,
+                                                  StringComparison.Ordinal)) Then Return False
+        Parteneri.Add(New DdfPartenerAsociat() With {
+            .CodFiscal = codFiscal.Trim(), .NumePartener = If(numePartener, String.Empty).Trim()})
+        Return True
+    End Function
+
+    ''' <summary>Slice 0094-02: takes one partner out of the list. False for the MAIN partner
+    ''' (it is changed from the header, never removed here) and for one that is not there.</summary>
+    Public Function RemoveAssociatedPartner(codFiscal As String) As Boolean
+        Dim key As String = DdfPartenerAsociat.Cheie(codFiscal)
+        Dim i As Integer = Parteneri.FindIndex(
+            Function(p) String.Equals(DdfPartenerAsociat.Cheie(p.CodFiscal), key, StringComparison.Ordinal))
+        If i < 0 OrElse Parteneri(i).DinAntet Then Return False
+        Parteneri.RemoveAt(i)
+        Return True
     End Function
 
     ''' <summary>
@@ -770,4 +838,42 @@ Public NotInheritable Class DdfPartener
     Public Property NumePartener As String = String.Empty
     ''' <summary>How many <c>Parteneri</c> rows share this <c>CodFiscal</c>.</summary>
     Public Property Randuri As Integer
+End Class
+
+''' <summary>
+''' Slice 0084-02 / 0094-02: one partner associated with a DDF -- a row of
+''' <c>FX_DDF_Parteneri</c>. Keyed on the fiscal code like <see cref="DdfPartener"/>.
+''' </summary>
+Public NotInheritable Class DdfPartenerAsociat
+    Public Property CodFiscal As String = String.Empty
+    Public Property NumePartener As String = String.Empty
+    ''' <summary>The document's MAIN partner: the one in the header (<c>FX_DDF.CodFiscal</c>),
+    ''' written on every line. Changed from the header combo, never removed from the list.</summary>
+    Public Property DinAntet As Boolean
+
+    ''' <summary>
+    ''' The comparison key of a fiscal code: its digits, the «RO» prefix and every separator
+    ''' dropped («RO 123» = «123»); a code with no digit at all is compared as typed, trimmed
+    ''' and upper-cased. The server applies the same rule (<c>ddf_parteneri.cheie_cf</c>).
+    ''' </summary>
+    Public Shared Function Cheie(codFiscal As String) As String
+        Dim brut As String = If(codFiscal, String.Empty).Trim().ToUpperInvariant()
+        Dim text As String = If(brut.StartsWith("RO", StringComparison.Ordinal), brut.Substring(2), brut)
+        Dim cifre As New StringBuilder()
+        For Each c As Char In text
+            If c >= "0"c AndAlso c <= "9"c Then cifre.Append(c)
+        Next
+        Return If(cifre.Length > 0, cifre.ToString(), brut)
+    End Function
+End Class
+
+''' <summary>
+''' Slice 0084-02: what the Sumar button's routes answer -- the partners associated with an
+''' angajament's DDF (the header partner first), and how many the last call added.
+''' </summary>
+Public NotInheritable Class DdfParteneriAsociati
+    Public Property Iddf As Integer
+    Public Property Parteneri As New List(Of DdfPartenerAsociat)()
+    ''' <summary>Rows added by a POST; 0 on a GET and when every partner was already there.</summary>
+    Public Property Adaugati As Integer
 End Class

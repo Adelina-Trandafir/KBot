@@ -47,6 +47,7 @@ Public Class DdfEditForm
     Private Const PAGINA_SECTIUNEA_B As String = "sectiunea-b"
     Private Const PAGINA_DESCRIERE As String = "descriere"
     Private Const PAGINA_FISIERE As String = "fisiere"
+    Private Const PAGINA_PARTENERI As String = "parteneri"
 
     ''' <summary>The two kinds of number the lock knows. Must match the server's literals.</summary>
     Private Const LOCK_CUAL As String = "CUAL"
@@ -162,6 +163,8 @@ Public Class DdfEditForm
             ' (`AplicaEnablement`) and the section-A Partener column is hidden, so without
             ' this the save was refused for a field nobody could reach.
             _draft.InheritHeaderPartner()
+            ' Slice 0094-02: the main partner is also the first row of the partners list.
+            _draft.SyncHeaderPartner()
 
             IncarcaAntetul()
             AplicaEnablement()
@@ -505,6 +508,11 @@ Public Class DdfEditForm
                 Finally
                     _seIncarca = False
                 End Try
+                ' Slice 0094-02: the same list is the «Parteneri» page's picker.
+                Dim paginaParteneri As IDdfEditPage = Nothing
+                If _pages.TryGetValue(PAGINA_PARTENERI, paginaParteneri) Then
+                    TryCast(paginaParteneri, DdfEditPartnersPage)?.SetCandidates(_parteneri)
+                End If
             Catch ex As Exception
                 GlobalErrorLog.Write("DdfEditForm.IncarcaListeleAsync/parteneri", ex)
                 cmbPartener.Enabled = False
@@ -782,6 +790,11 @@ Public Class DdfEditForm
             Case PAGINA_SECTIUNEA_B : Return New DdfEditSectiuneaBPage()
             Case PAGINA_DESCRIERE : Return New DdfEditDescrierePage()
             Case PAGINA_FISIERE : Return New DdfEditFisierePage()
+            Case PAGINA_PARTENERI
+                ' Slice 0094-02: its picker is the header combo's list, which the form fetched.
+                Dim paginaParteneri As New DdfEditPartnersPage()
+                paginaParteneri.SetCandidates(_parteneri)
+                Return paginaParteneri
             Case Else
                 Throw New ArgumentException($"Pagină de editare DDF necunoscută: '{key}'.", NameOf(key))
         End Select
@@ -979,6 +992,8 @@ Public Class DdfEditForm
                 _draft.CodFiscal = String.Empty
                 _draft.NumePartener = String.Empty
                 _draft.ImpingePartenerulPeLinii(String.Empty, 0)
+                ' Slice 0094-02: no main partner any more -- its row leaves the list, the others stay.
+                _draft.SyncHeaderPartner()
                 _seIncarca = True
                 Try
                     cmbPartener.SelectedIndex = -1
@@ -1017,6 +1032,9 @@ Public Class DdfEditForm
             ' The lines carry the fiscal code too: it is the only partner identifier the
             ' header actually holds, and inventing a CodPartener here would be a guess.
             _draft.ImpingePartenerulPeLinii(p.CodFiscal, 0)
+            ' Slice 0094-02: the picked partner becomes the main one of the list (the previous
+            ' main partner is replaced; the extras stay).
+            _draft.SyncHeaderPartner()
             AnuntaPaginile()
 
             If p.Randuri > 1 Then

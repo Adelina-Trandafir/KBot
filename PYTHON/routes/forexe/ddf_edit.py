@@ -11,6 +11,7 @@ is one unit, so there is NO `db_name` / `id_unitate` parameter anywhere):
     GET    /api/forexe/ddf/draft/<iddf>/<idrev>           -> an existing revision, for editing
     GET    /api/forexe/ddf/clasificatii                   -> the section-A combo source
     GET    /api/forexe/ddf/parteneri                      -> the header partner combo
+    GET|POST /api/forexe/ddf/parteneri-asociati           -> the partners of a DDF (ddf_parteneri.py)
     GET    /api/forexe/ddf/comp                           -> the compartment combo
     GET    /api/forexe/ddf/surse-program                  -> program -> SS map (AVACONT_COMUN.DefaProgram)
     POST   /api/forexe/ddf/save                           -> the whole graph, one transaction
@@ -111,6 +112,7 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection, get_kbot_comun_connection
 
 from . import forexe_bp
+from .ddf_parteneri import ParteneriInvalizi, citeste_parteneri, sincronizeaza_parteneri
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
 
 logger = logging.getLogger(__name__)
@@ -600,6 +602,9 @@ def post_ddf_genereaza():
         dc = _txt(angajament.get("DC"))
         stare = _txt(angajament.get("Stare"))
         avertismente = []
+        # Slice 0094-02: the partners the document already has (none for a new one). Read from
+        # the stored row, BEFORE the header below drops the partner of a document without PartAng.
+        parteneri = []
 
         # ---- the header -------------------------------------------------------------
         if rev0:
@@ -644,6 +649,9 @@ def post_ddf_genereaza():
                     "Generați întâi revizia inițială."
                 )
             antet = _antet_din_ddf(existent, nou=False)
+            parteneri = citeste_parteneri(
+                cursor, db_name, antet["iddf"], antet["part_ang"],
+                antet["cod_fiscal"], antet["nume_partener"])
             antet["incarcat"] = True
             antet["preluat"] = True
             if not antet["part_ang"]:
@@ -724,6 +732,7 @@ def post_ddf_genereaza():
             "linii_a": linii_a,
             "linii_b": linii_b,
             "atasamente": [],
+            "parteneri": parteneri,
             "avertismente": avertismente,
             "sursa": sursa,
         }
@@ -1046,6 +1055,9 @@ def get_ddf_draft(iddf, idrev):
             "linii_a": linii_a,
             "linii_b": linii_b,
             "atasamente": atasamente,
+            "parteneri": citeste_parteneri(
+                cursor, db_name, _int0(cap.get("IDDF")), cap.get("PartAng"),
+                cap.get("CodFiscal"), cap.get("NumePartener")),
             "avertismente": avertismente,
             "sursa": "existent",
         }
@@ -1946,6 +1958,16 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
             if cursor.fetchone() is None:
                 raise DateInvalide(
                     f"Documentul (IDDF {iddf}, CUAL {cual}) nu mai există în baza de date.")
+
+    # ---- 3b: FX_DDF_Parteneri (slice 0094-02) ---------------------------------------------
+    # The list the operator saw on the «Parteneri» page is the list that is stored, the header
+    # partner always among them. Absent from the body (an older client) = left untouched.
+    try:
+        sincronizeaza_parteneri(
+            cursor, g.session.db_name, iddf, sarcina.get("parteneri"),
+            antet.get("part_ang"), antet.get("cod_fiscal"), antet.get("nume_partener"))
+    except ParteneriInvalizi as e:
+        raise DateInvalide(str(e))
 
     # ---- 4: FX_DDF_REV -------------------------------------------------------------------
     numar_rev = _int0(revizie.get("numar_rev"))

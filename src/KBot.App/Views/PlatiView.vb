@@ -282,6 +282,7 @@ Public Class PlatiView
         Try
             tree.Clear()
             Dim palette As ThemePalette = TryGetPalette()
+            tree.HelpDemoRightIcon = PlusIcon(palette)   ' slice 0000-30: the tour shows the «+» when no payment waits for an ordonantare
 
             ' Cea mai veche zi cu cel puțin o plată ne-ordonantată -> «+» pe ea (o singură zi).
             Dim plusDay As Date? = OldestUnordonantatDay(rows)

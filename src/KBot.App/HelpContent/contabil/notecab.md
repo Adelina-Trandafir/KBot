@@ -38,7 +38,7 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 ## Vederea «Note corecție»
 <!-- slice: 0088, 0097, 0000-14, 0078-08 -->
 
-Apare doar pe un angajament pentru care s-a făcut cel puțin o notă de corecție (altfel e gri).
+Apare doar pe un angajament pentru care s-a făcut cel puțin o notă de corecție (altfel butonul ei nu se vede în bara vederilor).
 Lupa din capul arborelui caută o notă; butonul de strângere din subsol («Note») îngustează arborele.
 Arată notele care privesc angajamentul selectat: arborele cu notele, rândurile lor și pagina
 **Document**, unde documentul se generează cât timp nu e semnat și se descarcă după ce e semnat.

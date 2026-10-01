@@ -47,6 +47,30 @@ Public Interface IKBotHelpParts
 End Interface
 
 ''' <summary>
+''' Slice 0000-30: a control (or a view) that HIDES a part by state, data or a setting (a view
+''' button that waits for a connection, an icon that appears only when there is something to do)
+''' shows it for the one tour step that talks about it, then puts it back. The tour asks only for a
+''' part that is not on screen; the tour text tells the operator how to get it for real.
+''' </summary>
+Public Interface IKBotHelpReveal
+
+    ''' <summary>
+    ''' Shows <paramref name="part"/> of <paramref name="target"/> (the control the step names, a
+    ''' descendant of or the implementer itself; <paramref name="part"/> is the step's <c>part:</c>, or
+    ''' its <c>reveal:</c> when it has one). True = it was hidden and is shown now; False = nothing to
+    ''' reveal here (the part is not one of this implementer's, or it is not hidden).
+    ''' <paramref name="area"/> = a screen rectangle the tour rings together with the target (a menu
+    ''' that was opened); Empty = none. <paramref name="note"/> = the bubble's note when the standard
+    ''' one does not fit; Nothing = standard.
+    ''' </summary>
+    Function HelpReveal(target As Control, part As String, ByRef area As Drawing.Rectangle, ByRef note As String) As Boolean
+
+    ''' <summary>Puts back everything <see cref="HelpReveal"/> showed. Safe to call when nothing was shown.</summary>
+    Sub HelpRevealEnd()
+
+End Interface
+
+''' <summary>
 ''' Slice 0000-23: a control that paints text itself (so the help capture cannot read it from a
 ''' <c>Text</c> property) reports where the text it shows is sensitive -- the capture blurs those
 ''' places before the picture is saved.

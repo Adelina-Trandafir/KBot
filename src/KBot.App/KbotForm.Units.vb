@@ -146,6 +146,7 @@ Partial Public Class KbotForm
             End Try
             _periods = Nothing
             _treeRows = Array.Empty(Of AngajamentTreeInfo)()
+            _formularNouActiv = False   ' another unit: the «Angajament nou» form state does not carry over
             PopulateTree(_treeRows, Nothing)
             navViews.SelectedKey = "sumar"
             ApplyViewGating(Nothing)

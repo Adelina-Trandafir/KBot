@@ -189,7 +189,7 @@ Partial Class ExtraseForm
         Name = "ExtraseForm"
         Padding = New Padding(2)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Extrase de cont"
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)

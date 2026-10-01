@@ -207,7 +207,7 @@ Public NotInheritable Class RobotQueue
                 item.Drop.Invoke()
             Next
             If removed.Count > 0 Then
-                _say($"{removed.Count} {If(removed.Count = 1, "sarcină a fost scoasă", "sarcini au fost removed")} din coada robotului.")
+                _say($"{removed.Count} {If(removed.Count = 1, "sarcină a fost scoasă", "sarcini au fost scoase")} din coada robotului.")
             End If
             RaiseChanged()
             Return removed.Count

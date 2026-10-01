@@ -30,6 +30,7 @@ Partial Class SetariForm
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnClose = New Button()
         pnlRoot = New Panel()
@@ -139,6 +140,10 @@ Partial Class SetariForm
         KBotNavItem7.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized
         KBotNavItem7.Key = "jurnal"
         KBotNavItem7.Text = "Jurnal"
+        KBotNavItem11.Align = KBotNavAlign.Far
+        KBotNavItem11.Image = My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32
+        KBotNavItem11.Key = "istoric"
+        KBotNavItem11.Text = "Istoric versiuni"
         KBotNavItem8.Align = KBotNavAlign.Far
         KBotNavItem8.IsSeparator = True
         KBotNavItem8.Key = "jur2"
@@ -151,6 +156,7 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)
+        navViews.Items.Add(KBotNavItem11)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)
         navViews.Location = New Point(11, 13)

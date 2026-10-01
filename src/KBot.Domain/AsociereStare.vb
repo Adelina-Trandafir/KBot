@@ -126,10 +126,16 @@ Public NotInheritable Class AsociereStare
     '''
     ''' <para><b>Cheile lor sunt NEGATIVE, și de-asta.</b> Toate cheile sunt <c>IDRH</c>-uri
     ''' reale, deci distincte între ele; negarea (<c>-IDRH</c>, reversibilă fiindcă
-    ''' <c>IDRH</c> pornește de la 1) spune dintr-o privire că rândul nu poartă o hotărâre
-    ''' și îl ține departe de cele pozitive ale rândurilor de decis. Nimic nu le trimite
-    ''' înapoi — toate sunt <see cref="InstantaneuLegat.Blocat"/>, iar formularul nu
-    ''' construiește decizii din rânduri blocate.</para>
+    ''' <c>IDRH</c> pornește de la 1) le ține departe de cele pozitive ale rândurilor de
+    ''' decis. They carry <see cref="InstantaneuLegat.Context"/>.</para>
+    '''
+    ''' <para><b>They can be moved since 01.10.2026</b> (operator: «I need to edit ANY
+    ''' reception when new data is downloaded, as long as there is no ordonantare for it»).
+    ''' <see cref="InstantaneuLegat.Blocat"/> is now what the server says — an ordonantare
+    ''' freezes the link, or the row has no name the save could use — not a blanket True.
+    ''' A moved context row goes back as a decision anchored on its real <c>IDRH</c>
+    ''' (<see cref="DecizieAsociere.Idrh"/>); an untouched one sends nothing, and silence
+    ''' means «leave it as it is».</para>
     ''' </summary>
     Public Shared Function DinPropunere(propunere As PrelucrarePropunere) As AsociereStare
         If propunere Is Nothing Then Throw New ArgumentNullException(NameOf(propunere))
@@ -158,12 +164,13 @@ Public NotInheritable Class AsociereStare
             stare.Instantanee.Add(legat)
         Next
 
-        ' `Blocat = True` fara exceptie, si nu e o parere a clientului: acoperirea ceruta de
-        ' server e exact multimea de decis, iar o decizie pentru un rand din afara ei e
-        ' respinsa cu 400. Corectarea unei legaturi vechi ramane treaba editorului de oricand.
+        ' `Blocat` is the server's word (01.10.2026), no longer True without exception: a
+        ' context row is frozen only by an ordonantare, or when it has no name the save
+        ' could use. `Context` is what keeps it out of the mandatory coverage.
         For Each c As InstantaneuLegat In propunere.InstantaneeAsezate
             Dim legat As New InstantaneuLegat() With {
                 .Idrh = -c.Idrh,
+                .Context = True,
                 .Idrr = c.Idrr,
                 .Idh = c.Idh,
                 .DataH = c.DataH,
@@ -172,7 +179,7 @@ Public NotInheritable Class AsociereStare
                 .TipReceptie = c.TipReceptie,
                 .Stergere = c.Stergere,
                 .Ignorat = c.Ignorat,
-                .Blocat = True
+                .Blocat = c.Blocat
             }
             legat.Motive.AddRange(c.Motive)
             legat.Linii.AddRange(c.Linii)
@@ -242,11 +249,19 @@ Public NotInheritable Class InstantaneuLegat
     ''' instantaneu care are deja o recepție: unul neasezat nu are legatura, deci nu are
     ''' ce sa fie blocat.
     '''
-    ''' <para>EXCEPTIE, in modul propunere: acolo TOT contextul e blocat, si randurile
-    ''' neasezate care nu si-au gasit randul de istoric in descarcarea asta. Vezi
-    ''' <see cref="AsociereStare.DinPropunere"/>.</para>
+    ''' <para>One more case, in proposal mode only: an unplaced row born in the current
+    ''' download that has no name the save could use (no history row, or a duplicate).
+    ''' See <see cref="AsociereStare.DinPropunere"/>.</para>
     ''' </summary>
     Public Property Blocat As Boolean
+
+    ''' <summary>
+    ''' Proposal mode only: the row was written BEFORE the current download (the server's
+    ''' <c>instantanee_asezate</c>). Its key here is <c>-IDRH</c>. No decision is owed for
+    ''' it; when the operator moves it, the change travels as a decision anchored on the
+    ''' real <c>IDRH</c>. Always False in the anytime editor.
+    ''' </summary>
+    Public Property Context As Boolean
 
     ''' <summary>
     ''' De ce e blocat, in romana, gata de aratat. De la cel mai specific la cel mai

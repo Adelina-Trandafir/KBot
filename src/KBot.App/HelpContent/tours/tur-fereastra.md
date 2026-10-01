@@ -11,9 +11,12 @@ goto: view:sumar
 Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând. Turul pornește singur la fiecare pornire până îl vezi până la capăt; îl găsești oricând la «?».
 
 ## Butonul MENIU
-<!-- slice: 0087, 0084, 0088, 0097-02 -->
+<!-- slice: 0087, 0084, 0088, 0097-02, 0000-29, 0000-30, 0000-31, fara-felie -->
 target: KbotForm.btnMeniu
-De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct în pagina FOREXE), deschizi extrasele de cont, nomenclatoarele și, când există, operațiunile necorelate. Semnul (!) pe buton înseamnă că ai operațiuni necorelate de rezolvat.
+reveal: menu
+De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct în pagina FOREXE), deschizi extrasele de cont, nomenclatoarele și «Configurare K-BOT», fereastra de setări. Meniul se deschide cu un clic pe buton; în tur îl vezi deschis.
+
+Două rânduri apar doar uneori. «(!) Operațiuni necorelate» se vede doar când ai operațiuni necorelate de rezolvat; atunci și butonul poartă semnul (!). «Jurnal activitate» (jurnalele K-BOT) se vede doar cât e bifat în Setări › Aplicație «Rândul «Jurnal activitate» în meniul MENIU...».
 
 ## Anul de lucru
 <!-- slice: 0001, 0086 -->
@@ -61,69 +64,69 @@ part: footer.right
 Iconița din dreapta, jos, aduce din FOREXE angajamentele noi. Cele noi se adaugă în listă; cele existente rămân neatinse.
 
 ## Vederile
-<!-- slice: 0018, 0088 -->
+<!-- slice: 0018, 0088, 0000-30 -->
 target: KbotForm.navViews
-Fiecare vedere arată alt fel de date ale angajamentului selectat. O vedere e gri cât timp angajamentul nu are date de acel fel. Urmează, pe rând, fiecare vedere.
+Fiecare vedere arată alt fel de date ale angajamentului selectat. O vedere apare doar când angajamentul selectat are date de acel fel; altfel butonul ei nu se vede (iar cu niciun angajament selectat se văd doar «Sumar» și, cât ești conectat, «Browser FOREXE»). Urmează, pe rând, fiecare vedere; cele care lipsesc acum ți le arată turul, cu o notă, ca să știi cum le faci să apară.
 
 ## Vederi › Sumar
-<!-- slice: 0011, 0000-23 -->
+<!-- slice: 0011, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:sumar
-Prima privire asupra angajamentului: datele lui și câte un rând pe indicator, cu creditul bugetar și totalurile.
+Prima privire asupra angajamentului: datele lui și câte un rând pe indicator, cu creditul bugetar și totalurile. Lipsește doar cât lucrezi în formularul gol «Angajament nou» din pagina FOREXE; alegi orice angajament din listă și revine.
 
 ## Vederi › Istoric
-<!-- slice: 0022, 0000-23 -->
+<!-- slice: 0022, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:istoric
-Toate rândurile de istoric ale angajamentului, așa cum le are FOREXE: rezervări, recepții, plăți.
+Toate rândurile de istoric ale angajamentului, așa cum le are FOREXE: rezervări, recepții, plăți. Apare doar când angajamentul selectat are rânduri de istoric.
 
 ## Vederi › Rezervări
-<!-- slice: 0014, 0000-23 -->
+<!-- slice: 0014, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:rezervari
-Rezervările de credite, pe luni și zile, cu valorile pe clasificații și graficul lor.
+Rezervările de credite, pe luni și zile, cu valorile pe clasificații și graficul lor. Apare doar când angajamentul selectat are rezervări.
 
 ## Vederi › Recepții
-<!-- slice: 0015, 0000-23 -->
+<!-- slice: 0015, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:receptii
-Recepțiile angajamentului pe luni, cu detaliul fiecăreia pe clasificații.
+Recepțiile angajamentului pe luni, cu detaliul fiecăreia pe clasificații. Apare doar când angajamentul selectat are recepții.
 
 ## Vederi › Plăți
-<!-- slice: 0017, 0000-23 -->
+<!-- slice: 0017, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:plati
-Plățile și încasările, pe luni și zile, cu extrasul bancar al fiecărei plăți.
+Plățile și încasările, pe luni și zile, cu extrasul bancar al fiecărei plăți. Apare doar când angajamentul selectat are plăți.
 
 ## Vederi › Extrase
-<!-- slice: 0080-02, 0000-23 -->
+<!-- slice: 0080-02, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:extrase
-Operațiunile din extrasele de cont care privesc angajamentul selectat.
+Operațiunile din extrasele de cont care privesc angajamentul selectat. Apare doar când angajamentul are asemenea operațiuni.
 
 ## Vederi › Browser FOREXE
-<!-- slice: 0074, 0000-23 -->
+<!-- slice: 0074, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:browser
-Pagina FOREXE, în fereastra K-BOT. Apare doar cât ești conectat la FOREXE.
+Pagina FOREXE, în fereastra K-BOT. Apare doar cât ești conectat la FOREXE: apeși «Conectare» în banda de jos (cu tokenul cu certificatul în calculator) și butonul se vede; când conexiunea se închide, dispare.
 
 ## Vederi › Fundamentare
-<!-- slice: 0020-02, 0000-23 -->
+<!-- slice: 0020-02, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:ddf
-Documentul de fundamentare al angajamentului, cu reviziile lui, documentul PDF și fișierele atașate.
+Documentul de fundamentare al angajamentului, cu reviziile lui, documentul PDF și fișierele atașate. Apare doar când angajamentul are document de fundamentare (se face din vederea «Rezervări», cu semnul «+»).
 
 ## Vederi › Ordonanțare
-<!-- slice: 0033, 0000-23 -->
+<!-- slice: 0033, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:ord
-Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
+Ordonanțările de plată ale angajamentului, cu documentul fiecăreia. Apare doar când angajamentul are ordonanțări (se fac din vederea «Plăți», cu semnul «+»).
 
 ## Vederi › Note corecție
-<!-- slice: 0088, 0000-23 -->
+<!-- slice: 0088, 0000-23, 0000-30 -->
 target: KbotForm.navViews
 part: item:notecab
-Notele de corecție CAB făcute pe angajament. E gri cât timp nu s-a făcut nicio notă pe el.
+Notele de corecție CAB făcute pe angajament. Apare doar când s-a făcut cel puțin o notă pe el (o notă nouă se face din MENIU › (!) Operațiuni necorelate).
 
 ## Vederi › Strânge bara
 <!-- slice: 0025, 0000-23 -->
@@ -142,7 +145,7 @@ target: KbotForm.forexeFooter
 Conectarea la FOREXE, certificatul, progresul robotului și ultimul lui mesaj. Turul «Legătura cu FOREXE» o arată pe larg.
 
 ## Bara de titlu
-<!-- slice: 0028-09, 0000-01, 0097, 0000-20 -->
+<!-- slice: 0028-09, 0000-01, 0097, 0000-20, 0000-29 -->
 target: KbotForm.capBar
 Bara de sus a ferestrei. O tragi cu mouse-ul ca să muți fereastra; dublu clic pe ea o mărește sau o readuce. Urmează, pe rând, ce are pe ea.
 
@@ -151,12 +154,6 @@ Bara de sus a ferestrei. O tragi cu mouse-ul ca să muți fereastra; dublu clic 
 target: KbotForm.capBar
 part: unit
 Unitatea pe care lucrezi. Dacă ai acces la mai multe, un clic pe ea te lasă să treci pe alta, fără parolă; conexiunea FOREXE, dacă e deschisă, se închide singură. Cu o singură unitate, numele ei e scris în titlu și nu se apasă.
-
-## Bara de titlu › Setări
-<!-- slice: 0072, 0000-23 -->
-target: KbotForm.capBar
-part: options
-Deschide fereastra «Setări».
 
 ## Bara de titlu › Temă
 <!-- slice: 0028-09, 0036, 0000-23 -->

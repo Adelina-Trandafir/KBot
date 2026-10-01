@@ -93,9 +93,9 @@ Partial Class SetariAplicatieView
         chkLogViewer.Name = "chkLogViewer"
         chkLogViewer.Size = New Size(498, 26)
         chkLogViewer.TabIndex = 2
-        chkLogViewer.Text = "Rândul «Arată jurnal» în meniul de opțiuni al ferestrei principale"
+        chkLogViewer.Text = "Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale"
         tips.SetToolTipHeader(chkLogViewer, "Vizualizatorul de jurnale")
-        tips.SetToolTipText(chkLogViewer, "Debifat, rândul dispare din meniul butonului de opțiuni." & vbLf & "Jurnalele se scriu în continuare pe disc.")
+        tips.SetToolTipText(chkLogViewer, "Debifat, rândul dispare din meniul MENIU." & vbLf & "Jurnalele se scriu în continuare pe disc.")
         chkLogViewer.UseVisualStyleBackColor = True
         '
         ' chkShowBrowser

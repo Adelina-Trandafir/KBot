@@ -28,16 +28,16 @@ part: header.right
 Deschide, într-o fereastră separată, evoluția rezervărilor angajamentului și totalurile lui pe luni.
 
 ## Arbore › Semnul «+»
-<!-- slice: 0014, 0081-02, 0000-23 -->
+<!-- slice: 0014, 0081-02, 0000-23, 0000-30 -->
 target: RezervariView.tree
 part: node.icon
-Stă pe rezervarea pentru care nu există încă document de fundamentare și pornește documentul pentru ea. Dacă nicio rezervare nu are nevoie de document, semnul nu apare și pasul acesta se sare.
+Stă pe rezervarea pentru care nu există încă document de fundamentare și pornește documentul pentru ea. Dacă nicio rezervare nu mai are nevoie de document, semnul nu se vede.
 
 ## Arbore › Acțiunile documentului
-<!-- slice: 0060, 0081-02, fara-felie, 0000-23 -->
+<!-- slice: 0060, 0081-02, fara-felie, 0000-23, 0000-27, 0000-30 -->
 target: RezervariView.tree
 part: footer.left
-Meniul documentului de fundamentare pe acest angajament: Adaugă rezervare, Definitivează, Derulează, Generează PDF final (cele care se pot face acum), plus «Reanalizează rezervările», care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare; îți arată întâi cifrele și abia apoi scrie.
+Meniul documentului de fundamentare pe acest angajament (apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au): Adaugă rezervare, Definitivează, Derulează, Generează PDF final (cele care se pot face acum), plus «Reanalizează rezervările», care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare; îți arată întâi cifrele și abia apoi scrie.
 
 ## Arbore › Reîmprospătează
 <!-- slice: 0060, 0000-23 -->

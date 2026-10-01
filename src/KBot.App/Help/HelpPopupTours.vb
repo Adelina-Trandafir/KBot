@@ -1,17 +1,14 @@
 Option Strict On
-Imports System.Runtime.InteropServices
 Imports KBot.Controls
 
 ''' <summary>
-''' Which guided tours the «?» popup offers (slice 0000-20): the tours of the application windows
-''' on screen, grouped per window, top window first.
+''' Which guided tours the «?» popup offers (slice 0000-20, narrowed in 0000-27): ONLY those of the
+''' window whose «?» was pressed -- the form itself and the views / controls inside it. Any other
+''' window (owned by it or not, visible or not) never counts: it has its own «?».
 '''
-''' <para>A window counts when it is visible, not minimized, and <c>Enabled</c> (a window behind
-''' a modal dialog is disabled, so it cannot be used anyway); the help's own windows never count.
-''' A tour belongs to a window when one of its screens (the tour's <c>screens:</c>, else its
-''' topic's) is VISIBLE in it: the form itself, or a control or view inside it. For the main window
-''' that is the selected view, since the others are hidden. A tour is offered once, on the top
-''' window it belongs to. Only the parts this login may read.</para>
+''' <para>A tour belongs to the window when one of its screens (the tour's <c>screens:</c>, else its
+''' topic's) is VISIBLE in it. For the main window that is the selected view, since the others are
+''' hidden. Only the parts this login may read.</para>
 ''' </summary>
 Friend NotInheritable Class HelpPopupTours
 
@@ -24,29 +21,18 @@ Friend NotInheritable Class HelpPopupTours
         Public ReadOnly Tours As New List(Of HelpTour)()
     End Class
 
-    Private Delegate Function EnumWindowsProc(hWnd As IntPtr, lParam As IntPtr) As Boolean
-
-    <DllImport("user32.dll")>
-    Private Shared Function EnumWindows(cb As EnumWindowsProc, lParam As IntPtr) As <MarshalAs(UnmanagedType.Bool)> Boolean
-    End Function
-
-    ''' <summary>The windows with at least one tour, top first.</summary>
-    Public Shared Function Collect(library As HelpLibrary, parts As IReadOnlyCollection(Of HelpPart)) As List(Of WindowTours)
+    ''' <summary>
+    ''' The tours of <paramref name="root"/> alone: a list of at most one window, empty when the
+    ''' window is unusable or has no tour.
+    ''' </summary>
+    Public Shared Function Collect(library As HelpLibrary, parts As IReadOnlyCollection(Of HelpPart), root As Form) As List(Of WindowTours)
         Dim result As New List(Of WindowTours)()
-        Dim offered As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-        Dim tours As List(Of HelpTour) = library.Tours.Where(Function(t) parts.Contains(t.Part)).ToList()
-        If tours.Count = 0 Then Return result
-        For Each f As Form In WindowsTopFirst()
-            Dim group As New WindowTours With {.Window = f}
-            For Each t As HelpTour In tours
-                If offered.Contains(t.Id) Then Continue For
-                If BelongsTo(library, t, f) Then
-                    group.Tours.Add(t)
-                    offered.Add(t.Id)
-                End If
-            Next
-            If group.Tours.Count > 0 Then result.Add(group)
+        If root Is Nothing OrElse Not Usable(root) Then Return result
+        Dim group As New WindowTours With {.Window = root}
+        For Each t As HelpTour In library.Tours.Where(Function(x) parts.Contains(x.Part))
+            If BelongsTo(library, t, root) Then group.Tours.Add(t)
         Next
+        If group.Tours.Count > 0 Then result.Add(group)
         Return result
     End Function
 
@@ -62,23 +48,6 @@ Friend NotInheritable Class HelpPopupTours
             If HelpTourRunner.FindInWindow(window, k) IsNot Nothing Then Return True
         Next
         Return False
-    End Function
-
-    ''' <summary>The application's usable windows, in z-order (top first).</summary>
-    Private Shared Function WindowsTopFirst() As List(Of Form)
-        Dim open As New Dictionary(Of IntPtr, Form)()
-        For Each f As Form In Application.OpenForms.Cast(Of Form)().ToList()
-            If f.IsHandleCreated AndAlso Usable(f) Then open(f.Handle) = f
-        Next
-        Dim ordered As New List(Of Form)()
-        If open.Count = 0 Then Return ordered
-        ' EnumWindows walks the top-level windows from the top of the z-order down.
-        EnumWindows(Function(h, l)
-                        Dim f As Form = Nothing
-                        If open.TryGetValue(h, f) Then ordered.Add(f)
-                        Return True
-                    End Function, IntPtr.Zero)
-        Return ordered
     End Function
 
     Private Shared Function Usable(f As Form) As Boolean

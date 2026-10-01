@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Runtime.InteropServices
 Imports KBot.Common
 Imports KBot.Theming
 
@@ -23,8 +24,8 @@ Public Class HelpCapturePromptForm
         Me.New()
         lblImagine.Text = capture.Caption
         lblPregatire.Text = If(String.IsNullOrWhiteSpace(capture.Prepare),
-                               "Nimic de pregătit: ecranul e cel potrivit. Apasă «Capturează».",
-                               capture.Prepare)
+                               "Nimic de pregătit: ecranul e cel potrivit. Apasă «Capturează» sau Ctrl + `.",
+                               capture.Prepare & vbCrLf & "(Meniurile și ferestrele mici deschise rămân deschise cât ține captura; Ctrl + ` face la fel ca «Capturează».)")
         lblNota.Text = If(note, String.Empty)
         lblNota.Visible = Not String.IsNullOrEmpty(note)
     End Sub
@@ -49,6 +50,52 @@ Public Class HelpCapturePromptForm
         Catch ex As Exception
             GlobalErrorLog.Write("HelpCapturePromptForm.OnThemeChanged", ex)
         End Try
+    End Sub
+
+    ' Ctrl + ` : a system-wide hotkey, so a popup menu set up by hand stays open (pressing the button
+    ' would take the focus and close it). WM_HOTKEY does not activate this window.
+    <DllImport("user32.dll", SetLastError:=True)>
+    Private Shared Function RegisterHotKey(hWnd As IntPtr, id As Integer, modifiers As UInteger, vk As UInteger) As <MarshalAs(UnmanagedType.Bool)> Boolean
+    End Function
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Private Shared Function UnregisterHotKey(hWnd As IntPtr, id As Integer) As <MarshalAs(UnmanagedType.Bool)> Boolean
+    End Function
+
+    Private Const HotkeyId As Integer = &H4B42
+    Private Const WM_HOTKEY As Integer = &H312
+    Private Const MOD_CONTROL As UInteger = &H2UI
+    Private Const MOD_NOREPEAT As UInteger = &H4000UI
+    Private Const VK_OEM_3 As UInteger = &HC0UI
+    Private _hotkeyOn As Boolean
+
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.OnHandleCreated(e)
+        Try
+            _hotkeyOn = RegisterHotKey(Handle, HotkeyId, MOD_CONTROL Or MOD_NOREPEAT, VK_OEM_3)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpCapturePromptForm.OnHandleCreated", ex)
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnHandleDestroyed(e As EventArgs)
+        Try
+            If _hotkeyOn Then
+                UnregisterHotKey(Handle, HotkeyId)
+                _hotkeyOn = False
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpCapturePromptForm.OnHandleDestroyed", ex)
+        End Try
+        MyBase.OnHandleDestroyed(e)
+    End Sub
+
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        If m.Msg = WM_HOTKEY AndAlso m.WParam.ToInt32() = HotkeyId Then
+            Finish(True)
+            Return
+        End If
+        MyBase.WndProc(m)
     End Sub
 
     Private Sub BtnCaptureaza_Click(sender As Object, e As EventArgs) Handles btnCaptureaza.Click

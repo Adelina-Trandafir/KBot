@@ -3,7 +3,7 @@ Imports KBot.Controls
 
 ''' <summary>
 ''' The shell's chrome (slice 0086 split out of KbotForm.vb): theme accents, the 1 px lines of
-''' the header and status bands, and the caption bar's options menu.
+''' the header and status bands.
 ''' </summary>
 ''' <remarks>
 ''' Switching the theme scheme has no handler here. The selector lives in the caption bar
@@ -11,11 +11,6 @@ Imports KBot.Controls
 ''' scheme over every open form -- the shell has nothing to do after it.
 ''' </remarks>
 Partial Public Class KbotForm
-
-    ' The row keys of the options button menu.
-    Private Const OPT_JURNAL As String = "jurnal"
-    ' Slice 0072: the settings window.
-    Private Const OPT_SETARI As String = "setari"
 
     ' The theme-aware semantic colours (run after ThemeManager.Apply and on every switch).
     Protected Overrides Sub OnThemeChanged()
@@ -74,77 +69,29 @@ Partial Public Class KbotForm
     End Sub
 
     ''' <summary>
-    ''' The options button of the caption bar: TWO rows at most, «Arata jurnal» and «Setari...»,
-    ''' each with its icon and a separator between them -- the operator's request of
-    ''' 20.09.2026 («the setari button will only show the Jurnal (if enabled from setari) and
-    ''' the Setari option»). The menu is a <c>CustomPopup</c>, painted by us, so it is themed
-    ''' exactly like the theme menu of the same bar.
-    '''
-    ''' <para>«Arata jurnal» is gated by <c>FeatureSwitches.VizualizatorJurnaleActiv</c> (the
-    ''' operator's own switch on the «Aplicatie» page). When it is off the menu has one row
-    ''' left, and a one-row menu is a detour: the click opens the settings window directly.</para>
-    '''
-    ''' <para>«Sincronizare (server)» left the menu with this request; <see cref="SincronizeazaAsync"/>
-    ''' stays, unreachable from the shell until the operator asks for a new home for it.</para>
-    ''' </summary>
-    Private Sub CapBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
-        Try
-            ' A second click on the button CLOSES the menu: the press already closed it (it
-            ' activated the window underneath), so without this guard it would reopen at once.
-            If CustomPopup.ClosedJustNow Then Return
-
-            If Not FeatureSwitches.VizualizatorJurnaleActiv Then
-                SetariForm.ShowFor(Me, _setariFactory)
-                Return
-            End If
-
-            Dim ancora As Rectangle = capBar.OptionButtonBounds
-            If ancora.IsEmpty Then Return
-
-            ' «&A» = the access letter, as in any system menu. The icons are the same two
-            ' the settings window uses for its nav rows, so the menu and the window agree.
-            Dim elemente As New List(Of CustomPopupItem) From {
-                New CustomPopupItem(OPT_JURNAL, "&Arată jurnal",
-                                    My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized),
-                CustomPopupItem.Separator(),
-                New CustomPopupItem(OPT_SETARI, "S&etări…", My.Resources.Resources.settings__1_)
-            }
-
-            ' NOT in «Using»: shown modeless, the popup disposes itself on close.
-            Dim meniu As New CustomPopup(elemente)
-            AddHandler meniu.ItemClicked, AddressOf MeniuOptiuni_ItemClicked
-            meniu.ShowBelow(capBar, ancora)
-        Catch ex As Exception
-            ' UI boundary (event handler): log and swallow.
-            GlobalErrorLog.Write("MainForm.CapBar_OptionButtonClick", ex)
-        End Try
-    End Sub
-
-    Private Sub MeniuOptiuni_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
-        Try
-            Select Case e.Item.Key
-                Case OPT_JURNAL
-                    ShowLog()
-                Case OPT_SETARI
-                    SetariForm.ShowFor(Me, _setariFactory)
-                Case Else
-                    ' No silent no-ops: a row added to the menu and forgotten here must show.
-                    Throw New ArgumentException("Rând necunoscut în meniul de opțiuni: «" & e.Item.Key & "».")
-            End Select
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.MeniuOptiuni_ItemClicked", ex)
-            KBotMessage.Show(Me, "Comanda nu a putut fi executată: " & ex.Message, "K-BOT",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
-        End Try
-    End Sub
-
-    ''' <summary>
     ''' Opens the log viewer: since slice 0072-01 it is the «Jurnal» page of the settings
     ''' window, so the same modeless, one-instance window is shown (or brought to the front)
     ''' and switched to that page. The operator can read the log and work in the shell at the
     ''' same time, as before.
     ''' </summary>
     Private Sub ShowLog()
-        SetariForm.ShowFor(Me, _setariFactory).ShowPage("jurnal")
+        Try
+            SetariForm.ShowFor(Me, _setariFactory).ShowPage("jurnal")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowLog", ex)
+            KBotMessage.Show(Me, "Jurnalul nu a putut fi deschis. Detalii în jurnalul de erori.",
+                             "Jurnal activitate", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>Opens the settings window (modeless, one instance): the header menu row «Configurare K-BOT».</summary>
+    Private Sub ShowSettings()
+        Try
+            SetariForm.ShowFor(Me, _setariFactory)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowSettings", ex)
+            KBotMessage.Show(Me, "Fereastra de setări nu a putut fi deschisă. Detalii în jurnalul de erori.",
+                             "Configurare K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
     End Sub
 End Class

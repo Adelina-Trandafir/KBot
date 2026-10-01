@@ -157,17 +157,11 @@ Public NotInheritable Class AppUpdateService
                 Return False
 
             Case UpdateDecision.Available
-                Dim answer As DialogResult = KBotMessage.Show(owner, OfferText(check, mandatory:=False), CAPTION,
-                                                             MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                                                             MessageBoxDefaultButton.Button1)
-                If answer <> DialogResult.Yes Then Return False
+                If Not AskOffer(owner, check, mandatory:=False) Then Return False
                 Return DownloadAndHandOver(owner, check, mandatory:=False)
 
             Case UpdateDecision.Required
-                Dim answer As DialogResult = KBotMessage.Show(owner, OfferText(check, mandatory:=True), CAPTION,
-                                                             MessageBoxButtons.OKCancel, MessageBoxIcon.Warning,
-                                                             MessageBoxDefaultButton.Button1)
-                If answer <> DialogResult.OK Then Return True      ' refused a mandatory update: the app closes
+                If Not AskOffer(owner, check, mandatory:=True) Then Return True      ' refused a mandatory update: the app closes
                 If DownloadAndHandOver(owner, check, mandatory:=True) Then Return True
                 ' Download cancelled or failed on a mandatory update: nothing else can run.
                 KBotMessage.Show(owner, "Fără această actualizare aplicația nu poate continua. Se închide.",
@@ -179,27 +173,31 @@ Public NotInheritable Class AppUpdateService
         End Select
     End Function
 
-    Private Shared Function OfferText(check As CheckResult, mandatory As Boolean) As String
-        Dim sb As New Text.StringBuilder()
+    ' The offer window (UpdateOfferForm): headline + bullets in a themed, wrapping text box. The
+    ' same sentences go to the operator log, as the message box used to do. True = accepted.
+    Private Shared Function AskOffer(owner As IWin32Window, check As CheckResult, mandatory As Boolean) As Boolean
+        Dim headline As String
+        Dim question As String
         If mandatory Then
-            sb.AppendLine("Versiunea pe care o aveți (" & check.Current.ToString() & ") nu mai poate fi folosită.")
-            sb.AppendLine("Este necesară actualizarea la versiunea " & check.Info.Version & ".")
+            headline = "Este necesară actualizarea la versiunea " & check.Info.Version & vbLf &
+                       "Versiunea pe care o aveți (" & check.Current.ToString() & ") nu mai poate fi folosită."
+            question = "Descarcă = se descarcă, aplicația se închide, se actualizează și pornește din nou. Anulare = aplicația se închide."
         Else
-            sb.AppendLine("Este disponibilă versiunea " & check.Info.Version & " a K-BOT (aveți " & check.Current.ToString() & ").")
+            headline = "Este disponibilă versiunea " & check.Info.Version & vbLf &
+                       "Aveți versiunea " & check.Current.ToString() & "."
+            question = "Actualizați acum? Aplicația se închide, se actualizează și pornește din nou. «Nu» = mai târziu."
         End If
-        If Not String.IsNullOrWhiteSpace(check.Info.Notes) Then
-            sb.AppendLine()
-            sb.AppendLine(check.Info.Notes.Trim())
-        End If
-        sb.AppendLine()
-        sb.AppendLine("Mărime: " & UpdateProgressForm.FormatBytes(check.Info.Size) & ".")
-        sb.AppendLine()
-        If mandatory Then
-            sb.Append("OK = se descarcă, aplicația se închide, se actualizează și pornește din nou. Anulare = aplicația se închide.")
-        Else
-            sb.Append("Actualizați acum? Aplicația se închide, se actualizează și pornește din nou. «Nu» = mai târziu.")
-        End If
-        Return sb.ToString()
+        Dim footer As String = "Mărime: " & UpdateProgressForm.FormatBytes(check.Info.Size) & "."
+
+        OperatorLog.Write("AppUpdateService", CAPTION,
+                          headline.Replace(vbLf, " ") & Environment.NewLine & If(check.Info.Notes, String.Empty).Trim() &
+                          Environment.NewLine & footer & Environment.NewLine & question)
+
+        Using dlg As New UpdateOfferForm(CAPTION, ReleaseNotesText.Offer(headline, check.Info.Notes, footer),
+                                         question, If(mandatory, "Descarcă", "Da"), If(mandatory, "Anulare", "Nu"))
+            Dim result As DialogResult = If(owner Is Nothing, dlg.ShowDialog(), dlg.ShowDialog(owner))
+            Return result = DialogResult.OK
+        End Using
     End Function
 
     ' Download into a fresh temp folder, then start the updater from a copy in that same

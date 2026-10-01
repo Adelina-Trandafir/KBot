@@ -149,6 +149,14 @@ Public NotInheritable Class DdfDraftAttDto
     Public Property prt_scr As Boolean
 End Class
 
+''' <summary>Slice 0094-02: one associated partner, keyed on <c>cod_fiscal</c>.
+''' <c>din_antet</c> marks the document's main partner (the header's).</summary>
+Public NotInheritable Class DdfDraftPartenerDto
+    Public Property cod_fiscal As String
+    Public Property nume_partener As String
+    Public Property din_antet As Boolean
+End Class
+
 ''' <summary>What <c>POST /genereaza</c> and <c>GET /draft/{iddf}/{idrev}</c> return, and the
 ''' body <c>POST /save</c> takes back (plus the two lock ids).</summary>
 Public NotInheritable Class DdfDraftDto
@@ -157,6 +165,11 @@ Public NotInheritable Class DdfDraftDto
     Public Property linii_a As New List(Of DdfDraftLinieADto)()
     Public Property linii_b As New List(Of DdfDraftLinieBDto)()
     Public Property atasamente As New List(Of DdfDraftAttDto)()
+    ''' <summary>Slice 0094-02: every partner associated with the document (<c>FX_DDF_Parteneri</c>).
+    ''' Sent on the way up as the COMPLETE list -- the save makes the table match it. NOT
+    ''' initialised: a body without the key (an older client) leaves the table untouched, which an
+    ''' empty list would not.</summary>
+    Public Property parteneri As List(Of DdfDraftPartenerDto)
     Public Property avertismente As New List(Of String)()
     ''' <summary>Which source the SERVER chose: «rezervari», «istoric» or «existent».
     ''' Decision D5 -- the caller never picks.</summary>

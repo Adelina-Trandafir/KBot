@@ -22,10 +22,10 @@ part: header.search
 Caută în arbore: scrii și arborele arată doar ce se potrivește. Esc golește căutarea și închide banda.
 
 ## Arbore › Asocieri
-<!-- slice: 0048-04, 0000-23 -->
+<!-- slice: 0048-04, 0000-23, 0056-02 -->
 target: ReceptiiView.tree
 part: header.right
-Deschide fereastra Asocieri, unde corectezi unde e așezat fiecare instantaneu din istoric față de recepții. Se poate deschide oricând. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți se văd, dar nu se mai pot muta.
+Deschide fereastra Asocieri, unde corectezi unde e așezat fiecare instantaneu din istoric față de recepții. Se poate deschide oricând. Legăturile unui angajament cu o ordonanțare din ziua instantaneului sau de după ea se văd, dar nu se mai pot muta.
 
 ## Arbore › Reface din istoric
 <!-- slice: 0062, 0000-23 -->

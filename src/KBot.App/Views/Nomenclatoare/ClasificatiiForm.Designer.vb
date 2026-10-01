@@ -469,7 +469,6 @@ Partial Class ClasificatiiForm
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        CenterOnScreen = False
         ClientSize = New Size(1603, 780)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None

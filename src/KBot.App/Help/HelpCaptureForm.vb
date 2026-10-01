@@ -26,6 +26,7 @@ Public Class HelpCaptureForm
     Private Const ColState As String = "stare"
     Private Const ColShoot As String = "poza"
     Private Const ColLoad As String = "incarca"
+    Private Const ColView As String = "vezi"
 
     Private Shared _instance As HelpCaptureForm
 
@@ -110,12 +111,14 @@ Public Class HelpCaptureForm
                 row(ColPrepare) = If(c.Prepare, String.Empty)
                 row(ColState) = If(taken.HasValue, "făcută " & taken.Value.ToString("dd.MM HH:mm"), "lipsă")
                 row(ColShoot) = If(taken.HasValue, "Refă", "Fă poza")
+                row(ColView) = "Vezi"
                 row(ColLoad) = "Încarcă"
                 _rows.Add(c)
             Next
         Finally
             grid.EndUpdate()
         End Try
+        ShowDetail()
     End Sub
 
     Private Shared Function PartShort(part As HelpPart) As String
@@ -126,6 +129,50 @@ Public Class HelpCaptureForm
             Case Else : Throw New ArgumentException("Unknown help part: " & part.ToString(), NameOf(part))
         End Select
     End Function
+
+    ' ── Detail footer ─────────────────────────────────────────────────────────────
+
+    Private Sub Grid_SelectionChanged(sender As Object, e As EventArgs) Handles grid.SelectionChanged
+        Try
+            ShowDetail()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpCaptureForm.Grid_SelectionChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Fills the footer from the current row: its caption, what to prepare, and the saved picture.</summary>
+    Private Sub ShowDetail()
+        ClearPreview()
+        Dim idx As Integer = grid.CurrentRowIndex
+        If _store Is Nothing OrElse idx < 0 OrElse idx >= _rows.Count Then
+            txtImagine.Text = String.Empty
+            txtPregatire.Text = String.Empty
+            Return
+        End If
+        Dim capture As HelpCapture = _rows(idx)
+        txtImagine.Text = capture.Caption
+        txtPregatire.Text = If(capture.Prepare, String.Empty)
+        If Not _store.Exists(capture) Then Return
+        Try
+            ' Copied into a fresh bitmap so the file stays free (GDI+ holds a file open).
+            Using source As Image = Image.FromFile(_store.PathFor(capture))
+                picPreview.Image = New Bitmap(source)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpCaptureForm.ShowDetail", ex)
+        End Try
+    End Sub
+
+    Private Sub ClearPreview()
+        Dim old As Image = picPreview.Image
+        picPreview.Image = Nothing
+        old?.Dispose()
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
+        ClearPreview()
+    End Sub
 
     Private Sub ChkDoarLipsa_CheckedChanged(sender As Object, e As EventArgs) Handles chkDoarLipsa.CheckedChanged
         Try
@@ -163,6 +210,8 @@ Public Class HelpCaptureForm
                 StartCapture(_rows(e.RowIndex))
             ElseIf e.ColumnKey = ColLoad Then
                 LoadFromDisk(_rows(e.RowIndex))
+            ElseIf e.ColumnKey = ColView Then
+                ViewSaved(_rows(e.RowIndex))
             End If
         Catch ex As Exception
             _busy = False
@@ -173,6 +222,18 @@ Public Class HelpCaptureForm
             KBotMessage.Show(Me, "Captura nu a putut porni: " & ex.Message, "Capturi pentru ajutor",
                              MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
+    End Sub
+
+    ''' <summary>«Vezi»: opens the saved picture of this row, so the operator sees what was stored.</summary>
+    Private Sub ViewSaved(capture As HelpCapture)
+        If Not _store.Exists(capture) Then
+            KBotMessage.Show(Me, "Imaginea «" & capture.Caption & "» nu a fost făcută încă.", "Capturi pentru ajutor",
+                             MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        Using dlg As New HelpCaptureViewForm(capture.Caption, _store.PathFor(capture))
+            dlg.ShowDialog(Me)
+        End Using
     End Sub
 
     ''' <summary>
@@ -203,7 +264,16 @@ Public Class HelpCaptureForm
         Dim note As String = GoToTarget(capture)
         Dim prompt As New HelpCapturePromptForm(capture, note)
         AddHandler prompt.Finished, Sub(ok) OnPromptFinished(capture, ok)
-        prompt.Show()
+        ' Slice 0000-31: from here to the end of the capture (taken or given up) the popups the operator
+        ' opens (menus, column filters, right-click menus) stay open when the focus moves to this tool.
+        ' Released in OnPromptFinished; if the bar cannot even be shown, here.
+        KBotPopupGuard.Hold()
+        Try
+            prompt.Show()
+        Catch
+            KBotPopupGuard.Release()
+            Throw
+        End Try
     End Sub
 
     ''' <summary>
@@ -236,6 +306,8 @@ Public Class HelpCaptureForm
                              MessageBoxButtons.OK, MessageBoxIcon.Warning)
         Finally
             _busy = False
+            ' Slice 0000-31: popups behave normally again; the ones kept open close now.
+            KBotPopupGuard.Release()
             Try
                 Dim restore As Action = _restoreHelp
                 _restoreHelp = Nothing

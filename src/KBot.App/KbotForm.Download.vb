@@ -125,6 +125,7 @@ Partial Public Class KbotForm
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
 
+            MarcheazaDescarcareaFaraIntrebare(cod)
             ' Slice 0098: through the robot queue -- several clicks in a row run one after the
             ' other, in order, and a second click on a node already queued is refused.
             Await _robotQueue.RunAsync("nod|" & cod, $"Descărcare completă «{cod}»",
@@ -136,6 +137,26 @@ Partial Public Class KbotForm
             KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' When another FOREXE action is already running or waiting, this one and the waiting
+    ''' node / receptii ones skip the receptii selection window: all receptii are downloaded.
+    ''' </summary>
+    Private Sub MarcheazaDescarcareaFaraIntrebare(cod As String)
+        If _robotQueue.ActionCount(_controller.IsBusy) = 0 Then
+            _descarcareFaraIntrebare.Remove(cod)   ' a lone click is asked as usual
+            Return
+        End If
+        _descarcareFaraIntrebare.Add(cod)
+        For Each w As RobotQueue.RobotTask In _robotQueue.Waiting
+            Dim key As String = If(w.Key, String.Empty)
+            Dim i As Integer = key.IndexOf("|"c)
+            If i > 0 AndAlso (key.StartsWith("nod|", StringComparison.OrdinalIgnoreCase) OrElse
+                              key.StartsWith("receptii|", StringComparison.OrdinalIgnoreCase)) Then
+                _descarcareFaraIntrebare.Add(key.Substring(i + 1))
+            End If
+        Next
     End Sub
 
     ''' <summary>A node's whole download + ingest, run as one robot queue task (slice 0098).</summary>

@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.Collections.Generic
+Imports System.Linq
 
 ''' <summary>
 ''' One CSS rule K-BOT puts into every FOREXE page the operator sees (operator, 21.09.2026):
@@ -56,13 +57,16 @@ Public NotInheritable Class PageStyleRule
     ''' </summary>
     Public Shared Function Defaults() As List(Of PageStyleRule)
         Const codOpen As String = "body:has(.well.well-small h4 span:nth-child(2)) "
-        Return New List(Of PageStyleRule) From {
+        Dim rules As New List(Of PageStyleRule) From {
             New PageStyleRule("Meniul lateral FOREXE ascuns cât timp un angajament e deschis",
                               codOpen & "[class*='col-lg-2']:has(.bs-sidebar)",
                               "visibility: hidden"),
             New PageStyleRule("Conținutul pe toată lățimea cât timp un angajament e deschis",
                               codOpen & "[class*='col-lg-2']:has(.bs-sidebar) + [class*='col-lg-10']",
-                              "width: 100%"),
+                              "width: 100%")
+        }
+        rules.AddRange(NewFormRules())
+        rules.AddRange(New List(Of PageStyleRule) From {
             New PageStyleRule("Pagina folosește 90% din lățimea ferestrei",
                               "#main.container",
                               "max-width: 90%"),
@@ -73,7 +77,41 @@ Public NotInheritable Class PageStyleRule
                               "span.nav.nav-tabs ~ button.btn.btn-default",
                               "display: none",
                               "https://forexe.mfinante.gov.ro/CABWeb/contract")
+        })
+        Return rules
+    End Function
+
+    ' The empty «Angajament nou» form has no code header yet, so the two rules above never hold on
+    ' it and FOREXE's side menu stayed in view (operator, 01.10.2026). The form is told apart by its
+    ' «descriere» field.
+    Private Const NewFormOpen As String = "body:has(textarea[name='descriere']) "
+
+    Private Shared Function NewFormRules() As List(Of PageStyleRule)
+        Return New List(Of PageStyleRule) From {
+            New PageStyleRule("Meniul lateral FOREXE ascuns pe formularul de angajament nou",
+                              NewFormOpen & "[class*='col-lg-2']:has(.bs-sidebar)",
+                              "visibility: hidden"),
+            New PageStyleRule("Conținutul pe toată lățimea pe formularul de angajament nou",
+                              NewFormOpen & "[class*='col-lg-2']:has(.bs-sidebar) + [class*='col-lg-10']",
+                              "width: 100%")
         }
+    End Function
+
+    ''' <summary>
+    ''' Settings saved before 01.10.2026 hold the first rules of <see cref="Defaults"/> but not the
+    ''' ones for the «Angajament nou» form. Adds those, once: only when the list still has the
+    ''' «angajament deschis» menu rule (an operator who deleted that one does not want them either)
+    ''' and has no rule on the new form yet. Returns True when it changed the list.
+    ''' </summary>
+    Public Shared Function AddNewFormRulesIfMissing(rules As List(Of PageStyleRule)) As Boolean
+        If rules Is Nothing Then Return False
+        Dim hasMenuRule As Boolean = rules.Any(Function(r) r IsNot Nothing AndAlso
+            r.Selector.Contains(".bs-sidebar") AndAlso r.Selector.Contains("h4 span:nth-child(2)"))
+        Dim hasNewFormRule As Boolean = rules.Any(Function(r) r IsNot Nothing AndAlso
+            r.Selector.Contains("textarea[name='descriere']"))
+        If Not hasMenuRule OrElse hasNewFormRule Then Return False
+        rules.AddRange(NewFormRules())
+        Return True
     End Function
 
     ''' <summary>Deep copy of a list; Nothing gives an empty list.</summary>

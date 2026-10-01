@@ -26,6 +26,9 @@ Friend NotInheritable Class HelpTourRunner
     ' Slice 0000-23: the part the current step made visible, put back when the step changes.
     Private _demoOwner As IKBotHelpParts
     Private _demoPart As String
+    ' Slice 0000-30: what the current step showed although the app hides it (put back with the demo).
+    Private ReadOnly _revealers As New List(Of IKBotHelpReveal)()
+    Private ReadOnly _forced As New List(Of Control)()
     ' Slice 0097-02: the tour started by itself at K-BOT's start (its bubble carries «Nu mai
     ' arata turul initial»), and whether it went past its last step.
     Private ReadOnly _initial As Boolean
@@ -92,16 +95,43 @@ Friend NotInheritable Class HelpTourRunner
                 If _finished Then Return
 
                 Dim rect As Rectangle = Rectangle.Empty
+                Dim revealed As Boolean
+                Dim revealArea As Rectangle = Rectangle.Empty
+                Dim revealNote As String = Nothing
                 If [step].Target.Length > 0 Then
                     Dim target As Control = FindTarget([step].Target)
+                    If target Is Nothing Then
+                        ' Slice 0000-30: a control the app hides now (not connected, nothing to show yet)
+                        ' is shown for this step.
+                        target = FindHiddenTarget([step].Target)
+                        If target IsNot Nothing Then
+                            target.Visible = True
+                            _forced.Add(target)
+                            revealed = True
+                            Await Task.Delay(80).ConfigureAwait(True)
+                            If _finished Then Return
+                        End If
+                    End If
                     If target Is Nothing Then
                         If note Is Nothing Then
                             note = "Partea despre care e vorba nu e pe ecran acum; deschide fereastra sau vederea potrivită ca s-o vezi."
                         End If
                     Else
+                        ' Slice 0000-31: the step asks for something to be opened (the MENIU menu).
+                        If [step].Reveal.Length > 0 AndAlso TryRevealPart(target, [step].Reveal, revealArea, revealNote) Then
+                            revealed = True
+                            Await Task.Delay(250).ConfigureAwait(True)
+                            If _finished Then Return
+                        End If
                         If [step].Part.Length > 0 Then
                             Dim partMissing As Boolean
                             Dim piece As Rectangle = PartBounds(target, [step].Part, note, partMissing)
+                            If partMissing AndAlso TryRevealPart(target, [step].Part, revealArea, revealNote) Then
+                                revealed = True
+                                Await Task.Delay(80).ConfigureAwait(True)
+                                If _finished Then Return
+                                piece = PartBounds(target, [step].Part, note, partMissing)
+                            End If
                             If partMissing Then
                                 Dim nextIndex As Integer = index + direction
                                 If nextIndex >= _tour.Steps.Count Then
@@ -119,9 +149,14 @@ Friend NotInheritable Class HelpTourRunner
                             If Not piece.IsEmpty Then rect = target.RectangleToScreen(piece)
                         End If
                         If rect.IsEmpty Then rect = target.RectangleToScreen(target.ClientRectangle)
+                        If Not revealArea.IsEmpty Then rect = Rectangle.Union(rect, revealArea)
                     End If
                 End If
 
+                If revealed Then
+                    Dim shownNote As String = If(revealNote, "Îl vezi acum doar pentru tur: în mod obișnuit K-BOT îl ascunde (cum îl faci să apară, scrie mai sus).")
+                    note = If(note Is Nothing, shownNote, note & " " & shownNote)
+                End If
                 _bubble.ShowStep(_tour.Title, [step].Title, [step].Text, note, index, _tour.Steps.Count)
                 Dim pointAt As Rectangle = Rectangle.Empty
                 If Not rect.IsEmpty Then
@@ -170,15 +205,41 @@ Friend NotInheritable Class HelpTourRunner
         End Try
     End Function
 
-    ' Puts back a part the tour made visible (the tree row's button that waits for the mouse).
+    ''' <summary>
+    ''' Slice 0000-30: asks the target, then each control above it (the view that owns the control),
+    ''' to show <paramref name="part"/> although it is hidden now. True = something was shown.
+    ''' </summary>
+    Private Function TryRevealPart(target As Control, part As String, ByRef area As Rectangle, ByRef note As String) As Boolean
+        Dim c As Control = target
+        While c IsNot Nothing
+            Dim revealer As IKBotHelpReveal = TryCast(c, IKBotHelpReveal)
+            If revealer IsNot Nothing AndAlso revealer.HelpReveal(target, part, area, note) Then
+                _revealers.Add(revealer)
+                Return True
+            End If
+            c = c.Parent
+        End While
+        Return False
+    End Function
+
+    ' Puts back a part the tour made visible (the tree row's button that waits for the mouse) and
+    ' everything it showed although the app hides it (slice 0000-30).
     Private Sub EndDemo()
-        If _demoOwner Is Nothing Then Return
-        Dim owner As IKBotHelpParts = _demoOwner
-        Dim part As String = _demoPart
-        _demoOwner = Nothing
-        _demoPart = Nothing
-        If TypeOf owner Is Control AndAlso DirectCast(owner, Control).IsDisposed Then Return
-        owner.SetHelpPartDemo(part, False)
+        If _demoOwner IsNot Nothing Then
+            Dim owner As IKBotHelpParts = _demoOwner
+            Dim part As String = _demoPart
+            _demoOwner = Nothing
+            _demoPart = Nothing
+            If Not (TypeOf owner Is Control AndAlso DirectCast(owner, Control).IsDisposed) Then owner.SetHelpPartDemo(part, False)
+        End If
+        For Each revealer As IKBotHelpReveal In _revealers
+            If Not (TypeOf revealer Is Control AndAlso DirectCast(revealer, Control).IsDisposed) Then revealer.HelpRevealEnd()
+        Next
+        _revealers.Clear()
+        For Each c As Control In _forced
+            If Not c.IsDisposed Then c.Visible = False
+        Next
+        _forced.Clear()
     End Sub
 
     Private Sub Finish()
@@ -226,6 +287,28 @@ Friend NotInheritable Class HelpTourRunner
             If controlName.Length = 0 Then Return host
             For Each hit As Control In host.Controls.Find(controlName, True)
                 If hit.Visible AndAlso hit.Width > 0 AndAlso hit.Height > 0 Then Return hit
+            Next
+        Next
+        Return Nothing
+    End Function
+
+    ''' <summary>
+    ''' Slice 0000-30: <c>TypeName.controlName</c> when the control exists in a visible window but the
+    ''' app hides it now (its own Visible is False, everything above it is shown): the tour shows it
+    ''' for the step. A control that is only out of sight because its view or page is not open does not
+    ''' count. Nothing for a target without a control name.
+    ''' </summary>
+    Private Shared Function FindHiddenTarget(target As String) As Control
+        Dim dot As Integer = target.IndexOf("."c)
+        If dot < 0 Then Return Nothing
+        Dim typeName As String = target.Substring(0, dot).Trim()
+        Dim controlName As String = target.Substring(dot + 1).Trim()
+        For Each f As Form In Application.OpenForms.Cast(Of Form)().ToList()
+            If Not f.Visible OrElse TypeOf f Is HelpForm OrElse TypeOf f Is HelpTourBubble OrElse TypeOf f Is HelpTourFrame Then Continue For
+            For Each host As Control In OfType(f, typeName)
+                For Each hit As Control In host.Controls.Find(controlName, True)
+                    If Not hit.Visible AndAlso hit.Parent IsNot Nothing AndAlso hit.Parent.Visible Then Return hit
+                Next
             Next
         Next
         Return Nothing

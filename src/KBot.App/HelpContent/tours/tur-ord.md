@@ -5,11 +5,11 @@ part: contabil
 topic: contabil.vederi.ord
 ---
 ## Plățile neordonanțate
-<!-- slice: 0049-01, 0000-23 -->
+<!-- slice: 0049-01, 0000-23, 0000-30 -->
 target: PlatiView.tree
 part: node.icon
 goto: view:plati
-O ordonanțare se face din plăți. În vederea Plăți, semnul + apare pe zilele (și lunile) cu plăți neordonanțate. Pe o zi face o ordonanțare din plățile ei și o deschide în editor; pe o lună face câte una pentru fiecare zi și le salvează direct.
+O ordonanțare se face din plăți. În vederea Plăți, semnul + apare pe zilele (și lunile) cu plăți neordonanțate; fără plăți neordonanțate nu se vede. Pe o zi face o ordonanțare din plățile ei și o deschide în editor; pe o lună face câte una pentru fiecare zi și le salvează direct.
 
 ## Arborele ordonanțărilor
 <!-- slice: 0033, 0097 -->

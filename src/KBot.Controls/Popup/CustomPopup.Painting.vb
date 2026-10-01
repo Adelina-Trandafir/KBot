@@ -36,7 +36,7 @@ Partial Public Class CustomPopup
             If Items.Count = 0 Then Return
 
             Dim gutter As Integer = IconGutter()
-            Dim padX As Integer = ThemeShapes.ScaleDpi(Me, PadXLogical)
+            Dim padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
             Dim vizor As New Rectangle(0, 0, ClientSize.Width, ClientSize.Height)
 
             For i As Integer = 0 To Items.Count - 1
@@ -77,7 +77,7 @@ Partial Public Class CustomPopup
         If evidentiat Then
             ' Aceeași umplere ca a butoanelor din KBotNavList (ThemeShapes.FillModern): nicio
             ' culoare nouă, doar două nuanțe derivate din culoarea de evidențiere a schemei.
-            Dim inset As Integer = ThemeShapes.ScaleDpi(Me, 2)
+            Dim inset As Integer = ThemeShapes.ScaleDpi(ScaleRef, 2)
             Dim h As Rectangle = Rectangle.Inflate(r, -inset, 0)
             Dim raza As Integer = Math.Max(0, EffectiveRadius() - 1)
             Using path As GraphicsPath = ThemeShapes.RoundedRect(h, raza)
@@ -86,7 +86,7 @@ Partial Public Class CustomPopup
         End If
 
         If gutter > 0 AndAlso it.Image IsNot Nothing Then
-            Dim side As Integer = ThemeShapes.ScaleDpi(Me, ImageSize)
+            Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
             Dim dest As New Rectangle(r.Left + padX, r.Top + (r.Height - side) \ 2, side, side)
             ' Aceeași desaturare pentru elementele dezactivate ca în bara de navigare — ajutorul
             ' e Friend Shared pe KBotNavList tocmai ca să nu existe două matrice de culoare.
@@ -108,13 +108,13 @@ Partial Public Class CustomPopup
     ' Slice 0777: the check mark of a Checked row, right-aligned inside the padding, in the
     ' row's own text colour (so it follows the highlight and the disabled state with the text).
     Private Sub DrawCheckMark(g As Graphics, r As Rectangle, padX As Integer, fore As Color)
-        Dim side As Integer = ThemeShapes.ScaleDpi(Me, CheckMarkLogical)
+        Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical)
         Dim box As New Rectangle(r.Right - padX - side, r.Top + (r.Height - side) \ 2, side, side)
         Dim pts As PointF() = {
             New PointF(box.Left, box.Top + side * 0.55F),
             New PointF(box.Left + side * 0.38F, box.Bottom - side * 0.1F),
             New PointF(box.Right, box.Top + side * 0.1F)}
-        Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(Me, 2)))
+        Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(ScaleRef, 2)))
             pen.LineJoin = LineJoin.Round
             pen.StartCap = LineCap.Round
             pen.EndCap = LineCap.Round
