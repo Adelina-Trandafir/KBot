@@ -152,6 +152,17 @@ Namespace KBot.Forexe
         End Function
 
         ''' <summary>
+        ''' «adlop - Angajament Nou.wfl» (slice 0097-02): open the empty «Angajament nou» form, then
+        ''' stop. No parameters and no tables; the run either lands on the form or fails.
+        ''' </summary>
+        Public Shared Function BuildAngajamentNou() As JobRequest
+            Return New JobRequest With {
+                .WorkflowName = "AngajamentNou",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.AngajamentNouFile)
+            }
+        End Function
+
+        ''' <summary>
         ''' «adlop - Receptie Editata.wfl» (slice 0076): the reception the operator just saved
         ''' in the «Browser FOREXE» view, and the history from its end back to
         ''' <paramref name="ultimaData"/>. Starts on the page the operator is on.

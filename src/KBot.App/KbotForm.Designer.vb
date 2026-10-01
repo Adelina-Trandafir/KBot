@@ -34,6 +34,8 @@ Partial Class KbotForm
         Dim KBotMenuItem8 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem9 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem10 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem11 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -172,15 +174,23 @@ Partial Class KbotForm
         btnMeniu.Text = "  MENIU"
         btnMeniu.TextImageRelation = TextImageRelation.ImageBeforeText
         tips.SetToolTipHeader(btnMeniu, "Meniu")
-        tips.SetToolTipText(btnMeniu, "Angajament nou, clasificațiile bugetare și partenerii.")
+        tips.SetToolTipText(btnMeniu, "Adăugarea angajamentelor, extrasele, clasificațiile bugetare și partenerii.")
         btnMeniu.UseVisualStyleBackColor = True
         ' 
         ' menuNou
         ' 
         menuNou.DropDownButton = btnMeniu
+        KBotMenuItem11.Image = My.Resources.Resources.plus_green
+        KBotMenuItem11.Key = "angajament_nou"
+        KBotMenuItem11.Text = "Angajament nou"
+        KBotMenuItem12.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotMenuItem12.Key = "angajament_forexe"
+        KBotMenuItem12.Text = "Creează angajament în FOREXE"
         KBotMenuItem1.Image = My.Resources.Resources.plus_green
-        KBotMenuItem1.Key = "angajament_nou"
-        KBotMenuItem1.Text = "<b>Angajament nou</b>"
+        KBotMenuItem1.Items.Add(KBotMenuItem11)
+        KBotMenuItem1.Items.Add(KBotMenuItem12)
+        KBotMenuItem1.Key = "adaugare_angajamente"
+        KBotMenuItem1.Text = "<b>Adăugare angajamente...</b>"
         KBotMenuItem2.Image = My.Resources.Resources.FX_RED_16
         KBotMenuItem2.Key = "operatiuni_necorelate"
         KBotMenuItem2.Text = "<b>(!) Operațiuni necorelate</b>"

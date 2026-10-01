@@ -5,9 +5,9 @@ part: contabil
 topic: contabil.ddf
 ---
 ## De unde pornește
-<!-- slice: 0081-02, 0086 -->
+<!-- slice: 0081-02, 0086, 0097-02 -->
 target: KbotForm.btnMeniu
-Un angajament NOU pornește din MENIU › Angajament nou. O rezervare nouă pe un angajament existent pornește din vederea «Rezervări».
+Un angajament NOU pornește din MENIU › Adăugare angajamente... › Angajament nou. O rezervare nouă pe un angajament existent pornește din vederea «Rezervări».
 
 ## Adaugă rezervare
 <!-- slice: 0081-02, 0081-04, 0000-23 -->

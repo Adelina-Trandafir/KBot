@@ -135,6 +135,31 @@
     //     operator's own rules stay on is the operator's choice - «Pagina originala» lifts
     //     them for the shot, «Asa cum se vede» keeps them.
     //
+    // 15. (slice 0097-02) A QUESTION THAT ONLY WANTS «DA» IS ANSWERED BY K-BOT. When FOREXE
+    //     opens a confirmation window («Sunteti sigur ca doriti sa ...?») K-BOT presses its
+    //     «Da» / «OK» for the operator. Only a window that asks: one that has anything to
+    //     fill in (the motive of a reservation, the description of a definitivare) is left
+    //     alone, and so is one that only tells something (a single button). Never while the
+    //     robot drives - the workflows answer their own windows. The markup is NOT verified
+    //     against the live page: a bootstrap «.modal», the word «sigur» in its text, a yes
+    //     and a no button in its footer (see confirmButtons).
+    //
+    // 16. (slice 0097-02) THE MENU IS A SETTING: config.menu (Setari -> FOREXE). Off, the
+    //     floating menu is not drawn; everything else in this file works as before.
+    //
+    // 17. (slice 0097-02) TWO RECEPTIONS ON THE SAME DATE. When «Adauga» starts a new
+    //     reception the dates of the receptions already in the list are read from the page
+    //     (the same table «Receptii Angajament.wfl» scrapes) and kept with the operation.
+    //     When the date typed in the form is one of them the operator is asked - once the
+    //     field is left, and in any case before the save - whether to go on: it is not
+    //     recommended, but it is allowed. «Da» is remembered for that date; «Nu» puts the
+    //     cursor back in the date field. Same box as the save-without-changes message.
+    //
+    // 18. (slice 0097-02) A page handed back by the robot ON THE EMPTY «Angajament nou» FORM
+    //     (the shell's «Creeaza angajament in FOREXE») starts the «Angajament nou» operation,
+    //     as if the operator had pressed the link: the robot's click was not watched, and
+    //     without this the save that follows would never be reported to K-BOT.
+    //
     //  EVERY selector in OPS below is copied from the workflows in
     //  Workflows/Creare (Creare Angajament, Incarca Rezervare, Rezervare si
     //  Receptie) and from «Prelucrare Completa» - they are the selectors the robot
@@ -149,7 +174,7 @@
     var KEY_SUSPEND_MSG = 'kbotWatchSuspendMsg'; // sessionStorage: what the veil says meanwhile
     var KEY_ZOOM = 'kbotWatchZoom';        // localStorage: zoom factor as text
     var KEY_POS = 'kbotWatchPos';          // localStorage: JSON {right, bottom} of the menu
-    var KEY_CONFIG = 'kbotWatchConfig';    // localStorage: JSON {devTools, rules} from .NET
+    var KEY_CONFIG = 'kbotWatchConfig';    // localStorage: JSON {devTools, menu, rules} from .NET
     var KEY_COLLAPSED = 'kbotWatchFold';   // localStorage: '1' while the menu is folded
     var KEY_SHOT = 'kbotWatchShot';        // sessionStorage: the angajament whose «before» picture is taken
 
@@ -271,11 +296,14 @@
     // (the reception's date at the eye / at the save), rezBefore (the indicator codes of the
     // tab0 table when a reservation started), rezIndicator (the code of the row whose eye was
     // pressed), rezBuget (the budget table read at the save click).
+    // Section 17: recDates (the dates of the receptions already in the list when a new one
+    // was started), recAck (the date the operator agreed to use although it is one of them).
     function emptyState() {
         return {
             op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null,
             formSeen: false, rowDate: '', formDate: '',
-            rezBefore: null, rezIndicator: '', rezBuget: null
+            rezBefore: null, rezIndicator: '', rezBuget: null,
+            recDates: null, recAck: ''
         };
     }
 
@@ -470,6 +498,18 @@
         return two(m[1]) + '/' + two(m[2]) + '/' + m[3];
     }
 
+    // Section 17: the dates of the receptions the angajament already has, read from the list
+    // on the receptions tab (column «Data», the key the robot's own read gives it).
+    function receptionDates() {
+        var out = [];
+        var rows = scrapeTable(document.querySelector(SEL_LISTA));
+        for (var i = 0; i < rows.length; i++) {
+            var d = normDate(rows[i].Data);
+            if (d && out.indexOf(d) < 0) { out.push(d); }
+        }
+        return out;
+    }
+
     // ── Reporting to .NET ────────────────────────────────────────────────────
     function emit(event, extra) {
         if (typeof window._kbotWatchCallback !== 'function') { return; }
@@ -523,6 +563,9 @@
                 // code is the one that was not in the table before (read at the finish).
                 var rowZ = el && closestOf(el, '.glyphicon-eye-open, a:has(.glyphicon-eye-open)') ? rowReadOf(el) : null;
                 state.rezIndicator = indicatorOf(rowZ);
+            } else if (opName === 'receptie') {
+                // Section 17: the list is on screen now and gone once the form opens.
+                state.recDates = receptionDates();
             }
         } catch (ignored) { }
         saveState();
@@ -657,6 +700,7 @@
     var guardSnapshots = {};      // kind -> {name: value} read when the form appeared
     var guardRefreshTimer = null;
     var guardBox = null;
+    var guardDefault = null;      // what Esc / Enter do to the box on screen (null = close it)
 
     function readFields(sel) {
         var list;
@@ -750,8 +794,10 @@
         }
     }
 
-    // A message the operator must close before touching the page again.
-    function showBlockingMessage(line1, line2) {
+    // A message the operator must close before touching the page again. With "question"
+    // ({text, yes, no, onYes, onNo} - section 17) it asks instead of telling: two buttons,
+    // «no» the default one (focused; Esc and Enter answer it).
+    function showBlockingMessage(line1, line2, question) {
         hideBlockingMessage();
         if (!document.body) { return; }
         guardBox = document.createElement('div');
@@ -771,31 +817,235 @@
         var l2 = document.createElement('div');
         l2.textContent = line2;
         l2.style.cssText = 'font-weight:bold;font-size:16px;margin-bottom:14px;';
-        var ok = mkButton('Am înțeles', 'Închide mesajul', hideBlockingMessage);
-        ok.style.padding = '6px 18px';
-        box.appendChild(t); box.appendChild(l1); box.appendChild(l2); box.appendChild(ok);
+        box.appendChild(t); box.appendChild(l1); box.appendChild(l2);
+        // What each button does once the box is gone; the first one is the default.
+        var answers = [];
+        function addAnswer(text, title, run) {
+            var b = mkButton(text, title, function () { });
+            b.style.padding = '6px 18px';
+            answers.push({ el: b, run: run });
+            return b;
+        }
+        if (question) {
+            if (question.text) {
+                var l3 = document.createElement('div');
+                l3.textContent = question.text;
+                l3.style.cssText = 'margin-bottom:14px;';
+                box.appendChild(l3);
+            }
+            box.appendChild(addAnswer(question.no, '', question.onNo));
+            box.appendChild(addAnswer(question.yes, '', question.onYes));
+        } else {
+            box.appendChild(addAnswer('Am înțeles', 'Închide mesajul', null));
+        }
+        guardDefault = answers[0].run;
         guardBox.appendChild(box);
         // Captured at the box, so nothing under it hears the click - which also means the
         // button's own listener never runs (the event stops here, before its target): the
-        // button is answered HERE. Found on screen (operator, 21.09.2026).
+        // buttons are answered HERE. Found on screen (operator, 21.09.2026).
         guardBox.addEventListener('click', function (ev) {
             ev.stopPropagation();
-            if (ok === ev.target || ok.contains(ev.target)) { hideBlockingMessage(); }
+            for (var i = 0; i < answers.length; i++) {
+                if (answers[i].el === ev.target || answers[i].el.contains(ev.target)) {
+                    var run = answers[i].run;
+                    hideBlockingMessage();
+                    if (run) { try { run(); } catch (ignored) { } }
+                    return;
+                }
+            }
         }, true);
         document.body.appendChild(guardBox);
-        try { ok.focus(); } catch (ignored) { }
+        try { answers[0].el.focus(); } catch (ignored) { }
     }
 
     function hideBlockingMessage() {
         if (guardBox && guardBox.parentNode) { guardBox.parentNode.removeChild(guardBox); }
         guardBox = null;
+        guardDefault = null;
     }
 
     function onBlockKey(e) {
         if (!guardBox) { return; }
-        if (e.key === 'Escape' || e.key === 'Enter') { hideBlockingMessage(); }
         e.preventDefault();
         e.stopImmediatePropagation();
+        if (e.key === 'Escape' || e.key === 'Enter') {
+            var run = guardDefault;
+            hideBlockingMessage();
+            if (run) { try { run(); } catch (ignored) { } }
+        }
+    }
+
+    // ── Section 17: a second reception on a date that already has one ────────
+    var sameDateTimer = null;
+
+    // The date in the new reception's form when the list already holds a reception on it;
+    // '' otherwise (another operation, no form, no list read, a free date).
+    function sameDate() {
+        if (state.op !== 'receptie' || !state.recDates || !state.recDates.length) { return ''; }
+        var field = null;
+        try { field = document.querySelector(SEL_DATA_RECEPTIE); } catch (ignored) { }
+        if (!field) { return ''; }
+        var d = normDate(field.value);
+        return (d && state.recDates.indexOf(d) >= 0) ? d : '';
+    }
+
+    // onYes runs after the operator agreed (Nothing = only remember the answer).
+    function askSameDate(d, onYes) {
+        emit('info', { message: 'recepție nouă pe o dată care are deja recepție (' + d + '); întreb operatorul' });
+        showBlockingMessage(
+            'Angajamentul are deja o recepție cu data ' + d + '.',
+            'NU este recomandat să aveți mai multe recepții pe aceeași dată.',
+            {
+                text: 'Continuați cu această dată?',
+                yes: 'Da, continui',
+                no: 'Nu, schimb data',
+                onYes: function () {
+                    state.recAck = d;
+                    saveState();
+                    emit('info', { message: 'operatorul păstrează data ' + d + ' pentru recepția nouă' });
+                    if (onYes) { onYes(); }
+                },
+                onNo: function () {
+                    emit('info', { message: 'operatorul schimbă data recepției noi' });
+                    try {
+                        var field = document.querySelector(SEL_DATA_RECEPTIE);
+                        if (field) { field.focus(); }
+                    } catch (ignored) { }
+                }
+            });
+    }
+
+    // The date field was left (or its value committed): asked a moment later, because a
+    // date picker writes the value after the field has lost the focus.
+    function onSameDateLeave(e) {
+        if (suspended || state.op !== 'receptie' || sameDateTimer) { return; }
+        var el = e.target;
+        var isDate = false;
+        try { isDate = !!el && !!el.matches && el.matches(SEL_DATA_RECEPTIE); } catch (ignored) { }
+        if (!isDate) { return; }
+        sameDateTimer = setTimeout(function () {
+            sameDateTimer = null;
+            if (suspended || guardBox) { return; }
+            var d = sameDate();
+            if (d && state.recAck !== d) { askSameDate(d, null); }
+        }, 250);
+    }
+
+    // The save itself: held until the operator answers, replayed on «Da». Capture phase,
+    // after the form guard and before the marker (a save the operator takes back needs none).
+    function onSameDateClick(e) {
+        if (suspended || state.op !== 'receptie') { return; }
+        var el = e.target;
+        if (!el || !el.tagName) { return; }
+        if (menu && menu.contains(el)) { return; }
+        if (closestOf(el, '.modal-dialog')) { return; }
+        if (!ruleMatches(el, GUARDS['receptie'].save)) { return; }
+        var d = sameDate();
+        if (!d || state.recAck === d) { return; }
+        var button = closestOf(el, 'button') || el;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        askSameDate(d, function () { button.click(); });
+    }
+
+    // ── Section 15: a question that only wants «Da» is answered by K-BOT ─────
+    var CONFIRM_DELAY_MS = 150;
+    var CONFIRM_WORD = 'sigur';
+    var YES_WORDS = ['da', 'ok', 'continua', 'confirma', 'confirm'];
+    var NO_WORDS = ['nu', 'renunta', 'anuleaza', 'inchide', 'inapoi'];
+    var confirmTimer = null;
+
+    // Anything the operator would have to fill in or choose: such a window is not a question.
+    function modalHasFields(modal) {
+        var list;
+        try { list = modal.querySelectorAll('textarea, select, input'); } catch (e) { return true; }
+        for (var i = 0; i < list.length; i++) {
+            var type = (list[i].getAttribute('type') || '').toLowerCase();
+            if (type === 'hidden' || type === 'button' || type === 'submit' || type === 'reset' || type === 'image') { continue; }
+            if (isVisible(list[i])) { return true; }
+        }
+        return false;
+    }
+
+    function wordIn(el, words) {
+        var text = fold(el.innerText || el.value || '');
+        for (var i = 0; i < words.length; i++) {
+            if (text === words[i] || text.indexOf(words[i] + ' ') === 0 || text.indexOf(words[i] + ',') === 0) { return true; }
+        }
+        return false;
+    }
+
+    // {yes, no} of a window: its footer's buttons (the whole window when it has no footer).
+    // «yes» is known by its word, else by FOREXE's green button; «no» by its word, else it
+    // is any other button. Either may be null.
+    function confirmButtons(modal) {
+        var scope = null;
+        var list;
+        try { scope = modal.querySelector('.modal-footer'); } catch (ignored) { }
+        try {
+            list = (scope || modal).querySelectorAll('button, a.btn, input[type=\'button\'], input[type=\'submit\']');
+        } catch (e) { return { yes: null, no: null }; }
+        var all = [];
+        var i;
+        for (i = 0; i < list.length; i++) {
+            if (!list[i].disabled && isVisible(list[i]) && !closestOf(list[i], '.close')) { all.push(list[i]); }
+        }
+        var yes = null, no = null;
+        for (i = 0; i < all.length && !yes; i++) { if (wordIn(all[i], YES_WORDS)) { yes = all[i]; } }
+        for (i = 0; i < all.length && !yes; i++) {
+            if (all[i].classList && all[i].classList.contains('btn-success') && !wordIn(all[i], NO_WORDS)) { yes = all[i]; }
+        }
+        for (i = 0; i < all.length && !no; i++) { if (all[i] !== yes && wordIn(all[i], NO_WORDS)) { no = all[i]; } }
+        for (i = 0; i < all.length && !no; i++) { if (all[i] !== yes) { no = all[i]; } }
+        return { yes: yes, no: no };
+    }
+
+    // Every open FOREXE window that asks «... sigur ...?» and has nothing to fill in gets its
+    // «Da» pressed, once per opening (a window that closes and opens again is asked anew).
+    function checkConfirm() {
+        confirmTimer = null;
+        if (suspended || guardBox) { return; }
+        var modals;
+        try { modals = document.querySelectorAll('.modal'); } catch (e) { return; }
+        for (var i = 0; i < modals.length; i++) {
+            var m = modals[i];
+            if (!isVisible(m)) { m._kbotAnswered = false; continue; }
+            if (m._kbotAnswered) { continue; }
+            var text = norm(m.innerText);
+            if (fold(text).indexOf(CONFIRM_WORD) < 0) { continue; }
+            if (modalHasFields(m)) { continue; }
+            var b = confirmButtons(m);
+            if (!b.yes || !b.no) { continue; }
+            m._kbotAnswered = true;
+            emit('info', { message: 'întrebare FOREXE confirmată de K-BOT («' + norm(b.yes.innerText || b.yes.value) +
+                '»): ' + text.slice(0, 160) });
+            try { b.yes.click(); } catch (ignored) { }
+        }
+    }
+
+    // A window is drawn in several steps (inserted, then shown): one look after they settle.
+    function scheduleConfirmCheck() {
+        if (confirmTimer || suspended) { return; }
+        confirmTimer = setTimeout(checkConfirm, CONFIRM_DELAY_MS);
+    }
+
+    // ── Section 18: the robot left the page on the empty «Angajament nou» form ──
+    function onNewAngajamentForm() {
+        if (readCod()) { return false; }
+        var descr = null;
+        try { descr = document.querySelector('textarea[name=\'descriere\']'); } catch (ignored) { }
+        if (!descr || !isVisible(descr)) { return false; }
+        var buttons;
+        try { buttons = document.querySelectorAll('button'); } catch (e) { return false; }
+        for (var i = 0; i < buttons.length; i++) {
+            if (fold(buttons[i].innerText).indexOf('adauga angajament') >= 0) { return true; }
+        }
+        return false;
+    }
+
+    function armNewAngajament() {
+        if (suspended || state.op || !onNewAngajamentForm()) { return; }
+        startOperation('angajament', OPS['angajament'].label, null);
     }
 
     // ── The operator's page choices: styles + developer tools ────────────────
@@ -804,12 +1054,19 @@
             var raw = localStorage.getItem(KEY_CONFIG);
             if (raw) {
                 var c = JSON.parse(raw);
-                if (c && typeof c === 'object') {
-                    return { devTools: !!c.devTools, darkMode: !!c.darkMode, veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : [] };
-                }
+                if (c && typeof c === 'object') { return configFrom(c); }
             }
         } catch (ignored) { }
-        return { devTools: false, darkMode: false, veil: veilColors(null), rules: [] };
+        return configFrom({});
+    }
+
+    // One shape for the stored and the received config. "menu" (section 16) is on unless it
+    // says false: a config kept by an older script has no such key.
+    function configFrom(c) {
+        return {
+            devTools: !!c.devTools, darkMode: !!c.darkMode, menu: c.menu !== false,
+            veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : []
+        };
     }
 
     // From .NET: the JSON text of ForexeWatchConfig. Applied now, kept for the next load.
@@ -817,10 +1074,11 @@
         var c = null;
         try { c = typeof json === 'string' ? JSON.parse(json) : json; } catch (ignored) { }
         if (!c || typeof c !== 'object') { return; }
-        config = { devTools: !!c.devTools, darkMode: !!c.darkMode, veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : [] };
+        config = configFrom(c);
         try { localStorage.setItem(KEY_CONFIG, JSON.stringify(config)); } catch (ignored) { }
         installStyles();
         installBusyStyle();
+        syncMenu();
     }
 
     // A rule's "page" (operator, 21.09.2026): empty = every page; otherwise the rule is in
@@ -1034,7 +1292,7 @@
         syncBusy();
         if (document.body) {
             if (!veil || !document.body.contains(veil)) { veil = null; buildVeil(); }
-            if (menu && document.body.contains(menu)) { menu.style.display = suspended ? 'none' : ''; }
+            if (menu && document.body.contains(menu)) { syncMenu(); }
         }
         hookWicket();
     }
@@ -1599,6 +1857,13 @@
         document.body.appendChild(menu);
         renderStatus();
         setFolded(readFolded());
+        syncMenu();
+    }
+
+    // The menu is on screen unless a robot job drives the page (it would sit over the
+    // robot's click targets) or the settings switched it off (section 16).
+    function syncMenu() {
+        if (menu) { menu.style.display = (suspended || !config.menu) ? 'none' : ''; }
     }
 
     function readFolded() {
@@ -1695,14 +1960,16 @@
                 sessionStorage.removeItem(KEY_SUSPEND_MSG);
             }
         } catch (ignored) { }
-        if (menu) { menu.style.display = suspended ? 'none' : ''; }
+        syncMenu();
         // The rules stay on (section 4); the veil follows the flag (section 9).
         if (styleEl) { styleEl.disabled = false; }
         if (!veil) { buildVeil(); }
         syncBusy();
         // Handed back after a robot job: say at once which angajament it left on screen,
         // even when it is the same code as before the job (the shell may have missed it).
-        if (!suspended) { reportPage(true); }
+        // A job that stopped on the empty «Angajament nou» form hands the operation over
+        // too (section 18).
+        if (!suspended) { reportPage(true); armNewAngajament(); }
     }
 
     function readSuspended() {
@@ -1756,10 +2023,14 @@
         buildMenu();
         buildVeil();
         applyZoom(readZoom(), true);
-        if (suspended && menu) { menu.style.display = 'none'; }
+        syncMenu();
         // The form guard goes BEFORE the watcher: a swallowed save must not arm a finish.
         document.addEventListener('click', onGuardClick, true);
         document.addEventListener('keydown', onGuardKey, true);
+        // Section 17: the same-date question holds a save after the guard, before the marker.
+        document.addEventListener('click', onSameDateClick, true);
+        document.addEventListener('focusout', onSameDateLeave, true);
+        document.addEventListener('change', onSameDateLeave, true);
         // Slice 0076: the marker holds a save click between the guard and the watcher.
         document.addEventListener('click', onMarcajClick, true);
         document.addEventListener('keydown', onMarcajKey, true);
@@ -1775,6 +2046,13 @@
             new MutationObserver(scheduleGuardRefresh).observe(document.body || document.documentElement,
                 { childList: true, subtree: true });
         } catch (ignored) { }
+        // Section 15: a confirmation window is either inserted (childList) or only shown
+        // (its class / style); both are looked at, once per burst.
+        try {
+            new MutationObserver(scheduleConfirmCheck).observe(document.body || document.documentElement,
+                { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        } catch (ignored) { }
+        scheduleConfirmCheck();
         // Always on, suspended or not: the robot never presses these, the operator must not.
         window.addEventListener('keydown', onKeyDown, true);
         window.addEventListener('contextmenu', onContextMenu, true);
@@ -1792,6 +2070,7 @@
             reportPage(false);
             refreshGuards();
             checkAbandoned();
+            scheduleConfirmCheck();
             // The last safety net under the watchers of section 11: should anything drop
             // the sheets, the busy class or the veil past all of them, they come back here.
             resync();

@@ -49,6 +49,9 @@ Public Class BrowserView
     Private _deschidere As Boolean
     ' Why the last dock failed, shown in the panel until the next attempt; empty = it did not.
     Private _eroareAndocare As String = String.Empty
+    ' Slice 0097-02: the shell asked for the empty «Angajament nou» form while the browser was
+    ' not docked here yet; the dock in flight opens it when it is done.
+    Private _nouCerut As Boolean
 
     Public Sub New(controller As ForexeController)
         ArgumentNullException.ThrowIfNull(controller)
@@ -165,6 +168,62 @@ Public Class BrowserView
         End Try
     End Sub
 
+    ' ── A new angajament, by hand (slice 0097-02) ────────────────────────
+
+    ''' <summary>
+    ''' «Meniu › Adaugare angajamente › Creeaza angajament in FOREXE»: the robot opens the empty
+    ''' «Angajament nou» form in the page and stops; the operator fills it in here. The shell
+    ''' calls this right after it has cleared the tree's selection and switched to this view, so
+    ''' the browser may still be docking: the request then waits for that dock (its tail starts
+    ''' it), and is dropped if the dock fails. UI boundary: failures are shown in the view.
+    ''' </summary>
+    Public Async Function CereAngajamentNouAsync() As Task
+        Try
+            _nouCerut = True
+            If _andocare Then Return                 ' the dock in flight starts it when it is done
+            Await AndocheazaAsync()                  ' docks when needed; its tail takes the request
+            If Not _nouCerut Then Return
+            ' Already docked here (AndocheazaAsync had nothing to do), or there was nothing to dock.
+            _nouCerut = False
+            If _controller.IsConnected AndAlso BrowserEsteAici Then
+                PornesteAngajamentNou()
+            Else
+                ActualizeazaStarea()
+            End If
+        Catch ex As Exception
+            _nouCerut = False
+            GlobalErrorLog.Write("BrowserView.CereAngajamentNouAsync", ex)
+            lblStare.Text = "Formularul de angajament nou nu s-a putut deschide în FOREXE: " & ex.Message
+        End Try
+    End Function
+
+    ' UI boundary (async Sub): log and tell, never rethrow.
+    Private Async Sub PornesteAngajamentNou()
+        If _deschidere Then
+            lblStare.Text = "Se deschide deja un angajament — cereți din nou formularul de angajament nou după aceea."
+            Return
+        End If
+        _deschidere = True
+        busy.Running = True
+        lblStare.Text = "Deschid formularul de angajament nou în FOREXE..."
+        Try
+            Dim ok As Boolean = Await _controller.DeschideAngajamentNouAsync()
+            If ok Then
+                lblStare.Text = "Formularul «Angajament nou» e deschis în FOREXE — completați-l și salvați."
+            Else
+                lblStare.Text = If(String.IsNullOrEmpty(_controller.LastFailure),
+                                   "Formularul de angajament nou nu s-a putut deschide în FOREXE.",
+                                   _controller.LastFailure)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("BrowserView.PornesteAngajamentNou", ex)
+            lblStare.Text = "Formularul de angajament nou nu s-a putut deschide în FOREXE: " & ex.Message
+        Finally
+            _deschidere = False
+            busy.Running = False
+        End Try
+    End Sub
+
     ' ── Docking follows visibility ───────────────────────────────────────
 
     Private Async Sub BrowserView_VisibleChanged(sender As Object, e As EventArgs) Handles Me.VisibleChanged
@@ -217,9 +276,18 @@ Public Class BrowserView
         ' event of the watcher's resume would arrive after this decision - so a page already
         ' on that angajament stays put.
         If BrowserEsteAici Then
+            ' Slice 0097-02: the shell asked for the empty «Angajament nou» form meanwhile; that
+            ' is where the page goes, not to a node (the shell cleared the selection anyway).
+            If _nouCerut Then
+                _nouCerut = False
+                PornesteAngajamentNou()
+                Return
+            End If
             _codPagina = Await _controller.CitesteCodulPaginiiAsync()
             ActualizeazaStarea()
             DeschideDacaDifera()
+        Else
+            _nouCerut = False   ' no browser here: the request does not wait for a later dock
         End If
     End Function
 

@@ -299,6 +299,7 @@ Partial Class LoginForm
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
+        capBar.ShowHelpButton = False
         capBar.ShowThemeButton = True
         capBar.Size = New Size(516, 67)
         capBar.TabIndex = 1

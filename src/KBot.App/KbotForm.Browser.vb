@@ -122,6 +122,52 @@ Partial Public Class KbotForm
     End Sub
 
     ''' <summary>
+    ''' Slice 0097-02 -- «Meniu › Adaugare angajamente › Creeaza angajament in FOREXE»: nothing
+    ''' stays selected in the tree, the «Browser FOREXE» view comes to the front and the robot
+    ''' opens the empty «Angajament nou» form in it («adlop - Angajament Nou.wfl»), where the
+    ''' operator fills it in by hand. Without a FOREXE session it asks for one first, the same
+    ''' way the band's «Conectare» does. UI boundary (Async Sub from the menu): every failure is
+    ''' logged and told, never thrown.
+    ''' </summary>
+    Private Async Sub CreeazaAngajamentInForexe()
+        Const caption As String = "Creează angajament în FOREXE"
+        Try
+            If _controller.IsBusy Then
+                KBotMessage.Show(Me, "Robotul FOREXE lucrează acum. Așteptați să termine, apoi alegeți din nou «Creează angajament în FOREXE».",
+                                 caption, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            If Not BrowserDisponibil() Then
+                Dim conectat As Boolean = Await _controller.ConnectAsync().ConfigureAwait(True)
+                If Not conectat OrElse Not BrowserDisponibil() Then
+                    Dim motiv As String = _controller.LastFailure
+                    KBotMessage.Show(Me, "Nu există o sesiune FOREXE, deci formularul de angajament nou nu poate fi deschis." &
+                                     If(String.IsNullOrEmpty(motiv), String.Empty, vbLf & motiv),
+                                     caption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Return
+                End If
+            End If
+
+            ' The selection goes FIRST: the view records the tree's selection when it is shown and
+            ' would send the robot after that angajament the moment the browser is docked.
+            _currentInfo = Nothing
+            tree.SelectedNode = Nothing
+            navViews.SetItemVisible("browser", True)   ' the StateChanged of a fresh connect may still be on its way
+            navViews.SelectedKey = "browser"
+            ApplyViewGating(Nothing)
+            _activeView?.SetContext(Nothing)           ' the view was already open: SelectedKey changed nothing
+            RefreshInfoForm()
+
+            If _browserView Is Nothing Then Throw New InvalidOperationException("The «Browser FOREXE» view was not created.")
+            Await _browserView.CereAngajamentNouAsync().ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.CreeazaAngajamentInForexe", ex)
+            KBotMessage.Show(Me, "Formularul de angajament nou nu a putut fi deschis în FOREXE: " & ex.Message,
+                             caption, MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
     ''' The browser must leave the view's panel BEFORE the shell's window is destroyed:
     ''' DestroyWindow takes every child in the tree with it, the Chromium window included,
     ''' and that kills the FOREXE session. Undocking completes synchronously (the executor

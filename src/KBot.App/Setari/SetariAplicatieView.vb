@@ -102,6 +102,8 @@ Public Class SetariAplicatieView
         Try
             chkAvansate.Checked = AppSettings.Current.AdvancedOptions
             AplicaOptiunileAvansate(AppSettings.Current.AdvancedOptions)
+            ' Slice 0097-02: the tour switches itself off when it was seen to the end.
+            chkTurInitial.Checked = AppSettings.Current.ShowInitialTour
         Finally
             _suppress = before
         End Try
@@ -210,6 +212,8 @@ Public Class SetariAplicatieView
             chkLogViewer.Checked = s.LogViewerEnabled
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
+            chkStartMaximized.Checked = s.StartMaximized
+            chkTurInitial.Checked = s.ShowInitialTour
             chkAvansate.Checked = s.AdvancedOptions
             chkCapturi.Checked = s.HelpCaptureMode
             AplicaOptiunileAvansate(s.AdvancedOptions)
@@ -281,6 +285,22 @@ Public Class SetariAplicatieView
     Private Sub ChkReceptii_CheckedChanged(sender As Object, e As EventArgs) Handles chkReceptii.CheckedChanged
         SalveazaComutator(Sub(s) s.ReceptiiCheckedOnOpen = chkReceptii.Checked,
                           If(chkReceptii.Checked, "Selectorul de recepții pornește cu tot bifat.", "Selectorul de recepții pornește gol."))
+    End Sub
+
+    ' Slice 0097-02: the main window opens maximized. Read once, when the window opens.
+    Private Sub ChkStartMaximized_CheckedChanged(sender As Object, e As EventArgs) Handles chkStartMaximized.CheckedChanged
+        SalveazaComutator(Sub(s) s.StartMaximized = chkStartMaximized.Checked,
+                          If(chkStartMaximized.Checked,
+                             "Fereastra principală va porni mărită pe tot ecranul. Se aplică de la următoarea pornire.",
+                             "Fereastra principală va porni la mărimea ei obișnuită. Se aplică de la următoarea pornire."))
+    End Sub
+
+    ' Slice 0097-02: the main window's tour at every start, until seen to the end or switched off.
+    Private Sub ChkTurInitial_CheckedChanged(sender As Object, e As EventArgs) Handles chkTurInitial.CheckedChanged
+        SalveazaComutator(Sub(s) s.ShowInitialTour = chkTurInitial.Checked,
+                          If(chkTurInitial.Checked,
+                             "Turul ferestrei principale va porni singur la următoarea pornire a K-BOT.",
+                             "Turul ferestrei principale nu mai pornește singur. Îl găsești oricând la «?»."))
     End Sub
 
     ' ---------------- documents ----------------

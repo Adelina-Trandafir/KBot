@@ -5,15 +5,15 @@ part: contabil
 topic: contabil.fereastra
 ---
 ## Bine ai venit
-<!-- slice: 0000-04, 0000-23 -->
+<!-- slice: 0000-04, 0000-23, 0097-02 -->
 target: KbotForm
 goto: view:sumar
-Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând.
+Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând. Turul pornește singur la fiecare pornire până îl vezi până la capăt; îl găsești oricând la «?».
 
 ## Butonul MENIU
-<!-- slice: 0087, 0084, 0088 -->
+<!-- slice: 0087, 0084, 0088, 0097-02 -->
 target: KbotForm.btnMeniu
-De aici pornești un angajament nou, deschizi extrasele de cont, nomenclatoarele și, când există, operațiunile necorelate. Semnul (!) pe buton înseamnă că ai operațiuni necorelate de rezolvat.
+De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct în pagina FOREXE), deschizi extrasele de cont, nomenclatoarele și, când există, operațiunile necorelate. Semnul (!) pe buton înseamnă că ai operațiuni necorelate de rezolvat.
 
 ## Anul de lucru
 <!-- slice: 0001, 0086 -->

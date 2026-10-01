@@ -5,7 +5,8 @@ Imports KBot.Theming
 ''' <summary>
 ''' The bubble of a guided tour (slice 0000-04): the tour's name and step «n din m» (no caption
 ''' bar since slice 0000-24), the step's title and text, a note
-''' when K-BOT could not do something by itself, and «Înapoi» / «Înainte» / «Închide». Top-most,
+''' when K-BOT could not do something by itself, «Nu mai arata turul initial» (slice 0097-02, only
+''' on the tour that starts by itself), and «Inapoi» / «Inainte» / «Inchide». Top-most,
 ''' placed next to the control the step talks about -- since slice 0000-23 a callout whose point
 ''' touches the ring. Keys: → or Enter = next, ← = back, Esc = close.
 ''' <see cref="HelpTourRunner"/> drives it.
@@ -21,6 +22,30 @@ Public Class HelpTourBubble
     Public Sub New()
         InitializeComponent()
     End Sub
+
+    ''' <summary>
+    ''' Slice 0097-02: the box «Nu mai arata turul initial» is on the bubble (only the tour that
+    ''' starts by itself at K-BOT's start asks for it). Set before the first step is shown.
+    ''' </summary>
+    Public Property ShowNeverAgain As Boolean
+        Get
+            Return _neverAgainShown
+        End Get
+        Set(value As Boolean)
+            _neverAgainShown = value
+            chkNuMaiArata.Visible = value
+        End Set
+    End Property
+
+    ' Its own flag: Control.Visible answers False for as long as the bubble itself is not shown.
+    Private _neverAgainShown As Boolean
+
+    ''' <summary>Slice 0097-02: the operator ticked «Nu mai arata turul initial».</summary>
+    Public ReadOnly Property NeverAgain As Boolean
+        Get
+            Return chkNuMaiArata.Checked
+        End Get
+    End Property
 
     ''' <summary>Fills the bubble for one step and sizes it to its text.</summary>
     Public Sub ShowStep(tourTitle As String, stepTitle As String, text As String, note As String,
@@ -51,6 +76,7 @@ Public Class HelpTourBubble
         h += lblTitlu.GetPreferredSize(New Size(w, 0)).Height + lblTitlu.Margin.Vertical
         h += lblText.GetPreferredSize(New Size(w, 0)).Height + lblText.Margin.Vertical
         If lblNota.Visible Then h += lblNota.GetPreferredSize(New Size(w, 0)).Height + lblNota.Margin.Vertical
+        If _neverAgainShown Then h += chkNuMaiArata.GetPreferredSize(New Size(w, 0)).Height + chkNuMaiArata.Margin.Vertical
         h += CInt(Math.Round(44 * DeviceDpi / 96.0)) + tlyButoane.Margin.Vertical
         ClientSize = New Size(ClientSize.Width, h + Padding.Vertical + 4)
     End Sub
@@ -232,6 +258,7 @@ Public Class HelpTourBubble
             BackColor = p.AccentColor   ' the 1px outline in the accent colour: the bubble belongs to the ring
             lblPas.ForeColor = p.TextDimColor
             lblNota.ForeColor = p.WarningColor
+            chkNuMaiArata.ForeColor = p.TextDimColor
             ' ThemeManager.Apply rounds a borderless form AFTER this; undo it once Apply is done.
             If IsHandleCreated Then BeginInvoke(New Action(AddressOf PlainFrame))
         Catch ex As Exception

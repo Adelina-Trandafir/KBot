@@ -1000,6 +1000,45 @@ Partial Public NotInheritable Class ForexeController
     End Function
 
     ''' <summary>
+    ''' Slice 0097-02: opens the EMPTY «Angajament nou» form on the live session and stops there
+    ''' («adlop - Angajament Nou.wfl»). Nothing is filled in and nothing is written; the operator
+    ''' carries on from the page, and the in-page watcher follows the save as it does for an
+    ''' angajament started by hand. Returns False when the run could not start or failed - the
+    ''' reason is in <see cref="LastFailure"/> and on the console.
+    ''' </summary>
+    Public Async Function DeschideAngajamentNouAsync() As Task(Of Boolean)
+        Try
+            _ultimulEsec = String.Empty
+            If _busy Then
+                RaporteazaEsec("Rulează deja o operație FOREXE — formularul de angajament nou nu a fost deschis.")
+                Return False
+            End If
+            If Not IsConnected Then
+                RaporteazaEsec("Nu există o sesiune FOREXE — formularul de angajament nou nu poate fi deschis.")
+                Return False
+            End If
+
+            IntraInLucru()
+            Try
+                RaporteazaStare("Deschid formularul de angajament nou în FOREXE...")
+                Dim rezultat As JobResult = Await RunGatedAsync(Function() _runner.RunJobAsync(
+                    JobBuilder.BuildAngajamentNou(), Progres(), _cts.Token))
+                If Not rezultat.Success Then
+                    RaporteazaEsec("Formularul de angajament nou nu s-a putut deschide în FOREXE: " & rezultat.Message)
+                    Return False
+                End If
+                RaporteazaStare("Formularul de angajament nou e deschis în FOREXE.")
+                Return True
+            Finally
+                IesDinLucru()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DeschideAngajamentNouAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Slice 0081-04: runs one SENDING workflow (Creare / Incarca Rezervare / Definitivare /
     ''' Derulare) on the live session and hands back its result, FAILED ONES INCLUDED: a sending
     ''' run that stops halfway has already changed forexecab, and what it read before stopping (the

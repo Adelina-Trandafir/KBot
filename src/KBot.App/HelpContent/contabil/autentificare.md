@@ -7,8 +7,9 @@ parent: contabil
 screens: LoginForm
 keywords: login, parola, utilizator, unitate, autentificare, sesiune expirata, reautentificare, tine minte parola
 ---
-<!-- slice: 0001, 0063, 0072, 0081-06, 0097 -->
-K-BOT pornește cu fereastra de conectare.
+<!-- slice: 0001, 0063, 0072, 0081-06, 0097, 0097-02 -->
+K-BOT pornește cu fereastra de conectare. Ea nu are butonul «?» în bara de titlu: pagina aceasta
+se deschide cu **F1**.
 
 <!-- capture: conectare-fereastra | caption: Fereastra de conectare | prepare: Porniți K-BOT; fereastra de conectare se fotografiază înainte de «Continuă». -->
 

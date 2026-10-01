@@ -9,7 +9,7 @@
       <RemoteRoot>/updates/latest.json            what the server tells clients
 
   The client (KBot.App, Release build only) asks GET /api/update/latest at
-  startup and from the "Caută actualizări" buttons, compares its own
+  startup and from the "Cauta actualizari" buttons, compares its own
   KBot.App FileVersion with `version` / `minimum`, downloads /api/update/download
   and hands the zip to KBot.Updater.exe.
 
@@ -24,11 +24,21 @@
   latest.json is written LAST, so a client can never read a version whose file
   is not fully there.
 
+  What changed (slice 0067-02): the `notes` of latest.json -- the text the client
+  reads in the update box -- come from docs\release-notes\NOUTATI.md, where an AI
+  assistant (Copilot Chat in Visual Studio, or Claude) writes one Romanian section
+  per version. publish-release.ps1 puts the request on the clipboard and waits for
+  the section; this script then sends every section ABOVE the server's version and
+  up to the new one, so a client that jumps several versions reads all of them.
+  Rules and procedure: docs\release-notes\README.md.
+
   Parameters
     -Mandatory        raise `minimum` to this version: every client below it is
-                      forced to update (no "Mai târziu"). Without it, `minimum`
+                      forced to update (no "Mai tarziu"). Without it, `minimum`
                       stays what the server already had (or 0.0.0.0).
-    -Notes "<text>"   free text shown to the operator in the update dialog.
+    -Notes "<text>"   your own text for the update dialog, instead of the
+                      assistant's (one change per line). It is also stored as the
+                      version's section in NOUTATI.md when that has none.
     -SkipBuild        do not build; push the newest artifacts\KBot_Release_*.zip.
     -Force            push even if the server already has this version or newer.
     -SignThumbprint   forwarded to publish-release.ps1.
@@ -192,11 +202,11 @@ if (-not $SkipBuild) {
     $publish = Join-Path $SolutionRoot 'publish-release.ps1'
     if (-not (Test-Path -LiteralPath $publish)) { throw "publish-release.ps1 not found at $publish." }
     Write-Step "Building RELEASE via publish-release.ps1 ..."
-    if ([string]::IsNullOrWhiteSpace($SignThumbprint)) {
-        & $publish -Bump $Bump -Sign $Sign
-    } else {
-        & $publish -SignThumbprint $SignThumbprint -Bump $Bump -Sign $Sign
-    }
+    $publishArgs = @{ Bump = $Bump; Sign = $Sign }
+    if (-not [string]::IsNullOrWhiteSpace($SignThumbprint)) { $publishArgs['SignThumbprint'] = $SignThumbprint }
+    # Notes typed by hand (-Notes): the AI assistant is not asked for them (step 4b records them).
+    if (-not [string]::IsNullOrWhiteSpace($Notes)) { $publishArgs['ReleaseNotes'] = 'Skip' }
+    & $publish @publishArgs
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "publish-release.ps1 failed (ExitCode=$LASTEXITCODE)." }
 }
 
@@ -228,6 +238,32 @@ if ($server) {
     }
 } else {
     Write-Step "Server has no published update yet (404)."
+}
+
+# --- 4b. What changed: the notes for the update box (slice 0067-02) -------------
+#  Typed by hand (-Notes) = sent as they are and recorded. Otherwise they are read
+#  from docs\release-notes\NOUTATI.md: every section above the server's version, up
+#  to this one. publish-release.ps1 already asked for and waited on this version's
+#  section; under -SkipBuild nobody did, so it is asked for here.
+#  An error here stops the push: nothing has been uploaded yet.
+$notesTool = Join-Path $SolutionRoot 'tools\ReleaseNotes\ReleaseNotes.ps1'
+if (-not (Test-Path -LiteralPath $notesTool)) { throw "ReleaseNotes.ps1 not found at $notesTool." }
+if (-not [string]::IsNullOrWhiteSpace($Notes)) {
+    & $notesTool -Action Record -Version $localVersion.ToString() -NotesText $Notes
+} else {
+    if ($SkipBuild) {
+        & $notesTool -Action Request -Version $localVersion.ToString()
+        $null = & $notesTool -Action Wait -Version $localVersion.ToString()
+    }
+    $sinceVersion = ''
+    if ($server) { $sinceVersion = ([version]$server.version).ToString() }
+    $Notes = [string](& $notesTool -Action Text -Version $localVersion.ToString() -Since $sinceVersion)
+    if ([string]::IsNullOrWhiteSpace($Notes)) {
+        Write-Warning "[update] No release notes for $localVersion in docs\release-notes\NOUTATI.md -- the update box will say nothing about what changed."
+    } else {
+        Write-Step "Notes for the update box (from NOUTATI.md). To change them: stop at the password prompt (Ctrl+C), edit NOUTATI.md, run again with -SkipBuild."
+        foreach ($noteLine in ($Notes -split "\r?\n")) { Write-Host "    $noteLine" }
+    }
 }
 
 $minimum = $serverMinimum

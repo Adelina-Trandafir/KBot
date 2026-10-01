@@ -89,6 +89,19 @@ Public NotInheritable Class AppSettings
     Public Property HelpCaptureMode As Boolean = False
 
     ''' <summary>
+    ''' Slice 0097-02: the main window's guided tour starts by itself at every start of K-BOT, until
+    ''' it was seen to its last step or the operator ticked «Nu mai arata turul initial» on its
+    ''' bubble (both write False here). «Setari -> Aplicatie» turns it back on.
+    ''' </summary>
+    Public Property ShowInitialTour As Boolean = True
+
+    ''' <summary>
+    ''' Slice 0097-02: the main window opens maximized over the working area of its screen. Off by
+    ''' default (it opens at its designed size, centred), as before the switch existed.
+    ''' </summary>
+    Public Property StartMaximized As Boolean = False
+
+    ''' <summary>
     ''' Slice 0000-23: the text size of the help window's pages, in percent of the normal size
     ''' (which already follows the K-BOT text size). One of <see cref="HelpTextPercentChoices"/>.
     ''' </summary>
@@ -104,6 +117,13 @@ Public NotInheritable Class AppSettings
     ''' swallows those keys and the context menu (operator, 21.09.2026).
     ''' </summary>
     Public Property ForexeDevToolsAllowed As Boolean = False
+
+    ''' <summary>
+    ''' Slice 0097-02: the small floating K-BOT menu (zoom, the state of the watcher, its manual
+    ''' buttons) is shown inside the FOREXE page. On by default, as before the switch existed;
+    ''' off, the page keeps everything else K-BOT does in it and only the menu is not drawn.
+    ''' </summary>
+    Public Property ForexeShowPageMenu As Boolean = True
 
     ''' <summary>
     ''' The operator's CSS rules for the FOREXE page, written into every load and refresh.
@@ -486,6 +506,9 @@ Public NotInheritable Class AppSettings
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
+            .ShowInitialTour = ShowInitialTour,
+            .StartMaximized = StartMaximized,
+            .ForexeShowPageMenu = ForexeShowPageMenu,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
@@ -534,6 +557,9 @@ Public NotInheritable Class AppSettings
         If dto.HelpTextPercent.HasValue AndAlso HelpTextPercentChoices.Contains(dto.HelpTextPercent.Value) Then
             s.HelpTextPercent = dto.HelpTextPercent.Value
         End If
+        If dto.ShowInitialTour.HasValue Then s.ShowInitialTour = dto.ShowInitialTour.Value
+        If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
+        If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         ' A multiplier out of range in the file (hand-edited) keeps the default.
@@ -600,6 +626,9 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?
+    Public Property ShowInitialTour As Boolean?
+    Public Property StartMaximized As Boolean?
+    Public Property ForexeShowPageMenu As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?

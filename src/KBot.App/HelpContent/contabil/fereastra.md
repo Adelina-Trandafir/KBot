@@ -5,7 +5,7 @@ part: contabil
 order: 20
 parent: contabil
 screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.cboAn, KbotForm.cboSs, KbotForm.btnInfo, InternalInfoForm
-keywords: arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate
+keywords: arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, adaugare angajamente, fereastra marita, tot ecranul, maximizat, la pornire
 ---
 <!-- slice: 0006, 0086 -->
 Fereastra principală are cinci zone.
@@ -68,14 +68,26 @@ Schimbarea **nu se poate face**:
 > și deschide-le din nou după ce ai trecut pe altă unitate.
 
 ## MENIU
-<!-- slice: 0087, 0084, 0088, 0095-02 -->
+<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02 -->
 
-- **Angajament nou** — [Angajament nou](topic:contabil.ddf.nou)
+- **Adăugare angajamente...** — un dosar cu două rânduri:
+  - **Angajament nou** — îl faci în K-BOT și îl trimiți apoi în FOREXE — [Angajament nou](topic:contabil.ddf.nou);
+  - **Creează angajament în FOREXE** — îl faci de mână, direct în pagina FOREXE — [Un angajament nou făcut direct în FOREXE](topic:contabil.forexe.browser).
 - **(!) Operațiuni necorelate** — apare doar când există — [Operațiuni necorelate](topic:contabil.notecab)
 - **Extrase** — fereastra «Extrase de cont»
 - **Nomenclatoare › Clasificații bugetare / Parteneri** — [Nomenclatoare](topic:contabil.nomenclatoare)
 
 Când există operațiuni necorelate, butonul MENIU poartă semnul **(!)**.
+
+## Cum pornește fereastra
+<!-- slice: 0097-02 -->
+
+Fereastra principală pornește la mărimea ei obișnuită, în mijlocul ecranului. Dacă o vrei
+**mărită pe tot ecranul** de la pornire, bifează în **Setări › Aplicație** «Fereastra principală
+pornește mărită (pe tot ecranul)» — [Setări și aspect](topic:contabil.setari).
+
+La primele porniri, K-BOT îți arată singur **turul ferestrei principale** —
+[Tururile ghidate](topic:contabil.ajutor).
 
 ## Butonul ⓘ
 <!-- slice: fara-felie -->

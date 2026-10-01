@@ -5,15 +5,16 @@ part: contabil
 order: 900
 parent: contabil
 screens: HelpForm, KBotHelpPopup
-keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide
+keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul
 ---
-<!-- slice: 0000-01, 0000-04, 0000-20 -->
+<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02 -->
 Ajutorul se deschide în două feluri:
 
 - **F1**, în orice fereastră: se deschide direct fereastra de ajutor, la pagina despre ce ai pe
   ecran.
 - Butonul **?** din bara de titlu a fiecărei ferestre: se deschide un **meniu mic**, chiar sub
-  buton, cu o căsuță de căutare, pagina ecranului tău și tururile ghidate.
+  buton, cu o căsuță de căutare, pagina ecranului tău și tururile ghidate. Fereastra de
+  **conectare** nu are acest buton; acolo ajutorul se deschide cu F1.
 
 ## Meniul «?»
 <!-- slice: 0000-20, 0000-24 -->
@@ -67,7 +68,7 @@ căutai); un clic pe aceeași stea o retrage. Poți da nota și în fereastra de
 citit pagina: întrebarea din meniu merge acolo cu tot cu rezultatele ei.
 
 ## Tururile ghidate
-<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24 -->
+<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24, 0097-02 -->
 
 Un tur îți arată pe ecran, pas cu pas, unde e fiecare lucru: un chenar colorat în jurul
 butonului sau al listei și o bulă cu **Înapoi**, **Înainte** și **Închide**, al cărei vârf arată
@@ -81,6 +82,15 @@ sărite.
 
 Îl pornești din meniul «?» (**Tururi ghidate** sau butonul **«Tur ghidat»** al unui rezultat), din pagina lui de ajutor
 («▶ Tur ghidat: ...») sau din pagina de start a ajutorului, unde sunt toate.
+
+**Turul ferestrei principale pornește și singur**, la fiecare pornire a K-BOT, până când:
+
+- îl vezi **până la capăt** (apeși «Gata» la ultimul pas), sau
+- bifezi pe bula lui **«Nu mai arăta turul inițial»** și îl închizi.
+
+Dacă doar îl închizi, fără bifă, pornește din nou data viitoare. Din meniul «?» îl poți porni
+oricând; ca să pornească iar singur, bifează în **Setări › Aplicație** «Arată turul ferestrei
+principale la pornirea K-BOT» — [Setări și aspect](topic:contabil.setari).
 
 ## Fereastra de ajutor
 <!-- slice: 0000-01, 0000-20, 0000-23 -->

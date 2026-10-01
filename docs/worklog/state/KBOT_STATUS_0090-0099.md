@@ -135,6 +135,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0097 | **Corecturi (cererea operatorului, 30.09.2026)** — ORD/DDF: fără mesaj după ștergere (doar `mesaje_operator.log`); rădăcini «Toate ordonanțările» / «Toate reviziile»; ștergere pe lună și pe toate (refuzată dacă e ceva semnat); document cu măcar o semnătură = fără meniu (DDF: rămâne doar «Trimite»). KbotForm: eticheta barei strânse măsurată ca la desen (DPI); «Note corecție» doar cu note (`AreNoteCab`). Bara de titlu: selector de unitate (≥ 2 unități, `/api/auth/my-units` + `/api/auth/switch-unit`). Setări → Autentificare: reafișarea ferestrei de autentificare (oprire doar cu opțiuni avansate; 10–60 min altfel) + reautentificare tăcută. Login: «Ține minte parola până la repornirea calculatorului» (doar cu opțiuni avansate; DPAPI în cheie HKCU volatilă) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste; server nedeployat** | `SLICE-0097-corective.md` | Server: `routes/forexe/tree.py` + `routes/auth/auth.py` (gitignored) de copiat pe VPS. Cauza etichetei înguste = ipoteză (nereprodusă). La schimbarea unității sesiunea FOREXE se închide singură (refuz doar cu o operație FOREXE în curs și pe unități cu rol «Director»). FileVersion-urile nebumped. |
+| 0097-02 | **Corecturi, a doua trecere (cererea operatorului, 01.10.2026)** — (1) turul ferestrei principale pornește singur la fiecare pornire, până e văzut până la capăt sau se bifează «Nu mai arăta turul inițial» pe bula lui (`AppSettings.ShowInitialTour`, `HelpService.StartInitialTour`; revenire din Setări › Aplicație); (2) în pagina FOREXE, întrebările «Sunteți sigur...?» fără nimic de completat primesc singure «Da» (`ForexeWatch.js` §15; doar cât lucrează operatorul); (3) MENIU: dosarul «Adăugare angajamente...» = «Angajament nou» + «Creează angajament în FOREXE» (deselectează arborele, deschide vederea «Browser FOREXE», rulează `adlop - Angajament Nou.wfl` până la formularul gol; pagina predată pe formular pornește urmărirea «Angajament nou»); (4) mini-meniul K-BOT din pagină după `AppSettings.ForexeShowPageMenu` (Setări › FOREXE); (5) fereastra de conectare fără «?»; (6) `AppSettings.StartMaximized` (Setări › Aplicație): fereastra principală pornește mărită; (7) recepție nouă pe o dată care are deja recepție: întrebare Da / Nu în pagină, datele citite din lista de pe pagină (`ForexeWatch.js` §17) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**; `node --check` pe script) / **nerulat, nevăzut pe ecran, fără teste** | `SLICE-0097-02-corective.md` | Ajutorul: 0000-25. KBot.Common 1.5.9.0, KBot.Forexe 1.0.19.0; KBot.App la `push-update.ps1`. Ferestrele de confirmare FOREXE și câmpul datei n-au fost văzute: regulile sunt scrise din ce spune deja depozitul despre ele. |
 
 ### Open threads
 
@@ -146,6 +147,17 @@ Everything recorded about each slice: its registry row, its «Current focus» no
   de confirmat pe 100% / 125%.
 - **0097 — schimbarea unității:** ferestrele secundare deschise nu se închid; deconectarea FOREXE
   de la schimbare (`IForexeDisconnect`) nerulată — vederea «Browser FOREXE» andocată, nevăzută.
+- **0097-02 — nimic rulat.** De văzut pe ecran: turul la pornire + bifa de pe bulă, dosarul din
+  MENIU, cele două pagini de Setări, pornirea mărită, bara ferestrei de conectare.
+- **0097-02 — întrebările de confirmare FOREXE (punctul 2):** regula (`.modal` + «sigur» + fără
+  câmpuri + buton de «da» și de «nu») e scrisă fără ca ferestrele reale să fi fost văzute. De
+  verificat pe un PC de client: fiecare fereastră confirmată lasă pe consolă linia `[Urmărire]
+  întrebare FOREXE confirmată de K-BOT …`; una care rămâne pe ecran = regula trebuie lărgită.
+- **0097-02 — recepția pe aceeași dată (punctul 7):** întrebarea de la «Salvează» e sigură; cea de
+  la ieșirea din câmpul datei depinde de evenimentele pe care le dă selectorul de dată FOREXE
+  (nevăzut). Doar recepții NOI; o listă de recepții paginată s-ar citi doar cât e pe pagină.
+- **0097-02 — `adlop - Angajament Nou.wfl` nerulat**; «Creează angajament în FOREXE» nu trece prin
+  coada robotului (ca ceilalți apelanți direcți ai vederii «Browser FOREXE», vezi 0098).
 
 ---
 

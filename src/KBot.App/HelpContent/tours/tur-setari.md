@@ -22,18 +22,18 @@ target: SetariInfoView.btnActualizari
 Butonul «Caută actualizări» verifică dacă există o versiune nouă a K-BOT.
 
 ## Aplicație
-<!-- slice: 0072, 0777 -->
+<!-- slice: 0072, 0777, 0097-02 -->
 target: SetariForm.navViews
 part: item:aplicatie
 goto: setari:aplicatie
-Comutatoarele de zi cu zi și opțiunile listei de angajamente: sortarea și ce coloane se văd.
+Comutatoarele de zi cu zi (între ele: fereastra principală mărită la pornire și turul de la pornire) și opțiunile listei de angajamente: sortarea și ce coloane se văd.
 
 ## FOREXE
-<!-- slice: 0072, 0091, 0097 -->
+<!-- slice: 0072, 0091, 0097, 0097-02 -->
 target: SetariForm.navViews
 part: item:forexe
 goto: setari:forexe
-Starea robotului, certificatul memorat (și dacă se uită la schimbarea unității), testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
+Starea robotului, certificatul memorat (și dacă se uită la schimbarea unității), mini-meniul K-BOT din pagina FOREXE, testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
 
 ## Extrase
 <!-- slice: 0080-02, 0000-23 -->

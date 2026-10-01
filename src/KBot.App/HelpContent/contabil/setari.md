@@ -5,7 +5,7 @@ part: contabil
 order: 80
 parent: contabil
 screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
-keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate
+keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
 <!-- slice: 0072, 0072-01 -->
@@ -18,12 +18,33 @@ Butonul cu **rotița** din bara de titlu a ferestrei principale deschide **Setă
 |--------|------------|
 | **Informații** | datele sesiunii (utilizator, unitate, an, versiunile K-BOT), **schimbarea parolei** și «Caută actualizări» |
 | **Aplicație** | comutatoarele de zi cu zi și opțiunile listei de angajamente (sortare, coloane) |
-| **FOREXE** | certificatul memorat, testul de viteză și timpii de așteptare ai robotului — mai jos |
+| **FOREXE** | certificatul memorat, mini-meniul din pagina FOREXE, testul de viteză și timpii de așteptare ai robotului — mai jos |
 | **Extrase** | coloanele grilelor de extrase — vezi [Extrase de cont](topic:contabil.vederi.extrase) |
 | **Autentificare** | ce ține minte fereastra de conectare, ce se întâmplă când expiră sesiunea și adresa serverului K-BOT — mai jos |
 | **Jurnal** | jurnalele K-BOT, pentru când ceva nu merge |
 
 Setările se salvează pe măsură ce le schimbi.
+
+## Pagina «Aplicație»: pornirea K-BOT
+<!-- slice: 0097-02 -->
+
+Pe fila **Generale**:
+
+- **«Fereastra principală pornește mărită (pe tot ecranul)»** — **debifată la început.** Bifată,
+  fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în
+  mijlocul ecranului. Se aplică de la următoarea pornire.
+- **«Arată turul ferestrei principale la pornirea K-BOT»** — **bifată la început.** Cât e bifată,
+  turul ferestrei principale pornește singur la fiecare pornire. Se debifează singură după ce ai
+  văzut turul până la capăt sau ai bifat «Nu mai arăta turul inițial» pe bula lui; o bifezi din
+  nou dacă vrei să-l revezi la pornire — [Tururile ghidate](topic:contabil.ajutor).
+
+## Pagina «FOREXE»: mini-meniul din pagină
+<!-- slice: 0097-02 -->
+
+**«Arată mini-meniul K-BOT în pagina FOREXE (mărire / micșorare, starea urmăririi)»** — **bifată
+la început.** Debifată, micul meniu K-BOT din colțul paginii FOREXE nu se mai vede; K-BOT urmărește
+în continuare ce salvezi în pagină. Se aplică imediat —
+[Vederea «Browser FOREXE»](topic:contabil.forexe.browser).
 
 ## Pagina «FOREXE»: certificatul memorat
 <!-- slice: 0072, 0097 -->

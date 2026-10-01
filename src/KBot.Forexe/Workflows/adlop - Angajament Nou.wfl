@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Angajament nou în FOREXE" startUrl="current"
+  expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
+  <!-- V.1 - 01/10/2026 (slice 0097-02)
+    Opens the EMPTY «Angajament nou» form and STOPS there. Nothing is filled in and nothing
+    is saved: the operator carries on by hand in the shell's «Browser FOREXE» view, which
+    runs this flow from «Meniu › Adaugare angajamente › Creeaza angajament in FOREXE».
+
+    Every step is copied from sections 1 and 2 of «Creare\adlop - Creare Angajament.wfl»
+    (reset, Home through the logo, the «Angajament nou» link, the wait for the form), cut
+    short before the description is filled in.
+
+    No variables.
+  -->
+
+  <!-- Interface reset - mandatory first step (see Creare Angajament) -->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true"
+      LogValue="Resetare interfață — închid dropdown-uri deschise" />
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="20"
+    LogValue="Navigare Home via logo" />
+
+  <Log message="══ Deschid formularul de angajament nou ══" level="action" />
+
+  <!-- JS click, like Creare Angajament: docked in the narrower «Browser FOREXE» view,
+    FOREXE's fixed top bar can sit over the side menu's links (see Deschide Angajament V.2).
+    It does not wait by itself, hence the WaitFor before and after. -->
+  <WaitFor selector="a:has-text('Angajament nou')" timeout="15" />
+  <Click selector="a:has-text('Angajament nou')" jsClick="true" waitNavigation="false" timeout="15"
+    LogValue="Click Angajament nou" />
+  <WaitFor selector="textarea[name='descriere']" timeout="15"
+    LogValue="Aștept încărcarea formularului" />
+
+  <Log message="Formularul «Angajament nou» e deschis; completarea e a operatorului." level="success" />
+
+</Workflow>

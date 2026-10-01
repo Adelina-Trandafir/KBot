@@ -7,6 +7,8 @@ Imports KBot.Theming
 ' Slice 0087 -- the header menu (menuNou, opened by btnMeniu) and the two windows it opens besides
 ' «Angajament nou»: «Clasificatii bugetare» and «Parteneri». Both are standalone (modeless) windows,
 ' one of each at a time; asking again brings the open one to the front.
+' Slice 0097-02 -- «Angajament nou» moved into the folder «Adaugare angajamente...», next to
+' «Creeaza angajament in FOREXE» (KbotForm.Browser.vb).
 Partial Public Class KbotForm
 
     Private _clasificatiiForm As ClasificatiiForm
@@ -66,6 +68,10 @@ Partial Public Class KbotForm
             Select Case e.Key
                 Case "angajament_nou"
                     DeschideAngajamentNou()
+                Case "angajament_forexe"
+                    ' Slice 0097-02: the empty «Angajament nou» form, in the «Browser FOREXE» view
+                    ' (KbotForm.Browser.vb).
+                    CreeazaAngajamentInForexe()
                 Case "extrase"
                     ' Slice 0095-02: the «Extrase de cont» window (KbotForm.Extrase.vb).
                     DeschideExtrasele()

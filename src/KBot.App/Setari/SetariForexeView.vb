@@ -51,6 +51,7 @@ Public Class SetariForexeView
             Try
                 chkHideChrome.Checked = AppSettings.Current.ForexeHideBrowserChrome
                 chkDevTools.Checked = AppSettings.Current.ForexeDevToolsAllowed
+                chkMeniuPagina.Checked = AppSettings.Current.ForexeShowPageMenu
                 chkUitaCertificatLaUnitate.Checked = AppSettings.Current.ForexeForgetCertificateOnUnitSwitch
                 UmpleCapturile()
                 UmpleMultiplicatorul()
@@ -196,6 +197,25 @@ Public Class SetariForexeView
                                      If(inPagina, " Aplicat în pagina deschisă.", " Se aplică la următoarea deschidere a browserului."))
         Catch ex As Exception
             GlobalErrorLog.Write("SetariForexeView.ChkDevTools_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
+    ' Slice 0097-02: the floating K-BOT menu of the page. Saved at once and pushed into the open
+    ' page, like the developer tools switch.
+    Private Async Sub ChkMeniuPagina_CheckedChanged(sender As Object, e As EventArgs) Handles chkMeniuPagina.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeShowPageMenu = chkMeniuPagina.Checked
+            copie.Save()
+            Dim inPagina As Boolean = Await _controller.AplicaSetarilePaginiiAsync()
+            RaiseEvent StatusChanged(If(chkMeniuPagina.Checked,
+                                        "Mini-meniul K-BOT se vede în pagina FOREXE.",
+                                        "Mini-meniul K-BOT nu se mai vede în pagina FOREXE.") &
+                                     If(inPagina, " Aplicat în pagina deschisă.", " Se aplică la următoarea deschidere a browserului."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkMeniuPagina_CheckedChanged", ex)
             RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
         End Try
     End Sub

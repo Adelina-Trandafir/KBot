@@ -5,7 +5,8 @@ Imports Newtonsoft.Json.Linq
 
 ''' <summary>
 ''' What the in-page script (<c>ForexeWatch.js</c>) is told about the operator's choices:
-''' whether the developer tools stay reachable and which CSS rules to write into the page.
+''' whether the developer tools stay reachable, whether its floating menu is drawn and which CSS
+''' rules to write into the page.
 ''' Built from <see cref="AppSettings"/>, sent as one JSON text through
 ''' <c>WorkflowExecutor.ApplyWatchConfigAsync</c>; the page keeps it in its own storage so
 ''' every later load starts with it before the first paint.
@@ -16,9 +17,10 @@ Public NotInheritable Class ForexeWatchConfig
     End Sub
 
     ''' <summary>
-    ''' The JSON the page expects: <c>{devTools, darkMode, rules:[{enabled, selector, css, note, page}]}</c>.
+    ''' The JSON the page expects: <c>{devTools, menu, darkMode, veil, rules:[{enabled, selector, css, note, page}]}</c>.
     ''' <c>darkMode</c> is not a setting of its own: it follows K-BOT's theme (a dark scheme
-    ''' darkens the page too - operator, 21.09.2026).
+    ''' darkens the page too - operator, 21.09.2026). <c>menu</c> (slice 0097-02) = the floating
+    ''' K-BOT menu is drawn in the page.
     ''' </summary>
     Public Shared Function JsonFromSettings(settings As AppSettings) As String
         Try
@@ -37,6 +39,7 @@ Public NotInheritable Class ForexeWatchConfig
             End If
             Dim root As New JObject(
                 New JProperty("devTools", s.ForexeDevToolsAllowed),
+                New JProperty("menu", s.ForexeShowPageMenu),
                 New JProperty("darkMode", DarkModeNow()),
                 New JProperty("veil", VeilColorsNow()),
                 New JProperty("rules", rules))

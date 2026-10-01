@@ -36,6 +36,7 @@ Partial Class SetariForexeView
         tlyBrowser = New KBotTableLayoutPanel()
         chkHideChrome = New CheckBox()
         chkDevTools = New CheckBox()
+        chkMeniuPagina = New CheckBox()
         tlyCaptura = New KBotTableLayoutPanel()
         lblCapturaCaption = New Label()
         cmbCaptura = New KBotComboBox()
@@ -297,16 +298,18 @@ Partial Class SetariForexeView
         tlyBrowser.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBrowser.Controls.Add(chkHideChrome, 0, 0)
         tlyBrowser.Controls.Add(chkDevTools, 0, 1)
-        tlyBrowser.Controls.Add(tlyCaptura, 0, 2)
+        tlyBrowser.Controls.Add(chkMeniuPagina, 0, 2)
+        tlyBrowser.Controls.Add(tlyCaptura, 0, 3)
         tlyBrowser.Dock = DockStyle.Top
         tlyBrowser.Location = New Point(28, 300)
         tlyBrowser.Margin = New Padding(4, 0, 4, 24)
         tlyBrowser.Name = "tlyBrowser"
-        tlyBrowser.RowCount = 3
+        tlyBrowser.RowCount = 4
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
-        tlyBrowser.Size = New Size(904, 124)
+        tlyBrowser.RowStyles.Add(New RowStyle())
+        tlyBrowser.Size = New Size(904, 163)
         tlyBrowser.TabIndex = 5
         '
         ' tlyCaptura
@@ -318,13 +321,13 @@ Partial Class SetariForexeView
         tlyCaptura.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyCaptura.Controls.Add(lblCapturaCaption, 0, 0)
         tlyCaptura.Controls.Add(cmbCaptura, 1, 0)
-        tlyCaptura.Location = New Point(4, 78)
+        tlyCaptura.Location = New Point(4, 117)
         tlyCaptura.Margin = New Padding(0, 0, 0, 0)
         tlyCaptura.Name = "tlyCaptura"
         tlyCaptura.RowCount = 1
         tlyCaptura.RowStyles.Add(New RowStyle())
         tlyCaptura.Size = New Size(900, 46)
-        tlyCaptura.TabIndex = 2
+        tlyCaptura.TabIndex = 3
         '
         ' lblCapturaCaption
         '
@@ -378,6 +381,21 @@ Partial Class SetariForexeView
         tips.SetToolTipHeader(chkDevTools, "Instrumente pentru dezvoltatori")
         tips.SetToolTipText(chkDevTools, "Debifat, pagina înghite F12, Ctrl+Shift+I / J / C, Ctrl+U și meniul de clic dreapta." & vbLf & "Bifat, toate rămân la îndemână. Se aplică imediat în pagina deschisă.")
         chkDevTools.UseVisualStyleBackColor = True
+        '
+        ' chkMeniuPagina
+        '
+        chkMeniuPagina.AutoSize = True
+        chkMeniuPagina.Checked = True
+        chkMeniuPagina.CheckState = CheckState.Checked
+        chkMeniuPagina.Location = New Point(4, 78)
+        chkMeniuPagina.Margin = New Padding(4, 0, 4, 10)
+        chkMeniuPagina.Name = "chkMeniuPagina"
+        chkMeniuPagina.Size = New Size(420, 29)
+        chkMeniuPagina.TabIndex = 2
+        chkMeniuPagina.Text = "Arată mini-meniul K-BOT în pagina FOREXE (mărire / micșorare, starea urmăririi)"
+        tips.SetToolTipHeader(chkMeniuPagina, "Mini-meniul K-BOT din pagină")
+        tips.SetToolTipText(chkMeniuPagina, "Bifat: în colțul paginii FOREXE stă micul meniu K-BOT (− / + / 100% și starea urmăririi)." & vbLf & "Debifat: meniul nu se mai desenează; K-BOT urmărește în continuare ce salvați." & vbLf & "Se aplică imediat în pagina deschisă.")
+        chkMeniuPagina.UseVisualStyleBackColor = True
         '
         ' lblTitluViteza
         '
@@ -765,6 +783,7 @@ Partial Class SetariForexeView
     Friend WithEvents tlyBrowser As KBotTableLayoutPanel
     Friend WithEvents chkHideChrome As CheckBox
     Friend WithEvents chkDevTools As CheckBox
+    Friend WithEvents chkMeniuPagina As CheckBox
     Friend WithEvents tlyCaptura As KBotTableLayoutPanel
     Friend WithEvents lblCapturaCaption As Label
     Friend WithEvents cmbCaptura As KBotComboBox

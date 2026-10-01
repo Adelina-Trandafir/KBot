@@ -328,6 +328,45 @@ Public NotInheritable Class HelpService
         End Try
     End Sub
 
+    ''' <summary>The tour that runs by itself at start (slice 0097-02): the main window's.</summary>
+    Public Const InitialTourId As String = "tur-fereastra"
+
+    ''' <summary>
+    ''' Slice 0097-02: starts the main window's tour without being asked, when it is still due
+    ''' (<see cref="AppSettings.ShowInitialTour"/>) and this login reads the part it belongs to (a
+    ''' director never gets it). Its bubble carries «Nu mai arata turul initial»; the tour stops
+    ''' being due once it was seen to its last step or closed with that box ticked
+    ''' (<see cref="InitialTourSeen"/>). Called by the main window after it has loaded.
+    ''' </summary>
+    Public Sub StartInitialTour()
+        Try
+            If Not AppSettings.Current.ShowInitialTour Then Return
+            Dim tour As HelpTour = Library.FindTour(InitialTourId)
+            If tour Is Nothing Then Throw New InvalidOperationException("The initial tour '" & InitialTourId & "' is not in the help.")
+            If Not VisibleParts().Contains(tour.Part) Then Return
+            HelpTourRunner.Start(Me, tour, StepAside(), initial:=True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.StartInitialTour", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0097-02: the automatic tour is not due any more (seen to the end, or the operator
+    ''' asked not to see it again). Saved at once; «Setari -> Aplicatie» turns it back on.
+    ''' </summary>
+    Friend Sub InitialTourSeen()
+        Try
+            If Not AppSettings.Current.ShowInitialTour Then Return
+            Dim copy As AppSettings = AppSettings.Current.Clone()
+            copy.ShowInitialTour = False
+            copy.Save()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.InitialTourSeen", ex)
+            Throw
+        End Try
+    End Sub
+
     ''' <summary>
     ''' The help window (always on top since slice 0000-23) steps aside -- minimized -- while a tour
     ''' runs or a capture is taken; the returned action brings it back. Nothing to do when the

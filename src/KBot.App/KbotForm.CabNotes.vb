@@ -149,7 +149,7 @@ Partial Public Class KbotForm
         ApplyMenuButtonText()
         tips.SetToolTipText(btnMeniu, If(count > 0,
             $"Există {count} operațiuni «ERRRRRRRRRR» din FOREXE necorelate cu un angajament: Meniu → «Operațiuni necorelate».",
-            "Angajament nou, clasificațiile bugetare și partenerii."))
+            "Adăugarea angajamentelor, extrasele, clasificațiile bugetare și partenerii."))
     End Sub
 
     ''' <summary>

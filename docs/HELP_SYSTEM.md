@@ -16,6 +16,8 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 - The **«?» button** on every caption bar (slice 0000-20) opens a **popup** under the button: a
   search box, «Pe ecranul acesta» (the topic F1 would open), the guided tours of the windows on
   screen (one folder per window when several have tours) and «Deschide ajutorul complet (F1)».
+  The **login window has no «?»** (slice 0097-02, operator: `LoginForm.capBar.ShowHelpButton =
+  False`); F1 still works there.
 - The **search** (slice 0000-18) takes a typed question: filler words, diacritics and word
   endings do not matter, not every word must match, and it finds SECTIONS (a hit opens the page
   at its `## ` heading). A hit whose topic has `open:` carries «Deschide «...»» (0000-19); one
@@ -42,6 +44,14 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   ring), and a step can name one **part** of a tree / grid / caption bar / nav list (`part:`,
   `IKBotHelpParts` in `KBot.Theming\KBotHelp.vb`, implemented in `KBot.Controls\*\*.HelpParts.vb`);
   a part not on screen is skipped. Names and rules: `HelpContent/README.md`, «Guided tours».
+- **The initial tour** (slice 0097-02): the main window's tour (`HelpService.InitialTourId` =
+  `tur-fereastra`) also starts by itself, once `KbotForm` has loaded its data
+  (`HelpService.StartInitialTour`), at every start while `AppSettings.ShowInitialTour` is on. Its
+  bubble carries the box «Nu mai arăta turul inițial». The setting goes off
+  (`HelpService.InitialTourSeen`) when that tour ends past its last step -- however it was started
+  -- or is closed with the box ticked; Setări › Aplicație «Arată turul ferestrei principale la
+  pornirea K-BOT» turns it back on. A director never gets it (the tour's part is not visible).
+  Renaming or removing `tur-fereastra` means changing `InitialTourId` too.
 - **Capture blur** (slice 0000-23, operator tool, NOT described in the help): the capture tool
   blurs, on the frozen screen and before the operator chooses, the TEXT (never a whole bar or
   menu) of the login's user and unit, the other units' names, anything «RO» + digits, 13 digits in

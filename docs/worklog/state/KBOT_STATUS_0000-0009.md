@@ -41,11 +41,12 @@ slice number. Worklogs: `SLICE-0000-NN-<slug>.md`.
 | 0000-22 | **Textul ajutorului pentru asistent + documentația**: `contabil.ajutor` rescris (meniul «?», cum pui o întrebare, butoanele unui rezultat, stelele, tururile din meniu, căutarea din fereastră, fraza despre trimiterea fără nume), nota din `director`, pașii «?» din `tur-fereastra` și `tur-asocieri`; `docs/HELP_SYSTEM.md` (§1, §2, §3, §4, §6, §7 nou), `HelpContent/README.md`, `help-version.txt` în procedură | GATA (build **0 avertismente, 0 erori**; verificarea fără erori) / de citit de operator | `SLICE-0000-22-text-asistent-si-documentatie.md` | Capturi noi: `ajutor-meniu`, `ajutor-cautare`, `ajutor-fereastra-cautare` (meniul se închide la clic în altă parte: Win+Shift+S + «Încarcă»). |
 | 0000-23 | **Tururi cu vârf și pe fiecare buton + fereastra de ajutor + capturi estompate** (cererea operatorului, 30.09.2026): bula turului e un «callout» cu vârful pe inel; `part:` pe pașii de tur (`IKBotHelpParts` în Theming, implementat de arbore / grilă / bara de titlu / bara de vederi) — turul trece prin fiecare buton, cel care apare doar sub mouse e aprins pentru exemplu, cel care lipsește se sare; ~60 de pași noi în cele 17 tururi; fereastra de ajutor: istoric pe toată rularea (`HelpHistory`, «Istoric ▾»), «A−/A+» (`AppSettings.HelpTextPercent`), mereu deasupra, se închide singură la modalul altei ferestre; capturile estompează TEXTUL (nu bara / meniul) cu utilizatorul, unitatea, «RO»+cifre, CNP, cod fiscal fără RO (doar în câmpuri / coloane de cod fiscal), e-mail, telefon (`HelpCaptureRedaction`, `IKBotCaptureRedaction`); `Check-Help.ps1` verifică `part:` | GATA pe cod (build **0 avertismente, 0 erori** pe `src\`; verificarea fără erori) / **nevăzut pe ecran** | `SLICE-0000-23-tururi-pe-butoane-istoric-capturi-estompate.md` | Captură de refăcut: `ajutor-fereastra-cautare`. De citit: «Fișiere» din Fundamentare e ascuns în designer, dar `contabil.ddf` încă îl descrie. Categorii noi de estompat: doar cu acordul operatorului. |
 | 0000-24 | **Bula turului fără bară de titlu + titlurile din meniul «?»** (cererea operatorului, 30.09.2026): bula nu mai are bară de titlu (numele turului stă în rândul «… · Pasul n din m»), text mai mare (titlu 12,5 pt, text 10,5 pt), 440 px lățime; «gaura» din stânga = Windows 11 rotunjea și încadra tot dreptunghiul ferestrei, peste Region — acum `HelpWindowNative.PlainFrame` (fără rotunjire, fără chenar DWM), după fiecare așezare / afișare / schimbare de temă; în `KBotHelpList` titlurile de parte («Pe ecranul acesta», «Tururi ghidate») au aer deasupra, culoarea accentului și o linie dedesubt; `contabil.ajutor` actualizat | GATA pe cod (build **0 avertismente, 0 erori**; verificarea fără erori) / **nevăzut pe ecran** | `SLICE-0000-24-bula-tur-fara-bara-titluri-meniu.md` | Captură de refăcut: `ajutor-meniu`. Cauza «găurii» e citită din captură, nemăsurată. |
+| 0000-25 | **Ajutorul pentru 0097-02** (cererea operatorului, 01.10.2026): dosarul «Adăugare angajamente...» din MENIU și «Creează angajament în FOREXE»; pornirea ferestrei (mărită / turul care pornește singur, «Nu mai arăta turul inițial»); fereastra de conectare fără «?»; în `contabil.forexe.browser` patru secțiuni noi (angajament nou făcut direct în FOREXE, întrebările «Sunteți sigur...?», două recepții pe aceeași dată, mini-meniul K-BOT din pagină); `contabil.setari` (pornirea K-BOT, mini-meniul); pașii din `tur-fereastra`, `tur-ddf`, `tur-setari`; `HELP_SYSTEM.md` §1 | GATA (build **0 avertismente, 0 erori**; verificarea fără erori) / **nevăzut pe ecran**, de citit de operator | `SLICE-0000-25-ajutor-pentru-0097-02.md` | Capturi de refăcut: `setari`, `conectare-fereastra`. De citit: ferestrele de confirmare FOREXE și câmpul datei n-au fost văzute — textul e scris din cod. |
 
 ### Ajutorul e la zi până la
 
-**30.09.2026 — codul de azi, până la felia 0097 inclusiv, plus asistentul de ajutor (0000-18…0000-22), tururile pe butoane / fereastra de ajutor (0000-23) și bula fără bară de titlu (0000-24)**
-(`help-version.txt` = `2026-09-30`). Textul a fost scris din codul curent, nu din planuri. Următoarea
+**01.10.2026 — codul de azi, până la felia 0097 inclusiv cu a doua ei trecere (0097-02, acoperită în 0000-25), plus asistentul de ajutor (0000-18…0000-22), tururile pe butoane / fereastra de ajutor (0000-23) și bula fără bară de titlu (0000-24). Felia 0098 («Coada robotului») NU e încă în ajutor — vezi lista de mai jos**
+(`help-version.txt` = `2026-10-01`). Textul a fost scris din codul curent, nu din planuri. Următoarea
 actualizare pornește de la feliile de după 0096 și de la lista de mai jos (`docs/HELP_SYSTEM.md` §4).
 Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/help-version.txt`).
 
@@ -53,7 +54,7 @@ Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/hel
 
 - **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
-  - (nimic deschis; 0097 acoperită în 0000-13; «Reanalizează rezervările» acoperită în 0000-23)
+  - (0097 acoperită în 0000-13; «Reanalizează rezervările» în 0000-23; 0097-02 în 0000-25)
   - `contabil.ddf` — pagina «Fișiere» a vederii Fundamentare e ascunsă în designer (commit «temp»); subiectul încă o descrie. De hotărât de operator (0000-23)
   - 0098: `contabil.forexe.descarcare`, `contabil.fereastra`, `contabil.vederi.receptii`, `contabil.ddf.index` — descărcările / reîmprospătările / trimiterea merg acum prin «Coada robotului» (fereastră nouă + butonul «Coadă N» din subsol; vederile așteaptă cât rulează robotul); captură nouă pentru fereastra cozii
 
@@ -62,6 +63,9 @@ Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/hel
   (repornire). Altfel întrebările așteaptă în lista locală și trimiterea eșuează la fiecare 3 minute.
 - **0000-20 / 0000-21** — meniul «?», stelele și trimiterea întrebărilor nu au fost văzute pe ecran
   și nici rulate (fereastra principală singură; cu Setări deschisă peste ea = două dosare de tururi).
+- **0000-25** — de citit de operator: secțiunile noi din `contabil.forexe.browser` (întrebările
+  «Sunteți sigur...?», două recepții pe aceeași dată) sunt scrise din cod; paginile FOREXE reale
+  n-au fost văzute. Capturi de refăcut când există: `setari`, `conectare-fereastra`.
 - **0000-01** — exportul manualului neapăsat pe ecran; fereastra Director nevăzută; tema întunecată nevăzută.
 - **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).
 

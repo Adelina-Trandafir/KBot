@@ -24,6 +24,7 @@ Partial Class HelpTourBubble
         lblTitlu = New Label()
         lblText = New Label()
         lblNota = New Label()
+        chkNuMaiArata = New CheckBox()
         tlyButoane = New KBotTableLayoutPanel()
         btnInapoi = New Button()
         btnInainte = New Button()
@@ -52,16 +53,18 @@ Partial Class HelpTourBubble
         tlyCorp.Controls.Add(lblTitlu, 0, 1)
         tlyCorp.Controls.Add(lblText, 0, 2)
         tlyCorp.Controls.Add(lblNota, 0, 3)
-        tlyCorp.Controls.Add(tlyButoane, 0, 4)
+        tlyCorp.Controls.Add(chkNuMaiArata, 0, 4)
+        tlyCorp.Controls.Add(tlyButoane, 0, 5)
         tlyCorp.Dock = DockStyle.Fill
         tlyCorp.Location = New Point(0, 0)
         tlyCorp.Margin = New Padding(0)
         tlyCorp.Name = "tlyCorp"
         tlyCorp.Padding = New Padding(16, 12, 16, 12)
-        tlyCorp.RowCount = 5
+        tlyCorp.RowCount = 6
         tlyCorp.RowStyles.Add(New RowStyle())
         tlyCorp.RowStyles.Add(New RowStyle())
         tlyCorp.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyCorp.RowStyles.Add(New RowStyle())
         tlyCorp.RowStyles.Add(New RowStyle())
         tlyCorp.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
         tlyCorp.Size = New Size(438, 258)
@@ -102,6 +105,17 @@ Partial Class HelpTourBubble
         lblNota.Name = "lblNota"
         lblNota.TabIndex = 3
         lblNota.Visible = False
+        '
+        ' chkNuMaiArata
+        '
+        chkNuMaiArata.AutoSize = True
+        chkNuMaiArata.Font = New Font("Segoe UI", 9.75F)
+        chkNuMaiArata.Margin = New Padding(0, 8, 0, 0)
+        chkNuMaiArata.Name = "chkNuMaiArata"
+        chkNuMaiArata.TabIndex = 5
+        chkNuMaiArata.Text = "Nu mai arăta turul inițial"
+        chkNuMaiArata.UseVisualStyleBackColor = True
+        chkNuMaiArata.Visible = False
         '
         ' tlyButoane
         '
@@ -182,6 +196,7 @@ Partial Class HelpTourBubble
     Friend WithEvents lblTitlu As Label
     Friend WithEvents lblText As Label
     Friend WithEvents lblNota As Label
+    Friend WithEvents chkNuMaiArata As CheckBox
     Friend WithEvents tlyButoane As KBotTableLayoutPanel
     Friend WithEvents btnInapoi As Button
     Friend WithEvents btnInainte As Button

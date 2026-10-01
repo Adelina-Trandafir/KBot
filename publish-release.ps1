@@ -25,6 +25,17 @@
              one past the cap carries into the part above and resets.
              -Bump <part> skips the question.
 
+  Release notes (slice 0067-02, never fatal):
+             - Right after the version question the script works out what changed
+               since the previous version, puts a request ON THE CLIPBOARD and goes
+               on building. Paste it into Copilot Chat in Visual Studio or into
+               Claude: the assistant writes the version's section, in Romanian, in
+               docs\release-notes\NOUTATI.md (rules: docs\release-notes\README.md).
+             - At the end the script waits until that section exists (Enter = look
+               again, P = copy the request again, S = release without notes).
+             - A version that already has its section (no bump) asks nothing.
+             - -ReleaseNotes Skip leaves the whole step out.
+
   Digital signing (optional, never fatal):
              - Uses Certum SimplySign token via certificate thumbprint.
              - SimplySign Desktop must be running and logged in before the build.
@@ -57,7 +68,13 @@ param(
     # SimplySign confirmation is ever requested: every signing step is skipped.
     # Without an interactive console 'Ask' behaves as 'Yes' (the old behaviour).
     [ValidateSet('Ask', 'Yes', 'No')]
-    [string] $Sign = 'Ask'
+    [string] $Sign = 'Ask',
+
+    # Release notes (docs\release-notes\NOUTATI.md): 'Ask' (default) puts the request for
+    # the AI assistant on the clipboard after the version question and waits for the
+    # section at the end; 'Skip' leaves the step out.
+    [ValidateSet('Ask', 'Skip')]
+    [string] $ReleaseNotes = 'Ask'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -440,13 +457,30 @@ if ($script:SigningEnabled) {
 #  Writes the new number into KBot.App.vbproj BEFORE dotnet publish, so the exe, the
 #  installer and the update package all carry it. The edit is NOT committed here.
 $CurrentVersion = Get-KBotFileVersion -Project $ProjectFile
+$ReleaseVersion = $CurrentVersion
 $bumpPart = if ($Bump -eq 'Ask') { Read-KBotBumpChoice -Current $CurrentVersion } else { $Bump }
 if ($bumpPart -ne 'None') {
     $NewVersion = Step-KBotVersion -Version $CurrentVersion -Part $bumpPart
     Set-KBotFileVersion -Project $ProjectFile -NewVersion $NewVersion
+    $ReleaseVersion = $NewVersion
     Write-Host "FileVersion $CurrentVersion -> $NewVersion ($bumpPart) written to KBot.App.vbproj (not committed)." -ForegroundColor Green
 } else {
     Write-Host "FileVersion stays $CurrentVersion." -ForegroundColor Cyan
+}
+
+# --- 1c. Release notes: the request for the AI assistant (slice 0067-02) --------
+#  Asked for NOW, before the build, so the assistant writes docs\release-notes\
+#  NOUTATI.md while the build runs; step 11 waits for the section. Never fatal:
+#  a build without notes is still a build.
+$ReleaseNotesTool = Join-Path $SolutionRoot 'tools\ReleaseNotes\ReleaseNotes.ps1'
+if ($ReleaseNotes -eq 'Ask') {
+    try {
+        & $ReleaseNotesTool -Action Request -Version $ReleaseVersion.ToString()
+    } catch {
+        Write-Warning "[notes] The release notes request failed: $($_.Exception.Message) The build continues."
+    }
+} else {
+    Write-Host "Release notes: skipped (-ReleaseNotes Skip)." -ForegroundColor Yellow
 }
 
 # --- 2. Names / paths ----------------------------------------------------------
@@ -690,4 +724,19 @@ if (-not $script:SigningEnabled) {
     }
 } else {
     Write-Host "  Signing  : disabled (no thumbprint provided). Artifacts are UNSIGNED." -ForegroundColor Yellow
+}
+
+# --- 11. Release notes: wait for the section asked for in step 1c ---------------
+#  Last on purpose: everything is built, so waiting here costs nothing. The notes
+#  are not inside the package; push-update.ps1 reads them from NOUTATI.md.
+if ($ReleaseNotes -eq 'Ask') {
+    Write-Host ""
+    try {
+        $notesWritten = & $ReleaseNotesTool -Action Wait -Version $ReleaseVersion.ToString()
+        if (-not $notesWritten) {
+            Write-Host "  Notes    : NONE for $ReleaseVersion (docs\release-notes\NOUTATI.md)." -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Warning "[notes] Reading the release notes failed: $($_.Exception.Message)"
+    }
 }

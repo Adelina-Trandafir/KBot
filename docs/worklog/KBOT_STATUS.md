@@ -35,7 +35,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 
 |         Slice | Name                                                                                                                     | Status (short)                                | File                                        |
 | ------------: | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------- |
-|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…24 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
+|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…25 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0001 | Auth                                                                                                                     | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0002 | Split-brain 401 fix + reason codes                                                                                       | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0003 | Redis session backend                                                                                                    | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
@@ -152,6 +152,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0072-02 | «Activează opțiuni avansate»                                                                                             | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0073 | Recorder: mod de vizualizare, meniu plutitor în pagină, urmărirea operațiunilor FOREXE                                   | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0067-01 | Instalatorul Inno: detectează versiunea instalată, permite doar actualizări, actualizează cu regulile sistemului de act… | GATA pe cod                                   | [0060-0069](state/KBOT_STATUS_0060-0069.md) |
+|       0067-02 | Notele de versiune: la fiecare `publish-release` / `push-update`, un asistent AI (Copilot din VS sau Claude) scrie în română ce s-a schimbat (`docs/release-notes/NOUTATI.md`), trimis ca `notes` (cererea operatorului, 01.10.2026) | GATA pe scripturi (parsate, publicarea nerulată) | [0060-0069](state/KBOT_STATUS_0060-0069.md) |
 |          0074 | Vederea «Browser FOREXE» în shell: pagina andocată, arborele ↔ pagina                                                    | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0075-05 | Înregistrare publică: pagina operatorului                                                                                | GATA pe cod / verificat în browser pe un cio… | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0075-03 | Înregistrare publică: aprobarea — jobul de provizionare                                                                  | GATA pe cod / jobul n-a rulat niciodată — ni… | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
@@ -204,6 +205,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0095-02 | Subsolul arborelui descarcă direct extrasele; «Extrase de cont» din «Meniu → Extrase»; `btnMeniu` urmează lățimea lui `navViews` strâns (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0096 | Extrase: meniu de afișare în antetul arborelui — «antet + operații» / «operații + detalii» (cererea operatorului, 29.09.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0097 | Corecturi: ORD/DDF (fără mesaj la ștergere, rădăcini «Toate…», ștergere pe lună/toate, semnat = fără meniu); eticheta barei strânse la DPI; «Note corecție» doar cu note; selector de unitate în bara de titlu; reafișarea ferestrei de autentificare + «Ține minte parola» (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut; server nedeployat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|       0097-02 | Corecturi, a doua trecere: turul ferestrei principale pornește singur (până e văzut / «Nu mai arăta turul inițial»); «Da» automat la întrebările «Sunteți sigur...?» din pagina FOREXE; MENIU «Adăugare angajamente...» + «Creează angajament în FOREXE»; mini-meniul din pagină după setare; conectarea fără «?»; pornire mărită; întrebare la a doua recepție pe aceeași dată (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nerulat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0098 | Coada robotului (o singură coadă, în ordine, pauză / scoatere, fereastra «Coada robotului») + poarta serverului (nicio scriere pe server cât rulează robotul; citirile trec) (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut); 0098-02: citirile trec poarta + banc DevHarness (nerulat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
@@ -231,7 +233,12 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
 ## Current focus
 
 - Each slice's focus notes are in its `state/KBOT_STATUS_*.md` file, under «Current focus».
-- Latest (28.09.2026): slice 0090, this file split ([0090-0099](state/KBOT_STATUS_0090-0099.md));
+- Latest (01.10.2026): slice 0067-02, release notes written by an AI assistant at every
+  `publish-release.ps1` / `push-update.ps1` ([0060-0069](state/KBOT_STATUS_0060-0069.md);
+  procedure: `docs/release-notes/README.md`).
+- Same day: slice 0097-02 (second corrective pass) and its help, 0000-25
+  ([0090-0099](state/KBOT_STATUS_0090-0099.md), [0000-0009](state/KBOT_STATUS_0000-0009.md)).
+- Earlier (28.09.2026): slice 0090, this file split ([0090-0099](state/KBOT_STATUS_0090-0099.md));
   slices 0088 and 0089 ([0080-0089](state/KBOT_STATUS_0080-0089.md)), plus
   the sliceless «silent FOREXE downloads + FOREXE page pictures» work, whose cause is still NOT
   found ([SLICELESS](state/KBOT_STATUS_SLICELESS.md)).

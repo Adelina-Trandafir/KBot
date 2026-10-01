@@ -89,7 +89,8 @@ A picture the help needs is written as ONE line, where the picture should appear
 - `goto:` where K-BOT goes before the shot (optional):
   `view:<navViews key>` (sumar, istoric, rezervari, receptii, plati, extrase, browser, ddf, ord,
   notecab) · `menu:<header menu key>` (angajament_nou, extrase, clasificatii, parteneri,
-  operatiuni_necorelate) · `setari:<page>` (info, aplicatie, forexe, pagina, extrase, tema,
+  operatiuni_necorelate; `angajament_forexe` exists too but starts the robot -- do not use it
+  for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, pagina, extrase, tema,
   autentificare, foldere, jurnal) · `help` (this topic) / `help:<topic id>`.
 - `prepare:` Romanian, what the operator sets up by hand before «Capturează» (optional).
 

@@ -332,6 +332,9 @@ Partial Public Class KbotForm
                 Await RefreshUncorrelatedMarkAsync()
                 ' Slice 0097: the unit selector in the caption (two or more units only).
                 Await IncarcaUnitatileAsync()
+                ' Slice 0097-02: the main window's tour, by itself, until it was seen to the end
+                ' or switched off. Last, so it rings a window that already has its data.
+                PornesteTurulInitial()
             Else
                 ' No session (possible only in the Debug harness): no data, no silent sample --
                 ' the list stays empty, honestly. The disabled combos already tell the story.
@@ -348,5 +351,40 @@ Partial Public Class KbotForm
     Private Sub MainForm_Shown(sender As Object, e As EventArgs) Handles Me.Shown
         Me.Activate()
         Me.BringToFront()
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0097-02: with «Setari → Aplicatie → Fereastra principala porneste marita» the shell
+    ''' opens maximized. After the base (theme, fit, centring on the normal size), so «Restore»
+    ''' brings back the window the designer and the theme agreed on; still before the first paint.
+    ''' </summary>
+    Protected Overrides Sub OnLoad(e As EventArgs)
+        MyBase.OnLoad(e)
+        Try
+            If AppSettings.Current.StartMaximized Then WindowState = FormWindowState.Maximized
+        Catch ex As Exception
+            ' UI boundary (Load): log and swallow -- the window opens at its normal size.
+            GlobalErrorLog.Write("MainForm.OnLoad", ex)
+        End Try
+    End Sub
+
+    ' Slice 0097-02: the automatic tour of the main window (HelpService decides whether it is due).
+    ' Posted, not called: Load has just finished its last request and the window must paint the
+    ' data first. UI boundary: a tour that cannot start is logged, never told -- nobody asked for it.
+    Private Sub PornesteTurulInitial()
+        Try
+            If IsDisposed OrElse Not IsHandleCreated Then Return
+            BeginInvoke(New Action(
+                Sub()
+                    Try
+                        If IsDisposed OrElse Not Visible OrElse WindowState = FormWindowState.Minimized Then Return
+                        TryCast(KBotHelp.Provider, HelpService)?.StartInitialTour()
+                    Catch ex As Exception
+                        GlobalErrorLog.Write("MainForm.PornesteTurulInitial", ex)
+                    End Try
+                End Sub))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.PornesteTurulInitial", ex)
+        End Try
     End Sub
 End Class

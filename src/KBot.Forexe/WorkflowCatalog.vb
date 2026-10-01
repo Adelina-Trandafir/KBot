@@ -53,6 +53,12 @@ Namespace KBot.Forexe
         ' the operator lands on the page they would otherwise have searched for by hand.
         Public Const DeschideAngajamentFile As String = "adlop - Deschide Angajament.wfl"
 
+        ' Slice 0097-02: opens the EMPTY «Angajament nou» form and stops there - sections 1 and 2
+        ' of «Creare Angajament» (reset, Home, the link, the wait for the form), nothing filled
+        ' in. Run by the shell's «Meniu › Adaugare angajamente › Creeaza angajament in FOREXE»;
+        ' the operator fills the form by hand in the «Browser FOREXE» view.
+        Public Const AngajamentNouFile As String = "adlop - Angajament Nou.wfl"
+
         ' Slice 0076: the two flows run after the operator SAVED by hand in the «Browser
         ' FOREXE» view. Both start on the page the operator is on (no reset, no search, no
         ' «Modificare») and both read the history backwards like the REVERSE flow.

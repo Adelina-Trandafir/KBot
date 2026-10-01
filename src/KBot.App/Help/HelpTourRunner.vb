@@ -8,6 +8,8 @@ Imports KBot.Theming
 ''' (<see cref="HelpService.Navigate"/>), finds the control the step names among the open windows,
 ''' rings it (<see cref="HelpTourFrame"/>) and puts the bubble next to it. One tour at a time:
 ''' starting another ends the running one.
+''' Slice 0097-02: the main window's tour also starts by itself (<see cref="HelpService.StartInitialTour"/>);
+''' the runner tells the service when that tour was seen to its end or is not wanted again.
 ''' </summary>
 Friend NotInheritable Class HelpTourRunner
 
@@ -24,21 +26,33 @@ Friend NotInheritable Class HelpTourRunner
     ' Slice 0000-23: the part the current step made visible, put back when the step changes.
     Private _demoOwner As IKBotHelpParts
     Private _demoPart As String
+    ' Slice 0097-02: the tour started by itself at K-BOT's start (its bubble carries «Nu mai
+    ' arata turul initial»), and whether it went past its last step.
+    Private ReadOnly _initial As Boolean
+    Private _completed As Boolean
 
-    Private Sub New(service As HelpService, tour As HelpTour, onFinished As Action)
+    Private Sub New(service As HelpService, tour As HelpTour, onFinished As Action, initial As Boolean)
         _service = service
         _tour = tour
         _onFinished = onFinished
+        _initial = initial
+        _bubble.ShowNeverAgain = initial
         AddHandler _bubble.NextRequested, AddressOf OnNext
         AddHandler _bubble.BackRequested, AddressOf OnBack
         AddHandler _bubble.CloseRequested, AddressOf Finish
     End Sub
 
-    ''' <summary>Starts <paramref name="tour"/>; <paramref name="onFinished"/> runs when it ends, however it ends.</summary>
-    Public Shared Sub Start(service As HelpService, tour As HelpTour, onFinished As Action)
+    ''' <summary>
+    ''' Starts <paramref name="tour"/>; <paramref name="onFinished"/> runs when it ends, however it ends.
+    ''' <paramref name="initial"/> (slice 0097-02) = the automatic tour of K-BOT's start: when it ends
+    ''' past its last step, or with «Nu mai arata turul initial» ticked, the service is told it is
+    ''' not due any more.
+    ''' </summary>
+    Public Shared Sub Start(service As HelpService, tour As HelpTour, onFinished As Action,
+                            Optional initial As Boolean = False)
         Try
             _active?.Finish()
-            _active = New HelpTourRunner(service, tour, onFinished)
+            _active = New HelpTourRunner(service, tour, onFinished, initial)
             _active.ShowStep(0, 1)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpTourRunner.Start", ex)
@@ -49,6 +63,7 @@ Friend NotInheritable Class HelpTourRunner
     Private Sub OnNext()
         If _busy Then Return
         If _index >= _tour.Steps.Count - 1 Then
+            _completed = True
             Finish()
         Else
             ShowStep(_index + 1, 1)
@@ -90,6 +105,7 @@ Friend NotInheritable Class HelpTourRunner
                             If partMissing Then
                                 Dim nextIndex As Integer = index + direction
                                 If nextIndex >= _tour.Steps.Count Then
+                                    _completed = True   ' the last steps are not on this screen: the end all the same
                                     Finish()
                                     Return
                                 End If
@@ -171,9 +187,15 @@ Friend NotInheritable Class HelpTourRunner
             _finished = True
             If ReferenceEquals(_active, Me) Then _active = Nothing
             EndDemo()
+            ' Slice 0097-02: read before the bubble goes; a setting that cannot be saved must not
+            ' keep the tour's windows on screen (logged by the service).
+            ' Seen to the end counts however the tour was started (by itself or from the «?» menu).
+            Dim seen As Boolean = (_initial AndAlso _bubble.NeverAgain) OrElse
+                (_completed AndAlso String.Equals(_tour.Id, HelpService.InitialTourId, StringComparison.OrdinalIgnoreCase))
             If Not _frame.IsDisposed Then _frame.Close()
             If Not _bubble.IsDisposed Then _bubble.CloseByRunner()
             _onFinished?.Invoke()
+            If seen Then _service.InitialTourSeen()
         Catch ex As Exception
             GlobalErrorLog.Write("HelpTourRunner.Finish", ex)
         End Try
