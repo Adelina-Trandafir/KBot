@@ -120,4 +120,9 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="chkAdobeEcran.ToolTipText" xml:space="preserve">
+    <value>Adobe ține minte dimensiunea ferestrei pe care o închide, așa că se deschidea apoi la dimensiunea panoului K-BOT.
+Bifat: la închiderea ferestrei K-BOT, fereastra Adobe iese din panou, se maximizează pe ecran și se închide acolo (se vede o clipă).
+Debifat (implicit): se închide în panou, ca până acum.</value>
+  </data>
 </root>

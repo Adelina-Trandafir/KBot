@@ -58,6 +58,7 @@ Partial Public Class KbotForm
             DezleagaOperatiunileNecorectate()   ' slice 0084 - KbotForm.UncorrectedOperations.vb
             DezleagaBrowserul()
             DezleagaOptiunileArborelui()   ' slice 0777 - KbotForm.TreeOptions.vb
+            AdobeUiPreference.Restore(AddressOf KBot.Controls.AdobeHostLog.Write)   ' slice 0078-10 - Adobe's own interface value back
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.OnFormClosed", ex)
         End Try

@@ -118,7 +118,6 @@ Public Class DdfDocumentPage
             Dim p As ThemePalette = scheme.Palette
 
             BackColor = p.SurfaceAltColor
-            pnlBottomButtons.BackColor = p.SurfaceAltColor
 
             previewPdf.ApplyTheme(scheme)
         Catch ex As Exception

@@ -12,10 +12,13 @@ Imports KBot.Common
 ''' <item><see cref="Quiet"/> -- Adobe's windows stopped changing: no window of the process was shown,
 ''' hidden or moved for <see cref="QuietMs"/>. The host uses it to decide that a document has finished
 ''' opening (0078-08: the trees stay locked until then).</item>
+''' <item><see cref='HostedWindowClosed'/> -- the hosted window was destroyed (the operator closed the
+''' document inside Adobe, or Adobe ended). Slice 0078-10: without it nothing told the host, and its
+''' timers kept running for a window that no longer existed.</item>
 ''' </list>
 '''
 ''' A WinEvent hook, out of context (no DLL goes into Adobe; the callback runs on the UI thread that
-''' installed it), on EVENT_OBJECT_SHOW .. EVENT_OBJECT_LOCATIONCHANGE of Adobe's process, only for
+''' installed it), on EVENT_OBJECT_DESTROY .. EVENT_OBJECT_LOCATIONCHANGE of Adobe's process, only for
 ''' whole windows (OBJID_WINDOW). A burst of events is folded into one signal, raised when the burst
 ''' is over; the host's own moves raise events too, and the host only acts on what it finds.
 ''' </summary>
@@ -32,9 +35,12 @@ Friend NotInheritable Class AdobeWindowWatcher
     ' Folds a burst of events into one signal (restarted by every event).
     Private ReadOnly _settle As New Timer()
     Private _movedPending As Boolean
+    Private _gonePending As Boolean
 
     ''' <summary>The hosted window moved or was resized (UI thread, once per burst).</summary>
     Public Event HostedWindowMoved As Action
+    ''' <summary>The hosted window no longer exists (UI thread, once). The watcher is still armed: the host stops it.</summary>
+    Public Event HostedWindowClosed As Action
     ''' <summary>No window of Adobe's process changed for <see cref="QuietMs"/> (UI thread).</summary>
     Public Event Quiet As Action
 
@@ -55,7 +61,7 @@ Friend NotInheritable Class AdobeWindowWatcher
             If window = IntPtr.Zero OrElse pid <= 0 Then Return False
             _window = window
             _hook = AdobeNativeMethods.SetWinEventHook(
-                AdobeNativeMethods.EVENT_OBJECT_SHOW, AdobeNativeMethods.EVENT_OBJECT_LOCATIONCHANGE,
+                AdobeNativeMethods.EVENT_OBJECT_DESTROY, AdobeNativeMethods.EVENT_OBJECT_LOCATIONCHANGE,
                 IntPtr.Zero, _proc, CUInt(pid), 0UI, AdobeNativeMethods.WINEVENT_OUTOFCONTEXT)
             Return _hook <> IntPtr.Zero
         Catch ex As Exception
@@ -80,6 +86,7 @@ Friend NotInheritable Class AdobeWindowWatcher
         Try
             _settle.Stop()
             _movedPending = False
+            _gonePending = False
             If _hook <> IntPtr.Zero Then AdobeNativeMethods.UnhookWinEvent(_hook)
             _hook = IntPtr.Zero
             _window = IntPtr.Zero
@@ -93,6 +100,11 @@ Friend NotInheritable Class AdobeWindowWatcher
                            idObject As Integer, idChild As Integer, threadId As UInteger, timestamp As UInteger)
         Try
             If hook <> _hook OrElse idObject <> AdobeNativeMethods.OBJID_WINDOW OrElse idChild <> 0 Then Return
+            If eventType = AdobeNativeMethods.EVENT_OBJECT_DESTROY Then
+                ' Only the hosted window itself counts; other windows going away do not disturb the quiet wait.
+                If hWnd <> _window Then Return
+                _gonePending = True
+            End If
             If eventType = AdobeNativeMethods.EVENT_OBJECT_LOCATIONCHANGE AndAlso hWnd = _window Then _movedPending = True
             _settle.Stop()
             _settle.Start()
@@ -105,6 +117,14 @@ Friend NotInheritable Class AdobeWindowWatcher
         Try
             _settle.Stop()
             If _window = IntPtr.Zero Then Return
+            If _gonePending Then
+                _gonePending = False
+                _movedPending = False
+                If Not AdobeNativeMethods.IsWindow(_window) Then
+                    RaiseEvent HostedWindowClosed()
+                    Return
+                End If
+            End If
             If _movedPending Then
                 _movedPending = False
                 RaiseEvent HostedWindowMoved()

@@ -25,27 +25,96 @@ Partial Class AdobeGazduireForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AdobeGazduireForm))
         tips = New KBotToolTip(components)
+        cboAdobeInst = New KBotComboBox()
+        cboAdobeDetach = New KBotComboBox()
+        chkAdobeEcran = New CheckBox()
+        btnRenunta = New Button()
+        btnSalveaza = New Button()
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         lblIntro = New Label()
         tlyCampuri = New KBotTableLayoutPanel()
         lblAdobeInst = New Label()
-        cboAdobeInst = New KBotComboBox()
         lblAdobeDetach = New Label()
-        cboAdobeDetach = New KBotComboBox()
         lblAdobeEcran = New Label()
-        chkAdobeEcran = New CheckBox()
         tlySubsol = New KBotTableLayoutPanel()
-        btnRenunta = New Button()
-        btnSalveaza = New Button()
         tlyMain.SuspendLayout()
         tlyCampuri.SuspendLayout()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        '
+        ' 
+        ' cboAdobeInst
+        ' 
+        cboAdobeInst.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        cboAdobeInst.CornerRadius = 4
+        cboAdobeInst.Location = New Point(267, 8)
+        cboAdobeInst.Margin = New Padding(4, 0, 4, 10)
+        cboAdobeInst.Name = "cboAdobeInst"
+        cboAdobeInst.Size = New Size(430, 37)
+        cboAdobeInst.TabIndex = 1
+        tips.SetToolTipHeader(cboAdobeInst, "Comutatorul /n")
+        tips.SetToolTipText(cboAdobeInst, "Da: Adobe pornește un proces nou, al K-BOT." & vbLf & "Nu: Adobe poate preda documentul unei instanțe deja deschise de tine." & vbLf & "Automat: Da.")
+        ' 
+        ' cboAdobeDetach
+        ' 
+        cboAdobeDetach.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        cboAdobeDetach.CornerRadius = 4
+        cboAdobeDetach.Location = New Point(267, 55)
+        cboAdobeDetach.Margin = New Padding(4, 0, 4, 10)
+        cboAdobeDetach.Name = "cboAdobeDetach"
+        cboAdobeDetach.Size = New Size(430, 37)
+        cboAdobeDetach.TabIndex = 3
+        tips.SetToolTipHeader(cboAdobeDetach, "Cum se eliberează fereastra Adobe")
+        tips.SetToolTipText(cboAdobeDetach, "A: oprește procesul pornit de K-BOT — determinist." & vbLf & "B: închide doar fereastra și lasă procesul cald, deci următorul document pornește mai repede.")
+        ' 
+        ' chkAdobeEcran
+        ' 
+        chkAdobeEcran.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        chkAdobeEcran.AutoSize = True
+        chkAdobeEcran.Location = New Point(267, 102)
+        chkAdobeEcran.Margin = New Padding(4, 0, 4, 10)
+        chkAdobeEcran.Name = "chkAdobeEcran"
+        chkAdobeEcran.Size = New Size(430, 26)
+        chkAdobeEcran.TabIndex = 5
+        chkAdobeEcran.Text = "Readu fereastra Adobe la dimensiunea ecranului"
+        tips.SetToolTipHeader(chkAdobeEcran, "Adobe pe tot ecranul la închidere")
+        tips.SetToolTipText(chkAdobeEcran, resources.GetString("chkAdobeEcran.ToolTipText"))
+        chkAdobeEcran.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.DialogResult = DialogResult.Cancel
+        btnRenunta.Dock = DockStyle.Fill
+        btnRenunta.FlatStyle = FlatStyle.Flat
+        btnRenunta.Image = My.Resources.Resources.left_32
+        btnRenunta.Location = New Point(0, 0)
+        btnRenunta.Margin = New Padding(0)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Size = New Size(48, 48)
+        btnRenunta.TabIndex = 0
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Închide fără să schimbe nimic.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
+        ' btnSalveaza
+        ' 
+        btnSalveaza.Dock = DockStyle.Fill
+        btnSalveaza.FlatStyle = FlatStyle.Flat
+        btnSalveaza.Font = New Font("Segoe UI Semibold", 9F)
+        btnSalveaza.Image = My.Resources.Resources.save_32
+        btnSalveaza.Location = New Point(677, 0)
+        btnSalveaza.Margin = New Padding(0)
+        btnSalveaza.Name = "btnSalveaza"
+        btnSalveaza.Size = New Size(48, 48)
+        btnSalveaza.TabIndex = 1
+        tips.SetToolTipHeader(btnSalveaza, "Salvează")
+        tips.SetToolTipText(btnSalveaza, "Scrie setările (kbot_paths.json și app_settings.json) și închide.")
+        btnSalveaza.UseVisualStyleBackColor = True
+        ' 
         ' tlyMain
-        '
+        ' 
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(capBar, 0, 0)
@@ -61,11 +130,11 @@ Partial Class AdobeGazduireForm
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 80F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 78F))
-        tlyMain.Size = New Size(858, 371)
+        tlyMain.Size = New Size(725, 360)
         tlyMain.TabIndex = 0
-        '
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.settings__1_
         capBar.Location = New Point(0, 0)
@@ -74,28 +143,28 @@ Partial Class AdobeGazduireForm
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowTextScaleSlider = False
-        capBar.Size = New Size(858, 57)
+        capBar.Size = New Size(725, 57)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Fereastră găzduită Adobe"
-        '
+        ' 
         ' lblIntro
-        '
+        ' 
         lblIntro.Dock = DockStyle.Fill
         lblIntro.Location = New Point(4, 57)
         lblIntro.Margin = New Padding(4, 0, 4, 0)
         lblIntro.Name = "lblIntro"
         lblIntro.Padding = New Padding(20, 8, 20, 8)
-        lblIntro.Size = New Size(850, 80)
+        lblIntro.Size = New Size(717, 80)
         lblIntro.TabIndex = 1
         lblIntro.Text = "Setările de mai jos privesc DOAR motorul «Fereastră găzduită» — fereastra Adobe mutată în panoul K-BOT. Se aplică documentului următor."
         lblIntro.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' tlyCampuri
-        '
+        ' 
         tlyCampuri.AutoFitToTheme = False
         tlyCampuri.ColumnCount = 2
-        tlyCampuri.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 330F))
+        tlyCampuri.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 239F))
         tlyCampuri.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyCampuri.Controls.Add(lblAdobeInst, 0, 0)
         tlyCampuri.Controls.Add(cboAdobeInst, 1, 0)
@@ -113,138 +182,70 @@ Partial Class AdobeGazduireForm
         tlyCampuri.RowStyles.Add(New RowStyle())
         tlyCampuri.RowStyles.Add(New RowStyle())
         tlyCampuri.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyCampuri.Size = New Size(858, 156)
+        tlyCampuri.Size = New Size(725, 145)
         tlyCampuri.TabIndex = 2
-        '
+        ' 
         ' lblAdobeInst
-        '
+        ' 
         lblAdobeInst.AutoSize = True
         lblAdobeInst.Dock = DockStyle.Fill
         lblAdobeInst.Location = New Point(28, 8)
         lblAdobeInst.Margin = New Padding(4, 0, 4, 10)
         lblAdobeInst.Name = "lblAdobeInst"
-        lblAdobeInst.Size = New Size(322, 37)
+        lblAdobeInst.Size = New Size(231, 37)
         lblAdobeInst.TabIndex = 0
         lblAdobeInst.Text = "Instanță nouă Adobe (/n)"
         lblAdobeInst.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cboAdobeInst
-        '
-        cboAdobeInst.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboAdobeInst.CornerRadius = 4
-        cboAdobeInst.Location = New Point(358, 8)
-        cboAdobeInst.Margin = New Padding(4, 0, 4, 10)
-        cboAdobeInst.Name = "cboAdobeInst"
-        cboAdobeInst.Size = New Size(472, 37)
-        cboAdobeInst.TabIndex = 1
-        tips.SetToolTipHeader(cboAdobeInst, "Comutatorul /n")
-        tips.SetToolTipText(cboAdobeInst, "Da: Adobe pornește un proces nou, al K-BOT." & vbLf & "Nu: Adobe poate preda documentul unei instanțe deja deschise de tine." & vbLf & "Automat: Da.")
-        '
+        ' 
         ' lblAdobeDetach
-        '
+        ' 
         lblAdobeDetach.AutoSize = True
         lblAdobeDetach.Dock = DockStyle.Fill
         lblAdobeDetach.Location = New Point(28, 55)
         lblAdobeDetach.Margin = New Padding(4, 0, 4, 10)
         lblAdobeDetach.Name = "lblAdobeDetach"
-        lblAdobeDetach.Size = New Size(322, 37)
+        lblAdobeDetach.Size = New Size(231, 37)
         lblAdobeDetach.TabIndex = 2
         lblAdobeDetach.Text = "La schimbarea documentului"
         lblAdobeDetach.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' cboAdobeDetach
-        '
-        cboAdobeDetach.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboAdobeDetach.CornerRadius = 4
-        cboAdobeDetach.Location = New Point(358, 55)
-        cboAdobeDetach.Margin = New Padding(4, 0, 4, 10)
-        cboAdobeDetach.Name = "cboAdobeDetach"
-        cboAdobeDetach.Size = New Size(472, 37)
-        cboAdobeDetach.TabIndex = 3
-        tips.SetToolTipHeader(cboAdobeDetach, "Cum se eliberează fereastra Adobe")
-        tips.SetToolTipText(cboAdobeDetach, "A: oprește procesul pornit de K-BOT — determinist." & vbLf & "B: închide doar fereastra și lasă procesul cald, deci următorul document pornește mai repede.")
-        '
+        ' 
         ' lblAdobeEcran
-        '
+        ' 
         lblAdobeEcran.AutoSize = True
         lblAdobeEcran.Dock = DockStyle.Fill
         lblAdobeEcran.Location = New Point(28, 102)
         lblAdobeEcran.Margin = New Padding(4, 0, 4, 10)
         lblAdobeEcran.Name = "lblAdobeEcran"
-        lblAdobeEcran.Size = New Size(322, 37)
+        lblAdobeEcran.Size = New Size(231, 26)
         lblAdobeEcran.TabIndex = 4
         lblAdobeEcran.Text = "La închiderea K-BOT"
         lblAdobeEcran.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' chkAdobeEcran
-        '
-        chkAdobeEcran.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        chkAdobeEcran.AutoSize = True
-        chkAdobeEcran.Location = New Point(358, 107)
-        chkAdobeEcran.Margin = New Padding(4, 0, 4, 10)
-        chkAdobeEcran.Name = "chkAdobeEcran"
-        chkAdobeEcran.Size = New Size(472, 26)
-        chkAdobeEcran.TabIndex = 5
-        chkAdobeEcran.Text = "Readu fereastra Adobe la dimensiunea ecranului"
-        chkAdobeEcran.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(chkAdobeEcran, "Adobe pe tot ecranul la închidere")
-        tips.SetToolTipText(chkAdobeEcran, "Adobe ține minte dimensiunea ferestrei pe care o închide, așa că se deschidea apoi la dimensiunea panoului K-BOT." & vbLf & "Bifat: la închiderea ferestrei K-BOT, fereastra Adobe iese din panou, se maximizează pe ecran și se închide acolo (se vede o clipă)." & vbLf & "Debifat (implicit): se închide în panou, ca până acum.")
-        '
+        ' 
         ' tlySubsol
-        '
+        ' 
         tlySubsol.ColumnCount = 3
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210F))
-        tlySubsol.Controls.Add(btnRenunta, 1, 0)
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
+        tlySubsol.Controls.Add(btnRenunta, 0, 0)
         tlySubsol.Controls.Add(btnSalveaza, 2, 0)
-        tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 293)
+        tlySubsol.Dock = DockStyle.Bottom
+        tlySubsol.Location = New Point(0, 312)
         tlySubsol.Margin = New Padding(0)
         tlySubsol.Name = "tlySubsol"
-        tlySubsol.Padding = New Padding(20, 0, 20, 0)
         tlySubsol.RowCount = 1
-        tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(858, 78)
+        tlySubsol.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
+        tlySubsol.Size = New Size(725, 48)
         tlySubsol.TabIndex = 3
-        '
-        ' btnRenunta
-        '
-        btnRenunta.DialogResult = DialogResult.Cancel
-        btnRenunta.Dock = DockStyle.Fill
-        btnRenunta.FlatStyle = FlatStyle.Flat
-        btnRenunta.Location = New Point(452, 12)
-        btnRenunta.Margin = New Padding(4, 12, 4, 12)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Size = New Size(172, 54)
-        btnRenunta.TabIndex = 0
-        btnRenunta.Text = "Renunță"
-        btnRenunta.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Închide fără să schimbe nimic.")
-        '
-        ' btnSalveaza
-        '
-        btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.FlatStyle = FlatStyle.Flat
-        btnSalveaza.Font = New Font("Segoe UI Semibold", 9F)
-        btnSalveaza.Location = New Point(632, 12)
-        btnSalveaza.Margin = New Padding(4, 12, 4, 12)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Size = New Size(202, 54)
-        btnSalveaza.TabIndex = 1
-        btnSalveaza.Text = "Salvează"
-        btnSalveaza.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Scrie setările (kbot_paths.json și app_settings.json) și închide.")
-        '
+        ' 
         ' AdobeGazduireForm
-        '
+        ' 
         AcceptButton = btnSalveaza
+        AutoFitToTheme = False
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnRenunta
-        ClientSize = New Size(860, 373)
+        ClientSize = New Size(727, 362)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         MaximizeBox = False
@@ -252,7 +253,7 @@ Partial Class AdobeGazduireForm
         Name = "AdobeGazduireForm"
         Padding = New Padding(1)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Fereastră găzduită Adobe"
         tlyMain.ResumeLayout(False)
         tlyCampuri.ResumeLayout(False)

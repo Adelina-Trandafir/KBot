@@ -189,6 +189,7 @@ Friend NotInheritable Class AdobeNativeMethods
 
     ' ── Creation hook (optional early catch, slice 0024-03 §4) ──────────────────
     Public Const EVENT_OBJECT_CREATE As UInteger = &H8000UI
+    Public Const EVENT_OBJECT_DESTROY As UInteger = &H8001UI
     Public Const EVENT_OBJECT_SHOW As UInteger = &H8002UI
     ' Out-of-context: the callback runs on OUR thread, so it needs a message pump — install from the
     ' UI thread only. In-context would inject a DLL into Adobe, which is out of the question.

@@ -184,7 +184,8 @@ Public Class SetariAplicatieView
             cboVerbose.Items.Add(New VerboseItem(True, "Pornit — tot ce scrie robotul"))
             cboVerbose.Items.Add(New VerboseItem(False, "Oprit — doar <Log> și erorile"))
 
-            For Each g As AdobePreviewEngine In New AdobePreviewEngine() {AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveX, AdobePreviewEngine.ActiveXReadMode}
+            ' The plain ActiveX engine is no longer offered (the code behind it stays). Only the Read Mode one is.
+            For Each g As AdobePreviewEngine In New AdobePreviewEngine() {AdobePreviewEngine.WindowHost, AdobePreviewEngine.ActiveXReadMode}
                 cboAdobeMotor.Items.Add(New AdobeEngineItem(g))
             Next
             For Each r As ExcelRibbonMode In New ExcelRibbonMode() {ExcelRibbonMode.HideDockWindow, ExcelRibbonMode.Excel4Macro}
@@ -312,6 +313,7 @@ Public Class SetariAplicatieView
             SelecteazaPanglica(OfficeHostSettings.CurrentExcelRibbon().Value)
             chkAcroTrace.Checked = AcroPdfTraceLog.SwitchedOn
             chkAcroNou.Checked = AppSettings.Current.AcroPdfFreshControl
+            chkAdobeClasic.Checked = AppSettings.Current.AdobeClassicUi
             ActualizeazaDisponibilitateaAdobe()
         Finally
             _suppress = False
@@ -332,14 +334,25 @@ Public Class SetariAplicatieView
 
     ' The «Opțiuni…» button is for the HOSTED WINDOW only; on ActiveX the settings behind
     ' it do nothing, and a button that opens a dialog which changes nothing would look like it
-    ' acts (same rule as DdfDocumentPage).
+    ' acts (same rule as DdfDocumentPage). The reverse holds for the ActiveX rows and the script
+    ' messages button: they are shown only while an ActiveX engine is the one in use.
     Private Sub ActualizeazaDisponibilitateaAdobe()
-        btnAdobeGazduire.Enabled = MotorulEsteFereastra()
+        Dim activeX As Boolean = MotorulCurent() <> AdobePreviewEngine.WindowHost
+        btnAdobeGazduire.Enabled = Not activeX
+        chkAcroTrace.Visible = activeX
+        chkAcroNou.Visible = activeX
+        btnMesajeAdobe.Visible = activeX
     End Sub
 
-    Private Function MotorulEsteFereastra() As Boolean
+    ' The engine picked in the combo; with nothing picked (the stored engine is one the combo no
+    ' longer offers) the stored one.
+    Private Function MotorulCurent() As AdobePreviewEngine
         Dim motor As AdobeEngineItem = TryCast(cboAdobeMotor.SelectedItem, AdobeEngineItem)
-        Return motor Is Nothing OrElse motor.Engine = AdobePreviewEngine.WindowHost
+        Return If(motor Is Nothing, AdobeViewerSettings.CurrentEngine().Value, motor.Engine)
+    End Function
+
+    Private Function MotorulEsteFereastra() As Boolean
+        Return MotorulCurent() = AdobePreviewEngine.WindowHost
     End Function
 
     ''' <summary>
@@ -412,6 +425,18 @@ Public Class SetariAplicatieView
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ChkAcroTrace_CheckedChanged", ex)
         End Try
+    End Sub
+
+    ' Adobe starts in its classic interface (slice 0078-10). Saved; AdobeUiPreference writes the
+    ' registry value when the next document opens, and puts it back at exit. Switching it off
+    ' puts the operator's own value back at once.
+    Private Sub ChkAdobeClasic_CheckedChanged(sender As Object, e As EventArgs) Handles chkAdobeClasic.CheckedChanged
+        If _suppress Then Return
+        SalveazaComutator(Sub(s) s.AdobeClassicUi = chkAdobeClasic.Checked,
+                          If(chkAdobeClasic.Checked,
+                             "Adobe va porni în interfața clasică, de la următorul document deschis.",
+                             "Adobe nu mai este pus pe interfața clasică. Valoarea ta din Adobe a fost pusă la loc."))
+        If Not chkAdobeClasic.Checked Then AdobeUiPreference.Restore(Nothing)
     End Sub
 
     ' ActiveX: a new AcroPDF control for every document asked for (DDF and ORD). Saved.

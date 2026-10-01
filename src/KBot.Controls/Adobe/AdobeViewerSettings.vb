@@ -85,7 +85,7 @@ Public NotInheritable Class AdobeViewerSettings
     ''' <summary>Eticheta românească din combo.</summary>
     Public Shared Function EngineLabel(engine As AdobePreviewEngine) As String
         If engine = AdobePreviewEngine.ActiveX Then Return "ActiveX (AcroPDF)"
-        If engine = AdobePreviewEngine.ActiveXReadMode Then Return "ActiveX (AcroPDF) — mod citire, Ctrl+H"
+        If engine = AdobePreviewEngine.ActiveXReadMode Then Return "ActiveX"
         Return "Fereastră găzduită"
     End Function
 

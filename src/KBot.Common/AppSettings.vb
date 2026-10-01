@@ -226,6 +226,13 @@ Public NotInheritable Class AppSettings
     Public Property AcroPdfFreshControl As Boolean = False
 
     ''' <summary>
+    ''' Adobe starts in its CLASSIC interface (<c>bEnableAv2 = 0</c>) while K-BOT runs; the value is put
+    ''' back when K-BOT closes (<c>AdobeUiPreference</c>). Off by default: the value is Adobe's own
+    ''' and it changes every PDF the operator opens, so it is only touched when asked.
+    ''' </summary>
+    Public Property AdobeClassicUi As Boolean = False
+
+    ''' <summary>
     ''' Adobe script alerts («Warning: JavaScript Window») that K-BOT closes by itself: one
     ''' regular expression per entry, matched (case-insensitive, anywhere in the text) against the
     ''' alert's message. An alert that matches none is LEFT ON SCREEN for the operator -- the forms
@@ -522,6 +529,7 @@ Public NotInheritable Class AppSettings
             .AdobePopupWatch = AdobePopupWatch,
             .AdobeRestoreScreenOnExit = AdobeRestoreScreenOnExit,
             .AcroPdfFreshControl = AcroPdfFreshControl,
+            .AdobeClassicUi = AdobeClassicUi,
             .AdobeTrappedAlerts = AdobeTrappedAlerts?.ToList(),
             .ExcelRibbon = ExcelRibbon,
             .TreeSort = TreeSort,
@@ -581,6 +589,7 @@ Public NotInheritable Class AppSettings
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If dto.AdobeRestoreScreenOnExit.HasValue Then s.AdobeRestoreScreenOnExit = dto.AdobeRestoreScreenOnExit.Value
         If dto.AcroPdfFreshControl.HasValue Then s.AcroPdfFreshControl = dto.AcroPdfFreshControl.Value
+        If dto.AdobeClassicUi.HasValue Then s.AdobeClassicUi = dto.AdobeClassicUi.Value
         If dto.AdobeTrappedAlerts IsNot Nothing Then
             s.AdobeTrappedAlerts = dto.AdobeTrappedAlerts.
                 Where(Function(p) Not String.IsNullOrWhiteSpace(p)).
@@ -642,6 +651,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdobePopupWatch As Boolean?
     Public Property AdobeRestoreScreenOnExit As Boolean?
     Public Property AcroPdfFreshControl As Boolean?
+    Public Property AdobeClassicUi As Boolean?
     Public Property AdobeTrappedAlerts As List(Of String)
     Public Property ExcelRibbon As String
     Public Property TreeSort As String

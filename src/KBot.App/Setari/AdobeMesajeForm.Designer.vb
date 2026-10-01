@@ -23,27 +23,99 @@ Partial Class AdobeMesajeForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AdobeMesajeForm))
         tips = New KBotToolTip(components)
+        txtReguli = New KBotTextBox()
+        txtProba = New KBotTextBox()
+        btnImplicite = New Button()
+        btnRenunta = New Button()
+        btnSalveaza = New Button()
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         lblIntro = New Label()
         tlyCampuri = New KBotTableLayoutPanel()
         lblReguli = New Label()
-        txtReguli = New KBotTextBox()
         lblProba = New Label()
-        txtProba = New KBotTextBox()
         lblRezultat = New Label()
         tlySubsol = New KBotTableLayoutPanel()
-        btnImplicite = New Button()
-        btnRenunta = New Button()
-        btnSalveaza = New Button()
         tlyMain.SuspendLayout()
         tlyCampuri.SuspendLayout()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        '
+        ' 
+        ' txtReguli
+        ' 
+        txtReguli.AcceptsReturn = True
+        txtReguli.Dock = DockStyle.Fill
+        txtReguli.Font = New Font("Consolas", 10.5F)
+        txtReguli.Location = New Point(28, 36)
+        txtReguli.Margin = New Padding(4, 0, 4, 12)
+        txtReguli.Name = "txtReguli"
+        txtReguli.PlaceholderText = "GeneralError" & vbLf & "Operation failed" & vbLf & "TypeError"
+        txtReguli.Size = New Size(882, 264)
+        txtReguli.TabIndex = 1
+        tips.SetToolTipHeader(txtReguli, "Lista mesajelor închise automat")
+        tips.SetToolTipText(txtReguli, "Câte o expresie regulată pe rând; rândurile goale se ignoră." & vbLf & "Exemple: «GeneralError», «^Operation failed», «is not a (function|object)»." & vbLf & "Un mesaj care nu se potrivește cu niciun rând rămâne pe ecran.")
+        txtReguli.WordWrap = False
+        ' 
+        ' txtProba
+        ' 
+        txtProba.Dock = DockStyle.Fill
+        txtProba.Location = New Point(28, 340)
+        txtProba.Margin = New Padding(4, 0, 4, 6)
+        txtProba.Name = "txtProba"
+        txtProba.PlaceholderText = "Validarea s-a terminat cu succes!"
+        txtProba.Size = New Size(882, 42)
+        txtProba.TabIndex = 3
+        tips.SetToolTipHeader(txtProba, "Probă")
+        tips.SetToolTipText(txtProba, "Textul se verifică pe loc cu lista de mai sus (și cea nesalvată)." & vbLf & "Textul exact al unui mesaj îl găsești în jurnalul Adobe (adobe_preview.log).")
+        ' 
+        ' btnImplicite
+        ' 
+        btnImplicite.Dock = DockStyle.Fill
+        btnImplicite.FlatStyle = FlatStyle.Flat
+        btnImplicite.Image = My.Resources.Resources.default_32
+        btnImplicite.Location = New Point(842, 0)
+        btnImplicite.Margin = New Padding(0)
+        btnImplicite.Name = "btnImplicite"
+        btnImplicite.Size = New Size(48, 48)
+        btnImplicite.TabIndex = 2
+        tips.SetToolTipHeader(btnImplicite, "Lista implicită")
+        tips.SetToolTipText(btnImplicite, "Pune în casetă lista livrată cu K-BOT (erorile de script văzute până acum)." & vbLf & "Nu salvează: apasă «Salvează» ca să rămână.")
+        btnImplicite.UseVisualStyleBackColor = True
+        ' 
+        ' btnRenunta
+        ' 
+        btnRenunta.DialogResult = DialogResult.Cancel
+        btnRenunta.Dock = DockStyle.Fill
+        btnRenunta.FlatStyle = FlatStyle.Flat
+        btnRenunta.Image = My.Resources.Resources.left_32
+        btnRenunta.Location = New Point(0, 0)
+        btnRenunta.Margin = New Padding(0)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Size = New Size(48, 48)
+        btnRenunta.TabIndex = 0
+        tips.SetToolTipHeader(btnRenunta, "Renunță")
+        tips.SetToolTipText(btnRenunta, "Închide fără să schimbe nimic.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
+        ' btnSalveaza
+        ' 
+        btnSalveaza.Dock = DockStyle.Fill
+        btnSalveaza.FlatStyle = FlatStyle.Flat
+        btnSalveaza.Font = New Font("Segoe UI Semibold", 9F)
+        btnSalveaza.Image = My.Resources.Resources.save_32
+        btnSalveaza.Location = New Point(890, 0)
+        btnSalveaza.Margin = New Padding(0)
+        btnSalveaza.Name = "btnSalveaza"
+        btnSalveaza.Size = New Size(48, 48)
+        btnSalveaza.TabIndex = 1
+        tips.SetToolTipHeader(btnSalveaza, "Salvează")
+        tips.SetToolTipText(btnSalveaza, "Verifică fiecare rând, scrie lista în app_settings.json și închide." & vbLf & "Se aplică de la următorul mesaj Adobe.")
+        btnSalveaza.UseVisualStyleBackColor = True
+        ' 
         ' tlyMain
-        '
+        ' 
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(capBar, 0, 0)
@@ -58,12 +130,12 @@ Partial Class AdobeMesajeForm
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 120F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 78F))
-        tlyMain.Size = New Size(938, 678)
+        tlyMain.RowStyles.Add(New RowStyle())
+        tlyMain.Size = New Size(938, 643)
         tlyMain.TabIndex = 0
-        '
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = DockStyle.Fill
         capBar.IconImage = My.Resources.Resources.settings__1_
         capBar.Location = New Point(0, 0)
@@ -76,9 +148,9 @@ Partial Class AdobeMesajeForm
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "K-BOT — Mesaje de script Adobe"
-        '
+        ' 
         ' lblIntro
-        '
+        ' 
         lblIntro.Dock = DockStyle.Fill
         lblIntro.Location = New Point(4, 57)
         lblIntro.Margin = New Padding(4, 0, 4, 0)
@@ -86,11 +158,11 @@ Partial Class AdobeMesajeForm
         lblIntro.Padding = New Padding(20, 8, 20, 8)
         lblIntro.Size = New Size(930, 120)
         lblIntro.TabIndex = 1
-        lblIntro.Text = "Mesajele «Warning: JavaScript Window» ale Adobe al căror text se potrivește cu un rând din listă sunt închise automat (K-BOT apasă «OK»). Toate celelalte rămân pe ecran, pentru tine. Câte o expresie regulată pe rând; literele mari și mici nu contează, iar un cuvânt simplu se potrivește oriunde în text."
+        lblIntro.Text = resources.GetString("lblIntro.Text")
         lblIntro.TextAlign = ContentAlignment.MiddleLeft
-        '
+        ' 
         ' tlyCampuri
-        '
+        ' 
         tlyCampuri.AutoFitToTheme = False
         tlyCampuri.ColumnCount = 1
         tlyCampuri.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
@@ -110,140 +182,67 @@ Partial Class AdobeMesajeForm
         tlyCampuri.RowStyles.Add(New RowStyle())
         tlyCampuri.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
         tlyCampuri.RowStyles.Add(New RowStyle())
-        tlyCampuri.Size = New Size(938, 423)
+        tlyCampuri.Size = New Size(938, 418)
         tlyCampuri.TabIndex = 2
-        '
+        ' 
         ' lblReguli
-        '
+        ' 
         lblReguli.AutoSize = True
         lblReguli.Dock = DockStyle.Fill
         lblReguli.Location = New Point(28, 8)
         lblReguli.Margin = New Padding(4, 0, 4, 6)
         lblReguli.Name = "lblReguli"
-        lblReguli.Size = New Size(882, 25)
+        lblReguli.Size = New Size(882, 22)
         lblReguli.TabIndex = 0
         lblReguli.Text = "Mesaje închise automat (câte o expresie pe rând)"
-        '
-        ' txtReguli
-        '
-        txtReguli.AcceptsReturn = True
-        txtReguli.Dock = DockStyle.Fill
-        txtReguli.Font = New Font("Consolas", 10.5F)
-        txtReguli.Location = New Point(28, 39)
-        txtReguli.Margin = New Padding(4, 0, 4, 12)
-        txtReguli.Multiline = True
-        txtReguli.Name = "txtReguli"
-        txtReguli.PlaceholderText = "GeneralError" & vbLf & "Operation failed" & vbLf & "TypeError"
-        txtReguli.ScrollBars = ScrollBars.Vertical
-        txtReguli.Size = New Size(882, 226)
-        txtReguli.TabIndex = 1
-        txtReguli.WordWrap = False
-        tips.SetToolTipHeader(txtReguli, "Lista mesajelor închise automat")
-        tips.SetToolTipText(txtReguli, "Câte o expresie regulată pe rând; rândurile goale se ignoră." & vbLf & "Exemple: «GeneralError», «^Operation failed», «is not a (function|object)»." & vbLf & "Un mesaj care nu se potrivește cu niciun rând rămâne pe ecran.")
-        '
+        ' 
         ' lblProba
-        '
+        ' 
         lblProba.AutoSize = True
         lblProba.Dock = DockStyle.Fill
-        lblProba.Location = New Point(28, 277)
+        lblProba.Location = New Point(28, 312)
         lblProba.Margin = New Padding(4, 0, 4, 6)
         lblProba.Name = "lblProba"
-        lblProba.Size = New Size(882, 25)
+        lblProba.Size = New Size(882, 22)
         lblProba.TabIndex = 2
         lblProba.Text = "Probă — lipește aici textul unui mesaj Adobe"
-        '
-        ' txtProba
-        '
-        txtProba.Dock = DockStyle.Fill
-        txtProba.Location = New Point(28, 308)
-        txtProba.Margin = New Padding(4, 0, 4, 6)
-        txtProba.Name = "txtProba"
-        txtProba.PlaceholderText = "Validarea s-a terminat cu succes!"
-        txtProba.Size = New Size(882, 42)
-        txtProba.TabIndex = 3
-        tips.SetToolTipHeader(txtProba, "Probă")
-        tips.SetToolTipText(txtProba, "Textul se verifică pe loc cu lista de mai sus (și cea nesalvată)." & vbLf & "Textul exact al unui mesaj îl găsești în jurnalul Adobe (adobe_preview.log).")
-        '
+        ' 
         ' lblRezultat
-        '
+        ' 
         lblRezultat.AutoSize = True
         lblRezultat.Dock = DockStyle.Fill
-        lblRezultat.Location = New Point(28, 356)
+        lblRezultat.Location = New Point(28, 388)
         lblRezultat.Margin = New Padding(4, 0, 4, 0)
         lblRezultat.Name = "lblRezultat"
-        lblRezultat.Size = New Size(882, 25)
+        lblRezultat.Size = New Size(882, 22)
         lblRezultat.TabIndex = 4
-        '
+        ' 
         ' tlySubsol
-        '
+        ' 
         tlySubsol.ColumnCount = 4
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 230F))
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210F))
-        tlySubsol.Controls.Add(btnImplicite, 0, 0)
-        tlySubsol.Controls.Add(btnRenunta, 2, 0)
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
+        tlySubsol.Controls.Add(btnImplicite, 2, 0)
+        tlySubsol.Controls.Add(btnRenunta, 0, 0)
         tlySubsol.Controls.Add(btnSalveaza, 3, 0)
-        tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 600)
+        tlySubsol.Dock = DockStyle.Bottom
+        tlySubsol.Location = New Point(0, 595)
         tlySubsol.Margin = New Padding(0)
         tlySubsol.Name = "tlySubsol"
-        tlySubsol.Padding = New Padding(20, 0, 20, 0)
         tlySubsol.RowCount = 1
-        tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(938, 78)
+        tlySubsol.RowStyles.Add(New RowStyle())
+        tlySubsol.Size = New Size(938, 48)
         tlySubsol.TabIndex = 3
-        '
-        ' btnImplicite
-        '
-        btnImplicite.Dock = DockStyle.Fill
-        btnImplicite.FlatStyle = FlatStyle.Flat
-        btnImplicite.Location = New Point(24, 12)
-        btnImplicite.Margin = New Padding(4, 12, 4, 12)
-        btnImplicite.Name = "btnImplicite"
-        btnImplicite.Size = New Size(222, 54)
-        btnImplicite.TabIndex = 2
-        btnImplicite.Text = "Lista implicită"
-        btnImplicite.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnImplicite, "Lista implicită")
-        tips.SetToolTipText(btnImplicite, "Pune în casetă lista livrată cu K-BOT (erorile de script văzute până acum)." & vbLf & "Nu salvează: apasă «Salvează» ca să rămână.")
-        '
-        ' btnRenunta
-        '
-        btnRenunta.DialogResult = DialogResult.Cancel
-        btnRenunta.Dock = DockStyle.Fill
-        btnRenunta.FlatStyle = FlatStyle.Flat
-        btnRenunta.Location = New Point(532, 12)
-        btnRenunta.Margin = New Padding(4, 12, 4, 12)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Size = New Size(172, 54)
-        btnRenunta.TabIndex = 0
-        btnRenunta.Text = "Renunță"
-        btnRenunta.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Închide fără să schimbe nimic.")
-        '
-        ' btnSalveaza
-        '
-        btnSalveaza.Dock = DockStyle.Fill
-        btnSalveaza.FlatStyle = FlatStyle.Flat
-        btnSalveaza.Font = New Font("Segoe UI Semibold", 9F)
-        btnSalveaza.Location = New Point(712, 12)
-        btnSalveaza.Margin = New Padding(4, 12, 4, 12)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Size = New Size(202, 54)
-        btnSalveaza.TabIndex = 1
-        btnSalveaza.Text = "Salvează"
-        btnSalveaza.UseVisualStyleBackColor = True
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Verifică fiecare rând, scrie lista în app_settings.json și închide." & vbLf & "Se aplică de la următorul mesaj Adobe.")
-        '
+        ' 
         ' AdobeMesajeForm
-        '
+        ' 
+        AutoFitToTheme = False
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         CancelButton = btnRenunta
-        ClientSize = New Size(940, 680)
+        ClientSize = New Size(940, 645)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         MaximizeBox = False
@@ -251,7 +250,7 @@ Partial Class AdobeMesajeForm
         Name = "AdobeMesajeForm"
         Padding = New Padding(1)
         ShowInTaskbar = False
-        StartPosition = FormStartPosition.CenterParent
+        StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Mesaje de script Adobe"
         tlyMain.ResumeLayout(False)
         tlyCampuri.ResumeLayout(False)

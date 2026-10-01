@@ -120,4 +120,7 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="lblIntro.Text" xml:space="preserve">
+    <value>Mesajele «Warning: JavaScript Window» ale Adobe al căror text se potrivește cu un rând din listă sunt închise automat (K-BOT apasă «OK»). Toate celelalte rămân pe ecran, pentru tine. Câte o expresie regulată pe rând; literele mari și mici nu contează, iar un cuvânt simplu se potrivește oriunde în text.</value>
+  </data>
 </root>

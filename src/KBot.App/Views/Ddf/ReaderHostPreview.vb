@@ -103,6 +103,7 @@ Public Class ReaderHostPreview
         AddHandler _host.SaveNotSent, AddressOf OnSaveNotSent
         AddHandler _host.SaveKeysSent, AddressOf OnSaveKeysSent
         AddHandler _host.DocumentReady, AddressOf OnDocumentReady
+        AddHandler _host.HostedWindowClosed, AddressOf OnHostedWindowClosed
         ' În DESIGNER nu citim setările și nu scriem jurnal (0025-05, de când controlul e declarat
         ' în DdfView.Designer.vb și deci se construiește pe suprafața de design): `AppDir` e acolo
         ' folderul lui devenv.exe, deci `kbot_paths.json` lipsește oricum, iar singurul efect real
@@ -223,6 +224,9 @@ Public Class ReaderHostPreview
                 ShowMissing()
                 Return
             End If
+
+            ' Slice 0078-10: the classic interface, when the operator asked for it (Setari > Documente).
+            AdobeUiPreference.EnsureApplied(AddressOf AdobeHostLog.Write)
 
             ' Slice 0078: before Adobe starts, so the preference is already read by it.
             If Not _savePrefDone Then
@@ -445,6 +449,19 @@ Public Class ReaderHostPreview
         Else
             AdobeOpenGate.Leave(Me)
         End If
+    End Sub
+
+    ' Host event, UI thread (slice 0078-10): the operator closed the document inside Adobe. The host has
+    ' stopped its own timers; here the print watch goes too, the trees unlock and the panel says so.
+    ' UI boundary: log and swallow.
+    Private Sub OnHostedWindowClosed()
+        Try
+            StopPrintWatch()
+            SetOpening(False)
+            ShowMessage("Fereastra Adobe a fost închisă. Selectați din nou revizia din arbore.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnHostedWindowClosed", ex)
+        End Try
     End Sub
 
     ' Host event, UI thread: Adobe finished opening the document. UI boundary: log and swallow.

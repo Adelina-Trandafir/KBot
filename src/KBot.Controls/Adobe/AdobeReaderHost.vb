@@ -146,6 +146,7 @@ Public NotInheritable Class AdobeReaderHost
         AddHandler _readModeTimer.Tick, AddressOf OnReadModeTick
         AddHandler _windowWatcher.HostedWindowMoved, AddressOf OnAdobeResized
         AddHandler _windowWatcher.Quiet, AddressOf OnAdobeQuiet
+        AddHandler _windowWatcher.HostedWindowClosed, AddressOf OnHostedWindowClosed
         _readyDeadline.Interval = ReadyDeadlineMs
         AddHandler _readyDeadline.Tick, AddressOf OnReadyDeadline
     End Sub
@@ -224,9 +225,76 @@ Public NotInheritable Class AdobeReaderHost
     Private Sub StartSaveTrap()
         Try
             If Not _saveTrapEnabled OrElse Not IsHosting OrElse String.IsNullOrEmpty(_hostedPath) Then Return
+            ' Slice 0078-10: armed paused when the panel is off screen (no timer for a viewer nobody sees).
+            WatchScreenState()
+            If PanelShown() Then _saveTrap.Resume() Else _saveTrap.Pause()
             _saveTrap.Start(_hostedPath, HostedPids())
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.StartSaveTrap", ex)
+        End Try
+    End Sub
+
+    ' ── On screen / off screen (slice 0078-10) ───────────────────────────────────
+    '
+    ' Same rule as the ActiveX viewer (operator, 23.09.2026): the trap's timer and hooks stop while
+    ' the panel is not on screen -- another page of the view, another view, or the form minimised --
+    ' and start again when it is back. The window watch and the key timers are short-lived or
+    ' event-driven and are left alone.
+
+    Private _screenPanel As Control
+    Private _screenForm As Form
+
+    Private Function PanelShown() As Boolean
+        Dim surface As ControlHostSurface = TryCast(_host, ControlHostSurface)
+        If surface Is Nothing Then Return True
+        If Not surface.Control.Visible Then Return False
+        Dim form As Form = surface.Control.FindForm()
+        Return form Is Nothing OrElse form.WindowState <> FormWindowState.Minimized
+    End Function
+
+    ' Reached from StartSaveTrap (wrapped).
+    Private Sub WatchScreenState()
+        Dim panel As Control = TryCast(_host, ControlHostSurface)?.Control
+        If panel IsNot _screenPanel Then
+            UnwatchScreenState()
+            _screenPanel = panel
+            If panel IsNot Nothing Then
+                AddHandler panel.VisibleChanged, AddressOf OnScreenStateChanged
+                AddHandler panel.ParentChanged, AddressOf OnScreenStateChanged
+            End If
+        End If
+        Dim form As Form = panel?.FindForm()
+        If form IsNot _screenForm Then
+            If _screenForm IsNot Nothing Then RemoveHandler _screenForm.Resize, AddressOf OnScreenStateChanged
+            _screenForm = form
+            If form IsNot Nothing Then AddHandler form.Resize, AddressOf OnScreenStateChanged
+        End If
+    End Sub
+
+    Private Sub UnwatchScreenState()
+        If _screenPanel IsNot Nothing Then
+            RemoveHandler _screenPanel.VisibleChanged, AddressOf OnScreenStateChanged
+            RemoveHandler _screenPanel.ParentChanged, AddressOf OnScreenStateChanged
+            _screenPanel = Nothing
+        End If
+        If _screenForm IsNot Nothing Then
+            RemoveHandler _screenForm.Resize, AddressOf OnScreenStateChanged
+            _screenForm = Nothing
+        End If
+    End Sub
+
+    ' UI event (panel visibility, parent, form resize): log and swallow.
+    Private Sub OnScreenStateChanged(sender As Object, e As EventArgs)
+        Try
+            WatchScreenState()
+            Dim shown As Boolean = PanelShown()
+            If shown AndAlso _saveTrap.IsPaused Then
+                _saveTrap.Resume()
+            ElseIf Not shown AndAlso Not _saveTrap.IsPaused Then
+                _saveTrap.Pause()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnScreenStateChanged", ex)
         End Try
     End Sub
 
@@ -612,6 +680,27 @@ Public NotInheritable Class AdobeReaderHost
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0078-10: the hosted Adobe window is gone without K-BOT having asked (the operator closed
+    ''' the document in Adobe, or Adobe ended). Raised (UI thread) AFTER everything was stopped: the
+    ''' trap's timer, the window watch, the key timer, the opening deadline. The owner should stop
+    ''' whatever it started for the document (print watch) and tell the operator.
+    ''' </summary>
+    Public Event HostedWindowClosed As Action
+
+    ' Watcher event, UI thread. The normal release does all the stopping (and ends a process K-BOT started).
+    ' UI boundary: log and swallow.
+    Private Sub OnHostedWindowClosed()
+        Try
+            If Not IsHosting Then Return
+            Report("Fereastra Adobe a fost închisă din Adobe — opresc urmărirea documentului.")
+            Detach()
+            RaiseEvent HostedWindowClosed()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnHostedWindowClosed", ex)
+        End Try
+    End Sub
+
     ' ── Document ready (slice 0078-08) ──────────────────────────────────────────
 
     ' Watcher event, UI thread: Adobe's windows stopped changing. UI boundary: log and swallow.
@@ -920,11 +1009,13 @@ Public NotInheritable Class AdobeReaderHost
     Public Sub Dispose() Implements IDisposable.Dispose
         Try
             UnwatchClosingForm()
+            UnwatchScreenState()
             ReleaseAtScreenSize()
             Detach()
             _readModeTimer.Dispose()
             RemoveHandler _windowWatcher.HostedWindowMoved, AddressOf OnAdobeResized
             RemoveHandler _windowWatcher.Quiet, AddressOf OnAdobeQuiet
+            RemoveHandler _windowWatcher.HostedWindowClosed, AddressOf OnHostedWindowClosed
             _windowWatcher.Dispose()
             RemoveHandler _readyDeadline.Tick, AddressOf OnReadyDeadline
             _readyDeadline.Dispose()
