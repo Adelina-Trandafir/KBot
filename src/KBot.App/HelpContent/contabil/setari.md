@@ -4,22 +4,23 @@ title: Setări și aspect
 part: contabil
 order: 80
 parent: contabil
-screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
+screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
 keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
-<!-- slice: 0072, 0072-01, 0000-29, fara-felie -->
+<!-- slice: 0072, 0072-01, 0000-29, 0100-02, fara-felie -->
 Butonul **MENIU** al ferestrei principale are două rânduri pentru această fereastră:
 **Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
 (rândul se poate ascunde din pagina **Aplicație**).
 
-<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-01 22:48 | why: 0100: pagina «Aplicație» a Setărilor are comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și un grup nou, «Descărcări multiple», cu opțiuni avansate pornite. -->
+<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-01 23:30 | why: 0100-02: pagina «Aplicație» a Setărilor are comutatoarele regrupate (Fereastra principală, FOREXE, Avansat), iar lista paginilor are un rând în plus, «Descărcări multiple» (apare doar când unitatea o permite). -->
 
 | Pagina | Ce găsești |
 |--------|------------|
 | **Informații** | datele sesiunii (utilizator, unitate, an, versiunile K-BOT), **schimbarea parolei** și «Caută actualizări» |
 | **Aplicație** | comutatoarele de zi cu zi și opțiunile listei de angajamente (sortare, coloane) |
 | **FOREXE** | certificatul memorat, mini-meniul din pagina FOREXE, testul de viteză și timpii de așteptare ai robotului — mai jos |
+| **Descărcări multiple** | **apare doar dacă unitatea permite descărcarea pe mai multe taburi** — câte angajamente se descarcă deodată și actualizarea la conectare — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla) |
 | **Extrase** | coloanele grilelor de extrase — vezi [Extrase de cont](topic:contabil.vederi.extrase) |
 | **Autentificare** | ce ține minte fereastra de conectare, ce se întâmplă când expiră sesiunea și adresa serverului K-BOT — mai jos |
 | **Jurnal** | jurnalele K-BOT, pentru când ceva nu merge |
@@ -27,7 +28,7 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 Setările se salvează pe măsură ce le schimbi.
 
 ## Pagina «Aplicație»: cum e grupată fila «Generale»
-<!-- slice: 0100 -->
+<!-- slice: 0100, 0100-02 -->
 
 Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare nu s-a schimbat:
 
@@ -36,7 +37,9 @@ Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare 
 | **Fereastra principală** | pornirea mărită, turul inițial, rândul «Jurnal activitate» din meniul MENIU |
 | **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
-| **Descărcări multiple** | apare doar cu opțiunile avansate pornite — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla) |
+
+Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —
+[Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Pagina «Aplicație»: pornirea K-BOT
 <!-- slice: 0097-02 -->

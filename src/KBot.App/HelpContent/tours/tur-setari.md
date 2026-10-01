@@ -35,6 +35,13 @@ part: item:forexe
 goto: setari:forexe
 Starea robotului, certificatul memorat (și dacă se uită la schimbarea unității), mini-meniul K-BOT din pagina FOREXE, testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
 
+## Descărcări multiple
+<!-- slice: 0100-02 -->
+target: SetariForm.navViews
+part: item:multithread
+goto: setari:multithread
+Apare doar dacă unitatea ta permite descărcarea pe mai multe taburi. Aici alegi câte angajamente se descarcă deodată (cel mult cât îngăduie unitatea) și dacă cele vechi se actualizează singure la conectare.
+
 ## Extrase
 <!-- slice: 0080-02, 0000-23 -->
 target: SetariForm.navViews

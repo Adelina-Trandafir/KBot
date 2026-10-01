@@ -51,5 +51,4 @@ on screen, SQL not run, server route not run.
 - Whether the provisioning job copies **rows** of `AVACONT_SURSA` into new units (it clones the tables) is unchecked;
   a new unit without the default rows reads as «off» — safe.
 - The new page and the removed group were not seen on screen (designer hand-written).
-- **Help and captures not done on this branch**: the help of slice 0100 (0000-34/35) lives on `master`, which this
-  branch has not merged. The exact edits (topics, slice tags, capture tags with redo/why, tour step) are drafted in `SLICE-0000-36-DRAFT-ajutor-setari-multithread.md`, to apply on master. No screenshot was taken: it needs K-BOT running on a unit with Multithread = 1.
+- Help: done as 0000-36 (`SLICE-0000-36-ajutor-setari-multithread.md`); no screenshot taken (needs K-BOT on a unit with Multithread = 1).

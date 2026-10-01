@@ -5,32 +5,38 @@ part: contabil
 order: 35
 parent: contabil.forexe
 screens: ActualizareMultiplaForm
-keywords: descarcare multipla, actualizare multipla, mai multe angajamente, deodata, in acelasi timp, taburi, fire, thread, multithread, actualizeaza angajamente, la conectare, neactualizate, angajamente vechi, angajamente noi, actualizeaza implicit toate receptiile, data actualizarii
+keywords: descarcare multipla, actualizare multipla, mai multe angajamente, deodata, in acelasi timp, taburi, fire, thread, multithread, actualizeaza angajamente, la conectare, neactualizate, angajamente vechi, angajamente noi, actualizeaza implicit toate receptiile, data actualizarii, pagina descarcari multiple, nu apare pagina, permis, limita de taburi
 ---
-<!-- slice: 0100 -->
+<!-- slice: 0100, 0100-02 -->
 Implicit, K-BOT descarcă **un singur angajament odată**, în ordinea în care ai cerut. Dacă ai de adus
 la zi mai multe, poți pune K-BOT să le descarce **deodată**: fiecare lucrează pe un tab al lui din
 browserul FOREXE, în aceeași conectare, fără altă autentificare.
 
-Această variantă e **oprită la început** și se pornește din opțiunile avansate (vezi mai jos).
+Această variantă e **oprită la început**. O pornești din **Setări › Descărcări multiple**, iar pagina aceea
+există **doar dacă descărcarea pe mai multe taburi e permisă pentru unitatea ta**.
 
 ## Cum o pornești
-<!-- slice: 0100 -->
+<!-- slice: 0100, 0100-02 -->
 
-Deschide **Setări › Aplicație**, fila **Generale**. Grupul **«Descărcări multiple»** apare doar cu
-[opțiunile avansate](topic:avansat) pornite.
+Deschide **Setări** (butonul **MENIU** › «Configurare K-BOT») și alege pagina **Descărcări multiple**.
 
-<!-- capture: setari-descarcari-multiple | caption: Grupul «Descărcări multiple» din Setări › Aplicație | goto: setari:aplicatie | prepare: Activați opțiunile avansate (cu parola), apoi derulați fila «Generale» până la grupul «Descărcări multiple» și bifați prima opțiune. -->
+> **Nu vezi pagina în listă?** Atunci descărcarea pe mai multe taburi nu e permisă pentru unitatea la care
+> ești conectat: toate descărcările merg una câte una. Cere celui care administrează K-BOT să o permită.
+> Nu trebuie [opțiunile avansate](topic:avansat). Permisiunea se citește la conectare și când schimbi unitatea.
+
+<!-- capture: setari-descarcari-multiple | caption: Pagina «Descărcări multiple» din Setări | goto: setari:multithread | prepare: Unitatea trebuie să aibă descărcarea pe mai multe taburi permisă (pagina apare în lista Setărilor), cu limita de taburi peste 1. Bifați prima opțiune și bifați și «La conectare, actualizează angajamentele vechi», ca să se vadă și câmpul cu zilele. | redo: 2026-10-01 23:30 | why: 0100-02: grupul nu mai e în «Aplicație»; e pagina separată «Descărcări multiple», vizibilă doar când unitatea o permite. -->
 
 | Opțiunea | Ce face |
 |----------|---------|
 | **«Descarcă mai multe angajamente deodată»** — debifată la început | pornește descărcarea pe mai multe taburi și aduce în meniul arborelui rândul «Actualizează angajamente...». Debifată, totul merge una câte una, ca până acum. |
-| **«Numărul de taburi deodată (1–10)»** — 3 la început | câte descărcări lucrează în același timp; cel mult 10. E o limită a lucrului deodată, nu a angajamentelor alese: cele în plus așteaptă la rând (vezi mai jos). |
+| **«Numărul de taburi deodată (1–N)»** — 3 la început, dar nu mai mult decât îngăduie unitatea | câte descărcări lucrează în același timp. **N**, scris în chiar numele opțiunii, e limita unității (cel mult 10). Un număr mai mare nu se primește. E o limită a lucrului deodată, nu a angajamentelor alese: cele în plus așteaptă la rând (vezi mai jos). |
 | **«La conectare, actualizează angajamentele vechi»** — debifată la început | după conectarea la FOREXE, angajamentele neactualizate de cel puțin **N zile** se descarcă singure. |
 | **«Neactualizate de (zile, cel mult 10)»** — 7 la început | N-ul de mai sus, de la 1 la 10. Se poate scrie doar cât e bifată opțiunea de dinainte. |
 | **«Actualizează implicit toate recepțiile»** — debifată la început | nu se mai deschide fereastra de alegere a recepțiilor; se citesc toate (vezi mai jos). |
 
 Opțiunile de sub prima se pot schimba doar cât prima e bifată. Se salvează pe măsură ce le schimbi.
+Dacă la o conectare următoare unitatea nu mai permite descărcarea pe mai multe taburi, pagina dispare din
+Setări, iar descărcările merg din nou una câte una; bifele tale rămân salvate pentru când se permite din nou.
 
 ## Alegi angajamentele de actualizat
 <!-- slice: 0100 -->
@@ -38,11 +44,11 @@ Opțiunile de sub prima se pot schimba doar cât prima e bifată. Se salvează p
 Cu descărcarea pe mai multe taburi pornită, meniul iconiței din capul listei de angajamente (cea
 de la sortare și coloane) are un rând în plus: **«Actualizează angajamente...»**.
 
-<!-- capture: arbore-meniu-actualizare | caption: Meniul listei de angajamente, cu «Actualizează angajamente...» | prepare: Porniți descărcarea pe mai multe taburi în Setări › Aplicație, apoi apăsați iconița din dreapta capului listei de angajamente și țineți meniul deschis. -->
+<!-- capture: arbore-meniu-actualizare | caption: Meniul listei de angajamente, cu «Actualizează angajamente...» | prepare: Porniți descărcarea pe mai multe taburi în Setări › Descărcări multiple, apoi apăsați iconița din dreapta capului listei de angajamente și țineți meniul deschis. -->
 
 Se deschide fereastra **«Actualizează angajamente»**, cu toate angajamentele din listă:
 
-<!-- capture: actualizare-multipla | caption: Fereastra «Actualizează angajamente» | prepare: Porniți descărcarea pe mai multe taburi, deschideți meniul listei și alegeți «Actualizează angajamente...». Bifați câteva rânduri. -->
+<!-- capture: actualizare-multipla | caption: Fereastra «Actualizează angajamente» | prepare: Porniți descărcarea pe mai multe taburi (Setări › Descărcări multiple), deschideți meniul listei și alegeți «Actualizează angajamente...». Bifați câteva rânduri. -->
 
 | Coloana | Ce arată |
 |---------|----------|

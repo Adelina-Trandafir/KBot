@@ -91,7 +91,7 @@ A picture the help needs is written as ONE line, where the picture should appear
   notecab) · `menu:<header menu key>` (angajament_nou, extrase, clasificatii, parteneri,
   operatiuni_necorelate; `jurnal` and `setari` exist too, but open the settings window -- use
   `setari:<page>` instead; `angajament_forexe` exists too but starts the robot -- do not use it
-  for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, pagina, extrase, tema,
+  for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, multithread, pagina, extrase, tema,
   autentificare, foldere, jurnal) · `help` (this topic) / `help:<topic id>`.
 - `prepare:` Romanian, what the operator sets up by hand before «Capturează» (optional).
 - `redo:` + `why:` (slice 0000-34, optional, always together): the picture is OUT OF DATE because a later
