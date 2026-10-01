@@ -58,6 +58,43 @@ Public NotInheritable Class FakeForexeRunner
         Return Await SimulateAsync(job, progress, ct, RunSeconds).ConfigureAwait(True)
     End Function
 
+    ''' <summary>
+    ''' Slice 0100 bench: the same contract as the real runner -- at most min(maxThreads, 10) fake
+    ''' runs together, a FIFO queue behind them, each answer added to the list when it ends.
+    ''' </summary>
+    Public Async Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest), maxThreads As Integer,
+                                               jobFinished As Action(Of ParallelJobOutcome),
+                                               ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome)) _
+        Implements IForexeRunner.RunJobsParallelAsync
+        Dim outcomes As New List(Of ParallelJobOutcome)()
+        Dim fifo As New Queue(Of JobRequest)(jobs)
+        Dim threads As Integer = Math.Min(Math.Min(Math.Max(1, maxThreads), 10), Math.Max(1, jobs.Count))
+        Dim workers As New List(Of Task)()
+        For n As Integer = 1 To threads
+            Dim workerNo As Integer = n
+            workers.Add(Task.Run(
+                Async Function()
+                    Do
+                        Dim job As JobRequest = Nothing
+                        SyncLock fifo
+                            If fifo.Count = 0 OrElse ct.IsCancellationRequested Then Exit Do
+                            job = fifo.Dequeue()
+                        End SyncLock
+                        Dim started As Date = Date.Now
+                        Dim result As JobResult = Await SimulateAsync(job, Nothing, ct, RunSeconds).ConfigureAwait(False)
+                        Dim outcome As New ParallelJobOutcome With {.Job = job, .Result = result, .Worker = workerNo,
+                                                                    .StartedAt = started, .FinishedAt = Date.Now}
+                        SyncLock outcomes
+                            outcomes.Add(outcome)
+                        End SyncLock
+                        jobFinished?.Invoke(outcome)
+                    Loop
+                End Function))
+        Next
+        Await Task.WhenAll(workers).ConfigureAwait(True)
+        Return outcomes
+    End Function
+
     Public Async Function DescarcaExtraseAsync(folderDescarcare As String, dataDeLa As Date?,
                                                progres As Action(Of Integer, Integer, String),
                                                ct As CancellationToken) As Task(Of List(Of ExtrasDescarcat)) _

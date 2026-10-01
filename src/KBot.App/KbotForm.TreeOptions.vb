@@ -29,6 +29,8 @@ Partial Public Class KbotForm
     Private Const TREE_SORT_DATE As String = "sort-date"
     Private Const TREE_COL_COD As String = "col-cod"
     Private Const TREE_COL_SURSE As String = "col-surse"
+    ' Slice 0100: the multi-thread update window (only offered with multi-thread downloading on).
+    Private Const TREE_UPDATE_MANY As String = "update-many"
 
     ' Cell keys of the two columns (the ColumnDef.Name the cells are matched on).
     Private Const COL_COD As String = "CodAngajament"
@@ -288,6 +290,12 @@ Partial Public Class KbotForm
                     .Checked = s.TreeShowSurse}
             }
 
+            ' Slice 0100: the angajamente to update together (the window is KbotForm.Parallel.vb's).
+            If s.MultiThreadInEffect Then
+                rows.Add(CustomPopupItem.Separator())
+                rows.Add(New CustomPopupItem(TREE_UPDATE_MANY, "&Actualizăeză angajamente...", FxIcons.RefreshIcon()))
+            End If
+
             ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
             Dim menu As New CustomPopup(rows)
             AddHandler menu.ItemClicked, AddressOf TreeOptionsMenu_ItemClicked
@@ -305,6 +313,11 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Sub TreeOptionsMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
+            ' Slice 0100: not a setting -- it opens the window of the multi-thread update.
+            If String.Equals(e.Item.Key, TREE_UPDATE_MANY, StringComparison.Ordinal) Then
+                DeschideActualizareaMultipla()
+                Return
+            End If
             Dim copie As AppSettings = AppSettings.Current.Clone()
             Select Case e.Item.Key
                 Case TREE_SORT_NAME

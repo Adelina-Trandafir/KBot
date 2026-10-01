@@ -289,14 +289,24 @@ Partial Public Class WorkflowExecutor
         _logger.LogSuccess("Browser poziționat (Ready).")
 
 
-        AddHandler _page.Close, Sub()
-                                    _logger.LogWarning($"Pagina {_page.Url} a fost închisă de utilizator. Se revine la starea initiala")
-
-                                    Task.Run(Sub()
-                                                 RaiseEvent OnBrowserClosed("Browser-ul a fost inchis. Aplicatia se va inchide automat!")
-                                             End Sub)
-                                End Sub
+        AttachCloseNotice(_page)
     End Function
+
+    ' Slice 0100: true while K-BOT itself closes the primary's old tab to put another one in its
+    ' place (AdoptTabAsync) -- that is not «the operator closed the browser».
+    Private _suppressCloseNotice As Boolean = False
+
+    ''' <summary>Tells the host when the operator closes THIS page (the session's main tab).</summary>
+    Private Sub AttachCloseNotice(page As IPage)
+        AddHandler page.Close, Sub()
+                                   If _suppressCloseNotice Then Return
+                                   _logger.LogWarning($"Pagina {page.Url} a fost închisă de utilizator. Se revine la starea initiala")
+
+                                   Task.Run(Sub()
+                                                RaiseEvent OnBrowserClosed("Browser-ul a fost inchis. Aplicatia se va inchide automat!")
+                                            End Sub)
+                               End Sub
+    End Sub
 
     Private Async Function ApplyStealthWindowStyle() As Task
         Try

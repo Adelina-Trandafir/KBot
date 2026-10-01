@@ -238,6 +238,14 @@ Partial Public Class KbotForm
         Try
             If String.IsNullOrWhiteSpace(cod) Then Return New ReceptiiSarite()
 
+            ' Slice 0100: «Actualizeaza implicit toate receptiile» (multi-thread mode): no question,
+            ' every reception is read.
+            If AppSettings.Current.UpdateAllReceptiiInEffect Then
+                _descarcareFaraIntrebare.Remove(cod)
+                _controller.SpuneStare($"«{cod}»: se descarcă toate recepțiile (Setări → Aplicație: actualizează implicit toate recepțiile).")
+                Return New ReceptiiSarite()
+            End If
+
             ' Queued behind other FOREXE actions: no question, every reception is read.
             If _descarcareFaraIntrebare.Remove(cod) Then
                 _controller.SpuneStare($"«{cod}»: se descarcă toate recepțiile (mai multe actualizări în același timp).")

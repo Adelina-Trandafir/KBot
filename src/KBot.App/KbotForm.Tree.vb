@@ -200,6 +200,10 @@ Partial Public Class KbotForm
             If info.DataAngajamentNou.HasValue Then
                 linii.Add("Angajament nou (FOREXE): " & info.DataAngajamentNou.Value.ToString("dd.MM.yyyy HH:mm:ss"))
             End If
+            ' Slice 0100: the last saved download from FOREXE.
+            If info.DataActualizare.HasValue Then
+                linii.Add("Actualizat: " & info.DataActualizare.Value.ToString("dd.MM.yyyy HH:mm"))
+            End If
             If info.DataDefinitivare.HasValue Then
                 linii.Add("Definitivat: " & info.DataDefinitivare.Value.ToString("dd.MM.yyyy"))
             End If

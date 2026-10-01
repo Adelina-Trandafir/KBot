@@ -357,6 +357,7 @@ Public Class ApiClient
                                 .Stare = If(r.Stare, String.Empty),
                                 .DataCreare = r.DataCreare,
                                 .DataAngajamentNou = r.DataAngajamentNou,
+                                .DataActualizare = r.DataActualizare,
                                 .DataDefinitivare = r.DataDefinitivare,
                                 .IDDF = r.IDDF,
                                 .EIncarcat = r.Incarcat,

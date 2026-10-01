@@ -68,6 +68,9 @@ Partial Public Class KbotForm
                 Return
             End If
 
+            ' Slice 0100: what the tree held before, to tell the angajamente that APPEAR in it.
+            Dim dinainte As New HashSet(Of String)(_treeInfos.Keys, StringComparer.OrdinalIgnoreCase)
+
             Dim rezultat As AngajamenteAdaugate
             busyBar.Running = True
             Try
@@ -82,12 +85,17 @@ Partial Public Class KbotForm
             ' selection and drops the operator back on «sumar», which is pointless when no
             ' new angajament appeared.
             If rezultat.Inserate > 0 Then Await LoadTreeAsync()
+            Dim coduriNoi As List(Of String) =
+                _treeInfos.Keys.Where(Function(c) Not dinainte.Contains(c)).ToList()
 
             ' A good download is SILENT (operator, 28.09.2026): the figures go to the operator
             ' log only, never into a box. Only errors are shown.
             OperatorLog.Write("MainForm.Tree_FooterRightIconClicked", "Listă angajamente",
                 $"Angajamente în FOREXE: {rezultat.Candidate}. " &
                 $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.")
+
+            ' Slice 0100: multi-thread mode only -- the new ones can be downloaded right away.
+            Await IntreabaDespreAngajamenteleNoiAsync(coduriNoi)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DescarcaListaAsync", ex)
             Throw

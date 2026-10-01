@@ -25,6 +25,21 @@ Public Class RichTextBoxLogger
     ' Obiect pentru blocarea accesului la fișier între thread-uri
     Private Shared ReadOnly _fileLock As New Object()
 
+    ' Slice 0100: while several FOREXE tabs download at once their lines interleave in the same
+    ' console and file. A download sets this (it flows with the async calls of THAT download only,
+    ' never to the other tabs) and every line it writes starts with «[tag] ». Empty = no tag, as before.
+    Private Shared ReadOnly _scopeTag As New System.Threading.AsyncLocal(Of String)()
+
+    ''' <summary>Slice 0100: the tag put in front of every line written by the current async flow (e.g. the angajament code).</summary>
+    Public Shared Property ScopeTag As String
+        Get
+            Return _scopeTag.Value
+        End Get
+        Set(value As String)
+            _scopeTag.Value = value
+        End Set
+    End Property
+
     ' --- PROPRIETĂȚI ---
     ''' <summary>
     ''' Dacă este True, scrie în fereastra aplicației. Dacă False, ignoră UI-ul.
@@ -188,6 +203,8 @@ Public Class RichTextBoxLogger
     ''' <param name="operatorFacing">True for text written FOR the operator (a workflow's
     ''' &lt;Log&gt; or LogValue): shown on the console whatever the verbosity.</param>
     Public Sub Log(message As String, Optional level As LogLevel = LogLevel.Info, Optional operatorFacing As Boolean = False)
+        Dim tag As String = ScopeTag
+        If Not String.IsNullOrEmpty(tag) Then message = $"[{tag}] {message}"
         Dim timestamp = DateTime.Now.ToString("HH:mm:ss")
         Dim prefix = LogPrefixes(level)
         Dim color = LogColors(level)

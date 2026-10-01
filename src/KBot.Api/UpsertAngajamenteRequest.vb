@@ -89,6 +89,8 @@ Public NotInheritable Class GetTreeRow
     Public Property DataCreare As Date?
     ' Slice 0777: FX_Istoric «Angajament nou.» DataFX, time part included.
     Public Property DataAngajamentNou As Date?
+    ' Slice 0100: FX_Angajamente.DataActualizare, null when no download was saved yet.
+    Public Property DataActualizare As Date?
     Public Property DataDefinitivare As Date?
     Public Property Incarcat As Boolean
     Public Property Preluat As Boolean

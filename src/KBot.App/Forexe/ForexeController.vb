@@ -197,6 +197,13 @@ Partial Public NotInheritable Class ForexeController
     ''' </summary>
     Public Event UncorrectedOperationsFound As EventHandler(Of UncorrectedOperationsPage)
 
+    ''' <summary>
+    ''' Slice 0100: a FOREXE connection has just succeeded and the controller is idle again (raised
+    ''' after the busy flag went down). The shell starts the on-connect update of the old
+    ''' angajamente from it. Comes from the flow that connected, which may itself be a queued task.
+    ''' </summary>
+    Public Event Connected As EventHandler
+
     ' ── Intenții ─────────────────────────────────────────────────────────
 
     ''' <summary>
@@ -225,6 +232,7 @@ Partial Public NotInheritable Class ForexeController
             End If
 
             IntraInLucru()
+            Dim reusit As Boolean = False
             Try
                 Dim job As New JobRequest With {
                     .WorkflowName = "Conectare",
@@ -239,9 +247,11 @@ Partial Public NotInheritable Class ForexeController
                 Else
                     RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
                 End If
-                Return rezultat.Success
+                reusit = rezultat.Success
+                Return reusit
             Finally
                 IesDinLucru()
+                If reusit Then RidicaConectat()
             End Try
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.ConnectAsync", ex)
@@ -259,6 +269,7 @@ Partial Public NotInheritable Class ForexeController
             If _busy Then Return False
             _ultimulEsec = String.Empty
             IntraInLucru()
+            Dim reusit As Boolean = False
             Try
                 Dim job As New JobRequest With {
                     .WorkflowName = "Conectare",
@@ -273,9 +284,11 @@ Partial Public NotInheritable Class ForexeController
                 Else
                     RaporteazaEsec("Conectare eșuată: " & rezultat.Message)
                 End If
-                Return rezultat.Success
+                reusit = rezultat.Success
+                Return reusit
             Finally
                 IesDinLucru()
+                If reusit Then RidicaConectat()
             End Try
         Catch ex As Exception
             GlobalErrorLog.Write("ForexeController.ConnectAsync", ex)
@@ -1296,6 +1309,16 @@ Partial Public NotInheritable Class ForexeController
             GlobalErrorLog.Write("ForexeController.ReadUncorrectedOperationsAsync", ex)
         End Try
     End Function
+
+    ' Slice 0100: tells the shell a connection succeeded. Event boundary: a subscriber that throws
+    ' must not undo a good connection.
+    Private Sub RidicaConectat()
+        Try
+            RaiseEvent Connected(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.RidicaConectat", ex)
+        End Try
+    End Sub
 
     ' Deschide sesiunea dacă nu există; False = operatorul a anulat sau conectarea a eșuat.
     Private Async Function AsiguraSesiuneAsync() As Task(Of Boolean)

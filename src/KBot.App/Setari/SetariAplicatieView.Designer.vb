@@ -30,6 +30,11 @@ Partial Class SetariAplicatieView
         chkTurInitial = New CheckBox()
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
+        chkMultiThread = New CheckBox()
+        txtFire = New KBotTextField()
+        chkAutoVechi = New CheckBox()
+        txtZile = New KBotTextField()
+        chkToateReceptiile = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAdobeClasic = New CheckBox()
@@ -50,6 +55,12 @@ Partial Class SetariAplicatieView
         lblTitluComutatoare = New Label()
         tlyComutatoare = New KBotTableLayoutPanel()
         lblVerbose = New Label()
+        lblGrupFereastra = New Label()
+        lblGrupForexe = New Label()
+        lblGrupAvansat = New Label()
+        lblGrupDescarcari = New Label()
+        lblFire = New Label()
+        lblZile = New Label()
         tlyPaginaDocumente = New KBotTableLayoutPanel()
         lblTitluDocumente = New Label()
         tlyDocumente = New KBotTableLayoutPanel()
@@ -81,7 +92,7 @@ Partial Class SetariAplicatieView
         cboVerbose.Margin = New Padding(4, 0, 4, 10)
         cboVerbose.Name = "cboVerbose"
         cboVerbose.Size = New Size(496, 37)
-        cboVerbose.TabIndex = 1
+        cboVerbose.TabIndex = 7
         tips.SetToolTipHeader(cboVerbose, "Cât scrie consola FOREXE")
         tips.SetToolTipText(cboVerbose, "«Implicit» = pornit pe Debug, oprit pe Release (felia 0071)." & vbLf & "Pornit arată pașii, așteptările, andocarea și stivele; oprit arată doar <Log> și erorile." & vbLf & "Fișierul-jurnal primește oricum tot.")
         '
@@ -93,7 +104,7 @@ Partial Class SetariAplicatieView
         chkLogViewer.Margin = New Padding(4, 0, 4, 10)
         chkLogViewer.Name = "chkLogViewer"
         chkLogViewer.Size = New Size(498, 26)
-        chkLogViewer.TabIndex = 2
+        chkLogViewer.TabIndex = 4
         chkLogViewer.Text = "Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale"
         tips.SetToolTipHeader(chkLogViewer, "Vizualizatorul de jurnale")
         tips.SetToolTipText(chkLogViewer, "Debifat, rândul dispare din meniul MENIU." & vbLf & "Jurnalele se scriu în continuare pe disc.")
@@ -107,7 +118,7 @@ Partial Class SetariAplicatieView
         chkShowBrowser.Margin = New Padding(4, 0, 4, 10)
         chkShowBrowser.Name = "chkShowBrowser"
         chkShowBrowser.Size = New Size(359, 26)
-        chkShowBrowser.TabIndex = 3
+        chkShowBrowser.TabIndex = 8
         chkShowBrowser.Text = "Butonul «Arată browserul» în banda FOREXE"
         tips.SetToolTipHeader(chkShowBrowser, "Butonul de browser")
         tips.SetToolTipText(chkShowBrowser, "Debifat, operatorul nu mai poate deschide vizualizatorul browserului FOREXE." & vbLf & "Robotul rulează la fel; doar butonul dispare.")
@@ -121,7 +132,7 @@ Partial Class SetariAplicatieView
         chkReceptii.Margin = New Padding(4, 0, 4, 10)
         chkReceptii.Name = "chkReceptii"
         chkReceptii.Size = New Size(462, 26)
-        chkReceptii.TabIndex = 4
+        chkReceptii.TabIndex = 9
         chkReceptii.Text = "Selectorul de recepții se deschide cu toate recepțiile bifate"
         tips.SetToolTipHeader(chkReceptii, "Recepțiile de descărcat")
         tips.SetToolTipText(chkReceptii, "Bifat: apăsarea obișnuită aduce tot; debifat: nimic până nu alegi." & vbLf & "Cerut configurabil de operator la 10.09.2026.")
@@ -135,7 +146,7 @@ Partial Class SetariAplicatieView
         chkStartMaximized.Margin = New Padding(4, 0, 4, 10)
         chkStartMaximized.Name = "chkStartMaximized"
         chkStartMaximized.Size = New Size(462, 26)
-        chkStartMaximized.TabIndex = 5
+        chkStartMaximized.TabIndex = 2
         chkStartMaximized.Text = "Fereastra principală pornește mărită (pe tot ecranul)"
         tips.SetToolTipHeader(chkStartMaximized, "Fereastra la pornire")
         tips.SetToolTipText(chkStartMaximized, "Bifat: la pornirea K-BOT fereastra principală se deschide mărită pe tot ecranul." & vbLf & "Debifat: se deschide la mărimea ei obișnuită, în mijlocul ecranului." & vbLf & "Se aplică de la următoarea pornire.")
@@ -149,7 +160,7 @@ Partial Class SetariAplicatieView
         chkTurInitial.Margin = New Padding(4, 0, 4, 10)
         chkTurInitial.Name = "chkTurInitial"
         chkTurInitial.Size = New Size(462, 26)
-        chkTurInitial.TabIndex = 6
+        chkTurInitial.TabIndex = 3
         chkTurInitial.Text = "Arată turul ferestrei principale la pornirea K-BOT"
         tips.SetToolTipHeader(chkTurInitial, "Turul inițial")
         tips.SetToolTipText(chkTurInitial, "Bifat: la fiecare pornire K-BOT îți arată, pas cu pas, fereastra principală." & vbLf & "Se debifează singur după ce ai văzut turul până la capăt" & vbLf & "sau ai bifat «Nu mai arăta turul inițial» pe bula lui.")
@@ -163,7 +174,7 @@ Partial Class SetariAplicatieView
         chkAvansate.Margin = New Padding(4, 0, 4, 10)
         chkAvansate.Name = "chkAvansate"
         chkAvansate.Size = New Size(260, 26)
-        chkAvansate.TabIndex = 7
+        chkAvansate.TabIndex = 11
         chkAvansate.Text = "Activează opțiuni avansate"
         tips.SetToolTipHeader(chkAvansate, "Opțiuni avansate")
         tips.SetToolTipText(chkAvansate, "Bifat: apar paginile «Documente» (aici), «Pagina FOREXE», «Temă» și «Căi fișiere»." & vbLf & "Bifarea cere parola; debifarea nu.")
@@ -177,11 +188,157 @@ Partial Class SetariAplicatieView
         chkCapturi.Margin = New Padding(28, 0, 4, 10)
         chkCapturi.Name = "chkCapturi"
         chkCapturi.Size = New Size(300, 26)
-        chkCapturi.TabIndex = 8
+        chkCapturi.TabIndex = 12
         chkCapturi.Text = "Mod capturi pentru ajutor"
         tips.SetToolTipHeader(chkCapturi, "Capturi pentru ajutor")
         tips.SetToolTipText(chkCapturi, "Bifat: în «Meniu» și în fereastra de ajutor apare «Capturi pentru ajutor»," & vbLf & "lista imaginilor cerute de paginile de ajutor, fiecare cu butonul «Fă poza».")
         chkCapturi.UseVisualStyleBackColor = True
+        '
+        ' lblGrupFereastra
+        '
+        lblGrupFereastra.AutoSize = True
+        tlyComutatoare.SetColumnSpan(lblGrupFereastra, 2)
+        lblGrupFereastra.Font = New Font("Segoe UI Semibold", 10.5F)
+        lblGrupFereastra.Location = New Point(4, 0)
+        lblGrupFereastra.Margin = New Padding(4, 12, 4, 8)
+        lblGrupFereastra.Name = "lblGrupFereastra"
+        lblGrupFereastra.Size = New Size(200, 28)
+        lblGrupFereastra.TabIndex = 1
+        lblGrupFereastra.Text = "Fereastra principală"
+        '
+        ' lblGrupForexe
+        '
+        lblGrupForexe.AutoSize = True
+        tlyComutatoare.SetColumnSpan(lblGrupForexe, 2)
+        lblGrupForexe.Font = New Font("Segoe UI Semibold", 10.5F)
+        lblGrupForexe.Location = New Point(4, 0)
+        lblGrupForexe.Margin = New Padding(4, 12, 4, 8)
+        lblGrupForexe.Name = "lblGrupForexe"
+        lblGrupForexe.Size = New Size(200, 28)
+        lblGrupForexe.TabIndex = 5
+        lblGrupForexe.Text = "FOREXE"
+        '
+        ' lblGrupAvansat
+        '
+        lblGrupAvansat.AutoSize = True
+        tlyComutatoare.SetColumnSpan(lblGrupAvansat, 2)
+        lblGrupAvansat.Font = New Font("Segoe UI Semibold", 10.5F)
+        lblGrupAvansat.Location = New Point(4, 0)
+        lblGrupAvansat.Margin = New Padding(4, 12, 4, 8)
+        lblGrupAvansat.Name = "lblGrupAvansat"
+        lblGrupAvansat.Size = New Size(200, 28)
+        lblGrupAvansat.TabIndex = 10
+        lblGrupAvansat.Text = "Avansat"
+        '
+        ' lblGrupDescarcari
+        '
+        lblGrupDescarcari.AutoSize = True
+        tlyComutatoare.SetColumnSpan(lblGrupDescarcari, 2)
+        lblGrupDescarcari.Font = New Font("Segoe UI Semibold", 10.5F)
+        lblGrupDescarcari.Location = New Point(4, 0)
+        lblGrupDescarcari.Margin = New Padding(4, 12, 4, 8)
+        lblGrupDescarcari.Name = "lblGrupDescarcari"
+        lblGrupDescarcari.Size = New Size(200, 28)
+        lblGrupDescarcari.TabIndex = 13
+        lblGrupDescarcari.Text = "Descărcări multiple (mai multe taburi FOREXE deodată)"
+        '
+        ' chkMultiThread
+        '
+        chkMultiThread.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkMultiThread, 2)
+        chkMultiThread.Location = New Point(4, 0)
+        chkMultiThread.Margin = New Padding(4, 0, 4, 10)
+        chkMultiThread.Name = "chkMultiThread"
+        chkMultiThread.Size = New Size(462, 26)
+        chkMultiThread.TabIndex = 14
+        chkMultiThread.Text = "Descarcă mai multe angajamente deodată"
+        tips.SetToolTipHeader(chkMultiThread, "Descărcare pe mai multe fire")
+        tips.SetToolTipText(chkMultiThread, "Bifat: fiecare descărcare rulează pe un tab FOREXE al ei, mai multe deodată (aceeași conectare, fără altă autentificare)." & vbLf & "Cele peste numărul de taburi așteaptă la rând și pornesc pe măsură ce se eliberează un tab." & vbLf & "Apare un rând nou în meniul arborelui: «Actualizează angajamente...»." & vbLf & "Debifat: descărcările merg una câte una, ca până acum.")
+        chkMultiThread.UseVisualStyleBackColor = True
+        '
+        ' lblFire
+        '
+        lblFire.AutoSize = True
+        lblFire.Dock = DockStyle.Fill
+        lblFire.Location = New Point(4, 0)
+        lblFire.Margin = New Padding(28, 0, 4, 10)
+        lblFire.Name = "lblFire"
+        lblFire.Size = New Size(392, 40)
+        lblFire.TabIndex = 15
+        lblFire.Text = "Numărul de taburi deodată (1–10)"
+        lblFire.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtFire
+        '
+        txtFire.Anchor = AnchorStyles.Left
+        txtFire.BackColor = Color.Transparent
+        txtFire.Location = New Point(404, 0)
+        txtFire.Margin = New Padding(4, 0, 4, 10)
+        txtFire.MaxLength = 2
+        txtFire.Name = "txtFire"
+        txtFire.PlaceholderText = "3"
+        txtFire.Size = New Size(150, 40)
+        txtFire.TabIndex = 16
+        txtFire.TextAlign = HorizontalAlignment.Center
+        txtFire.TextPadding = New Padding(8, 0, 8, 0)
+        tips.SetToolTipHeader(txtFire, "Câte descărcări deodată")
+        tips.SetToolTipText(txtFire, "Cel mult 10. Atâtea taburi FOREXE lucrează în același timp." & vbLf & "Nu e o limită a angajamentelor alese: cele în plus așteaptă la rând." & vbLf & "Se salvează la Enter sau când ieși din câmp.")
+        '
+        ' chkAutoVechi
+        '
+        chkAutoVechi.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkAutoVechi, 2)
+        chkAutoVechi.Location = New Point(4, 0)
+        chkAutoVechi.Margin = New Padding(28, 0, 4, 10)
+        chkAutoVechi.Name = "chkAutoVechi"
+        chkAutoVechi.Size = New Size(462, 26)
+        chkAutoVechi.TabIndex = 17
+        chkAutoVechi.Text = "La conectare, actualizează angajamentele vechi"
+        tips.SetToolTipHeader(chkAutoVechi, "Actualizare la conectare")
+        tips.SetToolTipText(chkAutoVechi, "Bifat: după conectarea la FOREXE, angajamentele descărcate deja, dar neactualizate de cel puțin numărul de zile de mai jos, se descarcă singure (mai multe deodată)." & vbLf & "Nu se pune nicio întrebare și se citesc toate recepțiile." & vbLf & "Data ultimei actualizări se vede în descrierea de la trecerea mouse-ului peste angajament.")
+        chkAutoVechi.UseVisualStyleBackColor = True
+        '
+        ' lblZile
+        '
+        lblZile.AutoSize = True
+        lblZile.Dock = DockStyle.Fill
+        lblZile.Location = New Point(4, 0)
+        lblZile.Margin = New Padding(56, 0, 4, 10)
+        lblZile.Name = "lblZile"
+        lblZile.Size = New Size(392, 40)
+        lblZile.TabIndex = 18
+        lblZile.Text = "Neactualizate de (zile, cel mult 10)"
+        lblZile.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtZile
+        '
+        txtZile.Anchor = AnchorStyles.Left
+        txtZile.BackColor = Color.Transparent
+        txtZile.Location = New Point(404, 0)
+        txtZile.Margin = New Padding(4, 0, 4, 10)
+        txtZile.MaxLength = 2
+        txtZile.Name = "txtZile"
+        txtZile.PlaceholderText = "7"
+        txtZile.Size = New Size(150, 40)
+        txtZile.TabIndex = 19
+        txtZile.TextAlign = HorizontalAlignment.Center
+        txtZile.TextPadding = New Padding(8, 0, 8, 0)
+        tips.SetToolTipHeader(txtZile, "Zilele de la ultima actualizare")
+        tips.SetToolTipText(txtZile, "De la 1 la 10. Un angajament neactualizat de atâtea zile (sau mai mult) se descarcă la conectare." & vbLf & "Se salvează la Enter sau când ieși din câmp.")
+        '
+        ' chkToateReceptiile
+        '
+        chkToateReceptiile.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkToateReceptiile, 2)
+        chkToateReceptiile.Location = New Point(4, 0)
+        chkToateReceptiile.Margin = New Padding(28, 0, 4, 10)
+        chkToateReceptiile.Name = "chkToateReceptiile"
+        chkToateReceptiile.Size = New Size(462, 26)
+        chkToateReceptiile.TabIndex = 20
+        chkToateReceptiile.Text = "Actualizează implicit toate recepțiile"
+        tips.SetToolTipHeader(chkToateReceptiile, "Toate recepțiile, fără întrebare")
+        tips.SetToolTipText(chkToateReceptiile, "Bifat: cât timp descărcarea pe mai multe taburi e pornită, fereastra de alegere a recepțiilor nu se mai arată; se citesc toate recepțiile." & vbLf & "Debifat: alegerea recepțiilor se face ca până acum." & vbLf & "Fără descărcarea pe mai multe taburi, fereastra se arată ca până acum.")
+        chkToateReceptiile.UseVisualStyleBackColor = True
         '
         ' cboAdobeMotor
         '
@@ -430,20 +587,31 @@ Partial Class SetariAplicatieView
         tlyComutatoare.ColumnCount = 2
         tlyComutatoare.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 400F))
         tlyComutatoare.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyComutatoare.Controls.Add(lblVerbose, 0, 0)
-        tlyComutatoare.Controls.Add(cboVerbose, 1, 0)
-        tlyComutatoare.Controls.Add(chkLogViewer, 0, 1)
-        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 2)
-        tlyComutatoare.Controls.Add(chkReceptii, 0, 3)
-        tlyComutatoare.Controls.Add(chkStartMaximized, 0, 4)
-        tlyComutatoare.Controls.Add(chkTurInitial, 0, 5)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 6)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 7)
+        tlyComutatoare.Controls.Add(lblGrupFereastra, 0, 0)
+        tlyComutatoare.Controls.Add(chkStartMaximized, 0, 1)
+        tlyComutatoare.Controls.Add(chkTurInitial, 0, 2)
+        tlyComutatoare.Controls.Add(chkLogViewer, 0, 3)
+        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 4)
+        tlyComutatoare.Controls.Add(lblVerbose, 0, 5)
+        tlyComutatoare.Controls.Add(cboVerbose, 1, 5)
+        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 6)
+        tlyComutatoare.Controls.Add(chkReceptii, 0, 7)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 8)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 9)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 10)
+        tlyComutatoare.Controls.Add(lblGrupDescarcari, 0, 11)
+        tlyComutatoare.Controls.Add(chkMultiThread, 0, 12)
+        tlyComutatoare.Controls.Add(lblFire, 0, 13)
+        tlyComutatoare.Controls.Add(txtFire, 1, 13)
+        tlyComutatoare.Controls.Add(chkAutoVechi, 0, 14)
+        tlyComutatoare.Controls.Add(lblZile, 0, 15)
+        tlyComutatoare.Controls.Add(txtZile, 1, 15)
+        tlyComutatoare.Controls.Add(chkToateReceptiile, 0, 16)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 8
+        tlyComutatoare.RowCount = 17
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -452,7 +620,16 @@ Partial Class SetariAplicatieView
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.Size = New Size(904, 263)
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.Size = New Size(904, 640)
         tlyComutatoare.TabIndex = 1
         '
         ' lblVerbose
@@ -463,7 +640,7 @@ Partial Class SetariAplicatieView
         lblVerbose.Margin = New Padding(4, 0, 4, 10)
         lblVerbose.Name = "lblVerbose"
         lblVerbose.Size = New Size(392, 37)
-        lblVerbose.TabIndex = 0
+        lblVerbose.TabIndex = 6
         lblVerbose.Text = "Consola FOREXE detaliată (VerboseLogging)"
         lblVerbose.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -752,6 +929,17 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkTurInitial As CheckBox
     Friend WithEvents chkAvansate As CheckBox
     Friend WithEvents chkCapturi As CheckBox
+    Friend WithEvents lblGrupFereastra As Label
+    Friend WithEvents lblGrupForexe As Label
+    Friend WithEvents lblGrupAvansat As Label
+    Friend WithEvents lblGrupDescarcari As Label
+    Friend WithEvents chkMultiThread As CheckBox
+    Friend WithEvents lblFire As Label
+    Friend WithEvents txtFire As KBotTextField
+    Friend WithEvents chkAutoVechi As CheckBox
+    Friend WithEvents lblZile As Label
+    Friend WithEvents txtZile As KBotTextField
+    Friend WithEvents chkToateReceptiile As CheckBox
     Friend WithEvents tlyPaginaDocumente As KBotTableLayoutPanel
     Friend WithEvents lblTitluDocumente As Label
     Friend WithEvents tlyDocumente As KBotTableLayoutPanel

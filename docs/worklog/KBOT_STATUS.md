@@ -215,10 +215,11 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0097-03 | Anul și Sursa/Sectorul se mută din banda de sus în bara de titlu, lângă selectorul de unitate; dispar din `KbotForm` (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, netestat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0098 | Coada robotului (o singură coadă, în ordine, pauză / scoatere, fereastra «Coada robotului») + poarta serverului (nicio scriere pe server cât rulează robotul; citirile trec) (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut); 0098-02: citirile trec poarta + banc DevHarness (nerulat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0099 | `PrintCount`: de câte ori a fost tipărit un document — coloană pe cele patru tabele de PDF + `FX_DDF_REV` / `FX_ORD` pentru nesemnate; tipărirea văzută în coada de tipărire Windows (`AdobePrintWatcher`), numărată prin `POST …/print`; legat și în bancul de semnare; **lista de tipărire** pe lună / «Toate» din ORD și DDF («Generează și imprimă», «Salvează local», «Listat» de mână) (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; SQL + server nedeployate) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0100 | Descărcări multiple: mai multe angajamente deodată, câte un tab FOREXE fiecare; `FX_Angajamente.DataActualizare`; fereastra «Actualizează angajamente»; actualizarea la conectare și a angajamentelor noi; pagina «Aplicație» regrupată (cererea operatorului, 01.10.2026) | GATA pe cod (build `src/` curat, nimic rulat, nevăzut; SQL + server nedeployate); ajutorul: 0000-34 | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0100.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0101.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara
@@ -241,7 +242,9 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
 ## Current focus
 
 - Each slice's focus notes are in its `state/KBOT_STATUS_*.md` file, under «Current focus».
-- Latest (01.10.2026): slice 0067-02, release notes written by an AI assistant at every
+- Latest (01.10.2026): slice 0100, several angajamente downloaded at once, one FOREXE tab each
+  ([0100-0109](state/KBOT_STATUS_0100-0109.md); branch `SLICE-0100-Multithreading`; deploy order: the DDL first).
+- Earlier (01.10.2026): slice 0067-02, release notes written by an AI assistant at every
   `publish-release.ps1` / `push-update.ps1` ([0060-0069](state/KBOT_STATUS_0060-0069.md);
   procedure: `docs/release-notes/README.md`).
 - Same day: slice 0097-02 (second corrective pass) and its help, 0000-25

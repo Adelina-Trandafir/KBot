@@ -56,6 +56,7 @@ Partial Public Class KbotForm
             DezleagaUrmarirea()
             UnbindRobotQueue()   ' slice 0098 - KbotForm.RobotQueue.vb
             DezleagaOperatiunileNecorectate()   ' slice 0084 - KbotForm.UncorrectedOperations.vb
+            DezleagaActualizareaMultipla()   ' slice 0100 - KbotForm.Parallel.vb
             DezleagaBrowserul()
             DezleagaOptiunileArborelui()   ' slice 0777 - KbotForm.TreeOptions.vb
             AdobeUiPreference.Restore(AddressOf KBot.Controls.AdobeHostLog.Write)   ' slice 0078-10 - Adobe's own interface value back

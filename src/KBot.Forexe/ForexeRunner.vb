@@ -1,5 +1,7 @@
 ﻿Imports System
+Imports System.Collections.Concurrent
 Imports System.IO
+Imports System.Linq
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Threading
 Imports System.Threading.Tasks
@@ -690,6 +692,268 @@ Namespace KBot.Forexe
             End Try
         End Function
 
+        ' ── Slice 0100: several jobs at once, one tab each ──────────────────────
+
+        ''' <summary>
+        ''' Runs <paramref name="jobs"/> on the EXISTING session, up to <c>min(maxThreads, 10)</c> at a
+        ''' time, each in a tab of its own (same browser, same login). See
+        ''' <see cref="IForexeRunner.RunJobsParallelAsync"/> for the contract.
+        ''' </summary>
+        ''' <remarks>
+        ''' <para><b>The queue is FIFO and the threads are the workers.</b> N workers start; each takes
+        ''' the next job off the queue, runs it in a FRESH tab, closes the tab, and takes the next. So
+        ''' the thread count is the most downloads that run together, not the most jobs allowed.</para>
+        ''' <para><b>One job's trouble is that job's own.</b> An exception, an &lt;Exit&gt; or a timeout inside a
+        ''' tab becomes that job's failed outcome and the worker goes on to the next job; the other
+        ''' workers never notice. A cancel stops the workers from taking new jobs: the ones still
+        ''' queued come back as «not started».</para>
+        ''' <para><b>Nothing is processed here.</b> The answers only pile up in the returned list (the
+        ''' order they finished in); the caller works through them after the whole run.</para>
+        ''' <para><b>One history entry for the whole run</b> (<c>JobHistoryManager</c> keeps a single
+        ''' «current job», so a history entry per tab would overwrite each other).</para>
+        ''' </remarks>
+        Public Async Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest),
+                                                   maxThreads As Integer,
+                                                   jobFinished As Action(Of ParallelJobOutcome),
+                                                   ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome)) _
+            Implements IForexeRunner.RunJobsParallelAsync
+            ArgumentNullException.ThrowIfNull(jobs)
+            If _logger Is Nothing Then
+                Throw New InvalidOperationException("Logger neatașat — apelează AttachLogger înainte de RunJobsParallelAsync.")
+            End If
+            If _executor Is Nothing OrElse Not _executor.IsBrowserOpen Then
+                Throw New InvalidOperationException("Nicio sesiune activă — rulează Conectare (RunAsync) înainte de RunJobsParallelAsync.")
+            End If
+
+            Dim outcomes As New List(Of ParallelJobOutcome)()
+            If jobs.Count = 0 Then Return outcomes
+
+            ' Never more tabs than the settings allow, never more than there are jobs.
+            Dim threads As Integer = Math.Min(Math.Min(Math.Max(1, maxThreads), AppSettings.DownloadThreadsMax), jobs.Count)
+            Dim fifo As New ConcurrentQueue(Of JobRequest)(jobs)
+            Dim run As New ParallelRun()
+            ' The session this run started on: a reconnect meanwhile must not change it under the workers.
+            Dim primary As WorkflowExecutor = _executor
+
+            JobHistoryManager.StartJob("DescarcareMultipla",
+                                       $"{jobs.Count} lucrări, cel mult {threads} taburi FOREXE deodată")
+            Dim runEx As Exception = Nothing
+            Try
+                _logger.LogInfo($"Descărcare multiplă: {jobs.Count} lucrări, {threads} taburi FOREXE deodată.")
+                RidicaStare($"Descărcare multiplă: 0/{jobs.Count}...")
+                ' The docked window is shut to the operator while the robot drives, as in RunJobAsync.
+                Await primary.SetWatchSuspendedAsync(True, "K-BOT lucrează în FOREXE: descărcare multiplă")
+                primary.LockDockedInput(True)
+
+                Dim workers As New List(Of Task)()
+                For n As Integer = 1 To threads
+                    Dim workerNo As Integer = n
+                    workers.Add(Task.Run(Function() WorkerLoopAsync(primary, workerNo, fifo, run, outcomes, jobs.Count, jobFinished, ct)))
+                Next
+                Await Task.WhenAll(workers)
+            Catch ex As Exception
+                runEx = ex
+            End Try
+
+            ' Jobs a cancel kept from starting are still reported, so the caller can tell «not run» from «forgotten».
+            Dim left As JobRequest = Nothing
+            While fifo.TryDequeue(left)
+                SyncLock outcomes
+                    outcomes.Add(New ParallelJobOutcome With {
+                        .Job = left, .Worker = 0, .StartedAt = Date.Now, .FinishedAt = Date.Now,
+                        .Result = New JobResult With {.Success = False, .Message = "Nu a pornit: descărcarea multiplă a fost oprită."}})
+                End SyncLock
+            End While
+
+            ' ONE tab left, whatever happened above: the tab of the LAST job that finished without an
+            ' error (a failed job's tab was closed when it ended, so the one before it is still the
+            ' kept one -- operator, 01.10.2026). When no job succeeded the main tab stays.
+            Try
+                If run.Keeper IsNot Nothing Then
+                    Await primary.AdoptTabAsync(run.Keeper)
+                    _logger.LogInfo("Descărcare multiplă: a rămas deschis un singur tab FOREXE — cel al ultimei descărcări reușite.")
+                Else
+                    Dim closed As Integer = Await primary.CloseOtherTabsAsync()
+                    If closed > 0 Then _logger.LogInfo($"Descărcare multiplă: {closed} taburi FOREXE în plus au fost închise; a rămas tabul principal.")
+                End If
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.RunJobsParallelAsync", ex)
+                _logger.LogWarning($"Taburile în plus nu s-au putut închide: {ex.Message}")
+            End Try
+            Try
+                primary.LockDockedInput(False)
+                Await primary.SetWatchSuspendedAsync(False)
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.RunJobsParallelAsync", ex)
+                _logger.LogWarning($"Pagina FOREXE nu a putut fi redeschisă operatorului: {ex.Message}")
+            End Try
+
+            Dim reusite As Integer = outcomes.Where(Function(o) o.Result IsNot Nothing AndAlso o.Result.Success).Count()
+            If runEx IsNot Nothing Then
+                GlobalErrorLog.Write("ForexeRunner.RunJobsParallelAsync", runEx)
+                RidicaStare("Eroare!")
+                JobHistoryManager.FailJob(runEx.Message)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(runEx).Throw()
+            End If
+            RidicaStare("În așteptare...")
+            _logger.LogInfo($"Descărcare multiplă încheiată: {reusite} reușite din {outcomes.Count}.")
+            JobHistoryManager.FinishJob(If(ct.IsCancellationRequested, "Anulat", "Succes"))
+            Return outcomes
+        End Function
+
+        ''' <summary>The tab a multi-thread run keeps open: the last job that finished without an error (slice 0100).</summary>
+        Private NotInheritable Class ParallelRun
+            Public Keeper As WorkflowExecutor
+        End Class
+
+        ''' <summary>One worker thread: takes jobs off the FIFO queue until it is empty (or the run is cancelled).</summary>
+        Private Async Function WorkerLoopAsync(primary As WorkflowExecutor, workerNo As Integer,
+                                               fifo As ConcurrentQueue(Of JobRequest), run As ParallelRun,
+                                               outcomes As List(Of ParallelJobOutcome), total As Integer,
+                                               jobFinished As Action(Of ParallelJobOutcome),
+                                               ct As CancellationToken) As Task
+            Try
+                Do
+                    Dim job As JobRequest = Nothing
+                    If ct.IsCancellationRequested OrElse Not fifo.TryDequeue(job) Then Exit Do
+
+                    Dim outcome As ParallelJobOutcome = Await RunJobOnOwnTabAsync(primary, workerNo, job, run, ct)
+
+                    Dim done As Integer
+                    SyncLock outcomes
+                        outcomes.Add(outcome)
+                        done = outcomes.Count
+                    End SyncLock
+                    RidicaStare($"Descărcare multiplă: {done}/{total}...")
+                    Try
+                        jobFinished?.Invoke(outcome)
+                    Catch ex As Exception
+                        ' Event boundary: a callback that throws must not stop the worker.
+                        GlobalErrorLog.Write("ForexeRunner.WorkerLoopAsync", ex)
+                    End Try
+                Loop
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.WorkerLoopAsync", ex)
+                Throw
+            End Try
+        End Function
+
+        ''' <summary>
+        ''' One job in a fresh tab. NEVER throws: whatever goes wrong becomes the outcome's failed
+        ''' result, and the tab is closed either way. No call here touches <c>JobHistoryManager</c>
+        ''' (one entry for the whole run is kept by the caller).
+        ''' </summary>
+        Private Async Function RunJobOnOwnTabAsync(primary As WorkflowExecutor, workerNo As Integer,
+                                                   job As JobRequest, run As ParallelRun,
+                                                   ct As CancellationToken) As Task(Of ParallelJobOutcome)
+            Dim outcome As New ParallelJobOutcome With {.Job = job, .Worker = workerNo, .StartedAt = Date.Now}
+            Dim cod As String = String.Empty
+            If job.Parameters IsNot Nothing Then job.Parameters.TryGetValue(WorkflowCatalog.VarCodAngajament, cod)
+            ' Every line this job writes (and its executor's) starts with the code, so the interleaved
+            ' lines of the tabs can be told apart in the console and the file.
+            RichTextBoxLogger.ScopeTag = If(String.IsNullOrEmpty(cod), job.WorkflowName, cod)
+
+            Dim worker As WorkflowExecutor = Nothing
+            Dim result As JobResult
+            Try
+                If String.IsNullOrEmpty(job.WflPath) OrElse Not File.Exists(job.WflPath) Then
+                    result = New JobResult With {.Success = False, .Message = $"Fișierul workflow lipsește: {job.WflPath}"}
+                Else
+                    ct.ThrowIfCancellationRequested()
+                    _logger.LogInfo($"Tab {workerNo}: pornesc '{job.WorkflowName}'.")
+                    worker = Await primary.OpenWorkerAsync(ct)
+                    worker.ManualPinMode = True
+                    worker.TimeoutMultiplier = AppSettings.Current.ForexeTimeoutMultiplier
+                    worker.ValidateReadsTwice = AppSettings.Current.ForexeValidateTwiceInEffect
+                    worker.StopBeforeCommit = job.StopBeforeSave
+
+                    Dim workflow As Workflow = ParseJobWorkflow(worker, job)
+                    Await Task.Run(Function() worker.ExecuteAsync(workflow))
+
+                    Dim opritDeExit As String = worker.ExitMessage
+                    If Not String.IsNullOrWhiteSpace(opritDeExit) Then
+                        _logger.LogWarning($"'{job.WorkflowName}': flux oprit — {opritDeExit}")
+                        result = New JobResult With {.Success = False, .Message = opritDeExit,
+                                                     .StoppedBeforeSave = worker.StoppedBeforeCommit}
+                    Else
+                        result = New JobResult With {.Success = True, .Message = $"'{job.WorkflowName}' rulat."}
+                    End If
+                    PopulateResult(worker, result)
+                End If
+            Catch ex As OperationCanceledException
+                _logger.LogWarning($"'{job.WorkflowName}' anulat.")
+                result = New JobResult With {.Success = False, .Message = $"'{job.WorkflowName}' anulat."}
+                CollectQuietly(worker, result)
+            Catch ex As Exception
+                ' A timeout or any other failure of THIS tab: it is this job's answer, nothing more.
+                _logger.LogException(ex, $"Eroare rulare '{job.WorkflowName}'")
+                _logger.LogDebug("[DIAG][STACK] " & ex.ToString())
+                result = New JobResult With {.Success = False, .Message = ex.Message}
+                CollectQuietly(worker, result)
+            End Try
+
+            ' The tab of a job that ended WITHOUT an error is kept until a later such job replaces it, so
+            ' when the run is over the last good tab is still open (never more than N + 1 tabs at once).
+            ' A failed job's tab closes now.
+            If worker IsNot Nothing Then
+                Dim toClose As WorkflowExecutor = worker
+                If result.Success Then
+                    SyncLock run
+                        toClose = run.Keeper
+                        run.Keeper = worker
+                    End SyncLock
+                End If
+                If toClose IsNot Nothing Then
+                    Try
+                        Await toClose.CloseAsync()
+                    Catch ex As Exception
+                        GlobalErrorLog.Write("ForexeRunner.RunJobOnOwnTabAsync", ex)
+                    End Try
+                End If
+            End If
+            outcome.Result = result
+            outcome.FinishedAt = Date.Now
+            Return outcome
+        End Function
+
+        ''' <summary>A failed run's variables, when they can be read; never hides the failure.</summary>
+        Private Sub CollectQuietly(worker As WorkflowExecutor, result As JobResult)
+            If worker Is Nothing Then Return
+            Try
+                PopulateResult(worker, result)
+            Catch ex As Exception
+                _logger?.LogWarning("Variabilele fluxului oprit nu au putut fi colectate: " & ex.Message)
+            End Try
+        End Sub
+
+        ''' <summary>
+        ''' The workflow of <paramref name="job"/> for <paramref name="executor"/>: JSON parameters go
+        ''' into the executor's variables, the plain ones are written into the XML -- the same split
+        ''' <c>RunJobAsync</c> makes (KBOT_IPC.WorkFlow), for a worker tab's own executor.
+        ''' </summary>
+        Private Function ParseJobWorkflow(executor As WorkflowExecutor, job As JobRequest) As Workflow
+            Dim xml As String = File.ReadAllText(job.WflPath)
+            If job.Parameters IsNot Nothing AndAlso job.Parameters.Count > 0 Then
+                Dim varMeta As Dictionary(Of String, WorkflowVariable) = WorkflowParser.ExtractVariablesDetailed(xml)
+                Dim flatVars As New Dictionary(Of String, String)
+                For Each kvp In job.Parameters
+                    Dim meta As WorkflowVariable = Nothing
+                    Dim isJson As Boolean = varMeta.TryGetValue(kvp.Key, meta) AndAlso
+                                            meta.VarType.Equals("JSON", StringComparison.OrdinalIgnoreCase)
+                    If isJson Then
+                        executor.SetVariable(kvp.Key, kvp.Value)
+                    Else
+                        flatVars(kvp.Key) = kvp.Value
+                    End If
+                Next
+                If flatVars.Count > 0 Then xml = WorkflowParser.ApplyVariables(xml, flatVars)
+            End If
+            WorkflowParser.Logger = _logger
+            Dim workflow As Workflow = WorkflowParser.Parse(xml, job.WflPath)
+            executor.SetWorkflowPath(job.WflPath)
+            Return workflow
+        End Function
+
         ''' <summary>
         ''' Slice 0081-04: a failed run that STILL carries what the executor collected before it
         ''' stopped (<see cref="JobResult.Data"/> / <see cref="JobResult.Tables"/>). A sending
@@ -771,7 +1035,12 @@ Namespace KBot.Forexe
         ''' cele care conțin un JSON array de obiecte și în Tables (rând = coloană->valoare).
         ''' </summary>
         Private Sub PopulateResult(result As JobResult)
-            Dim vars As Dictionary(Of String, String) = _executor.GetAllVariables()
+            PopulateResult(_executor, result)
+        End Sub
+
+        ''' <summary>The same, for a given executor (a worker tab's own, slice 0100).</summary>
+        Private Shared Sub PopulateResult(executor As WorkflowExecutor, result As JobResult)
+            Dim vars As Dictionary(Of String, String) = executor.GetAllVariables()
             For Each kvp In vars
                 result.Data(kvp.Key) = kvp.Value
                 Dim table As TabelRezultat = TryParseTable(kvp.Value)

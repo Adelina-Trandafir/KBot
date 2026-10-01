@@ -21,6 +21,19 @@ Namespace KBot.Forexe
                              progress As IProgress(Of Integer),
                              ct As CancellationToken) As Task(Of JobResult)
 
+        ' Slice 0100: several jobs AT ONCE, one FOREXE tab per running job (same browser, same
+        ' login). At most min(maxThreads, 10) jobs run together; the rest wait in a FIFO queue and
+        ' each tab that frees up takes the next one. Every job's answer -- failures and timeouts
+        ' included -- is added to the returned list the moment ITS tab finishes (completion order);
+        ' nothing is processed meanwhile and one tab giving up never stops the others. When the
+        ' whole run is over only one FOREXE tab is left open. `jobFinished` is called from the
+        ' worker's thread for each finished job (progress lines only). Needs a live session and
+        ' THROWS only when the run itself cannot start (no session / no logger).
+        Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest),
+                                      maxThreads As Integer,
+                                      jobFinished As Action(Of ParallelJobOutcome),
+                                      ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome))
+
         ' Downloading the SNM bank statements, slice 0057. Not a workflow: FOREXE answers
         ' this one in JSON, and the old system called the path SNM_INTERNAL. It goes through
         ' the runner because the runner is the only thing holding a live page. Needs a live

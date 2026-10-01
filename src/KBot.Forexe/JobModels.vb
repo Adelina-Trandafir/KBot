@@ -37,4 +37,18 @@ Namespace KBot.Forexe
         ' structure travels; nothing is flattened.
         Public Property Tables As New Dictionary(Of String, TabelRezultat)
     End Class
+
+    ''' <summary>
+    ''' Slice 0100: what one job of a multi-thread run brought back, kept in the common result list
+    ''' the moment its tab finished. A failure, a stop or a cancel is an outcome too (Success =
+    ''' False, the reason in Message): one tab giving up never takes the others down with it.
+    ''' </summary>
+    Public Class ParallelJobOutcome
+        Public Property Job As JobRequest
+        Public Property Result As JobResult
+        ''' <summary>The worker (1..N) whose tab ran the job; 0 = the job never started (the run was cancelled first).</summary>
+        Public Property Worker As Integer
+        Public Property StartedAt As Date
+        Public Property FinishedAt As Date
+    End Class
 End Namespace

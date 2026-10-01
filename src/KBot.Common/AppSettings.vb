@@ -73,6 +73,75 @@ Public NotInheritable Class AppSettings
     ''' <summary>The reception picker opens with every reception already ticked.</summary>
     Public Property ReceptiiCheckedOnOpen As Boolean = True
 
+    ' ── Multi-thread downloads (slice 0100) ──────────────────────────────
+
+    ''' <summary>Fewest FOREXE tabs a multi-thread download can use.</summary>
+    Public Const DownloadThreadsMin As Integer = 1
+    ''' <summary>Most FOREXE tabs a multi-thread download can use (slice 0100: never more than 10).</summary>
+    Public Const DownloadThreadsMax As Integer = 10
+    ''' <summary>Most days the on-connect update can look back (slice 0100).</summary>
+    Public Const AutoUpdateDaysMax As Integer = 10
+
+    ''' <summary>
+    ''' Slice 0100: several angajamente are downloaded at once, one FOREXE tab each. Offered only
+    ''' with the advanced options on (see <see cref="MultiThreadInEffect"/>); off by default, so
+    ''' the one-at-a-time download is exactly what it was.
+    ''' </summary>
+    Public Property MultiThreadDownloads As Boolean = False
+
+    ''' <summary>Slice 0100: how many downloads run together, 1..<see cref="DownloadThreadsMax"/>.</summary>
+    Public Property DownloadThreads As Integer = 3
+
+    ''' <summary>
+    ''' Slice 0100: after a FOREXE connection, the angajamente not updated for
+    ''' <see cref="AutoUpdateDays"/> days are downloaded by themselves. Only with multi-thread on.
+    ''' </summary>
+    Public Property AutoUpdateOnConnect As Boolean = False
+
+    ''' <summary>Slice 0100: N of the on-connect update, 1..<see cref="AutoUpdateDaysMax"/>.</summary>
+    Public Property AutoUpdateDays As Integer = 7
+
+    ''' <summary>
+    ''' Slice 0100: «Actualizeaza implicit toate receptiile» -- a multi-thread download of an
+    ''' angajament does not open the reception picker, it reads every reception.
+    ''' </summary>
+    Public Property UpdateAllReceptiiByDefault As Boolean = False
+
+    ''' <summary>Slice 0100: multi-thread downloading as it applies now (needs the advanced options).</summary>
+    Public ReadOnly Property MultiThreadInEffect As Boolean
+        Get
+            Return AdvancedOptions AndAlso MultiThreadDownloads
+        End Get
+    End Property
+
+    ''' <summary>Slice 0100: <see cref="DownloadThreads"/> kept inside its range.</summary>
+    Public ReadOnly Property DownloadThreadsInEffect As Integer
+        Get
+            Return Math.Min(DownloadThreadsMax, Math.Max(DownloadThreadsMin, DownloadThreads))
+        End Get
+    End Property
+
+    ''' <summary>Slice 0100: the on-connect update as it applies now.</summary>
+    Public ReadOnly Property AutoUpdateOnConnectInEffect As Boolean
+        Get
+            Return MultiThreadInEffect AndAlso AutoUpdateOnConnect
+        End Get
+    End Property
+
+    ''' <summary>Slice 0100: <see cref="AutoUpdateDays"/> kept inside its range.</summary>
+    Public ReadOnly Property AutoUpdateDaysInEffect As Integer
+        Get
+            Return Math.Min(AutoUpdateDaysMax, Math.Max(1, AutoUpdateDays))
+        End Get
+    End Property
+
+    ''' <summary>Slice 0100: the reception picker is skipped, as it applies now.</summary>
+    Public ReadOnly Property UpdateAllReceptiiInEffect As Boolean
+        Get
+            Return MultiThreadInEffect AndAlso UpdateAllReceptiiByDefault
+        End Get
+    End Property
+
     ''' <summary>
     ''' The advanced settings pages are shown: the documents tab of the application page, the
     ''' FOREXE page styles, the theme and the file paths. Switching it on asks for a password
@@ -510,6 +579,11 @@ Public NotInheritable Class AppSettings
             .ShowBrowserButton = ShowBrowserButton,
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
+            .MultiThreadDownloads = MultiThreadDownloads,
+            .DownloadThreads = DownloadThreads,
+            .AutoUpdateOnConnect = AutoUpdateOnConnect,
+            .AutoUpdateDays = AutoUpdateDays,
+            .UpdateAllReceptiiByDefault = UpdateAllReceptiiByDefault,
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
@@ -559,6 +633,17 @@ Public NotInheritable Class AppSettings
         If dto.ShowBrowserButton.HasValue Then s.ShowBrowserButton = dto.ShowBrowserButton.Value
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
+        If dto.MultiThreadDownloads.HasValue Then s.MultiThreadDownloads = dto.MultiThreadDownloads.Value
+        ' A count / a number of days out of range in the file (hand-edited) keeps the default.
+        If dto.DownloadThreads.HasValue AndAlso
+           dto.DownloadThreads.Value >= DownloadThreadsMin AndAlso dto.DownloadThreads.Value <= DownloadThreadsMax Then
+            s.DownloadThreads = dto.DownloadThreads.Value
+        End If
+        If dto.AutoUpdateOnConnect.HasValue Then s.AutoUpdateOnConnect = dto.AutoUpdateOnConnect.Value
+        If dto.AutoUpdateDays.HasValue AndAlso dto.AutoUpdateDays.Value >= 1 AndAlso dto.AutoUpdateDays.Value <= AutoUpdateDaysMax Then
+            s.AutoUpdateDays = dto.AutoUpdateDays.Value
+        End If
+        If dto.UpdateAllReceptiiByDefault.HasValue Then s.UpdateAllReceptiiByDefault = dto.UpdateAllReceptiiByDefault.Value
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.HelpCaptureMode.HasValue Then s.HelpCaptureMode = dto.HelpCaptureMode.Value
         ' A size that is not one of the choices (hand-edited file) keeps the default.
@@ -633,6 +718,11 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowBrowserButton As Boolean?
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
+    Public Property MultiThreadDownloads As Boolean?
+    Public Property DownloadThreads As Integer?
+    Public Property AutoUpdateOnConnect As Boolean?
+    Public Property AutoUpdateDays As Integer?
+    Public Property UpdateAllReceptiiByDefault As Boolean?
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?

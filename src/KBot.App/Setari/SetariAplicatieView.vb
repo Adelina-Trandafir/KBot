@@ -20,6 +20,12 @@ Imports KBot.Theming
 ''' STARTUP (a path that cannot be written stops the launch), so it is written once, on
 ''' purpose, and the page says a restart is needed.</para>
 '''
+''' <para><b>The «Generale» tab is grouped by purpose (slice 0100):</b> «Fereastra principală» (how the
+''' main window starts and its menu), «FOREXE» (the console, the browser button, the reception picker),
+''' «Avansat» (the advanced options and what hangs off them) and -- only with the advanced options on --
+''' «Descărcări multiple» (several FOREXE tabs at once: the switch, how many, the update of the old
+''' angajamente on connection, and «actualizează implicit toate recepțiile»). Regrouping changed no behaviour.</para>
+'''
 ''' <para><b>Three tabs (slice 0777).</b> A horizontal <see cref="KBotNavList"/> on top, like the
 ''' vertical one of the settings window: «Generale» (the switches), «Documente» (PDF / Excel)
 ''' and «KBOT» (the main tree: its order and, per order, the CODANGAJAMENT / SURSE columns --
@@ -116,6 +122,11 @@ Public Class SetariAplicatieView
     Private Sub AplicaOptiunileAvansate(shown As Boolean)
         navPagini.SetItemVisible(PAGE_DOCUMENTE, shown)
         chkCapturi.Visible = shown   ' slice 0000-02: help capture mode lives under the advanced options
+        ' Slice 0100: the whole multi-download group is an advanced one (operator, 01.10.2026).
+        For Each c As Control In New Control() {lblGrupDescarcari, chkMultiThread, lblFire, txtFire,
+                                                chkAutoVechi, lblZile, txtZile, chkToateReceptiile}
+            c.Visible = shown
+        Next
         If Not shown AndAlso String.Equals(navPagini.SelectedKey, PAGE_DOCUMENTE, StringComparison.Ordinal) Then
             navPagini.SelectedKey = PAGE_GENERALE
         End If
@@ -217,6 +228,12 @@ Public Class SetariAplicatieView
             chkTurInitial.Checked = s.ShowInitialTour
             chkAvansate.Checked = s.AdvancedOptions
             chkCapturi.Checked = s.HelpCaptureMode
+            chkMultiThread.Checked = s.MultiThreadDownloads
+            txtFire.Text = s.DownloadThreadsInEffect.ToString(Globalization.CultureInfo.InvariantCulture)
+            chkAutoVechi.Checked = s.AutoUpdateOnConnect
+            txtZile.Text = s.AutoUpdateDaysInEffect.ToString(Globalization.CultureInfo.InvariantCulture)
+            chkToateReceptiile.Checked = s.UpdateAllReceptiiByDefault
+            ActualizeazaDisponibilitateaDescarcarilor()
             AplicaOptiunileAvansate(s.AdvancedOptions)
         Finally
             _suppress = False
@@ -302,6 +319,98 @@ Public Class SetariAplicatieView
                           If(chkTurInitial.Checked,
                              "Turul ferestrei principale va porni singur la următoarea pornire a K-BOT.",
                              "Turul ferestrei principale nu mai pornește singur. Îl găsești oricând la «?»."))
+    End Sub
+
+    ' ---------------- multiple downloads (slice 0100) ----------------
+
+    ' What hangs off the main switch is enabled only while the switch is on; the days field also
+    ' needs its own box. Kept visible (not hidden) so the operator sees what the switch brings.
+    Private Sub ActualizeazaDisponibilitateaDescarcarilor()
+        Dim pornit As Boolean = chkMultiThread.Checked
+        lblFire.Enabled = pornit
+        txtFire.Enabled = pornit
+        chkAutoVechi.Enabled = pornit
+        chkToateReceptiile.Enabled = pornit
+        lblZile.Enabled = pornit AndAlso chkAutoVechi.Checked
+        txtZile.Enabled = pornit AndAlso chkAutoVechi.Checked
+    End Sub
+
+    Private Sub ChkMultiThread_CheckedChanged(sender As Object, e As EventArgs) Handles chkMultiThread.CheckedChanged
+        ActualizeazaDisponibilitateaDescarcarilor()
+        SalveazaComutator(Sub(s) s.MultiThreadDownloads = chkMultiThread.Checked,
+                          If(chkMultiThread.Checked,
+                             "Descărcarea pe mai multe taburi FOREXE e pornită (cel mult " & AppSettings.Current.DownloadThreadsInEffect & " deodată).",
+                             "Descărcările merg din nou una câte una."))
+    End Sub
+
+    Private Sub ChkAutoVechi_CheckedChanged(sender As Object, e As EventArgs) Handles chkAutoVechi.CheckedChanged
+        ActualizeazaDisponibilitateaDescarcarilor()
+        SalveazaComutator(Sub(s) s.AutoUpdateOnConnect = chkAutoVechi.Checked,
+                          If(chkAutoVechi.Checked,
+                             "La conectare se actualizează angajamentele neactualizate de " & AppSettings.Current.AutoUpdateDaysInEffect & " zile.",
+                             "La conectare nu se mai actualizează nimic singur."))
+    End Sub
+
+    Private Sub ChkToateReceptiile_CheckedChanged(sender As Object, e As EventArgs) Handles chkToateReceptiile.CheckedChanged
+        SalveazaComutator(Sub(s) s.UpdateAllReceptiiByDefault = chkToateReceptiile.Checked,
+                          If(chkToateReceptiile.Checked,
+                             "Cât timp descărcarea pe mai multe taburi e pornită, se citesc toate recepțiile, fără întrebare.",
+                             "Alegerea recepțiilor se face ca până acum."))
+    End Sub
+
+    ' The two numbers save when the field is left or on Enter -- not on every keystroke.
+    Private Sub TxtFire_Leave(sender As Object, e As EventArgs) Handles txtFire.Leave
+        SalveazaNumarul(txtFire, "numărul de taburi", AppSettings.DownloadThreadsMin, AppSettings.DownloadThreadsMax,
+                        Function(s) s.DownloadThreadsInEffect, Sub(s, n) s.DownloadThreads = n,
+                        "Se descarcă cel mult {0} angajamente deodată.")
+    End Sub
+
+    Private Sub TxtZile_Leave(sender As Object, e As EventArgs) Handles txtZile.Leave
+        SalveazaNumarul(txtZile, "numărul de zile", 1, AppSettings.AutoUpdateDaysMax,
+                        Function(s) s.AutoUpdateDaysInEffect, Sub(s, n) s.AutoUpdateDays = n,
+                        "La conectare se actualizează angajamentele neactualizate de {0} zile.")
+    End Sub
+
+    Private Sub TxtDescarcari_FieldKeyDown(sender As Object, e As KeyEventArgs) Handles txtFire.FieldKeyDown, txtZile.FieldKeyDown
+        Try
+            If e.KeyCode <> Keys.Enter Then Return
+            e.SuppressKeyPress = True
+            If ReferenceEquals(sender, txtFire) Then
+                TxtFire_Leave(sender, EventArgs.Empty)
+            Else
+                TxtZile_Leave(sender, EventArgs.Empty)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.TxtDescarcari_FieldKeyDown", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Validates one whole-number field of the multiple-downloads group and saves it. Out of range
+    ''' or not a number -> the band says why and the field goes back to the stored value.
+    ''' </summary>
+    Private Sub SalveazaNumarul(field As KBotTextField, ce As String, minim As Integer, maxim As Integer,
+                                read As Func(Of AppSettings, Integer), write As Action(Of AppSettings, Integer),
+                                mesajFormat As String)
+        Try
+            If _suppress Then Return
+            Dim stored As Integer = read(AppSettings.Current)
+            Dim raw As String = If(field.Text, String.Empty).Trim()
+            Dim asked As Integer
+            If Not Integer.TryParse(raw, Globalization.NumberStyles.None,
+                                    Globalization.CultureInfo.InvariantCulture, asked) OrElse
+               asked < minim OrElse asked > maxim Then
+                RaiseEvent StatusChanged("Pentru " & ce & " trebuie un număr între " & minim & " și " & maxim &
+                                         ". A rămas " & stored & ".")
+                IncarcaComutatoarele()
+                Return
+            End If
+            If asked = stored Then Return
+            SalveazaComutator(Sub(s) write(s, asked), String.Format(mesajFormat, asked))
+        Catch ex As Exception
+            ' Reached from Leave / KeyDown only: UI boundary, log and swallow.
+            GlobalErrorLog.Write("SetariAplicatieView.SalveazaNumarul", ex)
+        End Try
     End Sub
 
     ' ---------------- documents ----------------
@@ -586,7 +695,7 @@ Public Class SetariAplicatieView
                                                    tlyPaginaKbot, tlyArbore}
                 t.BackColor = p.SurfaceAltColor
             Next
-            For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon,
+            For Each caption As Label In New Label() {lblVerbose, lblFire, lblZile, lblAdobeMotor, lblExcelRibbon,
                                                       lblSortare, lblOrdine, lblColoaneNume, lblColoaneData,
                                                       lblLatimeCod, lblLatimeSurse}
                 caption.ForeColor = p.TextDimColor

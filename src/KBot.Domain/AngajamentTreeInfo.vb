@@ -70,6 +70,23 @@ Public NotInheritable Class AngajamentTreeInfo
     ' Slice 0777: when FOREXE recorded the angajament as made -- the DataFX (DATETIME, time
     ' included) of its FX_Istoric row «Angajament nou.». The date sort orders on this.
     Public Property DataAngajamentNou As Date?
+    ' Slice 0100: when the last FOREXE download of this angajament was SAVED on the server
+    ' (FX_Angajamente.DataActualizare). Nothing = none since the column exists.
+    Public Property DataActualizare As Date?
+
+    ''' <summary>
+    ''' Slice 0100: this angajament was downloaded before (it has history or indicators) and its
+    ''' last saved download is older than <paramref name="zile"/> days at <paramref name="acum"/> --
+    ''' or has no date at all (downloaded before the date existed). A header-only angajament (never
+    ''' downloaded) is NOT «old»: there is nothing local to bring up to date. Used by the
+    ''' on-connect update and the selection window.
+    ''' </summary>
+    Public Function EsteNeactualizatDe(zile As Integer, acum As Date) As Boolean
+        If Not (AreIstoric OrElse AreIndicatori) Then Return False
+        If Not DataActualizare.HasValue Then Return True
+        Return DataActualizare.Value < acum.AddDays(-zile)
+    End Function
+
     Public Property DataDefinitivare As Date?
     Public Property IDDF As Long?
     Public Property EIncarcat As Boolean                 ' query: Incarcat

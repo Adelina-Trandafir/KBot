@@ -315,8 +315,131 @@ Partial Public Class WorkflowExecutor
         _logger.LogInfo($"[EXECUTOR] Throttle actualizat: {_throttleSettings.Label}")
     End Sub
 
+    ' ── Worker tabs (slice 0100) ─────────────────────────────────────────
+
+    ' True for an executor made by OpenWorkerAsync: it owns ONE tab of the primary's browser
+    ' context and nothing else. Closing it closes that tab only -- never the context, the browser
+    ' or Playwright, which belong to the primary and keep the login of the session.
+    Private _isWorkerTab As Boolean
+
+    ''' <summary>
+    ''' Slice 0100: a new executor with its OWN FOREXE tab in this executor's browser context. The
+    ''' context is the same, so the login (cookies, the certificate choice) carries over: a download
+    ''' running in the tab needs no second authentication. Variables, loop state and the workflow are
+    ''' the worker's own, so several workers run side by side without seeing each other. The caller
+    ''' closes it with <see cref="CloseAsync"/>, which closes the tab only.
+    ''' </summary>
+    ''' <remarks>
+    ''' Docking, the in-page watcher and the browser window handle stay with the primary: the worker
+    ''' never installs them. A new tab is brought to the front by Chromium, so the primary's tab is
+    ''' put back in front here -- the window docked in the shell keeps showing the page it showed.
+    ''' </remarks>
+    Friend Async Function OpenWorkerAsync(cancellationToken As CancellationToken) As Task(Of WorkflowExecutor)
+        If _context Is Nothing OrElse _page Is Nothing OrElse _page.IsClosed Then
+            Throw New InvalidOperationException("Nu există o sesiune FOREXE deschisă — nu se poate deschide un tab nou.")
+        End If
+        Dim worker As New WorkflowExecutor(_logger, _certificate, _stealthMode,
+                                           cancellationToken:=cancellationToken)
+        Try
+            worker._isWorkerTab = True
+            worker._playwright = _playwright
+            worker._browser = _browser
+            worker._context = _context
+            worker._excelProcessor = _excelProcessor
+            worker._page = Await _context.NewPageAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.OpenWorkerAsync", ex)
+            Throw
+        End Try
+        Try
+            Await _page.BringToFrontAsync()
+        Catch ex As Exception
+            ' Cosmetic: the docked window may show the worker's tab for a moment.
+            _logger.LogDebug($"[Worker] BringToFront pe tabul principal a eșuat (ignorat): {ex.Message}")
+        End Try
+        Return worker
+    End Function
+
+    ''' <summary>
+    ''' Slice 0100: closes every tab of the context except this executor's own, so ONE FOREXE tab is
+    ''' left when a multi-thread download ends. A tab that will not close is logged and skipped.
+    ''' </summary>
+    ''' <returns>How many tabs were closed.</returns>
+    Friend Async Function CloseOtherTabsAsync() As Task(Of Integer)
+        If _context Is Nothing Then Return 0
+        Dim closed As Integer = 0
+        For Each p As IPage In _context.Pages.ToList()
+            If ReferenceEquals(p, _page) OrElse p.IsClosed Then Continue For
+            Try
+                Await p.CloseAsync()
+                closed += 1
+            Catch ex As Exception
+                GlobalErrorLog.Write("WorkflowExecutor.CloseOtherTabsAsync", ex)
+                _logger.LogWarning($"Un tab FOREXE n-a putut fi închis: {ex.Message}")
+            End Try
+        Next
+        Return closed
+    End Function
+
+    ''' <summary>
+    ''' Slice 0100: the tab of <paramref name="worker"/> becomes THIS executor's page, and every other
+    ''' tab -- the old main one included -- is closed, so the one tab left open is the one a download
+    ''' finished in. The worker object is dropped without closing (its tab lives on as the page).
+    ''' </summary>
+    ''' <remarks>
+    ''' What was installed in the old page (the floating K-BOT menu, the recorder, the Wicket monitor)
+    ''' went with it: those flags are cleared, and the menu is put back in the new page when it was
+    ''' running. The window (and so the docking) is the same Chromium frame; its active tab is the
+    ''' adopted one. Closing the old page is K-BOT's own doing, not the operator's, so the
+    ''' «browser closed» notice is muted for it.
+    ''' </remarks>
+    Friend Async Function AdoptTabAsync(worker As WorkflowExecutor) As Task
+        ArgumentNullException.ThrowIfNull(worker)
+        If worker._page Is Nothing OrElse worker._page.IsClosed Then Return
+        If ReferenceEquals(worker._page, _page) Then Return
+
+        Dim wasWatching As Boolean = _watchActive
+        _suppressCloseNotice = True
+        Try
+            _page = worker._page
+            worker._page = Nothing   ' the worker no longer owns it: a stray CloseAsync must not close the page
+            _watchInstalled = False
+            _watchActive = False
+            _recorderInstalled = False
+            _recordingActive = False
+            _wicketMonitoringActive = False
+            AttachCloseNotice(_page)
+            Try
+                Await _page.BringToFrontAsync()
+            Catch ex As Exception
+                _logger.LogDebug($"[Worker] BringToFront pe tabul păstrat a eșuat (ignorat): {ex.Message}")
+            End Try
+            Await CloseOtherTabsAsync()
+        Finally
+            _suppressCloseNotice = False
+        End Try
+
+        If wasWatching Then
+            Try
+                Await StartWatchingAsync()
+            Catch ex As Exception
+                GlobalErrorLog.Write("WorkflowExecutor.AdoptTabAsync", ex)
+                _logger.LogWarning($"Meniul K-BOT nu a putut fi pus în tabul păstrat: {ex.Message}")
+            End Try
+        End If
+    End Function
+
     Public Async Function CloseAsync(Optional keepOpen As Boolean = False) As Task
         StopAuthMonitoring()
+        If _isWorkerTab Then
+            ' Slice 0100: the tab only. The context, browser and Playwright are the primary's.
+            Try
+                If _page IsNot Nothing AndAlso Not _page.IsClosed Then Await _page.CloseAsync()
+            Catch ex As Exception
+                GlobalErrorLog.Write("WorkflowExecutor.CloseAsync(worker)", ex)
+            End Try
+            Return
+        End If
         If keepOpen AndAlso _isDebug Then Return
         Try
             If _page IsNot Nothing Then Await _page.CloseAsync()

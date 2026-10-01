@@ -304,6 +304,8 @@ Partial Public Class KbotForm
             LeagaUrmarirea()
             ' The login's «Operatiuni necorectate» warning (slice 0084) - see KbotForm.UncorrectedOperations.vb.
             LeagaOperatiunileNecorectate()
+            ' Slice 0100: the on-connect update of the old angajamente - see KbotForm.Parallel.vb.
+            LeagaActualizareaMultipla()
             ' The «Browser FOREXE» view's gate on the session (slice 0074) - see KbotForm.Browser.vb.
             LeagaBrowserul()
 
