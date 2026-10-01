@@ -23,7 +23,7 @@ cu altă valoare decât a ei, descărcarea **nu pornește** și ți se oferă fe
 [Cazuri speciale](topic:contabil.asocieri.cazuri).
 
 ## Înainte de descărcare: ce recepții se citesc din nou
-<!-- slice: 0060, 0072, 0000-14, fara-felie -->
+<!-- slice: 0060, 0072, 0100, 0000-14, fara-felie -->
 
 Partea lungă a unei descărcări sunt recepțiile: robotul deschide în FOREXE pagina **fiecăreia**. De
 obicei te interesează doar una sau două — cele la care s-a schimbat ceva pe site. De aceea, înainte
@@ -55,6 +55,10 @@ angajamentul nu are încă nicio recepție în K-BOT, fereastra nu se deschide �
 Fereastra se deschide implicit cu **toate** recepțiile bifate; în **Setări › Aplicație**,
 «Selectorul de recepții se deschide cu toate recepțiile bifate» o poate face să se deschidă cu
 nimic bifat.
+
+Cu descărcarea pe mai multe taburi pornită și **«Actualizează implicit toate recepțiile»** bifată,
+fereastra nu se mai deschide deloc și se citesc toate recepțiile —
+[Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 > Dacă nu știi ce s-a schimbat pe site, lasă totul bifat: durează mai mult, dar nu scapă nimic.
 
@@ -107,6 +111,12 @@ Uneori FOREXE trimite pagina unei recepții mai încet decât o citește robotul
 tăiat. K-BOT recunoaște asta, nu atinge recepțiile deja existente cu date tăiate și te întreabă
 la sfârșit dacă le citește din nou, doar pe ele. Dacă se întâmplă des, mărește timpii de
 așteptare din **Setări › FOREXE**.
+
+## Mai multe angajamente deodată
+<!-- slice: 0100 -->
+
+Pentru a aduce la zi mai multe angajamente deodată (fiecare pe un tab al lui din FOREXE), vezi
+[Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Reîmprospătări parțiale
 <!-- slice: 0060 -->

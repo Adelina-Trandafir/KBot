@@ -94,6 +94,12 @@ A picture the help needs is written as ONE line, where the picture should appear
   for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, pagina, extrase, tema,
   autentificare, foldere, jurnal) · `help` (this topic) / `help:<topic id>`.
 - `prepare:` Romanian, what the operator sets up by hand before «Capturează» (optional).
+- `redo:` + `why:` (slice 0000-34, optional, always together): the picture is OUT OF DATE because a later
+  change altered that screen. `redo: 2026-10-01 22:48` is the moment of the change (`yyyy-MM-dd HH:mm`),
+  `why: 0100: ...` says what changed (Romanian, starts with the feature slice). While the saved picture
+  is OLDER than that moment, the capture list paints the row in red (state «de refăcut», the reason
+  at the top of the preparation box); taking the picture again, or loading one, clears it by itself.
+  A picture that does not exist yet is just «lipsă». Leave the tag in place afterwards; it does no harm.
 
 The operator takes them from «Meniu › Capturi pentru ajutor» (capture mode: Setări › Aplicație,
 visible only with the advanced options). Each «Fă poza» goes to `goto`, shows `prepare` in a

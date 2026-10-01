@@ -13,7 +13,7 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 **Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
 (rândul se poate ascunde din pagina **Aplicație**).
 
-<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie -->
+<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-01 22:48 | why: 0100: pagina «Aplicație» a Setărilor are comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și un grup nou, «Descărcări multiple», cu opțiuni avansate pornite. -->
 
 | Pagina | Ce găsești |
 |--------|------------|
@@ -26,10 +26,22 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 
 Setările se salvează pe măsură ce le schimbi.
 
+## Pagina «Aplicație»: cum e grupată fila «Generale»
+<!-- slice: 0100 -->
+
+Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare nu s-a schimbat:
+
+| Grupul | Ce conține |
+|--------|-----------|
+| **Fereastra principală** | pornirea mărită, turul inițial, rândul «Jurnal activitate» din meniul MENIU |
+| **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
+| **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
+| **Descărcări multiple** | apare doar cu opțiunile avansate pornite — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla) |
+
 ## Pagina «Aplicație»: pornirea K-BOT
 <!-- slice: 0097-02 -->
 
-Pe fila **Generale**:
+Din grupul **Fereastra principală**:
 
 - **«Fereastra principală pornește mărită (pe tot ecranul)»** — **debifată la început.** Bifată,
   fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în

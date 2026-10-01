@@ -12,18 +12,19 @@ cum afișează documentele, cum arată pagina FOREXE, tema și scalarea, foldere
 Sunt ascunse ca un operator să nu le schimbe din greșeală.
 
 ## Cum le pornești
-<!-- slice: 0072-02, 0000-29, fara-felie -->
+<!-- slice: 0072-02, 0000-29, 0100, fara-felie -->
 
 1. Deschide **Setări** (butonul **MENIU** › «Configurare K-BOT»), pagina **Aplicație**.
 2. Bifează **«Activează opțiuni avansate»**. K-BOT cere **parola** opțiunilor avansate.
 3. Cu parola corectă apar:
    - fila **Documente** în pagina «Aplicație»;
-   - paginile **Pagina FOREXE**, **Temă** și **Căi fișiere**.
+   - paginile **Pagina FOREXE**, **Temă** și **Căi fișiere**;
+   - grupul **Descărcări multiple** din fila **Generale** — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 Debifarea nu cere parolă și ascunde din nou paginile. Setările făcute rămân în vigoare și cât
 timp paginile sunt ascunse.
 
-<!-- capture: avansat-activare | caption: «Activează opțiuni avansate» în Setări › Aplicație | goto: setari:aplicatie -->
+<!-- capture: avansat-activare | caption: «Activează opțiuni avansate» în Setări › Aplicație | goto: setari:aplicatie | redo: 2026-10-01 22:48 | why: 0100: sub «Activează opțiuni avansate» apare acum grupul «Descărcări multiple», iar comutatoarele paginii sunt regrupate. -->
 
 > Parola nu e o protecție de securitate, ci o barieră împotriva unei schimbări făcute din
 > neatenție. Nu o da operatorilor care nu au nevoie de ea.

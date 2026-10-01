@@ -111,6 +111,7 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 | The popup, the search panel, the list, the stars (slice 0000-20/21) | `src/KBot.Controls/Popup/KBotHelp*.vb` — doc `KBotHelpPopup.md` |
 | The help's version (watermark date, sent with each question) | `src/KBot.App/HelpContent/help-version.txt` |
 | Question log on the server (slice 0000-21) | table `AVACONT_COMUN.FX_AjutorIntrebari` (`sql/0000_21_fx_ajutor_intrebari.sql`), route `PYTHON/routes/help_feedback.py` (`POST /api/help/feedback`) |
+| Capture list (`HelpCaptureForm`): red rows = pictures older than the tag's `redo:` moment (slice 0000-34) | `src/KBot.App/Help/HelpCaptureForm.vb`, `HelpCapture.vb` |
 | Capture mode switch | `AppSettings.HelpCaptureMode`; Setări › Aplicație «Mod capturi pentru ajutor» (visible only with advanced options) |
 | Capture menu + navigation for captures/tours | `src/KBot.App/KbotForm.HelpCapture.vb` |
 
@@ -183,8 +184,9 @@ operator sees and you are asked to cover it).
      `HelpContent/README.md` (and to `KbotForm.HelpCapture.vb` if it is a new KIND of target).
 5. **Pictures.**
    - A new screen worth showing → a new capture tag where the picture belongs (unique id).
-   - A screen whose look changed → keep the tag; list its id in the worklog under «Capturi de
-     refăcut» so the operator re-shoots it («Refă» in the capture list).
+   - A screen whose look changed → keep the tag and add `| redo: <yyyy-MM-dd HH:mm> | why: <slice>: <what
+     changed>` to it (slice 0000-34): the capture list then paints the row RED until the picture is
+     taken again. Also list its id in the worklog under «Capturi de refăcut».
    - Never delete or overwrite files in `img/` — they are the operator's.
    - A window the capture list cannot reach (director's window, dialogs that appear only in a real
      situation) → no `goto:`, and a `prepare:` that says when / where to shoot it.

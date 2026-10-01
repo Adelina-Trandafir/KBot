@@ -51,8 +51,10 @@ Dacă o închizi tu cât mai sunt sarcini, nu se mai redeschide singură până 
   Merge doar cât robotul lucrează în FOREXE; ce s-a salvat deja rămâne.
 
 ## Cât lucrează robotul
-<!-- slice: 0098, 0000-31 -->
+<!-- slice: 0098, 0100, 0000-31 -->
 
+- O [actualizare a mai multor angajamente deodată](topic:contabil.forexe.descarcare-multipla) e **o singură
+  sarcină** în coadă, oricâte angajamente ar avea.
 - Cât robotul descarcă din FOREXE, o vedere sau o listă pe care o deschizi poate arăta bara de așteptare
   până se termină lucrarea; apoi se completează singură. Poate dura câteva minute.
 - Cât e deschisă fereastra [Asocieri](topic:contabil.asocieri), robotul așteaptă după tine: nu pornește
