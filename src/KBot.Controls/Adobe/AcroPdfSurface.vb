@@ -458,8 +458,12 @@ Public NotInheritable Class AcroPdfSurface
             DisarmReadMode()
             ' A save of the previous document must finish before it is replaced.
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
-            _saveTrap.Stop()
+            ' slice 0078-09: replacing a document is closing it -- Adobe may ask «save changes?».
+            Dim replacing As Boolean = _loadedPath IsNot Nothing
+            If replacing Then _saveTrap.BeginClose()
             TracedLoad(host, pdfPath, clock)
+            If replacing Then PumpClosePrompt()
+            _saveTrap.Stop()
             _loadedPath = pdfPath
             ' Started right after the load, NOT after the pane wait: the operator may sign while
             ' Adobe is still laying out, and the pids are re-read on every sweep anyway.
@@ -535,20 +539,46 @@ Public NotInheritable Class AcroPdfSurface
             Tr($"Clear: host={_host IsNot Nothing} loaded={If(_loadedPath, "(none)")} trapBusy={_saveTrap.IsBusy}")
             ' A pressed Save still writing the file must not lose its control halfway.
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
-            _saveTrap.Stop()
+            ' slice 0078-09: the trap stays on while the control goes away, so Adobe's «save changes
+            ' before closing?» box is answered (see AdobeSaveTrap.BeginClose).
+            Dim hadDocument As Boolean = _loadedPath IsNot Nothing
+            If hadDocument Then _saveTrap.BeginClose()
             DisarmReadMode()
             _loadedPath = Nothing
             Dim host As AcroPdfHost = _host
             _host = Nothing
-            If host Is Nothing Then Return
+            If host Is Nothing Then
+                _saveTrap.Stop()
+                Return
+            End If
             Dim handle As String = If(host.IsHandleCreated, AcroPdfTraceLog.Hex(host.Handle), "(no handle)")
             _panel.Controls.Remove(host)
             host.Dispose()
             Tr($"Clear: control {handle} removed and disposed")
+            If hadDocument Then PumpClosePrompt()
+            _saveTrap.Stop()
         Catch ex As Exception
+            _saveTrap.Stop()
             Tr("Clear EXCEPTION: " & ex.ToString())
             GlobalErrorLog.Write("AcroPdfSurface.Clear", ex)
         End Try
+    End Sub
+
+    ' slice 0078-09: after a document was closed, lets the trap answer Adobe's «save changes before
+    ' closing?» (and the Save As that may follow) -- at least ClosePromptMinMs, longer while a save
+    ' runs, never past AdobeWindowTeardown.MaxExtendedWaitMs. Reached from Clear / ShowDocumentAsync
+    ' (both wrapped). Blocking on purpose: the document being replaced is gone only when it is done.
+    Private Const ClosePromptMinMs As Integer = 300
+
+    Private Sub PumpClosePrompt()
+        Dim clock As Diagnostics.Stopwatch = Diagnostics.Stopwatch.StartNew()
+        Do
+            Dim going As Boolean = _saveTrap.ClosePoll()
+            If Not going AndAlso clock.ElapsedMilliseconds >= ClosePromptMinMs Then Exit Do
+            If clock.ElapsedMilliseconds >= AdobeWindowTeardown.MaxExtendedWaitMs Then Exit Do
+            Threading.Thread.Sleep(50)
+        Loop
+        Tr($"PumpClosePrompt: done after {clock.ElapsedMilliseconds} ms")
     End Sub
 
     ' Creates the control on first use. AxHost needs a handle before GetOcx() returns anything.

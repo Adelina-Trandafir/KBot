@@ -324,6 +324,7 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Const IDOK As Integer = 1
     Public Const IDCANCEL As Integer = 2
     Public Const IDYES As Integer = 6
+    Public Const IDNO As Integer = 7
     ' SendMessageTimeout: return even if the foreign thread is hung, never block our UI for long.
     Public Const SMTO_ABORTIFHUNG As UInteger = &H2UI
 

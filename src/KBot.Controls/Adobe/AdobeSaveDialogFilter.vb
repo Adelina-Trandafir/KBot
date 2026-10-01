@@ -32,11 +32,16 @@ Public NotInheritable Class AdobeDialogFacts
     Public Property HasYesButton As Boolean
     ''' <summary>A DirectUIHWND child and no file-name edit: a TaskDialog (Vista-style confirm).</summary>
     Public Property IsTaskDialog As Boolean
+    ''' <summary>A child Button with id IDNO (7) -- with Yes and Cancel, the «save changes?» message box.</summary>
+    Public Property HasNoButton As Boolean
+    ''' <summary>The readable text of the dialog (its Static children joined by a space); empty when none is readable.</summary>
+    Public Property Text As String = ""
     Public Property Title As String = ""
 
     Public Function Describe() As String
         Return $"clasă={ClassName} proces={OwnerPid} titlu=«{Title}» numeFișier={HasFileNameEdit} " &
-               $"butonOK={HasOkButton} butonDa={HasYesButton} taskDialog={IsTaskDialog}"
+               $"butonOK={HasOkButton} butonDa={HasYesButton} butonNu={HasNoButton} taskDialog={IsTaskDialog}" &
+               If(Text.Length > 0, $" text=«{If(Text.Length > 200, Text.Substring(0, 200) & "…", Text)}»", "")
     End Function
 End Class
 
@@ -123,6 +128,51 @@ Public NotInheritable Class AdobeSaveDialogFilter
             Dim before As Char = text(text.Length - stem.Length - 1)
             Return before = "_"c OrElse before = "\"c OrElse before = "/"c
         End If
+        Return False
+    End Function
+
+    ''' <summary>
+    ''' True when <paramref name="facts"/> is Adobe's «Do you want to save changes to '...' before
+    ''' closing?» box for the document at <paramref name="target"/>. Only asked while K-BOT itself is
+    ''' closing that document (<see cref="AdobeSaveTrap.BeginClose"/>), and only for a process the
+    ''' trap watches, so the operator's own documents are never answered.
+    '''
+    ''' A message box: Yes + No buttons. A TaskDialog (buttons are not windows, nothing readable) is
+    ''' accepted only when it carries Adobe's title. When the text IS readable it must name the
+    ''' document: the file name, or its stem.
+    ''' </summary>
+    Public Shared Function IsSaveOnClosePrompt(facts As AdobeDialogFacts, target As String) As Boolean
+        If facts Is Nothing OrElse String.IsNullOrWhiteSpace(target) Then Return False
+        If facts.HasFileNameEdit Then Return False
+        Dim adobeTitle As Boolean = facts.Title.StartsWith("Adobe", StringComparison.OrdinalIgnoreCase)
+        Dim buttons As Boolean = facts.HasYesButton AndAlso facts.HasNoButton
+        Dim adobeTask As Boolean = facts.IsTaskDialog AndAlso adobeTitle
+        Dim stem As String = Path.GetFileNameWithoutExtension(target.Trim())
+        Dim namesDocument As Boolean = Not String.IsNullOrEmpty(stem) AndAlso
+            facts.Text.IndexOf(stem, StringComparison.OrdinalIgnoreCase) >= 0
+
+        ' MEASURED 01.10.2026 (the prompt Adobe really shows): class #32770, Adobe's title, the
+        ' text readable and naming the document -- and NO button with id 6 / 7 (the buttons are
+        ' found by their caption, see IsNoCaption). Title + the document's name is enough.
+        If adobeTitle AndAlso namesDocument Then Return True
+        If Not buttons AndAlso Not adobeTask Then Return False
+        If String.IsNullOrWhiteSpace(facts.Text) Then Return True
+        Return namesDocument
+    End Function
+
+    ''' <summary>
+    ''' True for the caption of a «No» button: No / Nu / Nein / Non / Nao, with or without an
+    ''' accelerator ampersand or a trailing mnemonic like «(&amp;N)». Adobe's own prompts do not use
+    ''' the standard button ids, so the button is known by its text.
+    ''' </summary>
+    Public Shared Function IsNoCaption(caption As String) As Boolean
+        If String.IsNullOrWhiteSpace(caption) Then Return False
+        Dim t As String = caption.Replace("&", "").Trim()
+        Dim paren As Integer = t.IndexOf("("c)
+        If paren > 0 Then t = t.Substring(0, paren).Trim()
+        For Each no As String In {"No", "Nu", "Nein", "Non", "Nao"}
+            If String.Equals(t, no, StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
         Return False
     End Function
 

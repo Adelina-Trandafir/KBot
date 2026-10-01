@@ -814,7 +814,10 @@ Public NotInheritable Class AdobeReaderHost
             ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
             ' signed file could be cut in half.
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
-            _saveTrap.Stop()
+            ' slice 0078-09 (operator, 01.10.2026): the trap stays on while the window closes, so Adobe's
+            ' «save changes before closing?» box is answered instead of being left for the operator.
+            ' It is stopped in the Finally, whatever happens below.
+            _saveTrap.BeginClose()
             _hostedPath = Nothing
 
             Dim hwnd As IntPtr = _hostedWindow
@@ -828,7 +831,8 @@ Public NotInheritable Class AdobeReaderHost
             If hwnd = IntPtr.Zero AndAlso pid <= 0 Then Return
 
             Dim outcome As AdobeTeardownOutcome =
-                _teardown.Run(hwnd, pid, _launchedPids, _options.DetachMode, _options.CloseGraceMs)
+                _teardown.Run(hwnd, pid, _launchedPids, _options.DetachMode, _options.CloseGraceMs,
+                              AddressOf _saveTrap.ClosePoll)
             If outcome.Message.Length > 0 Then Report(outcome.Message)
             If outcome.Action = AdobeTeardownAction.Killed OrElse
                outcome.Action = AdobeTeardownAction.ClosedThenKilled Then
@@ -836,6 +840,8 @@ Public NotInheritable Class AdobeReaderHost
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Detach", ex)
+        Finally
+            _saveTrap.Stop()
         End Try
     End Sub
 
@@ -875,15 +881,17 @@ Public NotInheritable Class AdobeReaderHost
     ''' when the option is off or nothing is hosted -- <see cref="Detach"/> stays the release then.
     ''' </summary>
     Private Sub ReleaseAtScreenSize()
+        ' Outside the Try: the Finally below stops the trap, which Detach (the release that follows
+        ' in Dispose) still needs when this one does nothing.
+        If Not _options.RestoreScreenSizeOnExit OrElse Not IsHosting Then Return
         Try
-            If Not _options.RestoreScreenSizeOnExit OrElse Not IsHosting Then Return
             _windowWatcher.Stop()
             _readyDeadline.Stop()
             _documentReady = False
             DisarmReadMode()
             _hook.Remove()
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
-            _saveTrap.Stop()
+            _saveTrap.BeginClose()     ' slice 0078-09: see Detach
             _hostedPath = Nothing
 
             Dim hwnd As IntPtr = _hostedWindow
@@ -894,11 +902,14 @@ Public NotInheritable Class AdobeReaderHost
 
             Dim area As Rectangle = Screen.FromHandle(hwnd).WorkingArea
             Dim killed As Boolean
-            Dim message As String = _screenRelease.Run(hwnd, pid, _originalStyle, area, _launchedPids, killed)
+            Dim message As String = _screenRelease.Run(hwnd, pid, _originalStyle, area, _launchedPids, killed,
+                                                       AddressOf _saveTrap.ClosePoll)
             If message.Length > 0 Then Report(message)
             If killed Then _launchedPids.Remove(pid)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.ReleaseAtScreenSize", ex)
+        Finally
+            _saveTrap.Stop()
         End Try
     End Sub
 

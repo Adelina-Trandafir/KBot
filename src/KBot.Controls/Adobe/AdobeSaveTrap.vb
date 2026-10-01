@@ -122,6 +122,22 @@ Public NotInheritable Class AdobeSaveTrap
     Private _lastDialog As IntPtr = IntPtr.Zero
     ' Confirm prompts already answered (answered once, not on every sweep).
     Private ReadOnly _answered As New HashSet(Of IntPtr)()
+    ' CLOSING (operator, 01.10.2026): K-BOT is closing this trap's document. Adobe then asks «Do you
+    ' want to save changes ... before closing?» -- a dialog that is neither the Save As nor a script
+    ' alert, which used to appear with nobody watching (the trap was stopped before the close) and
+    ' stay for the operator. While closing, that prompt is answered «No» (operator, 01.10.2026: «Yes»
+    ' made Adobe try to write the file and fail with «may be read-only, or another user may have it
+    ' open» -- the file is still held by the viewer being closed). Nothing is saved, nothing is asked.
+    Private _closing As Boolean
+    Private _closeAnsweredAt As DateTime = DateTime.MinValue
+    ' Presses of the No button per prompt window, and when the last one was.
+    Private ReadOnly _closeAttempts As New Dictionary(Of IntPtr, Integer)()
+    Private ReadOnly _closeClickedAt As New Dictionary(Of IntPtr, DateTime)()
+    ''' <summary>Presses of the No button on one close prompt before it is left to the operator.</summary>
+    Public Const MaxCloseAttempts As Integer = 3
+
+    ''' <summary>After answering the close prompt, how long the window closing is still awaited.</summary>
+    Public Const CloseAnswerWaitMs As Integer = 1000
 
     ''' <summary>Raised on the UI thread after a trapped Save As closed. Argument = the target path.</summary>
     Public Event Saved As Action(Of String)
@@ -373,6 +389,9 @@ Public NotInheritable Class AdobeSaveTrap
             _pending = IntPtr.Zero
             _hiddenSince = Nothing
             _presses = 0
+            _closing = False
+            _closeAttempts.Clear()
+            _closeClickedAt.Clear()
             _targetPath = Nothing
             _pids.Clear()
             Running.Remove(Me)
@@ -383,6 +402,40 @@ Public NotInheritable Class AdobeSaveTrap
             GlobalErrorLog.Write("AdobeSaveTrap.Stop", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' K-BOT is about to close the document this trap watches: from now on Adobe's «save changes
+    ''' before closing?» box for it is answered «No» (not saved). Call BEFORE the close is requested, keep the
+    ''' trap running (a paused one is resumed), pump <see cref="ClosePoll"/> while the window closes,
+    ''' then <see cref="Stop"/>. Does nothing for a trap that is not started.
+    ''' </summary>
+    Public Sub BeginClose()
+        Try
+            If _targetPath Is Nothing Then Return
+            _closing = True
+            _closeAnsweredAt = DateTime.MinValue
+            If _paused Then [Resume]()
+            Report("Capcana «Salvare ca»: documentul se închide — întrebarea Adobe «salvați modificările?» va primi răspunsul «Nu» (fără salvare).")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.BeginClose", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' One sweep while the document is closing. True while the close is not over: a save pressed by
+    ''' the trap is still running, or the prompt was answered a moment ago and its Save As may still
+    ''' come. The caller keeps polling (and pumping messages) while this is True.
+    ''' </summary>
+    Public Function ClosePoll() As Boolean
+        Try
+            If _targetPath Is Nothing OrElse Not _closing Then Return False
+            Sweep()
+            Return IsBusy OrElse (DateTime.UtcNow - _closeAnsweredAt).TotalMilliseconds < CloseAnswerWaitMs
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.ClosePoll", ex)
+            Return False
+        End Try
+    End Function
 
     ''' <summary>
     ''' Keeps the UI pumping until a pressed Save has finished, or <paramref name="timeoutMs"/>
@@ -543,7 +596,9 @@ Public NotInheritable Class AdobeSaveTrap
             Case AdobeDialogKind.ConfirmOverwrite
                 HandleConfirm(hwnd, facts)
             Case AdobeDialogKind.Other
-                If AdobeSaveDialogFilter.IsScriptNoise(facts.Title, ScriptAlertTitle, ScriptConsoleTitle) Then
+                If _closing AndAlso AdobeSaveDialogFilter.IsSaveOnClosePrompt(facts, _targetPath) Then
+                    AnswerClosePrompt(hwnd, facts)
+                ElseIf AdobeSaveDialogFilter.IsScriptNoise(facts.Title, ScriptAlertTitle, ScriptConsoleTitle) Then
                     DismissScriptNoise(hwnd, facts)
                 Else
                     ' Slice 0099: Adobe's own Print window. Left alone like every other dialog; the
@@ -700,6 +755,72 @@ Public NotInheritable Class AdobeSaveTrap
         Report($"Confirmarea de suprascriere acceptată: 0x{hwnd.ToInt64():X} {facts.Describe()}")
     End Sub
 
+    ' Adobe's «save changes before closing?» for the document K-BOT is closing: «No» (do not save), by message
+    ' (never keystrokes). MEASURED 01.10.2026: the prompt is a #32770 with NO button of id 6 / 7, so
+    ' the No button is found by its caption, like the OK of a script alert, and pressed a different
+    ' way per attempt (the dialog is not active, and BM_CLICK is documented to fail then):
+    '   0: WM_COMMAND / BN_CLICKED with the button's handle, posted -- needs no activation;
+    '   1: activate the dialog, then BM_CLICK;
+    '   2: BM_CLICK posted straight to the button.
+    ' NEVER WM_CLOSE: that is «Cancel», and the document would stay open. The dialog is NOT moved
+    ' off screen -- if nothing works the operator still sees it and can answer. A dialog with no
+    ' No button found is described in the log (every child) so the next run shows what it is.
+    Private Sub AnswerClosePrompt(hwnd As IntPtr, facts As AdobeDialogFacts)
+        Dim clickedAt As DateTime
+        If _closeClickedAt.TryGetValue(hwnd, clickedAt) AndAlso
+           (DateTime.UtcNow - clickedAt).TotalMilliseconds < ScriptClickRetryMs Then Return
+        Dim attempts As Integer = 0
+        _closeAttempts.TryGetValue(hwnd, attempts)
+        _closeAnsweredAt = DateTime.UtcNow
+        If attempts >= MaxCloseAttempts Then
+            If _answered.Add(hwnd) Then
+                Report($"ATENȚIE: întrebarea Adobe la închidere 0x{hwnd.ToInt64():X} nu a primit răspuns după {attempts} încercări — o las pe ecran.")
+            End If
+            Return
+        End If
+
+        Dim no As IntPtr = IntPtr.Zero
+        Dim children As New List(Of String)()
+        For Each c As IntPtr In AdobeNativeMethods.Descendants(hwnd)
+            Dim caption As String = AdobeNativeMethods.ReadText(c)
+            children.Add($"0x{c.ToInt64():X} clasă={AdobeNativeMethods.GetClass(c)} id={AdobeNativeMethods.GetDlgCtrlID(c)} " &
+                         $"vizibil={AdobeNativeMethods.IsVisibleStyleSet(c)} text=«{caption}»")
+            If no = IntPtr.Zero AndAlso AdobeSaveDialogFilter.IsNoCaption(caption) AndAlso
+               AdobeNativeMethods.IsVisibleStyleSet(c) Then no = c
+        Next
+        If attempts = 0 Then
+            Report($"Întrebarea Adobe la închidere: 0x{hwnd.ToInt64():X} {facts.Describe()} — copii: " &
+                   If(children.Count = 0, "(niciunul)", String.Join(" | ", children)))
+        End If
+
+        _closeAttempts(hwnd) = attempts + 1
+        _closeClickedAt(hwnd) = DateTime.UtcNow
+        Dim how As String
+        If no <> IntPtr.Zero Then
+            Select Case attempts
+                Case 0
+                    Dim wParam As New IntPtr((AdobeNativeMethods.BN_CLICKED << 16) Or (AdobeNativeMethods.GetDlgCtrlID(no) And &HFFFF))
+                    AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND, wParam, no)
+                    how = "WM_COMMAND pe butonul «Nu»"
+                Case 1
+                    AdobeNativeMethods.SetForegroundWindow(hwnd)
+                    AdobeNativeMethods.SendWithTimeout(no, AdobeNativeMethods.BM_CLICK, IntPtr.Zero, IntPtr.Zero)
+                    how = "activare + BM_CLICK"
+                Case Else
+                    AdobeNativeMethods.PostMessage(no, AdobeNativeMethods.BM_CLICK, IntPtr.Zero, IntPtr.Zero)
+                    how = "BM_CLICK trimis butonului"
+            End Select
+        ElseIf facts.HasNoButton Then
+            AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND, New IntPtr(AdobeNativeMethods.IDNO), IntPtr.Zero)
+            how = "WM_COMMAND IDNO"
+        Else
+            AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.TDM_CLICK_BUTTON, New IntPtr(AdobeNativeMethods.IDNO), IntPtr.Zero)
+            how = "TDM_CLICK_BUTTON IDNO (butonul «Nu» nu a fost găsit)"
+        End If
+        Tr($"AnswerClosePrompt {AcroPdfTraceLog.Hex(hwnd)}: attempt {attempts + 1}, no button {AcroPdfTraceLog.Hex(no)}, {how}")
+        Report($"Întrebarea Adobe la închidere: «Nu» apăsat (încercarea {attempts + 1}, {how}).")
+    End Sub
+
     ' The pressed Save either closes (done), stays hidden long enough (done), shows itself again
     ' (pressed again -- measured: it can blink while handling the click), or outlives the timeout
     ' (cancelled -- an invisible modal dialog left alive would freeze Adobe for good).
@@ -729,7 +850,13 @@ Public NotInheritable Class AdobeSaveTrap
             Report($"«Salvare ca» încheiat ({If(_confirmed, "cu", "fără")} confirmare de suprascriere): {path}")
             ' Paused while the save ran: now that it is done, the timer stops too.
             If _paused Then HaltWatching()
-            RaiseEvent Saved(path)
+            ' A save made because the document was being closed is not a signature: nobody is
+            ' told (the next document may already be the one the signing session watches).
+            If _closing Then
+                Report("Salvarea de la închidere nu se anunță mai departe.")
+            Else
+                RaiseEvent Saved(path)
+            End If
             Return
         End If
         If (DateTime.UtcNow - _pendingSince).TotalMilliseconds > SaveTimeoutMs Then
@@ -910,6 +1037,7 @@ Public NotInheritable Class AdobeSaveTrap
             .OwnerWindow = AdobeNativeMethods.GetWindow(hwnd, AdobeNativeMethods.GW_OWNER),
             .Title = AdobeNativeMethods.GetTitle(hwnd)}
         Dim hasDirectUi As Boolean = False
+        Dim texts As New List(Of String)()
         For Each c As IntPtr In AdobeNativeMethods.Descendants(hwnd)
             Dim cls As String = AdobeNativeMethods.GetClass(c)
             If String.Equals(cls, "Button", StringComparison.OrdinalIgnoreCase) AndAlso
@@ -917,10 +1045,15 @@ Public NotInheritable Class AdobeSaveTrap
                 Dim id As Integer = AdobeNativeMethods.GetDlgCtrlID(c)
                 If id = AdobeNativeMethods.IDOK Then facts.HasOkButton = True
                 If id = AdobeNativeMethods.IDYES Then facts.HasYesButton = True
+                If id = AdobeNativeMethods.IDNO Then facts.HasNoButton = True
             ElseIf String.Equals(cls, "DirectUIHWND", StringComparison.OrdinalIgnoreCase) Then
                 hasDirectUi = True
+            ElseIf cls.StartsWith("Static", StringComparison.OrdinalIgnoreCase) Then
+                Dim t As String = AdobeNativeMethods.ReadText(c).Trim()
+                If t.Length > 0 Then texts.Add(t.Replace(vbCr, " ").Replace(vbLf, " "))
             End If
         Next
+        facts.Text = String.Join(" ", texts)
         facts.HasFileNameEdit = FindFileNameEdit(hwnd) <> IntPtr.Zero
         facts.IsTaskDialog = hasDirectUi AndAlso Not facts.HasFileNameEdit
         Return facts

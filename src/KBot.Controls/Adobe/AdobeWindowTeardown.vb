@@ -60,6 +60,11 @@ End Class
 Public NotInheritable Class AdobeWindowTeardown
 
     Private Const GracePollMs As Integer = 25
+    ''' <summary>The longest the close wait may stretch while <c>whileClosing</c> says a save is going on.</summary>
+    Public Const MaxExtendedWaitMs As Integer = 15000
+
+    ' The poll of the Run in progress (Nothing outside Run). The UI thread only.
+    Private _whileClosing As Func(Of Boolean)
 
     Private ReadOnly _win As INativeWindows
     Private ReadOnly _launcher As IAdobeLauncher
@@ -73,8 +78,16 @@ Public NotInheritable Class AdobeWindowTeardown
     ''' Drops the window. <paramref name="launchedPids"/> is the set of process ids THIS host
     ''' started; a PID outside it is never killed, in the bench or in the app.
     ''' </summary>
+    ''' <remarks>
+    ''' <paramref name="whileClosing"/> (optional, slice 0078-09): called on every poll of the close wait.
+    ''' It lets the Save As trap answer Adobe's «save changes before closing?» box; it returns True
+    ''' while that is still going on, and the grace period then starts over (up to
+    ''' <see cref="MaxExtendedWaitMs"/> in all), so the process is not killed in the middle of a save.
+    ''' </remarks>
     Public Function Run(hwnd As IntPtr, hostedPid As Integer, launchedPids As ISet(Of Integer),
-                        mode As AdobeDetachMode, graceMs As Integer) As AdobeTeardownOutcome
+                        mode As AdobeDetachMode, graceMs As Integer,
+                        Optional whileClosing As Func(Of Boolean) = Nothing) As AdobeTeardownOutcome
+        _whileClosing = whileClosing
         Try
             If hwnd = IntPtr.Zero AndAlso hostedPid <= 0 Then
                 Return New AdobeTeardownOutcome(AdobeTeardownAction.None, "")
@@ -110,6 +123,8 @@ Public NotInheritable Class AdobeWindowTeardown
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeWindowTeardown.Run", ex)
             Throw
+        Finally
+            _whileClosing = Nothing
         End Try
     End Function
 
@@ -144,9 +159,17 @@ Public NotInheritable Class AdobeWindowTeardown
     ' default) kills and returns without waiting, so the normal document change never pays this.
     Private Function WaitForWindowToDie(hwnd As IntPtr, graceMs As Integer) As Boolean
         If hwnd = IntPtr.Zero Then Return True
-        Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(Math.Max(0, graceMs))
+        Dim started As DateTime = DateTime.UtcNow
+        Dim deadline As DateTime = started.AddMilliseconds(Math.Max(0, graceMs))
+        Dim limit As DateTime = started.AddMilliseconds(Math.Max(graceMs, MaxExtendedWaitMs))
         Do
             If Not _win.IsWindow(hwnd) Then Return True
+            ' The close prompt is answered from here: the trap sweeps, the UI keeps pumping, and the
+            ' grace period starts over while a save runs.
+            If _whileClosing IsNot Nothing AndAlso _whileClosing.Invoke() Then
+                Dim extended As DateTime = DateTime.UtcNow.AddMilliseconds(Math.Max(0, graceMs))
+                If extended > deadline Then deadline = If(extended < limit, extended, limit)
+            End If
             If DateTime.UtcNow >= deadline Then Return False
             Thread.Sleep(GracePollMs)
         Loop

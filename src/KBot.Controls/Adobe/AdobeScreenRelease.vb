@@ -56,8 +56,10 @@ Public NotInheritable Class AdobeScreenRelease
     ''' says whether the process had to be ended (only ever one in <paramref name="launchedPids"/>).
     ''' </summary>
     Public Function Run(hwnd As IntPtr, hostedPid As Integer, originalStyle As Long, workArea As Rectangle,
-                        launchedPids As ISet(Of Integer), ByRef killed As Boolean) As String
+                        launchedPids As ISet(Of Integer), ByRef killed As Boolean,
+                        Optional whileClosing As Func(Of Boolean) = Nothing) As String
         killed = False
+        _whileClosing = whileClosing
         Try
             If hwnd = IntPtr.Zero OrElse Not _win.IsWindow(hwnd) Then Return ""
 
@@ -89,13 +91,25 @@ Public NotInheritable Class AdobeScreenRelease
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeScreenRelease.Run", ex)
             Throw
+        Finally
+            _whileClosing = Nothing
         End Try
     End Function
 
+    ' slice 0078-09: the poll of the Run in progress, as in AdobeWindowTeardown (the trap answers
+    ' Adobe's «save changes before closing?» box; True = a save is going on, the wait starts over).
+    Private _whileClosing As Func(Of Boolean)
+
     Private Function WaitForWindowToDie(hwnd As IntPtr, graceMs As Integer) As Boolean
-        Dim deadline As DateTime = DateTime.UtcNow.AddMilliseconds(Math.Max(0, graceMs))
+        Dim started As DateTime = DateTime.UtcNow
+        Dim deadline As DateTime = started.AddMilliseconds(Math.Max(0, graceMs))
+        Dim limit As DateTime = started.AddMilliseconds(Math.Max(graceMs, AdobeWindowTeardown.MaxExtendedWaitMs))
         Do
             If Not _win.IsWindow(hwnd) Then Return True
+            If _whileClosing IsNot Nothing AndAlso _whileClosing.Invoke() Then
+                Dim extended As DateTime = DateTime.UtcNow.AddMilliseconds(Math.Max(0, graceMs))
+                If extended > deadline Then deadline = If(extended < limit, extended, limit)
+            End If
             If DateTime.UtcNow >= deadline Then Return False
             Thread.Sleep(PollMs)
         Loop
