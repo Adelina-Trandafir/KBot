@@ -156,8 +156,44 @@ foreach ($t in $topics) {
         $listed[$k.Split('.')[0]] = $true
     }
 }
+# Slice 0000-23: the parts a tour step may point at (part:), per control type. Keep in step
+# with the controls' IKBotHelpParts implementations (KBot.Controls\*\*.HelpParts.vb).
+$PartsByType = @{
+    'AdvancedTreeControl' = @('header', 'header.search', 'header.right', 'columns', 'node.icon', 'footer', 'footer.left', 'footer.right', 'footer.collapse')
+    'KBotDataView'        = @('header', 'header.filter', 'rows', 'footer', 'footer.left', 'footer.right', 'footer.collapse')
+    'KBotCaptionBar'      = @('icon', 'title', 'unit', 'options', 'theme', 'help', 'minimize', 'maximize', 'close')
+    'KBotNavList'         = @('collapse')   # plus item:<Key>
+}
+function Test-Part([string]$target, [string]$part, [string]$where) {
+    $dot = $target.IndexOf('.')
+    if ($dot -lt 0) { Add-Err "${where}: part '$part' needs a target Type.control, not '$target'"; return }
+    $type = $target.Substring(0, $dot); $ctl = $target.Substring($dot + 1)
+    if (-not $typeFile.ContainsKey($type)) { return }   # already reported by Test-Key
+    $ctlType = $null; $raw = ''
+    foreach ($p in $typeFile[$type]) {
+        $text = Get-Content -LiteralPath $p -Raw -Encoding UTF8
+        $raw += $text
+        $m = [regex]::Match($text, "(?m)^\s*(?:Friend|Private|Public|Protected)\s+(?:WithEvents\s+)?$([regex]::Escape($ctl))\s+As\s+(?:[A-Za-z0-9_]+\.)*([A-Za-z0-9_]+)")
+        if ($m.Success) { $ctlType = $m.Groups[1].Value }
+    }
+    if (-not $ctlType) { Add-Err "${where}: cannot find the type of '$target' for part '$part'"; return }
+    if (-not $PartsByType.ContainsKey($ctlType)) { Add-Err "${where}: '$target' is a $ctlType, which has no help parts (part '$part')"; return }
+    if ($ctlType -eq 'KBotNavList' -and $part -match '^item:(.+)$') {
+        if ($raw -notmatch "\.Key\s*=\s*""$([regex]::Escape($Matches[1]))""") { Add-Err "${where}: nav list '$target' has no item '$($Matches[1])'" }
+        return
+    }
+    if ($PartsByType[$ctlType] -notcontains $part) { Add-Err "${where}: '$part' is not a part of $ctlType ($($PartsByType[$ctlType] -join ', '))" }
+}
 foreach ($tr in $tours) {
     foreach ($m in [regex]::Matches($tr.__body, '(?m)^target:\s*(.+)$')) { Test-Key $m.Groups[1].Value.Trim() $tr.__file }
+    # Slice 0000-23: part: belongs to the target: of the same step.
+    foreach ($stepText in ($tr.__body -split '(?m)^## ')) {
+        $pm = [regex]::Match($stepText, '(?m)^part:\s*(.+)$')
+        if (-not $pm.Success) { continue }
+        $tm = [regex]::Match($stepText, '(?m)^target:\s*(.+)$')
+        if (-not $tm.Success) { Add-Err "$($tr.__file): part '$($pm.Groups[1].Value.Trim())' without a target:"; continue }
+        Test-Part $tm.Groups[1].Value.Trim() $pm.Groups[1].Value.Trim() $tr.__file
+    }
     # Slice 0000-20: the optional screens: of a tour (the windows the «?» popup offers it on).
     if ($tr.screens) {
         foreach ($k in $tr.screens.Split(',')) { $k = $k.Trim(); if ($k) { Test-Key $k $tr.__file } }

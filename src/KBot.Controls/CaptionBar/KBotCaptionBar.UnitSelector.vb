@@ -32,6 +32,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private _selectorMenuOpening As Boolean
     ' Where the selector was drawn last (client coordinates); Empty = not drawn.
     Private _selectorRect As Rectangle = Rectangle.Empty
+    ' Where the chosen unit's name was written last (inside _selectorRect); Empty = not drawn.
+    Private _selectorTextRect As Rectangle = Rectangle.Empty
     Private _selectorBorderColor As Color = SystemColors.ControlDark
 
     ''' <summary>The operator picked another choice. The selector does NOT move by itself.</summary>
@@ -79,6 +81,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         _selectorItems.Clear()
         _selectorKey = Nothing
         _selectorRect = Rectangle.Empty
+        _selectorTextRect = Rectangle.Empty
         Invalidate()
     End Sub
 
@@ -116,6 +119,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         Dim h As Integer = Math.Max(0, Height - ThemeShapes.ScaleDpi(Me, 12))
         If w <= chevronW + 2 * inner OrElse h <= 0 Then
             _selectorRect = Rectangle.Empty
+            _selectorTextRect = Rectangle.Empty
             Return
         End If
         Dim r As New Rectangle(sx, (Height - h) \ 2, w, h)
@@ -135,6 +139,8 @@ Partial Public NotInheritable Class KBotCaptionBar
 
         Dim textRect As New Rectangle(r.Left + inner, r.Top, Math.Max(0, r.Width - 3 * inner - chevronW), r.Height)
         TextRenderer.DrawText(g, choice, Font, textRect, _titleColor, flags Or TextFormatFlags.EndEllipsis)
+        ' Slice 0000-23: the capture blurs only the unit's name, not the box around it.
+        _selectorTextRect = New Rectangle(textRect.Left, textRect.Top, Math.Min(textW, textRect.Width), textRect.Height)
 
         ' The chevron: a small filled triangle, in the glyph colour.
         Dim cx As Integer = r.Right - inner - chevronW \ 2

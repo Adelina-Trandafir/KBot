@@ -179,7 +179,7 @@ Partial Public Class AdvancedTreeControl
         Dim latime As Integer = RightIconSize.Width + RightIconRightPaddingPx
         If Not IsRightIconHoverOnly(it) Then Return latime
         If _reserveRightIconSpace Then Return latime
-        Return If(it Is pHoveredItem, latime, 0)
+        Return If(it Is pHoveredItem OrElse it Is _helpDemoItem, latime, 0)
     End Function
 
     ''' <summary>Iconița din dreapta a acestui nod apare doar la survolare? (global SAU per nod)</summary>

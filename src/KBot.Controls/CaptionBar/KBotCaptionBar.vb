@@ -333,6 +333,22 @@ Partial Public NotInheritable Class KBotCaptionBar
         Return CloseRect().Left
     End Function
 
+    ' The icon's square, vertically centred (Empty = no icon, or no room). One formula for the
+    ' paint and the help (slice 0000-23, KBotCaptionBar.HelpParts.vb).
+    Private Function IconRect() As Rectangle
+        If _iconImage Is Nothing Then Return Rectangle.Empty
+        Dim side As Integer = Math.Min(Height - ThemeShapes.ScaleDpi(Me, 14), ThemeShapes.ScaleDpi(Me, 24))
+        If side <= 0 Then Return Rectangle.Empty
+        Return New Rectangle(ThemeShapes.ScaleDpi(Me, 12), (Height - side) \ 2, side, side)
+    End Function
+
+    ' Where the title starts: after the icon and its gap, or at the left padding.
+    Private Function TitleLeft() As Integer
+        Dim icon As Rectangle = IconRect()
+        If icon.IsEmpty Then Return ThemeShapes.ScaleDpi(Me, 12)
+        Return icon.Right + ThemeShapes.ScaleDpi(Me, 8)
+    End Function
+
     ' Comută starea ferestrei părinte între Normal și Maximized.
     Private Sub ToggleMaximize()
         Dim f As Form = FindForm()
@@ -348,18 +364,14 @@ Partial Public NotInheritable Class KBotCaptionBar
             g.Clear(_backColor)
 
             Dim pad As Integer = ThemeShapes.ScaleDpi(Me, 12)
-            Dim x As Integer = pad
 
             ' Pictogramă (pătrată, centrată vertical).
-            If _iconImage IsNot Nothing Then
-                Dim side As Integer = Math.Min(Height - ThemeShapes.ScaleDpi(Me, 14), ThemeShapes.ScaleDpi(Me, 24))
-                If side > 0 Then
-                    Dim iy As Integer = (Height - side) \ 2
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic
-                    g.DrawImage(_iconImage, New Rectangle(x, iy, side, side))
-                    x += side + ThemeShapes.ScaleDpi(Me, 8)
-                End If
+            Dim icon As Rectangle = IconRect()
+            If Not icon.IsEmpty Then
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic
+                g.DrawImage(_iconImage, icon)
             End If
+            Dim x As Integer = TitleLeft()
 
             ' Titlu. Slice 0097: with a selector, «title — [choice ▾]» (KBotCaptionBar.UnitSelector.vb).
             If SelectorVisible Then

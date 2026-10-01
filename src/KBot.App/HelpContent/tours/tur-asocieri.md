@@ -32,7 +32,19 @@ Pe un instantaneu din coș: «Nu consemnează nicio schimbare» (o salvare care 
 ## Graficele și plățile
 <!-- slice: 0048-05, 0048-09, 0061 -->
 target: AsociereForm.pnlGrafice
-Grafic = evoluția valorii; Distribuție = benzile, câte una pe recepție. Reperele verticale sunt plățile: ține mouse-ul pe unul ca să vezi totalul recepțiilor la data plății și diferența față de plăți. O diferență ciudată înseamnă, de obicei, un instantaneu pe recepția greșită.
+Reperele verticale sunt plățile: ține mouse-ul pe unul ca să vezi totalul recepțiilor la data plății și diferența față de plăți. O diferență ciudată înseamnă, de obicei, un instantaneu pe recepția greșită.
+
+## Grafice › Grafic
+<!-- slice: 0048-05, 0000-23 -->
+target: AsociereForm.navGrafice
+part: item:grafic
+Evoluția valorii recepțiilor în timp.
+
+## Grafice › Distribuție
+<!-- slice: 0048-09, 0000-23 -->
+target: AsociereForm.navGrafice
+part: item:benzi
+Benzile, câte una pe recepție: se vede unde cade fiecare instantaneu.
 
 ## Mesajele
 <!-- slice: 0048-04 -->

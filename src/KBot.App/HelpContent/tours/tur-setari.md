@@ -10,31 +10,48 @@ target: SetariForm.navViews
 goto: setari:info
 Câte o pagină pentru fiecare subiect. Setările se salvează pe măsură ce le schimbi.
 
-## Informații
+## Pagini › Informații
+<!-- slice: 0072, 0000-23 -->
+target: SetariForm.navViews
+part: item:info
+Datele sesiunii (utilizator, unitate, an, versiunile K-BOT) și schimbarea parolei.
+
+## Caută actualizări
 <!-- slice: 0072, 0067 -->
 target: SetariInfoView.btnActualizari
-Datele sesiunii (utilizator, unitate, an, versiunile K-BOT), schimbarea parolei și butonul Caută actualizări.
+Butonul «Caută actualizări» verifică dacă există o versiune nouă a K-BOT.
 
 ## Aplicație
 <!-- slice: 0072, 0777 -->
 target: SetariForm.navViews
+part: item:aplicatie
 goto: setari:aplicatie
 Comutatoarele de zi cu zi și opțiunile listei de angajamente: sortarea și ce coloane se văd.
 
 ## FOREXE
 <!-- slice: 0072, 0091, 0097 -->
 target: SetariForm.navViews
+part: item:forexe
 goto: setari:forexe
 Starea robotului, certificatul memorat (și dacă se uită la schimbarea unității), testul de viteză și timpii de așteptare. Dacă recepțiile vin des tăiate din FOREXE, mărește aici timpii.
+
+## Extrase
+<!-- slice: 0080-02, 0000-23 -->
+target: SetariForm.navViews
+part: item:extrase
+goto: setari:extrase
+Ce coloane se văd în grilele de extrase și în ce ordine, separat pentru vedere și pentru fereastra «Extrase de cont». «Revino la implicit» le readuce la forma inițială.
 
 ## Autentificare
 <!-- slice: 0063, 0072, 0097 -->
 target: SetariForm.navViews
+part: item:autentificare
 goto: setari:autentificare
 Ce ține minte fereastra de conectare (utilizatorul, unitatea; «Uită datele memorate» le șterge), ce face K-BOT când expiră sesiunea (îți arată fereastra de conectare sau se reconectează singur, cel mult o dată la intervalul ales) și adresa serverului K-BOT.
 
 ## Jurnal
 <!-- slice: 0031-04, 0072-01, 0089 -->
 target: SetariForm.navViews
+part: item:jurnal
 goto: setari:jurnal
 Jurnalele K-BOT și mesajele pe care ți le-a arătat, pentru când ceva nu merge. Golește jurnale șterge fișierele alese, definitiv.

@@ -113,15 +113,39 @@ screens: KbotForm            # optional (slice 0000-20): where the «?» popup o
 ---
 ## Butonul MENIU             # one '## ' per step: the bubble's heading
 target: KbotForm.btnMeniu    # optional: TypeName or TypeName.controlName to ring
+part: footer.right           # optional (slice 0000-23): one painted piece of the target, see below
 goto: view:sumar             # optional: same values as a capture's goto
 Text of the bubble. Plain text; **bold** marks are dropped; a blank line starts a paragraph,
 lines starting with '- ' become bullets.
 ```
 
 `target` uses the same names as `screens:` (the Debug help bar shows them on F1). A target that
-is not on screen does not stop the tour: the bubble is centred and says so. Painted parts
-(tree footer icons, caption-bar buttons) are not controls: ring their control and say where.
-Every tour is listed on the help start page under «Tururi ghidate».
+is not on screen does not stop the tour: the bubble is centred and says so. Every tour is listed
+on the help start page under «Tururi ghidate».
+
+**The bubble is a callout (slice 0000-23):** its point touches the ring around the target (or the
+part). It sits right of the target, else left, below, above; a target too big for any side (a
+whole view) gets the bubble inside it, pointing up at its top edge.
+
+**Parts (slice 0000-23).** Painted buttons are not controls, so `part:` names one inside the
+`target` control. The tour rings just that button and points at it. The names, per control:
+
+| Control | `part:` values |
+|---------|----------------|
+| tree (`AdvancedTreeControl`) | `header`, `header.search` (lupa), `header.right`, `columns`, `node.icon` (the button at the end of a row), `footer`, `footer.left`, `footer.right`, `footer.collapse` |
+| grid (`KBotDataView`) | `header` (column titles), `header.filter` (the first column menu icon on screen), `rows`, `footer` (TOTAL), `footer.left`, `footer.right`, `footer.collapse` |
+| caption bar (`KBotCaptionBar`) | `icon`, `title`, `unit`, `options`, `theme`, `help`, `minimize`, `maximize`, `close` |
+| nav list (`KBotNavList`) | `item:<Key>` (the item's `Key` in the designer), `collapse` |
+
+- `node.icon` that normally appears only under the mouse (the main list's refresh) is **shown for
+  the step** on the selected row (else the first row on screen that has one), then hidden again.
+- **A part that is not on screen when its step comes is skipped** (in the direction the operator
+  is going): a view without that button, an empty tree, a hidden page. So a tour may list every
+  button a control can have; write only the ones the designer really sets, though.
+- The convention: one step for the control as a whole («Lista angajamentelor»), then one step per
+  part, titled «Lista › Lupa», «Tabel › TOTALURI»...
+- `Check-Help.ps1` checks each `part:` against the table above (the type is read from the
+  control's declaration) and each `item:` key against the designer.
 
 **In the «?» popup (slice 0000-20)** a tour is offered on each visible window (not minimized,
 not behind a modal dialog) that shows one of its screens: the tour's own `screens:`, else its

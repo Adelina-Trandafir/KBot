@@ -29,6 +29,7 @@ Friend NotInheritable Class HelpCaptureOverlay
     Private _current As Point
     Private _hover As Rectangle                   ' picture coordinates
     Private _result As Rectangle = Rectangle.Empty
+    Private _blurred As Integer                   ' slice 0000-23: areas blurred on the frozen picture
 
     ''' <summary>The chosen area in picture coordinates; Empty when the operator gave up.</summary>
     Public ReadOnly Property Selection As Rectangle
@@ -52,16 +53,23 @@ Friend NotInheritable Class HelpCaptureOverlay
         Bounds = screenBounds
     End Sub
 
-    ''' <summary>Freezes <paramref name="screen"/> and lets the operator choose; Empty = gave up.</summary>
-    Public Shared Function Choose(owner As IWin32Window, screen As Screen, skip As ICollection(Of IntPtr)) As Bitmap
+    ''' <summary>
+    ''' Freezes <paramref name="screen"/> and lets the operator choose; Empty = gave up. Slice
+    ''' 0000-23: the sensitive text <paramref name="redaction"/> finds is blurred on the frozen
+    ''' picture BEFORE it is shown, so the operator sees exactly what will be saved.
+    ''' </summary>
+    Public Shared Function Choose(owner As IWin32Window, screen As Screen, skip As ICollection(Of IntPtr),
+                                  redaction As HelpCaptureRedaction) As Bitmap
         Try
             Dim b As Rectangle = screen.Bounds
             Dim shot As New Bitmap(b.Width, b.Height)
             Using g As Graphics = Graphics.FromImage(shot)
                 g.CopyFromScreen(b.Location, Point.Empty, b.Size)
             End Using
+            Dim blurred As Integer = 0
+            If redaction IsNot Nothing Then blurred = HelpCaptureRedaction.Blur(shot, b.Location, redaction.ScreenRegions(skip))
             Dim windows As List(Of HelpCaptureNative.WindowBox) = HelpCaptureNative.TopLevelWindows(skip)
-            Using overlay As New HelpCaptureOverlay(shot, b, windows)
+            Using overlay As New HelpCaptureOverlay(shot, b, windows) With {._blurred = blurred}
                 overlay.ShowDialog(owner)
                 If overlay.Selection.IsEmpty Then
                     shot.Dispose()
@@ -212,6 +220,10 @@ Friend NotInheritable Class HelpCaptureOverlay
 
             DrawLabel(g, "Trage un dreptunghi  ·  clic = fereastra  ·  Ctrl + clic = doar controlul  ·  Esc = renunță",
                       New Point(12, 12), accent)
+            If _blurred > 0 Then
+                DrawLabel(g, "Date personale estompate automat: " & _blurred & If(_blurred = 1, " loc", " locuri") &
+                          " (utilizator, unitate, conturi RO…, CNP, cod fiscal, e-mail, telefon)", New Point(12, 48), accent)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("HelpCaptureOverlay.OnPaint", ex)
         End Try

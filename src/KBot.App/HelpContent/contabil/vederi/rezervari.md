@@ -21,12 +21,12 @@ Rezervările de credite ale angajamentului, pe luni și zile.
   documentul pentru ea — vezi [Documentul de fundamentare](topic:contabil.ddf).
 
 ## Iconițele arborelui
-<!-- slice: 0060, 0061-02, 0081-02 -->
+<!-- slice: 0060, 0061-02, 0081-02, fara-felie -->
 
 | Unde | Ce face |
 |------|---------|
 | capul arborelui, dreapta | **Graficul rezervărilor**: evoluția rezervărilor și totalurile pe luni, într-o fereastră separată |
-| subsol, stânga | **acțiunile documentului de fundamentare** pe acest angajament (Adaugă rezervare / Definitivează / Derulează / Generează PDF final) — vezi [Adaugă rezervare, Definitivează, Derulează](topic:contabil.ddf.rezervare) |
+| subsol, stânga | **acțiunile documentului de fundamentare** pe acest angajament (Adaugă rezervare / Definitivează / Derulează / Generează PDF final) — vezi [Adaugă rezervare, Definitivează, Derulează](topic:contabil.ddf.rezervare); plus **«Reanalizează rezervările»**, care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare: îți arată întâi cifrele și scrie doar după ce confirmi |
 | subsol, dreapta | reîmprospătează din FOREXE doar rezervările (antet, indicatori, istoric) |
 
 <!-- capture: grafic-rezervari | caption: Graficul rezervărilor | goto: view:rezervari | prepare: Apăsați iconița din capul arborelui de rezervări, ca să se deschidă graficul. -->

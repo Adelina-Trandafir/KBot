@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Diagnostics
 Imports KBot.Common
+Imports KBot.Controls
 Imports KBot.Theming
 
 ''' <summary>
@@ -18,9 +19,9 @@ Public Class HelpForm
     Private Const TopicPrefix As String = "t:"
 
     Private ReadOnly _service As HelpService
-    Private ReadOnly _back As New Stack(Of String)()
-    Private ReadOnly _forward As New Stack(Of String)()
-    Private _current As String = String.Empty
+    ' Slice 0000-23: Back / Forward / the page on screen live in HelpService (the whole run), so
+    ' they outlive this window. See HelpHistory.
+    Private ReadOnly _history As HelpHistory
     Private _syncingTree As Boolean
     Private _contextKeys As New List(Of String)()
     Private _shown As Boolean
@@ -35,6 +36,7 @@ Public Class HelpForm
     End Sub
 
     Public Sub New(service As HelpService)
+        _history = If(service IsNot Nothing, service.History, New HelpHistory())
         InitializeComponent()
         _service = service
         ' Slice 0000-20: the same search as the «?» popup; its list covers the contents while the
@@ -68,9 +70,10 @@ Public Class HelpForm
             FoldSearch()
             BuildTree()
             ' HelpService picks the first page before Show(); it is drawn now that there is a handle.
-            If _current.Length = 0 Then _current = HomeKey
-            Render(_current)
-            SelectInTree(_current)
+            If _history.Current.Length = 0 Then _history.Current = HomeKey
+            _history.NoteVisit(_history.Current)
+            Render(_history.Current)
+            SelectInTree(_history.Current)
             UpdateButtons()
         Catch ex As Exception
             ' UI boundary (Load).
@@ -87,7 +90,7 @@ Public Class HelpForm
             tvCuprins.ForeColor = p.TextColor
             lblContext.ForeColor = p.TextDimColor
             ' The page CSS comes from the palette, so the page is redrawn with the new scheme.
-            If _current.Length > 0 AndAlso _service IsNot Nothing Then Render(_current)
+            If _service IsNot Nothing AndAlso _history.Current.Length > 0 Then Render(_history.Current)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.OnThemeChanged", ex)
         End Try
@@ -117,7 +120,7 @@ Public Class HelpForm
     ''' <summary>Draws the current page again (a picture was taken, the topics were re-read).</summary>
     Public Sub RefreshPage()
         Try
-            If _current.Length > 0 Then Render(_current)
+            If _history.Current.Length > 0 Then Render(_history.Current)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.RefreshPage", ex)
             Throw
@@ -146,15 +149,127 @@ Public Class HelpForm
 
     ' Every page change goes through here: history, render, tree selection, buttons.
     Private Sub Go(page As String, remember As Boolean)
-        If String.Equals(page, _current, StringComparison.Ordinal) Then Return
-        If remember AndAlso _current.Length > 0 Then
-            _back.Push(_current)
-            _forward.Clear()
+        If String.Equals(page, _history.Current, StringComparison.Ordinal) Then Return
+        If remember AndAlso _history.Current.Length > 0 Then
+            _history.Back.Push(_history.Current)
+            _history.Forward.Clear()
         End If
-        _current = page
+        _history.Current = page
+        _history.NoteVisit(page)
         Render(page)
         SelectInTree(page)
         UpdateButtons()
+    End Sub
+
+    ' ── Slice 0000-23: «Istoric» — every page seen this run ──────────────────────
+
+    Private Sub BtnIstoric_Click(sender As Object, e As EventArgs) Handles btnIstoric.Click
+        Try
+            mnuIstoric.Items.Clear()
+            For Each page As String In _history.Visited
+                Dim item As New KBotMenuItem(page, PageTitle(page)) With {.Tag = page}
+                If String.Equals(page, _history.Current, StringComparison.Ordinal) Then item.ShortcutText = "pe ecran"
+                mnuIstoric.Items.Add(item)
+            Next
+            If mnuIstoric.Items.Count = 0 Then
+                mnuIstoric.Items.Add(New KBotMenuItem("none", "Nicio pagină deschisă încă") With {.Enabled = False})
+            End If
+            mnuIstoric.ShowBelow(btnIstoric)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.BtnIstoric_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub MnuIstoric_ItemClicked(sender As Object, e As KBotMenuItemClickedEventArgs) Handles mnuIstoric.ItemClicked
+        Try
+            Dim page As String = TryCast(e.Item.Tag, String)
+            If Not String.IsNullOrEmpty(page) Then Go(page, remember:=True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.MnuIstoric_ItemClicked", ex)
+        End Try
+    End Sub
+
+    ' What the «Istoric» list says for a page: the topic's title (and «› section» for a page opened
+    ' at a section by the search), or the start page.
+    Private Function PageTitle(page As String) As String
+        If Not page.StartsWith(TopicPrefix, StringComparison.Ordinal) Then Return "Pagina de start"
+        Dim id As String = page.Substring(TopicPrefix.Length)
+        Dim hash As Integer = id.IndexOf("#"c)
+        If hash >= 0 Then id = id.Substring(0, hash)
+        Dim topic As HelpTopic = _service.Library.Find(id)
+        Return If(topic Is Nothing, id, topic.Title) & If(hash >= 0, " › secțiune", String.Empty)
+    End Function
+
+    ' ── Slice 0000-23: text size («A−» / «A+», kept in the settings) ─────────────
+
+    Private Sub BtnTextMic_Click(sender As Object, e As EventArgs) Handles btnTextMic.Click
+        Try
+            StepTextSize(-1)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.BtnTextMic_Click", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnTextMare_Click(sender As Object, e As EventArgs) Handles btnTextMare.Click
+        Try
+            StepTextSize(1)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpForm.BtnTextMare_Click", ex)
+        End Try
+    End Sub
+
+    ' One step through AppSettings.HelpTextPercentChoices; saved, and the page on screen
+    ' redrawn at the new size (the scroll position is kept by changing the body's style in place).
+    Private Sub StepTextSize(direction As Integer)
+        Dim choices As IReadOnlyList(Of Integer) = AppSettings.HelpTextPercentChoices
+        Dim at As Integer = choices.ToList().IndexOf(AppSettings.Current.HelpTextPercent)
+        If at < 0 Then at = choices.ToList().IndexOf(100)
+        Dim nextAt As Integer = Math.Max(0, Math.Min(choices.Count - 1, at + direction))
+        If nextAt = at Then Return
+        Dim copy As AppSettings = AppSettings.Current.Clone()
+        copy.HelpTextPercent = choices(nextAt)
+        copy.Save()
+        ApplyTextSizeInPlace()
+        UpdateButtons()
+    End Sub
+
+    Private Sub ApplyTextSizeInPlace()
+        If web.Document?.Body Is Nothing Then
+            If _history.Current.Length > 0 Then Render(_history.Current)
+            Return
+        End If
+        Dim pt As Double = 10.5 * AppScaling.TextScale * HelpHtml.HelpTextFactor()
+        web.Document.Body.Style = "font-size:" & pt.ToString("0.0", Globalization.CultureInfo.InvariantCulture) & "pt"
+    End Sub
+
+    ' ── Slice 0000-23: always on top, and out of the way of other windows' dialogs ───
+    ' The help window is TopMost (designer), so nothing of K-BOT's covers it. A modal dialog of
+    ' another window disables it (Windows' EnableWindow, WM_ENABLE) -- and a disabled window on top
+    ' of that dialog would hide it and could not be moved or closed. So when that happens the help
+    ' window closes itself (the pages seen stay in HelpHistory). Its own dialogs (the manual's
+    ' «Save as», the capture tool) are owned by it and do not count; nor does a minimized help
+    ' window (a tour or a capture put it there), which covers nothing. The check waits 150 ms:
+    ' at WM_ENABLE the dialog does not exist yet, so its owner cannot be seen.
+
+    Private Const WM_ENABLE As Integer = &HA
+
+    ' Left to Application.ThreadException, like every WndProc override in K-BOT (house rule).
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        MyBase.WndProc(m)
+        If m.Msg = WM_ENABLE AndAlso m.WParam = IntPtr.Zero AndAlso _service IsNot Nothing Then tmrModal.Start()
+    End Sub
+
+    Private Sub TmrModal_Tick(sender As Object, e As EventArgs) Handles tmrModal.Tick
+        Try
+            tmrModal.Stop()
+            If IsDisposed OrElse Not IsHandleCreated OrElse HelpWindowNative.IsEnabled(Handle) Then Return
+            If WindowState = FormWindowState.Minimized Then Return
+            If HelpWindowNative.OwnsEnabledWindow(Handle) Then Return
+            Close()
+        Catch ex As Exception
+            ' UI boundary (timer).
+            GlobalErrorLog.Write("HelpForm.TmrModal_Tick", ex)
+        End Try
     End Sub
 
     Private Sub Render(page As String)
@@ -229,16 +344,20 @@ Public Class HelpForm
     End Sub
 
     Private Sub UpdateButtons()
-        btnInapoi.Enabled = _back.Count > 0
-        btnInainte.Enabled = _forward.Count > 0
+        btnInapoi.Enabled = _history.Back.Count > 0
+        btnInainte.Enabled = _history.Forward.Count > 0
+        Dim percent As Integer = AppSettings.Current.HelpTextPercent
+        Dim choices As IReadOnlyList(Of Integer) = AppSettings.HelpTextPercentChoices
+        btnTextMic.Enabled = percent > choices(0)
+        btnTextMare.Enabled = percent < choices(choices.Count - 1)
     End Sub
 
     Private Sub BtnInapoi_Click(sender As Object, e As EventArgs) Handles btnInapoi.Click
         Try
-            If _back.Count = 0 Then Return
-            _forward.Push(_current)
-            Dim page As String = _back.Pop()
-            _current = String.Empty
+            If _history.Back.Count = 0 Then Return
+            _history.Forward.Push(_history.Current)
+            Dim page As String = _history.Back.Pop()
+            _history.Current = String.Empty
             Go(page, remember:=False)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.BtnInapoi_Click", ex)
@@ -247,10 +366,10 @@ Public Class HelpForm
 
     Private Sub BtnInainte_Click(sender As Object, e As EventArgs) Handles btnInainte.Click
         Try
-            If _forward.Count = 0 Then Return
-            _back.Push(_current)
-            Dim page As String = _forward.Pop()
-            _current = String.Empty
+            If _history.Forward.Count = 0 Then Return
+            _history.Back.Push(_history.Current)
+            Dim page As String = _history.Forward.Pop()
+            _history.Current = String.Empty
             Go(page, remember:=False)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpForm.BtnInainte_Click", ex)

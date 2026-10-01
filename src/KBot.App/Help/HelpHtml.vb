@@ -246,6 +246,11 @@ Public NotInheritable Class HelpHtml
         Return "data:" & mime & ";base64," & Convert.ToBase64String(System.IO.File.ReadAllBytes(file))
     End Function
 
+    ''' <summary>Slice 0000-23: the help window's text size (Setări file, «A-» / «A+»), as a factor.</summary>
+    Friend Shared Function HelpTextFactor() As Double
+        Return KBot.Common.AppSettings.Current.HelpTextPercent / 100.0
+    End Function
+
     ''' <summary>
     ''' The page head with the CSS built from the active theme, so the help window reads like the
     ''' rest of K-BOT. The printed manual uses fixed black-on-white instead: paper has no theme.
@@ -259,7 +264,8 @@ Public NotInheritable Class HelpHtml
         Dim accent As String = If(forPrint, "#1F4E79", p.Accent)
         Dim warn As String = If(forPrint, "#B06000", p.Warning)
         Dim codeBg As String = If(forPrint, "#F2F2F2", p.Surface)
-        Dim sizePt As Double = 10.5 * If(forPrint, 1.0, AppScaling.TextScale)
+        ' Slice 0000-23: on screen, also the help window's own «A- / A+» size.
+        Dim sizePt As Double = 10.5 * If(forPrint, 1.0, AppScaling.TextScale * HelpTextFactor())
 
         Dim css As New StringBuilder()
         css.Append("body{font-family:'Segoe UI',Arial,sans-serif;font-size:").Append(sizePt.ToString("0.0", Globalization.CultureInfo.InvariantCulture)) _

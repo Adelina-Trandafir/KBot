@@ -18,6 +18,26 @@ Imports KBot.Theming
 <DesignerCategory("Code")>
 Friend NotInheritable Class KBotMenuWindow
     Inherits Form
+    Implements IKBotCaptureRedaction
+
+    ''' <summary>
+    ''' Slice 0000-23: the TEXT of the rows whose text is sensitive (not the row, not its icon),
+    ''' for the help capture's blur. Same left edge as the paint (after the icon bar and its gap).
+    ''' </summary>
+    Public Function SensitiveRegions(isSensitive As Func(Of String, String, Boolean)) As IEnumerable(Of Rectangle) Implements IKBotCaptureRedaction.SensitiveRegions
+        ArgumentNullException.ThrowIfNull(isSensitive)
+        Dim result As New List(Of Rectangle)()
+        Dim textLeft As Integer = 1 + S(_menu.IconBarWidth) + S(TextGapLogical)
+        For Each row As RowSlot In _rows
+            Dim it As KBotMenuItem = row.Item
+            If it Is Nothing OrElse it.IsSeparator OrElse Not isSensitive(String.Empty, If(it.Text, String.Empty)) Then Continue For
+            Dim f As Font = FontOf(it)
+            Dim w As Integer = Math.Min(TextRenderer.MeasureText(it.Text, f).Width, Math.Max(0, row.Bounds.Right - textLeft))
+            Dim h As Integer = Math.Min(row.Bounds.Height, f.Height + 2)
+            If w > 0 Then result.Add(New Rectangle(textLeft, row.Bounds.Top + (row.Bounds.Height - h) \ 2, w, h))
+        Next
+        Return result
+    End Function
 
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
     Private Const WS_EX_NOACTIVATE As Integer = &H8000000

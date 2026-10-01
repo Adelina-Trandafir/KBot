@@ -363,7 +363,8 @@ Partial Public Class AdvancedTreeControl
         ' Hover-only: activat global SAU per nod. Cât nodul nu e survolat, iconița nu se desenează
         ' ȘI nu-i ține nimeni locul — textul se îngustează abia acum, când ea apare (perechea din
         ' DrawContent e RightIconGutter). Cine vrea text nemișcat pune ReserveRightIconSpace = True.
-        If IsRightIconHoverOnly(it) AndAlso it IsNot pHoveredItem Then Return
+        ' Slice 0000-23: a guided tour shows it on one row (_helpDemoItem) without the mouse.
+        If IsRightIconHoverOnly(it) AndAlso it IsNot pHoveredItem AndAlso it IsNot _helpDemoItem Then Return
 
         Dim scrollW As Integer = ScrollBarWidth 'If(Me.VerticalScroll.Visible, SystemInformation.VerticalScrollBarWidth, 0)
         Dim rx As Integer = Me.Width - _rightIconSize.Width - RightIconRightPaddingPx - scrollW

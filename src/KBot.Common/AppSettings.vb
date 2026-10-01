@@ -89,6 +89,16 @@ Public NotInheritable Class AppSettings
     Public Property HelpCaptureMode As Boolean = False
 
     ''' <summary>
+    ''' Slice 0000-23: the text size of the help window's pages, in percent of the normal size
+    ''' (which already follows the K-BOT text size). One of <see cref="HelpTextPercentChoices"/>.
+    ''' </summary>
+    Public Property HelpTextPercent As Integer = 100
+
+    ''' <summary>The sizes the help window's «A-» / «A+» step through, smallest first.</summary>
+    Public Shared ReadOnly Property HelpTextPercentChoices As IReadOnlyList(Of Integer) =
+        New Integer() {80, 90, 100, 115, 130, 150, 175, 200}
+
+    ''' <summary>
     ''' The browser's developer tools (F12, Ctrl+Shift+I / J / C, the context menu's
     ''' «Inspect») stay reachable in the FOREXE page. Off by default: the page script
     ''' swallows those keys and the context menu (operator, 21.09.2026).
@@ -475,6 +485,7 @@ Public NotInheritable Class AppSettings
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
+            .HelpTextPercent = HelpTextPercent,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
@@ -519,6 +530,10 @@ Public NotInheritable Class AppSettings
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.HelpCaptureMode.HasValue Then s.HelpCaptureMode = dto.HelpCaptureMode.Value
+        ' A size that is not one of the choices (hand-edited file) keeps the default.
+        If dto.HelpTextPercent.HasValue AndAlso HelpTextPercentChoices.Contains(dto.HelpTextPercent.Value) Then
+            s.HelpTextPercent = dto.HelpTextPercent.Value
+        End If
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         ' A multiplier out of range in the file (hand-edited) keeps the default.
@@ -584,6 +599,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ReceptiiCheckedOnOpen As Boolean?
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
+    Public Property HelpTextPercent As Integer?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?

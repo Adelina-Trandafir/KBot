@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Drawing
 Imports KBot.Common
+Imports KBot.Theming
 
 ''' <summary>
 ''' Runs one guided tour (slice 0000-04): for each step it opens the step's screen
@@ -20,6 +21,9 @@ Friend NotInheritable Class HelpTourRunner
     Private _index As Integer
     Private _finished As Boolean
     Private _busy As Boolean
+    ' Slice 0000-23: the part the current step made visible, put back when the step changes.
+    Private _demoOwner As IKBotHelpParts
+    Private _demoPart As String
 
     Private Sub New(service As HelpService, tour As HelpTour, onFinished As Action)
         _service = service
@@ -35,7 +39,7 @@ Friend NotInheritable Class HelpTourRunner
         Try
             _active?.Finish()
             _active = New HelpTourRunner(service, tour, onFinished)
-            _active.ShowStep(0)
+            _active.ShowStep(0, 1)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpTourRunner.Start", ex)
             Throw
@@ -47,45 +51,74 @@ Friend NotInheritable Class HelpTourRunner
         If _index >= _tour.Steps.Count - 1 Then
             Finish()
         Else
-            ShowStep(_index + 1)
+            ShowStep(_index + 1, 1)
         End If
     End Sub
 
     Private Sub OnBack()
         If _busy OrElse _index = 0 Then Return
-        ShowStep(_index - 1)
+        ShowStep(_index - 1, -1)
     End Sub
 
     ' UI boundary (async void, from bubble buttons): log and swallow; the tour ends on a failure.
-    Private Async Sub ShowStep(index As Integer)
+    ' Slice 0000-23: a step about one button of a control (part:) that is not on screen now is
+    ' skipped in the direction of travel (the button does not exist in this view, or the list is
+    ' empty); the bubble is a callout whose point touches the ring.
+    Private Async Sub ShowStep(index As Integer, direction As Integer)
         Try
             _busy = True
-            _index = index
-            Dim [step] As HelpTourStep = _tour.Steps(index)
-            Dim note As String = _service.Navigate([step].GoToTarget, _tour.TopicId)
-            ' A view is built lazily on its first opening: give the layout a moment before measuring.
-            Await Task.Delay(If([step].GoToTarget.Length > 0, 400, 60)).ConfigureAwait(True)
-            If _finished Then Return
+            Do
+                EndDemo()
+                _index = index
+                Dim [step] As HelpTourStep = _tour.Steps(index)
+                Dim note As String = _service.Navigate([step].GoToTarget, _tour.TopicId)
+                ' A view is built lazily on its first opening: give the layout a moment before measuring.
+                Await Task.Delay(If([step].GoToTarget.Length > 0, 400, 60)).ConfigureAwait(True)
+                If _finished Then Return
 
-            Dim target As Control = Nothing
-            If [step].Target.Length > 0 Then
-                target = FindTarget([step].Target)
-                If target Is Nothing AndAlso note Is Nothing Then
-                    note = "Partea despre care e vorba nu e pe ecran acum; deschide fereastra sau vederea potrivită ca s-o vezi."
+                Dim rect As Rectangle = Rectangle.Empty
+                If [step].Target.Length > 0 Then
+                    Dim target As Control = FindTarget([step].Target)
+                    If target Is Nothing Then
+                        If note Is Nothing Then
+                            note = "Partea despre care e vorba nu e pe ecran acum; deschide fereastra sau vederea potrivită ca s-o vezi."
+                        End If
+                    Else
+                        If [step].Part.Length > 0 Then
+                            Dim partMissing As Boolean
+                            Dim piece As Rectangle = PartBounds(target, [step].Part, note, partMissing)
+                            If partMissing Then
+                                Dim nextIndex As Integer = index + direction
+                                If nextIndex >= _tour.Steps.Count Then
+                                    Finish()
+                                    Return
+                                End If
+                                If nextIndex < 0 Then
+                                    direction = 1
+                                    nextIndex = index + 1
+                                End If
+                                index = nextIndex
+                                Continue Do
+                            End If
+                            If Not piece.IsEmpty Then rect = target.RectangleToScreen(piece)
+                        End If
+                        If rect.IsEmpty Then rect = target.RectangleToScreen(target.ClientRectangle)
+                    End If
                 End If
-            End If
 
-            _bubble.ShowStep(_tour.Title, [step].Title, [step].Text, note, index, _tour.Steps.Count)
-            Dim rect As Rectangle = Rectangle.Empty
-            If target IsNot Nothing Then
-                rect = target.RectangleToScreen(target.ClientRectangle)
-                _frame.Surround(rect)
-            ElseIf _frame.Visible Then
-                _frame.Hide()
-            End If
-            _bubble.PlaceNear(rect)
-            If Not _bubble.Visible Then _bubble.Show()
-            _bubble.Activate()
+                _bubble.ShowStep(_tour.Title, [step].Title, [step].Text, note, index, _tour.Steps.Count)
+                Dim pointAt As Rectangle = Rectangle.Empty
+                If Not rect.IsEmpty Then
+                    _frame.Surround(rect)
+                    pointAt = _frame.Bounds
+                ElseIf _frame.Visible Then
+                    _frame.Hide()
+                End If
+                _bubble.PlaceNear(pointAt)
+                If Not _bubble.Visible Then _bubble.Show()
+                _bubble.Activate()
+                Exit Do
+            Loop
         Catch ex As Exception
             GlobalErrorLog.Write("HelpTourRunner.ShowStep", ex)
             Finish()
@@ -94,11 +127,50 @@ Friend NotInheritable Class HelpTourRunner
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0000-23: where <paramref name="part"/> of <paramref name="target"/> is (client
+    ''' coordinates), after asking the control to show it if it normally waits for the mouse.
+    ''' <paramref name="missing"/> = the part exists but is not on screen now (the step is skipped).
+    ''' A control that has no such part is a mistake in the tour file: logged, the whole control
+    ''' is shown with a note.
+    ''' </summary>
+    Private Function PartBounds(target As Control, part As String, ByRef note As String, ByRef missing As Boolean) As Rectangle
+        missing = False
+        Dim owner As IKBotHelpParts = TryCast(target, IKBotHelpParts)
+        Try
+            If owner Is Nothing Then
+                Throw New ArgumentException("'" & target.GetType().Name & "' has no help parts (tour part '" & part & "').")
+            End If
+            owner.SetHelpPartDemo(part, True)
+            _demoOwner = owner
+            _demoPart = part
+            Dim r As Rectangle = owner.HelpPartBounds(part)
+            missing = r.IsEmpty
+            Return r
+        Catch ex As ArgumentException
+            GlobalErrorLog.Write("HelpTourRunner.PartBounds", ex)
+            If note Is Nothing Then note = "Turul nu găsește butonul despre care vorbește; îți arată tot controlul."
+            Return Rectangle.Empty
+        End Try
+    End Function
+
+    ' Puts back a part the tour made visible (the tree row's button that waits for the mouse).
+    Private Sub EndDemo()
+        If _demoOwner Is Nothing Then Return
+        Dim owner As IKBotHelpParts = _demoOwner
+        Dim part As String = _demoPart
+        _demoOwner = Nothing
+        _demoPart = Nothing
+        If TypeOf owner Is Control AndAlso DirectCast(owner, Control).IsDisposed Then Return
+        owner.SetHelpPartDemo(part, False)
+    End Sub
+
     Private Sub Finish()
         Try
             If _finished Then Return
             _finished = True
             If ReferenceEquals(_active, Me) Then _active = Nothing
+            EndDemo()
             If Not _frame.IsDisposed Then _frame.Close()
             If Not _bubble.IsDisposed Then _bubble.CloseByRunner()
             _onFinished?.Invoke()

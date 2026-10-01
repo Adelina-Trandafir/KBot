@@ -10,16 +10,35 @@ target: KbotForm.btnMeniu
 Un angajament NOU pornește din MENIU › Angajament nou. O rezervare nouă pe un angajament existent pornește din vederea «Rezervări».
 
 ## Adaugă rezervare
-<!-- slice: 0081-02, 0081-04 -->
+<!-- slice: 0081-02, 0081-04, 0000-23 -->
 target: RezervariView.tree
+part: footer.left
 goto: view:rezervari
-Iconița din stânga, jos, a arborelui rezervărilor arată acțiunea potrivită stării angajamentului: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final. Doar una odată.
+Iconița din stânga, jos, a arborelui rezervărilor deschide acțiunile documentului potrivite stării angajamentului: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final.
 
 ## Reviziile documentului
 <!-- slice: 0081-01, 0097, 0000-15 -->
 target: DdfView.tree
 goto: view:ddf
-Aici sunt toate reviziile documentului, sub rădăcina «Toate reviziile», pe luni, fiecare cu starea ei: Ciornă, Semnat A, Trimis, PDF final (de semnat B), la director, Aprobat.
+Aici sunt toate reviziile documentului, sub rădăcina «Toate reviziile», pe luni. Urmează, pe rând, butoanele arborelui.
+
+## Arbore › Lupa
+<!-- slice: 0027, 0000-23 -->
+target: DdfView.tree
+part: header.search
+Caută o revizie. Esc golește căutarea și închide banda.
+
+## Arbore › Starea reviziei
+<!-- slice: 0081-01, 0000-15, 0000-23 -->
+target: DdfView.tree
+part: node.icon
+Iconița de la capătul rândului arată starea reviziei: Ciornă, Semnat A (gata de trimis), Trimitere întreruptă, Trimis în FOREXE, PDF final (de semnat B), la director, Aprobat. Ține mouse-ul pe rând ca să citești starea.
+
+## Arbore › Strânge arborele
+<!-- slice: 0027-02, 0000-23 -->
+target: DdfView.tree
+part: footer.collapse
+Îngustează arborele la o fâșie, ca documentul din dreapta să aibă tot locul; încă un clic îl desface.
 
 ## Clic dreapta pe o revizie
 <!-- slice: 0081-04, 0097 -->
@@ -29,7 +48,19 @@ Meniul reviziei oferă, după stare: Trimite în FOREXE (sau Reia trimiterea), M
 ## Paginile reviziei
 <!-- slice: 0020-02, 0081-05 -->
 target: DdfView.navSub
-Vizualizare = valorile reviziei. Document PDF = documentul, unde îl și semnezi. Fișiere = atașamentele, inclusiv capturile venite din FOREXE.
+Revizia aleasă se vede pe mai multe pagini. Urmează fiecare.
+
+## Pagini › Vizualizare
+<!-- slice: 0020-02, 0000-23 -->
+target: DdfView.navSub
+part: item:previzualizare
+Valorile reviziei, pe clasificații.
+
+## Pagini › Document PDF
+<!-- slice: 0020-02, 0078, 0000-23 -->
+target: DdfView.navSub
+part: item:document
+Documentul reviziei; aici îl și semnezi, în Adobe.
 
 ## Ordinea pașilor
 <!-- slice: 0081, 0078-06, 0000-14 -->

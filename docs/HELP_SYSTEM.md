@@ -25,9 +25,32 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   the hit used and a 1-5 star rating, is sent to the server WITHOUT anything about who or where
   (see §7).
 - The **help window**: contents tree, the search box above it (its results take the tree's place
-  while it has text), Back / Forward, guided tours, «Exportă manualul...» (one HTML file,
-  printable to PDF).
+  while it has text), Back / Forward, «Istoric ▾», «A−» / «A+», guided tours, «Exportă
+  manualul...» (one HTML file, printable to PDF). Slice 0000-23:
+  - **history per run**: Back / Forward and «Istoric» (every page seen, newest first, 25 at most)
+    live in `HelpService.History` (`HelpHistory`), not in the window, so they survive closing and
+    reopening it; nothing goes to disk;
+  - **text size**: `AppSettings.HelpTextPercent` (80…200 %, on top of the K-BOT text size), used by
+    `HelpHtml.PageHead`; «A−»/«A+» change the page on screen in place (scroll kept);
+  - **always on top** (`TopMost`), and **closes itself when another window's modal dialog disables
+    it** (a disabled top-most window would hide that dialog): `WM_ENABLE(false)` starts a 150 ms
+    check (`HelpForm.TmrModal_Tick`); it stays open when the dialog is its own (owner chain,
+    `HelpWindowNative.OwnsEnabledWindow`: the manual's «Save as», the capture tool) or when it is
+    minimized (a tour or a capture moved it aside via `HelpService.StepAside`).
 - **Guided tours**: a coloured ring around a control plus a bubble with Înapoi / Înainte / Închide.
+  Slice 0000-23: the bubble is a **callout** (a `Region` with a triangle whose point touches the
+  ring), and a step can name one **part** of a tree / grid / caption bar / nav list (`part:`,
+  `IKBotHelpParts` in `KBot.Theming\KBotHelp.vb`, implemented in `KBot.Controls\*\*.HelpParts.vb`);
+  a part not on screen is skipped. Names and rules: `HelpContent/README.md`, «Guided tours».
+- **Capture blur** (slice 0000-23, operator tool, NOT described in the help): the capture tool
+  blurs, on the frozen screen and before the operator chooses, the TEXT (never a whole bar or
+  menu) of the login's user and unit, the other units' names, anything «RO» + digits, 13 digits in
+  a row (CNP), e-mail addresses, Romanian phone numbers, and a fiscal code without «RO» but only in
+  a field / column whose name or header says «cod fiscal», «CUI» or «CIF» (`HelpCaptureRedaction`).
+  Ordinary controls are read through `Text` (context = the control's `Name`); controls that paint
+  their text report it through `IKBotCaptureRedaction` (tree, grid, caption bar, `CustomPopup`,
+  `KBotMenuWindow`), with the column's key + header as context. Adobe, the FOREXE page and pictures loaded with «Încarcă» are
+  not read, so not blurred. A new sensitive category is added only with the operator's OK.
 - **Three parts**, and who sees them:
 
   | Part | `part:` | Who sees it |
@@ -73,8 +96,10 @@ The updater writes only the files in its package, so pictures shot on a client P
 | `HelpTopic.vb` | `HelpPart` enum + `HelpTopic` |
 | `HelpHtml.vb` | Markdown → HTML (Markdig), pages, the manual; capture tags → pictures / «Imagine lipsă» |
 | `HelpForm.vb` | the help window |
-| `HelpCapture*.vb`, `IHelpCaptureNavigator.vb` | capture tags, the capture list («Fă poza» / «Încarcă»), the screen freeze + rectangle, saving |
-| `HelpTour*.vb` | tour parsing, runner, ring, bubble |
+| `HelpHistory.vb` | 0000-23: Back / Forward / «Istoric» for the whole run (owned by `HelpService`) |
+| `HelpWindowNative.vb` | 0000-23: whose modal dialog disabled the help window |
+| `HelpCapture*.vb`, `IHelpCaptureNavigator.vb` | capture tags, the capture list («Fă poza» / «Încarcă»), the screen freeze + rectangle, saving; `HelpCaptureRedaction.vb` (0000-23) = what is blurred and the blur |
+| `HelpTour*.vb` | tour parsing, runner (parts, skipping, the demo of hover-only buttons), ring, callout bubble |
 
 ## 3. How F1 finds a topic
 
@@ -179,7 +204,13 @@ actualizat», name the topic ids (and capture ids) the change makes stale. One l
   `$Parts` in `Check-Help.ps1`.
 - New header key → `HelpLibrary` parser, README, `$HeaderKeys` in `Check-Help.ps1` (the last one
   added: `open:`, 0000-19, validated against `$GotoPrefix` / `HelpLibrary.GotoPattern`). New tour
-  key → `HelpTour.Parse`, README, `$TourKeys` (last: `screens:`, 0000-20).
+  key → `HelpTour.Parse`, README, `$TourKeys` (last: `screens:`, 0000-20). A new tour STEP key
+  (last: `part:`, 0000-23) → `HelpTour.Parse` preamble, README, and its check in `Check-Help.ps1`.
+- New help part on a control (0000-23) → the control's `HelpPartBounds` / `SetHelpPartDemo`
+  (`*.HelpParts.vb`), the README table and `$PartsByType` in `Check-Help.ps1`. A new control
+  family that tours should step through → implement `IKBotHelpParts` the same way.
+- A control that paints sensitive text itself → implement `IKBotCaptureRedaction` (text rectangles
+  only), or the capture blur cannot see it.
 - Every engine change follows the house rules in `CLAUDE.md` and is recorded as a `0000-NN` too.
 
 ## 7. Search and the question log (maintainer side)

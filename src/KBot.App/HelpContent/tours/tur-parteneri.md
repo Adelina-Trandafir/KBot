@@ -8,7 +8,13 @@ topic: contabil.nomenclatoare.parteneri
 <!-- slice: 0087, 0093, 0000-20 -->
 target: ParteneriForm.tree
 goto: menu:parteneri
-Partenerii unității care au cod fiscal, câte unul pe cod fiscal. Lupa din capul listei caută după o parte din cod sau din denumire; bifa «Ascunde partenerii fără activitate» lasă doar partenerii care apar pe un document (DDF sau ORD).
+Partenerii unității care au cod fiscal, câte unul pe cod fiscal. Bifa «Ascunde partenerii fără activitate» lasă doar partenerii care apar pe un document (DDF sau ORD).
+
+## Listă › Lupa
+<!-- slice: 0087, 0000-23 -->
+target: ParteneriForm.tree
+part: header.search
+Caută după o parte din cod sau din denumire. Esc golește căutarea și închide banda.
 
 ## Codul fiscal
 <!-- slice: 0087, 0000-20 -->
@@ -23,7 +29,13 @@ Banca se completează singură din IBAN, cât timp câmpul ei e gol.
 ## Coduri angajament
 <!-- slice: 0087, 0093, 0000-20 -->
 target: ParteneriForm.gridCoduri
-Clasificația, contul bancar asociat, codul angajamentului și codul indicatorului. + din subsolul tabelului adaugă un rând, completat direct în tabel; ✕ de pe un rând îl scoate.
+Clasificația, contul bancar asociat, codul angajamentului și codul indicatorului. ✕ de pe un rând îl scoate.
+
+## Coduri › Adaugă un cod
+<!-- slice: 0087, 0000-23 -->
+target: ParteneriForm.gridCoduri
+part: footer.right
+Semnul + adaugă un rând nou, pe care îl completezi direct în tabel.
 
 ## Butoanele ferestrei
 <!-- slice: 0087, 0000-20 -->

@@ -25,6 +25,10 @@ Public NotInheritable Class KBotHelpList
     ' Logical px (96 dpi), scaled at layout time (C2).
     Private Const PadXLogical As Integer = 10
     Private Const RowAirLogical As Integer = 12
+    ' A header is a section title (0000-24): air above it (less for the first one), a rule under it.
+    Private Const HeaderAirTopLogical As Integer = 16
+    Private Const HeaderAirFirstLogical As Integer = 4
+    Private Const HeaderAirBottomLogical As Integer = 6
     Private Const HitAirLogical As Integer = 8
     Private Const IndentLogical As Integer = 18
     Private Const ButtonGapLogical As Integer = 6
@@ -212,7 +216,7 @@ Public NotInheritable Class KBotHelpList
         Dim h As Integer
         Select Case r.Kind
             Case KBotHelpRowKind.Header
-                h = lineH + Px(RowAirLogical)
+                h = If(y = 0, Px(HeaderAirFirstLogical), Px(HeaderAirTopLogical)) + lineH + Px(HeaderAirBottomLogical)
             Case KBotHelpRowKind.Note
                 Dim textW As Integer = Math.Max(20, w - 2 * Px(PadXLogical))
                 h = TextRenderer.MeasureText(r.Title, Font, New Size(textW, Integer.MaxValue), TextFormatFlags.WordBreak).Height + Px(RowAirLogical)
@@ -356,7 +360,12 @@ Public NotInheritable Class KBotHelpList
         Const OneLine As TextFormatFlags = TextFormatFlags.EndEllipsis Or TextFormatFlags.SingleLine Or TextFormatFlags.NoPrefix Or TextFormatFlags.VerticalCenter
         Select Case row.Kind
             Case KBotHelpRowKind.Header
-                TextRenderer.DrawText(g, row.Title, BoldFont, New Rectangle(r.Left + padX, r.Top, textW, r.Height), _dim, OneLine Or TextFormatFlags.Bottom)
+                ' Title in the accent colour, standing on a rule across the list: it heads the rows under it.
+                Dim ruleY As Integer = r.Bottom - Px(HeaderAirBottomLogical) \ 2
+                TextRenderer.DrawText(g, row.Title, BoldFont, New Rectangle(r.Left + padX, ruleY - Px(2) - lineH, textW, lineH), _accent, OneLine)
+                Using pen As New Pen(_buttonBorder)
+                    g.DrawLine(pen, r.Left + padX, ruleY, r.Right - Px(PadXLogical), ruleY)
+                End Using
             Case KBotHelpRowKind.Note
                 TextRenderer.DrawText(g, row.Title, Font, New Rectangle(r.Left + padX, r.Top + Px(RowAirLogical) \ 2, textW, r.Height),
                                       _dim, TextFormatFlags.WordBreak Or TextFormatFlags.NoPrefix)

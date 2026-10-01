@@ -142,6 +142,7 @@ Partial Public Class AdvancedTreeControl
         Items.Clear()
         pSelectedItem = Nothing
         pHoveredItem = Nothing
+        _helpDemoItem = Nothing
         ' Randurile au disparut; un grup care le tine minte ar tine minte randuri care nu mai sunt
         ' nicaieri, iar gazda care citeste SelectedNodes ar lucra pe ele.
         ForgetSelection()

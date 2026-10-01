@@ -39,11 +39,22 @@ Friend NotInheritable Class HelpTourFrame
         End Get
     End Property
 
+    Private Shared Function Thickness(dpi As Integer) As Integer
+        Return Math.Max(3, CInt(Math.Round(3 * dpi / 96.0)))
+    End Function
+
+    ''' <summary>
+    ''' How far the ring's outer edge lies outside its target (gap + thickness, device pixels).
+    ''' Slice 0000-23: the callout bubble points at that edge.
+    ''' </summary>
+    Public Shared Function Outset(dpi As Integer) As Integer
+        Return 2 * Thickness(dpi)
+    End Function
+
     ''' <summary>Puts the ring around <paramref name="target"/> (screen coordinates).</summary>
     Public Sub Surround(target As Rectangle)
-        Dim thick As Integer = Math.Max(3, CInt(Math.Round(3 * DeviceDpi / 96.0)))
-        Dim gap As Integer = thick
-        Dim outer As Rectangle = Rectangle.Inflate(target, gap + thick, gap + thick)
+        Dim thick As Integer = Thickness(DeviceDpi)
+        Dim outer As Rectangle = Rectangle.Inflate(target, Outset(DeviceDpi), Outset(DeviceDpi))
         Bounds = outer
         Dim inner As New Rectangle(thick, thick, outer.Width - 2 * thick, outer.Height - 2 * thick)
         Dim shape As New Region(New Rectangle(Point.Empty, outer.Size))

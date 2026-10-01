@@ -45,6 +45,7 @@ target: ForexeFooterView.btnExtinde
 Deschide consola FOREXE: progresul pas cu pas, jurnalul și butonul «Anulează».
 
 ## Descărcarea unui angajament
-<!-- slice: 0055, 0060, 0048-04 -->
+<!-- slice: 0055, 0060, 0048-04, 0000-23 -->
 target: KbotForm.tree
-Fiecare angajament din listă are în dreapta o iconiță de reîmprospătare. Apăsată, întâi alegi ce recepții se citesc din nou (fereastra «Ce recepții reîmprospătez?»), apoi robotul citește din FOREXE angajamentul. Dacă rămân modificări neașezate pe recepții, se deschide fereastra «Asocieri».
+part: node.icon
+Fiecare angajament din listă are la capătul rândului o iconiță de reîmprospătare, care apare când ții mouse-ul pe rând (acum o vezi pe un rând ca exemplu). Apăsată, întâi alegi ce recepții se citesc din nou (fereastra «Ce recepții reîmprospătez?»), apoi robotul citește din FOREXE angajamentul. Dacă rămân modificări neașezate pe recepții, se deschide fereastra «Asocieri».

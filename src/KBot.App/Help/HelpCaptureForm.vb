@@ -33,6 +33,9 @@ Public Class HelpCaptureForm
     Private _store As HelpCaptureStore
     Private ReadOnly _rows As New List(Of HelpCapture)()
     Private _busy As Boolean
+    ' Slice 0000-23: brings the help window back after a capture (it is always on top, so it
+    ' steps aside -- minimized -- while the screen is photographed).
+    Private _restoreHelp As Action
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -163,6 +166,8 @@ Public Class HelpCaptureForm
             End If
         Catch ex As Exception
             _busy = False
+            _restoreHelp?.Invoke()
+            _restoreHelp = Nothing
             If Not Visible Then Show()
             GlobalErrorLog.Write("HelpCaptureForm.Grid_ButtonClick", ex)
             KBotMessage.Show(Me, "Captura nu a putut porni: " & ex.Message, "Capturi pentru ajutor",
@@ -194,6 +199,7 @@ Public Class HelpCaptureForm
     Private Sub StartCapture(capture As HelpCapture)
         _busy = True
         Hide()
+        _restoreHelp = _help.StepAside()
         Dim note As String = GoToTarget(capture)
         Dim prompt As New HelpCapturePromptForm(capture, note)
         AddHandler prompt.Finished, Sub(ok) OnPromptFinished(capture, ok)
@@ -215,7 +221,9 @@ Public Class HelpCaptureForm
                 ' Let the bar close and the screen underneath repaint before it is frozen.
                 Await Task.Delay(400).ConfigureAwait(True)
                 Dim screen As Screen = Screen.FromPoint(Cursor.Position)
-                Using picture As Bitmap = HelpCaptureOverlay.Choose(Nothing, screen, New List(Of IntPtr) From {Handle})
+                ' Slice 0000-23: user, unit, RO... accounts and CNPs are blurred before the picture is shown.
+                Dim redaction As New HelpCaptureRedaction(_help.Session)
+                Using picture As Bitmap = HelpCaptureOverlay.Choose(Nothing, screen, New List(Of IntPtr) From {Handle}, redaction)
                     If picture IsNot Nothing Then
                         _store.Save(capture, picture)
                         _help.RefreshOpenPage()
@@ -229,6 +237,9 @@ Public Class HelpCaptureForm
         Finally
             _busy = False
             Try
+                Dim restore As Action = _restoreHelp
+                _restoreHelp = Nothing
+                restore?.Invoke()
                 If Not IsDisposed Then
                     Show()
                     Fill()

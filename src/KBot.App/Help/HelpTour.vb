@@ -14,6 +14,13 @@ Public NotInheritable Class HelpTourStep
     ''' </summary>
     Public Property Target As String = String.Empty
 
+    ''' <summary>
+    ''' Slice 0000-23: one painted piece of the target (a tree's search icon, a caption bar's «?», a
+    ''' nav list button...), by the name the control gives it (<see cref="KBot.Theming.IKBotHelpParts"/>).
+    ''' Empty = the whole control. A part that is not on screen when the step comes is skipped.
+    ''' </summary>
+    Public Property Part As String = String.Empty
+
     ''' <summary>Where K-BOT goes first; same values as a capture's <c>goto</c>. Empty = stay.</summary>
     Public Property GoToTarget As String = String.Empty
 
@@ -25,7 +32,8 @@ End Class
 ''' <summary>
 ''' A guided tour (slice 0000-04): a Markdown file under <c>Help\tours\</c>. Header block like a
 ''' topic (<c>id</c>, <c>title</c>, <c>part</c>, <c>topic</c> = the help topic that offers it), then
-''' one <c>## Step title</c> per step, whose first lines may be <c>target:</c> and <c>goto:</c>.
+''' one <c>## Step title</c> per step, whose first lines may be <c>target:</c>, <c>part:</c>
+''' (slice 0000-23) and <c>goto:</c>.
 ''' Format and rules: <c>HelpContent\README.md</c>.
 ''' </summary>
 Public NotInheritable Class HelpTour
@@ -112,6 +120,10 @@ Public NotInheritable Class HelpTour
                 End If
                 If t.StartsWith("goto:", StringComparison.OrdinalIgnoreCase) Then
                     current.GoToTarget = t.Substring(5).Trim()
+                    Continue While
+                End If
+                If t.StartsWith("part:", StringComparison.OrdinalIgnoreCase) Then
+                    current.Part = t.Substring(5).Trim()
                     Continue While
                 End If
                 If t.Length = 0 Then Continue While

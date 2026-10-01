@@ -25,6 +25,21 @@ Public NotInheritable Class HelpService
     Private ReadOnly _questions As HelpQuestionLog
     Private _library As HelpLibrary
     Private _form As HelpForm
+    Private ReadOnly _history As New HelpHistory()
+
+    ''' <summary>Slice 0000-23: the pages seen this run; outlives the help window.</summary>
+    Friend ReadOnly Property History As HelpHistory
+        Get
+            Return _history
+        End Get
+    End Property
+
+    ''' <summary>Slice 0000-23: the login, for what the help capture must blur (user, unit).</summary>
+    Friend ReadOnly Property Session As SessionContext
+        Get
+            Return _session
+        End Get
+    End Property
 
     Public Sub New(session As SessionContext, feedbackApi As IHelpFeedbackApi)
         _session = session
@@ -306,17 +321,28 @@ Public NotInheritable Class HelpService
         Try
             Dim tour As HelpTour = Library.FindTour(id)
             If tour Is Nothing Then Throw New ArgumentException("Unknown tour '" & id & "'.", NameOf(id))
-            Dim window As HelpForm = If(_form IsNot Nothing AndAlso Not _form.IsDisposed AndAlso _form.Visible, _form, Nothing)
-            If window IsNot Nothing Then window.WindowState = FormWindowState.Minimized
-            HelpTourRunner.Start(Me, tour,
-                Sub()
-                    If window IsNot Nothing AndAlso Not window.IsDisposed Then window.WindowState = FormWindowState.Normal
-                End Sub)
+            HelpTourRunner.Start(Me, tour, StepAside())
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.StartTour", ex)
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' The help window (always on top since slice 0000-23) steps aside -- minimized -- while a tour
+    ''' runs or a capture is taken; the returned action brings it back. Nothing to do when the
+    ''' window is not open.
+    ''' </summary>
+    Friend Function StepAside() As Action
+        Dim window As HelpForm = If(_form IsNot Nothing AndAlso Not _form.IsDisposed AndAlso _form.Visible AndAlso
+                                    _form.WindowState <> FormWindowState.Minimized, _form, Nothing)
+        If window Is Nothing Then Return Sub()
+                                         End Sub
+        window.WindowState = FormWindowState.Minimized
+        Return Sub()
+                   If Not window.IsDisposed Then window.WindowState = FormWindowState.Normal
+               End Sub
+    End Function
 
     ''' <summary>Opens the help window at one topic (links from other windows, tours).</summary>
     Public Sub ShowTopic(id As String)
@@ -353,8 +379,12 @@ Public NotInheritable Class HelpService
     End Sub
 
     ' A window disabled by a modal dialog opened after it cannot be used: a fresh one is enabled.
+    ' (Control.Enabled does not see a modal dialog's EnableWindow; Windows' own flag does.)
+    ' The pages seen so far stay in History, so the new window's «Înapoi» still works.
     Private Function EnsureWindow() As HelpForm
-        If _form IsNot Nothing AndAlso (_form.IsDisposed OrElse Not _form.Enabled) Then
+        If _form IsNot Nothing AndAlso
+           (_form.IsDisposed OrElse Not _form.Enabled OrElse
+            (_form.IsHandleCreated AndAlso Not HelpWindowNative.IsEnabled(_form.Handle))) Then
             If Not _form.IsDisposed Then _form.Close()
             _form = Nothing
         End If

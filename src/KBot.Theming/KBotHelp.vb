@@ -23,6 +23,49 @@ Public Interface IKBotHelpProvider
 End Interface
 
 ''' <summary>
+''' Slice 0000-23: a control that paints its own buttons (tree, grid, caption bar, nav list) tells
+''' a guided tour where each of them is, so the tour bubble can point at one button instead of the
+''' whole control. Part names are fixed ASCII keys per control family (listed on each
+''' implementation and in <c>HelpContent\README.md</c>).
+''' </summary>
+Public Interface IKBotHelpParts
+
+    ''' <summary>
+    ''' Where <paramref name="part"/> is now, in client coordinates. <c>Rectangle.Empty</c> = the
+    ''' part exists for this kind of control but is not on screen now (no icon set, band hidden,
+    ''' scrolled away). An unknown part name throws <see cref="ArgumentException"/>.
+    ''' </summary>
+    Function HelpPartBounds(part As String) As Drawing.Rectangle
+
+    ''' <summary>
+    ''' Shows a part that normally appears only under the mouse (<paramref name="show"/> = True),
+    ''' so the tour can point at it, and puts it back (False). Parts that are always drawn ignore
+    ''' it. An unknown part name throws <see cref="ArgumentException"/>.
+    ''' </summary>
+    Sub SetHelpPartDemo(part As String, show As Boolean)
+
+End Interface
+
+''' <summary>
+''' Slice 0000-23: a control that paints text itself (so the help capture cannot read it from a
+''' <c>Text</c> property) reports where the text it shows is sensitive -- the capture blurs those
+''' places before the picture is saved.
+''' </summary>
+Public Interface IKBotCaptureRedaction
+
+    ''' <summary>
+    ''' The client rectangles of the TEXT (never a whole bar, row or menu) this control shows now for
+    ''' which <paramref name="isSensitive"/> answers True, plus anything that is sensitive by its
+    ''' nature (the unit selector of the caption bar). Only what is visible now.
+    ''' <paramref name="isSensitive"/> takes (context, text): the context is what the text is -- a
+    ''' column's key and header, empty when the control has no such notion -- so a plain number can
+    ''' be sensitive in a «Cod fiscal» column and harmless anywhere else.
+    ''' </summary>
+    Function SensitiveRegions(isSensitive As Func(Of String, String, Boolean)) As IEnumerable(Of Drawing.Rectangle)
+
+End Interface
+
+''' <summary>
 ''' The one place a control asks for help (slice 0000-01). Lives in Theming, next to
 ''' <see cref="ThemeManager"/>, because the caption bar (KBot.Controls) cannot reference KBot.App,
 ''' where the topics and the help window are. The application sets <see cref="Provider"/> once at

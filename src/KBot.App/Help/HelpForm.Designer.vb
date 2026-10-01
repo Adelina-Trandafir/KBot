@@ -19,6 +19,8 @@ Partial Class HelpForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
+        mnuIstoric = New KBotDropDownMenu(components)
+        tmrModal = New Timer(components)
         pnlRoot = New Panel()
         split = New SplitContainer()
         tvCuprins = New TreeView()
@@ -27,7 +29,10 @@ Partial Class HelpForm
         tlyBara = New KBotTableLayoutPanel()
         btnInapoi = New Button()
         btnInainte = New Button()
+        btnIstoric = New Button()
         lblContext = New Label()
+        btnTextMic = New Button()
+        btnTextMare = New Button()
         btnCapturi = New Button()
         btnManual = New Button()
         capBar = New KBotCaptionBar()
@@ -108,17 +113,23 @@ Partial Class HelpForm
         '
         ' tlyBara
         '
-        tlyBara.ColumnCount = 5
+        tlyBara.ColumnCount = 8
+        tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
         tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
         tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
         tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40F))
+        tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 44F))
         tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
         tlyBara.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 170F))
         tlyBara.Controls.Add(btnInapoi, 0, 0)
         tlyBara.Controls.Add(btnInainte, 1, 0)
-        tlyBara.Controls.Add(lblContext, 2, 0)
-        tlyBara.Controls.Add(btnCapturi, 3, 0)
-        tlyBara.Controls.Add(btnManual, 4, 0)
+        tlyBara.Controls.Add(btnIstoric, 2, 0)
+        tlyBara.Controls.Add(lblContext, 3, 0)
+        tlyBara.Controls.Add(btnTextMic, 4, 0)
+        tlyBara.Controls.Add(btnTextMare, 5, 0)
+        tlyBara.Controls.Add(btnCapturi, 6, 0)
+        tlyBara.Controls.Add(btnManual, 7, 0)
         tlyBara.Dock = DockStyle.Top
         tlyBara.Location = New Point(0, 0)
         tlyBara.Margin = New Padding(0)
@@ -153,14 +164,50 @@ Partial Class HelpForm
         tips.SetToolTipText(btnInainte, "Pagina din care te-ai întors cu «Înapoi».")
         btnInainte.UseVisualStyleBackColor = True
         '
+        ' btnIstoric
+        '
+        btnIstoric.Dock = DockStyle.Fill
+        btnIstoric.FlatStyle = FlatStyle.Flat
+        btnIstoric.Margin = New Padding(0, 0, 4, 0)
+        btnIstoric.Name = "btnIstoric"
+        btnIstoric.TabIndex = 2
+        btnIstoric.Text = "Istoric ▾"
+        tips.SetToolTipHeader(btnIstoric, "Istoric")
+        tips.SetToolTipText(btnIstoric, "Paginile de ajutor deschise de când ai pornit K-BOT, cea mai nouă sus. Un clic pe una o deschide din nou.")
+        btnIstoric.UseVisualStyleBackColor = True
+        '
         ' lblContext
         '
         lblContext.AutoEllipsis = True
         lblContext.Dock = DockStyle.Fill
         lblContext.Margin = New Padding(8, 0, 8, 0)
         lblContext.Name = "lblContext"
-        lblContext.TabIndex = 2
+        lblContext.TabIndex = 3
         lblContext.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' btnTextMic
+        '
+        btnTextMic.Dock = DockStyle.Fill
+        btnTextMic.FlatStyle = FlatStyle.Flat
+        btnTextMic.Margin = New Padding(0, 0, 4, 0)
+        btnTextMic.Name = "btnTextMic"
+        btnTextMic.TabIndex = 4
+        btnTextMic.Text = "A−"
+        tips.SetToolTipHeader(btnTextMic, "Text mai mic")
+        tips.SetToolTipText(btnTextMic, "Micșorează textul paginilor de ajutor. Mărimea aleasă se ține minte.")
+        btnTextMic.UseVisualStyleBackColor = True
+        '
+        ' btnTextMare
+        '
+        btnTextMare.Dock = DockStyle.Fill
+        btnTextMare.FlatStyle = FlatStyle.Flat
+        btnTextMare.Margin = New Padding(0, 0, 8, 0)
+        btnTextMare.Name = "btnTextMare"
+        btnTextMare.TabIndex = 5
+        btnTextMare.Text = "A+"
+        tips.SetToolTipHeader(btnTextMare, "Text mai mare")
+        tips.SetToolTipText(btnTextMare, "Mărește textul paginilor de ajutor. Mărimea aleasă se ține minte.")
+        btnTextMare.UseVisualStyleBackColor = True
         '
         ' btnCapturi
         '
@@ -168,7 +215,7 @@ Partial Class HelpForm
         btnCapturi.FlatStyle = FlatStyle.Flat
         btnCapturi.Margin = New Padding(0, 0, 4, 0)
         btnCapturi.Name = "btnCapturi"
-        btnCapturi.TabIndex = 3
+        btnCapturi.TabIndex = 6
         btnCapturi.Text = "Capturi..."
         btnCapturi.Visible = False
         tips.SetToolTipHeader(btnCapturi, "Capturi pentru ajutor")
@@ -181,11 +228,16 @@ Partial Class HelpForm
         btnManual.FlatStyle = FlatStyle.Flat
         btnManual.Margin = New Padding(0)
         btnManual.Name = "btnManual"
-        btnManual.TabIndex = 4
+        btnManual.TabIndex = 7
         btnManual.Text = "Exportă manualul..."
         tips.SetToolTipHeader(btnManual, "Exportă manualul")
         tips.SetToolTipText(btnManual, "Salvează tot ajutorul într-un singur fișier, care se deschide în browser. De acolo se tipărește sau se salvează ca PDF.")
         btnManual.UseVisualStyleBackColor = True
+        '
+        '
+        ' tmrModal
+        '
+        tmrModal.Interval = 150
         '
         ' capBar
         '
@@ -216,6 +268,7 @@ Partial Class HelpForm
         Padding = New Padding(1)
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Ajutor"
+        TopMost = True
         pnlRoot.ResumeLayout(False)
         split.Panel1.ResumeLayout(False)
         split.Panel1.PerformLayout()
@@ -235,8 +288,13 @@ Partial Class HelpForm
     Friend WithEvents tlyBara As KBotTableLayoutPanel
     Friend WithEvents btnInapoi As Button
     Friend WithEvents btnInainte As Button
+    Friend WithEvents btnIstoric As Button
     Friend WithEvents lblContext As Label
+    Friend WithEvents btnTextMic As Button
+    Friend WithEvents btnTextMare As Button
     Friend WithEvents btnCapturi As Button
     Friend WithEvents btnManual As Button
     Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents mnuIstoric As KBotDropDownMenu
+    Friend WithEvents tmrModal As Timer
 End Class
