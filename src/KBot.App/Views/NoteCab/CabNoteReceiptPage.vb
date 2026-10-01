@@ -19,6 +19,8 @@ Public Class CabNoteReceiptPage
     Private _pendingExists As Boolean
     Private _shownPath As String
     Private _shownExists As Boolean
+    ' Slice 0099: the print-count target of the pending receipt (Nothing when there is none).
+    Private _pendingPrint As PdfPrintTarget
 
     ' The path shown for a note that has no receipt: never a real file, so the preview always
     ' shows its «document lipsă» surface for it.
@@ -45,6 +47,7 @@ Public Class CabNoteReceiptPage
 
     Public Sub SetContext(ctx As CabNotePageContext) Implements ICabNotePage.SetContext
         Try
+            _pendingPrint = ctx?.ReceiptPrintTarget
             If ctx Is Nothing OrElse ctx.Note Is Nothing Then
                 _pendingPath = Nothing
                 _pendingExists = False
@@ -77,6 +80,8 @@ Public Class CabNoteReceiptPage
 
     Private Sub MountIfVisible()
         If Not Visible Then Return
+        ' Slice 0099: before ShowDocument -- the document shown takes the target it finds.
+        previewPdf.PrintTarget = _pendingPrint
         If String.Equals(_shownPath, _pendingPath, StringComparison.Ordinal) AndAlso
            _shownExists = _pendingExists Then Return
 

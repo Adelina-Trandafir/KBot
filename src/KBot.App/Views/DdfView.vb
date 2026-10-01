@@ -101,6 +101,13 @@ Public Class DdfView
     Private _nodeIsRoot As Boolean
     ' Revizia frunzei selectate acum — ținta generării (felia 05) și sursa căii PDF.
     Private _selectedRevizie As RevizieRow
+    ' Slice 0099: the revisions under the selected month / «Toate reviziile» root (what the print list
+    ' shows); Nothing on a leaf.
+    Private _nodeRevizii As List(Of RevizieRow)
+    ' Slice 0099: the DDF read WITH the generation data, shared by the unsigned documents one print-list
+    ' action generates (one read for the batch, not one per document). Reset whenever the list is shown.
+    Private _genData As Task(Of DdfInfo)
+    Private _genDataCod As String
     ' Calea REZOLVATĂ a documentului nodului curent (felia 0041): fie fișierul semnat adus în
     ' cache de pe server, fie cel NESEMNAT regenerat în zona de lucru. Gol până când una din
     ' cele două se întâmplă — de aceea nu se mai compune calea direct în BuildCurrentContext.
@@ -151,6 +158,8 @@ Public Class DdfView
         _withReauth = withReauth
         _session = session
         _executaComanda = executaComanda
+        ' Slice 0099: the print list counts prints through the same client (Nothing = a test double).
+        printList.Initialize(TryCast(apiClient, IPrintCountApi))
         ' Slice 0078: the session's FileSystemWatcher must not outlive the view.
         AddHandler Disposed, Sub(s, e) EndSigning()
         BuildNav()
@@ -287,6 +296,12 @@ Public Class DdfView
                                           If(_session Is Nothing, String.Empty, _session.NumeUnitate),
                                           If(_session Is Nothing, String.Empty, _session.CF))
             ctx.Signing = EnsureSigning(pdfPath, exists)
+            ' Slice 0099: a print of this document is counted against the revision. Same rule as the
+            ' signing session: a file picked from the list belongs to no revision.
+            If Not _nodeIsRoot AndAlso _selectedRevizie IsNot Nothing AndAlso
+               (String.IsNullOrEmpty(_pdfPathOverride) OrElse _overrideIsGenerated) Then
+                ctx.PrintTarget = PdfPrintTarget.Create(PrintedDocumentKind.Ddf, _selectedRevizie.Idrev, _apiClient)
+            End If
             Return ctx
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.BuildCurrentContext", ex)
@@ -298,7 +313,14 @@ Public Class DdfView
     ' aceeași pentru un click în arbore, un fișier ales din listă și sfârșitul unei generări.
     Private Sub PushToActivePage()
         _currentCtx = BuildCurrentContext()
+        ' Slice 0099: a month / «Toate reviziile» root shows the print list instead of the pages.
+        Dim listMode As Boolean = _currentCtx IsNot Nothing AndAlso _nodeIsRoot AndAlso _nodeRevizii IsNot Nothing
+        ' Back to the pages BEFORE they get the context (a hidden page does not mount a document);
+        ' away from them only AFTER, so a document shown a moment ago is cleared while its page is
+        ' still on screen.
+        If Not listMode Then ShowPageSurface()
         _activePage?.SetContext(_currentCtx)
+        If listMode Then ShowListSurface()
     End Sub
 
     ' ── Contextul shell-ului ─────────────────────────────────────────────────
@@ -374,6 +396,7 @@ Public Class DdfView
                 If tinta IsNot Nothing Then
                     _nodeRows = LiniiFor(tinta.Idrev)
                     _nodeIsRoot = False
+                    _nodeRevizii = Nothing
                     _selectedRevizie = tinta
                     _pdfPathOverride = Nothing
                     _pdfPathRezolvat = Nothing
@@ -393,6 +416,7 @@ Public Class DdfView
             ' doar peste toate reviziile: listă plată, fără un document unic.
             _nodeRows = ToateLiniile(revizii)
             _nodeIsRoot = True
+            _nodeRevizii = revizii
             _selectedRevizie = Nothing
             _pdfPathOverride = Nothing
             _pdfPathRezolvat = Nothing
@@ -540,6 +564,7 @@ Public Class DdfView
             ' Revizia frunzei (Nothing pe o rădăcină) = ținta unei eventuale generări (felia 05)
             ' și sursa căii PDF calculate în BuildCurrentContext.
             _selectedRevizie = payload.Revizie
+            _nodeRevizii = If(payload.IsRoot, payload.Revizii, Nothing)
             ' O selecție nouă în arbore ANULEAZĂ fișierul ales din lista paginii «Fișiere» ȘI
             ' calea rezolvată pentru nodul anterior.
             _pdfPathOverride = Nothing
@@ -769,6 +794,7 @@ Public Class DdfView
             If r IsNot Nothing Then
                 _nodeRows = LiniiFor(r.Idrev)
                 _nodeIsRoot = False
+                _nodeRevizii = Nothing
                 _selectedRevizie = r
                 _pdfPathOverride = Nothing
                 _overrideIsGenerated = False
@@ -849,6 +875,88 @@ Public Class DdfView
         End Try
     End Function
 
+    ' ── Lista de tipărire (slice 0099) ───────────────────────────────────────
+    ' A non-leaf node (a month, or «Toate reviziile») shows a list of its revisions with their
+    ' signatures, print count and the two footer actions, instead of the document pages.
+    Private Sub ShowPageSurface()
+        printList.Visible = False
+        navSub.Visible = True
+        pnlPages.Visible = True
+    End Sub
+
+    Private Sub ShowListSurface()
+        _genData = Nothing
+        printList.SetItems(BuildPrintItems(_nodeRevizii))
+        navSub.Visible = False
+        pnlPages.Visible = False
+        printList.Visible = True
+    End Sub
+
+    Private Function BuildPrintItems(revizii As List(Of RevizieRow)) As List(Of PrintListItem)
+        Dim items As New List(Of PrintListItem)()
+        If revizii Is Nothing Then Return items
+        For Each r As RevizieRow In revizii
+            Dim rev As RevizieRow = r
+            Dim item As New PrintListItem(PrintedDocumentKind.Ddf, rev.Idrev) With {
+                .Label = $"Revizia {rev.NumarRev} · {rev.EtichetaRevizie}",
+                .Signatures = rev.Semnatura,
+                .SignedAt = If(rev.ArePdfSemnat, rev.PdfDataModif, Nothing),
+                .PrintCount = rev.PrintCount
+            }
+            item.ObtainPdfAsync = Function() ObtainPrintPdfAsync(rev)
+            item.CountChanged = Sub(n As Integer) rev.PrintCount = n
+            items.Add(item)
+        Next
+        Return items
+    End Function
+
+    ''' <summary>
+    ''' The PDF of one revision for the print list, without showing it: the signed copy through the
+    ''' local cache (checked against the server, like a click on the leaf), or -- for an unsigned
+    ''' revision -- the document generated into the work area, the way the «Generează» button does.
+    ''' Risky boundary (HTTP, disk, XfaWriter): logs and re-throws.
+    ''' </summary>
+    Private Async Function ObtainPrintPdfAsync(rev As RevizieRow) As Task(Of String)
+        Try
+            Dim antet As DdfAntet = _antet
+            Dim cod As String = _requestedCod
+            If antet Is Nothing OrElse String.IsNullOrWhiteSpace(cod) Then
+                Throw New InvalidOperationException("Angajamentul nu mai este încărcat.")
+            End If
+
+            If rev.ArePdfSemnat Then
+                Dim idrev As Integer = rev.Idrev
+                Dim cachePath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, antet, rev.NumarRev)
+                Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
+                    cachePath, rev.PdfSha256,
+                    Function(shaLocal) _apiClient.DownloadDdfPdfAsync(idrev, shaLocal, CancellationToken.None)).ConfigureAwait(True)
+                Select Case rezultat.Status
+                    Case PdfCacheStatus.Gata : Return rezultat.Cale
+                    Case PdfCacheStatus.Eroare : Throw New InvalidOperationException(rezultat.Mesaj)
+                    ' Nesemnat: the row vanished meanwhile -> made like an unsigned one, below.
+                End Select
+            End If
+
+            Dim mode As DdfPdfMode = If(DdfRevisionStates.IsSent(rev.Stare), DdfPdfMode.Final, DdfPdfMode.Interim)
+            Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
+                Function() GenerationDataAsync(cod), AddressOf CitesteCapturaAsync, _session, rev.Idrev, mode).ConfigureAwait(True)
+            Return generat.PdfPath
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.ObtainPrintPdfAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' One read of the generation data (attachments included) for the whole batch.
+    Private Function GenerationDataAsync(cod As String) As Task(Of DdfInfo)
+        If _genData Is Nothing OrElse _genData.IsFaulted OrElse _genData.IsCanceled OrElse
+           Not String.Equals(_genDataCod, cod, StringComparison.Ordinal) Then
+            _genDataCod = cod
+            _genData = _withReauth(Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True))
+        End If
+        Return _genData
+    End Function
+
     ' ── Stare goală / conținut ───────────────────────────────────────────────
     Private Sub ClearAll()
         _requestedCod = Nothing
@@ -857,6 +965,7 @@ Public Class DdfView
         _antet = Nothing
         _nodeRows = Nothing
         _nodeIsRoot = False
+        _nodeRevizii = Nothing
         _selectedRevizie = Nothing
         _pdfPathOverride = Nothing
         _overrideIsGenerated = False
@@ -1108,6 +1217,7 @@ Public Class DdfView
             ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             pnlPages.BackColor = p.SurfaceAltColor
+            printList.ApplyTheme(scheme)
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 

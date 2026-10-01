@@ -29,6 +29,7 @@ Partial Class DdfView
         tree = New AdvancedTreeControl()
         image_list = New ImageList(components)
         pnlPages = New Panel()
+        printList = New PrintListPage()
         navSub = New KBotNavList()
         lblEmpty = New Label()
         CType(split, ComponentModel.ISupportInitialize).BeginInit()
@@ -52,6 +53,7 @@ Partial Class DdfView
         ' split.Panel2
         ' 
         split.Panel2.Controls.Add(pnlPages)
+        split.Panel2.Controls.Add(printList)
         split.Panel2.Controls.Add(navSub)
         split.Size = New Size(983, 528)
         split.SplitterDistance = 318
@@ -151,6 +153,16 @@ Partial Class DdfView
         pnlPages.Size = New Size(656, 488)
         pnlPages.TabIndex = 1
         ' 
+        ' printList
+        ' 
+        printList.Dock = DockStyle.Fill
+        printList.Location = New Point(0, 40)
+        printList.Margin = New Padding(4, 5, 4, 5)
+        printList.Name = "printList"
+        printList.Size = New Size(656, 488)
+        printList.TabIndex = 2
+        printList.Visible = False
+        ' 
         ' navSub
         ' 
         navSub.Dock = DockStyle.Top
@@ -211,6 +223,7 @@ Partial Class DdfView
     Friend WithEvents tree As Global.KBot.Controls.AdvancedTreeControl
     Friend WithEvents navSub As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlPages As Panel
+    Friend WithEvents printList As PrintListPage
     Friend WithEvents lblEmpty As Label
     Friend WithEvents image_list As ImageList
 End Class

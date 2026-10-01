@@ -20,6 +20,8 @@ Public Class CabNoteDocumentPage
     Private _shownPath As String
     Private _shownExists As Boolean
     Private _pendingSigning As PdfSigningSession
+    ' Slice 0099: the print-count target that goes with the pending target.
+    Private _pendingPrint As PdfPrintTarget
 
     Public Event GenerateRequested As EventHandler Implements ICabNotePage.GenerateRequested
 
@@ -39,10 +41,12 @@ Public Class CabNoteDocumentPage
                 _pendingPath = Nothing
                 _pendingExists = False
                 _pendingSigning = Nothing
+                _pendingPrint = Nothing
             Else
                 _pendingPath = ctx.PdfPath
                 _pendingExists = ctx.PdfExists
                 _pendingSigning = ctx.Signing
+                _pendingPrint = ctx.PrintTarget
             End If
             MountIfVisible()
         Catch ex As Exception
@@ -63,6 +67,8 @@ Public Class CabNoteDocumentPage
     Private Sub MountIfVisible()
         If Not Visible Then Return
         previewPdf.Signing = _pendingSigning
+        ' Slice 0099: before ShowDocument -- the document shown takes the target it finds.
+        previewPdf.PrintTarget = _pendingPrint
         If String.Equals(_shownPath, _pendingPath, StringComparison.Ordinal) AndAlso
            _shownExists = _pendingExists Then Return
 

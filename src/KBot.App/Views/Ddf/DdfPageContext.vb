@@ -58,6 +58,13 @@ Public NotInheritable Class DdfPageContext
     ''' </summary>
     Public Property Signing As PdfSigningSession
 
+    ''' <summary>
+    ''' Slice 0099: the revision the document at <see cref="PdfPath"/> is, for the print counter
+    ''' (Nothing when the node has no single revision document). Built by DdfView; the «Document»
+    ''' page hands it to the preview.
+    ''' </summary>
+    Public Property PrintTarget As PdfPrintTarget
+
     Public Sub New(antet As DdfAntet, linii As List(Of LinieSaRow), revizii As List(Of RevizieRow),
                    isRoot As Boolean, revizie As RevizieRow, cod As String,
                    pdfPath As String, pdfExists As Boolean,

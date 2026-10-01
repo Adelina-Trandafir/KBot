@@ -97,6 +97,9 @@ Public Class OrdView
     Private _nodeLinii As List(Of OrdLinieRow)
     Private _nodeIsRoot As Boolean
     Private _selectedOrd As OrdHeaderRow
+    ' Slice 0099: the ordonantari under the selected month / «Toate ordonantarile» root (what the
+    ' print list shows); Nothing on a leaf.
+    Private _nodeOrdonantari As List(Of OrdHeaderRow)
     ' Calea REZOLVATĂ a documentului nodului curent (felia 0041): fișierul semnat adus în cache
     ' de pe server. Gol până când rezolvarea se întoarce.
     Private _pdfPathRezolvat As String
@@ -128,6 +131,8 @@ Public Class OrdView
         _withReauth = withReauth
         _session = session
         _executaComanda = executaComanda
+        ' Slice 0099: the print list counts prints through the same client (Nothing = a test double).
+        printList.Initialize(TryCast(apiClient, IPrintCountApi))
         ' Slice 0078: the session's FileSystemWatcher must not outlive the view.
         AddHandler Disposed, Sub(s, e) EndSigning()
         BuildNav()
@@ -380,6 +385,10 @@ Public Class OrdView
                                           If(_session Is Nothing, String.Empty, _session.NumeUnitate),
                                           If(_session Is Nothing, String.Empty, _session.CF))
             ctx.Signing = EnsureSigning(pdfPath, exists)
+            ' Slice 0099: a print of this document is counted against the ordonantare.
+            If Not _nodeIsRoot AndAlso _selectedOrd IsNot Nothing Then
+                ctx.PrintTarget = PdfPrintTarget.Create(PrintedDocumentKind.Ord, _selectedOrd.Idordp, _apiClient)
+            End If
             Return ctx
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.BuildCurrentContext", ex)
@@ -391,7 +400,14 @@ Public Class OrdView
     ' paginilor — nicio pagină n-are metodă de reîmprospătare.
     Private Sub PushToActivePage()
         _currentCtx = BuildCurrentContext()
+        ' Slice 0099: a month / «Toate ordonantarile» root shows the print list instead of the pages.
+        Dim listMode As Boolean = _currentCtx IsNot Nothing AndAlso _nodeIsRoot AndAlso _nodeOrdonantari IsNot Nothing
+        ' Back to the pages BEFORE they get the context (a hidden page does not mount a document);
+        ' away from them only AFTER, so a document shown a moment ago is cleared while its page is
+        ' still on screen.
+        If Not listMode Then ShowPageSurface()
         _activePage?.SetContext(_currentCtx)
+        If listMode Then ShowListSurface()
     End Sub
 
     ' ── Contextul shell-ului ─────────────────────────────────────────────────
@@ -447,6 +463,7 @@ Public Class OrdView
                 If tinta IsNot Nothing Then
                     _nodeLinii = LiniiFor(tinta.Idordp)
                     _nodeIsRoot = False
+                    _nodeOrdonantari = Nothing
                     _selectedOrd = tinta
                     _pdfPathOverride = Nothing
                     _pdfPathRezolvat = Nothing
@@ -464,6 +481,7 @@ Public Class OrdView
             ' aceeași vedere ca a unei rădăcini de lună, doar peste toate ordonanțările.
             _nodeLinii = _linii
             _nodeIsRoot = True
+            _nodeOrdonantari = ordonantari
             _selectedOrd = Nothing
             _pdfPathOverride = Nothing
             _pdfPathRezolvat = Nothing
@@ -575,6 +593,7 @@ Public Class OrdView
                 _nodeLinii = payload.Linii
                 _nodeIsRoot = payload.IsRoot
                 _selectedOrd = payload.Ordonantare
+                _nodeOrdonantari = If(payload.IsRoot, payload.Ordonantari, Nothing)
                 PushToActivePage()
                 AratatMeniulContextual(pNode)
                 Return
@@ -583,6 +602,7 @@ Public Class OrdView
             _nodeLinii = payload.Linii
             _nodeIsRoot = payload.IsRoot
             _selectedOrd = payload.Ordonantare
+            _nodeOrdonantari = If(payload.IsRoot, payload.Ordonantari, Nothing)
             ' O selecție nouă anulează calea rezolvată pentru nodul anterior (felia 0041).
             _pdfPathOverride = Nothing
             _pdfPathRezolvat = Nothing
@@ -790,6 +810,7 @@ Public Class OrdView
         _linii = Nothing
         _nodeLinii = Nothing
         _nodeIsRoot = False
+        _nodeOrdonantari = Nothing
         _selectedOrd = Nothing
         _pdfPathOverride = Nothing
         _pdfPathRezolvat = Nothing
@@ -861,6 +882,71 @@ Public Class OrdView
             GlobalErrorLog.Write("OrdView.OnSigningCompleted", ex)
         End Try
     End Sub
+
+    ' ── Lista de tipărire (slice 0099) ───────────────────────────────────────
+    ' A non-leaf node (a month, or «Toate ordonanțările») shows a list of its ordonantari with their
+    ' signatures, print count and the two footer actions, instead of the document pages.
+    Private Sub ShowPageSurface()
+        printList.Visible = False
+        navSub.Visible = True
+        pnlPages.Visible = True
+    End Sub
+
+    Private Sub ShowListSurface()
+        printList.SetItems(BuildPrintItems(_nodeOrdonantari))
+        navSub.Visible = False
+        pnlPages.Visible = False
+        printList.Visible = True
+    End Sub
+
+    Private Function BuildPrintItems(ordonantari As List(Of OrdHeaderRow)) As List(Of PrintListItem)
+        Dim items As New List(Of PrintListItem)()
+        If ordonantari Is Nothing Then Return items
+        For Each o As OrdHeaderRow In ordonantari
+            Dim ord As OrdHeaderRow = o
+            Dim item As New PrintListItem(PrintedDocumentKind.Ord, ord.Idordp) With {
+                .Label = $"Ordonanțarea {ord.EtichetaOrd}",
+                .Signatures = ord.Semnatura,
+                .SignedAt = If(ord.ArePdfSemnat, ord.PdfDataModif, Nothing),
+                .PrintCount = ord.PrintCount
+            }
+            item.ObtainPdfAsync = Function() ObtainPrintPdfAsync(ord)
+            item.CountChanged = Sub(n As Integer) ord.PrintCount = n
+            items.Add(item)
+        Next
+        Return items
+    End Function
+
+    ''' <summary>
+    ''' The PDF of one ordonantare for the print list, without showing it: the signed copy through the
+    ''' local cache (checked against the server, like a click on the leaf), or -- for an unsigned one --
+    ''' the document generated into the work area. Risky boundary (HTTP, disk, XfaWriter): logs and
+    ''' re-throws.
+    ''' </summary>
+    Private Async Function ObtainPrintPdfAsync(ordonantare As OrdHeaderRow) As Task(Of String)
+        Try
+            Dim cod As String = _requestedCod
+            If String.IsNullOrWhiteSpace(cod) Then Throw New InvalidOperationException("Angajamentul nu mai este încărcat.")
+
+            If ordonantare.ArePdfSemnat Then
+                Dim idordp As Integer = ordonantare.Idordp
+                Dim cachePath As String = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, ordonantare, cod)
+                Dim rezultat As PdfCacheResult = Await PdfCache.EnsureAsync(
+                    cachePath, ordonantare.PdfSha256,
+                    Function(shaLocal) _apiClient.DownloadOrdPdfAsync(idordp, shaLocal, CancellationToken.None)).ConfigureAwait(True)
+                Select Case rezultat.Status
+                    Case PdfCacheStatus.Gata : Return rezultat.Cale
+                    Case PdfCacheStatus.Eroare : Throw New InvalidOperationException(rezultat.Mesaj)
+                    ' Nesemnat: the row vanished meanwhile -> made like an unsigned one, below.
+                End Select
+            End If
+
+            Return Await OrdPdfGenerator.GenereazaAsync(_apiClient, _session, ordonantare, cod).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.ObtainPrintPdfAsync", ex)
+            Throw
+        End Try
+    End Function
 
     Private Sub ShowEmpty(message As String)
         lblEmpty.Text = message
@@ -958,6 +1044,7 @@ Public Class OrdView
             ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             pnlPages.BackColor = p.SurfaceAltColor
+            printList.ApplyTheme(scheme)
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
 

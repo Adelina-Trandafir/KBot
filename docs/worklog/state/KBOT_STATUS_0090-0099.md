@@ -187,3 +187,36 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0098-02 | **Citirile trec poarta + bancul cozii (cererea operatorului, 30.09.2026)** — fereastra cozii se deschide singură DOAR peste o acțiune FOREXE (`RobotQueue.ActionCount`); `ServerGate.IsRead`: GET / HEAD / OPTIONS trec mereu, doar scrierile așteaptă cât rulează robotul (vederile nu mai îngheață pe durata unei descărcări). DevHarness → FOREXE: «Coada robotului + poarta serverului (FOREXE și server simulate)» — coada, poarta, controlerul și fereastra cozii REALE peste un robot simulat (`FakeForexeRunner`, răspunsuri în forma «Prelucrare Completa») și un server simulat (`FakeServerHandler`); scenarii: la rând, dublură, operațiune în față, robot în afara cozii, GET / POST manual, «Asociere» simulată, eșec, oprire | GATA pe cod (build Debug + Release **0 avertismente, 0 erori**) / **bancul nerulat** | `SLICE-0098-02-reads-pass-queue-bench.md` | Bancul scrie fișierele obișnuite ale descărcării pe codurile PROBA-*; «Asociere» simulată = casetă KBotMessage (ajunge și în `mesaje_operator.log`). |
+
+---
+
+## Slice 0099
+
+### Registry
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 0099 | **`PrintCount`: de câte ori a fost trimis la imprimantă un document (cererea operatorului, 01.10.2026)** — coloană `PrintCount int NOT NULL DEFAULT 0` pe `FX_DDF_PDF`, `FX_ORD_PDF`, `FX_NoteCAB_PDF`, `FX_NoteCAB_Recipisa` și, pentru documentele NESEMNATE (fără rând de PDF), pe `FX_DDF_REV` și `FX_ORD` (`sql/0099_print_count.sql`). K-BOT nu are comandă de tipărire: operatorul tipărește din Adobe, iar K-BOT vede lucrarea în coada de tipărire Windows (`AdobePrintWatcher` + `PrintSpooler`, un singur fir pentru tot procesul, doar cât e un document afișat); fereastra de tipărire Adobe, văzută de capcana «Salvare ca», doar îndesește citirea cozii. O lucrare nouă care poartă numele fișierului afișat = o tipărire → `POST …/print` (`routes/forexe/print_count.py`); serverul alege rândul (PDF-ul păstrat, altfel rândul documentului). «Microsoft Print to PDF» se numără. Legat în `DdfView` / `OrdView` / `NoteCabView` prin `PdfPrintTarget` → `ReaderHostPreview`, și în bancul de semnare (`PdfSigningHarnessForm`). **Partea 2 (aceeași zi, tot 0099): lista de tipărire** — pe o lună sau pe rădăcina «Toate…» din ORD și DDF, dreapta arată `PrintListPage` (grilă: bifă cu meniu în antet «toate» / «doar nelistate», Document, Semnături, Semnat la, Listat, Nr. tipăriri) cu «Generează și imprimă» (documentele pregătite și trimise la imprimantă prin verbul `printto`, fără să fie deschise) și «Salvează local» (dosar ales); «Listat» bifat la 0 tipăriri întreabă o dată, «Da» = o tipărire numărată, fără mesaj după. Rutele de listă `GET /api/forexe/ddf` / `/ord` întorc `print_count` (PDF + document; 0 unde SQL-ul nu a rulat) | GATA pe cod (build KBot.App Debug + Release **0 avertismente, 0 erori**) / **nimic rulat: nicio tipărire, nicio rută chemată, SQL neaplicat; fără teste** | `SLICE-0099-print-count.md` | Partea 1 nu are nimic vizibil; partea 2 e vizibilă și e în ajutor (`contabil.vederi.ord`, `contabil.ddf`, etichetă 0099). KBot.Controls 1.59.0.0, KBot.Api 1.0.17.0, KBot.Domain 1.2.9.0; KBot.App la `push-update.ps1`. Ordinea de deploy: SQL-ul pe fiecare bază + `AVACONT_SURSA`, apoi `print_count.py` + `__init__.py` pe VPS, apoi clientul. `PrintCount` nu e afișat nicăieri. |
+
+### Open threads
+
+- **0099 — nimic rulat.** De probat pe banc (DevHarness → semnarea PDF): Ctrl+P în Adobe, apoi
+  liniile «[Adobe] Tipărire…» din jurnal.
+- **0099 — numele lucrării Adobe e o presupunere** (numele fișierului). Dacă e altul, nu se
+  numără nimic; jurnalul arată lucrarea cu «nu poartă numele unui document deschis în K-BOT».
+- **0099 — titlul / clasa ferestrei de tipărire Adobe sunt presupuneri**; dacă sunt greșite se
+  pierde doar citirea deasă (250 ms), numărarea rămâne.
+- **0099 — «Microsoft Print to PDF» și capcana «Salvare ca» (risc nemăsurat):** fereastra în care
+  acea imprimantă cere locul fișierului e o fereastră standard de fișier; dacă aparține
+  procesului Adobe, capcana feliei 0078 îi scrie calea documentului și apasă «Salvare». Capcana
+  NU a fost schimbată aici.
+- **0099 — imprimante de rețea:** Windows anunță doar cozile calculatorului; pe cele de rețea
+  lucrarea se găsește la citirea periodică (2 s / 250 ms).
+- **0099 — sesiune expirată:** apelul merge direct la client (fără reautentificare); tipărirea
+  se scrie în jurnal ca nenumărată. O notă CAB fără PDF păstrat nu se numără.
+- **0099 (lista de tipărire) — nimic rulat, nimic văzut pe ecran.** De probat: clic pe o lună / «Toate» în ORD și DDF; meniul din antetul bifelor; «Listat» la 0 tipăriri; «Salvează local»; «Generează și imprimă» pe o imprimantă reală.
+- **0099 (lista de tipărire) — tipărirea fără fereastră merge prin verbul `printto` al programului de PDF** (Adobe Reader îl are). Fără un program de PDF care îl înregistrează, fiecare document se raportează cu mesajul shell-ului. Copiile cerute în fereastra imprimantei se fac prin repetarea trimiterii; numărătoarea crește cu 1 pe document. Nu se verifică dacă lucrarea a ajuns pe hârtie — doar că programul de PDF a terminat.
+- **0099 (lista de tipărire) — documentul semnat se tipărește așa cum e pe server** (pentru o revizie DDF semnată doar pe A și trimisă, fără Secțiunea B pusă în fișier). Cele nesemnate se generează în `TempPdf`, ca «Generează».
+- **0099 — de deployat:** `sql/0099_print_count.sql` (în `AVACONT_SURSA` întâi `sql/0088_04`,
+  tabela `FX_NoteCAB_Recipisa` lipsește acolo în dump-ul din 22.09.2026), `print_count.py`,
+  `routes/forexe/__init__.py`. `sql/AVACONT_SURSA.sql` și `MariaDB_Schema/` neactualizate.

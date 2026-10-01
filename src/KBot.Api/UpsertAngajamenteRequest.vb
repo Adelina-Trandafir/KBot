@@ -373,6 +373,8 @@ Public NotInheritable Class GetDdfRevizieRow
     Public Property pdf_sha256 As String
     Public Property pdf_dimensiune As Integer?
     Public Property pdf_data_modif As Date?
+    ' Slice 0099: how many times the revision was printed (PDF row + document row of sql/0099).
+    Public Property print_count As Integer
 End Class
 
 ' One FX_DDF_REV_SA record. parametrii_fund/ss are carried but not displayed (decision 4) —
@@ -498,6 +500,8 @@ Public NotInheritable Class GetOrdHeaderRow
     Public Property pdf_data_modif As Date?
     ' Slice 0078 -- FX_ORD.Semnatura: signer roles, e.g. "AB,Ordonator". Null/empty = unsigned.
     Public Property semnatura As String
+    ' Slice 0099: how many times the ordonantare was printed (PDF row + document row of sql/0099).
+    Public Property print_count As Integer
 End Class
 
 ' One FX_ORD_TBL record. The list stays FLAT (the server does not group), but every line

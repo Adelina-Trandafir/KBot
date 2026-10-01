@@ -60,6 +60,12 @@ Public NotInheritable Class OrdPageContext
     ''' </summary>
     Public Property Signing As PdfSigningSession
 
+    ''' <summary>
+    ''' Slice 0099: the ordonantare the document at <see cref="PdfPath"/> is, for the print counter
+    ''' (Nothing on a month root). Built by OrdView; the «Document» page hands it to the preview.
+    ''' </summary>
+    Public Property PrintTarget As PdfPrintTarget
+
     Public Sub New(linii As List(Of OrdLinieRow), isRoot As Boolean, nrOrd As Integer,
                    dataOrd As Date?, cod As String, pdfPath As String, pdfExists As Boolean,
                    Optional ord As OrdHeaderRow = Nothing,

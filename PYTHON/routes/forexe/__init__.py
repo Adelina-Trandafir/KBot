@@ -128,3 +128,6 @@ from . import note_cab  # noqa: E402,F401
 # pdf_banc.py = PUT /api/forexe/banc/pdf/<tip>/<iddoc>: the signing benches' server mirror (slice
 # 0078-05), ONLY for 000_DEMO -> KBOT_BANC_PDF (sql/0078_05_kbot_banc_pdf.sql). Bench only.
 from . import pdf_banc  # noqa: E402,F401
+# print_count.py = POST .../print: one more print of a DDF / ORD / CAB note / receipt shown in
+# K-BOT (slice 0099, sql/0099_print_count.sql). After pdf.py: it uses its family descriptions.
+from . import print_count  # noqa: E402,F401

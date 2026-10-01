@@ -45,6 +45,28 @@ part: footer.collapse
 target: DdfView.tree
 Meniul reviziei oferă, după stare: Trimite în FOREXE (sau Reia trimiterea), Modifică revizia, Șterge revizia, Șterge documentul. O revizie semnată nu se mai modifică și nu se mai șterge: îi rămâne doar trimiterea. Pe o lună sau pe rădăcină poți șterge tot ce e sub ea, dacă nimic nu e semnat.
 
+## Lista de tipărire
+<!-- slice: 0099 -->
+target: DdfView.printList
+goto: view:ddf
+Pe o lună sau pe rădăcina «Toate reviziile», în locul paginilor apare lista reviziilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o revizie aleasă în arbore: dă clic pe o lună sau pe rădăcină.
+
+## Lista › Bifele
+<!-- slice: 0099 -->
+target: PrintListPage.grila
+part: header
+Bifezi rândurile cu care lucrezi. Iconița din capul primei coloane deschide meniul «Selectează / deselectează toate» și «Selectează / deselectează doar cele nelistate». Dacă bifezi «Listat» la un document cu 0 tipăriri, K-BOT întreabă dacă îl marchezi ca listat.
+
+## Lista › Generează și imprimă
+<!-- slice: 0099 -->
+target: PrintListPage.btnImprima
+Trimite la imprimantă documentele bifate, fără să le deschidă. Alegi imprimanta o singură dată. Fiecare document trimis se numără ca tipărit.
+
+## Lista › Salvează local
+<!-- slice: 0099 -->
+target: PrintListPage.btnSalveaza
+Salvează documentele bifate într-un dosar ales de tine. Nu le numără ca tipărite.
+
 ## Paginile reviziei
 <!-- slice: 0020-02, 0081-05 -->
 target: DdfView.navSub

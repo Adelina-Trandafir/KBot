@@ -27,6 +27,8 @@ Public Class OrdDocumentPage
     Private _shownExists As Boolean
     ' Slice 0078: the signing session that goes with the pending target.
     Private _pendingSigning As PdfSigningSession
+    ' Slice 0099: the print-count target that goes with the pending target.
+    Private _pendingPrint As PdfPrintTarget
     ' Mesajul stării goale, ales la fiecare context (nicio selecție vs. PDF inexistent).
     'Private _mesajGol As String = "Selectați o ordonanțare din arbore."
 
@@ -58,10 +60,12 @@ Public Class OrdDocumentPage
                 _pendingPath = Nothing
                 _pendingExists = False
                 _pendingSigning = Nothing
+                _pendingPrint = Nothing
             Else
                 _pendingPath = ctx.PdfPath
                 _pendingExists = ctx.PdfExists
                 _pendingSigning = ctx.Signing
+                _pendingPrint = ctx.PrintTarget
             End If
             MountIfVisible()
         Catch ex As Exception
@@ -87,6 +91,8 @@ Public Class OrdDocumentPage
         ' Slice 0078: outside the (path, exists) guard -- a new session for the same file (after an
         ' upload, or a view reload) must reach the preview without re-launching Adobe.
         previewPdf.Signing = _pendingSigning
+        ' Slice 0099: before ShowDocument -- the document shown takes the target it finds.
+        previewPdf.PrintTarget = _pendingPrint
         If String.Equals(_shownPath, _pendingPath, StringComparison.Ordinal) AndAlso
            _shownExists = _pendingExists Then Return
 

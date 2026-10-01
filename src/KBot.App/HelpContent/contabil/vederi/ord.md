@@ -5,10 +5,10 @@ part: contabil
 order: 70
 parent: contabil.vederi
 screens: OrdView, OrdVizualizarePage, OrdDocumentPage
-keywords: ordonantare, ord, ordonantari de plata, document, pdf, semnare, genereaza, validare formular, anulare validare, alte avize, verificat avizat, cfp, control financiar preventiv, ordonator, compartiment de specialitate
+keywords: ordonantare, ord, ordonantari de plata, imprimare, tiparire, listat, document, pdf, semnare, genereaza, validare formular, anulare validare, alte avize, verificat avizat, cfp, control financiar preventiv, ordonator, compartiment de specialitate
 open: view:ord
 ---
-<!-- slice: 0033, 0041 -->
+<!-- slice: 0033, 0041, 0099 -->
 Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
 
 <!-- capture: ord | caption: Vederea «Ordonanțare» | goto: view:ord | prepare: Selectați un angajament care are ordonanțări, apoi o ordonanțare din arbore. -->
@@ -20,6 +20,7 @@ Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
     valoare, rămas) și, pe fiecare beneficiar, codul fiscal, contul IBAN și documentele
     justificative. **«Caută Beneficiar»** te duce la un beneficiar anume.
   - **Document** — PDF-ul ordonanțării.
+- Pe o **lună** sau pe **«Toate ordonanțările»** dreapta arată în schimb lista de tipărire — mai jos.
 
 ## Comenzile
 <!-- slice: 0049, 0049-01, 0097, 0000-14 -->
@@ -44,8 +45,42 @@ pe o lună sau pe rădăcină, și **doar dacă niciuna de sub ea nu e semnată*
 > ea clicul dreapta nu mai deschide niciun meniu. Iconița **«Adaugă»** din
 subsolul arborelui face același lucru ca «Adaugă ordonanțare…».
 
+## Lista de tipărire
+<!-- slice: 0099 -->
+
+Când dai clic pe o **lună** sau pe **«Toate ordonanțările»**, dreapta nu mai arată paginile, ci **lista ordonanțărilor** de sub rândul ales. Pe fiecare rând vezi:
+
+| Coloană | Ce arată |
+|---------|----------|
+| **bifa** din stânga | alegi rândul |
+| **Document** | ordonanțarea (numărul și data) |
+| **Semnături** | ce semnături are |
+| **Semnat la** | când a fost semnat |
+| **Listat** | bifat dacă documentul a fost tipărit măcar o dată |
+| **Nr. tipăriri** | de câte ori a fost tipărit |
+
+<!-- capture: ord-lista-tiparire | caption: Lista de tipărire a ordonanțărilor, pe «Toate ordonanțările» | goto: view:ord | prepare: Selectați un angajament cu mai multe ordonanțări, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate ordonanțările». -->
+
+Iconița din capul coloanei cu bife deschide un meniu:
+
+- **«Selectează / deselectează toate»** — bifează toate rândurile, sau le debifează dacă erau toate bifate;
+- **«Selectează / deselectează doar cele nelistate»** — la fel, dar doar pe rândurile cu 0 tipăriri; cele deja listate rămân cum erau.
+
+<!-- capture: ord-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ord | prepare: Pe lista de tipărire, apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
+
+Jos sunt două butoane, care lucrează pe rândurile **bifate**:
+
+- **«Generează și imprimă»** — alegi imprimanta, iar K-BOT pregătește documentele și le trimite la imprimantă, **fără să le deschidă**. Cele semnate sunt cele de pe server; cele nesemnate se fac pe loc din datele salvate, ca la «Generează». Fiecare document trimis se numără ca tipărit.
+- **«Salvează local»** — alegi un dosar, iar K-BOT salvează acolo documentele bifate. Nu le numără ca tipărite.
+
+Dacă un document nu poate fi tipărit sau salvat, la sfârșit primești un mesaj cu documentul și motivul; altfel nu apare niciun mesaj.
+
+**Listat, de mână.** Dacă bifezi **«Listat»** la un document cu 0 tipăriri (l-ai tipărit în altă parte), K-BOT întreabă dacă îl marchezi ca listat. **«Da»** îl numără ca o tipărire; **«Nu»** scoate bifa. După «Da» nu mai apare niciun mesaj, decât dacă ceva nu merge. La un document deja listat caseta e blocată: numărul doar crește.
+
+Numărul crește și când tipărești documentul din pagina **Document**.
+
 ## Documentul și semnarea
-<!-- slice: 0078, 0041, 0000-14, 0078-08 -->
+<!-- slice: 0078, 0041, 0000-14, 0078-08, 0099 -->
 
 Pe pagina **Document**:
 
@@ -58,6 +93,8 @@ Pe pagina **Document**:
 - **Un document semnat nu se mai generează niciodată din nou** — ajunge o singură semnătură.
   «Generează» pe o ordonanțare semnată răspunde «Documentul are cel puțin o semnătură, deci nu se
   mai generează din nou.»
+
+<!-- capture: ord-document | caption: Pagina «Document» a unei ordonanțări semnate | goto: view:ord | prepare: Selectați o ordonanțare semnată din arbore și deschideți pagina «Document». -->
 
 <!-- capture: ord-semnaturi | caption: Semnăturile ordonanțării, în josul documentului | goto: view:ord | prepare: Selectați o ordonanțare semnată și deschideți pagina «Document»; derulați la semnături. -->
 

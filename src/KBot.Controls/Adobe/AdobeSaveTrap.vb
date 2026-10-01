@@ -545,8 +545,14 @@ Public NotInheritable Class AdobeSaveTrap
             Case AdobeDialogKind.Other
                 If AdobeSaveDialogFilter.IsScriptNoise(facts.Title, ScriptAlertTitle, ScriptConsoleTitle) Then
                     DismissScriptNoise(hwnd, facts)
-                ElseIf _seen.Add(hwnd) Then
-                    Report($"Dialog Adobe {AdobeSaveDialogFilter.Label(kind)}: 0x{hwnd.ToInt64():X} {facts.Describe()}")
+                Else
+                    ' Slice 0099: Adobe's own Print window. Left alone like every other dialog; the
+                    ' print watch is only told, on every sweep that sees it, so it reads the print
+                    ' queue often while a print may follow.
+                    If AdobePrintJobFilter.IsPrintDialogTitle(facts.Title) Then AdobePrintWatcher.NotePrintDialog(hwnd, facts.Title)
+                    If _seen.Add(hwnd) Then
+                        Report($"Dialog Adobe {AdobeSaveDialogFilter.Label(kind)}: 0x{hwnd.ToInt64():X} {facts.Describe()}")
+                    End If
                 End If
             Case AdobeDialogKind.NotOurs
                 ' An Adobe dialog from a process we do NOT watch is logged once: that is exactly

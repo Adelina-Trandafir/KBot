@@ -40,6 +40,28 @@ part: footer.collapse
 target: OrdView.tree
 Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Pe o lună sau pe rădăcina «Toate ordonanțările» poți șterge toate ordonanțările de sub ea, dacă niciuna nu e semnată. Pe o ordonanțare semnată nu apare niciun meniu: nu se mai modifică și nu se mai șterge.
 
+## Lista de tipărire
+<!-- slice: 0099 -->
+target: OrdView.printList
+goto: view:ord
+Pe o lună sau pe rădăcina «Toate ordonanțările», în locul paginilor apare lista ordonanțărilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o ordonanțare aleasă în arbore: dă clic pe o lună sau pe rădăcină.
+
+## Lista › Bifele
+<!-- slice: 0099 -->
+target: PrintListPage.grila
+part: header
+Bifezi rândurile cu care lucrezi. Iconița din capul primei coloane deschide meniul «Selectează / deselectează toate» și «Selectează / deselectează doar cele nelistate». Dacă bifezi «Listat» la un document cu 0 tipăriri, K-BOT întreabă dacă îl marchezi ca listat.
+
+## Lista › Generează și imprimă
+<!-- slice: 0099 -->
+target: PrintListPage.btnImprima
+Trimite la imprimantă documentele bifate, fără să le deschidă. Alegi imprimanta o singură dată. Fiecare document trimis se numără ca tipărit.
+
+## Lista › Salvează local
+<!-- slice: 0099 -->
+target: PrintListPage.btnSalveaza
+Salvează documentele bifate într-un dosar ales de tine. Nu le numără ca tipărite.
+
 ## Paginile ordonanțării
 <!-- slice: 0033, 0041, 0000-14 -->
 target: OrdView.navSub

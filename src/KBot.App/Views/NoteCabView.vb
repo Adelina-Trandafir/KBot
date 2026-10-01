@@ -174,10 +174,16 @@ Public Class NoteCabView
         Dim exists As Boolean = Not String.IsNullOrEmpty(path) AndAlso File.Exists(path)
         Dim ctx As New CabNotePageContext(_nodeNotes, _selected, path, exists)
         ctx.Signing = EnsureSigning(path, exists)
+        ' Slice 0099: a print of the note's document is counted against the note.
+        If _selected IsNot Nothing Then
+            ctx.PrintTarget = PdfPrintTarget.Create(PrintedDocumentKind.CabNote, _selected.IdNc, _apiClient)
+        End If
         Dim r As CabNoteReceipt = _selected?.Receipt
         If r IsNot Nothing Then
             ctx.ReceiptPath = CabNoteFiles.ReceiptPath(_selected, r.RegistrationIndex, r.FileName)
             ctx.ReceiptExists = Not String.IsNullOrEmpty(ctx.ReceiptPath) AndAlso File.Exists(ctx.ReceiptPath)
+            ' Slice 0099: and a print of its receipt against the receipt.
+            ctx.ReceiptPrintTarget = PdfPrintTarget.Create(PrintedDocumentKind.CabNoteReceipt, r.IdReceipt, _apiClient)
         End If
         Return ctx
     End Function

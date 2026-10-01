@@ -211,10 +211,11 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0097 | Corecturi: ORD/DDF (fără mesaj la ștergere, rădăcini «Toate…», ștergere pe lună/toate, semnat = fără meniu); eticheta barei strânse la DPI; «Note corecție» doar cu note; selector de unitate în bara de titlu; reafișarea ferestrei de autentificare + «Ține minte parola» (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut; server nedeployat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |       0097-02 | Corecturi, a doua trecere: turul ferestrei principale pornește singur (până e văzut / «Nu mai arăta turul inițial»); «Da» automat la întrebările «Sunteți sigur...?» din pagina FOREXE; MENIU «Adăugare angajamente...» + «Creează angajament în FOREXE»; mini-meniul din pagină după setare; conectarea fără «?»; pornire mărită; întrebare la a doua recepție pe aceeași dată (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nerulat, nevăzut) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 |          0098 | Coada robotului (o singură coadă, în ordine, pauză / scoatere, fereastra «Coada robotului») + poarta serverului (nicio scriere pe server cât rulează robotul; citirile trec) (cererea operatorului, 30.09.2026) | GATA pe cod (build curat, netestat, nevăzut); 0098-02: citirile trec poarta + banc DevHarness (nerulat) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
+|          0099 | `PrintCount`: de câte ori a fost tipărit un document — coloană pe cele patru tabele de PDF + `FX_DDF_REV` / `FX_ORD` pentru nesemnate; tipărirea văzută în coada de tipărire Windows (`AdobePrintWatcher`), numărată prin `POST …/print`; legat și în bancul de semnare; **lista de tipărire** pe lună / «Toate» din ORD și DDF («Generează și imprimă», «Salvează local», «Listat» de mână) (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; SQL + server nedeployate) | [0090-0099](state/KBOT_STATUS_0090-0099.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0099.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0100.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara
@@ -255,6 +256,9 @@ plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele dou�
 - Same day: slice 0000-32, the help window is one continuous page (the tree follows the scroll),
   «Imprimă» and «Exportă» each with a menu of how much, and the freeze on «Exportă»
   ([0000-0009](state/KBOT_STATUS_0000-0009.md)). Not run, not seen on screen.
+- Same day: slice 0099, `PrintCount` — prints of the documents shown in the Adobe pane, noticed in
+  the Windows print queue and counted on the server ([0090-0099](state/KBOT_STATUS_0090-0099.md)).
+  Nothing run. Deploy order: the DDL first. No help change (nothing the operator sees).
 - Earlier (28.09.2026): slice 0090, this file split ([0090-0099](state/KBOT_STATUS_0090-0099.md));
   slices 0088 and 0089 ([0080-0089](state/KBOT_STATUS_0080-0089.md)), plus
   the sliceless «silent FOREXE downloads + FOREXE page pictures» work, whose cause is still NOT

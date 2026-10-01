@@ -137,6 +137,8 @@ Public NotInheritable Class RevizieRow
     Public Property PdfDimensiune As Integer?
     ''' <summary>Cand a fost scris ultima data PDF-ul semnat (cu ora); Nothing cand nu exista.</summary>
     Public Property PdfDataModif As Date?
+    ''' <summary>Slice 0099: how many times the revision was printed (PDF row + document row).</summary>
+    Public Property PrintCount As Integer
 
     ''' <summary>Exista un PDF SEMNAT pe server pentru aceasta revizie?</summary>
     Public ReadOnly Property ArePdfSemnat As Boolean

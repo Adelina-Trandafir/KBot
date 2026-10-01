@@ -57,6 +57,24 @@ Public Class ReaderHostPreview
     End Property
     Private _signing As PdfSigningSession
 
+    ''' <summary>
+    ''' Slice 0099: which server document the file about to be shown is (Nothing = the print is only
+    ''' logged, not counted). Set by the page BEFORE ShowDocument, like <see cref="Signing"/>: the
+    ''' document shown takes the target it finds here and keeps it until it is released.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False),
+     System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property PrintTarget As PdfPrintTarget
+
+    ''' <summary>
+    ''' Slice 0099: the print queue showed a job of the document on screen (UI thread). Raised for
+    ''' every such job, with or without a <see cref="PrintTarget"/>. For the bench.
+    ''' </summary>
+    Public Event DocumentPrinted As Action(Of AdobePrintJob)
+
+    ' Slice 0099: the print watch of the document on screen (Nothing when none is shown).
+    Private _printWatch As IDisposable
+
     ''' <summary>Slice 0078: a trapped save finished (argument = the document path). For the bench.</summary>
     Public Event DocumentSaved As Action(Of String)
     ''' <summary>Slice 0078: a save was cancelled by the trap (argument = Romanian reason). For the bench.</summary>
@@ -184,6 +202,8 @@ Public Class ReaderHostPreview
     Public Sub ShowDocument(pdfPath As String, exists As Boolean) Implements IDdfPreview.ShowDocument
         Try
             _requestedPath = pdfPath
+            ' Slice 0099: the previous document is no longer on screen (its late jobs are still caught).
+            StopPrintWatch()
             ' Ambele motoare folosesc ACELAȘI panou, deci cel nefolosit trebuie să-l elibereze —
             ' altfel controlul ActiveX ar rămâne peste fereastra reparentată, sau invers.
             ReleaseUnusedEngine()
@@ -214,6 +234,8 @@ Public Class ReaderHostPreview
             ' gazdă NU se arată acum: fereastra Adobe încă nu există, iar un dreptunghi gol nu spune
             ' nimic operatorului.
             ShowLoading()
+            ' Slice 0099: from now on a print job carrying this file's name is a print of it.
+            StartPrintWatch(pdfPath)
             ' Slice 0078-08: from here until Adobe reports the document done, the trees are locked.
             SetOpening(True)
             ' Fire-and-forget deliberat: metoda își tratează singură TOATE erorile (același tipar ca
@@ -370,6 +392,45 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ' ── Print count (slice 0099) ────────────────────────────────────────────────
+
+    ' Registers the document with the print watch. The target is the one the page set for THIS
+    ' document; it is kept by the registration, so a job that reaches the queue after the operator
+    ' moved on is still counted against the document it prints. A failing watch must not keep the
+    ' document off the screen: log and swallow.
+    Private Sub StartPrintWatch(pdfPath As String)
+        Try
+            Dim target As PdfPrintTarget = PrintTarget
+            _printWatch = AdobePrintWatcher.Watch(pdfPath, Sub(job) OnPrinted(job, target))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.StartPrintWatch", ex)
+            AdobeHostLog.Write("ATENȚIE: tipăririle acestui document nu pot fi urmărite (vezi jurnalul de erori).")
+        End Try
+    End Sub
+
+    Private Sub StopPrintWatch()
+        Try
+            _printWatch?.Dispose()
+            _printWatch = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.StopPrintWatch", ex)
+        End Try
+    End Sub
+
+    ' Watch callback, UI thread. UI boundary: log and swallow.
+    Private Sub OnPrinted(job As AdobePrintJob, target As PdfPrintTarget)
+        Try
+            If target Is Nothing Then
+                AdobeHostLog.Write($"Tipărire nenumărată: «{IO.Path.GetFileName(job.DocumentPath)}» nu e legat de un document de pe server.")
+            Else
+                target.Record(job)
+            End If
+            RaiseEvent DocumentPrinted(job)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnPrinted", ex)
+        End Try
+    End Sub
+
     ' ── Opening gate (slice 0078-08) ────────────────────────────────────────────
 
     ' True from the moment a document is sent to Adobe until Adobe reports it done; the application's
@@ -411,6 +472,7 @@ Public Class ReaderHostPreview
     ''' </summary>
     Friend Sub DetachReader()
         Try
+            StopPrintWatch()
             _host?.Dispose()
             DisposeAcro()
             SetOpening(False)
@@ -443,6 +505,7 @@ Public Class ReaderHostPreview
     Public Sub Clear() Implements IDdfPreview.Clear
         Try
             _requestedPath = Nothing
+            StopPrintWatch()
             _host.Detach()
             _acro?.Clear()
             SetOpening(False)
@@ -471,6 +534,7 @@ Public Class ReaderHostPreview
     Public Sub ShowNotice(message As String)
         Try
             _requestedPath = Nothing
+            StopPrintWatch()
             _host.Detach()
             _acro?.Clear()
             ShowMessage(message)

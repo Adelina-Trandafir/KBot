@@ -54,6 +54,8 @@ Public NotInheritable Class OrdHeaderRow
     ''' <summary>Slice 0078: signer roles stored in FX_ORD.Semnatura ("AB,CD,Ordonator");
     ''' empty when unsigned.</summary>
     Public Property Semnatura As String = String.Empty
+    ''' <summary>Slice 0099: how many times the ordonantare was printed (PDF row + document row).</summary>
+    Public Property PrintCount As Integer
 
     ''' <summary>Exista un PDF SEMNAT pe server pentru aceasta ordonantare?</summary>
     Public ReadOnly Property ArePdfSemnat As Boolean

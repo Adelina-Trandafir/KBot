@@ -49,6 +49,12 @@ Public NotInheritable Class CabNotePageContext
     ''' <summary>Is <see cref="ReceiptPath"/> on this computer right now?</summary>
     Public Property ReceiptExists As Boolean
 
+    ''' <summary>Slice 0099: the note the document at <see cref="PdfPath"/> is, for the print counter (Nothing on a month).</summary>
+    Public Property PrintTarget As PdfPrintTarget
+
+    ''' <summary>Slice 0099: the receipt at <see cref="ReceiptPath"/>, for the print counter (Nothing without a receipt).</summary>
+    Public Property ReceiptPrintTarget As PdfPrintTarget
+
     Public Sub New(notes As List(Of CabCorrectionNote), note As CabCorrectionNote, pdfPath As String, pdfExists As Boolean)
         Me.Notes = If(notes, New List(Of CabCorrectionNote)())
         Me.Note = note

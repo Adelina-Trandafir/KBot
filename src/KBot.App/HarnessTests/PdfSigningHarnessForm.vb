@@ -32,6 +32,14 @@ Imports KBot.Xfa
 ''' on <see cref="RecordingPdfApi"/>: nothing reaches the server. «Forțează fereastra găzduită»
 ''' (on by default) makes this bench's viewer use the hosted window whatever «Setări» says.</para>
 '''
+''' <para><b>Printing (slice 0099).</b> Every document opened here is watched in the print queue
+''' like on the real pages: print it from Adobe (Ctrl+P) and the journal shows the print lines of
+''' <c>adobe_preview.log</c>, marked «[Adobe]» (the Print window seen, the job found, the jobs that
+''' were NOT taken for this document), and one line of the bench per detected print. With an id
+''' and a login -- and not in the simulated-upload mode -- the print is also counted on the server,
+''' on the REAL row of that id (<c>PrintCount</c>), and the server's answer comes back as an
+''' «[Adobe]» line.</para>
+'''
 ''' <para><b>Always on a copy.</b> A local PDF is copied into <c>TempPdf\Banc\</c> first (wiped at
 ''' every start); the original is never touched. «Deschide copia de pe server» downloads into the
 ''' same folder -- that is the «retrieve» half of the round trip.</para>
@@ -61,6 +69,7 @@ Public NotInheritable Class PdfSigningHarnessForm
         _logHooked = True
         AddHandler preview.DocumentSaved, AddressOf OnDocumentSaved
         AddHandler preview.SaveCancelled, AddressOf OnSaveCancelled
+        AddHandler preview.DocumentPrinted, AddressOf OnDocumentPrinted
         ApplyEngineChoice()
         UpdateSessionLabel()
         Write("Banc pornit. Setarea motorului Adobe din «Setări» nu se schimbă; bancul poate doar să-și " &
@@ -189,6 +198,7 @@ Public NotInheritable Class PdfSigningHarnessForm
                 _signing.Begin()
                 Write($"Sesiune de semnare SIMULATĂ: {Kind()} {id}, nimic nu ajunge pe server.")
                 preview.Signing = _signing
+                preview.PrintTarget = BenchPrintTarget()
                 preview.ShowDocument(path, exists:=True)
                 Return
             End If
@@ -217,12 +227,39 @@ Public NotInheritable Class PdfSigningHarnessForm
             End If
 
             preview.Signing = _signing
+            preview.PrintTarget = BenchPrintTarget()
             preview.ShowDocument(path, exists:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("PdfSigningHarnessForm.OpenAsync", ex)
             Write("Deschiderea a eșuat: " & ex.Message)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0099: where a print of the document about to be shown is counted. Nothing = the bench
+    ''' only DETECTS the print (simulation, no id, no login). Independent of the upload tick: a
+    ''' document opened only for the trap is counted too when the id and the login are there.
+    ''' </summary>
+    Private Function BenchPrintTarget() As PdfPrintTarget
+        If chkSimuleaza.Checked Then
+            Write("Tipărire: simulare — o tipărire se DETECTEAZĂ, dar nu se numără pe server.")
+            Return Nothing
+        End If
+        Dim id As Integer
+        If Not Integer.TryParse(txtId.Text.Trim(), id) OrElse id <= 0 OrElse
+           _session Is Nothing OrElse Not _session.IsAuthenticated Then
+            Write("Tipărire: fără id sau fără autentificare, o tipărire se DETECTEAZĂ, dar nu se numără pe server.")
+            Return Nothing
+        End If
+        Dim printed As PrintedDocumentKind = If(KindEnum() = PdfDocKind.Ord, PrintedDocumentKind.Ord, PrintedDocumentKind.Ddf)
+        Dim target As PdfPrintTarget = PdfPrintTarget.Create(printed, id, _api)
+        If target Is Nothing Then
+            Write("Tipărire: clientul API al bancului nu are ruta de numărare — o tipărire doar se DETECTEAZĂ.")
+        Else
+            Write($"Tipărire: fiecare tipărire a acestui document se numără pe server, pe rândul REAL «{target.Describe()}» (PrintCount).")
+        End If
+        Return target
+    End Function
 
     ''' <summary>Adobe holds the file open: the preview lets go before the copy is overwritten.</summary>
     Private Sub ReleaseDocument()
@@ -231,6 +268,7 @@ Public NotInheritable Class PdfSigningHarnessForm
         _timeline?.Dispose()
         _timeline = Nothing
         preview.Signing = Nothing
+        preview.PrintTarget = Nothing
         preview.Clear()
         _path = Nothing
         lblFisier.Text = "Niciun document"
@@ -272,6 +310,18 @@ Public NotInheritable Class PdfSigningHarnessForm
 
     Private Sub OnSaveCancelled(reason As String)
         Write("SALVARE ANULATĂ de capcană: " & reason)
+    End Sub
+
+    ' Slice 0099: the print queue showed a job of the document on screen (UI thread). The server's
+    ' answer, when the print is counted, follows as an «[Adobe]» line (PdfPrintTarget writes it).
+    Private Sub OnDocumentPrinted(job As AdobePrintJob)
+        Try
+            Write($"TIPĂRIRE detectată: imprimanta «{job.Printer}», lucrarea {job.JobId} «{job.JobName}»" &
+                  If(preview.PrintTarget Is Nothing, " — nenumărată pe server (vezi mai sus de ce).",
+                     " — trimisă la server pentru numărare."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningHarnessForm.OnDocumentPrinted", ex)
+        End Try
     End Sub
 
     ' The session already showed its message to the operator; the bench adds it to the log.

@@ -932,7 +932,8 @@ Public Class ApiClient
                                 .TotalRevizie = r.total_revizie,
                                 .PdfSha256 = If(r.pdf_sha256, String.Empty),
                                 .PdfDimensiune = r.pdf_dimensiune,
-                                .PdfDataModif = r.pdf_data_modif
+                                .PdfDataModif = r.pdf_data_modif,
+                                .PrintCount = r.print_count
                             })
                         Next
                     End If
@@ -1037,7 +1038,8 @@ Public Class ApiClient
                                 .PdfSha256 = If(o.pdf_sha256, String.Empty),
                                 .PdfDimensiune = o.pdf_dimensiune,
                                 .PdfDataModif = o.pdf_data_modif,
-                                .Semnatura = If(o.semnatura, String.Empty)
+                                .Semnatura = If(o.semnatura, String.Empty),
+                                .PrintCount = o.print_count
                             })
                         Next
                     End If
