@@ -6,12 +6,32 @@ Imports KBot.Forexe
 
 ''' <summary>
 ''' Slice 0100: several angajamente downloaded AT ONCE, one FOREXE tab each (multi-thread mode:
-''' «Setari -> Aplicatie», advanced options). Three doors lead here -- the «Actualizeaza
+''' the server must allow it -- <c>Setari.Multithread</c>, slice 0100-02 -- and the operator switches it
+''' on in «Setari -> Descarcari multiple»). Three doors lead here -- the «Actualizeaza
 ''' angajamente...» row of the tree menu (the operator ticks them), the update of the old ones right
 ''' after a FOREXE connection, and the question after the list refresh brought new ones -- and one
 ''' road runs from there: <see cref="ActualizeazaMaiMulteAsync"/>.
 ''' </summary>
 Partial Public Class KbotForm
+
+    ''' <summary>
+    ''' Slice 0100-02: reads the settings the SERVER decides (table <c>Setari</c> of the connected unit) into
+    ''' <see cref="ServerSettings"/>. Run after a login and after a change of unit. A failure is logged and
+    ''' leaves every server-controlled setting OFF: a feature the server did not confirm is never on.
+    ''' </summary>
+    Private Async Function LoadServerSettingsAsync() As Task
+        Try
+            Dim api As ISetariApi = TryCast(_apiClient, ISetariApi)
+            If api Is Nothing Then
+                ServerSettings.Clear()
+                Return
+            End If
+            ServerSettings.Apply(Await api.GetServerSettingsAsync(CancellationToken.None))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.LoadServerSettingsAsync", ex)
+            ServerSettings.Clear()
+        End Try
+    End Function
 
     ''' <summary>Called once from Load: the on-connect update follows the controller's «connected».</summary>
     Private Sub LeagaActualizareaMultipla()

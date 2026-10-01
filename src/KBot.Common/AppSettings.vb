@@ -83,9 +83,10 @@ Public NotInheritable Class AppSettings
     Public Const AutoUpdateDaysMax As Integer = 10
 
     ''' <summary>
-    ''' Slice 0100: several angajamente are downloaded at once, one FOREXE tab each. Offered only
-    ''' with the advanced options on (see <see cref="MultiThreadInEffect"/>); off by default, so
-    ''' the one-at-a-time download is exactly what it was.
+    ''' Slice 0100: several angajamente are downloaded at once, one FOREXE tab each. The operator's
+    ''' own switch; it counts only while the SERVER allows multi-thread (slice 0100-02,
+    ''' <see cref="ServerSettings.MultithreadAllowed"/> -- see <see cref="MultiThreadInEffect"/>). Off by
+    ''' default, so the one-at-a-time download is exactly what it was.
     ''' </summary>
     Public Property MultiThreadDownloads As Boolean = False
 
@@ -107,17 +108,30 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property UpdateAllReceptiiByDefault As Boolean = False
 
-    ''' <summary>Slice 0100: multi-thread downloading as it applies now (needs the advanced options).</summary>
+    ''' <summary>
+    ''' Slice 0100: multi-thread downloading as it applies now -- the server allows it (slice 0100-02,
+    ''' <c>Setari.Multithread</c>) AND the operator switched it on. The advanced options no longer matter.
+    ''' </summary>
     Public ReadOnly Property MultiThreadInEffect As Boolean
         Get
-            Return AdvancedOptions AndAlso MultiThreadDownloads
+            Return ServerSettings.MultithreadAllowed AndAlso MultiThreadDownloads
         End Get
     End Property
 
-    ''' <summary>Slice 0100: <see cref="DownloadThreads"/> kept inside its range.</summary>
+    ''' <summary>
+    ''' Slice 0100: the most tabs the operator can ask for now: the server's <c>Multithread_Max</c>
+    ''' (slice 0100-02), never above <see cref="DownloadThreadsMax"/>.
+    ''' </summary>
+    Public Shared ReadOnly Property DownloadThreadsCeiling As Integer
+        Get
+            Return Math.Min(DownloadThreadsMax, Math.Max(DownloadThreadsMin, ServerSettings.MultithreadMax))
+        End Get
+    End Property
+
+    ''' <summary>Slice 0100: <see cref="DownloadThreads"/> kept inside 1..<see cref="DownloadThreadsCeiling"/>.</summary>
     Public ReadOnly Property DownloadThreadsInEffect As Integer
         Get
-            Return Math.Min(DownloadThreadsMax, Math.Max(DownloadThreadsMin, DownloadThreads))
+            Return Math.Min(DownloadThreadsCeiling, Math.Max(DownloadThreadsMin, DownloadThreads))
         End Get
     End Property
 

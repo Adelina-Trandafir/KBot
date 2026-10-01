@@ -31,6 +31,7 @@ Partial Class SetariForm
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnClose = New Button()
         pnlRoot = New Panel()
@@ -121,6 +122,10 @@ Partial Class SetariForm
         KBotNavItem3.Image = My.Resources.Resources.butonforexebug2022
         KBotNavItem3.Key = "forexe"
         KBotNavItem3.Text = "FOREXE"
+        KBotNavItem12.Image = My.Resources.Resources.FX_REFRESH_32
+        KBotNavItem12.Key = "multithread"
+        KBotNavItem12.Text = "Descărcări multiple"
+        KBotNavItem12.Visible = False
         KBotNavItem9.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
         KBotNavItem9.Key = "pagina"
         KBotNavItem9.Text = "Pagina FOREXE"
@@ -151,6 +156,7 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
+        navViews.Items.Add(KBotNavItem12)
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
         navViews.Items.Add(KBotNavItem4)

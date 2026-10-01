@@ -148,6 +148,8 @@ Partial Public Class KbotForm
             ApplyViewGating(Nothing)
 
             Await LoadPeriodsAsync()
+            ' Slice 0100-02: another unit, another Setari table.
+            Await LoadServerSettingsAsync()
             Await LoadTreeAsync()
             Await RefreshUncorrelatedMarkAsync()
         Catch ex As Exception

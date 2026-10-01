@@ -30,11 +30,6 @@ Partial Class SetariAplicatieView
         chkTurInitial = New CheckBox()
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
-        chkMultiThread = New CheckBox()
-        txtFire = New KBotTextField()
-        chkAutoVechi = New CheckBox()
-        txtZile = New KBotTextField()
-        chkToateReceptiile = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAdobeClasic = New CheckBox()
@@ -58,9 +53,6 @@ Partial Class SetariAplicatieView
         lblGrupFereastra = New Label()
         lblGrupForexe = New Label()
         lblGrupAvansat = New Label()
-        lblGrupDescarcari = New Label()
-        lblFire = New Label()
-        lblZile = New Label()
         tlyPaginaDocumente = New KBotTableLayoutPanel()
         lblTitluDocumente = New Label()
         tlyDocumente = New KBotTableLayoutPanel()
@@ -229,116 +221,6 @@ Partial Class SetariAplicatieView
         lblGrupAvansat.Size = New Size(200, 28)
         lblGrupAvansat.TabIndex = 10
         lblGrupAvansat.Text = "Avansat"
-        '
-        ' lblGrupDescarcari
-        '
-        lblGrupDescarcari.AutoSize = True
-        tlyComutatoare.SetColumnSpan(lblGrupDescarcari, 2)
-        lblGrupDescarcari.Font = New Font("Segoe UI Semibold", 10.5F)
-        lblGrupDescarcari.Location = New Point(4, 0)
-        lblGrupDescarcari.Margin = New Padding(4, 12, 4, 8)
-        lblGrupDescarcari.Name = "lblGrupDescarcari"
-        lblGrupDescarcari.Size = New Size(200, 28)
-        lblGrupDescarcari.TabIndex = 13
-        lblGrupDescarcari.Text = "Descărcări multiple (mai multe taburi FOREXE deodată)"
-        '
-        ' chkMultiThread
-        '
-        chkMultiThread.AutoSize = True
-        tlyComutatoare.SetColumnSpan(chkMultiThread, 2)
-        chkMultiThread.Location = New Point(4, 0)
-        chkMultiThread.Margin = New Padding(4, 0, 4, 10)
-        chkMultiThread.Name = "chkMultiThread"
-        chkMultiThread.Size = New Size(462, 26)
-        chkMultiThread.TabIndex = 14
-        chkMultiThread.Text = "Descarcă mai multe angajamente deodată"
-        tips.SetToolTipHeader(chkMultiThread, "Descărcare pe mai multe fire")
-        tips.SetToolTipText(chkMultiThread, "Bifat: fiecare descărcare rulează pe un tab FOREXE al ei, mai multe deodată (aceeași conectare, fără altă autentificare)." & vbLf & "Cele peste numărul de taburi așteaptă la rând și pornesc pe măsură ce se eliberează un tab." & vbLf & "Apare un rând nou în meniul arborelui: «Actualizează angajamente...»." & vbLf & "Debifat: descărcările merg una câte una, ca până acum.")
-        chkMultiThread.UseVisualStyleBackColor = True
-        '
-        ' lblFire
-        '
-        lblFire.AutoSize = True
-        lblFire.Dock = DockStyle.Fill
-        lblFire.Location = New Point(4, 0)
-        lblFire.Margin = New Padding(28, 0, 4, 10)
-        lblFire.Name = "lblFire"
-        lblFire.Size = New Size(392, 40)
-        lblFire.TabIndex = 15
-        lblFire.Text = "Numărul de taburi deodată (1–10)"
-        lblFire.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' txtFire
-        '
-        txtFire.Anchor = AnchorStyles.Left
-        txtFire.BackColor = Color.Transparent
-        txtFire.Location = New Point(404, 0)
-        txtFire.Margin = New Padding(4, 0, 4, 10)
-        txtFire.MaxLength = 2
-        txtFire.Name = "txtFire"
-        txtFire.PlaceholderText = "3"
-        txtFire.Size = New Size(150, 40)
-        txtFire.TabIndex = 16
-        txtFire.TextAlign = HorizontalAlignment.Center
-        txtFire.TextPadding = New Padding(8, 0, 8, 0)
-        tips.SetToolTipHeader(txtFire, "Câte descărcări deodată")
-        tips.SetToolTipText(txtFire, "Cel mult 10. Atâtea taburi FOREXE lucrează în același timp." & vbLf & "Nu e o limită a angajamentelor alese: cele în plus așteaptă la rând." & vbLf & "Se salvează la Enter sau când ieși din câmp.")
-        '
-        ' chkAutoVechi
-        '
-        chkAutoVechi.AutoSize = True
-        tlyComutatoare.SetColumnSpan(chkAutoVechi, 2)
-        chkAutoVechi.Location = New Point(4, 0)
-        chkAutoVechi.Margin = New Padding(28, 0, 4, 10)
-        chkAutoVechi.Name = "chkAutoVechi"
-        chkAutoVechi.Size = New Size(462, 26)
-        chkAutoVechi.TabIndex = 17
-        chkAutoVechi.Text = "La conectare, actualizează angajamentele vechi"
-        tips.SetToolTipHeader(chkAutoVechi, "Actualizare la conectare")
-        tips.SetToolTipText(chkAutoVechi, "Bifat: după conectarea la FOREXE, angajamentele descărcate deja, dar neactualizate de cel puțin numărul de zile de mai jos, se descarcă singure (mai multe deodată)." & vbLf & "Nu se pune nicio întrebare și se citesc toate recepțiile." & vbLf & "Data ultimei actualizări se vede în descrierea de la trecerea mouse-ului peste angajament.")
-        chkAutoVechi.UseVisualStyleBackColor = True
-        '
-        ' lblZile
-        '
-        lblZile.AutoSize = True
-        lblZile.Dock = DockStyle.Fill
-        lblZile.Location = New Point(4, 0)
-        lblZile.Margin = New Padding(56, 0, 4, 10)
-        lblZile.Name = "lblZile"
-        lblZile.Size = New Size(392, 40)
-        lblZile.TabIndex = 18
-        lblZile.Text = "Neactualizate de (zile, cel mult 10)"
-        lblZile.TextAlign = ContentAlignment.MiddleLeft
-        '
-        ' txtZile
-        '
-        txtZile.Anchor = AnchorStyles.Left
-        txtZile.BackColor = Color.Transparent
-        txtZile.Location = New Point(404, 0)
-        txtZile.Margin = New Padding(4, 0, 4, 10)
-        txtZile.MaxLength = 2
-        txtZile.Name = "txtZile"
-        txtZile.PlaceholderText = "7"
-        txtZile.Size = New Size(150, 40)
-        txtZile.TabIndex = 19
-        txtZile.TextAlign = HorizontalAlignment.Center
-        txtZile.TextPadding = New Padding(8, 0, 8, 0)
-        tips.SetToolTipHeader(txtZile, "Zilele de la ultima actualizare")
-        tips.SetToolTipText(txtZile, "De la 1 la 10. Un angajament neactualizat de atâtea zile (sau mai mult) se descarcă la conectare." & vbLf & "Se salvează la Enter sau când ieși din câmp.")
-        '
-        ' chkToateReceptiile
-        '
-        chkToateReceptiile.AutoSize = True
-        tlyComutatoare.SetColumnSpan(chkToateReceptiile, 2)
-        chkToateReceptiile.Location = New Point(4, 0)
-        chkToateReceptiile.Margin = New Padding(28, 0, 4, 10)
-        chkToateReceptiile.Name = "chkToateReceptiile"
-        chkToateReceptiile.Size = New Size(462, 26)
-        chkToateReceptiile.TabIndex = 20
-        chkToateReceptiile.Text = "Actualizează implicit toate recepțiile"
-        tips.SetToolTipHeader(chkToateReceptiile, "Toate recepțiile, fără întrebare")
-        tips.SetToolTipText(chkToateReceptiile, "Bifat: cât timp descărcarea pe mai multe taburi e pornită, fereastra de alegere a recepțiilor nu se mai arată; se citesc toate recepțiile." & vbLf & "Debifat: alegerea recepțiilor se face ca până acum." & vbLf & "Fără descărcarea pe mai multe taburi, fereastra se arată ca până acum.")
-        chkToateReceptiile.UseVisualStyleBackColor = True
         '
         ' cboAdobeMotor
         '
@@ -599,24 +481,11 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 8)
         tlyComutatoare.Controls.Add(chkAvansate, 0, 9)
         tlyComutatoare.Controls.Add(chkCapturi, 0, 10)
-        tlyComutatoare.Controls.Add(lblGrupDescarcari, 0, 11)
-        tlyComutatoare.Controls.Add(chkMultiThread, 0, 12)
-        tlyComutatoare.Controls.Add(lblFire, 0, 13)
-        tlyComutatoare.Controls.Add(txtFire, 1, 13)
-        tlyComutatoare.Controls.Add(chkAutoVechi, 0, 14)
-        tlyComutatoare.Controls.Add(lblZile, 0, 15)
-        tlyComutatoare.Controls.Add(txtZile, 1, 15)
-        tlyComutatoare.Controls.Add(chkToateReceptiile, 0, 16)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 17
-        tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowCount = 12
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -932,14 +801,6 @@ Partial Class SetariAplicatieView
     Friend WithEvents lblGrupFereastra As Label
     Friend WithEvents lblGrupForexe As Label
     Friend WithEvents lblGrupAvansat As Label
-    Friend WithEvents lblGrupDescarcari As Label
-    Friend WithEvents chkMultiThread As CheckBox
-    Friend WithEvents lblFire As Label
-    Friend WithEvents txtFire As KBotTextField
-    Friend WithEvents chkAutoVechi As CheckBox
-    Friend WithEvents lblZile As Label
-    Friend WithEvents txtZile As KBotTextField
-    Friend WithEvents chkToateReceptiile As CheckBox
     Friend WithEvents tlyPaginaDocumente As KBotTableLayoutPanel
     Friend WithEvents lblTitluDocumente As Label
     Friend WithEvents tlyDocumente As KBotTableLayoutPanel

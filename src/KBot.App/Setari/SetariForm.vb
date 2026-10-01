@@ -9,7 +9,7 @@ Imports KBot.Theming
 ''' <see cref="KBotNavList"/> on the left, one page at a time on the right, a status band
 ''' below. Six pages, created lazily at first activation like the shell's views:
 ''' «Informații» (operator, licence, updates, password), «Aplicație» (switches, documents,
-''' folders), «FOREXE», «Temă», «Autentificare» and -- pinned at the bottom of the list --
+''' folders), «FOREXE», «Descărcări multiple» (only while the server allows it, slice 0100-02), «Temă», «Autentificare» and -- pinned at the bottom of the list --
 ''' «Jurnal», the log viewer (slice 0072-01; it used to be a window of its own).
 '''
 ''' <para><b>Modeless, one instance.</b> Opened from the shell's options menu and owned by
@@ -98,7 +98,9 @@ Public Class SetariForm
             ' SelectionChanged and therefore creates it -- same reasoning as the shell.
             navViews.SelectedKey = "info"
             AplicaOptiunileAvansate()
+            AplicaSetarileServerului()
             AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
+            AddHandler ServerSettings.Changed, AddressOf ServerSettings_Changed
         Catch ex As Exception
             ' UI boundary (Load): log and swallow.
             GlobalErrorLog.Write("SetariForm.SetariForm_Load", ex)
@@ -108,6 +110,7 @@ Public Class SetariForm
     ' AppSettings.Changed is static: the subscription must end with the window.
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed
+        RemoveHandler ServerSettings.Changed, AddressOf ServerSettings_Changed
         MyBase.OnFormClosed(e)
     End Sub
 
@@ -119,6 +122,9 @@ Public Class SetariForm
     ''' page, the documents tab, lives inside <see cref="SetariAplicatieView"/>.
     ''' </summary>
     Friend Shared ReadOnly AdvancedPageKeys As String() = {"pagina", "tema", "foldere"}
+
+    ' The page the server's Setari.Multithread switches on and off (slice 0100-02).
+    Private Const KeyMultithread As String = "multithread"
 
     Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
         Try
@@ -141,6 +147,32 @@ Public Class SetariForm
             navViews.SetItemVisible(key, shown)
         Next
         If Not shown AndAlso AdvancedPageKeys.Contains(navViews.SelectedKey) Then
+            navViews.SelectedKey = "aplicatie"
+        End If
+    End Sub
+
+    ' ---------------- what the server decides (slice 0100-02) ----------------
+
+    ' ServerSettings.Changed is static and may fire on any thread: same shape as AppSettings_Changed.
+    Private Sub ServerSettings_Changed(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not IsHandleCreated Then Return
+            If InvokeRequired Then
+                BeginInvoke(New Action(AddressOf AplicaSetarileServerului))
+            Else
+                AplicaSetarileServerului()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForm.ServerSettings_Changed", ex)
+        End Try
+    End Sub
+
+    ' «Descarcari multiple» exists only while the server has Setari.Multithread on. The page is hidden
+    ' while it is on screen -> hand over to «Aplicatie», the same rule as the advanced pages.
+    Private Sub AplicaSetarileServerului()
+        Dim shown As Boolean = ServerSettings.MultithreadAllowed
+        navViews.SetItemVisible(KeyMultithread, shown)
+        If Not shown AndAlso String.Equals(navViews.SelectedKey, KeyMultithread, StringComparison.Ordinal) Then
             navViews.SelectedKey = "aplicatie"
         End If
     End Sub
@@ -216,6 +248,7 @@ Public Class SetariForm
                 Case "info" : Return New SetariInfoView(_session, _authApi, _updates, AddressOf InchideAplicatia)
                 Case "aplicatie" : Return New SetariAplicatieView()
                 Case "forexe" : Return New SetariForexeView(_controller)
+                Case KeyMultithread : Return New SetariMultithreadView()
                 Case "pagina" : Return New SetariPaginaView(_controller)
                 Case "extrase" : Return New SetariExtraseView()
                 Case "tema" : Return New SetariTemaView()

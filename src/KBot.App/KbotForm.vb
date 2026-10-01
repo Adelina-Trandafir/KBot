@@ -332,6 +332,8 @@ Partial Public Class KbotForm
             ' without one).
             If _session.IsAuthenticated AndAlso Not String.IsNullOrEmpty(_session.DbName) Then
                 Await LoadPeriodsAsync()
+                ' Slice 0100-02: what the server allows (multi-thread) is known before the tree is read.
+                Await LoadServerSettingsAsync()
                 Await LoadTreeAsync()
                 ' Slice 0088: the menu's «Operatiuni necorelate» entry and its «!» mark.
                 Await RefreshUncorrelatedMarkAsync()
