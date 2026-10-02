@@ -45,7 +45,7 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 > începe alta pe același angajament.
 
 ## Vederea «Fundamentare»
-<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099 -->
+<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099, 0101 -->
 
 - **Arborele**: rădăcina **«Toate reviziile»** (clic pe ea = tot documentul), lunile, apoi
   reviziile. **Clic dreapta** pe o revizie oferă, după stare: «Trimite în FOREXE» / «Reia trimiterea
@@ -58,18 +58,20 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
   (**Setări › Jurnal**).
 - **Lupa** din capul arborelui caută o revizie; **butonul de strângere** din subsol îngustează
   arborele — [Arborii și tabelele](topic:contabil.liste).
-- Paginile din dreapta: **Vizualizare** (valorile reviziei), **Document PDF** (documentul, unde
-  se și semnează) și **Fișiere** (atașamentele, inclusiv capturile venite din FOREXE). Pe o **lună**
-  sau pe **«Toate reviziile»** dreapta arată în schimb lista de tipărire — vezi **Lista de tipărire**, la sfârșitul acestui ajutor.
+- Paginile din dreapta, alese din bara de sus: **Vizualizare** (valorile reviziei), **Document PDF**
+  (documentul, unde se și semnează) și **Fișiere** (atașamentele, inclusiv capturile venite din FOREXE).
+  Pe o **lună** sau pe **«Toate reviziile»** bara rămâne: **Vizualizare** arată valorile tuturor
+  reviziilor de sub rând, iar pagina **Document PDF** se numește **Documente** și arată lista de
+  tipărire — vezi **Lista de tipărire**, la sfârșitul acestui ajutor.
 - Cât Adobe încă deschide documentul unei revizii (sau un fișier din «Fișiere»), arborele și lista
   de fișiere nu primesc alt rând — [Cât se deschide un document](topic:contabil.liste).
 
 <!-- capture: ddf-document | caption: Pagina «Document PDF» a unei revizii semnate | goto: view:ddf | prepare: Alegeți o revizie semnată din arbore și deschideți pagina «Document PDF». -->
 
 ## Lista de tipărire
-<!-- slice: 0099 -->
+<!-- slice: 0099, 0101 -->
 
-Când dai clic pe o **lună** sau pe **«Toate reviziile»**, dreapta nu mai arată paginile, ci **lista reviziilor** de sub rândul ales. Pe fiecare rând vezi:
+Când dai clic pe o **lună** sau pe **«Toate reviziile»**, bara cu pagini rămâne, iar pagina **Document PDF** se numește **Documente**. Deschide-o ca să vezi **lista reviziilor** de sub rândul ales; pagina **Vizualizare** arată în continuare valorile lor. Pe fiecare rând al listei vezi:
 
 | Coloană | Ce arată |
 |---------|----------|
@@ -80,14 +82,14 @@ Când dai clic pe o **lună** sau pe **«Toate reviziile»**, dreapta nu mai ara
 | **Listat** | bifat dacă documentul a fost tipărit măcar o dată |
 | **Nr. tipăriri** | de câte ori a fost tipărit |
 
-<!-- capture: ddf-lista-tiparire | caption: Lista de tipărire a reviziilor, pe «Toate reviziile» | goto: view:ddf | prepare: Selectați un angajament cu mai multe revizii, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate reviziile». -->
+<!-- capture: ddf-lista-tiparire | caption: Lista de tipărire a reviziilor, pe «Toate reviziile» | goto: view:ddf | prepare: Selectați un angajament cu mai multe revizii, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate reviziile», apoi pe pagina «Documente». -->
 
 Iconița din capul coloanei cu bife deschide un meniu:
 
 - **«Selectează / deselectează toate»** — bifează toate rândurile, sau le debifează dacă erau toate bifate;
 - **«Selectează / deselectează doar cele nelistate»** — la fel, dar doar pe rândurile cu 0 tipăriri; cele deja listate rămân cum erau.
 
-<!-- capture: ddf-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ddf | prepare: Pe lista de tipărire, apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
+<!-- capture: ddf-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ddf | prepare: Pe pagina «Documente» a rădăcinii «Toate reviziile», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
 
 Jos sunt două butoane, care lucrează pe rândurile **bifate**:
 

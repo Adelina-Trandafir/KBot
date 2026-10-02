@@ -36,7 +36,7 @@ Dacă ziua are **peste 25 de parteneri**, editorul te avertizează de la începu
 trebuie împărțite pe mai multe ordonanțări.
 
 ## Generare în lot
-<!-- slice: 0049-01 -->
+<!-- slice: 0049-01, 0101 -->
 
 **«Generare în lot…»** (clic dreapta în vederea Ordonanțare) face câte o ordonanțare pentru
 **fiecare zi** cu plăți neordonanțate a angajamentului. Semnul **«+»** de pe o **lună**, în
@@ -44,6 +44,7 @@ vederea Plăți, face același lucru doar pentru acea lună.
 
 - K-BOT spune întâi câte zile și câte ordonanțări estimate sunt și cere confirmarea.
 - Fiecare zi se generează și **se salvează direct**, fără editor și fără alte întrebări.
+- Când toate zilele s-au generat, **nu apare niciun mesaj de final**: vederile Ordonanțare și Plăți se reîncarcă singure și vezi acolo rezultatul.
 - **La prima eroare generarea se oprește** și spune ziua și motivul. Ordonanțările salvate până
   acolo **rămân salvate**; după ce rezolvi cauza, reiei — zilele deja acoperite nu se mai propun.
 

@@ -110,6 +110,10 @@ Public NotInheritable Class AngajamentTreeInfo
     ' Slice 0097: a CAB correction note (FX_NoteCAB_Corectii) corrects an operation on it.
     Public Property AreNoteCab As Boolean
 
+    ' Slice 0101: the receptions of this angajament whose chain does not close (the last snapshot
+    ' is not a deletion row and its total differs from the reception's value). Empty = all close.
+    Public Property LantNeinchis As IReadOnlyList(Of ReceptieNeinchisa) = Array.Empty(Of ReceptieNeinchisa)()
+
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)
     Public Property CodIndicator As String = String.Empty

@@ -711,6 +711,17 @@ Public NotInheritable Class KBotNavList
     End Sub
 
     ''' <summary>
+    ''' Schimbă textul unui buton (slice 0101: tabul «Document» devine «Documente» pe un nod de lună).
+    ''' Lățimea butonului se recalculează. Cheie necunoscută => excepție.
+    ''' </summary>
+    Public Sub SetItemText(key As String, text As String)
+        Dim item As KBotNavItem = _items(RequireIndex(key))
+        If String.Equals(item.Text, text, StringComparison.Ordinal) Then Return
+        item.Text = text
+        InvalidateLayout()
+    End Sub
+
+    ''' <summary>
     ''' Cheia selectată. O cheie NECUNOSCUTĂ aruncă ArgumentException (regula casei: fără no-op-uri
     ''' tăcute); setarea aceleiași chei nu re-ridică evenimentul.
     '''

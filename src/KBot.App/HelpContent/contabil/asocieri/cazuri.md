@@ -115,7 +115,7 @@ fără ordonanțare se poate corecta, fie că e veche, fie că abia a venit.
 închiderea fără salvare pierde doar mutările tale nesalvate (K-BOT te întreabă).
 
 ## «Lanțul nu se închide» oprește descărcările și ordonanțările
-<!-- slice: fara-felie -->
+<!-- slice: fara-felie, 0101 -->
 
 Dacă o recepție are ca **ultim instantaneu** unul cu **altă valoare** decât a ei (de obicei un
 instantaneu pus pe recepția greșită), K-BOT **nu pornește**:
@@ -127,6 +127,10 @@ Mesajul arată recepțiile cu pricina (data, valoarea ei, ultimul instantaneu ș
 întreabă dacă deschide fereastra de asociere. Acolo muți instantaneul pe recepția lui (sau în coș)
 și apeși «Salvează legăturile». După salvare K-BOT verifică din nou și, dacă totul se închide,
 continuă singur operația cerută. Dacă închizi fereastra fără să salvezi, operația nu pornește.
+
+Cum îl găsești dinainte: angajamentul cu un astfel de lanț este scris **cu roșu** în lista din fereastra
+principală (indicația lui spune ce recepții sunt și ce valori au), iar în fereastra de asociere
+recepția și ultimul ei instantaneu sunt tot roșii.
 
 Motivul: fără verificarea asta, descărcarea rula până la capăt și abia salvarea ei era refuzată cu
 «... Lanțul nu se închide.», iar o ordonanțare s-ar fi făcut pe cifre greșite ale recepțiilor.

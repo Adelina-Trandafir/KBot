@@ -13,6 +13,10 @@ Imports KBot.Domain
 ''' </summary>
 Partial Public Class KbotForm
 
+    ' Slice 0101: the rows whose receptions do not close, kept so a theme switch can repaint them
+    ' (the red is an explicit colour on the node, not «from the theme»).
+    Private ReadOnly _nodLantNeinchis As New List(Of AdvancedTreeControl.TreeItem)()
+
     ''' <summary>
     ''' Loads the tree from GET /api/forexe/tree for the selected period (year + SS), through
     ''' WithReauth -- the same single re-login path on 401. The database is not sent: the
@@ -101,6 +105,7 @@ Partial Public Class KbotForm
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
+            _nodLantNeinchis.Clear()
 
             ' The view gate is applied ONCE, after the loop, when it is known whether the old
             ' node is still in the tree. Gating on Nothing up here, before the re-selection,
@@ -129,6 +134,8 @@ Partial Public Class KbotForm
                 node.Bold = info.AreIndicatori   ' legacy: bold = has sources (indicatori)
                 node.Underline = _descarcateInSesiune.Contains(cod)   ' saved during this run
                 node.Tooltip = TooltipFor(info)
+                ' Slice 0101: a reception whose chain does not close paints the whole row red.
+                If info.LantNeinchis.Count > 0 Then _nodLantNeinchis.Add(node)
                 'node.ShowRightIconOnHover = True
 
                 _treeInfos(cod) = info
@@ -141,6 +148,8 @@ Partial Public Class KbotForm
                     infoDeSelectat = info
                 End If
             Next
+
+            ColoreazaLanturiNeinchise()
 
             ' The selection is put BACK at the end, with everything that hangs on it -- the
             ' view gate, the active view's context, the info window -- which is exactly what a
@@ -167,6 +176,18 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.PopulateTree", ex)
             Throw
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0101: the error colour on every row collected in <c>_nodLantNeinchis</c>. Also run on a
+    ''' theme switch, because the colour is set on the node and does not follow the theme by itself.
+    ''' </summary>
+    Private Sub ColoreazaLanturiNeinchise()
+        Dim paleta As ThemePalette = ThemeManager.Current?.Palette
+        If paleta Is Nothing Then Return
+        For Each nod As AdvancedTreeControl.TreeItem In _nodLantNeinchis
+            nod.NodeForeColor = paleta.ErrorColor
+        Next
     End Sub
 
     ''' <summary>
@@ -211,6 +232,18 @@ Partial Public Class KbotForm
             Dim surse As String = FormatSurse(info.Surse)
             If surse.Length > 0 Then linii.Add("Surse: " & surse)
             If info.Ascuns Then linii.Add("Ascuns")
+
+            ' Slice 0101: what is wrong, one line per reception.
+            If info.LantNeinchis.Count > 0 Then
+                Dim ro As New Globalization.CultureInfo("ro-RO")
+                linii.Add(String.Empty)
+                linii.Add("⚠ Lanțul nu se închide: ultimul instantaneu nu are valoarea recepției.")
+                For Each r As ReceptieNeinchisa In info.LantNeinchis
+                    linii.Add($"Recepția din {r.DataReceptie:dd.MM.yyyy}: ultimul instantaneu " &
+                              $"{r.TotalUltimInstantaneu.ToString("N2", ro)}, valoarea recepției " &
+                              $"{r.ValoareReceptie.ToString("N2", ro)}")
+                Next
+            End If
 
             Return String.Join(vbLf, linii)
         Catch ex As Exception

@@ -392,6 +392,8 @@ Public Class AsociereForm
                 _nodInstantaneu(inst.Idrh) = New RandDeArbore(treeLibere, frunza)
             Next
 
+            ColoreazaRosuLanturileNeinchise()
+
             ' O recepție pornită aici, dar încă nescriibilă, oprește salvarea ÎNTREAGĂ: serverul
             ' refuză tot pachetul, nu doar recepția cu pricina. Se spune înainte, și se spune ce
             ' anume lipsește — un buton stins fără motiv l-ar pune pe operator să caute.
@@ -1588,6 +1590,9 @@ Public Class AsociereForm
                 Next
             Next
 
+            ' LAST, so nothing above (chart colours, dimmed rows) can override it.
+            ColoreazaRosuLanturileNeinchise()
+
             AplicaCulorileBenzii(benzi, _bandaReceptie)
 
             treeLant.Invalidate()
@@ -1595,6 +1600,28 @@ Public Class AsociereForm
         Catch ex As Exception
             GlobalErrorLog.Write("AsociereForm.SincronizeazaCulorile", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' A chain whose last snapshot is not the receipt's value (and does not end in a deletion row):
+    ''' the receipt row AND that last snapshot row are written in the error colour, whatever any
+    ''' other colour rule says (operator). Same test as the «Lanțul nu se închide» tooltip line.
+    ''' </summary>
+    Private Sub ColoreazaRosuLanturileNeinchise()
+        Dim paleta As ThemePalette = ThemeManager.Current?.Palette
+        If paleta Is Nothing OrElse _stare Is Nothing Then Return
+        For Each rec As ReceptiePropusa In Receptiile()
+            Dim lant As List(Of InstantaneuLegat) = LantulReceptiei(rec)
+            If lant.Count = 0 Then Continue For
+            Dim ultimul As InstantaneuLegat = lant.Last()
+            If EsteStergere(ultimul.Idrh) Then Continue For
+            If Math.Round(ultimul.Total, 2) = Math.Round(rec.SumaAntet, 2) Then Continue For
+
+            Dim nodR As AdvancedTreeControl.TreeItem = Nothing
+            If _nodReceptie.TryGetValue(rec.Idrr, nodR) Then nodR.NodeForeColor = paleta.ErrorColor
+            Dim randH As RandDeArbore = Nothing
+            If _nodInstantaneu.TryGetValue(ultimul.Idrh, randH) Then randH.Nod.NodeForeColor = paleta.ErrorColor
+        Next
     End Sub
 
     ''' <summary>

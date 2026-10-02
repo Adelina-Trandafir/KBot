@@ -375,7 +375,8 @@ Public Class ApiClient
                                 .ArePartener = r.ArePartener,
                                 .AreORD = r.AreOrd,
                                 .AreExtrase = r.AreExtrase,
-                                .AreNoteCab = r.AreNoteCab
+                                .AreNoteCab = r.AreNoteCab,
+                                .LantNeinchis = ParseLantNeinchis(r.LantNeinchis)
                             })
                         Next
                     End If
@@ -389,6 +390,28 @@ Public Class ApiClient
             GlobalErrorLog.Write("ApiClient.GetTreeAsync", ex)
             Throw
         End Try
+    End Function
+
+    ' Slice 0101: «yyyy-MM-dd~total~suma|...» from the tree route -> the receptions whose chain does
+    ' not close. A piece that does not parse is skipped, not guessed (the column is a warning only).
+    Private Shared Function ParseLantNeinchis(text As String) As IReadOnlyList(Of ReceptieNeinchisa)
+        Dim rezultat As New List(Of ReceptieNeinchisa)()
+        If String.IsNullOrWhiteSpace(text) Then Return rezultat
+        For Each bucata As String In text.Split("|"c)
+            Dim parti() As String = bucata.Split("~"c)
+            If parti.Length <> 3 Then Continue For
+            Dim data As Date
+            Dim totalUltim As Double
+            Dim sumaReceptie As Double
+            If Date.TryParseExact(parti(0), "yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture,
+                                  Globalization.DateTimeStyles.None, data) AndAlso
+               Double.TryParse(parti(1), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, totalUltim) AndAlso
+               Double.TryParse(parti(2), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, sumaReceptie) Then
+                rezultat.Add(New ReceptieNeinchisa() With {
+                    .DataReceptie = data, .TotalUltimInstantaneu = totalUltim, .ValoareReceptie = sumaReceptie})
+            End If
+        Next
+        Return rezultat
     End Function
 
     ' Sumarul unui angajament (slice 0011), pentru SumarView. Un singur parametru:

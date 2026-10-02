@@ -41,10 +41,10 @@ target: OrdView.tree
 Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Pe o lună sau pe rădăcina «Toate ordonanțările» poți șterge toate ordonanțările de sub ea, dacă niciuna nu e semnată. Pe o ordonanțare semnată nu apare niciun meniu: nu se mai modifică și nu se mai șterge.
 
 ## Lista de tipărire
-<!-- slice: 0099 -->
+<!-- slice: 0099, 0101 -->
 target: OrdView.printList
 goto: view:ord
-Pe o lună sau pe rădăcina «Toate ordonanțările», în locul paginilor apare lista ordonanțărilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o ordonanțare aleasă în arbore: dă clic pe o lună sau pe rădăcină.
+Pe o lună sau pe rădăcina «Toate ordonanțările», pagina Documente arată lista ordonanțărilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o ordonanțare aleasă în arbore: dă clic pe o lună sau pe rădăcină, apoi pe pagina Documente.
 
 ## Lista › Bifele
 <!-- slice: 0099 -->
@@ -63,21 +63,21 @@ target: PrintListPage.btnSalveaza
 Salvează documentele bifate într-un dosar ales de tine. Nu le numără ca tipărite.
 
 ## Paginile ordonanțării
-<!-- slice: 0033, 0041, 0000-14 -->
+<!-- slice: 0033, 0041, 0000-14, 0101 -->
 target: OrdView.navSub
-Ordonanțarea aleasă se vede pe două pagini. Urmează fiecare.
+Ordonanțarea aleasă se vede pe două pagini; bara lor rămâne și pe o lună sau pe «Toate ordonanțările». Urmează fiecare.
 
 ## Pagini › Vizualizare
-<!-- slice: 0033, 0000-23 -->
+<!-- slice: 0033, 0000-23, 0101 -->
 target: OrdView.navSub
 part: item:vizualizare
-Rândurile ordonanțării și, pe fiecare beneficiar, codul fiscal, contul IBAN și documentele justificative.
+Rândurile ordonanțării și, pe fiecare beneficiar, codul fiscal, contul IBAN și documentele justificative. Pe o lună sau pe «Toate ordonanțările» arată rândurile tuturor ordonanțărilor de sub ea.
 
 ## Pagini › Document
-<!-- slice: 0041, 0000-14, 0000-23 -->
+<!-- slice: 0041, 0000-14, 0000-23, 0101 -->
 target: OrdView.navSub
 part: item:document
-PDF-ul ordonanțării; dacă lipsește, butonul Generează îl face din datele salvate. Un document semnat nu se mai generează din nou.
+PDF-ul ordonanțării; dacă lipsește, butonul Generează îl face din datele salvate. Un document semnat nu se mai generează din nou. Pe o lună sau pe «Toate ordonanțările» pagina se numește Documente și arată lista de tipărire.
 
 ## Semnarea
 <!-- slice: 0078, 0000-10 -->

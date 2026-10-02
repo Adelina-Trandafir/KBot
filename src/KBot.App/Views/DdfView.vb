@@ -205,6 +205,16 @@ Public Class DdfView
     ''' </summary>
     Private Sub ActivatePage(key As String)
         Try
+            ' Slice 0101: on a month / «Toate reviziile» node the «Documente» tab is the print list, not
+            ' the document page. The page that was on screen is put away; nothing is created.
+            If IsListTab(key) Then
+                If _activePage IsNot Nothing Then DirectCast(_activePage, Control).Visible = False
+                _activePage = Nothing
+                ShowListSurface()
+                Return
+            End If
+            ShowPageSurface()
+
             Dim page As IDdfPage = Nothing
             If Not _pages.TryGetValue(key, page) Then
                 page = CreatePage(key)
@@ -313,15 +323,37 @@ Public Class DdfView
     ' aceeași pentru un click în arbore, un fișier ales din listă și sfârșitul unei generări.
     Private Sub PushToActivePage()
         _currentCtx = BuildCurrentContext()
-        ' Slice 0099: a month / «Toate reviziile» root shows the print list instead of the pages.
-        Dim listMode As Boolean = _currentCtx IsNot Nothing AndAlso _nodeIsRoot AndAlso _nodeRevizii IsNot Nothing
+        ' Slice 0101: the nav bar stays on every node. On a month / «Toate reviziile» root the document
+        ' tab is called «Documente» and shows the print list (slice 0099); the other tabs show the
+        ' lines of the node, as on a leaf.
+        navSub.SetItemText(PAGE_PDF, If(IsListNode(), "Documente", "Document PDF"))
+        Dim listMode As Boolean = IsListTab(navSub.SelectedKey)
         ' Back to the pages BEFORE they get the context (a hidden page does not mount a document);
         ' away from them only AFTER, so a document shown a moment ago is cleared while its page is
         ' still on screen.
-        If Not listMode Then ShowPageSurface()
+        If Not listMode Then
+            ShowPageSurface()
+            ' Coming back from the list tab no page was on screen: the selected tab's page is shown now.
+            If _activePage Is Nothing AndAlso Not String.IsNullOrEmpty(navSub.SelectedKey) Then
+                ActivatePage(navSub.SelectedKey)
+                Return
+            End If
+        End If
         _activePage?.SetContext(_currentCtx)
         If listMode Then ShowListSurface()
     End Sub
+
+    ' Slice 0101: the node on screen is a month or the «Toate reviziile» root (it has a print list). A
+    ' file picked from the list (a revision-less document) takes the tab back for the document.
+    Private Function IsListNode() As Boolean
+        Return _currentCtx IsNot Nothing AndAlso _nodeIsRoot AndAlso _nodeRevizii IsNot Nothing AndAlso
+               String.IsNullOrEmpty(_pdfPathOverride)
+    End Function
+
+    ' Slice 0101: does this tab show the print list on the node on screen?
+    Private Function IsListTab(key As String) As Boolean
+        Return String.Equals(key, PAGE_PDF, StringComparison.Ordinal) AndAlso IsListNode()
+    End Function
 
     ' ── Contextul shell-ului ─────────────────────────────────────────────────
     ''' <summary>
@@ -876,8 +908,9 @@ Public Class DdfView
     End Function
 
     ' ── Lista de tipărire (slice 0099) ───────────────────────────────────────
-    ' A non-leaf node (a month, or «Toate reviziile») shows a list of its revisions with their
-    ' signatures, print count and the two footer actions, instead of the document pages.
+    ' A non-leaf node (a month, or «Toate reviziile») shows, on its «Documente» tab, a list of its
+    ' revisions with their signatures, print count and the two footer actions. Slice 0101: the nav bar
+    ' stays, and the other tabs still show the node's data.
     Private Sub ShowPageSurface()
         printList.Visible = False
         navSub.Visible = True
@@ -887,7 +920,6 @@ Public Class DdfView
     Private Sub ShowListSurface()
         _genData = Nothing
         printList.SetItems(BuildPrintItems(_nodeRevizii))
-        navSub.Visible = False
         pnlPages.Visible = False
         printList.Visible = True
     End Sub

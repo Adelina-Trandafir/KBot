@@ -38,6 +38,10 @@ Partial Public Class KbotForm
             ' and did NOT recurse into its children -- no colour is pushed over it here.
             pnlHeader.Invalidate()
             pnlStatus.Invalidate()
+
+            ' Slice 0101: the red rows carry an explicit colour, so they follow the theme here.
+            ColoreazaLanturiNeinchise()
+            tree.Invalidate()
         Catch ex As Exception
             ' UI boundary (runs in the theme / paint cascade) -- log and swallow.
             GlobalErrorLog.Write("MainForm.OnThemeChanged", ex)

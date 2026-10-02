@@ -10,9 +10,9 @@ target: AsociereForm
 Turul merge doar cu fereastra Asocieri deschisă. Dacă n-o vezi, închide turul, deschide Asocieri (vederea Recepții › iconița din dreapta, sus, a arborelui), apasă «?» din bara ei de titlu și pornește turul din meniu (sau F1, apoi turul din pagina de ajutor).
 
 ## Recepțiile și lanțurile lor
-<!-- slice: 0048-04, 0065 -->
+<!-- slice: 0048-04, 0065, 0101 -->
 target: AsociereForm.treeLant
-Câte un rând pe recepție: data, valoarea de azi și câte instantanee are. Sub ea, lanțul: salvările ei din istoric, în ordinea orei. Ultimul instantaneu trebuie să aibă valoarea de azi; altfel apare «Lanțul nu se închide».
+Câte un rând pe recepție: data, valoarea de azi și câte instantanee are. Sub ea, lanțul: salvările ei din istoric, în ordinea orei. Ultimul instantaneu trebuie să aibă valoarea de azi; altfel apare «Lanțul nu se închide», iar recepția și ultimul ei instantaneu se scriu cu roșu.
 
 ## Indicatorii
 <!-- slice: 0048-04 -->

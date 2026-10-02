@@ -46,10 +46,10 @@ target: DdfView.tree
 Meniul reviziei oferă, după stare: Trimite în FOREXE (sau Reia trimiterea), Modifică revizia, Șterge revizia, Șterge documentul. O revizie semnată nu se mai modifică și nu se mai șterge: îi rămâne doar trimiterea. Pe o lună sau pe rădăcină poți șterge tot ce e sub ea, dacă nimic nu e semnat.
 
 ## Lista de tipărire
-<!-- slice: 0099 -->
+<!-- slice: 0099, 0101 -->
 target: DdfView.printList
 goto: view:ddf
-Pe o lună sau pe rădăcina «Toate reviziile», în locul paginilor apare lista reviziilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o revizie aleasă în arbore: dă clic pe o lună sau pe rădăcină.
+Pe o lună sau pe rădăcina «Toate reviziile», pagina Documente arată lista reviziilor de sub rândul ales: semnăturile, data semnării, dacă a fost listat și de câte ori a fost tipărit. Lista nu se vede cât ai o revizie aleasă în arbore: dă clic pe o lună sau pe rădăcină, apoi pe pagina Documente.
 
 ## Lista › Bifele
 <!-- slice: 0099 -->
@@ -73,16 +73,16 @@ target: DdfView.navSub
 Revizia aleasă se vede pe mai multe pagini. Urmează fiecare.
 
 ## Pagini › Vizualizare
-<!-- slice: 0020-02, 0000-23 -->
+<!-- slice: 0020-02, 0000-23, 0101 -->
 target: DdfView.navSub
 part: item:previzualizare
-Valorile reviziei, pe clasificații.
+Valorile reviziei, pe clasificații. Pe o lună sau pe «Toate reviziile» arată valorile tuturor reviziilor de sub rând.
 
 ## Pagini › Document PDF
-<!-- slice: 0020-02, 0078, 0000-23 -->
+<!-- slice: 0020-02, 0078, 0000-23, 0101 -->
 target: DdfView.navSub
 part: item:document
-Documentul reviziei; aici îl și semnezi, în Adobe.
+Documentul reviziei; aici îl și semnezi, în Adobe. Pe o lună sau pe «Toate reviziile» pagina se numește Documente și arată lista de tipărire.
 
 ## Ordinea pașilor
 <!-- slice: 0081, 0078-06, 0000-14 -->

@@ -330,9 +330,10 @@ Partial Public Class KbotForm
             busyBar.Running = False
         End Try
 
+        ' No box on success (operator): the count goes to the operator log only; errors still show.
         If ziEsuata Is Nothing Then
-            KBotMessage.Show(Me, $"{reusite} ordonanțări au fost generate și salvate.",
-                            "Generare în lot", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            OperatorLog.Write("KbotForm.GenereazaInLotAsync", "Generare în lot",
+                $"{reusite} ordonanțări au fost generate și salvate.")
         Else
             KBotMessage.Show(Me,
                 $"Generarea s-a oprit la data {ziEsuata}." & vbCrLf &

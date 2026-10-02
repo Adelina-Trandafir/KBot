@@ -8,19 +8,20 @@ screens: OrdView, OrdVizualizarePage, OrdDocumentPage
 keywords: ordonantare, ord, ordonantari de plata, imprimare, tiparire, listat, document, pdf, semnare, genereaza, validare formular, anulare validare, alte avize, verificat avizat, cfp, control financiar preventiv, ordonator, compartiment de specialitate
 open: view:ord
 ---
-<!-- slice: 0033, 0041, 0099 -->
+<!-- slice: 0033, 0041, 0099, 0101 -->
 Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
 
 <!-- capture: ord | caption: Vederea «Ordonanțare» | goto: view:ord | prepare: Selectați un angajament care are ordonanțări, apoi o ordonanțare din arbore. -->
 
 - **Arborele** listează ordonanțările pe luni, cu data și totalul fiecăreia, sub rădăcina
   **«Toate ordonanțările»** (clic pe ea = toate rândurile angajamentului).
-- În dreapta, două pagini:
+- În dreapta, două pagini, alese din bara de sus:
   - **Vizualizare** — rândurile ordonanțării alese (clasificație, descriere, recepții, plăți,
     valoare, rămas) și, pe fiecare beneficiar, codul fiscal, contul IBAN și documentele
-    justificative. **«Caută Beneficiar»** te duce la un beneficiar anume.
-  - **Document** — PDF-ul ordonanțării.
-- Pe o **lună** sau pe **«Toate ordonanțările»** dreapta arată în schimb lista de tipărire — mai jos.
+    justificative. **«Caută Beneficiar»** te duce la un beneficiar anume. Pe o **lună** sau pe
+    **«Toate ordonanțările»** arată rândurile tuturor ordonanțărilor de sub ea.
+  - **Document** — PDF-ul ordonanțării alese. Pe o **lună** sau pe **«Toate ordonanțările»** pagina
+    se numește **Documente** și arată lista de tipărire — mai jos.
 
 ## Comenzile
 <!-- slice: 0049, 0049-01, 0097, 0000-14 -->
@@ -46,9 +47,9 @@ pe o lună sau pe rădăcină, și **doar dacă niciuna de sub ea nu e semnată*
 subsolul arborelui face același lucru ca «Adaugă ordonanțare…».
 
 ## Lista de tipărire
-<!-- slice: 0099 -->
+<!-- slice: 0099, 0101 -->
 
-Când dai clic pe o **lună** sau pe **«Toate ordonanțările»**, dreapta nu mai arată paginile, ci **lista ordonanțărilor** de sub rândul ales. Pe fiecare rând vezi:
+Când dai clic pe o **lună** sau pe **«Toate ordonanțările»**, bara cu pagini rămâne, iar pagina **Document** se numește **Documente**. Deschide-o ca să vezi **lista ordonanțărilor** de sub rândul ales; pagina **Vizualizare** arată în continuare valorile lor. Pe fiecare rând al listei vezi:
 
 | Coloană | Ce arată |
 |---------|----------|
@@ -59,14 +60,14 @@ Când dai clic pe o **lună** sau pe **«Toate ordonanțările»**, dreapta nu m
 | **Listat** | bifat dacă documentul a fost tipărit măcar o dată |
 | **Nr. tipăriri** | de câte ori a fost tipărit |
 
-<!-- capture: ord-lista-tiparire | caption: Lista de tipărire a ordonanțărilor, pe «Toate ordonanțările» | goto: view:ord | prepare: Selectați un angajament cu mai multe ordonanțări, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate ordonanțările». -->
+<!-- capture: ord-lista-tiparire | caption: Lista de tipărire a ordonanțărilor, pe «Toate ordonanțările» | goto: view:ord | prepare: Selectați un angajament cu mai multe ordonanțări, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate ordonanțările», apoi pe pagina «Documente». -->
 
 Iconița din capul coloanei cu bife deschide un meniu:
 
 - **«Selectează / deselectează toate»** — bifează toate rândurile, sau le debifează dacă erau toate bifate;
 - **«Selectează / deselectează doar cele nelistate»** — la fel, dar doar pe rândurile cu 0 tipăriri; cele deja listate rămân cum erau.
 
-<!-- capture: ord-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ord | prepare: Pe lista de tipărire, apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
+<!-- capture: ord-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ord | prepare: Pe pagina «Documente» a rădăcinii «Toate ordonanțările», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
 
 Jos sunt două butoane, care lucrează pe rândurile **bifate**:
 

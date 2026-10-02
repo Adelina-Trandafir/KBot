@@ -6,16 +6,41 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 
 <!-- Secțiunile sunt adăugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu ștergeți marcajele ascunse `<!\-\- release: ... \-\->` și `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmărite schimbările pentru versiunea următoare.-->
 
+## 1.1.1.4 (02.10.2026)
+
+<!-- felii: 0101, 0101-01, 0000-37, 0000-38 -->
+
+- În arborele principal, angajamentele ale căror recepții nu se închid (ultimul instantaneu nu are valoarea recepției) apar cu roșu; indicația arată care recepții și ce valori.
+- În fereastra de asociere a recepțiilor, recepția și ultimul ei instantaneu se scriu cu roșu când valorile nu coincid.
+- În Plăți, «+» de la o lună generează ordonanțările după confirmare, fără mesajul de succes de la final.
+- În vederile Ordonanțare și Fundamentare, bara cu pagini rămâne și pe o lună sau pe «Toate…»: «Vizualizare» arată valorile, iar pagina «Documente» arată lista fișierelor, de generat și de tipărit.
+- Ajutor: actualizări în paginile despre fereastra principală, asocierea recepțiilor, ordonanțări și fundamentare.
+
+## 1.1.1.3 (02.10.2026)
+
+<!-- release: utc=2026-10-01T21:00:00Z -->
+<!-- felii: 0100, 0100-02, 0000-34, 0000-36 -->
+<!-- git: 4aae6bd -->
+
+- Descărcări multiple: mai multe angajamente pot fi actualizate simultan.
+- Din meniul arborelui, «Actualizează angajamente...» deschide o fereastră în care bifați angajamentele; se pot bifa și cele neactualizate de un anumit număr de zile.
+- La conectarea la FOREXE, K-BOT poate actualiza singur angajamentele vechi, iar după o reîmprospătare a listei vă întreabă: «Dorești actualizarea angajamentelor noi?».
+- Indicația de la un angajament arată acum și data ultimei actualizări («Actualizat: ...»).
+- Setări › «Descărcări multiple» este o pagină separată, afișată doar dacă unitatea permite această funcție; numărul de angajamente descărcate simultan este limitat de unitate.
+- Ajutor: pagină nouă, «Mai multe descărcări deodată», și actualizări în paginile despre Setări și despre coadă.
+
 ## 1.1.1.2 (01.10.2026)
 
 <!-- release: utc=2026-10-01T15:54:33Z -->
-<!-- felii: 0777-02, 0097-03, 0078-09, 0078-10, 0099, 0000-30, 0000-31, 0000-32, 0000-33 -->
+<!-- felii: 0777-02, 0097-03, 0078-09, 0078-10, 0099, 0000-30, 0000-31, 0000-32, 0000-33, 0072-03, 0089-01, 0000-35 -->
 <!-- git: 714b886 -->
 
 - În arborele principal sunt evidențiate elementele descărcate în sesiunea curentă. Dacă faceți mai multe actualizări la rând, fereastra de recepții nu mai este afișată de fiecare dată.
 - Anul și «Sursă/Sector» apar acum în bara de titlu, lângă unitate, în loc să fie afișate dedesubt.
 - Adobe: la închidere, întrebarea «Salvați modificările?» primește automat răspunsul «Nu». Opțiunea «Adobe pornește în interfața clasică» a revenit în Setări › Documente.
 - Ajutor: tururile pot afișa și elementele ascunse și explică în ce situații apar. Au fost adăugate un tur și o pagină pentru coada robotului, iar fereastra de ajutor poate fi derulată continuu și permite imprimarea sau exportarea pe secțiuni.
+- Pagina «FOREXE» din Setări nu mai dă eroare la deschidere.
+- În Setări › Jurnal, jurnalele de server și lista cu tipul jurnalului apar doar cu «Opțiuni avansate» activate; fără ele rămân doar jurnalele de pe acest calculator.
 
 ## 1.1.1.1 (01.10.2026)
 
