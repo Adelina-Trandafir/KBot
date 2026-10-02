@@ -2,6 +2,7 @@
   "Host": "89.33.25.34",
   "Port": 27015,
   "User": "root",
+  "PrivateKeyPath": "",
   "LocalRoot": "",
   "RemoteRoot": "/root/AVACONT",
   "PreserveMTime": true,

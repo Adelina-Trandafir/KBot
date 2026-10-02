@@ -41,13 +41,6 @@ Partial Public Class ApiClient
         Public Property names As ClsfNamesWire
     End Class
 
-    Private NotInheritable Class QuartersWire
-        Public Property trim1 As Double?
-        Public Property trim2 As Double?
-        Public Property trim3 As Double?
-        Public Property trim4 As Double?
-    End Class
-
     Private NotInheritable Class CorrectionWire
         Public Property id As Integer?
         Public Property document As String
@@ -58,14 +51,24 @@ Partial Public Class ApiClient
         Public Property trim4 As Double?
     End Class
 
+    Private NotInheritable Class BudgetVersionWire
+        Public Property id As Integer?
+        Public Property data_inceput As String
+        Public Property trim1 As Double?
+        Public Property trim2 As Double?
+        Public Property trim3 As Double?
+        Public Property trim4 As Double?
+    End Class
+
     Private NotInheritable Class BudgetResponse
-        Public Property budget As QuartersWire
+        Public Property budgets As List(Of BudgetVersionWire)
         Public Property corrections As List(Of CorrectionWire)
     End Class
 
     Private NotInheritable Class BudgetRequest
         Public Property an As Integer
-        Public Property budget As QuartersWire
+        Public Property budgets As List(Of BudgetVersionWire)
+        Public Property deleted_budgets As List(Of Integer)
         Public Property corrections As List(Of CorrectionWire)
         Public Property deleted As List(Of Integer)
     End Class
@@ -209,17 +212,24 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function SaveBugetClasificatieAsync(idClsf As Integer, an As Integer, budget As QuarterAmounts,
+    Public Async Function SaveBugetClasificatieAsync(idClsf As Integer, an As Integer,
+                                                     budgets As IReadOnlyList(Of BudgetVersion),
+                                                     deletedBudgetIds As IReadOnlyList(Of Integer),
                                                      corrections As IReadOnlyList(Of RectificareBugetara),
                                                      deletedIds As IReadOnlyList(Of Integer),
                                                      ct As CancellationToken) As Task(Of BugetClasificatie) _
         Implements INomenclatoareApi.SaveBugetClasificatieAsync
         Try
-            ArgumentNullException.ThrowIfNull(budget)
+            ArgumentNullException.ThrowIfNull(budgets)
             ArgumentNullException.ThrowIfNull(corrections)
             Dim request As New BudgetRequest() With {
                 .an = an,
-                .budget = ToWire(budget),
+                .budgets = budgets.Select(Function(b) New BudgetVersionWire() With {
+                    .id = b.Id,
+                    .data_inceput = If(b.StartDate.HasValue, b.StartDate.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Nothing),
+                    .trim1 = ToDouble(b.Amounts.Trim1), .trim2 = ToDouble(b.Amounts.Trim2),
+                    .trim3 = ToDouble(b.Amounts.Trim3), .trim4 = ToDouble(b.Amounts.Trim4)}).ToList(),
+                .deleted_budgets = If(deletedBudgetIds Is Nothing, New List(Of Integer)(), deletedBudgetIds.ToList()),
                 .corrections = corrections.Select(Function(c) New CorrectionWire() With {
                     .id = c.Id,
                     .document = c.Document,
@@ -424,11 +434,17 @@ Partial Public Class ApiClient
         Dim payload As BudgetResponse = JsonSerializer.Deserialize(Of BudgetResponse)(respText, _json)
         Dim result As New BugetClasificatie()
         If payload Is Nothing Then Return result
-        If payload.budget IsNot Nothing Then
-            result.Budget = New QuarterAmounts() With {
-                .Trim1 = ToDecimal(payload.budget.trim1), .Trim2 = ToDecimal(payload.budget.trim2),
-                .Trim3 = ToDecimal(payload.budget.trim3), .Trim4 = ToDecimal(payload.budget.trim4)}
-        End If
+        For Each b As BudgetVersionWire In If(payload.budgets, New List(Of BudgetVersionWire)())
+            Dim start As Date
+            Dim hasStart As Boolean = Date.TryParseExact(If(b.data_inceput, String.Empty), "yyyy-MM-dd",
+                                                         CultureInfo.InvariantCulture, DateTimeStyles.None, start)
+            result.Budgets.Add(New BudgetVersion() With {
+                .Id = b.id,
+                .StartDate = If(hasStart, start, CType(Nothing, Date?)),
+                .Amounts = New QuarterAmounts() With {
+                    .Trim1 = ToDecimal(b.trim1), .Trim2 = ToDecimal(b.trim2),
+                    .Trim3 = ToDecimal(b.trim3), .Trim4 = ToDecimal(b.trim4)}})
+        Next
         For Each c As CorrectionWire In If(payload.corrections, New List(Of CorrectionWire)())
             Dim day As Date
             Dim hasDay As Boolean = Date.TryParseExact(If(c.data, String.Empty), "yyyy-MM-dd",
@@ -442,12 +458,6 @@ Partial Public Class ApiClient
                     .Trim3 = ToDecimal(c.trim3), .Trim4 = ToDecimal(c.trim4)}})
         Next
         Return result
-    End Function
-
-    Private Shared Function ToWire(q As QuarterAmounts) As QuartersWire
-        Return New QuartersWire() With {
-            .trim1 = ToDouble(q.Trim1), .trim2 = ToDouble(q.Trim2),
-            .trim3 = ToDouble(q.Trim3), .trim4 = ToDouble(q.Trim4)}
     End Function
 
     Private Shared Function ToDouble(value As Decimal?) As Double?

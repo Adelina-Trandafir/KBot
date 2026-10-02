@@ -107,7 +107,8 @@ Partial Public Class KbotForm
                 If Not Await SalveazaFaraMachetaAsync(cod, stare, propunere, pachet, alegeri) Then Return False
             Else
                 Using f As New AsociereForm(_apiClient, cod, propunere, pachet, alegeri,
-                                            Function(op) WithReauth(Of PrelucrareRaspuns)(op))
+                                            Function(op) WithReauth(Of PrelucrareRaspuns)(op),
+                                            DenumireAngajament(cod))
                     ' Slice 0098: the queue waits with the window (it runs one task at a time); its
                     ' window says what for.
                     _robotQueue.SetNote($"«{cod}»: așteaptă fereastra de asociere")

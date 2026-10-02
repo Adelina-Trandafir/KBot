@@ -14,9 +14,10 @@ Imports KBot.Theming
 ''' <summary>
 ''' «Clasificatii bugetare» (slice 0087-01, operator 26.09.2026): the classifications of the
 ''' database as a tree Capitol > Subcapitol > Articol > Alineat (code in the first column, name in
-''' the second), and for the chosen alineat its budget for the working year (one row, quarters 1-4
-''' typed, total computed) and its corrections (typed straight in the grid, «+» in the footer adds a
-''' row, «✕» removes one, totals in the footer). «Salveaza» writes both in one transaction. The «+»
+''' the second), and for the chosen alineat its budget for the working year as VERSIONS (slice 0102:
+''' one row = the budget from its «Început» date on, quarters 1-4 typed, no total; «+» in the footer
+''' adds a version, «✕» removes one) and its corrections (typed straight in the grid, «+» adds a row,
+''' «✕» removes one, totals in the footer). «Salveaza» writes both in one transaction. The «+»
 ''' in the tree footer opens <see cref="ClasificatiiAddForm"/>.
 ''' </summary>
 Public Class ClasificatiiForm
@@ -26,6 +27,7 @@ Public Class ClasificatiiForm
     Private Const ColTrim3 As String = "trim3"
     Private Const ColTrim4 As String = "trim4"
     Private Const ColTotal As String = "total"
+    Private Const ColStart As String = "inceput"
     Private Const ColDocument As String = "document"
     Private Const ColData As String = "data"
     Private Const ColDelete As String = "sterge"
@@ -39,6 +41,7 @@ Public Class ClasificatiiForm
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _an As Integer
     Private ReadOnly _deletedIds As New List(Of Integer)()
+    Private ReadOnly _deletedBudgetIds As New List(Of Integer)()
     Private _catalog As ClasificatiiCatalog
     Private _current As Clasificatie
     Private _currentNode As AdvancedTreeControl.TreeItem
@@ -261,13 +264,16 @@ Public Class ClasificatiiForm
         gridBuget.BeginUpdate()
         Try
             gridBuget.ClearRows()
-            Dim row As KBotDataRow = gridBuget.AddRow()
-            Dim b As QuarterAmounts = If(data.Budget, New QuarterAmounts())
-            row(ColTrim1) = Box(b.Trim1)
-            row(ColTrim2) = Box(b.Trim2)
-            row(ColTrim3) = Box(b.Trim3)
-            row(ColTrim4) = Box(b.Trim4)
-            row(ColTotal) = b.Total
+            For Each v As BudgetVersion In data.Budgets
+                Dim row As KBotDataRow = gridBuget.AddRow()
+                row(ColId) = If(v.Id.HasValue, CObj(v.Id.Value), Nothing)
+                row(ColStart) = If(v.StartDate.HasValue, CObj(v.StartDate.Value), Nothing)
+                row(ColTrim1) = Box(v.Amounts.Trim1)
+                row(ColTrim2) = Box(v.Amounts.Trim2)
+                row(ColTrim3) = Box(v.Amounts.Trim3)
+                row(ColTrim4) = Box(v.Amounts.Trim4)
+                row(ColDelete) = DeleteCaption
+            Next
         Finally
             gridBuget.EndUpdate()
         End Try
@@ -293,10 +299,11 @@ Public Class ClasificatiiForm
         gridBuget.ClearDirty()
         gridRectificari.ClearDirty()
         _deletedIds.Clear()
+        _deletedBudgetIds.Clear()
 
         gridBuget.Enabled = True
         gridRectificari.Enabled = True
-        lblBuget.Text = $"Buget anual {_an} — {_current.Clsf}"
+        lblBuget.Text = $"Buget {_an} — {_current.Clsf}"
         lblRectificari.Text = $"Rectificări bugetare {_an}"
         tips.SetToolTipText(lblBuget, _current.Denumire)
         SetDirty(False)
@@ -309,7 +316,8 @@ Public Class ClasificatiiForm
         gridBuget.Enabled = False
         gridRectificari.Enabled = False
         _deletedIds.Clear()
-        lblBuget.Text = "Buget anual — alegeți un alineat din arbore"
+        _deletedBudgetIds.Clear()
+        lblBuget.Text = "Buget — alegeți un alineat din arbore"
         lblRectificari.Text = "Rectificări bugetare"
         SetDirty(False)
     End Sub
@@ -354,7 +362,7 @@ Public Class ClasificatiiForm
                     Return
                 End If
                 e.ProposedValue = Math.Round(amount, 2)
-            ElseIf e.ColumnKey = ColData Then
+            ElseIf e.ColumnKey = ColData OrElse e.ColumnKey = ColStart Then
                 If text.Length = 0 Then
                     e.ProposedValue = Nothing
                     Return
@@ -380,12 +388,45 @@ Public Class ClasificatiiForm
         Handles gridBuget.CellValueChanged, gridRectificari.CellValueChanged
         Try
             Dim grid As KBotDataView = DirectCast(sender, KBotDataView)
-            If QuarterColumns.Contains(e.ColumnKey) Then
+            ' Only a correction's row has a «Total» column; a budget has none (slice 0102).
+            If QuarterColumns.Contains(e.ColumnKey) AndAlso grid Is gridRectificari Then
                 grid(ColTotal, e.RowIndex) = RowTotal(grid.Rows(e.RowIndex))
             End If
             SetDirty(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.Grid_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub GridBuget_FooterRightIconClicked(sender As Object, e As EventArgs) Handles gridBuget.FooterRightIconClicked
+        Try
+            If _current Is Nothing OrElse _busy Then Return
+            If Not gridBuget.CommitPendingEdit() Then Return
+            Dim row As KBotDataRow = gridBuget.AddRow()
+            ' The first version of a year starts on 01.01; the next ones default to today (inside
+            ' the year), the day a budget is usually changed.
+            row(ColStart) = If(gridBuget.RowCount > 1 AndAlso Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
+            row(ColDelete) = DeleteCaption
+            row.IsDirty = True
+            SetDirty(True)
+            Dim index As Integer = gridBuget.RowCount - 1
+            gridBuget.EnsureVisible(index)
+            gridBuget.EditCell(ColStart, index)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.GridBuget_FooterRightIconClicked", ex)
+        End Try
+    End Sub
+
+    Private Sub GridBuget_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridBuget.ButtonClick
+        Try
+            If e.ColumnKey <> ColDelete OrElse _busy Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridBuget.RowCount Then Return
+            Dim id As Object = gridBuget(ColId, e.RowIndex)
+            If id IsNot Nothing Then _deletedBudgetIds.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
+            gridBuget.RemoveRowAt(e.RowIndex)
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.GridBuget_ButtonClick", ex)
         End Try
     End Sub
 
@@ -441,23 +482,25 @@ Public Class ClasificatiiForm
             If Not gridBuget.CommitPendingEdit() OrElse Not gridRectificari.CommitPendingEdit() Then Return False
 
             Dim problem As String = Nothing
+            Dim budgets As List(Of BudgetVersion) = ReadBudgets(problem)
+            If problem IsNot Nothing Then
+                KBotMessage.Show(Me, problem, "Buget", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return False
+            End If
             Dim corrections As List(Of RectificareBugetara) = ReadCorrections(problem)
             If problem IsNot Nothing Then
                 KBotMessage.Show(Me, problem, "Rectificări bugetare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return False
             End If
 
-            Dim budgetRow As KBotDataRow = gridBuget.Rows(0)
-            Dim budget As New QuarterAmounts() With {
-                .Trim1 = ReadAmount(budgetRow, ColTrim1), .Trim2 = ReadAmount(budgetRow, ColTrim2),
-                .Trim3 = ReadAmount(budgetRow, ColTrim3), .Trim4 = ReadAmount(budgetRow, ColTrim4)}
+            Dim deletedBudgets As New List(Of Integer)(_deletedBudgetIds)
             Dim deleted As New List(Of Integer)(_deletedIds)
             Dim idClsf As Integer = _current.IdClsf
 
             SetBusy(True, "Se salvează…")
             Dim saved As BugetClasificatie = Await _gate.RunAsync(
-                Function() _api.SaveBugetClasificatieAsync(idClsf, _an, budget, corrections, deleted,
-                                                           CancellationToken.None)).ConfigureAwait(True)
+                Function() _api.SaveBugetClasificatieAsync(idClsf, _an, budgets, deletedBudgets, corrections,
+                                                           deleted, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return True
             FillGrids(saved)
             SetStatus($"Salvat: {_current.Clsf}.")
@@ -478,6 +521,37 @@ Public Class ClasificatiiForm
         Finally
             If Not IsDisposed Then SetBusy(False, Nothing)
         End Try
+    End Function
+
+    ' The budget versions as the grid shows them; the first incomplete or repeated row is reported and
+    ' selected. «Început» is required, inside the working year, and one per day.
+    Private Function ReadBudgets(ByRef problem As String) As List(Of BudgetVersion)
+        Dim list As New List(Of BudgetVersion)()
+        Dim seen As New HashSet(Of Date)()
+        For i As Integer = 0 To gridBuget.RowCount - 1
+            Dim row As KBotDataRow = gridBuget.Rows(i)
+            Dim startValue As Object = row(ColStart)
+            If Not TypeOf startValue Is Date Then
+                problem = $"Bugetul de la rândul {i + 1}: lipsește data de început."
+            ElseIf DirectCast(startValue, Date).Year <> _an Then
+                problem = $"Bugetul de la rândul {i + 1}: data de început {DirectCast(startValue, Date):dd.MM.yyyy} nu este în anul {_an}."
+            ElseIf Not seen.Add(DirectCast(startValue, Date).Date) Then
+                problem = $"Bugetul de la rândul {i + 1}: există deja o versiune care începe la {DirectCast(startValue, Date):dd.MM.yyyy}."
+            End If
+            If problem IsNot Nothing Then
+                gridBuget.EnsureVisible(i)
+                gridBuget.EditCell(ColStart, i)
+                Return list
+            End If
+            Dim idValue As Object = row(ColId)
+            list.Add(New BudgetVersion() With {
+                .Id = If(idValue Is Nothing, CType(Nothing, Integer?), Convert.ToInt32(idValue, CultureInfo.InvariantCulture)),
+                .StartDate = DirectCast(startValue, Date).Date,
+                .Amounts = New QuarterAmounts() With {
+                    .Trim1 = ReadAmount(row, ColTrim1), .Trim2 = ReadAmount(row, ColTrim2),
+                    .Trim3 = ReadAmount(row, ColTrim3), .Trim4 = ReadAmount(row, ColTrim4)}})
+        Next
+        Return list
     End Function
 
     ' The corrections as the grid shows them; the first incomplete row is reported and selected.

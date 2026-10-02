@@ -17,15 +17,18 @@ Public Interface INomenclatoareApi
     ''' <summary>Every classification of the session's database and the names of the tree levels.</summary>
     Function GetClasificatiiAsync(ct As CancellationToken) As Task(Of ClasificatiiCatalog)
 
-    ''' <summary>The budget of one classification for <paramref name="an"/> and that year's corrections.</summary>
+    ''' <summary>The budget versions of one classification for <paramref name="an"/> and that year's corrections.</summary>
     Function GetBugetClasificatieAsync(idClsf As Integer, an As Integer,
                                        ct As CancellationToken) As Task(Of BugetClasificatie)
 
     ''' <summary>
-    ''' Saves the budget and the corrections of one classification in one transaction and returns
-    ''' them as read back from the database.
+    ''' Saves the budget versions and the corrections of one classification in one transaction and
+    ''' returns them as read back from the database. <paramref name="deletedBudgetIds"/> and
+    ''' <paramref name="deletedIds"/> are the versions and the corrections removed in the window.
     ''' </summary>
-    Function SaveBugetClasificatieAsync(idClsf As Integer, an As Integer, budget As QuarterAmounts,
+    Function SaveBugetClasificatieAsync(idClsf As Integer, an As Integer,
+                                        budgets As IReadOnlyList(Of BudgetVersion),
+                                        deletedBudgetIds As IReadOnlyList(Of Integer),
                                         corrections As IReadOnlyList(Of RectificareBugetara),
                                         deletedIds As IReadOnlyList(Of Integer),
                                         ct As CancellationToken) As Task(Of BugetClasificatie)

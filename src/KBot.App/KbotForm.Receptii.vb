@@ -33,6 +33,13 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>The angajament's name as the tree has it (its Descriere), or empty when it is not in the tree.</summary>
+    Private Function DenumireAngajament(cod As String) As String
+        Dim info As AngajamentTreeInfo = Nothing
+        If cod IsNot Nothing AndAlso _treeInfos.TryGetValue(cod.Trim(), info) Then Return info.Descriere
+        Return String.Empty
+    End Function
+
     ''' <summary>
     ''' The editor itself, awaitable: also opened by the association guard
     ''' (<c>AsocierePermiteAsync</c>). True when the operator saved changes.
@@ -41,7 +48,8 @@ Partial Public Class KbotForm
         Try
             Using f As New AsociereForm(_apiClient, cod,
                                         Function(op) WithReauth(Of AsociereStare)(op),
-                                        Function(op) WithReauth(Of AsociereRezultat)(op))
+                                        Function(op) WithReauth(Of AsociereRezultat)(op),
+                                        DenumireAngajament(cod))
                 f.ShowDialog(Me)
                 If Not f.SAuSalvatModificari Then Return False
                 ' The tree, not only the view (operator, 10.09.2026): a moved link can turn

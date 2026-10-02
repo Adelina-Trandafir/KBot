@@ -105,8 +105,8 @@ Partial Public Class KbotForm
     End Sub
 
     ''' <summary>
-    ''' A finished operation: find the angajament code(s), download and ingest each one, then
-    ''' open its history for the interval. Throws to the caller on anything unexpected.
+    ''' A finished operation: find the angajament code(s), download and ingest each one.
+    ''' Throws to the caller on anything unexpected.
     ''' </summary>
     Private Async Function PreiaOperatiuneaAsync(ev As ForexeWatchEvent) As Task
         If _urmarireInLucru Then
@@ -123,9 +123,6 @@ Partial Public Class KbotForm
 
         _urmarireInLucru = True
         Try
-            Dim panaLa As Date = If(ev.FinishedAt, Date.Now)
-            Dim deLa As Date = If(ev.StartedAt, panaLa)
-
             Dim coduri As List(Of String)
             If ev.Operation = ForexeOperationKind.Angajament Then
                 coduri = Await CoduriNoiDupaSincronizareAsync(ev.CodEfectiv)
@@ -191,12 +188,6 @@ Partial Public Class KbotForm
                 ElseIf ev.Operation = ForexeOperationKind.Receptie OrElse
                        ev.Operation = ForexeOperationKind.ReceptieModificare Then
                     Await TrimiteCapturileAsync(cod, CapturaStore.FelReceptie)
-                End If
-                ' No history window after a reception (operator, 28.09.2026): the Receptii view
-                ' already shows what was written, as for reservations.
-                If ev.Operation <> ForexeOperationKind.Receptie AndAlso
-                   ev.Operation <> ForexeOperationKind.ReceptieModificare Then
-                    DeschideIstoricInterval(cod, deLa, panaLa, ev.Label)
                 End If
             Next
         Finally
@@ -674,23 +665,5 @@ Partial Public Class KbotForm
         Next
         Return noi
     End Function
-
-    ''' <summary>
-    ''' The history of the angajament, cut to the operator's minutes in the browser. Modeless,
-    ''' owned by the shell, disposed on close - one window per captured operation.
-    ''' </summary>
-    Private Sub DeschideIstoricInterval(cod As String, deLa As Date, panaLa As Date, eticheta As String)
-        Try
-            Dim f As New IstoricIntervalForm(_apiClient,
-                                             Function(op) WithReauth(Of IstoricInfo)(op),
-                                             cod, deLa, panaLa, eticheta)
-            AddHandler f.FormClosed, Sub(s, e) f.Dispose()
-            f.Show(Me)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.DeschideIstoricInterval", ex)
-            KBotMessage.Show(Me, "Fereastra de istoric nu s-a putut deschide: " & ex.Message,
-                            "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-        End Try
-    End Sub
 
 End Class

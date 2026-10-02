@@ -32,6 +32,8 @@ Partial Class ClasificatiiForm
         Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn15 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn16 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
@@ -60,7 +62,16 @@ Partial Class ClasificatiiForm
         ' 
         gridBuget.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridBuget.BackColor = SystemColors.Window
-        gridBuget.ColumnFillMode = KBotFillMode.LastColumn
+        KBotDataColumn15.AggregateFormatString = Nothing
+        KBotDataColumn15.Format = KBotFormat.ShortDate
+        KBotDataColumn15.FormatString = Nothing
+        KBotDataColumn15.HeaderText = "Început"
+        KBotDataColumn15.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn15.Key = "inceput"
+        KBotDataColumn15.OptionGroup = Nothing
+        KBotDataColumn15.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn15.ValueType = KBotValueType.DateTime
+        KBotDataColumn15.Width = 110
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.DecimalPlaces = 2
         KBotDataColumn1.Format = KBotFormat.Standard
@@ -106,24 +117,38 @@ Partial Class ClasificatiiForm
         KBotDataColumn4.ValueType = KBotValueType.Number
         KBotDataColumn4.Width = 110
         KBotDataColumn5.AggregateFormatString = Nothing
-        KBotDataColumn5.DecimalPlaces = 2
-        KBotDataColumn5.Format = KBotFormat.Standard
+        KBotDataColumn5.ColumnType = KBotColumnType.Button
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderText = "Total"
-        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn5.Key = "total"
+        KBotDataColumn5.HeaderText = ""
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn5.Key = "sterge"
+        KBotDataColumn5.MinWidth = 34
         KBotDataColumn5.OptionGroup = Nothing
-        KBotDataColumn5.ReadOnly = True
-        KBotDataColumn5.TextAlign = ContentAlignment.MiddleRight
-        KBotDataColumn5.ValueType = KBotValueType.Number
-        KBotDataColumn5.Width = 130
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.Width = 34
+        KBotDataColumn16.AggregateFormatString = Nothing
+        KBotDataColumn16.FormatString = Nothing
+        KBotDataColumn16.HeaderText = "Id"
+        KBotDataColumn16.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn16.Key = "id"
+        KBotDataColumn16.OptionGroup = Nothing
+        KBotDataColumn16.ReadOnly = True
+        KBotDataColumn16.Visible = KBotColumnVisibility.Hidden
+        gridBuget.Columns.Add(KBotDataColumn15)
         gridBuget.Columns.Add(KBotDataColumn1)
         gridBuget.Columns.Add(KBotDataColumn2)
         gridBuget.Columns.Add(KBotDataColumn3)
         gridBuget.Columns.Add(KBotDataColumn4)
         gridBuget.Columns.Add(KBotDataColumn5)
+        gridBuget.Columns.Add(KBotDataColumn16)
         gridBuget.Dock = DockStyle.Fill
         gridBuget.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
+        gridBuget.FooterBackColor = SystemColors.Control
+        gridBuget.FooterCaption = "Versiuni de buget"
+        gridBuget.FooterRightIcon = My.Resources.Resources.plus_green
+        gridBuget.FooterRightIconTooltip = "Adaugă o versiune de buget" & vbLf & "Rândul nou se completează direct în tabel."
+        gridBuget.FooterSeparatorColor = SystemColors.ActiveBorder
+        gridBuget.FooterVisible = True
         gridBuget.HeaderBackColor = SystemColors.Control
         gridBuget.HeaderHeight = 24
         gridBuget.HeaderSeparatorColor = SystemColors.ActiveBorder
@@ -131,10 +156,10 @@ Partial Class ClasificatiiForm
         gridBuget.Margin = New Padding(0)
         gridBuget.Name = "gridBuget"
         gridBuget.RowHeight = 24
-        gridBuget.Size = New Size(955, 90)
+        gridBuget.Size = New Size(955, 200)
         gridBuget.TabIndex = 1
-        tips.SetToolTipHeader(gridBuget, "Bugetul anual al clasificației")
-        tips.SetToolTipText(gridBuget, "Se tastează trimestrele 1 - 4; totalul se calculează singur." & vbLf & "Se scrie în baza de date la «Salvează».")
+        tips.SetToolTipHeader(gridBuget, "Bugetul clasificației, pe versiuni")
+        tips.SetToolTipText(gridBuget, "Fiecare rând este bugetul de la data din «Început» încolo (trimestrele 1 - 4); documentul de fundamentare citește bugetul de la data revizuirii." & vbLf & "«+» din subsol adaugă o versiune; «✕» o șterge. Totul se scrie la «Salvează».")
         ' 
         ' gridRectificari
         ' 
@@ -277,7 +302,7 @@ Partial Class ClasificatiiForm
         btnSalveaza.TabIndex = 1
         btnSalveaza.Text = "Salvează"
         tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Scrie în baza de date bugetul și rectificările clasificației alese.")
+        tips.SetToolTipText(btnSalveaza, "Scrie în baza de date versiunile de buget și rectificările clasificației alese.")
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' tlyMain
@@ -389,9 +414,9 @@ Partial Class ClasificatiiForm
         tlyRight.Name = "tlyRight"
         tlyRight.RowCount = 4
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 45F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 90F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 40F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 60F))
         tlyRight.Size = New Size(955, 614)
         tlyRight.TabIndex = 1
         ' 
@@ -405,7 +430,7 @@ Partial Class ClasificatiiForm
         lblBuget.Name = "lblBuget"
         lblBuget.Size = New Size(955, 45)
         lblBuget.TabIndex = 0
-        lblBuget.Text = "Buget anual"
+        lblBuget.Text = "Buget"
         lblBuget.TextAlign = ContentAlignment.MiddleCenter
         ' 
         ' lblRectificari

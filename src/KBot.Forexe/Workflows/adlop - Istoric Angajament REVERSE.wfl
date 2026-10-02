@@ -45,6 +45,7 @@
 <!-- SALVEZ TABELUL CU INDICATORI (REVERSE) -->
 <ScrapeTable selector="table.table-striped"
              saveTo="TabelIstoric"
+             partialOnError="true"
              lastPageSelector="a.last"
              prevPageSelector="a.prev"
              waitSelector="table.table-striped"

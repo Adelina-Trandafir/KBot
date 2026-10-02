@@ -56,7 +56,7 @@ Se deschide fereastra **«Actualizează angajamente»**, cu toate angajamentele 
 | **Cod**, **Descriere**, **Stare** | angajamentul, așa cum e în K-BOT |
 | **Actualizat** | când s-a salvat ultima descărcare; «—» dacă nu s-a salvat niciuna de când există această dată |
 
-Rândurile sunt în ordinea **celor mai vechi întâi**. Butonul **«Bifează cele neactualizate de N zile»**
+Rândurile sunt în **aceeași ordine ca în arbore**. Butonul **«Bifează cele neactualizate de N zile»**
 bifează doar angajamentele descărcate deja, dar neactualizate de N zile sau mai mult (N e din
 Setări). **«Actualizează»** pornește descărcarea celor bifate; **«Renunță»** închide fereastra fără
 să descarce nimic. Rândul de jos spune câte sunt bifate.

@@ -23,9 +23,15 @@ part: footer.right
 Semnul + deschide fereastra de adăugare: alegi sursa, clasificațiile funcționale și pe cele economice, ca la înregistrarea unității.
 
 ## Bugetul
-<!-- slice: 0087, 0000-20 -->
+<!-- slice: 0087, 0000-20, 0102, 0000-40 -->
 target: ClasificatiiForm.gridBuget
-Bugetul anului pentru clasificația aleasă, pe trimestre; totalul se calculează singur.
+Bugetul anului pentru clasificația aleasă, pe versiuni: fiecare rând este bugetul de la data din «Început» încolo, pe trimestre. Nu există total.
+
+## Buget › Adaugă o versiune
+<!-- slice: 0102, 0000-40 -->
+target: ClasificatiiForm.gridBuget
+part: footer.right
+Semnul + adaugă o versiune nouă de buget, cu data ei de început; «✕» de pe rând o șterge. Pentru revizii din ianuarie – martie adaugă o versiune care începe la 01.01.
 
 ## Rectificările
 <!-- slice: 0087, 0000-20 -->
@@ -45,6 +51,6 @@ part: footer
 Rândul de jos însumează rectificările.
 
 ## Salvează
-<!-- slice: 0087, 0000-20 -->
+<!-- slice: 0087, 0000-20, 0102, 0000-40 -->
 target: ClasificatiiForm.btnSalveaza
-Scrie bugetul și rectificările. Dacă treci pe alt nod sau închizi fereastra cu modificări nesalvate, K-BOT te întreabă ce faci cu ele.
+Scrie versiunile de buget și rectificările. Dacă treci pe alt nod sau închizi fereastra cu modificări nesalvate, K-BOT te întreabă ce faci cu ele.

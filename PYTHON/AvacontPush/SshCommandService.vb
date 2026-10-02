@@ -30,7 +30,7 @@ Public NotInheritable Class SshCommandService
     End Sub
 
     Public Sub Connect()
-        _client = New SshClient(_settings.Host, _settings.Port, _settings.User, _settings.Password)
+        _client = New SshClient(SshAuth.Build(_settings))
         AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
         _hostKeyError = ""
         Try
@@ -41,7 +41,7 @@ Public NotInheritable Class SshCommandService
             End If
             Throw New ApplicationException("Conectare eșuată la server (SSH). Verificați rețeaua și portul.", ex)
         Catch ex As SshAuthenticationException
-            Throw New ApplicationException("Autentificare eșuată (SSH). Verificați utilizatorul și parola.", ex)
+            Throw New ApplicationException("Autentificare eșuată (SSH). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
         End Try
     End Sub
 

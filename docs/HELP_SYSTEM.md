@@ -228,6 +228,10 @@ actualizat», name the topic ids (and capture ids) the change makes stale. One l
   - **how K-BOT works inside** (operator, 30.09.2026: «the help is meant for users only»): keys
     K-BOT presses for the user (Ctrl+H, Ctrl+2...), how it places or watches the Adobe window,
     log lines, timers, internal checks. Describe only what the user sees and does;
+  - **internal-only features and windows**: anything the operator did not ask for and does not
+    know exists (a check window, a helper dialog, a debugging aid) stays out of the help, its
+    pictures and its release notes until the operator says it is part of the product (operator,
+    02.10.2026, the «Istoric angajament» window of 0101-02, removed from the help);
   - the capture mode itself (it is a tool for the operator, not for clients);
   - the clicks inside the FOREXE page — the help describes what K-BOT does, not FOREXE's own pages;
   - the ORD's next step after signing (turned into a recepție and uploaded to the FOREXE CAB

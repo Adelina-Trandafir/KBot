@@ -16,6 +16,10 @@ Public Class PushSettings
     <JsonIgnore>
     Public Property Password As String = ""
 
+    ' Optional path of the SSH private key (slice 0103-02). Empty = look in ~/.ssh/config and then
+    ' for ~/.ssh/id_ed25519, id_ecdsa, id_rsa (SshAuth). With a key, no password is needed.
+    Public Property PrivateKeyPath As String = ""
+
     Public Property LocalRoot As String = ""
     Public Property RemoteRoot As String = "/root/AVACONT"
     Public Property PreserveMTime As Boolean = True

@@ -182,8 +182,10 @@ def insert():
             sql_structura = """INSERT INTO Clasificatii (IdClsfAcc, IdUnitate, Capitol, Subcapitol, Articol, Alineat, Denumire, Sector, Sursa, SS)
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             
-            sql_buget = """INSERT INTO Clasificatii_Buget (IdClsf, IdUnitate, An, Trim1, Trim2, Trim3, Trim4) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            # Slice 0102: every budget row has a DataInceput (the day it starts to apply). A row
+            # brought from Access is the budget of the whole year, so it starts on 01.01.
+            sql_buget = """INSERT INTO Clasificatii_Buget (IdClsf, IdUnitate, An, DataInceput, Trim1, Trim2, Trim3, Trim4) 
+                           VALUES (%s, %s, %s, MAKEDATE(%s, 1), %s, %s, %s, %s)"""
 
             inserted_count = 0
             mapping = {}
@@ -197,7 +199,7 @@ def insert():
                 
                 new_id = cursor.lastrowid
                 
-                val_b = (new_id, b['IdUnitate'], b['An'], b['Trim1'], b['Trim2'], b['Trim3'], b['Trim4'])
+                val_b = (new_id, b['IdUnitate'], b['An'], b['An'], b['Trim1'], b['Trim2'], b['Trim3'], b['Trim4'])
                 cursor.execute(sql_buget, val_b)
 
                 mapping[s['IdClsfAcc']] = new_id
@@ -527,6 +529,11 @@ def save_clasificatii_complete_upsert():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
 
+        # Slice 0102: a budget row is a VERSION that starts on DataInceput, and K-BOT's
+        # «Clasificatii bugetare» window now owns the versions. This route only brings in the
+        # budget of a classification that has NONE for the year yet (a version starting on 01.01);
+        # a classification that already has one is left alone -- overwriting a version with
+        # Access's current figures would erase the budget the DDF needs as it was.
         sql_exists_buget = """
             SELECT IdBuget
             FROM Clasificatii_Buget
@@ -535,24 +542,19 @@ def save_clasificatii_complete_upsert():
             LIMIT 1
         """
 
-        sql_upsert_buget = """
+        sql_insert_buget = """
             INSERT INTO Clasificatii_Buget
             (
                 IdClsf,
                 IdUnitate,
                 An,
+                DataInceput,
                 Trim1,
                 Trim2,
                 Trim3,
                 Trim4
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON DUPLICATE KEY UPDATE
-                IdUnitate = VALUES(IdUnitate),
-                Trim1 = VALUES(Trim1),
-                Trim2 = VALUES(Trim2),
-                Trim3 = VALUES(Trim3),
-                Trim4 = VALUES(Trim4)
+            VALUES (%s, %s, %s, MAKEDATE(%s, 1), %s, %s, %s, %s)
         """
 
         # ------------------------------------------------------------
@@ -561,7 +563,7 @@ def save_clasificatii_complete_upsert():
         inserted_clsf = 0
         updated_clsf = 0
         inserted_buget = 0
-        updated_buget = 0
+        skipped_buget = 0
         mapping = {}
 
         seen_payload_keys = set()
@@ -688,36 +690,37 @@ def save_clasificatii_complete_upsert():
                     )
 
                 # ----------------------------------------------------
-                # 5.5 Verificare existenta buget pentru raportare insert/update
+                # 5.5 Verificare existenta buget (slice 0102: versiuni cu DataInceput)
                 # ----------------------------------------------------
                 cursor.execute(sql_exists_buget, (current_id_clsf, b_clean["An"]))
                 existed_buget_before = cursor.fetchone() is not None
 
                 # ----------------------------------------------------
-                # 5.6 UPSERT Clasificatii_Buget
+                # 5.6 INSERT Clasificatii_Buget doar daca anul nu are nicio versiune
                 # ----------------------------------------------------
-                cursor.execute(
-                    sql_upsert_buget,
-                    (
-                        current_id_clsf,
-                        b_clean["IdUnitate"],
-                        b_clean["An"],
-                        b_clean["Trim1"],
-                        b_clean["Trim2"],
-                        b_clean["Trim3"],
-                        b_clean["Trim4"]
-                    )
-                )
-
                 if existed_buget_before:
-                    updated_buget += 1
+                    skipped_buget += 1
                     logger.debug(
-                        "UPSERT CLASIFICATII item=%s -> UPDATE Clasificatii_Buget IdClsf=%s An=%s",
+                        "UPSERT CLASIFICATII item=%s -> Clasificatii_Buget IdClsf=%s An=%s are deja "
+                        "o versiune de buget; lasat neatins",
                         idx,
                         current_id_clsf,
                         b_clean["An"]
                     )
                 else:
+                    cursor.execute(
+                        sql_insert_buget,
+                        (
+                            current_id_clsf,
+                            b_clean["IdUnitate"],
+                            b_clean["An"],
+                            b_clean["An"],
+                            b_clean["Trim1"],
+                            b_clean["Trim2"],
+                            b_clean["Trim3"],
+                            b_clean["Trim4"]
+                        )
+                    )
                     inserted_buget += 1
                     logger.debug(
                         "UPSERT CLASIFICATII item=%s -> INSERT Clasificatii_Buget IdClsf=%s An=%s",
@@ -760,13 +763,13 @@ def save_clasificatii_complete_upsert():
             logger.info(
                 "UPSERT CLASIFICATII commit succes. db=%s, total=%s, "
                 "clasificatii_inserted=%s, clasificatii_updated=%s, "
-                "buget_inserted=%s, buget_updated=%s",
+                "buget_inserted=%s, buget_skipped=%s",
                 db_name,
                 len(data_list),
                 inserted_clsf,
                 updated_clsf,
                 inserted_buget,
-                updated_buget
+                skipped_buget
             )
         except Exception as e:
             logger.error(
@@ -786,7 +789,7 @@ def save_clasificatii_complete_upsert():
             },
             "buget": {
                 "inserted": inserted_buget,
-                "updated": updated_buget
+                "skipped": skipped_buget
             },
             "mapping": mapping
         }), 200

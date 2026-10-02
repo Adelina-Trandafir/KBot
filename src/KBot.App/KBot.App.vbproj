@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.1.3</FileVersion>
+    <FileVersion>1.1.1.4</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -195,6 +195,12 @@
 		  <DependentUpon>KbotForm.vb</DependentUpon>
 	  </Compile>
 	  <Compile Update="KbotForm.Units.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.HelpReveal.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Parallel.vb">
 		  <DependentUpon>KbotForm.vb</DependentUpon>
 	  </Compile>
   </ItemGroup>

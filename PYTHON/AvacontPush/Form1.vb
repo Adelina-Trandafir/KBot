@@ -34,7 +34,7 @@ Partial Public Class Form1
             End If
 
             LoadSettingsToUi()
-            lblStatus.Text = "Pregătit."
+            lblStatus.Text = "Pregătit. " & SshAuth.Describe(_settings)
         Catch ex As Exception
             MessageBox.Show("Nu s-a putut încărca configurația: " & ex.Message,
                             "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -477,19 +477,28 @@ Partial Public Class Form1
             End If
 
             Dim targets = SchemaSyncService.ParseTargets(result.StdOut)
-            For Each t In targets
-                clbTargets.Items.Add(t)
-            Next
+            FillTargets(clbTargets, targets)
 
             If targets.Count = 0 Then
                 SetBusy(False, "Serverul nu a raportat nicio bază de unitate.")
             Else
-                SetBusy(False, $"{targets.Count} baze citite de pe server. Bifați ce sincronizați.")
+                SetBusy(False, $"{targets.Count} baze citite de pe server; cele care există sunt bifate. Debifați ce nu sincronizați.")
             End If
         Catch ex As Exception
             SetBusy(False, "Citirea bazelor a eșuat.")
             MessageBox.Show(ex.Message, "Eroare la citirea bazelor", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
+    End Sub
+
+    ' Fills a list with the databases the server reported and ticks every one that REALLY exists:
+    ' the ones with no «nu există pe server» note. A name CAI claims and the server does not have
+    ' is shown, unticked, and cannot be ticked (clbTargets_ItemCheck).
+    Private Shared Sub FillTargets(list As CheckedListBox, targets As List(Of SchemaTarget))
+        list.Items.Clear()
+        For Each t In targets
+            Dim index = list.Items.Add(t)
+            list.SetItemChecked(index, t.Exists)
+        Next
     End Sub
 
     ' Generates the statements and shows them. Executes nothing.
@@ -585,15 +594,18 @@ Partial Public Class Form1
     ' Runs one remote command on a worker thread, then mirrors the whole
     ' exchange into the output pane and the run log. Nothing arrives while the
     ' command runs: the channel hands over stdout and stderr only when it ends.
-    Private Async Function RunRemoteAsync(commandText As String) As Task(Of SshResult)
+    ' displayText replaces the command in the pane and the log when it is long and unreadable
+    ' (a one-time query travels as base64).
+    Private Async Function RunRemoteAsync(commandText As String, Optional displayText As String = Nothing) As Task(Of SshResult)
         Dim result As SshResult = Nothing
+        Dim shown As String = If(displayText, commandText)
 
         Await Task.Run(
             Sub()
                 Using log As New RunLogger()
                     Using ssh As New SshCommandService(_settings)
                         ssh.Connect()
-                        log.Write("CMD " & commandText)
+                        log.Write("CMD " & shown)
                         result = ssh.Run(commandText)
                         log.Write($"-> exit {result.ExitStatus}")
                         If result.StdOut.Trim() <> "" Then log.Write(result.StdOut.TrimEnd())
@@ -602,7 +614,7 @@ Partial Public Class Form1
                 End Using
             End Sub)
 
-        AppendOutput($"$ {commandText}   (exit {result.ExitStatus})")
+        AppendOutput($"$ {shown}   (exit {result.ExitStatus})")
         If result.StdOut.Trim() <> "" Then AppendOutput(result.StdOut.TrimEnd())
         If result.StdErr.Trim() <> "" Then AppendOutput(result.StdErr.TrimEnd())
         AppendOutput("")
@@ -614,8 +626,12 @@ Partial Public Class Form1
     End Function
 
     Private Function CheckedTargetNames() As List(Of String)
+        Return CheckedNames(clbTargets)
+    End Function
+
+    Private Shared Function CheckedNames(list As CheckedListBox) As List(Of String)
         Dim names As New List(Of String)()
-        For Each item In clbTargets.CheckedItems
+        For Each item In list.CheckedItems
             Dim t = TryCast(item, SchemaTarget)
             If t IsNot Nothing AndAlso t.Exists Then names.Add(t.Name)
         Next
@@ -626,10 +642,10 @@ Partial Public Class Form1
     ' the tick is refused here rather than sent out to fail on the server.
     ' CheckedListBox has no per-item disabled state, so this is what "disabled"
     ' means for those rows - the text already says why.
-    Private Sub clbTargets_ItemCheck(sender As Object, e As ItemCheckEventArgs) Handles clbTargets.ItemCheck
+    Private Sub clbTargets_ItemCheck(sender As Object, e As ItemCheckEventArgs) Handles clbTargets.ItemCheck, clbOnceTargets.ItemCheck
         If e.NewValue <> CheckState.Checked Then Return
 
-        Dim t = TryCast(clbTargets.Items(e.Index), SchemaTarget)
+        Dim t = TryCast(DirectCast(sender, CheckedListBox).Items(e.Index), SchemaTarget)
         If t Is Nothing OrElse t.Exists Then Return
 
         e.NewValue = CheckState.Unchecked
@@ -648,6 +664,135 @@ Partial Public Class Form1
                 Return "Anulat. Nimic nu s-a executat."
             Case Else
                 Return $"Sincronizarea s-a încheiat cu codul {exitStatus}. Citiți panoul de jos."
+        End Select
+    End Function
+
+    ' ------------------------------------------------------ ONE-TIME QUERIES
+
+    ' Fills the box from a .sql file (UTF-8). The name is only suggested, from the file name, and
+    ' only when it is still empty: the name is the query's identity together with its text.
+    Private Sub btnOnceLoad_Click(sender As Object, e As EventArgs) Handles btnOnceLoad.Click
+        Try
+            If dlgOnceFile.ShowDialog(Me) <> DialogResult.OK Then Return
+            txtOnceSql.Text = File.ReadAllText(dlgOnceFile.FileName, System.Text.Encoding.UTF8)
+            If txtOnceName.Text.Trim() = "" Then
+                txtOnceName.Text = Path.GetFileNameWithoutExtension(dlgOnceFile.FileName)
+            End If
+            lblStatus.Text = $"Încărcat: {Path.GetFileName(dlgOnceFile.FileName)}."
+        Catch ex As Exception
+            MessageBox.Show(ex.Message, "Eroare la citirea fișierului", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Reads the databases from the server (same listing as the schema tab) and ticks every one that
+    ' really exists.
+    Private Async Sub btnOnceTargets_Click(sender As Object, e As EventArgs) Handles btnOnceTargets.Click
+        Try
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se citesc bazele de pe server...")
+            rtbOutput.Clear()
+            clbOnceTargets.Items.Clear()
+
+            Dim result = Await RunRemoteAsync(New SchemaSyncService(_settings).ListCommand())
+            If result.ExitStatus <> 0 Then
+                SetBusy(False, "Citirea bazelor a eșuat.")
+                MessageBox.Show($"Serverul a răspuns cu codul {result.ExitStatus}. Detaliile sunt în panoul de jos.",
+                                "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+
+            Dim targets = SchemaSyncService.ParseTargets(result.StdOut)
+            FillTargets(clbOnceTargets, targets)
+            SetBusy(False, If(targets.Count = 0,
+                              "Serverul nu a raportat nicio bază de unitate.",
+                              $"{targets.Count} baze citite; cele care există sunt bifate. AVACONT_SURSA se rulează mereu, prima."))
+        Catch ex As Exception
+            SetBusy(False, "Citirea bazelor a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la citirea bazelor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' Shows, per database, whether the query is still to run. Writes nothing.
+    Private Async Sub btnOnceView_Click(sender As Object, e As EventArgs) Handles btnOnceView.Click
+        Await RunOneTimeAsync(view:=True)
+    End Sub
+
+    ' Executes on AVACONT_SURSA and on every unit of CAI, after a confirmation.
+    Private Async Sub btnOnceRun_Click(sender As Object, e As EventArgs) Handles btnOnceRun.Click
+        Await RunOneTimeAsync(view:=False)
+    End Sub
+
+    ' What every database's ledger already holds.
+    Private Async Sub btnOnceStatus_Click(sender As Object, e As EventArgs) Handles btnOnceStatus.Click
+        Try
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            SetBusy(True, "Se citește registrul interogărilor...")
+            rtbOutput.Clear()
+
+            Dim result = Await RunRemoteAsync(New OneTimeService(_settings).StatusCommand())
+            SetBusy(False, If(result.ExitStatus = 0, "Registrul a fost citit.",
+                              $"Citirea s-a încheiat cu codul {result.ExitStatus}. Citiți panoul de jos."))
+        Catch ex As Exception
+            SetBusy(False, "Citirea registrului a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    Private Async Function RunOneTimeAsync(view As Boolean) As Task
+        Try
+            Dim name = txtOnceName.Text.Trim()
+            Dim units = CheckedNames(clbOnceTargets)
+            Dim problem = OneTimeService.CheckName(name)
+            If problem = "" Then problem = OneTimeService.CheckSize(txtOnceSql.Text)
+            If problem = "" AndAlso units.Count = 0 Then problem = "Citiți bazele și bifați cel puțin una."
+            If problem <> "" Then
+                MessageBox.Show(problem, "Informație", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            ApplyUiToSettings()
+            AppConfigStore.Save(_settings)
+
+            If Not view Then
+                If MessageBox.Show(
+                        $"Interogarea «{name}» se rulează pe AVACONT_SURSA și pe {units.Count} unități: {String.Join(", ", units)}." & Environment.NewLine &
+                        "O bază care a rulat deja textul exact este sărită; modificările nu se pot anula." & Environment.NewLine & Environment.NewLine &
+                        "Ați făcut întâi «Vezi (nu execută)»? Continuați?",
+                        "Confirmare interogare unică", MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                    Return
+                End If
+            End If
+
+            SetBusy(True, If(view, "Se verifică bazele...", "Se rulează pe toate bazele... poate dura."))
+            rtbOutput.Clear()
+
+            Dim svc As New OneTimeService(_settings)
+            Dim result = Await RunRemoteAsync(svc.RunCommand(name, txtOnceSql.Text, view, units),
+                                              OneTimeService.Describe(name, view))
+            SetBusy(False, OneTimeStatus(result.ExitStatus, view))
+        Catch ex As Exception
+            SetBusy(False, "Interogarea unică a eșuat.")
+            MessageBox.Show(ex.Message, "Eroare la interogarea unică", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Function
+
+    ' The runner's exit codes, in the operator's words. 2 is a refusal, not a failure: nothing at
+    ' all was executed.
+    Private Shared Function OneTimeStatus(exitStatus As Integer, view As Boolean) As String
+        Select Case exitStatus
+            Case 0
+                Return If(view, "Verificare completă. Nu s-a executat nimic.", "Interogare unică încheiată.")
+            Case OneTimeService.ExitRefused
+                Return "Refuzat. Nimic nu s-a executat. Citiți panoul de jos."
+            Case OneTimeService.ExitFailed
+                Return "Terminat cu erori pe unele baze (nemarcate). Citiți panoul de jos."
+            Case Else
+                Return $"Interogarea s-a încheiat cu codul {exitStatus}. Citiți panoul de jos."
         End Select
     End Function
 
@@ -779,6 +924,14 @@ Partial Public Class Form1
         btnSchemaRun.Enabled = Not busy
         cmbSchemaMode.Enabled = Not busy
         clbTargets.Enabled = Not busy
+        btnOnceTargets.Enabled = Not busy
+        clbOnceTargets.Enabled = Not busy
+        btnOnceLoad.Enabled = Not busy
+        btnOnceStatus.Enabled = Not busy
+        btnOnceView.Enabled = Not busy
+        btnOnceRun.Enabled = Not busy
+        txtOnceName.Enabled = Not busy
+        txtOnceSql.Enabled = Not busy
         btnUsersLoad.Enabled = Not busy
         btnLoginReset.Enabled = Not busy
         lblStatus.Text = status

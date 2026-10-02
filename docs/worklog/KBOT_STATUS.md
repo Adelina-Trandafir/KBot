@@ -35,7 +35,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 
 |         Slice | Name                                                                                                                     | Status (short)                                | File                                        |
 | ------------: | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------------------------- |
-|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…38 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
+|          0000 | **AJUTOR (felie permanentă): ajutor interactiv + manual — toată munca la ajutor se trece aici, ca 0000-NN** | 0000-01…38 și 40 GATA | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0001 | Auth                                                                                                                     | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0002 | Split-brain 401 fix + reason codes                                                                                       | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
 |          0003 | Redis session backend                                                                                                    | DONE                                          | [0000-0009](state/KBOT_STATUS_0000-0009.md) |
@@ -221,10 +221,14 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0100-02 | `Setari` pe fiecare bază: serverul decide multi-thread (`Multithread`, `Multithread_Max`); pagină nouă «Descărcări multiple» în Setări, ascunsă cât serverul o oprește; grupul scos din «Aplicație» (cererea operatorului, 01.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; SQL + server nedeployate; ajutorul: 0000-36, fără capturi) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 |          0101 | Lanț de recepții care nu se închide: rândul și motivul în roșu în arborele principal și în fereastra de asociere; «+» pe lună în Plăți fără mesaj de succes (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; `tree.py` nedeployat; ajutorul: 0000-37) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 |       0101-01 | ORD și DDF: bara cu pagini rămâne pe o lună / «Toate…»; pagina «Documente» are lista de tipărire, «Vizualizare» arată din nou datele (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: 0000-38, fără capturi) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+|       0101-02 | Fără fereastra «Istoric angajament» după o salvare în pagina FOREXE; fereastra rămâne în proiect, doar referințele dispar (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: fără paragraful și captura `istoric-interval`) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+| 0102 | Bugetul clasificației cu date (`Clasificatii_Buget.DataInceput`): DDF-ul arată bugetul de la data reviziei, nu pe cel de azi; fereastra «Clasificații bugetare» pe versiuni, fără total (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; **DDL + server nedeployate**; ajutorul: 0000-40) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+| 0103 | Interogări unice: o interogare rulată o singură dată pe AVACONT_SURSA și pe fiecare unitate, ținută minte în `Interogari_Unice`; unitățile noi se nasc cu ea «rulată»; fila nouă din AvacontPush (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nimic rulat; **DDL pe șablon + server nedeployate**; fără ajutor, unealtă de dezvoltare) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+| 0103-02 | AvacontPush: login cu cheia SSH, fără parolă; toate bazele existente se bifează la detecție, și în fila «Interogări unice» (cererea operatorului, 02.10.2026) | GATA pe cod (build curat, nicio conectare făcută; fără ajutor) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0102.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0104.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

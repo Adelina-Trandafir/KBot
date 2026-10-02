@@ -68,7 +68,9 @@ angajament la care recepțiile s-au modificat des, **fereastra Asocieri va avea 
 e mersul normal, nu o problemă.
 
 ## Când se deschide
-<!-- slice: 0048-04, 0055 -->
+<!-- slice: 0048-04, 0055, 0000-39 -->
+
+Titlul ferestrei arată **codul și denumirea** angajamentului la care lucrezi.
 
 - **După o descărcare** din FOREXE, dacă a rămas ceva nehotărât — fereastra «Așezarea recepțiilor
   descărcate». Vezi [Descărcarea unui angajament](topic:contabil.forexe.descarcare).

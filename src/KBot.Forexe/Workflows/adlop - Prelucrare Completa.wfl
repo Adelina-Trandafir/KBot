@@ -272,6 +272,7 @@
 
     <ScrapeTable selector="table.table-striped"
       saveTo="TabelIstoric"
+      partialOnError="true"
       nextPageSelector="a[rel='next']"
       waitSelector="table.table-striped"
       fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"

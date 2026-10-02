@@ -105,6 +105,7 @@ Partial Public Class KbotForm
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
+            _treeOrder.Clear()
             _nodLantNeinchis.Clear()
 
             ' The view gate is applied ONCE, after the loop, when it is known whether the old
@@ -138,6 +139,7 @@ Partial Public Class KbotForm
                 If info.LantNeinchis.Count > 0 Then _nodLantNeinchis.Add(node)
                 'node.ShowRightIconOnHover = True
 
+                If Not _treeInfos.ContainsKey(cod) Then _treeOrder.Add(cod)
                 _treeInfos(cod) = info
                 If codSelectat IsNot Nothing AndAlso
                    String.Equals(cod, codSelectat, StringComparison.OrdinalIgnoreCase) Then

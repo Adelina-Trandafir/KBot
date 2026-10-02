@@ -113,7 +113,7 @@ Public NotInheritable Class TableMaps
 
         ' --- Clasificatii_Buget ----------------------------------------------------
         ' Same Access table, second target: trim1..trim4 become four COLUMNS of one row,
-        ' not four rows (settled by the DDL - UNIQUE (IdClsf, An)).
+        ' not four rows (settled by the DDL - UNIQUE (IdClsf, An, DataInceput) since slice 0102).
         ' Access IDClsf is excluded because it would case-insensitively match the target's
         ' IdClsf and write the RAW Access id where the RESOLVED one belongs.
         ' TOTAL is GENERATED on the target and therefore never written.
@@ -121,10 +121,13 @@ Public NotInheritable Class TableMaps
             Add(ColumnMapping.FromClasificatie("IdClsf", "IDClsf", True)).
             Add(ColumnMapping.FromUnit("IdUnitate")).
             Add(ColumnMapping.FromConstant("An", TransferYear)).
+            Add(ColumnMapping.FromConstant("DataInceput", New Date(TransferYear, 4, 1))).
             Exclude("IDClsf", "IdClsfPY", "TOTAL", "TOTALFX", "Capitol", "Subcapitol",
                     "Articol", "Alineat", "Denumire", "CodSSI", "CodAng", "CodInd",
                     "DTQ", "Esinc", "Document", "Data", "IdLegatura").
-            WithNote("An = 2026, scris fix (D1). Tabelul-sursă e tot «Clasificatii»."))
+            WithNote("An = 2026, scris fix (D1). Tabelul-sursă e tot «Clasificatii». " &
+                     "Slice 0102: «DataInceput» e obligatorie pe țintă (un rând = o versiune de buget); " &
+                     "rândurile aduse din Access încep la 01.04.2026, ca cele existente."))
 
         ' --- Clasificatii_Rectificari ----------------------------------------------
         ' Access ID is excluded: the target's ID is its own auto_increment and a name

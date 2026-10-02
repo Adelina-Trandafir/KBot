@@ -71,6 +71,22 @@ CREATE TABLE `Clasificatii`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
+-- Table structure for Interogari_Unice (slice 0103: the ledger of one-time queries; the
+-- provisioning job copies its ROWS into every new unit)
+-- ----------------------------
+DROP TABLE IF EXISTS `Interogari_Unice`;
+CREATE TABLE `Interogari_Unice`  (
+  `Hash` char(64) NOT NULL COMMENT 'Slice 0103: SHA-256 of the normalized query text',
+  `Nume` varchar(100) NOT NULL COMMENT 'The name the operator gave the query',
+  `RulatLa` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'When it was run on this database',
+  `RulatDe` varchar(64) NULL DEFAULT NULL COMMENT 'AvacontPush, or provisioning when a new unit is born with it marked done',
+  `Randuri` int(11) NULL DEFAULT NULL COMMENT 'Rows the statements reported as affected',
+  `Interogare` mediumtext NULL DEFAULT NULL COMMENT 'The normalized text that ran',
+  PRIMARY KEY (`Hash`) USING BTREE,
+  UNIQUE INDEX `uq_interogari_unice_nume`(`Nume` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for Clasificatii_Buget
 -- ----------------------------
 DROP TABLE IF EXISTS `Clasificatii_Buget`;
@@ -84,10 +100,11 @@ CREATE TABLE `Clasificatii_Buget`  (
   `Trim3` double NULL DEFAULT NULL,
   `Trim4` double NULL DEFAULT NULL,
   `An` int(4) NULL DEFAULT NULL,
+  `DataInceput` date NOT NULL COMMENT 'Slice 0102: the date this budget row starts to apply (one row = one version of the budget)',
   `DataAdugare` datetime NULL DEFAULT current_timestamp(),
   `DataModificare` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`IdBuget`) USING BTREE,
-  UNIQUE INDEX `uq_clasificatii_buget_idclsf_an`(`IdClsf` ASC, `An` ASC) USING BTREE,
+  UNIQUE INDEX `uq_clasificatii_buget_idclsf_an_data`(`IdClsf` ASC, `An` ASC, `DataInceput` ASC) USING BTREE,
   INDEX `Clasificatii_Buget_ibfk_1`(`IdClsf` ASC) USING BTREE,
   INDEX `Clasificatii_Buget_ibfk_2`(`IdUnitate` ASC) USING BTREE,
   CONSTRAINT `Clasificatii_Buget_ibfk_1` FOREIGN KEY (`IdClsf`) REFERENCES `Clasificatii` (`IDClsf`) ON DELETE CASCADE ON UPDATE CASCADE,

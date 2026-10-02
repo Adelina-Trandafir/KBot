@@ -5,6 +5,13 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 02.10.2026) — list without source filter when the tree is sorted by date; angajament name in
+  the association window; Wicket monitor after a multi-thread run.** (1) `JobBuilder.BuildListaAngajamente(.., toateSursele)`
+  sends `SURSA` empty when `TreeSortIsDate`. (2) `AsociereForm` title = «cod — denumire». (3) «Function
+  `_wicketMonitorCallback` has been already registered»: `AdoptTabAsync` now takes the worker's Wicket/click/key monitors over
+  (`TakeOverWicketMonitoring`) instead of installing them a second time. Build clean, nothing run; item 3 is a diagnosis from
+  code + log, to confirm on a run. Help in 0000-39. See `SLICELESS-lista-sursa-asociere-denumire-wicket.md`.
+
 - **No slice (operator, 01.10.2026) — the «Setări» button leaves the main caption bar; its two rows move
   into the header menu (MENIU).** `capBar.ShowOptionsButton` off; `menuNou` rows `setari`
   («Configurare K-BOT») and `jurnal` («Jurnal activitate») wired in `MenuNou_ItemClicked`; the log row
@@ -195,6 +202,16 @@ authoritative record is [`docs/worklog/KBOT_STATUS.md`](docs/worklog/KBOT_STATUS
 file and `KBOT_STATUS.md` disagree, `KBOT_STATUS.md` wins — fix it there first.
 
 ## What just landed (most recent first)
+
+- **History read keeps its rows when FOREXE answers a page turn with the Wicket «Eroare» page** (uncommitted, 2026-10-02)
+  - `ListenerInvocationNotAllowedException` on the history's «next» link used to make the next page's table never
+    appear -> `TimeoutException` -> whole job failed, rows lost. New `<ScrapeTable partialOnError="true">`
+    (`ScrapeTableAction.PartialOnError`, `WorkflowParser`): when the read fails (or at the top of a page) AND the page
+    shows «S-a produs o eroare» AND at least one page was read, the rows so far are saved to `saveTo` and the flow
+    goes on (console warns it is incomplete). Any other failure, or no error page, still throws as before.
+    Set on the `TabelIstoric` scrape of `Istoric Angajament`, `… REVERSE`, `Prelucrare Completa`, `… Reverse`.
+  - Not run against FOREXE (no local log of the error exists; the probe text comes from the operator's screenshot).
+    Open: what page FOREXE is left on after the error (the following «Înapoi» step is skipped when absent).
 
 - **Rezervări — endpoint + `RezervariView`, slice 0014 complete** (uncommitted, 2026-07-21)
   - The **second real view** (after Sumar, 0011). `MainForm.CreateView("rezervari")` now returns a

@@ -10,11 +10,13 @@ session's database, the yearly budget of one classification and its corrections.
                             "articol": {"10.01": ...}, "ss": {"02A": ...} } }
 
     GET  /api/forexe/nomenclatoare/clasificatii/<id_clsf>/buget?an=2026
-        -> 200 { "budget": {"trim1".."trim4"} | null,
+        -> 200 { "budgets": [ {"id", "data_inceput", "trim1".."trim4"}, ... ],
                  "corrections": [ {"id", "document", "data", "trim1".."trim4"}, ... ] }
 
     POST /api/forexe/nomenclatoare/clasificatii/<id_clsf>/buget
-        { "an": 2026, "budget": {"trim1".."trim4"},
+        { "an": 2026,
+          "budgets": [ {"id": null|n, "data_inceput": "yyyy-mm-dd", "trim1".."trim4"} ],
+          "deleted_budgets": [ids],
           "corrections": [ {"id": null|n, "document", "data": "yyyy-mm-dd", "trim1".."trim4"} ],
           "deleted": [ids] }
         -> 200 the same body as the GET, read back after the commit
@@ -34,8 +36,10 @@ WHERE THE DATA LIVES (MariaDB_Schema/AVACONT_SURSA.sql, AVACONT_COMUN.sql)
   * Level names are not in Clasificatii. Capitol = DefaClsfF(left(Capitol,2) + "0000"),
     Subcapitol = DefaClsfF(left(Capitol,2) + Subcapitol without the dot), Articol =
     DefaArticol(Articol); the sector-source name comes from DefaSursaSector.
-  * Clasificatii_Buget: one row per (IdClsf, An), unique key uq_clasificatii_buget_idclsf_an;
-    TOTAL is a generated column, never written.
+  * Clasificatii_Buget (slice 0102): one row = one VERSION of the budget of a classification for a
+    year, starting on DataInceput; unique key (IdClsf, An, DataInceput). The DDF reads the version
+    in force on the revision's day (routes/forexe/budget_on_day.py). TOTAL is a generated column,
+    never written and never shown: there is no yearly total of a budget.
   * Clasificatii_Rectificari has NO year column: the year of a correction is YEAR(Data), so a
     correction must carry a date inside the year being edited. Unique (IdClsf, Data, Document).
 
@@ -84,8 +88,9 @@ _SQL_ONE = (
     "SELECT IDClsf, IdUnitate, Capitol, Subcapitol, Articol, Alineat "
     "  FROM Clasificatii WHERE IDClsf = %s"
 )
-_SQL_BUDGET = (
-    "SELECT Trim1, Trim2, Trim3, Trim4 FROM Clasificatii_Buget WHERE IdClsf = %s AND An = %s"
+_SQL_BUDGETS = (
+    "SELECT IdBuget, DataInceput, Trim1, Trim2, Trim3, Trim4 FROM Clasificatii_Buget "
+    " WHERE IdClsf = %s AND An = %s ORDER BY DataInceput, IdBuget"
 )
 _SQL_CORRECTIONS = (
     "SELECT ID, Document, Data, Trim1, Trim2, Trim3, Trim4 "
@@ -93,12 +98,16 @@ _SQL_CORRECTIONS = (
     " WHERE IdClsf = %s AND YEAR(Data) = %s "
     " ORDER BY Data, Document, ID"
 )
-_SQL_BUDGET_UPSERT = (
-    "INSERT INTO Clasificatii_Buget (IdClsf, IdUnitate, An, Trim1, Trim2, Trim3, Trim4) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s) "
-    "ON DUPLICATE KEY UPDATE Trim1 = VALUES(Trim1), Trim2 = VALUES(Trim2), "
-    "Trim3 = VALUES(Trim3), Trim4 = VALUES(Trim4)"
+_SQL_BUDGET_UPDATE = (
+    "UPDATE Clasificatii_Buget "
+    "   SET DataInceput = %s, Trim1 = %s, Trim2 = %s, Trim3 = %s, Trim4 = %s "
+    " WHERE IdBuget = %s AND IdClsf = %s AND An = %s"
 )
+_SQL_BUDGET_INSERT = (
+    "INSERT INTO Clasificatii_Buget (IdClsf, IdUnitate, An, DataInceput, Trim1, Trim2, Trim3, Trim4) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+)
+_SQL_BUDGET_DELETE = "DELETE FROM Clasificatii_Buget WHERE IdBuget = %s AND IdClsf = %s"
 _SQL_CORRECTION_UPDATE = (
     "UPDATE Clasificatii_Rectificari "
     "   SET Document = %s, Data = %s, Trim1 = %s, Trim2 = %s, Trim3 = %s, Trim4 = %s "
@@ -206,12 +215,13 @@ def get_clasificatii_tree():
 # Budget + corrections of one classification
 # ---------------------------------------------------------------------------
 def _read_budget(cursor, id_clsf: int, an: int) -> dict:
-    cursor.execute(_SQL_BUDGET, (id_clsf, an))
-    row = cursor.fetchone()
-    budget = None if row is None else {
-        "trim1": _number(row["Trim1"]), "trim2": _number(row["Trim2"]),
-        "trim3": _number(row["Trim3"]), "trim4": _number(row["Trim4"]),
-    }
+    cursor.execute(_SQL_BUDGETS, (id_clsf, an))
+    budgets = [{
+        "id": int(r["IdBuget"]),
+        "data_inceput": r["DataInceput"].isoformat() if r["DataInceput"] is not None else None,
+        "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
+        "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
+    } for r in cursor.fetchall()]
     cursor.execute(_SQL_CORRECTIONS, (id_clsf, an))
     corrections = [{
         "id": int(r["ID"]),
@@ -220,7 +230,7 @@ def _read_budget(cursor, id_clsf: int, an: int) -> dict:
         "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
         "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
     } for r in cursor.fetchall()]
-    return {"budget": budget, "corrections": corrections}
+    return {"budgets": budgets, "corrections": corrections}
 
 
 def _classification(cursor, id_clsf: int) -> dict:
@@ -253,13 +263,45 @@ def get_clasificatie_buget(id_clsf):
             conn.close()
 
 
+def _save_budgets(cursor, clsf: dict, an: int, body: dict):
+    """The budget versions of the year: removals first (so a date can be freed and used again in
+    the same save), then every version of the request updated or added."""
+    id_clsf = int(clsf["IDClsf"])
+    deleted = body.get("deleted_budgets") or []
+    if not isinstance(deleted, list):
+        raise _Refused("Lista versiunilor de buget șterse nu are forma așteptată.")
+    for raw_id in deleted:
+        cursor.execute(_SQL_BUDGET_DELETE, (int(raw_id), id_clsf))
+
+    budgets = body.get("budgets")
+    if not isinstance(budgets, list):
+        raise _Refused("Lipsesc versiunile de buget («budgets»).")
+    seen = set()
+    for index, row in enumerate(budgets, start=1):
+        if not isinstance(row, dict):
+            raise _Refused(f"Bugetul {index} nu are forma așteptată.")
+        where = f"Bugetul {index}"
+        try:
+            start = date.fromisoformat(_text(row.get("data_inceput")))
+        except ValueError:
+            raise _Refused(f"{where}: lipsește data de început sau nu este o dată.")
+        if start.year != an:
+            raise _Refused(f"{where}: data de început {start:%d.%m.%Y} nu este în anul {an}.")
+        if start in seen:
+            raise _Refused(f"{where}: există deja un buget care începe la {start:%d.%m.%Y}.")
+        seen.add(start)
+        amounts = [_amount(row, q, where) for q in _QUARTERS]
+        row_id = row.get("id")
+        if row_id:
+            cursor.execute(_SQL_BUDGET_UPDATE, (start, *amounts, int(row_id), id_clsf, an))
+        else:
+            cursor.execute(_SQL_BUDGET_INSERT, (
+                id_clsf, int(clsf["IdUnitate"]), an, start, *amounts))
+
+
 def _save_budget(cursor, clsf: dict, an: int, body: dict):
     id_clsf = int(clsf["IDClsf"])
-    budget = body.get("budget")
-    if not isinstance(budget, dict):
-        raise _Refused("Lipsesc valorile bugetului («budget»).")
-    values = [_amount(budget, q, "Buget") for q in _QUARTERS]
-    cursor.execute(_SQL_BUDGET_UPSERT, (id_clsf, int(clsf["IdUnitate"]), an, *values))
+    _save_budgets(cursor, clsf, an, body)
 
     deleted = body.get("deleted") or []
     if not isinstance(deleted, list):
@@ -323,6 +365,9 @@ def post_clasificatie_buget(id_clsf):
     except mysql.connector.IntegrityError as e:
         _rollback(conn)
         if e.errno == 1062:
+            if "uq_clasificatii_buget" in str(e):
+                return _json_utf8({"error": "Există deja un buget cu aceeași dată de început pe "
+                                            "această clasificație."}, 409)
             return _json_utf8({"error": "Există deja o rectificare cu același document și aceeași "
                                         "dată pe această clasificație."}, 409)
         logger.error("[forexe.clasificatii_edit] budget save %s/%s: %s", db_name, id_clsf, e, exc_info=True)

@@ -39,14 +39,15 @@ Public NotInheritable Class ClasificatiiCatalog
     Public Property SsNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
 End Class
 
-''' <summary>The four quarters of a yearly budget or of a correction. Nothing = empty cell.</summary>
+''' <summary>The four quarters of a budget version or of a correction. Nothing = empty cell.</summary>
 Public NotInheritable Class QuarterAmounts
     Public Property Trim1 As Decimal?
     Public Property Trim2 As Decimal?
     Public Property Trim3 As Decimal?
     Public Property Trim4 As Decimal?
 
-    ''' <summary>The sum of the four quarters, empty ones counted as zero.</summary>
+    ''' <summary>The sum of the four quarters, empty ones counted as zero. Used for a correction's
+    ''' row only: a budget has no yearly total (operator, 02.10.2026).</summary>
     Public ReadOnly Property Total As Decimal
         Get
             Return Trim1.GetValueOrDefault() + Trim2.GetValueOrDefault() +
@@ -65,10 +66,23 @@ Public NotInheritable Class RectificareBugetara
     Public Property Amounts As New QuarterAmounts()
 End Class
 
-''' <summary>The budget of one classification for one year, with that year's corrections.</summary>
+''' <summary>
+''' One row of <c>Clasificatii_Buget</c> (slice 0102): the budget of a classification for a year
+''' FROM <see cref="StartDate"/> on. The budget on a day is the version with the greatest start date
+''' up to it, plus the corrections from that start date on (see <c>routes/forexe/budget_on_day.py</c>).
+''' </summary>
+Public NotInheritable Class BudgetVersion
+    ''' <summary>Nothing = a version added in the window, not saved yet.</summary>
+    Public Property Id As Integer?
+    ''' <summary>«Început» (the <c>DataInceput</c> column): the day this version starts to apply.</summary>
+    Public Property StartDate As Date?
+    Public Property Amounts As New QuarterAmounts()
+End Class
+
+''' <summary>The budget versions of one classification for one year, with that year's corrections.</summary>
 Public NotInheritable Class BugetClasificatie
-    ''' <summary>Nothing = no <c>Clasificatii_Buget</c> row for that year yet.</summary>
-    Public Property Budget As QuarterAmounts
+    ''' <summary>Empty = no <c>Clasificatii_Buget</c> row for that year yet. Oldest start date first.</summary>
+    Public Property Budgets As New List(Of BudgetVersion)()
     Public Property Corrections As New List(Of RectificareBugetara)()
 End Class
 

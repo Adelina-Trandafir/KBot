@@ -90,7 +90,7 @@ Partial Public Class WorkflowExecutor
                     End Try
 
                     If parseEx IsNot Nothing OrElse entry Is Nothing Then Return
-                    RaiseEvent OnWicketStateChange(entry)
+                    MonitorTarget.RaiseWicketEntry(entry)
                 End Sub)
 
             ' ── 2. Key callback ───────────────────────────────────────────────
@@ -118,7 +118,7 @@ Partial Public Class WorkflowExecutor
                     End Try
 
                     If parseEx IsNot Nothing OrElse entry Is Nothing Then Return
-                    RaiseEvent OnWicketStateChange(entry)
+                    MonitorTarget.RaiseWicketEntry(entry)
                 End Sub)
 
             ' ── 3. Init script — JS din cache ─────────────────────────────────

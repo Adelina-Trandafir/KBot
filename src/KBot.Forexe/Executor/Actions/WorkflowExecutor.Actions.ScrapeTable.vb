@@ -1,4 +1,5 @@
-﻿Imports Microsoft.Playwright
+﻿Imports KBot.Common
+Imports Microsoft.Playwright
 Imports Newtonsoft.Json.Linq
 Imports WorkflowModels
 
@@ -55,7 +56,20 @@ Partial Public Class WorkflowExecutor
         Dim currentPage As Integer = 1
         Dim exitScrape As Boolean
 
+        Dim stoppedOnError As Boolean = False
+
         Do
+            ' FOREXE answered the last page turn with its «Eroare» page: what was read so far is kept.
+            If action.PartialOnError AndAlso allData.Count > 0 Then
+                Dim eroare As String = Await WicketErrorTextAsync()
+                If eroare.Length > 0 Then
+                    stoppedOnError = True
+                    LogPartialStop(currentPage, allData.Count, eroare)
+                    Exit Do
+                End If
+            End If
+
+            Dim readEx As Exception = Nothing
             Try
                 Dim waitOk = Await TryWaitForElementAsync(parsedSelector, WaitForSelectorState.Attached, action.Timeout)
                 If Not waitOk Then
@@ -81,15 +95,52 @@ Partial Public Class WorkflowExecutor
                 If Not shouldContinue Then Exit Do
 
             Catch ex As Exception
-                _logger.LogError($"[ScrapeTable] Eroare critică la pagina {currentPage}: {ex.Message}")
-                Throw
+                readEx = ex   ' handled below: Await is not allowed inside a Catch
             End Try
+
+            If readEx IsNot Nothing Then
+                If action.PartialOnError AndAlso allData.Count > 0 AndAlso
+                   Not TypeOf readEx Is OperationCanceledException Then
+                    Dim eroare As String = Await WicketErrorTextAsync()
+                    If eroare.Length > 0 Then
+                        stoppedOnError = True
+                        LogPartialStop(currentPage, allData.Count, eroare)
+                        Exit Do
+                    End If
+                End If
+                _logger.LogError($"[ScrapeTable] Eroare critică la pagina {currentPage}: {readEx.Message}")
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(readEx).Throw()
+            End If
 
             currentPage += 1
         Loop
 
-        SaveScrapeResults(allData, action, exitScrape)
+        SaveScrapeResults(allData, action, exitScrape, stoppedOnError)
     End Function
+
+    ' ============================================================
+    '  EROARE FOREXE (pagina «Eroare» a Wicket) — se pastreaza ce s-a citit
+    ' ============================================================
+    ''' <summary>
+    ''' The text of FOREXE's «Eroare» page (Wicket «S-a produs o eroare: ...»), or empty when the page
+    ''' shows none. A best-effort probe: any failure of the probe itself reads as «no error page», so
+    ''' the original failure of the read is the one that surfaces.
+    ''' </summary>
+    Private Async Function WicketErrorTextAsync() As Task(Of String)
+        Try
+            Dim box = _page.Locator("text=S-a produs o eroare").First
+            If Await box.CountAsync() = 0 Then Return String.Empty
+            Return (Await box.InnerTextAsync(New LocatorInnerTextOptions With {.Timeout = 2000})).Trim()
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.WicketErrorTextAsync", ex)
+            Return String.Empty
+        End Try
+    End Function
+
+    Private Sub LogPartialStop(page As Integer, rows As Integer, eroare As String)
+        _logger.LogWarning($"[ScrapeTable] FOREXE a răspuns cu pagina de eroare la pagina {page}: {eroare}")
+        _logger.LogWarning($"[ScrapeTable] Păstrez cele {rows} rânduri citite până aici (citirea e incompletă).")
+    End Sub
 
     ' ============================================================
     '  INIT — navighează la ultima pagină dacă StartFromLast
@@ -414,14 +465,15 @@ Partial Public Class WorkflowExecutor
     ' ============================================================
     '  SALVARE FINALĂ
     ' ============================================================
-    Private Sub SaveScrapeResults(allData As List(Of Object), action As ScrapeTableAction, exitScrape As Boolean)
+    Private Sub SaveScrapeResults(allData As List(Of Object), action As ScrapeTableAction, exitScrape As Boolean,
+                                  Optional stoppedOnError As Boolean = False)
         Dim finalJson = Newtonsoft.Json.JsonConvert.SerializeObject(allData, Newtonsoft.Json.Formatting.Indented)
         Dim finalSaveTo = ReplaceInternalVariables(action.SaveTo)
 
         If String.IsNullOrEmpty(finalSaveTo) Then Return
 
         SetVariable(finalSaveTo, finalJson)
-        _logger.LogSuccess($"[ScrapeTable] Finalizat{If(exitScrape, " (exit condiție)", "")}. " &
+        _logger.LogSuccess($"[ScrapeTable] Finalizat{If(exitScrape, " (exit condiție)", "")}{If(stoppedOnError, " (oprit de eroarea FOREXE, rezultat parțial)", "")}. " &
                            $"Total {allData.Count} rânduri în '{finalSaveTo}'.")
     End Sub
 

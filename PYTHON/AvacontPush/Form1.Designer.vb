@@ -52,6 +52,20 @@ Partial Class Form1
     Friend WithEvents tabsMain As TabControl
     Friend WithEvents tabFiles As TabPage
     Friend WithEvents tabSchema As TabPage
+    Friend WithEvents tabOnce As TabPage
+    Friend WithEvents tlpOnce As TableLayoutPanel
+    Friend WithEvents tlpOnceActions As TableLayoutPanel
+    Friend WithEvents lblOnceName As Label
+    Friend WithEvents txtOnceName As TextBox
+    Friend WithEvents btnOnceTargets As Button
+    Friend WithEvents clbOnceTargets As CheckedListBox
+    Friend WithEvents btnOnceLoad As Button
+    Friend WithEvents btnOnceStatus As Button
+    Friend WithEvents btnOnceView As Button
+    Friend WithEvents btnOnceRun As Button
+    Friend WithEvents txtOnceSql As TextBox
+    Friend WithEvents lblOnceHint As Label
+    Friend WithEvents dlgOnceFile As OpenFileDialog
     Friend WithEvents tabUsers As TabPage
     Friend WithEvents tlpUsers As TableLayoutPanel
     Friend WithEvents tlpUsersActions As TableLayoutPanel
@@ -126,6 +140,20 @@ Partial Class Form1
         tabsMain = New TabControl()
         tabFiles = New TabPage()
         tabSchema = New TabPage()
+        tabOnce = New TabPage()
+        tlpOnce = New TableLayoutPanel()
+        tlpOnceActions = New TableLayoutPanel()
+        lblOnceName = New Label()
+        txtOnceName = New TextBox()
+        btnOnceTargets = New Button()
+        clbOnceTargets = New CheckedListBox()
+        btnOnceLoad = New Button()
+        btnOnceStatus = New Button()
+        btnOnceView = New Button()
+        btnOnceRun = New Button()
+        txtOnceSql = New TextBox()
+        lblOnceHint = New Label()
+        dlgOnceFile = New OpenFileDialog()
         tabUsers = New TabPage()
         tlpUsers = New TableLayoutPanel()
         tlpUsersActions = New TableLayoutPanel()
@@ -161,6 +189,9 @@ Partial Class Form1
         tabsMain.SuspendLayout()
         tabFiles.SuspendLayout()
         tabSchema.SuspendLayout()
+        tabOnce.SuspendLayout()
+        tlpOnce.SuspendLayout()
+        tlpOnceActions.SuspendLayout()
         tabUsers.SuspendLayout()
         tlpUsers.SuspendLayout()
         tlpUsersActions.SuspendLayout()
@@ -472,6 +503,7 @@ Partial Class Form1
         ' 
         tabsMain.Controls.Add(tabFiles)
         tabsMain.Controls.Add(tabSchema)
+        tabsMain.Controls.Add(tabOnce)
         tabsMain.Controls.Add(tabUsers)
         tabsMain.Dock = DockStyle.Fill
         tabsMain.Location = New Point(0, 0)
@@ -653,6 +685,175 @@ Partial Class Form1
         lblSchemaHint.Size = New Size(856, 25)
         lblSchemaHint.TabIndex = 2
         lblSchemaHint.Text = "Lista vine de pe server. «lipsă din CAI» = baza există, dar registrul nu o listează; «nu există pe server» = numai în CAI, deci nu poate fi bifată."
+        '
+        ' tabOnce
+        '
+        tabOnce.Controls.Add(tlpOnce)
+        tabOnce.Location = New Point(4, 34)
+        tabOnce.Name = "tabOnce"
+        tabOnce.Padding = New Padding(6)
+        tabOnce.Size = New Size(874, 223)
+        tabOnce.TabIndex = 3
+        tabOnce.Text = "Interogări unice"
+        tabOnce.UseVisualStyleBackColor = True
+        '
+        ' tlpOnce
+        '
+        tlpOnce.ColumnCount = 1
+        tlpOnce.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpOnce.Controls.Add(tlpOnceActions, 0, 0)
+        tlpOnce.Controls.Add(clbOnceTargets, 0, 1)
+        tlpOnce.Controls.Add(txtOnceSql, 0, 2)
+        tlpOnce.Controls.Add(lblOnceHint, 0, 3)
+        tlpOnce.Dock = DockStyle.Fill
+        tlpOnce.Location = New Point(6, 6)
+        tlpOnce.Margin = New Padding(0)
+        tlpOnce.Name = "tlpOnce"
+        tlpOnce.RowCount = 4
+        tlpOnce.RowStyles.Add(New RowStyle())
+        tlpOnce.RowStyles.Add(New RowStyle(SizeType.Percent, 40F))
+        tlpOnce.RowStyles.Add(New RowStyle(SizeType.Percent, 60F))
+        tlpOnce.RowStyles.Add(New RowStyle())
+        tlpOnce.Size = New Size(862, 211)
+        tlpOnce.TabIndex = 0
+        '
+        ' tlpOnceActions
+        '
+        tlpOnceActions.AutoSize = True
+        tlpOnceActions.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpOnceActions.ColumnCount = 7
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle())
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160F))
+        tlpOnceActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100F))
+        tlpOnceActions.Controls.Add(btnOnceTargets, 0, 0)
+        tlpOnceActions.Controls.Add(lblOnceName, 1, 0)
+        tlpOnceActions.Controls.Add(txtOnceName, 2, 0)
+        tlpOnceActions.Controls.Add(btnOnceLoad, 3, 0)
+        tlpOnceActions.Controls.Add(btnOnceStatus, 4, 0)
+        tlpOnceActions.Controls.Add(btnOnceView, 5, 0)
+        tlpOnceActions.Controls.Add(btnOnceRun, 6, 0)
+        tlpOnceActions.Dock = DockStyle.Fill
+        tlpOnceActions.Location = New Point(0, 0)
+        tlpOnceActions.Margin = New Padding(0)
+        tlpOnceActions.Name = "tlpOnceActions"
+        tlpOnceActions.RowCount = 1
+        tlpOnceActions.RowStyles.Add(New RowStyle())
+        tlpOnceActions.Size = New Size(862, 35)
+        tlpOnceActions.TabIndex = 0
+        '
+        ' btnOnceTargets
+        '
+        btnOnceTargets.Dock = DockStyle.Fill
+        btnOnceTargets.Location = New Point(0, 0)
+        btnOnceTargets.Margin = New Padding(0)
+        btnOnceTargets.Name = "btnOnceTargets"
+        btnOnceTargets.Size = New Size(130, 35)
+        btnOnceTargets.TabIndex = 0
+        btnOnceTargets.Text = "Citește bazele"
+        '
+        ' clbOnceTargets
+        '
+        clbOnceTargets.CheckOnClick = True
+        clbOnceTargets.Dock = DockStyle.Fill
+        clbOnceTargets.Font = New Font("Consolas", 9F)
+        clbOnceTargets.FormattingEnabled = True
+        clbOnceTargets.IntegralHeight = False
+        clbOnceTargets.Location = New Point(3, 38)
+        clbOnceTargets.Name = "clbOnceTargets"
+        clbOnceTargets.Size = New Size(856, 60)
+        clbOnceTargets.TabIndex = 1
+        '
+        ' lblOnceName
+        '
+        lblOnceName.Anchor = AnchorStyles.Left
+        lblOnceName.AutoSize = True
+        lblOnceName.Location = New Point(3, 5)
+        lblOnceName.Name = "lblOnceName"
+        lblOnceName.Size = New Size(62, 25)
+        lblOnceName.TabIndex = 1
+        lblOnceName.Text = "Nume:"
+        '
+        ' txtOnceName
+        '
+        txtOnceName.Anchor = AnchorStyles.Left Or AnchorStyles.Right
+        txtOnceName.Location = New Point(71, 2)
+        txtOnceName.MaxLength = 100
+        txtOnceName.Name = "txtOnceName"
+        txtOnceName.Size = New Size(236, 31)
+        txtOnceName.TabIndex = 2
+        '
+        ' btnOnceLoad
+        '
+        btnOnceLoad.Dock = DockStyle.Fill
+        btnOnceLoad.Location = New Point(310, 0)
+        btnOnceLoad.Margin = New Padding(0)
+        btnOnceLoad.Name = "btnOnceLoad"
+        btnOnceLoad.Size = New Size(150, 35)
+        btnOnceLoad.TabIndex = 3
+        btnOnceLoad.Text = "Din fișier…"
+        '
+        ' btnOnceStatus
+        '
+        btnOnceStatus.Dock = DockStyle.Fill
+        btnOnceStatus.Location = New Point(460, 0)
+        btnOnceStatus.Margin = New Padding(0)
+        btnOnceStatus.Name = "btnOnceStatus"
+        btnOnceStatus.Size = New Size(150, 35)
+        btnOnceStatus.TabIndex = 4
+        btnOnceStatus.Text = "Ce s-a rulat"
+        '
+        ' btnOnceView
+        '
+        btnOnceView.Dock = DockStyle.Fill
+        btnOnceView.Location = New Point(610, 0)
+        btnOnceView.Margin = New Padding(0)
+        btnOnceView.Name = "btnOnceView"
+        btnOnceView.Size = New Size(180, 35)
+        btnOnceView.TabIndex = 5
+        btnOnceView.Text = "Vezi (nu execută)"
+        '
+        ' btnOnceRun
+        '
+        btnOnceRun.Dock = DockStyle.Fill
+        btnOnceRun.Location = New Point(790, 0)
+        btnOnceRun.Margin = New Padding(0)
+        btnOnceRun.Name = "btnOnceRun"
+        btnOnceRun.Size = New Size(72, 35)
+        btnOnceRun.TabIndex = 6
+        btnOnceRun.Text = "Execută"
+        '
+        ' txtOnceSql
+        '
+        txtOnceSql.AcceptsReturn = True
+        txtOnceSql.AcceptsTab = True
+        txtOnceSql.Dock = DockStyle.Fill
+        txtOnceSql.Font = New Font("Consolas", 9F)
+        txtOnceSql.Location = New Point(3, 38)
+        txtOnceSql.Multiline = True
+        txtOnceSql.Name = "txtOnceSql"
+        txtOnceSql.ScrollBars = ScrollBars.Both
+        txtOnceSql.Size = New Size(856, 140)
+        txtOnceSql.TabIndex = 2
+        txtOnceSql.WordWrap = False
+        '
+        ' lblOnceHint
+        '
+        lblOnceHint.AutoSize = True
+        lblOnceHint.Dock = DockStyle.Fill
+        lblOnceHint.Location = New Point(3, 181)
+        lblOnceHint.Name = "lblOnceHint"
+        lblOnceHint.Size = New Size(856, 25)
+        lblOnceHint.TabIndex = 3
+        lblOnceHint.Text = "Citiți bazele (se bifează toate cele care există) și rulați: AVACONT_SURSA se rulează mereu, prima, apoi bazele bifate, fiecare în baza ei (nume de tabele fără prefix). «Vezi» nu scrie nimic; o bază care a rulat deja textul e sărită."
+        '
+        ' dlgOnceFile
+        '
+        dlgOnceFile.Filter = "Interogări SQL (*.sql)|*.sql|Toate fișierele (*.*)|*.*"
+        dlgOnceFile.Title = "Alegeți fișierul cu interogarea"
         '
         ' tabUsers
         '
@@ -924,6 +1125,11 @@ Partial Class Form1
         tlpSchema.ResumeLayout(False)
         tlpSchema.PerformLayout()
         tabSchema.ResumeLayout(False)
+        tlpOnceActions.ResumeLayout(False)
+        tlpOnceActions.PerformLayout()
+        tlpOnce.ResumeLayout(False)
+        tlpOnce.PerformLayout()
+        tabOnce.ResumeLayout(False)
         tlpUsersActions.ResumeLayout(False)
         tlpUsersActions.PerformLayout()
         CType(dgvUsers, System.ComponentModel.ISupportInitialize).EndInit()

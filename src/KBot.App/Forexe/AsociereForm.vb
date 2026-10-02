@@ -170,7 +170,8 @@ Public Class AsociereForm
     Public Sub New(apiClient As IApiClient,
                    cod As String,
                    withReauthStare As Func(Of Func(Of Task(Of AsociereStare)), Task(Of AsociereStare)),
-                   withReauthSalvare As Func(Of Func(Of Task(Of AsociereRezultat)), Task(Of AsociereRezultat)))
+                   withReauthSalvare As Func(Of Func(Of Task(Of AsociereRezultat)), Task(Of AsociereRezultat)),
+                   Optional denumire As String = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
         If withReauthStare Is Nothing Then Throw New ArgumentNullException(NameOf(withReauthStare))
@@ -180,7 +181,7 @@ Public Class AsociereForm
         _cod = cod.Trim()
         _withReauthStare = withReauthStare
         _withReauthSalvare = withReauthSalvare
-        capBar.Text = $"K-BOT — Legăturile recepțiilor · {_cod}"
+        capBar.Text = $"K-BOT — Legăturile recepțiilor · {TitluAngajament(_cod, denumire)}"
         ' Vederea implicită e graficul. Scrisă și aici, nu doar în designer: cheia din designer
         ' trece prin `EndInit`, care în procesul Visual Studio nu o aplică deloc — deci pe drumul
         ' ăla singura garanție e `benzi.Visible = False`, iar asta e o valoare, nu o alegere.
@@ -207,7 +208,8 @@ Public Class AsociereForm
                    propunere As PrelucrarePropunere,
                    pachet As PrelucrareRezultat,
                    alegeri As IReadOnlyList(Of AlegereUnitate),
-                   withReauthPrelucrare As Func(Of Func(Of Task(Of PrelucrareRaspuns)), Task(Of PrelucrareRaspuns)))
+                   withReauthPrelucrare As Func(Of Func(Of Task(Of PrelucrareRaspuns)), Task(Of PrelucrareRaspuns)),
+                   Optional denumire As String = Nothing)
         If apiClient Is Nothing Then Throw New ArgumentNullException(NameOf(apiClient))
         If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
         If propunere Is Nothing Then Throw New ArgumentNullException(NameOf(propunere))
@@ -221,13 +223,23 @@ Public Class AsociereForm
         _pachet = pachet
         _alegeri = If(alegeri Is Nothing, New List(Of AlegereUnitate)(), New List(Of AlegereUnitate)(alegeri))
         _withReauthPrelucrare = withReauthPrelucrare
-        capBar.Text = $"K-BOT — Așezarea recepțiilor descărcate · {_cod}"
+        capBar.Text = $"K-BOT — Așezarea recepțiilor descărcate · {TitluAngajament(_cod, denumire)}"
         ' Clearing the placements means something ONLY here. The anytime editor has no "current
         ' step": every link there is an old one, and a button that detached them all would be a
         ' tool for breaking, not for starting over. See btnReseteaza_Click.
         btnReseteaza.Visible = True
         AplicaVedereaDinDreaptaSus(VEDEREA_GRAFIC)
     End Sub
+
+    ''' <summary>
+    ''' «COD — denumire» for the window title (operator, 02.10.2026): the code alone does not tell
+    ''' which angajament the links belong to. Without a name (an angajament not in the tree yet)
+    ''' it is the code alone, as before. Friend Shared: pure text.
+    ''' </summary>
+    Friend Shared Function TitluAngajament(cod As String, denumire As String) As String
+        If String.IsNullOrWhiteSpace(denumire) Then Return cod
+        Return cod & " — " & denumire.Trim()
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' Încărcarea

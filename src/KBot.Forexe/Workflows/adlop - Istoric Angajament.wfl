@@ -45,7 +45,8 @@
   <!-- SALVEZ TABELUL CU INDICATORI -->
  <ScrapeTable selector="table.table-striped"
               saveTo="TabelIstoric"
-	            nextPageSelector="a[rel='next']" 
+              partialOnError="true"
+	            nextPageSelector="a[rel='next']"
       	      waitSelector="table.table-striped"
 	            fingerprintSelector="table.table-striped tbody tr:last-child td:first-child~table.table-striped tbody tr:last-child td:last-child"
               timeout="5" />

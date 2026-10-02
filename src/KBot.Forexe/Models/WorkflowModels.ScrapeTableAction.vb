@@ -36,6 +36,9 @@ Namespace WorkflowModels
         Public Property Strict As Boolean = False
         Public Property Page As String = String.Empty   ' "first" / "last" / numar
         Public Property Row As String = String.Empty    ' "first" / "last" / numar
+        ' When FOREXE answers a page turn with its «Eroare» page (Wicket ListenerInvocationNotAllowedException),
+        ' keep the rows read so far and save them instead of failing the whole read.
+        Public Property PartialOnError As Boolean = False
     End Class
 
 End Namespace

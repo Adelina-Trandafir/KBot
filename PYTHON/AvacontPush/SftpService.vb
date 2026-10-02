@@ -29,7 +29,7 @@ Public NotInheritable Class SftpService
     End Sub
 
     Public Sub Connect()
-        _client = New SftpClient(_settings.Host, _settings.Port, _settings.User, _settings.Password)
+        _client = New SftpClient(SshAuth.Build(_settings))
         AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
         _hostKeyError = ""
         Try
@@ -41,7 +41,7 @@ Public NotInheritable Class SftpService
             End If
             Throw New ApplicationException("Conectare eșuată la server (SFTP). Verificați rețeaua și portul.", ex)
         Catch ex As SshAuthenticationException
-            Throw New ApplicationException("Autentificare eșuată (SFTP). Verificați utilizatorul și parola.", ex)
+            Throw New ApplicationException("Autentificare eșuată (SFTP). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
         End Try
     End Sub
 

@@ -105,7 +105,7 @@ Partial Public Class KbotForm
             End If
 
             Dim coduri As List(Of String)
-            Using dlg As New ActualizareMultiplaForm(_treeInfos.Values.ToList(), s.AutoUpdateDaysInEffect)
+            Using dlg As New ActualizareMultiplaForm(_treeOrder.Select(Function(c) _treeInfos(c)).ToList(), s.AutoUpdateDaysInEffect)
                 If dlg.ShowDialog(Me) <> DialogResult.OK Then Return
                 coduri = dlg.Selectate.ToList()
             End Using

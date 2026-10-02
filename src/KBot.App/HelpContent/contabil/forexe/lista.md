@@ -6,9 +6,10 @@ order: 20
 parent: contabil.forexe
 keywords: actualizare lista, angajamente noi, sincronizare
 ---
-<!-- slice: 0034, 0057, 0100 -->
+<!-- slice: 0034, 0057, 0100, 0000-39 -->
 Iconița **din dreapta, jos**, a listei de angajamente aduce din FOREXE lista tuturor
-angajamentelor unității.
+angajamentelor unității. Cât lista e **sortată după dată**, se aduc **toate sursele** unității;
+cât e sortată după nume, doar cele ale sursei alese în bara de titlu.
 
 <!-- capture: lista-actualizare | caption: Iconița de actualizare a listei de angajamente | prepare: Arătați colțul de jos al listei de angajamente, cu iconița de actualizare. -->
 

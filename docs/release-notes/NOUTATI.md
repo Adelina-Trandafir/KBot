@@ -6,7 +6,21 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 
 <!-- Secțiunile sunt adăugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu ștergeți marcajele ascunse `<!\-\- release: ... \-\->` și `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmărite schimbările pentru versiunea următoare.-->
 
+## 1.1.1.5 (02.10.2026)
+<!-- release: utc=2026-10-02T07:24:34Z -->
+<!-- felii: 0101-02, 0102, 0000-40, SLICELESS-lista-sursa-asociere-denumire-wicket, 0000-39 -->
+
+- În fereastra «Actualizează angajamente», angajamentele apar în aceeași ordine ca în arborele principal.
+- «Clasificații bugetare»: bugetul se ține pe versiuni, fiecare cu data de «Început»; nu mai există total pe an.
+- Documentul de fundamentare arată bugetul clasificației de la data reviziei, cu rectificările până atunci, nu pe cel de azi.
+- Dacă la data reviziei clasificația nu are buget, se folosește creditul bugetar de azi și un mesaj o spune.
+- Fereastra de asociere a recepțiilor arată în titlu și denumirea angajamentului.
+- Cu arborele sortat după dată, «Lista de angajamente» aduce toate sursele unității, nu doar sursa aleasă.
+- După o descărcare pe mai multe taburi, citirea următoare a listelor nu se mai oprește la așteptarea paginilor.
+- Ajutor: actualizat pentru clasificațiile bugetare, editorul DDF, lista de angajamente și asocieri.
+
 ## 1.1.1.4 (02.10.2026)
+<!-- release: utc=2026-10-02T06:38:48Z -->
 
 <!-- felii: 0101, 0101-01, 0000-37, 0000-38 -->
 

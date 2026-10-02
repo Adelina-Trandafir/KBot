@@ -254,7 +254,8 @@ Public Class WorkflowParser
                 .FingerprintSelector = GetAttributeValue(e, "fingerprintSelector", ""),
                 .Page = GetAttributeValue(e, "page", ""),
                 .Row = GetAttributeValue(e, "row", ""),
-                .Strict = GetBoolAttribute(e, "strict", False)
+                .Strict = GetBoolAttribute(e, "strict", False),
+                .PartialOnError = GetBoolAttribute(e, "partialOnError", False)
             }
             Return a
         Catch ex As Exception

@@ -17,9 +17,17 @@ Namespace KBot.Forexe
         ''' Job ListaAngajamente cu cele 4 variabile verificate
         ''' (FX_ListaAngajamente_Descarcare / mdl_FX_Tasks_Send):
         ''' DATA_INCEPUT/DATA_SFARSIT (dd.MM.yyyy, fără conversie de locale),
-        ''' COD_PROGRAM, SURSA — toate din SessionContext.
+        ''' COD_PROGRAM, SURSA — din SessionContext.
         ''' </summary>
-        Public Shared Function BuildListaAngajamente(session As SessionContext) As JobRequest
+        ''' <param name="toateSursele">
+        ''' True = fără filtru după sursă (operator, 02.10.2026): cât arborele e sortat după dată,
+        ''' selectorul de sursă e ascuns, iar lista aduce TOATE angajamentele unității curente.
+        ''' SURSA se trimite atunci explicit goală: o variabilă nedată lasă în XML textul literal
+        ''' <c>{{SURSA}}</c>, iar <c>IfVar</c> l-ar lua drept valoare și ar încerca să selecteze o
+        ''' sursă cu acest nume.
+        ''' </param>
+        Public Shared Function BuildListaAngajamente(session As SessionContext,
+                                                     Optional toateSursele As Boolean = False) As JobRequest
             If session Is Nothing Then Throw New ArgumentNullException(NameOf(session))
 
             Dim an As String = session.An.ToString(Globalization.CultureInfo.InvariantCulture)
@@ -31,7 +39,7 @@ Namespace KBot.Forexe
             job.Parameters("DATA_INCEPUT") = "01.01." & an
             job.Parameters("DATA_SFARSIT") = "31.12." & an
             job.Parameters("COD_PROGRAM") = session.CodProgram
-            job.Parameters("SURSA") = session.SectorSursa
+            job.Parameters("SURSA") = If(toateSursele, String.Empty, session.SectorSursa)
             Return job
         End Function
 

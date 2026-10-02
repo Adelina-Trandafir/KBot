@@ -20,9 +20,18 @@ the PYTHON folder so it never lists its own files). Then:
    - If `LocalRoot` is left empty, it defaults to the parent of the app folder
      (i.e. the PYTHON folder), which is correct when the EXE sits in `PYTHON\_push\`.
 
-The password is **never stored**: it is typed in the app every run and kept only in
-memory (the `Password` property is `[JsonIgnore]`, so it is never written to nor read
-from `push_settings.json`). `push_settings.json` is also git-ignored.
+**Login (slice 0103-02): the SSH key, no password.** AvacontPush logs in with the operator's SSH
+key, the same one VS Code uses, so nothing is asked. The key is looked up in this order: the
+`PrivateKeyPath` of `push_settings.json` (empty by default); an `IdentityFile` line of the
+`~/.ssh/config` block that names the host (or `Host *`); then `~/.ssh/id_ed25519`, `id_ecdsa`,
+`id_rsa`. The status bar says which one will be used. The **Parolă** box is now optional: leave it
+empty with a key; type something and it is used as the passphrase of a protected key and as the
+password if the key is refused. SSH.NET does not talk to ssh-agent, so the key must be a file.
+Host key pinning is unchanged.
+
+A typed password is **never stored**: it lives only in memory (the `Password` property is
+`[JsonIgnore]`, so it is never written to nor read from `push_settings.json`).
+`push_settings.json` is also git-ignored.
 
 ## Use
 
@@ -55,8 +64,10 @@ a push.
 1. **Citește bazele** — runs `--list-targets` and fills the list with every
    database whose name starts with three digits (`000_DEMO`, `001_…`). One marked
    `(lipsă din CAI)` exists on the server but is not in the `AVACONT_COMUN.CAI`
-   registry — shown rather than hidden, because that is worth knowing.
-2. Tick the databases, pick **SAFE** or **FORCE**.
+   registry — shown rather than hidden, because that is worth knowing. **Every database
+   that really exists is ticked on detection** (slice 0103-02); the one marked
+   «nu există pe server» stays unticked and cannot be ticked.
+2. Untick what you do not want, pick **SAFE** or **FORCE**.
 3. **Vezi (nu execută)** — `--view`: generates the statements, writes them to the
    server's `.sql` file and prints the summary. Executes nothing.
 4. **Execută** — runs for real, after a confirmation dialog.
@@ -90,6 +101,48 @@ diacritics would otherwise raise `UnicodeEncodeError`.
 
 Output arrives only when the command **ends** — the channel hands over stdout and
 stderr in one piece — so a long sync shows nothing until it is done.
+
+## Interogări unice (third tab, slice 0103)
+
+Structure travels by schema sync; DATA changes (give existing rows a value, drop an old key) do
+not. This tab runs ONE query text on every database and remembers that it did, so it is never run
+twice and nobody has to remember which database got it.
+
+1. **Citește bazele** — the same listing as the schema tab; every database that really exists is
+   ticked. `AVACONT_SURSA` is not in the list: it always runs, first.
+2. Write or paste the query in the big box, or **Din fișier…** to load a `.sql` file. Give it a
+   **Nume** (3-100 characters: letters, digits, `_ . -`). Name + text are its identity.
+3. **Vezi (nu execută)** — shows, per database, `PENDING` (to run), `DONE` (already ran, with the
+   date) or `CONFLICT`. Writes nothing, not even the ledger table.
+4. **Execută** — after a confirmation. Runs on `AVACONT_SURSA` **first**, then on the ticked
+   units (sent as `--targets`; without it the runner takes every CAI database that exists). If the
+   template fails the run stops before any unit.
+4. **Ce s-a rulat** — the ledger of every database.
+
+**The ledger** is the table `Interogari_Unice` in every database, the template included (created by
+`sql/0102_01_sursa.sql` on `AVACONT_SURSA`, copied to the units by schema sync; the runner also
+creates it where it is missing). One row per query: `Hash` (SHA-256 of the statements - comments,
+line ends and blank lines do not count), `Nume` (unique), `RulatLa`, `RulatDe`, `Randuri`,
+`Interogare`. The same text is skipped; the same name with a different text is **refused before
+anything runs**.
+
+**Why the template runs it too.** A new unit is cloned from `AVACONT_SURSA` (structure only), and the
+provisioning job then copies the template's ledger rows into it
+(`routes/inregistrare/provizionare.py`): the unit is born with every query already «run». The
+template itself usually has no data, so the query does nothing there; what matters is the row.
+
+**Writing the query.**
+- Table names are NOT qualified: each database runs it connected to itself.
+- Plain statements separated by `;`. `DELIMITER`, `DROP DATABASE` and `DROP SCHEMA` are refused.
+- It runs in one transaction per database, but DDL commits implicitly in MariaDB, so write it so that
+  running it twice does no harm (`IF EXISTS`, `WHERE` on what is still to fix). A database where a
+  statement fails is reported, left **unmarked** and the run goes on with the next one; the query
+  can be run again, and only the unmarked databases run.
+- At most 30,000 bytes (it travels on the command line as base64; one SSH packet).
+
+The runner is `routes/one_time/runner.py` on the server (`--view`, `--run`, `--status`; exit 0 ok,
+1 some database failed, 2 refused). Its log is `routes/one_time/one_time.log`. The service account
+of `config.DB_CONFIG_NEW` needs CREATE / INSERT on `AVACONT_SURSA` as well as on the units.
 
 ## `.pushignore`
 

@@ -72,6 +72,8 @@ Partial Public Class KbotForm
     Private _currentInfo As AngajamentTreeInfo
     ' NodeKey -> info, rebuilt on every LoadTree.
     Private ReadOnly _treeInfos As New Dictionary(Of String, AngajamentTreeInfo)()
+    ''' <summary>The codes in the order the tree shows them (the dictionary promises no order).</summary>
+    Private ReadOnly _treeOrder As New List(Of String)()
     ' The btnOpt option: also show the HIDDEN (ASCUNS) angajamente (off by default).
     Private _includeHidden As Boolean
     ' The last rows GET /api/forexe/tree handed back, in the server's own order. Kept so a

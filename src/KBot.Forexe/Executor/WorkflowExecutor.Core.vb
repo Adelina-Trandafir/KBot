@@ -407,7 +407,8 @@ Partial Public Class WorkflowExecutor
             _watchActive = False
             _recorderInstalled = False
             _recordingActive = False
-            _wicketMonitoringActive = False
+            ' The worker's Wicket monitors live on in this page: taken over, not installed again.
+            TakeOverWicketMonitoring(worker)
             AttachCloseNotice(_page)
             Try
                 Await _page.BringToFrontAsync()

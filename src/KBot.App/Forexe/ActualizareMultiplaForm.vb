@@ -15,8 +15,7 @@ Imports KBot.Theming
 ''' the rest waiting in a FIFO queue.
 ''' </summary>
 ''' <remarks>
-''' The grid lists the angajamente of the tree as they are, the oldest update first (never updated
-''' ahead of all). «Bifeaza cele vechi» ticks those <see cref="AngajamentTreeInfo.EsteNeactualizatDe"/>
+''' The grid lists the angajamente in the same order as the tree. «Bifeaza cele vechi» ticks those <see cref="AngajamentTreeInfo.EsteNeactualizatDe"/>
 ''' calls old for the number of days of «Setari -> Aplicatie».
 ''' </remarks>
 Public Class ActualizareMultiplaForm
@@ -40,10 +39,8 @@ Public Class ActualizareMultiplaForm
         InitializeComponent()
         ArgumentNullException.ThrowIfNull(items)
         _zile = zile
-        ' Oldest update first; never updated ahead of every dated one; the code breaks ties.
-        _items = items.Where(Function(i) i IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(i.CodAngajament)).
-                       OrderBy(Function(i) If(i.DataActualizare, Date.MinValue)).
-                       ThenBy(Function(i) i.CodAngajament, StringComparer.OrdinalIgnoreCase).ToList()
+        ' The order the caller gives (the tree's own order) is kept: no sorting here.
+        _items = items.Where(Function(i) i IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(i.CodAngajament)).ToList()
         btnVechi.Text = $"Bifează cele neactualizate de {zile} zile"
     End Sub
 
