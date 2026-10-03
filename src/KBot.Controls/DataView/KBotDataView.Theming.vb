@@ -382,6 +382,7 @@ Partial Class KBotDataView
         _pOptionBorder?.Dispose() : _pOptionBorder = Nothing
         _pOptionFill?.Dispose() : _pOptionFill = Nothing
         _pButtonBorder?.Dispose() : _pButtonBorder = Nothing
+        DisposeCellBorderPen()
         DisposeBandFonts()
     End Sub
 
@@ -440,6 +441,10 @@ Partial Class KBotDataView
     ''' verificarea depășirii care aprinde eticheta.
     ''' </summary>
     Friend Function CellFontFor(col As KBotDataColumn) As Font
+        ' Slice 0085-02: a button column may carry its own caption font; it goes through here so
+        ' the painter and the width measuring still agree on one font.
+        If col IsNot Nothing AndAlso col.ColumnType = KBotColumnType.Button AndAlso
+           col.ButtonFont IsNot Nothing Then Return Marit(col.ButtonFont)
         If col IsNot Nothing AndAlso col.ColumnFont IsNot Nothing Then Return Marit(col.ColumnFont)
         Return Font
     End Function

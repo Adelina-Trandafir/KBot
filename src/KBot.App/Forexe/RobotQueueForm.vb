@@ -223,11 +223,12 @@ Public Class RobotQueueForm
         ' scroll bar appears for a row that should have fitted.
         Dim k_scale As Double = gridDescarcari.DpiScaleY
         Dim k_row As Integer = CInt(Math.Round(gridDescarcari.RowHeight * k_scale))
-        Dim k_border As Integer = 2 * Math.Max(1, CInt(Math.Round(gridDescarcari.BorderWidth * k_scale))) + 2
-        gridDescarcari.Height = Math.Max(1, Math.Min(k_snap.MaxRows, 10)) * k_row + k_border
+        Dim k_borderTop As Integer = 2 * CInt(Math.Round(gridDescarcari.BorderWidth * k_scale)) + 2
+        Dim k_borderBottom As Integer = 2 * CInt(Math.Round(gridAsteapta.BorderWidth * k_scale)) + 2
+        gridDescarcari.Height = Math.Max(1, Math.Min(k_snap.MaxRows, 10)) * k_row + k_borderTop
 
         Dim k_panel As Integer = gridDescarcari.Height
-        If k_waiting > 0 Then k_panel += lblInCoada.Height + Math.Min(k_waiting, MAX_WAITING_ROWS) * k_row + k_border
+        If k_waiting > 0 Then k_panel += lblInCoada.Height + Math.Min(k_waiting, MAX_WAITING_ROWS) * k_row + k_borderBottom
         ApplyHeight(Padding.Vertical + capBar.Height + lblCurent.Height + k_panel + pnlFoot.Height)
     End Sub
 

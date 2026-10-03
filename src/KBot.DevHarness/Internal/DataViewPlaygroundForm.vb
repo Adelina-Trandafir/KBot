@@ -1,5 +1,6 @@
 Imports System
 Imports System.Collections.Generic
+Imports System.Drawing
 Imports System.Windows.Forms
 Imports KBot.Common
 Imports KBot.Controls
@@ -14,6 +15,9 @@ Public NotInheritable Class DataViewPlaygroundForm
     Private ReadOnly _originalScheme As ThemeScheme
     Private _loading As Boolean = True     ' cât e True, sincronizarea controale→grilă e suspendată
     Private ReadOnly _stari As String() = {"Nou", "În lucru", "Definitivat", "Anulat"}
+    ' Button-column test objects (slice 0085-02); owned here, released on close.
+    Private _btnTestIcon As Bitmap
+    Private _btnBigFont As Font
 
     Public Sub New(log As Action(Of String))
         _log = log
@@ -30,6 +34,7 @@ Public NotInheritable Class DataViewPlaygroundForm
         PopulateColumnCombo()
         PopulateGroupCombos()
         SyncGridControls()
+        PopulateButtonControls()
         _loading = False
         LoadColumnInspector()
         RefreshInfo()
@@ -39,6 +44,7 @@ Public NotInheritable Class DataViewPlaygroundForm
         If _originalScheme IsNot Nothing AndAlso Not ReferenceEquals(ThemeManager.Current, _originalScheme) Then
             ThemeManager.SetScheme(_originalScheme)
         End If
+        ReleaseButtonTestObjects()
     End Sub
 
     ' La terminarea redimensionării ferestrei layout-ul (deci și auto-hide) e complet: abia
@@ -118,6 +124,12 @@ Public NotInheritable Class DataViewPlaygroundForm
     End Sub
 
     Private Sub Grid_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles grid.CellFormatting
+        ' Slice 0085-03: borders decided for ONE cell (a red box on every 4th row of "cod").
+        If chkCellBorderDemo.Checked AndAlso e.RowIndex Mod 4 = 0 AndAlso
+           String.Equals(e.ColumnKey, "cod", StringComparison.Ordinal) Then
+            e.Borders = KBotBorderSides.All
+            e.BorderColor = Color.Red
+        End If
         If Not e.ColumnKey.StartsWith("val", StringComparison.Ordinal) Then Return
         Dim v As Object = e.Value
         If v Is Nothing Then Return
@@ -329,6 +341,12 @@ Public NotInheritable Class DataViewPlaygroundForm
                 SetNum(numColMin, col.MinWidth)
                 ' MaxWidth = Integer.MaxValue (sau peste raza numericului) => 0 «neplafonat».
                 SetNum(numColMax, If(col.MaxWidth > CInt(numColMax.Maximum), 0, col.MaxWidth))
+                ' Slice 0085-03: the column's cell borders.
+                cboCellBorderColor.SelectedIndex = IndexOfCellBorderColor(col.CellBorderColor)
+                chkCellBorderLeft.Checked = (col.CellBorders And KBotBorderSides.Left) <> 0
+                chkCellBorderTop.Checked = (col.CellBorders And KBotBorderSides.Top) <> 0
+                chkCellBorderRight.Checked = (col.CellBorders And KBotBorderSides.Right) <> 0
+                chkCellBorderBottom.Checked = (col.CellBorders And KBotBorderSides.Bottom) <> 0
             Finally
                 _loading = False
             End Try
@@ -413,11 +431,151 @@ Public NotInheritable Class DataViewPlaygroundForm
             col.AutoHide = chkColAutoHide.Checked
             col.ShowColumnFilter = chkColFilterable.Checked
             col.AutoSizeMode = ColumnModeAt(cboColAutoSize.SelectedIndex)
+            col.CellBorderColor = CellBorderColorAt(cboCellBorderColor.SelectedIndex)
+            Dim k_sides As KBotBorderSides = KBotBorderSides.None
+            If chkCellBorderLeft.Checked Then k_sides = k_sides Or KBotBorderSides.Left
+            If chkCellBorderTop.Checked Then k_sides = k_sides Or KBotBorderSides.Top
+            If chkCellBorderRight.Checked Then k_sides = k_sides Or KBotBorderSides.Right
+            If chkCellBorderBottom.Checked Then k_sides = k_sides Or KBotBorderSides.Bottom
+            col.CellBorders = k_sides
             grid.AutoSizeColumns()     ' modelul coloanei nu are back-reference => forțăm trecerea
             RefreshInfo()
             UpdateDependentControls()  ' re-evaluează activările (fără a rescrie valorile în curs de editare)
         Catch ex As Exception
             GlobalErrorLog.Write("DataViewPlaygroundForm.ApplyColumn", ex)
+        End Try
+    End Sub
+
+    ' -- Button column "det" (slice 0085-02) ------------------------------------------
+    ' Every switch in the "Button column" section writes into the Button* properties of the
+    ' "det" column and the grid repaints live: caption, test icon, face / border colour, the four
+    ' border sides, alignment, size, margin, padding and font.
+
+    ' Cell border colours offered in the inspector (index 0 = Empty = the theme's grid line).
+    Private Shared Function CellBorderColorAt(k_index As Integer) As Color
+        Select Case k_index
+            Case 1 : Return Color.Transparent
+            Case 2 : Return Color.Red
+            Case 3 : Return Color.RoyalBlue
+            Case 4 : Return Color.DarkGreen
+            Case Else : Return Color.Empty
+        End Select
+    End Function
+
+    Private Shared Function IndexOfCellBorderColor(k_color As Color) As Integer
+        For k_i As Integer = 1 To 4
+            If CellBorderColorAt(k_i) = k_color Then Return k_i
+        Next
+        Return 0
+    End Function
+
+    Private Sub CellBorder_Changed(sender As Object, e As EventArgs) Handles _
+        cboCellBorderColor.SelectedIndexChanged, chkCellBorderLeft.CheckedChanged,
+        chkCellBorderTop.CheckedChanged, chkCellBorderRight.CheckedChanged,
+        chkCellBorderBottom.CheckedChanged
+        ApplyColumn()
+    End Sub
+
+    Private Sub chkCellBorderDemo_CheckedChanged(sender As Object, e As EventArgs) Handles chkCellBorderDemo.CheckedChanged
+        Apply(Sub() grid.Invalidate())
+    End Sub
+
+    Private Sub PopulateButtonControls()
+        cboCellBorderColor.Items.AddRange(New Object() {"Empty (grid line colour)", "Transparent", "Red", "RoyalBlue", "DarkGreen"})
+        cboCellBorderColor.SelectedIndex = 0
+        cboBtnBack.Items.AddRange(New Object() {"Empty (theme)", "Transparent (flat)", "LightGoldenrodYellow", "LightGreen"})
+        cboBtnBorderColor.Items.AddRange(New Object() {"Empty (theme)", "Transparent (none)", "Red", "RoyalBlue"})
+        cboBtnAlign.Items.AddRange([Enum].GetNames(GetType(ContentAlignment)))
+        cboBtnFont.Items.AddRange(New Object() {"Not set (grid font)", "Segoe UI 14 bold"})
+        cboBtnBack.SelectedIndex = 0
+        cboBtnBorderColor.SelectedIndex = 0
+        cboBtnAlign.SelectedIndex = cboBtnAlign.Items.IndexOf(ContentAlignment.MiddleCenter.ToString())
+        cboBtnFont.SelectedIndex = 0
+    End Sub
+
+    Private Sub ButtonOption_Changed(sender As Object, e As EventArgs) Handles _
+        txtBtnText.TextChanged, chkBtnImage.CheckedChanged, cboBtnBack.SelectedIndexChanged,
+        cboBtnBorderColor.SelectedIndexChanged, chkBtnBorderLeft.CheckedChanged,
+        chkBtnBorderTop.CheckedChanged, chkBtnBorderRight.CheckedChanged,
+        chkBtnBorderBottom.CheckedChanged, cboBtnAlign.SelectedIndexChanged,
+        numBtnSizeW.ValueChanged, numBtnSizeH.ValueChanged, numBtnMarginX.ValueChanged,
+        numBtnMarginY.ValueChanged, numBtnPadX.ValueChanged, numBtnPadY.ValueChanged,
+        cboBtnFont.SelectedIndexChanged
+        Apply(AddressOf ApplyButtonOptions)
+    End Sub
+
+    Private Sub ApplyButtonOptions()
+        Dim k_col As KBotDataColumn = grid.Column("det")
+        k_col.ButtonText = txtBtnText.Text
+        k_col.ButtonImage = If(chkBtnImage.Checked, TestIcon(), Nothing)
+
+        Select Case cboBtnBack.SelectedIndex
+            Case 1 : k_col.ButtonBackColor = Color.Transparent
+            Case 2 : k_col.ButtonBackColor = Color.LightGoldenrodYellow
+            Case 3 : k_col.ButtonBackColor = Color.LightGreen
+            Case Else : k_col.ButtonBackColor = Color.Empty
+        End Select
+        Select Case cboBtnBorderColor.SelectedIndex
+            Case 1 : k_col.ButtonBorderColor = Color.Transparent
+            Case 2 : k_col.ButtonBorderColor = Color.Red
+            Case 3 : k_col.ButtonBorderColor = Color.RoyalBlue
+            Case Else : k_col.ButtonBorderColor = Color.Empty
+        End Select
+
+        Dim k_sides As KBotBorderSides = KBotBorderSides.None
+        If chkBtnBorderLeft.Checked Then k_sides = k_sides Or KBotBorderSides.Left
+        If chkBtnBorderTop.Checked Then k_sides = k_sides Or KBotBorderSides.Top
+        If chkBtnBorderRight.Checked Then k_sides = k_sides Or KBotBorderSides.Right
+        If chkBtnBorderBottom.Checked Then k_sides = k_sides Or KBotBorderSides.Bottom
+        k_col.ButtonBorders = k_sides
+
+        k_col.ButtonAlign = CType([Enum].Parse(GetType(ContentAlignment), CStr(cboBtnAlign.SelectedItem)), ContentAlignment)
+        k_col.ButtonSize = New Size(CInt(numBtnSizeW.Value), CInt(numBtnSizeH.Value))
+        Dim k_mx As Integer = CInt(numBtnMarginX.Value)
+        Dim k_my As Integer = CInt(numBtnMarginY.Value)
+        k_col.ButtonMargin = New Padding(k_mx, k_my, k_mx, k_my)
+        Dim k_px As Integer = CInt(numBtnPadX.Value)
+        Dim k_py As Integer = CInt(numBtnPadY.Value)
+        k_col.ButtonPadding = New Padding(k_px, k_py, k_px, k_py)
+
+        If cboBtnFont.SelectedIndex = 1 Then
+            If _btnBigFont Is Nothing Then _btnBigFont = New Font("Segoe UI", 14.0F, FontStyle.Bold)
+            k_col.ButtonFont = _btnBigFont
+        Else
+            k_col.ButtonFont = Nothing
+        End If
+    End Sub
+
+    ' A small blue disc with a white plus, drawn once: the playground ships no image files.
+    Private Function TestIcon() As Bitmap
+        If _btnTestIcon Is Nothing Then
+            Dim k_bmp As New Bitmap(16, 16)
+            Using k_g As Graphics = Graphics.FromImage(k_bmp)
+                k_g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+                k_g.FillEllipse(Brushes.SteelBlue, 0, 0, 15, 15)
+                Using k_pen As New Pen(Color.White, 2.0F)
+                    k_g.DrawLine(k_pen, 8, 4, 8, 11)
+                    k_g.DrawLine(k_pen, 4, 8, 11, 8)
+                End Using
+            End Using
+            _btnTestIcon = k_bmp
+        End If
+        Return _btnTestIcon
+    End Function
+
+    ' The column must let go of the image / font before they are disposed, or a late repaint
+    ' would draw with a dead object.
+    Private Sub ReleaseButtonTestObjects()
+        Try
+            Dim k_col As KBotDataColumn = grid.Column("det")
+            k_col.ButtonImage = Nothing
+            k_col.ButtonFont = Nothing
+            _btnTestIcon?.Dispose()
+            _btnTestIcon = Nothing
+            _btnBigFont?.Dispose()
+            _btnBigFont = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("DataViewPlaygroundForm.ReleaseButtonTestObjects", ex)
         End Try
     End Sub
 

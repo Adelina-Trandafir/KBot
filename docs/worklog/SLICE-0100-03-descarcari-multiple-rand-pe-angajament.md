@@ -125,3 +125,38 @@ The columns of `gridDescarcari` (`cod`, `prog`, `opreste`) and `gridAsteapta` (`
 of the two X buttons (`"X"` written into every row). A Button cell shows its column's `HeaderText` when the cell has no
 text, so the caption now lives in the designer (`HeaderText = "X"` on both button columns; the headers are hidden by
 `ShowHeader = False`) and the code no longer writes it. Build clean.
+
+## Follow-up 6 (03.10.2026): icon on the X buttons (operator's new button properties)
+
+The operator set `ButtonImage` (`minus_red`) and `ButtonMargin` (0) in the designer, but on the TEXT column `cod` of the top
+grid (`KBotDataColumn3`), where they do nothing. Moved to its button column `opreste` (`KBotDataColumn5`) and applied the same to
+the waiting grid's button column `scoate` (`KBotDataColumn2`). With a picture an empty caption stays empty, so both columns'
+`HeaderText` went back to `""` (no «X» anywhere, code or designer; the caption can be set with `ButtonText`). Build clean; not seen.
+
+## Follow-up 7 (03.10.2026): playground for the queue window (DevHarness, Debug only)
+
+Operator: see the window in the harness, with a playground per column that saves what was changed so it can be written into the
+designer; simulate angajamente in both grids.
+- New harness test «Coada robotului — playground coloane (descărcare multiplă simulată)» (category FOREXE):
+  `src/KBot.App/HarnessTests/QueuePlaygroundTest.vb` + `QueuePlaygroundForm.vb` / `.Designer.vb` (in KBot.App because the
+  window, the queue and the controller are there; everything inside `#If DEBUG`).
+- It opens the REAL `RobotQueueForm` (its grids are `Friend`) over a real queue + controller + `FakeForexeRunner`. Buttons:
+  «Pornește descărcarea multiplă» (N angajamente with made-up codes `AAB` + 8 characters, T tabs, S seconds each — the
+  running ones fill the top grid, the rest the bottom one), «+ sarcină simplă în coadă» (a plain task, shows below too),
+  «Oprește tot», «(Re)deschide fereastra cozii».
+- A `PropertyGrid` on the chosen grid or column (combo: both grids and each column by key) — every change shows at once
+  in the real window. Extra combo for the button picture of a column (the project's resources, by name).
+- «Salvează ce am modificat» → `QueueDesignerExporter` writes, per grid and per column, the lines the designer would
+  serialize (only what each property's own `ShouldSerialize*` says is set: theme-resolved colours and fonts stay out), with the
+  placeholders `{GRID}` / `{COL}` and the column `Key` in the block header; into the text box, the clipboard and
+  `<AppDir>\Logs\playground_coada_designer.txt`. A property of a type the exporter does not write becomes a comment line.
+- The controller writes its usual files for the simulated downloads (answer, package, run log) as in the queue bench.
+Build clean (0 warnings); NOT run, never seen on screen.
+
+## Follow-up 8 (03.10.2026): the operator's playground result written into the designer
+
+The text saved by the playground (19:29) was written into `RobotQueueForm.Designer.vb`: both grids and all five columns
+(top grid: `AlternatingRows = False`, `BorderWidth = 0`; columns `cod` 113, `prog` 178 (`CellBorders = None`), `opreste` 40
+(`CellBorders = All`, picture + margin); bottom grid: `cod` 291, `scoate` 40 with picture + margin). The widths are the
+logical values (their sums equal the grid's logical width). `FitWindow` now takes the frame from each grid's own
+`BorderWidth` (the top one is 0, so no spare pixels are added any more). Build clean; not seen.

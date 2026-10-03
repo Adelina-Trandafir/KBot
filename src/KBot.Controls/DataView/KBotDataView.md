@@ -50,10 +50,25 @@ the pass only when the visible columns leave room for its `MinWidth`), `AutoHide
 (may be dropped, rightmost first,
 rather than showing a horizontal bar), `Frozen` (metadata only — the authority is
 `KBotDataView.FrozenColumnCount`), `AutoSizeMode = Inherit`.
+Cell borders (slice 0085-03): `CellBorderColor` (`Empty` = theme grid-line colour) and
+`CellBorders` (flags `KBotBorderSides`, default `Right | Bottom` = the grid lines); per single
+cell through `CellFormatting` (`e.BorderColor`, `e.Borders`). Neighbours drawing a shared edge
+make a double line.
 Cells: `TextAlign`, `CellPadding = 6,0,6,0`, `ColumnFont`, `ReadOnly`, `Enabled`,
 `ValueType`, `Format` or `FormatString` (never both), `DecimalPlaces = -1`,
 `Aggregate` + `AggregateFormatString`, `ComboItems`, `OptionGroup`,
 `ProgressMin/Max = 0/100`.
+Button cells (slice 0085-02, `Button` columns only, all metrics logical px): `ButtonText`
+(fixed caption; empty = cell text, then header — but with an image set, empty = no caption),
+`ButtonImage`, `ButtonBackColor` (`Empty` = theme, `Transparent` = flat: no face, and no border
+unless `ButtonBorderColor` is set), `ButtonBorderColor` (`Empty` = theme, `Transparent` = none),
+`ButtonBorders` (flags `KBotBorderSides` Left/Top/Right/Bottom, default `All` = rounded border;
+anything else = straight lines on the chosen sides over a plain rectangle),
+`ButtonPadding` (inner, default 0), `ButtonMargin` (outer, default 4,3,4,3), `ButtonAlign`
+(default MiddleCenter), `ButtonSize` (0 on an axis = fill the cell; alignment only shows when
+the button is smaller than the cell), `ButtonFont` (not set = column font, then grid font).
+A click acts only on the button face, not on the margin around it (Space still acts on the
+current cell).
 Header icons: `HeaderLeftIcon` (decorative) + `HeaderRightIcon` (raises
 `HeaderRightIconClicked`) with sizes, hover colour and tooltips; `ShowColumnFilter`,
 `ColumnFilterIcon`, `ColumnFilterIconSize`, `ColumnFilterHoverColor`, `FilterIconTooltip`.
@@ -193,7 +208,7 @@ so the label appears exactly when the painted text is clipped.
   the rows and reads them back.
 - `Key` and `ColumnType` cannot change once rows exist.
 - `ShowColumnFilter` is refused on `Button` and `ProgressBar` columns; `CellPadding` does
-  not apply to those two either.
+  not apply to those two either (a `Button` has `ButtonPadding` / `ButtonMargin` instead).
 - `Format` and `FormatString` are mutually exclusive.
 - Aggregates are offered per `ValueType` (`KBotAggregateRules`). The footer band is NOT a
   row: it is excluded from `Rows`, `RowCount`, virtualization, selection, hit-testing and

@@ -53,6 +53,41 @@ Partial Class DataViewPlaygroundForm
     Friend WithEvents numColMin As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblColMax As System.Windows.Forms.Label
     Friend WithEvents numColMax As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblCellBorderColor As System.Windows.Forms.Label
+    Friend WithEvents cboCellBorderColor As System.Windows.Forms.ComboBox
+    Friend WithEvents chkCellBorderLeft As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCellBorderTop As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCellBorderRight As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCellBorderBottom As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCellBorderDemo As System.Windows.Forms.CheckBox
+    Friend WithEvents lblSecBtn As System.Windows.Forms.Label
+    Friend WithEvents lblBtnText As System.Windows.Forms.Label
+    Friend WithEvents txtBtnText As System.Windows.Forms.TextBox
+    Friend WithEvents chkBtnImage As System.Windows.Forms.CheckBox
+    Friend WithEvents lblBtnBack As System.Windows.Forms.Label
+    Friend WithEvents cboBtnBack As System.Windows.Forms.ComboBox
+    Friend WithEvents lblBtnBorderColor As System.Windows.Forms.Label
+    Friend WithEvents cboBtnBorderColor As System.Windows.Forms.ComboBox
+    Friend WithEvents chkBtnBorderLeft As System.Windows.Forms.CheckBox
+    Friend WithEvents chkBtnBorderTop As System.Windows.Forms.CheckBox
+    Friend WithEvents chkBtnBorderRight As System.Windows.Forms.CheckBox
+    Friend WithEvents chkBtnBorderBottom As System.Windows.Forms.CheckBox
+    Friend WithEvents lblBtnAlign As System.Windows.Forms.Label
+    Friend WithEvents cboBtnAlign As System.Windows.Forms.ComboBox
+    Friend WithEvents lblBtnSizeW As System.Windows.Forms.Label
+    Friend WithEvents numBtnSizeW As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnSizeH As System.Windows.Forms.Label
+    Friend WithEvents numBtnSizeH As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnMarginX As System.Windows.Forms.Label
+    Friend WithEvents numBtnMarginX As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnMarginY As System.Windows.Forms.Label
+    Friend WithEvents numBtnMarginY As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnPadX As System.Windows.Forms.Label
+    Friend WithEvents numBtnPadX As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnPadY As System.Windows.Forms.Label
+    Friend WithEvents numBtnPadY As System.Windows.Forms.NumericUpDown
+    Friend WithEvents lblBtnFont As System.Windows.Forms.Label
+    Friend WithEvents cboBtnFont As System.Windows.Forms.ComboBox
     ' —— Grupare (slice 0029) ——
     Friend WithEvents lblSecGroup As System.Windows.Forms.Label
     Friend WithEvents lblGroup1 As System.Windows.Forms.Label
@@ -116,6 +151,41 @@ Partial Class DataViewPlaygroundForm
         numColMin = New NumericUpDown()
         lblColMax = New Label()
         numColMax = New NumericUpDown()
+        lblCellBorderColor = New Label()
+        cboCellBorderColor = New ComboBox()
+        chkCellBorderLeft = New CheckBox()
+        chkCellBorderTop = New CheckBox()
+        chkCellBorderRight = New CheckBox()
+        chkCellBorderBottom = New CheckBox()
+        chkCellBorderDemo = New CheckBox()
+        lblSecBtn = New Label()
+        lblBtnText = New Label()
+        txtBtnText = New TextBox()
+        chkBtnImage = New CheckBox()
+        lblBtnBack = New Label()
+        cboBtnBack = New ComboBox()
+        lblBtnBorderColor = New Label()
+        cboBtnBorderColor = New ComboBox()
+        chkBtnBorderLeft = New CheckBox()
+        chkBtnBorderTop = New CheckBox()
+        chkBtnBorderRight = New CheckBox()
+        chkBtnBorderBottom = New CheckBox()
+        lblBtnAlign = New Label()
+        cboBtnAlign = New ComboBox()
+        lblBtnSizeW = New Label()
+        numBtnSizeW = New NumericUpDown()
+        lblBtnSizeH = New Label()
+        numBtnSizeH = New NumericUpDown()
+        lblBtnMarginX = New Label()
+        numBtnMarginX = New NumericUpDown()
+        lblBtnMarginY = New Label()
+        numBtnMarginY = New NumericUpDown()
+        lblBtnPadX = New Label()
+        numBtnPadX = New NumericUpDown()
+        lblBtnPadY = New Label()
+        numBtnPadY = New NumericUpDown()
+        lblBtnFont = New Label()
+        cboBtnFont = New ComboBox()
         lblSecGroup = New Label()
         lblGroup1 = New Label()
         cboGroup1 = New ComboBox()
@@ -141,6 +211,12 @@ Partial Class DataViewPlaygroundForm
         CType(numColWidth, ComponentModel.ISupportInitialize).BeginInit()
         CType(numColMin, ComponentModel.ISupportInitialize).BeginInit()
         CType(numColMax, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnSizeW, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnSizeH, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnMarginX, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnMarginY, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnPadX, ComponentModel.ISupportInitialize).BeginInit()
+        CType(numBtnPadY, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' pnlTop
@@ -278,6 +354,41 @@ Partial Class DataViewPlaygroundForm
         flowLeft.Controls.Add(numColMin)
         flowLeft.Controls.Add(lblColMax)
         flowLeft.Controls.Add(numColMax)
+        flowLeft.Controls.Add(lblCellBorderColor)
+        flowLeft.Controls.Add(cboCellBorderColor)
+        flowLeft.Controls.Add(chkCellBorderLeft)
+        flowLeft.Controls.Add(chkCellBorderTop)
+        flowLeft.Controls.Add(chkCellBorderRight)
+        flowLeft.Controls.Add(chkCellBorderBottom)
+        flowLeft.Controls.Add(chkCellBorderDemo)
+        flowLeft.Controls.Add(lblSecBtn)
+        flowLeft.Controls.Add(lblBtnText)
+        flowLeft.Controls.Add(txtBtnText)
+        flowLeft.Controls.Add(chkBtnImage)
+        flowLeft.Controls.Add(lblBtnBack)
+        flowLeft.Controls.Add(cboBtnBack)
+        flowLeft.Controls.Add(lblBtnBorderColor)
+        flowLeft.Controls.Add(cboBtnBorderColor)
+        flowLeft.Controls.Add(chkBtnBorderLeft)
+        flowLeft.Controls.Add(chkBtnBorderTop)
+        flowLeft.Controls.Add(chkBtnBorderRight)
+        flowLeft.Controls.Add(chkBtnBorderBottom)
+        flowLeft.Controls.Add(lblBtnAlign)
+        flowLeft.Controls.Add(cboBtnAlign)
+        flowLeft.Controls.Add(lblBtnSizeW)
+        flowLeft.Controls.Add(numBtnSizeW)
+        flowLeft.Controls.Add(lblBtnSizeH)
+        flowLeft.Controls.Add(numBtnSizeH)
+        flowLeft.Controls.Add(lblBtnMarginX)
+        flowLeft.Controls.Add(numBtnMarginX)
+        flowLeft.Controls.Add(lblBtnMarginY)
+        flowLeft.Controls.Add(numBtnMarginY)
+        flowLeft.Controls.Add(lblBtnPadX)
+        flowLeft.Controls.Add(numBtnPadX)
+        flowLeft.Controls.Add(lblBtnPadY)
+        flowLeft.Controls.Add(numBtnPadY)
+        flowLeft.Controls.Add(lblBtnFont)
+        flowLeft.Controls.Add(cboBtnFont)
         flowLeft.Controls.Add(lblSecGroup)
         flowLeft.Controls.Add(lblGroup1)
         flowLeft.Controls.Add(cboGroup1)
@@ -611,6 +722,323 @@ Partial Class DataViewPlaygroundForm
         numColMax.Size = New Size(120, 31)
         numColMax.TabIndex = 33
         ' 
+        ' lblCellBorderColor
+        ' 
+        lblCellBorderColor.AutoSize = True
+        lblCellBorderColor.Location = New Point(11, 1140)
+        lblCellBorderColor.Name = "lblCellBorderColor"
+        lblCellBorderColor.Size = New Size(150, 25)
+        lblCellBorderColor.TabIndex = 80
+        lblCellBorderColor.Text = "CellBorderColor"
+        ' 
+        ' cboCellBorderColor
+        ' 
+        cboCellBorderColor.DropDownStyle = ComboBoxStyle.DropDownList
+        cboCellBorderColor.Location = New Point(11, 1168)
+        cboCellBorderColor.Name = "cboCellBorderColor"
+        cboCellBorderColor.Size = New Size(250, 33)
+        cboCellBorderColor.TabIndex = 81
+        ' 
+        ' chkCellBorderLeft
+        ' 
+        chkCellBorderLeft.AutoSize = True
+        chkCellBorderLeft.Location = New Point(11, 1204)
+        chkCellBorderLeft.Name = "chkCellBorderLeft"
+        chkCellBorderLeft.Size = New Size(204, 29)
+        chkCellBorderLeft.TabIndex = 82
+        chkCellBorderLeft.Text = "CellBorders: Left"
+        ' 
+        ' chkCellBorderTop
+        ' 
+        chkCellBorderTop.AutoSize = True
+        chkCellBorderTop.Location = New Point(11, 1239)
+        chkCellBorderTop.Name = "chkCellBorderTop"
+        chkCellBorderTop.Size = New Size(192, 29)
+        chkCellBorderTop.TabIndex = 83
+        chkCellBorderTop.Text = "CellBorders: Top"
+        ' 
+        ' chkCellBorderRight
+        ' 
+        chkCellBorderRight.AutoSize = True
+        chkCellBorderRight.Checked = True
+        chkCellBorderRight.CheckState = CheckState.Checked
+        chkCellBorderRight.Location = New Point(11, 1274)
+        chkCellBorderRight.Name = "chkCellBorderRight"
+        chkCellBorderRight.Size = New Size(216, 29)
+        chkCellBorderRight.TabIndex = 84
+        chkCellBorderRight.Text = "CellBorders: Right"
+        ' 
+        ' chkCellBorderBottom
+        ' 
+        chkCellBorderBottom.AutoSize = True
+        chkCellBorderBottom.Checked = True
+        chkCellBorderBottom.CheckState = CheckState.Checked
+        chkCellBorderBottom.Location = New Point(11, 1309)
+        chkCellBorderBottom.Name = "chkCellBorderBottom"
+        chkCellBorderBottom.Size = New Size(228, 29)
+        chkCellBorderBottom.TabIndex = 85
+        chkCellBorderBottom.Text = "CellBorders: Bottom"
+        ' 
+        ' chkCellBorderDemo
+        ' 
+        chkCellBorderDemo.AutoSize = True
+        chkCellBorderDemo.Location = New Point(11, 1344)
+        chkCellBorderDemo.Name = "chkCellBorderDemo"
+        chkCellBorderDemo.Size = New Size(624, 29)
+        chkCellBorderDemo.TabIndex = 86
+        chkCellBorderDemo.Text = "Per cell: CellFormatting box on every 4th row of Cod"
+        ' 
+        ' lblSecBtn
+        ' 
+        lblSecBtn.AutoSize = True
+        lblSecBtn.Location = New Point(11, 1650)
+        lblSecBtn.Margin = New Padding(3, 12, 3, 0)
+        lblSecBtn.Name = "lblSecBtn"
+        lblSecBtn.Size = New Size(250, 25)
+        lblSecBtn.TabIndex = 48
+        lblSecBtn.Text = "-- Button column (det) --"
+        ' 
+        ' lblBtnText
+        ' 
+        lblBtnText.AutoSize = True
+        lblBtnText.Location = New Point(11, 1678)
+        lblBtnText.Name = "lblBtnText"
+        lblBtnText.Size = New Size(270, 25)
+        lblBtnText.TabIndex = 49
+        lblBtnText.Text = "ButtonText (empty = header)"
+        ' 
+        ' txtBtnText
+        ' 
+        txtBtnText.Location = New Point(11, 1706)
+        txtBtnText.Name = "txtBtnText"
+        txtBtnText.Size = New Size(250, 31)
+        txtBtnText.TabIndex = 50
+        ' 
+        ' chkBtnImage
+        ' 
+        chkBtnImage.AutoSize = True
+        chkBtnImage.Location = New Point(11, 1740)
+        chkBtnImage.Name = "chkBtnImage"
+        chkBtnImage.Size = New Size(276, 29)
+        chkBtnImage.TabIndex = 51
+        chkBtnImage.Text = "ButtonImage (test icon)"
+        ' 
+        ' lblBtnBack
+        ' 
+        lblBtnBack.AutoSize = True
+        lblBtnBack.Location = New Point(11, 1775)
+        lblBtnBack.Name = "lblBtnBack"
+        lblBtnBack.Size = New Size(150, 25)
+        lblBtnBack.TabIndex = 52
+        lblBtnBack.Text = "ButtonBackColor"
+        ' 
+        ' cboBtnBack
+        ' 
+        cboBtnBack.DropDownStyle = ComboBoxStyle.DropDownList
+        cboBtnBack.Location = New Point(11, 1803)
+        cboBtnBack.Name = "cboBtnBack"
+        cboBtnBack.Size = New Size(250, 33)
+        cboBtnBack.TabIndex = 53
+        ' 
+        ' lblBtnBorderColor
+        ' 
+        lblBtnBorderColor.AutoSize = True
+        lblBtnBorderColor.Location = New Point(11, 1839)
+        lblBtnBorderColor.Name = "lblBtnBorderColor"
+        lblBtnBorderColor.Size = New Size(170, 25)
+        lblBtnBorderColor.TabIndex = 54
+        lblBtnBorderColor.Text = "ButtonBorderColor"
+        ' 
+        ' cboBtnBorderColor
+        ' 
+        cboBtnBorderColor.DropDownStyle = ComboBoxStyle.DropDownList
+        cboBtnBorderColor.Location = New Point(11, 1867)
+        cboBtnBorderColor.Name = "cboBtnBorderColor"
+        cboBtnBorderColor.Size = New Size(250, 33)
+        cboBtnBorderColor.TabIndex = 55
+        ' 
+        ' chkBtnBorderLeft
+        ' 
+        chkBtnBorderLeft.AutoSize = True
+        chkBtnBorderLeft.Checked = True
+        chkBtnBorderLeft.CheckState = CheckState.Checked
+        chkBtnBorderLeft.Location = New Point(11, 1903)
+        chkBtnBorderLeft.Name = "chkBtnBorderLeft"
+        chkBtnBorderLeft.Size = New Size(228, 29)
+        chkBtnBorderLeft.TabIndex = 56
+        chkBtnBorderLeft.Text = "ButtonBorders: Left"
+        ' 
+        ' chkBtnBorderTop
+        ' 
+        chkBtnBorderTop.AutoSize = True
+        chkBtnBorderTop.Checked = True
+        chkBtnBorderTop.CheckState = CheckState.Checked
+        chkBtnBorderTop.Location = New Point(11, 1938)
+        chkBtnBorderTop.Name = "chkBtnBorderTop"
+        chkBtnBorderTop.Size = New Size(216, 29)
+        chkBtnBorderTop.TabIndex = 57
+        chkBtnBorderTop.Text = "ButtonBorders: Top"
+        ' 
+        ' chkBtnBorderRight
+        ' 
+        chkBtnBorderRight.AutoSize = True
+        chkBtnBorderRight.Checked = True
+        chkBtnBorderRight.CheckState = CheckState.Checked
+        chkBtnBorderRight.Location = New Point(11, 1973)
+        chkBtnBorderRight.Name = "chkBtnBorderRight"
+        chkBtnBorderRight.Size = New Size(240, 29)
+        chkBtnBorderRight.TabIndex = 58
+        chkBtnBorderRight.Text = "ButtonBorders: Right"
+        ' 
+        ' chkBtnBorderBottom
+        ' 
+        chkBtnBorderBottom.AutoSize = True
+        chkBtnBorderBottom.Checked = True
+        chkBtnBorderBottom.CheckState = CheckState.Checked
+        chkBtnBorderBottom.Location = New Point(11, 2008)
+        chkBtnBorderBottom.Name = "chkBtnBorderBottom"
+        chkBtnBorderBottom.Size = New Size(252, 29)
+        chkBtnBorderBottom.TabIndex = 59
+        chkBtnBorderBottom.Text = "ButtonBorders: Bottom"
+        ' 
+        ' lblBtnAlign
+        ' 
+        lblBtnAlign.AutoSize = True
+        lblBtnAlign.Location = New Point(11, 2043)
+        lblBtnAlign.Name = "lblBtnAlign"
+        lblBtnAlign.Size = New Size(110, 25)
+        lblBtnAlign.TabIndex = 60
+        lblBtnAlign.Text = "ButtonAlign"
+        ' 
+        ' cboBtnAlign
+        ' 
+        cboBtnAlign.DropDownStyle = ComboBoxStyle.DropDownList
+        cboBtnAlign.Location = New Point(11, 2071)
+        cboBtnAlign.Name = "cboBtnAlign"
+        cboBtnAlign.Size = New Size(250, 33)
+        cboBtnAlign.TabIndex = 61
+        ' 
+        ' lblBtnSizeW
+        ' 
+        lblBtnSizeW.AutoSize = True
+        lblBtnSizeW.Location = New Point(11, 2107)
+        lblBtnSizeW.Name = "lblBtnSizeW"
+        lblBtnSizeW.Size = New Size(270, 25)
+        lblBtnSizeW.TabIndex = 62
+        lblBtnSizeW.Text = "ButtonSize.Width (0 = fill)"
+        ' 
+        ' numBtnSizeW
+        ' 
+        numBtnSizeW.Location = New Point(11, 2135)
+        numBtnSizeW.Maximum = New Decimal(New Integer() {300, 0, 0, 0})
+        numBtnSizeW.Name = "numBtnSizeW"
+        numBtnSizeW.Size = New Size(120, 31)
+        numBtnSizeW.TabIndex = 63
+        ' 
+        ' lblBtnSizeH
+        ' 
+        lblBtnSizeH.AutoSize = True
+        lblBtnSizeH.Location = New Point(11, 2169)
+        lblBtnSizeH.Name = "lblBtnSizeH"
+        lblBtnSizeH.Size = New Size(280, 25)
+        lblBtnSizeH.TabIndex = 64
+        lblBtnSizeH.Text = "ButtonSize.Height (0 = fill)"
+        ' 
+        ' numBtnSizeH
+        ' 
+        numBtnSizeH.Location = New Point(11, 2197)
+        numBtnSizeH.Maximum = New Decimal(New Integer() {100, 0, 0, 0})
+        numBtnSizeH.Name = "numBtnSizeH"
+        numBtnSizeH.Size = New Size(120, 31)
+        numBtnSizeH.TabIndex = 65
+        ' 
+        ' lblBtnMarginX
+        ' 
+        lblBtnMarginX.AutoSize = True
+        lblBtnMarginX.Location = New Point(11, 2231)
+        lblBtnMarginX.Name = "lblBtnMarginX"
+        lblBtnMarginX.Size = New Size(230, 25)
+        lblBtnMarginX.TabIndex = 66
+        lblBtnMarginX.Text = "ButtonMargin Left/Right"
+        ' 
+        ' numBtnMarginX
+        ' 
+        numBtnMarginX.Location = New Point(11, 2259)
+        numBtnMarginX.Maximum = New Decimal(New Integer() {60, 0, 0, 0})
+        numBtnMarginX.Name = "numBtnMarginX"
+        numBtnMarginX.Size = New Size(120, 31)
+        numBtnMarginX.TabIndex = 67
+        numBtnMarginX.Value = New Decimal(New Integer() {4, 0, 0, 0})
+        ' 
+        ' lblBtnMarginY
+        ' 
+        lblBtnMarginY.AutoSize = True
+        lblBtnMarginY.Location = New Point(11, 2293)
+        lblBtnMarginY.Name = "lblBtnMarginY"
+        lblBtnMarginY.Size = New Size(230, 25)
+        lblBtnMarginY.TabIndex = 68
+        lblBtnMarginY.Text = "ButtonMargin Top/Bottom"
+        ' 
+        ' numBtnMarginY
+        ' 
+        numBtnMarginY.Location = New Point(11, 2321)
+        numBtnMarginY.Maximum = New Decimal(New Integer() {60, 0, 0, 0})
+        numBtnMarginY.Name = "numBtnMarginY"
+        numBtnMarginY.Size = New Size(120, 31)
+        numBtnMarginY.TabIndex = 69
+        numBtnMarginY.Value = New Decimal(New Integer() {3, 0, 0, 0})
+        ' 
+        ' lblBtnPadX
+        ' 
+        lblBtnPadX.AutoSize = True
+        lblBtnPadX.Location = New Point(11, 2355)
+        lblBtnPadX.Name = "lblBtnPadX"
+        lblBtnPadX.Size = New Size(240, 25)
+        lblBtnPadX.TabIndex = 70
+        lblBtnPadX.Text = "ButtonPadding Left/Right"
+        ' 
+        ' numBtnPadX
+        ' 
+        numBtnPadX.Location = New Point(11, 2383)
+        numBtnPadX.Maximum = New Decimal(New Integer() {60, 0, 0, 0})
+        numBtnPadX.Name = "numBtnPadX"
+        numBtnPadX.Size = New Size(120, 31)
+        numBtnPadX.TabIndex = 71
+        ' 
+        ' lblBtnPadY
+        ' 
+        lblBtnPadY.AutoSize = True
+        lblBtnPadY.Location = New Point(11, 2417)
+        lblBtnPadY.Name = "lblBtnPadY"
+        lblBtnPadY.Size = New Size(240, 25)
+        lblBtnPadY.TabIndex = 72
+        lblBtnPadY.Text = "ButtonPadding Top/Bottom"
+        ' 
+        ' numBtnPadY
+        ' 
+        numBtnPadY.Location = New Point(11, 2445)
+        numBtnPadY.Maximum = New Decimal(New Integer() {60, 0, 0, 0})
+        numBtnPadY.Name = "numBtnPadY"
+        numBtnPadY.Size = New Size(120, 31)
+        numBtnPadY.TabIndex = 73
+        ' 
+        ' lblBtnFont
+        ' 
+        lblBtnFont.AutoSize = True
+        lblBtnFont.Location = New Point(11, 2479)
+        lblBtnFont.Name = "lblBtnFont"
+        lblBtnFont.Size = New Size(100, 25)
+        lblBtnFont.TabIndex = 74
+        lblBtnFont.Text = "ButtonFont"
+        ' 
+        ' cboBtnFont
+        ' 
+        cboBtnFont.DropDownStyle = ComboBoxStyle.DropDownList
+        cboBtnFont.Location = New Point(11, 2507)
+        cboBtnFont.Name = "cboBtnFont"
+        cboBtnFont.Size = New Size(250, 33)
+        cboBtnFont.TabIndex = 75
+        ' 
         ' lblSecGroup
         ' 
         lblSecGroup.AutoSize = True
@@ -770,6 +1198,12 @@ Partial Class DataViewPlaygroundForm
         CType(numColWidth, ComponentModel.ISupportInitialize).EndInit()
         CType(numColMin, ComponentModel.ISupportInitialize).EndInit()
         CType(numColMax, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnSizeW, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnSizeH, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnMarginX, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnMarginY, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnPadX, ComponentModel.ISupportInitialize).EndInit()
+        CType(numBtnPadY, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
         PerformLayout()
     End Sub

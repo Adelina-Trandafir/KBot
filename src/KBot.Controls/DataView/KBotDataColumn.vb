@@ -1120,6 +1120,346 @@ Public NotInheritable Class KBotDataColumn
         CellPadding = DefaultCellPadding
     End Sub
 
+    ' -- Cell borders (slice 0085-03) ----------------------------------------------------------
+    ' The grid lines ARE the cell borders: by default every cell draws its right and bottom side
+    ' in the theme's grid-line colour, which is exactly what the grid always looked like. A column
+    ' can change the colour and the sides; a CellFormatting handler can change them per cell.
+
+    ''' <summary>The cell borders of old: the right and the bottom side (the grid lines).</summary>
+    Public Const DefaultCellBorders As KBotBorderSides = KBotBorderSides.Right Or KBotBorderSides.Bottom
+
+    Private _cellBorderColor As Color = Color.Empty
+    Private _cellBorders As KBotBorderSides = DefaultCellBorders
+
+    ''' <summary>
+    ''' Colour of this column's cell borders. <c>Color.Empty</c> (default) = the theme's grid-line
+    ''' colour. <c>Color.Transparent</c> = invisible lines. A <c>CellFormatting</c> handler can
+    ''' replace it for a single cell (<c>BorderColor</c>).
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Border colour of the cells in this column. Empty = the theme's grid-line colour.")>
+    Public Property CellBorderColor As Color
+        Get
+            Return _cellBorderColor
+        End Get
+        Set(value As Color)
+            If _cellBorderColor = value Then Return
+            _cellBorderColor = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeCellBorderColor() As Boolean
+        Return Not _cellBorderColor.IsEmpty
+    End Function
+
+    Private Sub ResetCellBorderColor()
+        CellBorderColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Which sides of the cells in this column get a border line (Left, Top, Right, Bottom;
+    ''' combine them). Default Right + Bottom = the grid lines. Two neighbouring cells that both
+    ''' draw the side they share make a double line: pick one side per edge for a single line.
+    ''' A <c>CellFormatting</c> handler can replace it for a single cell (<c>Borders</c>).
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Which sides of the cells get a border: Left, Top, Right, Bottom (combine). Default Right + Bottom = the grid lines.")>
+    Public Property CellBorders As KBotBorderSides
+        Get
+            Return _cellBorders
+        End Get
+        Set(value As KBotBorderSides)
+            If (value And Not KBotBorderSides.All) <> KBotBorderSides.None Then
+                Throw New ArgumentException($"Unknown cell border sides: {value}.", NameOf(value))
+            End If
+            If _cellBorders = value Then Return
+            _cellBorders = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeCellBorders() As Boolean
+        Return _cellBorders <> DefaultCellBorders
+    End Function
+
+    Private Sub ResetCellBorders()
+        CellBorders = DefaultCellBorders
+    End Sub
+
+    ' -- Button cells (slice 0085-02) ---------------------------------------------------------
+    ' Everything in this block applies to KBotColumnType.Button only; the other types ignore it.
+    ' All pixel metrics (margin, padding, size) are LOGICAL (96 dpi): the grid scales them with
+    ' its own DPI when it paints, measures and hit-tests, so one source of truth, no write-back.
+    ' Defaults reproduce the button exactly as it was drawn before these properties existed.
+
+    ''' <summary>Outer margin of the button face inside the cell (logical px). Default 4, 3, 4, 3.</summary>
+    Public Shared ReadOnly DefaultButtonMargin As New Padding(4, 3, 4, 3)
+
+    Private _buttonText As String = String.Empty
+    Private _buttonImage As Image
+    Private _buttonBackColor As Color = Color.Empty
+    Private _buttonBorderColor As Color = Color.Empty
+    Private _buttonBorders As KBotBorderSides = KBotBorderSides.All
+    Private _buttonPadding As Padding = Padding.Empty
+    Private _buttonMargin As Padding = DefaultButtonMargin
+    Private _buttonAlign As ContentAlignment = ContentAlignment.MiddleCenter
+    Private _buttonSize As Size = Size.Empty
+    Private _buttonFont As Font
+
+    ''' <summary>
+    ''' Caption of the button, the same on every row. Empty = the cell's own text, then the column
+    ''' header -- unless <see cref="ButtonImage"/> is set, in which case an empty caption stays
+    ''' empty (an icon-only button). A <c>CellFormatting</c> handler can still replace it per row.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Caption of the button (same on every row). Empty = cell text, then the column header; with an image set, empty = no caption.")>
+    <DefaultValue("")>
+    Public Property ButtonText As String
+        Get
+            Return _buttonText
+        End Get
+        Set(value As String)
+            Dim k_new As String = If(value, String.Empty)
+            If String.Equals(_buttonText, k_new, StringComparison.Ordinal) Then Return
+            _buttonText = k_new
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Picture on the button, drawn before the caption (or alone, centred, when there is no
+    ''' caption). Drawn at its own pixel size scaled by the DPI, and shrunk to fit the button's
+    ''' content area keeping its proportions.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Picture on the button, drawn before the caption (or alone when there is no caption).")>
+    <DefaultValue(GetType(Image), Nothing)>
+    Public Property ButtonImage As Image
+        Get
+            Return _buttonImage
+        End Get
+        Set(value As Image)
+            If value Is _buttonImage Then Return
+            _buttonImage = value
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonImage() As Boolean
+        Return _buttonImage IsNot Nothing
+    End Function
+
+    Private Sub ResetButtonImage()
+        ButtonImage = Nothing
+    End Sub
+
+    ''' <summary>
+    ''' Face colour of the button. <c>Color.Empty</c> (default) = from the theme.
+    ''' <c>Color.Transparent</c> = a flat button: no face, and no border either unless
+    ''' <see cref="ButtonBorderColor"/> is set explicitly. Any other colour is drawn as the face.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Face colour of the button. Empty = from the theme. Transparent = no face, and no border unless ButtonBorderColor is set.")>
+    Public Property ButtonBackColor As Color
+        Get
+            Return _buttonBackColor
+        End Get
+        Set(value As Color)
+            If _buttonBackColor = value Then Return
+            _buttonBackColor = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonBackColor() As Boolean
+        Return Not _buttonBackColor.IsEmpty
+    End Function
+
+    Private Sub ResetButtonBackColor()
+        ButtonBackColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Colour of the button border. <c>Color.Empty</c> (default) = from the theme (greyed when the
+    ''' cell is disabled). <c>Color.Transparent</c> = no border line. An explicit colour also
+    ''' brings the border back on a flat button (<see cref="ButtonBackColor"/> transparent).
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Border colour of the button. Empty = from the theme. Transparent = no border.")>
+    Public Property ButtonBorderColor As Color
+        Get
+            Return _buttonBorderColor
+        End Get
+        Set(value As Color)
+            If _buttonBorderColor = value Then Return
+            _buttonBorderColor = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonBorderColor() As Boolean
+        Return Not _buttonBorderColor.IsEmpty
+    End Function
+
+    Private Sub ResetButtonBorderColor()
+        ButtonBorderColor = Color.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Which sides of the button get a border line (Left, Top, Right, Bottom; combine them).
+    ''' Default All = the rounded border of old. With any other value the border is drawn as
+    ''' straight lines on the chosen sides and the face is a plain rectangle (rounded corners need
+    ''' a closed outline).
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Which sides of the button get a border: Left, Top, Right, Bottom (combine). All = rounded border. Anything else = straight lines on the chosen sides.")>
+    <DefaultValue(KBotBorderSides.All)>
+    Public Property ButtonBorders As KBotBorderSides
+        Get
+            Return _buttonBorders
+        End Get
+        Set(value As KBotBorderSides)
+            If (value And Not KBotBorderSides.All) <> KBotBorderSides.None Then
+                Throw New ArgumentException($"Unknown button border sides: {value}.", NameOf(value))
+            End If
+            If _buttonBorders = value Then Return
+            _buttonBorders = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' INNER padding: the gap between the button face and its picture / caption (logical px).
+    ''' Default 0, 0, 0, 0.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Inner padding between the button face and its picture / caption (logical px). Default 0, 0, 0, 0.")>
+    Public Property ButtonPadding As Padding
+        Get
+            Return _buttonPadding
+        End Get
+        Set(value As Padding)
+            Dim k_new As New Padding(Math.Max(0, value.Left), Math.Max(0, value.Top),
+                                     Math.Max(0, value.Right), Math.Max(0, value.Bottom))
+            If _buttonPadding = k_new Then Return
+            _buttonPadding = k_new
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonPadding() As Boolean
+        Return _buttonPadding <> Padding.Empty
+    End Function
+
+    Private Sub ResetButtonPadding()
+        ButtonPadding = Padding.Empty
+    End Sub
+
+    ''' <summary>
+    ''' OUTER margin: the gap between the cell edges and the button face (logical px). Together
+    ''' with <see cref="ButtonAlign"/> and <see cref="ButtonSize"/> it places the button inside
+    ''' the cell. Default 4, 3, 4, 3.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Outer margin between the cell edges and the button (logical px). Default 4, 3, 4, 3.")>
+    Public Property ButtonMargin As Padding
+        Get
+            Return _buttonMargin
+        End Get
+        Set(value As Padding)
+            Dim k_new As New Padding(Math.Max(0, value.Left), Math.Max(0, value.Top),
+                                     Math.Max(0, value.Right), Math.Max(0, value.Bottom))
+            If _buttonMargin = k_new Then Return
+            _buttonMargin = k_new
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonMargin() As Boolean
+        Return _buttonMargin <> DefaultButtonMargin
+    End Function
+
+    Private Sub ResetButtonMargin()
+        ButtonMargin = DefaultButtonMargin
+    End Sub
+
+    ''' <summary>
+    ''' Where the button sits inside the cell (inside the area left by <see cref="ButtonMargin"/>).
+    ''' It only shows when the button is smaller than that area, i.e. when
+    ''' <see cref="ButtonSize"/> is set. Default MiddleCenter.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Where the button sits inside the cell. Only visible when ButtonSize makes the button smaller than the cell.")>
+    <DefaultValue(ContentAlignment.MiddleCenter)>
+    Public Property ButtonAlign As ContentAlignment
+        Get
+            Return _buttonAlign
+        End Get
+        Set(value As ContentAlignment)
+            If Not [Enum].IsDefined(GetType(ContentAlignment), value) Then
+                Throw New ArgumentException($"Unknown button alignment: {value}.", NameOf(value))
+            End If
+            If _buttonAlign = value Then Return
+            _buttonAlign = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Size of the button face (logical px). A dimension left at 0 fills the cell on that axis
+    ''' (minus <see cref="ButtonMargin"/>), so the default 0, 0 is the full-cell button of old.
+    ''' A size larger than the cell is cut to the cell.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Size of the button (logical px). 0 on an axis = fill the cell on that axis. Default 0, 0.")>
+    Public Property ButtonSize As Size
+        Get
+            Return _buttonSize
+        End Get
+        Set(value As Size)
+            Dim k_new As New Size(Math.Max(0, value.Width), Math.Max(0, value.Height))
+            If _buttonSize = k_new Then Return
+            _buttonSize = k_new
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonSize() As Boolean
+        Return _buttonSize <> Size.Empty
+    End Function
+
+    Private Sub ResetButtonSize()
+        ButtonSize = Size.Empty
+    End Sub
+
+    ''' <summary>
+    ''' Font of the button caption. <c>Nothing</c> (default) = the column's cell font, then the
+    ''' grid font. Like <see cref="ColumnFont"/> it feeds painting AND measuring through
+    ''' <c>KBotDataView.CellFontFor</c>, so the column is never measured with one font and drawn
+    ''' with another.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Font of the button caption. Not set = the column's cell font, then the grid font.")>
+    Public Property ButtonFont As Font
+        Get
+            Return _buttonFont
+        End Get
+        Set(value As Font)
+            If _buttonFont Is value Then Return
+            _buttonFont = value
+            Owner?.OnColumnHeaderChanged()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonFont() As Boolean
+        Return _buttonFont IsNot Nothing
+    End Function
+
+    Private Sub ResetButtonFont()
+        ButtonFont = Nothing
+    End Sub
+
     ''' <summary>
     ''' Format .NET aplicat valorii la afișare (ex. „N2”, „dd.MM.yyyy”). Vid => ToString().
     ''' Portița pentru un format oarecare; pentru lista obișnuită vezi <see cref="Format"/>.

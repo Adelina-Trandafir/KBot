@@ -124,11 +124,13 @@ Partial Class RobotQueueForm
         KBotDataColumn1.MinWidth = 100
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
-        KBotDataColumn1.Width = 360
+        KBotDataColumn1.Width = 291
         KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.ButtonImage = My.Resources.Resources.minus_red
+        KBotDataColumn2.ButtonMargin = New Padding(0)
         KBotDataColumn2.ColumnType = KBot.Controls.KBotColumnType.Button
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderText = "X"
+        KBotDataColumn2.HeaderText = ""
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Key = "scoate"
         KBotDataColumn2.OptionGroup = Nothing
@@ -160,11 +162,14 @@ Partial Class RobotQueueForm
         ' 
         ' gridDescarcari
         ' 
+        gridDescarcari.AlternatingRows = False
         gridDescarcari.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
         gridDescarcari.BackColor = SystemColors.Window
+        gridDescarcari.BorderWidth = 0
         gridDescarcari.CellTooltip.Enabled = False
         gridDescarcari.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
         KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.CellBorders = KBot.Controls.KBotBorderSides.None
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Angajament"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleLeft
@@ -172,8 +177,9 @@ Partial Class RobotQueueForm
         KBotDataColumn3.MinWidth = 100
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.Width = 140
+        KBotDataColumn3.Width = 113
         KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.CellBorders = KBot.Controls.KBotBorderSides.None
         KBotDataColumn4.ColumnType = KBot.Controls.KBotColumnType.ProgressBar
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Progres"
@@ -182,11 +188,14 @@ Partial Class RobotQueueForm
         KBotDataColumn4.MinWidth = 100
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.Width = 220
+        KBotDataColumn4.Width = 178
         KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.ButtonImage = My.Resources.Resources.minus_red
+        KBotDataColumn5.ButtonMargin = New Padding(0)
+        KBotDataColumn5.CellBorders = KBot.Controls.KBotBorderSides.All
         KBotDataColumn5.ColumnType = KBot.Controls.KBotColumnType.Button
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderText = "X"
+        KBotDataColumn5.HeaderText = ""
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn5.Key = "opreste"
         KBotDataColumn5.OptionGroup = Nothing

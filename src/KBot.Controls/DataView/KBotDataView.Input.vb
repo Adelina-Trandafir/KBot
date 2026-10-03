@@ -648,7 +648,11 @@ Partial Class KBotDataView
             If col Is Nothing Then Return
 
             ' Comutare/acționare (respectă dezactivarea), apoi evenimentul de click.
-            ActivateCell(col.Key, rowIndex)
+            ' Slice 0085-02: a button acts only when the click lands on its face (it can be
+            ' smaller than the cell now); the keyboard (Space) still acts on the current cell.
+            If col.ColumnType <> KBotColumnType.Button OrElse IsOnCellButton(col, rowIndex, e.Location) Then
+                ActivateCell(col.Key, rowIndex)
+            End If
             RaiseEvent CellClick(Me, New KBotCellEventArgs(col.Key, rowIndex))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseUp", ex)

@@ -397,13 +397,35 @@ Partial Class KBotDataView
         Dim previousClip As Region = g.Clip
         g.SetClip(scrollClip, CombineMode.Intersect)
         Dim hOffset As Integer = HScrollOffset()
+        ' Slice 0085-03: the line under the row is still ONE line across the row; a cell whose
+        ' bottom side is not the plain grid line (no bottom, or another colour) reports its span in
+        ' _rowGaps while it is drawn, and the line is drawn around those spans (DrawRowBottomLine).
+        ' Remember where the last cell ends: the stretch to its right keeps the line.
+        _rowGaps.Clear()
+        Dim lastRight As Integer = 0
+        Dim lastCol As KBotDataColumn = Nothing
         For Each cl In _scrollLayout
-            DrawCell(g, cl.Column, row, rowIndex,
-                     New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.WidthPx, _rowHeight),
-                     backColor, foreColor, rowEnabled)
+            Dim cellBox As New Rectangle(_frozenBandWidth + cl.X - hOffset, y, cl.Column.WidthPx, _rowHeight)
+            DrawCell(g, cl.Column, row, rowIndex, cellBox, backColor, foreColor, rowEnabled)
+            If cellBox.Right >= lastRight Then
+                lastRight = cellBox.Right
+                lastCol = cl.Column
+            End If
         Next
         g.Clip = previousClip
         previousClip.Dispose()
+
+        ' A scrolled cell's span must not cut the line under the frozen band it slides beneath.
+        For k_i As Integer = _rowGaps.Count - 1 To 0 Step -1
+            Dim k_gap As Point = _rowGaps(k_i)
+            If k_gap.X < _frozenBandWidth Then
+                If k_gap.Y <= _frozenBandWidth Then
+                    _rowGaps.RemoveAt(k_i)
+                Else
+                    _rowGaps(k_i) = New Point(_frozenBandWidth, k_gap.Y)
+                End If
+            End If
+        Next
 
         ' English: repaint the frozen band opaquely before its cells, so an H-scrolled scroll
         ' cell can never bleed under the static column — the frozen column is always on top,
@@ -421,13 +443,20 @@ Partial Class KBotDataView
         End If
 
         For Each cl In _frozenLayout
-            DrawCell(g, cl.Column, row, rowIndex,
-                     New Rectangle(cl.X, y, cl.Column.WidthPx, _rowHeight),
-                     backColor, foreColor, rowEnabled)
+            Dim cellBox As New Rectangle(cl.X, y, cl.Column.WidthPx, _rowHeight)
+            DrawCell(g, cl.Column, row, rowIndex, cellBox, backColor, foreColor, rowEnabled)
+            If cellBox.Right >= lastRight Then
+                lastRight = cellBox.Right
+                lastCol = cl.Column
+            End If
         Next
 
-        ' Linia orizontală de grilă, sub rând.
-        g.DrawLine(_pGridLine, 0, y + _rowHeight - 1, viewW, y + _rowHeight - 1)
+        ' The grid line below the row: one line across, around the cells that draw their own
+        ' bottom side. Past the last cell it follows the last column's choice (a column with no
+        ' bottom border leaves that stretch bare).
+        Dim lineEnd As Integer = viewW + 1
+        If lastCol IsNot Nothing AndAlso (lastCol.CellBorders And KBotBorderSides.Bottom) = 0 Then lineEnd = lastRight
+        DrawRowBottomLine(g, y + _rowHeight - 1, lineEnd)
     End Sub
 
     ' ── Celule ──────────────────────────────────────────────────────────────────
@@ -439,7 +468,7 @@ Partial Class KBotDataView
         Dim value As Object = row(col.Key)
 
         ' CellFormatting — argumente REFOLOSITE, pre-umplute cu valorile implicite din temă.
-        _cellArgs.Reset(col, row, rowIndex, value, FormatValue(value, col),
+        _cellArgs.Reset(col, row, rowIndex, value, DefaultCellText(value, col),
                         rowBack, rowFore, CellFontFor(col), col.TextAlign,
                         col.Enabled AndAlso rowEnabled)
         RaiseEvent CellFormatting(Me, _cellArgs)
@@ -479,10 +508,11 @@ Partial Class KBotDataView
             Case KBotColumnType.OptionButton
                 DrawOptionCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.Button
-                ' Butonul nu ține valoare: eticheta e textul celulei, iar dacă lipsește,
-                ' antetul coloanei (ex. o coloană «Detalii» cu același buton pe fiecare rând).
-                Dim caption As String = If(String.IsNullOrEmpty(_cellArgs.Text), col.HeaderText, _cellArgs.Text)
-                DrawButtonCell(g, cellRect, caption, _cellArgs.Font, enabled)
+                ' A button holds no value: its caption is the cell text (the column's ButtonText
+                ' unless a handler replaced it), then the column header, e.g. a "Detalii" column
+                ' with the same button on every row -- but not when a picture is set. Slice 0085-02:
+                ' placement, face colour, padding, picture and font come from the column.
+                DrawButtonCell(g, col, cellRect, ButtonCaptionFor(col, _cellArgs.Text), _cellArgs.Font, enabled)
             Case KBotColumnType.ProgressBar
                 DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
             Case KBotColumnType.Combo
@@ -500,8 +530,9 @@ Partial Class KBotDataView
                 End If
         End Select
 
-        ' Separatorul vertical de grilă, la marginea dreaptă a celulei.
-        g.DrawLine(_pGridLine, cellRect.Right - 1, cellRect.Top, cellRect.Right - 1, cellRect.Bottom - 1)
+        ' Slice 0085-03: the cell's borders (default right + bottom in the grid-line colour = the
+        ' grid lines of old), after the content so they sit on top of it.
+        DrawCellBorders(g, cellRect, _cellArgs.Borders, _cellArgs.BorderColor)
     End Sub
 
     ''' <summary>
@@ -589,31 +620,8 @@ Partial Class KBotDataView
         g.SmoothingMode = oldSmooth
     End Sub
 
-    ' Buton de acțiune: față rotunjită + chenar + etichetă centrată. Stările hover/pressed
-    ' vin în 0010-05, odată cu urmărirea mouse-ului.
-    Private Sub DrawButtonCell(g As Graphics, cellRect As Rectangle, caption As String, font As Font,
-                               enabled As Boolean)
-        Dim marginX As Integer = ScaleDpi(4)
-        Dim marginY As Integer = ScaleDpi(3)
-        Dim face As New Rectangle(cellRect.Left + marginX, cellRect.Top + marginY,
-                                  Math.Max(0, cellRect.Width - 2 * marginX),
-                                  Math.Max(0, cellRect.Height - 2 * marginY))
-        If face.Width <= 0 OrElse face.Height <= 0 Then Return
-
-        Dim oldSmooth As SmoothingMode = g.SmoothingMode
-        g.SmoothingMode = SmoothingMode.AntiAlias
-
-        Using path As GraphicsPath = RoundedRect(face, ScaleDpi(3))
-            g.FillPath(_bButtonFace, path)
-            g.DrawPath(If(enabled, _pButtonBorder, _pDisabledMark), path)
-        End Using
-
-        g.SmoothingMode = oldSmooth
-
-        TextRenderer.DrawText(g, caption, font, face, If(enabled, _cButtonText, _cDisabledText),
-            TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or
-            TextFormatFlags.EndEllipsis)
-    End Sub
+    ' The action button (rounded face + border + picture + caption) is drawn by
+    ' KBotDataView.CellButton.vb (slice 0085-02). Hover / pressed states come with 0010-05.
 
     ' Bară de progres: șină + umplere proporțională. fraction e deja limitat la 0..1.
     Private Sub DrawProgressCell(g As Graphics, cellRect As Rectangle, fraction As Double,

@@ -51,7 +51,7 @@ Public Class PushSettings
     ' scanned/pushed - the source is Python plus its related config/asset files, never
     ' build output or binaries. Editable in the config file.
     Public Property IncludeExtensions As List(Of String) = New List(Of String) From {
-        "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md"
+        "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md", "png", "svg", "jpg", "webp", "ico"
     }
 End Class
 

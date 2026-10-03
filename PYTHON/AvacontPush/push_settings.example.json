@@ -9,5 +9,5 @@
   "RemotePython": "/root/AVACONT/.venv/bin/python",
   "HostKeyFingerprint": "",
   "IgnorePatterns": [ ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj" ],
-  "IncludeExtensions": [ "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md" ]
+  "IncludeExtensions": [ "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md", "png", "svg", "jpg", "webp", "ico" ]
 }

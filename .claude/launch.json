@@ -27,6 +27,15 @@
         "8767"
       ],
       "port": 8767
+    },
+    {
+      "name": "landing-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/2a50f220-9b1a-4d52-bc55-d5abb3497f7b/scratchpad/landing_stub.py",
+        "8770"
+      ],
+      "port": 8770
     }
   ]
 }

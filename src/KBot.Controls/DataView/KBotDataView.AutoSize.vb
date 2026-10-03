@@ -515,8 +515,9 @@ Partial Class KBotDataView
                 need = Math.Max(need, MeasureSampledCells(col) + cellPadX + ScaleDpi(ComboChevronZone))
 
             Case KBotColumnType.Button
-                ' Butonul își desenează propriile margini, nu retragerea coloanei.
-                need = Math.Max(need, MeasureSampledCells(col) + 2 * ScaleDpi(4))
+                ' The button draws its own margin and padding, not the column's CellPadding
+                ' (slice 0085-02: caption + picture + button padding + button margin).
+                need = Math.Max(need, ButtonColumnNeed(col))
 
             Case Else
                 ' Text: widest formatted cell plus the column's own padding.
@@ -543,11 +544,10 @@ Partial Class KBotDataView
         Dim maxW As Integer = 0
         For i As Integer = 0 To limit - 1
             Dim row As KBotDataRow = ViewRowAt(i)
-            Dim text As String = FormatValue(row(col.Key), col)
-            ' A Button paints its caption, falling back to the header when the cell is empty.
-            If col.ColumnType = KBotColumnType.Button AndAlso String.IsNullOrEmpty(text) Then
-                text = col.HeaderText
-            End If
+            Dim text As String = DefaultCellText(row(col.Key), col)
+            ' A Button paints its caption, falling back to the header when the cell is empty
+            ' (and no picture is set).
+            If col.ColumnType = KBotColumnType.Button Then text = ButtonCaptionFor(col, text)
             Dim w As Integer = MeasureText(text, cf)
             If w > maxW Then maxW = w
         Next

@@ -49,10 +49,25 @@ Public NotInheritable Class KBotCellFormattingEventArgs
     ''' </summary>
     Public Property Enabled As Boolean
 
+    ''' <summary>
+    ''' Culoarea bordurilor acestei celule (slice 0085-03). Implicit: cea a coloanei
+    ''' (<see cref="KBotDataColumn.CellBorderColor"/>); <c>Color.Empty</c> = culoarea liniilor de
+    ''' grila din tema.
+    ''' </summary>
+    Public Property BorderColor As Color
+
+    ''' <summary>
+    ''' Laturile acestei celule care au bordura (slice 0085-03). Implicit: cele ale coloanei
+    ''' (<see cref="KBotDataColumn.CellBorders"/>).
+    ''' </summary>
+    Public Property Borders As KBotBorderSides
+
     ''' <summary>Re-inițializează instanța refolosită înaintea unei noi ridicări.</summary>
     Friend Sub Reset(column As KBotDataColumn, row As KBotDataRow, rowIndex As Integer,
                      value As Object, text As String, back As Color, fore As Color,
                      font As Font, alignment As ContentAlignment, enabled As Boolean)
+        Me.BorderColor = column.CellBorderColor
+        Me.Borders = column.CellBorders
         Me.Column = column
         Me.ColumnKey = column.Key
         Me.Row = row
