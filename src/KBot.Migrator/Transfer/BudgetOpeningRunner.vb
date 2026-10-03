@@ -8,13 +8,14 @@ Imports MySqlConnector
 ''' </summary>
 ''' <remarks>
 ''' <para>
-''' Until the new year's budget is adopted only a twelfth of last year's budget may be spent a
-''' month. For every selected unit this reads the PREVIOUS year's unit file
+''' The operators call this the «Buget 1/12» (until the new year's budget is adopted only a twelfth
+''' of last year's may be spent a month), but the VALUE written is NOT divided: since slice 0108
+''' (operator, 03.10.2026) FOREXE does not use the 1/12 figure and the budget of a day is the TOTAL
+''' of the version in force. For every selected unit this reads the PREVIOUS year's unit file
 ''' (<c>baza2025.accdb</c>, the registry's <c>baza2026.accdb</c> with the year stepped back),
 ''' sums <c>Clasificatii.Trim1..4</c> and <c>Rectificari.Trim1..4</c> per classification, and
 ''' writes one <c>Clasificatii_Buget</c> version starting on 01.01 of the transfer year with
-''' <c>Trim1 = CEILING(sum / 12)</c> and <c>Trim2..4 = 0</c> (operator, 02.10.2026: the
-''' budget is read cumulatively to the quarter of the day, so for January only Trim1 counts).
+''' <c>Trim1 = the whole sum</c> and <c>Trim2..4 = 0</c>.
 ''' </para>
 ''' <para>
 ''' <b>Mapping.</b> The sums are made INSIDE the previous file (Rectificari joins Clasificatii on
@@ -23,9 +24,11 @@ Imports MySqlConnector
 ''' (operator, 02.10.2026); no row, or more than one row, is reported as unmatched, never guessed.
 ''' </para>
 ''' <para>
-''' Two phases: <see cref="Plan"/> only reads; <see cref="Write"/> inserts the plan in one
-''' transaction. A version already present for (classification, year, 01.01) is left as it is -
-''' the operator may have corrected it - and counted.
+''' Two phases: <see cref="Plan"/> only reads; <see cref="Write"/> writes the plan in one
+''' transaction. A version already present for (classification, year, 01.01) is REPLACED with the
+''' new values (operator, 03.10.2026: the earlier 1/12 rows are overwritten, not kept) and counted
+''' in <see cref="BudgetOpeningPlan.Replaced"/>. A 01.01 version somebody typed by hand is
+''' replaced too: the run says how many, and the operator confirms before anything is written.
 ''' </para>
 ''' </remarks>
 Public NotInheritable Class BudgetOpeningRunner
@@ -81,7 +84,7 @@ Public NotInheritable Class BudgetOpeningRunner
         End Try
     End Function
 
-    ''' <summary>Inserts the planned rows in ONE transaction. Returns the rows written.</summary>
+    ''' <summary>Writes (inserts or replaces) the planned rows in ONE transaction. Returns the rows written.</summary>
     Public Function Write(plan As BudgetOpeningPlan) As Integer
         If plan Is Nothing Then Throw New ArgumentNullException(NameOf(plan))
         Dim written = 0
@@ -94,13 +97,16 @@ Public NotInheritable Class BudgetOpeningRunner
                                 cmd.Transaction = tx
                                 cmd.CommandText =
                                     "INSERT INTO `Clasificatii_Buget` (IdClsf, IdUnitate, Trim1, Trim2, Trim3, Trim4, An, DataInceput) " &
-                                    "VALUES (@c, @u, @t1, 0, 0, 0, @an, @d)"
+                                    "VALUES (@c, @u, @t1, 0, 0, 0, @an, @d) " &
+                                    "ON DUPLICATE KEY UPDATE Trim1 = VALUES(Trim1), Trim2 = 0, Trim3 = 0, Trim4 = 0"
                                 cmd.Parameters.AddWithValue("@c", row.IdClsf)
                                 cmd.Parameters.AddWithValue("@u", row.IdUnitate)
                                 cmd.Parameters.AddWithValue("@t1", row.Trim1)
                                 cmd.Parameters.AddWithValue("@an", TableMaps.TransferYear)
                                 cmd.Parameters.AddWithValue("@d", StartDate)
-                                written += cmd.ExecuteNonQuery()
+                                cmd.ExecuteNonQuery()
+                                ' MySQL reports 2 for a replaced row and 0 for an unchanged one: count the plan's rows.
+                                written += 1
                             End Using
                         Next
                         tx.Commit()
@@ -149,12 +155,10 @@ Public NotInheritable Class BudgetOpeningRunner
                                      If(matches Is Nothing, "nu există în MariaDB (IdClsfAcc).", "mai multe rânduri cu același IdClsfAcc."))
                 Continue For
             End If
-            If existing.Contains(chosen.IdClsf) Then
-                result.AlreadyThere += 1
-                Continue For
-            End If
+            ' An existing 01.01 version is replaced (slice 0108): counted, and still planned.
+            If existing.Contains(chosen.IdClsf) Then result.Replaced += 1
             result.Rows.Add(New BudgetOpeningRow(chosen.IdClsf, unit.IdUnitate, acc.Code,
-                                                 sum, Math.Ceiling(sum / 12.0R)))
+                                                 sum, Math.Round(sum, 2, MidpointRounding.AwayFromZero)))
         Next
     End Sub
 
@@ -288,6 +292,6 @@ Public NotInheritable Class BudgetOpeningPlan
     Public ReadOnly Property Unmatched As New List(Of String)()
     ''' <summary>Units skipped (missing file ...), one sentence each.</summary>
     Public ReadOnly Property Notes As New List(Of String)()
-    ''' <summary>Classifications that already have the 01.01 version, left untouched.</summary>
-    Public Property AlreadyThere As Integer
+    ''' <summary>Planned rows whose classification already has a 01.01 version: written over (slice 0108).</summary>
+    Public Property Replaced As Integer
 End Class

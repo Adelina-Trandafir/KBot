@@ -1013,18 +1013,18 @@ Public Class MigratorForm
                 For Each line In plan.Unmatched
                     Say("   Fără corespondent: " & line)
                 Next
-                Say($"   De scris: {plan.Rows.Count} rânduri; deja existente (neatinse): {plan.AlreadyThere}; fără corespondent: {plan.Unmatched.Count}.")
+                Say($"   De scris: {plan.Rows.Count} rânduri, din care existente (se înlocuiesc): {plan.Replaced}; fără corespondent: {plan.Unmatched.Count}.")
 
                 If plan.Rows.Count = 0 Then
                     Warn("Nu există nimic de scris." & Environment.NewLine & Environment.NewLine &
-                         $"Deja existente: {plan.AlreadyThere}. Fără corespondent: {plan.Unmatched.Count}. Note: {plan.Notes.Count}.")
+                         $"Fără corespondent: {plan.Unmatched.Count}. Note: {plan.Notes.Count}.")
                     Return
                 End If
 
                 Dim answer = KBotMessage.Show(
                     $"Se scriu {plan.Rows.Count} versiuni de buget cu data {BudgetOpeningRunner.StartDate:dd.MM.yyyy} " &
-                    $"în baza «{dc}» (Trim1 = 1/12 din totalul anului anterior, rotunjit în sus)." & Environment.NewLine &
-                    $"Deja existente, neatinse: {plan.AlreadyThere}. Fără corespondent: {plan.Unmatched.Count}. " &
+                    $"în baza «{dc}» (Trim1 = totalul anului anterior, Trim2..4 = 0)." & Environment.NewLine &
+                    $"Dintre ele, deja existente cu data aceasta și înlocuite: {plan.Replaced}. Fără corespondent: {plan.Unmatched.Count}. " &
                     $"Unități sărite: {plan.Notes.Count}." & Environment.NewLine & Environment.NewLine &
                     "Detaliile sunt în jurnal. Continuați?",
                     "Buget 1/12", MessageBoxButtons.YesNo, MessageBoxIcon.Question)

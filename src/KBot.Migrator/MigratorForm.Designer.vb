@@ -762,7 +762,7 @@ Partial Class MigratorForm
         btnBugetDeschidere.TabIndex = 4
         btnBugetDeschidere.Text = "Buget 1/12"
         tipMigrator.SetToolTipHeader(btnBugetDeschidere, "Buget de deschidere")
-        tipMigrator.SetToolTipText(btnBugetDeschidere, "Citește Clasificatii + Rectificari din fișierul anului anterior al unităților bifate" & vbLf & "și scrie în Clasificatii_Buget o versiune cu data 01.01, Trim1 = 1/12 din total (rotunjit în sus).")
+        tipMigrator.SetToolTipText(btnBugetDeschidere, "Citește Clasificatii + Rectificari din fișierul anului anterior al unităților bifate" & vbLf & "și scrie în Clasificatii_Buget o versiune cu data 01.01, Trim1 = totalul (o versiune 01.01 existentă se înlocuiește).")
         btnBugetDeschidere.UseVisualStyleBackColor = True
         ' 
         ' tlpGrile

@@ -243,8 +243,12 @@ Public NotInheritable Class TableMaps
         ' verifier's dry run names every row that does not resolve, before anything is
         ' written; the writer stops the run on one too.
         ' Slice 0084-01: the MariaDB column was renamed; Access keeps the old name.
+        ' Slice 0108: FX_Indicatori no longer has Credit_Bugetar (FOREXE's credit lives per
+        ' classification in FX_Indicatori_Buget) and `Credit_Bugetar_Initial` is read once from
+        ' FOREXE's «Informatii complete contract» page, so the Access «Prevedere_Bugetara_Initiala»
+        ' is NOT carried over.
         maps.Add(NameMatched("FX_Indicatori").WithClsfPair().
-            Rename("Prevedere_Bugetara_Initiala", "Credit_Bugetar"))
+            Exclude("Prevedere_Bugetara_Initiala"))
 
         ' --- FX_DDF ----------------------------------------------------------------
         ' MAPARE_ACCESS_MARIADB.md §3. PK is IDDF alone as of 24.08 - the operator
