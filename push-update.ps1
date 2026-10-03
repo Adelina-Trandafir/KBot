@@ -22,8 +22,8 @@
   and hands the zip to KBot.Updater.exe.
 
   Run it when YOU decide an update is viable, AFTER bumping <FileVersion> in
-  src\KBot.App\KBot.App.vbproj by hand. The script refuses to push a version that
-  is not newer than the one already on the server (override with -Force).
+  src\KBot.App\KBot.App.vbproj by hand. If the server already has this version or a
+  newer one, the script asks whether to overwrite it (-Force answers Yes).
 
   Transport: Windows OpenSSH sftp.exe in batch mode, one session, ONE password
   prompt (typed at the OpenSSH prompt, never stored). Host / Port / User /
@@ -51,7 +51,7 @@
                       assistant's (one change per line). It is also stored as the
                       version's section in NOUTATI.md when that has none.
     -SkipBuild        do not build; push the newest artifacts\KBot_Release_*.zip.
-    -Force            push even if the server already has this version or newer.
+    -Force            push without asking even if the server already has this version or newer.
     -SignThumbprint   forwarded to publish-release.ps1.
     -Bump             forwarded to publish-release.ps1: Ask (default, one console
                       question), None, Major, Minor, Build, Revision.
@@ -103,6 +103,13 @@ function Read-AudienceChoice {
         if ($key -in @('N', 'NONACCESS')) { return 'NonAccess' }
         Write-Host "  Type A (access) or N (non-access); Enter = A." -ForegroundColor Yellow
     }
+}
+
+function Read-YesNo {
+    param([string]$Question)
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) { return $false }
+    $answer = Read-Host "$Question (y/N)"
+    return ($answer.Trim().ToUpperInvariant() -in @('Y', 'YES', 'DA'))
 }
 
 function Find-SolutionRoot {
@@ -288,7 +295,12 @@ if ($server) {
     $serverMinimum = [version]$server.minimum
     Write-Step "Server has ($KindName): version $serverVersion, minimum $serverMinimum"
     if ($localVersion -le $serverVersion -and -not $Force) {
-        throw "Server already has $serverVersion for the $KindName package; local package is $localVersion. Bump <FileVersion> in src\KBot.App\KBot.App.vbproj, or use -Force."
+        $what = if ($localVersion -eq $serverVersion) { "already has $serverVersion" } else { "has $serverVersion, NEWER than $localVersion" }
+        Write-Warning "[update] The server $what for the $KindName package."
+        if (-not (Read-YesNo "Overwrite it with $($localVersion)?")) {
+            Write-Host "[update] Nothing pushed. (Bump <FileVersion> in src\KBot.App\KBot.App.vbproj for a new version.)" -ForegroundColor Yellow
+            return
+        }
     }
 } else {
     Write-Step "Server has no published $KindName update yet (404)."

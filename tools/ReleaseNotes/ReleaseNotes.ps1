@@ -321,7 +321,7 @@ function New-RequestText {
     [void]$sb.AppendLine("<!-- release: utc=$(Format-UtcStamp ([DateTime]::UtcNow)) -->")
     [void]$sb.AppendLine("<!-- felii: the worklog ids you used, comma separated (0097-02, 0000-25) -->")
     [void]$sb.AppendLine()
-    [void]$sb.AppendLine("- one change per line, Romanian, plain words")
+    [void]$sb.AppendLine("- one change per line, Romanian, plain words, WITHOUT diacritics (a b c only: the Setup/update window shows them as '?')")
     [void]$sb.AppendLine()
     [void]$sb.AppendLine("4. Edit ONLY docs/release-notes/NOUTATI.md. Do not build, run, test or commit anything.")
     [void]$sb.AppendLine()

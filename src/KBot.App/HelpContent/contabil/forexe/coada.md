@@ -42,10 +42,9 @@ Dacă o închizi tu cât mai sunt sarcini, nu se mai redeschide singură până 
 - **Sus** scrie ce lucrează robotul acum («În lucru: …») și, dacă e cazul, ce așteaptă («Pauză după ea.»;
   sau că coada așteaptă după tine cât e deschisă fereastra Asocieri). Fără nicio sarcină: «Nicio sarcină în
   lucru.» sau «Coada e în pauză.».
-- **Lista** are sarcinile care așteaptă, în ordinea în care vor rula, cu ora la care au intrat.
+- **Lista** are sarcinile care așteaptă, în ordinea în care vor rula, cu ora la care au intrat. Fiecare rând are un **«X»** care scoate din coadă sarcina aceea; sarcina în lucru nu se poate scoate de aici.
 - **Pauză** — sarcina în lucru se termină, cele care urmează nu mai pornesc. Butonul devine **Continuă**:
   coada pornește din nou, în aceeași ordine.
-- **Scoate** — scoate din coadă sarcina aleasă în listă. Sarcina în lucru nu se poate scoate de aici.
 - **Golește coada** — scoate toate sarcinile care așteaptă, după ce confirmi. Sarcina în lucru se
   termină normal.
 - **Oprește curenta** — oprește robotul din sarcina în lucru, ca «Anulează» din [consolă](topic:contabil.forexe.consola).

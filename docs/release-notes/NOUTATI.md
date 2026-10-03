@@ -1,54 +1,54 @@
-# K-BOT — noutăți pe versiuni
+# K-BOT — noutati pe versiuni
 
-Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
+Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
-<!--Textul fiecărei versiuni este cel afișat utilizatorului în fereastra de actualizare, înainte de a apăsa «Da». -->
+<!--Textul fiecarei versiuni este cel afisat utilizatorului in fereastra de actualizare, inainte de a apasa «Da». -->
 
-<!-- Secțiunile sunt adăugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu ștergeți marcajele ascunse `<!\-\- release: ... \-\->` și `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmărite schimbările pentru versiunea următoare.-->
+<!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
 ## 1.1.1.7 (03.10.2026)
 
 <!-- release: utc=2026-10-03T12:24:10Z -->
 <!-- felii: 0107-02, 0107, 0000-44, 0000-46, 0000-47, 0100-03, 0000-48 -->
 
-- «Clasificații bugetare»: cele două tabele au coloane de aceeași lățime; cel de sus arată și clasificația.
-- Bugetul are o coloană «Total» pe fiecare rând; totalul rectificărilor apare doar la o clasificație aleasă.
-- Sub cele două tabele, un rând nou adună ultimul buget (cel cu data cea mai nouă) cu toate rectificările.
-- Bifa nouă «Arată DOAR clasificațiile folosite în FOREXE», în dreapta bifei «Arată toate clasificațiile».
-- «Verifică bugetul» verifică doar clasificațiile folosite în FOREXE, adică cele cu credit raportat de FOREXE.
-- În «Verificare buget FOREXE», dublu clic pe un rând închide fereastra și alege clasificația în arbore.
-- La descărcarea mai multor angajamente, «Coada robotului» arată un rând cu bară de progres pentru fiecare.
-- «X» de pe un rând oprește doar descărcarea acelui angajament; celelalte merg mai departe.
-- Cele care așteaptă un tab apar dedesubt, într-o listă, fiecare cu «X» care îl scoate din descărcare.
-- Dacă nicio descărcare nu a reușit, mesajul «urmează ingestia» nu mai rămâne în bara de stare.
+- «Clasificatii bugetare»: cele doua tabele au coloane de aceeasi latime; cel de sus arata si clasificatia.
+- Bugetul are o coloana «Total» pe fiecare rand; totalul rectificarilor apare doar la o clasificatie aleasa.
+- Sub cele doua tabele, un rand nou aduna ultimul buget (cel cu data cea mai noua) cu toate rectificarile.
+- Bifa noua «Arata DOAR clasificatiile folosite in FOREXE», in dreapta bifei «Arata toate clasificatiile».
+- «Verifica bugetul» verifica doar clasificatiile folosite in FOREXE, adica cele cu credit raportat de FOREXE.
+- In «Verificare buget FOREXE», dublu clic pe un rand inchide fereastra si alege clasificatia in arbore.
+- La descarcarea mai multor angajamente, «Coada robotului» arata un rand cu bara de progres pentru fiecare.
+- «X» de pe un rand opreste doar descarcarea acelui angajament; celelalte merg mai departe.
+- Cele care asteapta un tab apar dedesubt, intr-o lista, fiecare cu «X» care il scoate din descarcare.
+- Daca nicio descarcare nu a reusit, mesajul «urmeaza ingestia» nu mai ramane in bara de stare.
 
 ## 1.1.1.6 (03.10.2026)
 
 <!-- release: utc=2026-10-03T07:56:21Z -->
 <!-- felii: 0105, 0106, 0107, 0000-43 -->
 
-- «Clasificații bugetare»: un nod de deasupra alineatelor arată un sumar, doar pentru citire: clasificația, ultimul buget și totalul rectificărilor.
-- Arborele arată implicit doar clasificațiile cu mișcare în an (vreun trimestru de buget sau de rectificare diferit de zero).
-- Bifa nouă «Arată toate clasificațiile», de sub arbore, le arată pe toate cele configurate.
-- «Verifică bugetul» arată doar clasificațiile la care diferența față de FOREXE nu este zero.
-- La actualizarea informațiilor unui angajament nu mai apare «Capturile nu au putut fi trimise: Value cannot be null».
-- Clic dreapta în arborele DDF și ORD nu mai reîncarcă documentul PDF; documentul se schimbă doar la clic stânga.
-- În arborii DDF, ORD și Asocieri, clic dreapta nu mai alege un rând: dați întâi clic stânga, apoi clic dreapta pentru meniu.
-- Ajutor: actualizat pentru clasificațiile bugetare și pentru clicul dreapta în DDF, ORD și Asocieri.
+- «Clasificatii bugetare»: un nod de deasupra alineatelor arata un sumar, doar pentru citire: clasificatia, ultimul buget si totalul rectificarilor.
+- Arborele arata implicit doar clasificatiile cu miscare in an (vreun trimestru de buget sau de rectificare diferit de zero).
+- Bifa noua «Arata toate clasificatiile», de sub arbore, le arata pe toate cele configurate.
+- «Verifica bugetul» arata doar clasificatiile la care diferenta fata de FOREXE nu este zero.
+- La actualizarea informatiilor unui angajament nu mai apare «Capturile nu au putut fi trimise: Value cannot be null».
+- Clic dreapta in arborele DDF si ORD nu mai reincarca documentul PDF; documentul se schimba doar la clic stanga.
+- In arborii DDF, ORD si Asocieri, clic dreapta nu mai alege un rand: dati intai clic stanga, apoi clic dreapta pentru meniu.
+- Ajutor: actualizat pentru clasificatiile bugetare si pentru clicul dreapta in DDF, ORD si Asocieri.
 
 ## 1.1.1.5 (02.10.2026)
 
 <!-- release: utc=2026-10-02T07:24:34Z -->
 <!-- felii: 0101-02, 0102, 0000-40, SLICELESS-lista-sursa-asociere-denumire-wicket, 0000-39 -->
 
-- În fereastra «Actualizează angajamente», angajamentele apar în aceeași ordine ca în arborele principal.
-- «Clasificații bugetare»: bugetul se ține pe versiuni, fiecare cu data de «Început»; nu mai există total pe an.
-- Documentul de fundamentare arată bugetul clasificației de la data reviziei, cu rectificările până atunci, nu pe cel de azi.
-- Dacă la data reviziei clasificația nu are buget, se folosește creditul bugetar de azi și un mesaj o spune.
-- Fereastra de asociere a recepțiilor arată în titlu și denumirea angajamentului.
-- Cu arborele sortat după dată, «Lista de angajamente» aduce toate sursele unității, nu doar sursa aleasă.
-- După o descărcare pe mai multe taburi, citirea următoare a listelor nu se mai oprește la așteptarea paginilor.
-- Ajutor: actualizat pentru clasificațiile bugetare, editorul DDF, lista de angajamente și asocieri.
+- In fereastra «Actualizeaza angajamente», angajamentele apar in aceeasi ordine ca in arborele principal.
+- «Clasificatii bugetare»: bugetul se tine pe versiuni, fiecare cu data de «Inceput»; nu mai exista total pe an.
+- Documentul de fundamentare arata bugetul clasificatiei de la data reviziei, cu rectificarile pana atunci, nu pe cel de azi.
+- Daca la data reviziei clasificatia nu are buget, se foloseste creditul bugetar de azi si un mesaj o spune.
+- Fereastra de asociere a receptiilor arata in titlu si denumirea angajamentului.
+- Cu arborele sortat dupa data, «Lista de angajamente» aduce toate sursele unitatii, nu doar sursa aleasa.
+- Dupa o descarcare pe mai multe taburi, citirea urmatoare a listelor nu se mai opreste la asteptarea paginilor.
+- Ajutor: actualizat pentru clasificatiile bugetare, editorul DDF, lista de angajamente si asocieri.
 
 ## 1.1.1.4 (02.10.2026)
 
@@ -56,11 +56,11 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 
 <!-- felii: 0101, 0101-01, 0000-37, 0000-38 -->
 
-- În arborele principal, angajamentele ale căror recepții nu se închid (ultimul instantaneu nu are valoarea recepției) apar cu roșu; indicația arată care recepții și ce valori.
-- În fereastra de asociere a recepțiilor, recepția și ultimul ei instantaneu se scriu cu roșu când valorile nu coincid.
-- În Plăți, «+» de la o lună generează ordonanțările după confirmare, fără mesajul de succes de la final.
-- În vederile Ordonanțare și Fundamentare, bara cu pagini rămâne și pe o lună sau pe «Toate…»: «Vizualizare» arată valorile, iar pagina «Documente» arată lista fișierelor, de generat și de tipărit.
-- Ajutor: actualizări în paginile despre fereastra principală, asocierea recepțiilor, ordonanțări și fundamentare.
+- In arborele principal, angajamentele ale caror receptii nu se inchid (ultimul instantaneu nu are valoarea receptiei) apar cu rosu; indicatia arata care receptii si ce valori.
+- In fereastra de asociere a receptiilor, receptia si ultimul ei instantaneu se scriu cu rosu cand valorile nu coincid.
+- In Plati, «+» de la o luna genereaza ordonantarile dupa confirmare, fara mesajul de succes de la final.
+- In vederile Ordonantare si Fundamentare, bara cu pagini ramane si pe o luna sau pe «Toate…»: «Vizualizare» arata valorile, iar pagina «Documente» arata lista fisierelor, de generat si de tiparit.
+- Ajutor: actualizari in paginile despre fereastra principala, asocierea receptiilor, ordonantari si fundamentare.
 
 ## 1.1.1.3 (02.10.2026)
 
@@ -68,12 +68,12 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 <!-- felii: 0100, 0100-02, 0000-34, 0000-36 -->
 <!-- git: 4aae6bd -->
 
-- Descărcări multiple: mai multe angajamente pot fi actualizate simultan.
-- Din meniul arborelui, «Actualizează angajamente...» deschide o fereastră în care bifați angajamentele; se pot bifa și cele neactualizate de un anumit număr de zile.
-- La conectarea la FOREXE, K-BOT poate actualiza singur angajamentele vechi, iar după o reîmprospătare a listei vă întreabă: «Dorești actualizarea angajamentelor noi?».
-- Indicația de la un angajament arată acum și data ultimei actualizări («Actualizat: ...»).
-- Setări › «Descărcări multiple» este o pagină separată, afișată doar dacă unitatea permite această funcție; numărul de angajamente descărcate simultan este limitat de unitate.
-- Ajutor: pagină nouă, «Mai multe descărcări deodată», și actualizări în paginile despre Setări și despre coadă.
+- Descarcari multiple: mai multe angajamente pot fi actualizate simultan.
+- Din meniul arborelui, «Actualizeaza angajamente...» deschide o fereastra in care bifati angajamentele; se pot bifa si cele neactualizate de un anumit numar de zile.
+- La conectarea la FOREXE, K-BOT poate actualiza singur angajamentele vechi, iar dupa o reimprospatare a listei va intreaba: «Doresti actualizarea angajamentelor noi?».
+- Indicatia de la un angajament arata acum si data ultimei actualizari («Actualizat: ...»).
+- Setari › «Descarcari multiple» este o pagina separata, afisata doar daca unitatea permite aceasta functie; numarul de angajamente descarcate simultan este limitat de unitate.
+- Ajutor: pagina noua, «Mai multe descarcari deodata», si actualizari in paginile despre Setari si despre coada.
 
 ## 1.1.1.2 (01.10.2026)
 
@@ -81,12 +81,12 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 <!-- felii: 0777-02, 0097-03, 0078-09, 0078-10, 0099, 0000-30, 0000-31, 0000-32, 0000-33, 0072-03, 0089-01, 0000-35 -->
 <!-- git: 714b886 -->
 
-- În arborele principal sunt evidențiate elementele descărcate în sesiunea curentă. Dacă faceți mai multe actualizări la rând, fereastra de recepții nu mai este afișată de fiecare dată.
-- Anul și «Sursă/Sector» apar acum în bara de titlu, lângă unitate, în loc să fie afișate dedesubt.
-- Adobe: la închidere, întrebarea «Salvați modificările?» primește automat răspunsul «Nu». Opțiunea «Adobe pornește în interfața clasică» a revenit în Setări › Documente.
-- Ajutor: tururile pot afișa și elementele ascunse și explică în ce situații apar. Au fost adăugate un tur și o pagină pentru coada robotului, iar fereastra de ajutor poate fi derulată continuu și permite imprimarea sau exportarea pe secțiuni.
-- Pagina «FOREXE» din Setări nu mai dă eroare la deschidere.
-- În Setări › Jurnal, jurnalele de server și lista cu tipul jurnalului apar doar cu «Opțiuni avansate» activate; fără ele rămân doar jurnalele de pe acest calculator.
+- In arborele principal sunt evidentiate elementele descarcate in sesiunea curenta. Daca faceti mai multe actualizari la rand, fereastra de receptii nu mai este afisata de fiecare data.
+- Anul si «Sursa/Sector» apar acum in bara de titlu, langa unitate, in loc sa fie afisate dedesubt.
+- Adobe: la inchidere, intrebarea «Salvati modificarile?» primeste automat raspunsul «Nu». Optiunea «Adobe porneste in interfata clasica» a revenit in Setari › Documente.
+- Ajutor: tururile pot afisa si elementele ascunse si explica in ce situatii apar. Au fost adaugate un tur si o pagina pentru coada robotului, iar fereastra de ajutor poate fi derulata continuu si permite imprimarea sau exportarea pe sectiuni.
+- Pagina «FOREXE» din Setari nu mai da eroare la deschidere.
+- In Setari › Jurnal, jurnalele de server si lista cu tipul jurnalului apar doar cu «Optiuni avansate» activate; fara ele raman doar jurnalele de pe acest calculator.
 
 ## 1.1.1.1 (01.10.2026)
 
@@ -94,14 +94,14 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 <!-- felii: 0056-02, 0084-02, 0094-02, 0000-26, 0000-27, 0000-28, 0000-29 -->
 <!-- git: b3325b1 -->
 
-- La o descărcare nouă puteți modifica și legăturile recepțiilor mai vechi, atât timp cât pentru acestea nu există o ordonanțare.
-- În vederea «Rezervări», pictograma de acțiuni din partea de jos a arborelui apare doar după ce nu mai există rezervări marcate cu «+», adică rezervări care trebuie aduse din FOREXE.
-- În «Sumar», butonul «Asociază parteneri», disponibil doar pentru angajamentele cu DDF, permite asocierea unuia sau mai multor parteneri cu documentul.
-- Editorul DDF are o pagină nouă, «Parteneri», în partea dreaptă a barei de pagini. Partenerul din antet rămâne partenerul principal.
-- Meniul «?» afișează doar tururile disponibile pentru fereastra din care a fost deschis. Editorul DDF are acum propriul tur ghidat.
-- Butonul cu rotița din bara de titlu a ferestrei principale a fost eliminat. Setările se deschid acum din «MENIU › Configurare K-BOT».
-- În «MENIU» a fost adăugată opțiunea «Jurnal activitate», pentru jurnalele K-BOT. Aceasta poate fi ascunsă din Setări › Aplicație.
-- O legătură este blocată doar de existența unei ordonanțări, începând cu data acesteia, nu și de o plată. Ajutorul a fost actualizat pentru a reflecta această regulă.
+- La o descarcare noua puteti modifica si legaturile receptiilor mai vechi, atat timp cat pentru acestea nu exista o ordonantare.
+- In vederea «Rezervari», pictograma de actiuni din partea de jos a arborelui apare doar dupa ce nu mai exista rezervari marcate cu «+», adica rezervari care trebuie aduse din FOREXE.
+- In «Sumar», butonul «Asociaza parteneri», disponibil doar pentru angajamentele cu DDF, permite asocierea unuia sau mai multor parteneri cu documentul.
+- Editorul DDF are o pagina noua, «Parteneri», in partea dreapta a barei de pagini. Partenerul din antet ramane partenerul principal.
+- Meniul «?» afiseaza doar tururile disponibile pentru fereastra din care a fost deschis. Editorul DDF are acum propriul tur ghidat.
+- Butonul cu rotita din bara de titlu a ferestrei principale a fost eliminat. Setarile se deschid acum din «MENIU › Configurare K-BOT».
+- In «MENIU» a fost adaugata optiunea «Jurnal activitate», pentru jurnalele K-BOT. Aceasta poate fi ascunsa din Setari › Aplicatie.
+- O legatura este blocata doar de existenta unei ordonantari, incepand cu data acesteia, nu si de o plata. Ajutorul a fost actualizat pentru a reflecta aceasta regula.
 
 ## 1.1.1.0 (01.10.2026)
 
@@ -109,22 +109,22 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 <!-- felii: 0097-02, 0097, 0098, 0098-02, 0096, 0095, 0095-02, 0093, 0094, 0078-07, 0078-08, 0000-01, 0000-02, 0000-03, 0000-04, 0000-05, 0000-06, 0000-07, 0000-08, 0000-09, 0000-10, 0000-11, 0000-12, 0000-13, 0000-14, 0000-15, 0000-16, 0000-17, 0000-18, 0000-19, 0000-20, 0000-21, 0000-22, 0000-23, 0000-24, 0000-25 -->
 <!-- git: cd41f68 -->
 
-- Turul ferestrei principale pornește automat la deschiderea aplicației și poate fi dezactivat sau reactivat din Setări.
-- În «MENIU» a fost adăugat dosarul «Adăugare angajamente...», care conține opțiunea «Creează angajament în FOREXE».
-- În pagina FOREXE, întrebările de tip «Sunteți sigur...?» primesc automat răspunsul «Da». Dacă introduceți o a doua recepție cu aceeași dată, K-BOT vă cere confirmarea.
-- Setări: fereastra principală poate porni maximizată, iar mini-meniul K-BOT din pagina FOREXE poate fi ascuns.
-- Unitatea poate fi schimbată direct din bara de titlu, iar conexiunea FOREXE se închide automat la schimbare. Reînnoirea unei sesiuni expirate este acum mai discretă.
-- Un document semnat nu mai poate fi regenerat. «Note corecție» este afișat doar atunci când angajamentul conține note.
-- Cât timp rulează robotul FOREXE, cererile de actualizare sunt puse într-o coadă. Coada are o fereastră proprie, din care puteți pune procesarea pe pauză sau o puteți anula.
-- ORD și DDF au noduri noi: «Toate ordonanțările» și «Toate reviziile». Este disponibilă și ștergerea pe lună, fără mesaj suplimentar după ștergere.
-- Istoric are acum nodul «Tot istoricul». Extrase are un meniu propriu de afișare și se deschide din «MENIU › Extrase».
-- Parteneri: codul fiscal este unic, datele pot fi completate din ANAF, banca este identificată automat pe baza IBAN-ului, iar formularul include și câmpul «Adresa».
-- Arborii așteaptă deschiderea documentului în Adobe înainte de a continua, iar fereastra Adobe rămâne în panoul în care este afișată.
-- Ajutor: F1 și «?» oferă căutare după întrebări, tururi ghidate pentru ferestre și un manual care poate fi exportat.
+- Turul ferestrei principale porneste automat la deschiderea aplicatiei si poate fi dezactivat sau reactivat din Setari.
+- In «MENIU» a fost adaugat dosarul «Adaugare angajamente...», care contine optiunea «Creeaza angajament in FOREXE».
+- In pagina FOREXE, intrebarile de tip «Sunteti sigur...?» primesc automat raspunsul «Da». Daca introduceti o a doua receptie cu aceeasi data, K-BOT va cere confirmarea.
+- Setari: fereastra principala poate porni maximizata, iar mini-meniul K-BOT din pagina FOREXE poate fi ascuns.
+- Unitatea poate fi schimbata direct din bara de titlu, iar conexiunea FOREXE se inchide automat la schimbare. Reinnoirea unei sesiuni expirate este acum mai discreta.
+- Un document semnat nu mai poate fi regenerat. «Note corectie» este afisat doar atunci cand angajamentul contine note.
+- Cat timp ruleaza robotul FOREXE, cererile de actualizare sunt puse intr-o coada. Coada are o fereastra proprie, din care puteti pune procesarea pe pauza sau o puteti anula.
+- ORD si DDF au noduri noi: «Toate ordonantarile» si «Toate reviziile». Este disponibila si stergerea pe luna, fara mesaj suplimentar dupa stergere.
+- Istoric are acum nodul «Tot istoricul». Extrase are un meniu propriu de afisare si se deschide din «MENIU › Extrase».
+- Parteneri: codul fiscal este unic, datele pot fi completate din ANAF, banca este identificata automat pe baza IBAN-ului, iar formularul include si campul «Adresa».
+- Arborii asteapta deschiderea documentului in Adobe inainte de a continua, iar fereastra Adobe ramane in panoul in care este afisata.
+- Ajutor: F1 si «?» ofera cautare dupa intrebari, tururi ghidate pentru ferestre si un manual care poate fi exportat.
 
 ## 1.1.0.6 (29.09.2026)
 
 <!-- release: utc=2026-09-29T13:11:47Z baseline -->
 <!-- felii: -->
 
-Versiunea de la care începe acest jurnal, aflată pe server la 01.10.2026. Nu are o listă de schimbări.
+Versiunea de la care incepe acest jurnal, aflata pe server la 01.10.2026. Nu are o lista de schimbari.

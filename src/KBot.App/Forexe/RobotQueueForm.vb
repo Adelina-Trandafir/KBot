@@ -7,8 +7,8 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Slice 0098: the small modeless window of the robot queue -- the running task, the waiting
-''' ones in the order they will run, and four commands: pause / resume, take the selected task
-''' out, empty the queue, stop the running task. The shell opens it (footer button, or by itself
+''' ones in the order they will run (each with an X that takes it out), and three commands: pause /
+''' resume, empty the queue, stop the running task. The shell opens it (footer button, or by itself
 ''' when a task has to wait) and owns it; closing it disposes it.
 ''' </summary>
 ''' <remarks>
@@ -20,7 +20,7 @@ Public Class RobotQueueForm
 
     Private ReadOnly _queue As RobotQueue
     Private ReadOnly _controller As ForexeController
-    ' The ids of the rows in lstCoada, in the same order.
+    ' The ids of the robot tasks waiting, in queue order.
     Private ReadOnly _ids As New List(Of Integer)()
 
     ' Slice 0100-03: the grid of the running downloads of a multi-thread run (two or more angajamente).
@@ -28,7 +28,6 @@ Public Class RobotQueueForm
     Private Const COL_PROG As String = "prog"
     Private Const COL_STOP As String = "opreste"
     Private Const COL_REMOVE As String = "scoate"
-    Private Const STOP_CAPTION As String = "X"
     ' Waiting angajamente shown at once; more of them scroll.
     Private Const MAX_WAITING_ROWS As Integer = 5
     Private ReadOnly _board As ParallelDownloadBoard
@@ -55,7 +54,6 @@ Public Class RobotQueueForm
             GlobalErrorLog.Write("RobotQueueForm.New", ex)
         End Try
         _board = controller.ParallelBoard
-        pnlDescarcari.Visible = False
         AddHandler _queue.Changed, AddressOf Queue_Changed
         AddHandler _controller.StateChanged, AddressOf Controller_StateChanged
         AddHandler _board.Changed, AddressOf Board_Changed
@@ -107,22 +105,29 @@ Public Class RobotQueueForm
         End Try
     End Sub
 
-    ' The grids of a multi-thread run (two or more angajamente; one alone gets none -- operator,
-    ' 03.10.2026). Top grid: one row per tab at work -- code, progress bar, X. A row that ends leaves, the
-    ' next one that starts takes a free place. Under it, the angajamente still WAITING for a tab, each with
-    ' an X that takes it out of the run. The queue's own list (other tasks) shows only when it has any.
+    ' The grids of the window. Top grid (a multi-thread run of two or more angajamente only; one alone gets
+    ' none -- operator, 03.10.2026): one row per tab at work -- code, progress bar, X. A row that ends leaves,
+    ' the next one that starts takes a free place. The WAITING grid replaces the old list: the angajamente
+    ' waiting for a tab (multi-thread run) and the robot tasks waiting in the queue, each with an X that
+    ' takes it out. Nothing waiting: in a multi-thread run the grid goes and the window shrinks.
     Private Sub RefreshGrid()
         Try
             If _board Is Nothing Then Return
             Dim k_snap As ParallelDownloadBoard.Snapshot = _board.GetSnapshot()
+            gridDescarcari.Visible = k_snap.IsMulti
             If k_snap.IsMulti Then
                 FillRunning(k_snap)
-                FillWaiting(k_snap)
-            ElseIf gridDescarcari.RowCount > 0 OrElse gridAsteapta.RowCount > 0 Then
+            ElseIf gridDescarcari.RowCount > 0 Then
                 gridDescarcari.ClearRows()
-                gridAsteapta.ClearRows()
             End If
-            FitWindow(k_snap)
+
+            Dim k_items As List(Of KeyValuePair(Of String, Object)) = BuildWaitingItems(k_snap)
+            FillWaiting(k_items)
+            gridAsteapta.Visible = k_items.Count > 0
+            lblInCoada.Visible = Not k_snap.IsMulti OrElse k_items.Count > 0
+            lblInCoada.Text = If(k_items.Count = 0, "(nicio sarcină în așteptare)", $"În așteptare ({k_items.Count}):")
+
+            FitWindow(k_snap, k_items.Count)
         Catch ex As Exception
             ' UI boundary (posted from a robot thread): log and swallow.
             GlobalErrorLog.Write("RobotQueueForm.RefreshGrid", ex)
@@ -151,19 +156,36 @@ Public Class RobotQueueForm
                 k_row.Tag = k_entry.Cod
                 k_row(COL_COD) = If(k_entry.Stopping, k_entry.Cod & "  (se oprește...)", k_entry.Cod)
                 k_row(COL_PROG) = k_entry.Percent
-                k_row(COL_STOP) = STOP_CAPTION
             Next
         Finally
             gridDescarcari.EndUpdate()
         End Try
     End Sub
 
-    Private Sub FillWaiting(k_snap As ParallelDownloadBoard.Snapshot)
-        Dim k_same As Boolean = gridAsteapta.RowCount = k_snap.WaitingCodes.Count
+    ' What waits, in the order it will go: first the angajamente of a multi-thread run still without a tab
+    ' (the Tag is their code, a String), then the robot tasks of the queue (the Tag is their id, an Integer).
+    Private Function BuildWaitingItems(k_snap As ParallelDownloadBoard.Snapshot) As List(Of KeyValuePair(Of String, Object))
+        Dim k_items As New List(Of KeyValuePair(Of String, Object))()
+        If k_snap.IsMulti Then
+            For Each k_cod As String In k_snap.WaitingCodes
+                k_items.Add(New KeyValuePair(Of String, Object)(k_cod, k_cod))
+            Next
+        End If
+        Dim k_position As Integer = 0
+        For Each k_task As RobotQueue.RobotTask In _queue.Waiting
+            k_position += 1
+            k_items.Add(New KeyValuePair(Of String, Object)(
+                $"{k_position}. {k_task.Label}   ({k_task.QueuedAt:HH:mm:ss})", k_task.Id))
+        Next
+        Return k_items
+    End Function
+
+    Private Sub FillWaiting(k_items As List(Of KeyValuePair(Of String, Object)))
+        Dim k_same As Boolean = gridAsteapta.RowCount = k_items.Count
         If k_same Then
-            For k_i As Integer = 0 To k_snap.WaitingCodes.Count - 1
-                If Not String.Equals(TryCast(gridAsteapta.Rows(k_i).Tag, String), k_snap.WaitingCodes(k_i),
-                                     StringComparison.OrdinalIgnoreCase) Then
+            For k_i As Integer = 0 To k_items.Count - 1
+                If Not Object.Equals(gridAsteapta.Rows(k_i).Tag, k_items(k_i).Value) OrElse
+                   Not String.Equals(TryCast(gridAsteapta(COL_COD, k_i), String), k_items(k_i).Key, StringComparison.Ordinal) Then
                     k_same = False
                     Exit For
                 End If
@@ -174,48 +196,39 @@ Public Class RobotQueueForm
         gridAsteapta.BeginUpdate()
         Try
             gridAsteapta.ClearRows()
-            For Each k_cod As String In k_snap.WaitingCodes
+            For Each k_item As KeyValuePair(Of String, Object) In k_items
                 Dim k_row As KBotDataRow = gridAsteapta.AddRow()
-                k_row.Tag = k_cod
-                k_row(COL_COD) = k_cod
-                k_row(COL_REMOVE) = STOP_CAPTION
+                k_row.Tag = k_item.Value
+                k_row(COL_COD) = k_item.Key
             Next
         Finally
             gridAsteapta.EndUpdate()
         End Try
     End Sub
 
-    ' Sizes the panel and the window to what is on show. Entering a multi-thread run the window remembers its
-    ' height and gives up its minimum height; it then grows or shrinks to fit -- the running grid, the waiting
-    ' grid when something waits (a short scrolling list above MAX_WAITING_ROWS), and the queue's own list only
-    ' when other tasks wait -- always keeping its BOTTOM edge where it is (it sits above the footer band).
-    Private Sub FitWindow(k_snap As ParallelDownloadBoard.Snapshot)
+    ' Sizes the window to what is on show, in a multi-thread run: the running grid, and under it the label and
+    ' the waiting grid when something waits (a short scrolling grid above MAX_WAITING_ROWS) -- always keeping
+    ' the BOTTOM edge where it is (the window sits above the footer band). Entering a run the window remembers
+    ' its height and gives up its minimum height; leaving it, both come back. Outside a run the window keeps
+    ' its own size and the waiting grid simply fills what is left.
+    Private Sub FitWindow(k_snap As ParallelDownloadBoard.Snapshot, k_waiting As Integer)
         If Not k_snap.IsMulti Then
             If _inMulti Then LeaveMulti()
             Return
         End If
         If Not _inMulti Then EnterMulti()
 
-        Dim k_scale As Double = DeviceDpi / 96.0
-        Dim k_row As Integer = CInt(Math.Ceiling(gridDescarcari.RowHeight * k_scale))
-        Dim k_border As Integer = CInt(Math.Ceiling(4 * k_scale))
+        ' The grid's OWN scale (it follows the operator's text size / zoom, not only the screen's dpi): a row is
+        ' round(RowHeight * scale) px and the frame is the border on both sides. A few pixels short and a
+        ' scroll bar appears for a row that should have fitted.
+        Dim k_scale As Double = gridDescarcari.DpiScaleY
+        Dim k_row As Integer = CInt(Math.Round(gridDescarcari.RowHeight * k_scale))
+        Dim k_border As Integer = 2 * Math.Max(1, CInt(Math.Round(gridDescarcari.BorderWidth * k_scale))) + 2
         gridDescarcari.Height = Math.Max(1, Math.Min(k_snap.MaxRows, 10)) * k_row + k_border
 
-        Dim k_hasWaiting As Boolean = k_snap.Waiting > 0
-        lblInCoada.Visible = k_hasWaiting
-        gridAsteapta.Visible = k_hasWaiting
         Dim k_panel As Integer = gridDescarcari.Height
-        If k_hasWaiting Then
-            lblInCoada.Text = $"Încă {k_snap.Waiting} în coadă:"
-            k_panel += lblInCoada.Height + Math.Min(k_snap.Waiting, MAX_WAITING_ROWS) * k_row + k_border
-        End If
-        pnlDescarcari.Height = k_panel
-
-        Dim k_listVisible As Boolean = _ids.Count > 0
-        lstCoada.Visible = k_listVisible
-        Dim k_listHeight As Integer = If(k_listVisible, lstCoada.ItemHeight * Math.Min(Math.Max(_ids.Count, 2), 4) + 4, 0)
-
-        ApplyHeight(Padding.Vertical + capBar.Height + lblCurent.Height + k_panel + pnlFoot.Height + k_listHeight)
+        If k_waiting > 0 Then k_panel += lblInCoada.Height + Math.Min(k_waiting, MAX_WAITING_ROWS) * k_row + k_border
+        ApplyHeight(Padding.Vertical + capBar.Height + lblCurent.Height + k_panel + pnlFoot.Height)
     End Sub
 
     Private Sub EnterMulti()
@@ -223,14 +236,10 @@ Public Class RobotQueueForm
         _heightBeforeMulti = Height
         _minSizeBeforeMulti = MinimumSize
         MinimumSize = New Size(MinimumSize.Width, 0)
-        pnlDescarcari.Visible = True
     End Sub
 
     Private Sub LeaveMulti()
         _inMulti = False
-        pnlDescarcari.Visible = False
-        lstCoada.Visible = True
-        If lstCoada.Items.Count = 0 Then lstCoada.Items.Add("(nicio sarcină în așteptare)")
         MinimumSize = _minSizeBeforeMulti
         ApplyHeight(_heightBeforeMulti)
     End Sub
@@ -270,13 +279,18 @@ Public Class RobotQueueForm
         End Try
     End Sub
 
-    ' The X of a WAITING angajament: it leaves the run and never gets a tab.
+    ' The X of a WAITING row: an angajament of the run (it never gets a tab) or a task of the queue.
     Private Sub GridAsteapta_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridAsteapta.ButtonClick
         Try
             If e.ColumnKey <> COL_REMOVE OrElse _board Is Nothing Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= gridAsteapta.RowCount Then Return
-            Dim k_cod As String = TryCast(gridAsteapta.Rows(e.RowIndex).Tag, String)
-            If Not String.IsNullOrEmpty(k_cod) Then _board.RemoveWaiting(k_cod)
+            Dim k_tag As Object = gridAsteapta.Rows(e.RowIndex).Tag
+            If TypeOf k_tag Is String Then
+                _board.RemoveWaiting(DirectCast(k_tag, String))
+            ElseIf TypeOf k_tag Is Integer Then
+                ' False = it started meanwhile; the grid is redrawn by Changed either way.
+                _queue.Cancel(DirectCast(k_tag, Integer))
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("RobotQueueForm.GridAsteapta_ButtonClick", ex)
         End Try
@@ -295,28 +309,10 @@ Public Class RobotQueueForm
             lblCurent.Text = text
         End If
 
-        Dim selectedId As Integer = If(lstCoada.SelectedIndex >= 0 AndAlso lstCoada.SelectedIndex < _ids.Count,
-                                     _ids(lstCoada.SelectedIndex), -1)
-        lstCoada.BeginUpdate()
-        Try
-            lstCoada.Items.Clear()
-            _ids.Clear()
-            Dim position As Integer = 0
-            For Each t As RobotQueue.RobotTask In _queue.Waiting
-                position += 1
-                lstCoada.Items.Add($"{position}. {t.Label}   ({t.QueuedAt:HH:mm:ss})")
-                _ids.Add(t.Id)
-            Next
-            If lstCoada.Items.Count = 0 Then
-                ' A multi-thread run hides the list when it is empty; the placeholder is for the plain window.
-                If Not _inMulti Then lstCoada.Items.Add("(nicio sarcină în așteptare)")
-            Else
-                Dim restored As Integer = _ids.IndexOf(selectedId)
-                If restored >= 0 Then lstCoada.SelectedIndex = restored
-            End If
-        Finally
-            lstCoada.EndUpdate()
-        End Try
+        _ids.Clear()
+        For Each t As RobotQueue.RobotTask In _queue.Waiting
+            _ids.Add(t.Id)
+        Next
         RefreshGrid()
         RefreshButtons()
     End Sub
@@ -324,17 +320,8 @@ Public Class RobotQueueForm
     Private Sub RefreshButtons()
         If _queue Is Nothing OrElse _controller Is Nothing Then Return
         btnPauza.Text = If(_queue.IsPaused, "Continuă", "Pauză")
-        btnScoate.Enabled = lstCoada.SelectedIndex >= 0 AndAlso lstCoada.SelectedIndex < _ids.Count
         btnGoleste.Enabled = _ids.Count > 0
         btnOpreste.Enabled = _queue.Current IsNot Nothing AndAlso _controller.IsBusy
-    End Sub
-
-    Private Sub LstCoada_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lstCoada.SelectedIndexChanged
-        Try
-            RefreshButtons()
-        Catch ex As Exception
-            GlobalErrorLog.Write("RobotQueueForm.lstCoada_SelectedIndexChanged", ex)
-        End Try
     End Sub
 
     Private Sub BtnPauza_Click(sender As Object, e As EventArgs) Handles btnPauza.Click
@@ -342,17 +329,6 @@ Public Class RobotQueueForm
             _queue.SetPaused(Not _queue.IsPaused)
         Catch ex As Exception
             GlobalErrorLog.Write("RobotQueueForm.btnPauza_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub BtnScoate_Click(sender As Object, e As EventArgs) Handles btnScoate.Click
-        Try
-            Dim i As Integer = lstCoada.SelectedIndex
-            If i < 0 OrElse i >= _ids.Count Then Return
-            ' False = it started meanwhile; the list is redrawn by Changed either way.
-            _queue.Cancel(_ids(i))
-        Catch ex As Exception
-            GlobalErrorLog.Write("RobotQueueForm.btnScoate_Click", ex)
         End Try
     End Sub
 
@@ -401,11 +377,8 @@ Public Class RobotQueueForm
             lblCurent.BackColor = p.SurfaceAltColor
             lblInCoada.ForeColor = p.TextColor
             lblInCoada.BackColor = p.SurfaceAltColor
-            lstCoada.BackColor = p.SurfaceAltColor
-            lstCoada.ForeColor = p.TextColor
 
             ButtonStyles.ApplySecondary(btnPauza, scheme)
-            ButtonStyles.ApplySecondary(btnScoate, scheme)
             ButtonStyles.ApplySecondary(btnGoleste, scheme)
             ButtonStyles.ApplySecondary(btnOpreste, scheme)
         Catch ex As Exception

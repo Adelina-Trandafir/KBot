@@ -96,3 +96,32 @@ Operator, after seeing the window (3 rows running, «Încă 3 în coadă.», an 
 - Help (`coada.md`) and `NOUTATI.md` (1.1.1.7: 2 lines) updated.
 Build clean (0 warnings). Not seen on screen: the heights are computed from the scaled row / label sizes by hand —
 check 1, 3 and 8 waiting angajamente, the last one finishing (window shrinking), X on a waiting row, and the end of run.
+
+## Follow-up 3 (03.10.2026): grids too short, scroll bars
+
+Operator's screenshot: with 3 running + 3 waiting the third row of each grid was cut and both grids showed a vertical
+scroll bar. Cause: `FitWindow` sized the rows with `DeviceDpi / 96`, but the grid scales by its own factor
+(`AppScaling.FactorFor`, which follows the operator's text size / zoom) and has a frame. Now it uses
+`gridDescarcari.DpiScaleY`: row = `round(RowHeight * scale)`, frame = 2 × border + 2 px slack. Build clean; not seen on screen.
+
+## Follow-up 4 (03.10.2026): one waiting grid instead of the list box
+
+Operator: «avem și lstCoada — nu putem folosi gridAsteapta în locul lui?». Done: `lstCoada` (ListBox) and the «Scoate»
+button (`btnScoate`, which worked on the selected list item) are gone from `RobotQueueForm`. `gridAsteapta` now fills
+the middle of the window ALWAYS and shows what waits: the angajamente of a multi-thread run still without a tab
+(Tag = code) and then the robot tasks of the queue («1. label   (hh:mm:ss)», Tag = id), each with an X (angajament →
+`ParallelDownloadBoard.RemoveWaiting`, task → `RobotQueue.Cancel`). `pnlDescarcari` is now the Fill panel holding
+`gridDescarcari` (running, Top, hidden outside a multi run), `lblInCoada` («În așteptare (N):», or
+«(nicio sarcină în așteptare)» outside a multi run when nothing waits) and `gridAsteapta`. In a multi run with nothing
+waiting the label and the grid are hidden and the window shrinks (as before). «Golește coada» and «Oprește curenta» stay.
+Help: `coada.md` (list rows have an X, «Scoate» point removed), `tur-coada.md` (list step now targets `lblInCoada`
+— the grid is hidden when nothing waits —, «Scoate» step removed). Build clean (0 warnings). Not seen on screen.
+Designer edited by hand again (controls removed, `pnlDescarcari.Dock = Fill`).
+
+## Follow-up 5 (03.10.2026): columns editable in the designer
+
+The columns of `gridDescarcari` (`cod`, `prog`, `opreste`) and `gridAsteapta` (`cod`, `scoate`) were already declared in
+`RobotQueueForm.Designer.vb` (VS re-saved them with `HeaderTextAlign`). The only thing still fixed in code was the caption
+of the two X buttons (`"X"` written into every row). A Button cell shows its column's `HeaderText` when the cell has no
+text, so the caption now lives in the designer (`HeaderText = "X"` on both button columns; the headers are hidden by
+`ShowHeader = False`) and the code no longer writes it. Build clean.

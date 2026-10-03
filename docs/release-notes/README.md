@@ -47,8 +47,8 @@ Above the first `## ` heading of `NOUTATI.md` (newest first), in exactly this sh
 <!-- release: utc=2026-10-01T09:12:00Z -->
 <!-- felii: 0097-02, 0000-25 -->
 
-- Turul ferestrei principale pornește singur la primele deschideri.
-- «MENIU» are un dosar nou, «Adăugare angajamente...».
+- Turul ferestrei principale porneste singur la primele deschideri.
+- «MENIU» are un dosar nou, «Adaugare angajamente...».
 ```
 
 - The heading and the `release` line come ready-made in the request: copy them.
@@ -61,17 +61,23 @@ Above the first `## ` heading of `NOUTATI.md` (newest first), in exactly this sh
 
 **Who reads it:** an accountant who uses K-BOT, in a message box, deciding whether to update now.
 
-- **Romanian, with diacritics, plain words, short sentences.** State what is different; do not
-  address the reader. If you must, use the polite form, as the update box does («Aveți»,
-  «Actualizați»).
+- **MANDATORY: no diacritics, ever.** Write `NOUTATI.md` in Romanian but with plain letters only:
+  `a` for ă/â, `i` for î, `s` for ș, `t` for ț (`Clasificatii`, `lățime` → `latime`, `așteaptă` →
+  `asteapta`). The Setup wizard's news page and the update box show ș/ț as `?` and ă as `a` (seen
+  on 1.1.1.7), so a diacritic only spoils the line. This covers the whole file, headings included.
+  «» stay. On-screen names copied from the app are written the same way: «Clasificatii bugetare»,
+  not «Clasificații bugetare».
+- **Romanian, plain words, short sentences.** State what is different; do not
+  address the reader. If you must, use the polite form, as the update box does («Aveti»,
+  «Actualizati»).
 - **Only what the user sees or does differently**: a new window, button, menu row, message, a
   flow that goes another way, a fault that no longer happens.
 - **Left out** (same line as the help, `docs/HELP_SYSTEM.md` §5): slice numbers, file, class,
   table and route names, how K-BOT does something inside, server-only work, refactors, tooling,
   documents, the dev harness, the capture tool, anything Debug-only. A change nobody would notice
   is not a line.
-- **On-screen text exactly as it is on screen**, in «». Take it from the worklog or the code,
-  never from memory.
+- **On-screen text as it is on screen** (minus diacritics, see above), in «». Take it from the
+  worklog or the code, never from memory.
 - **Plain text**: no `**bold**`, no backticks, no links — the box shows them as typed.
 - **At most 12 lines, each under about 110 characters.** Most important first. Several small
   fixes in one area → one line. The help brought up to date → at most one line, last.
@@ -80,7 +86,7 @@ Above the first `## ` heading of `NOUTATI.md` (newest first), in exactly this sh
 - Describe **only what is new since the previous version**. A worklog marked «already listed
   under X» was changed after that version: read what was added to it, skip the rest.
 - Nothing the user can see changed → the single line
-  `- Îmbunătățiri interne și corecturi mici.`
+  `- Imbunatatiri interne si corecturi mici.`
 
 ## 4. What the assistant must not do
 

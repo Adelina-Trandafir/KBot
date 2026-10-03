@@ -29,3 +29,7 @@ Operator request, 03.10.2026 (the slice itself: `SLICE-0100-03-…`).
   while both rows run and «Încă N în coadă.» shows. Needs a real multi-download.
 - Not seen in the help window. Number 0000-48 taken while another session was also working in the help
   (0000-47 existed); if it collides, renumber this one.
+
+## Follow-up (03.10.2026)
+
+The list box and the «Scoate» button left the window (see SLICE-0100-03, follow-up 4): `coada.md` now says every waiting row has an X and has no «Scoate» point; `tur-coada.md` loses the «Scoate» step and its list step targets `lblInCoada`. Tags `0100-03, 0000-48` on the touched sections.
