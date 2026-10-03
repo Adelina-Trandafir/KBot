@@ -88,7 +88,9 @@ Public NotInheritable Class CapturaStore
     End Property
 
     Private Shared Function FolderSau(folder As String) As String
-        Return If(String.IsNullOrWhiteSpace(folder), Folder, folder)
+        ' `CapturaStore.` is mandatory: VB is case-insensitive, so a bare `Folder` here is the
+        ' parameter `folder` (always Nothing in this branch), not the property.
+        Return If(String.IsNullOrWhiteSpace(folder), CapturaStore.Folder, folder)
     End Function
 
     ''' <summary>The folder of one angajament. Says nothing about whether it exists.</summary>

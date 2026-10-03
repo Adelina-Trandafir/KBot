@@ -41,9 +41,9 @@ part: footer.collapse
 Îngustează arborele la o fâșie, ca documentul din dreapta să aibă tot locul; încă un clic îl desface.
 
 ## Clic dreapta pe o revizie
-<!-- slice: 0081-04, 0097 -->
+<!-- slice: 0081-04, 0097, 0107 -->
 target: DdfView.tree
-Meniul reviziei oferă, după stare: Trimite în FOREXE (sau Reia trimiterea), Modifică revizia, Șterge revizia, Șterge documentul. O revizie semnată nu se mai modifică și nu se mai șterge: îi rămâne doar trimiterea. Pe o lună sau pe rădăcină poți șterge tot ce e sub ea, dacă nimic nu e semnat.
+Dă întâi clic stânga pe rând; clicul dreapta merge doar pe rândul ales. Meniul reviziei oferă, după stare: Trimite în FOREXE (sau Reia trimiterea), Modifică revizia, Șterge revizia, Șterge documentul. O revizie semnată nu se mai modifică și nu se mai șterge: îi rămâne doar trimiterea. Pe o lună sau pe rădăcină poți șterge tot ce e sub ea, dacă nimic nu e semnat.
 
 ## Lista de tipărire
 <!-- slice: 0099, 0101 -->

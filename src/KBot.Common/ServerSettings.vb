@@ -30,6 +30,8 @@ Public NotInheritable Class ServerSettings
     Public Const KeyMultithread As String = "Multithread"
     ''' <summary>The most FOREXE tabs a download may use at once.</summary>
     Public Const KeyMultithreadMax As String = "Multithread_Max"
+    ''' <summary>Slice 0104: 1 = the unit also runs the Access application, 0 (or no row) = it does not.</summary>
+    Public Const KeyAccess As String = "Access"
 
     ' Replaced as a whole on every Apply / Clear, so a reader never sees half a refresh.
     Private Shared _rows As IReadOnlyDictionary(Of String, ServerSettingRow) =
@@ -52,6 +54,16 @@ Public NotInheritable Class ServerSettings
     Public Shared ReadOnly Property MultithreadMax As Integer
         Get
             Return Math.Max(1, GetInt(KeyMultithreadMax, 1))
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Slice 0104: the connected unit has the Access application (Access is a number other than 0). The
+    ''' Access features are shown only while this holds -- see <see cref="AccessFeature"/>.
+    ''' </summary>
+    Public Shared ReadOnly Property AccessEnabled As Boolean
+        Get
+            Return GetInt(KeyAccess, 0) <> 0
         End Get
     End Property
 
@@ -78,12 +90,13 @@ Public NotInheritable Class ServerSettings
     End Function
 
     ''' <summary>
-    ''' Replaces everything with what the server just answered. Raises <see cref="Changed"/> when the two
+    ''' Replaces everything with what the server just answered. Raises <see cref="Changed"/> when the
     ''' settings the application acts on differ from before.
     ''' </summary>
     Public Shared Sub Apply(rows As IEnumerable(Of ServerSettingRow))
         Dim wasAllowed As Boolean = MultithreadAllowed
         Dim wasMax As Integer = MultithreadMax
+        Dim wasAccess As Boolean = AccessEnabled
         Dim fresh As New Dictionary(Of String, ServerSettingRow)(StringComparer.OrdinalIgnoreCase)
         If rows IsNot Nothing Then
             For Each r As ServerSettingRow In rows
@@ -91,7 +104,9 @@ Public NotInheritable Class ServerSettings
             Next
         End If
         _rows = fresh
-        If wasAllowed <> MultithreadAllowed OrElse wasMax <> MultithreadMax Then RaiseEvent Changed(Nothing, EventArgs.Empty)
+        If wasAllowed <> MultithreadAllowed OrElse wasMax <> MultithreadMax OrElse wasAccess <> AccessEnabled Then
+            RaiseEvent Changed(Nothing, EventArgs.Empty)
+        End If
     End Sub
 
     ''' <summary>Forgets everything (log out / a unit that could not be read): every setting is off again.</summary>

@@ -18,7 +18,10 @@ Imports KBot.Theming
 ''' one row = the budget from its «Început» date on, quarters 1-4 typed, no total; «+» in the footer
 ''' adds a version, «✕» removes one) and its corrections (typed straight in the grid, «+» adds a row,
 ''' «✕» removes one, totals in the footer). «Salveaza» writes both in one transaction. The «+»
-''' in the tree footer opens <see cref="ClasificatiiAddForm"/>.
+''' in the tree footer opens <see cref="ClasificatiiAddForm"/>. A node ABOVE the leaves (slice 0105) shows
+''' the same two grids as a read-only summary: a «Clsf» column that stretches, the LAST budget of each
+''' classification under the node and the TOTAL of its corrections; no «Început», «Nr. doc.», «Data»,
+''' «✕» or footer «+».
 ''' </summary>
 Public Class ClasificatiiForm
 
@@ -32,6 +35,7 @@ Public Class ClasificatiiForm
     Private Const ColData As String = "data"
     Private Const ColDelete As String = "sterge"
     Private Const ColId As String = "id"
+    Private Const ColClsf As String = "clsf"
     Private Const DeleteCaption As String = "✕"
     Private Shared ReadOnly QuarterColumns As String() = {ColTrim1, ColTrim2, ColTrim3, ColTrim4}
     Private Shared ReadOnly DateFormats As String() = {
@@ -45,9 +49,19 @@ Public Class ClasificatiiForm
     Private _catalog As ClasificatiiCatalog
     Private _current As Clasificatie
     Private _currentNode As AdvancedTreeControl.TreeItem
+    ' Slice 0105: the classifications with movement in the year (some quarter of a budget version or of a
+    ' correction is not zero); the tree shows only them until «Arată toate clasificațiile» is ticked.
+    Private _activeIds As New HashSet(Of Integer)()
+    Private _suppressToggle As Boolean
     Private _dirty As Boolean
     Private _busy As Boolean
     Private _closeAfterSave As Boolean
+    ' Slice 0105: a node above the leaves shows the read-only summary (Clsf column, last budget, corrections
+    ' total); the designer's «+» icons and captions are kept here to put back for a leaf.
+    Private _summaryMode As Boolean
+    Private _plusIcon As Image
+    Private _budgetCaption As String
+    Private _correctionsCaption As String
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -68,6 +82,12 @@ Public Class ClasificatiiForm
         Try
             If _api Is Nothing Then Return
             capBar.Text = $"K-BOT — Clasificații bugetare {_an}"
+            _plusIcon = gridBuget.FooterRightIcon
+            _budgetCaption = gridBuget.FooterCaption
+            _correctionsCaption = gridRectificari.FooterCaption
+            ' Slice 0104: «Trimite în Access» exists only for a unit that has the Access application
+            ' (Setari.Access = 1) AND only where the Access component is installed.
+            btnTrimiteAccess.Visible = AccessFeature.Enabled
             ShowNoSelection()
             LoadTree(Nothing)
         Catch ex As Exception
@@ -83,10 +103,13 @@ Public Class ClasificatiiForm
             SetBusy(True, "Se încarcă clasificațiile…")
             Dim catalog As ClasificatiiCatalog = Await _gate.RunAsync(
                 Function() _api.GetClasificatiiAsync(CancellationToken.None)).ConfigureAwait(True)
+            Dim summary As IReadOnlyList(Of BudgetSummaryRow) = Await _gate.RunAsync(
+                Function() _api.GetBudgetSummaryAsync(_an, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return
             _catalog = catalog
+            _activeIds = New HashSet(Of Integer)(summary.Where(Function(r) r.Active).Select(Function(r) r.IdClsf))
             BuildTree(catalog, selectIdClsf)
-            SetStatus($"{catalog.Items.Count} clasificații.")
+            SetStatus(CountText(catalog))
         Catch ex As ApiException
             GlobalErrorLog.Write("ClasificatiiForm.LoadTree", ex)
             If Not IsDisposed Then SetStatus(ex.Message)
@@ -104,7 +127,7 @@ Public Class ClasificatiiForm
         Dim folder As Image = My.Resources.Resources.folder_open
         Dim toSelect As AdvancedTreeControl.TreeItem = Nothing
 
-        Dim chapters = catalog.Items.GroupBy(Function(c) New With {Key c.Capitol, Key c.Ss}).
+        Dim chapters = VisibleItems(catalog).GroupBy(Function(c) New With {Key c.Capitol, Key c.Ss}).
                                      OrderBy(Function(gp) gp.Key.Capitol, StringComparer.Ordinal).
                                      ThenBy(Function(gp) gp.Key.Ss, StringComparer.Ordinal)
         For Each chapter In chapters
@@ -146,6 +169,29 @@ Public Class ClasificatiiForm
             _currentNode = toSelect
         End If
         tree.Invalidate()
+    End Sub
+
+    ' The classifications the tree shows: all of them, or only those with movement in the year.
+    Private Function VisibleItems(catalog As ClasificatiiCatalog) As List(Of Clasificatie)
+        If chkToate.Checked Then Return catalog.Items
+        Return catalog.Items.Where(Function(c) _activeIds.Contains(c.IdClsf)).ToList()
+    End Function
+
+    Private Function CountText(catalog As ClasificatiiCatalog) As String
+        Dim shown As Integer = VisibleItems(catalog).Count
+        Return If(chkToate.Checked, $"{shown} clasificații.",
+                  $"{shown} din {catalog.Items.Count} clasificații, cele cu mișcare în {_an}.")
+    End Function
+
+    ' UI boundary: the tree is rebuilt from the catalog already read; the open budget stays on screen.
+    Private Sub ChkToate_CheckedChanged(sender As Object, e As EventArgs) Handles chkToate.CheckedChanged
+        Try
+            If _suppressToggle OrElse _catalog Is Nothing OrElse _busy Then Return
+            BuildTree(_catalog, If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
+            SetStatus(CountText(_catalog))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.ChkToate_CheckedChanged", ex)
+        End Try
     End Sub
 
     Private Shared Function Left2(capitol As String) As String
@@ -206,7 +252,12 @@ Public Class ClasificatiiForm
             _currentNode = node
             Dim c As Clasificatie = TryCast(node.Tag, Clasificatie)
             If c Is Nothing Then
-                ShowNoSelection()
+                Dim leaves As List(Of Clasificatie) = LeavesUnder(node)
+                If leaves Is Nothing Then
+                    ShowNoSelection()
+                    Return
+                End If
+                Await LoadSummaryAsync(node, leaves).ConfigureAwait(True)
                 Return
             End If
             Await LoadBudgetAsync(c).ConfigureAwait(True)
@@ -221,6 +272,10 @@ Public Class ClasificatiiForm
             Using f As New ClasificatiiAddForm(_api, _gate, _an)
                 If f.ShowDialog(Me) <> DialogResult.OK Then Return
                 If f.Result IsNot Nothing AndAlso f.Result.Inserted > 0 Then
+                    ' New classifications have no movement yet: show them, or the operator would not find them.
+                    _suppressToggle = True
+                    chkToate.Checked = True
+                    _suppressToggle = False
                     LoadTree(If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
                 End If
             End Using
@@ -260,7 +315,137 @@ Public Class ClasificatiiForm
         End Try
     End Function
 
+    ' The classifications under a chapter («C|capitol|ss»), sub-chapter («S|…|sub») or article («A|…|art»)
+    ' node, in tree order; Nothing for any other node.
+    Private Function LeavesUnder(node As AdvancedTreeControl.TreeItem) As List(Of Clasificatie)
+        If _catalog Is Nothing OrElse String.IsNullOrEmpty(node.Key) Then Return Nothing
+        Dim parts As String() = node.Key.Split("|"c)
+        Dim level As String = parts(0)
+        Dim minParts As Integer = If(level = "C", 3, If(level = "S", 4, If(level = "A", 5, Integer.MaxValue)))
+        If parts.Length <> minParts Then Return Nothing
+        Return VisibleItems(_catalog).
+            Where(Function(x) x.Capitol = parts(1) AndAlso x.Ss = parts(2) AndAlso
+                              (parts.Length < 4 OrElse x.Subcapitol = parts(3)) AndAlso
+                              (parts.Length < 5 OrElse x.Articol = parts(4))).
+            OrderBy(Function(x) x.Subcapitol, StringComparer.Ordinal).
+            ThenBy(Function(x) x.Articol, StringComparer.Ordinal).
+            ThenBy(Function(x) x.Alineat, StringComparer.Ordinal).
+            ToList()
+    End Function
+
+    ' Risky (HTTP): shows its own error in the status line; never throws to the caller.
+    Private Async Function LoadSummaryAsync(node As AdvancedTreeControl.TreeItem, leaves As List(Of Clasificatie)) As Task
+        Try
+            SetBusy(True, "Se încarcă bugetele…")
+            Dim summary As IReadOnlyList(Of BudgetSummaryRow) = Await _gate.RunAsync(
+                Function() _api.GetBudgetSummaryAsync(_an, CancellationToken.None)).ConfigureAwait(True)
+            If IsDisposed Then Return
+            _current = Nothing
+            FillSummary(node, leaves, summary)
+            SetStatus(String.Empty)
+        Catch ex As ApiException
+            GlobalErrorLog.Write("ClasificatiiForm.LoadSummaryAsync", ex)
+            If Not IsDisposed Then
+                ShowNoSelection()
+                SetStatus(ex.Message)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.LoadSummaryAsync", ex)
+            If Not IsDisposed Then
+                ShowNoSelection()
+                SetStatus("Bugetele nu au putut fi încărcate. Detalii în jurnalul de erori.")
+            End If
+        Finally
+            If Not IsDisposed Then SetBusy(False, Nothing)
+        End Try
+    End Function
+
+    ' Budget grid: every classification under the node with its LAST version; corrections grid: the
+    ' classifications that have corrections, with the total of the year.
+    Private Sub FillSummary(node As AdvancedTreeControl.TreeItem, leaves As List(Of Clasificatie),
+                            summary As IReadOnlyList(Of BudgetSummaryRow))
+        ApplyMode(True)
+        Dim byId As New Dictionary(Of Integer, BudgetSummaryRow)()
+        For Each s As BudgetSummaryRow In summary
+            byId(s.IdClsf) = s
+        Next
+
+        gridBuget.BeginUpdate()
+        gridRectificari.BeginUpdate()
+        Try
+            gridBuget.ClearRows()
+            gridRectificari.ClearRows()
+            For Each c As Clasificatie In leaves
+                Dim s As BudgetSummaryRow = Nothing
+                byId.TryGetValue(c.IdClsf, s)
+
+                Dim row As KBotDataRow = gridBuget.AddRow()
+                row(ColClsf) = c.Clsf
+                If s IsNot Nothing AndAlso s.LastBudget IsNot Nothing Then
+                    row(ColTrim1) = Box(s.LastBudget.Amounts.Trim1)
+                    row(ColTrim2) = Box(s.LastBudget.Amounts.Trim2)
+                    row(ColTrim3) = Box(s.LastBudget.Amounts.Trim3)
+                    row(ColTrim4) = Box(s.LastBudget.Amounts.Trim4)
+                End If
+
+                If s IsNot Nothing AndAlso s.CorrectionsTotal IsNot Nothing Then
+                    Dim corr As KBotDataRow = gridRectificari.AddRow()
+                    corr(ColClsf) = c.Clsf
+                    corr(ColTrim1) = Box(s.CorrectionsTotal.Trim1)
+                    corr(ColTrim2) = Box(s.CorrectionsTotal.Trim2)
+                    corr(ColTrim3) = Box(s.CorrectionsTotal.Trim3)
+                    corr(ColTrim4) = Box(s.CorrectionsTotal.Trim4)
+                    corr(ColTotal) = s.CorrectionsTotal.Total
+                End If
+            Next
+        Finally
+            gridRectificari.EndUpdate()
+            gridBuget.EndUpdate()
+        End Try
+        gridBuget.ClearDirty()
+        gridRectificari.ClearDirty()
+        _deletedIds.Clear()
+        _deletedBudgetIds.Clear()
+
+        gridBuget.Enabled = True
+        gridRectificari.Enabled = True
+        Dim parts As String() = node.Key.Split("|"c)
+        Dim code As String = String.Join(".", parts.Skip(1).Where(Function(p, i) i <> 1))   ' capitol[.sub[.articol]], without the source
+        lblBuget.Text = $"Buget {_an} — {code} ({parts(2)}): {leaves.Count} clasificații"
+        lblRectificari.Text = $"Rectificări bugetare {_an} — total pe clasificație"
+        Dim split As Integer = If(node.Caption, String.Empty).IndexOf("~~~", StringComparison.Ordinal)
+        tips.SetToolTipText(lblBuget, If(split >= 0, node.Caption.Substring(split + 3), code))
+        SetDirty(False)
+    End Sub
+
+    ' The summary is read-only: it has the «Clsf» column (the one that stretches) and no «Început»,
+    ' «Nr. doc.», «Data», «✕» or footer «+»; a leaf has the editable grids as the designer made them.
+    Private Sub ApplyMode(summary As Boolean)
+        If summary = _summaryMode Then Return
+        _summaryMode = summary
+        SetColumn(gridBuget, ColClsf, summary)
+        SetColumn(gridBuget, ColStart, Not summary)
+        SetColumn(gridBuget, ColDelete, Not summary)
+        SetColumn(gridRectificari, ColClsf, summary)
+        SetColumn(gridRectificari, ColDocument, Not summary)
+        SetColumn(gridRectificari, ColData, Not summary)
+        SetColumn(gridRectificari, ColDelete, Not summary)
+        For Each grid As KBotDataView In {gridBuget, gridRectificari}
+            grid.ReadOnlyGrid = summary
+            grid.FooterRightIcon = If(summary, Nothing, _plusIcon)
+        Next
+        gridRectificari.FillColumnKey = If(summary, ColClsf, ColDocument)
+        gridBuget.FooterCaption = If(summary, "Ultimul buget al fiecărei clasificații", _budgetCaption)
+        gridRectificari.FooterCaption = _correctionsCaption
+    End Sub
+
+    Private Shared Sub SetColumn(grid As KBotDataView, key As String, shown As Boolean)
+        Dim column As KBotDataColumn = grid.Columns.First(Function(c) String.Equals(c.Key, key, StringComparison.Ordinal))
+        column.Visible = If(shown, KBotColumnVisibility.Visible, KBotColumnVisibility.Hidden)
+    End Sub
+
     Private Sub FillGrids(data As BugetClasificatie)
+        ApplyMode(False)
         gridBuget.BeginUpdate()
         Try
             gridBuget.ClearRows()
@@ -310,6 +495,7 @@ Public Class ClasificatiiForm
     End Sub
 
     Private Sub ShowNoSelection()
+        ApplyMode(False)
         _current = Nothing
         gridBuget.ClearRows()
         gridRectificari.ClearRows()
@@ -321,6 +507,17 @@ Public Class ClasificatiiForm
         lblRectificari.Text = "Rectificări bugetare"
         SetDirty(False)
     End Sub
+
+    ' Quarter by quarter, never through a total: +1000 and -1000 total 0 and still count as movement.
+    Private Shared Function HasMovement(data As BugetClasificatie) As Boolean
+        Return data.Budgets.Any(Function(b) AnyQuarter(b.Amounts)) OrElse
+               data.Corrections.Any(Function(r) AnyQuarter(r.Amounts))
+    End Function
+
+    Private Shared Function AnyQuarter(a As QuarterAmounts) As Boolean
+        Return a.Trim1.GetValueOrDefault() <> 0D OrElse a.Trim2.GetValueOrDefault() <> 0D OrElse
+               a.Trim3.GetValueOrDefault() <> 0D OrElse a.Trim4.GetValueOrDefault() <> 0D
+    End Function
 
     Private Shared Function Box(value As Decimal?) As Object
         If value.HasValue Then Return value.Value
@@ -503,6 +700,7 @@ Public Class ClasificatiiForm
                                                            deleted, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return True
             FillGrids(saved)
+            If HasMovement(saved) Then _activeIds.Add(idClsf) Else _activeIds.Remove(idClsf)
             SetStatus($"Salvat: {_current.Clsf}.")
             Return True
         Catch ex As ApiException
@@ -623,17 +821,103 @@ Public Class ClasificatiiForm
         End Try
     End Sub
 
+    ' ── Budget check + «Trimite in Access» (slice 0103-04 / 0103-06) ─────────────────
+
+    ' UI boundary: the check shows its own errors.
+    Private Async Sub BtnVerifica_Click(sender As Object, e As EventArgs) Handles btnVerifica.Click
+        Try
+            If _busy OrElse _api Is Nothing Then Return
+            SetBusy(True, "Se verifică bugetul față de FOREXE…")
+            Try
+                Await BudgetCheckForm.RunAsync(Me, _api, _gate, showWhenEqual:=True).ConfigureAwait(True)
+            Finally
+                If Not IsDisposed Then SetBusy(False, String.Empty)
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.BtnVerifica_Click", ex)
+        End Try
+    End Sub
+
+    ' UI boundary: writes the SAVED budget + rectifications of the chosen classification into the
+    ' Access file of its unit; every failure is told to the operator.
+    Private Async Sub BtnTrimiteAccess_Click(sender As Object, e As EventArgs) Handles btnTrimiteAccess.Click
+        Try
+            Dim c As Clasificatie = _current
+            If _busy OrElse _api Is Nothing OrElse c Is Nothing OrElse _dirty Then Return
+            ' Slice 0104: the Access code lives in KBot.Access, which only the package for Access clients
+            ' contains. The button is hidden without it; this guards a call that still gets here.
+            Dim bridge As IAccessBridge = AccessBridge.Instance
+            If bridge Is Nothing OrElse Not AccessFeature.Enabled Then
+                KBotMessage.Show(Me, "Această instalare nu are componenta Access.",
+                                 "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            If Not c.IdUnitate.HasValue OrElse c.IdClsfAcc = 0 Then
+                KBotMessage.Show(Me, "Clasificația nu are unitate sau id Access; nu se poate trimite în Access.",
+                                 "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            If KBotMessage.Show(Me,
+                    $"Se scriu în baza Access a unității bugetul în vigoare azi și rectificările anului {_an} " &
+                    $"ale clasificației {c.Clsf}. Rectificările șterse aici nu se șterg din Access." &
+                    Environment.NewLine & "Continuați?",
+                    "Trimite în Access", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+
+            SetBusy(True, "Se trimite în Access…")
+            Try
+                ' Read back from the server: what was SAVED is what is sent.
+                Dim data As BugetClasificatie = Await _gate.RunAsync(
+                    Function() _api.GetBugetClasificatieAsync(c.IdClsf, _an, CancellationToken.None)).ConfigureAwait(True)
+                Dim today As Date = Date.Today
+                Dim inForce As BudgetVersion = data.Budgets.
+                    Where(Function(v) v.StartDate.HasValue AndAlso v.StartDate.Value <= today).
+                    OrderByDescending(Function(v) v.StartDate.Value).
+                    FirstOrDefault()
+                Dim idUnitate As Integer = c.IdUnitate.Value
+                Dim idAcc As Integer = c.IdClsfAcc
+                Dim registry As String = AppSettings.Current.AccessRegistryPath   ' the operator's, «Setari ▸ Access»
+                Dim result As AccessSendResult = Await Task.Run(
+                    Function()
+                        Dim file As String = bridge.ResolveUnitFile(registry, idUnitate)
+                        Return bridge.SendBudget(file, idAcc, inForce, data.Corrections)
+                    End Function).ConfigureAwait(True)
+                If IsDisposed Then Return
+                Dim lines As String = $"Trimis în «{result.File}»:" & Environment.NewLine &
+                    If(inForce Is Nothing, "bugetul: nicio versiune în vigoare azi, nu s-a scris",
+                       If(result.BudgetUpdated = 0, "bugetul: clasificația nu există în Access",
+                          $"bugetul versiunii din {inForce.StartDate.Value:dd.MM.yyyy}: scris")) & Environment.NewLine &
+                    $"rectificări adăugate: {result.RectificariInserted}, actualizate: {result.RectificariUpdated}."
+                KBotMessage.Show(Me, lines, "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Finally
+                If Not IsDisposed Then SetBusy(False, String.Empty)
+            End Try
+        Catch ex As ApiException
+            GlobalErrorLog.Write("ClasificatiiForm.BtnTrimiteAccess_Click", ex)
+            KBotMessage.Show(Me, ex.Message, "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As InvalidOperationException
+            GlobalErrorLog.Write("ClasificatiiForm.BtnTrimiteAccess_Click", ex)
+            KBotMessage.Show(Me, ex.Message, "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.BtnTrimiteAccess_Click", ex)
+            KBotMessage.Show(Me, "Trimiterea în Access a eșuat. Detalii în jurnalul de erori.",
+                             "Trimite în Access", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     ' ── State ───────────────────────────────────────────────────────────────────
 
     Private Sub SetDirty(value As Boolean)
         _dirty = value
         btnSalveaza.Enabled = value AndAlso Not _busy AndAlso _current IsNot Nothing
+        btnTrimiteAccess.Enabled = Not value AndAlso Not _busy AndAlso _current IsNot Nothing
     End Sub
 
     Private Sub SetBusy(busy As Boolean, status As String)
         _busy = busy
         UseWaitCursor = busy
         btnSalveaza.Enabled = _dirty AndAlso Not busy AndAlso _current IsNot Nothing
+        btnTrimiteAccess.Enabled = Not _dirty AndAlso Not busy AndAlso _current IsNot Nothing
+        btnVerifica.Enabled = Not busy
         If status IsNot Nothing Then SetStatus(status)
     End Sub
 
@@ -653,6 +937,8 @@ Public Class ClasificatiiForm
             tlyBody.BackColor = p.SurfaceAltColor
             tlyRight.BackColor = p.SurfaceAltColor
             tlySubsol.BackColor = p.SurfaceAltColor
+            chkToate.BackColor = p.SurfaceAltColor
+            chkToate.ForeColor = p.TextColor
             lblBuget.BackColor = p.SurfaceAltColor
             lblBuget.ForeColor = p.TextColor
             lblRectificari.BackColor = p.SurfaceAltColor
@@ -660,6 +946,8 @@ Public Class ClasificatiiForm
             lblStare.ForeColor = p.TextDimColor
             ButtonStyles.ApplyPrimary(btnSalveaza, scheme)
             ButtonStyles.ApplySecondary(btnInchide, scheme)
+            ButtonStyles.ApplySecondary(btnVerifica, scheme)
+            ButtonStyles.ApplySecondary(btnTrimiteAccess, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.OnThemeChanged", ex)
         End Try

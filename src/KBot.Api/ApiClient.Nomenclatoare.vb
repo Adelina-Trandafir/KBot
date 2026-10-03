@@ -20,6 +20,8 @@ Partial Public Class ApiClient
     ' ── Wire shapes ─────────────────────────────────────────────────────────────
     Private NotInheritable Class ClsfItemWire
         Public Property id_clsf As Integer
+        Public Property id_unitate As Integer?
+        Public Property id_clsf_acc As Integer?
         Public Property capitol As String
         Public Property subcapitol As String
         Public Property articol As String
@@ -65,12 +67,41 @@ Partial Public Class ApiClient
         Public Property corrections As List(Of CorrectionWire)
     End Class
 
+    Private NotInheritable Class SummaryRowWire
+        Public Property id_clsf As Integer
+        Public Property activ As Boolean
+        Public Property budget As BudgetVersionWire
+        Public Property corrections As CorrectionWire
+    End Class
+
+    Private NotInheritable Class SummaryResponse
+        Public Property items As List(Of SummaryRowWire)
+    End Class
+
     Private NotInheritable Class BudgetRequest
         Public Property an As Integer
         Public Property budgets As List(Of BudgetVersionWire)
         Public Property deleted_budgets As List(Of Integer)
         Public Property corrections As List(Of CorrectionWire)
         Public Property deleted As List(Of Integer)
+    End Class
+
+    Private NotInheritable Class CheckRowWire
+        Public Property id_clsf As Integer
+        Public Property id_unitate As Integer?
+        Public Property clsf As String
+        Public Property denumire As String
+        Public Property ss As String
+        Public Property buget_kbot As Double?
+        Public Property credit_fx As Double?
+        Public Property diferenta As Double
+        Public Property egal As Boolean
+    End Class
+
+    Private NotInheritable Class CheckResponse
+        Public Property data As String
+        Public Property trimestru As Integer
+        Public Property items As List(Of CheckRowWire)
     End Class
 
     Private NotInheritable Class CodeNameWire
@@ -172,6 +203,8 @@ Partial Public Class ApiClient
             For Each w As ClsfItemWire In If(payload.items, New List(Of ClsfItemWire)())
                 result.Items.Add(New Clasificatie() With {
                     .IdClsf = w.id_clsf,
+                    .IdUnitate = w.id_unitate,
+                    .IdClsfAcc = w.id_clsf_acc.GetValueOrDefault(),
                     .Capitol = If(w.capitol, String.Empty),
                     .Subcapitol = If(w.subcapitol, String.Empty),
                     .Articol = If(w.articol, String.Empty),
@@ -212,6 +245,45 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    Public Async Function GetBudgetSummaryAsync(an As Integer, ct As CancellationToken) _
+        As Task(Of IReadOnlyList(Of BudgetSummaryRow)) _
+        Implements INomenclatoareApi.GetBudgetSummaryAsync
+        Try
+            Dim url As String = $"{NomenclatoareRoot}/clasificatii/sumar-buget?an={an.ToString(CultureInfo.InvariantCulture)}"
+            Dim respText As String = Await SendNomenclatoareAsync(HttpMethod.Get, url, Nothing,
+                                                                  "citirea sumarului de buget", ct).ConfigureAwait(False)
+            Dim payload As SummaryResponse = JsonSerializer.Deserialize(Of SummaryResponse)(respText, _json)
+            Dim result As New List(Of BudgetSummaryRow)()
+            If payload Is Nothing Then Return result
+            For Each w As SummaryRowWire In If(payload.items, New List(Of SummaryRowWire)())
+                Dim row As New BudgetSummaryRow() With {.IdClsf = w.id_clsf, .Active = w.activ}
+                If w.budget IsNot Nothing Then
+                    Dim start As Date
+                    Dim hasStart As Boolean = Date.TryParseExact(If(w.budget.data_inceput, String.Empty), "yyyy-MM-dd",
+                                                                 CultureInfo.InvariantCulture, DateTimeStyles.None, start)
+                    row.LastBudget = New BudgetVersion() With {
+                        .Id = w.budget.id,
+                        .StartDate = If(hasStart, start, CType(Nothing, Date?)),
+                        .Amounts = New QuarterAmounts() With {
+                            .Trim1 = ToDecimal(w.budget.trim1), .Trim2 = ToDecimal(w.budget.trim2),
+                            .Trim3 = ToDecimal(w.budget.trim3), .Trim4 = ToDecimal(w.budget.trim4)}}
+                End If
+                If w.corrections IsNot Nothing Then
+                    row.CorrectionsTotal = New QuarterAmounts() With {
+                        .Trim1 = ToDecimal(w.corrections.trim1), .Trim2 = ToDecimal(w.corrections.trim2),
+                        .Trim3 = ToDecimal(w.corrections.trim3), .Trim4 = ToDecimal(w.corrections.trim4)}
+                End If
+                result.Add(row)
+            Next
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetBudgetSummaryAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function SaveBugetClasificatieAsync(idClsf As Integer, an As Integer,
                                                      budgets As IReadOnlyList(Of BudgetVersion),
                                                      deletedBudgetIds As IReadOnlyList(Of Integer),
@@ -246,6 +318,40 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.SaveBugetClasificatieAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetBudgetCheckAsync(day As Date, ct As CancellationToken,
+                                              Optional codAngajament As String = Nothing) As Task(Of BudgetCheck) _
+        Implements INomenclatoareApi.GetBudgetCheckAsync
+        Try
+            Dim url As String = $"{NomenclatoareRoot}/clasificatii/verificare-buget" &
+                                $"?data={day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}"
+            If Not String.IsNullOrWhiteSpace(codAngajament) Then url &= "&angajament=" & Uri.EscapeDataString(codAngajament.Trim())
+            Dim respText As String = Await SendNomenclatoareAsync(HttpMethod.Get, url, Nothing,
+                                                                  "verificarea bugetului", ct).ConfigureAwait(False)
+            Dim payload As CheckResponse = JsonSerializer.Deserialize(Of CheckResponse)(respText, _json)
+            Dim result As New BudgetCheck() With {.Day = day}
+            If payload Is Nothing Then Return result
+            result.Quarter = payload.trimestru
+            For Each w As CheckRowWire In If(payload.items, New List(Of CheckRowWire)())
+                result.Rows.Add(New BudgetCheckRow() With {
+                    .IdClsf = w.id_clsf,
+                    .IdUnitate = w.id_unitate,
+                    .Clsf = If(w.clsf, String.Empty),
+                    .Denumire = If(w.denumire, String.Empty),
+                    .Ss = If(w.ss, String.Empty),
+                    .BugetKbot = ToDecimal(w.buget_kbot),
+                    .CreditFx = ToDecimal(w.credit_fx),
+                    .Diferenta = Math.Round(CDec(w.diferenta), 2),
+                    .Egal = w.egal})
+            Next
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetBudgetCheckAsync", ex)
             Throw
         End Try
     End Function

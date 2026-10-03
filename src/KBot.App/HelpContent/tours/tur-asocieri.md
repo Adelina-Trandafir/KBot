@@ -25,9 +25,9 @@ target: AsociereForm.treeLibere
 Instantaneele care încă nu au recepție. Trage-le peste recepția lor din stânga; locul în lanț îl dă ora. Cu Ctrl sau Shift iei mai multe deodată. Tras înapoi aici, un instantaneu se desprinde.
 
 ## Clic dreapta
-<!-- slice: 0048-04, 0059 -->
+<!-- slice: 0048-04, 0059, 0107 -->
 target: AsociereForm.treeLibere
-Pe un instantaneu din coș: «Nu consemnează nicio schimbare» (o salvare care n-a schimbat nimic) sau «Începe o recepție nouă» (o recepție ștearsă înainte de prima descărcare). Pe unul așezat: «Desprinde de recepție» și «Este rândul de ștergere».
+Dă întâi clic stânga pe rând; clicul dreapta merge doar pe un rând ales. Pe un instantaneu din coș: «Nu consemnează nicio schimbare» (o salvare care n-a schimbat nimic) sau «Începe o recepție nouă» (o recepție ștearsă înainte de prima descărcare). Pe unul așezat: «Desprinde de recepție» și «Este rândul de ștergere».
 
 ## Graficele și plățile
 <!-- slice: 0048-05, 0048-09, 0061 -->

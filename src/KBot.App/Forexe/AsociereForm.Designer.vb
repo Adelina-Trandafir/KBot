@@ -229,6 +229,7 @@ Partial Class AsociereForm
         treeLant.PaddingExpanderGap = 2
         treeLant.PaddingIconGap = 8
         treeLant.ReserveRightIconSpace = True
+        treeLant.RightClickSelects = False
         treeLant.RightIconSize = New Size(12, 12)
         treeLant.RootExpander = False
         treeLant.Size = New Size(503, 279)
@@ -356,6 +357,7 @@ Partial Class AsociereForm
         treeLibere.NodeImages = Il_Receptii
         treeLibere.PaddingExpanderGap = 8
         treeLibere.PaddingIconGap = 8
+        treeLibere.RightClickSelects = False
         treeLibere.Size = New Size(535, 279)
         treeLibere.TabIndex = 1
         ' 

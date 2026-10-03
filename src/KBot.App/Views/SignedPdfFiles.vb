@@ -18,22 +18,28 @@ Public NotInheritable Class SignedPdfFiles
     ''' </summary>
     Public Shared Function ReadShared(path As String) As Byte()
         Try
-            Using fs As New FileStream(path, FileMode.Open, FileAccess.Read,
-                                       FileShare.ReadWrite Or FileShare.Delete)
-                Dim buffer(CInt(fs.Length) - 1) As Byte
-                Dim read As Integer = 0
-                While read < buffer.Length
-                    Dim n As Integer = fs.Read(buffer, read, buffer.Length - read)
-                    If n <= 0 Then Exit While
-                    read += n
-                End While
-                If read <> buffer.Length Then Throw New IOException($"Short read on {path}: {read}/{buffer.Length}.")
-                Return buffer
-            End Using
+            Return ReadSharedCore(path)
         Catch ex As Exception
             GlobalErrorLog.Write("SignedPdfFiles.ReadShared", ex)
             Throw
         End Try
+    End Function
+
+    ' Unlogged read, for callers that retry on their own (a lock held by Adobe mid-write is
+    ' expected there, not an error worth a log entry per attempt).
+    Private Shared Function ReadSharedCore(path As String) As Byte()
+        Using fs As New FileStream(path, FileMode.Open, FileAccess.Read,
+                                   FileShare.ReadWrite Or FileShare.Delete)
+            Dim buffer(CInt(fs.Length) - 1) As Byte
+            Dim read As Integer = 0
+            While read < buffer.Length
+                Dim n As Integer = fs.Read(buffer, read, buffer.Length - read)
+                If n <= 0 Then Exit While
+                read += n
+            End While
+            If read <> buffer.Length Then Throw New IOException($"Short read on {path}: {read}/{buffer.Length}.")
+            Return buffer
+        End Using
     End Function
 
     ''' <summary>
@@ -46,20 +52,25 @@ Public NotInheritable Class SignedPdfFiles
         Try
             Dim limit As DateTime = DateTime.UtcNow.AddMilliseconds(timeoutMs)
             Dim lastLength As Long = -1
+            Dim lastLock As IOException = Nothing
             While DateTime.UtcNow < limit
                 Await Task.Delay(stepMs).ConfigureAwait(True)
                 If Not File.Exists(path) Then Continue While
                 Dim length As Long = New FileInfo(path).Length
                 If length > 0 AndAlso length = lastLength Then
                     Try
-                        Return ReadShared(path)
+                        Return ReadSharedCore(path)
                     Catch ex As IOException
                         ' Still locked for reading (Adobe mid-write): try again on the next step.
-                        GlobalErrorLog.Write("SignedPdfFiles.ReadWhenSettledAsync.Retry", ex)
+                        ' Logged once, below, only if it never cleared.
+                        lastLock = ex
                     End Try
                 End If
                 lastLength = length
             End While
+            If lastLock IsNot Nothing Then
+                GlobalErrorLog.Write("SignedPdfFiles.ReadWhenSettledAsync.Timeout", lastLock)
+            End If
             Return Nothing
         Catch ex As Exception
             GlobalErrorLog.Write("SignedPdfFiles.ReadWhenSettledAsync", ex)

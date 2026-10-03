@@ -21,6 +21,12 @@ Imports KBot.Theming
 ''' be able to log in. <see cref="RunManualCheckAsync"/> is the "Caută actualizări" button:
 ''' the same flow, but every outcome is said out loud, including "sunteți la zi".</para>
 '''
+''' <para><b>Which package</b> (slice 0104). The server keeps two packages: the one with the Migrator and the
+''' Access code, for clients that also run the Access application, and the one without them. The check
+''' asks for the package of the client's own kind, learned from the server for the operator's e-mail
+''' (<see cref="ResolveAccessAsync"/> -> <see cref="ClientProfile"/>), and it does NOT run until that
+''' is known: without it the application would not know which package to ask for.</para>
+'''
 ''' <para><b>Mandatory vs optional</b> is <see cref="UpdatePolicy"/>'s call: below the
 ''' server's <c>minimum</c> the only choices are update or close.</para>
 '''
@@ -36,10 +42,13 @@ Public NotInheritable Class AppUpdateService
     Private Const CAPTION As String = "Actualizare K-BOT"
 
     Private ReadOnly _api As IUpdateApi
+    Private ReadOnly _accessApi As IAccessTypeApi
 
-    Public Sub New(api As IUpdateApi)
+    Public Sub New(api As IUpdateApi, accessApi As IAccessTypeApi)
         ArgumentNullException.ThrowIfNull(api)
+        ArgumentNullException.ThrowIfNull(accessApi)
         _api = api
+        _accessApi = accessApi
     End Sub
 
     ''' <summary>The running KBot.App FileVersion -- the number the server's <c>version</c> is compared with.</summary>
@@ -67,7 +76,33 @@ Public NotInheritable Class AppUpdateService
         Public Property Decision As UpdateDecision
         Public Property Info As UpdateInfo
         Public Property Current As Version
+        ''' <summary>Slice 0104: the kind of package the version was read for (True = with the Access components).</summary>
+        Public Property Access As Boolean
     End Class
+
+    ''' <summary>
+    ''' Slice 0104: asks the server what kind of client <paramref name="email"/> is and records it in
+    ''' <see cref="ClientProfile"/>. Returns True when the kind is known afterwards (already known for this
+    ''' e-mail, or the server just said); False when there is no e-mail or the server could not be reached
+    ''' (logged; the kind then stays unknown and no update check runs). A previous answer belonging to a
+    ''' DIFFERENT e-mail is dropped first, so it can never decide for the new one.
+    ''' </summary>
+    Public Async Function ResolveAccessAsync(email As String, ct As CancellationToken) As Task(Of Boolean)
+        Try
+            If String.IsNullOrWhiteSpace(email) Then Return False
+            If ClientProfile.IsResolvedFor(email) Then Return True
+            ClientProfile.Forget()
+            Dim access As Boolean = Await _accessApi.GetAccessAsync(email, ct).ConfigureAwait(False)
+            ClientProfile.Resolved(email, access)
+            Return True
+        Catch ex As OperationCanceledException
+            Return False
+        Catch ex As Exception
+            ' Server down, refused, garbage: the kind stays unknown, the operator can still log in.
+            GlobalErrorLog.Write("AppUpdateService.ResolveAccessAsync", ex)
+            Return False
+        End Try
+    End Function
 
     ''' <summary>
     ''' Asks the server and decides. <c>Info</c> is <c>Nothing</c> when the server has never
@@ -76,15 +111,20 @@ Public NotInheritable Class AppUpdateService
     ''' </summary>
     Public Async Function CheckAsync(ct As CancellationToken) As Task(Of CheckResult)
         Try
+            If Not ClientProfile.AccessKnown Then
+                Throw New InvalidOperationException("Tipul clientului (cu / fără Access) nu este cunoscut încă; verificarea actualizărilor nu poate începe.")
+            End If
             Dim current As Version = CurrentVersion
-            Dim info As UpdateInfo = Await _api.GetLatestAsync(ct).ConfigureAwait(False)
+            Dim access As Boolean = ClientProfile.IsAccess
+            Dim info As UpdateInfo = Await _api.GetLatestAsync(access, ct).ConfigureAwait(False)
             If info Is Nothing Then
-                Return New CheckResult With {.Decision = UpdateDecision.UpToDate, .Info = Nothing, .Current = current}
+                Return New CheckResult With {.Decision = UpdateDecision.UpToDate, .Info = Nothing, .Current = current, .Access = access}
             End If
             Return New CheckResult With {
                 .Decision = UpdatePolicy.Decide(current, info.Version, info.Minimum),
                 .Info = info,
-                .Current = current}
+                .Current = current,
+                .Access = access}
         Catch ex As ApiException
             Throw
         Catch ex As Exception
@@ -100,6 +140,9 @@ Public NotInheritable Class AppUpdateService
     ''' </summary>
     Public Function RunStartupCheck() As Boolean
         Try
+            ' Slice 0104: without the client's kind there is no package to ask for. The login window
+            ' asks the server as soon as the e-mail is typed and then calls RunStartupCheckAsync.
+            If Not ClientProfile.AccessKnown Then Return False
             Dim check As CheckResult
             Try
                 Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(20))
@@ -118,13 +161,48 @@ Public NotInheritable Class AppUpdateService
     End Function
 
     ''' <summary>
+    ''' Slice 0104: the startup check for the case where the e-mail is only known once the operator types
+    ''' it on the login window (nothing remembered from an earlier login). Same quiet behaviour as
+    ''' <see cref="RunStartupCheck"/>, but with the window up: True = the application must exit now.
+    ''' </summary>
+    Public Async Function RunStartupCheckAsync(owner As IWin32Window) As Task(Of Boolean)
+        Try
+            If Not ClientProfile.AccessKnown Then Return False
+            Dim check As CheckResult
+            Try
+                Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(20))
+                    check = Await CheckAsync(cts.Token)
+                End Using
+            Catch ex As Exception
+                GlobalErrorLog.Write("AppUpdateService.RunStartupCheckAsync (verificarea a eșuat, aplicația continuă)", ex)
+                Return False
+            End Try
+            Return Offer(owner, check, manual:=False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AppUpdateService.RunStartupCheckAsync", ex)
+            Return False
+        End Try
+    End Function
+
+    ''' <summary>
     ''' The "Caută actualizări" entrance. Every outcome is shown. Returns <c>True</c> when the
     ''' caller must close the application (updater started / mandatory update refused).
     ''' </summary>
-    Public Async Function RunManualCheckAsync(owner As IWin32Window) As Task(Of Boolean)
+    Public Async Function RunManualCheckAsync(owner As IWin32Window, Optional email As String = Nothing) As Task(Of Boolean)
         Try
             Dim check As CheckResult
             Try
+                ' Slice 0104: the kind is normally known from the login; ask again here if it is not.
+                If Not ClientProfile.AccessKnown Then
+                    Using ask As New CancellationTokenSource(TimeSpan.FromSeconds(20))
+                        Await ResolveAccessAsync(email, ask.Token)
+                    End Using
+                    If Not ClientProfile.AccessKnown Then
+                        KBotMessage.Show(owner, "Serverul nu a putut spune ce tip de aplicație aveți (cu / fără Access), deci actualizările nu pot fi verificate acum. Încercați din nou.",
+                                         CAPTION, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        Return False
+                    End If
+                End If
                 Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(20))
                     check = Await CheckAsync(cts.Token)
                 End Using
@@ -219,7 +297,7 @@ Public NotInheritable Class AppUpdateService
             Directory.CreateDirectory(workDir)
             Dim zipPath As String = Path.Combine(workDir, If(String.IsNullOrWhiteSpace(check.Info.File), "KBot_" & check.Info.Version & ".zip", check.Info.File))
 
-            Using dlg As New UpdateProgressForm(_api, check.Info, zipPath)
+            Using dlg As New UpdateProgressForm(_api, check.Info, zipPath, check.Access)
                 Dim result As DialogResult = If(owner Is Nothing, dlg.ShowDialog(), dlg.ShowDialog(owner))
                 If result <> DialogResult.OK Then
                     TryDeleteDir(workDir)

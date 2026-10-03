@@ -7,6 +7,10 @@
 ;    /DAppVersion=<KBot.App FileVersion>        required (x.x.x.x)
 ;    /DOutputDir=<artifacts dir>                required
 ;    /DOutputBaseFilename=KBot_Setup_<stamp>    required
+;    /DWithAccess=1|0                           optional, default 1 (slice 0104): 1 = the package carries
+;                                               Migrare\ (the Access -> MariaDB utility), 0 = a package for
+;                                               clients WITHOUT the Access application: no Migrare\ files,
+;                                               no component, no shortcut, no mention in the wizard text
 ;    /DNewsInc=<file>                           optional: "what is new" page (last 3 versions),
 ;                                               written by ReleaseNotes.ps1 -Action Installer
 ;    /DSIGN=1 /Skbotsign="<signtool cmd> $f"    optional: signs Setup + uninstaller
@@ -37,6 +41,10 @@
 #endif
 #ifndef OutputBaseFilename
   #error OutputBaseFilename is required: /DOutputBaseFilename=<name without .exe>
+#endif
+
+#ifndef WithAccess
+  #define WithAccess 1
 #endif
 
 #define MyAppName        "K-BOT"
@@ -123,7 +131,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 #endif
 
 [Messages]
+#if WithAccess
 WelcomeLabel2=Acest program va instala {#MyAppName} {#AppVersion} pe calculatorul dumneavoastră.%n%n{#MyAppName} conține:%n  •  aplicația {#MyAppName} (angajamente, rezervări, recepții, plăți) împreună cu robotul FOREXE;%n  •  utilitarul de migrare a datelor din Access în MariaDB.%n%nSe recomandă închiderea celorlalte aplicații înainte de a continua.
+#else
+WelcomeLabel2=Acest program va instala {#MyAppName} {#AppVersion} pe calculatorul dumneavoastră.%n%n{#MyAppName} conține:%n  •  aplicația {#MyAppName} (angajamente, rezervări, recepții, plăți) împreună cu robotul FOREXE.%n%nSe recomandă închiderea celorlalte aplicații înainte de a continua.
+#endif
 FinishedLabel=Instalarea {#MyAppName} s-a încheiat. Aplicația poate fi pornită din meniul Start sau de pe desktop.%n%nPentru dezinstalare folosiți «Programe și caracteristici» din Windows.
 
 [Types]
@@ -132,7 +144,9 @@ Name: "custom"; Description: "Instalare personalizată"; Flags: iscustom
 
 [Components]
 Name: "app";     Description: "Aplicația {#MyAppName} și robotul FOREXE (obligatoriu)"; Types: full custom; Flags: fixed
+#if WithAccess
 Name: "migrare"; Description: "Utilitarul de migrare Access → MariaDB";               Types: full
+#endif
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
@@ -151,14 +165,18 @@ Name: "{app}\Logs"
 ; (Asociere\, WorkflowResults\, Extrase\, ...) and kbot_paths.json survive an
 ; upgrade, as they do an automatic update.
 Source: "{#SourceDir}\*";         DestDir: "{app}";         Excludes: "\Migrare\*,\Logs\*"; Flags: ignoreversion recursesubdirs; Components: app
+#if WithAccess
 Source: "{#SourceDir}\Migrare\*"; DestDir: "{app}\Migrare";                                 Flags: ignoreversion recursesubdirs; Components: migrare
+#endif
 #ifdef HAVE_RUNTIME
 Source: "{#RuntimeSetup}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: not DotNetDesktop8Present
 #endif
 
 [Icons]
 Name: "{group}\{#MyAppName}";                          Filename: "{app}\{#MyAppExe}";                 WorkingDir: "{app}";         Components: app
+#if WithAccess
 Name: "{group}\{#MyAppName} Migrare (Access → MariaDB)"; Filename: "{app}\Migrare\{#MyMigratorExe}"; WorkingDir: "{app}\Migrare"; Components: migrare
+#endif
 Name: "{group}\Dezinstalare {#MyAppName}";             Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}";                    Filename: "{app}\{#MyAppExe}";                 WorkingDir: "{app}";         Tasks: desktopicon
 

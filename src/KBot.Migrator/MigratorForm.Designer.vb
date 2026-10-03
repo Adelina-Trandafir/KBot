@@ -57,6 +57,7 @@ Partial Class MigratorForm
     Friend WithEvents btnVerifica As System.Windows.Forms.Button
     Friend WithEvents btnTransfera As System.Windows.Forms.Button
     Friend WithEvents btnOpreste As System.Windows.Forms.Button
+    Friend WithEvents btnBugetDeschidere As System.Windows.Forms.Button
     Friend WithEvents prgTransfer As System.Windows.Forms.ProgressBar
     Friend WithEvents tlpGrile As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents dgvTabele As KBot.Controls.KBotDataView
@@ -124,6 +125,7 @@ Partial Class MigratorForm
         btnVerifica = New Button()
         prgTransfer = New ProgressBar()
         btnOpreste = New Button()
+        btnBugetDeschidere = New Button()
         btnTransfera = New Button()
         tlpGrile = New Global.KBot.Controls.KBotTableLayoutPanel()
         dgvTabele = New Controls.KBotDataView()
@@ -681,13 +683,15 @@ Partial Class MigratorForm
         ' 
         ' tlpButoane
         ' 
-        tlpButoane.ColumnCount = 4
+        tlpButoane.ColumnCount = 5
+        tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlpButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpButoane.Controls.Add(btnVerifica, 0, 0)
-        tlpButoane.Controls.Add(prgTransfer, 3, 0)
+        tlpButoane.Controls.Add(prgTransfer, 4, 0)
+        tlpButoane.Controls.Add(btnBugetDeschidere, 3, 0)
         tlpButoane.Controls.Add(btnOpreste, 2, 0)
         tlpButoane.Controls.Add(btnTransfera, 1, 0)
         tlpButoane.Dock = DockStyle.Fill
@@ -714,10 +718,10 @@ Partial Class MigratorForm
         ' prgTransfer
         ' 
         prgTransfer.Dock = DockStyle.Fill
-        prgTransfer.Location = New Point(454, 5)
+        prgTransfer.Location = New Point(604, 5)
         prgTransfer.Margin = New Padding(4, 5, 4, 5)
         prgTransfer.Name = "prgTransfer"
-        prgTransfer.Size = New Size(1011, 55)
+        prgTransfer.Size = New Size(861, 55)
         prgTransfer.TabIndex = 3
         ' 
         ' btnOpreste
@@ -747,6 +751,19 @@ Partial Class MigratorForm
         tipMigrator.SetToolTipHeader(btnTransfera, "Transferă")
         tipMigrator.SetToolTipText(btnTransfera, "Se activează doar după o verificare fără constatări blocante." & vbLf & "Scrie totul într-o singură tranzacție; orice eșec derulează tot înapoi.")
         btnTransfera.UseVisualStyleBackColor = True
+        ' 
+        ' btnBugetDeschidere
+        ' 
+        btnBugetDeschidere.Dock = DockStyle.Fill
+        btnBugetDeschidere.Location = New Point(454, 5)
+        btnBugetDeschidere.Margin = New Padding(4, 5, 4, 5)
+        btnBugetDeschidere.Name = "btnBugetDeschidere"
+        btnBugetDeschidere.Size = New Size(142, 55)
+        btnBugetDeschidere.TabIndex = 4
+        btnBugetDeschidere.Text = "Buget 1/12"
+        tipMigrator.SetToolTipHeader(btnBugetDeschidere, "Buget de deschidere")
+        tipMigrator.SetToolTipText(btnBugetDeschidere, "Citește Clasificatii + Rectificari din fișierul anului anterior al unităților bifate" & vbLf & "și scrie în Clasificatii_Buget o versiune cu data 01.01, Trim1 = 1/12 din total (rotunjit în sus).")
+        btnBugetDeschidere.UseVisualStyleBackColor = True
         ' 
         ' tlpGrile
         ' 

@@ -9,13 +9,13 @@ keywords: trage, tragere, aseaza, desprinde, ctrl, shift, selectie multipla, ord
 ---
 <!-- slice: 0048-04 -->
 ## Gestul de bază: tragi
-<!-- slice: 0048-04, 0061 -->
+<!-- slice: 0048-04, 0061, 0107 -->
 
 - **Pe o recepție** — tragi instantaneul din coș peste rândul recepției lui din stânga. Recepția se
   aprinde toată, iar în timpul tragerii se vede **unde ar cădea** în lanț.
 - **Locul în lanț îl dă ora instantaneului**, nu tu: nu-l poți pune «înainte» sau «după» de mână.
-- **Înapoi în coș** — tragi un instantaneu din lanț în dreapta, ca să-l desprinzi. Sau clic dreapta ›
-  **«Desprinde de recepție»**.
+- **Înapoi în coș** — tragi un instantaneu din lanț în dreapta, ca să-l desprinzi. Sau clic dreapta pe el
+  (după ce l-ai ales cu clic stânga) › **«Desprinde de recepție»**.
 - **Mai multe deodată** — cu **Ctrl** (câte unul) sau **Shift** (un șir) alegi mai multe instantanee
   din același loc și le tragi împreună; clicul dreapta lucrează atunci pe toate.
 

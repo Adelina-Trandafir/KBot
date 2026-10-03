@@ -21,7 +21,7 @@ Fereastra principală are cinci zone.
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0077-3, 0098, 0000-31, 0101 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt

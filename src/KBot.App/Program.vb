@@ -120,9 +120,16 @@ Friend Module Program
                 ' the files can be replaced. An unreachable server never blocks startup: it is
                 ' logged and login follows. Debug never checks: a dev build with a lower
                 ' FileVersion would overwrite itself.
-                If provider.GetRequiredService(Of AppUpdateService)().RunStartupCheck() Then Return
+                '
+                ' Slice 0104: the check asks for the package of the client's own kind (with / without
+                ' the Access components), so the server is asked FIRST what kind the remembered e-mail
+                ' is. No remembered e-mail, or no answer: the check waits and the login window runs it
+                ' as soon as the operator has typed an e-mail the server answers for.
+                Dim updates As AppUpdateService = provider.GetRequiredService(Of AppUpdateService)()
+                ResolveClientKindAtStartup(updates)
+                If updates.RunStartupCheck() Then Return
                 ' Then the only way in is the login gate before the shell.
-                RunShellWithLogin(provider)
+                RunShellWithLogin(provider, updateCheckPending:=Not ClientProfile.AccessKnown)
 #End If
             End Using
 
@@ -132,6 +139,10 @@ Friend Module Program
             ShowFatal(ex)
         Finally
             SingleInstance.Release()
+            ' Slice 0104-02: the Office Access driver crashes while the process unloads it, so a process that used it
+            ' ends here, now, instead of by returning (see FastExit). Last statement of the application: everything
+            ' above has been closed. Must stay inside Finally -- the Return statements above skip anything after it.
+            FastExit.TerminateIfOfficeDriverLoaded()
         End Try
     End Sub
 
@@ -164,6 +175,12 @@ Friend Module Program
                 Dim jurnale As LogViewerForm = provider.GetRequiredService(Of LogViewerForm)()
                 AppScreen.SetReference(jurnale)
                 Application.Run(jurnale)
+            Case StartupLauncherForm.KEY_ACCESS
+                ' Slice 0104-02: the Access probe window alone -- no login, no shell, no services beyond the settings.
+                Using probe As New Global.KBot.DevHarness.AccessProbeForm()
+                    AppScreen.SetReference(probe)
+                    Application.Run(probe)
+                End Using
             Case Else
                 Throw New ArgumentException("Pornire necunoscută în launcher: «" & If(alegere, "<nimic>") & "».")
         End Select
@@ -238,15 +255,32 @@ Friend Module Program
         End Try
     End Sub
 
-    Private Sub RunShellWithLogin(provider As ServiceProvider)
+    ' Slice 0104: asks the server what kind of client the e-mail of the last login is, before the update
+    ' check. Nothing remembered (first start, or the memory is switched off) = nothing to ask. A server
+    ' that does not answer is logged by the service and leaves the kind unknown.
+    Private Sub ResolveClientKindAtStartup(updates As AppUpdateService)
+        Try
+            If Not AppSettings.Current.RememberLastLogin Then Return
+            Dim email As String = LastLoginStore.Load().Username
+            If String.IsNullOrWhiteSpace(email) Then Return
+            Using cts As New CancellationTokenSource(TimeSpan.FromSeconds(10))
+                Task.Run(Function() updates.ResolveAccessAsync(email, cts.Token)).GetAwaiter().GetResult()
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("Program.ResolveClientKindAtStartup", ex)
+        End Try
+    End Sub
+
+    Private Sub RunShellWithLogin(provider As ServiceProvider, Optional updateCheckPending As Boolean = False)
         Try
             ' Slice 0000-01: help is on from the login window onwards (F1 and «?»).
             HelpService.Install(provider.GetRequiredService(Of HelpService)())
 
             Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
                 AppScreen.SetReference(login)
+                login.UpdateCheckPending = updateCheckPending
                 If login.ShowDialog() <> DialogResult.OK Then
-                    Return   ' anulat -> ieșim fără a lansa shell-ul
+                    Return   ' anulat (sau actualizarea a pornit: login.ExitForUpdate) -> ieșim fără a lansa shell-ul
                 End If
                 login.Dispose()   ' nu mai avem nevoie de login, eliberăm resursele
             End Using
@@ -393,6 +427,9 @@ Friend Module Program
         ' that holds the conversation with the operator. Startup calls it on Release only; the
         ' «Caută actualizări» buttons call it from anywhere.
         services.AddSingleton(Of IUpdateApi, UpdateApi)()
+        ' Slice 0104: what kind of client the e-mail is (with / without Access) -- asked before the
+        ' update check, which then asks for the package of that kind. Public, like the update calls.
+        services.AddSingleton(Of IAccessTypeApi, AccessTypeApi)()
         services.AddSingleton(Of AppUpdateService)()
 
         ' Stocare temporară (SQLite in-memory).

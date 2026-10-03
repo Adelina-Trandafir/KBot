@@ -5,8 +5,16 @@
   Builds a RELEASE package (publish-release.ps1: publish, sign, zip, installer)
   and publishes it as THE update on the K-BOT server:
 
-      <RemoteRoot>/updates/KBot_<version>.zip     the package (the Release zip)
-      <RemoteRoot>/updates/latest.json            what the server tells clients
+      <RemoteRoot>/updates/KBot_<version>.zip             the package (the Release zip)
+      <RemoteRoot>/updates/KBot_<version>_noaccess.zip    ... for clients WITHOUT Access
+      <RemoteRoot>/updates/latest.json                    what the server tells clients
+
+  TWO KINDS OF PACKAGE (slice 0104). The Migrator and the Access code are only for clients
+  that also run the Access application, so the server keeps two packages and latest.json has
+  two blocks:   { "access": {...}, "non_access": {...} }
+  The FIRST question of this script (before the build, before the signing one) says which kind
+  this push is for; only that block is rewritten, the other one stays as the server has it
+  (read back through the API). A client asks /api/update/latest?access=1|0 for its own kind.
 
   The client (KBot.App, Release build only) asks GET /api/update/latest at
   startup and from the "Cauta actualizari" buttons, compares its own
@@ -33,9 +41,12 @@
   Rules and procedure: docs\release-notes\README.md.
 
   Parameters
-    -Mandatory        raise `minimum` to this version: every client below it is
-                      forced to update (no "Mai tarziu"). Without it, `minimum`
-                      stays what the server already had (or 0.0.0.0).
+    -Audience         Access / NonAccess / Ask (default: asks FIRST, before the signing
+                      question): which kind of package this is. Forwarded to publish-release.ps1.
+                      With -SkipBuild it picks which newest zip is pushed.
+    -Mandatory        raise `minimum` of THIS kind to this version: every client of this kind
+                      below it is forced to update (no "Mai tarziu"). Without it, `minimum`
+                      stays what the server already had for it (or 0.0.0.0).
     -Notes "<text>"   your own text for the update dialog, instead of the
                       assistant's (one change per line). It is also stored as the
                       version's section in NOUTATI.md when that has none.
@@ -54,6 +65,8 @@
 
 [CmdletBinding()]
 param(
+    [ValidateSet('Ask', 'Access', 'NonAccess')]
+    [string] $Audience = 'Ask',
     [switch] $Mandatory,
     [string] $Notes = '',
     [switch] $SkipBuild,
@@ -76,6 +89,21 @@ Set-StrictMode -Version Latest
 
 function Write-Step { param([string]$m) Write-Host "[update] $m" -ForegroundColor Cyan }
 function Write-Ok   { param([string]$m) Write-Host "[update] $m" -ForegroundColor Green }
+
+# The first question (slice 0104), same wording as publish-release.ps1. Enter = Access.
+function Read-AudienceChoice {
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+        Write-Host "Audience: no interactive console -> Access (pass -Audience NonAccess for the other package)." -ForegroundColor Yellow
+        return 'Access'
+    }
+    while ($true) {
+        $answer = Read-Host "For whom is this push? (A)ccess = with Migrator + Access code / (N)on-access = without [A]"
+        $key = ($answer -replace '[\s-]', '').ToUpperInvariant()
+        if ($key -in @('', 'A', 'ACCESS')) { return 'Access' }
+        if ($key -in @('N', 'NONACCESS')) { return 'NonAccess' }
+        Write-Host "  Type A (access) or N (non-access); Enter = A." -ForegroundColor Yellow
+    }
+}
 
 function Find-SolutionRoot {
     $dir = $PSScriptRoot
@@ -119,7 +147,7 @@ function Resolve-Sftp {
 # not the .vbproj on disk. Also checks the updater is in there: without it the
 # client has nothing to apply the package with.
 function Get-PackageInfo {
-    param([string]$ZipPath)
+    param([string]$ZipPath, [bool]$IncludeAccess)
     if (-not ('System.IO.Compression.ZipFile' -as [type])) {
         Add-Type -AssemblyName 'System.IO.Compression.FileSystem'
     }
@@ -139,6 +167,21 @@ function Get-PackageInfo {
         if (-not $app) { throw "KBot.App.exe not found inside $ZipPath." }
         $upd = $entries | Where-Object { $_.FullName -match '(^|/)KBot\.Updater\.exe$' } | Select-Object -First 1
         if (-not $upd) { throw "KBot.Updater.exe not found inside $ZipPath -- publish-release.ps1 must include it (step 4e)." }
+
+        # Slice 0104: the package must be the kind it is pushed as. A non-access package under the
+        # "access" block would strip the Migrator from nobody, but an access package under
+        # "non_access" would hand the Access code to clients who must not have it.
+        $migrator   = @($entries | Where-Object { $_.FullName -match '(^|/)Migrare/KBot\.Migrator\.exe$' })
+        $accessDll  = @($entries | Where-Object { $_.FullName -match '(^|/)KBot\.Access\.dll$' })
+        if ($IncludeAccess) {
+            if ($migrator.Count -eq 0 -or $accessDll.Count -eq 0) {
+                throw "$ZipPath is not an ACCESS package (Migrare\KBot.Migrator.exe and KBot.Access.dll expected). Build with -Audience Access."
+            }
+        } else {
+            if ($migrator.Count -gt 0 -or $accessDll.Count -gt 0) {
+                throw "$ZipPath carries Access components -- it cannot go out as the NON-ACCESS package. Build with -Audience NonAccess."
+            }
+        }
 
         $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("kbot_app_" + [guid]::NewGuid().ToString('N') + '.exe')
         [System.IO.Compression.ZipFileExtensions]::ExtractToFile($app, $tmp, $true)
@@ -166,10 +209,10 @@ function Get-PackageInfo {
     }
 }
 
-# GET /api/update/latest. Returns $null when nothing is published (404).
+# GET /api/update/latest?access=1|0. Returns $null when nothing is published for that kind (404).
 function Get-ServerLatest {
-    param([string]$BaseUrl)
-    $url = $BaseUrl.TrimEnd('/') + '/api/update/latest'
+    param([string]$BaseUrl, [bool]$Access)
+    $url = $BaseUrl.TrimEnd('/') + '/api/update/latest?access=' + $(if ($Access) { '1' } else { '0' })
     try {
         return Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
     } catch {
@@ -186,6 +229,13 @@ function Get-ServerLatest {
 
 $SolutionRoot = Find-SolutionRoot
 $ArtifactsDir = Join-Path $SolutionRoot 'artifacts'
+
+# --- 0. For whom (the FIRST question, before the build and its signing question) ----
+$AudienceChoice = if ($Audience -eq 'Ask') { Read-AudienceChoice } else { $Audience }
+$IncludeAccess  = ($AudienceChoice -eq 'Access')
+$KindName       = if ($IncludeAccess) { 'access' } else { 'non-access' }
+$ZipSuffix      = if ($IncludeAccess) { '' } else { '_noaccess' }
+Write-Step "Audience: $($KindName.ToUpper()) package."
 if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
     $SettingsPath = Join-Path $SolutionRoot 'PYTHON\_push\push_settings.json'
 }
@@ -202,7 +252,7 @@ if (-not $SkipBuild) {
     $publish = Join-Path $SolutionRoot 'publish-release.ps1'
     if (-not (Test-Path -LiteralPath $publish)) { throw "publish-release.ps1 not found at $publish." }
     Write-Step "Building RELEASE via publish-release.ps1 ..."
-    $publishArgs = @{ Bump = $Bump; Sign = $Sign }
+    $publishArgs = @{ Bump = $Bump; Sign = $Sign; Audience = $AudienceChoice }
     if (-not [string]::IsNullOrWhiteSpace($SignThumbprint)) { $publishArgs['SignThumbprint'] = $SignThumbprint }
     # Notes typed by hand (-Notes): the AI assistant is not asked for them (step 4b records them).
     if (-not [string]::IsNullOrWhiteSpace($Notes)) { $publishArgs['ReleaseNotes'] = 'Skip' }
@@ -211,8 +261,9 @@ if (-not $SkipBuild) {
 }
 
 $zips = @(Get-ChildItem -LiteralPath $ArtifactsDir -Filter 'KBot_Release_*.zip' -File -ErrorAction SilentlyContinue |
+          Where-Object { ($_.BaseName -like '*_noaccess') -eq (-not $IncludeAccess) } |
           Sort-Object LastWriteTime -Descending)
-if ($zips.Count -eq 0) { throw "No KBot_Release_*.zip in $ArtifactsDir." }
+if ($zips.Count -eq 0) { throw "No $KindName KBot_Release_*$ZipSuffix.zip in $ArtifactsDir." }
 $zip = $zips[0]
 if (-not $SkipBuild -and $zip.LastWriteTime -lt $buildStart) {
     throw "The newest zip ($($zip.Name)) predates this build -- publish-release.ps1 produced nothing."
@@ -220,24 +271,30 @@ if (-not $SkipBuild -and $zip.LastWriteTime -lt $buildStart) {
 Write-Step "Package: $($zip.FullName) ($([Math]::Round($zip.Length / 1MB, 1)) MB)"
 
 # --- 3. What is in it ----------------------------------------------------------
-$info = Get-PackageInfo -ZipPath $zip.FullName
+$info = Get-PackageInfo -ZipPath $zip.FullName -IncludeAccess $IncludeAccess
 $localVersion = $info.Version
 $sha = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Step "KBot.App FileVersion in package: $localVersion  (entries: $($info.Entries), top folder: '$($info.TopFolder)')"
 Write-Step "sha256: $sha"
 
 # --- 4. What the server has ----------------------------------------------------
-$server = Get-ServerLatest -BaseUrl $ApiBaseUrl
+$server = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access $IncludeAccess
+# The OTHER kind stays exactly as the server has it: latest.json is rewritten whole, so its block is
+# read back here and written again below.
+$otherServer = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access (-not $IncludeAccess)
 $serverMinimum = [version]'0.0.0.0'
 if ($server) {
     $serverVersion = [version]$server.version
     $serverMinimum = [version]$server.minimum
-    Write-Step "Server has: version $serverVersion, minimum $serverMinimum"
+    Write-Step "Server has ($KindName): version $serverVersion, minimum $serverMinimum"
     if ($localVersion -le $serverVersion -and -not $Force) {
-        throw "Server already has $serverVersion; local package is $localVersion. Bump <FileVersion> in src\KBot.App\KBot.App.vbproj, or use -Force."
+        throw "Server already has $serverVersion for the $KindName package; local package is $localVersion. Bump <FileVersion> in src\KBot.App\KBot.App.vbproj, or use -Force."
     }
 } else {
-    Write-Step "Server has no published update yet (404)."
+    Write-Step "Server has no published $KindName update yet (404)."
+}
+if ($otherServer) {
+    Write-Step "The other kind stays as it is: version $($otherServer.version), minimum $($otherServer.minimum)."
 }
 
 # --- 4b. What changed: the notes for the update box (slice 0067-02) -------------
@@ -275,8 +332,8 @@ if ($minimum -gt $localVersion) {
 }
 
 # --- 5. latest.json ------------------------------------------------------------
-$remoteFile = "KBot_$($localVersion).zip"
-$latest = [ordered]@{
+$remoteFile = "KBot_$($localVersion)$ZipSuffix.zip"
+$block = [ordered]@{
     version       = $localVersion.ToString()
     minimum       = $minimum.ToString()
     file          = $remoteFile
@@ -285,11 +342,33 @@ $latest = [ordered]@{
     published_utc = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
     notes         = $Notes
 }
+# What the server answered for the other kind is the block as latest.json holds it (the API only
+# trims nothing and adds nothing), so it goes back unchanged.
+$otherBlock = $null
+if ($otherServer) {
+    $otherBlock = [ordered]@{
+        version       = [string]$otherServer.version
+        minimum       = [string]$otherServer.minimum
+        file          = [string]$otherServer.file
+        size          = [long]$otherServer.size
+        sha256        = [string]$otherServer.sha256
+        published_utc = [string]$otherServer.published_utc
+        notes         = [string]$otherServer.notes
+    }
+}
+$latest = [ordered]@{}
+if ($IncludeAccess) {
+    $latest['access'] = $block
+    if ($otherBlock) { $latest['non_access'] = $otherBlock }
+} else {
+    if ($otherBlock) { $latest['access'] = $otherBlock }
+    $latest['non_access'] = $block
+}
 $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("kbot_push_" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 $latestPath = Join-Path $stage 'latest.json'
 $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-[System.IO.File]::WriteAllText($latestPath, ($latest | ConvertTo-Json -Depth 3), $utf8NoBom)
+[System.IO.File]::WriteAllText($latestPath, ($latest | ConvertTo-Json -Depth 4), $utf8NoBom)
 Write-Step "latest.json:`n$(Get-Content -LiteralPath $latestPath -Raw)"
 
 # --- 6. Upload: one sftp session, package first, latest.json LAST ---------------
@@ -315,20 +394,26 @@ Write-Step "Uploading over sftp (type the password at the OpenSSH prompt) ..."
 if ($LASTEXITCODE -ne 0) { throw "sftp failed (ExitCode=$LASTEXITCODE). Nothing may be assumed about the server state -- check $RemoteDir." }
 
 # --- 7. Verify through the API, the way clients will see it --------------------
-$after = Get-ServerLatest -BaseUrl $ApiBaseUrl
-if (-not $after) { throw "Upload finished but GET /api/update/latest still returns 404. Is UPDATE_DIR on the server $RemoteDir ?" }
+$after = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access $IncludeAccess
+if (-not $after) { throw "Upload finished but GET /api/update/latest?access=$(if ($IncludeAccess) { 1 } else { 0 }) still returns 404. Is UPDATE_DIR on the server $RemoteDir ? (an old server without slice 0104 does not know the access parameter)" }
 if ([version]$after.version -ne $localVersion) {
     throw "Upload finished but the server reports version $($after.version), expected $localVersion."
 }
 if ($after.sha256 -ne $sha) { throw "Server sha256 differs from the local package." }
+if ($otherServer) {
+    $otherAfter = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access (-not $IncludeAccess)
+    if (-not $otherAfter -or $otherAfter.sha256 -ne $otherServer.sha256) {
+        throw "The OTHER kind of package changed or vanished during the upload. Check latest.json in $RemoteDir."
+    }
+}
 
 Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Ok "PUBLISHED  version $localVersion   minimum $minimum   ($remoteFile, $([Math]::Round($zip.Length / 1MB, 1)) MB)"
+Write-Ok "PUBLISHED ($($KindName.ToUpper()))  version $localVersion   minimum $minimum   ($remoteFile, $([Math]::Round($zip.Length / 1MB, 1)) MB)"
 if ($Mandatory) {
     Write-Ok "Mandatory: every client below $localVersion must update before it can log in."
 } else {
     Write-Ok "Optional for clients at or above $minimum; mandatory below it."
 }
-Write-Host "  Clients read: $($ApiBaseUrl.TrimEnd('/'))/api/update/latest"
+Write-Host "  Clients read: $($ApiBaseUrl.TrimEnd('/'))/api/update/latest?access=$(if ($IncludeAccess) { 1 } else { 0 })"

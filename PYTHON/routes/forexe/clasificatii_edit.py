@@ -4,7 +4,7 @@ The «Clasificatii bugetare» window of K-BOT (slice 0087-01): the classificatio
 session's database, the yearly budget of one classification and its corrections.
 
     GET  /api/forexe/nomenclatoare/clasificatii?an=2026
-        -> 200 { "items": [ { "id_clsf", "capitol", "subcapitol", "articol", "alineat",
+        -> 200 { "items": [ { "id_clsf", "id_unitate", "id_clsf_acc", "capitol", "subcapitol", "articol", "alineat",
                               "denumire", "ss", "clsf" }, ... ],
                  "names": { "capitol": {"65": ...}, "subcapitol": {"650402": ...},
                             "articol": {"10.01": ...}, "ss": {"02A": ...} } }
@@ -12,6 +12,12 @@ session's database, the yearly budget of one classification and its corrections.
     GET  /api/forexe/nomenclatoare/clasificatii/<id_clsf>/buget?an=2026
         -> 200 { "budgets": [ {"id", "data_inceput", "trim1".."trim4"}, ... ],
                  "corrections": [ {"id", "document", "data", "trim1".."trim4"}, ... ] }
+
+    GET  /api/forexe/nomenclatoare/clasificatii/sumar-buget?an=2026
+        -> 200 { "items": [ { "id_clsf", "activ": true when some quarter of some budget version or
+                              correction of the year is not zero, "budget": {"id", "data_inceput", "trim1".."trim4"}|null,
+                              "corrections": {"trim1".."trim4"}|null } ] }
+           (the last budget version and the corrections total, for the non-leaf nodes of the tree)
 
     POST /api/forexe/nomenclatoare/clasificatii/<id_clsf>/buget
         { "an": 2026,
@@ -25,6 +31,10 @@ session's database, the yearly budget of one classification and its corrections.
         -> 200 { "ss": [ {"code", "name"} ],            (the sector-sources of THIS database)
                  "f": { "codes": [ {"code", "name"} ], "groups": {} },
                  "e": { "codes": [ {"code", "name"} ], "groups": {"20": ..., "2001": ...} } }
+
+    GET  /api/forexe/nomenclatoare/clasificatii/verificare-buget?data=2026-10-02[&angajament=AAB2...]   (slice 0103-04)
+        -> 200 { "data", "trimestru", "items": [ { "id_clsf", "id_unitate", "clsf", "denumire", "ss",
+                 "buget_kbot": number|null, "credit_fx": number|null, "diferenta", "egal" } ] }
 
     POST /api/forexe/nomenclatoare/clasificatii/adauga
         { "an": 2026, "ss": ["02A"], "f": ["650402"], "e": ["200101"] }
@@ -62,6 +72,7 @@ from routes.inregistrare import randuri
 from utils.database import COMMON_DB, get_kbot_connection
 
 from . import forexe_bp
+from .budget_on_day import as_day, budget_on_day, quarter_of
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +80,7 @@ logger = logging.getLogger(__name__)
 _MAX_DOCUMENT = 255
 
 _SQL_ITEMS = (
-    "SELECT C.IDClsf, C.Capitol, C.Subcapitol, C.Articol, C.Alineat, C.Denumire, C.SS, C.Clsf "
+    "SELECT C.IDClsf, C.IdUnitate, C.IdClsfAcc, C.Capitol, C.Subcapitol, C.Articol, C.Alineat, C.Denumire, C.SS, C.Clsf "
     "  FROM Clasificatii C "
     "  LEFT JOIN Unitati U ON U.IdUnitate = C.IdUnitate "
     " WHERE COALESCE(U.Ascuns, 0) = 0 "
@@ -194,6 +205,8 @@ def get_clasificatii_tree():
         cursor.execute(_SQL_ITEMS)
         items = [{
             "id_clsf": int(r["IDClsf"]),
+            "id_unitate": int(r["IdUnitate"]) if r["IdUnitate"] is not None else None,
+            "id_clsf_acc": int(r["IdClsfAcc"]) if r["IdClsfAcc"] is not None else None,
             "capitol": _text(r["Capitol"]),
             "subcapitol": _text(r["Subcapitol"]),
             "articol": _text(r["Articol"]),
@@ -231,6 +244,85 @@ def _read_budget(cursor, id_clsf: int, an: int) -> dict:
         "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
     } for r in cursor.fetchall()]
     return {"budgets": budgets, "corrections": corrections}
+
+
+# Summary for a non-leaf tree node: per classification, the LAST budget version of the year (greatest
+# DataInceput) and the TOTAL of the year's corrections per quarter. One row per classification at
+# most; (IdClsf, An, DataInceput) is unique, so the join to the maximum cannot double a row.
+_SQL_SUMMARY_BUDGETS = (
+    "SELECT B.IdClsf, B.IdBuget, B.DataInceput, B.Trim1, B.Trim2, B.Trim3, B.Trim4 "
+    "  FROM Clasificatii_Buget B "
+    "  JOIN (SELECT IdClsf, MAX(DataInceput) AS D FROM Clasificatii_Buget WHERE An = %s GROUP BY IdClsf) M "
+    "    ON M.IdClsf = B.IdClsf AND M.D = B.DataInceput "
+    " WHERE B.An = %s"
+)
+_SQL_SUMMARY_CORRECTIONS = (
+    "SELECT IdClsf, SUM(Trim1) AS Trim1, SUM(Trim2) AS Trim2, SUM(Trim3) AS Trim3, SUM(Trim4) AS Trim4 "
+    "  FROM Clasificatii_Rectificari "
+    " WHERE Data >= %s AND Data < %s "
+    " GROUP BY IdClsf"
+)
+
+
+# A classification has MOVEMENT in the year when ANY quarter of ANY of its budget versions or ANY
+# quarter of ANY of its corrections is not zero. The quarters are tested one by one, never through a
+# total: a correction of +1000 in quarter 1 and -1000 in quarter 2 totals 0 and is still activity.
+_SQL_SUMMARY_ACTIVE = (
+    "SELECT IdClsf FROM Clasificatii_Buget "
+    " WHERE An = %s AND (COALESCE(Trim1, 0) <> 0 OR COALESCE(Trim2, 0) <> 0 "
+    "                 OR COALESCE(Trim3, 0) <> 0 OR COALESCE(Trim4, 0) <> 0) "
+    " UNION "
+    "SELECT IdClsf FROM Clasificatii_Rectificari "
+    " WHERE Data >= %s AND Data < %s AND (COALESCE(Trim1, 0) <> 0 OR COALESCE(Trim2, 0) <> 0 "
+    "                                  OR COALESCE(Trim3, 0) <> 0 OR COALESCE(Trim4, 0) <> 0)"
+)
+
+
+def _read_summary(cursor, an: int) -> list:
+    """{"id_clsf", "activ", "budget": {...}|null, "corrections": {"trim1".."trim4"}|null} for every
+    classification that has a budget version or a correction in the year."""
+    cursor.execute(_SQL_SUMMARY_ACTIVE, (an, date(an, 1, 1), date(an + 1, 1, 1)))
+    active = {int(r["IdClsf"]) for r in cursor.fetchall()}
+    cursor.execute(_SQL_SUMMARY_BUDGETS, (an, an))
+    budgets = {}
+    for r in cursor.fetchall():
+        budgets[int(r["IdClsf"])] = {
+            "id": int(r["IdBuget"]),
+            "data_inceput": r["DataInceput"].isoformat() if r["DataInceput"] is not None else None,
+            "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
+            "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
+        }
+    cursor.execute(_SQL_SUMMARY_CORRECTIONS, (date(an, 1, 1), date(an + 1, 1, 1)))
+    corrections = {}
+    for r in cursor.fetchall():
+        corrections[int(r["IdClsf"])] = {
+            "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
+            "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
+        }
+    return [{"id_clsf": id_clsf, "activ": id_clsf in active,
+             "budget": budgets.get(id_clsf), "corrections": corrections.get(id_clsf)}
+            for id_clsf in sorted(set(budgets) | set(corrections))]
+
+
+@forexe_bp.route("/api/forexe/nomenclatoare/clasificatii/sumar-buget", methods=["GET"])
+@require_session
+def get_clasificatii_sumar_buget():
+    """The last budget version and the corrections total of every classification, for one year."""
+    db_name = g.session.db_name
+    conn = None
+    try:
+        an = _year(request.args.get("an"))
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        return _json_utf8({"items": _read_summary(cursor, an)}, 200)
+    except _Refused as e:
+        return _json_utf8({"error": str(e)}, 400)
+    except Exception as e:
+        logger.error("[forexe.clasificatii_edit] summary %s: %s", db_name, e, exc_info=True)
+        return _json_utf8({"error": f"Eroare la citirea sumarului de buget: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 def _classification(cursor, id_clsf: int) -> dict:
@@ -509,3 +601,93 @@ def _rollback(conn):
         conn.rollback()
     except Exception:
         logger.warning("[forexe.clasificatii_edit] rollback failed", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# Check: the budget FOREXE reported == the budget K-BOT holds (slice 0103-04)
+# ---------------------------------------------------------------------------
+# What FOREXE reported = the `Credit_Bugetar` of the MOST RECENTLY downloaded indicator row of each
+# classification (FX_Indicatori.DTQ). What K-BOT holds = the version in force on the day plus its
+# rectifications, cumulative to the quarter of the day (budget_on_day.py -- the same rule the DDF
+# uses). Rows whose two figures differ by less than half a cent are equal.
+_SQL_CHECK_CLASSIFICATIONS = (
+    "SELECT C.IDClsf, C.IdUnitate, C.Clsf, C.Denumire, C.SS "
+    "  FROM Clasificatii C "
+    "  LEFT JOIN Unitati U ON U.IdUnitate = C.IdUnitate "
+    " WHERE COALESCE(U.Ascuns, 0) = 0 "
+    " ORDER BY C.Capitol, C.Subcapitol, C.Articol, C.Alineat"
+)
+_SQL_CHECK_FX_ANGAJAMENT = (
+    "SELECT IdClsf, Credit_Bugetar FROM FX_Indicatori "
+    " WHERE IdClsf IS NOT NULL AND IdClsf <> 0 AND CodAngajament = %s "
+    " ORDER BY DTQ DESC"
+)
+_SQL_CHECK_FX = (
+    "SELECT IdClsf, Credit_Bugetar FROM FX_Indicatori "
+    " WHERE IdClsf IS NOT NULL AND IdClsf <> 0 "
+    " ORDER BY DTQ DESC"
+)
+_EQUAL_WITHIN = 0.005
+
+
+def check_budget(cursor, day: date, cod_angajament: str = "") -> list:
+    """One entry per classification that has a K-BOT budget on `day` or an indicator row. With
+    `cod_angajament` only the classifications of that angajament, against ITS indicator rows (the
+    automatic check after a download)."""
+    if cod_angajament:
+        cursor.execute(_SQL_CHECK_FX_ANGAJAMENT, (cod_angajament,))
+    else:
+        cursor.execute(_SQL_CHECK_FX)
+    credit_fx = {}
+    for r in cursor.fetchall():
+        credit_fx.setdefault(int(r["IdClsf"]), _number(r["Credit_Bugetar"]))
+
+    cursor.execute(_SQL_CHECK_CLASSIFICATIONS)
+    classifications = cursor.fetchall()
+    items = []
+    for c in classifications:
+        id_clsf = int(c["IDClsf"])
+        if cod_angajament and id_clsf not in credit_fx:
+            continue
+        kbot = budget_on_day(cursor, id_clsf, day)
+        fx = credit_fx.get(id_clsf)
+        if kbot is None and fx is None:
+            continue
+        diff = round((fx or 0.0) - (kbot or 0.0), 2)
+        items.append({
+            "id_clsf": id_clsf,
+            "id_unitate": int(c["IdUnitate"]) if c["IdUnitate"] is not None else None,
+            "clsf": _text(c["Clsf"]),
+            "denumire": _text(c["Denumire"]),
+            "ss": _text(c["SS"]),
+            "buget_kbot": kbot,
+            "credit_fx": fx,
+            "diferenta": diff,
+            "egal": kbot is not None and fx is not None and abs(diff) < _EQUAL_WITHIN,
+        })
+    return items
+
+
+@forexe_bp.route("/api/forexe/nomenclatoare/clasificatii/verificare-buget", methods=["GET"])
+@require_session
+def get_verificare_buget():
+    """The FOREXE credit against the K-BOT budget (+ rectifications) of every classification."""
+    db_name = g.session.db_name
+    conn = None
+    try:
+        raw_day = request.args.get("data")
+        day = as_day(raw_day) if raw_day else date.today()
+        if day is None:
+            raise _Refused("Data nu este o dată (aaaa-ll-zz).")
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        items = check_budget(cursor, day, _text(request.args.get("angajament")))
+        return _json_utf8({"data": day.isoformat(), "trimestru": quarter_of(day), "items": items}, 200)
+    except _Refused as e:
+        return _json_utf8({"error": str(e)}, 400)
+    except Exception as e:
+        logger.error("[forexe.clasificatii_edit] check %s: %s", db_name, e, exc_info=True)
+        return _json_utf8({"error": f"Eroare la verificarea bugetului: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()

@@ -19,6 +19,22 @@ Partial Public Class AdvancedTreeControl
     Public RaiseLeftClickOnRightClick As Boolean = True
     Public ReRaiseClickOnSameNode As Boolean = True
 
+    ''' <summary>
+    ''' Slice 0107. True (default): a right click selects the row under the cursor, like a left
+    ''' click. False: a right click on a row that is NOT selected does nothing at all -- no
+    ''' selection, no <c>NodeMouseDown</c>/<c>NodeMouseUp</c>, no expand -- the operator must left
+    ''' click it first; a right click on the selected row (or any row of the selected group)
+    ''' still raises the events, so the context menu opens. Used where selecting a row loads a
+    ''' document, so a menu click must not swap the document under the operator.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Fals: clic dreapta pe un rând neselectat nu face nimic (nu-l selectează, nu ridică evenimente); se dă întâi clic stânga.")>
+    <DefaultValue(True)>
+    Public Property RightClickSelects As Boolean = True
+
+    ' The right press that was refused: its release goes with it (same idea as _pressWhileLocked).
+    Private _rightPressIgnored As Boolean
+
     ' Tooltip
     Public AutoHideTooltipMs As Integer = 5000
 

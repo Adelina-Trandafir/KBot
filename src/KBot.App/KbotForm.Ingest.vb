@@ -134,6 +134,10 @@ Partial Public Class KbotForm
             ' Slice 0091: receptions whose detail arrived cut kept their old lines; the operator
             ' decides whether to read them again now.
             Await OferaReimprospatareaReceptiilorAsync(cod, propunere.ReceptiiIncomplete)
+
+            ' Slice 0103-04: the credit FOREXE just sent against the budget K-BOT holds; the window
+            ' opens only when something differs.
+            Await VerificaBugetulFxAsync(cod)
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)

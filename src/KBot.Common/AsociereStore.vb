@@ -64,7 +64,9 @@ Public NotInheritable Class AsociereStore
     ' motiv: fara el, un test ar scrie in folderul aplicatiei, iar doua teste care ruleaza
     ' in paralel s-ar calca pe fisiere.
     Private Shared Function FolderSau(folder As String) As String
-        Return If(String.IsNullOrWhiteSpace(folder), Folder, folder)
+        ' `AsociereStore.` is mandatory: VB is case-insensitive, so a bare `Folder` here is the
+        ' parameter `folder` (Nothing in this branch), not the property.
+        Return If(String.IsNullOrWhiteSpace(folder), AsociereStore.Folder, folder)
     End Function
 
     ''' <summary>Calea dosarului unui angajament. Nu spune daca exista.</summary>

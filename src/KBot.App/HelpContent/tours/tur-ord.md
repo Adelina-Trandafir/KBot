@@ -36,9 +36,9 @@ part: footer.collapse
 Îngustează arborele la o fâșie, ca documentul din dreapta să aibă tot locul; încă un clic îl desface.
 
 ## Clic dreapta pe arbore
-<!-- slice: 0049, 0049-01, 0097 -->
+<!-- slice: 0049, 0049-01, 0097, 0107 -->
 target: OrdView.tree
-Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Pe o lună sau pe rădăcina «Toate ordonanțările» poți șterge toate ordonanțările de sub ea, dacă niciuna nu e semnată. Pe o ordonanțare semnată nu apare niciun meniu: nu se mai modifică și nu se mai șterge.
+Dă întâi clic stânga pe rând; clicul dreapta merge doar pe rândul ales. Meniul are: Adaugă ordonanțare (întreabă ziua plăților), Modifică ordonanțarea, Șterge ordonanțarea (plățile ei redevin neordonanțate) și Generare în lot (câte una pentru fiecare zi cu plăți neordonanțate; se oprește la prima eroare). Pe o lună sau pe rădăcina «Toate ordonanțările» poți șterge toate ordonanțările de sub ea, dacă niciuna nu e semnată. Pe o ordonanțare semnată nu apare niciun meniu: nu se mai modifică și nu se mai șterge.
 
 ## Lista de tipărire
 <!-- slice: 0099, 0101 -->

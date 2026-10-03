@@ -99,7 +99,7 @@ Public Class SetariInfoView
             btnActualizari.Enabled = False
             RaiseEvent BusyChanged(True)
             RaiseEvent StatusChanged("Se verifică actualizările...")
-            Dim mustExit As Boolean = Await _updates.RunManualCheckAsync(FindForm())
+            Dim mustExit As Boolean = Await _updates.RunManualCheckAsync(FindForm(), _session.OperatorName)
             RaiseEvent StatusChanged(String.Empty)
             If mustExit Then _exitApp()
         Catch ex As Exception

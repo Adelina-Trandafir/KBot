@@ -591,6 +591,14 @@ Public Class DdfView
             Dim payload As DdfNodeRows = TryCast(pNode.Tag, DdfNodeRows)
             If payload Is Nothing Then Return
 
+            ' Slice 0106: the right button only opens the write commands. The menu takes its
+            ' node from `pNode`/`payload`, not from the view's selection, so the context and
+            ' the shown PDF stay as they are -- the PDF reloads on the LEFT click only.
+            If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
+                AratatMeniulContextual(pNode, payload)
+                Return
+            End If
+
             _nodeRows = payload.Linii
             _nodeIsRoot = payload.IsRoot
             ' Revizia frunzei (Nothing pe o rădăcină) = ținta unei eventuale generări (felia 05)
@@ -609,13 +617,6 @@ Public Class DdfView
             ' cel din cache e la zi) și abia apoi re-împingem contextul. Fire-and-forget
             ' deliberat, ca LoadAsync: metoda își tratează singură toate erorile.
             EnsureSignedPdfAsync(_selectedRevizie)
-
-            ' Slice 0051: the right button opens the write commands. Wired AFTER the read
-            ' path above, so a failure to build the menu cannot stop the selection from
-            ' working -- the view stays usable read-only whatever happens here.
-            If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
-                AratatMeniulContextual(pNode, payload)
-            End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.Tree_NodeMouseUp", ex)
         End Try

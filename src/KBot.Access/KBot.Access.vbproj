@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.Access</RootNamespace>
+    <AssemblyName>KBot.Access</AssemblyName>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <!-- A class library does not copy its package files (the OLE DB provider) to its output by default;
+         KBot.App copies this component next to its exe for a development run and needs them there. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- Slice 0104: everything that talks to the Access files (OLE DB / ACE). Shipped ONLY in the package
+       for clients that also run the Access application; KBot.App never references this project (it
+       finds KBot.Access.dll at run time through KBot.Common.AccessBridge), so a package built without
+       it simply has no Access code. KBot.App.vbproj builds it first (ReferenceOutputAssembly=false). -->
+  <PropertyGroup>
+    <FileVersion>1.0.1.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Slice 0103-06: "Trimite in Access" writes the budget into the unit's Access file (ACE, 64-bit). -->
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
+  </ItemGroup>
+</Project>

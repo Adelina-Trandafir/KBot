@@ -51,18 +51,29 @@ Public NotInheritable Class AccessProvider
 
             Dim failures As New List(Of String)()
 
+            ' Passwords tried, in order: the one typed on the form (when there is one), then the
+            ' password shared by the AVACONT files (operator, 02.10.2026), then none. A password
+            ' offered to an unprotected file can be refused, hence the last attempt.
+            Dim passwords As New List(Of String)()
+            If Not String.IsNullOrEmpty(password) Then passwords.Add(password)
+            Dim sharedPassword As String = AccessFilePassword.Value()
+            If Not passwords.Contains(sharedPassword) Then passwords.Add(sharedPassword)
+            If Not passwords.Contains(String.Empty) Then passwords.Add(String.Empty)
+
             For Each provider In Providers
-                Dim cn As OleDbConnection = Nothing
-                Try
-                    cn = New OleDbConnection(BuildConnectionString(path, password, provider))
-                    cn.Open()
-                    Return cn
-                Catch ex As Exception
-                    ' Not a failure yet - the next provider may still open it. Record the
-                    ' reason so a total failure can name every attempt.
-                    failures.Add($"{provider}: {ex.Message}")
-                    If cn IsNot Nothing Then cn.Dispose()
-                End Try
+                For Each candidate In passwords
+                    Dim cn As OleDbConnection = Nothing
+                    Try
+                        cn = New OleDbConnection(BuildConnectionString(path, candidate, provider))
+                        cn.Open()
+                        Return cn
+                    Catch ex As Exception
+                        ' Not a failure yet - the next password or provider may still open it.
+                        ' Record the reason (never the password) so a total failure can name every attempt.
+                        failures.Add($"{provider}: {ex.Message}")
+                        If cn IsNot Nothing Then cn.Dispose()
+                    End Try
+                Next
             Next
 
             Throw New AccessOpenException(BuildFailureMessage(path, failures), Nothing)

@@ -22,6 +22,12 @@ Public Interface INomenclatoareApi
                                        ct As CancellationToken) As Task(Of BugetClasificatie)
 
     ''' <summary>
+    ''' The last budget version and the corrections total of every classification for
+    ''' <paramref name="an"/> (what a non-leaf tree node shows).
+    ''' </summary>
+    Function GetBudgetSummaryAsync(an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of BudgetSummaryRow))
+
+    ''' <summary>
     ''' Saves the budget versions and the corrections of one classification in one transaction and
     ''' returns them as read back from the database. <paramref name="deletedBudgetIds"/> and
     ''' <paramref name="deletedIds"/> are the versions and the corrections removed in the window.
@@ -32,6 +38,14 @@ Public Interface INomenclatoareApi
                                         corrections As IReadOnlyList(Of RectificareBugetara),
                                         deletedIds As IReadOnlyList(Of Integer),
                                         ct As CancellationToken) As Task(Of BugetClasificatie)
+
+    ''' <summary>
+    ''' FOREXE's credit against the K-BOT budget (+ rectifications) of every classification on
+    ''' <paramref name="day"/> (slice 0103-04).
+    ''' </summary>
+    ''' <paramref name="codAngajament"/> limits the check to that angajament's classifications.
+    Function GetBudgetCheckAsync(day As Date, ct As CancellationToken,
+                                 Optional codAngajament As String = Nothing) As Task(Of BudgetCheck)
 
     ''' <summary>The sector-sources of this database and the functional / economic dictionaries.</summary>
     Function GetClasificatiiNomenclatorAsync(an As Integer, ct As CancellationToken) As Task(Of ClasificatiiNomenclator)

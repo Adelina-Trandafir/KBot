@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.1.4</FileVersion>
+    <FileVersion>1.1.1.5</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -92,6 +92,8 @@
     <!-- Slice 0000-01: the help topics are Markdown; Markdig turns them into the help window's
          pages and into the exported manual. -->
     <PackageReference Include="Markdig" Version="0.45.0" />
+    <!-- Slice 0103-06's OLE DB package (writing the budget into the unit's Access file) moved with the
+         Access code into KBot.Access (slice 0104): this project no longer talks to Access itself. -->
   </ItemGroup>
 
   <!-- Slice 0000-01: help topics and their pictures. Written under HelpContent\, shipped as
@@ -105,6 +107,31 @@
   <ItemGroup>
     <None Include="..\..\docs\release-notes\NOUTATI.md" Link="Noutati\NOUTATI.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <!-- Slice 0104: the Access component (everything that talks to the Access files) is NOT referenced by this
+       project: the application finds KBot.Access.dll at run time (KBot.Common.AccessBridge), so a package
+       can be built without it. ReferenceOutputAssembly=false only makes the build order right and, below,
+       copies the component next to the exe for a development run. The property KBotAudience set to
+       NonAccess (what publish-release.ps1 passes for a non-Access package) leaves it out of the build
+       altogether. -->
+  <PropertyGroup>
+    <KBotAudience Condition="'$(KBotAudience)' == ''">Access</KBotAudience>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(KBotAudience)' != 'NonAccess'">
+    <ProjectReference Include="..\KBot.Access\KBot.Access.vbproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <Target Name="CopyAccessComponent" AfterTargets="Build" Condition="'$(KBotAudience)' != 'NonAccess'">
+    <PropertyGroup>
+      <_AccessOut>$(MSBuildProjectDirectory)\..\KBot.Access\bin\$(Configuration)\net8.0-windows\</_AccessOut>
+    </PropertyGroup>
+    <ItemGroup>
+      <_AccessAll Include="$(_AccessOut)**\*.*" />
+      <!-- KBot.Access's own files always; anything else (its OLE DB package) only when the app does not have it. -->
+      <_AccessToCopy Include="@(_AccessAll)"
+                     Condition="'%(Filename)' == 'KBot.Access' Or ('%(Filename)' != 'KBot.Common' And '%(Filename)' != 'KBot.Domain' And !Exists('$(OutDir)%(RecursiveDir)%(Filename)%(Extension)'))" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AccessToCopy)" DestinationFiles="@(_AccessToCopy->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 
   <!-- Banc de probă (Dev Harness): referit DOAR pe Debug → zero amprentă în Release. -->
   <ItemGroup Condition="'$(Configuration)'=='Debug'">

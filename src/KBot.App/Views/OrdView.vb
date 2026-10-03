@@ -617,14 +617,10 @@ Public Class OrdView
             Dim payload As OrdNodePayload = TryCast(pNode.Tag, OrdNodePayload)
             If payload Is Nothing Then Return
 
-            ' Clic DREAPTA -> meniul de comenzi (felia 0049). Selectia se muta intai, ca meniul
-            ' sa se refere la nodul de sub cursor, nu la cel de dinainte.
+            ' Clic DREAPTA -> doar meniul de comenzi (felia 0049). Meniul isi ia nodul de sub
+            ' cursor din `pNode`, nu din selectia vederii; contextul si PDF-ul NU se schimba
+            ' (felia 0106: PDF-ul se reincarca doar la clic stanga).
             If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
-                _nodeLinii = payload.Linii
-                _nodeIsRoot = payload.IsRoot
-                _selectedOrd = payload.Ordonantare
-                _nodeOrdonantari = If(payload.IsRoot, payload.Ordonantari, Nothing)
-                PushToActivePage()
                 AratatMeniulContextual(pNode)
                 Return
             End If

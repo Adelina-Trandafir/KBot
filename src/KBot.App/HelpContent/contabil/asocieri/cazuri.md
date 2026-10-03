@@ -7,9 +7,10 @@ parent: contabil.asocieri
 screens: AsociereForm.btnReseteaza, AsociereForm.btnRenunta, AsociereForm.ntfMesaj
 keywords: fara schimbare, nu consemneaza nicio schimbare, randul de stergere, receptie stearsa, receptie noua, reconstituita, legatura blocata, golește asezarile, renunta, lantul nu se inchide
 ---
-<!-- slice: 0048-04, 0061 -->
+<!-- slice: 0048-04, 0061, 0107 -->
 Toate comenzile de mai jos sunt în **meniul de clic dreapta** al unui instantaneu (sau al unui grup
-de instantanee alese cu Ctrl / Shift).
+de instantanee alese cu Ctrl / Shift). Clicul dreapta merge doar pe un rând **deja ales**: dă întâi
+clic stânga pe el; pe un rând neales nu face nimic.
 
 ## O salvare fără nicio schimbare — «Nu consemnează nicio schimbare»
 <!-- slice: 0048-04, 0064 -->

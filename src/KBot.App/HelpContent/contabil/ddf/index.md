@@ -45,10 +45,11 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 > începe alta pe același angajament.
 
 ## Vederea «Fundamentare»
-<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099, 0101 -->
+<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099, 0101, 0107 -->
 
 - **Arborele**: rădăcina **«Toate reviziile»** (clic pe ea = tot documentul), lunile, apoi
-  reviziile. **Clic dreapta** pe o revizie oferă, după stare: «Trimite în FOREXE» / «Reia trimiterea
+  reviziile. **Clic dreapta** pe un rând **deja ales** (dă întâi clic stânga pe el; pe un rând
+  neales clicul dreapta nu face nimic) oferă pe o revizie, după stare: «Trimite în FOREXE» / «Reia trimiterea
   în FOREXE», «Modifică revizia», «Șterge revizia», «Șterge documentul». Pe o lună: «Șterge TOATE
   reviziile lunii»; pe rădăcină: «Șterge documentul (TOATE reviziile)».
 - **O revizie semnată** (fie și cu o singură semnătură) **nu se mai modifică și nu se mai șterge**:

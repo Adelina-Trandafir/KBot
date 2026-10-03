@@ -25,17 +25,20 @@ Public Class UpdateProgressForm
     Private ReadOnly _api As IUpdateApi
     Private ReadOnly _info As UpdateInfo
     Private ReadOnly _destination As String
+    Private ReadOnly _access As Boolean
     Private ReadOnly _cts As New CancellationTokenSource()
     Private _running As Boolean
     Private _finished As Boolean
 
-    Public Sub New(api As IUpdateApi, info As UpdateInfo, destinationPath As String)
+    ''' <summary>Slice 0104: <paramref name="access"/> = the kind of package (with / without the Access components) the version was read for.</summary>
+    Public Sub New(api As IUpdateApi, info As UpdateInfo, destinationPath As String, access As Boolean)
         If api Is Nothing Then Throw New ArgumentNullException(NameOf(api))
         If info Is Nothing Then Throw New ArgumentNullException(NameOf(info))
         If String.IsNullOrWhiteSpace(destinationPath) Then Throw New ArgumentException("Calea de destinație lipsește.", NameOf(destinationPath))
         _api = api
         _info = info
         _destination = destinationPath
+        _access = access
         InitializeComponent()
         Try
             capBar.IconImage = My.Resources.kbot_64
@@ -64,7 +67,7 @@ Public Class UpdateProgressForm
     Private Async Function DownloadAsync() As Task
         Try
             Dim progress As New Progress(Of Long)(AddressOf OnProgress)
-            Await _api.DownloadAsync(_destination, _info.Sha256, progress, _cts.Token)
+            Await _api.DownloadAsync(_destination, _info.Sha256, _access, progress, _cts.Token)
             Finish(DialogResult.OK)
         Catch ex As OperationCanceledException
             DeleteQuietly()

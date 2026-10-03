@@ -6,6 +6,19 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 
 <!-- Secțiunile sunt adăugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu ștergeți marcajele ascunse `<!\-\- release: ... \-\->` și `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmărite schimbările pentru versiunea următoare.-->
 
+## 1.1.1.6 (03.10.2026)
+<!-- release: utc=2026-10-03T07:56:21Z -->
+<!-- felii: 0105, 0106, 0107, 0000-43 -->
+
+- «Clasificații bugetare»: un nod de deasupra alineatelor arată un sumar, doar pentru citire: clasificația, ultimul buget și totalul rectificărilor.
+- Arborele arată implicit doar clasificațiile cu mișcare în an (vreun trimestru de buget sau de rectificare diferit de zero).
+- Bifa nouă «Arată toate clasificațiile», de sub arbore, le arată pe toate cele configurate.
+- «Verifică bugetul» arată doar clasificațiile la care diferența față de FOREXE nu este zero.
+- La actualizarea informațiilor unui angajament nu mai apare «Capturile nu au putut fi trimise: Value cannot be null».
+- Clic dreapta în arborele DDF și ORD nu mai reîncarcă documentul PDF; documentul se schimbă doar la clic stânga.
+- În arborii DDF, ORD și Asocieri, clic dreapta nu mai alege un rând: dați întâi clic stânga, apoi clic dreapta pentru meniu.
+- Ajutor: actualizat pentru clasificațiile bugetare și pentru clicul dreapta în DDF, ORD și Asocieri.
+
 ## 1.1.1.5 (02.10.2026)
 <!-- release: utc=2026-10-02T07:24:34Z -->
 <!-- felii: 0101-02, 0102, 0000-40, SLICELESS-lista-sursa-asociere-denumire-wicket, 0000-39 -->

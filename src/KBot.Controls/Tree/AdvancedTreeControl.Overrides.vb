@@ -171,6 +171,14 @@ Partial Public Class AdvancedTreeControl
 
         Dim it = HitTestItem(e.Location)
 
+        ' Slice 0107: with RightClickSelects off, a right press that would change the selection
+        ' (a row outside it, or empty space) is refused whole; its release is swallowed too.
+        _rightPressIgnored = False
+        If e.Button = MouseButtons.Right AndAlso Not RightClickSelects AndAlso Not IsRowSelected(it) Then
+            _rightPressIgnored = True
+            Return
+        End If
+
         ' Se reține DE UNDE s-ar putea porni o tragere (felia 0048-04). Nu pornește nimic:
         ' pragul sistemului se măsoară abia în OnMouseMove, altfel orice clic cu un pixel de
         ' tremur ar deveni o tragere.
@@ -409,6 +417,12 @@ Partial Public Class AdvancedTreeControl
         ' Slice 0078-08: the release of a press that was refused goes with it.
         If _pressWhileLocked Then
             _pressWhileLocked = False
+            Return
+        End If
+
+        ' Slice 0107: same for a right press refused because the row was not selected.
+        If _rightPressIgnored Then
+            _rightPressIgnored = False
             Return
         End If
 

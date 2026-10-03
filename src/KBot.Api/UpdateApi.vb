@@ -22,6 +22,8 @@ Public NotInheritable Class UpdateApi
 
     Private Const LATEST_PATH As String = "/api/update/latest"
     Private Const DOWNLOAD_PATH As String = "/api/update/download"
+    ' Slice 0104: the package kind rides the query string (access=1 with the Access components, 0 without).
+    Private Const ACCESS_QUERY As String = "?access="
     Private Const COPY_BUFFER As Integer = 81920
 
     Private ReadOnly _http As HttpClient
@@ -37,11 +39,24 @@ Public NotInheritable Class UpdateApi
         _http = http
     End Sub
 
-    Public Async Function GetLatestAsync(ct As CancellationToken) As Task(Of UpdateInfo) _
+    Public Function GetLatestAsync(ct As CancellationToken) As Task(Of UpdateInfo) _
         Implements IUpdateApi.GetLatestAsync
+        Return GetLatestCoreAsync(LATEST_PATH, ct)
+    End Function
+
+    Public Function GetLatestAsync(access As Boolean, ct As CancellationToken) As Task(Of UpdateInfo) _
+        Implements IUpdateApi.GetLatestAsync
+        Return GetLatestCoreAsync(LATEST_PATH & ACCESS_QUERY & AccessFlag(access), ct)
+    End Function
+
+    Private Shared Function AccessFlag(access As Boolean) As String
+        Return If(access, "1", "0")
+    End Function
+
+    Private Async Function GetLatestCoreAsync(route As String, ct As CancellationToken) As Task(Of UpdateInfo)
         Try
             EnsureConfigured()
-            Using msg As New HttpRequestMessage(HttpMethod.Get, LATEST_PATH)
+            Using msg As New HttpRequestMessage(HttpMethod.Get, route)
                 msg.Options.Set(ServerGate.Bypass, True)   ' slice 0098: never touches the database
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                     Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
@@ -67,9 +82,20 @@ Public NotInheritable Class UpdateApi
         End Try
     End Function
 
-    Public Async Function DownloadAsync(destinationPath As String, expectedSha256 As String,
-                                        progress As IProgress(Of Long), ct As CancellationToken) As Task _
+    Public Function DownloadAsync(destinationPath As String, expectedSha256 As String,
+                                  progress As IProgress(Of Long), ct As CancellationToken) As Task _
         Implements IUpdateApi.DownloadAsync
+        Return DownloadCoreAsync(DOWNLOAD_PATH, destinationPath, expectedSha256, progress, ct)
+    End Function
+
+    Public Function DownloadAsync(destinationPath As String, expectedSha256 As String, access As Boolean,
+                                  progress As IProgress(Of Long), ct As CancellationToken) As Task _
+        Implements IUpdateApi.DownloadAsync
+        Return DownloadCoreAsync(DOWNLOAD_PATH & ACCESS_QUERY & AccessFlag(access), destinationPath, expectedSha256, progress, ct)
+    End Function
+
+    Private Async Function DownloadCoreAsync(route As String, destinationPath As String, expectedSha256 As String,
+                                             progress As IProgress(Of Long), ct As CancellationToken) As Task
         If String.IsNullOrWhiteSpace(destinationPath) Then Throw New ArgumentException("Calea de destinație lipsește.", NameOf(destinationPath))
         If String.IsNullOrWhiteSpace(expectedSha256) Then Throw New ArgumentException("Suma de control așteptată lipsește.", NameOf(expectedSha256))
 
@@ -79,7 +105,7 @@ Public NotInheritable Class UpdateApi
             Dim dir As String = Path.GetDirectoryName(destinationPath)
             If Not String.IsNullOrEmpty(dir) Then Directory.CreateDirectory(dir)
 
-            Using msg As New HttpRequestMessage(HttpMethod.Get, DOWNLOAD_PATH)
+            Using msg As New HttpRequestMessage(HttpMethod.Get, route)
                 msg.Options.Set(ServerGate.Bypass, True)   ' slice 0098: never touches the database
                 ' Headers first: the body is streamed below, not buffered by HttpClient.
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(False)

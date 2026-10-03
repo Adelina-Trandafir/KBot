@@ -108,6 +108,16 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property UpdateAllReceptiiByDefault As Boolean = False
 
+    ''' <summary>Slice 0104-02: where the AVACONT registry normally lives on a client with Access.</summary>
+    Public Const AccessRegistryPathDefault As String = "C:\AVACONT\cale.accdb"
+
+    ''' <summary>
+    ''' Slice 0104-02: the AVACONT registry (<c>cale.accdb</c>) the Access features read -- the one that names
+    ''' the Access file of each unit. Edited on the «Access» page of the settings window; starts as
+    ''' <see cref="AccessRegistryPathDefault"/>. Never empty: a blank value reads as the default.
+    ''' </summary>
+    Public Property AccessRegistryPath As String = AccessRegistryPathDefault
+
     ''' <summary>
     ''' Slice 0100: multi-thread downloading as it applies now -- the server allows it (slice 0100-02,
     ''' <c>Setari.Multithread</c>) AND the operator switched it on. The advanced options no longer matter.
@@ -598,6 +608,7 @@ Public NotInheritable Class AppSettings
             .AutoUpdateOnConnect = AutoUpdateOnConnect,
             .AutoUpdateDays = AutoUpdateDays,
             .UpdateAllReceptiiByDefault = UpdateAllReceptiiByDefault,
+            .AccessRegistryPath = AccessRegistryPath,
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
@@ -658,6 +669,7 @@ Public NotInheritable Class AppSettings
             s.AutoUpdateDays = dto.AutoUpdateDays.Value
         End If
         If dto.UpdateAllReceptiiByDefault.HasValue Then s.UpdateAllReceptiiByDefault = dto.UpdateAllReceptiiByDefault.Value
+        If Not String.IsNullOrWhiteSpace(dto.AccessRegistryPath) Then s.AccessRegistryPath = dto.AccessRegistryPath.Trim()
         If dto.AdvancedOptions.HasValue Then s.AdvancedOptions = dto.AdvancedOptions.Value
         If dto.HelpCaptureMode.HasValue Then s.HelpCaptureMode = dto.HelpCaptureMode.Value
         ' A size that is not one of the choices (hand-edited file) keeps the default.
@@ -737,6 +749,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AutoUpdateOnConnect As Boolean?
     Public Property AutoUpdateDays As Integer?
     Public Property UpdateAllReceptiiByDefault As Boolean?
+    Public Property AccessRegistryPath As String
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?

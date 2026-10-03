@@ -1,8 +1,16 @@
 ﻿<#
 ================================================================================
   publish-release.ps1
-  Publishes KBot.App (+ KBot.Migrator under Migrare\) in RELEASE and produces
-  a .zip plus an Inno Setup installer (KBot_Setup_<stamp>.exe) with uninstaller.
+  Publishes KBot.App (+ KBot.Migrator under Migrare\ and KBot.Access.dll, for Access
+  clients) in RELEASE and produces a .zip plus an Inno Setup installer
+  (KBot_Setup_<stamp>.exe) with uninstaller.
+
+  TWO KINDS OF PACKAGE (slice 0104). The Migrator and the code that talks to Access
+  matter only to clients who also run the Access VBA application:
+    access      -> app + Migrare\ + KBot.Access.dll          KBot_Release_<stamp>.zip
+    non-access  -> app only, none of the Access components   KBot_Release_<stamp>_noaccess.zip
+  Chosen by the FIRST question of the script, asked before the signing one
+  (-Audience Access / NonAccess skips it). push-update.ps1 forwards its own answer.
 
   RELEASE => Program.vb does NOT enter the #If DEBUG branch:
              - starts directly in MainForm (the real shell);
@@ -18,6 +26,7 @@
   Build PC requirements: .NET 8 SDK in PATH (dotnet), Inno Setup 6 (ISCC.exe).
 
   Questions before building (each skippable by parameter):
+    -Audience  for whom is the package? (A)ccess / (N)on-access, Enter = A. Asked first.
     -Sign    sign the exes, Setup and uninstaller? (Y)es / (N)o, Enter = Y. "No" =
              no signing step runs, the SimplySign token is never asked.
     -Bump    which part of KBot.App's FileVersion to bump: (M)ajor, m(i)nor, (b)uild,
@@ -56,6 +65,13 @@ param(
 
     # Timestamp server. Certum's RFC3161 endpoint.
     [string] $TimestampUrl = 'http://time.certum.pl',
+
+    # For whom is the package? 'Ask' (default) puts the FIRST question on the console, before the
+    # signing one: "(A)ccess / (N)on-access", Enter = Access. 'Access' = Migrare\ + KBot.Access.dll
+    # are in the package; 'NonAccess' = none of the Access components. Without an interactive
+    # console 'Ask' behaves as 'Access' (the old behaviour).
+    [ValidateSet('Ask', 'Access', 'NonAccess')]
+    [string] $Audience = 'Ask',
 
     # Which part of KBot.App's FileVersion to bump BEFORE building. 'Ask' (default)
     # prompts on the console: "(M)ajor, m(i)nor, (b)uild, (r)evision, (N)one", Enter = N.
@@ -149,6 +165,25 @@ function Read-KBotBumpChoice {
         $key = ($answer -replace '\s', '').ToUpperInvariant()
         if ($map.ContainsKey($key)) { return $map[$key] }
         Write-Host "  Type M, i, b, r or N (Enter = N)." -ForegroundColor Yellow
+    }
+}
+
+# ==============================================================================
+#  AUDIENCE (slice 0104)
+# ==============================================================================
+
+function Read-KBotAudienceChoice {
+    # One question on the console; Enter = Access (what every build was until slice 0104).
+    if (-not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+        Write-Host "Audience: no interactive console -> Access (pass -Audience NonAccess for the other package)." -ForegroundColor Yellow
+        return 'Access'
+    }
+    while ($true) {
+        $answer = Read-Host "For whom is this build? (A)ccess = with Migrator + Access code / (N)on-access = without [A]"
+        $key = ($answer -replace '[\s-]', '').ToUpperInvariant()
+        if ($key -in @('', 'A', 'ACCESS')) { return 'Access' }
+        if ($key -in @('N', 'NONACCESS')) { return 'NonAccess' }
+        Write-Host "  Type A (access) or N (non-access); Enter = A." -ForegroundColor Yellow
     }
 }
 
@@ -439,6 +474,18 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     throw "dotnet SDK is not in PATH on this (build) PC. Install .NET 8 SDK."
 }
 
+# --- 1-. For whom (asked on the console unless -Audience says) -------------------
+#  The very first question, before signing: it decides what goes into the package. 'Access' keeps
+#  Migrare\ and KBot.Access.dll; 'NonAccess' builds the app without them and the file names say so.
+$AudienceChoice = if ($Audience -eq 'Ask') { Read-KBotAudienceChoice } else { $Audience }
+$IncludeAccess  = ($AudienceChoice -eq 'Access')
+$AudienceSuffix = if ($IncludeAccess) { '' } else { '_noaccess' }
+if ($IncludeAccess) {
+    Write-Host "Audience: ACCESS (Migrare\ + KBot.Access.dll in the package)." -ForegroundColor Cyan
+} else {
+    Write-Host "Audience: NON-ACCESS (no Migrator, no Access code in the package)." -ForegroundColor Cyan
+}
+
 # --- 1a. Sign or not (asked on the console unless -Sign says) -------------------
 #  Decided first, before anything is built, so a "No" never reaches the SimplySign
 #  token: Invoke-KBotSign and the Inno sign command both read $script:SigningEnabled.
@@ -485,7 +532,7 @@ if ($ReleaseNotes -eq 'Ask') {
 
 # --- 2. Names / paths ----------------------------------------------------------
 $Stamp         = Get-Date -Format 'yyyyMMdd_HHmmss'
-$AppFolderName = "KBot_${Configuration}_$Stamp"
+$AppFolderName = "KBot_${Configuration}_$Stamp$AudienceSuffix"
 $ArtifactsDir  = Join-Path $SolutionRoot 'artifacts'
 $PublishDir    = Join-Path $ArtifactsDir $AppFolderName
 $ZipPath       = Join-Path $ArtifactsDir "$AppFolderName.zip"
@@ -502,6 +549,7 @@ Write-Host "Publish $Configuration ($Rid, framework-dependent)..." -ForegroundCo
     -r $Rid `
     --self-contained false `
     -p:PublishSingleFile=false `
+    -p:KBotAudience=$AudienceChoice `
     -o $PublishDir
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed (ExitCode=$LASTEXITCODE)."
@@ -517,26 +565,75 @@ if ($harnessLeak.Count -gt 0) {
 Write-Host "Guard OK: no KBot.DevHarness.* in output." -ForegroundColor Cyan
 
 # --- 4c. Migrare -- KBot.Migrator (Access -> MariaDB utility) under 'Migrare\' --
-#  Separate EXE (not referenced by KBot.App), so it gets its own publish. It lives in
-#  a subfolder so its own .deps.json / .runtimeconfig.json do not mix with the app's.
-#  Same parameters: framework-dependent, no single-file.
-$MigratorProj = Join-Path $SolutionRoot 'src\KBot.Migrator\KBot.Migrator.vbproj'
-if (-not (Test-Path $MigratorProj)) { throw "Project not found: $MigratorProj" }
+#  ONLY in the package for Access clients (slice 0104). Separate EXE (not referenced by KBot.App), so
+#  it gets its own publish. It lives in a subfolder so its own .deps.json / .runtimeconfig.json do not
+#  mix with the app's. Same parameters: framework-dependent, no single-file.
 $MigrareDir = Join-Path $PublishDir 'Migrare'
-Write-Host "Publish KBot.Migrator -> Migrare\ ..." -ForegroundColor Cyan
-& dotnet publish $MigratorProj `
-    -c $Configuration `
-    -r $Rid `
-    --self-contained false `
-    -p:PublishSingleFile=false `
-    -o $MigrareDir
-if ($LASTEXITCODE -ne 0) {
-    throw "dotnet publish KBot.Migrator failed (ExitCode=$LASTEXITCODE)."
+if ($IncludeAccess) {
+    $MigratorProj = Join-Path $SolutionRoot 'src\KBot.Migrator\KBot.Migrator.vbproj'
+    if (-not (Test-Path $MigratorProj)) { throw "Project not found: $MigratorProj" }
+    Write-Host "Publish KBot.Migrator -> Migrare\ ..." -ForegroundColor Cyan
+    & dotnet publish $MigratorProj `
+        -c $Configuration `
+        -r $Rid `
+        --self-contained false `
+        -p:PublishSingleFile=false `
+        -o $MigrareDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet publish KBot.Migrator failed (ExitCode=$LASTEXITCODE)."
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $MigrareDir 'KBot.Migrator.exe'))) {
+        throw "KBot.Migrator.exe missing from $MigrareDir after publish."
+    }
+    Write-Host "Migrare OK: KBot.Migrator.exe in $MigrareDir" -ForegroundColor Cyan
+} else {
+    Write-Host "Migrare: skipped (non-access package)." -ForegroundColor Yellow
 }
-if (-not (Test-Path -LiteralPath (Join-Path $MigrareDir 'KBot.Migrator.exe'))) {
-    throw "KBot.Migrator.exe missing from $MigrareDir after publish."
+
+# --- 4c1. KBot.Access -- the code that talks to the Access files (slice 0104) ----
+#  Also Access-only. KBot.App does not reference it (it finds KBot.Access.dll at run time), so it
+#  is published on its own and its files are put NEXT TO the app: KBot.Access.dll, its .deps.json
+#  and what it needs that the app does not already have (the OLE DB package). Anything the app
+#  already carries (KBot.Common.dll, KBot.Domain.dll, ...) is left exactly as the app published it.
+if ($IncludeAccess) {
+    $AccessProj = Join-Path $SolutionRoot 'src\KBot.Access\KBot.Access.vbproj'
+    if (-not (Test-Path $AccessProj)) { throw "Project not found: $AccessProj" }
+    $AccessStage = Join-Path $ArtifactsDir "_access_$Stamp"
+    if (Test-Path $AccessStage) { Remove-Item $AccessStage -Recurse -Force }
+    Write-Host "Publish KBot.Access -> next to the app ..." -ForegroundColor Cyan
+    & dotnet publish $AccessProj `
+        -c $Configuration `
+        -r $Rid `
+        --self-contained false `
+        -o $AccessStage
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet publish KBot.Access failed (ExitCode=$LASTEXITCODE)."
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $AccessStage 'KBot.Access.dll'))) {
+        throw "KBot.Access.dll missing from $AccessStage after publish."
+    }
+    $stagePrefix = (Resolve-Path -LiteralPath $AccessStage).Path.TrimEnd('\') + '\'
+    foreach ($f in Get-ChildItem -LiteralPath $AccessStage -Recurse -File) {
+        $rel = $f.FullName.Substring($stagePrefix.Length)
+        $dest = Join-Path $PublishDir $rel
+        $ours = $rel -like 'KBot.Access.*'
+        if ($ours -or -not (Test-Path -LiteralPath $dest)) {
+            New-Item -ItemType Directory -Path (Split-Path $dest -Parent) -Force | Out-Null
+            Copy-Item -LiteralPath $f.FullName -Destination $dest -Force
+        }
+    }
+    Remove-Item $AccessStage -Recurse -Force
+    Write-Host "Access OK: KBot.Access.dll in $PublishDir" -ForegroundColor Cyan
+} else {
+    # The mirror guard of 4b: a package for clients WITHOUT Access carries nothing of it.
+    $accessLeak = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File -ErrorAction SilentlyContinue |
+                    Where-Object { $_.Name -like 'KBot.Access.*' -or $_.Name -like 'KBot.Migrator.*' -or $_.Name -eq 'System.Data.OleDb.dll' })
+    if ($accessLeak.Count -gt 0) {
+        throw ("Non-access publish contains Access components: {0}. " +
+               "Check KBotAudience in KBot.App.vbproj.") -f (($accessLeak | ForEach-Object Name) -join ', ')
+    }
+    Write-Host "Guard OK: no Access components in a non-access package." -ForegroundColor Cyan
 }
-Write-Host "Migrare OK: KBot.Migrator.exe in $MigrareDir" -ForegroundColor Cyan
 
 # --- 4c2. KBot.Updater (slice 0067) -> single KBot.Updater.exe next to the app ----
 #  The in-place update helper. Published SINGLE-FILE (framework-dependent) so the app
@@ -572,7 +669,7 @@ Write-Host "Updater OK: KBot.Updater.exe in $PublishDir" -ForegroundColor Cyan
 #  The updater relaunches itself through UAC on machines where C:\KBOT is not
 #  writable; unsigned, that prompt would be the yellow one.
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.App.exe')
-Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe')
+if ($IncludeAccess) { Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe') }
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Updater.exe')
 
 # --- 5. Workflows folder -------------------------------------------------------
@@ -662,7 +759,7 @@ $AppExe = Join-Path $PublishDir 'KBot.App.exe'
 $AppVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($AppExe).FileVersion
 if ([string]::IsNullOrWhiteSpace($AppVersion)) { throw "Missing FileVersion on KBot.App.exe." }
 
-$SetupBaseName = "KBot_Setup_$Stamp"
+$SetupBaseName = "KBot_Setup_$Stamp$AudienceSuffix"
 $SetupExe      = Join-Path $ArtifactsDir "$SetupBaseName.exe"
 if (Test-Path -LiteralPath $SetupExe) { Remove-Item -LiteralPath $SetupExe -Force }
 
@@ -686,6 +783,7 @@ try {
 }
 
 $isccArgs = @(
+    "/DWithAccess=$(if ($IncludeAccess) { 1 } else { 0 })",
     "/DSourceDir=$PublishDir",
     "/DAppVersion=$AppVersion",
     "/DOutputDir=$ArtifactsDir",
@@ -719,7 +817,7 @@ Remove-Item $PublishDir -Recurse -Force
 # --- 9. Report -----------------------------------------------------------------
 $ZipSizeMB = [Math]::Round((Get-Item $ZipPath).Length / 1MB, 1)
 Write-Host ""
-Write-Host "DONE (RELEASE)." -ForegroundColor Green
+Write-Host "DONE (RELEASE, $(if ($IncludeAccess) { 'ACCESS' } else { 'NON-ACCESS' }) package)." -ForegroundColor Green
 Write-Host "  Behavior : starts DIRECTLY in MainForm (real shell, no DevHarness)."
 Write-Host "  Installer: $SetupExe  ($SetupSizeMB MB)"
 Write-Host "             -> wizard (Inno Setup): default C:\KBOT, registers an uninstaller."
@@ -727,8 +825,12 @@ Write-Host "             -> silent: KBot_Setup_$Stamp.exe /VERYSILENT /NORESTART
 Write-Host "  Zip (manual): $ZipPath  ($ZipSizeMB MB)  [fallback manual extraction]"
 Write-Host "  Requires : .NET Desktop Runtime 8 (win-x64) on the client PC."
 Write-Host "  Workflows: $($wfls.Count) .wfl file(s) included under 'Workflows\'."
-Write-Host "  Migrare  : KBot.Migrator.exe (Access -> MariaDB) included under 'Migrare\'."
-Write-Host "  Updater  : KBot.Updater.exe next to the app (slice 0067). Publish it: .\push-update.ps1 [-Mandatory] [-Notes '...']"
+if ($IncludeAccess) {
+    Write-Host "  Migrare  : KBot.Migrator.exe (Access -> MariaDB) included under 'Migrare\'; KBot.Access.dll next to the app."
+} else {
+    Write-Host "  Migrare  : NOT included (non-access package) -- push it with: .\push-update.ps1 -Audience NonAccess"
+}
+Write-Host "  Updater  : KBot.Updater.exe next to the app (slice 0067). Publish it: .\push-update.ps1 [-Audience Access|NonAccess] [-Mandatory] [-Notes '...']"
 Write-Host "  Browser  : installer offers the Chromium download as a task (else '.\playwright.ps1 install chromium')."
 
 # --- 10. Signing status summary ------------------------------------------------
@@ -750,5 +852,5 @@ if (-not $script:SigningEnabled) {
 # --- 11. Release notes: report (the wait happened before the installer, step 7b) ---
 if ($ReleaseNotes -eq 'Ask' -and -not $notesWritten) {
     Write-Host ""
-    Write-Host "  Notes    : NONE for $ReleaseVersion (docselease-notesNOUTATI.md)." -ForegroundColor Yellow
+    Write-Host "  Notes    : NONE for $ReleaseVersion (docs\release-notes\NOUTATI.md)." -ForegroundColor Yellow
 }

@@ -131,6 +131,7 @@ Partial Class DdfView
         tree.PaddingExpanderGap = 8
         tree.PaddingIconGap = 8
         tree.PaddingTreeStart = 8
+        tree.RightClickSelects = False
         tree.RightIconSize = New Size(14, 14)
         tree.SearchIn = AdvancedTreeControl.En_Tree_SearchIn.SearchIn_Both
         tree.Size = New Size(318, 528)

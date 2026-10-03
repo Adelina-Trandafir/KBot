@@ -28,12 +28,16 @@ Public Class StartupLauncherForm
     ''' <summary>Vizualizatorul de jurnale, singur — fără autentificare și fără shell.</summary>
     Public Const KEY_JURNALE As String = "jurnale"
 
+    ''' <summary>Slice 0104-02: fereastra mică de probă Access (citește cale.accdb, închide direct aplicația).</summary>
+    Public Const KEY_ACCESS As String = "access"
+
     ' Pornirile, în ordinea afișării. Un rând nou se adaugă AICI și nicăieri altundeva; dispecerul
     ' din Program.Main aruncă pe o cheie pe care n-o cunoaște, deci o pornire uitată se vede imediat.
     Private Shared ReadOnly PORNIRI As (Key As String, Text As String)() = {
         (KEY_APLICATIE, "Aplicația — autentificare, apoi K-BOT"),
         (KEY_BANC, "Banc de probă — teste și playground-uri"),
-        (KEY_JURNALE, "Jurnale — vizualizatorul de jurnale")}
+        (KEY_JURNALE, "Jurnale — vizualizatorul de jurnale"),
+        (KEY_ACCESS, "Probă Access — citește cale.accdb, închide direct")}
 
     ''' <summary>Cheia pornirii alese, sau <c>Nothing</c> dacă fereastra a fost respinsă.</summary>
     Public ReadOnly Property Alegere As String

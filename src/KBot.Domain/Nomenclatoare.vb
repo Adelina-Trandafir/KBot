@@ -8,6 +8,10 @@ Imports System.Collections.Generic
 ''' <summary>One row of <c>Clasificatii</c>: a leaf (alineat) of the classification tree.</summary>
 Public NotInheritable Class Clasificatie
     Public Property IdClsf As Integer
+    ''' <summary>The unit the classification belongs to (slice 0103-06: picks its Access file).</summary>
+    Public Property IdUnitate As Integer?
+    ''' <summary>The id of the same classification in the Access file (<c>Clasificatii.IdClsfAcc</c>).</summary>
+    Public Property IdClsfAcc As Integer
     ''' <summary>«65.02».</summary>
     Public Property Capitol As String = String.Empty
     ''' <summary>«04.02».</summary>
@@ -84,6 +88,54 @@ Public NotInheritable Class BugetClasificatie
     ''' <summary>Empty = no <c>Clasificatii_Buget</c> row for that year yet. Oldest start date first.</summary>
     Public Property Budgets As New List(Of BudgetVersion)()
     Public Property Corrections As New List(Of RectificareBugetara)()
+End Class
+
+''' <summary>
+''' What the budget grids show for a node above the leaves of the tree: per classification, its LAST
+''' budget version of the year and the TOTAL of the year's corrections (quarter by quarter).
+''' </summary>
+Public NotInheritable Class BudgetSummaryRow
+    Public Property IdClsf As Integer
+    ''' <summary>True when some quarter of some budget version or correction of the year is not zero
+    ''' (quarters tested one by one: +1000 and -1000 total 0 and still count).</summary>
+    Public Property Active As Boolean
+    ''' <summary>Nothing = the classification has no budget version in the year.</summary>
+    Public Property LastBudget As BudgetVersion
+    ''' <summary>Nothing = the classification has no correction in the year.</summary>
+    Public Property CorrectionsTotal As QuarterAmounts
+End Class
+
+''' <summary>
+''' One classification in the check of slice 0103-04: what FOREXE last reported as the budget
+''' (<c>FX_Indicatori.Credit_Bugetar</c>) against what K-BOT holds (the version in force + its
+''' rectifications, cumulative to the quarter of the day).
+''' </summary>
+Public NotInheritable Class BudgetCheckRow
+    Public Property IdClsf As Integer
+    Public Property IdUnitate As Integer?
+    Public Property Clsf As String = String.Empty
+    Public Property Denumire As String = String.Empty
+    Public Property Ss As String = String.Empty
+    ''' <summary>Nothing = no budget version covers the day.</summary>
+    Public Property BugetKbot As Decimal?
+    ''' <summary>Nothing = no indicator row downloaded for the classification.</summary>
+    Public Property CreditFx As Decimal?
+    ''' <summary>FOREXE minus K-BOT.</summary>
+    Public Property Diferenta As Decimal
+    Public Property Egal As Boolean
+End Class
+
+''' <summary>The whole check: the day it was made for and one row per classification.</summary>
+Public NotInheritable Class BudgetCheck
+    Public Property Day As Date
+    Public Property Quarter As Integer
+    Public Property Rows As New List(Of BudgetCheckRow)()
+    ''' <summary>The rows whose difference is not zero (rounded to cents): the only ones the operator sees.</summary>
+    Public ReadOnly Property Differences As IEnumerable(Of BudgetCheckRow)
+        Get
+            Return Rows.Where(Function(r) r.Diferenta <> 0D)
+        End Get
+    End Property
 End Class
 
 ''' <summary>A code + name pair from a dictionary (sector-source, functional or economic code).</summary>

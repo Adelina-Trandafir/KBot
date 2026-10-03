@@ -9,7 +9,8 @@ Imports KBot.Theming
 ''' <see cref="KBotNavList"/> on the left, one page at a time on the right, a status band
 ''' below. Six pages, created lazily at first activation like the shell's views:
 ''' «Informații» (operator, licence, updates, password), «Aplicație» (switches, documents,
-''' folders), «FOREXE», «Descărcări multiple» (only while the server allows it, slice 0100-02), «Temă», «Autentificare» and -- pinned at the bottom of the list --
+''' folders), «FOREXE», «Descărcări multiple» (only while the server allows it, slice 0100-02), «Access» (only for
+''' an Access client, slice 0104-02), «Temă», «Autentificare» and -- pinned at the bottom of the list --
 ''' «Jurnal», the log viewer (slice 0072-01; it used to be a window of its own).
 '''
 ''' <para><b>Modeless, one instance.</b> Opened from the shell's options menu and owned by
@@ -126,6 +127,10 @@ Public Class SetariForm
     ' The page the server's Setari.Multithread switches on and off (slice 0100-02).
     Private Const KeyMultithread As String = "multithread"
 
+    ' The page only an Access client has (slice 0104-02): the unit's Setari.Access is 1 AND the Access component
+    ' is in this installation (AccessFeature.Enabled).
+    Private Const KeyAccess As String = "access"
+
     Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
         Try
             If IsDisposed OrElse Not IsHandleCreated Then Return
@@ -173,6 +178,12 @@ Public Class SetariForm
         Dim shown As Boolean = ServerSettings.MultithreadAllowed
         navViews.SetItemVisible(KeyMultithread, shown)
         If Not shown AndAlso String.Equals(navViews.SelectedKey, KeyMultithread, StringComparison.Ordinal) Then
+            navViews.SelectedKey = "aplicatie"
+        End If
+
+        Dim accessShown As Boolean = AccessFeature.Enabled
+        navViews.SetItemVisible(KeyAccess, accessShown)
+        If Not accessShown AndAlso String.Equals(navViews.SelectedKey, KeyAccess, StringComparison.Ordinal) Then
             navViews.SelectedKey = "aplicatie"
         End If
     End Sub
@@ -249,6 +260,7 @@ Public Class SetariForm
                 Case "aplicatie" : Return New SetariAplicatieView()
                 Case "forexe" : Return New SetariForexeView(_controller)
                 Case KeyMultithread : Return New SetariMultithreadView()
+                Case KeyAccess : Return New SetariAccessView(_session)
                 Case "pagina" : Return New SetariPaginaView(_controller)
                 Case "extrase" : Return New SetariExtraseView()
                 Case "tema" : Return New SetariTemaView()

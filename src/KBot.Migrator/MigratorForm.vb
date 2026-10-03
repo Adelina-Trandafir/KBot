@@ -971,6 +971,84 @@ Public Class MigratorForm
         Return text & "." & Environment.NewLine
     End Function
 
+    ' ---- opening budget (slice 0103-03) ----------------------------------------------------
+
+    ''' <summary>
+    ''' «Buget 1/12»: reads the PREVIOUS year's Clasificatii + Rectificari of the ticked units and, after
+    ''' the operator has seen the plan, writes one Clasificatii_Buget version starting on 01.01.
+    ''' </summary>
+    Private Async Sub btnBugetDeschidere_Click(sender As Object, e As EventArgs) Handles btnBugetDeschidere.Click
+        Try
+            Dim server = BuildServer()
+            If server Is Nothing Then Return
+            Dim dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
+            If String.IsNullOrWhiteSpace(dc) Then
+                Warn("Nu a fost ales niciun DC. Citiți întâi registrul.")
+                Return
+            End If
+
+            Dim units As New List(Of CaiUnit)()
+            For Each row In dgvUnitati.Rows
+                If Not IsTicked(row) Then Continue For
+                Dim unit = TryCast(row.Tag, CaiUnit)
+                If unit IsNot Nothing Then units.Add(unit)
+            Next
+            If units.Count = 0 Then
+                Warn("Nu a fost bifată nicio unitate.")
+                Return
+            End If
+
+            Dim runner As New BudgetOpeningRunner(server, dc, AccessPassword(), AddressOf SayFromWorker)
+            SetBusy(True)
+            BeginProgress(0)
+            _cancellation = New CancellationTokenSource()
+            Try
+                Dim token = _cancellation.Token
+                Say($"Buget de deschidere {BudgetOpeningRunner.StartDate:dd.MM.yyyy}: se citesc fișierele anului anterior…")
+                Dim plan = Await Task.Run(Function() runner.Plan(units, token), token)
+
+                For Each note In plan.Notes
+                    Say("   " & note)
+                Next
+                For Each line In plan.Unmatched
+                    Say("   Fără corespondent: " & line)
+                Next
+                Say($"   De scris: {plan.Rows.Count} rânduri; deja existente (neatinse): {plan.AlreadyThere}; fără corespondent: {plan.Unmatched.Count}.")
+
+                If plan.Rows.Count = 0 Then
+                    Warn("Nu există nimic de scris." & Environment.NewLine & Environment.NewLine &
+                         $"Deja existente: {plan.AlreadyThere}. Fără corespondent: {plan.Unmatched.Count}. Note: {plan.Notes.Count}.")
+                    Return
+                End If
+
+                Dim answer = KBotMessage.Show(
+                    $"Se scriu {plan.Rows.Count} versiuni de buget cu data {BudgetOpeningRunner.StartDate:dd.MM.yyyy} " &
+                    $"în baza «{dc}» (Trim1 = 1/12 din totalul anului anterior, rotunjit în sus)." & Environment.NewLine &
+                    $"Deja existente, neatinse: {plan.AlreadyThere}. Fără corespondent: {plan.Unmatched.Count}. " &
+                    $"Unități sărite: {plan.Notes.Count}." & Environment.NewLine & Environment.NewLine &
+                    "Detaliile sunt în jurnal. Continuați?",
+                    "Buget 1/12", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If answer <> DialogResult.Yes Then Return
+
+                Dim written = Await Task.Run(Function() runner.Write(plan), token)
+                Say($"Buget de deschidere: {written} rânduri scrise.")
+                KBotMessage.Show($"Buget de deschidere scris: {written} rânduri.", "Buget 1/12",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Finally
+                EndProgress()
+                SetBusy(False)
+                _cancellation?.Dispose()
+                _cancellation = Nothing
+            End Try
+
+        Catch ex As OperationCanceledException
+            Say("Buget 1/12 oprit.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.btnBugetDeschidere_Click", ex)
+            Warn("Bugetul de deschidere a eșuat." & Environment.NewLine & Environment.NewLine & ex.Message)
+        End Try
+    End Sub
+
     Private Sub btnOpreste_Click(sender As Object, e As EventArgs) Handles btnOpreste.Click
         Try
             If _cancellation Is Nothing Then Return
@@ -1205,6 +1283,7 @@ Public Class MigratorForm
         btnTesteaza.Enabled = Not busy
         btnCitesteRegistru.Enabled = Not busy
         btnOpreste.Enabled = busy
+        btnBugetDeschidere.Enabled = Not busy
         If busy Then btnTransfera.Enabled = False
         Cursor = If(busy, Cursors.WaitCursor, Cursors.Default)
 

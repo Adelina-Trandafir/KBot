@@ -24,9 +24,12 @@ Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
     se numește **Documente** și arată lista de tipărire — mai jos.
 
 ## Comenzile
-<!-- slice: 0049, 0049-01, 0097, 0000-14 -->
+<!-- slice: 0049, 0049-01, 0097, 0000-14, 0107 -->
 
-**Clic dreapta** pe arbore deschide meniul:
+**Clic dreapta** pe un rând **deja ales** al arborelui deschide meniul. Dă întâi clic stânga pe
+rând: pe un rând neales clicul dreapta nu face nimic.
+
+Comenzile:
 
 | Comandă | Ce face |
 |---------|---------|

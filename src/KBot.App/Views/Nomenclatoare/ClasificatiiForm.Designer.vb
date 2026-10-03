@@ -34,15 +34,20 @@ Partial Class ClasificatiiForm
         Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn15 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn16 As KBotDataColumn = New KBotDataColumn()
-        tips = New KBotToolTip(components)
+        Dim KBotDataColumn17 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn18 As KBotDataColumn = New KBotDataColumn()
+        tips =New KBotToolTip(components)
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
         btnSalveaza = New Button()
+        btnVerifica = New Button()
+        btnTrimiteAccess = New Button()
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         pnlCard = New Panel()
         tlyBody = New KBotTableLayoutPanel()
         tree = New AdvancedTreeControl()
+        chkToate = New CheckBox()
         tlyRight = New KBotTableLayoutPanel()
         lblBuget = New Label()
         lblRectificari = New Label()
@@ -62,6 +67,18 @@ Partial Class ClasificatiiForm
         ' 
         gridBuget.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridBuget.BackColor = SystemColors.Window
+        gridBuget.ColumnFillMode = KBotFillMode.SpecificColumn
+        gridBuget.FillColumnKey = "clsf"
+        KBotDataColumn17.AggregateFormatString = Nothing
+        KBotDataColumn17.FormatString = Nothing
+        KBotDataColumn17.HeaderText = "Clsf"
+        KBotDataColumn17.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn17.Key = "clsf"
+        KBotDataColumn17.MinWidth = 150
+        KBotDataColumn17.OptionGroup = Nothing
+        KBotDataColumn17.ReadOnly = True
+        KBotDataColumn17.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn17.Width = 200
         KBotDataColumn15.AggregateFormatString = Nothing
         KBotDataColumn15.Format = KBotFormat.ShortDate
         KBotDataColumn15.FormatString = Nothing
@@ -134,6 +151,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn16.OptionGroup = Nothing
         KBotDataColumn16.ReadOnly = True
         KBotDataColumn16.Visible = KBotColumnVisibility.Hidden
+        gridBuget.Columns.Add(KBotDataColumn17)
         gridBuget.Columns.Add(KBotDataColumn15)
         gridBuget.Columns.Add(KBotDataColumn1)
         gridBuget.Columns.Add(KBotDataColumn2)
@@ -165,7 +183,18 @@ Partial Class ClasificatiiForm
         ' 
         gridRectificari.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridRectificari.BackColor = SystemColors.Window
-        gridRectificari.ColumnFillMode = KBotFillMode.FirstColumn
+        gridRectificari.ColumnFillMode = KBotFillMode.SpecificColumn
+        gridRectificari.FillColumnKey = "document"
+        KBotDataColumn18.AggregateFormatString = Nothing
+        KBotDataColumn18.FormatString = Nothing
+        KBotDataColumn18.HeaderText = "Clsf"
+        KBotDataColumn18.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn18.Key = "clsf"
+        KBotDataColumn18.MinWidth = 150
+        KBotDataColumn18.OptionGroup = Nothing
+        KBotDataColumn18.ReadOnly = True
+        KBotDataColumn18.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn18.Width = 200
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Nr. doc."
@@ -262,6 +291,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn14.OptionGroup = Nothing
         KBotDataColumn14.ReadOnly = True
         KBotDataColumn14.Visible = KBotColumnVisibility.Hidden
+        gridRectificari.Columns.Add(KBotDataColumn18)
         gridRectificari.Columns.Add(KBotDataColumn6)
         gridRectificari.Columns.Add(KBotDataColumn7)
         gridRectificari.Columns.Add(KBotDataColumn8)
@@ -304,6 +334,37 @@ Partial Class ClasificatiiForm
         tips.SetToolTipHeader(btnSalveaza, "Salvează")
         tips.SetToolTipText(btnSalveaza, "Scrie în baza de date versiunile de buget și rectificările clasificației alese.")
         btnSalveaza.UseVisualStyleBackColor = True
+        ' 
+        ' btnVerifica
+        ' 
+        btnVerifica.AutoSize = True
+        btnVerifica.FlatStyle = FlatStyle.Flat
+        btnVerifica.Location = New Point(600, 6)
+        btnVerifica.Margin = New Padding(0, 0, 12, 0)
+        btnVerifica.Name = "btnVerifica"
+        btnVerifica.Padding = New Padding(26, 4, 26, 4)
+        btnVerifica.Size = New Size(198, 60)
+        btnVerifica.TabIndex = 3
+        btnVerifica.Text = "Verifică bugetul"
+        tips.SetToolTipHeader(btnVerifica, "Verifică bugetul față de FOREXE")
+        tips.SetToolTipText(btnVerifica, "Compară bugetul + rectificările de azi cu creditul bugetar descărcat din FOREXE, pe fiecare clasificație." & vbLf & "Arată fiecare clasificație cu cele două valori și diferența.")
+        btnVerifica.UseVisualStyleBackColor = True
+        ' 
+        ' btnTrimiteAccess
+        ' 
+        btnTrimiteAccess.AutoSize = True
+        btnTrimiteAccess.Enabled = False
+        btnTrimiteAccess.FlatStyle = FlatStyle.Flat
+        btnTrimiteAccess.Location = New Point(800, 6)
+        btnTrimiteAccess.Margin = New Padding(0, 0, 12, 0)
+        btnTrimiteAccess.Name = "btnTrimiteAccess"
+        btnTrimiteAccess.Padding = New Padding(26, 4, 26, 4)
+        btnTrimiteAccess.Size = New Size(198, 60)
+        btnTrimiteAccess.TabIndex = 4
+        btnTrimiteAccess.Text = "Trimite în Access"
+        tips.SetToolTipHeader(btnTrimiteAccess, "Trimite în Access")
+        tips.SetToolTipText(btnTrimiteAccess, "Scrie în baza Access a unității (din registrul AVACONT) bugetul în vigoare azi și rectificările anului clasificației alese." & vbLf & "Se activează după salvare.")
+        btnTrimiteAccess.UseVisualStyleBackColor = True
         ' 
         ' tlyMain
         ' 
@@ -357,13 +418,16 @@ Partial Class ClasificatiiForm
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 39.42857F))
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.57143F))
         tlyBody.Controls.Add(tree, 0, 0)
+        tlyBody.Controls.Add(chkToate, 0, 1)
         tlyBody.Controls.Add(tlyRight, 1, 0)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(12, 9)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
-        tlyBody.RowCount = 1
+        tlyBody.RowCount = 2
         tlyBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyBody.RowStyles.Add(New RowStyle())
+        tlyBody.SetRowSpan(tlyRight, 2)
         tlyBody.Size = New Size(1575, 614)
         tlyBody.TabIndex = 0
         ' 
@@ -399,6 +463,20 @@ Partial Class ClasificatiiForm
         tree.SearchShow = True
         tree.Size = New Size(608, 614)
         tree.TabIndex = 0
+        ' 
+        ' chkToate
+        ' 
+        chkToate.AutoSize = True
+        chkToate.FlatStyle = FlatStyle.Flat
+        chkToate.Location = New Point(0, 620)
+        chkToate.Margin = New Padding(0, 9, 0, 0)
+        chkToate.Name = "chkToate"
+        chkToate.Size = New Size(260, 30)
+        chkToate.TabIndex = 2
+        chkToate.Text = "Arată toate clasificațiile"
+        tips.SetToolTipHeader(chkToate, "Arată toate clasificațiile")
+        tips.SetToolTipText(chkToate, "Debifat: arborele arată doar clasificațiile cu mișcare în an (vreun trimestru de buget sau de rectificare diferit de zero)." & vbLf & "Bifat: toate clasificațiile configurate.")
+        chkToate.UseVisualStyleBackColor = True
         ' 
         ' tlyRight
         ' 
@@ -449,13 +527,17 @@ Partial Class ClasificatiiForm
         ' tlySubsol
         ' 
         tlySubsol.AutoFitToTheme = False
-        tlySubsol.ColumnCount = 3
+        tlySubsol.ColumnCount = 5
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlySubsol.ColumnStyles.Add(New ColumnStyle())
         tlySubsol.ColumnStyles.Add(New ColumnStyle())
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
+        tlySubsol.ColumnStyles.Add(New ColumnStyle())
         tlySubsol.Controls.Add(lblStare, 0, 0)
-        tlySubsol.Controls.Add(btnSalveaza, 1, 0)
-        tlySubsol.Controls.Add(btnInchide, 2, 0)
+        tlySubsol.Controls.Add(btnVerifica, 1, 0)
+        tlySubsol.Controls.Add(btnTrimiteAccess, 2, 0)
+        tlySubsol.Controls.Add(btnSalveaza, 3, 0)
+        tlySubsol.Controls.Add(btnInchide, 4, 0)
         tlySubsol.Dock = DockStyle.Fill
         tlySubsol.Location = New Point(0, 698)
         tlySubsol.Margin = New Padding(0)
@@ -522,6 +604,7 @@ Partial Class ClasificatiiForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents tree As AdvancedTreeControl
+    Friend WithEvents chkToate As CheckBox
     Friend WithEvents tlyRight As KBotTableLayoutPanel
     Friend WithEvents lblBuget As Label
     Friend WithEvents gridBuget As KBotDataView
@@ -530,5 +613,7 @@ Partial Class ClasificatiiForm
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
     Friend WithEvents lblStare As Label
     Friend WithEvents btnSalveaza As Button
+    Friend WithEvents btnVerifica As Button
+    Friend WithEvents btnTrimiteAccess As Button
     Friend WithEvents btnInchide As Button
 End Class

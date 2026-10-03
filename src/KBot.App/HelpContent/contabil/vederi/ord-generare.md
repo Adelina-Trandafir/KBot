@@ -17,13 +17,13 @@ recepție are ca ultim instantaneu unul cu altă valoare decât a ei, ordonanța
 ți se oferă fereastra de asociere — vezi [Cazuri speciale](topic:contabil.asocieri.cazuri).
 
 ## O ordonanțare, pentru o zi
-<!-- slice: 0049-01, 0049-02 -->
+<!-- slice: 0049-01, 0049-02, 0107 -->
 
 Două drumuri:
 
 - **Din vederea Plăți** — semnul **«+»** de pe o **zi** (apare doar pe zilele cu plăți
   neordonanțate). Ziua e chiar cea apăsată, deci nu mai e întrebată.
-- **Din vederea Ordonanțare** — «Adaugă ordonanțare…» (clic dreapta) sau iconița «Adaugă» din
+- **Din vederea Ordonanțare** — «Adaugă ordonanțare…» (clic dreapta pe un rând deja ales) sau iconița «Adaugă» din
   subsolul arborelui. K-BOT întreabă întâi **ziua**:
 
 <!-- capture: ord-ziua | caption: Fereastra «Ordonanțare nouă» — alegerea zilei | goto: view:ord | prepare: Clic dreapta pe arborele ordonanțărilor › «Adaugă ordonanțare…». -->
@@ -36,9 +36,9 @@ Dacă ziua are **peste 25 de parteneri**, editorul te avertizează de la începu
 trebuie împărțite pe mai multe ordonanțări.
 
 ## Generare în lot
-<!-- slice: 0049-01, 0101 -->
+<!-- slice: 0049-01, 0101, 0107 -->
 
-**«Generare în lot…»** (clic dreapta în vederea Ordonanțare) face câte o ordonanțare pentru
+**«Generare în lot…»** (clic dreapta pe un rând deja ales din vederea Ordonanțare) face câte o ordonanțare pentru
 **fiecare zi** cu plăți neordonanțate a angajamentului. Semnul **«+»** de pe o **lună**, în
 vederea Plăți, face același lucru doar pentru acea lună.
 
@@ -49,14 +49,14 @@ vederea Plăți, face același lucru doar pentru acea lună.
   acolo **rămân salvate**; după ce rezolvi cauza, reiei — zilele deja acoperite nu se mai propun.
 
 ## Ștergerea
-<!-- slice: 0033, 0097 -->
+<!-- slice: 0033, 0097, 0107 -->
 
-**«Șterge ordonanțarea»** (clic dreapta pe o ordonanțare) cere confirmarea cu numărul, data și
+**«Șterge ordonanțarea»** (clic dreapta pe o ordonanțare deja aleasă) cere confirmarea cu numărul, data și
 totalul. Odată cu ordonanțarea se șterg beneficiarii, rândurile de plată, documentele
 justificative, atașamentele și PDF-ul semnat de pe server. **Plățile acoperite redevin
 neordonanțate**, deci pot intra într-o ordonanțare nouă.
 
-**Toate odată**: clic dreapta pe o **lună** › «Șterge TOATE ordonanțările lunii», sau pe rădăcina
+**Toate odată**: clic dreapta pe o **lună** aleasă › «Șterge TOATE ordonanțările lunii», sau pe rădăcina
 «Toate ordonanțările» › «Șterge TOATE ordonanțările». K-BOT cere o singură confirmare, cu numărul și
 totalul lor, apoi le șterge pe rând. Dacă una nu se poate șterge, se oprește acolo și spune câte
 s-au șters până atunci; celelalte rămân.

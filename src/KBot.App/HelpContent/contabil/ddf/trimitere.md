@@ -7,9 +7,9 @@ parent: contabil.ddf
 keywords: trimite in forexe, reia trimiterea, trimitere intrerupta, creare angajament, incarca rezervare, capturi
 open: view:ddf
 ---
-<!-- slice: 0081-04 -->
-O revizie **semnată pe A** se trimite în FOREXE din vederea «Fundamentare»: **clic dreapta** pe
-revizie › **Trimite în FOREXE**. Trebuie să fii conectat la FOREXE.
+<!-- slice: 0081-04, 0107 -->
+O revizie **semnată pe A** se trimite în FOREXE din vederea «Fundamentare»: alege revizia cu clic
+stânga, apoi **clic dreapta** pe ea › **Trimite în FOREXE**. Trebuie să fii conectat la FOREXE.
 
 <!-- capture: ddf-trimite-meniu | caption: Meniul reviziei, cu «Trimite în FOREXE» | goto: view:ddf | prepare: Alegeți o revizie în starea «Semnat A — gata de trimis» și faceți clic dreapta pe ea. -->
 

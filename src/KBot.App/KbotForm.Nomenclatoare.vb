@@ -112,6 +112,22 @@ Partial Public Class KbotForm
         Return True
     End Function
 
+    ''' <summary>
+    ''' Slice 0103-04: after a download, the budget FOREXE reported for the angajament against the budget
+    ''' K-BOT holds (version in force + rectifications). Silent when everything is equal; never stops the
+    ''' download flow (the check is advice).
+    ''' </summary>
+    Private Async Function VerificaBugetulFxAsync(cod As String) As Task
+        Try
+            Dim api As INomenclatoareApi = TryCast(_apiClient, INomenclatoareApi)
+            If api Is Nothing OrElse String.IsNullOrWhiteSpace(_session.DbName) Then Return
+            Dim gate As New ReauthGate(Function(action) WithReauth(Of Object)(action))
+            Await BudgetCheckForm.RunAsync(Me, api, gate, showWhenEqual:=False, codAngajament:=cod).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.VerificaBugetulFxAsync", ex)
+        End Try
+    End Function
+
     Private Sub DeschideClasificatiile()
         Try
             If _clasificatiiForm IsNot Nothing AndAlso Not _clasificatiiForm.IsDisposed Then

@@ -59,6 +59,11 @@ Friend Module Program
             Catch poolEx As Exception
                 GlobalErrorLog.Write("Program.ReleaseObjectPool", poolEx)
             End Try
+
+            ' Slice 0104-02: the Office Access driver still crashes while the process unloads it (the stack is
+            ' Office's own shutdown code, cdb log 03.10.2026), so a process that used it ends here, now -- see
+            ' FastExit. Last statement of the tool; must stay inside Finally.
+            FastExit.TerminateIfOfficeDriverLoaded()
         End Try
     End Sub
 

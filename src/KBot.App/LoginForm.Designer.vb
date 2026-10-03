@@ -17,6 +17,7 @@ Partial Class LoginForm
         components = New ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(LoginForm))
         tips = New KBot.Controls.KBotToolTip(components)
+        tmrAccess = New Timer(components)
         tlpBody = New Controls.KBotTableLayoutPanel()
         busyBar = New Controls.KBotBusyBar()
         picLogo = New PictureBox()
@@ -34,6 +35,10 @@ Partial Class LoginForm
         btnLogin = New Button()
         ntfError = New Controls.KBotNotice()
         capBar = New Controls.KBotCaptionBar()
+        '
+        ' tmrAccess
+        '
+        tmrAccess.Interval = 700
         tlpBody.SuspendLayout()
         CType(picLogo, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
@@ -330,6 +335,8 @@ Partial Class LoginForm
     End Sub
 
     Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
+    ' Slice 0104: waits a moment after the last keystroke in the e-mail box, then asks the server what kind of client it is.
+    Friend WithEvents tmrAccess As Timer
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents tlpBody As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents busyBar As Global.KBot.Controls.KBotBusyBar
