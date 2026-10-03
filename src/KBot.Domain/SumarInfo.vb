@@ -33,7 +33,7 @@ Public NotInheritable Class SumarRow
     Public Property Clsf As String = String.Empty
     Public Property CodIndicator As String = String.Empty
     Public Property Partener As String = String.Empty
-    ''' <summary>FX_Indicatori.Credit_Bugetar of this indicator (a plain value, not a sum).</summary>
+    ''' <summary>The credit bugetar FOREXE reports for the classification of this indicator (FX_Indicatori_Buget, slice 0108).</summary>
     Public Property CreditBugetar As Double
     Public Property TotalRezervari As Double
     Public Property TotalReceptii As Double

@@ -106,9 +106,10 @@ Public NotInheritable Class BudgetSummaryRow
 End Class
 
 ''' <summary>
-''' One classification in the check of slice 0103-04: what FOREXE last reported as the budget
-''' (<c>FX_Indicatori.Credit_Bugetar</c>) against what K-BOT holds (the version in force + its
-''' rectifications, cumulative to the quarter of the day).
+''' One classification in the check of slice 0103-04: what FOREXE last reported as the budget of the
+''' classification (<c>FX_Indicatori_Buget.CreditBugetar</c>, one row per classification since slice
+''' 0108) against what K-BOT holds (the TOTAL of the version in force + the total of its
+''' rectifications; no quarter cut-off).
 ''' </summary>
 Public NotInheritable Class BudgetCheckRow
     Public Property IdClsf As Integer
@@ -118,7 +119,7 @@ Public NotInheritable Class BudgetCheckRow
     Public Property Ss As String = String.Empty
     ''' <summary>Nothing = no budget version covers the day.</summary>
     Public Property BugetKbot As Decimal?
-    ''' <summary>Nothing = no indicator row downloaded for the classification.</summary>
+    ''' <summary>Nothing = FOREXE reported no credit for the classification yet.</summary>
     Public Property CreditFx As Decimal?
     ''' <summary>FOREXE minus K-BOT.</summary>
     Public Property Diferenta As Decimal
@@ -128,7 +129,6 @@ End Class
 ''' <summary>The whole check: the day it was made for and one row per classification.</summary>
 Public NotInheritable Class BudgetCheck
     Public Property Day As Date
-    Public Property Quarter As Integer
     Public Property Rows As New List(Of BudgetCheckRow)()
     ''' <summary>The rows whose difference is not zero (rounded to cents): the only ones the operator sees.</summary>
     Public ReadOnly Property Differences As IEnumerable(Of BudgetCheckRow)

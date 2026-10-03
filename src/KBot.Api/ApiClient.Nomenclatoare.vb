@@ -100,7 +100,6 @@ Partial Public Class ApiClient
 
     Private NotInheritable Class CheckResponse
         Public Property data As String
-        Public Property trimestru As Integer
         Public Property items As List(Of CheckRowWire)
     End Class
 
@@ -334,7 +333,6 @@ Partial Public Class ApiClient
             Dim payload As CheckResponse = JsonSerializer.Deserialize(Of CheckResponse)(respText, _json)
             Dim result As New BudgetCheck() With {.Day = day}
             If payload Is Nothing Then Return result
-            result.Quarter = payload.trimestru
             For Each w As CheckRowWire In If(payload.items, New List(Of CheckRowWire)())
                 result.Rows.Add(New BudgetCheckRow() With {
                     .IdClsf = w.id_clsf,

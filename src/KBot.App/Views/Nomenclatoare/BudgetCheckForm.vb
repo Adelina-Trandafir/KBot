@@ -11,8 +11,8 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' «Verificare buget FOREXE» (slice 0103-04): for every classification, the budget FOREXE reported
-''' (<c>FX_Indicatori.Credit_Bugetar</c> of the latest download) next to the budget K-BOT holds
-''' (the version in force today + its rectifications, cumulative to the current quarter), and the
+''' (<c>FX_Indicatori_Buget.CreditBugetar</c>, one row per classification) next to the budget K-BOT
+''' holds (the total of the version in force today + the total of its rectifications), and the
 ''' difference. The server does the arithmetic; this window only shows it.
 ''' </summary>
 Public Class BudgetCheckForm
@@ -69,7 +69,7 @@ Public Class BudgetCheckForm
 
     Private Sub BudgetCheckForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Try
-            capBar.Text = $"Verificare buget FOREXE — {_check.Day:dd.MM.yyyy}, trimestrul {_check.Quarter}"
+            capBar.Text = $"Verificare buget FOREXE — {_check.Day:dd.MM.yyyy}"
             FillGrid()
         Catch ex As Exception
             GlobalErrorLog.Write("BudgetCheckForm.BudgetCheckForm_Load", ex)

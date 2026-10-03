@@ -124,7 +124,7 @@ Partial Class BudgetCheckForm
         gridVerificare.Size = New Size(1196, 600)
         gridVerificare.TabIndex = 1
         tips.SetToolTipHeader(gridVerificare, "Bugetul din FOREXE față de cel din K-BOT")
-        tips.SetToolTipText(gridVerificare, "«Buget K-BOT» = versiunea în vigoare azi + rectificările, cumulat până la trimestrul curent." & vbLf & "«Credit FOREXE» = creditul bugetar de pe ultima descărcare a indicatorilor." & vbLf & "Diferența = FOREXE − K-BOT.")
+        tips.SetToolTipText(gridVerificare, "«Buget K-BOT» = totalul versiunii în vigoare azi + totalul rectificărilor ei." & vbLf & "«Credit FOREXE» = creditul bugetar al clasificației, de la ultima descărcare (același pentru toate angajamentele ei)." & vbLf & "Diferența = FOREXE − K-BOT.")
         '
         ' pnlCard
         '
