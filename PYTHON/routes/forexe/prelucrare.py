@@ -263,18 +263,27 @@ def _marcheaza_data_actualizarii(cursor, cod: str) -> None:
 _IND_EXISTS_SQL = (
     "SELECT 1 FROM FX_Indicatori WHERE CodAngajament = %s AND CodIndicator = %s"
 )
+# Slice 0108 (operator, 03.10.2026): FX_Indicatori no longer carries the credit bugetar. FOREXE's
+# credit belongs to the CLASSIFICATION (every angajament on it has the same figure) and goes to
+# FX_Indicatori_Buget, one row per IdClsf, rewritten by every download. `Credit_Bugetar_Initial`
+# is NOT written here any more: it is read ONCE from «Informatii complete contract» and written
+# by routes/forexe/credit_initial.py, so a refresh must never overwrite it.
 _IND_INSERT_SQL = (
     "INSERT INTO FX_Indicatori "
     "(CodAI, CodAngajament, CodIndicator, IdClsf, IndicatorFX, IdUnitate, SS, "
-    " Credit_Bugetar, Credit_Bugetar_Initial, Angajament_Legal, "
-    " Credit_Bugetar_Definitiv, NrCrt) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    " Angajament_Legal, Credit_Bugetar_Definitiv, NrCrt) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 )
-# Ramura Edit din VBA atinge EXACT aceste patru coloane si nimic altceva.
+# Ramura Edit din VBA atingea patru coloane; acum doua (creditul a plecat din rand).
 _IND_UPDATE_SQL = (
-    "UPDATE FX_Indicatori SET Credit_Bugetar = %s, "
-    "Credit_Bugetar_Initial = %s, Angajament_Legal = %s, Credit_Bugetar_Definitiv = %s "
+    "UPDATE FX_Indicatori SET Angajament_Legal = %s, Credit_Bugetar_Definitiv = %s "
     "WHERE CodAngajament = %s AND CodIndicator = %s"
+)
+_BUGET_CLSF_UPSERT_SQL = (
+    "INSERT INTO FX_Indicatori_Buget (IdClsf, IdUnitate, CreditBugetar, CodAngajament) "
+    "VALUES (%s, %s, %s, %s) "
+    "ON DUPLICATE KEY UPDATE IdUnitate = VALUES(IdUnitate), "
+    "CreditBugetar = VALUES(CreditBugetar), CodAngajament = VALUES(CodAngajament)"
 )
 
 
@@ -362,9 +371,6 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
         unde = f"{TABLE_INDICATORI}[{ind['cod_indicator']}]"
         prevedere = parse_amount(text_celula(
             _field(row, "Credit_bugetar", "Credit bugetar"), unde, "Credit_bugetar"))
-        credit_init = parse_amount(text_celula(
-            _field(row, "Total_credit_angajament", "Total credit angajament"),
-            unde, "Total_credit_angajament"))
         ang_legal = parse_amount(text_celula(
             _field(row, "Angajament_legal", "Angajament legal"), unde, "Angajament_legal"))
         credit_def = parse_amount(text_celula(
@@ -385,7 +391,7 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
                 ind["clsf_sal"],         # IndicatorFX = clsfRaw din VBA
                 id_unitate,
                 ind["ss"],
-                prevedere, credit_init, ang_legal, credit_def,
+                ang_legal, credit_def,
                 nr_crt,
             ))
         else:
@@ -396,11 +402,108 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
             # fel: intreba prin `FX_Unitate` si apoi arunca raspunsul pe aceasta
             # ramura. Consemnat in worklog ca de decis; nu se schimba pe nevazute.
             cursor.execute(_IND_UPDATE_SQL, (
-                prevedere, credit_init, ang_legal, credit_def,
+                ang_legal, credit_def,
                 cod, ind["cod_indicator"],
             ))
+        # The credit FOREXE reports for the classification (slice 0108). An indicator whose
+        # classification could not be resolved has no row to write it to (find_id_clsf warned).
+        if id_clsf:
+            cursor.execute(_BUGET_CLSF_UPSERT_SQL, (id_clsf, id_unitate, prevedere, cod))
         written += 1
     return written
+
+
+# ---------------------------------------------------------------------------
+# Pasul 2c -- creditul INITIAL, citit O SINGURA DATA pe angajament (slice 0108)
+# ---------------------------------------------------------------------------
+# «Informatii complete contract» (the page behind «Afiseaza informatii complete») shows, per
+# indicator, FOREXE's «Credit bugetar / An curent». The workflow opens it ONLY for an angajament
+# that is «In derulare» and whose `CreditInitialLa` is empty, and saves its table as
+# `InfoCompleteContract`; this step writes the figure into `FX_Indicatori.Credit_Bugetar_Initial`
+# and sets `FX_Angajamente.CreditInitialLa`. ONCE: the server itself refuses a second write
+# (`CreditInitialLa IS NULL` is checked before and in the UPDATE), whatever the client sends.
+# A page that does not have the expected shape gives a warning and nothing is written, so the
+# date stays empty and the next download tries again; it never stops the download itself.
+_CREDIT_INITIAL_TABLE = "InfoCompleteContract"
+# ScrapeTable joins the header rows with «!» and keeps letters, digits and «_»: the two header
+# levels above «An curent» are «Prevedere bugetara» and «Credit bugetar»; the angajament-row
+# column is «Cod ang-rand» («AAB2EF2MCP4-AA6»).
+_CREDIT_INITIAL_CELL = ("Prevedere_bugetara!Credit_bugetar!An_curent",)
+_CREDIT_INITIAL_CODAI = ("Cod_ang_rand", "Cod_ang_rand_")
+_ANG_CREDIT_STARE_SQL = (
+    "SELECT Stare, CreditInitialLa FROM FX_Angajamente WHERE CodAngajament = %s"
+)
+_ANG_CREDIT_MARK_SQL = (
+    "UPDATE FX_Angajamente SET CreditInitialLa = NOW() "
+    "WHERE CodAngajament = %s AND CreditInitialLa IS NULL"
+)
+_IND_CODAI_SQL = "SELECT CodAI FROM FX_Indicatori WHERE CodAngajament = %s"
+_IND_CREDIT_INITIAL_SQL = (
+    "UPDATE FX_Indicatori SET Credit_Bugetar_Initial = %s "
+    "WHERE CodAI = %s AND CodAngajament = %s"
+)
+
+
+def _step2c_credit_initial(cursor, cod: str, tabele: dict, warnings: list) -> int:
+    """Writes the initial credit once; returns the indicator rows written (0 = nothing done)."""
+    raw = tabele.get(_CREDIT_INITIAL_TABLE)
+    if raw is None:
+        return 0                 # the flow did not open the page: already read, or not in derulare
+    if not isinstance(raw, list):
+        raise ValueError(f"«{_CREDIT_INITIAL_TABLE}» trebuie să fie o listă.")
+
+    cursor.execute(_ANG_CREDIT_STARE_SQL, (cod,))
+    ang = cursor.fetchone()
+    if ang is None:
+        return 0
+    if ang["CreditInitialLa"] is not None:
+        journal.line("credit inițial: deja citit la %s, nu se rescrie", ang["CreditInitialLa"])
+        return 0
+    if "derulare" not in (ang["Stare"] or "").lower():
+        journal.line("credit inițial: angajamentul nu este «În derulare» (%s), nu se scrie",
+                     ang["Stare"])
+        return 0
+    if not raw:
+        warnings.append("Pagina «Informații complete contract» nu a adus niciun rând; "
+                        "creditul inițial nu s-a citit și se încearcă la următoarea descărcare.")
+        return 0
+
+    din_pagina = {}
+    for i, row in enumerate(raw):
+        if not isinstance(row, dict):
+            warnings.append(f"«{_CREDIT_INITIAL_TABLE}»[{i}] nu este un obiect; creditul inițial nu s-a citit.")
+            return 0
+        unde = f"{_CREDIT_INITIAL_TABLE}[{i}]"
+        celula_ai = _field(row, *_CREDIT_INITIAL_CODAI)
+        celula_credit = _field(row, *_CREDIT_INITIAL_CELL)
+        if celula_ai is None or celula_credit is None:
+            warnings.append("Pagina «Informații complete contract» nu are coloanele așteptate "
+                            "(«Cod ang-rând», «Credit bugetar — An curent»); creditul inițial nu "
+                            "s-a citit și se încearcă la următoarea descărcare.")
+            return 0
+        cod_ai_pagina = text_celula(celula_ai, unde, "Cod_ang_rand").strip()
+        if cod_ai_pagina == "":
+            continue
+        din_pagina[cod_ai_pagina] = parse_amount(text_celula(celula_credit, unde, "Credit_bugetar_An_curent"))
+
+    cursor.execute(_IND_CODAI_SQL, (cod,))
+    ai_baza = {r["CodAI"] for r in cursor.fetchall()}
+    scrise = 0
+    for ai, valoare in din_pagina.items():
+        if ai not in ai_baza:
+            warnings.append(f"Pagina «Informații complete contract» are rândul {ai}, care nu există "
+                            f"ca indicator al angajamentului; creditul lui inițial nu s-a scris.")
+            continue
+        cursor.execute(_IND_CREDIT_INITIAL_SQL, (valoare, ai, cod))
+        scrise += 1
+    if scrise == 0:
+        warnings.append("Niciun rând din «Informații complete contract» nu se potrivește cu indicatorii "
+                        "angajamentului; creditul inițial nu s-a citit.")
+        return 0
+    # The mark is set in the same transaction as the figures: both stay or both go.
+    cursor.execute(_ANG_CREDIT_MARK_SQL, (cod,))
+    journal.line("credit inițial: %d indicatori, citit o singură dată", scrise)
+    return scrise
 
 
 # ---------------------------------------------------------------------------
@@ -440,6 +543,8 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
             scrise["FX_Indicatori"] = _step2_indicatori(cursor, cod, indicators,
                                                         units, warnings)
         are["Indicatori"] = scrise["FX_Indicatori"] > 0
+        with timing.stage("pas 2c credit initial"):
+            _step2c_credit_initial(cursor, cod, tabele, warnings)
 
     # Indicatorii se recitesc ACUM din baza: pasii 3-5 au nevoie de `IdClsf`,
     # `IdUnitate`, `Clsf` si `CodSSI` asa cum sunt ele DUPA pasul 2, nu cum au sosit.

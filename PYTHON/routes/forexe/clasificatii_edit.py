@@ -33,7 +33,7 @@ session's database, the yearly budget of one classification and its corrections.
                  "e": { "codes": [ {"code", "name"} ], "groups": {"20": ..., "2001": ...} } }
 
     GET  /api/forexe/nomenclatoare/clasificatii/verificare-buget?data=2026-10-02[&angajament=AAB2...]   (slice 0103-04)
-        -> 200 { "data", "trimestru", "items": [ { "id_clsf", "id_unitate", "clsf", "denumire", "ss",
+        -> 200 { "data", "items": [ { "id_clsf", "id_unitate", "clsf", "denumire", "ss",
                  "buget_kbot": number|null, "credit_fx": number|null, "diferenta", "egal" } ] }
 
     POST /api/forexe/nomenclatoare/clasificatii/adauga
@@ -72,7 +72,7 @@ from routes.inregistrare import randuri
 from utils.database import COMMON_DB, get_kbot_connection
 
 from . import forexe_bp
-from .budget_on_day import as_day, budget_on_day, quarter_of
+from .budget_on_day import as_day, budget_on_day
 
 logger = logging.getLogger(__name__)
 
@@ -606,9 +606,10 @@ def _rollback(conn):
 # ---------------------------------------------------------------------------
 # Check: the budget FOREXE reported == the budget K-BOT holds (slice 0103-04)
 # ---------------------------------------------------------------------------
-# What FOREXE reported = the `Credit_Bugetar` of the MOST RECENTLY downloaded indicator row of each
-# classification (FX_Indicatori.DTQ). What K-BOT holds = the version in force on the day plus its
-# rectifications, cumulative to the quarter of the day (budget_on_day.py -- the same rule the DDF
+# What FOREXE reported = FX_Indicatori_Buget.CreditBugetar: ONE row per classification, written by
+# every download (slice 0108; the credit belongs to the classification, so there is no «which
+# angajament» to pick and no tie to break). What K-BOT holds = the version in force on the day plus
+# its rectifications, the TOTAL with no quarter cut-off (budget_on_day.py -- the same rule the DDF
 # uses). Rows whose two figures differ by less than half a cent are equal.
 _SQL_CHECK_CLASSIFICATIONS = (
     "SELECT C.IDClsf, C.IdUnitate, C.Clsf, C.Denumire, C.SS "
@@ -618,29 +619,27 @@ _SQL_CHECK_CLASSIFICATIONS = (
     " ORDER BY C.Capitol, C.Subcapitol, C.Articol, C.Alineat"
 )
 _SQL_CHECK_FX_ANGAJAMENT = (
-    "SELECT IdClsf, Credit_Bugetar FROM FX_Indicatori "
-    " WHERE IdClsf IS NOT NULL AND IdClsf <> 0 AND CodAngajament = %s "
-    " ORDER BY DTQ DESC"
+    "SELECT DISTINCT B.IdClsf, B.CreditBugetar FROM FX_Indicatori_Buget B "
+    "  JOIN FX_Indicatori I ON I.IdClsf = B.IdClsf "
+    " WHERE I.CodAngajament = %s"
 )
 _SQL_CHECK_FX = (
-    "SELECT IdClsf, Credit_Bugetar FROM FX_Indicatori "
-    " WHERE IdClsf IS NOT NULL AND IdClsf <> 0 "
-    " ORDER BY DTQ DESC"
+    "SELECT IdClsf, CreditBugetar FROM FX_Indicatori_Buget"
 )
 _EQUAL_WITHIN = 0.005
 
 
 def check_budget(cursor, day: date, cod_angajament: str = "") -> list:
-    """One entry per classification that has a K-BOT budget on `day` or an indicator row. With
-    `cod_angajament` only the classifications of that angajament, against ITS indicator rows (the
-    automatic check after a download)."""
+    """One entry per classification that has a K-BOT budget on `day` or a FOREXE credit. With
+    `cod_angajament` only the classifications of that angajament (the automatic check after a
+    download)."""
     if cod_angajament:
         cursor.execute(_SQL_CHECK_FX_ANGAJAMENT, (cod_angajament,))
     else:
         cursor.execute(_SQL_CHECK_FX)
     credit_fx = {}
     for r in cursor.fetchall():
-        credit_fx.setdefault(int(r["IdClsf"]), _number(r["Credit_Bugetar"]))
+        credit_fx[int(r["IdClsf"])] = _number(r["CreditBugetar"])
 
     cursor.execute(_SQL_CHECK_CLASSIFICATIONS)
     classifications = cursor.fetchall()
@@ -682,7 +681,7 @@ def get_verificare_buget():
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True, buffered=True)
         items = check_budget(cursor, day, _text(request.args.get("angajament")))
-        return _json_utf8({"data": day.isoformat(), "trimestru": quarter_of(day), "items": items}, 200)
+        return _json_utf8({"data": day.isoformat(), "items": items}, 200)
     except _Refused as e:
         return _json_utf8({"error": str(e)}, 400)
     except Exception as e:
