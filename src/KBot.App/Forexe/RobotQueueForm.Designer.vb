@@ -16,6 +16,11 @@ Partial Class RobotQueueForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim KBotDataColumn1 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn2 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn3 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn4 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn5 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         tips = New KBot.Controls.KBotToolTip(components)
         btnPauza = New Button()
         btnScoate = New Button()
@@ -24,10 +29,17 @@ Partial Class RobotQueueForm
         pnlCard = New Panel()
         lstCoada = New ListBox()
         pnlFoot = New Panel()
+        pnlDescarcari = New Panel()
+        gridDescarcari = New Controls.KBotDataView()
+        gridAsteapta = New Controls.KBotDataView()
+        lblInCoada = New Label()
         lblCurent = New Label()
         capBar = New Controls.KBotCaptionBar()
         pnlCard.SuspendLayout()
         pnlFoot.SuspendLayout()
+        pnlDescarcari.SuspendLayout()
+        CType(gridDescarcari, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridAsteapta, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
         ' btnPauza
@@ -90,6 +102,7 @@ Partial Class RobotQueueForm
         ' 
         pnlCard.Controls.Add(lstCoada)
         pnlCard.Controls.Add(pnlFoot)
+        pnlCard.Controls.Add(pnlDescarcari)
         pnlCard.Controls.Add(lblCurent)
         pnlCard.Controls.Add(capBar)
         pnlCard.Dock = DockStyle.Fill
@@ -126,9 +139,117 @@ Partial Class RobotQueueForm
         pnlFoot.Size = New Size(533, 40)
         pnlFoot.TabIndex = 2
         pnlFoot.Tag = "Card"
+        '
+        ' pnlDescarcari
+        '
+        pnlDescarcari.Controls.Add(gridAsteapta)
+        pnlDescarcari.Controls.Add(lblInCoada)
+        pnlDescarcari.Controls.Add(gridDescarcari)
+        pnlDescarcari.Dock = DockStyle.Top
+        pnlDescarcari.Location = New Point(0, 100)
+        pnlDescarcari.Margin = New Padding(4, 4, 4, 4)
+        pnlDescarcari.Name = "pnlDescarcari"
+        pnlDescarcari.Padding = New Padding(18, 0, 18, 0)
+        pnlDescarcari.Size = New Size(533, 160)
+        pnlDescarcari.TabIndex = 4
+        pnlDescarcari.Tag = "Card"
+        '
+        ' gridDescarcari
+        '
+        gridDescarcari.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        gridDescarcari.BackColor = SystemColors.Window
+        gridDescarcari.CellTooltip.Enabled = False
+        gridDescarcari.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        KBotDataColumn1.AggregateFormatString = Nothing
+        KBotDataColumn1.FormatString = Nothing
+        KBotDataColumn1.HeaderText = "Angajament"
+        KBotDataColumn1.Key = "cod"
+        KBotDataColumn1.MinWidth = 100
+        KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn1.ReadOnly = True
+        KBotDataColumn1.Width = 140
+        KBotDataColumn2.AggregateFormatString = Nothing
+        KBotDataColumn2.ColumnType = KBot.Controls.KBotColumnType.ProgressBar
+        KBotDataColumn2.FormatString = Nothing
+        KBotDataColumn2.HeaderText = "Progres"
+        KBotDataColumn2.Key = "prog"
+        KBotDataColumn2.MinWidth = 100
+        KBotDataColumn2.OptionGroup = Nothing
+        KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Width = 220
+        KBotDataColumn3.AggregateFormatString = Nothing
+        KBotDataColumn3.ColumnType = KBot.Controls.KBotColumnType.Button
+        KBotDataColumn3.FormatString = Nothing
+        KBotDataColumn3.HeaderText = ""
+        KBotDataColumn3.Key = "opreste"
+        KBotDataColumn3.MinWidth = 40
+        KBotDataColumn3.OptionGroup = Nothing
+        KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.Resizable = False
+        KBotDataColumn3.Width = 40
+        gridDescarcari.Columns.Add(KBotDataColumn1)
+        gridDescarcari.Columns.Add(KBotDataColumn2)
+        gridDescarcari.Columns.Add(KBotDataColumn3)
+        gridDescarcari.Dock = DockStyle.Top
+        gridDescarcari.FillColumnKey = "cod"
+        gridDescarcari.Location = New Point(18, 0)
+        gridDescarcari.Margin = New Padding(4, 4, 4, 4)
+        gridDescarcari.Name = "gridDescarcari"
+        gridDescarcari.ReadOnlyGrid = True
+        gridDescarcari.Selectable = False
+        gridDescarcari.ShowHeader = False
+        gridDescarcari.Size = New Size(497, 90)
+        gridDescarcari.TabIndex = 0
+        '
+        ' lblInCoada
+        '
+        lblInCoada.Dock = DockStyle.Top
+        lblInCoada.Location = New Point(18, 90)
+        lblInCoada.Margin = New Padding(4, 0, 4, 0)
+        lblInCoada.Name = "lblInCoada"
+        lblInCoada.Size = New Size(497, 30)
+        lblInCoada.TabIndex = 1
+        lblInCoada.TextAlign = ContentAlignment.MiddleLeft
         ' 
+        ' gridAsteapta
+        ' 
+        gridAsteapta.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
+        gridAsteapta.BackColor = SystemColors.Window
+        gridAsteapta.CellTooltip.Enabled = False
+        gridAsteapta.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        KBotDataColumn4.AggregateFormatString = Nothing
+        KBotDataColumn4.FormatString = Nothing
+        KBotDataColumn4.HeaderText = "Angajament"
+        KBotDataColumn4.Key = "cod"
+        KBotDataColumn4.MinWidth = 100
+        KBotDataColumn4.OptionGroup = Nothing
+        KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.Width = 360
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.ColumnType = KBot.Controls.KBotColumnType.Button
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = ""
+        KBotDataColumn5.Key = "scoate"
+        KBotDataColumn5.MinWidth = 40
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.ReadOnly = True
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.Width = 40
+        gridAsteapta.Columns.Add(KBotDataColumn4)
+        gridAsteapta.Columns.Add(KBotDataColumn5)
+        gridAsteapta.Dock = DockStyle.Fill
+        gridAsteapta.FillColumnKey = "cod"
+        gridAsteapta.Location = New Point(18, 120)
+        gridAsteapta.Margin = New Padding(4, 4, 4, 4)
+        gridAsteapta.Name = "gridAsteapta"
+        gridAsteapta.ReadOnlyGrid = True
+        gridAsteapta.Selectable = False
+        gridAsteapta.ShowHeader = False
+        gridAsteapta.Size = New Size(497, 40)
+        gridAsteapta.TabIndex = 2
+        '
         ' lblCurent
-        ' 
+        '
         lblCurent.Dock = DockStyle.Top
         lblCurent.Font = New Font("Segoe UI Semibold", 9.75F)
         lblCurent.Location = New Point(0, 40)
@@ -171,6 +292,9 @@ Partial Class RobotQueueForm
         Text = "Coada robotului"
         pnlCard.ResumeLayout(False)
         pnlFoot.ResumeLayout(False)
+        pnlDescarcari.ResumeLayout(False)
+        CType(gridDescarcari, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridAsteapta, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
@@ -178,6 +302,10 @@ Partial Class RobotQueueForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents lblCurent As Label
+    Friend WithEvents pnlDescarcari As Panel
+    Friend WithEvents gridDescarcari As Global.KBot.Controls.KBotDataView
+    Friend WithEvents lblInCoada As Label
+    Friend WithEvents gridAsteapta As Global.KBot.Controls.KBotDataView
     Friend WithEvents lstCoada As ListBox
     Friend WithEvents pnlFoot As Panel
     Friend WithEvents btnPauza As Button

@@ -11,5 +11,5 @@ Din **MENIU › Nomenclatoare** se deschid două ferestre de lucru, fiecare de s
 (poți lucra în paralel în fereastra principală):
 
 - [Clasificații bugetare](topic:contabil.nomenclatoare.clasificatii) — clasificațiile unității,
-  bugetul lor pe trimestre și rectificările;
+  bugetul lor pe trimestre și rectificările (de acolo se deschide și [Verificare buget FOREXE](topic:contabil.nomenclatoare.verificare-buget));
 - [Parteneri](topic:contabil.nomenclatoare.parteneri) — furnizorii și ceilalți parteneri.

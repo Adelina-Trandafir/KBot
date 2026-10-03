@@ -334,11 +334,13 @@ Partial Public Class WorkflowExecutor
     ''' never installs them. A new tab is brought to the front by Chromium, so the primary's tab is
     ''' put back in front here -- the window docked in the shell keeps showing the page it showed.
     ''' </remarks>
-    Friend Async Function OpenWorkerAsync(cancellationToken As CancellationToken) As Task(Of WorkflowExecutor)
+    Friend Async Function OpenWorkerAsync(cancellationToken As CancellationToken,
+                                          Optional progressCallback As Action(Of Integer, Integer) = Nothing) As Task(Of WorkflowExecutor)
         If _context Is Nothing OrElse _page Is Nothing OrElse _page.IsClosed Then
             Throw New InvalidOperationException("Nu există o sesiune FOREXE deschisă — nu se poate deschide un tab nou.")
         End If
         Dim worker As New WorkflowExecutor(_logger, _certificate, _stealthMode,
+                                           progressCallback:=progressCallback,
                                            cancellationToken:=cancellationToken)
         Try
             worker._isWorkerTab = True

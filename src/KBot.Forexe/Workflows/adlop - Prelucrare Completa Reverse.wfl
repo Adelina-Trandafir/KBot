@@ -22,7 +22,7 @@
   <IfExists selector="#select2-drop-mask" timeout="1">
     <Click selector="#select2-drop-mask" force="true" LogValue="Resetare interfață — închid dropdown-uri deschise"/>
   </IfExists>
-  <Click selector="#statlogo" waitNavigation="true" timeout="5"/>
+  <Click selector="#statlogo" waitNavigation="true" timeout="15"/>
 
   <!-- ═══════════════════════════════════════════════════════
        CĂUTARE ANGAJAMENT + DESCHIDERE MODIFICARE
@@ -30,20 +30,20 @@
 
   <Log message="══ Caut și deschid angajamentul {{COD_ANGAJAMENT}} ══" level="action"/>
 
-  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5"/>
-  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5"/>
-  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5"/>
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="15"/>
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="15"/>
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="15"/>
 
   <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
     <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu există în listă!" level="error"/>
     <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit. Opresc execuția."/>
   </IfExists>
 
-  <WaitFor selector="a[href*='exportToXLS']" timeout="5"/>
-  <Click selector="a.haction i.glyphicon-list:visible" timeout="5"/>
-  <WaitFor selector=".divaction" state="visible" timeout="5"/>
-  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5"/>
-  <WaitFor selector="li.tab0" timeout="5"/>
+  <WaitFor selector="a[href*='exportToXLS']" timeout="15"/>
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="15"/>
+  <WaitFor selector=".divaction" state="visible" timeout="15"/>
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="15"/>
+  <WaitFor selector="li.tab0" timeout="15"/>
 
   <Log message="Angajament {{COD_ANGAJAMENT}} deschis în modul Modificare." level="success"/>
 
@@ -77,9 +77,9 @@
 
   <Log message="══ SECȚIUNEA 1: Indicatori ══" level="action"/>
 
-  <WaitFor selector="li.tab0.active" timeout="5"/>
+  <WaitFor selector="li.tab0.active" timeout="15"/>
 
-  <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="5">
+  <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
 
     <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
                  saveTo="TabelIndicatori"
@@ -87,7 +87,7 @@
                  waitSelector="table.table-striped.table-bordered.table-condensed"
                  fingerprintSelector="table.table-striped.table-bordered.table-condensed tbody tr:last-child td:last-child"
                  isCheckpoint="true"
-                 timeout="5"/>
+                 timeout="15"/>
 
     <Log message="Lista indicatori citită. Încep iterarea..." level="info"/>
 
@@ -97,21 +97,21 @@
       <Log message="Procesez indicatorul [[idx]]: [[R.Indicator_ang]] / [[R.Sector_Sursa_Indicator]]..." level="info"/>
 
       <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
-             waitNavigation="false" timeout="5"/>
+             waitNavigation="false" timeout="15"/>
 
-      <WaitFor selector="table.table-bordered.table-hover.table-condensed" timeout="5"/>
+      <WaitFor selector="table.table-bordered.table-hover.table-condensed" timeout="15"/>
 
       <ScrapeTable selector="table.table-bordered.table-hover.table-condensed"
                    saveTo="BugetIndicator"
                    nextPageSelector="a[rel='next']"
                    waitSelector="table.table-bordered.table-hover.table-condensed"
                    fingerprintSelector="table.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
-                   timeout="5"/>
+                   timeout="15"/>
 
       <Log message="✓ Indicatorul [[idx]] procesat. Revin la listă..." level="success"/>
 
       <GoBack/>
-      <WaitFor selector="li.tab0.active" state="visible" timeout="5"/>
+      <WaitFor selector="li.tab0.active" state="visible" timeout="15"/>
 
     </ForEachVar>
 
@@ -132,17 +132,17 @@
 
   <Log message="══ SECȚIUNEA 2: Recepții ══" level="action"/>
 
-  <IfExists selector="li.tab1" timeout="5">
+  <IfExists selector="li.tab1" timeout="15">
 
-    <Click selector="li.tab1 a" timeout="5"/>
-    <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+    <Click selector="li.tab1 a" timeout="15"/>
+    <WaitFor selector="li.tab1.active" state="visible" timeout="15"/>
 
     <!-- Guard nivel 2: tab activ dar posibil gol -->
-    <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="5">
+    <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
 
       <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
                    saveTo="ListaReceptii"
-                   timeout="5"/>
+                   timeout="15"/>
 
       <Log message="Lista recepții citită. Încep iterarea..." level="info"/>
 
@@ -191,10 +191,10 @@
 
           <!-- nth-child e 1-based, exact ca idx -->
           <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
-                 waitNavigation="false" timeout="5"/>
+                 waitNavigation="false" timeout="15"/>
 
-          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="5"/>
-          <WaitFor selector="select[name='receptie']" timeout="5"/>
+          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="15"/>
+          <WaitFor selector="select[name='receptie']" timeout="15"/>
 
           <Read selector="select[name='receptie']" saveTo="TipReceptie"/>
           <Read selector="textarea[name='descriere']" saveTo="DescriereReceptie"/>
@@ -205,7 +205,7 @@
                        nextPageSelector="a[rel='next']"
                        waitSelector="table.table-striped.table-bordered.table-hover.table-condensed"
                        fingerprintSelector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
-                       timeout="5"/>
+                       timeout="15"/>
 
           <!-- Cod din primul rând al tabelului interior -->
           <Read selector="table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span"
@@ -215,7 +215,7 @@
 
           <!-- GoBack via browser — butonul 'Înapoi' din UI afișează confirmare modală -->
           <GoBack/>
-          <WaitFor selector="li.tab1.active" state="visible" timeout="5"/>
+          <WaitFor selector="li.tab1.active" state="visible" timeout="15"/>
           </Else>
         </IfVar>
 
@@ -241,13 +241,13 @@
 
   <Log message="══ SECȚIUNEA 4: Istoric angajament ══" level="action"/>
 
-  <Click selector="li.tab0 a" timeout="5"/>
-  <WaitFor selector="li.tab0.active" timeout="5"/>
+  <Click selector="li.tab0 a" timeout="15"/>
+  <WaitFor selector="li.tab0.active" timeout="15"/>
 
-  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="5"/>
-  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="5"/>
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15"/>
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15"/>
 
-  <IfExists selector="table.table-striped tbody tr" timeout="5">
+  <IfExists selector="table.table-striped tbody tr" timeout="15">
 
     <ScrapeTable selector="table.table-striped"
              saveTo="TabelIstoric"
@@ -258,7 +258,7 @@
              fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
              exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"
              startFromLast="true"
-             timeout="5" />
+             timeout="15" />
 
     <Log message="✓ Istoric salvat cu succes." level="success"/>
 

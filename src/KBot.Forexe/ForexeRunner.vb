@@ -715,6 +715,7 @@ Namespace KBot.Forexe
         Public Async Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest),
                                                    maxThreads As Integer,
                                                    jobFinished As Action(Of ParallelJobOutcome),
+                                                   hooks As ParallelRunHooks,
                                                    ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome)) _
             Implements IForexeRunner.RunJobsParallelAsync
             ArgumentNullException.ThrowIfNull(jobs)
@@ -748,7 +749,7 @@ Namespace KBot.Forexe
                 Dim workers As New List(Of Task)()
                 For n As Integer = 1 To threads
                     Dim workerNo As Integer = n
-                    workers.Add(Task.Run(Function() WorkerLoopAsync(primary, workerNo, fifo, run, outcomes, jobs.Count, jobFinished, ct)))
+                    workers.Add(Task.Run(Function() WorkerLoopAsync(primary, workerNo, fifo, run, outcomes, jobs.Count, jobFinished, hooks, ct)))
                 Next
                 Await Task.WhenAll(workers)
             Catch ex As Exception
@@ -806,18 +807,55 @@ Namespace KBot.Forexe
             Public Keeper As WorkflowExecutor
         End Class
 
+        ' Slice 0100-03: the three calls below sit on the edge to whoever shows the run. A callback
+        ' that throws must never stop a download, so each logs and swallows.
+        Private Shared Sub NotifyJobStarted(hooks As ParallelRunHooks, job As JobRequest, workerNo As Integer)
+            Try
+                hooks?.JobStarted?.Invoke(job, workerNo)
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.NotifyJobStarted", ex)
+            End Try
+        End Sub
+
+        ' Called from the worker's thread, once per main-flow step.
+        Private Shared Sub NotifyJobProgress(hooks As ParallelRunHooks, job As JobRequest, k_step As Integer, k_steps As Integer)
+            Try
+                hooks?.JobProgress?.Invoke(job, k_step, k_steps)
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.NotifyJobProgress", ex)
+            End Try
+        End Sub
+
+        ' Runs on the thread that asked for the stop (the UI's), so the close is handed to the pool.
+        Private Shared Sub CloseTabOfStoppedJob(k_tab As WorkflowExecutor)
+            Try
+                Task.Run(Function() k_tab.CloseAsync())
+            Catch ex As Exception
+                GlobalErrorLog.Write("ForexeRunner.CloseTabOfStoppedJob", ex)
+            End Try
+        End Sub
+
         ''' <summary>One worker thread: takes jobs off the FIFO queue until it is empty (or the run is cancelled).</summary>
         Private Async Function WorkerLoopAsync(primary As WorkflowExecutor, workerNo As Integer,
                                                fifo As ConcurrentQueue(Of JobRequest), run As ParallelRun,
                                                outcomes As List(Of ParallelJobOutcome), total As Integer,
                                                jobFinished As Action(Of ParallelJobOutcome),
+                                               hooks As ParallelRunHooks,
                                                ct As CancellationToken) As Task
             Try
                 Do
                     Dim job As JobRequest = Nothing
                     If ct.IsCancellationRequested OrElse Not fifo.TryDequeue(job) Then Exit Do
 
-                    Dim outcome As ParallelJobOutcome = Await RunJobOnOwnTabAsync(primary, workerNo, job, run, ct)
+                    Dim outcome As ParallelJobOutcome
+                    If hooks IsNot Nothing AndAlso hooks.IsStopped(job) Then
+                        ' The operator took it out while it waited: no tab is opened for it.
+                        outcome = New ParallelJobOutcome With {
+                            .Job = job, .Worker = 0, .StartedAt = Date.Now, .FinishedAt = Date.Now, .StoppedByOperator = True,
+                            .Result = New JobResult With {.Success = False, .Message = "Stopped by the operator before it started."}}
+                    Else
+                        outcome = Await RunJobOnOwnTabAsync(primary, workerNo, job, run, hooks, ct)
+                    End If
 
                     Dim done As Integer
                     SyncLock outcomes
@@ -845,6 +883,7 @@ Namespace KBot.Forexe
         ''' </summary>
         Private Async Function RunJobOnOwnTabAsync(primary As WorkflowExecutor, workerNo As Integer,
                                                    job As JobRequest, run As ParallelRun,
+                                                   hooks As ParallelRunHooks,
                                                    ct As CancellationToken) As Task(Of ParallelJobOutcome)
             Dim outcome As New ParallelJobOutcome With {.Job = job, .Worker = workerNo, .StartedAt = Date.Now}
             Dim cod As String = String.Empty
@@ -855,13 +894,27 @@ Namespace KBot.Forexe
 
             Dim worker As WorkflowExecutor = Nothing
             Dim result As JobResult
+            ' Slice 0100-03: the operator's «stop this one» for THIS job (never fires without hooks).
+            Dim k_stopToken As CancellationToken = If(hooks IsNot Nothing, hooks.StopTokenOf(job), CancellationToken.None)
+            Dim k_linked As CancellationTokenSource = Nothing
+            Dim k_registration As CancellationTokenRegistration = Nothing
             Try
                 If String.IsNullOrEmpty(job.WflPath) OrElse Not File.Exists(job.WflPath) Then
                     result = New JobResult With {.Success = False, .Message = $"Fișierul workflow lipsește: {job.WflPath}"}
                 Else
                     ct.ThrowIfCancellationRequested()
                     _logger.LogInfo($"Tab {workerNo}: pornesc '{job.WorkflowName}'.")
-                    worker = Await primary.OpenWorkerAsync(ct)
+                    NotifyJobStarted(hooks, job, workerNo)
+                    k_linked = CancellationTokenSource.CreateLinkedTokenSource(ct, k_stopToken)
+                    Dim k_progress As Action(Of Integer, Integer) = Nothing
+                    If hooks IsNot Nothing AndAlso hooks.JobProgress IsNot Nothing Then
+                        k_progress = Sub(k_step As Integer, k_steps As Integer) NotifyJobProgress(hooks, job, k_step, k_steps)
+                    End If
+                    worker = Await primary.OpenWorkerAsync(k_linked.Token, k_progress)
+                    ' Closing the tab is what cuts a step that waits on the page short; the token is only
+                    ' looked at between steps. Fires at once when the stop came while the tab was opening.
+                    Dim k_tab As WorkflowExecutor = worker
+                    k_registration = k_stopToken.Register(Sub() CloseTabOfStoppedJob(k_tab))
                     worker.ManualPinMode = True
                     worker.TimeoutMultiplier = AppSettings.Current.ForexeTimeoutMultiplier
                     worker.ValidateReadsTwice = AppSettings.Current.ForexeValidateTwiceInEffect
@@ -880,6 +933,10 @@ Namespace KBot.Forexe
                     End If
                     PopulateResult(worker, result)
                 End If
+            Catch ex As Exception When k_stopToken.IsCancellationRequested
+                ' The operator stopped this download: the closed tab's own error is not news.
+                _logger.LogDebug("[STOP] " & ex.Message)
+                result = New JobResult With {.Success = False, .Message = "Oprit de operator."}
             Catch ex As OperationCanceledException
                 _logger.LogWarning($"'{job.WorkflowName}' anulat.")
                 result = New JobResult With {.Success = False, .Message = $"'{job.WorkflowName}' anulat."}
@@ -891,6 +948,18 @@ Namespace KBot.Forexe
                 result = New JobResult With {.Success = False, .Message = ex.Message}
                 CollectQuietly(worker, result)
             End Try
+            k_registration.Dispose()
+            k_linked?.Dispose()
+
+            ' A stop that came in time is the operator's decision about this angajament, whatever the
+            ' robot had reached: nothing of it is kept, and its tab closes now (never the kept tab).
+            If k_stopToken.IsCancellationRequested Then
+                If result Is Nothing OrElse result.Success Then
+                    result = New JobResult With {.Success = False, .Message = "Oprit de operator."}
+                End If
+                outcome.StoppedByOperator = True
+                _logger.LogInfo($"«{cod}»: descărcarea a fost oprită de operator.")
+            End If
 
             ' The tab of a job that ended WITHOUT an error is kept until a later such job replaces it, so
             ' when the run is over the last good tab is still open (never more than N + 1 tabs at once).

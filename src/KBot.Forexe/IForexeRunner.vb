@@ -29,9 +29,12 @@ Namespace KBot.Forexe
         ' whole run is over only one FOREXE tab is left open. `jobFinished` is called from the
         ' worker's thread for each finished job (progress lines only). Needs a live session and
         ' THROWS only when the run itself cannot start (no session / no logger).
+        ' `hooks` (slice 0100-03, may be Nothing): reports each job's start and step progress, and
+        ' lets the caller stop ONE job (running or waiting) -- see ParallelRunHooks.
         Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest),
                                       maxThreads As Integer,
                                       jobFinished As Action(Of ParallelJobOutcome),
+                                      hooks As ParallelRunHooks,
                                       ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome))
 
         ' Downloading the SNM bank statements, slice 0057. Not a workflow: FOREXE answers

@@ -23,6 +23,11 @@ Public NotInheritable Class ParallelNodeResult
     Public Property Cod As String = String.Empty
     Public Property Pachet As PrelucrareRezultat
     Public Property Failure As String = String.Empty
+    ''' <summary>
+    ''' Slice 0100-03: the operator stopped this download (the X of its row). Not a failure: no
+    ''' <see cref="Failure"/> text, nothing to ingest, nothing to report.
+    ''' </summary>
+    Public Property Stopped As Boolean
 End Class
 
 ''' <summary>
@@ -46,6 +51,12 @@ Partial Public NotInheritable Class ForexeController
     ''' <see cref="DownloadNodeAsync"/>); done here, before the robot starts, because the server
     ''' gate is closed while it runs.
     ''' </param>
+    ''' <summary>
+    ''' Slice 0100-03: the running downloads of a multi-thread run (one row each, with progress) and
+    ''' how many wait. The queue window draws it; the X of a row stops that one download.
+    ''' </summary>
+    Public ReadOnly Property ParallelBoard As New ParallelDownloadBoard()
+
     Public Async Function DownloadNodesParallelAsync(
             requests As IReadOnlyList(Of ParallelNodeRequest),
             maxThreads As Integer,
@@ -91,12 +102,21 @@ Partial Public NotInheritable Class ForexeController
                 Dim total As Integer = jobs.Count
                 Dim terminat As Action(Of ParallelJobOutcome) =
                     Sub(o)
+                        ParallelBoard.JobEnded(o.Job)
                         Dim n As Integer = Interlocked.Increment(gata)
                         raportProgres.Report(CInt(Math.Min(100L, 100L * n \ total)))
                     End Sub
 
-                Dim outcomes As List(Of ParallelJobOutcome) =
-                    Await RunGatedAsync(Function() _runner.RunJobsParallelAsync(jobs, fire, terminat, _cts.Token))
+                ' Slice 0100-03: the board is what the queue window draws (one row per running tab);
+                ' its hooks carry each job's progress out and the operator's «stop this one» in.
+                Dim k_hooks As ParallelRunHooks = ParallelBoard.Begin(jobs, fire)
+                Dim outcomes As List(Of ParallelJobOutcome) = Nothing
+                Try
+                    outcomes = Await RunGatedAsync(Function() _runner.RunJobsParallelAsync(
+                                                       jobs, fire, terminat, k_hooks, _cts.Token))
+                Finally
+                    ParallelBoard.Finish()
+                End Try
 
                 ' ALL downloads have ended. Only now are the answers worked through, one at a time.
                 Dim rezultate As New List(Of ParallelNodeResult)()
@@ -104,7 +124,14 @@ Partial Public NotInheritable Class ForexeController
                     rezultate.Add(ProceseazaRaspunsul(o, sarite))
                 Next
                 Dim bune As Integer = rezultate.Where(Function(r) r.Pachet IsNot Nothing).Count()
-                RaporteazaStare($"Descărcarea multiplă s-a încheiat: {bune} reușite din {rezultate.Count}; urmează ingestia, una câte una.")
+                If bune > 0 Then
+                    Dim k_oprite As Integer = rezultate.Where(Function(r) r.Stopped).Count()
+                    RaporteazaStare($"Descărcarea multiplă s-a încheiat: {bune} reușite din {rezultate.Count - k_oprite}; urmează ingestia, una câte una.")
+                Else
+                    ' Nothing to ingest: «urmează ingestia» would be a lie, so the line goes back to the repose
+                    ' text (what failed, if anything, is in the list the shell shows).
+                    RaporteazaStare("În așteptare...")
+                End If
                 Return rezultate
             Finally
                 IesDinLucru()
@@ -124,6 +151,12 @@ Partial Public NotInheritable Class ForexeController
         Dim cod As String = String.Empty
         If o.Job IsNot Nothing Then o.Job.Parameters.TryGetValue(WorkflowCatalog.VarCodAngajament, cod)
         Dim rezultat As New ParallelNodeResult With {.Cod = cod}
+        ' The operator stopped this one: nothing of it is kept, and nobody is told it «failed».
+        If o.StoppedByOperator Then
+            rezultat.Stopped = True
+            RaporteazaStare($"«{cod}»: descărcarea a fost oprită — nu s-a salvat nimic.")
+            Return rezultat
+        End If
         Dim jurnal As New ForexeRunDump("PrelucrareCompleta", cod, _session)
         Try
             jurnal.NoteRequest(o.Job)

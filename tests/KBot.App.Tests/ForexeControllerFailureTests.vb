@@ -63,6 +63,7 @@ Public Class ForexeControllerFailureTests
         ' Slice 0100: the multi-thread run; no test here uses it (interface member only).
         Public Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest), maxThreads As Integer,
                                              jobFinished As Action(Of ParallelJobOutcome),
+                                             hooks As ParallelRunHooks,
                                              ct As CancellationToken) _
             As Task(Of List(Of ParallelJobOutcome)) Implements IForexeRunner.RunJobsParallelAsync
             Throw New NotSupportedException()

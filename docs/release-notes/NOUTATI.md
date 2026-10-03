@@ -6,7 +6,24 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 
 <!-- Secțiunile sunt adăugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu ștergeți marcajele ascunse `<!\-\- release: ... \-\->` și `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmărite schimbările pentru versiunea următoare.-->
 
+## 1.1.1.7 (03.10.2026)
+
+<!-- release: utc=2026-10-03T12:24:10Z -->
+<!-- felii: 0107-02, 0107, 0000-44, 0000-46, 0000-47, 0100-03, 0000-48 -->
+
+- «Clasificații bugetare»: cele două tabele au coloane de aceeași lățime; cel de sus arată și clasificația.
+- Bugetul are o coloană «Total» pe fiecare rând; totalul rectificărilor apare doar la o clasificație aleasă.
+- Sub cele două tabele, un rând nou adună ultimul buget (cel cu data cea mai nouă) cu toate rectificările.
+- Bifa nouă «Arată DOAR clasificațiile folosite în FOREXE», în dreapta bifei «Arată toate clasificațiile».
+- «Verifică bugetul» verifică doar clasificațiile folosite în FOREXE, adică cele cu credit raportat de FOREXE.
+- În «Verificare buget FOREXE», dublu clic pe un rând închide fereastra și alege clasificația în arbore.
+- La descărcarea mai multor angajamente, «Coada robotului» arată un rând cu bară de progres pentru fiecare.
+- «X» de pe un rând oprește doar descărcarea acelui angajament; celelalte merg mai departe.
+- Cele care așteaptă un tab apar dedesubt, într-o listă, fiecare cu «X» care îl scoate din descărcare.
+- Dacă nicio descărcare nu a reușit, mesajul «urmează ingestia» nu mai rămâne în bara de stare.
+
 ## 1.1.1.6 (03.10.2026)
+
 <!-- release: utc=2026-10-03T07:56:21Z -->
 <!-- felii: 0105, 0106, 0107, 0000-43 -->
 
@@ -20,6 +37,7 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 - Ajutor: actualizat pentru clasificațiile bugetare și pentru clicul dreapta în DDF, ORD și Asocieri.
 
 ## 1.1.1.5 (02.10.2026)
+
 <!-- release: utc=2026-10-02T07:24:34Z -->
 <!-- felii: 0101-02, 0102, 0000-40, SLICELESS-lista-sursa-asociere-denumire-wicket, 0000-39 -->
 
@@ -33,6 +51,7 @@ Aici găsiți schimbările din fiecare versiune, începând cu cea mai nouă.
 - Ajutor: actualizat pentru clasificațiile bugetare, editorul DDF, lista de angajamente și asocieri.
 
 ## 1.1.1.4 (02.10.2026)
+
 <!-- release: utc=2026-10-02T06:38:48Z -->
 
 <!-- felii: 0101, 0101-01, 0000-37, 0000-38 -->

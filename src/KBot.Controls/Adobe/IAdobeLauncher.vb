@@ -59,6 +59,8 @@ Public NotInheritable Class ProcessAdobeLauncher
                 New ProcessStartInfo(exePath, arguments) With {.UseShellExecute = False})
             If proc Is Nothing Then Return 0
             Try
+                ' Slice 0078-11: remembered, so closing K-BOT can end it (see AdobeProcessRegistry).
+                AdobeProcessRegistry.Track(proc.Id)
                 Return proc.Id
             Finally
                 ' The PID is the handle we keep; the Process object itself is not needed again.

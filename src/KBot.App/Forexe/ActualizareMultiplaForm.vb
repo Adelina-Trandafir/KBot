@@ -9,10 +9,10 @@ Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
-''' Slice 0100: «Actualizeaza angajamente» -- the window opened from the main tree's menu (only
-''' with multi-thread downloading on) where the operator ticks the angajamente to bring up to date.
-''' The ticked ones go to the multi-thread download: up to the configured number of tabs at once,
-''' the rest waiting in a FIFO queue.
+''' Slice 0100: «Actualizeaza angajamente» -- the window opened from the main tree's menu where the
+''' operator ticks the angajamente to bring up to date. With multi-thread downloading on, the ticked
+''' ones go to the multi-thread download: up to the configured number of tabs at once, the rest
+''' waiting in a FIFO queue. Without it (slice 0109) they join the robot queue one by one.
 ''' </summary>
 ''' <remarks>
 ''' The grid lists the angajamente in the same order as the tree. «Bifeaza cele vechi» ticks those <see cref="AngajamentTreeInfo.EsteNeactualizatDe"/>
@@ -42,6 +42,11 @@ Public Class ActualizareMultiplaForm
         ' The order the caller gives (the tree's own order) is kept: no sorting here.
         _items = items.Where(Function(i) i IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(i.CodAngajament)).ToList()
         btnVechi.Text = $"Bifează cele neactualizate de {zile} zile"
+        ' Slice 0109: without multi-thread the ticked ones join the robot queue and run one after the other.
+        If Not AppSettings.Current.MultiThreadInEffect Then
+            lblAntet.Text = "Bifează angajamentele pe care vrei să le aduci la zi din FOREXE. Se descarcă una după alta, în ordinea din listă, în «Coada robotului»."
+            tips.SetToolTipText(btnActualizeaza, "Pune în «Coada robotului» angajamentele <b>bifate</b>, în ordinea din listă." & vbLf & "Se descarcă una după alta, ca la apăsări succesive pe iconița de reîmprospătare a fiecăruia.")
+        End If
     End Sub
 
     Protected Overrides Sub OnLoad(e As EventArgs)

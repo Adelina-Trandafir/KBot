@@ -44,3 +44,27 @@ screen (operator rule: no test runs / UI driving unless asked).
   not exercised, DDF/ORD do not use multi-select.
 - ORD: «Adaugă ordonanțare…» / «Generare în lot…» now need a selected row to right click on
   (they were reachable from any row before); the «Adaugă» icon in the tree footer is unchanged.
+
+## Also under slice 0107 (03.10.2026): «Clasificatii bugetare», aligned grids and a final row
+
+Same slice, operator request: the two grids of `ClasificatiiForm` keep their columns on the same
+vertical lines, and a row under both adds the last budget and all the corrections.
+
+- Columns: every stretching column (`Clsf` of the budget grid, `Nr. doc.`, the `Clsf` columns) is authored at
+  150 (MinWidth 150); the other columns are 110 in every grid. Equal authored totals (leaf 844, node 700) make
+  the grids shrink or stretch the same way. Before, the budget grid's `Clsf` was authored at 200 and shrank every
+  column of that grid on a narrow panel, while the corrections grid did not.
+- Leaf: the budget grid shows `Clsf` first (`Clsf | Inceput | Trim 1-4 | Total | x` over `Nr. doc. | Data | ...`).
+- `KBotDataView`: `VScrollShown`, event `VScrollShownChanged` (raised after the layout pass), property
+  `ReserveVScrollSpace`. `ClasificatiiForm.Grid_VScrollShownChanged` reserves the bar's strip on all three grids
+  only while one of the two upper grids has its bar on.
+- `gridTotal` (one row, no header / footer, read only, text «Buget + rectificari»): newest-dated budget +
+  all corrections per quarter and Total; for a node, the last budget of every classification under it +
+  their corrections totals. `UpdateTotalRow` follows every edit, new row and delete.
+- Files: `KBotDataView.Layout.vb`, `KBotDataView.AutoSize.vb`, `ClasificatiiForm.Designer.vb`,
+  `ClasificatiiForm.vb`; help `clasificatii.md`, `tur-clasificatii.md` (0000-46).
+- `gridTotal` is not selectable (new `KBotDataView.Selectable`, default True) and its «Inceput» cell stays empty.
+- New check box `chkForexe` («Arata DOAR clasificatiile folosite in FOREXE», right of «Arata toate clasificatiile», both in `tlyBife`): the tree shows only the classifications that have a row in `FX_Indicatori_Buget` (by `IdClsf`); it wins over the movement filter. Server: `GET .../clasificatii` items carry `in_forexe` (`EXISTS` on `FX_Indicatori_Buget`) - **server not deployed**; `Clasificatie.InForexe`. - «Verifica bugetul»: double click on a row closes the window and `ClasificatiiForm.GoToClassification` selects that leaf and loads it (same path as a tree click, so unsaved changes are asked about); a leaf hidden by the filters makes the tree show all classifications first. `BudgetCheckForm.RunAsync(..., onPick)`; only when opened from this window (the automatic check after a download passes no `onPick`, double click does nothing there). Row id kept in `KBotDataRow.Tag`. Not seen on screen.
+- «Verifica bugetul» (`check_budget`, also the automatic check after a download): only classifications with a row in `FX_Indicatori_Buget` are checked; ones with K-BOT values but no FOREXE credit are left out (operator, 03.10.2026). The check box uses the same test. Both stay empty until a download with slice 0108 has filled `FX_Indicatori_Buget`.
+- Build `KBot.App`: 0 warnings, 0 errors. Not seen on screen: the alignment at the operator's DPI with and without
+  the bar, the strip appearing on the other grids when one starts to scroll, the height of the last row.

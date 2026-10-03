@@ -70,6 +70,20 @@ Partial Public Class WorkflowExecutor
             Catch ex As Exception
                 clickEx = ex
             End Try
+            ' FOREXE keeps a fixed bar at the bottom of the window: a row near the end of a long
+            ' table can stay under it however Playwright scrolls (03.10.2026, row 5 of the
+            ' indicators). Once, the element is brought to the MIDDLE of the window and clicked again.
+            If clickEx IsNot Nothing AndAlso Not action.Force AndAlso IsCoveredClick(clickEx) Then
+                _logger.LogWarning($"[Click] Ținta e acoperită de alt element (bara fixă a paginii): o aduc în mijlocul ferestrei și încerc din nou: {finalSelector}")
+                Dim retryEx As Exception = Nothing
+                Try
+                    Await locator.First.EvaluateAsync("el => el.scrollIntoView({ block: 'center', inline: 'nearest' })")
+                    Await locator.ClickAsync(clickOptions)
+                Catch ex As Exception
+                    retryEx = ex
+                End Try
+                clickEx = retryEx
+            End If
             If lifted Then Await RestorePageStylesAsync()
             If clickEx IsNot Nothing Then
                 System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(clickEx).Throw()
@@ -119,6 +133,12 @@ Partial Public Class WorkflowExecutor
             End Try
         End If
 
+    End Function
+
+    ''' <summary>True when Playwright gave up because another element covered the click point.</summary>
+    Private Shared Function IsCoveredClick(k_ex As Exception) As Boolean
+        Return TypeOf k_ex Is Microsoft.Playwright.PlaywrightException AndAlso
+               k_ex.Message.Contains("intercepts pointer events", StringComparison.OrdinalIgnoreCase)
     End Function
 
     ''' <summary>

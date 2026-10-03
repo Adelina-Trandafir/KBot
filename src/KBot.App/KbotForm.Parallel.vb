@@ -92,12 +92,13 @@ Partial Public Class KbotForm
 
     ''' <summary>
     ''' The tree menu's «Actualizeaza angajamente...»: the operator ticks the angajamente, then the
-    ''' ticked ones are downloaded together. UI boundary (async Sub started from a menu click).
+    ''' ticked ones are downloaded together (multi-thread) or, with one-at-a-time mode (slice 0109),
+    ''' each joins the robot queue as if its own icon had been pressed, in the order of the list.
+    ''' UI boundary (async Sub started from a menu click).
     ''' </summary>
     Private Async Sub DeschideActualizareaMultipla()
         Try
             Dim s As AppSettings = AppSettings.Current
-            If Not s.MultiThreadInEffect Then Return
             If _treeInfos.Count = 0 Then
                 KBotMessage.Show(Me, "Arborele nu are niciun angajament de actualizat.", "Actualizare multiplă",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -111,7 +112,12 @@ Partial Public Class KbotForm
             End Using
             If coduri.Count = 0 Then Return
 
-            Await ActualizeazaMaiMulteAsync(coduri, "Actualizare multiplă", intrebaReceptii:=True)
+            If s.MultiThreadInEffect Then
+                Await ActualizeazaMaiMulteAsync(coduri, "Actualizare multiplă", intrebaReceptii:=True)
+            Else
+                ' Slice 0109: one at a time -- the same queue entries the node icons make.
+                Await PuneNodurileInCoadaAsync(coduri)
+            End If
         Catch ex As RobotTaskDroppedException
             ' Duplicate or taken out of the queue: the console already said it.
         Catch ex As Exception
@@ -207,6 +213,11 @@ Partial Public Class KbotForm
             ' 3. All downloads have ended: the answers, ONE AT A TIME, in the order they finished.
             Dim esecuri As New List(Of String)()
             For Each r As ParallelNodeResult In rezultate
+                ' Stopped with the X of its row (slice 0100-03): not a failure, nothing to ingest or report.
+                If r.Stopped Then
+                    SpuneCapturiNetrimise(r.Cod, "descărcarea a fost oprită de operator")
+                    Continue For
+                End If
                 If r.Pachet Is Nothing Then
                     esecuri.Add(r.Failure)
                     SpuneCapturiNetrimise(r.Cod, "descărcarea din FOREXE nu a reușit")
@@ -217,14 +228,18 @@ Partial Public Class KbotForm
                     SpuneCapturiNetrimise(r.Cod, "descărcarea nu s-a salvat în K-BOT")
                     Continue For
                 End If
-                Await TrimiteCapturileAsync(r.Cod, CapturaStore.FelReceptie)
-                Await TrimiteCapturileAsync(r.Cod, CapturaStore.FelRezervare)
+                ' The parallel robot takes no pictures of its own, so a run is normally empty-handed
+                ' here and must say nothing; only pictures left on disk by an earlier session
+                ' (kept with «Nu») are sent.
+                For Each k_fel As String In {CapturaStore.FelReceptie, CapturaStore.FelRezervare}
+                    If _controller.CapturileDe(r.Cod, k_fel).Count > 0 Then Await TrimiteCapturileAsync(r.Cod, k_fel)
+                Next
             Next
 
             ' A good run is SILENT; only what went wrong is shown (operator, 28.09.2026).
             If esecuri.Count > 0 Then
                 Const MaxAfisate As Integer = 10
-                Dim text As String = $"{esecuri.Count} din {rezultate.Count} angajamente nu s-au actualizat:" &
+                Dim text As String = $"{esecuri.Count} din {rezultate.Where(Function(r) Not r.Stopped).Count()} angajamente nu s-au actualizat:" &
                                      Environment.NewLine & String.Join(Environment.NewLine,
                                          esecuri.Take(MaxAfisate).Select(Function(m) "• " & m))
                 If esecuri.Count > MaxAfisate Then text &= Environment.NewLine & $"• … și încă {esecuri.Count - MaxAfisate}."

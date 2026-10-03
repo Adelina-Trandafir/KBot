@@ -29,7 +29,7 @@ Partial Public Class KbotForm
     Private Const TREE_SORT_DATE As String = "sort-date"
     Private Const TREE_COL_COD As String = "col-cod"
     Private Const TREE_COL_SURSE As String = "col-surse"
-    ' Slice 0100: the multi-thread update window (only offered with multi-thread downloading on).
+    ' Slice 0100 / 0109: the «update angajamente» window (multi-thread: downloaded together; otherwise queued one by one).
     Private Const TREE_UPDATE_MANY As String = "update-many"
 
     ' Cell keys of the two columns (the ColumnDef.Name the cells are matched on).
@@ -290,11 +290,10 @@ Partial Public Class KbotForm
                     .Checked = s.TreeShowSurse}
             }
 
-            ' Slice 0100: the angajamente to update together (the window is KbotForm.Parallel.vb's).
-            If s.MultiThreadInEffect Then
-                rows.Add(CustomPopupItem.Separator())
-                rows.Add(New CustomPopupItem(TREE_UPDATE_MANY, "&Actualizăeză angajamente...", FxIcons.RefreshIcon()))
-            End If
+            ' Slice 0100 / 0109: the angajamente to update in one go (the window is KbotForm.Parallel.vb's).
+            ' Always offered: multi-thread downloads them together, otherwise they join the robot queue.
+            rows.Add(CustomPopupItem.Separator())
+            rows.Add(New CustomPopupItem(TREE_UPDATE_MANY, "&Actualizează angajamente...", FxIcons.RefreshIcon()))
 
             ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
             Dim menu As New CustomPopup(rows)
@@ -313,7 +312,7 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Sub TreeOptionsMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
-            ' Slice 0100: not a setting -- it opens the window of the multi-thread update.
+            ' Slice 0100 / 0109: not a setting -- it opens the «update angajamente» window.
             If String.Equals(e.Item.Key, TREE_UPDATE_MANY, StringComparison.Ordinal) Then
                 DeschideActualizareaMultipla()
                 Return

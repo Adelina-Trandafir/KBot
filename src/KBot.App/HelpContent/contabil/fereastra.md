@@ -21,14 +21,17 @@ Fereastra principală are cinci zone.
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
   angajament — [Cât se deschide un document](topic:contabil.liste).
 - **Lupa** din capul listei deschide căutarea; **Esc** o golește și o închide. Toate butoanele comune
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
-- **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
+- **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată). Meniul ei are
+  și rândul **«Actualizează angajamente...»**: bifezi angajamentele de adus la zi din FOREXE. Cu
+  descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în coadă, unul după altul
+  — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 - Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
 - Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
   existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).

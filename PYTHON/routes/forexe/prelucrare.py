@@ -280,10 +280,9 @@ _IND_UPDATE_SQL = (
     "WHERE CodAngajament = %s AND CodIndicator = %s"
 )
 _BUGET_CLSF_UPSERT_SQL = (
-    "INSERT INTO FX_Indicatori_Buget (IdClsf, IdUnitate, CreditBugetar, CodAngajament) "
-    "VALUES (%s, %s, %s, %s) "
-    "ON DUPLICATE KEY UPDATE IdUnitate = VALUES(IdUnitate), "
-    "CreditBugetar = VALUES(CreditBugetar), CodAngajament = VALUES(CodAngajament)"
+    "INSERT INTO FX_Indicatori_Buget (IdClsf, IdUnitate, CreditBugetar) "
+    "VALUES (%s, %s, %s) "
+    "ON DUPLICATE KEY UPDATE IdUnitate = VALUES(IdUnitate), CreditBugetar = VALUES(CreditBugetar)"
 )
 
 
@@ -408,7 +407,7 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
         # The credit FOREXE reports for the classification (slice 0108). An indicator whose
         # classification could not be resolved has no row to write it to (find_id_clsf warned).
         if id_clsf:
-            cursor.execute(_BUGET_CLSF_UPSERT_SQL, (id_clsf, id_unitate, prevedere, cod))
+            cursor.execute(_BUGET_CLSF_UPSERT_SQL, (id_clsf, id_unitate, prevedere))
         written += 1
     return written
 

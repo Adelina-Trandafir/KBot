@@ -598,7 +598,7 @@ Partial Class KBotDataView
     ' The available width mirrors what UpdateScrollBars uses, so a fill mode makes the totals
     ' match the viewport exactly and no horizontal scrollbar appears.
     Private Function AutoSizeAvailableWidth() As Integer
-        Dim vw As Integer = If(WillVScrollBeVisible(), SystemInformation.VerticalScrollBarWidth, 0)
+        Dim vw As Integer = If(WillVScrollBeVisible() OrElse _reserveVScrollSpace, SystemInformation.VerticalScrollBarWidth, 0)
         Return Math.Max(0, ClientSize.Width - vw)
     End Function
 

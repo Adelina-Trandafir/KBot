@@ -64,6 +64,7 @@ Public NotInheritable Class FakeForexeRunner
     ''' </summary>
     Public Async Function RunJobsParallelAsync(jobs As IReadOnlyList(Of JobRequest), maxThreads As Integer,
                                                jobFinished As Action(Of ParallelJobOutcome),
+                                               hooks As ParallelRunHooks,
                                                ct As CancellationToken) As Task(Of List(Of ParallelJobOutcome)) _
         Implements IForexeRunner.RunJobsParallelAsync
         Dim outcomes As New List(Of ParallelJobOutcome)()
@@ -81,9 +82,24 @@ Public NotInheritable Class FakeForexeRunner
                             job = fifo.Dequeue()
                         End SyncLock
                         Dim started As Date = Date.Now
-                        Dim result As JobResult = Await SimulateAsync(job, Nothing, ct, RunSeconds).ConfigureAwait(False)
-                        Dim outcome As New ParallelJobOutcome With {.Job = job, .Result = result, .Worker = workerNo,
-                                                                    .StartedAt = started, .FinishedAt = Date.Now}
+                        Dim outcome As ParallelJobOutcome
+                        If hooks IsNot Nothing AndAlso hooks.IsStopped(job) Then
+                            outcome = New ParallelJobOutcome With {
+                                .Job = job, .Worker = 0, .StartedAt = started, .FinishedAt = started, .StoppedByOperator = True,
+                                .Result = New JobResult With {.Success = False, .Message = "Oprit de operator (simulat)."}}
+                        Else
+                            hooks?.JobStarted?.Invoke(job, workerNo)
+                            Dim k_stop As CancellationToken = If(hooks IsNot Nothing, hooks.StopTokenOf(job), CancellationToken.None)
+                            Dim k_report As Action(Of Integer, Integer) = Nothing
+                            If hooks IsNot Nothing Then k_report = Sub(k_step As Integer, k_steps As Integer) hooks.JobProgress?.Invoke(job, k_step, k_steps)
+                            Dim result As JobResult = Await SimulateAsync(job, Nothing, ct, RunSeconds, k_stop, k_report).ConfigureAwait(False)
+                            If k_stop.IsCancellationRequested Then
+                                result = New JobResult With {.Success = False, .Message = "Oprit de operator (simulat)."}
+                            End If
+                            outcome = New ParallelJobOutcome With {.Job = job, .Result = result, .Worker = workerNo,
+                                                                   .StartedAt = started, .FinishedAt = Date.Now,
+                                                                   .StoppedByOperator = k_stop.IsCancellationRequested}
+                        End If
                         SyncLock outcomes
                             outcomes.Add(outcome)
                         End SyncLock
@@ -106,7 +122,9 @@ Public NotInheritable Class FakeForexeRunner
     ' One fake run: ten steps over `seconds`, the mid-run call at step five, a cancel honoured
     ' between steps (answered as a stopped workflow, not thrown).
     Private Async Function SimulateAsync(job As JobRequest, progress As IProgress(Of Integer),
-                                         ct As CancellationToken, seconds As Double) As Task(Of JobResult)
+                                         ct As CancellationToken, seconds As Double,
+                                         Optional stopToken As CancellationToken = Nothing,
+                                         Optional stepReport As Action(Of Integer, Integer) = Nothing) As Task(Of JobResult)
         Dim name As String = If(job?.WorkflowName, "Job")
         Dim cod As String = String.Empty
         If job IsNot Nothing Then job.Parameters.TryGetValue(WorkflowCatalog.VarCodAngajament, cod)
@@ -114,10 +132,14 @@ Public NotInheritable Class FakeForexeRunner
         Dim pause As Integer = CInt(Math.Max(50, seconds * 1000 / steps))
         RaiseEvent StatusUpdated(Me, $"[simulat] {name} pornește...")
         For i As Integer = 1 To steps
+            If stopToken.IsCancellationRequested Then
+                Return New JobResult With {.Success = False, .Message = "Oprit de operator (simulat)."}
+            End If
             If ct.IsCancellationRequested Then
                 RaiseEvent StatusUpdated(Me, $"[simulat] {name} anulat la pasul {i}.")
                 Return New JobResult With {.Success = False, .Message = "Anulat de operator (simulat)."}
             End If
+            stepReport?.Invoke(i - 1, steps)
             Try
                 Await Task.Delay(pause, ct).ConfigureAwait(True)
             Catch ex As OperationCanceledException
@@ -127,6 +149,7 @@ Public NotInheritable Class FakeForexeRunner
             RaiseEvent StatusUpdated(Me, $"[simulat] {name}: pasul {i}/{steps}")
             If i = steps \ 2 AndAlso MidRunCall IsNot Nothing Then Await MidRunCall.Invoke().ConfigureAwait(True)
         Next
+        stepReport?.Invoke(steps, steps)
         If FailRuns Then
             Return New JobResult With {.Success = False, .Message = "Workflow-ul simulat s-a oprit (eșec cerut din banc)."}
         End If

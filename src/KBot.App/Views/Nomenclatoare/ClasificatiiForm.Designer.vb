@@ -37,9 +37,18 @@ Partial Class ClasificatiiForm
         Dim KBotDataColumn17 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn18 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn19 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn20 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn21 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn22 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn23 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn24 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn25 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn26 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn27 As KBotDataColumn = New KBotDataColumn()
         tips =New KBotToolTip(components)
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
+        gridTotal = New KBotDataView()
         btnSalveaza = New Button()
         btnVerifica = New Button()
         btnTrimiteAccess = New Button()
@@ -48,7 +57,9 @@ Partial Class ClasificatiiForm
         pnlCard = New Panel()
         tlyBody = New KBotTableLayoutPanel()
         tree = New AdvancedTreeControl()
+        tlyBife = New KBotTableLayoutPanel()
         chkToate = New CheckBox()
+        chkForexe = New CheckBox()
         tlyRight = New KBotTableLayoutPanel()
         lblBuget = New Label()
         lblRectificari = New Label()
@@ -57,9 +68,11 @@ Partial Class ClasificatiiForm
         btnInchide = New Button()
         CType(gridBuget, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridRectificari, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridTotal, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
+        tlyBife.SuspendLayout()
         tlyRight.SuspendLayout()
         tlySubsol.SuspendLayout()
         SuspendLayout()
@@ -78,8 +91,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn17.MinWidth = 150
         KBotDataColumn17.OptionGroup = Nothing
         KBotDataColumn17.ReadOnly = True
-        KBotDataColumn17.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn17.Width = 200
+        KBotDataColumn17.Width = 150
         KBotDataColumn15.AggregateFormatString = Nothing
         KBotDataColumn15.Format = KBotFormat.ShortDate
         KBotDataColumn15.FormatString = Nothing
@@ -208,14 +220,15 @@ Partial Class ClasificatiiForm
         KBotDataColumn18.OptionGroup = Nothing
         KBotDataColumn18.ReadOnly = True
         KBotDataColumn18.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn18.Width = 200
+        KBotDataColumn18.Width = 150
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Nr. doc."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "document"
         KBotDataColumn6.OptionGroup = Nothing
-        KBotDataColumn6.Width = 110
+        KBotDataColumn6.MinWidth = 150
+        KBotDataColumn6.Width = 150
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.Format = KBotFormat.ShortDate
         KBotDataColumn7.FormatString = Nothing
@@ -225,7 +238,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.ValueType = KBotValueType.DateTime
-        KBotDataColumn7.Width = 96
+        KBotDataColumn7.Width = 110
         KBotDataColumn8.Aggregate = KBotAggregate.Sum
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.DecimalPlaces = 2
@@ -237,7 +250,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn8.OptionGroup = Nothing
         KBotDataColumn8.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn8.ValueType = KBotValueType.Number
-        KBotDataColumn8.Width = 96
+        KBotDataColumn8.Width = 110
         KBotDataColumn9.Aggregate = KBotAggregate.Sum
         KBotDataColumn9.AggregateFormatString = Nothing
         KBotDataColumn9.DecimalPlaces = 2
@@ -249,7 +262,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn9.OptionGroup = Nothing
         KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn9.ValueType = KBotValueType.Number
-        KBotDataColumn9.Width = 96
+        KBotDataColumn9.Width = 110
         KBotDataColumn10.Aggregate = KBotAggregate.Sum
         KBotDataColumn10.AggregateFormatString = Nothing
         KBotDataColumn10.DecimalPlaces = 2
@@ -261,7 +274,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn10.OptionGroup = Nothing
         KBotDataColumn10.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn10.ValueType = KBotValueType.Number
-        KBotDataColumn10.Width = 96
+        KBotDataColumn10.Width = 110
         KBotDataColumn11.Aggregate = KBotAggregate.Sum
         KBotDataColumn11.AggregateFormatString = Nothing
         KBotDataColumn11.DecimalPlaces = 2
@@ -273,7 +286,7 @@ Partial Class ClasificatiiForm
         KBotDataColumn11.OptionGroup = Nothing
         KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn11.ValueType = KBotValueType.Number
-        KBotDataColumn11.Width = 96
+        KBotDataColumn11.Width = 110
         KBotDataColumn12.Aggregate = KBotAggregate.Sum
         KBotDataColumn12.AggregateFormatString = Nothing
         KBotDataColumn12.DecimalPlaces = 2
@@ -332,6 +345,124 @@ Partial Class ClasificatiiForm
         gridRectificari.TabIndex = 3
         tips.SetToolTipHeader(gridRectificari, "Rectificările bugetare ale anului")
         tips.SetToolTipText(gridRectificari, "Nr. doc. și data sunt obligatorii; data trebuie să fie în anul de lucru." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvează».")
+        '
+        ' gridTotal
+        '
+        gridTotal.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridTotal.BackColor = SystemColors.Window
+        gridTotal.ColumnFillMode = KBotFillMode.SpecificColumn
+        gridTotal.FillColumnKey = "clsf"
+        KBotDataColumn20.AggregateFormatString = Nothing
+        KBotDataColumn20.FormatString = Nothing
+        KBotDataColumn20.HeaderText = "Clsf"
+        KBotDataColumn20.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn20.Key = "clsf"
+        KBotDataColumn20.MinWidth = 150
+        KBotDataColumn20.OptionGroup = Nothing
+        KBotDataColumn20.ReadOnly = True
+        KBotDataColumn20.Width = 150
+        KBotDataColumn21.AggregateFormatString = Nothing
+        KBotDataColumn21.Format = KBotFormat.ShortDate
+        KBotDataColumn21.FormatString = Nothing
+        KBotDataColumn21.HeaderText = "Început"
+        KBotDataColumn21.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn21.Key = "inceput"
+        KBotDataColumn21.OptionGroup = Nothing
+        KBotDataColumn21.ReadOnly = True
+        KBotDataColumn21.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn21.ValueType = KBotValueType.DateTime
+        KBotDataColumn21.Width = 110
+        KBotDataColumn22.AggregateFormatString = Nothing
+        KBotDataColumn22.DecimalPlaces = 2
+        KBotDataColumn22.Format = KBotFormat.Standard
+        KBotDataColumn22.FormatString = Nothing
+        KBotDataColumn22.HeaderText = "Trim. 1"
+        KBotDataColumn22.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn22.Key = "trim1"
+        KBotDataColumn22.OptionGroup = Nothing
+        KBotDataColumn22.ReadOnly = True
+        KBotDataColumn22.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn22.ValueType = KBotValueType.Number
+        KBotDataColumn22.Width = 110
+        KBotDataColumn23.AggregateFormatString = Nothing
+        KBotDataColumn23.DecimalPlaces = 2
+        KBotDataColumn23.Format = KBotFormat.Standard
+        KBotDataColumn23.FormatString = Nothing
+        KBotDataColumn23.HeaderText = "Trim. 2"
+        KBotDataColumn23.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn23.Key = "trim2"
+        KBotDataColumn23.OptionGroup = Nothing
+        KBotDataColumn23.ReadOnly = True
+        KBotDataColumn23.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn23.ValueType = KBotValueType.Number
+        KBotDataColumn23.Width = 110
+        KBotDataColumn24.AggregateFormatString = Nothing
+        KBotDataColumn24.DecimalPlaces = 2
+        KBotDataColumn24.Format = KBotFormat.Standard
+        KBotDataColumn24.FormatString = Nothing
+        KBotDataColumn24.HeaderText = "Trim. 3"
+        KBotDataColumn24.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn24.Key = "trim3"
+        KBotDataColumn24.OptionGroup = Nothing
+        KBotDataColumn24.ReadOnly = True
+        KBotDataColumn24.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn24.ValueType = KBotValueType.Number
+        KBotDataColumn24.Width = 110
+        KBotDataColumn25.AggregateFormatString = Nothing
+        KBotDataColumn25.DecimalPlaces = 2
+        KBotDataColumn25.Format = KBotFormat.Standard
+        KBotDataColumn25.FormatString = Nothing
+        KBotDataColumn25.HeaderText = "Trim. 4"
+        KBotDataColumn25.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn25.Key = "trim4"
+        KBotDataColumn25.OptionGroup = Nothing
+        KBotDataColumn25.ReadOnly = True
+        KBotDataColumn25.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn25.ValueType = KBotValueType.Number
+        KBotDataColumn25.Width = 110
+        KBotDataColumn26.AggregateFormatString = Nothing
+        KBotDataColumn26.DecimalPlaces = 2
+        KBotDataColumn26.Format = KBotFormat.Standard
+        KBotDataColumn26.FormatString = Nothing
+        KBotDataColumn26.HeaderText = "Total"
+        KBotDataColumn26.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn26.Key = "total"
+        KBotDataColumn26.OptionGroup = Nothing
+        KBotDataColumn26.ReadOnly = True
+        KBotDataColumn26.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn26.ValueType = KBotValueType.Number
+        KBotDataColumn26.Width = 110
+        KBotDataColumn27.AggregateFormatString = Nothing
+        KBotDataColumn27.FormatString = Nothing
+        KBotDataColumn27.HeaderText = ""
+        KBotDataColumn27.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn27.Key = "sterge"
+        KBotDataColumn27.MinWidth = 34
+        KBotDataColumn27.OptionGroup = Nothing
+        KBotDataColumn27.ReadOnly = True
+        KBotDataColumn27.Resizable = False
+        KBotDataColumn27.Width = 34
+        gridTotal.Columns.Add(KBotDataColumn20)
+        gridTotal.Columns.Add(KBotDataColumn21)
+        gridTotal.Columns.Add(KBotDataColumn22)
+        gridTotal.Columns.Add(KBotDataColumn23)
+        gridTotal.Columns.Add(KBotDataColumn24)
+        gridTotal.Columns.Add(KBotDataColumn25)
+        gridTotal.Columns.Add(KBotDataColumn26)
+        gridTotal.Columns.Add(KBotDataColumn27)
+        gridTotal.Dock = DockStyle.Fill
+        gridTotal.HeaderHeight = 24
+        gridTotal.Location = New Point(0, 604)
+        gridTotal.Margin = New Padding(0, 12, 0, 0)
+        gridTotal.Name = "gridTotal"
+        gridTotal.ReadOnlyGrid = True
+        gridTotal.Selectable = False
+        gridTotal.RowHeight = 24
+        gridTotal.ShowHeader = False
+        gridTotal.Size = New Size(955, 38)
+        gridTotal.TabIndex = 4
+        tips.SetToolTipHeader(gridTotal, "Bugetul în vigoare, cu rectificări")
+        tips.SetToolTipText(gridTotal, "Ultimul buget (cel cu data cea mai nouă) plus TOATE rectificările de mai sus, pe trimestre." & vbLf & "La un nod, însumează toate clasificațiile de sub el.")
         ' 
         ' btnSalveaza
         ' 
@@ -432,7 +563,7 @@ Partial Class ClasificatiiForm
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 39.42857F))
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.57143F))
         tlyBody.Controls.Add(tree, 0, 0)
-        tlyBody.Controls.Add(chkToate, 0, 1)
+        tlyBody.Controls.Add(tlyBife, 0, 1)
         tlyBody.Controls.Add(tlyRight, 1, 0)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(12, 9)
@@ -478,15 +609,48 @@ Partial Class ClasificatiiForm
         tree.Size = New Size(608, 614)
         tree.TabIndex = 0
         ' 
+        ' tlyBife
+        ' 
+        tlyBife.AutoFitToTheme = False
+        tlyBife.AutoSize = True
+        tlyBife.ColumnCount = 2
+        tlyBife.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyBife.ColumnStyles.Add(New ColumnStyle())
+        tlyBife.Controls.Add(chkToate, 0, 0)
+        tlyBife.Controls.Add(chkForexe, 1, 0)
+        tlyBife.Dock = DockStyle.Fill
+        tlyBife.Location = New Point(0, 614)
+        tlyBife.Margin = New Padding(0, 0, 12, 0)
+        tlyBife.Name = "tlyBife"
+        tlyBife.RowCount = 1
+        tlyBife.RowStyles.Add(New RowStyle())
+        tlyBife.Size = New Size(608, 39)
+        tlyBife.TabIndex = 2
+        ' 
+        ' chkForexe
+        ' 
+        chkForexe.AutoSize = True
+        chkForexe.Anchor = AnchorStyles.Right
+        chkForexe.FlatStyle = FlatStyle.Flat
+        chkForexe.Location = New Point(340, 9)
+        chkForexe.Margin = New Padding(12, 9, 0, 0)
+        chkForexe.Name = "chkForexe"
+        chkForexe.Size = New Size(268, 30)
+        chkForexe.TabIndex = 1
+        chkForexe.Text = "Arată DOAR clasificațiile folosite în FOREXE"
+        tips.SetToolTipHeader(chkForexe, "Doar clasificațiile folosite în FOREXE")
+        tips.SetToolTipText(chkForexe, "Bifat: arborele arată doar clasificațiile pentru care FOREXE a raportat un credit bugetar." & vbLf & "Are prioritate față de «Arată toate clasificațiile».")
+        chkForexe.UseVisualStyleBackColor = True
+        ' 
         ' chkToate
         ' 
         chkToate.AutoSize = True
         chkToate.FlatStyle = FlatStyle.Flat
-        chkToate.Location = New Point(0, 620)
+        chkToate.Location = New Point(0, 9)
         chkToate.Margin = New Padding(0, 9, 0, 0)
         chkToate.Name = "chkToate"
         chkToate.Size = New Size(260, 30)
-        chkToate.TabIndex = 2
+        chkToate.TabIndex = 0
         chkToate.Text = "Arată toate clasificațiile"
         tips.SetToolTipHeader(chkToate, "Arată toate clasificațiile")
         tips.SetToolTipText(chkToate, "Debifat: arborele arată doar clasificațiile cu mișcare în an (vreun trimestru de buget sau de rectificare diferit de zero)." & vbLf & "Bifat: toate clasificațiile configurate.")
@@ -500,15 +664,17 @@ Partial Class ClasificatiiForm
         tlyRight.Controls.Add(gridBuget, 0, 1)
         tlyRight.Controls.Add(lblRectificari, 0, 2)
         tlyRight.Controls.Add(gridRectificari, 0, 3)
+        tlyRight.Controls.Add(gridTotal, 0, 4)
         tlyRight.Dock = DockStyle.Fill
         tlyRight.Location = New Point(620, 0)
         tlyRight.Margin = New Padding(0)
         tlyRight.Name = "tlyRight"
-        tlyRight.RowCount = 4
+        tlyRight.RowCount = 5
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 45F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 40F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 60F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
         tlyRight.Size = New Size(955, 614)
         tlyRight.TabIndex = 1
         ' 
@@ -603,9 +769,12 @@ Partial Class ClasificatiiForm
         Text = "K-BOT — Clasificații bugetare"
         CType(gridBuget, ComponentModel.ISupportInitialize).EndInit()
         CType(gridRectificari, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridTotal, ComponentModel.ISupportInitialize).EndInit()
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
+        tlyBife.ResumeLayout(False)
+        tlyBife.PerformLayout()
         tlyRight.ResumeLayout(False)
         tlySubsol.ResumeLayout(False)
         tlySubsol.PerformLayout()
@@ -618,12 +787,15 @@ Partial Class ClasificatiiForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents tree As AdvancedTreeControl
+    Friend WithEvents tlyBife As KBotTableLayoutPanel
     Friend WithEvents chkToate As CheckBox
+    Friend WithEvents chkForexe As CheckBox
     Friend WithEvents tlyRight As KBotTableLayoutPanel
     Friend WithEvents lblBuget As Label
     Friend WithEvents gridBuget As KBotDataView
     Friend WithEvents lblRectificari As Label
     Friend WithEvents gridRectificari As KBotDataView
+    Friend WithEvents gridTotal As KBotDataView
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
     Friend WithEvents lblStare As Label
     Friend WithEvents btnSalveaza As Button

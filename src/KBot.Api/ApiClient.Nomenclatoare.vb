@@ -22,6 +22,7 @@ Partial Public Class ApiClient
         Public Property id_clsf As Integer
         Public Property id_unitate As Integer?
         Public Property id_clsf_acc As Integer?
+        Public Property in_forexe As Boolean
         Public Property capitol As String
         Public Property subcapitol As String
         Public Property articol As String
@@ -210,7 +211,8 @@ Partial Public Class ApiClient
                     .Alineat = If(w.alineat, String.Empty),
                     .Denumire = If(w.denumire, String.Empty),
                     .Ss = If(w.ss, String.Empty),
-                    .Clsf = If(w.clsf, String.Empty)})
+                    .Clsf = If(w.clsf, String.Empty),
+                    .InForexe = w.in_forexe})
             Next
             If payload.names IsNot Nothing Then
                 CopyNames(payload.names.capitol, result.CapitolNames)

@@ -132,7 +132,40 @@ Partial Public Class KbotForm
         Try
             Dim cod As String = If(pNode Is Nothing, Nothing, TryCast(pNode.Tag, String))
             If String.IsNullOrEmpty(cod) Then Return
+            Await PuneNodulInCoadaAsync(cod)
+        Catch ex As Exception
+            ' UI boundary (async Sub): PuneNodulInCoadaAsync already answers its own failures.
+            GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
+        End Try
+    End Sub
 
+    ''' <summary>
+    ''' Slice 0109: «Actualizeaza angajamente...» without multi-thread -- every ticked angajament is
+    ''' queued exactly as if its own node icon had been pressed, one after the other in the order
+    ''' given. The calls queue synchronously (each runs up to its first wait), so the first one is
+    ''' asked about its receptii as usual and the rest, finding the queue busy, read them all.
+    ''' </summary>
+    Private Async Function PuneNodurileInCoadaAsync(coduri As IEnumerable(Of String)) As Task
+        Try
+            Dim lucrari As New List(Of Task)()
+            For Each k_cod As String In coduri
+                If String.IsNullOrWhiteSpace(k_cod) Then Continue For
+                lucrari.Add(PuneNodulInCoadaAsync(k_cod))
+            Next
+            Await Task.WhenAll(lucrari)
+        Catch ex As Exception
+            ' UI boundary: each node already answers its own failure; this only guards the join.
+            GlobalErrorLog.Write("MainForm.PuneNodurileInCoadaAsync", ex)
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' One node's whole download as a robot queue task (slice 0098), shared by the node icon and the
+    ''' «Actualizeaza angajamente...» window (slice 0109). A failure is shown here; a duplicate or a
+    ''' task taken out of the queue is not (the console already said it).
+    ''' </summary>
+    Private Async Function PuneNodulInCoadaAsync(cod As String) As Task
+        Try
             MarcheazaDescarcareaFaraIntrebare(cod)
             ' Slice 0098: through the robot queue -- several clicks in a row run one after the
             ' other, in order, and a second click on a node already queued is refused.
@@ -141,11 +174,11 @@ Partial Public Class KbotForm
         Catch ex As RobotTaskDroppedException
             ' Duplicate or taken out of the queue: the console already said it.
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.tree_RightIconClicked", ex)
+            GlobalErrorLog.Write("MainForm.PuneNodulInCoadaAsync", ex)
             KBotMessage.Show(Me, "Descărcarea angajamentului a eșuat: " & ex.Message,
                             "FOREXE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
-    End Sub
+    End Function
 
     ''' <summary>
     ''' When another FOREXE action is already running or waiting, this one and the waiting

@@ -339,6 +339,8 @@ Public NotInheritable Class AcroPdfSurface
                     End Using
                 Next
             Next
+            ' Slice 0078-11: the family K-BOT started is remembered for the closing of the application.
+            AdobeProcessRegistry.TrackFamily(parents)
             Dim brokers As New HashSet(Of Integer)()
             For Each kv As KeyValuePair(Of Integer, Integer) In parents
                 If kv.Value = self Then brokers.Add(kv.Key)                      ' started by K-BOT

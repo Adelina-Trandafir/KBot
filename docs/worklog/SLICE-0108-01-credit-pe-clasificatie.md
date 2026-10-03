@@ -12,8 +12,8 @@ the "latest" with `ORDER BY DTQ DESC` - on 000_DEMO two angajamente had the same
 128.030). The fix is structural:
 
 1. **DDL (`sql/0108_01..03`).**
-   - New table `FX_Indicatori_Buget`: ONE row per `IdClsf` (`CreditBugetar`, `CodAngajament` = the
-     download that wrote it last, `DTI`, `DTQ`), data only from FOREXE.
+   - New table `FX_Indicatori_Buget`: ONE row per `IdClsf` (`CreditBugetar`,
+     `IdUnitate`, `DTI`, `DTQ`), data only from FOREXE; no angajament column (it is per classification).
    - `DTI` = created, `DTQ` = last change (`ON UPDATE current_timestamp()`) on the seven tables that had a
      `DTQ`: `Clasificatii_Venituri_Rectificari`, `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`, `FX_Plati`,
      `FX_Receptii`, `FX_Rezervari`. The one-time query copies the old `DTQ` into `DTI` with `DTQ = DTQ`

@@ -24,6 +24,26 @@ Partial Class KBotDataView
     ' SELECȚIE
     ' ========================================================================
 
+    Private _selectable As Boolean = True
+
+    ''' <summary>
+    ''' Slice 0107: False => no row or cell is ever chosen (no highlight, no keyboard cursor); the grid only shows
+    ''' its rows. Default True.
+    ''' </summary>
+    <Category("K-BOT: Body")>
+    <Description("False => nicio celulă sau rând nu se selectează (grilă doar de afișare).")>
+    <DefaultValue(True)>
+    Public Property Selectable As Boolean
+        Get
+            Return _selectable
+        End Get
+        Set(value As Boolean)
+            If _selectable = value Then Return
+            _selectable = value
+            If Not value Then SetCurrentCell(-1, Nothing)
+        End Set
+    End Property
+
     ''' <summary>Indexul rândului curent (-1 = fără selecție). Setarea derulează la el.</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -64,6 +84,7 @@ Partial Class KBotDataView
     ' Punctul UNIC prin care se schimbă selecția: derulează, repictează și ridică evenimentul
     ' o singură dată, doar la o schimbare reală.
     Private Sub SetCurrentCell(rowIndex As Integer, colKey As String)
+        If Not _selectable AndAlso rowIndex >= 0 Then Return
         If rowIndex = _currentRowIndex AndAlso String.Equals(colKey, _currentColumnKey, StringComparison.Ordinal) Then Return
         ' Mutarea celulei curente comite editarea deschisă. Dacă handler-ul de validare a
         ' respins valoarea, mutarea NU are loc — editorul rămâne deschis pe celula lui.

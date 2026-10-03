@@ -21,7 +21,10 @@ Imports KBot.Theming
 ''' in the tree footer opens <see cref="ClasificatiiAddForm"/>. A node ABOVE the leaves (slice 0105) shows
 ''' the same two grids as a read-only summary: a «Clsf» column that stretches, the LAST budget of each
 ''' classification under the node and the TOTAL of its corrections; no «Început», «Nr. doc.», «Data»,
-''' «✕» or footer «+».
+''' «✕» or footer «+». Slice 0107-03: under both grids a one-row grid (<c>gridTotal</c>, no header or footer) adds the
+''' LAST budget (newest «Început») and ALL the corrections; the three grids keep the same column widths
+''' (the budget grid has «Clsf» first for a leaf too, every stretching column is authored at 150), so their
+''' columns line up; the strip of the scroll bar is kept free on all three while one of the two scrolls.
 ''' </summary>
 Public Class ClasificatiiForm
 
@@ -49,6 +52,8 @@ Public Class ClasificatiiForm
     Private _catalog As ClasificatiiCatalog
     Private _current As Clasificatie
     Private _currentNode As AdvancedTreeControl.TreeItem
+    ' Slice 0107: the leaf of each classification in the tree now shown (the check window sends the operator to one).
+    Private ReadOnly _leafNodes As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
     ' Slice 0105: the classifications with movement in the year (some quarter of a budget version or of a
     ' correction is not zero); the tree shows only them until «Arată toate clasificațiile» is ticked.
     Private _activeIds As New HashSet(Of Integer)()
@@ -123,6 +128,7 @@ Public Class ClasificatiiForm
 
     Private Sub BuildTree(catalog As ClasificatiiCatalog, selectIdClsf As Integer?)
         tree.Clear()
+        _leafNodes.Clear()
         _currentNode = Nothing
         Dim folder As Image = My.Resources.Resources.folder_open
         Dim toSelect As AdvancedTreeControl.TreeItem = Nothing
@@ -157,6 +163,7 @@ Public Class ClasificatiiForm
                         Dim leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
                             $"L|{c.IdClsf}", $"{c.Articol}.{c.Alineat}~~~{Escape(c.Denumire)}", artNode)
                         leaf.Tag = c
+                        _leafNodes(c.IdClsf) = leaf
                         leaf.Tooltip = c.Clsf
                         If selectIdClsf.HasValue AndAlso c.IdClsf = selectIdClsf.Value Then toSelect = leaf
                     Next
@@ -173,18 +180,21 @@ Public Class ClasificatiiForm
 
     ' The classifications the tree shows: all of them, or only those with movement in the year.
     Private Function VisibleItems(catalog As ClasificatiiCatalog) As List(Of Clasificatie)
+        ' Slice 0107: «Arată DOAR clasificațiile folosite în FOREXE» wins over the movement filter.
+        If chkForexe.Checked Then Return catalog.Items.Where(Function(c) c.InForexe).ToList()
         If chkToate.Checked Then Return catalog.Items
         Return catalog.Items.Where(Function(c) _activeIds.Contains(c.IdClsf)).ToList()
     End Function
 
     Private Function CountText(catalog As ClasificatiiCatalog) As String
         Dim shown As Integer = VisibleItems(catalog).Count
+        If chkForexe.Checked Then Return $"{shown} din {catalog.Items.Count} clasificații, cele folosite în FOREXE."
         Return If(chkToate.Checked, $"{shown} clasificații.",
                   $"{shown} din {catalog.Items.Count} clasificații, cele cu mișcare în {_an}.")
     End Function
 
     ' UI boundary: the tree is rebuilt from the catalog already read; the open budget stays on screen.
-    Private Sub ChkToate_CheckedChanged(sender As Object, e As EventArgs) Handles chkToate.CheckedChanged
+    Private Sub ChkToate_CheckedChanged(sender As Object, e As EventArgs) Handles chkToate.CheckedChanged, chkForexe.CheckedChanged
         Try
             If _suppressToggle OrElse _catalog Is Nothing OrElse _busy Then Return
             BuildTree(_catalog, If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
@@ -275,6 +285,7 @@ Public Class ClasificatiiForm
                     ' New classifications have no movement yet: show them, or the operator would not find them.
                     _suppressToggle = True
                     chkToate.Checked = True
+                    chkForexe.Checked = False
                     _suppressToggle = False
                     LoadTree(If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
                 End If
@@ -411,6 +422,8 @@ Public Class ClasificatiiForm
 
         gridBuget.Enabled = True
         gridRectificari.Enabled = True
+        gridTotal.Enabled = True
+        UpdateTotalRow()
         Dim parts As String() = node.Key.Split("|"c)
         Dim code As String = String.Join(".", parts.Skip(1).Where(Function(p, i) i <> 1))   ' capitol[.sub[.articol]], without the source
         lblBuget.Text = $"Buget {_an} — {code} ({parts(2)}): {leaves.Count} clasificații"
@@ -425,13 +438,14 @@ Public Class ClasificatiiForm
     Private Sub ApplyMode(summary As Boolean)
         If summary = _summaryMode Then Return
         _summaryMode = summary
-        SetColumn(gridBuget, ColClsf, summary)
         SetColumn(gridBuget, ColStart, Not summary)
         SetColumn(gridBuget, ColDelete, Not summary)
         SetColumn(gridRectificari, ColClsf, summary)
         SetColumn(gridRectificari, ColDocument, Not summary)
         SetColumn(gridRectificari, ColData, Not summary)
         SetColumn(gridRectificari, ColDelete, Not summary)
+        SetColumn(gridTotal, ColStart, Not summary)
+        SetColumn(gridTotal, ColDelete, Not summary)
         For Each grid As KBotDataView In {gridBuget, gridRectificari}
             grid.ReadOnlyGrid = summary
             grid.FooterRightIcon = If(summary, Nothing, _plusIcon)
@@ -456,6 +470,63 @@ Public Class ClasificatiiForm
         column.Visible = If(shown, KBotColumnVisibility.Visible, KBotColumnVisibility.Hidden)
     End Sub
 
+    ' Slice 0107-03: the row under both grids = the LAST budget (newest «Început») + ALL the corrections, quarter
+    ' by quarter, read from what the two grids show now, so it follows every edit. A node adds up every
+    ' classification under it (the budget grid holds the last budget of each).
+    Private Sub UpdateTotalRow()
+        gridTotal.ClearRows()
+        If _current Is Nothing AndAlso Not _summaryMode Then Return
+        Dim sums(QuarterColumns.Length - 1) As Decimal
+        Dim lastStart As Date? = Nothing
+        Dim lastRow As KBotDataRow = Nothing
+        For i As Integer = 0 To gridBuget.RowCount - 1
+            Dim row As KBotDataRow = gridBuget.Rows(i)
+            If _summaryMode Then
+                AddQuarters(sums, row)
+                Continue For
+            End If
+            Dim startValue As Object = row(ColStart)
+            If TypeOf startValue Is Date AndAlso (Not lastStart.HasValue OrElse DirectCast(startValue, Date) > lastStart.Value) Then
+                lastStart = DirectCast(startValue, Date)
+                lastRow = row
+            End If
+        Next
+        If lastRow IsNot Nothing Then AddQuarters(sums, lastRow)
+        For i As Integer = 0 To gridRectificari.RowCount - 1
+            AddQuarters(sums, gridRectificari.Rows(i))
+        Next
+
+        Dim total As KBotDataRow = gridTotal.AddRow()
+        total(ColClsf) = "Buget + rectificări"
+        Dim sum As Decimal = 0D
+        For q As Integer = 0 To sums.Length - 1
+            total(QuarterColumns(q)) = sums(q)
+            sum += sums(q)
+        Next
+        total(ColTotal) = sum
+    End Sub
+
+    ' Slice 0107: the three grids must keep their columns on the same vertical lines. A grid that has more rows than
+    ' fit shows its scroll bar and loses that strip on the right; the others keep the strip free only then, so there
+    ' is no empty gutter when nobody scrolls.
+    Private Sub Grid_VScrollShownChanged(sender As Object, e As EventArgs) _
+        Handles gridBuget.VScrollShownChanged, gridRectificari.VScrollShownChanged
+        Try
+            Dim k_reserve As Boolean = gridBuget.VScrollShown OrElse gridRectificari.VScrollShown
+            gridBuget.ReserveVScrollSpace = k_reserve
+            gridRectificari.ReserveVScrollSpace = k_reserve
+            gridTotal.ReserveVScrollSpace = k_reserve
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.Grid_VScrollShownChanged", ex)
+        End Try
+    End Sub
+
+    Private Shared Sub AddQuarters(k_sums As Decimal(), k_row As KBotDataRow)
+        For q As Integer = 0 To k_sums.Length - 1
+            k_sums(q) += ReadAmount(k_row, QuarterColumns(q)).GetValueOrDefault()
+        Next
+    End Sub
+
     Private Sub FillGrids(data As BugetClasificatie)
         ApplyMode(False)
         SetCorrectionsTotal(True)
@@ -465,6 +536,7 @@ Public Class ClasificatiiForm
             gridBuget.ClearRows()
             For Each v As BudgetVersion In data.Budgets
                 Dim row As KBotDataRow = gridBuget.AddRow()
+                row(ColClsf) = _current.Clsf
                 row(ColId) = If(v.Id.HasValue, CObj(v.Id.Value), Nothing)
                 row(ColStart) = If(v.StartDate.HasValue, CObj(v.StartDate.Value), Nothing)
                 row(ColTrim1) = Box(v.Amounts.Trim1)
@@ -503,6 +575,8 @@ Public Class ClasificatiiForm
 
         gridBuget.Enabled = True
         gridRectificari.Enabled = True
+        gridTotal.Enabled = True
+        UpdateTotalRow()
         lblBuget.Text = $"Buget {_an} — {_current.Clsf}"
         lblRectificari.Text = $"Rectificări bugetare {_an}"
         tips.SetToolTipText(lblBuget, _current.Denumire)
@@ -515,8 +589,10 @@ Public Class ClasificatiiForm
         _current = Nothing
         gridBuget.ClearRows()
         gridRectificari.ClearRows()
+        gridTotal.ClearRows()
         gridBuget.Enabled = False
         gridRectificari.Enabled = False
+        gridTotal.Enabled = False
         _deletedIds.Clear()
         _deletedBudgetIds.Clear()
         lblBuget.Text = "Buget — alegeți un alineat din arbore"
@@ -605,6 +681,7 @@ Public Class ClasificatiiForm
             If QuarterColumns.Contains(e.ColumnKey) Then
                 grid(ColTotal, e.RowIndex) = RowTotal(grid.Rows(e.RowIndex))
             End If
+            If QuarterColumns.Contains(e.ColumnKey) OrElse e.ColumnKey = ColStart Then UpdateTotalRow()
             SetDirty(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.Grid_CellValueChanged", ex)
@@ -616,6 +693,7 @@ Public Class ClasificatiiForm
             If _current Is Nothing OrElse _busy Then Return
             If Not gridBuget.CommitPendingEdit() Then Return
             Dim row As KBotDataRow = gridBuget.AddRow()
+            row(ColClsf) = _current.Clsf
             ' The first version of a year starts on 01.01; the next ones default to today (inside
             ' the year), the day a budget is usually changed.
             row(ColStart) = If(gridBuget.RowCount > 1 AndAlso Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
@@ -623,6 +701,7 @@ Public Class ClasificatiiForm
             row(ColDelete) = DeleteCaption
             row.IsDirty = True
             SetDirty(True)
+            UpdateTotalRow()
             Dim index As Integer = gridBuget.RowCount - 1
             gridBuget.EnsureVisible(index)
             gridBuget.EditCell(ColStart, index)
@@ -638,6 +717,7 @@ Public Class ClasificatiiForm
             Dim id As Object = gridBuget(ColId, e.RowIndex)
             If id IsNot Nothing Then _deletedBudgetIds.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
             gridBuget.RemoveRowAt(e.RowIndex)
+            UpdateTotalRow()
             SetDirty(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.GridBuget_ButtonClick", ex)
@@ -670,6 +750,7 @@ Public Class ClasificatiiForm
             Dim id As Object = gridRectificari(ColId, e.RowIndex)
             If id IsNot Nothing Then _deletedIds.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
             gridRectificari.RemoveRowAt(e.RowIndex)
+            UpdateTotalRow()
             SetDirty(True)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.GridRectificari_ButtonClick", ex)
@@ -845,13 +926,45 @@ Public Class ClasificatiiForm
         Try
             If _busy OrElse _api Is Nothing Then Return
             SetBusy(True, "Se verifică bugetul față de FOREXE…")
+            Dim k_chosen As Integer? = Nothing
             Try
-                Await BudgetCheckForm.RunAsync(Me, _api, _gate, showWhenEqual:=True).ConfigureAwait(True)
+                Await BudgetCheckForm.RunAsync(Me, _api, _gate, showWhenEqual:=True,
+                                               onPick:=Sub(k_id) k_chosen = k_id).ConfigureAwait(True)
             Finally
                 If Not IsDisposed Then SetBusy(False, String.Empty)
             End Try
+            ' Slice 0107: double click in the check window = show that classification here.
+            If k_chosen.HasValue AndAlso Not IsDisposed Then GoToClassification(k_chosen.Value)
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.BtnVerifica_Click", ex)
+        End Try
+    End Sub
+
+    ' UI boundary (slice 0107): selects the leaf of a classification and loads its budget, through the same path
+    ' as a click on it (unsaved changes are asked about). A leaf the filters hide is made visible first.
+    Private Sub GoToClassification(k_idClsf As Integer)
+        Try
+            If _catalog Is Nothing OrElse _busy Then Return
+            If Not _leafNodes.ContainsKey(k_idClsf) Then
+                If Not _catalog.Items.Any(Function(k_x) k_x.IdClsf = k_idClsf) Then Return
+                _suppressToggle = True
+                chkForexe.Checked = False
+                chkToate.Checked = True
+                _suppressToggle = False
+                BuildTree(_catalog, If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
+                SetStatus(CountText(_catalog))
+                If Not _leafNodes.ContainsKey(k_idClsf) Then Return
+            End If
+            Dim k_node As AdvancedTreeControl.TreeItem = _leafNodes(k_idClsf)
+            If k_node Is _currentNode Then
+                tree.SelectAndReveal(k_node)
+                Return
+            End If
+            Dim k_previous As AdvancedTreeControl.TreeItem = _currentNode
+            tree.SelectAndReveal(k_node)
+            ChangeSelection(k_node, k_previous)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiForm.GoToClassification", ex)
         End Try
     End Sub
 
@@ -952,10 +1065,13 @@ Public Class ClasificatiiForm
             tlyMain.BackColor = p.SurfaceAltColor
             pnlCard.BackColor = p.SurfaceAltColor
             tlyBody.BackColor = p.SurfaceAltColor
+            tlyBife.BackColor = p.SurfaceAltColor
             tlyRight.BackColor = p.SurfaceAltColor
             tlySubsol.BackColor = p.SurfaceAltColor
             chkToate.BackColor = p.SurfaceAltColor
             chkToate.ForeColor = p.TextColor
+            chkForexe.BackColor = p.SurfaceAltColor
+            chkForexe.ForeColor = p.TextColor
             lblBuget.BackColor = p.SurfaceAltColor
             lblBuget.ForeColor = p.TextColor
             lblRectificari.BackColor = p.SurfaceAltColor

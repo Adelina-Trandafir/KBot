@@ -299,7 +299,12 @@ Friend Module Program
             AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
             ' Slice 0078: signed PDFs whose upload failed earlier are retried once the shell is up.
             AddHandler shell.Shown, Sub(s, e) RetryPendingPdfUploads(shell, api)
-            Application.Run(shell)
+            Try
+                Application.Run(shell)
+            Finally
+                ' Slice 0078-11: the Adobe processes K-BOT started do not outlive it (no ghosts in the Task Manager).
+                KBot.Controls.AdobeProcessRegistry.Shutdown()
+            End Try
 
             'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login
 

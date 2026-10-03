@@ -15,11 +15,34 @@ Partial Public Class KbotForm
     Private Sub BindRobotQueue()
         forexeFooter.BindQueue(_robotQueue)
         AddHandler _robotQueue.Changed, AddressOf RobotQueue_Changed
+        AddHandler _controller.ParallelBoard.Started, AddressOf ParallelBoard_Started
     End Sub
 
     ''' <summary>The queue lives as long as the shell, but the handler is removed on close anyway.</summary>
     Private Sub UnbindRobotQueue()
         RemoveHandler _robotQueue.Changed, AddressOf RobotQueue_Changed
+        RemoveHandler _controller.ParallelBoard.Started, AddressOf ParallelBoard_Started
+    End Sub
+
+    ' Slice 0100-03: a download of TWO OR MORE angajamente began -- the window with a row per running
+    ' download opens by itself, even though it is one single queued task (operator, 03.10.2026). One
+    ' angajament alone never opens it. Raised from the robot side: posted to the UI thread.
+    Private Sub ParallelBoard_Started(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Disposing OrElse Not IsHandleCreated Then Return
+            BeginInvoke(New Action(
+                Sub()
+                    Try
+                        If IsDisposed OrElse Disposing Then Return
+                        _queueFormDismissed = False
+                        ShowRobotQueue(activate:=False)
+                    Catch ex As Exception
+                        GlobalErrorLog.Write("MainForm.ParallelBoard_Started", ex)
+                    End Try
+                End Sub))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ParallelBoard_Started", ex)
+        End Try
     End Sub
 
     ' The window opens by itself only when MORE THAN ONE FOREXE action is under way (operator,
@@ -73,15 +96,35 @@ Partial Public Class KbotForm
                     If _robotQueue.Waiting.Count > 0 Then _queueFormDismissed = True
                     _queueForm = Nothing
                 End Sub
-            Dim area As Rectangle = RectangleToScreen(ClientRectangle)
-            Dim footerTop As Integer = forexeFooter.PointToScreen(Point.Empty).Y
-            _queueForm.Location = New Point(Math.Max(area.Left, area.Right - _queueForm.Width - 16),
-                                            Math.Max(area.Top, footerTop - _queueForm.Height - 8))
+            _queueForm.StartPosition = FormStartPosition.Manual
             _queueForm.Show(Me)
+            ' Placed AFTER Show: the window is scaled to the screen's dpi only when its handle is made, so
+            ' its width before Show is the designer's and the right edge landed past the shell's (off the
+            ' screen when the shell is maximized). Its real size is known now.
+            PlaceRobotQueue()
         ElseIf activate Then
             If _queueForm.WindowState = FormWindowState.Minimized Then _queueForm.WindowState = FormWindowState.Normal
             _queueForm.BringToFront()
         End If
         If activate Then _queueForm.Activate()
+    End Sub
+
+    ''' <summary>
+    ''' Puts the queue window flush with the shell's right edge, its bottom edge just above the footer
+    ''' band, by the window's REAL size. Never lets it leave the screen's working area.
+    ''' </summary>
+    Private Sub PlaceRobotQueue()
+        Try
+            If _queueForm Is Nothing OrElse _queueForm.IsDisposed Then Return
+            Dim k_area As Rectangle = RectangleToScreen(ClientRectangle)
+            Dim k_footerTop As Integer = forexeFooter.PointToScreen(Point.Empty).Y
+            Dim k_work As Rectangle = Screen.FromControl(Me).WorkingArea
+            Dim k_left As Integer = Math.Min(k_area.Right, k_work.Right) - _queueForm.Width
+            Dim k_top As Integer = k_footerTop - _queueForm.Height - 8
+            _queueForm.Location = New Point(Math.Max(Math.Max(k_area.Left, k_work.Left), k_left),
+                                            Math.Max(Math.Max(k_area.Top, k_work.Top), k_top))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.PlaceRobotQueue", ex)
+        End Try
     End Sub
 End Class

@@ -35,6 +35,8 @@ Partial Class KBotDataView
     ' already hidden", skip the write, and the stale bar would come back with the page. These
     ' flags say what WE asked for; every layout read goes through them, never through Visible.
     Private _vScrollShown As Boolean = False
+    Private _reserveVScrollSpace As Boolean = False
+    Private _vScrollShownChanged As Boolean = False
     Private _hScrollShown As Boolean = False
 
     ' Derulare orizontală pe coloane (ScrollByColumn): starea de aliniere la margini.
@@ -196,8 +198,44 @@ Partial Class KBotDataView
     Private Function ViewportWidth() As Integer
         ' The bar sits inside the border frame, so everything from its left edge on (bar plus
         ' the border strip beside it) is out of the viewport.
-        Return Math.Max(0, If(_vScrollShown, vScroll.Left, ClientSize.Width))
+        If _vScrollShown Then Return Math.Max(0, vScroll.Left)
+        ' Slice 0107: the space of the bar stays out of the viewport even while the bar is hidden.
+        If _reserveVScrollSpace Then
+            Return Math.Max(0, ClientSize.Width - BorderDevicePx() - SystemInformation.VerticalScrollBarWidth)
+        End If
+        Return Math.Max(0, ClientSize.Width)
     End Function
+
+    ''' <summary>Slice 0107: True while the vertical scroll bar is on (more rows than fit).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property VScrollShown As Boolean
+        Get
+            Return _vScrollShown
+        End Get
+    End Property
+
+    ''' <summary>Slice 0107: the vertical scroll bar appeared or went away (raised after the layout pass).</summary>
+    Public Event VScrollShownChanged As EventHandler
+
+    ''' <summary>
+    ''' Slice 0107: when True the strip of the vertical bar is always kept free on the right, whether the
+    ''' bar shows or not, so grids stacked one above the other keep their columns on the same vertical
+    ''' lines even when only some of them need to scroll. Default False.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Păstrează mereu liberă fâșia barei de derulare verticale, ca grilele puse una sub alta să-și țină coloanele aliniate.")>
+    <DefaultValue(False)>
+    Public Property ReserveVScrollSpace As Boolean
+        Get
+            Return _reserveVScrollSpace
+        End Get
+        Set(value As Boolean)
+            If _reserveVScrollSpace = value Then Return
+            _reserveVScrollSpace = value
+            LayoutChanged()
+        End Set
+    End Property
 
     ''' <summary>
     ''' Înălțimea zonei de date (client minus antet minus banda de subsol minus bara orizontală).
@@ -463,6 +501,11 @@ Partial Class KBotDataView
         Finally
             _inLayout = False
         End Try
+        ' Slice 0107: told AFTER the pass, so a listener may change this grid's own layout properties.
+        If _vScrollShownChanged Then
+            _vScrollShownChanged = False
+            RaiseEvent VScrollShownChanged(Me, EventArgs.Empty)
+        End If
     End Sub
 
     ' Decide vizibilitatea/valorile barelor. Cele două se influențează reciproc, deci
@@ -496,7 +539,7 @@ Partial Class KBotDataView
         Dim availH As Integer = Math.Max(0, ClientSize.Height - headerH - totalsH)
 
         Dim needV As Boolean = contentH > availH
-        If needV Then availW = Math.Max(0, availW - vw)
+        If needV OrElse _reserveVScrollSpace Then availW = Math.Max(0, availW - vw)
 
         Dim needH As Boolean = totalColsW > availW
         If needH Then
@@ -549,6 +592,7 @@ Partial Class KBotDataView
     Private Sub SetVScrollShown(shown As Boolean)
         If _vScrollShown = shown Then Return
         _vScrollShown = shown
+        _vScrollShownChanged = True
         vScroll.Visible = shown
     End Sub
 

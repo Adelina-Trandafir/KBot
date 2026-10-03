@@ -28,7 +28,7 @@ Deschide **Setări** (butonul **MENIU** › «Configurare K-BOT») și alege pag
 
 | Opțiunea | Ce face |
 |----------|---------|
-| **«Descarcă mai multe angajamente deodată»** — debifată la început | pornește descărcarea pe mai multe taburi și aduce în meniul arborelui rândul «Actualizează angajamente...». Debifată, totul merge una câte una, ca până acum. |
+| **«Descarcă mai multe angajamente deodată»** — debifată la început | pornește descărcarea pe mai multe taburi: angajamentele alese în «Actualizează angajamente...» se descarcă deodată. Debifată, totul merge una câte una, ca până acum (rândul «Actualizează angajamente...» rămâne în meniu, dar angajamentele alese intră pe rând în coadă — vezi mai jos). |
 | **«Numărul de taburi deodată (1–N)»** — 3 la început, dar nu mai mult decât îngăduie unitatea | câte descărcări lucrează în același timp. **N**, scris în chiar numele opțiunii, e limita unității (cel mult 10). Un număr mai mare nu se primește. E o limită a lucrului deodată, nu a angajamentelor alese: cele în plus așteaptă la rând (vezi mai jos). |
 | **«La conectare, actualizează angajamentele vechi»** — debifată la început | după conectarea la FOREXE, angajamentele neactualizate de cel puțin **N zile** se descarcă singure. |
 | **«Neactualizate de (zile, cel mult 10)»** — 7 la început | N-ul de mai sus, de la 1 la 10. Se poate scrie doar cât e bifată opțiunea de dinainte. |
@@ -39,10 +39,11 @@ Dacă la o conectare următoare unitatea nu mai permite descărcarea pe mai mult
 Setări, iar descărcările merg din nou una câte una; bifele tale rămân salvate pentru când se permite din nou.
 
 ## Alegi angajamentele de actualizat
-<!-- slice: 0100 -->
+<!-- slice: 0100, 0109 -->
 
-Cu descărcarea pe mai multe taburi pornită, meniul iconiței din capul listei de angajamente (cea
-de la sortare și coloane) are un rând în plus: **«Actualizează angajamente...»**.
+Meniul iconiței din capul listei de angajamente (cea de la sortare și coloane) are un rând în
+plus: **«Actualizează angajamente...»**. Rândul se vede **mereu**, cu descărcarea pe mai multe
+taburi pornită sau nu.
 
 <!-- capture: arbore-meniu-actualizare | caption: Meniul listei de angajamente, cu «Actualizează angajamente...» | prepare: Porniți descărcarea pe mai multe taburi în Setări › Descărcări multiple, apoi apăsați iconița din dreapta capului listei de angajamente și țineți meniul deschis. -->
 
@@ -64,8 +65,18 @@ să descarce nimic. Rândul de jos spune câte sunt bifate.
 Data ultimei actualizări se vede și în **descrierea de la trecerea mouse-ului** peste un angajament
 («Actualizat: ...»).
 
+### Cu descărcarea pe mai multe taburi oprită
+<!-- slice: 0109 -->
+
+Fereastra e aceeași, dar **«Actualizează»** nu descarcă deodată. Fiecare angajament bifat intră în
+[Coada robotului](topic:contabil.forexe.coada), în ordinea din listă, exact ca atunci când ai apăsat
+pe rând iconița de reîmprospătare a fiecăruia: se descarcă **unul după altul**, fiecare cu salvarea
+lui. Dacă nu era nicio altă lucrare în coadă, pentru **primul** angajament se deschide fereastra
+[«Ce recepții reîmprospătez?»](topic:contabil.forexe.descarcare); pentru celelalte se citesc **toate**
+recepțiile. Un angajament care așteaptă deja în coadă nu se mai adaugă a doua oară.
+
 ## Cum decurge descărcarea
-<!-- slice: 0100 -->
+<!-- slice: 0100, 0100-03, 0000-48 -->
 
 1. K-BOT pornește cel mult atâtea descărcări câte taburi ai cerut. Dacă ai ales mai multe, **restul
    așteaptă la rând**, în ordinea alegerii: pe măsură ce un tab termină, ia următorul angajament din
@@ -80,6 +91,10 @@ Data ultimei actualizări se vede și în **descrierea de la trecerea mouse-ului
    eroare (dacă ultima a avut o eroare, cel dinainte ei, și tot așa).
 5. O descărcare reușită nu spune nimic; dacă unele angajamente nu s-au actualizat, apare **o singură
    listă** cu ele și cu motivul.
+6. **Vezi ce se descarcă și poți opri una singură.** Cu două sau mai multe angajamente, se deschide
+   fereastra [Coada robotului](topic:contabil.forexe.coada) cu un rând pentru fiecare descărcare în lucru
+   (cod, bară de progres și un «X»). «X» oprește doar acea descărcare, fără s-o treacă printre cele eșuate.
+   Cele care așteaptă un tab liber sunt numărate sub rânduri.
 
 Toată actualizarea e **o singură lucrare** în [Coada robotului](topic:contabil.forexe.coada).
 

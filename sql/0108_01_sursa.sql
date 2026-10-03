@@ -88,13 +88,11 @@ ALTER TABLE `AVACONT_SURSA`.`FX_Rezervari`
 --    Written by routes/forexe/prelucrare.py on every download (the credit of the indicator row it
 --    scraped, whatever angajament it came from -- it is the same figure by FOREXE's own rule);
 --    read by Sumar, by «Verifica bugetul» and by the readers that used FX_Indicatori.Credit_Bugetar.
---    CodAngajament only says which download wrote the figure last.
 -- -------------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `AVACONT_SURSA`.`FX_Indicatori_Buget` (
   `IdClsf`         int(11)      NOT NULL COMMENT 'Clasificatii.IDClsf: one row per classification',
   `IdUnitate`      int(11)      NULL DEFAULT NULL COMMENT 'Clasificatii.IdUnitate of the classification',
   `CreditBugetar`  double       NOT NULL DEFAULT 0 COMMENT 'The credit bugetar FOREXE reported at the last download',
-  `CodAngajament`  varchar(50)  NULL DEFAULT NULL COMMENT 'The angajament whose download wrote it last',
   `DTI`            datetime     NULL DEFAULT current_timestamp() COMMENT 'When the row was created',
   `DTQ`            datetime     NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'When the row was last changed',
   PRIMARY KEY (`IdClsf`) USING BTREE,

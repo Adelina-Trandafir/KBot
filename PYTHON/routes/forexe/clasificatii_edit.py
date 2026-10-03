@@ -5,7 +5,7 @@ session's database, the yearly budget of one classification and its corrections.
 
     GET  /api/forexe/nomenclatoare/clasificatii?an=2026
         -> 200 { "items": [ { "id_clsf", "id_unitate", "id_clsf_acc", "capitol", "subcapitol", "articol", "alineat",
-                              "denumire", "ss", "clsf" }, ... ],
+                              "denumire", "ss", "clsf", "in_forexe" }, ... ],
                  "names": { "capitol": {"65": ...}, "subcapitol": {"650402": ...},
                             "articol": {"10.01": ...}, "ss": {"02A": ...} } }
 
@@ -80,7 +80,8 @@ logger = logging.getLogger(__name__)
 _MAX_DOCUMENT = 255
 
 _SQL_ITEMS = (
-    "SELECT C.IDClsf, C.IdUnitate, C.IdClsfAcc, C.Capitol, C.Subcapitol, C.Articol, C.Alineat, C.Denumire, C.SS, C.Clsf "
+    "SELECT C.IDClsf, C.IdUnitate, C.IdClsfAcc, C.Capitol, C.Subcapitol, C.Articol, C.Alineat, C.Denumire, C.SS, C.Clsf, "
+    "       EXISTS (SELECT 1 FROM FX_Indicatori_Buget F WHERE F.IdClsf = C.IDClsf) AS InForexe "
     "  FROM Clasificatii C "
     "  LEFT JOIN Unitati U ON U.IdUnitate = C.IdUnitate "
     " WHERE COALESCE(U.Ascuns, 0) = 0 "
@@ -214,6 +215,8 @@ def get_clasificatii_tree():
             "denumire": _text(r["Denumire"]),
             "ss": _text(r["SS"]),
             "clsf": _text(r["Clsf"]),
+            # Slice 0107: used in FOREXE = FX_Indicatori_Buget has a row for it (FOREXE reported its credit).
+            "in_forexe": bool(r["InForexe"]),
         } for r in cursor.fetchall()]
         return _json_utf8({"items": items, "names": read_names(cursor)}, 200)
     except Exception as e:
@@ -611,6 +614,8 @@ def _rollback(conn):
 # angajament» to pick and no tie to break). What K-BOT holds = the version in force on the day plus
 # its rectifications, the TOTAL with no quarter cut-off (budget_on_day.py -- the same rule the DDF
 # uses). Rows whose two figures differ by less than half a cent are equal.
+# Slice 0107: ONLY classifications that have a row in FX_Indicatori_Buget (= used in FOREXE) are checked;
+# a classification that has K-BOT values but was never reported by FOREXE is left out.
 _SQL_CHECK_CLASSIFICATIONS = (
     "SELECT C.IDClsf, C.IdUnitate, C.Clsf, C.Denumire, C.SS "
     "  FROM Clasificatii C "
@@ -630,9 +635,9 @@ _EQUAL_WITHIN = 0.005
 
 
 def check_budget(cursor, day: date, cod_angajament: str = "") -> list:
-    """One entry per classification that has a K-BOT budget on `day` or a FOREXE credit. With
-    `cod_angajament` only the classifications of that angajament (the automatic check after a
-    download)."""
+    """One entry per classification that FOREXE reported a credit for (a row in FX_Indicatori_Buget) and
+    that has a K-BOT budget on `day` or a credit. With `cod_angajament` only the classifications of that
+    angajament (the automatic check after a download)."""
     if cod_angajament:
         cursor.execute(_SQL_CHECK_FX_ANGAJAMENT, (cod_angajament,))
     else:
@@ -646,7 +651,7 @@ def check_budget(cursor, day: date, cod_angajament: str = "") -> list:
     items = []
     for c in classifications:
         id_clsf = int(c["IDClsf"])
-        if cod_angajament and id_clsf not in credit_fx:
+        if id_clsf not in credit_fx:      # not used in FOREXE: never checked, whatever K-BOT holds
             continue
         kbot = budget_on_day(cursor, id_clsf, day)
         fx = credit_fx.get(id_clsf)

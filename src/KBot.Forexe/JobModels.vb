@@ -1,5 +1,6 @@
 Imports System.Collections.Generic
-Imports KBot.Domain      ' CelulaTabel / RandTabel / TabelRezultat (decizia D-N).
+Imports System.Threading
+Imports KBot.Domain     ' CelulaTabel / RandTabel / TabelRezultat (decizia D-N).
 
 Namespace KBot.Forexe
     Public Class JobRequest
@@ -50,5 +51,66 @@ Namespace KBot.Forexe
         Public Property Worker As Integer
         Public Property StartedAt As Date
         Public Property FinishedAt As Date
+        ''' <summary>
+        ''' Slice 0100-03: the operator stopped THIS download (the X of its row): it never started, or its
+        ''' tab was closed under it. Not a failure -- the caller reports nothing for it.
+        ''' </summary>
+        Public Property StoppedByOperator As Boolean
+    End Class
+
+    ''' <summary>
+    ''' Slice 0100-03: the two-way line between a multi-thread run and whoever shows it. Out: a job
+    ''' started on a tab (<see cref="JobStarted"/>) and how far its main flow got
+    ''' (<see cref="JobProgress"/>, step / steps) -- both called from the worker's thread. In:
+    ''' <see cref="StopJob"/> stops ONE job, running or still waiting, and leaves the others alone.
+    ''' </summary>
+    ''' <remarks>
+    ''' A job that has not started is simply skipped when its turn comes. A running one has its tab
+    ''' CLOSED (the runner does it): a robot step that waits on the page is cut short that way,
+    ''' where a cancel token is only looked at between steps.
+    ''' </remarks>
+    Public NotInheritable Class ParallelRunHooks
+        Private ReadOnly _gate As New Object()
+        Private ReadOnly _stopped As New Dictionary(Of JobRequest, CancellationTokenSource)()
+
+        ''' <summary>(job, worker number) -- the job took a tab and began.</summary>
+        Public Property JobStarted As Action(Of JobRequest, Integer)
+
+        ''' <summary>(job, step, steps) -- progress of the job's main flow.</summary>
+        Public Property JobProgress As Action(Of JobRequest, Integer, Integer)
+
+        ''' <summary>Stops <paramref name="k_job"/>. False when it is unknown (already gone).</summary>
+        Public Function StopJob(k_job As JobRequest) As Boolean
+            ArgumentNullException.ThrowIfNull(k_job)
+            Dim k_source As CancellationTokenSource = Nothing
+            SyncLock _gate
+                If Not _stopped.TryGetValue(k_job, k_source) Then
+                    k_source = New CancellationTokenSource()
+                    _stopped(k_job) = k_source
+                End If
+            End SyncLock
+            k_source.Cancel()
+            Return True
+        End Function
+
+        ''' <summary>True once the operator asked to stop <paramref name="k_job"/>.</summary>
+        Public Function IsStopped(k_job As JobRequest) As Boolean
+            SyncLock _gate
+                Dim k_source As CancellationTokenSource = Nothing
+                Return _stopped.TryGetValue(k_job, k_source) AndAlso k_source.IsCancellationRequested
+            End SyncLock
+        End Function
+
+        ''' <summary>The token that fires when the operator stops <paramref name="k_job"/>.</summary>
+        Public Function StopTokenOf(k_job As JobRequest) As CancellationToken
+            SyncLock _gate
+                Dim k_source As CancellationTokenSource = Nothing
+                If Not _stopped.TryGetValue(k_job, k_source) Then
+                    k_source = New CancellationTokenSource()
+                    _stopped(k_job) = k_source
+                End If
+                Return k_source.Token
+            End SyncLock
+        End Function
     End Class
 End Namespace

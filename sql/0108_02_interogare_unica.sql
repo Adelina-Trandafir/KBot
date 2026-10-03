@@ -47,8 +47,8 @@ ALTER TABLE `FX_Receptii`
 ALTER TABLE `FX_Rezervari`
   MODIFY COLUMN `DTQ` datetime NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'Slice 0108: when the row was last changed';
 
-INSERT IGNORE INTO `FX_Indicatori_Buget` (`IdClsf`, `IdUnitate`, `CreditBugetar`, `CodAngajament`)
-SELECT I.`IdClsf`, I.`IdUnitate`, I.`Credit_Bugetar`, I.`CodAngajament`
+INSERT IGNORE INTO `FX_Indicatori_Buget` (`IdClsf`, `IdUnitate`, `CreditBugetar`)
+SELECT I.`IdClsf`, I.`IdUnitate`, I.`Credit_Bugetar`
   FROM `FX_Indicatori` I
  WHERE I.`IdClsf` IS NOT NULL AND I.`IdClsf` <> 0 AND I.`Credit_Bugetar` IS NOT NULL
    AND EXISTS (SELECT 1 FROM `Clasificatii` C WHERE C.`IDClsf` = I.`IdClsf`)

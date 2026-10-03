@@ -30,10 +30,10 @@ part: header.search
 Deschide banda de căutare peste listă: scrii o parte din nume și lista arată doar angajamentele care se potrivesc. Esc golește căutarea și închide banda.
 
 ## Lista › Rotița
-<!-- slice: 0777, 0000-23 -->
+<!-- slice: 0777, 0000-23, 0109 -->
 target: KbotForm.tree
 part: header.right
-Opțiunile listei: sortarea (după nume sau după dată) și coloanele care se văd (codul, sursele). Aceleași opțiuni sunt și în Setări › Aplicație › KBOT.
+Opțiunile listei: sortarea (după nume sau după dată) și coloanele care se văd (codul, sursele). Aceleași opțiuni sunt și în Setări › Aplicație › KBOT. Ultimul rând al meniului, «Actualizează angajamente...», deschide o fereastră în care bifezi mai multe angajamente de adus la zi din FOREXE: cu descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în «Coada robotului» și se fac una după alta, ca la apăsări succesive pe iconița de reîmprospătare.
 
 ## Lista › Reîmprospătarea unui angajament
 <!-- slice: 0034, 0098, 0000-23 -->

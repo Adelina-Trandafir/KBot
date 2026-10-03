@@ -25,6 +25,10 @@ Public Class BudgetCheckForm
     Private Const ColDiferenta As String = "diferenta"
 
     Private ReadOnly _check As BudgetCheck
+    Private _allowPick As Boolean
+
+    ''' <summary>Slice 0107: the classification the operator chose with a double click; Nothing = none.</summary>
+    Public Property PickedIdClsf As Integer?
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -46,15 +50,21 @@ Public Class BudgetCheckForm
     ''' </summary>
     Public Shared Async Function RunAsync(owner As IWin32Window, api As INomenclatoareApi, gate As ReauthGate,
                                           showWhenEqual As Boolean,
-                                          Optional codAngajament As String = Nothing) As Task(Of Integer)
+                                          Optional codAngajament As String = Nothing,
+                                          Optional onPick As Action(Of Integer) = Nothing) As Task(Of Integer)
         Try
             Dim check As BudgetCheck = Await gate.RunAsync(
                 Function() api.GetBudgetCheckAsync(Date.Today, CancellationToken.None, codAngajament)).ConfigureAwait(True)
             Dim differences As Integer = check.Differences.Count()
             If differences = 0 AndAlso Not showWhenEqual Then Return 0
+            Dim k_picked As Integer? = Nothing
             Using f As New BudgetCheckForm(check)
+                ' Slice 0107: with a listener, a double click on a row closes the window and hands the classification over.
+                f._allowPick = onPick IsNot Nothing
                 f.ShowDialog(owner)
+                k_picked = f.PickedIdClsf
             End Using
+            If k_picked.HasValue AndAlso onPick IsNot Nothing Then onPick(k_picked.Value)
             Return differences
         Catch ex As ApiException
             GlobalErrorLog.Write("BudgetCheckForm.RunAsync", ex)
@@ -83,6 +93,7 @@ Public Class BudgetCheckForm
             gridVerificare.ClearRows()
             For Each r As BudgetCheckRow In _check.Differences
                 Dim row As KBotDataRow = gridVerificare.AddRow()
+                row.Tag = r.IdClsf
                 row(ColClsf) = r.Clsf
                 row(ColDenumire) = r.Denumire
                 row(ColSs) = r.Ss
@@ -99,6 +110,20 @@ Public Class BudgetCheckForm
                            $"Toate cele {_check.Rows.Count} clasificații au aceeași valoare în FOREXE și în K-BOT.",
                            $"{differences} din {_check.Rows.Count} clasificații diferă. Un buget gol înseamnă că nu există " &
                            "versiune K-BOT în vigoare azi, respectiv nicio descărcare de indicatori.")
+    End Sub
+
+    ' UI boundary: a double click on a row picks its classification (only when the caller listens).
+    Private Sub GridVerificare_CellDoubleClick(sender As Object, e As KBotCellEventArgs) Handles gridVerificare.CellDoubleClick
+        Try
+            If Not _allowPick OrElse e.RowIndex < 0 OrElse e.RowIndex >= gridVerificare.RowCount Then Return
+            Dim k_tag As Object = gridVerificare.Rows(e.RowIndex).Tag
+            If k_tag Is Nothing Then Return
+            PickedIdClsf = Convert.ToInt32(k_tag, CultureInfo.InvariantCulture)
+            DialogResult = DialogResult.OK
+            Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("BudgetCheckForm.GridVerificare_CellDoubleClick", ex)
+        End Try
     End Sub
 
     Private Shared Function Box(value As Decimal?) As Object

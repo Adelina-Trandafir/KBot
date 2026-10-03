@@ -25,6 +25,8 @@ Public NotInheritable Class Clasificatie
     Public Property Ss As String = String.Empty
     ''' <summary>The full code, «65.02.04.02.10.01.01».</summary>
     Public Property Clsf As String = String.Empty
+    ''' <summary>Slice 0107: FOREXE reported a credit for it (<c>FX_Indicatori_Buget</c> has a row).</summary>
+    Public Property InForexe As Boolean
 End Class
 
 ''' <summary>
