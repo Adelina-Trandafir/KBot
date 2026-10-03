@@ -30,11 +30,13 @@ open: menu:clasificatii
 > versiuni ale aceleiași clasificații nu pot începe în aceeași zi.
 
 ## Cum se folosește bugetul în documentul de fundamentare
-<!-- slice: 0102 -->
+<!-- slice: 0102, 0108 -->
 
 Documentul de fundamentare arată la «Buget» ce buget avea clasificația **la data reviziei**, nu cel
-de azi: versiunea cu cea mai mare dată de început până la acea zi, plus rectificările de la data ei
-de început până la data reviziei, adunate de la trimestrul 1 până la trimestrul zilei reviziei.
+de azi: **totalul** versiunii cu cea mai mare dată de început până la acea zi (cele patru trimestre
+adunate), plus totalul rectificărilor de la data ei de început până la data reviziei. Trimestrul
+zilei nu mai contează: o versiune care începe la 01.04 cu 100, 200, 300 și 400 dă 1.000 în orice zi
+de la 01.04 încolo.
 
 Ca să iasă corect o revizie din ianuarie – martie, adaugă pe clasificație o versiune care începe
 la **01.01** a anului. Dacă la data reviziei nu există nicio versiune, documentul folosește creditul
@@ -48,17 +50,17 @@ apoi clasificațiile funcționale și economice. Se pot alege doar surse / secto
 le are deja. Clasificațiile care există deja sunt sărite și numărate.
 
 ## Verificarea bugetului față de FOREXE
-<!-- slice: 0103-04, 0105 -->
+<!-- slice: 0103-04, 0105, 0108 -->
 
 Butonul **«Verifică bugetul»** din josul ferestrei deschide o fereastră cu fiecare clasificație și
 trei valori:
 
-- **Buget K-BOT** – bugetul în vigoare azi plus rectificările, adunat până la trimestrul curent;
-- **Credit FOREXE** – creditul bugetar adus de ultima descărcare a indicatorilor;
+- **Buget K-BOT** – totalul versiunii în vigoare azi plus totalul rectificărilor ei (nu se mai oprește la trimestrul curent);
+- **Credit FOREXE** – creditul bugetar al clasificației, așa cum l-a raportat FOREXE la ultima descărcare. Este o singură valoare pe clasificație, la fel pentru toate angajamentele care o folosesc;
 - **Diferență** – FOREXE minus K-BOT.
 
 Se văd doar clasificațiile la care diferența nu este zero. Un câmp gol înseamnă că nu există buget K-BOT în vigoare azi,
-respectiv că niciun indicator descărcat nu are clasificația respectivă.
+respectiv că FOREXE nu a raportat încă un credit pentru clasificația respectivă.
 
 La sfârșitul unei descărcări de angajament K-BOT face singur aceeași verificare pentru clasificațiile
 angajamentului și deschide fereastra **doar dacă** găsește diferențe. Dacă totul se potrivește, nu

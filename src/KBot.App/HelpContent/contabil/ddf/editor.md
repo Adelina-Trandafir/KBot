@@ -30,7 +30,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
-<!-- slice: 0081-08, 0081-12, 0102 -->
+<!-- slice: 0081-08, 0081-12, 0102, 0108 -->
 
 - **Adaugă rând** deschide fereastra rândului nou:
   - **Sursă / sector** al rândului;
@@ -43,8 +43,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
   - **Valorile**: tastezi doar **valoarea curentă**, obligatorie și diferită de 0. Se văd și
     disponibilul (buget − recepții) și valoarea rămasă. Pe rândurile aduse automat din rezervări,
     **bugetul** este cel pe care îl avea clasificația la data reviziei, din «Clasificații
-    bugetare» (versiunea în vigoare plus rectificările, până la trimestrul acelei date), nu cel
-    de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar
+    bugetare» (totalul versiunii în vigoare plus rectificările), nu cel de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar
     de azi și un mesaj te anunță. Pe un rând adăugat de tine cu «Adaugă rând», bugetul rămâne
     creditul bugetar de azi.
 - **Șterge rândul** scoate linia; rândul pereche din Secțiunea B dispare odată cu ea.

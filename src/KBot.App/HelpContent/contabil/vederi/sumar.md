@@ -8,7 +8,7 @@ screens: SumarView, SumarPartnersForm
 keywords: sumar, indicatori, credit bugetar, totaluri, parteneri, asociere, partener
 open: view:sumar
 ---
-<!-- slice: 0011, 0000-14 -->
+<!-- slice: 0011, 0000-14, 0108 -->
 Prima privire asupra angajamentului.
 
 <!-- capture: sumar | caption: Vederea «Sumar» | goto: view:sumar | prepare: Selectați un angajament cu mai mulți indicatori. -->
@@ -21,7 +21,8 @@ a venit în K-BOT dintr-o descărcare din FOREXE.
 
 **Jos**, câte un rând pentru fiecare **indicator** (clasificație) al angajamentului: codul
 indicatorului, creditul bugetar și totalurile de rezervări, recepții, plăți, revizii DDF și
-ordonanțări.
+ordonanțări. **Creditul bugetar** este cel al clasificației, așa cum l-a raportat FOREXE: aceeași valoare
+pe toate angajamentele care folosesc clasificația.
 
 Coloanele tabelului se pot sorta și filtra din **pâlnia** capului de coloană; rândul de jos,
 **TOTALURI**, însumează ce se vede — [Arborii și tabelele](topic:contabil.liste).
