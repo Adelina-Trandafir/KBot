@@ -275,6 +275,46 @@
   </IfExists>
 
   <!-- ═══════════════════════════════════════════════════════
+       SECȚIUNEA 5 — CREDITUL INIȚIAL (slice 0108, 03.10.2026)
+       Se deschide pagina «Informații complete contract» O SINGURĂ DATĂ pe angajament:
+       K-BOT trimite {{CITESTE_CREDIT_INITIAL}} = "true" numai când angajamentul nu are încă
+       «CreditInitialLa» (adică nu i s-a citit niciodată creditul), și — a doua gardă — numai
+       dacă pagina angajamentului arată starea «În derulare». Pagina arată, pe fiecare
+       indicator, «Prevedere bugetară / Credit bugetar / An curent»; tabelul ei se salvează ca
+       «InfoCompleteContract», iar serverul îl scrie în FX_Indicatori.Credit_Bugetar_Initial și
+       pune data citirii (el însuși refuză o a doua scriere). Nu se citește în alt moment al
+       anului: «An curent» se schimbă odată cu calendarul.
+       Se rulează aici, la coadă, cu pagina angajamentului deja revenită din Istoric (li.tab0),
+       ca să nu schimbe starea paginii pentru secțiunile 1-4.
+       ═══════════════════════════════════════════════════════ -->
+
+  <IfVar value="{{CITESTE_CREDIT_INITIAL|true = citește creditul inițial din Informații complete contract}}" compare="eq:true">
+    <IfVar value="[[StareAngajament]]" compare="regex:derulare">
+      <Log message="══ SECȚIUNEA 5: Credit inițial (Informații complete contract) ══" level="action" />
+      <IfExists selector="button:has-text('Afișează informații complete'), a:has-text('Afișează informații complete')" timeout="5">
+        <Click selector="button:has-text('Afișează informații complete'), a:has-text('Afișează informații complete')"
+          waitNavigation="true" timeout="15" />
+        <WaitFor selector="h3.heading:has-text('Informații complete contract')" timeout="15" />
+
+        <ScrapeTable selector="table.table-striped.table-bordered.table-hover"
+          saveTo="InfoCompleteContract"
+          waitSelector="table.table-striped.table-bordered.table-hover"
+          timeout="15" />
+
+        <Log message="✓ Credit inițial citit din Informații complete contract." level="success" />
+
+        <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+        <WaitFor selector="li.tab0" timeout="15" />
+
+        <Else>
+          <Log message="Butonul «Afișează informații complete» nu există pe pagina angajamentului; creditul inițial se citește la o descărcare viitoare."
+            level="warning" />
+        </Else>
+      </IfExists>
+    </IfVar>
+  </IfVar>
+
+  <!-- ═══════════════════════════════════════════════════════
        FINAL
        ═══════════════════════════════════════════════════════ -->
 

@@ -106,6 +106,15 @@ Namespace KBot.Forexe
         Public Const VarReceptiiSarite As String = "RECEPTII_SARITE"
 
         ''' <summary>
+        ''' Slice 0108: <c>"true"</c> makes «Prelucrare Completa» (and its REVERSE twin) open the page
+        ''' «Informații complete contract» to read the INITIAL credit; ALWAYS sent ("false" otherwise),
+        ''' like <see cref="VarReceptiiSarite"/>. It is "true" only for an angajament whose initial
+        ''' credit was never read (<c>IstoricInfo.CreditInitialCitit</c> = False): once per angajament.
+        ''' The flow also checks that the page shows the state «În derulare».
+        ''' </summary>
+        Public Const VarCitesteCreditInitial As String = "CITESTE_CREDIT_INITIAL"
+
+        ''' <summary>
         ''' Formatul EXACT al lui DATA_IESIRE, copiat din Access mdl_FX_Tasks_Send:
         ''' <c>Format(lastDate, "DD\/MM\/YYYY HH\:MM\:SS")</c>. Nu e o alegere estetică —
         ''' valoarea intră într-o expresie regulată (<c>exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"</c>)
@@ -117,7 +126,8 @@ Namespace KBot.Forexe
         ' ATENȚIE: NU e un singur tabel, cum era la ListaAngajamente — sunt cinci, plus
         ' scalari citiți cu <Read saveTo>. Vezi WorkflowResultStore, care le salvează pe toate.
         Public Shared ReadOnly PrelucrareCompletaTables As String() = {
-            "TabelIndicatori", "BugetIndicator", "ListaReceptii", "Detaliu", "TabelIstoric"
+            "TabelIndicatori", "BugetIndicator", "ListaReceptii", "Detaliu", "TabelIstoric",
+            "InfoCompleteContract"   ' slice 0108: only when CITESTE_CREDIT_INITIAL = true
         }
 
         ''' <summary>

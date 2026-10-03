@@ -1128,6 +1128,7 @@ Public Class ApiClient
                     If payload Is Nothing Then Return result
 
                     result.Cod = If(payload.cod, If(cod, String.Empty))
+                    If payload.credit_initial_citit.HasValue Then result.CreditInitialCitit = payload.credit_initial_citit.Value
 
                     If payload.randuri IsNot Nothing Then
                         For Each r As GetIstoricRandRow In payload.randuri

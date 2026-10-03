@@ -80,4 +80,10 @@ Public NotInheritable Class IstoricInfo
     Public Property Cod As String = String.Empty
     Public Property Randuri As New List(Of IstoricRand)()
     Public Property Clasificatii As New List(Of IstoricClasificatie)()
+    ''' <summary>
+    ''' Slice 0108: True when the initial credit of the angajament was already read from «Informații
+    ''' complete contract» (it is read ONCE). Defaults to True = «do not read»: an answer that did
+    ''' not say (older server, failed call) must never make the robot open that page.
+    ''' </summary>
+    Public Property CreditInitialCitit As Boolean = True
 End Class

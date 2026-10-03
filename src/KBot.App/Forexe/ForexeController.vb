@@ -421,11 +421,15 @@ Partial Public NotInheritable Class ForexeController
 
             IntraInLucru()
             Try
-                Dim ultimaData As Date? = Await UltimaDataIstoric(cod, citesteIstoric)
+                Dim stareLocala As StareLocala = Await StareLocalaAsync(cod, citesteIstoric)
+                Dim ultimaData As Date? = stareLocala.UltimaData
+                ' Slice 0108: «Informații complete contract» is opened ONCE per angajament.
+                Dim citesteCredit As Boolean = Not stareLocala.CreditInitialCitit
                 jurnal.Note("istoric_local",
                             If(ultimaData.HasValue,
                                $"REVERSE de la {ultimaData.Value:yyyy-MM-dd HH:mm:ss}",
                                "fara istoric local -> prelucrare completa"))
+                jurnal.Note("credit_initial", If(citesteCredit, "se citeste (prima data)", "deja citit sau necunoscut"))
 
                 If receptiiSarite IsNot Nothing AndAlso Not receptiiSarite.EsteGol Then
                     jurnal.Note("receptii_sarite",
@@ -435,10 +439,10 @@ Partial Public NotInheritable Class ForexeController
                 Dim job As JobRequest
                 If ultimaData.HasValue Then
                     RaporteazaStare($"Descarc «{cod}» (REVERSE, de la {ultimaData.Value:dd.MM.yyyy HH:mm:ss})...")
-                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value, receptiiSarite?.Zile)
+                    job = JobBuilder.BuildPrelucrareCompletaReverse(cod, ultimaData.Value, receptiiSarite?.Zile, citesteCredit)
                 Else
                     RaporteazaStare($"Descarc «{cod}» (prelucrare completă)...")
-                    job = JobBuilder.BuildPrelucrareCompleta(cod, receptiiSarite?.Zile)
+                    job = JobBuilder.BuildPrelucrareCompleta(cod, receptiiSarite?.Zile, citesteCredit)
                 End If
                 jurnal.NoteRequest(job)
 
@@ -1258,18 +1262,38 @@ Partial Public NotInheritable Class ForexeController
     ''' </summary>
     Private Async Function UltimaDataIstoric(cod As String,
                                              citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of Date?)
-        If citesteIstoric Is Nothing Then Return Nothing
+        Return (Await StareLocalaAsync(cod, citesteIstoric)).UltimaData
+    End Function
+
+    ''' <summary>
+    ''' What the server already holds about an angajament and the download needs to choose its flow:
+    ''' the latest local history date (REVERSE or complete) and, since slice 0108, whether the
+    ''' initial credit was already read (it is read ONCE, so a failed or silent answer means
+    ''' «already read»: the robot never opens «Informații complete contract» on a guess).
+    ''' </summary>
+    Friend NotInheritable Class StareLocala
+        Public Property UltimaData As Date?
+        Public Property CreditInitialCitit As Boolean = True
+    End Class
+
+    Private Async Function StareLocalaAsync(cod As String,
+                                            citesteIstoric As Func(Of String, CancellationToken, Task(Of IstoricInfo))) As Task(Of StareLocala)
+        Dim stare As New StareLocala()
+        If citesteIstoric Is Nothing Then Return stare
         Try
             Dim info As IstoricInfo = Await citesteIstoric(cod, _cts.Token)
-            If info Is Nothing OrElse info.Randuri Is Nothing OrElse info.Randuri.Count = 0 Then Return Nothing
+            If info Is Nothing Then Return stare
+            stare.CreditInitialCitit = info.CreditInitialCitit
+            If info.Randuri Is Nothing OrElse info.Randuri.Count = 0 Then Return stare
             Dim date_ = info.Randuri.Where(Function(r) r.DataFx.HasValue).Select(Function(r) r.DataFx.Value).ToList()
-            If date_.Count = 0 Then Return Nothing
-            Return date_.Max()
+            If date_.Count = 0 Then Return stare
+            stare.UltimaData = date_.Max()
+            Return stare
         Catch ex As Exception
             ' Frontieră de decizie, nu de date: logăm, anunțăm și mergem pe fluxul complet.
-            GlobalErrorLog.Write("ForexeController.UltimaDataIstoric", ex)
+            GlobalErrorLog.Write("ForexeController.StareLocalaAsync", ex)
             RaporteazaStare($"Istoricul local pentru «{cod}» nu s-a putut citi ({ex.Message}) — rulez prelucrarea completă.")
-            Return Nothing
+            Return New StareLocala()
         End Try
     End Function
 

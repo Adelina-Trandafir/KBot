@@ -452,7 +452,16 @@ def _step2c_credit_initial(cursor, cod: str, tabele: dict, warnings: list) -> in
     if not isinstance(raw, list):
         raise ValueError(f"«{_CREDIT_INITIAL_TABLE}» trebuie să fie o listă.")
 
-    cursor.execute(_ANG_CREDIT_STARE_SQL, (cod,))
+    try:
+        cursor.execute(_ANG_CREDIT_STARE_SQL, (cod,))
+    except mysql.connector.Error as err:
+        # Same tolerance as DataActualizare: until sql/0108_01_sursa.sql is applied on the unit
+        # database the download is saved as before and only this figure is left unread.
+        if getattr(err, "errno", None) != _ER_BAD_FIELD:
+            raise
+        warnings.append("Creditul inițial nu s-a citit: coloana CreditInitialLa lipsește "
+                        "(slice 0108, DDL neaplicat).")
+        return 0
     ang = cursor.fetchone()
     if ang is None:
         return 0

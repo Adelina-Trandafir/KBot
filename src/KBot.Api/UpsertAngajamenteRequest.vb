@@ -427,6 +427,9 @@ Public NotInheritable Class GetIstoricResponse
     Public Property cod As String
     Public Property randuri As New List(Of GetIstoricRandRow)()
     Public Property clasificatii As New List(Of GetIstoricClasificatieRow)()
+    ' Slice 0108: FX_Angajamente.CreditInitialLa is not NULL (the initial credit was already read).
+    ' Nullable so an older server (no field) reads as «unknown».
+    Public Property credit_initial_citit As Boolean?
 End Class
 
 ' One raw FX_Istoric record. data_fx carries a TIME component (§2.3) — it deserializes to a

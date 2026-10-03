@@ -51,7 +51,8 @@ Namespace KBot.Forexe
         ''' </summary>
         Public Shared Function BuildPrelucrareCompleta(
                 cod As String,
-                Optional receptiiSarite As IEnumerable(Of Date) = Nothing) As JobRequest
+                Optional receptiiSarite As IEnumerable(Of Date) = Nothing,
+                Optional citesteCreditInitial As Boolean = False) As JobRequest
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
@@ -62,6 +63,7 @@ Namespace KBot.Forexe
             }
             job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
             PuneReceptiileSarite(job, receptiiSarite)
+            PuneCreditInitial(job, citesteCreditInitial)
             Return job
         End Function
 
@@ -73,7 +75,8 @@ Namespace KBot.Forexe
         ''' </summary>
         Public Shared Function BuildPrelucrareCompletaReverse(
                 cod As String, ultimaData As Date,
-                Optional receptiiSarite As IEnumerable(Of Date) = Nothing) As JobRequest
+                Optional receptiiSarite As IEnumerable(Of Date) = Nothing,
+                Optional citesteCreditInitial As Boolean = False) As JobRequest
             If String.IsNullOrWhiteSpace(cod) Then
                 Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cod))
             End If
@@ -89,6 +92,7 @@ Namespace KBot.Forexe
                 ultimaData.ToString(WorkflowCatalog.DataIesireFormat,
                                     Globalization.CultureInfo.InvariantCulture)
             PuneReceptiileSarite(job, receptiiSarite)
+            PuneCreditInitial(job, citesteCreditInitial)
             Return job
         End Function
 
@@ -250,6 +254,15 @@ Namespace KBot.Forexe
                                                 receptiiSarite As IEnumerable(Of Date))
             job.Parameters(WorkflowCatalog.VarReceptiiSarite) =
                 WorkflowCatalog.ListaDatelorSarite(receptiiSarite)
+        End Sub
+
+        ''' <summary>
+        ''' Slice 0108: <c>CITESTE_CREDIT_INITIAL</c>, ALWAYS ("true" / "false"): an unsent parameter
+        ''' would reach the workflow's IfVar as the literal placeholder text. "true" = open «Informații
+        ''' complete contract» once, for an angajament whose initial credit was never read.
+        ''' </summary>
+        Private Shared Sub PuneCreditInitial(job As JobRequest, citeste As Boolean)
+            job.Parameters(WorkflowCatalog.VarCitesteCreditInitial) = If(citeste, "true", "false")
         End Sub
 
         ' ── Slice 0081: the sending workflows ──────────────────────────────────────────

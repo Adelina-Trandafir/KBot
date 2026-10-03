@@ -71,11 +71,14 @@ Partial Public NotInheritable Class ForexeController
                 For Each rq As ParallelNodeRequest In requests
                     If String.IsNullOrWhiteSpace(rq.Cod) OrElse sarite.ContainsKey(rq.Cod) Then Continue For
                     sarite(rq.Cod) = rq.Sarite
-                    Dim ultimaData As Date? = Await UltimaDataIstoric(rq.Cod, citesteIstoric)
+                    Dim stareLocala As StareLocala = Await StareLocalaAsync(rq.Cod, citesteIstoric)
+                    Dim ultimaData As Date? = stareLocala.UltimaData
+                    ' Slice 0108: «Informații complete contract» is opened ONCE per angajament.
+                    Dim citesteCredit As Boolean = Not stareLocala.CreditInitialCitit
                     Dim job As JobRequest =
                         If(ultimaData.HasValue,
-                           JobBuilder.BuildPrelucrareCompletaReverse(rq.Cod, ultimaData.Value, rq.Sarite?.Zile),
-                           JobBuilder.BuildPrelucrareCompleta(rq.Cod, rq.Sarite?.Zile))
+                           JobBuilder.BuildPrelucrareCompletaReverse(rq.Cod, ultimaData.Value, rq.Sarite?.Zile, citesteCredit),
+                           JobBuilder.BuildPrelucrareCompleta(rq.Cod, rq.Sarite?.Zile, citesteCredit))
                     job.StopBeforeSave = _dryRunMode
                     jobs.Add(job)
                 Next
