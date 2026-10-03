@@ -8,18 +8,18 @@ screens: ClasificatiiForm, ClasificatiiAddForm, BudgetCheckForm
 keywords: clasificatii, clasificatie bugetara, indicatori, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat, verificare buget, credit bugetar, diferenta, trimite in access
 open: menu:clasificatii
 ---
-<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105 -->
+<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105, 0107-02 -->
 <!-- capture: clasificatii | caption: Fereastra «Clasificații bugetare» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. | redo: 2026-10-02 18:00 | why: 0103-04 / 0103-06: două butoane noi în subsol, «Verifică bugetul» și «Trimite în Access» -->
 
 - **Arborele** din stânga: Capitol › Subcapitol › Articol › Alineat, cu denumirile alături. Implicit arată doar clasificațiile cu **mișcare** în anul de lucru: cele care au vreun trimestru de buget sau de rectificare diferit de zero. Bifează **«Arată toate clasificațiile»**, de sub arbore, ca să le vezi pe toate cele configurate.
 - În dreapta, pentru clasificația aleasă:
   - **bugetul** anului, pe **versiuni**: fiecare rând este bugetul de la data din coloana
-    **«Început»** încolo, pe trimestre (Trim. 1–4). Nu există total, pentru că un buget nu se
-    adună pe an. Semnul **«+»** din josul grilei adaugă o versiune, **«✕»** o șterge;
+    **«Început»** încolo, pe trimestre (Trim. 1–4), cu **totalul** rândului în ultima coloană. Sub grilă nu
+    există un total general, pentru că versiunile unui buget nu se adună între ele. Semnul **«+»** din josul grilei adaugă o versiune, **«✕»** o șterge;
   - **rectificările**: numărul și data documentului, plus trimestrul (sau trimestrele) pe care le
     schimbă. Ele nu sunt buget, dar îl influențează. Semnul **«+»** din josul grilei adaugă o
-    rectificare, completată direct în tabel.
-- Dacă alegi un nod **mai sus de alineat** (capitol, subcapitol sau articol), tabelele din dreapta arată doar un sumar, fără editare: **Clsf** (coloana care se întinde), **ultimul buget** al fiecărei clasificații de sub nod și, la rectificări, **totalul** pe fiecare clasificație. Nu apar «Început», «Nr. doc.», «Data», «✕» și «+».
+    rectificare, completată direct în tabel. Rândul de jos însumează rectificările clasificației alese.
+- Dacă alegi un nod **mai sus de alineat** (capitol, subcapitol sau articol), tabelele din dreapta arată doar un sumar, fără editare: **Clsf** (coloana care se întinde), **ultimul buget** al fiecărei clasificații de sub nod și, la rectificări, **totalul** pe fiecare clasificație. Nu apar «Început», «Nr. doc.», «Data», «✕» și «+». În aceste sumare, ca și când nu e ales nimic, nu există rând de total jos: rectificările tuturor clasificațiilor la un loc nu înseamnă nimic.
 - **Salvează** scrie versiunile de buget și rectificările. Dacă treci pe alt nod sau închizi
   fereastra cu modificări nesalvate, K-BOT te întreabă ce faci cu ele.
 - **Verifică bugetul** compară bugetul din K-BOT cu cel din FOREXE (vezi mai jos).

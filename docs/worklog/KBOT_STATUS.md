@@ -233,6 +233,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 | 0105 | Clasificații bugetare: sumar doar-citire pe nodurile de deasupra alineatelor, arbore filtrat pe mișcare + «Arată toate clasificațiile», «Verifică bugetul» fără diferențe zero (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; **server nedeployat**; ajutorul: 0000-42) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 | 0106 | Trei reparații din jurnale: folderul de capturi nul («path1»), reîncercări Adobe fără zgomot în jurnalul de erori, clic dreapta în arborele DDF / ORD nu mai reîncarcă PDF-ul (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; fără ajutor) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 | 0107 | Controlul arbore: clic dreapta nu selectează un rând neselectat (proprietatea `RightClickSelects`, pusă pe `False` în DDF, ORD și Asocieri) (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: 0000-43) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+| 0107-02 | Clasificații bugetare: coloana «Total» pe rândul grilei de buget, fără total jos; rectificările fără rând de total când nu e aleasă o frunză (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: 0000-44) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 

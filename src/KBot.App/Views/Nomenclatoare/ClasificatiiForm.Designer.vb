@@ -36,6 +36,7 @@ Partial Class ClasificatiiForm
         Dim KBotDataColumn16 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn17 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn18 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn19 As KBotDataColumn = New KBotDataColumn()
         tips =New KBotToolTip(components)
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
@@ -133,6 +134,18 @@ Partial Class ClasificatiiForm
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn4.ValueType = KBotValueType.Number
         KBotDataColumn4.Width = 110
+        KBotDataColumn19.AggregateFormatString = Nothing
+        KBotDataColumn19.DecimalPlaces = 2
+        KBotDataColumn19.Format = KBotFormat.Standard
+        KBotDataColumn19.FormatString = Nothing
+        KBotDataColumn19.HeaderText = "Total"
+        KBotDataColumn19.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn19.Key = "total"
+        KBotDataColumn19.OptionGroup = Nothing
+        KBotDataColumn19.ReadOnly = True
+        KBotDataColumn19.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn19.ValueType = KBotValueType.Number
+        KBotDataColumn19.Width = 110
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.ColumnType = KBotColumnType.Button
         KBotDataColumn5.FormatString = Nothing
@@ -157,6 +170,7 @@ Partial Class ClasificatiiForm
         gridBuget.Columns.Add(KBotDataColumn2)
         gridBuget.Columns.Add(KBotDataColumn3)
         gridBuget.Columns.Add(KBotDataColumn4)
+        gridBuget.Columns.Add(KBotDataColumn19)
         gridBuget.Columns.Add(KBotDataColumn5)
         gridBuget.Columns.Add(KBotDataColumn16)
         gridBuget.Dock = DockStyle.Fill

@@ -365,6 +365,7 @@ Public Class ClasificatiiForm
     Private Sub FillSummary(node As AdvancedTreeControl.TreeItem, leaves As List(Of Clasificatie),
                             summary As IReadOnlyList(Of BudgetSummaryRow))
         ApplyMode(True)
+        SetCorrectionsTotal(False)
         Dim byId As New Dictionary(Of Integer, BudgetSummaryRow)()
         For Each s As BudgetSummaryRow In summary
             byId(s.IdClsf) = s
@@ -386,6 +387,7 @@ Public Class ClasificatiiForm
                     row(ColTrim2) = Box(s.LastBudget.Amounts.Trim2)
                     row(ColTrim3) = Box(s.LastBudget.Amounts.Trim3)
                     row(ColTrim4) = Box(s.LastBudget.Amounts.Trim4)
+                    row(ColTotal) = s.LastBudget.Amounts.Total
                 End If
 
                 If s IsNot Nothing AndAlso s.CorrectionsTotal IsNot Nothing Then
@@ -436,7 +438,17 @@ Public Class ClasificatiiForm
         Next
         gridRectificari.FillColumnKey = If(summary, ColClsf, ColDocument)
         gridBuget.FooterCaption = If(summary, "Ultimul buget al fiecărei clasificații", _budgetCaption)
-        gridRectificari.FooterCaption = _correctionsCaption
+        gridRectificari.FooterCaption = If(summary, "Rectificările anului, pe clasificație", _correctionsCaption)
+    End Sub
+
+    ' Slice 0107: the footer sums belong to ONE classification's corrections; with a node (or nothing) chosen
+    ' there is no leaf, and summing the corrections of every classification means nothing.
+    Private Sub SetCorrectionsTotal(shown As Boolean)
+        For Each k_key As String In {ColTrim1, ColTrim2, ColTrim3, ColTrim4, ColTotal}
+            gridRectificari.Columns.First(Function(k_col) String.Equals(k_col.Key, k_key, StringComparison.Ordinal)).Aggregate =
+                If(shown, KBotAggregate.Sum, KBotAggregate.None)
+        Next
+        If Not shown AndAlso Not _summaryMode Then gridRectificari.FooterCaption = String.Empty
     End Sub
 
     Private Shared Sub SetColumn(grid As KBotDataView, key As String, shown As Boolean)
@@ -446,6 +458,8 @@ Public Class ClasificatiiForm
 
     Private Sub FillGrids(data As BugetClasificatie)
         ApplyMode(False)
+        SetCorrectionsTotal(True)
+        gridRectificari.FooterCaption = _correctionsCaption
         gridBuget.BeginUpdate()
         Try
             gridBuget.ClearRows()
@@ -457,6 +471,7 @@ Public Class ClasificatiiForm
                 row(ColTrim2) = Box(v.Amounts.Trim2)
                 row(ColTrim3) = Box(v.Amounts.Trim3)
                 row(ColTrim4) = Box(v.Amounts.Trim4)
+                row(ColTotal) = v.Amounts.Total
                 row(ColDelete) = DeleteCaption
             Next
         Finally
@@ -496,6 +511,7 @@ Public Class ClasificatiiForm
 
     Private Sub ShowNoSelection()
         ApplyMode(False)
+        SetCorrectionsTotal(False)
         _current = Nothing
         gridBuget.ClearRows()
         gridRectificari.ClearRows()
@@ -585,8 +601,8 @@ Public Class ClasificatiiForm
         Handles gridBuget.CellValueChanged, gridRectificari.CellValueChanged
         Try
             Dim grid As KBotDataView = DirectCast(sender, KBotDataView)
-            ' Only a correction's row has a «Total» column; a budget has none (slice 0102).
-            If QuarterColumns.Contains(e.ColumnKey) AndAlso grid Is gridRectificari Then
+            ' Both grids show the row «Total» (slice 0107); neither has a footer total for the budget.
+            If QuarterColumns.Contains(e.ColumnKey) Then
                 grid(ColTotal, e.RowIndex) = RowTotal(grid.Rows(e.RowIndex))
             End If
             SetDirty(True)
@@ -603,6 +619,7 @@ Public Class ClasificatiiForm
             ' The first version of a year starts on 01.01; the next ones default to today (inside
             ' the year), the day a budget is usually changed.
             row(ColStart) = If(gridBuget.RowCount > 1 AndAlso Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
+            row(ColTotal) = 0D
             row(ColDelete) = DeleteCaption
             row.IsDirty = True
             SetDirty(True)

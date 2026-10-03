@@ -23,9 +23,9 @@ part: footer.right
 Semnul + deschide fereastra de adăugare: alegi sursa, clasificațiile funcționale și pe cele economice, ca la înregistrarea unității.
 
 ## Bugetul
-<!-- slice: 0087, 0000-20, 0102, 0000-40 -->
+<!-- slice: 0087, 0000-20, 0102, 0000-40, 0107-02 -->
 target: ClasificatiiForm.gridBuget
-Bugetul anului pentru clasificația aleasă, pe versiuni: fiecare rând este bugetul de la data din «Început» încolo, pe trimestre. Nu există total.
+Bugetul anului pentru clasificația aleasă, pe versiuni: fiecare rând este bugetul de la data din «Început» încolo, pe trimestre, cu totalul rândului în ultima coloană. Jos nu există total general.
 
 ## Buget › Adaugă o versiune
 <!-- slice: 0102, 0000-40 -->
@@ -45,10 +45,10 @@ part: footer.right
 Semnul + adaugă un rând nou, pe care îl completezi direct în tabel.
 
 ## Rectificări › Total
-<!-- slice: 0087, 0000-23 -->
+<!-- slice: 0087, 0000-23, 0107-02 -->
 target: ClasificatiiForm.gridRectificari
 part: footer
-Rândul de jos însumează rectificările.
+Rândul de jos însumează rectificările clasificației alese. Când e ales un nod mai sus de alineat, sau nimic, rândul de total lipsește.
 
 ## Salvează
 <!-- slice: 0087, 0000-20, 0102, 0000-40 -->
