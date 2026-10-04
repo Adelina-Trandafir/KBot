@@ -203,8 +203,15 @@ tutorials). One `## ` per step; its first lines are keys, then the bubble text; 
 | `dim:` | `yes` (default) or `ring` (ring only) |
 | `allow:` | extra places the user may use, `Type.control, ...` |
 
-Look-ahead: while a step is on, the user may also do the action of the next step when this one is optional or
-merged, going on past optional steps up to the first mandatory one. `Check-Help.ps1` validates the files.
+`changed` (000T-05): a tick box and a drop-down list (`KBotComboBox`: a real choice, not typing in its search
+box) are done at once; any other field is done when text was typed AND the focus has left it, or when Enter is
+pressed in it (single-line text boxes only: Enter is a new line in a multi-line one). «Înapoi» shows the
+nearest earlier step that applies, in the same window, as a revisit: no step done by state (tab open, box ticked)
+completes it, only a new action or «Înainte».
+
+Look-ahead (000T-05): while a step is on, the user may also do the action of the NEXT step when this one is
+optional or merged -- only that one (further steps stay dimmed; «Sari peste» is the way past an optional step);
+a merged next step passes the permission on. `Check-Help.ps1` validates the files.
 A window the tutorial opens should implement `IKBotTutorialHost` (the checker warns when it does not): it is
 told to start / stop and builds nothing itself — the runner makes the ring, veil and bubble for it after it is
 shown, so a modal window does not disable them.

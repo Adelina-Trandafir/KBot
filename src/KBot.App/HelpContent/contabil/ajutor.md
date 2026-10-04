@@ -118,16 +118,26 @@ ce urmează și, când ai făcut, trece singur la pasul următor.
 - Tutorialul merge **dintr-o fereastră în alta**: după ce apeși ceva care deschide o fereastră,
   așteaptă să se deschidă și continuă în ea.
 - Unii pași sunt **opționali**. Bula scrie «Pas opțional», spune **de ce** nu e obligatoriu și are
-  butonul **«Sari peste»**. Poți face pasul, poți sări peste el sau poți trece direct la un pas
-  de mai departe (de exemplu la «Salvează documentul»).
+  butonul **«Sari peste»**. Poți face pasul, poți sări peste el sau poți face direct pasul
+  următor. Ce vine mai departe rămâne întunecat până îi vine rândul.
 - Un pas care **nu se aplică** documentului tău (de exemplu un câmp care nu se poate modifica la o
   revizie ulterioară) este sărit singur.
+- Când un pas cere să scrii într-un câmp, tutorialul așteaptă până termini: apeși **Enter** (într-un
+  câmp pe un singur rând) sau treci în alt câmp. Nu merge mai departe la prima literă.
+- Butoanele de navigare din bulă se văd mereu; cele care nu se potrivesc pasului sunt dezactivate.
+- Butonul **«Sari la pasul obligatoriu»** (activ doar la un pas opțional): sare peste pasul acesta și
+  peste toți pașii opționali care urmează, până la primul pas obligatoriu. Dacă nu mai urmează niciunul,
+  tutorialul se încheie și bula se închide, fără întrebare.
+- Butonul **«Înapoi»** din bulă te întoarce la pasul dinainte, ca să-l revezi; ce ai făcut între
+  timp nu se desface. Pasul revăzut nu se termină singur: apeși **«Înainte»** sau îl faci din nou.
+  Nu te poți întoarce într-o fereastră pe care ai lăsat-o în urmă (de exemplu din document la
+  lista de sub el).
 - Unii pași cer doar să apeși **«Înainte»** după ce ai terminat, de exemplu când completezi un text
   lung.
 - Dacă faci **altceva decât pasul cerut** — apeși în zona întunecată sau scrii în altă parte —
   K-BOT întreabă **«Vrei să ieși din tutorial?»**. **Da** oprește tutorialul; **Nu** îl lasă pe același
-  pas (ce ai făcut între timp nu se desface). La fel dacă închizi fereastra în care lucrai. Butonul
-  **«Mă opresc»** din bulă pune aceeași întrebare.
+  pas (ce ai făcut între timp nu se desface). La fel dacă închizi fereastra în care lucrai.
+- Butonul **«Mă opresc»** din bulă oprește tutorialul pe loc, fără întrebare.
 
 ## Cum pornești un tutorial
 <!-- slice: 000T -->

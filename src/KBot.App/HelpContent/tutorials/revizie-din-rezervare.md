@@ -73,7 +73,7 @@ target: DdfEditForm.txtDescScurta
 wait: changed
 optional: yes
 why: Descrierea scurtă ajută la recunoașterea documentului în listă, dar documentul se poate salva și fără ea.
-Completează «Descriere scurtă» cu câteva cuvinte despre document.
+Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.
 
 ## Element fundamentare
 <!-- slice: 000T -->
@@ -148,4 +148,4 @@ Apasă «Asociază».
 <!-- slice: 000T -->
 target: DdfEditForm.btnSalveaza
 wait: click
-Apasă «Salvează documentul». Pașii opționali de mai sus pot fi sărituți: poți salva oricând.
+Apasă «Salvează documentul». Pașii opționali de mai sus se pot sări cu «Sari peste».

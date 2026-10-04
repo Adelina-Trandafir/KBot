@@ -16,6 +16,11 @@ Public Class HelpTourBubble
     Public Event NextRequested()
     Public Event BackRequested()
     Public Event CloseRequested()
+    ''' <summary>Slice 000T-05: «Sari la pasul obligatoriu» (tutorials only).</summary>
+    Public Event SkipOptionalRequested()
+
+    Private _skipShown As Boolean
+    Private _tutorialButtons As Boolean
 
     Private _closingByRunner As Boolean
 
@@ -39,6 +44,29 @@ Public Class HelpTourBubble
 
     ' Its own flag: Control.Visible answers False for as long as the bubble itself is not shown.
     Private _neverAgainShown As Boolean
+
+    Private Const WS_EX_NOACTIVATE As Integer = &H8000000
+
+    ''' <summary>
+    ''' Slice 000T-05: the bubble of an interactive tutorial never takes the focus and never reads keys
+    ''' (the operator types in the window behind it; a Space that reached «Inainte» moved the tutorial on).
+    ''' Clicking its buttons still works. Set right after construction, before the first Show.
+    ''' </summary>
+    Public Property NeverActivates As Boolean
+
+    Protected Overrides ReadOnly Property ShowWithoutActivation As Boolean
+        Get
+            Return NeverActivates
+        End Get
+    End Property
+
+    Protected Overrides ReadOnly Property CreateParams As CreateParams
+        Get
+            Dim k_cp As CreateParams = MyBase.CreateParams
+            If NeverActivates Then k_cp.ExStyle = k_cp.ExStyle Or WS_EX_NOACTIVATE
+            Return k_cp
+        End Get
+    End Property
 
     ''' <summary>Slice 0097-02: the operator ticked «Nu mai arata turul initial».</summary>
     Public ReadOnly Property NeverAgain As Boolean
@@ -69,12 +97,17 @@ Public Class HelpTourBubble
     End Sub
 
     ''' <summary>
-    ''' Slice 000T: the same bubble for an interactive tutorial step. No «Inapoi»; the right button is
-    ''' «Sari peste» / «Inainte» (<paramref name="k_nextText"/>, empty = hidden: the step moves on by
-    ''' itself when the user does it); «Inchide» reads «Ma opresc» and asks to leave the tutorial.
+    ''' Slice 000T: the same bubble for an interactive tutorial step. All the navigation buttons are always
+    ''' visible (slice 000T-05); one that does not apply to the step is disabled: «Inapoi» when there is no
+    ''' earlier step to go back to (<paramref name="k_canBack"/>), «Sari peste» / «Inainte»
+    ''' (<paramref name="k_nextText"/> empty = disabled: the step moves on by itself when the user does it),
+    ''' «Sari la pasul obligatoriu» when the step is not optional (<paramref name="k_canSkipOptional"/>);
+    ''' «Inchide» ends the tutorial. Only the enabled state (and the text, when the lines are active) of the
+    ''' buttons is set here: their look and place (images, order, size) are the designer's.
     ''' </summary>
     Public Sub ShowTutorial(k_tutorialTitle As String, k_stepTitle As String, k_text As String, k_note As String,
-                            k_index As Integer, k_count As Integer, k_nextText As String)
+                            k_index As Integer, k_count As Integer, k_nextText As String, k_canBack As Boolean,
+                            k_canSkipOptional As Boolean)
         Try
             ResetArrow()
             lblPas.Text = If(String.IsNullOrEmpty(k_tutorialTitle), String.Empty, k_tutorialTitle & "  ·  ") &
@@ -83,10 +116,18 @@ Public Class HelpTourBubble
             lblText.Text = k_text
             lblNota.Text = If(k_note, String.Empty)
             lblNota.Visible = Not String.IsNullOrEmpty(k_note)
-            btnInapoi.Visible = False
-            btnInainte.Visible = Not String.IsNullOrEmpty(k_nextText)
-            btnInainte.Text = If(k_nextText, String.Empty)
-            btnInchide.Text = "Mă opresc"
+            ' The navigation buttons are always on screen; what does not apply to this step is disabled.
+            btnInapoi.Visible = True
+            btnInapoi.Enabled = k_canBack
+            _skipShown = True
+            btnSariLaObligatoriu.Visible = True
+            btnSariLaObligatoriu.Enabled = k_canSkipOptional
+            btnInainte.Visible = True
+            btnInainte.Enabled = Not String.IsNullOrEmpty(k_nextText)
+            _tutorialButtons = True   ' the borderless dress is applied in OnThemeChanged (see there)
+
+            'btnInainte.Text = If(k_nextText, String.Empty)
+            'btnInchide.Text = "Mă opresc"
             FitToText()
         Catch ex As Exception
             GlobalErrorLog.Write("HelpTourBubble.ShowTutorial", ex)
@@ -101,9 +142,17 @@ Public Class HelpTourBubble
         h += lblPas.GetPreferredSize(New Size(w, 0)).Height + lblPas.Margin.Vertical
         h += lblTitlu.GetPreferredSize(New Size(w, 0)).Height + lblTitlu.Margin.Vertical
         h += lblText.GetPreferredSize(New Size(w, 0)).Height + lblText.Margin.Vertical
-        If lblNota.Visible Then h += lblNota.GetPreferredSize(New Size(w, 0)).Height + lblNota.Margin.Vertical
+        ' By text, not by Visible: Control.Visible answers False while the bubble itself is hidden (it is,
+        ' for instance, after a file chooser), which left the note out of the height and hid its lines.
+        If lblNota.Text.Length > 0 Then h += lblNota.GetPreferredSize(New Size(w, 0)).Height + lblNota.Margin.Vertical
         If _neverAgainShown Then h += chkNuMaiArata.GetPreferredSize(New Size(w, 0)).Height + chkNuMaiArata.Margin.Vertical
-        h += CInt(Math.Round(44 * DeviceDpi / 96.0)) + tlyButoane.Margin.Vertical
+        ' The button row is the designer's (an absolute row: its laid-out height is its style, already scaled);
+        ' 44 logical only before the first layout.
+        Dim rows As Integer() = tlyCorp.GetRowHeights()
+        Dim buttonRow As Integer = If(rows.Length > 6 AndAlso rows(6) > 0, rows(6), CInt(Math.Round(44 * DeviceDpi / 96.0)))
+        h += buttonRow + tlyButoane.Margin.Vertical
+        ' The «skip optional steps» button has its own row (tutorials only); own flag, as for the note.
+        If _skipShown Then h += btnSariLaObligatoriu.GetPreferredSize(Size.Empty).Height + btnSariLaObligatoriu.Margin.Vertical
         ClientSize = New Size(ClientSize.Width, h + Padding.Vertical + 4)
     End Sub
 
@@ -306,6 +355,15 @@ Public Class HelpTourBubble
             lblPas.ForeColor = p.TextDimColor
             lblNota.ForeColor = p.WarningColor
             chkNuMaiArata.ForeColor = p.TextDimColor
+            ' The tutorial's buttons: transparent, no border. Here and not in ShowTutorial: the form's Load and every
+            ' theme / scaling broadcast run ThemeManager.Apply (which gives every Button the theme's bordered look)
+            ' and only THEN OnThemeChanged -- a call made earlier is overwritten, the first step's included.
+            If _tutorialButtons Then
+                ButtonStyles.ApplyTrans(btnInapoi, ThemeManager.Current)
+                ButtonStyles.ApplyTrans(btnInainte, ThemeManager.Current)
+                ButtonStyles.ApplyTrans(btnSariLaObligatoriu, ThemeManager.Current)
+                ButtonStyles.ApplyTrans(btnInchide, ThemeManager.Current)
+            End If
             ' ThemeManager.Apply rounds a borderless form AFTER this; undo it once Apply is done.
             If IsHandleCreated Then BeginInvoke(New Action(AddressOf PlainFrame))
         Catch ex As Exception
@@ -316,6 +374,7 @@ Public Class HelpTourBubble
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         MyBase.OnKeyDown(e)
         Try
+            If NeverActivates Then Return
             Select Case e.KeyCode
                 Case Keys.Escape : RaiseEvent CloseRequested() : e.Handled = True
                 Case Keys.Right, Keys.Enter : If btnInainte.Visible Then RaiseEvent NextRequested()
@@ -334,6 +393,10 @@ Public Class HelpTourBubble
 
     Private Sub BtnInapoi_Click(sender As Object, e As EventArgs) Handles btnInapoi.Click
         RaiseEvent BackRequested()
+    End Sub
+
+    Private Sub BtnSariLaObligatoriu_Click(sender As Object, e As EventArgs) Handles btnSariLaObligatoriu.Click
+        RaiseEvent SkipOptionalRequested()
     End Sub
 
     Private Sub BtnInchide_Click(sender As Object, e As EventArgs) Handles btnInchide.Click

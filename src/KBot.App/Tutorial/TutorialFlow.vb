@@ -272,17 +272,20 @@ Public NotInheritable Class TutorialFlow
 
     ''' <summary>
     ''' The steps whose action the user may do while step <paramref name="k_index"/> is on: the step
-    ''' itself; after a step that is optional or merged, the next one too, going on past optional /
-    ''' merged steps up to and including the first mandatory one. Doing the action of a later step
-    ''' of this list completes (or skips) the ones before it.
+    ''' itself; when it is optional or merged, the NEXT one too (slice 000T-05: not further, so a step
+    ''' far ahead -- «Salvează documentul» -- stays dimmed until its turn; «Sari peste» is the way past
+    ''' an optional step). A merged next step passes the same permission on, because a merged pair is
+    ''' one gesture. Doing the action of a later step of this list completes (or skips) the ones before it.
     ''' </summary>
     Public Function AcceptedFrom(k_index As Integer) As IReadOnlyList(Of Integer)
         If k_index < 0 OrElse k_index >= Steps.Count Then Throw New ArgumentOutOfRangeException(NameOf(k_index))
         Dim accepted As New List(Of Integer) From {k_index}
         Dim i As Integer = k_index
-        While i < Steps.Count - 1 AndAlso (Steps(i).IsOptional OrElse Steps(i).Merge)
+        Dim reaches As Boolean = Steps(i).IsOptional OrElse Steps(i).Merge
+        While reaches AndAlso i < Steps.Count - 1
             i += 1
             accepted.Add(i)
+            reaches = Steps(i).Merge
         End While
         Return accepted
     End Function

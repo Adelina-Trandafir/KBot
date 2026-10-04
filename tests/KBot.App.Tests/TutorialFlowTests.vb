@@ -96,7 +96,7 @@ Public Class TutorialFlowTests
     End Sub
 
     <Fact>
-    Public Sub AcceptedFrom_OptionalChainRunsUpToTheFirstMandatoryStep()
+    Public Sub AcceptedFrom_OptionalStepAcceptsOnlyTheNextOne()
         Dim k_flow As TutorialFlow = Flow(
             "## A", "Text.",
             "## O1", "optional: yes", "why: Reason.", "Text.",
@@ -104,7 +104,7 @@ Public Class TutorialFlowTests
             "## M", "Text.",
             "## Z", "Text.")
         Assert.Equal({0}, k_flow.AcceptedFrom(0).ToArray())
-        Assert.Equal({1, 2, 3}, k_flow.AcceptedFrom(1).ToArray())
+        Assert.Equal({1, 2}, k_flow.AcceptedFrom(1).ToArray())
         Assert.Equal({2, 3}, k_flow.AcceptedFrom(2).ToArray())
         Assert.Equal({3}, k_flow.AcceptedFrom(3).ToArray())
     End Sub

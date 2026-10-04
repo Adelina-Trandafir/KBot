@@ -32,6 +32,9 @@ Friend NotInheritable Class TutorialRunner
     Private _finished As Boolean
     Private _asking As Boolean
     Private _closeWatch As Form
+    Private ReadOnly _typed As New HashSet(Of Integer)()   ' «changed» steps whose field got text since they were armed
+    Private _revisit As Boolean                             ' the step on screen was reached with «Inapoi»
+    Private _canBack As Boolean
 
     Private _dim As TutorialDim
     Private _frame As HelpTourFrame
@@ -60,8 +63,8 @@ Friend NotInheritable Class TutorialRunner
         Try
             _active?.Finish()
             If k_flow.Starts.Length > 0 AndAlso HelpTourRunner.FindTarget(k_flow.Starts) Is Nothing Then
-                KBotMessage.Show("Tutorialul «" & k_flow.Title & "» pornește dintr-o altă fereastră. Deschide fereastra potrivită și încearcă din nou.",
-                                 "Tutorial", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                KBotMessage.ShowOnTop("Tutorialul «" & k_flow.Title & "» pornește dintr-o altă fereastră. Deschide fereastra potrivită și încearcă din nou.",
+                                      "Tutorial", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 k_onFinished?.Invoke()
                 Return
             End If
@@ -86,7 +89,7 @@ Friend NotInheritable Class TutorialRunner
 
     ' Goes to step <k_index>, or to the first one after it that applies (a step whose when: is not met
     ' is skipped), arms what it waits for and puts it on screen.
-    Private Sub EnterStep(k_index As Integer)
+    Private Sub EnterStep(k_index As Integer, Optional k_revisit As Boolean = False)
         Dim i As Integer = k_index
         DetachAll()
         While i < _flow.Steps.Count AndAlso Not WhenHolds(_flow.Steps(i))
@@ -97,6 +100,8 @@ Friend NotInheritable Class TutorialRunner
             Return
         End If
         _index = i
+        _revisit = k_revisit
+        _canBack = PreviousStep() >= 0
         _shownIndex = -1
         _layoutKey = String.Empty
         _closeWatch = Nothing
@@ -133,11 +138,76 @@ Friend NotInheritable Class TutorialRunner
         Try
             If _finished OrElse _asking OrElse _index < 0 Then Return
             Dim st As TutorialStep = _flow.Steps(_index)
-            If st.IsOptional OrElse st.WaitKind = TutorialWaitKind.Manual Then Done(_index)
+            If st.IsOptional OrElse _revisit OrElse st.WaitKind = TutorialWaitKind.Manual Then Done(_index)
+            FocusHost()
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.OnNext", ex)
         End Try
     End Sub
+
+    ' The bubble's «Sari la pasul obligatoriu» (shown on an optional step): this step and every optional step
+    ' after it are skipped, up to the next mandatory step that applies; none left = the tutorial ends (the
+    ' bubble closes, no question).
+    Private Sub OnSkipOptional()
+        Try
+            If _finished OrElse _asking OrElse _index < 0 Then Return
+            For j As Integer = _index + 1 To _flow.Steps.Count - 1
+                If Not _flow.Steps(j).IsOptional AndAlso WhenHolds(_flow.Steps(j)) Then
+                    EnterStep(j)
+                    FocusHost()
+                    Return
+                End If
+            Next
+            Finish()
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialRunner.OnSkipOptional", ex)
+        End Try
+    End Sub
+
+    ' The bubble's «Inapoi»: the step before this one that applies, shown again; what the operator did
+    ' since is not undone.
+    Private Sub OnBack()
+        Try
+            If _finished OrElse _asking OrElse _index < 0 Then Return
+            Dim previous As Integer = PreviousStep()
+            If previous >= 0 Then EnterStep(previous, True)
+            FocusHost()
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialRunner.OnBack", ex)
+        End Try
+    End Sub
+
+    ' The step «Inapoi» goes to, or -1 when there is none: the nearest earlier step that applies, as long
+    ' as it is in the window already shown (one left behind -- the list under the document that opened --
+    ' cannot be worked in) and neither it nor this step is only a wait for a window to open.
+    Private Function PreviousStep() As Integer
+        If _index <= 0 OrElse _flow.Steps(_index).WaitKind = TutorialWaitKind.Opens Then Return -1
+        Dim i As Integer = _index - 1
+        While i >= 0 AndAlso Not WhenHolds(_flow.Steps(i))
+            i -= 1
+        End While
+        If i < 0 OrElse _flow.Steps(i).WaitKind = TutorialWaitKind.Opens Then Return -1
+        Dim here As Form = Nothing
+        ResolveHoles(_flow.Steps(_index), here)
+        If here Is Nothing Then here = _presenterHost
+        Dim there As Form = Nothing
+        ResolveHoles(_flow.Steps(i), there)
+        If there IsNot Nothing AndAlso here IsNot Nothing AndAlso Not ReferenceEquals(there, here) Then Return -1
+        Return i
+    End Function
+
+    ' The keyboard belongs to the window the operator works in, never to the bubble: after a click on a
+    ' bubble button the focus goes back to that window.
+    Private Sub FocusHost()
+        If _presenterHost IsNot Nothing AndAlso Not _presenterHost.IsDisposed AndAlso _presenterHost.Visible Then _presenterHost.Activate()
+    End Sub
+
+    ' Whether a keyboard message is addressed to a control of the bubble.
+    Private Function KeyIsForBubble(k_hwnd As IntPtr) As Boolean
+        If _bubble Is Nothing OrElse _bubble.IsDisposed Then Return False
+        Dim c As Control = Control.FromChildHandle(k_hwnd)
+        Return c IsNot Nothing AndAlso ReferenceEquals(c.FindForm(), _bubble)
+    End Function
 
     ' ── conditions ───────────────────────────────────────────────────────────────
 
@@ -210,19 +280,22 @@ Friend NotInheritable Class TutorialRunner
             Case TutorialWaitKind.Changed
                 Dim c As Control = ResolveControl(st)
                 If c Is Nothing Then Return False
+                ' A tick box and a drop-down list are done by one gesture: the tick / the chosen row. Text
+                ' being typed is NOT: typing only marks the step, and it is done when the operator leaves the
+                ' field (PollDone) -- the first letter must not move the tutorial on (slice 000T-05).
                 Dim h As EventHandler = Sub(s As Object, e As EventArgs) OnAction(k_j)
                 Dim box As CheckBox = TryCast(c, CheckBox)
                 Dim combo As KBotComboBox = TryCast(c, KBotComboBox)
                 If box IsNot Nothing Then
                     AddHandler box.CheckedChanged, h
                     _detach.Add(Sub() RemoveHandler box.CheckedChanged, h)
+                ElseIf combo IsNot Nothing Then
+                    AddHandler combo.SelectedIndexChanged, h
+                    _detach.Add(Sub() RemoveHandler combo.SelectedIndexChanged, h)
                 Else
-                    AddHandler c.TextChanged, h
-                    _detach.Add(Sub() RemoveHandler c.TextChanged, h)
-                    If combo IsNot Nothing Then
-                        AddHandler combo.SelectedIndexChanged, h
-                        _detach.Add(Sub() RemoveHandler combo.SelectedIndexChanged, h)
-                    End If
+                    Dim typed As EventHandler = Sub(s As Object, e As EventArgs) _typed.Add(k_j)
+                    AddHandler c.TextChanged, typed
+                    _detach.Add(Sub() RemoveHandler c.TextChanged, typed)
                 End If
             Case Else
                 ' Manual, Tab, Checked, Opens, Closes, Signal: watched by state in PollDone.
@@ -240,11 +313,20 @@ Friend NotInheritable Class TutorialRunner
         Next
         _detach.Clear()
         _armed.Clear()
+        _typed.Clear()
     End Sub
 
-    ' Whether the action of <k_step> is done, judged by the state of the app.
-    Private Function PollDone(k_step As TutorialStep) As Boolean
+    ' Whether the action of step <k_j> is done, judged by the state of the app.
+    Private Function PollDone(k_j As Integer) As Boolean
+        Dim k_step As TutorialStep = _flow.Steps(k_j)
+        ' A step shown again by «Inapoi» is not completed by the state it is already in (the tab is open,
+        ' the box is ticked): only a new action or «Inainte» moves on.
+        If _revisit AndAlso k_step.WaitKind <> TutorialWaitKind.Changed Then Return False
         Select Case k_step.WaitKind
+            Case TutorialWaitKind.Changed
+                ' Text typed into the field and the focus has left it (a tick box / a list is done by its event).
+                Dim field As Control = ResolveControl(k_step)
+                Return _typed.Contains(k_j) AndAlso field IsNot Nothing AndAlso Not field.ContainsFocus
             Case TutorialWaitKind.Tab
                 Dim nav As KBotNavList = TryCast(ResolveControl(k_step), KBotNavList)
                 Return nav IsNot Nothing AndAlso String.Equals(nav.SelectedKey, k_step.WaitArg, StringComparison.OrdinalIgnoreCase)
@@ -269,7 +351,7 @@ Friend NotInheritable Class TutorialRunner
             ArmMissing()
             Dim accepted As IReadOnlyList(Of Integer) = _flow.AcceptedFrom(_index)
             For n As Integer = accepted.Count - 1 To 0 Step -1
-                If PollDone(_flow.Steps(accepted(n))) Then
+                If PollDone(accepted(n)) Then
                     Done(accepted(n))
                     Return
                 End If
@@ -376,14 +458,14 @@ Friend NotInheritable Class TutorialRunner
             ' A manual step has nothing to watch, so its button is the only way on («Inainte»); any other
             ' optional step moves on by itself when the user does it, and «Sari peste» is the way past it.
             Dim nextText As String
-            If st.WaitKind = TutorialWaitKind.Manual Then
+            If st.WaitKind = TutorialWaitKind.Manual OrElse _revisit Then
                 nextText = If(_index = _flow.Steps.Count - 1, "Gata", "Înainte ►")
             ElseIf st.IsOptional Then
                 nextText = "Sari peste"
             Else
                 nextText = String.Empty
             End If
-            _bubble.ShowTutorial(_flow.Title, st.Title, st.Text, note, _index, _flow.Steps.Count, nextText)
+            _bubble.ShowTutorial(_flow.Title, st.Title, st.Text, note, _index, _flow.Steps.Count, nextText, _canBack, st.IsOptional)
         End If
 
         _dimOn = st.DimRest AndAlso primary.Count > 0
@@ -443,8 +525,10 @@ Friend NotInheritable Class TutorialRunner
         _dim.Owner = k_host
         AddHandler _dim.Clicked, AddressOf OnDimClicked
         _frame = New HelpTourFrame()
-        _bubble = New HelpTourBubble()
+        _bubble = New HelpTourBubble() With {.NeverActivates = True}
         AddHandler _bubble.NextRequested, AddressOf OnNext
+        AddHandler _bubble.BackRequested, AddressOf OnBack
+        AddHandler _bubble.SkipOptionalRequested, AddressOf OnSkipOptional
         AddHandler _bubble.CloseRequested, AddressOf OnStopRequested
         _shownIndex = -1
         _layoutKey = String.Empty
@@ -469,8 +553,8 @@ Friend NotInheritable Class TutorialRunner
         Dim host As IKBotTutorialHost = TryCast(k_form, IKBotTutorialHost)
         If host Is Nothing OrElse _hosts.Contains(host) Then Return
         If Not host.TutorialSupports(_flow.HostKey) Then
-            KBotMessage.Show(k_form, "Această fereastră nu poate fi folosită în tutorialul «" & _flow.Title & "».", "Tutorial",
-                             MessageBoxButtons.OK, MessageBoxIcon.Information)
+            KBotMessage.ShowOnTop(k_form, "Această fereastră nu poate fi folosită în tutorialul «" & _flow.Title & "».", "Tutorial",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information)
             Finish()
             Return
         End If
@@ -485,8 +569,10 @@ Friend NotInheritable Class TutorialRunner
         Ask("Ai făcut altceva decât pasul cerut. Vrei să ieși din tutorial?")
     End Sub
 
+    ' The bubble's «Mă opresc» is a deliberate choice: the tutorial ends at once, no question (slice 000T-05).
+    ' Esc / Alt+F4 on the bubble reach here too.
     Private Sub OnStopRequested()
-        Ask("Vrei să ieși din tutorial?")
+        Finish()
     End Sub
 
     Private Sub HostClosed()
@@ -499,7 +585,8 @@ Friend NotInheritable Class TutorialRunner
         If _asking OrElse _finished Then Return
         _asking = True
         Try
-            Dim answer As DialogResult = KBotMessage.Show(_presenterHost, k_message, "Tutorial", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+            ' Top-most: the step card and the ring are top-most too and would hide an ordinary box.
+            Dim answer As DialogResult = KBotMessage.ShowOnTop(_presenterHost, k_message, "Tutorial", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If answer = DialogResult.Yes Then Finish()
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.Ask", ex)
@@ -537,6 +624,24 @@ Friend NotInheritable Class TutorialRunner
 
     ' ── keys ─────────────────────────────────────────────────────────────────────
 
+    ' Enter in a single-line text box finishes its «changed» step at once (slice 000T-05), as leaving the field
+    ' does. A multi-line box (Enter is a new line there), a tick box and a drop-down list are not concerned.
+    Private Sub OnEnterKey(k_hwnd As IntPtr)
+        If _finished OrElse _asking OrElse _index < 0 OrElse _presenterHost Is Nothing Then Return
+        Dim box As TextBoxBase = TryCast(Control.FromChildHandle(k_hwnd), TextBoxBase)
+        If box Is Nothing OrElse box.Multiline OrElse box.ReadOnly Then Return
+        For Each j As Integer In _flow.AcceptedFrom(_index)
+            If _flow.Steps(j).WaitKind <> TutorialWaitKind.Changed Then Continue For
+            Dim target As Control = ResolveControl(_flow.Steps(j))
+            If target Is Nothing OrElse TypeOf target Is CheckBox OrElse TypeOf target Is KBotComboBox Then Continue For
+            If Not ReferenceEquals(target, box) AndAlso Not target.Contains(box) Then Continue For
+            Dim k_j As Integer = j
+            ' After the box has handled the key.
+            _presenterHost.BeginInvoke(New Action(Sub() OnAction(k_j)))
+            Return
+        Next
+    End Sub
+
     ' A key typed into a control of the dimmed window that is not where the user may act.
     Private Sub OnKey(k_hwnd As IntPtr, k_key As Keys)
         If _finished OrElse _asking OrElse Not _dimOn OrElse _presenterHost Is Nothing Then Return
@@ -563,7 +668,8 @@ Friend NotInheritable Class TutorialRunner
     Private NotInheritable Class KeyFilter
         Implements IMessageFilter
 
-        Private Const WM_KEYDOWN As Integer = &H100
+        Private Const WM_KEYFIRST As Integer = &H100   ' WM_KEYDOWN
+        Private Const WM_KEYLAST As Integer = &H109    ' WM_UNICHAR
         Private ReadOnly _owner As TutorialRunner
 
         Public Sub New(k_owner As TutorialRunner)
@@ -572,7 +678,19 @@ Friend NotInheritable Class TutorialRunner
 
         Public Function PreFilterMessage(ByRef m As Message) As Boolean Implements IMessageFilter.PreFilterMessage
             Try
-                If m.Msg = WM_KEYDOWN Then _owner.OnKey(m.HWnd, CType(m.WParam.ToInt32(), Keys))
+                If m.Msg >= WM_KEYFIRST AndAlso m.Msg <= WM_KEYLAST Then
+                    ' Whatever happened to put the focus on the bubble, a key never reaches it (a Space on
+                    ' «Inainte» moved the tutorial on while the operator typed): swallow it and hand the focus back.
+                    If _owner.KeyIsForBubble(m.HWnd) Then
+                        If m.Msg = WM_KEYFIRST Then _owner._presenterHost?.BeginInvoke(New Action(AddressOf _owner.FocusHost))
+                        Return True
+                    End If
+                    If m.Msg = WM_KEYFIRST Then
+                        Dim k_key As Keys = CType(m.WParam.ToInt32(), Keys)
+                        If k_key = Keys.Return Then _owner.OnEnterKey(m.HWnd)
+                        _owner.OnKey(m.HWnd, k_key)
+                    End If
+                End If
             Catch ex As Exception
                 GlobalErrorLog.Write("TutorialRunner.KeyFilter", ex)
             End Try

@@ -199,6 +199,9 @@
   <data name="FX_ORANGE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Umut-Pulat-Tulliana-2-File-temporary.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="left" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -210,6 +213,9 @@
   </data>
   <data name="FX_WHITE_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_WHITE_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Prev_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Prev_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="zoom-out" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\zoom-out.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -240,6 +246,9 @@
   </data>
   <data name="Folder_blue_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Folder_blue_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Next_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Next_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -307,6 +316,9 @@
   <data name="Fatcow-Farm-Fresh-Chart-curve.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Chart-curve.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="default_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\default_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="collapse" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\collapse.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -316,14 +328,11 @@
   <data name="FX_REFRESH_DARK_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_REFRESH_DARK_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="FX_RED_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FX_RED_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="FX_ORANGE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Umut-Pulat-Tulliana-2-File-temporary.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="FX_RED_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="FX_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -382,6 +391,9 @@
   <data name="minus_red" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\minus_red.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Stop_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Stop_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="FX_RED_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_RED_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -412,7 +424,7 @@
   <data name="expand_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\expand_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="default_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\default_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Skip_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Skip_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

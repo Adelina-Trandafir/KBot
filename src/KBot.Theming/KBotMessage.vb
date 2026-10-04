@@ -110,6 +110,33 @@ Public Module KBotMessage
         Return MessageBox.Show(text, caption)
     End Function
 
+    ''' <summary>
+    ''' Like <c>Show(owner, text, caption, buttons, icon)</c> but the box is TOP-MOST (Win32
+    ''' <c>MB_TOPMOST</c>), so it stays above other top-most windows. Needed by the interactive
+    ''' tutorials (slice 000T): their step card and ring are top-most, and an ordinary box would
+    ''' open underneath them. Same log line, same result.
+    ''' </summary>
+    Public Function ShowOnTop(owner As IWin32Window, text As String, caption As String,
+                              buttons As MessageBoxButtons, icon As MessageBoxIcon,
+                              <CallerFilePath> Optional file As String = Nothing,
+                              <CallerMemberName> Optional member As String = Nothing) As DialogResult
+        Journal(file, member, caption, text, icon)
+        Return MessageBox.Show(owner, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, MbTopMost)
+    End Function
+
+    ''' <summary>The top-most form without an owner.</summary>
+    Public Function ShowOnTop(text As String, caption As String,
+                              buttons As MessageBoxButtons, icon As MessageBoxIcon,
+                              <CallerFilePath> Optional file As String = Nothing,
+                              <CallerMemberName> Optional member As String = Nothing) As DialogResult
+        Journal(file, member, caption, text, icon)
+        Return MessageBox.Show(text, caption, buttons, icon, MessageBoxDefaultButton.Button1, MbTopMost)
+    End Function
+
+    ' Win32 MB_TOPMOST (0x40000). MessageBoxOptions has no member for it; the value passes straight
+    ' through into the style word of MessageBox.
+    Private ReadOnly MbTopMost As MessageBoxOptions = CType(&H40000, MessageBoxOptions)
+
     ' THERE IS NO SINGLE-ARGUMENT OVERLOAD. It would be ambiguous with Show(text, caption): the
     ' caller-info parameters are String and optional too, so Show("a", "b") would fit it as
     ' well, and the rule that decides (the candidate filling fewer optionals wins) is too thin
