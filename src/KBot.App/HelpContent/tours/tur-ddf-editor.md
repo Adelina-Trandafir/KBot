@@ -21,9 +21,9 @@ target: DdfEditForm.cmbPartener
 Aici alegi partenerul principal al documentului, unul singur: scrii începutul numelui sau al codului fiscal și îl alegi din listă. Majoritatea documentelor au doar acest partener. Schimbarea lui rescrie partenerul pe toate rândurile.
 
 ## Paginile documentului
-<!-- slice: 0051, 0094-02, 0000-28 -->
+<!-- slice: 0051, 0094-02, 0094-03, 0000-28 -->
 target: DdfEditForm.navSub
-Documentul are mai multe pagini. Urmează pe rând fiecare; cea din dreapta, «Parteneri», stă singură, pentru că nu face parte din revizia propriu-zisă.
+Documentul are mai multe pagini. Urmează pe rând fiecare; cea din dreapta, «Parteneri», stă singură, pentru că nu face parte din revizia propriu-zisă, și se vede doar când «Partener asociat» e bifat.
 
 ## Pagini › Secțiunea A
 <!-- slice: 0051, 0081-08, 0000-28 -->
@@ -50,10 +50,10 @@ part: item:fisiere
 Atașezi imagini, documente sau tabele. Se încarcă pe server după salvarea documentului.
 
 ## Pagini › Parteneri
-<!-- slice: 0094-02, 0084-02, 0000-28 -->
+<!-- slice: 0094-02, 0094-03, 0084-02, 0000-28 -->
 target: DdfEditForm.navSub
 part: item:parteneri
-Pagina din dreapta arată toți partenerii asociați documentului, nu doar pe cel din antet. Apasă pe ea ca să o deschizi.
+Pagina din dreapta arată toți partenerii asociați documentului, nu doar pe cel din antet. Apare doar când «Partener asociat» e bifat. Apasă pe ea ca să o deschizi.
 
 ## Parteneri › Cum asociezi
 <!-- slice: 0094-02, 0084-02, 0000-28 -->

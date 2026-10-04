@@ -82,6 +82,9 @@ Partial Public Class KbotForm
                 Case HelpCaptureMenuKey
                     ' Slice 0000-02: the help screenshot list (KbotForm.HelpCapture.vb).
                     DeschideCapturileAjutorului()
+                Case TutorialDesignerMenuKey
+                    ' Slice 000T-03: the tutorial designer (KbotForm.Tutorial.vb), capture mode only.
+                    DeschideDesignerulDeTutoriale()
                 Case "jurnal"
                     ShowLog()
                 Case "setari"

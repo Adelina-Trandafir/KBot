@@ -68,6 +68,32 @@ Public Class HelpTourBubble
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 000T: the same bubble for an interactive tutorial step. No «Inapoi»; the right button is
+    ''' «Sari peste» / «Inainte» (<paramref name="k_nextText"/>, empty = hidden: the step moves on by
+    ''' itself when the user does it); «Inchide» reads «Ma opresc» and asks to leave the tutorial.
+    ''' </summary>
+    Public Sub ShowTutorial(k_tutorialTitle As String, k_stepTitle As String, k_text As String, k_note As String,
+                            k_index As Integer, k_count As Integer, k_nextText As String)
+        Try
+            ResetArrow()
+            lblPas.Text = If(String.IsNullOrEmpty(k_tutorialTitle), String.Empty, k_tutorialTitle & "  ·  ") &
+                          "Pasul " & (k_index + 1) & " din " & k_count
+            lblTitlu.Text = k_stepTitle
+            lblText.Text = k_text
+            lblNota.Text = If(k_note, String.Empty)
+            lblNota.Visible = Not String.IsNullOrEmpty(k_note)
+            btnInapoi.Visible = False
+            btnInainte.Visible = Not String.IsNullOrEmpty(k_nextText)
+            btnInainte.Text = If(k_nextText, String.Empty)
+            btnInchide.Text = "Mă opresc"
+            FitToText()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpTourBubble.ShowTutorial", ex)
+            Throw
+        End Try
+    End Sub
+
     ' Height = the chrome + what the labels need at the bubble's width. Device pixels throughout.
     Private Sub FitToText()
         Dim w As Integer = tlyCorp.ClientSize.Width - tlyCorp.Padding.Horizontal
@@ -292,8 +318,9 @@ Public Class HelpTourBubble
         Try
             Select Case e.KeyCode
                 Case Keys.Escape : RaiseEvent CloseRequested() : e.Handled = True
-                Case Keys.Right, Keys.Enter : RaiseEvent NextRequested() : e.Handled = True
-                Case Keys.Left : If btnInapoi.Enabled Then RaiseEvent BackRequested()
+                Case Keys.Right, Keys.Enter : If btnInainte.Visible Then RaiseEvent NextRequested()
+                    e.Handled = True
+                Case Keys.Left : If btnInapoi.Visible AndAlso btnInapoi.Enabled Then RaiseEvent BackRequested()
                     e.Handled = True
             End Select
         Catch ex As Exception

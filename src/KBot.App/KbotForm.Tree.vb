@@ -263,6 +263,8 @@ Partial Public Class KbotForm
                 _treeInfos.TryGetValue(cod, info)
             End If
             _currentInfo = info
+            ' Slice 000T: a tutorial waiting for «an angajament that has reservations» hears it here.
+            If info IsNot Nothing AndAlso info.AreRezervari Then RaiseEvent TutorialSignal(SignalAngajamentCuRezervari)
             ' The node's flags decide which views are reachable (the Are* gate).
             ApplyViewGating(info)
             _activeView?.SetContext(info)

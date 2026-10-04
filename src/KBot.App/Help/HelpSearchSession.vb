@@ -70,6 +70,10 @@ Friend NotInheritable Class HelpSearchSession
             _hits = _service.Library.Search(_query, _service.VisibleParts())
             TrackQuestion()
             Dim rows As New List(Of KBotHelpRow)()
+            ' Slice 000T: a tutorial that answers the question comes first (it does the thing step by step).
+            For Each flow As TutorialFlow In _service.Library.SearchTutorials(_query, _service.VisibleParts())
+                rows.Add(HelpService.TutorialRow(flow))
+            Next
             For Each h As HelpHit In _hits
                 rows.Add(RowFor(h))
             Next
@@ -175,6 +179,12 @@ Friend NotInheritable Class HelpSearchSession
             Dim tour As HelpTour = TryCast(row.Tag, HelpTour)
             If tour IsNot Nothing Then
                 _service.StartTour(tour.Id)
+                Return True
+            End If
+            ' Slice 000T: an interactive tutorial.
+            Dim flow As TutorialFlow = TryCast(row.Tag, TutorialFlow)
+            If flow IsNot Nothing Then
+                _service.StartTutorial(flow.Id)
                 Return True
             End If
             Throw New ArgumentException("A help row without a known tag: " & row.Title, NameOf(row))

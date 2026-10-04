@@ -54,6 +54,7 @@ slice number. Worklogs: `SLICE-0000-NN-<slug>.md`.
 | 0000-45 | **Ajutor pentru 0108: creditul pe clasificație, bugetul fără trimestre** (cererea operatorului, 03.10.2026): `contabil.nomenclatoare.clasificatii` (fundamentare + verificare), `contabil.ddf.editor`, `contabil.vederi.sumar`; etichetă `0108`. Fără Migrator / Access în ajutor | GATA (text) / nevăzut pe ecran | `SLICE-0000-45-ajutor-credit-pe-clasificatie.md` | `Check-Help.ps1 -Coverage` rulat. |
 | 0000-46 | **Ajutor pentru 0107: coloanele egale și rândul de jos din «Clasificații bugetare»** (cererea operatorului, 03.10.2026): `contabil.nomenclatoare.clasificatii` + pasul nou «Bugetul în vigoare» din `tur-clasificatii`; etichetă `0107`. Captura `clasificatii` e de refăcut | GATA (text) / nevăzut pe ecran | `SLICE-0000-46-ajutor-clasificatii-latimi-rand-final.md` | `Check-Help.ps1 -Coverage`: fără erori. |
 | 0000-47 | **Subiect de ajutor pentru fereastra «Verificare buget FOREXE»** (cererea operatorului, 03.10.2026): subiect nou `contabil.nomenclatoare.verificare-buget` (cum se deschide, ce arată, doar clasificațiile folosite în FOREXE, dublu clic pe un rând → clasificația în arbore, 0107); secțiunea din `clasificatii` redusă la un link. **Captura `verificare-buget` NU e făcută** (de făcut de operator, fereastra cere date în `FX_Indicatori_Buget`) | GATA (text) / poza lipsă | `SLICE-0000-47-ajutor-verificare-buget.md` | `Check-Help.ps1 -Coverage`: fără erori. |
+| 0000-50 | **Ajutor pentru tutorialele interactive (felia 000T, la cererea operatorului, 04.10.2026)**: `contabil.ajutor` — grupul «Tutoriale» din meniul «?», tutorialul găsit prin întrebare, secțiunile noi «Tutorialele» și «Cum pornești un tutorial»; etichete `000T`; `help-version.txt` = `2026-10-04`. Designerul / recorderul NU sunt în ajutor (unealtă de operator). NOUTATI.md neatins (linia de adăugat la următoarea versiune e în worklog) | GATA (text) / nevăzut pe ecran | `SLICE-0000-50-ajutor-tutoriale.md` | `Check-Help.ps1`: «No errors.». Captură de refăcut: `ajutor-meniu`. |
 | 0000-49 | **Ajutor pentru 0109: «Actualizează angajamente...» și fără descărcare pe mai multe taburi** (cererea operatorului, 03.10.2026): `contabil.forexe.descarcare-multipla` (subsecțiune nouă), `contabil.fereastra`, `contabil.forexe.coada`, pasul «Lista › Rotița» din `tur-fereastra`; etichetă `0109`. (0000-48 e al altui fir, panoul cozii.) NOUTATI.md neatins: fără versiune nouă | GATA (text) / nevăzut pe ecran | `SLICE-0109-actualizare-angajamente-single-thread.md` | `Check-Help.ps1 -Coverage`: rămân doar etichetele `0000-48` ale celuilalt fir. |
 | 0000-48 | **Ajutor pentru 0100-03: câte un rând pe angajament în «Coada robotului»** (cererea operatorului, 03.10.2026): `contabil.forexe.coada` (secțiune nouă, «Oprește curenta» vs «X»), `contabil.forexe.descarcare-multipla` (punctul 6); etichetă `0100-03`. Captură nouă de făcut: `coada-descarcari-multiple` (și `coada-robot` lipsește) | GATA (text; nimic văzut în fereastra de ajutor) | `SLICE-0000-48-ajutor-descarcari-multiple-rand-pe-angajament.md` |
 | 0000-41 | **Ajutor pentru 0103-04 / 0103-06: «Verifică bugetul» și «Trimite în Access»** (cererea operatorului, 02.10.2026): `contabil.nomenclatoare.clasificatii` (două puncte noi, secțiunile «Verificarea bugetului față de FOREXE» și «Trimite în Access», `screens:` + `BudgetCheckForm`); captura `clasificatii` de refăcut | GATA pe cod (Check-Help: `BudgetCheckForm` acoperit; 3 erori vechi, ale altor fișiere) | `SLICE-0000-41-ajutor-verificare-buget-si-trimite-access.md` |
@@ -69,7 +70,8 @@ slice number. Worklogs: `SLICE-0000-NN-<slug>.md`.
 ### Ajutorul e la zi până la
 
 **01.10.2026 — codul de azi, până la felia 0097 inclusiv cu a doua ei trecere (0097-02, acoperită în 0000-25), plus corecturile la descărcare din Asocieri (0056-02, acoperite în 0000-26), plus asistentul de ajutor (0000-18…0000-22), tururile pe butoane / fereastra de ajutor (0000-23) și bula fără bară de titlu (0000-24), plus asocierea mai multor parteneri cu un DDF (0084/02 în Sumar și 0094-02 în editor, acoperite în 0000-28, cu turul editorului DDF), plus butonul «Setări» mutat în MENIU (0000-29), plus tururile care arată ce ascunde aplicația și spun cum apare (0000-30), plus meniul în tur, ferestrele mici ținute deschise la captură și coada robotului (0000-31, felia 0098 acoperită), plus fereastra de ajutor cu pagină continuă, tipărire și export pe bucăți (0000-32). Felia 0098 («Coada robotului») NU e încă în ajutor — vezi lista de mai jos**
-(`help-version.txt` = `2026-10-02`; la 02.10.2026 s-au adăugat felia 0101 — lanțurile de recepții neînchise, 0000-37 —, 0101-01 — pagina «Documente» pe lună, 0000-38 — și 0102 — bugetul pe versiuni, 0000-40). Textul a fost scris din codul curent, nu din planuri. Următoarea
+**04.10.2026 (0000-50): tutorialele interactive (felia 000T) sunt în ajutor; `help-version.txt` = `2026-10-04`.**
+(Până la 02.10.2026: `help-version.txt` era `2026-10-02`; la 02.10.2026 s-au adăugat felia 0101 — lanțurile de recepții neînchise, 0000-37 —, 0101-01 — pagina «Documente» pe lună, 0000-38 — și 0102 — bugetul pe versiuni, 0000-40). Textul a fost scris din codul curent, nu din planuri. Următoarea
 actualizare pornește de la feliile de după 0096 și de la lista de mai jos (`docs/HELP_SYSTEM.md` §4).
 Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/help-version.txt`).
 
@@ -98,6 +100,32 @@ Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/hel
   (`HelpCaptureViewForm`, `SetariIstoricView`, `UpdateOfferForm`).
 - **0000-01** — exportul manualului apăsat de operator la 01.10.2026: a înghețat K-BOT (vezi 0000-32); fereastra Director nevăzută; tema întunecată nevăzută.
 - **Observat în trecere:** `000_DEMO` nu are tabela `FX_NoteCAB_Corectii` (eroare 1146 la fiecare pornire, `RefreshUncorrelatedMarkAsync`).
+
+---
+
+## Slice 000T — TUTORIALE interactive
+
+Id dat de operator (04.10.2026; nu respectă numerotarea cu 4 cifre). Planul: `~/.claude/plans/i-need-a-tutorial-humble-pretzel.md`.
+Pași ca într-un joc: K-BOT arată următorul lucru (inel + restul întunecat), ASTEAPTĂ ce face utilizatorul (nu apasă
+el în locul lui), pași opționali cu «Sari peste» + motivul, la orice altceva întreabă «Vrei să ieși din tutorial?».
+Ferestrele (în special cele modale) își țin singure starea de tutorial (`IKBotTutorialHost`, cu o cheie `host-key`).
+Ajutorul pentru felie se trece ca `0000-NN` cu eticheta `<!-- slice: 000T -->`. **Excepție de la «niciodată teste»,
+valabilă DOAR aici:** teste cât mai puține, cu anunț înainte să pornească ceva.
+
+| Slice | Name | Status | Worklog(s) | Notes |
+|------:|------|--------|-----------|-------|
+| 000T-01 | **Motorul**: format `Help\tutorials\*.md`, `TutorialFlow` (parser + regula de privire înainte), `TutorialRunner` (pași, așteptări pe evenimente/stare, întunecare cu găuri, bulă, întrebarea de ieșire, tastatura), `IKBotTutorialHost`, `HelpService.StartTutorial`, `Check-Help.ps1` (cheia `000T` + secțiune tutoriale) | GATA pe cod (build **0 avertismente, 0 erori**; 17 teste verzi într-un proiect-ciornă; `Check-Help.ps1` «No errors.»); **nevăzut pe ecran**, nicio fereastră nu implementează încă `IKBotTutorialHost` | `SLICE-000T-01-engine.md` | Fără nicio schimbare de server/SQL. `tests\KBot.App.Tests` NU compilează din cauza altor teste (vezi Open threads). |
+| 000T-02 | Fluxul «revizie din rezervare» (18 pași) + descoperire (căutare + grupul «Tutoriale» din «?» al fiecărei ferestre) + `KbotForm`/`DdfEditForm` ca gazde, ancorele «rânduri cu rezervări» și «+» | GATA pe cod (build **0 avertismente, 0 erori**; 23 teste verzi în proiectul-ciornă; `Check-Help.ps1` «No errors.»); **nevăzut pe ecran** | `SLICE-000T-02-flux-si-descoperire.md` | Pasul 10 poate lipsi în fluxul «+». Pasul 15 presupune corecția 0094-NN (fila «Parteneri» legată de bifă). |
+| 000T-03 | Designer vizual (`TutorialDesignerForm`: pași, grile de proprietăți, «Salvează», «Testează de la pasul»), selectorul «Alege pe ecran» (`TutorialPicker`), `ToMarkdown` + `TutorialStore`, rândul «Designer tutoriale» din MENIU (doar în modul capturi) | GATA pe cod (build **0 avertismente, 0 erori**; 24 teste verzi în proiectul-ciornă; `Check-Help.ps1` «No errors.»); **fereastra și selectorul nedeschise niciodată** | `SLICE-000T-03-designer-si-selector.md` | În loc de `HelpPartAt` pe interfață, selectorul folosește `HelpPartBounds` cu aceleași nume ca verificatorul + `RightIconRectsOnScreen` / `ItemKeyAt`. |
+| 000T-04 | Recorder (`TutorialRecorder` + bara `TutorialRecorderBar`, butonul «Înregistrează» din designer); «Testează de la pasul N» a fost făcut în 000T-03 | GATA pe cod (build **0 avertismente, 0 erori**; `Check-Help.ps1` «No errors.»); **nerulat niciodată**, fără teste (există doar pe ferestre reale) | `SLICE-000T-04-recorder.md` | Din ce scrii se păstrează doar «s-a schimbat», nu valoarea. |
+| 000T-05 | Ajutorul (`0000-50`; NOUTATI.md rămâne pentru rularea scriptului de versiune) | GATA (text), nevăzut pe ecran | `SLICE-0000-50-ajutor-tutoriale.md` | Captura `ajutor-meniu` de refăcut. |
+
+### Open threads
+
+- **Corecție în afara 000T (felia 0094-02, fila a fost introdusă acolo):** fila «Parteneri» a `DdfEditForm` trebuie legată de bifa «Partener asociat» (azi e mereu vizibilă). Caz de confirmat: bifa oprită dar cu parteneri suplimentari deja asociați.
+- `tests\KBot.App.Tests` nu compilează (erori vechi, nu din 000T): `ForexeAnswerStoreTests.vb(43)` (`JobRequest` fără proprietate implicită) și `MainFormPoartaDdfTests` / `MainFormNavItemsTests` (constructorul `KbotForm` cere acum `capturiApi`).
+- Nevăzut pe ecran: bula/veilul în fereastra modală `DdfEditForm`; veilul față de liste derulante și dialogul de fișiere; pasul 10 («Element fundamentare») poate fi imposibil în fluxul «+» (grila e doar-citire când rândurile vin din rezervări).
+- Părțile ascunse prin stare (`reveal`) NU sunt arătate de tutoriale în 000T-01: o `part:` care nu e pe ecran cade pe tot controlul.
 
 ---
 

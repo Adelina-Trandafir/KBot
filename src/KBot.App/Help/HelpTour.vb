@@ -148,7 +148,7 @@ Public NotInheritable Class HelpTour
     End Function
 
     ' The bubble is a label, not a browser: bold marks go, paragraphs stay, wrapped lines join.
-    Private Shared Function CleanText(s As String) As String
+    Friend Shared Function CleanText(s As String) As String
         Dim paragraphs As String() = s.Replace("**", String.Empty).Trim().Split({vbCrLf & vbCrLf, vbLf & vbLf}, StringSplitOptions.RemoveEmptyEntries)
         Dim out As New List(Of String)()
         For Each p As String In paragraphs

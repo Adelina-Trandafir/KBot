@@ -37,6 +37,7 @@ Partial Class KbotForm
         Dim KBotMenuItem11 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem13 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem14 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -187,6 +188,10 @@ Partial Class KbotForm
         KBotMenuItem11.Key = "capturi_ajutor"
         KBotMenuItem11.Text = "Capturi pentru ajutor"
         KBotMenuItem11.Visible = False
+        KBotMenuItem14.Image = My.Resources.Resources.folder_open
+        KBotMenuItem14.Key = "tutoriale_designer"
+        KBotMenuItem14.Text = "Designer tutoriale"
+        KBotMenuItem14.Visible = False
         KBotMenuItem12.Image = My.Resources.Resources.Folder_blue_24
         KBotMenuItem12.Key = "jurnal"
         KBotMenuItem12.Text = "Jurnal activitate"
@@ -200,6 +205,7 @@ Partial Class KbotForm
         menuNou.Items.Add(KBotMenuItem9)
         menuNou.Items.Add(KBotMenuItem10)
         menuNou.Items.Add(KBotMenuItem11)
+        menuNou.Items.Add(KBotMenuItem14)
         menuNou.Items.Add(KBotMenuItem12)
         menuNou.Items.Add(KBotMenuItem13)
         ' 

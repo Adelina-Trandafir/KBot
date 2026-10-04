@@ -28,6 +28,16 @@ Partial Public NotInheritable Class KBotNavList
         Return item.Bounds
     End Function
 
+    ''' <summary>
+    ''' Slice 000T: the <see cref="KBotNavItem.Key"/> of the visible button under <paramref name="k_clientPoint"/>
+    ''' (the tutorial designer's picker writes it as <c>item:&lt;Key&gt;</c>); empty = no button there.
+    ''' </summary>
+    Public Function ItemKeyAt(k_clientPoint As Point) As String
+        If Not _layoutValid Then RecalcLayout()
+        Dim k_item As KBotNavItem = _items.FirstOrDefault(Function(it) it.Visible AndAlso Not it.IsSeparator AndAlso it.Bounds.Contains(k_clientPoint))
+        Return If(k_item Is Nothing OrElse String.IsNullOrEmpty(k_item.Key), String.Empty, k_item.Key)
+    End Function
+
     Public Sub SetHelpPartDemo(part As String, show As Boolean) Implements IKBotHelpParts.SetHelpPartDemo
         HelpPartBounds(part)   ' validates the name; every part is always drawn
     End Sub

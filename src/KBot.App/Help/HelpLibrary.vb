@@ -39,6 +39,16 @@ Public NotInheritable Class HelpLibrary
 
     Friend Const ToursFolderName As String = "tours"
 
+    ''' <summary>The interactive tutorials (slice 000T), in file order.</summary>
+    Public ReadOnly Property Tutorials As New List(Of TutorialFlow)()
+
+    Friend Const TutorialsFolderName As String = "tutorials"
+
+    ''' <summary>A tutorial by id, or Nothing.</summary>
+    Public Function FindTutorial(k_id As String) As TutorialFlow
+        Return Tutorials.FirstOrDefault(Function(t) String.Equals(t.Id, k_id, StringComparison.OrdinalIgnoreCase))
+    End Function
+
     ''' <summary>
     ''' Slice 0000-13: the source tag, one line <c>&lt;!-- slice: 0072, 0097 --&gt;</c> under every
     ''' section, naming the slices that decided what the section says. It is for the maintainer
@@ -60,8 +70,12 @@ Public NotInheritable Class HelpLibrary
     End Function
 
     Private Shared Function IsTourFile(root As String, file As String) As Boolean
-        Dim folder As String = Path.GetFullPath(Path.Combine(root, ToursFolderName)) & Path.DirectorySeparatorChar
-        Return Path.GetFullPath(file).StartsWith(folder, StringComparison.OrdinalIgnoreCase)
+        ' Slice 000T: the tutorials have their own folder and format too.
+        For Each name As String In {ToursFolderName, TutorialsFolderName}
+            Dim folder As String = Path.GetFullPath(Path.Combine(root, name)) & Path.DirectorySeparatorChar
+            If Path.GetFullPath(file).StartsWith(folder, StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
+        Return False
     End Function
 
     ''' <summary>A tour by id, or Nothing.</summary>
@@ -135,6 +149,25 @@ Public NotInheritable Class HelpLibrary
                             tour.TopicId = String.Empty
                         End If
                         library.Tours.Add(tour)
+                    Catch ex As ArgumentException
+                        library.Report(file, ex.Message)
+                    End Try
+                Next
+            End If
+
+            ' Slice 000T: the interactive tutorials, from <root>\tutorials\.
+            Dim tutorialsFolder As String = Path.Combine(root, TutorialsFolderName)
+            If Directory.Exists(tutorialsFolder) Then
+                For Each file As String In Directory.EnumerateFiles(tutorialsFolder, "*.md").OrderBy(Function(f) f, StringComparer.OrdinalIgnoreCase)
+                    If String.Equals(Path.GetFileName(file), "README.md", StringComparison.OrdinalIgnoreCase) Then Continue For
+                    Try
+                        Dim flow As TutorialFlow = TutorialFlow.ParseFile(file)
+                        If library.Tutorials.Any(Function(x) String.Equals(x.Id, flow.Id, StringComparison.OrdinalIgnoreCase)) Then
+                            library.Report(file, "duplicate tutorial id '" & flow.Id & "'")
+                            Continue For
+                        End If
+                        flow.BuildSearchIndex()
+                        library.Tutorials.Add(flow)
                     Catch ex As ArgumentException
                         library.Report(file, ex.Message)
                     End Try
@@ -346,6 +379,36 @@ Public NotInheritable Class HelpLibrary
             End If
         Next
         Return hits
+    End Function
+
+    ''' <summary>
+    ''' Slice 000T: the tutorials, among <paramref name="k_parts"/>, that answer <paramref name="k_query"/>,
+    ''' best first. Same rules as <see cref="Search"/>: filler words, case, diacritics and endings do not
+    ''' matter, not every word has to be found (with three words or more, half of them). The title weighs
+    ''' more than the keywords and the step titles.
+    ''' </summary>
+    Public Function SearchTutorials(k_query As String, k_parts As IReadOnlyCollection(Of HelpPart),
+                                    Optional k_max As Integer = 3) As List(Of TutorialFlow)
+        Dim k_terms As List(Of HelpQueryTerm) = HelpSearch.QueryTerms(k_query)
+        If k_terms.Count = 0 Then Return New List(Of TutorialFlow)()
+        Dim k_minMatched As Integer = If(k_terms.Count <= 2, 1, (k_terms.Count + 1) \ 2)
+        Dim k_scored As New List(Of KeyValuePair(Of TutorialFlow, Integer))()
+        For Each k_flow As TutorialFlow In Tutorials
+            If Not k_parts.Contains(k_flow.Part) OrElse k_flow.TitleTerms Is Nothing Then Continue For
+            Dim k_matched As Integer = 0
+            Dim k_weight As Integer = 0
+            For Each k_term As HelpQueryTerm In k_terms
+                Dim k_w As Integer = k_flow.TitleTerms.Weight(k_term, 10, 5) + k_flow.KeywordTerms.Weight(k_term, 6, 3)
+                If k_w > 0 Then
+                    k_matched += 1
+                    k_weight += k_w
+                End If
+            Next
+            If k_matched >= k_minMatched Then
+                k_scored.Add(New KeyValuePair(Of TutorialFlow, Integer)(k_flow, k_matched * 100 + Math.Min(99, k_weight)))
+            End If
+        Next
+        Return k_scored.OrderByDescending(Function(x) x.Value).Take(k_max).Select(Function(x) x.Key).ToList()
     End Function
 
     ''' <summary>The first tour offered by <paramref name="topicId"/> that <paramref name="parts"/> may see, or Nothing.</summary>

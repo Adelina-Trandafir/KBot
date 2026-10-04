@@ -51,6 +51,35 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
+    ''' <summary>
+    ''' Slice 000T: the client rectangle of every row on screen for which <paramref name="k_match"/>
+    ''' answers True (the rows of angajamente that have reservations). Rows scrolled out of sight or
+    ''' hidden by a collapsed parent are not on the list.
+    ''' </summary>
+    Public Function RowRectsOnScreen(k_match As Func(Of TreeItem, Boolean)) As List(Of Rectangle)
+        Dim k_rects As New List(Of Rectangle)()
+        For Each k_item As TreeItem In GetVisibleItems()
+            If Not k_match(k_item) Then Continue For
+            Dim k_top As Integer = GetItemY(k_item)
+            If RowOnScreen(k_top, _itemHeight) Then k_rects.Add(New Rectangle(0, k_top, Width, _itemHeight))
+        Next
+        Return k_rects
+    End Function
+
+    ''' <summary>
+    ''' Slice 000T: the client rectangle of the right icon (the «+» of a reservation row) of every
+    ''' row on screen that has one now, without showing anything for the purpose.
+    ''' </summary>
+    Public Function RightIconRectsOnScreen() As List(Of Rectangle)
+        Dim k_rects As New List(Of Rectangle)()
+        For Each k_item As TreeItem In GetVisibleItems()
+            If k_item.RightIcon Is Nothing Then Continue For
+            Dim k_rect As Rectangle = NodeRightIconRect(k_item)
+            If RowOnScreen(k_rect.Top, k_rect.Height) Then k_rects.Add(k_rect)
+        Next
+        Return k_rects
+    End Function
+
     Public Function HelpPartBounds(part As String) As Rectangle Implements IKBotHelpParts.HelpPartBounds
         Select Case part
             Case "header"

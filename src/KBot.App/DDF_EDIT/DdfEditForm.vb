@@ -174,6 +174,8 @@ Public Class DdfEditForm
             ' the operator can act on, and the interim PDF carries none of it either. The nav
             ' entry is authored in the designer, so it is hidden by key here.
             navSub.SetItemVisible(PAGINA_SECTIUNEA_B, DdfRevisionStates.IsSent(_stare))
+            ' Slice 0094-02 (corrective): «Parteneri» exists only while «Partener asociat» is on.
+            navSub.SetItemVisible(PAGINA_PARTENERI, _draft.PartAng)
 
             ' The generation warnings (a manually created angajament, an over-long object)
             ' are shown from the start: they are things to know BEFORE editing, not after a
@@ -1003,6 +1005,13 @@ Public Class DdfEditForm
                 AnuntaPaginile()
             Else
                 cmbPartener.Focus()
+            End If
+
+            ' Slice 0094-02 (corrective): the «Parteneri» tab follows the flag. A hidden tab stays
+            ' selected, so when it is the open one the editor falls back to section A.
+            navSub.SetItemVisible(PAGINA_PARTENERI, chkPartAng.Checked)
+            If Not chkPartAng.Checked AndAlso String.Equals(navSub.SelectedKey, PAGINA_PARTENERI, StringComparison.Ordinal) Then
+                navSub.SelectedKey = PAGINA_SECTIUNEA_A
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.ChkPartAng_CheckedChanged", ex)

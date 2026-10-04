@@ -74,7 +74,7 @@ Public NotInheritable Class HelpCaptureStore
 
     ' <repo>\src\KBot.App\HelpContent\img, looked for above the exe (bin\Debug\net8.0-windows\ is
     ' four levels under src\KBot.App). Nothing outside a repository build.
-    Private Shared Function FindSourceFolder() As String
+    Friend Shared Function FindSourceFolder() As String
         Dim dir As DirectoryInfo = New DirectoryInfo(AppContext.BaseDirectory)
         For i As Integer = 0 To 8
             If dir Is Nothing Then Exit For

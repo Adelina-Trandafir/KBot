@@ -6,6 +6,21 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.1.8 (04.10.2026)
+
+<!-- release: utc=2026-10-04T07:30:32Z -->
+<!-- felii: 000T-01, 000T-02, 000T-03, 000T-04, 0000-50 -->
+
+- «?» are un grup nou, «Tutoriale»: te conduc pe ecran, pas cu pas, chiar prin mai multe ferestre.
+- Primul tutorial: «Adauga o revizie pe baza unei rezervari existente», pana la «Salveaza documentul».
+- Tutorialul asteapta sa faci tu fiecare pas: ce ai de facut are chenar, restul ferestrei e intunecat.
+- K-BOT nu apasa nimic in locul tau; cand ai facut pasul, trece singur la urmatorul.
+- Cand apesi ceva care deschide o fereastra, tutorialul continua in fereastra noua.
+- Pasii optionali au butonul «Sari peste» si spun de ce nu sunt obligatorii.
+- Daca faci altceva decat pasul cerut, K-BOT intreaba «Vrei sa iesi din tutorial?»; «Nu» ramane pe acelasi pas.
+- Il gasesti si scriind in cautarea din «?» ce vrei sa faci, de exemplu «cum adaug o revizie»: apare primul.
+- Ajutor: pagina «Cum folosesti ajutorul» descrie tutorialele.
+
 ## 1.1.1.7 (03.10.2026)
 
 <!-- release: utc=2026-10-03T12:24:10Z -->

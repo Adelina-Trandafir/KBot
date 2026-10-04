@@ -5,19 +5,19 @@ part: contabil
 order: 900
 parent: contabil
 screens: HelpForm, KBotHelpPopup
-keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza
+keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza, tutorial, tutoriale, pas cu pas, invata, sari peste, pas optional, iesi din tutorial, ma opresc, intunecat
 ---
-<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02 -->
+<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T -->
 Ajutorul se deschide în două feluri:
 
 - **F1**, în orice fereastră: se deschide direct fereastra de ajutor, la pagina despre ce ai pe
   ecran.
 - Butonul **?** din bara de titlu a fiecărei ferestre: se deschide un **meniu mic**, chiar sub
-  buton, cu o căsuță de căutare, pagina ecranului tău și tururile ghidate. Fereastra de
+  buton, cu o căsuță de căutare, pagina ecranului tău, tururile ghidate și tutorialele. Fereastra de
   **conectare** nu are acest buton; acolo ajutorul se deschide cu F1.
 
 ## Meniul «?»
-<!-- slice: 0000-20, 0000-24, 0000-27 -->
+<!-- slice: 0000-20, 0000-24, 0000-27, 000T -->
 
 <!-- capture: ajutor-meniu | caption: Meniul «?» deschis din fereastra principală | prepare: Selectați un angajament și vederea «Rezervări», apoi apăsați «?» din bara de titlu. Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
 
@@ -27,12 +27,14 @@ Ajutorul se deschide în două feluri:
 - **Tururi ghidate** — doar tururile ferestrei din care ai apăsat **?**. Altă fereastră
   deschisă (chiar dacă a fost deschisă din aceasta) nu apare aici: ea are propriul ei **?**.
   Pentru fereastra principală apare și turul vederii pe care ești (de exemplu «Rezervări»).
+- **Tutoriale** — toate tutorialele, din **orice** fereastră (un tutorial trece prin mai multe
+  ferestre); cele care pornesc din fereastra ta sunt primele. Vezi mai jos «Tutorialele».
 - Ultimul rând, **«Deschide ajutorul complet (F1)»**, deschide fereastra de ajutor, la fel ca F1.
 
 Meniul se închide cu **Esc**, cu un clic în afara lui sau când alegi ceva din el.
 
 ## Cum pui o întrebare
-<!-- slice: 0000-18, 0000-20 -->
+<!-- slice: 0000-18, 0000-20, 000T -->
 
 <!-- capture: ajutor-cautare | caption: O întrebare în meniul «?», cu rezultatele și stelele | prepare: Apăsați «?» din fereastra principală și scrieți «cum trimit un DDF». Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
 
@@ -42,6 +44,10 @@ Scrie în căsuță ce vrei să faci, cu cuvintele tale: «cum trimit un DDF», 
 
 Rezultatele apar pe măsură ce scrii. Fiecare arată **pagina › secțiunea** și câteva cuvinte din
 ea. Un clic (sau **săgețile** și **Enter**) deschide fereastra de ajutor chiar la secțiunea aceea.
+
+Dacă întrebarea ta se potrivește cu un **tutorial** (de exemplu «cum adaug o revizie pe baza unei
+rezervări existente»), el apare **primul**, înaintea paginilor de ajutor, iar un clic pe el îl
+pornește — vezi mai jos «Tutorialele».
 
 Dacă nu apare nimic potrivit, încearcă alte cuvinte — de exemplu numele butonului sau al
 ferestrei — sau caută în cuprins.
@@ -97,6 +103,42 @@ Sunt sărite doar butoanele care nu au loc deloc pe ecranul tău (de exemplu lis
 Dacă doar îl închizi, fără bifă, pornește din nou data viitoare. Din meniul «?» îl poți porni
 oricând; ca să pornească iar singur, bifează în **Setări › Aplicație** «Arată turul ferestrei
 principale la pornirea K-BOT» — [Setări și aspect](topic:contabil.setari).
+
+## Tutorialele
+<!-- slice: 000T -->
+
+Un **tutorial** te duce pas cu pas printr-o treabă de la un capăt la altul — de exemplu «Adaugă o
+revizie pe baza unei rezervări existente», de la alegerea angajamentului până la «Salvează
+documentul» — și **așteaptă să faci tu fiecare pas**. K-BOT nu apasă nimic în locul tău: îți arată
+ce urmează și, când ai făcut, trece singur la pasul următor.
+
+- Ce ai de făcut are un **chenar** colorat, iar restul ferestrei e **întunecat**. O bulă îți spune
+  ce să faci și la ce pas ești. Poți folosi doar ce e luminat și bara de titlu (ca să muți
+  fereastra).
+- Tutorialul merge **dintr-o fereastră în alta**: după ce apeși ceva care deschide o fereastră,
+  așteaptă să se deschidă și continuă în ea.
+- Unii pași sunt **opționali**. Bula scrie «Pas opțional», spune **de ce** nu e obligatoriu și are
+  butonul **«Sari peste»**. Poți face pasul, poți sări peste el sau poți trece direct la un pas
+  de mai departe (de exemplu la «Salvează documentul»).
+- Un pas care **nu se aplică** documentului tău (de exemplu un câmp care nu se poate modifica la o
+  revizie ulterioară) este sărit singur.
+- Unii pași cer doar să apeși **«Înainte»** după ce ai terminat, de exemplu când completezi un text
+  lung.
+- Dacă faci **altceva decât pasul cerut** — apeși în zona întunecată sau scrii în altă parte —
+  K-BOT întreabă **«Vrei să ieși din tutorial?»**. **Da** oprește tutorialul; **Nu** îl lasă pe același
+  pas (ce ai făcut între timp nu se desface). La fel dacă închizi fereastra în care lucrai. Butonul
+  **«Mă opresc»** din bulă pune aceeași întrebare.
+
+## Cum pornești un tutorial
+<!-- slice: 000T -->
+
+- Din meniul **«?»** al oricărei ferestre, la grupul **Tutoriale**; cele care pornesc din fereastra ta
+  sunt primele.
+- Scriind în căsuța de căutare ce vrei să faci, cu cuvintele tale — tutorialul potrivit apare primul
+  în rezultate.
+
+Un tutorial pornește dintr-o anumită fereastră (de obicei cea principală). Dacă nu ești în ea,
+K-BOT îți spune să o deschizi întâi.
 
 ## Fereastra de ajutor
 <!-- slice: 0000-01, 0000-20, 0000-23, 0000-32 -->

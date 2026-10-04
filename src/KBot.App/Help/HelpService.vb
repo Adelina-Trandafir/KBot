@@ -280,6 +280,14 @@ Public NotInheritable Class HelpService
                 Next
             End If
         End If
+        ' Slice 000T: the interactive tutorials -- they cross windows, so every window's «?» lists them
+        ' all; the ones that start in this window come first.
+        Dim flows As List(Of TutorialFlow) = Library.Tutorials.Where(Function(f) parts.Contains(f.Part)).
+            OrderByDescending(Function(f) rootWindow IsNot Nothing AndAlso String.Equals(rootWindow.GetType().Name, f.Starts, StringComparison.OrdinalIgnoreCase)).ToList()
+        If flows.Count > 0 Then
+            rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tutoriale"))
+            rows.AddRange(flows.Select(Function(f) TutorialRow(f)))
+        End If
         ' Always the last row (operator, 01.10.2026): what the last versions changed.
         rows.Add(New KBotHelpRow(KBotHelpRowKind.Topic, "Ce e nou?") With {
             .Tag = WhatsNewMarker.Instance,
@@ -293,6 +301,12 @@ Public NotInheritable Class HelpService
         Private Sub New()
         End Sub
     End Class
+
+    ''' <summary>Slice 000T: the row of an interactive tutorial (popup list and typed-question results).</summary>
+    Friend Shared Function TutorialRow(k_flow As TutorialFlow) As KBotHelpRow
+        Return New KBotHelpRow(KBotHelpRowKind.Tour, k_flow.Title) With {
+            .Tag = k_flow, .ToolTipText = "K-BOT te conduce pe ecran, pas cu pas, și așteaptă să faci tu fiecare pas."}
+    End Function
 
     Private Shared Function TourRow(t As HelpTour) As KBotHelpRow
         Return New KBotHelpRow(KBotHelpRowKind.Tour, t.Title) With {
@@ -336,6 +350,22 @@ Public NotInheritable Class HelpService
             HelpTourRunner.Start(Me, tour, StepAside())
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.StartTour", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 000T: starts an interactive tutorial. Same rules as a tour for the help window (it steps
+    ''' aside and comes back); a tutorial the login may not read is not started.
+    ''' </summary>
+    Public Sub StartTutorial(k_id As String)
+        Try
+            Dim flow As TutorialFlow = Library.FindTutorial(k_id)
+            If flow Is Nothing Then Throw New ArgumentException("Unknown tutorial '" & k_id & "'.", NameOf(k_id))
+            If Not VisibleParts().Contains(flow.Part) Then Return
+            TutorialRunner.Start(Me, flow, StepAside())
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.StartTutorial", ex)
             Throw
         End Try
     End Sub

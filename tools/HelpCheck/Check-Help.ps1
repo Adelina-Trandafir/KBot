@@ -37,10 +37,12 @@ $CoverageSkip = @(
     'CabNoteReceiptPage', 'DdfFileBrowser', 'DdfFisierPreview', 'DdfValoriPage', 'ReaderHostPreview',
     'XfaXmlPreview', 'RegulaPaginaEditor', 'OrdDocumentePage', 'OrdAtasamentePage', 'OrdBeneficiariPage',
     'StartupLauncherForm', 'PlaceholderView',
-    'HelpForm', 'HelpCaptureForm', 'HelpCapturePromptForm', 'HelpCaptureOverlay', 'HelpTourBubble', 'HelpTourFrame'
+    'HelpForm', 'HelpCaptureForm', 'HelpCapturePromptForm', 'HelpCaptureOverlay', 'HelpTourBubble', 'HelpTourFrame',
+    'TutorialDesignerForm', 'TutorialPicker', 'TutorialDim', 'TutorialRecorderBar'   # slice 000T: operator tool / the tutorial's own windows
 )
 $HeaderKeys = @('id', 'title', 'part', 'order', 'parent', 'screens', 'keywords', 'open')
 $TourKeys = @('id', 'title', 'part', 'topic', 'screens')
+$TutorialKeys = @('id', 'title', 'part', 'keywords', 'starts', 'host-key')   # slice 000T
 $Parts = @('contabil', 'avansat', 'director')
 $GotoPrefix = '^(view:[a-z0-9_]+|menu:[a-z0-9_]+|setari:[a-z0-9_]+|help|help:[a-z0-9._-]+)$'
 
@@ -71,7 +73,7 @@ function Read-Header([string]$path, [string[]]$allowed) {
 
 # --- Topics
 $topicFiles = Get-ChildItem -LiteralPath $content -Recurse -Filter *.md |
-    Where-Object { $_.Name -ne 'README.md' -and $_.FullName -notlike "*\tours\*" }
+    Where-Object { $_.Name -ne 'README.md' -and $_.FullName -notlike "*\tours\*" -and $_.FullName -notlike "*\tutorials\*" }
 $topics = @()
 foreach ($f in $topicFiles) {
     $h = Read-Header $f.FullName $HeaderKeys
@@ -221,6 +223,10 @@ function Test-SliceId([string]$id, [string]$where) {
     $ok = $false
     if ($id -eq 'fara-felie') { $ok = $true }
     elseif ($id -match '^0000-\d{2}$') { $ok = [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id-*.md") }
+    # Slice 000T (interactive tutorials): the id is 000T or 000T-NN, with a worklog or a row in the index.
+    elseif ($id -match '^000T(-\d{2})?$') {
+        $ok = ($statusIndex -match '(?m)^\|\s*000T[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
     elseif ($id -match '^(\d{4})(-\d{2})?$') {
         $ok = ($statusIndex -match "(?m)^\|\s*$($Matches[1])[\s|/-]") -or
               [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
@@ -248,8 +254,62 @@ function Test-SourceTags([string]$body, [string]$file, [bool]$needIntro) {
 foreach ($t in $topics) { Test-SourceTags $t.__body $t.__file $true }
 foreach ($tr in $tours) { Test-SourceTags $tr.__body $tr.__file $false }
 
+# --- Interactive tutorials (slice 000T): <content>\tutorials\*.md. Header + one '## ' per step with
+# the keys the runner parses (TutorialFlow.vb). Keys and values are ASCII except the bubble text.
+$tutorials = @()
+$tutDir = Join-Path $content 'tutorials'
+if (Test-Path $tutDir) {
+    $StepKeys = @('target', 'part', 'anchor', 'wait', 'when', 'optional', 'merge', 'why', 'dim', 'allow')
+    $WaitKinds = @('manual', 'select', 'click', 'closes', 'changed', 'checked', 'tab', 'opens', 'signal')
+    $WhenKinds = @('always', 'enabled', 'editable', 'visible', 'checked', 'unchecked')
+    foreach ($f in Get-ChildItem -LiteralPath $tutDir -Filter *.md | Where-Object { $_.Name -ne 'README.md' }) {
+        $h = Read-Header $f.FullName $TutorialKeys
+        if ($null -eq $h) { continue }
+        foreach ($k in 'id', 'title') { if (-not $h[$k]) { Add-Err "$($h.__file): missing '$k'" } }
+        if ($h.part -and $Parts -notcontains $h.part) { Add-Err "$($h.__file): part '$($h.part)' is not valid" }
+        if ($h.starts) { Test-Key $h.starts $h.__file }
+        foreach ($stepText in ($h.__body -split '(?m)^## ' | Select-Object -Skip 1)) {
+            $title = ($stepText -split "`r?`n")[0].Trim()
+            $keys = @{}
+            foreach ($line in ($stepText -split "`r?`n" | Select-Object -Skip 1)) {
+                if ($line -match '^\s*<!--') { continue }
+                if ($line.Trim() -eq '') { continue }
+                if ($line -match '^(?<k>[a-z]+):\s*(?<v>.*)$' -and $StepKeys -contains $Matches.k) { $keys[$Matches.k] = $Matches.v.Trim() } else { break }
+            }
+            $w = "$($h.__file) step '$title'"
+            if ($keys.ContainsKey('target')) { Test-Key $keys.target $w }
+            if ($keys.ContainsKey('part')) {
+                if (-not $keys.ContainsKey('target')) { Add-Err "${w}: part without a target:" } else { Test-Part $keys.target $keys.part $w }
+            }
+            if ($keys.ContainsKey('wait')) {
+                $kind = $keys.wait.Split(':')[0].Trim().ToLowerInvariant()
+                if ($WaitKinds -notcontains $kind) { Add-Err "${w}: unknown wait kind '$kind'" }
+                elseif (@('tab', 'opens', 'signal') -contains $kind -and -not ($keys.wait -match ':\s*\S')) { Add-Err "${w}: wait: $kind needs a value" }
+                if ($kind -eq 'opens' -and $keys.wait -match ':\s*(\S+)') {
+                    $ot = $Matches[1]
+                    if (-not $typeFile.ContainsKey($ot)) { Add-Err "${w}: opens: type '$ot' not found in src\" }
+                    elseif (-not ($typeFile[$ot] | Where-Object { (Get-Content -LiteralPath $_ -Raw -Encoding UTF8) -match 'Implements\s+IKBotTutorialHost' })) {
+                        "  warning: $w opens '$ot', which does not implement IKBotTutorialHost (generic targeting only; modal windows may not work)"
+                    }
+                }
+                if (@('select', 'click', 'changed', 'checked', 'tab', 'closes') -contains $kind -and -not $keys.ContainsKey('target')) { Add-Err "${w}: wait: $kind needs a target:" }
+            }
+            if ($keys.ContainsKey('when')) {
+                $wk = $keys.when.Split(':')[0].Trim().ToLowerInvariant()
+                if ($WhenKinds -notcontains $wk) { Add-Err "${w}: unknown when kind '$wk'" }
+                if (@('checked', 'unchecked') -contains $wk -and $keys.when -match ':\s*(\S+)') { Test-Key $Matches[1] $w }
+                if (@('enabled', 'editable', 'visible') -contains $wk -and -not $keys.ContainsKey('target')) { Add-Err "${w}: when: $wk needs a target:" }
+            }
+            if ($keys.optional -eq 'yes' -and -not $keys.why) { Add-Err "${w}: optional step without a why: (the reason it is optional)" }
+            foreach ($yn in 'optional', 'merge') { if ($keys.ContainsKey($yn) -and @('yes', 'no', 'true', 'false') -notcontains $keys[$yn].ToLowerInvariant()) { Add-Err "${w}: $yn takes yes or no" } }
+        }
+        Test-SourceTags $h.__body $h.__file $false
+        $tutorials += $h
+    }
+}
+
 # --- Output
-"Help check: $($topics.Count) topics, $($tours.Count) tours, $($captureIds.Count) capture tags."
+"Help check: $($topics.Count) topics, $($tours.Count) tours, $($tutorials.Count) tutorials, $($captureIds.Count) capture tags."
 
 if ($Coverage) {
     ''

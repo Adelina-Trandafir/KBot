@@ -178,3 +178,33 @@ topic's `screens:`. «Shows» means the form, or a control / view inside it, is 
 main window that is the selected view. When several windows have tours, the popup puts them in
 one folder per window. Give a tour `screens:` only when its topic's screens do not name the
 window it starts on (e.g. `tur-avansat`: its topic lists one checkbox, the tour runs in Setări).
+
+## Interactive tutorials (slice 000T)
+
+A tour shows; a **tutorial waits for the user to do it** (the runner never clicks for them): ring on the
+target, the rest of the window dimmed, a bubble with the instruction, and the next step comes by itself when
+the user did the action. Anything else on the dimmed window (or a key typed outside the allowed places) asks
+«Vrei să ieși din tutorial?» (Da ends it, Nu stays on the step). One file per tutorial in `tutorials/` (NOT a
+topic, NOT a tour; the loaders skip it). Header keys: `id`, `title`, `part`, `keywords` (words the typed
+question may use), `starts` (the window type that must be open), `host-key` (a free ASCII string handed to every
+window the tutorial opens: `IKBotTutorialHost.TutorialSupports/TutorialBegin`, so one window can serve several
+tutorials). One `## ` per step; its first lines are keys, then the bubble text; every step carries its
+`<!-- slice: ... -->` tag like a tour step.
+
+| Step key | Meaning |
+|----------|---------|
+| `target:` | `TypeName` or `TypeName.controlName` (as a tour) — also the control the wait is attached to |
+| `part:` | a painted piece of the target (as a tour; a part hidden by state is NOT revealed, the whole control is used) |
+| `anchor:` | a named place only the owning window knows (`IKBotTutorialHost.TutorialAnchor`: the rows that have reservations, the row with the «+») |
+| `wait:` | `manual` (default; the «Înainte» button) · `select` (tree row) · `click` (button; for a tree only its row button) · `tab:<key>` (nav item selected) · `opens:<Type>` · `closes` · `changed` · `checked` · `signal:<name>` (the window raises `TutorialSignal`) |
+| `when:` | the step applies only if `enabled` / `editable` / `visible` (the target) or `checked:Type.box` / `unchecked:Type.box`; otherwise it is skipped |
+| `optional:` `why:` | `yes` adds «Sari peste»; `why:` (required) is shown as «Pas opțional: ...» |
+| `merge:` | `yes`: the NEXT step's action also completes this one (select a row and press its «+» are one click) |
+| `dim:` | `yes` (default) or `ring` (ring only) |
+| `allow:` | extra places the user may use, `Type.control, ...` |
+
+Look-ahead: while a step is on, the user may also do the action of the next step when this one is optional or
+merged, going on past optional steps up to the first mandatory one. `Check-Help.ps1` validates the files.
+A window the tutorial opens should implement `IKBotTutorialHost` (the checker warns when it does not): it is
+told to start / stop and builds nothing itself — the runner makes the ring, veil and bubble for it after it is
+shown, so a modal window does not disable them.

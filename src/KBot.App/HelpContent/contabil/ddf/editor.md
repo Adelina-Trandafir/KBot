@@ -14,7 +14,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 <!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. -->
 
 ## Antetul
-<!-- slice: 0081-09, 0081-10, 0094-02 -->
+<!-- slice: 0081-09, 0081-10, 0094-02, 0094-03 -->
 
 | Câmp | Ce e de știut |
 |------|---------------|
@@ -23,7 +23,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 | **Obiectul documentului** | se scrie și în descrierea angajamentului (peste 255 de caractere se scurtează) |
 | **Program** | programul documentului |
 | **Compartiment** | alegi unul folosit pe documentele anterioare sau scrii altul |
-| **Partener asociat** | bifat, leagă documentul de un partener principal, ales în câmpul de lângă; el se scrie pe toate rândurile din A și B. Pentru mai mulți parteneri vezi pagina «Parteneri» |
+| **Partener asociat** | bifat, leagă documentul de un partener principal, ales în câmpul de lângă; el se scrie pe toate rândurile din A și B. Pentru mai mulți parteneri vezi pagina «Parteneri», care apare doar cât timp bifa e pusă |
 | **Număr revizie** | rezervat pe server; revizia inițială e 0 |
 | **Data reviziei** | nu poate fi mai veche decât ultima revizie a angajamentului |
 | **Descriere scurtă** | motivul revizuirii; descrierea lungă primește același text, rescris apoi pe pagina «Descriere» |
@@ -59,8 +59,10 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
   documentului. Capturile venite din FOREXE nu se pot șterge de aici, dar se pot salva pe disc.
 
 ## Parteneri
-<!-- slice: 0094-02, 0084-02, 0000-28 -->
+<!-- slice: 0094-02, 0094-03, 0084-02, 0000-28 -->
 Pagina **Parteneri**, în dreapta barei cu pagini, arată toți partenerii asociați documentului.
+Apare doar când «Partener asociat» este bifat; debifat, pagina dispare din bara cu pagini (dacă
+era deschisă, editorul trece la Secțiunea A).
 Majoritatea documentelor au un singur partener și pentru ele ajunge câmpul din antet; pagina e
 pentru documentele cu mai mulți.
 
@@ -70,7 +72,8 @@ pentru documentele cu mai mulți.
   apeși **Asociază**. Un partener deja asociat nu mai apare în listă.
 - **Scoate din asociere** scoate partenerul selectat; pe cel principal nu îl poți scoate.
 - Lista se salvează odată cu documentul, cu **Salvează documentul**.
-- Dacă debifezi «Partener asociat», partenerul principal dispare din listă; ceilalți rămân.
+- Dacă debifezi «Partener asociat», partenerul principal dispare din listă; ceilalți rămân, iar
+  pagina se ascunde până bifezi din nou.
 
 > Doar partenerul principal se scrie pe rândurile din secțiunile A și B. Ceilalți rămân asociați
 > documentului.
