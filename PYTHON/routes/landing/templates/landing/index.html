@@ -119,14 +119,14 @@
     </a>
     <nav class="topnav" aria-label="Secțiunile paginii">
       {% for n in c.nav %}<a href="#{{ n.id }}">{{ n.label }}</a>{% endfor %}
-      {% if c.links.contact %}<a href="{{ c.links.contact }}">Contact</a>{% endif %}
     </nav>
     <div class="topbar__cta">
+      {% if c.links.portal %}<a class="btn btn--ghost btn--sm" href="{{ c.links.portal }}">{{ c.links.portal_label or 'Intră în cont' }}</a>{% endif %}
       {% if c.links.download %}
-        <a class="btn btn--ghost btn--sm" href="{{ c.links.register }}">Înregistrează unitatea</a>
+        <a class="btn btn--ghost btn--sm" href="{{ c.links.register }}">Înregistrează<span class="btn__more"> unitatea</span></a>
         <a class="btn btn--primary btn--sm" href="{{ c.links.download }}">Descarcă K-BOT</a>
       {% else %}
-        <a class="btn btn--primary btn--sm" href="{{ c.links.register }}">Înregistrează unitatea</a>
+        <a class="btn btn--primary btn--sm" href="{{ c.links.register }}">Înregistrează<span class="btn__more"> unitatea</span></a>
       {% endif %}
     </div>
   </div>
@@ -136,6 +136,7 @@
 <nav class="dots" aria-label="Navigare între secțiuni">
   <a href="#acasa" data-group="acasa" data-label="Acasă"></a>
   <a href="#pentru-toti" data-group="pentru-toti" data-label="Pentru toți utilizatorii"></a>
+  <a href="#tutoriale" data-group="tutoriale" data-label="Tutoriale"></a>
   <a href="#pentru-contabil" data-group="pentru-contabil" data-label="Pentru contabil"></a>
   <a href="#extrase" data-group="extrase" data-label="Extrase bancare"></a>
   <a href="#pentru-director" data-group="pentru-director" data-label="Pentru director"></a>
@@ -201,6 +202,25 @@
         <h3><span class="card__ico">{{ ico(card.icon) }}</span>{{ card.title }}</h3>
         {{ blocks(card.blocks) }}
       </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ======== 2b. tutorials ======== #}
+<section class="screen" id="tutoriale" data-screen data-group="tutoriale">
+  <div class="wrap">
+    <div class="split split--laptop split--rev">
+      <div class="reveal">
+        <span class="pill">{{ c.tutorials.kicker }}</span>
+        <h2>{{ c.tutorials.title }}</h2>
+        {% for p in c.tutorials.blocks %}<p class="{{ 'lead' if loop.first else '' }}">{{ p|rich }}</p>{% endfor %}
+      </div>
+      <div class="reveal">{{ laptop(c.tutorials.image) }}</div>
+    </div>
+    <div class="steps reveal">
+      {% for s in c.tutorials.steps %}
+      <div class="step"><span class="card__ico">{{ ico(s.icon) }}</span><span>{{ s.text }}</span></div>
       {% endfor %}
     </div>
   </div>
@@ -508,7 +528,7 @@
       {%- else -%}
         <a class="btn btn--primary btn--lg" href="{{ c.links.register }}">{{ ico('arrow') }} {{ c.finalcta.primary }}</a>
       {%- endif -%}
-      {% if c.links.contact %}<a class="btn btn--ghost btn--lg" href="{{ c.links.contact }}">Contact</a>{% endif %}
+      {% if c.links.contact %}<a class="btn btn--ghost btn--lg" href="{{ c.links.contact }}">{{ c.links.contact_label or 'Contact' }}</a>{% endif %}
     </div>
     <p class="closing__note">{{ c.finalcta.note }}</p>
   </div>

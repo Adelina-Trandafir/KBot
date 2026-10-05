@@ -150,4 +150,5 @@ Apasă «Asociază».
 <!-- slice: 000T -->
 target: DdfEditForm.btnSalveaza
 wait: click
+guard: yes
 Apasă «Salvează documentul». Pașii opționali de mai sus se pot sări cu «Sari peste».

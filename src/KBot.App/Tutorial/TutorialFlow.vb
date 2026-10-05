@@ -76,6 +76,13 @@ Public NotInheritable Class TutorialStep
     ''' <summary>Romanian: why an optional step is optional.</summary>
     Public Property Why As String = String.Empty
 
+    ''' <summary>
+    ''' Slice 000T-11: the press that completes this step (a <c>wait: click</c> on a button that CHANGES something, such as
+    ''' «Salveaza») is NOT carried out: it is swallowed and the tutorial ends, so nothing is saved by mistake. The operator
+    ''' presses the button again, outside the tutorial, when they mean it. The <c>guard:</c> key (yes / no).
+    ''' </summary>
+    Public Property Guard As Boolean
+
     ''' <summary>True (default) = everything but the target is dimmed; False = only the ring.</summary>
     Public Property DimRest As Boolean = True
 
@@ -129,7 +136,7 @@ Public NotInheritable Class TutorialFlow
     <Browsable(False)>
     Public Property SourcePath As String = String.Empty
 
-    Private Shared ReadOnly StepKeys As String() = {"target", "part", "anchor", "wait", "when", "optional", "merge", "why", "dim", "allow"}
+    Private Shared ReadOnly StepKeys As String() = {"target", "part", "anchor", "wait", "when", "optional", "merge", "why", "dim", "allow", "guard"}
 
     ''' <summary>Reads a tutorial file. Throws <see cref="ArgumentException"/> on a malformed file.</summary>
     Public Shared Function ParseFile(k_file As String) As TutorialFlow
@@ -209,6 +216,9 @@ Public NotInheritable Class TutorialFlow
 
     Private Shared Sub Finish(k_step As TutorialStep, k_body As StringBuilder)
         k_step.Text = HelpTour.CleanText(k_body.ToString())
+        If k_step.Guard AndAlso k_step.WaitKind <> TutorialWaitKind.Click Then
+            Throw New ArgumentException("the step '" & k_step.Title & "' has 'guard: yes' but does not 'wait: click' (a guard swallows the press it waits for)")
+        End If
         If k_step.IsOptional AndAlso k_step.Why.Length = 0 Then
             Throw New ArgumentException("the optional step '" & k_step.Title & "' has no 'why:' (the reason it is optional)")
         End If
@@ -230,6 +240,7 @@ Public NotInheritable Class TutorialFlow
             Case "when" : ParseWhen(k_step, k_value)
             Case "optional" : k_step.IsOptional = ParseYesNo(k_key, k_value)
             Case "merge" : k_step.Merge = ParseYesNo(k_key, k_value)
+            Case "guard" : k_step.Guard = ParseYesNo(k_key, k_value)
             Case "why" : k_step.Why = k_value
             Case "dim"
                 If String.Equals(k_value, "ring", StringComparison.OrdinalIgnoreCase) Then
@@ -340,6 +351,7 @@ Public NotInheritable Class TutorialFlow
             If st.IsOptional Then sb.Append("optional: yes").Append(vbLf)
             If st.Why.Length > 0 Then sb.Append("why: ").Append(st.Why).Append(vbLf)
             If st.Merge Then sb.Append("merge: yes").Append(vbLf)
+            If st.Guard Then sb.Append("guard: yes").Append(vbLf)
             If Not st.DimRest Then sb.Append("dim: ring").Append(vbLf)
             If st.Allow.Count > 0 Then sb.Append("allow: ").Append(String.Join(", ", st.Allow)).Append(vbLf)
             sb.Append(st.Text.Replace("• ", "- ")).Append(vbLf)

@@ -146,4 +146,5 @@ Apasă «Adaugă» și alege de pe disc una sau mai multe imagini. Se încarcă 
 
 target: OrdEditForm.btnSalveaza
 wait: click
+guard: yes
 Apasă «Salvează ordonanțarea». Pașii opționali de mai sus se pot sări cu «Sari peste». K-BOT verifică întâi tot și spune dintr-o dată ce lipsește; dacă totul e în regulă, te întreabă «Salvez datele?» și scrie ordonanțarea dintr-o singură mișcare.

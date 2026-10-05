@@ -267,7 +267,7 @@ foreach ($tr in $tours) { Test-SourceTags $tr.__body $tr.__file $false }
 $tutorials = @()
 $tutDir = Join-Path $content 'tutorials'
 if (Test-Path $tutDir) {
-    $StepKeys = @('target', 'part', 'anchor', 'wait', 'when', 'optional', 'merge', 'why', 'dim', 'allow')
+    $StepKeys = @('target', 'part', 'anchor', 'wait', 'when', 'optional', 'merge', 'why', 'dim', 'allow', 'guard')
     $WaitKinds = @('manual', 'select', 'click', 'closes', 'changed', 'checked', 'tab', 'opens', 'signal', 'anchor')
     $WhenKinds = @('always', 'enabled', 'editable', 'visible', 'checked', 'unchecked', 'condition')
     foreach ($f in Get-ChildItem -LiteralPath $tutDir -Filter *.md | Where-Object { $_.Name -ne 'README.md' }) {
@@ -311,7 +311,8 @@ if (Test-Path $tutDir) {
                 if (@('enabled', 'editable', 'visible') -contains $wk -and -not $keys.ContainsKey('target')) { Add-Err "${w}: when: $wk needs a target:" }
             }
             if ($keys.optional -eq 'yes' -and -not $keys.why) { Add-Err "${w}: optional step without a why: (the reason it is optional)" }
-            foreach ($yn in 'optional', 'merge') { if ($keys.ContainsKey($yn) -and @('yes', 'no', 'true', 'false') -notcontains $keys[$yn].ToLowerInvariant()) { Add-Err "${w}: $yn takes yes or no" } }
+            if ($keys.guard -and @('yes', 'true') -contains $keys.guard.ToLowerInvariant() -and (-not $keys.wait -or $keys.wait.Split(':')[0].Trim().ToLowerInvariant() -ne 'click')) { Add-Err "${w}: guard: yes needs wait: click" }
+            foreach ($yn in 'optional', 'merge', 'guard') { if ($keys.ContainsKey($yn) -and @('yes', 'no', 'true', 'false') -notcontains $keys[$yn].ToLowerInvariant()) { Add-Err "${w}: $yn takes yes or no" } }
         }
         Test-SourceTags $h.__body $h.__file $false
         $tutorials += $h

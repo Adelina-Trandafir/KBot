@@ -6,7 +6,10 @@
   "links": {
     "register": "/inregistrare",
     "download": null,
-    "contact": null
+    "portal": "/portal",
+    "portal_label": "Intră în cont",
+    "contact": "/detalii",
+    "contact_label": "Cere detalii"
   },
   "nav": [
     {
@@ -16,6 +19,10 @@
     {
       "id": "pentru-toti",
       "label": "Funcționalități"
+    },
+    {
+      "id": "tutoriale",
+      "label": "Tutoriale"
     },
     {
       "id": "roluri",
@@ -137,6 +144,36 @@
           "Mesajele importante afișate în aplicație sunt păstrate și în jurnalul de activitate.",
           "Așa că momentul acela clasic în care apeși reflex pe „OK” și, o secundă mai târziu, te întrebi „stai... ce scria?” nu mai trebuie urmat de investigații criminalistice."
         ]
+      }
+    ]
+  },
+  "tutorials": {
+    "kicker": "K-BOT te învață singur",
+    "title": "Nu ai nevoie de instruire separată: aplicația te conduce pas cu pas",
+    "image": {
+      "file": "fereastra-principala.png",
+      "alt": "Fereastra principală K-BOT",
+      "w": 1922,
+      "h": 1000
+    },
+    "blocks": [
+      "K-BOT vine cu **tutoriale interactive** încorporate. Un tutorial nu este un film și nu este un manual de citit: îți spune pe ecran ce ai de făcut, apoi **așteaptă să faci tu pasul** și abia după aceea merge mai departe.",
+      "Totul se întâmplă pe ecranul tău, în fereastra pe care o folosești de fapt. Zona din jur se întunecă, iar locul unde trebuie să acționezi rămâne luminat. K-BOT nu apasă nimic în locul tău.",
+      "Poți ieși oricând; dacă ai făcut altceva decât pasul cerut, tutorialul se oprește singur, fără să strice nimic.",
+      "Lista tutorialelor crește constant și va acoperi toate fluxurile de lucru existente și pe cele care vin. La prima pornire, un tutorial scurt îți arată unde le găsești; se pornesc din «?», de lângă butoanele de închidere ale ferestrei."
+    ],
+    "steps": [
+      {
+        "icon": "help",
+        "text": "Apeși «?» și alegi un tutorial"
+      },
+      {
+        "icon": "flow",
+        "text": "Faci pașii, unul câte unul, chiar în aplicație"
+      },
+      {
+        "icon": "check",
+        "text": "Ajungi la capăt cu lucrarea făcută"
       }
     ]
   },

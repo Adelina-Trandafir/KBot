@@ -298,13 +298,13 @@ Public Class PlatiView
             rootItem.Bold = True
 
             ' Foldere de lună, cronologic.
-            Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(r.DataPlata)).
+            Dim monthGroups = rows.GroupBy(Function(r) MonthKeyOf(TreeDateOf(r))).
                                    OrderBy(Function(g) g.Key)
 
             For Each mg In monthGroups
                 Dim monthRows As List(Of PlataRow) = mg.ToList()
                 Dim monthSum As Double = monthRows.Sum(Function(r) r.Suma)
-                Dim monthContainsPlus As Boolean = monthRows.Any(Function(r) SameDay(r.DataPlata, plusDay))
+                Dim monthContainsPlus As Boolean = monthRows.Any(Function(r) SameDay(TreeDateOf(r), plusDay))
                 Dim monthPlus As Image = If(monthContainsPlus, PlusIcon(palette), Nothing)
 
                 Dim monthItem As AdvancedTreeControl.TreeItem =
@@ -315,7 +315,7 @@ Public Class PlatiView
                 monthItem.Tag = monthRows
                 monthItem.Bold = True
                 ' Frunze = ZIUA (toate plățile ei într-un singur nod), cronologic.
-                Dim dayGroups = monthRows.GroupBy(Function(r) DayKeyOf(r.DataPlata)).
+                Dim dayGroups = monthRows.GroupBy(Function(r) DayKeyOf(TreeDateOf(r))).
                                           OrderBy(Function(g) g.Key)
                 For Each dg In dayGroups
                     Dim dayRows As List(Of PlataRow) = dg.ToList()
@@ -343,11 +343,20 @@ Public Class PlatiView
         End Try
     End Function
 
-    ' Cea mai veche zi (Min DataPlata) care conține cel puțin o plată cu AreOrd = False.
+    ' Data sub care o plata sta in arbore: data bancii (extrasul) cand exista, altfel data
+    ' platii. Doar afisare/grupare -- ordonantarea ramane pe DataPlata (PrimaDataDin, LunaAnOf).
+    Private Shared Function TreeDateOf(k_row As PlataRow) As Date?
+        If k_row.Extras IsNot Nothing AndAlso k_row.Extras.DataBanca.HasValue Then
+            Return k_row.Extras.DataBanca
+        End If
+        Return k_row.DataPlata
+    End Function
+
+    ' Cea mai veche zi din arbore (Min TreeDateOf) care conține cel puțin o plată cu AreOrd = False.
     ' Nothing dacă toate sunt deja ordonantate. Oglindește snapshot-ul TOP 1 din Show_Plati.
     Private Shared Function OldestUnordonantatDay(rows As List(Of PlataRow)) As Date?
-        Dim eligible = rows.Where(Function(r) r.DataPlata.HasValue AndAlso Not r.AreOrd).
-                            Select(Function(r) r.DataPlata.Value.Date)
+        Dim eligible = rows.Where(Function(r) TreeDateOf(r).HasValue AndAlso Not r.AreOrd).
+                            Select(Function(r) TreeDateOf(r).Value.Date)
         If Not eligible.Any() Then Return Nothing
         Return eligible.Min()
     End Function
@@ -366,7 +375,7 @@ Public Class PlatiView
                     row(COL_CLSF) = r.ClsfEfectiv
                     row(COL_PLATITOR) = If(r.Extras IsNot Nothing, r.Extras.PlatitorNume, String.Empty)
                     row(COL_NRDOC) = r.NrOP
-                    row(COL_DATA) = ShortDate(r.DataPlata)
+                    row(COL_DATA) = ShortDate(TreeDateOf(r))
                     row(COL_SUMA) = r.Suma
                 Next
             End If
@@ -435,7 +444,7 @@ Public Class PlatiView
     ' rand cu data o numeste). Nothing pentru grupul «fara data».
     Private Shared Function PrimaDataDin(rows As List(Of PlataRow)) As Date?
         For Each r As PlataRow In rows
-            If r.DataPlata.HasValue Then Return r.DataPlata.Value.Date
+            If TreeDateOf(r).HasValue Then Return TreeDateOf(r).Value.Date
         Next
         Return Nothing
     End Function
@@ -540,8 +549,8 @@ Public Class PlatiView
 
     ' LunaAn în formatul Access (Month/Year, ex. „1/2026") pentru evenimentul de ordonantare.
     Private Shared Function LunaAnOf(r As PlataRow) As String
-        If Not r.DataPlata.HasValue Then Return String.Empty
-        Return $"{r.DataPlata.Value.Month}/{r.DataPlata.Value.Year}"
+        If Not TreeDateOf(r).HasValue Then Return String.Empty
+        Return $"{TreeDateOf(r).Value.Month}/{TreeDateOf(r).Value.Year}"
     End Function
 
     ' NOTA: `DayOf(r)` a disparut aici — singurul lui apel, din Tree_RightIconClicked, a trecut

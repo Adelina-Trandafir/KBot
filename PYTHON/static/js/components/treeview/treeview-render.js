@@ -99,6 +99,9 @@ export const treeViewRenderMixin = {
       if (hasChildren) itemClasses += ' has-children';
       if (!asParent && isMatched) itemClasses += ' matched';
       if (isParentOfMatched) itemClasses += ' parent-matched';
+      if (nodeIdStr === String(this.selectedValue)) itemClasses += ' selected';
+      if (node.bold) itemClasses += ' is-bold';
+      if (node.error) itemClasses += ' is-error';
 
       html += `
     <div class="treeview-item-wrapper">
@@ -110,6 +113,7 @@ export const treeViewRenderMixin = {
            data-has-children="${hasChildren}"
            data-path='${this.escapeHtml(pathString)}'
            data-index="${itemIndex}"
+           ${node.tooltip ? `title="${this.escapeHtml(node.tooltip)}"` : ''}
            data-text-width="${Math.ceil(totalWidth)}">
         ${
           hasChildren
@@ -126,7 +130,7 @@ export const treeViewRenderMixin = {
           this.options.checkable ? ` title="${this.escapeHtml(nodeLabel)}"` : ''
         }>
           ${!asParent ? this.highlightText(nodeLabel, query, this.localSearchQuery) : nodeLabel}
-        </span>
+        </span>${node.badge ? `<span class="treeview-badge">${this.escapeHtml(node.badge)}</span>` : ''}
       </div>
       ${
         hasChildren && isExpanded

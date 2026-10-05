@@ -243,10 +243,18 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 | 0107-02 | Clasificații bugetare: coloana «Total» pe rândul grilei de buget, fără total jos; rectificările fără rând de total când nu e aleasă o frunză (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: 0000-44) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 | 0108 | Creditul bugetar pe clasificație (`FX_Indicatori_Buget`), bugetul pe zi fără trimestre, creditul inițial citit o singură dată din «Informații complete contract», `DTI`/`DTQ`, Migrator: totalul în Trim1 (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul: 0000-45) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
 | 0109 | «Actualizează angajamente...» din meniul listei și fără descărcare multi-thread: angajamentele bifate intră în «Coada robotului», unul după altul, ca la apăsări succesive pe iconița fiecăruia (cererea operatorului, 03.10.2026) | GATA pe cod (build curat, nimic rulat, nevăzut; ajutorul + turul: 0000-49; NOUTATI: linia de adăugat la următoarea versiune) | [0100-0109](state/KBOT_STATUS_0100-0109.md) |
+| 0110-01 | Sait: secțiunea «K-BOT te învață singur» (tutoriale interactive) pe pagina publică (cererea operatorului, 05.10.2026) | GATA pe cod, nevăzut, server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-02 | Sait: pagina «Cere mai multe detalii» (`/detalii`, tabel `FX_CereriDetalii`, mail la info@avatarsoft.ro) | GATA pe cod, probat cu stub; **DDL `sql/0110_02_fx_cereri_detalii.sql` + server nedeployate** | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-03 | Sait: portal, autentificare web (email + parolă + cod pe e-mail), sesiune, alegerea unității, monitorul de sesiune | GATA pe cod, probat cu server de probă; server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-04 | Sait: portal, intrare cu certificat digital calificat (nginx mTLS, host separat `cert.k-bot.ro`) | Deployat pe VPS și probat real cu un certificat certSIGN; deschise în worklog | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-05 | Sait: control JS DGV doar-citire (`static/js/dgv/`) | GATA pe cod, comportament probat în browser, aspectul nevăzut pe ecran | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-06 | Sait: pagini de vizualizare (Sumar, Rezervări, Recepții, Plăți) | GATA pe cod, probat cu date fictive; baza reală neîncercată, server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-07 | Sait: cercetare PDF (XFA) în browser | Cercetare încheiată (doar verdict, fără cod) | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+| 0110-08 | Sait: fila «Documente» (DDF, ORD, note) cu vizualizator PDF doar-citire | GATA pe cod, probat cu PDF-urile-exemplu; DDF semnat din K-BOT neavut, server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0110.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0111.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

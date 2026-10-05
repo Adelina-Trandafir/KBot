@@ -79,6 +79,7 @@ why: Folosești golirea doar dacă vrei să o iei de la capăt cu modificările 
 <!-- slice: 000T-10 -->
 target: AsociereForm.btnSalveaza
 wait: click
+guard: yes
 optional: yes
 why: Salvezi doar dacă ai mutat ceva; altfel închide fereastra cu «Renunță».
 Apasă <b>«Salvează legăturile»</b>. Nimic nu pleacă spre server până la acest buton, iar după salvare recepțiile se reîncarcă.<BR>

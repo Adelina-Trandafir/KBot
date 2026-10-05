@@ -231,6 +231,39 @@ def send_operator_code(to_address, code, minutes):
     _deliver(msg, conf)
 
 
+def send_portal_code(to_address, code, minutes):
+    """
+    The second factor of the sign-in to the web area of registered users (slice 0110-03).
+    Same contract as the others: MailNotConfigured without SMTP_HOST, smtplib errors propagate.
+    """
+    conf = _smtp_config()
+
+    msg = EmailMessage()
+    msg["Subject"] = "K-BOT: codul de acces la contul dumneavoastră"
+    msg["From"] = conf["sender"]
+    msg["To"] = to_address
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = _message_id(conf)
+    msg.set_content(
+        "\n".join([
+            "Bună ziua,",
+            "",
+            "Cineva s-a autentificat cu parola dumneavoastră în zona K-BOT pentru utilizatori.",
+            "",
+            f"Codul de acces este:  {code}",
+            "",
+            f"Codul este valabil {minutes} minute și poate fi folosit o singură dată.",
+            "Dacă nu ați fost dumneavoastră, schimbați parola contului K-BOT cât mai repede.",
+            "",
+            "K-BOT",
+            "",
+        ])
+    )
+
+    logger.info("portal code mail -> %s via %s:%s", _mask(to_address), conf["host"], conf["port"])
+    _deliver(msg, conf)
+
+
 def send_registration_rejected(to_address, denumire, motiv):
     """
     Tells the applicant their request was turned down, with the operator's reason
@@ -321,3 +354,53 @@ def _mask(address):
 
 
 mask_address = _mask
+
+
+def details_address():
+    """
+    Where a «Cere mai multe detalii» request is mailed (slice 0110-02): `DETALII_EMAIL` in
+    config.py. Empty means nobody is mailed -- the request is still in FX_CereriDetalii.
+    """
+    return str(_get(_read_config(), "DETALII_EMAIL", "info@avatarsoft.ro") or "").strip()
+
+
+def send_details_notice(to_address, id_cerere, nume, institutie, cf, email, telefon, mesaj):
+    """
+    Mails one «Cere mai multe detalii» request to the team (slice 0110-02).
+
+    The visitor's address is only the Reply-To, so answering is one click; nothing is sent
+    to it. Same contract as the others: MailNotConfigured without SMTP_HOST, smtplib errors
+    propagate. EmailMessage refuses a header with a line break, so nothing typed in the form
+    can add a header.
+    """
+    conf = _smtp_config()
+
+    msg = EmailMessage()
+    msg["Subject"] = f"K-BOT: cerere de detalii ({id_cerere}) - {institutie}"[:200]
+    msg["From"] = conf["sender"]
+    msg["To"] = to_address
+    msg["Reply-To"] = email
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = _message_id(conf)
+    msg.set_content(
+        "\n".join([
+            "Cineva cere mai multe detalii despre K-BOT.",
+            "",
+            f"Număr cerere:  {id_cerere}",
+            f"Nume:          {nume}",
+            f"Instituție:    {institutie}",
+            f"Cod fiscal:    {cf or '-'}",
+            f"E-mail:        {email}",
+            f"Telefon:       {telefon or '-'}",
+            "",
+            "Mesaj:",
+            mesaj or "(fără mesaj)",
+            "",
+            "Se răspunde direct acestui e-mail (Reply-To este adresa solicitantului).",
+            "K-BOT",
+            "",
+        ])
+    )
+
+    logger.info("details notice for request %s -> %s", id_cerere, _mask(to_address))
+    _deliver(msg, conf)

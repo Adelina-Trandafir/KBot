@@ -285,7 +285,7 @@ Public Class TutorialDesignerForm
         Dim copy As New TutorialStep With {
             .Title = src.Title & " (copie)", .Target = src.Target, .Part = src.Part, .Anchor = src.Anchor,
             .WaitKind = src.WaitKind, .WaitArg = src.WaitArg, .WhenKind = src.WhenKind, .WhenArg = src.WhenArg,
-            .IsOptional = src.IsOptional, .Merge = src.Merge, .Why = src.Why, .DimRest = src.DimRest, .Text = src.Text}
+            .IsOptional = src.IsOptional, .Merge = src.Merge, .Guard = src.Guard, .Why = src.Why, .DimRest = src.DimRest, .Text = src.Text}
         copy.Allow.AddRange(src.Allow)
         _flow.Steps.Insert(at + 1, copy)
         _dirty = True

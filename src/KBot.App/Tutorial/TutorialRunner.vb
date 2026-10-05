@@ -40,6 +40,8 @@ Friend NotInheritable Class TutorialRunner
     Private _neverAgain As Boolean
     Private _completed As Boolean
     Private _canBack As Boolean
+    ' Slice 000T-11: a press on the button of a guarded step was swallowed; its release is swallowed too and ends the tutorial.
+    Private _guardDown As Boolean
 
     Private _dim As TutorialDim
     Private _frame As HelpTourFrame
@@ -130,6 +132,12 @@ Friend NotInheritable Class TutorialRunner
     Private Sub Done(k_j As Integer)
         If _finished OrElse _asking Then Return
         Dim st As TutorialStep = _flow.Steps(k_j)
+        ' Slice 000T-11: a guarded step is the end (reached here by a way the filter cannot swallow, e.g. the form's Enter key).
+        If st.Guard Then
+            _completed = True
+            Finish()
+            Return
+        End If
         If st.WaitKind = TutorialWaitKind.Opens Then BeginHostOf(HelpTourRunner.FindTarget(st.WaitArg)?.FindForm())
         If _finished Then Return
         EnterStep(k_j + 1)
@@ -557,6 +565,11 @@ Friend NotInheritable Class TutorialRunner
             _lostShown = lostNow
             Dim note As String = Nothing
             If st.IsOptional Then note = "Pas opțional: " & st.Why
+            ' Slice 000T-11: the press on a guarded button only ends the tutorial; it must be said, or it looks like a button that does nothing.
+            If st.Guard Then
+                Dim guardNote As String = "Prima apăsare pe acest buton doar încheie tutorialul, fără să execute nimic. Apasă-l încă o dată, după tutorial, dacă vrei să se facă."
+                note = If(note Is Nothing, guardNote, note & " " & guardNote)
+            End If
             ' A step that points at nothing (a message) has nothing missing; only a target that is not on screen is said.
             If primary.Count = 0 AndAlso (st.Target.Length > 0 OrElse st.Anchor.Length > 0) Then
                 Dim lost As String = "Ce trebuie să faci nu e pe ecran acum; deschide vederea sau fereastra potrivită ca să îl vezi."
@@ -810,6 +823,67 @@ Friend NotInheritable Class TutorialRunner
         End Try
     End Sub
 
+    ' ── guarded buttons (slice 000T-11) ──────────────────────────────────────────
+
+    ' The index of the guarded step (one the look-ahead accepts) whose button the window <k_hwnd> belongs to, at the
+    ' pointer now; -1 when it is none. A tree without a painted part is not guarded (it is clicked all the time).
+    Private Function GuardedStepAt(k_hwnd As IntPtr) As Integer
+        If _finished OrElse _asking OrElse _index < 0 Then Return -1
+        Dim c As Control = Control.FromChildHandle(k_hwnd)
+        If c Is Nothing Then Return -1
+        For Each j As Integer In _flow.AcceptedFrom(_index)
+            Dim st As TutorialStep = _flow.Steps(j)
+            If Not st.Guard OrElse st.WaitKind <> TutorialWaitKind.Click Then Continue For
+            Dim target As Control = ResolveControl(st)
+            If target Is Nothing OrElse Not (ReferenceEquals(c, target) OrElse target.Contains(c)) Then Continue For
+            Dim wholeControl As Boolean = st.Part.Length = 0 OrElse st.Part = "node.icon" OrElse st.Part.StartsWith("item:", StringComparison.Ordinal)
+            If TypeOf target Is AdvancedTreeControl AndAlso wholeControl Then Continue For
+            If Not wholeControl Then
+                Dim owner As IKBotHelpParts = TryCast(target, IKBotHelpParts)
+                If owner Is Nothing OrElse Not ReferenceEquals(c, target) Then Continue For
+                If Not PartContains(owner, st.Part, target.PointToClient(Control.MousePosition)) Then Continue For
+            End If
+            Return j
+        Next
+        Return -1
+    End Function
+
+    ' Left press (or double press): swallowed when it is on a guarded button; the release finishes the job.
+    Private Function GuardPress(k_hwnd As IntPtr) As Boolean
+        If GuardedStepAt(k_hwnd) < 0 Then Return False
+        _guardDown = True
+        Return True
+    End Function
+
+    ' The release after a swallowed press: swallowed too (the control never saw the press, so it must not see this),
+    ' then the tutorial ends, once the message is over.
+    Private Function GuardRelease() As Boolean
+        If Not _guardDown Then Return False
+        _guardDown = False
+        EndAtGuard()
+        Return True
+    End Function
+
+    ' Space / Enter on the focused guarded button is a press as well.
+    Private Function GuardKey(k_hwnd As IntPtr, k_key As Keys) As Boolean
+        If k_key <> Keys.Space AndAlso k_key <> Keys.Return Then Return False
+        If GuardedStepAt(k_hwnd) < 0 Then Return False
+        EndAtGuard()
+        Return True
+    End Function
+
+    Private Sub EndAtGuard()
+        Dim k_end As New Action(Sub()
+                                    _completed = True
+                                    Finish()
+                                End Sub)
+        If _presenterHost IsNot Nothing AndAlso Not _presenterHost.IsDisposed Then
+            _presenterHost.BeginInvoke(k_end)
+        Else
+            k_end()
+        End If
+    End Sub
+
     ' ── keys ─────────────────────────────────────────────────────────────────────
 
     ' Enter in a single-line text box finishes its «changed» step at once (slice 000T-05), as leaving the field
@@ -858,6 +932,9 @@ Friend NotInheritable Class TutorialRunner
 
         Private Const WM_KEYFIRST As Integer = &H100   ' WM_KEYDOWN
         Private Const WM_KEYLAST As Integer = &H109    ' WM_UNICHAR
+        Private Const WM_LBUTTONDOWN As Integer = &H201
+        Private Const WM_LBUTTONUP As Integer = &H202
+        Private Const WM_LBUTTONDBLCLK As Integer = &H203
         Private ReadOnly _owner As TutorialRunner
 
         Public Sub New(k_owner As TutorialRunner)
@@ -866,6 +943,12 @@ Friend NotInheritable Class TutorialRunner
 
         Public Function PreFilterMessage(ByRef m As Message) As Boolean Implements IMessageFilter.PreFilterMessage
             Try
+                ' Slice 000T-11: the press on a guarded button is not carried out.
+                If m.Msg = WM_LBUTTONDOWN OrElse m.Msg = WM_LBUTTONDBLCLK Then
+                    If _owner.GuardPress(m.HWnd) Then Return True
+                ElseIf m.Msg = WM_LBUTTONUP Then
+                    If _owner.GuardRelease() Then Return True
+                End If
                 If m.Msg >= WM_KEYFIRST AndAlso m.Msg <= WM_KEYLAST Then
                     ' Whatever happened to put the focus on the bubble, a key never reaches it (a Space on
                     ' «Inainte» moved the tutorial on while the operator typed): swallow it and hand the focus back.
@@ -875,6 +958,7 @@ Friend NotInheritable Class TutorialRunner
                     End If
                     If m.Msg = WM_KEYFIRST Then
                         Dim k_key As Keys = CType(m.WParam.ToInt32(), Keys)
+                        If _owner.GuardKey(m.HWnd, k_key) Then Return True
                         If k_key = Keys.Return Then _owner.OnEnterKey(m.HWnd)
                         _owner.OnKey(m.HWnd, k_key)
                     End If

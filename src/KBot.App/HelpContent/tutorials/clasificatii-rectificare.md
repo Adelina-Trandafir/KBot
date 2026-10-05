@@ -75,4 +75,5 @@ Rândul acesta adună <b>ultimul buget</b> și <b>toate rectificările</b>, pe t
 <!-- slice: 000T-10 -->
 target: ClasificatiiForm.btnSalveaza
 wait: click
+guard: yes
 Apasă <b>«Salvează»</b>. Se scriu în baza de date rectificările și versiunile de buget ale clasificației alese.

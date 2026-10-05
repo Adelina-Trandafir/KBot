@@ -36,6 +36,61 @@
         "8770"
       ],
       "port": 8770
+    },
+    {
+      "name": "detalii-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/fc0861f5-5490-41a0-97d4-e2e93faf1f50/scratchpad/detalii_stub.py",
+        "8771"
+      ],
+      "port": 8771
+    },
+    {
+      "name": "portal-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/fc0861f5-5490-41a0-97d4-e2e93faf1f50/scratchpad/portal_stub.py",
+        "8772"
+      ],
+      "port": 8772
+    },
+    {
+      "name": "dgv-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/fc0861f5-5490-41a0-97d4-e2e93faf1f50/scratchpad/dgv_stub.py",
+        "8773"
+      ],
+      "port": 8773
+    },
+    {
+      "name": "pdf-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/fc0861f5-5490-41a0-97d4-e2e93faf1f50/scratchpad/pdf_stub.py",
+        "8774"
+      ],
+      "port": 8774
+    },
+    {
+      "name": "landing2-stub",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/ADELIN~1/AppData/Local/Temp/claude/C--Users-Adelina-Trandafir-source-repos-KBOT/fc0861f5-5490-41a0-97d4-e2e93faf1f50/scratchpad/landing2_stub.py",
+        "8775"
+      ],
+      "port": 8775
+    },
+    {
+      "name": "site-preview",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/Adelina Trandafir/source/repos/KBOT/tools/SitePreview/preview_server.py",
+        "--port",
+        "5050"
+      ],
+      "port": 5050
     }
   ]
 }

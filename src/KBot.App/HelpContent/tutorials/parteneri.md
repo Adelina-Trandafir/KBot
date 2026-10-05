@@ -107,6 +107,7 @@ Pentru <b>editare</b>, alege un partener din listă: datele lui apar în dreapta
 <!-- slice: 000T-10 -->
 target: ParteneriForm.btnSalveaza
 wait: click
+guard: yes
 optional: yes
 why: Salvezi doar dacă ai modificat ceva.
 Schimbă câmpurile dorite (codul fiscal se caută din nou la ANAF când îl modifici) și apasă <b>«Salvare»</b>.<BR>

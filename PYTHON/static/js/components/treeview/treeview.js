@@ -154,7 +154,41 @@ export class TreeView {
   init() {
     this.attachToContainer();
     this.initCheckable();
+    if (this.options.inline) {
+      this.initInline();
+      return;
+    }
     this.createOverlay();
+  }
+
+  /**
+   * Inline mode (portal): the tree sits open inside the container -- search box on top, nodes
+   * below -- instead of being a drop-down over the page. No overlay, never hidden; the input
+   * and the arrow stay in the DOM (the rest of the component reads them) but are not shown.
+   */
+  initInline() {
+    this.container.classList.add('treeview-container--inline');
+    this.createElements();
+    this.treeElement.classList.remove('hidden');
+    this.treeElement.classList.add('visible', 'treeview--inline');
+    this.bindEvents();
+    this.isVisible = true;
+  }
+
+  /** Inline mode: paint the selected row without re-rendering the list. */
+  markSelected() {
+    this.treeElement?.querySelectorAll('.treeview-item').forEach((el) => {
+      el.classList.toggle('selected', el.dataset.value === String(this.selectedValue));
+    });
+  }
+
+  /** Inline mode: forget the selected node (a new list is coming). */
+  clearSelection() {
+    this.selectedValue = null;
+    this.selectedText = '';
+    this.selectedPath = [];
+    this.input.value = '';
+    this.treeElement?.querySelectorAll('.treeview-item.selected').forEach((el) => el.classList.remove('selected'));
   }
 
   attachToContainer() {
@@ -232,7 +266,7 @@ export class TreeView {
     </div>
   `;
     this.treeElement.style.font = this.containerFont;
-    document.body.appendChild(this.treeElement);
+    (this.options.inline ? this.container : document.body).appendChild(this.treeElement);
 
     this.tree = document.getElementById(`${this.instanceId}-tree`);
 
