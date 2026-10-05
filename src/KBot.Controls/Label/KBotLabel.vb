@@ -28,7 +28,7 @@ Imports KBot.Common
 ''' <para>Grosimea și raza sunt în px LOGICI (96 dpi) și se scalează la pictare — regula casei.</para>
 ''' </summary>
 <ToolboxItem(True)>
-Public NotInheritable Class KBotLabel
+Public Class KBotLabel
     Inherits Label
     Implements IThemedControl
 

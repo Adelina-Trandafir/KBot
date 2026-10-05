@@ -42,7 +42,7 @@ $CoverageSkip = @(
 )
 $HeaderKeys = @('id', 'title', 'part', 'order', 'parent', 'screens', 'keywords', 'open')
 $TourKeys = @('id', 'title', 'part', 'topic', 'screens')
-$TutorialKeys = @('id', 'title', 'part', 'keywords', 'starts', 'host-key')   # slice 000T
+$TutorialKeys = @('id', 'title', 'part', 'keywords', 'starts', 'host-key', 'mandatory', 'requires')   # slice 000T
 $Parts = @('contabil', 'avansat', 'director')
 $GotoPrefix = '^(view:[a-z0-9_]+|menu:[a-z0-9_]+|setari:[a-z0-9_]+|help|help:[a-z0-9._-]+)$'
 
@@ -138,6 +138,12 @@ foreach ($f in $vbFiles) {
     }
 }
 function Test-Key([string]$key, [string]$where) {
+    # Slice 000T-10: 'Window>Type.control' = inside the windows of that type; the window type must exist too.
+    if ($key.Contains('>')) {
+        $scope = $key.Substring(0, $key.IndexOf('>')).Trim()
+        if (-not $typeFile.ContainsKey($scope)) { Add-Err "${where}: window type '$scope' not found in src\"; return }
+        $key = $key.Substring($key.IndexOf('>') + 1).Trim()
+    }
     $dot = $key.IndexOf('.')
     $type = if ($dot -lt 0) { $key } else { $key.Substring(0, $dot) }
     if (-not $typeFile.ContainsKey($type)) { Add-Err "${where}: type '$type' not found in src\"; return }
@@ -165,8 +171,10 @@ $PartsByType = @{
     'KBotDataView'        = @('header', 'header.filter', 'rows', 'footer', 'footer.left', 'footer.right', 'footer.collapse')
     'KBotCaptionBar'      = @('icon', 'title', 'unit', 'year', 'ss', 'options', 'theme', 'help', 'minimize', 'maximize', 'close')
     'KBotNavList'         = @('collapse')   # plus item:<Key>
+    'KBotHelpList'        = @('tutorials')   # slice 000T-07: the popup's tutorials block
 }
 function Test-Part([string]$target, [string]$part, [string]$where) {
+    if ($target.Contains('>')) { $target = $target.Substring($target.IndexOf('>') + 1).Trim() }
     $dot = $target.IndexOf('.')
     if ($dot -lt 0) { Add-Err "${where}: part '$part' needs a target Type.control, not '$target'"; return }
     $type = $target.Substring(0, $dot); $ctl = $target.Substring($dot + 1)
@@ -260,14 +268,16 @@ $tutorials = @()
 $tutDir = Join-Path $content 'tutorials'
 if (Test-Path $tutDir) {
     $StepKeys = @('target', 'part', 'anchor', 'wait', 'when', 'optional', 'merge', 'why', 'dim', 'allow')
-    $WaitKinds = @('manual', 'select', 'click', 'closes', 'changed', 'checked', 'tab', 'opens', 'signal')
-    $WhenKinds = @('always', 'enabled', 'editable', 'visible', 'checked', 'unchecked')
+    $WaitKinds = @('manual', 'select', 'click', 'closes', 'changed', 'checked', 'tab', 'opens', 'signal', 'anchor')
+    $WhenKinds = @('always', 'enabled', 'editable', 'visible', 'checked', 'unchecked', 'condition')
     foreach ($f in Get-ChildItem -LiteralPath $tutDir -Filter *.md | Where-Object { $_.Name -ne 'README.md' }) {
         $h = Read-Header $f.FullName $TutorialKeys
         if ($null -eq $h) { continue }
         foreach ($k in 'id', 'title') { if (-not $h[$k]) { Add-Err "$($h.__file): missing '$k'" } }
         if ($h.part -and $Parts -notcontains $h.part) { Add-Err "$($h.__file): part '$($h.part)' is not valid" }
         if ($h.starts) { Test-Key $h.starts $h.__file }
+        if ($h.requires -and @('forexe') -notcontains $h.requires.ToLowerInvariant()) { Add-Err "$($h.__file): requires '$($h.requires)' is not known (known: forexe)" }
+        if ($h.mandatory -and @('yes', 'no', 'true', 'false') -notcontains $h.mandatory.ToLowerInvariant()) { Add-Err "$($h.__file): mandatory takes yes or no" }
         foreach ($stepText in ($h.__body -split '(?m)^## ' | Select-Object -Skip 1)) {
             $title = ($stepText -split "`r?`n")[0].Trim()
             $keys = @{}
@@ -284,7 +294,7 @@ if (Test-Path $tutDir) {
             if ($keys.ContainsKey('wait')) {
                 $kind = $keys.wait.Split(':')[0].Trim().ToLowerInvariant()
                 if ($WaitKinds -notcontains $kind) { Add-Err "${w}: unknown wait kind '$kind'" }
-                elseif (@('tab', 'opens', 'signal') -contains $kind -and -not ($keys.wait -match ':\s*\S')) { Add-Err "${w}: wait: $kind needs a value" }
+                elseif (@('tab', 'opens', 'signal', 'anchor') -contains $kind -and -not ($keys.wait -match ':\s*\S')) { Add-Err "${w}: wait: $kind needs a value" }
                 if ($kind -eq 'opens' -and $keys.wait -match ':\s*(\S+)') {
                     $ot = $Matches[1]
                     if (-not $typeFile.ContainsKey($ot)) { Add-Err "${w}: opens: type '$ot' not found in src\" }
@@ -305,6 +315,18 @@ if (Test-Path $tutDir) {
         }
         Test-SourceTags $h.__body $h.__file $false
         $tutorials += $h
+    }
+    # Slice 000T-09: <link tutorial="id"> in a step text must name a tutorial that exists.
+    $tutorialIds = @($tutorials | ForEach-Object { $_.id })
+    foreach ($h in $tutorials) {
+        foreach ($m in [regex]::Matches($h.__body, '(?i)<(?:link|a)\b([^>]*)>')) {
+            if ($m.Groups[1].Value -match '(?i)\btutorial\s*=\s*["'']?([^"''\s>]+)') {
+                if ($tutorialIds -notcontains $Matches[1]) { Add-Err "$($h.__file): link to unknown tutorial '$($Matches[1])'" }
+                elseif ($Matches[1] -eq $h.id) { "  warning: $($h.__file): the tutorial links to itself" }
+            } else {
+                "  warning: $($h.__file): <link> without tutorial=""id"" is only drawn, a click does nothing"
+            }
+        }
     }
 }
 

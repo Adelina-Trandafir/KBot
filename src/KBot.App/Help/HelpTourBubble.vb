@@ -18,6 +18,8 @@ Public Class HelpTourBubble
     Public Event CloseRequested()
     ''' <summary>Slice 000T-05: «Sari la pasul obligatoriu» (tutorials only).</summary>
     Public Event SkipOptionalRequested()
+    ''' <summary>Slice 000T-09: a <c>&lt;link tutorial="id"&gt;</c> of the step text was clicked; the argument is the id.</summary>
+    Public Event TutorialLinkClicked(k_id As String)
 
     Private _skipShown As Boolean
     Private _tutorialButtons As Boolean
@@ -48,6 +50,19 @@ Public Class HelpTourBubble
     Private Const WS_EX_NOACTIVATE As Integer = &H8000000
 
     ''' <summary>
+    ''' Slice 000T-08: False = the «Inchide» / «Ma opresc» button is disabled (a mandatory tutorial cannot be closed
+    ''' from its bubble). Default True.
+    ''' </summary>
+    Public Property CloseAllowed As Boolean
+        Get
+            Return btnInchide.Enabled
+        End Get
+        Set(k_value As Boolean)
+            btnInchide.Enabled = k_value
+        End Set
+    End Property
+
+    ''' <summary>
     ''' Slice 000T-05: the bubble of an interactive tutorial never takes the focus and never reads keys
     ''' (the operator types in the window behind it; a Space that reached «Inainte» moved the tutorial on).
     ''' Clicking its buttons still works. Set right after construction, before the first Show.
@@ -68,11 +83,30 @@ Public Class HelpTourBubble
         End Get
     End Property
 
-    ''' <summary>Slice 0097-02: the operator ticked «Nu mai arata turul initial».</summary>
-    Public ReadOnly Property NeverAgain As Boolean
+    ''' <summary>
+    ''' Slice 0097-02: the operator ticked «Nu mai arata turul initial». Slice 000T-07: settable, so a
+    ''' tutorial that moves to a new bubble (another window) carries the tick over.
+    ''' </summary>
+    Public Property NeverAgain As Boolean
         Get
             Return chkNuMaiArata.Checked
         End Get
+        Set(k_value As Boolean)
+            chkNuMaiArata.Checked = k_value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Slice 000T-07: the caption of that box when the bubble belongs to something other than the initial
+    ''' tour (the tutorial of the start: «Nu mai arata tutorialul de inceput»). Set before the first step.
+    ''' </summary>
+    Public Property NeverAgainText As String
+        Get
+            Return chkNuMaiArata.Text
+        End Get
+        Set(k_value As String)
+            chkNuMaiArata.Text = k_value
+        End Set
     End Property
 
     ''' <summary>Fills the bubble for one step and sizes it to its text.</summary>
@@ -84,7 +118,7 @@ Public Class HelpTourBubble
             lblPas.Text = If(String.IsNullOrEmpty(tourTitle), String.Empty, tourTitle & "  ·  ") &
                           "Pasul " & (index + 1) & " din " & count
             lblTitlu.Text = stepTitle
-            lblText.Text = text
+            lblText.Html = text
             lblNota.Text = If(note, String.Empty)
             lblNota.Visible = Not String.IsNullOrEmpty(note)
             btnInapoi.Enabled = index > 0
@@ -113,7 +147,7 @@ Public Class HelpTourBubble
             lblPas.Text = If(String.IsNullOrEmpty(k_tutorialTitle), String.Empty, k_tutorialTitle & "  ·  ") &
                           "Pasul " & (k_index + 1) & " din " & k_count
             lblTitlu.Text = k_stepTitle
-            lblText.Text = k_text
+            lblText.Html = k_text
             lblNota.Text = If(k_note, String.Empty)
             lblNota.Visible = Not String.IsNullOrEmpty(k_note)
             ' The navigation buttons are always on screen; what does not apply to this step is disabled.
@@ -397,6 +431,10 @@ Public Class HelpTourBubble
 
     Private Sub BtnSariLaObligatoriu_Click(sender As Object, e As EventArgs) Handles btnSariLaObligatoriu.Click
         RaiseEvent SkipOptionalRequested()
+    End Sub
+
+    Private Sub LblText_LinkClicked(k_target As String) Handles lblText.LinkClicked
+        RaiseEvent TutorialLinkClicked(k_target)
     End Sub
 
     Private Sub BtnInchide_Click(sender As Object, e As EventArgs) Handles btnInchide.Click

@@ -145,6 +145,7 @@ whole view) gets the bubble inside it, pointing up at its top edge.
 | grid (`KBotDataView`) | `header` (column titles), `header.filter` (the first column menu icon on screen), `rows`, `footer` (TOTAL), `footer.left`, `footer.right`, `footer.collapse` |
 | caption bar (`KBotCaptionBar`) | `icon`, `title`, `unit`, `options`, `theme`, `help`, `minimize`, `maximize`, `close` |
 | nav list (`KBotNavList`) | `item:<Key>` (the item's `Key` in the designer), `collapse` |
+| help popup list (`KBotHelpList`, slice 000T-07) | `tutorials` (the «Tutoriale» header row and the tutorial rows under it; scrolled into view; target `KBotHelpSearchPanel.lstRezultate`) |
 
 - `node.icon` that normally appears only under the mouse (the main list's refresh) is **shown for
   the step** on the selected row (else the first row on screen that has one), then hidden again.
@@ -186,7 +187,7 @@ target, the rest of the window dimmed, a bubble with the instruction, and the ne
 the user did the action. Anything else on the dimmed window (or a key typed outside the allowed places) asks
 «Vrei să ieși din tutorial?» (Da ends it, Nu stays on the step). One file per tutorial in `tutorials/` (NOT a
 topic, NOT a tour; the loaders skip it). Header keys: `id`, `title`, `part`, `keywords` (words the typed
-question may use), `starts` (the window type that must be open), `host-key` (a free ASCII string handed to every
+question may use), `starts` (the window type that must be open), `mandatory` (`yes` / `no`, default `no`: see «Mandatory tutorials» below), `host-key` (a free ASCII string handed to every
 window the tutorial opens: `IKBotTutorialHost.TutorialSupports/TutorialBegin`, so one window can serve several
 tutorials). One `## ` per step; its first lines are keys, then the bubble text; every step carries its
 `<!-- slice: ... -->` tag like a tour step.
@@ -195,9 +196,9 @@ tutorials). One `## ` per step; its first lines are keys, then the bubble text; 
 |----------|---------|
 | `target:` | `TypeName` or `TypeName.controlName` (as a tour) — also the control the wait is attached to |
 | `part:` | a painted piece of the target (as a tour; a part hidden by state is NOT revealed, the whole control is used) |
-| `anchor:` | a named place only the owning window knows (`IKBotTutorialHost.TutorialAnchor`: the rows that have reservations, the row with the «+») |
-| `wait:` | `manual` (default; the «Înainte» button) · `select` (tree row) · `click` (button; for a tree only its row button) · `tab:<key>` (nav item selected) · `opens:<Type>` · `closes` · `changed` · `checked` · `signal:<name>` (the window raises `TutorialSignal`) |
-| `when:` | the step applies only if `enabled` / `editable` / `visible` (the target) or `checked:Type.box` / `unchecked:Type.box`; otherwise it is skipped |
+| `anchor:` | a named place only the owning window knows (`IKBotTutorialHost.TutorialAnchor`: the rows that have reservations, the row with the «+»). Main window (000T-09): `menu.<key>` = that row of the open MENIU menu (`menu.setari`), not on screen while the menu is closed; put the step AFTER a `wait: click` on `KbotForm.btnMeniu` and `allow: KbotForm.btnMeniu` so the button can reopen it. 000T-10: `popup.<key>` = that row of the pop-up list open now (the tree options list: `sort-name`, `sort-date`, `col-cod`, `col-surse`, `update-many`); `popup.a+b` = rows `a` and `b` together, one ring |
+| `wait:` | `manual` (default; the «Înainte» button) · `select` (tree row) · `click` (button; for a tree without `part:` only its row button; with `part:` — a tree / grid footer or header icon, collapse, search — the left press inside that part, 000T-09) · `tab:<key>` (nav item selected) · `opens:<Type>` · `closes` · `changed` · `checked` · `signal:<name>` (the window raises `TutorialSignal`; `a|b` = either of two; main window, 000T-10: `tree-menu:<key>` = a row of the tree options list was chosen, `selector-unit` / `selector-year` / `selector-ss` = another choice in that selector of the title bar) · `anchor:<name>` (000T-10: done when that anchor is on screen, e.g. `anchor:menu.clasificatii` once the «Nomenclatoare» submenu is open) |
+| `when:` | the step applies only if `enabled` / `editable` / `visible` (the target) or `checked:Type.box` / `unchecked:Type.box` or (000T-10) `condition:sort-date` / `condition:sort-name` (how the main tree is sorted); `visible` with a `part:` also needs that painted part drawn now (the title bar's year selector); otherwise it is skipped |
 | `optional:` `why:` | `yes` adds «Sari peste»; `why:` (required) is shown as «Pas opțional: ...» |
 | `merge:` | `yes`: the NEXT step's action also completes this one (select a row and press its «+» are one click) |
 | `dim:` | `yes` (default) or `ring` (ring only) |
@@ -212,6 +213,37 @@ completes it, only a new action or «Înainte».
 Look-ahead (000T-05): while a step is on, the user may also do the action of the NEXT step when this one is
 optional or merged -- only that one (further steps stay dimmed; «Sari peste» is the way past an optional step);
 a merged next step passes the permission on. `Check-Help.ps1` validates the files.
+**The bubble text may be HTML (000T-06)** — written in an editor and pasted under the step keys (also in the
+designer's text box). Supported: `b strong i em u s strike del small big mark code span font div p br h1..h6 ul ol li
+blockquote`; style on any tag (`style="color:#c00; background-color:#ff0; font-weight:bold; font-style:italic;
+text-decoration:underline; font-size:14pt"`) and `<font color size>`. Colours: `#rgb`, `#rrggbb`, `rgb()`, a .NET colour
+name, or a theme word (`accent dim warning error success text`) that follows the scheme (a fixed `#000` is unreadable on
+the dark one). Line breaks in the source are spaces: a break is a `<br>` or a block tag. Not drawn: tables, images, links,
+alignment, font names; the text inside such a tag still shows. A text with none of these tags stays plain (its line
+breaks are breaks), so the older tutorials look as before. Tours use the same bubble and so accept it too. The engine
+is `KBotHtmlText` / `KBotHtmlLabel` in `KBot.Controls\RichText`.
+**Header key `requires:` (000T-10).** `requires: forexe` = the tutorial is offered, found by a typed question and started only while a FOREXE session is live (always in a Debug build); otherwise it is hidden and a link to it says what is missing (`ITutorialRequirements`, answered by the main window).
+**Window scope in a target (000T-10).** `Window>Type.control` looks only inside the windows of that type: `ExtraseForm>ExtrasePanel.tree` is the tree of the «Extrase de cont» window, `KbotForm>ExtrasePanel.tree` the one of the main window's view (both hold an `ExtrasePanel`).
+**Opening steps that may be skipped.** A tutorial that works in a window opened from the MENIU starts with optional steps (`btnMeniu` click, `anchor: menu.…`, `wait: opens:`): when the window is already open the tutorial skips them by itself, or «Sari peste».
+**Links to another tutorial (000T-09).** In a tutorial's step text, `<link tutorial="id">text</link>` (`<a tutorial="id">` too) is drawn
+underlined in the accent colour; a click ENDS the running tutorial and starts the one with that `id` (`TutorialRunner.OnLinkClicked` →
+`HelpService.StartTutorial`: the target's `starts:` window must be open, else its usual message; a mandatory tutorial is not ended
+by it, it reminds). A link without `tutorial` is only drawn. Tours do not act on links. `Check-Help.ps1` errors on an unknown id.
+
+**The tutorial of the start (000T-07).** `HelpService.InitialTutorialId` = `tutoriale-intro` also starts by itself, like the
+initial tour, while `AppSettings.ShowInitialTutorial` is on, and only once the initial tour is not owed (a tour still due goes
+first and hands over to it when it ends; a director gets neither). It is `mandatory: yes`, so it has no «do not show again» box and ends only past its last step. The setting goes off
+(`HelpService.InitialTutorialSeen`) at that moment; Setări › Aplicație › Generale «Arată tutorialul de început la pornirea K-BOT» turns it back on (tutorial
+`setare-tutorial-initial` walks there). A step with no `target:` (a plain message) has no ring and no veil and is centred on the screen.
+Renaming or removing `tutoriale-intro` means changing `InitialTutorialId` too.
+
+**Mandatory tutorials (000T-08).** `mandatory: yes` in the header = the tutorial can only end by reaching its last step. The
+bubble's «Mă opresc» is disabled and Esc / Alt+F4 on it do nothing but remind; a press outside what the step allows, a key typed
+outside it, or a window the step worked in closing (the «?» popup closes when it loses the focus) shows the message «Tutorialul
+«...» trebuie parcurs până la capăt…» (OK only, no question). After a window closed, the tutorial goes back to the nearest earlier
+step with `wait: opens:` so the window can be opened again. A message-only step (no `target:`) veils the whole window in such a
+tutorial, so a press on it is caught too. The designer's «Testează» run is never mandatory.
+
 A window the tutorial opens should implement `IKBotTutorialHost` (the checker warns when it does not): it is
 told to start / stop and builds nothing itself — the runner makes the ring, veil and bubble for it after it is
 shown, so a modal window does not disable them.

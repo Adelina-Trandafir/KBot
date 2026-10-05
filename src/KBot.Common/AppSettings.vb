@@ -189,6 +189,14 @@ Public NotInheritable Class AppSettings
     Public Property ShowInitialTour As Boolean = True
 
     ''' <summary>
+    ''' Slice 000T-07: the short tutorial about the tutorials (a message, the «?» button, the list of
+    ''' tutorials) starts by itself at K-BOT's start, once the initial tour is not owed any more. Goes
+    ''' False when it was seen to its last step (it is mandatory: it cannot be closed before that).
+    ''' «Setari -> Generale» turns it back on.
+    ''' </summary>
+    Public Property ShowInitialTutorial As Boolean = True
+
+    ''' <summary>
     ''' Slice 0097-02: the main window opens maximized over the working area of its screen. Off by
     ''' default (it opens at its designed size, centred), as before the switch existed.
     ''' </summary>
@@ -613,6 +621,7 @@ Public NotInheritable Class AppSettings
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
             .ShowInitialTour = ShowInitialTour,
+            .ShowInitialTutorial = ShowInitialTutorial,
             .StartMaximized = StartMaximized,
             .ForexeShowPageMenu = ForexeShowPageMenu,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
@@ -677,6 +686,7 @@ Public NotInheritable Class AppSettings
             s.HelpTextPercent = dto.HelpTextPercent.Value
         End If
         If dto.ShowInitialTour.HasValue Then s.ShowInitialTour = dto.ShowInitialTour.Value
+        If dto.ShowInitialTutorial.HasValue Then s.ShowInitialTutorial = dto.ShowInitialTutorial.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
         If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
@@ -754,6 +764,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?
     Public Property ShowInitialTour As Boolean?
+    Public Property ShowInitialTutorial As Boolean?
     Public Property StartMaximized As Boolean?
     Public Property ForexeShowPageMenu As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?

@@ -5,7 +5,7 @@ part: contabil
 order: 80
 parent: contabil
 screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
-keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, mini-meniu, meniul din pagina
+keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, tutorial initial, tutorialul de inceput, nu mai arata tutorialul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
 <!-- slice: 0072, 0072-01, 0000-29, 0100-02, fara-felie -->
@@ -13,7 +13,7 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 **Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
 (rândul se poate ascunde din pagina **Aplicație**).
 
-<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-01 23:30 | why: 0100-02: pagina «Aplicație» a Setărilor are comutatoarele regrupate (Fereastra principală, FOREXE, Avansat), iar lista paginilor are un rând în plus, «Descărcări multiple» (apare doar când unitatea o permite). -->
+<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-05 08:53 | why: 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
 
 | Pagina | Ce găsești |
 |--------|------------|
@@ -42,7 +42,7 @@ Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —
 [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Pagina «Aplicație»: pornirea K-BOT
-<!-- slice: 0097-02 -->
+<!-- slice: 0097-02, 000T-07, 0000-51 -->
 
 Din grupul **Fereastra principală**:
 
@@ -53,6 +53,11 @@ Din grupul **Fereastra principală**:
   turul ferestrei principale pornește singur la fiecare pornire. Se debifează singură după ce ai
   văzut turul până la capăt sau ai bifat «Nu mai arăta turul inițial» pe bula lui; o bifezi din
   nou dacă vrei să-l revezi la pornire — [Tururile ghidate](topic:contabil.ajutor).
+- **«Arată tutorialul de început la pornirea K-BOT»** — **bifată la început.** Cât e bifată,
+  tutorialul scurt despre tutoriale pornește singur la pornire, după turul ferestrei principale
+  (dacă acela mai e de văzut). Nu se poate închide la jumătate: se parcurge până la capăt. Se debifează
+  singură după ce l-ai văzut până la capăt; o bifezi din nou dacă vrei să-l revezi la pornire. Cum faci asta pas cu pas îți arată tutorialul «Pornește sau oprește tutorialul de
+  început» — [Tutorialele](topic:contabil.ajutor).
 
 ## Pagina «FOREXE»: mini-meniul din pagină
 <!-- slice: 0097-02 -->

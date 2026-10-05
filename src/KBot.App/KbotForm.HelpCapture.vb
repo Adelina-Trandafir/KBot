@@ -24,11 +24,13 @@ Partial Public Class KbotForm
             Dim shown As Boolean = HelpCaptureModeOn
             Dim logShown As Boolean = FeatureSwitches.VizualizatorJurnaleActiv
             For Each item As KBotMenuItem In menuNou.Items
-                ' Slice 000T: the tutorial designer follows the capture mode too (operator tool).
                 If String.Equals(item.Key, HelpCaptureMenuKey, StringComparison.Ordinal) OrElse
-                   String.Equals(item.Key, HelpCaptureMenuSeparatorKey, StringComparison.Ordinal) OrElse
-                   String.Equals(item.Key, TutorialDesignerMenuKey, StringComparison.Ordinal) Then
+                   String.Equals(item.Key, HelpCaptureMenuSeparatorKey, StringComparison.Ordinal) Then
                     item.Visible = shown
+                End If
+                ' Slice 000T-10: the tutorial designer (operator tool) exists only in a Debug build.
+                If String.Equals(item.Key, TutorialDesignerMenuKey, StringComparison.Ordinal) Then
+                    item.Visible = TutorialDesignerAvailable
                 End If
                 If String.Equals(item.Key, "jurnal", StringComparison.Ordinal) Then item.Visible = logShown OrElse _helpMenuReveal
                 ' Slice 0000-31: the tour shows the rows that appear only sometimes.

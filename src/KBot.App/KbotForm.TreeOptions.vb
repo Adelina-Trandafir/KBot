@@ -312,6 +312,8 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Sub TreeOptionsMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
+            ' Slice 000T-10: a tutorial waiting for a row of this list (sorting, the update window).
+            RaiseEvent TutorialSignal(SignalTreeMenuPrefix & e.Item.Key)
             ' Slice 0100 / 0109: not a setting -- it opens the «update angajamente» window.
             If String.Equals(e.Item.Key, TREE_UPDATE_MANY, StringComparison.Ordinal) Then
                 DeschideActualizareaMultipla()

@@ -374,6 +374,18 @@ Public Class KBotDropDownMenu
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 000T-09: the screen rectangle of the open row with <paramref name="k_key"/>, in whichever
+    ''' level it is (the interactive tutorial rings it); Empty when the menu is closed or has no such row.
+    ''' </summary>
+    Public Function RowScreenBounds(k_key As String) As Rectangle
+        For Each k_window As KBotMenuWindow In _windows
+            Dim k_rect As Rectangle = k_window.RowScreenBounds(k_key)
+            If Not k_rect.IsEmpty Then Return k_rect
+        Next
+        Return Rectangle.Empty
+    End Function
+
     ''' <summary>Opens the menu under <paramref name="anchor"/> (flipped above when there is no room below).</summary>
     Public Sub ShowBelow(anchor As Control)
         Try

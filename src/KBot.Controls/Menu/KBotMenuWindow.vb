@@ -39,6 +39,21 @@ Friend NotInheritable Class KBotMenuWindow
         Return result
     End Function
 
+    ''' <summary>
+    ''' Slice 000T-09: the screen rectangle of the command row with <paramref name="k_key"/> in THIS window
+    ''' (the interactive tutorial rings it); Empty when the row is not here or not shown.
+    ''' </summary>
+    Friend Function RowScreenBounds(k_key As String) As Rectangle
+        If Not IsHandleCreated OrElse IsDisposed Then Return Rectangle.Empty
+        For Each k_row As RowSlot In _rows
+            Dim k_item As KBotMenuItem = k_row.Item
+            If k_item IsNot Nothing AndAlso Not k_item.IsSeparator AndAlso String.Equals(k_item.Key, k_key, StringComparison.Ordinal) Then
+                Return RectangleToScreen(k_row.Bounds)
+            End If
+        Next
+        Return Rectangle.Empty
+    End Function
+
     Private Const WS_EX_TOOLWINDOW As Integer = &H80
     Private Const WS_EX_NOACTIVATE As Integer = &H8000000
     Private Const CS_DROPSHADOW As Integer = &H20000

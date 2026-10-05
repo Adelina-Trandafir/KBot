@@ -23,6 +23,8 @@ Public Enum TutorialWaitKind
     Checked
     ''' <summary>The window raises <c>TutorialSignal</c> with the given name (<c>signal:name</c>).</summary>
     Signal
+    ''' <summary>Slice 000T-10: the named anchor of the window (<c>anchor:name</c>) is on screen (a menu row that appears once its menu is open).</summary>
+    Anchor
 End Enum
 
 ''' <summary>When a step applies (slice 000T). The <c>when:</c> key; a step that does not apply is skipped.</summary>
@@ -38,6 +40,8 @@ Public Enum TutorialWhenKind
     Checked
     ''' <summary><c>unchecked:name</c>: the named check box is not ticked.</summary>
     Unchecked
+    ''' <summary><c>condition:name</c>: the main window says the named condition holds (<see cref="ITutorialRequirements"/>: <c>sort-date</c>, <c>sort-name</c>...). Slice 000T-10.</summary>
+    Condition
 End Enum
 
 ''' <summary>One step of an interactive tutorial (slice 000T): what to point at, what to wait for.</summary>
@@ -106,6 +110,19 @@ Public NotInheritable Class TutorialFlow
     ''' <summary>Handed to every <c>IKBotTutorialHost</c> the tutorial walks into.</summary>
     Public Property HostKey As String = String.Empty
 
+    ''' <summary>
+    ''' Slice 000T-08: True = the tutorial can only end by reaching its last step. «Inchide» / «Ma opresc» and Esc
+    ''' do not stop it, and a click outside what the step allows says so instead of asking «Vrei sa iesi din
+    ''' tutorial?». The <c>mandatory:</c> header key (yes / no); default no.
+    ''' </summary>
+    Public Property Mandatory As Boolean
+
+    ''' <summary>
+    ''' Slice 000T-10: what has to be true for the tutorial to be offered and started; empty = nothing. The <c>requires:</c> header
+    ''' key. <c>forexe</c> = a live FOREXE session (or a Debug build). See <see cref="ITutorialRequirements"/>.
+    ''' </summary>
+    Public Property Requires As String = String.Empty
+
     <Browsable(False)>
     Public ReadOnly Property Steps As New List(Of TutorialStep)()
 
@@ -147,6 +164,8 @@ Public NotInheritable Class TutorialFlow
                 Case "keywords" : flow.Keywords = value
                 Case "starts" : flow.Starts = value
                 Case "host-key" : flow.HostKey = value
+                Case "mandatory" : flow.Mandatory = ParseYesNo(key, value)
+                Case "requires" : flow.Requires = value
                 Case Else : Throw New ArgumentException("unknown tutorial header key '" & key & "'")
             End Select
         End While
@@ -244,9 +263,10 @@ Public NotInheritable Class TutorialFlow
             Case "tab" : k_step.WaitKind = TutorialWaitKind.Tab
             Case "opens" : k_step.WaitKind = TutorialWaitKind.Opens
             Case "signal" : k_step.WaitKind = TutorialWaitKind.Signal
+            Case "anchor" : k_step.WaitKind = TutorialWaitKind.Anchor
             Case Else : Throw New ArgumentException("unknown wait kind '" & name & "'")
         End Select
-        Dim needsArg As Boolean = k_step.WaitKind = TutorialWaitKind.Tab OrElse k_step.WaitKind = TutorialWaitKind.Opens OrElse k_step.WaitKind = TutorialWaitKind.Signal
+        Dim needsArg As Boolean = k_step.WaitKind = TutorialWaitKind.Tab OrElse k_step.WaitKind = TutorialWaitKind.Opens OrElse k_step.WaitKind = TutorialWaitKind.Signal OrElse k_step.WaitKind = TutorialWaitKind.Anchor
         If needsArg AndAlso arg.Length = 0 Then Throw New ArgumentException("'wait: " & name & "' needs a value (" & name & ":value)")
         k_step.WaitArg = arg
     End Sub
@@ -262,8 +282,10 @@ Public NotInheritable Class TutorialFlow
             Case "visible" : k_step.WhenKind = TutorialWhenKind.Visible
             Case "checked" : k_step.WhenKind = TutorialWhenKind.Checked
             Case "unchecked" : k_step.WhenKind = TutorialWhenKind.Unchecked
+            Case "condition" : k_step.WhenKind = TutorialWhenKind.Condition
             Case Else : Throw New ArgumentException("unknown when kind '" & name & "'")
         End Select
+        If k_step.WhenKind = TutorialWhenKind.Condition AndAlso arg.Length = 0 Then Throw New ArgumentException("'when: condition' needs a name (condition:name)")
         If (k_step.WhenKind = TutorialWhenKind.Checked OrElse k_step.WhenKind = TutorialWhenKind.Unchecked) AndAlso arg.Length = 0 Then
             Throw New ArgumentException("'when: " & name & "' needs the check box name (" & name & ":name)")
         End If
@@ -305,6 +327,8 @@ Public NotInheritable Class TutorialFlow
         If Keywords.Length > 0 Then sb.Append("keywords: ").Append(Keywords).Append(vbLf)
         If Starts.Length > 0 Then sb.Append("starts: ").Append(Starts).Append(vbLf)
         If HostKey.Length > 0 Then sb.Append("host-key: ").Append(HostKey).Append(vbLf)
+        If Mandatory Then sb.Append("mandatory: yes").Append(vbLf)
+        If Requires.Length > 0 Then sb.Append("requires: ").Append(Requires).Append(vbLf)
         sb.Append("---").Append(vbLf).Append(k_tag).Append(vbLf)
         For Each st As TutorialStep In Steps
             sb.Append(vbLf).Append("## ").Append(st.Title).Append(vbLf).Append(k_tag).Append(vbLf)

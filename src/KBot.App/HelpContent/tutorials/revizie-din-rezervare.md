@@ -7,6 +7,7 @@ starts: KbotForm
 host-key: rezervare-plus
 ---
 <!-- slice: 000T -->
+
 ## Alege un angajament cu rezervări
 <!-- slice: 000T -->
 target: KbotForm.tree
@@ -20,7 +21,7 @@ Alege din lista de angajamente unul care are rezervări; sunt cele luminate. Doa
 target: KbotForm.navViews
 part: item:rezervari
 wait: tab:rezervari
-Apasă butonul «Rezervări». K-BOT nu îl apasă pentru tine.
+Apasă butonul «Rezervări».
 
 ## Alege rezervarea care are «+»
 <!-- slice: 000T -->
@@ -47,7 +48,7 @@ Așteaptă puțin: K-BOT pregătește documentul de fundamentare și îl deschid
 target: DdfEditForm.cmbComp
 when: enabled
 wait: changed
-Alege din listă compartimentul documentului. Câmpul se completează doar la documentul inițial; la o revizie ulterioară compartimentul vine de la prima revizie și acest pas nu apare.
+Alege din listă compartimentul documentului. Dacă nu există în listă, tastează-l. Fiecare compartiment adăugat va fi disponibil la următoarea revizie zero. <BR> <mark>Câmpul se completează doar la documentul inițial; la o revizie ulterioară compartimentul vine de la prima revizie și acest pas nu apare.</mark>
 
 ## Bifează partenerul
 <!-- slice: 000T -->
@@ -56,7 +57,7 @@ when: enabled
 wait: checked
 optional: yes
 why: Îl bifezi doar dacă documentul se leagă de un partener; dacă nu are partener, lași căsuța nebifată și treci mai departe.
-Bifează «Partener asociat» dacă documentul are un partener principal.
+Dacă angajamentul se referă la unul sau mai mulți beneficiari, bifează «Partener asociat».<BR> <mark>Nu bifa «Partener asociat» pentru angajamentele de salarii, burse, transport, sa. Ele NU se referă la un beneficiar anume!</mark>
 
 ## Alege partenerul
 <!-- slice: 000T -->
@@ -65,7 +66,8 @@ when: checked:DdfEditForm.chkPartAng
 wait: changed
 optional: yes
 why: Câmpul se folosește doar când «Partener asociat» e bifat.
-Scrie începutul numelui sau al codului fiscal și alege partenerul din listă.
+Scrie începutul numelui sau al codului fiscal și alege partenerul din listă.<BR>
+<mark>Poți selecta cu mausul sau apăsa ENTER!</mark>
 
 ## Descriere scurtă
 <!-- slice: 000T -->
@@ -73,16 +75,16 @@ target: DdfEditForm.txtDescScurta
 wait: changed
 optional: yes
 why: Descrierea scurtă ajută la recunoașterea documentului în listă, dar documentul se poate salva și fără ea.
-Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.
+Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.<BR> <mark>Pentru Revizia 0, descrierea reprezintă numele angajamentului din CAB. Pentru restul reviziilor, acesta este completat implicit cu ”mărire” sau ”creștere” in funcție de valoarea rezervării.</mark>
 
 ## Element fundamentare
 <!-- slice: 000T -->
 target: DdfEditSectiuneaAPage.grd
 when: editable
-wait: manual
 optional: yes
 why: Celula se completează de mână doar la un document care nu vine din rezervări; la unul făcut din rezervări rândurile sunt gata și acest pas nu apare.
-Completează celula «Element fundamentare» de pe primul rând, apoi apasă «Înainte».
+Completează celula «Element fundamentare» de pe primul rând, apoi apasă «Înainte».<BR>
+<mark>Pentru ușurarea muncii contabilului, această celulă este completată în mod implicit cu denumirea clasificației folosite. Dacă se dorește modificarea ei, se poate suprascrie.</mark>
 
 ## Fila «Descriere»
 <!-- slice: 000T -->
@@ -91,15 +93,15 @@ part: item:descriere
 wait: tab:descriere
 optional: yes
 why: Descrierea lungă nu e obligatorie.
-Deschide fila «Descriere».
+Dacă dorești și modificarea câmpului «Descriere Lungă», deschide fila «Descriere».
 
 ## Descriere lungă
 <!-- slice: 000T -->
 target: DdfEditDescrierePage.edtLunga
-wait: manual
 optional: yes
 why: Descrierea lungă nu e obligatorie.
-Scrie descrierea lungă a documentului, apoi apasă «Înainte».
+Scrie descrierea lungă a documentului, apoi apasă «Înainte».<BR>
+<mark>În caseta «Descriere Lungă» se poate scrie text formatat sau se poate lipi un text scris într-un editor de texte (precum Microsoft Word). Acesta își va păstra formatarea.</mark>
 
 ## Fila «Fișiere»
 <!-- slice: 000T -->
@@ -108,7 +110,7 @@ part: item:fisiere
 wait: tab:fisiere
 optional: yes
 why: Atașamentele nu sunt obligatorii.
-Deschide fila «Fișiere».
+Dacă dorești atașarea unor fișiere, precum <b>Nota de Comanda</b>, sau <b>Ștat de plată</b> în cazul angajamentelor de salarii eschide fila «Fișiere».
 
 ## Atașează fișiere
 <!-- slice: 000T -->
@@ -126,7 +128,7 @@ when: checked:DdfEditForm.chkPartAng
 wait: tab:parteneri
 optional: yes
 why: Fila e pentru documentele cu mai mulți parteneri și se vede doar când «Partener asociat» e bifat.
-Deschide fila «Parteneri».
+Dacă angajamentul curent se referă la mai mulți beneficiari, aceștia pot fi adăugați/editați în fila «Parteneri».
 
 ## Alege încă un partener
 <!-- slice: 000T -->

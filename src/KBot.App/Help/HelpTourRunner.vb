@@ -267,8 +267,17 @@ Friend NotInheritable Class HelpTourRunner
     ''' windows (the help and tour windows excluded). Nothing when it is not on screen.
     ''' </summary>
     Friend Shared Function FindTarget(target As String) As Control
+        ' Slice 000T-10: «Window>Type.control» looks only inside the windows of that type (the Extrase view and the
+        ' «Extrase de cont» window both hold an ExtrasePanel: «ExtraseForm>ExtrasePanel.tree» is the window's).
+        Dim scope As String = Nothing
+        Dim arrow As Integer = target.IndexOf(">"c)
+        If arrow > 0 Then
+            scope = target.Substring(0, arrow).Trim()
+            target = target.Substring(arrow + 1).Trim()
+        End If
         For Each f As Form In Application.OpenForms.Cast(Of Form)().ToList()
             If Not f.Visible OrElse TypeOf f Is HelpForm OrElse TypeOf f Is HelpTourBubble OrElse TypeOf f Is HelpTourFrame Then Continue For
+            If scope IsNot Nothing AndAlso Not String.Equals(f.GetType().Name, scope, StringComparison.OrdinalIgnoreCase) Then Continue For
             Dim hit As Control = FindInWindow(f, target)
             If hit IsNot Nothing Then Return hit
         Next

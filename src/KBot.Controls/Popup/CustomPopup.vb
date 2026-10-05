@@ -800,6 +800,22 @@ Public Class CustomPopup
         Return _rows(index)
     End Function
 
+    ''' <summary>
+    ''' Slice 000T-10: dreptunghiul pe ECRAN al rândului cu cheia <paramref name="k_key"/> (tutorialul interactiv îl
+    ''' încercuiește); gol dacă meniul nu e pe ecran sau n-are rândul. Ține cont de derulare.
+    ''' </summary>
+    Public Function RowScreenBounds(k_key As String) As Rectangle
+        If Not IsHandleCreated OrElse IsDisposed OrElse Not Visible Then Return Rectangle.Empty
+        For i As Integer = 0 To _items.Count - 1
+            If _items(i).IsSeparator OrElse Not String.Equals(_items(i).Key, k_key, StringComparison.Ordinal) Then Continue For
+            Dim k_row As Rectangle = RowBounds(i)
+            If k_row.IsEmpty Then Return Rectangle.Empty
+            k_row.Offset(0, -_scroll)
+            Return RectangleToScreen(k_row)
+        Next
+        Return Rectangle.Empty
+    End Function
+
     ''' <summary>Rândul de sub un punct din CLIENT, sau -1. Ține cont de derulare.</summary>
     Friend Function HitTest(clientPoint As Point) As Integer
         EnsureLayout()

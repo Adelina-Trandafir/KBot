@@ -110,6 +110,8 @@ Public Class SetariAplicatieView
             AplicaOptiunileAvansate(AppSettings.Current.AdvancedOptions)
             ' Slice 0097-02: the tour switches itself off when it was seen to the end.
             chkTurInitial.Checked = AppSettings.Current.ShowInitialTour
+            ' Slice 000T-07: the same for the tutorial of the start.
+            chkTutorialInitial.Checked = AppSettings.Current.ShowInitialTutorial
         Finally
             _suppress = before
         End Try
@@ -221,6 +223,7 @@ Public Class SetariAplicatieView
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
             chkStartMaximized.Checked = s.StartMaximized
             chkTurInitial.Checked = s.ShowInitialTour
+            chkTutorialInitial.Checked = s.ShowInitialTutorial
             chkAvansate.Checked = s.AdvancedOptions
             chkCapturi.Checked = s.HelpCaptureMode
             AplicaOptiunileAvansate(s.AdvancedOptions)
@@ -308,6 +311,14 @@ Public Class SetariAplicatieView
                           If(chkTurInitial.Checked,
                              "Turul ferestrei principale va porni singur la următoarea pornire a K-BOT.",
                              "Turul ferestrei principale nu mai pornește singur. Îl găsești oricând la «?»."))
+    End Sub
+
+    ' Slice 000T-07: the short tutorial about the tutorials at start, until seen to the end or switched off.
+    Private Sub ChkTutorialInitial_CheckedChanged(sender As Object, e As EventArgs) Handles chkTutorialInitial.CheckedChanged
+        SalveazaComutator(Sub(s) s.ShowInitialTutorial = chkTutorialInitial.Checked,
+                          If(chkTutorialInitial.Checked,
+                             "Tutorialul de început va porni singur la următoarea pornire a K-BOT.",
+                             "Tutorialul de început nu mai pornește singur. Îl găsești oricând la «?», la «Tutoriale»."))
     End Sub
 
     ' ---------------- documents ----------------

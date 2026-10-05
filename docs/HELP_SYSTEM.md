@@ -75,6 +75,12 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   -- or is closed with the box ticked; Setări › Aplicație «Arată turul ferestrei principale la
   pornirea K-BOT» turns it back on. A director never gets it (the tour's part is not visible).
   Renaming or removing `tur-fereastra` means changing `InitialTourId` too.
+- **The initial tutorial** (slice 000T-07): the short tutorial `tutoriale-intro` (a message, the «?» button, the «Tutoriale» list of
+  the popup) starts by itself after the initial tour is over or not owed (`HelpService.StartInitialTutorial`, called from the
+  end of `StartInitialTour`), while `AppSettings.ShowInitialTutorial` is on. It is a **mandatory** tutorial (`mandatory: yes`, slice 000T-08: it cannot be closed before its last step; a press
+  outside it says so); the setting goes off (`HelpService.InitialTutorialSeen`) when it ends past its last step; Setări › Aplicație ›
+  Generale turns it back on. The popup's «Tutoriale» header row has `Key = tutorials` so the
+  tutorial can ring that block (`KBotHelpList` part `tutorials`). Renaming `tutoriale-intro` means changing `InitialTutorialId` too.
 - **Capture blur** (slice 0000-23, operator tool, NOT described in the help): the capture tool
   blurs, on the frozen screen and before the operator chooses, the TEXT (never a whole bar or
   menu) of the login's user and unit, the other units' names, anything «RO» + digits, 13 digits in

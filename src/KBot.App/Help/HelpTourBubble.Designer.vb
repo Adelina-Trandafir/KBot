@@ -21,7 +21,7 @@ Partial Class HelpTourBubble
         tlyCorp = New KBotTableLayoutPanel()
         lblPas = New Label()
         lblTitlu = New Label()
-        lblText = New Label()
+        lblText = New KBotHtmlLabel()
         lblNota = New Label()
         chkNuMaiArata = New CheckBox()
         btnSariLaObligatoriu = New Button()
@@ -230,7 +230,7 @@ Partial Class HelpTourBubble
     Friend WithEvents tlyCorp As KBotTableLayoutPanel
     Friend WithEvents lblPas As Label
     Friend WithEvents lblTitlu As Label
-    Friend WithEvents lblText As Label
+    Friend WithEvents lblText As KBotHtmlLabel
     Friend WithEvents lblNota As Label
     Friend WithEvents chkNuMaiArata As CheckBox
     Friend WithEvents btnSariLaObligatoriu As Button

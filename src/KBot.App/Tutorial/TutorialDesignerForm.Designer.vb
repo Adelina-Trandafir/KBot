@@ -21,8 +21,6 @@ Partial Class TutorialDesignerForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(TutorialDesignerForm))
-        tips = New KBotToolTip(components)
         lstSteps = New ListBox()
         btnAdd = New Button()
         btnDel = New Button()
@@ -34,7 +32,17 @@ Partial Class TutorialDesignerForm
         btnPick = New Button()
         btnInregistreaza = New Button()
         btnSalveaza = New Button()
+        btnSterge = New Button()
         btnTesteaza = New Button()
+        btnHtmlBold = New Button()
+        btnHtmlItalic = New Button()
+        btnHtmlUnderline = New Button()
+        cmbHtmlColor = New ComboBox()
+        btnHtmlMark = New Button()
+        btnHtmlBreak = New Button()
+        btnHtmlList = New Button()
+        btnHtmlHeading = New Button()
+        lblPreview = New KBotHtmlLabel()
         pnlCard = New Panel()
         tlpBody = New KBotTableLayoutPanel()
         pnlLeft = New Panel()
@@ -42,6 +50,9 @@ Partial Class TutorialDesignerForm
         pgFlow = New PropertyGrid()
         pnlRight = New Panel()
         pgStep = New PropertyGrid()
+        pnlHtml = New Panel()
+        tlpHtmlEditor = New KBotTableLayoutPanel()
+        tlpHtmlTools = New KBotTableLayoutPanel()
         lblText = New Label()
         tlpButtons = New KBotTableLayoutPanel()
         btnInchide = New Button()
@@ -51,6 +62,9 @@ Partial Class TutorialDesignerForm
         pnlLeft.SuspendLayout()
         tlpStepButtons.SuspendLayout()
         pnlRight.SuspendLayout()
+        pnlHtml.SuspendLayout()
+        tlpHtmlEditor.SuspendLayout()
+        tlpHtmlTools.SuspendLayout()
         tlpButtons.SuspendLayout()
         SuspendLayout()
         ' 
@@ -61,12 +75,10 @@ Partial Class TutorialDesignerForm
         lstSteps.FormattingEnabled = True
         lstSteps.IntegralHeight = False
         lstSteps.Location = New Point(0, 480)
-        lstSteps.Margin = New Padding(4, 4, 4, 4)
+        lstSteps.Margin = New Padding(4)
         lstSteps.Name = "lstSteps"
         lstSteps.Size = New Size(498, 353)
         lstSteps.TabIndex = 2
-        tips.SetToolTipHeader(lstSteps, "Pașii tutorialului")
-        tips.SetToolTipText(lstSteps, "Alege un pas ca să-l editezi în dreapta. «(opțional)» = se poate sări peste el.")
         ' 
         ' btnAdd
         ' 
@@ -78,8 +90,6 @@ Partial Class TutorialDesignerForm
         btnAdd.Size = New Size(115, 45)
         btnAdd.TabIndex = 0
         btnAdd.Text = "+ Pas"
-        tips.SetToolTipHeader(btnAdd, "Pas nou")
-        tips.SetToolTipText(btnAdd, "Adaugă un pas după cel ales.")
         btnAdd.UseVisualStyleBackColor = True
         ' 
         ' btnDel
@@ -92,8 +102,6 @@ Partial Class TutorialDesignerForm
         btnDel.Size = New Size(115, 45)
         btnDel.TabIndex = 1
         btnDel.Text = "Șterge"
-        tips.SetToolTipHeader(btnDel, "Șterge pasul")
-        tips.SetToolTipText(btnDel, "Scoate pasul ales din tutorial.")
         btnDel.UseVisualStyleBackColor = True
         ' 
         ' btnUp
@@ -106,8 +114,6 @@ Partial Class TutorialDesignerForm
         btnUp.Size = New Size(65, 45)
         btnUp.TabIndex = 2
         btnUp.Text = "▲"
-        tips.SetToolTipHeader(btnUp, "Mai sus")
-        tips.SetToolTipText(btnUp, "Mută pasul înainte cu o poziție.")
         btnUp.UseVisualStyleBackColor = True
         ' 
         ' btnDown
@@ -120,8 +126,6 @@ Partial Class TutorialDesignerForm
         btnDown.Size = New Size(65, 45)
         btnDown.TabIndex = 3
         btnDown.Text = "▼"
-        tips.SetToolTipHeader(btnDown, "Mai jos")
-        tips.SetToolTipText(btnDown, "Mută pasul după următorul.")
         btnDown.UseVisualStyleBackColor = True
         ' 
         ' btnDup
@@ -134,8 +138,6 @@ Partial Class TutorialDesignerForm
         btnDup.Size = New Size(122, 45)
         btnDup.TabIndex = 4
         btnDup.Text = "Copie"
-        tips.SetToolTipHeader(btnDup, "Copiază pasul")
-        tips.SetToolTipText(btnDup, "Pune o copie a pasului chiar după el.")
         btnDup.UseVisualStyleBackColor = True
         ' 
         ' cmbFlows
@@ -144,27 +146,23 @@ Partial Class TutorialDesignerForm
         cmbFlows.DropDownStyle = ComboBoxStyle.DropDownList
         cmbFlows.FormattingEnabled = True
         cmbFlows.Location = New Point(0, 0)
-        cmbFlows.Margin = New Padding(4, 4, 4, 4)
+        cmbFlows.Margin = New Padding(4)
         cmbFlows.Name = "cmbFlows"
         cmbFlows.Size = New Size(498, 30)
         cmbFlows.TabIndex = 0
-        tips.SetToolTipHeader(cmbFlows, "Tutorialul")
-        tips.SetToolTipText(cmbFlows, "Alege un tutorial salvat ca să-l modifici, sau «(tutorial nou)».")
         ' 
         ' txtText
         ' 
         txtText.AcceptsReturn = True
-        txtText.Dock = DockStyle.Bottom
-        txtText.Font = New Font("Calibri", 11F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
-        txtText.Location = New Point(0, 691)
-        txtText.Margin = New Padding(4, 4, 4, 4)
+        txtText.Dock = DockStyle.Fill
+        txtText.Font = New Font("Consolas", 10F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
+        txtText.Location = New Point(0, 6)
+        txtText.Margin = New Padding(0, 0, 6, 0)
         txtText.Multiline = True
         txtText.Name = "txtText"
         txtText.ScrollBars = ScrollBars.Vertical
-        txtText.Size = New Size(962, 193)
-        txtText.TabIndex = 2
-        tips.SetToolTipHeader(txtText, "Textul din bulă")
-        tips.SetToolTipText(txtText, "Ce citește utilizatorul la acest pas. Un rând gol începe un paragraf; rândurile care încep cu «- » devin liste.")
+        txtText.Size = New Size(475, 327)
+        txtText.TabIndex = 0
         ' 
         ' btnPick
         ' 
@@ -172,13 +170,11 @@ Partial Class TutorialDesignerForm
         btnPick.FlatStyle = FlatStyle.Flat
         btnPick.Font = New Font("Segoe UI Semibold", 9F)
         btnPick.Location = New Point(0, 0)
-        btnPick.Margin = New Padding(4, 4, 4, 4)
+        btnPick.Margin = New Padding(4)
         btnPick.Name = "btnPick"
         btnPick.Size = New Size(962, 54)
         btnPick.TabIndex = 0
         btnPick.Text = "Alege pe ecran..."
-        tips.SetToolTipHeader(btnPick, "Alege pe ecran")
-        tips.SetToolTipText(btnPick, "Ascunde fereastra aceasta; treci cu mouse-ul peste K-BOT, apare un cadru pe ce găsește, iar un clic îl trece în pas (țintă, piesă, ce așteaptă). Esc sau clic dreapta renunță.")
         btnPick.UseVisualStyleBackColor = True
         ' 
         ' btnInregistreaza
@@ -191,9 +187,19 @@ Partial Class TutorialDesignerForm
         btnInregistreaza.Size = New Size(216, 60)
         btnInregistreaza.TabIndex = 3
         btnInregistreaza.Text = "Înregistrează"
-        tips.SetToolTipHeader(btnInregistreaza, "Înregistrează pașii")
-        tips.SetToolTipText(btnInregistreaza, resources.GetString("btnInregistreaza.ToolTipText"))
         btnInregistreaza.UseVisualStyleBackColor = True
+        ' 
+        ' btnSterge
+        ' 
+        btnSterge.Dock = DockStyle.Fill
+        btnSterge.FlatStyle = FlatStyle.Flat
+        btnSterge.Location = New Point(572, 6)
+        btnSterge.Margin = New Padding(0, 6, 9, 0)
+        btnSterge.Name = "btnSterge"
+        btnSterge.Size = New Size(216, 60)
+        btnSterge.TabIndex = 4
+        btnSterge.Text = "Șterge tutorialul"
+        btnSterge.UseVisualStyleBackColor = True
         ' 
         ' btnSalveaza
         ' 
@@ -206,8 +212,6 @@ Partial Class TutorialDesignerForm
         btnSalveaza.Size = New Size(216, 60)
         btnSalveaza.TabIndex = 0
         btnSalveaza.Text = "Salvează"
-        tips.SetToolTipHeader(btnSalveaza, "Salvează tutorialul")
-        tips.SetToolTipText(btnSalveaza, "Scrie fișierul în dosarul Help\tutorials (și în sursa din repo, când K-BOT rulează de acolo) și reîncarcă ajutorul.")
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' btnTesteaza
@@ -220,9 +224,117 @@ Partial Class TutorialDesignerForm
         btnTesteaza.Size = New Size(276, 60)
         btnTesteaza.TabIndex = 1
         btnTesteaza.Text = "Testează de la pasul"
-        tips.SetToolTipHeader(btnTesteaza, "Testează de la pasul ales")
-        tips.SetToolTipText(btnTesteaza, "Pornește tutorialul (așa cum e acum, nesalvat) de la pasul ales; fereastra aceasta se micșorează și revine la sfârșit.")
         btnTesteaza.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlBold
+        ' 
+        btnHtmlBold.Dock = DockStyle.Fill
+        btnHtmlBold.FlatStyle = FlatStyle.Flat
+        btnHtmlBold.Font = New Font("Segoe UI", 9F, FontStyle.Bold)
+        btnHtmlBold.Location = New Point(0, 0)
+        btnHtmlBold.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlBold.Name = "btnHtmlBold"
+        btnHtmlBold.Size = New Size(56, 54)
+        btnHtmlBold.TabIndex = 0
+        btnHtmlBold.Text = "B"
+        btnHtmlBold.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlItalic
+        ' 
+        btnHtmlItalic.Dock = DockStyle.Fill
+        btnHtmlItalic.FlatStyle = FlatStyle.Flat
+        btnHtmlItalic.Font = New Font("Segoe UI", 9F, FontStyle.Italic)
+        btnHtmlItalic.Location = New Point(60, 0)
+        btnHtmlItalic.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlItalic.Name = "btnHtmlItalic"
+        btnHtmlItalic.Size = New Size(56, 54)
+        btnHtmlItalic.TabIndex = 1
+        btnHtmlItalic.Text = "I"
+        btnHtmlItalic.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlUnderline
+        ' 
+        btnHtmlUnderline.Dock = DockStyle.Fill
+        btnHtmlUnderline.FlatStyle = FlatStyle.Flat
+        btnHtmlUnderline.Font = New Font("Segoe UI", 9F, FontStyle.Underline)
+        btnHtmlUnderline.Location = New Point(120, 0)
+        btnHtmlUnderline.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlUnderline.Name = "btnHtmlUnderline"
+        btnHtmlUnderline.Size = New Size(56, 54)
+        btnHtmlUnderline.TabIndex = 2
+        btnHtmlUnderline.Text = "U"
+        btnHtmlUnderline.UseVisualStyleBackColor = True
+        ' 
+        ' cmbHtmlColor
+        ' 
+        cmbHtmlColor.Dock = DockStyle.Fill
+        cmbHtmlColor.DropDownStyle = ComboBoxStyle.DropDownList
+        cmbHtmlColor.FormattingEnabled = True
+        cmbHtmlColor.Items.AddRange(New Object() {"Culoare...", "Accent (din temă)", "Estompat (din temă)", "Avertisment (din temă)", "Eroare (din temă)", "Succes (din temă)", "Roșu", "Verde", "Albastru", "Portocaliu"})
+        cmbHtmlColor.Location = New Point(180, 0)
+        cmbHtmlColor.Margin = New Padding(0, 0, 4, 0)
+        cmbHtmlColor.Name = "cmbHtmlColor"
+        cmbHtmlColor.Size = New Size(296, 30)
+        cmbHtmlColor.TabIndex = 3
+        ' 
+        ' btnHtmlMark
+        ' 
+        btnHtmlMark.Dock = DockStyle.Fill
+        btnHtmlMark.FlatStyle = FlatStyle.Flat
+        btnHtmlMark.Location = New Point(480, 0)
+        btnHtmlMark.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlMark.Name = "btnHtmlMark"
+        btnHtmlMark.Size = New Size(146, 54)
+        btnHtmlMark.TabIndex = 4
+        btnHtmlMark.Text = "Marcaj"
+        btnHtmlMark.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlBreak
+        ' 
+        btnHtmlBreak.Dock = DockStyle.Fill
+        btnHtmlBreak.FlatStyle = FlatStyle.Flat
+        btnHtmlBreak.Location = New Point(630, 0)
+        btnHtmlBreak.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlBreak.Name = "btnHtmlBreak"
+        btnHtmlBreak.Size = New Size(146, 54)
+        btnHtmlBreak.TabIndex = 5
+        btnHtmlBreak.Text = "↵ Rând"
+        btnHtmlBreak.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlList
+        ' 
+        btnHtmlList.Dock = DockStyle.Fill
+        btnHtmlList.FlatStyle = FlatStyle.Flat
+        btnHtmlList.Location = New Point(780, 0)
+        btnHtmlList.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlList.Name = "btnHtmlList"
+        btnHtmlList.Size = New Size(146, 54)
+        btnHtmlList.TabIndex = 6
+        btnHtmlList.Text = "• Listă"
+        btnHtmlList.UseVisualStyleBackColor = True
+        ' 
+        ' btnHtmlHeading
+        ' 
+        btnHtmlHeading.Dock = DockStyle.Fill
+        btnHtmlHeading.FlatStyle = FlatStyle.Flat
+        btnHtmlHeading.Location = New Point(930, 0)
+        btnHtmlHeading.Margin = New Padding(0, 0, 4, 0)
+        btnHtmlHeading.Name = "btnHtmlHeading"
+        btnHtmlHeading.Size = New Size(126, 54)
+        btnHtmlHeading.TabIndex = 7
+        btnHtmlHeading.Text = "Titlu"
+        btnHtmlHeading.UseVisualStyleBackColor = True
+        ' 
+        ' lblPreview
+        ' 
+        lblPreview.Dock = DockStyle.Fill
+        lblPreview.Font = New Font("Segoe UI", 10.5F)
+        lblPreview.Location = New Point(487, 6)
+        lblPreview.Margin = New Padding(6, 0, 0, 0)
+        lblPreview.Name = "lblPreview"
+        lblPreview.Padding = New Padding(12, 10, 12, 10)
+        lblPreview.Size = New Size(475, 327)
+        lblPreview.TabIndex = 1
         ' 
         ' pnlCard
         ' 
@@ -230,7 +342,7 @@ Partial Class TutorialDesignerForm
         pnlCard.Controls.Add(capBar)
         pnlCard.Dock = DockStyle.Fill
         pnlCard.Location = New Point(2, 4)
-        pnlCard.Margin = New Padding(4, 4, 4, 4)
+        pnlCard.Margin = New Padding(4)
         pnlCard.Name = "pnlCard"
         pnlCard.Size = New Size(1496, 1042)
         pnlCard.TabIndex = 0
@@ -246,7 +358,7 @@ Partial Class TutorialDesignerForm
         tlpBody.Controls.Add(tlpButtons, 0, 1)
         tlpBody.Dock = DockStyle.Fill
         tlpBody.Location = New Point(0, 60)
-        tlpBody.Margin = New Padding(4, 4, 4, 4)
+        tlpBody.Margin = New Padding(4)
         tlpBody.Name = "tlpBody"
         tlpBody.Padding = New Padding(12, 8, 12, 12)
         tlpBody.RowCount = 2
@@ -284,7 +396,7 @@ Partial Class TutorialDesignerForm
         tlpStepButtons.Controls.Add(btnDup, 4, 0)
         tlpStepButtons.Dock = DockStyle.Bottom
         tlpStepButtons.Location = New Point(0, 833)
-        tlpStepButtons.Margin = New Padding(4, 4, 4, 4)
+        tlpStepButtons.Margin = New Padding(4)
         tlpStepButtons.Name = "tlpStepButtons"
         tlpStepButtons.RowCount = 1
         tlpStepButtons.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
@@ -298,7 +410,7 @@ Partial Class TutorialDesignerForm
         pgFlow.Font = New Font("Calibri", 10F)
         pgFlow.HelpVisible = False
         pgFlow.Location = New Point(0, 30)
-        pgFlow.Margin = New Padding(6, 6, 6, 6)
+        pgFlow.Margin = New Padding(6)
         pgFlow.Name = "pgFlow"
         pgFlow.Size = New Size(498, 450)
         pgFlow.TabIndex = 1
@@ -307,8 +419,7 @@ Partial Class TutorialDesignerForm
         ' pnlRight
         ' 
         pnlRight.Controls.Add(pgStep)
-        pnlRight.Controls.Add(lblText)
-        pnlRight.Controls.Add(txtText)
+        pnlRight.Controls.Add(pnlHtml)
         pnlRight.Controls.Add(btnPick)
         pnlRight.Dock = DockStyle.Fill
         pnlRight.Location = New Point(522, 8)
@@ -322,36 +433,98 @@ Partial Class TutorialDesignerForm
         pgStep.Dock = DockStyle.Fill
         pgStep.Font = New Font("Calibri", 10F)
         pgStep.Location = New Point(0, 54)
-        pgStep.Margin = New Padding(6, 6, 6, 6)
+        pgStep.Margin = New Padding(6)
         pgStep.Name = "pgStep"
-        pgStep.Size = New Size(962, 604)
+        pgStep.Size = New Size(962, 410)
         pgStep.TabIndex = 1
         pgStep.ToolbarVisible = False
         ' 
+        ' pnlHtml
+        ' 
+        pnlHtml.Controls.Add(tlpHtmlEditor)
+        pnlHtml.Controls.Add(tlpHtmlTools)
+        pnlHtml.Controls.Add(lblText)
+        pnlHtml.Dock = DockStyle.Bottom
+        pnlHtml.Location = New Point(0, 464)
+        pnlHtml.Margin = New Padding(0)
+        pnlHtml.Name = "pnlHtml"
+        pnlHtml.Size = New Size(962, 420)
+        pnlHtml.TabIndex = 2
+        ' 
+        ' tlpHtmlEditor
+        ' 
+        tlpHtmlEditor.ColumnCount = 2
+        tlpHtmlEditor.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlpHtmlEditor.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlpHtmlEditor.Controls.Add(txtText, 0, 0)
+        tlpHtmlEditor.Controls.Add(lblPreview, 1, 0)
+        tlpHtmlEditor.Dock = DockStyle.Fill
+        tlpHtmlEditor.Location = New Point(0, 87)
+        tlpHtmlEditor.Margin = New Padding(0)
+        tlpHtmlEditor.Name = "tlpHtmlEditor"
+        tlpHtmlEditor.Padding = New Padding(0, 6, 0, 0)
+        tlpHtmlEditor.RowCount = 1
+        tlpHtmlEditor.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpHtmlEditor.Size = New Size(962, 333)
+        tlpHtmlEditor.TabIndex = 2
+        tlpHtmlEditor.Tag = "Card"
+        ' 
+        ' tlpHtmlTools
+        ' 
+        tlpHtmlTools.ColumnCount = 9
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 300F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
+        tlpHtmlTools.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpHtmlTools.Controls.Add(btnHtmlBold, 0, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlItalic, 1, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlUnderline, 2, 0)
+        tlpHtmlTools.Controls.Add(cmbHtmlColor, 3, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlMark, 4, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlBreak, 5, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlList, 6, 0)
+        tlpHtmlTools.Controls.Add(btnHtmlHeading, 7, 0)
+        tlpHtmlTools.Dock = DockStyle.Top
+        tlpHtmlTools.Location = New Point(0, 33)
+        tlpHtmlTools.Margin = New Padding(0)
+        tlpHtmlTools.Name = "tlpHtmlTools"
+        tlpHtmlTools.RowCount = 1
+        tlpHtmlTools.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpHtmlTools.Size = New Size(962, 54)
+        tlpHtmlTools.TabIndex = 1
+        tlpHtmlTools.Tag = "Card"
+        ' 
         ' lblText
         ' 
-        lblText.Dock = DockStyle.Bottom
-        lblText.Location = New Point(0, 658)
+        lblText.Dock = DockStyle.Top
+        lblText.Location = New Point(0, 0)
         lblText.Margin = New Padding(4, 0, 4, 0)
         lblText.Name = "lblText"
         lblText.Size = New Size(962, 33)
-        lblText.TabIndex = 3
-        lblText.Text = "Textul din bulă"
+        lblText.TabIndex = 0
+        lblText.Text = "Textul din bulă — stânga: ce scrii (text simplu sau HTML) · dreapta: cum se vede"
         lblText.TextAlign = ContentAlignment.BottomLeft
         ' 
         ' tlpButtons
         ' 
-        tlpButtons.ColumnCount = 5
+        tlpButtons.ColumnCount = 6
         tlpBody.SetColumnSpan(tlpButtons, 2)
         tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 225F))
         tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 225F))
+        tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 225F))
         tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 285F))
         tlpButtons.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 165F))
-        tlpButtons.Controls.Add(btnInregistreaza, 1, 0)
-        tlpButtons.Controls.Add(btnSalveaza, 2, 0)
-        tlpButtons.Controls.Add(btnTesteaza, 3, 0)
-        tlpButtons.Controls.Add(btnInchide, 4, 0)
+        tlpButtons.Controls.Add(btnSterge, 1, 0)
+        tlpButtons.Controls.Add(btnInregistreaza, 2, 0)
+        tlpButtons.Controls.Add(btnSalveaza, 3, 0)
+        tlpButtons.Controls.Add(btnTesteaza, 4, 0)
+        tlpButtons.Controls.Add(btnInchide, 5, 0)
         tlpButtons.Dock = DockStyle.Fill
         tlpButtons.Location = New Point(12, 904)
         tlpButtons.Margin = New Padding(0)
@@ -379,7 +552,7 @@ Partial Class TutorialDesignerForm
         capBar.Dock = DockStyle.Top
         capBar.IconImage = My.Resources.Resources.kbot_64
         capBar.Location = New Point(0, 0)
-        capBar.Margin = New Padding(4, 4, 4, 4)
+        capBar.Margin = New Padding(4)
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
@@ -396,7 +569,7 @@ Partial Class TutorialDesignerForm
         ClientSize = New Size(1500, 1050)
         Controls.Add(pnlCard)
         FormBorderStyle = FormBorderStyle.None
-        Margin = New Padding(4, 4, 4, 4)
+        Margin = New Padding(4)
         MaximizeBox = False
         MinimizeBox = False
         Name = "TutorialDesignerForm"
@@ -408,12 +581,14 @@ Partial Class TutorialDesignerForm
         pnlLeft.ResumeLayout(False)
         tlpStepButtons.ResumeLayout(False)
         pnlRight.ResumeLayout(False)
-        pnlRight.PerformLayout()
+        pnlHtml.ResumeLayout(False)
+        tlpHtmlEditor.ResumeLayout(False)
+        tlpHtmlEditor.PerformLayout()
+        tlpHtmlTools.ResumeLayout(False)
         tlpButtons.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents tips As Global.KBot.Controls.KBotToolTip
     Friend WithEvents pnlCard As Panel
     Friend WithEvents capBar As Global.KBot.Controls.KBotCaptionBar
     Friend WithEvents tlpBody As Global.KBot.Controls.KBotTableLayoutPanel
@@ -432,9 +607,22 @@ Partial Class TutorialDesignerForm
     Friend WithEvents pgStep As PropertyGrid
     Friend WithEvents lblText As Label
     Friend WithEvents txtText As TextBox
+    Friend WithEvents pnlHtml As Panel
+    Friend WithEvents tlpHtmlTools As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents btnHtmlBold As Button
+    Friend WithEvents btnHtmlItalic As Button
+    Friend WithEvents btnHtmlUnderline As Button
+    Friend WithEvents cmbHtmlColor As ComboBox
+    Friend WithEvents btnHtmlMark As Button
+    Friend WithEvents btnHtmlBreak As Button
+    Friend WithEvents btnHtmlList As Button
+    Friend WithEvents btnHtmlHeading As Button
+    Friend WithEvents tlpHtmlEditor As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents lblPreview As Global.KBot.Controls.KBotHtmlLabel
     Friend WithEvents tlpButtons As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents btnInregistreaza As Button
     Friend WithEvents btnSalveaza As Button
+    Friend WithEvents btnSterge As Button
     Friend WithEvents btnTesteaza As Button
     Friend WithEvents btnInchide As Button
 End Class

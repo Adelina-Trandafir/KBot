@@ -282,10 +282,11 @@ Public NotInheritable Class HelpService
         End If
         ' Slice 000T: the interactive tutorials -- they cross windows, so every window's «?» lists them
         ' all; the ones that start in this window come first.
-        Dim flows As List(Of TutorialFlow) = Library.Tutorials.Where(Function(f) parts.Contains(f.Part)).
+        Dim flows As List(Of TutorialFlow) = Library.Tutorials.Where(Function(f) parts.Contains(f.Part) AndAlso TutorialAvailable(f)).
             OrderByDescending(Function(f) rootWindow IsNot Nothing AndAlso String.Equals(rootWindow.GetType().Name, f.Starts, StringComparison.OrdinalIgnoreCase)).ToList()
         If flows.Count > 0 Then
-            rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tutoriale"))
+            ' Slice 000T-07: the key lets the tutorial of the start ring this block (KBotHelpList part «tutorials»).
+            rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tutoriale") With {.Key = KBotHelpList.PartTutorials})
             rows.AddRange(flows.Select(Function(f) TutorialRow(f)))
         End If
         ' Always the last row (operator, 01.10.2026): what the last versions changed.
@@ -293,6 +294,26 @@ Public NotInheritable Class HelpService
             .Tag = WhatsNewMarker.Instance,
             .ToolTipText = "Arată ce s-a schimbat în ultimele " & ReleaseNotesText.RecentVersions & " versiuni."})
         Return rows
+    End Function
+
+    ''' <summary>
+    ''' Slice 000T-10: True when what the tutorial <c>requires:</c> holds now (the main window answers,
+    ''' <see cref="ITutorialRequirements"/>); a tutorial that requires nothing is always available.
+    ''' </summary>
+    Friend Shared Function TutorialAvailable(k_flow As TutorialFlow) As Boolean
+        If k_flow Is Nothing OrElse String.IsNullOrWhiteSpace(k_flow.Requires) Then Return True
+        For Each k_window As ITutorialRequirements In Application.OpenForms.OfType(Of ITutorialRequirements)().ToList()
+            If k_window.TutorialRequirementMet(k_flow.Requires) Then Return True
+        Next
+        Return False
+    End Function
+
+    ' What the operator reads when the tutorial's requirement is not met.
+    Private Shared Function RequirementText(k_flow As TutorialFlow) As String
+        For Each k_window As ITutorialRequirements In Application.OpenForms.OfType(Of ITutorialRequirements)().ToList()
+            Return k_window.TutorialRequirementText(k_flow.Requires)
+        Next
+        Return "Tutorialul «" & k_flow.Title & "» nu poate porni acum."
     End Function
 
     ''' <summary>The tag of the popup's «Ce e nou?» row.</summary>
@@ -363,6 +384,11 @@ Public NotInheritable Class HelpService
             Dim flow As TutorialFlow = Library.FindTutorial(k_id)
             If flow Is Nothing Then Throw New ArgumentException("Unknown tutorial '" & k_id & "'.", NameOf(k_id))
             If Not VisibleParts().Contains(flow.Part) Then Return
+            ' Slice 000T-10: a tutorial that needs something (a FOREXE session) says what is missing.
+            If Not TutorialAvailable(flow) Then
+                KBotMessage.ShowOnTop(RequirementText(flow), "Tutorial", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
             TutorialRunner.Start(Me, flow, StepAside())
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.StartTutorial", ex)
@@ -382,13 +408,84 @@ Public NotInheritable Class HelpService
     ''' </summary>
     Public Sub StartInitialTour()
         Try
-            If Not AppSettings.Current.ShowInitialTour Then Return
+            If Not AppSettings.Current.ShowInitialTour Then
+                StartInitialTutorial()
+                Return
+            End If
             Dim tour As HelpTour = Library.FindTour(InitialTourId)
             If tour Is Nothing Then Throw New InvalidOperationException("The initial tour '" & InitialTourId & "' is not in the help.")
-            If Not VisibleParts().Contains(tour.Part) Then Return
-            HelpTourRunner.Start(Me, tour, StepAside(), initial:=True)
+            If Not VisibleParts().Contains(tour.Part) Then
+                StartInitialTutorial()
+                Return
+            End If
+            ' Slice 000T-07: when the tour is over, the tutorial of the start gets its turn -- after the
+            ' tour has been marked seen (posted), and only if the tour is not owed any more.
+            Dim restore As Action = StepAside()
+            HelpTourRunner.Start(Me, tour,
+                                 Sub()
+                                     restore()
+                                     PostInitialTutorial()
+                                 End Sub, initial:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.StartInitialTour", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>The tutorial that runs by itself at start (slice 000T-07): the short one about the tutorials.</summary>
+    Public Const InitialTutorialId As String = "tutoriale-intro"
+
+    ''' <summary>
+    ''' Slice 000T-07: starts the tutorial about the tutorials without being asked, when it is still due
+    ''' (<see cref="AppSettings.ShowInitialTutorial"/>), this login reads the part it belongs to, the main
+    ''' window is on screen and the initial tour is not owed (a tour still due goes first, see
+    ''' <see cref="StartInitialTour"/>). The tutorial is mandatory (<c>mandatory: yes</c>), so it stops being due
+    ''' only once seen to its last step (<see cref="InitialTutorialSeen"/>).
+    ''' </summary>
+    Public Sub StartInitialTutorial()
+        Try
+            If Not AppSettings.Current.ShowInitialTutorial Then Return
+            Dim flow As TutorialFlow = Library.FindTutorial(InitialTutorialId)
+            If flow Is Nothing Then Throw New InvalidOperationException("The initial tutorial '" & InitialTutorialId & "' is not in the help.")
+            If Not VisibleParts().Contains(flow.Part) Then Return
+            Dim tour As HelpTour = Library.FindTour(InitialTourId)
+            If AppSettings.Current.ShowInitialTour AndAlso tour IsNot Nothing AndAlso VisibleParts().Contains(tour.Part) Then Return
+            ' Nobody asked for it: a window it cannot start in is not worth a message.
+            If flow.Starts.Length > 0 AndAlso HelpTourRunner.FindTarget(flow.Starts) Is Nothing Then Return
+            TutorialRunner.Start(Me, flow, StepAside(), k_initial:=True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.StartInitialTutorial", ex)
+            Throw
+        End Try
+    End Sub
+
+    ' After the initial tour: later, on the window's own queue, so the tour's «seen» has been saved first.
+    ' UI boundary (posted action): logged, never shown -- nobody asked for it.
+    Private Sub PostInitialTutorial()
+        Dim main As Control = TryCast(MainWindow(), Control)
+        If main Is Nothing OrElse main.IsDisposed OrElse Not main.IsHandleCreated Then Return
+        main.BeginInvoke(New Action(
+            Sub()
+                Try
+                    StartInitialTutorial()
+                Catch ex As Exception
+                    GlobalErrorLog.Write("HelpService.PostInitialTutorial", ex)
+                End Try
+            End Sub))
+    End Sub
+
+    ''' <summary>
+    ''' Slice 000T-07: the tutorial of the start is not due any more (seen to the end, or the operator asked
+    ''' not to see it again). Saved at once; «Setari -> Generale» turns it back on.
+    ''' </summary>
+    Friend Sub InitialTutorialSeen()
+        Try
+            If Not AppSettings.Current.ShowInitialTutorial Then Return
+            Dim copy As AppSettings = AppSettings.Current.Clone()
+            copy.ShowInitialTutorial = False
+            copy.Save()
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.InitialTutorialSeen", ex)
             Throw
         End Try
     End Sub

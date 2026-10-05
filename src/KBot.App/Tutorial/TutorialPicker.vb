@@ -241,7 +241,19 @@ Friend NotInheritable Class TutorialPicker
             k_pick.SuggestedWait = TutorialWaitKind.Tab
             k_pick.SuggestedWaitArg = k_part.Substring(5)
         ElseIf TypeOf k_control Is AdvancedTreeControl Then
-            k_pick.SuggestedWait = If(k_part = "node.icon", TutorialWaitKind.Click, TutorialWaitKind.Select)
+            ' A row is selected; the row button and every painted button of the header / footer (the footer's
+            ' icons, the collapse button, the search icon) are CLICKED -- the runner watches the press inside the part
+            ' (slice 000T-09). The empty bands themselves ("header", "footer") do nothing.
+            If k_part.Length = 0 Then
+                k_pick.SuggestedWait = TutorialWaitKind.Select
+            ElseIf k_part = "header" OrElse k_part = "footer" Then
+                k_pick.SuggestedWait = TutorialWaitKind.Manual
+            Else
+                k_pick.SuggestedWait = TutorialWaitKind.Click
+            End If
+        ElseIf TypeOf k_control Is KBotDataView Then
+            ' Same for the grid: its header (sort), filter icon and footer buttons; not the TOTAL band, not the cells.
+            k_pick.SuggestedWait = If(k_part.Length > 0 AndAlso k_part <> "footer", TutorialWaitKind.Click, TutorialWaitKind.Manual)
         ElseIf TypeOf k_control Is CheckBox Then
             k_pick.SuggestedWait = TutorialWaitKind.Checked
         ElseIf TypeOf k_control Is ButtonBase Then

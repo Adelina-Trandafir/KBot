@@ -5,7 +5,7 @@ part: contabil
 order: 900
 parent: contabil
 screens: HelpForm, KBotHelpPopup
-keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza, tutorial, tutoriale, pas cu pas, invata, sari peste, pas optional, iesi din tutorial, ma opresc, intunecat
+keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza, tutorial, tutoriale, tutorial initial, tutorialul de inceput, ce sunt tutorialele, nu mai arata tutorialul, pas cu pas, invata, sari peste, pas optional, iesi din tutorial, ma opresc, intunecat
 ---
 <!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T -->
 Ajutorul se deschide în două feluri:
@@ -19,7 +19,7 @@ Ajutorul se deschide în două feluri:
 ## Meniul «?»
 <!-- slice: 0000-20, 0000-24, 0000-27, 000T -->
 
-<!-- capture: ajutor-meniu | caption: Meniul «?» deschis din fereastra principală | prepare: Selectați un angajament și vederea «Rezervări», apoi apăsați «?» din bara de titlu. Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
+<!-- capture: ajutor-meniu | caption: Meniul «?» deschis din fereastra principală | redo: 2026-10-05 08:53 | why: 000T-07: grupul «Tutoriale» are acum două tutoriale (și la 0000-50 se adăugase grupul) | prepare: Selectați un angajament și vederea «Rezervări», apoi apăsați «?» din bara de titlu. Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
 
 - Sus e **căsuța de căutare** (vezi mai jos). Sub ea, meniul e împărțit în părți; fiecare parte
   are un titlu colorat, subliniat, iar rândurile de sub el sunt ale lui.
@@ -149,6 +149,24 @@ ce urmează și, când ai făcut, trece singur la pasul următor.
 
 Un tutorial pornește dintr-o anumită fereastră (de obicei cea principală). Dacă nu ești în ea,
 K-BOT îți spune să o deschizi întâi.
+
+## Tutorialul de început
+<!-- slice: 000T-07, 0000-51 -->
+
+La pornirea K-BOT, **după turul ferestrei principale** (cât acela mai e de văzut), pornește singur
+un tutorial foarte scurt, **«Ce sunt tutorialele»**: un mesaj despre tutoriale, apoi chenarul pe
+butonul **«?»** al ferestrei — apeși tu pe el — și, în meniul care se deschide, chenarul pe lista
+**Tutoriale**.
+
+**Acest tutorial nu se poate închide la jumătate: trebuie parcurs până la capăt.** Butonul de
+ieșire din bulă e dezactivat, iar dacă apeși în afara lui sau închizi meniul «?» înainte de pasul lui, K-BOT îți
+spune că trebuie să ajungi la final și te duce înapoi la pasul în care puteai deschide meniul.
+
+Pornește singur la fiecare pornire, până când îl vezi **până la capăt** (apeși «Gata» la ultimul
+pas). Îl poți relua oricând din meniul **«?»**, la **Tutoriale**. Ca să nu mai pornească singur
+(sau să pornească iar), debifezi sau bifezi în **Setări › Aplicație** «Arată tutorialul de început
+la pornirea K-BOT»; tutorialul
+**«Pornește sau oprește tutorialul de început»** te duce acolo pas cu pas — [Setări și aspect](topic:contabil.setari).
 
 ## Fereastra de ajutor
 <!-- slice: 0000-01, 0000-20, 0000-23, 0000-32 -->

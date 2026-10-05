@@ -93,8 +93,21 @@ Partial Public Class KBotHelpPopup
 
     ' ── Closing ───────────────────────────────────────────────────────────────────
 
+    ''' <summary>
+    ''' Slice 000T-08: True while a tutorial points at the popup: losing the focus, Esc and the rows do not close it
+    ''' (any window the tutorial shows takes the focus for a moment, which used to close the popup under it). The
+    ''' tutorial closes it with <see cref="CloseNow"/> when it moves on or ends.
+    ''' </summary>
+    Public Property KeepOpen As Boolean
+
+    ''' <summary>Closes the popup now, whatever <see cref="KeepOpen"/> says.</summary>
+    Public Sub CloseNow()
+        KeepOpen = False
+        CloseSoon()
+    End Sub
+
     Private Sub CloseSoon()
-        If _closing OrElse IsDisposed Then Return
+        If KeepOpen OrElse _closing OrElse IsDisposed Then Return
         _closing = True
         If IsHandleCreated Then
             BeginInvoke(New MethodInvoker(AddressOf Close))

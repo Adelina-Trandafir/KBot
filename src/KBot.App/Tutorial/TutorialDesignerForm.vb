@@ -25,6 +25,9 @@ Public Class TutorialDesignerForm
         InitializeComponent()
         _service = k_service
         Try
+            _colorResetting = True
+            cmbHtmlColor.SelectedIndex = 0
+            _colorResetting = False
             RefreshFlowList()
             NewFlow()
         Catch ex As Exception
@@ -130,6 +133,7 @@ Public Class TutorialDesignerForm
             pgStep.SelectedObject = st
             txtText.Text = If(st Is Nothing, String.Empty, st.Text.Replace(vbLf, vbCrLf))
             txtText.Enabled = st IsNot Nothing
+            tlpHtmlTools.Enabled = st IsNot Nothing
             btnPick.Enabled = st IsNot Nothing
         Finally
             _loading = False
@@ -159,9 +163,83 @@ Public Class TutorialDesignerForm
     End Sub
 
     Private Sub TxtText_TextChanged(sender As Object, e As EventArgs) Handles txtText.TextChanged
-        If _loading OrElse CurrentStep Is Nothing Then Return
-        CurrentStep.Text = txtText.Text.Replace(vbCrLf, vbLf)
-        _dirty = True
+        Try
+            ' The preview follows every change, the load of a step included.
+            lblPreview.Html = txtText.Text
+            If _loading OrElse CurrentStep Is Nothing Then Return
+            CurrentStep.Text = txtText.Text.Replace(vbCrLf, vbLf)
+            _dirty = True
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialDesignerForm.TxtText_TextChanged", ex)
+        End Try
+    End Sub
+
+    ' ── the HTML helpers (slice 000T-06) ─────────────────────────────────────────
+
+    ' Same order as the items of cmbHtmlColor. The values are text written INTO the tutorial (a theme word follows the
+    ' scheme on the user's screen; a fixed colour is content, not a colour of this window).
+    Private Shared ReadOnly HtmlColorValues As String() = {String.Empty, "accent", "dim", "warning", "error", "success", "#c00000", "#1a7f37", "#0b5cad", "#c25e00"}
+    Private _colorResetting As Boolean
+
+    ' The selection goes between the two tags and stays selected (no selection: the caret lands between them).
+    Private Sub WrapSelection(k_open As String, k_close As String)
+        Dim k_start As Integer = txtText.SelectionStart
+        Dim k_selected As String = txtText.SelectedText
+        txtText.SelectedText = k_open & k_selected & k_close
+        txtText.Select(k_start + k_open.Length, k_selected.Length)
+        txtText.Focus()
+    End Sub
+
+    Private Sub BtnHtmlBold_Click(sender As Object, e As EventArgs) Handles btnHtmlBold.Click
+        WrapSelection("<b>", "</b>")
+    End Sub
+
+    Private Sub BtnHtmlItalic_Click(sender As Object, e As EventArgs) Handles btnHtmlItalic.Click
+        WrapSelection("<i>", "</i>")
+    End Sub
+
+    Private Sub BtnHtmlUnderline_Click(sender As Object, e As EventArgs) Handles btnHtmlUnderline.Click
+        WrapSelection("<u>", "</u>")
+    End Sub
+
+    Private Sub BtnHtmlMark_Click(sender As Object, e As EventArgs) Handles btnHtmlMark.Click
+        WrapSelection("<mark>", "</mark>")
+    End Sub
+
+    Private Sub BtnHtmlHeading_Click(sender As Object, e As EventArgs) Handles btnHtmlHeading.Click
+        WrapSelection("<h3>", "</h3>")
+    End Sub
+
+    Private Sub BtnHtmlBreak_Click(sender As Object, e As EventArgs) Handles btnHtmlBreak.Click
+        txtText.SelectedText = "<br>"
+        txtText.Focus()
+    End Sub
+
+    ' Every non-empty line of the selection becomes an item; nothing selected: a list with one empty item.
+    Private Sub BtnHtmlList_Click(sender As Object, e As EventArgs) Handles btnHtmlList.Click
+        Dim k_items As List(Of String) = txtText.SelectedText.Replace(vbCrLf, vbLf).Split(ChrW(10)).
+            Select(Function(k_line) k_line.Trim()).Where(Function(k_line) k_line.Length > 0).ToList()
+        If k_items.Count = 0 Then
+            Dim k_start As Integer = txtText.SelectionStart
+            txtText.SelectedText = "<ul><li></li></ul>"
+            txtText.Select(k_start + "<ul><li>".Length, 0)
+        Else
+            txtText.SelectedText = "<ul>" & vbCrLf & String.Join(vbCrLf, k_items.Select(Function(k_item) "<li>" & k_item & "</li>")) & vbCrLf & "</ul>"
+        End If
+        txtText.Focus()
+    End Sub
+
+    Private Sub CmbHtmlColor_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbHtmlColor.SelectedIndexChanged
+        Try
+            If _colorResetting OrElse cmbHtmlColor.SelectedIndex <= 0 Then Return
+            WrapSelection("<span style=""color:" & HtmlColorValues(cmbHtmlColor.SelectedIndex) & """>", "</span>")
+            ' Back to the «Culoare...» heading: the box is a menu, not a state.
+            _colorResetting = True
+            cmbHtmlColor.SelectedIndex = 0
+            _colorResetting = False
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialDesignerForm.CmbHtmlColor_SelectedIndexChanged", ex)
+        End Try
     End Sub
 
     Private Sub BtnAdd_Click(sender As Object, e As EventArgs) Handles btnAdd.Click
@@ -309,12 +387,46 @@ Public Class TutorialDesignerForm
         End Try
     End Sub
 
+    ' Deletes the tutorial open now, from every folder it was saved to (Recycle Bin). A tutorial that was never saved
+    ' has no file: the button then only drops what is on screen.
+    Private Sub BtnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
+        Try
+            ' The file chosen in the list, not _flow.Id: the id may have been edited in the grid and then names another tutorial.
+            Dim k_id As String = If(cmbFlows.SelectedIndex > 0, cmbFlows.SelectedItem.ToString(), String.Empty)
+            Dim k_files As List(Of String) = If(k_id.Length > 0, TutorialStore.FilesOf(k_id), New List(Of String)())
+            Dim k_ask As String
+            If k_files.Count = 0 Then
+                k_ask = "Tutorialul «" & _flow.Title & "» nu e salvat nicăieri. Renunți la ce ai pe ecran?"
+            Else
+                k_ask = "Ștergi tutorialul «" & _flow.Title & "»?" & vbLf & vbLf & String.Join(vbLf, k_files) & vbLf & vbLf &
+                        "Fișierele merg în Coșul de reciclare."
+            End If
+            If KBotMessage.Show(Me, k_ask, "Designer tutoriale", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
+            If k_files.Count > 0 Then
+                ' Other tutorials pointing here would be left with a dead link: tell, and ask again.
+                Dim k_links As List(Of String) = TutorialStore.LinksTo(k_id)
+                If k_links.Count > 0 AndAlso KBotMessage.Show(Me,
+                        "Aceste tutoriale au o legătură către «" & _flow.Title & "»:" & vbLf & vbLf & String.Join(vbLf, k_links) & vbLf & vbLf &
+                        "După ștergere, legătura rămâne în text și un clic pe ea nu mai pornește nimic. Ștergi tutorialul oricum?",
+                        "Designer tutoriale", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
+                TutorialStore.Delete(k_id)
+                _service.ReloadLibrary()
+            End If
+            RefreshFlowList()
+            NewFlow()
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialDesignerForm.BtnSterge_Click", ex)
+            KBotMessage.Show(Me, "Tutorialul nu a putut fi șters. Detalii în jurnalul de erori.", "Designer tutoriale", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     Private Sub BtnTesteaza_Click(sender As Object, e As EventArgs) Handles btnTesteaza.Click
         Try
             If Not Check() Then Return
             Dim k_from As Integer = Math.Max(0, lstSteps.SelectedIndex)
             ' What is tested is what is on screen now (unsaved), read back through the real parser.
             Dim k_copy As TutorialFlow = TutorialFlow.Parse(_flow.ToMarkdown())
+            k_copy.Mandatory = False   ' a test run must always be possible to leave
             WindowState = FormWindowState.Minimized
             TutorialRunner.Start(_service, k_copy,
                                  Sub()

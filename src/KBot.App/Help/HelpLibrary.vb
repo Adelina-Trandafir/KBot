@@ -394,7 +394,7 @@ Public NotInheritable Class HelpLibrary
         Dim k_minMatched As Integer = If(k_terms.Count <= 2, 1, (k_terms.Count + 1) \ 2)
         Dim k_scored As New List(Of KeyValuePair(Of TutorialFlow, Integer))()
         For Each k_flow As TutorialFlow In Tutorials
-            If Not k_parts.Contains(k_flow.Part) OrElse k_flow.TitleTerms Is Nothing Then Continue For
+            If Not k_parts.Contains(k_flow.Part) OrElse k_flow.TitleTerms Is Nothing OrElse Not HelpService.TutorialAvailable(k_flow) Then Continue For
             Dim k_matched As Integer = 0
             Dim k_weight As Integer = 0
             For Each k_term As HelpQueryTerm In k_terms

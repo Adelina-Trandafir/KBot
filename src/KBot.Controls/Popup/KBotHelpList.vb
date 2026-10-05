@@ -18,7 +18,7 @@ Imports KBot.Common
 ''' </summary>
 <ToolboxItem(False)>
 <DesignerCategory("Code")>
-Public NotInheritable Class KBotHelpList
+Partial Public NotInheritable Class KBotHelpList
     Inherits Control
     Implements IThemedControl
 
@@ -54,6 +54,9 @@ Public NotInheritable Class KBotHelpList
     Private ReadOnly _rows As New List(Of KBotHelpRow)()
     Private ReadOnly _slots As New List(Of Slot)()
     Private ReadOnly _scroll As New KBotScrollBar()
+    ' Whether the list wants its scroll bar. Never read back from _scroll.Visible: a child reports False
+    ' while its parent is not shown yet, and the rows are laid out in the popup's constructor.
+    Private _barOn As Boolean
     Private ReadOnly _tips As New KBotToolTip()
     Private ReadOnly _tipContent As New KBotToolTipContent()
     Private _contentHeight As Integer
@@ -186,7 +189,7 @@ Public NotInheritable Class KBotHelpList
 
     ' Content width: the scroll bar's column is kept free whenever the list could need it.
     Private Function ContentWidth() As Integer
-        Return Math.Max(40, ClientSize.Width - If(_scroll.Visible, _scroll.Width, 0))
+        Return Math.Max(40, ClientSize.Width - If(_barOn, _scroll.Width, 0))
     End Function
 
     Private Sub Relayout()
@@ -249,12 +252,13 @@ Public NotInheritable Class KBotHelpList
 
     Private Sub UpdateScroll()
         Dim need As Boolean = _contentHeight > ClientSize.Height AndAlso ClientSize.Height > 0
-        If need <> _scroll.Visible Then
+        _scroll.Width = Px(KBotScrollBar.GrosimeImplicita)
+        If need <> _barOn Then
+            _barOn = need
             _scroll.Visible = need
             BuildSlots()   ' the width available changed: measure again
         End If
-        _scroll.Width = Px(KBotScrollBar.GrosimeImplicita)
-        If _scroll.Visible Then
+        If _barOn Then
             _scroll.SmallChange = Px(WheelStepLogical) \ 2
             _scroll.SetRange(0, Math.Max(0, _contentHeight - 1), Math.Max(1, ClientSize.Height), _scroll.Value)
         End If
@@ -262,12 +266,12 @@ Public NotInheritable Class KBotHelpList
 
     Private ReadOnly Property Offset As Integer
         Get
-            Return If(_scroll.Visible, _scroll.Value, 0)
+            Return If(_barOn, _scroll.Value, 0)
         End Get
     End Property
 
     Private Sub EnsureVisible(index As Integer)
-        If Not _scroll.Visible Then Return
+        If Not _barOn Then Return
         Dim b As Rectangle = _slots(index).Bounds
         If b.Top < _scroll.Value Then
             _scroll.Value = b.Top
@@ -480,7 +484,7 @@ Public NotInheritable Class KBotHelpList
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
         MyBase.OnMouseWheel(e)
         Try
-            If Not _scroll.Visible Then Return
+            If Not _barOn Then Return
             _scroll.Value -= Math.Sign(e.Delta) * Px(WheelStepLogical)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotHelpList.OnMouseWheel", ex)

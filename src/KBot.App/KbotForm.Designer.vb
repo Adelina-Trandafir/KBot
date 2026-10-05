@@ -292,7 +292,7 @@ Partial Class KbotForm
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
         tree.FooterLeftIcon = My.Resources.Resources.credit_card
-        tree.FooterLeftIconTooltip = "Extrasele de cont: fereastra cu toate extrasele bazei." & vbLf & "Descărcarea din FOREXE se face de acolo."
+        tree.FooterLeftIconTooltip = "Descarcă extrasele de cont noi din FOREXE și le importă." & vbLf & "Fereastra cu toate extrasele bazei: MENIU ▸ Extrase."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Cele noi se adaugă; cele existente rămân neatinse."
         tree.FooterSeparatorColor = Color.Gainsboro

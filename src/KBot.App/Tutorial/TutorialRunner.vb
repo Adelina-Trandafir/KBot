@@ -34,6 +34,11 @@ Friend NotInheritable Class TutorialRunner
     Private _closeWatch As Form
     Private ReadOnly _typed As New HashSet(Of Integer)()   ' «changed» steps whose field got text since they were armed
     Private _revisit As Boolean                             ' the step on screen was reached with «Inapoi»
+    ' Slice 000T-07: the tutorial of K-BOT's start (its bubble carries the box «Nu mai arata tutorialul de inceput»),
+    ' whether that box was ticked (kept across the bubbles: each window gets its own), and whether the last step was passed.
+    Private ReadOnly _initial As Boolean
+    Private _neverAgain As Boolean
+    Private _completed As Boolean
     Private _canBack As Boolean
 
     Private _dim As TutorialDim
@@ -42,25 +47,36 @@ Friend NotInheritable Class TutorialRunner
     Private _presenterHost As Form
     Private _layoutKey As String = String.Empty
     Private _shownIndex As Integer = -1
+    Private _lostShown As Boolean   ' the bubble on screen carries the note «the target is not on screen» (slice 000T-10)
     Private _dimOn As Boolean
     Private _frameOn As Boolean
     Private _holes As New List(Of Rectangle)()
 
-    Private Sub New(k_service As HelpService, k_flow As TutorialFlow, k_onFinished As Action)
+    Private Sub New(k_service As HelpService, k_flow As TutorialFlow, k_onFinished As Action, k_initial As Boolean)
         _service = k_service
         _flow = k_flow
         _onFinished = k_onFinished
+        _initial = k_initial
         _filter = New KeyFilter(Me)
     End Sub
 
     ''' <summary>
     ''' Starts <paramref name="k_flow"/>; <paramref name="k_onFinished"/> runs when it ends, however it
     ''' ends. Another tutorial running is ended first. A tutorial that starts in a window that is not
-    ''' open says so and does not start.
+    ''' open says so and does not start. <paramref name="k_initial"/> (slice 000T-07) = the tutorial of K-BOT's
+    ''' start: its bubble carries «Nu mai arata tutorialul de inceput», and the service is told it is not due
+    ''' any more once it was seen to its last step or that box was ticked.
     ''' </summary>
     Public Shared Sub Start(k_service As HelpService, k_flow As TutorialFlow, k_onFinished As Action,
-                            Optional k_startIndex As Integer = 0)
+                            Optional k_startIndex As Integer = 0, Optional k_initial As Boolean = False)
         Try
+            ' Slice 000T-08: a mandatory tutorial on screen is not ended by starting another one (a row of the «?»
+            ' list, the designer's test): it says so and goes on.
+            If _active IsNot Nothing AndAlso _active._flow.Mandatory AndAlso Not _active._finished Then
+                _active.Remind()
+                k_onFinished?.Invoke()
+                Return
+            End If
             _active?.Finish()
             If k_flow.Starts.Length > 0 AndAlso HelpTourRunner.FindTarget(k_flow.Starts) Is Nothing Then
                 KBotMessage.ShowOnTop("Tutorialul «" & k_flow.Title & "» pornește dintr-o altă fereastră. Deschide fereastra potrivită și încearcă din nou.",
@@ -69,7 +85,7 @@ Friend NotInheritable Class TutorialRunner
                 Return
             End If
             If k_startIndex < 0 OrElse k_startIndex >= k_flow.Steps.Count Then Throw New ArgumentOutOfRangeException(NameOf(k_startIndex))
-            _active = New TutorialRunner(k_service, k_flow, k_onFinished)
+            _active = New TutorialRunner(k_service, k_flow, k_onFinished, k_initial)
             _active.Begin(k_startIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.Start", ex)
@@ -96,6 +112,7 @@ Friend NotInheritable Class TutorialRunner
             i += 1
         End While
         If i >= _flow.Steps.Count Then
+            _completed = True
             Finish()
             Return
         End If
@@ -142,6 +159,30 @@ Friend NotInheritable Class TutorialRunner
             FocusHost()
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.OnNext", ex)
+        End Try
+    End Sub
+
+    ' Slice 000T-09: a <link tutorial="id"> of the step text was clicked: this tutorial ends and that one starts
+    ' (TutorialRunner.Start ends the running one; a mandatory one only reminds). Later, on the window's own queue:
+    ' the click comes from the bubble that ending this tutorial closes.
+    Private Sub OnLinkClicked(k_id As String)
+        Try
+            If _finished OrElse _asking OrElse _presenterHost Is Nothing OrElse _presenterHost.IsDisposed Then Return
+            Dim k_service As HelpService = _service
+            _presenterHost.BeginInvoke(New Action(Sub() StartLinked(k_service, k_id)))
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialRunner.OnLinkClicked", ex)
+        End Try
+    End Sub
+
+    ' UI boundary (posted action): an unknown or unstartable tutorial leaves the running one as it is.
+    Private Shared Sub StartLinked(k_service As HelpService, k_id As String)
+        Try
+            k_service.StartTutorial(k_id)
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialRunner.StartLinked", ex)
+            KBotMessage.ShowOnTop("Tutorialul din legătură nu a putut fi pornit. Detalii în jurnalul de erori.", "Tutorial",
+                                  MessageBoxButtons.OK, MessageBoxIcon.Information)
         End Try
     End Sub
 
@@ -221,18 +262,41 @@ Friend NotInheritable Class TutorialRunner
             Case TutorialWhenKind.Always
                 Return True
             Case TutorialWhenKind.Visible
-                Return ResolveControl(k_step) IsNot Nothing
+                ' Slice 000T-10: with a part: the painted part must be drawn now (a selector of the title bar that
+                ' the unit has only one choice for is not).
+                Dim c As Control = ResolveControl(k_step)
+                If c Is Nothing Then Return False
+                Return k_step.Part.Length = 0 OrElse PartIsDrawn(c, k_step.Part)
             Case TutorialWhenKind.Enabled
                 Dim c As Control = ResolveControl(k_step)
                 Return c IsNot Nothing AndAlso c.Enabled
             Case TutorialWhenKind.Editable
                 Dim c As Control = ResolveControl(k_step)
                 Return c IsNot Nothing AndAlso c.Enabled AndAlso Not IsReadOnly(c)
+            Case TutorialWhenKind.Condition
+                ' Slice 000T-10: a condition only the main window can judge (how the tree is sorted).
+                For Each k_window As ITutorialRequirements In Application.OpenForms.OfType(Of ITutorialRequirements)().ToList()
+                    If k_window.TutorialRequirementMet(k_step.WhenArg) Then Return True
+                Next
+                Return False
             Case Else
                 Dim box As CheckBox = TryCast(HelpTourRunner.FindTarget(k_step.WhenArg), CheckBox)
                 If box Is Nothing Then Return False
                 Return box.Checked = (k_step.WhenKind = TutorialWhenKind.Checked)
         End Select
+    End Function
+
+    ' Whether the painted part of a control is on screen now; a control without parts, or a part it does not know, answers True
+    ' (the step was written for the whole control).
+    Private Shared Function PartIsDrawn(k_control As Control, k_part As String) As Boolean
+        Dim owner As IKBotHelpParts = TryCast(k_control, IKBotHelpParts)
+        If owner Is Nothing OrElse k_part.StartsWith("item:", StringComparison.Ordinal) Then Return True
+        Try
+            Return Not owner.HelpPartBounds(k_part).IsEmpty
+        Catch ex As ArgumentException
+            GlobalErrorLog.Write("TutorialRunner.PartIsDrawn", ex)
+            Return True
+        End Try
     End Function
 
     Private Shared Function IsReadOnly(k_control As Control) As Boolean
@@ -267,7 +331,19 @@ Friend NotInheritable Class TutorialRunner
                 Dim c As Control = ResolveControl(st)
                 If c Is Nothing Then Return False
                 Dim tree As AdvancedTreeControl = TryCast(c, AdvancedTreeControl)
-                If tree IsNot Nothing Then
+                Dim owner As IKBotHelpParts = TryCast(c, IKBotHelpParts)
+                If owner IsNot Nothing AndAlso st.Part.Length > 0 AndAlso st.Part <> "node.icon" AndAlso
+                   Not st.Part.StartsWith("item:", StringComparison.Ordinal) Then
+                    ' Slice 000T-09: a painted button of a tree / grid (footer icons, collapse, search, header icon):
+                    ' these are no Click and no row event, so the left press inside the part is what counts. The
+                    ' control acts on the press itself, so this fires just before its own action.
+                    Dim k_part As String = st.Part
+                    Dim h As MouseEventHandler = Sub(s As Object, e As MouseEventArgs)
+                                                     If e.Button = MouseButtons.Left AndAlso PartContains(owner, k_part, e.Location) Then OnAction(k_j)
+                                                 End Sub
+                    AddHandler c.MouseDown, h
+                    _detach.Add(Sub() RemoveHandler c.MouseDown, h)
+                ElseIf tree IsNot Nothing Then
                     ' A tree is clicked all the time: only its row button («+») counts.
                     Dim h As AdvancedTreeControl.RightIconClickedEventHandler = Sub(n As AdvancedTreeControl.TreeItem, e As MouseEventArgs) OnAction(k_j)
                     AddHandler tree.RightIconClicked, h
@@ -301,6 +377,17 @@ Friend NotInheritable Class TutorialRunner
                 ' Manual, Tab, Checked, Opens, Closes, Signal: watched by state in PollDone.
         End Select
         Return True
+    End Function
+
+    ' Whether a point (client coordinates) is inside a painted part that is on screen now; an unknown part or one
+    ' the control does not draw at the moment is not.
+    Private Shared Function PartContains(k_owner As IKBotHelpParts, k_part As String, k_point As Point) As Boolean
+        Try
+            Return k_owner.HelpPartBounds(k_part).Contains(k_point)
+        Catch ex As ArgumentException
+            GlobalErrorLog.Write("TutorialRunner.PartContains", ex)
+            Return False
+        End Try
     End Function
 
     Private Sub DetachAll()
@@ -339,7 +426,16 @@ Friend NotInheritable Class TutorialRunner
                 If _closeWatch Is Nothing Then _closeWatch = ResolveControl(k_step)?.FindForm()
                 Return _closeWatch IsNot Nothing AndAlso (_closeWatch.IsDisposed OrElse Not _closeWatch.Visible)
             Case TutorialWaitKind.Signal
-                Return _signals.Remove(k_step.WaitArg)
+                ' Slice 000T-10: «a|b» = any of the signals.
+                Dim k_done As Boolean = False
+                For Each k_name As String In k_step.WaitArg.Split("|"c)
+                    If _signals.Remove(k_name.Trim()) Then k_done = True
+                Next
+                Return k_done
+            Case TutorialWaitKind.Anchor
+                ' Slice 000T-10: done when the named anchor is on screen (the submenu row appears once its menu is open).
+                Dim k_unused As Form = Nothing
+                Return AnchorRects(k_step.WaitArg, ResolveControl(k_step), k_unused).Count > 0
             Case Else
                 Return False
         End Select
@@ -388,27 +484,33 @@ Friend NotInheritable Class TutorialRunner
         Return k_control.RectangleToScreen(k_control.ClientRectangle)
     End Function
 
+    ' The screen rectangles of a named anchor: asked of the window that holds <k_control> first, then of every
+    ' other window that is a tutorial host; <k_host> is the window that answered. Empty = not on screen now.
+    Private Shared Function AnchorRects(k_anchor As String, k_control As Control, ByRef k_host As Form) As List(Of Rectangle)
+        Dim rects As New List(Of Rectangle)()
+        Dim hosts As New List(Of IKBotTutorialHost)()
+        Dim own As IKBotTutorialHost = TryCast(k_control?.FindForm(), IKBotTutorialHost)
+        If own IsNot Nothing Then hosts.Add(own)
+        For Each other As IKBotTutorialHost In Application.OpenForms.OfType(Of IKBotTutorialHost)().ToList()
+            If Not hosts.Contains(other) Then hosts.Add(other)
+        Next
+        For Each h As IKBotTutorialHost In hosts
+            Dim found As IReadOnlyList(Of Rectangle) = h.TutorialAnchor(k_anchor)
+            If found IsNot Nothing AndAlso found.Count > 0 Then
+                rects.AddRange(found.Where(Function(r) Not r.IsEmpty))
+                k_host = TryCast(h, Form)
+                Exit For
+            End If
+        Next
+        Return rects
+    End Function
+
     ' The places of a step on screen (an anchor the window knows, else the control / its part) and
     ' the window they are in.
     Private Shared Function ResolveHoles(k_step As TutorialStep, ByRef k_host As Form) As List(Of Rectangle)
         Dim control As Control = ResolveControl(k_step)
         Dim rects As New List(Of Rectangle)()
-        If k_step.Anchor.Length > 0 Then
-            Dim hosts As New List(Of IKBotTutorialHost)()
-            Dim own As IKBotTutorialHost = TryCast(control?.FindForm(), IKBotTutorialHost)
-            If own IsNot Nothing Then hosts.Add(own)
-            For Each other As IKBotTutorialHost In Application.OpenForms.OfType(Of IKBotTutorialHost)().ToList()
-                If Not hosts.Contains(other) Then hosts.Add(other)
-            Next
-            For Each h As IKBotTutorialHost In hosts
-                Dim found As IReadOnlyList(Of Rectangle) = h.TutorialAnchor(k_step.Anchor)
-                If found IsNot Nothing AndAlso found.Count > 0 Then
-                    rects.AddRange(found.Where(Function(r) Not r.IsEmpty))
-                    k_host = TryCast(h, Form)
-                    Exit For
-                End If
-            Next
-        End If
+        If k_step.Anchor.Length > 0 Then rects.AddRange(AnchorRects(k_step.Anchor, control, k_host))
         If rects.Count = 0 AndAlso control IsNot Nothing Then rects.Add(ControlRect(control, k_step.Part))
         If k_host Is Nothing AndAlso control IsNot Nothing Then k_host = control.FindForm()
         Return rects
@@ -448,10 +550,15 @@ Friend NotInheritable Class TutorialRunner
                             String.Join(";", everything.Select(Function(r) r.ToString()))
         If key = _layoutKey AndAlso _shownIndex = _index Then Return
 
-        If _shownIndex <> _index Then
+        ' Slice 000T-10: the bubble is also made again when the target appears or goes (a pop-up list that opens a moment
+        ' after the press), or its note would stay wrong until the next step.
+        Dim lostNow As Boolean = primary.Count = 0 AndAlso (st.Target.Length > 0 OrElse st.Anchor.Length > 0)
+        If _shownIndex <> _index OrElse lostNow <> _lostShown Then
+            _lostShown = lostNow
             Dim note As String = Nothing
             If st.IsOptional Then note = "Pas opțional: " & st.Why
-            If primary.Count = 0 Then
+            ' A step that points at nothing (a message) has nothing missing; only a target that is not on screen is said.
+            If primary.Count = 0 AndAlso (st.Target.Length > 0 OrElse st.Anchor.Length > 0) Then
                 Dim lost As String = "Ce trebuie să faci nu e pe ecran acum; deschide vederea sau fereastra potrivită ca să îl vezi."
                 note = If(note Is Nothing, lost, note & " " & lost)
             End If
@@ -468,7 +575,10 @@ Friend NotInheritable Class TutorialRunner
             _bubble.ShowTutorial(_flow.Title, st.Title, st.Text, note, _index, _flow.Steps.Count, nextText, _canBack, st.IsOptional)
         End If
 
-        _dimOn = st.DimRest AndAlso primary.Count > 0
+        ' Slice 000T-08: in a mandatory tutorial a step that points at nothing (a message) veils the whole window,
+        ' so a click outside the bubble is caught and answered.
+        Dim messageOnly As Boolean = st.Target.Length = 0 AndAlso st.Anchor.Length = 0
+        _dimOn = st.DimRest AndAlso (primary.Count > 0 OrElse (_flow.Mandatory AndAlso messageOnly))
         If _dimOn Then _dim.Cover(host.RectangleToScreen(host.ClientRectangle), everything, CaptionRect(host))
         Dim pointAt As Rectangle = Rectangle.Empty
         If primary.Count > 0 Then
@@ -519,6 +629,8 @@ Friend NotInheritable Class TutorialRunner
         If ReferenceEquals(_presenterHost, k_host) AndAlso _bubble IsNot Nothing AndAlso Not _bubble.IsDisposed Then Return
         ClosePresenter()
         _presenterHost = k_host
+        Dim popup As KBotHelpPopup = TryCast(k_host, KBotHelpPopup)
+        If popup IsNot Nothing Then popup.KeepOpen = True
         BeginHostOf(k_host)
         If _finished Then Return
         _dim = New TutorialDim()
@@ -526,15 +638,27 @@ Friend NotInheritable Class TutorialRunner
         AddHandler _dim.Clicked, AddressOf OnDimClicked
         _frame = New HelpTourFrame()
         _bubble = New HelpTourBubble() With {.NeverActivates = True}
+        _bubble.CloseAllowed = Not _flow.Mandatory
+        ' A mandatory tutorial is not left before its end, so «do not show again» would only be a way out.
+        If _initial AndAlso Not _flow.Mandatory Then
+            _bubble.NeverAgainText = "Nu mai arăta tutorialul de început"
+            _bubble.ShowNeverAgain = True
+            _bubble.NeverAgain = _neverAgain
+        End If
         AddHandler _bubble.NextRequested, AddressOf OnNext
         AddHandler _bubble.BackRequested, AddressOf OnBack
         AddHandler _bubble.SkipOptionalRequested, AddressOf OnSkipOptional
         AddHandler _bubble.CloseRequested, AddressOf OnStopRequested
+        AddHandler _bubble.TutorialLinkClicked, AddressOf OnLinkClicked
         _shownIndex = -1
         _layoutKey = String.Empty
     End Sub
 
     Private Sub ClosePresenter()
+        ' Slice 000T-08: the «?» popup was held open for the step; it goes with the step.
+        Dim popup As KBotHelpPopup = TryCast(_presenterHost, KBotHelpPopup)
+        If popup IsNot Nothing AndAlso Not popup.IsDisposed Then popup.CloseNow()
+        If _bubble IsNot Nothing AndAlso Not _bubble.IsDisposed AndAlso _bubble.NeverAgain Then _neverAgain = True
         For Each f As Form In New Form() {_dim, _frame}
             If f IsNot Nothing AndAlso Not f.IsDisposed Then f.Close()
         Next
@@ -565,19 +689,81 @@ Friend NotInheritable Class TutorialRunner
 
     ' ── leaving ──────────────────────────────────────────────────────────────────
 
+    ' A press on the veil. It only counts when the pointer is really outside what the step allows: on a hole (grown a
+    ' little), the ring or the bubble it is the user doing the step, however the veil came to hear it.
     Private Sub OnDimClicked()
+        If PointerIsOnTutorial() Then Return
+        Deviated()
+    End Sub
+
+    Private Function PointerIsOnTutorial() As Boolean
+        Dim p As Point = Control.MousePosition
+        Dim air As Integer = CInt(Math.Round(10 * If(_presenterHost IsNot Nothing, _presenterHost.DeviceDpi, 96) / 96.0))
+        For Each h As Rectangle In _holes
+            If Rectangle.Inflate(h, air, air).Contains(p) Then Return True
+        Next
+        For Each f As Form In New Form() {_bubble, _frame}
+            If f IsNot Nothing AndAlso Not f.IsDisposed AndAlso f.Visible AndAlso f.Bounds.Contains(p) Then Return True
+        Next
+        Return False
+    End Function
+
+    ' The user did something else than the step asks: a mandatory tutorial says it must be finished, any other asks.
+    Private Sub Deviated()
+        If _flow.Mandatory Then
+            Remind()
+            Return
+        End If
         Ask("Ai făcut altceva decât pasul cerut. Vrei să ieși din tutorial?")
     End Sub
 
     ' The bubble's «Mă opresc» is a deliberate choice: the tutorial ends at once, no question (slice 000T-05).
     ' Esc / Alt+F4 on the bubble reach here too.
     Private Sub OnStopRequested()
+        If _flow.Mandatory Then
+            Remind()
+            Return
+        End If
         Finish()
     End Sub
 
     Private Sub HostClosed()
         ClosePresenter()
+        If _flow.Mandatory Then
+            Remind()
+            ReturnToLastOpening()
+            Return
+        End If
         Ask("Ai închis fereastra în care lucrai. Vrei să ieși din tutorial?")
+    End Sub
+
+    ' Slice 000T-08: a mandatory tutorial is not left before its end; the operator is told so (top-most, as Ask).
+    Private Sub Remind()
+        If _asking OrElse _finished Then Return
+        _asking = True
+        Try
+            KBotMessage.ShowOnTop(_presenterHost, "Tutorialul «" & _flow.Title & "» trebuie parcurs până la final. Urmează pașii din bulă; poți ieși din el abia după ultimul pas.",
+                                  "Tutorial", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As Exception
+            GlobalErrorLog.Write("TutorialRunner.Remind", ex)
+        Finally
+            _asking = False
+        End Try
+    End Sub
+
+    ' The window the step worked in is gone (closed, or a pop-up that closes when it loses the focus): the tutorial
+    ' goes back to the nearest earlier step that waits for a window to open, so the operator can open it again; with
+    ' none, the same step is shown again in the main window.
+    Private Sub ReturnToLastOpening()
+        If _finished Then Return
+        Dim target As Integer = _index
+        For j As Integer = _index To 0 Step -1
+            If _flow.Steps(j).WaitKind = TutorialWaitKind.Opens Then
+                target = j
+                Exit For
+            End If
+        Next
+        EnterStep(target)
     End Sub
 
     ' «Da» ends the tutorial; «Nu» goes on at the same step (what the user did is not undone).
@@ -614,9 +800,11 @@ Friend NotInheritable Class TutorialRunner
                 End Try
             Next
             _hosts.Clear()
-            ClosePresenter()
+            ClosePresenter()   ' also keeps the tick of the box on the bubble that goes away
             If ReferenceEquals(_active, Me) Then _active = Nothing
             _onFinished?.Invoke()
+            ' Slice 000T-07: seen to the end, or asked not to be shown again.
+            If _initial AndAlso (_completed OrElse _neverAgain) Then _service.InitialTutorialSeen()
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.Finish", ex)
         End Try
@@ -662,7 +850,7 @@ Friend NotInheritable Class TutorialRunner
             x = x.Parent
             steps += 1
         End While
-        _presenterHost.BeginInvoke(New Action(Sub() Ask("Ai făcut altceva decât pasul cerut. Vrei să ieși din tutorial?")))
+        _presenterHost.BeginInvoke(New Action(Sub() Deviated()))
     End Sub
 
     Private NotInheritable Class KeyFilter

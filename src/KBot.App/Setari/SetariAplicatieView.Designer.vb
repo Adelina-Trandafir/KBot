@@ -28,6 +28,7 @@ Partial Class SetariAplicatieView
         chkReceptii = New CheckBox()
         chkStartMaximized = New CheckBox()
         chkTurInitial = New CheckBox()
+        chkTutorialInitial = New CheckBox()
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
@@ -157,6 +158,20 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkTurInitial, "Turul inițial")
         tips.SetToolTipText(chkTurInitial, "Bifat: la fiecare pornire K-BOT îți arată, pas cu pas, fereastra principală." & vbLf & "Se debifează singur după ce ai văzut turul până la capăt" & vbLf & "sau ai bifat «Nu mai arăta turul inițial» pe bula lui.")
         chkTurInitial.UseVisualStyleBackColor = True
+        '
+        ' chkTutorialInitial
+        '
+        chkTutorialInitial.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkTutorialInitial, 2)
+        chkTutorialInitial.Location = New Point(4, 227)
+        chkTutorialInitial.Margin = New Padding(4, 0, 4, 10)
+        chkTutorialInitial.Name = "chkTutorialInitial"
+        chkTutorialInitial.Size = New Size(462, 26)
+        chkTutorialInitial.TabIndex = 13
+        chkTutorialInitial.Text = "Arată tutorialul de început la pornirea K-BOT"
+        tips.SetToolTipHeader(chkTutorialInitial, "Tutorialul de început")
+        tips.SetToolTipText(chkTutorialInitial, "Bifat: K-BOT îți arată, pe scurt, ce sunt tutorialele și unde le găsești (butonul «?»)." & vbLf & "Vine după turul inițial, dacă acela e încă bifat." & vbLf & "Nu poate fi închis la jumătate: se parcurge până la capăt." & vbLf & "Se debifează singur după ce l-ai văzut până la capăt.")
+        chkTutorialInitial.UseVisualStyleBackColor = True
         '
         ' chkAvansate
         '
@@ -472,20 +487,21 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(lblGrupFereastra, 0, 0)
         tlyComutatoare.Controls.Add(chkStartMaximized, 0, 1)
         tlyComutatoare.Controls.Add(chkTurInitial, 0, 2)
-        tlyComutatoare.Controls.Add(chkLogViewer, 0, 3)
-        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 4)
-        tlyComutatoare.Controls.Add(lblVerbose, 0, 5)
-        tlyComutatoare.Controls.Add(cboVerbose, 1, 5)
-        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 6)
-        tlyComutatoare.Controls.Add(chkReceptii, 0, 7)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 8)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 9)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 10)
+        tlyComutatoare.Controls.Add(chkTutorialInitial, 0, 3)
+        tlyComutatoare.Controls.Add(chkLogViewer, 0, 4)
+        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 5)
+        tlyComutatoare.Controls.Add(lblVerbose, 0, 6)
+        tlyComutatoare.Controls.Add(cboVerbose, 1, 6)
+        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 7)
+        tlyComutatoare.Controls.Add(chkReceptii, 0, 8)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 9)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 10)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 11)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 12
+        tlyComutatoare.RowCount = 13
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -498,7 +514,8 @@ Partial Class SetariAplicatieView
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.Size = New Size(904, 640)
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.Size = New Size(904, 676)
         tlyComutatoare.TabIndex = 1
         '
         ' lblVerbose
@@ -796,6 +813,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkReceptii As CheckBox
     Friend WithEvents chkStartMaximized As CheckBox
     Friend WithEvents chkTurInitial As CheckBox
+    Friend WithEvents chkTutorialInitial As CheckBox
     Friend WithEvents chkAvansate As CheckBox
     Friend WithEvents chkCapturi As CheckBox
     Friend WithEvents lblGrupFereastra As Label

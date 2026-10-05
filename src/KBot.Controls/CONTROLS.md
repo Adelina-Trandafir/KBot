@@ -25,6 +25,7 @@ lists only its exceptions.
 | `KBotCalendar` | [Calendar/KBotCalendar.md](Calendar/KBotCalendar.md) | Owner-drawn calendar: days / months / years, one zoom axis |
 | `KBotDatePicker` | [Calendar/KBotDatePicker.md](Calendar/KBotDatePicker.md) | Date field, typed or picked, height NOT locked; UserControl authored in the designer, inner box is `KBotDateEditBox` |
 | `KBotRichTextEditor` | [RichText/KBotRichTextEditor.md](RichText/KBotRichTextEditor.md) | Rich-text surface: toolbar band + counter band, RTF and plain text |
+| `KBotHtmlLabel` | [RichText/KBotHtmlLabel.md](RichText/KBotHtmlLabel.md) | `KBotLabel` whose text is a small HTML subset (b, br, div, colours, lists); plain text when it has none of the tags |
 | `KBotTableLayoutPanel` | [Table/KBotTableLayoutPanel.md](Table/KBotTableLayoutPanel.md) | Themed table: logical fixed rows/columns/padding scaled per DPI like the tree, content fit, themed cell lines |
 | `KBotTextBox` | [TextField/KBotTextBox.md](TextField/KBotTextBox.md) | General text box, own border + own scrollbars |
 | `KBotTextField` | [TextField/KBotTextField.md](TextField/KBotTextField.md) | Single-line form field with password eye |

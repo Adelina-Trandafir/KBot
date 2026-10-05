@@ -34,6 +34,8 @@ Public Module KBotRichText
         Public BackColor As Color
         ''' <summary>True dacă segmentul cere fundal propriu.</summary>
         Public HasBackColor As Boolean
+        ''' <summary>Slice 000T-09: what a click on the segment asks for (the HTML reader's link); Nothing / empty = not a link.</summary>
+        Public Link As String
     End Structure
 
     ''' <summary>O linie deja ruptă pe ecran: segmentele ei + înălțimea ei.</summary>
@@ -358,6 +360,38 @@ Public Module KBotRichText
             Throw
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 000T-09: the <see cref="RichRun.Link"/> of the segment under <paramref name="point"/> (client
+    ''' coordinates of the control that drew <paramref name="layout"/> in <paramref name="bounds"/> with
+    ''' <paramref name="align"/>), or Nothing. Same geometry as <see cref="Draw"/>.
+    ''' </summary>
+    Public Function LinkAt(g As Graphics, layout As RichLayout, bounds As Rectangle, align As ContentAlignment, point As Point) As String
+        Try
+            If g Is Nothing OrElse layout.Lines Is Nothing Then Return Nothing
+            Dim fmt As StringFormat = MeasureFormat()
+            Dim y As Integer = bounds.Y + VerticalOffset(align, bounds.Height, layout.Height)
+            For Each ln As RichLine In layout.Lines
+                If point.Y >= y AndAlso point.Y < y + ln.Height Then
+                    Dim x As Single = bounds.X + HorizontalOffset(align, bounds.Width, ln.Width)
+                    For Each r As RichRun In ln.Runs
+                        If r.Text.Length = 0 Then Continue For
+                        Dim w As Single = g.MeasureString(r.Text, r.Font, PointF.Empty, fmt).Width
+                        If point.X >= x AndAlso point.X < x + w Then
+                            Return If(String.IsNullOrEmpty(r.Link), Nothing, r.Link)
+                        End If
+                        x += w
+                    Next
+                    Return Nothing
+                End If
+                y += ln.Height
+            Next
+            Return Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRichText.LinkAt", ex)
+            Throw
+        End Try
+    End Function
 
     ' Alinierile se citesc pe cele două axe separat; ContentAlignment le ține împreună.
     Private Function HorizontalOffset(align As ContentAlignment, total As Integer, continut As Integer) As Integer

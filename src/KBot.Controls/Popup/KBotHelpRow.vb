@@ -65,6 +65,12 @@ Public NotInheritable Class KBotHelpRow
     ''' <summary>Folder: open (its children shown under it).</summary>
     Public Property Expanded As Boolean
 
+    ''' <summary>
+    ''' A fixed ASCII name the help can point at (slice 000T-07): a Header row with a key marks the block
+    ''' of rows under it (<see cref="KBotHelpList"/>'s help part of that name). Empty = none.
+    ''' </summary>
+    Public Property Key As String = String.Empty
+
     ''' <summary>The application's own object behind the row (never read by the controls).</summary>
     Public Property Tag As Object
 

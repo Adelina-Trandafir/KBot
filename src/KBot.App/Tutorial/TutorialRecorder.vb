@@ -158,7 +158,7 @@ Friend NotInheritable Class TutorialRecorder
         If k_pick.SuggestedWait = TutorialWaitKind.Changed Then Return "Completează " & k_pick.Target.Substring(k_pick.Target.IndexOf("."c) + 1)
         If k_pick.Control IsNot Nothing AndAlso TypeOf k_pick.Control Is ButtonBase AndAlso caption.Length > 0 Then Return "Apasă «" & caption & "»"
         If k_pick.SuggestedWait = TutorialWaitKind.Select Then Return "Alege un rând din listă"
-        If k_pick.SuggestedWait = TutorialWaitKind.Click Then Return "Apasă " & k_pick.Target
+        If k_pick.SuggestedWait = TutorialWaitKind.Click Then Return "Apasă " & k_pick.Target & If(k_pick.Part.Length > 0, " (" & k_pick.Part & ")", String.Empty)
         Return k_pick.Target
     End Function
 
