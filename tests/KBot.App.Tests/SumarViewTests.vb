@@ -57,6 +57,13 @@ Public Class SumarViewTests
             Throw New NotSupportedException()
         End Function
 
+        Public Function CorecteazaValoareaAsync(cod As String,
+                                               corectie As CorectieValoare,
+                                               ct As CancellationToken) As Task(Of AsociereRezultat) _
+            Implements IApiClient.CorecteazaValoareaAsync
+            Throw New NotSupportedException()
+        End Function
+
         Public Function RebuildReceptiiAsync(cod As String, apply As Boolean, ct As CancellationToken) _
             As Task(Of ReceptiiRebuildResult) Implements IApiClient.RebuildReceptiiAsync
             Throw New NotSupportedException()

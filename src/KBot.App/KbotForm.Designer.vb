@@ -38,6 +38,7 @@ Partial Class KbotForm
         Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem13 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem14 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem15 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -181,6 +182,9 @@ Partial Class KbotForm
         KBotMenuItem9.Image = My.Resources.Resources.binvoice
         KBotMenuItem9.Key = "extrase"
         KBotMenuItem9.Text = "Extrase"
+        KBotMenuItem15.Image = My.Resources.Resources.binvoice
+        KBotMenuItem15.Key = "efactura"
+        KBotMenuItem15.Text = "E-Factura"
         KBotMenuItem10.IsSeparator = True
         KBotMenuItem10.Key = "capturi_ajutor_sep"
         KBotMenuItem10.Visible = False
@@ -203,6 +207,7 @@ Partial Class KbotForm
         menuNou.Items.Add(KBotMenuItem7)
         menuNou.Items.Add(KBotMenuItem8)
         menuNou.Items.Add(KBotMenuItem9)
+        menuNou.Items.Add(KBotMenuItem15)
         menuNou.Items.Add(KBotMenuItem10)
         menuNou.Items.Add(KBotMenuItem11)
         menuNou.Items.Add(KBotMenuItem14)

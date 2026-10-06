@@ -29,11 +29,14 @@ Partial Class SetariAplicatieView
         chkStartMaximized = New CheckBox()
         chkTurInitial = New CheckBox()
         chkTutorialInitial = New CheckBox()
+        chkAvertismentAdobe = New CheckBox()
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAdobeClasic = New CheckBox()
+        chkAdobeHover = New CheckBox()
+        chkAdobeSemnareModerna = New CheckBox()
         chkAcroTrace = New CheckBox()
         chkAcroNou = New CheckBox()
         btnMesajeAdobe = New Button()
@@ -173,6 +176,20 @@ Partial Class SetariAplicatieView
         tips.SetToolTipText(chkTutorialInitial, "Bifat: K-BOT îți arată, pe scurt, ce sunt tutorialele și unde le găsești (butonul «?»)." & vbLf & "Vine după turul inițial, dacă acela e încă bifat." & vbLf & "Nu poate fi închis la jumătate: se parcurge până la capăt." & vbLf & "Se debifează singur după ce l-ai văzut până la capăt.")
         chkTutorialInitial.UseVisualStyleBackColor = True
         '
+        ' chkAvertismentAdobe
+        '
+        chkAvertismentAdobe.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkAvertismentAdobe, 2)
+        chkAvertismentAdobe.Location = New Point(4, 263)
+        chkAvertismentAdobe.Margin = New Padding(4, 0, 4, 10)
+        chkAvertismentAdobe.Name = "chkAvertismentAdobe"
+        chkAvertismentAdobe.Size = New Size(462, 26)
+        chkAvertismentAdobe.TabIndex = 14
+        chkAvertismentAdobe.Text = "Avertizează dacă Adobe e mai vechi de 2025"
+        tips.SetToolTipHeader(chkAvertismentAdobe, "Avertisment Adobe")
+        tips.SetToolTipText(chkAvertismentAdobe, "Bifat: la pornire, K-BOT te avertizează dacă Adobe de pe acest calculator" & vbLf & "este mai vechi de versiunea 2025 (recomandat: Adobe Acrobat Reader gratuit)." & vbLf & "Se debifează singur dacă ai ales «Da» la «Nu mai primești acest avertisment».")
+        chkAvertismentAdobe.UseVisualStyleBackColor = True
+        '
         ' chkAvansate
         '
         chkAvansate.AutoSize = True
@@ -278,14 +295,40 @@ Partial Class SetariAplicatieView
         tips.SetToolTipText(chkAdobeClasic, "Bifat: la deschiderea unui PDF, K-BOT pune Adobe pe interfața clasică (bara din dreapta, meniurile vechi)." & vbLf & "Valoarea ta din Adobe se pune la loc când închizi K-BOT, deci Adobe-ul tău obișnuit nu se schimbă." & vbLf & "Se aplică de la următorul document deschis; un Adobe deja pornit rămâne cum era.")
         chkAdobeClasic.UseVisualStyleBackColor = True
         '
+        ' chkAdobeHover
+        '
+        chkAdobeHover.AutoSize = True
+        chkAdobeHover.Location = New Point(404, 138)
+        chkAdobeHover.Margin = New Padding(4, 0, 4, 10)
+        chkAdobeHover.Name = "chkAdobeHover"
+        chkAdobeHover.Size = New Size(462, 26)
+        chkAdobeHover.TabIndex = 4
+        chkAdobeHover.Text = "Adobe — chenar colorat când treci cu mouse-ul peste câmpuri"
+        tips.SetToolTipHeader(chkAdobeHover, "Chenar la trecerea mouse-ului")
+        tips.SetToolTipText(chkAdobeHover, "Este bifa «Show border hover color for fields» din preferințele Adobe (Forms)." & vbLf & "Se citește și se scrie direct în Adobe, deci vezi mereu ce are Adobe acum." & vbLf & "Se aplică de la următorul Adobe pornit; un Adobe deja deschis rămâne cum era.")
+        chkAdobeHover.UseVisualStyleBackColor = True
+        '
+        ' chkAdobeSemnareModerna
+        '
+        chkAdobeSemnareModerna.AutoSize = True
+        chkAdobeSemnareModerna.Location = New Point(404, 174)
+        chkAdobeSemnareModerna.Margin = New Padding(4, 0, 4, 10)
+        chkAdobeSemnareModerna.Name = "chkAdobeSemnareModerna"
+        chkAdobeSemnareModerna.Size = New Size(462, 26)
+        chkAdobeSemnareModerna.TabIndex = 5
+        chkAdobeSemnareModerna.Text = "Adobe — interfața modernă pentru semnare și ID digital"
+        tips.SetToolTipHeader(chkAdobeSemnareModerna, "Interfața modernă pentru semnare")
+        tips.SetToolTipText(chkAdobeSemnareModerna, "Este bifa «Use modern user interface for signing and Digital ID configuration» din preferințele Adobe (Signatures)." & vbLf & "Se citește și se scrie direct în Adobe, deci vezi mereu ce are Adobe acum." & vbLf & "Se aplică de la următorul Adobe pornit; un Adobe deja deschis rămâne cum era.")
+        chkAdobeSemnareModerna.UseVisualStyleBackColor = True
+        '
         ' chkAcroTrace
         '
         chkAcroTrace.AutoSize = True
-        chkAcroTrace.Location = New Point(404, 138)
+        chkAcroTrace.Location = New Point(404, 210)
         chkAcroTrace.Margin = New Padding(4, 0, 4, 10)
         chkAcroTrace.Name = "chkAcroTrace"
         chkAcroTrace.Size = New Size(462, 26)
-        chkAcroTrace.TabIndex = 4
+        chkAcroTrace.TabIndex = 6
         chkAcroTrace.Text = "ActiveX — jurnal de diagnostic detaliat (acropdf_trace.log)"
         tips.SetToolTipHeader(chkAcroTrace, "Jurnal de diagnostic ActiveX")
         tips.SetToolTipText(chkAcroTrace, "Bifat: vizualizatorul ActiveX scrie în Logs\acropdf_trace.log tot ce vede și tot ce face (cronometre, ferestre, procese, salvări)." & vbLf & "Înregistrează de la deschiderea unui document până când e deschis sau apare o eroare care blochează." & vbLf & "Nu se salvează: la fiecare pornire a aplicației este oprit.")
@@ -294,11 +337,11 @@ Partial Class SetariAplicatieView
         ' chkAcroNou
         '
         chkAcroNou.AutoSize = True
-        chkAcroNou.Location = New Point(404, 174)
+        chkAcroNou.Location = New Point(404, 246)
         chkAcroNou.Margin = New Padding(4, 0, 4, 10)
         chkAcroNou.Name = "chkAcroNou"
         chkAcroNou.Size = New Size(462, 26)
-        chkAcroNou.TabIndex = 5
+        chkAcroNou.TabIndex = 7
         chkAcroNou.Text = "ActiveX — control Adobe nou la fiecare document"
         tips.SetToolTipHeader(chkAcroNou, "Control Adobe nou la fiecare document")
         tips.SetToolTipText(chkAcroNou, "Bifat: la alegerea altei revizii (DDF și ORD) controlul Adobe se închide și se distruge, iar documentul nou se deschide într-un control nou." & vbLf & "Debifat: documentul nou se încarcă în același control." & vbLf & "Doar pentru motoarele ActiveX.")
@@ -309,12 +352,12 @@ Partial Class SetariAplicatieView
         btnMesajeAdobe.AutoSize = True
         btnMesajeAdobe.Dock = DockStyle.Left
         btnMesajeAdobe.FlatStyle = FlatStyle.Flat
-        btnMesajeAdobe.Location = New Point(404, 210)
+        btnMesajeAdobe.Location = New Point(404, 282)
         btnMesajeAdobe.Margin = New Padding(4, 0, 4, 10)
         btnMesajeAdobe.Name = "btnMesajeAdobe"
         btnMesajeAdobe.Padding = New Padding(12, 4, 12, 4)
         btnMesajeAdobe.Size = New Size(320, 45)
-        btnMesajeAdobe.TabIndex = 6
+        btnMesajeAdobe.TabIndex = 8
         btnMesajeAdobe.Text = "Mesaje de script Adobe…"
         tips.SetToolTipHeader(btnMesajeAdobe, "Mesaje de script Adobe")
         tips.SetToolTipText(btnMesajeAdobe, "Lista mesajelor «Warning: JavaScript Window» pe care K-BOT le închide singur (expresii regulate)." & vbLf & "Un mesaj care nu se potrivește cu lista rămâne pe ecran, pentru tine." & vbLf & "Se arată doar pentru motorul ActiveX.")
@@ -324,11 +367,11 @@ Partial Class SetariAplicatieView
         '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboExcelRibbon.CornerRadius = 4
-        cboExcelRibbon.Location = New Point(404, 265)
+        cboExcelRibbon.Location = New Point(404, 337)
         cboExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         cboExcelRibbon.Name = "cboExcelRibbon"
         cboExcelRibbon.Size = New Size(496, 37)
-        cboExcelRibbon.TabIndex = 8
+        cboExcelRibbon.TabIndex = 10
         tips.SetToolTipHeader(cboExcelRibbon, "Panglica Excel în previzualizare")
         tips.SetToolTipText(cboExcelRibbon, "Macro: Excel își ascunde singur panglica (poate fi refuzat de o politică)." & vbLf & "Fereastră: se ascunde fereastra panglicii, ca la Word — nu poate fi refuzat." & vbLf & "Word are o singură metodă și nu se configurează.")
         '
@@ -488,20 +531,22 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(chkStartMaximized, 0, 1)
         tlyComutatoare.Controls.Add(chkTurInitial, 0, 2)
         tlyComutatoare.Controls.Add(chkTutorialInitial, 0, 3)
-        tlyComutatoare.Controls.Add(chkLogViewer, 0, 4)
-        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 5)
-        tlyComutatoare.Controls.Add(lblVerbose, 0, 6)
-        tlyComutatoare.Controls.Add(cboVerbose, 1, 6)
-        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 7)
-        tlyComutatoare.Controls.Add(chkReceptii, 0, 8)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 9)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 10)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 11)
+        tlyComutatoare.Controls.Add(chkAvertismentAdobe, 0, 4)
+        tlyComutatoare.Controls.Add(chkLogViewer, 0, 5)
+        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 6)
+        tlyComutatoare.Controls.Add(lblVerbose, 0, 7)
+        tlyComutatoare.Controls.Add(cboVerbose, 1, 7)
+        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 8)
+        tlyComutatoare.Controls.Add(chkReceptii, 0, 9)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 10)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 11)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 12)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 13
+        tlyComutatoare.RowCount = 14
+        tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -572,16 +617,18 @@ Partial Class SetariAplicatieView
         tlyDocumente.Controls.Add(cboAdobeMotor, 1, 0)
         tlyDocumente.Controls.Add(btnAdobeGazduire, 1, 1)
         tlyDocumente.Controls.Add(chkAdobeClasic, 1, 2)
-        tlyDocumente.Controls.Add(chkAcroTrace, 1, 3)
-        tlyDocumente.Controls.Add(chkAcroNou, 1, 4)
-        tlyDocumente.Controls.Add(btnMesajeAdobe, 1, 5)
-        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 6)
-        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 6)
+        tlyDocumente.Controls.Add(chkAdobeHover, 1, 3)
+        tlyDocumente.Controls.Add(chkAdobeSemnareModerna, 1, 4)
+        tlyDocumente.Controls.Add(chkAcroTrace, 1, 5)
+        tlyDocumente.Controls.Add(chkAcroNou, 1, 6)
+        tlyDocumente.Controls.Add(btnMesajeAdobe, 1, 7)
+        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 8)
+        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 8)
         tlyDocumente.Dock = DockStyle.Top
         tlyDocumente.Location = New Point(28, 58)
         tlyDocumente.Margin = New Padding(4, 0, 4, 24)
         tlyDocumente.Name = "tlyDocumente"
-        tlyDocumente.RowCount = 7
+        tlyDocumente.RowCount = 9
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
@@ -589,7 +636,9 @@ Partial Class SetariAplicatieView
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
-        tlyDocumente.Size = New Size(904, 312)
+        tlyDocumente.RowStyles.Add(New RowStyle())
+        tlyDocumente.RowStyles.Add(New RowStyle())
+        tlyDocumente.Size = New Size(904, 384)
         tlyDocumente.TabIndex = 1
         '
         ' lblAdobeMotor
@@ -608,11 +657,11 @@ Partial Class SetariAplicatieView
         '
         lblExcelRibbon.AutoSize = True
         lblExcelRibbon.Dock = DockStyle.Fill
-        lblExcelRibbon.Location = New Point(4, 265)
+        lblExcelRibbon.Location = New Point(4, 337)
         lblExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         lblExcelRibbon.Name = "lblExcelRibbon"
         lblExcelRibbon.Size = New Size(392, 37)
-        lblExcelRibbon.TabIndex = 7
+        lblExcelRibbon.TabIndex = 9
         lblExcelRibbon.Text = "Excel — cum se ascunde panglica"
         lblExcelRibbon.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -814,6 +863,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkStartMaximized As CheckBox
     Friend WithEvents chkTurInitial As CheckBox
     Friend WithEvents chkTutorialInitial As CheckBox
+    Friend WithEvents chkAvertismentAdobe As CheckBox
     Friend WithEvents chkAvansate As CheckBox
     Friend WithEvents chkCapturi As CheckBox
     Friend WithEvents lblGrupFereastra As Label
@@ -826,6 +876,8 @@ Partial Class SetariAplicatieView
     Friend WithEvents cboAdobeMotor As KBotComboBox
     Friend WithEvents btnAdobeGazduire As Button
     Friend WithEvents chkAdobeClasic As CheckBox
+    Friend WithEvents chkAdobeHover As CheckBox
+    Friend WithEvents chkAdobeSemnareModerna As CheckBox
     Friend WithEvents chkAcroTrace As CheckBox
     Friend WithEvents chkAcroNou As CheckBox
     Friend WithEvents btnMesajeAdobe As Button

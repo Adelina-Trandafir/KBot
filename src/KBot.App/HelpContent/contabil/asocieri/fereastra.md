@@ -11,7 +11,7 @@ keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, 
 <!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. -->
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
-<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0101 -->
+<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0101, 0111 -->
 
 Câte un rând pe **recepție**: data recepției, valoarea de azi și, în paranteză, câte instantanee are
 lanțul ei. Sub fiecare recepție, **lanțul**: instantaneele ei, în ordinea orei.
@@ -32,7 +32,9 @@ dispare când lanțul se închide, după o mutare. Un lanț care se termină cu 
 socotește. Același semn roșu apare și pe angajament, în lista din fereastra principală.
 
 Semnele de pe rândul unui instantaneu: data și ora salvării, totalul, plus **[ștergere]** (rândul în
-care recepția a fost ștearsă, scris înclinat) sau **[fără schimbare]**. Un instantaneu scris stins,
+care recepția a fost ștearsă, scris înclinat), **[fără schimbare]** sau **[corectat]** (ai corectat
+tu valoarea pe care o scrisese FOREXE — vezi [Valoarea greșită din FOREXE](topic:contabil.asocieri.cazuri)).
+Un instantaneu scris stins,
 cu lacăt, este **blocat**: angajamentul are o ordonanțare din ziua lui sau de după ea; se vede, dar
 nu se mai poate muta. Toate celelalte se pot muta — și după o descărcare, inclusiv cele care erau
 așezate dinainte ([Legături blocate](topic:contabil.asocieri.cazuri)).

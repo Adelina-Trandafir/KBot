@@ -76,6 +76,8 @@ Public Class MigratorForm
             txtGazda.Text = _settings.Host
             txtPort.Text = _settings.Port.ToString(CultureInfo.InvariantCulture)
             txtUtilizator.Text = _settings.User
+            txtEfEmise.Text = _settings.EfIssuedFile
+            txtEfPrimite.Text = _settings.EfReceivedFile
             'txtServerUrl.Text = _settings.ServerUrl
 
             FillTableList()
@@ -170,6 +172,8 @@ Public Class MigratorForm
         _settings.Host = txtGazda.Text.Trim()
         _settings.Port = ParsePort()
         _settings.User = txtUtilizator.Text.Trim()
+        _settings.EfIssuedFile = txtEfEmise.Text.Trim()
+        _settings.EfReceivedFile = txtEfPrimite.Text.Trim()
         _settings.Dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
         '_settings.ServerUrl = txtServerUrl.Text.Trim()
         ' No secret reaches this call - MigratorSettings has no field for one. The API key
@@ -271,6 +275,7 @@ Public Class MigratorForm
             FillUnitList()
             ShowCodFiscal()
             ShowForexePath()
+            RefreshEfHeader(True)
         Catch ex As Exception
             GlobalErrorLog.Write("MigratorForm.cboDc_SelectedIndexChanged", ex)
         End Try
@@ -1049,7 +1054,7 @@ Public Class MigratorForm
         End Try
     End Sub
 
-    Private Sub btnOpreste_Click(sender As Object, e As EventArgs) Handles btnOpreste.Click
+    Private Sub btnOpreste_Click(sender As Object, e As EventArgs) Handles btnOpreste.Click, btnEfOpreste.Click
         Try
             If _cancellation Is Nothing Then Return
             Say("Se oprește…")
@@ -1284,6 +1289,9 @@ Public Class MigratorForm
         btnCitesteRegistru.Enabled = Not busy
         btnOpreste.Enabled = busy
         btnBugetDeschidere.Enabled = Not busy
+        btnEfVerifica.Enabled = Not busy
+        btnEfOpreste.Enabled = busy
+        If busy Then btnEfImporta.Enabled = False
         If busy Then btnTransfera.Enabled = False
         Cursor = If(busy, Cursors.WaitCursor, Cursors.Default)
 

@@ -81,6 +81,14 @@ Public NotInheritable Class AcroPdfSurface
 
     ' Deep enough for Adobe's pane tree, which was measured at 11 levels.
     Private Const ProbeDepth As Integer = 14
+    ' TEMPORARY TEST (operator, 06.10.2026, slice 0078-15): True = K-BOT does NOTHING to the ActiveX control except load the
+    ' file (no script-alert trap, no Ctrl+H / Ctrl+2, no resize fit, no close prompt answering, no tree walk). To end the test:
+    ' set it to False (every guarded line is marked «HANDS-OFF TEST»).
+    Private Const ActiveXHandsOffTest As Boolean = True
+    ' Slice 0078-15 (operator, 06.10.2026): the ActiveX viewer's own script-burst timing (the hosted window keeps
+    ' AdobeSaveTrap's 3000 / 100 ms): here the alerts block K-BOT's thread while they last, so the wait after them is shorter.
+    Private Const ActiveXBurstQuietMs As Integer = 1200
+    Private Const ActiveXBurstIntervalMs As Integer = 50
     ' Adobe re-lays-out asynchronously; these are the waits that let it.
     Private Const CollapseSettleMs As Integer = 600
 
@@ -163,12 +171,15 @@ Public NotInheritable Class AcroPdfSurface
         _log = log
         _clsid = AcroPdfDetector.NormaliseClsid(AcroPdfDetector.ResolveClsid())
         _saveTrap = New AdobeSaveTrap(AddressOf Report) With {
-            .PidSource = AddressOf OwnerPids, .IsOnScreen = AddressOf IsOnScreen, .Traced = True}
+            .PidSource = AddressOf OwnerPids, .IsOnScreen = AddressOf IsOnScreen, .Traced = True,
+            .BurstQuietMs = ActiveXBurstQuietMs, .BurstIntervalMs = ActiveXBurstIntervalMs}
         AddHandler _saveTrap.Saved, AddressOf OnTrapSaved
         AddHandler _saveTrap.Failed, AddressOf OnTrapFailed
         AddHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
         AddHandler _refitTimer.Tick, AddressOf OnRefitTick
         AddHandler _deadCheckTimer.Tick, AddressOf OnDeadCheckTick
+        AddHandler _settleTimer.Tick, AddressOf OnSettleTick
+        AddHandler _resizeTimer.Tick, AddressOf OnResizeFitTick
         AddHandler _panel.SizeChanged, AddressOf OnPanelSizeChanged
         AddHandler _panel.VisibleChanged, AddressOf OnScreenStateChanged
         AddHandler _panel.ParentChanged, AddressOf OnScreenStateChanged
@@ -219,7 +230,8 @@ Public NotInheritable Class AcroPdfSurface
             If _saveTrap.IsPaused Then
                 _saveTrap.Resume()
                 ' Adobe may have laid out again while hidden: re-apply the header fix.
-                If _host IsNot Nothing AndAlso Not ReadMode Then ScheduleHeaderSearch(HeaderSearchTicksAfterResize)
+                ' Slice 0078-15: header refit timer commented out (operator, 06.10.2026); old path only.
+                ' If _host IsNot Nothing AndAlso Not ReadMode Then ScheduleHeaderSearch(HeaderSearchTicksAfterResize)
             End If
             If _readModePending Then
                 ' The empty-control check waits while the viewer is off screen; restarted here.
@@ -242,9 +254,15 @@ Public NotInheritable Class AcroPdfSurface
         Try
             Tr($"OnPanelSizeChanged: size={_panel.ClientSize} host={_host IsNot Nothing}; " & ScreenText())
             If _host Is Nothing OrElse Not ViewerShown() Then Return
+            ' Slice 0078-15: a resize -> Ctrl+2 again, after the resize has stopped (restarted on every size change).
+            If Not ActiveXHandsOffTest AndAlso Not String.IsNullOrEmpty(_loadedPath) Then   ' HANDS-OFF TEST
+                _resizeTimer.Stop()
+                _resizeTimer.Start()
+            End If
             ' Read Mode survives a resize: Adobe lays it out itself.
-            If ReadMode Then Return
-            ScheduleHeaderSearch(HeaderSearchTicksAfterResize)
+            ' Slice 0078-15: the header refit timer is commented out (operator, 06.10.2026); old path only.
+            ' If ReadMode Then Return
+            ' ScheduleHeaderSearch(HeaderSearchTicksAfterResize)
         Catch ex As Exception
             Tr("OnPanelSizeChanged EXCEPTION: " & ex.ToString())
             GlobalErrorLog.Write("AcroPdfSurface.OnPanelSizeChanged", ex)
@@ -453,6 +471,14 @@ Public NotInheritable Class AcroPdfSurface
             End If
 
             Report($"AcroPDF: încarc «{Path.GetFileName(pdfPath)}».")
+            ' HANDS-OFF TEST: the file is loaded and nothing else is done to the control.
+            If ActiveXHandsOffTest Then
+                Dim k_before As Long = clock.ElapsedMilliseconds
+                Dim k_answer As Boolean = host.LoadFile(pdfPath)
+                _loadedPath = pdfPath
+                Report($"AcroPDF (test fără intervenții): LoadFile a răspuns {k_answer} în {clock.ElapsedMilliseconds - k_before} ms; nu se face nimic altceva.")
+                Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed:=True)
+            End If
             ' The previous document's header search / Read Mode wait belongs to that document (the
             ' 24.09.2026 trace: a search left running ended the NEXT load's recording as «open»).
             _refitTimer.Stop()
@@ -471,58 +497,65 @@ Public NotInheritable Class AcroPdfSurface
             ' Adobe is still laying out, and the pids are re-read on every sweep anyway.
             StartSaveTrap()
 
-            If ReadMode Then
-                ' No pane wait, no collapse, no hiding, no header timer: one Ctrl+H when Adobe
-                ' says the page is laid out (only on a control that has not had it). The
-                ' recording ends when it is sent.
-                _deadRetryDone = False
-                ArmReadMode()
-                Tr($"ShowDocumentAsync END (read mode armed) after {clock.ElapsedMilliseconds} ms")
-                Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed:=True)
-            End If
+            ' Slice 0078-15 (operator, 06.10.2026): ALWAYS the Read Mode path, whatever ReadMode says.
+            ' The guard is commented, not removed:  'If ReadMode Then ... 'End If
+            ' (An awaited, already completed task keeps the method Async while the old path's awaits are commented.)
+            Await Task.CompletedTask.ConfigureAwait(True)
+            ' If ReadMode Then
+            ' No pane wait, no collapse, no hiding, no header timer: one Ctrl+H (then Ctrl+2) when Adobe
+            ' says the page is laid out (only on a control that has not had it). The
+            ' recording ends when it is sent.
+            _deadRetryDone = False
+            ArmReadMode()
+            Tr($"ShowDocumentAsync END (read mode armed) after {clock.ElapsedMilliseconds} ms")
+            Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed:=True)
+            ' End If
 
-            If Not Await WaitForPaneTreeAsync().ConfigureAwait(True) Then
-                ' MEASURED 23.09.2026: now and then Adobe builds NOTHING in the control (the panel
-                ' stays empty) and the same file opens fine on the next try. One fresh control and
-                ' one more load before giving up; the trap follows the new load.
-                Report($"AcroPDF: controlul nu are vederi Adobe ({DescribeTree()}) — îl recreez și reîncarc o dată.")
-                Clear()
-                host = EnsureHost()
-                If host Is Nothing Then
-                    EndRecording("BLOCKING: the control could not be recreated")
-                    Return New AcroPdfResult(AcroPdfStatus.Failed,
-                                             "Controlul Adobe nu a putut fi recreat. Detalii în jurnalul de erori.")
-                End If
-                TracedLoad(host, pdfPath, clock)
-                _loadedPath = pdfPath
-                StartSaveTrap()
-                If Not Await WaitForPaneTreeAsync().ConfigureAwait(True) Then
-                    Report($"AcroPDF: nici a doua încărcare nu a construit vederile ({DescribeTree()}).")
-                    If Tracing Then TraceTree("ShowDocumentAsync: tree when giving up")
-                    EndRecording($"BLOCKING: second load built no Adobe views after {clock.ElapsedMilliseconds} ms")
-                    ' Said as what it is: Adobe did not SHOW the document (the old note blamed the
-                    ' collapse, which never ran).
-                    Return New AcroPdfResult(AcroPdfStatus.Shown,
-                                             "Adobe nu a afișat documentul — vezi jurnalul.", collapsed:=False)
-                End If
-                Report("AcroPDF: a doua încărcare a reușit.")
-            End If
-            Tr($"ShowDocumentAsync: pane tree ready at {clock.ElapsedMilliseconds} ms -> collapse")
-            Dim collapsed As Boolean = Await CollapsePanesAsync().ConfigureAwait(True)
-            Tr($"ShowDocumentAsync: collapse -> {collapsed} at {clock.ElapsedMilliseconds} ms -> hide chrome")
-            HideChrome()
-            ' The header can appear only after the page has rendered: searched on the refit timer.
-            _headerTicksLeft = 0
-            ScheduleHeaderSearch(HeaderSearchTicksAfterLoad)
-            If Tracing Then
-                Tr($"ShowDocumentAsync: control version «{If(TryReadVersion(), "(none)")}»")
-                TraceTree("ShowDocumentAsync: tree at the end of the load")
-            End If
+            ' OLD PATH (pane wait, collapse, hide chrome, header search) -- COMMENTED OUT, not deleted (operator, 06.10.2026,
+            ' slice 0078-15): the ActiveX viewer now always takes the Read Mode path above (Ctrl+H, Ctrl+2).
+            ' To bring it back: restore the lines below and the «If ReadMode Then» guard above.
+            'If Not Await WaitForPaneTreeAsync().ConfigureAwait(True) Then
+            '    ' MEASURED 23.09.2026: now and then Adobe builds NOTHING in the control (the panel
+            '    ' stays empty) and the same file opens fine on the next try. One fresh control and
+            '    ' one more load before giving up; the trap follows the new load.
+            '    Report($"AcroPDF: controlul nu are vederi Adobe ({DescribeTree()}) — îl recreez și reîncarc o dată.")
+            '    Clear()
+            '    host = EnsureHost()
+            '    If host Is Nothing Then
+            '        EndRecording("BLOCKING: the control could not be recreated")
+            '        Return New AcroPdfResult(AcroPdfStatus.Failed,
+            '                                 "Controlul Adobe nu a putut fi recreat. Detalii în jurnalul de erori.")
+            '    End If
+            '    TracedLoad(host, pdfPath, clock)
+            '    _loadedPath = pdfPath
+            '    StartSaveTrap()
+            '    If Not Await WaitForPaneTreeAsync().ConfigureAwait(True) Then
+            '        Report($"AcroPDF: nici a doua încărcare nu a construit vederile ({DescribeTree()}).")
+            '        If Tracing Then TraceTree("ShowDocumentAsync: tree when giving up")
+            '        EndRecording($"BLOCKING: second load built no Adobe views after {clock.ElapsedMilliseconds} ms")
+            '        ' Said as what it is: Adobe did not SHOW the document (the old note blamed the
+            '        ' collapse, which never ran).
+            '        Return New AcroPdfResult(AcroPdfStatus.Shown,
+            '                                 "Adobe nu a afișat documentul — vezi jurnalul.", collapsed:=False)
+            '    End If
+            '    Report("AcroPDF: a doua încărcare a reușit.")
+            'End If
+            'Tr($"ShowDocumentAsync: pane tree ready at {clock.ElapsedMilliseconds} ms -> collapse")
+            'Dim collapsed As Boolean = Await CollapsePanesAsync().ConfigureAwait(True)
+            'Tr($"ShowDocumentAsync: collapse -> {collapsed} at {clock.ElapsedMilliseconds} ms -> hide chrome")
+            'HideChrome()
+            '' The header can appear only after the page has rendered: searched on the refit timer.
+            '_headerTicksLeft = 0
+            'ScheduleHeaderSearch(HeaderSearchTicksAfterLoad)
+            'If Tracing Then
+            '    Tr($"ShowDocumentAsync: control version «{If(TryReadVersion(), "(none)")}»")
+            '    TraceTree("ShowDocumentAsync: tree at the end of the load")
+            'End If
 
-            ' The recording ends when the header search ends (OnRefitTick): that is the last step
-            ' of opening the document.
-            Tr($"ShowDocumentAsync END shown, collapsed={collapsed}, after {clock.ElapsedMilliseconds} ms")
-            Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed)
+            '' The recording ends when the header search ends (OnRefitTick): that is the last step
+            '' of opening the document.
+            'Tr($"ShowDocumentAsync END shown, collapsed={collapsed}, after {clock.ElapsedMilliseconds} ms")
+            'Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed)
         Catch ex As Exception
             Tr($"ShowDocumentAsync EXCEPTION after {clock.ElapsedMilliseconds} ms: " & ex.ToString())
             EndRecording("BLOCKING: exception " & ex.GetType().Name & ": " & ex.Message)
@@ -540,10 +573,10 @@ Public NotInheritable Class AcroPdfSurface
         Try
             Tr($"Clear: host={_host IsNot Nothing} loaded={If(_loadedPath, "(none)")} trapBusy={_saveTrap.IsBusy}")
             ' A pressed Save still writing the file must not lose its control halfway.
-            If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
+            If Not ActiveXHandsOffTest AndAlso _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)   ' HANDS-OFF TEST
             ' slice 0078-09: the trap stays on while the control goes away, so Adobe's «save changes
             ' before closing?» box is answered (see AdobeSaveTrap.BeginClose).
-            Dim hadDocument As Boolean = _loadedPath IsNot Nothing
+            Dim hadDocument As Boolean = _loadedPath IsNot Nothing AndAlso Not ActiveXHandsOffTest   ' HANDS-OFF TEST
             If hadDocument Then _saveTrap.BeginClose()
             DisarmReadMode()
             _loadedPath = Nothing
@@ -874,10 +907,28 @@ Public NotInheritable Class AcroPdfSurface
     Private Const PageViewTitle As String = "AVPageView"
     Private Const ExternalWindowTitle As String = "Acrobat External Window"
     Private Const VK_H As UShort = &H48US
+    ' Slice 0078-14 (operator, 06.10.2026): F8 -- sent WITHOUT Ctrl, right after Ctrl+H -- hides the right-hand toolbar.
+    Private Const VK_F8 As UShort = &H77US
+    ' Slice 0078-15 (operator, 06.10.2026): Ctrl+2 after F8 -- the same as the hosted window (AdobeReaderHost).
+    Private Const VK_2 As UShort = &H32US
     ' Longer than Acrobat's cold start seen on the client first (> 4 s would have been cut), far
     ' longer than a warm load (first window within 0.5 s).
     Private Const DeadControlMs As Integer = 5000
     Private ReadOnly _deadCheckTimer As New Timer() With {.Interval = DeadControlMs}
+    ' Slice 0078-15 (operator, 06.10.2026): the keys wait for Adobe to SETTLE. Measured 06.10.2026 (acropdf_trace.log):
+    ' keys sent 2 s after the load, with the right-hand pane still open (page view 291 px wide instead of 637), did
+    ' nothing. So: at least ReadModeMinAfterLoadMs since the load AND no window event inside the control for
+    ' ReadModeQuietMs. A short poll timer re-checks (no event arrives after the last one).
+    Private Const ReadModeMinAfterLoadMs As Integer = 3000
+    Private Const ReadModeQuietMs As Integer = 1000
+    Private Const SettlePollMs As Integer = 250
+    Private ReadOnly _settleTimer As New Timer() With {.Interval = SettlePollMs}
+    ' Slice 0078-15 (operator, 06.10.2026): after the viewer is RESIZED, Ctrl+2 (fit width) is sent again, once the resize
+    ' has stopped for ResizeFitDelayMs, when a document is loaded and the viewer is on screen.
+    Private Const ResizeFitDelayMs As Integer = 500
+    Private ReadOnly _resizeTimer As New Timer() With {.Interval = ResizeFitDelayMs}
+    Private _readModeArmedTick As Long
+    Private _lastControlEventTick As Long
     ' The empty-control replacement already happened for this load.
     Private _deadRetryDone As Boolean
     Private _readModePending As Boolean
@@ -895,6 +946,8 @@ Public NotInheritable Class AcroPdfSurface
         _readModePending = True
         _readModeWoken = False
         _readModeWait = Nothing
+        _readModeArmedTick = Environment.TickCount64
+        _lastControlEventTick = _readModeArmedTick
         If ViewerShown() Then _deadCheckTimer.Start()
         If _readModeProc Is Nothing Then _readModeProc = AddressOf OnReadModeEvent
         _readModeHook = AdobeNativeMethods.SetWinEventHook(
@@ -913,6 +966,7 @@ Public NotInheritable Class AcroPdfSurface
     Private Sub DisarmReadMode()
         _readModePending = False
         _deadCheckTimer.Stop()
+        _settleTimer.Stop()
         If _readModeHook <> IntPtr.Zero Then
             AdobeNativeMethods.UnhookWinEvent(_readModeHook)
             Tr($"ReadMode: hook {AcroPdfTraceLog.Hex(_readModeHook)} removed")
@@ -940,6 +994,8 @@ Public NotInheritable Class AcroPdfSurface
                 End If
                 Return
             End If
+            ' Slice 0078-15: any window event inside the control means Adobe is still moving.
+            If Not isForm Then _lastControlEventTick = Environment.TickCount64
             ' Adobe put a window in the control: it is not the empty-control case.
             If Not isForm AndAlso _deadCheckTimer.Enabled Then
                 _deadCheckTimer.Stop()
@@ -1003,6 +1059,57 @@ Public NotInheritable Class AcroPdfSurface
         End Try
     End Sub
 
+    ' Slice 0078-15: the poll that re-checks the settle conditions. Timer: log and swallow.
+    Private Sub OnSettleTick(sender As Object, e As EventArgs)
+        Try
+            If Not _readModePending Then
+                _settleTimer.Stop()
+                Return
+            End If
+            TrySendReadMode("settle poll")
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcroPdfSurface.OnSettleTick", ex)
+        End Try
+    End Sub
+
+    ' Slice 0078-15: the resize has stopped -> Ctrl+2 (fit width), under the same conditions as the first keys
+    ' (page laid out, no alert burst, K-BOT in front, focus inside the control). Nothing is sent while the first
+    ' keys are still pending (they carry Ctrl+2 too). Timer: log and swallow.
+    Private Sub OnResizeFitTick(sender As Object, e As EventArgs)
+        Try
+            _resizeTimer.Stop()
+            If _host Is Nothing OrElse Not _host.IsHandleCreated OrElse String.IsNullOrEmpty(_loadedPath) Then Return
+            If _readModePending Then Return
+            Dim page As IntPtr
+            Dim wait As String = ReadModeBlocker(page)
+            If wait IsNot Nothing Then
+                Tr($"ResizeFit: not sent -- {wait}")
+                Return
+            End If
+            AdobeNativeMethods.SetFocus(page)
+            Dim focus As IntPtr = AdobeNativeMethods.GetFocus()
+            If Not (focus = page OrElse AdobeNativeMethods.IsChild(_host.Handle, focus)) Then
+                Tr($"ResizeFit: not sent -- the focus did not reach the control (focus {AcroPdfTraceLog.Hex(focus)})")
+                Return
+            End If
+            Dim keys As AdobeNativeMethods.INPUT() = {
+                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
+                AdobeNativeMethods.KeyInput(VK_2, False),
+                AdobeNativeMethods.KeyInput(VK_2, True),
+                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)}
+            Dim sent As UInteger = AdobeNativeMethods.SendInput(CUInt(keys.Length), keys,
+                Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
+            Tr($"ResizeFit: SendInput Ctrl+2 -> {sent}/{keys.Length} event(s) after a resize to {_panel.ClientSize}")
+            If sent = keys.Length Then
+                Report("AcroPDF: după redimensionare — Ctrl+2 trimis documentului.")
+            Else
+                Report($"AcroPDF: ATENȚIE — Ctrl+2 după redimensionare nu a putut fi trimis ({sent}/{keys.Length} taste).")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcroPdfSurface.OnResizeFitTick", ex)
+        End Try
+    End Sub
+
     ' Trap event, UI thread. Boundary: log and swallow.
     Private Sub OnScriptBurstEnded()
         Try
@@ -1032,6 +1139,8 @@ Public NotInheritable Class AcroPdfSurface
                     _readModeWait = wait
                     Tr($"ReadMode: waiting -- {wait} (trigger: {trigger})")
                 End If
+                ' Slice 0078-15: no event follows the last one, so a short poll re-checks while the viewer is on screen.
+                If ViewerShown() AndAlso Not _settleTimer.Enabled Then _settleTimer.Start()
                 Return
             End If
 
@@ -1051,21 +1160,37 @@ Public NotInheritable Class AcroPdfSurface
                 Return
             End If
 
-            Dim keys As AdobeNativeMethods.INPUT() = {
-                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
-                AdobeNativeMethods.KeyInput(VK_H, False),
-                AdobeNativeMethods.KeyInput(VK_H, True),
-                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)}
-            Dim sent As UInteger = AdobeNativeMethods.SendInput(CUInt(keys.Length), keys,
-                Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
-            Dim err As Integer = If(sent = keys.Length, 0, Runtime.InteropServices.Marshal.GetLastWin32Error())
-            Tr($"ReadMode: SendInput Ctrl+H -> {sent}/{keys.Length} event(s)" & If(err <> 0, $", Win32 error {err}", ""))
-            If sent = keys.Length Then
-                Report("AcroPDF: mod citire — Ctrl+H trimis documentului.")
-                EndRecording("document open, Ctrl+H sent")
+            ' Slice 0078-15 (operator, 06.10.2026): ONE SendInput per key, in order, like the hosted window
+            ' (AdobeReaderHost.TrySendPendingKeys) -- not one batch. Ctrl+H, then Ctrl+2.
+            ' F8 removed from this flow (operator, 06.10.2026): Ctrl+H and Ctrl+2 are enough. To bring it back, add
+            ' Tuple.Create("F8", VK_F8, False) between them.
+            Dim failedKey As String = Nothing
+            For Each step_ As Tuple(Of String, UShort, Boolean) In New Tuple(Of String, UShort, Boolean)() {
+                Tuple.Create("Ctrl+H", VK_H, True), Tuple.Create("Ctrl+2", VK_2, True)}
+                Dim keys As AdobeNativeMethods.INPUT() = If(step_.Item3,
+                    New AdobeNativeMethods.INPUT() {
+                        AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
+                        AdobeNativeMethods.KeyInput(step_.Item2, False),
+                        AdobeNativeMethods.KeyInput(step_.Item2, True),
+                        AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)},
+                    New AdobeNativeMethods.INPUT() {
+                        AdobeNativeMethods.KeyInput(step_.Item2, False),
+                        AdobeNativeMethods.KeyInput(step_.Item2, True)})
+                Dim sent As UInteger = AdobeNativeMethods.SendInput(CUInt(keys.Length), keys,
+                    Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
+                Dim err As Integer = If(sent = keys.Length, 0, Runtime.InteropServices.Marshal.GetLastWin32Error())
+                Tr($"ReadMode: SendInput {step_.Item1} -> {sent}/{keys.Length} event(s)" & If(err <> 0, $", Win32 error {err}", ""))
+                If sent = keys.Length Then
+                    Report($"AcroPDF: mod citire — {step_.Item1} trimis documentului.")
+                Else
+                    Report($"AcroPDF: ATENȚIE — {step_.Item1} nu a putut fi trimis ({sent}/{keys.Length} taste, eroarea {err}).")
+                    failedKey = step_.Item1 & " (error " & err & ")"
+                End If
+            Next
+            If failedKey Is Nothing Then
+                EndRecording("document open, Ctrl+H and Ctrl+2 sent")
             Else
-                Report($"AcroPDF: ATENȚIE — Ctrl+H nu a putut fi trimis ({sent}/{keys.Length} taste, eroarea {err}).")
-                EndRecording($"BLOCKING: SendInput sent {sent} of {keys.Length} key events, error {err}")
+                EndRecording("BLOCKING: SendInput failed for " & failedKey)
             End If
         Catch ex As Exception
             Tr("TrySendReadMode EXCEPTION: " & ex.ToString())
@@ -1091,9 +1216,14 @@ Public NotInheritable Class AcroPdfSurface
             End If
         Next
         If page = IntPtr.Zero Then Return "page view not laid out yet"
-        If _saveTrap.InScriptBurst Then Return $"script alerts within the last {AdobeSaveTrap.ScriptBurstQuietMs} ms"
+        If _saveTrap.InScriptBurst Then Return $"script alerts within the last {ActiveXBurstQuietMs} ms"
         If _form Is Nothing OrElse Not _form.IsHandleCreated Then Return "no form"
         If Not AdobeNativeMethods.IsWindowEnabled(_form.Handle) Then Return "form disabled (a modal alert is up)"
+        ' Slice 0078-15: Adobe must have SETTLED (see ReadModeMinAfterLoadMs).
+        Dim sinceLoad As Long = Environment.TickCount64 - _readModeArmedTick
+        If sinceLoad < ReadModeMinAfterLoadMs Then Return $"settling: {sinceLoad} ms since the load, {ReadModeMinAfterLoadMs} ms wanted"
+        Dim sinceEvent As Long = Environment.TickCount64 - _lastControlEventTick
+        If sinceEvent < ReadModeQuietMs Then Return $"Adobe still changing its windows: last event {sinceEvent} ms ago, {ReadModeQuietMs} ms of quiet wanted"
         Dim fg As IntPtr = AdobeNativeMethods.GetForegroundWindow()
         If fg <> _form.Handle Then Return $"K-BOT is not the foreground window (foreground {AcroPdfTraceLog.Hex(fg)} «{AdobeNativeMethods.GetTitle(fg)}»)"
         Return Nothing
@@ -1208,6 +1338,10 @@ Public NotInheritable Class AcroPdfSurface
             _refitTimer.Dispose()
             RemoveHandler _deadCheckTimer.Tick, AddressOf OnDeadCheckTick
             _deadCheckTimer.Dispose()
+            RemoveHandler _settleTimer.Tick, AddressOf OnSettleTick
+            _settleTimer.Dispose()
+            RemoveHandler _resizeTimer.Tick, AddressOf OnResizeFitTick
+            _resizeTimer.Dispose()
             RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
             RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed
             RemoveHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded

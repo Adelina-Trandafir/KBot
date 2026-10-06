@@ -341,6 +341,9 @@ Partial Public Class KbotForm
                 Await RefreshUncorrelatedMarkAsync()
                 ' Slice 0097: the unit selector in the caption (two or more units only).
                 Await IncarcaUnitatileAsync()
+                ' The advice about the installed Adobe (free Reader 2025+ recommended); the
+                ' operator switches it off from its own window. Before the tour, which is posted.
+                AdobeAdvice.ShowIfDue(Me)
                 ' Slice 0097-02: the main window's tour, by itself, until it was seen to the end
                 ' or switched off. Last, so it rings a window that already has its data.
                 PornesteTurulInitial()

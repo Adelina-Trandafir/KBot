@@ -26,3 +26,53 @@ info@avatarsoft.ro; all roles may enter; the JS session monitor in `JS_COMPONENT
 | 0110-10 | Portal: pe calculator fiecare card al angajamentului are arborele lui (Istoric, Rezervari, Receptii, Extrase, Plati, Fundamentari, Ordonantari: «Toate...» > luna > ziua / documentul, cu totaluri, ca in K-BOT; Sumar fara arbore, ca in K-BOT); grupările pe data scoase din toate cardurile in ambele moduri (Istoric neschimbat); cardul «Documente» inlocuit de «Fundamentari» si «Ordonantari» (liniile documentului + PDF-ul semnat; notele CAB in dosarul lor din Ordonantari) | GATA pe cod, probat in browser cu date inventate (calculator + telefon); **nevazut pe ecran, baza reala neincercata, server nedeployat** | `SLICE-0110-10-portal-carduri-arbori.md` |
 | 0110-11 | Portal, Administrare: cardul «Coloane» (coloane vizibile, pozitie, latime, o coloana care se extinde, pentru TOATE grilele sitului; se pastreaza in browser, se aplica pe grilele reale pentru administrator; fisier JSON de dat dezvoltatorului, care il pune in `grid-layouts.defaults.js`) | GATA pe cod, probat in browser cu date inventate; **nevazut pe ecran; Clasificatii/Parteneri neprobate in preview; asteapta fisierul cu alegerile administratorului**; server nedeployat | `SLICE-0110-11-portal-coloane-grile.md` |
 | 0110-12 | Portal, DOAR calculator: detalii sub grila (Istoric: descriere + valori; Plati: extrasul bancar), meniul de vizualizare din antetul arborelui Extrase (antet + operatii / operatii + detalii), Fundamentari si Ordonantari cu navbar Vizualizare | Document, informatiile din header (DDF: antet; ORD: filtru beneficiar + subsol); reparat arborele fara casuta de cautare | GATA pe cod, probat in browser cu date inventate; **nevazut pe ecran, baza reala neincercata, server nedeployat** | `SLICE-0110-12-portal-carduri-detalii.md` |
+
+---
+
+## Slice 0111 — value correction of a reception snapshot
+
+Operator, 06.10.2026. FOREXE's own history sometimes writes a wrong total on a reception header
+(the 12.06.2026 reception of `AAB3MEF2MG2`: header row «valoare: 0», line row «Suma receptie: 1635
+RON»). K-BOT cannot trust that total 100%, so the operator may correct it from the association
+window. Reasoning and rules: `docs/FUNDAMENT_Asociere_Receptii.md` §1.8 and Part 6 (F35).
+
+Locked decisions (operator, 06.10.2026):
+- the corrected figure goes in the WORKING columns (`FX_Receptii_H.Total`, `FX_Receptii.Valoare`),
+  which every reader already uses; the existing `TotalOrig` / `ValoareOrig` keep what FOREXE said (no
+  new `ValoareReala` column);
+- `FX_Istoric` is never edited; a correction never causes a new download;
+- on save, a total that is not the sum of the lines is a BLOCKING error;
+- who / when / why: three columns on the header (`CorectatDe`, `CorectatLa`, `CorectatMotiv`);
+- the DDL runs on `AVACONT_SURSA` only; the other databases are brought up by AvacontPush (schema
+  sync, then the one-time query).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0111 | Value correction of a reception snapshot (menu «Corectează valoarea…», `CorectieValoareForm`, `POST /api/forexe/asociere/corectie`, `TotalOrig` at birth, DDL + one-time query) | GATA pe cod: `KBot.App` builds with 0 warnings / 0 errors, the Python files compile; **nothing ran against a live MariaDB, the form was never seen on screen; DDL + one-time query + server not deployed** | `SLICE-0111-01-corectie-valoare-instantaneu.md` |
+
+### Current focus — 0111
+
+Done in code (06.10.2026): `sql/0111_01_sursa.sql`, `sql/0111_02_interogare_unica.sql`;
+`PYTHON/routes/forexe/prelucrare_pasi.py` (`TotalOrig` at birth), `PYTHON/routes/forexe/asociere.py`
+(read of the new fields + the correction route); domain / API / form on the client; help 0000-53.
+
+Deployment order (operator runs it): DDL on `AVACONT_SURSA` › AvacontPush schema sync (SAFE) › push the
+Python files › AvacontPush one-time query `0111_total_orig_si_valoare_orig` › the K-BOT client.
+
+### Open threads — 0111
+
+- **To decide (operator):** does the ordonantare freeze also apply to a VALUE correction? Implemented as
+  YES (same rule as for the link: an ordonantare read the total, §1.3); lifting it is the `blocks`
+  check in `plan_correction`.
+- **Second pass (same day): the download window.** The correction is also offered there, on the
+  snapshots the download brought; it travels with the decision and the server applies it in phase two
+  before the placements are checked. NOT run live; the phase-two path was never exercised (the first
+  real download with a correction is its test). An older snapshot is not correctable from there.
+- **Not run live:** the route, the one-time query, the `TotalOrig` ← `Total` value list in the header
+  insert (MariaDB documents that a value list may read a column set earlier in it), the form on screen.
+- Capture `asocieri-corectie-valoare` (help) is not taken.
+- `tests/KBot.App.Tests` does not build for reasons that are NOT this slice (`ForexeAnswerStoreTests`
+  indexes a `JobRequest`; `MainForm*Tests` miss the `capturiApi` argument). The 9 test fakes of
+  `IApiClient` got the new member (`CorecteazaValoareaAsync`) so that this slice adds no error.
+- The rebuild from history (`receptii_refacere`) of a header that was deleted is born again with the
+  history's figure and without a correction.

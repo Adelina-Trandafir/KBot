@@ -23,8 +23,11 @@ Imports KBot.Common
 ''' and takes effect at once. Callers that build an expensive line
 ''' (a window tree dump) check <see cref="Enabled"/> first.</para>
 '''
-''' <para>Only the ActiveX engine writes here: the hosted-window engine shares
-''' <see cref="AdobeSaveTrap"/>, but its trap has no trace sink attached.</para>
+''' <para>Written by the ActiveX engine and, since slice 0078-12, by the hosted-window engine
+''' (<see cref="AdobeReaderHost"/>: source «AdobeReaderHost», plus its trap as «SaveTrap#n»), which
+''' opens a recording per document only while <see cref="SwitchedOn"/>. The settings window offers
+''' the switch while an ActiveX engine is chosen; the older-Adobe bench (<c>OldAdobeHostHarnessForm</c>)
+''' has its own tick for the hosted window.</para>
 '''
 ''' <para>Terminal sink, like <see cref="AdobeHostLog"/>: a failed write goes to <see cref="Trace"/>
 ''' and is NEVER thrown. Same line format (timestamp, two spaces, text), so the log viewer reads it

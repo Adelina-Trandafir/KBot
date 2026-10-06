@@ -1558,6 +1558,65 @@ Public NotInheritable Class AdobeReaderHarnessForm
         End Try
     End Sub
 
+    ' ══ Taste Read Mode în ActiveX — slice 0078-15 (cererea operatorului, 06.10.2026) ══════════════
+    ' Ctrl+H, Ctrl+2 trimise controlului ActiveX în patru feluri: toate într-un lot sau pe rând,
+    ' fără sau cu focusul pus întâi în control. Fără focus, tastele ajung la ce are focusul (butonul
+    ' apăsat) — rezultatul e de notat. Fiecare pas e în jurnalul băncii.
+    Private Sub RunAcroKeys(allAtOnce As Boolean, focusFirst As Boolean)
+        Dim k_label As String = If(allAtOnce, "toate odată", "pe rând") & If(focusFirst, " + focus în control", " (fără focus)")
+        RhpLog($"── Taste ActiveX: {k_label} ──")
+        If _acroHost Is Nothing OrElse Not _acroHost.IsHandleCreated Then
+            ShowStatus("Încarcă întâi un document în ActiveX.")
+            RhpLog("Taste ActiveX: controlul nu e creat — nimic trimis.")
+            Return
+        End If
+        Dim k_inside As Boolean = True
+        If focusFirst Then k_inside = AdobeReadModeKeys.FocusInto(_acroHost.Handle, AddressOf RhpLog)
+        If focusFirst AndAlso Not k_inside Then
+            RhpLog("Taste ActiveX: focusul NU e în control — le trimit oricum, ca să vedem unde ajung.")
+        End If
+        Dim k_ok As Boolean = If(allAtOnce, AdobeReadModeKeys.SendAllAtOnce(AddressOf RhpLog),
+                                 AdobeReadModeKeys.SendOneByOne(AddressOf RhpLog))
+        RhpLog($"Taste ActiveX ({k_label}): " & If(k_ok, "toate evenimentele au plecat; uită-te în control ce s-a întâmplat.", "NU au plecat toate (vezi mai sus)."))
+        ShowStatus($"Taste ActiveX ({k_label}): " & If(k_ok, "trimise.", "eșec la trimitere."))
+    End Sub
+
+    Private Sub btnKeysAllNoFocus_Click(sender As Object, e As EventArgs) Handles btnKeysAllNoFocus.Click
+        Try
+            RunAcroKeys(True, False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnKeysAllNoFocus_Click", ex)
+            RhpLog("Taste ActiveX: eșec — " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub btnKeysOneNoFocus_Click(sender As Object, e As EventArgs) Handles btnKeysOneNoFocus.Click
+        Try
+            RunAcroKeys(False, False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnKeysOneNoFocus_Click", ex)
+            RhpLog("Taste ActiveX: eșec — " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub btnKeysAllFocus_Click(sender As Object, e As EventArgs) Handles btnKeysAllFocus.Click
+        Try
+            RunAcroKeys(True, True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnKeysAllFocus_Click", ex)
+            RhpLog("Taste ActiveX: eșec — " & ex.Message)
+        End Try
+    End Sub
+
+    Private Sub btnKeysOneFocus_Click(sender As Object, e As EventArgs) Handles btnKeysOneFocus.Click
+        Try
+            RunAcroKeys(False, True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHarnessForm.btnKeysOneFocus_Click", ex)
+            RhpLog("Taste ActiveX: eșec — " & ex.Message)
+        End Try
+    End Sub
+
     ' Parametrul NU se numește `path`: VB e insensibil la majuscule, deci `path` ar umbri
     ' System.IO.Path și fiecare `Path.GetFileName` de mai jos ar deveni o căutare de membru pe String.
     Private Sub LoadIntoAcro(pdf As String, what As String)

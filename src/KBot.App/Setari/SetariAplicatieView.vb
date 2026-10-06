@@ -112,6 +112,7 @@ Public Class SetariAplicatieView
             chkTurInitial.Checked = AppSettings.Current.ShowInitialTour
             ' Slice 000T-07: the same for the tutorial of the start.
             chkTutorialInitial.Checked = AppSettings.Current.ShowInitialTutorial
+            chkAvertismentAdobe.Checked = AppSettings.Current.ShowAdobeAdvice
         Finally
             _suppress = before
         End Try
@@ -224,6 +225,7 @@ Public Class SetariAplicatieView
             chkStartMaximized.Checked = s.StartMaximized
             chkTurInitial.Checked = s.ShowInitialTour
             chkTutorialInitial.Checked = s.ShowInitialTutorial
+            chkAvertismentAdobe.Checked = s.ShowAdobeAdvice
             chkAvansate.Checked = s.AdvancedOptions
             chkCapturi.Checked = s.HelpCaptureMode
             AplicaOptiunileAvansate(s.AdvancedOptions)
@@ -321,6 +323,14 @@ Public Class SetariAplicatieView
                              "Tutorialul de început nu mai pornește singur. Îl găsești oricând la «?», la «Tutoriale»."))
     End Sub
 
+    ' The advice about the installed Adobe at start (free Reader 2025+ recommended). Read at start.
+    Private Sub ChkAvertismentAdobe_CheckedChanged(sender As Object, e As EventArgs) Handles chkAvertismentAdobe.CheckedChanged
+        SalveazaComutator(Sub(s) s.ShowAdobeAdvice = chkAvertismentAdobe.Checked,
+                          If(chkAvertismentAdobe.Checked,
+                             "K-BOT te va avertiza la pornire dacă Adobe e mai vechi de 2025.",
+                             "K-BOT nu te mai avertizează despre versiunea Adobe."))
+    End Sub
+
     ' ---------------- documents ----------------
 
     Private Sub IncarcaDocumentele()
@@ -331,9 +341,24 @@ Public Class SetariAplicatieView
             chkAcroTrace.Checked = AcroPdfTraceLog.SwitchedOn
             chkAcroNou.Checked = AppSettings.Current.AcroPdfFreshControl
             chkAdobeClasic.Checked = AppSettings.Current.AdobeClassicUi
+            IncarcaBifeleAdobe()
             ActualizeazaDisponibilitateaAdobe()
         Finally
             _suppress = False
+        End Try
+    End Sub
+
+    ' The two checkboxes below mirror Adobe's own Preferences: the registry is the store, so they are
+    ' read here every time the page is shown and never kept in app_settings.json.
+    Private Sub IncarcaBifeleAdobe()
+        Try
+            chkAdobeHover.Checked = AdobeUserCheckboxes.GetFieldHoverBorder()
+            chkAdobeSemnareModerna.Checked = AdobeUserCheckboxes.GetModernSigningUi()
+        Catch ex As Exception
+            ' GetXxx already logged; the page stays usable, the boxes are left disabled.
+            chkAdobeHover.Enabled = False
+            chkAdobeSemnareModerna.Enabled = False
+            RaiseEvent StatusChanged("Preferințele Adobe nu au putut fi citite: " & ex.Message)
         End Try
     End Sub
 
@@ -454,6 +479,36 @@ Public Class SetariAplicatieView
                              "Adobe va porni în interfața clasică, de la următorul document deschis.",
                              "Adobe nu mai este pus pe interfața clasică. Valoarea ta din Adobe a fost pusă la loc."))
         If Not chkAdobeClasic.Checked Then AdobeUiPreference.Restore(Nothing)
+    End Sub
+
+    ' «Show border hover color for fields» -> written straight into Adobe's preferences.
+    Private Sub ChkAdobeHover_CheckedChanged(sender As Object, e As EventArgs) Handles chkAdobeHover.CheckedChanged
+        Try
+            If _suppress Then Return
+            AdobeUserCheckboxes.SetFieldHoverBorder(chkAdobeHover.Checked)
+            RaiseEvent StatusChanged(If(chkAdobeHover.Checked,
+                "Adobe: câmpurile au chenar colorat la trecerea mouse-ului. Se aplică de la următorul Adobe pornit.",
+                "Adobe: câmpurile nu mai au chenar colorat la trecerea mouse-ului. Se aplică de la următorul Adobe pornit."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.ChkAdobeHover_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Preferința Adobe nu a putut fi salvată: " & ex.Message)
+            IncarcaDocumentele()
+        End Try
+    End Sub
+
+    ' «Use modern user interface for signing and Digital ID configuration» -> same.
+    Private Sub ChkAdobeSemnareModerna_CheckedChanged(sender As Object, e As EventArgs) Handles chkAdobeSemnareModerna.CheckedChanged
+        Try
+            If _suppress Then Return
+            AdobeUserCheckboxes.SetModernSigningUi(chkAdobeSemnareModerna.Checked)
+            RaiseEvent StatusChanged(If(chkAdobeSemnareModerna.Checked,
+                "Adobe: semnarea folosește interfața modernă. Se aplică de la următorul Adobe pornit.",
+                "Adobe: semnarea folosește interfața clasică. Se aplică de la următorul Adobe pornit."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariAplicatieView.ChkAdobeSemnareModerna_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Preferința Adobe nu a putut fi salvată: " & ex.Message)
+            IncarcaDocumentele()
+        End Try
     End Sub
 
     ' ActiveX: a new AcroPDF control for every document asked for (DDF and ORD). Saved.

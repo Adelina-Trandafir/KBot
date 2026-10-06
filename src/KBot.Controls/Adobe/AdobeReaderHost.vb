@@ -98,6 +98,13 @@ Public NotInheritable Class AdobeReaderHost
     Private ReadOnly _saveTrap As AdobeSaveTrap
     ' The document hosted right now -- the ONLY path the save trap may ever force.
     Private _hostedPath As String
+    ' Slice 0078-12: the script windows (errors, messages, console) of the document hosted now, and
+    ' whether any arrived since the summary was last written to the working log.
+    Private ReadOnly _scriptMonitor As New AdobeScriptMonitor()
+    Private _scriptSummaryDue As Boolean
+    ' Slice 0078-12: this host opened a recording in AcroPdfTraceLog for the document being opened.
+    Private _traceOpen As Boolean
+    Private _product As AdobeProductInfo
 
     ' Every process id THIS host started. A PID outside this set is never killed.
     Private ReadOnly _launchedPids As New HashSet(Of Integer)()
@@ -139,9 +146,13 @@ Public NotInheritable Class AdobeReaderHost
         _screenRelease = New AdobeScreenRelease(windows, _launcher)
         _hook = New AdobeCreationHook(AddressOf Report)
         _saveTrap = New AdobeSaveTrap(AddressOf Report)
+        ' Slice 0078-12: writes to acropdf_trace.log too, but only while the trace switch is on AND
+        ' this host has a recording open (BeginTrace) -- otherwise it writes nothing, as before.
+        _saveTrap.Traced = True
         AddHandler _saveTrap.Saved, AddressOf OnTrapSaved
         AddHandler _saveTrap.Failed, AddressOf OnTrapFailed
         AddHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
+        AddHandler _saveTrap.ScriptAlertSeen, AddressOf OnScriptAlertSeen
         _readModeTimer.Interval = ReadModeTickMs
         AddHandler _readModeTimer.Tick, AddressOf OnReadModeTick
         AddHandler _windowWatcher.HostedWindowMoved, AddressOf OnAdobeResized
@@ -178,6 +189,75 @@ Public NotInheritable Class AdobeReaderHost
     Public Event SaveTrapFailed As Action(Of String)
 
     ''' <summary>
+    ''' Slice 0078-12: raised (UI thread) for every script window of Adobe the trap met while this
+    ''' host holds a document: an error alert it pressed OK on, a message it left to the operator,
+    ''' the JavaScript Debugger console it hid. After <see cref="ScriptMonitor"/> recorded it.
+    ''' </summary>
+    Public Event ScriptAlertSeen As Action(Of AdobeScriptAlert)
+
+    ''' <summary>
+    ''' Slice 0078-12: the script windows of the document hosted now (cleared at every document).
+    ''' <see cref="AdobeScriptMonitor.Summary"/> goes to the working log when the document is open
+    ''' and when it is let go.
+    ''' </summary>
+    Public ReadOnly Property ScriptMonitor As AdobeScriptMonitor
+        Get
+            Return _scriptMonitor
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Slice 0078-12: the Adobe this host launched for the last document (Nothing before the first
+    ''' one). <see cref="AdobeProductInfo.IsBefore2024"/> tells the older Acrobat from the 2024 line.
+    ''' </summary>
+    Public ReadOnly Property AdobeProduct As AdobeProductInfo
+        Get
+            Return _product
+        End Get
+    End Property
+
+    ' Trap event, UI thread: tally it and pass it on. UI boundary: log and swallow.
+    Private Sub OnScriptAlertSeen(k_alert As AdobeScriptAlert)
+        Try
+            _scriptSummaryDue = True
+            _scriptMonitor.Record(k_alert)
+            RaiseEvent ScriptAlertSeen(k_alert)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeReaderHost.OnScriptAlertSeen", ex)
+        End Try
+    End Sub
+
+    ' One line in the working log: what script windows this document gave. Called when the document
+    ' is open and (only when something came since) when it is let go.
+    Private Sub ReportScriptSummary(k_when As String)
+        Report($"Mesaje de script Adobe {k_when}: {_scriptMonitor.Summary()}.")
+        _scriptSummaryDue = False
+    End Sub
+
+    ' ── Trace (slice 0078-12) ───────────────────────────────────────────────────
+    ' The hosted window writes to the same acropdf_trace.log as the ActiveX surface, under the source
+    ' «AdobeReaderHost» (and «SaveTrap#n»). Nothing is written unless AcroPdfTraceLog.SwitchedOn.
+
+    Private Sub BeginTrace(k_what As String)
+        If Not AcroPdfTraceLog.SwitchedOn Then Return
+        AcroPdfTraceLog.BeginSession("AdobeReaderHost", k_what)
+        _traceOpen = True
+    End Sub
+
+    Private Sub EndTrace(k_reason As String)
+        If Not _traceOpen Then Return
+        _traceOpen = False
+        AcroPdfTraceLog.EndSession("AdobeReaderHost", k_reason)
+    End Sub
+
+    ' The window tree of the hosted Adobe, only when the trace is writing (the walk is not free).
+    Private Sub TraceTree(k_when As String)
+        If Not AcroPdfTraceLog.Enabled OrElse _hostedWindow = IntPtr.Zero Then Return
+        AcroPdfTraceLog.WriteBlock("AdobeReaderHost", $"Hosted window tree {k_when} (hwnd {AcroPdfTraceLog.Hex(_hostedWindow)}, pid {_hostedPid}):",
+            AdobeWindowProbe.Walk(_hostedWindow, _host.Handle, 8).Select(Function(k_n) AdobeWindowProbe.DescribeNode(k_n)))
+    End Sub
+
+    ''' <summary>
     ''' Slice 0078: while True, every file dialog of the hosted Adobe is filled with the HOSTED
     ''' document's own path and confirmed, off screen (see <see cref="AdobeSaveTrap"/>). The target
     ''' is never a separate property: it cannot differ from the file actually on screen. Takes
@@ -203,6 +283,12 @@ Public NotInheritable Class AdobeReaderHost
     ''' are hidden by Adobe itself. True by default; the bench may switch it off.
     ''' </summary>
     Public Property ReadModeEnabled As Boolean = True
+
+    ''' <summary>
+    ''' Slice 0078-13: with Read Mode, also send F8 (no Ctrl) -- Acrobat's toggle for the right-hand
+    ''' toolbar. True by default; the older-Adobe bench may switch it off to compare. F8 TOGGLES.
+    ''' </summary>
+    Public Property HideRightPaneEnabled As Boolean = True
 
     ''' <summary>The document hosted right now, or Nothing.</summary>
     Public ReadOnly Property HostedPath As String
@@ -380,8 +466,16 @@ Public NotInheritable Class AdobeReaderHost
                                            "Documentul nu există pe disc.", Nothing)
             End If
 
+            ' Slice 0078-12: a new document starts a new tally (the previous summary was written by Detach).
+            _scriptMonitor.Reset()
+            _scriptSummaryDue = False
+
             Dim adobePath As String = _launcher.ResolvePath()
+            _product = AdobeProductInfo.Read(adobePath)
+            BeginTrace($"hosted window: {Path.GetFileName(pdfPath)} -- {_product.Describe()}")
+            Report("Adobe: " & _product.Describe())
             If String.IsNullOrEmpty(adobePath) Then
+                EndTrace("Adobe not installed")
                 Report("Adobe Reader/Acrobat nu a fost găsit pe această mașină.")
                 ' Deliberately NO fallback to the default handler: these are LiveCycle/XFA documents
                 ' and no other product renders them — a "helpful" fallback would show a broken page.
@@ -413,6 +507,7 @@ Public NotInheritable Class AdobeReaderHost
             pid = _launcher.Start(adobePath, args)
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.LaunchAndHostAsync.Start", ex)
+            EndTrace("launch failed: " & ex.Message)
             Return New AdobeHostResult(AdobeHostStatus.LaunchFailed,
                                        "Adobe nu a putut fi pornit. Detalii în jurnalul de erori.", Nothing)
         End Try
@@ -436,11 +531,13 @@ Public NotInheritable Class AdobeReaderHost
         If gen <> _generation Then
             ' A newer document took over while we waited. Ours must not be left running.
             AbandonLaunched(pid)
+            EndTrace("superseded by a newer document before the window was found")
             Return New AdobeHostResult(AdobeHostStatus.Superseded, "", Nothing)
         End If
 
         If Not caught.Found Then
             Report($"Fereastra Adobe nu a apărut în {opts.FindTimeoutMs \ 1000} secunde.")
+            EndTrace($"BLOCKING: no Adobe window within {opts.FindTimeoutMs \ 1000} s")
             Return New AdobeHostResult(AdobeHostStatus.WindowNotFound,
                                        "Adobe a pornit, dar fereastra documentului nu a apărut.",
                                        Nothing, caught.ElapsedMs, caught.Match)
@@ -470,11 +567,15 @@ Public NotInheritable Class AdobeReaderHost
 
         ' Slice 0078: armed as soon as the window is visible -- the operator can sign from now on.
         StartSaveTrap()
+        TraceTree("right after hosting")
 
         ' Adobe finishes its layout after the window appears; without this second pass the reparented
         ' window can stay blank.
         Await Task.Delay(_options.RedrawDelayMs).ConfigureAwait(True)
-        If gen <> _generation Then Return New AdobeHostResult(AdobeHostStatus.Superseded, "", Nothing)
+        If gen <> _generation Then
+            EndTrace("superseded by a newer document while the window was being placed")
+            Return New AdobeHostResult(AdobeHostStatus.Superseded, "", Nothing)
+        End If
         Fill("Poziție (a doua trecere)")
 
         ' Slice 0078-07: from here on, a size Adobe gives its window by itself is put back to the panel.
@@ -606,6 +707,8 @@ Public NotInheritable Class AdobeReaderHost
     Private Const VK_S As UShort = &H53US
     ' Slice 0078-07 (operator, 29.09.2026): Ctrl+2 right after Ctrl+H (Acrobat: zoom to the page width).
     Private Const VK_2 As UShort = &H32US
+    ' Slice 0078-13 (operator, 06.10.2026): F8 -- sent WITHOUT Ctrl -- hides the right-hand toolbar (Tools pane).
+    Private Const VK_F8 As UShort = &H77US
     Private ReadOnly _readModeTimer As New System.Windows.Forms.Timer()
     ' Slice 0078-05: the Ctrl+<key> combinations waiting for the conditions above (H = Read Mode,
     ' S = the save K-BOT asks for after a signature, see RequestSave). Sent in order, each once.
@@ -633,6 +736,11 @@ Public NotInheritable Class AdobeReaderHost
     ' Reached from LaunchAndHostAsync (wrapped).
     Private Sub ArmReadMode()
         QueueKey(VK_H)
+        ' Slice 0078-13: F8 hides the right-hand toolbar. BEFORE Ctrl+2, so the zoom to the page width
+        ' is taken once the pane is going away. Same for the old and the new Adobe (one code path).
+        ' F8 removed from the flow (operator, 06.10.2026): Ctrl+H and Ctrl+2 are enough. To bring it back,
+        ' restore:  If HideRightPaneEnabled Then QueueKey(VK_F8)
+        ' If HideRightPaneEnabled Then QueueKey(VK_F8)
         ' Queued behind Ctrl+H: same conditions, same focus, sent in the same batch, in this order.
         QueueKey(VK_2)
     End Sub
@@ -734,6 +842,10 @@ Public NotInheritable Class AdobeReaderHost
         _documentReady = True
         _readyDeadline.Stop()
         Report($"Document gata în Adobe ({why}).")
+        ' Slice 0078-12: the opening burst of script windows is over by now (DocumentReady waits for it).
+        ReportScriptSummary("la deschidere")
+        TraceTree("when the document is ready")
+        EndTrace($"document ready: {why}")
         RaiseEvent DocumentReady()
     End Sub
 
@@ -773,12 +885,14 @@ Public NotInheritable Class AdobeReaderHost
     End Sub
 
     Private Shared Function KeyName(vk As UShort) As String
+        If vk = VK_F8 Then Return "F8"
         Return "Ctrl+" & ChrW(vk)
     End Function
 
     ' What the operator must do by hand when a combination could not be sent.
     Private Shared Function ManualHint(vk As UShort) As String
         If vk = VK_S Then Return "Salvați documentul (Ctrl+S) ca să nu se piardă schimbarea de după semnătură."
+        If vk = VK_F8 Then Return "Apăsați F8 în document pentru a ascunde bara din dreapta."
         If vk = VK_2 Then Return "Apăsați Ctrl+2 în document pentru a-l potrivi la lățimea panoului."
         Return "Apăsați Ctrl+H în document pentru a ascunde barele."
     End Function
@@ -833,11 +947,15 @@ Public NotInheritable Class AdobeReaderHost
         DisarmReadMode()
 
         For Each vk As UShort In keysToSend
-            Dim keys As AdobeNativeMethods.INPUT() = {
-                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
-                AdobeNativeMethods.KeyInput(vk, False),
-                AdobeNativeMethods.KeyInput(vk, True),
-                AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)}
+            Dim keys As AdobeNativeMethods.INPUT() = If(vk = VK_F8,
+                New AdobeNativeMethods.INPUT() {
+                    AdobeNativeMethods.KeyInput(vk, False),
+                    AdobeNativeMethods.KeyInput(vk, True)},
+                New AdobeNativeMethods.INPUT() {
+                    AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, False),
+                    AdobeNativeMethods.KeyInput(vk, False),
+                    AdobeNativeMethods.KeyInput(vk, True),
+                    AdobeNativeMethods.KeyInput(AdobeNativeMethods.VK_CONTROL, True)})
             Dim sent As UInteger = AdobeNativeMethods.SendInput(CUInt(keys.Length), keys,
                 Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
             If sent = keys.Length Then
@@ -900,6 +1018,10 @@ Public NotInheritable Class AdobeReaderHost
             _documentReady = False
             DisarmReadMode()
             _hook.Remove()
+            ' Slice 0078-12: script windows that came after the opening summary (the operator's own
+            ' validation messages, late errors) are tallied once, as the document is let go.
+            If _scriptSummaryDue Then ReportScriptSummary("până la eliberarea documentului")
+            EndTrace("document released")
             ' Slice 0078: a Save we pressed must finish before Adobe is closed or killed, or the
             ' signed file could be cut in half.
             If _saveTrap.IsBusy Then _saveTrap.WaitWhileBusy(5000)
@@ -1004,6 +1126,9 @@ Public NotInheritable Class AdobeReaderHost
 
     Private Sub Report(line As String)
         _log?.Invoke(line)
+        ' Slice 0078-12: every working-log line is mirrored in the trace (no-op unless it is writing),
+        ' the same way the ActiveX surface does.
+        AcroPdfTraceLog.Write("AdobeReaderHost", "REPORT: " & line)
     End Sub
 
     Public Sub Dispose() Implements IDisposable.Dispose
@@ -1023,6 +1148,7 @@ Public NotInheritable Class AdobeReaderHost
             RemoveHandler _saveTrap.Saved, AddressOf OnTrapSaved
             RemoveHandler _saveTrap.Failed, AddressOf OnTrapFailed
             RemoveHandler _saveTrap.ScriptBurstEnded, AddressOf OnScriptBurstEnded
+            RemoveHandler _saveTrap.ScriptAlertSeen, AddressOf OnScriptAlertSeen
             _saveTrap.Dispose()
         Catch ex As Exception
             GlobalErrorLog.Write("AdobeReaderHost.Dispose", ex)

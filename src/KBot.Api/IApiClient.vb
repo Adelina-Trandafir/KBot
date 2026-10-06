@@ -285,6 +285,21 @@ Public Interface IApiClient
                                    comenzi As IReadOnlyList(Of ComandaAsociere),
                                    ct As CancellationToken) As Task(Of AsociereRezultat)
 
+    ''' <summary>
+    ''' Corrects the value of ONE snapshot — the header total and its lines, together
+    ''' (slice 0111, POST /api/forexe/asociere/corectie). FOREXE's own history sometimes writes a
+    ''' wrong total; the working columns are corrected, the originals keep what FOREXE said.
+    '''
+    ''' <para>The server refuses with <see cref="ApiException"/>: 400 when the total is not the
+    ''' sum of the lines, the reason is missing or nothing changed; 409 with <c>Reason</c>
+    ''' <c>STARE_MODIFICATA</c> (the base holds other values than the ones sent — reload) or
+    ''' <c>INSTANTANEU_BLOCAT</c> (an ordonantare froze the snapshot). Nothing is written in any
+    ''' of those cases.</para>
+    ''' </summary>
+    Function CorecteazaValoareaAsync(cod As String,
+                                     corectie As CorectieValoare,
+                                     ct As CancellationToken) As Task(Of AsociereRezultat)
+
     ' ── EDITORUL DE ORDONANTARE (felia 0049) ────────────────────────────────────────────
     ' Opt apeluri peste `routes/forexe/ord_edit.py`. Baza NU se trimite niciodata (serverul o
     ' ia din sesiune); un 401 curge spre WithReauth, fara retry in client.

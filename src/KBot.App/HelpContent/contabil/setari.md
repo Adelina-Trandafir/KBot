@@ -13,7 +13,7 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 **Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
 (rândul se poate ascunde din pagina **Aplicație**).
 
-<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-05 08:53 | why: 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
+<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-06 12:00 | why: 0078-14: pagina «Aplicație» are un comutator nou, «Avertizează dacă Adobe e mai vechi de 2025» (sub tutorialul de început); înainte, 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
 
 | Pagina | Ce găsești |
 |--------|------------|
@@ -34,7 +34,7 @@ Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare 
 
 | Grupul | Ce conține |
 |--------|-----------|
-| **Fereastra principală** | pornirea mărită, turul inițial, rândul «Jurnal activitate» din meniul MENIU |
+| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe, rândul «Jurnal activitate» din meniul MENIU |
 | **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
 
@@ -42,7 +42,7 @@ Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —
 [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Pagina «Aplicație»: pornirea K-BOT
-<!-- slice: 0097-02, 000T-07, 0000-51 -->
+<!-- slice: 0097-02, 000T-07, 0000-51, 0078-14 -->
 
 Din grupul **Fereastra principală**:
 
@@ -58,6 +58,12 @@ Din grupul **Fereastra principală**:
   (dacă acela mai e de văzut). Nu se poate închide la jumătate: se parcurge până la capăt. Se debifează
   singură după ce l-ai văzut până la capăt; o bifezi din nou dacă vrei să-l revezi la pornire. Cum faci asta pas cu pas îți arată tutorialul «Pornește sau oprește tutorialul de
   început» — [Tutorialele](topic:contabil.ajutor).
+- **«Avertizează dacă Adobe e mai vechi de 2025»** — **bifată la început.** Cât e bifată, la
+  pornire K-BOT îți spune, într-o fereastră, dacă Adobe de pe calculator e mai vechi de versiunea
+  2025 și îți recomandă **Adobe Acrobat Reader gratuit**, versiunea 2025 sau mai nouă: pe un Acrobat
+  mai vechi sau neoriginal pot apărea mesaje de eroare la completarea sau la semnarea documentelor.
+  În fereastra avertismentului, **«Da»** la întrebarea «Vrei să nu mai primești acest avertisment?»
+  îl oprește (debifează comutatorul), iar **«Nu»** îl lasă. Îl bifezi din nou de aici.
 
 ## Pagina «FOREXE»: mini-meniul din pagină
 <!-- slice: 0097-02 -->

@@ -6,7 +6,7 @@ set -u
 
 SRC=/root/ca
 OUT=/etc/nginx/ca/calificate.pem
-FILES="certsign-rootg2 certsign-qualifiedca certsign-rootcasign2023rsa certsign-qualifiedca2023rsa DigiSignQualifiedRootCAv3 DigiSignQualifiedCAClass32017 ts_root_g2 ts_qca_g2"
+FILES="certsign-rootg2 certsign-qualifiedca certsign-rootcasign2023rsa certsign-qualifiedca2023rsa DigiSignQualifiedRootCAv3 DigiSignQualifiedCAClass32017 ts_root_g2 ts_qca_g2 ts_root_g3 ts_qca_g3"
 
 mkdir -p /etc/nginx/ca
 TMP=$(mktemp)
@@ -31,4 +31,4 @@ if [ "$COUNT" -eq 0 ]; then
 fi
 mv "$TMP" "$OUT"
 chmod 644 "$OUT"
-echo "Gata: $COUNT certificate in $OUT (asteptat: 8)"
+echo "Gata: $COUNT certificate in $OUT (asteptat: 8 sau 10 cu cele Trans Sped G3)"

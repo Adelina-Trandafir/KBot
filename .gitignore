@@ -524,3 +524,4 @@ tools/KBotInstaller/prereq/
 
 # slice 0110-09: the offline country file (DB-IP Lite, CC-BY, refreshed by hand on the server)
 PYTHON/data/*.mmdb
+/Surse/RawExport

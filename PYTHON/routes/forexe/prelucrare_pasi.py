@@ -675,16 +675,21 @@ _RECEPTII_ISTORIC_SQL = (
 _MAX_NRCRT_H_SQL = (
     "SELECT MAX(NrCrt) AS MaxNr FROM FX_Receptii_H WHERE CodAngajament = %s"
 )
+# Slice 0111: `TotalOrig` is born with the row, equal to `Total` -- what FOREXE said. `Total` is
+# the working value an operator may correct (routes/forexe/asociere.py, corectie); `TotalOrig`
+# never changes after this insert. The value is the expression `Total`, not a second
+# placeholder: a MariaDB value list may read a column set earlier in the same list, so the
+# parameter tuples of every caller stay as they were.
 _H_INSERT_SQL = (
     "INSERT INTO FX_Receptii_H "
-    "(IDH, NrCrt, CodAngajament, DataH, Total, Descriere, EsteStergere, Sters) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, 0)"
+    "(IDH, NrCrt, CodAngajament, DataH, Total, TotalOrig, Descriere, EsteStergere, Sters) "
+    "VALUES (%s, %s, %s, %s, %s, Total, %s, %s, 0)"
 )
 # Slice 0076: the same row, with the IDRH the page reserved and wrote into the description.
 _H_INSERT_CU_ID_SQL = (
     "INSERT INTO FX_Receptii_H "
-    "(IDRH, IDH, NrCrt, CodAngajament, DataH, Total, Descriere, EsteStergere, Sters) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0)"
+    "(IDRH, IDH, NrCrt, CodAngajament, DataH, Total, TotalOrig, Descriere, EsteStergere, Sters) "
+    "VALUES (%s, %s, %s, %s, %s, %s, Total, %s, %s, 0)"
 )
 _REC_INSERT_SQL = (
     "INSERT INTO FX_Receptii "

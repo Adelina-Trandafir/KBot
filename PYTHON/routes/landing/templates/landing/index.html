@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ c.meta.title }}</title>
 <meta name="description" content="{{ c.meta.description }}">
+<link rel="canonical" href="https://k-bot.ro/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="K-BOT">
+<meta property="og:locale" content="ro_RO">
+<meta property="og:title" content="{{ c.meta.title }}">
+<meta property="og:description" content="{{ c.meta.description }}">
+<meta property="og:url" content="https://k-bot.ro/">
+<meta property="og:image" content="https://k-bot.ro/static/site/img/art/logo-512.png">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","@id":"https://k-bot.ro/#org","name":"K-BOT","url":"https://k-bot.ro/","logo":"https://k-bot.ro/static/site/img/art/logo-512.png"},
+{"@type":"SoftwareApplication","name":"K-BOT","applicationCategory":"BusinessApplication","operatingSystem":"Windows","url":"https://k-bot.ro/","inLanguage":"ro","publisher":{"@id":"https://k-bot.ro/#org"},"description":"{{ c.meta.description }}"}
+]}
+</script>
 <meta name="theme-color" content="#309eff">
 <link rel="icon" type="image/png" sizes="64x64" href="/static/site/img/art/logo-64.png">
 <link rel="apple-touch-icon" href="/static/site/img/art/logo-512.png">
@@ -118,17 +133,16 @@
         <span class="brand__tag">{{ c.hero.kicker }}</span>
       </span>
     </a>
+    {% if c.alop_page.published %}
+    <a class="btn btn--hot btn--sm" href="/alop-eroare-adobe-acrobat-pro">{{ ico("alert") }} PDF „Inteligent”</a>
+    {% endif %}
     <nav class="topnav" aria-label="Secțiunile paginii">
-      {% for n in c.nav %}<a href="#{{ n.id }}">{{ n.label }}</a>{% endfor %}
+      {% for n in c.nav %}<a href="#{{ n.id }}" data-tip="{{ n.label }}" aria-label="{{ n.label }}"><span aria-hidden="true">{{ n.icon }}</span></a>{% endfor %}
     </nav>
     <div class="topbar__cta">
+      <a class="btn btn--{{ 'ghost' if c.links.download else 'primary' }} btn--sm" href="{{ c.links.register }}">Înregistrează</a>
       {% if c.links.portal %}<a class="btn btn--ghost btn--sm" href="{{ c.links.portal }}">{{ c.links.portal_label or 'Intră în cont' }}</a>{% endif %}
-      {% if c.links.download %}
-        <a class="btn btn--ghost btn--sm" href="{{ c.links.register }}">Înregistrează<span class="btn__more"> unitatea</span></a>
-        <a class="btn btn--primary btn--sm" href="{{ c.links.download }}">Descarcă K-BOT</a>
-      {% else %}
-        <a class="btn btn--primary btn--sm" href="{{ c.links.register }}">Înregistrează<span class="btn__more"> unitatea</span></a>
-      {% endif %}
+      {% if c.links.download %}<a class="btn btn--primary btn--sm" href="{{ c.links.download }}">Descarcă K-BOT</a>{% endif %}
     </div>
   </div>
 </header>
@@ -185,6 +199,37 @@
     <p class="roles__outro reveal">{{ c.roles.outro }}</p>
   </div>
   <a class="scrollhint" href="#pentru-toti" aria-label="Derulează pentru detalii"><span>Derulează pentru detalii</span>{{ ico('down') }}</a>
+</section>
+
+{# ======== people + data safety ======== #}
+<section class="screen screen--tint" id="oameni" data-screen data-group="oameni">
+  <div class="wrap">
+    <header class="screen__head reveal">
+      <span class="pill">{{ c.people.kicker }}</span>
+      <h2>{{ c.people.title }}</h2>
+      {% for p in c.people.intro %}<p class="{{ 'lead' if loop.first else '' }}">{{ p|rich }}</p>{% endfor %}
+    </header>
+    <div class="cards cards--3">
+      {% for card in c.people.cards %}
+      <article class="card reveal">
+        <h3><span class="card__ico">{{ ico(card.icon) }}</span>{{ card.title }}</h3>
+        {{ blocks(card.blocks) }}
+      </article>
+      {% endfor %}
+    </div>
+    <header class="screen__head reveal">
+      <h3 class="sub-title">{{ c.people.safety_title }}</h3>
+      <p class="lead">{{ c.people.safety_intro }}</p>
+    </header>
+    <div class="cards cards--3">
+      {% for card in c.people.safety_cards %}
+      <article class="card reveal">
+        <h3><span class="card__ico">{{ ico(card.icon) }}</span>{{ card.title }}</h3>
+        {{ blocks(card.blocks) }}
+      </article>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 
 {# ======== 2. everyone ======== #}
@@ -337,6 +382,32 @@
     <div class="safety__foot reveal">
       <img src="/static/site/img/art/shield.svg" alt="" width="100" height="115" aria-hidden="true">
       <div>{% for p in c.safety.outro %}<p>{{ p|rich }}</p>{% endfor %}</div>
+    </div>
+  </div>
+</section>
+
+{# ======== online access ======== #}
+<section class="screen" id="acces-online" data-screen data-group="acces-online">
+  <div class="wrap">
+    <header class="screen__head reveal">
+      <span class="pill">{{ c.online.kicker }}</span>
+      <h2>{{ c.online.title }}</h2>
+      {% for p in c.online.intro %}<p class="{{ 'lead' if loop.first else '' }}">{{ p|rich }}</p>{% endfor %}
+    </header>
+    <div class="cards cards--3">
+      {% for card in c.online.cards %}
+      <article class="card reveal">
+        <h3><span class="card__ico">{{ ico(card.icon) }}</span>{{ card.title }}</h3>
+        {{ blocks(card.blocks) }}
+      </article>
+      {% endfor %}
+    </div>
+    <div class="reveal">
+      {% for p in c.online.outro %}<p class="lead">{{ p|rich }}</p>{% endfor %}
+      <p>
+        <button type="button" class="link" data-open="dlg-acces-online">{{ c.online.more_label }} {{ ico('arrow') }}</button>
+        {% if c.links.portal %} &nbsp; <a class="btn btn--ghost btn--sm" href="{{ c.links.portal }}">{{ c.links.portal_label or 'Intră în cont' }}</a>{% endif %}
+      </p>
     </div>
   </div>
 </section>
@@ -550,6 +621,16 @@
   </div>
 </dialog>
 {% endfor %}
+
+<dialog class="drawer" id="dlg-acces-online" aria-labelledby="dlg-acces-online-t">
+  <div class="drawer__head">
+    <h3 id="dlg-acces-online-t"><span class="card__ico">{{ ico('eye') }}</span>{{ c.online.title }}</h3>
+    <button type="button" class="drawer__close" data-close aria-label="Închide">{{ ico('close') }}</button>
+  </div>
+  <div class="drawer__body">
+    {{ blocks(c.online.blocks) }}
+  </div>
+</dialog>
 
 {% for n in c.future.nodes %}
 <dialog class="drawer" id="dlg-{{ n.id }}" aria-labelledby="dlg-{{ n.id }}-t">

@@ -22,6 +22,14 @@ Launches Adobe, finds its top-level window and makes it a child of the host pane
   parameters, no floating-badge watcher (they stayed in the operator's own Adobe after K-BOT
   closed). The toolbars are hidden by Adobe's Read Mode: Ctrl+H sent once when the page is laid
   out, K-BOT is in the foreground and no script-alert burst is running.
+- **Slice 0078-12 (script windows + older Adobe):** `ScriptMonitor` (`AdobeScriptMonitor`: the script
+  windows of the document hosted now — error alerts K-BOT pressed OK on, the form's own messages left to the
+  operator, the JavaScript Debugger console — counted per document, `Summary()`), the event `ScriptAlertSeen`
+  (`AdobeScriptAlert`, raised by `AdobeSaveTrap.ScriptAlertSeen`), `AdobeProduct` (`AdobeProductInfo`:
+  exe + file version, `IsBefore2024` = major < 24). The working log gets `Adobe: …` at every launch and
+  `Mesaje de script Adobe la deschidere: …` when the document is ready. Trace to `acropdf_trace.log` (source
+  `AdobeReaderHost`) only while `AcroPdfTraceLog.SwitchedOn`. Bench for the older Adobe:
+  `OldAdobeHostHarnessForm` (KBot.App, DevHarness ▸ «Adobe/PDF», Debug only).
 - `AdobeReaderHost.ResolveAdobePath()` (Shared)
 - `AdobeHostStatus` = `Hosted` `AdobeMissing` `LaunchFailed` `WindowNotFound` `Superseded`
   `Failed`; `AdobeHostResult` carries `Status`, `Message` (Romanian, operator-ready, empty

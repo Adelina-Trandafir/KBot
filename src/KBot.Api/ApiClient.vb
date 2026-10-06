@@ -2351,6 +2351,19 @@ Public Class ApiClient
             pe.idrr = d.Idrr
         End If
         If Not String.IsNullOrWhiteSpace(d.ReceptieNoua) Then pe.receptie_noua = d.ReceptieNoua
+        ' Slice 0111: only a snapshot of the download carries one (never a correction by IDRH).
+        If d.Corectie IsNot Nothing Then
+            If corectura Then
+                Throw New ArgumentException(
+                    "O corecție de valoare se poate trimite doar pe un instantaneu adus de descărcare.", NameOf(d))
+            End If
+            Dim c As New PostPrelucrareCorectie() With {.total = d.Corectie.Total, .motiv = d.Corectie.Motiv}
+            For Each l As CorectieLinie In d.Corectie.Linii
+                c.linii.Add(New PostPrelucrareCorectieLinie() With {
+                    .cod_indicator = l.CodIndicator, .valoare = l.Valoare})
+            Next
+            pe.corectie = c
+        End If
         Return pe
     End Function
 
@@ -2470,6 +2483,52 @@ Public Class ApiClient
         End Try
     End Function
 
+    ' ── POST /api/forexe/asociere/corectie (slice 0111) ───────────────────────────────────
+    ' One snapshot, header + lines together. The refusals (400 total <> sum of lines / no
+    ' reason / nothing changed; 409 STARE_MODIFICATA / INSTANTANEU_BLOCAT) arrive as an
+    ' ApiException with Reason filled in by BuildApiException: nothing was written in any of
+    ' them, the caller shows the server's sentence or reloads the picture.
+    Public Async Function CorecteazaValoareaAsync(cod As String,
+                                                  corectie As CorectieValoare,
+                                                  ct As CancellationToken) As Task(Of AsociereRezultat) Implements IApiClient.CorecteazaValoareaAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+            If corectie Is Nothing Then Throw New ArgumentNullException(NameOf(corectie))
+
+            Dim req As New PostAsociereCorectieRequest() With {
+                .cod = cod,
+                .idrh = corectie.Idrh,
+                .total_vechi = corectie.TotalVechi,
+                .total = corectie.Total,
+                .motiv = corectie.Motiv}
+            For Each l As CorectieLinie In corectie.Linii
+                req.linii.Add(New PostAsociereCorectieLinie() With {
+                    .idr = l.Idr, .valoare_veche = l.ValoareVeche, .valoare = l.Valoare})
+            Next
+
+            Dim body As String = JsonSerializer.Serialize(req, _jsonFaraNull)
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/asociere/corectie")
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "corectarea valorii", CInt(resp.StatusCode))
+                    End If
+                    ' The body carries no fingerprint (links did not move); the caller reloads.
+                    Return New AsociereRezultat() With {.CodAngajament = cod}
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.CorecteazaValoareaAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' O recepție de pe fir -> POCO. UN SINGUR loc: cele doua rute o trimit in aceeasi
     ' forma (acelasi `citeste_receptii` pe server), iar doua copii ale conversiei ar aluneca
     ' una fata de alta fara sa se vada.
@@ -2511,7 +2570,11 @@ Public Class ApiClient
             .TipReceptie = If(i.tip_receptie, String.Empty),
             .Stergere = i.stergere,
             .Ignorat = i.ignorat,
-            .Blocat = i.blocat}
+            .Blocat = i.blocat,
+            .TotalOrig = i.total_orig,
+            .CorectatDe = If(i.corectat_de, String.Empty),
+            .CorectatMotiv = If(i.corectat_motiv, String.Empty)}
+        If Not String.IsNullOrWhiteSpace(i.corectat_la) Then inst.CorectatLa = CitesteData(i.corectat_la)
         If i.motive IsNot Nothing Then inst.Motive.AddRange(i.motive)
         If i.linii IsNot Nothing Then
             For Each l As PostPropunereLinieI In i.linii
@@ -2520,7 +2583,9 @@ Public Class ApiClient
                     .CodAi = If(l.cod_ai, String.Empty),
                     .CodSsi = If(l.cod_ssi, String.Empty),
                     .IdClsf = If(l.id_clsf.HasValue, l.id_clsf.Value, 0),
-                    .Valoare = l.valoare})
+                    .Valoare = l.valoare,
+                    .Idr = l.idr,
+                    .ValoareOrig = l.valoare_orig})
             Next
         End If
         Return inst

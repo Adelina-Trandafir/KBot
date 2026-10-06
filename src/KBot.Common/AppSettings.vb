@@ -197,6 +197,14 @@ Public NotInheritable Class AppSettings
     Public Property ShowInitialTutorial As Boolean = True
 
     ''' <summary>
+    ''' The advice shown at K-BOT's start when the installed Adobe is not the free Adobe Acrobat
+    ''' Reader 2025 or newer (the signing flow is clean there; on an older or unofficial Acrobat Pro
+    ''' the form's scripts may raise permission errors). On by default. The operator turns it off
+    ''' from the advice window itself («Nu mai arăta»); «Setari -> Generale» turns it back on.
+    ''' </summary>
+    Public Property ShowAdobeAdvice As Boolean = True
+
+    ''' <summary>
     ''' Slice 0097-02: the main window opens maximized over the working area of its screen. Off by
     ''' default (it opens at its designed size, centred), as before the switch existed.
     ''' </summary>
@@ -622,6 +630,7 @@ Public NotInheritable Class AppSettings
             .HelpTextPercent = HelpTextPercent,
             .ShowInitialTour = ShowInitialTour,
             .ShowInitialTutorial = ShowInitialTutorial,
+            .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
             .ForexeShowPageMenu = ForexeShowPageMenu,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
@@ -687,6 +696,7 @@ Public NotInheritable Class AppSettings
         End If
         If dto.ShowInitialTour.HasValue Then s.ShowInitialTour = dto.ShowInitialTour.Value
         If dto.ShowInitialTutorial.HasValue Then s.ShowInitialTutorial = dto.ShowInitialTutorial.Value
+        If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
         If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
@@ -765,6 +775,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property HelpTextPercent As Integer?
     Public Property ShowInitialTour As Boolean?
     Public Property ShowInitialTutorial As Boolean?
+    Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?
     Public Property ForexeShowPageMenu As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?

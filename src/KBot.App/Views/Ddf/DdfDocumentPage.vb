@@ -15,7 +15,7 @@ Imports KBot.Theming
 ''' re-încorporarea care trebuia făcută.
 ''' </summary>
 Public Class DdfDocumentPage
-    Implements IDdfPage, IThemedControl
+    Implements IDdfPage, IThemedControl, IReleasesDocument
 
     ' Ținta cerută (reținută) și ce e efectiv încorporat acum — perechea (cale, existență).
     Private _pendingPath As String
@@ -79,6 +79,18 @@ Public Class DdfDocumentPage
             MountIfVisible()
         Catch ex As Exception
             GlobalErrorLog.Write("DdfDocumentPage.VisibleChanged", ex)
+        End Try
+    End Sub
+
+    ' Slice 0078-15: the whole view was put away -- the document is closed (its local signed copy goes with it).
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            If String.IsNullOrEmpty(_shownPath) Then Return
+            _shownPath = Nothing
+            _shownExists = False
+            previewPdf.Clear()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfDocumentPage.ReleaseDocument", ex)
         End Try
     End Sub
 

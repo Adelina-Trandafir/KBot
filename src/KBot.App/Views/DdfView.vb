@@ -39,7 +39,7 @@ Imports KBot.Theming
 '''     face culoarea rădăcinii să depindă de ordinea de parcurgere. Accidental, nu intenționat.
 ''' </summary>
 Public Class DdfView
-    Implements IAngajamentView, IThemedControl
+    Implements IAngajamentView, IThemedControl, IReleasesDocument
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     '
@@ -360,6 +360,17 @@ Public Class DdfView
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) sau
     ''' fără DDF (<c>AreDDF = False</c>) NU se face niciun apel de rețea — doar se golește vederea.
     ''' </summary>
+    ' Slice 0078-15: the shell put this view away -- every page lets its document go.
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            For Each k_page As IDdfPage In _pages.Values
+                TryCast(k_page, IReleasesDocument)?.ReleaseDocument()
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.ReleaseDocument", ex)
+        End Try
+    End Sub
+
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
             Dim cod As String = info?.CodAngajament

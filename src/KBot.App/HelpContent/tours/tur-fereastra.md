@@ -11,10 +11,10 @@ goto: view:sumar
 Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând. Turul pornește singur la fiecare pornire până îl vezi până la capăt; îl găsești oricând la «?».
 
 ## Butonul MENIU
-<!-- slice: 0087, 0084, 0088, 0097-02, 0000-29, 0000-30, 0000-31, fara-felie -->
+<!-- slice: 0087, 0084, 0088, 0097-02, 0000-29, 0000-30, 0000-31, 00EF-05, 0000-54, fara-felie -->
 target: KbotForm.btnMeniu
 reveal: menu
-De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct în pagina FOREXE), deschizi extrasele de cont, nomenclatoarele și «Configurare K-BOT», fereastra de setări. Meniul se deschide cu un clic pe buton; în tur îl vezi deschis.
+De aici adaugi un angajament («Adăugare angajamente...»: în K-BOT sau direct în pagina FOREXE), deschizi extrasele de cont, fereastra «E-Factura» (tokenul ANAF), nomenclatoarele și «Configurare K-BOT», fereastra de setări. Meniul se deschide cu un clic pe buton; în tur îl vezi deschis.
 
 Două rânduri apar doar uneori. «(!) Operațiuni necorelate» se vede doar când ai operațiuni necorelate de rezolvat; atunci și butonul poartă semnul (!). «Jurnal activitate» (jurnalele K-BOT) se vede doar cât e bifat în Setări › Aplicație «Rândul «Jurnal activitate» în meniul MENIU...».
 

@@ -110,6 +110,10 @@ Partial Class AdobeReaderHarnessForm
     Friend WithEvents chkAcroChrome As System.Windows.Forms.CheckBox
     Friend WithEvents btnAcroProbe As System.Windows.Forms.Button
     Friend WithEvents btnAcroPrefs As System.Windows.Forms.Button
+    Friend WithEvents btnKeysAllNoFocus As System.Windows.Forms.Button
+    Friend WithEvents btnKeysOneNoFocus As System.Windows.Forms.Button
+    Friend WithEvents btnKeysAllFocus As System.Windows.Forms.Button
+    Friend WithEvents btnKeysOneFocus As System.Windows.Forms.Button
     Friend WithEvents btnAcroHideChrome As System.Windows.Forms.Button
     Friend WithEvents btnAcroCollapse As System.Windows.Forms.Button
     Friend WithEvents btnAcroHud As System.Windows.Forms.Button
@@ -251,6 +255,10 @@ Partial Class AdobeReaderHarnessForm
         chkAcroChrome = New CheckBox()
         btnAcroProbe = New Button()
         btnAcroPrefs = New Button()
+        btnKeysAllNoFocus = New Button()
+        btnKeysOneNoFocus = New Button()
+        btnKeysAllFocus = New Button()
+        btnKeysOneFocus = New Button()
         btnAcroHideChrome = New Button()
         btnAcroCollapse = New Button()
         btnAcroHud = New Button()
@@ -1087,6 +1095,10 @@ Partial Class AdobeReaderHarnessForm
         flowAcroButtons.Controls.Add(btnAcroHideChrome)
         flowAcroButtons.Controls.Add(btnAcroProbe)
         flowAcroButtons.Controls.Add(btnAcroPrefs)
+        flowAcroButtons.Controls.Add(btnKeysAllNoFocus)
+        flowAcroButtons.Controls.Add(btnKeysOneNoFocus)
+        flowAcroButtons.Controls.Add(btnKeysAllFocus)
+        flowAcroButtons.Controls.Add(btnKeysOneFocus)
         flowAcroButtons.Controls.Add(chkAcroChrome)
         flowAcroButtons.Dock = DockStyle.Fill
         flowAcroButtons.Margin = New Padding(0)
@@ -1116,6 +1128,39 @@ Partial Class AdobeReaderHarnessForm
         btnAcroClear.TabIndex = 2
         btnAcroClear.Text = "Golește"
         btnAcroClear.UseVisualStyleBackColor = True
+        '
+        '
+        ' btnKeysAllNoFocus — slice 0078-15: Ctrl+H, Ctrl+2 în controlul ActiveX, într-un singur lot, focusul rămâne unde e.
+        '
+        btnKeysAllNoFocus.AutoSize = True
+        btnKeysAllNoFocus.Name = "btnKeysAllNoFocus"
+        btnKeysAllNoFocus.TabIndex = 20
+        btnKeysAllNoFocus.Text = "Taste: toate odată (fără focus)"
+        btnKeysAllNoFocus.UseVisualStyleBackColor = True
+        '
+        ' btnKeysOneNoFocus — slice 0078-15: Ctrl+H, Ctrl+2 în controlul ActiveX, pe rând, focusul rămâne unde e.
+        '
+        btnKeysOneNoFocus.AutoSize = True
+        btnKeysOneNoFocus.Name = "btnKeysOneNoFocus"
+        btnKeysOneNoFocus.TabIndex = 21
+        btnKeysOneNoFocus.Text = "Taste: pe rând (fără focus)"
+        btnKeysOneNoFocus.UseVisualStyleBackColor = True
+        '
+        ' btnKeysAllFocus — slice 0078-15: Ctrl+H, Ctrl+2 în controlul ActiveX, într-un singur lot, după ce focusul e pus în control.
+        '
+        btnKeysAllFocus.AutoSize = True
+        btnKeysAllFocus.Name = "btnKeysAllFocus"
+        btnKeysAllFocus.TabIndex = 22
+        btnKeysAllFocus.Text = "Focus în control + toate odată"
+        btnKeysAllFocus.UseVisualStyleBackColor = True
+        '
+        ' btnKeysOneFocus — slice 0078-15: Ctrl+H, Ctrl+2 în controlul ActiveX, pe rând, după ce focusul e pus în control.
+        '
+        btnKeysOneFocus.AutoSize = True
+        btnKeysOneFocus.Name = "btnKeysOneFocus"
+        btnKeysOneFocus.TabIndex = 23
+        btnKeysOneFocus.Text = "Focus în control + pe rând"
+        btnKeysOneFocus.UseVisualStyleBackColor = True
         '
         ' btnAcroCollapse — apasă butonul LUI Adobe, ca Adobe să-și facă singur re-aranjarea.
         ' Ascunderea (butonul de alături) lasă LĂȚIMEA, deci Adobe nu reașază nimic și documentul

@@ -4,10 +4,10 @@ title: Asocieri — cazuri speciale
 part: contabil
 order: 30
 parent: contabil.asocieri
-screens: AsociereForm.btnReseteaza, AsociereForm.btnRenunta, AsociereForm.ntfMesaj
-keywords: fara schimbare, nu consemneaza nicio schimbare, randul de stergere, receptie stearsa, receptie noua, reconstituita, legatura blocata, golește asezarile, renunta, lantul nu se inchide
+screens: AsociereForm.btnReseteaza, AsociereForm.btnRenunta, AsociereForm.ntfMesaj, CorectieValoareForm
+keywords: fara schimbare, nu consemneaza nicio schimbare, randul de stergere, receptie stearsa, receptie noua, reconstituita, legatura blocata, golește asezarile, renunta, lantul nu se inchide, valoare gresita, total gresit, valoare 0, corecteaza valoarea, corectat, valoarea din forexe, motivul corectiei
 ---
-<!-- slice: 0048-04, 0061, 0107 -->
+<!-- slice: 0048-04, 0061, 0107, 0111 -->
 Toate comenzile de mai jos sunt în **meniul de clic dreapta** al unui instantaneu (sau al unui grup
 de instantanee alese cu Ctrl / Shift). Clicul dreapta merge doar pe un rând **deja ales**: dă întâi
 clic stânga pe el; pe un rând neales nu face nimic.
@@ -64,12 +64,53 @@ salvează.
 > **«⚠ Reconstituire nesigură»**: gruparea instantaneelor a fost o judecată a ta, nu o verificare.
 > Marcajul rămâne, ca o cifră care nu se leagă peste luni să poată fi urmărită până aici.
 
+## Valoarea greșită din FOREXE — «Corectează valoarea…»
+<!-- slice: 0111 -->
+<!-- capture: asocieri-corectie-valoare | caption: Fereastra «Corectează valoarea», cu totalul și liniile unui instantaneu | prepare: Deschideți Asocieri, dați clic dreapta pe un instantaneu care nu e blocat și alegeți «Corectează valoarea…». -->
+
+Uneori FOREXE scrie în istoric o valoare greșită — de exemplu un total de **0** peste o linie de
+1.635,00. Instantaneul nu se mai potrivește cu recepția lui, lanțul nu se închide (roșu) și
+ordonanțările pornesc de la o cifră falsă. Cifra bună o știi tu.
+
+Clic dreapta pe instantaneu › **«Corectează valoarea…»**. Se deschide o fereastră cu **totalul**
+instantaneului și câte o linie pe indicator:
+
+- în coloana **«Din FOREXE»** vezi ce a scris FOREXE; în **«Valoare corectă»** tastezi cifra bună;
+- **totalul îți este propus ca suma liniilor pe indicatori** și se schimbă singur cât modifici liniile;
+  îl poți tasta și tu, atunci rămâne cum l-ai pus. În orice caz **totalul trebuie să fie egal cu suma
+  liniilor**: sub tabel vezi suma, iar dacă nu se potrivesc
+  K-BOT refuză salvarea — corectezi totalul și liniile împreună;
+- **«Motivul corecției»** este obligatoriu și se păstrează cu numele tău și data;
+- **«Revino la valorile din FOREXE»** pune la loc cifrele scrise de FOREXE (se salvează tot cu
+  «Salvează»);
+- **«Salvează»**, în fereastra Asocieri deschisă din Recepții, scrie corecția **imediat**, nu odată cu
+  legăturile, iar fereastra se reîncarcă: mutările nesalvate de acolo se pierd (K-BOT te întreabă
+  întâi).
+
+**Imediat după o descărcare** (fereastra «Așezarea recepțiilor descărcate») poți corecta instantaneele
+pe care descărcarea tocmai le-a adus — tocmai acolo ți se poate întâmpla ca un instantaneu cu valoare
+greșită să nu se lase tras pe recepția lui. Corecția **nu se scrie pe loc**: «Salvează» din fereastra
+de corecție o păstrează în fereastra descărcării, instantaneul se vede cu valoarea corectată și cu
+**[corectat]**, îl tragi pe recepția lui, iar corecția se scrie **odată cu descărcarea**, la
+«Salvează descărcarea». Dacă renunți la descărcare, se pierde și ea. Instantaneele mai vechi, deja
+scrise, se corectează din Asocieri deschis din Recepții.
+
+Un instantaneu corectat apare cu **[corectat]**; ținând mouse-ul pe el vezi ce a scris FOREXE, cine
+a corectat, când și de ce. O descărcare nouă nu desface corecția.
+
+Nu se poate corecta rândul de ștergere. Un instantaneu **așezat** pe o recepție se corectează sub
+aceeași regulă ca la mutare (vezi mai jos «Legături blocate»); unul **neașezat** se poate corecta
+oricând.
+
+> Corectează doar când FOREXE a scris o cifră greșită. Dacă ai așezat instantaneul pe recepția
+> greșită, nu-l corecta: mută-l.
+
 ## Legături blocate
-<!-- slice: 0048-04, 0058-02, 0056-02 -->
+<!-- slice: 0048-04, 0058-02, 0056-02, 0111 -->
 
 Singurul lucru care blochează o legătură este o **ordonanțare**: dacă angajamentul are o ordonanțare
 din ziua instantaneului sau de după ea, instantaneul se vede stins, cu lacăt, și nu se mai poate
-muta. Clicul dreapta spune «Această legătură nu se mai poate modifica» și motivul (numărul și data
+muta. **Nici valoarea lui nu se mai poate corecta** în acest caz. Clicul dreapta spune «Această legătură nu se mai poate modifica» și motivul (numărul și data
 ordonanțării). Ca să-l muți, trebuie întâi schimbată sau ștearsă ordonanțarea. O simplă plată nu
 blochează nimic.
 

@@ -75,6 +75,9 @@ Partial Public Class KbotForm
                 Case "extrase"
                     ' Slice 0095-02: the «Extrase de cont» window (KbotForm.Extrase.vb).
                     DeschideExtrasele()
+                Case "efactura"
+                    ' Slice 00EF-05: the E-Factura token window (KbotForm.EFactura.vb).
+                    DeschideEFactura()
                 Case "clasificatii"
                     DeschideClasificatiile()
                 Case "parteneri"

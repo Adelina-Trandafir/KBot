@@ -26,6 +26,16 @@ Public NotInheritable Class AdobeRegistryConstants
     ' §2.2 — viewer generation, per user (Adobe-documented). Same AVGeneral hive.
     Public Const ValEnableAv2 As String = "bEnableAv2"            ' REG_DWORD 0=classic, 1=modern
 
+    ' §2.2b — two checkboxes of Acrobat's Preferences, per user, under the product root
+    ' (<c>HKCU\Software\Adobe\Adobe Acrobat\DC</c> -- the AVGeneral hive minus its last segment).
+    ' Names READ from this PC's registry, matching both preference screens (07.10.2026):
+    '   «Show border hover color for fields»                  -> FormsPrefs\bRuntimeHighlight  (DWORD 0/1)
+    '   «Use modern user interface for signing and Digital ID» -> Security\cPubSec\bEnableCEFBasedUI (DWORD 0/1)
+    Public Const SubKeyFormsPrefs As String = "FormsPrefs"
+    Public Const SubKeyPubSec As String = "Security\cPubSec"
+    Public Const ValFieldHoverBorder As String = "bRuntimeHighlight"
+    Public Const ValModernSigningUi As String = "bEnableCEFBasedUI"
+
     ' §2.3 — upsell & services, machine-wide, elevation required (Adobe-documented).
     Public Const ProductReader As String = "Acrobat Reader"       ' <product> for FeatureLockDown
     Public Const ProductAcrobat As String = "Adobe Acrobat"

@@ -1,4 +1,6 @@
 Option Strict On
+Imports System.IO
+Imports System.Linq
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
@@ -202,6 +204,8 @@ Public Class ReaderHostPreview
     ''' </summary>
     Public Sub ShowDocument(pdfPath As String, exists As Boolean) Implements IDdfPreview.ShowDocument
         Try
+            ' Slice 0078-15: the document that was on screen, kept to delete its local signed copy below.
+            Dim k_previous As String = _requestedPath
             _requestedPath = pdfPath
             ' Slice 0099: the previous document is no longer on screen (its late jobs are still caught).
             StopPrintWatch()
@@ -213,6 +217,11 @@ Public Class ReaderHostPreview
             ' document is closed and destroyed here, on the click; the load creates a new one. A
             ' reused control sometimes stayed empty after LoadFile (client trace 24.09.2026).
             If UsesActiveX() AndAlso AppSettings.Current.AcroPdfFreshControl Then _acro?.Clear()
+
+            ' Slice 0078-15 (operator, 06.10.2026): moving to another document deletes the previous one's local
+            ' SIGNED copy (the cache); the next opening checks its sum against the server and downloads it again.
+            QueueDeleteOfPrevious(k_previous, pdfPath)
+            TryDeletePending()
 
             If String.IsNullOrWhiteSpace(pdfPath) Then
                 SetOpening(False)
@@ -315,6 +324,8 @@ Public Class ReaderHostPreview
         Dim result As AcroPdfResult = Await surface.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
         If Not String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then Return
 
+        ' Slice 0078-15: the previous document is surely released by now -- the delete that was still locked is retried.
+        TryDeletePending()
         If result.Succeeded Then
             ShowHost()
             ' Nota discretă spune doar ce NU a mers: colapsarea e vizibilă, absența ei nu.
@@ -464,10 +475,169 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ' ── Local signed copy removed on leaving the document (slice 0078-15, operator 06.10.2026) ─────────
+    ' Only a file under the signed-PDF cache folders (DDF, ORD, NC -- not NC\Recipise) and with NO upload waiting for
+    ' it (PendingPdfUploads): such a copy is only a copy of the server's. A file still held by Adobe stays queued and
+    ' is retried when the new document is ready. Never the document that is on screen now.
+    Private _pendingDelete As String
+    ' Retry while Adobe still holds the file (it lets go a moment after the window / control is gone).
+    Private Const DeleteRetryMs As Integer = 700
+    Private Const DeleteMaxRetries As Integer = 12
+    Private _deleteRetries As Integer
+    Private ReadOnly _deleteRetryTimer As New Timer() With {.Interval = DeleteRetryMs}
+    Private _deleteRetryWired As Boolean
+    ' Copies a closed view could not delete yet: removed once the Adobe processes of K-BOT are gone (Program).
+    Private Shared ReadOnly s_exitDeletes As New List(Of String)()
+    Private Shared ReadOnly s_exitLock As New Object()
+
+    ''' <summary>Slice 0078-15: called when K-BOT ends, after its Adobe processes were stopped: deletes what was still locked.</summary>
+    Friend Shared Sub DeleteLeftoversAtExit()
+        Try
+            Dim k_list As List(Of String)
+            SyncLock s_exitLock
+                k_list = New List(Of String)(s_exitDeletes)
+                s_exitDeletes.Clear()
+            End SyncLock
+            For Each k_path As String In k_list
+                Try
+                    If File.Exists(k_path) Then
+                        File.Delete(k_path)
+                        AdobeHostLog.Write($"Copia locală semnată ștearsă la închiderea K-BOT: «{k_path}».")
+                    End If
+                Catch ex As Exception When TypeOf ex Is IOException OrElse TypeOf ex Is UnauthorizedAccessException
+                    AdobeHostLog.Write($"Copia locală semnată «{k_path}» nu a putut fi ștearsă la închidere ({ex.Message}).")
+                End Try
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.DeleteLeftoversAtExit", ex)
+        End Try
+    End Sub
+
+    Private Sub OnDeleteRetryTick(sender As Object, e As EventArgs)
+        Try
+            _deleteRetries += 1
+            TryDeletePending()
+            If String.IsNullOrEmpty(_pendingDelete) OrElse _deleteRetries >= DeleteMaxRetries Then
+                _deleteRetryTimer.Stop()
+                If Not String.IsNullOrEmpty(_pendingDelete) Then
+                    AdobeHostLog.Write($"Copia locală semnată «{_pendingDelete}» a rămas pe disc (Adobe o ține încă) — se șterge la închiderea K-BOT.")
+                    SyncLock s_exitLock
+                        s_exitDeletes.Add(_pendingDelete)
+                    End SyncLock
+                    _pendingDelete = Nothing
+                End If
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.OnDeleteRetryTick", ex)
+        End Try
+    End Sub
+
+    ' Reached from ShowDocument (wrapped).
+    Private Sub QueueDeleteOfPrevious(k_previous As String, k_next As String)
+        Try
+            If String.IsNullOrWhiteSpace(k_previous) Then
+                AdobeHostLog.Write("Copia locală: nimic de șters (niciun document anterior pe ecran).")
+                Return
+            End If
+            If SamePath(k_previous, k_next) Then
+                AdobeHostLog.Write($"Copia locală «{k_previous}» nu se șterge: e același document care se afișează.")
+                Return
+            End If
+            If Not IsSignedCacheFile(k_previous) Then
+                AdobeHostLog.Write($"Copia locală «{k_previous}» nu se șterge: nu e sub folderele cache (DDF «{If(KBotPaths.Current.DdfPdfRoot, KBotPaths.DefaultDdfPdfRoot)}», ORD «{If(KBotPaths.Current.OrdPdfRoot, KBotPaths.DefaultOrdPdfRoot)}»).")
+                Return
+            End If
+            AdobeHostLog.Write($"Copia locală «{k_previous}» pusă la ștergere.")
+            If HasPendingUpload(k_previous) Then
+                AdobeHostLog.Write($"Copia locală semnată «{k_previous}» nu se șterge: are o încărcare în așteptare spre server.")
+                Return
+            End If
+            ' An earlier copy still locked by Adobe is not forgotten: it moves to the list deleted at exit.
+            If Not String.IsNullOrEmpty(_pendingDelete) AndAlso Not SamePath(_pendingDelete, k_previous) Then
+                SyncLock s_exitLock
+                    s_exitDeletes.Add(_pendingDelete)
+                End SyncLock
+            End If
+            _pendingDelete = k_previous
+            _deleteRetries = 0
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.QueueDeleteOfPrevious", ex)
+        End Try
+    End Sub
+
+    ' Tries the queued delete. A file still held by Adobe (IOException) stays queued for the next call.
+    Private Sub TryDeletePending()
+        Try
+            Dim k_path As String = _pendingDelete
+            If String.IsNullOrEmpty(k_path) Then Return
+            If SamePath(k_path, _requestedPath) Then
+                AdobeHostLog.Write($"Copia locală «{k_path}» nu se șterge: documentul e afișat din nou.")
+                _pendingDelete = Nothing
+                Return
+            End If
+            If Not File.Exists(k_path) Then
+                AdobeHostLog.Write($"Copia locală «{k_path}»: fișierul nu mai există, nimic de șters.")
+                _pendingDelete = Nothing
+                Return
+            End If
+            Try
+                File.Delete(k_path)
+                _pendingDelete = Nothing
+                AdobeHostLog.Write($"Copia locală semnată ștearsă la trecerea pe alt document: «{k_path}».")
+            Catch ex As IOException
+                AdobeHostLog.Write($"Copia locală semnată «{k_path}» e încă folosită de Adobe — o șterg la următoarea ocazie ({ex.Message}).")
+                StartDeleteRetry()
+            Catch ex As UnauthorizedAccessException
+                AdobeHostLog.Write($"Copia locală semnată «{k_path}» nu poate fi ștearsă acum ({ex.Message}) — încerc din nou la următoarea ocazie.")
+                StartDeleteRetry()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.TryDeletePending", ex)
+        End Try
+    End Sub
+
+    ' Keeps trying every DeleteRetryMs while the file stays queued (the timer is wired on first use).
+    Private Sub StartDeleteRetry()
+        If Not _deleteRetryWired Then
+            AddHandler _deleteRetryTimer.Tick, AddressOf OnDeleteRetryTick
+            _deleteRetryWired = True
+        End If
+        If Not _deleteRetryTimer.Enabled Then _deleteRetryTimer.Start()
+    End Sub
+
+    Private Shared Function SamePath(k_a As String, k_b As String) As Boolean
+        If String.IsNullOrWhiteSpace(k_a) OrElse String.IsNullOrWhiteSpace(k_b) Then Return False
+        Return String.Equals(System.IO.Path.GetFullPath(k_a), System.IO.Path.GetFullPath(k_b), StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    Private Shared Function IsUnder(k_path As String, k_root As String) As Boolean
+        If String.IsNullOrWhiteSpace(k_path) OrElse String.IsNullOrWhiteSpace(k_root) Then Return False
+        Dim k_full As String = System.IO.Path.GetFullPath(k_path)
+        Dim k_base As String = System.IO.Path.GetFullPath(k_root).TrimEnd("\"c, "/"c) & "\"
+        Return k_full.StartsWith(k_base, StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    ' True for a file under the signed caches: the DDF root, the ORD root, and the NC folder beside it (not its Recipise).
+    Private Shared Function IsSignedCacheFile(k_path As String) As Boolean
+        Dim k_ddf As String = If(KBotPaths.Current.DdfPdfRoot, KBotPaths.DefaultDdfPdfRoot)
+        Dim k_ord As String = If(KBotPaths.Current.OrdPdfRoot, KBotPaths.DefaultOrdPdfRoot)
+        Dim k_parent As String = System.IO.Path.GetDirectoryName(k_ord.TrimEnd("\"c, "/"c))
+        If String.IsNullOrEmpty(k_parent) Then k_parent = k_ord
+        Dim k_nc As String = System.IO.Path.Combine(k_parent, "NC")
+        If IsUnder(k_path, System.IO.Path.Combine(k_nc, "Recipise")) Then Return False
+        Return IsUnder(k_path, k_ddf) OrElse IsUnder(k_path, k_ord) OrElse IsUnder(k_path, k_nc)
+    End Function
+
+    Private Shared Function HasPendingUpload(k_path As String) As Boolean
+        Return PendingPdfUploads.All().Any(Function(k_e) SamePath(k_e.CachePath, k_path) OrElse SamePath(k_e.PdfPath, k_path))
+    End Function
+
     ' Host event, UI thread: Adobe finished opening the document. UI boundary: log and swallow.
     Private Sub OnDocumentReady()
         Try
             SetOpening(False)
+            ' Slice 0078-15: the hosted window of the previous document is gone by now.
+            TryDeletePending()
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.OnDocumentReady", ex)
         End Try
@@ -490,9 +660,20 @@ Public Class ReaderHostPreview
     Friend Sub DetachReader()
         Try
             StopPrintWatch()
+            ' Slice 0078-15: closing the view -- the document on screen is released and its local signed copy goes
+            ' too. What Adobe still holds is deleted when K-BOT ends (DeleteLeftoversAtExit).
+            QueueDeleteOfPrevious(_requestedPath, Nothing)
+            _deleteRetryTimer.Stop()
             _host?.Dispose()
             DisposeAcro()
             SetOpening(False)
+            TryDeletePending()
+            If Not String.IsNullOrEmpty(_pendingDelete) Then
+                SyncLock s_exitLock
+                    s_exitDeletes.Add(_pendingDelete)
+                End SyncLock
+                _pendingDelete = Nothing
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.DetachReader", ex)
         End Try
@@ -521,12 +702,16 @@ Public Class ReaderHostPreview
 
     Public Sub Clear() Implements IDdfPreview.Clear
         Try
+            ' Slice 0078-15: the document that was on screen -- its local signed copy goes with it.
+            Dim k_previous As String = _requestedPath
             _requestedPath = Nothing
             StopPrintWatch()
             _host.Detach()
             _acro?.Clear()
             SetOpening(False)
             ShowMessage("Selectați o revizie din arbore.")
+            QueueDeleteOfPrevious(k_previous, Nothing)
+            TryDeletePending()
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.Clear", ex)
         End Try
@@ -550,11 +735,15 @@ Public Class ReaderHostPreview
     ''' </summary>
     Public Sub ShowNotice(message As String)
         Try
+            Dim k_previous As String = _requestedPath
             _requestedPath = Nothing
             StopPrintWatch()
             _host.Detach()
             _acro?.Clear()
             ShowMessage(message)
+            ' Slice 0078-15: the document that was on screen goes with its local signed copy.
+            QueueDeleteOfPrevious(k_previous, Nothing)
+            TryDeletePending()
         Catch ex As Exception
             GlobalErrorLog.Write("ReaderHostPreview.ShowNotice", ex)
         End Try

@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.1.8</FileVersion>
+    <FileVersion>1.1.1.9</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -78,6 +78,8 @@
     <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
     <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
     <ProjectReference Include="..\KBot.Xfa\KBot.Xfa.vbproj" />
+    <!-- Slice 00EF-05: ferestrele E-Factura (tokenul ANAF, apoi facturile). Referinta merge doar App -> EFactura. -->
+    <ProjectReference Include="..\KBot.EFactura\KBot.EFactura.vbproj" />
   </ItemGroup>
 
   <ItemGroup>

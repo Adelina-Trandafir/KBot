@@ -1,7 +1,10 @@
 {
   "meta": {
-    "title": "K-BOT",
-    "description": "K-BOT este aplicația care preia o mare parte din munca repetitivă din FOREXE și o face în locul contabilului."
+    "title": "K-BOT – automatizare FOREXE pentru contabilii din instituții publice",
+    "description": "K-BOT preia munca repetitivă din FOREXE: angajamente, recepții, documente de fundamentare și ordonanțări, pregătite, verificate și semnate din aplicație."
+  },
+  "alop_page": {
+    "published": false
   },
   "links": {
     "register": "/inregistrare",
@@ -14,34 +17,47 @@
   "nav": [
     {
       "id": "acasa",
+      "icon": "🏠",
       "label": "Acasă"
     },
     {
       "id": "pentru-toti",
+      "icon": "⚙️",
       "label": "Funcționalități"
     },
     {
       "id": "tutoriale",
+      "icon": "🎓",
       "label": "Tutoriale"
     },
     {
       "id": "roluri",
+      "icon": "👥",
       "label": "Pentru cine"
     },
     {
       "id": "siguranta",
+      "icon": "🛡️",
       "label": "Siguranță"
     },
     {
+      "id": "acces-online",
+      "icon": "🌐",
+      "label": "Online"
+    },
+    {
       "id": "nu-contabilitate",
+      "icon": "🔗",
       "label": "Integrare"
     },
     {
       "id": "ce-urmeaza",
+      "icon": "🚀",
       "label": "Ce urmează"
     },
     {
       "id": "despre-noi",
+      "icon": "💬",
       "label": "Despre noi"
     }
   ],
@@ -917,5 +933,231 @@
   "finalcta": {
     "primary": "Încearcă K-BOT gratuit",
     "note": "Versiune completă gratuită până la 31.12.2026 · Fără obligație de continuare"
+  },
+  "online": {
+    "id": "acces-online",
+    "kicker": "Online",
+    "title": "Accesul online la date",
+    "intro": [
+      "K-BOT nu este singurul loc în care îți poți vedea datele. Le poți consulta și online, direct din browser, de oriunde te-ai afla: de la birou, de acasă sau chiar de pe telefon. Nu trebuie să instalezi nimic.",
+      "Pagina online este gândită exclusiv pentru consultare. **Poți să te uiți. Nu poți să strici nimic.**"
+    ],
+    "cards": [
+      {
+        "icon": "eye",
+        "title": "Ce poți vedea",
+        "blocks": [
+          {
+            "ul": [
+              "lista angajamentelor",
+              "Sumarul",
+              "Rezervările",
+              "Recepțiile",
+              "Plățile",
+              "documentele PDF"
+            ]
+          },
+          "Nu poți modifica date, nu poți descărca informații noi din FOREXE și nu poți trimite operațiuni. Lucrul propriu-zis rămâne în K-BOT."
+        ]
+      },
+      {
+        "icon": "shield",
+        "title": "Autentificare în doi pași",
+        "blocks": [
+          "Fără certificat digital, intrarea cere întotdeauna parola **și** codul primit pe e-mail. Parola singură nu este suficientă.",
+          "Vezi doar unitățile la care contul tău are deja drepturi. Nu poți vedea datele altor unități."
+        ]
+      },
+      {
+        "icon": "pen",
+        "title": "Intrare cu tokenul digital",
+        "blocks": [
+          "Dacă folosești un token cu semnătură digitală calificată, îl poți înrola și pentru accesul online. După înrolare, intri cu el, fără codul primit pe e-mail.",
+          "Funcționează de pe calculator; de pe telefon sau tabletă intri cu parola și codul."
+        ]
+      }
+    ],
+    "outro": [
+      "Datele pot fi văzute de oriunde. **Nu de oricine.** Datele rămân pe serverele K-BOT și sunt disponibile numai persoanelor autorizate pentru unitățile respective."
+    ],
+    "more_label": "Citește tot",
+    "blocks": [
+      "K-BOT nu este singurul loc în care îți poți vedea datele. Le poți consulta și online, direct din browser, de oriunde te-ai afla: de la birou, de acasă sau chiar de pe telefon. Nu trebuie să instalezi nimic.",
+      "Pagina online este gândită exclusiv pentru consultare. Poți vedea:",
+      {
+        "ul": [
+          "lista angajamentelor;",
+          "Sumarul;",
+          "Rezervările;",
+          "Recepțiile;",
+          "Plățile;",
+          "documentele PDF."
+        ]
+      },
+      "Nu poți modifica date, nu poți descărca informații noi din FOREXE și nu poți trimite operațiuni. Lucrul propriu-zis rămâne în K-BOT. Online vezi informația de care ai nevoie, fără riscul de a modifica ceva din greșeală.",
+      "Documentele PDF văzute online sunt o **copie aplatizată** a fișierelor originale și se pot vedea **doar dacă au fost semnate inițial în aplicația locală**.",
+      {
+        "rule": true
+      },
+      {
+        "title": "Cum intri"
+      },
+      "Accesul este simplu:",
+      {
+        "ul": [
+          "Deschizi pagina K-BOT în browser și apeși „Intră în cont”.",
+          "Introduci adresa de e-mail și parola — aceleași pe care le folosești în K-BOT.",
+          "Primești pe e-mail un cod de 6 cifre și îl introduci în pagină. Codul poate fi folosit o singură dată și expiră după 10 minute.",
+          "Alegi unitatea, apoi anul și sursa cu care vrei să lucrezi."
+        ]
+      },
+      "Dacă ai acces la mai multe unități, le poți schimba oricând din bara de sus.",
+      "Fără conturi separate, fără încă o parolă de ținut minte. Avem deja destule.",
+      {
+        "rule": true
+      },
+      {
+        "title": "Intrare cu certificatul digital, fără codul primit pe e-mail"
+      },
+      "Dacă folosești un token cu semnătură digitală calificată, același tip de certificat cu care semnezi documentele, îl poți înrola și pentru accesul online. După înrolare, poți intra folosind certificatul, fără să mai introduci codul primit pe e-mail.",
+      {
+        "h": "Cum îl înrolezi"
+      },
+      {
+        "ul": [
+          "Intri prima dată folosind parola și codul primit pe e-mail.",
+          "Conectezi tokenul la calculator.",
+          "Apeși „Certificat” în partea de sus a paginii.",
+          "Alegi „Înrolează certificatul acesta”."
+        ]
+      },
+      "La următoarea vizită poți apăsa direct „Intră cu certificat digital” și alegi certificatul corespunzător.",
+      {
+        "h": "De reținut"
+      },
+      {
+        "ul": [
+          "Un singur certificat poate fi activ pentru contul tău. Dacă certificatul este reînnoit, îl înrolezi din nou, iar cel vechi este dezactivat.",
+          "Din același dialog „Certificat” poți dezactiva certificatul în orice moment.",
+          "Autentificarea cu certificat funcționează de pe calculator, unde tokenul poate fi conectat fizic. De pe telefon sau tabletă intri în continuare cu adresa de e-mail, parola și codul primit pe e-mail.",
+          "Dacă certificatul a expirat sau browserul nu îl poate identifica, pagina revine automat la autentificarea cu parolă și cod."
+        ]
+      },
+      {
+        "rule": true
+      },
+      {
+        "title": "Datele pot fi văzute de oriunde. Nu de oricine."
+      },
+      "Accesul din browser nu înseamnă că datele devin mai puțin protejate. Din contră, accesul online folosește mai multe mecanisme de protecție tocmai pentru că informațiile pot fi consultate din afara calculatorului pe care este instalat K-BOT.",
+      {
+        "h": "Autentificare în doi pași"
+      },
+      "Fără certificat digital, autentificarea cere întotdeauna parola și codul primit pe e-mail. Parola singură nu este suficientă pentru acces. Dacă folosești certificatul digital, al doilea factor este chiar tokenul fizic pe care îl deții.",
+      {
+        "h": "Vezi doar unitățile la care ai acces"
+      },
+      "După autentificare, K-BOT îți arată doar unitățile pentru care contul tău are deja drepturi. Nu poți vedea datele altor unități.",
+      {
+        "h": "Accesul online este doar pentru citire"
+      },
+      "Din browser poți consulta informațiile, dar nu le poți modifica. Nu poți:",
+      {
+        "ul": [
+          "modifica angajamente;",
+          "schimba recepții;",
+          "trimite operațiuni;",
+          "descărca informații noi din FOREXE;",
+          "altera documentele existente."
+        ]
+      },
+      "Poți să te uiți. Nu poți să strici nimic.",
+      {
+        "h": "Sesiunile nu rămân deschise la nesfârșit"
+      },
+      "După 20 de minute fără activitate, sesiunea se închide automat. Cu două minute înainte, K-BOT te avertizează și îți permite să continui dacă încă lucrezi. Indiferent de activitate, o sesiune nu poate rămâne deschisă mai mult de 8 ore.",
+      {
+        "h": "Parola nu este păstrată de pagina online"
+      },
+      "Parola este verificată atunci când te autentifici și nu este păstrată ulterior de pagină. Codul primit pe e-mail are o durată de viață limitată, poate fi folosit o singură dată și este păstrat doar într-o formă criptată până la expirare.",
+      {
+        "h": "Accesările lasă o urmă"
+      },
+      "K-BOT păstrează informații despre autentificări: cine a accesat sistemul, când a avut loc accesul și unitatea consultată. Astfel, accesările pot fi verificate ulterior dacă este nevoie.",
+      {
+        "h": "Încercările greșite sunt limitate"
+      },
+      "Dacă sunt introduse în mod repetat parole sau coduri greșite, autentificarea este blocată temporar. Nu poți încerca la nesfârșit până când „poate nimerește cineva parola”.",
+      {
+        "h": "Protecția datelor și certificatul digital"
+      },
+      "Datele rămân pe serverele K-BOT și sunt disponibile numai persoanelor autorizate pentru unitățile respective. Pentru certificatul digital, serverul păstrează doar amprenta necesară identificării certificatului. Nu este necesară păstrarea CNP-ului sau a altor date personale din certificat pentru această autentificare.",
+      {
+        "rule": true
+      },
+      {
+        "title": "Când ai terminat"
+      },
+      "Apasă „Ieși”. Este mai bine decât să închizi pur și simplu fila browserului, mai ales atunci când folosești un calculator care nu îți aparține. Un click în plus. De data asta chiar merită."
+    ]
+  },
+  "people": {
+    "kicker": "Cine stă în spatele K-BOT",
+    "title": "Site-ul a fost făcut cu AI. Aplicația, de oameni.",
+    "intro": [
+      "Da, acest site de prezentare a fost realizat cu ajutorul inteligenței artificiale (Claude Code). **Aplicația K-BOT nu.**",
+      "K-BOT este făcut de oameni reali, cu ajutorul inteligenței artificiale. **Toate funcțiile trec prin mâna unor oameni, iar tot planul și toată logica sunt 100% umane.**"
+    ],
+    "cards": [
+      {
+        "icon": "user",
+        "title": "Planul este omenesc",
+        "blocks": [
+          "Ce face K-BOT, în ce ordine și de ce se hotărăște de oameni care cunosc munca din FOREXE și din contabilitatea publică."
+        ]
+      },
+      {
+        "icon": "check",
+        "title": "Fiecare funcție trece prin oameni",
+        "blocks": [
+          "Nicio funcție nu ajunge în aplicație doar pentru că o poate scrie un program. Fiecare este gândită, verificată și acceptată de oameni."
+        ]
+      },
+      {
+        "icon": "pen",
+        "title": "AI-ul ajută, nu decide",
+        "blocks": [
+          "Inteligența artificială accelerează munca de scriere și de verificare. Direcția, regulile și răspunderea rămân ale oamenilor."
+        ]
+      }
+    ],
+    "safety_title": "Siguranța datelor tale",
+    "safety_intro": "Datele unei unități nu sunt un detaliu tehnic. Iată, pe scurt, cum stau lucrurile.",
+    "safety_cards": [
+      {
+        "icon": "shield",
+        "title": "Programatorul nu are acces la parolele tale",
+        "blocks": [
+          "Cel care a scris aplicația **nu are acces la parolele utilizatorilor**. Nu le poate citi și nu le poate afla.",
+          "Parola este folosită o singură dată, pentru a verifica autentificarea, și nu este păstrată de aplicație sau de pagina online."
+        ]
+      },
+      {
+        "icon": "doc",
+        "title": "GDPR: se lucrează",
+        "blocks": [
+          "Lucrăm la conformarea cu GDPR pentru datele prelucrate de aplicație. Este un proces în desfășurare: nu pretindem că este încheiat și nu ascundem că nu este.",
+          "Principiile după care lucrăm sunt cele din regulament: datele sunt vizibile doar persoanelor autorizate pentru unitatea lor, accesările lasă o urmă și nu păstrăm mai mult decât este necesar."
+        ]
+      },
+      {
+        "icon": "eye",
+        "title": "Accesul online, la fel de păstrat",
+        "blocks": [
+          "Datele pot fi consultate din browser, dar doar în regim de citire și doar cu autentificare în doi pași sau cu tokenul tău digital.",
+          "Detaliile sunt în secțiunea „Accesul online la date”, mai jos pe pagină."
+        ]
+      }
+    ]
   }
 }

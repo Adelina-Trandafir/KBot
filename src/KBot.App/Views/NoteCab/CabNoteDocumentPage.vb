@@ -13,7 +13,7 @@ Imports KBot.Theming
 ''' A SIGNED note is never generated: the view downloads the server's copy instead.</para>
 ''' </summary>
 Public Class CabNoteDocumentPage
-    Implements ICabNotePage, IThemedControl
+    Implements ICabNotePage, IThemedControl, IReleasesDocument
 
     Private _pendingPath As String
     Private _pendingExists As Boolean
@@ -61,6 +61,18 @@ Public Class CabNoteDocumentPage
             MountIfVisible()
         Catch ex As Exception
             GlobalErrorLog.Write("CabNoteDocumentPage.VisibleChanged", ex)
+        End Try
+    End Sub
+
+    ' Slice 0078-15: the whole view was put away -- the document is closed (its local signed copy goes with it).
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            If String.IsNullOrEmpty(_shownPath) Then Return
+            _shownPath = Nothing
+            _shownExists = False
+            previewPdf.Clear()
+        Catch ex As Exception
+            GlobalErrorLog.Write("CabNoteDocumentPage.ReleaseDocument", ex)
         End Try
     End Sub
 

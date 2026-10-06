@@ -98,13 +98,14 @@ Schimbarea **nu se poate face**:
 > și deschide-le din nou după ce ai trecut pe altă unitate.
 
 ## MENIU
-<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02, 0000-29, 0000-31, fara-felie -->
+<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02, 0000-29, 0000-31, 00EF-05, 0000-54, fara-felie -->
 
 - **Adăugare angajamente...** — un dosar cu două rânduri:
   - **Angajament nou** — îl faci în K-BOT și îl trimiți apoi în FOREXE — [Angajament nou](topic:contabil.ddf.nou);
   - **Creează angajament în FOREXE** — îl faci de mână, direct în pagina FOREXE — [Un angajament nou făcut direct în FOREXE](topic:contabil.forexe.browser).
 - **(!) Operațiuni necorelate** — apare doar când există — [Operațiuni necorelate](topic:contabil.notecab)
 - **Extrase** — fereastra «Extrase de cont»
+- **E-Factura** — fereastra tokenului ANAF, pentru facturile electronice — [E-Factura și tokenul ANAF](topic:contabil.efactura)
 - **Nomenclatoare › Clasificații bugetare / Parteneri** — [Nomenclatoare](topic:contabil.nomenclatoare)
 - **Jurnal activitate** — jurnalele K-BOT; rândul lipsește dacă l-ai ascuns din Setări › Aplicație — [Setări și aspect](topic:contabil.setari)
 - **Configurare K-BOT** — fereastra de setări — [Setări și aspect](topic:contabil.setari)

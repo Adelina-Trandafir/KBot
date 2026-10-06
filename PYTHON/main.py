@@ -38,8 +38,10 @@ from routes.migrare.migrare import migrare_bp  # felia 0044: migrarea prin fisie
 from routes.update import update_bp  # slice 0067: application update channel (public, read-only)
 from routes.inregistrare.inregistrare import inregistrare_bp  # felia 0075: pagina publica de inregistrare
 from routes.landing.landing import landing_bp  # public presentation page: GET / (k-bot.ro)
+from routes.landing.seo import seo_bp  # robots.txt + sitemap.xml
 from routes.landing.vizite import vizite_bp  # slice 0110-09: POST /api/vizita (who looks at the page)
 from routes.detalii.detalii import detalii_bp  # slice 0110-02: GET /detalii + POST /api/detalii
+from routes.pdf_inteligent.pdf_inteligent import pdf_inteligent_bp  # public article: GET /pdf-inteligent (Reader vs Pro, ALOP forms)
 from routes.portal.portal import portal_bp  # slice 0110-03: GET /portal + /api/portal/*
 import routes.portal.date  # noqa: F401  slice 0110-06: registers /api/portal/date/* on portal_bp
 import routes.portal.certificat  # noqa: F401  slice 0110-04: registers /api/portal/certificat/* on portal_bp
@@ -49,6 +51,7 @@ from routes.logs import logs_bp  # slice 0089: the caller's own server / timing 
 from routes.help_feedback import help_feedback_bp  # slice 0000-21: help questions + ratings (nothing about who)
 from routes.setari import setari_bp  # slice 0100-02: GET /api/setari (the settings the server decides)
 from routes.access import access_bp  # slice 0104: POST /api/access/client-type (public: Access client or not)
+from routes.efactura import efactura_bp  # slice 00EF-04: /api/efactura/token/* (ANAF e-Factura token, bearer)
 
 # 1. Initializam logger-ul global (ca sa scrie in fisierul .log)
 logger = setup_logger()
@@ -114,14 +117,17 @@ app.register_blueprint(migrare_bp)
 app.register_blueprint(update_bp)
 app.register_blueprint(inregistrare_bp)  # Inregistrarea publica a unei unitati noi
 app.register_blueprint(landing_bp)  # GET / : the K-BOT presentation page
+app.register_blueprint(seo_bp)  # robots.txt + sitemap.xml
 app.register_blueprint(vizite_bp)  # slice 0110-09: POST /api/vizita
 app.register_blueprint(detalii_bp)  # slice 0110-02: the «Cere mai multe detalii» form
+app.register_blueprint(pdf_inteligent_bp)  # the «PDF Inteligent» article
 app.register_blueprint(portal_bp)  # slice 0110-03: web area of registered users (read-only)
 app.register_blueprint(operator_bp)  # Aprobarea cererilor de inregistrare
 app.register_blueprint(logs_bp)  # slice 0089: GET /api/logs/server, /api/logs/timing
 app.register_blueprint(help_feedback_bp)  # slice 0000-21: POST /api/help/feedback
 app.register_blueprint(setari_bp)  # slice 0100-02: GET /api/setari
 app.register_blueprint(access_bp)  # slice 0104: POST /api/access/client-type
+app.register_blueprint(efactura_bp)  # slice 00EF-04: /api/efactura/token/start, /cod, /stare
 
 logger.info("=== RUTE ÎNREGISTRATE ===")
 for rule in app.url_map.iter_rules():

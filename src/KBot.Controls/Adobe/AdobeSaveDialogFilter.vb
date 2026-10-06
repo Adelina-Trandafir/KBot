@@ -85,7 +85,27 @@ Public NotInheritable Class AdobeSaveDialogFilter
             Return AdobeDialogKind.ConfirmOverwrite
         End If
 
+        ' Slice 0078-13: MEASURED 05.10.2026 on Acrobat 19.12 -- the «Replace existing file?» box is NOT
+        ' owned by the Save As we pressed, so the owner test above never matched and the box stayed on
+        ' screen (Save As timed out and reappeared 44 times). While a Save As of ours is pending, a
+        ' Yes/No box of the watched process whose text is the replace question is that confirm.
+        If awaitingConfirmFor <> IntPtr.Zero AndAlso facts.HasYesButton AndAlso IsReplaceQuestion(facts.Text) Then
+            Return AdobeDialogKind.ConfirmOverwrite
+        End If
+
         Return AdobeDialogKind.Other
+    End Function
+
+    ''' <summary>
+    ''' True when <paramref name="text"/> is the «file already exists, replace it?» question (English
+    ''' wording of Windows / Adobe, or the Romanian one).
+    ''' </summary>
+    Public Shared Function IsReplaceQuestion(text As String) As Boolean
+        If String.IsNullOrWhiteSpace(text) Then Return False
+        For Each marker As String In New String() {"already exists", "Replace existing", "există deja", "exista deja", "înlocui", "inlocui"}
+            If text.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0 Then Return True
+        Next
+        Return False
     End Function
 
     ''' <summary>

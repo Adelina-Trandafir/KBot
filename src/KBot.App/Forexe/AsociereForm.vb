@@ -62,6 +62,8 @@ Public Class AsociereForm
     Private Const MENIU_DESPRINDE As String = "desprinde"
     Private Const MENIU_RECEPTIE_NOUA As String = "receptie_noua"
     Private Const MENIU_RENUNTA_RECEPTIE As String = "renunta_receptie"
+    ' Slice 0111: correct the value FOREXE gave (header total + lines), saved at once.
+    Private Const MENIU_CORECTEAZA As String = "corecteaza"
 
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
@@ -98,6 +100,13 @@ Public Class AsociereForm
     Private ReadOnly _pozitie As New Dictionary(Of Integer, Integer)
     Private ReadOnly _ignorat As New Dictionary(Of Integer, Boolean)
     Private ReadOnly _stergere As New Dictionary(Of Integer, Boolean)
+
+    ' Slice 0111 (download window only): the values the operator corrected here on the snapshots the
+    ' download brought, by the same key (IDRH of the picture). They are NOT written now -- the snapshots
+    ' are not in the base yet, phase one rolled back -- they travel with the decisions at save and the
+    ' server applies them before the placements are checked. The corrected figures are also put on the
+    ' snapshot itself (`PastreazaCorectia`), so the whole window reads them.
+    Private ReadOnly _corectii As New Dictionary(Of Integer, CorectieValoare)
 
     ' Recepțiile pe care le PORNEȘTE operatorul aici, din coșul celor neașezate (F26): o
     ' recepție creată și ștearsă pe site înainte ca K-BOT să fi descărcat vreodată
@@ -270,6 +279,7 @@ Public Class AsociereForm
             _pozitie.Clear()
             _ignorat.Clear()
             _stergere.Clear()
+            _corectii.Clear()
             ' Recepțiile pornite aici s-au dus odată cu salvarea: ce s-a scris se întoarce din
             ' `stare` cu IDRR-ul lui adevărat, iar ce nu s-a scris nu mai are pe ce sta.
             _receptiiNoi.Clear()
@@ -828,6 +838,7 @@ Public Class AsociereForm
         'If inst.Blocat Then semne &= "  🔒"
         If EsteStergere(inst.Idrh) Then semne &= "  [ștergere]"
         If EsteIgnorat(inst.Idrh) Then semne &= "  [fără schimbare]"
+        If inst.EsteCorectat() Then semne &= "  [corectat]"
         ' NOTHING about `DataR` here, and nothing in the two tooltips either (operator,
         ' 09.09.2026). This was the last remnant of the withdrawn F13: a sign that lit up on
         ' perfectly correct data, on row after row, because `DataR` is typed by hand on the
@@ -933,6 +944,15 @@ Public Class AsociereForm
         If Not String.IsNullOrWhiteSpace(inst.Descriere) Then sb.AppendLine(inst.Descriere)
         Dim ind As String = String.Join(", ", inst.Indicatori().OrderBy(Function(x) x))
         If ind <> "" Then sb.AppendLine($"Indicatori: {ind}")
+        ' Slice 0111: a corrected value says so, what FOREXE gave, and who / when / why.
+        If inst.EsteCorectat() Then
+            sb.AppendLine()
+            If inst.TotalOrig.HasValue Then sb.AppendLine($"Valoarea corectată. FOREXE a dat: {Bani(inst.TotalOrig.Value)}")
+            If inst.CorectatLa.HasValue Then
+                sb.AppendLine($"Corectat de {inst.CorectatDe} · {inst.CorectatLa.Value:dd.MM.yyyy HH:mm}")
+            End If
+            If Not String.IsNullOrWhiteSpace(inst.CorectatMotiv) Then sb.AppendLine("Motiv: " & inst.CorectatMotiv)
+        End If
         ' No "older than the receipt's date" warning here any more — see CaptionInstantaneu.
         If inst.Blocat Then
             sb.AppendLine()
@@ -2426,6 +2446,18 @@ Public Class AsociereForm
                                             Il_Receptii.Images.Item("Receptii")))
         End If
 
+        ' Slice 0111: only the anytime editor (a proposal's snapshots are not in the base yet), and
+        ' not the deletion row, which has no value of its own to correct. A frozen snapshot never
+        ' gets here: it returned above, with the reason.
+        ' In the download window: only a snapshot the download brought (an older one is corrected
+        ' in the anytime editor, where it already is in the base).
+        If Not inst.Stergere AndAlso
+           ((_mod = ModAsociere.Oricand AndAlso inst.Idrh > 0) OrElse
+            (_mod = ModAsociere.Propunere AndAlso Not inst.Context)) Then
+            intrari.Add(CustomPopupItem.Separator())
+            intrari.Add(New CustomPopupItem(MENIU_CORECTEAZA, "Corectează &valoarea…"))
+        End If
+
         Dim meniu As New CustomPopup(intrari)
         AddHandler meniu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs) AplicaComandaDeMeniu(inst, ev.Item.Key)
@@ -2602,6 +2634,11 @@ Public Class AsociereForm
                     _stergere(inst.Idrh) = True
                 Case MENIU_NU_STERGERE
                     _stergere(inst.Idrh) = False
+                Case MENIU_CORECTEAZA
+                    ' Not a local move: the correction is saved at once and the window reloads, so
+                    ' nothing is rebuilt from the local picture here.
+                    DeschideCorectia(inst)
+                    Return
                 Case MENIU_RECEPTIE_NOUA
                     ' Se scrie DOAR în `_pozitie`, cu un IDRR negativ. Recepția însăși se naște
                     ' din asta la reconstruire — nu se adaugă nimic nicăieri pe lângă, ca să nu
@@ -2620,6 +2657,117 @@ Public Class AsociereForm
             ntfMesaj.Show("Comanda nu a putut fi aplicată. Vedeți jurnalul de erori.", NoticeKind.Error)
         End Try
     End Sub
+
+    ' ══════════════════════════════════════════════════════════════════════════
+    ' Corectarea valorii (felia 0111)
+    ' ══════════════════════════════════════════════════════════════════════════
+
+    ''' <summary>
+    ''' Opens the value correction of one snapshot. It is saved by the dialog itself and the picture
+    ''' is reloaded from the server afterwards: the correction changes what the snapshot is worth,
+    ''' so the matching by value, the colours and the chain marks are all redrawn from fresh data.
+    ''' </summary>
+    ''' <remarks>
+    ''' The reload throws away the moves made here and not saved yet, so the operator is asked first
+    ''' when there are any. Unsaved links are what `Comenzi()` lists; the pairs the window placed by
+    ''' itself on opening (felia 0065) are among them and come back on their own after the reload.
+    ''' </remarks>
+    Private Async Sub DeschideCorectia(inst As InstantaneuLegat)
+        ' UI boundary (async void): log and show, never re-throw onto the UI thread.
+        Try
+            If inst Is Nothing Then Return
+
+            ' The download window: nothing is in the base yet, so the correction is kept here and
+            ' goes with the save. The window is not reloaded (that would drop the whole proposal).
+            If _mod = ModAsociere.Propunere Then
+                If inst.Context Then Return
+                Dim rezultatLocal As DialogResult
+                Using dlgLocal As New CorectieValoareForm(inst, _cod,
+                    Function(k_corectie As CorectieValoare) Task.FromResult(PastreazaCorectia(inst, k_corectie)))
+                    rezultatLocal = dlgLocal.ShowDialog(Me)
+                End Using
+                ' `Reconstruieste` also puts up the «how many are left to decide» notice.
+                If rezultatLocal = DialogResult.OK Then Reconstruieste()
+                Return
+            End If
+
+            If _mod <> ModAsociere.Oricand Then Return
+
+            If Comenzi().Count > 0 Then
+                Dim raspuns As DialogResult = KBotMessage.Show(Me,
+                    "Corecția se salvează imediat și fereastra se reîncarcă: mutările nesalvate de aici se pierd " &
+                    "(perechile așezate automat se refac singure). Continuați?",
+                    "K-BOT", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If raspuns <> DialogResult.Yes Then Return
+            End If
+
+            Dim rezultat As DialogResult
+            Using dlg As New CorectieValoareForm(inst, _cod,
+                Function(k_corectie As CorectieValoare) _withReauthSalvare(
+                    Function() _apiClient.CorecteazaValoareaAsync(_cod, k_corectie, CancellationToken.None)))
+                rezultat = dlg.ShowDialog(Me)
+            End Using
+
+            If rezultat = DialogResult.OK Then
+                _SAuSalvatModificari = True
+                Await ReincarcaAsync()
+                ntfMesaj.Show("Valoarea a fost corectată.", NoticeKind.Success)
+            ElseIf rezultat = DialogResult.Retry Then
+                ' Nothing was written: the picture was old (or the snapshot got frozen).
+                Await ReincarcaAsync()
+                ntfMesaj.Show("Imaginea s-a reîncărcat: valorile instantaneului nu mai erau cele afișate.", NoticeKind.Warning)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.DeschideCorectia", ex)
+            ntfMesaj.Show(TextDeEroare(ex, "Nu am putut corecta valoarea"), NoticeKind.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Download window: puts the corrected figures ON the snapshot (total and lines) and remembers the
+    ''' correction in <c>_corectii</c> to send with the save (slice 0111).
+    ''' </summary>
+    ''' <remarks>
+    ''' The snapshot's lines are REPLACED by copies, never changed in place: the line objects are the
+    ''' proposal's own (<c>AsociereStare.DinPropunere</c> adds them to the list without copying them).
+    ''' What FOREXE gave stays as <c>TotalOrig</c> / <c>ValoareOrig</c>, set the first time; a snapshot
+    ''' brought back to those figures is no longer «corrected» and sends nothing.
+    ''' </remarks>
+    Private Function PastreazaCorectia(inst As InstantaneuLegat, k_corectie As CorectieValoare) As AsociereRezultat
+        If Not inst.TotalOrig.HasValue Then inst.TotalOrig = inst.Total
+        inst.Total = k_corectie.Total
+        For Each k_linie As CorectieLinie In k_corectie.Linii
+            For i As Integer = 0 To inst.Linii.Count - 1
+                Dim k_veche As LinieInstantaneu = inst.Linii(i)
+                If Not String.Equals(k_veche.CodIndicator, k_linie.CodIndicator, StringComparison.OrdinalIgnoreCase) Then Continue For
+                inst.Linii(i) = New LinieInstantaneu() With {
+                    .CodIndicator = k_veche.CodIndicator,
+                    .CodAi = k_veche.CodAi,
+                    .CodSsi = k_veche.CodSsi,
+                    .IdClsf = k_veche.IdClsf,
+                    .Idr = k_veche.Idr,
+                    .Valoare = k_linie.Valoare,
+                    .ValoareOrig = If(k_veche.ValoareOrig.HasValue, k_veche.ValoareOrig, New Double?(k_veche.Valoare))}
+                Exit For
+            Next
+        Next
+        inst.CorectatDe = "dumneavoastră"
+        inst.CorectatLa = Date.Now
+        inst.CorectatMotiv = k_corectie.Motiv
+
+        If inst.EsteCorectat() Then
+            Dim k_trimis As New CorectieValoare() With {
+                .Idrh = inst.Idrh, .Total = inst.Total, .Motiv = k_corectie.Motiv}
+            For Each k_l As LinieInstantaneu In inst.Linii
+                k_trimis.Linii.Add(New CorectieLinie() With {.CodIndicator = k_l.CodIndicator, .Valoare = k_l.Valoare})
+            Next
+            _corectii(inst.Idrh) = k_trimis
+        Else
+            ' Back to what FOREXE said: nothing to send.
+            _corectii.Remove(inst.Idrh)
+        End If
+        Return New AsociereRezultat() With {.CodAngajament = _cod}
+    End Function
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' Salvarea
@@ -2762,7 +2910,8 @@ Public Class AsociereForm
                                       receptii As IEnumerable(Of ReceptiePropusa),
                                       pozitie As IReadOnlyDictionary(Of Integer, Integer),
                                       ignorat As IReadOnlyDictionary(Of Integer, Boolean),
-                                      stergere As IReadOnlyDictionary(Of Integer, Boolean)) As List(Of DecizieAsociere)
+                                      stergere As IReadOnlyDictionary(Of Integer, Boolean),
+                                      Optional corectii As IReadOnlyDictionary(Of Integer, CorectieValoare) = Nothing) As List(Of DecizieAsociere)
         If instantanee Is Nothing Then Throw New ArgumentNullException(NameOf(instantanee))
         If receptii Is Nothing Then Throw New ArgumentNullException(NameOf(receptii))
 
@@ -2833,6 +2982,8 @@ Public Class AsociereForm
                 .Idh = If(inst.RandIstoric.HasValue OrElse inst.Idh <= 0, Nothing, New Integer?(inst.Idh)),
                 .DataH = inst.DataH
             }
+            ' Slice 0111: the value corrected here travels with the decision that names the row.
+            If corectii IsNot Nothing AndAlso corectii.ContainsKey(inst.Idrh) Then d.Corectie = corectii(inst.Idrh)
             If eIgnorat Then
                 d.Actiune = ActiuneAsociere.Ignorat
             ElseIf idrr < 0 Then
@@ -2871,7 +3022,7 @@ Public Class AsociereForm
     Private Async Function SalveazaPropunereaAsync() As Task
         Try
             Dim decizii As List(Of DecizieAsociere) =
-                DeciziiDin(_stare.Instantanee, _stare.Receptii, _pozitie, _ignorat, _stergere)
+                DeciziiDin(_stare.Instantanee, _stare.Receptii, _pozitie, _ignorat, _stergere, _corectii)
 
             Cursor = Cursors.WaitCursor
             btnSalveaza.Enabled = False

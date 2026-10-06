@@ -120,6 +120,13 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("serverUrl")>
     Public Property ServerUrl As String = String.Empty
 
+    ' ---- the «E-Factura» tab (slice 00EF-03): two paths, so they are not typed again. Not secrets. ----
+    <JsonPropertyName("efIssuedFile")>
+    Public Property EfIssuedFile As String = String.Empty
+
+    <JsonPropertyName("efReceivedFile")>
+    Public Property EfReceivedFile As String = String.Empty
+
     ''' <summary>Reads the settings file, or returns defaults when there is none.</summary>
     Public Shared Function Load() As MigratorSettings
         Try

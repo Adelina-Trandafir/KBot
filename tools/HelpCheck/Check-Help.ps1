@@ -235,6 +235,10 @@ function Test-SliceId([string]$id, [string]$where) {
     elseif ($id -match '^000T(-\d{2})?$') {
         $ok = ($statusIndex -match '(?m)^\|\s*000T[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
     }
+    # Slice 00EF (E-Factura): the id is 00EF or 00EF-NN, with a worklog or a row in the index.
+    elseif ($id -match '^00EF(-\d{2})?$') {
+        $ok = ($statusIndex -match '(?m)^\|\s*00EF[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
     elseif ($id -match '^(\d{4})(-\d{2})?$') {
         $ok = ($statusIndex -match "(?m)^\|\s*$($Matches[1])[\s|/-]") -or
               [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")

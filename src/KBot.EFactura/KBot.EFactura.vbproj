@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.EFactura</RootNamespace>
+    <AssemblyName>KBot.EFactura</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+
+  <!-- Versiune componentă K-BOT.
+       FileVersion: incrementează MANUAL, doar când SE SCHIMBĂ acest proiect. Stă la baza
+       comparației din manifestul de update.
+       AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
+       rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <!-- Slice 00EF-05. E-Factura: biblioteca ferestrelor și a pașilor E-Factura, folosită DIRECT de KBot.App
+       (același proces, aceeași sesiune, aceeași temă, aceleași jurnale). Referințele merg doar spre
+       KBot.App -> KBot.EFactura, niciodată înapoi: tot ce are nevoie din fereastra principală (unitatea,
+       poarta de re-autentificare) îi e dat ca argument.
+       Controalele noi, dacă apar, se pun în KBot.Controls\<Familie>\, nu aici. -->
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
+    <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
+  </ItemGroup>
+</Project>

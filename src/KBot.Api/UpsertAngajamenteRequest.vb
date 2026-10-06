@@ -645,6 +645,19 @@ Public NotInheritable Class PostPrelucrareDecizie
     ' absenta, nu o valoare.
     Public Property rand_receptie As Integer?
     Public Property receptie_noua As String
+    ' Slice 0111: the value corrected in the download window; absent (null) when not corrected.
+    Public Property corectie As PostPrelucrareCorectie
+End Class
+
+Public NotInheritable Class PostPrelucrareCorectie
+    Public Property total As Double
+    Public Property motiv As String
+    Public Property linii As New List(Of PostPrelucrareCorectieLinie)()
+End Class
+
+Public NotInheritable Class PostPrelucrareCorectieLinie
+    Public Property cod_indicator As String
+    Public Property valoare As Double
 End Class
 
 ' Corpul de 200 al fazei «propunere».
@@ -726,6 +739,9 @@ Public NotInheritable Class PostPropunereLinieI
     Public Property cod_ssi As String
     Public Property id_clsf As Integer?
     Public Property valoare As Double
+    ' Slice 0111: only the anytime editor's read sends them (a proposal's lines do not).
+    Public Property idr As Integer
+    Public Property valoare_orig As Double?
 End Class
 
 ' ══════════════════════════════════════════════════════════════════════════════════════
@@ -761,6 +777,12 @@ Public NotInheritable Class GetAsociereInstantaneu
     Public Property blocat As Boolean
     Public Property motive As New List(Of String)()
     Public Property linii As New List(Of PostPropunereLinieI)()
+    ' Slice 0111: what FOREXE said, and who corrected the working value, when and why.
+    ' Nullable: null until the server has filled the original.
+    Public Property total_orig As Double?
+    Public Property corectat_de As String
+    Public Property corectat_la As String
+    Public Property corectat_motiv As String
 End Class
 
 Public NotInheritable Class GetAsocierePlata
@@ -784,6 +806,22 @@ Public NotInheritable Class PostAsociereComanda
     ' Integer nenulabil ar trimite 0, iar 0 ar fi citit ca o tinta, nu ca o tacere.
     Public Property idrr As Integer?
     Public Property receptie_noua As String
+End Class
+
+' Corpul lui POST /api/forexe/asociere/corectie (slice 0111).
+Public NotInheritable Class PostAsociereCorectieRequest
+    Public Property cod As String
+    Public Property idrh As Integer
+    Public Property total_vechi As Double
+    Public Property total As Double
+    Public Property motiv As String
+    Public Property linii As New List(Of PostAsociereCorectieLinie)()
+End Class
+
+Public NotInheritable Class PostAsociereCorectieLinie
+    Public Property idr As Integer
+    Public Property valoare_veche As Double
+    Public Property valoare As Double
 End Class
 
 ' Corpul de 200 al lui POST /api/forexe/asociere.

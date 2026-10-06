@@ -31,7 +31,7 @@ Imports KBot.Theming
 ''' `aggOrd` / `aggRev`).
 ''' </summary>
 Public Class OrdView
-    Implements IAngajamentView, IThemedControl
+    Implements IAngajamentView, IThemedControl, IReleasesDocument
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     ' Designerul le scrie ca LITERALE în navSub.Items, deci cele două trebuie să rămână în
@@ -445,6 +445,17 @@ Public Class OrdView
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) NU se
     ''' face niciun apel de rețea — doar se golește vederea.
     ''' </summary>
+    ' Slice 0078-15: the shell put this view away -- every page lets its document go.
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            For Each k_page As IOrdPage In _pages.Values
+                TryCast(k_page, IReleasesDocument)?.ReleaseDocument()
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.ReleaseDocument", ex)
+        End Try
+    End Sub
+
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
             Dim cod As String = info?.CodAngajament

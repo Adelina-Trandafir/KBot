@@ -325,6 +325,24 @@ Public NotInheritable Class LinieInstantaneu
     Public Property CodSsi As String = String.Empty
     Public Property IdClsf As Integer
     Public Property Valoare As Double
+
+    ''' <summary>
+    ''' <c>FX_Receptii.IDR</c> (slice 0111): the key a value correction names the line by.
+    ''' 0 where the server did not send it (a proposal's lines are not corrected).
+    ''' </summary>
+    Public Property Idr As Integer
+
+    ''' <summary>
+    ''' What FOREXE said (<c>FX_Receptii.ValoareOrig</c>, slice 0111); Nothing until the server
+    ''' has filled it. <see cref="Valoare"/> is the working value, which an operator may have
+    ''' corrected.
+    ''' </summary>
+    Public Property ValoareOrig As Double?
+
+    ''' <summary>True when the working value is no longer the one FOREXE gave.</summary>
+    Public Function EsteCorectata() As Boolean
+        Return ValoareOrig.HasValue AndAlso Math.Round(Valoare, 2) <> Math.Round(ValoareOrig.Value, 2)
+    End Function
 End Class
 
 ''' <summary>Raspunsul operatorului pentru UN instantaneu. POCO.</summary>
@@ -373,6 +391,14 @@ Public NotInheritable Class DecizieAsociere
     Public Property DataH As Date
 
     Public Property Actiune As ActiuneAsociere
+
+    ''' <summary>
+    ''' Slice 0111: the value the operator corrected, in the download window, on this snapshot
+    ''' (the total and every line, lines named by indicator); Nothing = not corrected. It travels
+    ''' with the decision that names the snapshot and is applied by the server in phase two,
+    ''' before the placements are checked. Only for a snapshot the download brought.
+    ''' </summary>
+    Public Property Corectie As CorectieValoare
 
     ''' <summary>Receptia existenta pe care se aseaza. 0 = niciuna.</summary>
     Public Property Idrr As Integer

@@ -13,7 +13,7 @@ Imports KBot.Theming
 ''' A receipt is never signed, so the page has no signing session.</para>
 ''' </summary>
 Public Class CabNoteReceiptPage
-    Implements ICabNotePage, IThemedControl
+    Implements ICabNotePage, IThemedControl, IReleasesDocument
 
     Private _pendingPath As String
     Private _pendingExists As Boolean
@@ -75,6 +75,18 @@ Public Class CabNoteReceiptPage
             MountIfVisible()
         Catch ex As Exception
             GlobalErrorLog.Write("CabNoteReceiptPage.VisibleChanged", ex)
+        End Try
+    End Sub
+
+    ' Slice 0078-15: the whole view was put away -- the document is closed (its local signed copy goes with it).
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            If String.IsNullOrEmpty(_shownPath) Then Return
+            _shownPath = Nothing
+            _shownExists = False
+            previewPdf.Clear()
+        Catch ex As Exception
+            GlobalErrorLog.Write("CabNoteReceiptPage.ReleaseDocument", ex)
         End Try
     End Sub
 

@@ -37,6 +37,19 @@ Public Class AdobeSaveDialogFilterTests
         Assert.Equal(AdobeDialogKind.Other, AdobeSaveDialogFilter.Classify(f, Pids, IntPtr.Zero))
     End Sub
 
+    ' Slice 0078-13: Acrobat 19.12's «Replace existing file?» box is not owned by the Save As.
+    <Fact>
+    Public Sub ReplaceQuestionNotOwnedBySaveAs_IsConfirm_WhileASaveIsPending()
+        Dim f As New AdobeDialogFacts With {.ClassName = "#32770", .OwnerPid = 200, .OwnerWindow = New IntPtr(&H99), .HasYesButton = True,
+            .HasNoButton = True, .Text = "C:\x\DDF.PDF The file already exists. Replace existing file?"}
+        Assert.Equal(AdobeDialogKind.ConfirmOverwrite, AdobeSaveDialogFilter.Classify(f, Pids, New IntPtr(&H1234)))
+        ' Nothing pending: never answered.
+        Assert.Equal(AdobeDialogKind.Other, AdobeSaveDialogFilter.Classify(f, Pids, IntPtr.Zero))
+        ' Another Yes/No question while a save is pending: left alone.
+        f.Text = "Do you want to continue?"
+        Assert.Equal(AdobeDialogKind.Other, AdobeSaveDialogFilter.Classify(f, Pids, New IntPtr(&H1234)))
+    End Sub
+
     <Fact>
     Public Sub ConfirmOwnedByPressedSaveAs_IsConfirm()
         Dim pressed As New IntPtr(&H1234)

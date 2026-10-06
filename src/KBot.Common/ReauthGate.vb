@@ -10,6 +10,9 @@ Imports System.Threading.Tasks
 ''' this one gate, built by the shell around <c>WithReauth(Of Object)</c>. The re-login policy still
 ''' lives only in the shell; the gate only boxes the result on the way in and unboxes it on the way
 ''' out.</para>
+'''
+''' <para>Slice 00EF-05: moved here from KBot.App (it depends on nothing in the shell) so that KBot.EFactura, which
+''' the shell references and which therefore cannot reference it back, can take the same gate.</para>
 ''' </summary>
 Public NotInheritable Class ReauthGate
 

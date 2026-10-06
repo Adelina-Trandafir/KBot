@@ -14,6 +14,10 @@ F25's real key. §1.5 rewritten accordingly; O2 closed, O7 added.
 **Revised 18.09.2026 (slice 0068): F33 added** — a history row is consumed once; **F34 added** —
 a snapshot whose history row is not in the download is anchored on `FX_Istoric.ID`, because the
 REVERSE flow carries only the newer history rows.
+**Revised 06.10.2026 (slice 0111): F35 added** — FOREXE's own history can carry a WRONG total on a
+reception header; the operator may correct the working value (`FX_Receptii_H.Total`,
+`FX_Receptii.Valoare`) from the association window while the value FOREXE gave is kept
+(`TotalOrig`, `ValoareOrig`). New §1.8 and Part 6.
 **Location:** `docs/FUNDAMENT_Asociere_Receptii.md` (moved here from the repo root in slice 0048-03).
 
 This document exists because the association form could not be explained to its users. Working
@@ -22,7 +26,8 @@ It is the main data-entry step of the whole ingest.
 
 Part 1 is the reasoning, meant to be read start to finish. Part 2 is the same content as numbered
 rules with sources, meant to be quoted at implementation time. Part 3 corrects existing documents.
-Part 4 records what was decided on 26.08. Part 5 lists what is still open.
+Part 4 records what was decided on 26.08. Part 5 lists what is still open. Part 6 (slice 0111)
+records the value correction.
 
 Sources are marked. `VERIFIED` = read in the code or the schema, file named. `OPERATOR` = stated by
 the operator, date given. `DERIVED` = follows from something above, derivation shown. `UNVERIFIED` =
@@ -162,6 +167,25 @@ that way, no separate deletion-date column is needed: the chain already says whe
 A deleted reception still counts toward the receptions total for payments made **before** its
 deletion, and stops counting after. It disappears from the Recepții tree and from ORD computation
 from that date onward.
+
+## 1.8 When FOREXE's own total is wrong (slice 0111)
+
+Everything above assumes the number FOREXE writes in its history is the number it means. Almost
+always it is. On 06.10.2026 a real case showed it is not always: the reception of 12.06.2026 of
+`AAB3MEF2MG2` has, in the history, a line row «Suma receptie: 1635 RON» and, right after it, the
+header row «Receptie: plata salarii metodisti mai 2026, valoare: 0, (activ:true)». The reception
+itself, in `ListaReceptii`, says 1.635,00. The header total is simply wrong, and it is FOREXE that
+wrote it (the row was saved by a person on the site, with no K-BOT marker in its description).
+
+K-BOT copies the header row's value into `FX_Receptii_H.Total` (step 3b → 4a), so the wrong 0 has
+three consequences: the snapshot cannot be matched to its reception by value (the automatic
+placement of felia 0065 looks for equal totals); the chain of that reception never closes (F15,
+the red mark); and `DIFH` / `DIF` — stored columns, which the ordonantare sums (`SUM(FX_Receptii.DIF)`,
+`qFX_ORD_REC_ANT`) — start from a false figure.
+
+Nothing in K-BOT can know the right number; the operator does. So the operator may correct it, and
+the design keeps two things apart that must stay apart: **what FOREXE said** (kept, never edited)
+and **what K-BOT works with** (editable, with who / when / why). See Part 6.
 
 ---
 
@@ -632,3 +656,79 @@ implemented rather than intended.
 anything distinctive there, so it is not usable as a discriminator today. Parked: it becomes the
 carrier for the real ForexeBug reception id once K-BOT posts back to the site — at which point DUBII
 stops being necessary for anything created from then on.
+
+
+---
+
+# Part 6 — Value correction (slice 0111, 06.10.2026)
+
+Reasoning in §1.8. Sources are marked as in the rest of the document.
+
+**F35 — The working value of a snapshot may be corrected by the operator; what FOREXE said is kept.**
+`OPERATOR` 06.10.2026: FOREXE's history can carry a wrong total on a header, so K-BOT cannot rely on
+it 100%; the user gets the right to give the history the correct value.
+
+* **Two columns per value, both already in the schema.** `FX_Receptii_H.Total` / `TotalOrig` and
+  `FX_Receptii.Valoare` / `ValoareOrig`. `Total` and `Valoare` are the WORKING values — the ones every
+  reader already uses (tree, grid, chain check, DIF, ordonantare, DDF totals) — so no reader changes.
+  The `*Orig` columns keep what FOREXE said and never change after the row is born. A row is
+  «corrected» when the working value differs from its original. `VERIFIED` (06.10.2026): nothing in
+  `PYTHON/routes` writes `Total` or `Valoare` after the insert; only `DIFH`/`DIF`, `IDRR`, `Sters`.
+  Access used the same pair (`mdl_FX_Helpers.FX_Actualizeaza_Date_Tabele`: `SET TotalOrig = Total
+  WHERE TotalOrig IS NULL`); K-BOT wrote `ValoareOrig` at birth but never `TotalOrig`.
+* **Who / when / why**, three columns on the HEADER only (`CorectatDe`, `CorectatLa`,
+  `CorectatMotiv`; `sql/0111_01_sursa.sql`): one save is one header plus its lines, so the header carries
+  the audit of the whole correction. The reason is required (at most 500 characters).
+* **`FX_Istoric` is never touched.** It is the evidence of what FOREXE said. A correction cannot
+  provoke a new download: the history rows are deduplicated on their raw text (`Timp`, `Utilizator`,
+  `Descriere`, `Observatii`; `get_hash_for_row_istoric`), a row already processed (`Prelucrat = 1`) is
+  never parsed again, and the robot stops reading at `DATA_IESIRE`, the newest `DataFX` already known.
+  `VERIFIED` in the code, not run on a live base. One consequence: the rebuild from history
+  (`receptii_refacere.py`) writes only what is MISSING; a header that was deleted and rebuilt is born
+  again with the figure of the history row and without the correction.
+* **HASH.** The header hash is made of the angajament, `DataH`, `TipReceptie` and `Descriere` — not of
+  `Total`. The line hash is made of angajament, indicator, date, classification and `Valoare` at birth;
+  it is written to `FX_Receptii.HASH` and read by nobody (no `SELECT` of it in `PYTHON/routes` or
+  `src/**/*.vb`; no unique index on `FX_Receptii` or `FX_Receptii_H`; the only unique `HASH` is
+  `FX_Istoric.HASH`, from the raw text). A correction therefore leaves it as it was and does NOT
+  recompute it. `VERIFIED` 06.10.2026.
+* **The rules, all on the server** (`asociere.py`, `plan_correction` / `post_correction`, route
+  `POST /api/forexe/asociere/corectie`):
+  1. a reason is required;
+  2. the corrected `Total` must equal the sum of the corrected lines to two decimals — a BLOCKING
+     error (400), not a warning (`OPERATOR` 06.10.2026). Header and lines are saved together, all or
+     nothing, so the rule is checked on the state AFTER the save, and an angajament whose other
+     snapshots are already inconsistent does not stop an unrelated correction;
+  3. a PLACED snapshot that the ordonantare rule freezes cannot be corrected (409
+     `INSTANTANEU_BLOCAT`), the same rule as for its link: an ordonantare read its total (§1.3).
+     An unplaced snapshot can. `ASSUMPTION` — the operator has not yet said whether the rule applies
+     to values; it is one line to lift;
+  4. the deletion row has no value of its own to correct;
+  5. the client sends the values it SAW; if the base holds others, nothing is written (409
+     `STARE_MODIFICATA`, the code of a stale fingerprint);
+  6. for a placed snapshot step 4d runs again in the same transaction — `DIFH` / `DIF` are stored and
+     the ordonantare sums `DIF`; for an unplaced one there is no chain and nothing to recompute;
+  7. the originals are filled FIRST, only where still `NULL`, so the figure FOREXE gave is never lost
+     whatever the one-time query has or has not done.
+* **At birth.** `_H_INSERT_SQL` / `_H_INSERT_CU_ID_SQL` (`prelucrare_pasi.py`) write `TotalOrig` equal
+  to `Total` (the expression `Total` in the value list, so no caller's parameters change). The rows
+  that exist are filled by the one-time query `sql/0111_02_interogare_unica.sql`. Counted on 06.10.2026
+  on the 18 databases of the operator: no row has an original that differs from its working value, so
+  nothing shows as «corrected» before anyone corrects anything.
+* **In the form.** Context menu of a snapshot › «Corectează valoarea…» (anytime editor only, not on a
+  frozen snapshot, not on the deletion row): `CorectieValoareForm`. The correction is saved at once and
+  the window reloads; a snapshot with a corrected value reads `[corectat]` in the tree and its tooltip
+  says what FOREXE gave and who / when / why corrected it.
+* **In the download window** (same day, second pass). The operator hit the case there: the snapshot with
+  the wrong 0 cannot be dropped on its reception (the values differ) and the download cannot be saved
+  before every snapshot has a decision. The snapshots of a download are NOT in the base while the
+  operator decides (phase one rolls back), so the correction is kept in the window, shown on the
+  snapshot, and travels with the DECISION that names the snapshot (`corectie`: total, reason, lines named
+  by INDICATOR because a line born in this run has no key yet). Phase two writes it FIRST
+  (`asociere.apply_download_corrections`, same `plan_correction` rules), re-reads the snapshots, and only
+  then checks and applies the placements, so F14 / F15 / F16 see the corrected figures. Only snapshots the
+  download brought; an older one (`instantanee_asezate`) is corrected in the anytime editor. Giving up
+  the download gives up the correction.
+* **`UNVERIFIED`**: nothing ran against a live MariaDB. In particular that a value list may read a
+  column set earlier in the same list (`TotalOrig` ← `Total`) is MariaDB's documented behaviour, not
+  something run here.

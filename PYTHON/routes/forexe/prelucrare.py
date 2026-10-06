@@ -130,7 +130,7 @@ from .prelucrare_asociere import (
 # Din ruta VECINA, nu invers: `asociere.py` importa deja din `prelucrare_asociere`, deci
 # regulile de blocare si platile stau acolo, iar aici se imprumuta. Nu se face ciclu --
 # `asociere.py` nu importa fisierul asta.
-from .asociere import citeste_blocaje, citeste_plati
+from .asociere import apply_download_corrections, citeste_blocaje, citeste_plati
 
 logger = logging.getLogger(__name__)
 
@@ -869,6 +869,15 @@ def post_prelucrare():
             return raspuns
 
         # --- PASUL 4c, FAZA DOI: se aplica deciziile, se ignora automatul ------
+        # Slice 0111: the values the operator corrected in the download window travel with the
+        # decisions. They are written FIRST and the snapshots re-read, so the checks of the
+        # chains below (F14 / F15 / F16) see the corrected figures, not the ones FOREXE wrote.
+        corectii = [d for d in decizii if d.get("corectie")]
+        if corectii:
+            with timing.stage("corectii de valoare"):
+                apply_download_corrections(cursor, corectii, instantanee,
+                                           str(un or "")[:255])
+                instantanee = citeste_instantanee(cursor, cod, index_la_id, [])
         # The snapshots written before this run are read only when the operator corrected
         # one of them: the blocking rule is checked again HERE, on the server, because an
         # ordonantare may have appeared since the proposal.

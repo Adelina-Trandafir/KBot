@@ -54,6 +54,16 @@ Public NotInheritable Class AdobeSaveTrap
     Public Const ScriptBurstIntervalMs As Integer = 100
     ''' <summary>After this long with no new script box the sweep goes back to <see cref="SweepIntervalMs"/>.</summary>
     Public Const ScriptBurstQuietMs As Integer = 3000
+
+    ''' <summary>
+    ''' Slice 0078-15 (operator, 06.10.2026): the quiet time after the last script box, PER TRAP. Default
+    ''' <see cref="ScriptBurstQuietMs"/> (the hosted window keeps it); the ActiveX viewer sets a shorter one, since there
+    ''' the alerts block K-BOT's own thread while they last.
+    ''' </summary>
+    Public Property BurstQuietMs As Integer = ScriptBurstQuietMs
+
+    ''' <summary>Slice 0078-15: the sweep interval while a burst runs, PER TRAP. Default <see cref="ScriptBurstIntervalMs"/>.</summary>
+    Public Property BurstIntervalMs As Integer = ScriptBurstIntervalMs
     ''' <summary>How long after our Save click the dialog may take to disappear.</summary>
     Public Const SaveTimeoutMs As Integer = 20000
     ''' <summary>
@@ -150,6 +160,17 @@ Public NotInheritable Class AdobeSaveTrap
     ''' </summary>
     Public Event ScriptBurstEnded As Action
 
+    ''' <summary>
+    ''' Slice 0078-12: raised on the UI thread for every script window of Adobe this trap met -- an
+    ''' error alert it pressed OK on, a message it left to the operator, the JavaScript Debugger
+    ''' console it hid -- ONCE per window and outcome. The same facts as the «Mesajul de script…»
+    ''' lines of the working log, structured (<see cref="AdobeScriptMonitor"/> tallies them). The
+    ''' trap's own work never depends on a listener: a listener that throws is logged and ignored.
+    ''' Two traps watching the same Adobe process (older Acrobat ignores «/n») share the windows:
+    ''' the one that meets a window first reports it.
+    ''' </summary>
+    Public Event ScriptAlertSeen As Action(Of AdobeScriptAlert)
+
     ' Trace identity: two traps (DDF + ORD) run at once, and their lines must be told apart.
     Private Shared _nextId As Integer
     Private ReadOnly _id As Integer
@@ -165,8 +186,9 @@ Public NotInheritable Class AdobeSaveTrap
 
     ''' <summary>
     ''' When True, every step of this trap is also written to <see cref="AcroPdfTraceLog"/> (while
-    ''' the operator has that trace switched on). Set by <see cref="AcroPdfSurface"/> only -- the
-    ''' hosted-window engine's trap stays out of the ActiveX trace.
+    ''' the trace switch is on AND a recording is running). Set by <see cref="AcroPdfSurface"/> and,
+    ''' since slice 0078-12, by <see cref="AdobeReaderHost"/> (which opens the recording itself);
+    ''' lines are told apart by their «SaveTrap#n» source.
     ''' </summary>
     Public Property Traced As Boolean
 
@@ -503,7 +525,7 @@ Public NotInheritable Class AdobeSaveTrap
             End If
             If _timer.Interval <> SweepIntervalMs AndAlso DateTime.UtcNow > _burstUntil Then
                 _timer.Interval = SweepIntervalMs
-                Report($"Capcana: fără mesaje de script de {ScriptBurstQuietMs} ms — verificare din nou la {SweepIntervalMs} ms.")
+                Report($"Capcana: fără mesaje de script de {BurstQuietMs} ms — verificare din nou la {SweepIntervalMs} ms.")
                 RaiseEvent ScriptBurstEnded()
             End If
             Sweep()
@@ -885,11 +907,14 @@ Public NotInheritable Class AdobeSaveTrap
         Tr($"DismissScriptNoise {AcroPdfTraceLog.Hex(hwnd)} «{facts.Title}»: console={isConsole} " &
            $"sinceLastAlert={(now - _lastScriptAlert).TotalMilliseconds:0} ms sinceStart={(now - _startedAt).TotalMilliseconds:0} ms")
         If isConsole Then
-            Dim afterAlert As Boolean = (now - _lastScriptAlert).TotalMilliseconds <= ScriptBurstQuietMs
+            Dim afterAlert As Boolean = (now - _lastScriptAlert).TotalMilliseconds <= BurstQuietMs
             Dim afterLoad As Boolean = (now - _startedAt).TotalMilliseconds <= ConsoleAfterLoadMs
             If Not afterAlert AndAlso Not afterLoad Then
                 ' Opened by the operator: theirs. Logged once per showing.
-                If _seen.Add(hwnd) Then Report($"Consola de script Adobe 0x{hwnd.ToInt64():X} deschisă fără eroare — lăsată în pace.")
+                If _seen.Add(hwnd) Then
+                    Report($"Consola de script Adobe 0x{hwnd.ToInt64():X} deschisă fără eroare — lăsată în pace.")
+                    NotifyScript(hwnd, facts.Title, ReadAlertText(hwnd), AdobeScriptAlertAction.ConsoleLeftAlone, Nothing, 0)
+                End If
                 Return
             End If
             _seen.Remove(hwnd)
@@ -923,11 +948,14 @@ Public NotInheritable Class AdobeSaveTrap
         ' Only alerts whose message is on the operator's list are closed (24.09.2026): the forms
         ' also use alerts to TELL the operator something, and those must stay on screen. Checked
         ' on every sweep, so an alert whose text was not readable yet is judged again.
+        Dim scriptRule As String = Nothing     ' the pattern that matched, for ScriptAlertSeen
         If Not isConsole Then
             Dim rule As String = AdobeScriptAlertFilter.FirstMatch(message, AdobeScriptAlertFilter.Current())
+            scriptRule = rule
             If rule Is Nothing Then
                 If LeftToOperator.Add(hwnd) Then
                     Report($"{what} Adobe 0x{hwnd.ToInt64():X} lăsat operatorului (textul nu e în lista mesajelor închise automat): {text}")
+                    NotifyScript(hwnd, facts.Title, text, AdobeScriptAlertAction.LeftToOperator, Nothing, 0)
                 End If
                 Tr($"DismissScriptNoise {AcroPdfTraceLog.Hex(hwnd)}: no trapped-alert pattern matches -> left on screen")
                 Return
@@ -942,6 +970,8 @@ Public NotInheritable Class AdobeSaveTrap
             ScriptClicks(hwnd) = DateTime.UtcNow
             Dim how As String = PressOk(hwnd, okButton, attempts)
             Report($"{what} Adobe 0x{hwnd.ToInt64():X}: apăsat «OK» (încercarea {attempts + 1}, {how}): {text}")
+            ' Reported on the FIRST press only: the next ones are retries of the same alert.
+            If attempts = 0 Then NotifyScript(hwnd, facts.Title, text, AdobeScriptAlertAction.Pressed, scriptRule, 1)
             Return
         End If
 
@@ -955,6 +985,7 @@ Public NotInheritable Class AdobeSaveTrap
                 Report($"ATENȚIE: {what} Adobe 0x{hwnd.ToInt64():X} nu s-a închis după {attempts} apăsări pe «OK» — " &
                        $"îl las pe ecran (ascuns ar bloca Adobe): {text}")
                 If Traced Then AcroPdfTraceLog.EndSession($"SaveTrap#{_id}", $"BLOCKING: script alert {AcroPdfTraceLog.Hex(hwnd)} did not close after {attempts} OK presses: {text}")
+                NotifyScript(hwnd, facts.Title, text, AdobeScriptAlertAction.Stuck, scriptRule, attempts)
             End If
             Return
         End If
@@ -965,8 +996,35 @@ Public NotInheritable Class AdobeSaveTrap
             Dim why As String = If(isConsole, "consola nu are «OK»",
                                    If(okButton = IntPtr.Zero, "fără buton «OK»", $"«OK» apăsat de {attempts} ori fără efect"))
             Report($"{what} Adobe 0x{hwnd.ToInt64():X} «{facts.Title}» ascuns ({why}): {text}")
+            NotifyScript(hwnd, facts.Title, text, If(isConsole, AdobeScriptAlertAction.ConsoleHidden, AdobeScriptAlertAction.Hidden),
+                         scriptRule, attempts)
         End If
     End Sub
+
+    ' Slice 0078-12: tells the listeners about one script window. Reached from DismissScriptNoise
+    ' (itself reached only from wrapped paths). A listener that throws must not cut the trap's work
+    ' short -- logged and swallowed.
+    Private Sub NotifyScript(hwnd As IntPtr, k_title As String, k_text As String, k_action As AdobeScriptAlertAction,
+                             k_rule As String, k_attempts As Integer)
+        Try
+            RaiseEvent ScriptAlertSeen(New AdobeScriptAlert(DateTime.Now, hwnd, k_title, k_text, k_action, k_rule, k_attempts))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.NotifyScript", ex)
+        End Try
+    End Sub
+
+    ' The Static texts of a script window joined by « | » (same shape as the text the log shows).
+    ' Only for the console left alone, which returns before the text is read.
+    Private Shared Function ReadAlertText(hwnd As IntPtr) As String
+        Dim parts As New List(Of String)()
+        For Each c As IntPtr In AdobeNativeMethods.Descendants(hwnd)
+            If Not AdobeNativeMethods.GetClass(c).StartsWith("Static", StringComparison.OrdinalIgnoreCase) Then Continue For
+            Dim t As String = AdobeNativeMethods.ReadText(c).Trim()
+            If t.Length > 0 Then parts.Add(t.Replace(vbCr, " ").Replace(vbLf, " "))
+        Next
+        Dim joined As String = If(parts.Count = 0, "(fără text citibil)", String.Join(" | ", parts))
+        Return If(joined.Length > 500, joined.Substring(0, 500) & "…", joined)
+    End Function
 
     ' One press of a script alert's OK, a DIFFERENT way per attempt. MEASURED 24.09.2026: BM_CLICK
     ' returned True three times and the alert stayed -- the alert is owned by K-BOT's main form,
@@ -1008,10 +1066,10 @@ Public NotInheritable Class AdobeSaveTrap
     ' A script box is showing: sweep every ScriptBurstIntervalMs until ScriptBurstQuietMs pass
     ' without another one.
     Private Sub EnterScriptBurst()
-        _burstUntil = DateTime.UtcNow.AddMilliseconds(ScriptBurstQuietMs)
-        If _timer.Interval <> ScriptBurstIntervalMs Then
-            _timer.Interval = ScriptBurstIntervalMs
-            Report($"Capcana: mesaj de script detectat — verificare la {ScriptBurstIntervalMs} ms.")
+        _burstUntil = DateTime.UtcNow.AddMilliseconds(BurstQuietMs)
+        If _timer.Interval <> BurstIntervalMs Then
+            _timer.Interval = BurstIntervalMs
+            Report($"Capcana: mesaj de script detectat — verificare la {BurstIntervalMs} ms.")
         End If
     End Sub
 

@@ -133,6 +133,32 @@ Partial Class MigratorForm
         dgvConstatari = New Controls.KBotDataView()
         rtbJurnal = New RichTextBox()
         rtbInfoRowConstatari = New RichTextBox()
+        tabPrincipal = New TabControl()
+        tabTransfer = New TabPage()
+        tabEFactura = New TabPage()
+        tlpPaginaTransfer = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlpEFactura = New Global.KBot.Controls.KBotTableLayoutPanel()
+        grpEfSurse = New GroupBox()
+        tlpEfSurse = New Global.KBot.Controls.KBotTableLayoutPanel()
+        lblEfEmise = New Label()
+        txtEfEmise = New Controls.KBotTextField()
+        btnEfEmise = New Button()
+        lblEfPrimite = New Label()
+        txtEfPrimite = New Controls.KBotTextField()
+        btnEfPrimite = New Button()
+        lblEfBaza = New Label()
+        grpEfAlege = New GroupBox()
+        flpEfAlege = New FlowLayoutPanel()
+        chkEfFurnizor = New CheckBox()
+        chkEfClienti = New CheckBox()
+        chkEfEmise = New CheckBox()
+        chkEfPrimite = New CheckBox()
+        tlpEfButoane = New Global.KBot.Controls.KBotTableLayoutPanel()
+        btnEfVerifica = New Button()
+        btnEfImporta = New Button()
+        btnEfOpreste = New Button()
+        prgEf = New ProgressBar()
+        rtbEfJurnal = New RichTextBox()
         tipMigrator = New KBot.Controls.KBotToolTip(components)
         tlpRoot.SuspendLayout()
         grpServer.SuspendLayout()
@@ -149,6 +175,16 @@ Partial Class MigratorForm
         CType(dgvTabele, ComponentModel.ISupportInitialize).BeginInit()
         tlpDreapta.SuspendLayout()
         CType(dgvConstatari, ComponentModel.ISupportInitialize).BeginInit()
+        tabPrincipal.SuspendLayout()
+        tabTransfer.SuspendLayout()
+        tabEFactura.SuspendLayout()
+        tlpPaginaTransfer.SuspendLayout()
+        tlpEFactura.SuspendLayout()
+        grpEfSurse.SuspendLayout()
+        tlpEfSurse.SuspendLayout()
+        grpEfAlege.SuspendLayout()
+        flpEfAlege.SuspendLayout()
+        tlpEfButoane.SuspendLayout()
         SuspendLayout()
         ' 
         ' tlpRoot
@@ -157,18 +193,16 @@ Partial Class MigratorForm
         tlpRoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlpRoot.Controls.Add(capBar, 0, 0)
         tlpRoot.Controls.Add(grpServer, 0, 2)
-        tlpRoot.Controls.Add(grpUnitate, 0, 3)
-        tlpRoot.Controls.Add(grpTransfer, 0, 4)
+        tlpRoot.Controls.Add(tabPrincipal, 0, 3)
         tlpRoot.Dock = DockStyle.Fill
         tlpRoot.Location = New Point(0, 0)
         tlpRoot.Margin = New Padding(4, 5, 4, 5)
         tlpRoot.Name = "tlpRoot"
-        tlpRoot.RowCount = 5
+        tlpRoot.RowCount = 4
         tlpRoot.RowStyles.Add(New RowStyle())
         tlpRoot.RowStyles.Add(New RowStyle())
         tlpRoot.RowStyles.Add(New RowStyle())
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 37.5F))
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 62.5F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlpRoot.Size = New Size(1505, 1044)
         tlpRoot.TabIndex = 0
         ' 
@@ -921,6 +955,360 @@ Partial Class MigratorForm
         rtbInfoRowConstatari.Size = New Size(371, 261)
         rtbInfoRowConstatari.TabIndex = 2
         rtbInfoRowConstatari.Text = ""
+        '
+        ' tabPrincipal
+        '
+        tabPrincipal.Controls.Add(tabTransfer)
+        tabPrincipal.Controls.Add(tabEFactura)
+        tabPrincipal.Dock = DockStyle.Fill
+        tabPrincipal.Location = New Point(4, 174)
+        tabPrincipal.Margin = New Padding(4, 5, 4, 5)
+        tabPrincipal.Name = "tabPrincipal"
+        tabPrincipal.SelectedIndex = 0
+        tabPrincipal.Size = New Size(1497, 865)
+        tabPrincipal.TabIndex = 2
+        '
+        ' tabTransfer
+        '
+        tabTransfer.Controls.Add(tlpPaginaTransfer)
+        tabTransfer.Location = New Point(4, 29)
+        tabTransfer.Name = "tabTransfer"
+        tabTransfer.Padding = New Padding(3)
+        tabTransfer.Size = New Size(1489, 832)
+        tabTransfer.TabIndex = 0
+        tabTransfer.Text = "Transfer"
+        tabTransfer.UseVisualStyleBackColor = True
+        '
+        ' tabEFactura
+        '
+        tabEFactura.Controls.Add(tlpEFactura)
+        tabEFactura.Location = New Point(4, 29)
+        tabEFactura.Name = "tabEFactura"
+        tabEFactura.Padding = New Padding(3)
+        tabEFactura.Size = New Size(1489, 832)
+        tabEFactura.TabIndex = 1
+        tabEFactura.Text = "E-Factura"
+        tabEFactura.UseVisualStyleBackColor = True
+        '
+        ' tlpPaginaTransfer
+        '
+        tlpPaginaTransfer.ColumnCount = 1
+        tlpPaginaTransfer.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpPaginaTransfer.Controls.Add(grpUnitate, 0, 0)
+        tlpPaginaTransfer.Controls.Add(grpTransfer, 0, 1)
+        tlpPaginaTransfer.Dock = DockStyle.Fill
+        tlpPaginaTransfer.Location = New Point(3, 3)
+        tlpPaginaTransfer.Margin = New Padding(0)
+        tlpPaginaTransfer.Name = "tlpPaginaTransfer"
+        tlpPaginaTransfer.RowCount = 2
+        tlpPaginaTransfer.RowStyles.Add(New RowStyle(SizeType.Percent, 37.5F))
+        tlpPaginaTransfer.RowStyles.Add(New RowStyle(SizeType.Percent, 62.5F))
+        tlpPaginaTransfer.Size = New Size(1483, 826)
+        tlpPaginaTransfer.TabIndex = 0
+        '
+        ' tlpEFactura
+        '
+        tlpEFactura.ColumnCount = 1
+        tlpEFactura.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpEFactura.Controls.Add(grpEfSurse, 0, 0)
+        tlpEFactura.Controls.Add(grpEfAlege, 0, 1)
+        tlpEFactura.Controls.Add(tlpEfButoane, 0, 2)
+        tlpEFactura.Controls.Add(rtbEfJurnal, 0, 3)
+        tlpEFactura.Dock = DockStyle.Fill
+        tlpEFactura.Location = New Point(3, 3)
+        tlpEFactura.Margin = New Padding(0)
+        tlpEFactura.Name = "tlpEFactura"
+        tlpEFactura.RowCount = 4
+        tlpEFactura.RowStyles.Add(New RowStyle())
+        tlpEFactura.RowStyles.Add(New RowStyle())
+        tlpEFactura.RowStyles.Add(New RowStyle(SizeType.Absolute, 65F))
+        tlpEFactura.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpEFactura.Size = New Size(1483, 826)
+        tlpEFactura.TabIndex = 0
+        '
+        ' grpEfSurse
+        '
+        grpEfSurse.AutoSize = True
+        grpEfSurse.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpEfSurse.Controls.Add(tlpEfSurse)
+        grpEfSurse.Dock = DockStyle.Fill
+        grpEfSurse.Location = New Point(4, 5)
+        grpEfSurse.Margin = New Padding(4, 5, 4, 5)
+        grpEfSurse.Name = "grpEfSurse"
+        grpEfSurse.Padding = New Padding(14, 4, 14, 4)
+        grpEfSurse.Size = New Size(1475, 186)
+        grpEfSurse.TabIndex = 0
+        grpEfSurse.TabStop = False
+        grpEfSurse.Text = "Sursele datelor"
+        '
+        ' tlpEfSurse
+        '
+        tlpEfSurse.AutoSize = True
+        tlpEfSurse.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        tlpEfSurse.ColumnCount = 3
+        tlpEfSurse.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 420F))
+        tlpEfSurse.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpEfSurse.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 70F))
+        tlpEfSurse.Controls.Add(lblEfEmise, 0, 0)
+        tlpEfSurse.Controls.Add(txtEfEmise, 1, 0)
+        tlpEfSurse.Controls.Add(btnEfEmise, 2, 0)
+        tlpEfSurse.Controls.Add(lblEfPrimite, 0, 1)
+        tlpEfSurse.Controls.Add(txtEfPrimite, 1, 1)
+        tlpEfSurse.Controls.Add(btnEfPrimite, 2, 1)
+        tlpEfSurse.Controls.Add(lblEfBaza, 0, 2)
+        tlpEfSurse.Dock = DockStyle.Fill
+        tlpEfSurse.Location = New Point(14, 26)
+        tlpEfSurse.Margin = New Padding(4, 5, 4, 5)
+        tlpEfSurse.Name = "tlpEfSurse"
+        tlpEfSurse.RowCount = 3
+        tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpEfSurse.Size = New Size(1447, 156)
+        tlpEfSurse.TabIndex = 0
+        '
+        ' lblEfEmise
+        '
+        lblEfEmise.AutoSize = True
+        lblEfEmise.Dock = DockStyle.Fill
+        lblEfEmise.Location = New Point(4, 0)
+        lblEfEmise.Margin = New Padding(4, 0, 4, 0)
+        lblEfEmise.Name = "lblEfEmise"
+        lblEfEmise.Size = New Size(412, 52)
+        lblEfEmise.TabIndex = 0
+        lblEfEmise.Text = "Facturi emise (fișierul unității, baza<an>.accdb)"
+        lblEfEmise.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtEfEmise
+        '
+        txtEfEmise.BackColor = Color.Transparent
+        txtEfEmise.Dock = DockStyle.Fill
+        txtEfEmise.Location = New Point(424, 5)
+        txtEfEmise.Margin = New Padding(4, 5, 4, 5)
+        txtEfEmise.Name = "txtEfEmise"
+        txtEfEmise.Size = New Size(949, 42)
+        txtEfEmise.TabIndex = 1
+        '
+        ' btnEfEmise
+        '
+        btnEfEmise.Dock = DockStyle.Fill
+        btnEfEmise.Location = New Point(1377, 5)
+        btnEfEmise.Margin = New Padding(4, 5, 4, 5)
+        btnEfEmise.Name = "btnEfEmise"
+        btnEfEmise.Size = New Size(62, 42)
+        btnEfEmise.TabIndex = 2
+        btnEfEmise.Text = "..."
+        btnEfEmise.UseVisualStyleBackColor = True
+        '
+        ' lblEfPrimite
+        '
+        lblEfPrimite.AutoSize = True
+        lblEfPrimite.Dock = DockStyle.Fill
+        lblEfPrimite.Location = New Point(4, 52)
+        lblEfPrimite.Margin = New Padding(4, 0, 4, 0)
+        lblEfPrimite.Name = "lblEfPrimite"
+        lblEfPrimite.Size = New Size(412, 52)
+        lblEfPrimite.TabIndex = 3
+        lblEfPrimite.Text = "Facturi primite (magazinul ef_<an>.accdb)"
+        lblEfPrimite.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtEfPrimite
+        '
+        txtEfPrimite.BackColor = Color.Transparent
+        txtEfPrimite.Dock = DockStyle.Fill
+        txtEfPrimite.Location = New Point(424, 57)
+        txtEfPrimite.Margin = New Padding(4, 5, 4, 5)
+        txtEfPrimite.Name = "txtEfPrimite"
+        txtEfPrimite.Size = New Size(949, 42)
+        txtEfPrimite.TabIndex = 4
+        '
+        ' btnEfPrimite
+        '
+        btnEfPrimite.Dock = DockStyle.Fill
+        btnEfPrimite.Location = New Point(1377, 57)
+        btnEfPrimite.Margin = New Padding(4, 5, 4, 5)
+        btnEfPrimite.Name = "btnEfPrimite"
+        btnEfPrimite.Size = New Size(62, 42)
+        btnEfPrimite.TabIndex = 5
+        btnEfPrimite.Text = "..."
+        btnEfPrimite.UseVisualStyleBackColor = True
+        '
+        ' lblEfBaza
+        '
+        lblEfBaza.AutoSize = True
+        tlpEfSurse.SetColumnSpan(lblEfBaza, 3)
+        lblEfBaza.Dock = DockStyle.Fill
+        lblEfBaza.Location = New Point(4, 104)
+        lblEfBaza.Margin = New Padding(4, 0, 4, 0)
+        lblEfBaza.Name = "lblEfBaza"
+        lblEfBaza.Size = New Size(1439, 52)
+        lblEfBaza.TabIndex = 6
+        lblEfBaza.Text = "Baza-țintă: (necunoscută)"
+        lblEfBaza.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' grpEfAlege
+        '
+        grpEfAlege.AutoSize = True
+        grpEfAlege.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        grpEfAlege.Controls.Add(flpEfAlege)
+        grpEfAlege.Dock = DockStyle.Fill
+        grpEfAlege.Location = New Point(4, 201)
+        grpEfAlege.Margin = New Padding(4, 5, 4, 5)
+        grpEfAlege.Name = "grpEfAlege"
+        grpEfAlege.Padding = New Padding(14, 4, 14, 4)
+        grpEfAlege.Size = New Size(1475, 90)
+        grpEfAlege.TabIndex = 1
+        grpEfAlege.TabStop = False
+        grpEfAlege.Text = "Ce se importă"
+        '
+        ' flpEfAlege
+        '
+        flpEfAlege.AutoSize = True
+        flpEfAlege.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        flpEfAlege.Controls.Add(chkEfFurnizor)
+        flpEfAlege.Controls.Add(chkEfClienti)
+        flpEfAlege.Controls.Add(chkEfEmise)
+        flpEfAlege.Controls.Add(chkEfPrimite)
+        flpEfAlege.Dock = DockStyle.Fill
+        flpEfAlege.Location = New Point(14, 26)
+        flpEfAlege.Margin = New Padding(4, 5, 4, 5)
+        flpEfAlege.Name = "flpEfAlege"
+        flpEfAlege.Size = New Size(1447, 60)
+        flpEfAlege.TabIndex = 0
+        '
+        ' chkEfFurnizor
+        '
+        chkEfFurnizor.AutoSize = True
+        chkEfFurnizor.Checked = True
+        chkEfFurnizor.CheckState = CheckState.Checked
+        chkEfFurnizor.Location = New Point(8, 8)
+        chkEfFurnizor.Margin = New Padding(8)
+        chkEfFurnizor.Name = "chkEfFurnizor"
+        chkEfFurnizor.Size = New Size(260, 44)
+        chkEfFurnizor.TabIndex = 0
+        chkEfFurnizor.Text = "Furnizorul (UNIT + serie)"
+        chkEfFurnizor.UseVisualStyleBackColor = True
+        '
+        ' chkEfClienti
+        '
+        chkEfClienti.AutoSize = True
+        chkEfClienti.Checked = True
+        chkEfClienti.CheckState = CheckState.Checked
+        chkEfClienti.Location = New Point(284, 8)
+        chkEfClienti.Margin = New Padding(8)
+        chkEfClienti.Name = "chkEfClienti"
+        chkEfClienti.Size = New Size(260, 44)
+        chkEfClienti.TabIndex = 1
+        chkEfClienti.Text = "Clienți"
+        chkEfClienti.UseVisualStyleBackColor = True
+        '
+        ' chkEfEmise
+        '
+        chkEfEmise.AutoSize = True
+        chkEfEmise.Checked = True
+        chkEfEmise.CheckState = CheckState.Checked
+        chkEfEmise.Location = New Point(560, 8)
+        chkEfEmise.Margin = New Padding(8)
+        chkEfEmise.Name = "chkEfEmise"
+        chkEfEmise.Size = New Size(260, 44)
+        chkEfEmise.TabIndex = 2
+        chkEfEmise.Text = "Facturi emise + linii"
+        chkEfEmise.UseVisualStyleBackColor = True
+        '
+        ' chkEfPrimite
+        '
+        chkEfPrimite.AutoSize = True
+        chkEfPrimite.Checked = True
+        chkEfPrimite.CheckState = CheckState.Checked
+        chkEfPrimite.Location = New Point(836, 8)
+        chkEfPrimite.Margin = New Padding(8)
+        chkEfPrimite.Name = "chkEfPrimite"
+        chkEfPrimite.Size = New Size(300, 44)
+        chkEfPrimite.TabIndex = 3
+        chkEfPrimite.Text = "Facturi primite (cu linii, note, mesaje)"
+        chkEfPrimite.UseVisualStyleBackColor = True
+        '
+        ' tlpEfButoane
+        '
+        tlpEfButoane.ColumnCount = 4
+        tlpEfButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpEfButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpEfButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlpEfButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlpEfButoane.Controls.Add(btnEfVerifica, 0, 0)
+        tlpEfButoane.Controls.Add(btnEfImporta, 1, 0)
+        tlpEfButoane.Controls.Add(btnEfOpreste, 2, 0)
+        tlpEfButoane.Controls.Add(prgEf, 3, 0)
+        tlpEfButoane.Dock = DockStyle.Fill
+        tlpEfButoane.Location = New Point(0, 296)
+        tlpEfButoane.Margin = New Padding(0)
+        tlpEfButoane.Name = "tlpEfButoane"
+        tlpEfButoane.RowCount = 1
+        tlpEfButoane.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlpEfButoane.Size = New Size(1483, 65)
+        tlpEfButoane.TabIndex = 2
+        '
+        ' btnEfVerifica
+        '
+        btnEfVerifica.Dock = DockStyle.Fill
+        btnEfVerifica.Location = New Point(4, 5)
+        btnEfVerifica.Margin = New Padding(4, 5, 4, 5)
+        btnEfVerifica.Name = "btnEfVerifica"
+        btnEfVerifica.Size = New Size(142, 55)
+        btnEfVerifica.TabIndex = 0
+        btnEfVerifica.Text = "Verifică"
+        tipMigrator.SetToolTipHeader(btnEfVerifica, "Verifică importul E-Factura")
+        tipMigrator.SetToolTipText(btnEfVerifica, "Citește fișierele și baza fără să scrie nimic și arată în jurnal ce s-ar scrie," & vbLf & "ce se lasă deoparte și ce nu se poate scrie (BLOCANT).")
+        btnEfVerifica.UseVisualStyleBackColor = True
+        '
+        ' btnEfImporta
+        '
+        btnEfImporta.Dock = DockStyle.Fill
+        btnEfImporta.Enabled = False
+        btnEfImporta.Location = New Point(154, 5)
+        btnEfImporta.Margin = New Padding(4, 5, 4, 5)
+        btnEfImporta.Name = "btnEfImporta"
+        btnEfImporta.Size = New Size(142, 55)
+        btnEfImporta.TabIndex = 1
+        btnEfImporta.Text = "Importă"
+        tipMigrator.SetToolTipHeader(btnEfImporta, "Importă")
+        tipMigrator.SetToolTipText(btnEfImporta, "Se activează doar după o verificare fără constatări blocante." & vbLf & "Scrie totul într-o tranzacție; rândurile deja existente în țintă rămân neschimbate" & vbLf & "(în afară de lista unităților de măsură, care se actualizează).")
+        btnEfImporta.UseVisualStyleBackColor = True
+        '
+        ' btnEfOpreste
+        '
+        btnEfOpreste.Dock = DockStyle.Fill
+        btnEfOpreste.Enabled = False
+        btnEfOpreste.Location = New Point(304, 5)
+        btnEfOpreste.Margin = New Padding(4, 5, 4, 5)
+        btnEfOpreste.Name = "btnEfOpreste"
+        btnEfOpreste.Size = New Size(142, 55)
+        btnEfOpreste.TabIndex = 2
+        btnEfOpreste.Text = "Oprește"
+        tipMigrator.SetToolTipHeader(btnEfOpreste, "Oprește")
+        tipMigrator.SetToolTipText(btnEfOpreste, "Oprirea derulează tranzacția înapoi — baza rămâne exact cum era.")
+        btnEfOpreste.UseVisualStyleBackColor = True
+        '
+        ' prgEf
+        '
+        prgEf.Dock = DockStyle.Fill
+        prgEf.Location = New Point(454, 5)
+        prgEf.Margin = New Padding(4, 5, 4, 5)
+        prgEf.Name = "prgEf"
+        prgEf.Size = New Size(1025, 55)
+        prgEf.TabIndex = 3
+        '
+        ' rtbEfJurnal
+        '
+        rtbEfJurnal.Dock = DockStyle.Fill
+        rtbEfJurnal.Location = New Point(4, 366)
+        rtbEfJurnal.Margin = New Padding(4, 5, 4, 5)
+        rtbEfJurnal.Name = "rtbEfJurnal"
+        rtbEfJurnal.ReadOnly = True
+        rtbEfJurnal.Size = New Size(1475, 455)
+        rtbEfJurnal.TabIndex = 3
+        rtbEfJurnal.Text = ""
+        rtbEfJurnal.WordWrap = False
         ' 
         ' MigratorForm
         ' 
@@ -955,6 +1343,21 @@ Partial Class MigratorForm
         CType(dgvTabele, ComponentModel.ISupportInitialize).EndInit()
         tlpDreapta.ResumeLayout(False)
         CType(dgvConstatari, ComponentModel.ISupportInitialize).EndInit()
+        tabPrincipal.ResumeLayout(False)
+        tabTransfer.ResumeLayout(False)
+        tabEFactura.ResumeLayout(False)
+        tlpPaginaTransfer.ResumeLayout(False)
+        tlpEFactura.ResumeLayout(False)
+        tlpEFactura.PerformLayout()
+        grpEfSurse.ResumeLayout(False)
+        grpEfSurse.PerformLayout()
+        tlpEfSurse.ResumeLayout(False)
+        tlpEfSurse.PerformLayout()
+        grpEfAlege.ResumeLayout(False)
+        grpEfAlege.PerformLayout()
+        flpEfAlege.ResumeLayout(False)
+        flpEfAlege.PerformLayout()
+        tlpEfButoane.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -962,5 +1365,33 @@ Partial Class MigratorForm
     Friend WithEvents tlpButoane As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents TableLayoutPanel1 As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents capBar As Controls.KBotCaptionBar
+
+    ' --- slice 00EF-03: the «E-Factura» tab ---------------------------------------
+    Friend WithEvents tabPrincipal As TabControl
+    Friend WithEvents tabTransfer As TabPage
+    Friend WithEvents tabEFactura As TabPage
+    Friend WithEvents tlpPaginaTransfer As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents tlpEFactura As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents grpEfSurse As GroupBox
+    Friend WithEvents tlpEfSurse As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents lblEfEmise As Label
+    Friend WithEvents txtEfEmise As KBot.Controls.KBotTextField
+    Friend WithEvents btnEfEmise As Button
+    Friend WithEvents lblEfPrimite As Label
+    Friend WithEvents txtEfPrimite As KBot.Controls.KBotTextField
+    Friend WithEvents btnEfPrimite As Button
+    Friend WithEvents lblEfBaza As Label
+    Friend WithEvents grpEfAlege As GroupBox
+    Friend WithEvents flpEfAlege As FlowLayoutPanel
+    Friend WithEvents chkEfFurnizor As CheckBox
+    Friend WithEvents chkEfClienti As CheckBox
+    Friend WithEvents chkEfEmise As CheckBox
+    Friend WithEvents chkEfPrimite As CheckBox
+    Friend WithEvents tlpEfButoane As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents btnEfVerifica As Button
+    Friend WithEvents btnEfImporta As Button
+    Friend WithEvents btnEfOpreste As Button
+    Friend WithEvents prgEf As ProgressBar
+    Friend WithEvents rtbEfJurnal As RichTextBox
 
 End Class

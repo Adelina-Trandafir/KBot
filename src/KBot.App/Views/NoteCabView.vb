@@ -26,7 +26,7 @@ Imports KBot.Theming
 ''' through the shell's <c>UploadCabNoteAsync</c> (the same step as the note window).</para>
 ''' </summary>
 Public Class NoteCabView
-    Implements IAngajamentView, IThemedControl
+    Implements IAngajamentView, IThemedControl, IReleasesDocument
 
     Private Const PageView As String = "vizualizare"
     Private Const PageDocument As String = "document"
@@ -194,6 +194,17 @@ Public Class NoteCabView
     End Sub
 
     ' ── Shell context ──────────────────────────────────────────────────────────
+
+    ' Slice 0078-15: the shell put this view away -- every page lets its document go.
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            For Each k_page As ICabNotePage In _pages.Values
+                TryCast(k_page, IReleasesDocument)?.ReleaseDocument()
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("NoteCabView.ReleaseDocument", ex)
+        End Try
+    End Sub
 
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try

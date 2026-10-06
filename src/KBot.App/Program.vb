@@ -304,6 +304,8 @@ Friend Module Program
             Finally
                 ' Slice 0078-11: the Adobe processes K-BOT started do not outlive it (no ghosts in the Task Manager).
                 KBot.Controls.AdobeProcessRegistry.Shutdown()
+                ' Slice 0078-15: the local signed copies that were still locked by Adobe go now that it is gone.
+                ReaderHostPreview.DeleteLeftoversAtExit()
             End Try
 
             'trebuie sa aduca in prim plan fereastra main, daca loginul a fost facut cu succes si s-a inchis formularul login

@@ -18,7 +18,7 @@ Imports KBot.Theming
 ''' <c>OrdView.OnGenerateRequested</c> builds the PDF, exactly as DDF does.
 ''' </summary>
 Public Class OrdDocumentPage
-    Implements IOrdPage, IThemedControl
+    Implements IOrdPage, IThemedControl, IReleasesDocument
 
     ' Ținta cerută (reținută) și ce e efectiv încorporat acum — perechea (cale, existență).
     Private _pendingPath As String
@@ -86,6 +86,18 @@ Public Class OrdDocumentPage
     ' Încorporează ținta reținută, dar numai dacă pagina e pe ecran ȘI perechea (cale,
     ' existență) s-a schimbat față de ce e afișat — ca să nu relansăm Adobe la fiecare
     ' comutare de pagină.
+    ' Slice 0078-15: the whole view was put away -- the document is closed (its local signed copy goes with it).
+    Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
+        Try
+            If String.IsNullOrEmpty(_shownPath) Then Return
+            _shownPath = Nothing
+            _shownExists = False
+            previewPdf.Clear()
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdDocumentPage.ReleaseDocument", ex)
+        End Try
+    End Sub
+
     Private Sub MountIfVisible()
         If Not Visible Then Return
         ' Slice 0078: outside the (path, exists) guard -- a new session for the same file (after an

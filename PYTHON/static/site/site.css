@@ -560,3 +560,28 @@ a.card--role:hover, .topic:hover { transform: translateY(-3px); box-shadow: var(
   .topbar__cta .btn--sm { padding: 8px 14px; font-size: .88rem; }
   .btn__more { display: none; }
 }
+
+/* ---------- the red «PDF Inteligent» button in the top bar ---------- */
+.btn--hot { background: #d62839; color: #fff; border-color: #d62839; box-shadow: 0 6px 16px rgba(214, 40, 57, .28); }
+.btn--hot:hover { background: #b81f2f; border-color: #b81f2f; box-shadow: 0 10px 22px rgba(214, 40, 57, .36); }
+.btn--hot .ico { width: 18px; height: 18px; }
+@media (max-width: 440px) {
+  .topbar__cta .btn--ghost:not(.btn--hot) { display: none; }
+}
+
+/* The section menu shows an emoji; the words come as a tooltip. */
+.topnav a { position: relative; font-size: 1.25rem; line-height: 1; padding: 8px 12px; }
+.topnav a::after {
+  content: attr(data-tip); position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 8px;
+  white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s;
+}
+.topnav a:hover::after, .topnav a:focus-visible::after { opacity: 1; }
+
+/* Red button right after the brand; the emoji menu starts to its left-aligned, with a gap. */
+.topbar__in > .btn--hot { flex: none; }
+.topnav { margin-left: 28px; }
+.topbar__cta { margin-left: auto; }
+@media (max-width: 520px) {
+  .topbar__in > .btn--hot { padding: 8px 14px; font-size: .88rem; }
+}

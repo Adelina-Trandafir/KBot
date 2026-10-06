@@ -271,6 +271,34 @@ Public NotInheritable Class InstantaneuLegat
 
     Public Property Linii As New List(Of LinieInstantaneu)
 
+    ''' <summary>
+    ''' What FOREXE said (<c>FX_Receptii_H.TotalOrig</c>, slice 0111); Nothing until the server
+    ''' has filled it. <see cref="Total"/> is the working value, which an operator may have
+    ''' corrected.
+    ''' </summary>
+    Public Property TotalOrig As Double?
+
+    ''' <summary>Who last corrected the value by hand (slice 0111); empty = never.</summary>
+    Public Property CorectatDe As String = String.Empty
+
+    ''' <summary>When the value was last corrected by hand (slice 0111); Nothing = never.</summary>
+    Public Property CorectatLa As Date?
+
+    ''' <summary>Why it was corrected (slice 0111).</summary>
+    Public Property CorectatMotiv As String = String.Empty
+
+    ''' <summary>
+    ''' True when the total or any line is no longer what FOREXE gave (slice 0111). A row whose
+    ''' original the server has not filled yet counts as not corrected.
+    ''' </summary>
+    Public Function EsteCorectat() As Boolean
+        If TotalOrig.HasValue AndAlso Math.Round(Total, 2) <> Math.Round(TotalOrig.Value, 2) Then Return True
+        For Each l As LinieInstantaneu In Linii
+            If l.EsteCorectata() Then Return True
+        Next
+        Return False
+    End Function
+
     ''' <summary>Indicatorii pe care ii numeste instantaneul. Pentru vetourile F14/F16.</summary>
     Public Function Indicatori() As HashSet(Of String)
         Dim set_ As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
@@ -305,6 +333,34 @@ Public NotInheritable Class ComandaAsociere
 
     ''' <summary>Eticheta unei recepții reconstituite. Nothing = niciuna.</summary>
     Public Property ReceptieNoua As String
+End Class
+
+''' <summary>
+''' A value correction of ONE snapshot (slice 0111): the header total and the lines, saved
+''' together. POCO. The old values travel with the new ones: the server refuses the save when
+''' the base holds others, so two sessions cannot overwrite each other silently.
+''' </summary>
+Public NotInheritable Class CorectieValoare
+    Public Property Idrh As Integer
+    Public Property TotalVechi As Double
+    Public Property Total As Double
+
+    ''' <summary>Required: why the figure FOREXE gave is not the right one.</summary>
+    Public Property Motiv As String = String.Empty
+
+    Public Property Linii As New List(Of CorectieLinie)
+End Class
+
+''' <summary>One line of a <see cref="CorectieValoare"/>. POCO.</summary>
+Public NotInheritable Class CorectieLinie
+    ''' <summary>
+    ''' Slice 0111: the indicator the line is named by in the DOWNLOAD window, where a line born in
+    ''' this run has no <see cref="Idr"/> yet (0). The anytime editor names it by <see cref="Idr"/>.
+    ''' </summary>
+    Public Property CodIndicator As String = String.Empty
+    Public Property Idr As Integer
+    Public Property ValoareVeche As Double
+    Public Property Valoare As Double
 End Class
 
 ''' <summary>Ce a scris serverul, si ce a avut de semnalat. POCO.</summary>

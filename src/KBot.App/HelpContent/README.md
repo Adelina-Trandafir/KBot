@@ -88,7 +88,7 @@ A picture the help needs is written as ONE line, where the picture should appear
 - `caption:` Romanian, shown under the picture / in the «Imagine lipsă» box and in the list.
 - `goto:` where K-BOT goes before the shot (optional):
   `view:<navViews key>` (sumar, istoric, rezervari, receptii, plati, extrase, browser, ddf, ord,
-  notecab) · `menu:<header menu key>` (angajament_nou, extrase, clasificatii, parteneri,
+  notecab) · `menu:<header menu key>` (angajament_nou, extrase, efactura, clasificatii, parteneri,
   operatiuni_necorelate; `jurnal` and `setari` exist too, but open the settings window -- use
   `setari:<page>` instead; `angajament_forexe` exists too but starts the robot -- do not use it
   for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, multithread, pagina, extrase, tema,
