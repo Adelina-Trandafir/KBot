@@ -23,6 +23,7 @@
 <script src="/static/js/utils/css.js"></script>
 <script src="/static/js/utils/z-max.js"></script>
 <script type="module" src="/static/js/portal/portal.js"></script>
+<script type="module" src="/static/js/portal/nozoom.js"></script>
 </head>
 <body class="portal">
 
@@ -120,19 +121,57 @@
           <button type="button" role="tab" data-tab="receptii"><span class="pa__ico" aria-hidden="true">📦</span><span class="pa__lbl">Recepții</span></button>
           <button type="button" role="tab" data-tab="extrase"><span class="pa__ico" aria-hidden="true">🏦</span><span class="pa__lbl">Extrase</span></button>
           <button type="button" role="tab" data-tab="plati"><span class="pa__ico" aria-hidden="true">💶</span><span class="pa__lbl">Plăți</span></button>
-          <button type="button" role="tab" data-tab="documente"><span class="pa__ico" aria-hidden="true">📄</span><span class="pa__lbl">Documente</span></button>
+          <button type="button" role="tab" data-tab="fundamentari"><span class="pa__ico" aria-hidden="true">📑</span><span class="pa__lbl">Fundamentări</span></button>
+          <button type="button" role="tab" data-tab="ordonantari"><span class="pa__ico" aria-hidden="true">📋</span><span class="pa__lbl">Ordonanțări</span></button>
         </div>
         <div class="pa__main">
           <div class="pa__sel" id="pa-sel">Alegeți un angajament din listă.</div>
-          <div class="pa__grid" id="grid-tab"></div>
-          <div class="pa__docs" id="docs-tab" hidden>
-            <div class="pa__docs-list" id="grid-docs"></div>
-            <div class="pa__docs-bar">
-              <span class="pa__docs-note">Vizualizare a documentului semnat. Semnăturile se verifică în K-BOT.</span>
-              <button type="button" class="btn btn--ghost btn--sm" id="btn-docdl" hidden>Descarcă PDF-ul semnat</button>
+          <!-- slice 0110-10: on a computer the tree of the card (Toate ... > month > day / document) sits beside its grid; a phone has no tree -->
+          <div class="pa__split">
+            <div class="pa__tree" id="tab-tree-host" hidden>
+              <!-- slice 0110-12: the header of the tree (Extrase only): the icon that changes what the card shows -->
+              <div class="pa__tree-head" id="tab-tree-head" hidden>
+                <span class="pa__tree-cap">Extrase</span>
+                <button type="button" class="pa__opt" id="btn-ext-mode" aria-haspopup="menu" aria-expanded="false" aria-controls="ext-mode-menu" title="Modul de vizualizare" aria-label="Modul de vizualizare">⚙️</button>
+              </div>
+              <div class="card pa__menu pa__menu--tree" id="ext-mode-menu" role="menu" hidden>
+                <button type="button" role="menuitemradio" data-mode="antet">Arată antet + operații</button>
+                <button type="button" role="menuitemradio" data-mode="detalii">Arată operații + detalii</button>
+              </div>
+              <div class="pa__grid" id="tab-tree"></div>
             </div>
-            <p class="msg" id="msg-doc" hidden></p>
-            <div class="pa__docs-view" id="pdf-host"></div>
+            <div class="pa__content">
+              <div class="pa__grid" id="grid-tab"></div>
+              <!-- slice 0110-12: under the grid of Istoric and Plati (computers): the detail of the chosen row -->
+              <div class="pa__detail" id="tab-detail" hidden></div>
+              <!-- slice 0110-12: the Extrase card (computers) -->
+              <div class="pa__ext-card" id="ext-tab" hidden>
+                <div class="pc__g" id="xt-top"></div>
+                <div class="pc__g" id="xt-ops"></div>
+                <dl class="kv pa__kv" id="xt-detail" hidden></dl>
+              </div>
+              <div class="pa__docs" id="docs-tab" hidden>
+                <!-- slice 0110-12: the horizontal navbar of DdfView / OrdView (computers) -->
+                <div class="pa__subnav" id="doc-nav" role="tablist" aria-label="Documentul">
+                  <button type="button" role="tab" data-page="view" class="is-active">Vizualizare</button>
+                  <button type="button" role="tab" data-page="doc">Document</button>
+                </div>
+                <div class="pa__page" id="doc-page-view">
+                  <div class="pa__doc-head" id="doc-head" hidden></div>
+                  <div class="pa__docs-list" id="grid-docs"></div>
+                  <div class="pa__docs-lines" id="grid-lines"></div>
+                  <dl class="kv pa__kv" id="doc-foot" hidden></dl>
+                </div>
+                <div class="pa__page" id="doc-page-doc">
+                  <div class="pa__docs-bar">
+                    <span class="pa__docs-note">Vizualizare a documentului semnat. Semnăturile se verifică în K-BOT.</span>
+                    <button type="button" class="btn btn--ghost btn--sm" id="btn-docdl" hidden>Descarcă PDF-ul semnat</button>
+                  </div>
+                  <p class="msg" id="msg-doc" hidden></p>
+                  <div class="pa__docs-view" id="pdf-host"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -222,6 +261,76 @@
           <dt>Cod program</dt><dd id="ed-prog"></dd>
           <dt>Explicații</dt><dd id="ed-expl"></dd>
         </dl>
+      </div>
+    </div>
+
+    <!-- slice 0110-09: the Administrare page (administrator accounts only): databases, logs, visitors -->
+    <div class="card pa__ext adm" id="adm-view" hidden>
+      <h2 class="pa__h"><span class="pa__title">Administrare</span></h2>
+      <div class="adm__tabs" id="adm-tabs" role="tablist" aria-label="Administrare">
+        <button type="button" role="tab" data-adm="db" class="is-active">Baze de date</button>
+        <button type="button" role="tab" data-adm="logs">Jurnale</button>
+        <button type="button" role="tab" data-adm="visits">Vizitatori</button>
+        <button type="button" role="tab" data-adm="cols">Coloane</button>
+      </div>
+
+      <div class="adm__panel" id="adm-panel-db">
+        <div class="adm__bar">
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-adm-db">Reîncarcă</button>
+          <span class="pa__hint" id="adm-db-note"></span>
+        </div>
+        <div class="adm__g" id="adm-grid-db"></div>
+      </div>
+
+      <div class="adm__panel" id="adm-panel-logs" hidden>
+        <div class="adm__bar">
+          <div class="adm__f"><div id="adm-file"></div></div>
+          <div class="adm__f"><div id="adm-db"></div></div>
+          <label class="adm__chk">Cele mai noi
+            <select id="adm-limit">
+              <option value="500">500</option>
+              <option value="1500" selected>1500</option>
+              <option value="3000">3000</option>
+              <option value="5000">5000</option>
+            </select>
+            intrări
+          </label>
+          <label class="adm__chk"><input type="checkbox" id="chk-adm-old"> Și fișierele vechi (rotite)</label>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-adm-log">Reîncarcă</button>
+        </div>
+        <p class="pa__hint adm__note" id="adm-log-note"></p>
+        <div class="adm__g" id="adm-grid-logs"></div>
+        <pre class="adm__detail" id="adm-log-detail">Alegeți o linie ca să-i vedeți tot textul.</pre>
+      </div>
+
+      <div class="adm__panel" id="adm-panel-visits" hidden>
+        <div class="adm__bar">
+          <div class="adm__f"><div id="adm-period"></div></div>
+          <label class="adm__chk"><input type="checkbox" id="chk-adm-byip"> Grupat pe IP</label>
+          <label class="adm__chk"><input type="checkbox" id="chk-adm-bots"> Arată și roboții</label>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-adm-visit">Reîncarcă</button>
+        </div>
+        <p class="pa__hint adm__note" id="adm-visit-note"></p>
+        <div class="adm__g" id="adm-grid-visits"></div>
+        <div class="pa__sel" id="adm-sections-title"></div>
+        <div class="adm__g adm__g--small" id="adm-grid-sections"></div>
+      </div>
+
+      <!-- slice 0110-11: which columns of every grid show, in which order and how wide -->
+      <div class="adm__panel" id="adm-panel-cols" hidden>
+        <p class="pa__hint adm__note">Alegeți o grilă, apoi bifați coloanele care rămân, schimbați-le poziția și lățimea și alegeți coloana care se extinde când e loc. Modificările se păstrează în acest browser și se văd pe grilele reale cât timp sunteți conectat ca administrator. Descărcați fișierul (sau copiați textul) și dați-l dezvoltatorului ca să devină valoarea tuturor utilizatorilor.</p>
+        <div class="adm__bar">
+          <div class="adm__f adm__f--wide"><div id="adm-cols-grid"></div></div>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-cols-reset" title="Această grilă revine la toate coloanele, cu lățimea după conținut">Revino la valorile din cod</button>
+          <button type="button" class="btn btn--primary btn--sm" id="btn-cols-export">Descarcă fișierul</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-cols-copy">Copiază textul</button>
+          <label class="btn btn--ghost btn--sm adm__file">Încarcă din fișier<input type="file" id="file-cols-import" accept=".json,application/json" hidden></label>
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-cols-clearall">Șterge toate modificările</button>
+        </div>
+        <p class="pa__hint adm__note" id="adm-cols-state"></p>
+        <div class="adm__clist" id="adm-cols-list"></div>
+        <p class="pa__hint adm__note" id="adm-cols-sample"></p>
+        <div class="adm__g" id="adm-cols-preview"></div>
       </div>
     </div>
   </section>

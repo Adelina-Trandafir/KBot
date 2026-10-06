@@ -613,6 +613,33 @@
         ]
       },
       {
+        "id": "online",
+        "label": "Online",
+        "icon": "window",
+        "title": "Accesul online va deveni treptat un spațiu de lucru",
+        "teaser": "Astăzi, accesul online este doar pentru consultarea datelor. Următorul pas: o parte din operațiunile din aplicația instalată vor putea fi făcute și din browser.",
+        "blocks": [
+          "Astăzi, accesul online la K-BOT este **doar pentru consultarea datelor**.",
+          "Următorul pas este extinderea acestei zone astfel încât o parte din operațiunile care acum se fac exclusiv în aplicația instalată să poată fi realizate și direct din browser.",
+          {
+            "title": "Editarea datelor din browser"
+          },
+          "În plan este introducerea posibilității de a **crea și modifica date direct din interfața online**, păstrând aceleași reguli de validare, drepturi de acces și protecție existente în K-BOT.",
+          "Scopul este ca, pentru operațiunile care nu depind de componente locale ale calculatorului, utilizatorul să poată lucra și din browser, fără să fie obligatoriu să se afle la calculatorul pe care este instalată aplicația.",
+          "**Astăzi: vezi datele online. Mai departe: vei putea și lucra cu ele.**",
+          {
+            "rule": true
+          },
+          {
+            "title": "Legătura online cu FOREXE"
+          },
+          "Analizăm și posibilitatea ca anumite informații să poată fi **descărcate din FOREXE direct prin sistemul online**.",
+          "Această direcție depinde însă de validarea tehnică a modului în care FOREXE poate fi accesat în siguranță din această arhitectură.",
+          "Dacă integrarea se dovedește fezabilă, obiectivul este ca actualizarea datelor să nu mai depindă întotdeauna de aplicația K-BOT instalată pe un anumit calculator.",
+          "Deocamdată este o **direcție în evaluare**, nu o funcție promisă."
+        ]
+      },
+      {
         "id": "departe",
         "label": "Mai departe",
         "icon": "box",
@@ -667,7 +694,9 @@
       "label": "Direcția",
       "blocks": [
         "**Astăzi, K-BOT automatizează o parte importantă din lucrul cu FOREXE și documentele aferente.**",
-        "**Mâine, vrem ca informația să circule singură între e-Factura, extrase bancare, gestiune, documente și FOREXE — iar utilizatorul să intervină acolo unde este nevoie de verificare și decizie.**"
+        "**Mâine, vrem ca informația să circule singură între e-Factura, extrase bancare, gestiune, documente și FOREXE — iar utilizatorul să intervină acolo unde este nevoie de verificare și decizie.**",
+        "Pe termen lung, vrem ca diferența dintre „K-BOT instalat” și „K-BOT online” să fie tot mai mică. Aplicația instalată va rămâne necesară acolo unde există motive tehnice — de exemplu integrarea cu componente locale, certificate sau aplicații externe — dar cât mai multe operațiuni vor putea fi mutate în browser atunci când acest lucru poate fi făcut corect și sigur.",
+        "**Mai puțin „trebuie să ajung la calculatorul acela”. Mai mult „mă conectez și continui de unde am rămas”.**"
       ]
     },
     "more_label": "Citește tot"

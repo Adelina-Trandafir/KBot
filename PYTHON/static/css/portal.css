@@ -18,6 +18,10 @@
   .portal .dgv__sort { font-size: 7.33px; }
   .pa__tabs .pa__lbl {font-size: 12px;padding-right: 4px;}
   .portal .dgv__note, .portal .treeview-no-results { font-size: 9.33px; }
+  /* the trees (angajamente, cards, Extrase, Clasificatii, Parteneri): 2 pt smaller than the page text */
+  /* the tree copies the font of its container when it is made, so the size is set on the container */
+  /* (the class treeview-container is added after the tree has read the font, so the hosts are named) */
+  #grid-ang, #tab-tree, #tree-ext, #tree-clsf, #tree-part, .portal .treeview-container, .portal .treeview, .portal .treeview-search-input { font-size: 11.67px; }
 }
 
 .header {
@@ -71,6 +75,24 @@
 .pc__detail { flex: 0 0 auto; max-height: 45%; overflow: auto; }
 .pc__detail[hidden] { display: none; }
 
+/* ---------- the Administrare page (slice 0110-09) ---------- */
+.portal__app.is-adm .pa__body, .portal__app.is-adm .pa__f--an, .portal__app.is-adm .pa__f--ss, .portal__app.is-adm .pa__hint { display: none; }
+.portal__app.is-adm .pa__bar .js-back-ang { display: inline-flex; }
+.adm__tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.adm__tabs button { font: inherit; padding: 6px 14px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--ink); cursor: pointer; }
+.adm__tabs button.is-active { background: var(--brand, #309eff); border-color: var(--brand, #309eff); color: #fff; }
+.adm__panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.adm__panel[hidden] { display: none; }
+.adm__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.adm__f { flex: 0 1 300px; min-width: 200px; }
+.adm__chk { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--ink-soft); cursor: pointer; }
+.adm__chk select { font: inherit; color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 2px 6px; }
+.adm__note { margin: 0; color: var(--ink-soft); font-size: .88rem; }
+.adm__g { flex: 1 1 0; min-height: 120px; position: relative; }
+.adm__g--small { flex: 0 0 190px; min-height: 120px; }
+.adm__g > .dgv { position: absolute; inset: 0; width: auto; height: auto; min-height: 0; }
+.adm__detail { flex: 0 0 auto; max-height: 28%; overflow: auto; margin: 0; padding: 10px 12px; font: .82rem/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(127, 127, 127, .08); border-radius: var(--radius-sm); }
+
 /* ---------- the Clasificatii page and its budget check ---------- */
 .pc { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(300px, 32%) 1fr; grid-template-rows: minmax(0, 1fr); gap: 12px; }
 .pc[hidden] { display: none; }
@@ -103,11 +125,13 @@
 .pmenu__top, .pmenu__sub {
   font: inherit; cursor: pointer; color: var(--ink); background: transparent; border: 0; border-radius: 8px; white-space: nowrap;
 }
-.pmenu__top { padding: 4px 12px; font-weight: 700; font-size: .92rem; }
+.pmenu__top { padding: 4px 12px; font-weight: 700; font-size: .92rem; display: inline-flex; align-items: center; gap: 6px; }
 .pmenu__top:hover, .pmenu__top[aria-expanded="true"] { background: var(--sky-2); color: var(--blue-deep); }
-.pmenu__caret { font-size: .75em; }
+.pmenu__ico { font-size: 1.25em; line-height: 1; }
+.pmenu__group { padding: 6px 12px 2px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); cursor: default; }
+.pmenu__sub--nested { padding-left: 24px; }
 .pmenu__list {
-  position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; min-width: 190px;
+  position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; min-width: 210px;
   margin: 0; padding: 6px; list-style: none; display: flex; flex-direction: column;
 }
 .pmenu__list[hidden] { display: none; }
@@ -116,6 +140,7 @@
 @media (max-width: 900px) {
   .header .brand__text { display: none; }
   .pmenu__top { padding: 4px 8px; font-size: .85rem; }
+  .pmenu__txt { display: none; }
 }
 
 /* ---------- dark look: html[data-theme="dark"], toggled by #btn-theme ---------- */
@@ -285,7 +310,7 @@ html[data-theme="dark"] .portal .treeview-badge { background: rgba(255, 255, 255
   .pa__tabs button { flex: 1 0 auto; min-width: 42px; gap: 0; padding: 3px 3px 2px; font-size: .62rem; line-height: 1.15; }
   .pa__tabs .pa__back { padding-left: 4px; padding-right: 6px; margin-right: 0; }
   .pa__tabs .pa__lbl { padding: 0; font-size: .62rem; }
-  .pa__ico { font-size: 1.05rem; line-height: 1.1; }
+  .pa__ico {font-size: 1.5rem;line-height: 1.1;}
   .pa__tabs button.is-active { border-bottom-width: 2px; }
 }
 
@@ -328,3 +353,95 @@ html[data-theme="dark"] .portal .pa__opt:hover { background: #232c3b; }
 .portal__certs { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .portal__certs li { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .92rem; overflow-wrap: anywhere; }
 .portal__certs li.is-off { color: var(--ink-soft); text-decoration: line-through; }
+
+/* ---------- slice 0110-10: the tree of a card of the angajament (computers) ----------
+   The card's tree (Toate ... > month > day / document) sits left of its grid; a phone has no tree. */
+.pa__split { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; }
+.pa__tree { flex: 0 0 189px; min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; }
+.pa__tree[hidden] { display: none; }
+.pa__content { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.pa__docs-lines { flex: 1 1 0; min-height: 110px; position: relative; }
+.pa__docs-lines > .dgv { position: absolute; inset: 0; width: auto; height: auto; min-height: 0; }
+@media (max-width: 900px) {
+  .pa__tree { display: none !important; }
+  .pa__docs-lines { flex: 0 0 150px; }
+}
+
+/* ---------- slice 0110-11: the «Coloane» tab of Administrare ---------- */
+.adm__f--wide { flex: 0 1 460px; min-width: 240px; }
+.adm__file { cursor: pointer; display: inline-flex; align-items: center; }
+.adm__clist { flex: 0 1 auto; max-height: 38%; min-height: 96px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.adm__crow { display: grid; grid-template-columns: 64px minmax(160px, 1fr) 84px 120px 84px; align-items: center; gap: 8px; padding: 2px 10px; border-bottom: 1px solid var(--line); }
+.adm__crow:last-child { border-bottom: 0; }
+.adm__crow--head { position: sticky; top: 0; z-index: 1; font-weight: 700; font-size: .85rem; color: var(--ink-soft); background: var(--card, #fff); }
+.adm__crow.is-off .adm__ctitle { opacity: .5; text-decoration: line-through; }
+.adm__crow input[type="checkbox"], .adm__crow input[type="radio"] { justify-self: start; width: 16px; height: 16px; cursor: pointer; }
+.adm__crow input[type="number"] { width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 2px 6px; }
+.adm__cmoves { display: inline-flex; gap: 4px; }
+.adm__cmoves .btn { padding: 0 8px; min-height: 0; line-height: 1.4; }
+.adm__ctitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 900px) {
+  .adm__crow { grid-template-columns: 52px minmax(90px, 1fr) 72px 84px 62px; gap: 4px; padding: 2px 6px; }
+}
+
+/* ---------- slice 0110-12: details under the grids, the Extrase card, the navbar of the document cards (computers) ---------- */
+.pa__tree-head { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 0 2px 4px; }
+.pa__tree-head[hidden] { display: none; }
+.pa__tree-cap { flex: 1 1 auto; font-weight: 700; }
+.pa__menu--tree { top: 30px; right: 0; left: auto; }
+.pa__detail { flex: 0 0 auto; display: flex; gap: 12px; padding-top: 4px; border-top: 1px solid var(--line); }
+.pa__detail[hidden] { display: none; }
+.pa__detail--istoric { height: 190px; }
+.pa__detail--plati { flex-direction: column; gap: 4px; }
+.pa__det-desc { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pa__det-cap { font-weight: 700; color: var(--ink-soft); font-size: .85rem; }
+.pa__det-text { flex: 1 1 0; min-height: 0; overflow: auto; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
+.pa__det-vals { flex: 0 0 340px; position: relative; }
+.pa__det-vals > .dgv { position: absolute; inset: 0; width: auto; height: auto; min-height: 0; }
+.pa__det-msg { color: var(--ink-soft); }
+.pa__det-msg[hidden] { display: none; }
+.pa__kv { grid-template-columns: max-content 1fr max-content 1fr; gap: 2px 18px; }
+.pa__kv[hidden] { display: none; }
+.pa__kv dt { font-size: .85rem; color: var(--ink-soft); }
+.pa__kv dd { overflow-wrap: anywhere; color: var(--ink); }
+.pa__kv--head { grid-template-columns: max-content 1fr max-content 1fr max-content 1fr; }
+.pa__ext-card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.pa__ext-card[hidden] { display: none; }
+.pa__ext-card > .pa__kv { flex: 0 0 auto; max-height: 45%; overflow: auto; }
+.pa__subnav { flex: 0 0 auto; display: flex; gap: 4px; border-bottom: 2px solid var(--line); }
+.pa__subnav button { font: inherit; font-weight: 700; padding: 4px 14px; margin-bottom: -2px; cursor: pointer; color: var(--ink-soft); background: transparent; border: 0; border-bottom: 3px solid transparent; }
+.pa__subnav button:hover { background: var(--sky-1); }
+.pa__subnav button.is-active { color: var(--blue-deep); border-bottom-color: var(--blue); }
+.pa__page { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.pa__doc-head { flex: 0 0 auto; }
+.pa__doc-head[hidden] { display: none; }
+.pa__bene { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink-soft); }
+.pa__bene select { font: inherit; color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 2px 6px; max-width: 420px; }
+@media (min-width: 901px) { .pa__page--off { display: none; } .pa__docs-list { display: none; } }
+/* a phone: no navbar, header, footer or detail; the two parts of a document card stay one column, as before */
+@media (max-width: 900px) {
+  .pa__subnav, .pa__doc-head, .pa__detail, .pa__ext-card { display: none !important; }
+  .pa__page { display: contents; }
+  .pa__kv#doc-foot { display: none !important; }
+}
+html[data-theme="dark"] .portal .pa__bene select { background: #232b38; color: var(--ink); }
+html[data-theme="dark"] .portal .pa__subnav button:hover { background: #232c3b; }
+
+/* ---------- slice 0110-13: narrow Extrase tree, one-button menu, taller blue bar (computers), still phone page ---------- */
+@media (min-width: 901px) {
+  /* the Extrase tree keeps ~30% of its former width */
+  #ext-view { grid-template-columns: minmax(150px, 10%) 1fr; }
+  /* the bar is 40% taller and #3b5a85; its text turns light */
+  .portal .header { min-height: 53px; background: #3b5a85; border-bottom-color: #3b5a85; backdrop-filter: none; }
+  .portal .header .brand__name, .portal .header .brand__tag, .portal .header .user-email { color: #fff; }
+  .portal .header .pmenu__top, .portal .header .btn--ghost { color: #fff; border-color: rgba(255, 255, 255, .45); background: transparent; }
+  .portal .header .pmenu__top:hover, .portal .header .pmenu__top[aria-expanded="true"],
+  .portal .header .btn--ghost:hover { background: rgba(255, 255, 255, .16); color: #fff; }
+}
+html[data-theme="dark"] .portal .header { background: rgba(21, 26, 35, .92); }
+
+/* phone: the page never scrolls and never zooms (only the PDF viewer zooms, see nozoom.js) */
+html { touch-action: manipulation; }
+@media (max-width: 900px) {
+  html:has(body.portal), .portal { height: 100dvh; overflow: hidden; overscroll-behavior: none; }
+}

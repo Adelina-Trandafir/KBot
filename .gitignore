@@ -521,3 +521,6 @@ tools/KBotInstaller/prereq/
 /Surse/ETAPE ORDONANTARE/Etapa1_Semnata.pdf
 /Surse/ETAPE ORDONANTARE/Etapa2_Semnata.pdf
 /Surse/ETAPE ORDONANTARE/Etapa3_Semnata.pdf
+
+# slice 0110-09: the offline country file (DB-IP Lite, CC-BY, refreshed by hand on the server)
+PYTHON/data/*.mmdb

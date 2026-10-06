@@ -12,21 +12,9 @@
 
 import { DataGrid } from '../dgv/datagrid.js';
 import { TreeView } from '../components/treeview/treeview.js';
+import { columnsOf, QUARTERS } from './columns.js';
 
 const $ = (id) => document.getElementById(id);
-const money = { valueType: 'number', format: 'standard', aggregate: 'sum' };
-const plain = { valueType: 'number', format: 'standard' };
-const QUARTERS = [
-  { key: 'trim1', title: 'Trim. 1' },
-  { key: 'trim2', title: 'Trim. 2' },
-  { key: 'trim3', title: 'Trim. 3' },
-  { key: 'trim4', title: 'Trim. 4' },
-];
-const quarterColumns = (extra = {}) => [
-  ...QUARTERS.map((q) => ({ ...q, ...plain, ...extra })),
-  { key: 'total', title: 'Total', ...plain, ...extra },
-];
-
 const rowHeight = () => (window.matchMedia('(max-width: 900px)').matches ? 20 : 23);
 const sumOf = (r) => (r.trim1 || 0) + (r.trim2 || 0) + (r.trim3 || 0) + (r.trim4 || 0);
 
@@ -116,7 +104,12 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
 
   function paintTree(selectId) {
     const shown = visibleItems();
-    tree.setData(buildNodes(shown));
+    const k_nodes = buildNodes(shown);
+    tree.setData(k_nodes);
+    // level 0 starts open; the other roots stay as the operator left them (several can be open at once)
+    k_nodes.forEach((k_n) => { if (k_n.children && k_n.children.length) tree.expandedNodes.add(String(k_n.id)); });
+    tree.isTreeRendered = false;
+    tree.renderTree(tree.currentQuery);
     const total = catalog.items.length;
     const kind = $('chk-clsf-forexe').checked ? 'cele folosite în FOREXE'
       : $('chk-clsf-toate').checked ? '' : `cele cu mișcare în ${year()}`;
@@ -156,6 +149,7 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
     bound = true;
     tree = new TreeView($('tree-clsf'), {
       inline: true,
+      autoCollapse: false,
       selectParents: true,
       searchPlaceholder: 'Căutați (minimum 3 caractere)…',
       onSelect: (sel) => choose(String(sel.id)),
@@ -178,15 +172,15 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
     $('clsf-corr-title').textContent = '';
   }
 
-  function paintGrids({ budgetCols, budgetRows, corrCols, corrRows, budgetTitle, corrTitle, corrFooter }) {
+  function paintGrids({ budgetGrid, budgetRows, corrGrid, corrRows, budgetTitle, corrTitle, corrFooter }) {
     [gBudget, gCorr, gTotal].forEach((g) => g && g.destroy());
     $('clsf-buget-title').textContent = budgetTitle;
     $('clsf-corr-title').textContent = corrTitle;
     gBudget = new DataGrid($('grid-clsf-buget'), {
-      columns: budgetCols, rows: budgetRows, rowHeight: rowHeight(), emptyText: 'Nu există buget pentru anul ales.',
+      columns: columnsOf(budgetGrid), layoutId: budgetGrid, rows: budgetRows, rowHeight: rowHeight(), emptyText: 'Nu există buget pentru anul ales.',
     });
     gCorr = new DataGrid($('grid-clsf-corr'), {
-      columns: corrCols, rows: corrRows, rowHeight: rowHeight(), footer: corrFooter, footerCaption: '{0} rectificări',
+      columns: columnsOf(corrGrid), layoutId: corrGrid, rows: corrRows, rowHeight: rowHeight(), footer: corrFooter, footerCaption: '{0} rectificări',
       emptyText: 'Nu există rectificări în anul ales.',
     });
     // the row under both: the LAST budget + ALL the corrections, quarter by quarter
@@ -197,7 +191,8 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
     const host = $('grid-clsf-total');
     host.style.height = `${2 * rowHeight() + 4}px`;
     gTotal = new DataGrid(host, {
-      columns: [{ key: 'eticheta', title: '', width: 160 }, ...quarterColumns()],
+      columns: columnsOf('clsf.total'),
+      layoutId: 'clsf.total',
       rows: [withTotal({ 'eticheta': 'Buget + rectificări', ...sums })],
       rowHeight: rowHeight(),
       emptyText: '',
@@ -225,13 +220,9 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
       paintGrids({
         budgetTitle: `Buget ${an}${item ? ` — ${item.clsf}` : ''}`,
         corrTitle: `Rectificări bugetare ${an}`,
-        budgetCols: [{ key: 'data_inceput', title: 'Început', valueType: 'datetime', format: 'shortDate' }, ...quarterColumns()],
+        budgetGrid: 'clsf.buget',
         budgetRows: budgets,
-        corrCols: [
-          { key: 'document', title: 'Nr. doc.' },
-          { key: 'data', title: 'Data', valueType: 'datetime', format: 'shortDate' },
-          ...quarterColumns(money),
-        ],
+        corrGrid: 'clsf.rectificari',
         corrRows: r.data.corrections.map(withTotal),
         corrFooter: true,
       });
@@ -252,9 +243,9 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
     paintGrids({
       budgetTitle: `Buget ${an} — ${code} (${parts[2]}): ${leaves.length} clasificații`,
       corrTitle: `Rectificări bugetare ${an} — total pe clasificație`,
-      budgetCols: [{ key: 'clsf', title: 'Clsf', width: 150 }, ...quarterColumns()],
+      budgetGrid: 'clsf.buget-grup',
       budgetRows,
-      corrCols: [{ key: 'clsf', title: 'Clsf', width: 150 }, ...quarterColumns()],
+      corrGrid: 'clsf.rectificari-grup',
       corrRows,
       corrFooter: false,
     });
@@ -297,14 +288,8 @@ export function createClasificatiiPage({ call, fail, say, year, hasUnit }) {
       : `${rows.length} din ${all.length} clasificații diferă. Un buget gol înseamnă că nu există versiune K-BOT în vigoare azi, `
         + 'respectiv nicio descărcare de indicatori. Dublu clic pe un rând deschide clasificația.';
     checkGrid = new DataGrid($('grid-check'), {
-      columns: [
-        { key: 'clsf', title: 'Clsf' },
-        { key: 'denumire', title: 'Denumire', width: 260 },
-        { key: 'ss', title: 'Sursa' },
-        { key: 'buget_kbot', title: 'Buget K-BOT', ...plain },
-        { key: 'credit_fx', title: 'Credit FOREXE', ...plain },
-        { key: 'diferenta', title: 'Diferență', ...plain },
-      ],
+      columns: columnsOf('clsf.verificare'),
+      layoutId: 'clsf.verificare',
       rows,
       rowHeight: rowHeight(),
       footer: true,

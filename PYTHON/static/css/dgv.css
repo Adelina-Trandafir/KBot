@@ -77,6 +77,8 @@
 .dgv__fb.is-active { background: var(--dgv-accent); color: var(--dgv-accent-text); }
 .dgv__rs { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
 .dgv__rs:hover { background: var(--dgv-accent); opacity: .35; }
+/* the last column's grip stays inside the header, so a fill column that exactly fills the grid causes no sideways scroll */
+.dgv__hc:last-child .dgv__rs { right: 0; }
 
 /* rows */
 .dgv__viewport { position: relative; flex: 1 0 auto; }

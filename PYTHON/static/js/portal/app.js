@@ -1,10 +1,16 @@
-// Slice 0110-06 -- the signed-in page of the web area: unit / year / source pickers (the existing
-// Combobox), the list of angajamente and, for the one picked, its Sumar, Rezervari, Receptii and
-// Plati in the read-only DataGrid. VIEW ONLY: nothing here sends data to the server except the
-// choice of the unit; the data routes are GET (routes/portal/date.py).
+// Slices 0110-06 / 0110-10 / 0110-11 -- the signed-in page of the web area: unit / year / source pickers
+// (the existing Combobox), the list of angajamente and, for the one picked, its cards in the read-only
+// DataGrid. VIEW ONLY: nothing here sends data to the server except the choice of the unit; the data
+// routes are GET (routes/portal/date.py).
 //
 // The shapes of the answers are those of the desktop app's routes (routes/forexe/*), because the
 // portal calls the same functions.
+//
+// Slice 0110-10: on a computer every card of the angajament (Istoric, Rezervari, Receptii, Extrase, Plati,
+// Fundamentari, Ordonantari) has its own tree beside its grid, as the desktop views have -- «Toate ...» >
+// month > day / document (tabtrees.js). A phone has no trees: the grid shows every row, never grouped by
+// date. The old «Documente» card is gone: its signed documents live in Fundamentari (the DDF revisions)
+// and Ordonantari (the ORD documents and the CAB correction notes).
 
 import { Combobox } from '../components/combobox/combobox.js';
 import { DataGrid } from '../dgv/datagrid.js';
@@ -13,14 +19,17 @@ import { createPdfView } from './pdfview.js';
 import { createClasificatiiPage } from './clasificatii.js';
 import { createParteneriPage } from './parteneri.js';
 import { createExtrasePage } from './extrase.js';
+import { createAdminPage, adminRows } from './admin.js';
+import { columnsOf } from './columns.js';
+import { buildTabTree, hasTree, ROOT } from './tabtrees.js';
+import { createExtraseCard } from './extrasecard.js';
 
 const ALL_SOURCES = '*';
-const MONTH_KEY = /^\d+\.(\d+\.\d+)/; // dd.MM.yyyy -> MM.yyyy
+const isPc = () => window.matchMedia('(min-width: 901px)').matches;
+const roDay = (iso) => (iso ? String(iso).slice(0, 10).split('-').reverse().join('.') : '');
+const roMoney = (n) => new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
 
 const $ = (id) => document.getElementById(id);
-
-// ---------------------------------------------------------------- column sets
-const money = { valueType: 'number', format: 'standard', aggregate: 'sum' };
 
 // The angajamente tree is flat, as in the desktop app: one node per angajament, a status mark
 // in front (the desktop's coloured status icon, by the same words of Stare, first match wins),
@@ -31,7 +40,7 @@ const STATUS_MARKS = [
 ];
 
 function statusMark(stare) {
-  const norm = String(stare || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const norm = String(stare || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const hit = STATUS_MARKS.find(([token]) => norm.includes(token));
   return hit ? hit[1] : '⚪';
 }
@@ -78,80 +87,32 @@ function angajamentNode(row) {
   };
 }
 
+// The cards whose data is one list of rows. `grid` is the id of the grid in columns.js (its columns and
+// its saved layout). No card groups its rows by date any more: on a computer the tree does that job.
 const TABS = {
   sumar: {
     path: 'sumar',
     rows: (d) => d.rows || [],
-    columns: [
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'cod_indicator', title: 'Indicator' },
-      { key: 'partener', title: 'Partener' },
-      { key: 'credit_bug', title: 'Credit bugetar', ...money },
-      { key: 'total_rezervari', title: 'Rezervări', ...money },
-      { key: 'total_receptii', title: 'Recepții', ...money },
-      { key: 'total_plati', title: 'Plăți', ...money },
-      { key: 'total_revizii', title: 'Revizii', ...money },
-      { key: 'total_ordonantari', title: 'Ordonanțări', ...money },
-    ],
+    grid: 'ang.sumar',
     options: { frozen: 1, footer: true, footerCaption: '{0} indicatori' },
-    groups: [],
   },
   istoric: {
     path: 'istoric',
     rows: (d) => d.randuri || [],
-    columns: [
-      { key: 'data_fx', title: 'Data', valueType: 'datetime', format: 'generalDate' },
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'tip_rand', title: 'Tip' },
-      { key: 'cod_indicator', title: 'Indicator' },
-      { key: 'descriere', title: 'Descriere', width: 240 },
-      { key: 'val_rezervare_i', title: 'Rez. inițială', ...money },
-      { key: 'val_rezervare_d', title: 'Rez. definitivă', ...money },
-      { key: 'val_rezervare_dif', title: 'Diferență', ...money },
-      { key: 'val_ang_leg', title: 'Angajament legal', ...money },
-      { key: 'val_receptie', title: 'Recepție', ...money },
-      { key: 'val_plata', title: 'Plată', ...money },
-      { key: 'doc', title: 'Document' },
-      { key: 'observatii', title: 'Observații', width: 240 },
-    ],
+    grid: 'ang.istoric',
     options: { footer: true, footerCaption: '{0} rânduri' },
-    groups: [],
   },
   rezervari: {
     path: 'rezervari',
     rows: (d) => d.rows || [],
-    columns: [
-      { key: 'data_rezervare', title: 'Data', valueType: 'datetime', format: 'shortDate' },
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'denumire', title: 'Denumire', width: 240 },
-      { key: 'cod_indicator', title: 'Indicator' },
-      { key: 'r_credit_bug', title: 'Credit bugetar', ...money },
-      { key: 'r_initiala', title: 'Inițială', ...money },
-      { key: 'r_valoare', title: 'Valoare', ...money },
-      { key: 'r_definitiva', title: 'Definitivă', ...money },
-      { key: 'are_ddf', title: 'DDF', valueType: 'boolean', format: 'yesNo' },
-    ],
+    grid: 'ang.rezervari',
     options: { footer: true, footerCaption: '{0} rezervări' },
-    groups: [{ key: 'data_rezervare', dir: 'asc', keyPattern: MONTH_KEY, headerCaption: 'Luna {1} ({2})', showFooter: false, headerAggregates: true }],
   },
   receptii: {
     path: 'receptii',
     rows: (d) => d.receptii || [],
-    columns: [
-      { key: 'data_r', title: 'Data recepției', valueType: 'datetime', format: 'shortDate' },
-      { key: 'nrcrt_r', title: 'Nr.', valueType: 'number' },
-      { key: 'descriere_r', title: 'Descriere', width: 220 },
-      { key: 'data_h', title: 'Versiune antet', valueType: 'datetime', format: 'generalDate' },
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'denumire', title: 'Denumire', width: 220 },
-      { key: 'cod_indicator', title: 'Indicator' },
-      { key: 'valoare', title: 'Valoare', ...money },
-      { key: 'dif', title: 'Diferență', ...money },
-      { key: 'suma_antet', title: 'Suma antet', valueType: 'number', format: 'standard' },
-      { key: 'este_stergere', title: 'Ștergere', valueType: 'boolean', format: 'yesNo' },
-    ],
+    grid: 'ang.receptii',
     options: { footer: true, footerCaption: '{0} rânduri' },
-    groups: [{ key: 'data_r', dir: 'asc', keyPattern: MONTH_KEY, headerCaption: 'Luna {1} ({2})', showFooter: false }],
   },
   extrase: {
     path: 'extrase',
@@ -163,69 +124,45 @@ const TABS = {
         return { ...o, clsf: a.clsf || '', data_extras: a.data_extras || null };
       });
     },
-    columns: [
-      { key: 'data_banca', title: 'Data banca', valueType: 'datetime', format: 'shortDate' },
-      { key: 'data_extras', title: 'Data extras', valueType: 'datetime', format: 'shortDate' },
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'nr_doc', title: 'Nr. doc.' },
-      { key: 'platitor_nume', title: 'Plătitor', width: 220 },
-      { key: 'suma_debit', title: 'Debit', ...money },
-      { key: 'suma_credit', title: 'Credit', ...money },
-      { key: 'cod_contract', title: 'Cod angajament' },
-      { key: 'rand_contract', title: 'Indicator' },
-      { key: 'referinta', title: 'Referință', width: 160 },
-      { key: 'explicatii', title: 'Explicații', width: 280 },
-    ],
+    grid: 'ang.extrase',
     options: { footer: true, footerCaption: '{0} operațiuni' },
-    groups: [{ key: 'data_banca', dir: 'asc', keyPattern: MONTH_KEY, headerCaption: 'Luna {1} ({2})', showFooter: false, headerAggregates: true }],
   },
   plati: {
     path: 'plati',
     rows: (d) => d.plati || [],
-    columns: [
-      { key: 'data_plata', title: 'Data plății', valueType: 'datetime', format: 'shortDate' },
-      { key: 'nr_op', title: 'Nr. OP' },
-      { key: 'clsf', title: 'Clasificație' },
-      { key: 'denumire', title: 'Denumire', width: 220 },
-      { key: 'cod_indicator', title: 'Indicator' },
-      { key: 'suma', title: 'Suma', ...money },
-      { key: 'are_ord', title: 'Ordonanțat', valueType: 'boolean', format: 'yesNo' },
-      { key: 'platitor_nume', title: 'Plătitor', width: 200 },
-      { key: 'nr_doc_extras', title: 'Nr. document' },
-      { key: 'explicatii', title: 'Explicații', width: 260 },
-    ],
+    grid: 'ang.plati',
     options: { footer: true, footerCaption: '{0} plăți' },
-    groups: [{ key: 'data_plata', dir: 'asc', keyPattern: MONTH_KEY, headerCaption: 'Luna {1} ({2})', showFooter: false, headerAggregates: true }],
   },
 };
 
-// The signed documents of one angajament (slice 0110-08): one list for the three kinds, a viewer under it.
-const DOC_COLUMNS = [
-  { key: 'tip', title: 'Document' },
-  { key: 'nr', title: 'Număr' },
-  { key: 'data', title: 'Data', valueType: 'datetime', format: 'shortDate' },
-  { key: 'suma', title: 'Suma', valueType: 'number', format: 'standard' },
-  { key: 'semn', title: 'Semnături' },
-  { key: 'pdf', title: 'PDF semnat', valueType: 'boolean', format: 'yesNo' },
-];
-const DOC_ORDER = { DDF: 0, ORD: 1, 'Nota CAB': 2 };
+// The cards of signed documents (slice 0110-10): the lines of the documents in a grid, the chosen one's
+// PDF under it. grid / listGrid are ids in columns.js: the lines, and (phone only) the list of documents.
+const DOC_TABS = {
+  fundamentari: {
+    grid: 'ang.fundamentari',
+    listGrid: 'ang.fundamentari-lista',
+    emptyLines: 'Nu există linii de fundamentare.',
+    emptyList: 'Angajamentul nu are fundamentări.',
+    none: 'Angajamentul nu are documente de fundamentare.',
+    pick: 'Alegeți o revizie din arbore ca să-i vedeți documentul.',
+    pickList: 'Alegeți o revizie din listă.',
+  },
+  ordonantari: {
+    grid: 'ang.ordonantari',
+    listGrid: 'ang.ordonantari-lista',
+    emptyLines: 'Nu există linii de ordonanțare.',
+    emptyList: 'Angajamentul nu are ordonanțări sau note de corecție.',
+    none: 'Angajamentul nu are ordonanțări sau note de corecție CAB.',
+    pick: 'Alegeți o ordonanțare sau o notă din arbore ca să-i vedeți documentul.',
+    pickList: 'Alegeți un document din listă.',
+  },
+};
 
-/** The three list answers -> one array of rows for the documents grid. */
-function documentRows(ddf, ord, note) {
-  const rows = [];
-  (ddf.revizii || []).forEach((r) => rows.push({
-    tip: 'DDF', nr: `Rev. ${r.numar_rev}`, data: r.data_rev, suma: r.total_revizie, semn: r.semnatura || '',
-    pdf: !!r.pdf_sha256, path: `ddf-pdf/${r.idrev}`,
-  }));
-  (ord.ordonantari || []).forEach((r) => rows.push({
-    tip: 'ORD', nr: String(r.nr_ord), data: r.data_ord, suma: r.total_ord, semn: r.semnatura || '',
-    pdf: !!r.pdf_sha256, path: `ord-pdf/${r.idordp}`,
-  }));
-  (note.note || []).forEach((r) => rows.push({
-    tip: 'Nota CAB', nr: String(r.nr_nota), data: r.data_nota, suma: null, semn: r.semnatura || '',
-    pdf: !!r.pdf_sha256, path: `nc-pdf/${r.idnc}`,
-  }));
-  return rows.sort((a, b) => DOC_ORDER[a.tip] - DOC_ORDER[b.tip] || String(a.data).localeCompare(String(b.data)));
+/** A grid in a host element: its columns and saved layout come from the catalog by id. */
+function makeGrid(host, id, extra = {}) {
+  return new DataGrid($(host), {
+    columns: columnsOf(id), layoutId: id, rowHeight: gridRowHeight(), ...extra,
+  });
 }
 
 // ---------------------------------------------------------------- the page
@@ -244,11 +181,25 @@ export function createApp({ call, callBytes, onUnauthorized }) {
   let treeRows = []; // the rows as the server sent them
   const order = { by: 'name', desc: false }; // the list order chosen in the options menu
   let gridTab = null;
+  let gridTabKey = ''; // `${cod}|${tab}` of the grid shown: the same card of the same angajament keeps its grid and column widths
+  let treeTab = null; // the tree of the open card (computers)
+  let treeMode = ''; // 'rows' | 'docs' | '' -- what a click in treeTab does
+  let rowsState = null; // {name, rows, built} of the open row card
+  let docState = null; // {name, built} of the open document card
+  let gridLines = null;
+  let extCard = null; // the Extrase card (computers), slice 0110-12
+  let gridValori = null; // the values under the grid of Istoric
+  let detailUpdate = null; // (row) => paints the detail under the grid of Istoric / Plati
+  let docPage = 'view'; // the page of a document card on a computer: 'view' | 'doc'
+  let pendingDoc = null; // the document of the chosen node: shown in the viewer when the viewer is on screen
+  let openedDocId = ''; // the document the viewer holds
+  let nodeLines = []; // the lines of the chosen node of a document card
+  let orderFilter = ''; // the beneficiary chosen in the header of Ordonantari
   let tab = 'sumar';
   let picked = null; // the selected angajament row
   let treeSeq = 0; // the answer of an older request must not replace a newer one
   let tabSeq = 0;
-  const cache = new Map(); // `${cod}|${tab}` -> rows of the tab
+  const cache = new Map(); // `${cod}|${tab}` -> the data of the card
   let gridDocs = null;
   let pdfView = null;
   let docSeq = 0; // the same rule for documents
@@ -306,10 +257,14 @@ export function createApp({ call, callBytes, onUnauthorized }) {
       onSelect: (sel) => pick(rowsByCod.get(String(sel.id))),
     });
     pdfView = createPdfView($('pdf-host'));
+    setupModeMenu();
+    document.querySelectorAll('#doc-nav button').forEach((b) => b.addEventListener('click', () => setDocPage(b.dataset.page)));
     $('btn-docdl').addEventListener('click', downloadDoc);
     document.querySelectorAll('.pa__tabs button[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
+    // crossing between a phone and a computer width changes what the card shows (trees only on a computer)
+    window.matchMedia('(min-width: 901px)').addEventListener('change', () => { if (picked) loadTab(); });
     // The unit field (label + combo) is always exactly as wide as the angajamente tree's search box.
     const unitField = document.querySelector('.pa__f--unit');
     const matchTreeWidth = () => {
@@ -461,6 +416,18 @@ export function createApp({ call, callBytes, onUnauthorized }) {
     if (treeAng) treeAng.clearSelection();
     $('pa-sel').textContent = 'Alegeți un angajament din listă.';
     if (gridTab) gridTab.setRows([]);
+    gridTabKey = '';
+    rowsState = null;
+    docState = null;
+    treeMode = '';
+    if (extCard) extCard.destroy();
+    if (treeTab) {
+      treeTab.setData([]);
+      treeTab.clearSelection();
+    }
+    if (gridLines) gridLines.setRows([]);
+    if (gridDocs) gridDocs.setRows([]);
+    if (detailUpdate) detailUpdate(null);
   }
 
   // ------------------------------------------------------------ one angajament
@@ -473,11 +440,8 @@ export function createApp({ call, callBytes, onUnauthorized }) {
   }
 
   function switchTab(name) {
-    if (!TABS[name] && name !== 'documente') throw new Error(`Unknown tab: ${name}`);
+    if (!TABS[name] && !DOC_TABS[name]) throw new Error(`Unknown tab: ${name}`);
     tab = name;
-    const docs = name === 'documente';
-    $('grid-tab').hidden = docs;
-    $('docs-tab').hidden = !docs;
     document.querySelectorAll('.pa__tabs button[data-tab]').forEach((b) => {
       const on = b.dataset.tab === name;
       b.classList.toggle('is-active', on);
@@ -486,81 +450,427 @@ export function createApp({ call, callBytes, onUnauthorized }) {
     loadTab();
   }
 
-  function paintTab(def, rows) {
+  /** Makes the tree of the card (once, when its host is on screen: the tree measures the box it sits in). */
+  function ensureTabTree() {
+    if (treeTab) return;
+    treeTab = new TreeView($('tab-tree'), {
+      inline: true,
+      selectParents: true,
+      showSearchBox: false, // the trees of the cards have no search box
+      onSelect: (sel) => onTreeSelect(String(sel.id)),
+    });
+  }
+
+  // ---- the display menu in the header of the Extrase tree (slice 0110-12), as the icon of the desktop tree header
+  function closeModeMenu() {
+    $('ext-mode-menu').hidden = true;
+    $('btn-ext-mode').setAttribute('aria-expanded', 'false');
+  }
+
+  function setupModeMenu() {
+    const menu = $('ext-mode-menu');
+    const opener = $('btn-ext-mode');
+    const paint = () => menu.querySelectorAll('button[data-mode]').forEach((b) => {
+      b.setAttribute('aria-checked', String(!!extCard && b.dataset.mode === extCard.mode));
+    });
+    opener.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menu.hidden;
+      paint();
+      menu.hidden = !open;
+      opener.setAttribute('aria-expanded', String(open));
+    });
+    menu.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-mode]');
+      if (!b || !extCard) return;
+      extCard.setMode(b.dataset.mode);
+      closeModeMenu();
+    });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target)) closeModeMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModeMenu(); });
+  }
+
+  // ---- the detail under the grid of Istoric and Plati (slice 0110-12; computers): what the desktop views show there
+  const ISTORIC_VALUES = [
+    ['Rezervare inițială', 'val_rezervare_i'], ['Rezervare definitivă', 'val_rezervare_d'],
+    ['Rezervare anterioară', 'val_rezervare_ant'], ['Rezervare diferență', 'val_rezervare_dif'],
+    ['Angajament legal', 'val_ang_leg'], ['Recepție', 'val_receptie'], ['Plată', 'val_plata'],
+  ];
+
+  const div = (cls, text) => {
+    const d = document.createElement('div');
+    d.className = cls;
+    if (text !== undefined) d.textContent = text;
+    return d;
+  };
+
+  function fillPairs(dl, pairs) {
+    dl.textContent = '';
+    pairs.forEach(([label, value]) => {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value == null ? '' : String(value);
+      dl.append(dt, dd);
+    });
+  }
+
+  /** Builds the detail area of the card (or hides it): sets `detailUpdate(row)`. */
+  function setupDetail(name) {
+    const host = $('tab-detail');
+    host.textContent = '';
+    if (gridValori) {
+      gridValori.destroy();
+      gridValori = null;
+    }
+    detailUpdate = null;
+    if (!isPc() || (name !== 'istoric' && name !== 'plati')) {
+      host.hidden = true;
+      return;
+    }
+    host.hidden = false;
+    if (name === 'istoric') {
+      // IstoricView: the description (Observatii) of the chosen row, and its non-zero values (Tip | Valoare)
+      host.className = 'pa__detail pa__detail--istoric';
+      const left = div('pa__det-desc');
+      const text = div('pa__det-text');
+      left.append(div('pa__det-cap', 'Descriere'), text);
+      const right = div('pa__det-vals');
+      right.id = 'grid-valori';
+      host.append(left, right);
+      gridValori = makeGrid('grid-valori', 'ang.istoric-valori', { rows: [], emptyText: '' });
+      detailUpdate = (row) => {
+        text.textContent = row ? (row.observatii || '') : '';
+        gridValori.setRows(row
+          ? ISTORIC_VALUES.map(([tip, key]) => ({ tip, valoare: Number(row[key]) || 0 })).filter((v) => v.valoare !== 0)
+          : []);
+      };
+    } else {
+      // PlatiView: the bank statement line behind the chosen payment
+      host.className = 'pa__detail pa__detail--plati';
+      const msg = div('pa__det-msg');
+      const dl = document.createElement('dl');
+      dl.className = 'kv pa__kv';
+      host.append(msg, dl);
+      detailUpdate = (row) => {
+        const noExtras = row && row.idfxe == null && !row.nr_doc_extras && !row.platitor_nume;
+        msg.textContent = !row ? 'Selectați o plată.' : (noExtras ? 'Fără extras bancar asociat.' : '');
+        msg.hidden = !msg.textContent;
+        dl.hidden = !row || noExtras;
+        if (dl.hidden) return;
+        fillPairs(dl, [
+          ['Nr. document', row.nr_doc_extras], ['Data bancă', roDay(row.data_banca)], ['Data document', row.data_doc],
+          ['Referință', row.referinta], ['Plătitor', row.platitor_nume], ['CUI', row.platitor_cui],
+          ['IBAN', row.platitor_iban], ['Sumă debit', roMoney(row.suma_debit)], ['Sumă credit', roMoney(row.suma_credit)],
+          ['Explicații', row.explicatii],
+        ]);
+      };
+    }
+    detailUpdate(null);
+  }
+
+  /** The grid of a row card: the same grid (and widths) is kept while the node changes, so the columns do not jump. */
+  function paintTab(name, nodeRows, allRows) {
+    const key = `${picked.CodAngajament}|${name}`;
+    if (gridTab && gridTabKey === key) {
+      gridTab.clearFilters();
+      gridTab.setRows(nodeRows, { keepWidths: true });
+      if (detailUpdate) detailUpdate(null);
+      return;
+    }
     if (gridTab) gridTab.destroy();
-    gridTab = new DataGrid($('grid-tab'), {
-      columns: def.columns,
-      rows,
-      groups: def.groups,
-      rowHeight: gridRowHeight(),
+    const def = TABS[name];
+    gridTab = makeGrid('grid-tab', def.grid, {
+      rows: allRows,
       emptyText: 'Nu există date pentru acest angajament.',
+      onSelect: (row) => { if (detailUpdate) detailUpdate(row); },
       ...def.options,
     });
+    gridTabKey = key;
+    if (nodeRows !== allRows) gridTab.setRows(nodeRows, { keepWidths: true });
+  }
+
+  /** Fills the tree of the card with the root open (months stay closed), as the desktop trees start. */
+  function setTabTree(nodes) {
+    treeTab.setData(nodes);
+    if (!treeTab.expandedNodes.has(ROOT)) treeTab.toggleNode(ROOT, true);
+  }
+
+  /** A click in the tree of the open card. */
+  function onTreeSelect(id) {
+    if (treeMode === 'rows' && rowsState && rowsState.built) {
+      const node = rowsState.built.info.get(id);
+      if (node) paintTab(rowsState.name, node.rows, rowsState.rows);
+    } else if (treeMode === 'docs' && docState) {
+      chooseDocNode(id);
+    } else if (treeMode === 'ext' && extCard) {
+      extCard.show(id);
+    }
+  }
+
+  /** What is on screen under the tabs: 'grid' (a row card), 'docs' (lines + viewer) or 'ext' (the Extrase card). */
+  function showPane(kind, withTree) {
+    $('grid-tab').hidden = kind !== 'grid';
+    $('docs-tab').hidden = kind !== 'docs';
+    $('ext-tab').hidden = kind !== 'ext';
+    $('tab-tree-host').hidden = !withTree;
+    $('tab-tree-head').hidden = kind !== 'ext';
+    closeModeMenu();
+    if (withTree) ensureTabTree();
+  }
+
+  /** The data of a card: the rows of a row card; the answers of the routes of a document card. Null when the read failed. */
+  async function fetchTab(name, cod) {
+    const q = encodeURIComponent(cod);
+    if (TABS[name]) {
+      const r = await call('GET', `/api/portal/date/${TABS[name].path}?cod=${q}`);
+      if (!r.ok) {
+        fail(r, 'Datele nu au putut fi citite.');
+        return null;
+      }
+      const rows = TABS[name].rows(r.data);
+      if (name === 'extrase') rows.raw = r.data; // the Extrase card on a computer needs the headers too
+      return rows;
+    }
+    if (name === 'fundamentari') {
+      const r = await call('GET', `/api/portal/date/ddf?cod=${q}`);
+      if (!r.ok) {
+        fail(r, 'Documentele nu au putut fi citite.');
+        return null;
+      }
+      return r.data;
+    }
+    const [ord, note] = await Promise.all(['ord', 'note'].map((n) => call('GET', `/api/portal/date/${n}?cod=${q}`)));
+    const bad = [ord, note].find((r) => !r.ok);
+    if (bad) {
+      fail(bad, 'Documentele nu au putut fi citite.');
+      return null;
+    }
+    return { ord: ord.data, note: note.data };
   }
 
   async function loadTab() {
     if (!picked) return;
     say('');
-    if (tab === 'documente') {
-      await loadDocs();
-      return;
-    }
-    const def = TABS[tab];
+    const isDoc = !!DOC_TABS[tab];
     const key = `${picked.CodAngajament}|${tab}`;
     const mine = (tabSeq += 1);
-    if (cache.has(key)) {
-      paintTab(def, cache.get(key));
-      return;
+    let data = cache.get(key);
+    if (data === undefined) {
+      data = await fetchTab(tab, picked.CodAngajament);
+      if (mine !== tabSeq || data === null) return; // an older answer, or the read failed (already said)
+      cache.set(key, data);
     }
-    const r = await call('GET', `/api/portal/date/${def.path}?cod=${encodeURIComponent(picked.CodAngajament)}`);
-    if (mine !== tabSeq) return;
-    if (!r.ok) {
-      fail(r, 'Datele nu au putut fi citite.');
-      return;
+    if (extCard) extCard.destroy();
+    if (isDoc) {
+      await renderDocTab(tab, data);
+    } else {
+      await clearViewer(); // a document still loading for the card we just left must not paint
+      if (mine !== tabSeq) return;
+      renderRowsTab(tab, data);
     }
-    const rows = def.rows(r.data);
-    cache.set(key, rows);
-    paintTab(def, rows);
   }
 
-  // ------------------------------------------------------------ documents (slice 0110-08)
+  function renderRowsTab(name, rows) {
+    docState = null;
+    if (name === 'extrase' && isPc()) {
+      renderExtraseCard(rows);
+      return;
+    }
+    const withTree = isPc() && hasTree(name);
+    showPane('grid', withTree);
+    setupDetail(name);
+    treeMode = withTree ? 'rows' : '';
+    rowsState = { name, rows, built: null };
+    if (!withTree) {
+      paintTab(name, rows, rows);
+      return;
+    }
+    rowsState.built = buildTabTree(name, rows);
+    setTabTree(rowsState.built.nodes);
+    treeTab.selectNodeById(ROOT); // paints the grid through onSelect
+  }
+
+  /** Slice 0110-12: the Extrase card on a computer: tree + display menu + grids, as ExtraseView. */
+  function renderExtraseCard(rows) {
+    showPane('ext', true);
+    setupDetail('extrase'); // hides the detail area of Istoric / Plati
+    treeMode = 'ext';
+    rowsState = null;
+    if (!extCard) extCard = createExtraseCard({ top: 'xt-top', ops: 'xt-ops', detail: 'xt-detail' });
+    setTabTree(extCard.load(rows.raw || { antete: [], operatiuni: rows }));
+    treeTab.selectNodeById(ROOT);
+  }
+
+  // ------------------------------------------------------------ the document cards (slices 0110-08, 0110-10, 0110-12)
   const docMsg = (text) => {
     $('msg-doc').textContent = text || '';
     $('msg-doc').hidden = !text;
   };
 
-  async function loadDocs() {
-    const mine = (docSeq += 1);
+  async function clearViewer() {
+    docSeq += 1;
     docMsg('');
     $('btn-docdl').hidden = true;
     docBlob = null;
-    await pdfView.clear();
-    const cod = encodeURIComponent(picked.CodAngajament);
-    const key = `${picked.CodAngajament}|documente`;
-    let rows = cache.get(key);
-    if (!rows) {
-      const [a, b, c] = await Promise.all(['ddf', 'ord', 'note'].map((n) => call('GET', `/api/portal/date/${n}?cod=${cod}`)));
-      if (mine !== docSeq) return;
-      const bad = [a, b, c].find((r) => !r.ok);
-      if (bad) {
-        fail(bad, 'Documentele nu au putut fi citite.');
-        return;
-      }
-      rows = documentRows(a.data, b.data, c.data);
-      cache.set(key, rows);
-    }
-    if (gridDocs) gridDocs.destroy();
-    gridDocs = new DataGrid($('grid-docs'), {
-      columns: DOC_COLUMNS,
-      rows,
-      rowHeight: gridRowHeight(),
-      emptyText: 'Angajamentul nu are documente DDF, ORD sau note.',
-      onSelect: (row) => openDoc(row),
+    openedDocId = '';
+    if (pdfView) await pdfView.clear();
+  }
+
+  /** The page of the card on a computer (the navbar of DdfView / OrdView): 'view' = header + lines, 'doc' = the PDF. */
+  function setDocPage(page) {
+    docPage = page;
+    $('doc-page-view').classList.toggle('pa__page--off', page !== 'view');
+    $('doc-page-doc').classList.toggle('pa__page--off', page !== 'doc');
+    document.querySelectorAll('#doc-nav button').forEach((b) => {
+      const on = b.dataset.page === page;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', String(on));
     });
-    // One document: show it at once; several: the person chooses.
-    const openable = rows.filter((r) => r.pdf);
-    if (openable.length === 1) openDoc(openable[0]);
-    else if (rows.length) docMsg('Alegeți un document din listă.');
+    syncDoc();
+  }
+
+  /**
+   * Puts the PDF of the chosen document into the viewer when it is on screen (the Document page on a computer; always
+   * on a phone, where both parts are shown). A viewer that is not on screen has no width to draw into, so it waits.
+   */
+  async function syncDoc() {
+    if (!docState || (isPc() && docPage !== 'doc')) return;
+    if (!pendingDoc) {
+      await clearViewer();
+      docMsg(DOC_TABS[docState.name].pick);
+      return;
+    }
+    if (openedDocId === pendingDoc.id && docBlob) return;
+    openedDocId = pendingDoc.id;
+    await openDoc(pendingDoc);
+  }
+
+  const beneficiaryText = (a) => {
+    if (!a) return '';
+    if (!a.part_ang) return 'Fără partener';
+    const name = String(a.nume_partener || '').trim();
+    if (!name) return '';
+    return a.cod_fiscal ? `${name} (CIF ${String(a.cod_fiscal).trim()})` : name;
+  };
+
+  /** DdfVizualizarePage header: the document's header data. OrdVizualizarePage header: the beneficiary filter. */
+  function renderDocHead(name, data, built) {
+    const head = $('doc-head');
+    head.textContent = '';
+    head.hidden = !isPc();
+    orderFilter = '';
+    if (name === 'fundamentari') {
+      const a = (data.antet || [])[0] || null;
+      const dl = document.createElement('dl');
+      dl.className = 'kv pa__kv pa__kv--head';
+      fillPairs(dl, [
+        ['Cod angajament', (a && a.cod_angajament) || picked.CodAngajament], ['Data creare', a ? roDay(a.data_creare) : ''],
+        ['Compartimentul', a && a.comp], ['CUAL', a && a.cual != null ? a.cual : ''],
+        ['Beneficiar', beneficiaryText(a)], ['Obiect DDF', a && a.obiect_ddf],
+      ]);
+      head.appendChild(dl);
+      return;
+    }
+    const names = [...new Set(built.allLines.map((l) => String(l.den_bene || '').trim()).filter(Boolean))]
+      .sort((x, y) => nameCmp.compare(x, y));
+    const label = document.createElement('label');
+    label.className = 'pa__bene';
+    label.append('Caută beneficiar ');
+    const select = document.createElement('select');
+    select.id = 'sel-bene';
+    select.add(new Option('(toți beneficiarii)', ''));
+    names.forEach((n) => select.add(new Option(n, n)));
+    select.addEventListener('change', () => {
+      orderFilter = select.value;
+      paintLines();
+    });
+    label.appendChild(select);
+    head.appendChild(label);
+  }
+
+  /** The lines of the node, narrowed to the chosen beneficiary on an Ordonantari card. */
+  function paintLines() {
+    if (!gridLines) return;
+    const rows = orderFilter ? nodeLines.filter((l) => String(l.den_bene || '').trim() === orderFilter) : nodeLines;
+    gridLines.setRows(rows, { keepWidths: true });
+    renderDocFoot(null);
+  }
+
+  /** OrdVizualizarePage footer: the beneficiary data of the chosen line. */
+  function renderDocFoot(line) {
+    const foot = $('doc-foot');
+    foot.hidden = !(isPc() && docState && docState.name === 'ordonantari');
+    if (foot.hidden) return;
+    const l = line || {};
+    fillPairs(foot, [
+      ['Beneficiar', l.den_bene], ['Cod fiscal', l.cod_fiscal], ['Cont IBAN', l.cont_iban],
+      ['Doc. justificative', l.doc_just], ['Obiect DDF', l.obiect_ddf],
+    ]);
+  }
+
+  async function renderDocTab(name, data) {
+    const cfg = DOC_TABS[name];
+    const pc = isPc();
+    const tabTag = tabSeq;
+    await clearViewer();
+    showPane('docs', pc);
+    const built = buildTabTree(name, data);
+    if (tabTag !== tabSeq) return; // another card was chosen while the viewer was clearing
+    docState = { name, built };
+    rowsState = null;
+    pendingDoc = null;
+    nodeLines = built.allLines;
+    treeMode = pc ? 'docs' : '';
+    setupDetail(name);
+    $('grid-docs').hidden = pc; // the list of documents is for a phone: on a computer the tree is the list
+    if (gridLines) gridLines.destroy();
+    if (gridDocs) gridDocs.destroy();
+    gridDocs = null;
+    renderDocHead(name, data, built);
+    gridLines = makeGrid('grid-lines', cfg.grid, {
+      rows: built.allLines, footer: true, footerCaption: '{0} linii', emptyText: cfg.emptyLines,
+      onSelect: (row) => renderDocFoot(row),
+    });
+    renderDocFoot(null);
+    setDocPage('view');
+    if (pc) setTabTree(built.nodes);
+    if (!built.docs.length) {
+      docMsg(cfg.none);
+      return;
+    }
+    if (pc) {
+      // One document: its node is chosen at once; several: the root, and the person chooses.
+      treeTab.selectNodeById(built.docs.length === 1 ? built.docs[0].id : ROOT);
+      return;
+    }
+    gridDocs = makeGrid('grid-docs', cfg.listGrid, {
+      rows: built.docs, emptyText: cfg.emptyList, onSelect: (row) => chooseDoc(row),
+    });
+    const openable = built.docs.filter((d) => d.pdf);
+    if (openable.length === 1) chooseDoc(openable[0]);
+    else docMsg(cfg.pickList);
+  }
+
+  /** Phone: a row of the list of documents. */
+  function chooseDoc(row) {
+    if (!row || !docState) return;
+    const node = docState.built.info.get(row.id);
+    if (node) nodeLines = node.rows;
+    paintLines();
+    pendingDoc = row;
+    syncDoc();
+  }
+
+  /** Computer: a node of the tree. A document node shows its lines and (on the Document page) its PDF; a folder shows the lines of all it holds. */
+  async function chooseDocNode(id) {
+    if (!docState) return;
+    const node = docState.built.info.get(id);
+    if (!node) return;
+    nodeLines = node.rows;
+    paintLines();
+    pendingDoc = node.doc;
+    await syncDoc();
   }
 
   async function openDoc(row) {
@@ -594,7 +904,7 @@ export function createApp({ call, callBytes, onUnauthorized }) {
   }
 
   function fileName(row) {
-    const clean = (t) => String(t).normalize('NFD').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '');
+    const clean = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '');
     return `${clean(row.tip)}_${clean(row.nr)}_${clean(picked.CodAngajament)}.pdf`;
   }
 
@@ -610,6 +920,96 @@ export function createApp({ call, callBytes, onUnauthorized }) {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
+  // ------------------------------------------------------------ real rows for the column editor (slice 0110-11)
+  // The «Coloane» preview shows what the grid would show for the unit that is open: the rows of the first
+  // angajamente that have any (cards), or the unit's own lists (statements, partners, classifications).
+  const GRID_TAB = {
+    'ang.sumar': 'sumar', 'ang.istoric': 'istoric', 'ang.rezervari': 'rezervari', 'ang.receptii': 'receptii',
+    'ang.extrase': 'extrase', 'ang.plati': 'plati', 'ang.fundamentari': 'fundamentari',
+    'ang.fundamentari-lista': 'fundamentari', 'ang.ordonantari': 'ordonantari', 'ang.ordonantari-lista': 'ordonantari',
+  };
+  const QUARTER_KEYS = ['trim1', 'trim2', 'trim3', 'trim4'];
+  const withTotal = (r) => ({ ...r, total: QUARTER_KEYS.reduce((s, k) => s + (Number(r[k]) || 0), 0) });
+
+  async function getJson(path, fallback) {
+    const r = await call('GET', path);
+    if (!r.ok) {
+      fail(r, fallback);
+      return null;
+    }
+    return r.data;
+  }
+
+  /** @returns {Promise<{rows: object[], why: string}>} why = a sentence when there are no rows */
+  async function realRows(id) {
+    if (id.startsWith('admin.')) return adminRows(call, id); // the Administrare grids read no unit
+    if (!me || !me.db_name) return { rows: [], why: 'Alegeți mai întâi o unitate din bara de sus: grila se vede cu datele ei.' };
+    const none = (why) => ({ rows: [], why });
+    if (GRID_TAB[id]) {
+      const name = GRID_TAB[id];
+      const rows = [];
+      const candidates = sortRows(treeRows, 'name', false).slice(0, 15);
+      if (!candidates.length) return none('Unitatea nu are angajamente pentru anul și sursa alese.');
+      for (const cand of candidates) {
+        const key = `${cand.CodAngajament}|${name}`;
+        let data = cache.get(key);
+        if (data === undefined) {
+          data = await fetchTab(name, cand.CodAngajament);
+          if (data === null) return none('Datele nu au putut fi citite.');
+          cache.set(key, data);
+        }
+        if (name === 'fundamentari' || name === 'ordonantari') {
+          const built = buildTabTree(name, data);
+          rows.push(...(id.endsWith('-lista') ? built.docs : built.allLines));
+        } else rows.push(...data);
+        if (rows.length >= 40) break;
+      }
+      return rows.length ? { rows, why: '' } : none('Primele angajamente ale unității nu au date pentru această grilă.');
+    }
+    if (id.startsWith('extrase.')) {
+      const d = await getJson('/api/portal/date/extrase', 'Extrasele nu au putut fi citite.');
+      if (!d) return none('Extrasele nu au putut fi citite.');
+      if (id === 'extrase.antete') return { rows: d.antete || [], why: '' };
+      const heads = new Map((d.antete || []).map((a) => [a.idexh, a]));
+      return { rows: (d.operatiuni || []).map((o) => ({ ...o, clsf: (heads.get(o.idfxh) || {}).clsf || '' })), why: '' };
+    }
+    if (id === 'parteneri.coduri') {
+      const d = await getJson('/api/portal/date/parteneri', 'Partenerii nu au putut fi citiți.');
+      return d ? { rows: d.partners.flatMap((p) => p.coduri || []), why: '' } : none('Partenerii nu au putut fi citiți.');
+    }
+    if (id.startsWith('clsf.')) {
+      const an = encodeURIComponent(anCombo.getSelectedValue());
+      if (id === 'clsf.verificare') {
+        const d = await getJson('/api/portal/date/clasificatii-verificare', 'Verificarea nu a putut fi citită.');
+        return d ? { rows: d.items, why: '' } : none('Verificarea nu a putut fi citită.');
+      }
+      const [cat, sum] = await Promise.all([
+        getJson('/api/portal/date/clasificatii', 'Clasificațiile nu au putut fi citite.'),
+        getJson('/api/portal/date/clasificatii-sumar?an=' + an, 'Clasificațiile nu au putut fi citite.'),
+      ]);
+      if (!cat || !sum) return none('Clasificațiile nu au putut fi citite.');
+      const code = new Map(cat.items.map((c) => [c.id_clsf, c.clsf]));
+      const active = sum.items.filter((i) => i.activ);
+      if (id === 'clsf.buget-grup') return { rows: active.filter((i) => i.budget).map((i) => withTotal({ clsf: code.get(i.id_clsf), ...i.budget })), why: '' };
+      if (id === 'clsf.rectificari-grup') return { rows: active.filter((i) => i.corrections).map((i) => withTotal({ clsf: code.get(i.id_clsf), ...i.corrections })), why: '' };
+      if (id === 'clsf.total') {
+        const sums = { eticheta: 'Buget + rectificări' };
+        QUARTER_KEYS.forEach((k) => { sums[k] = active.reduce((s, i) => s + ((i.budget && i.budget[k]) || 0) + ((i.corrections && i.corrections[k]) || 0), 0); });
+        return { rows: [withTotal(sums)], why: '' };
+      }
+      // one classification: the first active ones until a budget (or corrections) turns up
+      const wanted = id === 'clsf.buget' ? 'budgets' : 'corrections';
+      const rows = [];
+      for (const item of active.slice(0, 10)) {
+        const d = await getJson('/api/portal/date/clasificatii-buget/' + encodeURIComponent(item.id_clsf) + '?an=' + an, 'Bugetul nu a putut fi citit.');
+        if (d) rows.push(...d[wanted].map(withTotal));
+        if (rows.length >= 20) break;
+      }
+      return rows.length ? { rows, why: '' } : none('Clasificațiile active ale anului nu au ' + (wanted === 'budgets' ? 'buget.' : 'rectificări.'));
+    }
+    return none('Grila nu are un cititor.');
+  }
+
   // ------------------------------------------------------------ the pages of the header menu
   // Each page module offers show / hide / reload and is made on first use; only one is open at a time.
   const pages = {};
@@ -620,6 +1020,7 @@ export function createApp({ call, callBytes, onUnauthorized }) {
     }),
     parteneri: () => createParteneriPage({ call, fail, say, hasUnit: () => !!(me && me.db_name) }),
     extrase: () => createExtrasePage({ call, fail, say, hasUnit: () => !!(me && me.db_name) }),
+    admin: () => createAdminPage({ call, fail, say, realRows }),
   };
 
   function closePage() {
@@ -629,7 +1030,8 @@ export function createApp({ call, callBytes, onUnauthorized }) {
 
   async function openPage(name) {
     if (!pageMakers[name]) throw new Error(`Unknown page: ${name}`);
-    if (!me || !me.db_name) {
+    // the admin page looks at every database, so it needs no unit opened
+    if (name !== 'admin' && (!me || !me.db_name)) {
       say('Alegeți mai întâi unitatea.');
       return;
     }

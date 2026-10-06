@@ -8,7 +8,10 @@
 // footer, frozen leading columns, resizable columns, sort (click the title), per-column filter
 // (checklist + one condition), multi-level grouping with header / footer bands and aggregates,
 // grid footer with totals, cell tooltips for clipped text, three looks (modern / classic / dark).
-// What it does NOT do, on purpose: edit cells, select several rows, reorder columns.
+// Column layout (slice 0110-11): an optional `layout` {order, hidden, widths, fill} -- or a `layoutId` the
+// page-wide `DataGrid.layoutProvider` answers for -- sets which columns show, in which order, how wide,
+// and which ONE column takes the free width when the grid is wider than its columns.
+// What it does NOT do, on purpose: edit cells, select several rows, reorder columns by dragging.
 //
 // The data logic (formats, filters, sort, grouping, aggregates) is in engine.js and has no DOM.
 
@@ -32,6 +35,8 @@ const DEFAULTS = {
   footerCaption: '{0} rânduri',
   emptyText: 'Nu există date de afișat.',
   autoSize: true,
+  layoutId: null, // the id the layout provider is asked for
+  layout: null, // an explicit layout; wins over the provider
 };
 
 const COLUMN_DEFAULTS = {
@@ -65,6 +70,12 @@ function el(tag, className, text) {
 }
 
 export class DataGrid {
+  /** (layoutId) -> {order, hidden, widths, fill} | null. Set once by the page; the grid itself knows nothing about where layouts live. */
+  static layoutProvider = null;
+
+  /** (layoutId, rows) -> void. Lets the page keep the last rows a grid showed (the layout editor previews with them). */
+  static rowSink = null;
+
   constructor(container, options = {}) {
     if (!(container instanceof HTMLElement)) throw new Error('DataGrid needs a container element');
     this._abort = new AbortController();
@@ -84,6 +95,8 @@ export class DataGrid {
     this._firstRendered = -1;
     this._popup = null;
     this._frame = 0;
+    this._fillKey = null;
+    this._extra = 0;
 
     this._build();
     this.setColumns(options.columns || []);
@@ -97,6 +110,11 @@ export class DataGrid {
   get isFiltered() { return [...this._filters.values()].some(filterIsActive); }
   get isGrouped() { return this._groups.length > 0; }
   get sort() { return this._sort ? { ...this._sort } : null; }
+
+  /** The columns as they are now, in order: {key, title, visible, width} (width = the base width, without the free space a fill column takes). */
+  getColumnState() {
+    return this._columns.map((c) => ({ key: c.key, title: c.title, visible: c.visible, width: c.width }));
+  }
 
   setTheme(theme) {
     if (!['modern', 'classic', 'dark'].includes(theme)) throw new Error(`Unknown grid theme: ${theme}`);
@@ -116,17 +134,20 @@ export class DataGrid {
       }
       return col;
     });
+    this._columns = this._applyLayout(this._columns);
     this._filters = new Map();
     this._sort = null;
     this._sized = false;
     this._refresh({ rebuildHeader: true });
   }
 
-  setRows(rows) {
+  /** Replaces the rows. With keepWidths the columns keep the widths they have (a tree node shows another part of the same rows). */
+  setRows(rows, { keepWidths = false } = {}) {
     if (!Array.isArray(rows)) throw new Error('setRows needs an array');
     this._rows = rows;
+    if (this._opts.layoutId && typeof DataGrid.rowSink === 'function') DataGrid.rowSink(this._opts.layoutId, rows);
     this._selected = null;
-    this._sized = false;
+    if (!keepWidths) this._sized = false;
     this._refresh({ rebuildHeader: true });
   }
 
@@ -215,7 +236,12 @@ export class DataGrid {
 
     // Synchronous: a window of rows is cheap, and a frame callback would not run in a hidden tab.
     this._scroll.addEventListener('scroll', () => this._renderWindow(false), { signal, passive: true });
-    new ResizeObserver(() => this._scheduleRender()).observe(this._scroll);
+    new ResizeObserver(() => {
+      if (this._fillKey && this._head.childElementCount) {
+        this._applyWidths();
+        this._scheduleRender(true);
+      } else this._scheduleRender();
+    }).observe(this._scroll);
     this._window.addEventListener('click', (ev) => this._onRowClick(ev), { signal });
     this._window.addEventListener('dblclick', (ev) => this._onRowDblClick(ev), { signal });
     this._window.addEventListener('mouseover', (ev) => this._tipIfClipped(ev), { signal });
@@ -227,6 +253,59 @@ export class DataGrid {
 
   // ------------------------------------------------------------------ data -> items
   _col(key) { return this._columns.find((c) => c.key === key); }
+
+  /** Order, visibility, widths and the fill column from the layout (explicit, or the provider's for this grid's id). */
+  _applyLayout(cols) {
+    const layout = this._opts.layout
+      || (this._opts.layoutId && typeof DataGrid.layoutProvider === 'function' ? DataGrid.layoutProvider(this._opts.layoutId) : null);
+    this._fillKey = null;
+    if (!layout) return cols;
+    const hidden = new Set(layout.hidden || []);
+    const widths = layout.widths || {};
+    cols.forEach((c) => {
+      if (hidden.has(c.key)) c.visible = false;
+      const w = Number(widths[c.key]);
+      if (w > 0) {
+        c.width = Math.max(c.minWidth, Math.round(w));
+        c._auto = false;
+      }
+    });
+    const rank = new Map((layout.order || []).map((k, i) => [k, i]));
+    const place = (c) => (rank.has(c.key) ? rank.get(c.key) : 1e6 + cols.indexOf(c));
+    const ordered = [...cols].sort((a, b) => place(a) - place(b));
+    if (layout.fill && ordered.some((c) => c.key === layout.fill && c.visible)) this._fillKey = layout.fill;
+    return ordered;
+  }
+
+  /** Width of a vertical scrollbar of this browser (measured once with a throw-away box). */
+  _scrollbarWidth() {
+    if (this._sbw === undefined) {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:absolute;visibility:hidden;width:100px;height:100px;overflow:scroll';
+      document.body.appendChild(probe);
+      this._sbw = probe.offsetWidth - probe.clientWidth;
+      probe.remove();
+    }
+    return this._sbw;
+  }
+
+  /**
+   * The width the columns can use: the scroll area minus its borders and minus the vertical scrollbar --
+   * the one that is there now, or the one the rows will bring (the rows are counted, not yet laid out).
+   */
+  _availWidth() {
+    const s = this._scroll;
+    const rowsHeight = this._opts.headerHeight + this._items.length * this._opts.rowHeight
+      + (this._opts.footer ? this._opts.rowHeight : 0);
+    const needsBar = s.clientHeight > 0 && rowsHeight > s.clientHeight;
+    // the bar that is there is measured as it is (zoom rounds it differently from the probe); one that is coming is estimated
+    const present = s.offsetWidth - s.clientWidth - 2 * s.clientLeft;
+    const bar = needsBar ? Math.max(present, this._scrollbarWidth()) : 0;
+    return s.offsetWidth - 2 * s.clientLeft - bar;
+  }
+
+  /** The width a column is drawn at: its own, plus the free width when it is the fill column. */
+  _w(col) { return col.width + (col.key === this._fillKey ? this._extra : 0); }
   _visibleColumns() { return this._columns.filter((c) => c.visible); }
 
   _refresh({ rebuildHeader = false } = {}) {
@@ -319,12 +398,14 @@ export class DataGrid {
 
   _applyWidths() {
     const cols = this._visibleColumns();
-    const total = cols.reduce((s, c) => s + c.width, 0);
+    const base = cols.reduce((s, c) => s + c.width, 0);
+    this._extra = this._fillKey ? Math.max(0, this._availWidth() - base) : 0;
+    const total = base + this._extra;
     this._totalWidth = total;
     [this._head, this._window, this._foot].forEach((node) => { node.style.minWidth = `${total}px`; });
     this._viewport.style.minWidth = `${total}px`;
     this._head.querySelectorAll('.dgv__hc').forEach((cell) => {
-      cell.style.width = `${this._col(cell.dataset.key).width}px`;
+      cell.style.width = `${this._w(this._col(cell.dataset.key))}px`;
     });
     this._positionFrozen(this._head);
     this._buildFooter();
@@ -336,7 +417,7 @@ export class DataGrid {
     let x = 0;
     cols.forEach((c, i) => {
       if (i < this._opts.frozen) offsets.set(c.key, x);
-      x += c.width;
+      x += this._w(c);
     });
     return offsets;
   }
@@ -359,7 +440,7 @@ export class DataGrid {
     this._visibleColumns().forEach((col) => {
       const cell = el('div', 'dgv__hc');
       cell.dataset.key = col.key;
-      cell.style.width = `${col.width}px`;
+      cell.style.width = `${this._w(col)}px`;
       if (this._isRight(col)) cell.classList.add('is-right');
 
       const title = el('span', 'dgv__title', col.title);
@@ -405,7 +486,7 @@ export class DataGrid {
     ev.preventDefault();
     ev.stopPropagation();
     const startX = ev.clientX;
-    const startW = col.width;
+    const startW = this._w(col);
     const grip = ev.currentTarget;
     grip.setPointerCapture(ev.pointerId);
     const move = (e) => {
@@ -417,6 +498,7 @@ export class DataGrid {
     const up = () => {
       grip.removeEventListener('pointermove', move);
       grip.removeEventListener('pointerup', up);
+      this._emit('onColumnResize', { key: col.key, width: col.width });
     };
     grip.addEventListener('pointermove', move);
     grip.addEventListener('pointerup', up);
@@ -478,7 +560,7 @@ export class DataGrid {
     const cell = el('div', 'dgv__cell');
     if (extraClass) cell.classList.add(extraClass);
     cell.dataset.key = col.key;
-    cell.style.width = `${col.width}px`;
+    cell.style.width = `${this._w(col)}px`;
     if (this._isRight(col)) cell.classList.add('is-right');
     cell.textContent = text;
     return cell;
@@ -508,7 +590,7 @@ export class DataGrid {
       if (withAggregates && col.aggregate) text = this._aggregateText(col, item.rows);
       const cell = this._cell(col, '', 'is-band');
       if (ci === 0) {
-        cell.style.width = `${cols.slice(0, span).reduce((sum, c) => sum + c.width, 0)}px`;
+        cell.style.width = `${cols.slice(0, span).reduce((sum, c) => sum + this._w(c), 0)}px`;
         const label = el('span', 'dgv__caption');
         if (isHeader) label.appendChild(el('span', 'dgv__chev', item.collapsed ? '▸' : '▾'));
         label.appendChild(document.createTextNode(caption));

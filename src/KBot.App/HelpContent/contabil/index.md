@@ -6,7 +6,7 @@ order: 0
 screens: KbotForm
 keywords: prezentare, fereastra principala, flux
 ---
-<!-- slice: 0000-03 -->
+<!-- slice: 0000-03, 0000-52 -->
 K-BOT ține evidența angajamentelor bugetare ale unității și le leagă de **FOREXE** (sistemul de
 control al angajamentelor al Ministerului Finanțelor): citește din FOREXE rezervările, recepțiile
 și plățile, face documentele de fundamentare (DDF) și le trimite înapoi în FOREXE.
@@ -27,6 +27,8 @@ control al angajamentelor al Ministerului Finanțelor): citește din FOREXE reze
    Extrase — [Vederile angajamentului](topic:contabil.vederi).
 5. **Faci documentul de fundamentare**, îl semnezi și îl trimiți în FOREXE —
    [Documentul de fundamentare](topic:contabil.ddf).
+
+**Și din browser:** datele unității pot fi consultate, în regim doar de citire, și online, de oriunde — cu e-mail, parolă și cod de verificare sau, de pe calculator, cu tokenul tău digital. Accesul online la date îți oferă informațiile de care ai nevoie fără să fie necesară instalarea K-BOT pe dispozitivul de pe care le consulți. [Accesul online la date](topic:contabil.online).
 
 > **Regula de aur:** un angajament pe care îl lucrezi prin K-BOT nu se mai modifică de mână în
 > FOREXE. Tot ce se schimbă în FOREXE trebuie să treacă prin K-BOT — prin robot sau prin pagina

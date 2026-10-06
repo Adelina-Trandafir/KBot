@@ -73,6 +73,52 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Open threads (sliceless)
 
+- **PARKED (06.10.2026, operator has another plan first) - read FOREXE tables from the operator's
+  own browser, no K-BOT robot.** Idea: the portal cannot run the FOREXE login (certificate is on a
+  USB token, the key never leaves it, so a server-side robot is out). But the operator's browser
+  already holds the FOREXE session, so a script running IN the FOREXE page can read the tables and
+  POST them to the server. Nothing is built; nothing was changed in the code for this.
+  **What was proven in the real FOREXE page (Chrome console, 06.10.2026):**
+  (1) `forexe.mfinante.gov.ro` sends NO `Content-Security-Policy` (header or meta), and a request
+  from that page to `https://kbot.avatarsoft.ro` leaves without a violation, so a script there can
+  talk to our server. Only tested on `/CABWeb/contracte` (= Angajamente), re-check other pages.
+  (2) The export link `a[href*='exportToXLS']` can be fetched from the page (200, real binary .xls,
+  308 KB). Not needed: K-BOT reads the tables, not the Excel.
+  (3) `ScrapeTableExtract.js` (src/KBot.Forexe/Services/JavaScripts) copied into the page, plus a
+  loop on `a[rel='next']` with a wait on the last row, read all pages of «Lista angajamente»
+  (14 rows, 2 pages, 0.3 s) with the same keys K-BOT produces (Cod, Descriere, Stare...).
+  Page number is `span.goto em span`; go back with `a[rel='prev']` before reading.
+  **Why it dies:** a script pasted in the console is destroyed on every full page load (Wicket URL
+  change). So one run must do one whole job on ONE page. Multi-page flows (Prelucrare Completa,
+  anything that writes to FOREXE) stay in K-BOT.
+  **No install + no extra click is not possible.** Options: (a) bookmarklet = one click, no
+  install; (b) browser extension = zero clicks, installed once; (c) keep K-BOT.
+  Extension: Chrome/Edge accept only store-signed extensions, the operator's own code-signing
+  certificate does not help; unlisted Chrome Web Store listing (one-time developer fee, review,
+  privacy policy needed) works for personal and institution PCs unless the institution's IT
+  blocks extensions; off-store force install needs a managed (domain) PC. Confirm fee and rules on
+  the official page before relying on them.
+  **Server side already exists:** `POST /api/forexe/angajamente/upsert` (routes/forexe/angajamente.py),
+  body `{db_name, doar_noi, rows:[{Cod, Descriere, Stare}]}`, bearer `require_session`.
+  **Plan when resumed:**
+  1. CORS for that route only, origin `https://forexe.mfinante.gov.ro` (answer the OPTIONS
+     preflight; the portal has its own CORS in routes/portal/portal.py:165 as a model).
+  2. A SEPARATE short-lived token (hours), valid only for the upsert route, never the K-BOT login
+     bearer. Read routes/auth/guard.py and the login routes first to see how sessions are made.
+     With an extension the token should be fetched from the portal while the user is logged in
+     there, not pasted by hand. `db_name` (unit) travels with the token.
+  3. Portal page that mints the token and, for the bookmarklet stage, shows the draggable
+     bookmarklet link.
+  4. Bookmarklet first (proves it end to end, no store, no review): the tested script +
+     POST to the route + a small on-page message («Trimis: N randuri, M noi»). Decide
+     `doar_noi` true/false (or offer both).
+  5. Only then the extension (same script, starts on its own when the table shows), store
+     listing, privacy text.
+  6. Other lists (receptii, indicatori...) one by one; each needs its own route and a check of
+     its table selector.
+  Do NOT paste or keep FOREXE session cookies in chat: two were pasted today; operator was told to
+  log out of FOREXE.
+
 - **FOREXE page pictures (no slice, 28.09.2026) — why they never left the client.** Seen
   28.09 15:10 (005_CEVM, AAB5T2585AE, DDF revision 305 found 0 pictures): EXPECTED — the
   reservation was saved outside the in-app browser, so no marker and no picture exist; K-BOT

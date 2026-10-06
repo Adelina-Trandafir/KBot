@@ -7,18 +7,11 @@
 
 import { DataGrid } from '../dgv/datagrid.js';
 import { TreeView } from '../components/treeview/treeview.js';
+import { columnsOf } from './columns.js';
 
 const $ = (id) => document.getElementById(id);
 const rowHeight = () => (window.matchMedia('(max-width: 900px)').matches ? 20 : 23);
 const nameCmp = new Intl.Collator('ro', { sensitivity: 'base', numeric: true });
-
-const CODE_COLUMNS = [
-  { key: 'clsf', title: 'Clasificație', width: 160 },
-  { key: 'denumire_clsf', title: 'Denumire clasificație', width: 240 },
-  { key: 'cont_bancar', title: 'Cont bancar asociat', width: 220 },
-  { key: 'cod_ang', title: 'Cod ang.' },
-  { key: 'cod_ind', title: 'Cod ind.' },
-];
 
 /**
  * @param {{call: Function, fail: Function, say: Function, hasUnit: () => boolean}} deps
@@ -67,7 +60,8 @@ export function createParteneriPage({ call, fail, say, hasUnit }) {
     set('part-ascuns', p ? (p.ascuns ? 'Da — nu mai apare în liste' : 'Nu') : '');
     if (!p) return;
     grid = new DataGrid($('grid-part-cod'), {
-      columns: CODE_COLUMNS,
+      columns: columnsOf('parteneri.coduri'),
+      layoutId: 'parteneri.coduri',
       rows: p.coduri,
       rowHeight: rowHeight(),
       footer: true,

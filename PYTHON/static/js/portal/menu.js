@@ -1,9 +1,10 @@
-// The horizontal menu of the portal header (next to the K-BOT brand). Built by hand, not from a
-// library, so anything about it can be changed: the entries are plain data in MENU, the markup
-// and the look (.pmenu* in portal.css) are ours.
+// The menu of the portal header (next to the K-BOT brand): ONE button with a menu emoji; every
+// entry lives in the list it opens. Built by hand, so anything about it can be changed: the entries
+// are plain data in MENU, the markup and the look (.pmenu* in portal.css) are ours.
 //
-// An entry is {key, label} for a button, or {key, label, items: [{key, label}]} for a button that
-// opens a list. A click on a leaf fires `onPick(key)`; the page decides what each key does.
+// An entry is {key, label} for a button, or {key, label, items: [{key, label}]} for a group (a
+// caption with its entries indented under it). A click on a leaf fires onPick(key); the page
+// decides what each key does.
 
 const MENU = [
   {
@@ -18,60 +19,83 @@ const MENU = [
 ];
 
 export function createMenu(host, onPick) {
-  let openKey = '';
+  let adminItem = null;
+  let isOpen = false;
+
+  const li = document.createElement('li');
+  li.className = 'pmenu__item';
+  const top = document.createElement('button');
+  top.type = 'button';
+  top.className = 'pmenu__top';
+  top.setAttribute('aria-haspopup', 'menu');
+  top.setAttribute('aria-expanded', 'false');
+  top.setAttribute('aria-label', 'Meniu');
+  top.title = 'Meniu';
+  top.innerHTML = '<span class="pmenu__ico" aria-hidden="true">☰</span> <span class="pmenu__txt">Meniu</span>';
+  const list = document.createElement('ul');
+  list.className = 'pmenu__list card';
+  list.setAttribute('role', 'menu');
+  list.hidden = true;
+  li.appendChild(top);
+  li.appendChild(list);
+  host.appendChild(li);
 
   function closeAll() {
-    openKey = '';
-    host.querySelectorAll('.pmenu__top[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
-    host.querySelectorAll('.pmenu__list').forEach((l) => { l.hidden = true; });
+    isOpen = false;
+    top.setAttribute('aria-expanded', 'false');
+    list.hidden = true;
   }
 
-  function open(top, list, key) {
-    closeAll();
-    openKey = key;
-    top.setAttribute('aria-expanded', 'true');
-    list.hidden = false;
+  function toggle() {
+    isOpen = !isOpen;
+    top.setAttribute('aria-expanded', String(isOpen));
+    list.hidden = !isOpen;
   }
 
-  MENU.forEach((entry) => {
-    const li = document.createElement('li');
-    li.className = 'pmenu__item';
-    const top = document.createElement('button');
-    top.type = 'button';
-    top.className = 'pmenu__top';
-    top.textContent = entry.label;
-    li.appendChild(top);
+  function leaf(entry, nested) {
+    const sli = document.createElement('li');
+    sli.setAttribute('role', 'none');
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = nested ? 'pmenu__sub pmenu__sub--nested' : 'pmenu__sub';
+    b.setAttribute('role', 'menuitem');
+    b.textContent = entry.label;
+    b.addEventListener('click', () => { closeAll(); onPick(entry.key, entry.label); });
+    sli.appendChild(b);
+    return sli;
+  }
 
+  function addEntry(entry) {
+    const els = [];
     if (entry.items) {
-      top.setAttribute('aria-haspopup', 'menu');
-      top.setAttribute('aria-expanded', 'false');
-      top.insertAdjacentHTML('beforeend', ' <span class="pmenu__caret" aria-hidden="true">▾</span>');
-      const list = document.createElement('ul');
-      list.className = 'pmenu__list card';
-      list.setAttribute('role', 'menu');
-      list.hidden = true;
-      entry.items.forEach((sub) => {
-        const sli = document.createElement('li');
-        sli.setAttribute('role', 'none');
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'pmenu__sub';
-        b.setAttribute('role', 'menuitem');
-        b.textContent = sub.label;
-        b.addEventListener('click', () => { closeAll(); onPick(sub.key, sub.label); });
-        sli.appendChild(b);
-        list.appendChild(sli);
-      });
-      top.addEventListener('click', () => (openKey === entry.key ? closeAll() : open(top, list, entry.key)));
-      li.appendChild(list);
+      const cap = document.createElement('li');
+      cap.className = 'pmenu__group';
+      cap.setAttribute('role', 'presentation');
+      cap.textContent = entry.label;
+      els.push(cap);
+      entry.items.forEach((sub) => els.push(leaf(sub, true)));
     } else {
-      top.addEventListener('click', () => { closeAll(); onPick(entry.key, entry.label); });
+      els.push(leaf(entry, false));
     }
-    host.appendChild(li);
-  });
+    els.forEach((e) => list.appendChild(e));
+    return els;
+  }
+
+  top.addEventListener('click', toggle);
+  MENU.forEach(addEntry);
 
   // a click anywhere else, or Escape, closes the open list
-  document.addEventListener('click', (e) => { if (!host.contains(e.target)) closeAll(); });
+  document.addEventListener('click', (e) => { if (!li.contains(e.target)) closeAll(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
-  return { closeAll };
+  return {
+    closeAll,
+    /** Slice 0110-09: the «Administrare» entry exists only for the accounts the server names as administrators. */
+    setAdmin(on) {
+      if (on && !adminItem) adminItem = addEntry({ key: 'admin', label: 'Administrare' });
+      if (!on && adminItem) {
+        adminItem.forEach((e) => e.remove());
+        adminItem = null;
+      }
+    },
+  };
 }
