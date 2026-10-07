@@ -1,0 +1,1006 @@
+Option Compare Database
+Option Explicit
+
+'==================================================================
+' modExportAccdb - export complet .accdb -> JSON / XML
+'------------------------------------------------------------------
+' Exporta: tabele (schema + lookup + indecsi), relatii, interogari,
+'          formulare, rapoarte, module, macrouri, ribbon-uri.
+' Scop: portare catre Python + JS/HTML + MariaDB, cu output compact.
+'
+' NU foloseste "On Error Resume Next" nicaieri - doar "On Error GoTo".
+' Dependenta: referinta DAO (Microsoft Office Access database engine).
+'==================================================================
+
+'---------------- OPTIUNI ----------------
+Private Const OPT_LAYOUT      As Boolean = True    ' Left/Top/Width/Height, sectiuni
+Private Const OPT_STYLE       As Boolean = False   ' culori, fonturi, borduri (mult text!)
+Private Const OPT_DATA        As Boolean = False   ' date tabele -> CSV UTF-8
+Private Const OPT_DATA_MAXROWS As Long = 0         ' 0 = toate randurile
+Private Const OPT_SKIP_PREFIX As String = "MSys|USys|~"  ' obiecte ignorate
+
+'---------------- STARE INTERNA ----------------
+Private mBuf()  As String
+Private mBufN   As Long
+Private mRoot   As String
+Private mErrors As Collection
+
+'==================================================================
+' PUNCT DE INTRARE
+'==================================================================
+Public Sub ExportAccdbAll(Optional ByVal outRoot As String = "")
+    Dim t0 As Single: t0 = Timer
+
+    If Len(outRoot) = 0 Then outRoot = CurrentProject.path & "\_export\"
+    If Right$(outRoot, 1) <> "\" Then outRoot = outRoot & "\"
+    mRoot = outRoot
+    Set mErrors = New Collection
+
+    EnsureDir mRoot
+    EnsureDir mRoot & "forms"
+    EnsureDir mRoot & "reports"
+    EnsureDir mRoot & "code\forms"
+    EnsureDir mRoot & "code\reports"
+    EnsureDir mRoot & "code\modules"
+    EnsureDir mRoot & "macros"
+    EnsureDir mRoot & "ribbons"
+    If OPT_DATA Then EnsureDir mRoot & "data"
+
+    DoCmd.Echo False, "Export in curs..."
+
+    ExportTables
+    ExportRelations
+    ExportQueries
+    ExportForms
+    ExportReports
+    ExportModules
+    ExportMacros
+    ExportRibbons
+    ExportIndex t0
+
+    DoCmd.Echo True
+    MsgBox "Export terminat in " & Format$(Timer - t0, "0.0") & "s" & vbCrLf & _
+           "Folder: " & mRoot & vbCrLf & _
+           "Erori: " & mErrors.Count, vbInformation
+End Sub
+
+'==================================================================
+' 4. TABELE
+'==================================================================
+Private Sub ExportTables()
+    Dim db As DAO.Database, tdf As DAO.TableDef
+    Dim fld As DAO.Field, idx As DAO.Index, i As Long
+    Set db = CurrentDb
+
+    BufInit
+    A "{""tables"":["
+    For Each tdf In db.TableDefs
+        If Not IsSkipped(tdf.Name) Then
+            A "{"
+            PS "name", tdf.Name
+            If Len(tdf.Connect) > 0 Then
+                PS "linked", tdf.Connect
+                PS "sourceTable", tdf.SourceTableName
+            End If
+            PS "description", CStr2(GP(tdf, "Description"))
+            PN "recordCount", tdf.RecordCount
+
+            A """fields"":["
+            For Each fld In tdf.Fields
+                A "{"
+                PS "name", fld.Name
+                PS "type", DaoTypeName(fld.type)
+                PS "mysql", MySqlType(fld)
+                If fld.type = 10 Or fld.type = 18 Then PN "size", fld.Size
+                PB "required", fld.Required
+                PB "autoInc", (fld.Attributes And 16) = 16
+                If fld.type = 10 Or fld.type = 12 Then PB "allowZeroLen", fld.AllowZeroLength
+                PS "default", CStr2(fld.DefaultValue)
+                PS "validationRule", CStr2(fld.ValidationRule)
+                PS "validationText", CStr2(fld.ValidationText)
+                PS "caption", CStr2(GP(fld, "Caption"))
+                PS "description", CStr2(GP(fld, "Description"))
+                PS "format", CStr2(GP(fld, "Format"))
+                PS "inputMask", CStr2(GP(fld, "InputMask"))
+                PS "decimals", CStr2(GP(fld, "DecimalPlaces"))
+                ' lookup (important la portare: combo-uri implicite)
+                PS "displayControl", DisplayControlName(GP(fld, "DisplayControl"))
+                PS "rowSourceType", CStr2(GP(fld, "RowSourceType"))
+                PS "rowSource", CStr2(GP(fld, "RowSource"))
+                PS "boundColumn", CStr2(GP(fld, "BoundColumn"))
+                PS "columnWidths", CStr2(GP(fld, "ColumnWidths"))
+                EndObj
+                A ","
+            Next fld
+            EndArr
+            A ","
+
+            A """indexes"":["
+            For Each idx In tdf.Indexes
+                A "{"
+                PS "name", idx.Name
+                PB "primary", idx.Primary
+                PB "unique", idx.Unique
+                PB "foreign", idx.Foreign
+                A """fields"":["
+                For i = 0 To idx.Fields.Count - 1
+                    A JS(idx.Fields(i).Name) & ","
+                Next i
+                EndArr
+                A ","
+                EndObj
+                A ","
+            Next idx
+            EndArr
+            EndObj
+            A ","
+
+            If OPT_DATA Then ExportTableData tdf.Name
+        End If
+    Next tdf
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "tables.json", BufText
+    Set db = Nothing
+End Sub
+
+Private Sub ExportRelations()
+    Dim db As DAO.Database, rel As DAO.Relation, i As Long
+    Set db = CurrentDb
+    BufInit
+    A "{""relations"":["
+    For Each rel In db.Relations
+        If Not IsSkipped(rel.Table) And Not IsSkipped(rel.ForeignTable) Then
+            A "{"
+            PS "name", rel.Name
+            PS "table", rel.Table
+            PS "foreignTable", rel.ForeignTable
+            PB "enforced", (rel.Attributes And 2) = 0
+            PB "cascadeUpdate", (rel.Attributes And 256) = 256
+            PB "cascadeDelete", (rel.Attributes And 4096) = 4096
+            A """fields"":["
+            For i = 0 To rel.Fields.Count - 1
+                A "{" & """from"":" & JS(rel.Fields(i).Name) & _
+                       ",""to"":" & JS(rel.Fields(i).ForeignName) & "},"
+            Next i
+            EndArr
+            EndObj
+            A ","
+        End If
+    Next rel
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "relations.json", BufText
+    Set db = Nothing
+End Sub
+
+Private Sub ExportTableData(ByVal tblName As String)
+    On Error GoTo Fail
+    Dim rs As DAO.Recordset, S As String, i As Long, n As Long
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM [" & tblName & "]", 4) 'dbOpenSnapshot
+
+    For i = 0 To rs.Fields.Count - 1
+        S = S & IIf(i > 0, ",", "") & CsvCell(rs.Fields(i).Name)
+    Next i
+    S = S & vbCrLf
+
+    Do While Not rs.EOF
+        For i = 0 To rs.Fields.Count - 1
+            S = S & IIf(i > 0, ",", "") & CsvCell(rs.Fields(i).value)
+        Next i
+        S = S & vbCrLf
+        n = n + 1
+        If OPT_DATA_MAXROWS > 0 And n >= OPT_DATA_MAXROWS Then Exit Do
+        rs.MoveNext
+    Loop
+    rs.Close
+    WriteUtf8 mRoot & "data\" & SafeName(tblName) & ".csv", S
+    Exit Sub
+Fail:
+    LogErr "data:" & tblName, Err.Description
+End Sub
+
+'==================================================================
+' 3. INTEROGARI
+'==================================================================
+Private Sub ExportQueries()
+    Dim db As DAO.Database, qdf As DAO.QueryDef, p As DAO.Parameter
+    Set db = CurrentDb
+    BufInit
+    A "{""queries"":["
+    For Each qdf In db.QueryDefs
+        If Not IsSkipped(qdf.Name) Then
+            A "{"
+            PS "name", qdf.Name
+            PS "type", QueryTypeName(qdf.type)
+            PB "returnsRecords", qdf.ReturnsRecords
+            PS "connect", CStr2(qdf.Connect)
+            PS "description", CStr2(GP(qdf, "Description"))
+            A """parameters"":["
+            For Each p In qdf.Parameters
+                A "{""name"":" & JS(p.Name) & ",""type"":" & JS(DaoTypeName(p.type)) & "},"
+            Next p
+            EndArr
+            A ","
+            PS "sql", qdf.SQL
+            EndObj
+            A ","
+        End If
+    Next qdf
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "queries.json", BufText
+    Set db = Nothing
+End Sub
+
+'==================================================================
+' 1. FORMULARE
+'==================================================================
+Private Sub ExportForms()
+    Dim ao As Object, nm As String
+    Dim names As New Collection, v As Variant
+
+    For Each ao In CurrentProject.AllForms
+        If Not IsSkipped(ao.Name) Then names.Add ao.Name
+    Next ao
+
+    BufInit
+    A "{""forms"":["
+    For Each v In names
+        A JS(CStr(v)) & ","
+    Next v
+    EndArr
+    A "}"
+    WriteUtf8 mRoot & "forms\_index.json", BufText
+
+    For Each v In names
+        ExportOneForm CStr(v)
+    Next v
+End Sub
+
+Private Sub ExportOneForm(ByVal frmName As String)
+    On Error GoTo Fail
+    Dim frm As Access.Form, ctl As Access.Control, i As Long
+
+    DoCmd.OpenForm frmName, acDesign, , , , acHidden
+    Set frm = Forms(frmName)
+
+    BufInit
+    A "{"
+    PS "name", frmName
+    PS "kind", "form"
+    ' --- proprietati de date / comportament ---
+    PS "recordSource", CStr2(GP(frm, "RecordSource"))
+    PS "filter", CStr2(GP(frm, "Filter"))
+    PB "filterOn", CBool2(GP(frm, "FilterOn"))
+    PS "orderBy", CStr2(GP(frm, "OrderBy"))
+    PB "orderByOn", CBool2(GP(frm, "OrderByOn"))
+    PS "caption", CStr2(GP(frm, "Caption"))
+    PS "defaultView", CStr2(GP(frm, "DefaultView"))
+    PB "allowEdits", CBool2(GP(frm, "AllowEdits"))
+    PB "allowAdditions", CBool2(GP(frm, "AllowAdditions"))
+    PB "allowDeletions", CBool2(GP(frm, "AllowDeletions"))
+    PB "dataEntry", CBool2(GP(frm, "DataEntry"))
+    PB "popUp", CBool2(GP(frm, "PopUp"))
+    PB "modal", CBool2(GP(frm, "Modal"))
+    PS "recordsetType", CStr2(GP(frm, "RecordsetType"))
+    PS "ribbonName", CStr2(GP(frm, "RibbonName"))
+    PS "shortcutMenuBar", CStr2(GP(frm, "ShortcutMenuBar"))
+    PS "tag", CStr2(GP(frm, "Tag"))
+    If OPT_LAYOUT Then PN "width", CLng2(GP(frm, "Width"))
+    WriteEvents frm
+    WriteSections frm, False
+    WriteControls frm
+
+    ' --- cod VBA in fisier separat ---
+    If frm.HasModule Then
+        If frm.Module.CountOfLines > 0 Then
+            WriteUtf8 mRoot & "code\forms\" & SafeName(frmName) & ".vba", _
+                      frm.Module.Lines(1, frm.Module.CountOfLines)
+            PS "codeFile", "code/forms/" & SafeName(frmName) & ".vba"
+        End If
+    End If
+    EndObj
+
+    WriteUtf8 mRoot & "forms\" & SafeName(frmName) & ".json", BufText
+    DoCmd.Close acForm, frmName, acSaveNo
+    Exit Sub
+Fail:
+    LogErr "form:" & frmName, Err.Description
+    CloseObjQuiet acForm, frmName
+End Sub
+
+'==================================================================
+' 2. RAPOARTE
+'==================================================================
+Private Sub ExportReports()
+    Dim ao As Object, names As New Collection, v As Variant
+
+    For Each ao In CurrentProject.AllReports
+        If Not IsSkipped(ao.Name) Then names.Add ao.Name
+    Next ao
+
+    BufInit
+    A "{""reports"":["
+    For Each v In names
+        A JS(CStr(v)) & ","
+    Next v
+    EndArr
+    A "}"
+    WriteUtf8 mRoot & "reports\_index.json", BufText
+
+    For Each v In names
+        ExportOneReport CStr(v)
+    Next v
+End Sub
+
+Private Sub ExportOneReport(ByVal rptName As String)
+    On Error GoTo Fail
+    Dim rpt As Access.Report, i As Long
+
+    DoCmd.OpenReport rptName, acViewDesign
+    Set rpt = Reports(rptName)
+
+    BufInit
+    A "{"
+    PS "name", rptName
+    PS "kind", "report"
+    PS "recordSource", CStr2(GP(rpt, "RecordSource"))
+    PS "filter", CStr2(GP(rpt, "Filter"))
+    PS "orderBy", CStr2(GP(rpt, "OrderBy"))
+    PS "caption", CStr2(GP(rpt, "Caption"))
+    PS "tag", CStr2(GP(rpt, "Tag"))
+    If OPT_LAYOUT Then PN "width", CLng2(GP(rpt, "Width"))
+
+    ' --- grupari / sortari (esential la portare) ---
+    A """groupLevels"":["
+    For i = 0 To 9
+        If Not GroupLevelOk(rpt, i) Then Exit For
+        A "{"
+        PN "index", i
+        PS "controlSource", CStr2(rpt.GroupLevel(i).ControlSource)
+        PB "sortOrder", rpt.GroupLevel(i).SortOrder
+        PB "groupHeader", rpt.GroupLevel(i).GroupHeader
+        PB "groupFooter", rpt.GroupLevel(i).GroupFooter
+        PN "groupOn", rpt.GroupLevel(i).GroupOn
+        PN "groupInterval", rpt.GroupLevel(i).GroupInterval
+        PN "keepTogether", rpt.GroupLevel(i).KeepTogether
+        EndObj
+        A ","
+    Next i
+    EndArr
+    A ","
+
+    WriteEvents rpt
+    WriteSections rpt, True
+    WriteControls rpt
+
+    If rpt.HasModule Then
+        If rpt.Module.CountOfLines > 0 Then
+            WriteUtf8 mRoot & "code\reports\" & SafeName(rptName) & ".vba", _
+                      rpt.Module.Lines(1, rpt.Module.CountOfLines)
+            PS "codeFile", "code/reports/" & SafeName(rptName) & ".vba"
+        End If
+    End If
+    EndObj
+
+    WriteUtf8 mRoot & "reports\" & SafeName(rptName) & ".json", BufText
+    DoCmd.Close acReport, rptName, acSaveNo
+    Exit Sub
+Fail:
+    LogErr "report:" & rptName, Err.Description
+    CloseObjQuiet acReport, rptName
+End Sub
+
+Private Function GroupLevelOk(rpt As Access.Report, ByVal i As Long) As Boolean
+    On Error GoTo Fail
+    Dim S As String
+    S = rpt.GroupLevel(i).ControlSource
+    GroupLevelOk = True
+    Exit Function
+Fail:
+    GroupLevelOk = False
+End Function
+
+'==================================================================
+' SECTIUNI + CONTROALE (comun form/report)
+'==================================================================
+Private Sub WriteSections(obj As Object, ByVal isReport As Boolean)
+    Dim i As Long
+    A """sections"":["
+    For i = 0 To 12
+        If SectionOk(obj, i) Then
+            A "{"
+            PN "index", i
+            PS "name", SectionName(i, isReport)
+            If OPT_LAYOUT Then PN "height", CLng2(GP(obj.Section(i), "Height"))
+            PB "visible", CBool2(GP(obj.Section(i), "Visible"))
+            PB "canGrow", CBool2(GP(obj.Section(i), "CanGrow"))
+            PB "canShrink", CBool2(GP(obj.Section(i), "CanShrink"))
+            If OPT_STYLE Then PN "backColor", CLng2(GP(obj.Section(i), "BackColor"))
+            EndObj
+            A ","
+        End If
+    Next i
+    EndArr
+    A ","
+End Sub
+
+Private Function SectionOk(obj As Object, ByVal i As Long) As Boolean
+    On Error GoTo Fail
+    Dim h As Long
+    h = obj.Section(i).Height
+    SectionOk = True
+    Exit Function
+Fail:
+    SectionOk = False
+End Function
+
+Private Sub WriteControls(obj As Object)
+    Dim ctl As Access.Control
+    A """controls"":["
+    For Each ctl In obj.Controls
+        A "{"
+        PS "name", ctl.Name
+        PS "type", CtlTypeName(ctl.ControlType)
+        PS "parent", ParentName(ctl, obj.Name)
+        PN "section", CLng2(GP(ctl, "Section"))
+
+        ' --- date ---
+        PS "controlSource", CStr2(GP(ctl, "ControlSource"))
+        PS "caption", CStr2(GP(ctl, "Caption"))
+        PS "rowSourceType", CStr2(GP(ctl, "RowSourceType"))
+        PS "rowSource", CStr2(GP(ctl, "RowSource"))
+        PS "boundColumn", CStr2(GP(ctl, "BoundColumn"))
+        PS "columnCount", CStr2(GP(ctl, "ColumnCount"))
+        PS "columnWidths", CStr2(GP(ctl, "ColumnWidths"))
+        PB "columnHeads", CBool2(GP(ctl, "ColumnHeads"))
+        PB "limitToList", CBool2(GP(ctl, "LimitToList"))
+        PS "defaultValue", CStr2(GP(ctl, "DefaultValue"))
+        PS "validationRule", CStr2(GP(ctl, "ValidationRule"))
+        PS "validationText", CStr2(GP(ctl, "ValidationText"))
+        PS "format", CStr2(GP(ctl, "Format"))
+        PS "decimalPlaces", CStr2(GP(ctl, "DecimalPlaces"))
+        PS "inputMask", CStr2(GP(ctl, "InputMask"))
+        PS "optionValue", CStr2(GP(ctl, "OptionValue"))
+
+        ' --- subformular / subraport ---
+        PS "sourceObject", CStr2(GP(ctl, "SourceObject"))
+        PS "linkMasterFields", CStr2(GP(ctl, "LinkMasterFields"))
+        PS "linkChildFields", CStr2(GP(ctl, "LinkChildFields"))
+
+        ' --- comportament ---
+        PB "visible", CBool2(GP(ctl, "Visible"))
+        PB "enabled", CBool2(GP(ctl, "Enabled"))
+        PB "locked", CBool2(GP(ctl, "Locked"))
+        PS "tabIndex", CStr2(GP(ctl, "TabIndex"))
+        PS "statusBarText", CStr2(GP(ctl, "StatusBarText"))
+        PS "controlTipText", CStr2(GP(ctl, "ControlTipText"))
+        PS "tag", CStr2(GP(ctl, "Tag"))
+
+        If OPT_LAYOUT Then
+            PN "left", CLng2(GP(ctl, "Left"))
+            PN "top", CLng2(GP(ctl, "Top"))
+            PN "width", CLng2(GP(ctl, "Width"))
+            PN "height", CLng2(GP(ctl, "Height"))
+        End If
+        If OPT_STYLE Then
+            PN "backColor", CLng2(GP(ctl, "BackColor"))
+            PN "foreColor", CLng2(GP(ctl, "ForeColor"))
+            PS "fontName", CStr2(GP(ctl, "FontName"))
+            PN "fontSize", CLng2(GP(ctl, "FontSize"))
+            PN "fontWeight", CLng2(GP(ctl, "FontWeight"))
+            PN "fontItalic", CLng2(GP(ctl, "FontItalic"))
+            PN "textAlign", CLng2(GP(ctl, "TextAlign"))
+            PN "borderStyle", CLng2(GP(ctl, "BorderStyle"))
+        End If
+
+        WriteEvents ctl
+        EndObj
+        A ","
+    Next ctl
+    EndArr
+    A ","
+End Sub
+
+Private Function ParentName(ctl As Access.Control, ByVal ownerName As String) As String
+    On Error GoTo Fail
+    Dim S As String
+    S = ctl.Parent.Name
+    If StrComp(S, ownerName, vbTextCompare) = 0 Then S = ""
+    ParentName = S
+    Exit Function
+Fail:
+    ParentName = ""
+End Function
+
+'------------------------------------------------------------------
+' Evenimente: se scriu doar cele completate
+'------------------------------------------------------------------
+Private Sub WriteEvents(obj As Object)
+    Static ev As Variant
+    Dim i As Long, val As String, wrote As Boolean
+
+    If IsEmpty(ev) Then
+        ev = Array("OnOpen", "OnLoad", "OnClose", "OnUnload", "OnCurrent", "OnResize", _
+                   "OnActivate", "OnDeactivate", "OnTimer", "OnError", "OnGotFocus", "OnLostFocus", _
+                   "OnClick", "OnDblClick", "OnChange", "OnDirty", "OnUndo", "OnNotInList", _
+                   "BeforeUpdate", "AfterUpdate", "BeforeInsert", "AfterInsert", _
+                   "BeforeDelConfirm", "AfterDelConfirm", "OnDelete", _
+                   "OnEnter", "OnExit", "OnKeyDown", "OnKeyPress", "OnKeyUp", _
+                   "OnMouseDown", "OnMouseMove", "OnMouseUp", "OnMouseWheel", _
+                   "OnFormat", "OnPrint", "OnRetreat", "OnNoData", "OnPage", "OnFilter", "OnApplyFilter")
+    End If
+
+    A """events"":{"
+    For i = LBound(ev) To UBound(ev)
+        val = CStr2(GP(obj, CStr(ev(i))))
+        If Len(val) > 0 Then
+            A JS(CStr(ev(i))) & ":" & JS(val) & ","
+            wrote = True
+        End If
+    Next i
+    EndObjRaw
+    A ","
+End Sub
+
+'==================================================================
+' MODULE + MACROURI
+'==================================================================
+Private Sub ExportModules()
+    Dim ao As Object
+    BufInit
+    A "{""modules"":["
+    For Each ao In CurrentProject.AllModules
+        If Not IsSkipped(ao.Name) Then
+            A "{"
+            PS "name", ao.Name
+            PS "file", "code/modules/" & SafeName(ao.Name) & ".vba"
+            EndObj
+            A ","
+            SaveTextQuiet acModule, ao.Name, mRoot & "code\modules\" & SafeName(ao.Name) & ".vba"
+        End If
+    Next ao
+    EndArr
+    A "}"
+    WriteUtf8 mRoot & "code\modules\_index.json", BufText
+End Sub
+
+Private Sub ExportMacros()
+    Dim ao As Object
+    BufInit
+    A "{""macros"":["
+    For Each ao In CurrentProject.AllMacros
+        If Not IsSkipped(ao.Name) Then
+            A "{"
+            PS "name", ao.Name
+            PS "file", "macros/" & SafeName(ao.Name) & ".xml"
+            EndObj
+            A ","
+            SaveTextQuiet acMacro, ao.Name, mRoot & "macros\" & SafeName(ao.Name) & ".xml"
+        End If
+    Next ao
+    EndArr
+    A "}"
+    WriteUtf8 mRoot & "macros\_index.json", BufText
+End Sub
+
+Private Sub SaveTextQuiet(ByVal objType As Long, ByVal objName As String, ByVal path As String)
+    On Error GoTo Fail
+    Application.SaveAsText objType, objName, path
+    Exit Sub
+Fail:
+    LogErr "saveAsText:" & objName, Err.Description
+End Sub
+
+'==================================================================
+' 5. RIBBON-URI
+'==================================================================
+Private Sub ExportRibbons()
+    Dim rs As DAO.Recordset, nm As String, xml As String, f As String
+
+    BufInit
+    A "{"
+    PS "customRibbonID", CStr2(GP(CurrentDb, "CustomRibbonID"))
+    A """ribbons"":["
+
+    If TableExists("USysRibbons") Then
+        On Error GoTo Fail
+        Set rs = CurrentDb.OpenRecordset("SELECT * FROM USysRibbons", 4)
+        Do While Not rs.EOF
+            nm = CStr2(rs!RibbonName)
+            xml = RibbonXmlOf(rs)
+            f = "ribbons/" & SafeName(nm) & ".xml"
+            WriteUtf8 mRoot & "ribbons\" & SafeName(nm) & ".xml", xml
+            A "{"
+            PS "name", nm
+            PS "file", f
+            PN "length", Len(xml)
+            EndObj
+            A ","
+            rs.MoveNext
+        Loop
+        rs.Close
+    End If
+
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "ribbons\_index.json", BufText
+    Exit Sub
+Fail:
+    LogErr "ribbons", Err.Description
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "ribbons\_index.json", BufText
+End Sub
+
+Private Function RibbonXmlOf(rs As DAO.Recordset) As String
+    On Error GoTo Alt
+    RibbonXmlOf = CStr2(rs!RibbonXml)
+    Exit Function
+Alt:
+    On Error GoTo Fail
+    RibbonXmlOf = CStr2(rs.Fields(2).value)
+    Exit Function
+Fail:
+    RibbonXmlOf = ""
+End Function
+
+'==================================================================
+' INDEX GENERAL
+'==================================================================
+Private Sub ExportIndex(ByVal t0 As Single)
+    Dim v As Variant
+    BufInit
+    A "{"
+    PS "database", CurrentProject.Name
+    PS "path", CurrentProject.path
+    PS "accessVersion", Application.Version
+    PS "exportedAt", Format$(Now, "yyyy-mm-dd hh:nn:ss")
+    PB "optLayout", OPT_LAYOUT
+    PB "optStyle", OPT_STYLE
+    PB "optData", OPT_DATA
+    PN "forms", CurrentProject.AllForms.Count
+    PN "reports", CurrentProject.AllReports.Count
+    PN "modules", CurrentProject.AllModules.Count
+    PN "macros", CurrentProject.AllMacros.Count
+    PN "queries", CurrentDb.QueryDefs.Count
+    PN "tables", CurrentDb.TableDefs.Count
+    A """errors"":["
+    For Each v In mErrors
+        A JS(CStr(v)) & ","
+    Next v
+    EndArr
+    EndObj
+    WriteUtf8 mRoot & "index.json", BufText
+End Sub
+
+'==================================================================
+' HELPERE JSON
+'==================================================================
+Private Sub BufInit()
+    ReDim mBuf(1023)
+    mBufN = 0
+End Sub
+
+Private Sub A(ByVal S As String)
+    If mBufN > UBound(mBuf) Then ReDim Preserve mBuf(UBound(mBuf) * 2 + 1)
+    mBuf(mBufN) = S
+    mBufN = mBufN + 1
+End Sub
+
+Private Function BufText() As String
+    If mBufN = 0 Then BufText = "": Exit Function
+    ReDim Preserve mBuf(mBufN - 1)
+    BufText = Join(mBuf, "")
+End Function
+
+Private Sub TrimComma()
+    If mBufN = 0 Then Exit Sub
+    If Right$(mBuf(mBufN - 1), 1) = "," Then
+        mBuf(mBufN - 1) = Left$(mBuf(mBufN - 1), Len(mBuf(mBufN - 1)) - 1)
+    End If
+End Sub
+
+Private Sub EndObj()
+    TrimComma
+    A "}" & vbLf
+End Sub
+
+Private Sub EndObjRaw()      ' obiect fara newline (ex: events)
+    TrimComma
+    A "}"
+End Sub
+
+Private Sub EndArr()
+    TrimComma
+    A "]"
+End Sub
+
+' scrie proprietate string doar daca are continut (economie de tokeni)
+Private Sub PS(ByVal K As String, ByVal v As String)
+    If Len(v) = 0 Then Exit Sub
+    A JS(K) & ":" & JS(v) & ","
+End Sub
+
+Private Sub PN(ByVal K As String, ByVal v As Variant)
+    If IsNull(v) Then Exit Sub
+    A JS(K) & ":" & Replace(CStr(v), ",", ".") & ","
+End Sub
+
+Private Sub PB(ByVal K As String, ByVal v As Variant)
+    If IsNull(v) Then Exit Sub
+    A JS(K) & ":" & IIf(CBool(v), "true", "false") & ","
+End Sub
+
+Private Function JS(ByVal S As String) As String
+    Dim i As Long, c As String, o As String
+    For i = 1 To Len(S)
+        c = Mid$(S, i, 1)
+        Select Case AscW(c)
+            Case 34:  o = o & "\"""
+            Case 92:  o = o & "\\"
+            Case 8:   o = o & "\b"
+            Case 9:   o = o & "\t"
+            Case 10:  o = o & "\n"
+            Case 12:  o = o & "\f"
+            Case 13:  o = o & "\r"
+            Case Is < 32: o = o & "\u" & Right$("000" & Hex$(AscW(c)), 4)
+            Case Else: o = o & c
+        End Select
+    Next i
+    JS = """" & o & """"
+End Function
+
+'==================================================================
+' HELPERE GENERALE (fara On Error Resume Next)
+'==================================================================
+Private Function GP(obj As Object, ByVal pName As String) As Variant
+    On Error GoTo Fail
+    GP = obj.Properties(pName).value
+    Exit Function
+Fail:
+    GP = Null
+End Function
+
+Private Function CStr2(ByVal v As Variant) As String
+    If IsNull(v) Then CStr2 = "" Else CStr2 = CStr(v)
+End Function
+
+Private Function CLng2(ByVal v As Variant) As Variant
+    If IsNull(v) Then CLng2 = Null Else CLng2 = CLng(v)
+End Function
+
+Private Function CBool2(ByVal v As Variant) As Variant
+    If IsNull(v) Then CBool2 = Null Else CBool2 = CBool(v)
+End Function
+
+Private Function IsSkipped(ByVal nm As String) As Boolean
+    Dim p As Variant
+    For Each p In Split(OPT_SKIP_PREFIX, "|")
+        If Left$(nm, Len(p)) = p Then IsSkipped = True: Exit Function
+    Next p
+End Function
+
+Private Function TableExists(ByVal nm As String) As Boolean
+    On Error GoTo Fail
+    Dim S As String
+    S = CurrentDb.TableDefs(nm).Name
+    TableExists = True
+    Exit Function
+Fail:
+    TableExists = False
+End Function
+
+Private Sub CloseObjQuiet(ByVal t As Long, ByVal nm As String)
+    On Error GoTo Fail
+    DoCmd.Close t, nm, acSaveNo
+    Exit Sub
+Fail:
+End Sub
+
+Private Sub LogErr(ByVal ctx As String, ByVal msg As String)
+    mErrors.Add ctx & " -> " & msg
+    Debug.Print "[EXPORT ERR] " & ctx & " -> " & msg
+End Sub
+
+Private Function SafeName(ByVal S As String) As String
+    Dim bad As Variant, b As Variant
+    bad = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+    For Each b In bad
+        S = Replace(S, b, "_")
+    Next b
+    SafeName = S
+End Function
+
+Private Function CsvCell(ByVal v As Variant) As String
+    Dim S As String
+    If IsNull(v) Then CsvCell = "": Exit Function
+    If VarType(v) = vbByte + vbArray Then CsvCell = "<binary>": Exit Function
+    S = CStr(v)
+    If InStr(S, ",") > 0 Or InStr(S, """") > 0 Or InStr(S, vbCr) > 0 Or InStr(S, vbLf) > 0 Then
+        S = """" & Replace(S, """", """""") & """"
+    End If
+    CsvCell = S
+End Function
+
+Private Sub EnsureDir(ByVal p As String)
+    Dim parts() As String, i As Long, cur As String
+    p = Replace(p, "/", "\")
+    If Right$(p, 1) = "\" Then p = Left$(p, Len(p) - 1)
+    parts = Split(p, "\")
+    cur = parts(0)
+    For i = 1 To UBound(parts)
+        cur = cur & "\" & parts(i)
+        If Not FolderExists(cur) Then MkDir cur
+    Next i
+End Sub
+
+Private Function FolderExists(ByVal p As String) As Boolean
+    On Error GoTo Fail
+    FolderExists = ((GetAttr(p) And vbDirectory) = vbDirectory)
+    Exit Function
+Fail:
+    FolderExists = False
+End Function
+
+' UTF-8 fara BOM (python json.load merge direct)
+Private Sub WriteUtf8(ByVal path As String, ByVal content As String)
+    On Error GoTo Fail
+    Dim S As Object, b As Object
+    Set S = CreateObject("ADODB.Stream")
+    S.type = 2: S.Charset = "utf-8": S.Open
+    S.WriteText content
+    S.Position = 0
+    S.type = 1
+    S.Position = 3                      ' sare peste BOM
+    Set b = CreateObject("ADODB.Stream")
+    b.type = 1: b.Open
+    S.CopyTo b
+    b.SaveToFile path, 2                ' adSaveCreateOverWrite
+    b.Close: S.Close
+    Exit Sub
+Fail:
+    LogErr "write:" & path, Err.Description
+End Sub
+
+'==================================================================
+' MAPARI DE TIPURI
+'==================================================================
+Private Function DaoTypeName(ByVal t As Long) As String
+    Select Case t
+        Case 1: DaoTypeName = "Boolean"
+        Case 2: DaoTypeName = "Byte"
+        Case 3: DaoTypeName = "Integer"
+        Case 4: DaoTypeName = "Long"
+        Case 5: DaoTypeName = "Currency"
+        Case 6: DaoTypeName = "Single"
+        Case 7: DaoTypeName = "Double"
+        Case 8: DaoTypeName = "Date"
+        Case 9: DaoTypeName = "Binary"
+        Case 10: DaoTypeName = "Text"
+        Case 11: DaoTypeName = "LongBinary"
+        Case 12: DaoTypeName = "Memo"
+        Case 15: DaoTypeName = "GUID"
+        Case 16: DaoTypeName = "BigInt"
+        Case 18: DaoTypeName = "Char"
+        Case 19: DaoTypeName = "Numeric"
+        Case 20: DaoTypeName = "Decimal"
+        Case 21: DaoTypeName = "Float"
+        Case 22: DaoTypeName = "Time"
+        Case 23: DaoTypeName = "TimeStamp"
+        Case 101: DaoTypeName = "Attachment"
+        Case Else: DaoTypeName = "T" & t
+    End Select
+End Function
+
+' sugestie de tip MariaDB - economiseste munca la portare
+Private Function MySqlType(fld As DAO.Field) As String
+    Dim isAuto As Boolean
+    isAuto = ((fld.Attributes And 16) = 16)
+    Select Case fld.type
+        Case 1: MySqlType = "TINYINT(1)"
+        Case 2: MySqlType = "TINYINT UNSIGNED"
+        Case 3: MySqlType = "SMALLINT"
+        Case 4: MySqlType = IIf(isAuto, "INT AUTO_INCREMENT", "INT")
+        Case 5: MySqlType = "DECIMAL(19,4)"
+        Case 6: MySqlType = "FLOAT"
+        Case 7: MySqlType = "DOUBLE"
+        Case 8, 23: MySqlType = "DATETIME"
+        Case 22: MySqlType = "TIME"
+        Case 9, 11: MySqlType = "LONGBLOB"
+        Case 10: MySqlType = "VARCHAR(" & IIf(fld.Size = 0, 255, fld.Size) & ")"
+        Case 18: MySqlType = "CHAR(" & fld.Size & ")"
+        Case 12: MySqlType = "LONGTEXT"
+        Case 15: MySqlType = "CHAR(36)"
+        Case 16: MySqlType = "BIGINT"
+        Case 19, 20: MySqlType = "DECIMAL(28,6)"
+        Case 21: MySqlType = "DOUBLE"
+        Case 101: MySqlType = "LONGBLOB"
+        Case Else: MySqlType = "VARCHAR(255)"
+    End Select
+End Function
+
+Private Function QueryTypeName(ByVal t As Long) As String
+    Select Case t
+        Case 0: QueryTypeName = "SELECT"
+        Case 16: QueryTypeName = "CROSSTAB"
+        Case 32: QueryTypeName = "DELETE"
+        Case 48: QueryTypeName = "UPDATE"
+        Case 64: QueryTypeName = "APPEND"
+        Case 80: QueryTypeName = "MAKETABLE"
+        Case 96: QueryTypeName = "DDL"
+        Case 112: QueryTypeName = "SQLPASSTHROUGH"
+        Case 128: QueryTypeName = "SETOPERATION"
+        Case 144: QueryTypeName = "SPTBULK"
+        Case Else: QueryTypeName = "Q" & t
+    End Select
+End Function
+
+Private Function CtlTypeName(ByVal t As Long) As String
+    Select Case t
+        Case 100: CtlTypeName = "Label"
+        Case 101: CtlTypeName = "Rectangle"
+        Case 102: CtlTypeName = "Line"
+        Case 103: CtlTypeName = "Image"
+        Case 104: CtlTypeName = "CommandButton"
+        Case 105: CtlTypeName = "OptionButton"
+        Case 106: CtlTypeName = "CheckBox"
+        Case 107: CtlTypeName = "OptionGroup"
+        Case 108: CtlTypeName = "BoundObjectFrame"
+        Case 109: CtlTypeName = "TextBox"
+        Case 110: CtlTypeName = "ListBox"
+        Case 111: CtlTypeName = "ComboBox"
+        Case 112: CtlTypeName = "SubForm"
+        Case 114: CtlTypeName = "ObjectFrame"
+        Case 118: CtlTypeName = "PageBreak"
+        Case 119: CtlTypeName = "CustomControl"
+        Case 122: CtlTypeName = "ToggleButton"
+        Case 123: CtlTypeName = "TabControl"
+        Case 124: CtlTypeName = "Page"
+        Case 126: CtlTypeName = "Attachment"
+        Case 127: CtlTypeName = "EmptyCell"
+        Case 129: CtlTypeName = "NavigationControl"
+        Case 130: CtlTypeName = "NavigationButton"
+        Case 131: CtlTypeName = "WebBrowser"
+        Case Else: CtlTypeName = "C" & t
+    End Select
+End Function
+
+Private Function SectionName(ByVal i As Long, ByVal isReport As Boolean) As String
+    If isReport Then
+        Select Case i
+            Case 0: SectionName = "Detail"
+            Case 1: SectionName = "ReportHeader"
+            Case 2: SectionName = "ReportFooter"
+            Case 3: SectionName = "PageHeader"
+            Case 4: SectionName = "PageFooter"
+            Case Else
+                If (i - 5) Mod 2 = 0 Then
+                    SectionName = "GroupHeader" & ((i - 5) \ 2 + 1)
+                Else
+                    SectionName = "GroupFooter" & ((i - 5) \ 2 + 1)
+                End If
+        End Select
+    Else
+        Select Case i
+            Case 0: SectionName = "Detail"
+            Case 1: SectionName = "FormHeader"
+            Case 2: SectionName = "FormFooter"
+            Case 3: SectionName = "PageHeader"
+            Case 4: SectionName = "PageFooter"
+            Case Else: SectionName = "Section" & i
+        End Select
+    End If
+End Function
+
+Private Function DisplayControlName(ByVal v As Variant) As String
+    If IsNull(v) Then DisplayControlName = "": Exit Function
+    Select Case CLng(v)
+        Case 109: DisplayControlName = "TextBox"
+        Case 110: DisplayControlName = "ListBox"
+        Case 111: DisplayControlName = "ComboBox"
+        Case 106: DisplayControlName = "CheckBox"
+        Case Else: DisplayControlName = "C" & v
+    End Select
+End Function

@@ -1,0 +1,119 @@
+Option Compare Database
+Option Explicit
+
+Private Type STARTUPINFO
+    CB As Long
+    lpReserved As Long
+    lpDesktop As Long
+    lpTitle As Long
+    dwX As Long
+    dwY As Long
+    dwXSize As Long
+    dwYSize As Long
+    dwXCountChars As Long
+    dwYCountChars As Long
+    dwFillAttribute As Long
+    dwFlags As Long
+    wShowWindow As Integer
+    cbReserved2 As Integer
+    lpReserved2 As Byte
+    hStdInput As Long
+    hStdOutput As Long
+    hStdError As Long
+End Type
+
+Private Type SECURITY_ATTRIBUTES
+  nLength As Long
+  lpSecurityDescriptor As LongPtr
+  bInheritHandle As Long
+End Type
+
+Private Type OVERLAPPED
+    internal As Long
+    internalHigh As Long
+    OffSet As Long
+    OffsetHigh As Long
+    hEvent As Long
+End Type
+
+Private Type PROCESS_INFORMATION
+  hProcess As LongPtr
+  hThread As LongPtr
+  dwProcessId As Long
+  dwThreadId As Long
+End Type
+
+Private Const STARTF_USESHOWWINDOW = &H1
+Private Const STARTF_USESTDHANDLES = &H100
+Private Const SW_HIDE = 0
+Private Const SW_SHOWDEFAULT As Long = 10
+
+Private Const EM_SETSEL = &HB1
+Private Const EM_REPLACESEL = &HC2
+
+Private Const WAIT_TIMEOUT As Long = 258&
+
+Private Declare PtrSafe Sub GetStartupInfo Lib "kernel32" Alias "GetStartupInfoA" (lpStartupInfo As STARTUPINFO)
+Private Declare PtrSafe Function CreatePipe Lib "kernel32" (phReadPipe As LongPtr, phWritePipe As LongPtr, lpPipeAttributes As SECURITY_ATTRIBUTES, ByVal nSize As Long) As Long
+Private Declare PtrSafe Function CreateProcess Lib "kernel32" Alias "CreateProcessA" (ByVal lpApplicationName As String, ByVal lpCommandLine As String, lpProcessAttributes As SECURITY_ATTRIBUTES, lpThreadAttributes As SECURITY_ATTRIBUTES, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, lpEnvironment As Any, ByVal lpCurrentDriectory As String, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare PtrSafe Function SetWindowText Lib "user32" Alias "SetWindowTextA" (ByVal hWnd As LongPtr, ByVal lpString As String) As Long
+Private Declare PtrSafe Function ReadFileEx Lib "kernel32" (ByVal hFile As LongPtr, lpBuffer As Any, ByVal nNumberOfBytesToRead As Long, lpOverlapped As OVERLAPPED, ByVal lpCompletionRoutine As LongPtr) As Long
+Private Declare PtrSafe Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hWnd As LongPtr, ByVal wMsg As Long, ByVal wParam As LongPtr, lParam As Any) As LongPtr
+Private Declare PtrSafe Function CloseHandle Lib "kernel32" (ByVal hObject As LongPtr) As Long
+Private Declare PtrSafe Function GetThreadDesktop Lib "user32" (ByVal dwThread As Long) As LongPtr
+Private Declare PtrSafe Function WriteFile Lib "kernel32" (ByVal hFile As LongPtr, lpBuffer As Any, ByVal nNumberOfBytesToWrite As Long, lpNumberOfBytesWritten As Long, lpOverlapped As OVERLAPPED) As Long
+Private Declare PtrSafe Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As LongPtr, ByVal dwMilliseconds As Long) As Long
+
+Public Function ExecWait(cmdLine As String) As Boolean
+Const C_PROC_NAME = "mdl_ExecWait\ExecWait"
+
+On Error GoTo Eroare
+
+Dim i%, t$
+Dim PA As SECURITY_ATTRIBUTES
+Dim pra As SECURITY_ATTRIBUTES
+Dim tra As SECURITY_ATTRIBUTES
+Dim PI As PROCESS_INFORMATION
+Dim sui As STARTUPINFO
+Dim hRead As Long
+Dim hWrite As Long
+Dim bRead As Long
+Dim ExitLoop As Long: ExitLoop = 0
+Dim rtret As Long
+Dim lpBuffer As String, wholestr As String
+'Dim withCursor As Boolean
+
+'withCursor = (ExpectedFile <> "") And (ExpectedSize <> 0)
+
+sui.CB = Len(sui)
+GetStartupInfo sui
+sui.dwFlags = STARTF_USESHOWWINDOW Or STARTF_USESTDHANDLES
+sui.wShowWindow = 0
+        
+'If withCursor Then
+'    Init_Meter
+'    glMTR.Initialize CLng(ExpectedSize / 1000), ExpectedFile, False
+'End If
+
+If CreateProcess(vbNullString, cmdLine, pra, tra, 1, 0, ByVal 0&, vbNullString, sui, PI) <> 0 Then
+    Do
+        rtret = WaitForSingleObject(PI.hProcess, 100)
+            
+        If rtret <> WAIT_TIMEOUT Then Exit Do
+        
+        'If withCursor Then glMTR.UpdateTask CLng(FileLen(ExpectedFile) / 1000), , CStr(Round(FileLen(ExpectedFile) / 1000, 2)) & " / " & CStr(Round(ExpectedSize / 1000, 2)) & " Kb."
+
+        DoEvents
+       
+    Loop
+End If
+
+ExecWait = True
+
+IESIRE:
+Exit Function
+
+Eroare:
+    DebugPrint "EROARE (" & cmdLine & "): " & Err.Description, C_PROC_NAME
+    Resume IESIRE
+End Function

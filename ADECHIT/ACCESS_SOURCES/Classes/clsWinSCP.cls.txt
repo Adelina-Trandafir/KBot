@@ -1,0 +1,519 @@
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Public Event FtpError(e As String)
+Public Event Progress(FileName As String, Percent As Double, Size As Long)
+Public Event DownloadDone(File As String)
+Public Event UploadDone(remoteFile As String, LastWrite As Date)
+
+Private WithEvents Ses As WinSCPnet.session
+Attribute Ses.VB_VarHelpID = -1
+Private mySessionOptions As WinSCPnet.sessionOptions
+
+Private strCurrentDir As String
+Private strCurrentFile As String
+Private colCurrentDir As Collection
+Private wscpFile As clsWinScpFile
+Private blnIsOpen As Boolean
+Private lngFileSize As Long
+
+'============================
+' Property Let SetCurrentFolder
+'============================
+Public Property Let SetCurrentFolder(value As String)
+On Error GoTo ErrHandler
+
+strCurrentDir = value
+Set colCurrentDir = Nothing
+
+Exit Property
+
+ErrHandler:
+MsgBox "Error in SetCurrentFolder: " & Err.Description, vbCritical
+End Property
+
+'============================
+' Property Let SetCurrentFile
+'============================
+Public Property Let SetCurrentFile(value As String)
+On Error GoTo ErrHandler
+
+strCurrentFile = Replace(value, "\", "/")
+Set wscpFile = Nothing
+
+Exit Property
+
+ErrHandler:
+MsgBox "Error in SetCurrentFile: " & Err.Description, vbCritical
+End Property
+
+'============================
+' Property Get FileExists
+'============================
+Public Property Get FileExists(value As String) As Boolean
+On Error GoTo ErrHandler
+
+Dim bolFileExists As Boolean
+Dim wFile As Object
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+strCurrentFile = value
+
+Set wscpFile = Nothing
+
+If Not Ses Is Nothing Then
+    bolFileExists = Ses.FileExists(value)
+End If
+
+If bolFileExists Then
+    Set wFile = Ses.GetFileInfo(value)
+    If Not wFile Is Nothing Then
+        Set wscpFile = New clsWinScpFile
+        With wscpFile
+            .FullPath = wFile.FullName
+            .Name = wFile.Name
+            .Permissions = wFile.FilePermissions
+            .LastWrite = wFile.LastWriteTime
+            .IsFolder = wFile.IsDirectory
+            .Size = wFile.Length32
+        End With
+    End If
+End If
+
+FileExists = bolFileExists
+Exit Property
+
+ErrHandler:
+MsgBox "Error in FileExists property: " & Err.Description, vbCritical
+FileExists = False
+End Property
+
+'============================
+' Property Get CurrentFile
+'============================
+Public Property Get CurrentFile(Optional newFile As String = "") As clsWinScpFile
+On Error GoTo ErrHandler
+Dim fe As Boolean
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+If newFile <> "" Then
+    If FileExists(newFile) Then
+        Set CurrentFile = wscpFile
+    Else
+        Set CurrentFile = New clsWinScpFile  ' Avoids error if nothing found
+    End If
+        
+ElseIf wscpFile Is Nothing Then
+    fe = FileExists(strCurrentFile)
+    Set CurrentFile = wscpFile
+
+Else
+    Set CurrentFile = wscpFile
+End If
+
+Exit Property
+
+ErrHandler:
+MsgBox "Error in CurrentFile property: " & Err.Description, vbCritical
+Set CurrentFile = Nothing
+End Property
+
+'============================
+' Property Get CurrentFolder
+'============================
+Public Property Get CurrentFolder(Optional newPath As String = "") As Collection
+On Error GoTo ErrHandler
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+If newPath <> "" Then
+    strCurrentDir = newPath
+Else
+    If strCurrentDir = "" Then strCurrentDir = "/"
+End If
+
+If colCurrentDir Is Nothing Then
+    Set colCurrentDir = New Collection
+    GetDirectory
+End If
+
+Set CurrentFolder = colCurrentDir
+
+Exit Property
+
+ErrHandler:
+MsgBox "Error in CurrentFolder property: " & Err.Description, vbCritical
+Set CurrentFolder = Nothing
+End Property
+
+'============================
+' Function DownloadFile with wildcards
+'============================
+Public Function DownloadFile(localFilePath As String, Optional remoteFilePath As String = "") As Boolean
+Dim transferResult As Object
+On Error GoTo ErrHandler
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Function
+End If
+
+If remoteFilePath <> "" Then strCurrentFile = remoteFilePath
+
+' Make sure session is open
+If Ses Is Nothing Then
+    MsgBox "Session is not open!", vbExclamation
+    DownloadFile = False
+    Exit Function
+End If
+
+' Download the remote file to the specified local file.
+' The third parameter (False) means we do not remove the remote file.
+Set transferResult = Ses.GetFiles(strCurrentFile, localFilePath, False)
+
+' Check the transfer result.
+If transferResult.IsSuccess Then
+    DownloadFile = True
+Else
+    Dim failure As Variant
+    For Each failure In transferResult.Failures
+        MsgBox "Error downloading file: " & failure.Message, vbExclamation
+    Next failure
+    DownloadFile = False
+End If
+
+Exit Function
+
+ErrHandler:
+MsgBox "Error: " & Err.Description, vbCritical
+DownloadFile = False
+End Function
+
+'============================
+' Function DownloadFile specific file to dest folder. destfolder HAS to be a folder. the filename is kept from ftp
+'============================
+Public Function DownloadFileToFolder(localFolderPath As String, Optional remoteFilePath As String = "") As String
+Dim transferResult As Object
+
+On Error GoTo ErrHandler
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Function
+End If
+
+If remoteFilePath <> "" Then strCurrentFile = remoteFilePath
+
+' Make sure session is open
+If Ses Is Nothing Then
+    MsgBox "Session is not open!", vbExclamation
+    DownloadFileToFolder = ""
+    Exit Function
+End If
+
+' Download the remote file to the specified local file.
+' The third parameter (False) means we do not remove the remote file.
+Set transferResult = Ses.GetFileToDirectory(strCurrentFile, localFolderPath, False)
+
+' Check the transfer result.
+If transferResult.Error Is Nothing Then
+    DownloadFileToFolder = transferResult.Destination
+Else
+    DownloadFileToFolder = ""
+End If
+
+Exit Function
+
+ErrHandler:
+MsgBox "Error: " & Err.Description, vbCritical
+DownloadFileToFolder = False
+End Function
+
+Public Function DeleteFile(remoteFile As String) As Boolean
+Dim transferResult As Object
+On Error GoTo ErrHandler
+
+If Not blnIsOpen Then
+    MsgBox "FTP connection is not open!", vbExclamation
+    DeleteFile = False
+    Exit Function
+End If
+
+' Attempt to remove the file.
+Set transferResult = Ses.RemoveFiles(remoteFile)
+
+' Check if the removal succeeded.
+If transferResult.IsSuccess Then
+    DeleteFile = True
+Else
+    Dim failure As Variant
+    For Each failure In transferResult.Failures
+        MsgBox "Error deleting file: " & failure.Message, vbExclamation
+    Next failure
+    DeleteFile = False
+End If
+
+Exit Function
+
+ErrHandler:
+MsgBox "Error in DeleteFile: " & Err.Description, vbCritical
+DeleteFile = False
+End Function
+
+Public Function UploadFile(localFilePath As String, remoteFilePath As String) As Boolean
+On Error GoTo ErrHandler
+Dim transferResult As Object
+
+With New FileSystemObject
+    If .FileExists(localFilePath) Then
+        lngFileSize = .GetFile(localFilePath).Size
+    Else
+        RaiseEvent FtpError("File " & localFilePath & " doesn't exist!")
+        Exit Function
+    End If
+End With
+
+' Upload the file using PutFiles.
+' The third parameter (False) indicates not to remove the local file after upload.
+Set transferResult = Ses.PutFiles(localFilePath, remoteFilePath, False)
+
+' Check if the upload succeeded.
+If transferResult.IsSuccess Then
+    UploadFile = True
+Else
+    Dim failure As Variant
+    For Each failure In transferResult.Failures
+        MsgBox "Error uploading file: " & failure.Message, vbExclamation
+    Next failure
+    UploadFile = False
+End If
+
+Exit Function
+
+ErrHandler:
+MsgBox "Error in UploadFile: " & Err.Description, vbCritical
+UploadFile = False
+End Function
+
+'============================
+' Method CloseSession
+'============================
+Public Sub CloseSession()
+If Not Ses Is Nothing And blnIsOpen Then
+    Ses.Close
+    blnIsOpen = False
+End If
+
+End Sub
+
+Public Sub OpenSession()
+If mySessionOptions Is Nothing Then
+    MsgBox "Sesiunea FTP nu este initializata!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+If Not Ses Is Nothing Then Ses.Open mySessionOptions
+blnIsOpen = True
+
+End Sub
+
+'============================
+' Class_Initialize
+'============================
+Private Sub Class_Initialize()
+On Error GoTo ErrHandler
+    Init_Options
+    Set Ses = New WinSCPnet.session
+    'Ses.DebugLogPath = CurrentProject.Path & "\RES\winscp.log"
+    'Ses.DebugLogLevel = 0
+    'Ses.SessionLogPath = CurrentProject.Path & "\RES\winscp_session.log"
+    
+    Ses.Open mySessionOptions
+    blnIsOpen = True
+    ConexiuneOK = True
+    
+    If Not Ses Is Nothing Then
+        strCurrentDir = Ses.HomePath
+    End If
+    Exit Sub
+ErrHandler:
+    MsgBox "Error in Class_Initialize: " & Err.Description, vbCritical
+End Sub
+
+Private Sub Init_Options()
+Set mySessionOptions = New WinSCPnet.sessionOptions
+
+With mySessionOptions
+    .Protocol = Protocol_Ftp
+    .FtpSecure = FtpSecure_Explicit
+    .HostName = "avatarsoft.ro"
+    .UserName = "adechit@avatarsoft.ro"
+    .Password = "MUtb7gZHmwyFch68ry9t"
+    .TimeoutInMilliseconds = 5000
+End With
+End Sub
+'============================
+' GetDirectory
+'============================
+Private Sub GetDirectory()
+On Error GoTo ErrHandler
+
+Dim directoryInfo As Object
+Dim fileInfo As Object
+Dim cFile As clsWinScpFile
+Dim colCD As Collection
+Dim i As Integer, J As Integer
+Dim arrFolders() As Variant
+Dim arrFiles() As Variant
+
+If Not blnIsOpen Then
+    MsgBox "Conexiunea FTP nu este deschisa!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+Set directoryInfo = Ses.ListDirectory(strCurrentDir)
+Set colCD = New Collection
+
+' Build collection of files/folders from directory listing
+For Each fileInfo In directoryInfo.Files
+    If fileInfo.Name <> ".." Then
+        Set cFile = New clsWinScpFile
+        With cFile
+            .FullPath = fileInfo.FullName
+            .Name = fileInfo.Name
+            .Permissions = fileInfo.FilePermissions
+            .LastWrite = fileInfo.LastWriteTime
+            .IsFolder = fileInfo.IsDirectory
+            .Size = fileInfo.Length32
+        End With
+        colCD.Add cFile
+    End If
+Next fileInfo
+
+' Separate folders into array
+J = 0
+ReDim arrFolders(colCD.Count - 1)
+For i = 1 To colCD.Count
+    If colCD(i).IsFolder Then
+        Set arrFolders(J) = colCD(i)
+        J = J + 1
+    End If
+Next i
+ReDim Preserve arrFolders(J - 1)
+arrFolders = BubbleSort(arrFolders)
+
+' Separate files into array
+J = 0
+ReDim arrFiles(colCD.Count - 1)
+For i = 1 To colCD.Count
+    If Not colCD(i).IsFolder Then
+        Set arrFiles(J) = colCD(i)
+        J = J + 1
+    End If
+Next i
+ReDim Preserve arrFiles(J - 1)
+arrFiles = BubbleSort(arrFiles)
+
+' Rebuild current folder collection with sorted arrays
+Set colCurrentDir = New Collection
+Dim idx As Integer
+For idx = LBound(arrFolders) To UBound(arrFolders)
+    colCurrentDir.Add arrFolders(idx)
+Next idx
+For idx = LBound(arrFiles) To UBound(arrFiles)
+    colCurrentDir.Add arrFiles(idx)
+Next idx
+
+Set cFile = Nothing
+Set directoryInfo = Nothing
+Set fileInfo = Nothing
+
+Exit Sub
+
+ErrHandler:
+    MsgBox "Error in GetDirectory: " & Err.Description, vbCritical
+End Sub
+
+'============================
+' BubbleSort Function
+'============================
+Private Function BubbleSort(arr As Variant) As Variant
+On Error GoTo ErrHandler
+    Dim i As Long, K As Long
+    Dim temp As Variant
+    Dim lb As Long, ub As Long, n As Long
+    
+    ' Get the lower and upper bounds of the array
+    lb = LBound(arr)
+    ub = UBound(arr)
+    n = ub - lb + 1
+    
+    ' Perform bubble sort: repeat (n-1) times
+    For K = 1 To n - 1
+        For i = lb To ub - K
+            If IsEmpty(arr(i + 1)) Then Exit For
+            If arr(i).Name > arr(i + 1).Name Then
+                Set temp = arr(i)
+                Set arr(i) = arr(i + 1)
+                Set arr(i + 1) = temp
+            End If
+        Next i
+    Next K
+    
+    BubbleSort = arr
+    Exit Function
+ErrHandler:
+    MsgBox "Error in BubbleSort: " & Err.Description, vbCritical
+    BubbleSort = arr
+End Function
+
+'============================
+' Class_Terminate
+'============================
+Private Sub Class_Terminate()
+On Error Resume Next
+    If Not Ses Is Nothing Then Ses.dispose
+    Set mySessionOptions = Nothing
+    Set colCurrentDir = Nothing
+    ConexiuneOK = False
+End Sub
+
+'============================
+' Ses_Failed Event Handler
+'============================
+Private Sub Ses_Failed(ByVal sender As Variant, ByVal e As WinSCPnet.FailedEventArgs)
+RaiseEvent FtpError(e.Error)
+End Sub
+
+Private Sub Ses_FileTransferProgress(ByVal sender As Variant, ByVal e As WinSCPnet.FileTransferProgressEventArgs)
+RaiseEvent Progress(e.FileName, e.FileProgress, e.cps)
+End Sub
+
+Private Sub Ses_FileTransferred(ByVal sender As Variant, ByVal e As WinSCPnet.TransferEventArgs)
+'extra test if the remote size is equal to the downloaded size
+If e.side = WinSCPnet.ProgressSide_Remote Then
+    If wscpFile.Size = e.Length Then
+        RaiseEvent DownloadDone(e.FileName)
+    End If
+Else
+    If Not e.touch Is Nothing Then
+        Me.SetCurrentFile = e.touch.FileName
+        RaiseEvent UploadDone(e.touch.FileName, e.touch.LastWriteTime)
+    End If
+End If
+End Sub

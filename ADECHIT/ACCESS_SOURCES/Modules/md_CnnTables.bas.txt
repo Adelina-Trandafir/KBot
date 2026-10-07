@@ -1,0 +1,570 @@
+Option Compare Database
+Option Explicit
+
+Private cEr_N As Integer
+Private cEr_D As String
+Private db As DAO.Database
+
+Function CnnTable2021(b As String, Typ As Byte, frm As Access.Form) As Boolean
+On Error GoTo Eroare
+If b = "" Then Exit Function
+
+CnnTable2021 = False
+
+Dim RC As DAO.Recordset, TC As DAO.Recordset
+Dim rs As DAO.Recordset
+Dim TD As DAO.TableDef
+
+Dim Sir As String
+Dim i As Long
+
+'CurrentDb.Execute "DELETE * FROM TblExtern"
+
+Set RC = CurrentDb.OpenRecordset("SELECT Struct, NumTbl FROM [_TBLS_] WHERE Typ=" & Typ & " Order By NumTbl;")
+Set TC = CurrentDb.OpenRecordset("SELECT * FROM [Erori Intrare]", 2)
+Set db = OpenDatabase(b, False, False, ";pwd=andreI")
+
+If Not POP(RC) Then 'daca lipsesc inregistrari pentru baza curenta
+    Set db = Nothing
+    Set TD = Nothing
+    Set RC = Nothing
+    CnnTable2021 = False
+    DebugPrint "EROARE: Lipsa baza de date, sau tabel [_TBLS_] eronat!", "Modules/Leg_Table/CnnTbl()"
+    Exit Function
+End If
+
+Sir = "Ms Access;PWD=andreI;DATABASE=" + b
+
+
+For i = 1 To RC.RecordCount
+    'nu exista tabelul in backend
+    If Nz(DLookup("ID", "TblExtern", "Tbl Like '" & RC!numtbl & "' AND Baza Like '" & b & "'"), 0) = 0 Then
+        If Not AddTableFromTbls(RC!numtbl) Then
+            TC.AddNew
+                TC!Dt = Now()
+                TC!unt = b
+                TC!Tbl = RC!numtbl
+                TC!er_n = 1
+                TC!er_d = "Lipsa tabel [@" & RC!numtbl & "]"
+                TC!Bd = Sir
+            TC.Update
+        End If
+        
+        If CheckTableStructure(RC!numtbl, RC!Struct, TC, b) Then
+            Set TD = CurrentDb.CreateTableDef("" & RC!numtbl & "")
+                TD.Connect = Sir
+                TD.SourceTableName = RC!numtbl
+                CurrentDb.TableDefs.Append TD
+        End If
+    Else
+        If CheckTableStructure(RC!numtbl, RC!Struct, TC, b) Then
+            Set TD = CurrentDb.CreateTableDef("" & RC!numtbl & "")
+                TD.Connect = Sir
+                TD.SourceTableName = RC!numtbl
+                CurrentDb.TableDefs.Append TD
+        End If
+    End If
+    
+    RC.MoveNext
+Next
+
+CurrentDb.TableDefs.Refresh
+CnnTable2021 = True
+
+IESIRE:
+Set db = Nothing
+Set RC = Nothing
+Set TC = Nothing
+Set rs = Nothing
+Set TD = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTables/CnnTable2021()"
+    CnnTable2021 = False
+    Resume IESIRE
+End Function
+ 
+Function CheckTableStructure(Tbl As String, Struct As Integer, TC As DAO.Recordset, DbName As String) As Boolean
+On Error GoTo Eroare
+
+Dim rs As DAO.Recordset
+Dim fld As DAO.Field
+Dim tDef As DAO.TableDef
+
+CheckTableStructure = False
+
+Set tDef = db.TableDefs("[" & Tbl & "]")
+Set rs = CurrentDb.OpenRecordset("SELECT * FROM [_Struct_] WHERE Id=" & Struct & " ORDER BY Fld", 2)
+POP rs
+
+Do While Not rs.EOF
+    If Not HasField(tDef, rs!fld) Then
+        If Not AddField(tDef, rs!fld, rs!Typ, rs!Siz) Then
+            TC.AddNew
+                TC!Dt = Now()
+                TC!unt = DbName
+                TC!Tbl = Tbl
+                TC!er_n = 2
+                TC!er_d = "Adaugare camp [" & rs!fld & "] in tabelul @[" & Tbl & "] esuata"
+                TC!Bd = db.Connect
+            TC.Update
+        End If
+    End If
+    
+    If Not IsFieldOK(tDef, rs!fld, rs!Typ, Nz(rs!Siz, 0)) Then
+        If Not FixField(tDef, rs!fld, rs!Typ, Nz(rs!Siz, 0)) Then
+            TC.AddNew
+                TC!Dt = Now()
+                TC!unt = DbName
+                TC!Tbl = Tbl
+                TC!er_n = 3
+                TC!er_d = "Modificare camp [" & rs!fld & "] in tabelul [" & Tbl & "] esuata"
+                TC!Bd = db.Connect
+            TC.Update
+        End If
+    End If
+    
+    rs.MoveNext
+Loop
+
+CheckTableStructure = True
+
+IESIRE:
+Set rs = Nothing
+Set fld = Nothing
+Set tDef = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTable/CheckTableStructure()"
+    Resume IESIRE
+End Function
+
+Function AddField(TD As DAO.TableDef, fld As String, Typ As Integer, Siz As Integer) As Boolean
+On Error GoTo Eroare
+
+Dim FD As DAO.Field
+
+Set FD = TD.CreateField
+    FD.Name = fld
+    FD.type = Typ
+    FD.Size = Siz
+
+TD.Fields.Append FD
+TD.Fields.Refresh
+
+AddField = True
+
+Set FD = Nothing
+
+Exit Function
+
+Eroare:
+    AddField = False
+    If Not FD Is Nothing Then Set FD = Nothing
+End Function
+
+Function IsFieldOK(TD As DAO.TableDef, fld As String, Typ As Integer, Siz As Integer) As Boolean
+On Error GoTo Eroare
+
+IsFieldOK = True
+
+If Typ <> CInt(TD.Fields("[" & fld & "]").type) Then IsFieldOK = False
+If Siz <> CInt(TD.Fields("[" & fld & "]").Size) Then IsFieldOK = False
+    
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTables/IsFieldOK()"
+End Function
+
+Function FixField(TD As DAO.TableDef, fld As String, Typ As Integer, Siz As Integer) As Boolean
+On Error GoTo Eroare
+
+Dim FD As DAO.Field
+Dim idx As DAO.Index
+Dim wasIndexed As Boolean
+
+
+FixField = False
+
+If ExistaTemporar(TD) Then
+    TD.Fields.Delete "Temporar"
+    TD.Fields.Refresh
+End If
+
+Set FD = TD.CreateField
+    FD.Name = "Temporar"
+    FD.Size = Siz
+    FD.type = Typ
+    If Typ = 10 Or Typ = 12 Then FD.AllowZeroLength = True
+
+TD.Fields.Append FD
+TD.Fields.Refresh
+
+If FD.type = 4 Or FD.type = 7 Then 'daca e numeric trebuie sa verific ce valoare introduc in el
+    db.Execute "Update [" & TD.Name & "] Set Temporar = Iif(IsNumeric([" & fld & "]),[" & fld & "],0)", dbFailOnError
+Else
+    db.Execute "Update [" & TD.Name & "] Set Temporar = [" & fld & "]", dbFailOnError
+End If
+
+Call RemoveFieldRealtions(fld, TD.Name) 'campul selectat pentru modificare face parte dintr-una sau mai multe relatii
+
+Set idx = IndexTemporar(TD, fld) 'salvez indexul (daca are) si apoi il sterg
+
+TD.Fields.Delete "" & fld & ""
+
+TD.Fields.Refresh
+
+TD.Fields("Temporar").Name = fld
+         
+If Not idx Is Nothing Then
+    idx.Name = fld
+    TD.Indexes.Append idx
+End If
+
+TD.Fields.Refresh
+
+FixField = True
+
+IESIRE:
+Set idx = Nothing
+Set FD = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTable/FixField()"
+    FixField = False
+    Resume IESIRE
+End Function
+
+Function RemoveFieldRealtions(fld As String, Tbl As String) As Boolean
+On Error GoTo Eroare
+
+Dim i As Integer
+Dim J As Integer
+
+Do
+    If db.Relations(i).ForeignTable = Tbl Or db.Relations(i).Table = Tbl Then
+        For J = 0 To db.Relations(i).Fields.Count - 1
+            If db.Relations(i).Fields(J).Name = fld Then
+                db.Relations.Delete db.Relations(i).Name
+                db.Relations.Refresh
+            End If
+        Next J
+    End If
+    i = i + 1
+Loop Until i = db.Relations.Count - 1
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTable/RemoveFieldRealtions()"
+    RemoveFieldRealtions = False
+End Function
+
+Function AddTableFromTbls(Tabel As String) As Boolean
+On Error GoTo Eroare
+
+AddTableFromTbls = False
+
+DoCmd.TransferDatabase acExport, "Microsoft Access", db.Name, acTable, "@" & Tabel, Tabel, False
+
+db.TableDefs.Refresh
+
+AddTableFromTbls = True
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules\Leg_table\AddTblFromTbl()"
+End Function
+
+
+Sub SetUnsetPassword(PunIau As Byte)
+On Error GoTo Eroare
+
+P1:
+If PunIau = 1 Then db.NewPassword "", "andreI"        'pune parola noua
+
+If PunIau <> 1 Then db.NewPassword "andreI", ""       'ia parola veche"
+
+Exit Sub
+
+Eroare:
+    DebugPrint Err.Description, "Modules/Siguranta/PSS()"
+End Sub
+
+Function IndexTemporar(TD As DAO.TableDef, fName As String) As DAO.Index
+On Error GoTo Eroare
+
+Dim i As Integer
+Dim cntIndex As Integer
+Dim savIndex As Boolean
+
+cntIndex = 0
+
+For i = 0 To TD.Indexes.Count - 1 'numar cati indecsi exista pe campul ales
+    If TD.Indexes(i).Fields = "+" & fName Or TD.Indexes(i).Fields = fName Then
+        cntIndex = cntIndex + 1
+    End If
+Next i
+
+i = 0
+
+If cntIndex = 0 Then 'campul nu este indexat
+    Set IndexTemporar = Nothing
+    Exit Function
+End If
+
+If cntIndex > 1 Then 'daca exista mai mult de un index, il aleg doar pe cel Primary
+    Do
+        If TD.Indexes(i).Fields = "+" & fName Or TD.Indexes(i).Fields = fName Then
+            If TD.Indexes(i).Primary Then
+                Set IndexTemporar = TD.CreateIndex("Temporar") 'creez un index nou, cu proprietatile celui pe care vreau sa il sterg
+                    IndexTemporar.Primary = TD.Indexes(i).Primary
+                    IndexTemporar.Fields = TD.Indexes(i).Fields
+                    IndexTemporar.IgnoreNulls = TD.Indexes(i).IgnoreNulls
+                    
+                    savIndex = True
+            
+                    TD.Indexes.Delete TD.Indexes(i).Name
+            Else
+                TD.Indexes.Delete TD.Indexes(i).Name
+            End If
+        End If
+        
+        i = i + 1
+    
+    Loop Until i >= TD.Indexes.Count
+    
+    i = 0
+
+    If Not savIndex Then 'nu a fost niciunul Primary, deci il aleg pe primul
+        Do
+            If TD.Indexes(i).Fields = "+" & fName Or TD.Indexes(i).Fields = fName Then
+                
+                If Not savIndex Then
+                    Set IndexTemporar = TD.CreateIndex("Temporar") 'creez un index nou, cu proprietatile celui pe care vreau sa il sterg
+                        IndexTemporar.Primary = TD.Indexes(i).Primary
+                        IndexTemporar.Fields = TD.Indexes(i).Fields
+                        IndexTemporar.IgnoreNulls = TD.Indexes(i).IgnoreNulls
+                        
+                        savIndex = True
+                End If
+                
+                If savIndex Then TD.Indexes.Delete TD.Indexes(i).Name
+            End If
+        
+            i = i + 1
+        
+        Loop Until i >= TD.Indexes.Count
+    End If
+Else 'exista doar un index, deci il copiez si apoi il sterg
+    Do
+        If TD.Indexes(i).Fields = "+" & fName Or TD.Indexes(i).Fields = fName Then
+            Set IndexTemporar = TD.CreateIndex("Temporar") 'creez un index nou, cu proprietatile celui pe care vreau sa il sterg
+                IndexTemporar.Primary = TD.Indexes(i).Primary
+                IndexTemporar.Fields = TD.Indexes(i).Fields
+                IndexTemporar.IgnoreNulls = TD.Indexes(i).IgnoreNulls
+            
+            TD.Indexes.Delete TD.Indexes(i).Name
+        End If
+        
+        i = i + 1
+    
+    Loop Until i >= TD.Indexes.Count
+End If
+
+Exit Function
+
+Eroare:
+    If Err.Number = 3800 Then 'baza de date este prea veche si poate avea erori
+        Resume Next
+    Else
+        DebugPrint Err.Description, "Modules/mdl_CnnTables/FieldIndex"
+        Set IndexTemporar = Nothing
+    End If
+End Function
+
+
+Public Function Compact_DB(path As String) As Boolean
+On Error GoTo Eroare
+
+Dim Fso As New FileSystemObject
+Dim tmp As String
+
+Compact_DB = False
+
+'COMPACT CHOSEN DATABASE, TO TEMPORARY DATABASE NAME
+tmp = Fso.GetParentFolderName(path) & "\tmp." & Fso.GetExtensionName(path)
+
+DBEngine.CompactDatabase path, tmp, dbLangGeneral & ";pwd=andreI", dbVersion120, ";pwd=andreI"
+
+'DELETE OLD DATABASE
+Kill path
+
+'RENAME TEMPORARY DATABASE TO ORIGINAL NAME
+Name tmp As path
+
+Compact_DB = True
+
+IESIRE:
+Set Fso = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_CnnTables/Compact_DB()"
+    Compact_DB = False
+    Resume IESIRE
+End Function
+
+Function HasField(Tbl As TableDef, fld As String) As Boolean
+HasField = False
+
+On Error GoTo Eroare
+
+Dim i As Integer: i = 0
+
+For i = 0 To Tbl.Fields.Count - 1
+    If Tbl.Fields(i).Name = fld Then
+        HasField = True
+        Exit Function
+    End If
+Next i
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules\Leg_table\HasField()"
+
+End Function
+
+Function ExistaTemporar(tdf As TableDef) As Boolean
+On Error GoTo Eroare
+
+Dim temp As String
+Dim fld As DAO.Field
+
+ExistaTemporar = False
+
+For Each fld In tdf.Fields
+    If fld.Name = "Temporar" Then
+        ExistaTemporar = True
+        GoTo IESIRE
+    End If
+Next
+
+IESIRE:
+Set fld = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/Leg_Tabele/ExistaTemporar()"
+    ExistaTemporar = False
+    Resume IESIRE
+End Function
+
+Public Sub StergeLegaturi(Optional Bz As String = "")
+On Error GoTo Eroare
+
+DebugPrint "START Modules/Leg_Table/StergeLegaturi()", , False
+
+Dim Dbs As DAO.Database
+Dim tdf As DAO.TableDef
+Dim Index As Long
+Dim pula As Integer
+Set Dbs = CurrentDb
+
+Set Dbs = CurrentDb
+pula = Dbs.TableDefs.Count - 1
+For Index = pula To 0 Step -1
+    Set tdf = Dbs.TableDefs(Index)
+    If Left(tdf.Connect, 5) <> "" Then
+        If Bz <> "" Then
+            If Split(tdf.Connect, "\")(UBound(Split(tdf.Connect, "\"))) <> Bz Then
+                GoTo Next_Index
+            Else
+                Dbs.TableDefs.Delete tdf.Name
+            End If
+        Else
+            Dbs.TableDefs.Delete tdf.Name
+        End If
+    End If
+Next_Index:
+Next Index
+
+Set Dbs = Nothing
+Set tdf = Nothing
+DebugPrint "STOP Modules/Leg_Table/StergeLegaturi()", , False
+
+Exit Sub
+
+Eroare:
+    DebugPrint Err.Description, "Modules/Leg_Table/StergeLegaturi()"
+
+End Sub
+
+Public Sub CatalogExternTabele(Baza As String, frm As Access.Form)
+Dim objCatalog As adox.Catalog
+Dim Cnt As Long
+Dim cnn As ADODB.Connection
+Dim i As Long
+Dim RC As DAO.Recordset
+    
+Set RC = CurrentDb.OpenRecordset("TblExtern", 2)
+
+'create a connection object
+Set cnn = New ADODB.Connection
+With cnn
+   .Provider = "Microsoft.ACE.OLEDB.12.0"
+   .ConnectionString = Baza
+   .Properties("Jet OLEDB:Database Password") = "andreI"
+   .Open
+End With
+
+Set objCatalog = New adox.Catalog
+
+objCatalog.ActiveConnection = cnn
+Cnt = objCatalog.Tables.Count
+
+For i = 0 To objCatalog.Tables.Count - 1
+    If objCatalog.Tables.Item(i).type = "TABLE" Then
+        RC.AddNew
+            RC!Tbl = objCatalog.Tables.Item(i).Name
+            RC!Baza = Baza
+        RC.Update
+    End If
+Next i
+
+cnn.Close
+
+Final:
+Set cnn = Nothing
+Set objCatalog = Nothing
+
+End Sub
+
+Public Function UnsafeStart()
+Application.SetOption "Error Trapping", 0
+MsgBox "Break On All Errors = True", vbOKOnly + vbInformation
+End Function
+
+Sub SafeStart()
+'Application.SetOption "Error Trapping", 2
+End Sub
+
+Public Function Autoexec() As Boolean
+Autoexec = False
+
+Call StergeLegaturi
+Call SafeStart
+
+Autoexec = True
+End Function

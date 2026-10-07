@@ -1,0 +1,42 @@
+Option Compare Database
+Option Explicit
+
+Public Enum SetWarningsEnum
+    [_F] = -1
+    swe_StopOnError = 0
+    swe_ResetToPrevious = 1
+    swe_IgnoreError = 2
+    swe_Switch = 3
+End Enum
+
+Public lastSafeOption As Single
+
+Public Function SafeUnsafe(TIP As SetWarningsEnum)
+'0 - break on all errors
+'1 - restore to previouse option
+'2 - don't break
+
+Dim ET As Single
+Dim tmpLastSafeOption As Single
+
+If TIP = swe_Switch Then
+    ET = Application.GetOption("Error Trapping")
+    If ET = 0 Then
+        Application.SetOption "Error Trapping", 2
+    Else
+        Application.SetOption "Error Trapping", 0
+    End If
+
+    MsgBox "Break On All Errors = " & CStr(CBool(CInt(ET))), vbOKOnly + IIf(ET = 0, vbExclamation, vbInformation)
+Else
+    If TIP = swe_ResetToPrevious Then
+        tmpLastSafeOption = Application.GetOption("Error Trapping")
+        Application.SetOption "Error Trapping", lastSafeOption
+        lastSafeOption = tmpLastSafeOption
+    Else
+        lastSafeOption = Application.GetOption("Error Trapping")
+        Application.SetOption "Error Trapping", TIP
+    End If
+End If
+
+End Function

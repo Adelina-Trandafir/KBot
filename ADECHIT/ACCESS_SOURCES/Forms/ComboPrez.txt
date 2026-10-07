@@ -1,0 +1,447 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =726652868
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =24
+    GridY =24
+    Width =7080
+    DatasheetFontHeight =11
+    ItemSuffix =4
+    Left =6465
+    Top =2490
+    Right =14925
+    Bottom =3975
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0xba4281d34f6ce540
+    End
+    GUID = Begin
+        0xff9b97477f53e24bb354d27e8343d20e
+    End
+    NameMap = Begin
+        0x0acc0e5500000000be140cfd29d66f45901b9c6211cfb2bc000000006656dce5 ,
+        0xd89be540000000000000000047007200750070006500000000000000e1cec347 ,
+        0x560cab4096ef27c43a68b0e800000000a0531a7dda9be5400000000000000000 ,
+        0x50006c0061007400690074006f0072006900000000000000e25a14e62c9b294e ,
+        0xab7ad1261d816e8c07000000e1cec347560cab4096ef27c43a68b0e849004400 ,
+        0x5000000000000000d41b16dee3b04641b70b6a1f6b34357e07000000e1cec347 ,
+        0x560cab4096ef27c43a68b0e84e0075006d006500000000000000222346c44ce6 ,
+        0x4d41aca20fa9667ad40507000000be140cfd29d66f45901b9c6211cfb2bc4700 ,
+        0x720075007000610000000000000054f46ee8d5c5f24e8c099c5eaff13b8c0700 ,
+        0x0000e1cec347560cab4096ef27c43a68b0e843004e005000000000000000e1d8 ,
+        0x7b499accf542933ce1b63ebc064707000000be140cfd29d66f45901b9c6211cf ,
+        0xb2bc490044004700000000000000f76a61fab7b6384b9c882aca32eba8a30700 ,
+        0x0000e1cec347560cab4096ef27c43a68b0e84900440047000000000000000000 ,
+        0x00000000000000000000000000000d0000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    Caption ="Selectează frate"
+    DatasheetFontName ="Calibri"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Section
+            Height =900
+            Name ="Detail"
+            GUID = Begin
+                0xfd641364cd1c4a478f78906c2e632624
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    OverlapFlags =87
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    ColumnCount =4
+                    ListWidth =5760
+                    Left =1980
+                    Top =60
+                    Width =5040
+                    FontSize =9
+                    BorderColor =10921638
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"510\""
+                    GUID = Begin
+                        0x958c1d0610a5c04b941d08f4f4e44c8f
+                    End
+                    Name ="C0"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT Platitori.IDP, Platitori.Nume, Grupe.Grupa, Platitori.CNP, Grupe.IDG\015\012"
+                        "FROM Grupe INNER JOIN Platitori ON Grupe.IDG = Platitori.IDG\015\012WHERE (((Pla"
+                        "titori.IDP) Not In (select IDP FROM [Prezenta_L] WHERE IDG Like Forms![Prezenta]"
+                        "![IDG])) AND ((Grupe.IDG) Like [forms]![Prezenta]![IDG]))\015\012ORDER BY Platit"
+                        "ori.Nume;\015\012"
+                    ColumnWidths ="0;2880;1440;1440"
+                    FontName ="Consolas"
+                    BaseInfo ="\"SELECT Platitori.IDP, Platitori.Nume, Grupe.Grupa, Platitori.CNP, Grupe.IDG\015"
+                        "\012FROM Grupe INNER JOIN Platitori ON Grupe.IDG = Platitori.IDG\015\012WHERE (("
+                        "(Platitori.IDP) Not In (select IDP FROM [Prezenta_L] WHERE IDG Like Forms![Preze"
+                        "nta]![IDG])) AND ((Grupe.IDG) Like [forms]![Prezenta]![IDG]))\015\012ORDER BY Pl"
+                        "atitori.Nume;\015\012\";\"Grupe\";\"Platitori\";\"\""
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1980
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =7020
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =0
+                    ForeShade =100.0
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextFontFamily =49
+                            Left =60
+                            Top =60
+                            Width =1920
+                            Height =240
+                            FontSize =9
+                            BorderColor =8355711
+                            Name ="Label1"
+                            Caption ="Selectează copil"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0xdb1ec046e194dc49b6f998f2fa43284d
+                            End
+                            GridlineColor =10921638
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =60
+                            LayoutCachedWidth =1980
+                            LayoutCachedHeight =300
+                            ThemeFontIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =5580
+                    Top =480
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =4210752
+                    Name ="sav"
+                    Caption =" Salvează"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x31297ac569198149b96256e2a1e266dc
+                    End
+                    GridlineColor =10921638
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000ab598980ab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989800000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xab5989ffab5989ffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xab5989ffab5989ffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffd9b4caffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffd9b4caffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff00000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =5580
+                    LayoutCachedTop =480
+                    LayoutCachedWidth =7020
+                    LayoutCachedHeight =840
+                    PictureCaptionArrangement =5
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =32768
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =32768
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =60
+                    Top =480
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =2
+                    ForeColor =4210752
+                    Name ="Command3"
+                    Caption =" IEȘIRE"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x0b6351f17000f54c93532ca2656e4528
+                    End
+                    GridlineColor =10921638
+                    OnClickEmMacro = Begin
+                        Version =196611
+                        ColumnsShown =0
+                        Begin
+                            Action ="Close"
+                            Argument ="2"
+                            Argument =""
+                            Argument ="1"
+                        End
+                        Begin
+                            Comment ="_AXL:<?xml version=\"1.0\" encoding=\"UTF-16\" standalone=\"no\"?>\015\012<UserI"
+                                "nterfaceMacro For=\"Command3\" Event=\"OnClick\" xmlns=\"http://schemas.microsof"
+                                "t.com/office/accessservices/2009/11/application\"><Statements><Action Name=\"Clo"
+                                "seWindow\"><Argument Name=\"Object"
+                        End
+                        Begin
+                            Comment ="_AXL:Type\">Form</Argument><Argument Name=\"Save\">Yes</Argument></Action></Stat"
+                                "ements></UserInterfaceMacro>"
+                        End
+                    End
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000082c2ea0982c2ea4b82c2ea90 ,
+                        0x82c2eade00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000082c2ea2182c2ea7582c2eab782c2eaf982c2eaff82c2eaff ,
+                        0x82c2eaff00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffa500000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffc000000000b17d4a90b17d4affb17d4af0b17d4a36 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffedffffff30b17d4a87b17d4affb17d4af0b17d4a3600000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaffffffffffd7ecf8ff82c2eaff ,
+                        0x82c2eaffffffff30b17d4a81b17d4affb17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4aff82c2eaff82c2eaff82c2eaffdceef9ffc4e2f5ff82c2eaff ,
+                        0x82c2eaffffffff27b17d4a7eb17d4affb17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4aff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffe4ffffff27b17d4a84b17d4affb17d4af0b17d4a3900000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffbd00000000b17d4a8db17d4affb17d4af0b17d4a39 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffa500000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2ea2182c2ea6f82c2eab782c2eaf982c2eaff82c2eaff ,
+                        0x82c2eaff00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000082c2ea0982c2ea4e82c2ea96 ,
+                        0x82c2eae400000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =480
+                    LayoutCachedWidth =1500
+                    LayoutCachedHeight =840
+                    PictureCaptionArrangement =5
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =32768
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =32768
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Sav_Click()
+Dim MaxIDZ As Long
+
+If Nz(C0, "") = "" Then
+    MsgBox "Nu ai ales niciun copil!", vbOKOnly + vbInformation
+    DoCmd.Close acForm, Me.Name
+    Exit Sub
+End If
+
+Dim RC As Recordset, TC As Recordset, Qc As DAO.QueryDef
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Prezenta_L", 2)
+
+RC.AddNew
+    MaxIDZ = Nz(DMax("IDZ", "Prezenta_l"), 0)
+    If MaxIDZ < Nz(DMax("IDZ", "Prezenta"), 0) Then MaxIDZ = Nz(DMax("IDZ", "Prezenta"), 0)
+    RC!IDZ = MaxIDZ + 1
+    RC!IDP = C0
+    RC!IDL = Forms!prezenta!IDL
+    RC!IDV = DLookup("IDV", "ValoriTaxe", "Activ=True")
+    RC!IDG = Forms!prezenta!IDG
+RC.Update
+
+GolesteTabel , "tmpSitDebPrezenta"
+
+Set Qc = CurrentDb.QueryDefs("SItLunara")
+    Qc.Parameters(0) = [Forms]![prezenta]![IDL]
+
+Set RC = Qc.OpenRecordset
+
+Set TC = CurrentDb.OpenRecordset("tmpSitDebPrezenta", 2)
+
+If POP(RC) Then
+    Do While Not RC.EOF
+        TC.AddNew
+            TC!IDP = RC!IDP
+            TC!SID = RC!SID
+            TC!SIC = Abs(RC!SIC)
+            TC!Retur = RC!Retur
+            TC!Platita = RC!Platita
+        TC.Update
+        
+        RC.MoveNext
+    Loop
+End If
+
+Forms!prezenta!Prezenta_sub!IDP_p.Requery
+Forms!prezenta!Prezenta_sub.Requery
+DoCmd.Close acForm, Me.Name
+
+End Sub

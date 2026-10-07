@@ -1,0 +1,63 @@
+Option Compare Database
+Option Explicit
+
+Public Sub SalvezSiguranta()
+On Error GoTo Eroare
+
+Dim TypCnn As Byte
+
+Dim Zi As String, Luna As String, An As String, Data As String, Z As String, L As String, A As String, rezZip As Single
+Dim Cale1 As String, Cale2 As String, CaleL As String
+Dim i As Long, PB As Long: PB = 2
+Dim Fisier As String
+Dim DC As String: DC = DLookup("DC", "Unitati")
+
+Zi = Day(Now)
+Luna = Month(Now)
+An = Year(Now)
+
+If Len(Zi) = 1 Then
+    Z = "0" & Zi
+Else
+    Z = Zi
+End If
+
+If Len(Luna) = 1 Then
+    L = "0" & Luna
+Else
+    L = Luna
+End If
+
+Fisier = Forms!adechit!Lst.Column(1)
+Data = Replace(Fisier, ".mdb", "") & "_" & L & Z & An
+
+Cale1 = Dir(CurrentDb.Name)
+Cale2 = CurrentDb.Name
+CaleL = Forms!adechit!Lst.Column(0) & Forms!adechit!Lst.Column(1)
+
+If Dir("C:\SIG", vbDirectory) = "" Then MkDir "C:\SIG"
+
+If Dir("C:\SIG\ADECHIT", vbDirectory) = "" Then MkDir "C:\SIG\ADECHIT"
+
+If Dir("C:\SIG\ADECHIT\" & DC, vbDirectory) = "" Then MkDir "C:\SIG\ADECHIT\" & DC
+
+If Dir("C:\SIG\ADECHIT\" & DC & "\" & Data & ".zip") <> "" Then Exit Sub
+
+rezZip = Zip7("C:\SIG\ADECHIT\" & DC & "\" & Data & ".zip", CaleL, "andreI")
+
+If rezZip = 9 Then MsgBox "Lipseste 7-Zip!", vbOKOnly + vbCritical
+
+If rezZip <> 1 Then MsgBox "Fisierul de siguranta nu a fost creat!", vbCritical, "Atentie...."
+
+Exit Sub
+
+Eroare:
+    Select Case Err.Number
+        Case 2450 Or 1001 Or 76
+            DebugPrint "Calea pentru salvare nu mai exista!", "Modules/Siguranta/SalvezSiguranta()"
+        Case 70
+            DebugPrint "Lipsa drepturi scriere in folderul (C:\SIG\ADECHIT)", "Modules/Siguranta/SalvezSiguranta()"
+        Case Else
+            DebugPrint Err.Description, "Modules/Siguranta/SalvezSiguranta()"
+    End Select
+End Sub

@@ -1,0 +1,55 @@
+Option Compare Database
+Option Explicit
+Public Const mcStrModule As String = "AvaCont"
+Public mintNumSteps As Integer
+Dim fInLoop As Boolean
+Dim fExitLoop As Boolean
+
+
+Public Function ProgressBar(frm As Form, ByRef MaxI As Long, CurrI As Long, Optional e As Boolean = False, Optional LBL As String = "", Optional Color As Long = -1)
+On Error GoTo Eroare
+    
+Dim intI As Integer
+Dim dblPct As Double
+
+With frm
+    If MaxI = -1 Then
+        !boxWhole.visible = False
+        !boxPct.visible = False
+        !BoxLbl.visible = False
+        Exit Function
+    End If
+    
+    If Color = -1 Then !boxPct.BackColor = RGB(66, 135, 245) Else !boxPct.BackColor = Color
+    
+    If !boxWhole.visible = False Then !boxWhole.visible = True
+    If !boxPct.visible = False Then !boxPct.visible = True
+    
+    If !BoxLbl.visible = False Then !BoxLbl.visible = True
+    !BoxLbl.Caption = LBL
+    !BoxLbl.ForeColor = RGB(0, 0, 0)
+    
+    If MaxI = 0 Then Exit Function
+    
+    dblPct = CurrI / MaxI
+    
+    If !boxWhole.Width * dblPct >= !boxWhole.Width Then
+        !boxPct.Width = !boxWhole.Width
+    Else
+        !boxPct.Width = !boxWhole.Width * dblPct
+    End If
+    
+
+    
+    
+    If e Then !boxPct.BackColor = RGB(255, 0, 0)
+    DoEvents
+End With
+
+PROC_EXIT:
+    Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/newProgressBar/ProgressBar()"
+    Resume Next
+End Function

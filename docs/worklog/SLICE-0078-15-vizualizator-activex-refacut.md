@@ -384,7 +384,10 @@ salvat la semnare). Se scoate ușor:
   - vechiul vizualizator deschidea sesiunile de înregistrare;
   - pe ActiveX, capcana mai are `Traced = True`, dar nimeni nu mai deschide o sesiune, deci bifa «Jurnal de
     diagnostic detaliat» din Setări nu mai produce nimic pe ActiveX;
-  - de hotărât: o scoatem, sau o legăm de urmărirea detaliată.
-- **Ajutorul** (`avansat.documente`, `avansat.jurnale`) nu e actualizat; trecut în 0000 ▸ «Ajutor de actualizat».
+  - REZOLVAT 07.10.2026 (cererea operatorului): bifa e legată de urmărirea detaliată — `ReaderHostPreview.EmbedWithActiveXAsync`
+    setează `surface.DetailedWatch = AcroPdfTraceLog.SwitchedOn` înainte de fiecare încărcare; scrie în `activex_check.log`;
+  - eticheta și textul ajutător din Setări, mesajul de stare și ajutorul numesc acum `activex_check.log`;
+  - rămâne: liniile `SaveTrap#n` nu apar în `acropdf_trace.log` pe ActiveX (nu se deschide o sesiune de înregistrare).
+- **Ajutorul** (`avansat.documente`, `avansat.jurnale`): actualizat 07.10.2026 (numele fișierului `activex_check.log`, eticheta `0078-15`).
 - **Versiunile** (FileVersion Controls / Common / App) nu au fost mărite: nu s-a cerut încă.
 - **Regula din §5.6:** de căutat în cod alte citiri cu `FileShare.Read` pe PDF-uri ținute de Adobe.

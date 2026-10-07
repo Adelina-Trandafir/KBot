@@ -3,10 +3,17 @@
 Routes of the ISSUED invoices of E-Factura (slice 00EF-06). All `@require_session` (K-BOT bearer): the unit is the
 session's (`g.session.db_name`), never a parameter of the request. The rules are in facturi.py.
 
-  Issuer         GET  /api/efactura/furnizor                       -> { exista, furnizor }
+  Issuer         GET  /api/efactura/furnizor                       -> { exista, furnizor, are_facturi }  (the unit's row of
+                                                                   AVACONT_COMUN.Unitati_Detalii, 00EF-13; furnizor.AnafPreluat = 1 once
+                                                                   the ANAF button was used; are_facturi = the series and number are fixed)
+                 GET|PUT /api/efactura/furnizor/conturi           { conturi: [{ Cont }] } -> { conturi: [{ IdCont, Cont, Banca }] }
+                                                                   the unit's own IBANs (Unitati_Conturi); the bank is deduced from the account
                  PUT  /api/efactura/furnizor                       { Denumire, CodFiscal, Adresa, Orasul, Judetul, Mail,
-                                                                     Telefon, Reprezentant, SerieFactura, NumarInitial,
-                                                                     AfiseazaPrimiteNoi }
+                                                                     Telefon, SerieFactura, NumarInitial, AfiseazaPrimiteNoi }
+                                                                   -> as GET; 409 SERIE_BLOCATA when invoices exist and the series or
+                                                                   the first number changed
+                 POST /api/efactura/furnizor/anaf                  -> as GET; takes the name and address from ANAF ONCE (409
+                                                                   ANAF_DEJA_PRELUAT afterwards)
   Units          GET  /api/efactura/um?q=                          -> { um: [{ Cod, Explicatie }] }   (UN/ECE codes)
   Customers      GET  /api/efactura/clienti?q=&limit=              -> { clienti: [...] }
                  POST /api/efactura/clienti                        -> 201 the customer
@@ -125,6 +132,31 @@ def furnizor_get():
 def furnizor_put():
     answer = facturi.furnizor_set(g.session.db_name, _body())
     _audit("EF_FURNIZOR_MODIFICA", answer["furnizor"]["CodFiscal"])
+    return _json(answer)
+
+
+@efactura_bp.route("/api/efactura/furnizor/anaf", methods=["POST"])
+@require_session
+@_guarded("furnizor/anaf")
+def furnizor_anaf():
+    answer = facturi.furnizor_anaf(g.session.db_name)
+    _audit("EF_FURNIZOR_ANAF", answer["furnizor"]["CodFiscal"])
+    return _json(answer)
+
+
+@efactura_bp.route("/api/efactura/furnizor/conturi", methods=["GET"])
+@require_session
+@_guarded("furnizor/conturi/get")
+def furnizor_conturi_get():
+    return _json(facturi.conturi_get(g.session.db_name))
+
+
+@efactura_bp.route("/api/efactura/furnizor/conturi", methods=["PUT"])
+@require_session
+@_guarded("furnizor/conturi/put")
+def furnizor_conturi_put():
+    answer = facturi.conturi_set(g.session.db_name, _body())
+    _audit("EF_FURNIZOR_CONTURI", None, "conturi=%d" % len(answer["conturi"]))
     return _json(answer)
 
 

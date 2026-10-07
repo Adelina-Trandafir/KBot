@@ -1,0 +1,65 @@
+Option Compare Database
+Option Explicit
+
+Function CnnTbl(Optional Cale As String = "")
+On Error GoTo Er1
+
+Dim tblDef As TableDef
+Dim Sir As String
+Dim RC As Recordset
+Dim i As Long
+
+
+Sir = "Ms Access;PWD=;DATABASE=" + Trim(Cale)
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM _TBLS_ WHERE Typ=1", 2)
+If RC.EOF Then
+    MsgBox "Atentie! Exista o eroare la configurarea tabelului [_TBLS_]!" & vbCrLf & "Nu se poate continua!", vbOKOnly + vbCritical
+    Exit Function
+End If
+
+POP RC
+
+For i = 1 To RC.RecordCount
+    For Each tblDef In CurrentDb.TableDefs
+        If Trim(tblDef.Connect) <> "" And tblDef.Name = RC!numtbl Then
+            tblDef.Connect = Sir
+            tblDef.RefreshLink
+        End If
+    Next
+    RC.MoveNext
+Next i
+
+IESIRE:
+    Set RC = Nothing
+    Set tblDef = Nothing
+
+Exit Function
+
+Er1:
+    Select Case Err.Number
+        Case 3011
+            Resume Next
+        Case Else
+            MsgBox Err.Number & " - " & Err.Description
+            Resume IESIRE
+        End Select
+End Function
+
+
+Sub PSS(c As String, Pv As String, PN As String, PunIau As Byte)
+'On Error GoTo Er1
+Dim db As Object, Pvv As String
+
+P1:
+Set db = OpenDatabase(c, True, False, ";pwd=" & Pv)
+If PunIau = 1 Then db.NewPassword "", PN 'pune parola noua
+If PunIau <> 1 Then db.NewPassword Pv, PN       'ia parola veche
+db.Close
+
+Exit Sub
+
+Er1:
+    Pvv = Pv
+    GoTo P1
+End Sub

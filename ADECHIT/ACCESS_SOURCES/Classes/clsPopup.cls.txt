@@ -1,0 +1,25 @@
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+
+Private Sub DeletePopUpMenu()
+    'Delete PopUp menu if it exist
+On Error GoTo Eroare
+
+Dim Mn As CommandBar
+    
+For Each Mn In Application.CommandBars
+    If Mn.Name = "NcRap" Then
+        Mn.Delete
+    End If
+Next
+
+Set Mn = Nothing
+
+Eroare:
+    DebugPrint Err.Description, "Classes/clsPopup/DeletePopupMenu()"
+End Sub

@@ -4,9 +4,13 @@
 -- NOT RUN anywhere yet. Safe to run again (CREATE TABLE IF NOT EXISTS). Same engine / character set / collation as
 -- the rest: InnoDB, utf8mb3 / utf8mb3_general_ci.
 --
+-- SLICE 00EF-13 (07.10.2026): the issuer's data (EF_Furnizor) and its accounts are NO LONGER a table of each unit
+-- database: they are AVACONT_COMUN.Unitati_Detalii / Unitati_Conturi (sql/00EF_13_unitati_detalii.sql). The table
+-- below that used to be here is gone; this file now has EIGHT tables.
+--
 -- ORDER (the whole 00EF-02):
 --   1. this file, on AVACONT_SURSA;
---   2. AvacontPush, tab «Sincronizare schema»: SAFE, on every unit database (the nine tables appear in each);
+--   2. AvacontPush, tab «Sincronizare schema»: SAFE, on every unit database (the eight tables appear in each);
 --   3. 00EF_02_efactura_comun.sql, on AVACONT_COMUN (the token tables and EF_UM; not touched by the sync);
 --   4. the operator writes the rows of AVACONT_COMUN.EF_UM.
 --
@@ -23,7 +27,7 @@ USE `AVACONT_SURSA`;
 --
 --   issued invoices   Factura -> EF_Facturi        FacturaC -> EF_FacturiLinii
 --                     ClientiEF -> EF_Clienti      EF_UM -> AVACONT_COMUN.EF_UM (one list for all units)
---                     UNIT (address, contact) + Scheme row 'DPIFV' (C2, T3) -> EF_Furnizor
+--                     UNIT (address, contact) + Scheme row 'DPIFV' (C2, T3) -> AVACONT_COMUN.Unitati_Detalii (00EF-13)
 --   received invoices EF -> EF_Mesaje   EFT -> EF_Primite   EFS -> EF_PrimiteLinii
 --                     EFT_C -> EF_PrimiteNote   EFT_M -> EF_PrimiteMesaje
 --
@@ -31,36 +35,10 @@ USE `AVACONT_SURSA`;
 -- The token table is NOT here: it is common to all units, see 00EF_02_efactura_comun.sql.
 -- =====================================================================================
 
--- ---------------------------------------------------------------------------------
--- The unit as the INVOICE ISSUER. One row only (Id = 1). Replaces the UNIT columns the
--- XML reads (qFacturi_Vanzare: Furnizor, Furnizor_CUI, _Orasul, _Adresa, _Judetul, _Mail,
--- _Telefon, _Reprezentant) and the Scheme row NumeForm='DPIFV' (T3 = invoice series,
--- C2 = «show the list of new invoices to tick before downloading»).
--- The name and the tax code of the unit are ALSO in AVACONT_COMUN.Unitati (NumeUnitate, CF);
--- the copy here is what goes into the XML, so the operator can fix it without touching the
--- common table.
--- ---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `EF_Furnizor` (
-  `Id` tinyint(4) NOT NULL DEFAULT 1,
-  `Denumire` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `CodFiscal` varchar(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL COMMENT 'As sent to ANAF: digits, or RO + digits when the unit is a VAT payer',
-  `Adresa` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `Orasul` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `Judetul` varchar(8) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT 'County code the XML puts after «RO-» (e.g. PH)',
-  `Mail` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `Telefon` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `Reprezentant` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
-  `SerieFactura` varchar(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT 'Was Scheme.T3 of DPIFV; goes in front of the number: Serie_Numar',
-  `NumarInitial` int(11) NOT NULL DEFAULT 1 COMMENT 'Slice 00EF-06: first invoice number of a series that has no invoice yet (was Scheme.C5 of DPIFV)',
-  `AfiseazaPrimiteNoi` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Was Scheme.C2 of DPIFV: tick the new received invoices before downloading them',
-  `DataModificare` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`Id`) USING BTREE,
-  CONSTRAINT `CK_EF_Furnizor_UnSingurRand` CHECK (`Id` = 1)
-) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
 
 -- Units of measure (Access EF_UM) are NOT here: the list is the same for every unit (2113 UN/ECE codes, file
 -- Surse/RawExport/tables/TABLE_VALUES/EF_UM.txt), so it is ONE table in AVACONT_COMUN, like BIC. See
--- 00EF_02_efactura_comun.sql. Nine tables in this file.
+-- 00EF_02_efactura_comun.sql. Eight tables in this file.
 
 -- ---------------------------------------------------------------------------------
 -- Customers of the issued invoices (Access ClientiEF).
@@ -256,7 +234,7 @@ CREATE TABLE IF NOT EXISTS `EF_PrimiteMesaje` (
 -- =====================================================================================
 -- Check afterwards (one statement at a time):
 --   SELECT TABLE_NAME, TABLE_COLLATION FROM information_schema.TABLES
---    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'EF\_%';     -- 9 rows, utf8mb3_general_ci
+--    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'EF\_%';     -- 8 rows, utf8mb3_general_ci
 --   SELECT COUNT(*) FROM information_schema.REFERENTIAL_CONSTRAINTS
 --    WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_NAME LIKE 'FK\_EF\_%';   -- 7
 -- =====================================================================================

@@ -1,0 +1,57 @@
+Option Compare Database
+
+Function VerTBLS() As Integer
+On Error GoTo HndlErr
+
+Dim cdb As Object
+Dim Tb As TableDef, ft As Field
+Dim TC As Recordset
+Dim strOpenPwd As String, Cnt As Byte, e As Byte
+Set TC = CurrentDb.OpenRecordset("V")
+
+If Not TC!e Then Exit Function
+
+strOpenPwd = ";pwd=tzp"
+Set cdb = OpenDatabase(Name:=CurrentProject.path & "\baza.mdb", _
+                            Options:=True, _
+                            ReadOnly:=False, _
+                            Connect:=strOpenPwd)
+
+
+For Each Tb In CurrentDb.TableDefs
+    If Mid(Tb.Name, 1, 1) = "@" Then
+        Set TC = CurrentDb.OpenRecordset(Tb.Name)
+        For Each ft In TC.Fields
+            cdb.Execute ("ALTER TABLE " & Mid(Tb.Name, 2, Len(Tb.Name)) & " ADD COLUMN " & ft.Name & " " & TipFLD(ft.type))
+        Next
+        Cnt = Cnt + 1
+    End If
+Next
+
+DoCmd.SetWarnings False
+DoCmd.RunSQL "UPDATE V SET E=0"
+DoCmd.RunSQL "UPDATE Numere SET Ac=-1"
+DoCmd.SetWarnings True
+
+MsgBox "Au fost modificate " & Cnt & " tabeluri cu " & e & " erori!" & vbCrLf & "Trebuie repornit programul pentru a se actualiza!", vbOKOnly + vbInformation
+DoCmd.Quit acQuitSaveNone
+
+Exit Function
+
+HndlErr:
+    e = e + 1
+    Resume Next
+End Function
+
+Function TipFLD(t As Byte) As String
+Select Case t
+    Case 4
+        TipFLD = "Number"
+    Case 8
+        TipFLD = "datetime"
+    Case 1
+        TipFLD = "yesno"
+    Case Else
+        TipFLD = "text"
+End Select
+End Function

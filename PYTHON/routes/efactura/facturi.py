@@ -36,12 +36,16 @@ import mysql.connector
 
 from utils.database import COMMON_DB, get_kbot_connection
 
+from routes.inregistrare import anaf
+
 from . import facturi_store as store, ubl, validare
 from .tokens import EfEroare
 
 logger = logging.getLogger(__name__)
 
-SQL_FILES = "sql/00EF_02_efactura_unitate.sql și sql/00EF_06_efactura_numar_initial.sql"
+SQL_FILES = "sql/00EF_02_efactura_unitate.sql și sql/00EF_13_unitati_detalii.sql"
+SQL_FILES_CONTURI = "sql/00EF_13_unitati_detalii.sql"
+MAX_CONTURI = 50
 MAX_LINES = 1000
 MAX_LIST = 2000
 DEFAULT_LIST = 500
@@ -59,7 +63,7 @@ _LIMIT_VALUE = Decimal(10) ** 15
 # connections
 # ---------------------------------------------------------------------------------------------
 @contextmanager
-def _unit(dc):
+def _unit(dc, sql_files=SQL_FILES):
     """A transactional connection to the unit database: rolled back on any error, always closed. A missing
     table or column (the DDL was not run) and a taken invoice number become refusals the operator can act on."""
     conn = get_kbot_connection(dc)
@@ -70,7 +74,7 @@ def _unit(dc):
         errno = getattr(err, "errno", None)
         if errno in (_ER_NO_SUCH_TABLE, _ER_BAD_FIELD):
             logger.error("[efactura] schema: errno=%s %s", errno, getattr(err, "msg", ""))
-            raise EfEroare(f"Tabelele E-Factura ale unității lipsesc sau sunt vechi. Rulați {SQL_FILES}.",
+            raise EfEroare(f"Tabelele E-Factura ale unității lipsesc sau sunt vechi. Rulați {sql_files}.",
                            "TABELE_LIPSA", 503) from err
         if errno == _ER_DUP_ENTRY:
             raise EfEroare("Seria și numărul facturii sunt deja folosite. Reîncercați.", "NUMAR_FOLOSIT", 409) from err
@@ -178,6 +182,13 @@ def _date(value, label):
         raise _bad(f"{label}: dată invalidă (aaaa-ll-zz).") from None
 
 
+def _not_older(value, minimum):
+    """Slice 00EF-09: an invoice may not be dated before the one that comes just before it in its series."""
+    if minimum is not None and value < minimum:
+        raise EfEroare(f"Data facturii nu poate fi mai veche decât a ultimei facturi ({minimum.strftime('%d.%m.%Y')}).",
+                       "DATA_PREA_VECHE", 409)
+
+
 def _parse_lines(raw):
     if not isinstance(raw, list) or not raw:
         raise EfEroare("Factura trebuie să aibă cel puțin o linie.", "LINII_LIPSA", 400)
@@ -262,11 +273,15 @@ def _present_header(row):
     return out
 
 
-def _present(row, client, lines, last_of_series, has_storno):
-    """The full picture of one invoice: header, customer, lines and what the operator may do with it now."""
+def _present(row, client, lines, last_of_series, has_storno, min_date=None):
+    """The full picture of one invoice: header, customer, lines and what the operator may do with it now.
+    `poate_modifica_data` (slice 00EF-09): the date of a draft moves only while it is the last of its series, and never
+    before `data_minima` = the date of the invoice just before it."""
     out = _present_header(row)
     state, is_storno = out["stare"], out["este_storno"]
     out["poate_modifica"] = state == DRAFT and not is_storno
+    out["poate_modifica_data"] = state == DRAFT and not is_storno and last_of_series
+    out["data_minima"] = _iso(min_date)
     out["poate_corecta"] = state == ACCEPTED and not is_storno
     out["poate_storna"] = state == ACCEPTED and not is_storno and not has_storno
     out["poate_sterge"] = state == DRAFT and last_of_series
@@ -285,11 +300,12 @@ def _detail(cursor, id_factura):
     return _present(
         row, store.client_get(cursor, row["IdClient"]), store.linii_get(cursor, id_factura),
         last_of_series=store.is_last_of_series(cursor, row["SerieFactura"], row["NumarFactura"]),
-        has_storno=store.storno_of(cursor, id_factura) is not None)
+        has_storno=store.storno_of(cursor, id_factura) is not None,
+        min_date=store.max_date(cursor, row["SerieFactura"], row["NumarFactura"]))
 
 
-def _need_furnizor(cursor, for_update=False):
-    furnizor = store.furnizor_get(cursor, for_update)
+def _need_furnizor(cursor, dc, for_update=False):
+    furnizor = store.furnizor_get(cursor, dc, for_update)
     if furnizor is None:
         raise EfEroare("Datele unității care emite facturile nu sunt completate (denumire, cod fiscal, adresă, serie).",
                        "FURNIZOR_LIPSA", 409)
@@ -313,10 +329,20 @@ def _lock(cursor, id_factura):
 # ---------------------------------------------------------------------------------------------
 # the issuer
 # ---------------------------------------------------------------------------------------------
+def _furnizor_answer(cursor, dc):
+    """The unit's row as the window needs it: the columns, `AnafPreluat` (the ANAF button is closed) and `are_facturi`
+    (the series and the first number are then fixed). `exista` is false when the unit has not filled its data in yet."""
+    row = store.furnizor_get(cursor, dc)
+    if row is None:
+        return {"exista": False, "furnizor": None, "are_facturi": store.have_invoices(cursor)}
+    furnizor = dict(row)
+    furnizor["AnafPreluat"] = int(furnizor["AnafPreluat"] or 0)
+    return {"exista": True, "furnizor": furnizor, "are_facturi": store.have_invoices(cursor)}
+
+
 def furnizor_get(dc):
     with _unit(dc) as conn:
-        row = store.furnizor_get(conn.cursor(dictionary=True))
-    return {"exista": row is not None, "furnizor": None if row is None else dict(row)}
+        return _furnizor_answer(conn.cursor(dictionary=True), dc)
 
 
 def furnizor_set(dc, data):
@@ -328,7 +354,6 @@ def furnizor_set(dc, data):
         "Judetul": _text(data, "Judetul", "Județul", 8, upper=True),
         "Mail": _text(data, "Mail", "E-mailul", 255),
         "Telefon": _text(data, "Telefon", "Telefonul", 64),
-        "Reprezentant": _text(data, "Reprezentant", "Reprezentantul", 255),
         "SerieFactura": _text(data, "SerieFactura", "Seria facturilor", 10, upper=True, strip_spaces=True),
         "NumarInitial": _int(data.get("NumarInitial", 1), "Primul număr de factură", minimum=1),
         "AfiseazaPrimiteNoi": _flag(data.get("AfiseazaPrimiteNoi"), "Afișează facturile primite noi"),
@@ -337,9 +362,103 @@ def furnizor_set(dc, data):
         raise _bad("Codul fiscal trebuie să fie cifre, cu «RO» în față dacă unitatea este plătitoare de TVA.")
     with _unit(dc) as conn:
         cursor = conn.cursor(dictionary=True)
-        store.furnizor_save(cursor, values)
+        # Slice 00EF-13: once the unit has issued an invoice the series and the first number are fixed (the numbering of
+        # the invoices already made depends on them). The window shows them read only; this refuses a client that sends
+        # another value.
+        if store.have_invoices(cursor):
+            old = store.furnizor_get(cursor, dc, for_update=True)
+            if old is not None and ((old["SerieFactura"] or None) != values["SerieFactura"]
+                                    or old["NumarInitial"] != values["NumarInitial"]):
+                raise EfEroare("Unitatea a emis deja facturi: seria și primul număr nu se mai pot schimba.",
+                               "SERIE_BLOCATA", 409)
+        store.furnizor_save(cursor, dc, values)
         conn.commit()
-        return {"exista": True, "furnizor": dict(store.furnizor_get(cursor))}
+        return _furnizor_answer(cursor, dc)
+
+
+def furnizor_anaf(dc):
+    """The one-time take of the unit's name and address from ANAF, by the tax code the unit has in Unitati (slice 00EF-13).
+    It closes itself (`AnafPreluat` = 1): a second call is refused, because ANAF's text overwrites what was typed. A unit
+    with no issuer row yet gets one (name and address from ANAF, tax code from Unitati); the rest is then typed and saved."""
+    with _unit(dc) as conn:
+        cursor = conn.cursor(dictionary=True)
+        old = store.furnizor_get(cursor, dc, for_update=True)
+        if old is not None and old["AnafPreluat"]:
+            raise EfEroare("Datele unității au fost deja preluate de la ANAF o dată; butonul nu mai poate fi folosit.",
+                           "ANAF_DEJA_PRELUAT", 409)
+        unit = store.furnizor_unit(cursor, dc)
+        if unit is None:
+            raise EfEroare("Unitatea nu există în lista unităților.", "UNITATE_LIPSA", 404)
+        cf = anaf.normalize_cf(unit["CF"])
+        if not anaf.is_valid_cf(cf):
+            raise EfEroare("Codul fiscal al unității nu este valid.", "CF_INVALID", 409)
+        try:
+            found = anaf.lookup(cf)
+        except anaf.AnafNotFound:
+            raise EfEroare("ANAF nu cunoaște codul fiscal al unității.", "ANAF_NECUNOSCUT", 404) from None
+        except anaf.AnafIncomplete:
+            raise EfEroare("ANAF a găsit codul fiscal, dar nu a dat denumirea.", "ANAF_INCOMPLET", 502) from None
+        except anaf.AnafUnavailable:
+            raise EfEroare("ANAF nu a putut fi contactat acum. Încercați mai târziu.", "ANAF_INDISPONIBIL", 502) from None
+        store.furnizor_mark_anaf(cursor, dc, found["denumire"][:255], found["adresa"][:255] or None, cf)
+        conn.commit()
+        return _furnizor_answer(cursor, dc)
+
+
+# ---------------------------------------------------------------------------------------------
+# the issuer's bank accounts (slice 00EF-12, moved to AVACONT_COMUN.Unitati_Conturi by 00EF-13)
+# ---------------------------------------------------------------------------------------------
+_IBAN = re.compile(r"^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$")
+
+
+def _iban_ok(iban):
+    """The ISO 13616 check: the first four characters go to the end, letters become 10..35, the number mod 97 is 1."""
+    moved = iban[4:] + iban[:4]
+    return int("".join(str(int(ch, 36)) for ch in moved)) % 97 == 1
+
+
+def _clean_iban(value, position):
+    """One account as typed: spaces out, upper case, shape and check digits verified. `position` is the row number."""
+    if not isinstance(value, str):
+        raise _bad(f"Contul {position}: valoare invalidă.")
+    iban = "".join(value.split()).upper()
+    if not iban:
+        raise _bad(f"Contul {position}: scrieți contul sau ștergeți rândul.")
+    if not _IBAN.match(iban) or not _iban_ok(iban):
+        raise _bad(f"Contul {position} («{iban}») nu este un IBAN valid: 2 litere, 2 cifre de control și restul contului.")
+    return iban
+
+
+def _conturi_answer(rows):
+    return {"conturi": [{"IdCont": row["IdCont"], "Cont": row["Cont"], "Banca": row["Banca"] or ""} for row in rows]}
+
+
+def conturi_get(dc):
+    with _unit(dc, SQL_FILES_CONTURI) as conn:
+        return _conturi_answer(store.conturi_list(conn.cursor(dictionary=True), dc))
+
+
+def conturi_set(dc, data):
+    """Replaces the list of accounts with `data["conturi"]` (each `{ "Cont": ... }`); the bank of each is deduced from
+    its characters 5-8 in AVACONT_COMUN.BIC. An empty list removes every account."""
+    items = data.get("conturi")
+    if not isinstance(items, list):
+        raise _bad("Lista de conturi lipsește.")
+    if len(items) > MAX_CONTURI:
+        raise _bad(f"Cel mult {MAX_CONTURI} de conturi.")
+    seen = set()
+    rows = []
+    for position, item in enumerate(items, start=1):
+        iban = _clean_iban(item.get("Cont") if isinstance(item, dict) else None, position)
+        if iban in seen:
+            raise _bad(f"Contul {iban} apare de două ori.")
+        seen.add(iban)
+        rows.append((iban, _bank_for(iban) or None))
+    with _unit(dc, SQL_FILES_CONTURI) as conn:
+        cursor = conn.cursor(dictionary=True)
+        store.conturi_replace(cursor, dc, rows)
+        conn.commit()
+        return _conturi_answer(store.conturi_list(cursor, dc))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -432,9 +551,10 @@ def _known_units():
 def numar_urmator(dc):
     with _unit(dc) as conn:
         cursor = conn.cursor(dictionary=True)
-        furnizor = _need_furnizor(cursor)
+        furnizor = _need_furnizor(cursor, dc)
         series = furnizor["SerieFactura"] or ""
-        return {"serie": series, "numar": store.next_number(cursor, series, furnizor["NumarInitial"])}
+        return {"serie": series, "numar": store.next_number(cursor, series, furnizor["NumarInitial"]),
+                "data_minima": _iso(store.max_date(cursor, series))}
 
 
 def facturi_list(dc, year, q, limit):
@@ -459,9 +579,10 @@ def factura_create(dc, data):
     header, lines = _parse_invoice(data)
     with _unit(dc) as conn:
         cursor = conn.cursor(dictionary=True)
-        furnizor = _need_furnizor(cursor, for_update=True)         # the lock serialises the numbering
+        furnizor = _need_furnizor(cursor, dc, for_update=True)         # the lock serialises the numbering
         _need_client(cursor, header["IdClient"])
         series = furnizor["SerieFactura"] or ""
+        _not_older(header["DataFactura"], store.max_date(cursor, series))
         number = store.next_number(cursor, series, furnizor["NumarInitial"])
         new_id = _insert_invoice(cursor, header, lines, series, number)
         conn.commit()
@@ -480,6 +601,11 @@ def factura_update(dc, id_factura, data):
         if state == DRAFT:
             header, lines = _parse_invoice(data)
             _need_client(cursor, header["IdClient"])
+            if header["DataFactura"] != row["DataFactura"]:
+                if not store.is_last_of_series(cursor, row["SerieFactura"], row["NumarFactura"]):
+                    raise EfEroare("Data se mai poate schimba doar la ultima factură a seriei; la celelalte rămâne cea "
+                                   "de la salvare.", "DATA_BLOCATA", 409)
+                _not_older(header["DataFactura"], store.max_date(cursor, row["SerieFactura"], row["NumarFactura"]))
             store.factura_update_full(cursor, id_factura, header)
             store.linii_delete(cursor, id_factura)
             store.linii_insert(cursor, id_factura, lines)
@@ -516,7 +642,7 @@ def factura_storno(dc, id_factura, data):
     header, lines = _parse_invoice(data)
     with _unit(dc) as conn:
         cursor = conn.cursor(dictionary=True)
-        furnizor = _need_furnizor(cursor, for_update=True)
+        furnizor = _need_furnizor(cursor, dc, for_update=True)
         original = _lock(cursor, id_factura)
         if stare_factura(original) != ACCEPTED:
             raise EfEroare("Se poate storna doar o factură acceptată de ANAF.", "NU_SE_POATE_STORNA", 409)
@@ -527,6 +653,7 @@ def factura_storno(dc, id_factura, data):
         _need_client(cursor, header["IdClient"])
 
         series = furnizor["SerieFactura"] or ""
+        _not_older(header["DataFactura"], store.max_date(cursor, series))
         number = store.next_number(cursor, series, furnizor["NumarInitial"])
         storno_header = {
             "IdClient": original["IdClient"], "DataFactura": header["DataFactura"],
@@ -551,7 +678,7 @@ def _material(dc, id_factura):
         row = store.factura_get(cursor, id_factura)
         if row is None:
             raise EfEroare("Factura nu există.", "NU_EXISTA", 404)
-        return (store.furnizor_get(cursor), store.client_get(cursor, row["IdClient"]), row,
+        return (store.furnizor_get(cursor, dc), store.client_get(cursor, row["IdClient"]), row,
                 store.linii_get(cursor, id_factura))
 
 

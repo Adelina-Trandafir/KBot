@@ -1,0 +1,1034 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =341992690
+Begin Form
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    ControlBox = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    ScrollBars =2
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =2607
+    DatasheetFontHeight =11
+    ItemSuffix =18
+    Left =-1770
+    Top =3180
+    Right =900
+    Bottom =3390
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0x729d6dd8cec2e540
+    End
+    GUID = Begin
+        0xc922771ccfc86445a0633e67969786e6
+    End
+    NameMap = Begin
+        0x0acc0e55000000007bc7eafce7588f4fa6abfa6e134a422100000000796cb6dd ,
+        0xcec2e54000000000000000004c0075006e00610044005f004c00000000000000 ,
+        0x1659631c68b0ac4cb4b14476f1155130070000007bc7eafce7588f4fa6abfa6e ,
+        0x134a4221490044004c0000000000000018270e799532574ebea69d90bb995188 ,
+        0x070000007bc7eafce7588f4fa6abfa6e134a4221490044005600000000000000 ,
+        0xe36a28b4b3c2d14e8eebde156901ef2a070000007bc7eafce7588f4fa6abfa6e ,
+        0x134a42214c0075006e0061000000000000007cbaf943e448524f9ff23b455ce2 ,
+        0x2e66070000007bc7eafce7588f4fa6abfa6e134a422141006e0075006c000000 ,
+        0x0000000062234f8c62d82144882ed9f1f26da73b070000007bc7eafce7588f4f ,
+        0xa6abfa6e134a42214c0075006e00610054000000000000006d4b6d7469d30649 ,
+        0xba90a5c39032e25c070000007bc7eafce7588f4fa6abfa6e134a42214c004100 ,
+        0x0000000000009a34228c99c0014cbe9c768deee512be070000007bc7eafce758 ,
+        0x8f4fa6abfa6e134a422149006e0063006800690073006100000000000000de57 ,
+        0x62c2fb74bc429390ee4c2246e256070000007bc7eafce7588f4fa6abfa6e134a ,
+        0x42215300740065007200730000000000000033342215f386c34da34e61c99dae ,
+        0x2b2b00000000486a8d19da6be54000000000000000004c0075006e0069000000 ,
+        0x00000000db82037a523f3b48b99077c6b006a9210700000033342215f386c34d ,
+        0xa34e61c99dae2b2b4c0075006e006100000000000000979dc20b170722439f66 ,
+        0x3b965ce9a2a90700000033342215f386c34da34e61c99dae2b2b450078007000 ,
+        0x6c0000000000000016a18d278281404ba9a5505025caa3db06000000c922771c ,
+        0xcfc86445a0633e67969786e643004c000000000000009300a6c1e8364445bee4 ,
+        0xfa07ef63ce3706000000c922771ccfc86445a0633e67969786e649006e006300 ,
+        0x6800690073006100000000000000000000000000000000000000000000000c00 ,
+        0x0000050000000000000000000000000000000000
+    End
+    RecordSource ="SELECT LunaD_L.IDL, LunaD_L.IDV, LunaD_L.Luna, LunaD_L.Anul, LunaD_L.LunaT, Luna"
+        "D_L.LA, LunaD_L.Inchisa, LunaD_L.Sters, CDbl([anul] & IIf(Len([luna])=1,\"0\",\""
+        "\") & [luna]) AS Expr1 FROM LunaD_L WHERE (((LunaD_L.Sters)=False)) ORDER BY CDb"
+        "l([anul] & IIf(Len([luna])=1,\"0\",\"\") & [luna]) DESC; "
+    Caption ="Luni prezență"
+    OnCurrent ="[Event Procedure]"
+    BeforeUpdate ="[Event Procedure]"
+    AfterUpdate ="[Event Procedure]"
+    DatasheetFontName ="Calibri"
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Rectangle
+            SpecialEffect =3
+            BackStyle =0
+            BorderLineStyle =0
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AsianLineBreak =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Subform
+            BorderLineStyle =0
+            BorderThemeColorIndex =1
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            BorderShade =65.0
+            ShowPageHeaderAndPageFooter =1
+        End
+        Begin FormHeader
+            Visible = NotDefault
+            Height =276
+            BackColor =15592953
+            Name ="FormHeader"
+            GUID = Begin
+                0x6f4cc0c07886214b8cb0b67043dd3a45
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            Begin
+                Begin Label
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =49
+                    Top =36
+                    Width =1464
+                    Height =240
+                    FontSize =9
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label1"
+                    Caption ="Luna"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x68cf9fb8371a6747b6e0151662d85e55
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+                    LayoutCachedTop =36
+                    LayoutCachedWidth =1464
+                    LayoutCachedHeight =276
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    OverlapFlags =87
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =1464
+                    Top =36
+                    Width =852
+                    Height =240
+                    FontSize =9
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label2"
+                    Caption ="Anul"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x19eebbf450e4464b80d32ab3dcc6d748
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+                    LayoutCachedLeft =1464
+                    LayoutCachedTop =36
+                    LayoutCachedWidth =2316
+                    LayoutCachedHeight =276
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageHeader
+            DisplayWhen =1
+            Height =0
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x4483776e52ff994d89820c7945501826
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin Section
+            Height =292
+            Name ="Detail"
+            GUID = Begin
+                0xb50d77107c2ae947b714eadfffeec2b9
+            End
+            BackThemeColorIndex =1
+            Begin
+                Begin ComboBox
+                    OldBorderStyle =0
+                    OverlapFlags =93
+                    BackStyle =0
+                    IMESentenceMode =3
+                    ColumnCount =2
+                    Width =1464
+                    Height =292
+                    FontSize =9
+                    TabIndex =3
+                    BackColor =15592953
+                    BorderColor =10921638
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x788692d6a66f1b43b681bd33c6822c19
+                    End
+                    Name ="Luna"
+                    ControlSource ="Luna"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT Luni.Luna, Luni.Expl FROM Luni ORDER BY Luni.Luna; "
+                    ColumnWidths ="0"
+                    AfterUpdate ="[Event Procedure]"
+                    FontName ="Arial Narrow"
+                    OnGotFocus ="[Event Procedure]"
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+
+                    LayoutCachedWidth =1464
+                    LayoutCachedHeight =292
+                    DisplayAsHyperlink =1
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    ForeThemeColorIndex =0
+                    ForeShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OverlapFlags =255
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Width =2607
+                    Height =282
+                    FontSize =9
+                    TabIndex =2
+                    BorderColor =-2147483609
+                    Name ="KKK"
+                    OnEnter ="[Event Procedure]"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000002010000030000000100000000000000000000001e00000001000000 ,
+                        0x1f497d00f3f0f6000100000000000000200000003f00000001000000ffffff00 ,
+                        0xffffff000100000000000000410000004f0000000101000000800000f9eded00 ,
+                        0x5b0043004c005d003d005b00490044004c005d00200041006e00640020004e00 ,
+                        0x7a0028005b00490044004c005d002c00300029003c003e003000000000000000 ,
+                        0x5b0043004c005d003c003e005b00490044004c005d00200041006e0064002000 ,
+                        0x4e007a0028005b00490044004c005d002c00300029003c003e00300000000000 ,
+                        0x00004e007a0028005b00490044004c005d002c00300029003d00300000000000 ,
+                        0x0000
+                    End
+                    GUID = Begin
+                        0x6125999cd1f699498df807915087ff21
+                    End
+                    HorizontalAnchor =2
+
+                    LayoutCachedWidth =2607
+                    LayoutCachedHeight =282
+                    DisplayAsHyperlink =1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x0100030000000100000000000000010000001f497d00f3f0f6001d0000005b00 ,
+                        0x43004c005d003d005b00490044004c005d00200041006e00640020004e007a00 ,
+                        0x28005b00490044004c005d002c00300029003c003e0030000000000000000000 ,
+                        0x00000000000000000000000000010000000000000001000000ffffff00ffffff ,
+                        0x001e0000005b0043004c005d003c003e005b00490044004c005d00200041006e ,
+                        0x00640020004e007a0028005b00490044004c005d002c00300029003c003e0030 ,
+                        0x0000000000000000000000000000000000000000000001000000000000000101 ,
+                        0x000000800000f9eded000d0000004e007a0028005b00490044004c005d002c00 ,
+                        0x300029003d003000000000000000000000000000000000000000000000
+                    End
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    OverlapFlags =255
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Width =1464
+                    Height =292
+                    FontSize =9
+                    BackColor =15592953
+                    BorderColor =10921638
+                    Name ="LunaT"
+                    ControlSource ="LunaT"
+                    OnEnter ="[Event Procedure]"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x3c08b405bce85546a4ecfdec544435ad
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+
+                    LayoutCachedWidth =1464
+                    LayoutCachedHeight =292
+                    DisplayAsHyperlink =1
+                    BackThemeColorIndex =-1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    OverlapFlags =255
+                    TextAlign =2
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1464
+                    Width =840
+                    Height =282
+                    FontSize =9
+                    TabIndex =1
+                    BackColor =15592953
+                    BorderColor =10921638
+                    Name ="Anul"
+                    ControlSource ="Anul"
+                    OnDblClick ="[Event Procedure]"
+                    FontName ="Arial Narrow"
+                    OnGotFocus ="[Event Procedure]"
+                    OnClick ="[Event Procedure]"
+                    GUID = Begin
+                        0x41a148fc0a59e0439a80469fd9db2192
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+
+                    LayoutCachedLeft =1464
+                    LayoutCachedWidth =2304
+                    LayoutCachedHeight =282
+                    DisplayAsHyperlink =1
+                    BackThemeColorIndex =-1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin CommandButton
+                    Transparent = NotDefault
+                    OverlapFlags =255
+                    Width =2304
+                    Height =282
+                    TabIndex =4
+                    ForeColor =4210752
+                    Name ="FOC"
+                    Caption ="Command10"
+                    OnClick ="[Event Procedure]"
+                    GUID = Begin
+                        0xb3dfff7b148e664ab7f44c3530e5527d
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+
+                    CursorOnHover =1
+                    LayoutCachedWidth =2304
+                    LayoutCachedHeight =282
+                    BackColor =14136213
+                    BorderColor =14136213
+                    HoverColor =15060409
+                    PressedColor =9592887
+                    HoverForeColor =4210752
+                    PressedForeColor =4210752
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    OverlapFlags =255
+                    TextFontCharSet =2
+                    TextFontFamily =18
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =2304
+                    Width =288
+                    Height =282
+                    TabIndex =5
+                    BorderColor =10921638
+                    ForeColor =15592953
+                    Name ="INC"
+                    ControlSource ="=IIf([inchisa],\"\",\"\")"
+                    OnEnter ="[Event Procedure]"
+                    FontName ="Webdings"
+                    ConditionalFormat = Begin
+                        0x01000000d0000000030000000100000000000000000000000900000001000000 ,
+                        0xffffff00ffffff0001000000000000000a0000001900000001000000ff000000 ,
+                        0xffffff0001000000000000001a000000370000000100000022b14c00ffffff00 ,
+                        0x5b00690064006c005d003d002d003100000000005b0069006e00630068006900 ,
+                        0x730061005d003d005400720075006500000000005b0069006e00630068006900 ,
+                        0x730061005d003d00460061006c0073006500200041006e00640020005b006900 ,
+                        0x64006c005d003c003e00300000000000
+                    End
+                    GUID = Begin
+                        0x0eb59d938612ed429b048bf030b70a62
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+
+                    LayoutCachedLeft =2304
+                    LayoutCachedWidth =2592
+                    LayoutCachedHeight =282
+                    DisplayAsHyperlink =1
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010004000000010000000000000001000000ffffff00ffffff00080000005b00 ,
+                        0x690064006c005d003d002d003100000000000000000000000000000000000000 ,
+                        0x000000010000000000000001000000ff000000ffffff000e0000005b0069006e ,
+                        0x00630068006900730061005d003d005400720075006500000000000000000000 ,
+                        0x00000000000000000000000001000000000000000100000022b14c00ffffff00 ,
+                        0x1c0000005b0069006e00630068006900730061005d003d00460061006c007300 ,
+                        0x6500200041006e00640020005b00690064006c005d003c003e00300000000000 ,
+                        0x0000000000000000000000000000000000010000000000000001000000ffffff ,
+                        0x00ffffff001b0000005b0069006e00630068006900730061005d003d00460061 ,
+                        0x006c0073006500200041006e00640020005b00690064006c005d003d00300000 ,
+                        0x0000000000000000000000000000000000000000
+                    End
+                End
+                Begin CommandButton
+                    Transparent = NotDefault
+                    OverlapFlags =247
+                    Left =2304
+                    Top =24
+                    Width =264
+                    Height =240
+                    TabIndex =6
+                    ForeColor =4210752
+                    Name ="BINC"
+                    Caption ="Command17"
+                    OnClick ="[Event Procedure]"
+                    GUID = Begin
+                        0x4027f72d8486924a867fd3095e245563
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =2304
+                    LayoutCachedTop =24
+                    LayoutCachedWidth =2568
+                    LayoutCachedHeight =264
+                    Gradient =0
+                    BackColor =15195103
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =14136213
+                    HoverColor =15195103
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedColor =15195103
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =4210752
+                    PressedForeColor =4210752
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+            End
+        End
+        Begin PageFooter
+            DisplayWhen =1
+            Height =252
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x3a75a318d6e5564cb80baa2e0e3613c6
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    IMESentenceMode =3
+                    Width =420
+                    FontSize =8
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="CL"
+                    GUID = Begin
+                        0x16a18d278281404ba9a5505025caa3db
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedWidth =420
+                    LayoutCachedHeight =240
+                End
+                Begin CheckBox
+                    OverlapFlags =93
+                    Left =840
+                    Top =60
+                    Width =300
+                    Height =180
+                    TabIndex =1
+                    BorderColor =10921638
+                    Name ="Nou"
+                    GUID = Begin
+                        0x297b77935522124885c7165b1c32d18d
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =840
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =1140
+                    LayoutCachedHeight =240
+                End
+                Begin CheckBox
+                    OverlapFlags =247
+                    Left =1128
+                    Top =72
+                    Width =300
+                    Height =180
+                    TabIndex =2
+                    BorderColor =10921638
+                    Name ="Inchisa"
+                    ControlSource ="Inchisa"
+                    GUID = Begin
+                        0x9300a6c1e8364445bee4fa07ef63ce37
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1128
+                    LayoutCachedTop =72
+                    LayoutCachedWidth =1428
+                    LayoutCachedHeight =252
+                End
+            End
+        End
+        Begin FormFooter
+            Height =240
+            Name ="FormFooter"
+            GUID = Begin
+                0x966477af0bc8e14ab4c99600d142432e
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin Rectangle
+                    Visible = NotDefault
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =93
+                    Width =2607
+                    Height =240
+                    Name ="boxWhole"
+                    GUID = Begin
+                        0x59fd6717b35e1a468786ffd62980d5aa
+                    End
+                    HorizontalAnchor =2
+                    LayoutCachedWidth =2607
+                    LayoutCachedHeight =240
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    Visible = NotDefault
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =223
+                    Width =2607
+                    Height =240
+                    BackColor =16764057
+                    Name ="boxPct"
+                    GUID = Begin
+                        0x6074d215a9991e4599d2af9f741bb49f
+                    End
+                    HorizontalAnchor =2
+                    LayoutCachedWidth =2607
+                    LayoutCachedHeight =240
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    Visible = NotDefault
+                    OldBorderStyle =1
+                    OverlapFlags =215
+                    TextFontCharSet =238
+                    TextAlign =1
+                    TextFontFamily =49
+                    Width =2607
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    LeftMargin =72
+                    ForeColor =8355711
+                    Name ="boxLbl"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd69c9a27b677884b932a660a1b7f8a98
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+                    LayoutCachedWidth =2607
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+Public SeDeschide As Boolean
+
+Private Sub Anul_GotFocus()
+If Me.IDL <> 0 Then If FOC.visible Then FOC.SetFocus
+Call FOC_Click
+
+End Sub
+
+Private Sub AdaugaPrezenta0()
+If Not IsLoaded("Prezenta") Then Exit Sub
+
+Dim i As Long
+Dim Dt As Date
+Dim WrkDayz As Integer
+Dim MaxIDZ As Double
+
+Forms!prezenta!IDL = IDL
+Forms!prezenta!IDV = IDV
+FOC.visible = True
+
+Dim RC As DAO.Recordset, TC As DAO.Recordset
+
+Set TC = CurrentDb.OpenRecordset("LunaD", 2)
+
+TC.AddNew
+    TC!IDL = IDL
+    TC!IDV = IDV
+    TC!Luna = Luna
+    TC!Anul = Anul
+    TC!LunaT = LunaT
+    TC!LA = LA
+TC.Update
+
+Set RC = CurrentDb.OpenRecordset("SELECT Platitori.IDG, Platitori.IDP FROM Platitori WHERE Platitori.Plecat=False;", 2)
+Set TC = CurrentDb.OpenRecordset("Prezenta", 2)
+
+If Not POP(RC) Then
+    MsgBox "A aparut o eroare la preluarea generala!" & vbCrLf & "Este necesar sa o realizezi manual!", vbOKOnly + vbExclamation
+    GoTo IESIRE
+End If
+
+Dt = CDate(Format("01/" & Me.Luna & "/" & Me.Anul, "Short Date"))
+WrkDayz = Work_Days(Dt, CDate(Format(dhLastDayInMonth(Dt), "Short Date")))
+MaxIDZ = DMax("IDZ", "Prezenta")
+
+For i = 1 To RC.RecordCount
+    TC.AddNew
+        TC!IDZ = MaxIDZ + i
+        TC!IDG = RC!IDG
+        TC!IDP = RC!IDP
+        TC!IDL = IDL
+        TC!IDV = IDV
+        TC!ZileLuna = WrkDayz
+        TC!ZilePrezenta = 0
+        TC!ZileAbsenta = 0
+    TC.Update
+    
+    Call ProgressBar(Me, RC.RecordCount, i)
+    
+    RC.MoveNext
+Next i
+
+IESIRE:
+    Set RC = Nothing
+    Set TC = Nothing
+    
+    Call ProgressBar(Me, -1, -1)
+    
+    Exit Sub
+    
+End Sub
+
+
+Private Sub FOC_Click()
+CL = Me.IDL
+
+Forms!prezenta!CautT.Enabled = True
+Forms!prezenta!CAUT.Enabled = True
+Forms!prezenta!CautB.Enabled = True
+
+If Me.Luna <> 0 Then
+    Forms!prezenta!Rapoarte!DI = Format("01/" & Me.Luna & "/" & Me.Anul, "Short Date")
+    Forms!prezenta!Rapoarte!DSF = dhLastDayInMonth(Format("01/" & Me.Luna & "/" & Me.Anul, "Short Date"))
+End If
+
+Call IncarcaGrupe
+
+Call IncarcaPrezenta(True)
+
+Parent!Plati.SourceObject = "Plati_chitante"
+Parent!Tb = 0
+
+End Sub
+
+Private Sub Form_AfterUpdate()
+FOC.visible = True
+End Sub
+
+Private Sub Form_BeforeUpdate(Cancel As Integer)
+If IsLoaded("Prezenta") Then
+    Forms!prezenta!IDL = IDL
+    Forms!prezenta!IDV = IDV
+End If
+
+End Sub
+
+
+Private Sub Form_Current()
+If SeDeschide Then Exit Sub
+
+CL = Me.IDL
+
+If Me.NewRecord Then FOC.visible = False Else FOC.visible = True
+
+Forms!prezenta!IDL = IDL
+Forms!prezenta!IDV = IDV
+
+If Me.NewRecord Then Exit Sub
+
+Forms!prezenta!CautT.Enabled = True
+Forms!prezenta!CAUT.Enabled = True
+Forms!prezenta!CautB.Enabled = True
+
+Forms!prezenta!cIDV.Enabled = Not Me!Inchisa
+Forms!prezenta!cIDV = IDV
+
+End Sub
+
+Private Sub Form_Load()
+SeDeschide = True
+Me.AllowAdditions = True
+Me.AllowEdits = True
+Me.AllowDeletions = True
+Anul.Enabled = False
+Anul.Locked = True
+
+Call ProgressBar(Forms!prezenta!Luni.Form, -1, -1)
+
+Dim RC As Recordset, TC As Recordset
+
+Set TC = CurrentDb.OpenRecordset("LunaD_L", 2)
+Set RC = CurrentDb.OpenRecordset("SELECT lunad.IDL, lunad.Idv, lunad.Luna, lunad.Anul, lunad.LunaT, lunad.LA, lunad.inchisa FROM lunad;", 2)
+
+Call GolesteTabel(TC)
+
+Do While Not RC.EOF
+    TC.AddNew
+        TC!IDL = RC!IDL
+        TC!Luna = RC!Luna
+        TC!Anul = RC!Anul
+        TC!LunaT = RC!LunaT
+        TC!LA = RC!LA
+        TC!IDV = RC!IDV
+        TC!Inchisa = RC!Inchisa
+    TC.Update
+    RC.MoveNext
+Loop
+
+Set RC = Nothing
+Set TC = Nothing
+
+If Not Me.NewRecord Then
+    FOC.visible = True
+    FOC.SetFocus
+End If
+
+Me.Requery
+SeDeschide = False
+
+End Sub
+
+Private Sub bINC_Click()
+If Nz(DLookup("IDL", "LunaD", "IDL=" & Me.IDL), "") = "" Then
+    MsgBox "Luna nu a fost activata inca, deci nu poate fi inchisa!", vbOKOnly + vbInformation
+    Exit Sub
+End If
+
+If Not Inchisa Then
+    If ECount("IDG", "(SELECT IDG FROM SS_Buget WHERE IDL = " & Me.IDL - 2 & " GROUP BY IDG)") <> 0 Then
+        If ECount("IDG", "(SELECT IDG FROM SS_Buget WHERE IDL = " & Me.IDL - 2 & " GROUP BY IDG)") > ECount("IDG", "(SELECT IDG FROM Prezenta WHERE IDL = " & IDL & " GROUP BY IDG)") Then
+            If MsgBox("In luna anterioara exista mai multe grupe cu prezenta decat in luna curenta!" & vbCrLf & "Este corect?", vbYesNo + vbQuestion) = vbNo Then Exit Sub
+        End If
+    End If
+    
+    If MsgBox("Doresti inchiderea lunii selectate?" & vbCrLf & "Nu vei mai putea modifica prezenta, dar vei putea modifica platile!" & vbCrLf & "Doresti sa continui?", vbYesNo + vbQuestion) = vbNo Then Exit Sub
+    Dim RC As Recordset
+    Dim tIDL As Integer
+    
+    Set RC = CurrentDb.OpenRecordset("SELECT * FROM LunaD WHERE IDL = " & IDL, 2)
+    If Not RC.EOF Then
+        tIDL = RC!IDL - 1
+        
+        RC.Edit
+            RC!Inchisa = True
+        RC.Update
+        
+        Set RC = CurrentDb.OpenRecordset("SELECT * FROM LunaD_L WHERE IDL = " & IDL, 2)
+        RC.Edit
+            RC!Inchisa = True
+        RC.Update
+    
+        If tIDL <> 0 Then
+            Screen.MousePointer = 11
+            Call CalculSituatieDebitori_Buget2021(True, True, tIDL)
+            Screen.MousePointer = 0
+            Me.Recalc
+        End If
+        
+    Else
+        MsgBox "Luna selectata nu a putut fi inchisa!" & vbCrLf & "Contacteaza autorul!", vbOKOnly + vbCritical
+        Me.Undo
+        Luna.Undo
+    End If
+Else
+    If DMax("IDL", "LunaD") = IDL Then
+        If MsgBox("Doresti deblocarea lunii curente?", vbYesNo + vbQuestion) = vbNo Then Exit Sub
+        ActualizeazaCamp "LunaD", "Inchisa", False, "IDL=" & IDL
+        ActualizeazaCamp "LunaD_L", "Inchisa", False, "IDL=" & IDL
+        GolesteTabel , "SS_Buget", "IDL=" & IDL - 1
+        Me.Recalc
+    Else
+        MsgBox "Se poate debloca DOAR ultima luna inchisa, atata timp cat nu exista una deschisa!", vbOKOnly + vbInformation
+    End If
+End If
+    
+Set RC = Nothing
+
+End Sub
+
+Private Sub INC_Enter()
+If BINC.visible Then BINC.SetFocus
+End Sub
+
+Private Sub KKK_Enter()
+If Me.IDL <> 0 Then If FOC.visible Then FOC.SetFocus
+Call FOC_Click
+End Sub
+
+Private Sub Luna_AfterUpdate()
+Dim RC As DAO.Recordset
+
+If DCount("IDL", "LunaD", "Inchisa=False") <> 0 Then
+    MsgBox "Pentru a adauga o luna noua, luna anterioara trebuie sa fie inchisa!" & vbCrLf & "Apasa pe lacatul verde!", vbOKOnly + vbCritical
+    Me.Undo
+    Luna.Undo
+    Me.Requery
+    Exit Sub
+End If
+
+Anul = IIf(Luna.Column(0) = "1", DMax("Anul", "LunaD") + 1, DMax("Anul", "LunaD"))
+LunaT = Luna.Column(1)
+LA = IIf(Len(Luna) = 1, "0" & Luna, Luna) & Anul
+
+IDL = CDbl(Nz(DMax("IDL", "LunaD_L", "IDL>0"), 0)) + 1
+IDV = CDbl(Nz(DLookup("IDV", "ValoriTaxe", "Activ=True"), 0))
+
+CL = IDL
+
+If DCount("IDL", "LunaD") <= 0 Then Exit Sub
+
+If MsgBox("Doresti preluarea tuturor grupelor din luna " & IIf(Luna = 1, 12, Luna - 1) & "/" & IIf(Luna = 1, Year(Now()) - 1, Year(Now())) & "?", vbYesNo + vbQuestion) = vbNo Then Exit Sub
+
+Call AdaugaPrezenta0
+
+MsgBox "Datele au fost transferate cu succes!", vbOKOnly + vbInformation
+
+FOC.SetFocus
+
+End Sub
+
+Private Sub Luna_GotFocus()
+If Me.IDL <> 0 Then If FOC.visible Then FOC.SetFocus
+Call FOC_Click
+End Sub
+
+
+Private Sub LunaT_Enter()
+If Me.IDL <> 0 Then
+    If FOC.visible Then
+        FOC.SetFocus
+        Exit Sub
+    End If
+End If
+Luna.SetFocus
+Luna.Dropdown
+End Sub
+
+Sub TesteazaUltimaLuna()
+If Nz(DLookup("Inchisa", "LunaD", "IDL=" & Nz(DMax("IDL", "LunaD"), 0)), 0) = -1 Then
+    Dim RC As DAO.Recordset
+    
+    Set RC = CurrentDb.OpenRecordset("SELECT * FROM LunaD WHERE IDL = " & DMax("IDL", "LunaD"), 2)
+    RC.Edit
+        RC!Inchisa = False
+    RC.Update
+    
+    Set RC = Nothing
+End If
+
+End Sub
+
+Sub IncarcaGrupe()
+
+Forms!prezenta!Grupe!GE.visible = True
+
+CurrentDb.Execute "DELETE * FROM Grupe_L"
+
+Dim RC As Recordset, TC As Recordset
+Set TC = CurrentDb.OpenRecordset("Grupe_L", 2)
+
+If Me!Inchisa = True Then
+    Set RC = CurrentDb.OpenRecordset("SELECT IDG, Grupa, Educator FROM SS_Buget WHERE IDL = " & Me!IDL & " GROUP BY IDG, Grupa, Educator ORDER BY IDG;", 2)
+Else
+    Set RC = CurrentDb.OpenRecordset("SELECT Grupe.IDg, Grupe.Grupa, grupe.educator FROM Grupe;", 2)
+End If
+   
+Do While Not RC.EOF
+    TC.AddNew
+        TC!IDG = RC!IDG
+        TC!Grupa = RC!Grupa
+        TC!Educator = RC!Educator
+    TC.Update
+    RC.MoveNext
+Loop
+
+Set RC = Nothing
+Set TC = Nothing
+
+Forms!prezenta!Grupe.Requery
+
+End Sub

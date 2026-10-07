@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Collections.Generic
 Imports System.Globalization
 Imports System.Net.Http
 Imports System.Text
@@ -110,11 +111,57 @@ Partial Public Class ApiClient
             Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                 Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
                 If Not resp.IsSuccessStatusCode Then
-                    Throw BuildApiException(respText, k_what, CInt(resp.StatusCode))
+                    Throw BuildEFacturaException(respText, k_what, CInt(resp.StatusCode))
                 End If
                 Return respText
             End Using
         End Using
+    End Function
+
+    ' Slice 00EF-09: like SendEFacturaAsync, for an answer that is a file (the PDF of ANAF).
+    Private Async Function SendEFacturaBytesAsync(k_path As String, k_what As String, ct As CancellationToken) As Task(Of Byte())
+        EnsureConfigured()
+        Using msg As New HttpRequestMessage(HttpMethod.Get, k_path)
+            msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+            Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                If Not resp.IsSuccessStatusCode Then
+                    Dim k_text As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    Throw BuildEFacturaException(k_text, k_what, CInt(resp.StatusCode))
+                End If
+                Return Await resp.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(False)
+            End Using
+        End Using
+    End Function
+
+    ' The server's refusal text, with the lines of its detail lists under it: «constatari» (our own checks: level, code,
+    ' message) and «mesaje» (what ANAF said). Without them the operator would read «Factura are erori» and nothing else.
+    Private Shared Function BuildEFacturaException(k_respText As String, k_what As String, k_status As Integer) As ApiException
+        Dim k_base As ApiException = BuildApiException(k_respText, k_what, k_status)
+        Dim k_lines As New List(Of String)()
+        Try
+            Using k_doc As JsonDocument = JsonDocument.Parse(If(k_respText, String.Empty))
+                If k_doc.RootElement.ValueKind <> JsonValueKind.Object Then Return k_base
+                Dim k_list As JsonElement
+                If k_doc.RootElement.TryGetProperty("constatari", k_list) AndAlso k_list.ValueKind = JsonValueKind.Array Then
+                    For Each k_item As JsonElement In k_list.EnumerateArray()
+                        Dim k_msg As JsonElement
+                        If k_item.ValueKind = JsonValueKind.Object AndAlso k_item.TryGetProperty("mesaj", k_msg) AndAlso k_msg.ValueKind = JsonValueKind.String Then
+                            k_lines.Add("• " & k_msg.GetString())
+                        End If
+                    Next
+                End If
+                If k_doc.RootElement.TryGetProperty("mesaje", k_list) AndAlso k_list.ValueKind = JsonValueKind.Array Then
+                    For Each k_item As JsonElement In k_list.EnumerateArray()
+                        If k_item.ValueKind = JsonValueKind.String Then k_lines.Add("• " & k_item.GetString())
+                    Next
+                End If
+            End Using
+        Catch ex As JsonException
+            ' Not a JSON body (a proxy page, a timeout): the base exception already says what it can.
+            Return k_base
+        End Try
+        If k_lines.Count = 0 Then Return k_base
+        Return New ApiException(k_base.Message & vbLf & String.Join(vbLf, k_lines), If(k_base.StatusCode, k_status), k_base.Reason)
     End Function
 
     Private Shared Function ToTokenState(k_json As String) As EFacturaTokenState

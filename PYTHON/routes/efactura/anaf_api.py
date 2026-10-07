@@ -14,6 +14,9 @@ decided: the Access flow "is always right", so no test environment is used.
   descarca   GET  {BASE}/descarcare?id=<id>                  (DescarcaFactura / DescarcaMesaje) -> a zip; a body that
              starts with `{` is an error in JSON, as Access treated it
   mesaje     GET  {BASE}/listaMesajeFactura?zile=<n>&cif=<CUI>  (ListaMesaje) -> JSON `{"mesaje": [...]}` or `{"eroare": "..."}`
+  pdf        POST {PDF_URL}/<FACT1|FCN>/DA   body = the invoice XML, NO token (slice 00EF-09): ANAF's public XML -> PDF service
+             answer: the PDF, or a JSON / text error. NOT verified against the live service (written from ANAF's published
+             description); `pdf_din_xml` checks the `%PDF` signature and says plainly when the answer is anything else.
 
 The token goes only into the `Authorization` header and is never logged, raised or returned. A failure logs the call
 name and the HTTP status; the text of ANAF's answer reaches the operator only after it was cut and cleaned (it is
@@ -41,6 +44,7 @@ from .tokens import EfEroare, TokenNecesar
 logger = logging.getLogger(__name__)
 
 BASE = "https://api.anaf.ro/prod/FCTEL/rest"
+PDF_URL = "https://webservicesp.anaf.ro/prod/FCTEL/rest/transformare"
 TIMEOUT_UPLOAD = 60
 TIMEOUT_READ = 30
 MAX_ANSWER = 25 * 1024 * 1024          # a downloaded zip; the other answers are tiny
@@ -169,6 +173,46 @@ def descarca(token, download_id):
     if not data:
         raise EfEroare("ANAF a răspuns fără fișier.", "ANAF_RASPUNS", 502)
     return data
+
+
+def factura_din_zip(zip_bytes):
+    """The invoice XML inside the zip ANAF keeps for an accepted invoice: the one file that is not the signature."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
+            for info in archive.infolist():
+                name = info.filename.lower()
+                if not name.endswith(".xml") or "semnatura" in name or "signature" in name or info.file_size > MAX_ENTRY:
+                    continue
+                with archive.open(info) as handle:
+                    return handle.read(MAX_ENTRY + 1)[:MAX_ENTRY]
+    except (zipfile.BadZipFile, OSError, RuntimeError) as err:
+        logger.error("[efactura] invoice zip could not be read: %s", type(err).__name__)
+    raise EfEroare("Arhiva ANAF nu conține fișierul facturii.", "ANAF_RASPUNS", 502)
+
+
+def pdf_din_xml(xml_bytes):
+    """The PDF ANAF draws from an invoice XML (the public transformation service, no token). Slice 00EF-09.
+    The standard is read from the root element: a `CreditNote` goes to FCN, everything else to FACT1."""
+    standard = "FCN" if b"<CreditNote" in xml_bytes[:2048] else "FACT1"
+    request = urllib.request.Request(
+        f"{PDF_URL}/{standard}/DA", data=xml_bytes, method="POST",
+        headers={"Content-Type": "text/plain; charset=UTF-8", "Accept": "*/*", "User-Agent": "K-BOT"})
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_UPLOAD) as response:
+            status, body = response.status, response.read(MAX_ANSWER + 1)
+    except urllib.error.HTTPError as err:
+        status, body = err.code, err.read(MAX_ENTRY)
+    except (urllib.error.URLError, TimeoutError, OSError) as err:
+        logger.error("[efactura] ANAF pdf: unreachable: %s", type(err).__name__)
+        raise AnafIndisponibil("Serviciul ANAF care desenează factura nu a putut fi contactat. Încercați mai târziu.") from None
+    if status >= 500 or status in (408, 429):
+        logger.error("[efactura] ANAF pdf: HTTP %s", status)
+        raise AnafIndisponibil(f"Serviciul ANAF care desenează factura nu răspunde (HTTP {status}).")
+    if body[:4] != b"%PDF":
+        logger.error("[efactura] ANAF pdf: HTTP %s, the answer is not a PDF", status)
+        text = clean(body.decode("utf-8", errors="replace"), 200)
+        raise EfEroare("ANAF nu a dat PDF-ul facturii" + (f": {text}" if text else "."), "ANAF_PDF", 502)
+    return _bounded(body, "pdf")
 
 
 def lista_mesaje(token, cui, days):

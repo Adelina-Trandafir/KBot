@@ -1,0 +1,9 @@
+-- =====================================================================================
+-- Slice 00EF-12 -- the bank accounts (IBAN) of the unit as the ISSUER of the E-Factura invoices.
+-- SUPERSEDED by slice 00EF-13: DO NOT RUN.
+--
+-- The accounts are AVACONT_COMUN.Unitati_Conturi now (one table for every unit, key DC + Cont), created by
+-- sql/00EF_13_unitati_detalii.sql. EF_FurnizorConturi, the table this file used to create in AVACONT_SURSA, no longer
+-- exists in the unit databases. The rules did not change: Banca is deduced by the server from characters 5-8 of the
+-- IBAN (AVACONT_COMUN.BIC), nobody types it; these are the accounts of the CURRENT UNIT, not of the partners it pays.
+-- =====================================================================================

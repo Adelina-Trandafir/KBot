@@ -1,0 +1,4372 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =79808156
+Begin Report
+    LayoutForPrint = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =10587
+    DatasheetFontHeight =11
+    ItemSuffix =92
+    Top =480
+    Right =10920
+    Bottom =9072
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0x27f30511b76ce540
+    End
+    GUID = Begin
+        0x4f6c8be73582a748b22f7fe5d09bad5c
+    End
+    NameMap = Begin
+        0x0acc0e55000000002c83eb873837b3498315275532451fc00000000010dd3c54 ,
+        0xf56de54000000000000000004600610063007400750072006900000000000000 ,
+        0x402dbc67abf4d44ea62fd98bc5f59369070000002c83eb873837b34983152755 ,
+        0x32451fc04900440050004c0000000000000043cf212a90912e4d84b3f733582c ,
+        0x153e01000000f8cc4404916de54000000000000000005000720065007a006500 ,
+        0x6e0074006100000000000000dd6cf2270b1fcb429706ac18a90f235b06000000 ,
+        0x43cf212a90912e4d84b3f733582c153e4900440050004c00000000000000892a ,
+        0xbdf11398194489e4dd2c1f2126fe060000004f6c8be73582a748b22f7fe5d09b ,
+        0xad5c4900440053000000000000008c57c350e90004409fd5fbe8262367cd0600 ,
+        0x00004f6c8be73582a748b22f7fe5d09bad5c42005f0043006f006e0074000000 ,
+        0x00000000fe9f3689b6eaa24bb9e957743cdc9a690000000088643e54f56de540 ,
+        0x000000000000000050006c0061007400690074006f00720069005f0073007500 ,
+        0x620000000000000009bc8a4458984144aa7be39840845cff07000000fe9f3689 ,
+        0xb6eaa24bb9e957743cdc9a69490044005300000000000000a2e3b23a81424d4e ,
+        0x9509b4f36de8956f07000000fe9f3689b6eaa24bb9e957743cdc9a694e007500 ,
+        0x6d0065000000000000006f6f5af2de31764e8eb39cb3b746cff007000000fe9f ,
+        0x3689b6eaa24bb9e957743cdc9a694300550049000000000000006fb74756f58f ,
+        0xff4ca2b64607b56abdbf07000000fe9f3689b6eaa24bb9e957743cdc9a694100 ,
+        0x63007400690076000000000000004ae70ff3524022499eea82544e10ed180100 ,
+        0x000076961f13916de54000000000000000004600610063007400750072006900 ,
+        0x000000000000945347524b00954394cda92ce2346577060000004ae70ff35240 ,
+        0x22499eea82544e10ed18490044005300000000000000e98da0e2240c72438cd4 ,
+        0x8aa8f69a6255060000004f6c8be73582a748b22f7fe5d09bad5c440061007400 ,
+        0x6100000000000000000000000000000000000000000000000700000000000000 ,
+        0x00000000000000000000000043006f006e00740069006e007500740000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x00000000000055004d0000000000000000000000000000000000000000000000 ,
+        0x0700000000000000000000000000000000000000430061006e00740000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x0000000000005000550000000000000000000000000000000000000000000000 ,
+        0x0700000000000000000000000000000000000000560061006c006f0061007200 ,
+        0x6500000000000000000000000000000000000000000000000700000000000000 ,
+        0x000000000000000000000000520061006e006400310000000000000000000000 ,
+        0x0000000000000000000000000700000000000000000000000000000000000000 ,
+        0x520061006e006400320000000000000000000000000000000000000000000000 ,
+        0x0700000000000000000000000000000000000000440061007400610000000000 ,
+        0x000024ff4481bbb91547843e48507ba228a6060000004f6c8be73582a748b22f ,
+        0x7fe5d09bad5c530045005200490045000000000000002019de831ac0a341906f ,
+        0x279919ffaff3060000004f6c8be73582a748b22f7fe5d09bad5c4e0055004d00 ,
+        0x410052000000000000004d0ff80fc4a4c64ea3288e66ff905be2060000004f6c ,
+        0x8be73582a748b22f7fe5d09bad5c41006e0075006c0061007400610000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x0000000000004900440053000000000000000000000000000000000000000000 ,
+        0x0000070000000000000000000000000000000000000053006500720069006500 ,
+        0x0000000000000000000000000000000000000000000007000000000000000000 ,
+        0x000000000000000000004e0075006d0061007200000000000000000000000000 ,
+        0x0000000000000000000007000000000000000000000000000000000000004100 ,
+        0x6e0075006c006100740061000000000000000000000000000000000000000000 ,
+        0x000007000000000000000000000000000000000000004c006900730074006100 ,
+        0x74006100000000000000000000000000000000000000000000000c0000000500 ,
+        0x00000000000000000000000000000000
+    End
+    RecordSource ="SELECT Facturi.* FROM Facturi WHERE (((Facturi.IDPL)=[forms]![Prezenta]![IDPL]))"
+        "; "
+    DatasheetFontName ="Calibri"
+    PrtMip = Begin
+        0x4002000040020000f8010000f7000000000000005b290000f801000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00a8ff6600000000d3a7ff660000000000000000e8a7ff660000000015000000 ,
+        0x010403069c00640943ff8107010009009a0b3408640001000f00580202000100 ,
+        0x580202000000413400df911f187b921000000000fc00000088a7ff6600020067 ,
+        0x9c345300e8a70000000000000000000000000000010000000000000002000000 ,
+        0x0200000015010000010100000000000000000000000000000000000044494e55 ,
+        0x2200b80214055004bb0f6d3b0000000000000000000000000100000000000000 ,
+        0x00000000000000001c0000000100000065000000000000000000000000000000 ,
+        0x0100000000000000000000000000000001000000000000000000060000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000b8020000534d544a ,
+        0x000000001000a802000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000500400004c505048010000005108db60 ,
+        0x5108db6007000000000000000000000000000000010000000000000000000000 ,
+        0x00000000000000005802000058020000580200005802000002000000ec130000 ,
+        0xc8190000a11300007d1900004b0000004b0000003c0000003c0000003c000000 ,
+        0x3c00000000000000010000000f2700000100000001000000010000000f270000 ,
+        0x000000000f2700000f270000000000000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f27000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000057656420 ,
+        0x4665622032362031363a30323a30323a32323220323032300000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077ba0f60 ,
+        0x4b0000004b0000000100000000000000040000000001000077ba0f6000000000
+    End
+    PrtDevNames = Begin
+        0x08001e0034000100000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000055534230303100
+    End
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    FitToPage =1
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    RibbonName ="rbbPPVW"
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    PrtDevModeW = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x2000380036003000300000000000000000000000000000000000000000000000 ,
+        0x01040306dc00640943ff8107010009009a0b3408640001000f00580202000100 ,
+        0x5802020000004100340000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000002000000 ,
+        0x0200000015010000010100000000000000000000000000000000000044494e55 ,
+        0x2200b80214055004bb0f6d3b0000000000000000000000000100000000000000 ,
+        0x00000000000000001c0000000100000065000000000000000000000000000000 ,
+        0x0100000000000000000000000000000001000000000000000000060000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000b8020000534d544a ,
+        0x000000001000a802000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000500400004c505048010000005108db60 ,
+        0x5108db6007000000000000000000000000000000010000000000000000000000 ,
+        0x00000000000000005802000058020000580200005802000002000000ec130000 ,
+        0xc8190000a11300007d1900004b0000004b0000003c0000003c0000003c000000 ,
+        0x3c00000000000000010000000f2700000100000001000000010000000f270000 ,
+        0x000000000f2700000f270000000000000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f2700000f270000 ,
+        0x0f2700000f2700000f2700000f2700000f2700000f2700000f27000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000057656420 ,
+        0x4665622032362031363a30323a30323a32323220323032300000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000077ba0f60 ,
+        0x4b0000004b0000000100000000000000040000000001000077ba0f6000000000
+    End
+    PrtDevNamesW = Begin
+        0x04001a0030000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x5500530042003000300031000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Rectangle
+            BorderLineStyle =0
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Line
+            BorderLineStyle =0
+            BorderThemeColorIndex =0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AsianLineBreak =1
+            ShowDatePicker =0
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin UnboundObjectFrame
+            OldBorderStyle =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =7272
+            Name ="ReportHeader"
+            GUID = Begin
+                0x1ce2a95d30ada143bf39e7ceb650425c
+            End
+            OnPaint ="[Event Procedure]"
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1677
+                    Width =2475
+                    ColumnOrder =1
+                    FontSize =8
+                    FontWeight =700
+                    Name ="P_Banca"
+                    ControlSource ="=DLookUp(\"banca\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xb64db17040959246b2d53f62a3b2a2fa
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1677
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1917
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1437
+                    Width =2475
+                    ColumnOrder =2
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="P_Cont"
+                    ControlSource ="=DLookUp(\"cont\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xe6e0bee24fba4b4e8992cbbf206da2f7
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1437
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1677
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =957
+                    Width =2475
+                    ColumnOrder =3
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="P_ADRESA"
+                    ControlSource ="=DLookUp(\"adresa\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x022a4d702c29a54ba8773c744b9f003e
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =957
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1197
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1248
+                    Top =480
+                    Width =2475
+                    ColumnOrder =4
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =3
+                    Name ="P_CUI"
+                    ControlSource ="=DLookUp(\"cf\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x9887122be857e54b92fad69265d307ed
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1248
+                    LayoutCachedTop =480
+                    LayoutCachedWidth =3723
+                    LayoutCachedHeight =720
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    IMESentenceMode =3
+                    Left =48
+                    Top =72
+                    Width =3666
+                    Height =405
+                    ColumnOrder =5
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =4
+                    BackColor =15527148
+                    Name ="Unitate"
+                    ControlSource ="=DLookUp(\"Denumire\",\"Unitati\")"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x304908b049df6d45a6672bda892729c3
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =72
+                    LayoutCachedWidth =3714
+                    LayoutCachedHeight =477
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =717
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label3"
+                    Caption ="Nr.ord.reg."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x4904954c3a4e9b41b8b326d0bf5eb925
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =717
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =957
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =480
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label4"
+                    Caption ="C.U.I.:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xb531106d2aa59b419c2cd397610e260d
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =480
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =720
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =957
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label6"
+                    Caption ="Sediul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x571b6744ed7b8f4eb3e80531dc5f31ff
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =957
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1197
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =1437
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label10"
+                    Caption ="Contul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x12900c5714ed094f929be38495cd112a
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1437
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1677
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =1677
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label12"
+                    Caption ="Banca:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x6cf4935c4f7cfb4da811a47a87efa50c
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1677
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1917
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =477
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label23"
+                    Caption ="C.U.I.:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xf1aef272d6647348bf839bcec4441b4b
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =477
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =702
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =477
+                    Width =2475
+                    Height =225
+                    ColumnOrder =6
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =5
+                    Name ="B_CUI"
+                    ControlSource ="=DLookUp(\"CUI\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xf5afb09aa211d942bed4c03103a6a286
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =477
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =702
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =702
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label26"
+                    Caption ="Nr.ord.reg."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xb8b711d6f2d6ac45840c6254142a6d41
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =702
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =927
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =702
+                    Width =2475
+                    Height =225
+                    ColumnOrder =7
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =6
+                    Name ="B_J"
+                    ControlSource ="=DLookUp(\"j\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x29d1160c1cc3ca419792af88656524ca
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =702
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =927
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =927
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label31"
+                    Caption ="Sediul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x03922fefd17ee842af57bfbf49976640
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =927
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1152
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =927
+                    Width =2475
+                    Height =375
+                    ColumnOrder =8
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =7
+                    Name ="B_Adresa"
+                    ControlSource ="=DLookUp(\"adresa\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x901ca780a479f14f8f503ffb4a3bb97e
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =927
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =1302
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Top =24
+                    Width =10587
+                    Name ="Line44"
+                    GUID = Begin
+                        0xe06157ae9133004099463e275917d49d
+                    End
+                    LayoutCachedTop =24
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =24
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =717
+                    Width =2475
+                    ColumnOrder =9
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =8
+                    Name ="P_J"
+                    ControlSource ="=DLookUp(\"j\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x491515e8e249104b8d4f8f4aa2c79870
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =717
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =957
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =1302
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label278"
+                    Caption ="Contul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x08cc745492c96b4991e952ed39d2a4e8
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =1302
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1527
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8066
+                    Top =1302
+                    Width =2475
+                    Height =225
+                    ColumnOrder =10
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =9
+                    Name ="B_Cont"
+                    ControlSource ="=DLookUp(\"Cont\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x8c57c350e90004409fd5fbe8262367cd
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8066
+                    LayoutCachedTop =1302
+                    LayoutCachedWidth =10541
+                    LayoutCachedHeight =1527
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =1527
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label280"
+                    Caption ="Banca:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x0d831ab4abbd644a998e0b1a2972e6ce
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =1527
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1752
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8066
+                    Top =1527
+                    Width =2475
+                    Height =225
+                    ColumnOrder =11
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =10
+                    Name ="B_Banca"
+                    ControlSource ="=DLookUp(\"banca\",\"banci\",\"BIC Like '\" & Mid([b_Cont],5,4) & \"'\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xdc654274a6b15d44b24cc3c86ac7ce24
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8066
+                    LayoutCachedTop =1527
+                    LayoutCachedWidth =10541
+                    LayoutCachedHeight =1752
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1197
+                    Width =2475
+                    ColumnOrder =12
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =11
+                    BorderColor =12835293
+                    ForeColor =4138256
+                    Name ="P_JUD"
+                    ControlSource ="=DLookUp(\"judetul\",\"Unitati\")"
+                    GUID = Begin
+                        0x69b731ed39ca574ebd911a97a94a7e2d
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1197
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1437
+                    BorderThemeColorIndex =3
+                    BorderShade =90.0
+                    ForeThemeColorIndex =2
+                    ForeTint =100.0
+                    ForeShade =50.0
+                End
+                Begin Label
+                    Left =48
+                    Top =1197
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    BorderColor =16777215
+                    ForeColor =13995605
+                    Name ="Label87"
+                    Caption ="Judetul:"
+                    GUID = Begin
+                        0x9c4ae37a328cbe4ca0848eacb3841b9b
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1197
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1437
+                    BorderThemeColorIndex =1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =2
+                    ForeTint =60.0
+                End
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    LimitToList = NotDefault
+                    OldBorderStyle =0
+                    IMESentenceMode =3
+                    ColumnCount =4
+                    ListRows =6
+                    ListWidth =5040
+                    Left =6864
+                    Top =72
+                    Width =3666
+                    Height =405
+                    ColumnOrder =13
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =12
+                    BackColor =15527148
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x7bcf073290e556408bda4727a62f0d46
+                    End
+                    Name ="Beneficiar"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT Platitori_sub.IDS, Platitori_sub.Nume, Platitori_sub.CUI, Platitori_sub.A"
+                        "ctiv FROM Platitori_sub WHERE (((Platitori_sub.IDS) Like [forms]![Facturi]![IDS]"
+                        ")) ORDER BY Platitori_sub.Nume; "
+                    ColumnWidths ="0;2880;1440;720"
+                    FontName ="Arial Narrow"
+
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =72
+                    LayoutCachedWidth =10530
+                    LayoutCachedHeight =477
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ForeThemeColorIndex =-1
+                    ForeShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Top =1980
+                    Width =10587
+                    Name ="Line6"
+                    GUID = Begin
+                        0xae8ed8fecc1a1f41ab236a594e2b703d
+                    End
+                    LayoutCachedTop =1980
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =1980
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Top =2412
+                    Width =10587
+                    Height =336
+                    ColumnOrder =14
+                    FontSize =14
+                    TabIndex =13
+                    BorderColor =8355711
+                    Name ="Label8"
+                    ControlSource ="=\" din data de <b>\" & [Data] & \"</b>\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x7f300f170fec4a4491cefaec793239a8
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedTop =2412
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =2748
+                    BorderThemeColorIndex =0
+                    BorderTint =50.0
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =96
+                    Top =2928
+                    Width =504
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label11"
+                    Caption ="Nr. Crt."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x53680c9292f4404fa27b50d195a0d379
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =600
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =600
+                    Top =2928
+                    Width =5928
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label13"
+                    Caption ="Conținutul"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x6de01251e6d17b4495b123b4bad00c15
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =600
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =6528
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =6528
+                    Top =2928
+                    Width =696
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label14"
+                    Caption ="U / M"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x12fbdb2aabb0804895d91e998bdfcd15
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =6528
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =7224
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =7224
+                    Top =2928
+                    Width =936
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label15"
+                    Caption ="Cant."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc25c2e9d155bb741a6715594d2effbc4
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =7224
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =8160
+                    Top =2928
+                    Width =1176
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label16"
+                    Caption ="Prețul unitar"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x322a276118bb9341b83bafa9f466847b
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =9336
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =9336
+                    Top =2928
+                    Width =1176
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label17"
+                    Caption ="Valoarea"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x4b63af323c401548acb5a08e535317c2
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =9336
+                    LayoutCachedTop =2928
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =3384
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =3384
+                    Width =504
+                    Height =1416
+                    ColumnOrder =15
+                    FontSize =9
+                    TabIndex =14
+                    BorderColor =7500402
+                    Name ="Label18"
+                    ControlSource ="=\"1\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x739aa098ee7a744fafd8b40ec41ca01f
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =600
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =600
+                    Top =3384
+                    Width =5928
+                    Height =1416
+                    ColumnOrder =16
+                    FontSize =9
+                    TabIndex =15
+                    BorderColor =7500402
+                    Name ="Continut"
+                    ControlSource ="Continut"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xe49ca96580f3864cb87bdb30469f9adf
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =600
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =6528
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =6528
+                    Top =3384
+                    Width =696
+                    Height =1416
+                    ColumnOrder =17
+                    FontSize =9
+                    TabIndex =16
+                    BorderColor =7500402
+                    Name ="UM"
+                    ControlSource ="UM"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xa80ab834a75a584cab98c8b0fa110893
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =6528
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =7224
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =7224
+                    Top =3384
+                    Width =936
+                    Height =1416
+                    ColumnOrder =18
+                    FontSize =9
+                    TabIndex =17
+                    BorderColor =7500402
+                    Name ="Cant"
+                    ControlSource ="Cant"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x3e126a92a4b8fc4c9817eba99a13ffd7
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =7224
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8160
+                    Top =3384
+                    Width =1176
+                    Height =1416
+                    ColumnOrder =19
+                    FontSize =9
+                    TabIndex =18
+                    BorderColor =7500402
+                    Name ="PU"
+                    ControlSource ="PU"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd940eda31a48c94d876877933a89aafa
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =9336
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =9336
+                    Top =3384
+                    Width =1176
+                    Height =1416
+                    ColumnOrder =20
+                    FontSize =9
+                    TabIndex =19
+                    BorderColor =7500402
+                    Name ="Valoare"
+                    ControlSource ="Valoare"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x6a9a6faa8d5f574fa3343d6716ab11e9
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =9336
+                    LayoutCachedTop =3384
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =4800
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =4800
+                    Width =8064
+                    Height =264
+                    ColumnOrder =21
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =20
+                    BorderColor =7500402
+                    Name ="Rand1"
+                    ControlSource ="Rand1"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x5ed71a36b6ffdf4b96df586812b65f36
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4800
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =5064
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =5064
+                    Width =8064
+                    Height =264
+                    ColumnOrder =22
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =21
+                    BorderColor =7500402
+                    Name ="Rand2"
+                    ControlSource ="Rand2"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc6211f2309e8a84f8d23df52369ccf1b
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =5064
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =5328
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    Left =96
+                    Top =5460
+                    Width =1538
+                    Height =1151
+                    FontSize =7
+                    BorderColor =7500402
+                    Name ="Etichet184"
+                    Caption ="Semnatura si stampila"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x8ea6e93d06947543b46650f162e296d8
+                    End
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =5460
+                    LayoutCachedWidth =1634
+                    LayoutCachedHeight =6611
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =5685
+                    Width =5784
+                    Height =225
+                    ColumnOrder =23
+                    FontSize =8
+                    TabIndex =22
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="Nume"
+                    ControlSource ="=DLookUp(\"NUME\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x9d46463252d5964d9366e5699ed78fa8
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =5685
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =5910
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =5685
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Etichet189"
+                            Caption ="Nume:"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x9ae156f81d01a44da50f85ac7111f86a
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =5685
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =5910
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =5910
+                    Width =5784
+                    Height =225
+                    ColumnOrder =24
+                    FontSize =8
+                    TabIndex =23
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="CNP"
+                    ControlSource ="=DLookUp(\"CNP\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x4a79fe57705c2c40b14544443341f2d1
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =5910
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =6135
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =5910
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Etichet190"
+                            Caption ="CNP:"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x1831c6c3b564d14e8bf728389dffe77a
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =5910
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =6135
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =18
+                    Left =1632
+                    Top =5460
+                    Width =6533
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    Name ="Etichet94"
+                    Caption ="Date delegat..."
+                    FontName ="Bookman Old Style"
+                    GUID = Begin
+                        0x5899b29fd455ad42a74199c85a1e56ea
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =5460
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =5685
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    Left =1632
+                    Top =6360
+                    Width =6533
+                    Height =255
+                    FontSize =8
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Etichet195"
+                    Caption ="Semnaturile si data livrarii:"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x63a8750889551c4887518659a5cb4423
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =6360
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =6615
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =6135
+                    Width =5784
+                    Height =225
+                    ColumnOrder =25
+                    FontSize =8
+                    TabIndex =24
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="DATEBI"
+                    ControlSource ="=DLookUp(\"DATEBI\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd672c0877283c4478112eec3b903a9c1
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =6135
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =6360
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =6135
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Etichet217"
+                            Caption ="BI/CI"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x14f01cb2b7ed454d8134a793c8f41462
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =6135
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =6360
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    Left =8160
+                    Top =5463
+                    Width =2352
+                    Height =1148
+                    FontSize =7
+                    BorderColor =7500402
+                    Name ="Label234"
+                    Caption ="Semnatura clientului"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x2847df0606bafd4f842f2a2564ab6349
+                    End
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =5463
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =6611
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    RunningSum =2
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =8160
+                    Top =4800
+                    Width =2352
+                    Height =531
+                    ColumnOrder =26
+                    FontSize =12
+                    TabIndex =25
+                    BorderColor =7500402
+                    Name ="TOT2"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xdc73d43d5605654ba01033b1564cee16
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =4800
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =5331
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    Left =1632
+                    Top =5460
+                    Width =6533
+                    Height =1151
+                    BorderColor =7500402
+                    Name ="Caset188"
+                    GUID = Begin
+                        0x2bbd5c41626cea41a78436557fbdb3f6
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =5460
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =6611
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Top =5376
+                    Width =10587
+                    Name ="Line27"
+                    GUID = Begin
+                        0xec69a4da99083649bbe60792a81e0028
+                    End
+                    LayoutCachedTop =5376
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =5376
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    Left =96
+                    Top =4800
+                    Width =8069
+                    Height =527
+                    BorderColor =7500402
+                    Name ="Box28"
+                    GUID = Begin
+                        0x2ac3329312b73146bf52b430296273f7
+                    End
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4800
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =5327
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =3816
+                    Top =477
+                    Width =2058
+                    Height =300
+                    ColumnOrder =27
+                    TabIndex =26
+                    Name ="Data"
+                    ControlSource ="Data"
+                    Format ="Short Date"
+                    GUID = Begin
+                        0xe98da0e2240c72438cd48aa8f69a6255
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3816
+                    LayoutCachedTop =477
+                    LayoutCachedWidth =5874
+                    LayoutCachedHeight =777
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Top =2076
+                    Width =10587
+                    Height =336
+                    ColumnOrder =28
+                    FontSize =14
+                    TabIndex =27
+                    BorderColor =8355711
+                    Name ="Label7"
+                    ControlSource ="=\"<u>FACTURĂ FISCALĂ <b>\" & [SERIE] & \" / \" & [NUMAR] & \"</b></u>\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xbd0e0b3685c18b468dc730c26bd03d88
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedTop =2076
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =2412
+                    BorderThemeColorIndex =0
+                    BorderTint =50.0
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =3816
+                    Top =72
+                    Width =2058
+                    Height =405
+                    ColumnOrder =29
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =28
+                    BackColor =15527148
+                    Name ="Text30"
+                    ControlSource ="=\"Data facturii\""
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xb39e4e2068a8e745b683d08962809d17
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3816
+                    LayoutCachedTop =72
+                    LayoutCachedWidth =5874
+                    LayoutCachedHeight =477
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Top =7104
+                    Width =10587
+                    Height =168
+                    FontSize =7
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label5"
+                    Caption ="©ADESIT - P.F.A. Trandafir Marius Andrei 2020"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x7cf15e9a9ba41d448be03865cf553a82
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedTop =7104
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =7272
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =4248
+                    Width =10416
+                    Height =552
+                    ColumnOrder =0
+                    FontSize =20
+                    FontWeight =700
+                    TabIndex =29
+                    BorderColor =10921638
+                    ForeColor =255
+                    Name ="Anl"
+                    ControlSource ="=\"Factură anulată\""
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x01000000a2000000020000000100000000000000000000000f00000001010000 ,
+                        0xff000000f9eded000100000000000000100000002000000001000000ffffff00 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x5b0041006e0075006c006100740061005d003d00540072007500650000000000 ,
+                        0x5b0041006e0075006c006100740061005d003d00460061006c00730065000000 ,
+                        0x0000
+                    End
+                    GUID = Begin
+                        0x89c05ff77eac36438fdcfef8e6de8393
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4248
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =4800
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000010000000000000001010000ff000000f9eded000e0000005b00 ,
+                        0x41006e0075006c006100740061005d003d005400720075006500000000000000 ,
+                        0x000000000000000000000000000000010000000000000001000000ffffff00ff ,
+                        0xffff000f0000005b0041006e0075006c006100740061005d003d00460061006c ,
+                        0x0073006500000000000000000000000000000000000000000000
+                    End
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextAlign =1
+                    TextFontFamily =49
+                    Left =96
+                    Top =6611
+                    Width =10419
+                    Height =360
+                    FontSize =8
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label90"
+                    Caption ="Întocmit de Staicu Roxana.\015\012Factura este valabilă fără semnătura și ștampi"
+                        "lă!"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x6daefc366ae04b4bb228ae76136121ef
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =6611
+                    LayoutCachedWidth =10515
+                    LayoutCachedHeight =6971
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageHeader
+            Visible = NotDefault
+            Height =300
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xf5110c2bc545814ba4aed18ab351ac3c
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    IMESentenceMode =3
+                    Width =888
+                    Height =300
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="IDZ"
+                    GUID = Begin
+                        0xcb0198a9d9360c44972541e02bfb280e
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedWidth =888
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =888
+                    Width =888
+                    Height =300
+                    TabIndex =1
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="IDP"
+                    GUID = Begin
+                        0xa618f0e639631a48b8e623989f758e1c
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =888
+                    LayoutCachedWidth =1776
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =1776
+                    Width =888
+                    Height =300
+                    TabIndex =2
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="IDS"
+                    ControlSource ="IDS"
+                    GUID = Begin
+                        0x892abdf11398194489e4dd2c1f2126fe
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1776
+                    LayoutCachedWidth =2664
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =2664
+                    Width =888
+                    Height =300
+                    TabIndex =3
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="IDL"
+                    GUID = Begin
+                        0x8fc55d7f81a35849b54ef792a97d204b
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2664
+                    LayoutCachedWidth =3552
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =3552
+                    Width =888
+                    Height =300
+                    TabIndex =4
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="IDPL"
+                    ControlSource ="IDPL"
+                    GUID = Begin
+                        0x0b83b740ad823a4090291396f2db25a4
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3552
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =4440
+                    Width =888
+                    Height =300
+                    TabIndex =5
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="SERIE"
+                    ControlSource ="Serie"
+                    GUID = Begin
+                        0x24ff4481bbb91547843e48507ba228a6
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =4440
+                    LayoutCachedWidth =5328
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =5328
+                    Width =888
+                    Height =300
+                    TabIndex =6
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="NUMAR"
+                    ControlSource ="Numar"
+                    GUID = Begin
+                        0x2019de831ac0a341906f279919ffaff3
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =5328
+                    LayoutCachedWidth =6216
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =6216
+                    Width =888
+                    Height =300
+                    TabIndex =7
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="Anulata"
+                    ControlSource ="Anulata"
+                    Format ="True/False"
+                    GUID = Begin
+                        0x4d0ff80fc4a4c64ea3288e66ff905be2
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =6216
+                    LayoutCachedWidth =7104
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    IMESentenceMode =3
+                    Left =7104
+                    Width =888
+                    Height =300
+                    TabIndex =8
+                    BorderColor =10921638
+                    ForeColor =4210752
+                    Name ="Listata"
+                    ControlSource ="Listata"
+                    Format ="True/False"
+                    GUID = Begin
+                        0xb632db16c1cf9d47ba8dc8c8d447adab
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =7104
+                    LayoutCachedWidth =7992
+                    LayoutCachedHeight =300
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =504
+            Name ="Detail"
+            GUID = Begin
+                0x2650daee79549e458e6362c26e505280
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin Line
+                    OldBorderStyle =2
+                    BorderLineStyle =1
+                    Left =216
+                    Top =264
+                    Width =10371
+                    BorderColor =8355711
+                    Name ="Line0"
+                    GUID = Begin
+                        0x56d2203ebd5a2d4d825f017bfa08561c
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =216
+                    LayoutCachedTop =264
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =264
+                    BorderTint =50.0
+                End
+                Begin Label
+                    TextFontCharSet =2
+                    TextFontFamily =2
+                    Top =120
+                    Width =432
+                    Height =276
+                    FontSize =14
+                    FontWeight =700
+                    BorderColor =8355711
+                    ForeColor =8355711
+                    Name ="Label2"
+                    Caption =""
+                    FontName ="Wingdings"
+                    GUID = Begin
+                        0xda77bdf5536d454eb76cb41eba835acd
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedTop =120
+                    LayoutCachedWidth =432
+                    LayoutCachedHeight =396
+                    ThemeFontIndex =-1
+                End
+            End
+        End
+        Begin PageFooter
+            Height =36
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x35a22578cbcd3f4ba965c7734867c25d
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =7224
+            Name ="ReportFooter"
+            GUID = Begin
+                0xff587b8b19f72344bdd7d6b78506f332
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1653
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    Name ="Text6"
+                    ControlSource ="=DLookUp(\"banca\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x370c7cf33eb5a947bdebf1862ef2866e
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1653
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1893
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1413
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Text7"
+                    ControlSource ="=DLookUp(\"cont\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x5eee44536cedf440aa60f1e6d3798290
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1413
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1653
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =933
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="Text8"
+                    ControlSource ="=DLookUp(\"adresa\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x4fc46f3100c53747bc5bac7f3fcc4fa7
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =933
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1173
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1248
+                    Top =456
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =3
+                    Name ="Text9"
+                    ControlSource ="=DLookUp(\"cf\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x693a8123ce86d94e885ad6997f8cba82
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1248
+                    LayoutCachedTop =456
+                    LayoutCachedWidth =3723
+                    LayoutCachedHeight =696
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    IMESentenceMode =3
+                    Left =48
+                    Top =48
+                    Width =3666
+                    Height =405
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =4
+                    BackColor =15527148
+                    Name ="Text10"
+                    ControlSource ="=DLookUp(\"Denumire\",\"Unitati\")"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x1a4b62b412275d48ab8d9a0d9b135a91
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =3714
+                    LayoutCachedHeight =453
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =693
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label19"
+                    Caption ="Nr.ord.reg."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x82806f47da2bc54994836b31a52afce5
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =693
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =933
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =456
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label20"
+                    Caption ="C.U.I.:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xa1672d9b3b4c44479e821e032f662dc0
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =456
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =696
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =933
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label21"
+                    Caption ="Sediul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xefe15c2bd7b3974095e9cc032040cb39
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =933
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1173
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =1413
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label22"
+                    Caption ="Contul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x872e1e41fe7d7144aef847ebf3994afe
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1413
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1653
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =48
+                    Top =1653
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    Name ="Label24"
+                    Caption ="Banca:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc19e9179db99f843a04a3e4cc67d8319
+                    End
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1653
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1893
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =453
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label25"
+                    Caption ="C.U.I.:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xac3e37d39a9be94b95066b793de51e02
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =453
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =678
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =453
+                    Width =2475
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =5
+                    Name ="Text26"
+                    ControlSource ="=DLookUp(\"CUI\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x23b830e6f824f34dbaf208db7aa603d2
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =453
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =678
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =678
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label27"
+                    Caption ="Nr.ord.reg."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x3bb119282ca4bf499fd9eb3da1e0d504
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =678
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =903
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =678
+                    Width =2475
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =6
+                    Name ="Text28"
+                    ControlSource ="=DLookUp(\"j\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xeba94a9fa0ddf94591b933f788d0403e
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =678
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =903
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =903
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label29"
+                    Caption ="Sediul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xddba9fe7c12ca54e89e3867cf69e7516
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =903
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1128
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8062
+                    Top =903
+                    Width =2475
+                    Height =375
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =7
+                    Name ="Text31"
+                    ControlSource ="=DLookUp(\"adresa\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc1703d340c21694ebfd10ef9276a518e
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8062
+                    LayoutCachedTop =903
+                    LayoutCachedWidth =10537
+                    LayoutCachedHeight =1278
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Width =10587
+                    Name ="Line32"
+                    GUID = Begin
+                        0xf5d24f24620aad4aa95d35d34d7ffe4f
+                    End
+                    LayoutCachedWidth =10587
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =693
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =8
+                    Name ="Text33"
+                    ControlSource ="=DLookUp(\"j\",\"Unitati\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xf494b636eca52046bb921eb6fa63b8a4
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =693
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =933
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =1278
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label34"
+                    Caption ="Contul:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xbfb66d9739b4214bbea2e4c4fc6481ed
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =1278
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1503
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8066
+                    Top =1278
+                    Width =2475
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =9
+                    Name ="Text35"
+                    ControlSource ="=DLookUp(\"Cont\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x00366792f479f9478e9d720e604a318a
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8066
+                    LayoutCachedTop =1278
+                    LayoutCachedWidth =10541
+                    LayoutCachedHeight =1503
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    TextFontFamily =49
+                    Left =6864
+                    Top =1503
+                    Width =1197
+                    Height =225
+                    FontSize =8
+                    Name ="Label36"
+                    Caption ="Banca:"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x170729a8d9290a468183f25bab94c466
+                    End
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =1503
+                    LayoutCachedWidth =8061
+                    LayoutCachedHeight =1728
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8066
+                    Top =1503
+                    Width =2475
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =10
+                    Name ="Text37"
+                    ControlSource ="=DLookUp(\"banca\",\"Platitori_sub\",\"IDS = \" & [IDS])"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd6836d4f37db8145a864b702c65e90df
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8066
+                    LayoutCachedTop =1503
+                    LayoutCachedWidth =10541
+                    LayoutCachedHeight =1728
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =1
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1245
+                    Top =1173
+                    Width =2475
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =11
+                    BorderColor =12835293
+                    ForeColor =4138256
+                    Name ="Text38"
+                    ControlSource ="=DLookUp(\"judetul\",\"Unitati\")"
+                    GUID = Begin
+                        0x0e2ec76334c6ef4f80343f160d2cbf21
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1245
+                    LayoutCachedTop =1173
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =1413
+                    BorderThemeColorIndex =3
+                    BorderShade =90.0
+                    ForeThemeColorIndex =2
+                    ForeTint =100.0
+                    ForeShade =50.0
+                End
+                Begin Label
+                    Left =48
+                    Top =1173
+                    Width =1197
+                    Height =240
+                    FontSize =8
+                    BorderColor =16777215
+                    ForeColor =13995605
+                    Name ="Label39"
+                    Caption ="Judetul:"
+                    GUID = Begin
+                        0x8fc7cc6fcaf4164d8ab3048800b21a25
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =48
+                    LayoutCachedTop =1173
+                    LayoutCachedWidth =1245
+                    LayoutCachedHeight =1413
+                    BorderThemeColorIndex =1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =2
+                    ForeTint =60.0
+                End
+                Begin ComboBox
+                    ColumnHeads = NotDefault
+                    LimitToList = NotDefault
+                    OldBorderStyle =0
+                    IMESentenceMode =3
+                    ColumnCount =4
+                    ListRows =6
+                    ListWidth =5040
+                    Left =6864
+                    Top =48
+                    Width =3666
+                    Height =405
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =12
+                    BackColor =15527148
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"100\""
+                    GUID = Begin
+                        0x500f578667c5cd45afd582d4bf2f4d9d
+                    End
+                    Name ="Combo40"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT Platitori_sub.IDS, Platitori_sub.Nume, Platitori_sub.CUI, Platitori_sub.A"
+                        "ctiv FROM Platitori_sub WHERE (((Platitori_sub.IDS) Like [forms]![Facturi]![IDS]"
+                        ")) ORDER BY Platitori_sub.Nume; "
+                    ColumnWidths ="0;2880;1440;720"
+                    FontName ="Arial Narrow"
+
+                    LayoutCachedLeft =6864
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =10530
+                    LayoutCachedHeight =453
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ForeThemeColorIndex =-1
+                    ForeShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Top =1956
+                    Width =10587
+                    Name ="Line41"
+                    GUID = Begin
+                        0x418271176046c14faa359f15bc2a93dc
+                    End
+                    LayoutCachedTop =1956
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =1956
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Top =2388
+                    Width =10587
+                    Height =336
+                    FontSize =14
+                    TabIndex =13
+                    BorderColor =8355711
+                    Name ="Text42"
+                    ControlSource ="=\" din data de <b>\" & [Data] & \"</b>\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x95fb489daaaef243931b8d4ab879eb3e
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedTop =2388
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =2724
+                    BorderThemeColorIndex =0
+                    BorderTint =50.0
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =96
+                    Top =2904
+                    Width =504
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label43"
+                    Caption ="Nr. Crt."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x219f0cbf93a8134988a4df8ef2553a2c
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =600
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =600
+                    Top =2904
+                    Width =5928
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label44"
+                    Caption ="Conținutul"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x9c6582e086a2d54daa0dc9334825bf94
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =600
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =6528
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =6528
+                    Top =2904
+                    Width =696
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label45"
+                    Caption ="U / M"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc248a7c8aaddd34ea596db864a384cc5
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =6528
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =7224
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =7224
+                    Top =2904
+                    Width =936
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label46"
+                    Caption ="Cant."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xb71e2aae721df84bacdea13ec4a7843d
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =7224
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =8160
+                    Top =2904
+                    Width =1176
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label47"
+                    Caption ="Prețul unitar"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x9e10958ab9132c43987888d964e19a6a
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =9336
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =9336
+                    Top =2904
+                    Width =1176
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    BorderColor =7500402
+                    Name ="Label48"
+                    Caption ="Valoarea"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x60d5105a10e8134ebb310a5cec805ec2
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =9336
+                    LayoutCachedTop =2904
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =3360
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeTint =100.0
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    Left =96
+                    Top =5436
+                    Width =1538
+                    Height =1151
+                    FontSize =7
+                    BorderColor =7500402
+                    Name ="Label57"
+                    Caption ="Semnatura si stampila"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x3e4bd4b96ec14444bf6826d4f6604cfb
+                    End
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =5436
+                    LayoutCachedWidth =1634
+                    LayoutCachedHeight =6587
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =5661
+                    Width =5784
+                    Height =225
+                    FontSize =8
+                    TabIndex =14
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="Text58"
+                    ControlSource ="=DLookUp(\"NUME\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x46281ea030c47c4bac8cfc1a4e83461f
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =5661
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =5886
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =5661
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Label59"
+                            Caption ="Nume:"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x04af04de6f876d4e81ca54e3aba6d593
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =5661
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =5886
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =5886
+                    Width =5784
+                    Height =225
+                    FontSize =8
+                    TabIndex =15
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="Text60"
+                    ControlSource ="=DLookUp(\"CNP\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0x01f8dfd7193d0a4087c1be20060aa9d2
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =5886
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =6111
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =5886
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Label61"
+                            Caption ="CNP:"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0x3cc3b346066e9f4397c89d3a77fb76ac
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =5886
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =6111
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =18
+                    Left =1632
+                    Top =5436
+                    Width =6533
+                    Height =225
+                    FontSize =8
+                    FontWeight =700
+                    Name ="Label62"
+                    Caption ="Date delegat..."
+                    FontName ="Bookman Old Style"
+                    GUID = Begin
+                        0x966ff3f2205e5a44862d971e0d41dbd6
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =5436
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =5661
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    Left =1632
+                    Top =6336
+                    Width =6533
+                    Height =255
+                    FontSize =8
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label63"
+                    Caption ="Semnaturile si data livrarii:"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xecd3547e70d6054bba0d099cfc79f505
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =6336
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =6591
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =2379
+                    Top =6111
+                    Width =5784
+                    Height =225
+                    FontSize =8
+                    TabIndex =16
+                    BackColor =15527148
+                    BorderColor =4210752
+                    Name ="Text64"
+                    ControlSource ="=DLookUp(\"DATEBI\",\"Delegati\",\"IDS=\" & [IDS])"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xb4f883af3fea1b45a791302d372dc395
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =2379
+                    LayoutCachedTop =6111
+                    LayoutCachedWidth =8163
+                    LayoutCachedHeight =6336
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                    Begin
+                        Begin Label
+                            Left =1632
+                            Top =6111
+                            Width =747
+                            Height =225
+                            FontSize =8
+                            FontWeight =700
+                            Name ="Label65"
+                            Caption ="BI/CI"
+                            FontName ="Arial"
+                            GUID = Begin
+                                0xa1e55d2ccba26041a7ffb8dc83ef0c94
+                            End
+                            LayoutCachedLeft =1632
+                            LayoutCachedTop =6111
+                            LayoutCachedWidth =2379
+                            LayoutCachedHeight =6336
+                            ThemeFontIndex =-1
+                            BackThemeColorIndex =-1
+                            BorderThemeColorIndex =-1
+                            BorderTint =100.0
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                            GridlineThemeColorIndex =-1
+                            GridlineShade =100.0
+                        End
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    Left =8160
+                    Top =5439
+                    Width =2352
+                    Height =1148
+                    FontSize =7
+                    BorderColor =7500402
+                    Name ="Label66"
+                    Caption ="Semnatura clientului"
+                    FontName ="Arial"
+                    GUID = Begin
+                        0xd37e32ae9435924fa1e92f04e2c51ee8
+                    End
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =5439
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =6587
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    Left =1632
+                    Top =5436
+                    Width =6533
+                    Height =1151
+                    BorderColor =7500402
+                    Name ="Box68"
+                    GUID = Begin
+                        0x3c90dd571eb9a04e92d4b268a741ddf0
+                    End
+                    LayoutCachedLeft =1632
+                    LayoutCachedTop =5436
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =6587
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Line
+                    BorderWidth =3
+                    Top =5352
+                    Width =10587
+                    Name ="Line69"
+                    GUID = Begin
+                        0xf5e0e9f3e0cabb43b8eb3abe22aad6ce
+                    End
+                    LayoutCachedTop =5352
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =5352
+                    BorderThemeColorIndex =-1
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =3816
+                    Top =453
+                    Width =2058
+                    Height =300
+                    TabIndex =17
+                    Name ="Text71"
+                    Format ="Short Date"
+                    GUID = Begin
+                        0x741ab3d4541ebd47abebe8ae91616f84
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3816
+                    LayoutCachedTop =453
+                    LayoutCachedWidth =5874
+                    LayoutCachedHeight =753
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Top =2052
+                    Width =10587
+                    Height =336
+                    FontSize =14
+                    TabIndex =18
+                    BorderColor =8355711
+                    Name ="Text72"
+                    ControlSource ="=\"<u>FACTURĂ FISCALĂ <b>\" & [SERIE] & \" / \" & [NUMAR] & \"</b></u>\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x47fc819e700efe44b4927f58160adcdf
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedTop =2052
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =2388
+                    BorderThemeColorIndex =0
+                    BorderTint =50.0
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =3816
+                    Top =48
+                    Width =2058
+                    Height =405
+                    FontSize =14
+                    FontWeight =700
+                    TabIndex =19
+                    BackColor =15527148
+                    Name ="Text73"
+                    ControlSource ="=\"Data facturii\""
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xb46e9c0209e7b244bf8503c4d5cf6be0
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3816
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =5874
+                    LayoutCachedHeight =453
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontCharSet =238
+                    TextFontFamily =49
+                    Top =7056
+                    Width =10587
+                    Height =168
+                    FontSize =7
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label74"
+                    Caption ="©ADESIT - P.F.A. Trandafir Marius Andrei 2020"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x0ba224f9a94e0d4d99016706b943a979
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedTop =7056
+                    LayoutCachedWidth =10587
+                    LayoutCachedHeight =7224
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =3360
+                    Width =504
+                    Height =1416
+                    FontSize =9
+                    TabIndex =20
+                    BorderColor =7500402
+                    Name ="Text75"
+                    ControlSource ="=\"1\""
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x604804441d7fd34aa99d62d7fef324dd
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =600
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =600
+                    Top =3360
+                    Width =5928
+                    Height =1416
+                    FontSize =9
+                    TabIndex =21
+                    BorderColor =7500402
+                    Name ="Text76"
+                    ControlSource ="Continut"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x9d876b4757f26b42bec732094b404e0f
+                    End
+                    GridlineColor =10921638
+                    TextFormat =1
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =600
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =6528
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =6528
+                    Top =3360
+                    Width =696
+                    Height =1416
+                    FontSize =9
+                    TabIndex =22
+                    BorderColor =7500402
+                    Name ="Text77"
+                    ControlSource ="UM"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x34182f80119e6445a575aca3fde1b2c0
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =6528
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =7224
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =7224
+                    Top =3360
+                    Width =936
+                    Height =1416
+                    FontSize =9
+                    TabIndex =23
+                    BorderColor =7500402
+                    Name ="Text78"
+                    ControlSource ="Cant"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x64a14f2200b25a4795031c2852d0979c
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =7224
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =8160
+                    Top =3360
+                    Width =1176
+                    Height =1416
+                    FontSize =9
+                    TabIndex =24
+                    BorderColor =7500402
+                    Name ="Text79"
+                    ControlSource ="PU"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xf13927732a4d3541a5dd51e615efa321
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =9336
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    TextAlign =3
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =9336
+                    Top =3360
+                    Width =1176
+                    Height =1416
+                    FontSize =9
+                    TabIndex =25
+                    BorderColor =7500402
+                    Name ="Text80"
+                    ControlSource ="Valoare"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x46b3968be5db904c9342f9719eaf9fe9
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =9336
+                    LayoutCachedTop =3360
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =4776
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =4776
+                    Width =8064
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =26
+                    BorderColor =7500402
+                    Name ="Text81"
+                    ControlSource ="Rand1"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xcbce84429ab13040bf75ea87dd87f158
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4776
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =5040
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =1
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =5040
+                    Width =8064
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =27
+                    BorderColor =7500402
+                    Name ="Text82"
+                    ControlSource ="Rand2"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x162f9829a8ce83489d206dfa8869c380
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =5040
+                    LayoutCachedWidth =8160
+                    LayoutCachedHeight =5304
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =2
+                    RunningSum =2
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =8160
+                    Top =4776
+                    Width =2352
+                    Height =531
+                    FontSize =12
+                    TabIndex =28
+                    BorderColor =7500402
+                    Name ="Text83"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc333983ee2c35f46b76f41f59f744273
+                    End
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =8160
+                    LayoutCachedTop =4776
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =5307
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    Left =96
+                    Top =4776
+                    Width =8069
+                    Height =527
+                    BorderColor =7500402
+                    Name ="Box84"
+                    GUID = Begin
+                        0x6ce6c2fe11d34949a6da5dd51311c8d5
+                    End
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4776
+                    LayoutCachedWidth =8165
+                    LayoutCachedHeight =5303
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin TextBox
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =96
+                    Top =4224
+                    Width =10416
+                    Height =552
+                    FontSize =20
+                    FontWeight =700
+                    TabIndex =29
+                    BorderColor =10921638
+                    ForeColor =255
+                    Name ="anl2"
+                    ControlSource ="=\"Factură anulată\""
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x01000000a2000000020000000100000000000000000000000f00000001010000 ,
+                        0xff000000f9eded000100000000000000100000002000000001000000ffffff00 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x5b0041006e0075006c006100740061005d003d00540072007500650000000000 ,
+                        0x5b0041006e0075006c006100740061005d003d00460061006c00730065000000 ,
+                        0x0000
+                    End
+                    GUID = Begin
+                        0x20badc7f6d97a04aa8d53735cd4c0c60
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =4224
+                    LayoutCachedWidth =10512
+                    LayoutCachedHeight =4776
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000010000000000000001010000ff000000f9eded000e0000005b00 ,
+                        0x41006e0075006c006100740061005d003d005400720075006500000000000000 ,
+                        0x000000000000000000000000000000010000000000000001000000ffffff00ff ,
+                        0xffff000f0000005b0041006e0075006c006100740061005d003d00460061006c ,
+                        0x0073006500000000000000000000000000000000000000000000
+                    End
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextAlign =1
+                    TextFontFamily =49
+                    Left =96
+                    Top =6576
+                    Width =10419
+                    Height =360
+                    FontSize =8
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label91"
+                    Caption ="Întocmit de Staicu Roxana.\015\012Factura este valabilă fără semnătura și ștampi"
+                        "lă!"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x31546fb7713f9b439dd1b36a49aa2149
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =96
+                    LayoutCachedTop =6576
+                    LayoutCachedWidth =10515
+                    LayoutCachedHeight =6936
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Load()
+DoCmd.Maximize
+End Sub
+
+Private Sub ReportHeader_Paint()
+Anl.visible = Anulata
+anl2.visible = Anulata
+End Sub

@@ -58,6 +58,10 @@ Public NotInheritable Class KBotTextField
     Private _revealed As Boolean = False
     Private _focused As Boolean = False
     Private _hoverEye As Boolean = False
+    Private _inputMask As String = String.Empty
+    ' Nothing = no mask.
+    Private _mask As KBotInputMask
+    Private _shaping As Boolean
 
     ''' <summary>The inner box's KeyDown, re-raised on the frame (same signature).</summary>
     Public Event FieldKeyDown As KeyEventHandler
@@ -77,6 +81,7 @@ Public NotInheritable Class KBotTextField
         AddHandler _inner.Enter, AddressOf OnInnerEnter
         AddHandler _inner.Leave, AddressOf OnInnerLeave
         AddHandler _inner.KeyDown, AddressOf OnInnerKeyDown
+        AddHandler _inner.KeyPress, AddressOf OnInnerKeyPress
         ' The frame's own TextChanged must fire too. `Text` is delegated to the inner box, so
         ' without this forward a `Handles txtX.TextChanged` written in a designer-authored form
         ' would silently do nothing.
@@ -107,7 +112,29 @@ Public NotInheritable Class KBotTextField
             Return _inner.Text
         End Get
         Set(value As String)
-            _inner.Text = value
+            _inner.Text = If(_mask Is Nothing, value, _mask.Normalize(value))
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' What the operator may type, one character per position: <c>0</c> = digit, <c>L</c> = letter, <c>A</c> = letter or digit,
+    ''' <c>&amp;</c> = any character, <c>\x</c> = the literal <c>x</c>; every other character is a literal the mask writes by itself
+    ''' (<c>0000.000.000</c> for a phone). Empty = no mask. The same language and the same engine as
+    ''' <see cref="KBotComboBox.InputMask"/> (<see cref="KBotInputMask"/>). An invalid mask THROWS.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Input mask: 0 = digit, L = letter, A = letter or digit, & = any, \x = literal x, anything else = literal written automatically. Empty = no mask.")>
+    <DefaultValue("")>
+    Public Property InputMask As String
+        Get
+            Return _inputMask
+        End Get
+        Set(value As String)
+            Dim k_value As String = If(value, String.Empty)
+            ' Parsed BEFORE anything is stored: a mask that throws leaves the old one in place.
+            _mask = If(k_value.Length = 0, Nothing, New KBotInputMask(k_value))
+            _inputMask = k_value
+            If _mask IsNot Nothing Then _inner.Text = _mask.Normalize(_inner.Text)
         End Set
     End Property
 
@@ -707,14 +734,77 @@ Public NotInheritable Class KBotTextField
     End Sub
 
     Private Sub OnInnerKeyDown(sender As Object, e As KeyEventArgs)
-        RaiseEvent FieldKeyDown(Me, e)
+        Try
+            ' Under a mask Delete and paste are edits of the raw value too.
+            If _mask IsNot Nothing Then
+                If e.KeyCode = Keys.Delete AndAlso Not e.Control AndAlso Not e.Shift Then
+                    ApplyMaskEdit(_mask.DeleteForward(_inner.Text, _inner.SelectionStart, _inner.SelectionLength))
+                    e.Handled = True
+                    e.SuppressKeyPress = True
+                ElseIf (e.KeyCode = Keys.V AndAlso e.Control) OrElse (e.KeyCode = Keys.Insert AndAlso e.Shift) Then
+                    Dim k_pasted As String = If(Clipboard.ContainsText(), Clipboard.GetText(), String.Empty)
+                    ApplyMaskEdit(_mask.Paste(_inner.Text, _inner.SelectionStart, _inner.SelectionLength, k_pasted))
+                    e.Handled = True
+                    e.SuppressKeyPress = True
+                End If
+            End If
+            RaiseEvent FieldKeyDown(Me, e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.OnInnerKeyDown", ex)
+        End Try
+    End Sub
+
+    ' Typed characters under a mask: each goes through the mask, Backspace through its own rule, Ctrl+V was pasted in KeyDown.
+    Private Sub OnInnerKeyPress(sender As Object, e As KeyPressEventArgs)
+        Try
+            If _mask Is Nothing Then Return
+            Dim k_char As Char = e.KeyChar
+            Select Case AscW(k_char)
+                Case 8
+                    ApplyMaskEdit(_mask.Backspace(_inner.Text, _inner.SelectionStart, _inner.SelectionLength))
+                    e.Handled = True
+                Case 22
+                    e.Handled = True
+                Case Else
+                    If Char.IsControl(k_char) Then Return
+                    ApplyMaskEdit(_mask.InsertChar(_inner.Text, _inner.SelectionStart, _inner.SelectionLength, k_char))
+                    e.Handled = True
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.OnInnerKeyPress", ex)
+        End Try
+    End Sub
+
+    ' A refused keystroke is Nothing: nothing is written.
+    Private Sub ApplyMaskEdit(k_edit As KBotMaskEdit)
+        If k_edit Is Nothing Then Return
+        _shaping = True
+        Try
+            _inner.Text = k_edit.Text
+            _inner.SelectionStart = k_edit.Caret
+            _inner.SelectionLength = 0
+        Finally
+            _shaping = False
+        End Try
     End Sub
 
     ' The inner text changed => so did the frame's, because `Text` is delegated there. The
     ' placeholder repaints the same way, so the repaint lives here too.
     Private Sub OnInnerTextChanged(sender As Object, e As EventArgs)
-        OnTextChanged(EventArgs.Empty)
-        Invalidate()
+        Try
+            ' A change the mask did not make (Ctrl+X, the context-menu paste) is shaped by the mask.
+            If _mask IsNot Nothing AndAlso Not _shaping Then
+                Dim k_shaped As String = _mask.Normalize(_inner.Text)
+                If Not String.Equals(k_shaped, _inner.Text, StringComparison.Ordinal) Then
+                    ApplyMaskEdit(New KBotMaskEdit(k_shaped, k_shaped.Length))
+                    Return
+                End If
+            End If
+            OnTextChanged(EventArgs.Empty)
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextField.OnInnerTextChanged", ex)
+        End Try
     End Sub
 
 End Class

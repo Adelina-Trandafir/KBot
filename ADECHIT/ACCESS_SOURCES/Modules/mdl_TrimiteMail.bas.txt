@@ -1,0 +1,329 @@
+Option Compare Database
+Option Explicit
+
+
+Public Function Mail(TIP As Byte) As String
+Dim M As String
+Dim RC As Recordset, xc As Recordset, TC As Recordset
+Dim Trimis As Integer, PDF As String, Titlu As String, Body As String, FD As String
+Dim TipMail As String
+Set xc = CurrentDb.OpenRecordset("TrimitereCalup", 2)
+GolesteTabel xc
+
+Select Case TIP
+    Case 0
+        FD = "FA"
+        TipMail = "Sitatie informativa"
+    Case 1     'fisa debitor
+        FD = "FD" 'trebuie sa fie din maxim 2 caractere
+        TipMail = "Fisa debitorului"
+    Case 2
+        FD = "FC"
+        TipMail = "Fisa de cont"
+    Case 4
+        FD = "FF"
+        TipMail = "Factura fiscala"
+End Select
+
+Mail = "Calculare sume"
+
+Set RC = CurrentDb.OpenRecordset("SELECT IDP, IDZ, IDL, IDG FROM Prezenta WHERE IDG LIKE " & Forms!prezenta!IDG & " AND IDP LIKE '" & IIf(Forms!prezenta!IDP = -1, "*", Forms!prezenta!IDP) & "' AND IDL Like '" & Forms!prezenta!IDL & "' GROUP BY IDP, IDZ, IDL, IDG")
+POP RC
+
+Do While Not RC.EOF
+    If Nz(DLookup("IDM", "Mail", "IDP=" & RC!IDP & " AND IDL=" & RC!IDL & " AND IDZ=" & RC!IDZ & " AND FD=" & TIP), 0) <> 0 Then
+        If MsgBox("Mailul acesta a mai fost trimis " & IIf(DLookup("Rezultat", "Mail", "IDP=" & RC!IDP & " AND IDL=" & RC!IDL & " AND IDZ=" & RC!IDZ & " AND FD=" & TIP) = "Succes", " cu succes ", " fara succes ") & " in data de " & DLookup("DataTrimis", "Mail", "IDP=" & RC!IDP & " AND IDL=" & RC!IDL & " AND IDZ=" & RC!IDZ & " AND FD=" & TIP) & "." & vbCrLf & "Doresti sa il trimiti din nou?", vbYesNo + vbQuestion) = vbNo Then GoTo Fara
+    End If
+
+    M = DLookup("EMail", "Platitori_sub", "IDP=" & RC!IDP & " AND Activ = True")
+    
+    'in functie de tip, pot sa adaug orice fisier ca atasament
+    Select Case TIP
+        Case 1, 2
+            PDF = Create_PDF(TIP, RC!IDP, RC!IDL)
+        Case 0
+            If CDbl(Nz(DLookup("Vl", "CFGs", "CFG Like 'Trimite_doc'"), 0)) = True Then
+                PDF = Situatie_DOC(RC!IDP, RC!IDZ, RC!IDL, RC!IDG)
+            Else
+                PDF = ""
+            End If
+        Case 4
+            PDF = Create_PDF(TIP, RC!IDP, RC!IDL)
+    End Select
+    
+    Mail = "Generare fisier PDF"
+    
+    If Nz(M, "") = "" Then
+        'MsgBox "Platitorul " & DLookup("Nume", "Platiori", "IDP= " & Rc!IDP) & " nu are configurata adresa de E-mail!" & vbCrLf & "Nu se poate trimite!", vbOKOnly + vbInformation
+        Mail = "Fara Mail"
+        GoTo FaraMail
+    End If
+    
+    Call CalculVariabile(RC!IDP, RC!IDL, RC!IDZ)
+    
+    Titlu = fMail(Nz(DLookup("VL", "CFGs", "CFG='Subject_" & FD & "' AND F='" & FD & "'"), ""))
+    
+    If TIP = 0 And CDbl(Nz(DLookup("Vl", "CFGs", "CFG Like 'Trimite_doc'"), 0)) = True Then
+        Body = "<b>Cititi documentul atasat!</b>"
+    Else
+        Body = fMail(Nz(DLookup("VL", "CFGs", "CFG='Body_" & FD & "' AND F='" & FD & "'"), "Document atasat"))
+    End If
+    
+    Trimis = Send_Attach(PDF, Titlu, "", M) 'daca vreau sa folosesc fisier txt ca holder pentru body
+    'Trimis = Send_Attach(PDF, Titlu, Body, M) 'daca trimit body-ul ca string direct
+    
+    Mail = "Fisier trimis"
+    
+    xc.AddNew
+        xc!Document = IIf(PDF = "", "<Fara fisier atasat>", PDF)
+        xc!Mail = DLookup("EMail", "Platitori_sub", "Activ = True AND IDP=" & RC!IDP)
+        xc!Trimis = Trimis
+        xc!DataTrimitere = Format(Now(), "dd/mm/yyyy")
+        If IsLoaded("Rapoarte") Then xc!Calup = Forms!prezenta!Plati!TG Else xc!Calup = False
+    xc.Update
+    
+    Mail = "Scriere in [TrimitereCalup]"
+    
+    Set TC = CurrentDb.OpenRecordset("SELECT * FROM Mail WHERE IDP=" & RC!IDP & " AND IDL = " & RC!IDL & " AND IDZ = " & RC!IDZ & " AND FD = " & TIP, 2)
+    If TC.EOF Then
+        TC.AddNew
+            TC!idm = Nz(DMax("IDM", "Mail"), 0) + 1
+            TC!IDP = RC!IDP
+            TC!IDL = RC!IDL
+            TC!IDZ = RC!IDZ
+            TC!Trimis = IIf(Trimis = 0, -1, 0)
+            TC!datatrimis = Format(Now(), "dd/mm/yyyy")
+            TC!rezultat = Switch(Trimis = 0, "Succes", Trimis = 1, "Problema program", Trimis = 2, "Problema mail")
+            TC!TipMail = TipMail
+            TC!FD = TIP
+        TC.Update
+    Else
+        TC.Edit
+            TC!Trimis = IIf(Trimis = 0, -1, 0)
+            TC!datatrimis = Format(Now(), "dd/mm/yyyy")
+            TC!rezultat = Switch(Trimis = 0, "Succes", Trimis = 1, "Problema program", Trimis = 2, "Problema mail")
+        TC.Update
+    End If
+    
+    Mail = "Scriere in [Mail]"
+FaraMail:
+    RC.MoveNext
+Loop
+
+Fara:
+If IsLoaded("Rapoarte") Then
+    If Forms!prezenta!Plati!TG Then
+        Forms!prezenta!IDP = -1
+    End If
+End If
+
+Mail = ""
+
+Set RC = Nothing
+Set xc = Nothing
+Set TC = Nothing
+
+End Function
+
+
+Public Function Create_PDF(ID As Byte, IDP As Integer, IDL As Integer) As String
+On Error GoTo Eroare
+
+Dim Cale As String
+Dim Fisier As String
+Dim Raport As String
+
+If IDP <> 0 Then
+    If FileExists(CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")", True) = False Then
+        MkDir CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")"
+    End If
+    
+    Cale = CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")\"
+Else
+
+    Cale = CurrentProject.path & "\Rapoarte\"
+End If
+
+
+Select Case ID
+    Case 1
+        Forms!prezenta!IDP = IDP
+        Forms!prezenta!IDL = IDL
+        Raport = "FisaDebitor"
+        Fisier = "Fisa Debitor " & Replace(DLookup("LA", "Variabile"), "/", ".") & ".pdf"
+    
+    Case 2
+        Forms!prezenta!IDP = IDP
+        Forms!prezenta!IDL = IDL
+        Raport = "FisaCont"
+        Fisier = "Fisa contului " & Replace(DLookup("LA", "Variabile"), "/", ".") & ".pdf"
+    
+    Case 4
+        Forms!prezenta!IDP = IDP
+        Forms!prezenta!IDL = IDL
+        Raport = "Factura_mail"
+        Fisier = "Factura fiscala " & Replace(DLookup("LA", "Variabile"), "/", ".") & ".pdf"
+    
+    Case 10
+        Forms!prezenta!IDL = IDL
+        Raport = IIf(Forms!prezenta!Plati!TGP + Forms!prezenta!Plati!SG = 0, "SituatieDebitori_buget", IIf(Forms!prezenta!Plati!SG = 0, "SituatieDebitori_buget_total", "SituatieDebitori_buget_total_grp"))
+        Fisier = "Debitori_" & IIf(Forms!prezenta!Plati!TGP = 0, Replace(SanitizeText(DLookup("Grupa", "Grupe", "IDG=" & Forms!prezenta!IDG)), Space(1), "_") & "_", "") & Year(Forms!prezenta!Plati!DSF) & "-" & fLuna(Month(Forms!prezenta!Plati!DSF)) & ".pdf"
+End Select
+
+DoCmd.OpenReport Raport, acViewPreview, , , acHidden
+
+DoCmd.OutputTo acOutputReport, Raport, acFormatPDF, Cale & Fisier, False
+
+Create_PDF = Cale & Fisier
+
+DoCmd.Close acReport, Raport
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_TrimiteMail/Create_PDF()"
+    Create_PDF = ""
+End Function
+
+Public Function Send_Attach(Att As String, Subject As String, Body As String, M As String) As Byte
+'atentie, daca vreau sa folosesc un fisier text ca si Body, schimb " /B " cu " /BTxt " si trec calea fisierului
+Dim Trimis As String
+Dim From As String, Pass As String, Server As String, p As String, SSL As String, HTML As String, Nume As String, CC As String, CR As String, StrMail As String
+Send_Attach = 1
+
+From = Nz(DLookup("VL", "CFGS", "CFG='From'"), "")
+Pass = PSW(Nz(DLookup("VL", "CFGS", "CFG='Password'"), ""), True)
+Server = Nz(DLookup("VL", "CFGS", "CFG='Server'"), "")
+p = Nz(DLookup("VL", "CFGS", "CFG='Port'"), "")
+SSL = Nz(DLookup("VL", "CFGS", "CFG='SSL'"), "")
+SSL = IIf(SSL = "-1", "/SSL", "")
+HTML = Nz(DLookup("VL", "CFGS", "CFG='HTML'"), "")
+HTML = IIf(HTML = "-1", "/html", "")
+Nume = Nz(DLookup("VL", "CFGS", "CFG='sNume'"), "")
+CC = Nz(DLookup("VL", "CFGS", "CFG='CC'"), "")
+
+
+CR = CurrentProject.path & "\"
+
+StrMail = CR & "SwithMail.exe /s /from " & Chr(34) & From & Chr(34) & _
+                                " /name " & Chr(34) & "" & From & "" & Chr(34) & _
+                                " /u " & Chr(34) & From & Chr(34) & _
+                                " /pass " & Chr(34) & Pass & Chr(34) & _
+                                " /server " & Chr(34) & Server & Chr(34) & _
+                                " /p " & Chr(34) & p & Chr(34) & _
+                                " " & SSL & _
+                                " /to " & Chr(34) & M & Chr(34) & _
+                                " /cc " & Chr(34) & CC & Chr(34) & _
+                                " /sub " & Chr(34) & "" & Subject & "" & Chr(34) & _
+                                " /a " & Chr(34) & Att & Chr(34) & _
+                                " /bTxt " & Chr(34) & "" & CurrentProject.path & "\Res\body.txt" & "" & Chr(34) & _
+                                " /html" ' & HTML
+                                '" /B " & Chr(34) & "" & Body & "" & Chr(34) & _
+
+
+Open CR & "SendMail.Bat" For Output As #1
+Print #1, "prompt $g"
+Print #1, "CLS"
+Print #1, "@ECHO Se trimite mail catre: " & M
+Print #1, "@ECHO Fisierul atasat: " & IIf(Att = "", "FARA FISIER ATASAT", Att)
+Print #1, "@echo off"
+Print #1, "Rem ..."
+Print #1, "set errorlevel="
+Print #1, StrMail
+Print #1, "IF %errorlevel% ==0 GOTO SUCCESS"
+Print #1, "IF %errorlevel% ==1 GOTO ERROR"
+Print #1, ""
+Print #1, ":SUCCESS"
+Print #1, "ECHO Trimis >> " & CR & "test.txt"
+Print #1, "GOTO END"
+Print #1, ""
+Print #1, ":ERROR"
+Print #1, "ECHO Eroare >> " & CR & "test.txt"
+Print #1, "GOTO END"
+Print #1, ""
+Print #1, ":END"
+Close #1
+
+Call ExecWait(CR & "SendMail.bat")
+
+ If FileExists(CR & "SendMail.bat") Then Kill CR & "SendMail.bat"
+
+If Not FileExists(CR & "test.txt") Then Exit Function
+With New Scripting.FileSystemObject
+    With .OpenTextFile(CR & "test.txt", ForReading)
+        Do Until .AtEndOfStream
+            Trimis = Trim(.ReadLine)
+        Loop
+    End With
+End With
+
+Send_Attach = IIf(Trimis = "Trimis", 0, 2)
+
+Kill CR & "test.txt"
+
+
+End Function
+
+Public Function fMail(c As String) As String
+Dim diacriticCode() As String, sanitizedCode() As String, i As Integer
+Dim RC As Recordset: Set RC = CurrentDb.OpenRecordset("Variabile", 2)
+
+diacriticCode = Split("[P_Nume],[Nume],[CNP],[LA],[Z_Prez],[Z_Abs],[D_Prez],[P_Suma],[R_Suma],[T_Suma],[C_Suma],[M_Suma],[A_Suma],[F_Suma],[T_DocP],[N_DocP],[D_DocP]", ",")
+sanitizedCode = Split(RC!P_Nume & "," & RC!Nume & "," & RC!CNP & "," & RC!LA & "," & RC!Z_Prez & "," & RC!Z_Abs & "," & RC!D_Prez & "," & RC!P_Suma & "," & RC!R_Suma & "," & RC!T_Suma & "," & RC!C_Suma & "," & RC!M_Suma & "," & RC!A_Suma & "," & RC!F_Suma & "," & RC!T_DocP & "," & RC!N_DocP & "," & RC!d_docp, ",")
+
+For i = LBound(diacriticCode) To UBound(sanitizedCode)
+    c = Replace(c, diacriticCode(i), sanitizedCode(i), , , vbTextCompare)
+Next i
+fMail = Trim(c)
+    
+WriteUTF8WithoutBOM c
+End Function
+
+
+Sub WriteUTF8WithoutBOM(Txt As String)
+'functie pentru transferul datelor dintr-un camp, intr-un fisier TXT cu pastrarea caracterelor speciale
+    Dim UTFStream As Object
+    Set UTFStream = CreateObject("adodb.stream")
+    UTFStream.type = adTypeText
+    UTFStream.Mode = adModeReadWrite
+    UTFStream.Charset = "UTF-8"
+    UTFStream.LineSeparator = adLF
+    UTFStream.Open
+    UTFStream.WriteText SanitizeText(Txt), adWriteLine
+ 
+    UTFStream.Position = 3 'skip BOM
+ 
+    Dim BinaryStream As Object
+    Set BinaryStream = CreateObject("adodb.stream")
+    BinaryStream.type = adTypeBinary
+    BinaryStream.Mode = adModeReadWrite
+    BinaryStream.Open
+ 
+    'Strips BOM (first 3 bytes)
+    UTFStream.CopyTo BinaryStream
+ 
+    'UTFStream.SaveToFile "d:\adodb-stream1.txt", adSaveCreateOverWrite
+    UTFStream.Flush
+    UTFStream.Close
+ 
+    BinaryStream.SaveToFile CurrentProject.path & "\res\body.txt", adSaveCreateOverWrite
+    BinaryStream.Flush
+    BinaryStream.Close
+End Sub
+
+
+Public Function fMail2021(c As String) As String
+Dim diacriticCode() As String, sanitizedCode() As String, i As Integer
+Dim RC As Recordset: Set RC = OpenParamRecordset(CurrentDb.QueryDefs("qVariabile").SQL, 2)
+
+diacriticCode = Split("[P_Nume],[Nume],[CNP],[LA],[Z_Prez],[Z_Abs],[D_Prez],[P_Suma],[R_Suma],[T_Suma],[C_Suma],[M_Suma],[A_Suma],[F_Suma],[T_DocP],[N_DocP],[D_DocP]", ",")
+sanitizedCode = Split(RC!P_Nume & "," & RC!Nume & "," & RC!CNP & "," & RC!LA & "," & RC!Z_Prez & "," & RC!Z_Abs & "," & RC!D_Prez & "," & RC!P_Suma & "," & RC!R_Suma & "," & RC!T_Suma & "," & RC!C_Suma & "," & RC!M_Suma & "," & RC!A_Suma & "," & RC!F_Suma & "," & RC!T_DocP & "," & RC!N_DocP & "," & RC!d_docp, ",")
+
+For i = LBound(diacriticCode) To UBound(sanitizedCode)
+    c = Replace(c, diacriticCode(i), sanitizedCode(i), , , vbTextCompare)
+Next i
+
+fMail2021 = Trim(c)
+
+Set RC = Nothing
+End Function

@@ -9,6 +9,10 @@ Conventions: [C1..C9](../CONTROLS.md). Status: not recorded.
 
 ## API
 - `Text`, `PlaceholderText`, `MaxLength`, `UseSystemPasswordChar`
+- `InputMask: String = ""` (slice 00EF-13) — same language and engine as `KBotComboBox.InputMask`
+  (`KBotInputMask`: `0` digit, `L` letter, `A` letter or digit, `&` any, `\x` literal, anything else a
+  literal the mask writes). Typing, Backspace, Delete and paste go through the mask; a `Text` set from code
+  is shaped by it. An invalid mask throws.
 - `InnerTextBox: TextBox` (read-only) — the real edit control.
 - `FocusInput()`, `GetPreferredSize(...)`, `ApplyTheme(scheme)`
 - `FieldKeyDown As KeyEventHandler` — the inner box's `KeyDown`, re-raised on the frame.

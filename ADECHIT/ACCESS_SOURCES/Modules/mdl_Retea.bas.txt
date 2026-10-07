@@ -1,0 +1,206 @@
+Option Compare Database
+Option Explicit
+
+ #If Win64 Then
+        Private Declare PtrSafe Function gethostbyname Lib "WSOCK32.DLL" (ByVal HostName As String) As Long
+        Private Declare PtrSafe Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (xDest As Any, xSource As Any, ByVal nbytes As Long)
+        Private Declare PtrSafe Function WSAStartup Lib "WSOCK32.DLL" (ByVal wVersionRequired As Long, lpWSADATA As WSADATA) As Long
+        Private Declare PtrSafe Function WSACleanup Lib "WSOCK32.DLL" () As Long
+    #Else
+        Private Declare Function gethostbyname Lib "WSOCK32.DLL" (ByVal HostName As String) As Long
+        Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (xDest As Any, xSource As Any, ByVal nbytes As Long)
+        Private Declare Function WSAStartup Lib "WSOCK32.DLL" (ByVal wVersionRequired As Long, lpWSADATA As WSADATA) As Long
+        Private Declare Function WSACleanup Lib "WSOCK32.DLL" () As Long
+    #End If
+
+    'NETWORK AND PING API FUNCTIONS
+    #If Win64 Then
+        Public Declare PtrSafe Function IcmpCreateFile Lib "icmp.dll" () As Long
+        Public Declare PtrSafe Function inet_addr Lib "WSOCK32.DLL" (ByVal CP As String) As Long
+        Public Declare PtrSafe Function IcmpCloseHandle Lib "icmp.dll" (ByVal IcmpHandle As Long) As Long
+        Private Declare PtrSafe Function IcmpSendEcho Lib "icmp.dll" _
+           (ByVal IcmpHandle As Long, _
+            ByVal DestinationAddress As Long, _
+            ByVal RequestData As String, _
+            ByVal RequestSize As Long, _
+            ByVal RequestOptions As Long, _
+            ReplyBuffer As ICMP_ECHO_REPLY, _
+            ByVal ReplySize As Long, _
+            ByVal Timeout As Long) As Long
+    #Else
+        Public Declare Function IcmpCreateFile Lib "icmp.dll" () As Long
+        Public Declare Function inet_addr Lib "WSOCK32.DLL" (ByVal CP As String) As Long
+        Public Declare Function IcmpCloseHandle Lib "icmp.dll" (ByVal IcmpHandle As Long) As Long
+        Private Declare Function IcmpSendEcho Lib "icmp.dll" _
+           (ByVal IcmpHandle As Long, _
+            ByVal DestinationAddress As Long, _
+            ByVal RequestData As String, _
+            ByVal RequestSize As Long, _
+            ByVal RequestOptions As Long, _
+            ReplyBuffer As ICMP_ECHO_REPLY, _
+            ByVal ReplySize As Long, _
+            ByVal Timeout As Long) As Long
+    #End If
+
+    Public Const WINSOCK_ERROR = "Windows Sockets not responding correctly."
+    Public Const INADDR_NONE As Long = &HFFFFFFFF
+    Public Const WSA_SUCCESS = 0
+    Public Const GWL_STYLE = -16
+    Public Const WS_SYSMENU = &H80000
+    Private Const ICMP_SUCCESS As Long = 0
+    Private Const WS_VERSION_REQD As Long = &H101
+    Private Const MAX_WSADescription As Long = 256
+    Private Const MAX_WSASYSStatus As Long = 128
+
+    'PING AND NETWORK ENUMS
+    Private Type IP_OPTION_INFORMATION
+       ttl             As Byte
+       Tos             As Byte
+       Flags           As Byte
+       OptionsSize     As Byte
+       OptionsData     As Long
+    End Type
+
+    Public Type ICMP_ECHO_REPLY
+       Address         As Long
+       Status          As Long
+       RoundTripTime   As Long
+       DataSize        As Long
+       Reserved        As Integer
+       ptrData                 As Long
+       Options        As IP_OPTION_INFORMATION
+       Data            As String * 250
+    End Type
+
+    Private Type WSADATA
+        wVersion As Integer
+        wHighVersion As Integer
+        szDescription(0 To MAX_WSADescription) As Byte
+        szSystemStatus(0 To MAX_WSASYSStatus) As Byte
+        wMaxSockets As Long
+        wMaxUDPDG As Long
+        dwVendorInfo As Long
+    End Type
+
+'trebuie sa aiba slash la urma
+Public Function CheckNetworkPath(sFile As String) As Boolean
+    'Response Variables
+    Dim bResponse As Boolean, bLocal As Boolean
+    'File System Variables
+    Dim oFS As Object, oDrive As Object, oTemp As Object
+    'Variables for chkecing the server
+    Dim strIPAddress  As String, Reply As ICMP_ECHO_REPLY, lngSuccess As Long, sServer As String
+
+    If sFile = "" Then Exit Function
+    bResponse = False
+
+    On Error GoTo SomeProblem
+
+    ' Determine if drive is local and resolve all remote paths to UNC filenames
+    Set oFS = CreateObject("Scripting.FileSystemObject")
+    Set oDrive = oFS.Drives
+    bLocal = False
+    If UCase(VBA.Left(sFile, 1)) Like "[A-Z]" Then
+        For Each oDrive In oFS.Drives
+            If oDrive.path = UCase(VBA.Left(sFile, 2)) Then
+                If oDrive.DriveType = 3 Then ' Remote Drive
+                    sFile = Replace(sFile, (VBA.Left(sFile, 2)), oDrive.ShareName)
+                Else
+                    bLocal = True
+                End If
+                Exit For
+            End If
+        Next oDrive
+    End If
+
+    If bLocal Then
+        'Allow for checking at the end of this if statement
+        bResponse = True
+    ElseIf VBA.Left(sFile, 1) <> "\" Then
+        ' File Name only specified / Not a valid path
+        bResponse = False
+    Else
+        'Otherwise we are dealing with a server path
+
+        'Get the server name
+        sServer = VBA.Mid$(sFile, 3, InStr(3, sFile, "\", vbTextCompare) - 3)
+
+        'Set up networking to check
+        If SocketsInitialize() Then
+            strIPAddress = GetIPFromHostName(sServer)   'Get the ipaddress of the server name
+            lngSuccess = ping(strIPAddress, Reply)      'Ping the IP that is passing the address and get a reply.
+            Call WSACleanup                             'Clean up the sockets.
+            If lngSuccess = 0 Then bResponse = True     'If we get a ping back we're all good
+        End If
+    End If
+
+SomeProblem:
+    CheckNetworkPath = bResponse
+    Set oTemp = Nothing
+    Set oDrive = Nothing
+End Function
+
+Public Function GetIPFromHostName(ByVal sHostName As String) As String
+        'converts a host name to an IP address.
+        Dim ptrHosent As Long  'address of hostent structure
+        Dim ptrName As Long    'address of name pointer
+        Dim ptrAddress As Long    'address of address pointer
+        Dim ptrIPAddress As Long
+        Dim sAddress As String
+        sAddress = Space$(4)
+        ptrHosent = gethostbyname(sHostName & vbNullChar)
+        If ptrHosent <> 0 Then
+            ptrName = ptrHosent
+            ptrAddress = ptrHosent + 12
+            'get the IP address
+            CopyMemory ptrName, ByVal ptrName, 4
+            CopyMemory ptrAddress, ByVal ptrAddress, 4
+            CopyMemory ptrIPAddress, ByVal ptrAddress, 4
+            CopyMemory ByVal sAddress, ByVal ptrIPAddress, 4
+            GetIPFromHostName = IPToText(sAddress)
+        End If
+    End Function
+
+    Private Function IPToText(ByVal IPAddress As String) As String
+        IPToText = CStr(Asc(IPAddress)) & "." & _
+                   CStr(Asc(Mid$(IPAddress, 2, 1))) & "." & _
+                   CStr(Asc(Mid$(IPAddress, 3, 1))) & "." & _
+                   CStr(Asc(Mid$(IPAddress, 4, 1)))
+    End Function
+
+    Public Function SocketsInitialize() As Boolean
+        Dim WSAD As WSADATA
+        SocketsInitialize = WSAStartup(WS_VERSION_REQD, WSAD) = ICMP_SUCCESS
+    End Function
+
+    Public Function ping(sAddress As String, Reply As ICMP_ECHO_REPLY) As Long
+        'Function to ping an address and see if a response is obtained
+        Dim hIcmp As Long, lAddress As Long, lTimeOut As Long, StringToSend As String
+
+        StringToSend = "test"           'Short string of data to send
+        lTimeOut = 1000 'ms             'ICMP (ping) timeout
+        lAddress = inet_addr(sAddress)  'Convert string address to a long representation
+
+        'If we have a valid response
+        If (lAddress <> -1) And (lAddress <> 0) Then
+
+            'Create the handle for ICMP requests.
+            hIcmp = IcmpCreateFile()
+
+            If hIcmp Then
+                'Ping the destination IP address.
+                Call IcmpSendEcho(hIcmp, lAddress, StringToSend, Len(StringToSend), 0, Reply, Len(Reply), lTimeOut)
+
+                'Reply status
+                ping = Reply.Status
+
+                'Close the Icmp handle.
+                IcmpCloseHandle hIcmp
+            Else
+                Debug.Print "failure opening icmp handle."
+                ping = -1
+            End If
+        Else
+            ping = -1
+        End If
+    End Function

@@ -1,0 +1,64 @@
+Version =196611
+PublishOption =1
+ColumnsShown =0
+Begin
+End
+Begin
+    MacroName ="^D"
+    Action ="RunCode"
+    Argument ="DeschidePrezenta()"
+End
+Begin
+    MacroName ="^N"
+    Action ="RunCode"
+    Argument ="AccessCloseButtonEnabled(True)"
+End
+Begin
+    MacroName ="^Q"
+    Action ="SetWarnings"
+    Argument ="true"
+End
+Begin
+    MacroName ="^Y"
+    Action ="RunMacro"
+    Argument ="Autoexec"
+End
+Begin
+    MacroName ="^M"
+    Action ="RunCode"
+    Argument ="SafeUnsafe(0)"
+End
+Begin
+    Action ="MsgBox"
+    Argument ="Error trapping = 0"
+    Argument ="0"
+    Argument ="4"
+End
+Begin
+    Comment ="_AXL:<?xml version=\"1.0\" encoding=\"UTF-16\" standalone=\"no\"?>\015\012<UserI"
+        "nterfaceMacro MinimumClientDesignVersion=\"14.0.0000.0000\" xmlns=\"http://schem"
+        "as.microsoft.com/office/accessservices/2009/11/application\"><Statements><Commen"
+        "t></Comment></Statements><Sub"
+End
+Begin
+    Comment ="_AXL: Name=\"^D\"><Statements><Action Name=\"RunCode\"><Argument Name=\"Function"
+        "Name\">DeschidePrezenta()</Argument></Action></Statements></Sub><Sub Name=\"^N\""
+        "><Statements><Action Name=\"RunCode\"><Argument Name=\"FunctionName\">AccessClos"
+        "eButtonEnabled(True)</Arg"
+End
+Begin
+    Comment ="_AXL:ument></Action></Statements></Sub><Sub Name=\"^Q\"><Statements><Action Coll"
+        "apsed=\"true\" Name=\"SetWarnings\"><Argument Name=\"WarningsOn\">true</Argument"
+        "></Action></Statements></Sub><Sub Name=\"^Y\"><Statements><Action Name=\"RunMacr"
+        "o\"><Argument Name=\"Macro"
+End
+Begin
+    Comment ="_AXL:Name\">Autoexec</Argument></Action></Statements></Sub><Sub Name=\"^M\"><Sta"
+        "tements><Action Name=\"RunCode\"><Argument Name=\"FunctionName\">SafeUnsafe(0)</"
+        "Argument></Action><Action Name=\"MessageBox\"><Argument Name=\"Message\">Error t"
+        "rapping = 0</Argument><A"
+End
+Begin
+    Comment ="_AXL:rgument Name=\"Beep\">No</Argument><Argument Name=\"Type\">Information</Arg"
+        "ument></Action></Statements></Sub></UserInterfaceMacro>"
+End

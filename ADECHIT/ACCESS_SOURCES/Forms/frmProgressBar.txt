@@ -1,0 +1,185 @@
+Version =20
+VersionRequired =20
+Checksum =151424863
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    ControlBox = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    AllowUpdating =2
+    ScrollBars =0
+    TabularCharSet =128
+    TabularFamily =0
+    BorderStyle =0
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =8353
+    DatasheetFontHeight =10
+    DatasheetFontWeight =500
+    ItemSuffix =4
+    Left =12260
+    Top =4570
+    Right =21980
+    Bottom =6190
+    TimerInterval =500
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xe209d13931bbe440
+    End
+    GUID = Begin
+        0xe91501be5a45544fb7650069e18c4415
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    DatasheetFontName =""
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DatasheetGridlinesColor12 =12632256
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =238
+            FontName ="Tahoma"
+        End
+        Begin Rectangle
+            SpecialEffect =3
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin CommandButton
+            TextFontCharSet =238
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin CheckBox
+            SpecialEffect =2
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+        End
+        Begin Section
+            Height =358
+            Name ="Detail"
+            GUID = Begin
+                0xf120cdcb8069784b94404d35fd9bebdd
+            End
+            Begin
+                Begin Rectangle
+                    SpecialEffect =0
+                    BackStyle =1
+                    OldBorderStyle =0
+                    OverlapFlags =93
+                    Width =8353
+                    Height =358
+                    BorderColor =16777215
+                    Name ="boxWhole"
+                    GUID = Begin
+                        0xc20907d075d8ba43a06677a83b63ae0f
+                    End
+                    LayoutCachedWidth =8353
+                    LayoutCachedHeight =358
+                End
+                Begin CommandButton
+                    Enabled = NotDefault
+                    OverlapFlags =223
+                    Width =8353
+                    Height =358
+                    ForeColor =4210752
+                    Name ="boxPct"
+                    GUID = Begin
+                        0xde866c280c6eed42983ccb243532eb16
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedWidth =8353
+                    LayoutCachedHeight =358
+                    Shape =5
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =14136213
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =4210752
+                    PressedForeColor =4210752
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                    Overlaps =1
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    OverlapFlags =215
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =8353
+                    Height =358
+                    FontSize =14
+                    FontWeight =700
+                    ForeColor =8210719
+                    Name ="BoxLBL"
+                    Caption ="Backup bază de date"
+                    FontName ="Consolas"
+                    Tag ="Backup bază de date"
+                    GUID = Begin
+                        0x412573841b77c64ea5be0032b0ee035f
+                    End
+                    LayoutCachedWidth =8353
+                    LayoutCachedHeight =358
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+
+Private Sub Form_Load()
+ProgressBar Me, -1, -1
+End Sub

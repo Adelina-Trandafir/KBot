@@ -1,0 +1,318 @@
+Option Compare Database
+Option Explicit
+
+Public Function NextAutonumber(ByVal pTable As String, _
+        ByVal pAutonumField As String) As Long
+
+    Dim Cat As Object
+    Set Cat = CreateObject("ADOX.Catalog")
+    Set Cat.ActiveConnection = CurrentProject.Connection
+    NextAutonumber = Cat.Tables(pTable).Columns(pAutonumField).Properties("Seed")
+    Set Cat = Nothing
+End Function
+
+Function PSW(p As String, Optional U As Boolean = False) As String
+Dim RC As Recordset: Set RC = CurrentDb.OpenRecordset("SELECT A, B FROM TP")
+Dim i As Integer
+
+For i = 1 To Len(p)
+    RC.FindFirst "Asc(" & IIf(U, "B", "A") & ")=" & Asc(Mid(p, i, 1))
+    If Not RC.NoMatch Then
+        PSW = PSW & RC.Fields("" & IIf(U, "A", "b") & "").value
+    Else
+        PSW = PSW & Mid(p, i, 1)
+    End If
+Next i
+End Function
+
+Function FileExists(ByVal strFile As String, Optional bFindFolders As Boolean) As Boolean
+    'Purpose:   Return True if the file exists, even if it is hidden.
+    'Arguments: strFile: File name to look for. Current directory searched if no path included.
+    '           bFindFolders. If strFile is a folder, FileExists() returns False unless this argument is True.
+    'Note:      Does not look inside subdirectories for the file.
+    'Author:    Allen Browne. http://allenbrowne.com June, 2006.
+    Dim lngAttributes As Long
+
+    'Include read-only files, hidden files, system files.
+    lngAttributes = (vbReadOnly Or vbHidden Or vbSystem)
+
+    If bFindFolders Then
+        lngAttributes = (lngAttributes Or vbDirectory) 'Include folders as well.
+    Else
+        'Strip any trailing slash, so Dir does not look inside the folder.
+        Do While Right$(strFile, 1) = "\"
+            strFile = Left$(strFile, Len(strFile) - 1)
+        Loop
+    End If
+
+    'If Dir() returns something, the file exists.
+    On Error Resume Next
+    FileExists = (Len(Dir(strFile, lngAttributes)) > 0)
+End Function
+
+Function FolderExists(strPath As String) As Boolean
+    On Error Resume Next
+    FolderExists = ((GetAttr(strPath) And vbDirectory) = vbDirectory)
+End Function
+
+
+Function Situatie_DOC_PlaceHolder(IDP As Integer, IDZ As Integer, IDL As Integer, Optional IDG As Integer = 0) As String
+Situatie_DOC_PlaceHolder = ""
+
+Dim TC As Recordset
+Dim wrdApp As Object
+Dim wrdDoc As Object
+Dim oCC As Object
+Dim Filepath As String
+
+Set wrdApp = CreateObject("Word.Application")
+Set wrdDoc = CreateObject("Word.Document")
+
+Filepath = CurrentProject.path & "\Rapoarte\Situatie lunara " & DLookup("Nume", "Platitori", "IDP=" & IDP) & "(" & DLookup("CNP", "Platitori", "IDP=" & IDP) & ").docx"
+
+If Nz(Dir(Filepath), "") <> "" Then
+    GoTo IESIRE
+End If
+
+FileCopy CurrentProject.path & "\RES\FA_tmpl.docx", Filepath
+
+CalculVariabile IDP, IDL, IDZ
+
+Set TC = CurrentDb.OpenRecordset("Variabile", 2)
+
+wrdApp.visible = True
+Set wrdDoc = wrdApp.Documents.Open(Filepath)
+
+POP TC
+
+For Each oCC In wrdDoc.ContentControls
+    oCC.SetPlaceholderText , , Nz(TC.Fields("" & oCC.Tag & "").value, "")
+Next
+
+wrdDoc.Protect 3, , "andreI"
+wrdDoc.Save
+wrdApp.Quit
+
+IESIRE:
+Set wrdApp = Nothing
+Set wrdDoc = Nothing
+Set oCC = Nothing
+
+Situatie_DOC_PlaceHolder = Filepath
+
+End Function
+
+Function Situatie_DOC(IDP As Integer, IDZ As Integer, IDL As Integer, Optional IDG As Integer = 0) As String
+Situatie_DOC = ""
+
+Dim TC As Recordset
+Dim wrdApp As Object
+Dim wrdDoc As Object
+Dim oCC As Object
+Dim Filepath As String
+
+Set wrdApp = CreateObject("Word.Application")
+Set wrdDoc = CreateObject("Word.Document")
+
+Dim Cale As String
+
+If FileExists(CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")", True) = False Then
+    MkDir CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")"
+End If
+
+Cale = CurrentProject.path & "\Rapoarte\" & UCase(DLookup("Nume", "Platitori", "IDP = " & IDP)) & " (" & DLookup("CNP", "Platitori", "IDP = " & IDP) & ")\"
+
+Filepath = Cale & "\Situatie informativa " & Replace(DLookup("LA", "Variabile"), "/", ".") & ".docx"
+
+If Nz(Dir(Filepath), "") <> "" Then
+    GoTo IESIRE
+End If
+
+FileCopy CurrentProject.path & "\RES\FA.tmpl", Filepath
+
+CalculVariabile IDP, IDL, IDZ
+
+Set TC = CurrentDb.OpenRecordset("Variabile", 2)
+
+wrdApp.visible = True
+Set wrdDoc = wrdApp.Documents.Open(Filepath)
+
+POP TC
+
+For Each oCC In wrdDoc.FormFields
+    oCC.Result = Nz(TC.Fields("" & oCC.Name & "").value, "")
+Next
+
+wrdDoc.ExportAsFixedFormat _
+    Replace(Filepath, ".docx", ".pdf"), _
+     ExportFormat:=17
+
+wrdApp.Quit (False)
+
+IESIRE:
+Set wrdApp = Nothing
+Set wrdDoc = Nothing
+Set oCC = Nothing
+
+Situatie_DOC = Replace(Filepath, ".docx", ".pdf")
+
+If FileExists(Filepath) Then Kill Filepath
+
+End Function
+
+Public Sub CalculVariabile(ByVal IDP As Long, ByVal IDL As Long, Optional ByVal IDZ As Long = 0, Optional ByVal IDPL As Long = 0)
+Dim RC As Recordset: Set RC = CurrentDb.OpenRecordset("Variabile", 2)
+Dim tTip As String
+
+tTip = Nz(DLookup("TIP", "Plati", "IDPL=" & IDPL), "X")
+
+GolesteTabel RC
+
+RC.AddNew
+
+RC!P_Nume = Replace(Nz(DLookup("Nume", "Platitori_SUB", "Activ=True AND IDP=" & IDP), ""), ",", ";")
+
+RC!Nume = Replace(Nz(DLookup("Nume", "Platitori", "IDP=" & IDP), ""), ",", ";")
+RC!CNP = Replace(Nz(DLookup("cnp", "Platitori", "IDP=" & IDP), ""), ",", ";")
+
+RC!LA = Replace(Nz(DLookup("LunaT", "LunaD", "IDL=" & IDL), "") & "/" & Nz(DLookup("Anul", "LunaD", "IDL=" & IDL), ""), ",", ";")
+
+RC!Z_Prez = Replace(Nz(DLookup("ZilePrezenta", "Prezenta", "IDZ=" & IDZ), 0), ",", ".")
+RC!Z_Abs = Replace(Nz(DLookup("ZileAbsenta", "Prezenta", "IDZ=" & IDZ), 0), ",", ".")
+
+RC!D_Prez = Replace(Replace(Replace(Nz(DLookup("Detalii", "Prezenta", "IDZ=" & IDZ), ""), "<li>", ""), "</li>", ";"), ",", ";")
+
+RC!C_Suma = Replace(CInt(Nz(DLookup("ValoareContract", "Prezenta", "IDZ=" & IDZ), 0)), ",", ".")
+RC!M_Suma = Replace(CInt(Nz(DLookup("Valoaremancare", "Prezenta", "IDZ=" & IDZ), 0)), ",", ".")
+RC!A_Suma = Replace(CInt(Nz(DLookup("Avans", "Prezenta", "IDZ=" & IDZ), 0)), ",", ".")
+RC!F_Suma = Replace(CInt(DLookup("ReducereFrate", "Prezenta", "IDZ=" & IDZ)), ",", ".")
+
+RC!P_Suma = Replace(CInt(Nz(DLookup("ValoareTotala", "Prezenta", "IDZ=" & IDZ), 0)), ",", ".")
+RC!R_Suma = Replace(CInt(Nz(DLookup("Restanta", "Restante", "IDP=" & IDP & " AND IDL <= " & IDL), 0)), ",", ".")
+RC!T_Suma = Replace(CDbl(Format(Nz(DLookup("ValoareTotala", "Prezenta", "IDZ=" & IDZ), 0), "Standard")) + CDbl(Format(Nz(DLookup("Restanta", "Restante", "IDP=" & IDP & " AND IDL <= " & IDL), 0), "Standard")), ",", ".")
+
+RC!T_DocP = Replace(Switch(tTip = "0", Nz(DLookup("FelDoc", "AlteDoc", "IDPL=" & IDPL), ""), tTip = "1", "Bon fiscal", tTip = "2", "Chitanta", tTip = "X", ""), ",", ";")
+RC!N_DocP = Replace(Switch(tTip = "0", Nz(DLookup("NrDoc", "AlteDoc", "IDPL=" & IDPL), ""), tTip = "1", Nz(DLookup("NrBF", "BonuriF", "IDPL=" & IDPL), ""), tTip = "2", Nz(DLookup("Numar", "Chitante", "IDPL=" & IDPL), ""), tTip = "3", "#", tTip = "X", ""), ",", ";")
+RC!d_docp = Replace(Nz(DLookup("Data", "Plati", "IDPL=" & IDPL), ""), "/", ".")
+
+RC.Update
+
+Set RC = Nothing
+End Sub
+
+
+Public Function SanitizeText(ByVal inputString As String) As String
+'functie ce inlocuieste diacriticile cu caracterele lor corespunzatoare
+
+    Dim diacriticCode() As String, sanitizedCode() As String, i As Integer
+                        
+                        ' ih din a, ih, IH, ah, AH, sh, SH, tz, TZ
+    diacriticCode = Split("194,226,206,238,258,259,536,537,538,539", ",")
+    sanitizedCode = Split("65,97,73,105,65,97,83,115,84,116", ",")
+    
+    For i = LBound(diacriticCode) To UBound(sanitizedCode)
+        inputString = Replace(inputString, ChrW(diacriticCode(i)), Chr(sanitizedCode(i)), , , vbBinaryCompare)
+    Next i
+    SanitizeText = Trim(inputString)
+End Function
+
+Public Function funcListDescription()
+' descrierea fiecarui camp
+' !!! Daca nu are descriere genereaza eroare, pentru ca nu are proprietatea respectiva,
+'     aceasta fiind creeata doar atunci cand se completeaza ceva !!!
+
+Dim db As DAO.Database
+Dim tdf As DAO.TableDef
+Dim fld As Field
+
+Set db = CurrentDb
+Set tdf = db.TableDefs("Variabile")
+For Each fld In tdf.Fields
+'debugprint fld.Name & " --> " & fld.Properties("Description")
+    'debugPrint "rc!" & fld.Name & ", " & "& " & Chr(34) & "," & Chr(34) & " & "
+Next fld
+
+db.Close
+Set db = Nothing
+Set tdf = Nothing
+
+End Function
+
+Public Function ListFiles(strPath As String, Optional strFileSpec As String, _
+    Optional bIncludeSubfolders As Boolean, Optional Lst As ListBox)
+On Error GoTo Err_Handler
+    'Purpose:   List the files in the path.
+    'Arguments: strPath = the path to search.
+    '           strFileSpec = "*.*" unless you specify differently.
+    '           bIncludeSubfolders: If True, returns results from subdirectories of strPath as well.
+    '           lst: if you pass in a list box, items are added to it. If not, files are listed to immediate window.
+    '               The list box must have its Row Source Type property set to Value List.
+    'Method:    FilDir() adds items to a collection, calling itself recursively for subfolders.
+    Dim colDirList As New Collection
+    Dim varItem As Variant
+    
+    Call FillDir(colDirList, strPath, strFileSpec, bIncludeSubfolders)
+    
+    'Add the files to a list box if one was passed in. Otherwise list to the Immediate Window.
+    If Lst Is Nothing Then
+        For Each varItem In colDirList
+            Debug.Print CStr(varItem)
+        Next
+    Else
+        Lst.AddItem "Cale" & ListSep & "Baza de date"
+        For Each varItem In colDirList
+            Lst.AddItem varItem
+        Next
+    End If
+
+Exit_Handler:
+    Lst.Requery
+    Exit Function
+
+Err_Handler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+    Resume Exit_Handler
+End Function
+
+Private Function FillDir(colDirList As Collection, ByVal strFolder As String, strFileSpec As String, _
+    bIncludeSubfolders As Boolean)
+    'Build up a list of files, and then add add to this list, any additional folders
+    Dim strTemp As String
+    Dim colFolders As New Collection
+    Dim vFolderName As Variant
+
+    'Add the files to the folder.
+    strFolder = TrailingSlash(strFolder)
+    strTemp = Dir(strFolder & strFileSpec)
+    Do While strTemp <> vbNullString
+        colDirList.Add strFolder & ListSep & strTemp
+        strTemp = Dir
+    Loop
+
+    If bIncludeSubfolders Then
+        'Build collection of additional subfolders.
+        strTemp = Dir(strFolder, vbDirectory)
+        Do While strTemp <> vbNullString
+            If (strTemp <> ".") And (strTemp <> "..") Then
+                If (GetAttr(strFolder & strTemp) And vbDirectory) <> 0& Then
+                    colFolders.Add strTemp
+                End If
+            End If
+            strTemp = Dir
+        Loop
+        'Call function recursively for each subfolder.
+        For Each vFolderName In colFolders
+            Call FillDir(colDirList, strFolder & TrailingSlash(vFolderName), strFileSpec, True)
+        Next vFolderName
+    End If
+End Function
+
+Public Function TrailingSlash(varIn As Variant) As String
+    If Len(varIn) > 0& Then
+        If Right(varIn, 1&) = "\" Then
+            TrailingSlash = varIn
+        Else
+            TrailingSlash = varIn & "\"
+        End If
+    End If
+End Function

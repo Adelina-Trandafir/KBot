@@ -1,0 +1,1195 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =-243218708
+Begin Form
+    RecordSelectors = NotDefault
+    ControlBox = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    Cycle =1
+    GridX =48
+    GridY =48
+    Width =3012
+    DatasheetFontHeight =11
+    ItemSuffix =78
+    Left =8085
+    Top =45
+    Right =11100
+    Bottom =2940
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0xf7fb9d66b26ce540
+    End
+    GUID = Begin
+        0x4c04f5cb09bb3347b5a6e5063164087f
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    Caption ="Detalii plată"
+    DatasheetFontName ="Calibri"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010403069c00c00343a7000201000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x08002c0050000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000004c5054313a0000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000
+    End
+    OnLoad ="[Event Procedure]"
+    AllowDatasheetView =0
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    PrtDevModeW = Begin
+        0x000023014b9599d51899df01a475620180c3df01000000007f0000009498df01 ,
+        0x0000f70d7e685501000000007f0000007f000000c000f70dbf182301bf9699d5 ,
+        0x01040306dc00c00343a7000201000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c00650074007400650072000000480000001a00000c00010000 ,
+        0xc000f70d0000f70d0a0000000100000058010001500300001815f70d64656667 ,
+        0x7f00000018150000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNamesW = Begin
+        0x040028004c000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000004c00500054003100 ,
+        0x3a00000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Image
+            BackStyle =0
+            OldBorderStyle =0
+            BorderLineStyle =0
+            SizeMode =3
+            PictureAlignment =2
+            BorderColor =16777215
+            GridlineColor =16777215
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AsianLineBreak =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin EmptyCell
+            Height =240
+            GridlineColor =12632256
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin FormHeader
+            Visible = NotDefault
+            Height =276
+            BackColor =15195103
+            Name ="FormHeader"
+            GUID = Begin
+                0x1483a9d8995f0649bad84cebe5dc5d04
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =3000
+                    Height =276
+                    FontSize =9
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="Label63"
+                    Caption ="Adaugă / Modifcă Chitanță"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd4e60208e2cc2d469e7c12d56b7f9236
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+                    LayoutCachedWidth =3000
+                    LayoutCachedHeight =276
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageHeader
+            DisplayWhen =1
+            Height =264
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xce0dcb7a0e028545be0c2167f57ef399
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =93
+                    TextAlign =1
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Width =564
+                    Height =264
+                    FontSize =9
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="IDC"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x6d7e7704a882894598c3c4580327bea2
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+
+                    LayoutCachedWidth =564
+                    LayoutCachedHeight =264
+                    ColumnStart =1
+                    ColumnEnd =1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =87
+                    TextAlign =1
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =564
+                    Width =564
+                    Height =264
+                    FontSize =9
+                    TabIndex =1
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="IDPL"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x7266761c249ffd4290c1315bc7d393af
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =564
+                    LayoutCachedWidth =1128
+                    LayoutCachedHeight =264
+                    RowStart =1
+                    RowEnd =1
+                    ColumnStart =1
+                    ColumnEnd =1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =1170
+                    Width =210
+                    Height =180
+                    TabIndex =2
+                    BorderColor =10921638
+                    Name ="Edit"
+                    GUID = Begin
+                        0xacb1f9e4b589da4e9bfd40fdbc0c54ef
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1170
+                    LayoutCachedWidth =1380
+                    LayoutCachedHeight =180
+                End
+                Begin CheckBox
+                    OverlapFlags =85
+                    Left =1380
+                    Width =210
+                    Height =180
+                    TabIndex =3
+                    BorderColor =10921638
+                    Name ="cSAV"
+                    GUID = Begin
+                        0x98fb804fbfa2d34ba86ca27b54d15c2e
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1380
+                    LayoutCachedWidth =1590
+                    LayoutCachedHeight =180
+                End
+            End
+        End
+        Begin Section
+            Height =1920
+            Name ="Detail"
+            GUID = Begin
+                0xca70d42fb39b9b47bb5b8ea03d9100c1
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    OverlapFlags =95
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =1296
+                    Top =60
+                    Width =1644
+                    Height =300
+                    FontSize =9
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="NrCH"
+                    FontName ="Consolas"
+                    OnKeyPress ="[Event Procedure]"
+                    GUID = Begin
+                        0x7f462df1e910c4448071474a5ba3aaea
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+
+                    LayoutCachedLeft =1296
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =2940
+                    LayoutCachedHeight =360
+                    RowStart =2
+                    RowEnd =2
+                    ColumnStart =1
+                    ColumnEnd =1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextAlign =1
+                            TextFontFamily =49
+                            Left =60
+                            Top =60
+                            Width =1236
+                            Height =300
+                            FontSize =9
+                            FontWeight =700
+                            LeftMargin =44
+                            TopMargin =22
+                            RightMargin =44
+                            BottomMargin =22
+                            BorderColor =8355711
+                            Name ="Label6"
+                            Caption ="Număr"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0xf2f53b2a99e52a49b2baf996e3c6c42e
+                            End
+                            BottomPadding =150
+                            GridlineColor =10921638
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =60
+                            LayoutCachedWidth =1296
+                            LayoutCachedHeight =360
+                            RowStart =2
+                            RowEnd =2
+                            ThemeFontIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin TextBox
+                    OverlapFlags =95
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =1296
+                    Top =360
+                    Width =1644
+                    Height =300
+                    FontSize =9
+                    TabIndex =1
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="DataCH"
+                    Format ="Short Date"
+                    FontName ="Consolas"
+                    OnKeyPress ="[Event Procedure]"
+                    GUID = Begin
+                        0x167cac7fe1910645bfcd12d955232e4f
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+                    ShowDatePicker =0
+
+                    LayoutCachedLeft =1296
+                    LayoutCachedTop =360
+                    LayoutCachedWidth =2940
+                    LayoutCachedHeight =660
+                    RowStart =1
+                    RowEnd =1
+                    ColumnStart =3
+                    ColumnEnd =3
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    OverlapFlags =95
+                    TextAlign =1
+                    TextFontFamily =49
+                    Left =60
+                    Top =360
+                    Width =1236
+                    Height =300
+                    FontSize =9
+                    FontWeight =700
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =8355711
+                    Name ="Label12"
+                    Caption ="Data"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc38535175da2924db79988ec4b266c36
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =360
+                    LayoutCachedWidth =1296
+                    LayoutCachedHeight =660
+                    RowStart =1
+                    RowEnd =1
+                    ColumnStart =2
+                    ColumnEnd =2
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OverlapFlags =95
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =1296
+                    Top =660
+                    Width =1644
+                    Height =300
+                    FontSize =9
+                    TabIndex =2
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="Valoare"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    OnKeyPress ="[Event Procedure]"
+                    GUID = Begin
+                        0x7fee284069fcf24dad45703d69431a87
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+
+                    LayoutCachedLeft =1296
+                    LayoutCachedTop =660
+                    LayoutCachedWidth =2940
+                    LayoutCachedHeight =960
+                    RowStart =1
+                    RowEnd =1
+                    ColumnStart =3
+                    ColumnEnd =3
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    OverlapFlags =95
+                    TextAlign =1
+                    TextFontFamily =49
+                    Left =60
+                    Top =660
+                    Width =1236
+                    Height =300
+                    FontSize =9
+                    FontWeight =700
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =8355711
+                    Name ="Label67"
+                    Caption ="Valoare"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x3a333a7f69146d4e8f7e22d326f2a80c
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =660
+                    LayoutCachedWidth =1296
+                    LayoutCachedHeight =960
+                    RowStart =1
+                    RowEnd =1
+                    ColumnStart =2
+                    ColumnEnd =2
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    OverlapFlags =87
+                    TextAlign =1
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =1296
+                    Top =960
+                    Width =1644
+                    Height =900
+                    FontSize =8
+                    TabIndex =3
+                    LeftMargin =44
+                    TopMargin =22
+                    RightMargin =44
+                    BottomMargin =22
+                    BorderColor =10921638
+                    Name ="Continut"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x2ac553f32559d84cbf00a238c808518c
+                    End
+                    BottomPadding =150
+                    GridlineColor =10921638
+                    HorizontalAnchor =2
+                    VerticalAnchor =2
+
+                    LayoutCachedLeft =1296
+                    LayoutCachedTop =960
+                    LayoutCachedWidth =2940
+                    LayoutCachedHeight =1860
+                    RowStart =2
+                    RowEnd =2
+                    ColumnStart =1
+                    ColumnEnd =1
+                    ThemeFontIndex =-1
+                    ForeTint =100.0
+                    Begin
+                        Begin Label
+                            OverlapFlags =95
+                            TextAlign =1
+                            TextFontFamily =49
+                            Left =60
+                            Top =960
+                            Width =1236
+                            Height =300
+                            FontSize =9
+                            FontWeight =700
+                            LeftMargin =44
+                            TopMargin =22
+                            RightMargin =44
+                            BottomMargin =22
+                            BorderColor =8355711
+                            Name ="Label69"
+                            Caption ="Conținut"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0xf85a67029e216943b2a3c6a34cbbb157
+                            End
+                            BottomPadding =150
+                            GridlineColor =10921638
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =960
+                            LayoutCachedWidth =1296
+                            LayoutCachedHeight =1260
+                            RowStart =2
+                            RowEnd =2
+                            ThemeFontIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin CheckBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    Left =540
+                    Top =1500
+                    TabIndex =4
+                    BorderColor =10921638
+                    Name ="Anulata"
+                    GUID = Begin
+                        0xe1ca560b76a3df4f8146e6a0f7bb3552
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =540
+                    LayoutCachedTop =1500
+                    LayoutCachedWidth =800
+                    LayoutCachedHeight =1740
+                End
+            End
+        End
+        Begin PageFooter
+            DisplayWhen =1
+            Height =0
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x34f3681c2790f849a36585ad3b7d4bf7
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin FormFooter
+            Height =420
+            Name ="FormFooter"
+            GUID = Begin
+                0x61ce49f194c7734cba6e035cec7b5d5d
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            Begin
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextFontFamily =49
+                    Left =1746
+                    Top =36
+                    Width =1200
+                    Height =324
+                    FontSize =8
+                    FontWeight =700
+                    ForeColor =26112
+                    Name ="Sav"
+                    Caption =" Salvează"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    ControlTipText ="Salvează bonul fiscal. NU ÎNSEAMNĂ ȘI LISTARE !!!"
+                    GUID = Begin
+                        0x268b9a62f7bf0e45ad8bd0e507e75321
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000ab598980ab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989800000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xab5989ffab5989ffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xab5989ffab5989ffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffd9b4caffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffd9b4caffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffffffffffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffab5989ff ,
+                        0xab5989ff0000000000000000ab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ffab5989ff ,
+                        0xab5989ff00000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =1746
+                    LayoutCachedTop =36
+                    LayoutCachedWidth =2946
+                    LayoutCachedHeight =360
+                    PictureCaptionArrangement =5
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverColor =14151142
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedColor =14151142
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =26112
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =26112
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =36
+                    Top =36
+                    Width =384
+                    Height =324
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =10040879
+                    Name ="Und"
+                    Caption =" Renunță"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    ControlTipText ="Renunță la modificarea / adăugarea bonului curent!"
+                    GUID = Begin
+                        0xae395d4b87a0e04c9ac5d09d59b501ad
+                    End
+                    GridlineColor =10921638
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000b17d4a0fb17d4aedb17d4ac0b17d4a7bb17d4a0c00000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000b17d4a0fb17d4affb17d4affb17d4affb17d4ae7b17d4a48 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000b17d4a0fb17d4a3fb17d4aa8b17d4affb17d4af9 ,
+                        0xb17d4a3000000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000000000000b17d4a96b17d4aff ,
+                        0xb17d4ab100000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000000000000b17d4a12b17d4aff ,
+                        0xb17d4af000000000000000000000000000000000b17d4a5ab17d4afcb17d4aff ,
+                        0xb17d4af9b17d4a4500000000000000000000000000000000b17d4a12b17d4aff ,
+                        0xb17d4af6000000000000000000000000b17d4a42b17d4af9b17d4affb17d4afc ,
+                        0xb17d4a510000000000000000000000000000000000000000b17d4a96b17d4aff ,
+                        0xb17d4ac30000000000000000b17d4a36b17d4af6b17d4affb17d4affb17d4a5d ,
+                        0x000000000000000000000000b17d4a12b17d4a42b17d4aa8b17d4affb17d4aff ,
+                        0xb17d4a4b00000000b17d4a27b17d4aeab17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4affb17d4affb17d4affb17d4affb17d4affb17d4af9b17d4a78 ,
+                        0x0000000000000000b17d4a24b17d4aeab17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4affb17d4affb17d4aedb17d4accb17d4a90b17d4a2400000000 ,
+                        0x000000000000000000000000b17d4a2db17d4aedb17d4affb17d4affb17d4a5a ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x00000000000000000000000000000000b17d4a36b17d4af3b17d4affb17d4af9 ,
+                        0xb17d4a3c00000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000b17d4a42b17d4af6b17d4aff ,
+                        0xb17d4aeab17d4a24000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =36
+                    LayoutCachedTop =36
+                    LayoutCachedWidth =420
+                    LayoutCachedHeight =360
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    OldBorderStyle =0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverColor =16317694
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedColor =16317694
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =8355711
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =8355711
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                    Overlaps =1
+                End
+                Begin CommandButton
+                    TabStop = NotDefault
+                    OverlapFlags =85
+                    TextFontCharSet =238
+                    TextFontFamily =49
+                    Left =486
+                    Top =36
+                    Width =1200
+                    Height =324
+                    FontSize =8
+                    FontWeight =700
+                    TabIndex =2
+                    Name ="Listeaza"
+                    Caption =" Listează"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    ControlTipText ="Trimite bonul la casa de marcat! SALVARE NECESARA APRIORI !!!"
+                    GUID = Begin
+                        0x2a40f216d784644cbded3c9f607f9517
+                    End
+                    GridlineColor =10921638
+                    HorizontalAnchor =1
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x00000000000000000000000072727248727272e7727272ff727272ff727272ff ,
+                        0x727272ff727272ff727272ff727272ff727272e7727272480000000000000000 ,
+                        0x000000000000000000000000727272e4727272ff727272ff727272ff727272ff ,
+                        0x727272ff727272ffd4d4d4ffffffffffd7d7d7ff727272e40000000000000000 ,
+                        0x000000000000000000000000727272ff727272ff727272ff727272ff727272ff ,
+                        0x727272ff727272ffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x000000000000000000000000727272ff727272ff727272ff727272ff727272ff ,
+                        0x727272ff727272ffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff0000000000000000 ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff727272ff727272ff ,
+                        0x0000000000000000000000000000000000000000727272ffffffffffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff727272ff727272ff ,
+                        0x0000000000000000000000000000000000000000727272e7dbdbdbffffffffff ,
+                        0xffffffffffffffffffffffffffffffffffffffff727272ff727272ff727272e7 ,
+                        0x00000000000000000000000000000000000000007272723f727272c9727272ff ,
+                        0x727272ff727272ff727272ff727272ff727272ff727272ff727272c97272723f ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =486
+                    LayoutCachedTop =36
+                    LayoutCachedWidth =1686
+                    LayoutCachedHeight =360
+                    PictureCaptionArrangement =5
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    Gradient =0
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverColor =15788753
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedColor =15788753
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =0
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =0
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =2
+                    WebImagePaddingTop =2
+                    WebImagePaddingRight =1
+                    WebImagePaddingBottom =1
+                    Overlaps =1
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub DataBF_keypress(KeyAscii As Integer)
+'MsgBox "Data bonului este stabilita automat in momentul listarii!", vbOKOnly + vbInformation
+'keyascii = 0
+
+End Sub
+
+Private Sub Form_Load()
+'If IsLoaded("Plati") Then Me.Move Forms!Plati.WindowLeft + Forms!Plati.InsideWidth + 30, Forms!Plati.WindowTop, , Forms!Plati.InsideHeight + 550
+End Sub
+
+Private Sub Listeaza_Click()
+If Not cSAV Then
+    MsgBox "Salveaza documentul mai intai, apoi listeaza-l!", vbOKOnly + vbInformation
+    Exit Sub
+End If
+
+If Nz(Continut, "") = "" Then
+    MsgBox "Completeaza toate campurile!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+TempVars!IDC = IDC.value
+
+DoCmd.OpenReport "Chitanta", acViewPreview
+
+Forms!prezenta!Plati!Murdar = False
+
+End Sub
+
+Private Sub NrBF_keypress(KeyAscii As Integer)
+MsgBox "Numarul bonului este stabilit automat de program!", vbOKOnly + vbInformation
+KeyAscii = 0
+
+End Sub
+
+
+Private Sub OraBF_keypress(KeyAscii As Integer)
+MsgBox "Ora se completeaza automat in momentul listarii chitantei!", vbOKOnly + vbInformation
+KeyAscii = 0
+
+End Sub
+
+Private Sub Sav_Click()
+Dim Rest As Double, Achit As Double, ValLuna As Double, ValAnti As Double
+
+If Nz(Continut, "") = "" Then
+    MsgBox "Completeaza toate campurile!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+If Nz(DCount("IDF", "facturi", "IDPL=" & IDPL), 0) <> 0 Then
+    MsgBox "Plata curenta are factura salvata!" & vbCrLf & "Nu se mai pot modifica datele curente!", vbOKOnly + vbCritical
+    Exit Sub
+End If
+
+If MsgBox("Doresti salvarea datelor?", vbYesNo + vbQuestion) = vbNo Then Exit Sub
+
+Dim RC As Recordset
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Chitante WHERE IDPL=" & IDPL, 2)
+
+If RC.EOF Then
+    RC.AddNew
+        RC!IDC = IDC
+        RC!IDPL = IDPL
+        RC!Data = DataCH
+        RC!Numar = NrCH
+        RC!Valoare = Valoare
+        RC!Explicatie = Continut
+        RC!Anulata = Anulata
+        RC!Serie = Nz(DLookup("VL", "CFGs", "F='CH' AND CFG='SERIE'"), "CH")
+    RC.Update
+    
+    ActualizeazaCamp "CFGs", "VL", NrCH, "F='CH' AND CFG='NUMAR'"
+    
+    Achit = Nz(DSum("Plata", "Plati", "IDP = " & Forms!prezenta!IDP & " AND IDZ = " & Forms!prezenta!IDZ & " AND Anulata = False"), 0)
+    
+    ValLuna = Nz(DLookup("ValoareContract", "Prezenta", "IDZ=" & Forms!prezenta!IDZ), 0)
+    ValAnti = Nz(DLookup("Restanta", "Prezenta", "IDZ=" & Forms!prezenta!IDZ & " AND Restanta < 0"), 0)
+    
+    Rest = Nz(DLookup("Restanta", "Prezenta", "IDZ=" & Forms!prezenta!IDZ & " AND Restanta > 0"), 0) - Nz(DSum("Restanta", "Plati", "IDP = " & Forms!prezenta!IDP & " AND IDZ = " & Forms!prezenta!IDZ & " AND Anulata = False"), 0)
+    
+    Set RC = CurrentDb.OpenRecordset("SELECT * FROM Plati WHERE IDPL = " & IDPL, 2)
+        RC.Edit
+            If Rest > 0 Then
+                If Achit <= Rest Then
+                    RC!Restanta = RC!Plata
+                Else
+                    If Achit <= RC!Valoare Then
+                        RC!Restanta = Rest
+                    Else
+                        RC!Restanta = Rest
+                        RC!Anticipat = RC!Plata - Rest - ValLuna
+                    End If
+                End If
+            Else
+                If Achit > RC!Valoare Then
+                    RC!Anticipat = Achit - ValLuna - ValAnti
+                End If
+            End If
+                
+            RC!Valid = True
+        RC.Update
+    
+    cSAV = True
+    
+Else
+    If Anulata Then
+        If MsgBox("Odata anulata o chitanta ACEASTA NU MAI POATE FI RESTAURATA NICIODATA!!!!" & vbCrLf & "Doresti anularea chitantei curente?", vbYesNo + vbQuestion) = vbNo Then
+            Set RC = Nothing
+            Exit Sub
+        End If
+        
+        RC.Edit
+            RC!Anulata = Anulata
+        RC.Update
+        
+        MsgBox "Chitanta a fost anulata!", vbOKOnly + vbInformation
+        
+        Set RC = Nothing
+        
+        Exit Sub
+        
+    Else
+        MsgBox "O chitanta salvata nu mai poate fi modificata, DECAT anulata!", vbOKOnly + vbInformation
+        Exit Sub
+    End If
+End If
+
+MsgBox "Salvare efectuata cu succes!", vbOKOnly + vbInformation
+
+Set RC = Nothing
+
+Forms!prezenta!Plati!Murdar = False
+
+End Sub
+
+Private Sub Und_Click()
+With Forms!prezenta
+    If !Plati!Murdar Then
+        Dim RC As Recordset: Set RC = !Plati.Form.Recordset
+        RC.Delete
+        !Plati.Requery
+        !Plati!Murdar = False
+    End If
+    !Plati.SetFocus
+    !Facturi.visible = False
+    
+    .InsideWidth = 10200
+    
+    ResizeForm "Prezenta", "", "", -1, -1, -3, -3
+            
+End With
+
+
+End Sub
+
+Private Sub Valoare_keypress(KeyAscii As Integer)
+'MsgBox "Valoare bonului este stabilita automat din tabelul [Plati]!", vbOKOnly + vbInformation
+'keyascii = 0
+
+End Sub

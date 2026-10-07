@@ -88,7 +88,7 @@ def trimite(dc, id_factura, correction_data=None):
         row = F._lock(cursor, id_factura)
         correction = _sendable(row, F.stare_factura(row), correction_data)
 
-        furnizor = store.furnizor_get(cursor)
+        furnizor = store.furnizor_get(cursor, dc)
         if furnizor is None:
             raise EfEroare("Datele unității care emite facturile nu sunt completate.", "FURNIZOR_LIPSA", 409)
         client = store.client_get(cursor, row["IdClient"])
@@ -190,6 +190,13 @@ def descarca(dc, id_factura):
         raise EfEroare("Fișierul se descarcă doar pentru o factură acceptată de ANAF.", "NU_SE_DESCARCA", 409)
     _, token = tokens.access_token(dc)
     return anaf_api.descarca(token, row["id_descarcare"].strip()), ubl.file_name(row)[:-4] + ".zip"
+
+
+def pdf_anaf(dc, id_factura):
+    """(pdf bytes, file name) of an ACCEPTED invoice as ANAF draws it (slice 00EF-09): the signed file ANAF keeps is
+    downloaded, its XML is taken out of the zip and sent to ANAF's public XML -> PDF service."""
+    zip_bytes, name = descarca(dc, id_factura)
+    return anaf_api.pdf_din_xml(anaf_api.factura_din_zip(zip_bytes)), name[:-4] + ".pdf"
 
 
 # ---------------------------------------------------------------------------------------------

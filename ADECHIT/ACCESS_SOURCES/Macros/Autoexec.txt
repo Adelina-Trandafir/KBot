@@ -1,0 +1,58 @@
+Version =196611
+PublishOption =1
+ColumnsShown =0
+Begin
+    Action ="SetLocalVar"
+    Argument ="__*L0_"
+    Argument ="autoexec()=True"
+End
+Begin
+    Action ="SetLocalVar"
+    Argument ="__*L0C_"
+    Argument ="[LocalVars]![__*L0_]"
+End
+Begin
+    Condition ="[LocalVars]![__*L0C_]"
+    Action ="OpenForm"
+    Argument ="ADECHIT"
+    Argument ="0"
+    Argument =""
+    Argument =""
+    Argument ="-1"
+    Argument ="3"
+End
+Begin
+    Action ="SetLocalVar"
+    Argument ="__*L0C_"
+    Argument ="(Not [LocalVars]![__*L0_])"
+End
+Begin
+    Condition ="[LocalVars]![__*L0C_]"
+    Action ="MsgBox"
+    Argument ="A apărut o eroare la deschiderea programului!"
+    Argument ="-1"
+    Argument ="1"
+    Argument ="EROARE"
+End
+Begin
+    Action ="SetLocalVar"
+    Argument ="__*L0C_"
+    Argument ="False"
+End
+Begin
+    Comment ="_AXL:<?xml version=\"1.0\" encoding=\"UTF-16\" standalone=\"no\"?>\015\012<UserI"
+        "nterfaceMacro MinimumClientDesignVersion=\"14.0.0000.0000\" xmlns=\"http://schem"
+        "as.microsoft.com/office/accessservices/2009/11/application\"><Statements><Condit"
+        "ionalBlock><If><Condition>aut"
+End
+Begin
+    Comment ="_AXL:oexec()=True</Condition><Statements><Action Name=\"OpenForm\"><Argument Nam"
+        "e=\"FormName\">ADECHIT</Argument><Argument Name=\"WindowMode\">Dialog</Argument>"
+        "</Action></Statements></If><Else><Statements><Action Name=\"MessageBox\"><Argume"
+        "nt Name=\"Message\">A a"
+End
+Begin
+    Comment ="_AXL:părut o eroare la deschiderea programului!</Argument><Argument Name=\"Type\""
+        ">Critical</Argument><Argument Name=\"Title\">EROARE</Argument></Action></Stateme"
+        "nts></Else></ConditionalBlock></Statements></UserInterfaceMacro>"
+End

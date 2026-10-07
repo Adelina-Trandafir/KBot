@@ -1,0 +1,109 @@
+Option Compare Database
+Option Explicit
+                        
+Public Declare PtrSafe Function apiCopyFile Lib "kernel32" Alias "CopyFileA" (ByVal lpExistingFileName As String, ByVal lpNewFileName As String, ByVal bFailIfExists As Long) As Long
+
+
+Public Function CopyFile(SourceFile As String, DestFile As String) As Long
+'---------------------------------------------------------------
+' PURPOSE: Copy a file on disk from one location to another.
+' ACCEPTS: The name of the source file and destination file.
+' RETURNS: Nothing
+'---------------------------------------------------------------
+Dim Result As Long
+If Dir(Replace(SourceFile, "|", "")) = "" Then
+    'MsgBox Chr(34) & SourceFile & Chr(34) & " is not valid file name."
+    CopyFile = 0
+Else
+    CopyFile = apiCopyFile(Replace(SourceFile, "|", ""), DestFile, False)
+End If
+
+End Function
+
+Function CopyFileWithFSO(SourceFilePath As String, DestPath As String, OverWrite As Boolean) As Long
+' (1) copies one file from one folder to another folder with the VBA FileSystemObject
+' (2) contains extensive error handling (safeguards)
+' (3) requires a reference to the object library "Microsoft Scripting Runtime" under Options > Tools > References... in the Visual Basic Editor.
+
+    Dim blFileExists As Boolean, blSourceErr As Boolean
+    Dim strFileName As String, strSuccessMsg As String, strNewDestPath As String, strNewSourcePath As String
+    Dim Fso As Scripting.FileSystemObject
+    Dim strErrMsg As String
+    
+    Set Fso = New Scripting.FileSystemObject
+    
+    With Fso
+        
+        strNewDestPath = .BuildPath(.GetAbsolutePathName(DestPath), "\")
+        strFileName = .GetFileName(SourceFilePath)
+    
+        'check if the source file exists
+        If Not .FileExists(SourceFilePath) Then
+            
+            ' check if the root drive was specified
+            If .DriveExists(Left(SourceFilePath, 2)) Then
+                blSourceErr = True
+            
+            ' the provided source path is incomplete
+            ' build new path and ask the user if he accepts the suggestion
+            Else
+                strNewSourcePath = .BuildPath(.GetAbsolutePathName(SourceFilePath), "")
+                If Not MsgBox("The source path " & Chr(34) & SourceFilePath & Chr(34) & _
+                    " is incomplete. Will you accept the following suggestion: " _
+                    & Chr(34) & strNewSourcePath & Chr(34) & "?", vbYesNo, "Confirm new source path") = vbYes Then _
+                        blSourceErr = True
+            End If
+            
+            ' error
+            If blSourceErr Then _
+                strErrMsg = "The source file," & Chr(34) & strFileName & Chr(34) & _
+                        " does not exist, or the specified path to the file, " & Chr(34) & _
+                        Replace(SourceFilePath, strFileName, "") & Chr(34) & " is incorrect."
+        
+        ' check if the destination folder already exists
+        ElseIf Not .FolderExists(strNewDestPath) Then
+        
+            ' prompt the user if the destination folder should be created
+            If MsgBox("The destination folder, " & Chr(34) & strNewDestPath & Chr(34) & ", does not exist. Do you want to create it?", vbYesNo, _
+                "Create new folder?") = vbYes Then
+                .CreateFolder (strNewDestPath)
+            Else
+                strErrMsg = "The destination folder could not be created."
+            End If
+        
+        ' check if the file already exists in the destination folder
+        Else
+            blFileExists = .FileExists(strNewDestPath & strFileName)
+            If Not OverWrite Then
+                If blFileExists Then _
+                    strErrMsg = "The file, " & Chr(34) & strFileName & Chr(34) & _
+                        ", already exists in the destination folder, " & Chr(34) & _
+                        strNewDestPath & Chr(34) & "."
+            End If
+        End If
+        
+        ' attempt to copy file
+        If strErrMsg = vbNullString Then
+            On Error Resume Next
+            If strNewSourcePath = vbNullString Then strNewSourcePath = SourceFilePath
+            Call .CopyFile(strNewSourcePath, strNewDestPath, OverWrite)
+            If Err.Number <> 0 Then strErrMsg = "Run-time error " & Err.Number & Chr(10) & Err.Description
+            On Error GoTo 0
+        End If
+        
+        ' succesful copy
+        If strErrMsg = vbNullString Then
+            strSuccessMsg = "The file" & Chr(34) & strFileName & Chr(34) & " was copied to " & _
+                Chr(34) & strNewDestPath & Chr(34) & "."
+            If blFileExists Then strSuccessMsg = strSuccessMsg & Chr(10) & _
+                "(Note, the existing file in the destination folder was overwritten)."
+            MsgBox strSuccessMsg, vbInformation, "File copied"
+        
+        ' error
+        Else
+            MsgBox strErrMsg, vbCritical, "Error!"
+        End If
+        
+    End With
+
+End Function

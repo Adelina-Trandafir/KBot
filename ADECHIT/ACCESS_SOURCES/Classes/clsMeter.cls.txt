@@ -1,0 +1,388 @@
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+Option Base 0
+
+Private Const CLASS_TITLE = "Progress Meter"
+Private Const TWIPS = 43.2                  'Number of twips in 1% of a 3 inch progress bar
+Private Const PAUSE_MIN_LENGTH = 0.1        'Minimum pause length in seconds
+Private Const PAUSE_MAX_LENGTH = 10         'Maximum paues length in seconds
+Private Const PAUSE_DURING_UPDATE = 0.002   'Duration of pause every time progress bar is updated.  Must be 0.002 or greater
+Private Const METER_FORM_NAME = "frmMeter"  'Name of the meter form
+Private Const BAR_COLOR = 65280             'Default color of the progress bar - 65280 is bright green
+Private Const FORM_COLOR = 16777215         'Default color of the detail section of the form - 16777215 is white
+
+Private frmMeter As Form                    'Progress meter form
+
+Private boxProgress As Control              'Box used as a progress bar for the task
+Private lblComplete As Control              'Label displaying task % complete
+Private lblDescription As Control           'Label providing project status description (loading..., etc)
+
+Private pInitialized As Boolean             'Whether or not the initialization routine has been run
+Private pCounter As Long                    'Counter of actions taken during the task
+Private pMax As Long                        'Max number of iterations for the task - loops, records, actions, etc
+Private pDesc As String                     'Task name/label
+Private pPause As Boolean                   'Tracks whether or not the process should pause once complete
+Private pPauseLength As Long                'Tracks length of above pause
+Private pProgress As Byte                   'Variable tracking current task progress in percent
+
+'*** THESE PROPERTIES ARE DUMMIED OUT AS THEY ARE NORMALLY ONLY NEEDED FOR TESTING/TROUBLESHOOTING.
+'Property Get Initialized() As Boolean
+'    Initialized = pInitialized
+'End Property
+'
+'Property Get Counter() As Long
+'    Counter = pCounter
+'End Property
+'
+'Property Get Description() As String
+'    Description = pDesc
+'End Property
+'
+'Property Get Progress() As Byte
+'    Progress = pProgress
+'End Property
+
+Private Sub Class_Initialize()
+
+On Error GoTo Class_Initialize_Err
+
+Dim frm As Object
+
+    'Set defaults.
+    pDesc = ""
+    pInitialized = False
+    pCounter = 0
+    pProgress = 0
+
+    'Determine if frmDualMeter exists in the database.  Will generate and trap an error if the form doesn't exist.
+    Set frm = CurrentProject.AllForms(METER_FORM_NAME)
+
+Class_Initialize_Exit:
+    If Not frm Is Nothing Then Set frm = Nothing
+    Exit Sub
+    
+Class_Initialize_Err:
+    'Determine which error code was encountered.
+    Select Case Err.Number
+        Case 2467   'Indicated object/form (METER_FORM_NAME) doesn't exist.
+            'Create the form.
+            CreateMeterForm
+            Resume Next
+        Case Else   'Any other error message.
+            MsgBox "Error occurred" & vbCrLf & vbCrLf & _
+            "In Function:" & vbTab & "clsMeter.Class_Initialize" & vbCrLf & _
+            "Err Number: " & vbTab & Err.Number & vbCrLf & _
+            "Description: " & vbTab & Err.Description, vbCritical, CLASS_TITLE
+            Resume Class_Initialize_Exit
+    End Select
+
+End Sub
+
+Private Sub Class_Terminate()
+    On Error Resume Next
+    'De-reference all controls.
+    If Not boxProgress Is Nothing Then Set boxProgress = Nothing
+    If Not lblComplete Is Nothing Then Set lblComplete = Nothing
+    If Not lblDescription Is Nothing Then Set lblDescription = Nothing
+    'Determine if the meter form is still open.
+    If Not frmMeter Is Nothing Then
+        'It is, so close the form.
+        DoCmd.Close acForm, frmMeter.Name
+        'De-reference the form.
+        Set frmMeter = Nothing
+    End If
+End Sub
+
+Public Function Initialize(ByVal NumberOfActions As Long, _
+                           ByVal Description As String, _
+                           Optional ByVal PauseOnTaskComplete As Boolean = True, _
+                           Optional ByVal PauseDuration As Single = PAUSE_MIN_LENGTH, _
+                           Optional ByVal BarColor As Long = -1, _
+                           Optional ByVal FormColor As Long = -1) As Boolean
+' ************************************************************
+' Created by       : Scott L. Prince
+' Parameters       : None
+' Results          : Verifies values have been pased to pMax and pDesc
+'                    Provides warning message if either of the above fail verification
+'                    Opens pForm
+' Returns          : Success or failure
+' Date             : 3-21-14
+' Remarks          :
+' Changes          :
+' ************************************************************
+On Error GoTo Initialize_Err
+
+    'Defaults
+    Initialize = False
+    
+    'Ensure NumberOfActions is not zero.
+    If NumberOfActions = 0 Then
+        'NumberOfActions was never provided
+        MsgBox "Tasks must contain at least one action!", vbInformation, CLASS_TITLE
+    ElseIf Description = "" Then
+        'Description was never provided
+        MsgBox "Task description never provided!", vbInformation, CLASS_TITLE
+    ElseIf PauseOnTaskComplete = True And PauseDuration < PAUSE_MIN_LENGTH Then
+        'Pause duration is too short.
+        MsgBox "Pause duration must be no less than " & PAUSE_MIN_LENGTH & " seconds!", vbInformation, CLASS_TITLE
+    ElseIf PauseOnTaskComplete = True And PauseDuration > PAUSE_MAX_LENGTH Then
+        'Pause duration is too long.
+        MsgBox "Pause duration must be no greater than " & PAUSE_MAX_LENGTH & " seconds!", vbInformation, CLASS_TITLE
+    Else
+        'Assign values to the appropriate internal variables.
+        pMax = NumberOfActions
+        pDesc = Description
+        pPause = PauseOnTaskComplete
+        pPauseLength = PauseDuration
+                
+        'Open the progress meter form.
+        DoCmd.OpenForm "frmMeter", acNormal
+        
+        'Assign frmMeter to frmMeter.
+        Set frmMeter = Forms!frmMeter
+        
+        'Assign controls
+        Set lblComplete = frmMeter.lblTaskProg
+        Set boxProgress = frmMeter.bxTask
+        Set lblDescription = frmMeter.lblTask
+        
+        'Determine if valid progress bar parameter was passed.
+        If BarColor > -1 Then
+            'Determine if color of progress bar needs to be changed.
+            If boxProgress.Properties("BackColor") <> CLng(BarColor) Then
+                'Change the color.
+                boxProgress.Properties("BackColor") = CLng(BarColor)
+            End If
+        End If
+        
+        'Determine if valid background color parameter was passed.
+        If FormColor > -1 Then
+            'Determine if the color of the meter form needs to be changed.
+            If frmMeter.Section(0).BackColor <> FormColor Then
+                'Change the color.
+                frmMeter.Section(0).BackColor = FormColor
+            End If
+        End If
+        
+        'Change the width of the task progress meter.
+        boxProgress.Width = 1
+        
+        'Update task progress counter to 0%.
+        lblComplete.Caption = "0%"
+        
+        'Update lblTask to the provided task description.
+        lblDescription.Caption = pDesc
+        
+        pInitialized = True
+    End If
+
+Initialize_Exit:
+    Exit Function
+    
+Initialize_Err:
+    MsgBox "Error occurred" & vbCrLf & vbCrLf & _
+    "In Function:" & vbTab & "Initialize" & vbCrLf & _
+    "Err Number: " & vbTab & Err.Number & vbCrLf & _
+    "Description: " & vbTab & Err.Description, vbCritical, CLASS_TITLE
+    Resume Initialize_Exit
+
+End Function
+
+Public Sub UpdateTask(ByVal ActionCount As Long)
+' ************************************************************
+' Created by       : Scott L. Prince
+' Parameters       : None
+' Results          : Updates pCounter
+'                    Updates task progress bar if new completion percentage is reached
+'                    Updates project progress indicators if task is completed
+' Date             : 3-21-14
+' Remarks          :
+' Changes          :
+' ************************************************************
+On Error GoTo UpdateTask_Err
+
+Dim OldProgress As Integer
+
+    'Defaults
+    OldProgress = pProgress
+    
+    If pInitialized Then
+        'Update pCounter.
+        pCounter = ActionCount
+        
+        'If pCounter is higher than pMax, then set its value to pMax.
+        If pCounter > pMax Then pCounter = pMax
+        'Determine the updated percentage toward completion.
+        pProgress = Int(pCounter / pMax * 100)
+        'Determine if the progress bar needs to be updated.
+        If pProgress <> OldProgress Then
+            'Progress percentage has been updated.  Increase the progress bar to pProgress %.
+            boxProgress.Width = Int(pProgress * TWIPS)
+            'Update the displayed completion percentage.
+            lblComplete.Caption = pProgress & "%"
+            'Pause so user can see bar progress.
+            Pause PAUSE_DURING_UPDATE
+        End If
+        'Determine if the task is complete.
+        If pCounter = pMax Then
+            'Determine whether or not to pause processing so user can see the 100% indication.
+            'If TRUE, pause for pPauseLength seconds.
+            If pPause Then Pause pPauseLength
+            'Close the open form.
+            DoCmd.Close acForm, frmMeter.Name
+            'Destroy the object frmMeter.
+            Set frmMeter = Nothing
+        End If
+    Else
+        'Notify the user that the object must be initialized.
+        MsgBox "DualImport object not initialized!", vbCritical, CLASS_TITLE
+    End If
+
+UpdateTask_Exit:
+    Exit Sub
+    
+UpdateTask_Err:
+    MsgBox "Error occurred" & vbCrLf & vbCrLf & _
+    "In Function:" & vbTab & "UpdateTask" & vbCrLf & _
+    "Err Number: " & vbTab & Err.Number & vbCrLf & _
+    "Description: " & vbTab & Err.Description, vbCritical, CLASS_TITLE
+    Resume UpdateTask_Exit
+
+End Sub
+
+Public Sub ChangeDesc(ByVal NewDesc As String)
+    
+    'Change the saved task description.
+    pDesc = NewDesc
+    'Change the displayed task description.
+    lblDescription.Caption = NewDesc
+    
+End Sub
+
+Private Function Pause(NumberOfSeconds As Variant)
+On Error GoTo Err_Pause
+
+    Dim PauseTime As Variant, Start As Variant
+
+    PauseTime = NumberOfSeconds
+    Start = Timer
+    Do While Timer < Start + PauseTime
+        DoEvents
+    Loop
+
+Exit_Pause:
+    Exit Function
+
+Err_Pause:
+    MsgBox Err.Number & " - " & Err.Description, vbCritical, "Pause()"
+    Resume Exit_Pause
+
+End Function
+
+Private Sub CreateMeterForm()
+' ************************************************************
+' Created by       : Scott L. Prince
+' Parameters       : None
+' Results          : Creates the form that displays the progress meters.
+' Date             : 5-13-14
+' Remarks          :
+' Changes          :
+' ************************************************************
+On Error GoTo CreateMeterForm_Err
+
+Dim NameOfForm As String
+Dim bxTask As Rectangle
+Dim frm As Form
+Dim lblTask As label
+Dim lblTaskProg As label
+
+    'Create the form and assign the pertinent properties.
+    Set frm = CreateForm
+    frm.AutoCenter = True
+    frm.DefaultView = 0
+    frm.Width = 4560
+    frm.NavigationButtons = False
+    frm.RecordSelectors = False
+    frm.AllowFilters = False
+    frm.PopUp = True
+    frm.Modal = True
+    frm.ScrollBars = 0
+    frm.Section(0).Height = 720
+    frm.Section(0).BackColor = FORM_COLOR
+    frm.AllowEdits = True
+    frm.AllowDeletions = False
+    frm.AllowAdditions = False
+    frm.AllowFilters = False
+    frm.ShortcutMenu = False
+    frm.Caption = "Progress"
+    frm.ViewsAllowed = 1
+    frm.BorderStyle = 1
+    frm.ControlBox = False
+    frm.DividingLines = False
+    frm.MinMaxButtons = 0
+    frm.CloseButton = False
+    
+    'Save the name of the form for future reference.
+    NameOfForm = frm.Name
+    
+    'Create the box bxTask.
+    Set bxTask = CreateControl(NameOfForm, acRectangle, acDetail, , , 120, 360, 2000, 240)
+    bxTask.BackColor = BAR_COLOR
+    bxTask.BorderStyle = 0
+    bxTask.BorderWidth = 0
+    bxTask.BorderColor = 0
+    bxTask.SpecialEffect = 0
+    bxTask.BackStyle = 1
+    bxTask.Name = "bxTask"
+    bxTask.InSelection = True
+    DoCmd.RunCommand acCmdSendToBack
+    bxTask.InSelection = False
+    
+    'Create the task progress label.
+    Set lblTaskProg = CreateControl(frm.Name, acLabel, acDetail, , "100%", 120, 360)
+    lblTaskProg.FontBold = True
+    lblTaskProg.Width = 4320
+    lblTaskProg.Height = 240
+    lblTaskProg.Name = "lblTaskProg"
+    lblTaskProg.TextAlign = 2
+    lblTaskProg.BorderStyle = 1
+    lblTaskProg.BorderWidth = 0
+    
+    'Create the task label.
+    Set lblTask = CreateControl(frm.Name, acLabel, acDetail, , "Task", 120, 120)
+    lblTask.FontBold = True
+    lblTask.Width = 4320
+    lblTask.Height = 240
+    lblTask.Name = "lblTask"
+    lblTask.TextAlign = 1
+    lblTask.BorderStyle = 0
+    lblTask.BorderWidth = 0
+    
+    'Save the form.
+    DoCmd.Save acForm, NameOfForm
+    'Close the form.
+    DoCmd.Close acForm, NameOfForm
+    'Rename the form.
+    DoCmd.Rename METER_FORM_NAME, acForm, NameOfForm
+    
+CreateMeterForm_Exit:
+    'Remove pointer to frm if it is set.
+    If Not frm Is Nothing Then Set frm = Nothing
+    If Not bxTask Is Nothing Then Set bxTask = Nothing
+    If Not lblTask Is Nothing Then Set lblTask = Nothing
+    If Not lblTaskProg Is Nothing Then Set lblTaskProg = Nothing
+    'Exit the procedure.
+    Exit Sub
+    
+CreateMeterForm_Err:
+    MsgBox "Error occurred" & vbCrLf & vbCrLf & _
+    "In Function:" & vbTab & "clsDualMeter.CreateMeterForm" & vbCrLf & _
+    "Err Number: " & vbTab & Err.Number & vbCrLf & _
+    "Description: " & vbTab & Err.Description, vbCritical, CLASS_TITLE
+    Resume CreateMeterForm_Exit
+
+End Sub

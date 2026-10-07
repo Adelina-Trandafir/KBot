@@ -1,0 +1,96 @@
+Option Compare Database
+Option Explicit
+
+Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
+Public Function Zip7(strDestFileName As String, strSourceFileName As String, strPassword As String) As Single
+On Error GoTo Eroare
+
+Dim str7zippath As String, strCommand As String
+
+Zip7 = 0
+
+str7zippath = "C:\Program Files (x86)\7-Zip\7z.exe"
+
+If Dir(str7zippath) = "" Then
+    'incearca si pe 64b
+    str7zippath = "C:\Program Files\7-Zip\7z.exe"
+    
+    If Dir(str7zippath) = "" Then
+        Zip7 = 9 'lipseste 7zip.exe
+        Exit Function
+    End If
+End If
+
+strCommand = """" & str7zippath & """ -p" & strPassword & " a -tzip """ & strDestFileName & """ """ & strSourceFileName & """"
+
+Call ExecWait(strCommand)
+
+If Not Dir(strDestFileName) <> "" Then
+    Zip7 = 2 'eroare de scriere fisier
+Else
+    Zip7 = 1 'succes
+End If
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/Zip_Unzip/Zip7()"
+End Function
+
+Public Function UnZip7(strDestFolder As String, strSourceFileName As String, strPassword As String, Optional ExpectedFiles As String = "") As Single
+'ExpectedFiles - poate contine mai multe fisiere separate cu |
+On Error GoTo Eroare
+
+If Right(strDestFolder, 1) <> "\" Then strDestFolder = strDestFolder & "\"
+
+Dim str7zippath As String, strCommand As String
+Dim ub As Integer, i As Integer
+
+UnZip7 = 0
+
+str7zippath = "C:\Program Files (x86)\7-Zip\7z.exe"
+
+If Dir(str7zippath) = "" Then
+    'incearca si pe 64b
+    str7zippath = "C:\Program Files\7-Zip\7z.exe"
+    
+    If Dir(str7zippath) = "" Then
+        UnZip7 = 9 'lipseste 7zip.exe
+        Exit Function
+    End If
+End If
+
+strCommand = str7zippath & " e " & """" & strSourceFileName & """" & " -p" & strPassword & " -o" & """" & strDestFolder & """" & " -y"
+
+Call ExecWait(strCommand)
+
+If ExpectedFiles = "" Then
+    UnZip7 = 1
+    Exit Function
+Else
+    If Right(ExpectedFiles, 1) <> "|" Then
+        If Dir(strDestFolder & ExpectedFiles) = "" Then
+            UnZip7 = 2
+        Else
+            UnZip7 = 1
+        End If
+    Else
+        ub = UBound(Split(ExpectedFiles, "|"))
+        For i = 0 To ub - 1
+            If Dir(strDestFolder & Split(ExpectedFiles, "|")(i)) = "" Then
+                UnZip7 = 3 'nu s-a gasit cel putin un fisier asteptat in arhiva
+            Else
+                If UnZip7 <> 3 Then 'nu am avut eroarea de mai sus niciodata
+                    UnZip7 = 1
+                End If
+            End If
+        Next i
+    End If
+End If
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/Zip_Unzip/UnZip7()"
+End Function

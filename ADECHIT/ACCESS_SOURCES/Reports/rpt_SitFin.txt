@@ -1,0 +1,1166 @@
+Version =20
+VersionRequired =20
+Checksum =2120569764
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    TabularFamily =127
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =14811
+    DatasheetFontHeight =10
+    ItemSuffix =55
+    Left =1140
+    Top =1470
+    Right =17730
+    Bottom =8670
+    DatasheetGridlinesColor =12632256
+    OnNoData ="[Event Procedure]"
+    RecSrcDt = Begin
+        0x1ae9bcaf4e04e440
+    End
+    GUID = Begin
+        0xef2d10125fd34f4a96bbb6fe75aef0e0
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000005300690074007500610074006900690020007300 ,
+        0x61006c0076006100740065000000000000000000000000000000000000000000 ,
+        0x000007000000000000000000000000000000000000004e0075006d0065000000 ,
+        0x0000000000000000000000000000000000000000070000000000000000000000 ,
+        0x00000000000000004e0072005a0069006c0065005000720065007a0000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x0000000000005300490044000000000000000000000000000000000000000000 ,
+        0x0000070000000000000000000000000000000000000053004900430000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x00000000000043006f006e0074007200530074006100620069006c0000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x00000000000043006f006e007400720041006300680069007400000000000000 ,
+        0x0000000000000000000000000000000007000000000000000000000000000000 ,
+        0x000000004100630068006900740041006e007400690063006900700000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x0000000000005300460044000000000000000000000000000000000000000000 ,
+        0x0000070000000000000000000000000000000000000053004600430000000000 ,
+        0x0000000000000000000000000000000000000700000000000000000000000000 ,
+        0x0000000000004e00520043004800490054000000000000000000000000000000 ,
+        0x0000000000000000070000000000000000000000000000000000000050006c00 ,
+        0x6100740069000000000000000000000000000000000000000000000001000000 ,
+        0x0000000000000000000000000000000073006900740075006100740069006500 ,
+        0x000000000000bf00e6cad8a84e498682581419eb9bb806000000ef2d10125fd3 ,
+        0x4f4a96bbb6fe75aef0e04e0072005a0069006c0065005000720065007a000000 ,
+        0x000000006f63aa4da606c046a0464911f9de30e906000000ef2d10125fd34f4a ,
+        0x96bbb6fe75aef0e053004900440000000000000041e3106d896b27429e1544a1 ,
+        0xe7718b1a06000000ef2d10125fd34f4a96bbb6fe75aef0e05300490043000000 ,
+        0x0000000001da359db5590647af0b6f2b3d0d933b06000000ef2d10125fd34f4a ,
+        0x96bbb6fe75aef0e043006f006e0074007200530074006100620069006c000000 ,
+        0x00000000f28d075a22d2cd48a619516cc730889606000000ef2d10125fd34f4a ,
+        0x96bbb6fe75aef0e043006f006e00740072004100630068006900740000000000 ,
+        0x000010c395aceb6bbe4e82a79547dd3dce9c06000000ef2d10125fd34f4a96bb ,
+        0xb6fe75aef0e04100630068006900740041006e00740069006300690070000000 ,
+        0x00000000d2681c4e8764864f83d2ea1fe6751bb406000000ef2d10125fd34f4a ,
+        0x96bbb6fe75aef0e0530046004400000000000000d91c7e15ec35ab41a2a9d506 ,
+        0x90cbc13806000000ef2d10125fd34f4a96bbb6fe75aef0e05300460043000000 ,
+        0x000000006a477e296295234a99ac9d231666240a000000002a09c58d8e6ce540 ,
+        0x000000000000000070006c006100740069000000000000000000000000000000 ,
+        0x00000000000000000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="SELECT [Situatii salvate].IdPlatitor, [Situatii salvate].Nume, [Situatii salvate"
+        "].NrZilePrez, [Situatii salvate].SID, [Situatii salvate].SIC, [Situatii salvate]"
+        ".ContrStabil, [Situatii salvate].ContrAchit, [Situatii salvate].AchitRestan, [Si"
+        "tuatii salvate].AchitAnticip, [Situatii salvate].SFD, [Situatii salvate].SFC, [S"
+        "ituatii salvate].NRCHIT, [Situatii salvate].Luna, [Situatii salvate].An, [Situat"
+        "ii salvate].SumaVirata, [Situatii salvate].Plati FROM [Situatii salvate] WHERE ("
+        "(([Situatii salvate].Luna)=forms!situatie!ll) And (([Situatii salvate].An)=forms"
+        "!situatie!aa)); "
+    OnOpen ="[Event Procedure]"
+    OnClose ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x5303000053030000d50200005303000000000000db390000e100000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00004501000000002200000054394501000000001813f524503945010c00be00 ,
+        0x010403069c00c00303df810302000900ea0a6f08640001000700fdff02000100 ,
+        0x580201000000413400000000a8615b01b7ceec63fc615b01a0615b01a4615b01 ,
+        0x020000000c000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x08002c0050000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000004c5054313a00
+    End
+    FilterOnLoad =0
+    DatasheetGridlinesColor12 =12632256
+    RibbonName ="rbbPPVW"
+    PrtDevModeW = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x530065007200690065007300200043006c006100730073002000440000000000 ,
+        0x01040306dc00c00303df810302000900ea0a6f08640001000700fdff02000100 ,
+        0x5802010000004100340000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNamesW = Begin
+        0x040028004c000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000004c00500054003100 ,
+        0x3a000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Rectangle
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+            AsianLineBreak =255
+            ShowDatePicker =0
+        End
+        Begin BreakLevel
+            ControlSource ="Nume"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =680
+            Name ="ReportHeader"
+            GUID = Begin
+                0x80db3be23731864f8d1e7fcbe6f7211c
+            End
+            Begin
+                Begin Label
+                    TextFontFamily =34
+                    Width =3585
+                    Height =465
+                    FontSize =18
+                    FontWeight =700
+                    Name ="Label0"
+                    Caption ="Situatia financiara la"
+                    GUID = Begin
+                        0xa4057b314b2bcd4fa7000ca283375333
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3628
+                    Top =56
+                    Width =5961
+                    Height =375
+                    FontSize =14
+                    FontWeight =700
+                    Name ="Text49"
+                    ControlSource ="=Forms!Situatie!Unitatea"
+                    GUID = Begin
+                        0x8abdfd79859fb048822273b786624f89
+                    End
+
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =11055
+                    Top =56
+                    Width =3066
+                    Height =330
+                    FontSize =12
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Text51"
+                    ControlSource ="=Forms!Situatie!ll & \"/\" & Forms!Situatie!aa"
+                    GUID = Begin
+                        0xc821c81b2a3d3741ab70d7ea92eaf68d
+                    End
+
+                End
+            End
+        End
+        Begin PageHeader
+            Height =525
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0xffaa238a0ee1044f8f01fb38ef742097
+            End
+            Begin
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Width =540
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label1"
+                    Caption ="NR.\015\012CRT."
+                    GUID = Begin
+                        0xb798568048f06c47a01500217643ed44
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =540
+                    Width =3996
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label2"
+                    Caption ="Numele și prenumele"
+                    GUID = Begin
+                        0x81269c60a154434bb166cf0c2b0ee0a9
+                    End
+                    LayoutCachedLeft =540
+                    LayoutCachedWidth =4536
+                    LayoutCachedHeight =525
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4524
+                    Width =750
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label3"
+                    Caption ="Nr. zile\015\012prez."
+                    GUID = Begin
+                        0x198d88e9965e964ca1d3da9ff391c5b1
+                    End
+                    LayoutCachedLeft =4524
+                    LayoutCachedWidth =5274
+                    LayoutCachedHeight =525
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5274
+                    Width =1326
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Text5"
+                    ControlSource ="=\"01.\" & Forms!situatie!ll & \".\" & Forms!situatie!aa"
+                    GUID = Begin
+                        0x5fc12dcb6bcb1641a8d6d581d1a09040
+                    End
+
+                    LayoutCachedLeft =5274
+                    LayoutCachedWidth =6600
+                    LayoutCachedHeight =240
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =5280
+                    Top =240
+                    Width =660
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label7"
+                    Caption ="Debit"
+                    GUID = Begin
+                        0x9f9bc23d880b2645875881bd6bc141a8
+                    End
+                    LayoutCachedLeft =5280
+                    LayoutCachedTop =240
+                    LayoutCachedWidth =5940
+                    LayoutCachedHeight =525
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =5940
+                    Top =240
+                    Width =660
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label8"
+                    Caption ="Credit"
+                    GUID = Begin
+                        0x75758128902e3743a220939842de33f3
+                    End
+                    LayoutCachedLeft =5940
+                    LayoutCachedTop =240
+                    LayoutCachedWidth =6600
+                    LayoutCachedHeight =525
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =6600
+                    Width =900
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label9"
+                    Caption ="Contract\015\012stabilit"
+                    GUID = Begin
+                        0x85ce105cfda00f40ac5d5ac185c5e55e
+                    End
+                    LayoutCachedLeft =6600
+                    LayoutCachedWidth =7500
+                    LayoutCachedHeight =525
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =7500
+                    Width =900
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label11"
+                    Caption ="Valoare\015\012achitată"
+                    GUID = Begin
+                        0x25a819d0ef57aa47841bdedcd4f46fbe
+                    End
+                    LayoutCachedLeft =7500
+                    LayoutCachedWidth =8400
+                    LayoutCachedHeight =525
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =8400
+                    Width =900
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    ForeColor =5026082
+                    Name ="Label13"
+                    Caption ="Achitat\015\012anticipat"
+                    GUID = Begin
+                        0xddf3ca519b974844b417489035d9dd07
+                    End
+                    LayoutCachedLeft =8400
+                    LayoutCachedWidth =9300
+                    LayoutCachedHeight =525
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =10197
+                    Width =1326
+                    FontWeight =700
+                    TabIndex =1
+                    BorderColor =4210752
+                    Name ="Text14"
+                    ControlSource ="=\"01.\" & IIf(Forms!situatie!ll=12,1,Forms!situatie!ll+1) & \".\" & IIf(Forms!s"
+                        "ituatie!ll=12,Forms!situatie!aa+1,Forms!situatie!aa)"
+                    GUID = Begin
+                        0x3453c74bd10a824992da123900cf18e1
+                    End
+
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =10197
+                    Top =240
+                    Width =660
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label15"
+                    Caption ="Debit"
+                    GUID = Begin
+                        0x8181e3018bfcd443b6ff972a55fefec7
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =10857
+                    Top =240
+                    Width =660
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label16"
+                    Caption ="Credit"
+                    GUID = Begin
+                        0x161dd24df287df44a779ec1a2340b95d
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =11526
+                    Width =3270
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Label17"
+                    Caption ="Număr chitanță /\015\012Număr tichet creșă"
+                    GUID = Begin
+                        0xcc2d71db6a8cdf4f9230c76560b14b1e
+                    End
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Width =14811
+                    Height =525
+                    Name ="Box37"
+                    GUID = Begin
+                        0x47f6bb253319c940b830f67763785b11
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =9297
+                    Width =900
+                    Height =525
+                    FontSize =10
+                    FontWeight =700
+                    BorderColor =4210752
+                    ForeColor =8210719
+                    Name ="Label55"
+                    Caption ="Plăți"
+                    GUID = Begin
+                        0xfa443210c78ae44e824d8aef3290c4af
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =225
+            Name ="Detail"
+            GUID = Begin
+                0xfeee087da53e274ebf38a50ca89ac0c5
+            End
+            Begin
+                Begin TextBox
+                    RunningSum =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Width =540
+                    Height =225
+                    BorderColor =4210752
+                    Name ="Text24"
+                    ControlSource ="=1"
+                    GUID = Begin
+                        0x39863b6373dfc745ace751e62dd378da
+                    End
+
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =540
+                    Width =3996
+                    Height =225
+                    TabIndex =1
+                    BorderColor =4210752
+                    Name ="Nume"
+                    ControlSource ="Nume"
+                    GUID = Begin
+                        0xd47e996cdedc134a83548401b13f9e98
+                    End
+
+                    LayoutCachedLeft =540
+                    LayoutCachedWidth =4536
+                    LayoutCachedHeight =225
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =4530
+                    Width =750
+                    Height =225
+                    TabIndex =2
+                    BorderColor =4210752
+                    Name ="NrZilePrez"
+                    ControlSource ="NrZilePrez"
+                    GUID = Begin
+                        0xbf00e6cad8a84e498682581419eb9bb8
+                    End
+
+                    LayoutCachedLeft =4530
+                    LayoutCachedWidth =5280
+                    LayoutCachedHeight =225
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5280
+                    Width =660
+                    Height =225
+                    TabIndex =3
+                    BorderColor =4210752
+                    Name ="SID"
+                    ControlSource ="SID"
+                    Format ="Standard"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x6f63aa4da606c046a0464911f9de30e9
+                    End
+
+                    LayoutCachedLeft =5280
+                    LayoutCachedWidth =5940
+                    LayoutCachedHeight =225
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5940
+                    Width =660
+                    Height =225
+                    TabIndex =4
+                    BorderColor =4210752
+                    Name ="SIC"
+                    ControlSource ="SIC"
+                    Format ="Standard"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000004000000000000000200000001000000 ,
+                        0xff000000ffffff000000000002000000030000000500000001000000ffffff00 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0x41e3106d896b27429e1544a1e7718b1a
+                    End
+
+                    LayoutCachedLeft =5940
+                    LayoutCachedWidth =6600
+                    LayoutCachedHeight =225
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000400000001000000ff000000ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000002000000010000 ,
+                        0x00ffffff00ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =6600
+                    Width =900
+                    Height =225
+                    TabIndex =5
+                    BorderColor =4210752
+                    Name ="ContrStabil"
+                    ControlSource ="ContrStabil"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x01da359db5590647af0b6f2b3d0d933b
+                    End
+
+                    LayoutCachedLeft =6600
+                    LayoutCachedWidth =7500
+                    LayoutCachedHeight =225
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =7500
+                    Width =900
+                    Height =225
+                    TabIndex =6
+                    BorderColor =4210752
+                    Name ="ContrAchit"
+                    ControlSource ="ContrAchit"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xf28d075a22d2cd48a619516cc7308896
+                    End
+
+                    LayoutCachedLeft =7500
+                    LayoutCachedWidth =8400
+                    LayoutCachedHeight =225
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    IMESentenceMode =3
+                    Left =8400
+                    Width =900
+                    Height =225
+                    TabIndex =7
+                    BorderColor =4210752
+                    ForeColor =5026082
+                    Name ="AchitAnticip"
+                    ControlSource ="AchitAnticip"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x10c395aceb6bbe4e82a79547dd3dce9c
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =10197
+                    Width =660
+                    Height =225
+                    TabIndex =8
+                    BorderColor =4210752
+                    Name ="SFD"
+                    ControlSource ="SFD"
+                    Format ="Standard"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xd2681c4e8764864f83d2ea1fe6751bb4
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =10857
+                    Width =660
+                    Height =225
+                    TabIndex =9
+                    BorderColor =4210752
+                    Name ="SFC"
+                    ControlSource ="SFC"
+                    Format ="Standard"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000004000000000000000200000001000000 ,
+                        0xff000000ffffff000000000002000000030000000500000001000000ffffff00 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0xd91c7e15ec35ab41a2a9d50690cbc138
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000400000001000000ff000000ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000002000000010000 ,
+                        0x00ffffff00ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =11526
+                    Width =3270
+                    Height =225
+                    TabIndex =10
+                    BorderColor =4210752
+                    Name ="NRCHIT"
+                    ControlSource ="NRCHIT"
+                    GUID = Begin
+                        0xb2436d6e87401d4eba6320424ad666f1
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    IMESentenceMode =3
+                    Left =9297
+                    Width =900
+                    Height =225
+                    TabIndex =11
+                    BorderColor =4210752
+                    ForeColor =8210719
+                    Name ="Text56"
+                    ControlSource ="Plati"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xd6ecf7b5219b8e47aceebfbcfc03cf6d
+                    End
+
+                End
+            End
+        End
+        Begin PageFooter
+            Height =1415
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x80ccc346ad026d4e9872c8ff1642cc4e
+            End
+            Begin
+                Begin TextBox
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =13095
+                    Top =1140
+                    Name ="Text47"
+                    ControlSource ="=\"Pagina \" & [Page] & \" din \" & [Pages]"
+                    GUID = Begin
+                        0xf43997bd0149d644b09284078c28d3b1
+                    End
+
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =10034
+                    Top =226
+                    Width =1140
+                    Height =330
+                    FontSize =12
+                    FontWeight =700
+                    Name ="Label48"
+                    Caption ="Întocmit, "
+                    GUID = Begin
+                        0xd8e935d46cf73f42b1832394009e9423
+                    End
+                End
+                Begin Line
+                    Left =9240
+                    Top =963
+                    Width =2948
+                    Name ="Line53"
+                    GUID = Begin
+                        0x49d4fe1bf58bb2499d76065abbb84b79
+                    End
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    TextFontFamily =34
+                    Top =1190
+                    Width =3045
+                    Height =225
+                    FontWeight =700
+                    Name ="Label54"
+                    Caption ="Program realizat de S.C. Avatar Soft SRL"
+                    GUID = Begin
+                        0x360b63c6a2398042a0420a779be35506
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =1293
+            Name ="ReportFooter"
+            GUID = Begin
+                0xf73ab706c0188c4896ad7274f7000ff7
+            End
+            Begin
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3642
+                    Width =750
+                    Height =225
+                    FontWeight =700
+                    BorderColor =4210752
+                    Name ="Text38"
+                    ControlSource ="=Sum([NrZilePrez])"
+                    GUID = Begin
+                        0x7133a63c1b8020409b605d467ee48f7e
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4380
+                    Width =660
+                    Height =225
+                    TabIndex =1
+                    BorderColor =4210752
+                    Name ="Text39"
+                    ControlSource ="=Sum([SID])"
+                    Format ="Standard"
+                    FontName ="Arial Narrow"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x88f7d49914a30a4d9e42052e959c7ed4
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5040
+                    Width =660
+                    Height =225
+                    TabIndex =2
+                    BorderColor =4210752
+                    Name ="Text40"
+                    ControlSource ="=Sum([SIC])"
+                    Format ="Standard"
+                    FontName ="Arial Narrow"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff000000000004000000030000000500000001000000ff000000 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0xafeb7565e4e62b469622cb12db68795e
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010000 ,
+                        0x00ff000000ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5700
+                    Width =900
+                    Height =225
+                    FontWeight =700
+                    TabIndex =3
+                    BorderColor =4210752
+                    Name ="Text41"
+                    ControlSource ="=Sum([ContrStabil])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xaa4e335ce042d04582f08a150d3eb367
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =6600
+                    Width =900
+                    Height =225
+                    FontWeight =700
+                    TabIndex =4
+                    BorderColor =4210752
+                    Name ="Text42"
+                    ControlSource ="=Sum([ContrAchit])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x2945c8681d77704caf02506b262789d2
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7500
+                    Width =900
+                    Height =225
+                    FontWeight =700
+                    TabIndex =5
+                    BorderColor =4210752
+                    Name ="Text43"
+                    ControlSource ="=Sum([AchitRestan])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xaf1b852cbe9c1144b405deee57f4e126
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =8400
+                    Width =900
+                    Height =225
+                    FontWeight =700
+                    TabIndex =6
+                    BorderColor =4210752
+                    Name ="Text44"
+                    ControlSource ="=Sum([achitAnticip])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xcbe2c2e659e82d41a211686da5f0e9d0
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =10197
+                    Width =660
+                    Height =225
+                    TabIndex =7
+                    BorderColor =4210752
+                    Name ="Text45"
+                    ControlSource ="=Sum([SFD])"
+                    Format ="Standard"
+                    FontName ="Arial Narrow"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xd17d89001ca31d479e723158b4cf2447
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =10857
+                    Width =660
+                    Height =225
+                    TabIndex =8
+                    BorderColor =4210752
+                    Name ="Text46"
+                    ControlSource ="=Sum([SFC])"
+                    Format ="Standard"
+                    FontName ="Arial Narrow"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff000000000004000000030000000500000001000000ff000000 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0xef6ace18812f73438935e93b8a78317e
+                    End
+
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010000 ,
+                        0x00ff000000ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    IMESentenceMode =3
+                    Left =546
+                    Width =3096
+                    Height =225
+                    TabIndex =9
+                    BorderColor =4210752
+                    Name ="Text48"
+                    ControlSource ="=\"TOTAL UNITATE\""
+                    GUID = Begin
+                        0x21b04659f279514190f9d1d865cced14
+                    End
+
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =9297
+                    Width =900
+                    Height =225
+                    FontWeight =700
+                    TabIndex =10
+                    BorderColor =4210752
+                    Name ="Text57"
+                    ControlSource ="=Sum([plati])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xb77ab38d22733143b8b869d80ed1cd17
+                    End
+
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+
+Private Sub Report_Close()
+DoCmd.Restore
+End Sub
+
+Private Sub Report_NoData(Cancel As Integer)
+Cancel = True
+End Sub
+
+Private Sub Report_Open(Cancel As Integer)
+DoCmd.Maximize
+End Sub

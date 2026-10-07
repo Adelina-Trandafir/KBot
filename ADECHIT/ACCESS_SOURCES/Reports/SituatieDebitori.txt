@@ -1,0 +1,2573 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =-84450009
+Begin Report
+    LayoutForPrint = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =16118
+    DatasheetFontHeight =11
+    ItemSuffix =112
+    Top =480
+    Right =6768
+    Bottom =8340
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0x0e79a307526de540
+    End
+    GUID = Begin
+        0xaee57d237d79074cbfd5cdf92c1f915f
+    End
+    NameMap = Begin
+        0x0acc0e55000000005938175efea4ef478d06918b6fbd94d700000000917ba607 ,
+        0x526de54000000000000000005300690074007500610074006900650044006500 ,
+        0x6200690074006f0072006900000000000000222346c44ce64d41aca20fa9667a ,
+        0xd405070000005938175efea4ef478d06918b6fbd94d747007200750070006100 ,
+        0x0000000000002e36dc43f704db4ca70590791eade4a5070000005938175efea4 ,
+        0xef478d06918b6fbd94d74c0075006e0061000000000000003bbefeab1347bd47 ,
+        0xa893799d00982ced070000005938175efea4ef478d06918b6fbd94d75a006900 ,
+        0x6c0065004c0075006e006100000000000000d41b16dee3b04641b70b6a1f6b34 ,
+        0x357e070000005938175efea4ef478d06918b6fbd94d74e0075006d0065000000 ,
+        0x0000000054f46ee8d5c5f24e8c099c5eaff13b8c070000005938175efea4ef47 ,
+        0x8d06918b6fbd94d743004e005000000000000000ac8bd2b8cb0a3f4cbd95ca98 ,
+        0xc08a5104070000005938175efea4ef478d06918b6fbd94d75a0069006c006500 ,
+        0x5000720065007a0065006e00740061000000000000001946d69c7826fb418bbb ,
+        0xaa450e87a4d6070000005938175efea4ef478d06918b6fbd94d7530049004400 ,
+        0x000000000000ecdf73e50ec13d418a5c57603bb4eedc070000005938175efea4 ,
+        0xef478d06918b6fbd94d7530049004300000000000000fb78330be5631648966b ,
+        0x5beb3273476e070000005938175efea4ef478d06918b6fbd94d7560061006c00 ,
+        0x6f0061007200650043006f006e007400720061006300740000000000000077c1 ,
+        0xb445f4896449b5ef3d63700feb64070000005938175efea4ef478d06918b6fbd ,
+        0x94d7560061006c006f006100720065004d0061006e0063006100720065000000 ,
+        0x00000000e5a95ce43571ed4d8a5c198e25777544070000005938175efea4ef47 ,
+        0x8d06918b6fbd94d7520065006400750063006500720065004600720061007400 ,
+        0x650000000000000014583fb07e83a943b3b5fcb46e42a031070000005938175e ,
+        0xfea4ef478d06918b6fbd94d74100760061006e00730000000000000071d6a61c ,
+        0x2fda94498aee1afdfdb0ae89070000005938175efea4ef478d06918b6fbd94d7 ,
+        0x560061006c006f00610072006500000000000000122e73a8c72c5244bd695c9b ,
+        0x608dda51070000005938175efea4ef478d06918b6fbd94d750006c0061007400 ,
+        0x690074006100000000000000850b1121c1f23743b226e109edf916b007000000 ,
+        0x5938175efea4ef478d06918b6fbd94d77400690070000000000000006909e88b ,
+        0x28d46740a89edb9217b12e7e070000005938175efea4ef478d06918b6fbd94d7 ,
+        0x530046004400000000000000ef5518adc9bcd94cbde477328977d46007000000 ,
+        0x5938175efea4ef478d06918b6fbd94d7530046004300000000000000c77edb27 ,
+        0xbe65c44da677b4d1d3959d4906000000aee57d237d79074cbfd5cdf92c1f915f ,
+        0x5a0069006c0065005000720065007a0065006e0074006100000000000000c7aa ,
+        0xac9bd1dce7429e9139843cf4fe9906000000aee57d237d79074cbfd5cdf92c1f ,
+        0x915f53004900440000000000000091df92f93e5d0742bcac1e3a6de8e4960600 ,
+        0x0000aee57d237d79074cbfd5cdf92c1f915f560061006c006f00610072006500 ,
+        0x43006f006e0074007200610063007400000000000000814683fcbb624f43bdfb ,
+        0x5e680b54fc1406000000aee57d237d79074cbfd5cdf92c1f915f530049004300 ,
+        0x000000000000d358464586d6e943a54d9a76e0985b5406000000aee57d237d79 ,
+        0x074cbfd5cdf92c1f915f560061006c006f006100720065004d0061006e006300 ,
+        0x610072006500000000000000fb5c4ba852ef4b45a8ecec201b750dac06000000 ,
+        0xaee57d237d79074cbfd5cdf92c1f915f52006500640075006300650072006500 ,
+        0x460072006100740065000000000000002b977ed78cf06b429f97c397bfc9c855 ,
+        0x06000000aee57d237d79074cbfd5cdf92c1f915f4100760061006e0073000000 ,
+        0x00000000a1ce6ff43184304f8164cd007e701fca06000000aee57d237d79074c ,
+        0xbfd5cdf92c1f915f560061006c006f006100720065000000000000002ac07573 ,
+        0x66344b4d807bd354915318f706000000aee57d237d79074cbfd5cdf92c1f915f ,
+        0x50006c006100740069007400610000000000000060d86397f0b6404faf25a70a ,
+        0x681e13ee06000000aee57d237d79074cbfd5cdf92c1f915f5300460044000000 ,
+        0x0000000007241661be9be44784c560c9da055c0f06000000aee57d237d79074c ,
+        0xbfd5cdf92c1f915f530046004300000000000000397af9c40344c444b866720b ,
+        0xf5e6ef5906000000aee57d237d79074cbfd5cdf92c1f915f4700720075007000 ,
+        0x6100000000000000d6234d5c2ffa334e82a6824ea38cb47406000000aee57d23 ,
+        0x7d79074cbfd5cdf92c1f915f4c0075006e006100000000000000000000000000 ,
+        0x000000000000000000000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="SituatieDebitori"
+    Caption ="SituatieDebitori"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Calibri"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000f63e00002001000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010403069c00c00343a7000202000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x08002c0050000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000004c5054313a00
+    End
+    FilterOnLoad =0
+    FitToPage =1
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    RibbonName ="rbbPPVW"
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    PrtDevModeW = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x530065007200690065007300200043006c006100730073002000440000000000 ,
+        0x01040306dc00c00343a7000202000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c00650074007400650072000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNamesW = Begin
+        0x040028004c000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000004c00500054003100 ,
+        0x3a000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AsianLineBreak =1
+            ShowDatePicker =0
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="Luna"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="Grupa"
+        End
+        Begin BreakLevel
+            ControlSource ="Nume"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =456
+            BackColor =15849926
+            Name ="ReportHeader"
+            GUID = Begin
+                0xfcd5a892bd139742870d40f0359a7b66
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =2
+            BackTint =20.0
+            Begin
+                Begin Label
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =16104
+                    Height =456
+                    FontSize =14
+                    FontWeight =700
+                    TopMargin =43
+                    BorderColor =8355711
+                    Name ="Label94"
+                    Caption ="Situație Lunară Debitori"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xfe3705967c6b2d49a0f295daabd06041
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =456
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageHeader
+            Height =0
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x756530681fb1a94781d0f76a2c0dbb69
+            End
+            AutoHeight =1
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =0
+            Name ="GroupHeader0"
+            GUID = Begin
+                0x0c59726ba4756c4bacb6d9590dcd4af1
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =864
+            BreakLevel =1
+            Name ="GroupHeader2"
+            GUID = Begin
+                0x1c728cceb6d9a840bbb9cbbf720c478f
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    DecimalPlaces =0
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =1296
+                    Width =3888
+                    FontSize =9
+                    BackColor =15592953
+                    BorderColor =10921638
+                    Name ="Grupa"
+                    ControlSource ="Grupa"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x397af9c40344c444b866720bf5e6ef59
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1296
+                    LayoutCachedWidth =5184
+                    LayoutCachedHeight =240
+                    BackThemeColorIndex =-1
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    Begin
+                        Begin Label
+                            TextAlign =2
+                            TextFontFamily =49
+                            Width =1296
+                            Height =240
+                            FontSize =9
+                            FontWeight =700
+                            BorderColor =8355711
+                            Name ="Grupa_Label"
+                            Caption ="Grupa"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0xd4d1d081dc5ac040996f8fe49b8875b6
+                            End
+                            GridlineColor =10921638
+                            LayoutCachedWidth =1296
+                            LayoutCachedHeight =240
+                            ThemeFontIndex =-1
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Top =408
+                    Width =3000
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    TopMargin =115
+                    BackColor =15527148
+                    Name ="Nume_Label"
+                    Caption ="Nume"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x840933bc586d8b46b90a4a1327a79a71
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =3000
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =3000
+                    Top =408
+                    Width =1440
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    TopMargin =115
+                    BackColor =15527148
+                    Name ="CNP_Label"
+                    Caption ="CNP"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xfa0fbe0b78dd664bab2f09dcb7ed678f
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =3000
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =4440
+                    Top =408
+                    Width =792
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15590879
+                    Name ="ZilePrezenta_Label"
+                    Caption ="Zile\015\012Prezență"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x6f167e06a7eb6b4eb95bf6c92dcf7940
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =4440
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =5232
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =5232
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15592953
+                    Name ="SID_Label"
+                    Caption ="S.I.\015\012Debit"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x09fafc579a22f3449caf7f54c4e192f9
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =5232
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =6096
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =6096
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =14151142
+                    Name ="SIC_Label"
+                    Caption ="S.I.\015\012Credit"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x1f31941a5ca26745b999a6a785917d2c
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =6096
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =6960
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =6960
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="ValoareContract_Label"
+                    Caption ="Valoare\015\012Contract"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x62e54488e87d6e458cd99b615952ee9a
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =6960
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =7824
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =7824
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="ValoareMancare_Label"
+                    Caption ="Valoare\015\012Hrană"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x561a09b8b763f54aa9248ac5e3c23188
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =7824
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =8688
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =8688
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="ReducereFrate_Label"
+                    Caption ="ReducereFrate"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xa9c684128e404145ad5f60a73c18f3d7
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =8688
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =9552
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =9552
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    TopMargin =115
+                    BackColor =15527148
+                    Name ="Avans_Label"
+                    Caption ="Avans"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x3af9096d07f11b4b942df784112ccdd2
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =9552
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =10416
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =10416
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="Valoare_Label"
+                    Caption ="Valoare\015\012TOTALĂ"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0xfe119f370952e34ba5670d1d62ec351e
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =10416
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =11280
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =11280
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    TopMargin =115
+                    BackColor =15527148
+                    Name ="Platita_Label"
+                    Caption ="Platita"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x7b55216ec06594419a6ad05392208bb4
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =11280
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =12144
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =13872
+                    Top =408
+                    Width =2232
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    TopMargin =115
+                    BackColor =15527148
+                    Name ="Detalii_Label"
+                    Caption ="Detalii"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x34b46eb844d75e4bb26eba043fcdf2a6
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =13872
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =12144
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15592953
+                    Name ="SFD_Label"
+                    Caption ="S.F.\015\012DEBIT"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x2d458616a81e3e4f996b265cecc57bd1
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =12144
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =13008
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =13008
+                    Top =408
+                    Width =864
+                    Height =456
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =14151142
+                    Name ="SFC_Label"
+                    Caption ="S.F.\015\012CREDIT"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x7206e486336e6049891ceb105a46dfa3
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =13008
+                    LayoutCachedTop =408
+                    LayoutCachedWidth =13872
+                    LayoutCachedHeight =864
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =8754
+                    Width =2472
+                    Height =228
+                    FontSize =9
+                    TabIndex =1
+                    BackColor =16381933
+                    BorderColor =10921638
+                    Name ="Luna"
+                    ControlSource ="Luna"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd6234d5c2ffa334e82a6824ea38cb474
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =8754
+                    LayoutCachedWidth =11226
+                    LayoutCachedHeight =228
+                    BackThemeColorIndex =-1
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    Begin
+                        Begin Label
+                            TextAlign =2
+                            TextFontFamily =49
+                            Left =7056
+                            Width =1704
+                            Height =228
+                            FontSize =9
+                            FontWeight =700
+                            BorderColor =8355711
+                            Name ="Luna_Label"
+                            Caption ="Luna"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0x503c8f35a8de7c44bc88dca3308bd700
+                            End
+                            GridlineColor =10921638
+                            LayoutCachedLeft =7056
+                            LayoutCachedWidth =8760
+                            LayoutCachedHeight =228
+                            ThemeFontIndex =-1
+                            ForeThemeColorIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OldBorderStyle =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =14880
+                    Width =1224
+                    Height =228
+                    FontSize =9
+                    TabIndex =2
+                    BackColor =16183539
+                    BorderColor =10921638
+                    Name ="ZileLuna"
+                    ControlSource ="ZileLuna"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x0a735415301d084791362a12161d7a2a
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =14880
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =228
+                    BackThemeColorIndex =-1
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =13176
+                    Width =1704
+                    Height =228
+                    FontSize =9
+                    FontWeight =700
+                    BorderColor =8355711
+                    Name ="ZileLuna_Label"
+                    Caption ="Număr maxim zile"
+                    FontName ="Consolas"
+                    Tag ="DetachedLabel"
+                    GUID = Begin
+                        0x7911983d3dd43547a50089fba733dc0b
+                    End
+                    GridlineStyleBottom =1
+                    GridlineColor =10921638
+                    LayoutCachedLeft =13176
+                    LayoutCachedWidth =14880
+                    LayoutCachedHeight =228
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =288
+            Name ="Detail"
+            GUID = Begin
+                0x5ed781bd4575894fb8db3f3767dc7308
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Width =3000
+                    Height =288
+                    ColumnWidth =2295
+                    FontSize =9
+                    BorderColor =14211288
+                    Name ="Nume"
+                    ControlSource ="Nume"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x0a035563707bc44d9b95b5fe11c4fb29
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedWidth =3000
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =3000
+                    Height =288
+                    FontSize =9
+                    TabIndex =1
+                    BorderColor =14211288
+                    Name ="CNP"
+                    ControlSource ="CNP"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xddd940155eb30348a0695d0064826fb9
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =3000
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =4440
+                    Width =792
+                    Height =288
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =2
+                    BorderColor =14211288
+                    ForeColor =8210719
+                    Name ="ZilePrezenta"
+                    ControlSource ="ZilePrezenta"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xc77edb27be65c44da677b4d1d3959d49
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =4440
+                    LayoutCachedWidth =5232
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =5232
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =3
+                    BorderColor =14211288
+                    Name ="SID"
+                    ControlSource ="SID"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff000000000004000000030000000500000001010000ba141900 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0xc7aaac9bd1dce7429e9139843cf4fe99
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =5232
+                    LayoutCachedWidth =6096
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010100 ,
+                        0x00ba141900ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6096
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =4
+                    BorderColor =14211288
+                    Name ="SIC"
+                    ControlSource ="SIC"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000400000003000000050000000101000000800000 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0x814683fcbb624f43bdfb5e680b54fc14
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6096
+                    LayoutCachedWidth =6960
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010100 ,
+                        0x0000800000ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6960
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =5
+                    BorderColor =14211288
+                    Name ="ValoareContract"
+                    ControlSource ="ValoareContract"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x91df92f93e5d0742bcac1e3a6de8e496
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6960
+                    LayoutCachedWidth =7824
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =7824
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =6
+                    BorderColor =14211288
+                    Name ="ValoareMancare"
+                    ControlSource ="ValoareMancare"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xd358464586d6e943a54d9a76e0985b54
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =7824
+                    LayoutCachedWidth =8688
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =8688
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =7
+                    BorderColor =14211288
+                    Name ="ReducereFrate"
+                    ControlSource ="ReducereFrate"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xfb5c4ba852ef4b45a8ecec201b750dac
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =8688
+                    LayoutCachedWidth =9552
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =9552
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =8
+                    BorderColor =14211288
+                    Name ="Avans"
+                    ControlSource ="Avans"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x2b977ed78cf06b429f97c397bfc9c855
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =9552
+                    LayoutCachedWidth =10416
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =10416
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =9
+                    BorderColor =14211288
+                    Name ="Valoare"
+                    ControlSource ="Valoare"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xa1ce6ff43184304f8164cd007e701fca
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =10416
+                    LayoutCachedWidth =11280
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =11280
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =10
+                    BorderColor =14211288
+                    Name ="Platita"
+                    ControlSource ="Platita"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x2ac0757366344b4d807bd354915318f7
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =11280
+                    LayoutCachedWidth =12144
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =13872
+                    Width =2244
+                    Height =288
+                    FontSize =9
+                    TabIndex =11
+                    BorderColor =14211288
+                    Name ="Det"
+                    ControlSource ="=Switch([tip]=\"0\",\"Alte modalități\",[tip]=\"1\",\"Bon Fiscal\",[tip]=\"2\",\""
+                        "Chitanță\")"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x23a4455e2869064eaa64a5f59fa113fb
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =13872
+                    LayoutCachedWidth =16116
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =12144
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =12
+                    BorderColor =14211288
+                    Name ="SFD"
+                    ControlSource ="SFD"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff000000000004000000030000000500000001010000ba141900 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0x60d86397f0b6404faf25a70a681e13ee
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =12144
+                    LayoutCachedWidth =13008
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010100 ,
+                        0x00ba141900ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =13008
+                    Width =864
+                    Height =288
+                    FontSize =9
+                    TabIndex =13
+                    BorderColor =14211288
+                    Name ="SFC"
+                    ControlSource ="SFC"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x010000006c000000020000000000000002000000000000000200000001000000 ,
+                        0xffffff00ffffff00000000000400000003000000050000000101000000800000 ,
+                        0xffffff0000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000300000000000
+                    End
+                    GUID = Begin
+                        0x07241661be9be44784c560c9da055c0f
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =13008
+                    LayoutCachedWidth =13872
+                    LayoutCachedHeight =288
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010002000000000000000200000001000000ffffff00ffffff00010000003000 ,
+                        0x0000000000000000000000000000000000000000000000000004000000010100 ,
+                        0x0000800000ffffff000100000030000000000000000000000000000000000000 ,
+                        0x00000000
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =16104
+                    Height =288
+                    FontSize =9
+                    FontWeight =700
+                    Name ="Label98"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x1166ba012aae424d942706bbb13347aa
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =288
+                    ThemeFontIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Height =264
+            BreakLevel =1
+            Name ="GroupFooter3"
+            GUID = Begin
+                0x1cf7862d76644446bef8570714b874fd
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =4440
+                    Width =792
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="Sum Of ZilePrezenta"
+                    ControlSource ="=Sum([ZilePrezenta])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_ZilePrezenta"
+                    GUID = Begin
+                        0xfa1831b82761f048a863a621d83034db
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =4440
+                    LayoutCachedWidth =5232
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =5232
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    BackColor =15527148
+                    Name ="Sum Of SID"
+                    ControlSource ="=Sum([SID])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_SID"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xb1a3d801a2dd8442a5629a151d915e20
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =5232
+                    LayoutCachedWidth =6096
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6960
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =2
+                    BackColor =15527148
+                    Name ="Sum Of ValoareContract"
+                    ControlSource ="=Sum([ValoareContract])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_ValoareContract"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x2b2b4435402ee14f8e24690039370ee1
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6960
+                    LayoutCachedWidth =7824
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6096
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =3
+                    BackColor =15527148
+                    Name ="Sum Of SIC"
+                    ControlSource ="=Sum([SIC])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_SIC"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x94c97a654f1ec841b60346d28ca23db7
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6096
+                    LayoutCachedWidth =6960
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =7824
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =4
+                    BackColor =15527148
+                    Name ="Sum Of ValoareMancare"
+                    ControlSource ="=Sum([ValoareMancare])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_ValoareMancare"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x5af1e4b608ae854396a69793f66e08b5
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =7824
+                    LayoutCachedWidth =8688
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =8688
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =5
+                    BackColor =15527148
+                    Name ="Sum Of ReducereFrate"
+                    ControlSource ="=Sum([ReducereFrate])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_ReducereFrate"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xc35e3adf161d3b4f98d6fb8f13708332
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =8688
+                    LayoutCachedWidth =9552
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =9552
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =6
+                    BackColor =15527148
+                    Name ="Sum Of Avans"
+                    ControlSource ="=Sum([Avans])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_Avans"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x5bdc84e992a88347abc97fdf92e78a13
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =9552
+                    LayoutCachedWidth =10416
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =10416
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =7
+                    BackColor =15527148
+                    Name ="Sum Of Valoare"
+                    ControlSource ="=Sum([Valoare])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_Valoare"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x828fa223c70b7b49a1db42bc1c2da180
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =10416
+                    LayoutCachedWidth =11280
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =11280
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =8
+                    BackColor =15527148
+                    Name ="Sum Of Platita"
+                    ControlSource ="=Sum([Platita])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_Platita"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xda7679065b5b57488f2e11822c5ce795
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =11280
+                    LayoutCachedWidth =12144
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =12144
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =9
+                    BackColor =15527148
+                    Name ="Sum Of SFD"
+                    ControlSource ="=Sum([SFD])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_SFD"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xf0ac46ecb2ad3b47b04db130d1c9808d
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =12144
+                    LayoutCachedWidth =13008
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =13008
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =10
+                    BackColor =15527148
+                    Name ="Sum Of SFC"
+                    ControlSource ="=Sum([SFC])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    EventProcPrefix ="Sum_Of_SFC"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x60ff0ef103a1f945b2615fdd95bed2cf
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =13008
+                    LayoutCachedWidth =13872
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =13872
+                    Width =2232
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="Label97"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xae852a550a20eb4db1c65b596f12a8d8
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =13872
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =264
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Width =4440
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =11
+                    BackColor =15527148
+                    Name ="Label7"
+                    ControlSource ="=\"TOTAL \" & [Grupa]"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x2dd197233abde949b9bad1af152c599d
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =264
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Height =408
+            Name ="GroupFooter1"
+            GUID = Begin
+                0xfd02fe9cfcdf4840a431c448cf841a50
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =4440
+                    Top =48
+                    Width =792
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="Text100"
+                    ControlSource ="=Sum([ZilePrezenta])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x915410323ee590478805eb194a566bce
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =4440
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =5232
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =5232
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    BackColor =15527148
+                    Name ="Text101"
+                    ControlSource ="=Sum([SID])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xa1837e0d8f75e648ad0ed194e7988ff5
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =5232
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =6096
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6960
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =2
+                    BackColor =15527148
+                    Name ="Text102"
+                    ControlSource ="=Sum([ValoareContract])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x84df5f19f892a948958960419f99c0dd
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6960
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =7824
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =6096
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =3
+                    BackColor =15527148
+                    Name ="Text103"
+                    ControlSource ="=Sum([SIC])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x5a33e6b3369c634a8c4674c555b36356
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =6096
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =6960
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =7824
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =4
+                    BackColor =15527148
+                    Name ="Text104"
+                    ControlSource ="=Sum([ValoareMancare])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x44ea65fa13395f4f98816d2dc5160ff4
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =7824
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =8688
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =8688
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =5
+                    BackColor =15527148
+                    Name ="Text105"
+                    ControlSource ="=Sum([ReducereFrate])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xcfc07fcece2aac41b5546304d98b868b
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =8688
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =9552
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =9552
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =6
+                    BackColor =15527148
+                    Name ="Text106"
+                    ControlSource ="=Sum([Avans])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xa290228d6d6c45488cb2a11d5f8654b5
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =9552
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =10416
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =10416
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =7
+                    BackColor =15527148
+                    Name ="Text107"
+                    ControlSource ="=Sum([Valoare])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x08aa21e5b5e37a45be2d74541cf94555
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =10416
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =11280
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =11280
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =8
+                    BackColor =15527148
+                    Name ="Text108"
+                    ControlSource ="=Sum([Platita])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0xdbc2e4e369ff264b8235c4fdefeadc98
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =11280
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =12144
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =12144
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =9
+                    BackColor =15527148
+                    Name ="Text109"
+                    ControlSource ="=Sum([SFD])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x13076febdc059f4fb69f837d5d6bd94e
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =12144
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =13008
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =3
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Left =13008
+                    Top =48
+                    Width =864
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =10
+                    BackColor =15527148
+                    Name ="Text110"
+                    ControlSource ="=Sum([SFC])"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    ConditionalFormat = Begin
+                        0x0100000066000000010000000000000002000000000000000200000001000000 ,
+                        0xececec00ffffff00000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x300000000000
+                    End
+                    GUID = Begin
+                        0x23c4d52cb60eb14281ab59598e812554
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =13008
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =13872
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x010001000000000000000200000001000000ececec00ffffff00010000003000 ,
+                        0x000000000000000000000000000000000000000000
+                    End
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =13872
+                    Top =48
+                    Width =2232
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    BackColor =15527148
+                    Name ="Label111"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x8cf5bc92e8149b42970c4194546c1e99
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =13872
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =16104
+                    LayoutCachedHeight =312
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    Top =48
+                    Width =4440
+                    Height =264
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =11
+                    BackColor =15527148
+                    Name ="Label99"
+                    ControlSource ="=\"TOTAL LUNA \" & [Luna]"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x7c30ab930bcc684c8b44bc157af3e92e
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedTop =48
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =312
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageFooter
+            Height =0
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x840c7c23a37f644eb5da6cf5d0d88c6c
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportFooter"
+            GUID = Begin
+                0x0ff2eea952018b41b5dc5406a37f1ef2
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Open(Cancel As Integer)
+DoCmd.Maximize
+End Sub

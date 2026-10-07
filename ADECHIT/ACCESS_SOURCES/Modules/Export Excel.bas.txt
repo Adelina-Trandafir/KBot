@@ -1,0 +1,302 @@
+Option Compare Database
+Public Function SituatieDebitori()
+'On Error GoTo Err_ModifyExportedExcelFileFormats
+Dim xlApp As Object
+Dim xlSheet As Object
+Dim RC As Recordset, i As Integer, sOutput As String
+
+'Application.SetOption "Show Status Bar", True
+
+vStatusBar = SysCmd(acSysCmdSetStatus, "Formatting export file... please wait.")
+
+
+Set xlApp = CreateObject("Excel.Application")
+
+'DoCmd.SetWarnings False
+DoCmd.RunSQL "DELETE * FROM Situatie"
+DoCmd.OpenQuery "Export Situatie"
+
+'Borders(Stanga) = 7
+'Borders(Dreapta) = 10
+'Borders(Sus) = 8
+'Borders(Jos) = 9
+'Weight - subtire = 1
+'Weight - gros = -4138
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Situatie ORDER BY Nume")
+
+sTemplate = CurrentProject.path & "\Situatie.tmpl"
+sOutput = CurrentProject.path & "\Situatie debitori" & Forms!Situatie!ll & "-" & Forms!Situatie!aa & ".xls"
+
+If Dir(sOutput) <> "" Then Kill sOutput
+FileCopy sTemplate, sOutput
+
+Set xlSheet = xlApp.Workbooks.Open(sOutput).Sheets(1)
+    With xlApp
+        .Application.Sheets("Debitori").Select
+        .Application.Range("E1") = Forms!Situatie!Unitatea
+        .Application.Range("O1") = Forms!Situatie!ll & "/" & Forms!Situatie!aa
+        .Application.Range("F3") = "Sold la " & Format("01/" & Forms!Situatie!ll & "/" & Forms!Situatie!aa, "dd.mm.yyyy")
+        .Application.Range("M3") = "Sold la " & Format("31/" & Forms!Situatie!ll & "/" & Forms!Situatie!aa, "dd.mm.yyyy")
+        RC.MoveLast
+        RC.MoveFirst
+'        Forms!situatie!PB.visible = True
+'        Forms!situatie!PB.Min = 1
+'        Forms!situatie!PB.Max = rc.RecordCount
+        
+        For i = 1 To RC.RecordCount
+            .Application.Range("A" & i + 4) = i
+            .Application.Range("A" & i + 4).Borders(9).LineStyle = 1 'jos
+            .Application.Range("A" & i + 4).Borders(7).weight = -4138 'stanga
+            .Application.Range("A" & i + 4).Borders(10).weight = -4138 'dreapta
+            .Application.Range("B" & i + 4 & ":D" & i + 4).mergecells = True
+            .Application.Range("B" & i + 4 & ":D" & i + 4).Borders(9).LineStyle = 1 'jos
+            .Application.Range("B" & i + 4).Font.Name = "Arial Narrow"
+            Select Case Len(RC!Nume)
+                Case 0 To 20
+                    .Application.Range("B" & i + 4).Font.Size = 11
+                Case 20 To 30
+                    .Application.Range("B" & i + 4).Font.Size = 9
+                Case Is > 30
+                    .Application.Range("B" & i + 4).Font.Size = 8
+            End Select
+            .Application.Range("D" & i + 4).Borders(10).weight = -4138
+            .Application.Range("B" & i + 4) = StrConv(RC!Nume, vbProperCase)
+            .Application.Range("E" & i + 4) = RC!NrZilePrez
+            .Application.Range("E" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("E" & i + 4).Borders(10).weight = -4138
+            .Application.Range("F" & i + 4) = RC!SID
+            .Application.Range("F" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("F" & i + 4).Borders(10).LineStyle = 1
+            .Application.Range("G" & i + 4) = RC!SIC
+            .Application.Range("G" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("G" & i + 4).Borders(10).weight = -4138
+            .Application.Range("H" & i + 4) = RC!ContrStabil
+            .Application.Range("H" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("H" & i + 4).Borders(10).weight = -4138
+            .Application.Range("I" & i + 4) = RC!ContrAchit
+            .Application.Range("I" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("I" & i + 4).Borders(10).weight = -4138
+            .Application.Range("J" & i + 4) = RC!AchitRestan
+            .Application.Range("J" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("J" & i + 4).Borders(10).weight = -4138
+            .Application.Range("K" & i + 4) = RC!AchitAnticip
+            .Application.Range("K" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("K" & i + 4).Borders(10).weight = -4138
+            .Application.Range("L" & i + 4) = RC!Plati
+            .Application.Range("L" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("L" & i + 4).Borders(10).weight = -4138
+            .Application.Range("M" & i + 4) = RC!SFD
+            .Application.Range("m" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("m" & i + 4).Borders(10).LineStyle = 1
+            .Application.Range("N" & i + 4) = RC!SFC
+            .Application.Range("N" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("N" & i + 4).Borders(10).weight = -4138
+            .Application.Range("O" & i + 4 & ":Q" & i + 4).mergecells = True
+            .Application.Range("O" & i + 4) = RC!NRCHIT
+            .Application.Range("O" & i + 4 & ":Q" & i + 4).Borders(9).LineStyle = 1
+            .Application.Range("Q" & i + 4).Borders(10).weight = -4138
+            .Application.Range("Q" & i + 4).HorizontalAlignment = -4108
+            .Application.Range("O" & i + 4).Select
+            .Application.Range("A" & i + 4).EntireRow.OffSet(1, 0).Insert
+            '.Application.activecell.entirerow.Insert
+            vI = (i + 4) Mod 2
+            If vI = 0 Then
+                .Application.Rows("" & i + 4 & ":" & i + 4 & "").Interior.Color = RGB(255, 255, 204)
+            Else
+                .Application.Rows("" & i + 4 & ":" & i + 4 & "").Interior.Color = RGB(255, 255, 255)
+            End If
+'            Forms!situatie!PB.Value = i
+            RC.MoveNext
+        Next i
+        .Application.Range("E" & i + 4).formula = "=sum(E1:E" & i + 3 & ")"
+        .Application.Range("E" & i + 4).Borders(7).weight = -4138
+        .Application.Range("E" & i + 4).Borders(8).weight = -4138
+        .Application.Range("E" & i + 4).Borders(9).weight = -4138
+        .Application.Range("E" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("f" & i + 4).formula = "=sum(f1:f" & i + 3 & ")"
+        .Application.Range("f" & i + 4).Borders(8).weight = -4138
+        .Application.Range("f" & i + 4).Borders(9).weight = -4138
+        .Application.Range("f" & i + 4).Borders(10).LineStyle = 1
+        
+        .Application.Range("g" & i + 4).formula = "=sum(g1:g" & i + 3 & ")"
+        .Application.Range("g" & i + 4).Borders(8).weight = -4138
+        .Application.Range("g" & i + 4).Borders(9).weight = -4138
+        .Application.Range("g" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("h" & i + 4).formula = "=sum(h1:h" & i + 3 & ")"
+        .Application.Range("h" & i + 4).Borders(8).weight = -4138
+        .Application.Range("h" & i + 4).Borders(9).weight = -4138
+        .Application.Range("h" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("i" & i + 4).formula = "=sum(i1:i" & i + 3 & ")"
+        .Application.Range("i" & i + 4).Borders(8).weight = -4138
+        .Application.Range("i" & i + 4).Borders(9).weight = -4138
+        .Application.Range("i" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("j" & i + 4).formula = "=sum(j1:j" & i + 3 & ")"
+        .Application.Range("j" & i + 4).Borders(8).weight = -4138
+        .Application.Range("j" & i + 4).Borders(9).weight = -4138
+        .Application.Range("j" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("k" & i + 4).formula = "=sum(k1:k" & i + 3 & ")"
+        .Application.Range("k" & i + 4).Borders(8).weight = -4138
+        .Application.Range("k" & i + 4).Borders(9).weight = -4138
+        .Application.Range("k" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("l" & i + 4).formula = "=sum(l1:l" & i + 3 & ")"
+        .Application.Range("l" & i + 4).Borders(8).weight = -4138
+        .Application.Range("l" & i + 4).Borders(9).weight = -4138
+        .Application.Range("l" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("m" & i + 4).formula = "=sum(m1:m" & i + 3 & ")"
+        .Application.Range("m" & i + 4).Borders(8).weight = -4138
+        .Application.Range("m" & i + 4).Borders(9).weight = -4138
+        .Application.Range("m" & i + 4).Borders(10).LineStyle = 1
+        
+        .Application.Range("n" & i + 4).formula = "=sum(n1:n" & i + 3 & ")"
+        .Application.Range("n" & i + 4).Borders(8).weight = -4138
+        .Application.Range("n" & i + 4).Borders(9).weight = -4138
+        .Application.Range("n" & i + 4).Borders(10).weight = -4138
+        
+        .Application.Range("A1").Select
+        .Application.ActiveWorkbook.Save
+        .Application.ActiveWorkbook.Close
+        .Quit
+    End With
+    
+Set xlApp = Nothing
+Set xlSheet = Nothing
+
+MsgBox "Exportul a fost efectuat --> " & sOutput
+'Forms!situatie!PB.visible = False
+
+vStatusBar = SysCmd(acSysCmdClearStatus)
+
+Exit_ModifyExportedExcelFileFormats:
+    Exit Function
+
+Err_ModifyExportedExcelFileFormats:
+    vStatusBar = SysCmd(acSysCmdClearStatus)
+    MsgBox Err.Number & " - " & Err.Description
+    xlApp.Application.ActiveWorkbook.Close
+    Forms!Situatie!PB.visible = False
+    Resume Exit_ModifyExportedExcelFileFormats
+End Function
+
+Public Function RegistruCasa()
+'On Error GoTo Err_ModifyExportedExcelFileFormats
+Dim xlApp As Object
+Dim xlSheet As Object
+Dim RC As Recordset, i As Integer, sOutput As String, Dt As String, vI As Byte
+
+'Application.SetOption "Show Status Bar", True
+
+vStatusBar = SysCmd(acSysCmdSetStatus, "Formatting export file... please wait.")
+
+
+Set xlApp = CreateObject("Excel.Application")
+
+'DoCmd.SetWarnings False
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM regcasa ORDER BY Explicatia")
+
+sTemplate = CurrentProject.path & "\registru.tmpl"
+sOutput = CurrentProject.path & "\Registru casa " & Month(Forms!RC!DS) & "-" & Year(Forms!RC!DS) & ".xls"
+
+If Dir(sOutput) <> "" Then Kill sOutput
+FileCopy sTemplate, sOutput
+
+Dt = Forms!RC!DI & vbCrLf & Forms!RC!DS
+Set xlSheet = xlApp.Workbooks.Open(sOutput).Sheets(1)
+    With xlApp
+        .Application.Sheets("Registru").Select
+        .Application.Range("D1") = RC!Unitatea
+        .Application.Range("J1") = Dt
+        Forms!RC!PB.visible = True
+        Forms!RC!PB.Min = 1
+        Forms!RC!PB.Max = RC.RecordCount
+        
+        For i = 1 To RC.RecordCount
+            .Application.Range("A" & i + 3) = i
+            .Application.Range("A" & i + 3).Borders(7).weight = -4138
+            .Application.Range("A" & i + 3).Borders(9).weight = -4138
+            .Application.Range("A" & i + 3).Borders(10).weight = -4138
+            .Application.Range("B" & i + 3 & ":D" & i + 3).mergecells = True
+            .Application.Range("B" & i + 3) = StrConv(RC!Explicatia, vbProperCase)
+            .Application.Range("B" & i + 3 & ":D" & i + 3).Borders(9).weight = -4138
+            .Application.Range("D" & i + 3).Borders(10).weight = -4138
+            Select Case Len(RC!Explicatia)
+                Case 0 To 30
+                    .Application.Range("B" & i + 3).Font.Size = 11
+                Case 31 To 40
+                    .Application.Range("B" & i + 3).Font.Size = 9
+                Case Is > 40
+                    .Application.Range("B" & i + 3).Font.Size = 8
+            End Select
+            .Application.Range("E" & i + 3 & ":F" & i + 3).mergecells = True
+            .Application.Range("E" & i + 3) = RC!NrActCasa
+            .Application.Range("E" & i + 3 & ":F" & i + 3).Borders(9).weight = -4138
+            .Application.Range("E" & i + 3).HorizontalAlignment = -4108
+            .Application.Range("F" & i + 3).Borders(10).weight = -4138
+            .Application.Range("G" & i + 3) = RC!Data
+            .Application.Range("G" & i + 3).Borders(9).weight = -4138
+            .Application.Range("G" & i + 3).Borders(10).weight = -4138
+            .Application.Range("G" & i + 3).HorizontalAlignment = -4108
+            .Application.Range("H" & i + 3 & ":I" & i + 3).mergecells = True
+            .Application.Range("H" & i + 3) = RC!Incasari
+            .Application.Range("H" & i + 3 & ":I" & i + 3).Borders(9).weight = -4138
+            .Application.Range("I" & i + 3).Borders(10).weight = -4138
+            .Application.Range("J" & i + 3 & ":K" & i + 3).mergecells = True
+            .Application.Range("J" & i + 3) = RC!Plati
+            .Application.Range("J" & i + 3 & ":K" & i + 3).Borders(9).weight = -4138
+            .Application.Range("K" & i + 3).Borders(10).weight = -4138
+            vI = (i + 4) Mod 2
+            If vI = 0 Then
+                .Application.Rows("" & i + 3 & ":" & i + 3 & "").Interior.Color = RGB(255, 255, 204)
+            Else
+                .Application.Rows("" & i + 3 & ":" & i + 3 & "").Interior.Color = RGB(255, 255, 255)
+            End If
+            .Application.Range("J" & i + 3).Select
+            .Application.Range("J" & i + 3).EntireRow.OffSet(1, 0).Insert
+            Forms!RC!PB.value = i
+            RC.MoveNext
+        Next i
+        .Application.Range("H" & i + 3 & ":I" & i + 3).mergecells = True
+        .Application.Range("H" & i + 3 & ":I" & i + 3).Borders(9).weight = -4138
+        .Application.Range("H" & i + 3).Borders(7).weight = -4138
+        .Application.Range("I" & i + 3).Borders(10).weight = -4138
+        .Application.Range("H" & i + 3).HorizontalAlignment = -4108
+        .Application.Range("H" & i + 3).formula = "=sum(H1:I" & i + 2 & ")"
+        
+        .Application.Range("J" & i + 3 & ":K" & i + 3).mergecells = True
+        .Application.Range("J" & i + 3 & ":K" & i + 3).Borders(9).weight = -4138
+        .Application.Range("J" & i + 3).Borders(7).weight = -4138
+        .Application.Range("K" & i + 3).Borders(10).weight = -4138
+        .Application.Range("J" & i + 3).HorizontalAlignment = -4108
+        .Application.Range("J" & i + 3).formula = "=sum(J1:K" & i + 2 & ")"
+        
+        .Application.ActiveWorkbook.Save
+        .Application.ActiveWorkbook.Close
+        .Quit
+    End With
+    
+Set xlApp = Nothing
+Set xlSheet = Nothing
+
+MsgBox "Exportul a fost efectuat --> " & sOutput
+vStatusBar = SysCmd(acSysCmdClearStatus)
+
+Exit_ModifyExportedExcelFileFormats:
+    Exit Function
+
+Err_ModifyExportedExcelFileFormats:
+    Forms!RC!PB.visible = False
+    vStatusBar = SysCmd(acSysCmdClearStatus)
+    MsgBox Err.Number & " - " & Err.Description
+    xlApp.Application.ActiveWorkbook.Close
+    Resume Exit_ModifyExportedExcelFileFormats
+        
+                
+End Function

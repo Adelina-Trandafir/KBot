@@ -119,9 +119,6 @@
 
   <!-- Slice 0078-15 (06.10.2026): the plain PDF (no form, no scripts) the ActiveX viewer loads into every new control
        BEFORE the real document (AcroPdfViewer.PrimerPath), shipped as <AppDir>\empty_pdf.pdf. -->
-  <ItemGroup>
-    <None Include="..\..\empty_pdf.pdf" Link="empty_pdf.pdf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-  </ItemGroup>
 
   <!-- Slice 0104: the Access component (everything that talks to the Access files) is NOT referenced by this
        project: the application finds KBot.Access.dll at run time (KBot.Common.AccessBridge), so a package
@@ -142,8 +139,7 @@
     <ItemGroup>
       <_AccessAll Include="$(_AccessOut)**\*.*" />
       <!-- KBot.Access's own files always; anything else (its OLE DB package) only when the app does not have it. -->
-      <_AccessToCopy Include="@(_AccessAll)"
-                     Condition="'%(Filename)' == 'KBot.Access' Or ('%(Filename)' != 'KBot.Common' And '%(Filename)' != 'KBot.Domain' And !Exists('$(OutDir)%(RecursiveDir)%(Filename)%(Extension)'))" />
+      <_AccessToCopy Include="@(_AccessAll)" Condition="'%(Filename)' == 'KBot.Access' Or ('%(Filename)' != 'KBot.Common' And '%(Filename)' != 'KBot.Domain' And !Exists('$(OutDir)%(RecursiveDir)%(Filename)%(Extension)'))" />
     </ItemGroup>
     <Copy SourceFiles="@(_AccessToCopy)" DestinationFiles="@(_AccessToCopy->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>

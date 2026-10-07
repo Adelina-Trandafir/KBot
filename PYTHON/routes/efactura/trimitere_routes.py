@@ -10,6 +10,7 @@ the session's. The rules are in trimitere.py; the ANAF calls in anaf_api.py; the
   POST /api/efactura/facturi/<id>/verifica    no body; the screen calls it 2-3 seconds after `trimite`, and again while it says in_prelucrare
         -> 200 { rezultat: acceptata | refuzata | in_prelucrare | necunoscut, stare_anaf, mesaj, factura }
   GET  /api/efactura/facturi/<id>/descarca    -> the zip of an accepted invoice (application/zip)
+  GET  /api/efactura/facturi/<id>/pdf-anaf    -> the accepted invoice as ANAF draws it (application/pdf; slice 00EF-09)
   GET  /api/efactura/mesaje?zile=20&primite=1 -> { cui, zile, mesaje: [{ id, data_creare, id_incarcare, id_solicitare, cif_emitent,
                                                    cif_beneficiar, tip, detalii, deja_in_baza }] }
   GET  /api/efactura/mesaje/<id_solicitare>/descarca -> the zip of one message
@@ -65,6 +66,18 @@ def facturi_verifica(id_factura):
 @_guarded("facturi/descarca")
 def facturi_descarca(id_factura):
     return _zip_response(*trimitere.descarca(g.session.db_name, id_factura))
+
+
+@efactura_bp.route("/api/efactura/facturi/<int:id_factura>/pdf-anaf", methods=["GET"])
+@require_session
+@_guarded("facturi/pdf-anaf")
+def facturi_pdf_anaf(id_factura):
+    data, name = trimitere.pdf_anaf(g.session.db_name, id_factura)
+    safe = _SAFE_NAME.sub("_", name)
+    response = current_app.response_class(data, mimetype="application/pdf")
+    response.headers["Content-Disposition"] = 'inline; filename="%s"' % safe
+    response.headers["X-Nume-Fisier"] = safe
+    return response
 
 
 @efactura_bp.route("/api/efactura/mesaje", methods=["GET"])

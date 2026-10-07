@@ -1,0 +1,66 @@
+Option Compare Database
+Option Explicit
+
+Public Function BackupFTP() As Boolean
+On Error GoTo Eroare
+
+Dim Fso As New FileSystemObject
+
+Dim Fis As String
+Dim DC As String: DC = DLookup("DC", "Unitati")
+Dim newFile As Boolean
+Dim uplFile As String
+Dim infFile As Boolean
+
+If wsFTP Is Nothing Then Set wsFTP = New clsWinSCP
+
+Fis = NewestFile("C:\SIG\ADECHIT\" & DC & "\", "*.zip")
+
+If Fis = "" Then 'daca nu exista backup, incerc sa il creez pe loc
+    MsgBox "Nu se poate face backup-ul online pentru ca nu a fost gasit cel local!", vbOKOnly + vbCritical
+    GoTo IESIRE
+Else
+    Fis = "C:\SIG\ADECHIT\" & DC & "\" & Fis
+End If
+
+BackupFTP = wsFTP.UploadFile(Fis, "/backup/" & DC & "/")
+
+If BackupFTP Then SaveSetting "ADECHIT", "General", "bck_LastWrite", Format(Now(), "yyyy-mm-dd hh:mm:ss")
+
+IESIRE:
+Set Fso = Nothing
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_BackupFTP/BackupFTP()"
+    BackupFTP = 900 'alta eroare
+    If IsLoaded("frmProgressBar") Then DoCmd.Close acForm, "frmProgressBar"
+    Resume IESIRE
+End Function
+
+Function NewestFile(Directory, FileSpec)
+' Returns the name of the most recent file in a Directory
+' That matches the FileSpec (e.g., "*.xls").
+' Returns an empty string if the directory does not exist or
+' it contains no matching files
+    Directory = Replace(Directory, Chr(34), "")
+    Dim FileName As String
+    Dim MostRecentFile As String
+    Dim MostRecentDate As Date
+    If Right(Directory, 1) <> "\" Then Directory = Directory & "\"
+
+    FileName = Dir(Directory & FileSpec, 0)
+    If FileName <> "" Then
+        MostRecentFile = FileName
+        MostRecentDate = FileDateTime(Directory & FileName)
+        Do While FileName <> ""
+            If FileDateTime(Directory & FileName) > MostRecentDate Then
+                 MostRecentFile = FileName
+                 MostRecentDate = FileDateTime(Directory & FileName)
+             End If
+             FileName = Dir
+        Loop
+    End If
+    NewestFile = MostRecentFile 'daca vreau fisierul
+    'NewestFile = MostRecentDate 'daca vreau data
+End Function

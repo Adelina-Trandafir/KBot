@@ -1,0 +1,282 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =1024736736
+Begin Form
+    PopUp = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =24
+    GridY =24
+    Width =4560
+    DatasheetFontHeight =11
+    ItemSuffix =3
+    Left =9204
+    Top =3636
+    Right =15336
+    Bottom =6456
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0xba4281d34f6ce540
+    End
+    GUID = Begin
+        0xa4bd3672b07cdd4bb23f2bf678209494
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    Caption ="Selectează frate"
+    DatasheetFontName ="Calibri"
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            FontSize =11
+            FontWeight =400
+            FontName ="Calibri"
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =16777215
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Section
+            Height =960
+            Name ="Detail"
+            GUID = Begin
+                0xfd641364cd1c4a478f78906c2e632624
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin ComboBox
+                    OverlapFlags =87
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    ColumnCount =3
+                    ListWidth =4320
+                    Left =1740
+                    Top =60
+                    Width =2700
+                    FontSize =9
+                    BorderColor =10921638
+                    ColumnInfo ="\"\";\"\";\"\";\"\";\"\";\"\";\"10\";\"510\""
+                    GUID = Begin
+                        0x958c1d0610a5c04b941d08f4f4e44c8f
+                    End
+                    Name ="C0"
+                    RowSourceType ="Table/Query"
+                    RowSource ="SELECT Platitori_L.IDP, Platitori_L.Nume, Grupe_L.Grupa, Platitori_L.CNP\015\012"
+                        "FROM Grupe_L INNER JOIN Platitori_L ON Grupe_L.IDG = Platitori_L.IDG\015\012WHER"
+                        "E (((Platitori_L.IDP) Like [forms]![Platitori2016]![sub_Platitori]![idf]))\015\012"
+                        "\015\012UNION ALL SELECT Platitori_L.IDP, Platitori_L.Nume, Grupe_L.Grupa, Plati"
+                        "tori_L.CNP\015\012FROM Grupe_L INNER JOIN Platitori_L ON Grupe_L.IDG = Platitori"
+                        "_L.IDG\015\012WHERE (((Platitori_L.IDP) Not Like [forms]![Platitori2016]![sub_Pl"
+                        "atitori]![idf] And (Platitori_L.IDP) Not Like [forms]![Platitori2016]![sub_Plati"
+                        "tori]![idp]));\015\012"
+                    ColumnWidths ="0;2880;1440"
+                    FontName ="Consolas"
+                    BaseInfo ="\"SELECT Platitori_L.IDP, Platitori_L.Nume, Grupe_L.Grupa, Platitori_L.CNP\015\012"
+                        "FROM Grupe_L INNER JOIN Platitori_L ON Grupe_L.IDG = Platitori_L.IDG\015\012WHER"
+                        "E (((Platitori_L.IDP) Like [forms]![Platitori2016]![sub_Platitori]![idf]))\015\012"
+                        "\015\012UNION ALL SELECT Platitori_L.IDP, Platitori_L.Nume, Grupe_L.Grupa, Plati"
+                        "tori_L.CNP\015\012FROM Grupe_L INNER JOIN Platitori_L ON Grupe_L.IDG = Platitori"
+                        "_L.IDG\015\012WHERE (((Platitori_L.IDP) Not Like [forms]![Platitori2016]![sub_Pl"
+                        "atitori]![idf] And (Platitori_L.IDP) Not Like [forms]![Platitori20\";\"\015\012\""
+                        "\"\";\"Grupe_L\";\"Platitori_L\";\"Grupe_L\";\"Platitori_L\";\"\""
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =1740
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =4440
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =0
+                    ForeShade =100.0
+                    Begin
+                        Begin Label
+                            OverlapFlags =93
+                            TextFontFamily =49
+                            Left =60
+                            Top =60
+                            Width =1680
+                            Height =240
+                            FontSize =9
+                            BorderColor =8355711
+                            Name ="Label1"
+                            Caption ="Selectează frate"
+                            FontName ="Consolas"
+                            GUID = Begin
+                                0xdb1ec046e194dc49b6f998f2fa43284d
+                            End
+                            GridlineColor =10921638
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =60
+                            LayoutCachedWidth =1740
+                            LayoutCachedHeight =300
+                            ThemeFontIndex =-1
+                            ForeTint =100.0
+                        End
+                    End
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =1740
+                    Top =480
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =4210752
+                    Name ="sav"
+                    Caption ="Salvează"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x31297ac569198149b96256e2a1e266dc
+                    End
+                    GridlineColor =10921638
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =1740
+                    LayoutCachedTop =480
+                    LayoutCachedWidth =3180
+                    LayoutCachedHeight =840
+                    Gradient =0
+                    BackColor =15590879
+                    BackThemeColorIndex =-1
+                    BackTint =100.0
+                    BorderColor =8210719
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ThemeFontIndex =-1
+                    HoverColor =14151142
+                    HoverThemeColorIndex =-1
+                    HoverTint =100.0
+                    PressedColor =14151142
+                    PressedThemeColorIndex =-1
+                    PressedShade =100.0
+                    HoverForeColor =32768
+                    HoverForeThemeColorIndex =-1
+                    HoverForeTint =100.0
+                    PressedForeColor =32768
+                    PressedForeThemeColorIndex =-1
+                    PressedForeTint =100.0
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+
+Private Sub Form_Load()
+If IsLoaded("Platitori2016") Then
+    C0 = Forms!platitori2016!sub_Platitori!IDF
+End If
+
+End Sub
+
+Private Sub Sav_Click()
+Dim RC As Recordset
+If IsLoaded("Platitori2016") Then
+    Set RC = Forms!platitori2016!sub_Platitori.Form.Recordset
+    If Nz(C0, "") = "" Then
+        RC.Edit
+            RC!Frate = False
+            RC!IDF = 0
+            RC!Editat = True
+        RC.Update
+    Else
+        RC.Edit
+            RC!IDF = C0
+            RC!Editat = True
+        RC.Update
+    End If
+    Set RC = Nothing
+    DoCmd.Close acForm, Me.Name
+End If
+
+End Sub

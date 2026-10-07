@@ -1,0 +1,2524 @@
+Version =20
+VersionRequired =20
+Checksum =-665022414
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    TabularFamily =48
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =7758
+    DatasheetFontHeight =10
+    ItemSuffix =148
+    Left =2175
+    Top =5280
+    Right =13005
+    Bottom =9465
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xc1f711b2d2f2e440
+    End
+    GUID = Begin
+        0xd507a0c14cd1c343a9fb67a16c1fbf6e
+    End
+    NameMap = Begin
+        0x0acc0e550000000043cf212a90912e4d84b3f733582c153e010000001ca26da6 ,
+        0x9ab4e54000000000000000005000720065007a0065006e007400610000000000 ,
+        0x000026371cb135dfea4491ab7c945b72ed1f0600000043cf212a90912e4d84b3 ,
+        0xf733582c153e50006c00610074006900000000000000697c6ccba74a9643ac5d ,
+        0x7b308553a9090600000043cf212a90912e4d84b3f733582c153e500072006500 ,
+        0x7a0065006e00740061005f007300750062000000000000000000000000000000 ,
+        0x00000000000000000c000000050000000000000000000000000000000000
+    End
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x540100006e040000f0000000f000000000000000c91e00005426000000000000 ,
+        0x020000005401000000000000a20700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00000000000000000000000000000000a5b5ed76a83e3401b2b5ed76503e3401 ,
+        0x010403069c00d40553f78107020009009a0b3408640001000700580201000100 ,
+        0x5802030000004134007eaa14a83e3401aff07d0001000000ea32100096321000 ,
+        0x9f32100094920000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000000000000000000000000000000000000000000050524956 ,
+        0x4220000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000180000000000102710271027 ,
+        0x000010270000000000000000b000a40300000000000000000000000000000000 ,
+        0x0000000000000000030000000000000030021000503403002888040000000000 ,
+        0x00000000000000000000000000000000000000000000000046469ff205000000 ,
+        0x04000000ff00ff00010000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0100000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000b0000000534d544a000000001000a000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x3002000045424441000001000100000001000000010000000100000000000000 ,
+        0x5300740061006e00640061007200640000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000001000000
+    End
+    PrtDevNames = Begin
+        0x08001c0026000100000000000000000000000000000000000000000000000000 ,
+        0x000000000000446f63756d656e74735c2a2e70646600
+    End
+    FilterOnLoad =0
+    DatasheetGridlinesColor12 =12632256
+    RibbonName ="rbbPPVW"
+    PrtDevModeW = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x01040306dc00d40553f78107020009009a0b3408640001000700580201000100 ,
+        0x580203000000410034000000e51edb659bd4dc65cc74c5f470325e103902003b ,
+        0x0900000039020000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000000000000000000000000000000000000000000050524956 ,
+        0x4220000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000180000000000102710271027 ,
+        0x000010270000000000000000b000a40300000000000000000000000000000000 ,
+        0x0000000000000000030000000000000030021000503403002888040000000000 ,
+        0x00000000000000000000000000000000000000000000000046469ff205000000 ,
+        0x04000000ff00ff00010000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0100000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000b0000000534d544a000000001000a000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x3002000045424441000001000100000001000000010000000100000000000000 ,
+        0x5300740061006e00640061007200640000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000001000000
+    End
+    PrtDevNamesW = Begin
+        0x0400180022000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000044006f00630075006d0065006e00740073005c002a002e0070006400 ,
+        0x66000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Rectangle
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+        End
+        Begin Image
+            OldBorderStyle =0
+            BorderLineStyle =0
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+            AsianLineBreak =255
+            ShowDatePicker =0
+        End
+        Begin ComboBox
+            OldBorderStyle =0
+            TextFontFamily =2
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+        End
+        Begin UnboundObjectFrame
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="=1"
+        End
+        Begin PageHeader
+            Height =0
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x2f4fd36510852c41a4bfdc3df9d28a63
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            CanShrink = NotDefault
+            Height =9752
+            Name ="GroupHeader0"
+            GUID = Begin
+                0x5d8abf6b817a6e4894e8357296b74b06
+            End
+            AutoHeight =255
+            Begin
+                Begin Label
+                    TextFontFamily =34
+                    Left =4994
+                    Top =60
+                    Width =2220
+                    Height =390
+                    FontSize =14
+                    Name ="Label3"
+                    Caption ="CĂTRE CASIERIE"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x7c171510fca3594f9aa0ddb5b8a0c8d7
+                    End
+                    LayoutCachedLeft =4994
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =7214
+                    LayoutCachedHeight =450
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3006
+                    Top =60
+                    Width =1881
+                    Height =390
+                    FontSize =14
+                    FontWeight =700
+                    BorderColor =12632256
+                    Name ="Combo1"
+                    ControlSource ="=\"Plată\""
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xdc50fb6ee8a4df4787cf813c72a90467
+                    End
+
+                    LayoutCachedLeft =3006
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =4887
+                    LayoutCachedHeight =450
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =855
+                            Top =60
+                            Width =2040
+                            Height =390
+                            FontSize =14
+                            Name ="Tip_Label"
+                            Caption ="DISPOZIŢIE DE"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0xd1b2b6b7e0d2f646ad72fb39a4e4da48
+                            End
+                            LayoutCachedLeft =855
+                            LayoutCachedTop =60
+                            LayoutCachedWidth =2895
+                            LayoutCachedHeight =450
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2552
+                    Top =510
+                    Width =1581
+                    Height =330
+                    FontSize =12
+                    TabIndex =1
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Numarul"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![nrdoc]"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x84b7ebbe0d1dee45a371fd4d7f9f01ca
+                    End
+
+                    LayoutCachedLeft =2552
+                    LayoutCachedTop =510
+                    LayoutCachedWidth =4133
+                    LayoutCachedHeight =840
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =1590
+                            Top =510
+                            Width =960
+                            Height =330
+                            FontSize =12
+                            Name ="Label5"
+                            Caption ="numărul"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0xf9349b1c3475134cb3f0ab8993f2b8cf
+                            End
+                            LayoutCachedLeft =1590
+                            LayoutCachedTop =510
+                            LayoutCachedWidth =2550
+                            LayoutCachedHeight =840
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4605
+                    Top =510
+                    Width =1581
+                    Height =330
+                    FontSize =12
+                    TabIndex =2
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Data"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x2e7ea49242dcfa43b6318297ef610ba5
+                    End
+
+                    LayoutCachedLeft =4605
+                    LayoutCachedTop =510
+                    LayoutCachedWidth =6186
+                    LayoutCachedHeight =840
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =4200
+                            Top =510
+                            Width =405
+                            Height =330
+                            FontSize =12
+                            Name ="Label8"
+                            Caption ="din"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x1620bd9f2329244490b0625bf9b5f9e9
+                            End
+                            LayoutCachedLeft =4200
+                            LayoutCachedTop =510
+                            LayoutCachedWidth =4605
+                            LayoutCachedHeight =840
+                        End
+                    End
+                End
+                Begin Line
+                    Left =855
+                    Top =910
+                    Width =6349
+                    Name ="Line2"
+                    GUID = Begin
+                        0x74b17c84277126498d0faef2c1b3b460
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =910
+                    LayoutCachedWidth =7204
+                    LayoutCachedHeight =910
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1991
+                    Top =1771
+                    Height =285
+                    FontSize =10
+                    TabIndex =5
+                    BorderColor =8421504
+                    Name ="Suma"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x292b9bea7c47164f894c9c54e1fed696
+                    End
+
+                    LayoutCachedLeft =1991
+                    LayoutCachedTop =1771
+                    LayoutCachedWidth =3692
+                    LayoutCachedHeight =2056
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =65
+                            Top =1769
+                            Width =1365
+                            Height =285
+                            FontSize =10
+                            Name ="Label15"
+                            Caption ="Suma (în cifre)"
+                            GUID = Begin
+                                0x7b6c6c6684e8e943b4e2a1333363e351
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =1769
+                            LayoutCachedWidth =1430
+                            LayoutCachedHeight =2054
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1991
+                    Top =2178
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =6
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="SumaLitere"
+                    ControlSource ="=sumalitere([Forms]![Prezenta]![Plati]![suma])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x401dd789372e1b45b6bdc94c7dfa9633
+                    End
+
+                    LayoutCachedLeft =1991
+                    LayoutCachedTop =2178
+                    LayoutCachedWidth =7652
+                    LayoutCachedHeight =2463
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =60
+                            Top =2178
+                            Width =1395
+                            Height =285
+                            FontSize =10
+                            Name ="Label17"
+                            Caption ="Suma (în litere)"
+                            GUID = Begin
+                                0xbfce131d4b3b1f46a7cb6fa46720883a
+                            End
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =2178
+                            LayoutCachedWidth =1455
+                            LayoutCachedHeight =2463
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1992
+                    Top =975
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =3
+                    BorderColor =8421504
+                    Name ="Nume"
+                    ControlSource ="=[Forms]![Prezenta]![Prezenta_sub]![idp].[column](1)"
+                    GUID = Begin
+                        0x0c20b2bb93224743bdc62f731f464274
+                    End
+
+                    LayoutCachedLeft =1992
+                    LayoutCachedTop =975
+                    LayoutCachedWidth =7653
+                    LayoutCachedHeight =1260
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =65
+                            Top =980
+                            Width =1950
+                            Height =270
+                            FontSize =10
+                            Name ="Label10"
+                            Caption ="Numele şi prenumele"
+                            GUID = Begin
+                                0x86412117aa90424b97004fb4360984cf
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =980
+                            LayoutCachedWidth =2015
+                            LayoutCachedHeight =1250
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1992
+                    Top =1385
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =4
+                    BorderColor =8421504
+                    Name ="Functia"
+                    ControlSource ="=\"BENEFICIAR\""
+                    GUID = Begin
+                        0x349c9f4042ec664eabf5d37a3875789b
+                    End
+
+                    LayoutCachedLeft =1992
+                    LayoutCachedTop =1385
+                    LayoutCachedWidth =7653
+                    LayoutCachedHeight =1670
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =65
+                            Top =1385
+                            Width =1890
+                            Height =285
+                            FontSize =10
+                            Name ="Label13"
+                            Caption ="Funcţia (calitatea)"
+                            GUID = Begin
+                                0x3b41bd32a14c6d4cb82e469c90510819
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =1385
+                            LayoutCachedWidth =1955
+                            LayoutCachedHeight =1670
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1987
+                    Top =2570
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =7
+                    BorderColor =8421504
+                    Name ="Scopul"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![explicatie]"
+                    GUID = Begin
+                        0xf4b3c94a954209489e495f65c459c276
+                    End
+
+                    LayoutCachedLeft =1987
+                    LayoutCachedTop =2570
+                    LayoutCachedWidth =7648
+                    LayoutCachedHeight =2855
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =60
+                            Top =2570
+                            Width =1890
+                            Height =285
+                            FontSize =10
+                            Name ="lblScopul"
+                            Caption ="Scopul"
+                            GUID = Begin
+                                0x37aac804b1a9bf43ad11fa55aa80ed1b
+                            End
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =2570
+                            LayoutCachedWidth =1950
+                            LayoutCachedHeight =2855
+                        End
+                    End
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Width =7758
+                    Height =2933
+                    Name ="Box5"
+                    GUID = Begin
+                        0xcb226b8776edf346bba9083a517ef795
+                    End
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =2933
+                End
+                Begin Image
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    SizeMode =1
+                    Top =2940
+                    Width =855
+                    Height =1260
+                    Name ="OLEUnbound6"
+                    PictureData = Begin
+                        0x030000000000000008000000b90300002f06000000000000010009000003f000 ,
+                        0x000003001c00000000000400000003010800050000000b020000000005000000 ,
+                        0x0c027801e200040000002e0118001c000000fb029cff00000000000090010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d010000040000000201010005000000090200000002 ,
+                        0x0d000000320a5900ffff0100040000000000e100770120152d00030000001e00 ,
+                        0x0700000016049301a500e2ff3b001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d0101001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d01020004000000f001010004000000020101001900 ,
+                        0x0000320a57017a00090004003b00e2ffa500930153656d6e6174757261002500 ,
+                        0x1e00340021001e001200220016001e000d000000320a39007a00010004003b00 ,
+                        0xe2ffa500930120151d00040000002701ffff1c000000fb021000070000000000 ,
+                        0xbc02000000000102022253797374656d0000000000009b99807c50101b00f04e ,
+                        0x1f00680e1b005ae78339040000002d010100030000000000
+                    End
+                    GUID = Begin
+                        0x0dadc2851490244889538cb12b22b640
+                    End
+
+                    LayoutCachedTop =2940
+                    LayoutCachedWidth =855
+                    LayoutCachedHeight =4200
+                    TabIndex =17
+                End
+                Begin Line
+                    Left =3000
+                    Top =420
+                    Width =1897
+                    Name ="Line7"
+                    GUID = Begin
+                        0x986d6d0825d48b4090e533d07b99f1d5
+                    End
+                    LayoutCachedLeft =3000
+                    LayoutCachedTop =420
+                    LayoutCachedWidth =4897
+                    LayoutCachedHeight =420
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =855
+                    Top =2940
+                    Width =2355
+                    Height =510
+                    FontSize =10
+                    Name ="Label9"
+                    Caption ="Conducătorul\015\012unităţii"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0xf3cf14dbd245234bb849518b4ba1fb61
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =2940
+                    LayoutCachedWidth =3210
+                    LayoutCachedHeight =3450
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =3213
+                    Top =2933
+                    Width =2445
+                    Height =510
+                    FontSize =10
+                    Name ="Label11"
+                    Caption ="Viza de control\015\012financiar preventiv"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x05ded9e4c25ef74ca36ce8b145ea7bb8
+                    End
+                    LayoutCachedLeft =3213
+                    LayoutCachedTop =2933
+                    LayoutCachedWidth =5658
+                    LayoutCachedHeight =3443
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =5658
+                    Top =2933
+                    Width =2100
+                    Height =510
+                    FontSize =10
+                    Name ="Label12"
+                    Caption ="Compartiment\015\012financiar-contabil"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0xfaf74b359c5dc0428696170e8451e2c0
+                    End
+                    LayoutCachedLeft =5658
+                    LayoutCachedTop =2933
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =3443
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =855
+                    Top =3450
+                    Width =2355
+                    Height =750
+                    FontSize =10
+                    Name ="Label14"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x0debc5d59e03084c94717e351af16a15
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =3210
+                    LayoutCachedHeight =4200
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =3213
+                    Top =3450
+                    Width =2445
+                    Height =750
+                    FontSize =10
+                    Name ="Label16"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0xd42f483768652740a2d4da76ee27382e
+                    End
+                    LayoutCachedLeft =3213
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =5658
+                    LayoutCachedHeight =4200
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =5658
+                    Top =3450
+                    Width =2100
+                    Height =750
+                    FontSize =10
+                    Name ="Label18"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0xb37afcab97334c4b9258e3a28c55985d
+                    End
+                    LayoutCachedLeft =5658
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =4200
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Top =4305
+                    Width =7758
+                    Height =2933
+                    Name ="Box19"
+                    GUID = Begin
+                        0x2e8e3e5720ab9641bab42e8b427bd14c
+                    End
+                    LayoutCachedTop =4305
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =7238
+                End
+                Begin Label
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1015
+                    Top =4418
+                    Width =6675
+                    Height =735
+                    FontSize =14
+                    Name ="Label20"
+                    Caption ="DATE SUPLIMENTARE PRIVIND BENEFICIARUL SUMEI:"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x981f8e728ca1b4428a5876977eaf07bc
+                    End
+                    LayoutCachedLeft =1015
+                    LayoutCachedTop =4418
+                    LayoutCachedWidth =7690
+                    LayoutCachedHeight =5153
+                End
+                Begin Image
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    SizeMode =1
+                    Top =4305
+                    Width =855
+                    Height =2933
+                    Name ="OLEUnbound21"
+                    PictureData = Begin
+                        0x030000000000000008000000f6040000670c0000000000000100090000038401 ,
+                        0x000004001f00000000000400000003010800050000000b020000000005000000 ,
+                        0x0c02ef022d01040000002e0118001c000000fb021000070000000000bc020000 ,
+                        0x00000102022253797374656d00022d01000016a30000c4e9120004ee8339680e ,
+                        0x1b000c020000040000002d01000004000000020101001c000000fb029cff0000 ,
+                        0x000000009001000000000440001254696d6573204e657720526f6d616e000000 ,
+                        0x0000000000000000000000000000040000002d01010005000000090200000002 ,
+                        0x0d000000320a5a00000001000400000000002c01ee0220f52d00030000001e00 ,
+                        0x0700000016040c03f100e2ff3c001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d01020004000000020101001f000000320aa3027a00 ,
+                        0x0d0004003c00e2fff1000c03536520636f6d706c657465617a0025001e001100 ,
+                        0x1d0022003300220013001d0013001d001e001d0005000000140220017a001c00 ,
+                        0x0000fb02bdff0000840384039001000000ee0440001254696d6573204e657720 ,
+                        0x526f6d616e0000000000000000000000000000000000040000002d0103000400 ,
+                        0x00002e01190016000000320a20017a00070004003c00e2fff1000c03e3206e75 ,
+                        0x6d6169001e0010002200220033001e001300040000002e011800040000002d01 ,
+                        0x020004000000f00103000d000000320a4a007a00010004003c00e2fff1000c03 ,
+                        0x20f51d0004000000020101000500000014020f02ca001c000000fb02bdff0000 ,
+                        0x840384039001000000ee0440001254696d6573204e657720526f6d616e000000 ,
+                        0x0000000000000000000000000000040000002d010300040000002e0119001d00 ,
+                        0x0000320a0f02ca000c0004003c00e2fff1000c0370656e74727520706ce3fe69 ,
+                        0x22001d0022001300150022001000220012001e0012001300040000002e011800 ,
+                        0x040000002d01020004000000f00103000d000000320add00ca00010004003c00 ,
+                        0xe2fff1000c0320f51d00040000002701ffff040000002d010000030000000000
+                    End
+                    GUID = Begin
+                        0x3ac70de58f283a4c978921c19ade9d9e
+                    End
+
+                    LayoutCachedTop =4305
+                    LayoutCachedWidth =855
+                    LayoutCachedHeight =7238
+                    TabIndex =16
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3442
+                    Top =5325
+                    Width =1206
+                    Height =285
+                    FontSize =10
+                    TabIndex =8
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="SeriaBI"
+                    GUID = Begin
+                        0x815a72c360f67f4082ba5d7d831d8947
+                    End
+
+                    LayoutCachedLeft =3442
+                    LayoutCachedTop =5325
+                    LayoutCachedWidth =4648
+                    LayoutCachedHeight =5610
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =1020
+                            Top =5325
+                            Width =2925
+                            Height =285
+                            FontSize =10
+                            Name ="Label25"
+                            Caption ="Actul de identitate     seria:"
+                            GUID = Begin
+                                0xe18c9fc43c06e64b900a9019d6d93458
+                            End
+                            LayoutCachedLeft =1020
+                            LayoutCachedTop =5325
+                            LayoutCachedWidth =3945
+                            LayoutCachedHeight =5610
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5552
+                    Top =5325
+                    Width =2091
+                    Height =285
+                    FontSize =10
+                    TabIndex =9
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text22"
+                    GUID = Begin
+                        0xfa61557144031c45be430db220f1b204
+                    End
+
+                    LayoutCachedLeft =5552
+                    LayoutCachedTop =5325
+                    LayoutCachedWidth =7643
+                    LayoutCachedHeight =5610
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =4697
+                            Top =5325
+                            Width =825
+                            Height =285
+                            FontSize =10
+                            Name ="Label23"
+                            Caption ="numărul:"
+                            GUID = Begin
+                                0xb91e044b9c87ba4c86bd1f12375cbdf3
+                            End
+                            LayoutCachedLeft =4697
+                            LayoutCachedTop =5325
+                            LayoutCachedWidth =5522
+                            LayoutCachedHeight =5610
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3693
+                    Top =5715
+                    Width =3561
+                    Height =285
+                    FontSize =10
+                    TabIndex =10
+                    BorderColor =8421504
+                    Name ="Text24"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x03392ae76f865e40b65f5ded628ef3bf
+                    End
+
+                    LayoutCachedLeft =3693
+                    LayoutCachedTop =5715
+                    LayoutCachedWidth =7254
+                    LayoutCachedHeight =6000
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =1020
+                            Top =5715
+                            Width =2655
+                            Height =285
+                            FontSize =10
+                            Name ="Label26"
+                            Caption ="Am primit suma de (în cifre):"
+                            GUID = Begin
+                                0x47bf51e587ad6c4c9244031a79e881f9
+                            End
+                            LayoutCachedLeft =1020
+                            LayoutCachedTop =5715
+                            LayoutCachedWidth =3675
+                            LayoutCachedHeight =6000
+                        End
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =7305
+                    Top =5715
+                    Width =270
+                    Height =285
+                    FontSize =10
+                    Name ="Label27"
+                    Caption ="lei"
+                    GUID = Begin
+                        0x05ee76aeefbb1844b865e59af59d0751
+                    End
+                    LayoutCachedLeft =7305
+                    LayoutCachedTop =5715
+                    LayoutCachedWidth =7575
+                    LayoutCachedHeight =6000
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4363
+                    Top =6119
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =11
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text28"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xaf9fe77716f7a54ba64d60b51274483c
+                    End
+
+                    LayoutCachedLeft =4363
+                    LayoutCachedTop =6119
+                    LayoutCachedWidth =6409
+                    LayoutCachedHeight =6449
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =3058
+                            Top =6119
+                            Width =1035
+                            Height =330
+                            FontSize =12
+                            Name ="Label29"
+                            Caption ="Data:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0xaec82fec9ae2dc4f990a0f2f5a6b56a1
+                            End
+                            LayoutCachedLeft =3058
+                            LayoutCachedTop =6119
+                            LayoutCachedWidth =4093
+                            LayoutCachedHeight =6449
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4363
+                    Top =6569
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =12
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text30"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xcf52f08cca46f143a44e208a580f2d5c
+                    End
+
+                    LayoutCachedLeft =4363
+                    LayoutCachedTop =6569
+                    LayoutCachedWidth =6409
+                    LayoutCachedHeight =6899
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =3060
+                            Top =6570
+                            Width =1305
+                            Height =330
+                            FontSize =12
+                            Name ="Label31"
+                            Caption ="Semnătura:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x5b4ab40307cce947b868e6425d47d33a
+                            End
+                            LayoutCachedLeft =3060
+                            LayoutCachedTop =6570
+                            LayoutCachedWidth =4365
+                            LayoutCachedHeight =6900
+                        End
+                    End
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Top =7238
+                    Width =7758
+                    Height =2168
+                    Name ="Box33"
+                    GUID = Begin
+                        0xfe0d0e27414b7d4ebe53a6a507323e1d
+                    End
+                    LayoutCachedTop =7238
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =9406
+                End
+                Begin Label
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =855
+                    Top =7305
+                    Width =6840
+                    Height =390
+                    FontSize =14
+                    Name ="Label34"
+                    Caption ="CASIER"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xe8d7aa44b2645a49ac0b94b329c15ace
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =7305
+                    LayoutCachedWidth =7695
+                    LayoutCachedHeight =7695
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3573
+                    Top =7815
+                    Width =3726
+                    Height =285
+                    FontSize =10
+                    TabIndex =13
+                    BorderColor =8421504
+                    Name ="Text35"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x1fe0a8d4927e3741931152d91301a1dd
+                    End
+
+                    LayoutCachedLeft =3573
+                    LayoutCachedTop =7815
+                    LayoutCachedWidth =7299
+                    LayoutCachedHeight =8100
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =900
+                            Top =7815
+                            Width =2655
+                            Height =285
+                            FontSize =10
+                            Name ="Label36"
+                            Caption ="Am plătit suma de (în cifre):"
+                            GUID = Begin
+                                0x7cc5338b94785543aa6e4bbd373dbf72
+                            End
+                            LayoutCachedLeft =900
+                            LayoutCachedTop =7815
+                            LayoutCachedWidth =3555
+                            LayoutCachedHeight =8100
+                        End
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =7305
+                    Top =7815
+                    Width =285
+                    Height =285
+                    FontSize =10
+                    Name ="Label37"
+                    Caption ="lei"
+                    GUID = Begin
+                        0x6a70c9794547e340940a5864386196a4
+                    End
+                    LayoutCachedLeft =7305
+                    LayoutCachedTop =7815
+                    LayoutCachedWidth =7590
+                    LayoutCachedHeight =8100
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2605
+                    Top =8500
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =14
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text38"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x8d39109c7a6dd5469df23c46f9ab7498
+                    End
+
+                    LayoutCachedLeft =2605
+                    LayoutCachedTop =8500
+                    LayoutCachedWidth =4651
+                    LayoutCachedHeight =8830
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =1300
+                            Top =8500
+                            Width =1035
+                            Height =330
+                            FontSize =12
+                            Name ="Label39"
+                            Caption ="Data:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x8229736650a498409acafe1bd5f4a0b9
+                            End
+                            LayoutCachedLeft =1300
+                            LayoutCachedTop =8500
+                            LayoutCachedWidth =2335
+                            LayoutCachedHeight =8830
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2605
+                    Top =8950
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =15
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text40"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x5f815579e70a624ca5ef91077ef3acee
+                    End
+
+                    LayoutCachedLeft =2605
+                    LayoutCachedTop =8950
+                    LayoutCachedWidth =4651
+                    LayoutCachedHeight =9280
+                    Begin
+                        Begin Label
+                            TextFontFamily =34
+                            Left =1302
+                            Top =8951
+                            Width =1305
+                            Height =330
+                            FontSize =12
+                            Name ="Label41"
+                            Caption ="Semnătura:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x2fe93502c5564a4fa156961652ea6586
+                            End
+                            LayoutCachedLeft =1302
+                            LayoutCachedTop =8951
+                            LayoutCachedWidth =2607
+                            LayoutCachedHeight =9281
+                        End
+                    End
+                End
+                Begin Label
+                    Left =7200
+                    Top =9525
+                    Width =555
+                    Height =225
+                    Name ="Label42"
+                    Caption ="14-4-4"
+                    GUID = Begin
+                        0xbb18476b264d2245b7b4edd89cefac1c
+                    End
+                    LayoutCachedLeft =7200
+                    LayoutCachedTop =9525
+                    LayoutCachedWidth =7755
+                    LayoutCachedHeight =9750
+                End
+                Begin Label
+                    Top =9527
+                    Width =2100
+                    Height =225
+                    Name ="Label43"
+                    Caption ="Raport realizat în ADECHIT©"
+                    GUID = Begin
+                        0xf0f04b17fa2616428f34a3fd8d2d9eba
+                    End
+                    LayoutCachedTop =9527
+                    LayoutCachedWidth =2100
+                    LayoutCachedHeight =9752
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =0
+            Name ="Detail"
+            GUID = Begin
+                0x97757551faa79e4a9310b404fe8d291e
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            CanShrink = NotDefault
+            Height =9752
+            Name ="GroupFooter1"
+            GUID = Begin
+                0x1b38150ecd895a44ad54e500fb78bd64
+            End
+            AutoHeight =255
+            Begin
+                Begin Label
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =4994
+                    Top =60
+                    Width =2220
+                    Height =390
+                    FontSize =14
+                    Name ="Label96"
+                    Caption ="CĂTRE CASIERIE"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x533a58dddaea46409c9292be0583b203
+                    End
+                    LayoutCachedLeft =4994
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =7214
+                    LayoutCachedHeight =450
+                End
+                Begin TextBox
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3006
+                    Top =60
+                    Width =1881
+                    Height =390
+                    FontSize =14
+                    FontWeight =700
+                    BorderColor =12632256
+                    Name ="Text97"
+                    ControlSource ="=\"Plată\""
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x3243c19acdcc2f43a20335b1ff107406
+                    End
+
+                    LayoutCachedLeft =3006
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =4887
+                    LayoutCachedHeight =450
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =855
+                            Top =60
+                            Width =2040
+                            Height =390
+                            FontSize =14
+                            Name ="Label98"
+                            Caption ="DISPOZIŢIE DE"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x7dc7a2248fd80f4383780fc044227a60
+                            End
+                            LayoutCachedLeft =855
+                            LayoutCachedTop =60
+                            LayoutCachedWidth =2895
+                            LayoutCachedHeight =450
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2552
+                    Top =510
+                    Width =1581
+                    Height =330
+                    FontSize =12
+                    TabIndex =1
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text99"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![nrdoc]"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xc3fa4dbf1e4ae948b1b1f4fab3904242
+                    End
+
+                    LayoutCachedLeft =2552
+                    LayoutCachedTop =510
+                    LayoutCachedWidth =4133
+                    LayoutCachedHeight =840
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =1590
+                            Top =510
+                            Width =960
+                            Height =330
+                            FontSize =12
+                            Name ="Label100"
+                            Caption ="numărul"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x8887a944dc3b9443be5c537be2d14cbf
+                            End
+                            LayoutCachedLeft =1590
+                            LayoutCachedTop =510
+                            LayoutCachedWidth =2550
+                            LayoutCachedHeight =840
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4605
+                    Top =510
+                    Width =1581
+                    Height =330
+                    FontSize =12
+                    TabIndex =2
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text101"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x50a1f8d854fd38448deba1dfc476c099
+                    End
+
+                    LayoutCachedLeft =4605
+                    LayoutCachedTop =510
+                    LayoutCachedWidth =6186
+                    LayoutCachedHeight =840
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =4200
+                            Top =510
+                            Width =405
+                            Height =330
+                            FontSize =12
+                            Name ="Label102"
+                            Caption ="din"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x19312c69de387c48a9f20ca989f5ebf2
+                            End
+                            LayoutCachedLeft =4200
+                            LayoutCachedTop =510
+                            LayoutCachedWidth =4605
+                            LayoutCachedHeight =840
+                        End
+                    End
+                End
+                Begin Line
+                    Left =855
+                    Top =910
+                    Width =6349
+                    Name ="Line103"
+                    GUID = Begin
+                        0x30f4d2ec9096f54e96260e5f8872c156
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =910
+                    LayoutCachedWidth =7204
+                    LayoutCachedHeight =910
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1991
+                    Top =1771
+                    Height =285
+                    FontSize =10
+                    TabIndex =3
+                    BorderColor =8421504
+                    Name ="Text104"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xd24814f4cdf50e4cadbb44e9dca75cfa
+                    End
+
+                    LayoutCachedLeft =1991
+                    LayoutCachedTop =1771
+                    LayoutCachedWidth =3692
+                    LayoutCachedHeight =2056
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =65
+                            Top =1769
+                            Width =1365
+                            Height =285
+                            FontSize =10
+                            Name ="Label105"
+                            Caption ="Suma (în cifre)"
+                            GUID = Begin
+                                0x73f56e777a5db74889263d6420ff1f94
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =1769
+                            LayoutCachedWidth =1430
+                            LayoutCachedHeight =2054
+                        End
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    TabStop = NotDefault
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1991
+                    Top =2178
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =4
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text106"
+                    ControlSource ="=sumalitere([Forms]![Prezenta]![Plati]![suma])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x77ee6cfcd416db4c85c93b50bd191fba
+                    End
+
+                    LayoutCachedLeft =1991
+                    LayoutCachedTop =2178
+                    LayoutCachedWidth =7652
+                    LayoutCachedHeight =2463
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =60
+                            Top =2178
+                            Width =1395
+                            Height =285
+                            FontSize =10
+                            Name ="Label107"
+                            Caption ="Suma (în litere)"
+                            GUID = Begin
+                                0x1e09a76f9011484282d428bd0258aec9
+                            End
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =2178
+                            LayoutCachedWidth =1455
+                            LayoutCachedHeight =2463
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1992
+                    Top =975
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =5
+                    BorderColor =8421504
+                    Name ="Text108"
+                    ControlSource ="=[Forms]![Prezenta]![Prezenta_sub]![idp].[column](1)"
+                    GUID = Begin
+                        0x6c6e81a16a53b44ca60d0984293aa0b5
+                    End
+
+                    LayoutCachedLeft =1992
+                    LayoutCachedTop =975
+                    LayoutCachedWidth =7653
+                    LayoutCachedHeight =1260
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =65
+                            Top =980
+                            Width =1950
+                            Height =270
+                            FontSize =10
+                            Name ="Label109"
+                            Caption ="Numele şi prenumele"
+                            GUID = Begin
+                                0xffc3e507ed8f8a4fbb4c3efe8b37f6e6
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =980
+                            LayoutCachedWidth =2015
+                            LayoutCachedHeight =1250
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1992
+                    Top =1385
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =6
+                    BorderColor =8421504
+                    Name ="Text110"
+                    ControlSource ="=\"BENEFICIAR\""
+                    GUID = Begin
+                        0xde5b1aa505629c4c8bca34ff21885603
+                    End
+
+                    LayoutCachedLeft =1992
+                    LayoutCachedTop =1385
+                    LayoutCachedWidth =7653
+                    LayoutCachedHeight =1670
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =65
+                            Top =1385
+                            Width =1890
+                            Height =285
+                            FontSize =10
+                            Name ="Label111"
+                            Caption ="Funcţia (calitatea)"
+                            GUID = Begin
+                                0xdbfe6ab0e67ff241a45f5fac80b72548
+                            End
+                            LayoutCachedLeft =65
+                            LayoutCachedTop =1385
+                            LayoutCachedWidth =1955
+                            LayoutCachedHeight =1670
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1987
+                    Top =2570
+                    Width =5661
+                    Height =285
+                    FontSize =10
+                    TabIndex =7
+                    BorderColor =8421504
+                    Name ="Text112"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![explicatie]"
+                    GUID = Begin
+                        0x43b1a8867cfcb843bff460268446f453
+                    End
+
+                    LayoutCachedLeft =1987
+                    LayoutCachedTop =2570
+                    LayoutCachedWidth =7648
+                    LayoutCachedHeight =2855
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =60
+                            Top =2570
+                            Width =1890
+                            Height =285
+                            FontSize =10
+                            Name ="Label113"
+                            Caption ="Scopul"
+                            GUID = Begin
+                                0x7dc636af108061428349e707ba97879e
+                            End
+                            LayoutCachedLeft =60
+                            LayoutCachedTop =2570
+                            LayoutCachedWidth =1950
+                            LayoutCachedHeight =2855
+                        End
+                    End
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Width =7758
+                    Height =2933
+                    Name ="Box114"
+                    GUID = Begin
+                        0xd3665294c9584a48b5fb1671e9a7fb76
+                    End
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =2933
+                End
+                Begin Image
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    SizeMode =1
+                    Top =2940
+                    Width =855
+                    Height =1260
+                    Name ="Image115"
+                    PictureData = Begin
+                        0x030000000000000008000000b90300002f06000000000000010009000003f000 ,
+                        0x000003001c00000000000400000003010800050000000b020000000005000000 ,
+                        0x0c027801e200040000002e0118001c000000fb029cff00000000000090010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d010000040000000201010005000000090200000002 ,
+                        0x0d000000320a5900ffff0100040000000000e100770120152d00030000001e00 ,
+                        0x0700000016049301a500e2ff3b001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d0101001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d01020004000000f001010004000000020101001900 ,
+                        0x0000320a57017a00090004003b00e2ffa500930153656d6e6174757261002500 ,
+                        0x1e00340021001e001200220016001e000d000000320a39007a00010004003b00 ,
+                        0xe2ffa500930120151d00040000002701ffff1c000000fb021000070000000000 ,
+                        0xbc02000000000102022253797374656d0000000000009b99807c50101b00f04e ,
+                        0x1f00680e1b005ae78339040000002d010100030000000000
+                    End
+                    GUID = Begin
+                        0x545c6c78cf36b34bb6254f71629cee33
+                    End
+
+                    LayoutCachedTop =2940
+                    LayoutCachedWidth =855
+                    LayoutCachedHeight =4200
+                    TabIndex =16
+                End
+                Begin Line
+                    Left =3000
+                    Top =420
+                    Width =1897
+                    Name ="Line116"
+                    GUID = Begin
+                        0x07025754f46b6447b6304b3e384f065e
+                    End
+                    LayoutCachedLeft =3000
+                    LayoutCachedTop =420
+                    LayoutCachedWidth =4897
+                    LayoutCachedHeight =420
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =855
+                    Top =2940
+                    Width =2355
+                    Height =510
+                    FontSize =10
+                    Name ="Label117"
+                    Caption ="Conducătorul\015\012unităţii"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x8061e00c1a8a0248832e8bed4113621d
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =2940
+                    LayoutCachedWidth =3210
+                    LayoutCachedHeight =3450
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =3213
+                    Top =2933
+                    Width =2445
+                    Height =510
+                    FontSize =10
+                    Name ="Label118"
+                    Caption ="Viza de control\015\012financiar preventiv"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x63ca4bebca2e1f4280d4a300f6be181e
+                    End
+                    LayoutCachedLeft =3213
+                    LayoutCachedTop =2933
+                    LayoutCachedWidth =5658
+                    LayoutCachedHeight =3443
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =5658
+                    Top =2933
+                    Width =2100
+                    Height =510
+                    FontSize =10
+                    Name ="Label119"
+                    Caption ="Compartiment\015\012financiar-contabil"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x63b6b12662b0ed4a8c9c9e8a477b3ae6
+                    End
+                    LayoutCachedLeft =5658
+                    LayoutCachedTop =2933
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =3443
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =855
+                    Top =3450
+                    Width =2355
+                    Height =750
+                    FontSize =10
+                    Name ="Label120"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x3502afe50f19354b98d2a282e087c8a4
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =3210
+                    LayoutCachedHeight =4200
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =3213
+                    Top =3450
+                    Width =2445
+                    Height =750
+                    FontSize =10
+                    Name ="Label121"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x29cde11f70e2da42872ae17090a6229b
+                    End
+                    LayoutCachedLeft =3213
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =5658
+                    LayoutCachedHeight =4200
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =18
+                    Left =5658
+                    Top =3450
+                    Width =2100
+                    Height =750
+                    FontSize =10
+                    Name ="Label122"
+                    FontName ="Times New Roman"
+                    GUID = Begin
+                        0x2f12aded70504b44af79b8fc234addf7
+                    End
+                    LayoutCachedLeft =5658
+                    LayoutCachedTop =3450
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =4200
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Top =4305
+                    Width =7758
+                    Height =2933
+                    Name ="Box123"
+                    GUID = Begin
+                        0xf086e9e8e0a1e442905a4962f33877ba
+                    End
+                    LayoutCachedTop =4305
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =7238
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1015
+                    Top =4418
+                    Width =6675
+                    Height =735
+                    FontSize =14
+                    Name ="Label124"
+                    Caption ="DATE SUPLIMENTARE PRIVIND BENEFICIARUL SUMEI:"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xeee7ebdfb9a29d42a3d9e1b00a17eb7c
+                    End
+                    LayoutCachedLeft =1015
+                    LayoutCachedTop =4418
+                    LayoutCachedWidth =7690
+                    LayoutCachedHeight =5153
+                End
+                Begin Image
+                    OldBorderStyle =1
+                    BorderWidth =2
+                    SizeMode =1
+                    Top =4305
+                    Width =855
+                    Height =2933
+                    Name ="Image125"
+                    PictureData = Begin
+                        0x030000000000000008000000f6040000670c0000000000000100090000038401 ,
+                        0x000004001f00000000000400000003010800050000000b020000000005000000 ,
+                        0x0c02ef022d01040000002e0118001c000000fb021000070000000000bc020000 ,
+                        0x00000102022253797374656d00022d01000016a30000c4e9120004ee8339680e ,
+                        0x1b000c020000040000002d01000004000000020101001c000000fb029cff0000 ,
+                        0x000000009001000000000440001254696d6573204e657720526f6d616e000000 ,
+                        0x0000000000000000000000000000040000002d01010005000000090200000002 ,
+                        0x0d000000320a5a00000001000400000000002c01ee0220f52d00030000001e00 ,
+                        0x0700000016040c03f100e2ff3c001c000000fb02bdff00008403840390010000 ,
+                        0x00000440001254696d6573204e657720526f6d616e0000000000000000000000 ,
+                        0x000000000000040000002d01020004000000020101001f000000320aa3027a00 ,
+                        0x0d0004003c00e2fff1000c03536520636f6d706c657465617a0025001e001100 ,
+                        0x1d0022003300220013001d0013001d001e001d0005000000140220017a001c00 ,
+                        0x0000fb02bdff0000840384039001000000ee0440001254696d6573204e657720 ,
+                        0x526f6d616e0000000000000000000000000000000000040000002d0103000400 ,
+                        0x00002e01190016000000320a20017a00070004003c00e2fff1000c03e3206e75 ,
+                        0x6d6169001e0010002200220033001e001300040000002e011800040000002d01 ,
+                        0x020004000000f00103000d000000320a4a007a00010004003c00e2fff1000c03 ,
+                        0x20f51d0004000000020101000500000014020f02ca001c000000fb02bdff0000 ,
+                        0x840384039001000000ee0440001254696d6573204e657720526f6d616e000000 ,
+                        0x0000000000000000000000000000040000002d010300040000002e0119001d00 ,
+                        0x0000320a0f02ca000c0004003c00e2fff1000c0370656e74727520706ce3fe69 ,
+                        0x22001d0022001300150022001000220012001e0012001300040000002e011800 ,
+                        0x040000002d01020004000000f00103000d000000320add00ca00010004003c00 ,
+                        0xe2fff1000c0320f51d00040000002701ffff040000002d010000030000000000
+                    End
+                    GUID = Begin
+                        0x748b326c9eb93d44af140ff9ca8d885b
+                    End
+
+                    LayoutCachedTop =4305
+                    LayoutCachedWidth =855
+                    LayoutCachedHeight =7238
+                    TabIndex =17
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3442
+                    Top =5325
+                    Width =1206
+                    Height =285
+                    FontSize =10
+                    TabIndex =8
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text126"
+                    GUID = Begin
+                        0xb95d32904f2ea24da318dae637c789fd
+                    End
+
+                    LayoutCachedLeft =3442
+                    LayoutCachedTop =5325
+                    LayoutCachedWidth =4648
+                    LayoutCachedHeight =5610
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =1020
+                            Top =5325
+                            Width =2925
+                            Height =285
+                            FontSize =10
+                            Name ="Label127"
+                            Caption ="Actul de identitate     seria:"
+                            GUID = Begin
+                                0xa1a5177aeae6444f92def8a380b71c77
+                            End
+                            LayoutCachedLeft =1020
+                            LayoutCachedTop =5325
+                            LayoutCachedWidth =3945
+                            LayoutCachedHeight =5610
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5552
+                    Top =5325
+                    Width =2091
+                    Height =285
+                    FontSize =10
+                    TabIndex =9
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text128"
+                    GUID = Begin
+                        0xd4db13fa03fd0c47800c99ae2888d31e
+                    End
+
+                    LayoutCachedLeft =5552
+                    LayoutCachedTop =5325
+                    LayoutCachedWidth =7643
+                    LayoutCachedHeight =5610
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =4697
+                            Top =5325
+                            Width =825
+                            Height =285
+                            FontSize =10
+                            Name ="Label129"
+                            Caption ="numărul:"
+                            GUID = Begin
+                                0x5fe0f4c838ada741820388c1a9f91d65
+                            End
+                            LayoutCachedLeft =4697
+                            LayoutCachedTop =5325
+                            LayoutCachedWidth =5522
+                            LayoutCachedHeight =5610
+                        End
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3693
+                    Top =5715
+                    Width =3561
+                    Height =285
+                    FontSize =10
+                    TabIndex =10
+                    BorderColor =8421504
+                    Name ="Text130"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0xa5e554648c44ac468d41b07e3d9381ce
+                    End
+
+                    LayoutCachedLeft =3693
+                    LayoutCachedTop =5715
+                    LayoutCachedWidth =7254
+                    LayoutCachedHeight =6000
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =1020
+                            Top =5715
+                            Width =2655
+                            Height =285
+                            FontSize =10
+                            Name ="Label131"
+                            Caption ="Am primit suma de (în cifre):"
+                            GUID = Begin
+                                0xc4a19982410e0843b95e5b3d5923fc0f
+                            End
+                            LayoutCachedLeft =1020
+                            LayoutCachedTop =5715
+                            LayoutCachedWidth =3675
+                            LayoutCachedHeight =6000
+                        End
+                    End
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =7305
+                    Top =5715
+                    Width =270
+                    Height =285
+                    FontSize =10
+                    Name ="Label132"
+                    Caption ="lei"
+                    GUID = Begin
+                        0xc1fc3d0e1120b74c85efed71eb97c74e
+                    End
+                    LayoutCachedLeft =7305
+                    LayoutCachedTop =5715
+                    LayoutCachedWidth =7575
+                    LayoutCachedHeight =6000
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4363
+                    Top =6119
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =11
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text133"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x7b46b4237f8663409777de542bce40e7
+                    End
+
+                    LayoutCachedLeft =4363
+                    LayoutCachedTop =6119
+                    LayoutCachedWidth =6409
+                    LayoutCachedHeight =6449
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =3058
+                            Top =6119
+                            Width =1035
+                            Height =330
+                            FontSize =12
+                            Name ="Label134"
+                            Caption ="Data:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x455ff8885d23794e95e8b57067d7c879
+                            End
+                            LayoutCachedLeft =3058
+                            LayoutCachedTop =6119
+                            LayoutCachedWidth =4093
+                            LayoutCachedHeight =6449
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4363
+                    Top =6569
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =12
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text135"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0xb26b0cefa660734b928cc584e9445e6e
+                    End
+
+                    LayoutCachedLeft =4363
+                    LayoutCachedTop =6569
+                    LayoutCachedWidth =6409
+                    LayoutCachedHeight =6899
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =3060
+                            Top =6570
+                            Width =1305
+                            Height =330
+                            FontSize =12
+                            Name ="Label136"
+                            Caption ="Semnătura:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0xc78fbbef0361a04d9c0ee61a48bc3416
+                            End
+                            LayoutCachedLeft =3060
+                            LayoutCachedTop =6570
+                            LayoutCachedWidth =4365
+                            LayoutCachedHeight =6900
+                        End
+                    End
+                End
+                Begin Rectangle
+                    BackStyle =0
+                    BorderWidth =2
+                    Top =7238
+                    Width =7758
+                    Height =2168
+                    Name ="Box137"
+                    GUID = Begin
+                        0xea8c6989d53b0240a3cafd8a5ca19b08
+                    End
+                    LayoutCachedTop =7238
+                    LayoutCachedWidth =7758
+                    LayoutCachedHeight =9406
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextAlign =1
+                    TextFontFamily =34
+                    Left =855
+                    Top =7305
+                    Width =6840
+                    Height =390
+                    FontSize =14
+                    Name ="Label138"
+                    Caption ="CASIER"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x4aa9b4ba2aca4f40b8d5750132eed686
+                    End
+                    LayoutCachedLeft =855
+                    LayoutCachedTop =7305
+                    LayoutCachedWidth =7695
+                    LayoutCachedHeight =7695
+                End
+                Begin TextBox
+                    DecimalPlaces =2
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =3
+                    TextFontFamily =34
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3573
+                    Top =7815
+                    Width =3726
+                    Height =285
+                    FontSize =10
+                    TabIndex =13
+                    BorderColor =8421504
+                    Name ="Text139"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![suma]"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x17729aa68c04b84ba8a643e06f401671
+                    End
+
+                    LayoutCachedLeft =3573
+                    LayoutCachedTop =7815
+                    LayoutCachedWidth =7299
+                    LayoutCachedHeight =8100
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =900
+                            Top =7815
+                            Width =2655
+                            Height =285
+                            FontSize =10
+                            Name ="Label140"
+                            Caption ="Am plătit suma de (în cifre):"
+                            GUID = Begin
+                                0x19daa00e6c64734887329b0c05ebe3ab
+                            End
+                            LayoutCachedLeft =900
+                            LayoutCachedTop =7815
+                            LayoutCachedWidth =3555
+                            LayoutCachedHeight =8100
+                        End
+                    End
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =7305
+                    Top =7815
+                    Width =285
+                    Height =285
+                    FontSize =10
+                    Name ="Label141"
+                    Caption ="lei"
+                    GUID = Begin
+                        0xc529f7fc45e4d9489f2c0c1857e4960f
+                    End
+                    LayoutCachedLeft =7305
+                    LayoutCachedTop =7815
+                    LayoutCachedWidth =7590
+                    LayoutCachedHeight =8100
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2605
+                    Top =8500
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =14
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text142"
+                    ControlSource ="=[Forms]![Prezenta]![Plati]![data]"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x2f163d40ec4a23419801d43d90dcd014
+                    End
+
+                    LayoutCachedLeft =2605
+                    LayoutCachedTop =8500
+                    LayoutCachedWidth =4651
+                    LayoutCachedHeight =8830
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =1300
+                            Top =8500
+                            Width =1035
+                            Height =330
+                            FontSize =12
+                            Name ="Label143"
+                            Caption ="Data:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0xde6b1de9f91dc642bd78044c8d9d83e4
+                            End
+                            LayoutCachedLeft =1300
+                            LayoutCachedTop =8500
+                            LayoutCachedWidth =2335
+                            LayoutCachedHeight =8830
+                        End
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontCharSet =238
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2605
+                    Top =8950
+                    Width =2046
+                    Height =330
+                    FontSize =12
+                    TabIndex =15
+                    BackColor =12632256
+                    BorderColor =8421504
+                    Name ="Text144"
+                    Format ="Short Date"
+                    FontName ="Tahoma"
+                    GUID = Begin
+                        0x1bff35d78346b146a54e5699f6c59838
+                    End
+
+                    LayoutCachedLeft =2605
+                    LayoutCachedTop =8950
+                    LayoutCachedWidth =4651
+                    LayoutCachedHeight =9280
+                    Begin
+                        Begin Label
+                            TextFontCharSet =238
+                            TextFontFamily =34
+                            Left =1302
+                            Top =8951
+                            Width =1305
+                            Height =330
+                            FontSize =12
+                            Name ="Label145"
+                            Caption ="Semnătura:"
+                            FontName ="Tahoma"
+                            GUID = Begin
+                                0x13952d1b7bfe6c4495a78b747a4b865d
+                            End
+                            LayoutCachedLeft =1302
+                            LayoutCachedTop =8951
+                            LayoutCachedWidth =2607
+                            LayoutCachedHeight =9281
+                        End
+                    End
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Left =7200
+                    Top =9525
+                    Width =555
+                    Height =225
+                    Name ="Label146"
+                    Caption ="14-4-4"
+                    GUID = Begin
+                        0x874bae4773116f4ebf4e9551d7c9ccbe
+                    End
+                    LayoutCachedLeft =7200
+                    LayoutCachedTop =9525
+                    LayoutCachedWidth =7755
+                    LayoutCachedHeight =9750
+                End
+                Begin Label
+                    TextFontCharSet =238
+                    TextFontFamily =34
+                    Top =9527
+                    Width =2100
+                    Height =225
+                    Name ="Label147"
+                    Caption ="Raport realizat în ADECHIT©"
+                    GUID = Begin
+                        0x41af8ccc745c424fae67197f7483041f
+                    End
+                    LayoutCachedTop =9527
+                    LayoutCachedWidth =2100
+                    LayoutCachedHeight =9752
+                End
+            End
+        End
+        Begin PageFooter
+            Height =0
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x506c39550f5e704589ffddaae69e2155
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+
+Private Sub Report_Open(Cancel As Integer)
+DoCmd.Maximize
+End Sub

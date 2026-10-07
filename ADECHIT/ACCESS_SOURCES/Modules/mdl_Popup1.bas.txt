@@ -1,0 +1,87 @@
+Option Compare Database
+Option Explicit
+
+Public Const Mname As String = "Popup"
+Public Popup_Var1 As Variant 'folosesc aceste variabile pentru a putea transmite parametrii catre functii externe (vezi Popup_Parteneri_2015)
+Public Popup_Var2 As Variant
+
+Private Sub DeletePopUpMenu()
+'Delete PopUp menu if it exist
+On Error GoTo Eroare
+
+Dim FoundFlag As Boolean, delBars As Integer
+Dim bar As CommandBar
+
+FoundFlag = False
+delBars = 0
+
+For Each bar In CommandBars
+    If bar.BuiltIn = False Then
+        If (bar.visible = False) Then
+            bar.Delete
+            FoundFlag = delBars = delBars + 1
+        End If
+    End If
+Next bar
+
+Exit Sub
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_Popup/DeletePopupMenu()"
+End Sub
+
+Public Sub Popup_Meniu()
+Call DeletePopUpMenu
+Call Popup_Men
+Application.CommandBars(Mname).ShowPopup
+
+End Sub
+
+Sub Popup_Men()
+Dim menuItem As CommandBarPopup
+'Add PopUp menu
+With Application.CommandBars.Add(Name:=Mname, Position:=msoBarPopup, _
+                                    MenuBar:=False, Temporary:=True)
+
+    With .Controls.Add(type:=msoControlButton)
+        .Caption = "Descarca factura"
+        .FaceId = 25
+        .onAction = "PP_Meniu"
+        .Parameter = 1
+    End With
+
+    With .Controls.Add(type:=msoControlButton)
+        .Caption = "Descarca situatie"
+        .FaceId = 25
+        .onAction = "PP_Meniu"
+        .Parameter = 2
+    End With
+
+    With .Controls.Add(type:=msoControlButton)
+        .Caption = "Genereaza nota contabila"
+        .FaceId = 25
+        .onAction = "PP_Meniu"
+        .Parameter = 3
+        .BeginGroup = True
+    End With
+End With
+End Sub
+
+Sub PP_Meniu()
+Popup_Var1 = CommandBars.ActionControl.Parameter
+Select Case Popup_Var1
+    Case 1
+        DoCmd.OpenForm "FTP", acNormal
+        Forms!ftp!WantedFile = DLookup("LunaFact", "TblVar") & "_" & DLookup("Numar", "FacturileMele", "Luna Like '" & DLookup("LunaFact", "TblVar") & "'") & ".pdf"
+        Forms!ftp!oFisiere = 1
+        Call Forms("FTP").foFisiere
+    Case 2
+        DoCmd.OpenForm "FTP", acNormal
+        Forms!ftp!WantedFile = DLookup("LunaFact", "TblVar") & "_situatie.doc"
+        Forms!ftp!oFisiere = 2
+        Call Forms("FTP").foFisiere
+   Case 3
+        Stop
+End Select
+        
+End Sub

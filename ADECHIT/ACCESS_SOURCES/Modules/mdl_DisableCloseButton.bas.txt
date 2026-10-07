@@ -1,0 +1,33 @@
+Option Compare Database
+Option Explicit
+
+Private Declare PtrSafe Function GetSystemMenu Lib "user32" (ByVal hWnd As LongPtr, ByVal bRevert As Long) As LongPtr
+Private Declare PtrSafe Function EnableMenuItem Lib "user32" (ByVal hMenu As LongPtr, ByVal wIDEnableItem As Long, ByVal wEnable As Long) As Long
+
+Public Function AccessCloseButtonEnabled(pfEnabled As Boolean)
+  ' Comments: Control the Access close button.
+  '           Disabling it forces the user to exit within the application
+  ' Params  : pfEnabled       TRUE enables the close button, FALSE disabled it
+  ' Owner   : Copyright (c) FMS, Inc.
+  ' Source  : Total Visual SourceBook
+  ' Usage   : Permission granted to subscribers of the FMS Newsletter
+
+  On Error Resume Next
+
+  Const clngMF_ByCommand As Long = &H0&
+  Const clngMF_Grayed As Long = &H1&
+  Const clngSC_Close As Long = &HF060&
+
+  Dim lngWindow As LongPtr
+  Dim lngMenu As LongPtr
+  Dim lngFlags As Long
+
+  lngWindow = Application.hWndAccessApp
+  lngMenu = GetSystemMenu(lngWindow, 0)
+  If pfEnabled Then
+    lngFlags = clngMF_ByCommand And Not clngMF_Grayed
+  Else
+    lngFlags = clngMF_ByCommand Or clngMF_Grayed
+  End If
+  Call EnableMenuItem(lngMenu, clngSC_Close, lngFlags)
+End Function

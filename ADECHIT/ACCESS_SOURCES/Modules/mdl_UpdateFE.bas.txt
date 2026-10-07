@@ -1,0 +1,115 @@
+Option Compare Database
+Option Explicit
+
+Public ConexiuneOK As Boolean
+
+Public Function DescarcaFEOnline() As Double
+Dim Fso As New FileSystemObject
+Dim vOFF As Double
+Dim newFile As Boolean
+Dim dwnFile As String
+Dim Rgx As Object
+Dim rezZip As Single
+
+Set Rgx = CreateObject("VbScript.RegExp")
+    Rgx.Global = True
+    Rgx.Pattern = "\D+"
+
+Set wsFTP = New clsWinSCP
+    wsFTP.SetCurrentFile = "/update.txt"
+    
+If wsFTP.CurrentFile.LastWrite <> GetSetting("ADECHIT", "General", "upd_LastWrite", 0) Then
+    newFile = True
+ElseIf wsFTP.CurrentFile.Size <> GetSetting("ADECHIT", "General", "upd_Size", 0) Then
+    newFile = True
+End If
+
+If newFile Or Not Fso.FileExists(CurrentProject.path & "\RES\update.txt") Then
+    dwnFile = wsFTP.DownloadFileToFolder(CurrentProject.path & "\RES\")
+    
+    If dwnFile <> "" Then
+        SaveSetting "ADECHIT", "General", "upd_LastWrite", wsFTP.CurrentFile.LastWrite
+        SaveSetting "ADECHIT", "General", "upd_Size", wsFTP.CurrentFile.Size
+    End If
+Else
+    dwnFile = CurrentProject.path & "\RES\update.txt"
+End If
+
+With Fso.OpenTextFile(dwnFile, ForReading)
+    vOFF = Rgx.Replace(.ReadAll, "")
+End With
+'
+If vOFF = 0 Or vOFF = 999 Then
+    MsgBox "Eroare la preluarea informatiilor de pe server!" & vbCrLf & "Incearca mai tarziu!", vbOKOnly + vbExclamation
+    GoTo IESIRE
+End If
+
+If vOFF > Rgx.Replace(CDbl(DLookup("VER", "VEROFFLINE")), "") Then
+    If MsgBox("Exista o versiune mai noua pe server!" & vbCrLf & "Doresti sa o descarci acum?", vbYesNo + vbQuestion) = vbNo Then
+        DescarcaFEOnline = -1 'utilizatorul a anulat descarcarea
+        If IsLoaded("frmProgressBar") Then DoCmd.Close acForm, "frmProgressBar"
+        Exit Function
+    End If
+Else
+    If IsLoaded("frmProgressBar") Then DoCmd.Close acForm, "frmProgressBar"
+    DescarcaFEOnline = 0 'nu exista versiune mai noua
+    Exit Function
+End If
+
+If Not Fso.FolderExists(CurrentProject.path & "\Update\") Then
+    Fso.CreateFolder CurrentProject.path & "\Update\"
+End If
+
+'If Not IsLoaded("frmProgressBar") Then DoCmd.OpenForm "frmProgressBar", acNormal
+
+dwnFile = wsFTP.DownloadFileToFolder(CurrentProject.path & "\Update\", "update_" & Rgx.Replace(vOFF, "") & ".zip")
+
+If dwnFile = "" Then
+    MsgBox "Fisierul nu a fost descarcat cu succes!" & vbCrLf & "Inceraca mai tarziu!", vbOKOnly + vbExclamation
+    DescarcaFEOnline = 999 'eroare la descarcarea fisierului
+    Exit Function
+End If
+
+rezZip = UnZip7(CurrentProject.path & "\Update\", dwnFile, "andreI")
+
+If rezZip = 9 Then MsgBox "Lipseste 7-Zip!", vbOKOnly + vbCritical
+
+If rezZip <> 1 Then
+    DescarcaFEOnline = 99    'fisierul nu a fost dezarhivat
+    GoTo IESIRE
+End If
+
+Dim FF As Integer
+
+FF = FreeFile
+
+If Not Fso.FolderExists(CurrentProject.path & "\Res") Then
+    Fso.CreateFolder CurrentProject.path & "\Res"
+End If
+
+Open CurrentProject.path & "\Res\UpdateFE.BAT" For Output As #FF
+ Print #FF, "prompt $g"
+ Print #FF, "@echo off"
+ Print #FF, "CLS"
+ Print #FF, "echo Asteapta! Se actualizeaza AVASIT" & Chr(169) & "..."
+ Print #FF, "taskkill /IM msaccess.exe"
+ Print #FF, "echo."
+ Print #FF, "timeout -t 2 >nul"
+ Print #FF, "del " & Chr(34) & CurrentProject.path & "\Update\update_" & vOFF & ".zip" & Chr(34)
+ Print #FF, "xcopy /i /e /y " & Chr(34) & CurrentProject.path & "\Update\*.*" & Chr(34) & " " & Chr(34) & CurrentProject.path & Chr(34)
+ Print #FF, "del /q " & Chr(34) & CurrentProject.path & "\Update\*.*" & Chr(34)
+ Print #FF, "echo Rezolvat! Se deschide aplicatia..."
+ Print #FF, "start """" """ & CurrentProject.path & "\adechit.accdb"""
+ Print #FF, "exit"
+Close #FF
+
+Shell CurrentProject.path & "\Res\updateFE.bat", vbNormalFocus
+
+DoCmd.Quit acQuitSaveAll
+
+IESIRE:
+If Not wsFTP Is Nothing Then
+    wsFTP.CloseSession
+    Set wsFTP = Nothing
+End If
+End Function

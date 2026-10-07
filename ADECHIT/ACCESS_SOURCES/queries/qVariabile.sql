@@ -1,0 +1,6 @@
+-- Query: qVariabile
+-- Type: Select
+
+SELECT Nz([xPlatitori_sub].[Nume],'[Platitori_sub]') AS P_Nume, Platitori.Nume, Platitori.CNP, fluna([lunad]![luna]) & "/" & [anul] AS LA, Prezenta.zileprezenta AS Z_Prez, Nz([detalii],"...") AS D_Prez, Prezenta.valoarecontract AS C_Suma, Prezenta.valoaremancare AS M_Suma, Platitori.avans AS A_Suma, Prezenta.reducerefrate AS F_Suma, Prezenta.valoaretotala AS P_Suma, Prezenta.restanta AS R_Suma, Prezenta.valoaretotala AS T_Suma, Nz(Switch(Nz([tip],'X')='0',Nz([feldoc],''),Nz([tip],'X')='1','Bon fiscal',Nz([tip],'X')='2','Chitanță',Nz([tip],'X')='X',''),"") AS T_DocP, Nz(Switch(Nz([tip],'X')='0',Nz([nrdoc],''),Nz([tip],'X')='1',[nrbf],Nz([tip],'X')='2',[numar],Nz([tip],'X')='X',''),"") AS N_DocP, Nz([plati]![data],"") AS D_DocP, Prezenta.zileabsenta AS Z_Abs, [lunad]![la] AS LA2
+FROM ((Platitori LEFT JOIN (SELECT * FROM Platitori_sub WHERE Activ=True)  AS xPlatitori_Sub ON Platitori.IDP = xPlatitori_Sub.IDP) INNER JOIN (LunaD INNER JOIN Prezenta ON LunaD.IDL = Prezenta.IDL) ON Platitori.IDP = Prezenta.IDP) LEFT JOIN (((Plati LEFT JOIN AlteDoc ON Plati.IDPL = AlteDoc.IDPL) LEFT JOIN BonuriF ON Plati.IDPL = BonuriF.IDPL) LEFT JOIN Chitante ON Plati.IDPL = Chitante.IDPL) ON Prezenta.IDZ = Plati.IDZ
+WHERE (((Prezenta.IDZ) Like [Forms]![Prezenta]![IDZ]));

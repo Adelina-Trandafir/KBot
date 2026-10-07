@@ -1,0 +1,111 @@
+Option Compare Database
+Option Explicit
+
+
+Sub Export_Tabel_Txt()
+Dim Tbl As TableDef
+Dim fNum As Integer, J As Integer, i As Integer
+Dim K As Long
+
+fNum = FreeFile()
+K = 0
+Open CurrentProject.path & "\tabel.txt" For Output As #fNum
+
+For Each Tbl In CurrentDb.TableDefs
+    If Tbl.Properties(4) <> "" Then
+        Print #1, "[TABEL] --> " & Tbl.Name
+        For J = 0 To Tbl.Fields.Count - 1
+            Print #1, "     --> Camp:   " & Tbl.Fields(J).Name
+            Print #1, "     --> Tip:    " & Tbl.Fields(J).type
+            Print #1, "     --> Marime: " & Tbl.Fields(J).Size
+        Next J
+        For i = 0 To 9
+            Print #1, i & " | " & Tbl.Properties(i).Name & " --> " & Tbl.Properties(i)
+        Next i
+        Print #1, "==================================="
+    End If
+Next
+Close #1
+
+Set Tbl = Nothing
+End Sub
+
+Public Sub AdaugTabelIn_TBLS(Optional prefixTbl As String = "", Optional xTbl As TableDef = Empty, Optional Typ As Integer, Optional Bz As String = "")
+Dim Tbl As TableDef
+Dim K As Long: K = 0
+Dim J As Integer
+Dim S As Integer: S = 0
+Dim rs As Recordset, Rx As Recordset
+
+DoCmd.SetWarnings False
+If prefixTbl = "" Then
+    For Each Tbl In CurrentDb.TableDefs
+        If Tbl.Properties(4) <> "" Then
+            K = K + 1
+            DoCmd.RunSQL "INSERT INTO [_TBLS_] ( NumTbl, Typ, Struct, MDI ) SELECT '" & Tbl.Name & "', 1, " & K & ", False FROM [_Mail]"
+            For J = 0 To Tbl.Fields.Count - 1
+                DoCmd.RunSQL "INSERT INTO [_Struct_] ( ID, Fld, Typ, Siz ) SELECT " & K & ", '" & Tbl.Fields(J).Name & "', " & Tbl.Fields(J).type & ", " & Tbl.Fields(J).Size
+            Next J
+        End If
+    Next
+Else
+    If prefixTbl = "#" Then 'daca adaug tabelul in [_TBLS_] din macheta "AdaugaTabelInTBLS"
+        If Bz <> "cale" Then Bz = Bz & "[An]"
+        Select Case Left(Bz, 1)
+            Case "C"
+                S = 0
+            Case "B"
+                S = 1
+            Case "G"
+                S = 2
+        End Select
+        Set Tbl = xTbl
+        If Tbl.Properties(4) <> "" Then
+            K = K + 1
+            Set rs = CurrentDb.OpenRecordset("_TBLS_")
+            rs.AddNew
+                rs!numtbl = Tbl.Name
+                rs!Typ = S
+                rs!Struct = Typ
+                rs!mdi = False
+                rs!Bz = Bz
+            rs.Update
+            
+            Set Rx = CurrentDb.OpenRecordset("_Struct_")
+            For J = 0 To Tbl.Fields.Count - 1
+                Rx.AddNew
+                    Rx!ID = Typ
+                    Rx!fld = Tbl.Fields(J).Name
+                    Rx!Typ = Tbl.Fields(J).type
+                    Rx!Siz = Tbl.Fields(J).Size
+                Rx.Update
+            Next J
+        End If
+    Else
+        Set Tbl = xTbl
+        K = Nz(DMax("Struct", prefixTbl & "_TBLS_"), 0) + 1
+        Set rs = CurrentDb.OpenRecordset(prefixTbl & "_TBLS_")
+        rs.AddNew
+            rs!numtbl = Tbl.Name
+            rs!Typ = Typ
+            rs!Struct = K
+            rs!mdi = False
+        rs.Update
+        
+        Set Rx = CurrentDb.OpenRecordset(prefixTbl & "_Struct_")
+        For J = 0 To Tbl.Fields.Count - 1
+            Rx.AddNew
+                Rx!ID = K
+                Rx!fld = Tbl.Fields(J).Name
+                Rx!Typ = Tbl.Fields(J).type
+                Rx!Siz = Tbl.Fields(J).Size
+            Rx.Update
+        Next J
+    End If
+End If
+
+DoCmd.SetWarnings True
+Set rs = Nothing
+Set Rx = Nothing
+Set Tbl = Nothing
+End Sub

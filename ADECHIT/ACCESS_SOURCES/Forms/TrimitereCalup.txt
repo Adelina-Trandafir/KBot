@@ -1,0 +1,623 @@
+Version =20
+VersionRequired =20
+Checksum =-1769462120
+Begin Form
+    PopUp = NotDefault
+    Modal = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    AllowDesignChanges = NotDefault
+    ScrollBars =2
+    ViewsAllowed =1
+    TabularCharSet =163
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =10758
+    DatasheetFontHeight =11
+    ItemSuffix =24
+    Left =5976
+    Top =2220
+    Right =16992
+    Bottom =9540
+    DatasheetGridlinesColor =15062992
+    RecSrcDt = Begin
+        0x9b2d1fdc556de540
+    End
+    GUID = Begin
+        0x07e3defdd9c3704e98b621f17efcc08b
+    End
+    NameMap = Begin
+        0x0acc0e55000000006353c5ab2826a84fbc0da9dde8a8023500000000c1212d63 ,
+        0x536de54000000000000000005400720069006d00690074006500720065004300 ,
+        0x61006c0075007000000000000000580723dbb2a06b41818b3634eaef84d30700 ,
+        0x00006353c5ab2826a84fbc0da9dde8a8023544006f00630075006d0065006e00 ,
+        0x74000000000000008d4b2bdf27f4a54997b2661825ab758e070000006353c5ab ,
+        0x2826a84fbc0da9dde8a802354d00610069006c000000000000000f95c7eefb06 ,
+        0xae4c855796941feeeac1070000006353c5ab2826a84fbc0da9dde8a802355400 ,
+        0x720069006d0069007300000000000000f581df33381dfe4388b975c8843c2633 ,
+        0x070000006353c5ab2826a84fbc0da9dde8a80235440061007400610054007200 ,
+        0x69006d00690074006500720065000000000000002f1711dc71adb14cb85cc0c5 ,
+        0xb135d20a070000006353c5ab2826a84fbc0da9dde8a802354d00650073006100 ,
+        0x6a000000000000005365f481a8080f47a9664f5c5299545b070000006353c5ab ,
+        0x2826a84fbc0da9dde8a80235430061006c007500700000000000000000000000 ,
+        0x0000000000000000000000000c00000005000000000000000000000000000000 ,
+        0x0000
+    End
+    RecordSource ="SELECT TrimitereCalup.Document, TrimitereCalup.Mail, TrimitereCalup.Trimis, Trim"
+        "itereCalup.DataTrimitere, TrimitereCalup.Mesaj, TrimitereCalup.Calup FROM Trimit"
+        "ereCalup; "
+    Caption ="Situatie mailuri trimise"
+    DatasheetFontName ="Calibri"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000e010000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x00addf6347acdf63304c0802304acc1b01000004343cce0104000000583cce01 ,
+        0x010400069c00780303af0000010009009a0b3408640001000f00580202000100 ,
+        0x580203000000413400000000dc3ace014f5ae163a8345e12343cce01f03bce01 ,
+        0xf31c5711e43b0000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff4749533400000000000000000000000044494e55 ,
+        0x220020015c031c00cad2f6720000000000000000000000000000000000000000 ,
+        0x0000000000000000090000000000000000000100000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000001000000000000000000000020010000534d544a ,
+        0x00000000100010017b00300046003400310033003000440044002d0031003900 ,
+        0x430037002d0037006100620036002d0039003900410031002d00390038003000 ,
+        0x4600300033004200320045004500340045007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c00496e746572 ,
+        0x6c656176696e67004f464600496d61676554797065004a5045474d6564004f72 ,
+        0x69656e746174696f6e00504f52545241495400436f6c6c617465004f46460052 ,
+        0x65736f6c7574696f6e004f7074696f6e3100506170657253697a65004c455454 ,
+        0x455200436f6c6f724d6f64650032346270700000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000001c0000005634444d ,
+        0x0100000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800290047000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000504f525450524f4d50543a0000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000
+    End
+    AllowDatasheetView =0
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =16053492
+    DatasheetGridlinesColor12 =15062992
+    PrtDevModeW = Begin
+        0x00000000c000ec0f649ccf0100000000a00000008ed20000010000009aabdf00 ,
+        0x09000000090000006115000000000000fce914018d4cdd00000000000000ec0f ,
+        0x01040006dc00780303af0000010009009a0b3408640001000f00580202000100 ,
+        0x58020300000041003400000083b75377090000008473cf01e02fec0f6815ec0f ,
+        0xc000ec0f470300007fd15177070001e20000000009000000000000008874cf00 ,
+        0x47030000ffff0000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff4749533400000000000000000000000044494e55 ,
+        0x220020015c031c00cad2f6720000000000000000000000000000000000000000 ,
+        0x0000000000000000090000000000000000000100000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000001000000000000000000000020010000534d544a ,
+        0x00000000100010017b00300046003400310033003000440044002d0031003900 ,
+        0x430037002d0037006100620036002d0039003900410031002d00390038003000 ,
+        0x4600300033004200320045004500340045007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c00496e746572 ,
+        0x6c656176696e67004f464600496d61676554797065004a5045474d6564004f72 ,
+        0x69656e746174696f6e00504f52545241495400436f6c6c617465004f46460052 ,
+        0x65736f6c7574696f6e004f7074696f6e3100506170657253697a65004c455454 ,
+        0x455200436f6c6f724d6f64650032346270700000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000001c0000005634444d ,
+        0x0100000000000000000000000000000000000000
+    End
+    PrtDevNamesW = Begin
+        0x0400250043000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000050004f0052005400500052004f004d00500054003a0000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =161
+            FontSize =10
+            BorderColor =6710886
+            ForeColor =6710886
+            FontName ="Century Gothic"
+        End
+        Begin Rectangle
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+            BorderColor =6710886
+        End
+        Begin Line
+            BorderLineStyle =0
+            Width =1701
+            BorderColor =6710886
+        End
+        Begin Image
+            BackStyle =0
+            BorderLineStyle =0
+            SizeMode =3
+            PictureAlignment =2
+            Width =1701
+            Height =1701
+            BorderColor =6710886
+        End
+        Begin CommandButton
+            TextFontCharSet =161
+            Width =1701
+            Height =283
+            FontWeight =400
+            ForeColor =6710886
+            FontName ="Century Gothic"
+            BorderLineStyle =0
+        End
+        Begin OptionButton
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =6710886
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+        End
+        Begin OptionGroup
+            BackStyle =1
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =6710886
+        End
+        Begin BoundObjectFrame
+            SizeMode =3
+            BorderLineStyle =0
+            BackStyle =0
+            Width =4536
+            Height =2835
+            LabelX =-1701
+            BorderColor =6710886
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            TextFontCharSet =163
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =6710886
+            FontName ="Calibri"
+            AsianLineBreak =1
+        End
+        Begin ListBox
+            TextFontCharSet =163
+            BorderLineStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =11
+            BorderColor =6710886
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+        End
+        Begin ComboBox
+            TextFontCharSet =163
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =6710886
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+        End
+        Begin Subform
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =6710886
+        End
+        Begin UnboundObjectFrame
+            BackStyle =0
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =6710886
+        End
+        Begin CustomControl
+            OldBorderStyle =1
+            Width =4536
+            Height =2835
+            BorderColor =6710886
+        End
+        Begin ToggleButton
+            TextFontCharSet =161
+            Width =283
+            Height =283
+            FontWeight =400
+            ForeColor =6710886
+            FontName ="Century Gothic"
+            BorderLineStyle =0
+        End
+        Begin Tab
+            TextFontCharSet =163
+            Width =5103
+            Height =3402
+            FontSize =11
+            FontName ="Calibri"
+            BorderLineStyle =0
+        End
+        Begin Attachment
+            BackStyle =0
+            BorderLineStyle =0
+            PictureSizeMode =3
+            Width =1701
+            Height =1701
+            BorderColor =6710886
+            LabelX =-1701
+        End
+        Begin FormHeader
+            Height =1037
+            BackColor =9605778
+            Name ="FormHeader"
+            GUID = Begin
+                0x222c4713b306364097262b2aca856530
+            End
+            Begin
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =85
+                    TextAlign =2
+                    Left =-15
+                    Top =60
+                    Width =10605
+                    Height =570
+                    FontSize =20
+                    FontWeight =700
+                    BackColor =9605778
+                    BorderColor =5832932
+                    ForeColor =-2147483617
+                    Name ="Label12"
+                    Caption ="Trimitere MAIL"
+                    GUID = Begin
+                        0x582e76a22f410940b496fa2738f9c967
+                    End
+                    LayoutCachedLeft =-15
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =10590
+                    LayoutCachedHeight =630
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =93
+                    TextAlign =2
+                    Left =5160
+                    Top =737
+                    Width =2394
+                    Height =300
+                    FontWeight =700
+                    BackColor =-2147483606
+                    ForeColor =-2147483617
+                    Name ="Label16"
+                    Caption ="Mail:"
+                    GUID = Begin
+                        0x5faa7fb48d98e94ba4db7d13c0b71cd5
+                    End
+                    LayoutCachedLeft =5160
+                    LayoutCachedTop =737
+                    LayoutCachedWidth =7554
+                    LayoutCachedHeight =1037
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =95
+                    TextAlign =2
+                    Left =7560
+                    Top =737
+                    Width =1650
+                    Height =300
+                    FontWeight =700
+                    BackColor =-2147483606
+                    ForeColor =-2147483617
+                    Name ="Label17"
+                    Caption ="Trimis:"
+                    GUID = Begin
+                        0x25f42f1c6938644995762c5c51b1f144
+                    End
+                    LayoutCachedLeft =7560
+                    LayoutCachedTop =737
+                    LayoutCachedWidth =9210
+                    LayoutCachedHeight =1037
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =87
+                    TextAlign =2
+                    Left =9216
+                    Top =737
+                    Width =1440
+                    Height =300
+                    FontWeight =700
+                    BackColor =-2147483606
+                    ForeColor =-2147483617
+                    Name ="Label18"
+                    Caption ="DataTrimitere:"
+                    GUID = Begin
+                        0xea682226f4817041a246fb22b599eb2d
+                    End
+                    LayoutCachedLeft =9216
+                    LayoutCachedTop =737
+                    LayoutCachedWidth =10656
+                    LayoutCachedHeight =1037
+                End
+                Begin Label
+                    BackStyle =1
+                    OverlapFlags =87
+                    TextFontCharSet =0
+                    TextAlign =1
+                    Left =144
+                    Top =737
+                    Width =5010
+                    Height =300
+                    FontWeight =700
+                    BackColor =-2147483606
+                    ForeColor =-2147483617
+                    Name ="Label20"
+                    Caption ="Document"
+                    GUID = Begin
+                        0x64a55dccc18e074fa226326854a7cee7
+                    End
+                    LayoutCachedLeft =144
+                    LayoutCachedTop =737
+                    LayoutCachedWidth =5154
+                    LayoutCachedHeight =1037
+                End
+            End
+        End
+        Begin Section
+            Height =315
+            Name ="Detail"
+            GUID = Begin
+                0x3746d757e0ca4a4e92afa5b45bb6dde7
+            End
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =93
+                    TextFontCharSet =186
+                    TextAlign =2
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =5160
+                    Width =2394
+                    Height =315
+                    FontSize =10
+                    Name ="Mail"
+                    ControlSource ="Mail"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xfc2c7b767892554e92d101012a0a8104
+                    End
+
+                    LayoutCachedLeft =5160
+                    LayoutCachedWidth =7554
+                    LayoutCachedHeight =315
+                End
+                Begin ComboBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    RowSourceTypeInt =1
+                    OverlapFlags =95
+                    TextAlign =2
+                    BackStyle =0
+                    IMESentenceMode =3
+                    ColumnCount =2
+                    Left =7560
+                    Width =1641
+                    Height =315
+                    TabIndex =1
+                    GUID = Begin
+                        0x82b1a7c9fecb1145bf2dbe4f56382cc6
+                    End
+                    Name ="Trimis"
+                    ControlSource ="Trimis"
+                    RowSourceType ="Value List"
+                    RowSource ="0;\"Trimis OK\";1;\"Problema program\";2;\"Problema mail\""
+                    ColumnWidths ="0"
+                    AllowValueListEdits =0
+
+                    LayoutCachedLeft =7560
+                    LayoutCachedWidth =9201
+                    LayoutCachedHeight =315
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =87
+                    TextFontCharSet =186
+                    TextAlign =2
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =9207
+                    Width =1446
+                    Height =315
+                    ColumnWidth =1935
+                    FontSize =10
+                    TabIndex =2
+                    Name ="DataTrimitere"
+                    ControlSource ="DataTrimitere"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xe46de4465f9e4341bb513e174874c3b3
+                    End
+
+                    LayoutCachedLeft =9207
+                    LayoutCachedWidth =10653
+                    LayoutCachedHeight =315
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =87
+                    TextFontCharSet =0
+                    TextAlign =1
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =144
+                    Width =5010
+                    Height =315
+                    FontSize =10
+                    TabIndex =3
+                    Name ="Doc"
+                    ControlSource ="=Replace([Document],[CurrentProject].[Path] & \"\\Rapoarte\\\",\"..\")"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x301eaa443edbd34a8406c545d9b47a64
+                    End
+
+                    LayoutCachedLeft =144
+                    LayoutCachedWidth =5154
+                    LayoutCachedHeight =315
+                End
+            End
+        End
+        Begin FormFooter
+            Height =680
+            BackColor =9605778
+            Name ="FormFooter"
+            GUID = Begin
+                0xad10108d45754243ae136224e587949c
+            End
+            Begin
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =170
+                    Top =56
+                    Width =576
+                    Height =576
+                    Name ="Command19"
+                    Caption ="Command19"
+                    PictureData = Begin
+                        0x2800000010000000100000000100040000000000800000000000000000000000 ,
+                        0x0000000000000000000000000000800000800000008080008000000080008000 ,
+                        0x8080000080808000c0c0c0000000ff00c0c0c00000ffff00ff000000c0c0c000 ,
+                        0xffff0000ffffff00dadad0dadadadadaadad00adadadadaddad030dadadadada ,
+                        0xad0330adadadadad0033300000000adaa03330ff0dadadadd03300ff0adad4da ,
+                        0xa03330ff0dad44add03330ff0ad44444a03330ff0d444444d03330ff0ad44444 ,
+                        0xa0330fff0dad44add030ffff0adad4daa00fffff0dadadadd00000000adadada ,
+                        0xadadadadadadadad000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+                    ObjectPalette = Begin
+                        0x000301000000000000000000
+                    End
+                    ControlTipText ="Close Form"
+                    GUID = Begin
+                        0xce97516f13ca7a4d836684af52f6952e
+                    End
+                    OnClickEmMacro = Begin
+                        Version =196611
+                        ColumnsShown =8
+                        Begin
+                            Action ="Close"
+                            Argument ="-1"
+                            Argument =""
+                            Argument ="0"
+                        End
+                        Begin
+                            Comment ="_AXL:<?xml version=\"1.0\" encoding=\"UTF-16\" standalone=\"no\"?>\015\012<UserI"
+                                "nterfaceMacro For=\"Command19\" xmlns=\"http://schemas.microsoft.com/office/acce"
+                                "ssservices/2009/11/application\"><Statements><Action Name=\"CloseWindow\"/></Sta"
+                                "tements></UserInterfaceMacro>"
+                        End
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =170
+                    LayoutCachedTop =56
+                    LayoutCachedWidth =746
+                    LayoutCachedHeight =632
+                    UseTheme =255
+                    BackColor =-2147483606
+                    HoverColor =10855845
+                    PressedColor =10855845
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                End
+            End
+        End
+    End
+End

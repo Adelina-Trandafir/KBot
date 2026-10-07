@@ -1,0 +1,520 @@
+Version =21
+VersionRequired =20
+PublishOption =1
+Checksum =-843372469
+Begin Form
+    RecordSelectors = NotDefault
+    NavigationButtons = NotDefault
+    AllowDeletions = NotDefault
+    DividingLines = NotDefault
+    AllowAdditions = NotDefault
+    AllowDesignChanges = NotDefault
+    ScrollBars =2
+    TabularCharSet =238
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =5711
+    DatasheetFontHeight =11
+    ItemSuffix =15
+    Left =1120
+    Top =2910
+    Right =7540
+    Bottom =8530
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0x41e1b235cf94e640
+    End
+    GUID = Begin
+        0x742a5b1a6b6bc946a057e431392b8566
+    End
+    NameMap = Begin
+        0x0acc0e5500000000c1534d120eae1641a77255ee65f629c80000000039d2b628 ,
+        0xcf94e640000000000000000074006d00700043004f004d0050005f0044000000 ,
+        0x000000002ef6cde611a50148afa256236ba3baf707000000c1534d120eae1641 ,
+        0xa77255ee65f629c844005f004900440050000000000000009e54c7cff0482c44 ,
+        0x818d1b9447ff9ece06000000742a5b1a6b6bc946a057e431392b856643004c00 ,
+        0x0000000000003a8e0df946da594db01cf32e928ed4ec07000000c1534d120eae ,
+        0x1641a77255ee65f629c844005f004e0055004d0045000000000000007f0b21a4 ,
+        0xc060e2489b24d86d12ac60e807000000c1534d120eae1641a77255ee65f629c8 ,
+        0x44005f0053004f004c004400000000000000cdca5381fb6b2946afee5ec62bbe ,
+        0x69d907000000c1534d120eae1641a77255ee65f629c844005f00520045005300 ,
+        0x5400000000000000ead2be8cdab957468cf4281e81da714b07000000c1534d12 ,
+        0x0eae1641a77255ee65f629c844005f0047005200550050004100000000000000 ,
+        0x20f38e54246f29448ef42e8af7a5815106000000742a5b1a6b6bc946a057e431 ,
+        0x392b856644005f0053004f004c00440000000000000000000000000000000000 ,
+        0x0000000000000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="tmpCOMP_D"
+    DatasheetFontName ="Calibri"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =238
+            FontSize =11
+            BorderColor =8355711
+            ForeColor =6710886
+            FontName ="Calibri"
+            GridlineColor =10921638
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =60.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            TextFontCharSet =238
+            Width =1701
+            Height =283
+            FontSize =11
+            FontWeight =400
+            ForeColor =4210752
+            FontName ="Calibri"
+            GridlineColor =10921638
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackColor =14136213
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =14136213
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverColor =15060409
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedColor =9592887
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeColor =4210752
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeColor =4210752
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            TextFontCharSet =238
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =10921638
+            ForeColor =4210752
+            FontName ="Calibri"
+            AsianLineBreak =1
+            GridlineColor =10921638
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin ComboBox
+            AddColon = NotDefault
+            TextFontCharSet =238
+            BorderLineStyle =0
+            Width =1701
+            LabelX =-1701
+            FontSize =11
+            BorderColor =10921638
+            ForeColor =4138256
+            FontName ="Calibri"
+            GridlineColor =10921638
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =2
+            ForeShade =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Subform
+            BorderLineStyle =0
+            Width =1701
+            Height =1701
+            BorderColor =10921638
+            GridlineColor =10921638
+            BorderThemeColorIndex =1
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            BorderShade =65.0
+            ShowPageHeaderAndPageFooter =1
+        End
+        Begin FormHeader
+            Height =300
+            BackColor =9486586
+            Name ="FormHeader"
+            GUID = Begin
+                0x40198c822987a74eb98efe2a7858595a
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =9
+            BackTint =60.0
+            Begin
+                Begin Label
+                    FontItalic = NotDefault
+                    OverlapFlags =93
+                    TextAlign =2
+                    Left =1700
+                    Width =2331
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    ForeColor =0
+                    Name ="Label1"
+                    Caption ="NUME PLATITOR"
+                    GUID = Begin
+                        0xc938de4130c3f64293cdcb36dbef0fff
+                    End
+                    HorizontalAnchor =2
+                    LayoutCachedLeft =1700
+                    LayoutCachedWidth =4031
+                    LayoutCachedHeight =300
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    OverlapFlags =95
+                    TextAlign =2
+                    Left =4025
+                    Width =840
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    ForeColor =0
+                    Name ="Label2"
+                    Caption ="SOLD"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x10e449615a40094a8c5127c7616bc69e
+                    End
+                    HorizontalAnchor =1
+                    LayoutCachedLeft =4025
+                    LayoutCachedWidth =4865
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    OverlapFlags =87
+                    TextAlign =2
+                    Left =4865
+                    Width =840
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    ForeColor =0
+                    Name ="Label3"
+                    Caption ="RAMAS"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xcb1ce9ca769f484993649be7881a678c
+                    End
+                    HorizontalAnchor =1
+                    LayoutCachedLeft =4865
+                    LayoutCachedWidth =5705
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    OverlapFlags =87
+                    TextAlign =2
+                    Width =1701
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    ForeColor =0
+                    Name ="Label4"
+                    Caption ="GRUPA"
+                    GUID = Begin
+                        0x6655b23f4d02b94e9e26f28a4343c4e0
+                    End
+                    LayoutCachedWidth =1701
+                    LayoutCachedHeight =300
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin Section
+            Height =300
+            Name ="Detail"
+            GUID = Begin
+                0x390c511bc6396f489933ca0853a260a5
+            End
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =93
+                    IMESentenceMode =3
+                    Width =5711
+                    Height =300
+                    TabIndex =5
+                    ForeColor =16777215
+                    Name ="BCK"
+                    ConditionalFormat = Begin
+                        0x010000007c000000010000000100000000000000000000000d00000000000000 ,
+                        0x00000000fce6d400000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x5b0044005f004900440050005d003d005b0043004c005d0000000000
+                    End
+                    GUID = Begin
+                        0xdbe35a223a5cfc4a90cf4bf51ab826e0
+                    End
+                    HorizontalAnchor =2
+
+                    LayoutCachedWidth =5711
+                    LayoutCachedHeight =300
+                    BackThemeColorIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                    ConditionalFormat14 = Begin
+                        0x01000100000001000000000000000000000000000000fce6d4000c0000005b00 ,
+                        0x44005f004900440050005d003d005b0043004c005d0000000000000000000000 ,
+                        0x0000000000000000000000
+                    End
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =255
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1700
+                    Width =2331
+                    Height =300
+                    FontSize =10
+                    Name ="D_NUME"
+                    ControlSource ="D_NUME"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x155271562b8e394c947c316292fb7ec8
+                    End
+                    HorizontalAnchor =2
+
+                    LayoutCachedLeft =1700
+                    LayoutCachedWidth =4031
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =0
+                    OverlapFlags =255
+                    TextAlign =3
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =4025
+                    Width =840
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =1643706
+                    Name ="D_SOLD"
+                    ControlSource ="D_SOLD"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x20f38e54246f29448ef42e8af7a58151
+                    End
+                    HorizontalAnchor =1
+
+                    LayoutCachedLeft =4025
+                    LayoutCachedWidth =4865
+                    LayoutCachedHeight =300
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =0
+                    OverlapFlags =255
+                    TextAlign =3
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =4865
+                    Width =840
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =2
+                    ForeColor =1643706
+                    Name ="D_REST"
+                    ControlSource ="D_REST"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x1547176c7c7eb342a3fc669d794db326
+                    End
+                    HorizontalAnchor =1
+
+                    LayoutCachedLeft =4865
+                    LayoutCachedWidth =5705
+                    LayoutCachedHeight =300
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    OverlapFlags =255
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Height =300
+                    FontSize =10
+                    TabIndex =3
+                    Name ="D_GRUPA"
+                    ControlSource ="D_GRUPA"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x429b0f4cccb98e4e8dcee57a320d0032
+                    End
+
+                    LayoutCachedWidth =1701
+                    LayoutCachedHeight =300
+                    ThemeFontIndex =-1
+                End
+                Begin CommandButton
+                    Transparent = NotDefault
+                    OverlapFlags =247
+                    Width =5711
+                    Height =300
+                    TabIndex =4
+                    Name ="BTN"
+                    Caption ="Command6"
+                    OnClick ="[Event Procedure]"
+                    GUID = Begin
+                        0x868c62a4a238384ebd1ebb5608e64981
+                    End
+                    HorizontalAnchor =2
+
+                    CursorOnHover =1
+                    LayoutCachedWidth =5711
+                    LayoutCachedHeight =300
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                    Overlaps =1
+                End
+            End
+        End
+        Begin FormFooter
+            Height =300
+            BackColor =9486586
+            Name ="FormFooter"
+            GUID = Begin
+                0xafcf5adbf42f704b8ba45f690e78b4d3
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =9
+            BackTint =60.0
+            Begin
+                Begin TextBox
+                    Visible = NotDefault
+                    OverlapFlags =85
+                    IMESentenceMode =3
+                    Height =300
+                    Name ="CL"
+                    GUID = Begin
+                        0x9e54c7cff0482c44818d1b9447ff9ece
+                    End
+
+                    LayoutCachedWidth =1701
+                    LayoutCachedHeight =300
+                End
+                Begin TextBox
+                    Enabled = NotDefault
+                    Locked = NotDefault
+                    DecimalPlaces =0
+                    OverlapFlags =85
+                    TextAlign =3
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3455
+                    Width =1410
+                    Height =300
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =1
+                    ForeColor =1643706
+                    Name ="T_SOLD"
+                    ControlSource ="=Sum([D_SOLD])"
+                    Format ="Standard"
+                    GUID = Begin
+                        0x750ff686d616d648b5e8f419c71b0c57
+                    End
+                    HorizontalAnchor =1
+
+                    LayoutCachedLeft =3455
+                    LayoutCachedWidth =4865
+                    LayoutCachedHeight =300
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub BTN_Click()
+CL = D_IDP
+Parent!D_NUME = D_NUME
+Parent!D_SOLD = D_SOLD
+
+If Round(Nz(Parent!D_SOLD, 0), 2) > Round(Nz(Parent!C_SOLD, 0), 2) Then
+    Parent!Suma = Round(Nz(Parent!C_SOLD, 0), 2)
+Else
+    Parent!Suma = D_SOLD
+End If
+
+End Sub

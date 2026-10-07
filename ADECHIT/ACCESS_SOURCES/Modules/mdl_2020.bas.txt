@@ -1,0 +1,645 @@
+Option Compare Database
+Option Explicit
+
+Public Function ECount(Expr As String, Domain As String, Optional Criteria As String, Optional bCountDistinct As Boolean) As Variant
+On Error GoTo Err_Handler
+    'Purpose:   Enhanced DCount() function, with the ability to count distinct.
+    'Return:    Number of records. Null on error.
+    'Arguments: Expr           = name of the field to count. Use square brackets if the name contains a space.
+    '           Domain         = name of the table or query.
+    '           Criteria       = any restrictions. Can omit.
+    '           bCountDistinct = True to return the number of distinct values in the field. Omit for normal count.
+    'Notes:     Nulls are excluded (whether distinct count or not.)
+    '           Use "*" for Expr if you want to count the nulls too.
+    '           You cannot use "*" if bCountDistinct is True.
+    'Examples:  Number of customers who have a region: ECount("Region", "Customers")
+    '           Number of customers who have no region: ECount("*", "Customers", "Region Is Null")
+    '           Number of distinct regions: ECount("Region", "Customers", ,True)
+    Dim db As DAO.Database
+    Dim rs As DAO.Recordset
+    Dim strSql As String
+
+    'Initialize to return Null on error.
+    ECount = Null
+    Set db = DBEngine(0)(0)
+
+    If bCountDistinct Then
+        'Count distinct values.
+        If Expr <> "*" Then             'Cannot count distinct with the wildcard.
+            strSql = "SELECT " & Expr & " FROM [" & Domain & "] WHERE (" & Expr & " Is Not Null)"
+            If Criteria <> vbNullString Then
+                strSql = strSql & " AND (" & Criteria & ")"
+            End If
+            strSql = strSql & " GROUP BY " & Expr & ";"
+            Set rs = db.OpenRecordset(strSql)
+            If rs.RecordCount > 0& Then
+                rs.MoveLast
+            End If
+            ECount = rs.RecordCount     'Return the number of distinct records.
+            rs.Close
+        End If
+    Else
+        'Normal count.
+        strSql = "SELECT Count(" & Expr & ") AS TheCount FROM " & Domain & " as Dom"
+        If Criteria <> vbNullString Then
+            strSql = strSql & " WHERE " & Criteria
+        End If
+        Set rs = db.OpenRecordset(strSql)
+        If rs.RecordCount > 0& Then
+            ECount = rs!TheCount        'Return the count.
+        End If
+        rs.Close
+    End If
+
+Exit_Handler:
+    Set rs = Nothing
+    Set db = Nothing
+    Exit Function
+
+Err_Handler:
+    MsgBox Err.Description, vbExclamation, "ECount Error " & Err.Number
+    Resume Exit_Handler
+End Function
+
+Public Function dhFirstDayInMonth(Optional dtmDate As Date = 0) As Date
+    ' Return the first day in the specified month.
+    If dtmDate = 0 Then
+        ' Did the caller pass in a date? If not, use
+        ' the current date.
+        dtmDate = Date
+    End If
+    dhFirstDayInMonth = DateSerial(Year(dtmDate), _
+     Month(dtmDate), 1)
+End Function
+
+Public Function dhFirstDayInMonthWithoutWeekend(Optional dtmDate As Date = 0) As Date
+    ' Return the first day in the specified month.
+    If dtmDate = 0 Then
+        ' Did the caller pass in a date? If not, use
+        ' the current date.
+        dtmDate = Date
+    End If
+    dhFirstDayInMonthWithoutWeekend = DateSerial(Year(dtmDate), _
+     Month(dtmDate), 1)
+     
+     If Weekday(dhFirstDayInMonthWithoutWeekend) = 1 Then dhFirstDayInMonthWithoutWeekend = DateAdd("d", 1, dhFirstDayInMonthWithoutWeekend)
+     If Weekday(dhFirstDayInMonthWithoutWeekend) = 7 Then dhFirstDayInMonthWithoutWeekend = DateAdd("d", 2, dhFirstDayInMonthWithoutWeekend)
+    
+End Function
+Public Function dhLastDayInMonth(Optional dtmDate As Date = 0) As Date
+    ' Return the last day in the specified month.
+    If dtmDate = 0 Then
+        ' Did the caller pass in a date? If not, use
+        ' the current date.
+        dtmDate = Date
+    End If
+    dhLastDayInMonth = DateSerial(Year(dtmDate), _
+     Month(dtmDate) + 1, 0)
+End Function
+
+Public Function dhFirstDayInQuarter( _
+ Optional dtmDate As Date = 0) As Date
+    ' Returns the first day in the quarter specified
+    ' by the date in dtmDate.
+    Const dhcMonthsInQuarter As Integer = 3
+    If dtmDate = 0 Then
+        ' Did the caller pass in a date? If not, use
+        ' the current date.
+        dtmDate = Date
+    End If
+    dhFirstDayInQuarter = DateSerial( _
+     Year(dtmDate), _
+     Int((Month(dtmDate) - 1) / dhcMonthsInQuarter) * _
+     dhcMonthsInQuarter + 1, _
+     1)
+End Function
+
+Public Function dhLastDayInQuarter(Optional dtmDate As Date = 0) As Date
+    ' Returns the last day in the quarter specified
+    ' by the date in dtmDate.
+    Const dhcMonthsInQuarter As Integer = 3
+    If dtmDate = 0 Then
+        ' Did the caller pass in a date? If not, use
+        ' the current date.
+        dtmDate = Date
+    End If
+    dhLastDayInQuarter = DateSerial( _
+     Year(dtmDate), _
+     Int((Month(dtmDate) - 1) / dhcMonthsInQuarter) _
+      * dhcMonthsInQuarter + (dhcMonthsInQuarter + 1), _
+     0)
+End Function
+
+Public Function DataListaredinPerioada()
+Dim frm As Form
+Set frm = Screen.ActiveForm
+With frm
+    Select Case Left(!PER.Column(0), 1)
+        Case "A"
+            !DI = Format("01/01/" & Replace(!PER.Column(0), "A_", ""), "Short Date")
+            !DSF = Format("31/12/" & Replace(!PER.Column(0), "A_", ""), "Short Date")
+        Case "T"
+            '!DI = Format(dhFirstDayInQuarter(CDate(Format(Split(!Per.Column(0), "|")(2), "Short Date"))), "Short Date") 'asta imi baga de la inceputul trimestrului
+            !DI = Format("01/01/" & Split(!PER.Column(0), "|")(1), "Short Date") 'asta imi baga de la inceputul anului
+            !DSF = Format(dhLastDayInQuarter(CDate(Format(Split(!PER.Column(0), "|")(2), "Short Date"))), "Short Date")
+        Case "L"
+            !DI = Format("01/01/" & Split(!PER.Column(0), "|")(1), "Short Date") 'asta imi baga de la inceputul anului
+            !DSF = dhLastDayInMonth(CDate(Format(Split(!PER.Column(0), "|")(2), "Short Date")))
+    End Select
+End With
+
+Set frm = Nothing
+
+End Function
+
+
+Public Function fLuna(L As String) As String
+Select Case L
+    Case 1
+        fLuna = "Ianuarie"
+    Case 2
+        fLuna = "Februarie"
+    Case 3
+        fLuna = "Martie"
+    Case 4
+        fLuna = "Aprilie"
+    Case 5
+        fLuna = "Mai"
+    Case 6
+        fLuna = "Iunie"
+    Case 7
+        fLuna = "Iulie"
+    Case 8
+        fLuna = "August"
+    Case 9
+        fLuna = "Septembrie"
+    Case 10
+        fLuna = "Octombrie"
+    Case 11
+        fLuna = "Noiembrie"
+    Case 12
+        fLuna = "Decembrie"
+    Case Else
+        fLuna = "#ERROR#"
+End Select
+End Function
+
+Public Function GolesteTabel(Optional myR As Recordset, Optional myT As String = "", Optional Conditie As String = "") As Boolean
+Dim RC As Long
+
+If myR Is Nothing Then
+    If myT = "" Then
+        GolesteTabel = False
+        Exit Function
+    Else
+        If Not ExistaTabel(myT) Then
+            MsgBox "Nu exista tabelul selectat!", vbOKOnly + vbCritical, "[GOLESTE TABEL]"
+            GolesteTabel = False
+            Exit Function
+        End If
+        Set myR = CurrentDb.OpenRecordset("SELECT * FROM [" & myT & "]" & IIf(Conditie <> "", " WHERE " & Conditie, ""), 2)
+    End If
+End If
+        
+GolesteTabel = False
+
+If Not myR.EOF Then
+    myR.MoveLast
+    Do While Not myR.BOF
+        myR.Delete
+        myR.MovePrevious
+    Loop
+    GolesteTabel = True
+Else
+    GolesteTabel = False
+End If
+
+
+End Function
+
+Public Function ExistaTabel(Tbl As String) As Boolean
+Dim Tb As TableDef
+
+ExistaTabel = False
+
+For Each Tb In CurrentDb.TableDefs
+    If Tb.Name = Tbl Then
+        ExistaTabel = True
+        Exit Function
+    End If
+Next
+End Function
+
+Public Function StergeQuery(QName As String) As Byte
+Dim obj As QueryDef
+StergeQuery = 0
+For Each obj In CurrentDb.QueryDefs
+    If obj.Name = QName Then
+        DoCmd.DeleteObject acQuery, QName
+        StergeQuery = 1
+        Set obj = Nothing
+        Exit Function
+    End If
+Next
+End Function
+
+
+Public Function fSQL(ByVal ID As Double, Vl As Integer, VLX As Integer) As String
+Dim RC As Recordset
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM [~SQL_8XXX] WHERE Grp=CDbl('" & ID & "') AND VL=CInt('" & Vl & "') AND VLX=CInt('" & VLX & "')")
+If RC.EOF Then
+    fSQL = "E"
+Else
+    fSQL = RC!SQL
+End If
+If Right(fSQL, 1) = ";" Then fSQL = Mid(fSQL, 1, Len(fSQL) - 1)
+RC.Close
+Set RC = Nothing
+End Function
+
+Public Function POP(RC As Recordset) As Boolean
+If Not RC.EOF Then
+    RC.MoveLast
+    RC.MoveFirst
+    POP = True
+Else
+    POP = False
+End If
+End Function
+
+Public Function ResizeForm(frm As String, Optional frm2 As String = "", Optional frm3 As String = "", _
+                    Optional W As Double = -1, Optional h As Double = -1, Optional L As Double = -1, Optional t As Double = -1, _
+                    Optional bW As Double = -1, Optional bH As Double = -1, Optional BL As Double = -4, Optional bT As Double = -4)
+
+'Pentru variabilele optionale:
+'=============================
+'Frm2 --> daca se doreste deschiderea impreuna cu un al doi-lea formular
+'Frm3 --> daca se doreste deschiderea in relatie cu un formular parinte (se ignora Frm2 daca exista Frm3)
+'-1 --> dimensiunea formularului
+'-2 --> dimensiunea ecranului
+'-3 --> centrul formularului / centrul ecranului
+'-4 --> doar pentru formularul [frm2] - aliniat la fomularul principal
+'-5 --> doar pentru formularul [frm2] - aliniat la formularul principal + dimensiunea acestuia
+'orice alta valoare pozitiva --> dimensiunea dorita
+'=============================
+Const SMALL_OFFSET = 10
+
+Dim aForm As New clFormWindow
+Dim afW As Long, afH As Long, afL As Long, afT As Long
+Dim xfW As Long, xfH As Long, xfL As Long, xfT As Long
+
+If frm2 <> "" Then
+    Dim bForm As New clFormWindow, bfW As Long, bfH As Long, bfL As Long, bfT As Long
+    If Not IsLoaded(frm2) Then DoCmd.OpenForm frm2, acNormal
+    bForm.hWnd = Forms("" & frm2 & "").hWnd
+    bfW = bForm.Width
+    bfH = bForm.Height
+    bfL = bForm.Left
+    bfT = bForm.Top
+End If
+    
+With aForm
+    If frm3 <> "" Then
+        .hWnd = Forms("" & frm3 & "").hWnd
+    Else
+        If Not IsLoaded(frm) Then DoCmd.OpenForm frm, acNormal
+        .hWnd = Forms("" & frm & "").hWnd
+    End If
+    
+    afW = .Width
+    afH = .Height
+    afL = .Left
+    afT = .Top
+    
+    xfW = .Parent.Width
+    xfH = .Parent.Height
+    xfL = .Parent.Left
+    xfT = .Parent.Top
+    
+    If frm <> "" Then 'se doreste modificarea formularului parinte
+        If (xfW - SMALL_OFFSET) <> afW Or (xfH - SMALL_OFFSET) <> afH Then
+            .Width = Switch(W = -1, afW, W = -2, xfW - SMALL_OFFSET, True, W)
+            .Height = Switch(h = -1, afH, h = -2, xfH - SMALL_OFFSET, True, h)
+            .Left = Switch(L = -1, afL, L = -2, xfL, L = -3, IIf(frm2 = "", xfW / 2 - afW / 2, xfW / 2 - (afW + bfW) / 2), True, L)
+            .Top = Switch(t = -1, afT, t = -2, xfT, t = -3, xfH / 2 - afH / 2, True, t)
+        End If
+        
+        afW = .Width
+        afH = .Height
+        afL = .Left
+        afT = .Top
+    End If
+    
+End With
+    
+If frm2 <> "" Then
+    With bForm
+        .Width = Switch(bW = -1, bfW, bW = -2, xfW - SMALL_OFFSET - afW - afL, bW = -4, afW, True, bW)
+        .Height = Switch(bH = -1, bfH, bH = -2, xfH - SMALL_OFFSET, bH = -4, afH, True, bH)
+        .Left = Switch(BL = -1, bfL, BL = -2, xfL, BL = -4, afL, BL = -5, afL + afW, True, BL)
+        .Top = Switch(bT = -1, bfT, bT = -2, xfT, bT = -4, afT, bT = -5, afT + afH, True, bT)
+    End With
+End If
+
+Set aForm = Nothing
+Set bForm = Nothing
+End Function
+
+
+Public Function StergeRand(Tbl As String, Crit As String) As Double
+StergeRand = 0 'initial
+
+Dim RC As Recordset
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM [" & Tbl & "] WHERE " & Crit, 2)
+If RC.EOF Then
+    StergeRand = 1 'lipseste inregistrarea
+    Set RC = Nothing
+    Exit Function
+End If
+
+POP RC
+
+Do While Not RC.EOF
+    RC.Edit
+        RC!Sters = True
+    RC.Update
+    RC.MoveNext
+Loop
+
+StergeRand = -1 'stergere cu succes
+
+Set RC = Nothing
+
+
+End Function
+
+
+Public Function DateSelect(Optional Button As Integer = 1, Optional Shift As Integer = 2, Optional x As Single = 0, Optional y As Single = 0)
+'On Error GoTo Eroare
+
+Dim ctl As Control: Set ctl = Screen.ActiveControl
+Dim ctlN As String
+
+Forms!datepicker!Data = Format(ctl.Caption & "/" & Forms!datepicker!Luna & "/" & Year(Now()), "Short Date")
+
+If Not Forms!datepicker!DA Then
+    ctl.BackColor = RGB(150, 150, 200)
+    ctl.FontBold = True
+    ctlN = ctl.Name
+    For Each ctl In Forms!datepicker.Form.Controls
+        If Left(ctl.Name, 1) = "Z" And ctl.Name <> ctlN Then
+            ctl.BackColor = RGB(255, 255, 255)
+            ctl.FontBold = False
+        End If
+    Next
+    GoTo FaraClick
+End If
+
+If ctl.Tag = True Then
+    ctl.Tag = False
+    ctl.BackColor = RGB(255, 255, 255)
+Else
+    ctl.Tag = True
+    ctl.BackColor = RGB(0, 255, 0)
+End If
+
+ExitFunction:
+Set ctl = Nothing
+
+
+FaraClick:
+Exit Function
+
+Eroare:
+     Select Case Err.Number
+        Case 2501
+            'nu s-a completat campul necesar
+        Case Else
+            MsgBox "Eroare functie {DateSelect}: " & Err.Description & vbCrLf & "Numar: " & Err.Number
+    End Select
+End Function
+
+Function Work_Days(BegDate As Variant, EndDate As Variant) As Integer
+ 
+Dim WholeWeeks As Variant
+Dim DateCnt As Variant
+Dim EndDays As Integer
+
+On Error GoTo Err_Work_Days
+
+BegDate = DateValue(BegDate)
+EndDate = DateValue(EndDate)
+WholeWeeks = DateDiff("w", BegDate, EndDate)
+DateCnt = DateAdd("ww", WholeWeeks, BegDate)
+EndDays = 0
+
+Do While DateCnt <= EndDate
+    If Format(DateCnt, "ddd") <> "Sun" And _
+        Format(DateCnt, "ddd") <> "Sat" Then
+        EndDays = EndDays + 1
+    End If
+    DateCnt = DateAdd("d", 1, DateCnt)
+Loop
+
+Work_Days = WholeWeeks * 5 + EndDays
+
+Exit Function
+
+Err_Work_Days:
+
+' If either BegDate or EndDate is Null, return a zero
+' to indicate that no workdays passed between the two dates.
+
+If Err.Number = 94 Then
+    Work_Days = 0
+    Exit Function
+Else
+    ' If some other error occurs, provide a message.
+    MsgBox "Error " & Err.Number & ": " & Err.Description
+End If
+ 
+End Function
+
+
+Function FisaCont() As Boolean
+Dim IDP As Integer, Sold As Double
+
+TempVars!IDP = IIf(Forms!prezenta!Rapoarte!TG, "*", Forms!prezenta!IDP.value)
+
+GolesteTabel , "FisaCont"
+
+DoCmd.SetWarnings False
+DoCmd.OpenQuery "AddFisaCont"
+DoCmd.SetWarnings True
+
+Dim RC As Recordset
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM FisaCont ORDER BY IDP, Data", 2)
+If RC.EOF Then
+    Set RC = Nothing
+    Exit Function
+End If
+
+POP RC
+
+IDP = RC!IDP
+Sold = 0
+Do While Not RC.EOF
+    If RC!IDP = 3 Then
+    End If
+    
+    If IDP <> RC!IDP Then Sold = 0
+    
+    Sold = Sold + RC!DEBIT - RC!CREDIT
+    
+    RC.Edit
+        RC!Sold = Sold
+        RC!TIPS = Switch(Sold < 0, "Credit", Sold > 0, "Debit", Sold = 0, "")
+    RC.Update
+    
+    IDP = RC!IDP
+    RC.MoveNext
+Loop
+
+End Function
+
+Function OpenParamRecordset(SQL As String, dbType As DAO.RecordsetTypeEnum) As DAO.Recordset
+On Error GoTo Eroare
+
+Dim Qc As DAO.QueryDef
+Dim i As Integer
+
+Set Qc = CurrentDb.CreateQueryDef("")
+    Qc.SQL = SQL
+    If Qc.Parameters.Count <> 0 Then
+        For i = 0 To Qc.Parameters.Count - 1
+            Qc.Parameters(i) = Eval(Qc.Parameters(i).Name)
+        Next i
+    End If
+
+Set OpenParamRecordset = Qc.OpenRecordset
+
+IESIRE:
+Set Qc = Nothing
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_2020/OpenParamRecordSet()"
+    Set OpenParamRecordset = Nothing
+    Resume IESIRE
+    
+End Function
+
+Public Sub IncarcaPlati()
+On Error GoTo Eroare
+
+Dim RC As DAO.Recordset, TC As DAO.Recordset
+
+Select Case Forms!prezenta!Tb
+    Case 0 'chitante
+        GolesteTabel , "tmpPlatiChitante"
+        
+        Set RC = OpenParamRecordset("PARAMETERS [forms]![prezenta]![idz] Long; SELECT Plati.*, Chitante.* FROM Plati INNER JOIN Chitante ON Plati.IDPL = Chitante.IDPL WHERE (((Plati.IDZ)=[forms]![prezenta]![idz]));", dbOpenTable)
+        If Not POP(RC) Then
+            If Forms!prezenta!Plati.SourceObject = "Plati_chitante" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_chitante"
+            GoTo Final
+        End If
+        
+        Do While Not RC.EOF
+            Set TC = CurrentDb.OpenRecordset("tmpPlatiChitante", 2)
+            TC.AddNew
+                TC!IDPL = RC![plati.idpl]
+                TC!IDP = RC!IDP
+                TC!IDZ = RC!IDZ
+                TC!IDS = RC!IDS
+                TC!IDC = RC!IDC
+                TC!Data = RC![Plati.Data]
+                TC!Plata = RC!Plata
+                TC!TIP = RC!TIP
+                TC!Anulata = RC![Plati.Anulata]
+                TC!Valid = RC!Valid
+                TC!Serie = RC!Serie
+                TC!Numar = RC!Numar
+                TC!Explicatie = RC!Explicatie
+                TC!Salvata = True
+            TC.Update
+        
+            RC.MoveNext
+        Loop
+    
+        If Forms!prezenta!Plati.SourceObject = "Plati_chitante" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_chitante"
+        
+    Case 1 'alte plati
+        GolesteTabel , "tmpPlatiAlte"
+        
+        Set RC = OpenParamRecordset("PARAMETERS [forms]![prezenta]![idz] Long; SELECT Plati.*, AlteDoc.* FROM Plati INNER JOIN AlteDoc ON Plati.IDPL = AlteDoc.IDPL WHERE (((Plati.IDZ)=[forms]![prezenta]![idz]));", dbOpenTable)
+        If Not POP(RC) Then
+            If Forms!prezenta!Plati.SourceObject = "Plati_alte" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_alte"
+            GoTo Final
+        End If
+        
+        Do While Not RC.EOF
+            Set TC = CurrentDb.OpenRecordset("tmpPlatiAlte", 2)
+            TC.AddNew
+                TC!IDPL = RC![plati.idpl]
+                TC!IDP = RC!IDP
+                TC!IDZ = RC!IDZ
+                TC!IDS = RC!IDS
+                TC!IDL = RC!IDL
+                TC!IDA = RC!IDA
+                TC!Data = RC!Data
+                TC!Plata = RC!Plata
+                TC!TIP = RC!TIP
+                TC!Anulata = RC![Plati.Anulata]
+                TC!Valid = RC!Valid
+                TC!NrDoc = RC!NrDoc
+                TC!FelDoc = RC!FelDoc
+                TC!Salvata = True
+            TC.Update
+        
+            RC.MoveNext
+        Loop
+        
+        If Forms!prezenta!Plati.SourceObject = "Plati_alte" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_alte"
+        
+    Case 2 'restituiri
+        GolesteTabel , "tmpPlatiRetur"
+        
+        Set RC = OpenParamRecordset("PARAMETERS [forms]![prezenta]![idz] Long; SELECT Retur.* FROM Retur WHERE Retur.IDZ=[forms]![prezenta]![idz];", dbOpenTable)
+        If Not POP(RC) Then
+            If Forms!prezenta!Plati.SourceObject = "Plati_retur" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_retur"
+            GoTo Final
+        End If
+        
+        Do While Not RC.EOF
+            Set TC = CurrentDb.OpenRecordset("tmpPlatiRetur", 2)
+            TC.AddNew
+                TC!IDP = RC!IDP
+                TC!IDZ = RC!IDZ
+                TC!IDS = RC!IDS
+                TC!IDL = RC!IDL
+                TC!IDR = RC!IDR
+                TC!Data = RC!Data
+                TC!Explicatie = RC!Explicatie
+                TC!Suma = RC!Suma
+                TC!Anulat = RC!Anulat
+                TC!Salvata = True
+                TC!NrDoc = RC!NrDoc
+            TC.Update
+        
+            RC.MoveNext
+        Loop
+        
+        If Forms!prezenta!Plati.SourceObject = "Plati_retur" Then Forms!prezenta!Plati.Requery Else Forms!prezenta!Plati.SourceObject = "Plati_retur"
+End Select
+
+Final:
+Set RC = Nothing
+Set TC = Nothing
+
+Exit Sub
+
+Eroare:
+    DebugPrint Err.Description, "Forms/Prezenta_sub_buget/Form_Current()", True
+    Resume Final
+End Sub

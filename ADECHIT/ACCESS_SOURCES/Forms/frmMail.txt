@@ -1,0 +1,131 @@
+Version =21
+VersionRequired =20
+Checksum =-1100211363
+Begin Form
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    ControlBox = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    AllowUpdating =2
+    ScrollBars =0
+    TabularCharSet =128
+    TabularFamily =0
+    BorderStyle =0
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =60
+    GridY =60
+    Width =4933
+    DatasheetFontHeight =10
+    DatasheetFontWeight =500
+    ItemSuffix =3
+    Left =9015
+    Top =3810
+    Right =15015
+    Bottom =5430
+    TimerInterval =500
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0xe209d13931bbe440
+    End
+    GUID = Begin
+        0x8946b95cd8e33e46b5d618f6a1bc03ed
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    DatasheetFontName =""
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DatasheetGridlinesColor12 =12632256
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =238
+            FontName ="Tahoma"
+        End
+        Begin Rectangle
+            SpecialEffect =3
+            BackStyle =0
+            BorderLineStyle =0
+            Width =850
+            Height =850
+        End
+        Begin CheckBox
+            SpecialEffect =2
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+        End
+        Begin Section
+            Height =358
+            Name ="Detail"
+            GUID = Begin
+                0x9e9efd51e4a5e846816a1d15f4aa7c0b
+            End
+            Begin
+                Begin Rectangle
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =93
+                    Width =4933
+                    Height =358
+                    Name ="boxWhole"
+                    GUID = Begin
+                        0x400a4901296539418034dffcee300875
+                    End
+                    LayoutCachedWidth =4933
+                    LayoutCachedHeight =358
+                End
+                Begin Rectangle
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =223
+                    Width =4933
+                    Height =358
+                    Name ="boxPct"
+                    GUID = Begin
+                        0x8f96c82d66317948afb2dd84cff78965
+                    End
+                    LayoutCachedWidth =4933
+                    LayoutCachedHeight =358
+                End
+                Begin Label
+                    FontItalic = NotDefault
+                    OldBorderStyle =1
+                    OverlapFlags =215
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =4933
+                    Height =358
+                    FontSize =14
+                    FontWeight =700
+                    ForeColor =8210719
+                    Name ="BoxLbl"
+                    Caption ="Backup bază de date"
+                    FontName ="Consolas"
+                    Tag ="Backup bază de date"
+                    GUID = Begin
+                        0xf65ba1d5d47985438acfab66ede2c0cf
+                    End
+                    LayoutCachedWidth =4933
+                    LayoutCachedHeight =358
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit

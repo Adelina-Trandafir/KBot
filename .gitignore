@@ -529,3 +529,5 @@ PYTHON/data/*.mmdb
 /DocumentFundamentare_2026_02_17_008_fara_xml_213136.pdf
 /DocumentFundamentare_2026_02_17_008_fara_xml_213252.pdf
 /empty_pdf.pdf
+*.mdb
+/_push

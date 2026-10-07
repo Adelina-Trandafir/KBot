@@ -1,0 +1,202 @@
+Option Compare Database
+Option Explicit
+
+'Ersatz f�r VBA-Sendkeys-Anweisung
+'Quelle: Von Sascha Trowitzsch modifizierte Version nach
+' akhimna (http://ms-office-forum.net/forum/showthread.php?t=215539)
+
+'(Sendkeys f�hrt unter Vista zu einem Laufzeitfehler und ist gesperrt,
+' wenn die UAC angeschaltet ist.)
+
+' Im Gegensatz zur "normalen" SendKeys-Anweisung lassen sich
+' �ber SendKeysAPI auch zus�tzlich nachfolgende Systemtasten "dr�cken":
+' Windows -Taste
+' Kontextmen� -Taste
+' Druck -Taste(PrintScreen)
+' _______________
+' Beispiele:
+'
+' txtName.SetFocus
+' SendeTasten "Hallo Welt!"
+'
+' SendeTasten "{WIN}"        START > Programme �ffnen
+'
+' txtName.SetFocus
+' SendeTasten "{APPS}"       Kontextmen� der TextBox anzeigen
+'
+' SendeTasten "{PRINT}"      Bildschirm-Inhalt des aktiven Window ins Clipboard kopieren
+'
+' SendeTasten "{+3}"         Shift + 3 w�rde � ergeben
+' SendeTasten "{+2}"         Shift + 2 w�rde " ergeben
+' SendeTasten "{%TAB}"       Alt-TAB
+' SendeTasten "{%DOWN}"      Alt-NachUnten z.B. Drop-Down Feld aufklappen
+' SendeTasten "{^c}"         Strg+c  = kopieren
+' SendeTasten "{^v}"         Strg+v  = einf�gen
+'
+' Einschr�nkungen:
+' a) +, % und ^ k�nnen nicht kombiniert werden also z.B. {^%e} funktioniert nicht
+' b) Tastenwiederholungen sind nicht m�glich, z.B. {x 10} als 10-maliges Dr�cken der Taste x
+'
+'________________
+
+
+' ben�tigte API-Deklarationen
+Private Declare PtrSafe Sub keybd_event Lib "user32" (ByVal bVk As Byte, ByVal bScan As Byte, ByVal dwFlags As Long, ByVal dwExtraInfo As LongPtr)
+Private Declare PtrSafe Function VkKeyScan Lib "user32" Alias "VkKeyScanA" (ByVal cChar As Byte) As Integer
+' Taste dr�cken und loslassen
+Public Const KEYEVENTF_KEYUP = &H2
+' KeyCode anhand des Ascii-Wertes eines Zeichens ermitteln
+
+Private Type Integertype
+    i As Integer
+End Type
+
+Private Type HiLowByteType
+    LowByte As Byte
+    HiByte As Byte
+End Type
+
+' Zus�tzliche Virtual KeyCodes
+Private Const VK_WIN = &H5B         ' Windows-Taste
+Private Const VK_APPS = &H5D        ' Kontextmen�-Taste
+Private Const VK_SCROLL = &H91      ' Rollen (Scroll Lock) Taste
+
+
+Public Function SendKeysAPI(ByVal strText As String)
+Dim VK As Long
+Dim VK_x As Long
+Dim strChar As String
+Dim strChar2 As String
+Dim i As Long, n As Long, L As Long
+Dim bolShift As Boolean
+Dim bolStrg As Boolean
+Dim bolAlt As Boolean
+Dim intWert As Integer
+Dim strText2 As String
+Dim intEnde As Integer
+Dim intLaenge As Integer
+Dim vKeys As Variant
+Dim vKeysInt As Variant
+
+
+vKeys = Array("BACKSPACE", "BS", "BKSP", "BREAK", "CAPSLOCK", "DELETE", "DEL", "DOWN", "UP", _
+                 "LEFT", "RIGHT", "END", "ENTER", "HOME", "ESC", "HELP", "INSERT", "INS", "NUMLOCK", _
+                 "PGUP", "PGDN", "SCROLLLOCK", "TAB", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", _
+                 "F10", "F11", "F12", "F13", "F14", "F15", "F16", "PRINT", "WIN", "APPS")
+vKeysInt = Array(vbKeyBack, vbKeyBack, vbKeyBack, vbKeyPause, vbKeyCapital, vbKeyDelete, _
+                    vbKeyDelete, vbKeyDown, vbKeyUp, vbKeyLeft, vbKeyRight, vbKeyEnd, vbKeyReturn, vbKeyHome, _
+                    vbKeyEscape, vbKeyHelp, vbKeyInsert, vbKeyInsert, vbKeyNumlock, vbKeyPageUp, vbKeyPageDown, _
+                    VK_SCROLL, vbKeyTab, vbKeyF1, vbKeyF2, vbKeyF3, vbKeyF4, vbKeyF5, vbKeyF6, vbKeyF7, vbKeyF8, _
+                    vbKeyF9, vbKeyF10, vbKeyF11, vbKeyF12, vbKeyF13, vbKeyF14, vbKeyF15, vbKeyF16, vbKeySnapshot, _
+                    VK_WIN, VK_APPS)
+
+' Jedes Zeichen einzeln senden
+For i = 1 To Len(strText)
+    ' aktuelles Zeichen extrahieren
+    strChar = Mid$(strText, i, 1)
+
+    ' Sonderzeichen?
+    bolShift = False
+    bolStrg = False
+    bolAlt = False
+    If strChar = "{" Then
+        VK = -1
+        For n = 0 To UBound(vKeys)
+            L = Len(vKeys(n))
+            If UCase$(Mid$(strText, i + 1, L)) = vKeys(n) Then
+                VK = vKeysInt(n)
+                i = i + L + 1
+                Exit For
+            End If
+        Next n
+        If VK = -1 Then
+            strChar2 = Mid$(strText, i + 1, 1)
+            If (strChar2 = "+" Or strChar2 = "%" Or strChar2 = "^") Then
+                intEnde = InStr(i, strText, "}")
+                intLaenge = (intEnde - i) + 1
+                strText2 = Mid$(strText, i, intLaenge)
+                strText2 = Replace(strText2, strChar2, "")
+                Select Case strChar2
+                Case "+"                ' Shift
+                    VK_x = vbKeyShift
+                Case "%"                ' Alt
+                    VK_x = vbKeyMenu
+                Case "^"                ' Strg
+                    VK_x = vbKeyControl
+                End Select
+                i = i + 1
+                ' Steuertaste dr�cken
+                keybd_event VK_x, 1, 0, 0
+                ' Sub erneut aufrufen f�r 2. Taste
+                ' ''''debug.print strText2
+                SendKeysAPI (strText2)
+                i = i + (Len(strText2) - 1)
+                ' Steuertaste loslassen
+                keybd_event VK_x, 1, KEYEVENTF_KEYUP, 0
+            End If
+        End If
+    Else
+        ' Normale Tasten und keine Steuertasten
+        VK = VKKeyFromAscii(Asc(strChar), intWert)
+        If intWert = 1 Then
+            bolShift = True
+        ElseIf intWert = 6 Then
+            bolStrg = True
+            bolAlt = True
+        End If
+    End If
+
+    If i > Len(strText) Then Exit Function
+
+    ' Vor tats�chlichem Anschlag besondere Tasten gedr�ckt halten
+    If bolShift Then
+        keybd_event vbKeyShift, 1, 0, 0
+    End If
+    If bolStrg Then
+        keybd_event vbKeyControl, 1, 0, 0
+    End If
+    If bolAlt Then
+        keybd_event vbKeyMenu, 1, 0, 0
+    End If
+
+    ' niederdr�cken und wieder loslassen
+    If VK > -1 Then
+        keybd_event VK, 1, 0, 0
+        keybd_event VK, 1, KEYEVENTF_KEYUP, 0
+    End If
+
+    ' Nach Anschlag besondere Tasten loslassen
+    If bolShift Then
+        keybd_event vbKeyShift, 1, KEYEVENTF_KEYUP, 0
+    End If
+    If bolStrg Then
+        keybd_event vbKeyControl, 1, KEYEVENTF_KEYUP, 0
+    End If
+    If bolAlt Then
+        keybd_event vbKeyMenu, 1, KEYEVENTF_KEYUP, 0
+    End If
+
+Next i
+End Function
+
+'Dr�ckt eine Taste und l�sst sie wieder los
+Private Sub SendkeyAPI(intKeycode As Integer)
+    keybd_event intKeycode, 1, 0, 0
+    keybd_event intKeycode, 1, KEYEVENTF_KEYUP, 0
+End Sub
+
+Private Function VKKeyFromAscii(ByVal KeyAscii As Long, ByRef Shiftstate As Integer)
+' KeyAscii = ascii-Wert eines Zeichens, z.B. asc("a")
+' Shiftstate = R�ckgabe: Welche zus�tzlichen Tasten sind erforderlich:
+'       0 = keine
+'       1 = Shift
+'       6 = AltGr (Alt + Shift)
+    Dim vHL As HiLowByteType
+    Dim vI As Integertype
+
+    vI.i = VkKeyScan(KeyAscii)
+    LSet vHL = vI
+    Shiftstate = vHL.HiByte
+    ' ''''debug.print "shiftstate " & Chr(KeyAscii) & ": " & Shiftstate
+    VKKeyFromAscii = vHL.LowByte
+End Function

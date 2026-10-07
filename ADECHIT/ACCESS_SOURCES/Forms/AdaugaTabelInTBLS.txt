@@ -1,0 +1,205 @@
+Version =20
+VersionRequired =20
+Checksum =1205130605
+Begin Form
+    RecordSelectors = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    TabularCharSet =204
+    BorderStyle =3
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =10746
+    DatasheetFontHeight =11
+    ItemSuffix =3
+    Left =4032
+    Top =972
+    Right =14784
+    Bottom =5892
+    DatasheetGridlinesColor =15062992
+    RecSrcDt = Begin
+        0x302835e87ebbe440
+    End
+    GUID = Begin
+        0x98a77a9314fb744b9cd86e07cbd73d77
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    DatasheetFontName ="Calibri"
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =16053492
+    DatasheetGridlinesColor12 =15062992
+    FitToScreen =1
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =238
+            FontSize =11
+            FontName ="Calibri"
+        End
+        Begin CommandButton
+            TextFontCharSet =238
+            Width =1701
+            Height =283
+            FontSize =11
+            FontWeight =400
+            ForeColor =-2147483630
+            FontName ="Calibri"
+            BorderLineStyle =0
+        End
+        Begin ListBox
+            TextFontCharSet =238
+            BorderLineStyle =0
+            Width =1701
+            Height =1417
+            LabelX =-1701
+            FontSize =11
+            BorderColor =12632256
+            FontName ="Calibri"
+            AllowValueListEdits =1
+            InheritValueList =1
+        End
+        Begin Section
+            Height =4927
+            Name ="Detail"
+            GUID = Begin
+                0x18b9182a25e0c74eb4d2f3cd3488a271
+            End
+            Begin
+                Begin ListBox
+                    ColumnHeads = NotDefault
+                    RowSourceTypeInt =1
+                    OverlapFlags =85
+                    IMESentenceMode =3
+                    ColumnCount =7
+                    Width =8790
+                    Height =4642
+                    Name ="L"
+                    RowSourceType ="Value List"
+                    ColumnWidths ="1440;0;2160;0;0;0"
+                    OnDblClick ="[Event Procedure]"
+                    GUID = Begin
+                        0xf087b5814dd56c4fb12f9097952394cf
+                    End
+
+                    LayoutCachedWidth =8790
+                    LayoutCachedHeight =4642
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    Left =8925
+                    Top =150
+                    Width =1821
+                    Height =868
+                    TabIndex =1
+                    Name ="Command2"
+                    Caption ="Adauga tabel in TBLS"
+                    OnClick ="[Event Procedure]"
+                    GUID = Begin
+                        0x745e9dc9fe031e4d9b16b0d752ef8de2
+                    End
+
+                    LayoutCachedLeft =8925
+                    LayoutCachedTop =150
+                    LayoutCachedWidth =10746
+                    LayoutCachedHeight =1018
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+
+Private Sub Command2_Click()
+Dim Tbl As TableDef
+Dim Bz As String
+
+For Each Tbl In CurrentDb.TableDefs
+    If Tbl.Name = L Then
+        Bz = L.Column(5)
+        Bz = Replace(Bz, "DATABASE=" & CurrentProject.path & "\", "")
+        Bz = Replace(Bz, ".mdb", "")
+        
+        Call AdaugTabelIn_TBLS( _
+                    "#", _
+                    Tbl, _
+                    Nz(DMax("Struct", "_TBLS_"), 0) + 1, _
+                    Bz)
+    End If
+Next
+
+For i = 1 To L.ListCount
+    L.RemoveItem 0
+Next
+
+Call Form_Load
+
+End Sub
+
+Private Sub Form_Load()
+Dim Tbl As TableDef
+Dim x As String, i As Integer
+
+
+
+
+For Each Tbl In CurrentDb.TableDefs
+    For i = 0 To 5
+        x = x & Tbl.Properties(i).Name & ";"
+    Next
+    x = Mid(x, 1, Len(x) - 1)
+    L.AddItem x
+    Exit For
+Next
+
+x = ""
+
+For Each Tbl In CurrentDb.TableDefs
+    If Nz(Tbl.Properties(4).value, "") = "" Then GoTo Pas
+    If Nz(DLookup("Struct", "_TBLS_", "NumTbl='" & Tbl.Properties(0) & "'"), "") <> "" Then GoTo Pas
+    For i = 0 To 5
+        x = x & Tbl.Properties(i).value & ";"
+    Next
+    x = Mid(x, 1, Len(x) - 1)
+    TblProps Tbl
+    ''debugprint X
+    L.AddItem x
+Pas:
+    x = ""
+Next
+
+End Sub
+
+Function TblProps(Tbl As TableDef)
+Dim i As Integer
+Open CurrentProject.path & "\tblprops.txt" For Append As #1
+For i = 0 To 9
+    Print #1, Tbl.Name; "--> (" & i & ") " & Tbl.Properties(i).Name & " = " & Tbl.Properties(i).value
+Next i
+'Print #1, vbCrLf
+Close #1
+End Function
+
+Private Sub L_DblClick(Cancel As Integer)
+Call Command2_Click
+End Sub

@@ -1,0 +1,15 @@
+Option Compare Database
+Option Explicit
+
+Public Function DebugPrint(msg As String, Optional Mdl As String = "#Fara Modul#", Optional Eroare As Boolean = True)
+Dim FF As Integer: FF = FreeFile()
+
+Open CurrentProject.path & "\log.txt" For Append As #FF
+Print #FF, "[" & Format(Now(), "DD/MM/YYYY H:mm:ss") & "] - {" & Mdl & "} --> " & Mid(msg, 1, 255) & IIf(Len(msg) > 255, "...", "")
+Close #FF
+
+If Not Eroare Then Exit Function
+
+If CBool(DLookup("B", "B")) Then If InStr(1, msg, "SUCCES") = 0 Then MsgBox msg & vbCrLf & Mdl, vbOKOnly + vbCritical
+
+End Function

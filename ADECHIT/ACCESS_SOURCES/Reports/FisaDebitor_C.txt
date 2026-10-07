@@ -1,0 +1,527 @@
+Version =20
+VersionRequired =20
+PublishOption =1
+Checksum =-794981720
+Begin Report
+    LayoutForPrint = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =24
+    GridY =24
+    Width =5532
+    DatasheetFontHeight =11
+    ItemSuffix =17
+    Left =5664
+    Top =3504
+    Right =10860
+    Bottom =7692
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0xd68e1dae4d6de540
+    End
+    GUID = Begin
+        0x331d9dbcd6503f4ca62dcb360c37160d
+    End
+    NameMap = Begin
+        0x0acc0e5500000000109f46ded0242043b1d8e5291b9c8d31000000003aba4b07 ,
+        0x566de54000000000000000004600690073006100440065006200690074006f00 ,
+        0x72005f004300000000000000323b4c8de57f4449958a2b434170692107000000 ,
+        0x109f46ded0242043b1d8e5291b9c8d314400610074006100000000000000bd9b ,
+        0xc186e56ab3418faabfc279a906a207000000109f46ded0242043b1d8e5291b9c ,
+        0x8d3170006c00610074006100000000000000a2d29ce448b23a4595b90d225bad ,
+        0x832207000000109f46ded0242043b1d8e5291b9c8d3144006500740061006c00 ,
+        0x69006900000000000000f261936dd676894ca0a11f3b9ca207e907000000109f ,
+        0x46ded0242043b1d8e5291b9c8d316e00720064006f006300000000000000c278 ,
+        0xd103b900384992d21b262901acf107000000109f46ded0242043b1d8e5291b9c ,
+        0x8d31640061007400610064006f00630000000000000000000000000000000000 ,
+        0x0000000000000c000000050000000000000000000000000000000000
+    End
+    RecordSource ="FisaDebitor_C"
+    DatasheetFontName ="Calibri"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000201c0000f000000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010403069c00c00343a7000201000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c65747465720000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x08002c0050000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000004c5054313a00
+    End
+    FilterOnLoad =0
+    FitToPage =1
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    PrtDevModeW = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x530065007200690065007300200043006c006100730073002000440000000000 ,
+        0x01040306dc00c00343a7000201000900ea0a6f08640001000f00580201000100 ,
+        0x5802030000004c00650074007400650072000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000011010000ffffffff4749533400000000000000000000000044494e55 ,
+        0x22004801a4031c001982d5650000000000000000000000000000000000000000 ,
+        0x00000000000000000b0000000000000000000000000000000300000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000100000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000048010000534d544a ,
+        0x00000000100038017b00440044003600360045004400370034002d0030003000 ,
+        0x370038002d0034003700360045002d0042004500370039002d00330045003800 ,
+        0x3200460042003700370043003300360035007d000000496e70757442696e0046 ,
+        0x4f524d534f5552434500524553444c4c00556e69726573444c4c004f7269656e ,
+        0x746174696f6e00504f52545241495400436f6c6c617465004f4646004d656469 ,
+        0x6154797065005072696e74657244656661756c74005265736f6c7574696f6e00 ,
+        0x6470695f36303078363030783100506170657253697a65004134005061676573 ,
+        0x5065725368656574003100506167654f726465720046726f6e74546f4261636b ,
+        0x0050616765426f72646572004f464600436f6c6f724d6f646500477261797363 ,
+        0x616c650000000000000000000000000000000000000000000000000000000000 ,
+        0x1c0000005634444d0100000000000000000000000000000000000000
+    End
+    PrtDevNamesW = Begin
+        0x040028004c000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000004c00500054003100 ,
+        0x3a000000
+    End
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            FontSize =11
+            FontName ="Calibri"
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin TextBox
+            AddColon = NotDefault
+            FELineBreak = NotDefault
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            FontName ="Calibri"
+            AsianLineBreak =1
+            ShowDatePicker =0
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ThemeFontIndex =1
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =240
+            BackColor =15849926
+            Name ="ReportHeader"
+            GUID = Begin
+                0x6ca2d0539b5782448b168ca49d3cbb1c
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =2
+            BackTint =20.0
+            Begin
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =12
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =15858167
+                    Name ="Label0"
+                    Caption ="Data"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xcabddcb581496e478be1a0007bd4d09f
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =12
+                    LayoutCachedWidth =1032
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =1032
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =15858167
+                    Name ="Label1"
+                    Caption ="Plată"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x97b4d6136eef994fb5f69b5b76086a59
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =1032
+                    LayoutCachedWidth =2052
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =2052
+                    Width =1440
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =15858167
+                    Name ="Label2"
+                    Caption ="Tip plată"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xdbe48a8d3db96b4e91334a7194f929c5
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =2052
+                    LayoutCachedWidth =3492
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =3492
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =15858167
+                    Name ="Label9"
+                    Caption ="Nr. doc."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x5ee87a9ef44d5f4496e81b591cb5e088
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =3492
+                    LayoutCachedWidth =4512
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    BackStyle =1
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =4512
+                    Width =1020
+                    Height =240
+                    FontSize =8
+                    FontWeight =700
+                    BackColor =15858167
+                    Name ="Label10"
+                    Caption ="Data doc."
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x2df1d832fd44d443a719bb363985b62f
+                    End
+                    GridlineColor =10921638
+                    LayoutCachedLeft =4512
+                    LayoutCachedWidth =5532
+                    LayoutCachedHeight =240
+                    ThemeFontIndex =-1
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageHeader
+            Height =0
+            BackColor =15592953
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x0f182467f0807441a22bd6e65754e6ba
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            Height =240
+            Name ="Detail"
+            GUID = Begin
+                0xacd6e09469fb2e4798c6e9861b59a144
+            End
+            BackThemeColorIndex =1
+            Begin
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =12
+                    Width =1020
+                    FontSize =8
+                    Name ="Data"
+                    ControlSource ="Data"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x49c3e8e67760d24c8b7bbc3b9dabdbf3
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =12
+                    LayoutCachedWidth =1032
+                    LayoutCachedHeight =240
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =1032
+                    Width =1020
+                    FontSize =8
+                    TabIndex =1
+                    Name ="plata"
+                    ControlSource ="plata"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x8db61ea9927c3340994b6e1a8b54ddcb
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =1032
+                    LayoutCachedWidth =2052
+                    LayoutCachedHeight =240
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    DecimalPlaces =0
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =2052
+                    FontSize =8
+                    TabIndex =2
+                    Name ="tipx"
+                    ControlSource ="Detalii"
+                    Format ="Standard"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xd0f99f0a76211e4fb926db6063c667e8
+                    End
+                    GridlineColor =10921638
+
+                    LayoutCachedLeft =2052
+                    LayoutCachedWidth =3492
+                    LayoutCachedHeight =240
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =3492
+                    Width =1020
+                    FontSize =8
+                    TabIndex =3
+                    Name ="nrdoc"
+                    ControlSource ="nrdoc"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x7a2aebc9cc7e7b4b923ac5c4d68da84d
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =3492
+                    LayoutCachedWidth =4512
+                    LayoutCachedHeight =240
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =49
+                    BackStyle =0
+                    IMESentenceMode =3
+                    Left =4512
+                    Width =1020
+                    FontSize =8
+                    TabIndex =4
+                    Name ="datadoc"
+                    ControlSource ="datadoc"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x01a36c06ddaf3842a3a69e1589d22207
+                    End
+                    GridlineColor =10921638
+                    ShowDatePicker =1
+
+                    LayoutCachedLeft =4512
+                    LayoutCachedWidth =5532
+                    LayoutCachedHeight =240
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin PageFooter
+            Height =0
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x4580a7b53c18a7468d8ff11efdf71c6c
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportFooter"
+            GUID = Begin
+                0x73ae3bd4bd79d04ab6eeb8882ba9c5b3
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+        End
+    End
+End

@@ -13,7 +13,7 @@ the bottom, so `efactura_bp` must exist BEFORE that import (same pattern as rout
     token_routes.py  POST /api/efactura/token/start, POST .../cod, GET .../stare   (slice 00EF-04)
     ubl.py           the UBL 2.1 / CIUS-RO XML of an issued invoice (pure)          (slice 00EF-06)
     validare.py      our own checks of an invoice + ANAF's public validation service (slice 00EF-06)
-    facturi_store.py SQL of EF_Furnizor / EF_Clienti / EF_Facturi / EF_FacturiLinii  (slice 00EF-06)
+    facturi_store.py SQL of Unitati_Detalii + Unitati_Conturi (COMUN, 00EF-13) / EF_Clienti / EF_Facturi / EF_FacturiLinii (00EF-06)
     facturi.py       the rules: states, numbering, correction, storno, XML, validation (slice 00EF-06)
     factura_routes.py /api/efactura/furnizor, /um, /clienti, /facturi, ...         (slice 00EF-06)
     anaf_api.py      the calls to ANAF with the access token: upload, state, download, messages (slice 00EF-07)

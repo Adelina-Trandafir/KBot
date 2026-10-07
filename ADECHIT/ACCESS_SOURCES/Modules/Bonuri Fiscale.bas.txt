@@ -1,0 +1,57 @@
+Option Compare Database
+
+Option Explicit
+
+Function fBonFiscal(IDPL As Integer) As String
+fBonFiscal = "START"
+
+Dim RC As Recordset: Set RC = CurrentDb.OpenRecordset("SELECT * FROM BonuriF WHERE IDPL = " & IDPL & "", 2)
+Dim FF As Integer: FF = FreeFile()
+Dim BF_IN As String, BF_OUT As String, BF_SOFT As String
+
+BF_IN = Nz(DLookup("VL", "CFGS", "CFG='CaleBF_IN'"), "")
+BF_OUT = Nz(DLookup("VL", "CFGS", "CFG='CaleBF_out'"), "")
+BF_SOFT = Nz(DLookup("VL", "CFGS", "CFG='CaleBF_soft'"), "")
+
+If Dir(Left(BF_IN, InStrRev(BF_IN, "\")), vbDirectory) = "" Or BF_IN = "" Then
+    MsgBox "ATENTIE! Calea fisierului transmis la casa de marcat este eronata!" & vbCrLf & "Nu se transmite bonul!", vbOKOnly + vbCritical
+    fBonFiscal = "EROARE"
+    Set RC = Nothing
+    Exit Function
+End If
+
+If FileExists(BF_IN) Then Kill BF_IN
+
+If Dir(Left(BF_OUT, InStrRev(BF_OUT, "\")), vbDirectory) = "" Or BF_OUT = "" Then
+    MsgBox "ATENTIE! Calea fisierului raspuns de la casa de marcat este eronata!" & vbCrLf & "Nu se transmite bonul!", vbOKOnly + vbCritical
+    fBonFiscal = "EROARE"
+    Set RC = Nothing
+    Exit Function
+End If
+
+If FileExists(BF_SOFT) = False Or BF_SOFT = "" Then
+    MsgBox "ATENTIE! Calea driverului pentru casa de marcat este eronata!" & vbCrLf & "Nu se transmite bonul!", vbOKOnly + vbCritical
+    fBonFiscal = "EROARE"
+    Set RC = Nothing
+    Exit Function
+End If
+
+If Not RC.EOF Then
+    Open BF_IN For Output As FF
+    Print #FF, "P,1,______,_,__;" & Nz(DLookup("VL", "CFGs", "CFG='Mesaj_SUS'"), "") & ";;;;"
+    Print #FF, "S,1,______,_,__;" & Mid(RC!Continut, 1, 72) & ";" & RC!Valoare & ";1;1;1;6;0;0;"
+    Print #FF, "P,1,______,_,__;" & Nz(DLookup("VL", "CFGs", "CFG='Mesaj_JOS'"), "") & ";;;;"
+    Print #FF, "T,1,______,_,__;0;" 'daca vreau cu card voi trece 1 in loc de 0
+    Close #FF
+End If
+
+Set RC = Nothing
+
+Dim cmdLine As String: cmdLine = BF_SOFT & " " & BF_IN & " " & BF_OUT
+
+ExecWait cmdLine
+
+If FileExists(BF_IN) Then Kill BF_IN
+
+fBonFiscal = "FINAL"
+End Function

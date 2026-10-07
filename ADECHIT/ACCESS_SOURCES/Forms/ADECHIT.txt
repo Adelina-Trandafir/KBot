@@ -1,0 +1,549 @@
+Version =21
+VersionRequired =20
+PublishOption =1
+Checksum =896911761
+Begin Form
+    PopUp = NotDefault
+    Modal = NotDefault
+    RecordSelectors = NotDefault
+    MaxButton = NotDefault
+    MinButton = NotDefault
+    ControlBox = NotDefault
+    AutoCenter = NotDefault
+    NavigationButtons = NotDefault
+    CloseButton = NotDefault
+    DividingLines = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    ScrollBars =0
+    TabularCharSet =238
+    BorderStyle =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridX =24
+    GridY =24
+    Width =3780
+    DatasheetFontHeight =11
+    ItemSuffix =6
+    Left =10800
+    Top =3850
+    Right =14580
+    Bottom =6910
+    DatasheetGridlinesColor =14806254
+    RecSrcDt = Begin
+        0x8089ef358e6de540
+    End
+    GUID = Begin
+        0x6a373a45d363bf4ab5f64a41f590755c
+    End
+    NameMap = Begin
+        0x0acc0e5500000000000000000000000000000000000000000c00000005000000 ,
+        0x0000000000000000000000000000
+    End
+    DatasheetFontName ="Calibri"
+    OnLoad ="[Event Procedure]"
+    FilterOnLoad =0
+    ShowPageMargins =0
+    DisplayOnSharePointSite =1
+    DatasheetAlternateBackColor =15921906
+    DatasheetGridlinesColor12 =0
+    FitToScreen =1
+    DatasheetBackThemeColorIndex =1
+    BorderThemeColorIndex =3
+    ThemeFontIndex =1
+    ForeThemeColorIndex =0
+    AlternateBackThemeColorIndex =1
+    AlternateBackShade =95.0
+    NoSaveCTIWhenDisabled =1
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =238
+            FontSize =11
+            BorderColor =8355711
+            ForeColor =8355711
+            FontName ="Calibri"
+            GridlineColor =10921638
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =0
+            BorderTint =50.0
+            ForeThemeColorIndex =0
+            ForeTint =50.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin Rectangle
+            SpecialEffect =3
+            BackStyle =0
+            BorderLineStyle =0
+            BorderColor =10921638
+            GridlineColor =10921638
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin CommandButton
+            TextFontCharSet =238
+            FontSize =11
+            FontWeight =400
+            ForeColor =4210752
+            FontName ="Calibri"
+            GridlineColor =10921638
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+            UseTheme =1
+            Shape =1
+            Gradient =12
+            BackColor =14136213
+            BackThemeColorIndex =4
+            BackTint =60.0
+            BorderLineStyle =0
+            BorderColor =14136213
+            BorderThemeColorIndex =4
+            BorderTint =60.0
+            ThemeFontIndex =1
+            HoverColor =15060409
+            HoverThemeColorIndex =4
+            HoverTint =40.0
+            PressedColor =9592887
+            PressedThemeColorIndex =4
+            PressedShade =75.0
+            HoverForeColor =4210752
+            HoverForeThemeColorIndex =0
+            HoverForeTint =75.0
+            PressedForeColor =4210752
+            PressedForeThemeColorIndex =0
+            PressedForeTint =75.0
+        End
+        Begin CheckBox
+            BorderLineStyle =0
+            LabelX =230
+            LabelY =-30
+            BorderColor =10921638
+            GridlineColor =10921638
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin ListBox
+            TextFontCharSet =238
+            BorderLineStyle =0
+            LabelX =-1800
+            FontSize =11
+            ForeColor =4210752
+            BorderColor =10921638
+            FontName ="Calibri"
+            GridlineColor =10921638
+            AllowValueListEdits =1
+            InheritValueList =1
+            ThemeFontIndex =1
+            BackThemeColorIndex =1
+            BorderThemeColorIndex =1
+            BorderShade =65.0
+            ForeThemeColorIndex =0
+            ForeTint =75.0
+            GridlineThemeColorIndex =1
+            GridlineShade =65.0
+        End
+        Begin FormHeader
+            Height =276
+            BackColor =15849926
+            Name ="FormHeader"
+            GUID = Begin
+                0xa3af7ecc6a81a34498f1c27463c3e8a2
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =2
+            BackTint =20.0
+            Begin
+                Begin Label
+                    OverlapFlags =85
+                    TextAlign =2
+                    TextFontFamily =49
+                    Width =3780
+                    Height =276
+                    FontSize =12
+                    FontWeight =700
+                    ForeColor =8210719
+                    Name ="Label0"
+                    Caption ="ADECHIT 2020"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x674f3c2f2e6d0b49b97dee8d56496db1
+                    End
+                    LayoutCachedWidth =3780
+                    LayoutCachedHeight =276
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+            End
+        End
+        Begin Section
+            Height =2253
+            Name ="Detail"
+            GUID = Begin
+                0x49724de0863bcd4590b62e23b74cb3b4
+            End
+            AlternateBackColor =15921906
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =1
+            Begin
+                Begin ListBox
+                    ColumnHeads = NotDefault
+                    RowSourceTypeInt =1
+                    OverlapFlags =87
+                    TextFontFamily =49
+                    IMESentenceMode =3
+                    ColumnCount =2
+                    Left =60
+                    Top =60
+                    Width =3660
+                    Height =1980
+                    FontSize =9
+                    FontWeight =700
+                    ForeColor =8210719
+                    Name ="Lst"
+                    RowSourceType ="Value List"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xadf918f488f0d547bdbd0b82012e8911
+                    End
+                    AllowValueListEdits =0
+
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =2040
+                    ThemeFontIndex =-1
+                    ForeThemeColorIndex =-1
+                    ForeTint =100.0
+                End
+                Begin Label
+                    Visible = NotDefault
+                    OldBorderStyle =1
+                    OverlapFlags =93
+                    TextAlign =2
+                    TextFontFamily =49
+                    Left =60
+                    Top =2040
+                    Width =3660
+                    Height =213
+                    FontSize =8
+                    FontWeight =700
+                    BorderColor =0
+                    ForeColor =0
+                    Name ="boxLbl"
+                    Caption ="GRUPA PLECATI"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x747cb63255bdcb4398db1d24c5925e03
+                    End
+                    HorizontalAnchor =2
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =2040
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =2253
+                    ThemeFontIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderTint =100.0
+                    ForeThemeColorIndex =-1
+                End
+                Begin Rectangle
+                    Visible = NotDefault
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =223
+                    Left =60
+                    Top =2040
+                    Width =3660
+                    Height =213
+                    BorderColor =0
+                    Name ="boxWhole"
+                    GUID = Begin
+                        0x8ac7ea2465d22843a304713f9605ab4b
+                    End
+                    GridlineColor =0
+                    HorizontalAnchor =2
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =2040
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =2253
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+                Begin Rectangle
+                    Visible = NotDefault
+                    SpecialEffect =0
+                    BackStyle =1
+                    OverlapFlags =95
+                    Left =60
+                    Top =2040
+                    Width =0
+                    Height =213
+                    BackColor =16090946
+                    BorderColor =0
+                    Name ="boxPct"
+                    GUID = Begin
+                        0x3b2366be5ff09743b293d6694ba74bb5
+                    End
+                    GridlineColor =0
+                    HorizontalAnchor =2
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =2040
+                    LayoutCachedWidth =60
+                    LayoutCachedHeight =2253
+                    BackThemeColorIndex =-1
+                    BorderThemeColorIndex =-1
+                    BorderShade =100.0
+                    GridlineThemeColorIndex =-1
+                    GridlineShade =100.0
+                End
+            End
+        End
+        Begin FormFooter
+            Height =540
+            BackColor =15849926
+            Name ="FormFooter"
+            GUID = Begin
+                0x7be569ccc8538c48883a343723588728
+            End
+            AlternateBackThemeColorIndex =1
+            AlternateBackShade =95.0
+            BackThemeColorIndex =2
+            BackTint =20.0
+            Begin
+                Begin CommandButton
+                    Default = NotDefault
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =60
+                    Top =60
+                    Width =1320
+                    Height =372
+                    FontSize =9
+                    FontWeight =700
+                    Name ="IESIRE"
+                    Caption =" IEȘIRE"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0xff0856e2ba7eee41b54d78c673a4e4a2
+                    End
+                    OnClickEmMacro = Begin
+                        Version =196611
+                        ColumnsShown =8
+                        Begin
+                            Action ="Quit"
+                            Argument ="0"
+                        End
+                        Begin
+                            Comment ="_AXL:<?xml version=\"1.0\" encoding=\"UTF-16\" standalone=\"no\"?>\015\012<UserI"
+                                "nterfaceMacro For=\"IESIRE\" xmlns=\"http://schemas.microsoft.com/office/accesss"
+                                "ervices/2009/11/application\"><Statements><Action Name=\"QuitAccess\"><Argument "
+                                "Name=\"Options\">Prompt</Argument"
+                        End
+                        Begin
+                            Comment ="_AXL:></Action></Statements></UserInterfaceMacro>"
+                        End
+                    End
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000082c2ea0982c2ea4b82c2ea90 ,
+                        0x82c2eade00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000082c2ea2182c2ea7582c2eab782c2eaf982c2eaff82c2eaff ,
+                        0x82c2eaff00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffa500000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffc000000000b17d4a90b17d4affb17d4af0b17d4a36 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffedffffff30b17d4a87b17d4affb17d4af0b17d4a3600000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaffffffffffd7ecf8ff82c2eaff ,
+                        0x82c2eaffffffff30b17d4a81b17d4affb17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4aff82c2eaff82c2eaff82c2eaffdceef9ffc4e2f5ff82c2eaff ,
+                        0x82c2eaffffffff27b17d4a7eb17d4affb17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4aff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffe4ffffff27b17d4a84b17d4affb17d4af0b17d4a3900000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffbd00000000b17d4a8db17d4affb17d4af0b17d4a39 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffa500000000000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaffffffffffffffffffffffffff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2eaff82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff ,
+                        0x82c2eaff82c2eaff82c2eaff82c2eaff82c2eaff000000000000000000000000 ,
+                        0x000000000000000082c2ea2182c2ea6f82c2eab782c2eaf982c2eaff82c2eaff ,
+                        0x82c2eaff00000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000000000000000000082c2ea0982c2ea4e82c2ea96 ,
+                        0x82c2eae400000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =60
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =1380
+                    LayoutCachedHeight =432
+                    PictureCaptionArrangement =5
+                    ThemeFontIndex =-1
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                End
+                Begin CommandButton
+                    OverlapFlags =85
+                    TextFontFamily =49
+                    Left =2400
+                    Top =60
+                    Width =1320
+                    Height =372
+                    FontSize =9
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="INTRARE"
+                    Caption ="INTRARE"
+                    OnClick ="[Event Procedure]"
+                    FontName ="Consolas"
+                    GUID = Begin
+                        0x82423c719190a94a93ddebc160166207
+                    End
+                    ImageData = Begin
+                        0x2800000010000000100000000100200000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0xb17d4a45b17d4af9b17d4affb17d4afcb17d4a5a000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x00000000b17d4a4eb17d4af9b17d4affb17d4af9b17d4a4b0000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000b17d4a57b17d4afcb17d4affb17d4af6b17d4a3f00000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000b17d4a60b17d4affb17d4affb17d4af0b17d4a33 ,
+                        0x000000000000000000000000b17d4a03b17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4affb17d4affb17d4affb17d4affb17d4affb17d4affb17d4aea ,
+                        0xb17d4a27000000000000000000000000b17d4affb17d4affb17d4affb17d4aff ,
+                        0xb17d4affb17d4affb17d4affb17d4affb17d4affb17d4affb17d4affb17d4ae7 ,
+                        0xb17d4a2400000000000000000000000000000000000000000000000000000000 ,
+                        0x000000000000000000000000b17d4a5ab17d4affb17d4affb17d4aeab17d4a2d ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000b17d4a45b17d4af9b17d4affb17d4af0b17d4a3300000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x00000000b17d4a36b17d4af6b17d4affb17d4af6b17d4a390000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0xb17d4a24b17d4aeab17d4affb17d4af6b17d4a42000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+                        0x0000000000000000
+                    End
+
+                    CursorOnHover =1
+                    LayoutCachedLeft =2400
+                    LayoutCachedTop =60
+                    LayoutCachedWidth =3720
+                    LayoutCachedHeight =432
+                    PictureCaptionArrangement =4
+                    ThemeFontIndex =-1
+                    WebImagePaddingLeft =3
+                    WebImagePaddingTop =3
+                    WebImagePaddingRight =2
+                    WebImagePaddingBottom =2
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private WithEvents lFTP As clsWinSCP
+Attribute lFTP.VB_VarHelpID = -1
+
+Private Sub Form_Load()
+Screen.MousePointer = 11
+SafeUnsafe swe_IgnoreError
+
+On Error Resume Next
+
+ListFiles CurrentProject.path, "baza*.mdb", False, Me.Lst
+
+Call AccessCloseButtonEnabled(False)
+Call DescarcaFEOnline
+
+Screen.MousePointer = 0
+
+Set lFTP = wsFTP
+boxPct.Width = 0
+
+End Sub
+
+Private Sub INTRARE_Click()
+If Nz(Lst.Column(1), "") = "" Then
+    MsgBox "Alege unitatea dorita!", vbOKOnly + vbInformation
+    Exit Sub
+End If
+
+CatalogExternTabele Lst.Column(0) & Lst.Column(1), Me
+
+CnnTable2021 Lst.Column(0) & Lst.Column(1), 1, Me
+
+SalvezSiguranta
+
+If GetSetting("ADECHIT", "General", "bck_LastWrite", "0") = "0" Then
+    BackupFTP
+ElseIf DateDiff("d", Now(), CDate(Format(GetSetting("ADECHIT", "General", "bck_LastWrite", 0), "General Date"))) > 30 Then
+    BackupFTP
+End If
+
+FaraBackup:
+If Nz(DLookup("ID", "CFGS", "F='XX' AND CFG='CodAnulare'"), "") = "" Then AddRecord "CFGS", "@,'CodAnulare',0,'XX'"
+
+If Nz(DLookup("ID", "RunOnce", "RO='Copii plecati 2021'"), "") = "" Then
+    CurrentDb.Execute "UPDATE Platitori SET Platitori.Plecat = False;"
+    CurrentDb.Execute "UPDATE (Platitori INNER JOIN SS_Buget ON Platitori.IDP = SS_Buget.IDP) INNER JOIN Grupe ON Platitori.IDG = Grupe.IDG SET Platitori.Plecat = True WHERE ((([sfd]+[sfc])=0) AND ((InStr(1,[grupe]![grupa],'pleca'))<>0) AND ((SS_Buget.IDL)=DMax('IDL','ss_buget')));"
+    CurrentDb.Execute "INSERT INTO RunOnce (RO) VALUES ('Copii plecati 2021')"
+End If
+
+DoCmd.Close acForm, Me.Name
+End Sub
+
+Private Sub lFTP_FtpError(e As String)
+MsgBox e, vbOKOnly + vbCritical, "EROARE SERVER FTP"
+End Sub
+
+
+Private Sub lFTP_Progress(FileName As String, Percent As Double, Size As Long)
+Dim t As Long: t = boxWhole.Width
+If Split(FileName, ".")(UBound(Split(FileName, "."))) = "zip" Then
+    boxPct.Width = t * Percent
+End If
+Debug.Print FileName
+End Sub

@@ -1,0 +1,370 @@
+Option Compare Database
+Option Explicit
+
+Public Function CalculSituatieDebitori_Buget2021(grp As Boolean, Optional sav As Boolean = False, Optional tIDL As Integer = 0) As Boolean
+On Error GoTo Eroare
+
+Dim Wk As DAO.Workspace
+Dim Qc As DAO.QueryDef
+'Dim Frm As Access.Form
+'Dim RC As DAO.Recordset, Tc As DAO.Recordset
+
+'If Not sav Then
+'    Set Frm = Forms!prezenta!Rapoarte.Form
+'Else
+'    Set Frm = Forms!prezenta!Luni.Form
+'End If
+
+CalculSituatieDebitori_Buget2021 = False
+
+CurrentDb.Execute "DELETE * FROM Situatie_buget"
+CurrentDb.Execute "DELETE * FROM Solduri_lunare"
+CurrentDb.Execute "DELETE * FROM Explicatie_lunara"
+
+Screen.MousePointer = 11
+Set Wk = Workspaces(0)
+
+Wk.BeginTrans
+
+Set Qc = CurrentDb.QueryDefs("qPrezenta")
+    If sav Then
+        Qc.Parameters(0) = "*"
+    Else
+        Qc.Parameters(0) = IIf(Forms!prezenta!Rapoarte!TGP = False, Forms!prezenta!IDG, "*")
+    End If
+    Qc.Parameters(1) = [Forms]![prezenta]![IDL]
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 6, 1, False, "Calculare prezenta")
+
+Set Qc = CurrentDb.QueryDefs("qSolduri")
+    Qc.Parameters(0) = [Forms]![prezenta]![IDL]
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 6, 2, False, "Calculare solduri initiale")
+    
+Set Qc = CurrentDb.QueryDefs("Update_Solduri")
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 6, 3, False, "Actualizare solduri initiale")
+
+Set Qc = CurrentDb.QueryDefs("Update_Situatie")
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 6, 4, False, "Actualizare date situatie")
+
+Set Qc = CurrentDb.QueryDefs("qExplicatie")
+    Qc.Parameters(0) = [Forms]![prezenta]![IDL]
+    Qc.Execute
+
+'Call ProgressBar(Frm, 6, 5, False, "Calculare explicatie doc.")
+
+Set Qc = CurrentDb.QueryDefs("Update_Detalii")
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 6, 6, False, "Actualizare explicatie doc.")
+
+Set Qc = CurrentDb.QueryDefs("Update_Compensare")
+    Qc.Execute
+    
+'Call ProgressBar(Frm, 7, 7, False, "Actualizare compensare.")
+'Call ProgressBar(Frm, -1, -1)
+
+If sav Then
+    Set Qc = CurrentDb.QueryDefs("Salvare_Lunara")
+    Qc.Execute
+End If
+
+Wk.CommitTrans
+CalculSituatieDebitori_Buget2021 = True
+
+IESIRE:
+Set Qc = Nothing
+Set Wk = Nothing
+Screen.MousePointer = 0
+
+Exit Function
+
+Eroare:
+    MsgBox Err.Description, vbOKOnly + vbCritical
+    Wk.Rollback
+    CalculSituatieDebitori_Buget2021 = False
+    Resume IESIRE
+End Function
+
+Public Function CalculSituatieDebitori_Buget(grp As Boolean, Optional sav As Boolean = False, Optional tIDL As Integer = 0) As Boolean
+    Dim Qc As DAO.QueryDef
+    Dim RC As DAO.Recordset, TC As DAO.Recordset
+    Dim SoldPrezenta As Double, SoldPlati As Double, SoldInitial As Double, SoldInitialLuna As Double, SoldRetur As Double
+    Dim i As Long
+    
+CalculSituatieDebitori_Buget = False
+
+GolesteTabel , "Situatie_buget"
+
+Set TC = CurrentDb.OpenRecordset("Situatie_buget", 2)
+
+Set Qc = CurrentDb.CreateQueryDef("", DLookup("SQL", "SQL", "ID=1"))
+If sav Then
+    Qc.Parameters(0) = "*"
+    Qc.Parameters(1) = tIDL
+Else
+    Qc.Parameters(0) = IIf(Forms!prezenta!Plati!TGP = False, Forms!prezenta!IDG, "*")
+    Qc.Parameters(1) = Forms!prezenta!IDL
+End If
+
+Set RC = Qc.OpenRecordset
+
+If Not POP(RC) Then
+    Set TC = Nothing
+    Set RC = Nothing
+    MsgBox "Eroare la calculul situatiei lunare!" & vbCrLf & "{CalculSituatieDebitori_Buget}", vbOKOnly + vbCritical
+    Exit Function
+End If
+
+
+Do While Not RC.EOF
+    i = i + 1
+    If RC!IDP = 10445 Then
+'        Stop
+    End If
+    
+    If sav Then
+        SoldPrezenta = Nz(DSum("ValoareContract", "Prezenta", "IDL < " & tIDL & " AND IDP = " & RC!IDP), 0)
+        SoldPlati = Nz(DSum("Plata", "Plati", "IDL < " & tIDL & " AND IDP = " & RC!IDP), 0)
+        SoldInitial = Nz(DLookup("SI", "Platitori", "IDP=" & RC!IDP), 0)
+        SoldRetur = Nz(DSum("Suma", "Retur", "IDP=" & RC!IDP & " AND IDL < " & tIDL & ""), 0)
+        SoldInitialLuna = SoldPrezenta + SoldInitial - SoldPlati + SoldRetur
+    Else
+        SoldPrezenta = Nz(DSum("ValoareContract", "Prezenta", "IDL < " & Forms!prezenta!IDL & " AND IDP = " & RC!IDP), 0)
+        SoldPlati = Nz(DSum("Plata", "Plati", "IDL < " & Forms!prezenta!IDL & " AND IDP = " & RC!IDP & " AND Anulata=False"), 0)
+        SoldInitial = Nz(DLookup("SI", "Platitori", "IDP=" & RC!IDP), 0)
+        SoldRetur = Nz(DSum("Suma", "Retur", "IDP=" & RC!IDP & " AND IDL < " & Forms!prezenta!IDL & ""), 0)
+        SoldInitialLuna = SoldPrezenta + SoldInitial - SoldPlati + SoldRetur
+    End If
+    
+    TC.AddNew
+        TC!SID = IIf(SoldInitialLuna > 0, SoldInitialLuna, 0)
+        TC!SIC = IIf(SoldInitialLuna < 0, Abs(SoldInitialLuna), 0)
+        TC!IDG = RC!IDG
+        TC!IDP = RC!IDP
+        TC!IDZ = RC!IDZ
+        TC!IDL = RC!IDL
+        TC!Luna = RC!LunaT
+        TC!Anul = RC!Anul
+        TC!Grupa = RC!Grupa
+        TC!Educator = RC!Educator
+        TC!Nume = RC!Nume
+        TC!CNP = RC!CNP
+        TC!ZilePrezenta = RC!ZilePrezenta
+        TC!ValoareContract = RC!ValoareContract
+        TC!Plata = RC!Plata
+        TC!Plati = RC!Plati
+        TC!Plecat = RC!Plecat
+        '=================
+        'tc!Restanta = Rc!Restanta 'nefolosit
+        TC!Compensare = IIf(TC!SID > 0, 0, IIf(TC!Plata + TC!Plati > 0, IIf((TC!ValoareContract - (TC!Plata + TC!Plati)) < 0, 0, TC!ValoareContract - (TC!Plata + TC!Plati)), IIf(TC!SIC > TC!ValoareContract, TC!ValoareContract, TC!SIC)))
+        TC!Anticipat = IIf((TC!Plata + TC!Plati - TC!ValoareContract - TC!SID) > 0, TC!Plata + TC!Plati - TC!SID - TC!ValoareContract, 0)
+        TC!Retur = RC!Retur
+        TC!ValoareTotala = RC!ValoareTotala
+        If sav Then
+            TC!Detalii = PreiaDetalii(RC!IDZ, tIDL)
+        Else
+            TC!Detalii = PreiaDetalii(RC!IDZ, Forms!prezenta!IDL)
+        End If
+        TC!SFD = IIf(SoldInitialLuna + RC!ValoareContract - (RC!Plata + RC!Plati - Nz(RC!Retur, 0)) > 0, SoldInitialLuna + RC!ValoareContract - (RC!Plata + RC!Plati - Nz(RC!Retur, 0)), 0)
+        TC!SFC = IIf(SoldInitialLuna + RC!ValoareContract - (RC!Plata + RC!Plati - Nz(RC!Retur, 0)) < 0, Abs(SoldInitialLuna + RC!ValoareContract - (RC!Plata + RC!Plati - Nz(RC!Retur, 0))), 0)
+        
+        If TC!Compensare > 0 Then If TC!SIC > 0 And TC!SFD > 0 Then TC!Compensare = TC!SIC
+    TC.Update
+    
+    If Not sav Then
+        If Forms!prezenta!Plati!TGP Then Call ProgressBar(Forms!prezenta!Plati.Form, RC.RecordCount, i, False, RC!Grupa)
+    Else
+        Call ProgressBar(Forms!prezenta!Luni.Form, RC.RecordCount, i, False, "BLOCARE " & RC!Grupa)
+    End If
+    
+    RC.MoveNext
+Loop
+
+
+If Not sav Then
+    Call ProgressBar(Forms!prezenta!Plati.Form, -1, -1)
+Else
+    Call ProgressBar(Forms!prezenta!Luni.Form, -1, -1)
+End If
+
+If sav Then
+    Set RC = CurrentDb.OpenRecordset("Situatie_buget", 2)
+    Set TC = CurrentDb.OpenRecordset("SELECT * FROM SS_Buget WHERE IDL = " & tIDL, 2)
+    
+    If POP(TC) Then GoTo Final
+    POP RC
+    
+    Do While Not RC.EOF
+        TC.AddNew
+            TC!IDG = RC!IDG
+            TC!IDP = RC!IDP
+            TC!IDL = RC!IDL
+            TC!IDZ = RC!IDZ
+            TC!Luna = RC!Luna
+            TC!Anul = RC!Anul
+            TC!Grupa = RC!Grupa
+            TC!Nume = RC!Nume
+            TC!CNP = RC!CNP
+            TC!SID = RC!SID
+            TC!SIC = RC!SIC
+            TC!ZilePrezenta = RC!ZilePrezenta
+            TC!ValoareContract = RC!ValoareContract
+            TC!ValoareTotala = RC!ValoareTotala
+            TC!Plata = RC!Plata
+            TC!Restanta = RC!Restanta
+            TC!Compensare = RC!Compensare
+            TC!Anticipat = RC!Anticipat
+            TC!Plati = RC!Plati
+            TC!Retur = RC!Retur
+            TC!SFD = RC!SFD
+            TC!SFC = RC!SFC
+            TC!Detalii = RC!Detalii
+            TC!Plecat = RC!Plecat
+        TC.Update
+        
+        RC.MoveNext
+    Loop
+End If
+    
+Final:
+Set RC = Nothing
+Set TC = Nothing
+End Function
+
+Public Function PreiaDetalii(IDZ As Integer, IDL As Integer) As String
+
+PreiaDetalii = ""
+
+Dim RC As DAO.Recordset
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Chitante WHERE IDPL IN (SELECT IDPL FROM Plati WHERE IDZ = " & IDZ & ") AND Anulata=False", 2)
+If POP(RC) Then
+    Do While Not RC.EOF
+        PreiaDetalii = PreiaDetalii & ";Ch." & RC!Numar
+        RC.MoveNext
+    Loop
+End If
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM BonuriF WHERE IDPL IN (SELECT IDPL FROM Plati WHERE IDZ = " & IDZ & ")", 2)
+If POP(RC) Then
+    Do While Not RC.EOF
+        PreiaDetalii = PreiaDetalii & ";Bf." & RC!NrBF
+        RC.MoveNext
+    Loop
+End If
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM AlteDoc WHERE IDPL IN (SELECT IDPL FROM Plati WHERE IDZ = " & IDZ & ")", 2)
+If POP(RC) Then
+    Do While Not RC.EOF
+        PreiaDetalii = PreiaDetalii & ";" & Left(RC!FelDoc, 2) & "." & RC!NrDoc
+        RC.MoveNext
+    Loop
+End If
+
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Retur WHERE IDL = " & IDL & " AND IDZ = " & IDZ, 2)
+If POP(RC) Then
+    Do While Not RC.EOF
+        PreiaDetalii = PreiaDetalii & ";" & RC!Explicatie
+        RC.MoveNext
+    Loop
+End If
+
+If PreiaDetalii <> "" Then PreiaDetalii = Mid(PreiaDetalii, 2)
+
+Set RC = Nothing
+
+End Function
+
+
+Public Function ConcatRelated(strField As String, _
+    strTable As String, _
+    Optional strWhere As String, _
+    Optional strOrderBy As String, _
+    Optional strSeparator = ", ") As Variant
+On Error GoTo Err_Handler
+    'Purpose:   Generate a concatenated string of related records.
+    'Return:    String variant, or Null if no matches.
+    'Arguments: strField = name of field to get results from and concatenate.
+    '           strTable = name of a table or query.
+    '           strWhere = WHERE clause to choose the right values.
+    '           strOrderBy = ORDER BY clause, for sorting the values.
+    '           strSeparator = characters to use between the concatenated values.
+    'Notes:     1. Use square brackets around field/table names with spaces or odd characters.
+    '           2. strField can be a Multi-valued field (A2007 and later), but strOrderBy cannot.
+    '           3. Nulls are omitted, zero-length strings (ZLSs) are returned as ZLSs.
+    '           4. Returning more than 255 characters to a recordset triggers this Access bug:
+    '               http://allenbrowne.com/bug-16.html
+    Dim rs As DAO.Recordset         'Related records
+    Dim rsMV As DAO.Recordset       'Multi-valued field recordset
+    Dim strSql As String            'SQL statement
+    Dim strOut As String            'Output string to concatenate to.
+    Dim lngLen As Long              'Length of string.
+    Dim bIsMultiValue As Boolean    'Flag if strField is a multi-valued field.
+    
+    'Initialize to Null
+    ConcatRelated = Null
+    
+    'Build SQL string, and get the records.
+    strSql = "SELECT " & strField & " FROM " & strTable
+    If strWhere <> vbNullString Then
+        strSql = strSql & " WHERE " & strWhere
+    End If
+    If strOrderBy <> vbNullString Then
+        strSql = strSql & " ORDER BY " & strOrderBy
+    End If
+    Set rs = DBEngine(0)(0).OpenRecordset(strSql, dbOpenDynaset)
+    'Determine if the requested field is multi-valued (Type is above 100.)
+    bIsMultiValue = (rs(0).type > 100)
+    
+    'Loop through the matching records
+    Do While Not rs.EOF
+        If bIsMultiValue Then
+            'For multi-valued field, loop through the values
+            Set rsMV = rs(0).value
+            Do While Not rsMV.EOF
+                If Not IsNull(rsMV(0)) Then
+                    strOut = strOut & rsMV(0) & strSeparator
+                End If
+                rsMV.MoveNext
+            Loop
+            Set rsMV = Nothing
+        ElseIf Not IsNull(rs(0)) Then
+            strOut = strOut & rs(0) & strSeparator
+        End If
+        rs.MoveNext
+    Loop
+    rs.Close
+    
+    'Return the string without the trailing separator.
+    lngLen = Len(strOut) - Len(strSeparator)
+    If lngLen > 0 Then
+        ConcatRelated = Left(strOut, lngLen)
+    End If
+
+Exit_Handler:
+    'Clean up
+    Set rsMV = Nothing
+    Set rs = Nothing
+    Exit Function
+
+Err_Handler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description, vbExclamation, "ConcatRelated()"
+    Resume Exit_Handler
+End Function
+
+
+Function PreiaDateSalvate(IDL As Integer)
+CurrentDb.Execute "DELETE * FROM Situatie_buget"
+CurrentDb.Execute "INSERT INTO Situatie_buget ( IDG, IDP, IDL, IDZ, Luna, Anul, Grupa, Educator, Nume, CNP, ZilePrezenta, SID, SIC, ValoareContract, ValoareTotala, Plata, Restanta, Compensare, Anticipat, Plati, Retur, SFD, SFC, Detalii, Plecat ) " & _
+                "SELECT SS_Buget.IDG, SS_Buget.IDP, SS_Buget.IDL, SS_Buget.IDZ, SS_Buget.Luna, SS_Buget.Anul, SS_Buget.Grupa, SS_Buget.Educator, SS_Buget.Nume, SS_Buget.CNP, SS_Buget.ZilePrezenta, SS_Buget.SID, SS_Buget.SIC, SS_Buget.ValoareContract, SS_Buget.ValoareTotala, SS_Buget.Plata, SS_Buget.Restanta, SS_Buget.Compensare, SS_Buget.Anticipat, SS_Buget.Plati, SS_Buget.Retur, SS_Buget.SFD, SS_Buget.SFC, SS_Buget.Detalii, SS_Buget.Plecat " & _
+                " FROM SS_Buget" & _
+                " WHERE IDL=" & IDL & " AND CStr(IDG) Like '" & IIf(Forms!prezenta!Rapoarte!TGP, "*", Forms!prezenta!IDG) & "'"
+
+End Function

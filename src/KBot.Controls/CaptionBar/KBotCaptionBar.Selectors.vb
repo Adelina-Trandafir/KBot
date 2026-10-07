@@ -33,6 +33,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     Public Const SelectorYear As String = "year"
     ''' <summary>The source / sector selector («Sursă/Sector»).</summary>
     Public Const SelectorSector As String = "ss"
+    ''' <summary>The invoice-kind selector of the E-Factura window (sales / purchases).</summary>
+    Public Const SelectorKind As String = "kind"
 
     ''' <summary>One painted drop-down: its choices, its state and where it was drawn last.</summary>
     Private NotInheritable Class TitleSelector
@@ -77,7 +79,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private ReadOnly _selectors As TitleSelector() = {
         New TitleSelector(SelectorUnit, String.Empty, 2),
         New TitleSelector(SelectorYear, "An Date", 1),
-        New TitleSelector(SelectorSector, "Sursă/Sector", 1)}
+        New TitleSelector(SelectorSector, "Sursă/Sector", 1),
+        New TitleSelector(SelectorKind, "Tip factură", 1)}
     ' Raised for the duration of the opening, so the common IPopupAnchor sink knows which
     ' painted element unfolded (see SetPopupOpen).
     Private _selectorMenuOpening As Boolean

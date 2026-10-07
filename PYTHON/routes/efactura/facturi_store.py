@@ -1,8 +1,8 @@
 # routes/efactura/facturi_store.py
 """
-SQL of the issued-invoice tables (slice 00EF-06): `EF_Furnizor`, `EF_Clienti`, `EF_Facturi`, `EF_FacturiLinii` in
-the UNIT database (sql/00EF_02_efactura_unitate.sql, plus `NumarInitial` from sql/00EF_06_efactura_numar_initial.sql),
-and the two read-only common lists `AVACONT_COMUN.EF_UM` and `AVACONT_COMUN.BIC`.
+SQL of the issued-invoice tables (slice 00EF-06): `EF_Clienti`, `EF_Facturi`, `EF_FacturiLinii` in the UNIT database
+(sql/00EF_02_efactura_unitate.sql), the issuer's `AVACONT_COMUN.Unitati_Detalii` / `Unitati_Conturi` (slice 00EF-13,
+sql/00EF_13_unitati_detalii.sql), and the two read-only common lists `AVACONT_COMUN.EF_UM` and `AVACONT_COMUN.BIC`.
 
 Plain statements on a cursor the caller owns (a DICTIONARY cursor: rows come back as dicts); the rules --
 who may change what, in which state -- are in facturi.py. Nothing here commits.
@@ -11,7 +11,12 @@ No `%` is ever written inside a statement: patterns travel as parameters (mysql.
 """
 from decimal import Decimal
 
-FURNIZOR_COLUMNS = ("Denumire", "CodFiscal", "Adresa", "Orasul", "Judetul", "Mail", "Telefon", "Reprezentant",
+# The issuer's data and accounts live in AVACONT_COMUN (slice 00EF-13), one row per unit (key DC); the statements name the
+# schema, so the unit connection reads and locks them in the same transaction as the invoice tables.
+FURNIZOR_TABLE = "AVACONT_COMUN.Unitati_Detalii"
+CONTURI_TABLE = "AVACONT_COMUN.Unitati_Conturi"
+# What the window edits (and what the XML reads); AnafPreluat is written only by furnizor_mark_anaf.
+FURNIZOR_COLUMNS = ("Denumire", "CodFiscal", "Adresa", "Orasul", "Judetul", "Mail", "Telefon",
                     "SerieFactura", "NumarInitial", "AfiseazaPrimiteNoi")
 CLIENT_COLUMNS = ("IdClient", "DenumireClient", "CodFiscal", "IndFiscal", "Cont", "Banca", "Adresa", "Judetul",
                   "Orasul", "Sector", "CNP")
@@ -33,19 +38,57 @@ def like(text):
 # ---------------------------------------------------------------------------------------------
 # issuer
 # ---------------------------------------------------------------------------------------------
-def furnizor_get(cursor, for_update=False):
-    cursor.execute("SELECT " + ", ".join(FURNIZOR_COLUMNS) + " FROM EF_Furnizor WHERE Id = 1"
-                   + (" FOR UPDATE" if for_update else ""))
+def furnizor_get(cursor, dc, for_update=False):
+    """The unit's row of Unitati_Detalii (None = not filled in yet), plus AnafPreluat."""
+    cursor.execute("SELECT " + ", ".join(FURNIZOR_COLUMNS) + ", AnafPreluat FROM " + FURNIZOR_TABLE + " WHERE DC = %s"
+                   + (" FOR UPDATE" if for_update else ""), (dc,))
     return cursor.fetchone()
 
 
-def furnizor_save(cursor, values):
-    """Insert-or-update of the single row (Id = 1). `values` is a dict with every column of FURNIZOR_COLUMNS."""
+def furnizor_save(cursor, dc, values):
+    """Insert-or-update of the unit's row. `values` is a dict with every column of FURNIZOR_COLUMNS."""
     columns = ", ".join(FURNIZOR_COLUMNS)
     marks = ", ".join(["%s"] * len(FURNIZOR_COLUMNS))
     updates = ", ".join(f"{name} = VALUES({name})" for name in FURNIZOR_COLUMNS)
-    cursor.execute(f"INSERT INTO EF_Furnizor (Id, {columns}) VALUES (1, {marks}) ON DUPLICATE KEY UPDATE {updates}",
-                   tuple(values[name] for name in FURNIZOR_COLUMNS))
+    cursor.execute(f"INSERT INTO {FURNIZOR_TABLE} (DC, {columns}) VALUES (%s, {marks}) ON DUPLICATE KEY UPDATE {updates}",
+                   (dc,) + tuple(values[name] for name in FURNIZOR_COLUMNS))
+
+
+def furnizor_unit(cursor, dc):
+    """The unit's name and tax code from Unitati (None = no such unit)."""
+    cursor.execute("SELECT NumeUnitate, CF FROM AVACONT_COMUN.Unitati WHERE DC = %s", (dc,))
+    return cursor.fetchone()
+
+
+def furnizor_mark_anaf(cursor, dc, denumire, adresa, cod_fiscal):
+    """The one-time take from ANAF (slice 00EF-13): writes the name and the address, closes the button (AnafPreluat = 1).
+    A unit with no row yet gets one, with `cod_fiscal` as the tax code; an existing row keeps everything else."""
+    cursor.execute(
+        f"INSERT INTO {FURNIZOR_TABLE} (DC, Denumire, CodFiscal, Adresa, AnafPreluat, DataAnafPreluat) "
+        "VALUES (%s, %s, %s, %s, 1, NOW()) "
+        "ON DUPLICATE KEY UPDATE Denumire = VALUES(Denumire), Adresa = VALUES(Adresa), AnafPreluat = 1, DataAnafPreluat = NOW()",
+        (dc, denumire, cod_fiscal, adresa))
+
+
+def have_invoices(cursor):
+    """True when the unit has issued at least one invoice (the series and the first number are then fixed)."""
+    cursor.execute("SELECT 1 FROM EF_Facturi LIMIT 1")
+    return cursor.fetchone() is not None
+
+
+# ---------------------------------------------------------------------------------------------
+# the issuer's bank accounts (slice 00EF-12, moved to AVACONT_COMUN.Unitati_Conturi by 00EF-13)
+# ---------------------------------------------------------------------------------------------
+def conturi_list(cursor, dc):
+    cursor.execute("SELECT IdCont, Cont, Banca FROM " + CONTURI_TABLE + " WHERE DC = %s ORDER BY IdCont", (dc,))
+    return cursor.fetchall()
+
+
+def conturi_replace(cursor, dc, rows):
+    """The whole list of the unit is replaced: `rows` is a list of (Cont, Banca). The caller commits (one transaction)."""
+    cursor.execute("DELETE FROM " + CONTURI_TABLE + " WHERE DC = %s", (dc,))
+    for cont, banca in rows:
+        cursor.execute("INSERT INTO " + CONTURI_TABLE + " (DC, Cont, Banca) VALUES (%s, %s, %s)", (dc, cont, banca))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -135,6 +178,17 @@ def is_last_of_series(cursor, series, number):
     cursor.execute("SELECT COUNT(*) AS n FROM EF_Facturi WHERE SerieFactura = %s AND NumarFactura > %s",
                    (series, number))
     return cursor.fetchone()["n"] == 0
+
+
+def max_date(cursor, series, below_number=None):
+    """The newest date among the invoices of `series` (those under `below_number` when given), or None when there is
+    none. Numbers run in the order of the dates, so a new or moved invoice may not be older than this (slice 00EF-09)."""
+    if below_number is None:
+        cursor.execute("SELECT MAX(DataFactura) AS d FROM EF_Facturi WHERE SerieFactura = %s", (series,))
+    else:
+        cursor.execute("SELECT MAX(DataFactura) AS d FROM EF_Facturi WHERE SerieFactura = %s AND NumarFactura < %s",
+                       (series, below_number))
+    return cursor.fetchone()["d"]
 
 
 def storno_of(cursor, id_factura):

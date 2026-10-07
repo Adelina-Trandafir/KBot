@@ -233,7 +233,7 @@ def _invoice_line(line):
 def build(furnizor, client, invoice, lines, bank_name, schema_location=True):
     """The invoice as UTF-8 bytes.
 
-    furnizor   EF_Furnizor row (dict)         client  EF_Clienti row (dict)
+    furnizor   Unitati_Detalii row (dict)         client  EF_Clienti row (dict)
     invoice    EF_Facturi row (dict; `DataFactura` is a `date`)
     lines      EF_FacturiLinii rows (dicts, in the order they are to be written)
     bank_name  `BIC.Banca` for characters 5-8 of the invoice's IBAN, or "" when unknown

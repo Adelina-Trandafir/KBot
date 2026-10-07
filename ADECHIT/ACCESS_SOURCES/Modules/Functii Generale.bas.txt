@@ -1,0 +1,673 @@
+Option Compare Database
+Option Explicit
+
+Public UseTreeScroll As Boolean
+Public wsFTP As clsWinSCP
+
+Function ChangeProperty(strPropName As String, varPropType As Variant, varPropValue As Variant) As Integer
+    Dim Dbs As Object, prp As Variant
+    Const conPropNotFoundError = 3270
+
+    Set Dbs = CurrentDb
+    On Error GoTo Change_Err
+    Dbs.Properties(strPropName) = varPropValue
+    ChangeProperty = True
+
+Change_Bye:
+    Exit Function
+
+Change_Err:
+    If Err = conPropNotFoundError Then    ' Property not found.
+        Set prp = Dbs.CreateProperty(strPropName, _
+            varPropType, varPropValue)
+        Dbs.Properties.Append prp
+        Resume Next
+    Else
+        ' Unknown error.
+        ChangeProperty = False
+        Resume Change_Bye
+    End If
+End Function
+
+Function SetBypassProperty(TIP As Boolean)
+Const DB_Boolean As Long = 1
+    ChangeProperty "AllowBypassKey", DB_Boolean, TIP
+End Function
+
+
+
+Public Function Reseed()
+On Error GoTo Er
+Dim RC As Recordset, IDP As Long
+Set RC = CurrentDb.OpenRecordset("SELECT * FROM Platitori ORDER BY IdPlatitor DESC")
+RC.MoveLast
+RC.MoveFirst
+
+Prim:
+If IDP < RC!IdPlatitor Then
+    IDP = RC!IdPlatitor
+Else
+    GoTo Final
+End If
+
+st:
+
+RC.AddNew
+    RC!IdPlatitor = IDP + 1
+    RC!Nume = "TTT"
+    RC!Grupa = 1
+    RC!Adresa = "TTT"
+    RC!Temp3 = "X"
+RC.Update
+
+If RC!IdPlatitor < IDP Then GoTo Prim
+Final:
+DoCmd.SetWarnings False
+DoCmd.RunSQL "DELETE * FROM Platitori WHERE Temp3='X'"
+DoCmd.SetWarnings True
+
+MsgBox "Rezolvat!"
+Exit Function
+Er:
+    If Err.Number = 3022 Then GoTo st
+    MsgBox "Eroare: " & Err.Description
+    
+End Function
+
+Function vercnp(CNP As String) As Integer
+Dim Watch As Integer
+If Len(CNP) <> 13 Then
+    vercnp = 0
+    Exit Function
+End If
+
+
+Watch = val(Mid(CNP, 4, 2))
+If Watch > 12 Then
+    vercnp = 2
+    Exit Function
+End If
+
+If val(Mid(CNP, 6, 2)) > 31 Then
+    vercnp = 3
+    Exit Function
+End If
+
+If val(Mid(CNP, 8, 2)) > 52 Then
+    vercnp = 4
+    Exit Function
+End If
+
+If val(Right(CNP, 1)) <> UltimaCifra(CNP) Then
+    vercnp = 5
+    Exit Function
+End If
+
+vercnp = -1
+End Function
+
+Function UltimaCifra(CNP As String) As Integer
+Dim i As Integer
+Dim A(12), vs As Integer
+
+For i = 1 To 12
+    A(i) = Mid("279146358279", i, 1)
+Next i
+
+For i = 1 To 12
+    vs = vs + A(i) * Mid(CNP, i, 1)
+Next i
+UltimaCifra = vs Mod 11
+
+If UltimaCifra = 10 Then UltimaCifra = 1
+End Function
+
+Function ExplCNP(vercnp As Integer) As String
+Select Case vercnp
+    Case 0
+        ExplCNP = "Lungimea CNP-ului este diferita!"
+    Case 1
+        ExplCNP = "Prima cifra a CNP-ului este eronata!"
+    Case 2
+        ExplCNP = "Pozitiile 3,4 sunt eronate!"
+    Case 3
+        ExplCNP = "Pozitiile 5,6 sunt eronate!"
+    Case 4
+        ExplCNP = "Pozitiile 7,8 sunt eronate!"
+    Case 5
+        ExplCNP = "Cifra de control este eronata!"
+End Select
+End Function
+
+Function DirListBox(fld As Control, ID, row, col, Code)
+    ' Purpose:    To read the contents of a directory into a ListBox.
+    ' Usage:      Create a ListBox. Set its RowSourceType to "DirListBox"
+    ' Parameters: The arguments are provided by Access itself.
+    ' Notes:      You could read a FileSpec from an underlying form.
+    '             Error handling not shown. More than 512 files not handled.
+    Dim strFileName As String
+    Static StrFiles(0 To 511) As String ' Array to hold File Names
+    Static IntCount As Integer          ' Number of Files in list
+    
+    Select Case Code
+        Case 0                          ' Initialize
+            DirListBox = True
+        Case 1                          ' Open: load file names into array
+            DirListBox = Timer
+            strFileName = Dir(CurrentProject.path & "\baza*.mdb")   ' Read filespec from a form here???
+            Do While Len(strFileName) > 0
+                StrFiles(IntCount) = strFileName
+                strFileName = Dir
+                IntCount = IntCount + 1
+                Forms!arhiva!t = IntCount
+            Loop
+        Case 3                          ' Rows
+            DirListBox = Forms!arhiva!t
+
+        Case 4                          ' Columns
+            DirListBox = 1
+
+        Case 5                          ' Column width in twips
+            DirListBox = 1440
+
+        Case 6                          ' Supply data
+            DirListBox = StrFiles(row)
+
+
+    End Select
+End Function
+
+Public Function AflaC(CH As String) As String
+Dim i As Integer
+
+AflaC = Asc(Mid(CH, 1, 1))
+
+For i = 2 To Len(CH)
+    AflaC = AflaC & Chr("7" & Mid(CH, i, 1))
+Next i
+End Function
+
+
+
+Public Function MakeCod(st As String, Dt As String) As String
+Dim i As Integer
+Dim x As Double
+Dim t As Integer
+
+For i = 1 To Len(st)
+    x = CDbl(Mid(st, i, 1))
+    t = 70 + x
+    MakeCod = MakeCod & Chr(t)
+Next i
+
+For i = 1 To Len(Dt)
+    If Mid(Dt, i, 1) = "." Then GoTo Pas
+    If Mid(Dt, i, 1) = "/" Then GoTo Pas
+    x = CDbl(Mid(Dt, i, 1))
+    t = 70 + x
+    MakeCod = MakeCod & Chr(t)
+Pas:
+Next i
+End Function
+
+Public Function SumaLitere(SUMN As Double) As String
+Dim Nr As Variant, Sir As String, S As String, Num As Integer, SS As String, Virgula As Variant
+
+Dim sute As String, zeci As String, uni As String, un(1 To 10) As String
+Dim cSir As Integer, i As Integer, vS1 As String, vS2 As String, vN1 As Double, vN2 As Double, Semn As String
+Dim Xy As Currency, Xz As Currency, Xyz As Currency
+Dim Bol As Boolean
+
+Nr = Fix(SUMN)
+un(1) = "miliard"
+un(2) = "demiliarde"
+un(3) = "milion"
+un(4) = "demilioane"
+un(5) = "mie"
+un(6) = "demii"
+un(7) = ""
+un(8) = ""
+un(9) = "milioane"
+un(10) = "mii"
+
+Sir = ""
+S = "1"
+Num = 4
+
+While S <> ""
+    S = Right(Nr, 3)
+    Nr = Left(Nr, IIf(Len(Nr) - 3 > 0, Len(Nr) - 3, 0))
+    SS = ""
+    
+    If S <> "" Then
+        Select Case Len(S)
+            Case 3
+                sute = Mid(S, 1, 1)
+                zeci = Mid(S, 2, 1)
+                uni = Mid(S, 3, 1)
+                
+                SS = Numar(sute, 1) + IIf(sute = 1, "suta", IIf(sute > 1, "sute", ""))
+                
+                If zeci = 1 And uni <> 0 Then 'pentru 11 pana la 19
+                    SS = SS + Numar(uni, 4) + "sprezece" + Switch(Num = 4, un(Num * 2), Num = 3, un(10), Num = 2, un(9))
+                Else
+                    If zeci = 1 And uni = 0 Then 'pentru zece
+                        SS = SS + "zece" + un(Num * 2)
+                    Else
+                        SS = SS + Numar(zeci, 2) + IIf(zeci <> 0, "zeci", "") + IIf(uni <> "0", "si" + Numar(uni, 3), "") + IIf(S <> "000", un(Num * 2), "")
+                    End If
+                End If
+                
+                Sir = SS + Sir
+                
+            Case 2
+                sute = 0
+                zeci = Mid(S, 1, 1)
+                uni = Mid(S, 2, 1)
+                
+                If zeci = 1 And uni <> 0 Then
+                    SS = SS + Numar(uni, 4) + "sprezece" + Switch(Num = 4, un(Num * 2), Num = 3, un(10), Num = 2, un(9))
+                Else
+                    If zeci = 1 And uni = 0 Then
+                        SS = "zece" + un(Num * 2)
+                    Else
+                        SS = SS + Numar(zeci, 2) + IIf(zeci <> 0, "zeci", "") + IIf(uni <> "0", "si" + Numar(uni, 3), "") + un(Num * 2)
+                    End If
+                End If
+                
+                Sir = SS + Sir
+                
+            Case 1
+                sute = 0
+                zeci = 0
+                uni = Mid(S, 1, 1)
+                
+                If uni = 1 And Num = 3 Then
+                    SS = Numar(uni, 1) + Switch(Num = 4, un(Num * 2 - 1), Num = 3, un(10), Num = 2, un(9))
+                Else
+                    SS = Numar(uni, 5) + Switch(Num = 4, un(Num * 2 - 1), Num = 3, un(10), Num = 2, un(9))
+                End If
+                
+                Sir = SS + Sir
+            
+        End Select
+        
+        Num = Num - 1
+        
+    End If
+Wend
+
+Xy = Round(SUMN, 2)             'mare basina
+Xz = Round(Fix(SUMN), 2)        'pentru interpretarea corecta a numerelor cu virgula
+Xyz = Xy - Xz                   'cacat
+
+If Xyz <> 0 Then
+    Virgula = val(Mid(Xyz, 3, 2))
+    SumaLitere = Sir & " lei si " & Virgula & IIf(Virgula = "1", " ban", " bani")
+Else
+    SumaLitere = Sir & " lei"
+End If
+
+End Function
+
+Function Numar(S As String, Z As Integer)
+Select Case Z
+    Case 1:
+        Select Case S
+            Case 1: Numar = "o"
+            Case 2: Numar = "doua"
+            Case 3: Numar = "trei"
+            Case 4: Numar = "patru"
+            Case 5: Numar = "cinci"
+            Case 6: Numar = "sase"
+            Case 7: Numar = "sapte"
+            Case 8: Numar = "opt"
+            Case 9: Numar = "noua"
+        End Select
+        
+    Case 2:
+        Select Case S
+            Case 1: Numar = "zece"
+            Case 2: Numar = "doua"
+            Case 3: Numar = "trei"
+            Case 4: Numar = "patru"
+            Case 5: Numar = "cinci"
+            Case 6: Numar = "sai"
+            Case 7: Numar = "sapte"
+            Case 8: Numar = "opt"
+            Case 9: Numar = "noua"
+        End Select
+        
+    Case 3:
+        Select Case S
+            Case 1: Numar = "unu"
+            Case 2: Numar = "doi"
+            Case 3: Numar = "trei"
+            Case 4: Numar = "patru"
+            Case 5: Numar = "cinci"
+            Case 6: Numar = "sase"
+            Case 7: Numar = "sapte"
+            Case 8: Numar = "opt"
+            Case 9: Numar = "noua"
+        End Select
+        
+    Case 4:
+        Select Case S
+            Case 1: Numar = "un"
+            Case 2: Numar = "doi"
+            Case 3: Numar = "trei"
+            Case 4: Numar = "pai"
+            Case 5: Numar = "cinci"
+            Case 6: Numar = "sai"
+            Case 7: Numar = "sapte"
+            Case 8: Numar = "opt"
+            Case 9: Numar = "noua"
+        End Select
+
+    Case 5:
+        Select Case S
+            Case 1: Numar = "un"
+            Case 2: Numar = "doua"
+            Case 3: Numar = "trei"
+            Case 4: Numar = "pai"
+            Case 5: Numar = "cinci"
+            Case 6: Numar = "sai"
+            Case 7: Numar = "sapte"
+            Case 8: Numar = "opt"
+            Case 9: Numar = "noua"
+        End Select
+End Select
+End Function
+
+Function fStrComp(Text1 As String, Text2 As String) As Long
+Dim Pozitie As Double, Litera As Double, Valoare1 As Double, Valoare2 As Double
+Dim i As Integer, c As String
+
+Text1 = UCase(Trim(Replace(Text1, " ", "")))
+
+For i = 1 To Len(Text1)
+    c = Mid(Text1, i, 1)
+    Pozitie = i
+    Litera = Asc(c)
+    Valoare1 = Valoare1 + 10000 + Litera
+Next i
+
+'Text1 = Len(Text1) & "|" & Valoare
+
+'==============
+
+Text2 = UCase(Trim(Replace(Text2, " ", "")))
+
+For i = 1 To Len(Text2)
+    c = Mid(Text2, i, 1)
+    Pozitie = i
+    Litera = Asc(c)
+    Valoare2 = Valoare2 + 10000 + Litera
+Next i
+
+'Text2 = Len(Text2) & "|" & Valoare
+
+If Len(Text1) > Len(Text2) Then
+    Valoare2 = Valoare2 + (Len(Text1) - Len(Text2)) * 10000
+Else
+    Valoare1 = Valoare1 + (Len(Text2) - Len(Text1)) * 10000
+End If
+
+fStrComp = Abs(Valoare1 - Valoare2)
+End Function
+
+Function ASCn(c As String) As Double
+ASCn = DLookup("V", "LIT", "C='" & c & "'")
+End Function
+
+Function IsLoaded(ByVal strFormName As String) As Boolean
+ ' Returns True if the specified form is open in Form view or Datasheet view.
+    Dim oAccessObject As AccessObject
+
+    Set oAccessObject = CurrentProject.AllForms(strFormName)
+    If oAccessObject.IsLoaded Then
+        If oAccessObject.CurrentView <> acCurViewDesign Then
+            IsLoaded = True
+        End If
+    End If
+    
+End Function
+
+Function FindAutoNumber(TableName As String) As String
+    Dim Dbs As DAO.Database
+    Dim tdf As DAO.TableDef
+    Dim fld As DAO.Field
+    Set Dbs = CurrentDb
+    Set tdf = Dbs.TableDefs(TableName)
+    For Each fld In tdf.Fields
+        If fld.Attributes And dbAutoIncrField Then
+            FindAutoNumber = fld.Name
+            Exit Function
+        End If
+    Next fld
+End Function
+ 
+Public Function ControlExists(ByRef ctlName As String, ByRef frm As Form) As Boolean
+On Error GoTo Eroare
+  Dim ctl As Control
+  
+  For Each ctl In frm.Controls
+    If ctl.Name = ctlName Then
+      ControlExists = True
+      Exit For
+    End If
+  Next ctl
+  
+ExitHere:
+  Exit Function
+Eroare:
+  DebugPrint Err.Description, "Modules/mdl_Functii_Generale/ControlExists()"
+  Resume ExitHere
+End Function
+
+Public Function AddRecord(Tbl As String, Valori As String) As Boolean
+Dim RC As Recordset
+Dim i As Integer
+Dim arrFld As Variant
+
+arrFld = Split(Valori, ",")
+
+If Not IsArray(arrFld) Then GoTo Final
+
+Set RC = CurrentDb.OpenRecordset(Tbl, 2)
+
+If UBound(arrFld) + 1 <> RC.Fields.Count Then
+    MsgBox "Numarul de campuri nu corespunde!", vbOKOnly + vbCritical
+    Set RC = Nothing
+End If
+
+RC.AddNew
+
+For i = 0 To RC.Fields.Count - 1
+    If arrFld(i) = "@" Then GoTo Pas
+    
+    If Left(arrFld(i), 1) = "'" Then
+        If Right(arrFld(i), 1) = "'" Then
+            RC.Fields(i).value = Replace(arrFld(i), "'", "")
+            GoTo Pas
+        Else
+            MsgBox "Eroare formatare string (" & i & ")!", vbOKOnly + vbCritical
+            GoTo Final
+        End If
+    End If
+    
+    If IsDate(arrFld(i)) Then
+        RC.Fields(i).value = CDate(arrFld(i))
+        GoTo Pas
+    End If
+    
+    If IsNumeric(arrFld(i)) Then
+        RC.Fields(i).value = CDbl(arrFld(i))
+        GoTo Pas
+    End If
+    
+Pas:
+Next i
+
+RC.Update
+
+Set RC = Nothing
+
+Final:
+
+End Function
+
+Public Function ActualizeazaCamp(Tbl As String, Camp As String, ValoareNoua As Variant, Optional Conditie As String = "") As Integer
+''' 0 = Actualizare corecta
+''' 1 = Lipsa tabel
+''' 2 = Lipsa camp
+''' 3 = Lipsa date (conditie eronata?)
+''' 9 = Alta eroare
+
+On Error GoTo Eroare
+
+If Not ExistaTabel(Tbl) Then
+    ActualizeazaCamp = 1
+    Exit Function
+End If
+
+If Not ExistaCamp(Tbl, Camp) Then
+    ActualizeazaCamp = 2
+    Exit Function
+End If
+
+Dim RC As DAO.Recordset
+
+If Nz(Conditie, "") <> "" Then
+    Set RC = CurrentDb.OpenRecordset("SELECT * FROM [" & Tbl & "] WHERE " & Conditie & ";", 2)
+Else
+    Set RC = CurrentDb.OpenRecordset("SELECT * FROM [" & Tbl & "];", 2)
+End If
+
+If Not POP(RC) Then
+    ActualizeazaCamp = 3
+    Set RC = Nothing
+    Exit Function
+End If
+
+Do While Not RC.EOF
+    RC.Edit
+        RC.Fields(Camp).value = ValoareNoua
+    RC.Update
+    
+    RC.MoveNext
+Loop
+
+Set RC = Nothing
+
+ActualizeazaCamp = 0
+
+Exit Function
+
+Eroare:
+    DebugPrint Err.Description, "Modules/mdl_Functii_Generale/ActualizeazaCamp()"
+    ActualizeazaCamp = 9
+    If Not RC Is Nothing Then Set RC = Nothing
+End Function
+
+
+Public Function ExistaCamp(Tbl As String, Cmp As String) As Boolean
+Dim RC As Recordset: Set RC = CurrentDb.OpenRecordset(Tbl)
+Dim i As Integer
+
+ExistaCamp = False
+
+For i = 0 To RC.Fields.Count - 1
+    If RC.Fields(i).Name = Cmp Then
+        ExistaCamp = True
+        Exit Function
+    End If
+Next i
+End Function
+
+
+
+Function FormatN(Optional ByVal Suma_Text As String = "", Optional Lungime As Integer = 13, Optional Round1Cut2 As Byte = 1) As String
+Dim vInt As String, vDec As String, vSuma As String, Negativ As Boolean, i As Integer
+Dim dZec As Integer, dSep As String
+
+If Suma_Text = "" Then
+    FormatN = ""
+    Exit Function
+End If
+
+If dZec = 0 Then
+    If Nz(TempVars.Item("Zec"), "") = "" Then
+        TempVars.Item("Zec") = Zec()
+        dZec = Zec()
+    Else
+        dZec = TempVars.Item("Zec").value
+    End If
+End If
+
+If dSep = "" Then
+    If Nz(TempVars.Item("Sep"), "") = "" Then
+        TempVars.Item("Sep") = New_DSep()
+        dSep = New_DSep()
+    Else
+        dSep = TempVars.Item("Sep").value
+    End If
+End If
+
+If Left(Suma_Text, 1) = "-" Then
+    Negativ = True
+    Suma_Text = Mid(Suma_Text, 2)
+Else
+    Negativ = False
+End If
+
+vInt = Split(Suma_Text, dSep)(0)
+
+For i = 1 To CInt(Len(vInt) / 3)
+    vSuma = "." & Right(vInt, 3) & vSuma
+    vInt = Replace(vInt, Right(vInt, 3), "")
+Next i
+
+If vInt <> "" Then vSuma = vInt & vSuma 'pune cifrele ramase daca len(vint) / 3 are rest
+
+If Left(vSuma, 1) = "." Then vSuma = Mid(vSuma, 2) 'scoate punctul daca len(vint) mod 3 = 0
+
+If InStr(1, Suma_Text, dSep) Then
+    If Round1Cut2 = 1 Then vDec = Split(Round("0" & dSep & Split(Suma_Text, dSep)(1), dZec), dSep)(1)   'pune zecimalele daca este cazul
+    If Round1Cut2 = 2 Then vDec = Left(Split(Suma_Text, dSep)(1), dZec)
+End If
+
+vSuma = vSuma & "," & vDec & RepChar("0", dZec - Len(vDec))
+
+If Negativ Then vSuma = "-" & vSuma
+
+If Lungime < Len(vSuma) Then
+    FormatN = vSuma
+Else
+    FormatN = Space(Lungime - Len(vSuma)) & vSuma
+End If
+
+End Function
+
+
+Private Function RepChar(CH As String, Cn As Integer) As String
+Dim i As Integer
+
+For i = 1 To Cn
+    RepChar = RepChar & CH
+Next i
+End Function
+
+Function Zec() As Integer
+Zec = 2
+
+End Function
+
+Public Function New_DSep() As String
+If CInt("0.1") = 0 Then
+    New_DSep = "."
+ElseIf CInt("0,1") = 0 Then
+    New_DSep = ","
+End If
+
+End Function

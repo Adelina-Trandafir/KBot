@@ -1,0 +1,26 @@
+# Relationships
+
+Format: `PrimaryTable.Field -> ForeignTable.Field`
+
+- **Grupe_LPrezenta_L**: Grupe_L.IDG -> Prezenta_L.IDG [cascade update, cascade delete]
+- **LunaD_LPrezenta_L**: LunaD_L.IDL -> Prezenta_L.IDL [cascade update, cascade delete]
+- **Prezenta_LPrezenta_sub_L**: Prezenta_L.IDZ -> Prezenta_sub_L.IDZ [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].GrupePlatitori**: Grupe.IDG -> Platitori.IDG [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].LunaDPrezenta**: LunaD.IDL -> Prezenta.IDL [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatiAlteDoc**: Plati.IDPL -> AlteDoc.IDPL [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatiBonuriF**: Plati.IDPL -> BonuriF.IDPL [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatiChitante**: Plati.IDPL -> Chitante.IDPL [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatiFacturi**: Plati.IDPL -> Facturi.IDPL [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatitoriPlati**: Platitori.IDP -> Plati.IDP [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatitoriPlatitori_sub**: Platitori.IDP -> Platitori_sub.IDP [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PlatitoriPrezenta**: Platitori.IDP -> Prezenta.IDP [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].Platitori_subDelegati**: Platitori_sub.IDS -> Delegati.IDS [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PrezentaMail**: Prezenta.IDZ -> Mail.IDZ [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PrezentaPlati**: Prezenta.IDZ -> Plati.IDZ [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].PrezentaPrezenta_sub**: Prezenta.IDZ -> Prezenta_sub.IDZ [cascade update, cascade delete]
+- **[C:\avasit\baza2020_PP.mdb].Reference**: LunaD.IDL -> Plati.IDL [no referential integrity]
+- **[C:\avasit\baza2020_PP.mdb].ValoriTaxePlatitori**: ValoriTaxe.IDV -> Platitori.IDV [cascade update, cascade delete]
+- **{7160288A-0BDA-4461-8F18-14569399B5A0}**: _TBLS_.Struct -> _Struct_.ID [cascade update, cascade delete]
+- **{81E82274-4CD9-4C44-BFE0-20A8F1AAE851}**: Platitori_sub_L.IDS -> Delegati_L.IDS [cascade update, cascade delete]
+- **{D5909822-35BE-41D5-9D85-0EA4640FA8F8}**: Platitori_L.IDP -> Platitori_sub_L.IDP [cascade update, cascade delete]
+- **{F911206E-C6E8-4179-AE70-433C326B843E}**: Grupe_L.IDG -> Platitori_L.IDG [cascade update, cascade delete]

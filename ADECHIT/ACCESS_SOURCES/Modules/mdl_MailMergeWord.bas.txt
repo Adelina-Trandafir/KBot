@@ -1,0 +1,50 @@
+Option Compare Database
+Option Explicit
+
+Public Sub DoMailMerge(strFileSavePath As String)
+
+    ' Create new Word App, add a document and set it visible
+Dim wdApp As Object
+
+Set wdApp = CreateObject("Word.Application")
+    wdApp.Documents.Add
+    wdApp.visible = True
+
+    ' Open the data set from this database
+    wdApp.ActiveDocument.MailMerge.OpenDataSource _
+        Name:=Application.CurrentProject.FullName, _
+        OpenExclusive:=False, _
+        LinkToSource:=True, _
+        Connection:="TABLE Luni", _
+        SQLStatement:="SELECT Luni.* FROM Luni;"
+              
+    ' Add fields to the mail merge document
+    Dim oSel As Object
+    Set oSel = wdApp.Selection
+    With wdApp.ActiveDocument.MailMerge.Fields
+    
+        oSel.TypeText vbNewLine & vbNewLine
+        .Add oSel.Range, "Luna"
+        oSel.TypeText " "
+        .Add oSel.Range, "Expl"
+        oSel.TypeText vbNewLine
+        
+        
+        oSel.TypeText "We have created this mail just for you..."
+        oSel.TypeText vbNewLine
+        oSel.TypeText vbNewLine
+        oSel.TypeText "Sincerely," & vbNewLine & "John Q. Public"
+        oSel.TypeText vbFormFeed
+        
+    End With
+    
+    ' Execute the mail merge and save the document
+    wdApp.ActiveDocument.MailMerge.Execute
+    wdApp.ActiveDocument.SaveAs strFileSavePath
+        
+    ' Close everything and Cleanup Variables
+    Set oSel = Nothing
+    wdApp.ActiveDocument.Close False
+    Set wdApp = Nothing
+
+End Sub

@@ -1,0 +1,42 @@
+Option Compare Database
+Option Explicit
+
+'=================================================================================
+'- CHECK IF A MODULE & SUBROUTINE EXISTS
+'- VBA constant : vbext_pk_Proc = All procedures other than property procedures.
+'- An error is generated if the Module or Sub() does not exist - so we trap them.
+'---------------------------------------------------------------------------------
+'- VB Editor : Tools/References - add reference TO ......
+'-    .... "Microsoft Visual Basic For Applications Extensibility"
+'----------------------------------------------------------------------------------
+'- Brian Baulsom October 2007
+'==================================================================================
+Function ExistaFunctia(Mdl As String, Functia As String) As Boolean
+Dim MyModule As Object
+Dim MyLine As Long
+
+On Error Resume Next
+'---------------------------------------------------------------------------
+'- test data
+'MyModuleName = "mod_popup"
+'----------------------------------------------------------------------------
+'- MODULE
+Set MyModule = Access.VBE.ActiveVBProject.VBComponents(Mdl).CodeModule
+If Err.Number <> 0 Then
+    ExistaFunctia = False
+    Exit Function
+End If
+'-----------------------------------------------------------------------------
+'- SUBROUTINE
+'- find first line of subroutine (or error)
+MyLine = MyModule.ProcStartLine(Functia, vbext_pk_Proc)
+If Err.Number <> 0 Then
+    ExistaFunctia = False
+Else
+    ExistaFunctia = True
+End If
+
+Set MyModule = Nothing
+
+End Function
+'-----------------------------------------------------------------------------------
