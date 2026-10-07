@@ -1,4 +1,3 @@
-#If DEBUG Then
 Option Strict On
 Imports System.Collections.Generic
 Imports System.IO
@@ -178,4 +177,3 @@ Friend NotInheritable Class PdfSaveTimeline
     End Sub
 
 End Class
-#End If

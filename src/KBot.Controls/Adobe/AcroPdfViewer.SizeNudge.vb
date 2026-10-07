@@ -12,8 +12,8 @@ Imports KBot.Common
 ' When Adobe was already running, that window had the control's size from the start.
 ' So: while the page view is not laid out yet, when a window directly inside the control is 0x0 and the control is not,
 ' re-send the control's rectangle (AcroPdfHost.ResendRectangle: geometry only, the document is NOT loaded again). At most
-' MaxNudges times per load, not twice within NudgeGapMs. Driven by the watch's WinEvents, no timer; it lives on the
-' watch hooks for now and moves with the hook it needs when the check code goes.
+' MaxNudges times per load, not twice within NudgeGapMs. Driven by the WinEvents of either watch, no timer
+' (AcroPdfViewer.LightWatch.vb, or the ACTIVEX-CHECK AcroPdfViewer.Watch.vb).
 Partial Public NotInheritable Class AcroPdfViewer
 
     Private Const MaxNudges As Integer = 3
@@ -63,6 +63,7 @@ Partial Public NotInheritable Class AcroPdfViewer
             Dim k_answer As String = _host.ResendRectangle()
             Check($"+{Elapsed()} ms >>>>> SIZE NUDGE {_nudges}/{MaxNudges}: window {HexOf(k_empty)} inside the control was 0x0 " &   ' ACTIVEX-CHECK
                   $"-> control rectangle {_host.Bounds} sent again ({k_answer}); that window is now {AdobeNativeMethods.RectInParent(k_empty)} <<<<<")
+            Report("AcroPDF: fereastra Adobe din control era goală (0×0) — i-am retrimis dimensiunea controlului.")
         Catch ex As Exception
             GlobalErrorLog.Write("AcroPdfViewer.Nudge", ex)
         End Try

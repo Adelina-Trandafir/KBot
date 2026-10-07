@@ -14,6 +14,7 @@ Partial Class ActivexLogViewerForm
     Friend WithEvents btnPrevDiff As Button
     Friend WithEvents btnNextDiff As Button
     Friend WithEvents btnExport As Button
+    Friend WithEvents btnLanes As Button
     Friend WithEvents lblStatus As Label
 
     Friend WithEvents splMain As SplitContainer
@@ -59,6 +60,7 @@ Partial Class ActivexLogViewerForm
         btnPrevDiff = New Button()
         btnNextDiff = New Button()
         btnExport = New Button()
+        btnLanes = New Button()
         lblStatus = New Label()
         splMain = New SplitContainer()
         pnlLeftBar = New FlowLayoutPanel()
@@ -103,6 +105,7 @@ Partial Class ActivexLogViewerForm
         pnlBar.Controls.Add(btnPrevDiff)
         pnlBar.Controls.Add(btnNextDiff)
         pnlBar.Controls.Add(btnExport)
+        pnlBar.Controls.Add(btnLanes)
         pnlBar.Controls.Add(lblStatus)
         pnlBar.Dock = DockStyle.Top
         pnlBar.Height = 42
@@ -167,6 +170,15 @@ Partial Class ActivexLogViewerForm
         btnExport.TabIndex = 6
         btnExport.Text = "Export Excel…"
         btnExport.UseVisualStyleBackColor = True
+        '
+        ' btnLanes -- the left tree as lanes: a root is a lane, a leaf a change in it (ActivexLaneForm)
+        '
+        btnLanes.AutoSize = True
+        btnLanes.Name = "btnLanes"
+        btnLanes.Padding = New Padding(8, 2, 8, 2)
+        btnLanes.TabIndex = 7
+        btnLanes.Text = "Pe culoare…"
+        btnLanes.UseVisualStyleBackColor = True
         '
         ' lblStatus
         '

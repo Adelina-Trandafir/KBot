@@ -9,7 +9,7 @@ Imports KBot.Common
 ' and Adobe's top-level windows; then a background thread checks them -- and lists Adobe's processes -- right after
 ' the release and again 1 / 3 / 10 / 30 s later. Background, so it neither blocks the UI nor stops when the bench closes
 ' (Dispose lets the log writer finish only after it). It dies with K-BOT itself: close only the bench, not K-BOT.
-' Part of AcroPdfViewer; the whole file goes when the operator says the investigation is over.
+' Part of AcroPdfViewer. Kept for a future investigation (operator, 07.10.2026): used only while DetailedWatch is True.
 Partial Public NotInheritable Class AcroPdfViewer
 
     Private Shared ReadOnly ReleaseSnapshotsMs As Integer() = {0, 1000, 3000, 10000, 30000}

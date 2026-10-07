@@ -39,6 +39,8 @@ Partial Class SetariAplicatieView
         chkAdobeSemnareModerna = New CheckBox()
         chkAcroTrace = New CheckBox()
         chkAcroNou = New CheckBox()
+        chkAcroLatime = New CheckBox()
+        chkAcroSalvare = New CheckBox()
         btnMesajeAdobe = New Button()
         cboExcelRibbon = New KBotComboBox()
         cboSortare = New KBotComboBox()
@@ -329,9 +331,9 @@ Partial Class SetariAplicatieView
         chkAcroTrace.Name = "chkAcroTrace"
         chkAcroTrace.Size = New Size(462, 26)
         chkAcroTrace.TabIndex = 6
-        chkAcroTrace.Text = "ActiveX — jurnal de diagnostic detaliat (acropdf_trace.log)"
+        chkAcroTrace.Text = "ActiveX — jurnal de diagnostic detaliat (activex_check.log)"
         tips.SetToolTipHeader(chkAcroTrace, "Jurnal de diagnostic ActiveX")
-        tips.SetToolTipText(chkAcroTrace, "Bifat: vizualizatorul ActiveX scrie în Logs\acropdf_trace.log tot ce vede și tot ce face (cronometre, ferestre, procese, salvări)." & vbLf & "Înregistrează de la deschiderea unui document până când e deschis sau apare o eroare care blochează." & vbLf & "Nu se salvează: la fiecare pornire a aplicației este oprit.")
+        tips.SetToolTipText(chkAcroTrace, "Bifat: vizualizatorul ActiveX scrie în Logs\activex_check.log tot ce vede și tot ce face (evenimente de fereastră, structura ferestrelor)." & vbLf & "Înregistrează de la deschiderea fiecărui document, cât timp bifa e pornită." & vbLf & "Nu se salvează: la fiecare pornire a aplicației este oprit.")
         chkAcroTrace.UseVisualStyleBackColor = True
         '
         ' chkAcroNou
@@ -347,12 +349,38 @@ Partial Class SetariAplicatieView
         tips.SetToolTipText(chkAcroNou, "Bifat: la alegerea altei revizii (DDF și ORD) controlul Adobe se închide și se distruge, iar documentul nou se deschide într-un control nou." & vbLf & "Debifat: documentul nou se încarcă în același control." & vbLf & "Doar pentru motoarele ActiveX.")
         chkAcroNou.UseVisualStyleBackColor = True
         '
+        ' chkAcroLatime -- ActiveX only: Ctrl+2 (page width) after Read Mode
+        '
+        chkAcroLatime.AutoSize = True
+        chkAcroLatime.Location = New Point(404, 282)
+        chkAcroLatime.Margin = New Padding(4, 0, 4, 10)
+        chkAcroLatime.Name = "chkAcroLatime"
+        chkAcroLatime.Size = New Size(462, 26)
+        chkAcroLatime.TabIndex = 11
+        chkAcroLatime.Text = "ActiveX — pagina pe toată lățimea la deschidere"
+        tips.SetToolTipHeader(chkAcroLatime, "Pagina pe toată lățimea")
+        tips.SetToolTipText(chkAcroLatime, "Bifat: după ce documentul se deschide, K-BOT îl potrivește pe toată lățimea ferestrei (ca Ctrl+2 în Adobe)." & vbLf & "Debifat: documentul rămâne la mărimea aleasă de Adobe." & vbLf & "Doar pentru motorul ActiveX. Se aplică de la următorul document deschis.")
+        chkAcroLatime.UseVisualStyleBackColor = True
+        '
+        ' chkAcroSalvare -- ActiveX only: Ctrl+S after a signature, when the signing session asks for it (under test)
+        '
+        chkAcroSalvare.AutoSize = True
+        chkAcroSalvare.Location = New Point(404, 318)
+        chkAcroSalvare.Margin = New Padding(4, 0, 4, 10)
+        chkAcroSalvare.Name = "chkAcroSalvare"
+        chkAcroSalvare.Size = New Size(462, 26)
+        chkAcroSalvare.TabIndex = 12
+        chkAcroSalvare.Text = "ActiveX — salvare automată după semnătură"
+        tips.SetToolTipHeader(chkAcroSalvare, "Salvare automată după semnătură")
+        tips.SetToolTipText(chkAcroSalvare, "Bifat: după fiecare semnătură, K-BOT salvează documentul încă o dată (ca Ctrl+S în Adobe), ca să păstreze ce a completat formularul pentru semnatarul următor." & vbLf & "Debifat: documentul se trimite așa cum a fost salvat la semnare." & vbLf & "Doar pentru motorul ActiveX. În probă.")
+        chkAcroSalvare.UseVisualStyleBackColor = True
+        '
         ' btnMesajeAdobe
         '
         btnMesajeAdobe.AutoSize = True
         btnMesajeAdobe.Dock = DockStyle.Left
         btnMesajeAdobe.FlatStyle = FlatStyle.Flat
-        btnMesajeAdobe.Location = New Point(404, 282)
+        btnMesajeAdobe.Location = New Point(404, 354)
         btnMesajeAdobe.Margin = New Padding(4, 0, 4, 10)
         btnMesajeAdobe.Name = "btnMesajeAdobe"
         btnMesajeAdobe.Padding = New Padding(12, 4, 12, 4)
@@ -367,7 +395,7 @@ Partial Class SetariAplicatieView
         '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         cboExcelRibbon.CornerRadius = 4
-        cboExcelRibbon.Location = New Point(404, 337)
+        cboExcelRibbon.Location = New Point(404, 409)
         cboExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         cboExcelRibbon.Name = "cboExcelRibbon"
         cboExcelRibbon.Size = New Size(496, 37)
@@ -621,14 +649,18 @@ Partial Class SetariAplicatieView
         tlyDocumente.Controls.Add(chkAdobeSemnareModerna, 1, 4)
         tlyDocumente.Controls.Add(chkAcroTrace, 1, 5)
         tlyDocumente.Controls.Add(chkAcroNou, 1, 6)
-        tlyDocumente.Controls.Add(btnMesajeAdobe, 1, 7)
-        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 8)
-        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 8)
+        tlyDocumente.Controls.Add(chkAcroLatime, 1, 7)
+        tlyDocumente.Controls.Add(chkAcroSalvare, 1, 8)
+        tlyDocumente.Controls.Add(btnMesajeAdobe, 1, 9)
+        tlyDocumente.Controls.Add(lblExcelRibbon, 0, 10)
+        tlyDocumente.Controls.Add(cboExcelRibbon, 1, 10)
         tlyDocumente.Dock = DockStyle.Top
         tlyDocumente.Location = New Point(28, 58)
         tlyDocumente.Margin = New Padding(4, 0, 4, 24)
         tlyDocumente.Name = "tlyDocumente"
-        tlyDocumente.RowCount = 9
+        tlyDocumente.RowCount = 11
+        tlyDocumente.RowStyles.Add(New RowStyle())
+        tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
         tlyDocumente.RowStyles.Add(New RowStyle())
@@ -657,7 +689,7 @@ Partial Class SetariAplicatieView
         '
         lblExcelRibbon.AutoSize = True
         lblExcelRibbon.Dock = DockStyle.Fill
-        lblExcelRibbon.Location = New Point(4, 337)
+        lblExcelRibbon.Location = New Point(4, 409)
         lblExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         lblExcelRibbon.Name = "lblExcelRibbon"
         lblExcelRibbon.Size = New Size(392, 37)
@@ -880,6 +912,8 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkAdobeSemnareModerna As CheckBox
     Friend WithEvents chkAcroTrace As CheckBox
     Friend WithEvents chkAcroNou As CheckBox
+    Friend WithEvents chkAcroLatime As CheckBox
+    Friend WithEvents chkAcroSalvare As CheckBox
     Friend WithEvents btnMesajeAdobe As Button
     Friend WithEvents lblExcelRibbon As Label
     Friend WithEvents cboExcelRibbon As KBotComboBox

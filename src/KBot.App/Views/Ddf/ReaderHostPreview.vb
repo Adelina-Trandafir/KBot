@@ -90,7 +90,7 @@ Public Class ReaderHostPreview
     Private ReadOnly _host As AdobeReaderHost
     ' Suprafața ActiveX, creată LENEȘ: dacă operatorul nu cere motorul «ActiveX», controlul COM nu
     ' se încarcă niciodată în proces.
-    ' Slice 0078-15 (operator, 06.10.2026): the rebuilt viewer; AcroPdfSurface is no longer used.
+    ' Slice 0078-15 (operator, 06.10.2026): the rebuilt viewer (the old AcroPdfSurface was removed 07.10.2026).
     Private _acro As AcroPdfViewer
     Private _engine As AdobePreviewEngine = AdobePreviewEngine.WindowHost
     ' Documentul cerut ultima dată — gardă anti-răspuns depășit (același tipar ca vederile).
@@ -160,8 +160,13 @@ Public Class ReaderHostPreview
     Public Function RequestSave() As Boolean
         Try
             If UsesActiveX() Then
-                AdobeHostLog.Write("Salvarea după semnătură se cere doar în fereastra găzduită; motorul ActiveX nu o face.")
-                Return False
+                ' Slice 0078-15 (operator, 07.10.2026): optional on ActiveX, from the settings page (under test).
+                If Not AppSettings.Current.AcroPdfSaveAfterSignature OrElse _acro Is Nothing Then
+                    AdobeHostLog.Write("Salvarea după semnătură pe ActiveX e oprită din setări; documentul se trimite așa cum a fost salvat.")
+                    Return False
+                End If
+                _acro.SaveAfterSignatureEnabled = True
+                Return _acro.RequestSave()
             End If
             Return _host.RequestSave()
         Catch ex As Exception
@@ -304,12 +309,12 @@ Public Class ReaderHostPreview
     End Sub
 
     ''' <summary>
-    ''' Calea ActiveX: încarcă documentul în controlul AcroPDF ȘI îl aduce în starea cerută —
-    ''' aranjarea trezită și panourile colapsate, adică exact ce face butonul «Colapsează panourile»
-    ''' de pe banc. Totul e în <see cref="AcroPdfSurface"/>, o singură implementare pentru amândouă.
+    ''' The ActiveX path: loads the document into the AcroPDF control through <see cref="AcroPdfViewer"/> (slice
+    ''' 0078-15), which also sends Read Mode and traps Save As. The old viewer (AcroPdfSurface: pane wait, collapse,
+    ''' hidden header) was removed on 07.10.2026.
     '''
-    ''' Dacă AcroPDF nu e înregistrat pe mașină, NU cădem în tăcere pe cealaltă cale: operatorul a
-    ''' cerut explicit acest motor, iar o comutare tăcută i-ar ascunde că setarea lui nu s-a aplicat.
+    ''' When AcroPDF is not registered on the machine, there is NO silent fall-back to the other path: the operator
+    ''' asked for this engine explicitly, and a silent switch would hide that the setting did not apply.
     ''' </summary>
     Private Async Function EmbedWithActiveXAsync(pdfPath As String) As Task
         Dim surface As AcroPdfViewer = EnsureAcroSurface()
@@ -324,7 +329,10 @@ Public Class ReaderHostPreview
         ShowHost()
         pnlHost.Update()
 
-        ' Slice 0078-15: both ActiveX engines use the rebuilt viewer (load only, for now).
+        ' Slice 0078-15: both ActiveX engines use the rebuilt viewer. Ctrl+2 after Read Mode from the settings page.
+        surface.FitWidthAfterReadMode = AppSettings.Current.AcroPdfFitWidth
+        ' The Settings switch «Jurnal de diagnostic detaliat» picks the big watch (activex_check.log); read at each load.
+        surface.DetailedWatch = AcroPdfTraceLog.SwitchedOn
         Dim result As AcroPdfResult = Await surface.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
         If Not String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then Return
 
@@ -361,7 +369,7 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
-    ' Both ActiveX engines (old path and Read Mode) use the same AcroPDF surface.
+    ' Both ActiveX engine values (the old «ActiveX» text still stored on some PCs, and «ActiveXCitire») use AcroPdfViewer.
     Private Function UsesActiveX() As Boolean
         Return _engine = AdobePreviewEngine.ActiveX OrElse _engine = AdobePreviewEngine.ActiveXReadMode
     End Function
@@ -369,10 +377,15 @@ Public Class ReaderHostPreview
     Private Function EnsureAcroSurface() As AcroPdfViewer
         Try
             If _acro Is Nothing Then
-                ' Slice 0078-15: no Save As trap yet on the rebuilt viewer (added in a later step).
-                ' Slice 0078-15 primer test: the plain PDF shipped next to the exe goes into every new control first.
+                ' Slice 0078-15 primer test: the plain PDF shipped next to the exe (the primer is switched off in the viewer).
                 _acro = New AcroPdfViewer(pnlHost, AddressOf AdobeHostLog.Write) With {
                     .PrimerPath = System.IO.Path.Combine(AppContext.BaseDirectory, "empty_pdf.pdf")}
+                ' Slice 0078-15 (operator, 07.10.2026): the rebuilt viewer traps Save As exactly like the hosted window.
+                _acro.SaveTrapEnabled = True
+                AddHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
+                AddHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
+                AddHandler _acro.SaveKeysSent, AddressOf OnSaveKeysSent
+                AddHandler _acro.SaveNotSent, AddressOf OnSaveNotSent
             End If
             Return _acro
         Catch ex As Exception
@@ -716,6 +729,10 @@ Public Class ReaderHostPreview
 
     Private Sub DisposeAcro()
         If _acro Is Nothing Then Return
+        RemoveHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
+        RemoveHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
+        RemoveHandler _acro.SaveKeysSent, AddressOf OnSaveKeysSent
+        RemoveHandler _acro.SaveNotSent, AddressOf OnSaveNotSent
         _acro.Dispose()
         _acro = Nothing
     End Sub

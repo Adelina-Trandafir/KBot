@@ -17,7 +17,7 @@ Le citești din **Setări › Jurnal** sau direct din folder.
 | `harness_errors.log` | erorile aplicației, cu toate detaliile tehnice |
 | `mesaje_operator.log` | fiecare mesaj arătat operatorului, exact cum l-a văzut |
 | `adobe_preview.log` | afișarea documentelor în Adobe: ce s-a hotărât și de ce |
-| `acropdf_trace.log` | diagnosticul detaliat al controlului ActiveX (doar cu comutatorul pornit) |
+| `activex_check.log` | diagnosticul detaliat al controlului ActiveX (doar cu comutatorul pornit) |
 
 Pagina **Jurnal** arată și jurnalele serverului pentru utilizatorul și sesiunea ta, dar numai cât timp
 [opțiunile avansate](topic:avansat) sunt pornite. Cu ele pornite, lista de deasupra tabelului îți lasă să alegi

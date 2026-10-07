@@ -335,6 +335,18 @@ Public NotInheritable Class AppSettings
     Public Property AcroPdfFreshControl As Boolean = False
 
     ''' <summary>
+    ''' ActiveX viewer: after Adobe's Read Mode (Ctrl+H) is on, also send Ctrl+2 (page width). Off by default
+    ''' (operator, 07.10.2026: optional, from the settings page).
+    ''' </summary>
+    Public Property AcroPdfFitWidth As Boolean = False
+
+    ''' <summary>
+    ''' ActiveX viewer: after a signature, Ctrl+S when the signing session asks for the save that keeps the form's
+    ''' postSign change (slice 0078-15, operator 07.10.2026: optional, under test). Off by default.
+    ''' </summary>
+    Public Property AcroPdfSaveAfterSignature As Boolean = False
+
+    ''' <summary>
     ''' Adobe starts in its CLASSIC interface (<c>bEnableAv2 = 0</c>) while K-BOT runs; the value is put
     ''' back when K-BOT closes (<c>AdobeUiPreference</c>). Off by default: the value is Adobe's own
     ''' and it changes every PDF the operator opens, so it is only touched when asked.
@@ -646,6 +658,8 @@ Public NotInheritable Class AppSettings
             .AdobePopupWatch = AdobePopupWatch,
             .AdobeRestoreScreenOnExit = AdobeRestoreScreenOnExit,
             .AcroPdfFreshControl = AcroPdfFreshControl,
+            .AcroPdfFitWidth = AcroPdfFitWidth,
+            .AcroPdfSaveAfterSignature = AcroPdfSaveAfterSignature,
             .AdobeClassicUi = AdobeClassicUi,
             .AdobeTrappedAlerts = AdobeTrappedAlerts?.ToList(),
             .ExcelRibbon = ExcelRibbon,
@@ -720,6 +734,8 @@ Public NotInheritable Class AppSettings
         If dto.AdobePopupWatch.HasValue Then s.AdobePopupWatch = dto.AdobePopupWatch.Value
         If dto.AdobeRestoreScreenOnExit.HasValue Then s.AdobeRestoreScreenOnExit = dto.AdobeRestoreScreenOnExit.Value
         If dto.AcroPdfFreshControl.HasValue Then s.AcroPdfFreshControl = dto.AcroPdfFreshControl.Value
+        If dto.AcroPdfFitWidth.HasValue Then s.AcroPdfFitWidth = dto.AcroPdfFitWidth.Value
+        If dto.AcroPdfSaveAfterSignature.HasValue Then s.AcroPdfSaveAfterSignature = dto.AcroPdfSaveAfterSignature.Value
         If dto.AdobeClassicUi.HasValue Then s.AdobeClassicUi = dto.AdobeClassicUi.Value
         If dto.AdobeTrappedAlerts IsNot Nothing Then
             s.AdobeTrappedAlerts = dto.AdobeTrappedAlerts.
@@ -790,6 +806,8 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdobePopupWatch As Boolean?
     Public Property AdobeRestoreScreenOnExit As Boolean?
     Public Property AcroPdfFreshControl As Boolean?
+    Public Property AcroPdfFitWidth As Boolean?
+    Public Property AcroPdfSaveAfterSignature As Boolean?
     Public Property AdobeClassicUi As Boolean?
     Public Property AdobeTrappedAlerts As List(Of String)
     Public Property ExcelRibbon As String

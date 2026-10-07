@@ -5,6 +5,8 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **Commit `c42929e` (07.10.2026, «SLICELESS - Modificare mod incarcare AcroPDF In activex controll») NU e lucru fără felie:** tot ce e în el pe PDF-ul ActiveX aparține feliei **0078-15** — vezi `SLICE-0078-15-vizualizator-activex-refacut.md` și [0070-0079](KBOT_STATUS_0070-0079.md).
+
 - **Slice 0SEO (operator, 06.10.2026) — public site: SEO basics + the «PDF Inteligent» / ALOP-Adobe article kept as a DRAFT.** Title/description/canonical/Open Graph/JSON-LD on `/`, `/robots.txt`, `/sitemap.xml`, emoji section menu with tooltips, red button + «Înregistrează» order in the top bar. The article (`/alop-eroare-adobe-acrobat-pro`) is hidden (no button, not in the sitemap, `noindex`) until `content.json` → `alop_page.published` is set to `true`; publishing steps are in the worklog. Checked with the test client only, nothing seen in a browser, server not restarted/deployed. See `SLICE-0SEO-01-sait-seo-pagina-alop.md`.
 
 - **No slice (operator, 02.10.2026) — list without source filter when the tree is sorted by date; angajament name in

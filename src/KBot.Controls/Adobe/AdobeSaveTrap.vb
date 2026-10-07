@@ -186,7 +186,7 @@ Public NotInheritable Class AdobeSaveTrap
 
     ''' <summary>
     ''' When True, every step of this trap is also written to <see cref="AcroPdfTraceLog"/> (while
-    ''' the trace switch is on AND a recording is running). Set by <see cref="AcroPdfSurface"/> and,
+    ''' the trace switch is on AND a recording is running). Set by <see cref="AcroPdfViewer"/> and,
     ''' since slice 0078-12, by <see cref="AdobeReaderHost"/> (which opens the recording itself);
     ''' lines are told apart by their «SaveTrap#n» source.
     ''' </summary>

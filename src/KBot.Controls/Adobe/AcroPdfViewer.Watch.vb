@@ -6,7 +6,8 @@ Imports System.Windows.Forms
 Imports KBot.Common
 
 ' ACTIVEX-CHECK (slice 0078-15): the temporary watch of Adobe's windows and of the operator's clicks.
-' Part of AcroPdfViewer; the whole file goes when the operator says the investigation is over.
+' Part of AcroPdfViewer. Kept for a future investigation (operator, 07.10.2026): it runs only while DetailedWatch is True;
+' otherwise the small watch (AcroPdfViewer.LightWatch.vb) drives the same fixes.
 Partial Public NotInheritable Class AcroPdfViewer
 
     ' ══ ACTIVEX-CHECK: temporary window watch (slice 0078-15) ══════════════════════════════════

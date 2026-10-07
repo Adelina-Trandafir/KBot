@@ -30,7 +30,7 @@
          DataView\  KBotDataView (+ partial-uri, KBotDataColumn/Row/Collection, enum-urile
                     KBotAggregate/KBotAutoSizeMode/KBotColumnType/KBotFillMode) și
                     DataView\Events\ (KBotCell*/KBotRow*/KBotButtonClickEventArgs)
-         Adobe\     vizualizatorul Adobe (AcroPdfHost/AcroPdfSurface + gazduirea nativă)
+         Adobe\     vizualizatorul Adobe (AcroPdfHost/AcroPdfViewer + gazduirea nativă)
          Office\    OfficeDocumentHost (gazduirea unui document Excel/Word intr-un panou),
                     OfficeLateBound (apelurile IDispatch prin reflexie) si OfficeHostLog
          NavList\   KBotNavList (+ KBotNavItem/Collection, KBotNavOrientation/Align/

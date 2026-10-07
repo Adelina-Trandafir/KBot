@@ -48,8 +48,9 @@ Rândurile de mai jos (și butonul «Mesaje de script Adobe...») se arată doar
 **ActiveX**; cu «Fereastră găzduită» sunt ascunse.
 <!-- slice: 0078-10 -->
 
-- **Jurnal de diagnostic detaliat** — scrie în `Logs\acropdf_trace.log` tot ce face controlul
-  Adobe. Pornește-l doar cât cauți o problemă.
+- **Jurnal de diagnostic detaliat** — scrie în `Logs\activex_check.log` tot ce face controlul
+  Adobe, de la următorul document deschis. Pornește-l doar cât cauți o problemă.
+  <!-- slice: 0078-15 -->
 - **Control Adobe nou la fiecare document** — la schimbarea reviziei, controlul se distruge și
   documentul se deschide într-unul nou.
 

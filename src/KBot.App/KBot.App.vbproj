@@ -66,6 +66,13 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <!-- Two harness forms own a .resx; with their whole class inside #If DEBUG, MSBuild cannot find the class
+       to name the resource (MSB3042). So the files carry no #If and are left out of non-Debug builds here. -->
+  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
+    <Compile Remove="HarnessTests\DdfSectiuneaBHarnessForm*.vb;HarnessTests\PdfSigningHarnessForm*.vb;HarnessTests\RecordingPdfApi.vb;HarnessTests\PdfSignatureReport.vb;HarnessTests\PdfSaveTimeline.vb" />
+    <EmbeddedResource Remove="HarnessTests\DdfSectiuneaBHarnessForm.resx;HarnessTests\PdfSigningHarnessForm.resx" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />

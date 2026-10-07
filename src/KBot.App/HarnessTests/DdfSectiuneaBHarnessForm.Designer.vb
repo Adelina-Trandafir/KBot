@@ -1,4 +1,3 @@
-#If DEBUG Then
 ' Bench for slice 0078-04: the interim DDF (real section A, placeholder section B), generated from a real revision, signed on A
 ' and saved locally; then section B written INTO it (incremental update) and signed again.
 '
@@ -433,4 +432,3 @@ Partial Class DdfSectiuneaBHarnessForm
     End Sub
 
 End Class
-#End If

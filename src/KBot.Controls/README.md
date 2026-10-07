@@ -18,7 +18,7 @@ e logică (după control), nu după felul fișierului.
 |---|---|
 | `Tree/` | `AdvancedTreeControl` (+ partial-urile `.API`/`.Painting`/`.Popup*`/…), `ColumnDef`, `TreeLogger`, `TooltipTableModel`, `NodeDebugInfo`, `FrmNodeDebug` |
 | `DataView/` | `KBotDataView` (+ partial-urile `.Layout`/`.Painting`/`.Editing`/…), `KBotDataColumn`, `KBotDataColumnCollection`, `KBotDataRow`, enum-urile `KBotAggregate`/`KBotAutoSizeMode`/`KBotColumnType`/`KBotFillMode`; `DataView/Events/` ține `KBotCell*`/`KBotRow*`/`KBotButtonClickEventArgs` |
-| `Adobe/` | vizualizatorul Adobe: `AcroPdfHost`, `AcroPdfSurface`, găzduirea nativă (`AdobeReaderHost`, `AdobeWindow*`, `Adobe*Watcher`, registry, `IHostSurface`) |
+| `Adobe/` | vizualizatorul Adobe: `AcroPdfHost`, `AcroPdfViewer`, găzduirea nativă (`AdobeReaderHost`, `AdobeWindow*`, `Adobe*Watcher`, registry, `IHostSurface`) |
 | `NavList/` | `KBotNavList`, `KBotNavItem`, `KBotNavItemCollection`, `KBotNavFlyout` + `KBotNavFlyoutStyle` (eticheta plutitoare a barei strânse), enum-urile `KBotNavOrientation`/`KBotNavAlign`/`KBotNavCorner`/`KBotNavCollapseState` |
 | `Menu/` | `KBotDropDownMenu` (+ partial `.Input`), `KBotMenuItem`, `KBotMenuItemCollection`, `KBotMenuItemClickedEventArgs`, `KBotMenuWindow` (one level on screen) -- slice 0087 |
 | `Popup/` | `CustomPopup` (+ partialele `.Painting`/`.Input`), `CustomPopupItem`, `CustomPopupItemCollection`, `CustomPopupItemEventArgs`, `PopupMnemonic` (litera de acces, funcție pură), `IPopupAnchor` (controlul care desfășoară meniul rămâne aprins cât e deschis) |

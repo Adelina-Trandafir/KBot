@@ -1,4 +1,3 @@
-#If DEBUG Then
 ' Bench for slice 0078: sign a DDF / ORD inside the real Adobe preview, watch the Save As trap,
 ' upload the signed file and read it back from the server.
 '
@@ -402,4 +401,3 @@ Partial Class PdfSigningHarnessForm
     End Sub
 
 End Class
-#End If

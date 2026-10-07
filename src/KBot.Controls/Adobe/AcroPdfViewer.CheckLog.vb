@@ -6,7 +6,8 @@ Imports System.Windows.Forms
 Imports KBot.Common
 
 ' ACTIVEX-CHECK (slice 0078-15): the operator mark, the tree dumps and the writer of activex_check.log.
-' Part of AcroPdfViewer; the whole file goes when the operator says the investigation is over.
+' Part of AcroPdfViewer. Kept for a future investigation (operator, 07.10.2026); it writes only while DetailedWatch is
+' True (AcroPdfViewer.LightWatch.vb).
 Partial Public NotInheritable Class AcroPdfViewer
 
     ''' <summary>
@@ -30,6 +31,7 @@ Partial Public NotInheritable Class AcroPdfViewer
 
     ' The whole tree under the control, one line per window, indented by depth.
     Private Sub DumpTree(k_reason As String)
+        If Not DetailedWatch Then Return   ' the small watch writes nothing: no tree walk either
         If _host Is Nothing OrElse Not _host.IsHandleCreated Then Return
         Dim k_all As List(Of IntPtr) = AdobeNativeMethods.Descendants(_host.Handle)
         Check($"tree ({k_reason}): {k_all.Count} window(s) under control {HexOf(_host.Handle)}, focus={Describe(AdobeNativeMethods.GetFocus())}")
@@ -122,7 +124,9 @@ Partial Public NotInheritable Class AcroPdfViewer
     Private ReadOnly _checkQueue As New System.Collections.Concurrent.BlockingCollection(Of String)()
     Private _checkWriter As Threading.Thread
 
+    ' Written only while the big watch is the one in use (DetailedWatch); otherwise every check line is dropped here.
     Private Sub Check(k_line As String)
+        If Not DetailedWatch Then Return
         Check(k_line, ViewerTag())
     End Sub
 
@@ -134,6 +138,7 @@ Partial Public NotInheritable Class AcroPdfViewer
 
     ' With the tag given: for the background threads, which must not walk the control tree.
     Private Sub Check(k_line As String, k_tag As String)
+        If Not DetailedWatch Then Return
         SyncLock _checkQueue
             If _checkQueue.IsAddingCompleted Then Return
             If _checkWriter Is Nothing Then

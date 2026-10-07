@@ -1,4 +1,3 @@
-#If DEBUG Then
 Option Strict On
 Imports System.Collections.Generic
 Imports KBot.Common
@@ -56,4 +55,3 @@ Friend NotInheritable Class PdfSignatureReport
     End Function
 
 End Class
-#End If

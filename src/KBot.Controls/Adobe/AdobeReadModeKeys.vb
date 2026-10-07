@@ -5,7 +5,7 @@ Imports KBot.Common
 ''' <summary>
 ''' The keys of the ActiveX viewer's Read Mode -- Ctrl+H and Ctrl+2 (F8 was removed from the flows, operator 06.10.2026) -- sent in two ways,
 ''' and a way to put the keyboard focus INSIDE the control, so the bench can compare the four
-''' combinations (slice 0078-15, operator 06.10.2026). Bench helper: <see cref="AcroPdfSurface"/> keeps its own
+''' combinations (slice 0078-15, operator 06.10.2026). Bench helper: <see cref="AcroPdfViewer"/> keeps its own
 ''' copy of the logic and is not changed by this class. Every step goes to the <c>k_log</c> callback.
 ''' </summary>
 Public NotInheritable Class AdobeReadModeKeys

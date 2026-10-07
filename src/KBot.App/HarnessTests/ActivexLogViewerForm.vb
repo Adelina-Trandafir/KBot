@@ -462,6 +462,25 @@ Public NotInheritable Class ActivexLogViewerForm
         End Try
     End Sub
 
+    ' ── The left tree as lanes (ActivexLaneForm) ────────────────────────────────
+    ' What the tree shows now (so «Fără rândurile arborilor de ferestre» and «Ascunde ce e identic» apply): a root is a
+    ' lane, a leaf under any of its elements a marker.
+
+    ' Not modal, like the viewer itself: it is a picture of what the left tree showed when the button was pressed.
+    Private Sub btnLanes_Click(sender As Object, e As EventArgs) Handles btnLanes.Click
+        Try
+            If tvLeft.Nodes.Count = 0 Then
+                lblStatus.Text = "Nimic de arătat: arborele din stânga e gol."
+                Return
+            End If
+            Dim k_form As New ActivexLaneForm($"Jurnalul ActiveX — pe culoare — {cboRunLeft.Text}", ActivexLaneForm.SpecsOf(tvLeft.Nodes.Cast(Of TreeNode)()))
+            k_form.Show(Me)
+        Catch ex As Exception
+            lblStatus.Text = "Nu pot deschide culoarele: " & ex.Message
+            GlobalErrorLog.Write("ActivexLogViewerForm.btnLanes_Click", ex)
+        End Try
+    End Sub
+
     ' ── Handlers (UI boundaries: log and swallow) ───────────────────────────────
 
     Private Sub tvLeft_AfterSelect(sender As Object, e As TreeViewEventArgs) Handles tvLeft.AfterSelect

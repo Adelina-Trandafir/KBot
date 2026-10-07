@@ -7,19 +7,19 @@ Imports System.Windows.Forms
 Imports KBot.Common
 
 ''' <summary>
-''' The AcroPDF ActiveX viewer, rebuilt from zero (slice 0078-15, operator 06.10.2026). Replaces
-''' <see cref="AcroPdfSurface"/>, which stays in the project only as a reference to draw from.
+''' The AcroPDF ActiveX viewer, rebuilt from zero (slice 0078-15, operator 06-07.10.2026). It replaced the old viewer
+''' (AcroPdfSurface), removed from the project on 07.10.2026 -- what it did is in docs/worklog/SLICE-0078-15-*.md.
 '''
-''' Built step by step, each step checked on the operator's PC before the next one is added.
-''' STEP 1 (this version): load the file and WATCH Adobe's windows -- nothing else. No wake (focus /
-''' size change / click), no keys (Ctrl+H comes later), no script-alert clicker, no Save As trap, no
-''' close-prompt answering, no empty-control reload. The operator clicks in the control.
-''' PRIMER TEST: a new control first loads a plain PDF (<see cref="PrimerPath"/>), then the document.
+''' Built step by step, each step checked on the operator's PC before the next one is added. Now (07.10.2026):
+''' the document goes in through <c>src</c> (<see cref="LoadThroughSrc"/>); Adobe's window born 0x0 gets the control's
+''' size again (AcroPdfViewer.SizeNudge.vb); Read Mode (Ctrl+H, then optionally Ctrl+2) is sent as soon as the page is
+''' laid out and verified (AcroPdfViewer.ReadMode.vb); the Save As trap, the «save changes?» answer and the trapped
+''' script alerts (AcroPdfViewer.SaveTrap.vb); Ctrl+S after a signature, optional (AcroPdfViewer.SaveKeys.vb).
+''' The primer (<see cref="PrimerPath"/>) is switched off.
 '''
-''' The watching is temporary: its lines go to their own file, <c>&lt;AppDir&gt;\Logs\activex_check.log</c>
-''' (background writer, never through <c>adobe_preview.log</c> and the benches' live boxes), and every member
-''' that exists only for it is marked «ACTIVEX-CHECK», so it can be removed in one pass when the operator says
-''' the investigation is over.
+''' Two interchangeable watches drive the fixes (<see cref="DetailedWatch"/>): the small one (default,
+''' AcroPdfViewer.LightWatch.vb) writes nothing; the big one (ACTIVEX-CHECK, kept for future investigations) also
+''' writes every window event to <c>&lt;AppDir&gt;\Logs\activex_check.log</c>.
 ''' </summary>
 Partial Public NotInheritable Class AcroPdfViewer
     Implements IDisposable
@@ -35,6 +35,7 @@ Partial Public NotInheritable Class AcroPdfViewer
         _panel = hostPanel
         _log = log
         _clsid = AcroPdfDetector.NormaliseClsid(AcroPdfDetector.ResolveClsid())
+        InitSaveTrap()
     End Sub
 
     ''' <summary>False when AcroPDF is not registered -- the caller must then say so.</summary>
@@ -77,10 +78,11 @@ Partial Public NotInheritable Class AcroPdfViewer
             End If
 
             Report($"AcroPDF: încarc «{Path.GetFileName(pdfPath)}».")
-            StartWatch(pdfPath)                                                     ' ACTIVEX-CHECK
+            StartWatching(pdfPath)   ' the big watch (ACTIVEX-CHECK) or the small one: DetailedWatch
             CancelPrimer()
             ResetSizeNudge()
             ArmReadMode()
+            Dim k_replacing As Boolean = BeforeLoadSaveTrap()
             _loadedPath = pdfPath
 
             ' PRIMER switched off (operator, 07.10.2026: src only for now): the document goes in directly.
@@ -96,6 +98,7 @@ Partial Public NotInheritable Class AcroPdfViewer
             'End If
 
             LoadTraced(k_host, pdfPath, "DOCUMENT")
+            AfterLoadSaveTrap(k_replacing)
             Return New AcroPdfResult(AcroPdfStatus.Shown, "", collapsed:=True)
         Catch ex As Exception
             Check("ShowDocument EXCEPTION: " & ex.Message)                          ' ACTIVEX-CHECK
@@ -108,20 +111,28 @@ Partial Public NotInheritable Class AcroPdfViewer
     ''' <summary>Empties the viewer by DESTROYING the control; the next load creates a new one.</summary>
     Public Sub Clear()
         Try
-            StopWatch()                                                             ' ACTIVEX-CHECK
+            StopWatching()
             CancelPrimer()
             _readModePending = False
+            _fitWidthPending = False
+            _savePending = False
+            Dim k_hadDocument As Boolean = BeforeClearSaveTrap()
             _loadedPath = Nothing
             Dim k_host As AcroPdfHost = _host
             _host = Nothing
-            If k_host Is Nothing Then Return
-            Dim k_release As ReleaseState = BeforeRelease(k_host)                   ' ACTIVEX-CHECK
+            If k_host Is Nothing Then
+                _saveTrap.Stop()
+                Return
+            End If
+            Dim k_release As ReleaseState = If(DetailedWatch, BeforeRelease(k_host), Nothing)   ' ACTIVEX-CHECK
             Dim k_clock As Diagnostics.Stopwatch = Diagnostics.Stopwatch.StartNew()
             _panel.Controls.Remove(k_host)
             k_host.Dispose()
             Check($"Clear: control removed and disposed in {k_clock.ElapsedMilliseconds} ms, IsDisposed={k_host.IsDisposed}")   ' ACTIVEX-CHECK
-            StartReleaseWatch(k_release)                                            ' ACTIVEX-CHECK
+            AfterClearSaveTrap(k_hadDocument)
+            If k_release IsNot Nothing Then StartReleaseWatch(k_release)            ' ACTIVEX-CHECK
         Catch ex As Exception
+            _saveTrap.Stop()
             GlobalErrorLog.Write("AcroPdfViewer.Clear", ex)
         End Try
     End Sub
@@ -135,7 +146,9 @@ Partial Public NotInheritable Class AcroPdfViewer
             _panel.Controls.Add(k_host)
             Dim k_handle As IntPtr = k_host.Handle
             _host = k_host
-            'WatchFormClose()   ' release on FormClosed switched off (operator, 07.10.2026: src only for now)
+            ' Release on FormClosed back ON for testing (operator, 07.10.2026, afternoon): the control goes while its
+            ' windows still exist, so the trap can answer «save changes?» and Adobe sees a clean close.
+            WatchFormClose()
             Check($"EnsureHost: control {HexOf(k_handle)} created in {k_clock.ElapsedMilliseconds} ms, " &   ' ACTIVEX-CHECK
                   $"bounds={k_host.Bounds}, {AdobeNativeMethods.Descendants(k_handle).Count} window(s) inside")
             Return k_host
@@ -251,6 +264,7 @@ Partial Public NotInheritable Class AcroPdfViewer
     Public Sub Dispose() Implements IDisposable.Dispose
         Clear()
         Try
+            DisposeSaveTrap()
             If _form IsNot Nothing Then RemoveHandler _form.FormClosed, AddressOf OnFormClosed
             _form = Nothing
             'If _primerTimerWired Then RemoveHandler _primerTimer.Tick, AddressOf OnPrimerTimeout

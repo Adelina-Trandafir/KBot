@@ -340,6 +340,8 @@ Public Class SetariAplicatieView
             SelecteazaPanglica(OfficeHostSettings.CurrentExcelRibbon().Value)
             chkAcroTrace.Checked = AcroPdfTraceLog.SwitchedOn
             chkAcroNou.Checked = AppSettings.Current.AcroPdfFreshControl
+            chkAcroLatime.Checked = AppSettings.Current.AcroPdfFitWidth
+            chkAcroSalvare.Checked = AppSettings.Current.AcroPdfSaveAfterSignature
             chkAdobeClasic.Checked = AppSettings.Current.AdobeClassicUi
             IncarcaBifeleAdobe()
             ActualizeazaDisponibilitateaAdobe()
@@ -383,6 +385,8 @@ Public Class SetariAplicatieView
         btnAdobeGazduire.Enabled = Not activeX
         chkAcroTrace.Visible = activeX
         chkAcroNou.Visible = activeX
+        chkAcroLatime.Visible = activeX
+        chkAcroSalvare.Visible = activeX
         btnMesajeAdobe.Visible = activeX
     End Sub
 
@@ -462,7 +466,7 @@ Public Class SetariAplicatieView
             AcroPdfTraceLog.SwitchedOn = chkAcroTrace.Checked
             RaiseEvent StatusChanged(If(chkAcroTrace.Checked,
                 "Jurnalul de diagnostic ActiveX este pornit până la închiderea aplicației: Logs\" &
-                AcroPdfTraceLog.FileNameOnly & ", de la următoarea deschidere de document.",
+                "activex_check.log, de la următoarea deschidere de document.",
                 "Jurnalul de diagnostic ActiveX este oprit."))
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.ChkAcroTrace_CheckedChanged", ex)
@@ -518,6 +522,24 @@ Public Class SetariAplicatieView
                           If(chkAcroNou.Checked,
                              "ActiveX: fiecare document nou se deschide într-un control Adobe nou.",
                              "ActiveX: documentele se încarcă în același control Adobe."))
+    End Sub
+
+    ' ActiveX only (slice 0078-15, operator 07.10.2026): Ctrl+2 after Adobe's Read Mode. Read at every load.
+    Private Sub ChkAcroLatime_CheckedChanged(sender As Object, e As EventArgs) Handles chkAcroLatime.CheckedChanged
+        If _suppress Then Return
+        SalveazaComutator(Sub(s) s.AcroPdfFitWidth = chkAcroLatime.Checked,
+                          If(chkAcroLatime.Checked,
+                             "ActiveX: documentele se deschid cu pagina pe toată lățimea.",
+                             "ActiveX: documentele se deschid la mărimea aleasă de Adobe."))
+    End Sub
+
+    ' ActiveX only (slice 0078-15, operator 07.10.2026, under test): Ctrl+S after a signature. Read at every request.
+    Private Sub ChkAcroSalvare_CheckedChanged(sender As Object, e As EventArgs) Handles chkAcroSalvare.CheckedChanged
+        If _suppress Then Return
+        SalveazaComutator(Sub(s) s.AcroPdfSaveAfterSignature = chkAcroSalvare.Checked,
+                          If(chkAcroSalvare.Checked,
+                             "ActiveX: după fiecare semnătură, documentul se salvează automat încă o dată.",
+                             "ActiveX: documentul nu se mai salvează automat după semnătură."))
     End Sub
 
     Private Sub CboExcelRibbon_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboExcelRibbon.SelectedIndexChanged

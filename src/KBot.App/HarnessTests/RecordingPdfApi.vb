@@ -1,4 +1,3 @@
-#If DEBUG Then
 Option Strict On
 Imports System.Collections.Generic
 Imports System.Reflection
@@ -58,4 +57,3 @@ Public Class RecordingPdfApi
     End Function
 
 End Class
-#End If

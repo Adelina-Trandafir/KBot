@@ -1,4 +1,4 @@
-# Adobe viewer family — AdobeReaderHost + AcroPdfSurface
+# Adobe viewer family — AdobeReaderHost + AcroPdfViewer
 
 Two ways to show a PDF inside a K-BOT panel. Neither is a designer control: both take a
 host `Control` (or `IHostSurface`) and a `log` callback, and both are `IDisposable`.
@@ -38,13 +38,26 @@ Launches Adobe, finds its top-level window and makes it a child of the host pane
   `UseCreationHook = False`, `CaptureDelayMs = 0`, `FindTimeoutMs`, `FindPollMs = 30`,
   `RedrawDelayMs`, `CloseGraceMs = 1500`, `ExtraArgs`, `Clone()`, `Describe()`.
 
-## AcroPdfSurface — the AcroPDF ActiveX
-- `New(hostPanel, log)`, `IsAvailable`, `TryReadVersion()`,
-  `ShowDocumentAsync(pdfPath) As Task(Of AcroPdfResult)`, `Clear()`, `Dispose()`
+## AcroPdfViewer — the AcroPDF ActiveX (slice 0078-15)
+Rebuilt from zero on 06-07.10.2026; the old `AcroPdfSurface` was removed on 07.10.2026 (what it did:
+`docs/worklog/SLICE-0078-15-vizualizator-activex-refacut.md`).
+- `New(hostPanel, log)`, `IsAvailable`, `LoadedPath`,
+  `ShowDocumentAsync(pdfPath) As Task(Of AcroPdfResult)` (synchronous inside), `Clear()` (destroys the control),
+  `Dispose()`; the control is also released on the form's `FormClosed`.
+- `LoadThroughSrc = True` (the document goes in through `src` = `file:///…`; False = `LoadFile`),
+  `PrimerPath` (switched off in code), `DetailedWatch` (False = the small WinEvent watch, writes nothing; True =
+  the big one, every window event to `Logsactivex_check.log`), `FitWidthAfterReadMode` (Ctrl+2 after Ctrl+H).
+- Fixes, all driven by window events (no timer): Adobe's window born 0x0 gets the control's rectangle again
+  (`AcroPdfHost.ResendRectangle`, `IOleInPlaceObject.SetObjectRects`, max. 3); Ctrl+H when `AVPageView` is visible
+  with a size, verified (task pane + tab strip hidden) and re-sent once after >= 700 ms if the document header is
+  still there.
+- Signing: `SaveTrapEnabled`, `DocumentSaved`, `SaveTrapFailed`, `OwnerPids()`, `IsOnScreen()` (the same
+  `AdobeSaveTrap` as the hosted window); `SaveAfterSignatureEnabled` + `RequestSave()` + `SaveKeysSent` /
+  `SaveNotSent` (Ctrl+S after a signature, optional, NOT working yet).
 - `AcroPdfStatus` = `Shown` `NotRegistered` `FileMissing` `Failed`; `AcroPdfResult` adds
-  `Collapsed` (True when the document view ended up filling the panel).
+  `Collapsed` (always True now: kept for the callers' shape).
 - `AcroPdfDetector.ResolveClsid()` / `NormaliseClsid(clsid)`; `AcroPdfHost` is the low-level
-  wrapper (`LoadFile`, `ApplyChrome`, `Clear`, `TryReadVersion`).
+  wrapper (`LoadFile`, `LoadThroughSrc`, `ResendRectangle`, `ApplyChrome`, `Clear`, `TryReadVersion`).
 
 ## Profiles and UI detection (DevHarness bench only since slice 0078-05)
 Adobe's classic and modern UIs need different window offsets and clipping. Only the DevHarness
