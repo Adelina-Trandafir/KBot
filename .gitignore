@@ -525,3 +525,7 @@ tools/KBotInstaller/prereq/
 # slice 0110-09: the offline country file (DB-IP Lite, CC-BY, refreshed by hand on the server)
 PYTHON/data/*.mmdb
 /Surse/RawExport
+*.xlsx
+/DocumentFundamentare_2026_02_17_008_fara_xml_213136.pdf
+/DocumentFundamentare_2026_02_17_008_fara_xml_213252.pdf
+/empty_pdf.pdf

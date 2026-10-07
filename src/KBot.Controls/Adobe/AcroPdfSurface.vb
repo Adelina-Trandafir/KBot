@@ -42,6 +42,9 @@ Public NotInheritable Class AcroPdfResult
 End Class
 
 ''' <summary>
+''' RETIRED (slice 0078-15, operator 06.10.2026): replaced by <see cref="AcroPdfViewer"/>, rebuilt
+''' step by step. Nothing uses this class any more; it stays only as a reference to draw from.
+'''
 ''' Shows a PDF in the AcroPDF ActiveX control, and puts it into the state the operator actually
 ''' wants: document filling the panel, Adobe's panes collapsed.
 '''

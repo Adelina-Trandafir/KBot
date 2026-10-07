@@ -42,7 +42,8 @@ Partial Public Class KbotForm
                 DirectCast(previous, System.Windows.Forms.Control).Visible = False
                 ' Slice 0078-15: the view put away lets its document go (local signed copy deleted); it is fetched
                 ' again, sum checked, when the view comes back and gets the context below.
-                TryCast(previous, IReleasesDocument)?.ReleaseDocument()
+                ' Deactivated with the deletion (ReaderHostPreview.LocalCopyDeleteEnabled), kept in the code.
+                If ReaderHostPreview.LocalCopyDeleteEnabled Then TryCast(previous, IReleasesDocument)?.ReleaseDocument()
             End If
             ' Only the ACTIVE view gets the context; the others get it when activated.
             view.SetContext(_currentInfo)

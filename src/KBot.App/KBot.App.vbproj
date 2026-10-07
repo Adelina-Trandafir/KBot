@@ -110,6 +110,12 @@
     <None Include="..\..\docs\release-notes\NOUTATI.md" Link="Noutati\NOUTATI.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Slice 0078-15 (06.10.2026): the plain PDF (no form, no scripts) the ActiveX viewer loads into every new control
+       BEFORE the real document (AcroPdfViewer.PrimerPath), shipped as <AppDir>\empty_pdf.pdf. -->
+  <ItemGroup>
+    <None Include="..\..\empty_pdf.pdf" Link="empty_pdf.pdf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- Slice 0104: the Access component (everything that talks to the Access files) is NOT referenced by this
        project: the application finds KBot.Access.dll at run time (KBot.Common.AccessBridge), so a package
        can be built without it. ReferenceOutputAssembly=false only makes the build order right and, below,

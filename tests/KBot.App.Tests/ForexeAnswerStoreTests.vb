@@ -1,4 +1,4 @@
-Option Strict On
+﻿Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.IO
@@ -40,9 +40,9 @@ Public Class ForexeAnswerStoreTests
 
     <Fact>
     Public Sub FromRun_KeepsTheVerdictTheVariablesAndTheRequest()
-        Dim job As JobRequest = Job()
-        job.StopBeforeSave = True
-        Dim a As ForexeAnswer = ForexeAnswerStore.FromRun(job, "!DDF7", Session(), Result(), New Date(2026, 9, 26, 14, 30, 12, 457))
+        Dim k_job As JobRequest = Job()
+        k_job.StopBeforeSave = True
+        Dim a As ForexeAnswer = ForexeAnswerStore.FromRun(k_job, "!DDF7", Session(), Result(), New Date(2026, 9, 26, 14, 30, 12, 457))
 
         Assert.Equal(ForexeAnswerStore.CurrentVersion, a.Version)
         Assert.Equal("CreareAngajament", a.Workflow)

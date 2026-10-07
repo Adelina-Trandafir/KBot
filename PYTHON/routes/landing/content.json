@@ -4,7 +4,7 @@
     "description": "K-BOT preia munca repetitivă din FOREXE: angajamente, recepții, documente de fundamentare și ordonanțări, pregătite, verificate și semnate din aplicație."
   },
   "alop_page": {
-    "published": false
+    "published": true
   },
   "links": {
     "register": "/inregistrare",

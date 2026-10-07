@@ -28,3 +28,6 @@ Only a throw-away check with Flask's test client (no server, nothing on screen):
 - The description of `/` is ~165 characters (Google cuts near 155).
 - Not added: a link to the article inside the presentation text (only the top-bar button).
 - Help (`HelpContent/`): not touched, the change is on the public site, not in the application.
+
+## Update 07.10.2026
+The operator confirmed the problem is real (she saved and signed by hand a form downloaded from the Ministry's site, same error) and asked to publish: `alop_page.published` is now `true`, the date of the page and of the JSON-LD is 07.10.2026, and a «Verificat și manual» note was added under the error messages. Still to do by hand: submit the sitemap in Search Console and request indexing. Nothing seen in a browser; the server must be restarted/deployed.

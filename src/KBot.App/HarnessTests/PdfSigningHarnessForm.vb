@@ -158,6 +158,16 @@ Public NotInheritable Class PdfSigningHarnessForm
         txtJurnal.Clear()
     End Sub
 
+    ' Slice 0078-15 check (temporary, ACTIVEX-CHECK): the operator sees the document loaded -- the viewer logs the moment.
+    Private Sub btnVad_Click(sender As Object, e As EventArgs) Handles btnVad.Click
+        Try
+            Write("Operatorul: documentul se vede încărcat la " & DateTime.Now.ToString("HH:mm:ss.fff") & ".")
+            preview.MarkOperatorSeen()
+        Catch ex As Exception
+            GlobalErrorLog.Write("PdfSigningHarnessForm.btnVad_Click", ex)
+        End Try
+    End Sub
+
     Private Sub chkGazduita_CheckedChanged(sender As Object, e As EventArgs) Handles chkGazduita.CheckedChanged
         Try
             ApplyEngineChoice()

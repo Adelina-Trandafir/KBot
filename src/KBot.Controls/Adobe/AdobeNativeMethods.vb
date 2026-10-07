@@ -212,6 +212,50 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Shared Function UnhookWinEvent(hWinEventHook As IntPtr) As Boolean
     End Function
 
+    ' ── Low-level mouse hook: the time of the operator's clicks on the ActiveX control (ACTIVEX-CHECK) ──
+    Public Const WH_MOUSE_LL As Integer = 14
+    Public Const WM_RBUTTONDOWN As Integer = &H204
+
+    <StructLayout(LayoutKind.Sequential)>
+    Public Structure MSLLHOOKSTRUCT
+        Public X As Integer
+        Public Y As Integer
+        Public MouseData As UInteger
+        Public Flags As UInteger
+        ' Same tick clock as the WinEvent timestamps.
+        Public Time As UInteger
+        Public ExtraInfo As IntPtr
+    End Structure
+
+    <StructLayout(LayoutKind.Sequential)>
+    Public Structure POINTSTRUCT
+        Public X As Integer
+        Public Y As Integer
+    End Structure
+
+    Public Delegate Function LowLevelMouseProc(nCode As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function SetWindowsHookEx(idHook As Integer, lpfn As LowLevelMouseProc,
+                                            hMod As IntPtr, dwThreadId As UInteger) As IntPtr
+    End Function
+
+    <DllImport("user32.dll", SetLastError:=True)>
+    Public Shared Function UnhookWindowsHookEx(hhk As IntPtr) As Boolean
+    End Function
+
+    <DllImport("user32.dll")>
+    Public Shared Function CallNextHookEx(hhk As IntPtr, nCode As Integer, wParam As IntPtr, lParam As IntPtr) As IntPtr
+    End Function
+
+    <DllImport("kernel32.dll", CharSet:=CharSet.Unicode)>
+    Public Shared Function GetModuleHandle(lpModuleName As String) As IntPtr
+    End Function
+
+    <DllImport("user32.dll")>
+    Public Shared Function WindowFromPoint(pt As POINTSTRUCT) As IntPtr
+    End Function
+
     ' ── Read mode (Ctrl+H) path of the ActiveX surface ─────────────────────────
     Public Const EVENT_OBJECT_STATECHANGE As UInteger = &H800AUI
     Public Const EVENT_OBJECT_LOCATIONCHANGE As UInteger = &H800BUI
@@ -318,6 +362,7 @@ Friend NotInheritable Class AdobeNativeMethods
     Public Const SWP_NOSIZE As UInteger = &H1UI
     Public Const WM_SETTEXT As UInteger = &HCUI
     Public Const WM_GETTEXT As UInteger = &HDUI
+    Public Const WM_GETTEXTLENGTH As UInteger = &HEUI
     Public Const WM_COMMAND As UInteger = &H111UI
     ' TaskDialog-only message: presses one of its buttons by id. The Vista-style «Confirm Save As»
     ' prompt is a TaskDialog, whose buttons are not child windows and cannot be clicked any other way.
@@ -374,6 +419,24 @@ Friend NotInheritable Class AdobeNativeMethods
         Dim ok As IntPtr = SendMessageTimeoutBuffer(hWnd, WM_GETTEXT, New IntPtr(sb.Capacity), sb,
                                                     SMTO_ABORTIFHUNG, 2000UI, result)
         If ok = IntPtr.Zero Then Return ""
+        Return sb.ToString()
+    End Function
+
+    ''' <summary>
+    ''' The window's WHOLE text (length asked first, so a long console is not cut at 1024 characters), with a timeout;
+    ''' "" on failure. For reading Adobe's boxes and its JavaScript console (ACTIVEX-CHECK).
+    ''' </summary>
+    Public Shared Function ReadAllText(hWnd As IntPtr) As String
+        If hWnd = IntPtr.Zero Then Return ""
+        Dim k_length As IntPtr
+        If SendMessageTimeoutPtr(hWnd, WM_GETTEXTLENGTH, IntPtr.Zero, IntPtr.Zero,
+                                 SMTO_ABORTIFHUNG, 2000UI, k_length) = IntPtr.Zero Then Return ""
+        Dim k_count As Integer = CInt(Math.Min(k_length.ToInt64(), 200000L))
+        If k_count <= 0 Then Return ""
+        Dim sb As New StringBuilder(k_count + 1)
+        Dim result As IntPtr
+        If SendMessageTimeoutBuffer(hWnd, WM_GETTEXT, New IntPtr(sb.Capacity), sb,
+                                    SMTO_ABORTIFHUNG, 2000UI, result) = IntPtr.Zero Then Return ""
         Return sb.ToString()
     End Function
 
@@ -507,5 +570,20 @@ Friend NotInheritable Class AdobeNativeMethods
         If Not GetWindowRect(hWnd, r) Then Return Rectangle.Empty
         Return r.ToRectangle()
     End Function
+
+    ''' <summary>
+    ''' The OLE in-place object of an ActiveX control (slice 0078-15): <c>SetObjectRects</c> tells the control where it
+    ''' sits and how big it is -- the same call AxHost makes on every resize. It moves / sizes, it loads nothing.
+    ''' Methods in vtable order (IOleWindow first).
+    ''' </summary>
+    <ComImport, Guid("00000113-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)>
+    Public Interface IOleInPlaceObject
+        <PreserveSig> Function GetWindow(ByRef phwnd As IntPtr) As Integer
+        <PreserveSig> Function ContextSensitiveHelp(fEnterMode As Integer) As Integer
+        <PreserveSig> Function InPlaceDeactivate() As Integer
+        <PreserveSig> Function UIDeactivate() As Integer
+        <PreserveSig> Function SetObjectRects(ByRef lprcPosRect As RECT, ByRef lprcClipRect As RECT) As Integer
+        <PreserveSig> Function ReactivateAndUndo() As Integer
+    End Interface
 
 End Class

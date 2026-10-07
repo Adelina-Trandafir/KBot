@@ -69,14 +69,28 @@ Public NotInheritable Class AcroPdfHost
     ''' </summary>
     Public Function LoadFile(pdfPath As String) As Boolean
         Dim ocx As Object = GetOcx()
-        If ocx Is Nothing Then Throw New InvalidOperationException(
-            "Controlul AcroPDF nu a fost creat (GetOcx a întors Nothing).")
-        Dim result As Object = ocx.GetType().InvokeMember(
-            "LoadFile", BindingFlags.InvokeMethod, Nothing, ocx, New Object() {pdfPath})
+
+        If ocx Is Nothing Then Throw New InvalidOperationException("Controlul AcroPDF nu a fost creat (GetOcx a întors Nothing).")
+
+        Dim result As Object = ocx.GetType().InvokeMember("LoadFile", BindingFlags.InvokeMethod, Nothing, ocx, New Object() {pdfPath})
         ' LoadFile is documented as returning a boolean, but a control that returns nothing at all
         ' must not be reported as a failure it did not report.
         If TypeOf result Is Boolean Then Return CBool(result)
         Return True
+    End Function
+
+    ''' <summary>
+    ''' Loads the document through the control's <c>src</c> property, as a <c>file:///</c> address, instead of
+    ''' <c>LoadFile</c> (slice 0078-15 test, operator 07.10.2026: a Stack Overflow answer reports <c>LoadFile</c> doing
+    ''' nothing on Acrobat DC while <c>src</c> worked). Returns the address it set. Risky boundary (COM interop): the
+    ''' caller logs.
+    ''' </summary>
+    Public Function LoadThroughSrc(pdfPath As String) As String
+        Dim ocx As Object = GetOcx()
+        If ocx Is Nothing Then Throw New InvalidOperationException("Controlul AcroPDF nu a fost creat (GetOcx a întors Nothing).")
+        Dim k_address As String = New Uri(pdfPath).AbsoluteUri
+        ocx.GetType().InvokeMember("src", BindingFlags.SetProperty, Nothing, ocx, New Object() {k_address})
+        Return k_address
     End Function
 
     ''' <summary>
@@ -124,6 +138,25 @@ Public NotInheritable Class AcroPdfHost
             Dim detail As String = If(ex.InnerException Is Nothing, ex.Message, ex.InnerException.Message)
             Return $"  {memberName}({arg}) — EȘEC: {detail}"
         End Try
+    End Function
+
+    ''' <summary>
+    ''' Tells the control its rectangle again, first one pixel narrower, then the real one, through
+    ''' <c>IOleInPlaceObject.SetObjectRects</c> (slice 0078-15). Geometry only: the document is NOT loaded again.
+    ''' Measured 07.10.2026: when Adobe starts while the document is being loaded, its window inside the control is born
+    ''' 0x0 and stays so until something re-sends the control's rectangle (the operator's click did). Returns the two
+    ''' HRESULTs as text. Risky boundary (COM interop): the caller logs.
+    ''' </summary>
+    Public Function ResendRectangle() As String
+        Dim k_inPlace As AdobeNativeMethods.IOleInPlaceObject = TryCast(GetOcx(), AdobeNativeMethods.IOleInPlaceObject)
+        If k_inPlace Is Nothing Then Return "the control has no IOleInPlaceObject"
+        Dim k_real As New AdobeNativeMethods.RECT With {.Left = Left, .Top = Top, .Right = Right, .Bottom = Bottom}
+        Dim k_narrow As AdobeNativeMethods.RECT = k_real
+        k_narrow.Right -= 1
+        Dim k_clip As AdobeNativeMethods.RECT = k_real
+        Dim k_first As Integer = k_inPlace.SetObjectRects(k_narrow, k_clip)
+        Dim k_second As Integer = k_inPlace.SetObjectRects(k_real, k_clip)
+        Return $"hr 0x{k_first:X8} / 0x{k_second:X8}"
     End Function
 
     ''' <summary>Calls <c>src = ""</c> / <c>LoadFile("")</c> to blank the control, best-effort.</summary>

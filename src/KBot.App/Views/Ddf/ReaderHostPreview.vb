@@ -90,7 +90,8 @@ Public Class ReaderHostPreview
     Private ReadOnly _host As AdobeReaderHost
     ' Suprafața ActiveX, creată LENEȘ: dacă operatorul nu cere motorul «ActiveX», controlul COM nu
     ' se încarcă niciodată în proces.
-    Private _acro As AcroPdfSurface
+    ' Slice 0078-15 (operator, 06.10.2026): the rebuilt viewer; AcroPdfSurface is no longer used.
+    Private _acro As AcroPdfViewer
     Private _engine As AdobePreviewEngine = AdobePreviewEngine.WindowHost
     ' Documentul cerut ultima dată — gardă anti-răspuns depășit (același tipar ca vederile).
     Private _requestedPath As String
@@ -311,16 +312,19 @@ Public Class ReaderHostPreview
     ''' cerut explicit acest motor, iar o comutare tăcută i-ar ascunde că setarea lui nu s-a aplicat.
     ''' </summary>
     Private Async Function EmbedWithActiveXAsync(pdfPath As String) As Task
-        Dim surface As AcroPdfSurface = EnsureAcroSurface()
+        Dim surface As AcroPdfViewer = EnsureAcroSurface()
         If surface Is Nothing Then
             ShowMessage("Documentul nu a putut fi afișat. Detalii în jurnalul de erori.")
             Return
         End If
 
-        ' Engine "ActiveX -- mod citire": toolbars hidden by Adobe's Read Mode (Ctrl+H) instead of
-        ' the collapse / hide / header timers. Read at every load, so a change in the settings
-        ' window applies to the next document.
-        surface.ReadMode = (_engine = AdobePreviewEngine.ActiveXReadMode)
+        ' Slice 0078-15 UNCOVER TEST (operator, 06.10.2026): the panel is uncovered (the «loading» cover taken off) and
+        ' painted BEFORE the control is created and LoadFile is called. Measured the same day: every first load made under
+        ' the cover stayed empty, the reload made on the uncovered panel got Adobe's window at once.
+        ShowHost()
+        pnlHost.Update()
+
+        ' Slice 0078-15: both ActiveX engines use the rebuilt viewer (load only, for now).
         Dim result As AcroPdfResult = Await surface.ShowDocumentAsync(pdfPath).ConfigureAwait(True)
         If Not String.Equals(_requestedPath, pdfPath, StringComparison.Ordinal) Then Return
 
@@ -343,19 +347,32 @@ Public Class ReaderHostPreview
         End If
     End Function
 
+    ''' <summary>Slice 0078-15 bench check: the operator sees the document loaded -- logged by the ActiveX viewer.</summary>
+    Friend Sub MarkOperatorSeen()
+        Try
+            If _acro Is Nothing Then
+                AdobeHostLog.Write("[ACTIVEX-CHECK] OPERATOR mark pressed, but no ActiveX viewer exists (engine: " &
+                                   AdobeViewerSettings.EngineLabel(_engine) & ").")
+                Return
+            End If
+            _acro.MarkOperatorSeen()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.MarkOperatorSeen", ex)
+        End Try
+    End Sub
+
     ' Both ActiveX engines (old path and Read Mode) use the same AcroPDF surface.
     Private Function UsesActiveX() As Boolean
         Return _engine = AdobePreviewEngine.ActiveX OrElse _engine = AdobePreviewEngine.ActiveXReadMode
     End Function
 
-    Private Function EnsureAcroSurface() As AcroPdfSurface
+    Private Function EnsureAcroSurface() As AcroPdfViewer
         Try
             If _acro Is Nothing Then
-                _acro = New AcroPdfSurface(pnlHost, AddressOf AdobeHostLog.Write)
-                ' Slice 0078: the ActiveX engine traps Save As exactly like the hosted window.
-                _acro.SaveTrapEnabled = True
-                AddHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
-                AddHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
+                ' Slice 0078-15: no Save As trap yet on the rebuilt viewer (added in a later step).
+                ' Slice 0078-15 primer test: the plain PDF shipped next to the exe goes into every new control first.
+                _acro = New AcroPdfViewer(pnlHost, AddressOf AdobeHostLog.Write) With {
+                    .PrimerPath = System.IO.Path.Combine(AppContext.BaseDirectory, "empty_pdf.pdf")}
             End If
             Return _acro
         Catch ex As Exception
@@ -479,6 +496,10 @@ Public Class ReaderHostPreview
     ' Only a file under the signed-PDF cache folders (DDF, ORD, NC -- not NC\Recipise) and with NO upload waiting for
     ' it (PendingPdfUploads): such a copy is only a copy of the server's. A file still held by Adobe stays queued and
     ' is retried when the new document is ready. Never the document that is on screen now.
+    ' DEACTIVATED (operator, 06.10.2026): the deletion stays in the code but does nothing while False -- no copy is
+    ' queued, so nothing is deleted on switching documents, on Clear / ShowNotice / DetachReader or at exit. The shell's
+    ' view-switch release (KbotForm.ActivateView -> IReleasesDocument) reads it too. True = back on.
+    Friend Const LocalCopyDeleteEnabled As Boolean = False
     Private _pendingDelete As String
     ' Retry while Adobe still holds the file (it lets go a moment after the window / control is gone).
     Private Const DeleteRetryMs As Integer = 700
@@ -535,6 +556,7 @@ Public Class ReaderHostPreview
     ' Reached from ShowDocument (wrapped).
     Private Sub QueueDeleteOfPrevious(k_previous As String, k_next As String)
         Try
+            If Not LocalCopyDeleteEnabled Then Return
             If String.IsNullOrWhiteSpace(k_previous) Then
                 AdobeHostLog.Write("Copia locală: nimic de șters (niciun document anterior pe ecran).")
                 Return
@@ -694,8 +716,6 @@ Public Class ReaderHostPreview
 
     Private Sub DisposeAcro()
         If _acro Is Nothing Then Return
-        RemoveHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
-        RemoveHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
         _acro.Dispose()
         _acro = Nothing
     End Sub
