@@ -13,9 +13,7 @@ def catalog_data(repo):
     history = repo.rows('Grupe_Educator')
     for group in groups:
         group['Educators'] = group_educators(group, history, date.today().isoformat()) or ''
-    return {'groups': groups, 'children': repo.rows('Platitori'),
-            'payers': repo.rows('Platitori_sub'), 'educators': history,
-            'years': sorted({date.today().year, *[row['Anul'] for row in repo.rows('LunaD')]}, reverse=True)}
+    return {'groups': groups}
 
 
 def save_group(repo, body):

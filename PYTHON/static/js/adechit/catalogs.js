@@ -120,6 +120,7 @@ export function bindCatalogs({ api, context, refresh }) {
         return { ...updated };
       }, onRowValidate: ({ row }) => validateTaxes(row),
       onEditError: ({ error: failure, row, key }) => invalidTax(row, failure, key).catch(error) });
+    instance.sortBy('Expl', 'asc');
     grids.push(instance);
     return instance;
   };

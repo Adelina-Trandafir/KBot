@@ -1,4 +1,5 @@
 Imports System.Data.OleDb
+Imports System.IO
 Imports System.Threading.Tasks
 Imports KBot.Common
 Imports KBot.Theming
@@ -17,6 +18,7 @@ Friend Module Program
         AddHandler TaskScheduler.UnobservedTaskException, AddressOf OnUnobservedTaskException
 
         Try
+            StartErrorLog()
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
             ThemeStore.LoadScaling()
@@ -38,6 +40,24 @@ Friend Module Program
             End Try
             ' The Office Access driver crashes while the process unloads it (see KBot.Migrator Program, slice 0104-02).
             FastExit.TerminateIfOfficeDriverLoaded()
+        End Try
+    End Sub
+
+    ''' <summary>Archive the previous error file and keep the shared logger's current path for this run.</summary>
+    Private Sub StartErrorLog()
+        Try
+            LogPaths.EnsureLogsDirectory()
+            Dim logPath = LogPaths.Combine(GlobalErrorLog.FileNameOnly)
+            If File.Exists(logPath) Then
+                Dim archivePath = Path.Combine(Path.GetDirectoryName(logPath),
+                    $"harness_errors_ADE_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}.log")
+                File.Move(logPath, archivePath)
+            End If
+            Using stream As New FileStream(logPath, FileMode.CreateNew, FileAccess.Write, FileShare.ReadWrite)
+                ' The common logger appends only errors from this launch to the new empty file.
+            End Using
+        Catch ex As Exception
+            Throw New IOException("Jurnalul nou de erori nu a putut fi pregătit. Jurnalul anterior nu este șters.", ex)
         End Try
     End Sub
 

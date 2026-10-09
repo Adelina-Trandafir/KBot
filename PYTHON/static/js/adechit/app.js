@@ -4,10 +4,11 @@ import { Combobox } from '../components/combobox/combobox.js';
 import { DatePicker } from '../components/datepicker/datepicker.js';
 import { showMessage } from '../portal/messages.js';
 import { bindCatalogs } from './catalogs.js';
+import { bindAnnual } from './annual.js';
 
 const $ = (id) => document.getElementById(id);
 const state = { context: null, unit: null, monthId: null, groupId: null, rows: [], shownRows: [],
-  selected: null, grid: null, monthTree: null, groupTree: null, monthCombo: null, groupCombo: null, plan: { hidden: [], nameWidth: null }, ledger: 'receipt', request: 0 };
+  selected: null, grid: null, monthTree: null, groupTree: null, yearCombo: null, monthCombo: null, groupCombo: null, year: null, loadedYears: new Map(), groupsRequest: null, plan: { hidden: [], nameWidth: null }, ledger: 'receipt', request: 0 };
 
 function idempotencyKey() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -45,37 +46,69 @@ function dateText(value) { return value ? new Intl.DateTimeFormat('ro-RO').forma
 function selectedMonth() { return state.context.months.find((row) => row.IDL === state.monthId); }
 function selectedGroup() { return state.context.groups.find((row) => row.IDG === state.groupId); }
 
-function monthNodes(months) {
-  const years = new Map();
-  months.forEach((month) => {
-    if (!years.has(month.Anul)) years.set(month.Anul, []);
-    years.get(month.Anul).push(month);
-  });
-  return [...years.entries()].sort((a, b) => b[0] - a[0]).map(([year, rows]) => ({
+function syncCloseButton(month = selectedMonth()) {
+  const desktopOnly = month?.Luna === 8 && mobileQuery.matches;
+  $('ade-close').disabled = !month || Boolean(month.Inchisa) || desktopOnly;
+  $('ade-close').title = desktopOnly ? 'Închiderea anuală pentru august se face pe desktop.' : 'Închide luna';
+}
+
+function monthNodes() {
+  return state.context.years.map((year) => ({
     id: `year:${year}`, label: `Anul ${year}`, bold: true,
-    children: rows.sort((a, b) => b.Luna - a.Luna).map((row) => ({ id: `month:${row.IDL}`,
-      label: `${row.LunaT}/${row.Anul}${row.Inchisa ? ' · închisă' : ''}`, error: Boolean(row.Inchisa) })),
+    children: state.loadedYears.has(year) ? state.context.months.filter((row) => row.Anul === year)
+      .sort((a, b) => b.Luna - a.Luna).map((row) => ({ id: `month:${row.IDL}`,
+        label: `${row.LunaT}/${row.Anul}${row.Inchisa ? ' · închisă' : ''}`, error: Boolean(row.Inchisa) }))
+      : [{ id: `pending:${year}`, label: 'Se încarcă…' }],
   }));
+}
+
+async function loadYear(year) {
+  if (!state.loadedYears.has(year)) {
+    const pending = api(`/api/adechit/rows/LunaD?Anul=${year}`).then(({ rows }) => {
+      state.context.months = [...state.context.months.filter((row) => row.Anul !== year), ...rows];
+    });
+    state.loadedYears.set(year, pending);
+    pending.catch(() => state.loadedYears.delete(year));
+  }
+  await state.loadedYears.get(year);
+  state.monthTree.setData(monthNodes());
+  state.monthTree.isTreeRendered = false; state.monthTree.renderTree('');
+  syncPickers();
+}
+
+async function loadGroups() {
+  if (!state.groupsRequest) state.groupsRequest = api('/api/adechit/catalog-data').then(({ groups }) => {
+    state.context.groups = [...groups].sort((a, b) => String(a.Grupa || '').localeCompare(String(b.Grupa || ''), 'ro', { sensitivity: 'base' }));
+    state.groupTree.setData(state.context.groups.map((row) => ({ id: `group:${row.IDG}`, label: row.Grupa, tooltip: row.Educators || '' })));
+    state.groupTree.isTreeRendered = false; state.groupTree.renderTree('');
+    syncPickers();
+  }).catch((error) => { state.groupsRequest = null; throw error; });
+  await state.groupsRequest;
 }
 
 function buildTrees() {
   state.monthTree = new TreeView($('ade-month-tree'), { inline: true, autoCollapse: false, selectableLevel: 2,
-    showSearchBox: false, onSelect: ({ id }) => chooseMonth(Number(String(id).split(':')[1])) });
-  const months = monthNodes(state.context.months);
+    showSearchBox: false, onSelect: ({ id }) => { if (String(id).startsWith('month:')) chooseMonth(Number(String(id).split(':')[1])).catch(report); } });
+  const months = monthNodes();
   state.monthTree.setData(months);
-  months.forEach((node) => state.monthTree.expandedNodes.add(String(node.id)));
+  const toggle = state.monthTree.toggleNode.bind(state.monthTree);
+  state.monthTree.toggleNode = async (id, skip) => {
+    try {
+      if (!state.monthTree.expandedNodes.has(String(id))) await loadYear(Number(String(id).split(':')[1]));
+      toggle(id, skip);
+    } catch (error) { report(error); }
+  };
   state.monthTree.isTreeRendered = false;
   state.monthTree.renderTree('');
 
   state.groupTree = new TreeView($('ade-group-tree'), { inline: true, autoCollapse: false, showSearchBox: false,
-    onSelect: ({ id }) => chooseGroup(id === 'group:all' ? null : Number(String(id).split(':')[1])) });
-  state.groupTree.setData([{ id: 'group:all', label: 'Toate grupele', bold: true },
-    ...state.context.groups.map((row) => ({ id: `group:${row.IDG}`, label: row.Grupa, tooltip: row.Educator || '' }))]);
+    onSelect: ({ id }) => chooseGroup(Number(String(id).split(':')[1])).catch(report) });
+  state.groupTree.setData([]);
   state.groupTree.isTreeRendered = false;
   state.groupTree.renderTree('');
 }
 
-// Phone layout: month and group are chosen from two custom comboboxes instead of the two trees.
+// Phone layout: year, month and group use comboboxes instead of the two trees.
 function buildPickers() {
   const k_make = (k_id, k_label, k_onPick) => {
     const k_combo = new Combobox($(k_id), { readonly: true, placeholder: k_label, staticData: [], onSelect: k_onPick });
@@ -83,21 +116,29 @@ function buildPickers() {
     k_combo.input.setAttribute('aria-label', k_label);
     return k_combo;
   };
+  state.yearCombo = k_make('ade-year-combo', 'Anul', async (value) => {
+    state.year = Number(value); state.monthId = null; state.groupId = null;
+    loadSituation(); syncPickers();
+    try { await loadYear(state.year); } catch (error) { report(error); }
+  });
   state.monthCombo = k_make('ade-month-combo', 'Luna', (k_value) => chooseMonth(Number(k_value)).catch(report));
-  state.groupCombo = k_make('ade-group-combo', 'Grupa', (k_value) => chooseGroup(k_value === '' ? null : Number(k_value)));
+  state.groupCombo = k_make('ade-group-combo', 'Grupa', (k_value) => chooseGroup(Number(k_value)).catch(report));
 }
 
 function syncPickers() {
   if (!state.monthCombo || !state.context) return;
-  const k_months = [...state.context.months].sort((a, b) => b.Anul - a.Anul || b.Luna - a.Luna)
+  state.yearCombo.options.staticData = state.context.years.map((year) => ({ value: String(year), label: String(year) }));
+  if (state.year) state.yearCombo.setValue(String(state.year), String(state.year)); else state.yearCombo.clear();
+  const k_months = state.context.months.filter((row) => row.Anul === state.year)
+    .sort((a, b) => String(a.LunaT || '').localeCompare(String(b.LunaT || ''), 'ro', { sensitivity: 'base' }))
     .map((row) => ({ value: String(row.IDL), label: `${row.LunaT} ${row.Anul}${row.Inchisa ? ' · închisă' : ''}` }));
   state.monthCombo.options.staticData = k_months;
   const k_month = k_months.find((item) => item.value === String(state.monthId));
   if (k_month) state.monthCombo.setValue(k_month.value, k_month.label); else state.monthCombo.clear();
-  const k_groups = [{ value: '', label: 'Toate grupele' }, ...state.context.groups.map((row) => ({ value: String(row.IDG), label: row.Grupa }))];
+  const k_groups = state.context.groups.map((row) => ({ value: String(row.IDG), label: row.Grupa }));
   state.groupCombo.options.staticData = k_groups;
   const k_group = k_groups.find((item) => item.value === (state.groupId == null ? '' : String(state.groupId)));
-  state.groupCombo.setValue(k_group.value, k_group.label);
+  if (k_group) state.groupCombo.setValue(k_group.value, k_group.label); else state.groupCombo.clear();
 }
 
 function situationColumns(canEdit) {
@@ -120,7 +161,7 @@ async function saveAttendance({ row, value }) {
   $('ade-save-state').textContent = 'Se salvează și se recalculează…';
   await api('/api/adechit/attendance', { method: 'POST', body: JSON.stringify({ id: row.IDZ,
     version: row.Version, values: { ZilePrezenta: value } }) });
-  const result = await api(`/api/adechit/situation/${state.monthId}`);
+  const result = await api(`/api/adechit/situation/${state.monthId}?IDG=${state.groupId}`);
   const saved = decorateRows(result.rows).find((item) => item.IDZ === row.IDZ);
   $('ade-save-state').textContent = 'Prezența a fost salvată; situația a fost recalculată.';
   showMessage($('ade-message'), 'Prezența și valorile lunare au fost recalculate.', 'info');
@@ -204,7 +245,7 @@ function wireLongPress() {
   });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach((k_name) => k_grid.addEventListener(k_name, k_cancel));
   k_grid.addEventListener('contextmenu', (k_event) => { if (mobileQuery.matches) k_event.preventDefault(); });
-  mobileQuery.addEventListener('change', () => { hideRowDetail(); if (state.grid) createGrid(); });
+  mobileQuery.addEventListener('change', () => { hideRowDetail(); if (state.grid) createGrid(); syncCloseButton(); });
   let k_frame = 0;
   const k_refit = () => {
     clearTimeout(k_frame);
@@ -221,26 +262,37 @@ function createGrid() {
   hideRowDetail();
   state.grid?.destroy();
   state.plan = planColumns();
-  const canEdit = !selectedMonth()?.Inchisa;
+  const canEdit = Boolean(state.monthId && state.groupId) && !selectedMonth()?.Inchisa;
   state.grid = new DataGrid($('ade-grid'), { columns: situationColumns(canEdit), rows: state.shownRows,
     rowKey: 'IDZ', mobileRowScale: 1.2, editable: canEdit, layoutId: 'ade.attendance', layout: { fill: 'Nume', hidden: state.plan.hidden, widths: state.plan.nameWidth ? { Nume: state.plan.nameWidth } : {} }, footer: true,
     footerCaption: '{0} copii', frozen: 1, onSelect: selectChild, onCellSave: saveAttendance,
     onCellSaved: ({ row }) => { state.selected = row; loadLedger().catch(report); },
     onEditError: ({ error }) => { $('ade-save-state').textContent = 'Salvarea nu a reușit; valoarea introdusă a fost păstrată.'; report(error); } });
+  state.grid.sortBy('Nume', 'asc');
 }
 
 async function loadSituation() {
   const own = ++state.request;
-  const result = await api(`/api/adechit/situation/${state.monthId}`);
+  state.rows = []; state.shownRows = []; state.selected = null; createGrid(); renderLedger();
+  $('ade-selected-child').textContent = 'Selectați un copil din tabel.';
+  const month = selectedMonth();
+  $('ade-period').textContent = month ? `${month.LunaT} ${month.Anul}${month.Inchisa ? ' · lună închisă' : ''}` : 'Alegeți luna';
+  $('ade-group-caption').textContent = selectedGroup()?.Grupa || 'Alegeți grupa';
+  syncCloseButton(month);
+  $('ade-reopen').disabled = !month || !month.Inchisa;
+  $('ade-refresh').disabled = !month || state.groupId == null;
+  $('ade-add-child').disabled = !month || state.groupId == null;
+  $('ade-take-children').disabled = !month || state.groupId == null;
+  if (!month || state.groupId == null) return;
+  const result = await api(`/api/adechit/situation/${state.monthId}?IDG=${state.groupId}`);
   if (own !== state.request) return;
   state.rows = decorateRows(result.rows || []);
   state.shownRows = state.rows.filter((row) => state.groupId == null || row.IDG === state.groupId);
   state.selected = null;
   createGrid();
-  const month = selectedMonth();
   $('ade-period').textContent = `${month.LunaT} ${month.Anul}${month.Inchisa ? ' · lună închisă' : ''}`;
-  $('ade-group-caption').textContent = selectedGroup()?.Grupa || 'Toate grupele';
-  $('ade-close').disabled = Boolean(month.Inchisa);
+  $('ade-group-caption').textContent = selectedGroup()?.Grupa || 'Alegeți grupa';
+  syncCloseButton(month);
   $('ade-reopen').disabled = !month.Inchisa;
   $('ade-selected-child').textContent = 'Selectați un copil din tabel.';
   renderLedger();
@@ -250,15 +302,17 @@ async function loadSituation() {
 async function chooseMonth(id) {
   if (!Number.isFinite(id) || id === state.monthId) return;
   state.monthId = id;
+  state.year = selectedMonth()?.Anul;
   syncPickers();
+  await loadGroups();
   await loadSituation();
 }
 
-function chooseGroup(id) {
+async function chooseGroup(id) {
+  if (!Number.isFinite(id) || id === state.groupId) return;
   state.groupId = id;
   syncPickers();
-  $('ade-group-caption').textContent = selectedGroup()?.Grupa || 'Toate grupele';
-  filterGrid();
+  await loadSituation();
 }
 
 function selectChild(row) {
@@ -287,18 +341,111 @@ function ledgerSpec(kind) {
 }
 
 const REFUND_EXPLANATION = 'Restituire sumă';
+let receiptMenuCleanup = null;
+
+function receiptActionButton(id, latest = false) {
+  return `<button class="ade-cell-button ade-receipt-actions" type="button" data-receipt-id="${id || ''}" ${id ? '' : 'disabled'}
+    aria-haspopup="menu" aria-expanded="false" title="${latest ? 'Opțiuni pentru ultima chitanță salvată' : 'Opțiuni chitanță'}" aria-label="Opțiuni chitanță">📥</button>`;
+}
+
+async function fetchReceiptOutput(id, kind) {
+  const response = await fetch(`/api/adechit/receipts/${id}/${kind}`, {
+    headers: { 'X-Ade-Unit': state.unit, 'X-Portal-Token': portalToken(), Accept: kind === 'pdf' ? 'application/pdf' : 'text/html' },
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    if (response.status === 401 || result.reason === 'UNITATE_NEDESCHISA') toPortal(response.status === 401);
+    throw new Error(result.error || `Eroare HTTP ${response.status}`);
+  }
+  return response;
+}
+
+async function outputReceipt(id, kind) {
+  // Open synchronously from the menu click so the browser accepts the print window.
+  const printWindow = kind === 'print' ? window.open('', '_blank') : null;
+  try {
+    if (kind === 'print' && !printWindow) throw new Error('Browserul a blocat fereastra de listare. Permiteți ferestrele popup pentru această pagină.');
+    if (printWindow) { printWindow.document.title = 'Chitanță'; printWindow.document.body.textContent = 'Se pregătește chitanța…'; }
+    const response = await fetchReceiptOutput(id, kind);
+    if (kind === 'print') {
+      const html = await response.text();
+      if (printWindow.closed) return;
+      printWindow.document.open(); printWindow.document.write(html); printWindow.document.close();
+      printWindow.opener = null;
+    } else {
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a'); link.href = url; link.download = `Chitanta_${id}.pdf`;
+      document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+  } catch (error) { printWindow?.close(); throw error; }
+}
+
+async function openReceiptMenu(button, receipt) {
+  receiptMenuCleanup?.();
+  if (mobileQuery.matches || !receipt || !state.selected) return;
+  const child = state.selected.IDP;
+  const payers = await api(`/api/adechit/rows/Platitori_sub?IDP=${child}`);
+  if (mobileQuery.matches || !button.isConnected || state.selected?.IDP !== child) return;
+  receiptMenuCleanup?.();
+  const payer = payers.rows.find((row) => row.IDS === receipt.PayerId);
+  const menu = document.createElement('div'); menu.className = 'ade-receipt-menu';
+  menu.setAttribute('role', 'menu'); menu.setAttribute('aria-label', 'Opțiuni chitanță');
+  const listeners = new AbortController();
+  const close = (focus = false) => {
+    listeners.abort(); menu.remove(); button.setAttribute('aria-expanded', 'false');
+    if (focus && button.isConnected) button.focus();
+    if (receiptMenuCleanup === close) receiptMenuCleanup = null;
+  };
+  receiptMenuCleanup = close;
+  const entries = [{ icon: '🖨️', label: 'Listare', kind: 'print' }];
+  if (payer?.EMail?.trim()) entries.push({ icon: '✉️', label: 'Trimitere pe mail', disabled: true });
+  entries.push({ icon: '📄', label: 'Descarcă PDF', kind: 'pdf' });
+  for (const entry of entries) {
+    const item = document.createElement('button'); item.type = 'button'; item.setAttribute('role', 'menuitem');
+    item.disabled = Boolean(entry.disabled);
+    const icon = document.createElement('span'); icon.className = 'ade-receipt-menu__icon'; icon.setAttribute('aria-hidden', 'true'); icon.textContent = entry.icon;
+    const label = document.createElement('span'); label.textContent = entry.label; item.append(icon, label);
+    if (entry.kind) item.addEventListener('click', () => { close(true); outputReceipt(receipt.IDC, entry.kind).catch(report); });
+    menu.append(item);
+  }
+  document.body.append(menu); button.setAttribute('aria-expanded', 'true');
+  menu.style.zIndex = String(window.ZIndexManager?.getNext() || 1001);
+  const rect = button.getBoundingClientRect();
+  menu.style.left = `${Math.max(8, Math.min(rect.right - menu.offsetWidth, innerWidth - menu.offsetWidth - 8))}px`;
+  menu.style.top = `${Math.max(8, Math.min(rect.bottom + menu.offsetHeight > innerHeight - 8 ? rect.top - menu.offsetHeight : rect.bottom, innerHeight - menu.offsetHeight - 8))}px`;
+  const items = [...menu.querySelectorAll('button:not(:disabled)')]; items[0]?.focus();
+  menu.addEventListener('keydown', (event) => {
+    const index = items.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault(); items[(index + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault(); items[event.key === 'Home' ? 0 : items.length - 1]?.focus();
+    }
+  });
+  document.addEventListener('pointerdown', (event) => { if (!menu.contains(event.target) && !button.contains(event.target)) close(); }, { capture: true, signal: listeners.signal });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { event.preventDefault(); close(true); } else if (event.key === 'Tab') close(); }, { signal: listeners.signal });
+  addEventListener('resize', () => close(), { signal: listeners.signal });
+  addEventListener('scroll', () => close(), { capture: true, signal: listeners.signal });
+}
 
 function renderLedger(rows = []) {
+  receiptMenuCleanup?.();
   const kind = state.ledger;
   const spec = ledgerSpec(kind);
   const body = $('ade-ledger-body');
   if (!state.selected) { body.innerHTML = '<div class="ade-ledger-empty">Selectați copilul pentru a vedea documentele și a adăuga un rând.</div>'; return; }
-  const existing = rows.map((row) => `<tr class="${row.Cancelled ? 'is-cancelled' : ''}">${spec
-    .map((column) => `<td class="${column.cls}">${escapeHtml(column.cell(row) ?? '')}</td>`).join('')}<td class="ade-row-actions">${row.Cancelled ? 'Anulat' : ''}</td></tr>`).join('');
+  const existing = [...rows].sort((a, b) => String(a.Explicatie || '').localeCompare(String(b.Explicatie || ''), 'ro', { sensitivity: 'base' }))
+    .map((row) => `<tr class="${row.Cancelled ? 'is-cancelled' : ''}">${spec
+    .map((column) => `<td class="${column.cls}">${escapeHtml(column.cell(row) ?? '')}</td>`).join('')}<td class="ade-row-actions">${kind === 'receipt' ? receiptActionButton(row.IDC) : row.Cancelled ? 'Anulat' : ''}</td></tr>`).join('');
   const draftCells = spec.map((column) => `<td class="${column.cls}">${column.draft || ''}</td>`).join('');
-  body.innerHTML = `<table class="ade-ledger-table"><colgroup>${spec.map((column) => `<col class="${column.cls.split(' ')[0]}">`).join('')}<col class="ade-col-actions"></colgroup>
+  const latestReceipt = kind === 'receipt' ? [...rows].sort((a, b) => b.IDC - a.IDC)[0] : null;
+  body.innerHTML = `<table class="ade-ledger-table${kind === 'receipt' ? ' ade-ledger-table--receipts' : ''}"><colgroup>${spec.map((column) => `<col class="${column.cls.split(' ')[0]}">`).join('')}<col class="ade-col-actions"></colgroup>
     <thead><tr>${spec.map((column) => `<th>${column.title}</th>`).join('')}<th class="ade-row-actions"></th></tr></thead>
-    <tbody>${existing}<tr class="is-draft">${draftCells}<td class="ade-row-actions"><button class="ade-cell-button" id="ade-ledger-save" type="button" title="Salvează documentul nou și recalculează situația" aria-label="Salvează documentul nou">💾</button></td></tr></tbody></table>`;
+    <tbody>${existing}<tr class="is-draft">${draftCells}<td class="ade-row-actions"><div class="ade-ledger-buttons"><button class="ade-cell-button" id="ade-ledger-save" type="button" title="Salvează documentul nou și recalculează situația" aria-label="Salvează documentul nou">💾</button>${kind === 'receipt' ? receiptActionButton(latestReceipt?.IDC, true) : ''}</div></td></tr></tbody></table>`;
+  body.querySelectorAll('[data-receipt-id]').forEach((button) => button.addEventListener('click', () => {
+    openReceiptMenu(button, rows.find((row) => row.IDC === Number(button.dataset.receiptId))).catch(report);
+  }));
   // the calendar opens on today when today is in the selected month, otherwise on the first day of that month
   new DatePicker($('ade-ledger-date'), { startDate: () => {
     const k_month = selectedMonth();
@@ -348,7 +495,8 @@ async function ledgerData() {
   ]);
   const payments = new Map(paymentResult.rows.map((row) => [row.IDPL, row]));
   return documentResult.rows.filter((row) => payments.has(row.IDPL)).map((row) => ({ ...row,
-    Valoare: payments.get(row.IDPL).Plata, Cancelled: Boolean(row.Anulata || payments.get(row.IDPL).Anulata) }));
+    Valoare: payments.get(row.IDPL).Plata, PayerId: payments.get(row.IDPL).IDS,
+    Cancelled: Boolean(row.Anulata || payments.get(row.IDPL).Anulata) }));
 }
 
 async function loadLedger() {
@@ -397,11 +545,15 @@ async function takeChildren() {
 
 function bind() {
   const catalogs = bindCatalogs({ api, context: () => state.context, refresh: () => loadContext(true).catch(report) });
+  const annual = bindAnnual({ api, refresh: () => loadContext(true), message: (text) => showMessage($('ade-message'), text, 'info') });
   wireLongPress();
   document.querySelectorAll('.ade-report-date input').forEach((k_input) => new DatePicker(k_input));
   $('ade-search').addEventListener('input', filterGrid);
   $('ade-refresh').addEventListener('click', () => loadSituation().catch(report));
-  $('ade-close').addEventListener('click', () => command('/api/adechit/close', 'Luna a fost închisă.'));
+  $('ade-close').addEventListener('click', () => {
+    if (selectedMonth()?.Luna === 8) annual(state.monthId).catch(report);
+    else command('/api/adechit/close', 'Luna a fost închisă.');
+  });
   $('ade-reopen').addEventListener('click', () => command('/api/adechit/reopen', 'Luna a fost redeschisă.'));
   $('ade-add-child').addEventListener('click', () => catalogs.addChild(state.groupId, (child) =>
     api('/api/adechit/attendance/prepare', { method: 'POST', body: JSON.stringify({
@@ -427,19 +579,33 @@ function bind() {
   };
   setReportsCollapsed(localStorage.getItem('ade.reports.collapsed') === '1');
   reportsToggle.addEventListener('click', () => setReportsCollapsed(!shell.classList.contains('is-reports-collapsed')));
-  addEventListener('pagehide', () => { state.grid?.destroy(); state.monthTree?.destroy?.(); state.groupTree?.destroy?.(); }, { once: true });
+  addEventListener('pagehide', () => { receiptMenuCleanup?.(); state.grid?.destroy(); state.monthTree?.destroy?.(); state.groupTree?.destroy?.(); }, { once: true });
 }
 
 async function loadContext(rebuildTrees = false) {
   const context = await api('/api/adechit/context');
-  state.context = context; state.unit = context.unit;
+  state.context = { ...context, months: [], groups: [], years: [] }; state.unit = context.unit;
+  state.loadedYears.clear(); state.groupsRequest = null;
+  state.context.years = (await api('/api/adechit/years')).years;
   $('ade-context').textContent = `${context.unit} · ${context.email}`;
   $('ade-limitations').textContent = context.limitations.join(' ');
-  if (state.monthId == null || !context.months.some((row) => row.IDL === state.monthId)) state.monthId = context.months.at(-1)?.IDL;
-  if (!rebuildTrees) { buildTrees(); buildPickers(); }
-  else {
-    state.monthTree.setData(monthNodes(context.months)); state.monthTree.isTreeRendered = false; state.monthTree.renderTree('');
+  if (!rebuildTrees) {
+    buildTrees(); buildPickers();
+    const latestYear = state.context.years[0];
+    state.monthTree.expandedNodes.clear();
+    if (latestYear != null) {
+      await loadYear(latestYear);
+      state.monthTree.expandedNodes.add(`year:${latestYear}`);
+      state.monthTree.isTreeRendered = false; state.monthTree.renderTree('');
+    }
   }
+  else {
+    if (state.year) await loadYear(state.year);
+    state.monthTree.setData(monthNodes()); state.monthTree.isTreeRendered = false; state.monthTree.renderTree('');
+    if (state.monthId) await loadGroups();
+  }
+  if (!state.context.months.some((row) => row.IDL === state.monthId)) state.monthId = null;
+  if (!state.context.groups.some((row) => row.IDG === state.groupId)) state.groupId = null;
   syncPickers();
   await loadSituation();
 }
@@ -448,8 +614,6 @@ async function start() {
   state.unit = new URLSearchParams(location.search).get('unit') || 'preview';
   bind();
   await loadContext();
-  state.monthTree.selectNodeById(`month:${state.monthId}`);
-  state.groupTree.selectNodeById('group:all');
 }
 
 start().catch(report);

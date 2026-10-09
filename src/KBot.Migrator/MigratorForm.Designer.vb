@@ -146,6 +146,9 @@ Partial Class MigratorForm
         lblEfPrimite = New Label()
         txtEfPrimite = New Controls.KBotTextField()
         btnEfPrimite = New Button()
+        lblEfZip = New Label()
+        txtEfZip = New Controls.KBotTextField()
+        btnEfZip = New Button()
         lblEfBaza = New Label()
         grpEfAlege = New GroupBox()
         flpEfAlege = New FlowLayoutPanel()
@@ -1036,7 +1039,7 @@ Partial Class MigratorForm
         grpEfSurse.Margin = New Padding(4, 5, 4, 5)
         grpEfSurse.Name = "grpEfSurse"
         grpEfSurse.Padding = New Padding(14, 4, 14, 4)
-        grpEfSurse.Size = New Size(1475, 186)
+        grpEfSurse.Size = New Size(1475, 238)
         grpEfSurse.TabIndex = 0
         grpEfSurse.TabStop = False
         grpEfSurse.Text = "Sursele datelor"
@@ -1055,16 +1058,20 @@ Partial Class MigratorForm
         tlpEfSurse.Controls.Add(lblEfPrimite, 0, 1)
         tlpEfSurse.Controls.Add(txtEfPrimite, 1, 1)
         tlpEfSurse.Controls.Add(btnEfPrimite, 2, 1)
-        tlpEfSurse.Controls.Add(lblEfBaza, 0, 2)
+        tlpEfSurse.Controls.Add(lblEfZip, 0, 2)
+        tlpEfSurse.Controls.Add(txtEfZip, 1, 2)
+        tlpEfSurse.Controls.Add(btnEfZip, 2, 2)
+        tlpEfSurse.Controls.Add(lblEfBaza, 0, 3)
         tlpEfSurse.Dock = DockStyle.Fill
         tlpEfSurse.Location = New Point(14, 26)
         tlpEfSurse.Margin = New Padding(4, 5, 4, 5)
         tlpEfSurse.Name = "tlpEfSurse"
-        tlpEfSurse.RowCount = 3
+        tlpEfSurse.RowCount = 4
         tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
         tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
         tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
-        tlpEfSurse.Size = New Size(1447, 156)
+        tlpEfSurse.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlpEfSurse.Size = New Size(1447, 208)
         tlpEfSurse.TabIndex = 0
         '
         ' lblEfEmise
@@ -1133,16 +1140,49 @@ Partial Class MigratorForm
         btnEfPrimite.Text = "..."
         btnEfPrimite.UseVisualStyleBackColor = True
         '
+        ' lblEfZip
+        '
+        lblEfZip.AutoSize = True
+        lblEfZip.Dock = DockStyle.Fill
+        lblEfZip.Location = New Point(4, 104)
+        lblEfZip.Margin = New Padding(4, 0, 4, 0)
+        lblEfZip.Name = "lblEfZip"
+        lblEfZip.Size = New Size(412, 52)
+        lblEfZip.TabIndex = 6
+        lblEfZip.Text = "Arhivele ANAF (fact<id>.zip, folderul cu zip-uri)"
+        lblEfZip.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtEfZip
+        '
+        txtEfZip.BackColor = Color.Transparent
+        txtEfZip.Dock = DockStyle.Fill
+        txtEfZip.Location = New Point(424, 109)
+        txtEfZip.Margin = New Padding(4, 5, 4, 5)
+        txtEfZip.Name = "txtEfZip"
+        txtEfZip.Size = New Size(949, 42)
+        txtEfZip.TabIndex = 7
+        '
+        ' btnEfZip
+        '
+        btnEfZip.Dock = DockStyle.Fill
+        btnEfZip.Location = New Point(1377, 109)
+        btnEfZip.Margin = New Padding(4, 5, 4, 5)
+        btnEfZip.Name = "btnEfZip"
+        btnEfZip.Size = New Size(62, 42)
+        btnEfZip.TabIndex = 8
+        btnEfZip.Text = "..."
+        btnEfZip.UseVisualStyleBackColor = True
+        '
         ' lblEfBaza
         '
         lblEfBaza.AutoSize = True
         tlpEfSurse.SetColumnSpan(lblEfBaza, 3)
         lblEfBaza.Dock = DockStyle.Fill
-        lblEfBaza.Location = New Point(4, 104)
+        lblEfBaza.Location = New Point(4, 156)
         lblEfBaza.Margin = New Padding(4, 0, 4, 0)
         lblEfBaza.Name = "lblEfBaza"
         lblEfBaza.Size = New Size(1439, 52)
-        lblEfBaza.TabIndex = 6
+        lblEfBaza.TabIndex = 9
         lblEfBaza.Text = "Baza-țintă: (necunoscută)"
         lblEfBaza.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -1380,6 +1420,9 @@ Partial Class MigratorForm
     Friend WithEvents lblEfPrimite As Label
     Friend WithEvents txtEfPrimite As KBot.Controls.KBotTextField
     Friend WithEvents btnEfPrimite As Button
+    Friend WithEvents lblEfZip As Label
+    Friend WithEvents txtEfZip As KBot.Controls.KBotTextField
+    Friend WithEvents btnEfZip As Button
     Friend WithEvents lblEfBaza As Label
     Friend WithEvents grpEfAlege As GroupBox
     Friend WithEvents flpEfAlege As FlowLayoutPanel

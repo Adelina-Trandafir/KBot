@@ -3,8 +3,8 @@
 Received e-invoices (slice 00EF-17): synchronise from ANAF, list, detail, files, link to a DDF.
 
 SYNC (`sincronizeaza`): the ANAF messages of kind «FACTURA PRIMITA» of the last N days (N <= 60) that are not yet in `EF_Mesaje`
-are downloaded one by one (zip -> invoice XML), read by primite_ubl.py and written in ONE transaction per message: EF_Mesaje
-(with the XML), EF_Primite, EF_PrimiteLinii, EF_PrimiteNote. `EF_Mesaje.IdSol` is unique, so a repeated or interrupted sync never
+are downloaded one by one (the zip is kept, the invoice XML inside it is read), read by primite_ubl.py and written in ONE transaction per message: EF_Mesaje
+(with the ANAF zip: XML + signature, no separate XML), EF_Primite, EF_PrimiteLinii, EF_PrimiteNote. `EF_Mesaje.IdSol` is unique, so a repeated or interrupted sync never
 doubles anything. A call handles at most `limita` new messages and answers how many are left (`ramase`), so the screen can
 loop with a progress bar. A message that cannot be read is reported in `erori` and skipped (it stays out of EF_Mesaje, so the next sync tries
 again); the others go on.
@@ -14,8 +14,10 @@ Supplier name: it comes from the XML (`RegistrationName`, mandatory in CIUS-RO).
 LINK TO A DDF: automatic = the supplier's normalised CUI equals a partner of the DDF (`FX_DDF_Parteneri.CodFiscal`, same
 normalisation); manual = a row in `EF_PrimiteAsocieri`. A list for a DDF returns both and says which (`legatura`: «auto» / «manual»).
 """
+import io
 import logging
 import re
+import zipfile
 from datetime import datetime
 
 from . import anaf_api, facturi as F, primite_ubl, tokens, trimitere
@@ -23,7 +25,8 @@ from .tokens import EfEroare
 
 logger = logging.getLogger(__name__)
 
-SQL_FILES = "sql/00EF_02_efactura_unitate.sql si sql/00EF_17_primite_asocieri.sql si sql/00EF_17_primite_tva.sql"
+SQL_FILES = ("sql/00EF_02_efactura_unitate.sql si sql/00EF_17_primite_asocieri.sql si sql/00EF_17_primite_tva.sql "
+             "si sql/00EF_23_mesaje_zip.sql")
 DEFAULT_BATCH = 20
 MAX_BATCH = 50
 MAX_LIST = 2000
@@ -48,14 +51,14 @@ def _digits(text):
 # ---------------------------------------------------------------------------------------------
 # sync
 # ---------------------------------------------------------------------------------------------
-def _store_message(cursor, message, cui, xml, parsed):
-    """One message and its invoice. Raises on any database error (the caller rolls back this message only)."""
+def _store_message(cursor, message, cui, zip_bytes, parsed):
+    """One message and its invoice; the ANAF zip is kept (XML + ANAF signature), the XML alone is not. Raises on any database error (the caller rolls back this message only)."""
     cursor.execute(
-        "INSERT INTO EF_Mesaje (IdSol, IdIncarcare, CifEmitent, DataMesaj, CuiUnitate, Nou, NumeFisier, XmlContinut) "
+        "INSERT INTO EF_Mesaje (IdSol, IdIncarcare, CifEmitent, DataMesaj, CuiUnitate, Nou, NumeFisier, ZipContinut) "
         "VALUES (%s, %s, %s, %s, %s, 1, %s, %s)",
         (message["id_solicitare"], message.get("id") or None,
          _digits(message.get("cif_emitent")) or parsed["CuiNormalizat"], _message_date(message.get("data_creare")), cui,
-         (parsed["NrFact"] or "")[:255] + ".xml", xml))
+         (parsed["NrFact"] or "")[:255] + ".xml", zip_bytes))
     cursor.execute(
         "INSERT INTO EF_Primite (IdSol, NrFact, DataFact, DataScad, CotaTVA, TVA, Valoare, Total, CUI, CuiNormalizat, DenumireP, "
         "Adresa, Atasament, Tip, Semn, Ref) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
@@ -101,9 +104,9 @@ def sincronizeaza(dc, days, batch=DEFAULT_BATCH):
         cursor = conn.cursor(dictionary=True)
         for message in todo:
             try:
-                xml = anaf_api.factura_din_zip(anaf_api.descarca(token, message["id"]))
-                parsed = primite_ubl.parse(xml)
-                _store_message(cursor, message, cui, xml, parsed)
+                zip_bytes = anaf_api.descarca(token, message["id"])
+                parsed = primite_ubl.parse(anaf_api.factura_din_zip(zip_bytes))
+                _store_message(cursor, message, cui, zip_bytes, parsed)
                 conn.commit()
                 added += 1
             except (EfEroare, primite_ubl.XmlNeinteles) as err:
@@ -195,12 +198,31 @@ def detaliu(dc, id_primita):
         cursor.execute("SELECT d.IDDF, d.CodAngajament FROM FX_DDF_Parteneri p JOIN FX_DDF d ON d.IDDF = p.IDDF WHERE " + _PARTNER_CUI
                        + " = %s", (row["CuiNormalizat"] or "-",))
         auto = [_plain(r) for r in cursor.fetchall()]
-        cursor.execute("SELECT XmlContinut FROM EF_Mesaje WHERE IdSol = %s", (row["IdSol"],))
-        xml = cursor.fetchone()["XmlContinut"]
+        xml = _xml_of(cursor, row["IdSol"])
     files = primite_ubl.parse(xml)["atasamente"] if xml else []
     row.pop("DataAdaugare", None)
     return {"factura": _plain(row), "linii": lines, "cote": rates, "note": notes, "mesaje": messages, "atasamente": files,
             "legaturi": {"auto": auto, "manual": manual}}
+
+
+def _xml_of(cursor, id_sol):
+    """The invoice XML of a message: the stored XML, else the invoice entry of the stored ANAF zip.
+    A migrated message keeps the zip only (the signature file sits next to the XML in it), a new one keeps the XML."""
+    cursor.execute("SELECT XmlContinut, ZipContinut FROM EF_Mesaje WHERE IdSol = %s", (id_sol,))
+    row = cursor.fetchone()
+    if row["XmlContinut"]:
+        return bytes(row["XmlContinut"])
+    if not row["ZipContinut"]:
+        return None
+    try:
+        with zipfile.ZipFile(io.BytesIO(bytes(row["ZipContinut"]))) as archive:
+            for name in archive.namelist():
+                base = name.rsplit("/", 1)[-1].lower()
+                if base.endswith(".xml") and not base.startswith("semnatura_"):
+                    return archive.read(name)
+    except zipfile.BadZipFile:
+        logger.exception("EF_Mesaje.ZipContinut deteriorat pentru IdSol=%s", id_sol)
+    return None
 
 
 def xml(dc, id_primita):
@@ -208,17 +230,21 @@ def xml(dc, id_primita):
     with F._unit(dc, SQL_FILES) as conn:
         cursor = conn.cursor(dictionary=True)
         row = _row(cursor, id_primita)
-        cursor.execute("SELECT XmlContinut FROM EF_Mesaje WHERE IdSol = %s", (row["IdSol"],))
-        data = cursor.fetchone()["XmlContinut"]
+        data = _xml_of(cursor, row["IdSol"])
     if not data:
         raise EfEroare("XML-ul facturii nu este salvat.", "NU_EXISTA", 404)
-    return bytes(data), _file_name(row) + ".xml"
+    return data, _file_name(row) + ".xml"
 
 
 def zip_anaf(dc, id_primita):
-    """(zip bytes, file name): the signed zip, downloaded again from ANAF (the database keeps the XML only)."""
+    """(zip bytes, file name): the signed zip kept in the database (migrated messages), else downloaded again from ANAF."""
     with F._unit(dc, SQL_FILES) as conn:
-        row = _row(conn.cursor(dictionary=True), id_primita)
+        cursor = conn.cursor(dictionary=True)
+        row = _row(cursor, id_primita)
+        cursor.execute("SELECT ZipContinut FROM EF_Mesaje WHERE IdSol = %s", (row["IdSol"],))
+        kept = cursor.fetchone()["ZipContinut"]
+    if kept:
+        return bytes(kept), _file_name(row) + ".zip"
     _, token = tokens.access_token(dc)
     if not anaf_api.is_id(row["IdIncarcare"] or ""):
         raise EfEroare("Mesajul nu are numarul de descarcare ANAF.", "NU_EXISTA", 404)

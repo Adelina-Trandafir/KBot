@@ -1,8 +1,10 @@
 """SLICE-ADE1/4: ADE blueprint using portal authentication and common infrastructure."""
 import logging
 from functools import wraps
-from flask import Blueprint, current_app, g, jsonify, request, send_from_directory
-from .domain import SCHEMA, EDITABLE, DomainError, require, group_educators
+from flask import Blueprint, Response, current_app, g, jsonify, request, send_from_directory, render_template, send_file
+from io import BytesIO
+from werkzeug.utils import secure_filename
+from .domain import SCHEMA, EDITABLE, DomainError, require
 from .repository import transaction
 from .calculations import calculate
 from . import service
@@ -16,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_blueprint(authenticate=None, repository_factory=None, rights=None):
-    bp = Blueprint('adechit', __name__)
+    bp = Blueprint('adechit', __name__, template_folder='../../templates')
     # rights(context) -> the set of operations the signed-in user may do in this unit. Default: the
     # AD roles of AVACONT_COMUN (slice AD10-01); the local preview passes its own.
     if rights is None:
@@ -37,7 +39,7 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
                             require(operation in g.ade_operations, 'FORBIDDEN', 'Nu aveți dreptul necesar pentru această operație ADE.', 403)
                             result = function(repo, *args, **kwargs)
                         logger.info('ADE operation=%s outcome=success', operation)
-                        return jsonify(result)
+                        return result if isinstance(result, Response) else jsonify(result)
                     except DomainError as error:
                         logger.warning('ADE operation=%s refusal=%s', operation, error.reason)
                         return jsonify(error=str(error), reason=error.reason), error.status
@@ -68,16 +70,16 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.get('/api/adechit/context')
     @guard('read')
     def context(repo):
-        groups = repo.rows('Grupe')
-        educators = repo.rows('Grupe_Educator')
-        from datetime import date
-        for group in groups:
-            group['Educator'] = group_educators(group, educators, date.today().isoformat())
         return {'unit': g.portal['db_name'], 'email': g.portal['email'], 'schema': SCHEMA,
-                'editable': EDITABLE, 'months': repo.rows('LunaD'), 'groups': groups,
+                'editable': EDITABLE,
                 'permissions': sorted(g.ade_operations),
                 'preview': repository_factory is not None,
                 'limitations': ['Paritatea completă Access nu este validată.', 'Rapoartele și tipăririle sunt amânate.']}
+
+    @bp.get('/api/adechit/years')
+    @guard('read')
+    def years(repo):
+        return {'years': repo.years()}
 
     @bp.get('/api/adechit/receipt-defaults')
     @guard('read')
@@ -97,12 +99,12 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.get('/api/adechit/rows/<table>')
     @guard('read')
     def rows(repo, table):
-        data = repo.rows(table)
-        for key in ('IDL', 'IDG', 'IDP', 'IDZ'):
+        filters = {}
+        for key in ('IDL', 'IDG', 'IDP', 'IDZ', 'Anul'):
             if key in request.args:
                 require(request.args[key].isdigit(), 'FILTER', 'Filtru invalid.', 400)
-                data = [r for r in data if r.get(key) == int(request.args[key])]
-        return {'rows': data}
+                filters[key] = int(request.args[key])
+        return {'rows': repo.rows(table, **filters)}
 
     def command(repo, operation, function):
         body = request.get_json(silent=True)
@@ -142,11 +144,16 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.get('/api/adechit/situation/<int:month_id>')
     @guard('read')
     def situation(repo, month_id):
+        group_id = request.args.get('IDG')
+        require(group_id is None or group_id.isdigit(), 'FILTER', 'Filtru invalid.', 400)
+        group_id = int(group_id) if group_id is not None else None
         month = repo.get('LunaD', month_id)
         if month['Inchisa']:
-            return {'rows': [r for r in repo.rows('SS_Buget') if r['IDL'] == month_id], 'saved': True}
-        calculated, _ = calculate(repo.data(), month_id)
-        attendance = {row['IDZ']: row for row in repo.rows('Prezenta') if row['IDL'] == month_id}
+            filters = {'IDL': month_id, **({'IDG': group_id} if group_id is not None else {})}
+            return {'rows': repo.rows('SS_Buget', **filters), 'saved': True}
+        data = repo.situation_data(month_id, group_id) if group_id is not None else repo.data()
+        calculated, _ = calculate(data, month_id, group_id)
+        attendance = {row['IDZ']: row for row in data['Prezenta'] if row['IDL'] == month_id}
         for row in calculated:
             source = attendance[row['IDZ']]
             row.update(Version=source['Version'], ZileLuna=service.month_days(month), IDV=source['IDV'])
@@ -157,6 +164,21 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     def documents(repo):
         return command(repo, 'documents', lambda body: service.emit_document(repo, g.portal['db_name'], body))
 
+    @bp.get('/api/adechit/receipts/<int:receipt_id>/<output>')
+    @guard('read')
+    def receipt_output(repo, receipt_id, output):
+        from .receipt_output import receipt_data, pdf_bytes
+        require(output in ('pdf', 'print'), 'OUTPUT', 'Format de chitanță necunoscut.', 404)
+        data = receipt_data(repo, receipt_id, g.portal['db_name'])
+        if output == 'pdf':
+            name = secure_filename(f"Chitanta_{data['series']}_{data['number']}.pdf")
+            response = send_file(BytesIO(pdf_bytes(data)), mimetype='application/pdf', as_attachment=True, download_name=name, max_age=0)
+        else:
+            response = Response(render_template('adechit/receipt.html', receipt=data), mimetype='text/html')
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+        response.headers.update({'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+        return response
+
     @bp.post('/api/adechit/cancel')
     @guard('cancel')
     def cancel(repo):
@@ -165,7 +187,20 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.post('/api/adechit/close')
     @guard('close')
     def close(repo):
-        return command(repo, 'close', lambda body: service.close_month(repo, body))
+        def run(body):
+            if repo.get('LunaD', body['id'])['Luna'] == 8:
+                require({'catalog', 'transfer'} <= set(g.ade_operations), 'FORBIDDEN',
+                        'Închiderea anuală necesită drepturile pentru catalog și transfer.', 403)
+            return service.close_month(repo, body, g.portal['email'])
+        return command(repo, 'close', run)
+
+    @bp.get('/api/adechit/annual/<int:month_id>')
+    @guard('close')
+    def annual_preview(repo, month_id):
+        from . import annual
+        require({'catalog', 'transfer'} <= set(g.ade_operations), 'FORBIDDEN',
+                'Închiderea anuală necesită drepturile pentru catalog și transfer.', 403)
+        return annual.preview(repo, month_id)
 
     @bp.post('/api/adechit/reopen')
     @guard('reopen')

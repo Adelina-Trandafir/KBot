@@ -15,7 +15,9 @@ Partial Class AdeMigratorForm
     Friend WithEvents txtFisier As KBot.Controls.KBotTextField
     Friend WithEvents btnRasfoire As System.Windows.Forms.Button
     Friend WithEvents lblDc As System.Windows.Forms.Label
+    Friend WithEvents txtTargetDc As KBot.Controls.KBotTextField
     Friend WithEvents btnCiteste As System.Windows.Forms.Button
+    Friend WithEvents chkChildCnpIsParent As System.Windows.Forms.CheckBox
 
     ' --- server ---
     Friend WithEvents grpServer As System.Windows.Forms.GroupBox
@@ -36,12 +38,20 @@ Partial Class AdeMigratorForm
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
     Friend WithEvents btnStop As System.Windows.Forms.Button
+    Friend WithEvents lblMigrationState As System.Windows.Forms.Label
+    Friend WithEvents grpLog As System.Windows.Forms.GroupBox
+    Friend WithEvents tlpLog As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents lblLogPath As System.Windows.Forms.Label
+    Friend WithEvents btnLoadErrors As System.Windows.Forms.Button
+    Friend WithEvents rtbLog As System.Windows.Forms.RichTextBox
 
     ' --- bottom: tables (left), educators + conversions (right) ---
     Friend WithEvents tlpJos As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grpTabele As System.Windows.Forms.GroupBox
     Friend WithEvents dgvTabele As KBot.Controls.KBotDataView
     Friend WithEvents tlpDreapta As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents grpGrupe As System.Windows.Forms.GroupBox
+    Friend WithEvents dgvGrupe As KBot.Controls.KBotDataView
     Friend WithEvents grpEducatori As System.Windows.Forms.GroupBox
     Friend WithEvents dgvEducatori As KBot.Controls.KBotDataView
     Friend WithEvents grpConversii As System.Windows.Forms.GroupBox
@@ -54,6 +64,12 @@ Partial Class AdeMigratorForm
     Private Sub InitializeComponent()
         components = New System.ComponentModel.Container()
         btnStop = New System.Windows.Forms.Button()
+        lblMigrationState = New System.Windows.Forms.Label()
+        grpLog = New System.Windows.Forms.GroupBox()
+        tlpLog = New Global.KBot.Controls.KBotTableLayoutPanel()
+        lblLogPath = New System.Windows.Forms.Label()
+        btnLoadErrors = New System.Windows.Forms.Button()
+        rtbLog = New System.Windows.Forms.RichTextBox()
         Dim colTabel As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colRanduriAccess As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colTinta As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
@@ -62,6 +78,8 @@ Partial Class AdeMigratorForm
         Dim colGrupa As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colBrut As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colNume As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
+        Dim colGroupName As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
+        Dim colDeparted As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         tlpRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         grpSursa = New System.Windows.Forms.GroupBox()
         tlpSursa = New Global.KBot.Controls.KBotTableLayoutPanel()
@@ -69,7 +87,9 @@ Partial Class AdeMigratorForm
         txtFisier = New KBot.Controls.KBotTextField()
         btnRasfoire = New System.Windows.Forms.Button()
         lblDc = New System.Windows.Forms.Label()
+        txtTargetDc = New KBot.Controls.KBotTextField()
         btnCiteste = New System.Windows.Forms.Button()
+        chkChildCnpIsParent = New System.Windows.Forms.CheckBox()
         grpServer = New System.Windows.Forms.GroupBox()
         tlpServer = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblGazda = New System.Windows.Forms.Label()
@@ -89,6 +109,8 @@ Partial Class AdeMigratorForm
         grpTabele = New System.Windows.Forms.GroupBox()
         dgvTabele = New KBot.Controls.KBotDataView()
         tlpDreapta = New Global.KBot.Controls.KBotTableLayoutPanel()
+        grpGrupe = New System.Windows.Forms.GroupBox()
+        dgvGrupe = New KBot.Controls.KBotDataView()
         grpEducatori = New System.Windows.Forms.GroupBox()
         dgvEducatori = New KBot.Controls.KBotDataView()
         grpConversii = New System.Windows.Forms.GroupBox()
@@ -97,6 +119,7 @@ Partial Class AdeMigratorForm
         tipAde = New KBot.Controls.KBotToolTip(components)
         CType(dgvTabele, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(dgvEducatori, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(dgvGrupe, System.ComponentModel.ISupportInitialize).BeginInit()
         tlpRoot.SuspendLayout()
         grpSursa.SuspendLayout()
         tlpSursa.SuspendLayout()
@@ -107,6 +130,7 @@ Partial Class AdeMigratorForm
         grpTabele.SuspendLayout()
         tlpDreapta.SuspendLayout()
         grpEducatori.SuspendLayout()
+        grpGrupe.SuspendLayout()
         grpConversii.SuspendLayout()
         SuspendLayout()
         '
@@ -118,16 +142,18 @@ Partial Class AdeMigratorForm
         tlpRoot.Controls.Add(grpServer, 0, 1)
         tlpRoot.Controls.Add(tlpActiune, 0, 2)
         tlpRoot.Controls.Add(tlpJos, 0, 3)
-        tlpRoot.Controls.Add(lblStare, 0, 4)
+        tlpRoot.Controls.Add(grpLog, 0, 4)
+        tlpRoot.Controls.Add(lblStare, 0, 5)
         tlpRoot.Dock = DockStyle.Fill
         tlpRoot.Location = New Point(0, 0)
         tlpRoot.Name = "tlpRoot"
         tlpRoot.Padding = New Padding(8)
-        tlpRoot.RowCount = 5
+        tlpRoot.RowCount = 6
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 70.0F))
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 70.0F))
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 46.0F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 82.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 190.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 26.0F))
         tlpRoot.Size = New Size(1280, 820)
         tlpRoot.TabIndex = 0
@@ -143,22 +169,36 @@ Partial Class AdeMigratorForm
         '
         ' tlpSursa
         '
-        tlpSursa.ColumnCount = 5
+        tlpSursa.ColumnCount = 6
         tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 70.0F))
         tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40.0F))
-        tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 260.0F))
+        tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90.0F))
+        tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 170.0F))
         tlpSursa.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120.0F))
         tlpSursa.Controls.Add(lblFisier, 0, 0)
         tlpSursa.Controls.Add(txtFisier, 1, 0)
         tlpSursa.Controls.Add(btnRasfoire, 2, 0)
         tlpSursa.Controls.Add(lblDc, 3, 0)
-        tlpSursa.Controls.Add(btnCiteste, 4, 0)
+        tlpSursa.Controls.Add(txtTargetDc, 4, 0)
+        tlpSursa.Controls.Add(btnCiteste, 5, 0)
+        tlpSursa.Controls.Add(chkChildCnpIsParent, 0, 1)
+        tlpSursa.SetColumnSpan(chkChildCnpIsParent, 6)
         tlpSursa.Dock = DockStyle.Fill
         tlpSursa.Name = "tlpSursa"
-        tlpSursa.RowCount = 1
+        tlpSursa.RowCount = 2
         tlpSursa.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpSursa.RowStyles.Add(New RowStyle(SizeType.Absolute, 26.0F))
         tlpSursa.TabIndex = 0
+        '
+        ' chkChildCnpIsParent
+        '
+        chkChildCnpIsParent.AutoSize = True
+        chkChildCnpIsParent.Dock = DockStyle.Fill
+        chkChildCnpIsParent.Name = "chkChildCnpIsParent"
+        chkChildCnpIsParent.TabIndex = 6
+        chkChildCnpIsParent.Text = "CNP Copil = CNP Părinte"
+        chkChildCnpIsParent.UseVisualStyleBackColor = True
         '
         ' lblFisier
         '
@@ -188,8 +228,16 @@ Partial Class AdeMigratorForm
         lblDc.Dock = DockStyle.Fill
         lblDc.Name = "lblDc"
         lblDc.TabIndex = 3
-        lblDc.Text = "DC: (necitit)"
+        lblDc.Text = "DC destinație"
         lblDc.TextAlign = ContentAlignment.MiddleCenter
+        '
+        ' txtTargetDc
+        '
+        txtTargetDc.Dock = DockStyle.Fill
+        txtTargetDc.Enabled = True
+        txtTargetDc.ReadOnly = False
+        txtTargetDc.Name = "txtTargetDc"
+        txtTargetDc.TabIndex = 4
         '
         ' btnCiteste
         '
@@ -323,9 +371,12 @@ Partial Class AdeMigratorForm
         tlpActiune.Controls.Add(lblRezumat, 0, 0)
         tlpActiune.Controls.Add(btnMigreaza, 1, 0)
         tlpActiune.Controls.Add(btnStop, 2, 0)
+        tlpActiune.Controls.Add(lblMigrationState, 0, 1)
+        tlpActiune.SetColumnSpan(lblMigrationState, 3)
         tlpActiune.Dock = DockStyle.Fill
         tlpActiune.Name = "tlpActiune"
-        tlpActiune.RowCount = 1
+        tlpActiune.RowCount = 2
+        tlpActiune.RowStyles.Add(New RowStyle(SizeType.Absolute, 40.0F))
         tlpActiune.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         tlpActiune.TabIndex = 2
         '
@@ -355,6 +406,58 @@ Partial Class AdeMigratorForm
         btnStop.TabIndex = 2
         btnStop.Text = "Oprește"
         btnStop.UseVisualStyleBackColor = True
+        '
+        ' lblMigrationState
+        '
+        lblMigrationState.Dock = DockStyle.Fill
+        lblMigrationState.AutoEllipsis = True
+        lblMigrationState.Name = "lblMigrationState"
+        lblMigrationState.Text = "Migrare blocată: alegeți fișierul și apăsați «Citește»."
+        lblMigrationState.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' grpLog
+        '
+        grpLog.Controls.Add(tlpLog)
+        grpLog.Dock = DockStyle.Fill
+        grpLog.Name = "grpLog"
+        grpLog.Text = "Jurnal de operații și erori"
+        '
+        ' tlpLog
+        '
+        tlpLog.ColumnCount = 2
+        tlpLog.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        tlpLog.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
+        tlpLog.RowCount = 2
+        tlpLog.RowStyles.Add(New RowStyle(SizeType.Absolute, 30.0F))
+        tlpLog.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpLog.Controls.Add(lblLogPath, 0, 0)
+        tlpLog.Controls.Add(btnLoadErrors, 1, 0)
+        tlpLog.Controls.Add(rtbLog, 0, 1)
+        tlpLog.SetColumnSpan(rtbLog, 2)
+        tlpLog.Dock = DockStyle.Fill
+        tlpLog.Name = "tlpLog"
+        '
+        ' lblLogPath
+        '
+        lblLogPath.Dock = DockStyle.Fill
+        lblLogPath.AutoEllipsis = True
+        lblLogPath.Name = "lblLogPath"
+        lblLogPath.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' btnLoadErrors
+        '
+        btnLoadErrors.Dock = DockStyle.Fill
+        btnLoadErrors.FlatStyle = FlatStyle.Flat
+        btnLoadErrors.Name = "btnLoadErrors"
+        btnLoadErrors.Text = "Încarcă logul erorilor"
+        '
+        ' rtbLog
+        '
+        rtbLog.Dock = DockStyle.Fill
+        rtbLog.Name = "rtbLog"
+        rtbLog.ReadOnly = True
+        rtbLog.WordWrap = False
+        rtbLog.ScrollBars = RichTextBoxScrollBars.Both
         '
         ' tlpJos
         '
@@ -420,21 +523,49 @@ Partial Class AdeMigratorForm
         '
         tlpDreapta.ColumnCount = 1
         tlpDreapta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        tlpDreapta.Controls.Add(grpEducatori, 0, 0)
-        tlpDreapta.Controls.Add(grpConversii, 0, 1)
+        tlpDreapta.Controls.Add(grpGrupe, 0, 0)
+        tlpDreapta.Controls.Add(grpEducatori, 0, 1)
+        tlpDreapta.Controls.Add(grpConversii, 0, 2)
         tlpDreapta.Dock = DockStyle.Fill
         tlpDreapta.Name = "tlpDreapta"
-        tlpDreapta.RowCount = 2
-        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 50.0F))
-        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 50.0F))
+        tlpDreapta.RowCount = 3
+        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 28.0F))
+        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 36.0F))
+        tlpDreapta.RowStyles.Add(New RowStyle(SizeType.Percent, 36.0F))
         tlpDreapta.TabIndex = 1
+        '
+        ' grpGrupe / dgvGrupe
+        '
+        grpGrupe.Controls.Add(dgvGrupe)
+        grpGrupe.Dock = DockStyle.Fill
+        grpGrupe.Name = "grpGrupe"
+        grpGrupe.Text = "Grupe — verificați bifa Plecați înainte de migrare"
+        grpGrupe.TabIndex = 0
+        grpGrupe.TabStop = False
+        colGroupName.Key = "grupa"
+        colGroupName.HeaderText = "Grupă"
+        colGroupName.ReadOnly = True
+        colGroupName.Width = 300
+        colDeparted.Key = "plecati"
+        colDeparted.HeaderText = "Plecați"
+        colDeparted.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        colDeparted.Width = 90
+        dgvGrupe.Columns.Add(colGroupName)
+        dgvGrupe.Columns.Add(colDeparted)
+        dgvGrupe.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
+        dgvGrupe.FillColumnKey = "grupa"
+        dgvGrupe.Dock = DockStyle.Fill
+        dgvGrupe.Name = "dgvGrupe"
+        dgvGrupe.HeaderHeight = 26
+        dgvGrupe.RowHeight = 24
+        dgvGrupe.TabIndex = 0
         '
         ' grpEducatori
         '
         grpEducatori.Controls.Add(dgvEducatori)
         grpEducatori.Dock = DockStyle.Fill
         grpEducatori.Name = "grpEducatori"
-        grpEducatori.TabIndex = 0
+        grpEducatori.TabIndex = 1
         grpEducatori.TabStop = False
         grpEducatori.Text = "Educatori găsiți pe fiecare grupă — corectați ultima coloană înainte de migrare"
         '
@@ -468,7 +599,7 @@ Partial Class AdeMigratorForm
         grpConversii.Controls.Add(rtbConversii)
         grpConversii.Dock = DockStyle.Fill
         grpConversii.Name = "grpConversii"
-        grpConversii.TabIndex = 1
+        grpConversii.TabIndex = 2
         grpConversii.TabStop = False
         grpConversii.Text = "Conversii și constatări"
         '
@@ -494,10 +625,14 @@ Partial Class AdeMigratorForm
         tipAde.SetToolTipText(btnRasfoire, "Caută fișiere .mdb, de obicei în C:\adechit.")
         tipAde.SetToolTipHeader(btnCiteste, "Citește fișierul")
         tipAde.SetToolTipText(btnCiteste, "Citește Access-ul (doar citire) și arată ce se va scrie. Nu atinge serverul.")
+        tipAde.SetToolTipHeader(txtTargetDc, "DC destinație")
+        tipAde.SetToolTipText(txtTargetDc, "Propus din Access, editabil. După schimbare, apăsați «Testează» pentru noua destinație.")
         tipAde.SetToolTipHeader(btnTesteaza, "Testează serverul")
+        tipAde.SetToolTipHeader(chkChildCnpIsParent, "CNP-ul părintelui din Access")
+        tipAde.SetToolTipText(chkChildCnpIsParent, "Dacă CNP-ul copilului din Access aparține părintelui, copiază Platitori.CNP în CNP_Platitor pentru plătitorii asociați. După schimbare, apăsați «Testează».")
         tipAde.SetToolTipText(btnTesteaza, "Verifică parola, baza cu numele DC-ului și dacă tabelele AD_ sunt create și goale.")
         tipAde.SetToolTipHeader(btnMigreaza, "Migrează")
-        tipAde.SetToolTipText(btnMigreaza, "Scrie totul într-o singură tranzacție: dacă ceva eșuează, baza rămâne neschimbată.")
+        tipAde.SetToolTipText(btnMigreaza, "Scrie planul verificat într-o singură tranzacție. Motivele blocării sunt afișate lângă buton și în jurnal.")
         '
         ' AdeMigratorForm
         '
@@ -511,6 +646,7 @@ Partial Class AdeMigratorForm
         Text = "ADE.Migrator — Access ADECHIT ▸ MariaDB"
         CType(dgvTabele, System.ComponentModel.ISupportInitialize).EndInit()
         CType(dgvEducatori, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(dgvGrupe, System.ComponentModel.ISupportInitialize).EndInit()
         tlpRoot.ResumeLayout(False)
         grpSursa.ResumeLayout(False)
         tlpSursa.ResumeLayout(False)
@@ -521,6 +657,7 @@ Partial Class AdeMigratorForm
         grpTabele.ResumeLayout(False)
         tlpDreapta.ResumeLayout(False)
         grpEducatori.ResumeLayout(False)
+        grpGrupe.ResumeLayout(False)
         grpConversii.ResumeLayout(False)
         ResumeLayout(False)
     End Sub

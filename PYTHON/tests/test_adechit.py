@@ -69,6 +69,75 @@ def test_workspace_situation_and_prepare_new_children(tmp_path):
     assert repeated.status_code == 409 and repeated.json['reason'] == 'NO_NEW_CHILDREN'
 
 
+def test_lazy_catalog_and_server_filters(tmp_path, monkeypatch):
+    from routes.adechit.repository import Repository
+    http, database = client(tmp_path)
+    connection = sqlite3.connect(database)
+    connection.executescript("""
+        INSERT INTO AD_Grupe (IDG,Grupa) VALUES (2,'Other group');
+        INSERT INTO AD_Platitori (IDP,IDG,Nume,Plecat) VALUES (2,2,'Other child',0);
+        INSERT INTO AD_Platitori_sub (IDS,IDP,Nume,Activ) VALUES (2,2,'Other payer',1);
+        INSERT INTO AD_LunaD (IDL,Anul,Luna) VALUES (9,2025,12);
+    """)
+    connection.commit(); connection.close()
+    queries = []
+    query = Repository.query
+    def tracked(self, sql, params=()):
+        queries.append(sql)
+        return query(self, sql, params)
+    monkeypatch.setattr(Repository, 'query', tracked)
+    context = http.get('/api/adechit/context', headers=headers()).json
+    assert 'months' not in context and 'groups' not in context
+    assert queries == []
+    assert http.get('/api/adechit/years', headers=headers()).json == {'years': [2026, 2025]}
+    groups = http.get('/api/adechit/catalog-data', headers=headers()).json
+    assert set(groups) == {'groups'} and len(groups['groups']) == 2
+    assert not any('AD_Platitori' in sql for sql in queries)
+    months = http.get('/api/adechit/rows/LunaD?Anul=2026', headers=headers()).json['rows']
+    assert [row['IDL'] for row in months] == [1]
+    children = http.get('/api/adechit/rows/Platitori?IDG=1', headers=headers()).json['rows']
+    payers = http.get('/api/adechit/rows/Platitori_sub?IDP=1', headers=headers()).json['rows']
+    assert [row['IDP'] for row in children] == [1]
+    assert [row['IDS'] for row in payers] == [1]
+    assert all('WHERE' in sql for sql in queries if 'AD_Platitori' in sql)
+    assert http.get('/api/adechit/rows/Platitori?IDG=bad', headers=headers()).status_code == 400
+
+
+def test_group_situation_preserves_history_and_closed_snapshot(tmp_path, monkeypatch):
+    from routes.adechit.repository import Repository
+    http, database = client(tmp_path)
+    connection = sqlite3.connect(database)
+    connection.executescript("""
+        INSERT INTO AD_Grupe (IDG,Grupa) VALUES (2,'Previous group');
+        INSERT INTO AD_Platitori (IDP,IDG,Nume,SI,Plecat) VALUES (2,2,'Other child',0,0);
+        INSERT INTO AD_LunaD (IDL,IDV,Anul,Luna,Inchisa,ZileLuna) VALUES (2,1,2026,11,0,21);
+        INSERT INTO AD_Prezenta (IDZ,IDP,IDG,IDV,IDL,ZilePrezenta,ValoareContract,ValoareTotala)
+          VALUES (2,1,2,1,2,5,125,125),(3,2,1,1,2,2,50,50);
+        INSERT INTO AD_Plati (IDPL,IDZ,IDP,IDL,Plata,TIP,Anulata) VALUES (1,1,1,1,20,2,0);
+    """)
+    connection.commit(); connection.close()
+    all_rows = http.get('/api/adechit/situation/2', headers=headers()).json['rows']
+    def no_full_data(self):
+        raise AssertionError('Group reads must not load the entire database')
+    monkeypatch.setattr(Repository, 'data', no_full_data)
+    scoped = http.get('/api/adechit/situation/2?IDG=2', headers=headers())
+    assert scoped.status_code == 200
+    assert scoped.json['rows'] == [row for row in all_rows if row['IDG'] == 2]
+    assert scoped.json['rows'][0]['SID'] == 230
+    empty = http.get('/api/adechit/situation/2?IDG=1', headers=headers()).json['rows']
+    assert [row['IDP'] for row in empty] == [2]
+    connection = sqlite3.connect(database)
+    connection.executescript("""
+        UPDATE AD_LunaD SET Inchisa=1 WHERE IDL=2;
+        INSERT INTO AD_SS_Buget (IDL,IDG,IDP,IDZ) VALUES (2,2,1,2),(2,1,2,3);
+    """)
+    connection.commit(); connection.close()
+    closed = http.get('/api/adechit/situation/2?IDG=2', headers=headers())
+    assert closed.status_code == 200 and closed.json['saved']
+    assert [row['IDP'] for row in closed.json['rows']] == [1]
+    assert http.get('/api/adechit/situation/2?IDG=bad', headers=headers()).status_code == 400
+
+
 def test_m04_and_idempotency(tmp_path):
     http, _ = client(tmp_path)
     body = {'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-11-03',
@@ -227,7 +296,7 @@ def test_catalog_batch_tax_validation_activation_and_rights(tmp_path):
     assert invalid.status_code == 400
     assert http.get('/api/adechit/rows/ValoriTaxe', headers=headers()).json['rows'][0]['TaxaZilnica'] == 25
     saved = post(http, '/api/adechit/catalog-save', {'items': [
-        {'table': 'ValoriTaxe', 'id': None, 'values': {'TaxaZilnica': 30, 'Activ': True}},
+        {'table': 'ValoriTaxe', 'id': None, 'values': {'TaxaZilnica': 30, 'Activ': True, 'Expl': 'New tax', 'DeLa': '2026-11'}},
         {'table': 'ValoriTaxe', 'id': 1, 'version': 1, 'values': {'Expl': 'Old tax'}},
     ]})
     assert saved.status_code == 200

@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS `EF_Mesaje` (
   `Nou` tinyint(4) NOT NULL DEFAULT 1,
   `NumeFisier` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `XmlContinut` longblob NULL DEFAULT NULL,
+  `ZipContinut` longblob NULL DEFAULT NULL COMMENT 'The zip ANAF returned (XML + ANAF signature file); NULL when only the XML was kept',
   `DataAdaugare` datetime NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`IdMesaj`) USING BTREE,
   UNIQUE INDEX `UQ_EF_Mesaje_IdSol`(`IdSol` ASC) USING BTREE,

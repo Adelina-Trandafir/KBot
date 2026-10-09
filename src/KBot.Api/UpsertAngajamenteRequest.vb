@@ -109,6 +109,8 @@ Public NotInheritable Class GetTreeRow
     Public Property AreExtrase As Boolean
     ' Slice 0097: a CAB correction note (FX_NoteCAB_Corectii) corrects an operation on it.
     Public Property AreNoteCab As Boolean
+    ' Slice 00EF-22: the DDF of the angajament has received e-invoices.
+    Public Property ArePrimite As Boolean
     ' Slice 0101: receptions whose chain does not close, «yyyy-MM-dd~total~suma» joined with «|»; null = none.
     Public Property LantNeinchis As String
     ' Slice 0008-02: FX_Angajamente.Alias (null = none).

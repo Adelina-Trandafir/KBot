@@ -111,6 +111,8 @@ Public NotInheritable Class AngajamentTreeInfo
     Public Property AreExtrase As Boolean
     ' Slice 0097: a CAB correction note (FX_NoteCAB_Corectii) corrects an operation on it.
     Public Property AreNoteCab As Boolean
+    ' Slice 00EF-22: the angajament's DDF has received e-invoices (a partner's tax code or a link made by the operator): the view «E-Factura».
+    Public Property ArePrimite As Boolean
 
     ' Slice 0101: the receptions of this angajament whose chain does not close (the last snapshot
     ' is not a deletion row and its total differs from the reception's value). Empty = all close.

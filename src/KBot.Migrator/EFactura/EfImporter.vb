@@ -39,6 +39,8 @@ Public NotInheritable Class EfImporter
     Private _accessInvoiceIds As HashSet(Of Integer)
     Private _invoiceNumbers As HashSet(Of String)
     Private _messageIds As HashSet(Of String)
+    ''' <summary>IdSol -> IdIncarcare of every message kept by the import: the archive is <c>fact&lt;IdIncarcare&gt;.zip</c>.</summary>
+    Private _messageUploads As Dictionary(Of String, String)
     Private _receivedIds As HashSet(Of Integer)
     Private _umKnown As HashSet(Of String)
     Private _umUsed As Dictionary(Of String, Integer)
@@ -137,6 +139,7 @@ Public NotInheritable Class EfImporter
             If _options.DoPrimite AndAlso accessReceived IsNot Nothing Then
                 k_token.ThrowIfCancellationRequested()
                 DoReceivedReferences(k_write, k_report, accessReceived, cnUnit, txUnit)
+                DoReceivedArchives(k_write, k_report, cnUnit, txUnit)
             End If
             If _options.DoEmise Then ReportUnknownUm(k_report)
 
@@ -171,6 +174,7 @@ Public NotInheritable Class EfImporter
         _accessInvoiceIds = New HashSet(Of Integer)()
         _invoiceNumbers = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         _messageIds = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        _messageUploads = New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
         _receivedIds = New HashSet(Of Integer)()
         _umKnown = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         _umUsed = New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
@@ -510,8 +514,11 @@ Public NotInheritable Class EfImporter
                          Return If(String.Equals(own, wanted, StringComparison.Ordinal), EfRowDecision.Keep, EfRowDecision.LeaveOut)
                      End Function
         Dim solAt = s.IndexOf("IdSol")
+        Dim uploadAt = s.IndexOf("IdIncarcare")
         s.AfterRow = Sub(row As Object())
-                         _messageIds.Add(Convert.ToString(row(solAt), CultureInfo.InvariantCulture))
+                         Dim sol = Convert.ToString(row(solAt), CultureInfo.InvariantCulture)
+                         _messageIds.Add(sol)
+                         _messageUploads(sol) = Convert.ToString(row(uploadAt), CultureInfo.InvariantCulture)
                      End Sub
         s.BatchSize = 25
         Return s
@@ -759,6 +766,88 @@ Public NotInheritable Class EfImporter
         End If
         _say($"EF_Primite: {pairs.Count} trimiteri între facturi" & If(k_write, " scrise.", "."))
     End Sub
+
+    ' ---- the ANAF archives -------------------------------------------------------------------------------------
+
+    ''' <summary>
+    ''' Stores <c>fact&lt;IdIncarcare&gt;.zip</c> in <c>EF_Mesaje.ZipContinut</c> for the messages the import keeps (the archive
+    ''' holds the invoice XML AND ANAF's signature file) and, in the same statement, clears <c>XmlContinut</c>: a message keeps
+    ''' its XML only when no usable archive was found for it. Archives without a message are ignored. A message that already has
+    ''' an archive is left as it is. Only warnings: a missing or damaged archive never blocks (the XML stays in the row).
+    ''' </summary>
+    Private Sub DoReceivedArchives(k_write As Boolean, k_report As EfImportReport, k_cn As MySqlConnection, k_tx As MySqlTransaction)
+        Dim folder = _options.ZipFolder
+        If String.IsNullOrWhiteSpace(folder) Then
+            _say("Arhive ANAF: niciun folder ales; toate mesajele își păstrează XML-ul.")
+            Return
+        End If
+        If Not Directory.Exists(folder) Then
+            k_report.Add(EfSeverity.Warning, "EF_Mesaje", $"Folderul de arhive «{folder}» nu există: toate mesajele își păstrează XML-ul.")
+            Return
+        End If
+        If _messageUploads.Count = 0 Then
+            _say("Arhive ANAF: nu sunt mesaje de legat.")
+            Return
+        End If
+
+        Dim found As Integer = 0
+        Dim missing As Integer = 0
+        Dim damaged As Integer = 0
+        Dim noSignature As Integer = 0
+        Dim bytes As Long = 0
+        For Each pair In _messageUploads
+            Dim upload = pair.Value
+            Dim filePath = If(String.IsNullOrWhiteSpace(upload), Nothing, Path.Combine(folder, $"fact{upload.Trim()}.zip"))
+            If filePath Is Nothing OrElse Not File.Exists(filePath) Then
+                missing += 1
+                Continue For
+            End If
+            Dim data = File.ReadAllBytes(filePath)
+            Dim content = InspectArchive(data)
+            If Not content.HasInvoiceXml Then
+                damaged += 1
+                Continue For
+            End If
+            If Not content.HasSignature Then noSignature += 1
+            found += 1
+            bytes += data.Length
+            If k_write AndAlso k_cn IsNot Nothing AndAlso Not k_report.HasBlocking Then
+                Using cmd = k_cn.CreateCommand()
+                    cmd.Transaction = k_tx
+                    cmd.CommandText = "UPDATE `EF_Mesaje` SET `ZipContinut` = @z, `XmlContinut` = NULL WHERE `IdSol` = @s AND `ZipContinut` IS NULL"
+                    cmd.Parameters.AddWithValue("@z", data)
+                    cmd.Parameters.AddWithValue("@s", pair.Key)
+                    cmd.ExecuteNonQuery()
+                End Using
+            End If
+        Next
+        If missing > 0 Then
+            k_report.Add(EfSeverity.Warning, "EF_Mesaje", $"{missing} mesaje nu au arhiva fact<id>.zip în folder (își păstrează XML-ul din Access).")
+        End If
+        If damaged > 0 Then
+            k_report.Add(EfSeverity.Warning, "EF_Mesaje", $"{damaged} arhive sunt deteriorate sau nu conțin XML-ul facturii (mesajele își păstrează XML-ul din Access).")
+        End If
+        If noSignature > 0 Then
+            k_report.Add(EfSeverity.Warning, "EF_Mesaje", $"{noSignature} arhive nu conțin fișierul de semnătură ANAF (semnatura_*.xml).")
+        End If
+        _say($"Arhive ANAF: {found} găsite ({CLng(bytes / 1024)} KB)" & If(k_write, " și scrise; XML-ul acestor mesaje nu se mai păstrează.", "; XML-ul acestor mesaje nu se va mai păstra."))
+    End Sub
+
+    ''' <summary>What a zip holds: the invoice XML (an .xml entry that is not <c>semnatura_*</c>) and ANAF's signature file. A damaged zip holds neither.</summary>
+    Private Shared Function InspectArchive(k_zip As Byte()) As (HasInvoiceXml As Boolean, HasSignature As Boolean)
+        Try
+            Using ms As New MemoryStream(k_zip)
+                Using archive As New System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read)
+                    Dim xmlEntries = archive.Entries.Where(Function(en) en.Name.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)).ToList()
+                    Dim signature = xmlEntries.Any(Function(en) en.Name.StartsWith("semnatura_", StringComparison.OrdinalIgnoreCase))
+                    Dim invoice = xmlEntries.Any(Function(en) Not en.Name.StartsWith("semnatura_", StringComparison.OrdinalIgnoreCase) AndAlso en.Length > 0)
+                    Return (invoice, signature)
+                End Using
+            End Using
+        Catch ex As InvalidDataException
+            Return (False, False)
+        End Try
+    End Function
 
     ' ---- helpers ------------------------------------------------------------------------------------------------------
 

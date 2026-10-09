@@ -24,9 +24,33 @@ class Repository:
         return [{key: value.isoformat() if isinstance(value, (date, datetime)) else value
                  for key, value in dict(row).items()} for row in self.execute(sql, params).fetchall()]
 
-    def rows(self, table):
+    def rows(self, table, **filters):
         require(table in SCHEMA, 'TABLE', 'Tabel necunoscut.', 404)
-        return self.query(f'SELECT * FROM `AD_{table}` ORDER BY `{SCHEMA[table]["key"]}`')
+        require(set(filters) <= set(SCHEMA[table]['fields']), 'FILTER', 'Filtru invalid.', 400)
+        where = ' WHERE ' + ' AND '.join(f'`{key}`=%s' for key in filters) if filters else ''
+        return self.query(f'SELECT * FROM `AD_{table}`{where} ORDER BY `{SCHEMA[table]["key"]}`', tuple(filters.values()))
+
+    def years(self):
+        return [row['Anul'] for row in self.query('SELECT DISTINCT Anul FROM AD_LunaD ORDER BY Anul DESC')]
+
+    def situation_data(self, month_id, group_id):
+        # Keep all earlier movements of the selected children for opening balances,
+        # including movements in groups they previously belonged to.
+        people = 'SELECT IDP FROM AD_Prezenta WHERE IDL=%s AND IDG=%s'
+        attendance = f'SELECT IDZ FROM AD_Prezenta WHERE IDP IN ({people})'
+        payments = f'SELECT IDPL FROM AD_Plati WHERE IDZ IN ({attendance})'
+        data = {table: [] for table in SCHEMA}
+        data['LunaD'] = [self.get('LunaD', month_id)]
+        data['Grupe'] = [self.get('Grupe', group_id)]
+        data['Grupe_Educator'] = self.rows('Grupe_Educator', IDG=group_id)
+        for table, clause in [('Platitori', f'IDP IN ({people})'),
+                              ('Prezenta', f'IDP IN ({people})'),
+                              ('Plati', f'IDZ IN ({attendance})'),
+                              ('Retur', f'IDP IN ({people})'),
+                              ('Chitante', f'IDPL IN ({payments})'),
+                              ('AlteDoc', f'IDPL IN ({payments})')]:
+            data[table] = self.query(f'SELECT * FROM `AD_{table}` WHERE {clause}', (month_id, group_id))
+        return data
 
     def get(self, table, row_id):
         key = SCHEMA[table]['key']

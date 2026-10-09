@@ -5,15 +5,70 @@
 Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → MariaDB.
 Executabilul păstrează numele existent `ADE.Migrator.exe`.
 
+<!-- slice: ADE5-06 -->
+
+Sub buton apare permanent starea migrării. Când este blocată, primul motiv apare
+acolo, iar lista completă este în **Jurnal de operații și erori**, în partea de jos.
+Jurnalul păstrează mesajele sesiunii, blocajele Access/MariaDB și excepțiile complete.
+**Încarcă logul erorilor** adaugă ultimele maximum 256 KiB din jurnalul comun
+`harness_errors.log`; încărcarea se face numai la apăsarea butonului. Reîncărcarea nu
+șterge diagnosticul sesiunii. Conexiunea înregistrează gazda/portul, fără parolă.
+
+<!-- slice: ADE5-10 -->
+
+La fiecare lansare, logul anterior este arhivat în același dosar, cu numele
+`harness_errors_ADE_<data_ora>_<identificator>.log`, și se creează un
+`harness_errors.log` gol pentru rularea nouă. Caseta de jos pornește goală;
+mesajele obișnuite de inițializare nu sunt adăugate în ea. Erorile reale de
+inițializare sunt afișate și jurnalizate. Jurnalele SQL de migrare nu sunt resetate.
+
+Un `Connect Timeout expired` la Testează înseamnă că serverul nu a confirmat
+conexiunea în timpul alocat. Verificați gazda, portul și accesul la server și repetați
+Testează. Conectarea reușită fără un plan citit nu activează Migrează: întâi Citește,
+apoi Testează. Eșecul salvării preferințelor locale este afișat și jurnalizat, dar
+permite continuarea verificării sursei/destinației.
+
 1. Alegeți MDB-ul și apăsați **Citește**. Această operație citește numai fișierul local.
-2. Verificați numerele de rânduri, conversiile, blocajele și educatorii. Corectați educatorii
+2. Verificați numerele de rânduri, conversiile, blocajele, bifa **Plecați** și educatorii. Corectați educatorii
    în ultima coloană; modificarea reface planul și cere o nouă verificare a serverului.
-3. Completați conexiunea și apăsați **Testează**. Destinația este baza identificată prin
-   `Unitati.DC`. Tabelele de destinație trebuie să existe, să fie goale și să folosească
+3. Completați conexiunea și **DC destinație**, apoi apăsați **Testează**. DC-ul este
+   propus din `Unitati.DC`, dar îl puteți modifica. Tabelele de destinație trebuie să existe, să fie goale și să folosească
    InnoDB. Seria existentă de chitanțe nu se suprascrie. Se verifică și coloanele AD_Imports.
 4. Apăsați **Migrează** după rezolvarea blocajelor. Utilitarul verifică din nou hash-ul
    MDB și destinația înainte de scriere. Schimbarea fișierului sau a datelor conexiunii
    invalidează verificarea precedentă. Nu folosiți simultan două utilitare pe aceeași bază.
+
+<!-- slice: ADE5-07 -->
+
+<!-- slice: ADE5-08 -->
+
+Lista **Grupe** propune automat bifa **Plecați** când denumirea conține `pleca`,
+indiferent de majuscule (de exemplu „Plecați”, „COPII PLECATI”). Puteți bifa
+o grupă cu altă denumire sau debifa o propunere nepotrivită. Se acceptă cel mult
+o grupă specială; mai multe bife blochează migrarea până la corectare. Fără
+nicio bifă apare o observație în plan. Bifa confirmată determină `Tip=PLECATI`
+în AD_Grupe și reconstruirea istoricului copiilor plecați.
+
+Schimbarea unei bife reface planul și cere din nou **Testează**. La o nouă
+citire a MDB-ului, propunerile se reconstruiesc după denumirile din fișier.
+MDB-ul nu este modificat. ADE5-08: build cu 0 erori/avertismente, fără teste
+automate, probă vizuală sau migrare executată din chat.
+
+<!-- slice: ADE5-09 -->
+Opțiunea **CNP Copil = CNP Părinte**, din zona sursei Access, este implicit
+nebifată. Bifați-o când `Platitori.CNP` din Access conține CNP-ul părintelui.
+În acest caz, valoarea se copiază și în `AD_Platitori_sub.CNP_Platitor` pentru
+toți plătitorii legați prin IDP de copil, inclusiv peste un CNP al plătitorului
+deja completat în sursă. CNP-ul copilului se păstrează. Valorile sursă goale
+nu suprascriu CNP-ul plătitorului. Fără bifă, maparea existentă rămâne valabilă.
+Schimbarea bifei reface planul, arată conversia în rezumat și cere din nou
+**Testează** înainte de migrare. Alegerea rămâne la recitirea sursei în aceeași
+sesiune; nu este memorată între porniri. Compilare curată; migrarea nu a fost probată.
+
+Caseta **DC destinație** este editabilă între operații. Modificarea ei cere o nouă
+apăsare pe Testează; planul Access rămâne încărcat. Verificarea, migrarea și seria
+de chitanțe folosesc DC-ul ales. Confirmarea și jurnalul arată separat DC-ul sursei
+și destinația. MDB-ul nu este modificat. O nouă citire propune din nou DC-ul din Access.
 
 **Oprește** solicită oprirea migrării înainte de COMMIT. Instrucțiunea SQL curentă
 trebuie să se termine înainte ca solicitarea să fie observată; apoi se încearcă rollback.

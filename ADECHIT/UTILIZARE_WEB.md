@@ -1,14 +1,30 @@
 # ADECHIT — interfața și regulile actuale
 
-Actualizat: 09.10.2026, SLICE-ADE6-18. Acest document consolidează rezultatul
+Actualizat: 09.10.2026, SLICE-ADE6-23 / ADE8-05. Acest document consolidează rezultatul
 threadului ADE1-05/06 și ADE6-05–17. Regulile de mai jos înlocuiesc descrierile
 intermediare ale interfeței din workloguri; acestea rămân dovezi istorice.
 Starea implementării este în [status](../ADECHIT_STATUS.md).
 
 ## Pagina principală și controalele comune
 
+<!-- slice: ADE6-22 -->
+La deschidere nu este selectată nicio lună sau grupă, iar tabelul copiilor este
+gol. Cel mai recent an din arbore este deschis automat și numai lunile lui
+se încarcă la pornire; ceilalți ani sunt închiși și își încarcă lunile la deschidere.
+Alegerea lunii încarcă grupele, fără opțiunea Toate. Alegerea grupei încarcă
+numai situația copiilor acelei grupe, cu istoricul necesar calculării soldurilor.
+Reîncărcarea și preluarea/adăugarea copiilor sunt disponibile după alegerea
+lunii și grupei; închiderea/redeschiderea necesită alegerea lunii.
+
+Grupele din arbore și combobox, copiii, plătitorii și educatorii sunt ordonați
+alfabetic după nume/denumire, cu regulile limbii române. Taxele se ordonează
+după Explicație, iar documentele după Explicație, cu rândul nou la sfârșit.
+Comboboxul lunilor folosește denumirea lunii. Arborele LUNA / ANUL păstrează
+ordinea cronologică descrescătoare pentru ani și luni. Ordonarea inițială a
+grilelor se poate schimba prin apăsarea antetului unei coloane.
+
 Pe PC, bara cu luna/grupa și explicația ei este ascunsă; tabelul începe la același
-Y cu panoul LUNA / ANUL. Pe mobil, primul rând conține numai cele două comboboxuri;
+Y cu panoul LUNA / ANUL. Pe mobil, primul rând conține comboboxurile Anul, Luna și Grupa;
 mesajul de încărcare și spațiul rezervat lui sunt eliminate.
 
 Se păstrează DataGrid-ul comun în toate modurile, inclusiv pe mobil. Filtrarea
@@ -32,6 +48,18 @@ pe mobil. Calculul lățimilor ține cont de borduri, scrollbarul vertical și
 rotunjiri; scrollul orizontal necesar unor grile late rămâne posibil pe PC.
 
 ## Plătitori pe PC și editorii
+
+<!-- slice: ADE6-23 -->
+Mesajul introductiv „Selectați grupa, copilul și plătitorul. Folosiți Adaugă
+sau Modifică.” este eliminat. Fereastra nu afișează nici mesajele informative
+de încărcare/salvare; zona de mesaje apare numai pentru erori.
+
+<!-- slice: ADE6-21 -->
+La fiecare deschidere se încarcă numai grupele, fără selecție implicită.
+Copiii se descarcă după alegerea grupei, iar persoanele asociate după alegerea
+copilului. Schimbarea grupei golește imediat copiii și plătitorii precedenți;
+un răspuns întârziat pentru o selecție veche este ignorat. Anii și istoricul
+educatorilor se încarcă numai când se deschide editorul grupei.
 
 Fereastra conține trei liste dependente, Grupe → Copii → Plătitori, cu Adaugă și
 Modifică. Listele sunt doar pentru selecție și afișare; modificările se fac în
@@ -103,6 +131,28 @@ numai ➕ și ✏️ pentru nivelul curent.
 Lățimea butonului se scade numai din denumire/nume. Filtrarea denumirii/numelelor
 rămâne disponibilă și pe mobil.
 
+## Chitanțe pe PC
+
+<!-- slice: ADE8-05 -->
+Pe PC, la Chitanțe, butonul 📥 de lângă 💾 deschide meniul ultimei chitanțe
+salvate pentru copilul curent. Până la prima salvare este inactiv. Fiecare
+chitanță existentă are și propriul buton 📥. Meniul are stil Windows,
+pictograme în stânga, navigare cu săgeți și închidere prin Escape sau clic în afară:
+🖨️ Listare, ✉️ Trimitere pe mail, 📄 Descarcă PDF. Mailul apare numai dacă
+plătitorul asociat chitanței are EMail completat și rămâne inactiv.
+
+Listare deschide o fereastră cu două exemplare și dialogul browserului;
+butonul Listare din acea fereastră permite repetarea comenzii. Descarcă PDF
+generează documentul aceleiași chitanțe. Datele/suma/seria/numărul provin din
+chitanța și plata salvate, persoana asociată și datele comune ale unității.
+Chitanțele anulate sunt marcate ANULATĂ. Listarea și PDF-ul nu emit numere noi
+și nu salvează rândul nou. Meniul este ascuns pe mobil.
+
+Publicarea include fontul DejaVuSans.ttf și licența sa, șablonul receipt.html,
+modulele API/JS și CSS. PDF-ul necesită instalarea în mediul Python al serverului
+a `requirements-adechit.txt`, apoi restartul backendului. Fără DDL suplimentar.
+Nu s-au executat probe funcționale/vizuale; verificarea revine utilizatorului.
+
 ## Taxe și perioade
 
 ADE6-20: la adăugarea unui rând în DGV, Escape în celula activată automat
@@ -135,6 +185,39 @@ ca sfârșit luna anterioară noului început; modificările se salvează atomic
 **Taxele migrate pot avea DeLa/PanaLa NULL.** Lipsa datelor nu blochează citirea,
 editarea, utilizarea sau importul lor și nu se inventează perioade istorice.
 Numai taxele noi create prin catalog necesită DeLa. IDV istoric rămâne păstrat.
+
+## Închidere anuală — ADE7-04
+
+<!-- slice: ADE7-04 -->
+
+La închiderea unei luni august deschise, pe desktop apare fereastra de închidere
+anuală. Pe mobil (cel mult 980px) fereastra nu apare, iar închiderea lui august
+este dezactivată. Celelalte luni păstrează fluxul obișnuit.
+
+În stânga se află arborele custom cu grupele; în dreapta, DGV-ul custom cu copiii
+grupei selectate. Prima coloană bifează selecția. Ctrl adaugă/elimină copii din
+selecție, iar Shift bifează intervalul în ordinea afișată. Copiii selectați se
+trag peste grupa destinație din arbore. Alternativ, se alege destinația din
+comboboxul custom și se apasă „Mută copiii selectați”. Mutarea poate cuprinde un
+copil, mai mulți sau toată grupa. Coloana „Grupa din august” păstrează originea.
+
+„Plecat” este o bifă separată de selecție. Copiii astfel marcați ies la 31 august;
+cei cu sold sunt preluați în grupa specială pentru copiii plecați în septembrie.
+Sub tabelul copiilor este DGV-ul custom al educatorilor noului an. Numele grupei
+poate fi schimbat, iar educatorii pot fi adăugați, editați sau eliminați din plan.
+
+„Adaugă grupă”, sub arbore, creează o grupă în planul noului an. Salvarea este
+refuzată dacă numele nu este unic, lipsește un educator sau lipsește un copil
+care rămâne. O grupă nouă fără copii poate fi eliminată din plan.
+
+„Renunță” abandonează planul. „Închide august și deschide septembrie” salvează
+atomic situația din august cu datele vechi, aplică planul și creează septembrie.
+Mutările și plecările sunt jurnalizate; perioadele educatorilor anteriori se
+păstrează. Datele modificate între timp de alt utilizator impun reîncărcarea
+ferestrei. Operația necesită drepturile de închidere, catalog și transfer.
+
+Implementare locală. Aspectul, interacțiunea drag-and-drop în browser și
+funcționarea pe MariaDB rămân de verificat de utilizator.
 
 ## Predare și verificări efective
 

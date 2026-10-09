@@ -11,7 +11,7 @@
 // Column layout (slice 0110-11): an optional `layout` {order, hidden, widths, fill} -- or a `layoutId` the
 // page-wide `DataGrid.layoutProvider` answers for -- sets which columns show, in which order, how wide,
 // and which ONE column takes the free width when the grid is wider than its columns.
-// What it does NOT do, on purpose: select several rows or reorder columns by dragging.
+// Multiple selection and row dragging are opt-in; column dragging is not supported.
 //
 // The data logic (formats, filters, sort, grouping, aggregates) is in engine.js and has no DOM.
 
@@ -20,6 +20,7 @@ import {
   formatValue, aggregate, aggregatesFor, buildItems, groupCaption, filterIsActive, createFilter, isBlank,
 } from './engine.js';
 import { editing } from './editing.js';
+import { selectRows } from './selection.js';
 import ListenerTracker from '../listener-tracker/listener-tracker-mixin.js';
 import { registerInstance, unregisterInstance } from '../instances-registry.js';
 let gridSequence = 0;
@@ -107,6 +108,8 @@ export class DataGrid {
     this._items = [];
     this._shownRows = 0;
     this._selected = null;
+    this._selection = new Set();
+    this._selectionAnchor = null;
     this._firstRendered = -1;
     this._popup = null;
     this._frame = 0;
@@ -126,11 +129,16 @@ export class DataGrid {
   // ------------------------------------------------------------------ public API
   get shownRowCount() { return this._shownRows; }
   get rowCount() { return this._rows.length; }
+  getSelectedRows() { return this._opts.multiSelect ? [...this._selection] : (this._selected ? [this._selected] : []); }
   selectRow(rowId, { notify = false } = {}) {
     const row = this._rows.find((item) => item[this._opts.rowKey] === rowId);
     if (!row) return false;
     if (notify) this._select(row);
-    else { this._selected = row; this._renderWindow(true); }
+    else {
+      this._selected = row;
+      if (this._opts.multiSelect) { this._selection = new Set([row]); this._selectionAnchor = row; }
+      this._renderWindow(true);
+    }
     return true;
   }
   get isFiltered() { return [...this._filters.values()].some(filterIsActive); }
@@ -179,6 +187,8 @@ export class DataGrid {
     if (this.hasEdit) throw new Error('Confirmați sau anulați editarea înainte de reîncărcare.');
     if (!Array.isArray(rows)) throw new Error('setRows needs an array');
     this._rows = rows;
+    this._selection.clear();
+    this._selectionAnchor = null;
     if (this._opts.layoutId && typeof DataGrid.rowSink === 'function') DataGrid.rowSink(this._opts.layoutId, rows);
     this._selected = null;
     if (!keepWidths) this._sized = false;
@@ -589,12 +599,28 @@ export class DataGrid {
     if (item.kind === 'row') {
       row.classList.add('is-data');
       if (this._opts.alternatingRows && index % 2 === 1) row.classList.add('is-alt');
-      if (item.row === this._selected) row.classList.add('is-selected');
+      if (this._opts.multiSelect ? this._selection.has(item.row) : item.row === this._selected) row.classList.add('is-selected');
+      if (this._opts.dragRows) {
+        row.draggable = true;
+        row.addEventListener('dragstart', (event) => {
+          if (this._opts.multiSelect && !this._selection.has(item.row)) this._select(item.row);
+          this._emit('onRowDragStart', { event, rows: this.getSelectedRows() });
+        });
+        row.addEventListener('dragend', (event) => this._emit('onRowDragEnd', { event }));
+      }
       const indent = this._groups.length ? this._indentOf(this._groups.length) : 0;
       cols.forEach((col, ci) => {
         const text = formatValue(item.row[col.key], col);
         const cell = this._cell(col, text);
-        if (col.display === 'checkbox') {
+        if (col.selectionCheckbox && this._opts.multiSelect) {
+          const indicator = document.createElement('input');
+          indicator.type = 'checkbox'; indicator.checked = this._selection.has(item.row);
+          indicator.setAttribute('aria-label', col.title || 'Selectat');
+          indicator.addEventListener('click', (event) => {
+            event.stopPropagation(); this._select(item.row, { shiftKey: event.shiftKey, toggle: true });
+          });
+          cell.replaceChildren(indicator); cell.classList.add('is-checkbox');
+        } else if (col.display === 'checkbox') {
           const indicator = document.createElement('input');
           indicator.type = 'checkbox';
           indicator.checked = Boolean(item.row[col.key]);
@@ -741,7 +767,8 @@ export class DataGrid {
     this._activeKey = key;
     if (hit.item.kind === 'gh') { this._toggleGroup(hit.item); return; }
     if (hit.item.kind !== 'row') return;
-    this._select(hit.item.row);
+    this._select(hit.item.row, ev);
+    if (this._opts.multiSelect) { this._root.focus({ preventScroll: true }); return; }
     if (matchMedia('(min-width: 981px) and (pointer: fine)').matches && this.beginEdit(hit.item.row, key)) return;
     this._root.focus({ preventScroll: true });
   }
@@ -752,14 +779,28 @@ export class DataGrid {
     if (hit && hit.item && hit.item.kind === 'row') this._emit('onRowDblClick', hit.item.row);
   }
 
-  _select(row) {
+  _select(row, event = {}) {
     this._selected = row;
+    if (this._opts.multiSelect) {
+      const ordered = this._items.filter((item) => item.kind === 'row').map((item) => item.row);
+      this._selection = selectRows(this._selection, ordered, row, this._selectionAnchor, event);
+      if (!event.shiftKey) this._selectionAnchor = row;
+    }
     // Do not rebuild the clicked row here: replacing it between the first and
     // second click prevents the browser from dispatching `dblclick`.
     this._window.querySelectorAll('.dgv__row[data-i]').forEach((node) => {
-      node.classList.toggle('is-selected', this._items[Number(node.dataset.i)]?.row === row);
+      const item = this._items[Number(node.dataset.i)];
+      const selected = this._opts.multiSelect ? this._selection.has(item?.row) : item?.row === row;
+      node.classList.toggle('is-selected', selected);
+      if (this._opts.multiSelect && item?.kind === 'row') {
+        node.setAttribute('aria-selected', String(selected));
+        node.querySelectorAll('.dgv__cell').forEach((cell) => {
+          if (this._col(cell.dataset.key)?.selectionCheckbox) cell.querySelector('input').checked = selected;
+        });
+      }
     });
     this._emit('onSelect', row);
+    if (this._opts.multiSelect) this._emit('onSelectionChange', this.getSelectedRows());
   }
 
   _onKey(ev) {
@@ -780,7 +821,8 @@ export class DataGrid {
     if (next === null) return;
     ev.preventDefault();
     const itemIndex = dataIdx[next];
-    this._selected = this._items[itemIndex].row;
+    if (this._opts.multiSelect) this._select(this._items[itemIndex].row, ev);
+    else this._selected = this._items[itemIndex].row;
     this._ensureVisible(itemIndex);
     this._renderWindow(true);
     this._emit('onSelect', this._selected);

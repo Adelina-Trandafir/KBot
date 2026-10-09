@@ -6,31 +6,23 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
-## 1.1.2.2 (09.10.2026)
-
-<!-- release: utc=2026-10-09T13:08:14Z -->
-<!-- felii: 0008-02, 000T-12, 0000-61 -->
-
-- Angajamentele se pot grupa: un angajament poate fi in mai multe grupe, fiecare grupa are denumire si culoare.
-- Rotita listei de angajamente are un rand nou, «Grupe»: alegeti o grupa si lista arata doar angajamentele ei, in culoarea grupei.
-- In lista unei grupe, fiecare angajament apare cu aliasul lui (sau cu denumirea, daca nu are alias).
-- Cat este aleasa o grupa, lista cuprinde toti anii si toate sursele; alegerea sectorului si sortarea nu se mai afiseaza.
-- «Grupe» > «Editeaza grupe...» deschide fereastra in care adaugati grupe, bifati angajamentele si alegeti culoarea.
-- In fereastra grupelor, «Angajamente negrupate» se pot trage cu mouse-ul peste o grupa; coloana «Alias» se scrie direct in tabel.
-- Coloana «Indicatori» arata, la trecerea mouse-ului, ce indicatori are fiecare angajament.
-- Ajutor: tutoriale noi pentru deschiderea ferestrei grupelor, adaugarea unei grupe, scoaterea si adaugarea unui angajament, plus subiect nou.
-
 ## 1.1.2.1 (09.10.2026)
 
-<!-- release: utc=2026-10-09T09:40:33Z -->
-<!-- felii: 0112, 0112-02, 0112-03, 0112-04, 0000-59 -->
+<!-- release: utc=2026-10-09T15:42:42Z -->
+<!-- felii: 0112, 0112-02, 0112-03, 0112-04, 0008-02, 000T-12, 00EF-16, 00EF-17, 00EF-18, 00EF-19, 00EF-20, 00EF-21, 00EF-22, 00EF-23, 0000-59, 0000-60, 0000-61, 0000-62, 0000-63, 0000-64, 0000-65, 0000-66 -->
 
-- Casetele de mesaj ale K-BOT sunt acum proprii, nu cele din Windows: bara de titlu, butoane si pictograme in culorile temei alese.
-- Fereastra mesajului se potriveste singura dupa lungimea textului; mesajul poate avea si un titlu aparte, cu text ingrosit.
-- Butoanele «Da», «OK», «Reincearca» stau mereu in dreapta, iar «Nu», «Anulare» in stanga.
-- La un mesaj de eroare, butonul din bara de titlu trimite eroarea, cu detaliile ei, la serverul K-BOT, ca sa poata fi analizata.
-- Butonul de trimitere se stinge cat timp se trimite si dispare dupa trimitere; nu mai apare niciun mesaj despre asta.
-- Ajutor: subiect nou despre mesajele K-BOT si despre trimiterea unei erori.
+- Casetele de mesaj ale K-BOT sunt proprii, in culorile temei; «Da»/«OK» stau in dreapta, «Nu»/«Anulare» in stanga.
+- La un mesaj de eroare, butonul din bara de titlu trimite eroarea, cu detalii, la serverul K-BOT.
+- Angajamentele se pot grupa (denumire si culoare); rotita listei are randul «Grupe» si arata doar angajamentele grupei.
+- «Grupe» > «Editeaza grupe...»: adaugati grupe, bifati angajamente, alegeti culoarea; «Alias» se scrie in tabel.
+- Coloana «Indicatori» arata, la trecerea mouse-ului, ce indicatori are fiecare angajament.
+- «E-Factura - facturi emise»: facturile anului ales, cu filtru pe luni; «Cont emitent» propune conturile unitatii.
+- O factura acceptata are in meniu «Corecteaza factura (tip 384)».
+- Facturile primite se aduc de la ANAF: meniul unitatii, «Sincronizeaza facturi primite» (7-60 zile).
+- Fereastra noua «Facturi primite»: toate facturile anului, cu cautare dupa furnizor, cod fiscal sau numar.
+- Fila «E-Factura» de la fundamentare apare doar la angajamente cu facturi primite: Linii, Factura PDF, Atasamente, Mesaje.
+- «Leaga de un DDF...» leaga o factura primita de o fundamentare; «Salveaza ca ZIP» da arhiva semnata de ANAF.
+- Ajutor: subiecte noi pentru mesaje, grupe si facturile primite, plus tutoriale pentru grupe.
 
 ## 1.1.2.0 (09.10.2026)
 

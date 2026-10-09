@@ -139,7 +139,7 @@ Public NotInheritable Class AdeWriter
             Dim k_written As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
             Using k_dump As New SqlDumpWriter(k_journalRoot, k_dc, Sub(message) k_progress.Report(message))
                 k_progress.Report("Jurnal SQL: " & k_dump.Folder)
-                k_dump.WriteInfo({"Aplicație: ADE.Migrator", "Bază: " & k_dc, "Fișier: " & Path.GetFileName(k_source.FilePath), "SHA-256: " & k_source.FileHash})
+                k_dump.WriteInfo({"Aplicație: ADE.Migrator", "Bază destinație: " & k_dc, "DC sursă Access: " & k_source.Dc, "Fișier: " & Path.GetFileName(k_source.FilePath), "SHA-256: " & k_source.FileHash})
                 Using k_cn = k_server.Open(k_dc)
                     Using k_tx = k_cn.BeginTransaction()
                         Dim k_commitAttempted = False
@@ -154,7 +154,7 @@ Public NotInheritable Class AdeWriter
                                 k_cancel.ThrowIfCancellationRequested()
                                 InsertReceiptConfig(k_cn, k_tx, k_dc, k_plan.ReceiptConfig, k_dump)
                             End If
-                            InsertImportRecord(k_cn, k_tx, k_source, k_written, k_dump)
+                            InsertImportRecord(k_cn, k_tx, k_source, k_written, k_dump, k_dc)
                             k_cancel.ThrowIfCancellationRequested()
                             k_commitAttempted = True
                             k_tx.Commit()
@@ -232,8 +232,8 @@ Public NotInheritable Class AdeWriter
     End Sub
 
     Private Shared Sub InsertImportRecord(k_cn As MySqlConnection, k_tx As MySqlTransaction, k_source As AdeSource,
-                                          k_written As Dictionary(Of String, Integer), k_dump As SqlDumpWriter)
-        Dim k_json = JsonSerializer.Serialize(New With {.counts = k_written, .unit = k_source.Dc})
+                                          k_written As Dictionary(Of String, Integer), k_dump As SqlDumpWriter, targetDc As String)
+        Dim k_json = JsonSerializer.Serialize(New With {.counts = k_written, .unit = targetDc, .source_unit = k_source.Dc})
         Using k_cmd As New MySqlCommand("INSERT INTO AD_Imports (SourceHash,SourceFile,Manifest,Result) VALUES (@h,@f,@m,@r)", k_cn, k_tx)
             k_cmd.Parameters.AddWithValue("@h", k_source.FileHash)
             k_cmd.Parameters.AddWithValue("@f", Path.GetFileName(k_source.FilePath))

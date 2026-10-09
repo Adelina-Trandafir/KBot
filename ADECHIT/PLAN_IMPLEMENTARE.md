@@ -18,7 +18,8 @@ probele Access intermediare și validarea predării. AD_04 adaugă perioade null
 pentru taxe după AD_03; executarea aparține utilizatorului. Preview-ul necesită
 restart după ultimele modificări backend/schema.
 
-Rapoartele, PDF-urile și tipăririle bazate pe rapoarte rămân excluse din acest pas.
+Rapoartele ADE9 rămân excluse din acest pas. La cererea explicită a utilizatorului,
+ADE8-05 adaugă separat listarea și PDF-ul chitanțelor deja salvate.
 
 ## Navigare
 
@@ -353,9 +354,50 @@ conexiunilor la închidere, progres pe tabel, SqlDumpWriter comun, hash MDB și
 reverificarea destinației. Schimbarea intrărilor cere o nouă verificare.
 Rezultatul COMMIT necunoscut este raportat fără promisiunea unei baze neschimbate.
 Build verificat; scenariile UI/MariaDB rămân de probat de utilizator, fără teste
-automate în această intervenție. Următoarea subfelie liberă: ADE5-06.
+automate în această intervenție. Continuare: ADE5-06.
 [Worklog](../docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md),
 [utilizare](ADE.Migrator/README.md).
+
+### SLICE-ADE5-06 — jurnal în formular și motivele blocării
+
+Implementat local: jurnal de operații/excepții în formular, încărcarea logului comun,
+starea permanentă a butonului și păstrarea erorii verificării. Preferințele locale
+nu blochează verificarea dacă nu pot fi salvate. Logul existent indică un timeout;
+conectarea și activarea după verificarea reală rămân de probat de utilizator.
+[Worklog](../docs/worklog/SLICE-ADE5-06-migrator-log-formular.md).
+Continuare: ADE5-07.
+
+### SLICE-ADE5-07 — DC destinație editabil
+
+Implementat local: DC propus din Access într-o casetă editabilă; modificarea cere
+o nouă verificare. Verificarea, scrierea și chitanțele folosesc DC-ul ales, iar jurnalul
+păstrează separat identitatea sursei. Build curat; funcționarea rămâne de probat.
+[Worklog](../docs/worklog/SLICE-ADE5-07-migrator-dc-editabil.md).
+Următoarea subfelie liberă: ADE5-10.
+
+### SLICE-ADE5-08 — Alegerea grupei de plecați
+
+Migratorul bifează automat grupele al căror nume conține «pleca», fără diferență
+între litere mari/mici. Utilizatorul poate schimba bifa; alegerea se aplică înainte
+de construirea istoricului. Mai multe grupe bifate blochează verificarea/scrierea.
+Compilare reușită, fără probe funcționale.
+[Worklog](../docs/worklog/SLICE-ADE5-08-grupa-plecati.md).
+
+### SLICE-ADE5-09 — CNP-ul copilului folosit și la părinte
+
+Opțiune implicit nebifată «CNP Copil = CNP Părinte»: la transfer copiază
+Platitori.CNP din Access în CNP_Platitor pentru plătitorii asociați prin IDP.
+Valorile goale nu suprascriu. Schimbarea opțiunii invalidează verificarea.
+Compilare reușită; transferul rămâne de probat de utilizator.
+[Worklog](../docs/worklog/SLICE-ADE5-09-cnp-parinte.md).
+
+### SLICE-ADE5-10 — log nou la lansare
+
+Logul comun anterior este arhivat, iar rularea începe cu un fișier nou și caseta
+goală. Încărcarea logului în formular este numai manuală. Erorile de pornire
+rămân raportate. Build curat; arhivarea/interfața rămân de probat.
+[Worklog](../docs/worklog/SLICE-ADE5-10-log-nou-pornire.md).
+Următoarea subfelie liberă: ADE5-11.
 
 ## Slice ADE6
 

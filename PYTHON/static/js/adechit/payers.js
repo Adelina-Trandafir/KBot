@@ -32,11 +32,16 @@ export function bindPayers({ api, context, refresh }) {
   let busy = false;
   let dirty = false;
   let sequence = 0;
+  let listRequest = 0;
   const canEdit = () => context().permissions.includes('catalog');
   const report = (error, host = message) => { console.error('[ADE forms]', error); showMessage(host, error.message, 'error'); };
-  const grid = (host, rows, columns, key, onSelect, options = {}) => new DataGrid(host, {
-    columns, rows, rowKey: key, onSelect, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
-    theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern', ...options });
+  const grid = (host, rows, columns, key, onSelect, options = {}) => {
+    const instance = new DataGrid(host, {
+      columns, rows, rowKey: key, onSelect, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
+      theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern', ...options });
+    instance.sortBy(columns.find((item) => ['Nume', 'Grupa', 'Educator'].includes(item.key)).key, 'asc');
+    return instance;
+  };
   function syncMobilePage() {
     listHosts.forEach((host, index) => { host.parentElement.hidden = mobile.matches && index !== level; });
     $('ade-payers-title').textContent = mobile.matches ? ['Grupe', 'Copii', 'Plătitori'][level] : 'Plătitori';
@@ -46,9 +51,24 @@ export function bindPayers({ api, context, refresh }) {
   }
   function openLevel(row, index) {
     if (!mobile.matches) return;
-    if (index === 0) { selectedGroup = row; selectedChild = null; selectedPayer = null; }
-    else { selectedChild = row; selectedPayer = null; }
-    level = index + 1; renderLists();
+    level = index + 1;
+    (index === 0 ? chooseGroup(row) : chooseChild(row)).catch((error) => report(error, $('ade-payers-message')));
+  }
+  async function chooseGroup(row) {
+    const own = ++listRequest;
+    selectedGroup = row; selectedChild = null; selectedPayer = null;
+    data.children = []; data.payers = []; renderLists();
+    const result = await api(`/api/adechit/rows/Platitori?IDG=${row.IDG}`);
+    if (own !== listRequest || !page.open) return;
+    data.children = result.rows; renderLists();
+  }
+  async function chooseChild(row) {
+    const own = ++listRequest;
+    selectedChild = row; selectedPayer = null;
+    data.payers = []; renderLists();
+    const result = await api(`/api/adechit/rows/Platitori_sub?IDP=${row.IDP}`);
+    if (own !== listRequest || !page.open) return;
+    data.payers = result.rows; renderLists();
   }
   listHosts.forEach((host) => {
     host.addEventListener('contextmenu', (event) => { if (mobile.matches) event.preventDefault(); });
@@ -145,8 +165,13 @@ export function bindPayers({ api, context, refresh }) {
       const text = cnpMessage(read('CNP_Platitor')); showMessage(message, text, text ? 'error' : 'info');
     });
   }
-  function editGroup(row = null) {
+  async function editGroup(row = null) {
     if (!canEdit()) return;
+    const [yearData, educators] = await Promise.all([
+      api('/api/adechit/years'), row ? api(`/api/adechit/rows/Grupe_Educator?IDG=${row.IDG}`) : Promise.resolve({ rows: [] }),
+    ]);
+    data.years = [...new Set([new Date().getFullYear(), ...yearData.years])].sort((a, b) => b - a);
+    data.educators = educators.rows;
     if (!begin(row ? 'Modifică grupa' : 'Adaugă grupă', '/api/adechit/group-save', (saved) => { selectedGroup = saved; }, 'group')) return;
     field('Grupa', 'Nume grupă', row?.Grupa).maxLength = 50;
     const closed = document.createElement('div'); closed.className = 'ade-form-pair'; body.append(closed);
@@ -223,10 +248,10 @@ export function bindPayers({ api, context, refresh }) {
     const payerColumns = [column('Nume', 'Plătitor', 210), column('CNP_Platitor', 'CNP plătitor', 140), closedFlag('Closed')];
     const listOptions = (key) => mobile.matches ? { proportionalWidths: true, autoSize: false } : { layout: { fill: key } };
     grids.push(grid($('ade-groups-list'), groupRows, groupColumns, 'IDG', (row) => {
-      selectedGroup = row; selectedChild = null; selectedPayer = null; renderLists();
+      chooseGroup(row).catch((error) => report(error, $('ade-payers-message')));
     }, { ...listOptions('Grupa'), onCellAction: ({ row }) => openLevel(row, 0) }));
     grids.push(grid($('ade-children-list'), children, mobile.matches ? mobileColumns(childColumns, [50, 35, 15], true) : childColumns, 'IDP', (row) => {
-      selectedChild = row; selectedPayer = null; renderLists();
+      chooseChild(row).catch((error) => report(error, $('ade-payers-message')));
     }, { ...listOptions('Nume'), onCellAction: ({ row }) => openLevel(row, 1) }));
     grids.push(grid($('ade-payers-list'), payers, mobile.matches ? mobileColumns(payerColumns, [50, 35, 15]) : payerColumns, 'IDS', (row) => {
       selectedPayer = row; updateButtons();
@@ -250,15 +275,28 @@ export function bindPayers({ api, context, refresh }) {
     }
   }
   async function reload() {
-    data = await api('/api/adechit/catalog-data'); renderLists();
+    const own = ++listRequest;
+    const result = await api('/api/adechit/catalog-data');
+    if (own !== listRequest || !page.open) return;
+    const next = { ...result, children: [], payers: [], educators: [], years: [] };
+    next.groups.sort((a, b) => String(a.Grupa || '').localeCompare(String(b.Grupa || ''), 'ro', { sensitivity: 'base' }));
+    const groupId = selectedGroup?.IDG; const childId = selectedChild?.IDP;
+    if (groupId != null && next.groups.some((row) => row.IDG === groupId)) {
+      next.children = (await api(`/api/adechit/rows/Platitori?IDG=${groupId}`)).rows;
+      if (childId != null && next.children.some((row) => row.IDP === childId))
+        next.payers = (await api(`/api/adechit/rows/Platitori_sub?IDP=${childId}`)).rows;
+    }
+    if (own === listRequest && page.open) { data = next; renderLists(); }
   }
   async function open() {
     if (page.open || !context()) return;
+    selectedGroup = null; selectedChild = null; selectedPayer = null; data = null;
+    listHosts.forEach((host) => host.replaceChildren());
     level = 0; syncMobilePage();
-    page.showModal(); showMessage($('ade-payers-message'), 'Se încarcă grupele, copiii și plătitorii…', 'info');
+    page.showModal(); showMessage($('ade-payers-message'), '', 'info');
     $('ade-payers-mobile-add').disabled = true; $('ade-payers-mobile-edit').disabled = true;
     document.querySelectorAll('#ade-payers-dialog .ade-list-actions button').forEach((button) => { button.disabled = true; });
-    try { await reload(); showMessage($('ade-payers-message'), 'Selectați grupa, copilul și plătitorul. Folosiți Adaugă sau Modifică.', 'info'); }
+    try { await reload(); }
     catch (error) { report(error, $('ade-payers-message')); }
   }
   form.addEventListener('input', () => { dirty = true; });
@@ -274,14 +312,14 @@ export function bindPayers({ api, context, refresh }) {
       const continuation = onSaved(saved); editor.close(); cleanEditor();
       await continuation;
       await reload(); await refresh();
-      showMessage($('ade-payers-message'), 'Datele au fost salvate.', 'info');
+      showMessage($('ade-payers-message'), '', 'info');
     } catch (error) { report(error, editor.open ? message : $('ade-payers-message')); }
     finally { busy = false; body.inert = false; $('ade-record-save').disabled = false; $('ade-record-cancel').disabled = false; }
   });
   $('ade-record-cancel').addEventListener('click', () => { if (!busy) { editor.close(); cleanEditor(); } });
   [page, editor].forEach((dialog) => dialog.addEventListener('cancel', (event) => event.preventDefault()));
   $('ade-payers-close').addEventListener('click', () => {
-    if (editor.open || busy) return; page.close(); grids.forEach((instance) => instance.destroy()); grids = [];
+    if (editor.open || busy) return; ++listRequest; page.close(); grids.forEach((instance) => instance.destroy()); grids = [];
   });
   $('ade-payers-back').addEventListener('click', () => {
     if (editor.open || busy) return;
@@ -292,8 +330,8 @@ export function bindPayers({ api, context, refresh }) {
     $(`ade-${['group', 'child', 'payer'][level]}-${action}`).click();
   });
   $('ade-payers').addEventListener('click', open);
-  $('ade-group-add').addEventListener('click', () => editGroup());
-  $('ade-group-edit').addEventListener('click', () => { if (selectedGroup) editGroup(selectedGroup); });
+  $('ade-group-add').addEventListener('click', () => editGroup().catch((error) => report(error, $('ade-payers-message'))));
+  $('ade-group-edit').addEventListener('click', () => { if (selectedGroup) editGroup(selectedGroup).catch((error) => report(error, $('ade-payers-message'))); });
   $('ade-child-add').addEventListener('click', () => editChild());
   $('ade-child-edit').addEventListener('click', () => { if (selectedChild) editChild(selectedChild); });
   $('ade-payer-add').addEventListener('click', () => editPayer());

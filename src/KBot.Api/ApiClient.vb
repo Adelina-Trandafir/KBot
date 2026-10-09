@@ -377,6 +377,7 @@ Public Class ApiClient
                                 .AreORD = r.AreOrd,
                                 .AreExtrase = r.AreExtrase,
                                 .AreNoteCab = r.AreNoteCab,
+                                .ArePrimite = r.ArePrimite,
                                 .LantNeinchis = ParseLantNeinchis(r.LantNeinchis)
                             })
                         Next

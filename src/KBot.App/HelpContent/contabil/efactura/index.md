@@ -156,13 +156,13 @@ Cât timp scrii sau modifici o factură, aceste vederi nu se văd. Dacă nu exis
 Butonul **«Token ANAF»** din subsolul ferestrei deschide fereastra tokenului, unde vezi starea lui și îl obții sau îl reînnoiești cu certificatul calificat al unității. Pașii, mesajele și ce faci când ceva nu merge sunt în [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
 
 ## Facturile primite
-<!-- slice: 00EF-18, 00EF-21, 0000-61, 0000-64 -->
+<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66 -->
 
-În bara din stânga a ferestrei principale apare vederea **«E-Factura»** doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
+În bara din stânga a ferestrei principale apare vederea **«E-Factura»** doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Starea se citește odată cu arborele: după o sincronizare sau după ce legi o factură, fila apare când arborele se reîmprospătează. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
 
 - În stânga este un arbore: rădăcina **«Toate facturile»**, sub ea lunile (cea mai nouă prima), iar sub fiecare lună facturile, cu furnizorul și totalul. Punctul portocaliu înseamnă o factură pe care nu ai deschis-o încă; după ce o deschizi devine verde;
 - vederea arată facturile furnizorilor care sunt parteneri ai fundamentării angajamentului (se compară codul fiscal, fără «RO» și fără spații), plus cele pe care le-ai legat chiar tu. Cu bifa **«Arată toate facturile primite»** vezi și celelalte (cu punct gri); clic dreapta pe una și **«Leagă de acest DDF»** o leagă de fundamentare, iar **«Scoate legătura cu acest DDF»** desface o legătură făcută de tine;
-- clic dreapta pe o factură oferă și **«Salvează ca ZIP»** (arhiva semnată, adusă din nou de la ANAF) și **«Salvează ca XML»**;
+- clic dreapta pe o factură oferă și **«Salvează ca ZIP»** (arhiva semnată de ANAF, păstrată împreună cu factura; dacă lipsește, K-BOT o aduce din nou de la ANAF) și **«Salvează ca XML»** (factura din arhivă);
 - în dreapta, pe bara de vederi: **Linii** (liniile scrise de furnizor și, dedesubt, TVA-ul pe fiecare cotă — o factură poate avea mai multe), **Factură PDF** (factura clasică pe care furnizorul a atașat-o, iar dacă nu a atașat niciuna, cea desenată de ANAF), **Atașamente** (doar dacă factura are fișiere atașate; dublu clic pe un fișier îl salvează) și **Mesaje** (doar dacă factura are note sau mesaje).
 
 Facturile se aduc de la ANAF din fereastra **«E-Factura — facturi emise»**, vezi mai jos.

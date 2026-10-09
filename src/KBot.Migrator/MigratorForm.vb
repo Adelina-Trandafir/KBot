@@ -78,6 +78,7 @@ Public Class MigratorForm
             txtUtilizator.Text = _settings.User
             txtEfEmise.Text = _settings.EfIssuedFile
             txtEfPrimite.Text = _settings.EfReceivedFile
+            txtEfZip.Text = _settings.EfZipFolder
             'txtServerUrl.Text = _settings.ServerUrl
 
             FillTableList()
@@ -174,6 +175,7 @@ Public Class MigratorForm
         _settings.User = txtUtilizator.Text.Trim()
         _settings.EfIssuedFile = txtEfEmise.Text.Trim()
         _settings.EfReceivedFile = txtEfPrimite.Text.Trim()
+        _settings.EfZipFolder = txtEfZip.Text.Trim()
         _settings.Dc = Convert.ToString(cboDc.SelectedItem, CultureInfo.InvariantCulture)
         '_settings.ServerUrl = txtServerUrl.Text.Trim()
         ' No secret reaches this call - MigratorSettings has no field for one. The API key

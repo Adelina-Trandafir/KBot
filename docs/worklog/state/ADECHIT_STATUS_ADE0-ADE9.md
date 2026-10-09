@@ -19,12 +19,20 @@ Plan: [ADE0 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE0-05 | Locația datelor reale și interdicția opririi proceselor MSACCESS | DOCUMENTAT LOCAL | [Memorie Access](../SLICE-ADE0-05-memorie-access.md) |
 | SLICE-ADE0-06 | Deciziile despre schema AD_: prefix, chei străine, tabele și coloane scoase | DECIZII ÎNREGISTRATE — cod și DDL scrise local, nevalidate pe MariaDB, teste nerulate | [Decizii schema AD_](../SLICE-ADE0-06-decizii-schema-ad.md) |
 | SLICE-ADE0-07 | Deciziile despre grupe, istoric, copii plecati si DDL-ul final al schemei AD_ (inchide M06, completeaza M03) | DECIZII INREGISTRATE — DDL scris local (sql/AD_03_schema_finala.sql), nevalidat pe MariaDB; cod neadaptat | [Decizii grupe/istoric](../SLICE-ADE0-07-decizii-grupe-istoric-ddl-final.md) |
+| SLICE-ADE0-08 | Plan pentru subunități în același DC, comutare și serii/contoare de chitanțe separate | DOCUMENTAT LOCAL — fără cod sau probe | [Plan subunități](../SLICE-ADE0-08-plan-subunitati.md) |
+| SLICE-ADE0-09 | Verificare selectivă baza_40/baza_47 pentru subunități: schema, numărători, luni și chitanțe | ANALIZAT LOCAL — read-only; fără migrare sau teste ale aplicației | [Verificare MDB](../SLICE-ADE0-09-verificare-mdb-subunitati.md) |
 
 ### Current focus
 
 - Analiza inițială este documentată; implementarea a continuat în ADE1–ADE8.
   Pentru starea actuală a threadului vezi [UTILIZARE_WEB](../../../ADECHIT/UTILIZARE_WEB.md).
-  Următoarea subfelie liberă de analiză: **ADE0-08**. ADE0-06 (08.10.2026) consemnează deciziile despre schema `AD_`.
+  Următoarea subfelie liberă de analiză: **ADE0-10**. ADE0-06 (08.10.2026) consemnează deciziile despre schema `AD_`.
+- ADE0-08: [planul subunităților](../../../ADECHIT/plan_subunitati.md) este documentat.
+  Denumirea Subunitate și numerotarea proprie a chitanțelor sunt confirmate;
+  izolarea, migratorul și selectorul nu sunt implementate.
+- ADE0-09: baza_40/baza_47 citite selectiv read-only; schema relevantă concordă,
+  serii/contoare proprii și referințe istorice la luni lipsă consemnate în secțiunea 12
+  a planului. În inventarul curent nu mai este prezent baza2020_PP.mdb.
 - Date reale disponibile: ADECHIT/ACCESS_SOURCES/baza2020_PP.mdb, citit local prin ACE
   în mod doar-citire. Nu echivalează cu validarea completă a migrării/calculului.
 - Reguli adoptate explicit la 08.10.2026: [REGULI_PROIECT](../../../ADECHIT/REGULI_PROIECT.md).
@@ -39,6 +47,9 @@ Plan: [ADE0 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 ### Open threads
 
+- Subunități: înaintea implementării sunt necesare corespondența MDB/subunitate,
+  exporturile țintelor și păstrarea echivalenței regulilor temporale bazate pe IDL.
+  Detalii și acceptare în [plan](../../../ADECHIT/plan_subunitati.md).
 - `CalculSituatieDebitori_Buget2021` are apelanți în Rapoarte, Luni și Prezenta;
   varianta anterioară nu are apel extern găsit. Aceasta nu dovedește utilizarea live.
 - Lanțul 2021: `qPrezenta` → `qSolduri` → `Update_Solduri` → `Update_Situatie` →
@@ -191,16 +202,31 @@ Plan: [ADE5 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE5-03 | Reconciliere număr de rânduri, relații, solduri și istoric | TESTAT LOCAL — 5.247 rânduri, zero diferențe |
 | SLICE-ADE5-04 | ADE.Migrator: migrare directa Access (.mdb) -> MariaDB pe schema AD_03, cu educatori pe perioade si istoric copii | CONSTRUIT LOCAL — build curat; nerulat, netestat | [ADE.Migrator](../SLICE-ADE5-04-ade-migrator.md) |
 | SLICE-ADE5-05 | Oprire controlată, progres, jurnal SQL, invalidarea verificării și rezultat COMMIT explicit | CONSTRUIT LOCAL — 0 erori/avertismente; nerulat, netestat | [Worklog](../SLICE-ADE5-05-migrator-oprire-jurnal.md) |
+| SLICE-ADE5-06 | Log în formular și motive vizibile pentru Migrează blocat; preferințe locale separate de verificare | CONSTRUIT LOCAL — build curat; versiunea nouă nerulată | [Worklog](../SLICE-ADE5-06-migrator-log-formular.md) |
+| SLICE-ADE5-07 | DC destinație editabil, separat de sursa Access și reverificat la schimbare | CONSTRUIT LOCAL — build curat; nerulat | [Worklog](../SLICE-ADE5-07-migrator-dc-editabil.md) |
+| SLICE-ADE5-08 | Detectare pleca și bifa manuală pentru grupa specială de plecați | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste/probă vizuală | [Worklog](../SLICE-ADE5-08-grupa-plecati.md) |
+| SLICE-ADE5-09 | Opțiune CNP Copil = CNP Părinte și completarea CNP_Platitor | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-09-cnp-parinte.md) |
+| SLICE-ADE5-10 | Arhivarea logului anterior, log nou și casetă goală la lansare | CONSTRUIT LOCAL — build curat; nerulat | [Worklog](../SLICE-ADE5-10-log-nou-pornire.md) |
 
 ### Current focus
 
+- ADE5-09: bifa din zona sursei copiază CNP-ul Access al copilului în CNP_Platitor
+  pentru plătitorii asociați, păstrând și valoarea copilului; valorile goale nu
+  suprascriu. Bifa implicit oprită și modificarea ei cere Testează din nou.
+- ADE5-08: lista de grupe propune Plecați după `pleca` fără diferențierea
+  majusculelor; bifele corectabile determină Tip și istoricul copiilor.
+  Schimbarea cere Testează din nou; mai multe grupe speciale blochează migrarea.
 - Taxele migrate pot avea perioade DeLa/PanaLa NULL (ADE6-15); importul nu
   inventează date și lipsa lor nu blochează utilizarea. AD_04 se aplică după AD_03.
 
 - ADE5-05: utilizarea utilitarului și interpretarea jurnalelor sunt în
   [README](../../../ADECHIT/ADE.Migrator/README.md). Serverul și scenariile de oprire
   rămân de probat de utilizator; buildul nu reprezintă test funcțional.
-- Depinde de ADE3/ADE4; următoarea subfelie liberă: **ADE5-06**.
+- ADE5-06: logul existent indică un timeout la conectare; formularul afișează acum
+  motivele blocării și erorile. Reîncercarea și validarea pe server aparțin utilizatorului.
+- ADE5-07: DC destinație editabil; schimbarea invalidează verificarea, păstrând planul.
+- ADE5-10: log nou la pornire; logul vechi se arhivează, fără încărcare automată în formular.
+- Depinde de ADE3/ADE4; următoarea subfelie liberă: **ADE5-11**.
 - Reutilizăm mecanismele existente de migrare potrivite după verificarea lor; nu pornim
   automat vechiul flux Python orientat către alte tabele/servere.
 - Păstrăm relațiile și istoricul necesar. Repetarea importului nu dublează înregistrări.
@@ -244,9 +270,26 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE6-18 | Consolidarea documentației threadului PC/mobil, taxe și plătitor activ | DOCUMENTAT LOCAL — [worklog](../SLICE-ADE6-18-documentatie-thread.md); fără teste sau modificări runtime |
 | SLICE-ADE6-19 | Formular Taxe cât DGV-ul plus paddinguri | SCRIS LOCAL — [worklog](../SLICE-ADE6-19-taxe-formular-compact.md); fără teste |
 | SLICE-ADE6-20 | Escape anulează rândul nou; validare taxe cu dialog Continuă/Anulează | SCRIS LOCAL — [worklog](../SLICE-ADE6-20-rand-nou-escape-validare-taxe.md); fără teste |
+| SLICE-ADE6-21 | Pornire fără selecții, încărcare lazy an/lună/grupă/copii și Plătitori | TESTAT LOCAL NONVIZUAL — [worklog](../SLICE-ADE6-21-incarcare-lazy.md); 18 API + 3 JS; UI/server nevalidate |
+| SLICE-ADE6-22 | Ordonare alfabetică și numai cel mai recent an deschis la pornire | SCRIS LOCAL — [worklog](../SLICE-ADE6-22-ordonare-ultimul-an.md); fără teste noi |
+| SLICE-ADE6-23 | Eliminarea mesajelor informative din Plătitori | SCRIS LOCAL — [worklog](../SLICE-ADE6-23-fara-mesaj-platitori.md); fără teste |
 
 ### Current focus
 
+- ADE6-23: mesajele de introducere/încărcare/salvare Plătitori eliminate;
+  zona de mesaje este ascunsă implicit și apare numai la erori.
+- **ADE6-22:** listele de grupe/copii/plătitori/educatori se ordonează după
+  nume/denumire; taxele și documentele după explicație. Comboboxul lunilor
+  este alfabetic; arborele anilor/lunilor rămâne cronologic descrescător.
+  Numai cel mai recent an se deschide la pornire și încarcă lunile lui,
+  fără selectarea lunii/grupei sau încărcarea copiilor. Fără teste noi.
+- **ADE6-21:** lista inițială conține numai anii, fără lună/grupă aleasă și fără
+  copii. Lunile se cer la deschiderea anului, grupele după alegerea lunii,
+  copiii după alegerea grupei. Nu există Toate la Grupa. Plătitori descarcă
+  doar grupele la deschidere, apoi copiii grupei și persoanele copilului.
+  SQL filtrat, inclusiv istoricul necesar soldului; formulele rămân aceleași.
+  Probele au fost rulate înainte de citirea preferinței de a lăsa testarea
+  utilizatorului; nu s-au continuat probele după identificarea regulii.
 - **ADE6-18:** documentație consolidată; regulile actuale sunt în
   [UTILIZARE_WEB](../../../ADECHIT/UTILIZARE_WEB.md). ADE6-07–17 nu au fost
   testate; notele de mai jos păstrează etapele anterioare, nu înlocuiesc ghidul final.
@@ -259,7 +302,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 - Ferestrele inițiale Plătitori/Taxe sunt descrise în [ADE6-05](../SLICE-ADE6-05-ferestre-platitori-taxe.md).
   Editările sunt locale până la «Salvează și închide»; conflictul sau eroarea păstrează fereastra.
 - Implementarea prezenței este descrisă în [worklog](../SLICE-ADE6-04-workspace-prezenta.md).
-  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-21**.
+  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-24**.
 - Refolosim aspectul portalului și controalele comune; structura arborelui și coloanele
   urmează operațiile Access incluse, stabilite în ADE0.
 - Acceptare: modificările se salvează prin API cu validare; prezența lunilor închise refuză scrierea;
@@ -267,6 +310,8 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 ### Open threads
 
+- ADE6-21/22: utilizatorul verifică aspectul/navigarea pe PC și telefon,
+  după publicarea fișierelor web/API și restartul backendului. Fără DDL nou.
 - M06 este decis în ADE0-07; formularul copilului implementează mutarea individuală și jurnalul.
   Transferul lot, compensarea prin consiliu și înlocuirea vechiului endpoint /transfer rămân de făcut.
 - Exportul local MariaDB_Schema nu are AD_; AD_03 este referința aprobată pentru implementarea
@@ -289,10 +334,20 @@ Plan: [ADE7 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE7-01 | Transpunerea mdl_Situatie și a interogărilor sale, cu rezultate intermediare comparabile | SCRIS LOCAL — opt faze distincte; neverificat Access |
 | SLICE-ADE7-02 | Închidere/redeschidere, situația salvată și luna următoare | TESTAT LOCAL — M05, orfani și reatașare |
 | SLICE-ADE7-03 | Comparație Access/web 1 la 1 pe cazurile de referință | SCRIS LOCAL — fixture IDL 50/51; rezultate Access lipsă |
+| SLICE-ADE7-04 | Închidere anuală august, mutări individuale/lot prin TreeView și DataGrid custom, grupe noi validate, exclusiv desktop | SCRIS LOCAL — [worklog](../SLICE-ADE7-04-inchidere-anuala.md); 25 API + 5 JS trecute înainte de citirea regulii de testare; UI/server nevalidate |
 
 ### Current focus
 
-- Depinde de ADE0, ADE3–ADE6; următoarea subfelie liberă: **ADE7-04**.
+- Depinde de ADE0, ADE3–ADE6; următoarea subfelie liberă: **ADE7-05**.
+- ADE7-04: închiderea lui august deschide planul anual numai pe desktop. Selecție
+  multiplă Ctrl/Shift în DataGrid, drag-and-drop pe arbore, Plecat separat de
+  selecție, educatori în DataGrid și grupe noi cu nume unic/educator/copil obligatorii.
+  Salvare atomică după snapshotul din august. Nu necesită DDL nou; AD_03 rămâne prerequisite.
+  Testele locale au fost rulate înainte de identificarea preferinței de a lăsa
+  testarea utilizatorului; nu s-au continuat ulterior. Ultimele ajustări JS nu au
+  fost retestate. Aspectul, drag-and-drop real și MariaDB rămân neverificate.
+  Redeschiderea păstrează cataloagele modificate; anularea completă a reorganizării
+  anuale rămâne de stabilit, conform worklogului ADE7-04.
 - **Fidelitatea calculelor este criteriu obligatoriu.** Comparam pe fiecare persoană/lună
   SID/SIC, obligații, plăți, compensare, anticipat, retur, SFD/SFC și totalurile relevante.
 - Cazuri: sold debitor/creditor/zero, fără prezență, fără plăți, plată parțială, supraplată,
@@ -321,11 +376,16 @@ Plan: [ADE8 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE8-02 | Chitanțe: serie/număr/explicație, document și tipărire | TESTAT LOCAL PARȚIAL — numerotare/șablon; PDF/print exclus |
 | SLICE-ADE8-03 | Probe tranzacționale, cereri repetate și utilizatori simultani | TESTAT LOCAL PARȚIAL — idempotency/lock; MariaDB concurent neverificat |
 | SLICE-ADE8-04 | Taburi Chitanțe/Alte plăți/Restituiri și rând nou cu valoare propusă din SID/SIC | TESTAT LOCAL PARȚIAL — UI și API local; MariaDB neverificat |
+| SLICE-ADE8-05 | Popup PC pentru chitanțe, listare HTML și descărcare PDF; mail inactiv condiționat | SCRIS LOCAL — [worklog](../SLICE-ADE8-05-meniu-listare-pdf.md); sintaxă verificată, fără probe funcționale/vizuale |
 
 ### Current focus
 
+- ADE8-05: Listare și PDF pentru chitanțele salvate au fost cerute explicit
+  de utilizator în acest chat, înlocuind amânarea lor. Date salvate, două exemplare,
+  sume în cifre/litere, font cu diacritice și marcaj ANULATĂ. Numerele nu se schimbă.
+  Mail apare numai dacă plătitorul asociat are EMail; rămâne inactiv.
 - Implementarea este descrisă în [worklog](../SLICE-ADE8-04-taburi-incasari.md).
-  Depinde de ADE2–ADE7; următoarea subfelie liberă: **ADE8-05**.
+  Depinde de ADE2–ADE7; următoarea subfelie liberă: **ADE8-06**.
 - Datele unității se citesc din sistemul comun; configurația chitanței din Unitati_Chitante.
 - Încasările după închidere păstrează fereastra temporală Access și actualizează SS_Buget
   la salvare; prezența rămâne blocată (decizie utilizator 07.10.2026).
@@ -340,7 +400,9 @@ Plan: [ADE8 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
   citită selectiv din MDB, dar importul nu este scris și nu există seed 783/784.
 - M02 și M04 au fost decise; M03 este decis: motiv obligatoriu într-un popup.
   Persistarea motivului și comanda de anulare rămân de implementat.
-- PDF-ul, rapoartele și tipărirea sunt amânate explicit pentru pasul final.
+- ADE8-05 necesită ReportLab instalat pe server din requirements-adechit.txt,
+  publicarea fontului/șablonului și restartul backendului. Probele PDF/print
+  și PC rămân utilizatorului. Rapoartele ADE9 rămân amânate; mailul nu trimite.
 
 ## Slice ADE9
 

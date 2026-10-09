@@ -40,7 +40,7 @@ Public NotInheritable Class AdePlan
     Public Const NotMigrated As String = "Delegati, Prezenta_sub, MutaCopil, Trimis, Facturi, Ver_DB, NUMERE, OPuri, COMP, Mail, BonuriF"
 
     Private Const SystemUser As String = "migrare"
-    Private Const DepartedWord As String = "plecat"
+    Private Const DepartedWord As String = "pleca"
 
     Public ReadOnly Property Tables As New List(Of AdePlanTable)()
     Public ReadOnly Property Findings As New List(Of AdeFinding)()
@@ -62,13 +62,16 @@ Public NotInheritable Class AdePlan
 
     ''' <param name="k_educators">The names the operator settled on, per (group, text in Access). A text that is not in
     ''' the dictionary is split by the default rule.</param>
-    Public Shared Function Build(k_source As AdeSource, k_educators As IDictionary(Of (Integer, String), String)) As AdePlan
+    Public Shared Function Build(k_source As AdeSource, k_educators As IDictionary(Of (Integer, String), String),
+                                 Optional k_groupTypes As IDictionary(Of Integer, Boolean) = Nothing,
+                                 Optional k_childCnpIsParent As Boolean = False) As AdePlan
         Try
             Dim k_plan As New AdePlan(k_source.ReceiptConfig)
             k_plan.ConvertTables(k_source)
             k_plan.FixLinks()
-            k_plan.SetGroupTypes()
+            k_plan.SetGroupTypes(k_groupTypes)
             k_plan.FillDerived(k_source)
+            If k_childCnpIsParent Then k_plan.CopyParentCnp()
             k_plan.BuildEducators(k_source, k_educators)
             k_plan.BuildHistory(k_source)
             Return k_plan
@@ -179,22 +182,50 @@ Public NotInheritable Class AdePlan
 
     ' ---- 3. group type ---------------------------------------------------------------------------------------------
 
-    Private Sub SetGroupTypes()
+    Public Shared Function IsDepartedGroup(k_name As String) As Boolean
+        Return k_name IsNot Nothing AndAlso k_name.IndexOf(DepartedWord, StringComparison.OrdinalIgnoreCase) >= 0
+    End Function
+
+    Private Sub SetGroupTypes(k_groupTypes As IDictionary(Of Integer, Boolean))
         Dim k_departed As New List(Of String)()
         For Each k_row In Find("Grupe").Rows
             Dim k_name = TryCast(k_row("Grupa"), String)
-            Dim k_isDeparted = k_name IsNot Nothing AndAlso k_name.IndexOf(DepartedWord, StringComparison.OrdinalIgnoreCase) >= 0
+            Dim k_isDeparted = IsDepartedGroup(k_name)
+            Dim k_selected As Boolean
+            If k_groupTypes IsNot Nothing AndAlso k_groupTypes.TryGetValue(CInt(k_row("IDG")), k_selected) Then
+                k_isDeparted = k_selected
+            End If
             k_row("Tip") = If(k_isDeparted, "PLECATI", "NORMALA")
             If k_isDeparted Then k_departed.Add(k_name)
         Next
         If k_departed.Count = 0 Then
-            Notes.Add("Nicio grupă nu are «plecat» în nume: nu există grupa specială pentru copiii plecați (Tip = PLECATI).")
+            Notes.Add("Nu este selectată nicio grupă pentru copiii plecați (Tip = PLECATI). Verificați bifele din lista de grupe.")
         Else
-            Notes.Add($"Grupa pentru copiii plecați (Tip = PLECATI), recunoscută după nume: {String.Join("; ", k_departed)}.")
+            Notes.Add($"Grupe pentru copiii plecați (Tip = PLECATI), după detectare și bifele confirmate: {String.Join("; ", k_departed)}.")
         End If
+        If k_departed.Count > 1 Then Block("Sunt bifate mai multe grupe de plecați. Păstrați bifa numai la grupa specială pentru copiii plecați.")
     End Sub
 
     ' ---- 4. values that Access repeated on every row, and the origin of the movements ------------------------------
+
+    Private Sub CopyParentCnp()
+        Dim k_values As New Dictionary(Of Integer, String)()
+        For Each k_row In Find("Platitori").Rows
+            Dim k_cnp = TryCast(k_row("CNP"), String)
+            If k_row("IDP") IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(k_cnp) Then
+                k_values(CInt(k_row("IDP"))) = k_cnp
+            End If
+        Next
+        Dim k_copied = 0
+        For Each k_row In Find("Platitori_sub").Rows
+            Dim k_cnp As String = Nothing
+            If k_row("IDP") IsNot Nothing AndAlso k_values.TryGetValue(CInt(k_row("IDP")), k_cnp) Then
+                k_row("CNP_Platitor") = k_cnp
+                k_copied += 1
+            End If
+        Next
+        Notes.Add($"Opțiune CNP Copil = CNP Părinte: Platitori.CNP din Access copiat în CNP_Platitor pentru {k_copied} plătitori asociați. CNP-urile sursă goale nu înlocuiesc valorile existente.")
+    End Sub
 
     Private Sub FillDerived(k_source As AdeSource)
         ' The child's address (Access Platitori.Adresa) goes on every payer of that child whose own address is empty or just

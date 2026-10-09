@@ -138,6 +138,8 @@ Public NotInheritable Class EfImportOptions
     Public Property IssuedFile As String = String.Empty
     ''' <summary>The e-invoice store <c>ef_&lt;year&gt;.accdb</c>: EF, EFT, EFS, EFT_C, EFT_M.</summary>
     Public Property ReceivedFile As String = String.Empty
+    ''' <summary>Folder with the ANAF archives <c>fact&lt;id&gt;.zip</c> (id = EF.id = EF_Mesaje.IdIncarcare). Empty = archives are not stored.</summary>
+    Public Property ZipFolder As String = String.Empty
     ''' <summary>The unit's tax code. Selects the received messages that belong to this unit.</summary>
     Public Property UnitCui As String = String.Empty
 

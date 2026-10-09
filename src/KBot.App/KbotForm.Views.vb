@@ -145,12 +145,9 @@ Partial Public Class KbotForm
             ' Slice 0097: only when the branch has notes, like ORD and DDF (operator). The server
             ' sends 0 when the notes table does not exist on the unit database.
             navViews.SetItemVisible("notecab", info IsNot Nothing AndAlso info.AreNoteCab)
-            ' Slice 00EF-18 / 00EF-21: the received e-invoices show ONLY when the angajament's DDF has some (KbotForm.EFactura.vb asks the
-            ' server; until it answered, the answer of the last check for this same angajament stands).
-            Dim k_efactura As Boolean = info IsNot Nothing AndAlso info.AreDDF AndAlso
-                                        String.Equals(_eFacturaCod, info.CodAngajament, StringComparison.Ordinal) AndAlso _eFacturaAre
-            navViews.SetItemVisible("efactura", k_efactura)
-            If info IsNot Nothing AndAlso info.AreDDF Then VerificaFacturiPrimite(info.CodAngajament)
+            ' Slice 00EF-18 / 00EF-22: the received e-invoices show ONLY when the angajament's DDF has some -- the server says so in the tree
+            ' (ArePrimite), like the other flags: no request of its own.
+            navViews.SetItemVisible("efactura", info IsNot Nothing AndAlso info.AreDDF AndAlso info.ArePrimite)
             ' «Browser FOREXE» (slice 0074) hangs on the SESSION, not on the node: with no
             ' selection the operator can still browse; without a session there is no page.
             navViews.SetItemVisible("browser", BrowserDisponibil())
@@ -158,7 +155,6 @@ Partial Public Class KbotForm
             ' If the active view has just closed, fall back to «sumar» (always enabled) so the
             ' shell does not stay on a page the operator can no longer leave.
             If Not IsViewEnabled(navViews.SelectedKey, info) OrElse
-               (navViews.SelectedKey = "efactura" AndAlso Not k_efactura) OrElse
                (_formularNouActiv AndAlso navViews.SelectedKey = "sumar") Then
                 navViews.SelectedKey = If(_formularNouActiv, "browser", "sumar")
             End If
@@ -184,8 +180,7 @@ Partial Public Class KbotForm
             Case "ddf" : Return info.AreDDF
             Case "ord" : Return info.AreORD
             Case "notecab" : Return info.AreNoteCab
-            ' Whether it HAS invoices is asked of the server (ApplyViewGating / VerificaFacturiPrimite), not known from the node.
-            Case "efactura" : Return info.AreDDF
+            Case "efactura" : Return info.AreDDF AndAlso info.ArePrimite
             ' Gated by the session in ApplyViewGating / the coordinator's StateChanged
             ' (KbotForm.Browser.vb), never by the node.
             Case "browser" : Return True

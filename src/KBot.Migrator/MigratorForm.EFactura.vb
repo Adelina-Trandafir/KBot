@@ -81,6 +81,18 @@ Partial Public Class MigratorForm
         End Try
     End Sub
 
+    Private Sub btnEfZip_Click(sender As Object, e As EventArgs) Handles btnEfZip.Click
+        Try
+            Using dialog As New FolderBrowserDialog()
+                dialog.Description = "Alegeți folderul cu arhivele ANAF (fact<id>.zip)"
+                If Directory.Exists(txtEfZip.Text.Trim()) Then dialog.SelectedPath = txtEfZip.Text.Trim()
+                If dialog.ShowDialog(Me) = DialogResult.OK Then txtEfZip.Text = dialog.SelectedPath
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.btnEfZip_Click", ex)
+        End Try
+    End Sub
+
     Private Sub BrowseAccess(k_box As KBot.Controls.KBotTextField, k_title As String)
         Using dialog As New OpenFileDialog()
             dialog.Title = k_title
@@ -106,6 +118,7 @@ Partial Public Class MigratorForm
             .AccessPassword = AccessPassword(),
             .IssuedFile = txtEfEmise.Text.Trim(),
             .ReceivedFile = txtEfPrimite.Text.Trim(),
+            .ZipFolder = txtEfZip.Text.Trim(),
             .UnitCui = txtCodFiscal.Text.Trim(),
             .DoFurnizor = chkEfFurnizor.Checked,
             .DoClienti = chkEfClienti.Checked,
@@ -123,7 +136,7 @@ Partial Public Class MigratorForm
     Private Shared Function EfFingerprint(k_options As EfImportOptions) As String
         Return String.Join("|", {
             k_options.Server.Describe(), k_options.UnitDatabase, k_options.CommonDatabase,
-            k_options.IssuedFile, k_options.ReceivedFile, k_options.UnitCui,
+            k_options.IssuedFile, k_options.ReceivedFile, k_options.ZipFolder, k_options.UnitCui,
             k_options.DoFurnizor.ToString(), k_options.DoClienti.ToString(),
             k_options.DoEmise.ToString(), k_options.DoPrimite.ToString()})
     End Function
@@ -149,6 +162,7 @@ Partial Public Class MigratorForm
             Try
                 Dim token = _cancellation.Token
                 SayEf($"Verificare E-Factura pentru «{options.UnitDatabase}» (cod fiscal {options.UnitCui}).")
+                ShowEfTokens(options.UnitDatabase)
                 Dim importer As New EfImporter(options, AddressOf SayEfFromWorker, AddressOf EfStepFromWorker)
                 Dim report = Await Task.Run(Function() importer.Verify(token), token)
                 ShowEfReport(report)
@@ -177,6 +191,31 @@ Partial Public Class MigratorForm
             Warn("Verificarea E-Factura a eșuat." & Environment.NewLine & Environment.NewLine & ex.Message)
         End Try
         btnEfImporta.Enabled = canImport
+    End Sub
+
+    ''' <summary>Shows what the Access system left in the registry for the DC (read only, values masked). Informational: it never blocks.</summary>
+    Private Sub ShowEfTokens(k_dc As String)
+        Try
+            SayEf("— Token ANAF găsit în registru (sistemul Access) —")
+            Dim found = EfTokenRegistry.Read(k_dc)
+            SayEf($"   Cheie: {found.KeyPath}")
+            If Not found.KeyFound Then
+                SayEf("   Nu există cheia «Tokens» pentru acest DC: nimic de citit.")
+                Return
+            End If
+            SayEf($"   Token: {EfTokenRegistry.Mask(found.Token)}")
+            SayEf($"   RefreshKey: {EfTokenRegistry.Mask(found.RefreshKey)}")
+            If found.TokenExpiry.HasValue Then
+                Dim state = If(found.TokenExpiry.Value < DateTime.Now, "EXPIRAT", "valabil")
+                SayEf($"   TokenExpiry: {found.TokenExpiry.Value:dd.MM.yyyy HH:mm:ss} ({state})")
+            Else
+                SayEf($"   TokenExpiry: {If(String.IsNullOrWhiteSpace(found.TokenExpiryText), "(lipsă)", found.TokenExpiryText & " (dată necitibilă)")}")
+            End If
+            SayEf($"   Vercon: {If(String.IsNullOrWhiteSpace(found.Vercon), "(lipsă)", found.Vercon)}")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MigratorForm.ShowEfTokens", ex)
+            SayEf("   Registrul nu a putut fi citit: " & ex.Message)
+        End Try
     End Sub
 
     Private Sub ShowEfReport(k_report As EfImportReport)

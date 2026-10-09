@@ -290,14 +290,22 @@ def cancel_document(repo, body):
     return document
 
 
-def close_month(repo, body):
+def close_month(repo, body, username=''):
     month = repo.get('LunaD', body['id'])
     require(not month['Inchisa'], 'CLOSED', 'Luna este deja închisă.')
+    annual_state = None
+    if month['Luna'] == 8:
+        from . import annual
+        annual_state = annual.validate(repo, month, body.get('annual'))
+    else:
+        require('annual' not in body, 'ANNUAL_MONTH', 'Planul anual se aplică numai în august.', 400)
     require(not any(r['IDL'] == month['IDL'] for r in repo.rows('SS_Buget')), 'SNAPSHOT', 'Există deja situații salvate pentru această lună.')
     rows, _ = calculate(repo.data(), month['IDL'])
     for row in rows:
         repo.insert('SS_Buget', {k: value for k, value in row.items() if k in SCHEMA['SS_Buget']['fields']})
     closed = repo.update('LunaD', month, {'Inchisa': True})
+    if annual_state is not None:
+        annual.apply(repo, month, body['annual'], annual_state, username)
     opened, reattached = create_next_month(repo, closed)
     return {'closed': closed, 'opened': opened, 'reattached': reattached}
 
