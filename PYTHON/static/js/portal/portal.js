@@ -14,7 +14,7 @@ import eventBus, { EVENTS } from '../event-bus/event-bus.js';
 const TOKEN_KEY = 'kbot-portal-token';
 const PORTAL_URL = '/portal';
 
-// Slice ADE9-01: /portal?next=/adechit -- a page that needs the sign-in sends the user here and takes
+// slice AD10-01: /portal?next=/adechit -- a page that needs the sign-in sends the user here and takes
 // them back once a unit is open. Only these pages are allowed, never a free address.
 const NEXT_PAGES = ['/adechit'];
 const nextPage = (() => {

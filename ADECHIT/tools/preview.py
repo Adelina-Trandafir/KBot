@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'PYTHON'))
-from flask import Flask, g, jsonify, request
+from flask import Flask, g, jsonify, request, redirect
 from routes.adechit import create_blueprint
 from routes.adechit.domain import SCHEMA
 from routes.adechit.repository import Repository
@@ -70,6 +70,12 @@ def create_app(directory):
         initialize(directory / (unit + '.sqlite'))
     app = Flask('ade_preview', static_folder=str(ROOT / 'PYTHON/static'))
     app.json.ensure_ascii = False
+
+    @app.get('/')
+    @app.get('/portal')
+    def entry():
+        # The local preview has no portal login; recover old sign-in redirects here.
+        return redirect('/adechit')
 
     def factory(unit):
         if unit not in ('preview', 'preview2'):

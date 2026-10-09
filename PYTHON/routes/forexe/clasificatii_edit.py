@@ -69,6 +69,7 @@ from flask import g, current_app, request
 from routes.auth.guard import require_session
 from routes.inregistrare import nomenclatoare as registration_lists
 from routes.inregistrare import randuri
+from utils import clsf_pair
 from utils.database import COMMON_DB, get_kbot_connection
 
 from . import forexe_bp
@@ -532,6 +533,19 @@ def get_clasificatii_nomenclator():
             conn.close()
 
 
+# Fills FX_Indicatori.IdClsf where it is empty and EXACTLY ONE classification of the same unit has
+# the indicator's ClsfSal (the match the download makes: find_id_clsf). Zero or several matches
+# leave it alone, and a linked indicator is never moved.
+_SQL_LINK_INDICATORS = (
+    "UPDATE FX_Indicatori I "
+    "   SET I.IdClsf = (SELECT C.IDClsf FROM Clasificatii C "
+    "                    WHERE C.IdUnitate = I.IdUnitate AND C.ClsfSal = I.IndicatorFX) "
+    " WHERE (I.IdClsf IS NULL OR I.IdClsf = 0) "
+    "   AND (SELECT COUNT(*) FROM Clasificatii C "
+    "         WHERE C.IdUnitate = I.IdUnitate AND C.ClsfSal = I.IndicatorFX) = 1"
+)
+
+
 def _code_list(body: dict, key: str, label: str) -> list:
     raw = body.get(key)
     if not isinstance(raw, list) or not raw:
@@ -581,10 +595,18 @@ def post_clasificatii_adauga():
                 continue
             plain.execute(randuri.INSERT_SQL, row)
             inserted += 1
+        # Indicators downloaded before their classification existed are waiting with IdClsf NULL.
+        linked = 0
+        if inserted:
+            cursor.execute(_SQL_LINK_INDICATORS)
+            linked = cursor.rowcount
+            # Payments, receptions, history and reservations copied the empty IdClsf too.
+            clsf_pair.fill_children(cursor)
         conn.commit()
-        logger.info("[forexe.clasificatii_edit] %s: add requested %s, inserted %s, existing %s",
-                    db_name, len(rows), inserted, existing)
-        return _json_utf8({"requested": len(rows), "inserted": inserted, "existing": existing}, 200)
+        logger.info("[forexe.clasificatii_edit] %s: add requested %s, inserted %s, existing %s, "
+                    "indicators linked %s", db_name, len(rows), inserted, existing, linked)
+        return _json_utf8({"requested": len(rows), "inserted": inserted, "existing": existing,
+                           "linked": linked}, 200)
     except (_Refused, randuri.RanduriInvalide) as e:
         _rollback(conn)
         return _json_utf8({"error": str(e)}, 400)

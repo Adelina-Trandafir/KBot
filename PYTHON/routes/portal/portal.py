@@ -379,13 +379,14 @@ def portal_me():
         units = _user_units(note["email"])
         periods = _unit_periods(note["db_name"]) if note.get("db_name") else []
         sections = drepturi.sections_of(note["email"], note.get("db_name"))
+        operations = {k: sorted(drepturi.operations_of(note["email"], note.get("db_name"), k)) for k in sections}
     except mysql.connector.Error as err:
         logger.error("portal me: read failed for %s: %s", mailer.mask_address(note["email"]), err)
         return _fail("DB_ERROR", "Datele contului nu au putut fi citite.", 500)
     _slide(token, note)
     return _json({"email": note["email"], "units": units, "db_name": note.get("db_name"),
                   "role": note.get("role"), "periods": periods, "sections": sections,
-                  "is_admin": is_admin_email(note["email"])})
+                  "operations": operations, "is_admin": is_admin_email(note["email"])})
 
 
 @portal_bp.route("/api/portal/unit", methods=["POST"])

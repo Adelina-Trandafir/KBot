@@ -1,11 +1,11 @@
 /* SLICE-ADE1-04: the Access-like ADECHIT attendance workspace. */
-.portal.ade-page { min-height: 100vh; height: 100vh; overflow: hidden; background: var(--sky-1); color: var(--ink); }
+.portal.ade-page { --ade-header-back: #3b5a85; --ade-header-text: #fff; min-height: 100vh; height: 100vh; overflow: hidden; background: var(--sky-1); color: var(--ink); }
 .ade-header { box-sizing: border-box; width: 100%; max-width: 2048px; height: 46px; min-height: 46px; margin-inline: auto; padding: 0 12px; gap: 14px; border: 1px solid var(--line); border-top: 0; }
 .ade-header .brand { flex: 0 0 auto; font-size: calc(.9rem + 1px); }
 .ade-header__context { margin-left: auto; font-size: calc(.74rem + 1px); }
 .ade-header__actions { display: flex; gap: 6px; }
 .ade-header .btn, .ade-header a.btn { min-height: 28px; padding: 4px 10px; border-radius: var(--radius-sm); font-size: calc(.74rem + 1px); box-shadow: none; transform: none; }
-.portal.ade-page .ade-header, html[data-theme="dark"] .portal.ade-page .ade-header { background: #3b5a85; border-color: #3b5a85; backdrop-filter: none; color: #fff; }
+.portal.ade-page .ade-header, html[data-theme="dark"] .portal.ade-page .ade-header { background: var(--ade-header-back); border-color: var(--ade-header-back); backdrop-filter: none; color: var(--ade-header-text); }
 .ade-brand { display: inline-flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; }
 .ade-brand__name { font-weight: 800; letter-spacing: .04em; color: #fff; }
 .ade-header__context { color: rgba(255, 255, 255, .8); }
@@ -37,11 +37,9 @@
 .ade-icon-action .btn { width: 34px; min-height: 28px; padding: 2px; font-size: calc(1rem + 1px); line-height: 1; }
 .ade-icon-action::after { content: attr(data-tooltip); position: absolute; z-index: 20; left: 50%; bottom: calc(100% + 7px); width: max-content; max-width: 210px; padding: 5px 8px; color: var(--card); background: var(--ink); border-radius: var(--radius-sm); font-size: calc(.68rem + 1px); font-weight: 600; line-height: 1.25; opacity: 0; pointer-events: none; transform: translate(-50%, 3px); transition: opacity 120ms ease, transform 120ms ease; }
 .ade-icon-action:hover::after, .ade-icon-action:focus-within::after { opacity: 1; transform: translate(-50%, 0); }
-.ade-center { position: relative; display: grid; grid-template-rows: 40px minmax(190px, 1fr) 38px minmax(220px, 38%); overflow: hidden; }
-.ade-toolbar { display: flex; align-items: center; gap: 10px; padding: 5px 8px; background: var(--sky-1); border-bottom: 1px solid var(--line); }
-.ade-toolbar > div:first-child { display: grid; line-height: 1.1; }
-.ade-toolbar strong { font-size: calc(.8rem + 1px); }
-.ade-toolbar span { color: var(--ink-soft); font-size: calc(.68rem + 1px); }
+.ade-center { position: relative; display: grid; grid-template-rows: minmax(190px, 1fr) 38px minmax(220px, 38%); overflow: hidden; }
+.ade-toolbar { display: none; align-items: center; gap: 10px; padding: 5px 8px; background: var(--sky-1); border-bottom: 1px solid var(--line); }
+.ade-toolbar__info { display: none; }
 .ade-main .btn { min-height: 28px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); color: var(--ink); font: inherit; font-size: calc(.72rem + 1px); font-weight: 700; cursor: pointer; }
 .ade-main .btn:hover:not(:disabled) { border-color: var(--blue); background: var(--sky-1); }
 .ade-main .btn:disabled { opacity: .48; cursor: default; }
@@ -118,13 +116,16 @@
 .ade-help p { margin: 4px 0; }
 html[data-theme="dark"] .ade-header { background: var(--card); }
 @media (max-width: 980px) {
+  .ade-main { grid-template-rows: minmax(0, 1fr) auto; }
+  .ade-notice-row { display: none; }
   .ade-shell, .ade-shell.is-reports-collapsed { grid-template-columns: minmax(0,1fr); }
   .ade-sidebar, .ade-reports { display: none; }
   .ade-grid { user-select: none; -webkit-touch-callout: none; }
   .ade-header__context, .ade-header__actions a.btn, .ade-limitations, #ade-save-state { display: none; }
   .ade-header { gap: 8px; padding: 0 8px; }
   .ade-search { flex: 1 1 auto; }
-  .ade-toolbar__info { display: none !important; }
+  .ade-center { grid-template-rows: 40px minmax(190px, 1fr) 38px minmax(220px, 38%); }
+  .ade-toolbar { display: flex; }
   .ade-grid-actions .ade-btn-text { display: none; }
   .ade-ledger-table col.ade-col-number { width: 60px; min-width: 60px; }
   .ade-ledger-table col.ade-col-date { width: 110px; min-width: 110px; }
@@ -181,6 +182,7 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
 
 /* SLICE-ADE6-06: three catalogs and their uniform modal forms. */
 .ade-payers-window { width: min(1560px, 96vw); height: min(720px, 92vh); }
+.ade-payers-mobile-action { display: none; }
 .ade-payers-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; min-height: 0; flex: 1; padding: 4px 16px 16px; }
 .ade-list-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--line); }
 .ade-list-grid { flex: 1; min-height: 0; }
@@ -202,19 +204,41 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
 .ade-form-pair .ade-form-field { grid-template-columns: auto minmax(0, 1fr); }
 .ade-catalog .ade-record-actions { justify-content: space-between; padding: 14px 24px; }
 .ade-catalog .btn { min-width: 110px; min-height: 36px; padding: 6px 16px; color: var(--ink); background: var(--sky-2); border: 1px solid var(--line); border-radius: var(--radius-sm); font: inherit; font-weight: 650; }
-.ade-catalog-header { background: var(--card); }
-.ade-payers-window .dgv { --dgv-back: var(--card); --dgv-head-back: var(--card); --dgv-foot-back: var(--card); }
-.ade-group-editor { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; }
-.ade-years { border: 1px solid var(--line); display: flex; flex-direction: column; align-items: stretch; }
-.ade-years strong { padding: 8px; border-bottom: 1px solid var(--line); text-align: center; }
-.ade-years button { padding: 8px; border: 0; background: var(--card); color: var(--ink); font: inherit; cursor: pointer; }
-.ade-years button[aria-pressed="true"] { background: var(--sky-2); font-weight: 650; }
+.ade-catalog-header { background: var(--ade-header-back); color: var(--ade-header-text); }
+.ade-catalog-header span { color: inherit; }
+.ade-payers-window .dgv { --dgv-back: var(--card); }
+.ade-group-editor { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; }
+.ade-years { box-sizing: border-box; height: 250px; overflow-y: auto; display: flex; flex-direction: column; align-items: stretch; border-radius: var(--dgv-radius); }
+.ade-years strong { box-sizing: border-box; display: grid; place-items: center; height: 28px; flex: 0 0 28px; padding: 0 8px; border-bottom: 1px solid var(--dgv-line); background: var(--dgv-head-back); color: var(--dgv-head-text); text-align: center; }
+.ade-years button { box-sizing: border-box; height: 28px; flex: 0 0 28px; padding: 0 8px; border: 0; border-bottom: 1px solid var(--dgv-line); background: var(--dgv-back); color: var(--dgv-text); font: inherit; cursor: pointer; }
+.ade-years button[aria-pressed="true"] { background: var(--dgv-select-back); color: var(--dgv-select-text); font-weight: 650; }
 .ade-educator-grid { height: 250px; }
-.ade-group-editor > section > .btn { display: block; margin: 10px 0 0 auto; }
+.ade-educator-grid .dgv { box-sizing: border-box; }
+.ade-educator-grid .dgv__head { box-sizing: border-box; }
+.ade-record-window[data-kind="group"] { width: min(760px, 96vw); }
+.ade-record-window[data-kind="compact"] { width: min(460px, 96vw); }
+.ade-record-window[data-kind="compact"] .ade-record-body { gap: 10px; padding: 12px; }
+.ade-record-window[data-kind="compact"] .ade-form-field { grid-template-columns: 140px minmax(0, 1fr); gap: 7px; }
+.ade-record-window[data-kind="compact"] .ade-form-pair { grid-template-columns: 1fr; gap: 10px; }
 @media (max-width: 980px) {
-  .ade-payers-window { height: 92vh; }
-  .ade-payers-columns { grid-template-columns: 1fr; overflow: auto; }
-  .ade-list-panel { min-height: 260px; }
+  .ade-payers-window { width: calc(100vw - 20px); max-width: calc(100vw - 20px); height: calc(100vh - 20px); height: calc(100dvh - 20px); max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); margin: 10px; border: 0; border-radius: 0; overflow: hidden; }
+  .ade-payers-window > .ade-catalog-header { flex-direction: row; align-items: center; flex-shrink: 0; min-height: 46px; padding: 0 8px; }
+  .ade-payers-window #ade-payers-back { margin-left: auto; color: var(--ade-header-text); background: transparent; border: 0; }
+  .ade-payers-window > .msg[role="status"] { display: none !important; }
+  .ade-payers-window > .msg[role="alert"] { flex-shrink: 0; margin: 0; overflow-wrap: anywhere; }
+  .ade-payers-columns { display: flex; padding: 8px; gap: 0; overflow: hidden; }
+  .ade-payers-window .ade-list-panel { width: 100%; flex: 1; min-height: 0; border: 0; overflow: hidden; }
+  .ade-payers-window .ade-list-panel[hidden] { display: none; }
+  .ade-payers-window .ade-list-actions { display: none; }
+  .ade-payers-window .dgv { box-sizing: border-box; border: 0; border-radius: 0; min-height: 0; }
+  .ade-payers-window .dgv__scroll { overflow-x: hidden; overscroll-behavior: contain; }
+  .ade-payers-window .dgv__row { user-select: none; -webkit-touch-callout: none; }
+  .ade-payers-window .dgv__hc { padding-inline: 4px; }
+  .ade-payers-window .dgv__rs { display: none; }
+  .ade-payers-window .ade-payers-footer { flex-shrink: 0; justify-content: space-between; padding: 6px 8px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+  .ade-years strong, .ade-years button { height: 33.6px; flex-basis: 33.6px; }
+  .ade-payers-window .ade-payers-mobile-action { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; width: 40px; height: 36px; padding: 0; font-size: 1.2rem; }
+  .ade-payers-window #ade-payers-close { display: none; }
 }
 @media (max-width: 600px) {
   .ade-record-body { padding: 16px; gap: 16px; }
@@ -223,6 +247,5 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
   .ade-form-pair { grid-template-columns: 1fr; gap: 16px; }
   .ade-form-pair .ade-form-field { grid-template-columns: 1fr; }
   .ade-group-editor { grid-template-columns: 1fr; }
-  .ade-years { flex-direction: row; flex-wrap: wrap; }
-  .ade-years strong { border-bottom: 0; }
+  .ade-record-window[data-kind="compact"] .ade-form-field { grid-template-columns: 120px minmax(0, 1fr); }
 }

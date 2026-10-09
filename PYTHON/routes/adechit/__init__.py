@@ -16,8 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def create_blueprint(authenticate=None, repository_factory=None, rights=None):
+    bp = Blueprint('adechit', __name__)
     # rights(context) -> the set of operations the signed-in user may do in this unit. Default: the
-    # AD roles of AVACONT_COMUN (slice ADE9-01); the local preview passes its own.
+    # AD roles of AVACONT_COMUN (slice AD10-01); the local preview passes its own.
     if rights is None:
         def rights(context):
             return drepturi.operations_of(context["email"], context["db_name"], SECTION)
@@ -57,6 +58,9 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.get('/adechit')
     def page():
         response = send_from_directory(current_app.static_folder, 'adechit.html')
+        if repository_factory is not None:
+            response.direct_passthrough = False
+            response.set_data(response.get_data(as_text=True).replace('<html lang="ro">', '<html lang="ro" data-ade-preview="true">', 1))
         response.headers.update({'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
                                  'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'"})
         return response

@@ -59,7 +59,7 @@ function Find-SolutionRoot {
 function Read-PushSettings {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
-        throw "push_settings.json not found: $Path  (copy PYTHON\AvacontPush\push_settings.example.json and fill Host/Port/User/RemoteRoot)."
+        throw "push_settings.json not found: $Path  (copy AvacontPush\push_settings.example.json and fill Host/Port/User/RemoteRoot)."
     }
     $s = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($k in 'Host', 'User', 'RemoteRoot') {
@@ -162,7 +162,7 @@ function Get-ServerLatest {
 $SolutionRoot = Find-SolutionRoot
 $ArtifactsDir = Join-Path $SolutionRoot 'artifacts'
 if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
-    $SettingsPath = Join-Path $SolutionRoot 'PYTHON\_push\push_settings.json'
+    $SettingsPath = Join-Path $SolutionRoot '_push\push_settings.json'
 }
 
 # --- 1. Prerequisites ----------------------------------------------------------

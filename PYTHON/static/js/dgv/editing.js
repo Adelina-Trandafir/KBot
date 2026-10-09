@@ -1,5 +1,6 @@
 // SLICE-ADE2-01/02: opt-in cell editing, independent of recycled row elements.
 import { Combobox } from '../components/combobox/combobox.js';
+import { DatePicker } from '../components/datepicker/datepicker.js';
 import eventBus from '../event-bus/event-bus.js';
 
 export function parseCell(raw, column) {
@@ -37,6 +38,7 @@ export const editing = {
     const state = { row, key, column, host, raw: row[key] ?? '', pending: false,
       abort: new AbortController(), value: row[key] };
     this._edit = state;
+    this._activeKey = key;
     if (column.editor === 'list') {
       state.combo = new Combobox(host, { staticData: column.options || [],
         onSelect: (value) => { state.raw = value; state.value = value; } });
@@ -52,13 +54,19 @@ export const editing = {
       state.input.addEventListener('input', () => { state.raw = state.input.value; }, { signal: state.abort.signal });
     }
     state.input.setAttribute('aria-label', column.title);
+    if (column.editor === 'date') {
+      state.source = state.input;
+      state.source.addEventListener('change', () => { state.raw = state.source.value; }, { signal: state.abort.signal });
+      state.picker = new DatePicker(state.source);
+      state.input = state.picker.field;
+    }
     host.addEventListener('click', (event) => event.stopPropagation(), { signal: state.abort.signal });
     host.addEventListener('dblclick', (event) => event.stopPropagation(), { signal: state.abort.signal });
     host.addEventListener('keydown', (event) => {
       event.stopPropagation();
       if (event.key === 'Escape') { event.preventDefault(); this.cancelEdit(); }
       if (event.key === 'Enter' || event.key === 'Tab') {
-        event.preventDefault(); this.commitEdit(event.key === 'Tab' ? (event.shiftKey ? -1 : 1) : 0);
+        event.preventDefault(); this.commitEdit(event.shiftKey ? -1 : 1);
       }
     }, { signal: state.abort.signal });
     this._selected = row;
@@ -75,6 +83,7 @@ export const editing = {
     this._edit = null;
     state.abort.abort();
     state.combo?.destroy();
+    state.picker?.destroy();
     state.host.remove();
     if (!this._destroyed) { this._renderWindow(true); this._root.focus(); }
     this._emit('onEditState', { state: 'idle', key: state.key });
@@ -84,11 +93,18 @@ export const editing = {
     const state = this._edit;
     if (!state || state.pending) return false;
     try {
+      if (state.picker) {
+        state.picker.commitText();
+        if (state.input.classList.contains('is-invalid')) throw new Error('Introduceți o dată validă, în format zz.ll.aaaa.');
+        state.raw = state.source.value;
+        state.picker.close();
+      }
       const value = state.column.editor === 'list' ? state.value : parseCell(String(state.raw), state.column);
       const message = state.column.validate?.(value, state.row);
       if (message) throw new Error(message);
       state.pending = true;
       state.input.disabled = true;
+      state.host.inert = true;
       state.host.setAttribute('aria-busy', 'true');
       this._emit('onEditState', { state: 'saving', key: state.key });
       const saved = await this._opts.onCellSave({ row: { ...state.row }, key: state.key, value,
@@ -100,15 +116,21 @@ export const editing = {
       eventBus.emit('dgv:cell-saved', { grid: this._opts.layoutId, key: state.key });
       this._emit('onCellSaved', { row: state.row, key: state.key });
       if (direction) {
-        const columns = this._visibleColumns().filter((column) => this.canEdit(state.row, column));
-        const next = columns[columns.findIndex((column) => column.key === state.key) + direction];
-        if (next) this.beginEdit(state.row, next.key);
+        const columns = this._visibleColumns();
+        const cells = this._items.filter((item) => item.kind === 'row')
+          .flatMap((item) => columns.map((column) => ({ row: item.row, column })));
+        const current = cells.findIndex((cell) => cell.row === state.row && cell.column.key === state.key);
+        for (let index = current + direction; current >= 0 && index >= 0 && index < cells.length; index += direction) {
+          const next = cells[index];
+          if (this.canEdit(next.row, next.column)) { this.beginEdit(next.row, next.column.key); break; }
+        }
       }
       return true;
     } catch (error) {
       if (this._destroyed || this._edit !== state) return false;
       state.pending = false;
       state.input.disabled = false;
+      state.host.inert = false;
       state.input.setAttribute('aria-invalid', 'true');
       state.host.setAttribute('aria-busy', 'false');
       state.host.title = error.message;

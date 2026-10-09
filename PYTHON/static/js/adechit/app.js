@@ -101,9 +101,9 @@ function syncPickers() {
 }
 
 function situationColumns(canEdit) {
-  const number = (key, title, width = 90) => ({ key, title, valueType: ValueType.Number, width, align: 'right' });
+  const number = (key, title, width = 90) => ({ key, title, valueType: ValueType.Number, width, align: 'right', filter: false });
   return [
-    { key: 'Nume', title: 'Copil', valueType: ValueType.Text, width: 140 },
+    { key: 'Nume', title: 'Copil', valueType: ValueType.Text, width: 140, filter: true },
     number('SID', 'S.I. Debit', 96), number('SIC', 'S.I. Credit', 96),
     { ...number('ZilePrezenta', 'Prezență', 76), editable: canEdit, editor: 'number', nullable: false,
       validate: (value) => Number.isInteger(value) && value >= 0 && value <= 31 ? '' : 'Introduceți un număr întreg între 0 și 31.' },
@@ -223,7 +223,7 @@ function createGrid() {
   state.plan = planColumns();
   const canEdit = !selectedMonth()?.Inchisa;
   state.grid = new DataGrid($('ade-grid'), { columns: situationColumns(canEdit), rows: state.shownRows,
-    rowKey: 'IDZ', editable: canEdit, layoutId: 'ade.attendance', layout: { fill: 'Nume', hidden: state.plan.hidden, widths: state.plan.nameWidth ? { Nume: state.plan.nameWidth } : {} }, footer: true,
+    rowKey: 'IDZ', mobileRowScale: 1.2, editable: canEdit, layoutId: 'ade.attendance', layout: { fill: 'Nume', hidden: state.plan.hidden, widths: state.plan.nameWidth ? { Nume: state.plan.nameWidth } : {} }, footer: true,
     footerCaption: '{0} copii', frozen: 1, onSelect: selectChild, onCellSave: saveAttendance,
     onCellSaved: ({ row }) => { state.selected = row; loadLedger().catch(report); },
     onEditError: ({ error }) => { $('ade-save-state').textContent = 'Salvarea nu a reușit; valoarea introdusă a fost păstrată.'; report(error); } });

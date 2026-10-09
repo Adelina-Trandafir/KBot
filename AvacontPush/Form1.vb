@@ -27,10 +27,12 @@ Partial Public Class Form1
             _settings = AppConfigStore.Load()
 
             If String.IsNullOrWhiteSpace(_settings.LocalRoot) Then
-                ' Default: parent of the app folder. The EXE is deployed to PYTHON\_push\,
-                ' so the parent is the PYTHON folder itself.
+                ' Default: the PYTHON folder next to the app folder. The EXE is deployed to
+                ' <repo>\_push\, so the parent is the repo root and PYTHON sits inside it.
                 Dim baseDir = New DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar))
-                _settings.LocalRoot = If(baseDir.Parent IsNot Nothing, baseDir.Parent.FullName, baseDir.FullName)
+                Dim k_parent = If(baseDir.Parent IsNot Nothing, baseDir.Parent.FullName, baseDir.FullName)
+                Dim k_python = Path.Combine(k_parent, "PYTHON")
+                _settings.LocalRoot = If(Directory.Exists(k_python), k_python, k_parent)
             End If
 
             LoadSettingsToUi()

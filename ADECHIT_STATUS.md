@@ -63,6 +63,51 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
 
+- **SLICE-ADE6-14, 09.10.2026:** filtrare exclusiv pentru Nume/Grupa în toate
+  DGV ADE, pe PC și mobil. Antetele și footerele listelor folosesc culorile comune
+  ale DGV-ului principal. SCRIS LOCAL, fără teste.
+
+- **SLICE-ADE6-13, 09.10.2026:** fereastra Plătitori pe mobil are margine exterioară
+  de 10px pe toate laturile; paddingul interior din ADE6-12 se păstrează.
+  SCRIS LOCAL, fără teste.
+
+- **SLICE-ADE6-12, 09.10.2026:** padding mobil de 8px pentru Plătitori, buton ➡️
+  pe fiecare rând Grupe/Copii în locul apăsării lungi. Coloana de 40px se scade
+  exclusiv din denumire; CNP/I își păstrează lățimile. Rândurile tuturor DGV ADE
+  sunt cu 20% mai înalte pe mobil. SCRIS LOCAL, fără teste.
+
+- **SLICE-ADE6-11, 09.10.2026:** toate coloanele de stare din liste au antetul I
+  (închis), fără filtru. La plătitori I este inversul lui Activ numai pentru afișare;
+  datele și editorul păstrează Activ. SCRIS LOCAL, fără teste.
+
+- **SLICE-ADE6-10, 09.10.2026:** Plătitori pe mobil ocupă întregul ecran, cu
+  un singur tabel vizibil și scroll numai în tabel. Apăsare lungă Grupe → Copii →
+  Plătitori, înapoi în antet, acțiuni emoji în footer și coloane proporționale.
+  SCRIS LOCAL, fără teste; verificarea vizuală aparține utilizatorului.
+
+- **SLICE-ADE6-09, 09.10.2026:** rândul de mesaje și spațiul rezervat lui sunt
+  eliminate pe mobil; zona de lucru începe cu comboboxurile. SCRIS LOCAL, fără teste.
+
+- **SLICE-ADE6-08, 09.10.2026:** bara lună/grupă ascunsă complet pe PC, fără rând
+  rezervat; tabelul începe la nivelul panoului LUNA / ANUL. Pe mobil rămân doar
+  comboboxurile, fără text explicativ. SCRIS LOCAL, fără teste vizuale.
+
+- **SLICE-ADE1-06, 09.10.2026:** pornirea preview-ului și deschiderea aplicației
+  verificate nonvizual la cererea utilizatorului. Pagina locală este marcată explicit,
+  gate-ul nu o mai redirecționează spre autentificare, iar / și /portal revin la /adechit.
+  HTTP 200 pentru context/situație/catalog/configurarea chitanțelor; browser fără token,
+  fără erori JS/HTTP. Server local pornit pe 5050; nu s-a verificat aspectul.
+
+- **SLICE-ADE1-05, 09.10.2026:** corectat NameError la pornire: fabrica de blueprint
+  creează acum `bp` înaintea decoratorilor rutelor. SCRIS LOCAL; fără pornire/teste,
+  conform cerinței utilizatorului.
+
+- **SLICE-ADE6-07, 09.10.2026:** Enter trece la următoarea celulă editabilă,
+  clic unic pe PC, calendar comun în DGV; antete modale ca antetul principal,
+  ANI aliniat cu tabelul educatorilor, + Adaugă în footer, formulare copil/plătitor
+  la jumătate din lățime și spațiere redusă. SCRIS LOCAL, fără teste la cererea
+  utilizatorului; verificarea funcțională îi aparține. Server nepublicat.
+
 - **SLICE-ADE6-06, 09.10.2026:** Plătitori urmează cele patru machete: trei liste
   alăturate, Adaugă/Modifică, formulare uniforme pentru grupe/copii/plătitori,
   combobox, calendare comune și validare CNP în JS/API. Salvare atomică pentru

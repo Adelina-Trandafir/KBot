@@ -1,6 +1,12 @@
 /* SLICE-ADE2: opt-in editors use the existing grid theme. */
 .dgv__cell.is-editable { cursor: text; }
 .dgv__editor { width: 100%; height: 100%; }
+.dgv__cell.is-action { padding: 0; }
+.dgv__cell-action { width: 100%; height: 100%; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.dgv__cell-action:focus-visible { outline: 2px solid var(--dgv-accent); outline-offset: -2px; }
+.dgv__editor .kdp { width: 100%; height: 100%; }
+.dgv__editor .kdp__field { padding-inline: 24px; }
+.dgv__footer-action { height: 100%; padding: 0 6px; border: 0; color: var(--dgv-text); background: transparent; font: inherit; font-weight: 650; cursor: pointer; }
 .dgv__editor input { box-sizing: border-box; width: 100%; height: 100%; color: var(--dgv-text); background: var(--dgv-back); border: 1px solid var(--dgv-accent); }
 .dgv__editor[aria-busy="true"] { opacity: .65; }
 .dgv__editor input[aria-invalid="true"] { outline: 2px solid var(--dgv-accent); }

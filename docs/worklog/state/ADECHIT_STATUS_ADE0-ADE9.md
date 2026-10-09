@@ -61,13 +61,15 @@ Plan: [ADE1 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE1-02 | Pagina de bază cu aspectul portalului și TOATE sistemele comune conectate | TESTAT LOCAL — app.js, temă, mesaje și curățare conectate |
 | SLICE-ADE1-03 | Preview local la localhost:5050, date de probă și instrucțiuni de pornire | TESTAT LOCAL — 127.0.0.1:5050 probat în browser |
 | SLICE-ADE1-04 | Refacerea paginii Prezență după organizarea ecranului Access | TESTAT LOCAL — tree-uri custom, workspace compact și tab-control financiar probate vizual |
+| SLICE-ADE1-05 | Corectarea inițializării blueprintului la pornire | SCRIS LOCAL — fără teste la cererea utilizatorului; [worklog](../SLICE-ADE1-05-initializare-blueprint.md) |
+| SLICE-ADE1-06 | Pornire preview și deschiderea aplicației fără redirecționare la portal | TESTAT LOCAL NONVIZUAL — HTTP și browser fără token; [worklog](../SLICE-ADE1-06-pornire-preview.md) |
 
 ### Current focus
 
 - Continuarea este în [worklog](../SLICE-ADE1-02-pagina-si-preview.md). `.venv` folosește
   runtime-ul local Python 3.12.14; preview-ul este local-only și nu validează serverul.
 - Ecranul refăcut este descris în [worklog](../SLICE-ADE1-04-ecran-prezenta-access.md).
-  Depinde de maparea ADE0; următoarea subfelie liberă: **ADE1-05**.
+  Depinde de maparea ADE0; următoarea subfelie liberă: **ADE1-07**.
 - Definim o singură sursă pentru codul comun. Stabilim explicit cum ajung fișierele
   din proiectul ADECHIT în arborele publicat de AvacontPush, fără copiere manuală ambiguă.
 - Inventariem importurile comune: controale, EventBus, ListenerTracker, registru,
@@ -212,15 +214,26 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE6-04 | Arbore lună/grupă, căutare, preluare copii noi și recalcul după editarea prezenței | TESTAT LOCAL — API 9/9 și UI probat vizual |
 | SLICE-ADE6-05 | Ferestre modale Plătitori/Taxe, editare în celule și salvare atomică | TESTAT LOCAL — API 11/11 și browser 5050; server nevalidat |
 | SLICE-ADE6-06 | Trei liste, formulare uniforme după machete și validare CNP JS/API | TESTAT LOCAL — 16/16 API; browser/telefon; server nevalidat |
+| SLICE-ADE6-07 | Editare DGV din taste/clic și compactarea formularelor | SCRIS LOCAL — fără teste, la cererea utilizatorului |
+| SLICE-ADE6-08 | Bara de selecție numai pe mobil și alinierea tabelului pe PC | SCRIS LOCAL — [worklog](../SLICE-ADE6-08-bara-selectie-mobil.md); fără teste vizuale |
+| SLICE-ADE6-09 | Eliminarea rândului de mesaje pe mobil | SCRIS LOCAL — [worklog](../SLICE-ADE6-09-mobil-fara-mesaj.md); fără teste |
+| SLICE-ADE6-10 | Plătitori mobil pe ecran complet și navigare între liste prin apăsare lungă | SCRIS LOCAL — [worklog](../SLICE-ADE6-10-platitori-mobil.md); fără teste |
+| SLICE-ADE6-11 | Coloane I fără filtre și afișarea inversă a Activ pentru plătitori | SCRIS LOCAL — [worklog](../SLICE-ADE6-11-coloane-inchis.md); fără teste |
+| SLICE-ADE6-12 | Padding mobil, buton de deschidere pe rând și înălțime DGV +20% | SCRIS LOCAL — [worklog](../SLICE-ADE6-12-butoane-deschidere-mobil.md); fără teste |
+| SLICE-ADE6-13 | Margine exterioară de 10px pentru Plătitori mobil | SCRIS LOCAL — [worklog](../SLICE-ADE6-13-margine-fereastra-mobil.md); fără teste |
+| SLICE-ADE6-14 | Filtrare numai Nume/Grupa și culori DGV comune | SCRIS LOCAL — [worklog](../SLICE-ADE6-14-filtre-culori-dgv.md); fără teste |
 
 ### Current focus
 
+- [ADE6-07](../SLICE-ADE6-07-editare-dgv-formulare.md): navigare Enter între celulele
+  disponibile, clic unic numai pe PC, calendar comun, ANI aliniat, antete comune și
+  formulare compacte. Verificarea este lăsată utilizatorului conform cerinței explicite.
 - Pagina cu cele trei liste și formularele este descrisă în [ADE6-06](../SLICE-ADE6-06-machete-platitori.md).
   Schema locală include perioadele educatorilor, telefonul și jurnalul copilului din AD_03.
 - Ferestrele inițiale Plătitori/Taxe sunt descrise în [ADE6-05](../SLICE-ADE6-05-ferestre-platitori-taxe.md).
   Editările sunt locale până la «Salvează și închide»; conflictul sau eroarea păstrează fereastra.
 - Implementarea prezenței este descrisă în [worklog](../SLICE-ADE6-04-workspace-prezenta.md).
-  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-07**.
+  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-15**.
 - Refolosim aspectul portalului și controalele comune; structura arborelui și coloanele
   urmează operațiile Access incluse, stabilite în ADE0.
 - Acceptare: modificările se salvează prin API cu validare; prezența lunilor închise refuză scrierea;
@@ -329,21 +342,22 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
   în ADE0; nu sunt declarate automat necesare sau implementate în prima versiune.
 - Validarea pe server și tipărirea reală rămân în așteptare până la confirmarea utilizatorului.
 
-## Slice ADE9
+## Slice AD10
 
-Autorizare pe secțiuni (cerere operator 09.10.2026). **Atenție:** planul ADE1–ADE8 menționează «ADE9» pentru rapoartele Access; numărul se confirmă/se renumerotează.
+Autorizare pe secțiuni (cerere operator 09.10.2026). Numerotare: AD10 (nu ADE9, care rămâne rapoartele Access).
 
 ### Registry
 
 | Subfeliă | Titlu | Stare |
 | --- | --- | --- |
-| SLICE-ADE9-01 | ADECHIT doar cu logare; roluri/secțiuni/drepturi per unitate în AVACONT_COMUN (roluri românești: AD_CITIRE, AD_PREZENTA, AD_PLATI, ...); AD_Permissions eliminat | COD SCRIS, NERULAT — SQL neaplicat, fără teste, fără probă în browser |
+| SLICE-AD10-01 | ADECHIT doar cu logare; roluri/secțiuni/drepturi per unitate în AVACONT_COMUN (roluri românești: AD_CITIRE, AD_PREZENTA, AD_PLATI, ...); AD_Permissions eliminat | COD SCRIS, NERULAT — SQL neaplicat, fără teste, fără probă în browser |
+| SLICE-AD10-02 | Roluri KB ca seturi de operații (Roluri_Operatii), etapa 1 fără interdicții | COD SCRIS, NERULAT — AD10_03 neaplicat |
 
 ### Current focus
 
-- Worklog: [SLICE-ADE9-01](../SLICE-ADE9-01-drepturi-pe-sectiuni.md). Următoarea subfeliă liberă: **ADE9-02**.
+- Worklog: [SLICE-AD10-01](../SLICE-AD10-01-drepturi-pe-sectiuni.md). Următoarea subfeliă liberă: **AD10-03**.
 
 ### Open threads
 
-- Aplicat `sql/ADE9_01_sectiuni_roluri.sql` + `ADE9_02` (DROP AD_Permissions) + dat rolurile AD_ utilizatorilor; până atunci ADECHIT dă 403 tuturor.
+- Aplicat `sql/AD10_01_sectiuni_roluri.sql` + `AD10_02` (DROP AD_Permissions) + dat rolurile AD_ utilizatorilor; până atunci ADECHIT dă 403 tuturor.
 - Migrare `AD_Permissions` → `Utilizatori_Roluri`; link ADECHIT în meniul portalului; ecran de administrare roluri.

@@ -1,4 +1,4 @@
--- SLICE-ADE9-01: AD_Permissions (invented, empty everywhere) is gone; rights live in AVACONT_COMUN.
+-- SLICE-AD10-01: AD_Permissions (invented, empty everywhere) is gone; rights live in AVACONT_COMUN.
 -- Run this query, then run the DROP statements it prints (one per unit database that has the table).
 SELECT CONCAT('DROP TABLE IF EXISTS `', table_schema, '`.`AD_Permissions`;') AS stmt
 FROM information_schema.tables WHERE table_name = 'AD_Permissions';

@@ -12,13 +12,14 @@ dotnet build -c Release
 
 ## Deploy
 
-Copy the published output into `PYTHON\_push\` (the app must live in a subfolder of
-the PYTHON folder so it never lists its own files). Then:
+Copy the published output into `_push\` in the repo root, next to the PYTHON folder (the app
+must live outside the PYTHON folder so it never lists its own files). Then:
 
 1. Copy `push_settings.example.json` to `push_settings.json` next to the EXE.
 2. If needed, set `LocalRoot`.
-   - If `LocalRoot` is left empty, it defaults to the parent of the app folder
-     (i.e. the PYTHON folder), which is correct when the EXE sits in `PYTHON\_push\`.
+   - If `LocalRoot` is left empty, it defaults to the `PYTHON` folder next to the app folder
+     (falling back to the parent of the app folder if there is none), which is correct when
+     the EXE sits in `_push\` in the repo root.
 
 **Login (slice 0103-02): the SSH key, no password.** AvacontPush logs in with the operator's SSH
 key, the same one VS Code uses, so nothing is asked. The key is looked up in this order: the

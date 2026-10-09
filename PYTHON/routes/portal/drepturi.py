@@ -1,5 +1,5 @@
 """
-Rights per SECTION of the site (slice ADE9-01).
+Rights per SECTION of the site (slice AD10-01).
 
 A user holds ROLES per unit (AVACONT_COMUN.Utilizatori_Roluri); a role belongs to one section
 (AVACONT_COMUN.Roluri.Sectiune: AD = ADECHIT, later VR, AV) and stands for one operation
@@ -10,6 +10,8 @@ A user holds ROLES per unit (AVACONT_COMUN.Utilizatori_Roluri); a role belongs t
     allowed(email, db_name, section, op)    -> bool
 """
 import logging
+
+import mysql.connector
 
 from utils.database import get_kbot_comun_connection
 
@@ -31,26 +33,55 @@ def _rows(sql, params):
             conn.close()
 
 
+def _safe_rows(sql, params):
+    """Backwards compatibility: while the role tables are not in AVACONT_COMUN yet (script
+    sql/AD10_01 not applied) or the read fails, the user simply has NO section rights -- closed, not
+    open -- and the rest of the portal (sign-in, units, data views) keeps working as before."""
+    try:
+        return _rows(sql, params)
+    except mysql.connector.Error:
+        return []
+
+
+SECTION_KB = "KB"
+
+
 def sections_of(email, db_name):
+    """The sections the user may enter in this unit. KB: anybody with a row in Unitati_Utilizatori
+    for the unit; the other sections: the roles granted in Utilizatori_Roluri."""
     if not email or not db_name:
         return []
-    rows = _rows(
+    granted = _safe_rows(
         "SELECT DISTINCT r.Sectiune AS Sectiune FROM Utilizatori_Roluri ur "
-        "JOIN Roluri r ON r.IdRol = ur.IdRol WHERE ur.UN = %s AND ur.DC = %s ORDER BY r.Sectiune",
+        "JOIN Roluri r ON r.IdRol = ur.IdRol WHERE ur.UN = %s AND ur.DC = %s",
         (email, db_name),
     )
-    return [r["Sectiune"] for r in rows]
+    member = _safe_rows("SELECT 1 AS x FROM Unitati_Utilizatori WHERE UN = %s AND DC = %s", (email, db_name))
+    found = {r["Sectiune"] for r in granted}
+    if member:
+        found.add(SECTION_KB)
+    return sorted(found)
 
 
 def operations_of(email, db_name, section):
+    """The operations the user may do in this section and unit. KB: from the role named in
+    Unitati_Utilizatori.Rol (role code KB_<ROL>); the other sections: from the granted roles."""
     if not email or not db_name or not section:
         return set()
-    rows = _rows(
-        "SELECT DISTINCT r.Operatie AS Operatie FROM Utilizatori_Roluri ur "
-        "JOIN Roluri r ON r.IdRol = ur.IdRol "
-        "WHERE ur.UN = %s AND ur.DC = %s AND r.Sectiune = %s",
-        (email, db_name, section),
-    )
+    if section == SECTION_KB:
+        rows = _safe_rows(
+            "SELECT DISTINCT ro.Operatie AS Operatie FROM Unitati_Utilizatori uu "
+            "JOIN Roluri r ON r.Cod = CONCAT('KB_', UPPER(uu.Rol)) AND r.Sectiune = %s "
+            "JOIN Roluri_Operatii ro ON ro.IdRol = r.IdRol WHERE uu.UN = %s AND uu.DC = %s",
+            (section, email, db_name),
+        )
+    else:
+        rows = _safe_rows(
+            "SELECT DISTINCT ro.Operatie AS Operatie FROM Utilizatori_Roluri ur "
+            "JOIN Roluri r ON r.IdRol = ur.IdRol AND r.Sectiune = %s "
+            "JOIN Roluri_Operatii ro ON ro.IdRol = r.IdRol WHERE ur.UN = %s AND ur.DC = %s",
+            (section, email, db_name),
+        )
     return {r["Operatie"] for r in rows}
 
 

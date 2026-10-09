@@ -2,7 +2,7 @@ import { DataGrid, ValueType } from '../dgv/datagrid.js';
 import { showMessage } from '../portal/messages.js';
 import { bindPayers } from './payers.js';
 
-const text = (key, title, width = 150) => ({ key, title, width, valueType: ValueType.Text, editable: true });
+const text = (key, title, width = 150) => ({ key, title, width, valueType: ValueType.Text, editable: true, filter: key === 'Nume' || key === 'Grupa' });
 const flag = (key, title) => ({ ...text(key, title, 100),
   valueType: ValueType.Boolean, format: 'yesNo',
   parse: (raw) => {
@@ -23,10 +23,10 @@ export function bindCatalogs({ api, context, refresh }) {
   let sequence = 0;
   let request = null;
   const error = (failure) => { console.error('[ADE catalog]', failure); showMessage(message, failure.message, 'error'); };
-  const hint = () => showMessage(message, 'Editați cu dublu clic sau Enter. Pentru bife scrieți Da sau Nu. Salvați pentru a închide fereastra.', 'info');
+  const hint = () => showMessage(message, 'Pe PC editați cu un clic; pe mobil cu dublu clic. Enter confirmă și trece la următoarea celulă editabilă. Pentru bife scrieți Da sau Nu. Salvați pentru a închide fereastra.', 'info');
   const grid = (host, table, rows, columns, onSelect) => {
     const key = context().schema[table].key;
-    const instance = new DataGrid(host, { columns, rows, rowKey: key, editable: context().permissions.includes('catalog'),
+    const instance = new DataGrid(host, { columns, rows, rowKey: key, mobileRowScale: 1.2, editable: context().permissions.includes('catalog'),
       theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern',
       footer: true, footerCaption: '{0} înregistrări', layoutId: `ade.catalog.${table}`, onSelect,
       onCellSave: ({ row, key: field, value }) => {

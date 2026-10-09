@@ -27,7 +27,7 @@
 
   Transport: Windows OpenSSH sftp.exe in batch mode, one session, ONE password
   prompt (typed at the OpenSSH prompt, never stored). Host / Port / User /
-  RemoteRoot come from PYTHON\_push\push_settings.json, the same file
+  RemoteRoot come from _push\push_settings.json, the same file
   AvacontPush uses. The package goes up as *.part and is renamed into place, and
   latest.json is written LAST, so a client can never read a version whose file
   is not fully there.
@@ -124,7 +124,7 @@ function Find-SolutionRoot {
 function Read-PushSettings {
     param([string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
-        throw "push_settings.json not found: $Path  (copy PYTHON\AvacontPush\push_settings.example.json and fill Host/Port/User/RemoteRoot)."
+        throw "push_settings.json not found: $Path  (copy AvacontPush\push_settings.example.json and fill Host/Port/User/RemoteRoot)."
     }
     $s = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($k in 'Host', 'User', 'RemoteRoot') {
@@ -244,7 +244,7 @@ $KindName       = if ($IncludeAccess) { 'access' } else { 'non-access' }
 $ZipSuffix      = if ($IncludeAccess) { '' } else { '_noaccess' }
 Write-Step "Audience: $($KindName.ToUpper()) package."
 if ([string]::IsNullOrWhiteSpace($SettingsPath)) {
-    $SettingsPath = Join-Path $SolutionRoot 'PYTHON\_push\push_settings.json'
+    $SettingsPath = Join-Path $SolutionRoot '_push\push_settings.json'
 }
 
 # --- 1. Prerequisites first: fail before the (long) build, not after -----------

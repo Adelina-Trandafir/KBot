@@ -41,6 +41,7 @@ const DEFAULTS = {
   autoSize: true,
   layoutId: null, // the id the layout provider is asked for
   layout: null, // an explicit layout; wins over the provider
+  proportionalWidths: false, // treat column widths as weights of the available viewport width
 };
 
 const COLUMN_DEFAULTS = {
@@ -87,6 +88,13 @@ export class DataGrid {
     this._registryName = `DataGrid-${++gridSequence}`;
     registerInstance(this._registryName, this);
     this._opts = { ...DEFAULTS, ...options };
+    const rowHeight = this._opts.rowHeight;
+    const mobileRows = matchMedia('(max-width: 980px)');
+    const scaleRows = () => {
+      this._opts.rowHeight = rowHeight * (mobileRows.matches ? (options.mobileRowScale || 1) : 1);
+      if (options.headerHeight === undefined) this._opts.headerHeight = this._opts.rowHeight;
+    };
+    scaleRows();
     // the header is as tall as a row unless the page asks for another height
     if (options.headerHeight === undefined) this._opts.headerHeight = this._opts.rowHeight;
     this._container = container;
@@ -104,11 +112,15 @@ export class DataGrid {
     this._frame = 0;
     this._fillKey = null;
     this._extra = 0;
+    this._widthScale = 1;
 
     this._build();
     this.setColumns(options.columns || []);
     this.setGroups(options.groups || []);
     this.setRows(options.rows || []);
+    if (options.mobileRowScale) mobileRows.addEventListener('change', () => {
+      scaleRows(); this._refresh({ rebuildHeader: true });
+    }, { signal: this._abort.signal });
   }
 
   // ------------------------------------------------------------------ public API
@@ -264,7 +276,7 @@ export class DataGrid {
     // Synchronous: a window of rows is cheap, and a frame callback would not run in a hidden tab.
     this._scroll.addEventListener('scroll', () => this._renderWindow(false), { signal, passive: true });
     this._resizeObserver = new ResizeObserver(() => {
-      if (this._fillKey && this._head.childElementCount) {
+      if ((this._fillKey || this._opts.proportionalWidths) && this._head.childElementCount) {
         this._applyWidths();
         this._scheduleRender(true);
       } else this._scheduleRender();
@@ -333,7 +345,10 @@ export class DataGrid {
   }
 
   /** The width a column is drawn at: its own, plus the free width when it is the fill column. */
-  _w(col) { return col.width + (col.key === this._fillKey ? this._extra : 0); }
+  _w(col) {
+    if (!this._opts.proportionalWidths) return col.width + (col.key === this._fillKey ? this._extra : 0);
+    return col.fixedWidth ? col.width : Math.max(0, col.width * this._widthScale - (col.widthDeduction || 0));
+  }
   _visibleColumns() { return this._columns.filter((c) => c.visible); }
 
   _refresh({ rebuildHeader = false } = {}) {
@@ -427,8 +442,12 @@ export class DataGrid {
   _applyWidths() {
     const cols = this._visibleColumns();
     const base = cols.reduce((s, c) => s + c.width, 0);
+    const weighted = cols.filter((col) => !col.fixedWidth).reduce((sum, col) => sum + col.width, 0);
+    const fixed = cols.filter((col) => col.fixedWidth).reduce((sum, col) => sum + col.width, 0);
+    const deductions = cols.reduce((sum, col) => sum + (col.widthDeduction || 0), 0);
+    this._widthScale = weighted ? Math.max(0, this._availWidth() - fixed + deductions) / weighted : 1;
     this._extra = this._fillKey ? Math.max(0, this._availWidth() - base) : 0;
-    const total = base + this._extra;
+    const total = this._opts.proportionalWidths ? cols.reduce((sum, col) => sum + this._w(col), 0) : base + this._extra;
     this._totalWidth = total;
     [this._head, this._window, this._foot].forEach((node) => { node.style.minWidth = `${total}px`; });
     this._viewport.style.minWidth = `${total}px`;
@@ -580,6 +599,15 @@ export class DataGrid {
           cell.replaceChildren(indicator);
           cell.classList.add('is-checkbox');
         }
+        if (col.display === 'button') {
+          const button = el('button', 'dgv__cell-action', col.actionText);
+          button.type = 'button';
+          button.setAttribute('aria-label', col.actionLabel || col.title || 'Deschide');
+          button.addEventListener('click', (event) => {
+            event.stopPropagation(); this._emit('onCellAction', { row: item.row, key: col.key });
+          });
+          cell.replaceChildren(button); cell.classList.add('is-action');
+        }
         if (this.canEdit(item.row, col)) cell.classList.add('is-editable');
         if (this._edit?.row === item.row && this._edit.key === col.key) {
           cell.textContent = '';
@@ -658,7 +686,7 @@ export class DataGrid {
   _buildFooter() {
     const cols = this._visibleColumns();
     const hasAggregate = cols.some((c) => c.aggregate);
-    const show = this._opts.footer && (hasAggregate || this._opts.footerCaption);
+    const show = this._opts.footer && (hasAggregate || this._opts.footerCaption || this._opts.footerAction);
     this._foot.hidden = !show;
     this._foot.textContent = '';
     if (!show) return;
@@ -669,6 +697,13 @@ export class DataGrid {
       if (col.aggregate) text = this._aggregateText(col, rows);
       else if (ci === 0 && this._opts.footerCaption) text = this._opts.footerCaption.replace('{0}', String(rows.length));
       const cell = this._cell(col, text, 'is-foot');
+      if (ci === 0 && this._opts.footerAction) {
+        const action = this._opts.footerAction;
+        const button = el('button', 'dgv__footer-action', action.label);
+        button.type = 'button';
+        button.addEventListener('click', () => this._emit('onFooterAction'));
+        cell.replaceChildren(button);
+      }
       this._foot.appendChild(cell);
     });
     this._positionFrozen(this._foot);
@@ -681,14 +716,17 @@ export class DataGrid {
     return { node: rowNode, item: this._items[Number(rowNode.dataset.i)] };
   }
 
-  _onRowClick(ev) {
-    if (this._edit) return;
-    this._activeKey = ev.target.closest('.dgv__cell')?.dataset.key;
+  async _onRowClick(ev) {
+    const key = ev.target.closest('.dgv__cell')?.dataset.key;
     const hit = this._itemFromEvent(ev);
     if (!hit || !hit.item) return;
+    if (this._edit && !await this.commitEdit()) return;
+    if (this._destroyed) return;
+    this._activeKey = key;
     if (hit.item.kind === 'gh') { this._toggleGroup(hit.item); return; }
     if (hit.item.kind !== 'row') return;
     this._select(hit.item.row);
+    if (matchMedia('(min-width: 981px) and (pointer: fine)').matches && this.beginEdit(hit.item.row, key)) return;
     this._root.focus({ preventScroll: true });
   }
 

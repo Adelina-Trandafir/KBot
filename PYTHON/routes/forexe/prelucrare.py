@@ -77,6 +77,7 @@ from utils.database import get_kbot_connection
 # raporteaza la coada. Cu `KBOT_TIMING=0` in mediu, tot ce urmeaza e o citire de
 # variabila de mediu si atat.
 from utils import timing
+from utils import clsf_pair
 from utils import asociere_log as journal
 
 from . import forexe_bp
@@ -283,6 +284,13 @@ _IND_UPDATE_SQL = (
     "UPDATE FX_Indicatori SET Angajament_Legal = %s, Credit_Bugetar_Definitiv = %s "
     "WHERE CodAngajament = %s AND CodIndicator = %s"
 )
+# An indicator downloaded BEFORE its classification existed has IdClsf NULL (find_id_clsf only warns).
+# Once the classification is there (a later download, or added by hand) the link is filled in --
+# only over an empty IdClsf, never over a value, so an indicator already linked is not moved.
+_IND_FILL_CLSF_SQL = (
+    "UPDATE FX_Indicatori SET IdClsf = %s "
+    "WHERE CodAngajament = %s AND CodIndicator = %s AND (IdClsf IS NULL OR IdClsf = 0)"
+)
 _BUGET_CLSF_UPSERT_SQL = (
     "INSERT INTO FX_Indicatori_Buget (IdClsf, IdUnitate, CreditBugetar) "
     "VALUES (%s, %s, %s) "
@@ -399,7 +407,8 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
             ))
         else:
             # ATENTIE, comportament portat fidel si CONTRAINTUITIV: ramura Edit NU
-            # rescrie `IdUnitate`, `IdClsf`, `SS` sau `NrCrt`. Deci daca indicatorul
+            # rescrie `IdUnitate`, `SS` sau `NrCrt` (nici `IdClsf`, cu o singura abatere
+            # voita: un `IdClsf` GOL se completeaza, vezi `_IND_FILL_CLSF_SQL`). Deci daca indicatorul
             # exista deja, alegerea de unitate pe care tocmai a facut-o operatorul NU
             # ajunge in rand -- se aplica abia la un insert. Access facea exact la
             # fel: intreba prin `FX_Unitate` si apoi arunca raspunsul pe aceasta
@@ -408,6 +417,10 @@ def _step2_indicatori(cursor, cod: str, indicators: list, units: dict,
                 ang_legal, credit_def,
                 cod, ind["cod_indicator"],
             ))
+            if id_clsf:
+                cursor.execute(_IND_FILL_CLSF_SQL, (id_clsf, cod, ind["cod_indicator"]))
+                # Payments, receptions, history and reservations copied the empty IdClsf.
+                clsf_pair.fill_children(cursor, cod_ai(cod, ind["cod_indicator"]))
         # The credit FOREXE reports for the classification (slice 0108). An indicator whose
         # classification could not be resolved has no row to write it to (find_id_clsf warned).
         if id_clsf:

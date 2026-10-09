@@ -6,6 +6,16 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.0 (09.10.2026)
+
+<!-- release: utc=2026-10-09T08:30:00Z -->
+<!-- felii: SLICELESS -->
+
+- Un angajament cu o clasificatie adaugata manual in K-BOT se poate acum fundamenta: nu mai apare eroarea de legare.
+- Cand adaugati clasificatii noi, indicatorii care le asteptau se leaga singuri de ele.
+- La descarcarea din FOREXE, un indicator ramas fara clasificatie se leaga de ea imediat ce clasificatia exista.
+- Ordonantarea nu mai da «Clasificatia lipseste» / «Cod SSI lipsa» pe platile unui indicator legat acum de clasificatie.
+
 ## 1.1.1.9 (08.10.2026)
 
 <!-- release: utc=2026-10-08T05:00:33Z -->

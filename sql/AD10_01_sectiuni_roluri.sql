@@ -1,4 +1,4 @@
--- SLICE-ADE9-01: rights per SECTION of the site, by role, per unit.  Target: AVACONT_COMUN.
+-- SLICE-AD10-01: rights per SECTION of the site, by role, per unit.  Target: AVACONT_COMUN.
 -- A user can hold roles in several sections (KB = K-BOT itself, AD = ADECHIT, later VR, AV).
 -- A role belongs to ONE section and stands for ONE operation of that section (names in Romanian,
 -- no diacritics: AD_CITIRE, AD_PREZENTA, ...). The grant is (user, unit, role); a user holds
