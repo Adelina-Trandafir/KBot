@@ -8,7 +8,7 @@ EDITABLE = {
     'Grupe': 'Grupa',
     'Platitori': 'Nume CNP DataIntrare',
     'Platitori_sub': 'IDP Nume Adresa CNP_Platitor CUI Cont Banca Telefon EMail TrimiteMail Activ',
-    'ValoriTaxe': 'TaxaZilnica Expl Activ',
+    'ValoriTaxe': 'TaxaZilnica Expl Activ DeLa',
     'Prezenta': 'ZilePrezenta',
 }
 EDITABLE = {table: fields.split() for table, fields in EDITABLE.items()}

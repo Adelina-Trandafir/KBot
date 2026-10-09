@@ -95,14 +95,14 @@ Sunt sărite doar butoanele care nu au loc deloc pe ecranul tău (de exemplu lis
 Îl pornești din meniul «?» (**Tururi ghidate** sau butonul **«Tur ghidat»** al unui rezultat), din pagina lui de ajutor
 («▶ Tur ghidat: ...») sau din pagina de start a ajutorului, unde sunt toate.
 
-**Turul ferestrei principale pornește și singur**, la fiecare pornire a K-BOT, până când:
+**Turul ferestrei principale nu pornește singur** (la început). Dacă bifezi în **Setări › Aplicație**
+«Arată turul ferestrei principale la pornirea K-BOT», pornește la fiecare pornire a K-BOT, până când:
 
 - îl vezi **până la capăt** (apeși «Gata» la ultimul pas), sau
 - bifezi pe bula lui **«Nu mai arăta turul inițial»** și îl închizi.
 
 Dacă doar îl închizi, fără bifă, pornește din nou data viitoare. Din meniul «?» îl poți porni
-oricând; ca să pornească iar singur, bifează în **Setări › Aplicație** «Arată turul ferestrei
-principale la pornirea K-BOT» — [Setări și aspect](topic:contabil.setari).
+oricând — [Setări și aspect](topic:contabil.setari).
 
 ## Tutorialele
 <!-- slice: 000T -->

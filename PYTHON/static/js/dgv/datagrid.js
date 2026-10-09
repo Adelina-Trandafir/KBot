@@ -593,11 +593,22 @@ export class DataGrid {
           const indicator = document.createElement('input');
           indicator.type = 'checkbox';
           indicator.checked = Boolean(item.row[col.key]);
-          indicator.disabled = true;
-          indicator.tabIndex = -1;
+          indicator.disabled = col.editor !== 'checkbox' || !this.canEdit(item.row, col);
+          indicator.tabIndex = indicator.disabled ? -1 : 0;
           indicator.setAttribute('aria-label', col.title || col.key);
           cell.replaceChildren(indicator);
           cell.classList.add('is-checkbox');
+          if (!indicator.disabled) {
+            indicator.addEventListener('click', (event) => event.stopPropagation());
+            indicator.addEventListener('change', async () => {
+              const checked = indicator.checked;
+              indicator.checked = Boolean(item.row[col.key]);
+              if (this.hasEdit && !await this.commitEdit()) return;
+              if (this.beginEdit(item.row, col.key)) {
+                this._edit.input.checked = checked; this.commitEdit();
+              }
+            });
+          }
         }
         if (col.display === 'button') {
           const button = el('button', 'dgv__cell-action', col.actionText);

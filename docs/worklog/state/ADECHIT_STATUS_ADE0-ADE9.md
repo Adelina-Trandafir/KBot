@@ -222,6 +222,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE6-12 | Padding mobil, buton de deschidere pe rând și înălțime DGV +20% | SCRIS LOCAL — [worklog](../SLICE-ADE6-12-butoane-deschidere-mobil.md); fără teste |
 | SLICE-ADE6-13 | Margine exterioară de 10px pentru Plătitori mobil | SCRIS LOCAL — [worklog](../SLICE-ADE6-13-margine-fereastra-mobil.md); fără teste |
 | SLICE-ADE6-14 | Filtrare numai Nume/Grupa și culori DGV comune | SCRIS LOCAL — [worklog](../SLICE-ADE6-14-filtre-culori-dgv.md); fără teste |
+| SLICE-ADE6-15 | Escape în editor și perioade lună/an pentru taxe, date migrate opționale | SCRIS LOCAL — [worklog](../SLICE-ADE6-15-taxe-perioade.md); fără teste |
 
 ### Current focus
 
@@ -233,7 +234,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 - Ferestrele inițiale Plătitori/Taxe sunt descrise în [ADE6-05](../SLICE-ADE6-05-ferestre-platitori-taxe.md).
   Editările sunt locale până la «Salvează și închide»; conflictul sau eroarea păstrează fereastra.
 - Implementarea prezenței este descrisă în [worklog](../SLICE-ADE6-04-workspace-prezenta.md).
-  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-15**.
+  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-16**.
 - Refolosim aspectul portalului și controalele comune; structura arborelui și coloanele
   urmează operațiile Access incluse, stabilite în ADE0.
 - Acceptare: modificările se salvează prin API cu validare; prezența lunilor închise refuză scrierea;

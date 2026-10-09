@@ -6,6 +6,18 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.1 (09.10.2026)
+
+<!-- release: utc=2026-10-09T09:40:33Z -->
+<!-- felii: 0112, 0112-02, 0112-03, 0112-04, 0000-59 -->
+
+- Casetele de mesaj ale K-BOT sunt acum proprii, nu cele din Windows: bara de titlu, butoane si pictograme in culorile temei alese.
+- Fereastra mesajului se potriveste singura dupa lungimea textului; mesajul poate avea si un titlu aparte, cu text ingrosit.
+- Butoanele «Da», «OK», «Reincearca» stau mereu in dreapta, iar «Nu», «Anulare» in stanga.
+- La un mesaj de eroare, butonul din bara de titlu trimite eroarea, cu detaliile ei, la serverul K-BOT, ca sa poata fi analizata.
+- Butonul de trimitere se stinge cat timp se trimite si dispare dupa trimitere; nu mai apare niciun mesaj despre asta.
+- Ajutor: subiect nou despre mesajele K-BOT si despre trimiterea unei erori.
+
 ## 1.1.2.0 (09.10.2026)
 
 <!-- release: utc=2026-10-09T08:30:00Z -->

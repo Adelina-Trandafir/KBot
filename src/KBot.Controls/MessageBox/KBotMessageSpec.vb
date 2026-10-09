@@ -27,6 +27,12 @@ Public NotInheritable Class KBotMessageSpec
     ''' <summary>Stays above other top-most windows (the interactive tutorials need it).</summary>
     Public Property TopMost As Boolean
 
+    ''' <summary>Slice 0112-04: <c>FileName.Method</c> of the call that showed the message; empty when unknown (a preview).</summary>
+    Public Property Source As String = String.Empty
+
+    ''' <summary>Slice 0112-04: the line of that call.</summary>
+    Public Property SourceLine As Integer
+
     ''' <summary>The spec of a classic <c>MessageBox.Show</c> call.</summary>
     Public Shared Function FromWinForms(k_text As String, k_caption As String,
                                         k_buttons As MessageBoxButtons, k_icon As MessageBoxIcon,

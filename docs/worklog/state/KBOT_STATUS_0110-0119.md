@@ -85,11 +85,12 @@ Operator, 08.10.2026. A message window of our own (`KBot.ControlsMessageBox`: `K
 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
-| 0112 | K-BOT message box + debug message catalog (0112-02: catalog edits apply at run time, «Actualizează», MENIU › ADMIN) | GATA pe cod: Controls, DevHarness, App build 0 warnings / 0 errors; nimic rulat, **nevăzut pe ecran**; catalogul nu alimentează încă apelurile | [SLICE-0112](../SLICE-0112-caseta-mesaj-kbot-si-catalog.md) |
+| 0112 | K-BOT message box + debug message catalog (0112-02: catalog edits apply at run time, «Actualizează», MENIU › ADMIN; 0112-04: buton «Trimite eroarea» în bara casetei de eroare → `FX_RaportErori`) | GATA pe cod: Controls, DevHarness, App build 0 warnings / 0 errors; nimic rulat, **nevăzut pe ecran**; catalogul nu alimentează încă apelurile | [SLICE-0112](../SLICE-0112-caseta-mesaj-kbot-si-catalog.md) |
 
 ### Open threads — 0112
 
 - First look on screen (Classic / Dark / Modern, 125% / 150%, long text, extra button, TopMost over a tutorial card).
 - 0112-02 done in code: calls take their wording from the catalog (matched by file + member, confirmed by the code's template). Never run: first real edit on screen will prove the matcher.
 - A changed button set is applied as written; code that tests the old set will misread the answer (the editor warns).
+- 0112-04: apply `sql/0112_04_fx_raport_erori.sql` on the server and deploy `PYTHON/routes/error_report.py` + `main.py` BEFORE publishing the client; never run, button/tooltip unseen; body-size limit of the proxy unchecked.
 - Help: screenshots with a native message box are stale (listed in 0000-0009 Open threads).

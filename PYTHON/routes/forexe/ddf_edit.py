@@ -1443,12 +1443,23 @@ def _numar_folosit(cursor, tip: str, dc: str, cod: str, valoare: int) -> bool:
     return cursor.fetchone() is not None
 
 
-def _numar_blocat_de_altcineva(cursor, tip: str, dc: str, valoare: int, token: str):
-    """Who else is holding the number right now? Returns their user name, or None."""
-    cursor.execute(
-        "SELECT Utilizator FROM FX_NumberLock "
-        " WHERE Tip = %s AND DC = %s AND Valoare = %s AND ExpiraLa >= NOW() AND Token <> %s "
-        " LIMIT 1", (tip, dc, valoare, token))
+def _numar_blocat_de_altcineva(cursor, tip: str, dc: str, cod: str, valoare: int, token: str):
+    """Who else is holding the number right now? Returns their user name, or None.
+
+    A NUMARREV lock is scoped to its angajament (the same key `_SQL_LOCK_MAX_NUMARREV` uses):
+    revision 1 of angajament A and revision 1 of angajament B are different numbers.
+    """
+    if tip == LOCK_TIP_NUMARREV:
+        cursor.execute(
+            "SELECT Utilizator FROM FX_NumberLock "
+            " WHERE Tip = %s AND DC = %s AND CodAngajament = %s AND Valoare = %s "
+            "   AND ExpiraLa >= NOW() AND Token <> %s LIMIT 1",
+            (tip, dc, cod, valoare, token))
+    else:
+        cursor.execute(
+            "SELECT Utilizator FROM FX_NumberLock "
+            " WHERE Tip = %s AND DC = %s AND Valoare = %s AND ExpiraLa >= NOW() AND Token <> %s "
+            " LIMIT 1", (tip, dc, valoare, token))
     rand = cursor.fetchone()
     return _txt(rand.get("Utilizator")) if rand else None
 
@@ -1572,7 +1583,7 @@ def post_ddf_numar_schimba(idlock):
             conn.rollback()
             return _json_utf8({"error": f"Numărul {valoare} a mai fost folosit."}, 409)
 
-        detinator = _numar_blocat_de_altcineva(cursor, tip, dc, valoare, token)
+        detinator = _numar_blocat_de_altcineva(cursor, tip, dc, cod, valoare, token)
         if detinator is not None:
             conn.rollback()
             return _json_utf8(
@@ -1637,8 +1648,13 @@ def delete_ddf_numar(idlock):
     try:
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("DELETE FROM FX_NumberLock WHERE IdLock = %s AND Token = %s",
-                       (idlock, token))
+        # The same operator counts as the owner even when the session token changed since the
+        # lock was taken (a re-login while the form was open): otherwise the release matched
+        # nothing and the number stayed held until it expired.
+        utilizator = getattr(g.session, "username", "") or ""
+        cursor.execute("DELETE FROM FX_NumberLock WHERE IdLock = %s "
+                       "AND (Token = %s OR (Utilizator <> '' AND Utilizator = %s))",
+                       (idlock, token, utilizator))
         conn.commit()
         return _json_utf8({"id_lock": idlock, "eliberat": cursor.rowcount > 0}, 200)
     except Exception as e:

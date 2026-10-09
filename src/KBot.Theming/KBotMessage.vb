@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.IO
 Imports System.Runtime.CompilerServices
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Common
 
@@ -174,6 +175,16 @@ Public Module KBotMessage
     ''' </summary>
     Public Property Presenter As MessagePresenter
 
+    ''' <summary>
+    ''' What sends an error message to the server (slice 0112-04). The message window shows its «send the
+    ''' error» button only when this is set and the message is an error; the application sets it once the
+    ''' services exist (session, API). Controls and theming cannot reference the API, so the link is this delegate.
+    ''' The task faults when the report could not be sent; the window tells the operator.
+    ''' </summary>
+    Public Delegate Function ErrorReportHandler(report As MessageErrorReport) As Task
+
+    Public Property ErrorReporter As ErrorReportHandler
+
     <ThreadStatic> Private _lastExtraClicked As Boolean
 
     ''' <summary>
@@ -222,6 +233,8 @@ Public Module KBotMessage
             GlobalErrorLog.Write("KBotMessage.Run", ex)
             k_extras = New MessageExtras()
         End Try
+        k_extras.Source = Source(k_file, k_member)
+        k_extras.SourceLine = k_line
         Journal(k_file, k_member, k_caption, k_text, k_icon)
         LastExtraClicked = False
         Return Present(k_owner, k_text, k_caption, k_buttons, k_icon, k_default, k_topMost, k_extras)

@@ -159,4 +159,7 @@
 .dgv__btn:hover { background: var(--dgv-hover); }
 .dgv__btn.is-primary { background: var(--dgv-accent); border-color: var(--dgv-accent); color: var(--dgv-accent-text); }
 .dgv__cell.is-checkbox { display: flex; align-items: center; justify-content: center; }
-.dgv__cell.is-checkbox input { pointer-events: none; margin: 0; }
+.dgv__cell.is-checkbox input { margin: 0; }
+.dgv__cell.is-checkbox input:disabled { pointer-events: none; }
+.dgv__editor input[type="checkbox"] { width: 18px; height: 18px; }
+.dgv__cell.is-checkbox .dgv__editor { display: flex; align-items: center; justify-content: center; }

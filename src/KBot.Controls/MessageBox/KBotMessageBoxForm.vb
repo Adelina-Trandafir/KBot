@@ -26,6 +26,10 @@ Public Class KBotMessageBoxForm
     Private ReadOnly _standard As New List(Of KBotButton)()
     Private _extraClicked As Boolean
     Private _mayDismiss As Boolean
+    Private _sending As Boolean
+    Private _reportGlyph As Bitmap
+    Private ReadOnly _shownUtc As DateTime = DateTime.UtcNow
+    Private ReadOnly _tipContent As New KBotToolTipContent()
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -96,6 +100,17 @@ Public Class KBotMessageBoxForm
             End Select
             _mayDismiss = capBar.ShowClose
 
+            ' Slice 0112-04: an error can be sent to the server from the title bar (the application has to have
+            ' installed the sender, KBotMessage.ErrorReporter, and the operator to be logged in -- it says so if not).
+            Dim k_canReport As Boolean = _spec.Kind = KBotMsgKind.Error AndAlso KBotMessage.ErrorReporter IsNot Nothing
+            If k_canReport Then
+                _reportGlyph = DrawReportGlyph()
+                capBar.OptionButtonImage = _reportGlyph
+                _tipContent.HeaderText = "Trimite eroarea"
+                _tipContent.Text = "Trimite acest mesaj, cu detaliile necesare (aplicația, calculatorul, jurnalele), la serverul K-BOT, ca să poată fi analizat."
+            End If
+            capBar.ShowOptionsButton = k_canReport
+
             Dim k_def As Integer = Math.Min(Math.Max(_spec.DefaultButton, 1), _standard.Count) - 1
             _standard(k_def).Primary = True
             AcceptButton = _standard(k_def)
@@ -137,6 +152,86 @@ Public Class KBotMessageBoxForm
             DialogResult = DialogResult.OK
         Catch ex As Exception
             GlobalErrorLog.Write("KBotMessageBoxForm.btnExtra_Click", ex)
+        End Try
+    End Sub
+
+    ' ---------------- send the error (slice 0112-04) ----------------
+
+    ''' <summary>The glyph of the button: an arrow leaving a tray. A silhouette, so the bar recolours it with the theme.</summary>
+    Private Shared Function DrawReportGlyph() As Bitmap
+        Dim k_bmp As New Bitmap(64, 64)
+        Using k_g As Graphics = Graphics.FromImage(k_bmp)
+            k_g.SmoothingMode = Drawing2D.SmoothingMode.AntiAlias
+            Using k_brush As New SolidBrush(Color.Black)
+                k_g.FillPolygon(k_brush, New Point() {
+                    New Point(32, 6), New Point(12, 27), New Point(24, 27), New Point(24, 40),
+                    New Point(40, 40), New Point(40, 27), New Point(52, 27)})
+            End Using
+            Using k_pen As New Pen(Color.Black, 6.0F)
+                k_pen.LineJoin = Drawing2D.LineJoin.Round
+                k_g.DrawLines(k_pen, New Point() {New Point(9, 42), New Point(9, 57), New Point(55, 57), New Point(55, 42)})
+            End Using
+        End Using
+        Return k_bmp
+    End Function
+
+    Private Sub capBar_OptionButtonHoverChanged(sender As Object, e As EventArgs) Handles capBar.OptionButtonHoverChanged
+        Try
+            If capBar.OptionButtonHot AndAlso Not _sending Then
+                Dim k_r As Rectangle = capBar.OptionButtonBounds
+                ttip.ShowAt(capBar, _tipContent, capBar.PointToScreen(New Point(k_r.Left, k_r.Bottom)))
+            Else
+                ttip.HideNow()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotMessageBoxForm.capBar_OptionButtonHoverChanged", ex)
+        End Try
+    End Sub
+
+    Private Async Sub capBar_OptionButtonClick(sender As Object, e As EventArgs) Handles capBar.OptionButtonClick
+        Try
+            Dim k_send As KBotMessage.ErrorReportHandler = KBotMessage.ErrorReporter
+            If _sending OrElse k_send Is Nothing Then Return
+            _sending = True
+            ttip.HideNow()
+            Dim k_owner As Form = Owner
+            Dim k_report As New MessageErrorReport() With {
+                .ShownUtc = _shownUtc,
+                .Source = If(_spec.Source, String.Empty),
+                .SourceLine = _spec.SourceLine,
+                .Caption = If(_spec.Caption, String.Empty),
+                .Header = If(_spec.Header, String.Empty),
+                .Text = If(_spec.Text, String.Empty),
+                .Buttons = _spec.Buttons.ToString(),
+                .OwnerForm = If(k_owner Is Nothing, String.Empty, k_owner.GetType().Name & " | " & k_owner.Text)
+            }
+            ' No message either way (operator, 09.10.2026): the button is dimmed while the server answers, hidden for good
+            ' when it took the report, and live again when it did not (the reason is in the error log).
+            capBar.OptionButtonEnabled = False
+            Try
+                Await k_send(k_report)
+                capBar.ShowOptionsButton = False
+            Catch ex As Exception
+                GlobalErrorLog.Write("KBotMessageBoxForm.capBar_OptionButtonClick", ex)
+                capBar.OptionButtonEnabled = True
+            Finally
+                _sending = False
+            End Try
+        Catch ex As Exception
+            _sending = False
+            GlobalErrorLog.Write("KBotMessageBoxForm.capBar_OptionButtonClick", ex)
+        End Try
+    End Sub
+
+    Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        MyBase.OnFormClosed(e)
+        Try
+            ttip.HideNow()
+            capBar.OptionButtonImage = Nothing
+            _reportGlyph?.Dispose()
+            _reportGlyph = Nothing
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotMessageBoxForm.OnFormClosed", ex)
         End Try
     End Sub
 

@@ -180,6 +180,7 @@ function numberFormatter(min, max, grouping) {
  * generalDateSec | generalDateMs | shortTime | longTime | longTimeMs | yesNo | trueFalse | onOff.
  */
 export function formatValue(value, col) {
+  if (typeof col.formatter === 'function') return col.formatter(value);
   const valueType = col.valueType || ValueType.Text;
   const comparable = toComparable(value, valueType);
   if (comparable === null) return '';

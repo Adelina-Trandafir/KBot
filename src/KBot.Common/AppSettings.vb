@@ -182,11 +182,12 @@ Public NotInheritable Class AppSettings
     Public Property HelpCaptureMode As Boolean = False
 
     ''' <summary>
-    ''' Slice 0097-02: the main window's guided tour starts by itself at every start of K-BOT, until
+    ''' Slice 0097-02: the main window's guided tour can start by itself at every start of K-BOT, until
     ''' it was seen to its last step or the operator ticked «Nu mai arata turul initial» on its
-    ''' bubble (both write False here). «Setari -> Aplicatie» turns it back on.
+    ''' bubble (both write False here). Off by default for a new install (only the initial tutorial
+    ''' starts by itself); «Setari -> Aplicatie» turns it on.
     ''' </summary>
-    Public Property ShowInitialTour As Boolean = True
+    Public Property ShowInitialTour As Boolean = False
 
     ''' <summary>
     ''' Slice 000T-07: the short tutorial about the tutorials (a message, the «?» button, the list of
@@ -640,7 +641,7 @@ Public NotInheritable Class AppSettings
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
-            .ShowInitialTour = ShowInitialTour,
+            .ShowInitialTourOptIn = ShowInitialTour,
             .ShowInitialTutorial = ShowInitialTutorial,
             .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
@@ -708,7 +709,8 @@ Public NotInheritable Class AppSettings
         If dto.HelpTextPercent.HasValue AndAlso HelpTextPercentChoices.Contains(dto.HelpTextPercent.Value) Then
             s.HelpTextPercent = dto.HelpTextPercent.Value
         End If
-        If dto.ShowInitialTour.HasValue Then s.ShowInitialTour = dto.ShowInitialTour.Value
+        ' The tour is opt-in since 09.10.2026: the old "ShowInitialTour" key (True for everyone before) is ignored, so no existing install keeps it on.
+        If dto.ShowInitialTourOptIn.HasValue Then s.ShowInitialTour = dto.ShowInitialTourOptIn.Value
         If dto.ShowInitialTutorial.HasValue Then s.ShowInitialTutorial = dto.ShowInitialTutorial.Value
         If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
@@ -789,7 +791,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?
-    Public Property ShowInitialTour As Boolean?
+    Public Property ShowInitialTourOptIn As Boolean?
     Public Property ShowInitialTutorial As Boolean?
     Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?

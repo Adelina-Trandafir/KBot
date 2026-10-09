@@ -113,6 +113,8 @@ Friend Module Program
             ConfigureServices(services)
 
             Using provider As ServiceProvider = services.BuildServiceProvider()
+                ' Slice 0112-04: the «send the error» button of the message window needs the session and the API.
+                MessageErrorReporter.Install(provider)
 #If DEBUG Then
                 ' Pe Debug, dezvoltatorul alege fereastra de pornire dintr-o listă tematizată
                 ' (StartupLauncherForm). Apare DOAR în build-ul Debug; Release-ul nu are nicio
@@ -492,6 +494,10 @@ Friend Module Program
         services.AddSingleton(Of IHelpFeedbackApi)(
             Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IHelpFeedbackApi))
         services.AddSingleton(Of HelpService)()
+
+        ' Slice 0112-04: an error message can be sent to the server from the title bar of the message window.
+        services.AddSingleton(Of IErrorReportApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IErrorReportApi))
 
         ' Forms.
         services.AddTransient(Of KbotForm)()

@@ -32,6 +32,8 @@
   "ValoriTaxe": {
     "key": "IDV",
     "fields": {
+      "DeLa": { "type": "Text", "size": 7, "default": "" },
+      "PanaLa": { "type": "Text", "size": 7, "default": "" },
       "IDV": {
         "type": "Long",
         "size": 4,

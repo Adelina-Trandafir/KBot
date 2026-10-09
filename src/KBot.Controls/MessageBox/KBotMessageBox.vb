@@ -34,6 +34,8 @@ Public NotInheritable Class KBotMessageBox
         If k_extras IsNot Nothing Then
             k_spec.ExtraButton = If(k_extras.ExtraButton, String.Empty)
             k_spec.Header = If(k_extras.Header, String.Empty)
+            k_spec.Source = If(k_extras.Source, String.Empty)
+            k_spec.SourceLine = k_extras.SourceLine
             Dim k_close As KBotMsgClose
             If [Enum].TryParse(k_extras.CloseButton, True, k_close) Then k_spec.CloseButton = k_close
         End If

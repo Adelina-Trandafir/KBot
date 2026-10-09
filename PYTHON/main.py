@@ -49,6 +49,7 @@ import routes.portal.admin  # noqa: F401  slice 0110-09: registers /api/portal/a
 from routes.inregistrare.operator import operator_bp  # felia 0075-05: pagina operatorului (aprobarea cererilor)
 from routes.logs import logs_bp  # slice 0089: the caller's own server / timing journal lines
 from routes.help_feedback import help_feedback_bp  # slice 0000-21: help questions + ratings (nothing about who)
+from routes.error_report import error_report_bp  # slice 0112-04: POST /api/errors/report (error sent from the message window)
 from routes.setari import setari_bp  # slice 0100-02: GET /api/setari (the settings the server decides)
 from routes.access import access_bp  # slice 0104: POST /api/access/client-type (public: Access client or not)
 from routes.efactura import efactura_bp  # slice 00EF-04: /api/efactura/token/* (ANAF e-Factura token, bearer)
@@ -126,6 +127,7 @@ app.register_blueprint(portal_bp)  # slice 0110-03: web area of registered users
 app.register_blueprint(operator_bp)  # Aprobarea cererilor de inregistrare
 app.register_blueprint(logs_bp)  # slice 0089: GET /api/logs/server, /api/logs/timing
 app.register_blueprint(help_feedback_bp)  # slice 0000-21: POST /api/help/feedback
+app.register_blueprint(error_report_bp)  # slice 0112-04: POST /api/errors/report
 app.register_blueprint(setari_bp)  # slice 0100-02: GET /api/setari
 app.register_blueprint(access_bp)  # slice 0104: POST /api/access/client-type
 app.register_blueprint(efactura_bp)  # slice 00EF-04: /api/efactura/token/start, /cod, /stare

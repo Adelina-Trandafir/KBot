@@ -63,6 +63,11 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
 
+- **SLICE-ADE6-15, 09.10.2026:** Escape anulează numai editorul celulei;
+  Taxe fără instrucțiuni, Activ checkbox, perioade lună/an fără calendar,
+  sfârșit automat la adăugare. Taxele migrate fără date sunt acceptate, fără
+  completări istorice inventate. SCRIS LOCAL, fără teste; AD_04 necesar pe server.
+
 - **SLICE-ADE6-14, 09.10.2026:** filtrare exclusiv pentru Nume/Grupa în toate
   DGV ADE, pe PC și mobil. Antetele și footerele listelor folosesc culorile comune
   ale DGV-ului principal. SCRIS LOCAL, fără teste.

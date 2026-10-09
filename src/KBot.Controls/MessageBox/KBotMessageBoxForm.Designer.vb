@@ -22,7 +22,9 @@ Partial Class KBotMessageBoxForm
     ' pnlButtons.Height and the size of btn3 (the smallest a button may be).
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        components = New System.ComponentModel.Container()
         capBar = New KBotCaptionBar()
+        ttip = New KBotToolTip(components)
         pnlBody = New Panel()
         picIcon = New KBotMessageIcon()
         lblHeader = New KBotHtmlLabel()
@@ -46,6 +48,7 @@ Partial Class KBotMessageBoxForm
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowHelpButton = False
+        ' the options button is the «send the error» button: BuildContent shows it, and draws its glyph, for error messages only
         capBar.ShowTextScaleSlider = False
         capBar.Size = New Size(634, 50)
         capBar.TabIndex = 0
@@ -182,6 +185,7 @@ Partial Class KBotMessageBoxForm
     End Sub
 
     Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents ttip As KBotToolTip
     Friend WithEvents pnlBody As Panel
     Friend WithEvents picIcon As KBotMessageIcon
     Friend WithEvents lblHeader As KBotHtmlLabel

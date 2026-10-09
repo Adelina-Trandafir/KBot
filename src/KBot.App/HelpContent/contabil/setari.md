@@ -49,10 +49,10 @@ Din grupul **Fereastra principală**:
 - **«Fereastra principală pornește mărită (pe tot ecranul)»** — **debifată la început.** Bifată,
   fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în
   mijlocul ecranului. Se aplică de la următoarea pornire.
-- **«Arată turul ferestrei principale la pornirea K-BOT»** — **bifată la început.** Cât e bifată,
-  turul ferestrei principale pornește singur la fiecare pornire. Se debifează singură după ce ai
-  văzut turul până la capăt sau ai bifat «Nu mai arăta turul inițial» pe bula lui; o bifezi din
-  nou dacă vrei să-l revezi la pornire — [Tururile ghidate](topic:contabil.ajutor).
+- **«Arată turul ferestrei principale la pornirea K-BOT»** — **debifată la început.** Cât e debifată,
+  turul ferestrei principale nu pornește singur; îl pornești din meniul «?». O bifezi dacă vrei să
+  pornească singur la fiecare pornire. Se debifează singură după ce ai văzut turul până la capăt
+  sau ai bifat «Nu mai arăta turul inițial» pe bula lui — [Tururile ghidate](topic:contabil.ajutor).
 - **«Arată tutorialul de început la pornirea K-BOT»** — **bifată la început.** Cât e bifată,
   tutorialul scurt despre tutoriale pornește singur la pornire, după turul ferestrei principale
   (dacă acela mai e de văzut). Nu se poate închide la jumătate: se parcurge până la capăt. Se debifează

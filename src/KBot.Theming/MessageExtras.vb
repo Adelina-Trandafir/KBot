@@ -18,4 +18,10 @@ Public NotInheritable Class MessageExtras
     ''' </summary>
     Public Property CloseButton As String = "Auto"
 
+    ''' <summary>Slice 0112-04: <c>FileName.Method</c> of the call that showed the message (filled by <c>KBotMessage</c>).</summary>
+    Public Property Source As String = String.Empty
+
+    ''' <summary>Slice 0112-04: the line of that call.</summary>
+    Public Property SourceLine As Integer
+
 End Class

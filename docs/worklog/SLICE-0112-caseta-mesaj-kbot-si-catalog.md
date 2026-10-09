@@ -127,3 +127,45 @@ New: `Controls/Button/KBotButton.vb` + `.md`, `Controls/MessageBox/KBotMsgClose.
 - `KBotButton` is new and has no tooltip/mnemonic; `VS` re-saved `KBotMessageBoxForm.resx` (a stale one may exist).
 - Plain messages containing `<…>` text are read as HTML tags by `KBotHtmlLabel` when they look like one (unknown tags are dropped, their text kept).
 - Help: no topic describes the message window.
+
+
+---
+
+# SLICE 0112-04 — «send the error» button in the message window (operator, 09.10.2026)
+
+## What changed and why
+For a message of kind **Error**, the title bar of the K-BOT message window now shows the bar's right-hand (options) button as «Trimite eroarea»: a drawn
+arrow-out-of-a-tray glyph (follows the theme), a `KBotToolTip` (header + text, shown from the bar's new hover event), and a click that sends the error to the MariaDB
+server. Not shown for other kinds, and not when the application has not installed the sender (tests, DevHarness preview of a spec shows it only if installed).
+- **Window → application link**: `KBotMessage.ErrorReporter` (Theming delegate, like `Presenter`); `MessageErrorReport` (Theming) = the message as shown. `KBotMessage.Run` now also
+  records the call's `FileName.Method` + line in `MessageExtras.Source/SourceLine` → `KBotMessageSpec` → the report. The window refuses a second click while sending, hides the
+  button after a success and says so (Info); on failure it shows a **Warning** with the reason (never an Error: it would offer to send itself).
+- **Application** (`KBot.App\MessageErrorReporter.vb`, installed in `Program.Main` right after the service provider is built): adds app FileVersion, OS, .NET, PC name, Windows user,
+  culture, screen/dpi, theme, memory, uptime, session (unit, CF, year, SS, program, role), the active window, the list of open windows, and the tail of `harness_errors.log` (48 KB)
+  and `mesaje_operator.log` (24 KB). Needs a logged-in session (otherwise a Romanian message says to connect first).
+- **API**: `IErrorReportApi` / `ErrorReportRequest` / `ApiClient.SendErrorReportAsync` → `POST /api/errors/report` (bearer).
+- **Server**: `PYTHON/routes/error_report.py` (registered in `main.py`) → new table `AVACONT_COMUN.FX_RaportErori` (`sql/0112_04_fx_raport_erori.sql`, utf8mb3). Who sent it (user, unit id,
+  database, PC name) comes from the **session**, the IP from the request; the rest from the body. Idempotent by `Rid` (GUID per report). Text cut to column sizes; 4-byte characters → `?`.
+- **Caption bar**: new event `OptionButtonHoverChanged` + read-only `OptionButtonHot` (the button is painted, so a host hangs its tooltip on this).
+- NOUTATI: new section 1.1.2.1 (this + the whole custom message window, slices 0112 to 0112-04). FileVersion NOT bumped (the push script asks).
+
+## Files touched
+New: `sql/0112_04_fx_raport_erori.sql`, `PYTHON/routes/error_report.py`, `Api/IErrorReportApi.vb`, `Api/ApiClient.ErrorReport.vb`, `Theming/MessageErrorReport.vb`,
+`App/MessageErrorReporter.vb`. Edited: `PYTHON/main.py`, `Theming/KBotMessage.vb`, `Theming/MessageExtras.vb`, `Controls/MessageBox/KBotMessageBoxForm.vb` + `.Designer.vb` (KBotToolTip `ttip`),
+`KBotMessageSpec.vb`, `KBotMessageBox.vb`, `Controls/CaptionBar/KBotCaptionBar.vb`, `App/Program.vb`, `docs/release-notes/NOUTATI.md`, `state/KBOT_STATUS_0000-0009.md`.
+
+## Test results
+`dotnet build` KBot.App and KBot.DevHarness (Debug): 0 warnings, 0 errors. `py_compile` of `error_report.py` and `main.py` (venv): OK. Nothing run, no tests, **nothing seen on screen, no row written**.
+
+## Left unverified / deferred
+- **The table must be created on the server before the client is published** (`sql/0112_04_fx_raport_erori.sql`), and the server deployed (`error_report.py`, `main.py`). `DEFAULT UTC_TIMESTAMP()` on
+  `MomentPrimit` relies on MariaDB expression defaults (10.2+): to be confirmed when the script is applied.
+- Body limit 768 KB in the route; if nginx/Flask has a smaller `client_max_body_size` / `MAX_CONTENT_LENGTH` the send fails with a 413 (the window shows the reason).
+- On screen: the glyph in the three themes, the tooltip position under the button, the title width next to the button, a success box opening over an error box.
+- Help: no topic describes the message window; named in «Ajutor de actualizat» (0000-0009).
+- Not committed (operator rule: no git writes).
+
+**0112-04 revision (operator, 09.10.2026):** no success or failure message on sending (a failure goes to the error log only). The button is dimmed while the server answers
+(new `KBotCaptionBar.OptionButtonEnabled`: dimmed, no hover, no click), hidden for good after a successful send, enabled again after a failed one. The first live try returned a 500 from
+the server because the table had not been created yet; `error_report.py` now logs the driver message and the stack. Build: `KBot.Controls` 0 warnings / 0 errors; `KBot.App` compiled but could not copy
+its DLLs while K-BOT was running (close it and build again). Help: `contabil.mesaje` (0000-59).

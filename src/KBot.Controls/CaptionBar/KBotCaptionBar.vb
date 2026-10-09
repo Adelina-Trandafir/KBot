@@ -47,6 +47,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private _optionButtonPadding As Integer = 0
     Private _tintOptionButtonImage As Boolean = True
     Private _optionButtonActive As Boolean = False
+    Private _optionButtonEnabled As Boolean = True
 
     ' ── Optional - Theme Button (selectorul de teme; vezi KBotCaptionBar.ThemeButton.vb) ──────
     Private _showThemeButton As Boolean = False
@@ -263,6 +264,42 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private Shared ReadOnly newColorMatrixArray0 As Single() = New Single() {0.0F, 0.0F, 0.0F, 0.0F, 0.0F}
     Private Shared ReadOnly newColorMatrixArray1 As Single() = New Single() {0.0F, 0.0F, 0.0F, 1.0F, 0.0F}
 
+    ''' <summary>
+    ''' Slice 0112-04: the cursor entered or left the options button (<see cref="OptionButtonHot"/> says which).
+    ''' The button is painted, not a control, so a host that wants a tooltip on it hangs it on this event.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Cursorul a intrat pe butonul de opțiuni sau l-a părăsit (OptionButtonHot spune care)")>
+    Public Event OptionButtonHoverChanged As EventHandler
+
+    ''' <summary>
+    ''' Slice 0112-04: False = the options button is drawn dimmed and does nothing (no hover, no click, no event).
+    ''' The message window turns it off while an error is being sent.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("False = butonul de opțiuni e estompat și nu reacționează la cursor sau la click.")>
+    <DefaultValue(True)>
+    Public Property OptionButtonEnabled As Boolean
+        Get
+            Return _optionButtonEnabled
+        End Get
+        Set(value As Boolean)
+            If _optionButtonEnabled = value Then Return
+            _optionButtonEnabled = value
+            If Not value Then _optionButtonHover = False
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>True while the cursor is over the options button.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property OptionButtonHot As Boolean
+        Get
+            Return _optionButtonHover
+        End Get
+    End Property
+
     <Category("K-BOT")>
     <Description("Evenimentul declanșat la click pe butonul de opțiuni")>
     Public Custom Event OptionButtonClick As EventHandler
@@ -414,7 +451,8 @@ Partial Public NotInheritable Class KBotCaptionBar
             ' cursor: meniul trebuie să pară continuarea butonului. Vezi IPopupAnchor.
             If _showOptionsButton Then
                 DrawImageButton(g, OptionButtonRect(), _optionButtonImage, _optionButtonPadding,
-                                _tintOptionButtonImage, _optionButtonHover OrElse _optionButtonActive)
+                                _tintOptionButtonImage, _optionButtonEnabled AndAlso (_optionButtonHover OrElse _optionButtonActive),
+                                Not _optionButtonEnabled)
             End If
 
             ' Buton temă (opțional) — aceeași față ca butonul de opțiuni, alt conținut.
@@ -505,7 +543,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     ''' Ajutor chemat DOAR din OnPaint, care e deja înfășurat (regula de acoperire tranzitivă).
     ''' </summary>
     Private Sub DrawImageButton(g As Graphics, bounds As Rectangle, image As Image,
-                                padding As Integer, tint As Boolean, hot As Boolean)
+                                padding As Integer, tint As Boolean, hot As Boolean,
+                                Optional dimmed As Boolean = False)
         If hot Then
             Using hb As New SolidBrush(_optBtnHoverColor)
                 g.FillRectangle(hb, bounds)
@@ -521,7 +560,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         Dim ix As Integer = bounds.Left + (bounds.Width - side) \ 2
         Dim iy As Integer = (Height - side) \ 2
         g.InterpolationMode = InterpolationMode.HighQualityBicubic
-        DrawGlyphImage(g, image, New Rectangle(ix, iy, side, side), tint)
+        DrawGlyphImage(g, image, New Rectangle(ix, iy, side, side), tint, dimmed)
     End Sub
 
     ''' <summary>
@@ -536,9 +575,22 @@ Partial Public NotInheritable Class KBotCaptionBar
     '''
     ''' Ajutor chemat DOAR din OnPaint, care e deja înfășurat (regula de acoperire tranzitivă).
     ''' </summary>
-    Private Sub DrawGlyphImage(g As Graphics, image As Image, dest As Rectangle, tint As Boolean)
+    Private Sub DrawGlyphImage(g As Graphics, image As Image, dest As Rectangle, tint As Boolean, Optional dimmed As Boolean = False)
+        Dim k_alphaRow As Single() = If(dimmed, New Single() {0.0F, 0.0F, 0.0F, 0.4F, 0.0F}, newColorMatrixArray1)
         If Not tint Then
-            g.DrawImage(image, dest)
+            If Not dimmed Then
+                g.DrawImage(image, dest)
+                Return
+            End If
+            Using attrs As New ImageAttributes()
+                attrs.SetColorMatrix(New ColorMatrix(New Single()() {
+                    New Single() {1.0F, 0.0F, 0.0F, 0.0F, 0.0F},
+                    New Single() {0.0F, 1.0F, 0.0F, 0.0F, 0.0F},
+                    New Single() {0.0F, 0.0F, 1.0F, 0.0F, 0.0F},
+                    k_alphaRow,
+                    New Single() {0.0F, 0.0F, 0.0F, 0.0F, 1.0F}}))
+                g.DrawImage(image, dest, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, attrs)
+            End Using
             Return
         End If
         Using attrs As New ImageAttributes()
@@ -546,7 +598,7 @@ Partial Public NotInheritable Class KBotCaptionBar
                 newColorMatrix,
                 newColorMatrixArray,
                 newColorMatrixArray0,
-                newColorMatrixArray1,
+                k_alphaRow,
                 New Single() {_glyphColor.R / 255.0F, _glyphColor.G / 255.0F, _glyphColor.B / 255.0F, 0.0F, 1.0F}}))
             g.DrawImage(image, dest, 0, 0,
                         image.Width, image.Height, GraphicsUnit.Pixel, attrs)
@@ -571,10 +623,11 @@ Partial Public NotInheritable Class KBotCaptionBar
             Dim overClose As Boolean = CloseRect().Contains(e.Location)
             Dim overMax As Boolean = _showMaximize AndAlso MaxRect().Contains(e.Location)
             Dim overMin As Boolean = _showMinimize AndAlso MinRect().Contains(e.Location)
-            Dim overOpt As Boolean = _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location)
+            Dim overOpt As Boolean = _showOptionsButton AndAlso _optionButtonEnabled AndAlso OptionButtonRect().Contains(e.Location)
             Dim overTema As Boolean = _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location)
             Dim overHelp As Boolean = HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location)
             Dim selChanged As Boolean = UpdateSelectorHover(HitSelector(e.Location))
+            Dim optChanged As Boolean = overOpt <> _optionButtonHover
 
             If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse
                overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover OrElse overHelp <> _helpButtonHover OrElse
@@ -586,6 +639,7 @@ Partial Public NotInheritable Class KBotCaptionBar
                 _optionButtonHover = overOpt
                 _themeButtonHover = overTema
                 Invalidate()
+                If optChanged Then RaiseEvent OptionButtonHoverChanged(Me, EventArgs.Empty)
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseMove", ex)
@@ -595,6 +649,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
         Dim selChanged As Boolean = UpdateSelectorHover(Nothing)
+        Dim optWasHot As Boolean = _optionButtonHover
         If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover OrElse _helpButtonHover OrElse
            selChanged Then
             _helpButtonHover = False
@@ -604,6 +659,7 @@ Partial Public NotInheritable Class KBotCaptionBar
             _optionButtonHover = False
             _themeButtonHover = False
             Invalidate()
+            If optWasHot Then RaiseEvent OptionButtonHoverChanged(Me, EventArgs.Empty)
         End If
     End Sub
 
@@ -637,7 +693,7 @@ Partial Public NotInheritable Class KBotCaptionBar
             ElseIf _showMinimize AndAlso MinRect().Contains(e.Location) Then
                 f.WindowState = FormWindowState.Minimized
             ElseIf _showOptionsButton AndAlso OptionButtonRect().Contains(e.Location) Then
-                RaiseEvent OptionButtonClick(Me, EventArgs.Empty)
+                If _optionButtonEnabled Then RaiseEvent OptionButtonClick(Me, EventArgs.Empty)
             ElseIf _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location) Then
                 ' Meniul de teme îl face bara însăși — vezi KBotCaptionBar.ThemeButton.vb.
                 ShowThemeMenu()

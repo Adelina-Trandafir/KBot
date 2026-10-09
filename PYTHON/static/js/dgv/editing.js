@@ -47,11 +47,16 @@ export const editing = {
       state.input = state.combo.input;
     } else {
       state.input = document.createElement('input');
-      state.input.type = column.editor === 'date' ? 'date' : 'text';
+      state.input.type = column.editor === 'checkbox' ? 'checkbox' : column.editor === 'date' ? 'date' : 'text';
       if (column.editor === 'number') state.input.inputMode = 'decimal';
       state.input.value = state.raw;
+      if (column.editor === 'monthYear') {
+        state.input.value = column.formatter?.(state.raw) || state.raw;
+        state.input.placeholder = 'll.aaaa'; state.input.inputMode = 'numeric'; state.input.maxLength = 7;
+      }
+      if (column.editor === 'checkbox') state.input.checked = Boolean(row[key]);
       host.append(state.input);
-      state.input.addEventListener('input', () => { state.raw = state.input.value; }, { signal: state.abort.signal });
+      state.input.addEventListener('input', () => { state.raw = column.editor === 'checkbox' ? state.input.checked : state.input.value; }, { signal: state.abort.signal });
     }
     state.input.setAttribute('aria-label', column.title);
     if (column.editor === 'date') {
@@ -63,8 +68,11 @@ export const editing = {
     host.addEventListener('click', (event) => event.stopPropagation(), { signal: state.abort.signal });
     host.addEventListener('dblclick', (event) => event.stopPropagation(), { signal: state.abort.signal });
     host.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault(); event.stopImmediatePropagation(); this.cancelEdit();
+    }, { capture: true, signal: state.abort.signal });
+    host.addEventListener('keydown', (event) => {
       event.stopPropagation();
-      if (event.key === 'Escape') { event.preventDefault(); this.cancelEdit(); }
       if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault(); this.commitEdit(event.shiftKey ? -1 : 1);
       }
@@ -99,7 +107,8 @@ export const editing = {
         state.raw = state.source.value;
         state.picker.close();
       }
-      const value = state.column.editor === 'list' ? state.value : parseCell(String(state.raw), state.column);
+      const value = state.column.editor === 'checkbox' ? state.input.checked
+        : state.column.editor === 'list' ? state.value : parseCell(String(state.raw), state.column);
       const message = state.column.validate?.(value, state.row);
       if (message) throw new Error(message);
       state.pending = true;
