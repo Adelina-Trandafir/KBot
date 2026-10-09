@@ -5,6 +5,18 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 08.10.2026) — F15 on lines: a zero line on the reception is not a line.** Run 22
+  (018_GRRS, AAB2MN2DC25, save phase) was refused 400 at step 4c: «Recepția din 19.03.2026 · 3000.00:
+  liniile ultimului instantaneu nu se potrivesc cu cele ale recepției (AA4: instantaneu 369.00 / recepție
+  0.00)». The total matched; the snapshot had AA4 = 369, the reception no AA4 line. Now
+  `valideaza_plasarile` (`prelucrare_asociere.py`, block «F15 pe linii») compares only the indicators the
+  reception really carries (value != 0); an indicator present only on the snapshot no longer refuses.
+  A reception line > 0 that differs or is missing on the snapshot still does. Total check unchanged.
+  Recorded in `docs/FUNDAMENT_Asociere_Receptii.md` (F15, AMENDED 08.10.2026). Nothing run; tests
+  for F15 in `PYTHON/tests` not touched (may carry the old expectation). Client checked (08.10.2026):
+  `AsociereForm.vb` F15 (`SemnulCapatului`, the tooltip, `MotivulValorii`) compares TOTALS only, never
+  lines, and `MotivulRefuzului` (F14/F16) works on indicator sets, so nothing to change there.
+
 - **Commit `c42929e` (07.10.2026, «SLICELESS - Modificare mod incarcare AcroPDF In activex controll») NU e lucru fără felie:** tot ce e în el pe PDF-ul ActiveX aparține feliei **0078-15** — vezi `SLICE-0078-15-vizualizator-activex-refacut.md` și [0070-0079](KBOT_STATUS_0070-0079.md).
 
 - **Slice 0SEO (operator, 06.10.2026) — public site: SEO basics + the «PDF Inteligent» / ALOP-Adobe article kept as a DRAFT.** Title/description/canonical/Open Graph/JSON-LD on `/`, `/robots.txt`, `/sitemap.xml`, emoji section menu with tooltips, red button + «Înregistrează» order in the top bar. The article (`/alop-eroare-adobe-acrobat-pro`) is hidden (no button, not in the sitemap, `noindex`) until `content.json` → `alop_page.published` is set to `true`; publishing steps are in the worklog. Checked with the test client only, nothing seen in a browser, server not restarted/deployed. See `SLICE-0SEO-01-sait-seo-pagina-alop.md`.

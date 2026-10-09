@@ -88,6 +88,9 @@ Partial Public Class KbotForm
                 Case TutorialDesignerMenuKey
                     ' Slice 000T-03: the tutorial designer (KbotForm.Tutorial.vb), capture mode only.
                     DeschideDesignerulDeTutoriale()
+                Case MessageCatalogMenuKey
+                    ' Slice 0112: the message catalog (KbotForm.MessageCatalog.vb), Debug build only.
+                    DeschideCatalogulDeMesaje()
                 Case "jurnal"
                     ShowLog()
                 Case "setari"

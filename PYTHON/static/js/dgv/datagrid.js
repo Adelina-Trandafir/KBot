@@ -1,5 +1,5 @@
-// Slice 0110-05 -- DataGrid: the read-only data grid of the web area, the web counterpart of
-// KBotDataView (src/KBot.Controls/DataView) WITHOUT editing.
+// Slice 0110-05/ADE2 -- DataGrid: the web counterpart of KBotDataView. Editing is strictly
+// opt-in (`editable`, editable columns, `rowKey` and `onCellSave`); existing grids stay read-only.
 //
 //   import { DataGrid } from '/static/js/dgv/datagrid.js';
 //   const grid = new DataGrid(container, { columns: [...], rows: [...] });
@@ -11,7 +11,7 @@
 // Column layout (slice 0110-11): an optional `layout` {order, hidden, widths, fill} -- or a `layoutId` the
 // page-wide `DataGrid.layoutProvider` answers for -- sets which columns show, in which order, how wide,
 // and which ONE column takes the free width when the grid is wider than its columns.
-// What it does NOT do, on purpose: edit cells, select several rows, reorder columns by dragging.
+// What it does NOT do, on purpose: select several rows or reorder columns by dragging.
 //
 // The data logic (formats, filters, sort, grouping, aggregates) is in engine.js and has no DOM.
 
@@ -19,6 +19,10 @@ import {
   ValueType, Operator, allowedOperators, operatorCaption, operandCount,
   formatValue, aggregate, aggregatesFor, buildItems, groupCaption, filterIsActive, createFilter, isBlank,
 } from './engine.js';
+import { editing } from './editing.js';
+import ListenerTracker from '../listener-tracker/listener-tracker-mixin.js';
+import { registerInstance, unregisterInstance } from '../instances-registry.js';
+let gridSequence = 0;
 
 const OVERSCAN = 6;
 const SAMPLE_ROWS = 200;
@@ -79,6 +83,9 @@ export class DataGrid {
   constructor(container, options = {}) {
     if (!(container instanceof HTMLElement)) throw new Error('DataGrid needs a container element');
     this._abort = new AbortController();
+    ListenerTracker.applyTo(this, { debugMode: false, logPrefix: 'DataGrid' });
+    this._registryName = `DataGrid-${++gridSequence}`;
+    registerInstance(this._registryName, this);
     this._opts = { ...DEFAULTS, ...options };
     // the header is as tall as a row unless the page asks for another height
     if (options.headerHeight === undefined) this._opts.headerHeight = this._opts.rowHeight;
@@ -107,6 +114,13 @@ export class DataGrid {
   // ------------------------------------------------------------------ public API
   get shownRowCount() { return this._shownRows; }
   get rowCount() { return this._rows.length; }
+  selectRow(rowId, { notify = false } = {}) {
+    const row = this._rows.find((item) => item[this._opts.rowKey] === rowId);
+    if (!row) return false;
+    if (notify) this._select(row);
+    else { this._selected = row; this._renderWindow(true); }
+    return true;
+  }
   get isFiltered() { return [...this._filters.values()].some(filterIsActive); }
   get isGrouped() { return this._groups.length > 0; }
   get sort() { return this._sort ? { ...this._sort } : null; }
@@ -120,6 +134,13 @@ export class DataGrid {
     if (!['modern', 'classic', 'dark'].includes(theme)) throw new Error(`Unknown grid theme: ${theme}`);
     this._opts.theme = theme;
     this._root.dataset.theme = theme;
+  }
+
+  /** The data row shown by a rendered row node (or any element inside it); null for headers, group bands and anything outside the grid. */
+  rowFromNode(node) {
+    const rowNode = node?.closest?.('.dgv__row');
+    const item = rowNode && this._root.contains(rowNode) ? this._items[Number(rowNode.dataset.i)] : null;
+    return item?.kind === 'row' ? item.row : null;
   }
 
   setColumns(columns) {
@@ -143,6 +164,7 @@ export class DataGrid {
 
   /** Replaces the rows. With keepWidths the columns keep the widths they have (a tree node shows another part of the same rows). */
   setRows(rows, { keepWidths = false } = {}) {
+    if (this.hasEdit) throw new Error('Confirmați sau anulați editarea înainte de reîncărcare.');
     if (!Array.isArray(rows)) throw new Error('setRows needs an array');
     this._rows = rows;
     if (this._opts.layoutId && typeof DataGrid.rowSink === 'function') DataGrid.rowSink(this._opts.layoutId, rows);
@@ -208,6 +230,11 @@ export class DataGrid {
   }
 
   destroy() {
+    this._destroyed = true;
+    this.cancelEdit(true);
+    this._resizeObserver?.disconnect();
+    this.cleanupAllListeners();
+    unregisterInstance(this._registryName);
     this._abort.abort();
     cancelAnimationFrame(this._frame);
     this._closePopup();
@@ -236,12 +263,13 @@ export class DataGrid {
 
     // Synchronous: a window of rows is cheap, and a frame callback would not run in a hidden tab.
     this._scroll.addEventListener('scroll', () => this._renderWindow(false), { signal, passive: true });
-    new ResizeObserver(() => {
+    this._resizeObserver = new ResizeObserver(() => {
       if (this._fillKey && this._head.childElementCount) {
         this._applyWidths();
         this._scheduleRender(true);
       } else this._scheduleRender();
-    }).observe(this._scroll);
+    });
+    this._resizeObserver.observe(this._scroll);
     this._window.addEventListener('click', (ev) => this._onRowClick(ev), { signal });
     this._window.addEventListener('dblclick', (ev) => this._onRowDblClick(ev), { signal });
     this._window.addEventListener('mouseover', (ev) => this._tipIfClipped(ev), { signal });
@@ -542,6 +570,21 @@ export class DataGrid {
       cols.forEach((col, ci) => {
         const text = formatValue(item.row[col.key], col);
         const cell = this._cell(col, text);
+        if (col.display === 'checkbox') {
+          const indicator = document.createElement('input');
+          indicator.type = 'checkbox';
+          indicator.checked = Boolean(item.row[col.key]);
+          indicator.disabled = true;
+          indicator.tabIndex = -1;
+          indicator.setAttribute('aria-label', col.title || col.key);
+          cell.replaceChildren(indicator);
+          cell.classList.add('is-checkbox');
+        }
+        if (this.canEdit(item.row, col)) cell.classList.add('is-editable');
+        if (this._edit?.row === item.row && this._edit.key === col.key) {
+          cell.textContent = '';
+          cell.append(this._edit.host);
+        }
         if (ci === 0 && indent) cell.style.paddingLeft = `${indent + 8}px`;
         row.appendChild(cell);
       });
@@ -639,6 +682,8 @@ export class DataGrid {
   }
 
   _onRowClick(ev) {
+    if (this._edit) return;
+    this._activeKey = ev.target.closest('.dgv__cell')?.dataset.key;
     const hit = this._itemFromEvent(ev);
     if (!hit || !hit.item) return;
     if (hit.item.kind === 'gh') { this._toggleGroup(hit.item); return; }
@@ -649,16 +694,26 @@ export class DataGrid {
 
   _onRowDblClick(ev) {
     const hit = this._itemFromEvent(ev);
+    if (hit?.item?.kind === 'row' && this.beginEdit(hit.item.row, ev.target.closest('.dgv__cell')?.dataset.key)) return;
     if (hit && hit.item && hit.item.kind === 'row') this._emit('onRowDblClick', hit.item.row);
   }
 
   _select(row) {
     this._selected = row;
-    this._renderWindow(true);
+    // Do not rebuild the clicked row here: replacing it between the first and
+    // second click prevents the browser from dispatching `dblclick`.
+    this._window.querySelectorAll('.dgv__row[data-i]').forEach((node) => {
+      node.classList.toggle('is-selected', this._items[Number(node.dataset.i)]?.row === row);
+    });
     this._emit('onSelect', row);
   }
 
   _onKey(ev) {
+    if (this._edit) return;
+    if (ev.key === 'Enter' && this._selected) {
+      if (this.beginEdit(this._selected, this._activeKey || this._visibleColumns().find((c) => this.canEdit(this._selected, c))?.key)) ev.preventDefault();
+      return;
+    }
     if (this._popup) return;
     const dataIdx = this._items.map((it, i) => (it.kind === 'row' ? i : -1)).filter((i) => i >= 0);
     if (!dataIdx.length) return;
@@ -890,4 +945,5 @@ export class DataGrid {
   }
 }
 
+Object.defineProperties(DataGrid.prototype, Object.getOwnPropertyDescriptors(editing));
 export { ValueType, Operator };

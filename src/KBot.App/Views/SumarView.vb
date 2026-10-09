@@ -339,8 +339,8 @@ Public Class SumarView
                 Clipboard.SetText(lblCod.Text)
             Catch ex As Exception
                 GlobalErrorLog.Write("SumarView.lblCod_Click", ex)
-                MessageBox.Show("Nu s-a putut copia codul în clipboard.", "Eroare",
-                                MessageBoxButtons.OK, MessageBoxIcon.Error)
+                KBotMessage.Show(Me, "Nu s-a putut copia codul în clipboard.", "Eroare",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         End If
     End Sub

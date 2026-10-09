@@ -34,6 +34,8 @@ lists only its exceptions.
 | `KBotProgressBar` | [Progress/KBotProgressBar.md](Progress/KBotProgressBar.md) | Determinate progress bar (0..Maximum) |
 | `KBotBusyBar` | [BusyBar/KBotBusyBar.md](BusyBar/KBotBusyBar.md) | Indeterminate 3px activity bar |
 | `KBotNotice` | [Notice/KBotNotice.md](Notice/KBotNotice.md) | Error / warning / success message box |
+| `KBotButton` | [Button/KBotButton.md](Button/KBotButton.md) | Themed rounded push button: `Primary` accent face, `DialogResult`, Accept/Cancel button |
+| `KBotMessageBox` | [MessageBox/KBotMessageBox.md](MessageBox/KBotMessageBox.md) | K-BOT's own themed message window (replaces the native `MessageBox` behind every `KBotMessage.Show`); optional extra button |
 | `AdobeReaderHost` | [Adobe/AdobeReaderHost.md](Adobe/AdobeReaderHost.md) | PDF viewing: reparented Adobe window, or AcroPDF ActiveX |
 | `OfficeDocumentHost` | [Office/OfficeDocumentHost.md](Office/OfficeDocumentHost.md) | Excel / Word viewing: private instance, chrome stripped, window reparented |
 | `ThemeEditorForm` | [ThemeEditor/ThemeEditorForm.md](ThemeEditor/ThemeEditorForm.md) | Per-control colour/font overrides (form, not a control) |

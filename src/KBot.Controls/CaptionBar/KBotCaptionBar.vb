@@ -32,6 +32,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     ' ── Stare ─────────────────────────────────────────────────────────────────
     Private _iconImage As Image
     Private _showMinimize As Boolean = False
+    Private _showClose As Boolean = True
     Private _showMaximize As Boolean = False
     Private _hoverClose As Boolean = False
     Private _hoverMin As Boolean = False
@@ -70,6 +71,24 @@ Partial Public NotInheritable Class KBotCaptionBar
         End Get
         Set(value As Image)
             _iconImage = value
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Slice 0112: the close button (X). True (default) = drawn and active. False = no X at all -- the message
+    ''' box hides it for questions that must be answered. The other buttons keep their slots.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Arată butonul de închidere (X). False îl ascunde cu totul.")>
+    <DefaultValue(True)>
+    Public Property ShowClose As Boolean
+        Get
+            Return _showClose
+        End Get
+        Set(value As Boolean)
+            If _showClose = value Then Return
+            _showClose = value
             Invalidate()
         End Set
     End Property
@@ -293,6 +312,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     End Function
 
     Private Function CloseRect() As Rectangle
+        If Not _showClose Then Return Rectangle.Empty
         Return SlotRect(0)
     End Function
 
@@ -333,6 +353,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         If HelpButtonVisible() Then Return HelpButtonRect().Left
         If _showMinimize Then Return MinRect().Left
         If _showMaximize Then Return MaxRect().Left
+        If Not _showClose Then Return Width
         Return CloseRect().Left
     End Function
 
@@ -451,8 +472,9 @@ Partial Public NotInheritable Class KBotCaptionBar
                 End Using
             End If
 
-            ' Buton închidere.
+            ' Buton închidere (ascuns cu ShowClose = False).
             Dim cr As Rectangle = CloseRect()
+            If Not _showClose Then Return
             Dim closeGlyph As Color = _glyphColor
             If _hoverClose Then
                 Using hb As New SolidBrush(_closeHoverColor)

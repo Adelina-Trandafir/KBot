@@ -13,7 +13,7 @@ editarea DataGrid în celule este critică din prima versiune; fără facturi, b
 sau reduceri pentru absențe/frați; mdl_Situatie și interogările lui se transpun 1 la 1;
 cache-urile `_L` nu se migrează. Datele unității rămân în sistemul existent, fără pagină
 sau rută ADE pentru editarea lor. Unitati_Chitante este excepția explicită de la prefixul
-ADE_, iar seria și numărul oferite în conversație sunt doar exemple.
+AD_, iar seria și numărul oferite în conversație sunt doar exemple.
 
 Codex scrie și verifică local pe localhost:5050; utilizatorul publică prin AvacontPush
 și testează pe Linux/MariaDB. Acest flux prevalează asupra cerinței generice de push

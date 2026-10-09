@@ -8,7 +8,7 @@ Partial Public Class KbotForm
     Implements IHelpCaptureNavigator
 
     Private Const HelpCaptureMenuKey As String = "capturi_ajutor"
-    Private Const HelpCaptureMenuSeparatorKey As String = "capturi_ajutor_sep"
+    Private Const AdminMenuKey As String = "admin"
 
     ''' <summary>True while the capture mode is usable: switched on AND advanced options on.</summary>
     Friend Shared ReadOnly Property HelpCaptureModeOn As Boolean
@@ -24,13 +24,22 @@ Partial Public Class KbotForm
             Dim shown As Boolean = HelpCaptureModeOn
             Dim logShown As Boolean = FeatureSwitches.VizualizatorJurnaleActiv
             For Each item As KBotMenuItem In menuNou.Items
-                If String.Equals(item.Key, HelpCaptureMenuKey, StringComparison.Ordinal) OrElse
-                   String.Equals(item.Key, HelpCaptureMenuSeparatorKey, StringComparison.Ordinal) Then
-                    item.Visible = shown
-                End If
-                ' Slice 000T-10: the tutorial designer (operator tool) exists only in a Debug build.
-                If String.Equals(item.Key, TutorialDesignerMenuKey, StringComparison.Ordinal) Then
-                    item.Visible = TutorialDesignerAvailable
+                ' Slice 0112: the «ADMIN» folder holds the operator tools; it shows only while one of them does.
+                '   - help captures: capture mode on (0000-02);
+                '   - tutorial designer and message catalog: Debug build only (000T-10, 0112).
+                If String.Equals(item.Key, AdminMenuKey, StringComparison.Ordinal) Then
+                    Dim anyShown As Boolean = False
+                    For Each child As KBotMenuItem In item.Items
+                        If String.Equals(child.Key, HelpCaptureMenuKey, StringComparison.Ordinal) Then
+                            child.Visible = shown
+                        ElseIf String.Equals(child.Key, TutorialDesignerMenuKey, StringComparison.Ordinal) Then
+                            child.Visible = TutorialDesignerAvailable
+                        ElseIf String.Equals(child.Key, MessageCatalogMenuKey, StringComparison.Ordinal) Then
+                            child.Visible = MessageCatalogAvailable
+                        End If
+                        If child.Visible Then anyShown = True
+                    Next
+                    item.Visible = anyShown
                 End If
                 If String.Equals(item.Key, "jurnal", StringComparison.Ordinal) Then item.Visible = logShown OrElse _helpMenuReveal
                 ' Slice 0000-31: the tour shows the rows that appear only sometimes.

@@ -171,7 +171,7 @@ function makeGrid(host, id, extra = {}) {
  *   call(method, path, body) -> {ok, status, data}, as in portal.js;
  *   callBytes(path) -> the same, with the raw bytes (ArrayBuffer) as `data` when ok.
  */
-export function createApp({ call, callBytes, onUnauthorized }) {
+export function createApp({ call, callBytes, onUnauthorized, onUnitOpened }) {
   let me = null;
   let unitCombo = null;
   let anCombo = null;
@@ -322,6 +322,8 @@ export function createApp({ call, callBytes, onUnauthorized }) {
     me.db_name = r.data.db_name;
     me.role = r.data.role;
     me.periods = r.data.periods;
+    me.sections = r.data.sections;
+    if (onUnitOpened) onUnitOpened();
     cache.clear();
     resetSelection();
     fillPeriods();

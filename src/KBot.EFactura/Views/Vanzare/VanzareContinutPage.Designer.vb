@@ -27,19 +27,19 @@ Partial Class VanzareContinutPage
         Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyContinut = New KBotTableLayoutPanel()
-        flowLinii = New System.Windows.Forms.FlowLayoutPanel()
+        tlyLinii = New KBotTableLayoutPanel()
         btnLinieNoua = New System.Windows.Forms.Button()
         gridLinii = New KBotDataView()
         CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
         tlyContinut.SuspendLayout()
-        flowLinii.SuspendLayout()
+        tlyLinii.SuspendLayout()
         SuspendLayout()
         '
         ' tlyContinut
         '
         tlyContinut.ColumnCount = 1
         tlyContinut.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        tlyContinut.Controls.Add(flowLinii, 0, 0)
+        tlyContinut.Controls.Add(tlyLinii, 0, 0)
         tlyContinut.Controls.Add(gridLinii, 0, 1)
         tlyContinut.Dock = System.Windows.Forms.DockStyle.Fill
         tlyContinut.Location = New System.Drawing.Point(3, 3)
@@ -52,21 +52,26 @@ Partial Class VanzareContinutPage
         tlyContinut.Size = New System.Drawing.Size(743, 556)
         tlyContinut.TabIndex = 0
         '
-        ' flowLinii
+        ' tlyLinii
         '
-        flowLinii.Controls.Add(btnLinieNoua)
-        flowLinii.Dock = System.Windows.Forms.DockStyle.Fill
-        flowLinii.Margin = New System.Windows.Forms.Padding(0)
-        flowLinii.Name = "flowLinii"
-        flowLinii.Size = New System.Drawing.Size(727, 42)
-        flowLinii.TabIndex = 0
-        flowLinii.WrapContents = False
+        tlyLinii.ColumnCount = 2
+        tlyLinii.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
+        tlyLinii.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyLinii.Controls.Add(btnLinieNoua, 0, 0)
+        tlyLinii.Dock = System.Windows.Forms.DockStyle.Fill
+        tlyLinii.Margin = New System.Windows.Forms.Padding(0)
+        tlyLinii.Name = "tlyLinii"
+        tlyLinii.Size = New System.Drawing.Size(727, 42)
+        tlyLinii.RowCount = 1
+        tlyLinii.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyLinii.TabIndex = 0
         '
         ' btnLinieNoua
         '
+        btnLinieNoua.Anchor = System.Windows.Forms.AnchorStyles.Left
         btnLinieNoua.AutoSize = True
         btnLinieNoua.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnLinieNoua.Margin = New System.Windows.Forms.Padding(0, 0, 0, 6)
+        btnLinieNoua.Margin = New System.Windows.Forms.Padding(0)
         btnLinieNoua.Name = "btnLinieNoua"
         btnLinieNoua.Padding = New System.Windows.Forms.Padding(14, 2, 14, 2)
         btnLinieNoua.TabIndex = 0
@@ -176,14 +181,14 @@ Partial Class VanzareContinutPage
         Size = New System.Drawing.Size(757, 526)
         CType(gridLinii, System.ComponentModel.ISupportInitialize).EndInit()
         tlyContinut.ResumeLayout(False)
-        flowLinii.ResumeLayout(False)
-        flowLinii.PerformLayout()
+        tlyLinii.ResumeLayout(False)
+        tlyLinii.PerformLayout()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyContinut As KBotTableLayoutPanel
-    Friend WithEvents flowLinii As System.Windows.Forms.FlowLayoutPanel
+    Friend WithEvents tlyLinii As KBotTableLayoutPanel
     Friend WithEvents btnLinieNoua As System.Windows.Forms.Button
     Friend WithEvents gridLinii As KBotDataView
 End Class

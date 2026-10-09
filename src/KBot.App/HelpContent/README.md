@@ -101,7 +101,7 @@ A picture the help needs is written as ONE line, where the picture should appear
   at the top of the preparation box); taking the picture again, or loading one, clears it by itself.
   A picture that does not exist yet is just «lipsă». Leave the tag in place afterwards; it does no harm.
 
-The operator takes them from «Meniu › Capturi pentru ajutor» (capture mode: Setări › Aplicație,
+The operator takes them from «Meniu › ADMIN › Capturi pentru ajutor» (capture mode: Setări › Aplicație,
 visible only with the advanced options). Each «Fă poza» goes to `goto`, shows `prepare` in a
 floating bar, freezes the screen and saves the marked area to `<AppDir>\Help\img\` and, on a
 repository build, to `src\KBot.App\HelpContent\img\` too. The capture mode itself is NOT

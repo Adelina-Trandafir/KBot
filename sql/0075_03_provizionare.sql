@@ -84,6 +84,7 @@ GRANT SELECT, REFERENCES ON `AVACONT_COMUN`.`DefaClsfE`       TO 'kbot_provizion
 GRANT SELECT, REFERENCES ON `AVACONT_COMUN`.`DefaArticol`     TO 'kbot_provizionare'@'localhost';
 GRANT SELECT, REFERENCES ON `AVACONT_COMUN`.`DefaTitlu`       TO 'kbot_provizionare'@'localhost';
 GRANT SELECT, REFERENCES ON `AVACONT_COMUN`.`DefaSursaSector` TO 'kbot_provizionare'@'localhost';
+GRANT SELECT, REFERENCES ON `AVACONT_COMUN`.`DefaProgram`     TO 'kbot_provizionare'@'localhost';
 
 -- Check what it ended up with:
 -- SHOW GRANTS FOR 'kbot_provizionare'@'localhost';

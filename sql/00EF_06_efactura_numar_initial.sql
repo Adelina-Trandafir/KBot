@@ -2,6 +2,6 @@
 -- Slice 00EF-06 -- the first invoice number of the issuer.  SUPERSEDED by slice 00EF-13: DO NOT RUN.
 --
 -- The column `NumarInitial` (was Scheme.C5 of DPIFV, the first number of a series that has no invoice yet) lives in
--- AVACONT_COMUN.Unitati_Detalii now, created WITH the table by sql/00EF_13_unitati_detalii.sql. EF_Furnizor, the
+-- AVACONT_COMUN.Unitati_Date now, created WITH the table by sql/00EF_13_unitati_detalii.sql. EF_Furnizor, the
 -- table this file used to ALTER, no longer exists in the unit databases.
 -- =====================================================================================

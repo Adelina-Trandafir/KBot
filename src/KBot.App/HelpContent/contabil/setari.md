@@ -77,7 +77,9 @@ la început.** Debifată, micul meniu K-BOT din colțul paginii FOREXE nu se mai
 <!-- slice: 0072, 0097 -->
 
 **«Certificatul memorat»** arată certificatul pe care «Conectare» îl folosește fără să te mai
-întrebe. **«Uită certificatul»** îl șterge; la următoarea conectare îl alegi din nou.
+întrebe. **«Uită certificatul»** îl șterge; la următoarea conectare îl alegi din nou. Șterge și regula
+prin care browserul alegea singur certificatul. Dacă Windows nu o lasă ștearsă direct, îți cere
+permisiunea de administrator; răspunde «Da».
 
 **«Uită certificatul memorat când schimb unitatea din bara de titlu»** — **debifată la început.**
 Când treci pe altă unitate din bara de titlu (vezi [Fereastra principală](topic:contabil.fereastra)),

@@ -10,6 +10,7 @@ Status: covered by `KBotCaptionBarOptionButtonTests`, `KBotCaptionBarThemeButton
 
 ## API — bar
 - `IconImage: Image` — Empty leaves the title flush left.
+- `ShowClose = True` (slice 0112) — False hides the X completely (the message box does it for questions that must be answered); the other buttons keep their slots.
 - `ShowMinimize = False`, `ShowMaximize = False` (maximize also enables double-click on the
   drag area). A dialog gets close only.
 - `ApplyTheme(scheme)`

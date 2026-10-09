@@ -2146,15 +2146,19 @@ Public Class ApiClient
             Return Nothing
         End Try
         If payload Is Nothing Then Return Nothing
-        If Not String.Equals(payload.reason, PrelucrareRaspuns.MotivAlegereUnitate, StringComparison.Ordinal) Then Return Nothing
-        If payload.alegeri_necesare Is Nothing OrElse payload.alegeri_necesare.Count = 0 Then Return Nothing
+        ' Two questions travel on a 409: which unit (ALEGERE_UNITATE) and «register the
+        ' missing classification?» (CLASIFICATIE_LIPSA, 08.10.2026). Same list shape.
+        Dim lipsa As Boolean = String.Equals(payload.reason, PrelucrareRaspuns.MotivClasificatieLipsa, StringComparison.Ordinal)
+        If Not lipsa AndAlso Not String.Equals(payload.reason, PrelucrareRaspuns.MotivAlegereUnitate, StringComparison.Ordinal) Then Return Nothing
+        Dim k_lista As List(Of PostPrelucrareAlegereNecesara) = If(lipsa, payload.clasificatii_lipsa, payload.alegeri_necesare)
+        If k_lista Is Nothing OrElse k_lista.Count = 0 Then Return Nothing
 
         Dim raspuns As New PrelucrareRaspuns() With {
-            .Stare = PrelucrareStare.AlegereUnitate,
+            .Stare = If(lipsa, PrelucrareStare.ClasificatieLipsa, PrelucrareStare.AlegereUnitate),
             .CodAngajament = If(payload.cod, String.Empty),
             .Mesaj = If(payload.error, String.Empty)
         }
-        For Each n As PostPrelucrareAlegereNecesara In payload.alegeri_necesare
+        For Each n As PostPrelucrareAlegereNecesara In k_lista
             Dim necesara As New AlegereNecesara() With {
                 .Ss = If(n.ss, String.Empty),
                 .ClsfE = If(n.clsfe, String.Empty),
@@ -2215,7 +2219,8 @@ Public Class ApiClient
             For Each a As AlegereUnitate In alegeri
                 req.alegeri.Add(New PostPrelucrareAlegere() With {
                     .ss = a.Ss, .clsfe = a.ClsfE,
-                    .id_unitate = a.IdUnitate, .retine = a.Retine})
+                    .id_unitate = a.IdUnitate, .retine = a.Retine,
+                    .inregistreaza = If(a.Inregistreaza, CType(True, Boolean?), Nothing)})
             Next
         End If
         Return req

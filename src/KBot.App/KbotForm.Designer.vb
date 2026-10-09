@@ -33,12 +33,13 @@ Partial Class KbotForm
         Dim KBotMenuItem7 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem8 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem9 As KBotMenuItem = New KBotMenuItem()
-        Dim KBotMenuItem10 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem11 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem13 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem14 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem15 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem16 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem17 As KBotMenuItem = New KBotMenuItem()
         Dim TreeNodeDefinition1 As TreeNodeDefinition = New TreeNodeDefinition()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(KbotForm))
@@ -185,9 +186,10 @@ Partial Class KbotForm
         KBotMenuItem15.Image = My.Resources.Resources.binvoice
         KBotMenuItem15.Key = "efactura"
         KBotMenuItem15.Text = "E-Factura"
-        KBotMenuItem10.IsSeparator = True
-        KBotMenuItem10.Key = "capturi_ajutor_sep"
-        KBotMenuItem10.Visible = False
+        KBotMenuItem17.Image = My.Resources.Resources.Folder_blue_24
+        KBotMenuItem17.Key = "admin_mesaje"
+        KBotMenuItem17.Text = "Mesaje (catalog)"
+        KBotMenuItem17.Visible = False
         KBotMenuItem11.Image = My.Resources.Resources.folder_open
         KBotMenuItem11.Key = "capturi_ajutor"
         KBotMenuItem11.Text = "Capturi pentru ajutor"
@@ -196,6 +198,13 @@ Partial Class KbotForm
         KBotMenuItem14.Key = "tutoriale_designer"
         KBotMenuItem14.Text = "Designer tutoriale"
         KBotMenuItem14.Visible = False
+        KBotMenuItem16.Image = My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32
+        KBotMenuItem16.Items.Add(KBotMenuItem17)
+        KBotMenuItem16.Items.Add(KBotMenuItem11)
+        KBotMenuItem16.Items.Add(KBotMenuItem14)
+        KBotMenuItem16.Key = "admin"
+        KBotMenuItem16.Text = "<b>ADMIN</b>"
+        KBotMenuItem16.Visible = False
         KBotMenuItem12.Image = My.Resources.Resources.Folder_blue_24
         KBotMenuItem12.Key = "jurnal"
         KBotMenuItem12.Text = "Jurnal activitate"
@@ -208,9 +217,7 @@ Partial Class KbotForm
         menuNou.Items.Add(KBotMenuItem8)
         menuNou.Items.Add(KBotMenuItem9)
         menuNou.Items.Add(KBotMenuItem15)
-        menuNou.Items.Add(KBotMenuItem10)
-        menuNou.Items.Add(KBotMenuItem11)
-        menuNou.Items.Add(KBotMenuItem14)
+        menuNou.Items.Add(KBotMenuItem16)
         menuNou.Items.Add(KBotMenuItem12)
         menuNou.Items.Add(KBotMenuItem13)
         ' 

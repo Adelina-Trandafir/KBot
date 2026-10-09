@@ -10,6 +10,7 @@ Conventions: [C1..C9](../CONTROLS.md). Status: builds; **never run, never seen o
 ## Use
 - `Html: String` — the text. `Text` stays empty on purpose (the base label then draws nothing but its
   background and border). Serialised only when set.
+- `MeasureHtml(maxWidth)` (slice 0112) — the size the text needs wrapped at `maxWidth`, as wide as its widest line (a dialog that hugs its message).
 - `GetPreferredSize(proposed)` — the proposed width (else `MaximumSize.Width`, else `Width`) and the height the
   text needs there. A host that sizes itself to its text (the bubble's `FitToText`) calls it.
 - `KBotHtmlText.LooksLikeHtml(text)` / `ToRuns(...)` are public and pure (no screen): text in, runs out.

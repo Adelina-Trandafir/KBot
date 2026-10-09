@@ -162,7 +162,7 @@ Public Class SetariForexeView
     Private Sub BtnUitaCertificat_Click(sender As Object, e As EventArgs) Handles btnUitaCertificat.Click
         Try
             If KBotMessage.Show(FindForm(),
-                    "Certificatul memorat se șterge de pe acest calculator; la următoarea conectare îl alegi din nou. Continui?",
+                    "Certificatul memorat și regula de alegere automată a certificatului din browser se șterg de pe acest calculator; la următoarea conectare îl alegi din nou. Dacă regula nu se poate șterge direct, Windows cere permisiunea de administrator. Continui?",
                     "Uită certificatul", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             Dim sters As Boolean = CertificateService.ForgetLastUsedCertificate()
             ActualizeazaCertificatulMemorat()

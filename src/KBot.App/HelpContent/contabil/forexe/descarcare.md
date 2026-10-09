@@ -104,6 +104,14 @@ clasificația în cauză și lista unităților posibile.
   clasificație.
 - **«Renunță»** oprește salvarea. Nu s-a scris nimic.
 
+## Clasificație neconfigurată
+<!-- slice: 0000-60 -->
+
+Dacă o clasificație din descărcare nu există în nomenclatorul «Clasificații», K-BOT întreabă: **«Clasificația … nu este configurată! Dorești să o înregistrezi acum?»**
+
+- **Da**: clasificația se introduce automat în «Clasificații», iar descărcarea continuă și se salvează.
+- **Nu**: descărcarea se oprește și nu se salvează nimic.
+
 ## Recepții citite incomplet
 <!-- slice: 0091 -->
 

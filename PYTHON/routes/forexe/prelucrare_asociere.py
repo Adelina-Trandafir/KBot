@@ -1386,13 +1386,18 @@ def valideaza_plasarile(lanturi: Dict[int, List[dict]],
         # refused.
         journal.line("F15 pe linii: instantaneu %s", _ca_text(val_inst))
         journal.line("              recepție    %s", _ca_text(val_rec))
-        if val_inst and val_inst != val_rec:
+        # 08.10.2026: a line the reception holds at 0.00 is not a line (`_valori_pe_indicator`
+        # already drops it), so it cannot fail the chain. Only an indicator the reception
+        # really carries (value != 0) is compared; an indicator that has a value on the
+        # snapshot and none on the reception is not a vanished line, it is ignored.
+        coduri_dif = [cod for cod in sorted(val_rec)
+                      if round(val_inst.get(cod, 0), 2) != round(val_rec.get(cod, 0), 2)]
+        if val_inst and coduri_dif:
             journal.line("F15 CADE pe linii: tablourile de mai sus nu sunt egale")
             dif = ", ".join(
                 f"{cod}: instantaneu {val_inst.get(cod, 0):.2f} / recepție "
                 f"{val_rec.get(cod, 0):.2f}"
-                for cod in sorted(set(val_inst) | set(val_rec))
-                if round(val_inst.get(cod, 0), 2) != round(val_rec.get(cod, 0), 2))
+                for cod in coduri_dif)
             _f15(
                 f"{nume}: liniile ultimului instantaneu nu se potrivesc cu "
                 f"cele ale recepției ({dif}). Lanțul nu se închide."

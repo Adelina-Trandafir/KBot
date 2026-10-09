@@ -820,6 +820,14 @@ Public NotInheritable Class KBotTextBox
         End If
     End Sub
 
+    ' Inner box and scrollbars are placed by RefaLayout from the frame's own size; scaling them
+    ' again in the form's autoscale pass would apply the factor twice.
+    Protected Overrides ReadOnly Property ScaleChildren As Boolean
+        Get
+            Return False
+        End Get
+    End Property
+
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         Try

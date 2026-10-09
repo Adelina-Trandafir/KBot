@@ -39,6 +39,7 @@ from utils.database import COMMON_DB, get_kbot_connection
 from routes.inregistrare import anaf
 
 from . import facturi_store as store, ubl, validare
+from .adresa_anaf import county_and_city
 from .tokens import EfEroare
 
 logger = logging.getLogger(__name__)
@@ -330,14 +331,12 @@ def _lock(cursor, id_factura):
 # the issuer
 # ---------------------------------------------------------------------------------------------
 def _furnizor_answer(cursor, dc):
-    """The unit's row as the window needs it: the columns, `AnafPreluat` (the ANAF button is closed) and `are_facturi`
-    (the series and the first number are then fixed). `exista` is false when the unit has not filled its data in yet."""
+    """The unit's row as the window needs it: the columns and `are_facturi` (the series and the first number are then
+    fixed). `exista` is false when the unit has not filled its data in yet."""
     row = store.furnizor_get(cursor, dc)
     if row is None:
         return {"exista": False, "furnizor": None, "are_facturi": store.have_invoices(cursor)}
-    furnizor = dict(row)
-    furnizor["AnafPreluat"] = int(furnizor["AnafPreluat"] or 0)
-    return {"exista": True, "furnizor": furnizor, "are_facturi": store.have_invoices(cursor)}
+    return {"exista": True, "furnizor": dict(row), "are_facturi": store.have_invoices(cursor)}
 
 
 def furnizor_get(dc):
@@ -377,15 +376,11 @@ def furnizor_set(dc, data):
 
 
 def furnizor_anaf(dc):
-    """The one-time take of the unit's name and address from ANAF, by the tax code the unit has in Unitati (slice 00EF-13).
-    It closes itself (`AnafPreluat` = 1): a second call is refused, because ANAF's text overwrites what was typed. A unit
-    with no issuer row yet gets one (name and address from ANAF, tax code from Unitati); the rest is then typed and saved."""
+    """Takes the unit's name, county, city and address from ANAF, by the tax code the unit has in Unitati (slice 00EF-13).
+    It can be repeated at will: ANAF's text overwrites what was typed in those four fields (the window asks first). A unit
+    with no issuer row yet gets one (tax code from Unitati); the rest is then typed and saved."""
     with _unit(dc) as conn:
         cursor = conn.cursor(dictionary=True)
-        old = store.furnizor_get(cursor, dc, for_update=True)
-        if old is not None and old["AnafPreluat"]:
-            raise EfEroare("Datele unității au fost deja preluate de la ANAF o dată; butonul nu mai poate fi folosit.",
-                           "ANAF_DEJA_PRELUAT", 409)
         unit = store.furnizor_unit(cursor, dc)
         if unit is None:
             raise EfEroare("Unitatea nu există în lista unităților.", "UNITATE_LIPSA", 404)
@@ -400,7 +395,8 @@ def furnizor_anaf(dc):
             raise EfEroare("ANAF a găsit codul fiscal, dar nu a dat denumirea.", "ANAF_INCOMPLET", 502) from None
         except anaf.AnafUnavailable:
             raise EfEroare("ANAF nu a putut fi contactat acum. Încercați mai târziu.", "ANAF_INDISPONIBIL", 502) from None
-        store.furnizor_mark_anaf(cursor, dc, found["denumire"][:255], found["adresa"][:255] or None, cf)
+        county, city = county_and_city(found)
+        store.furnizor_mark_anaf(cursor, dc, found["denumire"][:255], found["adresa"][:255] or None, county, city, cf)
         conn.commit()
         return _furnizor_answer(cursor, dc)
 
@@ -465,7 +461,7 @@ def conturi_set(dc, data):
 # customers
 # ---------------------------------------------------------------------------------------------
 def _parse_client(data):
-    return {
+    values = {
         "DenumireClient": _text(data, "DenumireClient", "Denumirea", 255, required=True),
         "CodFiscal": _text(data, "CodFiscal", "Codul fiscal", 32, strip_spaces=True),
         "IndFiscal": _text(data, "IndFiscal", "Prefixul fiscal", 8, upper=True, strip_spaces=True),
@@ -477,11 +473,42 @@ def _parse_client(data):
         "Sector": _text(data, "Sector", "Sectorul", 8, upper=True, strip_spaces=True),
         "CNP": _flag(data.get("CNP"), "Persoană fizică"),
     }
+    if values["Judetul"] != "B":
+        values["Sector"] = None             # the sector exists only for Bucharest
+    return values
 
 
 def clienti_list(dc, q, limit):
     with _unit(dc) as conn:
         return {"clienti": [dict(row) for row in store.clienti_list(conn.cursor(dictionary=True), q, limit)]}
+
+
+def client_anaf(dc, data):
+    """The customer fields ANAF knows for a tax code typed on the «Cumpărător» tab: name, VAT prefix, county, city, address.
+    Nothing is written: the operator reviews the fields and saves the customer. `dc` is only the session's unit (the lookup
+    itself is not per unit)."""
+    raw = data.get("CodFiscal") if isinstance(data, dict) else None
+    cf = anaf.normalize_cf(raw)
+    if not anaf.is_valid_cf(cf):
+        raise _bad("Codul fiscal al clientului nu este valid.", "CF_INVALID")
+    try:
+        found = anaf.lookup(cf)
+    except anaf.AnafNotFound:
+        raise EfEroare("ANAF nu cunoaște acest cod fiscal.", "ANAF_NECUNOSCUT", 404) from None
+    except anaf.AnafIncomplete:
+        raise EfEroare("ANAF a găsit codul fiscal, dar nu a dat denumirea.", "ANAF_INCOMPLET", 502) from None
+    except anaf.AnafUnavailable:
+        raise EfEroare("ANAF nu a putut fi contactat acum. Încercați mai târziu.", "ANAF_INDISPONIBIL", 502) from None
+    county, city = county_and_city(found)
+    return {"client": {
+        "DenumireClient": found["denumire"][:255],
+        "CodFiscal": cf,
+        "IndFiscal": "RO" if found.get("platitor_tva") else "",
+        "Adresa": found["adresa"][:255],
+        "Judetul": county or "",
+        "Orasul": city or "",
+        "Sector": city if city and city.startswith("SECTOR") else "",
+    }}
 
 
 def client_get(dc, id_client):

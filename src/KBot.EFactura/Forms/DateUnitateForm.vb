@@ -11,12 +11,12 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slice 00EF-13 -- «Date Unitate»: the unit as the ISSUER of the E-Factura invoices (name, tax code, county, city, address, phone, e-mail,
 ''' series and first number of the invoices). It used to be the «Vânzător» view of <see cref="FacturiForm"/>; it is a window of its own now,
-''' opened as a dialog from the button «Date unitate». The row is one per unit, kept in AVACONT_COMUN.Unitati_Detalii.
+''' opened as a dialog from the button «Date unitate». The row is one per unit, kept in AVACONT_COMUN.Unitati_Date.
 '''
 ''' <para>The series and the first number are written once: as soon as the unit has an issued invoice the server says so
 ''' (<see cref="EFacturaFurnizor.AreFacturi"/>) and they are shown read only (the server refuses a change anyway). The button «Preia de la
-''' ANAF» takes the name and the address from ANAF, by the tax code the unit has in the list of units; it works ONCE
-''' (<see cref="EFacturaFurnizor.AnafPreluat"/>). The unit's bank accounts have their own window, «Conturi Unitate», next to this one in the
+''' ANAF» takes the name, the county, the city and the address from ANAF, by the tax code the unit has in the list of units; it can be
+''' used again whenever the operator wants them back. The window does it by itself when it opens and the name is empty. The unit's bank accounts have their own window, «Conturi Unitate», next to this one in the
 ''' menu of the invoice window's title bar.</para>
 ''' </summary>
 Public Class DateUnitateForm
@@ -56,15 +56,14 @@ Public Class DateUnitateForm
         End Get
     End Property
 
-    Private Sub DateUnitateForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+    ' UI boundary (async void Load): TakeFromAnafAsync shows its own failures.
+    Private Async Sub DateUnitateForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
             If _api Is Nothing Then Return
             CountyList.Fill(cmbJud)
             ShowFurnizor(_furnizor)
-            If _furnizor Is Nothing Then
-                ntfMesaj.Show("Datele unității nu sunt completate. Completați denumirea și codul fiscal (sau apăsați «Preia de la ANAF»), apoi «Salvează»; " &
-                              "fără ele nu se pot face facturi.", NoticeKind.Warning)
-            End If
+            ' The tax code is the unit's own (Unitati); an empty name means the unit has not filled the issuer data in yet.
+            If txtDen.Text.Trim().Length = 0 Then Await TakeFromAnafAsync(True).ConfigureAwait(True)
         Catch ex As Exception
             ' UI boundary (Load): log and swallow.
             GlobalErrorLog.Write("DateUnitateForm.DateUnitateForm_Load", ex)
@@ -122,7 +121,7 @@ Public Class DateUnitateForm
         txtSerie.ReadOnly = k_locked OrElse _working
         txtNumar.ReadOnly = k_locked OrElse _working
         btnSalveaza.Enabled = Not _working
-        btnAnaf.Enabled = Not _working AndAlso Not (_furnizor IsNot Nothing AndAlso _furnizor.AnafPreluat)
+        btnAnaf.Enabled = Not _working
     End Sub
 
     Private Sub SetBusy(k_on As Boolean)
@@ -164,14 +163,26 @@ Public Class DateUnitateForm
 
     ' ── ANAF ────────────────────────────────────────────────────────────────────
 
-    ' UI boundary (async void): every failure is shown to the operator here.
+    ' UI boundary (async void): TakeFromAnafAsync shows its own failures.
     Private Async Sub BtnAnaf_Click(sender As Object, e As EventArgs) Handles btnAnaf.Click
         Try
+            Await TakeFromAnafAsync(False).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DateUnitateForm.BtnAnaf_Click", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Takes the name, county, city and address from ANAF and writes them. <paramref name="k_automatic"/> = the window
+    ''' did it by itself on opening (no question: nothing typed is lost); the button asks first, because it overwrites the typed fields.</summary>
+    Private Async Function TakeFromAnafAsync(k_automatic As Boolean) As Task
+        Try
             If _working Then Return
-            Dim k_question As String = "Denumirea și adresa unității se iau de la ANAF, după codul fiscal din lista unităților, și se scriu imediat." & vbLf &
-                                       "Se poate face o singură dată. Ce ați scris în fereastră și nu ați salvat se pierde." & vbLf & "Continuați?"
-            If KBotMessage.Show(Me, k_question, "Preia de la ANAF", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                                MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
+            If Not k_automatic Then
+                Dim k_question As String = "Denumirea, județul, orașul și adresa unității se iau de la ANAF, după codul fiscal din lista unităților, și se scriu imediat." & vbLf &
+                                           "Ce ați scris în aceste câmpuri se înlocuiește; restul datelor rămân." & vbLf & "Continuați?"
+                If KBotMessage.Show(Me, k_question, "Preia de la ANAF", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                                    MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
+            End If
             SetBusy(True)
             ntfMesaj.Clear()
             Dim k_taken As EFacturaFurnizor = Await _gate.RunAsync(
@@ -179,17 +190,20 @@ Public Class DateUnitateForm
             If IsDisposed Then Return
             _furnizor = k_taken
             ShowFurnizor(k_taken)
-            ntfMesaj.Show("Denumirea și adresa au fost preluate de la ANAF. Completați restul datelor și apăsați «Salvează».", NoticeKind.Success)
+            ntfMesaj.Show("Denumirea, județul, orașul și adresa au fost preluate de la ANAF. Completați restul datelor și apăsați «Salvează».", NoticeKind.Success)
         Catch ex As OperationCanceledException
             ' The window was closed while the answer was on its way: nothing to show.
         Catch ex As ApiException
             If Not IsDisposed Then
-                ' A second try (the first one was made from another place) closes the button too.
-                If String.Equals(ex.Reason, "ANAF_DEJA_PRELUAT", StringComparison.Ordinal) AndAlso _furnizor IsNot Nothing Then _furnizor.AnafPreluat = True
-                KBotMessage.Show(Me, ex.Message, "Preia de la ANAF", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                If k_automatic Then
+                    ntfMesaj.Show("Datele unității nu sunt completate și nu s-au putut lua de la ANAF: " & ex.Message &
+                                  " Completați-le de mână sau apăsați «Preia de la ANAF», apoi «Salvează».", NoticeKind.Warning)
+                Else
+                    KBotMessage.Show(Me, ex.Message, "Preia de la ANAF", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                End If
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("DateUnitateForm.BtnAnaf_Click", ex)
+            GlobalErrorLog.Write("DateUnitateForm.TakeFromAnafAsync", ex)
             If Not IsDisposed Then
                 KBotMessage.Show(Me, "Datele nu au putut fi preluate de la ANAF. Detalii în jurnalul de erori.", "Preia de la ANAF",
                                  MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -197,7 +211,7 @@ Public Class DateUnitateForm
         Finally
             If Not IsDisposed Then SetBusy(False)
         End Try
-    End Sub
+    End Function
 
     ' ── Saving ──────────────────────────────────────────────────────────────────
 

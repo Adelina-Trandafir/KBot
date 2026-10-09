@@ -32,6 +32,10 @@ Partial Public Class FacturiForm
     ' The customer the fields show: 0 = a new one, not saved yet.
     Private _clientId As Integer
     Private _clientDirty As Boolean
+    ' True from «Client nou» until another customer is shown: only then the customer fields can be typed in.
+    Private _clientEditing As Boolean
+    ' The tax code ANAF was last asked about (digits), so Tab + Enter on the same code ask once.
+    Private _anafAsked As String = String.Empty
 
     Private Sub InitCounties()
         CountyList.Fill(cmbClientJud)
@@ -108,13 +112,17 @@ Partial Public Class FacturiForm
             txtClientCf.Text = k_c.CodFiscal
             txtClientDen.Text = k_c.DenumireClient
             CountyList.Choose(cmbClientJud, k_c.Judetul)
+            SyncSector()
             txtClientOras.Text = k_c.Orasul
             Dim k_sector As Integer = cmbClientSector.FindStringExact(k_c.Sector)
-            cmbClientSector.SelectedIndex = k_sector
+            If cmbClientSector.Visible Then cmbClientSector.SelectedIndex = k_sector
             txtClientAdresa.Text = k_c.Adresa
             txtClientCont.Text = k_c.Cont
             txtClientBanca.Text = k_c.Banca
             _clientDirty = False
+            _clientEditing = False
+            _anafAsked = String.Empty
+            ApplyClientMode(_mode <> EditMode.Viewing)
         Finally
             _loading = k_was
         End Try
@@ -132,21 +140,47 @@ Partial Public Class FacturiForm
             .Adresa = txtClientAdresa.Text.Trim(),
             .Judetul = CountyList.CodeOf(cmbClientJud),
             .Orasul = txtClientOras.Text.Trim(),
-            .Sector = cmbClientSector.Text.Trim(),
+            .Sector = If(IsBucharest(), cmbClientSector.Text.Trim(), String.Empty),
             .Cnp = chkCnp.Checked}
     End Function
+
+    Private Function IsBucharest() As Boolean
+        Return String.Equals(CountyList.CodeOf(cmbClientJud), "B", StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    ''' <summary>The sector exists only for Bucharest: shown then, hidden and emptied for any other county.</summary>
+    Private Sub SyncSector()
+        Dim k_bucharest As Boolean = IsBucharest()
+        pgCumparator.lblSectorT.Visible = k_bucharest
+        cmbClientSector.Visible = k_bucharest
+        If Not k_bucharest Then
+            cmbClientSector.SelectedIndex = -1
+            cmbClientSector.Text = String.Empty
+        End If
+    End Sub
+
+    Private Sub CmbClientJud_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbClientJud.SelectedIndexChanged
+        Try
+            SyncSector()
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.CmbClientJud_SelectedIndexChanged", ex)
+        End Try
+    End Sub
 
     Private Sub ClientCleanState()
         _clientDirty = False
     End Sub
 
-    ''' <summary>The customer controls follow the invoice: editable only while the invoice is.</summary>
+    ''' <summary>The customer controls follow the invoice: the combo and «Client nou» work while the invoice is edited; the fields
+    ''' only after «Client nou».</summary>
     Private Sub ApplyClientMode(k_edit As Boolean)
-        For Each k_c As Control In New Control() {cmbClient, chkCnp, txtClientInd, txtClientCf, txtClientDen, cmbClientJud, txtClientOras,
-                                    cmbClientSector, txtClientAdresa, txtClientCont, txtClientBanca, btnClientNou}
-            k_c.Enabled = k_edit
+        cmbClient.Enabled = k_edit
+        btnClientNou.Enabled = k_edit
+        For Each k_c As Control In New Control() {chkCnp, txtClientInd, txtClientCf, txtClientDen, cmbClientJud, txtClientOras,
+                                    cmbClientSector, txtClientAdresa, txtClientCont, txtClientBanca}
+            k_c.Enabled = k_edit AndAlso _clientEditing
         Next
-        btnClientSalveaza.Enabled = k_edit AndAlso Not _busy
+        btnClientSalveaza.Enabled = k_edit AndAlso _clientEditing AndAlso Not _busy
         btnClientSterge.Enabled = k_edit AndAlso Not _busy AndAlso _clientId > 0
     End Sub
 
@@ -182,14 +216,83 @@ Partial Public Class FacturiForm
         Try
             If _busy OrElse _mode = EditMode.Viewing Then Return
             ShowClient(Nothing)
+            _clientEditing = True
             SetDirty(True)
             ApplyClientMode(True)
-            txtClientDen.Focus()
-            SetStatus("Client nou: completați câmpurile și apăsați «Salvează clientul».")
+            txtClientCf.Focus()
+            SetStatus("Client nou: scrieți codul fiscal (datele se iau de la ANAF), completați restul și apăsați «Salvează clientul».")
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiForm.BtnClientNou_Click", ex)
         End Try
     End Sub
+
+    ' ── ANAF lookup of a typed tax code ─────────────────────────────────────────
+
+    Private Sub TxtClientCf_Leave(sender As Object, e As EventArgs) Handles txtClientCf.Leave
+        TakeClientFromAnafSafe()
+    End Sub
+
+    Private Sub TxtClientCf_FieldKeyDown(sender As Object, e As KeyEventArgs) Handles txtClientCf.FieldKeyDown
+        If e.KeyCode = Keys.Enter Then TakeClientFromAnafSafe()
+    End Sub
+
+    ' UI boundary (async void): TakeClientFromAnafAsync shows its own failures.
+    Private Async Sub TakeClientFromAnafSafe()
+        Try
+            Await TakeClientFromAnafAsync().ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.TakeClientFromAnafSafe", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Asks ANAF about the tax code typed for a new customer and fills name, VAT prefix, county, city and address.
+    ''' Nothing is saved: the operator reads the fields and presses «Salvează clientul». A failure is a message; the typing goes on.</summary>
+    Private Async Function TakeClientFromAnafAsync() As Task
+        Try
+            If _busy OrElse _loading OrElse Not _clientEditing OrElse _mode = EditMode.Viewing Then Return
+            Dim k_typed As String = txtClientCf.Text.Replace(" ", String.Empty).Trim().ToUpperInvariant()
+            If chkCnp.Checked OrElse k_typed.Length = 0 Then Return
+            Dim k_digits As String = If(k_typed.StartsWith("RO", StringComparison.Ordinal), k_typed.Substring(2), k_typed)
+            If k_digits.Length < 2 OrElse k_digits.Length > 10 OrElse Not k_digits.All(AddressOf Char.IsDigit) Then Return
+            If String.Equals(k_digits, _anafAsked, StringComparison.Ordinal) Then Return
+            _anafAsked = k_digits
+            SetBusy(True, "Se caută clientul la ANAF…")
+            Try
+                Dim k_found As EFacturaClient = Await _gate.RunAsync(
+                    Function() _api.TakeClientFromAnafAsync(k_digits, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed OrElse Not _clientEditing Then Return
+                Dim k_was As Boolean = _loading
+                _loading = True
+                Try
+                    txtClientCf.Text = k_found.CodFiscal
+                    txtClientInd.Text = k_found.IndFiscal
+                    txtClientDen.Text = k_found.DenumireClient
+                    CountyList.Choose(cmbClientJud, k_found.Judetul)
+                    SyncSector()
+                    txtClientOras.Text = k_found.Orasul
+                    If cmbClientSector.Visible Then cmbClientSector.SelectedIndex = cmbClientSector.FindStringExact(k_found.Sector)
+                    txtClientAdresa.Text = k_found.Adresa
+                Finally
+                    _loading = k_was
+                End Try
+                _clientDirty = True
+                SetDirty(True)
+                SetStatus($"Datele clientului «{k_found.DenumireClient}» au fost luate de la ANAF. Verificați-le și apăsați «Salvează clientul».")
+            Finally
+                If Not IsDisposed Then SetBusy(False, Nothing)
+            End Try
+        Catch ex As OperationCanceledException
+            ' The window was closed: nothing to show.
+        Catch ex As ApiException
+            If Not IsDisposed Then KBotMessage.Show(Me, ex.Message, "Preia de la ANAF", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.TakeClientFromAnafAsync", ex)
+            If Not IsDisposed Then
+                KBotMessage.Show(Me, "Datele clientului nu au putut fi luate de la ANAF. Detalii în jurnalul de erori.", "Preia de la ANAF",
+                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        End Try
+    End Function
 
     Private Async Sub BtnClientSalveaza_Click(sender As Object, e As EventArgs) Handles btnClientSalveaza.Click
         Try

@@ -13,7 +13,8 @@ export const comboboxUIMixin = {
       this.overlay = document.createElement('div');
       this.overlay.id = `${this.instanceId}_overlay`;
       this.overlay.className = 'combobox-overlay hidden';
-      document.body.appendChild(this.overlay);
+      // Modal controls keep their overlay inside the dialog's top layer.
+      (this.container.closest('dialog') || document.body).appendChild(this.overlay);
     }
   },
 

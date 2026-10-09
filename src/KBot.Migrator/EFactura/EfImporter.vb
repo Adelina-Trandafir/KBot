@@ -230,10 +230,10 @@ Public NotInheritable Class EfImporter
     Private Sub DoFurnizor(k_write As Boolean, k_report As EfImportReport, k_access As OleDbConnection,
                            k_cn As MySqlConnection, k_tx As MySqlTransaction, k_plans As List(Of EfTablePlan),
                            k_total As Integer)
-        Dim plan As New EfTablePlan("Unitati_Detalii", _options.CommonDatabase)
+        Dim plan As New EfTablePlan("Unitati_Date", _options.CommonDatabase)
         k_plans.Add(plan)
 
-        Dim spec As New EfTableSpec("UNIT", "Unitati_Detalii", "DC", "DC")
+        Dim spec As New EfTableSpec("UNIT", "Unitati_Date", "DC", "DC")
         spec.Columns.Add(New EfColumn("Denumire", Nothing, EfKind.Text) With {.MaxLength = 255, .Required = True})
         spec.Columns.Add(New EfColumn("CodFiscal", Nothing, EfKind.Text) With {.MaxLength = 32, .Required = True})
         spec.Columns.Add(New EfColumn("Adresa", Nothing, EfKind.Text) With {.MaxLength = 255})
@@ -246,8 +246,8 @@ Public NotInheritable Class EfImporter
 
         Dim unitTable = AccessSchema.ResolveTableName(k_access, "UNIT")
         If unitTable Is Nothing Then
-            k_report.Add(EfSeverity.Blocking, "Unitati_Detalii", "Tabelul UNIT lipsește din fișierul unității.")
-            Advance(k_total, "Unitati_Detalii")
+            k_report.Add(EfSeverity.Blocking, "Unitati_Date", "Tabelul UNIT lipsește din fișierul unității.")
+            Advance(k_total, "Unitati_Date")
             Return
         End If
 
@@ -268,17 +268,17 @@ Public NotInheritable Class EfImporter
         End Using
         plan.RowsRead = unitRows
         If unitRows = 0 Then
-            k_report.Add(EfSeverity.Blocking, "Unitati_Detalii", "Tabelul UNIT din fișierul unității nu are niciun rând.")
-            Advance(k_total, "Unitati_Detalii")
+            k_report.Add(EfSeverity.Blocking, "Unitati_Date", "Tabelul UNIT din fișierul unității nu are niciun rând.")
+            Advance(k_total, "Unitati_Date")
             Return
         End If
         If unitRows > 1 Then
-            k_report.Add(EfSeverity.Warning, "Unitati_Detalii", $"UNIT are {unitRows} rânduri; se folosește primul.")
+            k_report.Add(EfSeverity.Warning, "Unitati_Date", $"UNIT are {unitRows} rânduri; se folosește primul.")
         End If
 
         Dim schemeTable = AccessSchema.ResolveTableName(k_access, "Scheme")
         If schemeTable Is Nothing Then
-            k_report.Add(EfSeverity.Warning, "Unitati_Detalii", "Tabelul Scheme lipsește: seria facturii rămâne necompletată.")
+            k_report.Add(EfSeverity.Warning, "Unitati_Date", "Tabelul Scheme lipsește: seria facturii rămâne necompletată.")
         Else
             Dim found As Boolean = False
             Using reader = AccessSchema.OpenReader(k_access, schemeTable)
@@ -291,7 +291,7 @@ Public NotInheritable Class EfImporter
                     Exit While
                 End While
             End Using
-            If Not found Then k_report.Add(EfSeverity.Warning, "Unitati_Detalii", "În Scheme nu există rândul «DPIFV»: seria facturii rămâne necompletată.")
+            If Not found Then k_report.Add(EfSeverity.Warning, "Unitati_Date", "În Scheme nu există rândul «DPIFV»: seria facturii rămâne necompletată.")
         End If
 
         Dim values(spec.Columns.Count - 1) As Object
@@ -303,22 +303,22 @@ Public NotInheritable Class EfImporter
             Dim issue = EfConverter.ToTarget(col, value, values(i))
             If issue.Kind = EfIssueKind.Blocking Then
                 ok = False
-                k_report.Add(EfSeverity.Blocking, "Unitati_Detalii", $"{col.Target}: {issue.Text}")
+                k_report.Add(EfSeverity.Blocking, "Unitati_Date", $"{col.Target}: {issue.Text}")
             ElseIf issue.Kind = EfIssueKind.Warning Then
-                k_report.Add(EfSeverity.Warning, "Unitati_Detalii", $"{col.Target}: {issue.Text}")
+                k_report.Add(EfSeverity.Warning, "Unitati_Date", $"{col.Target}: {issue.Text}")
             End If
         Next
         If ok Then plan.RowsSelected = 1
 
-        ' Slice 00EF-13: the issuer is a row of AVACONT_COMUN.Unitati_Detalii (key DC = the unit database), written through the
+        ' Slice 00EF-13: the issuer is a row of AVACONT_COMUN.Unitati_Date (key DC = the unit database), written through the
         ' unit connection and its transaction (same server: the statements name the schema).
         Dim detailsExist As Boolean = k_cn IsNot Nothing AndAlso DetailsTableExists(k_cn)
         If detailsExist Then
             plan.RowsBefore = CountDetails(k_cn)
-            If plan.RowsBefore > 0 Then k_report.Add(EfSeverity.Info, "Unitati_Detalii", "Există deja datele furnizorului: rămân cum sunt (nu se suprascriu).")
+            If plan.RowsBefore > 0 Then k_report.Add(EfSeverity.Info, "Unitati_Date", "Există deja datele furnizorului: rămân cum sunt (nu se suprascriu).")
         ElseIf k_cn IsNot Nothing Then
-            k_report.Add(EfSeverity.Blocking, "Unitati_Detalii",
-                $"Tabelul Unitati_Detalii lipsește din baza «{_options.CommonDatabase}». Rulați scriptul sql/00EF_13_unitati_detalii.sql.")
+            k_report.Add(EfSeverity.Blocking, "Unitati_Date",
+                $"Tabelul Unitati_Date lipsește din baza «{_options.CommonDatabase}». Rulați scriptul sql/00EF_13_unitati_detalii.sql.")
         End If
 
         If k_write AndAlso ok AndAlso Not k_report.HasBlocking Then
@@ -326,13 +326,13 @@ Public NotInheritable Class EfImporter
             plan.RowsAdded = CountDetails(k_cn) - plan.RowsBefore
             plan.RowsKept = plan.RowsSelected - plan.RowsAdded
         End If
-        _say($"Unitati_Detalii: {Convert.ToString(values(0), CultureInfo.InvariantCulture)}, CUI {Convert.ToString(values(1), CultureInfo.InvariantCulture)}.")
-        Advance(k_total, "Unitati_Detalii")
+        _say($"Unitati_Date: {Convert.ToString(values(0), CultureInfo.InvariantCulture)}, CUI {Convert.ToString(values(1), CultureInfo.InvariantCulture)}.")
+        Advance(k_total, "Unitati_Date")
     End Sub
 
     Private Function DetailsTableExists(k_cn As MySqlConnection) As Boolean
         Using cmd = k_cn.CreateCommand()
-            cmd.CommandText = "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = @s AND TABLE_NAME = 'Unitati_Detalii'"
+            cmd.CommandText = "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = @s AND TABLE_NAME = 'Unitati_Date'"
             cmd.Parameters.AddWithValue("@s", _options.CommonDatabase)
             Return Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0
         End Using
@@ -340,7 +340,7 @@ Public NotInheritable Class EfImporter
 
     Private Function CountDetails(k_cn As MySqlConnection) As Long
         Using cmd = k_cn.CreateCommand()
-            cmd.CommandText = "SELECT COUNT(*) FROM " & TargetServer.Quote(_options.CommonDatabase) & ".`Unitati_Detalii` WHERE `DC` = @dc"
+            cmd.CommandText = "SELECT COUNT(*) FROM " & TargetServer.Quote(_options.CommonDatabase) & ".`Unitati_Date` WHERE `DC` = @dc"
             cmd.Parameters.AddWithValue("@dc", _options.UnitDatabase)
             Return Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture)
         End Using
@@ -361,7 +361,7 @@ Public NotInheritable Class EfImporter
                     marks.Add("@p" & i.ToString(CultureInfo.InvariantCulture))
                     cmd.Parameters.AddWithValue("@p" & i.ToString(CultureInfo.InvariantCulture), If(k_values(i), DBNull.Value))
                 Next
-                cmd.CommandText = "INSERT IGNORE INTO " & TargetServer.Quote(_options.CommonDatabase) & ".`Unitati_Detalii` (" &
+                cmd.CommandText = "INSERT IGNORE INTO " & TargetServer.Quote(_options.CommonDatabase) & ".`Unitati_Date` (" &
                                   String.Join(", ", names) & ") VALUES (" & String.Join(", ", marks) & ")"
                 cmd.ExecuteNonQuery()
             End Using

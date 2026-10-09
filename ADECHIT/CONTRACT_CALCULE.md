@@ -139,7 +139,7 @@ ORDER BY; qExplicatie ordonează doar pe IDZ. Ordinea documentelor în interioru
 IDZ nu este garantată de sursă. Nu pretindem o ordine alfabetică/numerică implicită.
 Rândurile fără explicații nu sunt atinse de INNER JOIN din Update_detalii.
 
-Salvare_Lunara copiază 26 de câmpuri în SS_Buget, inclusiv valorile istorice Nume/CNP,
+Salvare_Lunara copiază 25 de câmpuri în SS_Buget, inclusiv valorile istorice Nume/CNP,
 Grupa/Educator, Plecat și Detalii. Nu copiază SoldInitial; acesta nu există în schema
 SS_Buget exportată. `Restanta` este copiată, deși lanțul 2021 nu îi atribuie explicit
 o valoare și tabela de lucru are default 0.

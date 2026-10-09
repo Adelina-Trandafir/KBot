@@ -1609,6 +1609,14 @@ Partial Public Class KBotComboBox
         Invalidate()
     End Sub
 
+    ' The edit box is placed by LayoutEdit from the frame's own size; letting the form's autoscale
+    ' pass scale it too would apply the factor twice and overrun the outline.
+    Protected Overrides ReadOnly Property ScaleChildren As Boolean
+        Get
+            Return False
+        End Get
+    End Property
+
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         LayoutEdit()

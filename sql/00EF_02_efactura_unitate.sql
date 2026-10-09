@@ -5,7 +5,7 @@
 -- the rest: InnoDB, utf8mb3 / utf8mb3_general_ci.
 --
 -- SLICE 00EF-13 (07.10.2026): the issuer's data (EF_Furnizor) and its accounts are NO LONGER a table of each unit
--- database: they are AVACONT_COMUN.Unitati_Detalii / Unitati_Conturi (sql/00EF_13_unitati_detalii.sql). The table
+-- database: they are AVACONT_COMUN.Unitati_Date / Unitati_Conturi (sql/00EF_13_unitati_detalii.sql). The table
 -- below that used to be here is gone; this file now has EIGHT tables.
 --
 -- ORDER (the whole 00EF-02):
@@ -27,7 +27,7 @@ USE `AVACONT_SURSA`;
 --
 --   issued invoices   Factura -> EF_Facturi        FacturaC -> EF_FacturiLinii
 --                     ClientiEF -> EF_Clienti      EF_UM -> AVACONT_COMUN.EF_UM (one list for all units)
---                     UNIT (address, contact) + Scheme row 'DPIFV' (C2, T3) -> AVACONT_COMUN.Unitati_Detalii (00EF-13)
+--                     UNIT (address, contact) + Scheme row 'DPIFV' (C2, T3) -> AVACONT_COMUN.Unitati_Date (00EF-13)
 --   received invoices EF -> EF_Mesaje   EFT -> EF_Primite   EFS -> EF_PrimiteLinii
 --                     EFT_C -> EF_PrimiteNote   EFT_M -> EF_PrimiteMesaje
 --

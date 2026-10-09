@@ -44,12 +44,70 @@ Public Class CertificateService
     ''' <remarks>I/O boundary: logs and rethrows.</remarks>
     Public Shared Function ForgetLastUsedCertificate() As Boolean
         Try
+            Dim forgotten As Boolean = False
             Dim filePath As String = LastUsedCertificatePath()
-            If Not File.Exists(filePath) Then Return False
-            File.Delete(filePath)
-            Return True
+            If File.Exists(filePath) Then
+                File.Delete(filePath)
+                forgotten = True
+            End If
+            ' The browser's auto-select rule (written by WorkflowExecutor) names the old certificate.
+            If RemoveAutoSelectPolicy() Then forgotten = True
+            Return forgotten
         Catch ex As Exception
             GlobalErrorLog.Write("CertificateService.ForgetLastUsedCertificate", ex)
+            Throw
+        End Try
+    End Function
+
+    Private Const AutoSelectPolicyKey As String = "Software\Policies\Chromium\AutoSelectCertificateForUrls"
+    Private Const AutoSelectPolicyUrlMarker As String = "forexe.mfinante.gov.ro"
+
+    ''' <summary>
+    ''' Deletes the FOREXE rules from HKCU\Software\Policies\Chromium\AutoSelectCertificateForUrls.
+    ''' That key is normally writable only by an administrator (which is why the rule is written
+    ''' through an elevated reg.exe), so when the direct delete is refused the same elevated
+    ''' route is used. True when at least one rule was removed.
+    ''' </summary>
+    ''' <remarks>Registry / process boundary: logs and rethrows.</remarks>
+    Private Shared Function RemoveAutoSelectPolicy() As Boolean
+        Try
+            Dim k_names As New List(Of String)
+            Using k_key As Microsoft.Win32.RegistryKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(AutoSelectPolicyKey, False)
+                If k_key Is Nothing Then Return False
+                For Each k_name As String In k_key.GetValueNames()
+                    Dim k_value As String = k_key.GetValue(k_name)?.ToString()
+                    If k_value IsNot Nothing AndAlso k_value.IndexOf(AutoSelectPolicyUrlMarker, StringComparison.OrdinalIgnoreCase) >= 0 Then
+                        k_names.Add(k_name)
+                    End If
+                Next
+            End Using
+            If k_names.Count = 0 Then Return False
+
+            Dim removed As Boolean = False
+            For Each k_name As String In k_names
+                Try
+                    Using k_key As Microsoft.Win32.RegistryKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(AutoSelectPolicyKey, True)
+                        If k_key Is Nothing Then Throw New UnauthorizedAccessException()
+                        k_key.DeleteValue(k_name, False)
+                    End Using
+                    removed = True
+                Catch ex As Exception When TypeOf ex Is UnauthorizedAccessException OrElse TypeOf ex Is System.Security.SecurityException
+                    Dim k_info As New ProcessStartInfo With {
+                        .FileName = "reg.exe",
+                        .Arguments = $"delete ""HKCU\{AutoSelectPolicyKey}"" /v ""{k_name}"" /f",
+                        .Verb = "runas",
+                        .UseShellExecute = True,
+                        .WindowStyle = ProcessWindowStyle.Hidden
+                    }
+                    Using k_proc As Process = Process.Start(k_info)
+                        k_proc.WaitForExit()
+                        If k_proc.ExitCode = 0 Then removed = True
+                    End Using
+                End Try
+            Next
+            Return removed
+        Catch ex As Exception
+            GlobalErrorLog.Write("CertificateService.RemoveAutoSelectPolicy", ex)
             Throw
         End Try
     End Function
@@ -147,6 +205,9 @@ Public Class CertificateService
         Return HardwareRejectReason(cert)
     End Function
 
+    ''' <summary>CryptoAPI NTE_BAD_KEYSET: the key container named by the certificate does not exist.</summary>
+    Private Const NTE_BAD_KEYSET As Integer = &H80090016
+
     ''' <summary>
     ''' The hardware rules: the key lives on a token/smart card (or carries Client Authentication),
     ''' is not exportable and is not in a Microsoft software provider. Nothing = accepted.
@@ -159,7 +220,6 @@ Public Class CertificateService
 
                 Dim providerName As String = ""
                 Dim isNonExportable As Boolean = False
-                Dim isHardwareProvider As Boolean = False
 
                 ' A. Provider and export policy.
                 Dim cngKey As RSACng = TryCast(rsaPrivateKey, RSACng)
@@ -175,6 +235,35 @@ Public Class CertificateService
                     End If
                 End If
 
+                Return ClassifyProvider(cert, providerName, isNonExportable)
+
+            End Using ' <-- the connection to the card closes here for this certificate
+
+        Catch ex As CryptographicException When ex.HResult = NTE_BAD_KEYSET
+            ' "Keyset does not exist" = a STALE store copy: certutil shows it as "Missing stored keyset".
+            ' The store entry names a key container the token no longer offers (token not plugged in,
+            ' or an old copy left by an earlier insertion). Not selectable; say so, do not list it.
+            GlobalErrorLog.Write("CertificateService.HardwareRejectReason", ex)
+            Dim k_provider As String = StoredKeyProviderName(cert)
+            Return "stale store copy: key container not found" &
+                   If(String.IsNullOrEmpty(k_provider), "", " (provider '" & k_provider & "')") &
+                   " - token not plugged in or certificate not propagated from it"
+        Catch ex As Exception
+            ' Deliberate swallow: an error here (e.g. token not plugged in, missing driver) makes
+            ' the certificate ineligible instead of crashing the picker; still logged globally.
+            GlobalErrorLog.Write("CertificateService.HardwareRejectReason", ex)
+            Return "error reading the private key: " & ex.Message
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Rules B-F of the picker: software-provider blacklist, hardware whitelist / Client
+    ''' Authentication, name filter. Nothing = accepted.
+    ''' </summary>
+    Private Shared Function ClassifyProvider(cert As X509Certificate2, providerName As String, isNonExportable As Boolean) As String
+        Try
+            Dim isHardwareProvider As Boolean = False
+            If providerName Is Nothing Then providerName = ""
                 ' B. Blacklist: the standard Microsoft software providers.
                 Dim microsoftSoftwareProviders As String() = {
                     "Microsoft Strong Cryptographic Provider",
@@ -234,14 +323,32 @@ Public Class CertificateService
                 End If
 
                 Return Nothing
-
-            End Using ' <-- the connection to the card closes here for this certificate
-
         Catch ex As Exception
-            ' Deliberate swallow: an error here (e.g. token not plugged in, missing driver) makes
-            ' the certificate ineligible instead of crashing the picker; still logged globally.
-            GlobalErrorLog.Write("CertificateService.HardwareRejectReason", ex)
+            GlobalErrorLog.Write("CertificateService.ClassifyProvider", ex)
             Return "error reading the private key: " & ex.Message
+        End Try
+    End Function
+
+    <System.Runtime.InteropServices.DllImport("crypt32.dll", SetLastError:=True)>
+    Private Shared Function CertGetCertificateContextProperty(pCertContext As IntPtr, dwPropId As UInteger, pvData As IntPtr, ByRef pcbData As UInteger) As Boolean
+    End Function
+
+    ''' <summary>
+    ''' Name of the key provider recorded on the certificate (CERT_KEY_PROV_INFO_PROP_ID), read from
+    ''' the certificate context without opening the key. Nothing when none is recorded.
+    ''' </summary>
+    Private Shared Function StoredKeyProviderName(cert As X509Certificate2) As String
+        Const CERT_KEY_PROV_INFO_PROP_ID As UInteger = 2UI
+        Dim k_size As UInteger = 0UI
+        If Not CertGetCertificateContextProperty(cert.Handle, CERT_KEY_PROV_INFO_PROP_ID, IntPtr.Zero, k_size) OrElse k_size = 0UI Then Return Nothing
+        Dim k_buffer As IntPtr = System.Runtime.InteropServices.Marshal.AllocHGlobal(CInt(k_size))
+        Try
+            If Not CertGetCertificateContextProperty(cert.Handle, CERT_KEY_PROV_INFO_PROP_ID, k_buffer, k_size) Then Return Nothing
+            ' CRYPT_KEY_PROV_INFO: pwszContainerName, then pwszProvName.
+            Dim k_namePtr As IntPtr = System.Runtime.InteropServices.Marshal.ReadIntPtr(k_buffer, IntPtr.Size)
+            Return System.Runtime.InteropServices.Marshal.PtrToStringUni(k_namePtr)
+        Finally
+            System.Runtime.InteropServices.Marshal.FreeHGlobal(k_buffer)
         End Try
     End Function
 

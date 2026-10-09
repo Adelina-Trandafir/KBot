@@ -58,7 +58,7 @@ def _blank(value):
 def verifica(furnizor, client, invoice, lines, known_units, bank_name):
     """The findings for one invoice; an empty list means nothing was found.
 
-    furnizor   Unitati_Detalii row or None (the unit has not filled in its issuer data yet)
+    furnizor   Unitati_Date row or None (the unit has not filled in its issuer data yet)
     client     EF_Clienti row         invoice  EF_Facturi row         lines  EF_FacturiLinii rows
     known_units  set of the codes in AVACONT_COMUN.EF_UM, or None when that table could not be read
     bank_name  `BIC.Banca` of the IBAN's bank code, or "" when it is not in the list

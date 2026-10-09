@@ -28,10 +28,10 @@ USE `AVACONT_COMUN`;
 -- touching Unitati.
 --   SerieFactura / NumarInitial: read-only for the window as soon as the unit has one issued invoice (the server
 --     refuses a change then, see facturi.furnizor_set).
---   AnafPreluat: 1 once the button «Preia de la ANAF» was used (it works ONCE per unit: ANAF's name and address
---     overwrite what is typed, so it is allowed a single time); DataAnafPreluat = when.
+--   DataAnaf: when «Preia de la ANAF» (or the window opening with an empty name) last took the name, county, city and
+--     address from ANAF. It can be repeated at will: ANAF's text overwrites those four fields.
 -- ---------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `Unitati_Detalii` (
+CREATE TABLE IF NOT EXISTS `Unitati_Date` (
   `DC` varchar(64) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL COMMENT 'Unitati.DC = the unit database name',
   `Denumire` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
   `CodFiscal` varchar(32) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL COMMENT 'As sent to ANAF: digits, or RO + digits when the unit is a VAT payer',
@@ -43,11 +43,10 @@ CREATE TABLE IF NOT EXISTS `Unitati_Detalii` (
   `SerieFactura` varchar(10) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT 'Was Scheme.T3 of DPIFV; goes in front of the number: Serie_Numar',
   `NumarInitial` int(11) NOT NULL DEFAULT 1 COMMENT 'First invoice number of a series that has no invoice yet (was Scheme.C5 of DPIFV)',
   `AfiseazaPrimiteNoi` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'Was Scheme.C2 of DPIFV: tick the new received invoices before downloading them',
-  `AnafPreluat` tinyint(4) NOT NULL DEFAULT 0 COMMENT '1 = the name and address were already taken from ANAF once; the button is then closed',
-  `DataAnafPreluat` datetime NULL DEFAULT NULL,
+  `DataAnaf` datetime NULL DEFAULT NULL COMMENT 'Last take of the name / county / city / address from ANAF',
   `DataModificare` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`DC`) USING BTREE,
-  CONSTRAINT `FK_Unitati_Detalii_Unitati` FOREIGN KEY (`DC`) REFERENCES `Unitati` (`DC`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `FK_Unitati_Date_Unitati` FOREIGN KEY (`DC`) REFERENCES `Unitati` (`DC`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
 
 -- ---------------------------------------------------------------------------------
@@ -72,14 +71,14 @@ CREATE TABLE IF NOT EXISTS `Unitati_Conturi` (
 
 -- =====================================================================================
 -- Check afterwards (one statement at a time):
---   SHOW CREATE TABLE Unitati_Detalii;      SHOW CREATE TABLE Unitati_Conturi;      -- utf8mb3_general_ci, 1 FK each
+--   SHOW CREATE TABLE Unitati_Date;      SHOW CREATE TABLE Unitati_Conturi;      -- utf8mb3_general_ci, 1 FK each
 -- =====================================================================================
 
 -- =====================================================================================
 -- COPY from a unit database that already has the OLD tables (change `001_GR23` twice; one unit at a time; NOT run).
--- The old EF_Furnizor never had AnafPreluat, so it starts at 0. Reprezentant is not carried.
+-- Reprezentant is not carried.
 --
---   INSERT INTO AVACONT_COMUN.Unitati_Detalii
+--   INSERT INTO AVACONT_COMUN.Unitati_Date
 --          (DC, Denumire, CodFiscal, Adresa, Orasul, Judetul, Mail, Telefon, SerieFactura, NumarInitial, AfiseazaPrimiteNoi)
 --   SELECT '001_GR23', Denumire, CodFiscal, Adresa, Orasul, Judetul, Mail, Telefon, SerieFactura, NumarInitial, AfiseazaPrimiteNoi
 --     FROM `001_GR23`.EF_Furnizor WHERE Id = 1

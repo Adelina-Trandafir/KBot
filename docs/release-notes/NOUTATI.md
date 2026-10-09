@@ -6,6 +6,24 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.1.9 (08.10.2026)
+
+<!-- release: utc=2026-10-08T05:00:33Z -->
+<!-- felii: 000T-05, 000T-06, 000T-07, 000T-09, 000T-10, 0111-01, 0078-13, 0078-14, 0078-15, 00EF-08, 00EF-09, 00EF-12, 00EF-13, 00EF-14, 0000-51, 0000-53, 0000-54, 0000-55, 0000-56, 0000-57, 0000-58 -->
+
+- Meniul «E-Factura» are o fereastra noua pentru facturile emise: clientii in arbore, facturile sub ei, cu pictograma starii.
+- Din meniul unei facturi: trimitere la ANAF, validare, eroarea ANAF, factura clasica sau cea ANAF, stornare, modificare.
+- «Date Unitate» e o fereastra separata (denumire, cod fiscal, adresa, serie, primul numar); «Preia de la ANAF» le completeaza.
+- Conturile bancare ale unitatii se tin intr-o lista proprie; banca se stabileste singura din IBAN.
+- In fereastra de asociere a receptiilor se poate corecta valoarea unei receptii gresite, cu motiv obligatoriu.
+- Tutorialele: 14 tutoriale noi (conectare la FOREXE, extrase, clasificatii, parteneri, actualizare angajamente etc.).
+- Un tutorial poate trimite la altul printr-o legatura; mesajele tutorialului apar deasupra cardului de pas.
+- La pornire apare un mic tutorial despre tutoriale; se opreste din «Setari», «Arata tutorialul de inceput la pornirea K-BOT».
+- Documentele PDF din vizualizatorul incorporat se deschid mai sigur, fara sa mai ramana goale pana la un clic.
+- La un Adobe mai vechi de 2025, K-BOT avertizeaza la pornire si recomanda Adobe Acrobat Reader 2025 sau mai nou.
+- La salvarea unui PDF peste un fisier existent, intrebarea «Replace existing file?» primeste raspuns singura.
+- Ajutor: actualizat pentru facturile emise, conturi, date unitate si corectarea valorii unei receptii.
+
 ## 1.1.1.8 (04.10.2026)
 
 <!-- release: utc=2026-10-04T07:30:32Z -->

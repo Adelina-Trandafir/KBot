@@ -1,7 +1,7 @@
 # routes/efactura/facturi_store.py
 """
 SQL of the issued-invoice tables (slice 00EF-06): `EF_Clienti`, `EF_Facturi`, `EF_FacturiLinii` in the UNIT database
-(sql/00EF_02_efactura_unitate.sql), the issuer's `AVACONT_COMUN.Unitati_Detalii` / `Unitati_Conturi` (slice 00EF-13,
+(sql/00EF_02_efactura_unitate.sql), the issuer's `AVACONT_COMUN.Unitati_Date` / `Unitati_Conturi` (slice 00EF-13,
 sql/00EF_13_unitati_detalii.sql), and the two read-only common lists `AVACONT_COMUN.EF_UM` and `AVACONT_COMUN.BIC`.
 
 Plain statements on a cursor the caller owns (a DICTIONARY cursor: rows come back as dicts); the rules --
@@ -13,9 +13,9 @@ from decimal import Decimal
 
 # The issuer's data and accounts live in AVACONT_COMUN (slice 00EF-13), one row per unit (key DC); the statements name the
 # schema, so the unit connection reads and locks them in the same transaction as the invoice tables.
-FURNIZOR_TABLE = "AVACONT_COMUN.Unitati_Detalii"
+FURNIZOR_TABLE = "AVACONT_COMUN.Unitati_Date"
 CONTURI_TABLE = "AVACONT_COMUN.Unitati_Conturi"
-# What the window edits (and what the XML reads); AnafPreluat is written only by furnizor_mark_anaf.
+# What the window edits (and what the XML reads); DataAnaf is written only by furnizor_mark_anaf.
 FURNIZOR_COLUMNS = ("Denumire", "CodFiscal", "Adresa", "Orasul", "Judetul", "Mail", "Telefon",
                     "SerieFactura", "NumarInitial", "AfiseazaPrimiteNoi")
 CLIENT_COLUMNS = ("IdClient", "DenumireClient", "CodFiscal", "IndFiscal", "Cont", "Banca", "Adresa", "Judetul",
@@ -39,8 +39,8 @@ def like(text):
 # issuer
 # ---------------------------------------------------------------------------------------------
 def furnizor_get(cursor, dc, for_update=False):
-    """The unit's row of Unitati_Detalii (None = not filled in yet), plus AnafPreluat."""
-    cursor.execute("SELECT " + ", ".join(FURNIZOR_COLUMNS) + ", AnafPreluat FROM " + FURNIZOR_TABLE + " WHERE DC = %s"
+    """The unit's row of Unitati_Date (None = not filled in yet)."""
+    cursor.execute("SELECT " + ", ".join(FURNIZOR_COLUMNS) + " FROM " + FURNIZOR_TABLE + " WHERE DC = %s"
                    + (" FOR UPDATE" if for_update else ""), (dc,))
     return cursor.fetchone()
 
@@ -60,14 +60,16 @@ def furnizor_unit(cursor, dc):
     return cursor.fetchone()
 
 
-def furnizor_mark_anaf(cursor, dc, denumire, adresa, cod_fiscal):
-    """The one-time take from ANAF (slice 00EF-13): writes the name and the address, closes the button (AnafPreluat = 1).
-    A unit with no row yet gets one, with `cod_fiscal` as the tax code; an existing row keeps everything else."""
+def furnizor_mark_anaf(cursor, dc, denumire, adresa, judet, oras, cod_fiscal):
+    """The take from ANAF (slice 00EF-13): writes the name and the address, and the county and the city when they could be
+    read from the address (otherwise what is there stays). A unit with no row yet gets one, with `cod_fiscal` as the tax
+    code; an existing row keeps everything else. DataAnaf = when it was last done."""
     cursor.execute(
-        f"INSERT INTO {FURNIZOR_TABLE} (DC, Denumire, CodFiscal, Adresa, AnafPreluat, DataAnafPreluat) "
-        "VALUES (%s, %s, %s, %s, 1, NOW()) "
-        "ON DUPLICATE KEY UPDATE Denumire = VALUES(Denumire), Adresa = VALUES(Adresa), AnafPreluat = 1, DataAnafPreluat = NOW()",
-        (dc, denumire, cod_fiscal, adresa))
+        f"INSERT INTO {FURNIZOR_TABLE} (DC, Denumire, CodFiscal, Adresa, Judetul, Orasul, DataAnaf) "
+        "VALUES (%s, %s, %s, %s, %s, %s, NOW()) "
+        "ON DUPLICATE KEY UPDATE Denumire = VALUES(Denumire), Adresa = VALUES(Adresa), "
+        "Judetul = COALESCE(VALUES(Judetul), Judetul), Orasul = COALESCE(VALUES(Orasul), Orasul), DataAnaf = NOW()",
+        (dc, denumire, cod_fiscal, adresa, judet, oras))
 
 
 def have_invoices(cursor):

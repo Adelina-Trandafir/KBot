@@ -87,20 +87,20 @@ K-BOT nu salvează până nu ai: un client ales, o dată, un cont emitent și ce
 Numărul facturii, **Data facturii** (scrisă sau aleasă din calendar; se schimbă doar la o factură nouă sau la ultima factură a seriei, și nu înainte de factura anterioară), **Tip factură** (380 — factură; 384 — factură corectată; îl pune K-BOT), **Stare**, **Comentarii factură** (cel mult 255 de caractere), **Ref. comandă (BT-13)** (cel mult 30), **Cont emitent (IBAN)** — contul în care se plătește **această factură**; alegi unul folosit pe facturile anterioare sau scrii altul — și **TOTAL FACTURĂ**, care se adună singur din linii. Sub ele, K-BOT scrie în cuvinte situația facturii (ciornă, acceptată, motivul unui refuz, ce stornează).
 
 ## Vederea Cumpărător
-<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57 -->
+<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-15 -->
 
-Sus alegi clientul din listă; tastează o parte din denumire sau din codul fiscal ca să-l găsești. Câmpurile de dedesubt îl arată: **persoană fizică** (bifă; atunci «Cod fiscal» este CNP-ul), **prefix fiscal** («RO» pentru plătitor de TVA), **cod fiscal**, **denumire**, **județ**, **oraș**, **sector** (doar pentru București), **adresă**, **cont (IBAN)** și **bancă**.
+Sus alegi clientul din listă; tastează o parte din denumire sau din codul fiscal ca să-l găsești. Câmpurile de dedesubt îl arată: **persoană fizică** (bifă; atunci «Cod fiscal» este CNP-ul), **cod fiscal** și, pe același rând, **prefix fiscal** («RO» pentru plătitor de TVA), **denumire**, **județ**, **oraș**, **sector** (doar pentru București), **adresă**, **cont (IBAN)** și **bancă**.
 
-- **«Client nou»** golește câmpurile pentru un client nou.
+- **«Client nou»** golește câmpurile pentru un client nou și le activează; până îl apeși, câmpurile sunt inactive și doar lista de clienți se poate folosi. Cursorul merge pe **Cod fiscal**: după ce l-ai scris (și ai trecut mai departe sau ai apăsat Enter), K-BOT întreabă ANAF și completează singur denumirea, prefixul, județul, orașul și adresa. Verifici datele și apeși «Salvează clientul». Dacă ANAF nu răspunde sau nu cunoaște codul, primești un mesaj și completezi de mână.
 - **«Salvează clientul»** îl scrie în baza de date **separat de factură** și îl alege pentru ea. Dacă ai schimbat câmpurile unui client și nu l-ai salvat, factura nu se salvează până nu apeși «Salvează clientul».
 - **«Șterge clientul»** îl șterge; un client care are facturi nu se poate șterge.
 
 Câmpurile se pot schimba doar cât factura este deschisă pentru modificare.
 
 ## Date unitate
-<!-- slice: 00EF-13, 0000-58 -->
+<!-- slice: 00EF-13, 0000-58, 00EF-14 -->
 
-Datele unității care emite facturile (aceleași pe toate facturile) se țin într-o fereastră a lor, **«Date Unitate»**. O deschizi din butonul cu litera K din bara de titlu a ferestrei de facturi, care desface un meniu cu două rânduri: **«Date Unitate»** și **«Conturi Unitate»**. Dacă unitatea nu are încă aceste date, fereastra se deschide singură la intrare, iar facturi noi nu poți adăuga până nu le salvezi.
+Datele unității care emite facturile (aceleași pe toate facturile) se țin într-o fereastră a lor, **«Date Unitate»**. O deschizi din butonul cu litera K din bara de titlu a ferestrei de facturi, care desface un meniu cu două rânduri: **«Date Unitate»** și **«Conturi Unitate»**. Dacă unitatea nu are încă aceste date, fereastra se deschide singură la intrare, iar facturi noi nu poți adăuga până nu le salvezi. La deschidere, dacă denumirea este goală, K-BOT ia singur de la ANAF denumirea, județul, orașul și adresa, după codul fiscal al unității; restul le completezi tu.
 
 <!-- capture: date-unitate | caption: Fereastra «Date Unitate» | prepare: Din fereastra de facturi apăsați «Date unitate», pe o unitate cu datele completate. -->
 
@@ -112,7 +112,7 @@ Datele unității care emite facturile (aceleași pe toate facturile) se țin î
 
 **«Salvează»** scrie datele; **«Ieșire»** închide fereastra (dacă ai modificări nesalvate, K-BOT întreabă). Atenție: o modificare are efect asupra tuturor documentelor generate de aici înainte.
 
-**«Preia de la ANAF»** completează denumirea și adresa unității după codul ei fiscal din lista unităților și le scrie imediat. Se poate folosi **o singură dată**: după aceea butonul se închide, iar datele se schimbă doar de mână.
+**«Preia de la ANAF»** completează din nou denumirea, județul, orașul și adresa unității după codul ei fiscal din lista unităților și le scrie imediat. Îl poți folosi oricând, dacă ai schimbat de mână aceste câmpuri și vrei să le readuci; K-BOT întreabă înainte, pentru că ce ai scris în ele se înlocuiește.
 
 Conturile bancare ale unității sunt în fereastra **«Conturi Unitate»**, din același meniu — vezi [Conturile unității emitente](topic:contabil.efactura.conturi).
 

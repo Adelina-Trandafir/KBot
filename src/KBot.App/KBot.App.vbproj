@@ -111,6 +111,13 @@
     <None Include="HelpContent\**\*" Link="Help\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- Slice 0112: the message catalog (one entry per message box call). Edited entries replace the wording
+       of their call at run time (KBotMessage -> MessageOverrides), so it ships as <AppDir>\Config\ in
+       every configuration. Made and edited by tools\MessageCatalog\scan.js + the Debug catalog form. -->
+  <ItemGroup>
+    <None Include="Config\mesaje_catalog.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- 01.10.2026: the release notes of every version, shipped as <AppDir>\Noutati\NOUTATI.md for
        «Setari -> Istoric versiuni» and the «Ce e nou?» row of the help popup. -->
   <ItemGroup>

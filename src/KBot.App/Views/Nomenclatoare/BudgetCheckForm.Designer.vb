@@ -83,7 +83,7 @@ Partial Class BudgetCheckForm
         KBotDataColumn5.DecimalPlaces = 2
         KBotDataColumn5.Format = KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderText = "Credit FOREXE"
+        KBotDataColumn5.HeaderText = "Buget FOREXE"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "fx"
         KBotDataColumn5.OptionGroup = Nothing
@@ -125,7 +125,7 @@ Partial Class BudgetCheckForm
         gridVerificare.Size = New Size(1196, 600)
         gridVerificare.TabIndex = 1
         tips.SetToolTipHeader(gridVerificare, "Bugetul din FOREXE față de cel din K-BOT")
-        tips.SetToolTipText(gridVerificare, "«Buget K-BOT» = totalul versiunii în vigoare azi + totalul rectificărilor ei." & vbLf & "«Credit FOREXE» = creditul bugetar al clasificației, de la ultima descărcare (același pentru toate angajamentele ei)." & vbLf & "Diferența = FOREXE − K-BOT." & vbLf & "Din fereastra «Clasificații bugetare»: dublu clic pe un rând închide fereastra și alege clasificația în arbore.")
+        tips.SetToolTipText(gridVerificare, "«Buget K-BOT» = totalul versiunii în vigoare azi + totalul rectificărilor ei." & vbLf & "«Buget FOREXE» = creditul bugetar al clasificației, de la ultima descărcare (același pentru toate angajamentele ei)." & vbLf & "Diferența = FOREXE − K-BOT." & vbLf & "Din fereastra «Clasificații bugetare»: dublu clic pe un rând închide fereastra și alege clasificația în arbore.")
         '
         ' pnlCard
         '

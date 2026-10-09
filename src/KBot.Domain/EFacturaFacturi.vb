@@ -6,7 +6,7 @@ Imports System.Collections.Generic
 ' (ASCII); what the server computes (state, total, what the operator may do) is carried as read-only facts so the
 ' window never repeats the rules.
 
-''' <summary>The unit as the issuer of the invoices (<c>AVACONT_COMUN.Unitati_Detalii</c>, one row per unit).</summary>
+''' <summary>The unit as the issuer of the invoices (<c>AVACONT_COMUN.Unitati_Date</c>, one row per unit).</summary>
 Public NotInheritable Class EFacturaFurnizor
 
     Public Property Denumire As String = String.Empty
@@ -31,9 +31,6 @@ Public NotInheritable Class EFacturaFurnizor
 
     ''' <summary>Belongs to the received invoices (a later slice); carried so a save does not reset it.</summary>
     Public Property AfiseazaPrimiteNoi As Boolean
-
-    ''' <summary>Read only (the server decides): the name and address were already taken from ANAF once, so the button is closed.</summary>
-    Public Property AnafPreluat As Boolean
 
     ''' <summary>Read only (the server decides): the unit has issued invoices, so the series and the first number are fixed.</summary>
     Public Property AreFacturi As Boolean

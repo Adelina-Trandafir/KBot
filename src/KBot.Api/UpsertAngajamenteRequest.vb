@@ -571,6 +571,9 @@ Public NotInheritable Class PostPrelucrareAlegere
     Public Property clsfe As String
     Public Property id_unitate As Integer
     Public Property retine As Boolean
+    ' 08.10.2026: True = «register this classification in Clasificatii» (the operator answered
+    ' Da to the CLASIFICATIE_LIPSA question). Nothing otherwise, so the key is not sent.
+    Public Property inregistreaza As Boolean?
 End Class
 
 ' The 200 body. `are` is the port of FX_Angajament_Are; while steps 3-8 are unported it
@@ -598,6 +601,8 @@ Public NotInheritable Class PostPrelucrareChoiceBody
     Public Property reason As String
     Public Property cod As String
     Public Property alegeri_necesare As New List(Of PostPrelucrareAlegereNecesara)()
+    ' reason = CLASIFICATIE_LIPSA: classifications in no unit's nomenclator (same shape, no units).
+    Public Property clasificatii_lipsa As New List(Of PostPrelucrareAlegereNecesara)()
 End Class
 
 Public NotInheritable Class PostPrelucrareAlegereNecesara

@@ -60,6 +60,9 @@ Public Interface IEFacturaApi
     ''' <summary>POST (IdClient = 0) or PUT /api/efactura/clienti -- answers the stored customer.</summary>
     Function SaveClientAsync(k_client As EFacturaClient, ct As CancellationToken) As Task(Of EFacturaClient)
 
+    ''' <summary>POST /api/efactura/clienti/anaf -- the customer fields ANAF knows for a tax code (nothing is stored).</summary>
+    Function TakeClientFromAnafAsync(k_codFiscal As String, ct As CancellationToken) As Task(Of EFacturaClient)
+
     ''' <summary>DELETE /api/efactura/clienti/{id} -- refused by the server while the customer has invoices.</summary>
     Function DeleteClientAsync(k_idClient As Integer, ct As CancellationToken) As Task
 

@@ -582,6 +582,15 @@ Public NotInheritable Class KBotTextField
         Return If(stretched, 0, Width)
     End Function
 
+    ' The inner box is placed by LayoutBox from the frame's size (already scaled). If the form's
+    ' autoscale pass also scaled it, it would be scaled TWICE (after the frame's OnResize had laid
+    ' it out) and its white fill would overrun the frame's right/bottom outline.
+    Protected Overrides ReadOnly Property ScaleChildren As Boolean
+        Get
+            Return False
+        End Get
+    End Property
+
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
         Try

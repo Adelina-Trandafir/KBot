@@ -306,6 +306,9 @@ class SchemaDiff:
     # -- 1 / 2: tables -----------------------------------------------
     def _tables(self):
         for name in sorted(set(self.tgt.tables) - set(self.src.tables)):
+            # SLICE-ADE3-03: ADE owns its schema; absence from the K-BOT template is not deletion.
+            if name.upper().startswith('AD_') or name == 'Unitati_Chitante':
+                continue
             self._emit(name, None, "TABLE", "DROP",
                        f"DROP TABLE {self._t(name)};", destructive=True)
 

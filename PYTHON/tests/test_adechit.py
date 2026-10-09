@@ -1,0 +1,335 @@
+import json
+import sqlite3
+import sys
+import uuid
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from ADECHIT.tools.compare_phases import compare
+from ADECHIT.tools.preview import create_app
+
+
+def client(tmp_path):
+    app = create_app(tmp_path)
+    app.testing = True
+    return app.test_client(), tmp_path / 'preview.sqlite'
+
+
+def headers(key=False):
+    result = {'X-Ade-Unit': 'preview'}
+    if key:
+        result['Idempotency-Key'] = str(uuid.uuid4())
+    return result
+
+
+def post(http, path, body, key=None):
+    h = headers()
+    h['Idempotency-Key'] = key or str(uuid.uuid4())
+    return http.post(path, json=body, headers=h)
+
+
+def test_context_edit_and_read_only_refusal(tmp_path):
+    http, _ = client(tmp_path)
+    context = http.get('/api/adechit/context', headers=headers())
+    assert context.status_code == 200
+    assert context.json['preview'] is True
+
+    row = http.get('/api/adechit/rows/Prezenta', headers=headers()).json['rows'][0]
+    saved = post(http, '/api/adechit/attendance', {
+        'id': row['IDZ'], 'version': row['Version'], 'values': {'ZilePrezenta': 11},
+    })
+    assert saved.status_code == 200
+    assert saved.json['ZilePrezenta'] == 11
+    assert saved.json['ValoareContract'] == 275
+
+    refused = post(http, '/api/adechit/catalog/Chitante', {
+        'id': None, 'values': {'Numar': 7},
+    })
+    assert refused.status_code == 400
+    assert refused.json['reason'] == 'TABLE'
+
+
+def test_workspace_situation_and_prepare_new_children(tmp_path):
+    http, database = client(tmp_path)
+    situation = http.get('/api/adechit/situation/1', headers=headers())
+    assert situation.status_code == 200
+    assert situation.json['rows'][0]['Version'] == 1
+    assert situation.json['rows'][0]['ZileLuna'] == 22
+
+    connection = sqlite3.connect(database)
+    connection.execute("INSERT INTO AD_Platitori (IDP,IDG,Nume,Plecat) VALUES (2,1,'Copil nou',0)")
+    connection.commit(); connection.close()
+    prepared = post(http, '/api/adechit/attendance/prepare', {'month_id': 1, 'group_id': 1})
+    assert prepared.status_code == 200
+    assert prepared.json['count'] == 1
+    assert prepared.json['created'][0]['IDP'] == 2
+    repeated = post(http, '/api/adechit/attendance/prepare', {'month_id': 1, 'group_id': 1})
+    assert repeated.status_code == 409 and repeated.json['reason'] == 'NO_NEW_CHILDREN'
+
+
+def test_m04_and_idempotency(tmp_path):
+    http, _ = client(tmp_path)
+    body = {'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-11-03',
+            'amount': 100, 'number': 'OP-1', 'document_type': 'Virament'}
+    key = 'same-operation-0001'
+    first = post(http, '/api/adechit/documents', body, key)
+    repeated = post(http, '/api/adechit/documents', body, key)
+    assert first.status_code == repeated.status_code == 200
+    assert first.json == repeated.json
+    assert len(http.get('/api/adechit/rows/Plati', headers=headers()).json['rows']) == 1
+
+    changed = post(http, '/api/adechit/documents', {**body, 'amount': 101}, key)
+    assert changed.status_code == 409 and changed.json['reason'] == 'KEY_REUSED'
+    refused = post(http, '/api/adechit/documents', {**body, 'date': '2025-11-03', 'number': 'OP-2'})
+    assert refused.status_code == 400 and refused.json['reason'] == 'DATE_MONTH'
+
+
+def test_receipt_refund_and_open_decision_refusals(tmp_path):
+    http, _ = client(tmp_path)
+    receipt = post(http, '/api/adechit/documents', {
+        'kind': 'receipt', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-08', 'amount': 125,
+    })
+    assert receipt.status_code == 200
+    assert (receipt.json['Serie'], receipt.json['Numar'], receipt.json['Valoare']) == ('DEMO', 1, 125)
+    refund = post(http, '/api/adechit/documents', {
+        'kind': 'refund', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-08',
+        'amount': 20.5, 'number': 'R-1', 'explanation': 'Restituire test',
+    })
+    assert refund.status_code == 200
+    refused = post(http, '/api/adechit/cancel', {
+        'kind': 'refund', 'id': refund.json['IDR'], 'version': refund.json['Version'], 'reason': 'test',
+    })
+    assert refused.status_code == 409 and refused.json['reason'] == 'M03'
+    transfer = post(http, '/api/adechit/transfer', {'id': 1, 'group_id': 2})
+    assert transfer.status_code == 409 and transfer.json['reason'] == 'M06'
+
+
+def test_m02_closed_snapshot_is_rewritten_on_cancel(tmp_path):
+    http, _ = client(tmp_path)
+    closed = post(http, '/api/adechit/close', {'id': 1})
+    assert closed.status_code == 200
+    document = post(http, '/api/adechit/documents', {
+        'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-20',
+        'amount': 75, 'number': 'OP-75', 'document_type': 'Virament',
+    })
+    assert document.status_code == 200
+    snapshot = http.get('/api/adechit/rows/SS_Buget?IDL=1', headers=headers()).json['rows'][0]
+    assert snapshot['Plati'] == 75
+    canceled = post(http, '/api/adechit/cancel', {
+        'kind': 'other', 'id': document.json['IDA'], 'version': document.json['Version'], 'reason': 'corecție test',
+    })
+    assert canceled.status_code == 200
+    snapshot = http.get('/api/adechit/rows/SS_Buget?IDL=1', headers=headers()).json['rows'][0]
+    assert snapshot['Plati'] == 0
+    attendance = http.get('/api/adechit/rows/Prezenta?IDL=1', headers=headers()).json['rows'][0]
+    locked = post(http, '/api/adechit/attendance', {
+        'id': attendance['IDZ'], 'version': attendance['Version'], 'values': {'ZilePrezenta': 1},
+    })
+    assert locked.status_code == 409 and locked.json['reason'] == 'CLOSED'
+
+
+def test_m05_blocks_both_months_then_orphans_and_reattaches(tmp_path):
+    http, database = client(tmp_path)
+    assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
+    next_attendance = http.get('/api/adechit/rows/Prezenta?IDL=2', headers=headers()).json['rows'][0]
+    assert post(http, '/api/adechit/documents', {
+        'kind': 'other', 'attendance_id': next_attendance['IDZ'], 'payer_id': 1,
+        'date': '2026-11-10', 'amount': 30, 'number': 'OP-NOV', 'document_type': 'Virament',
+    }).status_code == 200
+    blocked = post(http, '/api/adechit/reopen', {'id': 1})
+    assert blocked.status_code == 409 and blocked.json['reason'] == 'REOPEN_MOVEMENTS'
+
+    connection = sqlite3.connect(database)
+    connection.execute("UPDATE AD_Settings SET SettingValue='0' WHERE SettingKey='BlockReopenWithMovements'")
+    connection.commit(); connection.close()
+    reopened = post(http, '/api/adechit/reopen', {'id': 1})
+    assert reopened.status_code == 200 and reopened.json['orphaned']['Plati'] == 1
+    orphan = http.get('/api/adechit/rows/Plati', headers=headers()).json['rows'][0]
+    assert orphan['IDL'] is None and orphan['IDZ'] is None
+    assert (orphan['OriginMonth'], orphan['OriginYear']) == (11, 2026)
+
+    closed_again = post(http, '/api/adechit/close', {'id': 1})
+    assert closed_again.status_code == 200 and closed_again.json['reattached']['Plati'] == 1
+    attached = http.get('/api/adechit/rows/Plati', headers=headers()).json['rows'][0]
+    assert attached['IDL'] == closed_again.json['opened']['IDL'] and attached['IDZ'] is not None
+
+
+def test_m05_block_also_checks_reopened_month(tmp_path):
+    http, _ = client(tmp_path)
+    movement = post(http, '/api/adechit/documents', {
+        'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-10',
+        'amount': 15, 'number': 'OP-OCT', 'document_type': 'Virament',
+    })
+    assert movement.status_code == 200
+    assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
+    blocked = post(http, '/api/adechit/reopen', {'id': 1})
+    assert blocked.status_code == 409 and blocked.json['reason'] == 'REOPEN_MOVEMENTS'
+
+
+def test_import_repeat_and_reconcile(tmp_path):
+    http, database = client(tmp_path)
+    connection = sqlite3.connect(database)
+    table_names = [row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE name LIKE 'AD_%'")]
+    for name in table_names:
+        if name not in ('AD_Lock', 'AD_Operations', 'AD_Settings', 'AD_Imports'):
+            connection.execute(f'DELETE FROM `{name}`')
+    connection.execute('DELETE FROM AD_Imports')
+    connection.commit(); connection.close()
+
+    tables = {name: [] for name in ('Grupe', 'ValoriTaxe', 'Platitori', 'Platitori_sub',
+        'LunaD', 'Prezenta', 'Plati', 'Chitante', 'AlteDoc', 'Retur', 'SS_Buget')}
+    tables['Grupe'] = [{'IDG': 41, 'Grupa': 'Import test', 'Educator': 'E'}]
+    dataset = {'format': 'adechit-access-v1', 'source': 'fixture', 'tables': tables}
+    body = {'dataset': dataset, 'source_file': 'fixture.json'}
+    first = http.post('/api/adechit/import', json=body, headers=headers())
+    repeated = http.post('/api/adechit/import', json=body, headers=headers())
+    assert first.status_code == repeated.status_code == 200
+    assert first.json['repeated'] is False and repeated.json['repeated'] is True
+    reconciliation = http.post('/api/adechit/reconcile', json=body, headers=headers())
+    assert reconciliation.status_code == 200 and reconciliation.json['ok'] is True
+
+
+def test_phase_comparator_reports_first_difference():
+    access = {'qPrezenta': [{'IDZ': 1, 'Plata': 10}], 'Update_Solduri': [{'IDZ': 1, 'SID': 2}]}
+    web = {'qPrezenta': [{'IDZ': 1, 'Plata': 10}], 'Update_Solduri': [{'IDZ': 1, 'SID': 3}]}
+    result = compare(access, web)
+    assert result['ok'] is False
+    assert result['first_divergent_phase'] == 'Update_Solduri'
+    assert result['differences'][0]['field'] == 'SID'
+
+
+def test_catalog_batch_rollback_and_idempotency(tmp_path):
+    http, _ = client(tmp_path)
+    body = {'items': [
+        {'table': 'Platitori', 'id': 1, 'version': 1, 'values': {'Nume': 'Updated child'}},
+        {'table': 'Platitori_sub', 'id': 1, 'version': 99, 'values': {'Nume': 'Updated payer'}},
+    ]}
+    refused = post(http, '/api/adechit/catalog-save', body)
+    assert refused.status_code == 409 and refused.json['reason'] == 'CONFLICT'
+    child = http.get('/api/adechit/rows/Platitori', headers=headers()).json['rows'][0]
+    assert child['Version'] == 1 and child['Nume'] != 'Updated child'
+    body['items'][1]['version'] = 1
+    first = post(http, '/api/adechit/catalog-save', body, 'catalog-batch-retry-1')
+    repeated = post(http, '/api/adechit/catalog-save', body, 'catalog-batch-retry-1')
+    assert first.status_code == repeated.status_code == 200
+    assert first.json == repeated.json
+    assert first.json['rows'][0]['Version'] == 2
+
+
+def test_catalog_batch_tax_validation_activation_and_rights(tmp_path):
+    http, database = client(tmp_path)
+    invalid = post(http, '/api/adechit/catalog-save', {'items': [
+        {'table': 'ValoriTaxe', 'id': 1, 'version': 1, 'values': {'TaxaZilnica': 30}},
+        {'table': 'ValoriTaxe', 'id': None, 'values': {'TaxaZilnica': -1}},
+    ]})
+    assert invalid.status_code == 400
+    assert http.get('/api/adechit/rows/ValoriTaxe', headers=headers()).json['rows'][0]['TaxaZilnica'] == 25
+    saved = post(http, '/api/adechit/catalog-save', {'items': [
+        {'table': 'ValoriTaxe', 'id': None, 'values': {'TaxaZilnica': 30, 'Activ': True}},
+        {'table': 'ValoriTaxe', 'id': 1, 'version': 1, 'values': {'Expl': 'Old tax'}},
+    ]})
+    assert saved.status_code == 200
+    taxes = http.get('/api/adechit/rows/ValoriTaxe', headers=headers()).json['rows']
+    assert [row['TaxaZilnica'] for row in taxes if row['Activ']] == [30]
+    assert http.get('/api/adechit/rows/Prezenta', headers=headers()).json['rows'][0]['IDV'] == 1
+    http.application.config['ADE_TEST_RIGHTS'].discard('catalog')
+    refused = post(http, '/api/adechit/catalog-save', {'items': [
+        {'table': 'ValoriTaxe', 'id': None, 'values': {'TaxaZilnica': 40}},
+    ]})
+    assert refused.status_code == 403
+
+
+def test_cnp_vba_codes_and_api_validation(tmp_path):
+    from PYTHON.routes.adechit.domain import cnp_code
+    def valid(prefix):
+        digit = sum(int(a) * int(b) for a, b in zip(prefix, '279146358279')) % 11
+        return prefix + str(1 if digit == 10 else digit)
+    sample = valid('520101012345')
+    assert cnp_code(sample) == -1
+    assert cnp_code(sample[:-1]) == 0
+    assert cnp_code('a' + sample[1:]) == 0
+    assert cnp_code(valid('520130112345')) == 2
+    assert cnp_code(valid('520103212345')) == 3
+    assert cnp_code(valid('520101053345')) == 4
+    assert cnp_code(sample[:-1] + str((int(sample[-1]) + 1) % 10)) == 5
+    # VBA checks only the supplied upper bounds, not a full calendar date.
+    assert cnp_code(valid('520000000345')) == -1
+    prefixes = ['52010101234' + str(index) for index in range(10)]
+    control_ten = next(prefix for prefix in prefixes
+                       if sum(int(a) * int(b) for a, b in zip(prefix, '279146358279')) % 11 == 10)
+    assert cnp_code(control_ten + '1') == -1
+    http, _ = client(tmp_path)
+    refused = post(http, '/api/adechit/catalog/Platitori_sub', {
+        'id': 1, 'version': 1, 'values': {'CNP_Platitor': 'invalid'},
+    })
+    assert refused.status_code == 400 and refused.json['reason'] == 'CNP'
+    saved = post(http, '/api/adechit/catalog/Platitori_sub', {
+        'id': 1, 'version': 1, 'values': {'CNP_Platitor': sample, 'Telefon': '0700000000'},
+    })
+    assert saved.status_code == 200 and saved.json['Telefon'] == '0700000000'
+    invalid_child = post(http, '/api/adechit/child-save', {'id': 1, 'version': 1, 'values': {'CNP': '123'}})
+    assert invalid_child.status_code == 400 and invalid_child.json['reason'] == 'CNP'
+
+
+def test_group_form_atomic_periods_and_conflicts(tmp_path):
+    http, _ = client(tmp_path)
+    body = {'id': None, 'values': {'Grupa': 'New group', 'InchisaDinAn': None}, 'educators': [
+        {'id': None, 'values': {'Educator': 'Teacher', 'DeLa': '2026-09-01', 'PanaLa': '2026-08-01'}},
+    ]}
+    assert post(http, '/api/adechit/group-save', body).status_code == 400
+    assert len(http.get('/api/adechit/rows/Grupe', headers=headers()).json['rows']) == 1
+    body['educators'][0]['values']['PanaLa'] = None
+    saved = post(http, '/api/adechit/group-save', body)
+    assert saved.status_code == 200
+    group = saved.json
+    periods = http.get('/api/adechit/rows/Grupe_Educator', headers=headers()).json['rows']
+    period = next(row for row in periods if row['IDG'] == group['IDG'])
+    edited = {'id': group['IDG'], 'version': group['Version'], 'values': {'Grupa': 'Changed'}, 'educators': [
+        {'id': period['IDGE'], 'version': 999, 'values': {'Educator': 'Teacher', 'DeLa': '2026-09-01', 'PanaLa': None}},
+    ]}
+    assert post(http, '/api/adechit/group-save', edited).status_code == 409
+    assert http.get('/api/adechit/rows/Grupe', headers=headers()).json['rows'][-1]['Grupa'] == 'New group'
+    edited['educators'] = [{'id': None, 'values': {'Educator': 'Teacher', 'DeLa': '2026-10-01', 'PanaLa': None}}]
+    refused = post(http, '/api/adechit/group-save', edited)
+    assert refused.status_code == 400 and refused.json['reason'] == 'PERIOD'
+
+
+def test_child_form_transfer_preserves_closed_month_and_logs_once(tmp_path):
+    http, _ = client(tmp_path)
+    group = post(http, '/api/adechit/group-save', {'id': None, 'values': {'Grupa': 'Target'}, 'educators': []}).json
+    assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
+    moved = {'id': 1, 'version': 1, 'values': {'Nume': 'Changed child', 'IDG': group['IDG'], 'Plecat': False}}
+    first = post(http, '/api/adechit/child-save', moved, 'child-form-transfer-01')
+    repeated = post(http, '/api/adechit/child-save', moved, 'child-form-transfer-01')
+    assert first.status_code == repeated.status_code == 200 and first.json == repeated.json
+    rows = http.get('/api/adechit/rows/Prezenta', headers=headers()).json['rows']
+    assert next(row for row in rows if row['IDL'] == 1)['IDG'] == 1
+    assert next(row for row in rows if row['IDL'] == 2)['IDG'] == group['IDG']
+    logs = http.get('/api/adechit/rows/Platitori_Istoric', headers=headers()).json['rows']
+    assert len(logs) == 1 and logs[0]['Tip'] == 'MUTARE'
+    invalid = post(http, '/api/adechit/child-save', {'id': 1, 'version': 2, 'values': {'Plecat': True}})
+    assert invalid.status_code == 400
+
+
+def test_departed_child_with_balance_stays_in_next_month(tmp_path):
+    http, _ = client(tmp_path)
+    departed = post(http, '/api/adechit/child-save', {'id': 1, 'version': 1,
+        'values': {'Plecat': True, 'DataIesire': '2026-10-09'}})
+    assert departed.status_code == 200
+    assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
+    data = http.get('/api/adechit/catalog-data', headers=headers()).json
+    special = next(row for row in data['groups'] if row.get('Tip') == 'PLECATI')
+    attendance = http.get('/api/adechit/rows/Prezenta?IDL=2', headers=headers()).json['rows']
+    assert len(attendance) == 1 and attendance[0]['IDG'] == special['IDG']
+
+
+def test_educator_history_is_authoritative_for_each_period():
+    from PYTHON.routes.adechit.domain import group_educators
+    group = {'IDG': 1, 'Educator': 'Legacy value'}
+    history = [{'IDG': 1, 'Educator': 'A', 'DeLa': '2026-01-01', 'PanaLa': '2026-09-15'},
+               {'IDG': 1, 'Educator': 'B', 'DeLa': '2026-09-16', 'PanaLa': '2026-10-31'}]
+    assert group_educators(group, history, '2026-09-10') == 'A'
+    assert group_educators(group, history, '2026-09-30') == 'B'
+    assert group_educators(group, history, '2026-11-01') == ''

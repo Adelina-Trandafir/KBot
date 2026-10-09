@@ -79,6 +79,10 @@ Friend Module Program
             ThemeManager.Initialize()
             KBotTheme.WireSubsystems()
 
+            ' From here on every KBotMessage.Show opens K-BOT's own themed message window instead of
+            ' the native Windows box (KBot.Controls\MessageBox). Needs the theme, so after Initialize.
+            KBot.Controls.KBotMessageBox.Install()
+
             ' The operator's switches (slice 0072, «Setări»). The FOREXE console verbosity is the
             ' one that has to be set BEFORE any console exists: RichTextBoxLogger starts on the
             ' build default (slice 0071) and only an explicit choice overrides it. The rest are

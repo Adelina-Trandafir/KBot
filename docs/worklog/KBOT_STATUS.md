@@ -262,10 +262,11 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 | 0110-11 | Sait: Administrare > «Coloane»: coloanele vizibile, pozitia, latimea si coloana care se extinde pentru toate grilele; export JSON pentru dezvoltator (cererea operatorului, 05.10.2026) | GATA pe cod, probat cu date inventate; asteapta fisierul administratorului; server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
 | 0110-12 | Sait, doar calculator: detalii sub grila la Istoric si Plati, meniul de vizualizare la Extrase, navbar + header la Fundamentari / Ordonantari (cererea operatorului, 05.10.2026) | GATA pe cod, probat cu date inventate; nevazut pe ecran, server nedeployat | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
 | 0111 | Valoarea unui instantaneu de recepție se poate corecta din fereastra Asocieri când FOREXE a scris una greșită (ex. total 0 peste o linie de 1635): coloanele de lucru `Total` / `Valoare` se corectează, `TotalOrig` / `ValoareOrig` păstrează ce a zis FOREXE, `CorectatDe/La/Motiv` pe antet; totalul trebuie să fie egal cu suma liniilor (eroare blocantă); `FX_Istoric` nu se atinge (cererea operatorului, 06.10.2026) | GATA pe cod (build `KBot.App` curat, nimic rulat pe o bază; **DDL pe șablon + interogare unică + server nedeployate**; ajutorul: 0000-53) | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
+|          0112 | **Caseta de mesaj K-BOT + catalog de mesaje (debug)**: `KBotMessageBox` în Controls înlocuiește `MessageBox`-ul nativ în tot codul prin `KBotMessage.Presenter`; macheta DevHarness cu toate cele 474 de mesaje | GATA pe cod, nevăzut pe ecran | [0110-0119](state/KBOT_STATUS_0110-0119.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0112.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
+**Next free slice number: 0113.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
 ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
 comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
 amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara

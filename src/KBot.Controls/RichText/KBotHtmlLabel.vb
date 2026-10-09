@@ -136,6 +136,28 @@ Public Class KBotHtmlLabel
     ''' Slice 000T-09: the user clicked a link of the text (<c>&lt;link tutorial="id"&gt;</c>); the argument is the id.
     ''' Raised on the left button's release over the link.
     ''' </summary>
+    ''' <summary>
+    ''' The size the text needs when wrapped at <paramref name="k_maxWidth"/> -- as WIDE as its widest line
+    ''' needs, not the whole proposed width (what <see cref="GetPreferredSize"/> answers). A dialog that wants
+    ''' to hug its message sizes itself with this. Empty size when there is no <see cref="Html"/>.
+    ''' </summary>
+    Public Function MeasureHtml(k_maxWidth As Integer) As Size
+        Try
+            If _html.Length = 0 Then Return Size.Empty
+            EnsureRuns()
+            Dim k_border As Integer = BorderPx()
+            Dim k_frame As Integer = 2 * k_border + Padding.Horizontal
+            Dim k_inner As Integer = Math.Max(1, k_maxWidth - k_frame)
+            Using k_graphics As Graphics = If(IsHandleCreated, Graphics.FromHwnd(Handle), Graphics.FromHwnd(IntPtr.Zero))
+                Dim k_lay As KBotRichText.RichLayout = LayoutAt(k_graphics, k_inner)
+                Return New Size(Math.Min(k_maxWidth, k_lay.Width + k_frame + 2), k_lay.Height + 2 * k_border + Padding.Vertical)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotHtmlLabel.MeasureHtml", ex)
+            Throw
+        End Try
+    End Function
+
     Public Event LinkClicked(k_target As String)
 
     Private _overLink As Boolean
@@ -194,6 +216,8 @@ Public Class KBotHtmlLabel
             Dim k_state As Drawing2D.GraphicsState = e.Graphics.Save()
             Try
                 e.Graphics.SetClip(k_area)
+                ' Text on an opaque surface: ClearType, like TextRenderer, instead of GDI+'s soft grey default.
+                e.Graphics.TextRenderingHint = Drawing.Text.TextRenderingHint.ClearTypeGridFit
                 KBotRichText.Draw(e.Graphics, k_lay, k_area, TextAlign)
             Finally
                 e.Graphics.Restore(k_state)

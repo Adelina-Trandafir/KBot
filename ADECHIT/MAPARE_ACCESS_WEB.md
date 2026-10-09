@@ -40,7 +40,7 @@ Nicio constatare de aici nu autorizează ștergerea datelor originale.
 | Prezenta.mcTree_Click / IncarcaGrupe | LunaD, Grupe; SS_Buget la luni închise | Numai starea ecranului/cache | Arbore an/lună, grupă, persoană; context trimis explicit API-ului |
 | Prezenta_sub_buget.bPrel_Click / ComboPrez.Sav_Click | Copii nepreluați, Plecat=False, Work_Days, SitLunara | Prezenta sau cache, în funcție de acțiune | Preluare în luna deschisă; păstrarea identității IDP/IDL/IDG |
 | Prezenta_sub_buget.ZilePrezenta_AfterUpdate / Sav_Click | TaxaZilnica din setul ales; calculul detaliat mai jos | LunaD și Prezenta | Editarea prezenței în celulă, cu validare/salvare pe server |
-| ComboGrupa.Sav_Click, ramura normală | Copilul și prezența selectată | Platitori.IDG, Prezenta.IDG, MutaCopil | Transfer cu istoric și aceeași unitate; operație atomică |
+| ComboGrupa.Sav_Click, ramura normală | Copilul și prezența selectată | Platitori.IDG, Prezenta.IDG | Transfer în aceeași unitate; operație atomică (fără MutaCopil, scos din model) |
 | ComboGrupa.Sav_Click, OA=TRG | Copiii bifați din catalog | Numai Platitori.IDG | Transfer de lot distinct; nu pretindem că are același efect ca transferul individual |
 | Plati_chitante.Form_BeforeInsert / Sav_Click | Persoana activă IDS; CFGs/CH; explicație prin fMail2021/qVariabile | Plati TIP=2, Chitante, următorul număr CFGs; SS_Buget dacă luna închisă | Încasare + chitanță + număr, atomic; tabel comun Unitati_Chitante |
 | Plati_Alte.Sav_Click | tmpPlatiAlte, număr/fel/sumă | Plati TIP=1, AlteDoc; SS_Buget dacă luna închisă | Alte încasări, cu rând editabil și document asociat |
@@ -117,22 +117,22 @@ Mapare pentru ADE3, **nu DDL aprobat sau executat**:
 
 | Sursă | Destinație propusă | Identitate / observație |
 |---|---|---|
-| Grupe | ADE_Grupe | IDG; denumire, educator |
-| Platitori | ADE_Platitori | IDP; aici sunt copiii; IDG, IDV, SI, Plecat și datele personale |
-| Platitori_sub | ADE_Platitori_sub | IDS → IDP; persoanele plătitoare; Activ |
-| Delegati | ADE_Delegati | IDD → IDS; necesitatea câmpurilor exclusiv de facturare se separă |
-| ValoriTaxe | ADE_ValoriTaxe | IDV; păstrăm istoricul necesar, fără recalcul de reduceri excluse |
-| LunaD | ADE_LunaD | IDL; lună/an, set de taxe, Inchisa |
-| Prezenta | ADE_Prezenta | IDZ → IDP/IDL/IDG/IDV; valori istorice nealterate la import |
-| Prezenta_sub | ADE_Prezenta_sub, condiționat | IDX → IDZ; perioade detaliate, dacă păstrăm calendarul/istoricul aferent |
-| Plati | ADE_Plati | IDPL → IDP/IDZ/IDS/IDL; sumele și anulările alimentează soldurile |
-| Chitante | ADE_Chitante | IDC → IDPL; serie, număr, explicație, valoare și anulare |
-| AlteDoc | ADE_AlteDoc | IDA → IDPL; număr/fel/data documentului |
-| Retur | ADE_Retur | IDR → IDP/IDZ/IDS/IDL; sumă, document, anulare |
-| SS_Buget | ADE_SS_Buget | Snapshot lunar: ID, IDP/IDL/IDZ/IDG, sume și descrieri istorice |
-| MutaCopil | ADE_MutaCopil | IDM → IDP/IDL/IDZ; grupa veche/nouă și data |
+| Grupe | AD_Grupe | IDG; denumire, educator |
+| Platitori | AD_Platitori | IDP; aici sunt copiii; IDG, IDV, SI, Plecat și datele personale |
+| Platitori_sub | AD_Platitori_sub | IDS → IDP; persoanele plătitoare; Activ |
+| Delegati | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. |
+| ValoriTaxe | AD_ValoriTaxe | IDV; păstrăm istoricul necesar, fără recalcul de reduceri excluse |
+| LunaD | AD_LunaD | IDL; lună/an, set de taxe, Inchisa |
+| Prezenta | AD_Prezenta | IDZ → IDP/IDL/IDG/IDV; valori istorice nealterate la import |
+| Prezenta_sub | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. |
+| Plati | AD_Plati | IDPL → IDP/IDZ/IDS/IDL; sumele și anulările alimentează soldurile |
+| Chitante | AD_Chitante | IDC → IDPL; serie, număr, explicație, valoare și anulare |
+| AlteDoc | AD_AlteDoc | IDA → IDPL; număr/fel/data documentului |
+| Retur | AD_Retur | IDR → IDP/IDZ/IDS/IDL; sumă, document, anulare |
+| SS_Buget | AD_SS_Buget | Snapshot lunar: ID, IDP/IDL/IDZ/IDG, sume și descrieri istorice |
+| MutaCopil | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. Transferul de grupă nu mai lasă istoric propriu. |
 | CFGs, numai CH | AVACONT_COMUN.Unitati_Chitante | Asociere DC; serie, următorul număr, șablon explicație |
-| Unitati | Sistemul comun existent | Nu creăm un duplicat ADE_Unitati; nu suprascriem datele comune la import |
+| Unitati | Sistemul comun existent | Nu creăm un duplicat AD_Unitati; nu suprascriem datele comune la import |
 
 Cheile Access nu se renumerotează independent. Alegerea păstrării lor sau a unei mapări
 la chei noi trebuie să mențină toate relațiile și ordinea IDL. Relațiile declarate sunt
@@ -153,7 +153,7 @@ fără a presupune că toate FK-urile există în Access. Verificăm orfanii în
   Compensare din mdl_Situatie. Formularul scrie COMP, dar lanțul 2021 **nu citește COMP**.
   Nu există apel de deschidere găsit în traseele inspectate. Nu îl adăugăm implicit în motor.
 - SIIR este accesibil din Platitori2016; importă Excel prin IMPXLS și scrie Grupe,
-  Platitori, Platitori_sub, Delegati. Portarea acestui import operațional rămâne de stabilit,
+  Platitori, Platitori_sub. Portarea acestui import operațional rămâne de stabilit,
   separat de migrarea inițială ADE5.
 - Mail/TrimitereCalup, exporturile Excel/PDF și variantele vechi rămân inventariate;
   existența lor în export nu echivalează cu includerea integrală în prima versiune web.

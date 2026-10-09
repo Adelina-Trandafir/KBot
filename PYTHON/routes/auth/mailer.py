@@ -67,8 +67,11 @@ def _smtp_config():
     }
 
 
-def _deliver(msg, conf):
-    """Opens the session the way `conf` says and sends one message. Errors propagate."""
+def _deliver(msg, conf, to_addrs=None):
+    """
+    Opens the session the way `conf` says and sends one message. Errors propagate.
+    `to_addrs` overrides the recipients of the envelope (the headers stay as written).
+    """
     opener = smtplib.SMTP_SSL if conf["use_ssl"] else smtplib.SMTP
     with opener(conf["host"], conf["port"], timeout=conf["timeout"]) as smtp:
         # STARTTLS on an already-encrypted session is an error, not a second layer.
@@ -76,7 +79,7 @@ def _deliver(msg, conf):
             smtp.starttls()
         if conf["user"]:
             smtp.login(conf["user"], conf["password"])
-        smtp.send_message(msg)
+        smtp.send_message(msg, to_addrs=to_addrs)
 
 
 def _message_id(conf):
@@ -163,6 +166,36 @@ def send_registration_code(to_address, code, minutes):
     _deliver(msg, conf)
 
 
+def _setup_link():
+    """
+    Public address of the first-install .exe: points at the *_noaccess.exe that is on the
+    server right now, whatever its version. With none found it still gives the generic
+    address, which answers 404 with a clear sentence.
+    """
+    base = str(_get(_read_config(), "PUBLIC_BASE_URL", "") or "https://kbot.avatarsoft.ro")
+    link = f"{base.rstrip('/')}/api/update/setup"
+    try:
+        from routes.update import newest_setup_name
+        name = newest_setup_name()
+    except Exception as err:
+        logger.warning("setup file lookup failed: %s", err)
+        name = None
+    return f"{link}/{name}" if name else link
+
+
+def _helpdesk_note():
+    """
+    The paragraph that says the version is still being worked on and where to report
+    problems (KBOT_HELPDESK in config.py). Without the address the paragraph keeps the
+    first sentence and drops the second -- never an empty "write to ." line.
+    """
+    address = str(_get(_read_config(), "KBOT_HELPDESK", "") or "").strip()
+    text = "Versiunea curentă a aplicației este încă în lucru.\n"
+    if address:
+        text += f"Dacă întâmpinați probleme, scrieți-ne la {address}.\n"
+    return text + "\n"
+
+
 def send_account_ready(to_address, denumire, link, hours):
     """
     Tells a new user their unit was approved and hands them the one-time link to
@@ -176,6 +209,26 @@ def send_account_ready(to_address, denumire, link, hours):
     """
     conf = _smtp_config()
 
+    msg = _account_ready_message(conf, to_address, denumire, link, hours)
+    logger.info("account ready mail -> %s via %s:%s",
+                _mask(to_address), conf["host"], conf["port"])
+    _deliver(msg, conf)
+
+    # Copy for the operator: the same text, but the password link is hidden -- whoever
+    # reads that mailbox must not be able to set the user's password. Sent after the
+    # user's mail and never allowed to fail it.
+    copy_to = operator_address()
+    if copy_to:
+        try:
+            hidden = link.partition("#")[0] + "#********"
+            copy = _account_ready_message(conf, to_address, denumire, hidden, hours)
+            _deliver(copy, conf, to_addrs=[copy_to])
+        except Exception as err:
+            logger.warning("account ready copy to operator failed: %s", err)
+
+
+def _account_ready_message(conf, to_address, denumire, link, hours):
+    """The «account ready» message; `link` is shown as given (real, or hidden for the copy)."""
     msg = EmailMessage()
     msg["Subject"] = "K-BOT: cererea de înregistrare a fost aprobată"
     msg["From"] = conf["sender"]
@@ -192,13 +245,13 @@ def send_account_ready(to_address, denumire, link, hours):
         f"Linkul este valabil {hours} de ore și poate fi folosit o singură dată.\n"
         f"După ce alegeți parola, vă autentificați în K-BOT cu adresa {to_address} "
         "și parola aleasă.\n\n"
+        "Dacă nu ați instalat încă K-BOT, descărcați programul de instalare de aici:\n\n"
+        f"{_setup_link()}\n\n"
+        f"{_helpdesk_note()}"
         "Dacă nu ați cerut dumneavoastră înregistrarea, ignorați acest mesaj.\n\n"
         "K-BOT\n"
     )
-
-    logger.info("account ready mail -> %s via %s:%s",
-                _mask(to_address), conf["host"], conf["port"])
-    _deliver(msg, conf)
+    return msg
 
 
 def send_operator_code(to_address, code, minutes):

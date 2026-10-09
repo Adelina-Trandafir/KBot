@@ -1,3 +1,9 @@
+/* SLICE-ADE2: opt-in editors use the existing grid theme. */
+.dgv__cell.is-editable { cursor: text; }
+.dgv__editor { width: 100%; height: 100%; }
+.dgv__editor input { box-sizing: border-box; width: 100%; height: 100%; color: var(--dgv-text); background: var(--dgv-back); border: 1px solid var(--dgv-accent); }
+.dgv__editor[aria-busy="true"] { opacity: .65; }
+.dgv__editor input[aria-invalid="true"] { outline: 2px solid var(--dgv-accent); }
 /* Slice 0110-05 -- look of static/js/dgv/datagrid.js. Three looks like the desktop themes:
    modern (default), classic (system greys), dark. Everything comes from the --dgv-* variables
    of the theme block, so a page can also override one variable. */
@@ -146,3 +152,5 @@
 .dgv__btn { padding: 6px 12px; font: inherit; cursor: pointer; color: inherit; background: var(--dgv-head-back); border: 1px solid var(--dgv-popup-border); border-radius: 4px; }
 .dgv__btn:hover { background: var(--dgv-hover); }
 .dgv__btn.is-primary { background: var(--dgv-accent); border-color: var(--dgv-accent); color: var(--dgv-accent-text); }
+.dgv__cell.is-checkbox { display: flex; align-items: center; justify-content: center; }
+.dgv__cell.is-checkbox input { pointer-events: none; margin: 0; }

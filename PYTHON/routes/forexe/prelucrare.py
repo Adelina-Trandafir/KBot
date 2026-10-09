@@ -89,10 +89,14 @@ from .prelucrare_helpers import (
 from .prelucrare_unitate import (
     MSG_UNIT_CHOICE,
     REASON_UNIT_CHOICE,
+    ClsfMissing,
+    MSG_CLSF_LIPSA,
+    REASON_CLSF_LIPSA,
     UnitChoiceRequired,
     UnitChoiceTableMissing,
     find_id_clsf,
     normalize_supplied_choices,
+    normalize_register_requests,
     resolve_units,
 )
 from .prelucrare_pasi import (
@@ -518,7 +522,7 @@ def _step2c_credit_initial(cursor, cod: str, tabele: dict, warnings: list) -> in
 # Conducta -- IDENTICA in ambele faze
 # ---------------------------------------------------------------------------
 def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings,
-                   receptii_incomplete=None):
+                   receptii_incomplete=None, register=None):
     """
     Pasii 1..5, 7 si 8, in ordinea impusa de cheile straine.
 
@@ -546,7 +550,7 @@ def _ruleaza_pasii(cursor, cod, scalari, tabele, db_name, un, supplied, warnings
         indicators = _read_indicators(cod, rows_indicatori)
         # Rezolvarea TUTUROR unitatilor, inainte de orice scriere in FX_Indicatori.
         with timing.stage("pas 2a rezolvare unitati"):
-            units = resolve_units(cursor, indicators, supplied, un, warnings)
+            units = resolve_units(cursor, indicators, supplied, un, warnings, register)
         with timing.stage("pas 2b scriere FX_Indicatori"):
             scrise["FX_Indicatori"] = _step2_indicatori(cursor, cod, indicators,
                                                         units, warnings)
@@ -683,6 +687,7 @@ def post_prelucrare():
 
     try:
         supplied = normalize_supplied_choices(data.get("alegeri"))
+        register = normalize_register_requests(data.get("alegeri"))
         decizii = None
         if mod == MOD_SALVARE:
             if "decizii" not in data:
@@ -759,7 +764,7 @@ def post_prelucrare():
         with timing.stage("pasii 1-8"):
             scrise, are, index_la_id, ancore_receptii = _ruleaza_pasii(
                 cursor, cod, scalari, tabele, db_name, un, supplied, warnings,
-                receptii_incomplete)
+                receptii_incomplete, register)
         idrr_incomplete = {x["idrr"] for x in receptii_incomplete}
         # What the client shows the operator and uses to offer the refresh: the reception
         # named by its date and sum, never by IDRR (a new one's IDRR dies with phase one).
@@ -938,6 +943,18 @@ def post_prelucrare():
             "reason": REASON_UNIT_CHOICE,
             "cod": cod,
             "alegeri_necesare": err.pending,
+        }, 409)
+
+    except ClsfMissing as err:
+        # A question, not an error (operator, 08.10.2026): roll back, ask «register it now?».
+        if conn is not None:
+            conn.rollback()
+        journal.line("întrebare, nu eroare: %d clasificații lipsă; rollback", len(err.pending))
+        return _json_utf8({
+            "error": MSG_CLSF_LIPSA,
+            "reason": REASON_CLSF_LIPSA,
+            "cod": cod,
+            "clasificatii_lipsa": err.pending,
         }, 409)
 
     except UnitChoiceTableMissing as err:

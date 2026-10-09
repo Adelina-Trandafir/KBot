@@ -361,9 +361,9 @@ Set mySessionOptions = New WinSCPnet.sessionOptions
 With mySessionOptions
     .Protocol = Protocol_Ftp
     .FtpSecure = FtpSecure_Explicit
-    .HostName = "avatarsoft.ro"
-    .UserName = "adechit@avatarsoft.ro"
-    .Password = "MUtb7gZHmwyFch68ry9t"
+    .HostName = ""
+    .UserName = ""
+    .Password = ""
     .TimeoutInMilliseconds = 5000
 End With
 End Sub

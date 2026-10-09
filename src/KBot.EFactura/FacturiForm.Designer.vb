@@ -20,21 +20,20 @@ Partial Class FacturiForm
         components = New ComponentModel.Container()
         Dim KBotMenuItem1 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem2 As KBotMenuItem = New KBotMenuItem()
-        Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem14 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem15 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem16 As KBotNavItem = New KBotNavItem()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FacturiForm))
+        Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
-        btnToken = New System.Windows.Forms.Button()
-        mnuUnitate = New KBotDropDownMenu(components)
-        btnSterge = New System.Windows.Forms.Button()
         btnRenunta = New System.Windows.Forms.Button()
         btnModifica = New System.Windows.Forms.Button()
         btnAdauga = New System.Windows.Forms.Button()
         btnSalveaza = New System.Windows.Forms.Button()
+        mnuUnitate = New KBotDropDownMenu(components)
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         barBusy = New KBotBusyBar()
@@ -55,6 +54,8 @@ Partial Class FacturiForm
         tlySubsol = New KBotTableLayoutPanel()
         btnIesire = New System.Windows.Forms.Button()
         lblStare = New System.Windows.Forms.Label()
+        tlyButoaneStanga = New System.Windows.Forms.TableLayoutPanel()
+        tlyButoaneDreapta = New System.Windows.Forms.TableLayoutPanel()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
@@ -62,22 +63,65 @@ Partial Class FacturiForm
         pnlPages.SuspendLayout()
         CType(navDetaliu, ComponentModel.ISupportInitialize).BeginInit()
         tlySubsol.SuspendLayout()
+        tlyButoaneStanga.SuspendLayout()
+        tlyButoaneDreapta.SuspendLayout()
         SuspendLayout()
         ' 
-        ' btnToken
+        ' btnRenunta
         ' 
-        btnToken.AutoSize = True
-        btnToken.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnToken.Location = New System.Drawing.Point(60, 6)
-        btnToken.Margin = New System.Windows.Forms.Padding(0, 0, 36, 0)
-        btnToken.Name = "btnToken"
-        btnToken.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnToken.Size = New System.Drawing.Size(242, 63)
-        btnToken.TabIndex = 2
-        btnToken.Text = "Token ANAF"
-        tips.SetToolTipHeader(btnToken, "Token ANAF")
-        tips.SetToolTipText(btnToken, "Arată până când este valabil tokenul ANAF al unității și îl reînnoiește cu certificatul calificat.")
-        btnToken.UseVisualStyleBackColor = True
+        btnRenunta.Dock = System.Windows.Forms.DockStyle.Fill
+        btnRenunta.Enabled = False
+        btnRenunta.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnRenunta.Image = My.Resources.Resources.undo
+        btnRenunta.Location = New System.Drawing.Point(0, 0)
+        btnRenunta.Margin = New System.Windows.Forms.Padding(0)
+        btnRenunta.Name = "btnRenunta"
+        btnRenunta.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnRenunta.Size = New System.Drawing.Size(50, 50)
+        btnRenunta.TabIndex = 4
+        tips.SetToolTipText(btnRenunta, "Renunță la modificările nesalvate ale facturii.")
+        btnRenunta.UseVisualStyleBackColor = True
+        ' 
+        ' btnModifica
+        ' 
+        btnModifica.Enabled = False
+        btnModifica.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnModifica.Image = My.Resources.Resources.edit_fact
+        btnModifica.Location = New System.Drawing.Point(802, 0)
+        btnModifica.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
+        btnModifica.Name = "btnModifica"
+        btnModifica.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnModifica.Size = New System.Drawing.Size(50, 50)
+        btnModifica.TabIndex = 5
+        tips.SetToolTipText(btnModifica, "Deblochează factura aleasă pentru modificare. Se modifică doar o ciornă (netrimisă la ANAF).")
+        btnModifica.UseVisualStyleBackColor = True
+        ' 
+        ' btnAdauga
+        ' 
+        btnAdauga.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnAdauga.Image = My.Resources.Resources.add_fact
+        btnAdauga.Location = New System.Drawing.Point(860, 0)
+        btnAdauga.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
+        btnAdauga.Name = "btnAdauga"
+        btnAdauga.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnAdauga.Size = New System.Drawing.Size(50, 50)
+        btnAdauga.TabIndex = 6
+        tips.SetToolTipText(btnAdauga, "Începe o factură nouă. Seria și numărul se dau la salvare.")
+        btnAdauga.UseVisualStyleBackColor = True
+        ' 
+        ' btnSalveaza
+        ' 
+        btnSalveaza.Enabled = False
+        btnSalveaza.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnSalveaza.Image = My.Resources.Resources.save_32
+        btnSalveaza.Location = New System.Drawing.Point(918, 0)
+        btnSalveaza.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
+        btnSalveaza.Name = "btnSalveaza"
+        btnSalveaza.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnSalveaza.Size = New System.Drawing.Size(50, 50)
+        btnSalveaza.TabIndex = 7
+        tips.SetToolTipText(btnSalveaza, "Scrie factura și liniile ei în baza de date (nu o trimite la ANAF).")
+        btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' mnuUnitate
         ' 
@@ -89,81 +133,6 @@ Partial Class FacturiForm
         KBotMenuItem2.Text = "Date Unitate"
         mnuUnitate.Items.Add(KBotMenuItem1)
         mnuUnitate.Items.Add(KBotMenuItem2)
-        ' 
-        ' btnSterge
-        ' 
-        btnSterge.AutoSize = True
-        btnSterge.Enabled = False
-        btnSterge.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnSterge.Location = New System.Drawing.Point(338, 6)
-        btnSterge.Margin = New System.Windows.Forms.Padding(0, 0, 12, 0)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnSterge.Size = New System.Drawing.Size(194, 63)
-        btnSterge.TabIndex = 3
-        btnSterge.Text = "Ștergere"
-        tips.SetToolTipText(btnSterge, "Șterge factura aleasă. Se poate șterge doar o ciornă care are ultimul număr al seriei; o factură trimisă la ANAF nu se șterge.")
-        btnSterge.UseVisualStyleBackColor = True
-        ' 
-        ' btnRenunta
-        ' 
-        btnRenunta.AutoSize = True
-        btnRenunta.Enabled = False
-        btnRenunta.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnRenunta.Location = New System.Drawing.Point(544, 6)
-        btnRenunta.Margin = New System.Windows.Forms.Padding(0, 0, 12, 0)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnRenunta.Size = New System.Drawing.Size(192, 63)
-        btnRenunta.TabIndex = 4
-        btnRenunta.Text = "Renunță"
-        tips.SetToolTipText(btnRenunta, "Renunță la modificările nesalvate ale facturii.")
-        btnRenunta.UseVisualStyleBackColor = True
-        ' 
-        ' btnModifica
-        ' 
-        btnModifica.AutoSize = True
-        btnModifica.Enabled = False
-        btnModifica.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnModifica.Location = New System.Drawing.Point(748, 6)
-        btnModifica.Margin = New System.Windows.Forms.Padding(0, 0, 12, 0)
-        btnModifica.Name = "btnModifica"
-        btnModifica.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnModifica.Size = New System.Drawing.Size(222, 63)
-        btnModifica.TabIndex = 5
-        btnModifica.Text = "Modificare"
-        tips.SetToolTipText(btnModifica, "Deblochează factura aleasă pentru modificare. Se modifică doar o ciornă (netrimisă la ANAF).")
-        btnModifica.UseVisualStyleBackColor = True
-        ' 
-        ' btnAdauga
-        ' 
-        btnAdauga.AutoSize = True
-        btnAdauga.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnAdauga.Location = New System.Drawing.Point(982, 6)
-        btnAdauga.Margin = New System.Windows.Forms.Padding(0, 0, 12, 0)
-        btnAdauga.Name = "btnAdauga"
-        btnAdauga.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnAdauga.Size = New System.Drawing.Size(212, 63)
-        btnAdauga.TabIndex = 6
-        btnAdauga.Text = "Adăugare"
-        tips.SetToolTipText(btnAdauga, "Începe o factură nouă. Seria și numărul se dau la salvare.")
-        btnAdauga.UseVisualStyleBackColor = True
-        ' 
-        ' btnSalveaza
-        ' 
-        btnSalveaza.AutoSize = True
-        btnSalveaza.Dock = System.Windows.Forms.DockStyle.Right
-        btnSalveaza.Enabled = False
-        btnSalveaza.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnSalveaza.Location = New System.Drawing.Point(1206, 6)
-        btnSalveaza.Margin = New System.Windows.Forms.Padding(0)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnSalveaza.Size = New System.Drawing.Size(180, 69)
-        btnSalveaza.TabIndex = 7
-        btnSalveaza.Text = "Salvare"
-        tips.SetToolTipText(btnSalveaza, "Scrie factura și liniile ei în baza de date (nu o trimite la ANAF).")
-        btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' tlyMain
         ' 
@@ -181,7 +150,7 @@ Partial Class FacturiForm
         tlyMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
         tlyMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 6F))
         tlyMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 81F))
+        tlyMain.RowStyles.Add(New System.Windows.Forms.RowStyle())
         tlyMain.Size = New System.Drawing.Size(1394, 894)
         tlyMain.TabIndex = 0
         ' 
@@ -192,7 +161,7 @@ Partial Class FacturiForm
         capBar.Location = New System.Drawing.Point(0, 0)
         capBar.Margin = New System.Windows.Forms.Padding(0)
         capBar.Name = "capBar"
-        capBar.OptionButtonImage = My.Resources.Resources.kbot_64
+        capBar.OptionButtonImage = CType(resources.GetObject("capBar.OptionButtonImage"), Drawing.Image)
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowOptionsButton = True
@@ -200,8 +169,8 @@ Partial Class FacturiForm
         capBar.Size = New System.Drawing.Size(1394, 66)
         capBar.TabIndex = 0
         capBar.TabStop = False
+        capBar.Text = "Factura"
         capBar.TintOptionButtonImage = False
-        capBar.Text = "E-Factura"
         ' 
         ' barBusy
         ' 
@@ -220,15 +189,15 @@ Partial Class FacturiForm
         pnlCard.Margin = New System.Windows.Forms.Padding(0)
         pnlCard.Name = "pnlCard"
         pnlCard.Padding = New System.Windows.Forms.Padding(12, 9, 12, 9)
-        pnlCard.Size = New System.Drawing.Size(1394, 741)
+        pnlCard.Size = New System.Drawing.Size(1394, 772)
         pnlCard.TabIndex = 2
         pnlCard.Tag = "Card"
         ' 
         ' tlyBody
         ' 
         tlyBody.ColumnCount = 2
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 32.608696F))
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 67.391304F))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F))
         tlyBody.Controls.Add(tree, 0, 0)
         tlyBody.Controls.Add(pnlDetaliu, 1, 0)
         tlyBody.Dock = System.Windows.Forms.DockStyle.Fill
@@ -237,7 +206,7 @@ Partial Class FacturiForm
         tlyBody.Name = "tlyBody"
         tlyBody.RowCount = 1
         tlyBody.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyBody.Size = New System.Drawing.Size(1370, 723)
+        tlyBody.Size = New System.Drawing.Size(1370, 754)
         tlyBody.TabIndex = 0
         ' 
         ' tree
@@ -264,7 +233,7 @@ Partial Class FacturiForm
         tree.LeftIconSize = New System.Drawing.Size(14, 14)
         tree.LeftTextWidth = 100
         tree.Location = New System.Drawing.Point(0, 0)
-        tree.Margin = New System.Windows.Forms.Padding(0, 0, 15, 0)
+        tree.Margin = New System.Windows.Forms.Padding(0)
         tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
         tree.PaddingExpanderGap = 8
@@ -274,7 +243,7 @@ Partial Class FacturiForm
         tree.RightClickSelects = False
         tree.RightIconSize = New System.Drawing.Size(14, 14)
         tree.ShowRightIconOnHover = True
-        tree.Size = New System.Drawing.Size(431, 723)
+        tree.Size = New System.Drawing.Size(411, 754)
         tree.TabIndex = 0
         ' 
         ' pnlDetaliu
@@ -283,10 +252,10 @@ Partial Class FacturiForm
         pnlDetaliu.Controls.Add(navDetaliu)
         pnlDetaliu.Controls.Add(ntfMesaj)
         pnlDetaliu.Dock = System.Windows.Forms.DockStyle.Fill
-        pnlDetaliu.Location = New System.Drawing.Point(446, 0)
+        pnlDetaliu.Location = New System.Drawing.Point(411, 0)
         pnlDetaliu.Margin = New System.Windows.Forms.Padding(0)
         pnlDetaliu.Name = "pnlDetaliu"
-        pnlDetaliu.Size = New System.Drawing.Size(924, 723)
+        pnlDetaliu.Size = New System.Drawing.Size(959, 754)
         pnlDetaliu.TabIndex = 1
         pnlDetaliu.Tag = "Card"
         ' 
@@ -303,7 +272,7 @@ Partial Class FacturiForm
         pnlPages.Location = New System.Drawing.Point(0, 40)
         pnlPages.Margin = New System.Windows.Forms.Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New System.Drawing.Size(924, 599)
+        pnlPages.Size = New System.Drawing.Size(959, 630)
         pnlPages.TabIndex = 1
         ' 
         ' pgGenerale
@@ -314,7 +283,7 @@ Partial Class FacturiForm
         pgGenerale.Margin = New System.Windows.Forms.Padding(0)
         pgGenerale.Name = "pgGenerale"
         pgGenerale.Padding = New System.Windows.Forms.Padding(6)
-        pgGenerale.Size = New System.Drawing.Size(924, 599)
+        pgGenerale.Size = New System.Drawing.Size(959, 630)
         pgGenerale.TabIndex = 0
         ' 
         ' pgCumparator
@@ -325,7 +294,7 @@ Partial Class FacturiForm
         pgCumparator.Margin = New System.Windows.Forms.Padding(0)
         pgCumparator.Name = "pgCumparator"
         pgCumparator.Padding = New System.Windows.Forms.Padding(6)
-        pgCumparator.Size = New System.Drawing.Size(924, 599)
+        pgCumparator.Size = New System.Drawing.Size(959, 630)
         pgCumparator.TabIndex = 1
         pgCumparator.Visible = False
         ' 
@@ -337,7 +306,7 @@ Partial Class FacturiForm
         pgAtasamente.Margin = New System.Windows.Forms.Padding(0)
         pgAtasamente.Name = "pgAtasamente"
         pgAtasamente.Padding = New System.Windows.Forms.Padding(6)
-        pgAtasamente.Size = New System.Drawing.Size(924, 599)
+        pgAtasamente.Size = New System.Drawing.Size(959, 630)
         pgAtasamente.TabIndex = 3
         pgAtasamente.Visible = False
         ' 
@@ -349,7 +318,7 @@ Partial Class FacturiForm
         pgContinut.Margin = New System.Windows.Forms.Padding(0)
         pgContinut.Name = "pgContinut"
         pgContinut.Padding = New System.Windows.Forms.Padding(6)
-        pgContinut.Size = New System.Drawing.Size(924, 599)
+        pgContinut.Size = New System.Drawing.Size(959, 630)
         pgContinut.TabIndex = 4
         pgContinut.Visible = False
         ' 
@@ -360,7 +329,7 @@ Partial Class FacturiForm
         pgPdf.Location = New System.Drawing.Point(0, 0)
         pgPdf.Margin = New System.Windows.Forms.Padding(0)
         pgPdf.Name = "pgPdf"
-        pgPdf.Size = New System.Drawing.Size(924, 599)
+        pgPdf.Size = New System.Drawing.Size(959, 630)
         pgPdf.TabIndex = 5
         pgPdf.Visible = False
         ' 
@@ -371,7 +340,7 @@ Partial Class FacturiForm
         pgAnaf.Location = New System.Drawing.Point(0, 0)
         pgAnaf.Margin = New System.Windows.Forms.Padding(0)
         pgAnaf.Name = "pgAnaf"
-        pgAnaf.Size = New System.Drawing.Size(924, 599)
+        pgAnaf.Size = New System.Drawing.Size(959, 630)
         pgAnaf.TabIndex = 6
         pgAnaf.Visible = False
         ' 
@@ -382,69 +351,69 @@ Partial Class FacturiForm
         pgEroare.Location = New System.Drawing.Point(0, 0)
         pgEroare.Margin = New System.Windows.Forms.Padding(0)
         pgEroare.Name = "pgEroare"
-        pgEroare.Size = New System.Drawing.Size(924, 599)
+        pgEroare.Size = New System.Drawing.Size(959, 630)
         pgEroare.TabIndex = 7
         pgEroare.Visible = False
         ' 
         ' navDetaliu
         ' 
         navDetaliu.Dock = System.Windows.Forms.DockStyle.Top
-        navDetaliu.IconSize = 16
+        navDetaliu.IconSize = 18
         navDetaliu.ItemCornerRadius = 2
-        navDetaliu.ItemPadding = New System.Windows.Forms.Padding(3)
-        KBotNavItem9.AutoSize = True
-        KBotNavItem9.Image = My.Resources.Resources.cells
-        KBotNavItem9.Key = "generale"
-        KBotNavItem9.Text = "Generale"
-        KBotNavItem10.AutoSize = True
-        KBotNavItem10.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Reseller_account_template_32
-        KBotNavItem10.Key = "cumparator"
-        KBotNavItem10.Text = "Cumpărător"
-        KBotNavItem12.AutoSize = True
-        KBotNavItem12.Image = My.Resources.Resources.attach
-        KBotNavItem12.Key = "atasamente"
-        KBotNavItem12.Text = "Atașamente"
-        KBotNavItem13.AutoSize = True
-        KBotNavItem13.Image = My.Resources.Resources.table
-        KBotNavItem13.Key = "continut"
-        KBotNavItem13.Text = "Conținut"
-        KBotNavItem14.AutoSize = True
-        KBotNavItem14.Image = My.Resources.Resources.invoice
-        KBotNavItem14.Key = "pdf"
-        KBotNavItem14.Text = "Factură PDF"
-        KBotNavItem14.Visible = False
-        KBotNavItem15.AutoSize = True
-        KBotNavItem15.Image = My.Resources.Resources.anaf
-        KBotNavItem15.Key = "anaf"
-        KBotNavItem15.Text = "Factură ANAF"
-        KBotNavItem15.Visible = False
-        KBotNavItem16.AutoSize = True
-        KBotNavItem16.Image = My.Resources.Resources.invoice_error
-        KBotNavItem16.Key = "eroare"
-        KBotNavItem16.Text = "Eroare ANAF"
-        KBotNavItem16.Visible = False
-        navDetaliu.Items.Add(KBotNavItem9)
-        navDetaliu.Items.Add(KBotNavItem10)
-        navDetaliu.Items.Add(KBotNavItem12)
-        navDetaliu.Items.Add(KBotNavItem13)
-        navDetaliu.Items.Add(KBotNavItem14)
-        navDetaliu.Items.Add(KBotNavItem15)
-        navDetaliu.Items.Add(KBotNavItem16)
+        navDetaliu.ItemPadding = New System.Windows.Forms.Padding(0)
+        KBotNavItem1.AutoSize = True
+        KBotNavItem1.Image = My.Resources.Resources.cells
+        KBotNavItem1.Key = "generale"
+        KBotNavItem1.Text = "Generale"
+        KBotNavItem2.AutoSize = True
+        KBotNavItem2.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Reseller_account_template_32
+        KBotNavItem2.Key = "cumparator"
+        KBotNavItem2.Text = "Cumpărător"
+        KBotNavItem3.AutoSize = True
+        KBotNavItem3.Image = My.Resources.Resources.table
+        KBotNavItem3.Key = "continut"
+        KBotNavItem3.Text = "Conținut"
+        KBotNavItem4.AutoSize = True
+        KBotNavItem4.Image = My.Resources.Resources.attach
+        KBotNavItem4.Key = "atasamente"
+        KBotNavItem4.Text = "Atașamente"
+        KBotNavItem5.AutoSize = True
+        KBotNavItem5.Image = My.Resources.Resources.invoice
+        KBotNavItem5.Key = "pdf"
+        KBotNavItem5.Text = "Factură PDF"
+        KBotNavItem5.Visible = False
+        KBotNavItem6.AutoSize = True
+        KBotNavItem6.Image = My.Resources.Resources.anaf
+        KBotNavItem6.Key = "anaf"
+        KBotNavItem6.Text = "Factură ANAF"
+        KBotNavItem6.Visible = False
+        KBotNavItem7.AutoSize = True
+        KBotNavItem7.Image = My.Resources.Resources.invoice_error
+        KBotNavItem7.Key = "eroare"
+        KBotNavItem7.Text = "Eroare ANAF"
+        KBotNavItem7.Visible = False
+        navDetaliu.Items.Add(KBotNavItem1)
+        navDetaliu.Items.Add(KBotNavItem2)
+        navDetaliu.Items.Add(KBotNavItem3)
+        navDetaliu.Items.Add(KBotNavItem4)
+        navDetaliu.Items.Add(KBotNavItem5)
+        navDetaliu.Items.Add(KBotNavItem6)
+        navDetaliu.Items.Add(KBotNavItem7)
         navDetaliu.Location = New System.Drawing.Point(0, 0)
         navDetaliu.Name = "navDetaliu"
         navDetaliu.Orientation = KBotNavOrientation.Horizontal
         navDetaliu.SelectedKey = Nothing
-        navDetaliu.Size = New System.Drawing.Size(924, 40)
+        navDetaliu.Size = New System.Drawing.Size(959, 40)
         navDetaliu.TabIndex = 0
         ' 
         ' ntfMesaj
         ' 
         ntfMesaj.BackColor = Drawing.Color.Transparent
         ntfMesaj.Dock = System.Windows.Forms.DockStyle.Bottom
-        ntfMesaj.Location = New System.Drawing.Point(0, 639)
+        ntfMesaj.Location = New System.Drawing.Point(0, 670)
         ntfMesaj.Margin = New System.Windows.Forms.Padding(4)
         ntfMesaj.Name = "ntfMesaj"
-        ntfMesaj.Size = New System.Drawing.Size(924, 84)
+        ntfMesaj.Size = New System.Drawing.Size(959, 84)
         ntfMesaj.TabIndex = 1
         ntfMesaj.TabStop = False
         ntfMesaj.Visible = False
@@ -452,43 +421,36 @@ Partial Class FacturiForm
         ' tlySubsol
         ' 
         tlySubsol.AutoFitToTheme = False
-        tlySubsol.ColumnCount = 8
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
-        tlySubsol.Controls.Add(btnIesire, 0, 0)
-        tlySubsol.Controls.Add(lblStare, 1, 0)
-        tlySubsol.Controls.Add(btnToken, 2, 0)
-        tlySubsol.Controls.Add(btnSterge, 3, 0)
-        tlySubsol.Controls.Add(btnRenunta, 4, 0)
-        tlySubsol.Controls.Add(btnModifica, 5, 0)
-        tlySubsol.Controls.Add(btnAdauga, 6, 0)
-        tlySubsol.Controls.Add(btnSalveaza, 7, 0)
+        tlySubsol.ColumnCount = 2
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
+        tlySubsol.Controls.Add(tlyButoaneStanga, 0, 0)
+        tlySubsol.Controls.Add(tlyButoaneDreapta, 1, 0)
         tlySubsol.Dock = System.Windows.Forms.DockStyle.Fill
-        tlySubsol.Location = New System.Drawing.Point(0, 813)
+        tlySubsol.Location = New System.Drawing.Point(0, 844)
         tlySubsol.Margin = New System.Windows.Forms.Padding(0)
         tlySubsol.Name = "tlySubsol"
-        tlySubsol.Padding = New System.Windows.Forms.Padding(8, 6, 8, 6)
         tlySubsol.RowCount = 1
-        tlySubsol.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlySubsol.Size = New System.Drawing.Size(1394, 81)
+        tlySubsol.RowStyles.Add(New System.Windows.Forms.RowStyle())
+        tlySubsol.Size = New System.Drawing.Size(1394, 50)
         tlySubsol.TabIndex = 3
         ' 
         ' btnIesire
         ' 
-        btnIesire.AutoSize = True
-        btnIesire.Dock = System.Windows.Forms.DockStyle.Left
+        btnIesire.Dock = System.Windows.Forms.DockStyle.Fill
         btnIesire.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnIesire.Location = New System.Drawing.Point(8, 6)
-        btnIesire.Margin = New System.Windows.Forms.Padding(0)
+        btnIesire.Image = My.Resources.Resources.exit_door
+        btnIesire.Location = New System.Drawing.Point(8, 0)
+        btnIesire.Margin = New System.Windows.Forms.Padding(8, 0, 0, 0)
         btnIesire.Name = "btnIesire"
         btnIesire.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
-        btnIesire.Size = New System.Drawing.Size(158, 69)
+        btnIesire.Size = New System.Drawing.Size(50, 50)
         btnIesire.TabIndex = 0
         btnIesire.Text = "Ieșire"
         btnIesire.UseVisualStyleBackColor = True
@@ -497,12 +459,49 @@ Partial Class FacturiForm
         ' 
         lblStare.AutoEllipsis = True
         lblStare.Dock = System.Windows.Forms.DockStyle.Fill
-        lblStare.Location = New System.Drawing.Point(184, 6)
+        lblStare.Location = New System.Drawing.Point(76, 0)
         lblStare.Margin = New System.Windows.Forms.Padding(18, 0, 18, 0)
         lblStare.Name = "lblStare"
-        lblStare.Size = New System.Drawing.Size(1, 69)
+        lblStare.Size = New System.Drawing.Size(324, 50)
         lblStare.TabIndex = 1
         lblStare.TextAlign = Drawing.ContentAlignment.MiddleLeft
+        ' 
+        ' tlyButoaneStanga
+        ' 
+        tlyButoaneStanga.ColumnCount = 2
+        tlyButoaneStanga.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        tlyButoaneStanga.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyButoaneStanga.Controls.Add(btnIesire, 0, 0)
+        tlyButoaneStanga.Controls.Add(lblStare, 1, 0)
+        tlyButoaneStanga.Dock = System.Windows.Forms.DockStyle.Fill
+        tlyButoaneStanga.Location = New System.Drawing.Point(0, 0)
+        tlyButoaneStanga.Margin = New System.Windows.Forms.Padding(0)
+        tlyButoaneStanga.Name = "tlyButoaneStanga"
+        tlyButoaneStanga.RowCount = 1
+        tlyButoaneStanga.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyButoaneStanga.Size = New System.Drawing.Size(418, 50)
+        tlyButoaneStanga.TabIndex = 8
+        ' 
+        ' tlyButoaneDreapta
+        ' 
+        tlyButoaneDreapta.ColumnCount = 5
+        tlyButoaneDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        tlyButoaneDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyButoaneDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        tlyButoaneDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        tlyButoaneDreapta.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle())
+        tlyButoaneDreapta.Controls.Add(btnSalveaza, 4, 0)
+        tlyButoaneDreapta.Controls.Add(btnAdauga, 3, 0)
+        tlyButoaneDreapta.Controls.Add(btnModifica, 2, 0)
+        tlyButoaneDreapta.Controls.Add(btnRenunta, 0, 0)
+        tlyButoaneDreapta.Dock = System.Windows.Forms.DockStyle.Fill
+        tlyButoaneDreapta.Location = New System.Drawing.Point(418, 0)
+        tlyButoaneDreapta.Margin = New System.Windows.Forms.Padding(0)
+        tlyButoaneDreapta.Name = "tlyButoaneDreapta"
+        tlyButoaneDreapta.RowCount = 1
+        tlyButoaneDreapta.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
+        tlyButoaneDreapta.Size = New System.Drawing.Size(976, 50)
+        tlyButoaneDreapta.TabIndex = 9
         ' 
         ' FacturiForm
         ' 
@@ -527,7 +526,8 @@ Partial Class FacturiForm
         pnlPages.ResumeLayout(False)
         CType(navDetaliu, ComponentModel.ISupportInitialize).EndInit()
         tlySubsol.ResumeLayout(False)
-        tlySubsol.PerformLayout()
+        tlyButoaneStanga.ResumeLayout(False)
+        tlyButoaneDreapta.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -552,11 +552,11 @@ Partial Class FacturiForm
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
     Friend WithEvents btnIesire As System.Windows.Forms.Button
     Friend WithEvents lblStare As System.Windows.Forms.Label
-    Friend WithEvents btnToken As System.Windows.Forms.Button
     Friend WithEvents mnuUnitate As KBotDropDownMenu
-    Friend WithEvents btnSterge As System.Windows.Forms.Button
     Friend WithEvents btnRenunta As System.Windows.Forms.Button
     Friend WithEvents btnModifica As System.Windows.Forms.Button
     Friend WithEvents btnAdauga As System.Windows.Forms.Button
     Friend WithEvents btnSalveaza As System.Windows.Forms.Button
+    Friend WithEvents tlyButoaneStanga As System.Windows.Forms.TableLayoutPanel
+    Friend WithEvents tlyButoaneDreapta As System.Windows.Forms.TableLayoutPanel
 End Class

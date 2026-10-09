@@ -39,9 +39,9 @@ Public Module KBotMessage
     Public Function Show(owner As IWin32Window, text As String, caption As String,
                          buttons As MessageBoxButtons, icon As MessageBoxIcon,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(owner, text, caption, buttons, icon)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, owner, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>
@@ -53,9 +53,9 @@ Public Module KBotMessage
                          buttons As MessageBoxButtons, icon As MessageBoxIcon,
                          defaultButton As MessageBoxDefaultButton,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(owner, text, caption, buttons, icon, defaultButton)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, owner, text, caption, buttons, icon, defaultButton, False)
     End Function
 
     ''' <summary>The same shape, without an owner.</summary>
@@ -63,51 +63,51 @@ Public Module KBotMessage
                          buttons As MessageBoxButtons, icon As MessageBoxIcon,
                          defaultButton As MessageBoxDefaultButton,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(text, caption, buttons, icon, defaultButton)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, Nothing, text, caption, buttons, icon, defaultButton, False)
     End Function
 
     ''' <summary>Counterpart of <c>MessageBox.Show(owner, text, caption, buttons)</c>.</summary>
     Public Function Show(owner As IWin32Window, text As String, caption As String,
                          buttons As MessageBoxButtons,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, MessageBoxIcon.None)
-        Return MessageBox.Show(owner, text, caption, buttons)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, owner, text, caption, buttons, MessageBoxIcon.None, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>Counterpart of <c>MessageBox.Show(owner, text, caption)</c>.</summary>
     Public Function Show(owner As IWin32Window, text As String, caption As String,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, MessageBoxIcon.None)
-        Return MessageBox.Show(owner, text, caption)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, owner, text, caption, MessageBoxButtons.OK, MessageBoxIcon.None, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>Counterpart of <c>MessageBox.Show(text, caption, buttons, icon)</c> -- no owner.</summary>
     Public Function Show(text As String, caption As String,
                          buttons As MessageBoxButtons, icon As MessageBoxIcon,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(text, caption, buttons, icon)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, Nothing, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>Counterpart of <c>MessageBox.Show(text, caption, buttons)</c> -- no owner.</summary>
     Public Function Show(text As String, caption As String, buttons As MessageBoxButtons,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, MessageBoxIcon.None)
-        Return MessageBox.Show(text, caption, buttons)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, Nothing, text, caption, buttons, MessageBoxIcon.None, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>Counterpart of <c>MessageBox.Show(text, caption)</c> -- no owner.</summary>
     Public Function Show(text As String, caption As String,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, MessageBoxIcon.None)
-        Return MessageBox.Show(text, caption)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, Nothing, text, caption, MessageBoxButtons.OK, MessageBoxIcon.None, MessageBoxDefaultButton.Button1, False)
     End Function
 
     ''' <summary>
@@ -119,23 +119,19 @@ Public Module KBotMessage
     Public Function ShowOnTop(owner As IWin32Window, text As String, caption As String,
                               buttons As MessageBoxButtons, icon As MessageBoxIcon,
                               <CallerFilePath> Optional file As String = Nothing,
-                              <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(owner, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, MbTopMost)
+                              <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, owner, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, True)
     End Function
 
     ''' <summary>The top-most form without an owner.</summary>
     Public Function ShowOnTop(text As String, caption As String,
                               buttons As MessageBoxButtons, icon As MessageBoxIcon,
                               <CallerFilePath> Optional file As String = Nothing,
-                              <CallerMemberName> Optional member As String = Nothing) As DialogResult
-        Journal(file, member, caption, text, icon)
-        Return MessageBox.Show(text, caption, buttons, icon, MessageBoxDefaultButton.Button1, MbTopMost)
+                              <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As DialogResult
+        Return Run(file, member, line, Nothing, text, caption, buttons, icon, MessageBoxDefaultButton.Button1, True)
     End Function
-
-    ' Win32 MB_TOPMOST (0x40000). MessageBoxOptions has no member for it; the value passes straight
-    ' through into the style word of MessageBox.
-    Private ReadOnly MbTopMost As MessageBoxOptions = CType(&H40000, MessageBoxOptions)
 
     ' THERE IS NO SINGLE-ARGUMENT OVERLOAD. It would be ambiguous with Show(text, caption): the
     ' caller-info parameters are String and optional too, so Show("a", "b") would fit it as
@@ -153,9 +149,126 @@ Public Module KBotMessage
     ''' </summary>
     Public Function Show(prompt As String, style As MsgBoxStyle, title As String,
                          <CallerFilePath> Optional file As String = Nothing,
-                         <CallerMemberName> Optional member As String = Nothing) As MsgBoxResult
-        OperatorLog.Write(Source(file, member), title, prompt, LevelOf(style))
-        Return MsgBox(prompt, style, title)
+                         <CallerMemberName> Optional member As String = Nothing,
+                         <CallerLineNumber> Optional line As Integer = 0) As MsgBoxResult
+        Return CType(Run(file, member, line, Nothing, prompt, title, ButtonsOf(style), IconOf(style), DefaultOf(style), False), MsgBoxResult)
+    End Function
+
+    ' ---------------- who puts the dialog on screen ----------------
+
+    ''' <summary>
+    ''' The window that shows a message. KBot.Controls supplies K-BOT's own themed box
+    ''' (<c>KBotMessageBox.Present</c>) and the application installs it at start-up; theming cannot
+    ''' reference Controls, so the link is this delegate. <c>topMost</c> = the old
+    ''' <c>MB_TOPMOST</c> of <see cref="ShowOnTop"/>.
+    ''' </summary>
+    Public Delegate Function MessagePresenter(owner As IWin32Window, text As String, caption As String,
+                                              buttons As MessageBoxButtons, icon As MessageBoxIcon,
+                                              defaultButton As MessageBoxDefaultButton,
+                                              topMost As Boolean, extras As MessageExtras) As DialogResult
+
+    ''' <summary>
+    ''' Nothing (the default, and in the unit tests) = the native Windows box. Set once at start-up;
+    ''' every <c>Show</c> in the solution then opens the K-BOT window instead, with no change at the
+    ''' call sites.
+    ''' </summary>
+    Public Property Presenter As MessagePresenter
+
+    <ThreadStatic> Private _lastExtraClicked As Boolean
+
+    ''' <summary>
+    ''' True when the LAST message shown on this thread was answered with its extra button (one the
+    ''' message catalog added). That answer comes back as <c>DialogResult.None</c>; a call that cares
+    ''' reads this right after <c>Show</c>. Set by the presenter.
+    ''' </summary>
+    Public Property LastExtraClicked As Boolean
+        Get
+            Return _lastExtraClicked
+        End Get
+        Set(value As Boolean)
+            _lastExtraClicked = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' The message catalog file (<c>Config/mesaje_catalog.json</c>) whose edited entries replace the
+    ''' wording of a call; Nothing = the one next to the executable. Setting it re-reads the file.
+    ''' </summary>
+    Public Property CatalogPath As String
+        Get
+            Return MessageOverrides.CatalogPath
+        End Get
+        Set(value As String)
+            MessageOverrides.CatalogPath = value
+        End Set
+    End Property
+
+    ''' <summary>Re-reads the message catalog (the editor calls it after a save).</summary>
+    Public Sub ReloadCatalog()
+        MessageOverrides.Reload()
+    End Sub
+
+    ' The one road every message takes: catalog edits first (so the log keeps what the operator
+    ' really read), then the log line, then the window.
+    Private Function Run(k_file As String, k_member As String, k_line As Integer,
+                         k_owner As IWin32Window, k_text As String, k_caption As String,
+                         k_buttons As MessageBoxButtons, k_icon As MessageBoxIcon,
+                         k_default As MessageBoxDefaultButton, k_topMost As Boolean) As DialogResult
+        Dim k_extras As New MessageExtras()
+        Try
+            MessageOverrides.Apply(k_file, k_member, k_line, k_caption, k_text, k_buttons, k_icon, k_extras)
+        Catch ex As Exception
+            ' A broken catalog never stops a dialog: the call keeps its own wording.
+            GlobalErrorLog.Write("KBotMessage.Run", ex)
+            k_extras = New MessageExtras()
+        End Try
+        Journal(k_file, k_member, k_caption, k_text, k_icon)
+        LastExtraClicked = False
+        Return Present(k_owner, k_text, k_caption, k_buttons, k_icon, k_default, k_topMost, k_extras)
+    End Function
+
+    Private Function Present(owner As IWin32Window, text As String, caption As String,
+                             buttons As MessageBoxButtons, icon As MessageBoxIcon,
+                             defaultButton As MessageBoxDefaultButton, topMost As Boolean,
+                             extras As MessageExtras) As DialogResult
+        Dim k_presenter As MessagePresenter = Presenter
+        If k_presenter IsNot Nothing Then
+            Return k_presenter(owner, text, caption, buttons, icon, defaultButton, topMost, extras)
+        End If
+        ' MB_TOPMOST (0x40000): MessageBoxOptions has no member for it; the value passes straight
+        ' through into the style word of MessageBox. (The native box has no extra button.)
+        Dim k_options As MessageBoxOptions = If(topMost, CType(&H40000, MessageBoxOptions), CType(0, MessageBoxOptions))
+        Return MessageBox.Show(owner, text, caption, buttons, icon, defaultButton, k_options)
+    End Function
+
+    ' MsgBoxStyle packs buttons (low nibble), icon (&HF0) and default button (&HF00).
+    Private Function ButtonsOf(style As MsgBoxStyle) As MessageBoxButtons
+        Select Case CInt(style) And &HF
+            Case 1 : Return MessageBoxButtons.OKCancel
+            Case 2 : Return MessageBoxButtons.AbortRetryIgnore
+            Case 3 : Return MessageBoxButtons.YesNoCancel
+            Case 4 : Return MessageBoxButtons.YesNo
+            Case 5 : Return MessageBoxButtons.RetryCancel
+            Case Else : Return MessageBoxButtons.OK
+        End Select
+    End Function
+
+    Private Function IconOf(style As MsgBoxStyle) As MessageBoxIcon
+        Select Case CInt(style) And &HF0
+            Case 16 : Return MessageBoxIcon.Error
+            Case 32 : Return MessageBoxIcon.Question
+            Case 48 : Return MessageBoxIcon.Warning
+            Case 64 : Return MessageBoxIcon.Information
+            Case Else : Return MessageBoxIcon.None
+        End Select
+    End Function
+
+    Private Function DefaultOf(style As MsgBoxStyle) As MessageBoxDefaultButton
+        Select Case CInt(style) And &HF00
+            Case &H100 : Return MessageBoxDefaultButton.Button2
+            Case &H200 : Return MessageBoxDefaultButton.Button3
+            Case Else : Return MessageBoxDefaultButton.Button1
+        End Select
     End Function
 
     ' ---------------- the shared part ----------------

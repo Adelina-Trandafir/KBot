@@ -21,7 +21,12 @@ Public Class VanzareCumparatorPage
             Dim k_palette As ThemePalette = k_scheme.Palette
             BackColor = k_palette.SurfaceAltColor
             tlyClient.BackColor = k_palette.SurfaceAltColor
-            flowClient.BackColor = k_palette.SurfaceAltColor
+            tlyLoc.BackColor = k_palette.SurfaceAltColor
+            lblOrasClientT.BackColor = k_palette.SurfaceAltColor
+            lblSectorT.BackColor = k_palette.SurfaceAltColor
+            tlyCf.BackColor = k_palette.SurfaceAltColor
+            lblIndT.BackColor = k_palette.SurfaceAltColor
+            tlyBtn.BackColor = k_palette.SurfaceAltColor
             For Each k_b As Button In New Button() {btnClientNou, btnClientSalveaza, btnClientSterge}
                 ButtonStyles.ApplySecondary(k_b, k_scheme)
             Next

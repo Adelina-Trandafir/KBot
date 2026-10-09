@@ -563,11 +563,10 @@ def step3cd_populeaza_rezervari(cursor, cod: str, initiala: bool,
     """
     Scrie FX_Rezervari. Apelata de doua ori: `initiala=True`, apoi `initiala=False`.
 
-    D-E: un `IDREV` care arata catre o revizie absenta din FX_DDF_REV se scrie NULL, se
-    numara si se intoarce ca avertisment. Nu ar trebui sa se intample; daca se intampla,
-    avertismentul e singurul mod in care cineva afla. Alternativa -- sa lasam INSERT-ul
-    sa cada -- ar lua toata tranzactia cu el (eroare 1452) pentru o legatura pe care
-    pasul 3e o poate umple mai tarziu oricum.
+    D-E: un `IDREV` care arata catre o revizie absenta din FX_DDF_REV se scrie NULL, fara
+    avertisment (operator, 08.10.2026). Alternativa -- sa lasam INSERT-ul sa cada -- ar
+    lua toata tranzactia cu el (eroare 1452) pentru o legatura pe care pasul 3e o poate
+    umple mai tarziu oricum.
     """
     valoare = "H.Val_AngLeg" if initiala else "H.Val_Rezervare_Dif"
     tip_rand = "Rez_Definitiva" if initiala else "Rez_Influenta"
@@ -580,10 +579,7 @@ def step3cd_populeaza_rezervari(cursor, cod: str, initiala: bool,
         if idrev is not None:
             cursor.execute(_DDF_REV_EXISTA_SQL, (int(idrev),))
             if cursor.fetchone() is None:
-                warnings.append(
-                    f"FX_Rezervari: revizia {idrev} nu există în FX_DDF_REV — "
-                    f"legătura rămâne goală (indicator {r['CodIndicator']})."
-                )
+                # Operator 08.10.2026: no message to the operator; step 3e fills the link later.
                 idrev = None
 
         # Slice 0108 (operator, 03.10.2026): the credit stamped on a reservation is the budget the

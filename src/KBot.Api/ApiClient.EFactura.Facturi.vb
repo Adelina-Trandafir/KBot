@@ -24,7 +24,6 @@ Partial Public Class ApiClient
         Public Property SerieFactura As String
         Public Property NumarInitial As Integer
         Public Property AfiseazaPrimiteNoi As Integer
-        Public Property AnafPreluat As Integer
     End Class
 
     Private NotInheritable Class EFacturaFurnizorAnswerWire
@@ -49,6 +48,10 @@ Partial Public Class ApiClient
 
     Private NotInheritable Class EFacturaClientiAnswerWire
         Public Property clienti As List(Of EFacturaClientWire)
+    End Class
+
+    Private NotInheritable Class EFacturaClientAnafAnswerWire
+        Public Property client As EFacturaClientWire
     End Class
 
     Private NotInheritable Class EFacturaUmWire
@@ -261,6 +264,23 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    Public Async Function TakeClientFromAnafAsync(k_codFiscal As String, ct As CancellationToken) _
+        As Task(Of EFacturaClient) Implements IEFacturaApi.TakeClientFromAnafAsync
+        Try
+            Dim body As String = JsonSerializer.Serialize(New EFacturaClientWire() With {.CodFiscal = k_codFiscal}, _json)
+            Dim respText As String = Await SendEFacturaAsync(HttpMethod.Post, "/api/efactura/clienti/anaf", body,
+                                                             "preluarea datelor clientului de la ANAF", ct).ConfigureAwait(False)
+            Dim wire As EFacturaClientAnafAnswerWire = JsonSerializer.Deserialize(Of EFacturaClientAnafAnswerWire)(respText, _json)
+            If wire Is Nothing OrElse wire.client Is Nothing Then Throw New ApiException("Serverul nu a trimis datele clientului.")
+            Return ToClient(wire.client)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.TakeClientFromAnafAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function DeleteClientAsync(k_idClient As Integer, ct As CancellationToken) _
         As Task Implements IEFacturaApi.DeleteClientAsync
         Try
@@ -406,7 +426,7 @@ Partial Public Class ApiClient
             .Judetul = If(k_wire.Judetul, String.Empty), .Mail = If(k_wire.Mail, String.Empty),
             .Telefon = If(k_wire.Telefon, String.Empty),
             .SerieFactura = If(k_wire.SerieFactura, String.Empty), .NumarInitial = Math.Max(1, k_wire.NumarInitial),
-            .AfiseazaPrimiteNoi = k_wire.AfiseazaPrimiteNoi <> 0, .AnafPreluat = k_wire.AnafPreluat <> 0, .AreFacturi = k_areFacturi}
+            .AfiseazaPrimiteNoi = k_wire.AfiseazaPrimiteNoi <> 0, .AreFacturi = k_areFacturi}
     End Function
 
     Private Shared Function ToClient(k_wire As EFacturaClientWire) As EFacturaClient

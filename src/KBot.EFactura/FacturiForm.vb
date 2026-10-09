@@ -366,8 +366,8 @@ Public Class FacturiForm
         btnModifica.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateModifica
         btnSalveaza.Enabled = Not _busy AndAlso k_edit
         btnRenunta.Enabled = Not _busy AndAlso k_edit
-        btnSterge.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateSterge
-        btnToken.Enabled = Not _busy AndAlso _authorizer IsNot Nothing
+        'btnSterge.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateSterge
+        'btnToken.Enabled = Not _busy AndAlso _authorizer IsNot Nothing
         If k_edit Then
             'lblAntet.Text = If(_mode = EditMode.Creating, "Factură nouă", $"Modificare — factura {_current?.Eticheta}")
         End If
@@ -477,8 +477,8 @@ Public Class FacturiForm
             End Try
             SetDirty(False)
             ApplyMode()
-            SelectView(ViewCumparator)
-            cmbClient.Focus()
+            SelectView(ViewGenerale)
+            cmbContPlata.Focus()
             SetStatus("Factură nouă: alegeți clientul, completați liniile și apăsați «Salvare».")
         Catch ex As OperationCanceledException
             ' The window was closed: nothing to show.
@@ -544,14 +544,14 @@ Public Class FacturiForm
         ShowInvoice(_current)
     End Sub
 
-    Private Async Sub BtnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
+    Private Async Sub BtnSterge_Click(sender As Object, e As EventArgs)
         Try
             If _busy OrElse _mode <> EditMode.Viewing OrElse _current Is Nothing OrElse Not _current.PoateSterge Then Return
             If KBotMessage.Show(Me, $"Ștergeți factura {_current.Eticheta} din {_current.DataFactura:dd.MM.yyyy} ({_current.ClientDenumire})?",
                                 "Ștergere factură", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
                                 MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
-            Dim k_id As Integer = _current.IdFactura
-            Dim k_label As String = _current.Eticheta
+            Dim k_id = _current.IdFactura
+            Dim k_label = _current.Eticheta
             SetBusy(True, "Se șterge factura…")
             Try
                 Await _gate.RunAsync(Function() _api.DeleteFacturaAsync(k_id, _cts.Token)).ConfigureAwait(True)
@@ -672,7 +672,7 @@ Public Class FacturiForm
         k_field.Focus()
     End Sub
 
-    Private Sub BtnToken_Click(sender As Object, e As EventArgs) Handles btnToken.Click
+    Private Sub BtnToken_Click(sender As Object, e As EventArgs)
         Try
             If _busy OrElse _authorizer Is Nothing Then Return
             Using k_form As New TokenForm(_authorizer, _unitName)
@@ -757,8 +757,8 @@ Public Class FacturiForm
             'lblAntet.ForeColor = k_palette.TextColor
             lblStare.ForeColor = k_palette.TextDimColor
             ButtonStyles.ApplyPrimary(btnSalveaza, k_scheme)
-            For Each k_b As Button In New Button() {btnAdauga, btnModifica, btnRenunta, btnSterge, btnIesire, btnToken}
-                ButtonStyles.ApplySecondary(k_b, k_scheme)
+            For Each k_b As Button In New Button() {btnAdauga, btnModifica, btnRenunta, btnIesire}
+                ButtonStyles.ApplyTrans(k_b, k_scheme)
             Next
             ApplyStateColor()
             ApplyTreeLook()

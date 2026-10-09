@@ -94,6 +94,7 @@ Mută acest reper la fiecare 0000-NN (și data din `src/KBot.App/HelpContent/hel
 
 - **Ajutor de actualizat** (feliile de funcționalitate adaugă aici ce subiecte / capturi au
   învechit, ex. `0098: contabil.vederi.plati — coloana nouă «Cont»; captura plati de refăcut`):
+  - 0112 (caseta de mesaj proprie): capturile care arată o casetă de mesaj nativă Windows sunt de refăcut (acum e fereastra K-BOT); niciun subiect nu descrie caseta în sine
   - (0101 acoperită în 0000-37; 0101-01 în 0000-38; 0102 în 0000-40 — captura `clasificatii` de refăcut)
   - 0078-15: `avansat.documente` — motorul implicit devine ActiveX după actualizare (acțiune unică, fără mesaj); două bife noi pe ActiveX: «ActiveX — pagina pe toată lățimea la deschidere» (`chkAcroLatime`) și «ActiveX — salvare automată după semnătură» (`chkAcroSalvare`, de descris abia când merge), de adăugat în `screens:`; «Jurnal de diagnostic detaliat» nu mai produce nimic pe ActiveX (de hotărât); captura `avansat-documente` de refăcut. `avansat.jurnale` — rândul `acropdf_trace.log` de revăzut
   - (0097 acoperită în 0000-13; «Reanalizează rezervările» în 0000-23; 0097-02 în 0000-25; 0056-02 în 0000-26; 0084/02 + 0094-02 în 0000-28)

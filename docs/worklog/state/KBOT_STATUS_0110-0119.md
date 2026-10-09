@@ -76,3 +76,20 @@ Python files › AvacontPush one-time query `0111_total_orig_si_valoare_orig` �
   `IApiClient` got the new member (`CorecteazaValoareaAsync`) so that this slice adds no error.
 - The rebuild from history (`receptii_refacere`) of a header that was deleted is born again with the
   history's figure and without a correction.
+
+---
+
+## Slice 0112 — K-BOT message box + debug message catalog
+
+Operator, 08.10.2026. A message window of our own (`KBot.ControlsMessageBox`: `KBotMessageBox`, `KBotMessageBoxForm`, `KBotMessageIcon`, `KBotMessageSpec`; kinds None/Info/Warning/Error/Question; optional extra button) replaces the native `MessageBox` behind every `KBotMessage.Show` through `KBotMessage.Presenter`, installed in `Program.Main` — no call site changed. Debug-only bench in DevHarness (grid of all 474 calls: type, buttons, extra button, caption, text, function; editor; preview) over `Config/mesaje_catalog.json`, produced by `tools/MessageCatalog/scan.js`.
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0112 | K-BOT message box + debug message catalog (0112-02: catalog edits apply at run time, «Actualizează», MENIU › ADMIN) | GATA pe cod: Controls, DevHarness, App build 0 warnings / 0 errors; nimic rulat, **nevăzut pe ecran**; catalogul nu alimentează încă apelurile | [SLICE-0112](../SLICE-0112-caseta-mesaj-kbot-si-catalog.md) |
+
+### Open threads — 0112
+
+- First look on screen (Classic / Dark / Modern, 125% / 150%, long text, extra button, TopMost over a tutorial card).
+- 0112-02 done in code: calls take their wording from the catalog (matched by file + member, confirmed by the code's template). Never run: first real edit on screen will prove the matcher.
+- A changed button set is applied as written; code that tests the old set will misread the answer (the editor warns).
+- Help: screenshots with a native message box are stale (listed in 0000-0009 Open threads).

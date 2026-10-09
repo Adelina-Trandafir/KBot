@@ -258,6 +258,14 @@ indicator. — `OPERATOR`, 26.08.2026.
 lines must equal the `RHR` rows. Shown per reception as a visible mark. Deliberately worded "the
 latest by date", not "exactly one that matches" — see F11. Does not apply to a chain terminated by a
 deletion (F21). — `OPERATOR`, 26.08.2026.
+**AMENDED 08.10.2026 — a zero line is not a line.** The lines are compared starting from the
+reception: only an indicator the reception really carries (`RHR` sum per indicator, zeroes dropped
+by `_valori_pe_indicator`) can fail the chain. An indicator with a value on the snapshot and 0.00
+(no line) on the reception does **not** refuse (case: «AA4: instantaneu 369.00 / recepție 0.00»,
+reception 19.03.2026 · 3000.00, `AAB2MN2DC25`, `018_GRRS`). The error is a reception line > 0 that
+differs from, or is missing on, the snapshot. The total check (`Total` = `SumaAntet`) is unchanged.
+Done in `prelucrare_asociere.py` (`valideaza_plasarile`, the «F15 pe linii» block). — `OPERATOR`,
+08.10.2026.
 
 **F16.** **Sets only grow.** Along one chain ordered by `DataH`, each snapshot's indicator set must
 contain the previous one's. — `OPERATOR`, 26.08.2026.

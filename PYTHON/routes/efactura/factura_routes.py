@@ -4,19 +4,20 @@ Routes of the ISSUED invoices of E-Factura (slice 00EF-06). All `@require_sessio
 session's (`g.session.db_name`), never a parameter of the request. The rules are in facturi.py.
 
   Issuer         GET  /api/efactura/furnizor                       -> { exista, furnizor, are_facturi }  (the unit's row of
-                                                                   AVACONT_COMUN.Unitati_Detalii, 00EF-13; furnizor.AnafPreluat = 1 once
-                                                                   the ANAF button was used; are_facturi = the series and number are fixed)
+                                                                   AVACONT_COMUN.Unitati_Date, 00EF-13;
+                                                                   are_facturi = the series and number are fixed)
                  GET|PUT /api/efactura/furnizor/conturi           { conturi: [{ Cont }] } -> { conturi: [{ IdCont, Cont, Banca }] }
                                                                    the unit's own IBANs (Unitati_Conturi); the bank is deduced from the account
                  PUT  /api/efactura/furnizor                       { Denumire, CodFiscal, Adresa, Orasul, Judetul, Mail,
                                                                      Telefon, SerieFactura, NumarInitial, AfiseazaPrimiteNoi }
                                                                    -> as GET; 409 SERIE_BLOCATA when invoices exist and the series or
                                                                    the first number changed
-                 POST /api/efactura/furnizor/anaf                  -> as GET; takes the name and address from ANAF ONCE (409
-                                                                   ANAF_DEJA_PRELUAT afterwards)
+                 POST /api/efactura/furnizor/anaf                  -> as GET; takes the name, county, city and address from
+                                                                   ANAF (as often as asked)
   Units          GET  /api/efactura/um?q=                          -> { um: [{ Cod, Explicatie }] }   (UN/ECE codes)
   Customers      GET  /api/efactura/clienti?q=&limit=              -> { clienti: [...] }
                  POST /api/efactura/clienti                        -> 201 the customer
+                 POST /api/efactura/clienti/anaf                   { CodFiscal } -> { client } the fields ANAF knows (nothing written)
                  GET|PUT|DELETE /api/efactura/clienti/<id>
   Invoices       GET  /api/efactura/facturi?an=&q=&limit=          -> { facturi: [header + ClientDenumire] }, newest first
                  POST /api/efactura/facturi                        { IdClient, DataFactura, ContPlata, Comentarii, BT_13,
@@ -182,6 +183,13 @@ def clienti_list():
 @_guarded("clienti/post")
 def clienti_post():
     return _json(facturi.client_create(g.session.db_name, _body()), 201)
+
+
+@efactura_bp.route("/api/efactura/clienti/anaf", methods=["POST"])
+@require_session
+@_guarded("clienti/anaf")
+def clienti_anaf():
+    return _json(facturi.client_anaf(g.session.db_name, _body()))
 
 
 @efactura_bp.route("/api/efactura/clienti/<int:id_client>", methods=["GET"])

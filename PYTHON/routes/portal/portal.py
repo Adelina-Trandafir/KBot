@@ -51,6 +51,7 @@ from routes.auth import mailer
 from routes.auth.auth import log_action, verify_operator
 from routes.auth.ratelimit import LIMITER
 from routes.auth.session_store import STORE
+from routes.portal import drepturi
 from utils.database import get_kbot_comun_connection
 
 logger = logging.getLogger(__name__)
@@ -377,12 +378,13 @@ def portal_me():
     try:
         units = _user_units(note["email"])
         periods = _unit_periods(note["db_name"]) if note.get("db_name") else []
+        sections = drepturi.sections_of(note["email"], note.get("db_name"))
     except mysql.connector.Error as err:
         logger.error("portal me: read failed for %s: %s", mailer.mask_address(note["email"]), err)
         return _fail("DB_ERROR", "Datele contului nu au putut fi citite.", 500)
     _slide(token, note)
     return _json({"email": note["email"], "units": units, "db_name": note.get("db_name"),
-                  "role": note.get("role"), "periods": periods,
+                  "role": note.get("role"), "periods": periods, "sections": sections,
                   "is_admin": is_admin_email(note["email"])})
 
 
@@ -400,13 +402,14 @@ def portal_unit():
                        rezultat="EROARE", ip=_ip())
             return _fail("UNITATE_INTERZISA", "Acces interzis pentru această unitate.", 403)
         periods = _unit_periods(db_name)
+        sections = drepturi.sections_of(note["email"], db_name)
     except mysql.connector.Error as err:
         logger.error("portal unit: read failed for %s: %s", mailer.mask_address(note["email"]), err)
         return _fail("DB_ERROR", "Unitatea nu a putut fi deschisă.", 500)
     note["db_name"], note["role"] = mine["DC"], mine["Rol"]
     _slide(token, note)
     log_action(note["email"], db_name, "PORTAL_UNIT", ip=_ip())
-    return _json({"db_name": db_name, "role": mine["Rol"], "periods": periods})
+    return _json({"db_name": db_name, "role": mine["Rol"], "periods": periods, "sections": sections})
 
 
 def _remaining_idle(note):

@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>ADE.Migrator</RootNamespace>
+    <AssemblyName>ADE.Migrator</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- x64, NOT AnyCPU: the ACE provider is 64-bit only on this estate (same reason as KBot.Migrator). -->
+    <PlatformTarget>x64</PlatformTarget>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
+    <StartupObject>ADE.Migrator.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+    <Import Include="KBot.Theming" />
+  </ItemGroup>
+
+  <!-- Reads the ADECHIT Access file (*.mdb) and writes the AD_ tables of the unit database in MariaDB.
+       Same two data packages as KBot.Migrator. AccessProvider / TargetServer are reused from KBot.Migrator
+       (public classes) rather than copied. -->
+  <ItemGroup>
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\..\src\KBot.Theming\KBot.Theming.vbproj" />
+    <ProjectReference Include="..\..\src\KBot.Controls\KBot.Controls.vbproj" />
+    <ProjectReference Include="..\..\src\KBot.Migrator\KBot.Migrator.vbproj" />
+  </ItemGroup>
+
+</Project>

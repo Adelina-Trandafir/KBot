@@ -24,7 +24,7 @@ Fereastra **«Verificare buget FOREXE»** pune față în față, pentru fiecare
 Un rând pe clasificație, cu coloanele **Clasificație**, **Denumire**, **SS** și trei valori:
 
 - **Buget K-BOT** – totalul versiunii de buget în vigoare azi plus totalul rectificărilor ei (nu se mai oprește la trimestrul curent). Gol înseamnă că nu există buget K-BOT în vigoare azi;
-- **Credit FOREXE** – creditul bugetar al clasificației, așa cum l-a raportat FOREXE la ultima descărcare. Este o singură valoare pe clasificație, la fel pentru toate angajamentele care o folosesc;
+- **Buget FOREXE** – creditul bugetar al clasificației, așa cum l-a raportat FOREXE la ultima descărcare. Este o singură valoare pe clasificație, la fel pentru toate angajamentele care o folosesc;
 - **Diferență** – FOREXE minus K-BOT.
 
 Se verifică doar clasificațiile **folosite în FOREXE**, adică cele pentru care FOREXE a raportat un credit. O clasificație care are valori în K-BOT, dar nu apare în FOREXE, nu se verifică și nu se arată. Se văd doar rândurile la care diferența nu este zero; în josul ferestrei scrie câte clasificații diferă din câte au fost verificate.

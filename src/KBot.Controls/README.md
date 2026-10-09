@@ -26,6 +26,8 @@ e logică (după control), nu după felul fișierului.
 | `CaptionBar/` | `KBotCaptionBar` |
 | `BusyBar/` | `KBotBusyBar` |
 | `Notice/` | `KBotNotice`, `NoticeKind` |
+| `Button/` | `KBotButton` — butonul rotunjit al casei (felia 0112): fața din temă, `Primary` = accent, `DialogResult`, merge ca `AcceptButton`/`CancelButton` |
+| `MessageBox/` | `KBotMessageBox` (punctul de intrare + `Install`), `KBotMessageBoxForm` (fereastra, din designer), `KBotMessageIcon` (pictograma desenată), `KBotMessageSpec`/`KBotMessageResult`, enum-urile `KBotMsgKind`/`KBotMsgButtons` — caseta de mesaj proprie, în locul `MessageBox`-ului nativ |
 | `TextField/` | `KBotTextField` (câmpul de o linie de pe `LoginForm`) și `KBotTextBox` (caseta generală: chenar reglabil ca CULOARE și GROSIME, multilinie, cu bare `KBotScrollBar` proprii în locul celor native) |
 | `Table/` | `KBotTableLayoutPanel` (+ partial-urile `.Dpi`/`.Fit`) — TableLayoutPanel-ul casei: rândurile, coloanele fixe și marginea interioară sunt autorate în pixeli LOGICI și calculate pentru ecran la scara K-BOT, ca rândurile arborelui și ale grilei (felia 0066); potrivire la conținut (0062) și linii de celulă din temă. Din 0066 TOATE tabelele din soluție sunt de acest tip |
 | `Scroll/` | `KBotScrollBar` — bara de derulare desenată de noi. Semantica intervalului e a lui `System.Windows.Forms.ScrollBar` (`Minimum .. Maximum - LargeChange + 1`), dar fața e a paletei: barele native sunt ferestre pictate de Windows, deci nicio culoare a schemei nu ajunge pe ele |

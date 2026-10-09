@@ -9,7 +9,10 @@ export const comboboxEventsMixin = {
    */
   bindEvents() {
     if (this.options.readonly) {
-      this.addDOMListener(this.container, 'click', () => this.handleReadonlyClick());
+      this.addDOMListener(this.container, 'click', (event) => {
+        // A choice already closes the dropdown; its bubbling click must not reopen it.
+        if (!this.dropdown.contains(event.target)) this.handleReadonlyClick();
+      });
       this.addDOMListener(this.input, 'keydown', (e) => this.handleKeydown(e));
       this.addDOMListener(this.input, 'blur', (e) => this.handleBlur(e));
     } else {

@@ -154,7 +154,9 @@ Public NotInheritable Class PrelucrareCoordinator
                 Dim raspuns As PrelucrareRaspuns =
                     Await _api.SalveazaAsociereaAsync(rezultat, amprenta, decizii, alegeriFacute, ct)
 
-                If raspuns Is Nothing OrElse raspuns.Stare <> PrelucrareStare.AlegereUnitate Then
+                If raspuns Is Nothing OrElse
+                   (raspuns.Stare <> PrelucrareStare.AlegereUnitate AndAlso
+                    raspuns.Stare <> PrelucrareStare.ClasificatieLipsa) Then
                     Return raspuns
                 End If
 
@@ -187,12 +189,41 @@ Public NotInheritable Class PrelucrareCoordinator
                                         cod As String) As List(Of AlegereUnitate)
         Dim rezultate As New List(Of AlegereUnitate)()
         Dim total As Integer = raspuns.AlegeriNecesare.Count
+        If raspuns.Stare = PrelucrareStare.ClasificatieLipsa Then
+            Return IntrebaInregistrarea(raspuns, cod)
+        End If
         For i As Integer = 0 To total - 1
             Dim ales As AlegereUnitate = _intreaba(raspuns.AlegeriNecesare(i), cod, i + 1, total)
             If ales Is Nothing Then Return Nothing
             rezultate.Add(ales)
         Next
         Return rezultate
+    End Function
+
+    ''' <summary>
+    ''' «Clasificația nu este configurată» (operator, 08.10.2026): o întrebare Da/Nu pentru
+    ''' fiecare clasificație lipsă. «Da» = serverul o înregistrează în «Clasificații» și fluxul
+    ''' continuă; «Nu» = Nothing, fluxul se oprește și nu se salvează nimic.
+    ''' </summary>
+    Private Shared Function IntrebaInregistrarea(raspuns As PrelucrareRaspuns,
+                                                 cod As String) As List(Of AlegereUnitate)
+        Dim k_rezultate As New List(Of AlegereUnitate)()
+        For Each k_item As AlegereNecesara In raspuns.AlegeriNecesare
+            Dim k_text As String =
+                $"Clasificația «{k_item.Clsf}» nu este configurată!" & Environment.NewLine &
+                "Dorești să o înregistrezi acum?" & Environment.NewLine & Environment.NewLine &
+                "Da — clasificația se introduce automat în nomenclatorul «Clasificații», " &
+                "iar descărcarea continuă și se salvează." & Environment.NewLine &
+                "Nu — descărcarea se oprește și nu se salvează nimic."
+            If KBotMessage.Show(Form.ActiveForm, k_text, $"K-BOT — Descărcarea lui «{cod}»",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                                MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                Return Nothing
+            End If
+            k_rezultate.Add(New AlegereUnitate() With {
+                .Ss = k_item.Ss, .ClsfE = k_item.ClsfE, .Inregistreaza = True})
+        Next
+        Return k_rezultate
     End Function
 
 End Class

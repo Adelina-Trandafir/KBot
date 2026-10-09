@@ -19,6 +19,12 @@ Public Enum PrelucrareStare
     ''' poartă recepțiile, instantaneele neașezate și amprenta.
     ''' </summary>
     Propunere = 2
+    ''' <summary>
+    ''' 409 <c>CLASIFICATIE_LIPSA</c> (08.10.2026): o clasificație nu există în nomenclatorul
+    ''' niciunei unități și NU s-a scris nimic. Operatorul e întrebat dacă o înregistrează acum;
+    ''' <see cref="PrelucrareRaspuns.AlegeriNecesare"/> le poartă pe cele lipsă.
+    ''' </summary>
+    ClasificatieLipsa = 3
 End Enum
 
 ''' <summary>
@@ -36,6 +42,9 @@ Public NotInheritable Class PrelucrareRaspuns
     ''' Stabil, ca și codurile de la 401 (TOKEN_UNKNOWN, CONTEXT_MISMATCH…).
     ''' </summary>
     Public Const MotivAlegereUnitate As String = "ALEGERE_UNITATE"
+
+    ''' <summary>Codul-motiv al 409-ului «clasificația nu este configurată» (08.10.2026).</summary>
+    Public Const MotivClasificatieLipsa As String = "CLASIFICATIE_LIPSA"
 
     Public Property Stare As PrelucrareStare = PrelucrareStare.Salvat
     Public Property CodAngajament As String = String.Empty
@@ -106,4 +115,10 @@ Public NotInheritable Class AlegereUnitate
     ''' NOUĂ se întreabă oricum din nou — memoria e per pereche (SS, ClsfE), nu globală.
     ''' </summary>
     Public Property Retine As Boolean
+    ''' <summary>
+    ''' True = răspunsul «Da» la «clasificația nu este configurată»: serverul o înregistrează în
+    ''' <c>Clasificatii</c> înăuntrul tranzacției. <see cref="IdUnitate"/> nu se folosește atunci.
+    ''' Rămâne în aceeași listă ca alegerile de unitate, fiindcă trebuie retrimisă în ambele faze.
+    ''' </summary>
+    Public Property Inregistreaza As Boolean
 End Class

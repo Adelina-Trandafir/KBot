@@ -14,6 +14,17 @@ import eventBus, { EVENTS } from '../event-bus/event-bus.js';
 const TOKEN_KEY = 'kbot-portal-token';
 const PORTAL_URL = '/portal';
 
+// Slice ADE9-01: /portal?next=/adechit -- a page that needs the sign-in sends the user here and takes
+// them back once a unit is open. Only these pages are allowed, never a free address.
+const NEXT_PAGES = ['/adechit'];
+const nextPage = (() => {
+  const wanted = new URLSearchParams(window.location.search).get('next') || '';
+  return NEXT_PAGES.includes(wanted) ? wanted : '';
+})();
+function goNext() {
+  if (nextPage) window.location.replace(nextPage);
+}
+
 const $ = (id) => document.getElementById(id);
 
 function readToken() {
@@ -172,6 +183,7 @@ installLayouts(); // the grids ask layouts.js for their column order, visibility
 const app = createApp({
   call,
   callBytes,
+  onUnitOpened: goNext,
   onUnauthorized: (message) => {
     writeToken('');
     say('msg-login', message || 'Sesiunea a expirat. Autentificați-vă din nou.');
@@ -194,6 +206,7 @@ async function openApp() {
   show('card-app');
   startMonitor();
   await app.open(me);
+  if (me.db_name) goNext(); // a unit is already open (the only one, or from earlier): straight back
 }
 
 // ---- light / dark look (the saved choice is applied early by a script in portal.html)

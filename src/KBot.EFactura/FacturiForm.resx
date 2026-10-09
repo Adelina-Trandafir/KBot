@@ -118,6 +118,31 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>168, 17</value>
+  </metadata>
+  <metadata name="mnuUnitate.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="capBar.OptionButtonImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAA39JREFUWEfF
+        llFkW1EYx0cJpexp9DWUPvVprzOllnEzoVb2EkobV1VlEa1Ue3OFO8IepqFdpFqJNDfZvYdQJqska5tE
+        27Qn9GmMMUZeQwllT2e+uTduvnvueh/W7eGXOP/z/77vf8U5Nw+eR148+J/YBDfIpDMmk85jC17scYtN
+        cINMOkmZdJiFHzLpeLDPDTbhLmTSGZdJp48CAIvY6wabYBIn1BsnNBAndOjJ4oRuxQllHL7HCR1B3pE4
+        oY9wbys2AZB06pV02pV0yiSd3kg6zUs6XZR0WjU0J2A/IOnUL+k0K+m0Z/SZwDMcA2xqV95N7aq7qV2x
+        vwj044awCRsfLjMbHy7ZPfAVz+IGWC+1/eulNrsHVDyLGyBWbHtixXYvVmwzB25jxTaJFduiBViDjr1W
+        /HgWNwCwVrj4tFa4YBzKa4WLcew3asaNfVwD9NYKF9x7wiasHpyNrR6c9VcPzhgig708wMepvVk9OHuI
+        vcDQIppvTUbzLRLNtxjiOppv2Z4gmm9NcTSP4cc93mDvIEAk15yK5JpqJNdkDsxZiyK55utIrnlr7MH3
+        a7Q/x+kBdCK55jNbgHC2oYazDebAz3C2MWoWhLONOY4HGIQEfzjbuOV4TLaGAqzsn6or+6fMgS/WxCv7
+        p1WOB6gi3xeOx2RwJH9/LO+dqMt7J8yBb9bGy3sn5xwPcI583zgek+EAS7vHW0u7x8yBn0u7x4OfYGn3
+        eJ3jAdYtnlGjDntMhgMAYqbuFzP1azFTZxxmLT6PmKlX0T6sB6cE/JweJqqYqQ9OzyCASShdS4bSNYa4
+        DqVrQ6/aULr2JJSuifCN9BHDj3uQULo2iefZAizsVB8u7FT7CztVhnB1EYGPUwv9xrAXsAnz20ee+e2j
+        3vz2EeNQnt8+4l7FoBv7uAb4hP2OAYKpij+YqrA/0A+mKiSYqogWYA069pr0gqmK7SblBnj17qP66t1H
+        dg+4exu+fHv49eXbQ3YPvMezuAECyfJEIFnuBpJl9heBfu7+kgGCQiYEhXQFhfQEheQFhQQEhcwKCvks
+        KIT9gaqgkEWj5sbQoA93uGMAwJfQHvkS2tDZh7UvoX33JTTGYfCCMbweX0Kb9SU0x+GATbiLGbkkzsgl
+        hujPyCXu8bwLm3AX05LqmZbU7rSkMgtJ7HOLTXDD042C9+lG4bEF7i3nBpvwr/kF/ng4zMTG540AAAAA
+        SUVORK5CYII=
+</value>
+  </data>
 </root>
