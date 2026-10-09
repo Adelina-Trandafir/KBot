@@ -30,14 +30,79 @@ export function bindCatalogs({ api, context, refresh }) {
   let sequence = 0;
   let request = null;
   let taxRows = [];
+  let taxOriginals = new Map();
+  let taxGrid = null;
+  let validationPrompt = null;
   const error = (failure) => { console.error('[ADE catalog]', failure); showMessage(message, failure.message, 'error'); };
   function closePrevious(row) {
     for (const other of taxRows) if (other.IDV !== row.IDV && (other.Activ || other._closedBy === row.IDV)) {
       other.Activ = false; other.PanaLa = previousMonth(row.DeLa); other._closedBy = row.IDV;
-      const draft = drafts.get(`ValoriTaxe:${other.IDV}`);
-      if (draft) draft.values.Activ = false;
     }
     if (row.Activ) row.PanaLa = null;
+  }
+  function rebuildTaxes() {
+    for (const row of taxRows) {
+      const draft = drafts.get(`ValoriTaxe:${row.IDV}`);
+      Object.assign(row, taxOriginals.get(row.IDV) || { PanaLa: null }, draft?.values || {});
+      delete row._closedBy;
+    }
+    const active = taxRows.filter((row) => row.Activ).sort((a, b) => (a.DeLa || '').localeCompare(b.DeLa || ''));
+    for (const row of active) {
+      row.Activ = true; closePrevious(row);
+    }
+  }
+  function removeTax(row) {
+    taxGrid?.cancelEdit();
+    if (row.IDV < 0) {
+      taxRows.splice(taxRows.findIndex((item) => item.IDV === row.IDV), 1);
+    }
+    drafts.delete(`ValoriTaxe:${row.IDV}`);
+    rebuildTaxes(); taxGrid?.setRows(taxRows); request = null;
+  }
+  async function invalidTax(row, failure, key) {
+    if (validationPrompt) return validationPrompt;
+    validationPrompt = new Promise((resolve) => {
+      const prompt = document.createElement('dialog');
+      prompt.className = 'ade-catalog ade-tax-validation';
+      prompt.setAttribute('aria-label', 'Taxă invalidă');
+      const header = document.createElement('header'); header.className = 'ade-catalog-header';
+      const title = document.createElement('h2'); title.textContent = 'Taxă invalidă'; header.append(title);
+      const text = document.createElement('p'); text.className = 'ade-tax-validation-text';
+      text.textContent = `${failure.message} Continuați editarea sau anulați înregistrarea?`;
+      const footer = document.createElement('footer');
+      const finish = (keep) => {
+        prompt.close(); prompt.remove(); validationPrompt = null;
+        if (keep) {
+          if (!taxGrid.hasEdit) taxGrid.beginEdit(row, key);
+          else taxGrid.focusEdit();
+        } else removeTax(row);
+        resolve(false);
+      };
+      for (const [label, keep] of [['Continuă editarea', true], ['Anulează înregistrarea', false]]) {
+        const button = document.createElement('button'); button.type = 'button';
+        button.className = 'btn'; button.textContent = label;
+        button.addEventListener('click', () => finish(keep)); footer.append(button);
+      }
+      prompt.addEventListener('cancel', (event) => { event.preventDefault(); finish(true); });
+      prompt.append(header, text, footer); document.body.append(prompt); prompt.showModal();
+    });
+    return validationPrompt;
+  }
+  async function validateTaxes(onlyRow = null) {
+    for (const row of onlyRow ? [onlyRow] : taxRows) {
+      const draft = drafts.get(`ValoriTaxe:${row.IDV}`);
+      if (!draft) continue;
+      let key; let message;
+      if (!(row.TaxaZilnica > 0)) { key = 'TaxaZilnica'; message = 'Valoarea taxei trebuie să fie mai mare decât zero.'; }
+      else if (!row.Expl?.trim()) { key = 'Expl'; message = 'Explicația taxei este obligatorie.'; }
+      else if (row.IDV < 0 || 'DeLa' in draft.values && row.DeLa !== taxOriginals.get(row.IDV)?.DeLa) {
+        const latest = taxRows.filter((other) => other.IDV !== row.IDV && (other.IDV > 0 || row.IDV > 0 || other.IDV > row.IDV))
+          .map((other) => other.DeLa || '').sort().at(-1) || '';
+        if (!row.DeLa || row.DeLa <= latest) { key = 'DeLa'; message = 'Începutul taxei este obligatoriu și trebuie să fie după ultimul început existent.'; }
+      }
+      if (message) return invalidTax(row, new Error(message), key);
+    }
+    return true;
   }
   const grid = (host, table, rows, columns, onSelect) => {
     const key = context().schema[table].key;
@@ -51,10 +116,10 @@ export function bindCatalogs({ api, context, refresh }) {
         draft.values[field] = value;
         drafts.set(token, draft);
         const updated = taxRows.find((item) => item.IDV === row.IDV);
-        Object.assign(updated, { [field]: value });
-        if (field === 'Activ' && value || field === 'DeLa' && (updated.Activ || updated.IDV < 0)) closePrevious(updated);
+        rebuildTaxes();
         return { ...updated };
-      }, onEditError: ({ error: failure }) => error(failure) });
+      }, onRowValidate: ({ row }) => validateTaxes(row),
+      onEditError: ({ error: failure, row, key }) => invalidTax(row, failure, key).catch(error) });
     grids.push(instance);
     return instance;
   };
@@ -79,13 +144,16 @@ export function bindCatalogs({ api, context, refresh }) {
       if (kind === 'taxes') {
         const rows = (await api('/api/adechit/rows/ValoriTaxe')).rows;
         taxRows = rows;
+        taxOriginals = new Map(rows.map((row) => [row.IDV, { ...row }]));
         const host = document.createElement('div'); host.className = 'ade-catalog-grid';
         const instance = grid(host, 'ValoriTaxe', rows, [
           { ...text('TaxaZilnica', 'Taxă zilnică', 140), editor: 'number', valueType: ValueType.Number,
-            validate: (value) => value >= 0 ? '' : 'Taxa nu poate fi negativă.' }, text('Expl', 'Explicație', 250),
+            validate: (value) => value > 0 ? '' : 'Valoarea taxei trebuie să fie mai mare decât zero.' },
+          { ...text('Expl', 'Explicație', 250), validate: (value) => value?.trim() ? '' : 'Explicația taxei este obligatorie.' },
           { ...text('DeLa', 'Început', 120), editor: 'monthYear', parse: monthValue, formatter: monthText, nullable: true },
           { ...text('PanaLa', 'Sfârșit', 120), editable: false, formatter: monthText },
           { ...text('Activ', 'Activ', 80), valueType: ValueType.Boolean, display: 'checkbox', editor: 'checkbox' }]);
+        taxGrid = instance;
         content.append(addButton('Adaugă taxă', async () => {
           if (busy || !await finishEdits()) return;
           const today = new Date();
@@ -96,10 +164,10 @@ export function bindCatalogs({ api, context, refresh }) {
             start = month === 12 ? `${year + 1}-01` : `${year}-${String(month + 1).padStart(2, '0')}`;
           }
           const row = { IDV: --sequence, TaxaZilnica: 0, Expl: '', Activ: true, DeLa: start, PanaLa: null };
-          closePrevious(row);
           drafts.set(`ValoriTaxe:${row.IDV}`, { table: 'ValoriTaxe', id: null,
             values: { TaxaZilnica: 0, Expl: '', Activ: true, DeLa: start } });
-          rows.push(row); instance.setRows(rows); instance.beginEdit(row, 'TaxaZilnica');
+          rows.push(row); rebuildTaxes(); instance.setRows(rows);
+          instance.beginNewRowEdit(row, 'TaxaZilnica', () => removeTax(row));
         }), host);
       }
       loaded = true; save.disabled = false;
@@ -112,9 +180,14 @@ export function bindCatalogs({ api, context, refresh }) {
     if (busy) return;
     try {
       if (!await finishEdits()) return;
+      if (!await validateTaxes()) return;
       busy = true; save.disabled = true; content.inert = true;
       if (drafts.size) {
-        const body = JSON.stringify({ items: [...drafts.values()] });
+        const items = [...drafts.entries()].map(([token, draft]) => {
+          const row = taxRows.find((item) => `ValoriTaxe:${item.IDV}` === token);
+          return { ...draft, values: { ...draft.values, ...('Activ' in draft.values ? { Activ: row.Activ } : {}) } };
+        });
+        const body = JSON.stringify({ items });
         if (!request || request.body !== body) request = { body, key: crypto.randomUUID() };
         await api('/api/adechit/catalog-save', { method: 'POST', ...request });
         drafts.clear();

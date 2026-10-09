@@ -16,6 +16,9 @@ Partial Public Class FacturiForm
     ' Nothing = the unit has not filled its issuer data yet (no invoice can be made until it does).
     Private _furnizor As EFacturaFurnizor
 
+    ' The unit's own IBANs (AVACONT_COMUN.Unitati_Conturi), offered first by the «Cont emitent» combo.
+    Private _conturi As New List(Of EFacturaCont)()
+
     Private Sub SetFurnizor(k_furnizor As EFacturaFurnizor)
         _furnizor = k_furnizor
     End Sub
@@ -38,10 +41,34 @@ Partial Public Class FacturiForm
                     OpenConturi()
                 Case "date"
                     OpenDateUnitate()
+                Case "primite"
+                    OpenSincronizarePrimite()
+                Case "listaprimite"
+                    OpenPrimite()
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiForm.MnuUnitate_ItemClicked", ex)
         End Try
+    End Sub
+
+    ' Slice 00EF-19: the window with all the received invoices of the year; one at a time, asking again brings it forward.
+    Private Sub OpenPrimite()
+        If _api Is Nothing Then Return
+        If _primiteForm IsNot Nothing AndAlso Not _primiteForm.IsDisposed Then
+            _primiteForm.Activate()
+            Return
+        End If
+        _primiteForm = New PrimiteForm(_api, _gate, _unitName, _year, _viewerFactory)
+        AddHandler _primiteForm.FormClosed, Sub() _primiteForm = Nothing
+        _primiteForm.Show(Me)
+    End Sub
+
+    ' Slice 00EF-18: brings the received invoices from ANAF (the dialog does the work, a batch at a time).
+    Private Sub OpenSincronizarePrimite()
+        If _busy OrElse _api Is Nothing Then Return
+        Using k_dialog As New SincronizarePrimiteForm(_api, _gate)
+            k_dialog.ShowDialog(Me)
+        End Using
     End Sub
 
     Private Sub OpenConturi()
@@ -49,7 +76,34 @@ Partial Public Class FacturiForm
         Using k_dialog As New ConturiForm(_api, _gate, _unitName)
             k_dialog.ShowDialog(Me)
         End Using
+        ' The list may have changed: the combo offers the new one.
+        Dim k_task As Task = ReloadConturiAsync()
     End Sub
+
+    ''' <summary>Reads the unit's own accounts again and refreshes the «Cont emitent» combo.</summary>
+    Private Async Function ReloadConturiAsync() As Task
+        Try
+            Await LoadConturiAsync().ConfigureAwait(True)
+            If Not IsDisposed Then FillContPlata()
+        Catch ex As OperationCanceledException
+            ' The window was closed.
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.ReloadConturiAsync", ex)
+        End Try
+    End Function
+
+    Private Async Function LoadConturiAsync() As Task
+        Try
+            Dim k_list As List(Of EFacturaCont) = Await _gate.RunAsync(
+                Function() _api.GetConturiAsync(_cts.Token)).ConfigureAwait(True)
+            If Not IsDisposed Then _conturi = k_list
+        Catch ex As OperationCanceledException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.LoadConturiAsync", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>Opens «Date Unitate» as a dialog; what it saved becomes the issuer this window keeps.</summary>
     Private Sub OpenDateUnitate()
@@ -71,6 +125,10 @@ Partial Public Class FacturiForm
             Dim k_text As String = cmbContPlata.Text
             cmbContPlata.Items.Clear()
             Dim k_seen As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+            For Each k_c As EFacturaCont In _conturi
+                Dim k_own As String = k_c.Cont.Trim()
+                If k_own.Length > 0 AndAlso k_seen.Add(k_own) Then cmbContPlata.Items.Add(k_own)
+            Next
             For Each k_f As EFacturaFactura In _facturi
                 Dim k_account As String = k_f.ContPlata.Trim()
                 If k_account.Length > 0 AndAlso k_seen.Add(k_account) Then cmbContPlata.Items.Add(k_account)
@@ -83,6 +141,7 @@ Partial Public Class FacturiForm
 
     ''' <summary>The account of the newest invoice: a new invoice starts from it (the operator may change it).</summary>
     Private Function DefaultContPlata() As String
+        If _conturi.Count = 1 Then Return _conturi(0).Cont.Trim()
         Dim k_last As EFacturaFactura = _facturi.FirstOrDefault(Function(x) x.ContPlata.Trim().Length > 0)
         Return If(k_last Is Nothing, String.Empty, k_last.ContPlata.Trim())
     End Function

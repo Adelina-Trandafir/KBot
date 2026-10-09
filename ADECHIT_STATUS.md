@@ -49,10 +49,10 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE2 | DataGrid comun cu editare directă în celule | TESTAT LOCAL — editare și regresie read-only probate în browser | [ADE2](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade2) |
 | SLICE-ADE3 | Schema ADE și configurarea chitanțelor | SCRIS LOCAL — DDL revizuit; nevalidat MariaDB | [ADE3](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade3) |
 | SLICE-ADE4 | Utilizatori și drepturi ADE | ÎN LUCRU — guard/matrice parțiale | [ADE4](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade4) |
-| SLICE-ADE5 | Migrarea datelor Access | TESTAT LOCAL — 5.247 rânduri importate și reconciliate fără diferențe | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
-| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | TESTAT LOCAL — trei liste Grupe/Copii/Plătitori și formulare modale după machete; CNP validat; server nevalidat | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
+| SLICE-ADE5 | Migrarea datelor Access | Import JSON/Python TESTAT LOCAL — 5.247 rânduri; ADE.Migrator ADE5-05 CONSTRUIT LOCAL, nerulat | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
+| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | TESTAT LOCAL până la ADE6-06; ADE6-07–17 SCRIS LOCAL, fără teste; documentație consolidată ADE6-18; server nevalidat | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
 | SLICE-ADE7 | Calculul situațiilor și ciclul lunar, paritate 1 la 1 | TESTAT LOCAL PARȚIAL — M05 implementat; rezultate Access lipsă | [ADE7](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade7) |
-| SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | TESTAT LOCAL PARȚIAL — taburi/rând nou SID-SIC; anularea restituirii blocată de M03 | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
+| SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | TESTAT LOCAL PARȚIAL — taburi/rând nou SID-SIC; anularea restituirii cu motiv decisă în M03, încă neimplementată | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
 | SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | PLANIFICAT | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
 
 **Următorul număr liber de felie: SLICE-ADE10.**
@@ -63,67 +63,39 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
 
-- **SLICE-ADE6-15, 09.10.2026:** Escape anulează numai editorul celulei;
-  Taxe fără instrucțiuni, Activ checkbox, perioade lună/an fără calendar,
-  sfârșit automat la adăugare. Taxele migrate fără date sunt acceptate, fără
-  completări istorice inventate. SCRIS LOCAL, fără teste; AD_04 necesar pe server.
+- **ADE5-05:** ADE.Migrator primește oprire controlată, progres pe tabel și jurnal SQL;
+  selecția/conexiunea invalidează verificarea anterioară, iar rezultatul COMMIT necunoscut
+  este raportat explicit. Build: 0 erori, 0 avertismente; nerulat, fără teste.
+  [Worklog](docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md) și
+  [utilizare](ADECHIT/ADE.Migrator/README.md). Următoarea subfelie: ADE5-06.
 
-- **SLICE-ADE6-14, 09.10.2026:** filtrare exclusiv pentru Nume/Grupa în toate
-  DGV ADE, pe PC și mobil. Antetele și footerele listelor folosesc culorile comune
-  ale DGV-ului principal. SCRIS LOCAL, fără teste.
+- **ADE6-20:** Escape în prima celulă activată la adăugare anulează rândul nou;
+  taxe cu valoare >0, explicație obligatorie și început nou ulterior celui
+  existent, cu dialog Continuă/Anulează. Datele migrate NULL nemodificate sunt
+  acceptate. SCRIS LOCAL, fără teste; backendul preview necesită restart.
 
-- **SLICE-ADE6-13, 09.10.2026:** fereastra Plătitori pe mobil are margine exterioară
-  de 10px pe toate laturile; paddingul interior din ADE6-12 se păstrează.
-  SCRIS LOCAL, fără teste.
+- **ADE6-19:** formularul Taxe micșorat la 744px, cât DGV-ul plus paddinguri
+  și borduri, cu limită 96vw. SCRIS LOCAL, fără teste.
 
-- **SLICE-ADE6-12, 09.10.2026:** padding mobil de 8px pentru Plătitori, buton ➡️
-  pe fiecare rând Grupe/Copii în locul apăsării lungi. Coloana de 40px se scade
-  exclusiv din denumire; CNP/I își păstrează lățimile. Rândurile tuturor DGV ADE
-  sunt cu 20% mai înalte pe mobil. SCRIS LOCAL, fără teste.
+- **SLICE-ADE6-18, 09.10.2026:** documentația threadului consolidată în
+  [UTILIZARE_WEB](ADECHIT/UTILIZARE_WEB.md): regulile finale PC/mobil, DGV,
+  formulare, CNP, perioadele taxelor și plătitorul activ unic per copil.
+  ADE6-06 a fost testat local (16 API și browser); ADE6-07–17 sunt SCRIS LOCAL,
+  fără teste ulterioare la cererea utilizatorului. Nu declarăm noua stare testată.
+- Mobil: DGV comun, filtrare numai Nume/Grupa, I fără filtru, ➡️ pe Grupe/Copii
+  în loc de apăsare lungă; margini exterioare 10px, padding interior 8px,
+  rânduri +20%, scroll numai în tabel, acțiuni emoji în footer.
+- Taxe: perioade lună/an, Activ checkbox, PanaLa automat; datele NULL din migrare
+  nu blochează utilizarea. Necesită [AD_04](sql/AD_04_taxe_perioade.sql) după AD_03.
+  Plătitorul nou devine activ și dezactivează ceilalți ai aceluiași copil atomic.
+- **ADE1-05/06:** blueprintul și redirecționarea /portal corectate; pornirea și
+  deschiderea preview-ului local 5050 au fost testate exclusiv nonvizual.
+  Această probă nu acoperă ultimele schimbări backend. Preview-ul trebuie repornit;
+  DDL-ul, publicarea prin AvacontPush și testarea serverului aparțin utilizatorului.
 
-- **SLICE-ADE6-11, 09.10.2026:** toate coloanele de stare din liste au antetul I
-  (închis), fără filtru. La plătitori I este inversul lui Activ numai pentru afișare;
-  datele și editorul păstrează Activ. SCRIS LOCAL, fără teste.
+### Repere anterioare (starea la data intervenției)
 
-- **SLICE-ADE6-10, 09.10.2026:** Plătitori pe mobil ocupă întregul ecran, cu
-  un singur tabel vizibil și scroll numai în tabel. Apăsare lungă Grupe → Copii →
-  Plătitori, înapoi în antet, acțiuni emoji în footer și coloane proporționale.
-  SCRIS LOCAL, fără teste; verificarea vizuală aparține utilizatorului.
-
-- **SLICE-ADE6-09, 09.10.2026:** rândul de mesaje și spațiul rezervat lui sunt
-  eliminate pe mobil; zona de lucru începe cu comboboxurile. SCRIS LOCAL, fără teste.
-
-- **SLICE-ADE6-08, 09.10.2026:** bara lună/grupă ascunsă complet pe PC, fără rând
-  rezervat; tabelul începe la nivelul panoului LUNA / ANUL. Pe mobil rămân doar
-  comboboxurile, fără text explicativ. SCRIS LOCAL, fără teste vizuale.
-
-- **SLICE-ADE1-06, 09.10.2026:** pornirea preview-ului și deschiderea aplicației
-  verificate nonvizual la cererea utilizatorului. Pagina locală este marcată explicit,
-  gate-ul nu o mai redirecționează spre autentificare, iar / și /portal revin la /adechit.
-  HTTP 200 pentru context/situație/catalog/configurarea chitanțelor; browser fără token,
-  fără erori JS/HTTP. Server local pornit pe 5050; nu s-a verificat aspectul.
-
-- **SLICE-ADE1-05, 09.10.2026:** corectat NameError la pornire: fabrica de blueprint
-  creează acum `bp` înaintea decoratorilor rutelor. SCRIS LOCAL; fără pornire/teste,
-  conform cerinței utilizatorului.
-
-- **SLICE-ADE6-07, 09.10.2026:** Enter trece la următoarea celulă editabilă,
-  clic unic pe PC, calendar comun în DGV; antete modale ca antetul principal,
-  ANI aliniat cu tabelul educatorilor, + Adaugă în footer, formulare copil/plătitor
-  la jumătate din lățime și spațiere redusă. SCRIS LOCAL, fără teste la cererea
-  utilizatorului; verificarea funcțională îi aparține. Server nepublicat.
-
-- **SLICE-ADE6-06, 09.10.2026:** Plătitori urmează cele patru machete: trei liste
-  alăturate, Adaugă/Modifică, formulare uniforme pentru grupe/copii/plătitori,
-  combobox, calendare comune și validare CNP în JS/API. Salvare atomică pentru
-  grupa + educatorii săi; mutarea copilului păstrează lunile închise și scrie jurnalul.
-  API: 16/16; browser local 5050, inclusiv telefon. Server/schema live nevalidate.
-  PL este checkbox doar pentru afișare în liste, editabil exclusiv din editorul elementului;
-  la grupe înseamnă Grupă închisă, la copii Plecat (confirmat de utilizator).
-
-- **SLICE-ADE6-05, 08.10.2026:** Plătitori și Taxe sunt ferestre modale din antet,
-  cu fundal blocat și salvare explicită atomică. Erorile păstrează editările.
-  API ADE: 11/11; probe browser locale pe 5050. Server nevalidat.
+Descrierile istorice de mai jos nu înlocuiesc regulile și starea finală de mai sus.
 
 - **SLICE-ADE1-04/ADE6-04/ADE8-04, 08.10.2026:** pagina Prezență urmează acum
   organizarea Access: arbori lună/grupă în stânga, situație editabilă în centru, comenzi sub
@@ -158,18 +130,20 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
   [Planul detaliat](ADECHIT/PLAN_IMPLEMENTARE.md) acoperă ADE0–ADE9 și toate cele
   30 de subfelii alocate; [deciziile deschise](ADECHIT/DECIZII_DESCHISE.md) au dependențe explicite.
 - ADE1 și ADE2 sunt testate local. ADE5 este testat local pe extractul real. ADE6/ADE8 sunt
-  finalizate pentru operațiile neblocate; M06 și M03 rămân refuzuri explicite. ADE9 și toate
+  implementate parțial; M03 rămâne neimplementat, iar M06 are mutarea individuală
+  și jurnalul, cu transferul lot și compensarea încă lipsă. ADE9 și toate
   rapoartele/PDF-urile/tipăririle rămân amânate.
 - **SLICE-ADE0-02:** maparea statică este documentată local în
   [fluxuri](ADECHIT/MAPARE_ACCESS_WEB.md), [calcule](ADECHIT/CONTRACT_CALCULE.md) și
   [inventarul celor 155 de obiecte](ADECHIT/INVENTAR_OBIECTE.md).
-- La reluarea implementării: **ADE1-01** pentru integrare; **ADE2** pentru editarea grilei.
+- La reluare: consultați regulile finale din [UTILIZARE_WEB](ADECHIT/UTILIZARE_WEB.md) și firele deschise; integrarea și grila comună sunt deja începute.
   Neconcordanțele M01–M10 sunt consemnate; nu s-a demonstrat încă paritatea în execuție.
 - Ordine propusă: ADE0 → ADE1 → ADE2 → ADE3 → ADE4 → ADE5 → ADE6 → ADE7 → ADE8 → ADE9.
   Datele istorice migrate în ADE5 permit compararea calculelor înaintea implementării
   noilor încasări. ADE9 repetă comparația pe operații introduse integral din web.
-- Primele ecrane de lucru vor avea editare în celule. Aceasta nu este amânată pentru
-  o versiune ulterioară și nu este înlocuită cu formulare separate.
+- Editarea în celule se păstrează la Prezență, Taxe și perioadele educatorilor.
+  Pentru Grupe/Copii/Plătitori utilizatorul a cerut liste de selecție și editori
+  modali după machete (ADE6-06), înlocuind propunerea inițială de editare directă.
 
 ## Locked decisions
 
@@ -222,13 +196,19 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
     La 08.10.2026 utilizatorul a decis că orice modificare a documentelor unei luni închise,
     inclusiv anularea, rescrie situația salvată pentru copilul respectiv.
 
+13. Regulile finale PC/mobil, filtrele numai Nume/Grupa, I inversat pentru Activ,
+    perioadele taxelor nullable la migrare și activarea unică per copil sunt
+    consemnate în [UTILIZARE_WEB](ADECHIT/UTILIZARE_WEB.md). Testarea UI aparține
+    utilizatorului; excepția autorizată a fost numai pornirea nonvizuală ADE1-06.
+
 ## Open threads — transversale
 
 Registrul complet al deciziilor/probelor: [DECIZII_DESCHISE](ADECHIT/DECIZII_DESCHISE.md).
 
 - [M01–M10](ADECHIT/MAPARE_ACCESS_WEB.md#6-neconcordanțe-de-rezolvat-înaintea-implementării-dependente):
-  M02, M04 și M05 sunt implementate local. M03 și M06 rămân
-  fără răspuns, iar TIP legacy, șabloanele și sursele lipsă necesită probe.
+  M01–M09 au decizii consemnate la 08.10.2026. M02, M04 și M05 sunt implementate
+  local; M03 este decis, dar neimplementat, iar M06 este implementat parțial
+  (jurnal, perioade educatori, mutare individuală/Plecat). M10 și paritatea necesită probe.
   Conversiile Long/Double și rezultatele intermediare necesită probe Access; nu rescriem
   formulele prin presupuneri. Aceste puncte nu blochează scheletul comun sau grila.
 - MDB-ul real a fost extras selectiv read-only. Rezultatele pe faze ale interogărilor Access

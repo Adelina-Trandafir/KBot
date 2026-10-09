@@ -157,8 +157,13 @@ Mapping and decisions are in the headers of the two files.
 | 00EF-07 | Server: upload, status, download, messages (ANAF calls with the stored token) | **written** (`PYTHON/routes/efactura/{anaf_api,trimitere,trimitere_routes}.py`, `py_compile` only, not deployed, nothing called at ANAF; `SLICE-00EF-07-trimitere-anaf.md`). PRODUCTION addresses as the VBA (operator decision); send, then check 2-3 s later with a re-check (the pause is the screen's, 00EF-09). Needs a test unit with a real token |
 | 00EF-08 | Screen `EFACTURA_ADD` in K-BOT: list, tabs, customers, seller + IBAN, lines + UM | **written, builds clean, never run, never seen on screen** (`SLICE-00EF-08-ecran-facturi-emise.md`; help 0000-55). The menu entry now opens this window; the token window is its «Token ANAF» button. Needs the 06/07 server deployed and the DDL run. |
 | 00EF-09 | Send flow in the UI (generate, validate, send, status, retry) | **written; never run, never seen on screen; not built since the views became separate page controls in `Views/Vanzare/`** (`SLICE-00EF-09-arbore-meniu-trimitere.md`; help 0000-57): the invoice list became a tree with a menu per invoice, the tabs a bar of views with the PDF views, send / check / storno from the menu, the date rule. Not yet: correction (type 384) of an accepted invoice, and a way out for a refused one. Server changes not deployed. |
-| 00EF-10 | View «E-Factura» in `KbotForm` (join by `CodFiscal`, normalising `RO` / spaces) + the received-invoice list it reads (WITHOUT accounting) | confirm what the view shows |
+| 00EF-10 | (replaced by 00EF-17..19 below, 09.10.2026) | |
 | 00EF-11 | Help (`0000-NN`, tag `00EF`) for the menu entry, the view and the screens | |
+| 00EF-17 | **Received invoices, server (A)**: UBL reader `primite_ubl.py`, sync + list + detail + files + manual link `primite.py`, routes `/api/efactura/primite...`, table `EF_PrimiteAsocieri` (`sql/00EF_17_primite_asocieri.sql`) | **written; parser checked on 3 real XMLs; server not deployed, DDL not run** (`SLICE-00EF-17-primite-server.md`) |
+| 00EF-18 | **Client + DDF view (B)**: domain + `IEFacturaApi`; view «E-Factura» in `KbotForm`: tree (months, root «Toate») + bar of views Linii / PDF / Atasamente / Mesaje; right click «Salveaza ca zip / xml»; manual link; button «Sincronizeaza primite» in `FacturiForm` with a progress box | next |
+| 00EF-19 | **Separate screen (C)** with all received invoices (same page control as 18, no DDF filter) | after 18 |
+| (later) | Message to the supplier (`TrimiteMesajFactura`), link to receptions: not now (operator, 09.10.2026) | |
+
 
 ## Open questions now
 

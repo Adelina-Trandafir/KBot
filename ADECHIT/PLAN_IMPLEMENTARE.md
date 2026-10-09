@@ -1,24 +1,22 @@
 # ADECHIT — planul detaliat al tuturor feliilor
 
-Actualizat: 08.10.2026. Planul rămâne criteriul de lucru; implementarea a fost începută,
-dar este oprită la un checkpoint parțial, neverificat, descris mai jos.
-Starea efectivă și numerele permanente se urmăresc în [ADECHIT_STATUS](../ADECHIT_STATUS.md).
-Acest plan detaliază livrabilele. Existența și starea rutelor/fișierelor se verifică în
-status și în worklog; unele au acum schițe parțiale, fără acceptare.
+Actualizat: 09.10.2026, ADE6-18. Planul descrie livrabilele; starea efectivă și
+numerele permanente se urmăresc în [ADECHIT_STATUS](../ADECHIT_STATUS.md).
 
-## Checkpoint de reluare — 08.10.2026 (corectat)
+## Checkpoint de reluare — 09.10.2026
 
-Starea exacta si la zi este in [ADECHIT_STATUS.md](../ADECHIT_STATUS.md) si in
-`docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md`; aceasta sectiune nu o dubleaza.
-Textul anterior (app.js lipsa, Python nefunctional, nimic executat) nu mai corespunde realitatii.
+Regulile finale ale interfeței și salvării sunt în [UTILIZARE_WEB](UTILIZARE_WEB.md),
+care înlocuiește propunerile intermediare pentru ADE2/ADE6. Importul local a
+reconciliat 5.247 de rânduri. ADE6-06 a trecut 16 teste API și probe browser locale;
+ADE6-07–17 sunt scrise local, fără teste la cererea utilizatorului. ADE1-06 a
+verificat numai pornirea/deschiderea aplicației, nonvizual, pe localhost:5050.
+Nimic nu este validat pe MariaDB/server și paritatea completă cu Access nu este demonstrată.
 
-Situatia actuala: mediul local ruleaza Python 3.12.14; pagina are `static/js/adechit/app.js`;
-preview-ul strict local pe 5050 a fost probat in browser (editare directa in celula si regresia
-situatiei read-only); importul din MDB a reconciliat 5.247 de randuri; M05 este implementat si
-testat local; testele ADE locale sunt 9/9. Nimic nu este validat pe MariaDB sau pe server.
-Raman deschise: ADE4 (drepturi, partial), paritatea calculului cu Access (lipsesc rezultatele
-intermediare), seed-ul chitantelor si deciziile M01, M03, M06-M10 din
-[DECIZII_DESCHISE.md](DECIZII_DESCHISE.md).
+M01–M09 au decizii înregistrate. M03 rămâne de implementat; M06 este parțial
+implementat, cu transferul lot și compensarea încă deschise. Rămân drepturile ADE4,
+probele Access intermediare și validarea predării. AD_04 adaugă perioade nullable
+pentru taxe după AD_03; executarea aparține utilizatorului. Preview-ul necesită
+restart după ultimele modificări backend/schema.
 
 Rapoartele, PDF-urile și tipăririle bazate pe rapoarte rămân excluse din acest pas.
 
@@ -179,8 +177,11 @@ Valorile NULL, șir vid și zero rămân distincte; formatul românesc nu se par
 eliminarea arbitrară a separatorilor. Câmpurile calculate sunt numai pentru citire.
 
 Livrabile: extensia comună și contract API JS documentat, cu editarea dezactivată implicit.
-Interacțiuni propuse: Enter începe/confirmă, Tab confirmă și trece la următoarea celulă
-editabilă, Escape abandonează modificarea nesalvată; erorile păstrează editorul și valoarea.
+Interacțiuni aprobate: clic unic pentru editare pe PC; pe mobil clic pentru selecție
+și dublu clic/Enter pentru editare. Enter/Tab confirmă și trec la următoarea celulă
+editabilă; Shift inversează direcția. Escape anulează editorul, fără să închidă
+fereastra. Erorile păstrează editorul. Datele folosesc calendarul custom comun;
+perioadele taxelor sunt lună/an fără calendar. Filtre ADE numai la Nume/Grupa.
 Verificări: tastatură, editor Combobox, focus vizibil, rânduri de grup/total needitabile.
 Acceptare: valoarea se poate modifica în celulă; nicio logică de taxe ADE în DataGrid.
 
@@ -338,9 +339,29 @@ Verificări: comparații pe fixture cunoscut, cel puțin o diferență introdus�
 detectată; reconcilierea reală rămâne în așteptare până la extract și rezultate server.
 Acceptare: zero diferențe de import neexplicate; egalitatea motorului web se dovedește în ADE7.
 
+### SLICE-ADE5-04 — utilitar desktop ADE.Migrator
+
+Implementat local: migrare directă MDB → MariaDB pe AD_03, cu reutilizarea
+componentelor KBot.Migrator, educatori pe perioade și istoric dedus.
+Build verificat; utilitarul și mapările nu sunt probate în execuție.
+Detalii: [worklog ADE5-04](../docs/worklog/SLICE-ADE5-04-ade-migrator.md).
+
+### SLICE-ADE5-05 — oprire, jurnal și verificare invalidată la schimbarea intrărilor
+
+Implementat local: oprirea scrierii înainte de COMMIT, așteptarea eliberării
+conexiunilor la închidere, progres pe tabel, SqlDumpWriter comun, hash MDB și
+reverificarea destinației. Schimbarea intrărilor cere o nouă verificare.
+Rezultatul COMMIT necunoscut este raportat fără promisiunea unei baze neschimbate.
+Build verificat; scenariile UI/MariaDB rămân de probat de utilizator, fără teste
+automate în această intervenție. Următoarea subfelie liberă: ADE5-06.
+[Worklog](../docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md),
+[utilizare](ADE.Migrator/README.md).
+
 ## Slice ADE6
 
-**Obiectiv:** operațiile curente pe grupe/copii/plătitori/taxe/prezență în grile editabile.
+**Obiectiv:** liste de selecție Grupe/Copii/Plătitori cu editori modali după machete;
+Taxe, Prezență și perioadele educatorilor folosesc editarea în DGV comun.
+Regulile PC/mobil, dimensiunile, filtrele și I sunt în [UTILIZARE_WEB](UTILIZARE_WEB.md).
 Dependențe: ADE2–ADE5; API autorizat și date coerente.
 
 ### SLICE-ADE6-01 — cataloagele
@@ -352,8 +373,10 @@ Livrabile: endpointuri și ecrane integrate în portal; câmpuri editabile decla
 salvare atomică pentru modificările legate și mesaje de validare în română.
 Verificări: adăugare, editare, persoană activă, legături, conflict, refuz fără drepturi;
 nu ștergem în cascadă istoricul financiar printr-o operație generică de catalog.
-Acceptare: editare în celule și date păstrate după reîncărcare; M06 rezolvat înaintea
-oricărei operații care modifică grupa în istoricul prezenței.
+Acceptare: editare prin formulare și date păstrate după reîncărcare; salvarea unui
+plătitor nou îl activează și dezactivează atomic ceilalți ai aceluiași copil.
+I este numai afișare în liste, iar filtrele rămân numai la nume/denumire.
+M06 este decis; lunile închise și jurnalul se păstrează la mutarea individuală.
 
 ### SLICE-ADE6-02 — taxe și prezență lunară
 
@@ -361,6 +384,9 @@ Pași: selecție an/lună/grupă, set activ de taxe și preluare copii; zile edi
 recalcul conform evenimentelor Access și SitLunara, distinct de motorul situației 2021.
 ValoareContract = ZilePrezenta × TaxaZilnica; ValoareTotala urmează exact traseul documentat,
 nu devine o formulă nouă unificată. Istoricul IDV nu este înlocuit cu taxa curentă la import.
+Taxele au DeLa/PanaLa lună/an (AD_04), Activ checkbox și sfârșit automat pentru
+taxa anterior activă la adăugare. PanaLa nu se introduce manual. Numai taxa nouă
+necesită DeLa; taxele migrate fără perioade nu sunt blocante.
 Livrabile: API preluare/salvare/prezență și UI integrat. Validăm pe server luna deschisă
 la momentul scrierii, chiar dacă pagina a fost deschisă înainte de închiderea lunii.
 Verificări: zero zile, schimbare taxă, rând existent, copil plecat/transferat, două editări,
@@ -370,7 +396,7 @@ Acceptare: calcule conforme și salvare/refuz vizibile; fără pagina de configu
 ### SLICE-ADE6-03 — transferuri și plecări
 
 Pași: tratament separat pentru transfer individual, transfer lot și schimbare grupă
-din catalog. Referință ComboGrupa/Platitori2016; M06 trebuie decis înainte de unificare.
+din catalog. Referință ComboGrupa/Platitori2016; M06 este decis în ADE0-07; implementarea este parțială (ADE6-06).
 MutaCopil a fost scos din model (08.10.2026); istoricul nu se reproduce, ci se înlocuiește conform M06: jurnal automat per copil (AD_Platitori_Istoric), istoric al educatorilor per grupă (AD_Grupe_Educator: DeLa/PanaLa; nivelul mica/mijlocie/mare NU se păstrează, decis 08.10.2026), reconstruit la migrare din AD_SS_Buget.Educator/Grupa/IDG cu listă de verificat de operator înainte de scriere, grupă închisă dar vizibilă în perioadele vechi, copil în prezența grupei din momentul închiderii lunii, copii plecați și compensare (AD_Compensare). Păstrăm restricția temporală aplicabilă din Access.
 Livrabile: comenzi explicite, istoric și preluarea corectă în luna următoare; nicio
 renumerotare izolată a IDZ și nicio mutare implicită de plăți la alt copil.

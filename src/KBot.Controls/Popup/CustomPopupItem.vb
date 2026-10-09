@@ -144,6 +144,16 @@ Public NotInheritable Class CustomPopupItem
     <DefaultValue(False)>
     Public Property IsSeparator As Boolean
 
+    ''' <summary>
+    ''' Slice 0008-02: the row opens a SUBMENU that the host shows beside it. A chevron is drawn at the
+    ''' right end and a click raises <c>ItemClicked</c> WITHOUT closing the popup: the host opens the
+    ''' second menu next to <c>RowScreenBounds</c> and closes the popup when that menu closes.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("True => a chevron is drawn at the right end of the row and a click keeps the popup open (the host shows a submenu).")>
+    <DefaultValue(False)>
+    Public Property Submenu As Boolean
+
     <Category("K-BOT")>
     <Description("True => rândul e un CURSOR care se trage, nu un rând care se apasă. Nu închide meniul; ridică SliderValueChanged.")>
     <DefaultValue(False)>

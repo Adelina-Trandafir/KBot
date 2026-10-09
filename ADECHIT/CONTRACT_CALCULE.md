@@ -226,3 +226,20 @@ intermediare după fiecare query, plus SS_Buget și rapoartele. Codex nu accesea
 
 Acceptare: zero diferențe numerice neexplicate și nicio modificare de regulă ascunsă.
 Exemplele calculate numai în Python nu înlocuiesc rezultatele de referință Access.
+
+## Actualizare de context — 09.10.2026, ADE6-18
+
+[Regulile finale ale cataloagelor](UTILIZARE_WEB.md) completează interfața și
+persistența, fără să declare formulele de mai sus validate prin paritate:
+
+- DeLa/PanaLa din catalogul taxelor sunt perioade lunare nullable la migrare.
+  Importul păstrează IDV istoric și nu înlocuiește taxa veche cu taxa activă nouă.
+- Activarea unui plătitor dezactivează ceilalți ai aceluiași copil; afișarea I
+  inversată nu schimbă sensul lui Activ în date sau documentele deja emise.
+- M06 este decis: mutarea individuală păstrează lunile închise și scrie jurnalul;
+  educatorii au perioade, iar copiii plecați cu sold rămân în grupa specială.
+  Transferul lot și compensarea încă neimplementate nu sunt declarate acceptate.
+
+ADE6-07–17 sunt scrise local fără teste ulterioare. Datele și rezultatele
+intermediare Access necesare parității, precum și validarea MariaDB/server, rămân
+probe distincte; actualizarea documentației nu le înlocuiește.

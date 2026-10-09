@@ -132,10 +132,11 @@ export function bindPayers({ api, context, refresh }) {
       ['CUI', 'Cod fiscal'], ['Cont', 'Cont bancar'], ['Banca', 'Banca']]) field(key, label, row?.[key]);
     const contacts = document.createElement('div'); contacts.className = 'ade-form-pair'; body.append(contacts);
     field('Telefon', 'Telefon', row?.Telefon, 'tel', contacts); field('EMail', 'Email', row?.EMail, 'email', contacts);
-    field('Activ', 'Activ', row ? row.Activ : true, 'checkbox');
+    field('Activ', 'Activ', row ? row.Activ : true, 'checkbox').disabled = !row;
     collect = () => {
       const values = Object.fromEntries(['Nume', 'Adresa', 'CNP_Platitor', 'CUI', 'Cont', 'Banca', 'Telefon', 'EMail', 'Activ'].map((key) => [key, read(key)]));
       values.IDP = selectedChild.IDP;
+      if (!row) values.Activ = true;
       const cnp = cnpMessage(values.CNP_Platitor); if (cnp) throw new Error(cnp);
       if (!values.Nume) throw new Error('Numele plătitorului este obligatoriu.');
       return { id: row?.IDS ?? null, version: row?.Version, values };
@@ -163,7 +164,12 @@ export function bindPayers({ api, context, refresh }) {
     const addEducator = async () => {
       if (editGrid.hasEdit && !await editGrid.commitEdit()) return;
       const period = { IDGE: --sequence, Educator: '', DeLa: '', PanaLa: '' };
-      periods.push(period); drafts.set(period.IDGE, period); dirty = true; filter(); editGrid.beginEdit(period, 'Educator');
+      const previousDirty = dirty;
+      periods.push(period); drafts.set(period.IDGE, period); dirty = true; filter();
+      editGrid.beginNewRowEdit(period, 'Educator', () => {
+        periods.splice(periods.indexOf(period), 1); drafts.delete(period.IDGE);
+        dirty = previousDirty; filter();
+      });
     };
     editGrid = grid(host, periods, columns, 'IDGE', null, { editable: true, layout: { fill: 'Educator' },
       footerCaption: '', footerAction: { label: '+ Adaugă' }, onFooterAction: () => addEducator().catch(report),

@@ -222,7 +222,7 @@ def clienti_delete(id_client):
 def facturi_list():
     return _json(facturi.facturi_list(
         g.session.db_name, _query_int("an", None, 2000, 2100), _query_text(),
-        _query_int("limit", facturi.DEFAULT_LIST, 1, facturi.MAX_LIST)))
+        _query_int("limit", facturi.MAX_LIST if request.args.get("an") else facturi.DEFAULT_LIST, 1, facturi.MAX_LIST)))
 
 
 @efactura_bp.route("/api/efactura/facturi", methods=["POST"])

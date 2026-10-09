@@ -3,6 +3,15 @@
 Part of the site plan (`SLICE-0110`). The web counterpart of `KBotDataView` WITHOUT editing, with filtering and grouping.
 No page uses it yet: the views come in 0110-06.
 
+## Later extension — 09.10.2026
+
+The initial read-only implementation below is historical. ADE2 added opt-in cell
+editing; ADE6 extended keyboard navigation, custom calendar/month-year editors,
+checkbox editing, mobile row scaling and width calculations. Default read-only
+use remains supported. ADE-specific filtering and interaction rules are in
+[ADECHIT/UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md). ADE6-07–17 were written
+locally without further tests at the operator’s request.
+
 ## What changed and why
 New folder `PYTHON/static/js/dgv/` (the copy Flask serves, like the other components; not duplicated in `JS_COMPONENTS/`)
 and `PYTHON/static/css/dgv.css`.

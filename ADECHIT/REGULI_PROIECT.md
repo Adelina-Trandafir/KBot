@@ -52,6 +52,15 @@ Se folosește mediul virtual Python al proiectului. Testele dependente de baza l
 nu rulează local; probele web locale folosesc localhost:5050. Lipsa mediului sau a unei
 dependențe se raportează; nu se pretinde că un test omis a trecut.
 
+### Preferința explicită de testare — 09.10.2026
+
+Utilizatorul testează modificările și raportează rezultatele. Nu pornim teste
+automate sau verificări vizuale din inițiativă pentru acest flux. Excepția
+autorizată explicit în thread a fost verificarea pornirii serverului și a
+deschiderii aplicației, exclusiv nonvizual (ADE1-06). O autorizare ulterioară
+se aplică numai scopului cerut; nu extindem proba la UI sau alte operații.
+Starea SCRIS LOCAL nu devine TESTAT LOCAL prin actualizarea documentației.
+
 ## 6. Notele de versiune
 
 Când sunt solicitate note de versiune, se citește întâi docs/release-notes/README.md

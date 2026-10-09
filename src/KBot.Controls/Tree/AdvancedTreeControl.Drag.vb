@@ -172,6 +172,19 @@ Partial Public Class AdvancedTreeControl
     ''' </summary>
     Public Event NodeDropped(sender As Object, e As TreeDropEventArgs)
 
+    ''' <summary>
+    ''' Slice 0008-02: cursorul e peste un rând cu ceva tras din ALT control (nu un nod de arbore) —
+    ''' un rând de grilă, de pildă. Gazda se uită în <see cref="TreeExternalDragEventArgs.Data"/>,
+    ''' spune dacă aruncarea e permisă și, dacă nu, de ce. Cere <see cref="DragEnabled"/>.
+    ''' </summary>
+    Public Event ExternalDragOver(sender As Object, e As TreeExternalDragEventArgs)
+
+    ''' <summary>
+    ''' Slice 0008-02: ceva tras din alt control a fost aruncat pe un rând care a răspuns «da».
+    ''' Controlul NU face nimic cu datele — gazda decide.
+    ''' </summary>
+    Public Event ExternalDropped(sender As Object, e As TreeExternalDragEventArgs)
+
     ' ══════════════════════════════════════════════════════════════════════════
     ' Pornirea — chemată din OnMouseDown / OnMouseMove
     ' ══════════════════════════════════════════════════════════════════════════
@@ -326,7 +339,11 @@ Partial Public Class AdvancedTreeControl
             If Not _dragEnabled Then Return
 
             Dim surse As List(Of TreeItem) = ItemsDinDate(drgevent.Data)
-            If surse.Count = 0 Then Return
+            If surse.Count = 0 Then
+                ' Nu e un nod de-al nostru: poate un rând dintr-o grilă (slice 0008-02).
+                RaspundeLaTragereExterna(drgevent)
+                Return
+            End If
             Dim sursa As TreeItem = surse(0)
 
             Dim p As Point = Me.PointToClient(New Point(drgevent.X, drgevent.Y))
@@ -363,6 +380,36 @@ Partial Public Class AdvancedTreeControl
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0008-02: răspunsul la o tragere care nu vine dintr-un nod de arbore. Aceeași stare
+    ''' (<c>_dropTarget</c> / <c>_dropAllowed</c>) ca la tragerea dintre noduri, deci același
+    ''' chenar și aceeași etichetă de refuz.
+    ''' </summary>
+    Private Sub RaspundeLaTragereExterna(drgevent As DragEventArgs)
+        Dim p As Point = Me.PointToClient(New Point(drgevent.X, drgevent.Y))
+        Dim tinta As TreeItem = RandReal(HitTestItem(p))
+        Dim permis As Boolean = False
+        Dim motiv As String = String.Empty
+        If tinta IsNot Nothing Then
+            Dim args As New TreeExternalDragEventArgs(tinta, drgevent.Data)
+            RaiseEvent ExternalDragOver(Me, args)
+            permis = args.Allow
+            motiv = If(args.Motiv, String.Empty)
+        End If
+
+        If tinta IsNot _dropTarget OrElse permis <> _dropAllowed Then
+            _dropTarget = tinta
+            _dropAllowed = permis
+            _dropMotiv = motiv
+            Me.Invalidate()
+        Else
+            _dropMotiv = motiv
+        End If
+
+        drgevent.Effect = If(permis, DragDropEffects.Move, DragDropEffects.None)
+        ArataMotivulRefuzului(tinta, permis)
+    End Sub
+
     Protected Overrides Sub OnDragLeave(e As EventArgs)
         Try
             MyBase.OnDragLeave(e)
@@ -391,7 +438,14 @@ Partial Public Class AdvancedTreeControl
             Dim permis As Boolean = _dropAllowed
             CancelDrag()
 
-            If Not permis OrElse surse.Count = 0 OrElse tinta Is Nothing Then Return
+            If surse.Count = 0 Then
+                ' Slice 0008-02: aruncare din alt control.
+                If permis AndAlso tinta IsNot Nothing Then
+                    RaiseEvent ExternalDropped(Me, New TreeExternalDragEventArgs(tinta, drgevent.Data))
+                End If
+                Return
+            End If
+            If Not permis OrElse tinta Is Nothing Then Return
             Dim args As New TreeDropEventArgs(surse(0), tinta)
             args.SetSources(surse)
             RaiseEvent NodeDropped(Me, args)
@@ -598,4 +652,29 @@ Public NotInheritable Class TreeDropEventArgs
 
     ''' <summary>Nodul pe care a fost aruncat.</summary>
     Public ReadOnly Property Target As AdvancedTreeControl.TreeItem
+End Class
+
+''' <summary>
+''' Slice 0008-02: argumentele lui <see cref="AdvancedTreeControl.ExternalDragOver"/> și
+''' <see cref="AdvancedTreeControl.ExternalDropped"/> — ceva tras din ALT control peste un rând.
+''' </summary>
+Public NotInheritable Class TreeExternalDragEventArgs
+    Inherits EventArgs
+
+    Public Sub New(target As AdvancedTreeControl.TreeItem, data As IDataObject)
+        Me.Target = target
+        Me.Data = data
+    End Sub
+
+    ''' <summary>Rândul de sub cursor.</summary>
+    Public ReadOnly Property Target As AdvancedTreeControl.TreeItem
+
+    ''' <summary>Ce se trage; gazda știe ce format a pus.</summary>
+    Public ReadOnly Property Data As IDataObject
+
+    ''' <summary>Gazda pune True dacă aruncarea e permisă pe acest rând. Implicit False.</summary>
+    Public Property Allow As Boolean
+
+    ''' <summary>De ce nu se poate — în română, arătat operatorului la refuz.</summary>
+    Public Property Motiv As String = String.Empty
 End Class

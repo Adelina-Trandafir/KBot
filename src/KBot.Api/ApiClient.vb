@@ -354,6 +354,7 @@ Public Class ApiClient
                                 .Caption = If(r.Descriere, String.Empty),
                                 .CodAngajament = cod,
                                 .Descriere = If(r.Descriere, String.Empty),
+                                .AliasAng = If(r.AliasAng, String.Empty),
                                 .Stare = If(r.Stare, String.Empty),
                                 .DataCreare = r.DataCreare,
                                 .DataAngajamentNou = r.DataAngajamentNou,

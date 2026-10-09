@@ -95,6 +95,7 @@ Partial Public Class CustomPopup
 
         Dim checkW As Integer = CheckBand()
         If it.Checked AndAlso checkW > 0 Then DrawCheckMark(g, r, padX, fore)
+        If it.Submenu AndAlso checkW > 0 Then DrawChevron(g, r, padX, fore)
 
         Dim textLeft As Integer = r.Left + padX + gutter
         Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, r.Right - padX - checkW - textLeft), r.Height)
@@ -114,6 +115,24 @@ Partial Public Class CustomPopup
             New PointF(box.Left, box.Top + side * 0.55F),
             New PointF(box.Left + side * 0.38F, box.Bottom - side * 0.1F),
             New PointF(box.Right, box.Top + side * 0.1F)}
+        Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(ScaleRef, 2)))
+            pen.LineJoin = LineJoin.Round
+            pen.StartCap = LineCap.Round
+            pen.EndCap = LineCap.Round
+            g.DrawLines(pen, pts)
+        End Using
+    End Sub
+
+    ' Slice 0008-02: the right-pointing chevron of a row that opens a submenu.
+    Private Sub DrawChevron(g As Graphics, r As Rectangle, padX As Integer, fore As Color)
+        Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical)
+        Dim w As Single = side * 0.45F
+        Dim x As Single = r.Right - padX - w
+        Dim y As Single = r.Top + (r.Height - side) / 2.0F
+        Dim pts As PointF() = {
+            New PointF(x, y + side * 0.1F),
+            New PointF(x + w, y + side * 0.5F),
+            New PointF(x, y + side * 0.9F)}
         Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(ScaleRef, 2)))
             pen.LineJoin = LineJoin.Round
             pen.StartCap = LineCap.Round

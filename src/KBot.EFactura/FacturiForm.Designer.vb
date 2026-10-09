@@ -20,6 +20,8 @@ Partial Class FacturiForm
         components = New ComponentModel.Container()
         Dim KBotMenuItem1 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem2 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem3 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItem4 As KBotMenuItem = New KBotMenuItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FacturiForm))
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
@@ -39,6 +41,8 @@ Partial Class FacturiForm
         barBusy = New KBotBusyBar()
         pnlCard = New System.Windows.Forms.Panel()
         tlyBody = New KBotTableLayoutPanel()
+        pnlArbore = New System.Windows.Forms.Panel()
+        cmbLuna = New KBotComboBox()
         tree = New AdvancedTreeControl()
         pnlDetaliu = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
@@ -59,6 +63,7 @@ Partial Class FacturiForm
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
+        pnlArbore.SuspendLayout()
         pnlDetaliu.SuspendLayout()
         pnlPages.SuspendLayout()
         CType(navDetaliu, ComponentModel.ISupportInitialize).BeginInit()
@@ -131,8 +136,16 @@ Partial Class FacturiForm
         KBotMenuItem2.Image = My.Resources.Resources.kbot_64
         KBotMenuItem2.Key = "date"
         KBotMenuItem2.Text = "Date Unitate"
+        KBotMenuItem3.Image = My.Resources.Resources.anaf
+        KBotMenuItem3.Key = "primite"
+        KBotMenuItem3.Text = "Sincronizează facturi primite"
         mnuUnitate.Items.Add(KBotMenuItem1)
         mnuUnitate.Items.Add(KBotMenuItem2)
+        KBotMenuItem4.Image = My.Resources.Resources.invoice
+        KBotMenuItem4.Key = "listaprimite"
+        KBotMenuItem4.Text = "Facturi primite"
+        mnuUnitate.Items.Add(KBotMenuItem3)
+        mnuUnitate.Items.Add(KBotMenuItem4)
         ' 
         ' tlyMain
         ' 
@@ -198,7 +211,7 @@ Partial Class FacturiForm
         tlyBody.ColumnCount = 2
         tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F))
         tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F))
-        tlyBody.Controls.Add(tree, 0, 0)
+        tlyBody.Controls.Add(pnlArbore, 0, 0)
         tlyBody.Controls.Add(pnlDetaliu, 1, 0)
         tlyBody.Dock = System.Windows.Forms.DockStyle.Fill
         tlyBody.Location = New System.Drawing.Point(12, 9)
@@ -208,6 +221,28 @@ Partial Class FacturiForm
         tlyBody.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
         tlyBody.Size = New System.Drawing.Size(1370, 754)
         tlyBody.TabIndex = 0
+        ' 
+        ' pnlArbore
+        ' 
+        pnlArbore.Controls.Add(tree)
+        pnlArbore.Controls.Add(cmbLuna)
+        pnlArbore.Dock = System.Windows.Forms.DockStyle.Fill
+        pnlArbore.Location = New System.Drawing.Point(0, 0)
+        pnlArbore.Margin = New System.Windows.Forms.Padding(0)
+        pnlArbore.Name = "pnlArbore"
+        pnlArbore.Size = New System.Drawing.Size(411, 754)
+        pnlArbore.TabIndex = 0
+        ' 
+        ' cmbLuna
+        ' 
+        cmbLuna.Dock = System.Windows.Forms.DockStyle.Top
+        cmbLuna.Location = New System.Drawing.Point(0, 0)
+        cmbLuna.Margin = New System.Windows.Forms.Padding(0)
+        cmbLuna.Name = "cmbLuna"
+        cmbLuna.Size = New System.Drawing.Size(411, 37)
+        cmbLuna.TabIndex = 1
+        tips.SetToolTipHeader(cmbLuna, "Luna facturilor")
+        tips.SetToolTipText(cmbLuna, "Arată în arbore doar facturile din luna aleasă. Anul este cel ales în K-BOT.")
         ' 
         ' tree
         ' 
@@ -521,6 +556,7 @@ Partial Class FacturiForm
         Text = "E-Factura — facturi emise"
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
+        pnlArbore.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
         pnlDetaliu.ResumeLayout(False)
         pnlPages.ResumeLayout(False)
@@ -537,6 +573,8 @@ Partial Class FacturiForm
     Friend WithEvents barBusy As KBotBusyBar
     Friend WithEvents pnlCard As System.Windows.Forms.Panel
     Friend WithEvents tlyBody As KBotTableLayoutPanel
+    Friend WithEvents pnlArbore As System.Windows.Forms.Panel
+    Friend WithEvents cmbLuna As KBotComboBox
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents pnlDetaliu As System.Windows.Forms.Panel
     Friend WithEvents navDetaliu As KBotNavList

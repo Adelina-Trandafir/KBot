@@ -8,7 +8,7 @@ screens: FacturiForm, DateUnitateForm
 keywords: efactura, e-factura, factura electronica, facturi emise, arbore, trimitere, trimite factura, validare, stornare, storno, factura clasica, pdf, eroare anaf, factura, client, cumparator, date unitate, unitate emitenta, cont emitent, iban, unitate de masura, linii, ciorna, serie, numar factura, anaf, token, certificat, certificat calificat, autorizare, reinnoire, spv, pin, expirat
 open: menu:efactura
 ---
-<!-- slice: 00EF-05, 00EF-08, 00EF-09, 00EF-13, 0000-54, 0000-55, 0000-57, 0000-58 -->
+<!-- slice: 00EF-05, 00EF-08, 00EF-09, 00EF-13, 00EF-16, 0000-54, 0000-55, 0000-57, 0000-58, 0000-60 -->
 Din **MENIU › E-Factura** se deschide fereastra **«E-Factura — facturi emise»**: aici pregătești facturile electronice ale unității, pe care le trimiți apoi la ANAF. Pentru a lucra cu ANAF, K-BOT are nevoie și de un **token ANAF** (o autorizare pe care o dai o singură dată, cu certificatul calificat al unității, și o reînnoiești o dată pe an); îl vezi și îl reînnoiești din butonul **«Token ANAF»** — vezi [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
 
 <!-- capture: efactura-facturi | caption: Fereastra «E-Factura — facturi emise» | goto: menu:efactura | prepare: Deschideți fereastra pe o unitate care are deja câteva facturi, în stări diferite, și alegeți una din arbore. -->
@@ -16,7 +16,9 @@ Din **MENIU › E-Factura** se deschide fereastra **«E-Factura — facturi emis
 Fereastra se deschide doar cât ai o unitate deschisă; altfel K-BOT spune «Nu există o unitate deschisă: autentificați-vă întâi.». Poți lucra în paralel în fereastra principală, iar dacă o ceri a doua oară, K-BOT o aduce în față pe cea deschisă.
 
 ## Arborele facturilor
-<!-- slice: 00EF-09, 00EF-13, 0000-57, 0000-58 -->
+<!-- slice: 00EF-09, 00EF-13, 00EF-16, 0000-57, 0000-58, 0000-60 -->
+
+Arborele arată facturile din **anul ales în K-BOT**. Deasupra lui, lista **«Toate lunile»** te lasă să alegi o lună (de la Ianuarie la Decembrie): arborele arată atunci doar facturile din luna aceea. Lista se oprește cât modifici sau adaugi o factură.
 
 În stânga vezi **clienții** unității, în ordine alfabetică; sub fiecare client sunt **facturile lui**, cea mai nouă prima, cu numărul, data și totalul. Pe rândul clientului vezi totalul facturilor lui. Lupa din antet deschide căutarea în arbore (după client sau după număr); Esc o golește. O factură aleasă se vede în dreapta, într-o bară cu **vederi** (Generale, Cumpărător, Atașamente, Conținut și, după starea facturii, vederile cu document — vezi mai jos).
 
@@ -30,7 +32,7 @@ Fereastra se deschide doar cât ai o unitate deschisă; altfel K-BOT spune «Nu 
 La sfârșitul rândului poate apărea **· stornare** (factura anulează o alta). Când treci cu mouse-ul peste o factură, în dreapta rândului apare **semnul cu trei puncte**: apăsat, deschide **meniul facturii**.
 
 ## Meniul unei facturi
-<!-- slice: 00EF-09, 0000-57 -->
+<!-- slice: 00EF-09, 00EF-16, 0000-57, 0000-60 -->
 
 <!-- capture: efactura-meniu-factura | caption: Meniul unei facturi acceptate | goto: menu:efactura | prepare: Treceți mouse-ul peste o factură acceptată din arbore și apăsați semnul cu trei puncte din dreapta rândului. -->
 
@@ -38,18 +40,23 @@ Apeși semnul din dreapta rândului ei. Factura se deschide în dreapta (dacă n
 
 | Starea facturii | Ce oferă meniul |
 |---|---|
-| Netrimisă (ciornă) | **Trimite factura în ANAF**; **Modifică factura** (doar o ciornă obișnuită, nu o factură de stornare) |
+| Netrimisă (ciornă) | **Trimite factura în ANAF**; **Modifică factura** (doar o ciornă obișnuită, nu o factură de stornare; modificarea nu trimite nimic) |
 | Trimisă, neconfirmată | **Validează la ANAF (starea facturii)** |
 | Refuzată | **Afișează eroarea ANAF** |
-| Acceptată | **Listează factura clasică (PDF)**; **Listează factura ANAF (PDF)**; **Stornează factura în ANAF** (dacă nu a fost deja stornată) |
+| Acceptată | **Listează factura clasică (PDF)**; **Listează factura ANAF (PDF)**; **Corectează factura (tip 384)**; **Stornează factura în ANAF** (dacă nu a fost deja stornată) |
 
 Un separator desparte, în meniu, trimiterea și verificarea de listări, iar listările de stornare și modificare.
 
+## Corectarea unei facturi acceptate
+<!-- slice: 00EF-16, 0000-60 -->
+
+**«Corectează factura (tip 384)»** se află doar în meniul unei facturi **acceptate** de ANAF (nu și al uneia de stornare). Se deschide o fereastră mică în care poți schimba doar **comentariile** și **referința comenzii**; restul facturii (client, linii, dată, total) rămâne cum este — pentru orice altceva, factura se stornează. Cu **«Trimite corecția»** factura pleacă din nou la ANAF ca **factură corectată (tip 384)**, iar K-BOT citește rezultatul ca la o trimitere obișnuită. Factura se schimbă la tine abia după ce ANAF a primit fișierul; dacă trimiterea nu reușește, rămâne așa cum era. După o corecție, factura arată **· corectată** și are tipul 384.
+
 ## Trimiterea la ANAF
-<!-- slice: 00EF-09, 0000-57 -->
+<!-- slice: 00EF-09, 00EF-16, 0000-57, 0000-60 -->
 
 1. Din meniul unei ciorne alege **«Trimite factura în ANAF»** și confirmă.
-2. K-BOT verifică factura. Dacă are erori, ți le arată într-o listă și **nu o trimite**; corectezi (**«Modifică factura»**) și încerci din nou. Dacă verificarea trece, factura se trimite.
+2. K-BOT verifică factura. Dacă are erori, ți le arată într-o listă și **nu o trimite**; corectezi (**«Modifică factura»**) și încerci din nou. Dacă verificarea trece, factura se trimite. Dacă factura are bifat **«Atașează factura originală»**, K-BOT o trimite împreună cu o factură PDF în formatul clasic, atașată în fișierul electronic.
 3. K-BOT așteaptă câteva secunde răspunsul ANAF, apoi îl citește o dată. Rezultatul apare în chenarul de sus: **verde** — acceptată; **roșu** — refuzată, cu motivul; **galben** — încă în prelucrare.
 4. Dacă factura este încă în prelucrare, bulina rămâne portocalie. Peste câteva momente alege din meniul ei **«Validează la ANAF (starea facturii)»**, care citește din nou starea. Se poate repeta până ANAF dă un răspuns.
 
@@ -82,9 +89,9 @@ K-BOT nu salvează până nu ai: un client ales, o dată, un cont emitent și ce
 **«Modificare»** (la fel ca **«Modifică factura»** din meniul facturii) deblochează o ciornă pentru schimbări (apoi «Salvare» sau «Renunță»). **Data** se poate schimba la o factură nouă și la **ultima factură a seriei**, dar nu mai veche decât factura dinainte; la celelalte facturi ea rămâne cea de la salvare. **«Ștergere»** șterge o ciornă, dar numai dacă are **ultimul număr al seriei** — altfel ar rămâne un număr lipsă; o factură trimisă la ANAF nu se șterge.
 
 ## Vederea Generale
-<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-13, 0000-58 -->
+<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-13, 00EF-16, 0000-58, 0000-60 -->
 
-Numărul facturii, **Data facturii** (scrisă sau aleasă din calendar; se schimbă doar la o factură nouă sau la ultima factură a seriei, și nu înainte de factura anterioară), **Tip factură** (380 — factură; 384 — factură corectată; îl pune K-BOT), **Stare**, **Comentarii factură** (cel mult 255 de caractere), **Ref. comandă (BT-13)** (cel mult 30), **Cont emitent (IBAN)** — contul în care se plătește **această factură**; alegi unul folosit pe facturile anterioare sau scrii altul — și **TOTAL FACTURĂ**, care se adună singur din linii. Sub ele, K-BOT scrie în cuvinte situația facturii (ciornă, acceptată, motivul unui refuz, ce stornează).
+Numărul facturii, **Data facturii** (scrisă sau aleasă din calendar; se schimbă doar la o factură nouă sau la ultima factură a seriei, și nu înainte de factura anterioară), **Tip factură** (380 — factură; 384 — factură corectată; îl pune K-BOT), **Stare**, **Comentarii factură** (cel mult 255 de caractere), **Ref. comandă (BT-13)** (cel mult 30), **Cont emitent (IBAN)** — contul în care se plătește **această factură**; lista oferă mai întâi **conturile unității** (din fereastra «Conturi Unitate»), apoi pe cele folosite pe facturile anterioare; poți și scrie altul. O factură nouă începe cu singurul cont al unității, dacă unitatea are unul singur — și **TOTAL FACTURĂ**, care se adună singur din linii. Sub ele, K-BOT scrie în cuvinte situația facturii (ciornă, acceptată, motivul unui refuz, ce stornează).
 
 ## Vederea Cumpărător
 <!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-15 -->
@@ -117,9 +124,9 @@ Datele unității care emite facturile (aceleași pe toate facturile) se țin î
 Conturile bancare ale unității sunt în fereastra **«Conturi Unitate»**, din același meniu — vezi [Conturile unității emitente](topic:contabil.efactura.conturi).
 
 ## Vederea Atașamente
-<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57 -->
+<!-- slice: 00EF-08, 0000-55, 00EF-09, 00EF-16, 0000-57, 0000-60 -->
 
-Bifa **«Atașează factura originală»**; alegerea se păstrează pe factură și se schimbă doar cât factura este o ciornă deschisă pentru modificare.
+Bifa **«Atașează factura originală»**; alegerea se păstrează pe factură și se schimbă doar cât factura este o ciornă deschisă pentru modificare. Când este bifată, la trimiterea la ANAF (și la o corecție) K-BOT întocmește factura PDF în formatul clasic și o atașează în fișierul electronic; fără bifă nu se atașează nimic.
 
 ## Vederea Conținut
 <!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57 -->
@@ -147,3 +154,37 @@ Cât timp scrii sau modifici o factură, aceste vederi nu se văd. Dacă nu exis
 <!-- slice: 00EF-05, 0000-54, 0000-55, 0000-56 -->
 
 Butonul **«Token ANAF»** din subsolul ferestrei deschide fereastra tokenului, unde vezi starea lui și îl obții sau îl reînnoiești cu certificatul calificat al unității. Pașii, mesajele și ce faci când ceva nu merge sunt în [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
+
+## Facturile primite
+<!-- slice: 00EF-18, 00EF-21, 0000-61, 0000-64 -->
+
+În bara din stânga a ferestrei principale apare vederea **«E-Factura»** doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
+
+- În stânga este un arbore: rădăcina **«Toate facturile»**, sub ea lunile (cea mai nouă prima), iar sub fiecare lună facturile, cu furnizorul și totalul. Punctul portocaliu înseamnă o factură pe care nu ai deschis-o încă; după ce o deschizi devine verde;
+- vederea arată facturile furnizorilor care sunt parteneri ai fundamentării angajamentului (se compară codul fiscal, fără «RO» și fără spații), plus cele pe care le-ai legat chiar tu. Cu bifa **«Arată toate facturile primite»** vezi și celelalte (cu punct gri); clic dreapta pe una și **«Leagă de acest DDF»** o leagă de fundamentare, iar **«Scoate legătura cu acest DDF»** desface o legătură făcută de tine;
+- clic dreapta pe o factură oferă și **«Salvează ca ZIP»** (arhiva semnată, adusă din nou de la ANAF) și **«Salvează ca XML»**;
+- în dreapta, pe bara de vederi: **Linii** (liniile scrise de furnizor și, dedesubt, TVA-ul pe fiecare cotă — o factură poate avea mai multe), **Factură PDF** (factura clasică pe care furnizorul a atașat-o, iar dacă nu a atașat niciuna, cea desenată de ANAF), **Atașamente** (doar dacă factura are fișiere atașate; dublu clic pe un fișier îl salvează) și **Mesaje** (doar dacă factura are note sau mesaje).
+
+Facturile se aduc de la ANAF din fereastra **«E-Factura — facturi emise»**, vezi mai jos.
+
+## Sincronizarea facturilor primite
+<!-- slice: 00EF-18, 0000-61 -->
+
+În fereastra **«E-Factura — facturi emise»**, butonul din bara de titlu (cel cu trei puncte) deschide meniul unității; **«Sincronizează facturi primite»** deschide o fereastră în care alegi perioada (ultimele 7, 15, 30, 45 sau 60 de zile; ANAF păstrează mesajele cel mult 60 de zile) și apeși **«Sincronizează»**.
+
+- fereastra aduce de la ANAF doar facturile care nu sunt deja în baza de date, câte o tranșă, cu o bară și o linie care arată cât s-a făcut; poți porni sincronizarea de câte ori vrei, nu se dublează nimic;
+- la sfârșit scrie că facturile primite sunt la zi; dacă un mesaj nu a putut fi citit, îl vezi într-un chenar, iar la următoarea sincronizare se încearcă din nou;
+- **«Închide»** oprește sincronizarea; ce s-a adus până atunci rămâne;
+- sincronizarea are nevoie de un token ANAF valabil (butonul **«Token ANAF»**).
+
+## Fereastra «Facturi primite»
+<!-- slice: 00EF-19, 00EF-20, 0000-62, 0000-63 -->
+
+Toate facturile primite de unitate, pe anul ales în K-BOT, se văd într-o fereastră proprie. O deschizi din fereastra **«E-Factura — facturi emise»**: butonul din bara de titlu (cel cu trei puncte), apoi **«Facturi primite»**.
+
+- fereastra are același arbore și aceleași vederi ca vederea «E-Factura» de la fundamentare (rădăcina «Toate facturile», lunile, **Linii**, **Factură PDF**, **Atașamente**, **Mesaje**; clic dreapta oferă «Salvează ca ZIP» și «Salvează ca XML»), dar fără lista „doar a unui DDF";
+- deasupra arborelui este o casetă de căutare: scrii o parte din numele furnizorului, din codul lui fiscal sau din numărul facturii și arborele rămâne doar cu facturile potrivite;
+- **«Sincronizează cu ANAF»** deschide aceeași fereastră de sincronizare ca în meniu (vezi mai sus) și, după ce a adus facturi noi, lista se citește din nou;
+- clic dreapta pe o factură oferă și **«Leagă de un DDF…»**: se deschide o listă a fundamentărilor, cu o casetă de căutare (după angajament, obiect, partener sau cod fiscal); alegi una (dublu clic o alege direct) și apeși **«Leagă»**. Legăturile făcute de tine se văd în vederea «E-Factura» a angajamentului respectiv; după ce ai deschis factura (clic pe ea), meniul ei oferă și **«Scoate legătura cu …»** pentru fiecare;
+- **«Reîmprospătează»** citește din nou lista din baza de date, fără să cheme ANAF;
+- **«Ieșire»** închide fereastra.

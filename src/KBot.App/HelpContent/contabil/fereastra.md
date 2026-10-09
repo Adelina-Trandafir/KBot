@@ -4,8 +4,8 @@ title: Fereastra principală
 part: contabil
 order: 20
 parent: contabil
-screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.btnInfo, InternalInfoForm
-keywords: arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, adaugare angajamente, fereastra marita, tot ecranul, maximizat, la pornire
+screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.btnInfo, InternalInfoForm, GrupeForm
+keywords: grupe, grupa, alias, culoare grupa, arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, adaugare angajamente, fereastra marita, tot ecranul, maximizat, la pornire
 ---
 <!-- slice: 0006, 0086, 0097-03 -->
 Fereastra principală are cinci zone.
@@ -21,7 +21,7 @@ Fereastra principală are cinci zone.
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -32,6 +32,7 @@ Fereastra principală are cinci zone.
   și rândul **«Actualizează angajamente...»**: bifezi angajamentele de adus la zi din FOREXE. Cu
   descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în coadă, unul după altul
   — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
+- Meniul rotiței are și rândul **«Grupe»**: alegi o grupă ca să vezi în listă doar angajamentele ei (vezi mai jos «Grupele de angajamente»).
 - Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
 - Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
   existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).
@@ -40,6 +41,44 @@ Fereastra principală are cinci zone.
 - Angajamentele descărcate sau actualizate de la pornirea programului sunt **subliniate** în listă. Sublinierea dispare când închideți programul.
 - Dacă apăsați reîmprospătarea pe mai multe angajamente cât timp se descarcă deja unul, pentru ele nu se mai deschide fereastra de alegere a recepțiilor: se descarcă toate.
 - Când mai multe acțiuni FOREXE așteaptă una după alta, se deschide fereastra **Coada robotului**; ea se închide singură după ce coada s-a golit. Butonul **«Coadă N»** din banda FOREXE o deschide oricând, dar se vede doar cât coada are ceva în ea — [Coada robotului](topic:contabil.forexe.coada).
+
+## Grupele de angajamente
+<!-- slice: 0008-02, 000T-12 -->
+
+O grupă strânge laolaltă angajamente care merg împreună. Un angajament poate fi în mai multe grupe. Fiecare grupă are un nume și o culoare.
+
+**Rotița** din capul listei › **«Grupe»** deschide o listă cu grupele, în ordine alfabetică, fiecare cu culoarea ei. Sub ele, după o linie de despărțire, e rândul **«Editează grupe...»**. Rândul «Grupe» are o săgeată în dreapta: lista grupelor se deschide lângă el, iar meniul rotiței rămâne deschis.
+
+<!-- capture: grupe-meniu | caption: Rotița listei › «Grupe»: grupele și «Editează grupe...» | prepare: Aveți cel puțin două grupe făcute, de culori diferite. Apăsați rotița listei și apoi rândul «Grupe». -->
+
+- Alegând o grupă, lista arată **doar angajamentele ei**. Pe fiecare rând apare **aliasul** angajamentului (dacă nu are alias, denumirea), iar textul are culoarea grupei. Rândurile cu roșu, cele cu lanț care nu se închide, rămân roșii. Capul listei spune ce grupă e aleasă.
+- Cât o grupă e aleasă, meniul are în plus rândul **«Toate angajamentele»**, care readuce lista întreagă. Atunci lista cuprinde angajamentele grupei din **toți anii și din toate sursele**, așa că alegerea **Sursă/Sector** din bara de titlu și rândurile de sortare din meniul rotiței dispar până revii la «Toate angajamentele».
+
+<!-- capture: grupe-arbore-filtrat | caption: Lista filtrată pe o grupă: aliasul pe rânduri, culoarea grupei, capul «GRUPA: ...» | prepare: Alegeți o grupă cu angajamente, dintre care unele au alias. -->
+
+### Fereastra «Grupe de angajamente»
+
+Se deschide din **«Editează grupe...»** și blochează fereastra principală cât e deschisă. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
+
+<!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din rotița listei › Grupe › Editează grupe... Alegeți o grupă cu mai multe angajamente. -->
+
+- **Angajamente negrupate**: tabelul arată angajamentele care nu sunt în nicio grupă. **Trage un rând** cu mouse-ul peste o grupă din arbore: angajamentul intră în acea grupă pe loc, fără să mai apeși «Salvează». Tutorial: «Adaugă un angajament într-o grupă existentă».
+
+<!-- capture: grupe-negrupate | caption: «Angajamente negrupate»: un rând tras peste o grupă | prepare: Alegeți primul rând din arbore. Începeți să trageți un rând (țineți butonul apăsat) deasupra unei grupe și faceți captura cu rândul tras și grupa luminată. -->
+
+- **O grupă existentă**: tabelul arată doar angajamentele ei, toate bifate. **Debifezi** un angajament și el dispare din listă; iese din grupă când apeși **«Salvează»**. Tutorial: «Scoate un angajament dintr-o grupă».
+- **Grupă nouă**: apeși **«+ Adăugare grupă»** din subsolul arborelui. În tabel apar **toate** angajamentele, nebifate; le bifezi pe cele din grupă. «Salvează» cere o denumire, o culoare (implicit negru) și cel puțin un angajament bifat; două grupe nu pot avea aceeași denumire. Tutorial: «Adaugă o grupă nouă».
+
+<!-- capture: grupe-grupa-noua | caption: O grupă nouă: denumire, culoare și angajamentele bifate | prepare: Apăsați «+ Adăugare grupă», scrieți o denumire, alegeți o culoare și bifați câteva angajamente. -->
+
+- Coloana **«Indicatori»** arată câți indicatori are angajamentul; ținând mouse-ul pe ea vezi care sunt, cu clasificația lor.
+
+<!-- capture: grupe-indicatori | caption: Eticheta cu indicatorii unui angajament | prepare: Țineți mouse-ul pe o celulă din coloana «Indicatori» până apare eticheta. -->
+
+- Coloana **«Alias»** se poate scrie direct în tabel. Aliasul se salvează îndată ce ieși din celulă și e al angajamentului, nu al grupei: îl vezi în orice grupă în care e angajamentul. Un câmp gol șterge aliasul.
+- Dacă ai modificări nesalvate și alegi alt rând din arbore sau închizi fereastra, K-BOT te întreabă dacă renunți la ele.
+
+**Tutoriale** (în meniul «?», la «Tutoriale»): «Deschide fereastra «Grupe de angajamente»» (din fereastra principală), apoi, din fereastra grupelor: «Adaugă o grupă nouă», «Scoate un angajament dintr-o grupă» și «Adaugă un angajament într-o grupă existentă».
 
 ## Vederile
 <!-- slice: 0018, 0074, 0088, 0097, 0000-30, 0000-31 -->

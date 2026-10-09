@@ -100,6 +100,7 @@ Partial Public Class ApiClient
         Public Property poate_modifica_data As Boolean
         Public Property data_minima As String
         Public Property poate_storna As Boolean
+        Public Property poate_corecta As Boolean
         Public Property client As EFacturaClientWire
         Public Property linii As List(Of EFacturaLinieWire)
     End Class
@@ -455,7 +456,7 @@ Partial Public Class ApiClient
             .Total = k_wire.total, .Stare = If(k_wire.stare, EFacturaStare.Ciorna), .EsteStorno = k_wire.este_storno,
             .PoateModifica = k_wire.poate_modifica, .PoateSterge = k_wire.poate_sterge,
             .PoateModificaData = k_wire.poate_modifica_data, .DataMinima = ParseDay(k_wire.data_minima),
-            .PoateStorna = k_wire.poate_storna,
+            .PoateStorna = k_wire.poate_storna, .PoateCorecta = k_wire.poate_corecta,
             .Client = ToClient(k_wire.client)}
         If k_wire.client IsNot Nothing Then k_result.ClientDenumire = k_result.Client.DenumireClient
         If k_wire.linii IsNot Nothing Then

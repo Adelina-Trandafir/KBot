@@ -85,7 +85,7 @@ Partial Class VanzareGeneralePage
         cmbContPlata.Size = New System.Drawing.Size(813, 37)
         cmbContPlata.TabIndex = 12
         tips.SetToolTipHeader(cmbContPlata, "Cont emitent")
-        tips.SetToolTipText(cmbContPlata, "IBAN-ul unității în care se plătește factura. Alegeți unul folosit pe facturile anterioare sau scrieți altul; contul este al facturii, nu al unității.")
+        tips.SetToolTipText(cmbContPlata, "IBAN-ul unității în care se plătește factura. Alegeți unul din conturile unității (fereastra «Conturi Unitate») sau unul folosit pe facturile anterioare, ori scrieți altul; contul este al facturii, nu al unității.")
         ' 
         ' tlyGenerale
         ' 

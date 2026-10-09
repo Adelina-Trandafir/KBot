@@ -27,8 +27,12 @@ them if they ever matter):
   * the order reference is written only when it holds something other than spaces. Access saved a single
     space for «empty» (`IIf(Len(BT_13)=0, " ", BT_13)`) and its test `Nz(BT_13,"") <> ""` then wrote an
     order reference of one space;
+  * (slice 00EF-14) when the invoice asks for it (`AtasamentOriginal`) the classic PDF of the invoice rides inside the XML as
+    BG-24 (`cac:AdditionalDocumentReference` / `cac:Attachment` / `cbc:EmbeddedDocumentBinaryObject`, base64, mimeCode
+    application/pdf). The PDF is drawn by the PC and handed to `build`; Access did not attach anything;
   * the file is indented (Access wrote it on one line). Whitespace between elements carries no meaning.
 """
+import base64
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from xml.sax.saxutils import escape, quoteattr
@@ -230,7 +234,19 @@ def _invoice_line(line):
     ])
 
 
-def build(furnizor, client, invoice, lines, bank_name, schema_location=True):
+def _attachment_ref(invoice, pdf):
+    """BG-24: the classic PDF of the invoice, base64 inside the XML. BT-122 = the invoice's own number."""
+    return _el("cac:AdditionalDocumentReference", children=[
+        _el("cbc:ID", invoice_id(invoice)),
+        _el("cbc:DocumentDescription", "Factura originala"),
+        _el("cac:Attachment", children=[
+            _el("cbc:EmbeddedDocumentBinaryObject", base64.b64encode(pdf).decode("ascii"),
+                [("mimeCode", "application/pdf"), ("filename", file_name(invoice)[:-4] + ".pdf")]),
+        ]),
+    ])
+
+
+def build(furnizor, client, invoice, lines, bank_name, schema_location=True, attachment_pdf=None):
     """The invoice as UTF-8 bytes.
 
     furnizor   Unitati_Date row (dict)         client  EF_Clienti row (dict)
@@ -238,6 +254,7 @@ def build(furnizor, client, invoice, lines, bank_name, schema_location=True):
     lines      EF_FacturiLinii rows (dicts, in the order they are to be written)
     bank_name  `BIC.Banca` for characters 5-8 of the invoice's IBAN, or "" when unknown
     schema_location  False for ANAF's validation service: Access removed `xsi:schemaLocation` before that call.
+    attachment_pdf   the bytes of the classic PDF to embed (BG-24), or None for no attachment.
 
     Raises ValueError when there are no lines (Access: «Lipsa produse?»); everything else is the job of
     `validare.verifica`, which tells the operator WHAT is wrong before the XML is built.
@@ -267,6 +284,8 @@ def build(furnizor, client, invoice, lines, bank_name, schema_location=True):
     children.append(_el("cbc:DocumentCurrencyCode", CURRENCY))
     if _text(invoice.get("BT_13")):
         children.append(_el("cac:OrderReference", children=[_el("cbc:ID", _text(invoice["BT_13"]))]))
+    if attachment_pdf:
+        children.append(_attachment_ref(invoice, attachment_pdf))
     children += [
         _supplier_party(furnizor),
         _customer_party(client),

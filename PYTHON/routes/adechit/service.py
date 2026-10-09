@@ -73,15 +73,25 @@ def save_catalog(repo, table, body, previous_active=()):
         require(bool((merged.get('Nume') or '').strip()), 'NAME', 'Numele este obligatoriu.', 400)
     if table == 'Grupe':
         require(bool((merged.get('Grupa') or '').strip()), 'NAME', 'Denumirea grupei este obligatorie.', 400)
+    if table == 'Platitori_sub':
+        if creating:
+            changes['Activ'] = True
+            merged['Activ'] = True
+        if merged.get('Activ'):
+            for other in repo.rows(table):
+                if other['IDP'] == merged['IDP'] and other['IDS'] != body.get('id') and other.get('Activ'):
+                    repo.update(table, other, {'Activ': False})
     if table == 'ValoriTaxe':
-        require(all(nz(merged.get(k)) >= 0 for k in ('TaxaZilnica',)), 'TAX', 'Taxele nu pot fi negative.', 400)
+        require(nz(merged.get('TaxaZilnica')) > 0, 'TAX', 'Valoarea taxei trebuie să fie mai mare decât zero.', 400)
+        require(bool((merged.get('Expl') or '').strip()), 'TAX', 'Explicația taxei este obligatorie.', 400)
         start = merged.get('DeLa')
         require((not creating and not start) or isinstance(start, str) and re.fullmatch(r'[1-9][0-9]{3}-(0[1-9]|1[0-2])', start),
                 'TAX_PERIOD', 'Completați începutul taxei în format lună/an.', 400)
         require(not merged.get('PanaLa') or not start or start <= merged['PanaLa'],
                 'TAX_PERIOD', 'Începutul taxei nu poate depăși sfârșitul.', 400)
-        if creating:
-            require(start > max((item.get('DeLa') or '' for item in repo.rows(table)), default=''),
+        if creating or 'DeLa' in changes and start != row.get('DeLa'):
+            require(start and start > max((item.get('DeLa') or '' for item in repo.rows(table)
+                                          if item['IDV'] != body.get('id')), default=''),
                     'TAX_PERIOD', 'Taxa nouă trebuie să înceapă după taxele existente.', 400)
         if creating or merged.get('Activ'):
             previous_end = None

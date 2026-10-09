@@ -157,6 +157,9 @@ Public NotInheritable Class EFacturaFactura
     ''' <summary>Slice 00EF-09: an accepted invoice that was not cancelled yet (and is not itself a storno).</summary>
     Public Property PoateStorna As Boolean
 
+    ''' <summary>An accepted invoice that is not a storno: it can be corrected (type 384; only the comment and the order reference change).</summary>
+    Public Property PoateCorecta As Boolean
+
     Public Property Client As EFacturaClient
     Public Property Linii As New List(Of EFacturaLinie)()
 

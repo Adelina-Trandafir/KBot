@@ -19,6 +19,9 @@ the bottom, so `efactura_bp` must exist BEFORE that import (same pattern as rout
     anaf_api.py      the calls to ANAF with the access token: upload, state, download, messages (slice 00EF-07)
     trimitere.py     send (check, validate, upload), state, download, messages        (slice 00EF-07)
     trimitere_routes.py /api/efactura/facturi/<id>/trimite|verifica|descarca, /mesaje (slice 00EF-07)
+    primite_ubl.py   reads the UBL XML of a received invoice (pure)                       (slice 00EF-17)
+    primite.py       sync from ANAF, list, detail, files, link to a DDF                    (slice 00EF-17)
+    primite_routes.py /api/efactura/primite/...                                            (slice 00EF-17)
 
 SECRETS: the client secret, the encryption key and both tokens exist on this server only. No route
 returns them and no log line prints them.
@@ -30,3 +33,4 @@ efactura_bp = Blueprint("efactura", __name__)
 from . import token_routes  # noqa: E402,F401  registers the token routes on efactura_bp
 from . import factura_routes  # noqa: E402,F401  registers the invoice routes on efactura_bp (slice 00EF-06)
 from . import trimitere_routes  # noqa: E402,F401  registers the send / state / download routes (slice 00EF-07)
+from . import primite_routes  # noqa: E402,F401  registers the received-invoice routes (slice 00EF-17)

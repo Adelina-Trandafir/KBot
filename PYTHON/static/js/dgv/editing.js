@@ -22,11 +22,15 @@ export function parseCell(raw, column) {
 
 export const editing = {
   get hasEdit() { return !!this._edit; },
+  focusEdit() { this._edit?.input.focus(); },
   canEdit(row, column) {
     return !!this._opts.editable && !!column?.editable
       && (typeof column.editable !== 'function' || column.editable(row));
   },
-  beginEdit(row, key) {
+  beginNewRowEdit(row, key, onCancelRow) {
+    return this.beginEdit(row, key, { onCancelRow });
+  },
+  beginEdit(row, key, { onCancelRow } = {}) {
     if (this._edit || this._destroyed) return false;
     const column = this._col(key);
     if (!this.canEdit(row, column)) return false;
@@ -36,7 +40,7 @@ export const editing = {
     const host = document.createElement('div');
     host.className = 'dgv__editor';
     const state = { row, key, column, host, raw: row[key] ?? '', pending: false,
-      abort: new AbortController(), value: row[key] };
+      abort: new AbortController(), value: row[key], onCancelRow };
     this._edit = state;
     this._activeKey = key;
     if (column.editor === 'list') {
@@ -69,7 +73,8 @@ export const editing = {
     host.addEventListener('dblclick', (event) => event.stopPropagation(), { signal: state.abort.signal });
     host.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
-      event.preventDefault(); event.stopImmediatePropagation(); this.cancelEdit();
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (this.cancelEdit()) state.onCancelRow?.(state.row);
     }, { capture: true, signal: state.abort.signal });
     host.addEventListener('keydown', (event) => {
       event.stopPropagation();
@@ -131,8 +136,12 @@ export const editing = {
         const current = cells.findIndex((cell) => cell.row === state.row && cell.column.key === state.key);
         for (let index = current + direction; current >= 0 && index >= 0 && index < cells.length; index += direction) {
           const next = cells[index];
-          if (this.canEdit(next.row, next.column)) { this.beginEdit(next.row, next.column.key); break; }
+          if (this.canEdit(next.row, next.column)) {
+            if (next.row !== state.row && await this._opts.onRowValidate?.({ row: state.row }) === false) return false;
+            this.beginEdit(next.row, next.column.key); return true;
+          }
         }
+        if (await this._opts.onRowValidate?.({ row: state.row }) === false) return false;
       }
       return true;
     } catch (error) {
@@ -143,7 +152,7 @@ export const editing = {
       state.input.setAttribute('aria-invalid', 'true');
       state.host.setAttribute('aria-busy', 'false');
       state.host.title = error.message;
-      this._emit('onEditError', { error, key: state.key });
+      this._emit('onEditError', { error, key: state.key, row: state.row });
       console.error('[DataGrid] Cell save failed', error);
       state.input.focus();
       return false;

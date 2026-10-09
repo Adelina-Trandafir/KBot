@@ -35,6 +35,7 @@ Partial Class AdeMigratorForm
     Friend WithEvents tlpActiune As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
+    Friend WithEvents btnStop As System.Windows.Forms.Button
 
     ' --- bottom: tables (left), educators + conversions (right) ---
     Friend WithEvents tlpJos As Global.KBot.Controls.KBotTableLayoutPanel
@@ -52,6 +53,7 @@ Partial Class AdeMigratorForm
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New System.ComponentModel.Container()
+        btnStop = New System.Windows.Forms.Button()
         Dim colTabel As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colRanduriAccess As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colTinta As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
@@ -314,11 +316,13 @@ Partial Class AdeMigratorForm
         '
         ' tlpActiune
         '
-        tlpActiune.ColumnCount = 2
+        tlpActiune.ColumnCount = 3
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
+        tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
         tlpActiune.Controls.Add(lblRezumat, 0, 0)
         tlpActiune.Controls.Add(btnMigreaza, 1, 0)
+        tlpActiune.Controls.Add(btnStop, 2, 0)
         tlpActiune.Dock = DockStyle.Fill
         tlpActiune.Name = "tlpActiune"
         tlpActiune.RowCount = 1
@@ -341,6 +345,16 @@ Partial Class AdeMigratorForm
         btnMigreaza.TabIndex = 1
         btnMigreaza.Text = "Migrează"
         btnMigreaza.UseVisualStyleBackColor = True
+        '
+        ' btnStop
+        '
+        btnStop.Dock = DockStyle.Fill
+        btnStop.Enabled = False
+        btnStop.FlatStyle = FlatStyle.Flat
+        btnStop.Name = "btnStop"
+        btnStop.TabIndex = 2
+        btnStop.Text = "Oprește"
+        btnStop.UseVisualStyleBackColor = True
         '
         ' tlpJos
         '

@@ -141,6 +141,21 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>
+    ''' Slice 0008-02: cheia coloanei de sub un punct client (X), sau Nothing. Pereche cu
+    ''' <see cref="RowIndexAt"/>, pentru gazdele care conduc singure mouse-ul peste grila
+    ''' (o etichetă proprie pe o singură coloană, de pildă).
+    ''' </summary>
+    Public Function ColumnKeyAt(pt As Point) As String
+        Try
+            Dim col As KBotDataColumn = ColumnAtX(pt.X)
+            Return If(col Is Nothing, Nothing, col.Key)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.ColumnKeyAt", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Apăsare pe o bandă de ANTET de grup: strânge/desface. True = a fost consumată, deci grila
     ''' nu mai caută nicio celulă sub ea.
     '''

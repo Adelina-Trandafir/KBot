@@ -31,6 +31,8 @@ Partial Public Class KbotForm
     Private Const TREE_COL_SURSE As String = "col-surse"
     ' Slice 0100 / 0109: the «update angajamente» window (multi-thread: downloaded together; otherwise queued one by one).
     Private Const TREE_UPDATE_MANY As String = "update-many"
+    ' Slice 0008-02: the «Grupe» folder (KbotForm.Grupe.vb).
+    Private Const TREE_GRUPE As String = "grupe"
 
     ' Cell keys of the two columns (the ColumnDef.Name the cells are matched on).
     Private Const COL_COD As String = "CodAngajament"
@@ -48,6 +50,14 @@ Partial Public Class KbotForm
     Private _appliedShowSurse As Boolean?
     Private _appliedCodWidth As Integer?
     Private _appliedSurseWidth As Integer?
+
+    ''' <summary>
+    ''' The sector selector of the title bar: shown only when the tree is sorted by name and no group is
+    ''' chosen (by date and by group the tree shows every source).
+    ''' </summary>
+    Private Function SectorSeVede() As Boolean
+        Return Not AppSettings.Current.TreeSortIsDate AndAlso _grupaActiva Is Nothing
+    End Function
 
     ''' <summary>Called once from Load: columns as the store says, then follow its changes.</summary>
     Private Sub LeagaOptiunileArborelui()
@@ -82,7 +92,7 @@ Partial Public Class KbotForm
         Try
             Dim s As AppSettings = AppSettings.Current
             ' By date the tree shows every source of the year, so the SS choice means nothing.
-            capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, Not s.TreeSortIsDate)
+            capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, SectorSeVede())
             Dim sortChanged As Boolean = Not Nullable.Equals(_appliedSortIsDate, s.TreeSortIsDate)
             Dim colsChanged As Boolean = Not Nullable.Equals(_appliedShowCod, s.TreeShowCod) OrElse
                                          Not Nullable.Equals(_appliedShowSurse, s.TreeShowSurse) OrElse
@@ -278,26 +288,36 @@ Partial Public Class KbotForm
         Try
             Dim s As AppSettings = AppSettings.Current
             Dim coloane As Image = My.Resources.Resources.cells
-            Dim rows As New List(Of CustomPopupItem) From {
-                New CustomPopupItem(TREE_SORT_NAME, "Sortare după &nume", My.Resources.Resources.vertical) With {
-                    .Checked = Not s.TreeSortIsDate},
-                New CustomPopupItem(TREE_SORT_DATE, "Sortare după &data creării", My.Resources.Resources.calendar) With {
-                    .Checked = s.TreeSortIsDate},
-                CustomPopupItem.Separator(),
+            Dim rows As New List(Of CustomPopupItem)()
+            ' Slice 0008-02: while a group is chosen the sort rows are not offered (the group decides what
+            ' the tree shows; the sector selector of the title bar is hidden too).
+            If _grupaActiva Is Nothing Then
+                rows.Add(New CustomPopupItem(TREE_SORT_NAME, "Sortare după &nume", My.Resources.Resources.vertical) With {
+                    .Checked = Not s.TreeSortIsDate})
+                rows.Add(New CustomPopupItem(TREE_SORT_DATE, "Sortare după &data creării", My.Resources.Resources.calendar) With {
+                    .Checked = s.TreeSortIsDate})
+                rows.Add(CustomPopupItem.Separator())
+            End If
+            rows.AddRange({
                 New CustomPopupItem(TREE_COL_COD, "Afișare coloana &CODANGAJAMENT", coloane) With {
                     .Checked = s.TreeShowCod},
                 New CustomPopupItem(TREE_COL_SURSE, "Afișare coloana &SURSE", coloane) With {
                     .Checked = s.TreeShowSurse}
-            }
+            })
 
             ' Slice 0100 / 0109: the angajamente to update in one go (the window is KbotForm.Parallel.vb's).
             ' Always offered: multi-thread downloads them together, otherwise they join the robot queue.
             rows.Add(CustomPopupItem.Separator())
             rows.Add(New CustomPopupItem(TREE_UPDATE_MANY, "&Actualizează angajamente...", FxIcons.RefreshIcon()))
+            ' Slice 0008-02: the groups of angajamente (their menu opens at the mouse).
+            rows.Add(New CustomPopupItem(TREE_GRUPE, "&Grupe", My.Resources.Resources.folder_open) With {.Submenu = True})
 
             ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
             Dim menu As New CustomPopup(rows)
             AddHandler menu.ItemClicked, AddressOf TreeOptionsMenu_ItemClicked
+            ' Slice 0008-02: the groups submenu lives and dies with this popup.
+            AddHandler menu.FormClosed, AddressOf TreeOptionsMenu_Closed
+            _treePopup = menu
             menu.ShowBelow(anchor, anchorRect)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ShowTreeOptionsMenu", ex)
@@ -317,6 +337,11 @@ Partial Public Class KbotForm
             ' Slice 0100 / 0109: not a setting -- it opens the «update angajamente» window.
             If String.Equals(e.Item.Key, TREE_UPDATE_MANY, StringComparison.Ordinal) Then
                 DeschideActualizareaMultipla()
+                Return
+            End If
+            ' Slice 0008-02: not a setting -- it opens the groups menu.
+            If String.Equals(e.Item.Key, TREE_GRUPE, StringComparison.Ordinal) Then
+                DeschideMeniulGrupe()
                 Return
             End If
             Dim copie As AppSettings = AppSettings.Current.Clone()

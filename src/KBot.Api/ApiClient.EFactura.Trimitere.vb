@@ -37,13 +37,33 @@ Partial Public Class ApiClient
         Public Property factura As EFacturaFacturaWire
     End Class
 
-    Public Async Function SendFacturaAsync(k_idFactura As Integer, ct As CancellationToken) _
+    Public Function SendFacturaAsync(k_idFactura As Integer, k_attachmentPdf As Byte(), ct As CancellationToken) _
         As Task(Of EFacturaTrimitere) Implements IEFacturaApi.SendFacturaAsync
+        Dim k_body As Dictionary(Of String, Object) = Nothing
+        If k_attachmentPdf IsNot Nothing Then
+            k_body = New Dictionary(Of String, Object) From {{"atasament_pdf", Convert.ToBase64String(k_attachmentPdf)}}
+        End If
+        Return SendFacturaCoreAsync(k_idFactura, k_body, ct)
+    End Function
+
+    Public Function SendCorectieAsync(k_idFactura As Integer, k_comentarii As String, k_bt13 As String, k_attachmentPdf As Byte(),
+                                      ct As CancellationToken) As Task(Of EFacturaTrimitere) Implements IEFacturaApi.SendCorectieAsync
+        Dim k_body As New Dictionary(Of String, Object) From {
+            {"corectie", New Dictionary(Of String, String) From {
+                {"Comentarii", If(k_comentarii, String.Empty)}, {"BT_13", If(k_bt13, String.Empty)}}}}
+        If k_attachmentPdf IsNot Nothing Then k_body("atasament_pdf") = Convert.ToBase64String(k_attachmentPdf)
+        Return SendFacturaCoreAsync(k_idFactura, k_body, ct)
+    End Function
+
+    ' k_body = Nothing sends a draft; a body with «corectie» corrects an accepted invoice (type 384).
+    Private Async Function SendFacturaCoreAsync(k_idFactura As Integer, k_data As Dictionary(Of String, Object), ct As CancellationToken) As Task(Of EFacturaTrimitere)
         Try
             If k_idFactura <= 0 Then Throw New ArgumentException("The invoice id is required.", NameOf(k_idFactura))
+            Dim k_body As String = If(k_data Is Nothing, Nothing, JsonSerializer.Serialize(k_data, _json))
             Dim respText As String = Await SendEFacturaAsync(
-                HttpMethod.Post, "/api/efactura/facturi/" & k_idFactura.ToString(CultureInfo.InvariantCulture) & "/trimite", Nothing,
-                "trimiterea facturii la ANAF", ct).ConfigureAwait(False)
+                HttpMethod.Post, "/api/efactura/facturi/" & k_idFactura.ToString(CultureInfo.InvariantCulture) & "/trimite", k_body,
+                If(k_data IsNot Nothing AndAlso k_data.ContainsKey("corectie"), "trimiterea corecției facturii la ANAF", "trimiterea facturii la ANAF"),
+                ct).ConfigureAwait(False)
             Dim wire As EFacturaTrimitereWire = JsonSerializer.Deserialize(Of EFacturaTrimitereWire)(respText, _json)
             If wire Is Nothing OrElse wire.factura Is Nothing Then Throw New ApiException("Serverul nu a trimis factura după trimitere.")
             Dim k_result As New EFacturaTrimitere() With {
@@ -57,7 +77,7 @@ Partial Public Class ApiClient
         Catch ex As ApiException
             Throw
         Catch ex As Exception
-            GlobalErrorLog.Write("ApiClient.SendFacturaAsync", ex)
+            GlobalErrorLog.Write("ApiClient.SendFacturaCoreAsync", ex)
             Throw
         End Try
     End Function

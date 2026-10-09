@@ -669,6 +669,11 @@ Public Class CustomPopup
         If Not IsSelectable(index) Then Return
         SelectedIndex = index
         If IsSliderRow(index) Then Return
+        If _items(index).Submenu Then
+            ' Slice 0008-02: the host opens the submenu; this popup stays until that closes.
+            RaiseEvent ItemClicked(Me, New CustomPopupItemEventArgs(_items(index), index))
+            Return
+        End If
         CloseWith(_items(index), index)
     End Sub
 
@@ -944,7 +949,7 @@ Public Class CustomPopup
     ''' </summary>
     Friend Function CheckBand() As Integer
         For Each it As CustomPopupItem In _items
-            If Not it.IsSeparator AndAlso Not it.IsSlider AndAlso it.Checked Then
+            If Not it.IsSeparator AndAlso Not it.IsSlider AndAlso (it.Checked OrElse it.Submenu) Then
                 Return ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical + IconGapLogical)
             End If
         Next

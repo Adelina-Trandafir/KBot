@@ -48,7 +48,12 @@ Public Class FacturiForm
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _authorizer As TokenAuthorizer
     Private ReadOnly _unitName As String
+    ' The year chosen in K-BOT (SessionContext.An): the tree lists the invoices dated in it; 0 = no year filter (designer / tests).
+    Private ReadOnly _year As Integer
     Private ReadOnly _cts As New CancellationTokenSource()
+    ' Handed on to the window of the received invoices (00EF-19), which draws PDFs too.
+    Private ReadOnly _viewerFactory As Func(Of IFacturaPdfViewer)
+    Private _primiteForm As PrimiteForm
 
     Private _mode As EditMode = EditMode.Viewing
     Private _facturi As New List(Of EFacturaFactura)()
@@ -69,15 +74,17 @@ Public Class FacturiForm
         BindPages()
         _gate = ReauthGate.Direct
         _unitName = String.Empty
+        _year = 0
     End Sub
 
     ''' <param name="k_api">The invoice routes; the shell passes its API client.</param>
     ''' <param name="k_gate">The shell's re-login net (a call that answers 401 is retried after a new login).</param>
     ''' <param name="k_authorizer">The token step, for the «Token ANAF» button.</param>
     ''' <param name="k_unitName">The open unit's name, shown in the status line.</param>
+    ''' <param name="k_year">The year chosen in K-BOT; only the invoices dated in it are listed (0 = all).</param>
     ''' <param name="k_viewerFactory">Makes the embedded PDF viewer (it lives in the shell's project); Nothing = the PDF views say there is none.</param>
     Public Sub New(k_api As IEFacturaApi, k_gate As ReauthGate, k_authorizer As TokenAuthorizer, k_unitName As String,
-                   Optional k_viewerFactory As Func(Of IFacturaPdfViewer) = Nothing)
+                   Optional k_year As Integer = 0, Optional k_viewerFactory As Func(Of IFacturaPdfViewer) = Nothing)
         ArgumentNullException.ThrowIfNull(k_api)
         ArgumentNullException.ThrowIfNull(k_gate)
         InitializeComponent()
@@ -86,6 +93,8 @@ Public Class FacturiForm
         _gate = k_gate
         _authorizer = k_authorizer
         _unitName = If(k_unitName, String.Empty)
+        _year = k_year
+        _viewerFactory = k_viewerFactory
         pgPdf.ViewerFactory = k_viewerFactory
         pgAnaf.ViewerFactory = k_viewerFactory
         pgEroare.ViewerFactory = k_viewerFactory
@@ -98,6 +107,7 @@ Public Class FacturiForm
             If _api Is Nothing Then Return
             InitCounties()
             InitSectors()
+            InitMonths()
             SelectView(ViewGenerale)
             ShowInvoice(Nothing)
             ApplyMode()
@@ -174,10 +184,12 @@ Public Class FacturiForm
     ''' <summary>Reads the invoice headers again and rebuilds the tree; <paramref name="k_selectId"/> is chosen when it is there.</summary>
     Private Async Function LoadInvoicesAsync(k_selectId As Integer?) As Task
         Dim k_list As List(Of EFacturaFactura) = Await _gate.RunAsync(
-            Function() _api.GetFacturiAsync(Nothing, Nothing, _cts.Token)).ConfigureAwait(True)
+            Function() _api.GetFacturiAsync(If(_year > 0, CType(_year, Integer?), Nothing), Nothing, _cts.Token)).ConfigureAwait(True)
         If IsDisposed Then Return
         _facturi = k_list
         BuildTree(k_selectId)
+        If _conturi.Count = 0 Then Await LoadConturiAsync().ConfigureAwait(True)
+        If IsDisposed Then Return
         FillContPlata()
     End Function
 
@@ -363,6 +375,7 @@ Public Class FacturiForm
         gridLinii.ReadOnlyGrid = Not k_edit
         ApplyClientMode(k_edit)
         btnAdauga.Enabled = Not _busy AndAlso _furnizor IsNot Nothing
+        cmbLuna.Enabled = Not _busy AndAlso _mode = EditMode.Viewing
         btnModifica.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateModifica
         btnSalveaza.Enabled = Not _busy AndAlso k_edit
         btnRenunta.Enabled = Not _busy AndAlso k_edit

@@ -42,11 +42,15 @@ Partial Public Class KbotForm
             Return
         End If
 
-        Dim an As Integer = anCheie.Value
-        capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, Not AppSettings.Current.TreeSortIsDate)
+        ' Slice 0008-02: a chosen group spans years and sources, so the tree then asks for every
+        ' year (an = 0) and every source -- the group's angajamente would otherwise fall outside the
+        ' year / SS of the title bar and the filtered tree would come out empty.
+        Dim an As Integer = If(_grupaActiva Is Nothing, anCheie.Value, 0)
+        capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, SectorSeVede())
         ' Sorted by date the tree is a timeline of the whole year: every source, not only the
         ' SS in the bar's selector (operator, 23.09.2026 -- slice 0777).
-        Dim ss As String = If(AppSettings.Current.TreeSortIsDate, ApiClient.TreeAllSources, ssCheie)
+        Dim ss As String = If(AppSettings.Current.TreeSortIsDate OrElse _grupaActiva IsNot Nothing,
+                              ApiClient.TreeAllSources, ssCheie)
         busyBar.Running = True
         Try
             Dim ct As CancellationToken = CancellationToken.None
@@ -117,9 +121,17 @@ Partial Public Class KbotForm
             Dim nodDeSelectat As AdvancedTreeControl.TreeItem = Nothing
             Dim infoDeSelectat As AngajamentTreeInfo = Nothing
 
+            ' Slice 0008-02: a chosen group narrows the tree to its angajamente, captioned with the
+            ' alias and written in the group's colour (KbotForm.Grupe.vb).
+            Dim k_filtru As HashSet(Of String) = If(_grupaActiva Is Nothing, Nothing,
+                New HashSet(Of String)(_grupaActiva.Coduri, StringComparer.OrdinalIgnoreCase))
+            Dim k_culoareGrupa As Color = If(_grupaActiva Is Nothing, Color.Empty, GrupeUi.HexToColor(_grupaActiva.Culoare))
+
             For Each info As AngajamentTreeInfo In SortRows(rows)
                 Dim cod As String = If(info.CodAngajament, String.Empty)
-                Dim caption As String = If(info.Descriere, String.Empty).Trim().ToUpperInvariant()
+                If k_filtru IsNot Nothing AndAlso Not k_filtru.Contains(cod) Then Continue For
+                Dim caption As String = If(k_filtru IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(info.AliasAng),
+                                           info.AliasAng, If(info.Descriere, String.Empty)).Trim().ToUpperInvariant()
 
                 Dim node As AdvancedTreeControl.TreeItem =
                     tree.AddItem("D_" & cod, caption,
@@ -135,6 +147,7 @@ Partial Public Class KbotForm
                 node.Bold = info.AreIndicatori   ' legacy: bold = has sources (indicatori)
                 node.Underline = _descarcateInSesiune.Contains(cod)   ' saved during this run
                 node.Tooltip = TooltipFor(info)
+                If k_filtru IsNot Nothing Then node.NodeForeColor = k_culoareGrupa
                 ' Slice 0101: a reception whose chain does not close paints the whole row red.
                 If info.LantNeinchis.Count > 0 Then _nodLantNeinchis.Add(node)
                 'node.ShowRightIconOnHover = True

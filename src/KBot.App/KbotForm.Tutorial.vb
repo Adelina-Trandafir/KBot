@@ -53,6 +53,12 @@ Partial Public Class KbotForm
     ''' </summary>
     Friend Const AnchorPopupPrefix As String = "popup."
 
+    ''' <summary>
+    ''' Anchor prefix (slice 000T-12): <c>grupe.&lt;key&gt;</c> = that row of the groups submenu that is open now
+    ''' (<c>grupe.grupe-editeaza</c> = the «Editeaza grupe...» row).
+    ''' </summary>
+    Friend Const AnchorGrupePrefix As String = "grupe."
+
     ''' <summary>Signal prefix (slice 000T-10): <c>tree-menu:&lt;key&gt;</c> = that row of the tree options list was chosen.</summary>
     Friend Const SignalTreeMenuPrefix As String = "tree-menu:"
 
@@ -86,6 +92,11 @@ Partial Public Class KbotForm
             End If
             If k_name.StartsWith(AnchorMenuPrefix, StringComparison.OrdinalIgnoreCase) Then
                 Dim k_row As Rectangle = menuNou.RowScreenBounds(k_name.Substring(AnchorMenuPrefix.Length))
+                If Not k_row.IsEmpty Then k_none.Add(k_row)
+                Return k_none
+            End If
+            If k_name.StartsWith(AnchorGrupePrefix, StringComparison.OrdinalIgnoreCase) Then
+                Dim k_row As Rectangle = menuGrupe.RowScreenBounds(k_name.Substring(AnchorGrupePrefix.Length))
                 If Not k_row.IsEmpty Then k_none.Add(k_row)
                 Return k_none
             End If

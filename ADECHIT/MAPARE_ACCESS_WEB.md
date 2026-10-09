@@ -3,6 +3,9 @@
 Data: 07.10.2026. Analiză statică a exportului, fără rulare Access sau MariaDB.
 Deciziile proiectului: [ADECHIT_STATUS](../ADECHIT_STATUS.md).
 Calculele: [contractul de paritate](CONTRACT_CALCULE.md).
+Actualizare web 09.10.2026, ADE6-18: [regulile finale](UTILIZARE_WEB.md) și
+[deciziile aprobate](DECIZII_DESCHISE.md) completează analiza statică inițială.
+Constatările despre Access de mai jos nu sunt instrucțiuni de implementare noi.
 Acoperirea obiectelor: [inventarul complet](INVENTAR_OBIECTE.md).
 
 „Apel găsit” înseamnă că există cod sau legătură de formular în export, nu că traseul
@@ -35,8 +38,8 @@ Nicio constatare de aici nu autorizează ștergerea datelor originale.
 
 | Operație / sursă exactă | Citire / calcul | Scriere Access | Echivalent web propus |
 |---|---|---|---|
-| Platitori2016.Sav_Click; Grupe, sub_Platitori, Platitori_sub_L, Platitori_sub_L_2, Delegati_L | Grupe, copii, persoane asociate/delegați; editările sunt pregătite în `_L` | Grupe, Platitori, Platitori_sub, Delegati | Grile comune editabile; API de salvare fără tabele `_L` |
-| Config_Taxe.Activ_Click / Form_AfterInsert | ValoriTaxe; dezactivează celelalte seturi | ValoriTaxe | Seturi de taxe ADE, păstrarea taxei aplicabile lunii |
+| Platitori2016.Sav_Click; Grupe, sub_Platitori, Platitori_sub_L, Platitori_sub_L_2, Delegati_L | Grupe, copii, persoane asociate/delegați; editările sunt pregătite în `_L` | Grupe, Platitori, Platitori_sub, Delegati | Liste DGV comune și editori modali Grupe/Copii/Plătitori după machete; API atomic fără `_L`; Delegati exclus |
+| Config_Taxe.Activ_Click / Form_AfterInsert | ValoriTaxe; dezactivează celelalte seturi | ValoriTaxe | DGV editabil: Activ checkbox, perioade lună/an, PanaLa automat la înlocuirea taxei active; perioade migrate NULL permise; IDV istoric păstrat |
 | Prezenta.mcTree_Click / IncarcaGrupe | LunaD, Grupe; SS_Buget la luni închise | Numai starea ecranului/cache | Arbore an/lună, grupă, persoană; context trimis explicit API-ului |
 | Prezenta_sub_buget.bPrel_Click / ComboPrez.Sav_Click | Copii nepreluați, Plecat=False, Work_Days, SitLunara | Prezenta sau cache, în funcție de acțiune | Preluare în luna deschisă; păstrarea identității IDP/IDL/IDG |
 | Prezenta_sub_buget.ZilePrezenta_AfterUpdate / Sav_Click | TaxaZilnica din setul ales; calculul detaliat mai jos | LunaD și Prezenta | Editarea prezenței în celulă, cu validare/salvare pe server |
@@ -117,11 +120,11 @@ Mapare pentru ADE3, **nu DDL aprobat sau executat**:
 
 | Sursă | Destinație propusă | Identitate / observație |
 |---|---|---|
-| Grupe | AD_Grupe | IDG; denumire, educator |
+| Grupe | AD_Grupe | IDG; denumire, InchisaDinAn; perioade educatori în AD_Grupe_Educator |
 | Platitori | AD_Platitori | IDP; aici sunt copiii; IDG, IDV, SI, Plecat și datele personale |
-| Platitori_sub | AD_Platitori_sub | IDS → IDP; persoanele plătitoare; Activ |
+| Platitori_sub | AD_Platitori_sub | IDS → IDP; Activ normal în date, I=!Activ la afișare; salvarea activă dezactivează ceilalți ai aceluiași copil |
 | Delegati | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. |
-| ValoriTaxe | AD_ValoriTaxe | IDV; păstrăm istoricul necesar, fără recalcul de reduceri excluse |
+| ValoriTaxe | AD_ValoriTaxe | IDV păstrat; AD_04 adaugă DeLa/PanaLa VARCHAR(7) nullable; fără perioade inventate la migrare sau recalcul de reduceri excluse |
 | LunaD | AD_LunaD | IDL; lună/an, set de taxe, Inchisa |
 | Prezenta | AD_Prezenta | IDZ → IDP/IDL/IDG/IDV; valori istorice nealterate la import |
 | Prezenta_sub | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. |
@@ -130,7 +133,7 @@ Mapare pentru ADE3, **nu DDL aprobat sau executat**:
 | AlteDoc | AD_AlteDoc | IDA → IDPL; număr/fel/data documentului |
 | Retur | AD_Retur | IDR → IDP/IDZ/IDS/IDL; sumă, document, anulare |
 | SS_Buget | AD_SS_Buget | Snapshot lunar: ID, IDP/IDL/IDZ/IDG, sume și descrieri istorice |
-| MutaCopil | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. Transferul de grupă nu mai lasă istoric propriu. |
+| MutaCopil | — | EXCLUS 08.10.2026 — decizia utilizatorului: tabelul nu se mai portează. Jurnal nou append-only în AD_Platitori_Istoric, conform M06; nu se reproduce tabelul Access. |
 | CFGs, numai CH | AVACONT_COMUN.Unitati_Chitante | Asociere DC; serie, următorul număr, șablon explicație |
 | Unitati | Sistemul comun existent | Nu creăm un duplicat AD_Unitati; nu suprascriem datele comune la import |
 

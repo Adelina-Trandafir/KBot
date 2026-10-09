@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.Globalization
+Imports System.IO
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -55,11 +56,22 @@ Partial Public Class FacturiForm
     ''' Sends invoice <paramref name="k_f"/>, waits, reads the state once. Does not touch the busy state (the caller holds it) and does not
     ''' reload; every failure is shown here (a message box for a refused send, a notice text for a state that could not be read).
     ''' </summary>
-    Private Async Function SendAndCheckAsync(k_f As EFacturaFactura) As Task(Of FlowResult)
+    Private Async Function SendAndCheckAsync(k_f As EFacturaFactura, Optional k_correction As CorectieForm = Nothing) As Task(Of FlowResult)
         Dim k_result As New FlowResult()
         Try
-            Dim k_sent As EFacturaTrimitere = Await _gate.RunAsync(
-                Function() _api.SendFacturaAsync(k_f.IdFactura, _cts.Token)).ConfigureAwait(True)
+            ' «Atașează factura originală»: the classic PDF is drawn here and travels with the send (the server embeds it in the XML).
+            Dim k_pdf As Byte() = Nothing
+            If k_f.AtasamentOriginal Then k_pdf = Await ClassicPdfBytesAsync(k_f).ConfigureAwait(True)
+            Dim k_sent As EFacturaTrimitere
+            If k_correction Is Nothing Then
+                k_sent = Await _gate.RunAsync(
+                    Function() _api.SendFacturaAsync(k_f.IdFactura, k_pdf, _cts.Token)).ConfigureAwait(True)
+            Else
+                Dim k_comments As String = k_correction.Comentarii
+                Dim k_order As String = k_correction.Referinta
+                k_sent = Await _gate.RunAsync(
+                    Function() _api.SendCorectieAsync(k_f.IdFactura, k_comments, k_order, k_pdf, _cts.Token)).ConfigureAwait(True)
+            End If
             If IsDisposed Then Return k_result
             k_result.Reload = True
             SetStatus($"Factura {k_f.Eticheta} a fost primită de ANAF. Se așteaptă răspunsul…")
@@ -97,6 +109,25 @@ Partial Public Class FacturiForm
         Return k_result
     End Function
 
+    ''' <summary>The classic PDF of <paramref name="k_f"/> as bytes (drawn into a work file that is removed at once).</summary>
+    Private Async Function ClassicPdfBytesAsync(k_f As EFacturaFactura) As Task(Of Byte())
+        Dim k_path As String = Path.Combine(Path.GetTempPath(), "kbot_ef_" & Guid.NewGuid().ToString("N") & ".pdf")
+        Dim k_furnizor As EFacturaFurnizor = _furnizor
+        Try
+            Await Task.Run(Sub() FacturaPdf.WriteInvoice(k_path, k_f, k_furnizor)).ConfigureAwait(True)
+            Return File.ReadAllBytes(k_path)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.ClassicPdfBytesAsync", ex)
+            Throw
+        Finally
+            Try
+                If File.Exists(k_path) Then File.Delete(k_path)
+            Catch ex As IOException
+                GlobalErrorLog.Write("FacturiForm.ClassicPdfBytesAsync.Delete", ex)
+            End Try
+        End Try
+    End Function
+
     ' When ANAF no longer takes the unit's token the way out is the «Token ANAF» button, not the menu.
     Private Shared Function TokenHint(k_ex As ApiException) As String
         If String.Equals(k_ex.Reason, "TOKEN_NECESAR", StringComparison.Ordinal) Then
@@ -124,6 +155,30 @@ Partial Public Class FacturiForm
                 k_result.Kind = NoticeKind.Warning
         End Select
     End Sub
+
+    ' ── Correct (type 384) ───────────────────────────────────────────────────────
+
+    ''' <summary>
+    ''' The menu's «Corectează factura» for an ACCEPTED invoice: asks for the new comment and order reference, then sends the invoice
+    ''' again as type 384 and reads the state once, like a first send. The invoice is changed on the server only after ANAF took the file.
+    ''' </summary>
+    Private Async Function CorrectCurrentAsync() As Task
+        Dim k_f As EFacturaFactura = _current
+        If k_f Is Nothing OrElse k_f.Stare <> EFacturaStare.Acceptata OrElse Not k_f.PoateCorecta OrElse _mode <> EditMode.Viewing Then Return
+        Dim k_result As FlowResult = Nothing
+        Using k_dialog As New CorectieForm(k_f.Eticheta, k_f.Comentarii, k_f.BT_13)
+            If k_dialog.ShowDialog(Me) <> DialogResult.OK Then Return
+            SetBusy(True, $"Se trimite corecția facturii {k_f.Eticheta} la ANAF…")
+            Try
+                k_result = Await SendAndCheckAsync(k_f, k_dialog).ConfigureAwait(True)
+            Finally
+                If Not IsDisposed Then SetBusy(False, Nothing)
+            End Try
+        End Using
+        If IsDisposed Then Return
+        If k_result.Reload Then Await ReloadAndShowAsync(k_f.IdFactura).ConfigureAwait(True)
+        If Not IsDisposed AndAlso k_result.Text IsNot Nothing Then ntfMesaj.Show(k_result.Text, k_result.Kind)
+    End Function
 
     ' ── Check the state ─────────────────────────────────────────────────────────
 

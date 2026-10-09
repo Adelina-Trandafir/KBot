@@ -339,9 +339,14 @@ export class DataGrid {
       + (this._opts.footer ? this._opts.rowHeight : 0);
     const needsBar = s.clientHeight > 0 && rowsHeight > s.clientHeight;
     // the bar that is there is measured as it is (zoom rounds it differently from the probe); one that is coming is estimated
-    const present = s.offsetWidth - s.clientWidth - 2 * s.clientLeft;
-    const bar = needsBar ? Math.max(present, this._scrollbarWidth()) : 0;
-    return s.offsetWidth - 2 * s.clientLeft - bar;
+    const style = getComputedStyle(s);
+    const borders = (parseFloat(style.borderLeftWidth) || 0) + (parseFloat(style.borderRightWidth) || 0);
+    const present = Math.max(0, s.offsetWidth - s.clientWidth - borders);
+    const inner = s.getBoundingClientRect().width - borders;
+    const current = Math.min(s.clientWidth, inner - present);
+    const pending = needsBar && present < 1 ? this._scrollbarWidth() : 0;
+    // Fractional layout widths at browser zoom must not round the columns past the viewport.
+    return Math.max(0, Math.floor(current - pending));
   }
 
   /** The width a column is drawn at: its own, plus the free width when it is the fill column. */

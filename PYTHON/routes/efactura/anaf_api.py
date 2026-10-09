@@ -216,7 +216,9 @@ def pdf_din_xml(xml_bytes):
 
 
 def lista_mesaje(token, cui, days):
-    """The messages of the last `days` days for `cui`: a list of dicts with the MESSAGE_KEYS that ANAF sent."""
+    """The messages of the last `days` days for `cui`: a list of dicts with the MESSAGE_KEYS that ANAF sent.
+    `id` is what `descarca` takes (verified on a real answer, 09.10.2026); `id_solicitare` is the supplier's upload number, the
+    name of the XML inside the zip. `cif_emitent` / `cif_beneficiar` are read from `detalii`."""
     url = f"{BASE}/listaMesajeFactura?zile={int(days)}&cif={urllib.parse.quote(str(cui), safe='')}"
     data = _bounded(_call("lista", "GET", url, token), "lista")
     if not data.strip():
@@ -233,7 +235,13 @@ def lista_mesaje(token, cui, days):
     out = []
     for item in payload.get("mesaje") or []:
         if isinstance(item, dict):
-            out.append({key: clean(item[key], 500) for key in MESSAGE_KEYS if key in item and item[key] is not None})
+            message = {key: clean(item[key], 500) for key in MESSAGE_KEYS if key in item and item[key] is not None}
+            # ANAF sends the two tax codes only inside `detalii` («... cif_emitent=N pentru cif_beneficiar=M»)
+            for key in ("cif_emitent", "cif_beneficiar"):
+                found = re.search(key + r"=(\d{1,32})", message.get("detalii", ""))
+                if key not in message and found:
+                    message[key] = found.group(1)
+            out.append(message)
     return out
 
 

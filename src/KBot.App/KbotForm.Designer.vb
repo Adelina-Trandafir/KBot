@@ -53,12 +53,14 @@ Partial Class KbotForm
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnInfo = New Button()
         btnSort = New Button()
         btnOpt = New Button()
         btnMeniu = New Button()
         menuNou = New KBotDropDownMenu(components)
+        menuGrupe = New KBotDropDownMenu(components)
         pnlRoot = New Panel()
         pnlWork = New Panel()
         split = New SplitContainer()
@@ -442,6 +444,10 @@ Partial Class KbotForm
         KBotNavItem11.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Check_boxes_32
         KBotNavItem11.Key = "notecab"
         KBotNavItem11.Text = "Note corecție"
+        KBotNavItem12.Align = KBotNavAlign.Far
+        KBotNavItem12.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
+        KBotNavItem12.Key = "efactura"
+        KBotNavItem12.Text = "E-Factura"
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
@@ -453,6 +459,7 @@ Partial Class KbotForm
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
         navViews.Items.Add(KBotNavItem11)
+        navViews.Items.Add(KBotNavItem12)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"
@@ -608,4 +615,5 @@ Partial Class KbotForm
     Friend WithEvents lblOperator As Label
     Friend WithEvents btnMeniu As Button
     Friend WithEvents menuNou As KBotDropDownMenu
+    Friend WithEvents menuGrupe As KBotDropDownMenu
 End Class

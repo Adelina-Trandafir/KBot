@@ -65,6 +65,8 @@ Public NotInheritable Class AngajamentTreeInfo
     ' --- identitate + rândul întors de /api/forexe/tree ---
     Public Property CodAngajament As String = String.Empty
     Public Property Descriere As String = String.Empty
+    ' Slice 0008-02: the name the operator gave the angajament (FX_Angajamente.Alias); empty = none.
+    Public Property AliasAng As String = String.Empty
     Public Property Stare As String = String.Empty
     Public Property DataCreare As Date?
     ' Slice 0777: when FOREXE recorded the angajament as made -- the DataFX (DATETIME, time

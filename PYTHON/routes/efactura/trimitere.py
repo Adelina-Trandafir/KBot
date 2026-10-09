@@ -14,6 +14,8 @@ THE FLOW, as the operator decided (06.10.2026): the VBA flow of `bSAV_Click` / `
                  the re-check button, which calls the same route.
 
 Differences from Access, deliberate:
+  * (00EF-14) an invoice with `AtasamentOriginal` is sent with its classic PDF inside the XML; the PDF comes from the PC in the body
+    (`atasament_pdf`, base64), the server checks it and embeds it. Without it such an invoice is not sent;
   * the validation before the upload is done by the server itself, not left to the caller;
   * an accepted invoice is CORRECTED by `trimite` with a `corectie` (comment and order reference): the change and type 384
     are written only after ANAF took the new file, so a failed attempt leaves the invoice as it was. (Access wrote the
@@ -25,6 +27,8 @@ Differences from Access, deliberate:
 If the database write fails AFTER ANAF took the file, the upload number is written to the server log (it is not a secret)
 so the invoice can be reconciled by hand; that is the one case this code cannot repair on its own.
 """
+import base64
+import binascii
 import logging
 
 from . import anaf_api, facturi as F, facturi_store as store, tokens, ubl, validare
@@ -32,6 +36,7 @@ from .tokens import EfEroare
 
 logger = logging.getLogger(__name__)
 
+MAX_PDF_BYTES = 3 * 1024 * 1024                  # ANAF takes 5 MB per upload, base64 adds a third
 MAX_DAYS = 60                                   # ANAF lists the messages of at most 60 days
 RECEIVED = "FACTURA PRIMITA"
 SENT = "FACTURA TRIMISA"
@@ -61,6 +66,25 @@ def _correction(row, data):
     return comments, order
 
 
+def _attachment(row, pdf_b64):
+    """The classic PDF to embed, or None. The invoice decides: only an invoice with `AtasamentOriginal` carries one, and one that
+    asks for it cannot be sent without it (the PC draws the PDF; a missing one is a defect, never a silent skip)."""
+    if not row.get("AtasamentOriginal"):
+        return None
+    if not pdf_b64:
+        raise EfEroare("Factura cere atașarea facturii originale, dar PDF-ul nu a fost trimis. Încercați din nou.",
+                       "ATASAMENT_LIPSA", 400)
+    try:
+        pdf = base64.b64decode(pdf_b64, validate=True)
+    except (binascii.Error, ValueError):
+        raise EfEroare("PDF-ul atașat nu este valid.", "ATASAMENT_INVALID", 400) from None
+    if not pdf.startswith(b"%PDF"):
+        raise EfEroare("Fișierul atașat nu este un PDF.", "ATASAMENT_INVALID", 400)
+    if len(pdf) > MAX_PDF_BYTES:
+        raise EfEroare("PDF-ul atașat este prea mare (cel mult 3 MB).", "ATASAMENT_PREA_MARE", 400)
+    return pdf
+
+
 def _sendable(row, state, correction):
     """None for a draft; (comentarii, bt_13) for a correction; a refusal for every other case."""
     if state == F.DRAFT:
@@ -80,7 +104,7 @@ def _sendable(row, state, correction):
     raise EfEroare("Factura a fost refuzată de ANAF și nu se mai retrimite.", "REFUZATA", 409)
 
 
-def trimite(dc, id_factura, correction_data=None):
+def trimite(dc, id_factura, correction_data=None, pdf_b64=None):
     """Checks, validates and uploads one invoice. Answers `{"factura": <detail>, "id_incarcare", "constatari"}`
     (`constatari` = the warnings of our checks; errors would have stopped here)."""
     with F._unit(dc) as conn:
@@ -96,13 +120,15 @@ def trimite(dc, id_factura, correction_data=None):
         effective = row if correction is None else {**row, "TipFactura": "384",
                                                     "Comentarii": correction[0], "BT_13": correction[1]}
         bank = F._bank_for(row["ContPlata"])
+        pdf = _attachment(row, pdf_b64)
 
         findings = validare.verifica(furnizor, client, effective, lines, F._known_units(), bank)
         if validare.has_errors(findings):
             raise Refuzata("Factura are erori și nu poate fi trimisă.", "INVALIDA", 409, {"constatari": findings})
 
         try:
-            verdict = validare.anaf_valideaza(ubl.build(furnizor, client, effective, lines, bank, schema_location=False))
+            verdict = validare.anaf_valideaza(ubl.build(furnizor, client, effective, lines, bank, schema_location=False,
+                                                                attachment_pdf=pdf))
         except validare.ValidareIndisponibila as err:
             raise Refuzata(f"{err} Factura nu a fost trimisă.", "VALIDARE_INDISPONIBILA", 502) from err
         if not verdict["ok"]:
@@ -110,7 +136,7 @@ def trimite(dc, id_factura, correction_data=None):
                            {"constatari": findings, "mesaje": verdict["mesaje"]})
 
         cui, token = tokens.access_token(dc)
-        outcome = anaf_api.upload(token, cui, ubl.build(furnizor, client, effective, lines, bank))
+        outcome = anaf_api.upload(token, cui, ubl.build(furnizor, client, effective, lines, bank, attachment_pdf=pdf))
         if outcome.error:
             raise Refuzata(f"ANAF a refuzat fișierul: {outcome.error}", "ANAF_REFUZA_INCARCAREA", 409,
                            {"mesaje": [outcome.error]})

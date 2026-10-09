@@ -111,6 +111,9 @@ Public NotInheritable Class GetTreeRow
     Public Property AreNoteCab As Boolean
     ' Slice 0101: receptions whose chain does not close, «yyyy-MM-dd~total~suma» joined with «|»; null = none.
     Public Property LantNeinchis As String
+    ' Slice 0008-02: FX_Angajamente.Alias (null = none).
+    <Text.Json.Serialization.JsonPropertyName("Alias")>
+    Public Property AliasAng As String
 End Class
 
 ' Wire DTOs for GET /api/forexe/sumar (vederea Sumar, slice 0011).

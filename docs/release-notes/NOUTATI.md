@@ -6,6 +6,20 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.2 (09.10.2026)
+
+<!-- release: utc=2026-10-09T13:08:14Z -->
+<!-- felii: 0008-02, 000T-12, 0000-61 -->
+
+- Angajamentele se pot grupa: un angajament poate fi in mai multe grupe, fiecare grupa are denumire si culoare.
+- Rotita listei de angajamente are un rand nou, «Grupe»: alegeti o grupa si lista arata doar angajamentele ei, in culoarea grupei.
+- In lista unei grupe, fiecare angajament apare cu aliasul lui (sau cu denumirea, daca nu are alias).
+- Cat este aleasa o grupa, lista cuprinde toti anii si toate sursele; alegerea sectorului si sortarea nu se mai afiseaza.
+- «Grupe» > «Editeaza grupe...» deschide fereastra in care adaugati grupe, bifati angajamentele si alegeti culoarea.
+- In fereastra grupelor, «Angajamente negrupate» se pot trage cu mouse-ul peste o grupa; coloana «Alias» se scrie direct in tabel.
+- Coloana «Indicatori» arata, la trecerea mouse-ului, ce indicatori are fiecare angajament.
+- Ajutor: tutoriale noi pentru deschiderea ferestrei grupelor, adaugarea unei grupe, scoaterea si adaugarea unui angajament, plus subiect nou.
+
 ## 1.1.2.1 (09.10.2026)
 
 <!-- release: utc=2026-10-09T09:40:33Z -->

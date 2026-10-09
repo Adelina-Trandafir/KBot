@@ -91,7 +91,16 @@ Public Interface IEFacturaApi
     ''' <see cref="ApiException"/> whose text lists the findings (<c>INVALIDA</c>, <c>RESPINSA_DE_VALIDATOR</c>,
     ''' <c>ANAF_REFUZA_INCARCAREA</c>, <c>TOKEN_NECESAR</c>, ...).
     ''' </summary>
-    Function SendFacturaAsync(k_idFactura As Integer, ct As CancellationToken) As Task(Of EFacturaTrimitere)
+    ''' <param name="k_attachmentPdf">The classic PDF of the invoice (slice 00EF-14): required by the server when the invoice has
+    ''' «Atașează factura originală» ticked, which embeds it in the XML as base64; Nothing otherwise.</param>
+    Function SendFacturaAsync(k_idFactura As Integer, k_attachmentPdf As Byte(), ct As CancellationToken) As Task(Of EFacturaTrimitere)
+
+    ''' <summary>
+    ''' POST /api/efactura/facturi/{id}/trimite with a <c>corectie</c> -- corrects an ACCEPTED invoice (type 384): only the comment and
+    ''' the order reference change, and only once ANAF took the new file.
+    ''' </summary>
+    Function SendCorectieAsync(k_idFactura As Integer, k_comentarii As String, k_bt13 As String, k_attachmentPdf As Byte(),
+                               ct As CancellationToken) As Task(Of EFacturaTrimitere)
 
     ''' <summary>POST /api/efactura/facturi/{id}/verifica -- reads the state at ANAF of a sent invoice and stores it.</summary>
     Function VerifyFacturaAsync(k_idFactura As Integer, ct As CancellationToken) As Task(Of EFacturaVerificare)
@@ -104,5 +113,44 @@ Public Interface IEFacturaApi
 
     ''' <summary>GET /api/efactura/facturi/{id}/pdf-anaf -- an accepted invoice drawn by ANAF (the bytes of a PDF).</summary>
     Function GetAnafPdfAsync(k_idFactura As Integer, ct As CancellationToken) As Task(Of Byte())
+
+    ' ── Slice 00EF-18: the received invoices (PYTHON/routes/efactura/primite_routes.py, slice 00EF-17) ──
+
+    ''' <summary>
+    ''' POST /api/efactura/primite/sincronizeaza -- downloads the new received messages of the last <paramref name="k_zile"/> days (1-60),
+    ''' at most <paramref name="k_limita"/> per call; the answer says how many are left, so the caller repeats it.
+    ''' </summary>
+    Function SyncPrimiteAsync(k_zile As Integer, k_limita As Integer, ct As CancellationToken) As Task(Of EFacturaSincronizare)
+
+    ''' <summary>GET /api/efactura/primite -- newest first; <paramref name="k_idDdf"/> = those of that DDF (partners' tax codes + manual links).</summary>
+    Function GetPrimiteAsync(k_year As Integer?, k_month As Integer?, k_query As String, k_idDdf As Integer?,
+                             ct As CancellationToken) As Task(Of List(Of EFacturaPrimita))
+
+    ''' <summary>GET /api/efactura/primite/{id} -- header, lines, VAT rates, notes, messages, embedded files and the DDF links.</summary>
+    Function GetPrimitaAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaPrimitaDetaliu)
+
+    ''' <summary>POST /api/efactura/primite/{id}/citita -- the message is no longer new.</summary>
+    Function MarkPrimitaCititaAsync(k_idPrimita As Integer, ct As CancellationToken) As Task
+
+    ''' <summary>GET .../xml -- the XML kept from ANAF.</summary>
+    Function GetPrimitaXmlAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of Byte())
+
+    ''' <summary>GET .../zip -- the signed archive, downloaded again from ANAF.</summary>
+    Function GetPrimitaZipAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of Byte())
+
+    ''' <summary>GET .../pdf -- the invoice as ANAF's service draws it from the saved XML.</summary>
+    Function GetPrimitaPdfAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of Byte())
+
+    ''' <summary>GET .../atasamente/{n} -- the n-th (0-based) file embedded in the XML.</summary>
+    Function GetPrimitaAtasamentAsync(k_idPrimita As Integer, k_index As Integer, ct As CancellationToken) As Task(Of Byte())
+
+    ''' <summary>POST .../asociere -- links the invoice to a DDF by the operator's own choice.</summary>
+    Function LinkPrimitaAsync(k_idPrimita As Integer, k_idDdf As Integer, ct As CancellationToken) As Task
+
+    ''' <summary>DELETE .../asociere/{iddf} -- removes a manual link.</summary>
+    Function UnlinkPrimitaAsync(k_idPrimita As Integer, k_idDdf As Integer, ct As CancellationToken) As Task
+
+    ''' <summary>GET /api/efactura/primite-ddf -- the DDFs a received invoice can be linked to (newest first, at most 300), narrowed by <paramref name="k_query"/> (slice 00EF-20).</summary>
+    Function GetDdfAlegereAsync(k_query As String, ct As CancellationToken) As Task(Of List(Of EFacturaDdfAlegere))
 
 End Interface

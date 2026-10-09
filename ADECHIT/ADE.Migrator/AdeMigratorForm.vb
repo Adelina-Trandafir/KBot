@@ -3,6 +3,7 @@ Imports System.IO
 Imports System.Text
 Imports System.Text.Json
 Imports System.Threading.Tasks
+Imports System.Threading
 Imports KBot.Common
 Imports KBot.Migrator
 
@@ -29,6 +30,8 @@ Public NotInheritable Class AdeSettings
         Catch ex As Exception
             ' A damaged settings file must not stop the tool: start from the defaults.
             GlobalErrorLog.Write("AdeSettings.Load", ex)
+            KBotMessage.Show("Setările nu au putut fi citite. Se folosesc valorile implicite." & Environment.NewLine & ex.Message,
+                             "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return New AdeSettings()
         End Try
     End Function
@@ -37,7 +40,8 @@ Public NotInheritable Class AdeSettings
         Try
             File.WriteAllText(FilePath(), JsonSerializer.Serialize(Me), Encoding.UTF8)
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeSettings.Save", ex)
+            ' The event handler records and displays this failure.
+            Throw
         End Try
     End Sub
 
@@ -56,6 +60,8 @@ Public Class AdeMigratorForm
     Private _targetProblems As List(Of String)
     Private _targetCounts As Dictionary(Of String, Integer)
     Private _busy As Boolean
+    Private _cancellation As CancellationTokenSource
+    Private _operationFinished As TaskCompletionSource(Of Boolean)
 
     Public Sub New()
         InitializeComponent()
@@ -70,7 +76,7 @@ Public Class AdeMigratorForm
             txtUtilizator.Text = _settings.User
             txtFisier.Text = If(_settings.LastFile.Length > 0 AndAlso File.Exists(_settings.LastFile), _settings.LastFile, GuessFile())
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.Load", ex)
+            ShowOperationError("AdeMigratorForm.Load", "Inițializarea ferestrei a eșuat.", ex)
         End Try
     End Sub
 
@@ -95,6 +101,16 @@ Public Class AdeMigratorForm
 
     Private Sub SetBusy(k_busy As Boolean)
         _busy = k_busy
+        grpSursa.Enabled = Not k_busy
+        grpServer.Enabled = Not k_busy
+        btnStop.Enabled = k_busy AndAlso _cancellation IsNot Nothing
+        If k_busy Then
+            _operationFinished = New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
+        Else
+            _cancellation?.Dispose()
+            _cancellation = Nothing
+            _operationFinished?.TrySetResult(True)
+        End If
         btnRasfoire.Enabled = Not k_busy
         btnCiteste.Enabled = Not k_busy
         btnTesteaza.Enabled = Not k_busy
@@ -107,13 +123,69 @@ Public Class AdeMigratorForm
         UseWaitCursor = k_busy
     End Sub
 
+    ''' <summary>Changing any input invalidates the verification that enabled a write.</summary>
+    Private Sub InputsChanged(sender As Object, e As EventArgs) Handles txtFisier.TextChanged, txtGazda.TextChanged, txtPort.TextChanged, txtUtilizator.TextChanged, txtParola.TextChanged
+        Try
+            _targetProblems = Nothing
+            _targetCounts = Nothing
+            If sender Is txtFisier Then
+                _source = Nothing
+                _plan = Nothing
+                lblDc.Text = "DC: —"
+                dgvTabele.ClearRows()
+                dgvEducatori.ClearRows()
+                rtbConversii.Clear()
+                lblRezumat.Text = "Fișier schimbat. Apăsați «Citește» înainte de verificare."
+            End If
+            lblStareServer.Text = "Netestat"
+            RefreshMigrateButton()
+        Catch ex As Exception
+            ShowOperationError("AdeMigratorForm.InputsChanged", "Actualizarea selecției a eșuat.", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnStop_Click(sender As Object, e As EventArgs) Handles btnStop.Click
+        Try
+            _cancellation?.Cancel()
+            btnStop.Enabled = False
+            Say("Oprire solicitată. Așteptați terminarea instrucțiunii curente și rollback-ul.")
+        Catch ex As Exception
+            ShowOperationError("AdeMigratorForm.Stop", "Oprirea nu a putut fi solicitată.", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Keep the process alive until the worker has released its connections.</summary>
+    Private Async Sub AdeMigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
+        Try
+            If Not _busy Then Return
+            e.Cancel = True
+            If KBotMessage.Show("O operație este în curs. Așteptați terminarea ei înainte de închidere. Închideți după terminare?",
+                                "Migrare ADE", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+            _cancellation?.Cancel()
+            Dim k_pending = _operationFinished
+            If k_pending IsNot Nothing Then Await k_pending.Task
+            Close()
+        Catch ex As Exception
+            e.Cancel = True
+            ShowOperationError("AdeMigratorForm.FormClosing", "Închiderea a eșuat.", ex)
+        End Try
+    End Sub
+
+    ''' <summary>UI errors stay visible; the shared log preserves their technical details.</summary>
+    Private Sub ShowOperationError(k_context As String, k_message As String, k_error As Exception)
+        GlobalErrorLog.Write(k_context, k_error)
+        Say(k_message)
+        KBotMessage.Show(k_message & Environment.NewLine & Environment.NewLine & k_error.Message,
+                         "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Error)
+    End Sub
+
     Private Sub Say(k_text As String)
         lblStare.Text = k_text
     End Sub
 
     ' ---- the file ------------------------------------------------------------------------------------------------
 
-    Private Sub btnRasfoire_Click(sender As Object, e As EventArgs) Handles btnRasfoire.Click
+    Private Sub BtnRasfoire_Click(sender As Object, e As EventArgs) Handles btnRasfoire.Click
         Try
             Using k_dialog As New OpenFileDialog() With {
                 .Title = "Alegeți baza Access ADECHIT",
@@ -123,11 +195,12 @@ Public Class AdeMigratorForm
                 If k_dialog.ShowDialog(Me) = DialogResult.OK Then txtFisier.Text = k_dialog.FileName
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.btnRasfoire_Click", ex)
+            ShowOperationError("AdeMigratorForm.Browse", "Alegerea fișierului a eșuat.", ex)
         End Try
     End Sub
 
-    Private Async Sub btnCiteste_Click(sender As Object, e As EventArgs) Handles btnCiteste.Click
+    Private Async Sub BtnCiteste_Click(sender As Object, e As EventArgs) Handles btnCiteste.Click
+        If _busy Then Return
         Try
             Dim k_path = txtFisier.Text.Trim()
             If k_path.Length = 0 OrElse Not File.Exists(k_path) Then
@@ -155,7 +228,7 @@ Public Class AdeMigratorForm
                                  "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.btnCiteste_Click", ex)
+            ShowOperationError("AdeMigratorForm.Read", "Citirea fișierului a eșuat.", ex)
         Finally
             SetBusy(False)
         End Try
@@ -179,12 +252,12 @@ Public Class AdeMigratorForm
         End Try
     End Sub
 
-    Private Sub dgvEducatori_CellValueChanged(sender As Object, e As KBot.Controls.KBotCellValueEventArgs) Handles dgvEducatori.CellValueChanged
+    Private Sub DgvEducatori_CellValueChanged(sender As Object, e As KBot.Controls.KBotCellValueEventArgs) Handles dgvEducatori.CellValueChanged
         Try
             If _busy OrElse _source Is Nothing Then Return
             RebuildPlan()
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.dgvEducatori_CellValueChanged", ex)
+            ShowOperationError("AdeMigratorForm.Educators", "Refacerea planului a eșuat. Corectați educatorii și verificați din nou.", ex)
         End Try
     End Sub
 
@@ -200,6 +273,11 @@ Public Class AdeMigratorForm
     End Function
 
     Private Sub RebuildPlan()
+        ' Clear the previous plan before rebuilding so a failed edit cannot leave a writable stale plan.
+        _plan = Nothing
+        _targetProblems = Nothing
+        _targetCounts = Nothing
+        RefreshMigrateButton()
         _plan = AdePlan.Build(_source, ReadEducators())
         _targetProblems = Nothing
         ShowPlan()
@@ -291,8 +369,11 @@ Public Class AdeMigratorForm
         Return New TargetServer(New TargetConnection(txtGazda.Text.Trim(), CUInt(k_port), txtUtilizator.Text.Trim(), txtParola.Text))
     End Function
 
-    Private Async Sub btnTesteaza_Click(sender As Object, e As EventArgs) Handles btnTesteaza.Click
+    Private Async Sub BtnTesteaza_Click(sender As Object, e As EventArgs) Handles btnTesteaza.Click
+        If _busy Then Return
         Try
+            _targetProblems = Nothing
+            _targetCounts = Nothing
             SetBusy(True)
             lblStareServer.Text = "Se testează..."
             Try
@@ -315,13 +396,15 @@ Public Class AdeMigratorForm
                     Say(If(k_problems.Count = 0, $"Baza «{k_dc}» este gata pentru migrare.", $"Baza «{k_dc}» nu este gata — vezi «Conversii și constatări»."))
                 End If
             Catch ex As Exception
+                _targetProblems = Nothing
+                _targetCounts = Nothing
                 GlobalErrorLog.Write("AdeMigratorForm.btnTesteaza_Click.test", ex)
-                lblStareServer.Text = "Conectare eșuată"
-                KBotMessage.Show("Nu m-am putut conecta la server:" & Environment.NewLine & Environment.NewLine & ex.Message,
+                lblStareServer.Text = "Verificare eșuată"
+                KBotMessage.Show("Verificarea serverului a eșuat:" & Environment.NewLine & Environment.NewLine & ex.Message,
                                  "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.btnTesteaza_Click", ex)
+            ShowOperationError("AdeMigratorForm.Test", "Verificarea serverului a eșuat.", ex)
         Finally
             SetBusy(False)
         End Try
@@ -334,37 +417,61 @@ Public Class AdeMigratorForm
                               _targetProblems IsNot Nothing AndAlso _targetProblems.Count = 0
     End Sub
 
-    Private Async Sub btnMigreaza_Click(sender As Object, e As EventArgs) Handles btnMigreaza.Click
+    Private Async Sub BtnMigreaza_Click(sender As Object, e As EventArgs) Handles btnMigreaza.Click
+        If _busy Then Return
+        Dim k_committed = False
         Try
-            If _plan Is Nothing OrElse _source Is Nothing Then Return
+            If _busy OrElse _plan Is Nothing OrElse _source Is Nothing OrElse _plan.HasBlocking OrElse
+                _targetProblems Is Nothing OrElse _targetProblems.Count > 0 Then Return
             Dim k_total = _plan.Tables.Sum(Function(t) t.Rows.Count)
             Dim k_answer = KBotMessage.Show(
                 $"Se scriu {k_total} rânduri în baza «{_source.Dc}» de pe {txtGazda.Text.Trim()}." & Environment.NewLine &
-                "Totul se face într-o singură tranzacție: dacă ceva eșuează, baza rămâne neschimbată." & Environment.NewLine & Environment.NewLine &
+                "Scrierea folosește o singură tranzacție. Dacă rezultatul nu poate fi confirmat, verificați serverul înainte de reluare." & Environment.NewLine & Environment.NewLine &
                 "Continuați?", "Migrare ADE", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If k_answer <> DialogResult.Yes Then Return
+            _cancellation = New CancellationTokenSource()
+            Dim k_cancel = _cancellation.Token
             SetBusy(True)
             Try
                 Dim k_server = BuildServer()
                 Dim k_dc = _source.Dc
                 Dim k_sourceNow = _source
                 Dim k_planNow = _plan
-                Dim k_progress As IProgress(Of String) = New Progress(Of String)(AddressOf Say)
-                Dim k_written = Await Task.Run(Function() AdeWriter.Write(k_server, k_dc, k_sourceNow, k_planNow, k_progress))
-                _targetCounts = Await Task.Run(Function() AdeWriter.CountRows(k_server, k_dc, k_planNow.Tables.Select(Function(t) t.Table)))
+                Dim k_run = _operationFinished
+                Dim k_progress As IProgress(Of String) = New Progress(Of String)(
+                    Sub(message)
+                        Try
+                            If _busy AndAlso _operationFinished Is k_run AndAlso Not k_cancel.IsCancellationRequested Then Say(message)
+                        Catch ex As Exception
+                            ShowOperationError("AdeMigratorForm.Progress", "Afișarea progresului a eșuat.", ex)
+                        End Try
+                    End Sub)
+                Dim k_journalRoot = Path.Combine(AppContext.BaseDirectory, "Jurnale", "ADE")
+                Dim k_written = Await Task.Run(Function() AdeWriter.Write(k_server, k_dc, k_sourceNow, k_planNow, k_progress, k_cancel, k_journalRoot))
+                k_committed = True
+                ' These are committed counts returned by the writer. A later query must not turn a committed run into a failure.
+                _targetCounts = k_written
                 _targetProblems = New List(Of String) From {"Migrarea s-a făcut deja; tabelele nu mai sunt goale."}
                 ShowPlan()
                 Say("Migrare terminată.")
-                KBotMessage.Show($"Migrare terminată: {k_written.Values.Sum()} rânduri în {k_written.Count} tabele.",
+                KBotMessage.Show($"Migrare terminată: {k_written.Values.Sum()} rânduri în {k_written.Count} tabele." & Environment.NewLine & "Jurnalele SQL sunt în: " & k_journalRoot,
+                                 "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Catch ex As OperationCanceledException
+                _targetProblems = Nothing
+                Say("Migrare oprită. Verificați din nou serverul înainte de reluare.")
+                KBotMessage.Show("Migrarea a fost oprită înainte de confirmarea tranzacției. Verificați din nou serverul înainte de reluare.",
                                  "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Catch ex As Exception
+                _targetProblems = Nothing
                 GlobalErrorLog.Write("AdeMigratorForm.btnMigreaza_Click.write", ex)
-                Say("Migrarea a eșuat; baza a rămas neschimbată.")
-                KBotMessage.Show("Migrarea a eșuat; baza a rămas neschimbată." & Environment.NewLine & Environment.NewLine & ex.Message,
+                Dim k_message = If(k_committed, "Migrarea este confirmată, dar afișarea rezultatului a eșuat. Verificați jurnalul.",
+                                   "Migrarea nu a fost confirmată. Verificați serverul și jurnalul înainte de reluare.")
+                Say(k_message)
+                KBotMessage.Show(k_message & Environment.NewLine & Environment.NewLine & ex.Message,
                                  "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
         Catch ex As Exception
-            GlobalErrorLog.Write("AdeMigratorForm.btnMigreaza_Click", ex)
+            ShowOperationError("AdeMigratorForm.Migrate", "Operația de migrare nu a putut fi finalizată.", ex)
         Finally
             SetBusy(False)
         End Try
