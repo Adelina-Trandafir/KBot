@@ -33,6 +33,13 @@ nu poate fi asociat altui CNP: mesajul din macheta administrativă identifică p
 CNP-ul și copilul. Modificarea emailului unei identități existente îl sincronizează
 pe toate asocierile aceluiași CNP. Asocierea nouă reutilizează identitatea existentă.
 
+AD11-03: înregistrările vechi cu email comun unor CNP-uri diferite sau emailuri
+diferite pentru același CNP sunt acceptate la import. În **Plătitori**, avertizarea
+de portal listează înregistrările afectate din subunitatea curentă; verificarea
+conflictului acoperă întregul DC. Click pe o intrare selectează grupa/copilul/părintele
+și deschide editorul, inclusiv dacă grupa este ascunsă. Corectarea reface accesul
+când nu mai există ambiguități. Introducerea unui conflict nou rămâne refuzată.
+
 ## Dashboard și fișă
 
 <!-- slice: AD11-02 -->
@@ -61,6 +68,10 @@ fără dată blochează raportul cu mesaj, fără succes aparent.
 
 ## Testarea manuală localhost
 
+AD11-04: pe mobil (lățime maximum 800px), selectorul ocupă întreaga lățime a
+dashboardului; cardurile și calendarele nu lățesc pagina. Graficele cu multe luni
+se derulează în interiorul cardului. „Imprimă” este ascuns, iar PDF-ul rămâne disponibil.
+
 Serverul curent: `http://localhost:5050`, date SQLite separate în
 `artifacts/ade-parents-preview`. Nu se folosesc emailuri sau date reale.
 
@@ -85,9 +96,15 @@ PYTHON/.venv/Scripts/python.exe ADECHIT/tools/preview.py --directory artifacts/a
 
 ## Predare pentru server (după testarea localhost)
 
-- În fiecare bază ADE: AD_05, AD_06, AD_07 dacă lipsesc, apoi `sql/AD_08_portal_parinti.sql`.
-  AD_08 adaugă codul, registrul CNP/email unic, provocările temporare și lock-ul identităților.
-  Datele CNP/email conflictuale se corectează înainte de backfill. Scriptul nu a fost executat în chat.
+- DDL: `sql/AD_08_portal_parinti.sql` pe **AVACONT_SURSA**, după AD_05–07.
+  Sincronizarea schemei din AvacontPush adaugă coloana CodAccesPortal și tabelele portalului în baze.
+- Date: conținutul `sql/AD_08_02_interogare_unica.sql` în **Interogări unice**, nume
+  `AD_08_portal_parinti_date`, întâi „Vezi (nu execută)”, apoi „Execută”. Instrucțiuni simple,
+  fără proceduri sau DELIMITER; păstrează codurile existente, completează codurile lipsă și lock-ul.
+  Scrierile ADE se suspendă pentru această operație. SQL-ul nu a fost executat în chat.
+  AD11-03: conflictele vechi CNP/email nu blochează migrarea. Emailul identității de portal
+  este NULL pentru CNP-urile afectate, contactele sursă rămân intacte. Portalul verifică
+  aceste conflicte la fiecare cerere, inclusiv pentru o sesiune deja conectată.
 - Publică împreună fișierele Python/JS/CSS/template din AD11-01 și noul ADE.Migrator;
   după AD_08, aplicația veche/migratorul vechi nu trebuie folosite pentru scrieri.
 - Instalează `PYTHON/requirements-adechit.txt`; biblioteca a fost instalată în venv local.

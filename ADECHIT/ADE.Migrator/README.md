@@ -6,9 +6,13 @@ Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → Ma
 Executabilul păstrează numele existent `ADE.Migrator.exe`.
 
 <!-- slice: AD11-01 -->
-Înainte de noua migrare se aplică `sql/AD_08_portal_parinti.sql`, după AD_05–07.
-Writerul verifică registrul portalului și CodAccesPortal, respinge conflictele CNP/email
-în DC și generează un cod aleatoriu comun asocierilor părintelui cu copii fără Plecat.
+Înainte de noua migrare se aplică DDL-ul `sql/AD_08_portal_parinti.sql` pe AVACONT_SURSA,
+după AD_05–07, apoi se sincronizează schema prin AvacontPush. Datele existente se
+completează prin `sql/AD_08_02_interogare_unica.sql`, în „Interogări unice”.
+Writerul verifică registrul portalului și CodAccesPortal și generează un cod aleatoriu
+comun asocierilor părintelui cu copii fără Plecat. AD11-03: conflictele CNP/email din
+sursele vechi nu opresc migrarea și nu schimbă contactele importate; părinții afectați
+au portalul blocat până la corectare, cu avertizări navigabile în fereastra Plătitori.
 Codurile nu sunt incluse în jurnalul SQL. Trimiterea emailului se face ulterior din
 macheta părinților. [Ghid portal](../PORTAL_PARINTI.md).
 

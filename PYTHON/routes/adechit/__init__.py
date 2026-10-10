@@ -147,6 +147,12 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     def child_save(repo):
         return command(repo, 'child-save', lambda body: catalog_forms.save_child(repo, body, g.portal['email'], 'transfer' in g.ade_operations))
 
+    @bp.get('/api/adechit/parents/portal-issues')
+    @guard('read')
+    def parent_portal_issues(repo):
+        from .parent_identity import portal_issues
+        return {'issues': portal_issues(repo)}
+
     @bp.post('/api/adechit/parents/<int:parent_id>/send-access')
     @guard('catalog')
     def send_parent_access(repo, parent_id):

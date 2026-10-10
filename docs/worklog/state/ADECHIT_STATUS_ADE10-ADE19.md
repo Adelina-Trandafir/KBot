@@ -39,12 +39,17 @@ Portalul părinților, conform planului aprobat și modelului de fișă de cont.
 |---|---|---|---|
 | SLICE-AD11-01 | CNP/cod/OTP, CodAccesPortal, email unic pe CNP, migrator, selector copii, dashboard/grafice, fișă print/PDF cu Interval, login/inbox localhost | SCRIS LOCAL — compilare/build curate, GET locale 200; funcțional/UI/PDF și server nevalidate | [Portal](../SLICE-AD11-01-portal-parinti.md) |
 | SLICE-AD11-02 | Font opțiuni copil, gri subtotal/total print și PDF, scroll vertical mobil | SCRIS LOCAL — proba utilizatorului în curs | [Corecturi](../SLICE-AD11-02-font-totaluri-scroll.md) |
+| SLICE-AD11-03 | Conflicte istorice tolerate la import, portal blocat dinamic, avertizări navigabile Plătitori; DDL sursă și query date AvacontPush separate | SCRIS LOCAL — sintaxă/build curate, SQL/UI neprobate | [Conflicte](../SLICE-AD11-03-conflicte-query-avacontpush.md) |
+| SLICE-AD11-04 | Selector mobil pe toată lățimea, carduri fără depășirea paginii, Imprimă ascuns pe mobil | SCRIS LOCAL — proba vizuală aparține utilizatorului | [Mobil](../SLICE-AD11-04-latimi-mobil.md) |
 
 ### Current focus
 
 Utilizatorul testează pe localhost:5050. Acreditări fictive: `/adechit/preview/parents`;
 login: `/adechit/parinti/preview`; inbox: `/adechit/preview/inbox`.
-Următoarea subfelie liberă: **AD11-03**.
+AD11-03 separă DDL pentru AVACONT_SURSA de queryul de date pentru AvacontPush;
+conflictele din datele vechi blochează portalul identităților afectate, nu migrarea.
+AD11-04 corectează lățimile mobile și ascunde Imprimă la maximum 800px.
+Următoarea subfelie liberă: **AD11-05**.
 
 ### Open threads
 

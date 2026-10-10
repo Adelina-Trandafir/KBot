@@ -59,7 +59,7 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | ADE8-05 SCRIS LOCAL: meniu PC chitanțe, listare și PDF; mail fără acțiune; funcțional/vizual neprobat | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
 | SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-01 SCRIS LOCAL: rapoartele (listare + PDF) din panoul Rapoarte; nerulate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
 | SLICE-ADE10 | Subunități în același DC: schemă, API, migrator, selector | ADE10-01–05 SCRIS LOCAL: AD_05 nerulat, migrator construit, nimic testat sau publicat | [ADE10](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ade10) |
-| SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-02 SCRIS LOCAL — font dropdown, gri totaluri și scroll mobil; proba utilizatorului în curs | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
+| SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-04 SCRIS LOCAL — selector pe toată lățimea mobilă, carduri fără depășire laterală, Imprimă ascuns pe mobil; UI neprobat | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
 | SLICE-AD11 | Anulare document în taburile de încasări, cu motiv obligatoriu | AD11-01 SCRIS LOCAL, NERULAT | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ad11) |
 
 **Următorul număr liber de felie: SLICE-AD12**.
@@ -75,7 +75,12 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
   construit fără erori/avertismente, paginile publice locale răspund HTTP 200. Funcțional/UI/PDF
   rămân pentru utilizator; AD_08 și SMTP/server nevalidate. [Ghid](ADECHIT/PORTAL_PARINTI.md).
   AD11-02: font dropdown mărit, gri subtotal/total print/PDF, scroll mobil corectat.
-  Următoarea subfelie liberă: **AD11-03**.
+  AD11-03: migrarea acceptă conflicte istorice CNP/email; portalul părinților afectați
+  este blocat, cu listă navigabilă în Plătitori. AD_08 este DDL pentru AVACONT_SURSA;
+  după sincronizarea schemei, AD_08_02 rulează în Interogări unice din AvacontPush.
+  AD11-04: selector pe toată lățimea pe mobil, carduri constrânse la ecran,
+  scroll pentru grafice în interiorul cardului și Imprimă ascuns pe mobil.
+  Următoarea subfelie liberă: **AD11-05**.
 
 - **ADE10-01–05:** subunitățile din [plan_subunitati.md](ADECHIT/plan_subunitati.md) sunt implementate local:
   `sql/AD_05_subunitati.sql`, context DC + subunitate în API, migrator cu ID-uri remapate și serie/contor

@@ -166,7 +166,7 @@ export function bindPayers({ api, context, refresh }) {
         row = await api('/api/adechit/catalog/Platitori_sub', { method: 'POST', body: JSON.stringify(payload), key: crypto.randomUUID() });
         selectedPayer = row; dirty = false; request = null;
         const result = await api(`/api/adechit/parents/${row.IDS}/send-access`, { method: 'POST', body: '{}' });
-        showMessage(message, result.message, 'info'); await reload(); await refresh();
+        showMessage(message, result.message, 'info'); await reload(); await loadPortalIssues(); await refresh();
       } catch (error) { report(error); }
       finally { busy = false; body.inert = false; }
     });
@@ -321,15 +321,46 @@ export function bindPayers({ api, context, refresh }) {
     }
     if (own === listRequest && page.open) { data = next; renderLists(); }
   }
+  async function loadPortalIssues() {
+    const own = listRequest;
+    const result = await api('/api/adechit/parents/portal-issues');
+    if (own !== listRequest || !page.open) return;
+    const host = $('ade-payers-portal-links'); host.replaceChildren();
+    $('ade-payers-portal-issues').hidden = !result.issues.length;
+    $('ade-payers-portal-summary').textContent = `Portal blocat pentru părinții cu conflicte CNP/email (${result.issues.length}). Apăsați pentru corectare.`;
+    for (const issue of result.issues) {
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'btn';
+      button.textContent = issue.message; host.append(button);
+      button.addEventListener('click', async () => {
+        if (busy || editor.open) return;
+        try {
+          if (!data.groups.some((group) => group.IDG === issue.group_id)) {
+            const catalog = await api('/api/adechit/catalog-data?include_hidden=1');
+            data.groups = catalog.groups;
+          }
+          const group = data.groups.find((row) => row.IDG === issue.group_id);
+          if (!group) throw new Error('Grupa nu mai este disponibilă. Reîncărcați fereastra.');
+          await chooseGroup(group);
+          const child = data.children.find((row) => row.IDP === issue.child_id);
+          if (!child) throw new Error('Copilul nu mai este disponibil. Reîncărcați fereastra.');
+          await chooseChild(child);
+          selectedPayer = data.payers.find((row) => row.IDS === issue.id);
+          if (!selectedPayer) throw new Error('Plătitorul nu mai este disponibil. Reîncărcați fereastra.');
+          level = 2; renderLists(); editPayer(selectedPayer);
+        } catch (error) { report(error, $('ade-payers-message')); }
+      });
+    }
+  }
   async function open() {
     if (page.open || !context()) return;
     selectedGroup = null; selectedChild = null; selectedPayer = null; data = null;
     listHosts.forEach((host) => host.replaceChildren());
+    $('ade-payers-portal-issues').hidden = true;
     level = 0; syncMobilePage();
     page.showModal(); showMessage($('ade-payers-message'), '', 'info');
     $('ade-payers-mobile-add').disabled = true; $('ade-payers-mobile-edit').disabled = true;
     document.querySelectorAll('#ade-payers-dialog .ade-list-actions button').forEach((button) => { button.disabled = true; });
-    try { await reload(); }
+    try { await reload(); await loadPortalIssues(); }
     catch (error) { report(error, $('ade-payers-message')); }
   }
   form.addEventListener('input', () => { dirty = true; });
@@ -344,7 +375,7 @@ export function bindPayers({ api, context, refresh }) {
       const saved = await api(endpoint, { method: 'POST', ...request });
       const continuation = onSaved(saved); editor.close(); cleanEditor();
       await continuation;
-      await reload(); await refresh();
+      await reload(); await loadPortalIssues(); await refresh();
       showMessage($('ade-payers-message'), '', 'info');
     } catch (error) { pendingNext = null; report(error, editor.open ? message : $('ade-payers-message')); }
     finally {

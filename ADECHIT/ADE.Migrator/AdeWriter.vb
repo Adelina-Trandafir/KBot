@@ -220,7 +220,7 @@ Public NotInheritable Class AdeWriter
                         Try
                             If RollbackIfStopped(k_tx, k_cancel, k_dump) Then Return Nothing
                             Using k_parentLock As New MySqlCommand("SELECT ID FROM AD_Lock WHERE ID=0 FOR UPDATE", k_cn, k_tx)
-                                If k_parentLock.ExecuteScalar() Is Nothing Then Throw New InvalidOperationException("Rulați sql/AD_08_portal_parinti.sql înainte de migrare.")
+                                If k_parentLock.ExecuteScalar() Is Nothing Then Throw New InvalidOperationException("Sincronizați schema AD_08 și rulați AD_08_02_interogare_unica.sql prin AvacontPush înainte de migrare.")
                             End Using
                             Dim k_subunitId = EnsureSubunit(k_cn, k_tx, k_subunitName, k_plan, k_dump, k_progress)
                             Dim k_maps As New Dictionary(Of String, Dictionary(Of Long, Long))(StringComparer.OrdinalIgnoreCase)
@@ -279,26 +279,18 @@ Public NotInheritable Class AdeWriter
         Return True
     End Function
 
-    ''' <summary>Validate contacts across the whole DC and provision one random code per parent with present children.</summary>
+    ''' <summary>Preserve legacy contacts; ambiguous identities cannot use the portal.</summary>
     Private Shared Sub ProvisionPortalParents(k_cn As MySqlConnection, k_tx As MySqlTransaction)
-        Dim k_conflictSql = "SELECT a.Nume,a.CNP_Platitor,b.Nume,b.CNP_Platitor,c.Nume FROM AD_Platitori_sub a " &
-            "JOIN AD_Platitori_sub b ON a.IDS<b.IDS JOIN AD_Platitori c ON c.IDP=b.IDP AND c.SubunitId=b.SubunitId " &
-            "WHERE (TRIM(COALESCE(a.EMail,''))<>'' AND LOWER(TRIM(a.EMail))=LOWER(TRIM(b.EMail)) " &
-            "AND COALESCE(TRIM(a.CNP_Platitor),'')<>COALESCE(TRIM(b.CNP_Platitor),'')) " &
-            "OR (TRIM(COALESCE(a.CNP_Platitor,''))<>'' AND TRIM(a.CNP_Platitor)=TRIM(b.CNP_Platitor) " &
-            "AND TRIM(COALESCE(a.EMail,''))<>'' AND TRIM(COALESCE(b.EMail,''))<>'' " &
-            "AND LOWER(TRIM(a.EMail))<>LOWER(TRIM(b.EMail))) LIMIT 1"
-        Using k_cmd As New MySqlCommand(k_conflictSql, k_cn, k_tx)
-            Using k_reader = k_cmd.ExecuteReader()
-                If k_reader.Read() Then
-                    Throw New InvalidOperationException($"Conflict CNP/email: {k_reader.GetValue(0)} (CNP {k_reader.GetValue(1)}) și {k_reader.GetValue(2)} (CNP {k_reader.GetValue(3)}), copil {k_reader.GetValue(4)}. Corectați datele înainte de migrare.")
-                End If
-            End Using
-        End Using
         Dim k_commands = {
-            "INSERT INTO AD_PortalParents (CNP,Email) SELECT TRIM(CNP_Platitor),MAX(NULLIF(LOWER(TRIM(EMail)),'')) FROM AD_Platitori_sub WHERE TRIM(CNP_Platitor) REGEXP '^[0-9]{13}$' GROUP BY TRIM(CNP_Platitor) ON DUPLICATE KEY UPDATE Email=COALESCE(VALUES(Email),Email)",
+            "DROP TEMPORARY TABLE IF EXISTS ad08_parent_contacts",
+            "CREATE TEMPORARY TABLE ad08_parent_contacts AS SELECT TRIM(CNP_Platitor) AS CNP, MAX(NULLIF(LOWER(TRIM(EMail)),'')) AS Email, COUNT(DISTINCT NULLIF(LOWER(TRIM(EMail)),'')) AS EmailCount FROM AD_Platitori_sub WHERE TRIM(CNP_Platitor) REGEXP '^[0-9]{13}$' GROUP BY TRIM(CNP_Platitor)",
+            "UPDATE ad08_parent_contacts i SET Email=NULL WHERE i.EmailCount>1 OR EXISTS (SELECT 1 FROM AD_Platitori_sub p WHERE LOWER(TRIM(p.EMail))=i.Email AND COALESCE(TRIM(p.CNP_Platitor),'')<>i.CNP)",
+            "UPDATE AD_PortalParents SET Email=NULL",
+            "INSERT INTO AD_PortalParents (CNP,Email) SELECT CNP,Email FROM ad08_parent_contacts WHERE 1=1 ON DUPLICATE KEY UPDATE Email=VALUES(Email)",
             "UPDATE AD_PortalParents i SET CodAccesPortal=LOWER(HEX(RANDOM_BYTES(16))) WHERE i.CodAccesPortal IS NULL AND EXISTS (SELECT 1 FROM AD_Platitori_sub p JOIN AD_Platitori c ON c.IDP=p.IDP AND c.SubunitId=p.SubunitId WHERE TRIM(p.CNP_Platitor)=i.CNP AND COALESCE(c.Plecat,0)=0)",
-            "UPDATE AD_Platitori_sub p JOIN AD_PortalParents i ON TRIM(p.CNP_Platitor)=i.CNP SET p.CodAccesPortal=i.CodAccesPortal, p.EMail=COALESCE(NULLIF(TRIM(p.EMail),''),i.Email)"
+            "UPDATE AD_Platitori_sub p JOIN AD_PortalParents i ON TRIM(p.CNP_Platitor)=i.CNP SET p.Version=p.Version+IF(NOT(p.CodAccesPortal<=>i.CodAccesPortal),1,0),p.CodAccesPortal=i.CodAccesPortal",
+            "INSERT IGNORE INTO AD_Lock (ID) VALUES (0)",
+            "DROP TEMPORARY TABLE ad08_parent_contacts"
         }
         ' Credentials never enter the SQL dump or application journal.
         For Each k_sql In k_commands

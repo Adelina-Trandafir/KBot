@@ -109,11 +109,8 @@ def save_child(repo, body, username, may_transfer):
         require(may_transfer, 'FORBIDDEN', 'Nu aveți dreptul de a muta copilul sau de a schimba starea Plecat.', 403)
     saved = repo.update('Platitori', existing, values) if existing else repo.insert('Platitori', values)
     if not saved.get('Plecat'):
-        from .parent_identity import prepare_parent
-        for parent in repo.rows('Platitori_sub', IDP=saved['IDP']):
-            updates = {'EMail': parent.get('EMail'), 'CNP_Platitor': parent.get('CNP_Platitor')}
-            prepare_parent(repo, updates, parent)
-            repo.update('Platitori_sub', parent, updates)
+        from .parent_identity import provision_existing
+        provision_existing(repo)
     events = []
     if not existing:
         events.append(('INTRARE', entry))

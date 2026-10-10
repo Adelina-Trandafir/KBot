@@ -44,6 +44,9 @@ def portal_url(unit):
 
 def send_access(repo, parent_id, unit, deliver=None):
     parent = repo.get('Platitori_sub', parent_id)
+    from .parent_identity import identity_conflicted
+    require(not identity_conflicted(repo, str(parent.get('CNP_Platitor') or '').strip()),
+            'PORTAL_CONFLICT', 'Accesul în portal este blocat. Corectați conflictele CNP/email din fereastra Plătitori.', 409)
     child = repo.get('Platitori', parent['IDP'])
     require(not child.get('Plecat'), 'DEPARTED', 'Copilul este plecat; accesul în portal nu este disponibil.', 409)
     require(cnp_code(parent.get('CNP_Platitor')) == -1 and parent.get('EMail') and parent.get('CodAccesPortal'),
@@ -105,6 +108,9 @@ def create_parent_blueprint(repository_factory=None, deliver=None, preview_units
         return wrapped
 
     def eligible(repo, cnp, email, access_hash):
+        from .parent_identity import identity_conflicted
+        if identity_conflicted(repo, cnp):
+            return []
         rows = repo.query('SELECT p.*,c.Nume AS ChildName,c.IDG,g.Grupa,c.DataIntrare FROM AD_Platitori_sub p '
             'JOIN AD_Platitori c ON c.IDP=p.IDP AND c.SubunitId=p.SubunitId '
             'JOIN AD_Subunits s ON s.SubunitId=p.SubunitId AND s.Active=1 '

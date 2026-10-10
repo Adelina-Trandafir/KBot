@@ -9,6 +9,10 @@ Starea implementării este în [status](../ADECHIT_STATUS.md).
 
 <!-- slice: AD11-01 -->
 <!-- slice: AD11-02 -->
+<!-- slice: AD11-04 -->
+Pe mobil, selectorul copilului ocupă aceeași lățime ca elementele dashboardului.
+Cardurile rămân în lățimea ecranului; graficele ample se derulează în propriul card.
+„Imprimă” este ascuns pe mobil; „Descarcă PDF” rămâne disponibil.
 Portalul părinților permite scroll vertical pe mobil. Selectorul are opțiuni cu
 font mărit; subtotalurile și totalul final al fișei au fundaluri gri distincte în print/PDF.
 Portalul separat al părinților este descris în [PORTAL_PARINTI.md](PORTAL_PARINTI.md):
@@ -273,6 +277,15 @@ Această probă nu validează aspectul sau schimbările backend ulterioare.
 Nu există validare pe server, paritate completă cu Access sau publicare din chat.
 
 Selectorul Subunitate apare numai daca aveti acces la mai mult de o subunitate. Accesul la o subunitate poate fi restrans la anumiti utilizatori (administratorul baza de date, tabelul AD_SubunitAccess).
+
+## Conflicte de acces la portal (SLICE-AD11-03)
+
+În **Plătitori**, avertizarea „Portal blocat pentru părinții cu conflicte CNP/email”
+listează înregistrările de corectat. Apăsați fiecare intrare pentru a selecta grupa,
+copilul și părintele și a deschide editorul. Lista cuprinde subunitatea curentă,
+iar conflictul se verifică pe întregul DC. Datele vechi cu aceste conflicte nu
+opresc migrarea; accesul părinților implicați este blocat până la corectare.
+Emailurile conflictuale nou introduse sunt refuzate cu identificarea celuilalt părinte.
 
 ## Rapoarte (SLICE-ADE9-01)
 
