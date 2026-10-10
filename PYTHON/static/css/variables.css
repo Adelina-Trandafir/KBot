@@ -1,5 +1,8 @@
 /* ========== DASHBOARD BASE ========== */
 :root {
+    /* AD11-02: account statement print palette. */
+    --report-subtotal-background: #eeeeee;
+    --report-total-background: #d6d6d6;
     /* Layout */
     --header-height: 50px;
     --modal-header-height: 40px;

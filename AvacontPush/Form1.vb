@@ -601,25 +601,31 @@ Partial Public Class Form1
     Private Async Function RunRemoteAsync(commandText As String, Optional displayText As String = Nothing) As Task(Of SshResult)
         Dim result As SshResult = Nothing
         Dim shown As String = If(displayText, commandText)
+        ' Created here, on the UI thread: Report() then runs AppendOutput on the UI thread, in order, line by line.
+        Dim live As New Progress(Of String)(Sub(k_line) AppendOutput(k_line))
+        Dim liveLine As Action(Of String) = Sub(k_line) DirectCast(live, IProgress(Of String)).Report(k_line)
 
+        AppendOutput($"$ {shown}")
         Await Task.Run(
             Sub()
                 Using log As New RunLogger()
                     Using ssh As New SshCommandService(_settings)
+                        liveLine("Conectare la server...")
                         ssh.Connect()
                         log.Write("CMD " & shown)
-                        result = ssh.Run(commandText)
+                        liveLine("Conectat. Se execută (rezultatul apare pe măsură ce vine)...")
+                        result = ssh.RunStreaming(commandText,
+                            Sub(k_line)
+                                log.Write(k_line)
+                                liveLine(k_line)
+                            End Sub)
                         log.Write($"-> exit {result.ExitStatus}")
-                        If result.StdOut.Trim() <> "" Then log.Write(result.StdOut.TrimEnd())
-                        If result.StdErr.Trim() <> "" Then log.Write("STDERR " & result.StdErr.TrimEnd())
+                        liveLine($"(exit {result.ExitStatus})")
+                        liveLine("")
                     End Using
                 End Using
             End Sub)
 
-        AppendOutput($"$ {shown}   (exit {result.ExitStatus})")
-        If result.StdOut.Trim() <> "" Then AppendOutput(result.StdOut.TrimEnd())
-        If result.StdErr.Trim() <> "" Then AppendOutput(result.StdErr.TrimEnd())
-        AppendOutput("")
         Return result
     End Function
 

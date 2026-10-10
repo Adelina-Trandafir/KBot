@@ -1,7 +1,7 @@
 # ADECHIT — plan pentru subunități în același DC
 
 Data: **09.10.2026**. Felie de analiză: **SLICE-ADE0-08**.
-Stare: **DOCUMENTAT LOCAL — implementare planificată**.
+Stare: **IMPLEMENTAT LOCAL (SLICE-ADE10-01–05, 09.10.2026) — netestat, DDL nerulat, nepublicat**. Predarea: [ADE10-05](../docs/worklog/SLICE-ADE10-05-predare-subunitati.md).
 
 ## 1. Obiectiv și decizii confirmate
 

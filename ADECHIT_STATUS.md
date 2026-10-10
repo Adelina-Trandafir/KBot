@@ -19,9 +19,13 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
   oprească el, inclusiv dacă procesul a fost pornit pentru această lucrare (08.10.2026).
 - Feliile sunt `SLICE-ADE0`, `SLICE-ADE1`, `SLICE-ADE2` etc., fără completare cu zerouri
   a numărului principal. Subfeliile sunt `SLICE-ADE2-01`, `SLICE-ADE2-02` etc.
+- **Pentru numărul principal mai mare de 9, prefixul `ADE` devine `AD`**
+  (instrucțiune explicită, 10.10.2026): `SLICE-AD10`, `SLICE-AD11` etc., cu
+  subfelii `SLICE-AD11-01`, `SLICE-AD11-02` etc. Regula se aplică și referințelor.
 - Numerele alocate sunt permanente. O corecție sau o continuare primește următoarea
   subfelie din aceeași felie; nu redenumim lucrările deja înregistrate.
-- Fiecare intervenție are worklog `docs/worklog/SLICE-ADE<n>-<NN>-<descriere>.md`:
+- Fiecare intervenție are worklog `docs/worklog/SLICE-ADE<n>-<NN>-<descriere>.md`
+  pentru n ≤ 9, respectiv `docs/worklog/SLICE-AD<n>-<NN>-<descriere>.md` pentru n > 9:
   ce s-a schimbat și de ce, fișiere, verificări efective, ce rămâne neverificat/amânat.
 - Detaliile sunt grupate câte zece felii în `docs/worklog/state/ADECHIT_STATUS_ADE<n>-ADE<m>.md`.
   Indexul, deciziile comune și următorul număr liber rămân aici, în rădăcina KBOT.
@@ -49,13 +53,16 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE2 | DataGrid comun cu editare directă în celule | TESTAT LOCAL — editare și regresie read-only probate în browser | [ADE2](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade2) |
 | SLICE-ADE3 | Schema ADE și configurarea chitanțelor | SCRIS LOCAL — DDL revizuit; nevalidat MariaDB | [ADE3](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade3) |
 | SLICE-ADE4 | Utilizatori și drepturi ADE | ÎN LUCRU — guard/matrice parțiale | [ADE4](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade4) |
-| SLICE-ADE5 | Migrarea datelor Access | ADE5-10 CONSTRUIT LOCAL: log nou și casetă goală la lansare; opțiunea CNP Copil = CNP Părinte păstrată; server nevalidat | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
+| SLICE-ADE5 | Migrarea datelor Access | ADE5-14 CONSTRUIT LOCAL: oprire fără excepție de anulare, rollback explicit; server nevalidat | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
 | SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-23 SCRIS LOCAL: mesaje informative Plătitori eliminate; fără teste noi | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
 | SLICE-ADE7 | Calculul situațiilor și ciclul lunar, paritate 1 la 1 | ADE7-04 SCRIS LOCAL: închidere anuală august exclusiv desktop, mutări Ctrl/Shift/drag-and-drop și grupe noi validate; UI/server nevalidate | [ADE7](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade7) |
 | SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | ADE8-05 SCRIS LOCAL: meniu PC chitanțe, listare și PDF; mail fără acțiune; funcțional/vizual neprobat | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
-| SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | PLANIFICAT | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
+| SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-01 SCRIS LOCAL: rapoartele (listare + PDF) din panoul Rapoarte; nerulate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
+| SLICE-ADE10 | Subunități în același DC: schemă, API, migrator, selector | ADE10-01–05 SCRIS LOCAL: AD_05 nerulat, migrator construit, nimic testat sau publicat | [ADE10](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ade10) |
+| SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-02 SCRIS LOCAL — font dropdown, gri totaluri și scroll mobil; proba utilizatorului în curs | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
+| SLICE-AD11 | Anulare document în taburile de încasări, cu motiv obligatoriu | AD11-01 SCRIS LOCAL, NERULAT | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ad11) |
 
-**Următorul număr liber de felie: SLICE-ADE10.**
+**Următorul număr liber de felie: SLICE-AD12**.
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); stările
 PLANIFICAT de mai sus se referă la implementare, nu la lipsa documentației.
 ADE0–ADE9 sunt alocate prin acest plan. Subfeliile planificate și următoarele numere libere
@@ -63,10 +70,38 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
 
+- **AD11-01:** portalul părinților este implementat local; autentificarea poate fi probată
+  pe localhost:5050 cu inbox și acreditări fictive. Python/JS verificate sintactic, migrator
+  construit fără erori/avertismente, paginile publice locale răspund HTTP 200. Funcțional/UI/PDF
+  rămân pentru utilizator; AD_08 și SMTP/server nevalidate. [Ghid](ADECHIT/PORTAL_PARINTI.md).
+  AD11-02: font dropdown mărit, gri subtotal/total print/PDF, scroll mobil corectat.
+  Următoarea subfelie liberă: **AD11-03**.
+
+- **ADE10-01–05:** subunitățile din [plan_subunitati.md](ADECHIT/plan_subunitati.md) sunt implementate local:
+  `sql/AD_05_subunitati.sql`, context DC + subunitate în API, migrator cu ID-uri remapate și serie/contor
+  pe subunitate, selector în antet. Nimic rulat, testat sau publicat. Ordinea de punere în funcțiune și probele
+  utilizatorului: [ADE10-05](docs/worklog/SLICE-ADE10-05-predare-subunitati.md). ADE10-06: corecturi după review și acces pe utilizator (vezi worklog-urile ADE10-02…05). Următoarea subfelie liberă: **ADE10-07**.
+
 - **ADE0-08:** [planul subunităților](ADECHIT/plan_subunitati.md) documentat la
   09.10.2026, fără cod. Subunitățile împart DC-ul și au serii/contoare de chitanțe
   separate. ADE0-09: baza_40/baza_47 verificate selectiv read-only; constatările
   sunt în secțiunea 12 a planului. Următoarea subfelie liberă de analiză: **ADE0-10**.
+
+- **ADE5-14:** oprirea migrării nu mai aruncă OperationCanceledException;
+  rollback explicit și rezultat distinct de succes în formular.
+  [Worklog](docs/worklog/SLICE-ADE5-14-oprire-fara-exceptie.md). Următoarea subfelie: ADE5-15.
+
+- **ADE5-13:** writerul nu mai citește cheia Access din rândurile generate
+  Grupe_Educator/Platitori_Istoric (IDGE/IDI). [Worklog](docs/worklog/SLICE-ADE5-13-chei-randuri-generate.md).
+  Următoarea subfelie: ADE5-14.
+
+- **ADE5-12:** referințele inexistente LunaD.IDV/Prezenta.IDV se importă ca NULL,
+  fără blocaj, cu numărători în plan. [Worklog](docs/worklog/SLICE-ADE5-12-taxe-lipsa-null.md).
+  Următoarea subfelie: ADE5-13.
+
+- **ADE5-11:** marcajele `FARA CNP` și `-1` se importă ca NULL în CNP/CNP_Platitor,
+  inclusiv SS_Buget, înainte de copierea către părinte; numărătorile apar în plan.
+  [Worklog](docs/worklog/SLICE-ADE5-11-cnp-lipsa-null.md). Următoarea subfelie: ADE5-12.
 
 - **ADE5-10:** logul anterior este arhivat la lansare și se creează unul nou;
   caseta din formular pornește goală, fără încărcarea automată a logului.

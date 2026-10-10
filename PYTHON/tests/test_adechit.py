@@ -30,6 +30,104 @@ def post(http, path, body, key=None):
     return http.post(path, json=body, headers=h)
 
 
+def test_hidden_groups_filter_confirmation_conflict_and_unhide(tmp_path):
+    http, database = client(tmp_path)
+    group = http.get('/api/adechit/catalog-data', headers=headers()).json['groups'][0]
+    body = {'id': group['IDG'], 'version': group['Version'], 'hidden': True}
+    refused = post(http, '/api/adechit/group-hidden', body)
+    assert refused.status_code == 409
+    assert refused.json['reason'] == 'GROUP_ACTIVE_CHILDREN'
+    assert len(http.get('/api/adechit/catalog-data', headers=headers()).json['groups']) == 1
+    key = str(uuid.uuid4())
+    saved = post(http, '/api/adechit/group-hidden', {**body, 'confirm_active': True}, key)
+    assert saved.status_code == 200 and saved.json['Ascunsa'] == 1
+    assert post(http, '/api/adechit/group-hidden', {**body, 'confirm_active': True}, key).json == saved.json
+    assert http.get('/api/adechit/catalog-data', headers=headers()).json['groups'] == []
+    all_groups = http.get('/api/adechit/catalog-data?include_hidden=1', headers=headers()).json['groups']
+    assert len(all_groups) == 1 and all_groups[0]['Ascunsa'] == 1
+    stale = post(http, '/api/adechit/group-hidden', {**body, 'hidden': False})
+    assert stale.status_code == 409 and stale.json['reason'] == 'CONFLICT'
+    unhidden = post(http, '/api/adechit/group-hidden', {**body, 'version': saved.json['Version'], 'hidden': False})
+    assert unhidden.status_code == 200 and unhidden.json['Ascunsa'] == 0
+    invalid = post(http, '/api/adechit/group-hidden', {**body, 'hidden': 'true'})
+    assert invalid.status_code == 400 and invalid.json['reason'] == 'BOOLEAN'
+    connection = sqlite3.connect(database)
+    connection.execute('UPDATE AD_Platitori SET Plecat=1 WHERE IDG=?', (group['IDG'],))
+    connection.commit()
+    connection.close()
+    no_active = post(http, '/api/adechit/group-hidden', {**body, 'version': unhidden.json['Version']})
+    assert no_active.status_code == 200
+
+
+def test_hide_group_respects_catalog_rights_and_subunit_scope(tmp_path):
+    app = create_app(tmp_path, second_subunit=True)
+    app.testing = True
+    http = app.test_client()
+    h = {**headers(True), 'X-Ade-Subunit': '1'}
+    foreign = http.post('/api/adechit/group-hidden', headers=h,
+                        json={'id': 101, 'version': 1, 'hidden': True, 'confirm_active': True})
+    assert foreign.status_code == 404
+    app.config['ADE_TEST_RIGHTS'].discard('catalog')
+    denied = http.post('/api/adechit/group-hidden', headers=h,
+                       json={'id': 1, 'version': 1, 'hidden': True, 'confirm_active': True})
+    assert denied.status_code == 403
+
+
+def test_main_groups_are_scoped_to_month_attendance_and_hidden_filter(tmp_path):
+    http, database = client(tmp_path)
+    connection = sqlite3.connect(database)
+    connection.executescript('''
+        INSERT INTO AD_Grupe (IDG,Grupa,Ascunsa) VALUES (2,'Hidden group',1),(3,'Empty group',0);
+        INSERT INTO AD_LunaD (IDL,Anul,Luna) VALUES (2,2026,11),(3,2026,12);
+        UPDATE AD_Platitori SET IDG=2 WHERE IDP=1;
+        INSERT INTO AD_Prezenta (IDZ,IDP,IDL,IDG,ZilePrezenta) VALUES (2,1,2,2,0);
+    ''')
+    connection.commit(); connection.close()
+    def groups(query):
+        response = http.get('/api/adechit/catalog-data' + query, headers=headers())
+        assert response.status_code == 200
+        return [group['IDG'] for group in response.json['groups']]
+    # The old month keeps the child's historical group, despite their current transfer.
+    assert groups('?IDL=1') == [1]
+    assert groups('?IDL=2') == []
+    assert groups('?IDL=2&include_hidden=1') == [2]
+    assert groups('?IDL=3&include_hidden=1') == []
+    # The Plătitori catalog continues to include groups with no monthly attendance.
+    assert groups('?include_hidden=1') == [1, 2, 3]
+    invalid = http.get('/api/adechit/catalog-data?IDL=bad', headers=headers())
+    assert invalid.status_code == 400
+    missing = http.get('/api/adechit/catalog-data?IDL=999', headers=headers())
+    assert missing.status_code == 404
+
+
+def test_legacy_payment_documents_use_payment_month_and_include_amounts(tmp_path):
+    http, database = client(tmp_path)
+    connection = sqlite3.connect(database)
+    connection.executescript('''
+        INSERT INTO AD_Plati (IDPL,IDP,IDZ,IDS,IDL,Plata,TIP,Anulata)
+            VALUES (1,1,1,1,1,80,2,0),(2,1,1,1,1,120,1,0),(3,1,1,1,1,20,2,1);
+        INSERT INTO AD_Chitante (IDC,IDPL,IDL,Numar,Anulata)
+            VALUES (1,1,NULL,10,0),(2,3,NULL,11,0);
+        INSERT INTO AD_AlteDoc (IDA,IDPL,IDL,NrDoc,Explicatie,Anulata)
+            VALUES (1,2,NULL,'OP-1','Virament',0);
+    ''')
+    connection.commit(); connection.close()
+    situation = http.get('/api/adechit/situation/1?IDG=1', headers=headers()).json['rows'][0]
+    assert situation['Plata'] == 80 and situation['Plati'] == 120
+    receipts = http.get('/api/adechit/ledger/1?IDL=1&kind=receipt', headers=headers())
+    assert receipts.status_code == 200
+    assert [row['Valoare'] for row in receipts.json['rows']] == [80, 20]
+    assert [row['Cancelled'] for row in receipts.json['rows']] == [False, True]
+    others = http.get('/api/adechit/ledger/1?IDL=1&kind=other', headers=headers())
+    assert others.status_code == 200
+    assert others.json['rows'][0]['Valoare'] == 120
+    assert others.json['rows'][0]['NrDoc'] == 'OP-1'
+    assert http.get('/api/adechit/ledger/1?IDL=1&kind=refund', headers=headers()).json['rows'] == []
+    assert http.get('/api/adechit/ledger/1?IDL=2&kind=receipt', headers=headers()).status_code == 409
+    assert http.get('/api/adechit/ledger/1?IDL=bad&kind=receipt', headers=headers()).status_code == 400
+    assert http.get('/api/adechit/ledger/1?IDL=1&kind=bad', headers=headers()).status_code == 400
+
+
 def test_context_edit_and_read_only_refusal(tmp_path):
     http, _ = client(tmp_path)
     context = http.get('/api/adechit/context', headers=headers())
@@ -141,7 +239,7 @@ def test_group_situation_preserves_history_and_closed_snapshot(tmp_path, monkeyp
 def test_m04_and_idempotency(tmp_path):
     http, _ = client(tmp_path)
     body = {'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-11-03',
-            'amount': 100, 'number': 'OP-1', 'document_type': 'Virament'}
+            'amount': 100, 'number': 'OP-1'}
     key = 'same-operation-0001'
     first = post(http, '/api/adechit/documents', body, key)
     repeated = post(http, '/api/adechit/documents', body, key)
@@ -181,7 +279,7 @@ def test_m02_closed_snapshot_is_rewritten_on_cancel(tmp_path):
     assert closed.status_code == 200
     document = post(http, '/api/adechit/documents', {
         'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-20',
-        'amount': 75, 'number': 'OP-75', 'document_type': 'Virament',
+        'amount': 75, 'number': 'OP-75',
     })
     assert document.status_code == 200
     snapshot = http.get('/api/adechit/rows/SS_Buget?IDL=1', headers=headers()).json['rows'][0]
@@ -205,7 +303,7 @@ def test_m05_blocks_both_months_then_orphans_and_reattaches(tmp_path):
     next_attendance = http.get('/api/adechit/rows/Prezenta?IDL=2', headers=headers()).json['rows'][0]
     assert post(http, '/api/adechit/documents', {
         'kind': 'other', 'attendance_id': next_attendance['IDZ'], 'payer_id': 1,
-        'date': '2026-11-10', 'amount': 30, 'number': 'OP-NOV', 'document_type': 'Virament',
+        'date': '2026-11-10', 'amount': 30, 'number': 'OP-NOV',
     }).status_code == 200
     blocked = post(http, '/api/adechit/reopen', {'id': 1})
     assert blocked.status_code == 409 and blocked.json['reason'] == 'REOPEN_MOVEMENTS'
@@ -229,7 +327,7 @@ def test_m05_block_also_checks_reopened_month(tmp_path):
     http, _ = client(tmp_path)
     movement = post(http, '/api/adechit/documents', {
         'kind': 'other', 'attendance_id': 1, 'payer_id': 1, 'date': '2026-10-10',
-        'amount': 15, 'number': 'OP-OCT', 'document_type': 'Virament',
+        'amount': 15, 'number': 'OP-OCT',
     })
     assert movement.status_code == 200
     assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
@@ -242,7 +340,7 @@ def test_import_repeat_and_reconcile(tmp_path):
     connection = sqlite3.connect(database)
     table_names = [row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE name LIKE 'AD_%'")]
     for name in table_names:
-        if name not in ('AD_Lock', 'AD_Operations', 'AD_Settings', 'AD_Imports'):
+        if name not in ('AD_Lock', 'AD_Operations', 'AD_Settings', 'AD_Imports', 'AD_Subunits', 'AD_ReceiptConfig'):
             connection.execute(f'DELETE FROM `{name}`')
     connection.execute('DELETE FROM AD_Imports')
     connection.commit(); connection.close()
@@ -388,8 +486,9 @@ def test_departed_child_with_balance_stays_in_next_month(tmp_path):
         'values': {'Plecat': True, 'DataIesire': '2026-10-09'}})
     assert departed.status_code == 200
     assert post(http, '/api/adechit/close', {'id': 1}).status_code == 200
-    data = http.get('/api/adechit/catalog-data', headers=headers()).json
+    data = http.get('/api/adechit/catalog-data?include_hidden=1', headers=headers()).json
     special = next(row for row in data['groups'] if row.get('Tip') == 'PLECATI')
+    assert special['Ascunsa'] == 1
     attendance = http.get('/api/adechit/rows/Prezenta?IDL=2', headers=headers()).json['rows']
     assert len(attendance) == 1 and attendance[0]['IDG'] == special['IDG']
 

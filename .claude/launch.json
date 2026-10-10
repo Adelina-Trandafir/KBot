@@ -91,6 +91,16 @@
         "5050"
       ],
       "port": 5050
+    },
+    {
+      "name": "ade-preview",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/Adelina Trandafir/source/repos/KBOT/ADECHIT/tools/preview.py",
+        "--port",
+        "5052"
+      ],
+      "port": 5052
     }
   ]
 }

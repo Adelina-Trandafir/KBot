@@ -103,6 +103,7 @@ export class TreeView {
       // OPȚIUNI NOI/ACTUALIZATE
       selectableLevel: options.selectableLevel || null,
       requireDoubleClick: options.requireDoubleClick || false,
+      indent: options.indent ?? 12, // px added per level
       autoCollapse: options.autoCollapse !== false, // true by default
       autoResize: options.autoResize !== false, // true by default
       showSearchBox: options.showSearchBox !== false, // true by default

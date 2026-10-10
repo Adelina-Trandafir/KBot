@@ -73,7 +73,7 @@ export const treeViewRenderMixin = {
       const isMatched = this.matchedNodes.has(nodeIdStr);
       const isParentOfMatched = this.parentOfMatchedNodes.has(nodeIdStr);
 
-      const paddingLeft = (level - 1) * 12;
+      const paddingLeft = (level - 1) * Number(this.options.indent ?? 12);
 
       // Calculează lățimea reală totală
       const expanderWidth = Number(this.expanderWidth);
@@ -130,7 +130,11 @@ export const treeViewRenderMixin = {
           this.options.checkable ? ` title="${this.escapeHtml(nodeLabel)}"` : ''
         }>
           ${!asParent ? this.highlightText(nodeLabel, query, this.localSearchQuery) : nodeLabel}
-        </span>${node.badge ? `<span class="treeview-badge">${this.escapeHtml(node.badge)}</span>` : ''}
+        </span>${node.badge ? `<span class="treeview-badge">${this.escapeHtml(node.badge)}</span>` : ''}${
+          node.rightIcon
+            ? `<span class="treeview-righticon" role="button" tabindex="0" data-action="${this.escapeHtml(node.rightIcon.action)}" data-node-id="${this.escapeHtml(nodeIdStr)}"${node.rightIcon.title ? ` title="${this.escapeHtml(node.rightIcon.title)}" aria-label="${this.escapeHtml(node.rightIcon.title)}"` : ''}>${node.rightIcon.icon}</span>`
+            : ''
+        }
       </div>
       ${
         hasChildren && isExpanded

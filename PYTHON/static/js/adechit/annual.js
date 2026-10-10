@@ -30,7 +30,7 @@ export function bindAnnual({ api, refresh, message }) {
       { key: 'Nume', title: 'Copil', valueType: ValueType.Text, width: 230, filter: false },
       { key: 'OriginalGroup', title: 'Grupa din august', valueType: ValueType.Text, width: 180, filter: false },
       { key: 'departed', title: 'Plecat', valueType: ValueType.Boolean, display: 'checkbox', editor: 'checkbox', editable: true, width: 70, filter: false },
-    ], rows, rowKey: 'IDP', editable: true, multiSelect: true, dragRows: true, enableGrouping: false,
+    ], rows, rowKey: 'IDP', headerHeight: 32, editable: true, multiSelect: true, dragRows: true, enableGrouping: false,
     footer: true, footerCaption: '{0} copii', layout: { fill: 'Nume' },
     onSelectionChange: selectionChanged,
     onCellSave: async ({ row, value }) => { if (busy) throw new Error('Închiderea este în curs.'); row.departed = value; return row; },
@@ -44,7 +44,7 @@ export function bindAnnual({ api, refresh, message }) {
   }
   function renderEducators() {
     educatorGrid?.destroy();
-    educatorGrid = new DataGrid($('ade-annual-educator-grid'), { columns: [
+    educatorGrid = new DataGrid($('ade-annual-educator-grid'), { headerHeight: 32, columns: [
       { key: 'name', title: 'Educator pentru noul an', valueType: ValueType.Text, editable: true, editor: 'text', width: 260,
         validate: (value) => typeof value === 'string' && value.trim() && value.length <= 50 ? '' : 'Completați numele (maximum 50 de caractere).' },
       { key: 'start', title: 'Începând cu', valueType: ValueType.Text, width: 140, filter: false },

@@ -101,6 +101,12 @@ Public NotInheritable Class AdePlan
             For Each k_dc As DataColumn In k_src.Columns
                 k_columns(k_dc.ColumnName) = k_dc
             Next
+            ' Access AlteDoc.FelDoc (a free text such as «C/Val. luna ...») becomes AlteDoc.Explicatie; there is no FelDoc column any more.
+            Dim k_felDoc As DataColumn = Nothing
+            If k_table.Name = "AlteDoc" AndAlso k_columns.TryGetValue("FelDoc", k_felDoc) Then
+                k_columns.Remove("FelDoc")
+                Notes.Add("AlteDoc: FelDoc din Access a trecut în Explicatie (coloana FelDoc nu mai există).")
+            End If
             Dim k_ignored = k_columns.Keys.Where(Function(c) Not k_table.Columns.Any(Function(t) String.Equals(t.Name, c, StringComparison.OrdinalIgnoreCase))).OrderBy(Function(c) c).ToList()
             If k_ignored.Count > 0 Then Notes.Add($"{k_table.Name}: coloane din Access care nu se mai iau — {String.Join(", ", k_ignored)}.")
 
@@ -119,6 +125,11 @@ Public NotInheritable Class AdePlan
                         k_rounded(k_id) = (k_old.Count + 1, k_old.Example)
                     End If
                 Next
+                If k_felDoc IsNot Nothing Then
+                    Dim k_explicatie = k_table.Columns.First(Function(c) c.Name = "Explicatie")
+                    Dim k_felNote As String = Nothing
+                    If k_out("Explicatie") Is Nothing Then k_out("Explicatie") = ConvertCell(k_table, k_explicatie, k_row(k_felDoc), k_felNote)
+                End If
                 Dim k_key = k_out(k_table.Key)
                 If k_key Is Nothing Then
                     Block($"{k_table.Name}: un rând fără cheie ({k_table.Key}).")
@@ -128,7 +139,7 @@ Public NotInheritable Class AdePlan
                 k_planTable.Rows.Add(k_out)
             Next
             For Each k_pair In k_rounded
-                Notes.Add($"{k_pair.Key}: {k_pair.Value.Count} valori nu au intrat întregi (ex.: {k_pair.Value.Example}).")
+                Notes.Add($"{k_pair.Key}: {k_pair.Value.Count} valori convertite (ex.: {k_pair.Value.Example}).")
             Next
         Next
     End Sub
@@ -146,6 +157,14 @@ Public NotInheritable Class AdePlan
             Case Else
                 Dim k_text = AdeValue.ToStr(k_cell)
                 Dim k_string = TryCast(k_text, String)
+                ' Normalize missing-CNP markers before CopyParentCnp and before the writer binds SQL parameters.
+                If k_string IsNot Nothing AndAlso (k_col.Name = "CNP" OrElse k_col.Name = "CNP_Platitor") Then
+                    Dim k_marker = k_string.Trim()
+                    If String.Equals(k_marker, "FARA CNP", StringComparison.OrdinalIgnoreCase) OrElse k_marker = "-1" Then
+                        k_note = "marcaj de CNP lipsă convertit în NULL"
+                        Return Nothing
+                    End If
+                End If
                 If k_string IsNot Nothing AndAlso k_col.MaxLen > 0 AndAlso k_string.Length > k_col.MaxLen Then
                     Block($"{k_table.Name}.{k_col.Name}: un text are {k_string.Length} caractere, iar coloana primește cel mult {k_col.MaxLen}.")
                 End If
@@ -196,6 +215,7 @@ Public NotInheritable Class AdePlan
                 k_isDeparted = k_selected
             End If
             k_row("Tip") = If(k_isDeparted, "PLECATI", "NORMALA")
+            k_row("Ascunsa") = k_isDeparted
             If k_isDeparted Then k_departed.Add(k_name)
         Next
         If k_departed.Count = 0 Then
@@ -266,6 +286,8 @@ Public NotInheritable Class AdePlan
         For Each k_row In Find("LunaD").Rows
             If k_row("IDL") Is Nothing Then Continue For
             Dim k_idl = CInt(k_row("IDL"))
+            ' Local month order: the server allocates new ids, so the order the Access rules compare lives here (plan section 5).
+            k_row("Ordine") = k_idl
             If k_row("Luna") IsNot Nothing AndAlso k_row("Anul") IsNot Nothing Then k_monthOf(k_idl) = (CInt(k_row("Luna")), CInt(k_row("Anul")))
             If k_row("ZileLuna") Is Nothing AndAlso k_days.ContainsKey(k_idl) Then
                 k_row("ZileLuna") = k_days(k_idl).OrderByDescending(Function(p) p.Value).First().Key

@@ -44,25 +44,30 @@ def amount_words(amount):
     return text
 
 
+def issuer_data(repo, unit):
+    """The issuing unit as printed on receipts and reports (name, tax code, address, bank accounts)."""
+    if repo.sqlite:
+        return {'name': 'Unitate de probă', 'tax_code': '', 'address': '', 'accounts': []}
+    rows = repo.query('SELECT u.NumeUnitate, u.CF, d.Adresa, d.Orasul, d.Judetul '
+                      'FROM AVACONT_COMUN.Unitati u LEFT JOIN AVACONT_COMUN.Unitati_Date d ON d.DC=u.DC WHERE u.DC=%s', (unit,))
+    require(len(rows) == 1, 'UNIT', 'Datele unității pentru chitanță nu sunt disponibile.', 409)
+    row = rows[0]
+    accounts = repo.query('SELECT Cont,Banca FROM AVACONT_COMUN.Unitati_Conturi WHERE DC=%s ORDER BY IdCont', (unit,))
+    return {'name': str(row['NumeUnitate'] or ''), 'tax_code': str(row['CF'] or ''),
+            'address': ', '.join(str(row[key]) for key in ('Adresa', 'Orasul', 'Judetul') if row.get(key)), 'accounts': accounts}
+
+
 def receipt_data(repo, receipt_id, unit):
     receipt = repo.get('Chitante', receipt_id)
     payment = repo.get('Plati', receipt['IDPL'])
     require(payment.get('IDS') is not None, 'PAYER', 'Chitanța nu are un plătitor asociat.', 409)
     payer = repo.get('Platitori_sub', payment['IDS'])
     require(payer['IDP'] == payment['IDP'], 'PAYER', 'Legăturile plătitorului chitanței sunt discordante.', 409)
-    if repo.sqlite:
-        issuer = {'name': 'Unitate de probă', 'tax_code': '', 'address': '', 'accounts': []}
-    else:
-        rows = repo.query('SELECT u.NumeUnitate, u.CF, d.Adresa, d.Orasul, d.Judetul '
-                          'FROM AVACONT_COMUN.Unitati u LEFT JOIN AVACONT_COMUN.Unitati_Date d ON d.DC=u.DC WHERE u.DC=%s', (unit,))
-        require(len(rows) == 1, 'UNIT', 'Datele unității pentru chitanță nu sunt disponibile.', 409)
-        row = rows[0]
-        accounts = repo.query('SELECT Cont,Banca FROM AVACONT_COMUN.Unitati_Conturi WHERE DC=%s ORDER BY IdCont', (unit,))
-        issuer = {'name': str(row['NumeUnitate'] or ''), 'tax_code': str(row['CF'] or ''),
-                  'address': ', '.join(str(row[key]) for key in ('Adresa', 'Orasul', 'Judetul') if row.get(key)), 'accounts': accounts}
+    issuer = issuer_data(repo, unit)
     amount = Decimal(str(payment.get('Plata') or 0)).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
     day = date.fromisoformat(str(receipt['Data'])[:10]).strftime('%d.%m.%Y')
-    return {'id': receipt_id, 'series': receipt.get('Serie') or '', 'number': receipt['Numar'], 'date': day,
+    # The series and number belong to the subunit of the document; the printout names that subunit (SLICE-ADE10).
+    return {'id': receipt_id, 'subunit': repo.subunit_name, 'series': receipt.get('Serie') or '', 'number': receipt['Numar'], 'date': day,
             'issuer': issuer, 'payer': payer.get('Nume') or '', 'address': payer.get('Adresa') or '',
             'amount': f'{amount:,.2f}'.replace(',', ' ').replace('.', ','), 'words': amount_words(amount),
             'explanation': receipt.get('Explicatie') or '', 'cancelled': bool(receipt.get('Anulata') or payment.get('Anulata'))}
@@ -95,6 +100,7 @@ def pdf_bytes(data):
         if data['cancelled']:
             block.append(p('ANULATĂ', title))
         block += [Spacer(1, 3 * mm), p(f"CHITANȚĂ {data['series']} / {data['number']}", title), p('Data: ' + data['date']),
+                  *([p('Subunitate: ' + data['subunit'])] if data.get('subunit') else []),
                   p('Am primit de la: ' + data['payer']), p('Adresa: ' + data['address']),
                   p('Suma de: ' + data['amount'] + ' lei'), p('Adică: ' + data['words']),
                   p('Reprezentând: ' + data['explanation']), Spacer(1, 7 * mm), p('Casier: ____________________'),

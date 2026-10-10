@@ -8,7 +8,8 @@ export function showMessage(element, message, level = 'info') {
   if (message) {
     history.push({ at: new Date().toISOString(), message, level });
     if (history.length > 100) history.shift();
-    eventBus.emit('ui:message', { level });
+    // The message is already displayed above; bus subscribers are optional.
+    if (eventBus.listenerCount('ui:message') > 0) eventBus.emit('ui:message', { level });
   }
 }
 export function messageHistory() { return history.map((item) => ({ ...item })); }

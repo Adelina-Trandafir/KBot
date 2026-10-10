@@ -505,9 +505,21 @@ export class DataGrid {
       cell.style.width = `${this._w(col)}px`;
       if (this._isRight(col)) cell.classList.add('is-right');
 
-      const title = el('span', 'dgv__title', col.title);
-      title.title = col.title;
-      cell.appendChild(title);
+      if (col.headerAction) {
+        // the whole header cell is one button (an emoji): the grid's own command, e.g. the "+" of the ADE attendance grid
+        const action = el('button', 'dgv__head-action', col.headerAction.text);
+        action.type = 'button';
+        action.title = col.headerAction.title || col.title;
+        action.setAttribute('aria-label', action.title);
+        action.disabled = Boolean(col.headerAction.disabled);
+        action.addEventListener('click', (ev) => { ev.stopPropagation(); this._emit('onHeaderAction', { key: col.key }); }, { signal });
+        cell.appendChild(action);
+        cell.classList.add('is-action');
+      } else {
+        const title = el('span', 'dgv__title', col.title);
+        title.title = col.title;
+        cell.appendChild(title);
+      }
 
       if (this._sort && this._sort.key === col.key) {
         cell.appendChild(el('span', 'dgv__sort', this._sort.dir === 'asc' ? '▲' : '▼'));
@@ -521,10 +533,12 @@ export class DataGrid {
         btn.addEventListener('click', (ev) => { ev.stopPropagation(); this._openFilter(col, btn); }, { signal });
         cell.appendChild(btn);
       }
-      const grip = el('span', 'dgv__rs');
-      grip.addEventListener('pointerdown', (ev) => this._startResize(ev, col), { signal });
-      grip.addEventListener('click', (ev) => ev.stopPropagation(), { signal });
-      cell.appendChild(grip);
+      if (!col.fixedWidth) {
+        const grip = el('span', 'dgv__rs');
+        grip.addEventListener('pointerdown', (ev) => this._startResize(ev, col), { signal });
+        grip.addEventListener('click', (ev) => ev.stopPropagation(), { signal });
+        cell.appendChild(grip);
+      }
 
       if (col.sortable) cell.addEventListener('click', () => this._cycleSort(col), { signal });
       cell.addEventListener('contextmenu', (ev) => { ev.preventDefault(); this._openMenu(col, ev.clientX, ev.clientY); }, { signal });
@@ -743,8 +757,13 @@ export class DataGrid {
         const action = this._opts.footerAction;
         const button = el('button', 'dgv__footer-action', action.label);
         button.type = 'button';
-        button.addEventListener('click', () => this._emit('onFooterAction'));
-        cell.replaceChildren(button);
+        if (action.title) { button.title = action.title; button.setAttribute('aria-label', action.title); }
+        if (action.active) button.classList.add('is-active');
+        if (action.menu) button.setAttribute('aria-haspopup', 'menu');
+        button.addEventListener('click', () => this._emit('onFooterAction', { button }));
+        // withCaption keeps the row count beside the button instead of replacing it
+        if (action.withCaption) { button.classList.add('dgv__footer-action--lead'); cell.replaceChildren(button, el('span', 'dgv__footer-caption', text)); }
+        else cell.replaceChildren(button);
       }
       this._foot.appendChild(cell);
     });

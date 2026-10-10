@@ -18,6 +18,8 @@ Partial Class AdeMigratorForm
     Friend WithEvents txtTargetDc As KBot.Controls.KBotTextField
     Friend WithEvents btnCiteste As System.Windows.Forms.Button
     Friend WithEvents chkChildCnpIsParent As System.Windows.Forms.CheckBox
+    Friend WithEvents lblSubunit As System.Windows.Forms.Label
+    Friend WithEvents txtSubunit As KBot.Controls.KBotTextField
 
     ' --- server ---
     Friend WithEvents grpServer As System.Windows.Forms.GroupBox
@@ -80,6 +82,7 @@ Partial Class AdeMigratorForm
         Dim colNume As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colGroupName As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colDeparted As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
+        Dim colHidden As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         tlpRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
         grpSursa = New System.Windows.Forms.GroupBox()
         tlpSursa = New Global.KBot.Controls.KBotTableLayoutPanel()
@@ -90,6 +93,8 @@ Partial Class AdeMigratorForm
         txtTargetDc = New KBot.Controls.KBotTextField()
         btnCiteste = New System.Windows.Forms.Button()
         chkChildCnpIsParent = New System.Windows.Forms.CheckBox()
+        lblSubunit = New System.Windows.Forms.Label()
+        txtSubunit = New KBot.Controls.KBotTextField()
         grpServer = New System.Windows.Forms.GroupBox()
         tlpServer = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblGazda = New System.Windows.Forms.Label()
@@ -183,7 +188,10 @@ Partial Class AdeMigratorForm
         tlpSursa.Controls.Add(txtTargetDc, 4, 0)
         tlpSursa.Controls.Add(btnCiteste, 5, 0)
         tlpSursa.Controls.Add(chkChildCnpIsParent, 0, 1)
-        tlpSursa.SetColumnSpan(chkChildCnpIsParent, 6)
+        tlpSursa.SetColumnSpan(chkChildCnpIsParent, 3)
+        tlpSursa.Controls.Add(lblSubunit, 3, 1)
+        tlpSursa.Controls.Add(txtSubunit, 4, 1)
+        tlpSursa.SetColumnSpan(txtSubunit, 2)
         tlpSursa.Dock = DockStyle.Fill
         tlpSursa.Name = "tlpSursa"
         tlpSursa.RowCount = 2
@@ -199,6 +207,22 @@ Partial Class AdeMigratorForm
         chkChildCnpIsParent.TabIndex = 6
         chkChildCnpIsParent.Text = "CNP Copil = CNP Părinte"
         chkChildCnpIsParent.UseVisualStyleBackColor = True
+        '
+        ' lblSubunit
+        '
+        lblSubunit.Dock = DockStyle.Fill
+        lblSubunit.Name = "lblSubunit"
+        lblSubunit.TabIndex = 7
+        lblSubunit.Text = "Subunitate"
+        lblSubunit.TextAlign = ContentAlignment.MiddleCenter
+        '
+        ' txtSubunit
+        '
+        txtSubunit.Dock = DockStyle.Fill
+        txtSubunit.Enabled = True
+        txtSubunit.ReadOnly = False
+        txtSubunit.Name = "txtSubunit"
+        txtSubunit.TabIndex = 8
         '
         ' lblFisier
         '
@@ -552,6 +576,12 @@ Partial Class AdeMigratorForm
         colDeparted.Width = 90
         dgvGrupe.Columns.Add(colGroupName)
         dgvGrupe.Columns.Add(colDeparted)
+        colHidden.Key = "ascunsa"
+        colHidden.HeaderText = "Ascunsă"
+        colHidden.ColumnType = KBot.Controls.KBotColumnType.CheckBox
+        colHidden.ReadOnly = True
+        colHidden.Width = 90
+        dgvGrupe.Columns.Add(colHidden)
         dgvGrupe.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
         dgvGrupe.FillColumnKey = "grupa"
         dgvGrupe.Dock = DockStyle.Fill
@@ -628,6 +658,8 @@ Partial Class AdeMigratorForm
         tipAde.SetToolTipHeader(txtTargetDc, "DC destinație")
         tipAde.SetToolTipText(txtTargetDc, "Propus din Access, editabil. După schimbare, apăsați «Testează» pentru noua destinație.")
         tipAde.SetToolTipHeader(btnTesteaza, "Testează serverul")
+        tipAde.SetToolTipHeader(txtSubunit, "Subunitate destinație")
+        tipAde.SetToolTipText(txtSubunit, "Evidența din acest MDB intră într-o subunitate a DC-ului. Un nume nou creează subunitatea; numele unei subunități existente o alege (trebuie să fie goală). Seria și numărul chitanțelor se importă în subunitatea aleasă. După schimbare, apăsați «Testează».")
         tipAde.SetToolTipHeader(chkChildCnpIsParent, "CNP-ul părintelui din Access")
         tipAde.SetToolTipText(chkChildCnpIsParent, "Dacă CNP-ul copilului din Access aparține părintelui, copiază Platitori.CNP în CNP_Platitor pentru plătitorii asociați. După schimbare, apăsați «Testează».")
         tipAde.SetToolTipText(btnTesteaza, "Verifică parola, baza cu numele DC-ului și dacă tabelele AD_ sunt create și goale.")

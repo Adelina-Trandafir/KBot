@@ -26,14 +26,27 @@
         "type": "Long",
         "size": 4,
         "default": ""
+      },
+      "Ascunsa": {
+        "type": "Yes/No",
+        "size": 1,
+        "default": "0"
       }
     }
   },
   "ValoriTaxe": {
     "key": "IDV",
     "fields": {
-      "DeLa": { "type": "Text", "size": 7, "default": "" },
-      "PanaLa": { "type": "Text", "size": 7, "default": "" },
+      "DeLa": {
+        "type": "Text",
+        "size": 7,
+        "default": ""
+      },
+      "PanaLa": {
+        "type": "Text",
+        "size": 7,
+        "default": ""
+      },
       "IDV": {
         "type": "Long",
         "size": 4,
@@ -63,6 +76,11 @@
         "type": "Long",
         "size": 4,
         "default": "0"
+      },
+      "Ordine": {
+        "type": "Long",
+        "size": 4,
+        "default": ""
       },
       "IDV": {
         "type": "Long",
@@ -207,6 +225,11 @@
       "Telefon": {
         "type": "Text",
         "size": 50,
+        "default": ""
+      },
+      "CodAccesPortal": {
+        "type": "Text",
+        "size": 64,
         "default": ""
       }
     }
@@ -385,11 +408,6 @@
         "default": "0"
       },
       "NrDoc": {
-        "type": "Text",
-        "size": 255,
-        "default": ""
-      },
-      "FelDoc": {
         "type": "Text",
         "size": 255,
         "default": ""

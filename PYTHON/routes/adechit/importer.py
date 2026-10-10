@@ -14,7 +14,7 @@ IMPORT_ORDER = (
     'SS_Buget',
 )
 SOURCE_IGNORED = {'ZileLuna', 'ZileAbsenta', 'MZCPrezenta', 'MZCAbsenta', 'ValoareMancare', 'Detalii', 'Motivul',
-                  'TaxaLunara', 'TaxaMicDejun', 'TaxaDejun', 'Murdar', 'DoarCalculZilnic', 'TaxaMancare', 'Valoare', 'Anticipat', 'Restanta', 'IDF', 'J', 'IDV', 'Avans', 'Adresa', 'Frate', 'ReducereFrate', 'ReducereBonus', 'ZileCon', 'DisCon', 'ZilePre', 'DisPre', 'DisBro'}
+                  'TaxaLunara', 'TaxaMicDejun', 'TaxaDejun', 'Murdar', 'DoarCalculZilnic', 'TaxaMancare', 'Valoare', 'Anticipat', 'FelDoc', 'Restanta', 'IDF', 'J', 'IDV', 'Avans', 'Adresa', 'Frate', 'ReducereFrate', 'ReducereBonus', 'ZileCon', 'DisCon', 'ZilePre', 'DisPre', 'DisBro'}
 # Every foreign key of the AD_ tables (child table, column, parent table). Mirrors the FOREIGN KEY lines of sql/AD_01_schema.sql.
 RELATIONS = (
     ('Platitori', 'IDG', 'Grupe'),
@@ -83,9 +83,15 @@ def normalize_dataset(raw):
         keys = set()
         for source in rows:
             require(isinstance(source, dict), 'IMPORT_ROW', f'Rând invalid în {table}.', 400)
+            if table == 'AlteDoc' and source.get('FelDoc') is not None and not source.get('Explicatie'):
+                source = {**source, 'Explicatie': source['FelDoc']}  # Access FelDoc is a free text: it lives in Explicatie now
             unknown_fields = set(source) - set(spec['fields']) - SOURCE_IGNORED
             require(not unknown_fields, 'IMPORT_FIELDS', f'Câmpuri necunoscute în {table}.', 400)
             row = {key: _normal(value, spec['fields'][key]) for key, value in source.items() if key in spec['fields']}
+            if table == 'Grupe':
+                # Older extracts have no Ascunsa column. Keep import and reconciliation
+                # consistent with the migrator's final departed-group choice.
+                row.setdefault('Ascunsa', row.get('Tip') == 'PLECATI' if row.get('Tip') else 'pleca' in str(row.get('Grupa') or '').casefold())
             key = row.get(spec['key'])
             require(key is not None and key not in keys, 'IMPORT_KEY', f'Cheie lipsă sau duplicată în {table}.', 400)
             keys.add(key)
@@ -163,66 +169,121 @@ def _counts(dataset):
     return {table: len(dataset['tables'][table]) for table in IMPORT_ORDER}
 
 
+def _store_id_map(repo, digest, maps):
+    """AD_IdMap keeps import + table + Access id -> server id, for audit and reconciliation (SLICE-ADE10)."""
+    sql = 'INSERT INTO AD_IdMap (SubunitId,ImportHash,TableName,SourceId,TargetId) VALUES (%s,%s,%s,%s,%s)'
+    rows = [(repo.scope(), digest, table, source, target) for table in IMPORT_ORDER for source, target in maps[table].items()]
+    if repo.sqlite:
+        sql = sql.replace('%s', '?')
+    for start in range(0, len(rows), 500):
+        repo.cursor.executemany(sql, rows[start:start + 500])
+
+
 def import_dataset(repo, raw, unit, source_file):
+    """Initial import into the empty current subunit. Access ids are not kept: the server allocates every key and
+    each reference is rewritten through the per-table map; LunaD.Ordine keeps the Access month order."""
     dataset = validate_dataset(raw)
     historical_warnings = relationship_issues(dataset, include_historical=True)
     digest = source_hash(dataset)
-    previous = repo.query('SELECT Result FROM AD_Imports WHERE SourceHash=%s', (digest,))
+    previous = repo.query('SELECT SubunitId, Result FROM AD_Imports WHERE SourceHash=%s', (digest,))
     if previous:
+        require(previous[0]['SubunitId'] == repo.scope(), 'IMPORT_OTHER_SUBUNIT',
+                'Acest extras a fost deja importat într-o altă subunitate a unității.')
         return {**json.loads(previous[0]['Result']), 'repeated': True}
-    other = repo.query('SELECT SourceHash FROM AD_Imports')
-    require(not other, 'IMPORT_CHANGED', 'Există deja un alt lot importat; extractul modificat nu se aplică automat.')
+    other = repo.query('SELECT SourceHash FROM AD_Imports WHERE SubunitId=%s', (repo.scope(),))
+    require(not other, 'IMPORT_CHANGED', 'Există deja un alt lot importat în subunitate; extractul modificat nu se aplică automat.')
     nonempty = [table for table in IMPORT_ORDER if repo.rows(table)]
-    require(not nonempty, 'IMPORT_NOT_EMPTY', 'Importul inițial cere tabele AD goale; datele existente nu sunt suprascrise.')
-
-    tables = without_dangling_links(dataset)
-    for table in IMPORT_ORDER:
-        for row in tables[table]:
-            if table in ('Plati', 'Retur') and row.get('IDL') is not None:
-                month = next((item for item in tables['LunaD'] if item['IDL'] == row['IDL']), None)
-                if month is not None:
-                    row = {**row, 'OriginMonth': month['Luna'], 'OriginYear': month['Anul']}
-            repo.insert(table, row)
-
+    require(not nonempty, 'IMPORT_NOT_EMPTY', 'Importul inițial cere o subunitate goală; datele existente nu sunt suprascrise.')
     config = dataset.get('receipt_config')
     if config:
-        existing = repo.query('SELECT DC FROM AVACONT_COMUN.Unitati_Chitante WHERE DC=%s', (unit,))
-        require(not existing, 'IMPORT_CONFIG_EXISTS', 'Configurația chitanțelor există deja și nu este suprascrisă.')
-        repo.execute('INSERT INTO AVACONT_COMUN.Unitati_Chitante (DC,Serie,Numar,Explicatie) VALUES (%s,%s,%s,%s)',
-                     (unit, config['Serie'], config['Numar'], config['Explicatie']))
-    result = {'source_hash': digest, 'counts': _counts(dataset), 'unit': unit, 'repeated': False,
-              'historical_relationship_warnings': len(historical_warnings)}
-    repo.execute('INSERT INTO AD_Imports (SourceHash,SourceFile,Manifest,Result) VALUES (%s,%s,%s,%s)',
-                 (digest, source_file, canonical_payload({'counts': result['counts'], 'unit': unit}),
+        require(repo.receipt_config() is None, 'IMPORT_CONFIG_EXISTS', 'Configurația chitanțelor există deja și nu este suprascrisă.')
+
+    tables = without_dangling_links(dataset)
+    month_of = {item['IDL']: item for item in tables['LunaD']}
+    parents = {}
+    for child, column, parent in RELATIONS:
+        parents.setdefault(child, []).append((column, parent))
+    maps = {table: {} for table in IMPORT_ORDER}
+    for table in IMPORT_ORDER:
+        key = SCHEMA[table]['key']
+        # Months go in ascending Access order so the server-allocated ids keep that order.
+        rows = sorted(tables[table], key=lambda item: item[key]) if table == 'LunaD' else tables[table]
+        for row in rows:
+            values = dict(row)
+            source_id = values.pop(key)
+            if table in ('Plati', 'Retur') and values.get('IDL') is not None and values['IDL'] in month_of:
+                month = month_of[values['IDL']]
+                values.update(OriginMonth=month['Luna'], OriginYear=month['Anul'])
+            for column, parent in parents.get(table, ()):
+                if values.get(column) is not None:
+                    values[column] = maps[parent][values[column]]
+            if table == 'LunaD':
+                values['Ordine'] = source_id
+            maps[table][source_id] = repo.insert(table, values)[key]
+    _store_id_map(repo, digest, maps)
+    from .parent_identity import provision_existing
+    provision_existing(repo)
+
+    if config:
+        repo.execute('INSERT INTO AD_ReceiptConfig (SubunitId,Serie,Numar,Explicatie) VALUES (%s,%s,%s,%s)',
+                     (repo.scope(), config['Serie'], config['Numar'], config['Explicatie']))
+    result = {'source_hash': digest, 'counts': _counts(dataset), 'unit': unit, 'subunit': repo.subunit_name,
+              'repeated': False, 'historical_relationship_warnings': len(historical_warnings)}
+    repo.execute('INSERT INTO AD_Imports (SubunitId,SourceHash,SourceFile,Manifest,Result) VALUES (%s,%s,%s,%s,%s)',
+                 (repo.scope(), digest, source_file, canonical_payload({'counts': result['counts'], 'unit': unit,
+                                                                        'subunit': repo.subunit_name}),
                   canonical_payload(result)))
     return result
 
 
 def reconcile_dataset(repo, raw, unit):
+    """Compare the source with the current subunit through the id map written by the import. A subunit without a
+    map (data converted from a single-evidence DC) keeps the Access ids, so the identity mapping applies."""
     dataset = validate_dataset(raw)
+    # A subunit receives one import. The map is found by subunit, not by hash: ADE.Migrator stores the hash of the
+    # MDB file, this path the hash of the normalized extract, and the two are different identities.
+    mapped = repo.query('SELECT TableName, SourceId, TargetId FROM AD_IdMap WHERE SubunitId=%s', (repo.scope(),))
+    maps = {table: {} for table in IMPORT_ORDER}
+    for row in mapped:
+        maps[row['TableName']][row['SourceId']] = row['TargetId']
+    identity = not mapped
+    parents = {}
+    for child, column, parent in RELATIONS:
+        parents.setdefault(child, {})[column] = parent
+
+    def target_id(table, source_id):
+        return source_id if identity else maps[table].get(source_id)
+
     differences = []
     tables = without_dangling_links(dataset)
     for table in IMPORT_ORDER:
         key = SCHEMA[table]['key']
         source = {row[key]: row for row in tables[table]}
         target = {row[key]: row for row in repo.rows(table)}
-        for missing in sorted(set(source) - set(target)):
-            differences.append({'table': table, 'key': missing, 'kind': 'missing'})
-        for extra in sorted(set(target) - set(source)):
-            differences.append({'table': table, 'key': extra, 'kind': 'extra'})
-        for row_id in sorted(set(source) & set(target)):
+        reached = set()
+        for source_id in sorted(source):
+            found = target_id(table, source_id)
+            if found is None or found not in target:
+                differences.append({'table': table, 'key': source_id, 'kind': 'missing'})
+                continue
+            reached.add(found)
             for field, info in SCHEMA[table]['fields'].items():
-                if field in ('OriginMonth', 'OriginYear'):
+                if field in ('OriginMonth', 'OriginYear', 'Ordine') or field == key:
                     continue
-                left = _normal(source[row_id].get(field), info)
-                right = _normal(target[row_id].get(field), info)
+                left = source[source_id].get(field)
+                if field in parents.get(table, {}) and left is not None:
+                    left = target_id(parents[table][field], left)
+                left = _normal(left, info)
+                right = _normal(target[found].get(field), info)
                 if left != right:
-                    differences.append({'table': table, 'key': row_id, 'kind': 'value',
+                    differences.append({'table': table, 'key': source_id, 'kind': 'value',
                                         'field': field, 'source': left, 'target': right})
+        for extra in sorted(set(target) - reached):
+            differences.append({'table': table, 'key': extra, 'kind': 'extra'})
     config = dataset.get('receipt_config')
     if config:
-        rows = repo.query('SELECT Serie,Numar,Explicatie FROM AVACONT_COMUN.Unitati_Chitante WHERE DC=%s', (unit,))
-        if len(rows) != 1 or any(rows[0].get(key) != value for key, value in config.items()):
-            differences.append({'table': 'Unitati_Chitante', 'key': unit, 'kind': 'config'})
+        current = repo.receipt_config()
+        if current is None or any(current.get(key) != value for key, value in config.items()):
+            differences.append({'table': 'AD_ReceiptConfig', 'key': repo.subunit_name, 'kind': 'config'})
     return {'ok': not differences, 'counts': _counts(dataset), 'differences': differences,
             'historical_relationship_warnings': len(relationship_issues(dataset, include_historical=True))}

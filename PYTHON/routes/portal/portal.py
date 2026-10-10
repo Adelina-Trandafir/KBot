@@ -62,12 +62,14 @@ TOKEN_HEADER = "X-Portal-Token"
 
 _NOTE_PENDING = "portal_pending"        # password right, code not typed yet
 _NOTE_SESSION = "portal_session"        # both factors passed
+_NOTE_TRUST = "portal_trust"            # the code was typed in this browser: password alone is enough until the hour ends
 
 CODE_TTL = 10 * 60
 CODE_MAX_ATTEMPTS = 5
-PORTAL_IDLE = 20 * 60                   # sliding window
-PORTAL_MAX = 8 * 60 * 60                # absolute cap, from the code
-PORTAL_MAX_EXTENSIONS = 20
+# One hour from the code, no more: the session never slides past it and cannot be extended (operator, 10.10.2026).
+PORTAL_MAX = 60 * 60                    # absolute cap, from the code
+PORTAL_IDLE = PORTAL_MAX                # so the cap is the only limit
+PORTAL_MAX_EXTENSIONS = 0
 
 _PAGE_FILE = "portal.html"
 
@@ -245,6 +247,12 @@ def portal_login():
         log_action(email, None, "PORTAL_DENIED", detalii="no unit", rezultat="EROARE", ip=ip)
         return _fail("FARA_UNITATI", "Contul nu are nicio unitate asociată.", 403)
 
+    # The code of the last hour is still good in this browser: password + that browser's trust token are enough.
+    trusted = _trusted_since(email, body.get("trust"))
+    if trusted is not None:
+        LIMITER.record_success(ip, email)
+        return open_session(email, units, ip, how="trusted code", issued_at=trusted)
+
     code = f"{secrets.randbelow(1_000_000):06d}"
     try:
         mailer.send_portal_code(email, code, CODE_TTL // 60)
@@ -300,19 +308,39 @@ def portal_verifica():
         return _fail("FARA_UNITATI", "Contul nu are nicio unitate asociată.", 403)
 
     LIMITER.record_success(ip, email)
-    return open_session(email, units, ip)
+    now = time.time()
+    trust = secrets.token_urlsafe(32)
+    STORE.put_note(trust, _NOTE_TRUST, {"email": email, "issued_at": now}, PORTAL_MAX)
+    return open_session(email, units, ip, issued_at=now, trust=trust)
 
 
-def open_session(email, units, ip, how=None):
+def _trusted_since(email, trust):
+    """When the code was typed in this browser, if that was less than an hour ago and for this account."""
+    trust = str(trust or "").strip()
+    note = STORE.get_note(trust, _NOTE_TRUST) if trust else None
+    if note is None or note.get("email") != email:
+        return None
+    issued = float(note.get("issued_at", 0))
+    return issued if time.time() < issued + PORTAL_MAX else None
+
+
+def open_session(email, units, ip, how=None, issued_at=None, trust=None):
     """Both factors passed (password + code, or an enrolled certificate): the portal session.
-    `how` is only the journal's remark. A user with one unit gets it opened at once."""
+    `how` is only the journal's remark. `issued_at` is when the code was typed (the hour counts from it).
+    A user with one unit gets it opened at once."""
     token = secrets.token_urlsafe(32)
-    note = {"email": email, "issued_at": time.time(), "extensions": 0, "db_name": None, "role": None}
+    issued_at = time.time() if issued_at is None else issued_at
+    note = {"email": email, "issued_at": issued_at, "extensions": 0, "db_name": None, "role": None}
     if len(units) == 1:
         note["db_name"], note["role"] = units[0]["DC"], units[0]["Rol"]
-    STORE.put_note(token, _NOTE_SESSION, note, PORTAL_IDLE)
+    ttl = max(1, int(min(PORTAL_IDLE, issued_at + PORTAL_MAX - time.time())))
+    note["idle_until"] = time.time() + ttl
+    STORE.put_note(token, _NOTE_SESSION, note, ttl)
     log_action(email, note["db_name"], "PORTAL_LOGIN", detalii=how, ip=ip)
-    return _json({"token": token, "expires_in": PORTAL_IDLE})
+    payload = {"token": token, "expires_in": ttl}
+    if trust:
+        payload["trust"] = trust
+    return _json(payload)
 
 
 # ---------------------------------------------------------------------------

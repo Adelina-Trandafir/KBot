@@ -1,19 +1,34 @@
 """SLICE-ADE6-06: atomic group histories and audited child form commands."""
 from datetime import date, datetime
 from .domain import require, validate_cnp, group_educators
-from .service import validate_values
+from .service import validate_values, prepare_attendance, month_order
 
 
 def iso_day(value):
     return str(value)[:10] if value else None
 
 
-def catalog_data(repo):
-    groups = repo.rows('Grupe')
+def catalog_data(repo, include_hidden=False, month_id=None):
+    if month_id is not None:
+        repo.get('LunaD', month_id)
+        groups = repo.month_groups(month_id, include_hidden)
+    else:
+        groups = repo.rows('Grupe') if include_hidden else repo.rows('Grupe', Ascunsa=0)
     history = repo.rows('Grupe_Educator')
     for group in groups:
         group['Educators'] = group_educators(group, history, date.today().isoformat()) or ''
     return {'groups': groups}
+
+
+def set_group_hidden(repo, body):
+    require(type(body.get('hidden')) is bool, 'BOOLEAN', 'Alegeți Da sau Nu.', 400)
+    group = repo.get('Grupe', body.get('id'))
+    require(group['Version'] == body.get('version'), 'CONFLICT', 'Grupa s-a modificat. Reîncărcați datele.')
+    if body['hidden'] and not group.get('Ascunsa'):
+        active_children = sum(not child.get('Plecat') for child in repo.rows('Platitori', IDG=group['IDG']))
+        require(not active_children or body.get('confirm_active') is True, 'GROUP_ACTIVE_CHILDREN',
+                f'Grupa are {active_children} copii fără bifa Plecat. Confirmați ascunderea grupei.')
+    return repo.update('Grupe', group, {'Ascunsa': body['hidden']})
 
 
 def save_group(repo, body):
@@ -93,9 +108,20 @@ def save_child(repo, body, username, may_transfer):
     if moving or leaving_changed:
         require(may_transfer, 'FORBIDDEN', 'Nu aveți dreptul de a muta copilul sau de a schimba starea Plecat.', 403)
     saved = repo.update('Platitori', existing, values) if existing else repo.insert('Platitori', values)
+    if not saved.get('Plecat'):
+        from .parent_identity import prepare_parent
+        for parent in repo.rows('Platitori_sub', IDP=saved['IDP']):
+            updates = {'EMail': parent.get('EMail'), 'CNP_Platitor': parent.get('CNP_Platitor')}
+            prepare_parent(repo, updates, parent)
+            repo.update('Platitori_sub', parent, updates)
     events = []
     if not existing:
         events.append(('INTRARE', entry))
+        # A new child goes straight into the attendance of the month open now (the latest open one): no extra step.
+        open_months = [row for row in repo.rows('LunaD') if not row['Inchisa']]
+        if open_months and not saved.get('Plecat'):
+            current = max(open_months, key=month_order)
+            prepare_attendance(repo, {'month_id': current['IDL'], 'group_id': saved['IDG'], 'person_id': saved['IDP']})
     if moving:
         events.append(('MUTARE', None))
         # Closed attendance and snapshots retain their original group.

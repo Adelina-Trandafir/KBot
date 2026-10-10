@@ -106,7 +106,7 @@ export function bindCatalogs({ api, context, refresh }) {
   }
   const grid = (host, table, rows, columns, onSelect) => {
     const key = context().schema[table].key;
-    const instance = new DataGrid(host, { columns, rows, rowKey: key, mobileRowScale: 1.2, editable: context().permissions.includes('catalog'),
+    const instance = new DataGrid(host, { columns, rows, rowKey: key, headerHeight: 32, mobileRowScale: 1.2, editable: context().permissions.includes('catalog'),
       theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern',
       footer: true, footerCaption: '{0} înregistrări', layoutId: `ade.catalog.${table}`, onSelect,
       onCellSave: ({ row, key: field, value }) => {

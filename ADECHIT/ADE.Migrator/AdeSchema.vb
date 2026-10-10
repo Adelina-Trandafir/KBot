@@ -75,17 +75,17 @@ Public NotInheritable Class AdeSchema
 
     ''' <summary>Insertion order: parents before children.</summary>
     Public Shared ReadOnly Tables As AdeTable() = {
-        New AdeTable("Grupe", "IDG", I("IDG"), S("Grupa", 50), S("Tip", 10), I("InchisaDinAn")),
+        New AdeTable("Grupe", "IDG", I("IDG"), S("Grupa", 50), S("Tip", 10), I("InchisaDinAn"), B("Ascunsa")),
         New AdeTable("ValoriTaxe", "IDV", I("IDV"), D("TaxaZilnica"), B("Activ"), S("Expl")),
         New AdeTable("Platitori", "IDP", I("IDP"), I("IDG"), S("Nume"), S("CNP"), B("Plecat"), I("SI"), T("DataIntrare"), T("DataIesire")),
         New AdeTable("Platitori_sub", "IDS", I("IDS"), I("IDP"), S("Nume", 50), S("Adresa"), S("CUI"), S("Cont"), S("Banca"),
                      S("EMail"), S("Telefon", 50), B("TrimiteMail"), B("Activ"), S("CNP_Platitor")),
-        New AdeTable("LunaD", "IDL", I("IDL"), I("IDV"), I("Luna"), I("Anul"), S("LunaT"), S("LA"), B("Inchisa"), I("ZileLuna")),
+        New AdeTable("LunaD", "IDL", I("IDL"), I("Ordine"), I("IDV"), I("Luna"), I("Anul"), S("LunaT"), S("LA"), B("Inchisa"), I("ZileLuna")),
         New AdeTable("Prezenta", "IDZ", I("IDZ"), I("IDP"), I("IDL"), I("IDV"), I("IDG"), I("ZilePrezenta"), D("ValoareContract"), I("ValoareTotala")),
         New AdeTable("Plati", "IDPL", I("IDPL"), I("IDP"), I("IDZ"), I("IDS"), I("IDL"), T("Data"), I("Plata"), I("TIP"), B("Anulata"),
                      B("Valid"), S("Motivul"), I("OriginMonth"), I("OriginYear")),
         New AdeTable("Chitante", "IDC", I("IDC"), I("IDPL"), T("Data"), S("Serie", 50), I("Numar"), S("Explicatie"), B("Anulata"), I("IDL")),
-        New AdeTable("AlteDoc", "IDA", I("IDA"), I("IDPL"), S("NrDoc"), S("FelDoc"), T("DataDoc"), B("Anulata"), I("IDL"), S("Explicatie")),
+        New AdeTable("AlteDoc", "IDA", I("IDA"), I("IDPL"), S("NrDoc"), T("DataDoc"), B("Anulata"), I("IDL"), S("Explicatie")),
         New AdeTable("Retur", "IDR", I("IDR"), I("IDP"), I("IDZ"), I("IDL"), I("IDS"), T("Data"), S("Explicatie"), B("Anulat"), S("NrDoc"),
                      D("Suma"), I("OriginMonth"), I("OriginYear")),
         New AdeTable("SS_Buget", "ID", I("ID"), I("IDG"), I("IDP"), I("IDL"), I("IDZ"), S("Luna"), I("Anul"), S("Nume"), S("CNP"),
@@ -115,12 +115,21 @@ Public NotInheritable Class AdeSchema
     }
 
     ''' <summary>
-    ''' Links that old data may leave pointing nowhere (a month or an attendance row that was deleted): the value is
+    ''' Foreign keys of the two tables the migration builds itself. They exist only after the plan is built, so they
+    ''' are not part of <see cref="Relations"/> (the link check runs before those tables exist), but the writer rewrites them.
+    ''' </summary>
+    Public Shared ReadOnly BuiltRelations As (Child As String, Col As String, Parent As String)() = {
+        ("Grupe_Educator", "IDG", "Grupe"),
+        ("Platitori_Istoric", "IDP", "Platitori"), ("Platitori_Istoric", "IDG_Vechi", "Grupe"), ("Platitori_Istoric", "IDG_Nou", "Grupe")
+    }
+
+    ''' <summary>
+    ''' Links that old data may leave pointing nowhere (a deleted month, attendance row or missing tax): the value is
     ''' stored as NULL and counted, not blocked. Every other dangling link blocks the migration.
     ''' </summary>
     Public Shared ReadOnly DanglingAllowed As String() = {
         "Plati.IDZ", "Plati.IDL", "Retur.IDZ", "Retur.IDL", "SS_Buget.IDL", "SS_Buget.IDZ", "SS_Buget.IDG",
-        "Chitante.IDL", "AlteDoc.IDL"
+        "Chitante.IDL", "AlteDoc.IDL", "LunaD.IDV", "Prezenta.IDV"
     }
 
 End Class

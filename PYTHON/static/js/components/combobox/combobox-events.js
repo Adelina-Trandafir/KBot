@@ -135,7 +135,7 @@ export const comboboxEventsMixin = {
    */
   handleDropdownClick(e) {
     const option = e.target.closest('.combobox-option');
-    if (!option) return;
+    if (!option || option.classList.contains('is-disabled')) return; // an item marked `disabled` is shown but cannot be chosen
 
     const value = option.dataset.value;
     const text = option.dataset.text;
@@ -149,6 +149,7 @@ export const comboboxEventsMixin = {
    * 🆕 MODIFICAT - suport pentru allowHtml în callback
    */
   selectValue(value, text) {
+    if (this.results.find((r) => r.value === value)?.disabled) return;
     // Pentru afișare în input, folosim textul simplu (fără HTML)
     this.input.value = text;
     this.selectedValue = value;

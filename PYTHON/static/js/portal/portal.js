@@ -10,6 +10,7 @@ import { createMenu } from './menu.js';
 import { installLayouts, setAdmin } from './layouts.js';
 import { createCertificate } from './certificat.js';
 import eventBus, { EVENTS } from '../event-bus/event-bus.js';
+import { Combobox } from '../components/combobox/combobox.js';
 
 const TOKEN_KEY = 'kbot-portal-token';
 const PORTAL_URL = '/portal';
@@ -17,12 +18,25 @@ const PORTAL_URL = '/portal';
 // slice AD10-01: /portal?next=/adechit -- a page that needs the sign-in sends the user here and takes
 // them back once a unit is open. Only these pages are allowed, never a free address.
 const NEXT_PAGES = ['/adechit'];
+const TRUST_KEY = 'kbot-portal-trust'; // the code typed in this browser: password alone is enough for the rest of the hour
 const nextPage = (() => {
   const wanted = new URLSearchParams(window.location.search).get('next') || '';
   return NEXT_PAGES.includes(wanted) ? wanted : '';
 })();
+// The application chosen on the sign-in card: K-BOT stays here, ADECHIT goes straight to its page (the portal never shows).
+let chosenApp = nextPage === '/adechit' ? 'adechit' : 'kbot';
+const chosenPage = () => (chosenApp === 'adechit' ? '/adechit' : '');
 function goNext() {
-  if (nextPage) window.location.replace(nextPage);
+  if (chosenPage()) window.location.replace(chosenPage());
+}
+
+function readTrust() {
+  try { return window.localStorage.getItem(TRUST_KEY) || ''; } catch (err) { console.error('[portal] localStorage is blocked', err); return ''; }
+}
+function writeTrust(value) {
+  try {
+    if (value) window.localStorage.setItem(TRUST_KEY, value); else window.localStorage.removeItem(TRUST_KEY);
+  } catch (err) { console.error('[portal] localStorage is blocked', err); }
 }
 
 const $ = (id) => document.getElementById(id);
@@ -131,13 +145,18 @@ $('form-login').addEventListener('submit', async (ev) => {
     return;
   }
   $('btn-login').disabled = true;
-  const r = await call('POST', '/api/portal/login', { email, parola });
+  const r = await call('POST', '/api/portal/login', { email, parola, trust: readTrust() });
   $('btn-login').disabled = false;
   if (!r.ok) {
     say('msg-login', r.data.error || 'Autentificarea nu a reușit. Reîncercați.');
     return;
   }
   $('p-parola').value = '';
+  if (r.data.token) { // the code of the last hour is still good in this browser: no new code
+    writeToken(r.data.token);
+    await openApp();
+    return;
+  }
   pending = r.data.pending;
   $('code-to').textContent = r.data.email_masked;
   $('p-cod').value = '';
@@ -145,6 +164,17 @@ $('form-login').addEventListener('submit', async (ev) => {
   show('card-code');
   $('p-cod').focus();
 });
+
+// ---- the application to open after signing in (only K-BOT and ADECHIT are live)
+const appCombo = new Combobox($('p-app-combo'), {
+  readonly: true, placeholder: 'Aplicația', allowHtml: true,
+  // the blue letter badge comes from CSS (data-letter), so the text shown in the field stays plain
+  staticData: [['kbot', 'K', 'K-BOT'], ['adechit', 'A', 'ADECHIT'], ['vercon', 'V', 'Vercon · în curând'], ['avacont', 'C', 'Avacont · în curând']]
+    .map(([value, letter, name]) => ({ value, label: `<span class="p-app" data-letter="${letter}">${name}</span>`, disabled: value === 'vercon' || value === 'avacont' })),
+  onSelect: (value) => { chosenApp = value; },
+});
+appCombo.input.id = 'p-app-combo-input';
+appCombo.setValue(chosenApp, chosenApp === 'adechit' ? 'ADECHIT' : 'K-BOT');
 
 // ---- step 2: the code
 $('btn-code-back').addEventListener('click', () => {
@@ -174,6 +204,7 @@ $('form-code').addEventListener('submit', async (ev) => {
     return;
   }
   pending = '';
+  writeTrust(r.data.trust);
   writeToken(r.data.token);
   await openApp();
 });
@@ -200,6 +231,7 @@ async function openApp() {
     return;
   }
   me = r.data;
+  if (chosenApp === 'adechit' && me.db_name) { goNext(); return; } // straight to the chosen page, the portal is never painted
   menu.setAdmin(me.is_admin === true);
   setAdmin(me.is_admin === true); // the administrator's own column layouts apply only to administrator accounts
   $('user-email').textContent = me.email;

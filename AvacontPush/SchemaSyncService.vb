@@ -35,9 +35,10 @@ Public NotInheritable Class SchemaSyncService
     ' Without PYTHONIOENCODING a server under the C locale raises
     ' UnicodeEncodeError on the first Romanian message with diacritics, because
     ' here stdout is a pipe rather than a terminal and Python takes its encoding
-    ' from the locale.
+    ' from the locale. PYTHONUNBUFFERED=1 makes the progress lines reach the output pane while the run goes on
+    ' (through a pipe Python would otherwise hold them in a buffer until it exits).
     Private Function Invocation() As String
-        Return $"PYTHONIOENCODING=utf-8 {Quote(_settings.RemotePython)} " &
+        Return $"PYTHONIOENCODING=utf-8 PYTHONUNBUFFERED=1 {Quote(_settings.RemotePython)} " &
                "-m routes.schema_sync.schema_sync"
     End Function
 

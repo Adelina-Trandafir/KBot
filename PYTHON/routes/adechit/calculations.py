@@ -19,7 +19,10 @@ def calculate(data, month_id, group_id=None):
     groups = {r['IDG']: r for r in data['Grupe']}
     months = {r['IDL']: r for r in data['LunaD']}
     payments = [r for r in data['Plati'] if active(r, 'Anulata')]
-    refunds = [r for r in data['Retur'] if active(r, 'Anulat')]
+    # Legacy refunds may carry no IDL: the month of their attendance row is theirs.
+    month_of_attendance = {r['IDZ']: r['IDL'] for r in data['Prezenta']}
+    refunds = [{**r, 'IDL': month_of_attendance.get(r.get('IDZ'))} if r.get('IDL') is None else r
+               for r in data['Retur'] if active(r, 'Anulat')]
     month = months[month_id]
     rows, trace = [], {}
     for attendance in data['Prezenta']:
@@ -68,8 +71,8 @@ def calculate(data, month_id, group_id=None):
                     details.append(doc)
                     explanations.append({'IDZ': row['IDZ'], 'DOC': doc})
             for document in data['AlteDoc']:
-                if document['IDPL'] == payment['IDPL'] and document.get('FelDoc') is not None and document.get('NrDoc') is not None:
-                    doc = document['FelDoc'][:2] + '.' + document['NrDoc']
+                if document['IDPL'] == payment['IDPL'] and document.get('Explicatie') is not None and document.get('NrDoc') is not None:
+                    doc = document['Explicatie'][:2] + '.' + document['NrDoc']
                     details.append(doc)
                     explanations.append({'IDZ': row['IDZ'], 'DOC': doc})
         for refund in refunds:

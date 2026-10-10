@@ -1,3 +1,4 @@
+import { confirmBox } from '../utils/confirm-box.js';
 import { DataGrid, ValueType } from '../dgv/datagrid.js';
 import { Combobox } from '../components/combobox/combobox.js';
 import { DatePicker } from '../components/datepicker/datepicker.js';
@@ -30,6 +31,7 @@ export function bindPayers({ api, context, refresh }) {
   let onSaved = null;
   let request = null;
   let busy = false;
+  let pendingNext = null;   // what opens once the saving form is fully done (the payer form after a new child)
   let dirty = false;
   let sequence = 0;
   let listRequest = 0;
@@ -37,7 +39,7 @@ export function bindPayers({ api, context, refresh }) {
   const report = (error, host = message) => { console.error('[ADE forms]', error); showMessage(host, error.message, 'error'); };
   const grid = (host, rows, columns, key, onSelect, options = {}) => {
     const instance = new DataGrid(host, {
-      columns, rows, rowKey: key, onSelect, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
+      columns, rows, rowKey: key, onSelect, headerHeight: 32, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
       theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern', ...options });
     instance.sortBy(columns.find((item) => ['Nume', 'Grupa', 'Educator'].includes(item.key)).key, 'asc');
     return instance;
@@ -152,6 +154,22 @@ export function bindPayers({ api, context, refresh }) {
       ['CUI', 'Cod fiscal'], ['Cont', 'Cont bancar'], ['Banca', 'Banca']]) field(key, label, row?.[key]);
     const contacts = document.createElement('div'); contacts.className = 'ade-form-pair'; body.append(contacts);
     field('Telefon', 'Telefon', row?.Telefon, 'tel', contacts); field('EMail', 'Email', row?.EMail, 'email', contacts);
+    const sendCode = document.createElement('button'); sendCode.type = 'button'; sendCode.className = 'btn';
+    sendCode.textContent = 'Trimite Codul de Acces'; body.append(sendCode);
+    const updateSendCode = () => { sendCode.hidden = !read('EMail'); };
+    $('ade-field-EMail').addEventListener('input', updateSendCode); updateSendCode();
+    sendCode.addEventListener('click', async () => {
+      if (busy) return;
+      try {
+        const payload = collect(); busy = true; body.inert = true;
+        // Save newly entered contact data before delivery; a failed mail does not discard the saved parent.
+        row = await api('/api/adechit/catalog/Platitori_sub', { method: 'POST', body: JSON.stringify(payload), key: crypto.randomUUID() });
+        selectedPayer = row; dirty = false; request = null;
+        const result = await api(`/api/adechit/parents/${row.IDS}/send-access`, { method: 'POST', body: '{}' });
+        showMessage(message, result.message, 'info'); await reload(); await refresh();
+      } catch (error) { report(error); }
+      finally { busy = false; body.inert = false; }
+    });
     field('Activ', 'Activ', row ? row.Activ : true, 'checkbox').disabled = !row;
     collect = () => {
       const values = Object.fromEntries(['Nume', 'Adresa', 'CNP_Platitor', 'CUI', 'Cont', 'Banca', 'Telefon', 'EMail', 'Activ'].map((key) => [key, read(key)]));
@@ -224,6 +242,19 @@ export function bindPayers({ api, context, refresh }) {
         values: { Educator: item.Educator, DeLa: item.DeLa || null, PanaLa: item.PanaLa || null } })) };
     };
   }
+  async function saveHiddenGroup({ row, value }) {
+    const payload = { id: row.IDG, version: row.Version, hidden: value };
+    let saved;
+    try {
+      saved = await api('/api/adechit/group-hidden', { method: 'POST', body: JSON.stringify(payload) });
+    } catch (error) {
+      if (error.reason !== 'GROUP_ACTIVE_CHILDREN') throw error;
+      if (!await confirmBox(`${error.message}\nAscundeți grupa „${row.Grupa}”?`, { title: 'Ascundere grupă', yes: 'Ascunde', no: 'Renunță' })) return row;
+      saved = await api('/api/adechit/group-hidden', { method: 'POST', body: JSON.stringify({ ...payload, confirm_active: true }) });
+    }
+    Object.assign(data.groups.find((group) => group.IDG === saved.IDG), saved);
+    return saved;
+  }
   function renderLists() {
     syncMobilePage();
     grids.forEach((instance) => instance.destroy()); grids = [];
@@ -241,15 +272,17 @@ export function bindPayers({ api, context, refresh }) {
         display: 'button', actionText: '➡️', actionLabel: 'Deschide', filter: false, sortable: false });
       return result;
     };
+    const hiddenFlag = { ...closedFlag('Ascunsa'), title: 'A', editable: canEdit(), editor: 'checkbox' };
     const groupColumns = mobile.matches
-      ? mobileColumns([column('Grupa', 'Grupa'), closedFlag('Closed')], [85, 15], true)
-      : [column('Grupa', 'Grupa'), column('Educators', 'Educatori', 210), closedFlag('Closed')];
+      ? mobileColumns([column('Grupa', 'Grupa'), closedFlag('Closed'), hiddenFlag], [70, 15, 15], true)
+      : [column('Grupa', 'Grupa'), column('Educators', 'Educatori', 210), closedFlag('Closed'), hiddenFlag];
     const childColumns = [column('Nume', 'Copil', 210), column('CNP', 'CNP copil', 140), closedFlag('Plecat')];
     const payerColumns = [column('Nume', 'Plătitor', 210), column('CNP_Platitor', 'CNP plătitor', 140), closedFlag('Closed')];
     const listOptions = (key) => mobile.matches ? { proportionalWidths: true, autoSize: false } : { layout: { fill: key } };
     grids.push(grid($('ade-groups-list'), groupRows, groupColumns, 'IDG', (row) => {
       chooseGroup(row).catch((error) => report(error, $('ade-payers-message')));
-    }, { ...listOptions('Grupa'), onCellAction: ({ row }) => openLevel(row, 0) }));
+    }, { ...listOptions('Grupa'), onCellAction: ({ row }) => openLevel(row, 0), editable: canEdit(),
+      onCellSave: saveHiddenGroup, onCellSaved: () => refresh().catch((error) => report(error, $('ade-payers-message'))) }));
     grids.push(grid($('ade-children-list'), children, mobile.matches ? mobileColumns(childColumns, [50, 35, 15], true) : childColumns, 'IDP', (row) => {
       chooseChild(row).catch((error) => report(error, $('ade-payers-message')));
     }, { ...listOptions('Nume'), onCellAction: ({ row }) => openLevel(row, 1) }));
@@ -276,7 +309,7 @@ export function bindPayers({ api, context, refresh }) {
   }
   async function reload() {
     const own = ++listRequest;
-    const result = await api('/api/adechit/catalog-data');
+    const result = await api('/api/adechit/catalog-data?include_hidden=1');
     if (own !== listRequest || !page.open) return;
     const next = { ...result, children: [], payers: [], educators: [], years: [] };
     next.groups.sort((a, b) => String(a.Grupa || '').localeCompare(String(b.Grupa || ''), 'ro', { sensitivity: 'base' }));
@@ -313,8 +346,11 @@ export function bindPayers({ api, context, refresh }) {
       await continuation;
       await reload(); await refresh();
       showMessage($('ade-payers-message'), '', 'info');
-    } catch (error) { report(error, editor.open ? message : $('ade-payers-message')); }
-    finally { busy = false; body.inert = false; $('ade-record-save').disabled = false; $('ade-record-cancel').disabled = false; }
+    } catch (error) { pendingNext = null; report(error, editor.open ? message : $('ade-payers-message')); }
+    finally {
+      busy = false; body.inert = false; $('ade-record-save').disabled = false; $('ade-record-cancel').disabled = false;
+      if (pendingNext) { const next = pendingNext; pendingNext = null; next(); }
+    }
   });
   $('ade-record-cancel').addEventListener('click', () => { if (!busy) { editor.close(); cleanEditor(); } });
   [page, editor].forEach((dialog) => dialog.addEventListener('cancel', (event) => event.preventDefault()));
@@ -338,12 +374,15 @@ export function bindPayers({ api, context, refresh }) {
   $('ade-payer-edit').addEventListener('click', () => { if (selectedPayer) editPayer(selectedPayer); });
   addEventListener('beforeunload', (event) => { if (editor.open && dirty) { event.preventDefault(); event.returnValue = ''; } });
   addEventListener('pagehide', () => { cleanEditor(); grids.forEach((instance) => instance.destroy()); }, { once: true });
-  return { addChild: async (groupId, afterCreate) => {
+  // The grid's "+": only the child form and then the payer form of the new child (no groups, no lists).
+  return { addChildWithPayer: async (groupId) => {
     if (groupId == null) throw new Error('Selectați grupa copilului.');
-    await open();
-    if (!data || !page.open) return;
-    selectedGroup = data.groups.find((group) => group.IDG === groupId);
-    if (mobile.matches) level = 1;
-    selectedChild = null; selectedPayer = null; renderLists(); editChild(null, afterCreate);
+    if (page.open || editor.open || busy) return;
+    const result = await api('/api/adechit/catalog-data?include_hidden=1');
+    data = { ...result, children: [], payers: [], educators: [], years: [] };
+    selectedGroup = data.groups.find((group) => group.IDG === groupId) || null;
+    selectedChild = null; selectedPayer = null;
+    // the payer form opens once the child form is saved and closed (the same dialog element serves both)
+    editChild(null, () => { pendingNext = () => editPayer(); });
   } };
 }

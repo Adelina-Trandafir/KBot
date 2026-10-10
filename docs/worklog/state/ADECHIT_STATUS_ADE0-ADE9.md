@@ -207,6 +207,10 @@ Plan: [ADE5 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE5-08 | Detectare pleca și bifa manuală pentru grupa specială de plecați | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste/probă vizuală | [Worklog](../SLICE-ADE5-08-grupa-plecati.md) |
 | SLICE-ADE5-09 | Opțiune CNP Copil = CNP Părinte și completarea CNP_Platitor | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-09-cnp-parinte.md) |
 | SLICE-ADE5-10 | Arhivarea logului anterior, log nou și casetă goală la lansare | CONSTRUIT LOCAL — build curat; nerulat | [Worklog](../SLICE-ADE5-10-log-nou-pornire.md) |
+| SLICE-ADE5-11 | Marcaje FARA CNP și -1 importate ca NULL, înainte de copierea CNP-ului | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-11-cnp-lipsa-null.md) |
+| SLICE-ADE5-12 | LunaD.IDV și Prezenta.IDV fără taxă existentă importate ca NULL | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-12-taxe-lipsa-null.md) |
+| SLICE-ADE5-13 | Writerul omite citirea cheilor Access la rândurile generate (IDGE/IDI) | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-13-chei-randuri-generate.md) |
+| SLICE-ADE5-14 | Oprire fără OperationCanceledException, cu rollback explicit și rezultat distinct în UI | CONSTRUIT LOCAL — 0 erori/avertismente; fără teste sau migrare | [Worklog](../SLICE-ADE5-14-oprire-fara-exceptie.md) |
 
 ### Current focus
 
@@ -226,7 +230,15 @@ Plan: [ADE5 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
   motivele blocării și erorile. Reîncercarea și validarea pe server aparțin utilizatorului.
 - ADE5-07: DC destinație editabil; schimbarea invalidează verificarea, păstrând planul.
 - ADE5-10: log nou la pornire; logul vechi se arhivează, fără încărcare automată în formular.
-- Depinde de ADE3/ADE4; următoarea subfelie liberă: **ADE5-11**.
+- ADE5-11: `FARA CNP` și `-1` devin NULL în CNP/CNP_Platitor, inclusiv SS_Buget;
+  spațiile marginale și majusculele nu contează. Conversiile sunt numărate în plan.
+- ADE5-12: referințele la taxe inexistente din LunaD/Prezenta devin NULL,
+  cu numărători în plan; nu se șterg rânduri și nu se blochează importul pentru ele.
+- ADE5-13: citirea cheii pentru hartă se face numai când SourceRows >= 0;
+  rândurile generate de educatori/istoric nu au cheie Access.
+- ADE5-14: oprirea normală întoarce Nothing numai înainte de tranzacție sau
+  după rollback confirmat; formularul distinge oprirea de COMMIT reușit.
+- Depinde de ADE3/ADE4; următoarea subfelie liberă: **ADE5-15**.
 - Reutilizăm mecanismele existente de migrare potrivite după verificarea lor; nu pornim
   automat vechiul flux Python orientat către alte tabele/servere.
 - Păstrăm relațiile și istoricul necesar. Repetarea importului nu dublează înregistrări.
@@ -412,7 +424,7 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 | Subfelie | Livrabil | Stare |
 |---|---|---|
-| SLICE-ADE9-01 | Situații de debitori, fișe, registru de casă și rapoartele incluse | AMÂNAT EXPLICIT — exclus din pasul curent |
+| SLICE-ADE9-01 | Situații de debitori, fișe, registru de casă și rapoartele incluse | SCRIS LOCAL 10.10.2026 — 8 rapoarte + dispoziție de plată; nerulat, SQL/PDF neprobate; SituatieDebitori veche exclusă, Factură neconstruită; [worklog](../SLICE-ADE9-01-rapoarte.md) |
 | SLICE-ADE9-02 | Probă completă pe 5050 și documentația fluxului de lucru | PLANIFICAT |
 | SLICE-ADE9-03 | Pachet pentru AvacontPush, instrucțiuni SQL și consemnarea probelor utilizatorului | PLANIFICAT |
 
@@ -452,3 +464,23 @@ Autorizare pe secțiuni (cerere operator 09.10.2026). Numerotare: AD10 (nu ADE9,
 
 - Aplicat `sql/AD10_01_sectiuni_roluri.sql` + `AD10_02` (DROP AD_Permissions) + dat rolurile AD_ utilizatorilor; până atunci ADECHIT dă 403 tuturor.
 - Migrare `AD_Permissions` → `Utilizatori_Roluri`; link ADECHIT în meniul portalului; ecran de administrare roluri.
+
+## Slice AD11
+
+Anularea documentelor din taburile de încasări (cerere operator 10.10.2026). Numerotare: AD11.
+
+### Registry
+
+| Subfeliă | Titlu | Stare |
+| --- | --- | --- |
+| SLICE-AD11-01 | Buton ❌ de anulare document (luna deschisă sau ultima închisă) cu motiv obligatoriu în fereastra de confirmare | COD SCRIS, NERULAT — doar `node --check`, fără probă în browser; necomis |
+
+### Current focus
+
+- Worklog: [SLICE-AD11-01](../SLICE-AD11-01-anulare-document.md). Următoarea subfeliă liberă: **AD11-02**.
+
+### Open threads
+
+- Dat `AD_Settings.AllowCancelDocuments = 'true'` pe subunitățile care au voie să anuleze (lipsă = oprit).
+- Probă în browser: caseta cu motiv, butonul inactiv la motiv gol, reîncărcarea după anulare, ascunderea butonului în lunile închise mai vechi.
+- Anularea restituirilor rămâne blocată de decizia M03 (salvarea motivului).

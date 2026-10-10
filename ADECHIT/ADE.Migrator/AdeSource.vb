@@ -34,6 +34,8 @@ Public NotInheritable Class AdeSource
     Public ReadOnly Property FilePath As String
     ''' <summary>Unit code = name of the unit database on the MariaDB server.</summary>
     Public ReadOnly Property Dc As String
+    ''' <summary>Unit name from Access (Unitati.Denumire); only a suggestion for the subunit name.</summary>
+    Public ReadOnly Property UnitName As String = String.Empty
     ''' <summary>SHA-256 of the file, recorded in AD_Imports.</summary>
     Public ReadOnly Property FileHash As String
     Public ReadOnly Property Tables As New Dictionary(Of String, DataTable)(StringComparer.OrdinalIgnoreCase)
@@ -51,6 +53,7 @@ Public NotInheritable Class AdeSource
             k_source._fileHash = HashOf(k_path)
             Using k_cn As OleDbConnection = AccessProvider.Open(k_path, String.Empty)
                 k_source._dc = ReadDc(k_cn)
+                k_source._unitName = ReadUnitName(k_cn)
                 For Each k_table In AdeSchema.Tables
                     k_source.Tables(k_table.Name) = Load(k_cn, k_table.Name)
                 Next
@@ -81,6 +84,18 @@ Public NotInheritable Class AdeSource
             End Using
         End Using
         Throw New InvalidOperationException("Tabelul Unitati nu are nicio valoare în coloana DC.")
+    End Function
+
+    Private Shared Function ReadUnitName(k_cn As OleDbConnection) As String
+        Using k_cmd As New OleDbCommand("SELECT Denumire FROM Unitati", k_cn)
+            Using k_reader = k_cmd.ExecuteReader()
+                While k_reader.Read()
+                    Dim k_value = Convert.ToString(k_reader(0), CultureInfo.InvariantCulture)
+                    If Not String.IsNullOrWhiteSpace(k_value) Then Return k_value.Trim()
+                End While
+            End Using
+        End Using
+        Return String.Empty
     End Function
 
     Private Shared Function ReadReceiptConfig(k_cn As OleDbConnection) As AdeReceiptConfig

@@ -28,9 +28,11 @@ def main():
             connection.execute(f'DELETE FROM `AD_{table}`')
         connection.execute('DELETE FROM AD_Imports')
         connection.execute('DELETE FROM AD_Operations')
-        connection.execute('DELETE FROM Unitati_Chitante')
+        connection.execute('DELETE FROM AD_ReceiptConfig')
+        connection.execute('DELETE FROM AD_IdMap')
         connection.commit()
         repo = Repository(connection, sqlite=True)
+        repo.subunit_id, repo.subunit_name = 1, 'Evidenta de proba'
         dataset = json.loads(args.extract.read_text(encoding='utf-8'))
         result = import_dataset(repo, dataset, 'fixture', args.extract.name)
         reconciliation = reconcile_dataset(repo, dataset, 'fixture')

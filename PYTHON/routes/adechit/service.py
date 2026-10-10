@@ -74,6 +74,8 @@ def save_catalog(repo, table, body, previous_active=()):
     if table == 'Grupe':
         require(bool((merged.get('Grupa') or '').strip()), 'NAME', 'Denumirea grupei este obligatorie.', 400)
     if table == 'Platitori_sub':
+        from .parent_identity import prepare_parent
+        prepare_parent(repo, changes, row)
         if creating:
             changes['Activ'] = True
             merged['Activ'] = True
@@ -170,9 +172,19 @@ def prepare_attendance(repo, body):
     return {'created': created, 'count': len(created)}
 
 
+def month_order(month):
+    """Local order of a month inside its subunit. Access compared surrogate IDL values; the server now allocates
+    IDL, so the order the rule needs lives in LunaD.Ordine (imported = the Access IDL, gaps included)."""
+    return month['Ordine'] if month.get('Ordine') is not None else month['IDL']
+
+
 def temporal(repo, month_id):
-    latest = max((nz(r['IDL']) for r in repo.rows('Prezenta')), default=0)
-    require(month_id + 1 >= latest, 'OLD_MONTH', 'Luna este prea veche pentru inserarea sau anularea documentului.')
+    require(month_id is not None, 'OLD_MONTH', 'Luna este prea veche pentru inserarea sau anularea documentului.')
+    order = month_order(repo.get('LunaD', month_id))
+    rows = repo.query('SELECT MAX(COALESCE(l.Ordine, l.IDL)) AS latest FROM AD_Prezenta p JOIN AD_LunaD l '
+                      'ON l.IDL=p.IDL AND l.SubunitId=p.SubunitId WHERE p.SubunitId=%s', (repo.scope(),))
+    latest = nz(rows[0]['latest']) if rows else 0
+    require(order + 1 >= latest, 'OLD_MONTH', 'Luna este prea veche pentru inserarea sau anularea documentului.')
 
 
 def document_date(value, month):
@@ -244,33 +256,42 @@ def emit_document(repo, db_name, body):
     else:
         config = None
         if kind == 'receipt':
-            configs = repo.query('SELECT * FROM AVACONT_COMUN.Unitati_Chitante WHERE DC=%s FOR UPDATE', (db_name,))
-            require(len(configs) == 1, 'CONFIG', 'Configurația chitanțelor nu a fost importată pentru această unitate.')
-            config = configs[0]
+            config = repo.receipt_config(lock=True)
+            require(config is not None, 'CONFIG', 'Configurația chitanțelor nu a fost importată pentru această subunitate.')
             require(config['Numar'] > 0 and bool(config['Serie']), 'CONFIG', 'Seria sau următorul număr este invalid.')
-            duplicate = repo.query('SELECT IDC FROM AD_Chitante WHERE Serie=%s AND Numar=%s', (config['Serie'], config['Numar']))
+            duplicate = repo.query('SELECT IDC FROM AD_Chitante WHERE SubunitId=%s AND Serie=%s AND Numar=%s',
+                                   (repo.scope(), config['Serie'], config['Numar']))
             require(not duplicate, 'NUMBER_USED', 'Numărul configurat este deja folosit. Verificați importul și configurația.')
             explanation = (body.get('explanation') or '').strip() or receipt_explanation(config, month)
             require(bool(explanation.strip()), 'EXPLANATION', 'Explicația chitanței este obligatorie.', 400)
         else:
-            require(bool(body.get('number')) and bool(body.get('document_type')), 'DOCUMENT', 'Completați felul și numărul documentului.', 400)
+            require(bool(body.get('number')), 'DOCUMENT', 'Completați numărul documentului.', 400)
         payment = repo.insert('Plati', {**links, **provenance, 'Plata': amount,
                               'TIP': 2 if kind == 'receipt' else 1, 'Anulata': False, 'Valid': True})
         if config:
             document = repo.insert('Chitante', validate_values('Chitante', {'IDPL': payment['IDPL'], 'Data': day, 'Serie': config['Serie'],
                        'Numar': config['Numar'], 'Explicatie': explanation, 'IDL': month['IDL'], 'Anulata': False}))
             document = {**document, 'Valoare': amount}  # the amount lives on the payment; the response still shows it
-            repo.execute('UPDATE AVACONT_COMUN.Unitati_Chitante SET Numar=Numar+1, Version=Version+1 WHERE DC=%s', (db_name,))
+            repo.execute('UPDATE AD_ReceiptConfig SET Numar=Numar+1, Version=Version+1 WHERE SubunitId=%s', (repo.scope(),))
         else:
             document = repo.insert('AlteDoc', validate_values('AlteDoc', {'IDPL': payment['IDPL'], 'NrDoc': body['number'],
-                       'FelDoc': body['document_type'], 'DataDoc': day, 'IDL': month['IDL'], 'Anulata': False,
+                       'DataDoc': day, 'IDL': month['IDL'], 'Anulata': False,
                        'Explicatie': (body.get('explanation') or '').strip() or None}))
     if month['Inchisa']:
         rewrite_snapshot(repo, attendance)
     return document
 
 
+CANCEL_SETTING = 'AllowCancelDocuments'
+
+
+def cancel_allowed(repo):
+    """AD_Settings.AllowCancelDocuments of the current subunit; a missing value means false."""
+    return str(repo.setting(CANCEL_SETTING, 'false')).strip().lower() in ('1', 'true', 'yes', 'da')
+
+
 def cancel_document(repo, body):
+    require(cancel_allowed(repo), 'CANCEL_OFF', 'Anularea documentelor nu este activată pentru această subunitate.', 403)
     table = {'receipt': 'Chitante', 'other': 'AlteDoc', 'refund': 'Retur'}.get(body.get('kind'))
     require(table is not None, 'KIND', 'Tip de document invalid.', 400)
     require(table != 'Retur', 'M03', 'Anularea restituirii așteaptă decizia privind salvarea motivului.')
@@ -321,6 +342,7 @@ def create_next_month(repo, closed):
         'IDV': taxes[0]['IDV'], 'Luna': month_number, 'Anul': year,
         'LunaT': MONTHS[month_number - 1], 'LA': f'{month_number:02d}{year}', 'Inchisa': False,
         'ZileLuna': work_days(month_number, year),
+        'Ordine': max((month_order(row) for row in repo.rows('LunaD')), default=0) + 1,
     })
     attendance_by_person = {}
     snapshots = {row['IDP']: row for row in repo.rows('SS_Buget') if row['IDL'] == closed['IDL']}
@@ -332,7 +354,7 @@ def create_next_month(repo, closed):
                 continue
             departed = [row for row in repo.rows('Grupe') if row.get('Tip') == 'PLECATI']
             require(len(departed) <= 1, 'GROUP', 'Există mai multe grupe speciale pentru copiii plecați.')
-            group_id = (departed[0] if departed else repo.insert('Grupe', {'Grupa': 'Copii plecați', 'Tip': 'PLECATI'}))['IDG']
+            group_id = (departed[0] if departed else repo.insert('Grupe', {'Grupa': 'Copii plecați', 'Tip': 'PLECATI', 'Ascunsa': True}))['IDG']
         attendance = repo.insert('Prezenta', {
             'IDP': person['IDP'], 'IDL': month['IDL'], 'IDV': month['IDV'], 'IDG': group_id,
             'ZilePrezenta': 0,
@@ -385,6 +407,10 @@ def reopen_month(repo, body):
                 orphaned[table] += 1
             repo.update(table, movement, provenance)
 
+    # Composite keys cannot SET NULL (SubunitId must stay): clear the document-to-month links of the removed month here.
+    for table in ('Chitante', 'AlteDoc'):
+        for document in [row for row in repo.rows(table) if row.get('IDL') == removed['IDL']]:
+            repo.update(table, document, {'IDL': None})
     for attendance in [row for row in repo.rows('Prezenta') if row['IDL'] == removed['IDL']]:
         repo.delete('Prezenta', attendance)
     for snapshot in [row for row in repo.rows('SS_Buget') if row['IDL'] == month['IDL']]:
@@ -397,12 +423,16 @@ def reopen_month(repo, body):
 
 def idempotent(repo, key, operation, payload, function):
     require(isinstance(key, str) and 8 <= len(key) <= 100, 'REQUEST_KEY', 'Cheia operației lipsește sau este invalidă.', 400)
-    fingerprint = hashlib.sha256(json.dumps([operation, payload], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
-    found = repo.query('SELECT * FROM AD_Operations WHERE RequestKey=%s', (key,))
+    # The subunit is part of the identity: the same key in another subunit never returns this result.
+    fingerprint = hashlib.sha256(json.dumps([operation, payload, repo.scope()], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    # Operations recorded before AD_05 carry the fingerprint without the subunit: still the same request.
+    legacy = hashlib.sha256(json.dumps([operation, payload], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+    found = repo.query('SELECT * FROM AD_Operations WHERE SubunitId=%s AND RequestKey=%s', (repo.scope(), key))
     if found:
-        require(found[0]['Fingerprint'] == fingerprint, 'KEY_REUSED', 'Cheia operației a fost refolosită cu alte date.')
+        require(found[0]['Fingerprint'] in (fingerprint, legacy), 'KEY_REUSED', 'Cheia operației a fost refolosită cu alte date.')
         return json.loads(found[0]['Result'])
     result = function()
     encoded = json.dumps(result, ensure_ascii=False, default=lambda value: value.isoformat())
-    repo.execute('INSERT INTO AD_Operations (RequestKey, Fingerprint, Result) VALUES (%s,%s,%s)', (key, fingerprint, encoded))
+    repo.execute('INSERT INTO AD_Operations (SubunitId, RequestKey, Fingerprint, Result) VALUES (%s,%s,%s,%s)',
+                 (repo.scope(), key, fingerprint, encoded))
     return json.loads(encoded)

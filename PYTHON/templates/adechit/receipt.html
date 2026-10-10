@@ -12,6 +12,7 @@
   </header>
   {% if receipt.cancelled %}<div class="cancelled">ANULATĂ</div>{% endif %}
   <h1>CHITANȚĂ {{ receipt.series }} / {{ receipt.number }}</h1>
+  {% if receipt.subunit %}<p>Subunitate: {{ receipt.subunit }}</p>{% endif %}
   <p>Data: {{ receipt.date }}</p>
   <p>Am primit de la: <strong>{{ receipt.payer }}</strong></p>
   <p>Adresa: {{ receipt.address }}</p>

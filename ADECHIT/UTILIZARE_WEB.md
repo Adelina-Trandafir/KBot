@@ -7,6 +7,16 @@ Starea implementării este în [status](../ADECHIT_STATUS.md).
 
 ## Pagina principală și controalele comune
 
+<!-- slice: AD11-01 -->
+<!-- slice: AD11-02 -->
+Portalul părinților permite scroll vertical pe mobil. Selectorul are opțiuni cu
+font mărit; subtotalurile și totalul final al fișei au fundaluri gri distincte în print/PDF.
+Portalul separat al părinților este descris în [PORTAL_PARINTI.md](PORTAL_PARINTI.md):
+autentificare CNP/cod permanent/cod email, numai copii fără Plecat, selector numai cu
+mai mulți copii, situații/grafice și fișă cont print/PDF pentru toată perioada sau Interval.
+În macheta părinților, „Trimite Codul de Acces” apare numai cu email completat și salvează
+datele înainte de trimitere. Același email la alt CNP este respins cu identificarea părintelui.
+
 <!-- slice: ADE6-22 -->
 La deschidere nu este selectată nicio lună sau grupă, iar tabelul copiilor este
 gol. Cel mai recent an din arbore este deschis automat și numai lunile lui
@@ -131,6 +141,22 @@ numai ➕ și ✏️ pentru nivelul curent.
 Lățimea butonului se scade numai din denumire/nume. Filtrarea denumirii/numelelor
 rămâne disponibilă și pe mobil.
 
+## Anularea unui document
+
+<!-- slice: AD11-01 -->
+În taburile Chitanțe și Alte documente, fiecare document salvat are în dreapta
+butonul ❌ «Anulare document». Butonul apare numai dacă setarea
+`AllowCancelDocuments` din AD_Settings are valoarea true pentru subunitatea
+curentă (dacă lipsește, anularea este oprită) și dacă luna selectată este
+deschisă sau este ultima lună închisă; pentru alte luni închise nu apare.
+Nu apare nici la documentele deja anulate (marcate tăiat) și nici la restituiri.
+
+La clic se deschide o fereastră de confirmare cu întrebarea «Ești sigur/ă că vrei
+să anulezi …?» și un câmp «Motivul anulării». Butonul «Anulează» (dreapta) rămâne
+inactiv cât timp motivul este gol. «Renunță» (stânga), Escape sau clicul în afara
+ferestrei închid fereastra fără să anuleze nimic. După anulare, situația copilului
+se recalculează, iar documentul rămâne în listă, marcat ca anulat.
+
 ## Chitanțe pe PC
 
 <!-- slice: ADE8-05 -->
@@ -219,6 +245,17 @@ ferestrei. Operația necesită drepturile de închidere, catalog și transfer.
 Implementare locală. Aspectul, interacțiunea drag-and-drop în browser și
 funcționarea pe MariaDB rămân de verificat de utilizator.
 
+## Subunități — ADE10-04
+
+<!-- slice: ADE10-04 -->
+
+O unitate (DC) poate avea mai multe evidențe, numite **subunități**; fiecare are propriile grupe, copii, luni, taxe, plăți și
+propria serie și propriul număr de chitanțe. În antet, lângă unitate, selectorul **Subunitate** arată evidența în care lucrați.
+Cu o singură subunitate, aceasta se alege automat. Cu mai multe, la prima deschidere alegeți una; alegerea este valabilă numai
+în fila curentă, deci două file pot lucra în subunități diferite. Schimbarea subunității reîncarcă pagina; dacă există o fereastră
+deschisă sau un rând de document început, mai întâi salvați sau renunțați. PDF-ul și listarea chitanței numesc subunitatea.
+Subunitățile se creează la importul unui MDB cu ADE.Migrator (câmpul Subunitate).
+
 ## Predare și verificări efective
 
 DDL-ul suplimentar este [AD_04_taxe_perioade.sql](../sql/AD_04_taxe_perioade.sql):
@@ -234,3 +271,13 @@ nonvizual, după corectarea blueprintului și redirecționării /portal. Marcaju
 preview nu ocolește autentificarea producției; launcherul rămâne strict local.
 Această probă nu validează aspectul sau schimbările backend ulterioare.
 Nu există validare pe server, paritate completă cu Access sau publicare din chat.
+
+Selectorul Subunitate apare numai daca aveti acces la mai mult de o subunitate. Accesul la o subunitate poate fi restrans la anumiti utilizatori (administratorul baza de date, tabelul AD_SubunitAccess).
+
+## Rapoarte (SLICE-ADE9-01)
+
+Panoul «Rapoarte» din dreapta ecranului Prezență listează sau descarcă în PDF: Situație lunară (grupa aleasă, «Toate grupele?»,
+«Separă grupe?»), Registru casă și Raport bancă (între «Dată început» și «Dată sfârșit», completate cu luna aleasă),
+Fișă cont și Fișă debitor (copilul selectat sau «Toți copiii din grupă»), Documente anulate și Situație financiară (luna aleasă).
+Pentru o restituire, butonul 📥 de pe rând oferă Dispoziția de plată. Rapoartele doar citesc: nu emit numere și nu schimbă situația.
+Pentru o lună închisă se folosește situația salvată la închidere. Detalii și abateri față de Access: `docs/worklog/SLICE-ADE9-01-rapoarte.md`.

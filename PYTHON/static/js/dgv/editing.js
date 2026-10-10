@@ -80,6 +80,9 @@ export const editing = {
       event.stopPropagation();
       if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault(); this.commitEdit(event.shiftKey ? -1 : 1);
+      } else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && column.editor !== 'list' && column.editor !== 'date') {
+        // Up/Down save (only when changed) and move the editor to the same column of the next/previous row.
+        event.preventDefault(); this.commitEdit(event.key === 'ArrowDown' ? 'down' : 'up');
       }
     }, { signal: state.abort.signal });
     this._selected = row;
@@ -116,19 +119,36 @@ export const editing = {
         : state.column.editor === 'list' ? state.value : parseCell(String(state.raw), state.column);
       const message = state.column.validate?.(value, state.row);
       if (message) throw new Error(message);
+      // Nothing changed: no write on the server (new rows always save).
+      const unchanged = !state.onCancelRow && (value === state.row[state.key] || (value == null && state.row[state.key] == null));
       state.pending = true;
       state.input.disabled = true;
       state.host.inert = true;
       state.host.setAttribute('aria-busy', 'true');
       this._emit('onEditState', { state: 'saving', key: state.key });
-      const saved = await this._opts.onCellSave({ row: { ...state.row }, key: state.key, value,
-        previous: state.row[state.key], rowId: state.row[this._opts.rowKey] });
-      if (this._destroyed || this._edit !== state) return false;
-      Object.assign(state.row, saved || { [state.key]: value });
-      this.cancelEdit(true);
-      this._refresh({ rebuildHeader: true });
-      eventBus.emit('dgv:cell-saved', { grid: this._opts.layoutId, key: state.key });
-      this._emit('onCellSaved', { row: state.row, key: state.key });
+      if (unchanged) {
+        this.cancelEdit(true);
+      } else {
+        const saved = await this._opts.onCellSave({ row: { ...state.row }, key: state.key, value,
+          previous: state.row[state.key], rowId: state.row[this._opts.rowKey] });
+        if (this._destroyed || this._edit !== state) return false;
+        Object.assign(state.row, saved || { [state.key]: value });
+        this.cancelEdit(true);
+        this._refresh({ rebuildHeader: true });
+        eventBus.emit('dgv:cell-saved', { grid: this._opts.layoutId, key: state.key });
+        this._emit('onCellSaved', { row: state.row, key: state.key });
+      }
+      if (direction === 'up' || direction === 'down') {
+        const rows = this._items.filter((item) => item.kind === 'row').map((item) => item.row);
+        const at = rows.indexOf(state.row);
+        for (let index = at + (direction === 'down' ? 1 : -1); at >= 0 && index >= 0 && index < rows.length; index += direction === 'down' ? 1 : -1) {
+          if (this.canEdit(rows[index], state.column)) {
+            if (await this._opts.onRowValidate?.({ row: state.row }) === false) return false;
+            this.beginEdit(rows[index], state.key); return true;
+          }
+        }
+        return true;
+      }
       if (direction) {
         const columns = this._visibleColumns();
         const cells = this._items.filter((item) => item.kind === 'row')

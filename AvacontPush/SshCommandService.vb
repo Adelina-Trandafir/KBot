@@ -84,6 +84,61 @@ Public NotInheritable Class SshCommandService
         }
     End Function
 
+    ' Runs one command and hands every complete output line to onLine WHILE it runs (stdout as is, stderr
+    ' prefixed "[err] "). The whole stdout/stderr is still returned, so callers that parse it work unchanged.
+    ' onLine runs on the calling (worker) thread; the caller marshals to the UI.
+    Public Function RunStreaming(commandText As String, onLine As Action(Of String)) As SshResult
+        Using cmd = _client.CreateCommand(commandText)
+            Dim pending = cmd.BeginExecute()
+            Dim utf8 = New UTF8Encoding(False)
+            Dim outDecoder = utf8.GetDecoder()
+            Dim errDecoder = utf8.GetDecoder()
+            Dim outAll As New StringBuilder()
+            Dim errAll As New StringBuilder()
+            Dim outLine As New StringBuilder()
+            Dim errLine As New StringBuilder()
+            Do
+                Dim moved = Pump(cmd.OutputStream, outDecoder, outAll, outLine, "", onLine)
+                moved = Pump(cmd.ExtendedOutputStream, errDecoder, errAll, errLine, "[err] ", onLine) OrElse moved
+                If pending.IsCompleted AndAlso Not moved Then Exit Do
+                If Not moved Then Threading.Thread.Sleep(80)
+            Loop
+            cmd.EndExecute(pending)
+            ' Whatever the last line was, even without a trailing newline.
+            If outLine.Length > 0 Then onLine?.Invoke(outLine.ToString())
+            If errLine.Length > 0 Then onLine?.Invoke("[err] " & errLine.ToString())
+            Return New SshResult With {
+                .ExitStatus = If(cmd.ExitStatus, -1),
+                .StdOut = outAll.ToString(),
+                .StdErr = errAll.ToString()
+            }
+        End Using
+    End Function
+
+    ' Moves what is available in the channel stream into the totals and emits finished lines. True if bytes moved.
+    Private Shared Function Pump(stream As IO.Stream, decoder As Decoder, all As StringBuilder, line As StringBuilder,
+                                 prefix As String, onLine As Action(Of String)) As Boolean
+        Dim moved = False
+        Dim buffer(8191) As Byte
+        Do While stream.Length > 0
+            Dim count = stream.Read(buffer, 0, buffer.Length)
+            If count <= 0 Then Exit Do
+            moved = True
+            Dim chars(decoder.GetCharCount(buffer, 0, count) - 1) As Char
+            Dim written = decoder.GetChars(buffer, 0, count, chars, 0)
+            For i = 0 To written - 1
+                all.Append(chars(i))
+                If chars(i) = ControlChars.Lf Then
+                    onLine?.Invoke(prefix & line.ToString().TrimEnd(ControlChars.Cr))
+                    line.Clear()
+                Else
+                    line.Append(chars(i))
+                End If
+            Next
+        Loop
+        Return moved
+    End Function
+
     Private Shared Function FormatFingerprint(bytes As Byte()) As String
         If bytes Is Nothing OrElse bytes.Length = 0 Then Return ""
         Dim sb As New StringBuilder(bytes.Length * 3)

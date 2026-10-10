@@ -15,9 +15,9 @@ Public NotInheritable Class AdeSettings
 
     Private Const FileName As String = "ade-migrator-settings.json"
 
-    Public Property Host As String = "127.0.0.1"
+    Public Property Host As String = "88.33.25.34"
     Public Property Port As Integer = 3306
-    Public Property User As String = "root"
+    Public Property User As String = "Admin"
     Public Property LastFile As String = String.Empty
 
     Private Shared Function FilePath() As String
@@ -133,7 +133,7 @@ Public Class AdeMigratorForm
     End Sub
 
     ''' <summary>Changing any input invalidates the verification that enabled a write.</summary>
-    Private Sub InputsChanged(sender As Object, e As EventArgs) Handles txtFisier.TextChanged, txtGazda.TextChanged, txtPort.TextChanged, txtUtilizator.TextChanged, txtParola.TextChanged, txtTargetDc.TextChanged
+    Private Sub InputsChanged(sender As Object, e As EventArgs) Handles txtFisier.TextChanged, txtGazda.TextChanged, txtPort.TextChanged, txtUtilizator.TextChanged, txtParola.TextChanged, txtTargetDc.TextChanged, txtSubunit.TextChanged
         Try
             _targetCheckError = String.Empty
             _targetProblems = Nothing
@@ -142,6 +142,7 @@ Public Class AdeMigratorForm
                 _source = Nothing
                 _plan = Nothing
                 txtTargetDc.Text = String.Empty
+                txtSubunit.Text = String.Empty
                 dgvTabele.ClearRows()
                 dgvEducatori.ClearRows()
                 dgvGrupe.ClearRows()
@@ -276,6 +277,7 @@ Public Class AdeMigratorForm
                 _settings.LastFile = k_path
                 SavePreferences()
                 txtTargetDc.Text = _source.Dc
+                If txtSubunit.Text.Trim().Length = 0 Then txtSubunit.Text = _source.UnitName
                 Say($"DC descoperit în Access: {_source.Dc}. Puteți schimba DC-ul destinației înainte de verificare.")
                 FillGroups()
                 FillEducators()
@@ -305,6 +307,7 @@ Public Class AdeMigratorForm
                 k_row.Tag = CInt(k_id)
                 k_row("grupa") = k_name
                 k_row("plecati") = AdePlan.IsDepartedGroup(k_name)
+                k_row("ascunsa") = AdePlan.IsDepartedGroup(k_name)
             Next
         Finally
             dgvGrupe.EndUpdate()
@@ -314,6 +317,10 @@ Public Class AdeMigratorForm
     Private Sub DgvGrupe_CellValueChanged(sender As Object, e As KBot.Controls.KBotCellValueEventArgs) Handles dgvGrupe.CellValueChanged
         Try
             If _busy OrElse _source Is Nothing Then Return
+            If e.ColumnKey <> "plecati" Then Return
+            For Each k_row In dgvGrupe.Rows
+                k_row("ascunsa") = Convert.ToBoolean(k_row("plecati"), CultureInfo.InvariantCulture)
+            Next
             RebuildPlan()
         Catch ex As Exception
             ShowOperationError("AdeMigratorForm.GroupTypes", "Refacerea planului a eșuat. Verificați bifele grupelor de plecați.", ex)
@@ -405,7 +412,7 @@ Public Class AdeMigratorForm
                 Dim k_receipt = dgvTabele.AddRow()
                 k_receipt("tabel") = "CFGs (CH)"
                 k_receipt("randuriAccess") = "—"
-                k_receipt("tinta") = "Unitati_Chitante"
+                k_receipt("tinta") = "AD_ReceiptConfig"
                 k_receipt("deScris") = "1"
                 k_receipt("inBaza") = "—"
             End If
@@ -475,6 +482,13 @@ Public Class AdeMigratorForm
     End Function
 
     ''' <summary>The operator's destination is separate from the unchanged unit identity read from Access.</summary>
+    ''' <summary>The subunit that receives this MDB (plan_subunitati.md): a new name creates it, an existing empty one is reused.</summary>
+    Private Function ReadSubunit() As String
+        Dim k_name = txtSubunit.Text.Trim()
+        If k_name.Length = 0 Then Throw New InvalidOperationException("Completați denumirea subunității.")
+        Return k_name
+    End Function
+
     Private Function ReadTargetDc() As String
         Dim targetDc = txtTargetDc.Text.Trim()
         If targetDc.Length = 0 Then Throw New InvalidOperationException("Completați DC-ul destinației.")
@@ -500,15 +514,17 @@ Public Class AdeMigratorForm
                 SavePreferences()
                 If _plan IsNot Nothing AndAlso _source IsNot Nothing Then
                     Dim k_dc = ReadTargetDc()
+                    Dim k_subunit = ReadSubunit()
                     Dim k_planNow = _plan
-                    Dim k_problems = Await Task.Run(Function() AdeWriter.Problems(k_server, k_dc, k_planNow))
+                    Dim k_sourceNow = _source
+                    Dim k_problems = Await Task.Run(Function() AdeWriter.Problems(k_server, k_dc, k_planNow, k_sourceNow, k_subunit))
                     _targetProblems = k_problems
                     For Each problem In k_problems
                         AppendLog("BLOCAJ SERVER", problem)
                     Next
                     _targetCounts = If(k_problems.Any(Function(p) p.StartsWith("Pe server nu există baza", StringComparison.Ordinal)),
                                        Nothing,
-                                       Await Task.Run(Function() AdeWriter.CountRows(k_server, k_dc, k_planNow.Tables.Select(Function(t) t.Table))))
+                                       Await Task.Run(Function() AdeWriter.CountRows(k_server, k_dc, k_planNow.Tables.Select(Function(t) t.Table), k_subunit)))
                     ShowPlan()
                     Say(If(k_problems.Count = 0, $"Baza «{k_dc}» este gata pentru migrare.", $"Baza «{k_dc}» nu este gata — vezi «Conversii și constatări»."))
                 Else
@@ -534,6 +550,7 @@ Public Class AdeMigratorForm
         Dim reasons As New List(Of String)
         If _busy Then reasons.Add("O operație este în curs; așteptați terminarea ei.")
         If String.IsNullOrWhiteSpace(txtTargetDc.Text) Then reasons.Add("Completați DC-ul destinației.")
+        If String.IsNullOrWhiteSpace(txtSubunit.Text) Then reasons.Add("Completați denumirea subunității.")
         If _source Is Nothing OrElse _plan Is Nothing Then
             reasons.Add("Apăsați «Citește» pentru încărcarea fișierului și construirea planului.")
         Else
@@ -563,9 +580,12 @@ Public Class AdeMigratorForm
                 _targetProblems Is Nothing OrElse _targetProblems.Count > 0 Then Return
             Dim k_total = _plan.Tables.Sum(Function(t) t.Rows.Count)
             Dim targetDc = ReadTargetDc()
+            Dim targetSubunit = ReadSubunit()
+            Dim k_receiptText = If(_plan.ReceiptConfig Is Nothing, "Fișierul nu are serie de chitanțe.", $"Seria de chitanțe a subunității: {_plan.ReceiptConfig.Serie}, următorul număr {_plan.ReceiptConfig.Numar}.")
             Dim k_answer = KBotMessage.Show(
                 $"Se scriu {k_total} rânduri în baza «{targetDc}» de pe {txtGazda.Text.Trim()}." & Environment.NewLine &
-                $"DC sursă Access: {_source.Dc}. DC destinație: {targetDc}." & Environment.NewLine &
+                $"DC sursă Access: {_source.Dc}. DC destinație: {targetDc}. Subunitate: {targetSubunit}." & Environment.NewLine &
+                k_receiptText & Environment.NewLine &
                 "Scrierea folosește o singură tranzacție. Dacă rezultatul nu poate fi confirmat, verificați serverul înainte de reluare." & Environment.NewLine & Environment.NewLine &
                 "Continuați?", "Migrare ADE", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If k_answer <> DialogResult.Yes Then Return
@@ -575,6 +595,7 @@ Public Class AdeMigratorForm
             Try
                 Dim k_server = BuildServer()
                 Dim k_dc = targetDc
+                Dim k_subunitName = targetSubunit
                 Dim k_sourceNow = _source
                 Dim k_planNow = _plan
                 Dim k_run = _operationFinished
@@ -587,19 +608,22 @@ Public Class AdeMigratorForm
                         End Try
                     End Sub)
                 Dim k_journalRoot = Path.Combine(AppContext.BaseDirectory, "Jurnale", "ADE")
-                Dim k_written = Await Task.Run(Function() AdeWriter.Write(k_server, k_dc, k_sourceNow, k_planNow, k_progress, k_cancel, k_journalRoot))
+                Dim k_written = Await Task.Run(Function() AdeWriter.Write(k_server, k_dc, k_sourceNow, k_planNow, k_subunitName, k_progress, k_cancel, k_journalRoot))
+                If k_written Is Nothing Then
+                    _targetProblems = Nothing
+                    _targetCounts = Nothing
+                    Say("Migrare oprită. Verificați din nou serverul înainte de reluare.")
+                    KBotMessage.Show("Migrarea a fost oprită; nu s-a confirmat un import nou. Verificați din nou serverul înainte de reluare.",
+                                     "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Return
+                End If
                 k_committed = True
                 ' These are committed counts returned by the writer. A later query must not turn a committed run into a failure.
                 _targetCounts = k_written
-                _targetProblems = New List(Of String) From {"Migrarea s-a făcut deja; tabelele nu mai sunt goale."}
+                _targetProblems = New List(Of String) From {"Migrarea s-a făcut deja; subunitatea nu mai este goală."}
                 ShowPlan()
                 Say("Migrare terminată.")
                 KBotMessage.Show($"Migrare terminată: {k_written.Values.Sum()} rânduri în {k_written.Count} tabele." & Environment.NewLine & "Jurnalele SQL sunt în: " & k_journalRoot,
-                                 "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Information)
-            Catch ex As OperationCanceledException
-                _targetProblems = Nothing
-                Say("Migrare oprită. Verificați din nou serverul înainte de reluare.")
-                KBotMessage.Show("Migrarea a fost oprită înainte de confirmarea tranzacției. Verificați din nou serverul înainte de reluare.",
                                  "Migrare ADE", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Catch ex As Exception
                 _targetProblems = Nothing

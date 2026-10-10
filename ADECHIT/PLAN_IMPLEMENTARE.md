@@ -23,6 +23,12 @@ ADE8-05 adaugă separat listarea și PDF-ul chitanțelor deja salvate.
 
 ## Navigare
 
+<!-- slice: AD11-01 -->
+Extensie aprobată și implementată local: [portalul părinților](PORTAL_PARINTI.md),
+SLICE-AD11-01. Autentificare CNP+cod permanent+OTP email, dashboard readonly cu
+copiii eligibili și fișă cont pentru toate perioadele pe IDP. Localhost pregătit pentru
+testarea utilizatorului; codul scris nu reprezintă validare funcțională/server.
+
 | Felie | Plan | Dependență principală |
 |---|---|---|
 | ADE0 | [Analiză și documentare](#slice-ade0) | Sursele Access și deciziile utilizatorului |
@@ -397,7 +403,34 @@ Logul comun anterior este arhivat, iar rularea începe cu un fișier nou și cas
 goală. Încărcarea logului în formular este numai manuală. Erorile de pornire
 rămân raportate. Build curat; arhivarea/interfața rămân de probat.
 [Worklog](../docs/worklog/SLICE-ADE5-10-log-nou-pornire.md).
-Următoarea subfelie liberă: ADE5-11.
+
+### SLICE-ADE5-11 — CNP lipsă ca NULL
+
+Marcajele `FARA CNP` și `-1` devin SQL NULL în câmpurile CNP/CNP_Platitor,
+inclusiv în SS_Buget, înainte de copierea către părinte. Recunoașterea ignoră
+spațiile marginale și majusculele; restul valorilor se păstrează ca text.
+Conversiile sunt numărate în plan. Fără teste sau migrare executată.
+[Worklog](../docs/worklog/SLICE-ADE5-11-cnp-lipsa-null.md).
+### SLICE-ADE5-12 — referințe la taxe inexistente ca NULL
+
+LunaD.IDV și Prezenta.IDV fără corespondent în ValoriTaxe se importă ca NULL,
+cu numărul conversiilor în plan, fără blocaj și fără ștergerea rândurilor sursă.
+Referințele existente se păstrează și se remapează normal.
+[Worklog](../docs/worklog/SLICE-ADE5-12-taxe-lipsa-null.md).
+### SLICE-ADE5-13 — cheile rândurilor generate
+
+Writerul citește cheia sursă pentru mapare numai din tabelele Access.
+Rândurile generate Grupe_Educator și Platitori_Istoric primesc IDGE/IDI de la
+MariaDB; nu mai apare KeyNotFoundException la căutarea cheii inexistente în plan.
+[Worklog](../docs/worklog/SLICE-ADE5-13-chei-randuri-generate.md).
+### SLICE-ADE5-14 — oprire fără excepție de anulare
+
+Oprirea solicitată verifică IsCancellationRequested, face rollback explicit
+în tranzacție și întoarce Nothing; formularul afișează oprirea fără a o confunda
+cu succesul. Erorile reale continuă să fie propagate. După trimiterea COMMIT,
+oprirea nu anulează importul.
+[Worklog](../docs/worklog/SLICE-ADE5-14-oprire-fara-exceptie.md).
+Următoarea subfelie liberă: ADE5-15.
 
 ## Slice ADE6
 

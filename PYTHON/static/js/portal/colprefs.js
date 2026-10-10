@@ -12,6 +12,7 @@
 //     size of the window they were chosen on
 
 import { DataGrid } from '../dgv/datagrid.js';
+import { confirmBox } from '../utils/confirm-box.js';
 import { Combobox } from '../components/combobox/combobox.js';
 import { GRID_CATALOG, columnsOf } from './columns.js';
 import {
@@ -287,9 +288,9 @@ export function createColumnsEditor({ say, realRows }) {
     note('Grila a revenit la valorile din cod (toate coloanele, în ordinea lor, cu lățimea după conținut).');
   }
 
-  function resetAll() {
+  async function resetAll() {
     if (!overriddenIds().length) return;
-    if (!window.confirm('Ștergeți modificările de coloane ale TUTUROR grilelor, din acest browser?')) return;
+    if (!await confirmBox('Ștergeți modificările de coloane ale TUTUROR grilelor, din acest browser?', { title: 'Coloane grile', yes: 'Șterge', no: 'Renunță' })) return;
     clearOverrides();
     paintCombo();
     open(gridId);

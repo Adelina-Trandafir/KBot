@@ -5,6 +5,13 @@
 Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → MariaDB.
 Executabilul păstrează numele existent `ADE.Migrator.exe`.
 
+<!-- slice: AD11-01 -->
+Înainte de noua migrare se aplică `sql/AD_08_portal_parinti.sql`, după AD_05–07.
+Writerul verifică registrul portalului și CodAccesPortal, respinge conflictele CNP/email
+în DC și generează un cod aleatoriu comun asocierilor părintelui cu copii fără Plecat.
+Codurile nu sunt incluse în jurnalul SQL. Trimiterea emailului se face ulterior din
+macheta părinților. [Ghid portal](../PORTAL_PARINTI.md).
+
 <!-- slice: ADE5-06 -->
 
 Sub buton apare permanent starea migrării. Când este blocată, primul motiv apare
@@ -54,6 +61,28 @@ citire a MDB-ului, propunerile se reconstruiesc după denumirile din fișier.
 MDB-ul nu este modificat. ADE5-08: build cu 0 erori/avertismente, fără teste
 automate, probă vizuală sau migrare executată din chat.
 
+<!-- slice: ADE5-13 -->
+
+Rândurile de educatori și istoric generate de migrator primesc ID-urile `IDGE`
+și `IDI` de la MariaDB. Writerul nu caută o cheie Access în aceste rânduri;
+maparea ID-urilor sursă se aplică numai tabelelor citite din MDB.
+
+<!-- slice: ADE5-12 -->
+
+Referințele `LunaD.IDV` și `Prezenta.IDV` fără corespondent în `ValoriTaxe`
+(inclusiv valoarea 0 când nu există taxa cu IDV=0) se importă ca SQL `NULL`.
+Numărul legăturilor lipsă apare în conversiile planului, fără să blocheze migrarea.
+Rândurile se păstrează, iar referințele la taxe existente se remapează normal.
+
+<!-- slice: ADE5-11 -->
+
+În câmpurile `Platitori.CNP`, `Platitori_sub.CNP_Platitor` și `SS_Buget.CNP`,
+marcajele `FARA CNP` și `-1` se importă ca SQL `NULL`. Recunoașterea ignoră
+spațiile de la margini și diferențele de majuscule. Celelalte valori se păstrează
+ca text, inclusiv zerourile inițiale. Numărul conversiilor apare în rezumatul
+planului. Conversia precedă opțiunea de copiere a CNP-ului copilului către părinte;
+un marcaj de CNP lipsă nu este copiat. MDB-ul rămâne nemodificat.
+
 <!-- slice: ADE5-09 -->
 Opțiunea **CNP Copil = CNP Părinte**, din zona sursei Access, este implicit
 nebifată. Bifați-o când `Platitori.CNP` din Access conține CNP-ul părintelui.
@@ -72,6 +101,10 @@ de chitanțe folosesc DC-ul ales. Confirmarea și jurnalul arată separat DC-ul 
 
 **Oprește** solicită oprirea migrării înainte de COMMIT. Instrucțiunea SQL curentă
 trebuie să se termine înainte ca solicitarea să fie observată; apoi se încearcă rollback.
+ADE5-14: oprirea normală nu mai aruncă `OperationCanceledException` în debugger.
+Writerul execută rollback explicit, scrie confirmarea în jurnal și întoarce o
+stare de oprire; formularul nu o prezintă ca migrare reușită. Erorile reale de
+rollback sau de conexiune sunt în continuare raportate.
 După trimiterea COMMIT, oprirea nu poate anula o tranzacție confirmată.
 La închiderea ferestrei în timpul unei operații, utilitarul așteaptă eliberarea conexiunilor.
 Citirea și verificarea conexiunii se așteaptă până la terminare; butonul Oprește este
@@ -92,7 +125,16 @@ verificați AD_Imports și tabelele pe server înainte de reluare. O eroare de s
 jurnalului este înregistrată și afișată prin mecanismul comun; jurnalizarea se dezactivează,
 iar tranzacția continuă conform comportamentului SqlDumpWriter din KBot.Migrator.
 
-Schema se pregătește separat de utilizator: AD_03 și, pentru perioadele taxelor, AD_04.
+<!-- slice: ADE10-03 -->
+
+**Subunitate (ADE10-03).** Fiecare MDB se importă într-o *subunitate* a DC-ului destinație. Câmpul **Subunitate** (propus din
+`Unitati.Denumire`) alege destinația: un nume nou creează subunitatea, numele uneia existente o alege dacă este activă și goală.
+Se poate importa un al doilea MDB în aceeași bază, în altă subunitate. Cheile din Access nu se păstrează: serverul le alocă,
+iar referințele se rescriu prin hartă (`AD_IdMap`); `LunaD.Ordine` păstrează ordinea lunilor din Access. Seria și numărul
+chitanțelor din MDB intră în `AD_ReceiptConfig` al subunității; `AVACONT_COMUN.Unitati_Chitante` nu se mai atinge.
+**Testează** cere schema din `sql/AD_05_subunitati.sql` aplicată și refuză un fișier deja importat în DC. Build curat; migrarea nu a fost rulată.
+
+Schema se pregătește separat de utilizator: AD_03, pentru perioadele taxelor AD_04, iar pentru subunități AD_05.
 Utilitarul nu execută DDL și nu inventează perioade pentru datele istorice NULL.
 
 ADE5-05: build verificat; utilitarul, oprirea, interfața și scrierea pe MariaDB rămân
