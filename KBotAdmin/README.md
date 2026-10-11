@@ -1,23 +1,47 @@
 # KBotAdmin
 
-The owner's private administration program (slice ME01). **Not part of K-BOT's delivery: it must never be published,
-packaged or sent to a client.** It is not in `KBot.sln`, and `publish-release.ps1` / `push-update.ps1` refuse any package
-that contains it.
+The owner's private administration program (slice ME01). **Not part of K-BOT's delivery: it must never be sent to a client
+or put in any K-BOT package, setup or update.** `publish-release.ps1` / `push-update.ps1` refuse any package that
+contains it. It is in `KBot.sln` for **Debug only** (so it shows in the start-up project list and F5 runs it; a Release
+build of the solution never builds it).
 
 ```powershell
 dotnet build KBotAdmin\KBotAdmin.vbproj
 dotnet run --project KBotAdmin\KBotAdmin.vbproj
+.\publish-admin.ps1        # -> _Admin\KBotAdmin.exe (git-ignored; close the running program first)
 ```
 
-- Talks to the server only over SSH (key from `~/.ssh`, or a typed password / passphrase that is never saved). No
-  database port is opened. Settings: `admin_settings.json` next to the exe (git-ignored; copy `admin_settings.example.json`).
-- Server half: `PYTHON/routes/admin_cli/` (push it with AvacontPush). The program runs
-  `python -m routes.admin_cli.admin_cli <verb>` and reads one JSON object back.
-- Uses `KBot.Controls` and `KBot.Theming` by project reference (same theme as K-BOT).
-- Errors: `<AppDir>\Logs\harness_errors.log`, messages shown to the operator: `Logs\mesaje_operator.log`.
+`publish-admin.ps1` is the owner's own copy to run separately (needs the .NET 8 Desktop Runtime); it keeps the
+`admin_settings.json` of `_Admin` across publishes.
 
-What AvacontPush did is spread over the main bar (the schema sync is **Sincronizare**): **Publicare** (right-aligned) is the file push over SFTP
-(scan, tick, send, restart the service; extensions and ignore rules are edited in the page and saved in
-`admin_settings.json`), **Interogări unice** the one-time queries, **Resetare Login** the login reset. The theme is always Classic. `LocalRoot` empty = the `PYTHON` folder next to `KBot.sln`.
+## Connection
+- Only SSH (SSH.NET): key from `~/.ssh`, or a typed password / passphrase that is never saved. No database port is opened.
+  Settings: `admin_settings.json` next to the exe (git-ignored; copy `admin_settings.example.json`): host, port, user,
+  key path, `RemoteRoot`, `RemotePython`, pinned host-key fingerprint, `LocalRoot` (empty = the `PYTHON` folder next to
+  `KBot.sln`), `PreserveMTime`, `ApiBaseUrl`, `IgnorePatterns`, `IncludeExtensions`.
+- A dropped session (idle timeout, firewall) is reconnected on the next command; a keep-alive is sent every 30 s.
+- Server half: `PYTHON/routes/admin_cli/` (push it with AvacontPush after every change there). The program runs
+  `python -m routes.admin_cli.admin_cli <verb>` and reads one JSON object back; no free SQL is ever sent.
+
+## Window
+- Always the **Classic** theme (`ThemeManager.InitializeFixed`), whatever theme K-BOT has saved; nothing is written to the
+  theme settings. Uses `KBot.Controls` and `KBot.Theming` by project reference.
+- Icon `KBotAdmin.ico` (K-BOT's blue rounded square with an X): exe, windows, caption bar, tray.
+- The X button / Alt+F4 hides the window into the **tray** (no taskbar button). The tray icon menu (left or right click):
+  «Afișează fereastra» and «Închide» (the only way to quit; it asks when an operation is running).
+- A message box left open while the operator switches away and comes back is brought back in front (`ModalGuard`).
+- At start only the databases and the accounts are read; every page reads its own data when it is opened.
+- Errors: `<AppDir>\Logs\harness_errors.log`; messages shown to the operator: `Logs\mesaje_operator.log`; the file push
+  traces every step in `Logs\publicare.log`.
+
+## Pages (main bar)
+Comenzi · Diferență (schema difference, read-only) · Sincronizare (`schema_sync`, preview by default) · Drepturi (ADECHIT
+rights per account) · Loguri (all server logs, coloured: api, vba, forexe timing, asociere, schema_sync, gunicorn error and
+access, help feedback, one-time runner) · Jurnal · Vizite · Server · Copii (backups and schema plans; a chosen database
+keeps only its own; double click shows the SQL text) · Cereri (new-account requests: approve / reject) · **Interogări unice**
+(one text run once on AVACONT_SURSA and the ticked databases, with the history and the text of every query that ran) ·
+**Resetare Login** (failed-login counters through the admin API) · **Publicare**, right-aligned (the file push of
+AvacontPush: scan, tick, send, restart the service; grids of accepted extensions and ignore rules edited in place and saved
+in `admin_settings.json`). AvacontPush itself is untouched.
 
 Status and open threads: `docs/worklog/state/KBOT_STATUS_ME01.md`.

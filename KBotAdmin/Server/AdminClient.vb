@@ -73,6 +73,25 @@ Public NotInheritable Class AdminClient
         End Try
     End Function
 
+    ''' <summary>
+    ''' The session, connected again when the server (or a firewall) dropped it while the program sat idle. Runs on a
+    ''' worker thread inside the gate. Before the first connect there is nothing to repeat, so that is an error.
+    ''' </summary>
+    Private Function LiveSession() As SshSession
+        If _ssh Is Nothing Then Throw New AdminException("Nu există conexiune la server. Conectați-vă mai întâi.")
+        If _ssh.IsConnected Then Return _ssh
+        Dim k_fresh As New SshSession(_settings)
+        Try
+            k_fresh.Connect()
+        Catch ex As Exception
+            k_fresh.Dispose()
+            Throw
+        End Try
+        _ssh.Dispose()
+        _ssh = k_fresh
+        Return _ssh
+    End Function
+
     ' ------------------------------------------------------------------
     ' Commands
     ' ------------------------------------------------------------------
@@ -100,9 +119,7 @@ Public NotInheritable Class AdminClient
             Await _gate.WaitAsync().ConfigureAwait(True)
             Dim k_result As SshResult
             Try
-                If _ssh Is Nothing Then Throw New AdminException("Nu există conexiune la server.")
-                Dim k_session As SshSession = _ssh
-                k_result = Await Task.Run(Function() k_session.Run(k_command)).ConfigureAwait(True)
+                k_result = Await Task.Run(Function() LiveSession().Run(k_command)).ConfigureAwait(True)
             Finally
                 _gate.Release()
             End Try
@@ -158,9 +175,7 @@ Public NotInheritable Class AdminClient
         Try
             Await _gate.WaitAsync().ConfigureAwait(True)
             Try
-                If _ssh Is Nothing Then Throw New AdminException("Nu există conexiune la server.")
-                Dim k_session As SshSession = _ssh
-                Return Await Task.Run(Function() k_session.RunStreaming(k_commandLine, k_onLine)).ConfigureAwait(True)
+                Return Await Task.Run(Function() LiveSession().RunStreaming(k_commandLine, k_onLine)).ConfigureAwait(True)
             Finally
                 _gate.Release()
             End Try

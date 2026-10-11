@@ -17,3 +17,7 @@ change re-renders the lines with the new palette.
 
 ## Limits
 The scroll bars are the native ones. Selection and copy are the RichTextBox's own.
+
+## Mouse wheel
+
+The box is read-only and never clicked into, so it **takes the focus when the mouse enters it** (only while its form is the active one): the wheel goes to the focused control, and without this it scrolled the button next to it.

@@ -1,7 +1,6 @@
 # SLICE-ME01 — KBotAdmin (the owner's private administration program)
 
-Date: 10.10.2026. Requested by the operator. Status: done on code, clean build; **never run against the server, never
-seen on screen**.
+Date: 10.10.2026. Requested by the operator. Status: done, clean build, in use by the operator since 11.10.2026 (see Follow-up).
 
 ## What changed and why
 
@@ -76,5 +75,11 @@ backups, session kill and MariaDB-level password / lock were not built;
 - `admin_logs.py`: untimed lines of gunicorn error.log were all stamped with the file time; now a traceback is one entry with the time of the next stamped line.
 - KBotAdmin is in `KBot.sln` for Debug only (no Release build); KBotLogBox takes the focus on mouse enter so the wheel scrolls it.
 - Menu reshaped (operator, 11.10.2026): no sub-buttons; pages Interogari unice and Resetare Login are in the main bar; Publicare (the file push) is right-aligned (KBotNavItem.Align = Far); `PublishView` removed; window 1500x760 so 13 entries fit. KBotAdmin theme is ALWAYS Classic: new `ThemeManager.InitializeFixed` (KBot.Theming 1.14.0.0) ignores the theme K-BOT saved, writes nothing to AppData, and makes `SetScheme` a no-op.
-- Publicare trace: `Logspublicare.log` (one line per step of the push).
+- Publicare trace: `Logs\publicare.log` (one line per step of the push).
 - Icon `KBotAdmin/KBotAdmin.ico` (K-BOT window icon with an X: blue rounded square, white letter): exe icon (taskbar), embedded for every window, the caption bar and the tray. Closing (X, Alt+F4) hides the window into the tray (no taskbar button); the tray menu (left or right click) has «Afisează fereastra» and «Închide» (asks if an operation runs). `ModalGuard` + `WndProc` of MainForm/ConnectionForm bring an open message box back in front when the program is re-activated. Theme button removed from the caption bar. Not published (the operator tests first).
+- Backups page (11.10.2026): a chosen database keeps only its dumps (`<db>_<stamp>.sql`) and the plans whose text names it; double click opens `SqlTextForm` (modal, read-only, first 2 MB; server verb `backup-text`, path checked against `backup/` and `schema_diff/`).
+- Interogari unice: history grid (`once-history`: the ledger of AVACONT_SURSA + done / still-to-run per unit), double click shows the query text.
+- Logs: `access.log`, `help_feedback.log`, `one_time.log` added (access only on request, last 6 MB).
+- Start-up reads only databases and accounts (no page is opened).
+- `AdminClient.LiveSession`: reconnects a dropped SSH session; `SshClient.KeepAliveInterval` = 30 s.
+- Local publish: `publish-admin.ps1` -> `_Admin\` (git-ignored, outside every K-BOT package; keeps `admin_settings.json`). README rewritten.

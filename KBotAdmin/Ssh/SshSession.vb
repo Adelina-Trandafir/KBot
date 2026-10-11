@@ -40,6 +40,7 @@ Public NotInheritable Class SshSession
     Public Sub Connect()
         Try
             _client = New SshClient(SshAuth.Build(_settings))
+            _client.KeepAliveInterval = TimeSpan.FromSeconds(30)   ' an idle session is not dropped by the server or a firewall
             AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
             _hostKeyError = String.Empty
             Try
