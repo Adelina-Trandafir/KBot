@@ -16,4 +16,8 @@ dotnet run --project KBotAdmin\KBotAdmin.vbproj
 - Uses `KBot.Controls` and `KBot.Theming` by project reference (same theme as K-BOT).
 - Errors: `<AppDir>\Logs\harness_errors.log`, messages shown to the operator: `Logs\mesaje_operator.log`.
 
+What AvacontPush did is spread over the main bar (the schema sync is **Sincronizare**): **Publicare** (right-aligned) is the file push over SFTP
+(scan, tick, send, restart the service; extensions and ignore rules are edited in the page and saved in
+`admin_settings.json`), **Interogări unice** the one-time queries, **Resetare Login** the login reset. The theme is always Classic. `LocalRoot` empty = the `PYTHON` folder next to `KBot.sln`.
+
 Status and open threads: `docs/worklog/state/KBOT_STATUS_ME01.md`.

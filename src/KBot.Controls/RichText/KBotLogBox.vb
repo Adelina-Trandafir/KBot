@@ -61,6 +61,20 @@ Public Class KBotLogBox
         If Not KBotDesignTime.IsDesignTime(Me) Then ApplyColors()
     End Sub
 
+    ''' <summary>
+    ''' The wheel goes to the control that has the focus, and a read-only log is never clicked into
+    ''' by the operator who only wants to scroll it: take the focus when the mouse comes over it.
+    ''' </summary>
+    Protected Overrides Sub OnMouseEnter(e As EventArgs)
+        MyBase.OnMouseEnter(e)
+        Try
+            If Not Focused AndAlso Not KBotDesignTime.IsDesignTime(Me) AndAlso FindForm() IsNot Nothing AndAlso
+               FindForm().ContainsFocus Then Focus()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotLogBox.OnMouseEnter", ex)
+        End Try
+    End Sub
+
     ' ------------------------------------------------------------------
     ' Content
     ' ------------------------------------------------------------------

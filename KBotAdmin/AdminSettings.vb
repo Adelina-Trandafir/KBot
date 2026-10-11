@@ -23,6 +23,36 @@ Public Class AdminSettings
     Public Property RemoteRoot As String = "/root/AVACONT"
     Public Property RemotePython As String = "/root/AVACONT/.venv/bin/python"
     Public Property HostKeyFingerprint As String = String.Empty
+
+    ''' <summary>The folder pushed to the server. Empty = the PYTHON folder next to KBot.sln (see <see cref="EffectiveLocalRoot"/>).</summary>
+    Public Property LocalRoot As String = String.Empty
+
+    ''' <summary>After an upload the remote time is set to the local one, so a new scan sees the file as identical.</summary>
+    Public Property PreserveMTime As Boolean = True
+
+    ''' <summary>Flask address for the admin routes of the Login page. https only.</summary>
+    Public Property ApiBaseUrl As String = "https://kbot.avatarsoft.ro"
+
+    ''' <summary>Folders and patterns the scan skips (a plain name = any path segment, *.ext = by extension).</summary>
+    Public Property IgnorePatterns As List(Of String) = New List(Of String) From {
+        ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj"
+    }
+
+    ''' <summary>The only extensions that are pushed (no leading dot).</summary>
+    Public Property IncludeExtensions As List(Of String) = New List(Of String) From {
+        "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md", "png", "svg", "jpg", "webp", "ico"
+    }
+
+    ''' <summary>The folder to push: the setting, else the PYTHON folder of the repository this exe was built in.</summary>
+    Public Function EffectiveLocalRoot() As String
+        If Not String.IsNullOrWhiteSpace(LocalRoot) Then Return LocalRoot.Trim()
+        Dim k_dir As DirectoryInfo = New DirectoryInfo(AppContext.BaseDirectory)
+        Do While k_dir IsNot Nothing
+            If File.Exists(Path.Combine(k_dir.FullName, "KBot.sln")) Then Return Path.Combine(k_dir.FullName, "PYTHON")
+            k_dir = k_dir.Parent
+        Loop
+        Return String.Empty
+    End Function
 End Class
 
 Public Module AdminSettingsStore
@@ -44,6 +74,9 @@ Public Module AdminSettingsStore
             Dim k_defaults As New AdminSettings()
             If String.IsNullOrWhiteSpace(k_result.RemoteRoot) Then k_result.RemoteRoot = k_defaults.RemoteRoot
             If String.IsNullOrWhiteSpace(k_result.RemotePython) Then k_result.RemotePython = k_defaults.RemotePython
+            If k_result.IgnorePatterns Is Nothing OrElse k_result.IgnorePatterns.Count = 0 Then k_result.IgnorePatterns = k_defaults.IgnorePatterns
+            If k_result.IncludeExtensions Is Nothing OrElse k_result.IncludeExtensions.Count = 0 Then k_result.IncludeExtensions = k_defaults.IncludeExtensions
+            If String.IsNullOrWhiteSpace(k_result.ApiBaseUrl) Then k_result.ApiBaseUrl = k_defaults.ApiBaseUrl
             Return k_result
         Catch ex As Exception
             GlobalErrorLog.Write("AdminSettingsStore.Load", ex)

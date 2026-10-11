@@ -35,6 +35,9 @@ Public Class MainForm
         _views("server") = viewServer
         _views("copii") = viewBackups
         _views("cereri") = viewRequests
+        _views("publicare") = viewPublish
+        _views("unice") = viewOnce
+        _views("login") = viewLogin
         For Each k_view As Control In _views.Values
             DirectCast(k_view, IAdminView).Attach(_context)
         Next
@@ -44,7 +47,6 @@ Public Class MainForm
         MyBase.OnShown(e)
         Try
             Await RefreshAllAsync()
-            navViews.SelectedKey = "loguri"
         Catch ex As Exception
             ' UI boundary (async void): shown to the operator, logged, never rethrown.
             GlobalErrorLog.Write("MainForm.OnShown", ex)

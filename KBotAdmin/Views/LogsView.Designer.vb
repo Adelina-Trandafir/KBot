@@ -171,8 +171,6 @@ Partial Class LogsView
         '
         ' logBox
         '
-        tips.SetToolTipHeader(logBox, "Logul serverului")
-        tips.SetToolTipText(logBox, "Ora apare colorată, erorile în roșu închis, urmele de eroare mai șterse. Se poate selecta și copia text.")
         logBox.Dock = DockStyle.Fill
         logBox.Location = New Point(8, 52)
         logBox.Margin = New Padding(0)

@@ -19,20 +19,26 @@ Public Class BackupsView
         Await LoadAsync()
     End Function
 
-    Public Sub SelectionChanged() Implements IAdminView.SelectionChanged
-        ' The list is the server's; only the "new copy" button depends on the chosen database.
+    Public Async Sub SelectionChanged() Implements IAdminView.SelectionChanged
+        ' A chosen database keeps only its own dumps and the plans that name it.
+        Try
+            Await LoadAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("BackupsView.SelectionChanged", ex)
+        End Try
     End Sub
 
     Private Async Function LoadAsync() As Task
         Await UiRun.Guard("BackupsView.LoadAsync", _context,
             Async Function()
                 _context.Say("Se citește lista copiilor...")
-                Dim k_result As BackupsResult = Await _context.Client.CallAsync(Of BackupsResult)("backups")
+                Dim k_result As BackupsResult = Await _context.Client.CallAsync(Of BackupsResult)("backups", "--db", _context.DbArgument)
                 grid.BeginUpdate()
                 Try
                     grid.ClearRows()
                     For Each k_file As BackupFile In k_result.Files
                         Dim k_row As KBotDataRow = grid.AddRow()
+                        k_row.Tag = k_file
                         k_row("name") = k_file.Name
                         k_row("kind") = k_file.Kind
                         k_row("size") = UiRun.FormatBytes(k_file.Size)
@@ -42,10 +48,32 @@ Public Class BackupsView
                 Finally
                     grid.EndUpdate()
                 End Try
-                lblState.Text = k_result.Files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere."
+                lblState.Text = k_result.Files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere" &
+                                If(_context.IsAll, ".", " pentru baza " & _context.SelectedDb & ".") & " Dublu clic pe un rând arată textul SQL."
                 _context.Say("Gata.")
             End Function)
     End Function
+
+    Private Async Sub Grid_CellDoubleClick(k_sender As Object, e As KBotCellEventArgs) Handles grid.CellDoubleClick
+        Try
+            If e.RowIndex < 0 OrElse e.RowIndex >= grid.Rows.Count Then Return
+            Dim k_file As BackupFile = TryCast(grid.Rows(e.RowIndex).Tag, BackupFile)
+            If k_file Is Nothing Then Return
+            Dim k_text As BackupText = Nothing
+            Await UiRun.Guard("BackupsView.Grid_CellDoubleClick", _context,
+                Async Function()
+                    _context.Say("Se citește " & k_file.Name & "...")
+                    k_text = Await _context.Client.CallAsync(Of BackupText)("backup-text", "--path", k_file.Path)
+                    _context.Say("Gata.")
+                End Function)
+            If k_text Is Nothing Then Return
+            Using k_form As New SqlTextForm(k_text.Name, k_text.Size, k_text.Text, k_text.ShownBytes, k_text.Truncated)
+                k_form.ShowDialog(Me)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("BackupsView.Grid_CellDoubleClick", ex)
+        End Try
+    End Sub
 
     Private Async Sub BtnRefresh_Click(k_sender As Object, e As EventArgs) Handles btnRefresh.Click
         Try

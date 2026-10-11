@@ -29,6 +29,9 @@ Partial Class MainForm
         Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         pnlRoot = New Panel()
         capBar = New KBotCaptionBar()
@@ -52,6 +55,9 @@ Partial Class MainForm
         viewServer = New ServerView()
         viewBackups = New BackupsView()
         viewRequests = New RequestsView()
+        viewPublish = New PushFilesView()
+        viewOnce = New OnceQueryView()
+        viewLogin = New LoginResetView()
         CType(navViews, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
@@ -220,25 +226,25 @@ Partial Class MainForm
         ' navViews
         '
         tips.SetToolTipHeader(navViews, "Paginile programului")
-        tips.SetToolTipText(navViews, "Comenzi: interogări sigure pe baza aleasă sau pe toate." & vbLf & "Diferență schemă: ce diferă de AVACONT_SURSA (doar citire)." & vbLf & "Sincronizare: aduce schema bazelor la schema sursei." & vbLf & "Drepturi: ce poate face fiecare cont în ADECHIT." & vbLf & "Loguri: jurnalele serverului, colorate." & vbLf & "Jurnal: ce s-a făcut în conturi." & vbLf & "Vizite: cine a deschis pagina de prezentare." & vbLf & "Server: disc, memorie, certificat, servicii." & vbLf & "Copii: copii de siguranță ale bazelor." & vbLf & "Cereri: cereri de conturi noi, de aprobat sau respins.")
+        tips.SetToolTipText(navViews, "Comenzi: interogări sigure pe baza aleasă sau pe toate." & vbLf & "Diferență schemă: ce diferă de AVACONT_SURSA (doar citire)." & vbLf & "Sincronizare: aduce schema bazelor la schema sursei." & vbLf & "Drepturi: ce poate face fiecare cont în ADECHIT." & vbLf & "Loguri: jurnalele serverului, colorate." & vbLf & "Jurnal: ce s-a făcut în conturi." & vbLf & "Vizite: cine a deschis pagina de prezentare." & vbLf & "Server: disc, memorie, certificat, servicii." & vbLf & "Copii: copii de siguranță ale bazelor." & vbLf & "Cereri: cereri de conturi noi, de aprobat sau respins." & vbLf & "Interogări unice: rulează o dată un text SQL pe toate bazele." & vbLf & "Resetare Login: șterge încercările de login eșuate ale utilizatorilor." & vbLf & "Publicare: trimite fișierele din PYTHON pe server și repornește serviciul.")
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Key = "comenzi"
         KBotNavItem1.Text = "Comenzi"
         KBotNavItem2.AutoSize = True
         KBotNavItem2.Key = "diferenta"
-        KBotNavItem2.Text = "Diferență schemă"
+        KBotNavItem2.Text = "Diferență"
         KBotNavItem3.AutoSize = True
         KBotNavItem3.Key = "sincronizare"
         KBotNavItem3.Text = "Sincronizare"
         KBotNavItem4.AutoSize = True
         KBotNavItem4.Key = "drepturi"
-        KBotNavItem4.Text = "Drepturi pe conturi"
+        KBotNavItem4.Text = "Drepturi"
         KBotNavItem5.AutoSize = True
         KBotNavItem5.Key = "loguri"
         KBotNavItem5.Text = "Loguri"
         KBotNavItem6.AutoSize = True
         KBotNavItem6.Key = "audit"
-        KBotNavItem6.Text = "Jurnal activitate"
+        KBotNavItem6.Text = "Jurnal"
         KBotNavItem7.AutoSize = True
         KBotNavItem7.Key = "vizite"
         KBotNavItem7.Text = "Vizite"
@@ -247,10 +253,20 @@ Partial Class MainForm
         KBotNavItem8.Text = "Server"
         KBotNavItem9.AutoSize = True
         KBotNavItem9.Key = "copii"
-        KBotNavItem9.Text = "Copii de siguranță"
+        KBotNavItem9.Text = "Copii"
         KBotNavItem10.AutoSize = True
         KBotNavItem10.Key = "cereri"
-        KBotNavItem10.Text = "Cereri conturi noi"
+        KBotNavItem10.Text = "Cereri"
+        KBotNavItem11.AutoSize = True
+        KBotNavItem11.Key = "unice"
+        KBotNavItem11.Text = "Interogări unice"
+        KBotNavItem12.AutoSize = True
+        KBotNavItem12.Key = "login"
+        KBotNavItem12.Text = "Resetare Login"
+        KBotNavItem13.Align = KBotNavAlign.Far
+        KBotNavItem13.AutoSize = True
+        KBotNavItem13.Key = "publicare"
+        KBotNavItem13.Text = "Publicare"
         navViews.Dock = DockStyle.Fill
         navViews.IconSize = 0
         navViews.Items.Add(KBotNavItem1)
@@ -263,6 +279,9 @@ Partial Class MainForm
         navViews.Items.Add(KBotNavItem8)
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
+        navViews.Items.Add(KBotNavItem11)
+        navViews.Items.Add(KBotNavItem12)
+        navViews.Items.Add(KBotNavItem13)
         navViews.Location = New Point(0, 0)
         navViews.Margin = New Padding(0)
         navViews.Name = "navViews"
@@ -283,6 +302,9 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewServer)
         pnlViews.Controls.Add(viewBackups)
         pnlViews.Controls.Add(viewRequests)
+        pnlViews.Controls.Add(viewPublish)
+        pnlViews.Controls.Add(viewOnce)
+        pnlViews.Controls.Add(viewLogin)
         pnlViews.Dock = DockStyle.Fill
         pnlViews.Location = New Point(0, 40)
         pnlViews.Margin = New Padding(0)
@@ -391,11 +413,41 @@ Partial Class MainForm
         viewRequests.TabIndex = 9
         viewRequests.Visible = False
         '
+        ' viewPublish
+        '
+        viewPublish.Dock = DockStyle.Fill
+        viewPublish.Location = New Point(0, 0)
+        viewPublish.Margin = New Padding(0)
+        viewPublish.Name = "viewPublish"
+        viewPublish.Size = New Size(962, 592)
+        viewPublish.TabIndex = 10
+        viewPublish.Visible = False
+        '
+        ' viewOnce
+        '
+        viewOnce.Dock = DockStyle.Fill
+        viewOnce.Location = New Point(0, 0)
+        viewOnce.Margin = New Padding(0)
+        viewOnce.Name = "viewOnce"
+        viewOnce.Size = New Size(962, 592)
+        viewOnce.TabIndex = 11
+        viewOnce.Visible = False
+        '
+        ' viewLogin
+        '
+        viewLogin.Dock = DockStyle.Fill
+        viewLogin.Location = New Point(0, 0)
+        viewLogin.Margin = New Padding(0)
+        viewLogin.Name = "viewLogin"
+        viewLogin.Size = New Size(962, 592)
+        viewLogin.TabIndex = 12
+        viewLogin.Visible = False
+        '
         ' MainForm
         '
         AutoScaleDimensions = New SizeF(96F, 96F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1280, 720)
+        ClientSize = New Size(1500, 760)
         Controls.Add(pnlRoot)
         FormBorderStyle = FormBorderStyle.None
         MinimumSize = New Size(1000, 640)
@@ -436,4 +488,7 @@ Partial Class MainForm
     Friend WithEvents viewServer As ServerView
     Friend WithEvents viewBackups As BackupsView
     Friend WithEvents viewRequests As RequestsView
+    Friend WithEvents viewPublish As PushFilesView
+    Friend WithEvents viewOnce As OnceQueryView
+    Friend WithEvents viewLogin As LoginResetView
 End Class

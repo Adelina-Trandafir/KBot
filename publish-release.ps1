@@ -637,7 +637,7 @@ if ($IncludeAccess) {
 
 # --- 4c1. KBotAdmin guard (SLICE-ME01) -------------------------------------------
 #  KBotAdmin is the owner's private administration program (databases, accounts, rights, schema sync, logs). It
-#  must NEVER reach a client, in any package. It lives outside KBot.sln and nothing here builds it; this guard
+#  must NEVER reach a client, in any package. It is in KBot.sln for Debug only (Release never builds it) and nothing here publishes it; this guard
 #  refuses the publish if anything of it (or its server settings) ever ends up in the folder.
 $adminLeak = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File -ErrorAction SilentlyContinue |
                Where-Object { $_.Name -like 'KBotAdmin*' -or $_.Name -like 'admin_settings*' -or $_.Name -like 'Renci.SshNet*' })

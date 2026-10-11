@@ -80,6 +80,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ADECHIT", "ADECHIT", "{B422
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "ADE.Migrator", "ADECHIT\ADE.Migrator\ADE.Migrator.vbproj", "{A3BE2067-106F-48DF-922F-45A61A59326B}"
 EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "KBotAdmin", "KBotAdmin\KBotAdmin.vbproj", "{29B804BC-F56F-4948-8CEA-6696A4631A13}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -393,6 +395,15 @@ Global
 		{A3BE2067-106F-48DF-922F-45A61A59326B}.Release|x64.Build.0 = Release|Any CPU
 		{A3BE2067-106F-48DF-922F-45A61A59326B}.Release|x86.ActiveCfg = Release|Any CPU
 		{A3BE2067-106F-48DF-922F-45A61A59326B}.Release|x86.Build.0 = Release|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|x64.Build.0 = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Debug|x86.Build.0 = Debug|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Release|x64.ActiveCfg = Release|Any CPU
+		{29B804BC-F56F-4948-8CEA-6696A4631A13}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

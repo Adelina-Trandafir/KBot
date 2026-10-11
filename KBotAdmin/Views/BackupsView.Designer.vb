@@ -168,7 +168,7 @@ Partial Class BackupsView
         grid.Size = New Size(884, 472)
         grid.TabIndex = 1
         tips.SetToolTipHeader(grid, "Fișierele")
-        tips.SetToolTipText(grid, "Copiile bazelor și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
+        tips.SetToolTipText(grid, "Copiile bazelor și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Cu o bază aleasă în stânga se văd doar copiile ei și planurile care o numesc." & vbLf & "Dublu clic pe un rând arată textul SQL al fișierului." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
         '
         ' lblState
         '

@@ -19,6 +19,7 @@ Public Module ThemeManager
     Private ReadOnly _userSchemes As New List(Of ThemeScheme)()
     Private ReadOnly _forms As New List(Of WeakReference(Of Form))()
     Private _initialized As Boolean = False
+    Private _fixed As Boolean = False
     Private _writesFormFont As Boolean = True
 
     ''' <summary>
@@ -159,6 +160,18 @@ Public Module ThemeManager
         _current = If(resolved, BuiltInSchemes.Classic())
     End Sub
 
+    ''' <summary>
+    ''' Ca <see cref="Initialize"/>, dar cu o schemă IMPUSĂ de program (KBotAdmin: mereu Classic): ignoră
+    ''' schema salvată de K-BOT, nu scrie nimic în AppData și <see cref="SetScheme"/> devine fără efect.
+    ''' Scalarea și celelalte setări rămân cele comune.
+    ''' </summary>
+    Public Sub InitializeFixed(scheme As ThemeScheme)
+        If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
+        Initialize()
+        _current = scheme
+        _fixed = True
+    End Sub
+
     ''' <summary>Rezolvă un nume la o schemă (built-in sau utilizator); Nothing dacă nu există.</summary>
     ''' <remarks>
     ''' Public de la felia 0028: selectorul de temă din MainForm ține în listă NUMELE schemelor
@@ -206,6 +219,7 @@ Public Module ThemeManager
     ''' <summary>Setează schema activă, o persistă, o difuzează și ridică ThemeChanged.</summary>
     Public Sub SetScheme(scheme As ThemeScheme)
         If scheme Is Nothing Then Throw New ArgumentNullException(NameOf(scheme))
+        If _fixed Then Return   ' schema impusă de program (InitializeFixed): nu se schimbă și nu se persistă
         _current = scheme
         ThemeStore.SaveActive(scheme.Name)
 

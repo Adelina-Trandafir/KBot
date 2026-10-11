@@ -177,6 +177,31 @@ Public Class BackupsResult
     Public Property Files As New List(Of BackupFile)()
 End Class
 
+Public Class BackupText
+    Public Property Name As String = String.Empty
+    Public Property Size As Long
+    Public Property Text As String = String.Empty
+    Public Property Truncated As Boolean
+    Public Property ShownBytes As Long
+End Class
+
+Public Class OnceHistoryItem
+    Public Property Name As String = String.Empty
+    Public Property Hash As String = String.Empty
+    Public Property RanAt As String = String.Empty
+    Public Property RanBy As String = String.Empty
+    Public Property Rows As Integer?
+    Public Property Text As String = String.Empty
+    Public Property Done As Integer
+    Public Property Total As Integer
+    Public Property Missing As New List(Of String)()
+End Class
+
+Public Class OnceHistoryResult
+    Public Property Items As New List(Of OnceHistoryItem)()
+    Public Property Units As Integer
+End Class
+
 Public Class BackupMade
     Public Property Db As String = String.Empty
     Public Property Path As String = String.Empty

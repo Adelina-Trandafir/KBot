@@ -5,5 +5,8 @@
   "PrivateKeyPath": "",
   "RemoteRoot": "/root/AVACONT",
   "RemotePython": "/root/AVACONT/.venv/bin/python",
-  "HostKeyFingerprint": ""
+  "HostKeyFingerprint": "",
+  "LocalRoot": "",
+  "PreserveMTime": true,
+  "ApiBaseUrl": "https://kbot.avatarsoft.ro"
 }

@@ -156,8 +156,6 @@ Partial Class SyncView
         logBox.Size = New Size(884, 392)
         logBox.TabIndex = 2
         logBox.Text = ""
-        tips.SetToolTipHeader(logBox, "Mersul sincronizării")
-        tips.SetToolTipText(logBox, "Liniile vin de pe server pe măsură ce se petrec. Roșu = eroare, galben = avertisment.")
         '
         ' tlyFoot
         '
