@@ -793,6 +793,10 @@ Public Class OrdView
             End Try
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.OnGenerateRequested", ex)
+            ' The operator must see that the generation FAILED, not just that nothing happened.
+            KBotMessage.Show(FindForm(),
+                "Documentul nu a putut fi generat." & vbCrLf & vbCrLf & ex.Message,
+                "Ordonanțare", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
 

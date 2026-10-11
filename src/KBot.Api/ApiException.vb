@@ -31,6 +31,18 @@ Public NotInheritable Class ApiException
         Me.Reason = reason
     End Sub
 
+    ' Security plan S1: a refused new password carries the server's CURRENT policy and every
+    ' unmet requirement (reason PASSWORD_POLICY_FAILED). Nothing otherwise.
+    Public ReadOnly Property PasswordFailure As KBot.Domain.PasswordPolicyFailure
+
+    Public Sub New(message As String, statusCode As Integer, reason As String,
+                   passwordFailure As KBot.Domain.PasswordPolicyFailure)
+        MyBase.New(message)
+        Me.StatusCode = statusCode
+        Me.Reason = reason
+        Me.PasswordFailure = passwordFailure
+    End Sub
+
     Public Sub New(message As String, inner As Exception)
         MyBase.New(message, inner)
     End Sub

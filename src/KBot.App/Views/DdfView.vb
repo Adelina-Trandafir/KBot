@@ -904,6 +904,10 @@ Public Class DdfView
             End Try
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.OnGenerateRequested", ex)
+            ' The operator must see that the generation FAILED, not just that nothing happened.
+            KBotMessage.Show(FindForm(),
+                "Documentul nu a putut fi generat." & vbCrLf & vbCrLf & ex.Message,
+                "DDF", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
 

@@ -15,6 +15,14 @@ Public Interface IAuthApi
     Function GetUnitsAsync(username As String, password As String,
                            ct As CancellationToken) As Task(Of IReadOnlyList(Of UnitInfo))
 
+    ' Security plan S1: like GetUnitsAsync, but tells apart "the password is the initial one - change
+    ' it first" (restricted token, no units) from a normal answer.
+    Function CheckAccessAsync(username As String, password As String,
+                              ct As CancellationToken) As Task(Of UnitsOutcome)
+
+    ' The server's real password requirements; allowed on the restricted token too.
+    Function GetPasswordPolicyAsync(token As String, ct As CancellationToken) As Task(Of PasswordPolicyInfo)
+
     Function LoginAsync(username As String, password As String, dc As String,
                         machine As String, ct As CancellationToken) As Task(Of LoginResult)
 

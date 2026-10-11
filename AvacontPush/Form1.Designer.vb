@@ -934,7 +934,7 @@ Partial Class Form1
         lblApiKey.Name = "lblApiKey"
         lblApiKey.Size = New Size(58, 25)
         lblApiKey.TabIndex = 2
-        lblApiKey.Text = "Cheie:"
+        lblApiKey.Text = "Token admin:"
         '
         ' txtApiKey
         '

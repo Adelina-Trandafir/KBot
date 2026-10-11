@@ -178,6 +178,21 @@ Partial Public Class KbotForm
         End Try
     End Function
 
+    ''' <summary>
+    ''' For code that talks to the server outside ApiClient (the PDF template download): makes sure the
+    ''' session token is alive, re-signing the operator in when it is not (the same net as every other call).
+    ''' Must run on the UI thread. True = the session has a usable token now.
+    ''' </summary>
+    Public Async Function EnsureSessionAsync() As Task(Of Boolean)
+        Try
+            Await WithReauth(Function() _authApi.GetMyUnitsAsync(_session.Token, CancellationToken.None)).ConfigureAwait(True)
+            Return True
+        Catch ex As ApiException
+            GlobalErrorLog.Write("KbotForm.EnsureSessionAsync", ex)
+            Return False
+        End Try
+    End Function
+
     ' One silent re-login at a time: several calls can hit the same expiry together.
     Private ReadOnly _reloginGate As New SemaphoreSlim(1, 1)
 

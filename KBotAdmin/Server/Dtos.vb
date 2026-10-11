@@ -41,6 +41,16 @@ Public Class AccountsResult
     Public Property Accounts As New List(Of AccountLink)()
 End Class
 
+Public Class PasswordStateRow
+    Public Property Un As String = String.Empty
+    Public Property MustChange As Boolean
+    Public Property ChangedAt As String
+End Class
+
+Public Class PasswordStateResult
+    Public Property Accounts As New List(Of PasswordStateRow)()
+End Class
+
 Public Class RoleInfo
     Public Property Id As Integer
     Public Property Cod As String = String.Empty

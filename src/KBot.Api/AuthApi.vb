@@ -54,6 +54,50 @@ Public NotInheritable Class AuthApi
         End Try
     End Function
 
+    Public Async Function CheckAccessAsync(username As String, password As String,
+                                           ct As CancellationToken) _
+        As Task(Of UnitsOutcome) Implements IAuthApi.CheckAccessAsync
+
+        Try
+            Dim payload As New UnitsRequest With {.Username = username, .Password = password}
+            Dim respText As String = Await PostAsync("/api/auth/units", payload, "listarea unităților", ct).ConfigureAwait(False)
+
+            Dim body As UnitsResponse = JsonSerializer.Deserialize(Of UnitsResponse)(respText, _json)
+            If body Is Nothing Then Throw New ApiException("Răspuns invalid de la server la listarea unităților.")
+            If body.PasswordChangeRequired Then
+                If String.IsNullOrEmpty(body.Token) Then
+                    Throw New ApiException("Răspuns invalid de la server: lipsește sesiunea pentru schimbarea parolei.")
+                End If
+                Return New UnitsOutcome(Nothing, True, body.Token)
+            End If
+            Return New UnitsOutcome(If(body.Units, New List(Of UnitInfo)()), False, Nothing)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.CheckAccessAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetPasswordPolicyAsync(token As String, ct As CancellationToken) _
+        As Task(Of PasswordPolicyInfo) Implements IAuthApi.GetPasswordPolicyAsync
+
+        Try
+            Dim respText As String = Await GetAsync("/api/auth/password/policy", "citirea cerințelor de parolă", ct,
+                                                    bearer:=token).ConfigureAwait(False)
+            Dim body As PasswordPolicyResponse = JsonSerializer.Deserialize(Of PasswordPolicyResponse)(respText, _json)
+            If body Is Nothing OrElse body.Policy Is Nothing Then
+                Throw New ApiException("Răspuns invalid de la server la citirea cerințelor de parolă.")
+            End If
+            Return body.Policy
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("AuthApi.GetPasswordPolicyAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function LoginAsync(username As String, password As String, dc As String,
                                      machine As String, ct As CancellationToken) _
         As Task(Of LoginResult) Implements IAuthApi.LoginAsync
@@ -64,6 +108,12 @@ Public NotInheritable Class AuthApi
             Dim respText As String = Await PostAsync("/api/auth/login", payload, "autentificare", ct).ConfigureAwait(False)
 
             Dim result As LoginResult = JsonSerializer.Deserialize(Of LoginResult)(respText, _json)
+            If result IsNot Nothing AndAlso result.PasswordChangeRequired Then
+                ' The account was flagged while this session was open (silent re-login): the full
+                ' sign-in window must run, which opens the mandatory password change.
+                Throw New ApiException("Trebuie să vă schimbați parola. Autentificați-vă din nou.", 403,
+                                       "PASSWORD_CHANGE_REQUIRED")
+            End If
             If result Is Nothing OrElse result.SessionContext Is Nothing OrElse String.IsNullOrEmpty(result.Token) Then
                 Throw New ApiException("Răspuns de autentificare invalid de la server.")
             End If
@@ -242,8 +292,12 @@ Public NotInheritable Class AuthApi
             ' Non-2xx -> ApiException cu mesajul roman al serverului, codul HTTP si
             ' codul-motiv ("reason"), parsate in ApiErrorBody (comun cu ApiClient).
             Dim body As ApiErrorBody = ApiErrorBody.Parse(respText)
+            Dim failure As PasswordPolicyFailure = Nothing
+            If String.Equals(body.Reason, "PASSWORD_POLICY_FAILED", StringComparison.Ordinal) Then
+                failure = New PasswordPolicyFailure(body.Policy, body.Violations)
+            End If
             Throw New ApiException(body.MessageOrFallback(actiune, CInt(resp.StatusCode)),
-                                   CInt(resp.StatusCode), body.Reason)
+                                   CInt(resp.StatusCode), body.Reason, failure)
         End Using
     End Function
 
@@ -293,6 +347,8 @@ Public NotInheritable Class AuthApi
     ' ---- DTO-uri de raspuns ----
     Private NotInheritable Class UnitsResponse
         <JsonPropertyName("units")> Public Property Units As List(Of UnitInfo)
+        <JsonPropertyName("password_change_required")> Public Property PasswordChangeRequired As Boolean
+        <JsonPropertyName("Token")> Public Property Token As String
     End Class
 
     Private NotInheritable Class PeriodsResponse

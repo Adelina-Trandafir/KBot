@@ -180,10 +180,6 @@ Public Class SetariInfoView
             ntfParola.Show("Introduceți codul primit pe e-mail.", NoticeKind.Error)
             Return
         End If
-        If noua.Length < 8 Then
-            ntfParola.Show("Parola nouă trebuie să aibă cel puțin 8 caractere.", NoticeKind.Error)
-            Return
-        End If
         If Not String.Equals(noua, confirmare, StringComparison.Ordinal) Then
             ntfParola.Show("Parola nouă și confirmarea ei nu coincid.", NoticeKind.Error)
             Return
@@ -199,6 +195,9 @@ Public Class SetariInfoView
             Dim rezultat As PasswordChangeResult = Await _authApi.ChangePasswordAsync(
                 _session.Token, _currentPassword, cod, noua, CancellationToken.None)
             ReseteazaParola()
+            ' Security plan S1: the old token was revoked with the account's other sessions; the
+            ' answer carries a fresh one for this unit.
+            If Not String.IsNullOrEmpty(rezultat.Token) Then _session.Token = rezultat.Token
             If rezultat.LegacyUpdated Then
                 ntfParola.Show("Parola a fost schimbată. De la următoarea autentificare se folosește parola nouă.", NoticeKind.Success)
             Else
@@ -207,7 +206,14 @@ Public Class SetariInfoView
             End If
             RaiseEvent StatusChanged("Parola a fost schimbată.")
         Catch ex As ApiException
-            ntfParola.Show(ex.Message, NoticeKind.Error)
+            ' A refused new password lists every unmet requirement of the server's real policy.
+            Dim k_text As New System.Text.StringBuilder(ex.Message)
+            If ex.PasswordFailure IsNot Nothing Then
+                For Each k_v As PasswordViolation In ex.PasswordFailure.Violations
+                    k_text.AppendLine().Append("• ").Append(k_v.Message)
+                Next
+            End If
+            ntfParola.Show(k_text.ToString(), NoticeKind.Error)
         Catch ex As Exception
             GlobalErrorLog.Write("SetariInfoView.BtnSchimbaParola_Click", ex)
             ntfParola.Show("Parola nu a putut fi schimbată. Verificați rețeaua.", NoticeKind.Error)

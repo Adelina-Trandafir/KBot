@@ -333,7 +333,12 @@ Public NotInheritable Class LoginForm
             If EmailShape.IsMatch(user) Then Await ResolveKindAsync(user)
             If ExitForUpdate Then Return
 
-            Dim units = Await _authApi.GetUnitsAsync(user, pass, CancellationToken.None)
+            Dim outcome As UnitsOutcome = Await _authApi.CheckAccessAsync(user, pass, CancellationToken.None)
+            If outcome.PasswordChangeRequired Then
+                Await RunMandatoryPasswordChangeAsync(outcome.RestrictedToken, pass)
+                Return
+            End If
+            Dim units As IReadOnlyList(Of UnitInfo) = outcome.Units
             If units Is Nothing OrElse units.Count = 0 Then
                 ShowError("Nu aveți nicio unitate accesibilă.")
                 Return
@@ -379,6 +384,48 @@ Public NotInheritable Class LoginForm
         Finally
             SetBusy(False)
         End Try
+    End Sub
+
+    ' Security plan S1: the account still has its initial password. The mandatory dialog runs on the
+    ' restricted token; the application stays closed until the change succeeded, and then the
+    ' operator signs in again with the NEW password (every old session was revoked by the server).
+    Private Async Function RunMandatoryPasswordChangeAsync(k_restrictedToken As String, k_initialPassword As String) As Task
+        Try
+            Dim k_changed As Boolean = False
+            Dim k_legacyUpdated As Boolean = True
+            Using k_dlg As New ForcedPasswordChangeForm(_authApi, k_restrictedToken, k_initialPassword)
+                k_changed = (k_dlg.ShowDialog(Me) = DialogResult.OK)
+                k_legacyUpdated = k_dlg.LegacyUpdated
+            End Using
+
+            If k_changed Then
+                txtPass.Text = String.Empty
+                txtPass.FocusInput()
+                If k_legacyUpdated Then
+                    ShowNotice("Parola a fost schimbată. Autentificați-vă cu parola nouă.", Global.KBot.Controls.NoticeKind.Success)
+                Else
+                    ShowNotice("Parola a fost schimbată pe serverul K-BOT. Serverul vechi (Access) NU a putut fi actualizat — " &
+                               "acolo rămâne parola veche până o aliniază un administrator. Autentificați-vă cu parola nouă.",
+                               Global.KBot.Controls.NoticeKind.Warning)
+                End If
+            Else
+                ' Closed without changing: end the restricted session (best effort) and stay on the credentials.
+                Try
+                    Await _authApi.LogoutAsync(k_restrictedToken, CancellationToken.None)
+                Catch ex As Exception
+                    GlobalErrorLog.Write("LoginForm.RunMandatoryPasswordChangeAsync.Logout", ex)
+                End Try
+                txtPass.Text = String.Empty
+                ShowError("Pentru a folosi aplicația trebuie să schimbați parola inițială.")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("LoginForm.RunMandatoryPasswordChangeAsync", ex)
+            ShowError("Schimbarea parolei nu a putut fi pornită.")
+        End Try
+    End Function
+
+    Private Sub ShowNotice(k_message As String, k_kind As Global.KBot.Controls.NoticeKind)
+        ntfError.Show(k_message, k_kind)
     End Sub
 
     ' ---------------- faza 2: login ----------------

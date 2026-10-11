@@ -3,17 +3,57 @@ Imports System.IO
 Imports System.Net.Http
 Imports KBot.Common
 
-' Descarcă/cache-uiește macheta XFA (DDF/ORD) de pe API-ul legacy (vezi Configs).
+' Descarcă/cache-uiește macheta XFA (DDF/ORD) de pe rutele bearer ale API-ului (vezi Configs).
 ' Portat din XFA_WRITTER. Cache pe disc în CACHE_DIR; HEAD întâi (evită re-download
 ' dacă fișierul e deja în cache), apoi GET complet.
 <System.Runtime.Versioning.SupportedOSPlatform("windows")>
 Public Class TemplateDownloader
+
+    ''' <summary>Returns the live bearer token of the signed-in session; set once by the application at start-up.</summary>
+    Public Shared Property TokenProvider As Func(Of String)
+
+    ''' <summary>
+    ''' Called when the server answers 401 (session closed or expired): the application re-signs the
+    ''' operator in and returns True when the session has a fresh token, False when it has not. Without it a 401 is
+    ''' reported as it is. Runs on the calling (worker) thread, so the implementation must marshal to the UI itself.
+    ''' </summary>
+    Public Shared Property ReauthenticateHook As Func(Of Boolean)
+
+    ' A 401 from the template route, told apart from every other failure so one re-login and one retry can follow.
+    Private NotInheritable Class TemplateUnauthorizedException
+        Inherits Exception
+
+        Public Sub New(k_message As String, k_inner As Exception)
+            MyBase.New(k_message, k_inner)
+        End Sub
+    End Class
 
     ''' <summary>
     ''' Întoarce calea locală a machetei pentru tipul de document (o descarcă dacă lipsește).
     ''' Metodă de graniță (I/O + HTTP): loghează în GlobalErrorLog și rearuncă.
     ''' </summary>
     Public Shared Function GetTemplatePath(docType As String) As String
+        Try
+            Try
+                Return GetTemplatePathOnce(docType)
+            Catch ex As TemplateUnauthorizedException
+                If ReauthenticateHook Is Nothing OrElse Not ReauthenticateHook.Invoke() Then
+                    Throw New Exception("Sesiunea a expirat sau a fost închisă. Autentificați-vă din nou.", ex)
+                End If
+            End Try
+            ' One retry with the fresh token; a second 401 is reported, not looped on.
+            Try
+                Return GetTemplatePathOnce(docType)
+            Catch ex As TemplateUnauthorizedException
+                Throw New Exception("Serverul a refuzat sesiunea imediat după autentificare. Contactați administratorul.", ex)
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("TemplateDownloader.GetTemplatePath", ex)
+            Throw
+        End Try
+    End Function
+
+    Private Shared Function GetTemplatePathOnce(docType As String) As String
         Try
             Dim templateUrl As String = GetUrlForDocType(docType)
 
@@ -23,7 +63,11 @@ Public Class TemplateDownloader
 
             Using client As New HttpClient()
                 client.Timeout = TimeSpan.FromSeconds(60)
-                client.DefaultRequestHeaders.Add("X-API-KEY", API_KEY)
+                Dim k_token As String = If(TokenProvider Is Nothing, String.Empty, TokenProvider.Invoke())
+                If String.IsNullOrEmpty(k_token) Then
+                    Throw New InvalidOperationException("Nu exista o sesiune autentificata pentru descarcarea machetei.")
+                End If
+                client.DefaultRequestHeaders.Authorization = New System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", k_token)
 
                 Dim headRequest As New HttpRequestMessage(HttpMethod.Head, BASE_URL & templateUrl)
                 Dim headResponse As HttpResponseMessage
@@ -50,6 +94,8 @@ Public Class TemplateDownloader
 
                 Return DownloadFull(client, templateUrl, docType)
             End Using
+        Catch ex As TemplateUnauthorizedException
+            Throw   ' control flow (re-login + one retry in GetTemplatePath): not logged here
         Catch ex As Exception
             GlobalErrorLog.Write("TemplateDownloader.GetTemplatePath", ex)
             Throw
@@ -74,6 +120,8 @@ Public Class TemplateDownloader
         Try
             response = client.GetAsync(BASE_URL & templateUrl).Result
             response.EnsureSuccessStatusCode()
+        Catch ex As HttpRequestException When ex.StatusCode = System.Net.HttpStatusCode.Unauthorized
+            Throw New TemplateUnauthorizedException($"Macheta {docType}: serverul a răspuns 401.", ex)
         Catch ex As Exception
             Throw New Exception($"Nu s-a putut descărca macheta {docType} de pe server: {ex.Message}", ex)
         End Try

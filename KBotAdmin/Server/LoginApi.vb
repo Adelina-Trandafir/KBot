@@ -30,7 +30,7 @@ Friend NotInheritable Class LoginErrorResponse
 End Class
 
 ''' <summary>
-''' HTTPS client for the X-Api-Key admin routes of the Flask server (<c>routes/admin.py</c>): the list of
+''' HTTPS client for the X-Admin-Token admin routes of the Flask server (<c>routes/admin.py</c>): the list of
 ''' operators with their failed-login state, and the reset of those counters. The counters live in the
 ''' memory of the running server, so SSH cannot reach them. The key is read once over SSH from the
 ''' server's own config.py and kept in memory only. Slice ME01.
@@ -51,10 +51,10 @@ Public NotInheritable Class LoginApi
         If _apiKey = String.Empty Then Throw New AdminException("Cheia API lipsește.")
     End Sub
 
-    ''' <summary>The command that prints the server's own API_KEY. Its output must not reach any log.</summary>
+    ''' <summary>The command that prints the server's own ADMIN_TOKEN (the administration credential, never the key shipped to clients). Its output must not reach any log.</summary>
     Public Shared Function ReadKeyCommand(k_settings As AdminSettings) As String
         Return "cd " & AdminClient.Quote(k_settings.RemoteRoot) & " && " & AdminClient.Quote(k_settings.RemotePython) &
-               " -c 'from config import API_KEY; print(API_KEY)'"
+               " -c 'from config import ADMIN_TOKEN; print(ADMIN_TOKEN)'"
     End Function
 
     Public Async Function GetUsersAsync() As Task(Of List(Of LoginUser))
@@ -77,7 +77,7 @@ Public NotInheritable Class LoginApi
     End Function
 
     Private Async Function SendAsync(k_req As HttpRequestMessage) As Task(Of String)
-        k_req.Headers.Add("X-Api-Key", _apiKey)
+        k_req.Headers.Add("X-Admin-Token", _apiKey)
         Dim k_resp As HttpResponseMessage
         Try
             k_resp = Await Http.SendAsync(k_req).ConfigureAwait(True)

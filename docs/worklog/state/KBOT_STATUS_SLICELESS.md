@@ -5,6 +5,14 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 11.10.2026) - PLAN_Securitate_API: new system built NEXT TO the legacy one; nothing legacy deleted.**
+  Done in code: S1 server + client (mandatory change of the initial password, restricted `password_change` session,
+  real MariaDB policy, AuthVersion revocation, `must-change` in admin_cli, `ForcedPasswordChangeForm`), bearer template
+  routes `/api/mfp/templates/{ddf,ord}` + `TemplateDownloader` on the session token (no key in KBot.Xfa),
+  `utils/dbname.py` (validator out of routes.admin), `require_admin` / `X-Admin-Token` on admin users/login-reset/refacere
+  and all migrare routes (KBotAdmin, AvacontPush, SchemaSyncClient switched). Retirement (S2.3-6, S3, S4) NOT done: it waits
+  for the operator's tests. See `SLICELESS-securitate-api.md` for the deployment steps and the retirement list.
+
 - **No slice (operator, 08.10.2026) — F15 on lines: a zero line on the reception is not a line.** Run 22
   (018_GRRS, AAB2MN2DC25, save phase) was refused 400 at step 4c: «Recepția din 19.03.2026 · 3000.00:
   liniile ultimului instantaneu nu se potrivesc cu cele ale recepției (AA4: instantaneu 369.00 / recepție

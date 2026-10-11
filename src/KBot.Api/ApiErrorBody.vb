@@ -1,6 +1,8 @@
 Option Strict On
 Imports System.Text.Json
+Imports System.Collections.Generic
 Imports System.Text.Json.Serialization
+Imports KBot.Domain
 
 ' Corpul standard de eroare al API-ului: { "error": "<mesaj român>", "reason": "<cod>" }.
 ' Parsat în ACELAȘI loc de AuthApi și ApiClient, ca operatorul să vadă mereu mesajul
@@ -10,6 +12,8 @@ Friend NotInheritable Class ApiErrorBody
 
     <JsonPropertyName("error")> Public Property [Error] As String
     <JsonPropertyName("reason")> Public Property Reason As String
+    <JsonPropertyName("violations")> Public Property Violations As List(Of PasswordViolation)
+    <JsonPropertyName("policy")> Public Property Policy As PasswordPolicyInfo
 
     Private Shared ReadOnly _json As JsonSerializerOptions =
         New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True}

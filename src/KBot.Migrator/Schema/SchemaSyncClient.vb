@@ -130,7 +130,7 @@ Public NotInheritable Class SchemaSyncClient
         _baseUrl = NormaliseUrl(baseUrl)
         _log = log
         _http = New HttpClient() With {.Timeout = TimeSpan.FromSeconds(120)}
-        _http.DefaultRequestHeaders.Add("X-Api-Key", apiKey.Trim())
+        _http.DefaultRequestHeaders.Add("X-Admin-Token", apiKey.Trim())
     End Sub
 
     ''' <summary>
@@ -163,7 +163,7 @@ Public NotInheritable Class SchemaSyncClient
         End If
 
         If String.IsNullOrWhiteSpace(apiKey) Then
-            reason = "Cheia API lipsește. Se tastează în «Cheie API», în grupul «Server Python», " &
+            reason = "Tokenul de administrare lipsește. Se tastează în «Token administrare», în grupul «Server Python», " &
                      "și nu se păstrează nicăieri după închiderea ferestrei."
             Return False
         End If
@@ -351,7 +351,7 @@ Public NotInheritable Class SchemaSyncClient
     ''' </summary>
     ''' <remarks>
     ''' The migration routes answer with a Romanian «error» field, so that is what is shown.
-    ''' 401 is the exception: <c>require_api_key</c> answers a bare English «Unauthorized»,
+    ''' 401 is the exception: <c>require_admin</c> answers a bare English «Unauthorized»,
     ''' which tells an operator nothing about which of the two boxes is wrong.
     ''' </remarks>
     Private Shared Sub EnsureOk(resp As HttpResponseMessage, body As String, url As String)
@@ -359,8 +359,8 @@ Public NotInheritable Class SchemaSyncClient
 
         If resp.StatusCode = HttpStatusCode.Unauthorized Then
             Throw New InvalidOperationException(
-                "Serverul a refuzat cheia API. Verificați «Cheie API» din grupul " &
-                "«Server Python» — este cheia serverului, nu parola MariaDB și nu parola " &
+                "Serverul a refuzat tokenul de administrare. Verificați «Token administrare» din grupul " &
+                "«Server Python» — este tokenul de administrare al serverului, nu parola MariaDB și nu parola " &
                 "fișierelor Access.")
         End If
 

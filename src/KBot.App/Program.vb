@@ -294,6 +294,7 @@ Friend Module Program
             Dim session As SessionContext = provider.GetRequiredService(Of SessionContext)()
             Dim authApi As IAuthApi = provider.GetRequiredService(Of IAuthApi)()
             Dim api As IApiClient = provider.GetRequiredService(Of IApiClient)()
+            KBot.Xfa.TemplateDownloader.TokenProvider = Function() session.Token
 
             ' Slice 0081-06: a director gets only the list of documents to sign, never the shell.
             Dim shell As Form
@@ -301,6 +302,13 @@ Friend Module Program
                 shell = provider.GetRequiredService(Of DirectorForm)()
             Else
                 shell = provider.GetRequiredService(Of KbotForm)()
+            End If
+            Dim k_kbotShell As KbotForm = TryCast(shell, KbotForm)
+            If k_kbotShell IsNot Nothing Then
+                ' The PDF template download runs on a worker thread outside ApiClient: on a 401 it asks the shell
+                ' (UI thread) to re-sign the operator in, then retries once.
+                KBot.Xfa.TemplateDownloader.ReauthenticateHook =
+                    Function() DirectCast(k_kbotShell.Invoke(New Func(Of Task(Of Boolean))(AddressOf k_kbotShell.EnsureSessionAsync)), Task(Of Boolean)).Result
             End If
             AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
             ' Slice 0078: signed PDFs whose upload failed earlier are retried once the shell is up.

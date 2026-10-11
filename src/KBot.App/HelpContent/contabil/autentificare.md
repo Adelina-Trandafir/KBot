@@ -58,3 +58,20 @@ fost ascunsă din Setări › Autentificare).
   utilizatorul și parola deja completate: apeși doar «Continuă».
 - Debifată la conectare: parola memorată se șterge.
 - Fără această bifă, parola **nu se păstrează** niciodată pe calculator.
+
+## Prima conectare: schimbarea parolei inițiale
+<!-- slice: 0000-67 -->
+
+Dacă parola contului este încă cea primită de la administrator, după **Continuă** nu se mai
+deschide lista de unități, ci fereastra **Schimbarea parolei**. Aplicația nu pornește până nu
+schimbi parola.
+
+1. Pe adresa de e-mail a contului primești un **cod de confirmare**. Dacă nu a sosit, apasă
+   **Trimite din nou codul**.
+2. Scrie codul, apoi **parola nouă** și confirmarea ei.
+3. Sub câmpuri vezi cerințele parolei (lungime, cifre, majuscule, minuscule, caractere speciale),
+   fiecare bifat când este îndeplinit. Dacă lipsește ceva, scrie ce anume lipsește.
+4. Apasă butonul din dreapta. Te conectezi apoi normal, cu **parola nouă**.
+
+Dacă închizi fereastra fără să schimbi parola, rămâi la fereastra de conectare. Aceleași cerințe
+se aplică și la schimbarea parolei din **Setări**.

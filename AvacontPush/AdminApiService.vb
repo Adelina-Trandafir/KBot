@@ -70,7 +70,7 @@ Public NotInheritable Class AdminApiService
     End Function
 
     Private Async Function SendAsync(req As HttpRequestMessage) As Task(Of String)
-        req.Headers.Add("X-Api-Key", _apiKey)
+        req.Headers.Add("X-Admin-Token", _apiKey)
         Dim resp As HttpResponseMessage
         Try
             resp = Await Http.SendAsync(req)

@@ -7,4 +7,6 @@ Public NotInheritable Class LoginResult
     <JsonPropertyName("Token")> Public Property Token As String
     <JsonPropertyName("SessionContext")> Public Property SessionContext As SessionContextDto
     <JsonPropertyName("LastSS")> Public Property LastSS As String
+    ' Security plan S1: the password is the initial one; the answer then carries only a restricted token.
+    <JsonPropertyName("password_change_required")> Public Property PasswordChangeRequired As Boolean
 End Class

@@ -19,4 +19,10 @@ Public NotInheritable Class PasswordChangeResult
     ' be reached or refused -- the operator then has two passwords until an administrator
     ' aligns them, and must be told.
     <JsonPropertyName("legacy_updated")> Public Property LegacyUpdated As Boolean
+    ' True after the MANDATORY change of an initial password: every session of the account was
+    ' revoked and the operator signs in again with the new password.
+    <JsonPropertyName("relogin_required")> Public Property ReloginRequired As Boolean
+    ' After a voluntary change from a normal session: a fresh token of the same unit (the old
+    ' one was revoked with the others). Nothing after a mandatory change.
+    <JsonPropertyName("Token")> Public Property Token As String
 End Class

@@ -26,11 +26,15 @@ Partial Class LoginResetView
         Dim gridCol6 As KBotDataColumn = New KBotDataColumn()
         Dim gridCol7 As KBotDataColumn = New KBotDataColumn()
         Dim gridCol8 As KBotDataColumn = New KBotDataColumn()
+        Dim gridCol9 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
         btnLoad = New KBotButton()
         btnReset = New KBotButton()
+        btnMustChange = New KBotButton()
+        btnMustChangeAll = New KBotButton()
+        btnClearMustChange = New KBotButton()
         grid = New KBotDataView()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
@@ -61,12 +65,18 @@ Partial Class LoginResetView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 3
+        tlyBar.ColumnCount = 6
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 250F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 250F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 290F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 250F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBar.Controls.Add(btnLoad, 0, 0)
         tlyBar.Controls.Add(btnReset, 1, 0)
+        tlyBar.Controls.Add(btnMustChange, 2, 0)
+        tlyBar.Controls.Add(btnMustChangeAll, 3, 0)
+        tlyBar.Controls.Add(btnClearMustChange, 4, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(0, 0)
         tlyBar.Margin = New Padding(0)
@@ -100,6 +110,42 @@ Partial Class LoginResetView
         btnReset.Text = "Resetează încercările"
         tips.SetToolTipHeader(btnReset, "Resetează")
         tips.SetToolTipText(btnReset, "Șterge contoarele de încercări eșuate (și blocarea) pentru utilizatorii bifați." & vbLf & "Un utilizator pe mai multe unități apare pe mai multe rânduri, dar se resetează o singură dată.")
+        '
+        ' btnMustChange
+        '
+        btnMustChange.Dock = DockStyle.Fill
+        btnMustChange.Location = New Point(0, 0)
+        btnMustChange.Margin = New Padding(0, 2, 6, 6)
+        btnMustChange.Name = "btnMustChange"
+        btnMustChange.Size = New Size(244, 36)
+        btnMustChange.TabIndex = 6
+        btnMustChange.Text = "Cere schimbarea parolei"
+        tips.SetToolTipHeader(btnMustChange, "Cere schimbarea parolei")
+        tips.SetToolTipText(btnMustChange, "Pentru utilizatorii bifați: la următoarea conectare trebuie să-și schimbe parola, iar sesiunile deschise se închid." & vbLf & "Se aplică contului, nu unei unități: un utilizator pe mai multe unități se marchează o singură dată.")
+        '
+        ' btnMustChangeAll
+        '
+        btnMustChangeAll.Dock = DockStyle.Fill
+        btnMustChangeAll.Location = New Point(0, 0)
+        btnMustChangeAll.Margin = New Padding(0, 2, 6, 6)
+        btnMustChangeAll.Name = "btnMustChangeAll"
+        btnMustChangeAll.Size = New Size(284, 36)
+        btnMustChangeAll.TabIndex = 7
+        btnMustChangeAll.Text = "Cere schimbarea pentru TOȚI"
+        tips.SetToolTipHeader(btnMustChangeAll, "Cere schimbarea pentru toți")
+        tips.SetToolTipText(btnMustChangeAll, "Marchează toate conturile legate de o unitate: fiecare trebuie să-și schimbe parola la următoarea conectare." & vbLf & "Toate sesiunile deschise se închid. Fiecare utilizator are nevoie de e-mailul contului pentru codul de confirmare.")
+        '
+        ' btnClearMustChange
+        '
+        btnClearMustChange.Dock = DockStyle.Fill
+        btnClearMustChange.Location = New Point(0, 0)
+        btnClearMustChange.Margin = New Padding(0, 2, 6, 6)
+        btnClearMustChange.Name = "btnClearMustChange"
+        btnClearMustChange.Size = New Size(244, 36)
+        btnClearMustChange.TabIndex = 8
+        btnClearMustChange.Text = "Anulează obligația"
+        tips.SetToolTipHeader(btnClearMustChange, "Anulează obligația")
+        tips.SetToolTipText(btnClearMustChange, "Pentru utilizatorii bifați: scoate obligația de a-și schimba parola." & vbLf & "Sesiunile deschise nu se închid și parola nu se schimbă.")
         '
         ' grid
         '
@@ -186,6 +232,16 @@ Partial Class LoginResetView
         gridCol8.OptionGroup = Nothing
         gridCol8.ReadOnly = True
         gridCol8.Width = 120
+        gridCol9.AggregateFormatString = Nothing
+        gridCol9.FormatString = Nothing
+        gridCol9.HeaderText = "Parola"
+        gridCol9.HeaderTooltip = "«de schimbat» = trebuie schimbată la următoarea conectare; altfel data ultimei schimbări, dacă există."
+        gridCol9.HeaderTextAlign = ContentAlignment.MiddleCenter
+        gridCol9.Key = "pwd"
+        gridCol9.MinWidth = 80
+        gridCol9.OptionGroup = Nothing
+        gridCol9.ReadOnly = True
+        gridCol9.Width = 150
         grid.Columns.Add(gridCol1)
         grid.Columns.Add(gridCol2)
         grid.Columns.Add(gridCol3)
@@ -194,6 +250,7 @@ Partial Class LoginResetView
         grid.Columns.Add(gridCol6)
         grid.Columns.Add(gridCol7)
         grid.Columns.Add(gridCol8)
+        grid.Columns.Add(gridCol9)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "unit"
         grid.HeaderHeight = 24
@@ -236,6 +293,9 @@ Partial Class LoginResetView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents btnLoad As KBotButton
     Friend WithEvents btnReset As KBotButton
+    Friend WithEvents btnMustChange As KBotButton
+    Friend WithEvents btnMustChangeAll As KBotButton
+    Friend WithEvents btnClearMustChange As KBotButton
     Friend WithEvents grid As KBotDataView
     Friend WithEvents lblState As Label
 End Class
