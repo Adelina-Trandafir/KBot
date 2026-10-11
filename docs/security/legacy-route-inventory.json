@@ -1,0 +1,1136 @@
+{
+  "generated": "2026-10-11",
+  "state": "planned, not yet disabled",
+  "api_key_handlers": 92,
+  "mixed_guard_handlers": 2,
+  "handlers": [
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 50,
+      "handler": "download_baza",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/download_baza', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 74,
+      "handler": "download_ef",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/download_ef', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 98,
+      "handler": "download_forexe",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/download_forexe', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 122,
+      "handler": "check_db",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/check_db', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 210,
+      "handler": "setup_database",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/setup_db', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 444,
+      "handler": "login_reset",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/login/reset', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 466,
+      "handler": "users_list",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/users', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 520,
+      "handler": "receptii_refacere_admin",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/receptii/refacere', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/admin.py",
+      "line": 565,
+      "handler": "ping_db",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "admin_bp.route('/api/admin/ping_db', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 112,
+      "handler": "get_clasificatii_ids",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/get_clasificatii_ids', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 163,
+      "handler": "insert",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/insert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 234,
+      "handler": "get_mapping",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/mapping_clasificatii', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 269,
+      "handler": "save_rectificari",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/rectificari', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 315,
+      "handler": "upsert_rectificari",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/rectificari_upsert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 428,
+      "handler": "save_clasificatii_complete_upsert",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/clasificatii_complete_upsert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/clasificatii.py",
+      "line": 865,
+      "handler": "sync_acc_kbot",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "clasificatii_bp.route('/api/clasificatii/sync_acc_kbot', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/att.py",
+      "line": 18,
+      "handler": "att_insert",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/att/insert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 41,
+      "handler": "save_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/save_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 74,
+      "handler": "update_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/update_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 106,
+      "handler": "update_ang_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/update_ang_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 151,
+      "handler": "ddf_confirm",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/confirm', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 236,
+      "handler": "ddf_patch",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/patch', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 306,
+      "handler": "sa_patch",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/sa/patch', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 373,
+      "handler": "cleanup_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/cleanup_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 414,
+      "handler": "delete_ddf",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/delete', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 453,
+      "handler": "delete_ddf_rev",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/rev/delete', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 498,
+      "handler": "update_cod_fiscal",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/update_cod_fiscal', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/core.py",
+      "line": 558,
+      "handler": "update_semnatura",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/update_semnatura', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/prt.py",
+      "line": 18,
+      "handler": "prt_insert",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/prt/insert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/prt.py",
+      "line": 71,
+      "handler": "prt_update",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/prt/update', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/prt.py",
+      "line": 116,
+      "handler": "prt_delete",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/prt/delete', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/sync_acc_mdb.py",
+      "line": 239,
+      "handler": "sync_ddf",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/sync_acc_mdb', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/sync_mdb_acc.py",
+      "line": 122,
+      "handler": "restore_ddf_list",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/sync_mdb_acc/list', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ddf/sync_mdb_acc.py",
+      "line": 138,
+      "handler": "restore_ddf",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ddf_bp.route('/api/ddf/sync_mdb_acc', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/forexe/angajament_dump.py",
+      "line": 252,
+      "handler": "get_angajament_dump",
+      "guards": [
+        "require_session_or_api_key"
+      ],
+      "route_declarations": [
+        "forexe_bp.route('/api/forexe/angajament/dump', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/forexe/seed.py",
+      "line": 181,
+      "handler": "seed_schema",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "seed_bp.route('/api/forexe/seed/schema', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/forexe/seed.py",
+      "line": 275,
+      "handler": "seed_rows",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "seed_bp.route('/api/forexe/seed/rows', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/forexe/seed.py",
+      "line": 373,
+      "handler": "seed_columns",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "seed_bp.route('/api/forexe/seed/columns', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/forexe/seed.py",
+      "line": 445,
+      "handler": "seed_ids",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "seed_bp.route('/api/forexe/seed/ids', methods=['GET', 'POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 65,
+      "handler": "get_avacont_version",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/get_avacont_version', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 146,
+      "handler": "get_update_version",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/get_update_version', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 217,
+      "handler": "download_avacont",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/download_avacont', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 289,
+      "handler": "init_upload",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/init_upload', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 321,
+      "handler": "upload_chunk",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/upload_chunk', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 357,
+      "handler": "finalize_upload",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/finalize_upload', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 481,
+      "handler": "download_archive",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/download_archive', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ftp.py",
+      "line": 533,
+      "handler": "download_file",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ftp_bp.route('/api/ftp/download_file', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/mfp.py",
+      "line": 156,
+      "handler": "get_cached_template_ord",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "mfp_bp.route('/api/mfp/template_ord', methods=['GET', 'HEAD'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/mfp.py",
+      "line": 179,
+      "handler": "get_cached_template",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "mfp_bp.route('/api/mfp/template_ddf', methods=['GET', 'HEAD'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/mfp.py",
+      "line": 201,
+      "handler": "get_ef_token",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "mfp_bp.route('/api/mfp/get_ef_token', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 165,
+      "handler": "baze",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/baze', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 218,
+      "handler": "fisiere",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/fisiere', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 233,
+      "handler": "push_init",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/push/init', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 250,
+      "handler": "push_bucata",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/push/bucata', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 280,
+      "handler": "push_final",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/push/final', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 297,
+      "handler": "tabele_fisier",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/tabele', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 395,
+      "handler": "analiza",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/analiza', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 467,
+      "handler": "rulare",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/rulare', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 569,
+      "handler": "schema_sync_start",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/schema-sync', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/migrare/migrare.py",
+      "line": 612,
+      "handler": "stare",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "migrare_bp.route('/api/migrare/stare/<job_id>', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 13,
+      "handler": "check_unitate",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/check_unitate', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 40,
+      "handler": "save_unitati",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/unitati', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 68,
+      "handler": "save_clasificatii_complete",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/clasificatii_complete', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 109,
+      "handler": "get_mapping",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/mapping_clasificatii', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 129,
+      "handler": "save_rectificari",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/rectificari', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/nomenclatoare.py",
+      "line": 156,
+      "handler": "save_parteneri",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "nom_bp.route('/api/parteneri', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 31,
+      "handler": "save_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/save_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 73,
+      "handler": "update_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/update_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 115,
+      "handler": "confirm",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/confirm', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 214,
+      "handler": "cleanup_staging",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/cleanup_staging', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 253,
+      "handler": "delete_ord",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/delete', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 300,
+      "handler": "update_id_plata_fx",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/update_id_plata_fx', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/core.py",
+      "line": 359,
+      "handler": "update_semnatura",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/update_semnatura', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/patch.py",
+      "line": 199,
+      "handler": "patch_part",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/patch/part', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/patch.py",
+      "line": 224,
+      "handler": "patch_tbl",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/patch/tbl', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/patch.py",
+      "line": 251,
+      "handler": "patch_att",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/patch/att', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/patch.py",
+      "line": 277,
+      "handler": "patch_doc",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/patch/doc', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/sync_acc_mdb.py",
+      "line": 189,
+      "handler": "sync_ord",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/sync_acc_mdb', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/sync_mdb_acc.py",
+      "line": 130,
+      "handler": "sync_mdb_acc_ord_list",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/sync_mdb_acc/list', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/ord/sync_mdb_acc.py",
+      "line": 146,
+      "handler": "sync_mdb_acc_ord",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "ord_bp.route('/api/ord/sync_mdb_acc', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/parteneri.py",
+      "line": 22,
+      "handler": "get_partner_ids_by_codes",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "parteneri_bp.route('/api/parteneri/get_partner_ids_by_codes', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/parteneri.py",
+      "line": 71,
+      "handler": "upsert_parteneri_coduri",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "parteneri_bp.route('/api/parteneri/upsert_coduri', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/parteneri.py",
+      "line": 127,
+      "handler": "save_parteneri",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "parteneri_bp.route('/api/parteneri/syncdb', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/parteneri.py",
+      "line": 194,
+      "handler": "upsert_parteneri",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "parteneri_bp.route('/api/parteneri/upsert', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/salarii.py",
+      "line": 54,
+      "handler": "save_document_complex",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "salarii_bp.route('/api/salarii/save_document', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 394,
+      "handler": "process_excel_base64",
+      "guards": [
+        "require_session_or_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/process_excel', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 559,
+      "handler": "say_hello",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/say_hello', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 572,
+      "handler": "download_pdfium_dll",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/pdfium_dll', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 593,
+      "handler": "check_update",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/check_update', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 639,
+      "handler": "check_updates",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/check_updates', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/tools.py",
+      "line": 675,
+      "handler": "upload_file",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "tools_bp.route('/api/tools/upload', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/wfls.py",
+      "line": 81,
+      "handler": "versiuni",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "wfl_bp.route('/api/wfls/versiuni', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/wfls.py",
+      "line": 103,
+      "handler": "check_updates",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "wfl_bp.route('/api/wfls/check_updates', methods=['POST'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    },
+    {
+      "file": "PYTHON/routes/wfls.py",
+      "line": 183,
+      "handler": "rebuild_versions",
+      "guards": [
+        "require_api_key"
+      ],
+      "route_declarations": [
+        "wfl_bp.route('/api/wfls/rebuild_versions', methods=['GET'])"
+      ],
+      "action": "retire legacy HTTP authentication; replace modern consumers where needed"
+    }
+  ]
+}

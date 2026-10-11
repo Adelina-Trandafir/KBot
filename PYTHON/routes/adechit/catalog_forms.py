@@ -83,6 +83,18 @@ def save_group(repo, body):
     return group
 
 
+def save_child_with_payer(repo, body, username, may_transfer):
+    """A new child and its first parent in ONE transaction: a refused parent leaves no child behind."""
+    from .service import save_catalog
+    payer = body.get('payer')
+    require(isinstance(body.get('child'), dict) and isinstance(payer, dict) and isinstance(payer.get('values'), dict),
+            'FIELDS', 'Datele copilului și ale părintelui sunt obligatorii.', 400)
+    require(str(payer['values'].get('Nume') or '').strip(), 'NAME', 'Numele plătitorului este obligatoriu.', 400)
+    child = save_child(repo, {'id': None, 'values': body['child']}, username, may_transfer)
+    parent = save_catalog(repo, 'Platitori_sub', {'id': None, 'values': {**payer['values'], 'IDP': child['IDP']}})
+    return {'child': child, 'payer': parent}
+
+
 def save_child(repo, body, username, may_transfer):
     values = body.get('values')
     allowed = {'Nume', 'CNP', 'IDG', 'DataIntrare', 'Plecat', 'DataIesire'}

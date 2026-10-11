@@ -102,7 +102,7 @@ SITUATION_COLUMNS = [  # key, label, twips, align, tint, summed
     ('Plata', 'Total\nchitanțe', 864, 'r', None, True), ('Plati', 'Total\nalte plăți', 864, 'r', None, True),
     ('Compensare', 'Compen-\nsare', 864, 'r', None, True), ('Anticipat', 'Achitat\nanticipat', 864, 'r', None, True),
     ('Retur', 'Retur\nalocație', 864, 'r', None, True), ('SFD', 'S.F.\nDEBIT', 729, 'r', 'd', True),
-    ('SFC', 'S.F.\nCREDIT', 729, 'r', 'c', True), ('Detalii', 'Detalii', 2394, 'l', None, False),
+    ('SFC', 'S.F.\nCREDIT', 729, 'r', 'c', True), ('Detalii', 'Detalii', 2250, 'l', None, False),
 ]
 
 
@@ -118,7 +118,7 @@ def situation_rows(repo, month_id, group_id):
 
 
 def _situation_table(rows):
-    columns = [col('', 282, 'c'), *[col(text, w, align, tint) for _, text, w, align, tint, _ in SITUATION_COLUMNS]]
+    columns = [col('', 420, 'c'), *[col(text, w, align, tint) for _, text, w, align, tint, _ in SITUATION_COLUMNS]]
     body = []
     for index, row in enumerate(rows, 1):
         body.append({'cells': [str(index), *[
@@ -508,6 +508,9 @@ BUILDERS = {'situation': situation_report, 'cash': cash_register_report, 'bank':
             'account': account_report, 'debtor': debtor_report, 'payment-order': payment_order, 'financial': financial_report}
 
 
+HIDDEN = {'debtor', 'financial'}   # buttons hidden from the panel; the code stays in case they come back
+
+
 def build(repo, unit, kind, args):
-    require(kind in BUILDERS, 'REPORT', 'Raport necunoscut.', 404)
+    require(kind in BUILDERS and kind not in HIDDEN, 'REPORT', 'Raport necunoscut.', 404)
     return BUILDERS[kind](repo, unit, args)

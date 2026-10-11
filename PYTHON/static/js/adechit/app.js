@@ -8,6 +8,7 @@ import { startSessionTimer } from './session.js';
 import { bindCatalogs } from './catalogs.js';
 import { bindAnnual } from './annual.js';
 import { bindReports, outputReport } from './reports.js';
+import { bindHelp } from './help.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
@@ -48,7 +49,7 @@ async function api(path, options = {}) {
     result = await response.json().catch(() => ({}));
   } finally { if (writing) state.pending -= 1; }
   if (response.status === 401 || result.reason === 'UNITATE_NEDESCHISA') { toPortal(response.status === 401); throw new Error(result.error || 'Autentificați-vă.'); }
-  if (!response.ok) throw Object.assign(new Error(result.error || `Eroare HTTP ${response.status}`), { reason: result.reason });
+  if (!response.ok) throw Object.assign(new Error(result.error || `Eroare HTTP ${response.status}`), { reason: result.reason, details: result.details });
   return result;
 }
 
@@ -391,6 +392,7 @@ function createGrid() {
     onCellSaved: ({ row }) => { state.selected = row; loadLedger().catch(report); },
     onEditError: ({ error }) => report(error),
     dragRows: canMove, onRowDragStart: onChildDragStart, onRowDragEnd: onChildDragEnd,
+    onRowDblClick: (k_row) => { if (k_row?.IDG != null && k_row.IDP != null) state.payers.openForChild(k_row.IDG, k_row.IDP).catch(report); },
     onHeaderAction: () => addChild().catch(report), onCellAction: ({ row }) => pickGroupFor(row).catch(report) });
   state.grid.sortBy('Nume', 'asc');
 }
@@ -854,10 +856,11 @@ async function logoutNow() {
 }
 
 function bind() {
-  const catalogs = state.payers = bindCatalogs({ api, context: () => state.context, refresh: () => loadContext(true).catch(report) });
+  const catalogs = state.payers = bindCatalogs({ api, context: () => state.context, refresh: () => loadContext(true).catch(report), moveToSubunit });
   const annual = bindAnnual({ api, refresh: () => loadContext(true), message: (text) => showMessage($('ade-message'), text, 'info') });
   state.annual = annual;
   wireLongPress();
+  bindHelp({ fetchOutput, report });
   state.reports = bindReports({ fetchOutput, report,
     snapshot: () => ({ month: state.context ? selectedMonth() : null, monthId: state.monthId, groupId: state.groupId, selected: state.selected }) });
   $('ade-search').addEventListener('input', filterGrid);
@@ -992,6 +995,23 @@ async function switchSubunit(value) {
   window.location.reload();
 }
 
+// A link to a child of another subunit: remember the target, switch (the page reloads) and open it once loaded.
+const PENDING_OPEN_KEY = 'ade.pendingOpen';
+function moveToSubunit(k_id, k_target) {
+  if (state.pending > 0) { report(new Error('Așteptați terminarea salvării în curs.')); return; }
+  try { window.sessionStorage.setItem(PENDING_OPEN_KEY, JSON.stringify({ ...k_target, subunit_id: k_id })); }
+  catch (k_error) { console.error('[ade] sessionStorage is blocked', k_error); }
+  rememberSubunit(state.unit, k_id);
+  window.location.reload();
+}
+function takePendingOpen() {
+  try {
+    const k_raw = window.sessionStorage.getItem(PENDING_OPEN_KEY);
+    window.sessionStorage.removeItem(PENDING_OPEN_KEY);
+    return k_raw ? JSON.parse(k_raw) : null;
+  } catch (k_error) { console.error('[ade] pending open unreadable', k_error); return null; }
+}
+
 async function loadContext(rebuildTrees = false) {
   const context = await readContext(rebuildTrees);
   state.context = { ...context, months: [], groups: [], years: [] }; state.unit = context.unit;
@@ -1023,7 +1043,12 @@ async function loadContext(rebuildTrees = false) {
   }
   else {
     if (state.year) await loadYear(state.year);
-    state.monthTree.setData(monthNodes()); state.monthTree.isTreeRendered = false; state.monthTree.renderTree('');
+    // Every year that was open stays open (and loaded): after a save the selected month must still be visible.
+    for (const k_id of state.monthTree.expandedNodes) {
+      const k_year = Number(String(k_id).split(':')[1]);
+      if (String(k_id).startsWith('year:') && k_year !== state.year) await loadYear(k_year);
+    }
+    renderMonthTree();
     if (!state.context.months.some((row) => row.IDL === state.monthId)) state.monthId = null;
     await loadGroups();
   }
@@ -1037,6 +1062,8 @@ async function start() {
   state.unit = new URLSearchParams(location.search).get('unit') || 'preview';
   bind();
   await loadContext();
+  const k_pending = takePendingOpen();
+  if (k_pending && k_pending.subunit_id === state.subunit) await state.payers.openForChild(k_pending.group_id, k_pending.child_id);
 }
 
 start().catch(report);

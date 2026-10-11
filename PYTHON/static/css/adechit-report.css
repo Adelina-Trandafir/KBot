@@ -2,10 +2,15 @@
 @font-face { font-family: AdeReport; src: url('/static/fonts/DejaVuSans.ttf') format('truetype'); }
 @page { size: A4; margin: 8mm; }
 * { box-sizing: border-box; }
-body.rpt { margin: 0 auto; max-width: 194mm; padding: 8mm 0; color: #000; background: #fff; font: 8.5pt/1.3 AdeReport, sans-serif; }
-body.rpt-wide { max-width: 281mm; font-size: 7.5pt; }
-.rpt nav { margin-bottom: 6mm; }
-.rpt nav button { padding: 6px 14px; font: inherit; font-size: 10pt; }
+body.rpt { margin: 0; padding: 0 12px 8mm; color: #000; background: #fff; font: 8.5pt/1.3 AdeReport, sans-serif; }
+body.rpt-wide { font-size: 7.5pt; }
+.rpt main, .rpt footer { max-width: 194mm; margin-inline: auto; }
+body.rpt-wide main, body.rpt-wide footer { max-width: 281mm; }
+.rpt-bar { position: sticky; top: 0; z-index: 10; margin-bottom: 6mm; padding: 6px 0; display: flex; align-items: center; gap: 6px; background: #fff; border-bottom: 1px solid #a6a6a6; }
+.rpt-bar button { padding: 6px 14px; font: inherit; font-size: 10pt; cursor: pointer; }
+.rpt-bar-gap { flex: 1; }
+.rpt-zoom { min-width: 3.5em; text-align: center; font-size: 10pt; }
+.rpt-table td.r, .rpt-table td.c { white-space: nowrap; }
 .rpt-letterhead { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3mm; font-weight: bold; }
 .rpt-right { font-size: 12pt; }
 .rpt-title { margin: 2mm 0 1mm; font-size: 14pt; text-align: center; }
@@ -35,4 +40,23 @@ body.rpt-wide { max-width: 281mm; font-size: 7.5pt; }
 .rpt-spacer { height: 6mm; }
 .rpt-break { break-after: page; }
 .rpt-footer { margin-top: 4mm; font-size: 7pt; font-weight: bold; }
-@media print { .rpt nav { display: none; } body.rpt { padding: 0; } }
+@media print { .rpt-bar { display: none; } body.rpt { padding: 0; margin: 0; } .rpt main, .rpt footer { zoom: 1 !important; } }
+
+/* SLICE-AD11-05: on the SCREEN the report follows the theme of the page that opened it (reports.js sets data-theme).
+   Printing keeps the Access palette above: these rules never apply to print, and the PDF is built by the server. */
+@media screen {
+  html[data-theme="dark"] { color-scheme: dark; background: #12161d; }
+  html[data-theme="dark"] body.rpt { color: #e6ebf3; background: #12161d; }
+  html[data-theme="dark"] .rpt-bar { background: #1b212b; border-bottom-color: #2f3a4d; }
+  html[data-theme="dark"] .rpt-bar button { color: #e6ebf3; background: #232c3b; border: 1px solid #2f3a4d; border-radius: 3px; }
+  html[data-theme="dark"] .rpt-bar button:hover { background: #2c384c; }
+  html[data-theme="dark"] .rpt-table th, html[data-theme="dark"] .rpt-table td { border-color: #3a475c; }
+  html[data-theme="dark"] .rpt-table th { background: #232c3b; }
+  html[data-theme="dark"] .rpt-table th.tint-d, html[data-theme="dark"] .rpt-table td.tint-d { background: #3a2326; }
+  html[data-theme="dark"] .rpt-table th.tint-c, html[data-theme="dark"] .rpt-table td.tint-c { background: #243322; }
+  html[data-theme="dark"] .rpt-table th.tint-z, html[data-theme="dark"] .rpt-table td.tint-z { background: #1f2d44; color: #9cc3f2; }
+  html[data-theme="dark"] .rpt-table tr.total td, html[data-theme="dark"] .rpt-table tr.sub td, html[data-theme="dark"] .rpt-table tr.grand td { background: #2a3548; }
+  html[data-theme="dark"] .rpt-table tr.cancelled td { color: #8d99ad; }
+  html[data-theme="dark"] .rpt-box, html[data-theme="dark"] .rpt-sign th, html[data-theme="dark"] .rpt-sign td { border-color: #6b7a92; }
+  html[data-theme="dark"] .rpt-kv td { border-bottom-color: #4a5870; }
+}

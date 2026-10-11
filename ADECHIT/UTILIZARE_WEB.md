@@ -288,6 +288,31 @@ iar conflictul se verifică pe întregul DC. Datele vechi cu aceste conflicte nu
 opresc migrarea; accesul părinților implicați este blocat până la corectare.
 Emailurile conflictuale nou introduse sunt refuzate cu identificarea celuilalt părinte.
 
+## Copil nou cu părinte, linkuri și dublu clic (SLICE-AD11-05)
+<!-- slice: AD11-05 -->
+
+- **«+» din Prezență** deschide un singur formular «Adaugă copil»: datele copilului și, dedesubt,
+  secțiunea «Părinte (plătitor)». Există un singur «Salvează»; fără numele părintelui nu se
+  salvează nimic, iar dacă părintele este refuzat nici copilul nu rămâne salvat.
+- **«Adaugă copil» din administrarea plătitorilor** deschide același formular cu părinte.
+- **După salvarea unui copil**, copacul lunilor rămâne deschis, deci luna aleasă se vede.
+- **Portalul K-BOT:** clic pe sigla K-BOT (după autentificare) deschide meniul «Aplicații», la fel
+  ca «A» din ADECHIT; ADECHIT se deschide de acolo.
+- **Rapoartele** deschise pe ecran urmăresc tema aleasă (întunecată sau luminoasă); la listare și în PDF
+  rămân pe alb.
+- **Dublu clic** pe un rând din Prezență deschide administrarea plătitorilor cu grupa și copilul
+  selectate (pe celulele zilelor dublu clic editează ziua). În administrarea plătitorilor, dublu clic
+  pe o grupă, un copil sau un plătitor deschide fereastra de modificare.
+- **Mesajele de eroare** au același aspect peste tot (fundal roșu deschis, text roșu închis).
+- **Email deja folosit:** mesajul numește părintele, copilul și grupa; fiecare este un link care
+  închide formularul curent și deschide înregistrarea respectivă (subunitatea se schimbă singură
+  dacă este alta). Verificarea se face doar pe copiii activi, în subunitatea curentă; același
+  părinte la mai mulți copii poate avea același email.
+- **CNP / email întâlnite și în altă parte:** după ce părăsiți câmpul CNP sau Email din formularul
+  plătitorului, un mesaj listează ceilalți părinți din DC cu același CNP sau email (cu subunitatea,
+  dacă DC-ul are mai multe, și «(plecat)» pentru copiii plecați), cu aceleași linkuri. Este doar
+  informare; salvarea este refuzată numai de regula de mai sus.
+
 ## Rapoarte (SLICE-ADE9-01)
 
 Panoul «Rapoarte» din dreapta ecranului Prezență listează sau descarcă în PDF: Situație lunară (grupa aleasă, «Toate grupele?»,

@@ -15,15 +15,16 @@ EDITABLE = {table: fields.split() for table, fields in EDITABLE.items()}
 
 
 class DomainError(ValueError):
-    def __init__(self, reason, message, status=409):
+    def __init__(self, reason, message, status=409, details=None):
         super().__init__(message)
         self.reason = reason
         self.status = status
+        self.details = details   # optional structured data the page turns into links
 
 
-def require(condition, reason, message, status=409):
+def require(condition, reason, message, status=409, details=None):
     if not condition:
-        raise DomainError(reason, message, status)
+        raise DomainError(reason, message, status, details)
 
 
 def cnp_code(value):

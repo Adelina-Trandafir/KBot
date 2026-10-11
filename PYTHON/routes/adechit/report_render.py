@@ -29,8 +29,7 @@ def _total_width(columns):
 def _html_table(block, landscape):
     columns = block['cols']
     total = _total_width(columns)
-    width = min(100, round(total * 100 / PAGE_TWIPS[landscape]))
-    out = [f'<table class="rpt-table" width="{width}%"><colgroup>']
+    out = ['<table class="rpt-table" width="100%"><colgroup>']
     out += [f'<col width="{column["w"] * 100 / total:.2f}%">' for column in columns]
     out.append('</colgroup>')
     if block.get('head', True):
@@ -91,7 +90,16 @@ def html_page(model):
     links = ''.join(f'<link rel="stylesheet" href="{escape(href)}">' for href in css)
     return (f'<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             f'<title>{escape(model["title"])}</title>{links}<script src="{escape(script)}" defer></script></head>'
-            f'<body class="rpt{" rpt-wide" if landscape else ""}"><nav><button id="report-print" type="button">🖨️ Listare</button></nav>'
+            f'<body class="rpt{" rpt-wide" if landscape else ""}"><nav class="rpt-bar">'
+            f'<button id="report-print" type="button" title="Listare la imprimanta implicită">🖨️ Listare</button>'
+            f'<button id="report-printer" type="button" title="Alegeți imprimanta">🖨️ Selecție imprimantă</button>'
+            f'<button id="report-pdf" type="button" title="Salvează raportul ca PDF">📄 Export PDF</button>'
+            f'<span class="rpt-bar-gap"></span>'
+            f'<button id="report-zoom-out" type="button" title="Micșorează (doar pe ecran)">➖</button>'
+            f'<span id="report-zoom-level" class="rpt-zoom">100%</span>'
+            f'<button id="report-zoom-in" type="button" title="Mărește (doar pe ecran)">➕</button>'
+            f'<span class="rpt-bar-gap"></span>'
+            f'<button id="report-back" type="button" title="Închide raportul">⬅ Înapoi</button></nav>'
             f'<main>{body}</main>{footer}</body></html>')
 
 
@@ -133,7 +141,7 @@ def pdf_bytes(model):
 
     def scaled(columns):
         total = _total_width(columns)
-        factor = min(1.0, available / (total / 20))
+        factor = available / (total / 20)
         return [column['w'] / 20 * factor for column in columns]
 
     for block in model['blocks']:

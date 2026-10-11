@@ -41,6 +41,7 @@ Portalul părinților, conform planului aprobat și modelului de fișă de cont.
 | SLICE-AD11-02 | Font opțiuni copil, gri subtotal/total print și PDF, scroll vertical mobil | SCRIS LOCAL — proba utilizatorului în curs | [Corecturi](../SLICE-AD11-02-font-totaluri-scroll.md) |
 | SLICE-AD11-03 | Conflicte istorice tolerate la import, portal blocat dinamic, avertizări navigabile Plătitori; DDL sursă și query date AvacontPush separate | SCRIS LOCAL — sintaxă/build curate, SQL/UI neprobate | [Conflicte](../SLICE-AD11-03-conflicte-query-avacontpush.md) |
 | SLICE-AD11-04 | Selector mobil pe toată lățimea, carduri fără depășirea paginii, Imprimă ascuns pe mobil | SCRIS LOCAL — proba vizuală aparține utilizatorului | [Mobil](../SLICE-AD11-04-latimi-mobil.md) |
+| SLICE-AD11-05 | «+» Prezență = copil + părinte atomic, erori cu aspect comun și linkuri (cross-subunitate), dublu clic, email doar pe copii activi/subunitatea curentă, mesaj CNP/email similare per DC, copac lună deschis după salvare, meniu «Aplicații» pe logo-ul portalului K-BOT | SCRIS LOCAL — doar sintaxă; UI/server neprobate | [Copil+părinte](../SLICE-AD11-05-copil-parinte-linkuri.md) |
 
 ### Current focus
 
@@ -49,10 +50,12 @@ login: `/adechit/parinti/preview`; inbox: `/adechit/preview/inbox`.
 AD11-03 separă DDL pentru AVACONT_SURSA de queryul de date pentru AvacontPush;
 conflictele din datele vechi blochează portalul identităților afectate, nu migrarea.
 AD11-04 corectează lățimile mobile și ascunde Imprimă la maximum 800px.
-Următoarea subfelie liberă: **AD11-05**.
+AD11-05: vezi worklog; identitatea portalului rămâne pe tot DC-ul (poate bloca portalul pentru emailuri acceptate la salvare).
+Următoarea subfelie liberă: **AD11-06**.
 
 ### Open threads
 
+- AD12-01 (ajutor ADECHIT, `static/help/adechit.json`): aspectul, imprimarea și PDF-ul neprobate; textul de citit de operator.
 - AD_08/SMTP/MariaDB și publicarea nu au fost executate.
 - Login complet, selector, retragere acces, PDF/print și migrarea urmează testarea utilizatorului.
 - Datele istorice lipsă din import nu sunt reconstruite; SI se păstrează ca sold inițial.

@@ -18,7 +18,7 @@ function previousMonth(value) {
   return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`;
 }
 
-export function bindCatalogs({ api, context, refresh }) {
+export function bindCatalogs({ api, context, refresh, moveToSubunit }) {
   const dialog = document.getElementById('ade-catalog');
   const content = document.getElementById('ade-catalog-content');
   const message = document.getElementById('ade-catalog-message');
@@ -201,7 +201,7 @@ export function bindCatalogs({ api, context, refresh }) {
   addEventListener('beforeunload', (event) => {
     if (dialog.open && (drafts.size || grids.some((instance) => instance.hasEdit))) { event.preventDefault(); event.returnValue = ''; }
   });
-  const payers = bindPayers({ api, context, refresh });
+  const payers = bindPayers({ api, context, refresh, moveToSubunit });
   document.getElementById('ade-taxes').addEventListener('click', () => open('taxes'));
   return payers;
 }

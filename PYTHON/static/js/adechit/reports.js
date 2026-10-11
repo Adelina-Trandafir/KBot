@@ -20,7 +20,11 @@ export async function outputReport({ fetchOutput, path, pdf, title }) {
       const k_html = await k_response.text();
       if (k_window.closed) return;
       k_window.document.open(); k_window.document.write(k_html); k_window.document.close();
-      k_window.opener = null;
+      // on screen the report follows the theme of this page; printing and the PDF stay on the Access palette
+      if (document.documentElement.dataset.theme === 'dark') k_window.document.documentElement.dataset.theme = 'dark';
+      // the page keeps its opener: the PDF button asks it to download (it holds the sign-in the request needs)
+      k_window.adePdf = () => outputReport({ fetchOutput, path: path.replace('/print?', '/pdf?'), pdf: true, title })
+        .catch((k_error) => k_window.alert(k_error.message));
       return;
     }
     const k_url = URL.createObjectURL(await k_response.blob());
@@ -64,7 +68,7 @@ export function bindReports({ fetchOutput, snapshot, report }) {
     if (!k_all.checked && k_now.groupId == null) throw new Error('Alegeți grupa sau bifați «Toate grupele».');
     const k_params = { month: k_now.monthId };
     if (k_all.checked) { k_params.all = '1'; if (k_split.checked) k_params.split = '1'; } else k_params.group = k_now.groupId;
-    return run('situation', k_params, $('ade-rep-situation-pdf').checked, 'Situație lunară');
+    return run('situation', k_params, false, 'Situație lunară');
   });
   const k_range = () => {
     if (!k_start.iso || !k_end.iso) throw new Error('Completați data de început și data de sfârșit.');
@@ -73,7 +77,6 @@ export function bindReports({ fetchOutput, snapshot, report }) {
   k_click('ade-rep-cash', () => run('cash', k_range(), false, 'Registru de casă'));
   k_click('ade-rep-bank', () => run('bank', k_range(), false, 'Raport bancă'));
   k_click('ade-rep-cancelled', () => run('cancelled', { month: k_month().monthId }, false, 'Documente anulate'));
-  k_click('ade-rep-financial', () => run('financial', { month: k_month().monthId }, false, 'Situația financiară'));
   // Account sheet and debtor sheet: the selected child, or every child of the group.
   const k_children = (k_kind, k_title) => () => {
     const k_now = k_month();
@@ -85,9 +88,10 @@ export function bindReports({ fetchOutput, snapshot, report }) {
       if (!k_now.selected) throw new Error('Selectați un copil din tabel.');
       k_params.child = k_now.selected.IDP;
     }
-    return run(k_kind, k_params, $('ade-rep-account-pdf').checked, k_title);
+    return run(k_kind, k_params, false, k_title);
   };
   k_click('ade-rep-account', k_children('account', 'Fișă cont'));
-  k_click('ade-rep-debtor', k_children('debtor', 'Fișă debitor'));
+  // the debtor sheet and financial state buttons are hidden in adechit.html (reports.py HIDDEN); the wiring is kept
+  $('ade-rep-debtor')?.addEventListener('click', () => { try { Promise.resolve(k_children('debtor', 'Fișă debitor')()).catch(report); } catch (k_error) { report(k_error); } });
   return { syncDates };
 }

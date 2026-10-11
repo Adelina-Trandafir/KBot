@@ -37,7 +37,7 @@ button.ade-brand { padding: 0; background: none; border: 0; cursor: pointer; fon
 .ade-side-panel { min-height: 0; display: grid; grid-template-rows: var(--ade-head-h) minmax(0,1fr); overflow: hidden; }
 .ade-group-panel { grid-template-rows: var(--ade-head-h) minmax(0,1fr) auto; }
 .ade-hidden-groups { display: flex; align-items: center; gap: 5px; padding: 6px; font-size: 12px; }
-.ade-side-panel h2 { margin: 0; display: flex; align-items: center; justify-content: center; padding: 0 2px; font-size: calc(.72rem + 1px); letter-spacing: .04em; background: var(--sky-2); border-bottom: 1px solid var(--line); }
+.ade-side-panel h2 { margin: 0; display: flex; align-items: center; justify-content: center; padding: 0 2px; font-size: calc(.72rem + 1px + 2pt); letter-spacing: .04em; background: var(--sky-2); border-bottom: 1px solid var(--line); }
 .ade-h2-text { flex: 1; text-align: center; }
 .ade-h2-btn { flex: 0 0 auto; width: 28px; height: 26px; padding: 0; color: var(--ink); background: transparent; border: 0; border-radius: 3px; font: inherit; line-height: 1; cursor: pointer; }
 .ade-h2-btn:hover:not(:disabled) { background: var(--sky-1); }
@@ -96,14 +96,6 @@ html[data-theme="dark"] .portal.ade-page { --ade-tab-receipt: #1f3a2b; --ade-tab
 .ade-ledger-buttons { display: flex; height: 100%; }
 .ade-ledger-buttons > .ade-cell-button { flex: 1; min-width: 0; }
 .ade-cell-button.ade-receipt-actions:disabled { opacity: .45; cursor: default; }
-.ade-receipt-menu { position: fixed; min-width: 220px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto; padding: 4px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 3px; box-shadow: 2px 4px 12px rgb(0 0 0 / .25); font-size: 13px; }
-.ade-receipt-menu > button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 30px; padding: 4px 10px 4px 0; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 2px; font: inherit; text-align: left; cursor: pointer; }
-.ade-receipt-menu__icon { display: grid; place-items: center; width: 30px; align-self: stretch; border-right: 1px solid var(--line); font-size: 16px; }
-.ade-receipt-menu > button:hover:enabled, .ade-receipt-menu > button:focus-visible { background: var(--sky-2); border-color: var(--blue); outline: none; }
-.ade-receipt-menu > button:disabled { opacity: .5; cursor: default; }
-.ade-receipt-menu > button[aria-checked="true"] .ade-receipt-menu__icon { font-weight: 700; color: var(--blue); }
-.ade-filter-menu { display: block !important; }
-.ade-receipt-menu__rule { height: 1px; margin: 4px 0; background: var(--line); }
 @media (min-width: 981px) { .ade-ledger-table--receipts col.ade-col-actions { width: 68px; } }
 @media (max-width: 980px) { .ade-receipt-actions, .ade-receipt-menu:not(.ade-filter-menu) { display: none !important; } }
 .ade-ledger-empty { padding: 16px; color: var(--ink-soft); text-align: center; }
@@ -111,16 +103,17 @@ html[data-theme="dark"] .portal.ade-page { --ade-tab-receipt: #1f3a2b; --ade-tab
 .ade-reports::before { content: ""; position: absolute; inset: 0 0 auto 0; height: var(--ade-head-h); background: var(--sky-2); border-bottom: 1px solid var(--line); }
 .ade-reports__toggle { position: absolute; z-index: 2; top: 0; right: 0; width: 32px; height: var(--ade-head-h); padding: 0; color: var(--ink); background: var(--sky-2); border: 0; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); font: 800 calc(1.2rem + 1px)/1 sans-serif; cursor: pointer; }
 .ade-reports__toggle:hover { color: var(--blue-deep); background: var(--sky-1); }
-.ade-reports__content { box-sizing: border-box; height: 100%; min-width: 286px; padding: calc(var(--ade-head-h) + 6px) 10px 10px; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
+.ade-reports__content { box-sizing: border-box; height: 100%; min-width: 320px; padding: calc(var(--ade-head-h) + 6px) 10px 10px; display: flex; flex-direction: column; gap: 6px; overflow: auto; }
 .ade-reports__content h2 { position: absolute; inset: 0 32px auto 0; height: var(--ade-head-h); margin: 0; display: grid; place-items: center; background: var(--sky-2); border-bottom: 1px solid var(--line); font-size: calc(.72rem + 1px); letter-spacing: .04em; }
 .ade-rep-group { padding: 5px 0; display: grid; gap: 5px; border-bottom: 1px solid var(--line); }
 .ade-rep-icon { display: none; }
-.ade-reports label { display: flex; align-items: center; gap: 5px; min-height: 22px; font-size: calc(.75rem + 1px); }
+.ade-reports label { display: flex; align-items: center; gap: 5px; min-height: 22px; font-size: calc(.75rem + 1px + 2pt); }
 .ade-reports input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
-.ade-report-command { width: 100%; min-height: 36px; padding: 5px 8px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--ink); background: linear-gradient(var(--card), var(--sky-2)); border: 1px solid var(--line); border-radius: var(--radius-sm); font: 800 calc(.78rem + 1px)/1.1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.ade-report-command { width: 100%; min-height: 36px; padding: 5px 8px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--ink); background: linear-gradient(var(--card), var(--sky-2)); border: 1px solid var(--line); border-radius: var(--radius-sm); font: 800 calc(.78rem + 1px + 2pt)/1.1 ui-monospace, SFMono-Regular, Consolas, monospace; }
 .ade-report-command:disabled { opacity: .62; }
-.ade-report-date { display: grid !important; grid-template-columns: 105px minmax(0,1fr); }
+.ade-report-date { display: grid !important; grid-template-columns: 125px minmax(0,1fr); }
 .ade-report-date input { box-sizing: border-box; width: 100%; min-width: 0; height: 25px; color: var(--ink); background: var(--card); border: 1px solid var(--line); font: inherit; }
+.ade-reports__content .kdp__field { font-size: calc(.75rem + 1px + 2pt); }
 .ade-reports__cancelled { min-height: 46px; }
 .ade-reports__spacer { flex: 1; min-height: 12px; }
 /* Collapsed rail: one icon per element; hovering or focusing an icon reveals only that element, to its left. */
@@ -208,6 +201,10 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
 .ade-catalog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--sky-2); border-bottom: 1px solid var(--line); }
 .ade-catalog-header h2 { margin: 0; font-size: 1.2rem; }
 .ade-catalog-header span { color: var(--ink-soft); font-size: .8rem; }
+/* Shared error notice (tokens in variables.css); links inside it are real buttons that open a record. */
+.msg[role="alert"] { color: var(--err-ink); background: var(--err-bg); border: 1px solid var(--err-line); border-radius: var(--radius-sm); padding: 8px 12px; font-weight: 600; overflow-wrap: anywhere; }
+.msg[role="alert"] .ade-link { padding: 0; color: inherit; background: none; border: 0; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+.msg[role="alert"] .ade-link:hover, .msg[role="alert"] .ade-link:focus-visible { text-decoration-thickness: 2px; outline: none; }
 .ade-catalog > .msg { margin: 8px 16px; }
 .ade-catalog > .msg[role="status"] { color: var(--ink); background: var(--sky-2); }
 .ade-catalog-content { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 0 16px 12px; overflow: auto; }
@@ -239,6 +236,7 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
 .ade-record-body > * { flex-shrink: 0; }
 .ade-record-window .msg { margin: 8px 24px; }
 .ade-record-window .msg[role="status"] { color: var(--ink); background: var(--card); }
+.ade-form-section { margin: 4px 0 -6px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 1.05rem; }
 .ade-form-field { display: grid; grid-template-columns: 160px minmax(0, 1fr); align-items: center; gap: 14px; min-width: 0; font-size: 1rem; }
 .ade-form-field > span { font-weight: 650; }
 .ade-form-field input:not([type="checkbox"]), .ade-form-field .combobox-input { box-sizing: border-box; width: 100%; height: 36px; padding: 5px 8px; color: var(--ink); background: var(--card); border: 0; border-bottom: 1px solid var(--ink-soft); border-radius: 0; font: inherit; }
@@ -324,17 +322,6 @@ dialog.ade-annual { width: min(1220px, 96vw); }
 .ade-group-panel { flex: 1 1 0; }
 /* Popup menus: ONE band in the application colour from top to bottom behind the icons (the icons themselves are transparent);
    change --avacont-blue and the whole band follows. The header menu has the band and the icons on the right. */
-.ade-filter-menu { padding: 0; background: linear-gradient(to right, var(--avacont-blue) 0 30px, var(--card) 30px); }
-.ade-filter-menu > button { gap: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
-.ade-filter-menu .ade-receipt-menu__icon { background: transparent; border: 0; }
-.ade-filter-menu > button > span:not(.ade-receipt-menu__icon) { flex: 1; align-self: stretch; display: flex; align-items: center; padding: 0 12px; }
-.ade-filter-menu > button:hover:enabled, .ade-filter-menu > button:focus-visible { background: transparent; border-color: transparent; }
-.ade-filter-menu > button:hover:enabled > span:not(.ade-receipt-menu__icon), .ade-filter-menu > button:focus-visible > span:not(.ade-receipt-menu__icon) { background: var(--sky-2); }
-.ade-filter-menu .ade-receipt-menu__rule { margin: 0 0 0 30px; }
-.ade-menu--icon-right { background: linear-gradient(to left, var(--avacont-blue) 0 30px, var(--card) 30px); }
-.ade-menu--icon-right > button { flex-direction: row-reverse; }
-.ade-menu--icon-right > button > span:not(.ade-receipt-menu__icon) { justify-content: flex-end; text-align: right; }
-.ade-menu--icon-right .ade-receipt-menu__rule { margin: 0 30px 0 0; }
 
 /* The left panel can be folded: the year, the months in short form and the groups with ellipsis. */
 .ade-page.is-left-collapsed .ade-month-panel .ade-h2-text { display: none; }

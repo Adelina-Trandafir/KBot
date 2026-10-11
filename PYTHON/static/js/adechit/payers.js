@@ -10,7 +10,7 @@ const column = (key, title, width = 160) => ({ key, title, width, valueType: Val
 const closedFlag = (key) => ({ ...column(key, 'I', 72), valueType: ValueType.Boolean, display: 'checkbox', filter: false });
 const day = (value) => value?.slice(0, 10) || '';
 
-export function bindPayers({ api, context, refresh }) {
+export function bindPayers({ api, context, refresh, moveToSubunit }) {
   const page = $('ade-payers-dialog');
   const editor = $('ade-record-dialog');
   const body = $('ade-record-body');
@@ -31,12 +31,69 @@ export function bindPayers({ api, context, refresh }) {
   let onSaved = null;
   let request = null;
   let busy = false;
-  let pendingNext = null;   // what opens once the saving form is fully done (the payer form after a new child)
   let dirty = false;
   let sequence = 0;
   let listRequest = 0;
   const canEdit = () => context().permissions.includes('catalog');
-  const report = (error, host = message) => { console.error('[ADE forms]', error); showMessage(host, error.message, 'error'); };
+  const report = (error, host = message) => {
+    console.error('[ADE forms]', error); showMessage(host, error.message, 'error');
+    if (error.reason === 'EMAIL_CONFLICT' && Array.isArray(error.details) && error.details.length) host.replaceChildren(...conflictNodes(error.details));
+  };
+  // The email conflict names the other parent, child and group as links that close the form and open that record.
+  const textNode = (value) => document.createTextNode(value);
+  function recordLink(label, depth, item, selectParent = false) {
+    if (!item.linkable || !label) return textNode(label || '(necompletat)');
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'ade-link'; button.textContent = label;
+    button.addEventListener('click', () => goTo(item, depth, selectParent).catch((error) => report(error, $('ade-payers-message'))));
+    return button;
+  }
+  // "părintele X, CNP …[, email …], copil Y, grupa Z[, subunitatea S]" with parent, child and group as links.
+  function personNodes(item, withEmail) {
+    const nodes = [textNode('părintele '), recordLink(item.parent, 2, item, true),
+      textNode(`, CNP ${item.cnp || '(necompletat)'}${withEmail ? `, email ${item.email || '(necompletat)'}` : ''}, copil `), recordLink(item.child, 2, item)];
+    if (item.group) nodes.push(textNode(', grupa '), recordLink(item.group, 1, item));
+    if (item.show_subunit && item.subunit) nodes.push(textNode(`, subunitatea ${item.subunit}`));
+    if (item.left) nodes.push(textNode(' (plecat)'));
+    return nodes;
+  }
+  const joinNodes = (items, withEmail) => items.flatMap((item, index) => [...(index ? [textNode('; ')] : []), ...personNodes(item, withEmail)]);
+  function conflictNodes(details) { return ['Adresa de email este deja utilizată de ', ...joinNodes(details, false), '.']; }
+  // Same CNP / same email already known in the DC (all subunits the account may open), shown while the operator types.
+  let similarRequest = 0;
+  async function showSimilar(pre, row) {
+    const own = ++similarRequest;
+    const cnp = read('CNP_Platitor', pre); const email = read('EMail', pre).toLowerCase();
+    const query = new URLSearchParams({ cnp: /^[0-9]{13}$/.test(cnp) ? cnp : '', email: email.includes('@') ? email : '', exclude: row?.IDS ?? '' });
+    if (!query.get('cnp') && !query.get('email')) return;
+    const found = await api(`/api/adechit/parents/similar?${query}`);
+    if (own !== similarRequest || !editor.open) return;
+    const nodes = [];
+    if (found.cnp.length) nodes.push(textNode('CNP-ul mai apare la: '), ...joinNodes(found.cnp, true), textNode('. '));
+    if (found.email.length) nodes.push(textNode('Emailul mai apare la: '), ...joinNodes(found.email, false), textNode('.'));
+    if (!nodes.length) return;
+    showMessage(message, 'x', 'error'); message.replaceChildren(...nodes);
+  }
+  // depth: 1 = group (its children), 2 = the child (its payers); the parent link also selects that payer.
+  async function goTo(item, depth, selectParent) {
+    if (busy) return;
+    editor.close(); cleanEditor();
+    // The record belongs to another subunit: the page reloads in that subunit and opens it there.
+    const here = context()?.subunit?.id;
+    if (item.subunit_id != null && here != null && item.subunit_id !== here) {
+      moveToSubunit(item.subunit_id, { group_id: item.group_id, child_id: item.child_id }); return;
+    }
+    if (!page.open) await open();
+    const group = data?.groups.find((row) => row.IDG === item.group_id);
+    if (!group) throw new Error('Grupa nu mai este disponibilă. Reîncărcați fereastra.');
+    await chooseGroup(group);
+    if (depth > 1) {
+      const child = data.children.find((row) => row.IDP === item.child_id);
+      if (!child) throw new Error('Copilul nu mai este disponibil. Reîncărcați fereastra.');
+      await chooseChild(child);
+      if (selectParent) selectedPayer = data.payers.find((row) => row.IDS === item.parent_id) || null;
+    }
+    level = depth; renderLists();
+  }
   const grid = (host, rows, columns, key, onSelect, options = {}) => {
     const instance = new DataGrid(host, {
       columns, rows, rowKey: key, onSelect, headerHeight: 32, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
@@ -90,10 +147,10 @@ export function bindPayers({ api, context, refresh }) {
     editor.showModal();
     return true;
   }
-  function field(key, label, value, type = 'text', parent = body) {
+  function field(key, label, value, type = 'text', parent = body, pre = '') {
     const row = document.createElement('label'); row.className = 'ade-form-field';
     const caption = document.createElement('span'); caption.textContent = label;
-    const input = document.createElement('input'); input.name = key; input.id = `ade-field-${key}`;
+    const input = document.createElement('input'); input.name = pre + key; input.id = `ade-field-${pre}${key}`;
     input.type = type; input.setAttribute('aria-label', label);
     if (type === 'checkbox') input.checked = Boolean(value); else input.value = value ?? '';
     input.maxLength = context().schema[type === 'checkbox' ? 'Platitori' : 'Platitori_sub']?.fields[key]?.size || 255;
@@ -103,8 +160,8 @@ export function bindPayers({ api, context, refresh }) {
     }
     return input;
   }
-  function read(key) {
-    const input = form.elements.namedItem(key);
+  function read(key, pre = '') {
+    const input = form.elements.namedItem(pre + key);
     return input.type === 'checkbox' ? input.checked : input.value.trim();
   }
   function validateDates() {
@@ -115,15 +172,10 @@ export function bindPayers({ api, context, refresh }) {
       }
     }
   }
-  function editChild(row = null, afterCreate = null) {
-    if (!canEdit()) return;
-    if (!row && !selectedGroup) { report(new Error('Selectați grupa copilului.'), $('ade-payers-message')); return; }
-    if (!begin(row ? 'Modifică copilul' : 'Adaugă copil', '/api/adechit/child-save', (saved) => {
-      selectedChild = saved; selectedGroup = data.groups.find((group) => group.IDG === saved.IDG) || selectedGroup;
-      return afterCreate?.(saved);
-    })) return;
-    field('Nume', 'Nume copil', row?.Nume).maxLength = 255;
-    field('CNP', 'CNP copil', row?.CNP).inputMode = 'numeric';
+  // The child's inputs; `pre` keeps the names apart when the same form also carries the parent's inputs.
+  function childFields(row, pre) {
+    field('Nume', 'Nume copil', row?.Nume, 'text', body, pre).maxLength = 255;
+    field('CNP', 'CNP copil', row?.CNP, 'text', body, pre).inputMode = 'numeric';
     const groupRow = document.createElement('div'); groupRow.className = 'ade-form-field';
     const label = document.createElement('span'); label.textContent = 'Grupa';
     const host = document.createElement('div'); groupRow.append(label, host); body.append(groupRow);
@@ -133,55 +185,89 @@ export function bindPayers({ api, context, refresh }) {
     combo.input.setAttribute('aria-label', 'Grupa'); controls.push(combo);
     const group = data.groups.find((item) => item.IDG === (row?.IDG ?? selectedGroup.IDG));
     combo.setValue(String(group.IDG), group.Grupa);
-    field('DataIntrare', 'Data intrare', day(row?.DataIntrare), 'date');
+    field('DataIntrare', 'Data intrare', day(row?.DataIntrare), 'date', body, pre);
     const exit = document.createElement('div'); exit.className = 'ade-form-pair'; body.append(exit);
-    field('Plecat', 'Plecat', row?.Plecat, 'checkbox', exit);
-    field('DataIesire', 'Data ieșire', day(row?.DataIesire), 'date', exit);
-    collect = () => {
+    field('Plecat', 'Plecat', row?.Plecat, 'checkbox', exit, pre);
+    field('DataIesire', 'Data ieșire', day(row?.DataIesire), 'date', exit, pre);
+    $(`ade-field-${pre}CNP`).addEventListener('blur', () => showMessage(message, cnpMessage(read('CNP', pre)), cnpMessage(read('CNP', pre)) ? 'error' : 'info'));
+    return () => {
       validateDates();
-      const values = { Nume: read('Nume'), CNP: read('CNP'), IDG: Number(combo.getSelectedValue()),
-        DataIntrare: read('DataIntrare') || null, Plecat: read('Plecat'), DataIesire: read('DataIesire') || null };
+      const values = { Nume: read('Nume', pre), CNP: read('CNP', pre), IDG: Number(combo.getSelectedValue()),
+        DataIntrare: read('DataIntrare', pre) || null, Plecat: read('Plecat', pre), DataIesire: read('DataIesire', pre) || null };
       const cnp = cnpMessage(values.CNP); if (cnp) throw new Error(cnp);
       if (!values.Nume) throw new Error('Numele copilului este obligatoriu.');
       return { id: row?.IDP ?? null, version: row?.Version, values };
     };
-    $('ade-field-CNP').addEventListener('blur', () => showMessage(message, cnpMessage(read('CNP')), cnpMessage(read('CNP')) ? 'error' : 'info'));
   }
-  function editPayer(row = null) {
-    if (!canEdit() || !selectedChild) return;
-    if (!begin(row ? 'Modifică plătitorul' : 'Adaugă plătitor', '/api/adechit/catalog/Platitori_sub', (saved) => { selectedPayer = saved; })) return;
-    for (const [key, label] of [['Nume', 'Nume plătitor'], ['Adresa', 'Adresă plătitor'], ['CNP_Platitor', 'CNP plătitor'],
-      ['CUI', 'Cod fiscal'], ['Cont', 'Cont bancar'], ['Banca', 'Banca']]) field(key, label, row?.[key]);
-    const contacts = document.createElement('div'); contacts.className = 'ade-form-pair'; body.append(contacts);
-    field('Telefon', 'Telefon', row?.Telefon, 'tel', contacts); field('EMail', 'Email', row?.EMail, 'email', contacts);
-    const sendCode = document.createElement('button'); sendCode.type = 'button'; sendCode.className = 'btn';
-    sendCode.textContent = 'Trimite Codul de Acces'; body.append(sendCode);
-    const updateSendCode = () => { sendCode.hidden = !read('EMail'); };
-    $('ade-field-EMail').addEventListener('input', updateSendCode); updateSendCode();
-    sendCode.addEventListener('click', async () => {
-      if (busy) return;
-      try {
-        const payload = collect(); busy = true; body.inert = true;
-        // Save newly entered contact data before delivery; a failed mail does not discard the saved parent.
-        row = await api('/api/adechit/catalog/Platitori_sub', { method: 'POST', body: JSON.stringify(payload), key: crypto.randomUUID() });
-        selectedPayer = row; dirty = false; request = null;
-        const result = await api(`/api/adechit/parents/${row.IDS}/send-access`, { method: 'POST', body: '{}' });
-        showMessage(message, result.message, 'info'); await reload(); await loadPortalIssues(); await refresh();
-      } catch (error) { report(error); }
-      finally { busy = false; body.inert = false; }
-    });
-    field('Activ', 'Activ', row ? row.Activ : true, 'checkbox').disabled = !row;
+  function editChild(row = null) {
+    if (!canEdit()) return;
+    if (!row && !selectedGroup) { report(new Error('Selectați grupa copilului.'), $('ade-payers-message')); return; }
+    if (!begin(row ? 'Modifică copilul' : 'Adaugă copil', '/api/adechit/child-save', (saved) => {
+      selectedChild = saved; selectedGroup = data.groups.find((group) => group.IDG === saved.IDG) || selectedGroup;
+    })) return;
+    collect = childFields(row, '');
+  }
+  // A new child is always saved together with its first parent: one form, one Save, nothing is kept without the parent.
+  function editChildWithPayer() {
+    if (!canEdit()) return;
+    if (!selectedGroup) { report(new Error('Selectați grupa copilului.'), $('ade-payers-message')); return; }
+    if (!begin('Adaugă copil', '/api/adechit/child-with-payer', (saved) => {
+      selectedChild = saved.child; selectedPayer = saved.payer;
+      selectedGroup = data.groups.find((group) => group.IDG === saved.child.IDG) || selectedGroup;
+    }, 'child-payer')) return;
+    const collectChild = childFields(null, 'c_');
+    const heading = document.createElement('h3'); heading.className = 'ade-form-section'; heading.textContent = 'Părinte (plătitor)'; body.append(heading);
+    const collectPayer = payerFields(null, 'p_', false);
     collect = () => {
-      const values = Object.fromEntries(['Nume', 'Adresa', 'CNP_Platitor', 'CUI', 'Cont', 'Banca', 'Telefon', 'EMail', 'Activ'].map((key) => [key, read(key)]));
-      values.IDP = selectedChild.IDP;
+      const child = collectChild(); const payer = collectPayer();
+      return { child: child.values, payer: { values: payer.values } };
+    };
+  }
+  // The parent's inputs; `withSend` adds the access-code button (only for a parent that already exists).
+  function payerFields(row, pre, withSend) {
+    for (const [key, label] of [['Nume', 'Nume plătitor'], ['Adresa', 'Adresă plătitor'], ['CNP_Platitor', 'CNP plătitor'],
+      ['CUI', 'Cod fiscal'], ['Cont', 'Cont bancar'], ['Banca', 'Banca']]) field(key, label, row?.[key], 'text', body, pre);
+    const contacts = document.createElement('div'); contacts.className = 'ade-form-pair'; body.append(contacts);
+    field('Telefon', 'Telefon', row?.Telefon, 'tel', contacts, pre); field('EMail', 'Email', row?.EMail, 'email', contacts, pre);
+    const gather = () => {
+      const values = Object.fromEntries(['Nume', 'Adresa', 'CNP_Platitor', 'CUI', 'Cont', 'Banca', 'Telefon', 'EMail', 'Activ'].map((key) => [key, read(key, pre)]));
+      values.IDP = selectedChild?.IDP;
       if (!row) values.Activ = true;
       const cnp = cnpMessage(values.CNP_Platitor); if (cnp) throw new Error(cnp);
       if (!values.Nume) throw new Error('Numele plătitorului este obligatoriu.');
       return { id: row?.IDS ?? null, version: row?.Version, values };
     };
-    $('ade-field-CNP_Platitor').addEventListener('blur', () => {
-      const text = cnpMessage(read('CNP_Platitor')); showMessage(message, text, text ? 'error' : 'info');
+    if (withSend) {
+      const sendCode = document.createElement('button'); sendCode.type = 'button'; sendCode.className = 'btn';
+      sendCode.textContent = 'Trimite Codul de Acces'; body.append(sendCode);
+      const updateSendCode = () => { sendCode.hidden = !read('EMail', pre); };
+      $(`ade-field-${pre}EMail`).addEventListener('input', updateSendCode); updateSendCode();
+      sendCode.addEventListener('click', async () => {
+        if (busy) return;
+        try {
+          const payload = collect(); busy = true; body.inert = true;
+          // Save newly entered contact data before delivery; a failed mail does not discard the saved parent.
+          row = await api('/api/adechit/catalog/Platitori_sub', { method: 'POST', body: JSON.stringify(payload), key: crypto.randomUUID() });
+          selectedPayer = row; dirty = false; request = null;
+          const result = await api(`/api/adechit/parents/${row.IDS}/send-access`, { method: 'POST', body: '{}' });
+          showMessage(message, result.message, 'info'); await reload(); await loadPortalIssues(); await refresh();
+        } catch (error) { report(error); }
+        finally { busy = false; body.inert = false; }
+      });
+    }
+    field('Activ', 'Activ', row ? row.Activ : true, 'checkbox', body, pre).disabled = !row;
+    const lookup = () => showSimilar(pre, row).catch((error) => console.error('[ADE forms] similar lookup failed', error));
+    $(`ade-field-${pre}CNP_Platitor`).addEventListener('blur', () => {
+      const text = cnpMessage(read('CNP_Platitor', pre)); showMessage(message, text, text ? 'error' : 'info');
+      if (!text) lookup();
     });
+    $(`ade-field-${pre}EMail`).addEventListener('blur', lookup);
+    return gather;
+  }
+  function editPayer(row = null) {
+    if (!canEdit() || !selectedChild) return;
+    if (!begin(row ? 'Modifică plătitorul' : 'Adaugă plătitor', '/api/adechit/catalog/Platitori_sub', (saved) => { selectedPayer = saved; })) return;
+    collect = payerFields(row, '', true);
   }
   async function editGroup(row = null) {
     if (!canEdit()) return;
@@ -282,13 +368,14 @@ export function bindPayers({ api, context, refresh }) {
     grids.push(grid($('ade-groups-list'), groupRows, groupColumns, 'IDG', (row) => {
       chooseGroup(row).catch((error) => report(error, $('ade-payers-message')));
     }, { ...listOptions('Grupa'), onCellAction: ({ row }) => openLevel(row, 0), editable: canEdit(),
+      onRowDblClick: (row) => editGroup(row).catch((error) => report(error, $('ade-payers-message'))),
       onCellSave: saveHiddenGroup, onCellSaved: () => refresh().catch((error) => report(error, $('ade-payers-message'))) }));
     grids.push(grid($('ade-children-list'), children, mobile.matches ? mobileColumns(childColumns, [50, 35, 15], true) : childColumns, 'IDP', (row) => {
       chooseChild(row).catch((error) => report(error, $('ade-payers-message')));
-    }, { ...listOptions('Nume'), onCellAction: ({ row }) => openLevel(row, 1) }));
+    }, { ...listOptions('Nume'), onCellAction: ({ row }) => openLevel(row, 1), onRowDblClick: (row) => { selectedChild = row; editChild(row); } }));
     grids.push(grid($('ade-payers-list'), payers, mobile.matches ? mobileColumns(payerColumns, [50, 35, 15]) : payerColumns, 'IDS', (row) => {
       selectedPayer = row; updateButtons();
-    }, listOptions('Nume')));
+    }, { ...listOptions('Nume'), onRowDblClick: (row) => { selectedPayer = row; editPayer(row); } }));
     // Restore visible selection using the common grid selection behavior.
     [selectedGroup, selectedChild, selectedPayer].forEach((row, index) => {
       if (row) grids[index].selectRow(row[['IDG', 'IDP', 'IDS'][index]]);
@@ -377,10 +464,9 @@ export function bindPayers({ api, context, refresh }) {
       await continuation;
       await reload(); await loadPortalIssues(); await refresh();
       showMessage($('ade-payers-message'), '', 'info');
-    } catch (error) { pendingNext = null; report(error, editor.open ? message : $('ade-payers-message')); }
+    } catch (error) { report(error, editor.open ? message : $('ade-payers-message')); }
     finally {
       busy = false; body.inert = false; $('ade-record-save').disabled = false; $('ade-record-cancel').disabled = false;
-      if (pendingNext) { const next = pendingNext; pendingNext = null; next(); }
     }
   });
   $('ade-record-cancel').addEventListener('click', () => { if (!busy) { editor.close(); cleanEditor(); } });
@@ -399,21 +485,21 @@ export function bindPayers({ api, context, refresh }) {
   $('ade-payers').addEventListener('click', open);
   $('ade-group-add').addEventListener('click', () => editGroup().catch((error) => report(error, $('ade-payers-message'))));
   $('ade-group-edit').addEventListener('click', () => { if (selectedGroup) editGroup(selectedGroup).catch((error) => report(error, $('ade-payers-message'))); });
-  $('ade-child-add').addEventListener('click', () => editChild());
+  $('ade-child-add').addEventListener('click', () => editChildWithPayer());
   $('ade-child-edit').addEventListener('click', () => { if (selectedChild) editChild(selectedChild); });
   $('ade-payer-add').addEventListener('click', () => editPayer());
   $('ade-payer-edit').addEventListener('click', () => { if (selectedPayer) editPayer(selectedPayer); });
   addEventListener('beforeunload', (event) => { if (editor.open && dirty) { event.preventDefault(); event.returnValue = ''; } });
   addEventListener('pagehide', () => { cleanEditor(); grids.forEach((instance) => instance.destroy()); }, { once: true });
-  // The grid's "+": only the child form and then the payer form of the new child (no groups, no lists).
-  return { addChildWithPayer: async (groupId) => {
+  // The grid's "+": one form with the child and the first parent (no groups, no lists).
+  return { openForChild: (groupId, childId) => goTo({ group_id: groupId, child_id: childId }, 2, false),
+    addChildWithPayer: async (groupId) => {
     if (groupId == null) throw new Error('Selectați grupa copilului.');
     if (page.open || editor.open || busy) return;
     const result = await api('/api/adechit/catalog-data?include_hidden=1');
     data = { ...result, children: [], payers: [], educators: [], years: [] };
     selectedGroup = data.groups.find((group) => group.IDG === groupId) || null;
     selectedChild = null; selectedPayer = null;
-    // the payer form opens once the child form is saved and closed (the same dialog element serves both)
-    editChild(null, () => { pendingNext = () => editPayer(); });
+    editChildWithPayer();
   } };
 }
