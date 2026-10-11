@@ -635,6 +635,18 @@ if ($IncludeAccess) {
     Write-Host "Guard OK: no Access components in a non-access package." -ForegroundColor Cyan
 }
 
+# --- 4c1. KBotAdmin guard (SLICE-ME01) -------------------------------------------
+#  KBotAdmin is the owner's private administration program (databases, accounts, rights, schema sync, logs). It
+#  must NEVER reach a client, in any package. It lives outside KBot.sln and nothing here builds it; this guard
+#  refuses the publish if anything of it (or its server settings) ever ends up in the folder.
+$adminLeak = @(Get-ChildItem -LiteralPath $PublishDir -Recurse -File -ErrorAction SilentlyContinue |
+               Where-Object { $_.Name -like 'KBotAdmin*' -or $_.Name -like 'admin_settings*' -or $_.Name -like 'Renci.SshNet*' })
+if ($adminLeak.Count -gt 0) {
+    throw ("The publish folder contains KBotAdmin files: {0}. KBotAdmin must never be delivered to clients." -f
+           (($adminLeak | ForEach-Object Name) -join ', '))
+}
+Write-Host "Guard OK: nothing of KBotAdmin in the package." -ForegroundColor Cyan
+
 # --- 4c2. KBot.Updater (slice 0067) -> single KBot.Updater.exe next to the app ----
 #  The in-place update helper. Published SINGLE-FILE (framework-dependent) so the app
 #  has ONE file to copy to %TEMP% before it exits; it references no KBot.* assembly and

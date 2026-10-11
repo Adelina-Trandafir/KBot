@@ -379,9 +379,12 @@ function createGrid() {
   state.grid?.destroy();
   state.plan = planColumns();
   const canEdit = Boolean(state.monthId && state.groupId) && !selectedMonth()?.Inchisa;
+  // The days of the last closed month stay editable for an account that holds the edit_closed right (role AD_EDIT_INCHISA).
+  const canEditDays = canEdit || (Boolean(state.monthId && state.groupId) && selectedMonth()?.IDL === lastClosedMonthId()
+    && state.context.permissions.includes('edit_closed') && state.context.permissions.includes('attendance'));
   const canMove = canEdit && !mobileQuery.matches;   // dragging: PC only; the phone uses the icon's group list
-  state.grid = new DataGrid($('ade-grid'), { columns: [actionColumn(canEdit), ...situationColumns(canEdit)], rows: state.shownRows, headerHeight: 32,
-    rowKey: 'IDZ', mobileRowScale: 1.2, editable: canEdit, layoutId: 'ade.attendance', layout: { order: ['Mutare'], fill: 'Nume', hidden: state.plan.hidden, widths: state.plan.nameWidth ? { Nume: state.plan.nameWidth } : {} }, footer: true,
+  state.grid = new DataGrid($('ade-grid'), { columns: [actionColumn(canEdit), ...situationColumns(canEditDays)], rows: state.shownRows, headerHeight: 32,
+    rowKey: 'IDZ', mobileRowScale: 1.2, editable: canEditDays, layoutId: 'ade.attendance', layout: { order: ['Mutare'], fill: 'Nume', hidden: state.plan.hidden, widths: state.plan.nameWidth ? { Nume: state.plan.nameWidth } : {} }, footer: true,
     footerCaption: '{0} copii', frozen: 2,
     footerAction: { label: '🔍', withCaption: true, menu: true, active: childFilterActive(), title: 'Filtrează lista de copii' },
     onFooterAction: ({ button }) => openChildFilterMenu(button), onSelect: selectChild, onCellSave: saveAttendance,
@@ -581,7 +584,7 @@ function orderActionButton(k_id) {
 const documentId = (k_kind, k_row) => (k_kind === 'receipt' ? k_row.IDC : k_row.IDA);
 function canCancelDocument(k_kind, k_row) {
   const k_month = selectedMonth();
-  if (!state.context.settings?.allowCancel || !k_month || k_kind === 'refund' || k_row.Cancelled || documentId(k_kind, k_row) == null) return false;
+  if (!state.context.permissions.includes('cancel') || !k_month || k_kind === 'refund' || k_row.Cancelled || documentId(k_kind, k_row) == null) return false;
   return !k_month.Inchisa || k_month.IDL === lastClosedMonthId();
 }
 

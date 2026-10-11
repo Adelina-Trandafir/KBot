@@ -19,7 +19,6 @@ import { createPdfView } from './pdfview.js';
 import { createClasificatiiPage } from './clasificatii.js';
 import { createParteneriPage } from './parteneri.js';
 import { createExtrasePage } from './extrase.js';
-import { createAdminPage, adminRows } from './admin.js';
 import { columnsOf } from './columns.js';
 import { buildTabTree, hasTree, ROOT } from './tabtrees.js';
 import { createExtraseCard } from './extrasecard.js';
@@ -944,7 +943,6 @@ export function createApp({ call, callBytes, onUnauthorized, onUnitOpened }) {
 
   /** @returns {Promise<{rows: object[], why: string}>} why = a sentence when there are no rows */
   async function realRows(id) {
-    if (id.startsWith('admin.')) return adminRows(call, id); // the Administrare grids read no unit
     if (!me || !me.db_name) return { rows: [], why: 'Alegeți mai întâi o unitate din bara de sus: grila se vede cu datele ei.' };
     const none = (why) => ({ rows: [], why });
     if (GRID_TAB[id]) {
@@ -1022,7 +1020,6 @@ export function createApp({ call, callBytes, onUnauthorized, onUnitOpened }) {
     }),
     parteneri: () => createParteneriPage({ call, fail, say, hasUnit: () => !!(me && me.db_name) }),
     extrase: () => createExtrasePage({ call, fail, say, hasUnit: () => !!(me && me.db_name) }),
-    admin: () => createAdminPage({ call, fail, say, realRows }),
   };
 
   function closePage() {
@@ -1032,8 +1029,7 @@ export function createApp({ call, callBytes, onUnauthorized, onUnitOpened }) {
 
   async function openPage(name) {
     if (!pageMakers[name]) throw new Error(`Unknown page: ${name}`);
-    // the admin page looks at every database, so it needs no unit opened
-    if (name !== 'admin' && (!me || !me.db_name)) {
+    if (!me || !me.db_name) {
       say('Alegeți mai întâi unitatea.');
       return;
     }

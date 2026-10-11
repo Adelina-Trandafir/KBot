@@ -137,10 +137,16 @@ def save_catalog_batch(repo, body):
     return {'rows': saved}
 
 
-def save_attendance(repo, body):
+def save_attendance(repo, body, edit_closed=False):
+    """`edit_closed` = the caller holds the AD_EDIT_INCHISA role (operation edit_closed, granted per account in
+    KBotAdmin): then the days of the LAST closed month may still be changed, and the saved situation is rewritten."""
     row = repo.get('Prezenta', body['id'])
     month = repo.get('LunaD', row['IDL'])
-    require(not month['Inchisa'], 'CLOSED', 'Prezența nu poate fi modificată într-o lună închisă.')
+    if month['Inchisa']:
+        require(edit_closed, 'CLOSED', 'Prezența nu poate fi modificată într-o lună închisă.')
+        closed = [r for r in repo.rows('LunaD') if r.get('Inchisa')]
+        require(month['IDL'] == max(r['IDL'] for r in closed), 'NOT_LAST_CLOSED',
+                'Prezența se poate modifica numai în ultima lună închisă.')
     require(row['Version'] == body.get('version'), 'CONFLICT', 'Prezența s-a modificat. Reîncărcați rândul.')
     changes = body.get('values', {})
     require(set(changes) == {'ZilePrezenta'}, 'READ_ONLY', 'Se editează numai zilele de prezență.', 400)
@@ -151,7 +157,10 @@ def save_attendance(repo, body):
     # Prezenta.cIDV update path, without the excluded discounts.
     value = days * tax['TaxaZilnica']
     changes.update(ValoareContract=value, ValoareTotala=access_long(value))
-    return repo.update('Prezenta', row, changes)
+    updated = repo.update('Prezenta', row, changes)
+    if month['Inchisa']:
+        rewrite_snapshot(repo, updated)
+    return updated
 
 
 def prepare_attendance(repo, body):
@@ -204,6 +213,10 @@ def rewrite_snapshot(repo, attendance):
     payments = [r for r in repo.rows('Plati') if r['IDZ'] == attendance['IDZ'] and active(r, 'Anulata')]
     refunds = [r for r in repo.rows('Retur') if r['IDZ'] == attendance['IDZ'] and active(r, 'Anulat')]
     current = dict(snapshot)
+    # The attendance values too: for a closed month whose days were edited (AD_EDIT_INCHISA) they changed; for a
+    # payment or a cancellation they are the same values the snapshot already holds.
+    for field in ('ZilePrezenta', 'ValoareContract', 'ValoareTotala'):
+        current[field] = attendance[field]
     current['Plata'] = nz(total([r for r in payments if r.get('TIP') == 2], 'Plata'))
     current['Plati'] = access_long(nz(total([r for r in payments if r.get('TIP') is not None and r['TIP'] != 2], 'Plata')))
     current['Retur'] = access_long(nz(total(refunds, 'Suma')))
@@ -219,7 +232,8 @@ def rewrite_snapshot(repo, attendance):
             details.append('VI:' + (row.get('NrDoc') or ''))
     details.extend('Re:' + (r.get('NrDoc') or '') for r in refunds)
     current['Detalii'] = ';'.join(details)
-    fields = ('Plata', 'Plati', 'Retur', 'Compensare', 'Anticipat', 'SFD', 'SFC', 'Detalii')
+    fields = ('ZilePrezenta', 'ValoareContract', 'ValoareTotala', 'Plata', 'Plati', 'Retur', 'Compensare',
+              'Anticipat', 'SFD', 'SFC', 'Detalii')
     return repo.update('SS_Buget', snapshot, {k: current[k] for k in fields})
 
 
@@ -282,16 +296,7 @@ def emit_document(repo, db_name, body):
     return document
 
 
-CANCEL_SETTING = 'AllowCancelDocuments'
-
-
-def cancel_allowed(repo):
-    """AD_Settings.AllowCancelDocuments of the current subunit; a missing value means false."""
-    return str(repo.setting(CANCEL_SETTING, 'false')).strip().lower() in ('1', 'true', 'yes', 'da')
-
-
 def cancel_document(repo, body):
-    require(cancel_allowed(repo), 'CANCEL_OFF', 'Anularea documentelor nu este activată pentru această subunitate.', 403)
     table = {'receipt': 'Chitante', 'other': 'AlteDoc', 'refund': 'Retur'}.get(body.get('kind'))
     require(table is not None, 'KIND', 'Tip de document invalid.', 400)
     require(table != 'Retur', 'M03', 'Anularea restituirii așteaptă decizia privind salvarea motivului.')

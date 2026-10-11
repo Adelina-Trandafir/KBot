@@ -165,6 +165,11 @@ function Get-PackageInfo {
         # carries BACKSLASHES in its entry names. publish-release.ps1 no longer does
         # that (20.09.2026), and such a package is refused here: the client's updater
         # strips the top folder by "/" and would unpack it into a subfolder of C:\KBOT.
+        # SLICE-ME01: KBotAdmin (the owner's private admin program) must never be inside a client package.
+        $adminInside = @($entries | Where-Object { $_.FullName -match '(^|/)(KBotAdmin[^/]*|admin_settings[^/]*|Renci\.SshNet[^/]*)$' })
+        if ($adminInside.Count -gt 0) {
+            throw ("Package contains KBotAdmin files ({0}); KBotAdmin must never be delivered to clients." -f $adminInside[0].FullName)
+        }
         $backslashed = @($entries | Where-Object { $_.FullName.Contains('\') })
         if ($backslashed.Count -gt 0) {
             throw ("Package entries use backslashes ({0}); rebuild it with the current publish-release.ps1 -- " +

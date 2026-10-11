@@ -45,8 +45,6 @@ from routes.pdf_inteligent.pdf_inteligent import pdf_inteligent_bp  # public art
 from routes.portal.portal import portal_bp  # slice 0110-03: GET /portal + /api/portal/*
 import routes.portal.date  # noqa: F401  slice 0110-06: registers /api/portal/date/* on portal_bp
 import routes.portal.certificat  # noqa: F401  slice 0110-04: registers /api/portal/certificat/* on portal_bp
-import routes.portal.admin  # noqa: F401  slice 0110-09: registers /api/portal/admin/* on portal_bp (admin accounts only)
-from routes.inregistrare.operator import operator_bp  # felia 0075-05: pagina operatorului (aprobarea cererilor)
 from routes.logs import logs_bp  # slice 0089: the caller's own server / timing journal lines
 from routes.help_feedback import help_feedback_bp  # slice 0000-21: help questions + ratings (nothing about who)
 from routes.error_report import error_report_bp  # slice 0112-04: POST /api/errors/report (error sent from the message window)
@@ -125,7 +123,6 @@ app.register_blueprint(vizite_bp)  # slice 0110-09: POST /api/vizita
 app.register_blueprint(detalii_bp)  # slice 0110-02: the «Cere mai multe detalii» form
 app.register_blueprint(pdf_inteligent_bp)  # the «PDF Inteligent» article
 app.register_blueprint(portal_bp)  # slice 0110-03: web area of registered users (read-only)
-app.register_blueprint(operator_bp)  # Aprobarea cererilor de inregistrare
 app.register_blueprint(logs_bp)  # slice 0089: GET /api/logs/server, /api/logs/timing
 app.register_blueprint(help_feedback_bp)  # slice 0000-21: POST /api/help/feedback
 app.register_blueprint(error_report_bp)  # slice 0112-04: POST /api/errors/report

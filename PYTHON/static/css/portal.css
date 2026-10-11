@@ -75,24 +75,6 @@
 .pc__detail { flex: 0 0 auto; max-height: 45%; overflow: auto; }
 .pc__detail[hidden] { display: none; }
 
-/* ---------- the Administrare page (slice 0110-09) ---------- */
-.portal__app.is-adm .pa__body, .portal__app.is-adm .pa__f--an, .portal__app.is-adm .pa__f--ss, .portal__app.is-adm .pa__hint { display: none; }
-.portal__app.is-adm .pa__bar .js-back-ang { display: inline-flex; }
-.adm__tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
-.adm__tabs button { font: inherit; padding: 6px 14px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); background: transparent; color: var(--ink); cursor: pointer; }
-.adm__tabs button.is-active { background: var(--brand, #309eff); border-color: var(--brand, #309eff); color: #fff; }
-.adm__panel { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
-.adm__panel[hidden] { display: none; }
-.adm__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.adm__f { flex: 0 1 300px; min-width: 200px; }
-.adm__chk { display: inline-flex; align-items: center; gap: 6px; font-size: .9rem; color: var(--ink-soft); cursor: pointer; }
-.adm__chk select { font: inherit; color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 2px 6px; }
-.adm__note { margin: 0; color: var(--ink-soft); font-size: .88rem; }
-.adm__g { flex: 1 1 0; min-height: 120px; position: relative; }
-.adm__g--small { flex: 0 0 190px; min-height: 120px; }
-.adm__g > .dgv { position: absolute; inset: 0; width: auto; height: auto; min-height: 0; }
-.adm__detail { flex: 0 0 auto; max-height: 28%; overflow: auto; margin: 0; padding: 10px 12px; font: .82rem/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; background: rgba(127, 127, 127, .08); border-radius: var(--radius-sm); }
-
 /* ---------- the Clasificatii page and its budget check ---------- */
 .pc { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(300px, 32%) 1fr; grid-template-rows: minmax(0, 1fr); gap: 12px; }
 .pc[hidden] { display: none; }
@@ -365,23 +347,6 @@ html[data-theme="dark"] .portal .pa__opt:hover { background: #232c3b; }
 @media (max-width: 900px) {
   .pa__tree { display: none !important; }
   .pa__docs-lines { flex: 0 0 150px; }
-}
-
-/* ---------- slice 0110-11: the «Coloane» tab of Administrare ---------- */
-.adm__f--wide { flex: 0 1 460px; min-width: 240px; }
-.adm__file { cursor: pointer; display: inline-flex; align-items: center; }
-.adm__clist { flex: 0 1 auto; max-height: 38%; min-height: 96px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
-.adm__crow { display: grid; grid-template-columns: 64px minmax(160px, 1fr) 84px 120px 84px; align-items: center; gap: 8px; padding: 2px 10px; border-bottom: 1px solid var(--line); }
-.adm__crow:last-child { border-bottom: 0; }
-.adm__crow--head { position: sticky; top: 0; z-index: 1; font-weight: 700; font-size: .85rem; color: var(--ink-soft); background: var(--card, #fff); }
-.adm__crow.is-off .adm__ctitle { opacity: .5; text-decoration: line-through; }
-.adm__crow input[type="checkbox"], .adm__crow input[type="radio"] { justify-self: start; width: 16px; height: 16px; cursor: pointer; }
-.adm__crow input[type="number"] { width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 2px 6px; }
-.adm__cmoves { display: inline-flex; gap: 4px; }
-.adm__cmoves .btn { padding: 0 8px; min-height: 0; line-height: 1.4; }
-.adm__ctitle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 900px) {
-  .adm__crow { grid-template-columns: 52px minmax(90px, 1fr) 72px 84px 62px; gap: 4px; padding: 2px 6px; }
 }
 
 /* ---------- slice 0110-12: details under the grids, the Extrase card, the navbar of the document cards (computers) ---------- */

@@ -19,7 +19,6 @@ const MENU = [
 ];
 
 export function createMenu(host, onPick) {
-  let adminItem = null;
   let isOpen = false;
 
   const li = document.createElement('li');
@@ -88,14 +87,6 @@ export function createMenu(host, onPick) {
   document.addEventListener('click', (e) => { if (!li.contains(e.target)) closeAll(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
   return {
-    closeAll,
-    /** Slice 0110-09: the «Administrare» entry exists only for the accounts the server names as administrators. */
-    setAdmin(on) {
-      if (on && !adminItem) adminItem = addEntry({ key: 'admin', label: 'Administrare' });
-      if (!on && adminItem) {
-        adminItem.forEach((e) => e.remove());
-        adminItem = null;
-      }
-    },
+    closeAll
   };
 }

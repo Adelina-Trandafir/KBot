@@ -123,21 +123,6 @@ def _hash(code):
     return hashlib.sha256(code.encode("utf-8")).hexdigest()
 
 
-def admin_emails():
-    """The accounts that may open the admin page (slice 0110-09): `PORTAL_ADMIN_EMAILS` in config.py,
-    else the operator's own account."""
-    try:
-        import config
-    except Exception:    # pragma: no cover - config is always there on the server
-        config = None
-    listed = getattr(config, "PORTAL_ADMIN_EMAILS", None) or ("scavatarsoft@gmail.com",)
-    return {str(e).strip().lower() for e in listed if str(e).strip()}
-
-
-def is_admin_email(email):
-    return str(email or "").strip().lower() in admin_emails()
-
-
 def _ip():
     # ProxyFix is active in main.py: the real client, not nginx.
     return request.remote_addr
@@ -414,7 +399,7 @@ def portal_me():
     _slide(token, note)
     return _json({"email": note["email"], "units": units, "db_name": note.get("db_name"),
                   "role": note.get("role"), "periods": periods, "sections": sections,
-                  "operations": operations, "is_admin": is_admin_email(note["email"])})
+                  "operations": operations})
 
 
 @portal_bp.route("/api/portal/unit", methods=["POST"])

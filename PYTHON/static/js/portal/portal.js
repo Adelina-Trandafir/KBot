@@ -7,7 +7,7 @@
 import sessionMonitoring from '../session/session-monitoring.js';
 import { createApp } from './app.js';
 import { createMenu } from './menu.js';
-import { installLayouts, setAdmin } from './layouts.js';
+import { installLayouts } from './layouts.js';
 import { createCertificate } from './certificat.js';
 import eventBus, { EVENTS } from '../event-bus/event-bus.js';
 import { Combobox } from '../components/combobox/combobox.js';
@@ -120,7 +120,7 @@ let noticeTimer = 0;
 document.querySelectorAll('.js-back-ang').forEach((b) => b.addEventListener('click', () => app.closePage()));
 
 const menu = createMenu($('pmenu'), (key, label) => {
-  if (['extrase', 'clasificatii', 'parteneri', 'admin'].includes(key)) {
+  if (['extrase', 'clasificatii', 'parteneri'].includes(key)) {
     app.openPage(key);
     return;
   }
@@ -232,8 +232,6 @@ async function openApp() {
   }
   me = r.data;
   if (chosenApp === 'adechit' && me.db_name) { goNext(); return; } // straight to the chosen page, the portal is never painted
-  menu.setAdmin(me.is_admin === true);
-  setAdmin(me.is_admin === true); // the administrator's own column layouts apply only to administrator accounts
   $('user-email').textContent = me.email;
   show('card-app');
   startMonitor();

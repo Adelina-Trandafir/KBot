@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- SLICE-ME01. KBotAdmin: the owner's administration program (databases, accounts, rights, schema
+       difference and sync, logs). It is NOT part of K-BOT's delivery and must stay out of it:
+       nothing here is referenced by KBot.App, KBot.sln or any publish / setup / update script, and
+       no publish script may ever pick it up. It builds on its own:
+           dotnet build KBotAdmin\KBotAdmin.vbproj
+       It talks to the server only over SSH (no database port is ever opened). It reuses K-BOT's own
+       controls and theme engine through project references; nothing flows the other way. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>KBotAdmin</RootNamespace>
+    <AssemblyName>KBotAdmin</AssemblyName>
+    <StartupObject>Sub Main</StartupObject>
+    <MyType>Empty</MyType>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <Nullable>disable</Nullable>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+    <Import Include="System.Collections.Generic" />
+    <Import Include="System.Linq" />
+    <Import Include="System.Threading.Tasks" />
+    <Import Include="KBot.Common" />
+    <Import Include="KBot.Theming" />
+    <Import Include="KBot.Controls" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SSH.NET" Version="2026.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\src\KBot.Theming\KBot.Theming.vbproj" />
+    <ProjectReference Include="..\src\KBot.Controls\KBot.Controls.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="admin_settings.example.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

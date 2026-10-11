@@ -79,7 +79,7 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
                 'subunits': active,
                 'subunit': {'id': repo.subunit_id, 'name': repo.subunit_name} if repo.subunit_id is not None else None,
                 'editable': EDITABLE,
-                'settings': {'allowCancel': repo.subunit_id is not None and service.cancel_allowed(repo)},
+                'settings': {'allowCancel': 'cancel' in g.ade_operations},   # the right is per account (role AD_ANULARE), no longer per subunit
                 'permissions': sorted(g.ade_operations),
                 'preview': repository_factory is not None,
                 'limitations': ['Paritatea completă Access nu este validată.', 'Rapoartele sunt scrise local și nu au fost probate pe server.']}
@@ -162,7 +162,7 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     @bp.post('/api/adechit/attendance')
     @guard('attendance')
     def attendance(repo):
-        return command(repo, 'attendance', lambda body: service.save_attendance(repo, body))
+        return command(repo, 'attendance', lambda body: service.save_attendance(repo, body, 'edit_closed' in g.ade_operations))
 
     @bp.post('/api/adechit/attendance/prepare')
     @guard('attendance')

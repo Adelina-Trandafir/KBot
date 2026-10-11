@@ -1,0 +1,9 @@
+# Local secrets: the server address, user and key path of this PC - never commit
+admin_settings.json
+
+# Run logs
+Logs/
+
+# Build output
+bin/
+obj/

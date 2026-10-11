@@ -345,12 +345,6 @@ def send_registration_rejected(to_address, denumire, motiv):
     _deliver(msg, conf)
 
 
-def operator_page_link():
-    """Where the approval page lives, for the operator's notice mail (0075-05)."""
-    base = str(_get(_read_config(), "PUBLIC_BASE_URL", "") or "https://kbot.avatarsoft.ro")
-    return f"{base.rstrip('/')}/operator"
-
-
 def operator_address():
     """
     Where a waiting registration is announced (slice 0075-02, plan 5.5).
@@ -387,8 +381,8 @@ def send_registration_notice(to_address, id_cerere, denumire, cf, email, randuri
         f"Cod fiscal:    {cf}\n"
         f"E-mail:        {email}\n"
         f"Clasificații:  {randuri} rânduri\n\n"
-        "Detaliile complete și butoanele de aprobare sunt pe pagina de cereri:\n"
-        f"{operator_page_link()}\n\n"
+        "Detaliile complete și butoanele de aprobare sunt în programul KBotAdmin,\n"
+        "la pagina «Cereri conturi noi».\n\n"
         "K-BOT\n"
     )
 

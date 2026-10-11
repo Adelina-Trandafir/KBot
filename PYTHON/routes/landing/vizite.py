@@ -12,7 +12,7 @@ nothing: the row keeps the largest `t` it has seen (and the sections that go wit
 The server adds what the page cannot know: the address (ProxyFix makes it the real one), the
 country (utils/geoip, offline), the browser line, and whether it looks like a robot.
 
-The rows are read back only by routes/portal/admin.py. The table is
+The rows are read back only by KBotAdmin (routes/admin_cli). The table is
 AVACONT_COMUN.Vizite_Site (sql/0110_09_vizite_site.sql); rows older than
 config.VIZITE_RETENTIE_ZILE days (180 by default) are deleted, a handful of requests at a time.
 

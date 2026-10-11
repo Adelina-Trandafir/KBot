@@ -149,10 +149,11 @@ rămâne disponibilă și pe mobil.
 
 <!-- slice: AD11-01 -->
 În taburile Chitanțe și Alte documente, fiecare document salvat are în dreapta
-butonul ❌ «Anulare document». Butonul apare numai dacă setarea
-`AllowCancelDocuments` din AD_Settings are valoarea true pentru subunitatea
-curentă (dacă lipsește, anularea este oprită) și dacă luna selectată este
-deschisă sau este ultima lună închisă; pentru alte luni închise nu apare.
+butonul ❌ «Anulare document». Butonul apare numai pentru conturile care au
+dreptul «Anulare documente» (rolul AD_ANULARE, dat pe cont din programul de
+administrare; setarea veche `AllowCancelDocuments` nu mai există) și dacă luna
+selectată este deschisă sau este ultima lună închisă; pentru alte luni închise
+nu apare.
 Nu apare nici la documentele deja anulate (marcate tăiat) și nici la restituiri.
 
 La clic se deschide o fereastră de confirmare cu întrebarea «Ești sigur/ă că vrei
@@ -294,3 +295,14 @@ Panoul «Rapoarte» din dreapta ecranului Prezență listează sau descarcă în
 Fișă cont și Fișă debitor (copilul selectat sau «Toți copiii din grupă»), Documente anulate și Situație financiară (luna aleasă).
 Pentru o restituire, butonul 📥 de pe rând oferă Dispoziția de plată. Rapoartele doar citesc: nu emit numere și nu schimbă situația.
 Pentru o lună închisă se folosește situația salvată la închidere. Detalii și abateri față de Access: `docs/worklog/SLICE-ADE9-01-rapoarte.md`.
+
+## Prezenta in ultima luna inchisa
+
+<!-- slice: ME01 -->
+Prezenta unei luni inchise nu se poate modifica, cu o singura exceptie: un cont
+care are dreptul «Editare luna inchisa» (rolul AD_EDIT_INCHISA, impreuna cu
+«Prezenta») poate corecta zilele de prezenta din **ultima** luna inchisa. Celelalte
+luni inchise raman blocate pentru toti. Situatia salvata a copilului se rescrie
+pe loc (valoarea contractului si soldul), iar soldul initial al lunii deschise
+se recalculeaza singur din luna inchisa. Dreptul il da sau il retrage proprietarul
+sistemului, pe cont, din programul de administrare.
