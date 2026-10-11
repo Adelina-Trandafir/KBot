@@ -6,7 +6,7 @@ Acest ghid însoțește [planul de securitate](../PLAN_Securitate_API.md). Stare
 
 **Nu există un modul care, prin simpla importare, să elimine toate apelurile HTTP existente.** Acestea pot fi în module, cod de formular/raport, macrocomenzi, Timer, AutoExec, Ribbon sau biblioteci. Un flag nou nu este consultat automat de vechile apeluri, iar ștergerea numai a header-ului API key păstrează cererile și produce erori.
 
-Pentru un inventar complet, importați [mdl_KBot_ExportAudit.bas](retirare_legacy/mdl_KBot_ExportAudit.bas) într-o copie de lucru a frontend-ului Access sursă, apoi executați în Immediate Window:
+Pentru un inventar complet, importați [mdl_KBot_ExportAudit.bas](retragere_legacy/mdl_KBot_ExportAudit.bas) într-o copie de lucru a frontend-ului Access sursă, apoi executați în Immediate Window:
 
 ```vb
 Kbot_ExportPentruCuratare
@@ -20,7 +20,7 @@ Exporturile conțin sursa originală și pot conține secretele încă neelimina
 
 ## Înlocuire concretă pentru modulul existent în repository
 
-Modulul original `mdl_FX_CLS_SYNC_TO_KBOT` trimite clasificări la API și setează X-API-Key. Înlocuiți-l integral cu [varianta retrasă](retirare_legacy/mdl_FX_CLS_SYNC_TO_KBOT.bas), păstrând numele modulului; nu importați încă un modul cu aceeași funcție.
+Modulul original `mdl_FX_CLS_SYNC_TO_KBOT` trimite clasificări la API și setează X-API-Key. Înlocuiți-l integral cu [varianta retrasă](retragere_legacy/mdl_FX_CLS_SYNC_TO_KBOT.bas), păstrând numele modulului; nu importați încă un modul cu aceeași funcție.
 
 Varianta tranzitorie păstrează semnătura funcției, dar nu trimite nimic și ridică o eroare explicită:
 
@@ -72,3 +72,20 @@ Acest exemplu înlocuiește doar acțiunea butonului respectiv; nu blochează ap
 - Toate endpoint-urile și aliasurile legacy retrase server-side, pe toate intrările: 404/410 și fără efecte.
 
 Doar schimbarea VBA nu protejează serverul de un client vechi sau modificat; doar închiderea serverului nu elimină secretele și erorile din VBA. Ambele părți sunt incluse în plan.
+
+## Excepție decisă de operator (11.10.2026): sincronizarea clasificațiilor și a partenerilor
+
+Din Access rămâne UN singur lucru: sincronizarea clasificațiilor și a partenerilor la modificare. Cheia comună veche (`X-Api-Key`) nu mai este acceptată nicăieri. Cele cinci rute rămase au o cheie proprie, **cheia Access**, valabilă doar pentru ele:
+
+| Rută | Funcția VBA |
+|---|---|
+| `POST /api/clasificatii/insert` | `PY_INS_Clasificatii` |
+| `POST /api/clasificatii/clasificatii_complete_upsert` | `PY_UPSERT_Clasificatii` |
+| `POST /api/clasificatii/sync_acc_kbot` | `FX_CLS_Sync_To_KBot` (slice 0103-05) |
+| `POST /api/parteneri/syncdb` | `PY_INS_Parteneri` |
+| `POST /api/parteneri/upsert` | `PY_UPSERT_Parteneri` |
+
+- Header: **`X-Access-Key`**, valoarea din `ACCESS_SYNC_KEY` din `config.py` de pe server. Nu se pune în git și nu se reutilizează valoarea vechii `API_KEY`.
+- În VBA se schimbă DOAR numele header-ului și valoarea: `.SetRequestHeader "X-Access-Key", <cheia Access>`, în cele patru funcții `PY_*` și în `FX_CLS_Sync_To_KBot`. Rămân neatinse restul funcțiilor din modul (`say_hello`, `ping_db`, `DescarcaView`, `TrimiteSalariiCatreServer`): rutele lor nu mai există și trebuie scoase din Access, nu adaptate.
+- Cheia Access dă dreptul de a scrie clasificații și parteneri în orice bază de unitate pe care o numește cererea. Nu autorizează nimic altceva (nici FOREXE, nici administrare, nici machete). Tratați fișierul Access ca pe un loc unde cheia poate fi citită.
+- Dacă `ACCESS_SYNC_KEY` lipsește din `config.py`, cele cinci rute refuză orice cerere.

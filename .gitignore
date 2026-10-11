@@ -535,3 +535,4 @@ PYTHON/data/*.mmdb
 
 # KBotAdmin local publish (owner only, never delivered; see publish-admin.ps1)
 /_Admin
+/VERCON/VERCON_ACCESS

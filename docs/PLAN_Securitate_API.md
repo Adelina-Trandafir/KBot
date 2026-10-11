@@ -2,7 +2,7 @@
 
 Actualizat: 11.10.2026, în urma auditului rutelor Python și a deciziilor utilizatorului.
 
-**Stare: plan pentru implementare.** Acest document nu dezactivează singur endpoint-urile și nu modifică deployment-ul. Fișierele VBA din `docs/vba/retirare_legacy` sunt pregătite pentru integrare, nu au fost importate într-o bază Access.
+**Stare: plan pentru implementare.** Acest document nu dezactivează singur endpoint-urile și nu modifică deployment-ul. Fișierele VBA din `docs/vba/retragere_legacy` sunt pregătite pentru integrare, nu au fost importate într-o bază Access.
 
 ## Decizii acceptate
 
@@ -80,7 +80,7 @@ Inventarul exact al handler-elor cu guard de cheie este în [security/legacy-rou
 
 ## S3. Eliminarea apelurilor și a cheilor din VBA
 
-Ghidul și codul pregătit sunt în [vba/RETIRARE_API_LEGACY.md](vba/RETIRARE_API_LEGACY.md).
+Ghidul și codul pregătit sunt în [vba/RETRAGERE_API_LEGACY.md](vba/RETRAGERE_API_LEGACY.md).
 
 - Eliminarea reală a clienților HTTP pentru API, helper-elor URL, constantelor și citirilor de chei din registru/tabele/fișiere, inclusiv setarea headerelor.
 - Eliminarea apelurilor de sincronizare din formulare, rapoarte, AutoExec, macrocomenzi, Timer, Ribbon și query-uri care apelează funcții VBA.

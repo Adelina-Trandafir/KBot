@@ -1,0 +1,846 @@
+COD NOU PENTRU SINCRONIZAREA ACCESS -> K-BOT (clasificatii si parteneri)
+=========================================================================
+Fisier text, NU modul. UN SINGUR MODUL: selectati tot din modulul vostru cu functiile PY_* (cel cu "mdl__Python"
+in CPN) si lipiti tot ce e intre "Option Compare Database" si "SFARSIT MODUL" de mai jos.
+
+Contine: PY_INS_Parteneri, PY_UPSERT_Parteneri, PY_INS_Clasificatii, PY_UPSERT_Clasificatii si
+FX_CLS_Sync_To_KBot (buget + rectificari spre serverul K-BOT; cu ajutatoarele lui DStr si OD).
+Din restul proiectului cere doar ce cereau si inainte: API_BASE_URL, DC, globIdUnitate si mdl_JSON
+(ConvertToJson, ParseJson). API_KEY nu mai e folosit.
+
+CE SE SCHIMBA
+  1. Headerul "X-API-KEY" dispare. Se trimite "X-Access-Key" cu CHEIA ACCESS (valoarea ACCESS_SYNC_KEY de pe
+     server). Se pune O SINGURA DATA, in functia KbotAccessKey(). Nu o puneti in registru, in tabel sau intr-un
+     fisier langa baza de date.
+  2. Serverul pune limite (mesajul serverului ajunge la operator):
+       - maxim 200 de randuri intr-o trimitere (la FX_CLS_Sync_To_KBot se numara si rectificarile);
+         peste 200 cererea e refuzata intreaga (nu se scrie nimic);
+       - maxim O trimitere reusita pe zi, pentru fiecare ruta si fiecare unitate; a doua in aceeasi zi e
+         refuzata. O trimitere esuata NU consuma ziua;
+       - db_name trebuie sa fie o unitate inregistrata.
+  3. Aceleasi 200 de randuri sunt verificate si in Access, inainte de trimitere.
+  4. PY_UPSERT_Clasificatii si PY_UPSERT_Parteneri trimit TOT tabelul: peste 200 de randuri se opresc cu un mesaj.
+     PY_INS_Clasificatii si PY_UPSERT_Clasificatii trimit acum SI rectificarile anului curent ale fiecarei clasificatii (si ele se numara
+     in cele 200). Serverul (clasificatii_complete_upsert) le salveaza in aceeasi tranzactie cu clasificatia.
+     Selectiile ("SELECT * FROM ...") NU au fost schimbate.
+
+CE DISPARE DIN MODUL (nu mai au rute pe server)
+  PY_TEST_PY_SERVER, PT_TEST_MARIADB, DescarcaView, TrimiteSalariiCatreServer, GenereazaJsonSalarii,
+  GetCollectionFromSQL, RecordsetToDictionary.
+  Dupa lipire: Debug > Compile. Orice apel catre ele din formulare, rapoarte sau macrocomenzi apare ca eroare
+  si trebuie scos. InsertJsonWithRecordset si ParseMariaDBDate au ramas neschimbate (nu fac apeluri HTTP).
+
+
+'#########################################################################################
+'#  MODUL  -  copiati de aici in jos pana la "SFARSIT MODUL"
+'#########################################################################################
+Option Compare Database
+Option Explicit
+
+Private Const KBOT_MAX_RANDURI As Long = 200
+
+Private Function KbotAccessKey() As String
+    ' Valoarea lui ACCESS_SYNC_KEY de pe server. NU valoarea veche a lui API_KEY.
+    KbotAccessKey = "PUNE_AICI_CHEIA_ACCESS"
+End Function
+
+' POST catre ruta data. True doar la HTTP 200. La orice alt raspuns arata mesajul serverului (inclusiv
+' "peste 200 de randuri" sau "deja trimis azi") si returneaza False. rRaspuns = corpul raspunsului.
+Private Function KbotAccessPost(ByVal vRuta As String, ByVal vJson As String, ByRef rRaspuns As String) As Boolean
+    Dim http As Object
+    Dim msg As String
+    Dim js As Object
+
+    On Error GoTo EROARE
+
+    Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+    http.Open "POST", API_BASE_URL & vRuta, False
+    http.SetRequestHeader "Content-Type", "application/json"
+    http.SetRequestHeader "X-Access-Key", KbotAccessKey()
+    http.SetTimeouts 0, 60000, 60000, 300000
+    http.send vJson
+
+    rRaspuns = http.responseText
+
+    If http.Status = 200 Then
+        KbotAccessPost = True
+        GoTo Iesire
+    End If
+
+    ' mesajul serverului, daca raspunsul e JSON cu campul "error"
+    msg = rRaspuns
+    On Error Resume Next
+    Set js = mdl_JSON.ParseJson(rRaspuns)
+    If Not js Is Nothing Then
+        If js.Exists("error") Then msg = js("error")
+    End If
+    On Error GoTo EROARE
+
+    Select Case http.Status
+        Case 401
+            msg = "Cheia Access este refuzata de server." & vbCrLf & msg
+        Case 413, 429
+            ' limite de trimitere (randuri / o data pe zi): mesajul serverului spune exact care
+        Case Else
+            msg = "Eroare server (" & http.Status & "): " & msg
+    End Select
+    MsgBox msg, vbExclamation, "Sincronizare K-BOT"
+    KbotAccessPost = False
+
+Iesire:
+    Set js = Nothing
+    Set http = Nothing
+    Exit Function
+
+EROARE:
+    MsgBox "Sincronizare K-BOT: " & Err.Description, vbCritical
+    KbotAccessPost = False
+    Resume Iesire
+End Function
+
+' Numara randurile unui recordset (dynaset) si revine la inceput.
+Private Function KbotNrRanduri(rs As DAO.Recordset) As Long
+    If rs.EOF Then
+        KbotNrRanduri = 0
+    Else
+        rs.MoveLast
+        KbotNrRanduri = rs.RecordCount
+        rs.MoveFirst
+    End If
+End Function
+
+' ----- neschimbate (fara apeluri HTTP) -----
+Public Sub InsertJsonWithRecordset(jsonString As String, tableName As String, Optional ClearTable As Boolean = True)
+Dim CPN As String: CPN = "mdl__Python\InsertJsonWithRecordset"
+On Error GoTo EROARE
+
+Dim jsonDict As Object
+Dim cRows As Collection
+Dim dRow As Dictionary
+Dim fldsDict As Dictionary
+Dim DB As DAO.Database
+Dim rs As DAO.Recordset
+Dim key As Variant
+Dim I As Integer
+
+Set fldsDict = CreateObject("Scripting.Dictionary")
+    fldsDict.CompareMode = TextCompare
+
+Set jsonDict = ParseJson(jsonString)
+If jsonDict Is Nothing Then Err.Raise 1, "", "Nu s-au gasit rezultate pe server!"
+
+Set cRows = jsonDict("data")
+
+Set DB = CurrentDb
+
+If ClearTable Then DB.Execute "DELETE * FROM [" & tableName & "]"
+
+Set rs = DB.OpenRecordset(tableName, dbOpenDynaset)
+
+For I = 0 To rs.Fields.Count - 1
+    fldsDict.Add rs.Fields(I).Name, CStr(rs.Fields(I).Type)
+Next
+
+For Each dRow In cRows
+    rs.AddNew
+    For Each key In dRow.Keys
+        If fldsDict.Exists(key) Then
+            If fldsDict(key) = "8" Then 'date then
+                rs.Fields(key).value = ParseMariaDBDate(dRow(key))
+            Else
+                rs.Fields(key).value = dRow(key)
+            End If
+        Else
+            Debug.Print CPN, "Lipsa camp " & key & " in tabelul " & tableName
+        End If
+    Next key
+    rs.Update
+Next
+
+rs.Close
+
+Iesire:
+Set jsonDict = Nothing
+Set cRows = Nothing
+
+Set rs = Nothing
+Set DB = Nothing
+Exit Sub
+
+EROARE:
+Resume Iesire
+End Sub
+
+Function ParseMariaDBDate(ByVal S As String) As Date
+    ParseMariaDBDate = DateSerial( _
+        CInt(Mid(S, 1, 4)), _
+        CInt(Mid(S, 6, 2)), _
+        CInt(Mid(S, 9, 2)) _
+    ) + TimeSerial( _
+        CInt(Mid(S, 12, 2)), _
+        CInt(Mid(S, 15, 2)), _
+        CInt(Mid(S, 18, 2)) _
+    )
+End Function
+
+'=========================================================================================
+' PARTENERI - INSERT   (ruta /parteneri/syncdb)
+'=========================================================================================
+Public Function PY_INS_Parteneri() As Boolean
+On Error GoTo EROARE
+
+Const API_NAME As String = "/parteneri/syncdb"
+
+Dim rs As DAO.Recordset
+Dim payload As Object
+Dim dataList As Object
+Dim item As Object
+Dim jsonBody As String
+Dim responseText As String
+Dim jsonResponse As Object
+Dim mapping As Object
+Dim trimise As Object
+Dim K As Variant
+
+PY_INS_Parteneri = False
+
+Set rs = CurrentDb.OpenRecordset("SELECT * FROM Parteneri WHERE Nz(IdPartener,0)=0 AND CodPartener<>'XXX'", dbOpenDynaset)
+
+If rs.EOF Then
+    PY_INS_Parteneri = True
+    GoTo Iesire
+End If
+
+If KbotNrRanduri(rs) > KBOT_MAX_RANDURI Then
+    MsgBox "Sunt " & rs.RecordCount & " parteneri de trimis; serverul accepta cel mult " & KBOT_MAX_RANDURI & _
+           " odata. Nu s-a trimis nimic.", vbExclamation, "PY_INS_Parteneri"
+    GoTo Iesire
+End If
+
+Set payload = CreateObject("Scripting.Dictionary")
+Set dataList = New Collection
+Set trimise = CreateObject("Scripting.Dictionary")
+
+payload("db_name") = DC
+
+rs.MoveFirst
+
+Do While Not rs.EOF
+    trimise(CStr(rs!CodPartener)) = True
+
+    Set item = CreateObject("Scripting.Dictionary")
+
+    item("IdUnitate") = globIdUnitate
+    item("CodPartener") = Nz(rs!CodPartener, "")
+    item("DenumirePartener") = Nz(rs!DenumirePartener, "")
+    item("CodFiscal") = Nz(rs!CodFiscal, "")
+    item("ContIBAN") = Nz(rs!ContIBAN, "")
+    item("Banca") = Nz(rs!Banca, "")
+    item("Adresa") = Nz(rs!Adresa, "")
+    item("Tip") = Nz(rs!Tip, "")
+
+    dataList.Add item
+
+    rs.MoveNext
+Loop
+
+Set payload("data") = dataList
+
+jsonBody = mdl_JSON.ConvertToJson(payload)
+
+If Not KbotAccessPost(API_NAME, jsonBody, responseText) Then GoTo Iesire
+
+Set jsonResponse = mdl_JSON.ParseJson(responseText)
+
+If Not jsonResponse.Exists("mapping") Then
+    Err.Raise vbObjectError + 1001, "PY_INS_Parteneri", "Serverul nu a returnat mapping."
+End If
+
+Set mapping = jsonResponse("mapping")
+
+For Each K In trimise.Keys
+
+    If Not mapping.Exists(CStr(K)) Then
+        Err.Raise vbObjectError + 1002, "PY_INS_Parteneri", "Lipseste mapping pentru CodPartener=" & K
+    End If
+
+    rs.FindFirst "CodPartener='" & Replace(CStr(K), "'", "''") & "'"
+
+    If rs.NoMatch Then
+        Err.Raise vbObjectError + 1003, "PY_INS_Parteneri", "Nu gasesc local CodPartener=" & K
+    End If
+
+    rs.Edit
+    rs!IdPartener = CLng(mapping(CStr(K)))
+    rs!Esinc = True
+    rs.Update
+Next K
+
+PY_INS_Parteneri = True
+
+Iesire:
+On Error Resume Next
+If Not rs Is Nothing Then rs.Close
+Set rs = Nothing
+Set payload = Nothing
+Set dataList = Nothing
+Set jsonResponse = Nothing
+Set mapping = Nothing
+Set trimise = Nothing
+Exit Function
+
+EROARE:
+MsgBox "Eroare PY_INS_Parteneri:" & vbCrLf & Err.Description, vbCritical
+Resume Iesire
+End Function
+
+'=========================================================================================
+' PARTENERI - UPSERT   (ruta /parteneri/upsert)
+'=========================================================================================
+Public Function PY_UPSERT_Parteneri() As Boolean
+On Error GoTo EROARE
+
+Const API_NAME As String = "/parteneri/upsert"
+
+Dim rs As DAO.Recordset
+Dim payload As Object
+Dim dataList As Object
+Dim item As Object
+Dim jsonBody As String
+Dim responseText As String
+Dim jsonResponse As Object
+Dim mapping As Object
+Dim trimise As Object
+Dim K As Variant
+
+PY_UPSERT_Parteneri = False
+
+Set rs = CurrentDb.OpenRecordset("SELECT * FROM Parteneri WHERE CodPartener<>'XXX'", dbOpenDynaset)
+
+If rs.EOF Then
+    PY_UPSERT_Parteneri = True
+    GoTo Iesire
+End If
+
+If KbotNrRanduri(rs) > KBOT_MAX_RANDURI Then
+    MsgBox "Sunt " & rs.RecordCount & " parteneri de trimis; serverul accepta cel mult " & KBOT_MAX_RANDURI & _
+           " odata. Nu s-a trimis nimic.", vbExclamation, "PY_UPSERT_Parteneri"
+    GoTo Iesire
+End If
+
+Set payload = CreateObject("Scripting.Dictionary")
+Set dataList = New Collection
+Set trimise = CreateObject("Scripting.Dictionary")
+
+payload("db_name") = DC
+
+rs.MoveFirst
+
+Do While Not rs.EOF
+    trimise(CStr(rs!CodPartener)) = True
+
+    Set item = CreateObject("Scripting.Dictionary")
+
+    item("IdUnitate") = globIdUnitate
+    item("CodPartener") = Nz(rs!CodPartener, "")
+    item("DenumirePartener") = Nz(rs!DenumirePartener, "")
+    item("CodFiscal") = Nz(rs!CodFiscal, "")
+    item("ContIBAN") = Nz(rs!ContIBAN, "")
+    item("Banca") = Nz(rs!Banca, "")
+    item("Adresa") = Nz(rs!Adresa, "")
+    item("Tip") = Nz(rs!Tip, "")
+
+    dataList.Add item
+
+    rs.MoveNext
+Loop
+
+Set payload("data") = dataList
+
+jsonBody = mdl_JSON.ConvertToJson(payload)
+
+If Not KbotAccessPost(API_NAME, jsonBody, responseText) Then GoTo Iesire
+
+Set jsonResponse = mdl_JSON.ParseJson(responseText)
+
+If Not jsonResponse.Exists("mapping") Then
+    Err.Raise vbObjectError + 1001, "PY_UPSERT_Parteneri", "Serverul nu a returnat mapping."
+End If
+
+Set mapping = jsonResponse("mapping")
+
+For Each K In trimise.Keys
+    If Not mapping.Exists(CStr(K)) Then
+        Err.Raise vbObjectError + 1002, "PY_UPSERT_Parteneri", "Lipseste mapping pentru CodPartener=" & K
+    End If
+
+    rs.FindFirst "CodPartener='" & Replace(CStr(K), "'", "''") & "'"
+
+    If rs.NoMatch Then
+        Err.Raise vbObjectError + 1003, "PY_UPSERT_Parteneri", "Nu gasesc local CodPartener=" & K
+    End If
+
+    rs.Edit
+    rs!IdPartener = CLng(mapping(CStr(K)))
+    rs!Esinc = True
+    rs.Update
+Next K
+
+PY_UPSERT_Parteneri = True
+
+Iesire:
+On Error Resume Next
+If Not rs Is Nothing Then rs.Close
+Set rs = Nothing
+Set payload = Nothing
+Set dataList = Nothing
+Set jsonResponse = Nothing
+Set mapping = Nothing
+Set trimise = Nothing
+Exit Function
+
+EROARE:
+MsgBox "Eroare PY_UPSERT_Parteneri:" & vbCrLf & Err.Description, vbCritical
+Resume Iesire
+End Function
+
+'=========================================================================================
+' CLASIFICATII - INSERT   (ruta /clasificatii/insert)
+'=========================================================================================
+Public Function PY_INS_Clasificatii() As Boolean
+On Error GoTo EROARE
+
+Const API_NAME As String = "/clasificatii/insert"
+
+Dim rs As DAO.Recordset
+Dim payload As Object
+Dim dataList As Object
+Dim item As Object
+Dim structura As Object
+Dim Buget As Object
+Dim jsonBody As String
+Dim responseText As String
+Dim jsonResponse As Object
+Dim mapping As Object
+Dim trimise As Object
+Dim K As Variant
+Dim rsR As DAO.Recordset
+Dim colR As Collection
+Dim dicR As Object
+Dim nTot As Long
+
+PY_INS_Clasificatii = False
+
+Set rs = CurrentDb.OpenRecordset("SELECT * FROM Clasificatii WHERE Nz(IdClsfPY,0)=0", dbOpenDynaset)
+
+If rs.EOF Then
+    PY_INS_Clasificatii = True
+    GoTo Iesire
+End If
+
+If KbotNrRanduri(rs) > KBOT_MAX_RANDURI Then
+    MsgBox "Sunt " & rs.RecordCount & " clasificatii de trimis; serverul accepta cel mult " & KBOT_MAX_RANDURI & _
+           " odata. Nu s-a trimis nimic.", vbExclamation, "PY_INS_Clasificatii"
+    GoTo Iesire
+End If
+
+Set payload = CreateObject("Scripting.Dictionary")
+Set dataList = New Collection
+Set trimise = CreateObject("Scripting.Dictionary")
+
+payload("db_name") = DC
+payload("unit_id") = globIdUnitate
+rs.MoveFirst
+
+Do While Not rs.EOF
+    trimise(CStr(rs!IdClsf)) = True
+
+    Set item = CreateObject("Scripting.Dictionary")
+    Set structura = CreateObject("Scripting.Dictionary")
+    Set Buget = CreateObject("Scripting.Dictionary")
+
+    structura("IdClsf") = Null
+    structura("IdClsfAcc") = rs!IdClsf
+    structura("IdUnitate") = globIdUnitate
+
+    structura("Capitol") = Nz(rs!Capitol, "")
+    structura("Subcapitol") = Nz(rs!Subcapitol, "")
+    structura("Articol") = Nz(rs!Articol, "")
+    structura("Alineat") = Nz(rs!Alineat, "")
+    structura("Denumire") = Nz(rs!Denumire, "")
+
+    Buget("IdUnitate") = globIdUnitate
+    Buget("An") = Year(Date)
+
+    Buget("Trim1") = Nz(rs!Trim1, Null)
+    Buget("Trim2") = Nz(rs!Trim2, Null)
+    Buget("Trim3") = Nz(rs!Trim3, Null)
+    Buget("Trim4") = Nz(rs!Trim4, Null)
+
+    ' rectificarile anului curent ale clasificatiei, trimise impreuna cu ea
+    Set colR = New Collection
+    Set rsR = CurrentDb.OpenRecordset( _
+        "SELECT Data, Document, Trim1, Trim2, Trim3, Trim4 FROM Rectificari" & _
+        " WHERE IdClsf = " & CLng(rs!IdClsf) & _
+        " AND Year([Data]) = " & Year(Date) & " AND Document Is Not Null", dbOpenSnapshot)
+    Do While Not rsR.EOF
+        Set dicR = CreateObject("Scripting.Dictionary")
+        dicR("Data") = Format(rsR!Data, "yyyy-mm-dd")
+        dicR("Document") = CStr(rsR!Document)
+        dicR("Trim1") = Nz(rsR!Trim1, Null)
+        dicR("Trim2") = Nz(rsR!Trim2, Null)
+        dicR("Trim3") = Nz(rsR!Trim3, Null)
+        dicR("Trim4") = Nz(rsR!Trim4, Null)
+        colR.Add dicR
+        nTot = nTot + 1
+        rsR.MoveNext
+    Loop
+    rsR.Close: Set rsR = Nothing
+    Set item("rectificari") = colR
+
+    Set item("structura") = structura
+    Set item("buget") = Buget
+
+    dataList.Add item
+    nTot = nTot + 1
+
+    rs.MoveNext
+Loop
+
+Set payload("data") = dataList
+
+' serverul numara clasificatiile SI rectificarile lor
+If nTot > KBOT_MAX_RANDURI Then
+    MsgBox "De trimis: " & dataList.Count & " clasificatii cu rectificarile lor = " & nTot & " randuri; serverul accepta cel mult " & _
+           KBOT_MAX_RANDURI & " odata. Nu s-a trimis nimic.", vbExclamation, "PY_INS_Clasificatii"
+    GoTo Iesire
+End If
+
+jsonBody = mdl_JSON.ConvertToJson(payload)
+
+If Not KbotAccessPost(API_NAME, jsonBody, responseText) Then GoTo Iesire
+
+Set jsonResponse = mdl_JSON.ParseJson(responseText)
+
+If Not jsonResponse.Exists("mapping") Then
+    Err.Raise vbObjectError + 1001, "PY_INS_Clasificatii", "Serverul nu a returnat obiectul mapping."
+End If
+
+Set mapping = jsonResponse("mapping")
+
+For Each K In trimise.Keys
+    If Not mapping.Exists(CStr(K)) Then
+        Err.Raise vbObjectError + 1002, "PY_INS_Clasificatii", "Lipseste mapping pentru IdClsf=" & K
+    End If
+
+    rs.FindFirst "IdClsf=" & CLng(K)
+
+    If rs.NoMatch Then
+        Err.Raise vbObjectError + 1003, "PY_INS_Clasificatii", "Nu gasesc local IdClsf=" & K
+    End If
+
+    rs.Edit
+    rs!IdClsfPY = CLng(mapping(CStr(K)))
+    rs!Esinc = True
+    rs.Update
+Next K
+
+PY_INS_Clasificatii = True
+
+Iesire:
+On Error Resume Next
+If Not rsR Is Nothing Then rsR.Close
+Set rsR = Nothing
+If Not rs Is Nothing Then rs.Close
+Set rs = Nothing
+Set payload = Nothing
+Set dataList = Nothing
+Set jsonResponse = Nothing
+Set mapping = Nothing
+Set trimise = Nothing
+Exit Function
+
+EROARE:
+MsgBox "Eroare PY_INS_Clasificatii:" & vbCrLf & Err.Description, vbCritical
+Resume Iesire
+End Function
+
+'=========================================================================================
+' CLASIFICATII - UPSERT COMPLET   (ruta /clasificatii/clasificatii_complete_upsert)
+'=========================================================================================
+Public Function PY_UPSERT_Clasificatii() As Boolean
+On Error GoTo EROARE
+
+Const API_NAME As String = "/clasificatii/clasificatii_complete_upsert"
+
+Dim rs As DAO.Recordset
+Dim payload As Object
+Dim dataList As Object
+Dim item As Object
+Dim structura As Object
+Dim Buget As Object
+Dim jsonBody As String
+Dim responseText As String
+Dim lipsa As String
+Dim nLipsa As Long
+Dim rsR As DAO.Recordset
+Dim colR As Collection
+Dim dicR As Object
+Dim nTot As Long
+
+PY_UPSERT_Clasificatii = False
+
+Set rs = CurrentDb.OpenRecordset("SELECT * FROM Clasificatii", dbOpenDynaset)
+
+If rs.EOF Then
+    PY_UPSERT_Clasificatii = True
+    GoTo Iesire
+End If
+
+If KbotNrRanduri(rs) > KBOT_MAX_RANDURI Then
+    MsgBox "Sunt " & rs.RecordCount & " clasificatii de trimis; serverul accepta cel mult " & KBOT_MAX_RANDURI & _
+           " odata. Nu s-a trimis nimic.", vbExclamation, "PY_UPSERT_Clasificatii"
+    GoTo Iesire
+End If
+
+Set payload = CreateObject("Scripting.Dictionary")
+Set dataList = New Collection
+
+payload("db_name") = DC
+
+rs.MoveFirst
+
+Do While Not rs.EOF
+    Set item = CreateObject("Scripting.Dictionary")
+    Set structura = CreateObject("Scripting.Dictionary")
+    Set Buget = CreateObject("Scripting.Dictionary")
+
+    If Nz(rs!IdClsfPY, 0) = 0 Then
+        structura("IdClsf") = Null
+    Else
+        structura("IdClsf") = rs!IdClsfPY
+    End If
+
+    structura("IdClsfAcc") = rs!IdClsf
+    structura("IdUnitate") = globIdUnitate
+
+    structura("Capitol") = Nz(rs!Capitol, "")
+    structura("Subcapitol") = Nz(rs!Subcapitol, "")
+    structura("Articol") = Nz(rs!Articol, "")
+    structura("Alineat") = Nz(rs!Alineat, "")
+    structura("Denumire") = Nz(rs!Denumire, "")
+
+    Buget("IdUnitate") = globIdUnitate
+    Buget("An") = Year(Date)
+
+    Buget("Trim1") = Nz(rs!Trim1, Null)
+    Buget("Trim2") = Nz(rs!Trim2, Null)
+    Buget("Trim3") = Nz(rs!Trim3, Null)
+    Buget("Trim4") = Nz(rs!Trim4, Null)
+
+    ' rectificarile anului (aceleasi ca in FX_CLS_Sync_To_KBot), trimise impreuna cu clasificatia
+    Set colR = New Collection
+    Set rsR = CurrentDb.OpenRecordset( _
+        "SELECT Data, Document, Trim1, Trim2, Trim3, Trim4 FROM Rectificari" & _
+        " WHERE IdClsf = " & CLng(rs!IdClsf) & _
+        " AND Year([Data]) = " & Year(Date) & " AND Document Is Not Null", dbOpenSnapshot)
+    Do While Not rsR.EOF
+        Set dicR = CreateObject("Scripting.Dictionary")
+        dicR("Data") = Format(rsR!Data, "yyyy-mm-dd")
+        dicR("Document") = CStr(rsR!Document)
+        dicR("Trim1") = Nz(rsR!Trim1, Null)
+        dicR("Trim2") = Nz(rsR!Trim2, Null)
+        dicR("Trim3") = Nz(rsR!Trim3, Null)
+        dicR("Trim4") = Nz(rsR!Trim4, Null)
+        colR.Add dicR
+        nTot = nTot + 1
+        rsR.MoveNext
+    Loop
+    rsR.Close: Set rsR = Nothing
+    Set item("rectificari") = colR
+
+    Set item("structura") = structura
+    Set item("buget") = Buget
+
+    dataList.Add item
+    nTot = nTot + 1
+
+    rs.MoveNext
+Loop
+
+Set payload("data") = dataList
+
+' serverul numara clasificatiile SI rectificarile lor
+If nTot > KBOT_MAX_RANDURI Then
+    MsgBox "De trimis: " & dataList.Count & " clasificatii cu rectificarile lor = " & nTot & " randuri; serverul accepta cel mult " & _
+           KBOT_MAX_RANDURI & " odata. Nu s-a trimis nimic.", vbExclamation, "PY_UPSERT_Clasificatii"
+    GoTo Iesire
+End If
+
+jsonBody = mdl_JSON.ConvertToJson(payload)
+
+If Not KbotAccessPost(API_NAME, jsonBody, responseText) Then GoTo Iesire
+
+Set dataList = mdl_JSON.ParseJson(responseText)("mapping")
+
+rs.MoveFirst
+
+Do While Not rs.EOF
+    If dataList.Exists(CStr(rs!IdClsf)) Then
+        rs.Edit
+        rs!IdClsfPY = dataList(CStr(rs!IdClsf))
+        rs!Esinc = True
+        rs.Update
+    Else
+        ' serverul nu a intors id pentru aceasta clasificatie: se noteaza si se continua cu urmatoarele
+        nLipsa = nLipsa + 1
+        If nLipsa <= 20 Then lipsa = lipsa & vbCrLf & "  IdClsf " & rs!IdClsf
+    End If
+    rs.MoveNext
+Loop
+
+If nLipsa > 0 Then
+    MsgBox "Serverul nu a returnat un id pentru " & nLipsa & " clasificatii; au ramas nemarcate ca sincronizate:" & _
+           lipsa & IIf(nLipsa > 20, vbCrLf & "  ... si inca " & (nLipsa - 20), ""), vbExclamation, "PY_UPSERT_Clasificatii"
+    PY_UPSERT_Clasificatii = False
+Else
+    PY_UPSERT_Clasificatii = True
+End If
+
+Iesire:
+On Error Resume Next
+If Not rsR Is Nothing Then rsR.Close
+Set rsR = Nothing
+If Not rs Is Nothing Then rs.Close
+Set rs = Nothing
+Set payload = Nothing
+Set dataList = Nothing
+Exit Function
+
+EROARE:
+MsgBox "Eroare PY_UPSERT_Clasificatii: " & Err.Description, vbCritical
+Resume Iesire
+End Function
+
+'=========================================================================================
+' CLASIFICATII - buget si rectificari spre serverul K-BOT   (ruta /clasificatii/sync_acc_kbot)
+' (slice 0103-05). Corelare pe server: Access IdUnitate + Clasificatii.IDClsf = MariaDB
+' Clasificatii.IdUnitate + Clasificatii.IdClsfAcc.
+' Apel:  FX_CLS_Sync_To_KBot Me!IdUnitate, 2026, Me!IDClsf     (o clasificare)
+'        FX_CLS_Sync_To_KBot 76, 2026                           (toate ale unitatii)
+' Serverul accepta cel mult 200 de randuri (clasificatii + rectificari) si O trimitere pe zi pe unitate.
+'=========================================================================================
+Private Function DStr(ByVal V As Variant) As Variant
+    ' data -> text yyyy-mm-dd ; Null ramane Null
+    If IsNull(V) Then DStr = Null Else DStr = Format(CDate(V), "yyyy-mm-dd")
+End Function
+
+Private Function OD(ByVal V As Variant) As Variant
+    ' Double sau Null
+    If IsNull(V) Then OD = Null Else OD = CDbl(V)
+End Function
+
+Public Function FX_CLS_Sync_To_KBot(ByVal vIdUnitate As Long, ByVal vAn As Long, _
+                                    Optional ByVal vIdClsf As Long = 0, _
+                                    Optional ByVal vDataInceput As Variant) As Boolean
+On Error GoTo EROARE
+    Const API_NAME As String = "/clasificatii/sync_acc_kbot"
+    Dim CPN As String:           CPN = "mdl__Python\FX_CLS_Sync_To_KBot"
+    Dim rsC As DAO.Recordset
+    Dim rsR As DAO.Recordset
+    Dim root As Dictionary
+    Dim dicC As Dictionary
+    Dim dicR As Dictionary
+    Dim colC As Collection
+    Dim colR As Collection
+    Dim sql As String
+    Dim n As Long
+    Dim nTot As Long
+    Dim responseText As String
+
+    Set root = New Dictionary
+    root("db_name") = DC()
+    root("id_unitate") = vIdUnitate
+    root("an") = vAn
+    If Not IsMissing(vDataInceput) Then
+        If Not IsNull(vDataInceput) And Not IsEmpty(vDataInceput) Then
+            root("data_inceput") = DStr(vDataInceput)
+        End If
+    End If
+
+    sql = "SELECT IDClsf, Trim1, Trim2, Trim3, Trim4 FROM Clasificatii"
+    If vIdClsf > 0 Then sql = sql & " WHERE IDClsf = " & CLng(vIdClsf)
+    Set rsC = CurrentDb.OpenRecordset(sql, dbOpenSnapshot)
+
+    Set colC = New Collection
+    Do While Not rsC.EOF
+        Set dicC = New Dictionary
+        dicC("IdClsfAcc") = CLng(rsC!IDClsf)
+        dicC("Trim1") = OD(rsC!Trim1)
+        dicC("Trim2") = OD(rsC!Trim2)
+        dicC("Trim3") = OD(rsC!Trim3)
+        dicC("Trim4") = OD(rsC!Trim4)
+
+        Set colR = New Collection
+        Set rsR = CurrentDb.OpenRecordset( _
+            "SELECT Data, Document, Trim1, Trim2, Trim3, Trim4 FROM Rectificari" & _
+            " WHERE IdClsf = " & CLng(rsC!IDClsf) & _
+            " AND Year([Data]) = " & CLng(vAn) & " AND Document Is Not Null", dbOpenSnapshot)
+        Do While Not rsR.EOF
+            Set dicR = New Dictionary
+            dicR("Data") = DStr(rsR!Data)
+            dicR("Document") = CStr(rsR!Document)
+            dicR("Trim1") = OD(rsR!Trim1)
+            dicR("Trim2") = OD(rsR!Trim2)
+            dicR("Trim3") = OD(rsR!Trim3)
+            dicR("Trim4") = OD(rsR!Trim4)
+            colR.Add dicR
+            nTot = nTot + 1
+            Set dicR = Nothing
+            rsR.MoveNext
+        Loop
+        rsR.Close: Set rsR = Nothing
+        dicC.Add "rectificari", colR
+        Set colR = Nothing
+
+        colC.Add dicC
+        Set dicC = Nothing
+        n = n + 1
+        nTot = nTot + 1
+        rsC.MoveNext
+    Loop
+    rsC.Close: Set rsC = Nothing
+
+    If n = 0 Then
+        MsgBox "Nu exista clasificatii de trimis.", vbInformation, CPN
+        GoTo Iesire
+    End If
+
+    ' serverul numara clasificatiile SI rectificarile lor
+    If nTot > KBOT_MAX_RANDURI Then
+        MsgBox "De trimis: " & n & " clasificatii cu rectificarile lor = " & nTot & " randuri; serverul accepta cel mult " & _
+               KBOT_MAX_RANDURI & " odata. Nu s-a trimis nimic." & vbCrLf & _
+               "Trimiteti o singura clasificatie (parametrul vIdClsf) sau restrangeti selectia.", vbExclamation, CPN
+        GoTo Iesire
+    End If
+    root.Add "clasificatii", colC
+
+    If KbotAccessPost(API_NAME, mdl_JSON.ConvertToJson(root), responseText) Then
+        FX_CLS_Sync_To_KBot = True
+        MsgBox "Trimis catre K-BOT: " & n & " clasificatii." & vbCrLf & Left$(responseText, 400), vbInformation, CPN
+    End If
+
+Iesire:
+    Set root = Nothing
+    If Not rsR Is Nothing Then rsR.Close: Set rsR = Nothing
+    If Not rsC Is Nothing Then rsC.Close: Set rsC = Nothing
+    Exit Function
+
+EROARE:
+    MsgBox "Eroare " & CPN & ": " & Err.Description, vbCritical
+    FX_CLS_Sync_To_KBot = False
+    Resume Iesire
+End Function
+'#########################################################################################
+'#  SFARSIT MODUL
+'#########################################################################################
