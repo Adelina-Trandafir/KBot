@@ -33,6 +33,11 @@ Partial Class MainForm
         Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
+        notify = New NotifyIcon(components)
+        mnuTray = New ContextMenuStrip(components)
+        mnuShow = New ToolStripMenuItem()
+        mnuExit = New ToolStripMenuItem()
+        mnuTray.SuspendLayout()
         pnlRoot = New Panel()
         capBar = New KBotCaptionBar()
         pnlStatus = New Panel()
@@ -93,7 +98,7 @@ Partial Class MainForm
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
-        capBar.ShowThemeButton = True
+        capBar.ShowThemeButton = False
         capBar.Size = New Size(1278, 44)
         capBar.TabIndex = 0
         capBar.TabStop = False
@@ -443,6 +448,29 @@ Partial Class MainForm
         viewLogin.TabIndex = 12
         viewLogin.Visible = False
         '
+        ' notify
+        '
+        notify.ContextMenuStrip = mnuTray
+        notify.Text = "KBotAdmin"
+        '
+        ' mnuTray
+        '
+        mnuTray.Items.AddRange(New ToolStripItem() {mnuShow, mnuExit})
+        mnuTray.Name = "mnuTray"
+        mnuTray.Size = New Size(180, 52)
+        '
+        ' mnuShow
+        '
+        mnuShow.Name = "mnuShow"
+        mnuShow.Size = New Size(179, 24)
+        mnuShow.Text = "Afișează fereastra"
+        '
+        ' mnuExit
+        '
+        mnuExit.Name = "mnuExit"
+        mnuExit.Size = New Size(179, 24)
+        mnuExit.Text = "Închide"
+        '
         ' MainForm
         '
         AutoScaleDimensions = New SizeF(96F, 96F)
@@ -462,6 +490,7 @@ Partial Class MainForm
         tlyLeft.ResumeLayout(False)
         tlyRight.ResumeLayout(False)
         pnlViews.ResumeLayout(False)
+        mnuTray.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -488,6 +517,10 @@ Partial Class MainForm
     Friend WithEvents viewServer As ServerView
     Friend WithEvents viewBackups As BackupsView
     Friend WithEvents viewRequests As RequestsView
+    Friend WithEvents notify As NotifyIcon
+    Friend WithEvents mnuTray As ContextMenuStrip
+    Friend WithEvents mnuShow As ToolStripMenuItem
+    Friend WithEvents mnuExit As ToolStripMenuItem
     Friend WithEvents viewPublish As PushFilesView
     Friend WithEvents viewOnce As OnceQueryView
     Friend WithEvents viewLogin As LoginResetView

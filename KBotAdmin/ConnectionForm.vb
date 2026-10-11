@@ -14,6 +14,7 @@ Public Class ConnectionForm
 
     Public Sub New(k_settings As AdminSettings)
         InitializeComponent()
+        Icon = AdminIcon.Value
         _settings = k_settings
         txtHost.Text = k_settings.Host
         txtPort.Text = k_settings.Port.ToString(CultureInfo.InvariantCulture)
@@ -28,6 +29,18 @@ Public Class ConnectionForm
             Return _client
         End Get
     End Property
+
+    Private Const WM_ACTIVATE As Integer = &H6
+    Private Const WM_ACTIVATEAPP As Integer = &H1C
+    Private Const WM_NCACTIVATE As Integer = &H86
+
+    ''' <summary>Coming back to the program (taskbar, Alt+Tab) must show an open message box, not hide it behind this window.</summary>
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        MyBase.WndProc(m)
+        If (m.Msg = WM_ACTIVATEAPP OrElse m.Msg = WM_ACTIVATE OrElse m.Msg = WM_NCACTIVATE) AndAlso IsHandleCreated Then
+            BeginInvoke(New Action(AddressOf ModalGuard.RaiseModal))
+        End If
+    End Sub
 
     Private Async Sub BtnConnect_Click(k_sender As Object, e As EventArgs) Handles btnConnect.Click
         If _connecting Then Return

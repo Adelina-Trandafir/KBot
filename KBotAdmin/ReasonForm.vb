@@ -5,6 +5,7 @@ Public Class ReasonForm
 
     Public Sub New(k_prompt As String)
         InitializeComponent()
+        Icon = AdminIcon.Value
         lblPrompt.Text = k_prompt
     End Sub
 

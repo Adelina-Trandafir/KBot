@@ -22,6 +22,7 @@
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+    <ApplicationIcon>KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -43,6 +44,10 @@
     <ProjectReference Include="..\src\KBot.Common\KBot.Common.vbproj" />
     <ProjectReference Include="..\src\KBot.Theming\KBot.Theming.vbproj" />
     <ProjectReference Include="..\src\KBot.Controls\KBot.Controls.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="KBotAdmin.ico" LogicalName="KBotAdmin.ico" />
   </ItemGroup>
 
   <ItemGroup>

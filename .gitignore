@@ -532,3 +532,6 @@ PYTHON/data/*.mmdb
 *.mdb
 /_push
 /Surse/EF_EXEMPLE
+
+# KBotAdmin local publish (owner only, never delivered; see publish-admin.ps1)
+/_Admin

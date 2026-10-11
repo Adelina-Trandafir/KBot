@@ -38,6 +38,7 @@ Public Class AccountForm
     Public Sub New(k_roles As IReadOnlyList(Of String), k_databases As IReadOnlyList(Of String),
                    k_fixedUn As String, k_preselectDb As String, k_currentRole As String)
         InitializeComponent()
+        Icon = AdminIcon.Value
         _roles = k_roles
         _databases = k_databases
         For Each k_name As String In k_roles

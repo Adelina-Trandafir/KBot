@@ -19,6 +19,10 @@ Public Class MainForm
 
     Public Sub New(k_client As AdminClient)
         InitializeComponent()
+        Icon = AdminIcon.Value
+        capBar.IconImage = AdminIcon.Small()
+        notify.Icon = AdminIcon.Value
+        notify.Visible = True
         _client = k_client
         _context = New AdminContext(k_client)
         AddHandler _context.StatusChanged, AddressOf OnStatusChanged
@@ -41,6 +45,80 @@ Public Class MainForm
         For Each k_view As Control In _views.Values
             DirectCast(k_view, IAdminView).Attach(_context)
         Next
+    End Sub
+
+    ' ------------------------------------------------------------------
+    ' The window closes into the tray; only the tray menu closes the program
+    ' ------------------------------------------------------------------
+
+    Private Const WM_ACTIVATE As Integer = &H6
+    Private Const WM_ACTIVATEAPP As Integer = &H1C
+    Private Const WM_NCACTIVATE As Integer = &H86
+
+    Private _exiting As Boolean
+    Private _tipShown As Boolean
+
+    ''' <summary>Coming back to the program (taskbar, Alt+Tab) must show an open message box, not hide it behind this window.</summary>
+    Protected Overrides Sub WndProc(ByRef m As Message)
+        MyBase.WndProc(m)
+        If (m.Msg = WM_ACTIVATEAPP OrElse m.Msg = WM_ACTIVATE OrElse m.Msg = WM_NCACTIVATE) AndAlso IsHandleCreated Then
+            BeginInvoke(New Action(AddressOf ModalGuard.RaiseModal))
+        End If
+    End Sub
+
+    Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
+        MyBase.OnFormClosing(e)
+        Try
+            ' The X button and Alt+F4 only hide the window; Windows shutting down, or the tray's «Închide», really close it.
+            If e.Cancel OrElse _exiting OrElse e.CloseReason <> CloseReason.UserClosing Then Return
+            e.Cancel = True
+            Hide()
+            ShowInTaskbar = False
+            If Not _tipShown Then
+                _tipShown = True
+                notify.ShowBalloonTip(2500, "KBotAdmin", "Rulează în zona de notificări. Clic pe iconiță pentru meniu.", ToolTipIcon.Info)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.OnFormClosing", ex)
+        End Try
+    End Sub
+
+    Private Sub ShowFromTray()
+        Try
+            ShowInTaskbar = True
+            Show()
+            If WindowState = FormWindowState.Minimized Then WindowState = FormWindowState.Normal
+            Activate()
+            BringToFront()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowFromTray", ex)
+        End Try
+    End Sub
+
+    Private Sub Notify_MouseUp(k_sender As Object, e As MouseEventArgs) Handles notify.MouseUp
+        Try
+            ' The icon's menu opens on a left click too (WinForms opens it on the right click only).
+            If e.Button = MouseButtons.Left Then
+                GetType(NotifyIcon).GetMethod("ShowContextMenu", Reflection.BindingFlags.Instance Or Reflection.BindingFlags.NonPublic).Invoke(notify, Nothing)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.Notify_MouseUp", ex)
+        End Try
+    End Sub
+
+    Private Sub MnuShow_Click(k_sender As Object, e As EventArgs) Handles mnuShow.Click
+        ShowFromTray()
+    End Sub
+
+    Private Sub MnuExit_Click(k_sender As Object, e As EventArgs) Handles mnuExit.Click
+        Try
+            If busy.Running AndAlso Not UiRun.Confirm("O operație rulează încă pe server. Închid programul oricum?", "KBotAdmin") Then Return
+            _exiting = True
+            notify.Visible = False
+            Close()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.MnuExit_Click", ex)
+        End Try
     End Sub
 
     Protected Overrides Async Sub OnShown(e As EventArgs)

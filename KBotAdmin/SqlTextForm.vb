@@ -6,6 +6,7 @@ Public Class SqlTextForm
 
     Public Sub New(k_name As String, k_size As Long, k_text As String, k_shownBytes As Long, k_truncated As Boolean)
         InitializeComponent()
+        Icon = AdminIcon.Value
         Text = k_name
         txtSql.Text = k_text.Replace(vbCr, String.Empty).Replace(vbLf, vbCrLf)
         lblInfo.Text = k_name & "   -   " & UiRun.FormatBytes(k_size) &
