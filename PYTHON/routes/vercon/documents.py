@@ -83,6 +83,20 @@ def _exists(repo, table, pk, value, active=False):
     return bool(repo.select(table, where, columns=(pk,)))
 
 
+_NOT_IN_ACCOUNT = 'Produsul nu face parte din contul ales. Contul unui produs se atribuie în nomenclatorul Produse.'
+
+
+def _account_of_product(repo, product):
+    """The account (category) a product belongs to; None when it has none."""
+    rows = repo.select('VC_Produse', {'ID': product}, columns=('IdMasina',)) if product is not None else []
+    return rows[0]['IdMasina'] if rows else None
+
+
+def _account_of_variant(repo, variant):
+    rows = repo.select('VC_ProduseP', {'IdProdus': variant}, columns=('ID',)) if variant is not None else []
+    return _account_of_product(repo, rows[0]['ID']) if rows else None
+
+
 def _line_key(raw, index):
     return str(raw.get('key') if isinstance(raw, dict) and raw.get('key') not in (None, '') else index)
 
@@ -362,6 +376,8 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None):
         if header.get(field) not in (None, '') and (value is None or not _exists(repo, table, pk, value)):
             errors['h.' + field] = 'Valoarea aleasă nu există în această gestiune.'
         cols[field] = value
+    if family == 'nir' and cols['IdMasina'] is None and 'h.IdMasina' not in errors:
+        errors['h.IdMasina'] = 'Alegeți categoria / contul.'
     if family == 'storno':
         cols['IdStorno'] = source['IdIntrare'] if source else None
         if source and cols['DataFc'] and source['DataFc'] and cols['DataFc'] < source['DataFc'].date():
@@ -400,6 +416,8 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None):
             if product is None or not _exists(repo, 'VC_Produse', 'ID', product, True):
                 bad('product', 'Alegeți produsul.')
             line['product'] = product
+            if product is not None and cols['IdMasina'] is not None and _account_of_product(repo, product) != cols['IdMasina']:
+                bad('product', _NOT_IN_ACCOUNT)
             line['COD'] = _text(raw.get('code'), 'l|%s|code' % key, errors, True, 255)
             line['data_intrarii'] = protocol.to_date(raw.get('data_intrarii'), 'Data intrării', None, errors, 'l|%s|data_intrarii' % key)
             dnf, df = _int(raw.get('DNF')), _int(raw.get('DF') if raw.get('DF') not in (None, '') else 0)
@@ -415,6 +433,8 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None):
             if variant is None or not _exists(repo, 'VC_ProduseP', 'IdProdus', variant, True):
                 bad('variant', 'Alegeți produsul.')
             line['variant'] = variant
+            if variant is not None and cols['IdMasina'] is not None and _account_of_variant(repo, variant) != cols['IdMasina']:
+                bad('variant', _NOT_IN_ACCOUNT)
         if cant is not None and pret is not None and (rate is not None or family == 'storno'):
             try:
                 if family == 'nir':
@@ -713,7 +733,7 @@ def create_bc(cursor, repo, ctx, exercise, body, request_key, request_id):
     header = body.get('header') if isinstance(body.get('header'), dict) else {}
     errors = {}
     cols = _bon_header(cursor, repo, ctx, exercise, header, errors)
-    lines = _clean_bon_lines(repo, ctx, body.get('lines'), errors)
+    lines = _clean_bon_lines(repo, ctx, body.get('lines'), errors, cols.get('IdMasina'))
     _fail(errors)
     number, text = _assign_number(cursor, ctx, 'bc', header.get('Numar'), errors)
     _fail(errors)
@@ -728,7 +748,7 @@ def create_bc(cursor, repo, ctx, exercise, body, request_key, request_id):
     return {'id': doc_id, 'number': text}
 
 
-def _clean_bon_lines(repo, ctx, raw_lines, errors):
+def _clean_bon_lines(repo, ctx, raw_lines, errors, account=None):
     """Lines of a consumption bon: a variant and a quantity; the price is the variant's price with VAT AT SAVE TIME (the
     line keeps it afterwards, whatever the nomenclature does)."""
     raw_lines = raw_lines if isinstance(raw_lines, list) else []
@@ -744,6 +764,9 @@ def _clean_bon_lines(repo, ctx, raw_lines, errors):
         variant, cant = _int(raw.get('variant')), _dec(raw.get('Cant'))
         if variant is None or variant not in prices:
             errors['l|%s|variant' % key] = 'Alegeți produsul.'
+            continue
+        if account is not None and _account_of_variant(repo, variant) != account:
+            errors['l|%s|variant' % key] = _NOT_IN_ACCOUNT
             continue
         if cant is None or cant <= 0:
             errors['l|%s|Cant' % key] = 'Cantitatea trebuie să fie pozitivă.'
@@ -762,7 +785,7 @@ def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
     errors = {}
     cols = _bon_header(cursor, repo, ctx, exercise, header, errors)
     old_lines = _all(cursor, 'SELECT ID, IdProdus, Cant, PUTVA FROM VC_Iesiri WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdBonConsum=%s', (*_scope(ctx), doc_id))
-    lines = _clean_bon_lines(repo, ctx, body.get('lines'), errors)
+    lines = _clean_bon_lines(repo, ctx, body.get('lines'), errors, cols.get('IdMasina'))
     _fail(errors)
     text = before['NumarBC']
     manual = header.get('Numar')

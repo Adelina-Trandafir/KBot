@@ -244,6 +244,16 @@ export class DataGrid {
 
   getSelectedRow() { return this._selected; }
 
+  /** Optional explicit document totals, independent of filtering. Values are already formatted by the caller. */
+  setFooter({ values, action, caption } = {}) {
+    if (values !== undefined) this._opts.footerValues = values;
+    if (action !== undefined) this._opts.footerAction = action;
+    if (caption !== undefined) this._opts.footerCaption = caption;
+    this._buildFooter();
+  }
+
+  setBusy(on) { this._root.inert = !!on; this._root.setAttribute('aria-busy', String(!!on)); }
+
   /** Sizes the columns that have no explicit width from the first rows. */
   autoSizeColumns() {
     this._autoSize(true);
@@ -742,7 +752,7 @@ export class DataGrid {
   _buildFooter() {
     const cols = this._visibleColumns();
     const hasAggregate = cols.some((c) => c.aggregate);
-    const show = this._opts.footer && (hasAggregate || this._opts.footerCaption || this._opts.footerAction);
+    const show = this._opts.footer && (hasAggregate || this._opts.footerCaption || this._opts.footerAction || this._opts.footerValues);
     this._foot.hidden = !show;
     this._foot.textContent = '';
     if (!show) return;
@@ -750,13 +760,18 @@ export class DataGrid {
     const rows = this._items.filter((i) => i.kind === 'row').map((i) => i.row);
     cols.forEach((col, ci) => {
       let text = '';
-      if (col.aggregate) text = this._aggregateText(col, rows);
+      const actionSpan = Math.max(1, Math.min(cols.length, this._opts.footerAction?.span || 1));
+      if (this._opts.footerAction && ci > 0 && ci < actionSpan) return;
+      if (this._opts.footerValues && Object.hasOwn(this._opts.footerValues, col.key)) text = this._opts.footerValues[col.key];
+      else if (col.aggregate) text = this._aggregateText(col, rows);
       else if (ci === 0 && this._opts.footerCaption) text = this._opts.footerCaption.replace('{0}', String(rows.length));
       const cell = this._cell(col, text, 'is-foot');
       if (ci === 0 && this._opts.footerAction) {
         const action = this._opts.footerAction;
         const button = el('button', 'dgv__footer-action', action.label);
+        cell.style.width = `${cols.slice(0, actionSpan).reduce((sum, item) => sum + this._w(item), 0)}px`;
         button.type = 'button';
+        button.disabled = !!action.disabled;
         if (action.title) { button.title = action.title; button.setAttribute('aria-label', action.title); }
         if (action.active) button.classList.add('is-active');
         if (action.menu) button.setAttribute('aria-haspopup', 'menu');

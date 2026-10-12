@@ -15,3 +15,11 @@ Stare: **IMPLEMENTAT_LOCAL**. Doar sintaxa verificata; **nimic rulat**, nimic va
 ## Presupuneri si neverificat
 - Stocul se calculeaza pe exercitiu (un exercitiu are stoc initial propriu, cum le creeaza inchiderea anului la VC08); intre exercitii nu se aduna.
 - Nimic rulat; nu s-a masurat timpul verificarii pe un volum real (Alimente are mii de linii: verificarea filtreaza pe variantele atinse).
+
+## Corectie 12.10.2026 — stocul pe cont
+Descoperit in Access (`QBC.sql`, `QBP.sql`): **un produs apartine unui cont (categoria lui, `VC_Produse.IdMasina`)** si un document are un cont; pe un document pot sta numai produsele contului lui. Pana la corectie, serverul si pagina nu tineau cont de asta (ofereau toate produsele).
+- Serverul refuza acum, cu mesaj pe linie, un produs care nu e din contul documentului: NIR (contul recepției este obligatoriu), BC (contul bonului), BP (contul de intrare). Retur si storno mostenesc contul documentului sursa.
+- Pagina ofera in combobox **doar produsele contului ales in antet**; la schimbarea contului scoate din linii produsele care nu mai se potrivesc (cu mesaj).
+- Nomenclatorul Produse cere acum categoria (contul) produsului.
+- Stocul ramane calculat pe varianta: fiindca o varianta apartine unui singur cont, stocul pe varianta **este** stocul pe cont. Ramane o diferenta fata de Access doar pentru istoric inconsistent (un BC cu alt cont decat al produsului): Access nu l-ar fi scazut din stocul contului, noi il scadem.
+- Nerulat; doar sintaxa verificata.

@@ -6,7 +6,8 @@ import { openMenu } from '../adechit/menu.js';
 import { startSessionTimer } from '../adechit/session.js';
 import { Combobox } from '../components/combobox/combobox.js';
 import { confirmBox } from '../utils/confirm-box.js';
-import { showMessage } from '../portal/messages.js';
+import { showMessage, messageHistory } from '../portal/messages.js';
+import { installLayouts } from '../portal/layouts.js';
 import { createApi, portalToken, toPortal } from './api.js';
 import { createDraft } from './draft.js';
 import { mountEditor } from './editor.js';
@@ -17,6 +18,7 @@ import { mountNomenclator, mountSettings } from './nomenclatoare.js';
 import { createLock } from './lock.js';
 import { createSaver } from './save.js';
 import { writePreference } from './documents.js';
+import { el, preview, scope } from './ui.js';
 
 const $ = (k_id) => document.getElementById(k_id);
 const lifetime = new AbortController();   // everything below is bound to this signal
@@ -28,8 +30,11 @@ const api = createApi({
   extraHeaders: () => ({ ...(lock?.token ? { 'X-Vercon-Lock': lock.token } : {}), ...(state.ctx ? { 'X-Vercon-Version': state.ctx.version } : {}) }),
 });
 lock = createLock({ api, signal: lifetime.signal, getUnit: () => state.unit,
-  onLost: (k_message) => showMessage($('vc-message'), `${k_message} Datele dvs. au rămas în formular, dar nu mai pot fi salvate fără o nouă ocupare.`, 'error') });
+  onLost: (k_message) => { $('vc-access').textContent = 'Consultare • acces pierdut'; showMessage($('vc-message'), `${k_message} Datele dvs. au rămas în formular, dar nu mai pot fi salvate fără o nouă ocupare.`, 'error'); } });
 const combos = {};
+const pageUi = scope();
+let formSequence = 0, formLoading = false;
+installLayouts();
 
 const paint = (k_kind, k_text) => {
   const k_host = $('vc-state');
@@ -86,15 +91,17 @@ function applyContext(k_ctx) {
 }
 
 function paintType(k_ctx) {
-  const k_box = $('vc-type-box'); const k_select = $('vc-type');
+  const k_box = $('vc-type-box'); const k_select = combos.type;
   const k_gest = k_ctx.selection.gestiune;
   k_box.hidden = !k_gest;
   if (!k_gest) return;
   const k_types = ['MATERIALE', 'ALIMENTE', 'OI', 'MF'];
-  k_select.replaceChildren(...k_types.map((k_t) => Object.assign(document.createElement('option'), { value: k_t, textContent: k_t, selected: k_t === k_ctx.selection.type })));
+  k_select.options.staticData = k_types.map((k_t) => ({ value: k_t, label: k_t }));
+  k_select.setValue(k_ctx.selection.type, k_ctx.selection.type);
   // After the first data the type is immutable; before it, the operator may still set it.
-  k_select.disabled = k_ctx.type_locked || !k_ctx.operations.includes('configure');
-  k_select.title = k_ctx.type_locked ? 'Tipul nu se mai poate schimba: gestiunea conține date.' : 'Tipul se poate alege cât timp gestiunea nu are date.';
+  k_select.setEnabled(!k_ctx.type_locked && k_ctx.operations.includes('configure'));
+  k_select.input.title = k_ctx.type_locked ? 'Tipul nu se mai poate schimba: gestiunea conține date.' : 'Tipul se poate alege cât timp gestiunea nu are date.';
+  $('vc-access').textContent = lock.holds(k_ctx.selection) ? '🔒 Acces exclusiv' : 'Consultare';
 }
 
 function paintMenu(k_ctx) {
@@ -108,8 +115,14 @@ function paintMenu(k_ctx) {
   }
   for (const [k_group, k_items] of k_groups) {
     const k_div = document.createElement('div'); k_div.className = 'vc-menu__group';
-    k_div.append(Object.assign(document.createElement('b'), { textContent: k_group }));
-    for (const k_item of k_items) {
+    const k_config = k_group === 'Configurari';
+    if (k_config) {
+      const button = el('button', { type: 'button', textContent: '▤ Nomenclatoare', 'aria-haspopup': 'menu' });
+      button.addEventListener('click', () => openMenu(button, k_items.map((item) => ({ icon: '▤', label: item.label, disabled: !item.enabled, run: () => openForm(item.key).catch(report) })), { label: 'Nomenclatoare și setări' }), { signal: lifetime.signal });
+      if (k_items.some((item) => item.key === state.form)) button.setAttribute('aria-current', 'true');
+      k_div.append(button);
+    }
+    for (const k_item of k_config ? [] : k_items) {
       const k_btn = Object.assign(document.createElement('button'), { type: 'button', textContent: k_item.label, disabled: !k_item.enabled, title: k_item.reason || '' });
       if (state.form === k_item.key) k_btn.setAttribute('aria-current', 'true');
       k_btn.addEventListener('click', () => openForm(k_item.key).catch(report), { signal: lifetime.signal });
@@ -126,6 +139,8 @@ async function allowLeave() {
 }
 
 function closeForm() {
+  ++formSequence;
+  pageUi.clear();
   state.editor?.destroy(); state.editor = null; state.draft = null; state.form = null; state.columns = null; state.saver = null;
   $('vc-work').hidden = true; $('vc-work').replaceChildren();
 }
@@ -139,11 +154,16 @@ async function change(k_wanted) {
 
 // ---- forms ------------------------------------------------------------------------------------------------------
 async function openForm(k_key) {
+  if (formLoading) return;
   if (state.form === k_key) return;
   if (!(await allowLeave())) return;
+  if (formLoading) return;
+  formLoading = true; $('vc-menu').inert = true;
+  try {
+  const opening = ++formSequence;
   const k_version = state.ctx.version; const k_sel = state.ctx.selection;
   const k_open = await api(`/api/vercon/forms/${encodeURIComponent(k_key)}/open?${query(k_sel)}`);
-  if (k_open.version !== state.ctx.version || k_version !== state.ctx.version) return;   // the context moved on
+  if (opening !== formSequence || k_open.version !== state.ctx.version || k_version !== state.ctx.version) return;
   if (k_open.write && !lock.holds(k_sel)) {
     try { await lock.acquire(k_sel); }
     catch (k_error) {
@@ -152,12 +172,14 @@ async function openForm(k_key) {
       if (!(await confirmBox(`${k_error.message} Dacă este o altă filă a dvs., o puteți prelua (cealaltă filă pierde accesul).`, { title: 'Gestiune ocupată', yes: 'Preiau', no: 'Renunț' }))) return;
       await lock.acquire(k_sel, true);
     }
-    if (state.ctx.version !== k_version) { await lock.release(); return; }
+    if (opening !== formSequence || state.ctx.version !== k_version) { await lock.release(); return; }
   }
   closeForm();
   state.form = k_key; state.columns = k_open.columns; state.revision = 1;
+  $('vc-search').value = '';
   writePreference(`form.${k_sel.type}`, k_key);               // per type: an MF choice is never applied to Alimente
   paintMenu(state.ctx);
+  paintType(state.ctx);
   const k_work = $('vc-work'); k_work.hidden = false;
   if (k_open.nom?.length || k_key === 'setari') {   // nomenclatures and gestiune settings (VC06-01)
     const k_args = { api, sel: () => state.ctx.selection, signal: lifetime.signal };
@@ -178,7 +200,7 @@ async function openForm(k_key) {
     return;
   }
   if (!k_open.columns.lines.length) {
-    k_work.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Această secțiune se completează în feliile următoare.' }));
+      k_work.replaceChildren(el('section', { className: 'vc-empty-page' }, el('h3', { textContent: state.ctx.menu.find((item) => item.key === k_key)?.label || 'VERCON' }), el('p', { textContent: 'Această secțiune este în pregătire.' })));
     return;
   }
   state.draft = createDraft({ unit: state.unit, subunit: k_sel.subunit, gestiune: k_sel.gestiune, year: k_sel.year, form: k_key });
@@ -190,6 +212,7 @@ async function openForm(k_key) {
     onSaved: (k_revision) => { if (k_revision != null) state.revision = k_revision; },
     simulate: () => new URLSearchParams(location.search).get('simulate') || '',
   });
+  } finally { formLoading = false; $('vc-menu').inert = false; }
 }
 
 // ---- start ------------------------------------------------------------------------------------------------------
@@ -208,6 +231,7 @@ async function start() {
     const k_who = await k_me.json().catch(() => ({}));
     if (!k_who.db_name) { toPortal(false); return; }
     state.unit = k_who.db_name;
+    $('vc-unit-label').textContent = `Unitate: ${k_who.db_name}`;
     $('vc-context').textContent = k_who.email || '';
     await loadContext({});
   } catch (k_error) {
@@ -222,25 +246,46 @@ function bind() {
   makeCombo('subunit', 'vc-subunit-combo', 'Subunitate', (k_v) => { if (String(k_v) !== String(k_sel().subunit)) change({ subunit: k_v }).catch(report); });
   makeCombo('gestiune', 'vc-gestiune-combo', 'Gestiune', (k_v) => { if (String(k_v) !== String(k_sel().gestiune)) change({ subunit: k_sel().subunit, gestiune: k_v }).catch(report); });
   makeCombo('year', 'vc-year-combo', 'An', (k_v) => { if (String(k_v) !== String(k_sel().year)) change({ subunit: k_sel().subunit, gestiune: k_sel().gestiune, year: k_v }).catch(report); });
-  $('vc-type').addEventListener('change', async (k_event) => {
+  makeCombo('type', 'vc-type-combo', 'Tip', async (k_type) => {
     try {
       if (!(await allowLeave())) { applyContext(state.ctx); return; }
-      await api('/api/vercon/gestiune/type', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subunit: k_sel().subunit, gestiune: k_sel().gestiune, type: k_event.target.value }) });
+      await api('/api/vercon/gestiune/type', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subunit: k_sel().subunit, gestiune: k_sel().gestiune, type: k_type }) });
       closeForm(); await loadContext(k_sel());
     } catch (k_error) { report(k_error); applyContext(state.ctx); }
+  });
+  $('vc-search').addEventListener('input', () => state.editor?.search?.($('vc-search').value), { signal: lifetime.signal });
+  $('vc-unit').addEventListener('click', async () => { if (await allowLeave()) { await lock.release(); toPortal(false); } }, { signal: lifetime.signal });
+  $('vc-theme').addEventListener('click', () => {
+    const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('kbot-portal-theme', theme); } catch (_) { /* The theme still applies to this visit. */ }
+    document.querySelectorAll('.vc-dgv > .dgv').forEach((node) => { node.dataset.theme = theme === 'dark' ? 'dark' : 'modern'; });
   }, { signal: lifetime.signal });
+  const help = () => preview('Ajutor VERCON', [{ title: 'Lucrul cu documente', columns: [{ key: 'step', title: 'Acțiune', width: 200 }, { key: 'text', title: 'Descriere', width: 580 }], rows: [
+    { step: 'Context', text: 'Alegeți subunitatea, gestiunea și exercițiul înainte de a deschide o operație.' },
+    { step: 'Consultare', text: 'Alegeți documentul din arborele din dreapta. ⋮ deschide opțiunile documentului.' },
+    { step: 'Adaugă / Modifică', text: 'Arborele se ascunde. Click sau Enter editează o celulă; Tab confirmă și trece la următoarea.' },
+    { step: 'Salvează', text: 'Salvează întregul document. Valorile și disponibilul se validează pe server.' },
+    { step: 'Renunță', text: 'Abandonează modificările nesalvate și revine la consultare.' },
+    { step: 'Lista de alimente', text: 'Adaugă rând în secțiunea BC asociază un bon existent, fără să repete consumul.' },
+  ] }], pageUi);
+  $('vc-help').addEventListener('click', () => openMenu($('vc-help'), [
+    { icon: 'ⓘ', label: 'Cum lucrez cu VERCON', run: help },
+    { icon: '◷', label: 'Mesaje din sesiune', run: () => preview('Mesaje VERCON', [{ title: 'Mesaje', columns: [
+      { key: 'at', title: 'Data', width: 210 }, { key: 'level', title: 'Tip', width: 90 }, { key: 'message', title: 'Mesaj', width: 600 },
+    ], rows: messageHistory() }], pageUi) },
+  ]), { signal: lifetime.signal });
   $('vc-apps').addEventListener('click', () => {
     openMenu($('vc-apps'), [
       { icon: '🏢', label: $('vc-context').textContent || 'Contul curent', disabled: true },
-      { icon: '🤖', label: 'K-BOT', rule: true, run: () => { window.location.href = '/portal'; } },
-      { icon: '📋', label: 'ADECHIT', run: () => { window.location.href = '/adechit'; } },
+      { icon: '🤖', label: 'K-BOT', rule: true, run: async () => { if (await allowLeave()) { await lock.release(); window.location.href = '/portal'; } } },
+      { icon: '📋', label: 'ADECHIT', run: async () => { if (await allowLeave()) { await lock.release(); window.location.href = '/adechit'; } } },
       { icon: '📒', label: 'Avacont · în curând', disabled: true },
     ], { label: 'Aplicații', below: $('vc-apps').closest('header') });
   }, { signal: lifetime.signal });
-  if (portalToken()) startSessionTimer({ token: portalToken, host: $('vc-session-timer'), onExpired: logoutNow });
+  const stopTimer = portalToken() ? startSessionTimer({ token: portalToken, host: $('vc-session-timer'), onExpired: logoutNow }) : null;
   // leaving the page with unsaved work: the browser asks; then every request and listener stops
   addEventListener('beforeunload', (k_event) => { if (state.draft?.dirty || state.editor?.isDirty?.()) { k_event.preventDefault(); k_event.returnValue = ''; } }, { signal: lifetime.signal });
-  addEventListener('pagehide', () => { lock.release(true); state.editor?.destroy(); Object.values(combos).forEach((k_c) => k_c.destroy?.()); lifetime.abort(); }, { once: true });
+  addEventListener('pagehide', () => { stopTimer?.(); pageUi.clear(); lock.release(true); state.editor?.destroy(); Object.values(combos).forEach((k_c) => k_c.destroy?.()); lifetime.abort(); }, { once: true });
 }
 
 bind();

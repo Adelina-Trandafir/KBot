@@ -44,11 +44,14 @@ export const editing = {
     this._edit = state;
     this._activeKey = key;
     if (column.editor === 'list') {
-      state.combo = new Combobox(host, { staticData: column.options || [],
+      const items = typeof column.options === 'function' ? column.options(row) : (column.options || []);
+      state.combo = new Combobox(host, { staticData: items, readonly: !column.searchable,
+        onSearch: column.onSearch ? (query) => column.onSearch(query, row) : async (query) => items.filter((item) => String(item.label || item.text || '').toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
         onSelect: (value) => { state.raw = value; state.value = value; } });
-      const selected = (column.options || []).find((item) => item.value === row[key]);
-      state.combo.setValue(row[key], selected?.text ?? String(row[key] ?? ''));
+      const selected = items.find((item) => String(item.value) === String(row[key]));
+      state.combo.setValue(row[key], selected?.label ?? selected?.text ?? String(row[key] ?? ''));
       state.input = state.combo.input;
+      if (column.searchable) state.input.addEventListener('input', () => { state.value = null; }, { signal: state.abort.signal });
     } else {
       state.input = document.createElement('input');
       state.input.type = column.editor === 'checkbox' ? 'checkbox' : column.editor === 'date' ? 'date' : 'text';

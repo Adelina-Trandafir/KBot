@@ -82,3 +82,5 @@ node VERCON\tools\mapare.js
 ```
 
 Scripturile citesc doar `VERCON_ACCESS` (care este ignorat de Git); iesirile intermediare sunt in `VERCON/tools/out/`.
+
+**Corectie 12.10.2026 — stocul pe cont:** un produs apartine unui cont si pe un document stau numai produsele contului lui (NIR, BC, BP); pagina ofera doar acele produse, serverul le refuza pe celelalte; BP are etichetele conturilor corectate (Cont de intrare / Cont primitor). Vezi worklog VC06-03 si VC07-02. Doar sintaxa verificata; nerulat.

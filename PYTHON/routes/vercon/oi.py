@@ -22,7 +22,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from . import numeric, protocol
-from .documents import (_all, _dec, _exists, _fail, _int, _line_key, _money, _name_join, _one, _scope, _text, _iso,
+from .documents import (_NOT_IN_ACCOUNT, _account_of_variant, _all, _dec, _exists, _fail, _int, _line_key, _money, _name_join, _one, _scope, _text, _iso,
                         _MAX_LINES, priced_line, total_of)
 from .nomenclatoare import NomError
 
@@ -244,7 +244,7 @@ def _cleaned_header(cursor, repo, ctx, family, header, errors):
 
 
 # ---- BP (handover) ---------------------------------------------------------------------------------------------------
-def _bp_lines(repo, ctx, raw_lines, errors):
+def _bp_lines(repo, ctx, raw_lines, errors, account=None):
     raw_lines = raw_lines if isinstance(raw_lines, list) else []
     if not raw_lines:
         errors['lines'] = 'Bonul nu are nicio linie.'
@@ -256,6 +256,9 @@ def _bp_lines(repo, ctx, raw_lines, errors):
         rows = repo.select('VC_ProduseP', {'IdProdus': variant, 'Activ': 1}) if variant is not None else []
         if not rows:
             errors['l|%s|variant' % key] = 'Alegeți produsul.'
+            continue
+        if account is not None and _account_of_variant(repo, variant) != account:
+            errors['l|%s|variant' % key] = _NOT_IN_ACCOUNT
             continue
         if cant is None or cant <= 0:
             errors['l|%s|Cant' % key] = 'Cantitatea trebuie să fie pozitivă.'
@@ -290,7 +293,7 @@ def _write_bp(cursor, repo, ctx, doc_id, number, header, lines, bc_id, now):
 def create_bp(cursor, repo, ctx, exercise, body, request_key, request_id):
     errors = {}
     header = _cleaned_header(cursor, repo, ctx, 'bp', body.get('header'), errors)
-    lines = _bp_lines(repo, ctx, body.get('lines'), errors)
+    lines = _bp_lines(repo, ctx, body.get('lines'), errors, header.get('IdMasinaP'))
     _fail(errors)
     number = _number(cursor, ctx, 'bp', (body.get('header') or {}).get('Numar'), errors)
     _fail(errors)
@@ -325,7 +328,7 @@ def edit_bp(cursor, repo, ctx, exercise, doc_id, body, request_id):
     _guard(cursor, ctx, 'bp', doc_id, rows)
     errors = {}
     header = _cleaned_header(cursor, repo, ctx, 'bp', body.get('header'), errors)
-    lines = _bp_lines(repo, ctx, body.get('lines'), errors)
+    lines = _bp_lines(repo, ctx, body.get('lines'), errors, header.get('IdMasinaP'))
     _fail(errors)
     number = rows[0]['NRBP']
     manual = (body.get('header') or {}).get('Numar')

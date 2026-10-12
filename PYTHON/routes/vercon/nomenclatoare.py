@@ -49,7 +49,7 @@ SPECS = {
         'label': 'Produse', 'table': 'VC_Produse', 'pk': 'ID', 'title': 'DenumireP', 'stamp': True,
         'fields': [
             _text('DenumireP', 'Denumire produs', 255, True), _text('UM', 'UM', 50), _text('CPV', 'CPV', 255),
-            {'key': 'IdMasina', 'label': 'Categorie / cont', 'type': 'ref', 'ref': 'categorii', 'required': False},
+            {'key': 'IdMasina', 'label': 'Categorie / cont', 'type': 'ref', 'ref': 'categorii', 'required': True},
             _text('CC', 'Clasificare M.F.', 255, False, frozenset({MF})),
             {'key': 'DNF', 'label': 'Durată normală de funcționare (luni)', 'type': 'int', 'min': 0, 'required': False, 'types': frozenset({MF})},
         ],

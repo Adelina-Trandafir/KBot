@@ -1,83 +1,60 @@
-// slice VC07-04: the fixed-asset register (MF gestiune). One row per asset: name, inventory number, entry date, value, normal
-// and used duration (months), monthly value, who holds it, how many were written off. The register data (entry date,
-// durations) is edited in the row and saved with the revision the page saw; the monthly value is recomputed by the server
-// from what the receipts say the asset cost. The identity of an asset never changes here.
-import { format, parse } from './fields.js';
-
-const el = (k_tag, k_attrs = {}, ...k_children) => {
-  const k_node = Object.assign(document.createElement(k_tag), k_attrs);
-  k_node.append(...k_children);
-  return k_node;
-};
-const dateText = (k_iso) => (k_iso ? format(k_iso, { type: 'date' }) : '');
-
-export function mountMf(k_host, k_opts) {
-  const k_abort = new AbortController();
-  const k_signal = { signal: k_abort.signal };
-  const k_state = { assets: [], canWrite: false, filter: '', editing: null, dirty: false };
-  const k_say = el('span', { className: 'vc-save-status', role: 'status' });
-  const say = (k_t, k_bad) => { k_say.textContent = k_t || ''; k_say.style.color = k_bad ? '#c0392b' : ''; };
-  const query = () => new URLSearchParams(Object.entries(k_opts.sel()).filter(([, k_v]) => k_v != null && k_v !== '').map(([k_k, k_v]) => [k_k, String(k_v)]));
-  const search = el('input', { type: 'search', placeholder: 'Caută mijloc fix…', 'aria-label': 'Caută' });
-  const k_table = el('div', { className: 'vc-doc__lines' });
-  k_host.replaceChildren(el('section', { className: 'vc-nom' }, el('div', { className: 'vc-nom__bar' }, el('h3', { textContent: 'Evidență mijloace fixe' }), search), k_table, el('div', { className: 'vc-actions' }, k_say)));
-
-  async function load() {
-    const k_d = await k_opts.api(`/api/vercon/mf/assets?${query()}`);
-    k_state.assets = k_d.assets; k_state.canWrite = k_d.can_write; paint();
-  }
-
+// The asset identity and cost remain immutable in this register.
+import { confirmBox } from '../utils/confirm-box.js';
+import { parse } from './fields.js';
+import { el, scope, grid, column, rowMenu, preview, showMessage } from './ui.js';
+export function mountMf(host, opts) {
+  const ui = scope(), dialogs = scope(), state = { assets: [], canWrite: false, draft: null, dirty: false, filter: '' };
+  let disposed = false, dataGrid;
+  const status = el('span', { className: 'vc-save-status', role: 'status' }), body = el('div', { className: 'vc-doc__lines' }), bar = el('div', { className: 'vc-actions' });
+  const root = el('section', { className: 'vc-nom' }, el('h3', { textContent: 'Registru mijloace fixe' }), body, bar); host.replaceChildren(root);
+  const say = (text = '', bad = false) => { if (!disposed) showMessage(status, text, bad ? 'error' : 'info'); };
+  const report = (error) => { if (!disposed && error.name !== 'AbortError') say([error.message || 'Operația a eșuat.', ...Object.values(error.fields || {})].join(' '), true); };
+  const dirty = () => state.dirty || ui.dirty();
+  const query = () => new URLSearchParams(Object.entries(opts.sel()).filter(([, v]) => v != null && v !== ''));
+  const specs = [
+    { key: 'name', label: 'Mijloc fix', width: 240 }, { key: 'code', label: 'Nr. inventar', width: 140 },
+    { key: 'entry_date', label: 'Data intrării', type: 'date', required: true, mutable: true },
+    { key: 'value', label: 'Valoare', type: 'decimal' },
+    { key: 'DNF', label: 'DNF · luni', type: 'int', required: true, min: 1, mutable: true },
+    { key: 'DF', label: 'DF · luni', type: 'int', min: 0, mutable: true },
+    { key: 'monthly', label: 'Valoare lunară', type: 'decimal' },
+    { key: 'holdersText', label: 'Deținător', width: 260 }, { key: 'written_off', label: 'Casat', type: 'decimal' },
+  ];
+  const columns = () => specs.map((spec) => column(spec, { width: spec.width || 120, editable: spec.mutable ? (row) => row.id === state.draft?.id : false }));
+  function rows() { return state.assets.filter((asset) => !state.filter || (asset.name + ' ' + asset.code).toLocaleLowerCase('ro').includes(state.filter)).map((asset) => ({
+    ...(state.draft?.id === asset.id ? state.draft : asset), holdersText: (asset.holders || []).map((holder) => holder.holder + ' (' + holder.qty + ')').join(', '),
+  })); }
   function paint() {
-    const k_needle = k_state.filter.trim().toLowerCase();
-    const k_rows = k_state.assets.filter((k_a) => !k_needle || `${k_a.name} ${k_a.code}`.toLowerCase().includes(k_needle));
-    const k_t = el('table', { className: 'vc-lines vc-lines--doc' });
-    k_t.append(el('thead', {}, el('tr', {}, ...['Mijloc fix', 'Nr. inventar', 'Data intrării', 'Valoare (lei)', 'Durată normală (luni)', 'Durată folosită (luni)', 'Valoare lunară', 'Deținător', 'Casat', ...(k_state.canWrite ? [''] : [])].map((k_h) => el('th', { textContent: k_h })))));
-    const k_b = el('tbody');
-    if (!k_rows.length) k_b.append(el('tr', {}, el('td', { colSpan: 10, textContent: 'Nu există mijloace fixe.' })));
-    for (const k_a of k_rows) k_b.append(k_state.editing === k_a.id ? editRow(k_a) : viewRow(k_a));
-    k_t.append(k_b); k_table.replaceChildren(k_t);
+    ui.clear(); body.replaceChildren();
+    dataGrid = grid(body, { layoutId: 'vercon.mf.register', rowKey: 'id', rows: rows(), editable: !!state.draft, columns: [...columns(), { key: 'actions', title: '⋮', width: 36, display: 'button', actionText: '⋮', editable: false }],
+      footer: true, footerCaption: '{0} mijloace fixe',
+      onCellSave: ({ key, value }) => { state.draft[key] = value; state.dirty = true; return { [key]: value }; },
+      onCellAction: ({ row }) => rowMenu(dataGrid, row, [
+        { label: 'Modifică datele de amortizare', disabled: !state.canWrite || !!state.draft, run: () => { state.draft = { ...state.assets.find((asset) => asset.id === row.id) }; state.dirty = false; say(); paint(); dataGrid.beginEdit(dataGrid._rows.find((asset) => asset.id === row.id), 'entry_date'); } },
+        { label: 'Previzualizare', run: () => preview('Mijloc fix • ' + row.code, [{ title: row.name, columns: columns().map((col) => ({ ...col, editable: false })), rows: [row] }], dialogs) },
+      ]),
+    }, ui);
+    bar.replaceChildren(); const button = (label, run) => { const b = el('button', { type: 'button', textContent: label }); b.addEventListener('click', () => Promise.resolve(run()).catch(report)); return b; };
+    if (state.draft) bar.append(button('Renunță', async () => {
+      if (dirty() && !await confirmBox('Renunțați la datele nesalvate ale mijlocului fix?', { title: 'Renunțare', yes: 'Renunț', no: 'Rămân aici' })) return;
+      state.draft = null; state.dirty = false; say(); paint();
+    }), button('Salvează', save));
+    bar.append(status);
   }
-
-  function viewRow(k_a) {
-    const k_tr = el('tr', {}, el('td', { textContent: k_a.name || '' }), el('td', { textContent: k_a.code || '' }), el('td', { textContent: dateText(k_a.entry_date) }),
-      el('td', { className: 'is-num', textContent: format(k_a.value, { type: 'decimal' }) }), el('td', { className: 'is-num', textContent: k_a.DNF ?? '' }), el('td', { className: 'is-num', textContent: k_a.DF ?? '' }),
-      el('td', { className: 'is-num', textContent: format(k_a.monthly, { type: 'decimal' }) }), el('td', { textContent: k_a.holders.map((k_h) => `${k_h.holder} (${format(k_h.qty, { type: 'decimal' })})`).join(', ') }),
-      el('td', { className: 'is-num', textContent: Number(k_a.written_off) ? format(k_a.written_off, { type: 'decimal' }) : '' }));
-    if (k_state.canWrite) { const k_e = el('button', { type: 'button', textContent: 'Modifică' }); k_e.addEventListener('click', () => { if (k_state.editing != null && k_state.dirty) { say('Salvați sau renunțați mai întâi la modificarea începută.', true); return; } k_state.editing = k_a.id; k_state.dirty = false; say(''); paint(); }, k_signal); k_tr.append(el('td', {}, k_e)); }
-    return k_tr;
+  async function load() { const data = await opts.api('/api/vercon/mf/assets?' + query()); if (disposed) return; state.assets = data.assets; state.canWrite = data.can_write; paint(); }
+  async function save() {
+    if (!state.canWrite || !state.draft || !await ui.commit()) return; const draft = state.draft, values = {}, errors = [];
+    for (const spec of specs.filter((item) => item.mutable)) { const result = parse(draft[spec.key], spec); if (!result.ok) errors.push(spec.label + ': ' + result.message); else values[spec.key] = result.value; }
+    if (errors.length) { say(errors.join(' '), true); return; } root.inert = true; say('Se salvează…');
+    try {
+      const sel = opts.sel(); await opts.api('/api/vercon/mf/assets/' + draft.id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subunit: sel.subunit, gestiune: sel.gestiune, year: sel.year, version: draft.version, DataIntrare: values.entry_date, DNF: values.DNF, DF: values.DF ?? 0 }) });
+      if (disposed) return; state.draft = null; state.dirty = false; paint(); say('Salvat.'); await load();
+    } catch (error) { report(error); } finally { if (!disposed) root.inert = false; }
   }
-
-  function editRow(k_a) {
-    const k_d = el('input', { type: 'text', value: dateText(k_a.entry_date), 'aria-label': 'Data intrării' });
-    const k_dnf = el('input', { type: 'text', value: k_a.DNF ?? '', inputMode: 'numeric', 'aria-label': 'Durată normală' });
-    const k_df = el('input', { type: 'text', value: k_a.DF ?? '', inputMode: 'numeric', 'aria-label': 'Durată folosită' });
-    for (const k_i of [k_d, k_dnf, k_df]) k_i.addEventListener('input', () => { k_state.dirty = true; }, k_signal);
-    const k_err = el('div', { className: 'vc-field-error' });
-    const k_save = el('button', { type: 'button', textContent: 'Salvează', className: 'is-primary' });
-    const k_no = el('button', { type: 'button', textContent: 'Renunță' });
-    k_no.addEventListener('click', () => { k_state.editing = null; k_state.dirty = false; say(''); paint(); }, k_signal);
-    k_save.addEventListener('click', async () => {
-      const k_pd = parse(k_d.value, { type: 'date', required: true }), k_pn = parse(k_dnf.value, { type: 'int', required: true, min: 1 }), k_pf = parse(k_df.value, { type: 'int', required: false, min: 0 });
-      const k_bad = [k_pd, k_pn, k_pf].find((k_p) => !k_p.ok);
-      if (k_bad) { k_err.textContent = k_bad.message; return; }
-      k_save.disabled = true; say('Se salvează…');
-      const k_sel = k_opts.sel();
-      try {
-        await k_opts.api(`/api/vercon/mf/assets/${k_a.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subunit: k_sel.subunit, gestiune: k_sel.gestiune, year: k_sel.year, version: k_a.version, DataIntrare: k_pd.value, DNF: k_pn.value, DF: k_pf.value ?? 0 }) });
-        k_state.editing = null; k_state.dirty = false; await load(); say('Salvat.');
-      } catch (k_error) {
-        if (k_error.name === 'AbortError') return;
-        k_save.disabled = false;
-        if (k_error.fields) k_err.textContent = Object.values(k_error.fields).join(' ');
-        if (k_error.reason === 'CONFLICT') { k_state.editing = null; k_state.dirty = false; await load(); }
-        say(k_error.message || 'Salvarea a eșuat.', true);
-      }
-    }, k_signal);
-    return el('tr', {}, el('td', { textContent: k_a.name || '' }), el('td', { textContent: k_a.code || '' }), el('td', {}, k_d), el('td', { className: 'is-num', textContent: format(k_a.value, { type: 'decimal' }) }),
-      el('td', {}, k_dnf), el('td', {}, k_df), el('td', { className: 'is-num', textContent: format(k_a.monthly, { type: 'decimal' }) }), el('td', { textContent: '' }), el('td', {}), el('td', {}, k_save, k_no, k_err));
-  }
-
-  search.addEventListener('input', () => { k_state.filter = search.value; paint(); }, k_signal);
-  load().catch((k_e) => { if (k_e.name !== 'AbortError') say(k_e.message || 'Evidența nu a putut fi încărcată.', true); });
-  return { ready: Promise.resolve(), isDirty: () => k_state.dirty, destroy: () => { k_abort.abort(); k_host.replaceChildren(); } };
+  const ready = load().catch(report);
+  return { ready, isDirty: dirty, search: async (text) => {
+    if (!await ui.commit() || disposed) return; state.filter = text.trim().toLocaleLowerCase('ro');
+    // Keep the edited asset visible even if it no longer matches the search.
+    if (state.draft && !rows().some((row) => row.id === state.draft.id)) state.filter = ''; dataGrid?.setRows(rows());
+  }, destroy: () => { disposed = true; ui.clear(); dialogs.clear(); host.replaceChildren(); } };
 }

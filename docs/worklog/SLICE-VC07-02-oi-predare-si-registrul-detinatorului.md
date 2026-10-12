@@ -14,7 +14,10 @@ Stare: **IMPLEMENTAT_LOCAL**. Doar sintaxa verificata; **nimic rulat**, nimic va
 - Ecran: grila BC (NIR), arbore **detinator → data → BP + total**.
 
 ## Presupuneri si neverificat
-- Nu se verifica daca produsul apartine contului de intrare ales (categoria produselor migrate poate fi goala/diferita); filtrul ramane de ales de operator.
+- ~~Nu se verifica daca produsul apartine contului de intrare~~ — **corectat, vezi mai jos**: se verifica. Risc ramas: un produs migrat fara cont (categorie goala) nu poate fi pus pe niciun document pana nu i se atribuie contul in nomenclator.
 - Aceleasi machete pentru MF (capabilitati `oi_*` valabile pe OI si MF).
 - Randurile de registru ale documentelor migrate se citesc ca atare; coliziuni de id intre tipuri vechi (IDBP=IDBT=5) nu sunt rezolvate pentru istoric.
 - Nimic rulat.
+
+## Corectie 12.10.2026 — contul de intrare
+Eticheta era inversata fata de Access: **«Cont de intrare» este `MasinaP`** (contul in care sunt produsele in magazie; filtreaza produsele si este contul BC-ului creat), iar **«Cont primitor» este `Masina`** (contul la detinator, scris in registru). Pagina are acum etichetele corecte, ofera numai produsele contului de intrare, iar serverul refuza un produs din alt cont (`Produsul nu face parte din contul ales`). Nerulat.

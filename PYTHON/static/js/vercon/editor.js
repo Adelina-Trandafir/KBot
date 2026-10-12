@@ -1,102 +1,82 @@
-// slice VC02-03/04: header + lines editor for a document form, bound to a draft that lives outside the DOM.
-// Every input writes its raw text into the draft on `input`; on `change` the text is parsed (decimal comma, local
-// date, NULL vs 0) and shown back normalised. Repainting the lines from the draft by stable row key keeps what was
-// typed, so a repaint (or later a virtualised list) never loses an edit.
+// Existing preview protocol, with the same shared controls as the real document screens.
+import { confirmBox } from '../utils/confirm-box.js';
 import { format, parse } from './fields.js';
-
-const el = (k_tag, k_attrs = {}, ...k_children) => {
-  const k_node = Object.assign(document.createElement(k_tag), k_attrs);
-  k_node.append(...k_children);
-  return k_node;
-};
-
-// opts: { draft, columns, saver, saveUrl, getRevision, onSaved, report }  -> { destroy }
-export function mountEditor(k_host, k_opts) {
-  const { draft, columns, saver } = k_opts;
-  const k_abort = new AbortController();
-  const k_signal = { signal: k_abort.signal };
-  const k_status = el('span', { className: 'vc-save-status', role: 'status' });
-  const k_errors = new Map();    // "where|field" -> message element
-
-  const k_input = (k_col, k_value, k_write, k_errorKey) => {
-    const k_box = el('input', { type: 'text', value: k_value ?? '', name: k_col.key, autocomplete: 'off' });
-    if (k_col.type === 'decimal' || k_col.type === 'int') k_box.inputMode = 'decimal';
-    k_box.setAttribute('aria-label', k_col.label);
-    const k_msg = el('div', { className: 'vc-field-error' });
-    k_errors.set(k_errorKey, k_msg);
-    k_box.addEventListener('input', () => k_write(k_box.value), k_signal);
-    k_box.addEventListener('change', () => {
-      const k_r = parse(k_box.value, k_col);
-      k_msg.textContent = k_r.ok ? '' : k_r.message;
-      if (k_r.ok) { k_box.value = format(k_r.value, k_col); k_write(k_box.value); }
-    }, k_signal);
-    return { k_box, k_msg };
-  };
-
-  const k_headerGrid = el('div', { className: 'vc-grid' });
-  for (const k_col of columns.header) {
-    const { k_box, k_msg } = k_input(k_col, draft.header()[k_col.key] ?? null, (k_t) => draft.setHeader(k_col.key, k_t), `header|${k_col.key}`);
-    k_headerGrid.append(el('label', {}, `${k_col.label}${k_col.required ? ' *' : ''}`, k_box, k_msg));
+import { el, scope, field, column, grid, rowMenu, preview, showMessage } from './ui.js';
+export function mountEditor(host, opts) {
+  const { draft, columns, saver } = opts, headerUi = scope(), linesUi = scope(), dialogs = scope(), inputs = new Map();
+  let disposed = false, linesGrid, baseline = snapshot();
+  const status = el('span', { className: 'vc-save-status', role: 'status' }), header = el('div', { className: 'vc-grid vc-doc__header' }), linesHost = el('div', { className: 'vc-doc__lines' });
+  const saveButton = el('button', { type: 'submit', textContent: 'Salvează', className: 'is-primary' });
+  const reconcileButton = el('button', { type: 'button', textContent: 'Verifică salvarea', hidden: true }), cancelButton = el('button', { type: 'button', textContent: 'Renunță' }), previewButton = el('button', { type: 'button', textContent: 'Previzualizare' });
+  const form = el('form', { noValidate: true, className: 'vc-doc__main' }, el('h3', { textContent: 'Document • previzualizare' }), header, linesHost, el('div', { className: 'vc-actions vc-doc__bar' }, cancelButton, previewButton, reconcileButton, saveButton, status)); host.replaceChildren(form);
+  const say = (text, bad = false) => { if (!disposed) showMessage(status, text, bad ? 'error' : 'info'); };
+  const report = (error) => { if (!disposed && error.name !== 'AbortError') say(error.message || 'Operația a eșuat.', true); };
+  const dirty = () => draft.dirty || headerUi.dirty() || linesUi.dirty();
+  function snapshot() { return { header: draft.header(), rows: draft.rows() }; }
+  async function commit() { return await headerUi.commit() && await linesUi.commit(); }
+  function paintHeader() {
+    headerUi.clear(); inputs.clear(); header.replaceChildren();
+    for (const spec of columns.header) { const f = field(spec, draft.header()[spec.key], true, (raw) => draft.setHeader(spec.key, raw), headerUi); inputs.set(spec.key, f); header.append(f.node); }
   }
-  const k_table = el('table', { className: 'vc-lines' });
-  const k_body = el('tbody');
-  k_table.append(el('thead', {}, el('tr', {}, ...columns.lines.map((k_c) => el('th', { textContent: k_c.label })), el('th'))), k_body);
-
   function paintLines() {
-    k_body.replaceChildren();
-    for (const k_row of draft.rows()) {
-      const k_tr = el('tr', {}); k_tr.dataset.rowKey = k_row.key;
-      for (const k_col of columns.lines) {
-        const { k_box, k_msg } = k_input(k_col, k_row.cells[k_col.key] ?? null, (k_t) => draft.setCell(k_row.key, k_col.key, k_t), `${k_row.key}|${k_col.key}`);
-        k_tr.append(el('td', {}, k_box, k_msg));
-      }
-      const k_del = el('button', { type: 'button', textContent: '✕', title: 'Șterge linia' });
-      k_del.setAttribute('aria-label', 'Șterge linia');
-      k_del.addEventListener('click', () => { draft.removeRow(k_row.key); paintLines(); }, k_signal);
-      k_tr.append(el('td', {}, k_del));
-      k_body.append(k_tr);
-    }
+    linesUi.clear(); linesHost.replaceChildren(); const body = el('div'); linesHost.append(body);
+    const rows = draft.rows().map((row, index) => ({ key: row.key, ordinal: index + 1, ...row.cells }));
+    linesGrid = grid(body, { layoutId: 'vercon.preview.' + opts.form, rowKey: 'key', rows, editable: !saver.hasUnknown,
+      columns: [{ key: 'ordinal', title: '#', width: 42, editable: false }, ...columns.lines.map((spec) => column(spec, { editable: true, width: spec.type === 'text' ? 230 : 125 })), { key: 'actions', title: '⋮', width: 42, editable: false, display: 'button', actionText: '⋮' }],
+      footer: true, footerCaption: '', footerAction: { label: '+ Adaugă rând', span: 2, disabled: saver.hasUnknown }, onFooterAction: async () => {
+        if (saver.hasUnknown || !await commit()) return; const rowKey = draft.addRow(); paintLines(); const row = linesGrid._rows.find((item) => item.key === rowKey);
+        linesGrid.beginNewRowEdit(row, columns.lines[0]?.key, () => { draft.removeRow(rowKey); paintLines(); });
+      },
+      onCellSave: ({ row, key, value }) => { draft.setCell(row.key, key, value); return { [key]: value }; }, onEditError: ({ error }) => report(error),
+      onCellAction: ({ row }) => rowMenu(linesGrid, row, [{ label: 'Elimină rândul', disabled: saver.hasUnknown, run: async () => { if (!await commit()) return; draft.removeRow(row.key); paintLines(); } }]),
+    }, linesUi);
   }
-  const k_add = el('button', { type: 'button', textContent: '+ Linie' });
-  k_add.addEventListener('click', () => { draft.addRow(); paintLines(); k_body.lastElementChild?.querySelector('input')?.focus(); }, k_signal);
-  const k_save = el('button', { type: 'submit', textContent: 'Salvează' });
-  const k_reconcile = el('button', { type: 'button', textContent: 'Verifică salvarea', hidden: true });
-  const k_form = el('form', { noValidate: true }, k_headerGrid, k_table, el('div', { className: 'vc-actions' }, k_add, k_save, k_reconcile, k_status));
-
-  const k_say = (k_text, k_bad) => { k_status.textContent = k_text; k_status.style.color = k_bad ? '#c0392b' : ''; };
-
-  k_form.addEventListener('submit', async (k_event) => {
-    k_event.preventDefault();
-    for (const k_m of k_errors.values()) k_m.textContent = '';
-    const k_data = draft.collect(columns, parse);
-    if (k_data.errors) {
-      for (const k_e of k_data.errors) { const k_m = k_errors.get(`${k_e.where}|${k_e.field}`); if (k_m) k_m.textContent = k_e.message; }
-      k_say('Corectați câmpurile marcate.', true); return;
+  function freezeUnknown() {
+    header.inert = saver.hasUnknown; linesHost.inert = saver.hasUnknown; saveButton.disabled = saver.hasUnknown; cancelButton.disabled = saver.hasUnknown; reconcileButton.hidden = !saver.hasUnknown;
+  }
+  function saved(result) {
+    draft.markSaved(); baseline = snapshot(); opts.onSaved(result.revision); freezeUnknown(); say(result.replayed ? 'Salvat (cererea fusese deja aplicată).' : 'Salvat.');
+  }
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault(); if (saver.hasUnknown || !await commit()) return;
+    for (const input of inputs.values()) input.error.textContent = '';
+    const data = draft.collect(columns, parse);
+    if (data.errors) {
+      for (const error of data.errors) if (error.where === 'header') inputs.get(error.field).error.textContent = error.message;
+      say(data.errors.map((error) => (error.where === 'header' ? '' : 'Rând ' + (draft.rows().findIndex((row) => row.key === error.where) + 1) + ': ') + error.message).join(' '), true); return;
     }
-    if (!k_opts.saveUrl) { k_say('Salvarea documentelor vine cu SLICE-VC06.', true); return; }
-    k_save.disabled = true; k_say('Se salvează…');
+    if (!opts.saveUrl) { say('Salvarea nu este disponibilă pentru acest ecran.', true); return; } form.inert = true; say('Se salvează…');
     try {
-      const k_r = await saver.save({ form: k_opts.form, subunit: draft.context.subunit, gestiune: draft.context.gestiune, base_revision: k_opts.getRevision(), header: k_data.header, lines: k_data.lines },
-        k_opts.simulate ? { 'X-Preview-Simulate': k_opts.simulate() } : null);
-      if (k_r.outcome === 'saved') { draft.markSaved(); k_reconcile.hidden = true; k_opts.onSaved(k_r.revision); k_say(k_r.replayed ? 'Salvat (cererea fusese deja aplicată).' : 'Salvat.'); }
-      else if (k_r.outcome === 'conflict') { k_opts.onSaved(k_r.revision, true); k_say(`${k_r.message} Datele dvs. au rămas în formular; reîncărcați documentul înainte de a salva din nou.`, true); }
-      else if (k_r.outcome === 'unknown') { k_reconcile.hidden = false; k_say(k_r.message, true); }
-      else if (k_r.outcome === 'expired') { k_say(k_r.message, true); }
-      else if (k_r.outcome === 'stale') { k_say('Contextul s-a schimbat în timpul salvării; răspunsul a fost ignorat.', true); }
-      else k_say(k_r.message, true);
-    } catch (k_error) {
-      if (k_error.name !== 'AbortError') { console.error('[vercon] save failed', k_error); k_say('Salvarea nu a putut fi trimisă.', true); }
-    } finally { k_save.disabled = false; }
-  }, k_signal);
-
-  k_reconcile.addEventListener('click', async () => {
-    const k_r = await saver.reconcile();
-    if (k_r.outcome === 'saved') { draft.markSaved(); k_reconcile.hidden = true; k_opts.onSaved(k_r.revision); k_say('Salvarea fusese aplicată.'); }
-    else if (k_r.outcome === 'not-applied') { k_reconcile.hidden = true; k_say('Salvarea nu fusese aplicată; puteți salva din nou.', true); }
-    else k_say(k_r.message || 'Nu s-a putut verifica.', true);
-  }, k_signal);
-
-  paintLines();
-  k_host.replaceChildren(k_form);
-  return { destroy: () => { k_abort.abort(); k_host.replaceChildren(); } };
+      const result = await saver.save({ form: opts.form, subunit: draft.context.subunit, gestiune: draft.context.gestiune, base_revision: opts.getRevision(), header: data.header, lines: data.lines }, opts.simulate ? { 'X-Preview-Simulate': opts.simulate() } : null);
+      if (disposed) return;
+      if (result.outcome === 'saved') saved(result);
+      else if (result.outcome === 'conflict') say((result.message || 'Documentul a fost modificat.') + ' Datele introduse au rămas în ciornă.', true);
+      else say(result.message || 'Salvarea nu a fost confirmată.', true);
+      freezeUnknown();
+    } catch (error) { report(error); } finally { if (!disposed) { form.inert = false; freezeUnknown(); } }
+  });
+  reconcileButton.addEventListener('click', async () => {
+    form.inert = true; try {
+      const result = await saver.reconcile(); if (disposed) return;
+      if (result.outcome === 'saved') saved(result);
+      else if (result.outcome === 'not-applied') say('Salvarea nu fusese aplicată. Puteți salva din nou.');
+      else say(result.message || 'Salvarea nu a putut fi confirmată.', true); freezeUnknown();
+    } catch (error) { report(error); } finally { if (!disposed) { form.inert = false; freezeUnknown(); } }
+  });
+  cancelButton.addEventListener('click', async () => {
+    if (saver.hasUnknown || dirty() && !await confirmBox('Renunțați la modificările nesalvate?', { title: 'Renunțare', yes: 'Renunț', no: 'Rămân aici' }) || disposed) return;
+    for (const row of draft.rows()) draft.removeRow(row.key);
+    for (const spec of columns.header) draft.setHeader(spec.key, baseline.header[spec.key] ?? '');
+    for (const row of baseline.rows) { const id = draft.addRow(); for (const [name, value] of Object.entries(row.cells)) draft.setCell(id, name, value); }
+    draft.markSaved(); paintHeader(); paintLines(); say('');
+  });
+  previewButton.addEventListener('click', async () => {
+    if (!await commit() || disposed) return;
+    preview('Document • ciornă', [
+      { title: 'Antet', columns: [{ key: 'label', title: 'Câmp', width: 240 }, { key: 'value', title: 'Valoare', width: 440 }], rows: columns.header.map((spec) => ({ label: spec.label, value: format(draft.header()[spec.key], spec) })) },
+      { title: 'Produse', columns: columns.lines.map((spec) => column(spec, { editable: false })), rows: draft.rows().map((row) => ({ ...row.cells })) },
+    ], dialogs);
+  });
+  paintHeader(); paintLines();
+  return { isDirty: dirty, destroy: () => { disposed = true; headerUi.clear(); linesUi.clear(); dialogs.clear(); host.replaceChildren(); } };
 }

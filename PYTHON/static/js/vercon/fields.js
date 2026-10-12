@@ -70,7 +70,7 @@ export function validate(k_value, k_column) {
 }
 
 export function format(k_value, k_column) {
-  if (k_value === null || k_value === undefined) return '';
+  if (k_value === null || k_value === undefined || k_value === '') return '';
   if (k_column.type === 'decimal') return String(k_value).replace('.', ',');
   if (k_column.type === 'date') { const [k_y, k_m, k_d] = String(k_value).split('-'); return `${k_d}.${k_m}.${k_y}`; }
   return String(k_value);

@@ -95,3 +95,93 @@
 @media (max-width: 800px) { .vc-doc { grid-template-columns: 1fr; } }
 .vc-history { max-width: 900px; width: 92vw; }
 .vc-history td { font-size: .85em; word-break: break-word; max-width: 420px; }
+
+/* VERCON v2: shared controls, NIR density and full-width document workspace. */
+.vc-main { max-width: none; padding: 10px 16px; }
+.vc-header { gap: 20px; min-height: 56px; height: auto; }
+.vc-global-search { flex: 1; max-width: 640px; display: flex; gap: 8px; align-items: center; background: var(--card, #fff); color: var(--ink); border-radius: 6px; padding: 6px 12px; }
+.vc-global-search input { width: 100%; border: 0; background: transparent; color: inherit; font: inherit; outline-offset: 2px; }
+.vc-header__right button { background: transparent; color: inherit; border: 1px solid #ffffff50; border-radius: 5px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+.vc-header__context { font-size: .8em; }
+.vc-selectors { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.vc-unit-label { font-weight: 600; margin-right: 12px; }
+.vc-picker { flex: 0 1 220px; }
+.vc-type { width: 150px; }
+.vc-type > div { width: 100%; }
+.vc-access { margin-left: auto; color: var(--ink); font-size: .85em; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; }
+.vc-bar { font-size: .85em; margin: 4px 0; opacity: .8; }
+.vc-menu { border-bottom: 1px solid var(--line); margin: 4px -16px 12px; padding: 0 16px; gap: 4px; }
+.vc-menu__group { gap: 0; }
+.vc-menu button { border: 0; border-radius: 0; padding: 10px 18px; }
+.vc-menu button[aria-current="true"] { border-bottom: 3px solid var(--primary-color); background: rgba(48,158,255,.1); color: var(--primary-color); }
+.vc-work { padding: 0; border: 0; }
+.vc-doc { gap: 10px; grid-template-columns: minmax(0,1fr) 300px; }
+.vc-doc__main, .vc-nom, .vc-empty-page { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--card, transparent); padding: 12px; }
+.vc-doc__header { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.vc-doc__header--nir { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.vc-header-group { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.vc-doc__header--oi { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.vc-doc__header--oi .vc-field[data-field="Expl"] { grid-column: 1 / -1; }
+.vc-field { min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .9em; }
+.vc-field > input:not([type="hidden"]), .vc-field .combobox-input, .vc-field .kdp__field { width: 100%; box-sizing: border-box; min-height: 32px; }
+.vc-field__combo { width: 100%; }
+.vc-field-error:empty { display: none; }
+.vc-field-error, .vc-save-status[role="alert"] { color: var(--err-ink); }
+.vc-save-status { margin-right: auto; }
+.vc-doc__bar { border-top: 1px solid var(--line); padding-top: 10px; }
+.vc-actions button { border: 1px solid var(--line); border-radius: 5px; padding: 7px 14px; background: transparent; color: inherit; cursor: pointer; }
+.vc-actions button:disabled { opacity: .45; cursor: default; }
+.vc-actions .is-primary { background: var(--primary-color); color: white; }
+.vc-actions .is-danger { color: var(--err-ink); }
+.vc-dgv { min-width: 0; height: 340px; width: 100%; }
+.vc-dgv.vc-dgv--small { height: 98px; }
+.vc-dgv.vc-dgv--meal { height: 220px; }
+.vc-dgv .dgv { height: 100%; }
+.vc-dgv .dgv__cell { font-size: 13px; }
+.vc-dgv .dgv__editor { font-size: inherit; }
+.vc-dgv .dgv__footer-action { white-space: nowrap; }
+.vc-dgv .dgv__footer-action:disabled { opacity: .4; cursor: default; }
+.vc-doc__tree { padding: 0; height: 660px; max-height: none; overflow: hidden; }
+.vc-doc__tree h4, .vc-product-panel h4 { margin: 0; padding: 10px 12px; background: rgba(48,158,255,.1); border-bottom: 1px solid var(--line); color: var(--primary-color); }
+.vc-tree-body { height: calc(100% - 42px); min-height: 200px; }
+.vc-tree-body .treeview--inline { max-height: none; height: 100%; }
+.vc-tree-body .treeview-dropdown { flex: 1; overflow: auto; }
+.vc-tree-body .treeview-righticon { opacity: 0; color: var(--primary-color); }
+.vc-tree-body .treeview-item:hover .treeview-righticon, .vc-tree-body .treeview-item:focus-within .treeview-righticon { opacity: 1; }
+.vc-product-panel { border: 1px solid var(--line); border-radius: 6px; min-width: 0; overflow: hidden; }
+.vc-product-panel .vc-tree-body { height: 350px; }
+.vc-product-details, .vc-availability { padding: 12px; border-top: 1px solid var(--line); font-size: .9em; }
+.vc-product-details dl, .vc-availability dl { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; }
+.vc-product-details dd, .vc-availability dd { margin: 0; font-variant-numeric: tabular-nums; }
+.vc-doc--bc { grid-template-columns: 260px minmax(0,1fr) 300px; }
+.vc-doc--bc:has(.vc-doc__tree[hidden]) { grid-template-columns: 260px minmax(0,1fr); }
+.vc-doc--bc .vc-doc__main.is-wide { grid-column: auto; }
+.vc-lista__meals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+.vc-meal, .vc-lista__meal { border: 1px solid var(--line); border-radius: 4px; min-width: 0; overflow: hidden; }
+.vc-meal h4, .vc-lista__meal h4, .vc-lista__bons h4 { margin: 0; padding: 8px 10px; background: rgba(48,158,255,.1); }
+.vc-lista__summary.vc-dgv { height: 96px; }
+.vc-lista__dishes.vc-dgv { height: 230px; }
+.vc-save-status.is-error { color: var(--err-ink, #c0392b); }
+.vc-modal footer a { color: var(--primary-color); padding: 7px 14px; }
+.vc-doc:has(> .vc-doc__tree[hidden]) { grid-template-columns: minmax(0,1fr); }
+.vc-doc--bc:has(> .vc-doc__tree[hidden]) { grid-template-columns: 260px minmax(0,1fr); }
+.vc-nom__fields.vc-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.vc-field__combo.combobox-container { max-width: none; }
+.vc-page .vc-field > input:not([type="hidden"]), .vc-page .combobox-input, .vc-page .kdp__field { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; }
+.vc-page .combobox-input:disabled { background: var(--card) !important; color: var(--ink); opacity: .7; }
+.vc-page .combobox-dropdown { background: var(--card); color: var(--ink); border-color: var(--line); }
+.vc-page .vc-nom__bar > button { padding: 5px 10px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; }
+.vc-lista__totals { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0; }
+.vc-lista__totals span { border: 1px solid var(--line); padding: 5px 12px; font-size: .9em; font-variant-numeric: tabular-nums; }
+.vc-modal { width: min(1100px,94vw); max-width: 94vw; max-height: 90vh; }
+.vc-modal__body { padding: 12px; overflow: auto; }
+.vc-modal__body h4 { margin: 0 0 6px; }
+.vc-modal__body .vc-tree-body { height: 330px; }
+.vc-modal__body .vc-dgv { height: 280px; }
+.vc-pdf { position: relative; height: 65vh; }
+.vc-nom__left { max-height: none; overflow: hidden; }
+.vc-nom__left .vc-tree-body { height: 390px; }
+.vc-nom__form { min-width: 0; }
+.vc-nom__list .vc-dgv { height: 400px; }
+@media (max-width: 1150px) { .vc-header__context { display: none; } .vc-doc--bc { grid-template-columns: 210px minmax(0,1fr); } .vc-doc--bc .vc-doc__tree { grid-column: 1 / -1; height: 300px; } }
+@media (max-width: 800px) { .vc-header { flex-wrap: wrap; padding: 8px; gap: 8px; } .vc-global-search { order: 3; flex-basis: 100%; max-width: none; } .vc-doc, .vc-doc--bc, .vc-doc--bc:has(.vc-doc__tree[hidden]), .vc-lista__meals { grid-template-columns: 1fr; } .vc-doc__header { grid-template-columns: 1fr; } .vc-access { margin-left: 0; } .vc-header__right button { padding: 4px 6px; } .vc-product-panel .vc-tree-body { height: 220px; } }

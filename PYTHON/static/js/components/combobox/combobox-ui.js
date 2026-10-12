@@ -69,6 +69,9 @@ export const comboboxUIMixin = {
    * Deschide dropdown-ul
    */
   show() {
+    // Cells/forms can be constructed before their dialog is attached.
+    const surface = this.container.closest('dialog') || document.body;
+    if (this.overlay.parentElement !== surface) surface.append(this.overlay);
     this.overlay.style.zIndex = Math.floor(window.ZIndexManager.getNext() || 1000) + 9999;
     this.dropdown.style.zIndex = Math.floor(window.ZIndexManager.getNext() || 1000) + 10000;
     if (this.options.showOnlyIcon) {
@@ -87,6 +90,7 @@ export const comboboxUIMixin = {
     this.dropdown.classList.remove('hidden');
 
     this.isVisible = true;
+    this.positionDropdown();
   },
 
   /**
@@ -280,8 +284,7 @@ export const comboboxUIMixin = {
    */
   handleWindowEvents() {
     if (this.isVisible) {
-      // Decomentează dacă vrei repoziționare automată
-      // this.positionDropdown();
+      this.positionDropdown();
     }
   },
 };
