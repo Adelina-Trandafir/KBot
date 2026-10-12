@@ -1,0 +1,12 @@
+[
+  {
+    "i": 2,
+    "path": "C:/Users/Adelina Trandafir/.codex/generated_images/01a12c0f-c847-7e81-b673-ebdbc8e64b56/exec-cb05b125-3071-4246-93b2-27e76acebcef.png",
+    "prompt": "Use case: precise-object-edit. Edit the supplied VERCON consumption UI screenshot. Preserve the entire image exactly: composition, all panels, typography, styles, fields, quantities, numbers, totals, buttons, icons. Change ONLY these four small text labels, rendering Romanian accurately:\n1. In the pale blue total label cell at bottom center, replace \"Total de plată (lei)\" with \"Valoare bon (lei)\". A bon de consum is an internal stock movement, not payment. Retain 610,0000.\n2. In the LEFT category tree replace \"302.02 Piese de schimb\" with \"302.02 Combustibili\".\n3. In the LEFT category tree replace \"302.03 Combustibili\" with \"302.04 Piese de schimb\".\n4. In the LEFT category tree replace \"303 Alte materiale\" with \"302.08 Alte materiale\".\nNo other changes. Single flat full-screen screenshot at same resolution and aspect ratio. No additional labels or decorative elements."
+  },
+  {
+    "i": 4,
+    "path": "C:/Users/Adelina Trandafir/.codex/generated_images/01a12c0f-c847-7e81-b673-ebdbc8e64b56/exec-f6b68fea-0f7d-4357-a60a-8799bbe9af75.png",
+    "prompt": "Use case: precise-object-edit. Edit the supplied VERCON inventory objects transfer screenshot. Preserve the whole screenshot exactly, including layout, labels, numeric examples, arrows, panels, context, type, colors and visual style. Change ONLY the horizontal module navigation row immediately below the context bar. It currently contains two Nomenclatoare tabs and the earlier one is misspelled. Render precisely these SEVEN navigation items in order and only once each: \"Evidență OI\", \"Intrări / NIR\", \"Predare\", \"Transfer\", \"Casare\", \"Rapoarte\", \"Nomenclatoare\". Keep Transfer selected with the same blue underline. Remove the duplicate malformed tab and its icon. Keep nav left aligned, same spacing as original and the freed area blank. All other image pixels and text must remain unchanged, including total 1.200,00 and transfer 8→6 /3→5. Same resolution/aspect, no browser frame."
+  }
+]

@@ -1,0 +1,64 @@
+<!-- Furnizat de utilizator in conversatie la 11.10.2026 (ribbonul Access "Vercon"); copie de referinta, nemodificata. -->
+<!-- Created with IDBE Ribbon Creator (Version: 1.1041) -->
+<!--            http://www.RibbonCreator.com            -->
+<!--             http://www.RibbonCreator.de            -->
+
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="OnRibbonLoad" loadImage="LoadImages">
+<commands>
+    <command idMso="Help" enabled="false"/>
+    <command idMso="WindowClose" enabled="false"/>
+    <command idMso="WindowRestore" enabled="false"/>
+    <command idMso="WindowMinimize" enabled="false"/>
+    <command idMso="ApplicationOptionsDialog" enabled="false"/>
+    <command idMso="FileExit" enabled="true"/>
+</commands>
+  <ribbon startFromScratch="true">
+    <tabs>
+      <tab id="tab_CFG" label="Configurări" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator;CustomTagValue1:=;CustomTagValue2:=;CustomTagValue3:=" >
+        <group id="grp0" label=" Configurări" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnAddProd" size="large" label="Adaugă produse" imageMso="_3DMaterialPlastic" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnCategorii" size="large" label="Categorii / Conturi" imageMso="AdpDiagramAddRelatedTables" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnFurnizori" size="large" label="Furnizori" imageMso="DistributionListAddNewMember" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnClienti" size="large" label="Gestionari" imageMso="DistributionListRemoveMember" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnUnitate" size="large" label="Unitate" imageMso="RssDownloadContent" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <separator id="sep1" getVisible="GetVisible" />
+          <button id="btnCoduri" size="large" label="Editare coduri" imageMso="CreateMacro" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnInchidere" size="large" label="Închidere an" imageMso="AdpPrimaryKey" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <separator id="sep2" getVisible="GetVisible" />
+          <button id="btnRetetar" size="large" label="Rețetar" imageMso="AccessTableTasks" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+        <group id="grp5" label="Online" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnUPDN" size="large" label="Încarcă unitate" imageMso="ServerConnection" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnBck" size="large" label="Creează backup" imageMso="FileBackupDatabase" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+      </tab>
+      <tab id="tab_gest" label="Gestiuni" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator;CustomTagValue1:=;CustomTagValue2:=;CustomTagValue3:=" >
+        <group id="grp2" label="Intrări" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnAddNIR" size="large" label="Adăugare / Editare N.I.R." imageMso="AdpDiagramAddTable" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnAddStorno" size="large" label="Adăugare / Editare Storno" imageMso="AdpDiagramHideTable" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+        <group id="grp3" label="Ieșiri" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnAddBC" size="large" label="Bon de consum" imageMso="AdpStoredProcedureQueryMakeTable" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnAddRE" size="large" label="Adăugare / Editare Retur" imageMso="ChartResetToMatchStyle" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <separator id="sep3" getVisible="GetVisible" />
+          <button id="btnAddLA" size="large" label="Listă de alimente" imageMso="AdpStoredProcedureQueryAppendValues" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+      </tab>
+      <tab id="tab_OI" label="Obiecte de Inventar / Mijloace Fixe" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator;CustomTagValue1:=;CustomTagValue2:=;CustomTagValue3:=" >
+        <group id="grp7" label="Obiecte de inventar" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnAddBP" size="large" label="Bon de predare" imageMso="ReviewNextComment" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnAddBT" size="large" label="Bon de transfer" imageMso="ReviewPreviousComment" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <button id="btnAddBS" size="large" label="Bon de casare" imageMso="ReviewDeleteComment" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+          <separator id="sep30" getVisible="GetVisible" />
+          <button id="btnListMF" size="large" label="Listă Mijloace Fixe" imageMso="AdpStoredProcedureQueryAppendValues" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+      </tab>
+      <tab id="tab_rap" label="Rapoarte" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator;CustomTagValue1:=;CustomTagValue2:=;CustomTagValue3:=" >
+        <group id="grp4" label="Rapoarte" getVisible ="GetVisible" tag = "RibbonName:=IDBERibbonCreator" >
+          <button id="btnLstSFP" size="large" label="TOATE RAPOARTELE" imageMso="CompareAndCombine" onAction="OnActionButton" getVisible="GetVisible" getEnabled="GetEnabled" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
+<!-- Nota: atributele `tag` repetitive ale butoanelor (RibbonName/inMenu/CustomTagValue*/CustomPicture*) au fost omise din aceasta copie de referinta; nu influenteaza comportamentul. -->

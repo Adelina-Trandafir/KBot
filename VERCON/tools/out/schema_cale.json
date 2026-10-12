@@ -1,0 +1,146 @@
+﻿{
+    "db":  "cale",
+    "tables":  [
+                   {
+                       "name":  "cale",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "Cale",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Denumire",
+                                          "t":  10,
+                                          "sz":  225,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Adresa",
+                                          "t":  10,
+                                          "sz":  225,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Reprezentant",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CUI",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "J",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Banca",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IBAN",
+                                          "t":  10,
+                                          "sz":  24,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PASS",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DC",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Detalii",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Capital",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "AnDate",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CaleReala",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  7
+                   },
+                   {
+                       "name":  "Ver",
+                       "fields":  [
+                                      {
+                                          "n":  "VER",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  true,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+
+                                   ],
+                       "rows":  1
+                   }
+               ],
+    "relations":  [
+
+                  ]
+}

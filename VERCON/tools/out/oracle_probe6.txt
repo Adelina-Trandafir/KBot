@@ -1,0 +1,24 @@
+### tz_Alimente
+furnizori_cu_NIR = 4
+furnizori_cu_NIR_dar_CF_gol = 1
+furnizori_cu_NIR_CF_gol_fara_SI = 1
+furnizori_cu_NIR_si_pattern_SI = 1
+furnizori_SI_fara_NIR = 6
+NIR_cu_IDF_diferit_de_IDFV = 0
+NIR_storno_si_IDF = 1
+### tz_Mijloace_Fixe
+furnizori_cu_NIR = 2
+furnizori_cu_NIR_dar_CF_gol = 1
+furnizori_cu_NIR_CF_gol_fara_SI = 0
+furnizori_cu_NIR_si_pattern_SI = 1
+furnizori_SI_fara_NIR = 0
+NIR_cu_IDF_diferit_de_IDFV = 0
+NIR_storno_si_IDF = 0
+### tz_Obiecte_Inventar
+furnizori_cu_NIR = 1
+furnizori_cu_NIR_dar_CF_gol = 0
+furnizori_cu_NIR_CF_gol_fara_SI = 0
+furnizori_cu_NIR_si_pattern_SI = 0
+furnizori_SI_fara_NIR = 0
+NIR_cu_IDF_diferit_de_IDFV = 0
+NIR_storno_si_IDF = 0

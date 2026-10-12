@@ -1,0 +1,139 @@
+{
+  "note": "Fictional data for the local VERCON preview. No real names, no real DC codes.",
+  "units": [
+    {
+      "db_name": "preview",
+      "name": "DC de proba A",
+      "subunits": [
+        {
+          "id": 1,
+          "name": "Subunitate A1",
+          "gestiuni": [
+            {
+              "id": 11,
+              "name": "Magazie materiale",
+              "type": "MATERIALE",
+              "years": [
+                2024,
+                2025,
+                2026
+              ],
+              "closed_years": [
+                2024,
+                2025
+              ],
+              "populated": true,
+              "occupied_by": null
+            },
+            {
+              "id": 12,
+              "name": "Bucatarie",
+              "type": "ALIMENTE",
+              "years": [
+                2025,
+                2026
+              ],
+              "closed_years": [
+                2025
+              ],
+              "populated": true,
+              "occupied_by": "alt.utilizator@example.test"
+            },
+            {
+              "id": 13,
+              "name": "Obiecte de inventar",
+              "type": "OI",
+              "years": [
+                2024,
+                2025,
+                2026
+              ],
+              "closed_years": [],
+              "populated": true,
+              "occupied_by": null
+            },
+            {
+              "id": 14,
+              "name": "Mijloace fixe",
+              "type": "MF",
+              "years": [
+                2023,
+                2024,
+                2025,
+                2026
+              ],
+              "closed_years": [],
+              "populated": true,
+              "occupied_by": null
+            },
+            {
+              "id": 15,
+              "name": "Magazie materiale 2",
+              "type": "MATERIALE",
+              "years": [
+                2026
+              ],
+              "closed_years": [],
+              "populated": true,
+              "occupied_by": null
+            },
+            {
+              "id": 16,
+              "name": "Gestiune noua (goala)",
+              "type": "MATERIALE",
+              "years": [
+                2026
+              ],
+              "closed_years": [],
+              "populated": false,
+              "occupied_by": null
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Subunitate A2",
+          "gestiuni": [
+            {
+              "id": 21,
+              "name": "Magazie A2",
+              "type": "MATERIALE",
+              "years": [
+                2026
+              ],
+              "closed_years": [],
+              "populated": true,
+              "occupied_by": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "db_name": "preview2",
+      "name": "DC de proba B",
+      "subunits": [
+        {
+          "id": 1,
+          "name": "Subunitate B1",
+          "gestiuni": [
+            {
+              "id": 11,
+              "name": "Magazie B1",
+              "type": "MATERIALE",
+              "years": [
+                2025,
+                2026
+              ],
+              "closed_years": [
+                2025
+              ],
+              "populated": true,
+              "occupied_by": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

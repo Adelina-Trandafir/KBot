@@ -1,0 +1,45 @@
+### tz_Alimente
+furnizori_total = 28
+furnizori_fara_NIR = 24
+furnizori_cf_gol = 10
+furnizori_cf_duplicat = 1
+furnizori_pattern_SI = 7
+NIR_pe_furnizori_SI = 2
+linii_pe_furnizori_SI = 79
+NIR_total = 192
+NIR_IDF_null_sau_0 = 0
+NIR_IDFV_nenul = 192
+NIR_FurnizorV_nenul = 191
+CF_forma_RO_prefix = 0
+clienti_total = 1
+clienti_CF_P = 0
+### tz_Mijloace_Fixe
+furnizori_total = 2
+furnizori_fara_NIR = 0
+furnizori_cf_gol = 1
+furnizori_cf_duplicat = 0
+furnizori_pattern_SI = 1
+NIR_pe_furnizori_SI = 1
+linii_pe_furnizori_SI = 154
+NIR_total = 2
+NIR_IDF_null_sau_0 = 0
+NIR_IDFV_nenul = 2
+NIR_FurnizorV_nenul = 2
+CF_forma_RO_prefix = 0
+clienti_total = 7
+clienti_CF_P = 7
+### tz_Obiecte_Inventar
+furnizori_total = 5
+furnizori_fara_NIR = 4
+furnizori_cf_gol = 0
+furnizori_cf_duplicat = 0
+furnizori_pattern_SI = 0
+NIR_pe_furnizori_SI = 0
+linii_pe_furnizori_SI = 0
+NIR_total = 4
+NIR_IDF_null_sau_0 = 0
+NIR_IDFV_nenul = 4
+NIR_FurnizorV_nenul = 1
+CF_forma_RO_prefix = 0
+clienti_total = 105
+clienti_CF_P = 103

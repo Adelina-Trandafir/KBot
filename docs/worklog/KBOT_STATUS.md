@@ -8,6 +8,10 @@ Keep it current. If reality and this file disagree, fix this file in the same co
 the current PC/mobile, DataGrid and catalog rules are in
 [UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md). ADE numbering is separate from K-BOT.
 
+**VERCON:** its separate registry is [VERCON_STATUS](../../VERCON/VERCON_STATUS.md) (slices
+VC00–VC09, worklogs `SLICE-VCxx-yy-*.md` here). 11.10.2026: SLICE-VC00-01…05 done as documents
++ local generators (nothing validated on the server, no code/DDL yet). VC numbering is separate from K-BOT.
+
 **Rule:** every task also produces a worklog in `docs/worklog/` (see
 `docs/worklog/CODE_WORKFLOW.md`). This STATUS file is the summary; the worklog is the detail.
 

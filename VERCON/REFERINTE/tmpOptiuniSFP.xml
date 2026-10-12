@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataroot xmlns:od="urn:schemas-microsoft-com:officedata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xsi:noNamespaceSchemaLocation="tmpOptiuniSFP.xsd" generated="2026-10-11T17:34:09">
+<tmpOptiuniSFP>
+<ID>0</ID>
+<Explicatie>PRODUSE</Explicatie>
+<Parinte>1</Parinte>
+<Tot>1</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<XLS>0</XLS>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>1</ID>
+<Explicatie> Fișă magazie</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Fisa_Magazie</Raport>
+<RaportA>Fisa_Magazie_BF</RaportA>
+<XLS>1</XLS>
+<TMPL>fm.tmpl</TMPL>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>2</ID>
+<Explicatie> Balanță stocuri</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Balanta_produse</Raport>
+<RaportA>Balanta_Produse_BF</RaportA>
+<XLS>1</XLS>
+<TMPL>Balanta.tmpl</TMPL>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>3</ID>
+<Explicatie> Fișa produsului</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Fisa_Produsului</Raport>
+<XLS>0</XLS>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>4</ID>
+<Explicatie> Stoc final</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Stoc_Final</Raport>
+<XLS>0</XLS>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>5</ID>
+<Explicatie> Listă inventar</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Lista_Inventar</Raport>
+<XLS>1</XLS>
+<TMPL>ListaInventar.tmpl</TMPL>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>6</ID>
+<Explicatie> Referat de achiziție</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Referat_Periodic_produs</Raport>
+<XLS>1</XLS>
+<TMPL>referat_per.tmpl</TMPL>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>7</ID>
+<Explicatie> Centralizator conturi</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Centralizator_Conturi</Raport>
+<XLS>1</XLS>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>8</ID>
+<Explicatie> Centralizator conturi / furnizori</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Centralizator_Conturi_Furnizori</Raport>
+<XLS>0</XLS>
+<TIP>G-O-M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>9</ID>
+<Explicatie> Situație intrări anuale</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Situatie_Intrari</Raport>
+<XLS>0</XLS>
+<TIP>G-O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>10</ID>
+<Explicatie> Plan anual de achiziții</Explicatie>
+<Parinte>1</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Plan_Achizitii</Raport>
+<XLS>1</XLS>
+<TMPL>plan.tmpl</TMPL>
+<TIP>G-O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>100</ID>
+<Explicatie>INTRĂRI</Explicatie>
+<Parinte>2</Parinte>
+<Tot>1</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>101</ID>
+<Explicatie> Listare N.I.R.</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>NIR_SFP</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>102</ID>
+<Explicatie> Fișă magazie</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Fisa_Magazie</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>103</ID>
+<Explicatie> Referat achiziție</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Referat_Periodic_Intrari</Raport>
+<XLS>1</XLS>
+<TMPL>referat_per.tmpl</TMPL>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>104</ID>
+<Explicatie> Notă de comandă</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Nota_Comanda</Raport>
+<XLS>1</XLS>
+<TMPL>nota_comanda.tmpl</TMPL>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>106</ID>
+<Explicatie> Centralizator intrări / perioadă</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Centralizator_Furnizori</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>107</ID>
+<Explicatie> Balanță produse / furnizor</Explicatie>
+<Parinte>2</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Centralizator_Furnizori</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>200</ID>
+<Explicatie>IEȘIRI</Explicatie>
+<Parinte>4</Parinte>
+<Tot>1</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>201</ID>
+<Explicatie> Listare bon consum</Explicatie>
+<Parinte>4</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Bon_Consum</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>202</ID>
+<Explicatie> Centralizator bonuri consum</Explicatie>
+<Parinte>4</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Centralizator_BC</Raport>
+<XLS>1</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>203</ID>
+<Explicatie> Consumuri / produs</Explicatie>
+<Parinte>4</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Consumuri_Produs</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>204</ID>
+<Explicatie> Consumuri / gestionari</Explicatie>
+<Parinte>4</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Consumuri_Unitati</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>205</ID>
+<Explicatie> Fișă de evidență / spații</Explicatie>
+<Parinte>4</Parinte>
+<Tot>0</Tot>
+<Parinte1>1) Magazie</Parinte1>
+<Raport>Fisa_Evidenta</Raport>
+<XLS>0</XLS>
+<TIP>G</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>300</ID>
+<Explicatie>BONURI</Explicatie>
+<Parinte>5</Parinte>
+<Tot>1</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>301</ID>
+<Explicatie> Bonuri casare</Explicatie>
+<Parinte>5</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_BON_BS</Raport>
+<RaportA>Centralizator_OI_BON_BS</RaportA>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>302</ID>
+<Explicatie> Bonuri predare</Explicatie>
+<Parinte>5</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_BON_BP</Raport>
+<RaportA>Centralizator_OI_BON_BP</RaportA>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>303</ID>
+<Explicatie> Bonuri transfer</Explicatie>
+<Parinte>5</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_BON_Bt</Raport>
+<RaportA>Centralizator_OI_BON_BT</RaportA>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>400</ID>
+<Explicatie>PRODUSE</Explicatie>
+<Parinte>6</Parinte>
+<Tot>1</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>401</ID>
+<Explicatie> Situație produse</Explicatie>
+<Parinte>6</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Fisa_Evidenta_Produse</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>402</ID>
+<Explicatie> Stoc final produse</Explicatie>
+<Parinte>6</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Fisa_Evidenta_Produse_STOC</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>403</ID>
+<Explicatie> Balanță obiecte inventar</Explicatie>
+<Parinte>6</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Balanta</Raport>
+<XLS>1</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>404</ID>
+<Explicatie> Lista inventar</Explicatie>
+<Parinte>6</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_LISTA_INVENTAR_TOTAL</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>500</ID>
+<Explicatie>PRIMITORI</Explicatie>
+<Parinte>7</Parinte>
+<Tot>1</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>501</ID>
+<Explicatie> Situație primitor</Explicatie>
+<Parinte>7</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Fisa_Evidenta_Primitori</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>502</ID>
+<Explicatie> Stoc final primitor</Explicatie>
+<Parinte>7</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Fisa_Evidenta_Primitori_STOC</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>503</ID>
+<Explicatie> Lista inventar</Explicatie>
+<Parinte>7</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Lista_Inventar</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>504</ID>
+<Explicatie> Fișă de evidență / spații O.I.</Explicatie>
+<Parinte>7</Parinte>
+<Tot>0</Tot>
+<Parinte1>2) Obiecte de inventar</Parinte1>
+<Raport>OI_Fisa_Evidenta</Raport>
+<XLS>0</XLS>
+<TIP>O</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>600</ID>
+<Explicatie>BONURI</Explicatie>
+<Parinte>8</Parinte>
+<Tot>1</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>601</ID>
+<Explicatie> Bonuri Casare</Explicatie>
+<Parinte>8</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>MF_BON_BS</Raport>
+<RaportA>Centralizator_MF_BON_BS</RaportA>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>602</ID>
+<Explicatie> Bonuri Predare</Explicatie>
+<Parinte>8</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>MF_BON_BP</Raport>
+<RaportA>Centralizator_MF_BON_BP</RaportA>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>603</ID>
+<Explicatie> Bonuri Transfer</Explicatie>
+<Parinte>8</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>MF_BON_Bt</Raport>
+<RaportA>Centralizator_MF_BON_BT</RaportA>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>700</ID>
+<Explicatie>PRODUSE</Explicatie>
+<Parinte>9</Parinte>
+<Tot>1</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>703</ID>
+<Explicatie>Balanță Mijloace Fixe</Explicatie>
+<Parinte>9</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>MF_Balanta</Raport>
+<RaportA>MF_Balanta_Subinv</RaportA>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>704</ID>
+<Explicatie>Amortizare</Explicatie>
+<Parinte>9</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>Amortizare</Raport>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>800</ID>
+<Explicatie>PRIMITORI</Explicatie>
+<Parinte>10</Parinte>
+<Tot>1</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+<tmpOptiuniSFP>
+<ID>803</ID>
+<Explicatie> Listă Inventar</Explicatie>
+<Parinte>10</Parinte>
+<Tot>0</Tot>
+<Parinte1>3) Mijloace Fixe</Parinte1>
+<Raport>MF_Lista_Inventar</Raport>
+<XLS>0</XLS>
+<TIP>M</TIP>
+</tmpOptiuniSFP>
+</dataroot>

@@ -1,0 +1,45 @@
+### tz_Alimente  NR.ZEC=4
+Intrari.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.Pret: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.TVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.ValoareCUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.ValoareCUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+ProduseP.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri_H.ValoareBC: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+NIR.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+SELECT Count(*) FROM ListaAlimente = 127
+SELECT Count(*) FROM LABC = 127
+### tz_Mijloace_Fixe  NR.ZEC=2
+Intrari.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.Pret: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.TVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.ValoareCUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.ValoareCUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+ProduseP.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri_H.ValoareBC: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+NIR.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+SELECT Count(*) FROM ListaAlimente = 0
+SELECT Count(*) FROM LABC = 0
+### tz_Obiecte_Inventar  NR.ZEC=2
+Intrari.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.Pret: rows_with_more_than_ZEC_decimals=5 max_abs_diff=0,005 sumdiff=0,00350000000003092
+Intrari.PUTVA: rows_with_more_than_ZEC_decimals=5 max_abs_diff=0,005 sumdiff=0,00350000000003092
+Intrari.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.TVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Intrari.ValoareCUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.Cant: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.PUTVA: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+Iesiri.ValoareCUTVA: rows_with_more_than_ZEC_decimals=8 max_abs_diff=0,005 sumdiff=-0,0131000000001222
+ProduseP.PUTVA: rows_with_more_than_ZEC_decimals=5 max_abs_diff=0,005 sumdiff=0,00349999999980355
+Iesiri_H.ValoareBC: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+NIR.Valoare: rows_with_more_than_ZEC_decimals=0 max_abs_diff= sumdiff=0
+SELECT Count(*) FROM ListaAlimente = 0
+SELECT Count(*) FROM LABC = 0

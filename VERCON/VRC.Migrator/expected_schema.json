@@ -1,0 +1,1330 @@
+{
+ "generated": "VERCON/tools/expected.js",
+ "tables": {
+  "Cina": {
+   "primaryKey": "Id",
+   "fields": [
+    {
+     "name": "Id",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdLista",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdFel",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Tip",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Explicatie",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Clienti": {
+   "primaryKey": "IDC",
+   "fields": [
+    {
+     "name": "IDC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Denumire",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Adresa",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CF",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "J",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CNP",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Cont",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "ComisieInventar": {
+   "primaryKey": "IdComisieInv",
+   "fields": [
+    {
+     "name": "IdComisieInv",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Receptie1",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie2",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie3",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie4",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "ComisieNIR": {
+   "primaryKey": "IdComisie",
+   "fields": [
+    {
+     "name": "IdComisie",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Receptie1",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie2",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie3",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Receptie4",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Dejun": {
+   "primaryKey": "Id",
+   "fields": [
+    {
+     "name": "Id",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdLista",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdFel",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Tip",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Explicatie",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "FeluriMancare": {
+   "primaryKey": "IDFel",
+   "fields": [
+    {
+     "name": "IDFel",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "DenFel",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Explicatie",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Furnizori": {
+   "primaryKey": "IDF",
+   "fields": [
+    {
+     "name": "IDF",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Denumire",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Adresa",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CF",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "J",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Cont",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "TIP",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "ONLINE",
+     "accessType": "Yes/No",
+     "class": "BOOL"
+    },
+    {
+     "name": "Orasul",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Iesiri": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdBonConsum",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "IesiriRetur": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdBonConsum",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Long",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "Iesiri_H": {
+   "primaryKey": "IdBonConsum",
+   "fields": [
+    {
+     "name": "IdBonConsum",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdRetur",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NumarBC",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DataBC",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "ValoareBC",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Expl",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Retur",
+     "accessType": "Yes/No",
+     "class": "BOOL"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "Intrari": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdIntrare",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDTVA",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Pret",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "TVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Valoare",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "IntrariStorno": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdIntrare",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Long",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "LABC": {
+   "primaryKey": "IdLista",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdLista",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NumarLA",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "DATALA",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "ValoareBon",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DEP",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareLista",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    }
+   ]
+  },
+  "LegBCLA": {
+   "primaryKey": "IdLista",
+   "fields": [
+    {
+     "name": "IdBonConsum",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdLista",
+     "accessType": "Long",
+     "class": "CHEIE"
+    }
+   ]
+  },
+  "ListaAlimente": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDLISTA",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "MicDejun_P",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "VMD",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "MicDejun_V",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "MicDejun_D",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "Dejun_P",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "VD",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Dejun_V",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Dejun_D",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "Cina_P",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "VC",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Cina_V",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Cina_D",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "Comentarii",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Masini": {
+   "primaryKey": "IdMasina",
+   "fields": [
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Masina",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "TIP",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "MicDejun": {
+   "primaryKey": "Id",
+   "fields": [
+    {
+     "name": "Id",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdLista",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdFel",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Tip",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Explicatie",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "NIR": {
+   "primaryKey": "IdIntrare",
+   "fields": [
+    {
+     "name": "IdIntrare",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdComisie",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDF",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDFV",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdStorno",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NrFact",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Data",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "Numar",
+     "accessType": "Double",
+     "class": "NUMAR"
+    },
+    {
+     "name": "Valoare",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataFc",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "Storno",
+     "accessType": "Yes/No",
+     "class": "BOOL"
+    },
+    {
+     "name": "FurnizorV",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "NR": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NR",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "NUM",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "NIR",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "NRFCT",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "NRBC",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "SI_LA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ZEC",
+     "accessType": "Long",
+     "class": "INT"
+    }
+   ]
+  },
+  "OI_Casare": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC_BC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NRBC",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DATABC",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Expl",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "OI_Predare": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBP",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdBonConsum",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasinaP",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC_BP",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NRBP",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DATABP",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Expl",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "OI_Produse": {
+   "primaryKey": "IDOI",
+   "fields": [
+    {
+     "name": "IDOI",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBP",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBT",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBO",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDM",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC_PTC",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "OI_Transfer": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDBT",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC_BT",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IDC_OLD",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "NRBT",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DATABT",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "Cant",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareCUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "Expl",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    }
+   ]
+  },
+  "Produse": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdMasina",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "DenumireP",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "UM",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CPV",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CC",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "DNF",
+     "accessType": "Long",
+     "class": "INT"
+    }
+   ]
+  },
+  "ProduseM": {
+   "primaryKey": null,
+   "fields": [
+    {
+     "name": "IDPMF",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "IdProdus",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "DataIntrare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "DNF",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "DF",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "ValoareLuna",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "ValoareLunara",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    }
+   ]
+  },
+  "ProduseP": {
+   "primaryKey": "IdProdus",
+   "fields": [
+    {
+     "name": "IdProdus",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "ID",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "PUTVA",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "DataSalvare",
+     "accessType": "Date/Time",
+     "class": "DATA"
+    },
+    {
+     "name": "COD",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Retetar": {
+   "primaryKey": "IdFel",
+   "fields": [
+    {
+     "name": "IdFel",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "Continut",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Cantitate",
+     "accessType": "Double",
+     "class": "VALOARE-INT"
+    },
+    {
+     "name": "AlteDetalii",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "UM",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CPV",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "Setari": {
+   "primaryKey": "ID",
+   "fields": [
+    {
+     "name": "ID",
+     "accessType": "AutoNumber",
+     "class": "CHEIE"
+    },
+    {
+     "name": "S",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "V",
+     "accessType": "Double",
+     "class": "CONFIG"
+    }
+   ]
+  },
+  "TVA": {
+   "primaryKey": "IdTVA",
+   "fields": [
+    {
+     "name": "IdTVA",
+     "accessType": "Long",
+     "class": "CHEIE"
+    },
+    {
+     "name": "TVA",
+     "accessType": "Double",
+     "class": "COTA"
+    },
+    {
+     "name": "Explicatie",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  },
+  "UNIT": {
+   "primaryKey": null,
+   "fields": [
+    {
+     "name": "NumeUnitate",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CUI",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Adresa",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Director",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Contabil",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Culoare",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Expirat",
+     "accessType": "Yes/No",
+     "class": "BOOL"
+    },
+    {
+     "name": "Secretar",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "SursaCont",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "AdresaMail",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Orasul",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "TelefonContact",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "SectorSursa",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "AlteDetalii",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "AnDate",
+     "accessType": "Long",
+     "class": "INT"
+    },
+    {
+     "name": "DC",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Alte",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Gestionar",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "CodProgram",
+     "accessType": "Text",
+     "class": "TEXT"
+    },
+    {
+     "name": "Judetul",
+     "accessType": "Text",
+     "class": "TEXT"
+    }
+   ]
+  }
+ }
+}

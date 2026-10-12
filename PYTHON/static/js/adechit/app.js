@@ -900,7 +900,7 @@ function bind() {
     openMenu($('ade-apps'), [
       { icon: '🏢', label: $('ade-context').textContent || 'Contul curent', disabled: true },
       { icon: '🤖', label: 'K-BOT', rule: true, run: () => { window.location.href = '/portal'; } },
-      { icon: '🏗️', label: 'Vercon · în curând', disabled: true },
+      { icon: '🏗️', label: 'VERCON', run: () => { window.location.href = '/vercon'; } },
       { icon: '📒', label: 'Avacont · în curând', disabled: true },
     ], { label: 'Aplicații', below: $('ade-apps').closest('header') });
   });

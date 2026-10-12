@@ -1,0 +1,3268 @@
+[
+ {
+  "type": "table",
+  "name": "@ComisieInventar",
+  "file": "tables/@ComisieInventar.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "sablon structura \"@\" folosit de mecanismul de schema Access",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@EF",
+  "file": "tables/@EF.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@EFS",
+  "file": "tables/@EFS.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@EFT",
+  "file": "tables/@EFT.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 15,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@ProduseM",
+  "file": "tables/@ProduseM.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "sablon structura \"@\" folosit de mecanismul de schema Access",
+  "fields": 6,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@RunOnce",
+  "file": "tables/@RunOnce.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@Setari",
+  "file": "tables/@Setari.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "sablon structura \"@\" folosit de mecanismul de schema Access",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@Trimis",
+  "file": "tables/@Trimis.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "sablon structura \"@\" folosit de mecanismul de schema Access",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "@UNIT",
+  "file": "tables/@UNIT.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "sablon structura \"@\" folosit de mecanismul de schema Access",
+  "fields": 21,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Alimente",
+  "file": "tables/Alimente.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 7,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "cale",
+  "file": "tables/cale.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "identitate/configurare; mapare pe comune/VC_Settings (nu copiere)",
+  "fields": 15,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Caletemp",
+  "file": "tables/Caletemp.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "identitate/configurare; mapare pe comune/VC_Settings (nu copiere)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Cina",
+  "file": "tables/Cina.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Clasificari",
+  "file": "tables/Clasificari.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "folosit de FC, Produse, CLS2024 (formulare active); date de profilat",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Clienti",
+  "file": "tables/Clienti.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 7,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "ComisieInventar",
+  "file": "tables/ComisieInventar.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "ComisieNIR",
+  "file": "tables/ComisieNIR.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "cpv",
+  "file": "tables/cpv.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator CPV in backend (9.454 randuri in baza Alimente), folosit de Produse; D08",
+  "fields": 2,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "CPV1",
+  "file": "tables/CPV1.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "folosit de formularul CPV2017 (deschis din Produse)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Dejun",
+  "file": "tables/Dejun.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "EF",
+  "file": "tables/EF.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 9,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "EFS",
+  "file": "tables/EFS.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 10,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "EFT",
+  "file": "tables/EFT.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 15,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "EF_TMP",
+  "file": "tables/EF_TMP.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Erori Intrare Tbl",
+  "file": "tables/Erori Intrare Tbl.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "jurnal de erori al mecanismului de schema Access (referit doar de VaerCon in cod comentat, clsDatabaseErrors, newProgressBar)",
+  "fields": 7,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Erori Intrare",
+  "file": "tables/Erori Intrare.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "idem",
+  "fields": 8,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Erori_Intrare",
+  "file": "tables/Erori_Intrare.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "jurnal de erori clsDatabaseErrors (DBS)",
+  "fields": 7,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "EXT_IDX",
+  "file": "tables/EXT_IDX.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Feluri",
+  "file": "tables/Feluri.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 1,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "FeluriMancare",
+  "file": "tables/FeluriMancare.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "FM_2",
+  "file": "tables/FM_2.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 11,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Furnizori",
+  "file": "tables/Furnizori.md",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "Furnizorii VERCON = Parteneri KBOT (decizie 11.10.2026): legare dupa CodFiscal; nu se migreaza furnizorii fara inregistrari; «Stoc initial» nu este furnizor real",
+  "fields": 9,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "gest_subCPV",
+  "file": "tables/gest_subCPV.md",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "nicio referinta in export",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Iesiri",
+  "file": "tables/Iesiri.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 7,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "IesiriRetur",
+  "file": "tables/IesiriRetur.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 6,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Iesiri_H",
+  "file": "tables/Iesiri_H.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 10,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Intrari",
+  "file": "tables/Intrari.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 11,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "IntrariStorno",
+  "file": "tables/IntrariStorno.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 6,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Jud",
+  "file": "tables/Jud.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "lista judete, folosita de formularul UNIT",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "LABC",
+  "file": "tables/LABC.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 7,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "LegBCLA",
+  "file": "tables/LegBCLA.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 2,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "ListaAlimente",
+  "file": "tables/ListaAlimente.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 15,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Masini",
+  "file": "tables/Masini.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "MicDejun",
+  "file": "tables/MicDejun.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "NIR",
+  "file": "tables/NIR.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 13,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "NR",
+  "file": "tables/NR.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "identitate/configurare; mapare pe comune/VC_Settings (nu copiere)",
+  "fields": 8,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "OI_Casare",
+  "file": "tables/OI_Casare.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 12,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "OI_Predare",
+  "file": "tables/OI_Predare.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 14,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "OI_Produse",
+  "file": "tables/OI_Produse.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 12,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "OI_TmpFact",
+  "file": "tables/OI_TmpFact.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 14,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "OI_Transfer",
+  "file": "tables/OI_Transfer.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 13,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Produse",
+  "file": "tables/Produse.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 8,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "ProduseM",
+  "file": "tables/ProduseM.md",
+  "disp": "INCLUS-DATE",
+  "note": "date business istorice",
+  "fields": 6,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "ProduseP",
+  "file": "tables/ProduseP.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Rbb",
+  "file": "tables/Rbb.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 7,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Retetar",
+  "file": "tables/Retetar.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 6,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "RunOnce",
+  "file": "tables/RunOnce.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 5,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Setari",
+  "file": "tables/Setari.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "identitate/configurare; mapare pe comune/VC_Settings (nu copiere)",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "SFP_CautCBX",
+  "file": "tables/SFP_CautCBX.md",
+  "disp": "TEMP-LUCRU",
+  "note": "sursa casetei de cautare din SFP",
+  "fields": 4,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "SQL",
+  "file": "tables/SQL.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "SQL_",
+  "file": "tables/SQL_.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "SQL_FIX_BD",
+  "file": "tables/SQL_FIX_BD.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 6,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "SQL_FIX_BD_SUB",
+  "file": "tables/SQL_FIX_BD_SUB.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 4,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "TblExcel",
+  "file": "tables/TblExcel.md",
+  "disp": "TEMP-LUCRU",
+  "note": "tabel de lucru al exportului Excel (mdl_Export_Excel)",
+  "fields": 13,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tblFiles",
+  "file": "tables/tblFiles.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tblFTP",
+  "file": "tables/tblFTP.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tblPopupMsg",
+  "file": "tables/tblPopupMsg.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "TipFirmeL",
+  "file": "tables/TipFirmeL.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 2,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpCoduri",
+  "file": "tables/tmpCoduri.md",
+  "disp": "EXCLUS-CODURI",
+  "note": "sistem Coduri (N06)",
+  "fields": 4,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "TmpFact",
+  "file": "tables/TmpFact.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 26,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "TmpFactV",
+  "file": "tables/TmpFactV.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpFMANTET",
+  "file": "tables/tmpFMANTET.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpFM_2",
+  "file": "tables/tmpFM_2.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpOI",
+  "file": "tables/tmpOI.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpOptiuniSFP",
+  "file": "tables/tmpOptiuniSFP.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "meniul SFP (MODEL/TIP/Raport); DATE PRIMITE de la utilizator: REFERINTE/tmpOptiuniSFP.xml; se transforma in catalog de rapoarte (VC_ReportCatalog)",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpProduseM",
+  "file": "tables/tmpProduseM.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 7,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpQFC",
+  "file": "tables/tmpQFC.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 17,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpRbb",
+  "file": "tables/tmpRbb.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 1,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpSFP",
+  "file": "tables/tmpSFP.md",
+  "disp": "DERIVAT",
+  "note": "rezultat de calcul/raport",
+  "fields": 20,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmpXMLPath",
+  "file": "tables/tmpXMLPath.md",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura (N13)",
+  "fields": 6,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_Balanta",
+  "file": "tables/tmp_Balanta.md",
+  "disp": "DERIVAT",
+  "note": "rezultat de calcul/raport",
+  "fields": 14,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_BC_DenProdus",
+  "file": "tables/tmp_BC_DenProdus.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 20,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Tmp_Cina",
+  "file": "tables/Tmp_Cina.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_Coduri",
+  "file": "tables/tmp_Coduri.md",
+  "disp": "EXCLUS-CODURI",
+  "note": "sistem Coduri (N06)",
+  "fields": 4,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Tmp_Dejun",
+  "file": "tables/Tmp_Dejun.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_II",
+  "file": "tables/tmp_II.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 2,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_LABC",
+  "file": "tables/tmp_LABC.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 8,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "tmp_LEGBCLA",
+  "file": "tables/tmp_LEGBCLA.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 8,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Tmp_Lista",
+  "file": "tables/Tmp_Lista.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 18,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Tmp_MicDejun",
+  "file": "tables/Tmp_MicDejun.md",
+  "disp": "TEMP-LUCRU",
+  "note": "scratch Access; drafturile se reconstruiesc izolat pe utilizator",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "Trimis",
+  "file": "tables/Trimis.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "tSQL",
+  "file": "tables/tSQL.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 2,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "TVA",
+  "file": "tables/TVA.md",
+  "disp": "INCLUS-NOMENCLATOR",
+  "note": "nomenclator/registru business",
+  "fields": 3,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "UNIT",
+  "file": "tables/UNIT.md",
+  "disp": "INCLUS-CONFIG",
+  "note": "identitate/configurare; mapare pe comune/VC_Settings (nu copiere)",
+  "fields": 20,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "Ver",
+  "file": "tables/Ver.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "versiune schema Access; citit doar ca diagnostic daca exista",
+  "fields": 1,
+  "linked": true
+ },
+ {
+  "type": "table",
+  "name": "VEROFFLINE",
+  "file": "tables/VEROFFLINE.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "VER_RAP",
+  "file": "tables/VER_RAP.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 2,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "x",
+  "file": "tables/x.md",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "tabel de lucru fara nicio referinta in export",
+  "fields": 8,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "XCX",
+  "file": "tables/XCX.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "tabel de lucru al modulului de criptare",
+  "fields": 26,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_ADODAODDL",
+  "file": "tables/_ADODAODDL.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 8,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_IDX_",
+  "file": "tables/_IDX_.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_Mail",
+  "file": "tables/_Mail.md",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/backup/ribbon/popup/mail/ANAF-firme: infrastructura desktop",
+  "fields": 14,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_QRY",
+  "file": "tables/_QRY.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 4,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_REL_",
+  "file": "tables/_REL_.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 10,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_Struct_",
+  "file": "tables/_Struct_.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 11,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_tblQry",
+  "file": "tables/_tblQry.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_tblRel",
+  "file": "tables/_tblRel.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 9,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_TBLS_",
+  "file": "tables/_TBLS_.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 5,
+  "linked": false
+ },
+ {
+  "type": "table",
+  "name": "_TBLS_Transfer",
+  "file": "tables/_TBLS_Transfer.md",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "mecanism schema Access (DBS/clsDatabase)",
+  "fields": 3,
+  "linked": false
+ },
+ {
+  "type": "query",
+  "name": "Amortizare",
+  "file": "queries/Amortizare.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta interimara",
+  "file": "queries/Balanta interimara.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta interimara2",
+  "file": "queries/Balanta interimara2.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta listare 1",
+  "file": "queries/Balanta listare 1.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta interimara2 (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta listare 2",
+  "file": "queries/Balanta listare 2.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta interimara (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta listare",
+  "file": "queries/Balanta listare.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta interimara2 (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta",
+  "file": "queries/Balanta.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta22",
+  "file": "queries/Balanta22.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta223",
+  "file": "queries/Balanta223.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta22_IA",
+  "file": "queries/Balanta22_IA.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul actual",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Balanta_inchidere_an",
+  "file": "queries/Balanta_inchidere_an.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta interimara (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC subreport 2013",
+  "file": "queries/BC subreport 2013.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC_Produs",
+  "file": "queries/BC_Produs.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de BC_Produs_S1 (Coduri)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC_Produs_BUN",
+  "file": "queries/BC_Produs_BUN.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC_Produs_FIFO",
+  "file": "queries/BC_Produs_FIFO.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC_Produs_S1",
+  "file": "queries/BC_Produs_S1.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "BC_Produs_S2",
+  "file": "queries/BC_Produs_S2.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Bon Consum",
+  "file": "queries/Bon Consum.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Bonuri consum",
+  "file": "queries/Bonuri consum.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Centralizator_BC",
+  "file": "queries/Centralizator_BC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Copac_BC",
+  "file": "queries/Copac_BC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Fisa de magazie antet furnizori",
+  "file": "queries/Fisa de magazie antet furnizori.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Fisa de magazie antet",
+  "file": "queries/Fisa de magazie antet.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Fisa de magazie Detaliu Furnizori",
+  "file": "queries/Fisa de magazie Detaliu Furnizori.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Fisa de magazie Detaliu",
+  "file": "queries/Fisa de magazie Detaliu.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "FM_IDP",
+  "file": "queries/FM_IDP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Iesiri-_Iesiri",
+  "file": "queries/Iesiri-_Iesiri.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Iesiri-_Intrari",
+  "file": "queries/Iesiri-_Intrari.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Listare Furnizori",
+  "file": "queries/Listare Furnizori.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Listare NIR 2",
+  "file": "queries/Listare NIR 2.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Listare NIR",
+  "file": "queries/Listare NIR.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Listare toti furnizorii",
+  "file": "queries/Listare toti furnizorii.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "MF_Balanta",
+  "file": "queries/MF_Balanta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "MF_Union_Balanta",
+  "file": "queries/MF_Union_Balanta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "OI_Balanta",
+  "file": "queries/OI_Balanta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "OI_Evidenta",
+  "file": "queries/OI_Evidenta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "OI_MaxID",
+  "file": "queries/OI_MaxID.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "OI_Union",
+  "file": "queries/OI_Union.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "OI_Union_Balanta",
+  "file": "queries/OI_Union_Balanta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Per",
+  "file": "queries/Per.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QBC",
+  "file": "queries/QBC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "qBCPT",
+  "file": "queries/qBCPT.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QBCR",
+  "file": "queries/QBCR.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QBP",
+  "file": "queries/QBP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QDEP",
+  "file": "queries/QDEP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QDEPL",
+  "file": "queries/QDEPL.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QEP",
+  "file": "queries/QEP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QFC",
+  "file": "queries/QFC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QFCDEL",
+  "file": "queries/QFCDEL.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QFCP",
+  "file": "queries/QFCP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QFCS",
+  "file": "queries/QFCS.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QFCS_SUB",
+  "file": "queries/QFCS_SUB.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QFCTMP",
+  "file": "queries/QFCTMP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QFCTMPMF",
+  "file": "queries/QFCTMPMF.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QFMA",
+  "file": "queries/QFMA.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QFMD",
+  "file": "queries/QFMD.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QIESIRI",
+  "file": "queries/QIESIRI.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "qIesiri_H",
+  "file": "queries/qIesiri_H.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QLABC",
+  "file": "queries/QLABC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QOIC",
+  "file": "queries/QOIC.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QOICP",
+  "file": "queries/QOICP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QOIT",
+  "file": "queries/QOIT.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QOITP",
+  "file": "queries/QOITP.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "qRetur",
+  "file": "queries/qRetur.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_1",
+  "file": "queries/QSFP_1.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_2",
+  "file": "queries/QSFP_2.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_3",
+  "file": "queries/QSFP_3.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_4",
+  "file": "queries/QSFP_4.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_5",
+  "file": "queries/QSFP_5.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "QSFP_BL",
+  "file": "queries/QSFP_BL.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "QSFP_FM",
+  "file": "queries/QSFP_FM.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul/sursa de raport actual; parametri Forms!/TempVars de extras (VC00-03)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "Query1",
+  "file": "queries/Query1.sql",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "INSERT in TmpFact; nicio referinta in export",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Retur_Produse",
+  "file": "queries/Retur_Produse.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Retur_produse_prost",
+  "file": "queries/Retur_produse_prost.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "SFP_Balanta",
+  "file": "queries/SFP_Balanta.sql",
+  "disp": "INCLUS-CALCUL",
+  "note": "calcul actual",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "Storno",
+  "file": "queries/Storno.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "refera Coduri (N06)",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "temp1",
+  "file": "queries/temp1.sql",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "coloane inexistente in schema curenta (Intrari.CodProdus); nicio referinta",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "tempQ",
+  "file": "queries/tempQ.sql",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "sursa de lista cu REȚETAR pentru ListaAlimente (Forms!ListaAlimente!mdv); nicio referinta",
+  "usesForms": true
+ },
+ {
+  "type": "query",
+  "name": "XLS_OI_MAT",
+  "file": "queries/XLS_OI_MAT.sql",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta listare 2 (Coduri)",
+  "usesForms": false
+ },
+ {
+  "type": "query",
+  "name": "_TEMP_Actualizeaza_BC_IDFV",
+  "file": "queries/_TEMP_Actualizeaza_BC_IDFV.sql",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "UPDATE unic pe coloane inexistente (Iesiri.IdIntrare/IDF); nicio referinta",
+  "usesForms": false
+ },
+ {
+  "type": "form",
+  "name": "AdaugaTabelInTBLS",
+  "file": "Forms/AdaugaTabelInTBLS.txt",
+  "family": "Exclus",
+  "desc": "mecanism schema Access",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "",
+  "marks": [
+   "refera mecanism schema Access"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "ALEGE_BC",
+  "file": "Forms/ALEGE_BC.txt",
+  "family": "BC",
+  "desc": "alegere BC (selector)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ALEGE_BC_RETUR",
+  "file": "Forms/ALEGE_BC_RETUR.txt",
+  "family": "BR",
+  "desc": "alegere BC pentru retur",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "BC",
+  "file": "Forms/BC.txt",
+  "family": "BC",
+  "desc": "Bon de consum",
+  "disp": "INCLUS-UI",
+  "note": "Setarea FIFO legacy nu reactiveaza Coduri.",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "BCP",
+  "file": "Forms/BCP.txt",
+  "family": "BC",
+  "desc": "BC pe produs (de clarificat)",
+  "disp": "INCLUS-UI",
+  "note": "fereastra de alegere produs pentru BC (pozitionata langa Denprodus, BC.txt:2590); BC",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "BR",
+  "file": "Forms/BR.txt",
+  "family": "BR",
+  "desc": "Bon retur",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Clienti",
+  "file": "Forms/Clienti.txt",
+  "family": "Nomenclatoare",
+  "desc": "Clienti/detinatori",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "CLS2024",
+  "file": "Forms/CLS2024.txt",
+  "family": "Nomenclatoare",
+  "desc": "CPV Vercon 2017 (selector)",
+  "disp": "INCLUS-UI",
+  "note": "depinde de decizia D08 (CPV comun)",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "CN",
+  "file": "Forms/CN.txt",
+  "family": "Alimente",
+  "desc": "subform mese: Cina (Tmp_Cina)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ComisieINV subform",
+  "file": "Forms/ComisieINV subform.txt",
+  "family": "Nomenclatoare",
+  "desc": "comisie inventar",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ComisieNIR subform",
+  "file": "Forms/ComisieNIR subform.txt",
+  "family": "Nomenclatoare",
+  "desc": "comisie NIR",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Config",
+  "file": "Forms/Config.txt",
+  "family": "Configurare",
+  "desc": "GESTIUNI: modificare date unitate",
+  "disp": "INCLUS-UI",
+  "note": "mapare pe VC_Gestiuni/VC_Settings",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "CPV2017",
+  "file": "Forms/CPV2017.txt",
+  "family": "Nomenclatoare",
+  "desc": "CPV Vercon 2017 (selector)",
+  "disp": "INCLUS-UI",
+  "note": "depinde de D08",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "D",
+  "file": "Forms/D.txt",
+  "family": "Alimente",
+  "desc": "subform mese: Dejun (Tmp_Dejun)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "EFACTURA",
+  "file": "Forms/EFACTURA.txt",
+  "family": "Exclus",
+  "desc": "e-Factura / mesaje ANAF",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "FC",
+  "file": "Forms/FC.txt",
+  "family": "FC",
+  "desc": "Recepție FC/NIR (+extensie MF)",
+  "disp": "INCLUS-UI",
+  "note": "Contine cod legacy Coduri in ramuri exclusive: ignorat.",
+  "marks": [
+   "refera Coduri"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "FCS",
+  "file": "Forms/FCS.txt",
+  "family": "FCS",
+  "desc": "Storno FC",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Feluri",
+  "file": "Forms/Feluri.txt",
+  "family": "Alimente",
+  "desc": "feluri de mancare",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "frmMail",
+  "file": "Forms/frmMail.txt",
+  "family": "Shell",
+  "desc": "trimite backup FTP",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "backup/FTP",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "frmPB",
+  "file": "Forms/frmPB.txt",
+  "family": "Shell",
+  "desc": "progress bar",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "frmProgressBar",
+  "file": "Forms/frmProgressBar.txt",
+  "family": "Shell",
+  "desc": "progress bar",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Furnizori",
+  "file": "Forms/Furnizori.txt",
+  "family": "Nomenclatoare",
+  "desc": "Furnizori",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "forma veche de furnizori; inlocuita de Parteneri KBOT",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Furnizori2022",
+  "file": "Forms/Furnizori2022.txt",
+  "family": "Nomenclatoare",
+  "desc": "Furnizori 2022 (de clarificat)",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "Furnizorii VERCON = Parteneri KBOT (decizie 11.10.2026): legare dupa CodFiscal; nu se migreaza furnizorii fara inregistrari; «Stoc initial» nu este furnizor real; completarea dupa CUI din ANAF nu se portează",
+  "marks": [
+   "refera ANAF"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "Gestionari",
+  "file": "Forms/Gestionari.txt",
+  "family": "Configurare",
+  "desc": "Gestionari (RecordSource Gestionari; caption Clienti)",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "nedeschis din ribbon/cod; sursa „Gestionari\" nu este tabel in export; ribbonul „Gestionari\" deschide Clienti",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "IA",
+  "file": "Forms/IA.txt",
+  "family": "Inchidere an",
+  "desc": "Inchidere/initializare an",
+  "disp": "INCLUS-UI",
+  "note": "NU se executa pe originale.",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "LABC",
+  "file": "Forms/LABC.txt",
+  "family": "Alimente",
+  "desc": "Lista alimente-BC",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "LEGBCLA",
+  "file": "Forms/LEGBCLA.txt",
+  "family": "Alimente",
+  "desc": "Legatura BC-lista alimente",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ListaAlimente",
+  "file": "Forms/ListaAlimente.txt",
+  "family": "Alimente",
+  "desc": "Lista alimente",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ListaAlimente_copy",
+  "file": "Forms/ListaAlimente_copy.txt",
+  "family": "Alimente",
+  "desc": "copie ListaAlimente (de clarificat)",
+  "disp": "NEREFERIT-NEPORTAT",
+  "note": "copie a ListaAlimente, nereferita",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Main",
+  "file": "Forms/Main.txt",
+  "family": "Shell",
+  "desc": "meniu principal Access",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "navigare Access; inlocuita de portal",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Masini",
+  "file": "Forms/Masini.txt",
+  "family": "Nomenclatoare",
+  "desc": "Categorii/conturi (Masini)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Masini_sub",
+  "file": "Forms/Masini_sub.txt",
+  "family": "Nomenclatoare",
+  "desc": "subform Masini",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "MD",
+  "file": "Forms/MD.txt",
+  "family": "Alimente",
+  "desc": "subform mese: Mic dejun (Tmp_MicDejun)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Mesaje_ANAF",
+  "file": "Forms/Mesaje_ANAF.txt",
+  "family": "Exclus",
+  "desc": "e-Factura / mesaje ANAF",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "MonthPicker",
+  "file": "Forms/MonthPicker.txt",
+  "family": "Shell",
+  "desc": "selector luna",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "inlocuit de calendarul comun",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "OI_Casare",
+  "file": "Forms/OI_Casare.txt",
+  "family": "OI",
+  "desc": "Casare OI/MF",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "OI_Predare",
+  "file": "Forms/OI_Predare.txt",
+  "family": "OI",
+  "desc": "Predare OI/MF",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "OI_TmpFact",
+  "file": "Forms/OI_TmpFact.txt",
+  "family": "OI",
+  "desc": "linii OI temporare",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "OI_Transfer",
+  "file": "Forms/OI_Transfer.txt",
+  "family": "OI",
+  "desc": "Transfer OI/MF",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "Produse",
+  "file": "Forms/Produse.txt",
+  "family": "Nomenclatoare",
+  "desc": "Produse",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "ProduseM",
+  "file": "Forms/ProduseM.txt",
+  "family": "Nomenclatoare",
+  "desc": "Produse MF",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "SETARI",
+  "file": "Forms/SETARI.txt",
+  "family": "Configurare",
+  "desc": "Setari (precizie etc.)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "SFP",
+  "file": "Forms/SFP.txt",
+  "family": "Situatii",
+  "desc": "Situatii financiare/rapoarte (meniu dinamic)",
+  "disp": "INCLUS-UI",
+  "note": "Meniu din tmpOptiuniSFP + MODEL.",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "subTreeView",
+  "file": "Forms/subTreeView.txt",
+  "family": "Shell",
+  "desc": "TreeView ActiveX",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "componenta UI Access",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "TmpFact",
+  "file": "Forms/TmpFact.txt",
+  "family": "FC",
+  "desc": "subform linii FC (sursa TmpFact)",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "TmpFactMF",
+  "file": "Forms/TmpFactMF.txt",
+  "family": "FC",
+  "desc": "subform linii FC MF",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "TmpFactV",
+  "file": "Forms/TmpFactV.txt",
+  "family": "FC",
+  "desc": "variante produs in FC",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "tmpSFP",
+  "file": "Forms/tmpSFP.txt",
+  "family": "Situatii",
+  "desc": "subform SFP",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "tmp_Balanta subform",
+  "file": "Forms/tmp_Balanta subform.txt",
+  "family": "Situatii",
+  "desc": "subform balanta",
+  "disp": "INCLUS-UI",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "UNIT",
+  "file": "Forms/UNIT.txt",
+  "family": "Configurare",
+  "desc": "Date unitate (partial e-Factura: cheile EFAUTH excluse)",
+  "disp": "INCLUS-PARTIAL",
+  "note": "",
+  "marks": [
+   "refera e-Factura",
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "VaerCon",
+  "file": "Forms/VaerCon.txt",
+  "family": "Shell",
+  "desc": "formular de start/selectie unitate-an",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "inlocuit de selectorul de context; regulile de context se mapeaza",
+  "marks": []
+ },
+ {
+  "type": "form",
+  "name": "XMLPath",
+  "file": "Forms/XMLPath.txt",
+  "family": "Exclus",
+  "desc": "e-Factura / mesaje ANAF",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "form",
+  "name": "XMLPath_sub",
+  "file": "Forms/XMLPath_sub.txt",
+  "family": "Exclus",
+  "desc": "e-Factura / mesaje ANAF",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "Amortizare",
+  "file": "Reports/Amortizare.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Balanta_produse",
+  "file": "Reports/Balanta_produse.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Balanta_produse_AFB",
+  "file": "Reports/Balanta_produse_AFB.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta (Coduri); obiect legacy exclus N06",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Balanta_Produse_BF",
+  "file": "Reports/Balanta_Produse_BF.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta listare 1 (Coduri); obiect legacy exclus N06",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Balanta_produse_furnizor",
+  "file": "Reports/Balanta_produse_furnizor.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "EXCLUS-CODURI",
+  "note": "dependenta tranzitiva de Balanta listare 2 (Coduri); obiect legacy exclus N06",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "BC subreport 2013",
+  "file": "Reports/BC subreport 2013.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "BonRetur",
+  "file": "Reports/BonRetur.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Bon_Consum",
+  "file": "Reports/Bon_Consum.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "BUConsum",
+  "file": "Reports/BUConsum.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "BUConsum_F",
+  "file": "Reports/BUConsum_F.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "BUConsum_F1",
+  "file": "Reports/BUConsum_F1.txt",
+  "family": "BC/BR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera e-Factura"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_BC",
+  "file": "Reports/Centralizator_BC.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_Conturi",
+  "file": "Reports/Centralizator_Conturi.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_Conturi_Furnizori",
+  "file": "Reports/Centralizator_Conturi_Furnizori.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_Furnizori",
+  "file": "Reports/Centralizator_Furnizori.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_OI_Bon_BP",
+  "file": "Reports/Centralizator_OI_Bon_BP.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_OI_Bon_BS",
+  "file": "Reports/Centralizator_OI_Bon_BS.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Centralizator_OI_Bon_BT",
+  "file": "Reports/Centralizator_OI_Bon_BT.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Cina subreport",
+  "file": "Reports/Cina subreport.txt",
+  "family": "Alimente",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Consumuri_Produs",
+  "file": "Reports/Consumuri_Produs.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Consumuri_Unitati",
+  "file": "Reports/Consumuri_Unitati.txt",
+  "family": "Centralizatoare",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Dejun subreport",
+  "file": "Reports/Dejun subreport.txt",
+  "family": "Alimente",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Fisa_Evidenta",
+  "file": "Reports/Fisa_Evidenta.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Fisa_Magazie",
+  "file": "Reports/Fisa_Magazie.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Fisa_Magazie_BF",
+  "file": "Reports/Fisa_Magazie_BF.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Fisa_Produsului",
+  "file": "Reports/Fisa_Produsului.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "FM1-u",
+  "file": "Reports/FM1-u.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "FM2",
+  "file": "Reports/FM2.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "ListaAlimente2015",
+  "file": "Reports/ListaAlimente2015.txt",
+  "family": "Alimente",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera e-Factura",
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "LISTA_INVENTAR",
+  "file": "Reports/LISTA_INVENTAR.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "MF_Balanta",
+  "file": "Reports/MF_Balanta.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "MF_Balanta_Subinv",
+  "file": "Reports/MF_Balanta_Subinv.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "MF_Bon_BP",
+  "file": "Reports/MF_Bon_BP.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "MF_Bon_BS",
+  "file": "Reports/MF_Bon_BS.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "MF_Bon_BT",
+  "file": "Reports/MF_Bon_BT.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "MF_LISTA_INVENTAR",
+  "file": "Reports/MF_LISTA_INVENTAR.txt",
+  "family": "MF",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "MicDejun subreport",
+  "file": "Reports/MicDejun subreport.txt",
+  "family": "Alimente",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "NIR",
+  "file": "Reports/NIR.txt",
+  "family": "NIR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "NIR_SFP",
+  "file": "Reports/NIR_SFP.txt",
+  "family": "NIR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "NIR_Storno",
+  "file": "Reports/NIR_Storno.txt",
+  "family": "NIR",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Nota_Comanda",
+  "file": "Reports/Nota_Comanda.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "nou_Furnizori",
+  "file": "Reports/nou_Furnizori.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Balanta",
+  "file": "Reports/OI_Balanta.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Bon_BP",
+  "file": "Reports/OI_Bon_BP.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "OI_Bon_BS",
+  "file": "Reports/OI_Bon_BS.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "OI_Bon_BT",
+  "file": "Reports/OI_Bon_BT.txt",
+  "family": "OI bonuri",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "OI_Casare",
+  "file": "Reports/OI_Casare.txt",
+  "family": "OI documente (formular-raport)",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "OI_Fisa_Evidenta",
+  "file": "Reports/OI_Fisa_Evidenta.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Fisa_Evidenta_Primitori",
+  "file": "Reports/OI_Fisa_Evidenta_Primitori.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Fisa_Evidenta_Primitori_STOC",
+  "file": "Reports/OI_Fisa_Evidenta_Primitori_STOC.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Fisa_Evidenta_Produse",
+  "file": "Reports/OI_Fisa_Evidenta_Produse.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Fisa_Evidenta_Produse_STOC",
+  "file": "Reports/OI_Fisa_Evidenta_Produse_STOC.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_LISTA_INVENTAR",
+  "file": "Reports/OI_LISTA_INVENTAR.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_LISTA_INVENTAR_TOTAL",
+  "file": "Reports/OI_LISTA_INVENTAR_TOTAL.txt",
+  "family": "OI evidenta/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "OI_Predare",
+  "file": "Reports/OI_Predare.txt",
+  "family": "OI documente (formular-raport)",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "OI_Transfer",
+  "file": "Reports/OI_Transfer.txt",
+  "family": "OI documente (formular-raport)",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": [
+   "refera FTP"
+  ]
+ },
+ {
+  "type": "report",
+  "name": "Plan_Achizitii",
+  "file": "Reports/Plan_Achizitii.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Referat_periodic_Intrari",
+  "file": "Reports/Referat_periodic_Intrari.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Referat_periodic_produs",
+  "file": "Reports/Referat_periodic_produs.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Situatie_Intrari",
+  "file": "Reports/Situatie_Intrari.txt",
+  "family": "Comenzi/referate/situatii",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "report",
+  "name": "Stoc_Final",
+  "file": "Reports/Stoc_Final.txt",
+  "family": "Stoc/fise/balante/inventar",
+  "disp": "INCLUS-RAPORT",
+  "note": "",
+  "marks": []
+ },
+ {
+  "type": "module",
+  "name": "basGDIPlus",
+  "file": "Modules/basGDIPlus.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "basRibbonCallbacks",
+  "file": "Modules/basRibbonCallbacks.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "basRibbonGlobals",
+  "file": "Modules/basRibbonGlobals.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "BCrypt",
+  "file": "Modules/BCrypt.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "BStorage",
+  "file": "Modules/BStorage.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_2024",
+  "file": "Modules/mdl_2024.bas.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "migrare/legare schema Access"
+ },
+ {
+  "type": "module",
+  "name": "mdl_64Bits",
+  "file": "Modules/mdl_64Bits.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_AdaugStocFM",
+  "file": "Modules/mdl_AdaugStocFM.bas.txt",
+  "disp": "INCLUS-CALCUL",
+  "note": "logica de business/export de analizat (N09 pentru AdaugStocFM)"
+ },
+ {
+  "type": "module",
+  "name": "mdl_AppendText",
+  "file": "Modules/mdl_AppendText.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Autoexec",
+  "file": "Modules/mdl_Autoexec.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_ChangeRemovePWD",
+  "file": "Modules/mdl_ChangeRemovePWD.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_compact&repair",
+  "file": "Modules/mdl_compact&repair.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_CryptDecrypt",
+  "file": "Modules/mdl_CryptDecrypt.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_debugPrint",
+  "file": "Modules/mdl_debugPrint.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Detect7Zip",
+  "file": "Modules/mdl_Detect7Zip.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_DISKRW",
+  "file": "Modules/mdl_DISKRW.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_EditData",
+  "file": "Modules/mdl_EditData.bas.txt",
+  "disp": "INCLUS-PARTIAL",
+  "note": "amestec: functii business si infrastructura; cod Coduri/legacy ignorat; extragere pe apel; contine referinte Coduri"
+ },
+ {
+  "type": "module",
+  "name": "mdl_EFactura",
+  "file": "Modules/mdl_EFactura.bas.txt",
+  "disp": "EXCLUS-EFACTURA",
+  "note": "e-Factura"
+ },
+ {
+  "type": "module",
+  "name": "mdl_ExecWait",
+  "file": "Modules/mdl_ExecWait.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_ExistaFunctia",
+  "file": "Modules/mdl_ExistaFunctia.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Export_Excel",
+  "file": "Modules/mdl_Export_Excel.bas.txt",
+  "disp": "INCLUS-CALCUL",
+  "note": "logica de business/export de analizat (N09 pentru AdaugStocFM)"
+ },
+ {
+  "type": "module",
+  "name": "mdl_FormatNumber",
+  "file": "Modules/mdl_FormatNumber.bas.txt",
+  "disp": "INCLUS-CALCUL",
+  "note": "logica de business/export de analizat (N09 pentru AdaugStocFM)"
+ },
+ {
+  "type": "module",
+  "name": "mdl_FTP",
+  "file": "Modules/mdl_FTP.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Functii",
+  "file": "Modules/mdl_Functii.bas.txt",
+  "disp": "INCLUS-PARTIAL",
+  "note": "amestec: functii business si infrastructura; cod Coduri/legacy ignorat; extragere pe apel; contine referinte Coduri"
+ },
+ {
+  "type": "module",
+  "name": "mdl_HTML",
+  "file": "Modules/mdl_HTML.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_JSON",
+  "file": "Modules/mdl_JSON.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_LegTabele",
+  "file": "Modules/mdl_LegTabele.bas.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "migrare/legare schema Access"
+ },
+ {
+  "type": "module",
+  "name": "mdl_ListSeparator",
+  "file": "Modules/mdl_ListSeparator.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_MouseCursor",
+  "file": "Modules/mdl_MouseCursor.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_MouseScroll",
+  "file": "Modules/mdl_MouseScroll.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_OI_Produse",
+  "file": "Modules/mdl_OI_Produse.bas.txt",
+  "disp": "INCLUS-CALCUL",
+  "note": "logica de business/export de analizat (N09 pentru AdaugStocFM)"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Popup2022",
+  "file": "Modules/mdl_Popup2022.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_PositionForm",
+  "file": "Modules/mdl_PositionForm.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_PozitieForm",
+  "file": "Modules/mdl_PozitieForm.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Retea",
+  "file": "Modules/mdl_Retea.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_siguranta",
+  "file": "Modules/mdl_siguranta.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Timer",
+  "file": "Modules/mdl_Timer.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_UpdateFE",
+  "file": "Modules/mdl_UpdateFE.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_VerificaCF",
+  "file": "Modules/mdl_VerificaCF.bas.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "verificare CF/ANAF a furnizorului; Partenerii sunt ai KBOT"
+ },
+ {
+  "type": "module",
+  "name": "mdl_WindowsVersion",
+  "file": "Modules/mdl_WindowsVersion.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "mdl_Zip_Unzip",
+  "file": "Modules/mdl_Zip_Unzip.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "modStartup",
+  "file": "Modules/modStartup.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "newProgressBar",
+  "file": "Modules/newProgressBar.bas.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "infrastructura Access/desktop (update, FTP, arhivare, GDI, ribbon, API Windows); nu e functie web"
+ },
+ {
+  "type": "module",
+  "name": "Utile",
+  "file": "Modules/Utile.bas.txt",
+  "disp": "INCLUS-PARTIAL",
+  "note": "amestec: functii business si infrastructura; cod Coduri/legacy ignorat; extragere pe apel"
+ },
+ {
+  "type": "class",
+  "name": "clFormWindow",
+  "file": "Classes/clFormWindow.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsDatabase",
+  "file": "Classes/clsDatabase.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsDatabaseError",
+  "file": "Classes/clsDatabaseError.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsDatabaseErrors",
+  "file": "Classes/clsDatabaseErrors.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsField",
+  "file": "Classes/clsField.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsFirma",
+  "file": "Classes/clsFirma.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaDG",
+  "file": "Classes/clsFirmaDG.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaInactiva",
+  "file": "Classes/clsFirmaInactiva.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaSF",
+  "file": "Classes/clsFirmaSF.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaSS",
+  "file": "Classes/clsFirmaSS.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaTVA",
+  "file": "Classes/clsFirmaTVA.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaTVAI",
+  "file": "Classes/clsFirmaTVAI.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirmaTVAS",
+  "file": "Classes/clsFirmaTVAS.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsFirme",
+  "file": "Classes/clsFirme.cls.txt",
+  "disp": "INLOCUIT-PARTENERI-KBOT",
+  "note": "client ANAF pentru furnizor (CUI); Partenerii sunt ai KBOT, nu se portează"
+ },
+ {
+  "type": "class",
+  "name": "clsIndex",
+  "file": "Classes/clsIndex.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsNode",
+  "file": "Classes/clsNode.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsPing",
+  "file": "Classes/clsPing.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsPopup",
+  "file": "Classes/clsPopup.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsQuery",
+  "file": "Classes/clsQuery.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsRegExp",
+  "file": "Classes/clsRegExp.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsRegExp_Match",
+  "file": "Classes/clsRegExp_Match.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsRelation",
+  "file": "Classes/clsRelation.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsTable",
+  "file": "Classes/clsTable.cls.txt",
+  "disp": "EXCLUS-SCHEMA-ACCESS",
+  "note": "DBS/clsDatabase si clasele copil"
+ },
+ {
+  "type": "class",
+  "name": "clsTreeview",
+  "file": "Classes/clsTreeview.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "class",
+  "name": "clsWinSCP",
+  "file": "Classes/clsWinSCP.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/WinSCP"
+ },
+ {
+  "type": "class",
+  "name": "clsWinScpFile",
+  "file": "Classes/clsWinScpFile.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "FTP/WinSCP"
+ },
+ {
+  "type": "class",
+  "name": "iTimer",
+  "file": "Classes/iTimer.cls.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "utilitar UI/Windows (regex, treeview, popup, timer, ping, form window)"
+ },
+ {
+  "type": "macro",
+  "name": "Afiseaza cod",
+  "file": "Macros/Afiseaza cod.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "pornire Access (Autoexec_ apeleaza Productie/AExec: nu se executa)"
+ },
+ {
+  "type": "macro",
+  "name": "Autoexec_",
+  "file": "Macros/Autoexec_.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "pornire Access (Autoexec_ apeleaza Productie/AExec: nu se executa)"
+ },
+ {
+  "type": "macro",
+  "name": "AutoKeys",
+  "file": "Macros/AutoKeys.txt",
+  "disp": "EXCLUS-INFRA-ACCESS",
+  "note": "pornire Access (Autoexec_ apeleaza Productie/AExec: nu se executa)"
+ }
+]

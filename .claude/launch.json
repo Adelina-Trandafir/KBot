@@ -101,6 +101,26 @@
         "5052"
       ],
       "port": 5052
+    },
+    {
+      "name": "vercon-preview",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/tools/preview.py",
+        "--port",
+        "5053"
+      ],
+      "port": 5053
+    },
+    {
+      "name": "vercon-probe",
+      "runtimeExecutable": "C:/Users/Adelina Trandafir/source/repos/KBOT/PYTHON/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/tools/preview.py",
+        "--port",
+        "5054"
+      ],
+      "port": 5054
     }
   ]
 }

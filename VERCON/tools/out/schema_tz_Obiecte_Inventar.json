@@ -1,0 +1,3488 @@
+﻿{
+    "db":  "tz_Obiecte_Inventar",
+    "tables":  [
+                   {
+                       "name":  "_ADODAODDL",
+                       "fields":  [
+                                      {
+                                          "n":  "DDL",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DAO",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "dINT",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "dHEX",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ADO",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "aINT",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "aHEX",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "SZ",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "dINT"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  24
+                   },
+                   {
+                       "name":  "_IDX_",
+                       "fields":  [
+                                      {
+                                          "n":  "IDX",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDS",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Num",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Prm",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Req",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Unq",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Frg",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "_Struct__IDX_",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "IdStruct",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDX",
+                                           "cols":  [
+                                                        "IDX"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Nume",
+                                           "cols":  [
+                                                        "Num"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "IDX"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  94
+                   },
+                   {
+                       "name":  "_REL_",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDS",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Relation",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ParentTbl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ParentRow",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ChildTbl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ChildRow",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "OK",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Ref",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "_Struct__REL_",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDS",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  48
+                   },
+                   {
+                       "name":  "_Struct_",
+                       "fields":  [
+                                      {
+                                          "n":  "IDS",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdStruct",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_Name",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_Type",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_Size",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_AI",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_IsRelation",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_IsRelated",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Column_IsIndexed",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "OK",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "_TBLS__Struct_",
+                                           "cols":  [
+                                                        "IdStruct"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "IdStruct"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDS",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "IDS"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Typ",
+                                           "cols":  [
+                                                        "Column_Type"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  218
+                   },
+                   {
+                       "name":  "_TBLS_",
+                       "fields":  [
+                                      {
+                                          "n":  "IdStruct",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "Table_Name",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DB_INDEX",
+                                          "t":  2,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DB_NAME",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "OK",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "NumTbl",
+                                           "cols":  [
+                                                        "Table_Name"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "IdStruct"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Struct",
+                                           "cols":  [
+                                                        "IdStruct"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  32
+                   },
+                   {
+                       "name":  "Cina",
+                       "fields":  [
+                                      {
+                                          "n":  "Id",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdLista",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdFel",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Tip",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Explicatie",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Id",
+                                           "cols":  [
+                                                        "Id"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "LABC_IdLista__Cina_IdLista",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "Clienti",
+                       "fields":  [
+                                      {
+                                          "n":  "IDC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Denumire",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Adresa",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CF",
+                                          "t":  10,
+                                          "sz":  10,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "J",
+                                          "t":  10,
+                                          "sz":  20,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CNP",
+                                          "t":  10,
+                                          "sz":  13,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cont",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IDC",
+                                           "cols":  [
+                                                        "IDC"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  105
+                   },
+                   {
+                       "name":  "ComisieInventar",
+                       "fields":  [
+                                      {
+                                          "n":  "IdComisieInv",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie1",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie2",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie3",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie4",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdComisie",
+                                           "cols":  [
+                                                        "IdComisieInv"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "ComisieNIR",
+                       "fields":  [
+                                      {
+                                          "n":  "IdComisie",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie1",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie2",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie3",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Receptie4",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdComisie",
+                                           "cols":  [
+                                                        "IdComisie"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  1
+                   },
+                   {
+                       "name":  "cpv",
+                       "fields":  [
+                                      {
+                                          "n":  "CODE",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "RO",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "CODE",
+                                           "cols":  [
+                                                        "CODE"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  9454
+                   },
+                   {
+                       "name":  "Dejun",
+                       "fields":  [
+                                      {
+                                          "n":  "Id",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdLista",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdFel",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Tip",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Explicatie",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Id",
+                                           "cols":  [
+                                                        "Id"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "LABC_IdLista__Dejun_IdLista",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "FeluriMancare",
+                       "fields":  [
+                                      {
+                                          "n":  "IDFel",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DenFel",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Explicatie",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IDFel",
+                                           "cols":  [
+                                                        "IDFel"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "Furnizori",
+                       "fields":  [
+                                      {
+                                          "n":  "IDF",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Denumire",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Adresa",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CF",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "J",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cont",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "TIP",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ONLINE",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Orasul",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IDF",
+                                           "cols":  [
+                                                        "IDF"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  5
+                   },
+                   {
+                       "name":  "Iesiri",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdBonConsum",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdBonConsum",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Iesiri_H_IdBonConsum__Iesiri_IdBonConsum",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ProdusePIesiri",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  1529
+                   },
+                   {
+                       "name":  "Iesiri_H",
+                       "fields":  [
+                                      {
+                                          "n":  "IdBonConsum",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdRetur",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NumarBC",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataBC",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareBC",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Expl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Retur",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Clienti_IDC__Iesiri_H_IDC",
+                                           "cols":  [
+                                                        "IDC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "IdBonConsum",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC",
+                                           "cols":  [
+                                                        "IDC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdRetur",
+                                           "cols":  [
+                                                        "IdRetur"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  96
+                   },
+                   {
+                       "name":  "IesiriRetur",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdBonConsum",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "idbc",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Iesiri_HIesiriRetur",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ProdusePIesiriRetur",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "Intrari",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdIntrare",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDTVA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Pret",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "TVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Valoare",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "NIR_IdIntrare__Intrari_IdIntrare",
+                                           "cols":  [
+                                                        "IdIntrare"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ProdusePIntrari",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "PUTVA",
+                                           "cols":  [
+                                                        "PUTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "TVAIntrari",
+                                           "cols":  [
+                                                        "IDTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  1137
+                   },
+                   {
+                       "name":  "IntrariStorno",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdIntrare",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "idintrare",
+                                           "cols":  [
+                                                        "IdIntrare"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  2
+                   },
+                   {
+                       "name":  "LABC",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdLista",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NumarLA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DATALA",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareBon",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DEP",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareLista",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdLista",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "LegBCLA",
+                       "fields":  [
+                                      {
+                                          "n":  "IdBonConsum",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdLista",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdLista",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Iesiri_HLegBCLA",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "LABCLegBCLA",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  true,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "ListaAlimente",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDLISTA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "MicDejun_P",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "VMD",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "MicDejun_V",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "MicDejun_D",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Dejun_P",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "VD",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Dejun_V",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Dejun_D",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cina_P",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "VC",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cina_V",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cina_D",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "LABC_IdLista__ListaAlimente_IDLISTA",
+                                           "cols":  [
+                                                        "IDLISTA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "Masini",
+                       "fields":  [
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Masina",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "TIP",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  2
+                   },
+                   {
+                       "name":  "MicDejun",
+                       "fields":  [
+                                      {
+                                          "n":  "Id",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdLista",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdFel",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Tip",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Explicatie",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "Id"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "LABC_IdLista__MicDejun_IdLista",
+                                           "cols":  [
+                                                        "IdLista"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "NIR",
+                       "fields":  [
+                                      {
+                                          "n":  "IdIntrare",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdComisie",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDF",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDFV",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdStorno",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NrFact",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Data",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Numar",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Valoare",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataFc",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Storno",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "FurnizorV",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ComisieNIRNIR",
+                                           "cols":  [
+                                                        "IdComisie"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "Furnizori_IDF__NIR_IDF",
+                                           "cols":  [
+                                                        "IDF"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "IdComisie",
+                                           "cols":  [
+                                                        "IdComisie"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDF",
+                                           "cols":  [
+                                                        "IDF"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdIntrare",
+                                           "cols":  [
+                                                        "IdIntrare"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdStorno",
+                                           "cols":  [
+                                                        "IdStorno"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  4
+                   },
+                   {
+                       "name":  "NR",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "NR",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NUM",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NIR",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NRFCT",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NRBC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "SI_LA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ZEC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  1
+                   },
+                   {
+                       "name":  "OI_Casare",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDBC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC_BC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NRBC",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DATABC",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Expl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Clienti_IDC__OI_Casare_IDC_BC",
+                                           "cols":  [
+                                                        "IDC_BC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC_BC",
+                                           "cols":  [
+                                                        "IDC_BC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "NRBC",
+                                           "cols":  [
+                                                        "NRBC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "OI_CasareIDBC",
+                                           "cols":  [
+                                                        "IDBC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "ProdusePOI_Casare",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "PUTVA",
+                                           "cols":  [
+                                                        "PUTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "OI_Predare",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDBP",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdBonConsum",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasinaP",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC_BP",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NRBP",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DATABP",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Expl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Clienti_IDC__OI_Predare_IDC_BP",
+                                           "cols":  [
+                                                        "IDC_BP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdBonConsum",
+                                           "cols":  [
+                                                        "IdBonConsum"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC_BP",
+                                           "cols":  [
+                                                        "IDC_BP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasinaP",
+                                           "cols":  [
+                                                        "IdMasinaP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "NRBP",
+                                           "cols":  [
+                                                        "NRBP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "OI_PredareIDBP",
+                                           "cols":  [
+                                                        "IDBP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "ProdusePOI_Predare",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "PUTVA",
+                                           "cols":  [
+                                                        "PUTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  1529
+                   },
+                   {
+                       "name":  "OI_Produse",
+                       "fields":  [
+                                      {
+                                          "n":  "IDOI",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDBP",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDBT",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDBC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDBO",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDM",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC_PTC",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Clienti_IDC__OI_Produse_IDC_PTC",
+                                           "cols":  [
+                                                        "IDC_PTC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "IDBC",
+                                           "cols":  [
+                                                        "IDBC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDBO",
+                                           "cols":  [
+                                                        "IDBO"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDBP",
+                                           "cols":  [
+                                                        "IDBP"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDBT",
+                                           "cols":  [
+                                                        "IDBT"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC_PTC",
+                                           "cols":  [
+                                                        "IDC_PTC"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDM",
+                                           "cols":  [
+                                                        "IDM"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDOI",
+                                           "cols":  [
+                                                        "IDOI"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "ProdusePOI_Produse",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "PUTVA",
+                                           "cols":  [
+                                                        "PUTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  1529
+                   },
+                   {
+                       "name":  "OI_Transfer",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IDBT",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC_BT",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IDC_OLD",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "NRBT",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DATABT",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cant",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "ValoareCUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Expl",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "Clienti_IDC__OI_Transfer_IDC_BT",
+                                           "cols":  [
+                                                        "IDC_BT"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDBT",
+                                           "cols":  [
+                                                        "IDBT"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC_BT",
+                                           "cols":  [
+                                                        "IDC_BT"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IDC_OLD",
+                                           "cols":  [
+                                                        "IDC_OLD"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdProdus",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "NRBT",
+                                           "cols":  [
+                                                        "NRBT"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "ProdusePOI_Transfer",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       },
+                                       {
+                                           "n":  "PUTVA",
+                                           "cols":  [
+                                                        "PUTVA"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "Produse",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "IdMasina",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DenumireP",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "UM",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CPV",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CC",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Masini_IdMasina__Produse_IdMasina",
+                                           "cols":  [
+                                                        "IdMasina"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  951
+                   },
+                   {
+                       "name":  "ProduseP",
+                       "fields":  [
+                                      {
+                                          "n":  "IdProdus",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "PUTVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataSalvare",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "IdProdus"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "ProduseProduseP",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  true
+                                       }
+                                   ],
+                       "rows":  1144
+                   },
+                   {
+                       "name":  "Retetar",
+                       "fields":  [
+                                      {
+                                          "n":  "IdFel",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Continut",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Cantitate",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "AlteDetalii",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "UM",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "CPV",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdFel",
+                                           "cols":  [
+                                                        "IdFel"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  0
+                   },
+                   {
+                       "name":  "RunOnce",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "Nume",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "V",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataCreeat",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "DataRezolvat",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "Nume",
+                                           "cols":  [
+                                                        "Nume"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  11
+                   },
+                   {
+                       "name":  "Setari",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "S",
+                                          "t":  10,
+                                          "sz":  255,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "V",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  5
+                   },
+                   {
+                       "name":  "SQL",
+                       "fields":  [
+                                      {
+                                          "n":  "ID1",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "SQL",
+                                          "t":  12,
+                                          "sz":  0,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "ID",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  false,
+                                           "uq":  false,
+                                           "fk":  false
+                                       },
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "ID1"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  17
+                   },
+                   {
+                       "name":  "Trimis",
+                       "fields":  [
+                                      {
+                                          "n":  "ID",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  false,
+                                          "ai":  true
+                                      },
+                                      {
+                                          "n":  "Succes",
+                                          "t":  1,
+                                          "sz":  1,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Data",
+                                          "t":  8,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "PrimaryKey",
+                                           "cols":  [
+                                                        "ID"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  45
+                   },
+                   {
+                       "name":  "TVA",
+                       "fields":  [
+                                      {
+                                          "n":  "IdTVA",
+                                          "t":  4,
+                                          "sz":  4,
+                                          "req":  true,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "TVA",
+                                          "t":  7,
+                                          "sz":  8,
+                                          "req":  false,
+                                          "ai":  false
+                                      },
+                                      {
+                                          "n":  "Explicatie",
+                                          "t":  10,
+                                          "sz":  50,
+                                          "req":  false,
+                                          "ai":  false
+                                      }
+                                  ],
+                       "indexes":  [
+                                       {
+                                           "n":  "IdTVA",
+                                           "cols":  [
+                                                        "IdTVA"
+                                                    ],
+                                           "pk":  true,
+                                           "uq":  true,
+                                           "fk":  false
+                                       }
+                                   ],
+                       "rows":  4
+                   }
+               ],
+    "relations":  [
+                      {
+                          "n":  "_Struct__IDX_",
+                          "parent":  "_Struct_",
+                          "child":  "_IDX_",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDS-\u003eIDS"
+                                     ]
+                      },
+                      {
+                          "n":  "_Struct__REL_",
+                          "parent":  "_Struct_",
+                          "child":  "_REL_",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDS-\u003eIDS"
+                                     ]
+                      },
+                      {
+                          "n":  "_TBLS__Struct_",
+                          "parent":  "_TBLS_",
+                          "child":  "_Struct_",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdStruct-\u003eIdStruct"
+                                     ]
+                      },
+                      {
+                          "n":  "Clienti_IDC__Iesiri_H_IDC",
+                          "parent":  "Clienti",
+                          "child":  "Iesiri_H",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDC-\u003eIDC"
+                                     ]
+                      },
+                      {
+                          "n":  "Clienti_IDC__OI_Casare_IDC_BC",
+                          "parent":  "Clienti",
+                          "child":  "OI_Casare",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDC-\u003eIDC_BC"
+                                     ]
+                      },
+                      {
+                          "n":  "Clienti_IDC__OI_Predare_IDC_BP",
+                          "parent":  "Clienti",
+                          "child":  "OI_Predare",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDC-\u003eIDC_BP"
+                                     ]
+                      },
+                      {
+                          "n":  "Clienti_IDC__OI_Produse_IDC_PTC",
+                          "parent":  "Clienti",
+                          "child":  "OI_Produse",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDC-\u003eIDC_PTC"
+                                     ]
+                      },
+                      {
+                          "n":  "Clienti_IDC__OI_Transfer_IDC_BT",
+                          "parent":  "Clienti",
+                          "child":  "OI_Transfer",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDC-\u003eIDC_BT"
+                                     ]
+                      },
+                      {
+                          "n":  "ComisieNIRNIR",
+                          "parent":  "ComisieNIR",
+                          "child":  "NIR",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdComisie-\u003eIdComisie"
+                                     ]
+                      },
+                      {
+                          "n":  "Furnizori_IDF__NIR_IDF",
+                          "parent":  "Furnizori",
+                          "child":  "NIR",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IDF-\u003eIDF"
+                                     ]
+                      },
+                      {
+                          "n":  "Iesiri_H_IdBonConsum__Iesiri_IdBonConsum",
+                          "parent":  "Iesiri_H",
+                          "child":  "Iesiri",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdBonConsum-\u003eIdBonConsum"
+                                     ]
+                      },
+                      {
+                          "n":  "Iesiri_HIesiriRetur",
+                          "parent":  "Iesiri_H",
+                          "child":  "IesiriRetur",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdBonConsum-\u003eIdBonConsum"
+                                     ]
+                      },
+                      {
+                          "n":  "Iesiri_HLegBCLA",
+                          "parent":  "Iesiri_H",
+                          "child":  "LegBCLA",
+                          "attr":  8192,
+                          "fields":  [
+                                         "IdBonConsum-\u003eIdBonConsum"
+                                     ]
+                      },
+                      {
+                          "n":  "LABC_IdLista__Cina_IdLista",
+                          "parent":  "LABC",
+                          "child":  "Cina",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdLista-\u003eIdLista"
+                                     ]
+                      },
+                      {
+                          "n":  "LABC_IdLista__Dejun_IdLista",
+                          "parent":  "LABC",
+                          "child":  "Dejun",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdLista-\u003eIdLista"
+                                     ]
+                      },
+                      {
+                          "n":  "LABC_IdLista__ListaAlimente_IDLISTA",
+                          "parent":  "LABC",
+                          "child":  "ListaAlimente",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdLista-\u003eIDLISTA"
+                                     ]
+                      },
+                      {
+                          "n":  "LABC_IdLista__MicDejun_IdLista",
+                          "parent":  "LABC",
+                          "child":  "MicDejun",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdLista-\u003eIdLista"
+                                     ]
+                      },
+                      {
+                          "n":  "LABCLegBCLA",
+                          "parent":  "LABC",
+                          "child":  "LegBCLA",
+                          "attr":  4353,
+                          "fields":  [
+                                         "IdLista-\u003eIdLista"
+                                     ]
+                      },
+                      {
+                          "n":  "Masini_IdMasina__Produse_IdMasina",
+                          "parent":  "Masini",
+                          "child":  "Produse",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdMasina-\u003eIdMasina"
+                                     ]
+                      },
+                      {
+                          "n":  "NIR_IdIntrare__Intrari_IdIntrare",
+                          "parent":  "NIR",
+                          "child":  "Intrari",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdIntrare-\u003eIdIntrare"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePIesiri",
+                          "parent":  "ProduseP",
+                          "child":  "Iesiri",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePIesiriRetur",
+                          "parent":  "ProduseP",
+                          "child":  "IesiriRetur",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePIntrari",
+                          "parent":  "ProduseP",
+                          "child":  "Intrari",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePOI_Casare",
+                          "parent":  "ProduseP",
+                          "child":  "OI_Casare",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePOI_Predare",
+                          "parent":  "ProduseP",
+                          "child":  "OI_Predare",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePOI_Produse",
+                          "parent":  "ProduseP",
+                          "child":  "OI_Produse",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProdusePOI_Transfer",
+                          "parent":  "ProduseP",
+                          "child":  "OI_Transfer",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdProdus-\u003eIdProdus"
+                                     ]
+                      },
+                      {
+                          "n":  "ProduseProduseP",
+                          "parent":  "Produse",
+                          "child":  "ProduseP",
+                          "attr":  4352,
+                          "fields":  [
+                                         "ID-\u003eID"
+                                     ]
+                      },
+                      {
+                          "n":  "TVAIntrari",
+                          "parent":  "TVA",
+                          "child":  "Intrari",
+                          "attr":  4352,
+                          "fields":  [
+                                         "IdTVA-\u003eIDTVA"
+                                     ]
+                      }
+                  ]
+}
