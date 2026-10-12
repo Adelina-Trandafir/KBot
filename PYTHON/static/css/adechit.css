@@ -258,7 +258,7 @@ html[data-theme="dark"] .ade-header { background: var(--card); }
 .ade-educator-grid { height: 250px; }
 .ade-educator-grid .dgv { box-sizing: border-box; }
 .ade-educator-grid .dgv__head { box-sizing: border-box; }
-.ade-record-window[data-kind="group"] { width: min(760px, 96vw); }
+.ade-record-window[data-kind="group"] { width: min(1120px, 96vw); }
 .ade-record-window[data-kind="compact"] { width: min(460px, 96vw); }
 .ade-record-window[data-kind="compact"] .ade-record-body { gap: 10px; padding: 12px; }
 .ade-record-window[data-kind="compact"] .ade-form-field { grid-template-columns: 140px minmax(0, 1fr); gap: 7px; }

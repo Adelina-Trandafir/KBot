@@ -36,14 +36,23 @@ DC = baza de date. `VC_Subunitati` → `VC_Gestiuni` (tip, stare, `Zec`, `Scara`
 | Furnizori | fara `VC_Furnizori`. `VC_NIR.IdPartener` → `Parteneri.IdPartener` (KBOT); `IDF`/`IDFV` nu se copiaza; `FurnizorV` (text) si `CodFiscalSursa` (CF-ul din Access la migrare) raman ca istoric; legatura reala este `IdPartener`. Mai multe NIR pot fi «Stoc initial» (fara unicitate pe `TipDoc`) |
 | «Stoc initial» | `VC_NIR.TipDoc = 'STOC_INITIAL'`, fara partener (CHECK) |
 | Legaturi logice fara relatie declarata (IdMasina, IdStorno, IDBP/IDBT/IDBC, IDC_OLD, ProduseM.IdProdus…) | coloane simple, **fara FK**: se pun FK doar dupa profilarea din migrator (VC05-01) |
+| Număr NIR cu zecimale | `VC_NIR.Numar` INT + `NumarSub` SMALLINT (sutimi): 707,1 = 707 + 10; ordine (Numar, NumarSub) |
 | Numere de document | nicio unicitate pe coloanele de numar: istoricul importat poate repeta numere; numerotarea noua o face `VC_Numbering` + serviciul (VC06) |
 | TVA, comisii | pe gestiune, nededuplicate dupa nume (D08 ramane pentru partajare) |
-| `cpv`, `Alimente` (lista), `Caletemp`, `tmp*`, `FM_2`, UNIT/Setari/NR | nu sunt tabele business VC_: UNIT → date comune; Setari/NR → `VC_Settings`/`VC_Numbering`/`VC_Gestiuni` |
+| `cpv`, `Alimente` (lista), `Caletemp`, `tmp*`, `FM_2`, UNIT/Setari/NR (contoarele NR.* nu se importa: numerotarea porneste de la ultimul numar real salvat, decizie 12.10.2026) | nu sunt tabele business VC_: UNIT → date comune; Setari/NR → `VC_Settings`/`VC_Numbering`/`VC_Gestiuni` |
 | `ProduseM.ValoareLunara` | exista doar in baza MF; in tinta e coloana normala (NULL la celelalte) |
 
 ## Import, audit, setari (VC03-03/04)
 
 `VC_Imports` are `UNIQUE (SubunitId)`: un singur transfer confirmat per subunitate, scris in aceeasi tranzactie cu tot lotul. `VC_ImportSources` tine fisierul (nume, nu cale), hash-ul, anul si gestiunea; `VC_IdMap` tine `(SourceId, tabel, tip, cheie sursa semnata) → cheie tinta`, cu `Kind` ROW/GROUP/ASSET. `VC_MigrationIssues` tine fiecare regula aplicata (N01/N02 etc.) cu valoarea originala. `VC_Operations` face comenzile web idempotente (cheia nu se confunda cu markerul de import). Nu se importa `cale.PASS` sau alte credentiale. Rolurile si dreptul nu au tabele VC_ (doar roluri pe DC in AVACONT_COMUN).
+
+## Cardinalitatea listă–BC — cerință nouă, 12.10.2026 revizia 2
+
+**Decis de utilizator:** o listă de alimente poate avea mai multe bonuri de consum. [FLUXURI_UI](FLUXURI_UI.md) și [CONTRACT_CALCULE](CONTRACT_CALCULE.md) definesc selecția, totalurile și salvarea atomică a setului. Un BC nu este ales pentru altă listă și nu apare de două ori în aceeași listă.
+
+În bazele Access această opțiune **nu există**: `LegBCLA.IdLista` este unic, adică o listă are exact un BC (1=1). Listă 1:N BC este o funcționalitate nouă a sistemului web. **DDL-ul și generatorul sunt aliniate (12.10.2026):** `VC_LegBCLA` are `RowId` tehnic, FK contextuale către `VC_LABC` și `VC_Iesiri_H`, index neunic `ix_LegBCLA_IdLista`, iar `uq_LegBCLA_IdBonConsum` (contextual) garantează că un BC aparține unei singure liste, deci apare o singură dată în ea (MariaDB admite mai multe NULL). Unicitatea `IdLista` din Access nu se copiază. Generatorul `tools/ddl.js` tratează explicit relația LABC→LegBCLA (one-to-one în Access) ca 1:N. Protecția concurentă a atribuirii este dată de cheia unică; serviciul VC07-01 trebuie să prindă eroarea de duplicat și să o raporteze ca „BC deja asociat altei liste".
+
+Migrarea păstrează legăturile istorice și proveniența; asocierile incompatibile cu regula țintă se diagnostichează înainte de import, fără ștergere/deduplicare tacită. Alinierea DDL și probele de cardinalitate/rollback rămân de implementat, nu sunt validate prin PNG-uri.
 
 ## Ce nu s-a facut
 

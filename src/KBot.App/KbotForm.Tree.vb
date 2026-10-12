@@ -149,7 +149,8 @@ Partial Public Class KbotForm
                 node.Tooltip = TooltipFor(info)
                 If k_filtru IsNot Nothing Then node.NodeForeColor = k_culoareGrupa
                 ' Slice 0101: a reception whose chain does not close paints the whole row red.
-                If info.LantNeinchis.Count > 0 Then _nodLantNeinchis.Add(node)
+                ' Operator, 12.10.2026: so does a broken reservation chain (repaired from the Rezervari view).
+                If info.LantNeinchis.Count > 0 OrElse info.RezervariGresite.Count > 0 Then _nodLantNeinchis.Add(node)
                 'node.ShowRightIconOnHover = True
 
                 If Not _treeInfos.ContainsKey(cod) Then _treeOrder.Add(cod)
@@ -258,6 +259,23 @@ Partial Public Class KbotForm
                               $"{r.TotalUltimInstantaneu.ToString("N2", ro)}, valoarea recepției " &
                               $"{r.ValoareReceptie.ToString("N2", ro)}")
                 Next
+            End If
+
+            ' Operator, 12.10.2026: a reservation that does not start from the end value of the one
+            ' before it. Both messages show when the angajament has both faults.
+            If info.RezervariGresite.Count > 0 Then
+                Const k_maxRanduri As Integer = 6
+                Dim ro As New Globalization.CultureInfo("ro-RO")
+                linii.Add(String.Empty)
+                linii.Add("⚠ Rezervări greșite: valoarea anterioară nu e cea la care s-a oprit rezervarea dinainte. " &
+                          "Repară din vederea «Rezervări».")
+                For Each r As RezervareGresita In info.RezervariGresite.Take(k_maxRanduri)
+                    linii.Add($"Rezervarea din {r.DataRezervare:dd.MM.yyyy}, {r.CodIndicator}: anterioară " &
+                              $"{r.Anterioara.ToString("N2", ro)}, ar trebui {r.Asteptata.ToString("N2", ro)}")
+                Next
+                If info.RezervariGresite.Count > k_maxRanduri Then
+                    linii.Add($"… și încă {info.RezervariGresite.Count - k_maxRanduri}")
+                End If
             End If
 
             Return String.Join(vbLf, linii)

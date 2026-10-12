@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `VC_ImportSources` (
   `SizeBytes` BIGINT UNSIGNED NOT NULL,
   `ReadAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`SourceId`),
-  UNIQUE KEY `uq_VC_ImportSource_hash` (`ImportId`, `SourceHash`),
+  UNIQUE KEY `uq_VC_ImportSource_hash` (`ImportId`, `GestiuneId`, `SourceHash`),
   KEY `ix_VC_ImportSource_gestiune` (`SubunitId`, `GestiuneId`),
   CONSTRAINT `fk_VC_ImportSource_Import` FOREIGN KEY (`ImportId`) REFERENCES `VC_Imports` (`ImportId`) ON DELETE RESTRICT,
   CONSTRAINT `fk_VC_ImportSource_Gestiune` FOREIGN KEY (`SubunitId`, `GestiuneId`) REFERENCES `VC_Gestiuni` (`SubunitId`, `GestiuneId`) ON DELETE RESTRICT

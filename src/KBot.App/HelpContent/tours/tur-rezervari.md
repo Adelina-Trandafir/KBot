@@ -37,13 +37,13 @@ Stă pe rezervarea pentru care nu există încă document de fundamentare și po
 <!-- slice: 0060, 0081-02, fara-felie, 0000-23, 0000-27, 0000-30 -->
 target: RezervariView.tree
 part: footer.left
-Meniul documentului de fundamentare pe acest angajament (apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au): Adaugă rezervare, Definitivează, Derulează, Generează PDF final (cele care se pot face acum), plus «Reanalizează rezervările», care reface pe server ordinea rezervărilor din istoric, fără nicio descărcare; îți arată întâi cifrele și abia apoi scrie.
+Meniul documentului de fundamentare pe acest angajament (apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au): Adaugă rezervare, Definitivează, Derulează, Generează PDF final (cele care se pot face acum).
 
-## Arbore › Reîmprospătează
-<!-- slice: 0060, 0000-23 -->
+## Arbore › Repară
+<!-- slice: 0060, 0000-23, 0092-01, 0000-68 -->
 target: RezervariView.tree
 part: footer.right
-Aduce din FOREXE doar rezervările acestui angajament: antetul, indicatorii și istoricul.
+Repară rezervările acestui angajament din istoric, fără nicio descărcare din FOREXE: îți arată întâi câte rânduri se schimbă și scrie abia după ce confirmi. Iconița se vede doar când angajamentul are rezervări greșite (acelea îl fac roșu în lista principală) și repararea nu se face într-o lună cu revizii.
 
 ## Valorile pe clasificații
 <!-- slice: 0014 -->

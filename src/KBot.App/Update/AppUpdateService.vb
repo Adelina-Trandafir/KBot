@@ -3,6 +3,7 @@ Imports System
 Imports System.Diagnostics
 Imports System.IO
 Imports System.Reflection
+Imports System.Text.Json
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -265,7 +266,9 @@ Public NotInheritable Class AppUpdateService
                        "Aveți versiunea " & check.Current.ToString() & "."
             question = "Actualizați acum? Aplicația se închide, se actualizează și pornește din nou. «Nu» = mai târziu."
         End If
-        Dim footer As String = "Mărime: " & UpdateProgressForm.FormatBytes(check.Info.Size) & "."
+        Dim k_size As Long = check.Info.Size
+        If DriverNeeded(check.Info) Then k_size += check.Info.Driver.Size
+        Dim footer As String = "Mărime: " & UpdateProgressForm.FormatBytes(k_size) & "."
 
         OperatorLog.Write("AppUpdateService", CAPTION,
                           headline.Replace(vbLf, " ") & Environment.NewLine & If(check.Info.Notes, String.Empty).Trim() &
@@ -305,6 +308,20 @@ Public NotInheritable Class AppUpdateService
                 End If
             End Using
 
+            ' The Playwright driver is its own package: fetched only when the server has one and the
+            ' installed driver differs (or is missing). A failed/cancelled driver download stops the update.
+            Dim k_driverZip As String = Nothing
+            If DriverNeeded(check.Info) Then
+                k_driverZip = Path.Combine(workDir, If(String.IsNullOrWhiteSpace(check.Info.Driver.File), "KBot_Driver_" & check.Info.Driver.Version & ".zip", check.Info.Driver.File))
+                Using dlgDriver As New UpdateProgressForm(_api, check.Info.Driver, k_driverZip)
+                    Dim k_driverResult As DialogResult = If(owner Is Nothing, dlgDriver.ShowDialog(), dlgDriver.ShowDialog(owner))
+                    If k_driverResult <> DialogResult.OK Then
+                        TryDeleteDir(workDir)
+                        Return False
+                    End If
+                End Using
+            End If
+
             Dim updaterCopy As String = Path.Combine(workDir, UPDATER_EXE)
             File.Copy(updaterSource, updaterCopy, overwrite:=True)
 
@@ -318,6 +335,10 @@ Public NotInheritable Class AppUpdateService
             psi.ArgumentList.Add("--restart") : psi.ArgumentList.Add(restartExe)
             psi.ArgumentList.Add("--sha256") : psi.ArgumentList.Add(check.Info.Sha256)
             psi.ArgumentList.Add("--version") : psi.ArgumentList.Add(check.Info.Version)
+            If k_driverZip IsNot Nothing Then
+                psi.ArgumentList.Add("--driver-zip") : psi.ArgumentList.Add(k_driverZip)
+                psi.ArgumentList.Add("--driver-sha256") : psi.ArgumentList.Add(check.Info.Driver.Sha256)
+            End If
             Process.Start(psi)
             OperatorLog.Write("AppUpdateService", CAPTION,
                               "Actualizare pornită: " & check.Current.ToString() & " -> " & check.Info.Version &
@@ -330,6 +351,40 @@ Public NotInheritable Class AppUpdateService
             If workDir IsNot Nothing Then TryDeleteDir(workDir)
             Return False
         End Try
+    End Function
+
+    ''' <summary>
+    ''' True when the server holds a driver package and the installed one is not that version
+    ''' (<c>.playwright\package\package.json</c> version, plus a node.exe under <c>.playwright\node</c>).
+    ''' No driver on the server = False: the client keeps what it has.
+    ''' </summary>
+    Friend Shared Function DriverNeeded(k_info As UpdateInfo) As Boolean
+        Try
+            If k_info Is Nothing OrElse k_info.Driver Is Nothing Then Return False
+            If String.IsNullOrWhiteSpace(k_info.Driver.Version) OrElse String.IsNullOrWhiteSpace(k_info.Driver.Sha256) Then Return False
+            Return Not String.Equals(InstalledDriverVersion(), k_info.Driver.Version, StringComparison.Ordinal)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AppUpdateService.DriverNeeded", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Nothing when the driver is absent or unreadable (then it is fetched).
+    Private Shared Function InstalledDriverVersion() As String
+        Dim k_root As String = Path.Combine(AppContext.BaseDirectory, ".playwright")
+        Dim k_pkg As String = Path.Combine(k_root, "package", "package.json")
+        Dim k_nodeDir As String = Path.Combine(k_root, "node")
+        If Not File.Exists(k_pkg) OrElse Not Directory.Exists(k_nodeDir) Then Return Nothing
+        If Directory.GetFiles(k_nodeDir, "node.exe", SearchOption.AllDirectories).Length = 0 Then Return Nothing
+        Try
+            Using k_doc As JsonDocument = JsonDocument.Parse(File.ReadAllText(k_pkg))
+                Dim k_ver As JsonElement
+                If k_doc.RootElement.TryGetProperty("version", k_ver) Then Return k_ver.GetString()
+            End Using
+        Catch ex As JsonException
+            GlobalErrorLog.Write("AppUpdateService.InstalledDriverVersion", ex)
+        End Try
+        Return Nothing
     End Function
 
     Private Shared Sub TryDeleteDir(dir As String)

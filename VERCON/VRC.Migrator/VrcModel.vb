@@ -52,6 +52,9 @@ End Class
 Public NotInheritable Class VrcFileProfile
 
     Public Property FileName As String = String.Empty
+    Public Property Kind As VrcFileKind
+    ''' <summary>Exercise year of a year file; 0 for a special base (tz_2100 is not a year).</summary>
+    Public Property Year As Integer
     Public Property SizeBytes As Long
     Public Property HashBefore As String = String.Empty
     Public Property HashAfter As String = String.Empty
@@ -66,5 +69,10 @@ Public NotInheritable Class VrcFileProfile
     Public Property Tables As New List(Of VrcTableProfile)()
     Public Property Config As New SortedDictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
     Public Property HeaderChecks As New List(Of VrcHeaderCheck)()
+    Public Property ProductCheck As VrcProductCheck = Nothing
+    Public Property Split As VrcSplitCheck = Nothing
+    ''' <summary>Smallest year of NIR.Data (0 = unknown). The exercise year of a special base (tz_2100) is this year.</summary>
+    Public Property MinNirYear As Integer
+    Public Property LineSigns As New List(Of VrcLineSignCheck)()
 
 End Class

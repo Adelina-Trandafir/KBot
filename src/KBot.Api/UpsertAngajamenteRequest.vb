@@ -113,6 +113,8 @@ Public NotInheritable Class GetTreeRow
     Public Property ArePrimite As Boolean
     ' Slice 0101: receptions whose chain does not close, «yyyy-MM-dd~total~suma» joined with «|»; null = none.
     Public Property LantNeinchis As String
+    ' Broken reservation chain, «yyyy-MM-dd~indicator~anterioara~asteptata» joined with «|»; null = none.
+    Public Property RezervariGresite As String
     ' Slice 0008-02: FX_Angajamente.Alias (null = none).
     <Text.Json.Serialization.JsonPropertyName("Alias")>
     Public Property AliasAng As String

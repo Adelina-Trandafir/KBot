@@ -21,6 +21,12 @@
   KBot.App FileVersion with `version` / `minimum`, downloads /api/update/download
   and hands the zip to KBot.Updater.exe.
 
+  Playwright driver: the '.playwright' folder (node.exe, ~100 MB) is NOT in the app zips.
+  publish-release.ps1 writes it as artifacts\KBot_Driver_<playwright version>.zip; this script
+  uploads it ONLY when the server's driver version differs (or there is none), and always
+  carries the driver block in latest.json (shared by both kinds; the file is rewritten whole).
+  Clients fetch it only when their installed driver version differs from it.
+
   Run it when YOU decide an update is viable, AFTER bumping <FileVersion> in
   src\KBot.App\KBot.App.vbproj by hand. If the server already has this version or a
   newer one, the script asks whether to overwrite it (-Force answers Yes).
@@ -226,7 +232,12 @@ function Get-ServerLatest {
     param([string]$BaseUrl, [bool]$Access)
     $url = $BaseUrl.TrimEnd('/') + '/api/update/latest?access=' + $(if ($Access) { '1' } else { '0' })
     try {
-        return Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 30
+        # The server's JSON has no charset in its Content-Type, so Windows PowerShell 5.1's Invoke-RestMethod
+        # decodes it as Latin-1 and the other kind's notes came back as mojibake (seen 12.10.2026), then
+        # went back into latest.json that way. Decode the bytes as UTF-8 ourselves.
+        $resp = Invoke-WebRequest -Uri $url -Method Get -TimeoutSec 30 -UseBasicParsing
+        $bytes = $resp.RawContentStream.ToArray()
+        return ([System.Text.Encoding]::UTF8.GetString($bytes) | ConvertFrom-Json)
     } catch {
         $resp = $null
         if ($_.Exception.PSObject.Properties.Name -contains 'Response') { $resp = $_.Exception.Response }
@@ -289,6 +300,20 @@ $sha = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerI
 Write-Step "KBot.App FileVersion in package: $localVersion  (entries: $($info.Entries), top folder: '$($info.TopFolder)')"
 Write-Step "sha256: $sha"
 
+# --- 3b. The Playwright driver package (own zip, shared by both kinds) ------------
+$driverZip = Get-ChildItem -LiteralPath $ArtifactsDir -Filter 'KBot_Driver_*.zip' -File -ErrorAction SilentlyContinue |
+             Sort-Object LastWriteTime -Descending | Select-Object -First 1
+$driverVersion = ''
+$driverSha = ''
+if ($driverZip) {
+    if ($driverZip.BaseName -notmatch '^KBot_Driver_(\d+(\.\d+){1,3})$') { throw "Unexpected driver package name: $($driverZip.Name)" }
+    $driverVersion = $Matches[1]
+    $driverSha = (Get-FileHash -LiteralPath $driverZip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    Write-Step "Driver package: $($driverZip.Name) ($([Math]::Round($driverZip.Length / 1MB, 1)) MB, Playwright $driverVersion)"
+} else {
+    Write-Warning "[update] No artifacts\KBot_Driver_*.zip -- the server's driver (if any) is kept as it is."
+}
+
 # --- 4. What the server has ----------------------------------------------------
 $server = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access $IncludeAccess
 # The OTHER kind stays exactly as the server has it: latest.json is rewritten whole, so its block is
@@ -312,6 +337,21 @@ if ($server) {
 }
 if ($otherServer) {
     Write-Step "The other kind stays as it is: version $($otherServer.version), minimum $($otherServer.minimum)."
+}
+
+# The driver block is shared: either answer carries it (the server adds it to both kinds).
+$serverDriver = $null
+if ($server -and $server.PSObject.Properties.Name -contains 'driver' -and $server.driver) { $serverDriver = $server.driver }
+elseif ($otherServer -and $otherServer.PSObject.Properties.Name -contains 'driver' -and $otherServer.driver) { $serverDriver = $otherServer.driver }
+$uploadDriver = $false
+$driverBlock  = $null
+if ($driverZip -and (-not $serverDriver -or [string]$serverDriver.version -ne $driverVersion)) {
+    $uploadDriver = $true
+    $driverBlock = [ordered]@{ version = $driverVersion; file = $driverZip.Name; size = [long]$driverZip.Length; sha256 = $driverSha }
+    Write-Step "Driver: the server has $(if ($serverDriver) { $serverDriver.version } else { 'none' }) -> uploading Playwright $driverVersion."
+} elseif ($serverDriver) {
+    $driverBlock = [ordered]@{ version = [string]$serverDriver.version; file = [string]$serverDriver.file; size = [long]$serverDriver.size; sha256 = [string]$serverDriver.sha256 }
+    Write-Step "Driver: the server already has Playwright $($serverDriver.version) -- not uploaded again."
 }
 
 # --- 4b. What changed: the notes for the update box (slice 0067-02) -------------
@@ -381,6 +421,7 @@ if ($IncludeAccess) {
     if ($otherBlock) { $latest['access'] = $otherBlock }
     $latest['non_access'] = $block
 }
+if ($driverBlock) { $latest['driver'] = $driverBlock }
 $stage = Join-Path ([System.IO.Path]::GetTempPath()) ("kbot_push_" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $stage -Force | Out-Null
 $latestPath = Join-Path $stage 'latest.json'
@@ -395,7 +436,16 @@ Write-Step "latest.json:`n$(Get-Content -LiteralPath $latestPath -Raw)"
 $batchPath = Join-Path $stage 'batch.sftp'
 $batch = @(
     "-mkdir $RemoteDir",
-    "cd $RemoteDir",
+    "cd $RemoteDir"
+)
+if ($uploadDriver) {
+    $batch += @(
+        "put ""$($driverZip.FullName)"" $($driverZip.Name).part",
+        "-rm $($driverZip.Name)",
+        "rename $($driverZip.Name).part $($driverZip.Name)"
+    )
+}
+$batch += @(
     "put ""$($zip.FullName)"" $remoteFile.part",
     "-rm $remoteFile",
     "rename $remoteFile.part $remoteFile",
@@ -417,6 +467,11 @@ if ([version]$after.version -ne $localVersion) {
     throw "Upload finished but the server reports version $($after.version), expected $localVersion."
 }
 if ($after.sha256 -ne $sha) { throw "Server sha256 differs from the local package." }
+if ($driverBlock) {
+    if (-not ($after.PSObject.Properties.Name -contains 'driver') -or -not $after.driver -or $after.driver.sha256 -ne $driverBlock.sha256) {
+        throw "Upload finished but GET /api/update/latest does not report the driver block. Is the new PYTHON\routes\update.py (driver package) deployed on the server and restarted?"
+    }
+}
 if ($otherServer) {
     $otherAfter = Get-ServerLatest -BaseUrl $ApiBaseUrl -Access (-not $IncludeAccess)
     if (-not $otherAfter -or $otherAfter.sha256 -ne $otherServer.sha256) {
@@ -433,4 +488,5 @@ if ($Mandatory) {
 } else {
     Write-Ok "Optional for clients at or above $minimum; mandatory below it."
 }
+if ($driverBlock) { Write-Ok "Driver: Playwright $($driverBlock.version) ($($driverBlock.file))$(if ($uploadDriver) { ' -- uploaded now' } else { ' -- already on the server' })." }
 Write-Host "  Clients read: $($ApiBaseUrl.TrimEnd('/'))/api/update/latest?access=$(if ($IncludeAccess) { 1 } else { 0 })"

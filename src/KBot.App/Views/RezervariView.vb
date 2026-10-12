@@ -75,13 +75,15 @@ Public Class RezervariView
     Private ReadOnly _executaComanda As Action(Of DdfComanda)
 
     ''' <summary>
-    ''' Reîmprospătarea rezervărilor din FOREXE (felia 0060) — iconița din DREAPTA subsolului
-    ''' arborelui. Vine de la shell din același motiv ca <see cref="_executaComanda"/>.
+    ''' Repararea rezervărilor angajamentului (cererea operatorului, 12.10.2026) — iconița din DREAPTA
+    ''' subsolului arborelui. A luat locul reîmprospătării din FOREXE (felia 0060): refă din istoric
+    ''' lanțul rezervărilor, fără nicio descărcare. Vine de la shell din același motiv ca
+    ''' <see cref="_executaComanda"/>.
     '''
     ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
     ''' face nimic.</para>
     ''' </summary>
-    Private ReadOnly _reimprospateaza As Action(Of String)
+    Private ReadOnly _repara As Action(Of String)
 
     ' ── Slice 0081-02: the footer LEFT icon -- ONE icon, ONE option at most ─────────────────
     ''' <summary>Reads the angajament's DDF (revisions + header) through the shell's 401 net.
@@ -91,6 +93,10 @@ Public Class RezervariView
     Private ReadOnly _actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo)
     ''' <summary>The icon as the designer set it, put back whenever there is an option to offer.</summary>
     Private ReadOnly _iconitaMeniu As Image
+    ''' <summary>The «Repara» icon and tooltip as the designer set them; shown only while the angajament
+    ''' has broken reservations (operator, 12.10.2026).</summary>
+    Private ReadOnly _iconitaRepara As Image
+    Private ReadOnly _tooltipRepara As String
     ''' <summary>The tree node of the angajament shown (state, description) -- the options need it.</summary>
     Private _info As AngajamentTreeInfo
     ''' <summary>The option the icon offers now; None = the icon is hidden.</summary>
@@ -102,7 +108,7 @@ Public Class RezervariView
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
                    Optional executaComanda As Action(Of DdfComanda) = Nothing,
-                   Optional reimprospateaza As Action(Of String) = Nothing,
+                   Optional repara As Action(Of String) = Nothing,
                    Optional citesteDdf As Func(Of String, Task(Of DdfInfo)) = Nothing,
                    Optional actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
@@ -111,15 +117,13 @@ Public Class RezervariView
         _apiClient = apiClient
         _withReauth = withReauth
         _executaComanda = executaComanda
-        _reimprospateaza = reimprospateaza
+        _repara = repara
         _citesteDdf = citesteDdf
         _actiuneMeniu = actiuneMeniu
         _iconitaMeniu = tree.FooterLeftIcon
         tree.HelpDemoFooterLeftIcon = _iconitaMeniu   ' slice 0000-30: the tour shows it while the view hides it
-        If _reimprospateaza Is Nothing Then
-            tree.FooterRightIcon = Nothing
-            tree.FooterRightIconTooltip = String.Empty
-        End If
+        _iconitaRepara = tree.FooterRightIcon
+        _tooltipRepara = tree.FooterRightIconTooltip
         AratatOptiunea(RezervariMenuOption.None)
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
@@ -153,20 +157,31 @@ Public Class RezervariView
 
     Private Sub AratatOptiunea(optiune As RezervariMenuOption)
         _optiune = optiune
-        ' «Reanalizeaza» is offered whenever an angajament is shown and the host runs menu actions,
-        ' so the icon hides only when there is nothing at all to pick.
+        ' The icon shows only when there is a document option to pick (the re-analysis lives on the
+        ' footer RIGHT icon, «Repara», not here -- operator, 12.10.2026).
         ' Operator, 01.10.2026: while a leaf still carries the "+" (to be added from FOREXE), the
         ' footer icon is hidden -- the "+" is the only thing to do first.
         If _actiuneMeniu Is Nothing OrElse _info Is Nothing OrElse _areFrunzaCuPlus OrElse
+           optiune = RezervariMenuOption.None OrElse
            String.IsNullOrWhiteSpace(_info.CodAngajament) Then
             tree.FooterLeftIcon = Nothing
             tree.FooterLeftIconTooltip = String.Empty
         Else
             tree.FooterLeftIcon = _iconitaMeniu
-            tree.FooterLeftIconTooltip = RezervariMenu.Label(
-                If(optiune = RezervariMenuOption.None, RezervariMenuOption.Reanalizeaza, optiune))
+            tree.FooterLeftIconTooltip = RezervariMenu.Label(optiune)
         End If
+        AratatRepara()
         tree.Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' The footer RIGHT icon, «Repara», exists only while the angajament has broken reservations (the
+    ''' same list that paints its row red in the main tree) and the host runs the repair. Operator, 12.10.2026.
+    ''' </summary>
+    Private Sub AratatRepara()
+        Dim k_arata As Boolean = _repara IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.RezervariGresite.Count > 0
+        tree.FooterRightIcon = If(k_arata, _iconitaRepara, Nothing)
+        tree.FooterRightIconTooltip = If(k_arata, _tooltipRepara, String.Empty)
     End Sub
 
     ''' <summary>
@@ -183,8 +198,6 @@ Public Class RezervariView
             For Each kv As KeyValuePair(Of RezervariMenuOption, String) In RezervariMenu.Intrari(_optiune)
                 intrari.Add(New CustomPopupItem(kv.Key.ToString(), kv.Value))
             Next
-            intrari.Add(New CustomPopupItem(RezervariMenuOption.Reanalizeaza.ToString(),
-                                            RezervariMenu.Label(RezervariMenuOption.Reanalizeaza)))
             Dim meniu As New CustomPopup(intrari)
             AddHandler meniu.ItemClicked,
                 Sub(s As Object, ev As CustomPopupItemEventArgs)
@@ -209,27 +222,24 @@ Public Class RezervariView
     End Property
 
     ''' <summary>
-    ''' Iconița din DREAPTA subsolului arborelui cere o reîmprospătare din FOREXE a
-    ''' REZERVĂRILOR angajamentului selectat (felia 0060) — nu o simplă recitire de pe server.
+    ''' Iconița din DREAPTA subsolului arborelui repară rezervările angajamentului selectat din
+    ''' istoricul lui (12.10.2026), în locul reîmprospătării din FOREXE (felia 0060, scoasă din vedere;
+    ''' calea veche rămâne în shell, neapelată de aici).
     ''' </summary>
     ''' <remarks>
-    ''' <para>Butonul spunea până acum «Reîncarcă rezervările de la server» și nu era legat la
-    ''' nimic. Cererea operatorului din 10.09.2026 îl face să însemne ce se aștepta de la el.</para>
-    ''' <para>Fluxul aduce antetul, indicatorii și ISTORICUL: <c>FX_Rezervari</c> se scrie pe
-    ''' server DIN <c>FX_Istoric</c>, deci istoricul e sursa rezervărilor. Recepțiile nu se
-    ''' ating, și tocmai acolo stăteau minutele.</para>
-    ''' <para>Vederea NU se reîncarcă de aici: după ingestie shell-ul reîncarcă arborele cu
-    ''' nodul păstrat, iar asta împinge singură contextul nou încoace.</para>
+    ''' <para>Shell-ul arată întâi ce s-ar schimba, cere confirmarea și abia apoi scrie; la
+    ''' sfârșit reîncarcă arborele cu nodul păstrat, iar asta împinge singură contextul nou
+    ''' încoace — vederea NU se reîncarcă de aici.</para>
     ''' </remarks>
     Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
         Try
-            If _reimprospateaza Is Nothing Then Return
+            If _repara Is Nothing Then Return
             If String.IsNullOrWhiteSpace(_requestedCod) Then
                 KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
                                 "K-BOT — Rezervări", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
-            _reimprospateaza(_requestedCod)
+            _repara(_requestedCod)
         Catch ex As Exception
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
             ' ar cădea pe firul de UI.

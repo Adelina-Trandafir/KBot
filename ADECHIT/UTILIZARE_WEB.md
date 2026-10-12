@@ -1,6 +1,6 @@
 # ADECHIT — interfața și regulile actuale
 
-Actualizat: 09.10.2026, SLICE-ADE6-23 / ADE8-05. Acest document consolidează rezultatul
+Actualizat: 12.10.2026, SLICE-ADE6-25. Acest document consolidează rezultatul
 threadului ADE1-05/06 și ADE6-05–17. Regulile de mai jos înlocuiesc descrierile
 intermediare ale interfeței din workloguri; acestea rămân dovezi istorice.
 Starea implementării este în [status](../ADECHIT_STATUS.md).
@@ -92,7 +92,7 @@ anul curent; formularul nu cere separat anul.
 Editorul grupei conține denumirea, bifa de închidere, ANI și tabelul perioadelor
 educatorilor. ANI și tabelul au înălțimi, antete, culori și rânduri aliniate.
 Coloanele umplu lățimea disponibilă; «+ Adaugă» se află în footerul tabelului.
-Lățimea maximă a editorului este 760px.
+Lățimea maximă a editorului este 1120px, limitată la 96vw.
 
 Editorul copilului conține nume, CNP, combobox grupă, data intrării, Plecat și
 data ieșirii. Editorul plătitorului conține nume, adresă, CNP, cod fiscal, cont,
@@ -116,6 +116,15 @@ blocat. Un plătitor existent poate fi dezactivat explicit: pot exista zero acti
 dar nu mai mulți activi în urma acestor salvări. Importul nu curăță global
 eventualele dubluri istorice; persoanele asociate altor copii nu sunt afectate.
 
+<!-- slice: ADE6-24 -->
+Tabelul educatorilor are coloanele Email și CNP, ambele opționale, editabile ca text.
+Email acceptă maximum 255 de caractere și se verifică formatul; CNP acceptă 13 cifre
+și validarea existentă, inclusiv cifra de control. Golirea unui câmp îl salvează NULL.
+Datele sunt completate doar în web: Access nu are aceste coloane și migratorul nu
+le caută, nu le importă și nu le reconstruiește. La migrare rămân NULL.
+DDL-ul [AD_09_educatori_contact.sql](../sql/AD_09_educatori_contact.sql) se rulează
+numai pe AVACONT_SURSA; KBotAdmin sincronizează schema bazelor unităților.
+
 Salvarea grupei și a perioadelor educatorilor este atomică. Istoricul educatorilor
 este sursa principală, cu fallback legacy numai când istoricul lipsește complet.
 Mutarea individuală/Plecat scrie jurnalul copilului și păstrează lunile închise;
@@ -124,6 +133,14 @@ rămân în grupa specială în luna următoare, cei cu sold zero ies. Transferu
 compensarea și înlocuirea endpointului legacy /transfer rămân de implementat.
 
 ## Plătitori pe mobil
+
+<!-- slice: ADE6-25 -->
+La o eroare de încărcare a formularului grupei se repetă „Modifică”. Mesajul
+de încărcare nu mai cere o cheie de salvare. Un deadlock sau timeout de blocare
+MariaDB este raportat ca „Baza de date este ocupată”, iar o salvare eșuată se
+reîncearcă din același formular, cu cheia operației păstrată. Operațiile nu se
+repetă automat. Corecția locală înlocuiește INSERT IGNORE pentru AD_Lock cu
+blocare exclusivă de la prima instrucțiune; fără DDL nou sau schimbarea autentificării.
 
 La lățimi ≤980px se vede un singur DGV, pe nivelul curent. Fereastra păstrează
 10px margine exterioară pe toate laturile și padding interior de 8px. Tabelul
@@ -236,6 +253,11 @@ copil, mai mulți sau toată grupa. Coloana „Grupa din august” păstrează o
 cei cu sold sunt preluați în grupa specială pentru copiii plecați în septembrie.
 Sub tabelul copiilor este DGV-ul custom al educatorilor noului an. Numele grupei
 poate fi schimbat, iar educatorii pot fi adăugați, editați sau eliminați din plan.
+
+<!-- slice: ADE6-24 -->
+Email și CNP sunt opționale și în tabelul educatorilor noului an. Datele existente
+sunt preluate și păstrate la înlocuirea perioadelor; pot fi editate sau golite.
+Dacă se modifică numai contactele, perioadele existente nu sunt înlocuite.
 
 „Adaugă grupă”, sub arbore, creează o grupă în planul noului an. Salvarea este
 refuzată dacă numele nu este unic, lipsește un educator sau lipsește un copil

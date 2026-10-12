@@ -74,7 +74,7 @@ Partial Public Class KbotForm
                 ' through the same 401 net and hands the chosen option back here.
                 Case "rezervari" : Return New RezervariView(_apiClient, Function(op) WithReauth(Of RezervariInfo)(op),
                                                             AddressOf ExecutaComandaDdf,
-                                                            AddressOf ReimprospateazaRezervari,
+                                                            AddressOf ReparaRezervari,
                                                             Function(c) WithReauth(Of DdfInfo)(
                                                                 Function() _apiClient.GetDdfAsync(c, CancellationToken.None)),
                                                             AddressOf ExecutaMeniulRezervari)

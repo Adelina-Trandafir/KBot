@@ -1,6 +1,6 @@
 # VERCON — registrul deciziilor (SLICE-VC00-05)
 
-Stare: ALINIAT la plan, 11.10.2026 (runda 3 de raspunsuri). Sectiunea autoritara este „Decizii ale utilizatorului — 11.10.2026, runda 3" din [PLAN_IMPLEMENTARE](PLAN_IMPLEMENTARE.md); acest registru o detaliaza. Distinge: **DECIS** (utilizator, nu se redeschide), **PROPUS** (model, de verificat) si **DESCHIS** (fara raspuns).
+Stare: ALINIAT la plan, 12.10.2026 (runda 3 + corecțiile vizuale ale utilizatorului). Autoritare sunt secțiunile din [PLAN_IMPLEMENTARE](PLAN_IMPLEMENTARE.md) datate 11.10.2026, runda 3, și 12.10.2026, corecții UI/fluxuri. Distinge: **DECIS** (utilizator, nu se redeschide), **PROPUS** (model, de verificat) si **DESCHIS** (fara raspuns).
 
 ## A. Decise de utilizator
 
@@ -23,7 +23,27 @@ Stare: ALINIAT la plan, 11.10.2026 (runda 3 de raspunsuri). Sectiunea autoritara
 | Valorizare stoc | pretul variantei, **modificabil oricand**, ca in Access (Q9); liniile documentelor isi pastreaza valorile |
 | Stoc negativ | **interzis** (Q10) |
 | Drepturi | doar roluri pe DC; fara ACL pe subunitate/gestiune (`VC_SubunitAccess`/`VC_GestiuneAccess` nu se creeaza) (Q11) |
+| Surse (12.10.2026) | folderul sursa se citeste dintr-o data: **tz_aaaa** (cate un exercitiu Materiale/Alimente), **tz_2100** = baza speciala OI/MF (**2100 nu este un an**; tipul il spun steagurile OBINV/MF), atat `.accdb` cat si `.mdb` (ambele se listeaza); **`tz.mdb` / `tz.accdb` nu se iau niciodata**; operatorul bifeaza anii doriti intr-un tabel |
 | D01 | atribuirea fisier → subunitate/gestiune/tip/DC o face operatorul in migrator, la import |
+
+### Corecții UI decise — 12.10.2026
+
+Sursa: [imaginile adnotate](MOCKUPURI/Corectii_mockup-uri_01/). Contract complet: [FLUXURI_UI](FLUXURI_UI.md).
+
+| Temă | Decizie |
+|---|---|
+| Arbori documente | În dreapta, numai în consultare; ascunși la adăugare/modificare, reapar la salvare confirmată/Renunță; frunzele au ⋯ la hover; Adaugă în toate familiile |
+| NIR antet | Factură/Dată factură/Valoare factură pe aceeași coloană, Număr NIR/Dată NIR pe alta; valoarea facturii activă/manuală, necompletată → suma produselor, cu N01/N02 păstrat |
+| NIR linii/MF | Produs prin combobox cu căutare la tastare; coloanele MF în aceeași grilă Produse recepționate, fără panou separat |
+| NIR salvat | Arbore furnizor → dată → număr factură + total |
+| Aspectul tuturor grilelor — revizia 2 | **NIR este unica referință vizuală corectă**: celule compacte, fără padding mare, aceleași editoare/tipografie/borduri; Adaugă rând mic în footer și totaluri aliniate pe coloane |
+| BC | DGV identic vizual cu NIR; arbore bonuri în dreapta, ascuns în editor; BC se creează separat și în Alimente |
+| ListaAlimente | Rezumatele porțiilor și felurile DGV în stilul NIR; fără Alimente necesare; arbore Liste salvate în dreapta în consultare, formatat ca NIR/BC/BP |
+| Legătura listă–BC — revizia 2 | **O listă poate avea mai multe BC-uri**: DGV cu un rând per bon, valoare pe rând și total general; Adaugă rând deschide popupul cu BC existente din Alimente neasociate altei liste; selecție aditivă fără duplicate, întregul set revalidat/salvat atomic; fără generare/resalvare BC sau consum repetat; IdLista țintă neunic în legături |
+| OI/MF documente | Fără Perioada/Deținători în stânga și Efectul transferului/Istoric produs în dreapta; arbore de BP/BT/BS în consultare |
+| Predare | Sursa este contul în care au intrat produsele |
+| Transfer/casare | Numai produse de la predătorul ales; casare fără Primitor |
+| SFP | Arborele multianual rămâne în rapoarte |
 
 ## B. Constatari VC00 (dovada)
 
@@ -49,7 +69,7 @@ Stare: ALINIAT la plan, 11.10.2026 (runda 3 de raspunsuri). Sectiunea autoritara
 
 Toate cele 12 intrebari (Q1–Q12) au primit raspuns si sunt in sectiunea A. **Nu mai exista intrebari deschise cerute utilizatorului.**
 
-**Nesolicitate acum (nu se inventeaza):** D12 (transfer intre contexte), rolul liniilor cu `Cant=0` (OI: 40 — pastrate), semnificatia `AnDate=2100`, eventuale baze `tz_aaaa` lipsa, semantica atributului DAO 8192.
+**Nesolicitate acum (nu se inventeaza):** D12 (transfer intre contexte), rolul liniilor cu `Cant=0` (OI: 40 — pastrate), eventuale baze `tz_aaaa` lipsa, semantica atributului DAO 8192.
 
 ## D. Propuneri ale modelului ramase de verificat (nu sunt reguli)
 
@@ -60,3 +80,22 @@ Toate cele 12 intrebari (Q1–Q12) au primit raspuns si sunt in sectiunea A. **N
 ## E. Backlog independent de aceste decizii
 
 VC01 (schelet web pe date fictive), VC02 pe fixture, reader/profilare VC05-01 (doar citire), motorul numeric (`ZEC`, `SCARA`, N01/N02), DDL VC03-01 (ierarhie, ocupare). La import (nu acum): atribuirea fisierelor, tipul Alimente/Materiale, DC real.
+
+## F. Decise de utilizator la profilarea VC05-01 — 12.10.2026
+
+Sursa: raportul de profilare pe `tz_2025` / `tz_2026` (047_GR47). Toate mesajele de mai jos sunt **avertismente care nu blochează** importul.
+
+| Tema | Decizie |
+|---|---|
+| Număr document negativ la NIR (`NIR.Numar`) | Dacă `NrFact` conține «stoc», documentul este stoc inițial și numărul negativ se acceptă (numai pentru stoc). În alt caz, numărul negativ sau cu zecimale se raportează ca avertisment; nu se trunchiază tacit. |
+| Total antet NIR diferit de suma liniilor | Se aplică regula totalului liniilor (cu TVA); avertisment nebloc, cu antetul și diferența. |
+| Preț negativ în `Intrari` / `Iesiri` | Inversarea se aplică **numai** în `Intrari` și `Iesiri`, unde există `Cant`: la migrare prețul devine **pozitiv** (aceeași valoare absolută) și cantitatea **negativă** (aceeași valoare absolută), cu mesaj de avertisment, nebloc. **BLOCANT:** dacă `Cant` ȘI prețul sunt ambele negative pe aceeași linie, importul se oprește pentru acel caz (operatorul îl corectează în sursă). `Cant` poate fi negativă, cu avertisment. Prețul din schemă rămâne ≥ 0 (CHECK). |
+| `ProduseP` (legătura Produse ↔ Intrari / Iesiri / Bonuri) | Se migrează **numai rândurile care au corelație efectivă** în `Intrari`, `Iesiri` sau bonuri (pentru OI și MF). Restul nu se transferă. Prețul negativ (−0,0941) vine dintr-o bază foarte veche în care era permis; un rând negativ fără corelație nu se transferă, deci nu mai e problemă. Dacă un rând negativ are corelație, se aplică regula `Intrari` / `Iesiri` de mai sus. |
+| `IdBonConsum` pe mai multe liste | Nu există în Access. Listă 1:N BC este o funcționalitate nouă, cerută pentru web; nu se verifică la import. |
+| Tip gestiune (Materiale / Alimente) | O bază poate avea atât conturi de Alimente, cât și de Materiale; **niciodată** OI sau MF în aceeași bază. Tipul îl alege operatorul; raportul nu îl deduce din `ListaAlimente`. |
+| Contoare `NR.*` (NIR, NR, NRBC, NRFCT) | Nu se mai folosesc. Numerotarea pornește de la ultimul număr real salvat, peste tot: NIR, BC și celelalte documente. |
+| Număr NIR cu zecimale (707,1) | Un NIR introdus la locul lui cronologic între două numere (nu își schimbă numărul). Se păstrează: partea întreagă în `Numar`, fracția în sutimi în `NumarSub` (707,1 = 707 + 10), ordonare după (Numar, NumarSub); mai mult de 2 zecimale blochează. Decis 12.10.2026. |
+| Alimente / Materiale într-un fișier | Tipul NU vine din fișier, ci din tipul contului (`Masini.TIP`): `A` = Alimente, `M` sau fără tip = Materiale. Un fișier de an dă până la două gestiuni (Alimente și Materiale); documentele se plasează după contul lor (sau după liniile lor); listele de alimente sunt Alimente; TVA, comisiile și clienții se copiază în ambele. OI și MF nu se amestecă cu ele. Decis 12.10.2026. |
+| Anul exercițiului la tz_2100 | Cel mai mic an din `NIR.Data`. Decis 12.10.2026. |
+| Motor Access | Toți utilizatorii au Access pe 64 de biți; nu se testează 32 de biți. |
+

@@ -1,0 +1,41 @@
+{
+  "generator": "built-in image_gen",
+  "corrections": [
+    {
+      "i": 0,
+      "prompt": "Use case: precise-object-edit. In the supplied NIR CONSULTARE saved-document screenshot preserve entire image, antet3columns, integrated single MF grid, all sample values, supplier/date/invoice tree, bottom Adaugă/Modifică buttons. Change ONLY the small \"+ Adaugă rând\" button inside the product grid to visibly disabled pale gray (text and icon muted), because the document is read-only in consult. Preserve bottom \"+ Adaugă\" document button active blue. Also align the totals row correctly under the matching columns: net total6.000,00 under \"Valoare fără TVA\", VAT1.260,00 under \"TVA\", incl7.260,00 under \"Total cu TVA\"; put TOTAL label in preceding column. No other changes or new elements.",
+      "file": "02-nir-mijloace-fixe.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-1ba4149a-0443-400f-ac5b-a32468aa544c.png"
+    },
+    {
+      "i": 3,
+      "prompt": "Use case: precise-object-edit. Preserve entire provided BC MODIFICARE screenshot, all form values, grid, context and missing saved-document tree. Change ONLY the erroneous left details line \"Disponibil la data curentă: 10 top\" to \"Disponibil la data bonului: 120 top\". Right detail before120/draft10/after110 remains unchanged. No other text changes, no new sidebars.",
+      "file": "03b-bon-consum-modificare.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-ee869072-07a6-4c36-9937-8a46d5994508.png"
+    },
+    {
+      "i": 4,
+      "prompt": "Use case: precise-object-edit. Preserve entire supplied food-list CONSULTARE screenshot, right saved-list tree, all dishes, BC120, quantities and totals. Change ONLY the three meal summary strips under Mic dejun/Dejun/Cină/Gustare into actual compact contiguous DataGridView tables, styled EXACTLY like dish tables directly beneath them: pale blue HEADER ROW with four contiguous cells \"Porții\"|\"Preț / porție\"|\"Valoare\"|\"Distribuit\", thin blue VERTICAL borders, SINGLE DATA ROW with values respectively80|5,0000|400,0000|80 ;80|9,0000|720,0000|80 ;80|4,0000|320,0000|80. Values read-only plain aligned numbers, NOT four detached rounded input controls; no gaps between columns. Keep each mini DGV aligned to dish DGV edges. Also make upper \"Alege B.C.\" button visibly disabled muted in consult state; it becomes active in Modifică, not here. No other changes. No Alimente necesare or automatic BC.",
+      "file": "04-lista-alimente.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-430aec33-af33-4834-88ca-370de3ba20de.png"
+    },
+    {
+      "i": 5,
+      "prompt": "Use case: precise-object-edit. Preserve supplied food-list MODIFICARE screenshot exactly, full-width3meal panels, lower association, header and footer. Change ONLY the three meal summary strips into compact TRUE DataGridView tables matching the dish DGVs: four contiguous columns \"Porții\"|\"Preț / porție\"|\"Valoare\"|\"Distribuit\" with a continuous pale blue HEADER ROW, VERTICAL blue gridlines and SINGLE DATA ROW. Values80|5,0000|400,0000|80 ;80|9,0000|720,0000|80 ;80|4,0000|320,0000|80. User-editable quantities/prices/distributed are in-cell plain compact editors within bordered DGV cells; calculated Valoare appears read-only bold. No detached standalone input pills or gaps between columns. Keep lower \"Alege B.C.\" ACTIVE and save label\"Salvează lista\", totals1440/780/diff660. No other changes.",
+      "file": "04b-lista-alimente-modificare.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-040d40d3-c5ca-45fc-9a02-1f5b396517de.png"
+    },
+    {
+      "i": 8,
+      "prompt": "Use case: precise-object-edit. Preserve supplied transfer MODIFICARE screenshot exactly with no sidebars, all fields and totals. Correct ONLY products grid so there are exactly TWO data rows, fully aligned across all columns. First row Scaun ergonomic|buc|8|2|350,00|700,00 with product combobox dropdown OPEN showing ONLY\"Scaun ergonomic — 8buc\" and \"Raft metalic — 3buc\"; dropdown floats over existing next row, not additional grid data. Second row Raft metalic|buc|3|1|500,00|500,00 with product combobox inside SAME row as other values. Remove stray separate Raft metalic combo outside data row and any third row. Footer\"Total (2 produse)\"1.200,00 unchanged. No extra products or new panels.",
+      "file": "05b-transfer-modificare.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-22fedf51-1844-4c85-98f3-33dc1c1181a6.png"
+    },
+    {
+      "i": 10,
+      "prompt": "Use case: precise-object-edit. Preserve provided casare ADAUGARE screenshot exactly including sole Predător section with no Primitor, no trees/sidebars, header, date, total350,00 and button labels. Change ONLY single product data row into active compact in-cell editors same DGV style as NIR: \"Scaun ergonomic\" cell becomes searchable combobox with small down-arrow; Cantitate casată1 becomes a numeric input; Preț cu TVA350,00 becomes numeric input. UMbuc, Disponibil8 and calculated Valoare350,00 remain read-only. Keep single row, no duplicate products, no extra panels.",
+      "file": "05d-casare-adaugare.png",
+      "path": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-1668e086-ab43-4cbd-815f-1de8c078fa36.png"
+    }
+  ]
+}

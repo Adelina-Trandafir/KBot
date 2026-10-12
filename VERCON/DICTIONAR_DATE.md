@@ -261,6 +261,8 @@ Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 
 Indexuri/chei (export): `IdLista` (IdLista) PRIMARY UNIQUE; `Iesiri_HLegBCLA` (IdBonConsum) FOREIGN; `LABCLegBCLA` (IdLista) UNIQUE FOREIGN
 
+**Ținta web — decizie utilizator 12.10.2026:** în Access o listă are exact un BC (1=1); în sistemul web o listă are mai multe BC-uri (funcționalitate nouă). IdLista țintă este neunic; RowId tehnic, FK contextuale, un BC aparține unei singure liste. DDL/generator aliniate: [SCHEMA_VC](SCHEMA_VC.md), [FLUXURI_UI](FLUXURI_UI.md). Datele istorice nu se repară tacit.
+
 ### ListaAlimente
 
 Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
@@ -325,7 +327,7 @@ Randuri (alimente/MF/OI): Alimente: 192; Mijloace_Fixe: 2; Obiecte_Inventar: 4
 | IdStorno | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NrFact | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | Data | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Numar | Double | 8 | nu | 0 | NUMAR | INT (numar document; negativ la storno/seria istorica); NU se scaleaza |
+| Numar | Double | 8 | nu | 0 | NUMAR | INT (numar document; negativ la storno/seria istorica); NU se scaleaza; fractia (document inserat intre doua numere) in NumarSub, in sutimi |
 | Valoare | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataFc | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 | Storno | Yes/No | 1 | nu | No | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
@@ -567,7 +569,7 @@ Access declara cascade update + delete pe aproape toate; tinta **nu copiaza** CA
 | 8 | Iesiri_H.IdBonConsum | IesiriRetur.IdBonConsum | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
 | 9 | Iesiri_H.IdBonConsum | LegBCLA.IdBonConsum | — | FK composit de context spre Iesiri_H; atribut DAO 8192 neclasificat (vezi §4); cardinalitate verificata in date; RESTRICT |
 | 10 | Iesiri_H.IdBonConsum | Iesiri.IdBonConsum | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 11 | LABC.IdLista | LegBCLA.IdLista | one-to-one, cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
+| 11 | LABC.IdLista | LegBCLA.IdLista | one-to-one, cascade update, cascade delete | FK de context; one-to-one doar in Access, tinta web este 1:N (SCHEMA_VC); stergere numai prin serviciul tranzactional (D05) |
 | 12 | LABC.IdLista | Cina.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
 | 13 | LABC.IdLista | Dejun.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
 | 14 | LABC.IdLista | ListaAlimente.IDLISTA | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |

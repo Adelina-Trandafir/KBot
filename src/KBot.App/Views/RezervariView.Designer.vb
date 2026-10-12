@@ -68,7 +68,7 @@ Partial Class RezervariView
         tree.ExpanderSize = 10
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
-        tree.FooterCaption = "Actualizează"
+        tree.FooterCaption = "Repară"
         tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
@@ -77,8 +77,8 @@ Partial Class RezervariView
         tree.FooterIconSize = New Size(18, 18)
         tree.FooterLeftIcon = My.Resources.Resources.plus_green
         tree.FooterLeftIconTooltip = "Acțiunile documentului de fundamentare pe acest angajament" & vbLf & "(Adaugă rezervare / Definitivează / Derulează / Generează PDF final)."
-        tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Reîmprospătează rezervările din FOREXE (antet, indicatori, istoric)."
+        tree.FooterRightIcon = My.Resources.Resources.Icojam_Blue_Bits_Pinion_settings_24
+        tree.FooterRightIconTooltip = "Repară rezervările acestui angajament din istoric (fără descărcare din FOREXE)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight

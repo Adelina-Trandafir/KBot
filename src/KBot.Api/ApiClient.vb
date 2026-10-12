@@ -378,7 +378,8 @@ Public Class ApiClient
                                 .AreExtrase = r.AreExtrase,
                                 .AreNoteCab = r.AreNoteCab,
                                 .ArePrimite = r.ArePrimite,
-                                .LantNeinchis = ParseLantNeinchis(r.LantNeinchis)
+                                .LantNeinchis = ParseLantNeinchis(r.LantNeinchis),
+                                .RezervariGresite = ParseRezervariGresite(r.RezervariGresite)
                             })
                         Next
                     End If
@@ -392,6 +393,28 @@ Public Class ApiClient
             GlobalErrorLog.Write("ApiClient.GetTreeAsync", ex)
             Throw
         End Try
+    End Function
+
+    ' «yyyy-MM-dd~indicator~anterioara~asteptata|...» from the tree route -> the reservations whose chain
+    ' is broken. A piece that does not parse is skipped, not guessed (the column is a warning only).
+    Private Shared Function ParseRezervariGresite(k_text As String) As IReadOnlyList(Of RezervareGresita)
+        Dim k_rezultat As New List(Of RezervareGresita)()
+        If String.IsNullOrWhiteSpace(k_text) Then Return k_rezultat
+        For Each k_bucata As String In k_text.Split("|"c)
+            Dim k_parti() As String = k_bucata.Split("~"c)
+            If k_parti.Length <> 4 Then Continue For
+            Dim k_data As Date
+            Dim k_ant As Double
+            Dim k_ast As Double
+            If Date.TryParseExact(k_parti(0), "yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture,
+                                  Globalization.DateTimeStyles.None, k_data) AndAlso
+               Double.TryParse(k_parti(2), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_ant) AndAlso
+               Double.TryParse(k_parti(3), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_ast) Then
+                k_rezultat.Add(New RezervareGresita() With {
+                    .DataRezervare = k_data, .CodIndicator = k_parti(1), .Anterioara = k_ant, .Asteptata = k_ast})
+            End If
+        Next
+        Return k_rezultat
     End Function
 
     ' Slice 0101: «yyyy-MM-dd~total~suma|...» from the tree route -> the receptions whose chain does

@@ -118,6 +118,10 @@ Public NotInheritable Class AngajamentTreeInfo
     ' is not a deletion row and its total differs from the reception's value). Empty = all close.
     Public Property LantNeinchis As IReadOnlyList(Of ReceptieNeinchisa) = Array.Empty(Of ReceptieNeinchisa)()
 
+    ' The reservations of this angajament whose chain is broken (R_Anterioara is not the end value of the
+    ' previous reservation of the same indicator). Empty = every chain holds. Repaired from the Rezervari view.
+    Public Property RezervariGresite As IReadOnlyList(Of RezervareGresita) = Array.Empty(Of RezervareGresita)()
+
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)
     Public Property CodIndicator As String = String.Empty

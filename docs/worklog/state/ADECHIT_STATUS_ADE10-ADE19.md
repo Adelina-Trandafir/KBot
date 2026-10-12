@@ -1,7 +1,7 @@
 # ADECHIT — STATUS, felii ADE10–ADE19
 
 Detalii pentru [indexul din rădăcină](../../../ADECHIT_STATUS.md).
-Actualizat: 09.10.2026.
+Actualizat: 12.10.2026.
 
 ## Slice ADE10
 
@@ -60,3 +60,24 @@ Următoarea subfelie liberă: **AD11-06**.
 - Login complet, selector, retragere acces, PDF/print și migrarea urmează testarea utilizatorului.
 - Datele istorice lipsă din import nu sunt reconstruite; SI se păstrează ca sold inițial.
 - Ghidul și pașii de publicare: [PORTAL_PARINTI.md](../../../ADECHIT/PORTAL_PARINTI.md).
+
+## Slice AD12
+
+Ajutor ADECHIT, o singură sursă pentru fereastră, imprimare și PDF.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD12-01 | Buton «?», cuprins, text formatat, imprimare și export PDF | SCRIS LOCAL — sintaxă și generare PDF inițială; aspect neprobat | [Ajutor](../SLICE-AD12-01-ajutor-adechit.md) |
+
+### Current focus
+
+- ADE6-24 actualizează în aceeași intervenție ajutorul despre Email/CNP la educatori,
+  în catalog și închiderea anuală. Sursa: `PYTHON/static/help/adechit.json`.
+  Următoarea subfelie liberă: **AD12-02**.
+
+### Open threads
+
+- Citirea textului de către operator, aspectul PC/mobil, imprimarea și PDF-ul rămân
+  de confirmat; actualizarea conținutului nu reprezintă validare vizuală.

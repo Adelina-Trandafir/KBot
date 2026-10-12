@@ -15,7 +15,7 @@ Public NotInheritable Class AdeSettings
 
     Private Const FileName As String = "ade-migrator-settings.json"
 
-    Public Property Host As String = "88.33.25.34"
+    Public Property Host As String = "89.33.25.34"
     Public Property Port As Integer = 3306
     Public Property User As String = "Admin"
     Public Property LastFile As String = String.Empty

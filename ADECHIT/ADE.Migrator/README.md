@@ -5,6 +5,14 @@
 Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → MariaDB.
 Executabilul păstrează numele existent `ADE.Migrator.exe`.
 
+<!-- slice: ADE6-24 -->
+Emailul și CNP-ul educatorilor (`AD_Grupe_Educator.EMail/CNP`) sunt opționale și
+se completează numai în ADECHIT web. Baza Access nu conține aceste coloane;
+migratorul nu le citește și nu le așteaptă. Inserările educatorilor omit aceste
+câmpuri, astfel încât rămân NULL implicit. Nu este necesară remigrarea datelor.
+DDL-ul `sql/AD_09_educatori_contact.sql` se aplică numai în AVACONT_SURSA;
+sincronizarea schemelor bazelor unităților se face prin KBotAdmin.
+
 <!-- slice: AD11-01 -->
 Înainte de noua migrare se aplică DDL-ul `sql/AD_08_portal_parinti.sql` pe AVACONT_SURSA,
 după AD_05–07, apoi se sincronizează schema prin AvacontPush. Datele existente se

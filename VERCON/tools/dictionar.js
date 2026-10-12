@@ -44,6 +44,9 @@ for (const t of tables) {
     md += `| ${f.n} | ${f.type} | ${f.size} | ${f.req ? 'da' : 'nu'} | ${f.def || ''} | ${c[0]} | ${c[1]} |\n`;
   }
   md += `\nIndexuri/chei (export): ${p.idx.map(i => `\`${i.n}\` (${i.cols})${i.flags ? ' ' + i.flags : ''}`).join('; ') || '—'}\n`;
+  if (t === 'LegBCLA') md += `
+**Ținta web — decizie utilizator 12.10.2026:** în Access o listă are exact un BC (1=1); în sistemul web o listă are mai multe BC-uri (funcționalitate nouă). IdLista țintă este neunic; RowId tehnic, FK contextuale, un BC aparține unei singure liste. DDL/generator aliniate: [SCHEMA_VC](SCHEMA_VC.md), [FLUXURI_UI](FLUXURI_UI.md). Datele istorice nu se repară tacit.
+`;
 }
 
 // FK matrix
@@ -54,6 +57,7 @@ const business = rel.filter(r => !/^_|^SQL/.test(r.p));
 const ctrl = (r) => {
   if (r.p === 'Iesiri_H' && r.c === 'LegBCLA') return 'FK composit de context spre Iesiri_H; atribut DAO 8192 neclasificat (vezi §4); cardinalitate verificata in date; RESTRICT';
   if (/^OI_/.test(r.c)) return `FK de context (SubunitId, GestiuneId, ${r.pf}); RESTRICT/inactivare; ${/IDC/.test(r.cf) ? 'detinatorul este nomenclator, nu se sterge daca e folosit' : 'linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC'}`;
+  if (r.p === 'LABC' && r.c === 'LegBCLA') return 'FK de context; one-to-one doar in Access, tinta web este 1:N (SCHEMA_VC); stergere numai prin serviciul tranzactional (D05)';
   if (r.p === 'LABC') return 'FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05)';
   if (r.p === 'Produse' || r.p === 'ProduseP' || r.p === 'Masini') return 'FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE)';
   return 'FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05)';

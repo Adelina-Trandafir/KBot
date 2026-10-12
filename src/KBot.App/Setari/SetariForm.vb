@@ -258,7 +258,7 @@ Public Class SetariForm
             Select Case key
                 Case "info" : Return New SetariInfoView(_session, _authApi, _updates, AddressOf InchideAplicatia)
                 Case "aplicatie" : Return New SetariAplicatieView()
-                Case "forexe" : Return New SetariForexeView(_controller)
+                Case "forexe" : Return New SetariForexeView(_controller) With {.ApiClient = _apiClient}
                 Case KeyMultithread : Return New SetariMultithreadView()
                 Case KeyAccess : Return New SetariAccessView(_session)
                 Case "pagina" : Return New SetariPaginaView(_controller)

@@ -652,6 +652,16 @@
         "size": 50,
         "default": ""
       },
+      "EMail": {
+        "type": "Text",
+        "size": 255,
+        "default": ""
+      },
+      "CNP": {
+        "type": "Text",
+        "size": 13,
+        "default": ""
+      },
       "DeLa": {
         "type": "Date/Time",
         "size": 8,

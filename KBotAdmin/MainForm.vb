@@ -174,6 +174,7 @@ Public Class MainForm
                 Async Function()
                     _context.Say("Se citesc bazele de date...")
                     Dim k_dbs As DatabasesResult = Await _client.CallAsync(Of DatabasesResult)("databases")
+                    k_dbs.Databases.RemoveAll(Function(k_d) Not k_d.Exists) ' a database that is not on the server appears nowhere
                     _context.Databases = k_dbs.Databases
                     Dim k_acc As AccountsResult = Await _client.CallAsync(Of AccountsResult)("accounts")
                     _accounts = k_acc.Accounts

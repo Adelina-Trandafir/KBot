@@ -1,6 +1,10 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
-Actualizat: 11.10.2026. Stari folosite (PLAN §Reguli de implementare): PLANIFICAT, IN_LUCRU, IMPLEMENTAT_LOCAL, VERIFICAT_LOCAL, VALIDAT_SERVER, ACCEPTAT. Un document scris sau un build trecut nu este validare. **Nimic nu este VALIDAT_SERVER sau ACCEPTAT.**
+Actualizat: 12.10.2026 (corecții mockupuri/documentație UI). Stari folosite (PLAN §Reguli de implementare): PLANIFICAT, IN_LUCRU, IMPLEMENTAT_LOCAL, VERIFICAT_LOCAL, VALIDAT_SERVER, ACCEPTAT. Un document scris sau un build trecut nu este validare. **Nimic nu este VALIDAT_SERVER sau ACCEPTAT.**
+
+## Corecții vizuale și fluxuri — 12.10.2026
+
+Sursa: [Corectii_mockup-uri_01](MOCKUPURI/Corectii_mockup-uri_01/) și mesajul ulterior cu cinci atașamente, **revizia 2**. NIR este referința unică pentru toate grilele, fără padding mare; o listă de alimente poate avea mai multe BC-uri, în DGV cu valori per rând și total general. [FLUXURI_UI](FLUXURI_UI.md), PLAN, DECIZII, MAPARE, CONTRACT_CALCULE și PROBE_BROWSER sunt aliniate; SCHEMA_VC/DICTIONAR_DATE disting schema Access de cardinalitatea țintă solicitată. Acoperire vizuală în [indexul v2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md): consultare/editor, popup BC, predare și casare. Stocuri, NIR și Rapoarte sunt păstrate identic. Stare: **DOCUMENTAT**; PNG-urile nu certifică implementarea sau probele browser/API. DDL și generatorul sunt aliniate la 1:N (12.10.2026, `uq_LegBCLA_IdBonConsum`; în Access era 1=1, funcționalitate nouă); `VC_LegBCLA` 1:N aplicată pe AVACONT_SURSA și pe cele 20 de DC-uri (12.10.2026, confirmat de operator); regulile listă–BC sunt în `PYTHON/routes/vercon/lista_bc.py` (doar sintaxa verificată, nerulat, fără rute); restul VC07-01 rămâne PLANIFICAT. [Worklog v2](../docs/worklog/VERCON-2026-10-12-corectii-mockupuri-v2.md).
 
 Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `docs/worklog/SLICE-VCxx-yy-*.md`. Documentatia: [PLAN](PLAN_IMPLEMENTARE.md) · [DETECTIE_VBA](DETECTIE_VBA.md) · [decizii](DECIZII_DESCHISE.md).
 
@@ -38,9 +42,13 @@ Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `d
 | SLICE-VC04-03 | `sql/VC04_03_privilegii_migrator.sql` (sablon); [worklog](../docs/worklog/SLICE-VC04-03-acl-locale-si-contul-migratorului.md) | **IMPLEMENTAT_LOCAL** | Doar sintaxa verificata; nerulat |
 | SLICE-VC04-04 | `lock.py`, `js/vercon/lock.js`, rute `/lock/*`; [worklog](../docs/worklog/SLICE-VC04-04-ocupare-exclusiva-cache-drafturi.md) | **IMPLEMENTAT_LOCAL** | Doar sintaxa verificata; nerulat |
 | SLICE-VC04-05 | [PROBE_ACCES](PROBE_ACCES.md) (parțial executat); [worklog](../docs/worklog/SLICE-VC04-05-probe-de-acces-si-audit.md) | **IN_LUCRU** | Probele de apel direct rulate pe preview (peste 40 de apeluri, 2 defecte gasite si reparate); restul neexecutat; nimic pe MariaDB/roluri reale |
-| SLICE-VC05-01 | `VERCON/VRC.Migrator` (reader read-only + profilare + raport), `tools/expected.js`; [worklog](../docs/worklog/SLICE-VC05-01-reader-si-profilare.md) | **IMPLEMENTAT_LOCAL** | Compilat curat; **nepornit, nicio baza reala citita** |
+| SLICE-VC05-01 | `VERCON/VRC.Migrator` (reader read-only + profilare + raport), `tools/expected.js`; [worklog](../docs/worklog/SLICE-VC05-01-reader-si-profilare.md) | **IMPLEMENTAT_LOCAL** | Compilat curat; **rulat de operator pe tz_2025 si tz_2026 (047_GR47) la 12.10.2026**: hash stabil, schema conforma; raman MF/OI si baza fara Ver |
+| SLICE-VC05-02 | `VrcPlan.vb`, grila de asociere din formular; [worklog](../docs/worklog/SLICE-VC05-02-planul-si-formularul-de-asociere.md) | **IMPLEMENTAT_LOCAL** | Compilat curat; nepornit |
+| SLICE-VC05-03 | `VrcRunner.vb`, `VrcConvert.vb`, `target_schema.json` (generat de `tools/ddl.js`); [worklog](../docs/worklog/SLICE-VC05-03-writer-atomic-si-maparea-cheilor.md) | **IMPLEMENTAT_LOCAL** | Compilat curat; **nicio linie scrisă vreodată în MariaDB**, nerulat |
+| SLICE-VC05-04 | stări, oprire, jurnal, Diagnostic; [worklog](../docs/worklog/SLICE-VC05-04-oprire-jurnal-si-diagnostic.md) | **IMPLEMENTAT_LOCAL** | Compilat; nerulat |
+| SLICE-VC05-05 | reconciliere înainte de COMMIT, raport; [worklog](../docs/worklog/SLICE-VC05-05-reconciliere-si-raport.md) | **IMPLEMENTAT_LOCAL** | Compilat; nicio reconciliere reală |
 
-Restul (24 subfelii) PLANIFICAT, plus VC02-05; VC04-05 este in lucru: nu exista pagina web, DDL sau migrator.
+Restul (20 subfelii) PLANIFICAT, plus VC02-05; VC04-05 este in lucru. VC05-01 a fost rulat pe tz_2025/tz_2026 (047_GR47, profilare); VC05-02…05 sunt scrise si compilate, **neprobate**.
 
 ## Urmatorul pas
 

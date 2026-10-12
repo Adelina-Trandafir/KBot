@@ -46,4 +46,11 @@ Public Interface IUpdateApi
     ''' </summary>
     Function DownloadAsync(destinationPath As String, expectedSha256 As String, access As Boolean,
                            progress As IProgress(Of Long), ct As CancellationToken) As Task
+
+    ''' <summary>
+    ''' The Playwright driver package (<c>GET /api/update/driver</c>), streamed and hash-checked exactly like
+    ''' <see cref="DownloadAsync(String, String, Boolean, IProgress(Of Long), CancellationToken)"/>.
+    ''' </summary>
+    Function DownloadDriverAsync(destinationPath As String, expectedSha256 As String,
+                                 progress As IProgress(Of Long), ct As CancellationToken) As Task
 End Interface

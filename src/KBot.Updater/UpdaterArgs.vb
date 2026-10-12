@@ -32,6 +32,12 @@ Friend NotInheritable Class UpdaterArgs
     ''' <summary>Version text for the window title. Optional, cosmetic.</summary>
     Public Property Version As String
 
+    ''' <summary>Optional second package (the Playwright driver, applied after the main one). Absolute path.</summary>
+    Public Property DriverZipPath As String
+
+    ''' <summary>Expected SHA-256 of the driver zip, hex. Optional.</summary>
+    Public Property DriverSha256 As String
+
     ''' <summary>Set by the updater itself when it relaunches elevated, so it never loops.</summary>
     Public Property Elevated As Boolean
 
@@ -45,7 +51,7 @@ Friend NotInheritable Class UpdaterArgs
                 Case "--elevated"
                     result.Elevated = True
                     i += 1
-                Case "--zip", "--target", "--wait", "--restart", "--sha256", "--version"
+                Case "--zip", "--target", "--wait", "--restart", "--sha256", "--version", "--driver-zip", "--driver-sha256"
                     If i + 1 >= argv.Length Then
                         Throw New ArgumentException("Argumentul " & key & " nu are valoare.")
                     End If
@@ -56,6 +62,8 @@ Friend NotInheritable Class UpdaterArgs
                         Case "--restart" : result.RestartExe = value
                         Case "--sha256" : result.Sha256 = value
                         Case "--version" : result.Version = value
+                        Case "--driver-zip" : result.DriverZipPath = value
+                        Case "--driver-sha256" : result.DriverSha256 = value
                         Case "--wait"
                             Dim pid As Integer
                             If Not Integer.TryParse(value, pid) OrElse pid < 0 Then
@@ -79,6 +87,12 @@ Friend NotInheritable Class UpdaterArgs
         If Not String.IsNullOrEmpty(result.Sha256) AndAlso result.Sha256.Trim().Length <> 64 Then
             Throw New ArgumentException("--sha256 trebuie să aibă 64 de caractere hex.")
         End If
+        If Not String.IsNullOrEmpty(result.DriverZipPath) AndAlso Not Path.IsPathRooted(result.DriverZipPath) Then
+            Throw New ArgumentException("--driver-zip trebuie să fie o cale absolută.")
+        End If
+        If Not String.IsNullOrEmpty(result.DriverSha256) AndAlso result.DriverSha256.Trim().Length <> 64 Then
+            Throw New ArgumentException("--driver-sha256 trebuie să aibă 64 de caractere hex.")
+        End If
         Return result
     End Function
 
@@ -89,6 +103,8 @@ Friend NotInheritable Class UpdaterArgs
         If Not String.IsNullOrEmpty(RestartExe) Then list.AddRange({"--restart", RestartExe})
         If Not String.IsNullOrEmpty(Sha256) Then list.AddRange({"--sha256", Sha256})
         If Not String.IsNullOrEmpty(Version) Then list.AddRange({"--version", Version})
+        If Not String.IsNullOrEmpty(DriverZipPath) Then list.AddRange({"--driver-zip", DriverZipPath})
+        If Not String.IsNullOrEmpty(DriverSha256) Then list.AddRange({"--driver-sha256", DriverSha256})
         If Elevated OrElse markElevated Then list.Add("--elevated")
         Return list
     End Function

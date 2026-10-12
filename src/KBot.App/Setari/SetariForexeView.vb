@@ -1,6 +1,9 @@
 Option Strict On
 Imports System.Security.Cryptography.X509Certificates
+Imports System.Threading
+Imports KBot.Api
 Imports KBot.Common
+Imports KBot.Domain
 Imports KBot.Forexe
 Imports KBot.Theming
 
@@ -23,6 +26,12 @@ Public Class SetariForexeView
     Public Event BusyChanged(busy As Boolean) Implements ISetariView.BusyChanged
 
     Private _suppress As Boolean
+
+    ''' <summary>
+    ''' The server client, set by the settings window. The section «Istoric» (deleting the last
+    ''' month of the history) needs it; without one (the harness) the section says so.
+    ''' </summary>
+    Public Property ApiClient As IApiClient
 
     Public Sub New(controller As ForexeController)
         ArgumentNullException.ThrowIfNull(controller)
@@ -71,6 +80,7 @@ Public Class SetariForexeView
             AratatCalea(lblRezultate, KBotPaths.FolderRezultateWorkflow)
             AratatCalea(lblExtrase, KBotPaths.FolderExtrase)
             AratatCalea(lblAnswers, KBotPaths.FolderRezultateForexe)
+            ArataSectiuneaIstoric()
         Catch ex As Exception
             GlobalErrorLog.Write("SetariForexeView.Activated", ex)
         End Try
@@ -402,6 +412,100 @@ Public Class SetariForexeView
         End Try
     End Sub
 
+    ' ---------------- delete the last month of the history (operator, 12.10.2026) ----------------
+
+    ''' <summary>
+    ''' The section is for the special account only: it shows while the advanced options switch of the
+    ''' application page is on (the one that asks for the password). Called on every activation, so
+    ''' coming back from that page picks the switch up.
+    ''' </summary>
+    Private Sub ArataSectiuneaIstoric()
+        Dim k_avansat As Boolean = AppSettings.Current.AdvancedOptions
+        lblTitluIstoric.Visible = k_avansat
+        tlyIstoric.Visible = k_avansat
+        If k_avansat Then IncarcaUltimaLunaAsync()
+    End Sub
+
+    ' UI boundary (Async Sub): reads the last month and what deleting it removes; failures are shown on the label.
+    Private Async Sub IncarcaUltimaLunaAsync()
+        Try
+            btnStergeLuna.Enabled = False
+            Dim k_api As IIstoricLuniApi = TryCast(ApiClient, IIstoricLuniApi)
+            If k_api Is Nothing Then
+                lblIstoricLuna.Text = "Serverul nu este disponibil în această fereastră."
+                Return
+            End If
+            lblIstoricLuna.Text = "Se citește ultima lună din istoric…"
+            Dim k_info As IstoricLunaInfo = Await k_api.CitesteUltimaLunaIstoricAsync(CancellationToken.None)
+            lblIstoricLuna.Text = DescrieLuna(k_info)
+            btnStergeLuna.Enabled = Not String.IsNullOrEmpty(k_info.Luna)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.IncarcaUltimaLunaAsync", ex)
+            lblIstoricLuna.Text = "Ultima lună din istoric nu a putut fi citită: " & ex.Message
+        End Try
+    End Sub
+
+    Private Shared Function DescrieLuna(k_info As IstoricLunaInfo) As String
+        If k_info Is Nothing OrElse String.IsNullOrEmpty(k_info.Luna) Then Return "Istoricul este gol."
+        Dim k_text As String = $"Ultima lună din istoric: {k_info.Eticheta} — {k_info.RanduriIstoric} rânduri, " &
+                               $"{k_info.Angajamente} angajamente, {k_info.Rezervari} rezervări, " &
+                               $"{k_info.Receptii} recepții, {k_info.Plati} plăți."
+        If k_info.Blocata Then k_text &= vbCrLf & k_info.Motiv
+        Return k_text
+    End Function
+
+    Private Async Sub BtnStergeLuna_Click(sender As Object, e As EventArgs) Handles btnStergeLuna.Click
+        Const k_titlu As String = "Șterge ultima lună din istoric"
+        Try
+            Dim k_api As IIstoricLuniApi = TryCast(ApiClient, IIstoricLuniApi)
+            If k_api Is Nothing Then Return
+            btnStergeLuna.Enabled = False
+            RaiseEvent BusyChanged(True)
+            Dim k_info As IstoricLunaInfo
+            Try
+                ' Fresh read: the numbers on the label may be minutes old.
+                k_info = Await k_api.CitesteUltimaLunaIstoricAsync(CancellationToken.None)
+            Finally
+                RaiseEvent BusyChanged(False)
+            End Try
+            lblIstoricLuna.Text = DescrieLuna(k_info)
+            If String.IsNullOrEmpty(k_info.Luna) Then Return
+            If k_info.Blocata Then
+                KBotMessage.Show(FindForm(), k_info.Motiv, k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+
+            If KBotMessage.Show(FindForm(),
+                    $"Se șterge luna {k_info.Eticheta} din istoric: {k_info.RanduriIstoric} rânduri, {k_info.Rezervari} rezervări, " &
+                    $"{k_info.Receptii} recepții și {k_info.Plati} plăți, pe {k_info.Angajamente} angajamente." & vbCrLf & vbCrLf &
+                    "Valorile se refac la următoarea descărcare din FOREXE. Operația nu se poate anula. Continuați?",
+                    k_titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
+
+            RaiseEvent BusyChanged(True)
+            Dim k_rezultat As IstoricLunaInfo
+            Try
+                k_rezultat = Await k_api.StergeLunaIstoricAsync(k_info.Luna, CancellationToken.None)
+            Finally
+                RaiseEvent BusyChanged(False)
+            End Try
+            RaiseEvent StatusChanged($"Luna {k_rezultat.Eticheta} a fost ștearsă din istoric.")
+            KBotMessage.Show(FindForm(),
+                $"Luna {k_rezultat.Eticheta} a fost ștearsă din istoric ({k_rezultat.RanduriIstoric} rânduri)." & vbCrLf & vbCrLf &
+                "Reîncărcați arborele și descărcați din nou din FOREXE angajamentele lunii, ca valorile să se refacă.",
+                k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As ApiException
+            GlobalErrorLog.Write("SetariForexeView.BtnStergeLuna_Click", ex)
+            KBotMessage.Show(FindForm(), ex.Message, k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.BtnStergeLuna_Click", ex)
+            KBotMessage.Show(FindForm(), "Luna nu a putut fi ștearsă. Detalii în jurnalul de erori.",
+                             k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            IncarcaUltimaLunaAsync()
+        End Try
+    End Sub
+
     ' ---------------- theme ----------------
 
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -417,6 +521,12 @@ Public Class SetariForexeView
             cmbCaptura.ApplyTheme(scheme)
             tlyFoldere.BackColor = p.SurfaceAltColor
             tlyTests.BackColor = p.SurfaceAltColor
+            tlyIstoric.BackColor = p.SurfaceAltColor
+            ButtonStyles.ApplySecondary(btnStergeLuna, scheme)
+            lblIstoricLuna.ForeColor = p.TextDimColor
+            lblIstoricLuna.BackColor = Color.Transparent
+            lblIstoricHint.ForeColor = p.TextDimColor
+            lblIstoricHint.BackColor = Color.Transparent
             tlyViteza.BackColor = p.SurfaceAltColor
             cmbMultiplicator.ApplyTheme(scheme)
             ButtonStyles.ApplySecondary(btnTesteazaViteza, scheme)

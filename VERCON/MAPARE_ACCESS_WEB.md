@@ -72,6 +72,23 @@ Tipuri: MAT = Materiale/alt tip fara MF si OI; OI; MF; AL = Alimente.
 - **Meniul SFP**: se construieste din `tmpOptiuniSFP` (MODEL, TIP) — metadatele **nu sunt in export** si au fost primite de la utilizator (vezi mai jos)
 - **Forme de shell Access** (Main, VaerCon, subTreeView, MonthPicker, frmMail, frmPB, frmProgressBar) nu se portează; `VaerCon` si `Main` sunt schitate doar ca referinta pentru selectorul de context (VC02-01).
 
+## Corecțiile UI ale utilizatorului — 12.10.2026
+
+Sursa: [Corectii_mockup-uri_01](MOCKUPURI/Corectii_mockup-uri_01/) și mesajul ulterior cu cinci atașamente, revizia 2. Această secțiune descrie interfața web solicitată, nu o nouă constatare despre Access. Contract: [FLUXURI_UI](FLUXURI_UI.md). Mockupuri: [index revizuit v2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md).
+
+| Familie | Adaptare obligatorie web |
+|---|---|
+| FC/NIR | Antet grupat pe furnizor/cont/comisie, factură, NIR; valoare factură activă/manuală, lipsă → suma liniilor, N01/N02 păstrat; produs combobox cu căutare; coloane MF în grila produselor, fără secțiune separată |
+| FC/NIR documente | Arbore în dreapta furnizor → dată → număr factură + total; ⋯ la hover/focus; ascuns la Adaugă/Modifică |
+| BC | DGV **identic vizual** cu NIR, compact, Adaugă rând în footer și totaluri pe coloane; arbore în dreapta, ascuns în editor; Adaugă document și pentru Alimente |
+| ListaAlimente/MD/D/CN | Rezumate porții/preț/valoare/distribuit și feluri DGV în stilul NIR, fără padding mare; fără Alimente necesare; Liste salvate în dreapta în consultare, formatate ca NIR/BC/BP, ascunse în editor |
+| ListaAlimente/ALEGE_BC/LEGBCLA | **Mai multe BC-uri per listă**, DGV NIR cu valoare pe rând și total general; Adaugă rând deschide popupul cu BC existente din Alimente curentă neasociate altei liste; selecție aditivă fără duplicate; salvează atomic lista/mese/setul de legături și revalidează toate BC-urile, fără creare/resalvare BC sau consum nou; IdLista țintă neunic |
+| OI_Predare | Fără Perioada/Deținători sau Efect/Istoric; arbore BP în dreapta numai în consultare; sursa = conturile de intrare ale produselor |
+| OI_Transfer | Aceeași structură; arbore cu toate BT în consultare; produse numai ale predătorului |
+| OI_Casare | Aceeași structură, arbore BS; numai produse ale predătorului, fără Primitor |
+
+Salvare confirmată/Renunță → reafișarea arborelui; eșec/conflict/rezultat necunoscut → draft păstrat. Toate grilele BP/BT/BS folosesc și ele aspectul NIR, cu Adaugă rând în footer. Arborii de documente diferă de selectorul de produse și de arborele perioadelor SFP. SCHITE rămâne reprezentarea exporturilor Access. Cardinalitatea istorică LegBCLA din export nu limitează ținta 1:N decisă; DDL/generatorul necesită aliniere, vezi SCHEMA_VC.
+
 ## Rapoarte
 
 Vezi [RAPOARTE.md](RAPOARTE.md).

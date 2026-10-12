@@ -41,6 +41,30 @@ Pornire: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`, 
 | S4 | sesiune expirată | mesaj; datele rămân | — |
 | S5 | schimbi contextul în timpul salvării | răspunsul e ignorat („stale") | — |
 
+## Corecții UI din 12.10.2026 — probe planificate
+
+Contract: [FLUXURI_UI](FLUXURI_UI.md). Neexecutate în aplicație; inspecția PNG nu înlocuiește probele browser.
+
+| # | Scenariu | Așteptat | Rezultat |
+|---|---|---|---|
+| U1 | NIR/BC/listă/BP/BT/BS: consultare → Adaugă/Modifică → Salvează/Renunță | Arbore în dreapta numai în consultare, revine la succes/Renunță; selecție restaurată | — |
+| U2 | Eroare/conflict/răspuns pierdut la salvare | Arbore ascuns, draft păstrat, reconciliere înainte de revenire | — |
+| U3 | NIR MF și Materiale; căutare produs | O singură grilă, coloane MF doar la MF; combobox cu căutare la tastare | — |
+| U4 | Valoare factură manuală/necompletată; prag N01 | Câmp activ; lipsă → sumă; regula N01/N02 și exact 1 leu păstrate | — |
+| U5 | Arbore NIR, hover/focus pe frunză | Furnizor → dată → nr. factură+total; ⋯ accesibil la tastatură | — |
+| U6 | ListaAlimente consultare/editor | Rezumate porții și feluri DGV identice vizual cu NIR; arbore în dreapta formatat ca NIR/BC/BP; fără Alimente necesare | — |
+| U7 | Popup BC: bon liber/asociat altei liste/altă gestiune | Numai BC eligibile Alimente curentă; selecție în draft | — |
+| U8 | Adaugă două BC-uri; Renunță în popup/listă; scoate o asociere | Alegerea adaugă rând fără înlocuirea celorlalte; Renunță în popup păstrează draftul, Renunță la listă restabilește setul salvat; BC-ul scos nu e anulat | — |
+| U9 | Salvează lista cu un BC din set devenit neeligibil/revizie veche | Revalidarea tuturor BC-urilor; atomicitate listă/mese/set de legături, fără salvare parțială; zero BC noi/resalvate, zero consum suplimentar | — |
+| U10 | BP/BT/BS consultare/editor | Fără Perioada/Deținători/Efect/Istoric; arbore familie numai în consultare; Adaugă prezent | — |
+| U11 | Predare: cont de intrare | Conturi în care au intrat produsele; produse disponibile în contul ales | — |
+| U12 | Transfer/casare: schimbă predătorul | Numai produsele sursei; liniile incompatibile nu se reinterpretează; casare fără Primitor | — |
+| U13 | Rapoarte/SFP OI/MF | Arborele multianual rămâne | — |
+| U14 | NIR vs BC/porții/feluri/BC asociate/BP/BT/BS | Aceeași densitate/tipografie/borduri/editoare compacte; fără padding mare; Adaugă rând în footer (dezactivat în consultare), totaluri pe coloane | — |
+| U15 | Lista cu BC 780,0000 și 660,0000; listă 1.440,0000; apoi scoate al doilea | Două rânduri, TOTAL BC 1.440,0000, diferență 0,0000; după scoatere total 780,0000 și diferență 660,0000, fără stoc modificat | — |
+| U16 | Încearcă același BC de două ori; două liste aleg simultan același BC | Fără dublare în draft/total; salvarea concurentă refuză asocierea la altă listă; draft păstrat | — |
+| U17 | Persistă/reîncarcă o listă cu două BC-uri | Ambele legături rămân; IdLista nu este unic în legături; FK de context și unicitatea perechii protejate | — |
+
 ## Generale
 
 | # | Scenariu | Rezultat |

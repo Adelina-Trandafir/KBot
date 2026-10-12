@@ -26,12 +26,27 @@ Public Class UpdateProgressForm
     Private ReadOnly _info As UpdateInfo
     Private ReadOnly _destination As String
     Private ReadOnly _access As Boolean
+    Private ReadOnly _driverMode As Boolean
     Private ReadOnly _cts As New CancellationTokenSource()
     Private _running As Boolean
     Private _finished As Boolean
 
     ''' <summary>Slice 0104: <paramref name="access"/> = the kind of package (with / without the Access components) the version was read for.</summary>
     Public Sub New(api As IUpdateApi, info As UpdateInfo, destinationPath As String, access As Boolean)
+        Me.New(api, info, destinationPath, access, False)
+    End Sub
+
+    ''' <summary>The same window for the Playwright driver package (a separate download, only when its version changed).</summary>
+    Public Sub New(api As IUpdateApi, k_driver As DriverInfo, destinationPath As String)
+        Me.New(api, ToInfo(k_driver), destinationPath, False, True)
+    End Sub
+
+    Private Shared Function ToInfo(k_driver As DriverInfo) As UpdateInfo
+        If k_driver Is Nothing Then Throw New ArgumentNullException(NameOf(k_driver))
+        Return New UpdateInfo With {.Version = k_driver.Version, .File = k_driver.File, .Size = k_driver.Size, .Sha256 = k_driver.Sha256}
+    End Function
+
+    Private Sub New(api As IUpdateApi, info As UpdateInfo, destinationPath As String, access As Boolean, k_driverMode As Boolean)
         If api Is Nothing Then Throw New ArgumentNullException(NameOf(api))
         If info Is Nothing Then Throw New ArgumentNullException(NameOf(info))
         If String.IsNullOrWhiteSpace(destinationPath) Then Throw New ArgumentException("Calea de destinație lipsește.", NameOf(destinationPath))
@@ -39,6 +54,7 @@ Public Class UpdateProgressForm
         _info = info
         _destination = destinationPath
         _access = access
+        _driverMode = k_driverMode
         InitializeComponent()
         Try
             capBar.IconImage = My.Resources.kbot_64
@@ -46,7 +62,7 @@ Public Class UpdateProgressForm
             ' The icon is cosmetic; its absence must not stop the update.
             GlobalErrorLog.Write("UpdateProgressForm.New", ex)
         End Try
-        lblAntet.Text = "Se descarcă versiunea " & _info.Version & "…"
+        lblAntet.Text = If(_driverMode, "Se descarcă componenta Playwright " & _info.Version & "…", "Se descarcă versiunea " & _info.Version & "…")
         lblDetaliu.Text = FormatBytes(0) & " din " & FormatBytes(_info.Size)
         bara.Maximum = 1000
         bara.Value = 0
@@ -67,7 +83,11 @@ Public Class UpdateProgressForm
     Private Async Function DownloadAsync() As Task
         Try
             Dim progress As New Progress(Of Long)(AddressOf OnProgress)
-            Await _api.DownloadAsync(_destination, _info.Sha256, _access, progress, _cts.Token)
+            If _driverMode Then
+                Await _api.DownloadDriverAsync(_destination, _info.Sha256, progress, _cts.Token)
+            Else
+                Await _api.DownloadAsync(_destination, _info.Sha256, _access, progress, _cts.Token)
+            End If
             Finish(DialogResult.OK)
         Catch ex As OperationCanceledException
             DeleteQuietly()

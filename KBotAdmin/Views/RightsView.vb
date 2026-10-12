@@ -214,6 +214,51 @@ Public Class RightsView
             Select(Function(k_r) Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(k_r.Cod.Substring(3).ToLowerInvariant())).ToList()
     End Function
 
+    ''' <summary>Gives an existing account access to one more database: only the databases it is not linked to are offered.</summary>
+    Private Async Sub BtnGrant_Click(k_sender As Object, e As EventArgs) Handles btnGrant.Click
+        Try
+            Dim k_row As AccountLink = CurrentLink()
+            Dim k_un As String = If(k_row IsNot Nothing, k_row.Un, _context.SelectedAccount)
+            If String.IsNullOrWhiteSpace(k_un) Then
+                KBotMessage.Show("Alegeți întâi contul: un rând din tabel sau un cont din arborele din stânga.", "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            If _roles.Roles.Count = 0 Then Await LoadAsync()
+            Dim k_free As List(Of String) = Nothing
+            Dim k_defaultRole As String = "Contabil"
+            Await UiRun.Guard("RightsView.BtnGrant_Click", _context,
+                Async Function()
+                    _context.Say("Se citesc bazele contului " & k_un & "...")
+                    Dim k_all As AccountsResult = Await _context.Client.CallAsync(Of AccountsResult)("accounts")
+                    Dim k_mine As List(Of AccountLink) = k_all.Accounts.Where(Function(k_a) String.Equals(k_a.Un, k_un, StringComparison.OrdinalIgnoreCase)).ToList()
+                    If k_mine.Count > 0 Then k_defaultRole = k_mine(0).Rol
+                    Dim k_taken As New HashSet(Of String)(k_mine.Select(Function(k_a) k_a.Dc), StringComparer.OrdinalIgnoreCase)
+                    k_free = _context.Databases.Select(Function(k_d) k_d.Db).Where(Function(k_d) Not k_taken.Contains(k_d)).ToList()
+                    _context.Say("Gata.")
+                End Function)
+            If k_free Is Nothing Then Return
+            If k_free.Count = 0 Then
+                KBotMessage.Show("Contul " & k_un & " are deja acces la toate bazele.", "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Using k_form As New AccountForm(KbRoleNames(), k_free, k_un, _context.SelectedDb, k_defaultRole, True)
+                If k_form.ShowDialog(FindForm()) <> DialogResult.OK Then Return
+                Dim k_db As String = k_form.Db
+                Dim k_rol As String = k_form.Rol
+                If Not UiRun.Confirm("Dau contului " & k_un & " acces la baza " & k_db & ", cu rolul K-BOT " & k_rol & "?", "Acces la o bază") Then Return
+                Await UiRun.Guard("RightsView.BtnGrant_Click", _context,
+                    Async Function()
+                        Await _context.Client.CallRawAsync("acct-add", "--un", k_un, "--dc", k_db, "--rol", k_rol)
+                        _context.Say("Contul " & k_un & " are acum acces la " & k_db & " ca " & k_rol & ".")
+                    End Function)
+            End Using
+            _context.RequestRefresh()
+            Await LoadAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("RightsView.BtnGrant_Click", ex)
+        End Try
+    End Sub
+
     Private Async Sub BtnAdd_Click(k_sender As Object, e As EventArgs) Handles btnAdd.Click
         Try
             If _roles.Roles.Count = 0 Then Await LoadAsync()

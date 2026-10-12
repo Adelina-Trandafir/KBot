@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-12",
+  "generator": "built-in image_gen",
+  "images": [
+    {
+      "file": "02-nir-mijloace-fixe.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-4c10a686-7472-4a20-90c2-982075cf458b.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "02b-nir-adaugare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-2c3b57c1-1e89-4a5c-9e94-6ce50cc3ebf5.png",
+      "edited": true,
+      "qaCorrection": false
+    },
+    {
+      "file": "03-bon-consum.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-072a53d0-dccc-44e6-90ba-49fb72c67c58.png",
+      "edited": true,
+      "qaCorrection": false
+    },
+    {
+      "file": "03b-bon-consum-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-4963eb59-8c9f-4dd5-b638-1f14195cdd5d.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "04-lista-alimente.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-20416337-3098-489d-82fb-06c92d947a3d.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "04b-lista-alimente-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-edccfcfc-d357-41ec-9d40-7e87f0522a38.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "04c-alegere-bon-consum.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-699b5c16-498d-4bf3-be10-71ddc3ee14d8.png",
+      "edited": true,
+      "qaCorrection": false
+    },
+    {
+      "file": "05-transfer-obiecte-inventar.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-315b9c74-5401-470b-a30b-f2577082b9af.png",
+      "edited": true,
+      "qaCorrection": false
+    },
+    {
+      "file": "05b-transfer-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-1a670c60-a7ba-4596-8140-eafef1761d66.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "05c-predare-adaugare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-c140add7-4dfa-457b-9eed-05da1c5fe268.png",
+      "edited": true,
+      "qaCorrection": false
+    },
+    {
+      "file": "05d-casare-adaugare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-6a26c90c-8862-4c9c-ae63-c13cf37671e1.png",
+      "edited": true,
+      "qaCorrection": true
+    },
+    {
+      "file": "01-gestiune-materiale.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/Corectii_mockup-uri_01/01-gestiune-materiale.png",
+      "edited": false
+    },
+    {
+      "file": "06-rapoarte-previzualizare.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/Corectii_mockup-uri_01/06-rapoarte-previzualizare.png",
+      "edited": false
+    }
+  ]
+}

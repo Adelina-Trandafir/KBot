@@ -183,8 +183,6 @@ Partial Public Class KbotForm
                                                Function() SchimbaStareaAngajamentuluiAsync(info, definitivare:=False)).ConfigureAwait(True)
                 Case RezervariMenuOption.GenereazaPdfFinal
                     Await GenereazaPdfFinalDinMeniuAsync(info).ConfigureAwait(True)
-                Case RezervariMenuOption.Reanalizeaza
-                    Await ReanalizeazaRezervariAsync(info.CodAngajament).ConfigureAwait(True)
                 Case Else
                     ' No silent no-ops: an option with no handler is a programming defect.
                     Throw New ArgumentException($"Opțiune de meniu fără acțiune: {optiune}", NameOf(optiune))
@@ -293,6 +291,24 @@ Partial Public Class KbotForm
                                 iddfDocument:=f.IddfSalvat)
             End If
         End Using
+    End Sub
+
+    ''' <summary>
+    ''' The Rezervari footer RIGHT icon, «Repară» (operator, 12.10.2026; it replaced the refresh from
+    ''' FOREXE): the same dry-run / confirm / write flow as the footer menu's «Reanalizează rezervările».
+    ''' UI boundary (Async Sub handed to the view): every failure is logged and shown, never thrown.
+    ''' </summary>
+    Private Async Sub ReparaRezervari(cod As String)
+        Try
+            Await ReanalizeazaRezervariAsync(cod).ConfigureAwait(True)
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ReparaRezervari", ex)
+            KBotMessage.Show(Me, ex.Message, "Reanalizarea rezervărilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReparaRezervari", ex)
+            KBotMessage.Show(Me, "Rezervările nu au putut fi reparate. Detalii în jurnalul de erori.",
+                            "Reanalizarea rezervărilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
     End Sub
 
     ''' <summary>

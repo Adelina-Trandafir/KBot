@@ -42,8 +42,9 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
                             g.ade_operations = rights(context)
                             require(operation in g.ade_operations, 'FORBIDDEN', 'Nu aveți dreptul necesar pentru această operație ADE.', 403)
                             result = function(repo, *args, **kwargs)
-                        logger.info('ADE operation=%s outcome=success', operation)
-                        return result if isinstance(result, Response) else jsonify(result)
+                        response = result if isinstance(result, Response) else jsonify(result)
+                        logger.info('ADE operation=%s method=%s path=%s outcome=success', operation, request.method, request.path)
+                        return response
                     except DomainError as error:
                         logger.warning('ADE operation=%s refusal=%s', operation, error.reason)
                         body = {'error': str(error), 'reason': error.reason}
@@ -53,9 +54,16 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
                     except (KeyError, TypeError) as error:
                         logger.warning('ADE malformed request: %s', type(error).__name__)
                         return jsonify(error='Cerere incompletă sau invalidă.', reason='REQUEST'), 400
-                    except Exception:
-                        logger.exception('ADE operation=%s failed', operation)
-                        return jsonify(error='Operația nu a fost finalizată. Reîncercați cu aceeași cheie.', reason='SERVER'), 500
+                    except Exception as error:
+                        logger.exception('ADE operation=%s method=%s path=%s failed', operation, request.method, request.path)
+                        reading = request.method in ('GET', 'HEAD')
+                        if getattr(error, 'errno', None) in (1205, 1213):
+                            message = ('Baza de date este ocupată. Reîncercați încărcarea datelor.' if reading else
+                                       'Baza de date este ocupată. Reîncercați salvarea cu aceeași cheie.')
+                            return jsonify(error=message, reason='DATABASE_BUSY'), 503
+                        message = ('Datele nu au putut fi încărcate. Reîncercați.' if reading else
+                                   'Operația nu a fost finalizată. Reîncercați cu aceeași cheie.')
+                        return jsonify(error=message, reason='SERVER'), 500
                 if authenticate:
                     return authenticate(run)()
                 from routes.portal.portal import require_portal_session

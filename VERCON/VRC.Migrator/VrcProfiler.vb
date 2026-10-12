@@ -53,8 +53,9 @@ Public NotInheritable Class VrcProfiler
     End Function
 
     ''' <summary>Profiles one file. A read problem is returned in <see cref="VrcFileProfile.ReadError"/>, not thrown.</summary>
-    Public Shared Function Profile(k_path As String, k_progress As Action(Of String)) As VrcFileProfile
-        Dim k_profile As New VrcFileProfile() With {.FileName = Path.GetFileName(k_path)}
+    Public Shared Function Profile(k_source As VrcSourceFile, k_progress As Action(Of String)) As VrcFileProfile
+        Dim k_path As String = k_source.Path
+        Dim k_profile As New VrcFileProfile() With {.FileName = Path.GetFileName(k_path), .Kind = k_source.Kind, .Year = k_source.Year}
         Try
             k_progress?.Invoke($"{k_profile.FileName}: hash…")
             k_profile.SizeBytes = New FileInfo(k_path).Length
@@ -65,6 +66,7 @@ Public NotInheritable Class VrcProfiler
                 ReadTables(k_cn, k_profile, k_progress)
                 ReadConfig(k_cn, k_profile)
                 ReadHeaderChecks(k_cn, k_profile)
+                VrcUsageReader.Read(k_cn, k_profile)
             End Using
             k_profile.HashAfter = HashOf(k_path)
             k_profile.Stable = String.Equals(k_profile.HashBefore, k_profile.HashAfter, StringComparison.Ordinal)

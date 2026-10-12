@@ -97,6 +97,10 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Open threads (sliceless)
 
+- **Playwright driver as its own update package (12.10.2026)** - code done, builds clean, NEVER run
+  against a server. Deploy `PYTHON/routes/update.py` to the VPS and restart BEFORE the first
+  `push-update.ps1`. Details: [SLICELESS-update-driver-package](../SLICELESS-update-driver-package.md).
+
 - **PARKED (06.10.2026, operator has another plan first) - read FOREXE tables from the operator's
   own browser, no K-BOT robot.** Idea: the portal cannot run the FOREXE login (certificate is on a
   USB token, the key never leaves it, so a server-side robot is out). But the operator's browser

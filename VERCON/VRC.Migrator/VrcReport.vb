@@ -27,6 +27,7 @@ Public NotInheritable Class VrcReport
         k_sb.AppendLine()
         k_sb.AppendLine($"## {k_p.FileName}")
         k_sb.AppendLine()
+        k_sb.AppendLine($"- Rol după nume: {KindText(k_p)}.")
         If k_p.ReadError.Length > 0 Then
             k_sb.AppendLine($"**NECITIT:** {k_p.ReadError}")
             Return
@@ -66,6 +67,8 @@ Public NotInheritable Class VrcReport
             Next
         Next
 
+        AppendUsage(k_sb, k_p)
+
         If k_p.HeaderChecks.Count > 0 Then
             k_sb.AppendLine()
             k_sb.AppendLine("### Antete față de suma liniilor (N01/N02) — doar numărate")
@@ -74,6 +77,37 @@ Public NotInheritable Class VrcReport
             k_sb.AppendLine("|---|---:|---:|---:|---:|---:|---:|")
             For Each k_h In k_p.HeaderChecks
                 k_sb.AppendLine($"| {k_h.HeaderTable} | {k_h.Headers:N0} | {k_h.HeaderZero:N0} | {k_h.HeaderNull:N0} | {k_h.DiffOverOneLeu:N0} | {k_h.MaxAbsDiff.ToString("N2", CultureInfo.InvariantCulture)} | {k_h.WithoutLines:N0} |")
+            Next
+        End If
+    End Sub
+
+    Private Shared Sub AppendUsage(k_sb As StringBuilder, k_p As VrcFileProfile)
+        If k_p.Split IsNot Nothing Then
+            Dim k_s = k_p.Split
+            k_sb.AppendLine()
+            k_sb.AppendLine("### Alimente / Materiale după tipul contului (Masini.TIP: A = Alimente, M sau fără tip = Materiale)")
+            k_sb.AppendLine()
+            k_sb.AppendLine($"- Conturi: {k_s.AccountsAlimente:N0} Alimente, {k_s.AccountsMateriale:N0} Materiale. NIR: {k_s.NirAlimente:N0} / {k_s.NirMateriale:N0}. Bonuri de consum: {k_s.BonAlimente:N0} / {k_s.BonMateriale:N0}. Liste de alimente: {k_s.Lists:N0}.")
+            If k_s.Unclassified > 0 Then k_sb.AppendLine($"- {k_s.Unclassified:N0} documente fără cont și fără linii care să le plaseze: merg la Materiale.")
+            If k_s.Conflicts > 0 Then k_sb.AppendLine($"- **{k_s.Conflicts:N0} documente au linii din ambele părți (BLOCANT).**")
+        End If
+        If k_p.MinNirYear > 0 Then k_sb.AppendLine($"- Cel mai mic an din NIR.Data: {k_p.MinNirYear} (anul propus pentru o bază specială).")
+        If k_p.ProductCheck IsNot Nothing Then
+            Dim k_c = k_p.ProductCheck
+            k_sb.AppendLine()
+            k_sb.AppendLine("### ProduseP — rânduri cu folosire (se migrează doar acestea)")
+            k_sb.AppendLine()
+            k_sb.AppendLine($"- Rânduri în ProduseP: {k_c.Total:N0}; **cu folosire în documente: {k_c.Used:N0}** (se migrează); fără folosire: {(k_c.Total - k_c.Used):N0} (nu se transferă). Căutat în: {String.Join(", ", k_c.SearchedIn)}.")
+            k_sb.AppendLine($"- PUTVA negativ: {k_c.NegativeUsed:N0} cu folosire (avertisment), {k_c.NegativeUnused:N0} fără folosire (nu se transferă).")
+        End If
+        If k_p.LineSigns.Count > 0 Then
+            k_sb.AppendLine()
+            k_sb.AppendLine("### Semne cantitate / preț pe liniile documentelor")
+            k_sb.AppendLine()
+            k_sb.AppendLine("| Tabel | Linii | Preț negativ (se inversează, avertisment) | Cantitate negativă (avertisment) | AMBELE negative (BLOCANT) |")
+            k_sb.AppendLine("|---|---:|---:|---:|---:|")
+            For Each k_l In k_p.LineSigns
+                k_sb.AppendLine($"| {k_l.Table} | {k_l.Lines:N0} | {k_l.NegativePriceOnly:N0} | {k_l.NegativeQuantityOnly:N0} | {If(k_l.BothNegative > 0, "**" & k_l.BothNegative.ToString("N0", CultureInfo.InvariantCulture) & "**", "0")} |")
             Next
         End If
     End Sub
@@ -87,6 +121,11 @@ Public NotInheritable Class VrcReport
         Dim k_mf As Boolean = Flag(k_p, "Setari.MF")
         Dim k_type As String = If(k_obinv, "OI", If(k_mf, "MF", "MATERIALE sau ALIMENTE (nu există steag: alege operatorul)"))
         k_sb.AppendLine($"- Tip propus din steaguri (OBINV={Flag01(k_p, "Setari.OBINV")}, MF={Flag01(k_p, "Setari.MF")}): **{k_type}**.")
+        If k_p.Kind = VrcFileKind.Special AndAlso Not (k_obinv OrElse k_mf) Then
+            k_sb.AppendLine("- **ATENȚIE:** fișierul este bază specială (tz_2100) dar nu are steagul OBINV sau MF: tipul trebuie stabilit de operator.")
+        ElseIf k_p.Kind = VrcFileKind.Year AndAlso (k_obinv OrElse k_mf) Then
+            k_sb.AppendLine("- **ATENȚIE:** fișier de an (nu tz_2100) cu steag OBINV/MF: neașteptat; se verifică înainte de plan.")
+        End If
         Dim k_zec As Integer = 4
         Dim k_zecText As String = "lipsește (se folosește 4)"
         Dim k_zecRaw As String = Nothing
@@ -115,6 +154,17 @@ Public NotInheritable Class VrcReport
             k_sb.AppendLine("- Capacitatea totalurilor (sume pe document/gestiune) se verifică la construirea planului (VC05-02).")
         End If
     End Sub
+
+    Private Shared Function KindText(k_p As VrcFileProfile) As String
+        Select Case k_p.Kind
+            Case VrcFileKind.Special
+                Return "bază specială (tz_2100: Obiecte de inventar sau Mijloace fixe; 2100 nu este un an)"
+            Case VrcFileKind.Year
+                Return $"exercițiul {k_p.Year} (Materiale sau Alimente)"
+            Case Else
+                Return "nume neobișnuit, selectat manual"
+        End Select
+    End Function
 
     Private Shared Function Flag(k_p As VrcFileProfile, k_key As String) As Boolean
         Dim k_raw As String = Nothing

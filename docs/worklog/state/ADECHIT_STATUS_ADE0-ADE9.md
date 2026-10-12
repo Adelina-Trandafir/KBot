@@ -285,9 +285,20 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE6-21 | Pornire fără selecții, încărcare lazy an/lună/grupă/copii și Plătitori | TESTAT LOCAL NONVIZUAL — [worklog](../SLICE-ADE6-21-incarcare-lazy.md); 18 API + 3 JS; UI/server nevalidate |
 | SLICE-ADE6-22 | Ordonare alfabetică și numai cel mai recent an deschis la pornire | SCRIS LOCAL — [worklog](../SLICE-ADE6-22-ordonare-ultimul-an.md); fără teste noi |
 | SLICE-ADE6-23 | Eliminarea mesajelor informative din Plătitori | SCRIS LOCAL — [worklog](../SLICE-ADE6-23-fara-mesaj-platitori.md); fără teste |
+| SLICE-ADE6-24 | Email și CNP opționale per educator, catalog și închidere anuală; DDL numai în sursă, fără migrare Access; HELP și punct de reluare | SCRIS LOCAL — [worklog](../SLICE-ADE6-24-educatori-email-cnp.md); fără probe funcționale/vizuale/server |
+| SLICE-ADE6-25 | Corecție deadlock AD_Lock la citiri paralele; mesaje încărcare/salvare distincte și rute în log | SCRIS LOCAL — [worklog](../SLICE-ADE6-25-deadlock-lock-row.md); eroare 1213 raportată pe server, corecție neprobată MariaDB |
 
 ### Current focus
 
+- **ADE6-25 (12.10.2026):** deadlock 1213 raportat în 000_DEMO la blocarea AD_Lock(0)
+  înaintea deschiderii editorului grupei. Corecție locală: blocare exclusivă la
+  inserare, metodă/rută în log, mesaje separate pentru citire/salvare și 503 pentru
+  concurență. Fără DDL nou; de publicat cele două module backend și HELP.
+- **ADE6-24 (12.10.2026):** EMail/CNP opționale în perioadele educatorilor și planul anual,
+  cu validare și păstrarea contactelor. Access nu conține coloanele: migratorul rămâne
+  neschimbat, câmpurile noi rămân NULL la import. AD_09 se rulează numai pe AVACONT_SURSA;
+  KBotAdmin sincronizează schemele unităților. HELP și documentația sunt actualizate.
+  Punctul de reluare: [STARE_LA_PAUZA](../../../ADECHIT/STARE_LA_PAUZA.md).
 - ADE6-23: mesajele de introducere/încărcare/salvare Plătitori eliminate;
   zona de mesaje este ascunsă implicit și apare numai la erori.
 - **ADE6-22:** listele de grupe/copii/plătitori/educatori se ordonează după
@@ -314,7 +325,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 - Ferestrele inițiale Plătitori/Taxe sunt descrise în [ADE6-05](../SLICE-ADE6-05-ferestre-platitori-taxe.md).
   Editările sunt locale până la «Salvează și închide»; conflictul sau eroarea păstrează fereastra.
 - Implementarea prezenței este descrisă în [worklog](../SLICE-ADE6-04-workspace-prezenta.md).
-  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-24**.
+  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-26**.
 - Refolosim aspectul portalului și controalele comune; structura arborelui și coloanele
   urmează operațiile Access incluse, stabilite în ADE0.
 - Acceptare: modificările se salvează prin API cu validare; prezența lunilor închise refuză scrierea;
@@ -322,12 +333,17 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 ### Open threads
 
+- ADE6-25: corecția trebuie probată pe MariaDB; raportul LATEST DETECTED DEADLOCK
+  este necesar doar pentru identificarea exactă a perechii sau dacă eroarea persistă.
+- ADE6-24: AD_09 nerulat; sincronizarea KBotAdmin, salvarea/golirea contactelor,
+  închiderea anuală și aspectul grilei pe PC/mobil rămân pentru utilizator.
 - ADE6-21/22: utilizatorul verifică aspectul/navigarea pe PC și telefon,
   după publicarea fișierelor web/API și restartul backendului. Fără DDL nou.
 - M06 este decis în ADE0-07; formularul copilului implementează mutarea individuală și jurnalul.
   Transferul lot, compensarea prin consiliu și înlocuirea vechiului endpoint /transfer rămân de făcut.
-- Exportul local MariaDB_Schema nu are AD_; AD_03 este referința aprobată pentru implementarea
-  locală, fără a declara schema live confirmată. Întrebarea despre schema de pe server e fără răspuns.
+- Exportul local MariaDB_Schema citit la 12.10.2026 conține AD_Grupe_Educator,
+  fără EMail/CNP; AD_09 adaugă aceste coloane în sursă. Citirea exportului nu
+  confirmă schema live sau executarea scriptului.
 - Decizie închisă: antet I, fără filtru; Grupă închisă / Plecat / inversul Activ la
   plătitori. Bifele se modifică numai în editor, listele rămân doar pentru selecție.
   Salvarea activă dezactivează ceilalți plătitori ai aceluiași copil (ADE6-17).

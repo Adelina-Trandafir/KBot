@@ -288,11 +288,15 @@ export function bindPayers({ api, context, refresh, moveToSubunit }) {
     const periods = data.educators.filter((item) => item.IDG === row?.IDG).map((item) => ({ ...item, DeLa: day(item.DeLa), PanaLa: day(item.PanaLa) }));
     const drafts = new Map(); let year = null;
     const columns = [{ ...column('Educator', 'Educator', 230), editable: true },
+      { ...column('EMail', 'Email', 220), editable: true, editor: 'text', nullable: true,
+        validate: (value) => !value?.trim() || value.length <= 255 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) ? '' : 'Introduceți o adresă de email validă.' },
+      { ...column('CNP', 'CNP', 155), editable: true, editor: 'text', nullable: true,
+        validate: (value) => cnpMessage(value?.trim() || '') },
       { ...column('DeLa', 'Începând cu', 160), editable: true, editor: 'date', valueType: ValueType.DateTime },
       { ...column('PanaLa', 'Până la', 160), editable: true, editor: 'date', nullable: true, valueType: ValueType.DateTime }];
     const addEducator = async () => {
       if (editGrid.hasEdit && !await editGrid.commitEdit()) return;
-      const period = { IDGE: --sequence, Educator: '', DeLa: '', PanaLa: '' };
+      const period = { IDGE: --sequence, Educator: '', EMail: '', CNP: '', DeLa: '', PanaLa: '' };
       const previousDirty = dirty;
       periods.push(period); drafts.set(period.IDGE, period); dirty = true; filter();
       editGrid.beginNewRowEdit(period, 'Educator', () => {
@@ -325,7 +329,8 @@ export function bindPayers({ api, context, refresh, moveToSubunit }) {
       if (!values.Grupa) throw new Error('Numele grupei este obligatoriu.');
       return { id: row?.IDG ?? null, version: row?.Version, values, educators: [...drafts.values()].map((item) => ({
         id: item.IDGE < 0 ? null : item.IDGE, version: item.Version,
-        values: { Educator: item.Educator, DeLa: item.DeLa || null, PanaLa: item.PanaLa || null } })) };
+        values: { Educator: item.Educator, EMail: item.EMail?.trim() || null, CNP: item.CNP?.trim() || null,
+          DeLa: item.DeLa || null, PanaLa: item.PanaLa || null } })) };
     };
   }
   async function saveHiddenGroup({ row, value }) {

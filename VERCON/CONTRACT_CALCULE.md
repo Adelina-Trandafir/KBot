@@ -95,6 +95,16 @@ Comparatia se face in unitati monetare reale (nu pe coeficienti cu scari diferit
 | 101,01 | 100,00 | S (diferenta 1,01) |
 | NULL | 100,00 | S, marcat lipsa |
 
+### 2.3.1 Câmpul manual din NIR — corecție UI 12.10.2026
+
+Valoare factură este activă și completabilă manual, în aceeași coloană cu numărul și data facturii. Nu se prezintă ca total calculat/read-only în editor. Dacă nu este completată se folosește suma produselor. Valoarea declarată și suma calculată a liniilor sunt distincte; la salvare se aplică N01/N02 de mai sus, fără schimbarea pragului de 1 leu. Vezi [FLUXURI_UI](FLUXURI_UI.md).
+
+### 2.3.2 Lista de alimente — mai multe BC-uri, revizia 2 din 12.10.2026
+
+O listă poate avea mai multe BC-uri existente. DGV-ul arată valoarea totală a fiecărui bon, o singură dată; `TotalBC = suma valorilor BC-urilor distincte asociate`, `ValoareLista = VMD + VD + VC`, `Diferență = ValoareLista - TotalBC`. Se folosește aceeași reprezentare numerică exactă și precizie a gestiunii ca pentru documente; fără rotunjire suplimentară pentru agregare. Exemplu: 780,0000 + 660,0000 = 1.440,0000, listă 1.440,0000, diferență 0,0000. Diferența rămâne vizibilă și poate fi nenulă; nu impune egalitate nouă.
+
+Salvarea listei scrie atomic antetul, mesele și întregul set de legături, revalidând eligibilitatea/contextul/revizia fiecărui BC și lipsa duplicatelor. Nu creează/resalvează bonuri și nu repetă efectele de stoc. BC-urile se creează separat. Adăugarea/scoaterea unei asocieri schimbă suma din draft, fără să modifice bonul; Renunță restabilește setul salvat. Un conflict pe orice bon împiedică salvarea parțială a setului.
+
 ### 2.4 Exemplele reale MF
 
 - **N01**: NIR local `IdIntrare=1`, antet 0; linii cu cota 0; `S = 1.262.155,34` (**dovada**, `nir_max_sum`). Rezultat: total tinta `S`; antet `0` in proveniență. Al doilea NIR MF are antet NULL (`nir_hnull=1`): marcat lipsa.

@@ -37,7 +37,7 @@ Contractele și fixture-urile pot fi pregătite înaintea dependențelor, dar ac
 1. Portarea se face în aplicația web KBOT existentă, cu un plan detaliat după modelul ADECHIT; livrabilul curent este documentația, nu implementarea.
 2. Ierarhia este **DC (bază MariaDB) → subunități → gestiuni**. O subunitate poate avea mai multe gestiuni, inclusiv mai multe de același tip.
 3. Tipurile includ Mijloace fixe, Obiecte de inventar, Alimente și Materiale. Specificul gestiunii determină machetele, coloanele și rapoartele; unele rapoarte sunt comune.
-4. OI deschide machetele `OI_*` și nu BC. MF adaugă coloane în FC și utilizează tot machetele `OI_*`. Pentru gestiunile care nu sunt MF și nici OI este disponibil BC. Alimente deschide și `ListaAlimente`; BC rămâne parte din fluxul/legătura consumului, cu traseul manual de verificat în maparea UI.
+4. OI deschide machetele `OI_*` și nu BC. MF adaugă coloane în grila FC și utilizează tot machetele `OI_*`. Pentru gestiunile care nu sunt MF și nici OI este disponibil BC. Alimente deschide și `ListaAlimente`; BC se creează separat și se asociază listei prin popup cu arbore de bonuri eligibile, fără generare la salvarea listei (corecții utilizator, 12.10.2026).
 5. Utilitarul separat se va numi **VRC.Migrator**, după modelul `ADE.Migrator`.
 6. Toate tabelele noi proprii VERCON în MariaDB au prefixul **`VC_`**. Denumirea executabilului `VRC` și prefixul tabelelor `VC_` nu se uniformizează artificial.
 7. Se reutilizează tabelele și datele existente din **`AVACONT_COMUN`**, inclusiv numele unității și adresa.
@@ -155,7 +155,7 @@ Celelalte 3 relații sunt `_Struct_.IDS → _IDX_.IDS`, `_Struct_.IDS → _REL_.
 - `IntrariStorno.IdIntrare/IdProdus`, `ProduseM.IdProdus`, `OI_Transfer.IDC_OLD` nu au relații declarate în lista backendului, deși au roluri de referință în cod. Se profilează separat înainte de adăugarea FK țintă.
 - `NIR.IdMasina`, `IdStorno`, `IDFV`, `Iesiri_H.IdMasina`, `IdRetur`, `OI_Predare.IdBonConsum`, `IdMasinaP` și `OI_Produse.IDBP/IDBT/IDBC/IDBO/IDM` nu primesc automat părinți după nume. Se urmăresc salvarea, ștergerea și interogările.
 - În `OI_Predare`, PK este `ID`; `IDBP` nu este unic. Similar, `OI_Transfer.IDBT` și `OI_Casare.IDBC` grupează linii/documente, iar PK este `ID`. Un FK simplu către aceste câmpuri ar presupune o unicitate inexistentă. Dacă web normalizează antete OI, creează mapări separate pentru ID de linie și ID de grup.
-- `LABC.IdLista` este PK; `LegBCLA.IdLista` este PK și FK unic către LABC. Aceasta nu demonstrează că un bon are cel mult o listă: nu apare unicitate pe `LegBCLA.IdBonConsum` în descriere. Se păstrează cardinalitatea reală, verificată și în date.
+- În exportul Access, `LABC.IdLista` este PK; `LegBCLA.IdLista` este PK și FK unic către LABC, iar `IdBonConsum` nu are unicitate declarată. Acestea rămân constatări despre sursă. **Ținta web, decisă 12.10.2026 revizia 2: o listă poate avea mai multe BC-uri.** Legăturile țintă au RowId, IdLista neunic, pereche listă–BC unică pe context și verificarea că un BC nu aparține altei liste. DDL/generatorul scris anterior trebuie aliniat la această decizie; importul nu pierde și nu repară tacit asocieri istorice incompatibile.
 - `Retetar.IdFel` este PK în schema comună. Nu se inventează un tabel de ingrediente cu mai multe rânduri pentru aceeași cheie fără verificarea semnificației `Continut` și a fluxului din formular.
 - `IntrariStorno.PUTVA` **și `IesiriRetur.PUTVA`** sunt `Long` în schema backendului, spre deosebire de variantele/prețurile `Double`. Al doilea caz rezultă din noua citire a `TZ_SCHEMA`; datele de retur furnizate sunt goale și nu probează efectul istoric.
 - Relația `Iesiri_H → LegBCLA` cere citirea atributelor DAO brute și o probă pe copie. `DETECTIE_VBA` a observat atributul 8192 și nu îi atribuie o semnificație neverificată. Lipsa etichetelor în Markdown nu tranșează cazul.
@@ -222,7 +222,7 @@ Un import confirmat nu înseamnă automat gestiune activată. Propunere: stări 
 | Grup / tabele țintă propuse | Sursă / responsabilitate | Apartenență |
 |---|---|---|
 | `VC_Subunitati`, `VC_Gestiuni`, `VC_Exercitii` | Cataloage permanente; tip gestiune, stare, an de evidență și închidere | DC → subunitate → gestiune → exercițiu |
-| `VC_Settings`, `VC_Numbering`, `VC_ContextLock` | Setari/NR, contoare și acces exclusiv cu titular/sesiune/expirare | Precizie pe subunitate; contor după tip/exercițiu; acces exclusiv pe DC+subunitate+gestiune, fără an |
+| `VC_Settings`, `VC_Numbering`, `VC_ContextLock` | Setari, contoare (pornesc de la ultimul numar real salvat, nu din NR.*) și acces exclusiv cu titular/sesiune/expirare | Precizie pe subunitate; contor după tip/exercițiu; acces exclusiv pe DC+subunitate+gestiune, fără an |
 | `VC_Masini`, `VC_Produse`, `VC_ProduseP` | Categorii/conturi, nomenclator, variante preț/cod inventar | Gestiune; continuitatea anuală explicită în D02 |
 | `VC_Furnizori`, `VC_Clienti`, `VC_TVA`, `VC_ComisieNIR`, `VC_ComisieInventar` | Nomenclatoare și deținători; TVA/comisii după verificarea oportunității reutilizării unor cataloage existente | Inițial gestiune; partajarea se decide, nu se deduplicatează după nume |
 | `VC_NIR`, `VC_Intrari`, `VC_IntrariStorno` | Antet recepție/storno, linii intrări și linii storno | Gestiune + exercițiu; data documentului rămâne distinctă |
@@ -258,7 +258,7 @@ Un import confirmat nu înseamnă automat gestiune activată. Propunere: stări 
 8. NULL, șir vid și 0 rămân distincte. Boolean Access -1/0 se convertește explicit, NULL separat. Coduri de inventar/numere document/CUI/CNP/IBAN rămân text când semantica este textuală; nu se pierd zerourile inițiale.
 9. Datele documentelor sunt date locale, fără conversie arbitrară la UTC; timestampurile auditului au convenție explicită. `Data`, `DataFc`, `DataBC`, `DataSalvare`, `DataIntrare` nu se substituie reciproc. Intervalele includ/exclud capete după contract, inclusiv documente cu oră.
 10. Lungimile și collation/charset pornesc de la exporturile MariaDB efective, compatibile cu FK comune; nu se schimbă global utf8mb3/utf8mb4 în acest proiect. Se detectează trunchierea/coliziunile accent/case și se raportează, fără eliminare silențioasă de diacritice.
-11. **Preț >=0 este invariant global**, inclusiv recepții, variante, retur, storno, OI/MF/Alimente, migrator și rapoarte. Cantitățile/efectele valorice pot avea semn potrivit mișcării, dar prețul unitar nu. Prețurile negative din sursă blochează transferul până la corectarea planului de conversie; nu se aplică ABS automat. DB/API verifică invarianta, nu numai UI.
+11. **Preț >=0 este invariant global**, inclusiv recepții, variante, retur, storno, OI/MF/Alimente, migrator și rapoarte. Cantitățile/efectele valorice pot avea semn potrivit mișcării, dar prețul unitar nu. Prețurile negative din sursă (decis 12.10.2026): numai în Intrari/Iesiri/IesiriRetur prețul devine pozitiv și cantitatea negativă (aceeași valoare absolută), cu avertisment; cantitatea ȘI prețul negative pe aceeași linie blochează transferul; ProduseP se transferă doar cu folosire în documente. DB/API verifică invarianta, nu numai UI.
 
 **Sursă numerică:** codul actual citește NR.ZEC cu fallback 4; aceasta este dovadă despre sursă, nu default impus aplicației noi. În transfer se compară ZEC din toate gestiunile subunității și se consemnează precizia aleasă pe subunitate, fără „ultimul fișier câștigă”. NR conține și SI_LA/NIR/NRFCT/NRBC/NR/NUM; fiecare se mapează, fără pierderea soldului inițial Alimente.
 
@@ -282,7 +282,7 @@ Serviciile primesc parametri expliciți și date verificate; nu citesc `Forms!..
 | Consum/retur/storno | Tip, document referit, cantități/prețuri istorice, dată, revizie | Disponibil reverificat sub lock; retur peste consum și storno peste intrarea rămasă tratate explicit. Schimbarea prețului variantei nu rescrie documentele salvate. |
 | OI predare/transfer/casare | Variantă, deținător sursă/destinație, document, dată | Transfer minus la vechiul deținător și plus la noul; total net zero, fără dublare. Predarea poate avea efect în Iesiri și OI; registrele nu se însumează mecanic ca două consumuri. |
 | MF / amortizare | Activ, DataIntrare, DNF, DF, valoare lunară, dată calcul, istoric | Început/sfârșit lună, februarie/an bisect, durată 0/NULL/epuizată, ultima lună cu rest, casare și transfer. DateDiff și Round Access necesită comparator; nu se presupune echivalență cu Python round. |
-| Alimente | Listă, mese, porții/beneficiari, feluri, cantități, prețuri, BC asociat | Antet+detalii+BC+legături atomice; rețeta actualizată nu schimbă retrospectiv lista salvată; valorile bon/listă și justificarea diferențelor se verifică. |
+| Alimente | Listă, mese, porții/beneficiari, feluri, cantități, prețuri, set de BC-uri existente alese prin popup și afișate în DGV | Antet+detalii+întregul set de legături atomice; fiecare BC revalidat, fără creare/resalvare sau consum repetat; rețeta actualizată nu schimbă retrospectiv lista salvată; valoare per BC, totalul sumei, valoare listă și diferență. |
 | Închidere an | Gestiune/exercițiu, solduri pe variantă/deținător/activ, țintă | Snapshot validat, blocare concurență, reportare unică, continuitate MF; repetarea nu dublează soldul. Copiile anuale importate nu se adună peste întregul istoric. |
 
 **Protocol comun de scriere:** sesiune + drepturi + capabilitate + drept de acces exclusiv valid → tranzacție scurtă → verificare titular/jeton exclusiv/context/stare/revizie → RequestKey/payload → calcul INT/scară, N01/N02, TVA per linie și preț >=0 → toate efectele+audit+rezultat → COMMIT → succes. Și citirea/rapoartele/exporturile cer accesul exclusiv; tranzacția SQL nu rămâne deschisă pe durata întregii sesiuni.
@@ -507,9 +507,9 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC03-02 — tabelele business, tipurile și FK
 
-**Pași:** dicționar final INT/scară/domeniu/NULL/lungimi, chei generate/numere și FK business valide. Include invariantul preț >=0, totalul N01/N02 și scara separată de numărul de zecimale configurabil pe subunitate. Introduce chei de context/indexuri/politica de ștergere fără modificarea schemei Access.
+**Pași:** dicționar final INT/scară/domeniu/NULL/lungimi, chei generate/numere și FK business valide. Include invariantul preț >=0, totalul N01/N02 și scara separată de numărul de zecimale configurabil pe subunitate. Introduce chei de context/indexuri/politica de ștergere fără modificarea schemei Access. Pentru LegBCLA aplică decizia din 12.10.2026 revizia 2: o listă are mai multe BC-uri; înlocuiește unicitatea contextuală IdLista cu index neunic, protejează perechea listă–BC și atribuirea unui BC unei singure liste. Generatorul, DDL și diagrama trebuie aliniate împreună; importul semnalează istoricul incompatibil fără deduplicare tacită.
 
-**Livrabile:** DDL propus `sql/VC_01_schema.sql` și diagramă relații. **Acceptare:** toate tabelele proprii încep VC_; legătura între gestiuni e refuzată de FK și API; operațiile business nu pot pierde istoricul prin ștergerea unui nomenclator.
+**Livrabile:** DDL propus `sql/VC_01_schema.sql` și diagramă relații. **Acceptare:** toate tabelele proprii încep VC_; legătura între gestiuni e refuzată de FK și API; operațiile business nu pot pierde istoricul prin ștergerea unui nomenclator; aceeași listă persistă două BC-uri distincte, fără duplicate sau asocierea concurentă a unui BC la altă listă.
 
 ### SLICE-VC03-03 — importuri, audit și idempotency
 
@@ -571,7 +571,7 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 **Pași:** proiect Windows VRC și reader read-only pentru toate sursele incluse în lotul unic, cu resurse eliberate, fără VBA/DBS/clsDatabase sau modificarea Access. Citește câmpurile business necesare și raportează lipsurile; nu construiește compatibilitate cu versiuni ale aplicației vechi. Verifică inventarul complet MF/OI multianual și Materiale/Alimente anual, linked tables și motorul de citire.
 
-**Livrabile:** VRC.Migrator.exe cu Citește și raport profilare. **Acceptare:** hashes/schema/date ale originalelor nu sunt modificate de reader; o bază fără Ver rămâne fără Ver; câmpurile absente sunt raportate diferit de NULL. Compatibilitate 32/64 biți cu motorul instalat, fără presupunerea că toate stațiile au Office/ACE.
+**Livrabile:** VRC.Migrator.exe cu Citește și raport profilare. **Acceptare:** hashes/schema/date ale originalelor nu sunt modificate de reader; o bază fără Ver rămâne fără Ver; câmpurile absente sunt raportate diferit de NULL. Doar Access pe 64 de biți (decis 12.10.2026).
 
 ### SLICE-VC05-02 — planul și formularul de asociere
 
@@ -637,7 +637,7 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC07-01 — ListaAlimente și rețetar
 
-**Pași:** LABC/ListaAlimente, mese MicDejun/Dejun/Cina, porții/beneficiari/feluri, rețetar, costuri și consum asociat. Clarifică rolul Alimente/Feluri/Retetar din cod, salvarea și actualizarea listei plus BC și LegBCLA într-o tranzacție.
+**Pași:** LABC/ListaAlimente, mese MicDejun/Dejun/Cina, porții/beneficiari/feluri, rețetar, costuri și consum asociat. BC se creează separat. O listă are mai multe BC-uri, afișate într-un DGV identic vizual cu NIR: un rând per BC, valoare pe rând, TOTAL BC în footer, valoare listă și diferență față de suma BC-urilor. Adaugă rând din footer deschide popupul cu arbore de bonuri din gestiunea Alimente curentă neasociate altei liste; alegerea adaugă, nu înlocuiește setul. Fără duplicate; ⋮ scoate numai asocierea din draft. Salvarea antetului/meselor/întregului set LegBCLA este atomică, cu revalidarea fiecărui BC; nu generează/resalvează bonuri și nu repetă consumul. DGV-uri NIR compacte pentru rezumate și feluri, fără padding mare/carduri în celule și fără Alimente necesare. Arborele listelor în dreapta, formatat ca NIR/BC/BP, se ascunde în editor. Vezi FLUXURI_UI, corecțiile din 12.10.2026 revizia 2; aliniază cardinalitatea țintă VC03-02 înainte de implementare.
 
 **Livrabile:** flux complet listă nouă/editare/listare/legare/dezlegare autorizată. **Acceptare:** 127 liste istorice Alimente din profilul DETECTIE sunt păstrate și reconciliate când se folosește același snapshot; o eroare între listă și bon nu lasă legături parțiale. Se testează masă absentă/porții 0/NULL și schimbare rețetă fără recalcul tacit al istoricului.
 
@@ -762,7 +762,7 @@ Lista de mai jos este minimul relevant pentru defectele/contextul cunoscut. Nu �
 | T19 — anulare migrator | Oprește înainte de commit, în timpul SQL și după commit trimis | Rollback confirmat sau necunoscut explicat, fără promisiune falsă | VC05 |
 | T20 — format/texte | O'Brien, diacritice, 01/02, virgulă zecimală, cod cu zero inițial | Parametri, parsare explicită și texte exacte | VC02/VC03/VC06 |
 | T21 — log indisponibil | Disc plin/acces log refuzat, eșec rollback/conexiune | Stare și diagnostic reale, fără secrete/succes fals | VC01/VC05 |
-| T22 — lista și bonul | Editează/șterge BC legat; modifică rețeta după salvare | Legături atomice și istoric păstrat | VC06/VC07 |
+| T22 — lista și bonurile | Adaugă două BC-uri existente, încearcă duplicat, scoate unul, Renunță; un BC devine neeligibil; editare/anulare BC legat; modifică rețeta după salvare | DGV NIR cu valori per BC și totalul sumei; popup filtrat pe Alimente; antet/mese/set de legături atomice, fără modificări parțiale, BC noi/resalvate sau consum repetat; cardinalitate 1:N | VC03/VC06/VC07 |
 | T23 — amortizare | Durată 0/NULL, lună limită, februarie bisect, ultim rest, mai multe predări | Rezultat per activ, fără multiplicare JOIN/divizare invalidă | VC08 |
 | T24 — închidere protejată prin T12 | Al doilea operator încearcă închiderea gestiunii ocupate; titularul pierde răspunsul ori anul următor există | Refuz prin aceeași ocupare exclusivă T12, fără logică paralelă de concurență; rollback/RequestKey previn reportarea dublă a titularului | VC04/VC08 |
 | T25 — FK/cascade | Șterge furnizor/client/produs folosit; referă antet/variantă din altă gestiune | Politica D05, fără dispariția istoricului ori legături între contexte | VC03/VC04/VC06 |
@@ -831,5 +831,16 @@ Aceasta sectiune este autoritara. **Documentele `CONTRACT_CALCULE.md` si `DECIZI
 - `Intrari.TVA` este suma TVA calculata (confirmat).
 - Meniul SFP (`tmpOptiuniSFP`, 47 randuri) si `Rbb` (49 randuri; toate `V=1,E=1`, in afara tabului `Tab_MF` ascuns) au fost primite; ribbonul nu diferentiaza dupa tip prin date, diferentierea o fac `Form_Open` din BC/BR/ListaAlimente (refuza la OBINV sau MF), `OI_*` (refuza daca nici OBINV nici MF) si `IA`.
 - Raman nedecise si nesolicitate acum: D12 (transfer intre contexte), rolul intrarilor cu `Cant=0` (pastrate), semnificatia `AnDate=2100`, eventuale baze `tz_aaaa` lipsa.
+
+## Corecții UI și fluxuri ale utilizatorului — 12.10.2026
+
+Sursa: imaginile adnotate din `MOCKUPURI/Corectii_mockup-uri_01` și mesajul ulterior cu cinci atașamente, **revizia 2**: NIR este unica referință vizuală de tabel și o listă poate avea mai multe BC-uri. Aceste clarificări înlocuiesc propunerile UI/flux contradictorii anterioare. Contractul detaliat este [FLUXURI_UI.md](FLUXURI_UI.md); livrabilul vizual este [setul corectat v2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md). Documentare/mockupuri; nu certifică implementarea aplicației. Cardinalitatea țintă 1:N necesită alinierea DDL/generatorului în VC03-02 înaintea VC07-01.
+
+1. **Consultare/editor:** NIR, BC, ListaAlimente și BP/BT/BS folosesc în dreapta arbori de documente salvate. La Adaugă/Modifică arborele dispare; reapare după salvare confirmată sau Renunță. Frunzele au ⋯ la hover/focus. Butonul Adaugă de document există în toate familiile. Draftul rămâne în editor dacă salvarea eșuează sau rezultatul e necunoscut (VC02-02/03/04, VC06-05).
+2. **NIR:** informațiile facturii (număr/dată/valoare) sunt pe aceeași coloană; numărul/data NIR pe o altă coloană. Valoare factură este activă și se introduce manual; necompletată → suma produselor. N01/N02 și pragul existent rămân valabile. Produsele se aleg prin combobox cu căutare la tastare. Coloanele MF sunt în aceeași grilă Produse recepționate, fără secțiune MF separată. Arbore NIR: furnizor → dată → număr factură + total (VC06-02).
+3. **BC:** grilă DGV identică vizual cu NIR, cu aceeași densitate/editoare și Adaugă rând în footer; arbore de bonuri în dreapta și aceleași tranziții; bonul se poate crea separat în Alimente (VC06-03).
+4. **Alimente:** rezumatele meselor, felurile și BC-urile asociate sunt DGV-uri identice vizual cu NIR; fără tabel Alimente necesare. O listă poate avea mai multe BC-uri existente, neasociate altei liste, numai din Alimente curentă. Adaugă rând din footer deschide popupul; un rând per BC, valoare pe rând și total general. Salvează lista scrie atomic lista/mese/set de legături și revalidează toate bonurile, fără consum repetat (VC07-01). Arbore Liste salvate în dreapta, formatat ca NIR/BC/BP, ascuns în editor.
+5. **OI/MF documente:** grile identice vizual cu NIR, compacte, cu Adaugă rând și totaluri în footer; fără panourile laterale Perioada/Deținători și fără Efectul transferului/Istoric produs. În consultare, arborele tuturor BP/BT/BS ale familiei este în dreapta; în editor se ascunde. Predare folosește drept sursă conturile în care au intrat produsele. Transfer/casare oferă numai produse ale predătorului ales. Casare nu are secțiune Primitor (VC07-02/03).
+6. **Rapoarte:** arborele multianual SFP cerut la 11.10.2026 rămâne; eliminarea panourilor de pe pagina OI nu schimbă această regulă. Criteriile browser sunt extinse în PROBE_BROWSER (VC02-05).
 
 **Corectie la checkpointul anterior:** punctul despre `Z = NR.ZEC` pe subunitate, cu rotunjirea celor 13 valori la conversie, este inlocuit de regulile 1–3 de mai sus.

@@ -231,7 +231,8 @@ async function openApp() {
     return;
   }
   me = r.data;
-  if (chosenPage() && me.db_name) { goNext(); return; } // straight to the chosen page, the portal is never painted
+  // straight to the chosen page, the portal is never painted; ADECHIT asks for the unit itself when none is open yet
+  if (chosenPage() && (me.db_name || chosenApp === 'adechit')) { goNext(); return; }
   $('user-email').textContent = me.email;
   show('card-app');
   startMonitor();

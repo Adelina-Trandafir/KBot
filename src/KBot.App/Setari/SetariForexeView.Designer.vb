@@ -65,6 +65,11 @@ Partial Class SetariForexeView
         lblTestsHint = New Label()
         lblAnswersCaption = New Label()
         lblAnswers = New Label()
+        lblTitluIstoric = New Label()
+        tlyIstoric = New KBotTableLayoutPanel()
+        lblIstoricLuna = New Label()
+        btnStergeLuna = New Button()
+        lblIstoricHint = New Label()
         tlyBody.SuspendLayout()
         tlyStare.SuspendLayout()
         tlyCertificat.SuspendLayout()
@@ -72,6 +77,7 @@ Partial Class SetariForexeView
         tlyViteza.SuspendLayout()
         tlyFoldere.SuspendLayout()
         tlyTests.SuspendLayout()
+        tlyIstoric.SuspendLayout()
         SuspendLayout()
         '
         ' tlyBody
@@ -91,12 +97,16 @@ Partial Class SetariForexeView
         tlyBody.Controls.Add(tlyTests, 0, 9)
         tlyBody.Controls.Add(lblTitluFoldere, 0, 10)
         tlyBody.Controls.Add(tlyFoldere, 0, 11)
+        tlyBody.Controls.Add(lblTitluIstoric, 0, 12)
+        tlyBody.Controls.Add(tlyIstoric, 0, 13)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(0, 0)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
         tlyBody.Padding = New Padding(24, 18, 24, 18)
-        tlyBody.RowCount = 13
+        tlyBody.RowCount = 15
+        tlyBody.RowStyles.Add(New RowStyle())
+        tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
         tlyBody.RowStyles.Add(New RowStyle())
@@ -593,6 +603,74 @@ Partial Class SetariForexeView
         lblTestsHint.TabIndex = 2
         lblTestsHint.Text = "Cele două moduri nu merg împreună și se opresc singure la închiderea K-BOT."
         '
+        ' lblTitluIstoric
+        '
+        lblTitluIstoric.AutoSize = True
+        lblTitluIstoric.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitluIstoric.Location = New Point(28, 700)
+        lblTitluIstoric.Margin = New Padding(4, 0, 4, 8)
+        lblTitluIstoric.Name = "lblTitluIstoric"
+        lblTitluIstoric.Size = New Size(250, 32)
+        lblTitluIstoric.TabIndex = 10
+        lblTitluIstoric.Text = "Istoric (avansat)"
+        '
+        ' tlyIstoric
+        '
+        tlyIstoric.AutoFitToTheme = False
+        tlyIstoric.AutoSize = True
+        tlyIstoric.ColumnCount = 1
+        tlyIstoric.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyIstoric.Controls.Add(lblIstoricLuna, 0, 0)
+        tlyIstoric.Controls.Add(btnStergeLuna, 0, 1)
+        tlyIstoric.Controls.Add(lblIstoricHint, 0, 2)
+        tlyIstoric.Dock = DockStyle.Top
+        tlyIstoric.Location = New Point(28, 740)
+        tlyIstoric.Margin = New Padding(4, 0, 4, 24)
+        tlyIstoric.Name = "tlyIstoric"
+        tlyIstoric.RowCount = 3
+        tlyIstoric.RowStyles.Add(New RowStyle())
+        tlyIstoric.RowStyles.Add(New RowStyle())
+        tlyIstoric.RowStyles.Add(New RowStyle())
+        tlyIstoric.Size = New Size(904, 130)
+        tlyIstoric.TabIndex = 11
+        '
+        ' lblIstoricLuna
+        '
+        lblIstoricLuna.AutoSize = True
+        lblIstoricLuna.Dock = DockStyle.Fill
+        lblIstoricLuna.Location = New Point(4, 0)
+        lblIstoricLuna.Margin = New Padding(4, 0, 4, 10)
+        lblIstoricLuna.Name = "lblIstoricLuna"
+        lblIstoricLuna.Size = New Size(896, 26)
+        lblIstoricLuna.TabIndex = 0
+        lblIstoricLuna.Text = "Se citește ultima lună din istoric…"
+        '
+        ' btnStergeLuna
+        '
+        btnStergeLuna.AutoSize = True
+        btnStergeLuna.FlatStyle = FlatStyle.Flat
+        btnStergeLuna.Font = New Font("Segoe UI Semibold", 9F)
+        btnStergeLuna.Location = New Point(4, 36)
+        btnStergeLuna.Margin = New Padding(4, 0, 4, 10)
+        btnStergeLuna.Name = "btnStergeLuna"
+        btnStergeLuna.Size = New Size(320, 40)
+        btnStergeLuna.TabIndex = 1
+        btnStergeLuna.Text = "Șterge ultima lună din istoric…"
+        tips.SetToolTipHeader(btnStergeLuna, "Șterge ultima lună din istoric")
+        tips.SetToolTipText(btnStergeLuna, "Șterge rândurile ultimei luni din istoricul FOREXE, cu rezervările, recepțiile și plățile ei," & vbLf & "ca valorile să se refacă la următoarea descărcare." & vbLf & "Nu se poate dacă luna are DDF sau ORD.")
+        btnStergeLuna.UseVisualStyleBackColor = True
+        '
+        ' lblIstoricHint
+        '
+        lblIstoricHint.AutoSize = True
+        lblIstoricHint.Dock = DockStyle.Fill
+        lblIstoricHint.Location = New Point(4, 86)
+        lblIstoricHint.Margin = New Padding(4, 0, 4, 0)
+        lblIstoricHint.Name = "lblIstoricHint"
+        lblIstoricHint.Size = New Size(896, 26)
+        lblIstoricHint.TabIndex = 2
+        lblIstoricHint.Text = "Doar ultima lună, doar o lună întreagă și doar dacă nu are DDF sau ORD."
+        '
         ' lblTitluFoldere
         '
         lblTitluFoldere.AutoSize = True
@@ -762,6 +840,8 @@ Partial Class SetariForexeView
         tlyFoldere.PerformLayout()
         tlyTests.ResumeLayout(False)
         tlyTests.PerformLayout()
+        tlyIstoric.ResumeLayout(False)
+        tlyIstoric.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -812,4 +892,9 @@ Partial Class SetariForexeView
     Friend WithEvents lblTestsHint As Label
     Friend WithEvents lblAnswersCaption As Label
     Friend WithEvents lblAnswers As Label
+    Friend WithEvents lblTitluIstoric As Label
+    Friend WithEvents tlyIstoric As KBotTableLayoutPanel
+    Friend WithEvents lblIstoricLuna As Label
+    Friend WithEvents btnStergeLuna As Button
+    Friend WithEvents lblIstoricHint As Label
 End Class

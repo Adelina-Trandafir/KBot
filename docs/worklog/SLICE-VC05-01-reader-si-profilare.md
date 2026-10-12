@@ -7,6 +7,12 @@ Stare: **IMPLEMENTAT_LOCAL**. Proiectul se compileaza (fara erori sau avertismen
 - `VERCON/tools/expected.js` genereaza schema asteptata din TZ_SCHEMA (`expected_schema.json`, incorporata).
 - `README.md` al migratorului.
 
+## Revizie 12.10.2026 (cerinta operatorului)
+- Sursele se aleg dintr-un **folder**; tabelul (KBotDataView) are bifa „Citeste" pe fiecare fisier. Se listeaza `tz_aaaa` si `tz_2100`, atat `.accdb` cat si `.mdb`; `tz.mdb`/`tz.accdb` nu se iau niciodata; alte nume `tz_...` apar nebifate.
+- `tz_2100` = baza speciala OI/MF (2100 nu este un an); raportul ia tipul din steaguri si avertizeaza daca un tz_2100 nu are OBINV/MF sau un fisier de an are steag.
+- `--profile raport.md <folder|fisiere>`.
+- Compilat curat; nepornit.
+
 ## Limite (neverificate)
 - Neprobat pe bazele reale: nu stim daca `Mode=Read` este acceptat de ACE pe toate fisierele, daca `GetOleDbSchemaTable` raporteaza corect tabelele legate, daca ID-urile negative se citesc corect sau timpul pe baze mari.
 - Compatibilitatea 32/64 biti cu motorul instalat nu este verificata; nu s-a verificat prezenta ACE pe alte statii.

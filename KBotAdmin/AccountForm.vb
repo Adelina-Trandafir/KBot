@@ -1,8 +1,9 @@
 Option Strict On
 
 ''' <summary>
-''' Adds an account to a database (e-mail, database, K-BOT role) or, with the e-mail and database fixed,
-''' changes the role of an existing link (slice ME01).
+''' Adds an account to a database (e-mail, database, K-BOT role); with the e-mail fixed and the database fixed too it
+''' changes the role of an existing link; with the e-mail fixed and <c>k_grant</c> it gives that existing account
+''' access to one more database (slice ME01).
 ''' </summary>
 Public Class AccountForm
 
@@ -35,8 +36,10 @@ Public Class AccountForm
     ''' <param name="k_fixedUn">Empty for a new link; the e-mail for a role change.</param>
     ''' <param name="k_preselectDb">The database to preselect (and to fix, for a role change).</param>
     ''' <param name="k_currentRole">The role to preselect.</param>
+    ''' <param name="k_grant">With an e-mail: the database stays choosable (the account gets access to one more database).</param>
     Public Sub New(k_roles As IReadOnlyList(Of String), k_databases As IReadOnlyList(Of String),
-                   k_fixedUn As String, k_preselectDb As String, k_currentRole As String)
+                   k_fixedUn As String, k_preselectDb As String, k_currentRole As String,
+                   Optional k_grant As Boolean = False)
         InitializeComponent()
         Icon = AdminIcon.Value
         _roles = k_roles
@@ -54,9 +57,14 @@ Public Class AccountForm
         If k_fixedUn <> String.Empty Then
             txtUn.Text = k_fixedUn
             txtUn.ReadOnly = True
-            cmbDb.Enabled = False
-            Text = "Schimbă rolul K-BOT"
-            lblInfo.Text = "Se schimbă doar rolul K-BOT al contului în această bază."
+            cmbDb.Enabled = k_grant
+            If k_grant Then
+                Text = "Dă acces la o bază"
+                lblInfo.Text = "Contul primește acces la baza aleasă, cu rolul K-BOT ales. Drepturile ADECHIT se dau apoi din tabel."
+            Else
+                Text = "Schimbă rolul K-BOT"
+                lblInfo.Text = "Se schimbă doar rolul K-BOT al contului în această bază."
+            End If
         Else
             Text = "Adaugă cont la bază"
             lblInfo.Text = "Contul trebuie să existe deja ca utilizator MariaDB; aici se face doar legătura lui cu baza și rolul K-BOT."

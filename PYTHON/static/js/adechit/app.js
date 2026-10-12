@@ -1058,9 +1058,39 @@ async function loadContext(rebuildTrees = false) {
   await loadSituation();
 }
 
+// The portal sends a user here without a unit opened when ADECHIT was chosen on its sign-in card:
+// the unit is picked in this page's header (one choice, no portal screen in between).
+// Returns true when a unit is open and the page can load.
+async function ensureUnit() {
+  const k_response = await fetch('/api/portal/me', { headers: { Accept: 'application/json', 'X-Portal-Token': portalToken() }, cache: 'no-store' });
+  const k_me = await k_response.json().catch(() => ({}));
+  if (k_response.status === 401) { toPortal(true); return false; }
+  if (!k_response.ok) throw new Error(k_me.error || `Eroare HTTP ${k_response.status}`);
+  if (k_me.db_name) return true;
+  const k_units = k_me.units || [];
+  if (!k_units.length) { showMessage($('ade-message'), 'Contul nu are nicio unitate.', 'error'); return false; }
+  const k_combo = new Combobox($('ade-unit-combo'), {
+    readonly: true, placeholder: 'Unitate',
+    staticData: k_units.map((k_row) => ({ value: k_row.DC, label: k_row.NumeUnitate })),
+    onSelect: async (k_value) => {
+      try {
+        const k_opened = await fetch('/api/portal/unit', { method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Portal-Token': portalToken() }, body: JSON.stringify({ db_name: k_value }) });
+        if (!k_opened.ok) { const k_body = await k_opened.json().catch(() => ({})); throw new Error(k_body.error || 'Unitatea nu a putut fi deschisă.'); }
+        window.location.reload();
+      } catch (k_error) { console.error('[ade] opening the unit failed', k_error); report(k_error); }
+    },
+  });
+  k_combo.input.id = 'ade-unit-combo-input';
+  k_combo.input.setAttribute('aria-label', 'Unitate');
+  $('ade-unit').hidden = false;
+  showMessage($('ade-message'), 'Alegeți unitatea în care lucrați.', 'info');
+  return false;
+}
+
 async function start() {
   state.unit = new URLSearchParams(location.search).get('unit') || 'preview';
   bind();
+  if (document.documentElement.dataset.adePreview !== 'true' && !(await ensureUnit())) return;
   await loadContext();
   const k_pending = takePendingOpen();
   if (k_pending && k_pending.subunit_id === state.subunit) await state.payers.openForChild(k_pending.group_id, k_pending.child_id);

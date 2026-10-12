@@ -43,6 +43,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
+| 0092-01 | **Rezervări greșite: butonul «Repară», rândul roșu în arborele principal și ștergerea ultimei luni din istoric (cererea operatorului, 12.10.2026)** | GATA pe cod (build curat KBot.App; nimic rulat pe MariaDB sau pe ecran; **serverul trebuie redeployat**) | `SLICE-0092-01-rezervari-gresite-sterge-luna.md` | August 2026 al unui utilizator pornește de la valorile lui iunie (14 rânduri; verificat pe `Rezervari.txt`). `tree.py` coloana `RezervariGresite` → rând roșu + hover; iconița dreapta-jos din «Rezervări» = «Repară» (reanalizarea existentă); Setări › FOREXE › «Istoric (avansat)» șterge ultima lună din istoric (fără DDF/ORD; cascadă + recepțiile lunii, fără orfane). Ajutor 0000-68; capturile `rezervari*.png` de refăcut. |
 | 0092 | **Rezervarea inițială = un singur eveniment, pe ultima zi inițială (cererea operatorului, 29.09.2026)** | GATA pe cod (build curat; nimic rulat) | `SLICE-0092-rezervare-initiala-o-singura-zi.md` | AAB5H2CHDGD: AA2 adăugat «În definitivare» pe 27.08, AAB definitivat pe 28.08 → două rânduri `EInitiala` pe zile diferite → două frunze «Inițială». Varianta A (doar cititorii, fără rescriere în bază): `RezervariView.BuildTree` pune toate rândurile inițiale pe ultima zi inițială; `_SQL_GEN_REZERVARI` folosește aceeași zi (`ZiRez`) pentru regula «cea mai veche zi, cel mai mic tip» și ca dată a reviziei. |
 
 ### Open threads

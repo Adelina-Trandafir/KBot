@@ -73,6 +73,12 @@ Friend Class UpdaterForm
                 UpdateApplier.VerifySha256(_args.ZipPath, _args.Sha256)
                 _log.Write("sha256 OK")
             End If
+            Dim k_hasDriver As Boolean = Not String.IsNullOrWhiteSpace(_args.DriverZipPath)
+            If k_hasDriver AndAlso Not String.IsNullOrWhiteSpace(_args.DriverSha256) Then
+                Status("Verific componenta Playwright…", Path.GetFileName(_args.DriverZipPath))
+                UpdateApplier.VerifySha256(_args.DriverZipPath, _args.DriverSha256)
+                _log.Write("driver sha256 OK")
+            End If
 
             ' 3. Can we write there -- the folder, and the "Programs and Features" entry the
             '    installer registered for it? If not, hand over to an elevated copy of
@@ -131,6 +137,23 @@ Friend Class UpdaterForm
                 CancellationToken.None)
             _log.Write("applied: written=" & result.Written & " skipped=" & result.Skipped)
 
+            ' 4a. The Playwright driver, when the app handed one over (its own package, see AppUpdateService).
+            If k_hasDriver Then
+                Status("Instalez componenta Playwright…", "")
+                Dim k_driver As UpdateApplier.ApplyResult = UpdateApplier.Apply(
+                    _args.DriverZipPath, _args.TargetDir,
+                    Sub(line) _log.Write(line),
+                    Sub(done, total)
+                        Post(Sub()
+                                 If bara.Maximum <> total Then bara.Maximum = total
+                                 bara.Value = Math.Min(done, total)
+                                 lblDetaliu.Text = done & " / " & total
+                             End Sub)
+                    End Sub,
+                    CancellationToken.None)
+                _log.Write("driver applied: written=" & k_driver.Written & " skipped=" & k_driver.Skipped)
+            End If
+
             ' 4b. "Programs and Features" shows the version the installer wrote; bring it to
             '     the version now on disk (the exe's FileVersion, what the installer compares
             '     against; --version is the fallback). Not fatal: the files ARE updated.
@@ -160,6 +183,7 @@ Friend Class UpdaterForm
             ' 6. The package is no longer needed. Best effort: a leftover zip is not a failure.
             Try
                 File.Delete(_args.ZipPath)
+                If k_hasDriver Then File.Delete(_args.DriverZipPath)
             Catch ex As Exception
                 _log.Write("package not deleted: " & ex.Message)
             End Try

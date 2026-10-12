@@ -732,7 +732,11 @@ try {
     try {
         # -Name yields paths RELATIVE to $PublishDir (no prefix arithmetic, no
         # short-vs-long path surprises).
+        #  '.playwright' (node.exe + cli, ~100 MB, unchanged between versions) is NOT in the update zip: it
+        #  ships as its own KBot_Driver_<playwright version>.zip (step 7a) that clients fetch only when
+        #  that version changes. The installer (7b) still takes it from the staging folder.
         foreach ($rel in Get-ChildItem -LiteralPath $PublishDir -Recurse -File -Name) {
+            if ($rel -like '.playwright\*') { continue }
             $file = Get-Item -LiteralPath (Join-Path $PublishDir $rel)
             $entryName = "$AppFolderName/" + $rel.Replace('\', '/')
             $entry = $archive.CreateEntry($entryName, [System.IO.Compression.CompressionLevel]::Optimal)
@@ -751,11 +755,49 @@ $check = [System.IO.Compression.ZipFile]::OpenRead($ZipPath)
 try {
     $bad = @($check.Entries | Where-Object { $_.FullName.Contains('\') })
     if ($bad.Count -gt 0) { throw "Zip entries with backslashes: $($bad[0].FullName) (+$($bad.Count - 1))." }
+    $pwLeak = @($check.Entries | Where-Object { $_.FullName -like "$AppFolderName/.playwright/*" })
+    if ($pwLeak.Count -gt 0) { throw "Update zip carries .playwright/ ($($pwLeak[0].FullName)); it belongs in the driver package." }
     foreach ($must in @("$AppFolderName/KBot.App.exe", "$AppFolderName/KBot.Updater.exe")) {
         if (-not ($check.Entries | Where-Object { $_.FullName -eq $must })) { throw "Zip is missing $must." }
     }
     Write-Host "Zip OK: $($check.Entries.Count) entries under '$AppFolderName/'." -ForegroundColor Cyan
 } finally { $check.Dispose() }
+
+# --- 7a. Driver package: the Playwright driver as its own zip --------------------
+#  artifacts\KBot_Driver_<playwright version>.zip, ONE top folder (KBot_Driver_<v>/) with .playwright/
+#  inside, so KBot.Updater strips the folder and writes <AppDir>\.playwright\... Same for both
+#  audiences. push-update.ps1 uploads it only when the server's driver version differs.
+$PwDir = Join-Path $PublishDir '.playwright'
+$PwPkg = Join-Path $PwDir 'package\package.json'
+if (-not (Test-Path -LiteralPath $PwPkg)) { throw ".playwright\package\package.json missing from the publish output ($PwPkg) -- the driver package cannot be built." }
+$PwVersion = [string](Get-Content -LiteralPath $PwPkg -Raw | ConvertFrom-Json).version
+if ($PwVersion -notmatch '^\d+(\.\d+){1,3}$') { throw "Playwright version in package.json is not x.x.x: '$PwVersion'." }
+$DriverFolder = "KBot_Driver_$PwVersion"
+$DriverZip    = Join-Path $ArtifactsDir "$DriverFolder.zip"
+if (Test-Path -LiteralPath $DriverZip) { Remove-Item -LiteralPath $DriverZip -Force }
+$dStream = [System.IO.File]::Open($DriverZip, [System.IO.FileMode]::CreateNew)
+try {
+    $dArchive = New-Object System.IO.Compression.ZipArchive($dStream, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($rel in Get-ChildItem -LiteralPath $PwDir -Recurse -File -Name -Force) {
+            $file = Get-Item -Force -LiteralPath (Join-Path $PwDir $rel)
+            $entry = $dArchive.CreateEntry("$DriverFolder/.playwright/" + $rel.Replace('\', '/'), [System.IO.Compression.CompressionLevel]::Optimal)
+            $entry.LastWriteTime = $file.LastWriteTime
+            $out = $entry.Open()
+            try {
+                $in = [System.IO.File]::OpenRead($file.FullName)
+                try { $in.CopyTo($out) } finally { $in.Dispose() }
+            } finally { $out.Dispose() }
+        }
+    } finally { $dArchive.Dispose() }
+} finally { $dStream.Dispose() }
+$driverCheck = [System.IO.Compression.ZipFile]::OpenRead($DriverZip)
+try {
+    if (@($driverCheck.Entries | Where-Object { $_.FullName.Contains('\') }).Count -gt 0) { throw "Driver zip entries with backslashes." }
+    if (-not ($driverCheck.Entries | Where-Object { $_.FullName -eq "$DriverFolder/.playwright/package/package.json" })) { throw "Driver zip is missing package/package.json." }
+    if (-not ($driverCheck.Entries | Where-Object { $_.FullName -like "$DriverFolder/.playwright/node/*node.exe" })) { throw "Driver zip is missing node.exe." }
+    Write-Host "Driver zip OK: $DriverZip ($([Math]::Round((Get-Item -LiteralPath $DriverZip).Length / 1MB, 1)) MB, Playwright $PwVersion, $($driverCheck.Entries.Count) entries)." -ForegroundColor Cyan
+} finally { $driverCheck.Dispose() }
 
 # --- 7b. Installer (Inno Setup) -> KBot_Setup_<stamp>.exe -----------------------
 #  tools\KBotInstaller\KBot.iss: publisher, logo, Romanian wizard text, components

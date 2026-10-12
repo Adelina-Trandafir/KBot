@@ -1,0 +1,41 @@
+﻿2026-10-12 11:01:30,982 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=12 linii=120 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:01:30,960 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 11:01:30,936 - INFO - 5.2.172.222 - [forexe.tree] 027_SCGM: an=2026 ss=* include_hidden=0 -> 53 randuri
+2026-10-12 11:01:29,520 - INFO - 5.2.172.222 - [forexe.rezervari.reanaliza] 027_SCGM: cod=AAB2E89S3BB aplica=True -> {'randuri_istoric': 166, 'istoric_de_corectat': 14, 'istoric_corectat': 14, 'rezervari_de_corectat': 14, 'rezervari_corectate': 14, 'tip_schimbat': 0, 'cod': 'AAB2E89S3BB', 'aplicat': True}
+2026-10-12 11:01:28,539 - INFO - 5.2.172.222 - [forexe.rezervari.reanaliza] 027_SCGM: cod=AAB2E89S3BB aplica=False -> {'randuri_istoric': 166, 'istoric_de_corectat': 14, 'istoric_corectat': 0, 'rezervari_de_corectat': 14, 'rezervari_corectate': 0, 'tip_schimbat': 0, 'cod': 'AAB2E89S3BB', 'aplicat': False}
+2026-10-12 11:01:26,426 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=12 linii=120 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:01:26,395 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 11:01:21,608 - INFO - 5.2.172.222 - [forexe.ord] 027_SCGM: cod=AAB2E89S3BB -> ordonantari=25 linii=1549 (cale_pdf=False)
+2026-10-12 11:01:19,669 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=12 linii=120 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:01:14,060 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=14 linii=136 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:01:03,604 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:00:48,822 - INFO - 5.2.172.222 - [forexe.rezervari.reanaliza] 027_SCGM: cod=AAB2E89S3BB aplica=False -> {'randuri_istoric': 166, 'istoric_de_corectat': 14, 'istoric_corectat': 0, 'rezervari_de_corectat': 14, 'rezervari_corectate': 0, 'tip_schimbat': 0, 'cod': 'AAB2E89S3BB', 'aplicat': False}
+2026-10-12 11:00:46,894 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 11:00:46,824 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 11:00:45,224 - INFO - 5.2.172.222 - [forexe.sumar] 027_SCGM: cod=AAB2E89S3BB -> 22 randuri
+2026-10-12 11:00:40,635 - INFO - 5.2.172.222 - [forexe.tree] 027_SCGM: an=2026 ss=* include_hidden=0 -> 53 randuri
+2026-10-12 10:51:17,746 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2XDT92XX -> antet=1 revizii=10 linii=17 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:51:17,727 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2XDT92XX -> 17 randuri
+2026-10-12 10:51:07,114 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2KR6PK2M -> antet=1 revizii=12 linii=12 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:51:07,090 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2KR6PK2M -> 12 randuri
+2026-10-12 10:50:57,933 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2KRRRM5A -> antet=1 revizii=10 linii=10 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:50:57,909 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2KRRRM5A -> 11 randuri
+2026-10-12 10:50:53,827 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2KR8CA55 -> antet=1 revizii=11 linii=11 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:50:53,809 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2KR8CA55 -> 12 randuri
+2026-10-12 10:50:38,556 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2KRCC64T -> antet=1 revizii=9 linii=9 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:50:38,536 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2KRCC64T -> 9 randuri
+2026-10-12 10:17:27,169 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 10:17:27,134 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 10:17:24,518 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 09:58:15,907 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 09:58:15,871 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 09:55:17,152 - INFO - 5.2.172.222 - [forexe.sumar] 027_SCGM: cod=AAB2E89S3BB -> 22 randuri
+2026-10-12 09:53:08,077 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 09:53:08,040 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 09:52:29,343 - INFO - 5.2.172.222 - [forexe.istoric] 027_SCGM: cod=AAB2E89S3BB -> randuri=2119 clasificatii=22
+2026-10-12 09:52:24,714 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 09:51:55,150 - INFO - 5.2.172.222 - [forexe.ddf] 027_SCGM: cod=AAB2E89S3BB -> antet=1 revizii=15 linii=150 sectiuneb=0 atasamente=0 (generare=False)
+2026-10-12 09:51:55,084 - INFO - 5.2.172.222 - [forexe.rezervari] 027_SCGM: cod=AAB2E89S3BB -> 154 randuri
+2026-10-12 09:51:53,574 - INFO - 5.2.172.222 - [forexe.sumar] 027_SCGM: cod=AAB2E89S3BB -> 22 randuri
+2026-10-12 09:51:40,677 - INFO - 5.2.172.222 - [forexe.extrase.import] 027_SCGM: primite=3 importate=2 sarite=1 randuri=12
+2026-10-12 09:50:14,226 - INFO - 5.2.172.222 - [forexe.tree] 027_SCGM: an=2026 ss=* include_hidden=0 -> 53 randuri

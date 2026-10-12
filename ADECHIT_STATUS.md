@@ -1,6 +1,6 @@
 # ADECHIT — STATUS și plan de portare
 
-Actualizat: **09.10.2026**. Sursa unică pentru starea proiectului ADECHIT.
+Actualizat: **12.10.2026**. Sursa unică pentru starea proiectului ADECHIT.
 Acest fișier spune ce este planificat, ce este scris și ce este verificat.
 Dacă realitatea diferă, actualizăm statusul în aceeași intervenție.
 
@@ -54,22 +54,40 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE3 | Schema ADE și configurarea chitanțelor | SCRIS LOCAL — DDL revizuit; nevalidat MariaDB | [ADE3](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade3) |
 | SLICE-ADE4 | Utilizatori și drepturi ADE | ÎN LUCRU — guard/matrice parțiale | [ADE4](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade4) |
 | SLICE-ADE5 | Migrarea datelor Access | ADE5-14 CONSTRUIT LOCAL: oprire fără excepție de anulare, rollback explicit; server nevalidat | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
-| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-23 SCRIS LOCAL: mesaje informative Plătitori eliminate; fără teste noi | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
+| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-25 SCRIS LOCAL: corecție deadlock AD_Lock la citiri paralele; eroare 1213 raportată pe server, corecție nevalidată MariaDB; ADE6-24 Email/CNP fără migrare Access | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
 | SLICE-ADE7 | Calculul situațiilor și ciclul lunar, paritate 1 la 1 | ADE7-04 SCRIS LOCAL: închidere anuală august exclusiv desktop, mutări Ctrl/Shift/drag-and-drop și grupe noi validate; UI/server nevalidate | [ADE7](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade7) |
 | SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | ADE8-05 SCRIS LOCAL: meniu PC chitanțe, listare și PDF; mail fără acțiune; funcțional/vizual neprobat | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
 | SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-01 SCRIS LOCAL: rapoartele (listare + PDF) din panoul Rapoarte; nerulate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
 | SLICE-ADE10 | Subunități în același DC: schemă, API, migrator, selector | ADE10-01–05 SCRIS LOCAL: AD_05 nerulat, migrator construit, nimic testat sau publicat | [ADE10](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ade10) |
 | SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-05 SCRIS LOCAL — copil + părinte într-un formular, linkuri în eroarea de email, dublu clic, mesaj „similare”; UI neprobat | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
-| SLICE-AD12 | Ajutor ADECHIT: buton «?», cuprins + text formatat, imprimare, PDF | AD12-01 SCRIS LOCAL — doar sintaxă; aspect/PDF neprobate | [AD12](docs/worklog/SLICE-AD12-01-ajutor-adechit.md) |
+| SLICE-AD12 | Ajutor ADECHIT: buton «?», cuprins + text formatat, imprimare, PDF | AD12-01 SCRIS LOCAL; conținut actualizat în ADE6-24; aspect/imprimare/PDF neprobate | [AD12](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad12) |
 | SLICE-AD11 | Anulare document în taburile de încasări, cu motiv obligatoriu | AD11-01 SCRIS LOCAL, NERULAT | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ad11) |
 
-**Următorul număr liber de felie: SLICE-AD12**.
+**Următorul număr liber de felie: SLICE-AD13**.
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); stările
 PLANIFICAT de mai sus se referă la implementare, nu la lipsa documentației.
 ADE0–ADE9 sunt alocate prin acest plan. Subfeliile planificate și următoarele numere libere
 sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
+
+- **ADE6-25 (12.10.2026):** utilizatorul a raportat deadlock 1213 pe `AD_Lock(0)`
+  la deschiderea grupei, în `000_DEMO`. Corecție locală: inserare/blocare exclusivă
+  prin ON DUPLICATE KEY UPDATE în loc de INSERT IGNORE, mesaje distincte la
+  încărcare/salvare și metodă/rută în log. Fără DDL suplimentar sau schimbare
+  de autentificare. De publicat repository.py / __init__.py / HELP și de reprobat
+  de utilizator; concurența reală MariaDB rămâne nevalidată.
+  Următoarea subfelie de catalog: **ADE6-26**.
+
+- **Punct de reluare, 12.10.2026:** [STARE_LA_PAUZA](ADECHIT/STARE_LA_PAUZA.md).
+  ADE6-24 adaugă Email/CNP opționale pentru fiecare educator și actualizează HELP/MD.
+  Access nu are aceste coloane: nu se migrează și nu se cere remigrare.
+  DDL: [AD_09](sql/AD_09_educatori_contact.sql) numai pe AVACONT_SURSA;
+  sincronizarea celorlalte baze se face prin KBotAdmin, conform cererii utilizatorului.
+  Probele funcționale/vizuale și executarea pe server nu sunt confirmate.
+  Următoarea subfelie de catalog: **ADE6-26**; continuările de validare/predare
+  rămân ADE9-02/03. Se poate opri lucrul pentru moment, fără a declara paritatea
+  financiară sau publicarea validate.
 
 - **AD11-01:** portalul părinților este implementat local; autentificarea poate fi probată
   pe localhost:5050 cu inbox și acreditări fictive. Python/JS verificate sintactic, migrator
@@ -295,9 +313,10 @@ Descrierile istorice de mai jos nu înlocuiesc regulile și starea finală de ma
 
 Registrul complet al deciziilor/probelor: [DECIZII_DESCHISE](ADECHIT/DECIZII_DESCHISE.md).
 
-- Subunități: [plan documentat](ADECHIT/plan_subunitati.md), neimplementat.
-  Sunt necesare corespondența MDB/subunitate, exporturile țintelor și analiza
-  echivalenței regulilor temporale bazate pe IDL înaintea remapării ID-urilor.
+- Subunități: [plan](ADECHIT/plan_subunitati.md) implementat local în ADE10-01–06;
+  probele migrării/contextului/concurenței pe MariaDB rămân neconfirmate în registru.
+- ADE6-24: AD_09 nerulat pe AVACONT_SURSA; KBotAdmin sincronizează schemele unităților.
+  Câmpurile educatorilor sunt numai web; migratorul nu așteaptă email/CNP în Access.
 - [M01–M10](ADECHIT/MAPARE_ACCESS_WEB.md#6-neconcordanțe-de-rezolvat-înaintea-implementării-dependente):
   M01–M09 au decizii consemnate la 08.10.2026. M02, M04 și M05 sunt implementate
   local; M03 este decis, dar neimplementat, iar M06 este implementat parțial

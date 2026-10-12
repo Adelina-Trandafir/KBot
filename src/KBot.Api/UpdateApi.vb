@@ -23,6 +23,7 @@ Public NotInheritable Class UpdateApi
     Private Const LATEST_PATH As String = "/api/update/latest"
     Private Const DOWNLOAD_PATH As String = "/api/update/download"
     ' Slice 0104: the package kind rides the query string (access=1 with the Access components, 0 without).
+    Private Const DRIVER_PATH As String = "/api/update/driver"
     Private Const ACCESS_QUERY As String = "?access="
     Private Const COPY_BUFFER As Integer = 81920
 
@@ -92,6 +93,12 @@ Public NotInheritable Class UpdateApi
                                   progress As IProgress(Of Long), ct As CancellationToken) As Task _
         Implements IUpdateApi.DownloadAsync
         Return DownloadCoreAsync(DOWNLOAD_PATH & ACCESS_QUERY & AccessFlag(access), destinationPath, expectedSha256, progress, ct)
+    End Function
+
+    Public Function DownloadDriverAsync(destinationPath As String, expectedSha256 As String,
+                                        progress As IProgress(Of Long), ct As CancellationToken) As Task _
+        Implements IUpdateApi.DownloadDriverAsync
+        Return DownloadCoreAsync(DRIVER_PATH, destinationPath, expectedSha256, progress, ct)
     End Function
 
     Private Async Function DownloadCoreAsync(route As String, destinationPath As String, expectedSha256 As String,

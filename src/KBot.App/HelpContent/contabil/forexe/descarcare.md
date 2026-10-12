@@ -127,8 +127,9 @@ Pentru a aduce la zi mai multe angajamente deodată (fiecare pe un tab al lui di
 [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Reîmprospătări parțiale
-<!-- slice: 0060 -->
+<!-- slice: 0060, 0092-01, 0000-68 -->
 
-În vederile **Rezervări** și **Recepții**, iconița din dreapta, jos, a arborelui reîmprospătează
-doar rezervările, respectiv doar recepțiile. La recepții se deschide întâi aceeași fereastră,
-«Ce recepții reîmprospătez?» (vezi mai sus).
+În vederea **Recepții**, iconița din dreapta, jos, a arborelui reîmprospătează doar recepțiile;
+se deschide întâi aceeași fereastră, «Ce recepții reîmprospătez?» (vezi mai sus). În vederea
+**Rezervări** aceeași iconiță nu mai descarcă din FOREXE: **repară** rezervările din istoric —
+[Rezervări](topic:contabil.vederi.rezervari).

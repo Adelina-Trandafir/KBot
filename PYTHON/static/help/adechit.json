@@ -141,6 +141,7 @@
         {"p": "Doar **ultima** lună închisă poate fi redeschisă, cu lacătul închis."},
         {"note": "Redeschiderea unei luni **șterge** luna deschisă în prezent, cu toată prezența introdusă în ea, iar acțiunea nu se poate anula. Dacă acea lună are deja plăți sau restituiri, redeschiderea poate fi blocată. Aplicația vă avertizează înainte."},
         {"h": "Închiderea anuală (august)", "id": "inchidere-anuala"},
+        {"p": "Tabelul educatorilor pentru noul an include **Email** și **CNP**, ambele opționale. Datele deja completate sunt preluate; le puteți modifica sau șterge înainte de închiderea anului.", "slice": "ADE6-24"},
         {"p": "La închiderea lunii **august** se deschide o fereastră în care pregătiți noul an: mutați copiii în grupele noi, marcați copiii **Plecat** și stabiliți educatorii grupelor. Fereastra apare numai pe calculator; pe telefon, închiderea lunii august nu este disponibilă."},
         {"ul": [
           "În stânga sunt grupele, în dreapta copiii grupei alese. Prima coloană bifează copiii; **Ctrl** adaugă sau scoate un copil din selecție, iar **Shift** bifează un interval.",
@@ -159,7 +160,8 @@
         {"p": "Din **meniu → Plătitori** se deschide fereastra de administrare. Ea are trei liste legate între ele: **Grupe → Copii → Plătitori**. Alegeți o grupă ca să vedeți copiii ei, apoi un copil ca să vedeți plătitorii lui."},
         {"p": "Fiecare listă are butoanele **Adaugă** și **Modifică**. Dublu clic pe un rând deschide direct fereastra de modificare. Coloana **I** (bifa) înseamnă: la grupe — grupă închisă; la copii — plecat; la plătitori — inactiv."},
         {"h": "Grupa", "id": "platitori-grupa"},
-        {"p": "Formularul grupei conține denumirea, bifa **Grupă închisă**, anii și tabelul educatorilor, cu perioadele lor (**Începând cu**, **Până la**). Perioadele aceluiași educator nu se pot suprapune. Coloana **A** din lista grupelor ascunde grupa din ecranul principal."},
+        {"p": "Formularul grupei conține denumirea, bifa **Grupă închisă**, anii și tabelul educatorilor, cu **Email**, **CNP** și perioadele lor (**Începând cu**, **Până la**). Perioadele aceluiași educator nu se pot suprapune. Coloana **A** din lista grupelor ascunde grupa din ecranul principal.", "slice": "ADE6-24"},
+        {"p": "**Email** și **CNP** sunt opționale pentru fiecare educator. Le completați sau le ștergeți direct în tabel, apoi apăsați **Salvează**. Dacă sunt completate, emailul trebuie să aibă un format valid, iar CNP-ul să conțină 13 cifre și o cifră de control corectă. CNP-ul se păstrează ca text, inclusiv zerourile de la început.", "slice": "ADE6-24"},
         {"h": "Copilul", "id": "platitori-copil"},
         {"p": "Formularul copilului conține nume, CNP, grupa, data intrării, **Plecat** și data ieșirii. Pentru un copil plecat, data ieșirii este obligatorie; invers, o dată de ieșire cere bifa **Plecat**. Mutarea în altă grupă și schimbarea stării **Plecat** cer dreptul de transfer ([vezi Drepturi](#drepturi))."},
         {"p": "**Adaugă copil** deschide același formular ca ➕ din prezență, cu părintele în aceeași fereastră ([vezi Adăugarea unui copil](#copii-adaugare))."},
@@ -177,7 +179,8 @@
         {"h": "Părinți cu acces blocat la portal", "id": "platitori-blocati"},
         {"p": "Dacă există părinți ale căror CNP sau email intră în conflict cu alte înregistrări, în fereastra Plătitori apare un avertisment: „Portal blocat pentru părinții cu conflicte CNP/email”. Fiecare rând al listei se poate apăsa: se deschide direct formularul părintelui de corectat. Accesul lor în portal rămâne blocat până la corectare."},
         {"h": "Ferestrele de modificare", "id": "platitori-ferestre"},
-        {"p": "Ferestrele de modificare blochează restul ecranului. **Escape** și clicul în afara ferestrei nu o închid. **Salvează** închide fereastra numai dacă salvarea a reușit; la o eroare, datele rămân în formular. **Renunță** abandonează modificările."}
+        {"p": "Ferestrele de modificare blochează restul ecranului. **Escape** și clicul în afara ferestrei nu o închid. **Salvează** închide fereastra numai dacă salvarea a reușit; la o eroare, datele rămân în formular. **Renunță** abandonează modificările."},
+        {"p": "Dacă apare mesajul **Baza de date este ocupată. Reîncercați încărcarea datelor.** la deschiderea unui formular, repetați **Modifică**. Dacă eroarea apare la salvare, păstrați formularul și repetați **Salvează**, pentru a reîncerca aceeași operație.", "slice": "ADE6-25"}
       ]
     },
     {

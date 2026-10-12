@@ -38,6 +38,7 @@ Partial Class RightsView
         btnRefresh = New KBotButton()
         btnAllAd = New KBotButton()
         btnNoAd = New KBotButton()
+        btnGrant = New KBotButton()
         btnAdd = New KBotButton()
         btnRole = New KBotButton()
         btnRemove = New KBotButton()
@@ -74,10 +75,11 @@ Partial Class RightsView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 7
+        tlyBar.ColumnCount = 8
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 140F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
@@ -85,9 +87,10 @@ Partial Class RightsView
         tlyBar.Controls.Add(btnRefresh, 0, 0)
         tlyBar.Controls.Add(btnAllAd, 1, 0)
         tlyBar.Controls.Add(btnNoAd, 2, 0)
-        tlyBar.Controls.Add(btnAdd, 3, 0)
-        tlyBar.Controls.Add(btnRole, 4, 0)
-        tlyBar.Controls.Add(btnRemove, 5, 0)
+        tlyBar.Controls.Add(btnGrant, 3, 0)
+        tlyBar.Controls.Add(btnAdd, 4, 0)
+        tlyBar.Controls.Add(btnRole, 5, 0)
+        tlyBar.Controls.Add(btnRemove, 6, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -132,6 +135,19 @@ Partial Class RightsView
         btnNoAd.Text = "Fără ADECHIT"
         tips.SetToolTipHeader(btnNoAd, "Retrage drepturile ADECHIT")
         tips.SetToolTipText(btnNoAd, "Ia contului rândului ales toate drepturile ADECHIT. Contul rămâne legat de bază.")
+        '
+        ' btnGrant
+        '
+        btnGrant.Dock = DockStyle.Fill
+        btnGrant.Location = New Point(420, 0)
+        btnGrant.Margin = New Padding(0, 2, 6, 6)
+        btnGrant.Name = "btnGrant"
+        btnGrant.Primary = True
+        btnGrant.Size = New Size(174, 36)
+        btnGrant.TabIndex = 3
+        btnGrant.Text = "Dă acces la o bază…"
+        tips.SetToolTipHeader(btnGrant, "Acces la o bază")
+        tips.SetToolTipText(btnGrant, "Dă contului ales (rândul din tabel sau contul din arborele din stânga) acces la încă o bază existentă, cu un rol K-BOT." & vbLf & "Se oferă doar bazele la care contul nu are încă acces. Pentru a-i lua accesul la o bază, folosiți «Scoate din bază».")
         '
         ' btnAdd
         '
@@ -403,6 +419,7 @@ Partial Class RightsView
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents btnAllAd As KBotButton
     Friend WithEvents btnNoAd As KBotButton
+    Friend WithEvents btnGrant As KBotButton
     Friend WithEvents btnAdd As KBotButton
     Friend WithEvents btnRole As KBotButton
     Friend WithEvents btnRemove As KBotButton

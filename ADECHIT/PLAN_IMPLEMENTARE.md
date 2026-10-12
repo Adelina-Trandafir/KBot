@@ -439,6 +439,11 @@ Taxe, Prezență și perioadele educatorilor folosesc editarea în DGV comun.
 Regulile PC/mobil, dimensiunile, filtrele și I sunt în [UTILIZARE_WEB](UTILIZARE_WEB.md).
 Dependențe: ADE2–ADE5; API autorizat și date coerente.
 
+ADE6-24 (12.10.2026): educatorii au EMail VARCHAR(255) NULL și CNP VARCHAR(13) NULL,
+completate numai în web (catalog și închidere anuală). Access nu are aceste coloane;
+nu se așteaptă migrarea lor. DDL AD_09 numai în AVACONT_SURSA, apoi sincronizare
+prin KBotAdmin. Implementare locală, probarea aparține utilizatorului.
+
 ### SLICE-ADE6-01 — cataloagele
 
 Pași: arbore/grile pentru Grupe, Platitori (copiii), Platitori_sub (persoane asociate)

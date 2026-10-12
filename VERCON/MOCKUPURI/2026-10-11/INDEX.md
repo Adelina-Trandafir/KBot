@@ -1,4 +1,6 @@
 # VERCON — propunere vizuală
+**Revizie ulterioară:** [set corectat v2 la 12.10.2026](../2026-10-12-corectate-v2/INDEX.md), după adnotări și cele cinci atașamente ulterioare: tabele în stil NIR și mai multe BC-uri per listă. Fluxuri: [FLUXURI_UI](../../FLUXURI_UI.md). Acest set rămâne referință istorică; generarea automată BC și panoul MF separat au fost înlocuite.
+
 11 octombrie 2026. Șase mockupuri desktop PNG, cu date fictive. Generate cu instrumentul integrat image_gen și verificate vizual. Acestea descriu direcția de interfață propusă.
 
 ## Ecrane

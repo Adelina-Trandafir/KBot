@@ -52,13 +52,24 @@ Friend Module Program
         Return k_exitCode
     End Function
 
-    ''' <summary>Read-only profile of the given files into a Markdown report; no window.</summary>
+    ''' <summary>
+    ''' Read-only profile into a Markdown report; no window. The arguments after the report path are folders (every tz_aaaa and
+    ''' tz_2100 file in them, .accdb and .mdb, never tz.mdb) and/or single files.
+    ''' </summary>
     Private Function RunHeadless(k_args As String()) As Integer
         Dim k_out As String = k_args(1)
-        Dim k_files = k_args.Skip(2).ToList()
-        Dim k_profiles = k_files.Select(Function(k_f) VrcProfiler.Profile(k_f, Nothing)).ToList()
+        Dim k_sources As New List(Of VrcSourceFile)()
+        For Each k_arg In k_args.Skip(2)
+            If Directory.Exists(k_arg) Then
+                k_sources.AddRange(VrcSourceFile.Scan(k_arg, Nothing).Where(Function(k_f) k_f.Selected))
+            Else
+                Dim k_file As VrcSourceFile = VrcSourceFile.FromPath(k_arg)
+                If k_file IsNot Nothing Then k_sources.Add(k_file)
+            End If
+        Next
+        Dim k_profiles = k_sources.Select(Function(k_f) VrcProfiler.Profile(k_f, Nothing)).ToList()
         File.WriteAllText(k_out, VrcReport.ToMarkdown(k_profiles), New UTF8Encoding(False))
-        Return If(k_profiles.Any(Function(k_p) k_p.ReadError.Length > 0), 2, 0)
+        Return If(k_profiles.Count = 0 OrElse k_profiles.Any(Function(k_p) k_p.ReadError.Length > 0), 2, 0)
     End Function
 
     ''' <summary>Archive the previous error file and keep the shared logger's current path for this run.</summary>

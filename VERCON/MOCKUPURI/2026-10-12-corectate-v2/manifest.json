@@ -1,0 +1,81 @@
+{
+  "date": "2026-10-12",
+  "revision": 2,
+  "instrument": "built-in image_gen",
+  "sourceCorrections": "../Corectii_mockup-uri_02/INDEX.md",
+  "edited": [
+    {
+      "file": "03-bon-consum.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-a7d6c49a-7a71-4292-8048-53add782e8c2.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "03b-bon-consum-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-6eb31f29-08b2-49c1-b38f-c0734496c581.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "05-transfer-obiecte-inventar.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-bc67438b-75ca-4df1-a751-fe0063817d80.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "05b-transfer-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-5ad1fa10-af0b-4560-951a-94edbb8c5853.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "04b-lista-alimente-modificare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-6dad7b72-86ee-42ed-b203-b974a19741d3.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "04-lista-alimente.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-2116e27d-45cf-481b-9e2f-cb592645477c.png",
+      "verifiedVisually": true,
+      "qaIteration": true
+    },
+    {
+      "file": "05c-predare-adaugare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-6c29f337-536d-4c9b-9f3e-a254ba4baeb2.png",
+      "verifiedVisually": true,
+      "qaIteration": false
+    },
+    {
+      "file": "05d-casare-adaugare.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-78312968-b8b3-4a12-b6e3-0020b0f61b94.png",
+      "verifiedVisually": true,
+      "qaIteration": false
+    },
+    {
+      "file": "04c-alegere-bon-consum.png",
+      "source": "C:\\Users\\Adelina Trandafir\\.codex\\generated_images\\01a12c0f-c847-7e81-b673-ebdbc8e64b56\\exec-2c12b947-ffa0-47b5-8de5-f90db7a03619.png",
+      "verifiedVisually": true,
+      "qaIteration": false
+    }
+  ],
+  "limitations": "Mockupuri și documentație; fără modificarea codului/SQL-ului sau probe browser/API.",
+  "referencesOutsideSet": [
+    {
+      "file": "01-gestiune-materiale.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/2026-10-12-corectate/01-gestiune-materiale.png"
+    },
+    {
+      "file": "02-nir-mijloace-fixe.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/2026-10-12-corectate/02-nir-mijloace-fixe.png"
+    },
+    {
+      "file": "02b-nir-adaugare.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/2026-10-12-corectate/02b-nir-adaugare.png"
+    },
+    {
+      "file": "06-rapoarte-previzualizare.png",
+      "source": "C:/Users/Adelina Trandafir/source/repos/KBOT/VERCON/MOCKUPURI/2026-10-12-corectate/06-rapoarte-previzualizare.png"
+    }
+  ]
+}

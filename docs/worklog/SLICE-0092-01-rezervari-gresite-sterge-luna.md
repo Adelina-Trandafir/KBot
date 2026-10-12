@@ -1,0 +1,93 @@
+# SLICE-0092-01 - Rezervari gresite (buton «Repara» + rand rosu) si stergerea ultimei luni din istoric (cererea operatorului 12.10.2026; sub-felie a ultimei felii de rezervari, 0092)
+
+## Ce s-a schimbat si de ce
+Un utilizator are luna august cu rezervarile gresite (jurnale in `jurnale_alti_utilizatori/Rezervari.txt` =
+tabelul `FX_Rezervari`, si `Istoric.txt` = `FX_Istoric`). **Verificat pe fisierul primit:** randurile din august
+(6.08 si 12.08.2026, 14 randuri) au `R_Anterioara` luata de la sfarsitul lui iunie (ex. AAB 130423) in loc de
+sfarsitul lui iulie (152373); `R_Valoare` iese gresit (44364 in loc de 22414). Istoricul are lantul corect
+(`Val_Rezervare_Ant` = 152373), deci reanalizarea existenta il poate repara. Cauza (versiune veche) **nu e
+dovedita** din cod.
+
+1. **Regula de detectare** (`routes/forexe/tree.py`, coloana noua `RezervariGresite`): un rand de rezervare care
+   nu e initial trebuie sa aiba `R_Anterioara` = `R_Definitiva` a randului dinaintea lui pe acelasi `CodAI`,
+   ordonat (`DataRezervare`, `IDH`), 0 daca nu exista. Probata cu un script node pe `Rezervari.txt`: prinde exact
+   cele 14 randuri din august, **zero fals-pozitive** in celelalte luni.
+2. **Arborele principal**: angajamentul cu rezervari gresite se scrie rosu (aceeasi lista `_nodLantNeinchis` ca la
+   recepiile cu lant neinchis); hover-ul arata mesajul `⚠ Rezervari gresite…` cu pana la 6 randuri; cu ambele
+   probleme apar ambele mesaje. Client: `RezervareGresita`, `AngajamentTreeInfo.RezervariGresite`,
+   `ApiClient.ParseRezervariGresite`, `KbotForm.Tree.vb`.
+3. **Butonul «Repara»**: iconita din dreapta-jos a arborelui din «Rezervari» (inainte «Actualizeaza», reimprospatare
+   din FOREXE) face acum reanalizarea din istoric (proba, confirmare, scriere) prin `ReparaRezervari` →
+   `ReanalizeazaRezervariAsync` (existente). Iconita noua: roata dintata (`Icojam…Pinion_settings_24`). Intrarea
+   «Reanalizeaza rezervarile» a fost SCOASA din meniul din stanga-jos (enum `RezervariMenuOption.Reanalizeaza` sters; iconita din stanga apare doar cand exista o optiune de document). `ReimprospateazaRezervari` din `KbotForm.Ingest.vb` ramane,
+   neapelata de aici (calea veche nu se sterge).
+4. **Setari › FOREXE › «Istoric (avansat)»** (vizibila doar cu optiunile avansate, cele cu parola): arata ultima luna
+   din istoric si butonul «Sterge ultima luna din istoric…». Server: `routes/forexe/istoric_luni.py`
+   (`GET /api/forexe/istoric/luna-ultima`, `POST /api/forexe/istoric/sterge-luna`). Reguli: doar ultima luna
+   (luna lui `MAX(FX_Istoric.DataFX)`), doar luna intreaga, **409 cu mesaj** daca luna are DDF (revizie cu
+   `DataRev` in luna sau rezervare cu `AreDDF`/`IDREV`) ori ORD (`DataORD` in luna), totul intr-o tranzactie.
+   Se sterg randurile `FX_Istoric` ale lunii; `FX_Rezervari`, `FX_Plati`, `FX_Receptii_H`, `FX_Receptii` pleaca prin
+   `ON DELETE CASCADE`; `FX_Receptii_R` nu ramane orfana: se sterg explicit receptiile datate in luna (`DataR`) DOAR cele datate in luna stearsa; o receptie mai veche ramane (si fara instantanee), ca informatia sa revina la descarcarea din FOREXE.
+   Client: `IIstoricLuniApi` (separata de `IApiClient`, ca fake-urile de test sa nu se schimbe),
+   `ApiClient.IstoricLuni.vb`, `IstoricLunaInfo`.
+5. Ajutor: `0000-68` (vezi `SLICE-0000-68-ajutor-rezervari-istoric.md`).
+
+## Fisiere
+- Server: `PYTHON/routes/forexe/tree.py`, NOU `PYTHON/routes/forexe/istoric_luni.py`, `routes/forexe/__init__.py`.
+- Domain/Api: NOU `RezervareGresita.vb`, `IstoricLunaInfo.vb`, `IIstoricLuniApi.vb`, `ApiClient.IstoricLuni.vb`;
+  `AngajamentTreeInfo.vb`, `UpsertAngajamenteRequest.vb`, `ApiClient.vb`.
+- App: `KbotForm.Tree.vb`, `KbotForm.Views.vb`, `KbotForm.Ddf.vb`, `Views/RezervariView.vb` + `.Designer.vb`,
+  `Setari/SetariForexeView.vb` + `.Designer.vb`, `Setari/SetariForm.vb`.
+
+## Teste / verificare
+- `dotnet build src\KBot.App\KBot.App.vbproj`: 0 erori, 0 avertismente. `py_compile`-ul (ast.parse) pe `tree.py` si
+  `istoric_luni.py` trece. Regula de detectare verificata doar pe fisierul `Rezervari.txt` (node), nu pe MariaDB.
+- Nu s-a rulat nimic pe MariaDB, nimic pe ecran, nu s-au rulat teste (regula proiectului).
+
+## Neverificat / amanat
+- **Serverul trebuie redeployat** (`tree.py` are coloana noua; fara el clientul vede lista goala = nimic rosu;
+  `istoric_luni.py` e rute noi). Fara redeploy clientul nou nu strica nimic.
+- SQL-ul `RezervariGresite` (subinterogare corelata, doua niveluri) si cele din `istoric_luni.py` nu au fost rulate pe
+  MariaDB; cost pe arbori mari neverificat.
+- Ca reanalizarea ajunge la acelasi lant ca regula de detectare pe date reale (pe fisierul primit, da: istoricul e
+  corect). Daca nu, randul ramane rosu dupa «Repara».
+- Poarta «optiuni avansate» (parola) este doar in client; serverul cere doar sesiunea.
+- Imaginile din ajutor (`rezervari.png`, `rezervari-meniu-ddf.png`) arata inca iconita/legenda veche din subsol:
+  de refacut la urmatoarea rulare de capturi. Nu s-au facut capturi (nimic rulat pe ecran).
+
+## Cerinte noi 12.10.2026 (a doua tura)
+- «Repara» NU se face daca ar atinge o luna cu revizii: `RevizieBlocata` in `rezervari_reanaliza.py` (409, mesaj cu luna). Luna e blocata daca are o revizie
+  `FX_DDF_REV.DataRev` in ea SAU un rand de rezervare atins e legat de DDF (`IDREV`/`AreDDF`). Verificarea ruleaza in proba si la scriere;
+  scrierile se aduna intai si se fac abia dupa verificare. Consecinta pe datele primite: toate cele 16 randuri din august au `AreDDF = 1`,
+  deci august la AAB2E89S3BB NU se mai poate repara cu butonul.
+- Butonul «Repara» (iconita dreapta-jos) apare doar daca `AngajamentTreeInfo.RezervariGresite` nu e goala (`RezervariView.AratatRepara`).
+  Pasul din tur nu mai are iconita de aratat cand nu sunt erori (control fara iconita demo pentru dreapta-jos): de verificat pe ecran.
+- Investigatie `Prelucrat` (vezi mai jos, sectiunea «Cauza Prelucrat = 0»): nimic modificat in ingestie.
+
+## Corectie 12.10.2026 (dupa un incident real pe 027_SCGM, angajament AAB2E89S3BB)
+- «Repara» a scris in baza valori gresite pe cele 14 randuri din septembrie. Cauza: `rezervari_reanaliza.py` citea din
+  `FX_Istoric` doar `Prelucrat = 1`, iar randurile de rezervare din iulie si august au `Prelucrat = 0` (cu tipul de lant deja
+  calculat); lantul a pornit de la iunie. Ruta nu fusese verificata pe date reale si butonul a fost legat de ea fara proba: gresala.
+- Fix: filtrul citeste `Prelucrat = 1 OR TipRand IN (Rez_Initiala, Rez_Definitiva, Rez_Influenta, Rez_Zero)`.
+- Simulare (node, `Istoric.txt` + `Rezervari.txt`): filtrul vechi reproduce exact stricaciunea din jurnal; filtrul nou schimba
+  doar cele 14 randuri din august (6.08: AAB 44364→22414 etc.; 12.08: AA3 799→121). Rez_Ord din simulare = coloana existenta
+  (nu NrCrt din FX_Indicatori) si nimic nu a rulat pe MariaDB.
+- Baza lui 027_SCGM e acum in starea stricata (septembrie): o noua «Repara» cu ruta reparata recalculeaza tot lantul din
+  `Val_AngLeg` (neatins), deci ar trebui sa readuca septembrie si sa repare august; proba va arata ~28 de randuri, nu 14.
+- Ramas: pasul de ingestie 3b (`_SEED_LAST_ANG_SQL`, `Prelucrat = 1`) are aceeasi dependenta si e probabil cauza initiala a lui
+  august; netinut. Plati iulie-august au tot `Prelucrat = 0` (128+181 randuri): netinut.
+
+## Cauza «Prelucrat = 0» (investigatie 12.10.2026, nimic modificat in ingestie)
+Verificat pe `Istoric.txt`: Ian-Iun (ID 1531-3060) si Sept (ID 7052+) au `Prelucrat = 1`; iulie (ID 5320-5577) si august (5904-6203) au
+rezervarile si platile pe 0 (doar «Receptie» pe 1). ID-urile iulie/august sunt MAI MICI decat ale lui septembrie, dar lantul lor s-a calculat
+DUPA septembrie: randul AAB din 08.07 (ID 5320) are `Val_Rezervare_Ant = 197089` (valoarea de la sfarsitul lui septembrie) si dif -44716;
+august (5904) are ant 152373 corect (mers dupa iulie in aceeasi bucla). Adica: randurile din iulie/august au ajuns in tabel nefacute
+(`Prelucrat = 0`, `TipRand` gol) dupa ce septembrie era deja prelucrat, si au fost luate de pasul 3b (`_TIPRAND_RANDURI_SQL`: P0 + TipRand
+gol), care porneste de la `_SEED_LAST_ANG_SQL` = ultimul rand P1 (septembrie).
+In cod: pasul 7 (`step7_actualizeaza_rezolvat`) marcheaza doar `ids_noi` ∪ `ids_consumate` (4a, doar receptii). Randurile P0 luate de 3b/5
+din stocul vechi nu sunt in niciuna → raman P0 pentru totdeauna, apoi sunt ignorate de seed (`Prelucrat = 1`) si de reanalizare. Slice 0068
+(F33) a reparat exact asta, dar numai pentru receptii.
+NEDOVEDIT: cum au ajuns randurile in tabel dupa septembrie (migrare cu ID explicit, `SeedTable("FX_Istoric","ID")`, e ipoteza); randurile
+`FX_Rezervari` din august au ant 130423 (nu cel din istoric): par venite din Access, nu calculate de K-BOT.
+Remediu propus (neaplicat): pasul 7 sa marcheze si randurile pe care 3b si 5 le-au prelucrat din stoc; seed-ul sa nu depinda de MAX(ID)
+ci de ordinea (zi, Rez_Ord, ID); plus un script care pune `Prelucrat = 1` pe randurile cu tip de lant deja calculat.
