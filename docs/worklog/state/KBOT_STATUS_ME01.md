@@ -34,3 +34,5 @@ Operator request, 10.10.2026: an administration program for the OWNER only. Desk
 - Logs page: `access.log` is read only on request (last 6 MB) and is not part of «all files» (4xx would swamp the counts).
 - `PYTHON/tests` and `ADECHIT/tools/preview.py` still untouched (see ADECHIT note above).
 - Help: none (KBotAdmin is not for clients). `KBot.Controls` gained `KBotLogBox` (FileVersion 1.65.0.0); no K-BOT window changed.
+
+- **ME01-02 (12.10.2026):** drepturile ADECHIT si VERCON nu mai sunt coloane in DGV; doua butoane deschid RightsForm (DGV cu drepturile unul sub altul, Explicatie + Bifa, click pe titlul Bifei = bifeaza/debifeaza tot). Compilat curat, nerulat. [worklog](../SLICE-ME01-02-drepturi-adechit-vercon-macheta.md)

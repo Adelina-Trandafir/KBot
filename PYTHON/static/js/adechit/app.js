@@ -421,9 +421,15 @@ async function loadSituation() {
 
 async function chooseMonth(id) {
   if (!Number.isFinite(id) || id === state.monthId) return;
+  const k_previousYear = state.year;
   state.monthId = id;
   state.groupsRequest = null; state.groupsSequence += 1;
   state.year = selectedMonth()?.Anul;
+  if (state.monthTree && state.year != null && state.year !== k_previousYear) {
+    state.monthTree.expandedNodes.delete(`year:${k_previousYear}`);
+    state.monthTree.expandedNodes.add(`year:${state.year}`);
+    renderMonthTree();
+  }
   syncPickers();
   await loadGroups();
   await loadSituation();

@@ -33,3 +33,65 @@
 .vc-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
 .vc-save-status { margin-left: 4px; }
 @media (max-width: 600px) { .vc-main { padding: 8px; } .vc-lines { display: block; overflow-x: auto; } }
+
+/* slice VC06-01: nomenclatures + settings (compact grid like NIR; list/tree left, form right, buttons in the footer) */
+.vc-nom { margin-bottom: 14px; }
+.vc-nom__bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 8px; }
+.vc-nom__bar h3 { margin: 0; flex: 1 1 auto; }
+.vc-nom__bar input[type="search"] { padding: 4px 8px; min-width: 180px; }
+.vc-nom__check { display: inline-flex; align-items: center; gap: 4px; font-size: .9em; }
+.vc-nom__body { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.2fr); gap: 12px; align-items: start; }
+.vc-nom__left { max-height: 420px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+.vc-nom__empty { margin: 8px; opacity: .7; }
+.vc-nom__tree details { border-bottom: 1px solid var(--line); }
+.vc-nom__tree summary { padding: 4px 8px; font-weight: 600; cursor: pointer; }
+.vc-nom__leaf { display: block; width: 100%; text-align: left; padding: 3px 8px 3px 24px; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.vc-nom__leaf:hover, .vc-lines tr[tabindex]:hover { background: rgba(48, 158, 255, .08); }
+.vc-nom__leaf.is-selected, .vc-lines tr.is-selected { background: rgba(48, 158, 255, .18); font-weight: 600; }
+.vc-nom .is-inactive { opacity: .5; text-decoration: line-through; }
+.vc-lines tr[tabindex] { cursor: pointer; }
+.vc-nom__form { margin-bottom: 0; }
+.vc-nom__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 12px; grid-column: 1 / -1; }
+.vc-nom__fields label { display: flex; flex-direction: column; font-size: .9em; gap: 2px; }
+.vc-nom__fields input, .vc-nom__fields select { padding: 4px 6px; }
+.vc-nom__fields input[readonly] { background: transparent; border-color: transparent; }
+.vc-nom .vc-actions { justify-content: flex-end; }
+.vc-nom__sub { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.vc-nom__sub[hidden] { display: none; }
+@media (max-width: 700px) { .vc-nom__body { grid-template-columns: 1fr; } }
+
+/* slice VC06-02..05: documents (NIR / storno / BC / BR). Grid = the NIR reference: contiguous cells, thin borders,
+   compact rows, small editors in the cell, calculated values as right-aligned text; Adauga rand small in the footer. */
+.vc-doc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 14px; align-items: start; }
+.vc-doc__main.is-wide { grid-column: 1 / -1; }
+.vc-doc:has(.vc-doc__tree[hidden]) { grid-template-columns: minmax(0, 1fr); }
+.vc-doc__titlebar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.vc-doc__titlebar h3 { margin: 0; }
+.vc-pill { padding: 1px 10px; border-radius: 12px; font-size: .85em; background: rgba(48, 158, 255, .15); }
+.vc-pill[data-state="draft"] { background: #fdebc8; }
+.vc-pill[data-state="annulled"] { background: #f6d2cf; color: #8a1f17; }
+.vc-pill[hidden] { display: none; }
+.vc-doc__header { margin-bottom: 10px; }
+.vc-doc__header select, .vc-doc__header input { padding: 4px 6px; }
+.vc-doc__header input[readonly] { background: transparent; border-color: transparent; }
+.vc-hint { font-size: .8em; opacity: .7; }
+.vc-doc__lines { overflow-x: auto; }
+.vc-lines--doc th { background: rgba(48, 158, 255, .1); font-weight: 600; font-size: .85em; white-space: nowrap; }
+.vc-lines--doc td { padding: 1px 3px; font-size: .9em; }
+.vc-lines--doc td.is-num, .vc-lines--doc td[data-calc] { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vc-lines--doc input, .vc-lines--doc select { width: 100%; min-width: 70px; box-sizing: border-box; padding: 2px 4px; border: 1px solid transparent; background: transparent; color: inherit; font: inherit; }
+.vc-lines--doc input:not([readonly]):not(:disabled), .vc-lines--doc select:not(:disabled) { border-color: var(--line); background: rgba(255, 255, 255, .5); }
+.vc-lines--doc td:nth-child(2) input { min-width: 180px; }
+.vc-doc__linesfoot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+.vc-doc__total { font-weight: 700; font-variant-numeric: tabular-nums; }
+.vc-doc__bar { justify-content: flex-end; margin-top: 12px; }
+.vc-doc__bar .is-primary { background: #309eff; color: #fff; border-color: #309eff; }
+.vc-doc__bar .is-danger { color: #c0392b; border-color: #c0392b; }
+.vc-doc__tree { border: 1px solid var(--line); border-radius: 6px; padding: 8px; max-height: 520px; overflow: auto; }
+.vc-doc__tree[hidden] { display: none; }
+.vc-doc__tree h4 { margin: 0 0 6px; }
+.vc-doc__tree details details { margin-left: 10px; }
+.vc-doc__tree .vc-nom__leaf { padding-left: 12px; font-size: .9em; }
+@media (max-width: 800px) { .vc-doc { grid-template-columns: 1fr; } }
+.vc-history { max-width: 900px; width: 92vw; }
+.vc-history td { font-size: .85em; word-break: break-word; max-width: 420px; }

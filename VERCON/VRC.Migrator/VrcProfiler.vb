@@ -65,6 +65,7 @@ Public NotInheritable Class VrcProfiler
                 k_profile.Provider = k_provider
                 ReadTables(k_cn, k_profile, k_progress)
                 ReadConfig(k_cn, k_profile)
+                ReadUnitName(k_cn, k_profile)
                 ReadHeaderChecks(k_cn, k_profile)
                 VrcUsageReader.Read(k_cn, k_profile)
             End Using
@@ -220,6 +221,20 @@ Public NotInheritable Class VrcProfiler
         Catch ex As Exception
             GlobalErrorLog.Write("VrcProfiler.ReadConfig", ex)
             k_profile.Config("config.eroare") = ex.Message
+        End Try
+    End Sub
+
+    ''' <summary>UNIT.NumeUnitate (the name of the unit, not of a person). Its own query: a base without the column still gives its DC and AnDate.</summary>
+    Private Shared Sub ReadUnitName(k_cn As OleDbConnection, k_profile As VrcFileProfile)
+        Try
+            If Not TableExists(k_profile, "UNIT") Then Return
+            Using k_cmd As New OleDbCommand("SELECT NumeUnitate FROM UNIT", k_cn)
+                Using k_reader = k_cmd.ExecuteReader()
+                    If k_reader.Read() Then k_profile.Config("UNIT.NumeUnitate") = If(k_reader.IsDBNull(0), "NULL", Convert.ToString(k_reader.GetValue(0), CultureInfo.InvariantCulture))
+                End Using
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("VrcProfiler.ReadUnitName", ex)   ' not every base has the column: the name is then simply not proposed
         End Try
     End Sub
 

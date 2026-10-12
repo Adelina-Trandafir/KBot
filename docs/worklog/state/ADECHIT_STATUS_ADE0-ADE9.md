@@ -287,9 +287,14 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE6-23 | Eliminarea mesajelor informative din Plătitori | SCRIS LOCAL — [worklog](../SLICE-ADE6-23-fara-mesaj-platitori.md); fără teste |
 | SLICE-ADE6-24 | Email și CNP opționale per educator, catalog și închidere anuală; DDL numai în sursă, fără migrare Access; HELP și punct de reluare | SCRIS LOCAL — [worklog](../SLICE-ADE6-24-educatori-email-cnp.md); fără probe funcționale/vizuale/server |
 | SLICE-ADE6-25 | Corecție deadlock AD_Lock la citiri paralele; mesaje încărcare/salvare distincte și rute în log | SCRIS LOCAL — [worklog](../SLICE-ADE6-25-deadlock-lock-row.md); eroare 1213 raportată pe server, corecție neprobată MariaDB |
+| SLICE-ADE6-26 | Colapsarea anului selectat anterior la alegerea lunii din alt an | SCRIS LOCAL — [worklog](../SLICE-ADE6-26-colapsare-an-anterior.md); fără teste sau probe UI |
 
 ### Current focus
 
+- **ADE6-26 (12.10.2026):** alegerea lunii din alt an colapsează anul selectat
+  anterior, inclusiv anul inițial, și păstrează extins anul noii luni.
+  Extinderea manuală a unui an pentru consultare nu schimbă selecția.
+  Modificare frontend locală, documentată în UTILIZARE_WEB; fără teste.
 - **ADE6-25 (12.10.2026):** deadlock 1213 raportat în 000_DEMO la blocarea AD_Lock(0)
   înaintea deschiderii editorului grupei. Corecție locală: blocare exclusivă la
   inserare, metodă/rută în log, mesaje separate pentru citire/salvare și 503 pentru
@@ -325,7 +330,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 - Ferestrele inițiale Plătitori/Taxe sunt descrise în [ADE6-05](../SLICE-ADE6-05-ferestre-platitori-taxe.md).
   Editările sunt locale până la «Salvează și închide»; conflictul sau eroarea păstrează fereastra.
 - Implementarea prezenței este descrisă în [worklog](../SLICE-ADE6-04-workspace-prezenta.md).
-  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-26**.
+  Depinde de ADE2–ADE5; următoarea subfelie liberă: **ADE6-27**.
 - Refolosim aspectul portalului și controalele comune; structura arborelui și coloanele
   urmează operațiile Access incluse, stabilite în ADE0.
 - Acceptare: modificările se salvează prin API cu validare; prezența lunilor închise refuză scrierea;
@@ -333,6 +338,8 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 ### Open threads
 
+- ADE6-26: utilizatorul probează alegerea lunilor între ani, prima alegere din
+  alt an și păstrarea ramurii noii luni după salvare/reîncărcare.
 - ADE6-25: corecția trebuie probată pe MariaDB; raportul LATEST DETECTED DEADLOCK
   este necesar doar pentru identificarea exactă a perechii sau dacă eroarea persistă.
 - ADE6-24: AD_09 nerulat; sincronizarea KBotAdmin, salvarea/golirea contactelor,

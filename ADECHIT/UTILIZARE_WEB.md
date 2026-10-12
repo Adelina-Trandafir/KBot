@@ -1,6 +1,6 @@
 # ADECHIT — interfața și regulile actuale
 
-Actualizat: 12.10.2026, SLICE-ADE6-25. Acest document consolidează rezultatul
+Actualizat: 12.10.2026, SLICE-ADE6-26. Acest document consolidează rezultatul
 threadului ADE1-05/06 și ADE6-05–17. Regulile de mai jos înlocuiesc descrierile
 intermediare ale interfeței din workloguri; acestea rămân dovezi istorice.
 Starea implementării este în [status](../ADECHIT_STATUS.md).
@@ -29,6 +29,12 @@ Alegerea lunii încarcă grupele, fără opțiunea Toate. Alegerea grupei încar
 numai situația copiilor acelei grupe, cu istoricul necesar calculării soldurilor.
 Reîncărcarea și preluarea/adăugarea copiilor sunt disponibile după alegerea
 lunii și grupei; închiderea/redeschiderea necesită alegerea lunii.
+
+<!-- slice: ADE6-26 -->
+În arborele LUNA / ANUL, alegerea unei luni din alt an colapsează anul
+selectat anterior și păstrează extins anul noii luni. La prima alegere,
+anul anterior este cel deschis automat la pornire. Simpla extindere a unui
+an pentru consultarea lunilor nu colapsează anul selectat.
 
 Grupele din arbore și combobox, copiii, plătitorii și educatorii sunt ordonați
 alfabetic după nume/denumire, cu regulile limbii române. Taxele se ordonează

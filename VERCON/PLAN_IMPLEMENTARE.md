@@ -597,6 +597,30 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 **Livrabile:** raport pe subunitate/lot/sursă/gestiune, README VRC și pachet de probă. **Acceptare:** zero pierderi/diferențe neexplicate după regulile aprobate, N01/N02 vizibile în proveniență și nicio gestiune publicată separat; VBA nu mai este folosită după transfer. Validarea rapoartelor web se închide în VC08-05.
 
+### SLICE-VC05-06 — parteneri din ANAF pentru furnizorii fără partener
+
+**Pași:** pentru fiecare cod fiscal din Access fără partener cu același cod fiscal în `Parteneri` din DC, cerere ANAF (v9), apoi fereastra «Parteneri ANAF»: denumire și adresă de la ANAF, bifarea per furnizor a sursei-sector (una sau mai multe). Un cod fiscal = un partener în DC; `IdUnitate` = cea mai mică unitate dintre SS bifate; `CodPartener` = următorul număr liber din acel SS. Furnizorii fără cod fiscal sau negăsiți rămân fără partener.
+
+**Livrabile:** `VrcAnaf`, fereastra de parteneri, `KBotDataView.HeaderClick` (SLICE-0008-03). **Acceptare:** partenerii creați apar în `Parteneri` cu datele ANAF, iar NIR-urile lor se leagă de ei.
+
+### SLICE-VC05-07 — partenerii din ANAF în aceeași tranzacție cu transferul
+
+**Pași:** fereastra doar pregătește lista; «Migrează» o scrie în `Parteneri` pe tranzacția transferului, înainte de potrivirea NIR-urilor cu partenerii.
+
+**Livrabile:** `VrcPartnerStore.AddInTransaction`, secțiunea de raport. **Acceptare:** un transfer eșuat, oprit sau cu diferențe de reconciliere nu lasă niciun partener nou.
+
+### SLICE-VC05-08 — coloana `Parteneri.Provenienta`
+
+**Pași:** coloană nulabilă: `MIGRARE_VERCON`, `manual`, `avacont`; gol = migrare_kbot. DDL întâi pe `AVACONT_SURSA` și sincronizare, apoi codul rutelor.
+
+**Livrabile:** `sql/Parteneri_Provenienta.sql`, rutele `/api/parteneri/syncdb`, `/upsert` și `parteneri_edit.py`, VRC.Migrator. **Acceptare:** rândurile existente nu se schimbă; fiecare cale de inserare scrie valoarea ei.
+
+### SLICE-VC05-09 — rezultatul transferului și aranjarea butoanelor
+
+**Pași:** verde închis la succes, portocaliu la rollback, roșu la eroare critică; propoziția rezultatului în prima linie a raportului; «Citește bifatele» sub «Alege folder».
+
+**Livrabile:** `VrcMigratorForm`, `VrcRunResult.Verdict`. **Acceptare:** rezultatul se deosebește dintr-o privire, fără a citi tot raportul.
+
 ## Slice VC06 — nomenclatoare și documente comune
 
 **Dependențe:** VC02–VC05 pentru acceptarea pe date importate; D03–D06/D08. Serviciile folosesc protocolul tranzacțional comun.

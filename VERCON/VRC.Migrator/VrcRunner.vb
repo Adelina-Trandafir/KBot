@@ -31,6 +31,9 @@ Friend NotInheritable Class VrcRunner
     Private Const MapBatch As Integer = 400
     Private Const MaxBlockersShown As Integer = 200
     Private Const CheckEvery As Integer = 200
+    ''' <summary>Rows per INSERT (as in ADE.Migrator), lowered for wide tables by <see cref="MaxParameters"/>.</summary>
+    Private Const InsertBatch As Integer = 500
+    Private Const MaxParameters As Integer = 20000
 
     Private ReadOnly _plan As VrcPlan
     Private ReadOnly _server As TargetServer
@@ -103,6 +106,7 @@ Friend NotInheritable Class VrcRunner
             Log("Tranzacție unică deschisă; nimic nu devine vizibil înainte de COMMIT.")
             CreateContext()
             OpenSources()
+            AddPreparedPartners()
             LoadPartners()
             For Each k_gest In _gestiuni
                 MigrateGestiune(k_gest)
@@ -224,6 +228,15 @@ Friend NotInheritable Class VrcRunner
             If _access.ContainsKey(k_source.Source.Path) Then Continue For
             _access(k_source.Source.Path) = VrcAccess.OpenReadOnly(k_source.Source.Path, k_provider)
             Log($"Citire doar-citire: {k_source.Profile.FileName} ({k_provider}).")
+        Next
+    End Sub
+
+    ''' <summary>The partners prepared from ANAF go into Parteneri on the transfer's own transaction: any failure or stop rolls them back with everything else.</summary>
+    Private Sub AddPreparedPartners()
+        If _plan.NewPartners.Count = 0 Then Return
+        _result.NewPartnerLines.AddRange(VrcPartnerStore.AddInTransaction(_cn, _tx, _plan.Dc, _plan.NewPartners))
+        For Each k_line In _result.NewPartnerLines
+            Log("Parteneri ANAF: " & k_line)
         Next
     End Sub
 
@@ -368,9 +381,9 @@ Friend NotInheritable Class VrcRunner
         Next
         If k_order.Count = 0 Then Return
 
-        Dim k_insert = PrepareInsert(k_table)
         Dim k_tracked = Track(k_gest, 0, k_table, k_gest.Name, 0)
         k_tracked.Count.SourceRows = k_order.Count
+        Dim k_pending As New List(Of PendingRow)()
         Dim k_done As Integer = 0
         For Each k_key In k_order
             Dim k_entry = k_merged(k_key)
@@ -383,16 +396,22 @@ Friend NotInheritable Class VrcRunner
                     Continue For
                 End If
             End If
-            Dim k_id As Long = InsertRow(k_gest, k_entry.Source, k_table, k_insert, k_entry.Row, k_key, k_tracked, 0, Nothing)
-            If k_id < 0 Then Continue For
-            _map($"G{k_gest.Id}|{k_table.Name}|{k_key}") = k_id
-            For Each k_contributor In k_entry.Contributors.Distinct()
-                _pendingMap.Add((_sourceIds(k_contributor), k_table.Name, "ROW", k_key, k_id))
+            Dim k_values = BuildRow(k_gest, k_entry.Source, k_table, k_entry.Row, k_key, k_tracked, 0, Nothing)
+            If k_values Is Nothing Then Continue For
+            k_pending.Add(New PendingRow() With {.Key = k_key, .Values = k_values, .Source = k_entry.Source, .Contributors = k_entry.Contributors.Distinct().ToList()})
+        Next
+
+        Dim k_ids = InsertPending(k_gest, k_table, 0, k_pending)
+        For k_i As Integer = 0 To k_pending.Count - 1
+            If k_ids(k_i) < 0 Then Continue For
+            _map($"G{k_gest.Id}|{k_table.Name}|{k_pending(k_i).Key}") = k_ids(k_i)
+            For Each k_contributor In k_pending(k_i).Contributors
+                _pendingMap.Add((_sourceIds(k_contributor), k_table.Name, "ROW", k_pending(k_i).Key, k_ids(k_i)))
             Next
         Next
         FlushMap()
+        ResolveDeferred(k_gest, k_table)
         If k_gest.Sources.Count > 1 Then Log($"{k_table.Name}: {k_total:N0} rânduri în {k_gest.Sources.Count} surse → {k_order.Count:N0} distincte (cheie identică = aceeași entitate).")
-        k_insert.Dispose()
     End Sub
 
     ' ---- exercise tables ---------------------------------------------------------------------------------------------
@@ -402,12 +421,12 @@ Friend NotInheritable Class VrcRunner
         If k_rows.Count = 0 Then Return
         Dim k_exercise As Long = k_gest.ExerciseIds(k_source)
         Dim k_sourceIndex As Integer = _plan.Sources.IndexOf(k_source)
-        Dim k_insert = PrepareInsert(k_table)
         Dim k_tracked = Track(k_gest, k_exercise, k_table, k_gest.Name, k_source.Year)
         k_tracked.Count.SourceRows = k_rows.Count
         If k_table.Name = "NIR" Then EnsureSums(k_source, k_lineSums, "NIR", "Intrari", "IdIntrare")
         If k_table.Name = "Iesiri_H" Then EnsureSums(k_source, k_lineSums, "Iesiri_H", "Iesiri", "IdBonConsum")
         Dim k_suppliers As Dictionary(Of String, String) = If(k_table.Name = "NIR", SupplierCodes(k_source), Nothing)
+        Dim k_pending As New List(Of PendingRow)()
         Dim k_n As Integer = 0
         For Each k_row In k_rows
             k_n += 1
@@ -418,16 +437,42 @@ Friend NotInheritable Class VrcRunner
                 Continue For
             End If
             Dim k_extra As New ExtraContext() With {.LineSums = k_lineSums, .Suppliers = k_suppliers}
-            Dim k_id As Long = InsertRow(k_gest, k_source, k_table, k_insert, k_row, k_key, k_tracked, k_exercise, k_extra)
-            If k_id < 0 Then Continue For
-            _map($"S{k_sourceIndex}|{k_table.Name}|{k_key}") = k_id
-            _pendingMap.Add((_sourceIds(k_source), k_table.Name, "ROW", k_key, k_id))
-            If _pendingMap.Count >= MapBatch Then FlushMap()
+            Dim k_values = BuildRow(k_gest, k_source, k_table, k_row, k_key, k_tracked, k_exercise, k_extra)
+            If k_values Is Nothing Then Continue For
+            k_pending.Add(New PendingRow() With {.Key = k_key, .Values = k_values, .Source = k_source, .Contributors = New List(Of VrcPlanSource) From {k_source}})
+        Next
+
+        Dim k_ids = InsertPending(k_gest, k_table, k_exercise, k_pending)
+        For k_i As Integer = 0 To k_pending.Count - 1
+            If k_ids(k_i) < 0 Then Continue For
+            _map($"S{k_sourceIndex}|{k_table.Name}|{k_pending(k_i).Key}") = k_ids(k_i)
+            _pendingMap.Add((_sourceIds(k_source), k_table.Name, "ROW", k_pending(k_i).Key, k_ids(k_i)))
         Next
         FlushMap()
-        k_insert.Dispose()
-        Log($"{k_gest.Name} {k_source.Year}: {k_table.Name} — {k_tracked.Count.SourceRows:N0} rânduri citite.")
+        ResolveDeferred(k_gest, k_table)
+        Log($"{k_gest.Name} {k_source.Year}: {k_table.Name} — {k_tracked.Count.SourceRows:N0} rânduri citite, {k_pending.Count:N0} scrise.")
     End Sub
+
+    ''' <summary>A converted row waiting for its batch.</summary>
+    Private NotInheritable Class PendingRow
+        Public Property Key As String = String.Empty
+        Public Property Values As List(Of Object)
+        Public Property Source As VrcPlanSource
+        Public Property Contributors As List(Of VrcPlanSource)
+    End Class
+
+    ''' <summary>A reference to another row of the SAME table (NIR.IdStorno → the NIR it reverses): written as NULL, then updated once every row has its new key.</summary>
+    Private NotInheritable Class DeferredLink
+        Public Property TableName As String = String.Empty
+        Public Property Source As VrcPlanSource
+        Public Property ChildKey As String = String.Empty
+        Public Property ChildMapKey As String = String.Empty
+        Public Property Column As String = String.Empty
+        Public Property ParentKey As String = String.Empty
+        Public Property ParentMapKey As String = String.Empty
+    End Class
+
+    Private ReadOnly _deferred As New List(Of DeferredLink)()
 
     Private NotInheritable Class ExtraContext
         Public Property LineSums As Dictionary(Of String, Dictionary(Of String, Decimal))
@@ -463,7 +508,8 @@ Friend NotInheritable Class VrcRunner
     ' ====================================================================================================================
     ' One row: convert → insert → remember the new key
     ' ====================================================================================================================
-    Private Function PrepareInsert(k_table As VrcTargetTable) As MySqlCommand
+    ''' <summary>The columns written for a table, in the order the values of <see cref="BuildRow"/> come.</summary>
+    Private Shared Function InsertColumns(k_table As VrcTargetTable) As List(Of String)
         Dim k_names As New List(Of String) From {"SubunitId", "GestiuneId"}
         If k_table.IsExercise Then k_names.Add("ExercitiuId")
         For Each k_c In k_table.Columns
@@ -471,13 +517,7 @@ Friend NotInheritable Class VrcRunner
             k_names.Add(k_c.Name)
         Next
         If k_table.Name = "NIR" Then k_names.AddRange({"IdPartener", "CodFiscalSursa", "TipDoc", "NumarSub"})
-        Dim k_cmd As New MySqlCommand(
-            $"INSERT INTO `{k_table.TargetName}` ({String.Join(", ", k_names.Select(Function(k_n) $"`{k_n}`"))}) VALUES ({String.Join(", ", k_names.Select(Function(k_n, k_i) "@p" & k_i.ToString(CultureInfo.InvariantCulture)))})",
-            _cn, _tx)
-        For k_i As Integer = 0 To k_names.Count - 1
-            k_cmd.Parameters.Add(New MySqlParameter() With {.ParameterName = "@p" & k_i.ToString(CultureInfo.InvariantCulture)})
-        Next
-        Return k_cmd
+        Return k_names
     End Function
 
     Private Function Track(k_gest As GestInfo, k_exercise As Long, k_table As VrcTargetTable, k_gestiuneName As String, k_year As Integer) As TrackedCount
@@ -492,10 +532,10 @@ Friend NotInheritable Class VrcRunner
         Return k_tracked
     End Function
 
-    ''' <summary>Converts and inserts one row. Returns the new id, or -1 when the row was not written (blocking finding or a rule skipped it).</summary>
-    Private Function InsertRow(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable, k_cmd As MySqlCommand,
-                               k_row As Dictionary(Of String, Object), k_key As String, k_tracked As TrackedCount,
-                               k_exercise As Long, k_extra As ExtraContext) As Long
+    ''' <summary>Converts one row to the values of its INSERT. Nothing is written here. Returns Nothing when the row is refused (a blocking finding was recorded).</summary>
+    Private Function BuildRow(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable,
+                              k_row As Dictionary(Of String, Object), k_key As String, k_tracked As TrackedCount,
+                              k_exercise As Long, k_extra As ExtraContext) As List(Of Object)
         Dim k_values As New List(Of Object) From {_subunitId, k_gest.Id}
         If k_table.IsExercise Then k_values.Add(k_exercise)
         Dim k_sourceIndex As Integer = _plan.Sources.IndexOf(k_source)
@@ -517,25 +557,125 @@ Friend NotInheritable Class VrcRunner
             End If
         Next
         If k_table.Name = "NIR" Then AddNirExtras(k_source, k_row, k_key, k_extra, k_values)
-        If Not k_ok Then Return -1
+        If Not k_ok Then Return Nothing
 
-        For k_i As Integer = 0 To k_values.Count - 1
-            k_cmd.Parameters(k_i).Value = If(k_values(k_i), DBNull.Value)
-        Next
-        Try
-            k_cmd.ExecuteNonQuery()
-        Catch ex As MySqlException
-            AddIssue(k_source, k_table.Name, k_key, String.Empty, "X07", "BLOCAJ", String.Empty, String.Empty, $"MariaDB a refuzat rândul (cod {CInt(ex.ErrorCode)}): {ex.Message}")
-            Return -1
-        End Try
         For Each k_pair In k_sums
             Dim k_sum As Long = 0
             k_tracked.Sums.TryGetValue(k_pair.Key, k_sum)
             k_tracked.Sums(k_pair.Key) = k_sum + k_pair.Value
         Next
         TrackNumbering(k_gest, k_exercise, k_table, k_row)
-        Return k_cmd.LastInsertedId
+        Return k_values
     End Function
+
+    ''' <summary>
+    ''' Writes the converted rows as multi-row INSERTs (a round trip per row was the whole cost of a large table, as in ADE.Migrator),
+    ''' then reads back the keys the server gave them. Returns one new key per pending row, -1 for a row MariaDB refused.
+    ''' </summary>
+    Private Function InsertPending(k_gest As GestInfo, k_table As VrcTargetTable, k_exercise As Long, k_pending As List(Of PendingRow)) As List(Of Long)
+        Dim k_ids As New List(Of Long)(k_pending.Count)
+        If k_pending.Count = 0 Then Return k_ids
+        Dim k_names = InsertColumns(k_table)
+        Dim k_head As String = $"INSERT INTO `{k_table.TargetName}` ({String.Join(", ", k_names.Select(Function(k_n) $"`{k_n}`"))}) VALUES "
+        Dim k_perBatch As Integer = Math.Max(1, Math.Min(InsertBatch, MaxParameters \ k_names.Count))
+        For k_start As Integer = 0 To k_pending.Count - 1 Step k_perBatch
+            _cancel.ThrowIfCancellationRequested()
+            Dim k_n As Integer = Math.Min(k_perBatch, k_pending.Count - k_start)
+            Try
+                Using k_cmd As New MySqlCommand(String.Empty, _cn, _tx)
+                    Dim k_sql As New StringBuilder(k_head)
+                    For k_i As Integer = 0 To k_n - 1
+                        If k_i > 0 Then k_sql.Append(","c)
+                        k_sql.Append("("c)
+                        Dim k_values = k_pending(k_start + k_i).Values
+                        For k_j As Integer = 0 To k_values.Count - 1
+                            If k_j > 0 Then k_sql.Append(","c)
+                            Dim k_name As String = $"@v{k_i}_{k_j}"
+                            k_cmd.Parameters.AddWithValue(k_name, If(k_values(k_j), DBNull.Value))
+                            k_sql.Append(k_name)
+                        Next
+                        k_sql.Append(")"c)
+                    Next
+                    k_cmd.CommandText = k_sql.ToString()
+                    k_cmd.ExecuteNonQuery()
+                    k_ids.AddRange(ReadNewKeys(k_gest, k_table, k_exercise, k_cmd.LastInsertedId, k_n))
+                End Using
+            Catch ex As MySqlException
+                ' A refused row spoils its batch; the failed statement leaves the transaction usable, so find the row(s) one by one.
+                For k_i As Integer = 0 To k_n - 1
+                    k_ids.Add(InsertOne(k_head, k_table, k_pending(k_start + k_i)))
+                Next
+            End Try
+            Log($"{k_table.TargetName}: {Math.Min(k_start + k_n, k_pending.Count):N0}/{k_pending.Count:N0} rânduri pregătite; tranzacția nu este încă confirmată.")
+        Next
+        Return k_ids
+    End Function
+
+    Private Function InsertOne(k_head As String, k_table As VrcTargetTable, k_row As PendingRow) As Long
+        Try
+            Using k_cmd As New MySqlCommand(String.Empty, _cn, _tx)
+                Dim k_sql As New StringBuilder(k_head)
+                k_sql.Append("("c)
+                For k_j As Integer = 0 To k_row.Values.Count - 1
+                    If k_j > 0 Then k_sql.Append(","c)
+                    k_sql.Append("@v").Append(k_j)
+                    k_cmd.Parameters.AddWithValue("@v" & k_j.ToString(CultureInfo.InvariantCulture), If(k_row.Values(k_j), DBNull.Value))
+                Next
+                k_sql.Append(")"c)
+                k_cmd.CommandText = k_sql.ToString()
+                k_cmd.ExecuteNonQuery()
+                Return k_cmd.LastInsertedId
+            End Using
+        Catch ex As MySqlException
+            AddIssue(k_row.Source, k_table.Name, k_row.Key, String.Empty, "X07", "BLOCAJ", String.Empty, String.Empty, $"MariaDB a refuzat rândul (cod {CInt(ex.ErrorCode)}): {ex.Message}")
+            Return -1
+        End Try
+    End Function
+
+    ''' <summary>The keys the server gave to the rows of the INSERT that just ran, in row order. The subunit is new and locked until COMMIT, so its rows from <paramref name="k_first"/> up are exactly this batch.</summary>
+    Private Function ReadNewKeys(k_gest As GestInfo, k_table As VrcTargetTable, k_exercise As Long, k_first As Long, k_expected As Integer) As List(Of Long)
+        Dim k_ids As New List(Of Long)(k_expected)
+        Dim k_key As String = If(k_table.PrimaryKey.Length > 0, k_table.PrimaryKey, "RowId")
+        Dim k_sql As String = $"SELECT `{k_key}` FROM `{k_table.TargetName}` WHERE SubunitId=@s AND GestiuneId=@g" & If(k_table.IsExercise, " AND ExercitiuId=@e", "") &
+                              $" AND `{k_key}`>=@f ORDER BY `{k_key}` LIMIT {k_expected}"
+        Using k_cmd As New MySqlCommand(k_sql, _cn, _tx)
+            k_cmd.Parameters.AddWithValue("@s", _subunitId)
+            k_cmd.Parameters.AddWithValue("@g", k_gest.Id)
+            If k_table.IsExercise Then k_cmd.Parameters.AddWithValue("@e", k_exercise)
+            k_cmd.Parameters.AddWithValue("@f", k_first)
+            Using k_reader = k_cmd.ExecuteReader()
+                While k_reader.Read()
+                    k_ids.Add(k_reader.GetInt64(0))
+                End While
+            End Using
+        End Using
+        If k_ids.Count <> k_expected Then
+            Throw New InvalidOperationException($"{k_table.TargetName}: serverul a întors {k_ids.Count} chei pentru {k_expected} rânduri scrise.")
+        End If
+        Return k_ids
+    End Function
+
+    ''' <summary>Sets the references to rows of the same table (written as NULL) now that every row of the table has its key.</summary>
+    Private Sub ResolveDeferred(k_gest As GestInfo, k_table As VrcTargetTable)
+        Dim k_mine = _deferred.Where(Function(k_d) k_d.TableName = k_table.Name).ToList()
+        If k_mine.Count = 0 Then Return
+        Dim k_key As String = If(k_table.PrimaryKey.Length > 0, k_table.PrimaryKey, "RowId")
+        For Each k_link In k_mine
+            Dim k_child As Long = 0
+            Dim k_parent As Long = 0
+            If Not _map.TryGetValue(k_link.ChildMapKey, k_child) Then Continue For   ' the row itself was refused: already a finding
+            If Not _map.TryGetValue(k_link.ParentMapKey, k_parent) Then
+                AddIssue(k_link.Source, k_table.Name, k_link.ChildKey, k_link.Column, "X05", "BLOCAJ", k_link.ParentKey, String.Empty, $"Părintele din {k_table.Name} nu există (rând orfan).")
+                Continue For
+            End If
+            Using k_cmd As New MySqlCommand($"UPDATE `{k_table.TargetName}` SET `{k_link.Column}`=@p WHERE `{k_key}`=@i", _cn, _tx)
+                k_cmd.Parameters.AddWithValue("@p", k_parent)
+                k_cmd.Parameters.AddWithValue("@i", k_child)
+                k_cmd.ExecuteNonQuery()
+            End Using
+        Next
+        _deferred.RemoveAll(Function(k_d) k_d.TableName = k_table.Name)
+    End Sub
 
     ''' <summary>Rules that change the raw values of a row before the generic conversion: price sign, N01/N02, opening stock numbers.</summary>
     Private Sub ApplyRowRules(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable, k_row As Dictionary(Of String, Object),
@@ -732,6 +872,12 @@ Friend NotInheritable Class VrcRunner
         Dim k_parent = VrcTargetSchema.Find(k_column.Parent)
         Dim k_textKey As String = VrcConvert.KeyText(k_raw)
         Dim k_mapKey As String = If(k_parent IsNot Nothing AndAlso k_parent.IsExercise, $"S{k_sourceIndex}|{k_column.Parent}|{k_textKey}", $"G{k_gest.Id}|{k_column.Parent}|{k_textKey}")
+        If String.Equals(k_column.Parent, k_table.Name, StringComparison.OrdinalIgnoreCase) Then
+            _deferred.Add(New DeferredLink() With {
+                .TableName = k_table.Name, .Source = k_source, .ChildKey = k_key, .Column = k_column.Name, .ParentKey = k_textKey, .ParentMapKey = k_mapKey,
+                .ChildMapKey = If(k_table.IsExercise, $"S{k_sourceIndex}|{k_table.Name}|{k_key}", $"G{k_gest.Id}|{k_table.Name}|{k_key}")})
+            Return Nothing
+        End If
         Dim k_target As Long = 0
         If _map.TryGetValue(k_mapKey, k_target) Then Return k_target
         AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X05", "BLOCAJ", k_textKey, String.Empty, $"Părintele din {k_column.Parent} nu există (rând orfan).")
@@ -860,21 +1006,25 @@ Friend NotInheritable Class VrcRunner
                          k_original As String, k_target As String, k_text As String)
         If k_severity = "BLOCAJ" AndAlso _result.Issues.Where(Function(k_i) k_i.Severity = "BLOCAJ").Count() >= MaxBlockersShown Then Return
         _result.Issues.Add(New VrcIssue() With {
-            .SourceFile = k_source.Profile.FileName, .TableName = k_table, .SourceKey = k_key, .FieldName = If(k_field, String.Empty), .RuleCode = k_rule,
+            .SourceFile = k_source.Profile.FileName, .SourceId = SourceIdOf(k_source), .TableName = k_table, .SourceKey = k_key, .FieldName = If(k_field, String.Empty), .RuleCode = k_rule,
             .Severity = k_severity, .OriginalValue = If(k_original, String.Empty), .TargetValue = If(k_target, String.Empty), .Justification = k_text})
     End Sub
 
+    Private Function SourceIdOf(k_source As VrcPlanSource) As Long
+        Dim k_id As Long = 0
+        _sourceIds.TryGetValue(k_source, k_id)
+        Return k_id
+    End Function
+
     ''' <summary>The findings go to VC_MigrationIssues in the same transaction (so a rolled-back run leaves none behind; the report keeps them).</summary>
     Private Sub FlushIssues()
-        Dim k_sourceIds = _sourceIds.ToDictionary(Function(k_p) k_p.Key.Profile.FileName, Function(k_p) k_p.Value, StringComparer.OrdinalIgnoreCase)
         Using k_cmd As New MySqlCommand("INSERT INTO VC_MigrationIssues (ImportId, SourceId, TableName, SourceKey, FieldName, RuleCode, Severity, OriginalValue, TargetValue, Justification) VALUES (@i, @s, @t, @k, @f, @r, @v, @o, @g, @j)", _cn, _tx)
             For Each k_name In {"@i", "@s", "@t", "@k", "@f", "@r", "@v", "@o", "@g", "@j"}
                 k_cmd.Parameters.Add(New MySqlParameter() With {.ParameterName = k_name})
             Next
             For Each k_issue In _result.Issues.Where(Function(k_x) k_x.Severity <> "BLOCAJ")
-                Dim k_sid As Long = 0
                 k_cmd.Parameters("@i").Value = _importId
-                k_cmd.Parameters("@s").Value = If(k_sourceIds.TryGetValue(k_issue.SourceFile, k_sid), CType(k_sid, Object), DBNull.Value)
+                k_cmd.Parameters("@s").Value = If(k_issue.SourceId > 0, CType(k_issue.SourceId, Object), DBNull.Value)
                 k_cmd.Parameters("@t").Value = Trunc(k_issue.TableName, 40)
                 k_cmd.Parameters("@k").Value = Trunc(k_issue.SourceKey, 100)
                 k_cmd.Parameters("@f").Value = Trunc(k_issue.FieldName, 40)

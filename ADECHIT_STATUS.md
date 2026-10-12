@@ -54,7 +54,7 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE3 | Schema ADE și configurarea chitanțelor | SCRIS LOCAL — DDL revizuit; nevalidat MariaDB | [ADE3](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade3) |
 | SLICE-ADE4 | Utilizatori și drepturi ADE | ÎN LUCRU — guard/matrice parțiale | [ADE4](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade4) |
 | SLICE-ADE5 | Migrarea datelor Access | ADE5-14 CONSTRUIT LOCAL: oprire fără excepție de anulare, rollback explicit; server nevalidat | [ADE5](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade5) |
-| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-25 SCRIS LOCAL: corecție deadlock AD_Lock la citiri paralele; eroare 1213 raportată pe server, corecție nevalidată MariaDB; ADE6-24 Email/CNP fără migrare Access | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
+| SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-26 SCRIS LOCAL: alegerea lunii din alt an colapsează anul selectat anterior; fără teste; ADE6-25 deadlock AD_Lock nevalidat MariaDB | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
 | SLICE-ADE7 | Calculul situațiilor și ciclul lunar, paritate 1 la 1 | ADE7-04 SCRIS LOCAL: închidere anuală august exclusiv desktop, mutări Ctrl/Shift/drag-and-drop și grupe noi validate; UI/server nevalidate | [ADE7](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade7) |
 | SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | ADE8-05 SCRIS LOCAL: meniu PC chitanțe, listare și PDF; mail fără acțiune; funcțional/vizual neprobat | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
 | SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-01 SCRIS LOCAL: rapoartele (listare + PDF) din panoul Rapoarte; nerulate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
@@ -71,13 +71,19 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
 
+- **ADE6-26 (12.10.2026):** alegerea unei luni din alt an în arborele LUNA / ANUL
+  colapsează anul selectat anterior și păstrează extins anul noii luni.
+  Modificare locală în `PYTHON/static/js/adechit/app.js`, fără teste sau probe UI.
+  [Worklog](docs/worklog/SLICE-ADE6-26-colapsare-an-anterior.md).
+  Următoarea subfelie de catalog: **ADE6-27**.
+
 - **ADE6-25 (12.10.2026):** utilizatorul a raportat deadlock 1213 pe `AD_Lock(0)`
   la deschiderea grupei, în `000_DEMO`. Corecție locală: inserare/blocare exclusivă
   prin ON DUPLICATE KEY UPDATE în loc de INSERT IGNORE, mesaje distincte la
   încărcare/salvare și metodă/rută în log. Fără DDL suplimentar sau schimbare
   de autentificare. De publicat repository.py / __init__.py / HELP și de reprobat
   de utilizator; concurența reală MariaDB rămâne nevalidată.
-  Următoarea subfelie de catalog: **ADE6-26**.
+  Următoarea subfelie de catalog: **ADE6-27**.
 
 - **Punct de reluare, 12.10.2026:** [STARE_LA_PAUZA](ADECHIT/STARE_LA_PAUZA.md).
   ADE6-24 adaugă Email/CNP opționale pentru fiecare educator și actualizează HELP/MD.
@@ -85,7 +91,7 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
   DDL: [AD_09](sql/AD_09_educatori_contact.sql) numai pe AVACONT_SURSA;
   sincronizarea celorlalte baze se face prin KBotAdmin, conform cererii utilizatorului.
   Probele funcționale/vizuale și executarea pe server nu sunt confirmate.
-  Următoarea subfelie de catalog: **ADE6-26**; continuările de validare/predare
+  Următoarea subfelie de catalog: **ADE6-27**; continuările de validare/predare
   rămân ADE9-02/03. Se poate opri lucrul pentru moment, fără a declara paritatea
   financiară sau publicarea validate.
 

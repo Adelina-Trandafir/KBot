@@ -1,2 +1,3 @@
-# Additional server dependency for saved receipt PDF output.
+# Additional server dependencies for PDF and Excel output.
 reportlab>=4,<5
+openpyxl>=3.1,<4

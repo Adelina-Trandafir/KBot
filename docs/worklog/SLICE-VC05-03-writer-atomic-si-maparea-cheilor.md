@@ -14,3 +14,7 @@ Stare: **IMPLEMENTAT_LOCAL**. Se compileaza curat; **nerulat pe nicio baza**, ni
 - Legaturile logice rezolvate dupa denumirea parintelui: IdMasina -> Masini, IntrariStorno.IdIntrare -> NIR, IntrariStorno/ProduseM.IdProdus -> ProduseP, OI_Transfer.IDC_OLD -> Clienti, OI_Predare.IdBonConsum -> Iesiri_H.
 - OI/MF: tabelele OI nu s-au vazut cu date; grupurile IDBP/IDBT/IDBC sunt renumerotate pe gestiune, neprobate.
 - Performanta nemasurata (inserare pe rand in tranzactie unica).
+
+## Revizie 12.10.2026 (dupa prima rulare pe 000_DEMO)
+- Prima rulare (anulata prin rollback, nimic scris) a gasit un blocaj real: `NIR.IdStorno` (NIR 545 → 532). Din formularele FC/FCS (`DCount("IdIntrare","NIR","IdStorno=" & IdIntrare)`, `DELETE FROM NIR WHERE IdStorno=`) rezulta ca IdStorno este IdIntrare al NIR-ului stornat: legatura logica NIR → NIR. O referinta la un rand din ACEEASI tabela se scrie NULL si se actualizeaza dupa ce toate randurile au cheia noua (`ResolveDeferred`).
+- Trimiterea datelor in stilul ADE.Migrator: INSERT multi-rand (pana la 500 de randuri / 20.000 de parametri), apoi citirea cheilor noi (`ReadNewKeys`); un rand refuzat de MariaDB strica doar lotul lui, care se reia pe rand pentru a-l identifica (constatare X07). Inainte: un drum la server pe rand.

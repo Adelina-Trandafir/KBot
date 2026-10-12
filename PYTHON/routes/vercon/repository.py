@@ -63,14 +63,17 @@ class ScopedRepository:
                             params + [values[c] for c in cols])
         return self.cursor.lastrowid
 
-    def update(self, table, values, where):
+    def update(self, table, values, where, bump_version=False):
+        """`bump_version` adds Version=Version+1 (the revision of the row); put the Version the client saw in `where`
+        and a rowcount of 0 means the row changed (or vanished) since."""
         if not where:
             raise ScopeError('UPDATE fara conditie este interzis.')
         sets = self._cols(values)
         if any(c in ('SubunitId', 'GestiuneId', 'ExercitiuId') for c in sets):
             raise ScopeError('Un rand nu isi schimba contextul.')
         wsql, wparams = self._where(table, where)
-        self.cursor.execute('UPDATE `%s` SET %s WHERE %s' % (table, ', '.join('`%s`=%%s' % c for c in sets), wsql),
+        assignments = ['`%s`=%%s' % c for c in sets] + (['`Version`=`Version`+1'] if bump_version else [])
+        self.cursor.execute('UPDATE `%s` SET %s WHERE %s' % (table, ', '.join(assignments), wsql),
                             [values[c] for c in sets] + wparams)
         return self.cursor.rowcount
 

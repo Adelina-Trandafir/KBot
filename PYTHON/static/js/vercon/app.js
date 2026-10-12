@@ -10,6 +10,10 @@ import { showMessage } from '../portal/messages.js';
 import { createApi, portalToken, toPortal } from './api.js';
 import { createDraft } from './draft.js';
 import { mountEditor } from './editor.js';
+import { mountDocuments } from './docs.js';
+import { mountLista } from './lista.js';
+import { mountMf } from './mf.js';
+import { mountNomenclator, mountSettings } from './nomenclatoare.js';
 import { createLock } from './lock.js';
 import { createSaver } from './save.js';
 import { writePreference } from './documents.js';
@@ -117,7 +121,7 @@ function paintMenu(k_ctx) {
 
 // A change of context with unsaved work asks first: keep it (stay where you are) or discard it (and move).
 async function allowLeave() {
-  if (!state.draft?.dirty) return true;
+  if (!state.draft?.dirty && !state.editor?.isDirty?.()) return true;
   return confirmBox('Aveți modificări nesalvate. Dacă schimbați contextul, ele se pierd.', { title: 'Modificări nesalvate', yes: 'Renunț la modificări', no: 'Rămân aici', warning: true });
 }
 
@@ -155,6 +159,24 @@ async function openForm(k_key) {
   writePreference(`form.${k_sel.type}`, k_key);               // per type: an MF choice is never applied to Alimente
   paintMenu(state.ctx);
   const k_work = $('vc-work'); k_work.hidden = false;
+  if (k_open.nom?.length || k_key === 'setari') {   // nomenclatures and gestiune settings (VC06-01)
+    const k_args = { api, sel: () => state.ctx.selection, signal: lifetime.signal };
+    state.editor = k_open.nom?.length ? mountNomenclator(k_work, { ...k_args, kinds: k_open.nom }) : mountSettings(k_work, k_args);
+    await state.editor.ready;
+    return;
+  }
+  if (!IS_PREVIEW && k_key === 'lista_alimente') {   // the food list (VC07-01)
+    state.editor = mountLista(k_work, { api, sel: () => state.ctx.selection, signal: lifetime.signal });
+    return;
+  }
+  if (!IS_PREVIEW && k_key === 'mf_registru') {   // the fixed-asset register (VC07-04)
+    state.editor = mountMf(k_work, { api, sel: () => state.ctx.selection, signal: lifetime.signal });
+    return;
+  }
+  if (!IS_PREVIEW && ['nir', 'storno', 'bc', 'br', 'bp', 'bt', 'bs'].includes(k_key)) {   // documents (VC06-02..05); the preview keeps the stand-in editor
+    state.editor = mountDocuments(k_work, { api, sel: () => state.ctx.selection, family: k_key, signal: lifetime.signal });
+    return;
+  }
   if (!k_open.columns.lines.length) {
     k_work.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Această secțiune se completează în feliile următoare.' }));
     return;
@@ -217,7 +239,7 @@ function bind() {
   }, { signal: lifetime.signal });
   if (portalToken()) startSessionTimer({ token: portalToken, host: $('vc-session-timer'), onExpired: logoutNow });
   // leaving the page with unsaved work: the browser asks; then every request and listener stops
-  addEventListener('beforeunload', (k_event) => { if (state.draft?.dirty) { k_event.preventDefault(); k_event.returnValue = ''; } }, { signal: lifetime.signal });
+  addEventListener('beforeunload', (k_event) => { if (state.draft?.dirty || state.editor?.isDirty?.()) { k_event.preventDefault(); k_event.returnValue = ''; } }, { signal: lifetime.signal });
   addEventListener('pagehide', () => { lock.release(true); state.editor?.destroy(); Object.values(combos).forEach((k_c) => k_c.destroy?.()); lifetime.abort(); }, { once: true });
 }
 

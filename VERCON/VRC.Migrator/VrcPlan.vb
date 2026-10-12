@@ -43,7 +43,11 @@ Public NotInheritable Class VrcPlan
     Private Const IntMax As Double = 2147483647.0
 
     Public Property Dc As String = String.Empty
+    ''' <summary>The base the operator typed as destination; empty = the DC of the files (UNIT.DC). A different one is a deliberate choice (a test base).</summary>
+    Public Property TargetDc As String = String.Empty
     Public Property SubunitName As String = String.Empty
+    ''' <summary>Partners prepared from ANAF (window «Parteneri ANAF»): inserted into Parteneri INSIDE the transfer transaction, so a failed transfer leaves none of them. Not part of <see cref="Hash"/>.</summary>
+    Public Property NewPartners As New List(Of VrcNewPartner)()
     Public Property Zec As Integer = 4
     Public Property Scale As Integer = 4
     Public Property Sources As New List(Of VrcPlanSource)()
@@ -85,6 +89,17 @@ Public NotInheritable Class VrcPlan
     Public Shared Function SuggestYear(k_profile As VrcFileProfile, k_source As VrcSourceFile) As Integer
         If k_source.Kind = VrcFileKind.Year Then Return k_source.Year
         Return If(k_profile.MinNirYear > 0, k_profile.MinNirYear, Date.Now.Year)
+    End Function
+
+    ''' <summary>UNIT.NumeUnitate of the profiles, in the order year files (oldest first) then the others; empty names are left out.</summary>
+    Public Shared Function UnitNames(k_profiles As IEnumerable(Of VrcFileProfile)) As List(Of String)
+        Dim k_ordered = k_profiles.OrderBy(Function(k_p) If(k_p.Kind = VrcFileKind.Year, 0, 1)).ThenBy(Function(k_p) k_p.Year).ToList()
+        Dim k_result As New List(Of String)()
+        For Each k_p In k_ordered
+            Dim k_name As String = Nothing
+            If k_p.Config.TryGetValue("UNIT.NumeUnitate", k_name) AndAlso k_name <> "NULL" AndAlso k_name.Trim().Length > 0 Then k_result.Add(k_name.Trim())
+        Next
+        Return k_result
     End Function
 
     Public Shared Function SuggestName(k_type As String) As String
@@ -155,13 +170,19 @@ Public NotInheritable Class VrcPlan
             If k_p.Config.TryGetValue("UNIT.DC", k_dc) AndAlso k_dc <> "NULL" AndAlso k_dc.Trim().Length > 0 Then
                 k_dcs.Add(k_dc.Trim())
             Else
-                Blockers.Add($"{k_name}: UNIT.DC lipsește (nu se știe baza DC destinație).")
+                If TargetDc Is Nothing OrElse TargetDc.Trim().Length = 0 Then Blockers.Add($"{k_name}: UNIT.DC lipsește (nu se știe baza DC destinație); completați câmpul DC.")
             End If
         Next
-        If k_dcs.Count > 1 Then
+        If k_dcs.Count > 1 AndAlso (TargetDc Is Nothing OrElse TargetDc.Trim().Length = 0) Then
             Blockers.Add($"Fișierele indică DC-uri diferite ({String.Join(", ", k_dcs)}); o subunitate are un singur DC.")
         ElseIf k_dcs.Count = 1 Then
             Dc = k_dcs.First()
+        End If
+        If TargetDc IsNot Nothing AndAlso TargetDc.Trim().Length > 0 Then
+            If Dc.Length > 0 AndAlso Not String.Equals(Dc, TargetDc.Trim(), StringComparison.OrdinalIgnoreCase) Then
+                Warnings.Add($"Baza destinație «{TargetDc.Trim()}» diferă de UNIT.DC din fișiere («{Dc}»): transferul se scrie în «{TargetDc.Trim()}».")
+            End If
+            Dc = TargetDc.Trim()
         End If
     End Sub
 

@@ -115,6 +115,9 @@ Public NotInheritable Class VrcWriter
                     End Using
                 End Using
             End Using
+            For Each k_prepared In k_plan.NewPartners
+                k_partners.Add(k_prepared.TaxCode)   ' prepared from ANAF: added inside the transfer transaction
+            Next
             Dim k_missing As New SortedSet(Of String)(StringComparer.Ordinal)
             For Each k_source In k_plan.Sources
                 If k_source.Profile.Tables.All(Function(k_t) Not String.Equals(k_t.Name, "Furnizori", StringComparison.OrdinalIgnoreCase)) Then Continue For

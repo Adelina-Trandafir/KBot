@@ -657,6 +657,11 @@ Partial Class KBotDataView
             End If
 
             If e.Button <> MouseButtons.Left Then Return
+            If _showHeader AndAlso e.Y >= 0 AndAlso e.Y < HeaderBandHeight() Then
+                Dim headerColumn As KBotDataColumn = ColumnAtX(e.X)
+                If headerColumn IsNot Nothing Then RaiseEvent HeaderClick(Me, New KBotCellEventArgs(headerColumn.Key, -1))
+                Return
+            End If
             Dim rowIndex As Integer = RowAtPoint(e.Location)
             If rowIndex < 0 Then Return
             Dim col As KBotDataColumn = ColumnAtX(e.X)

@@ -2,21 +2,19 @@ Option Strict On
 Imports System.Globalization
 
 ''' <summary>
-''' The rights per account and per application (slice ME01). A row is one account in one database; the check
-''' columns are the ADECHIT roles (Roluri / Utilizatori_Roluri on the server). Ticking a box gives the right on
-''' the server at once, clearing it takes it away; a refusal puts the box back. K-BOT's own role is the
-''' «Rol K-BOT» column and changes through the dialog.
+''' The accounts and their rights (slice ME01). A row is one account in one database. The rights of an application are
+''' NOT columns here: «Drepturi ADECHIT» and «Drepturi VERCON» open a dialog for the chosen row, with the roles of that
+''' application one under the other and a tick for each (Roluri / Utilizatori_Roluri on the server). K-BOT's own role is
+''' the «Rol K-BOT» column and changes through its own dialog.
 ''' </summary>
 Public Class RightsView
     Implements IAdminView
 
-    Private Const AdPrefix As String = "AD_"
     Private Const EditClosedRole As String = "AD_EDIT_INCHISA"
 
     Private _context As AdminContext
     Private _roles As New RolesResult()
     Private _links As New List(Of AccountLink)()
-    Private _filling As Boolean
 
     Public Sub New()
         InitializeComponent()
@@ -77,7 +75,6 @@ Public Class RightsView
     End Function
 
     Private Sub Fill()
-        _filling = True
         grid.BeginUpdate()
         Try
             grid.ClearRows()
@@ -86,16 +83,10 @@ Public Class RightsView
                 k_row("un") = k_link.Un
                 k_row("dc") = k_link.Dc
                 k_row("rol") = k_link.Rol
-                For Each k_column As KBotDataColumn In grid.Columns
-                    If k_column.Key.StartsWith(AdPrefix, StringComparison.Ordinal) Then
-                        k_row(k_column.Key) = k_link.Roles.Contains(k_column.Key)
-                    End If
-                Next
                 k_row.Tag = k_link
             Next
         Finally
             grid.EndUpdate()
-            _filling = False
         End Try
         Dim k_missing As Boolean = Not ServerHasRole(EditClosedRole)
         btnEnsure.Visible = k_missing
@@ -121,54 +112,63 @@ Public Class RightsView
     End Function
 
     ' ------------------------------------------------------------------
-    ' A tick changes
+    ' The rights dialogs
     ' ------------------------------------------------------------------
 
-    Private Async Sub Grid_CellValueChanged(k_sender As Object, e As KBotCellValueEventArgs) Handles grid.CellValueChanged
-        Try
-            If _filling OrElse Not e.ColumnKey.StartsWith(AdPrefix, StringComparison.Ordinal) Then Return
-            Dim k_link As AccountLink = TryCast(grid.Rows(e.RowIndex).Tag, AccountLink)
-            If k_link Is Nothing Then Return
-            Dim k_on As Boolean = Convert.ToBoolean(e.NewValue, CultureInfo.InvariantCulture)
-            Dim k_previous As Boolean = Convert.ToBoolean(e.OldValue, CultureInfo.InvariantCulture)
-            Dim k_cod As String = e.ColumnKey
-            Dim k_index As Integer = e.RowIndex
+    Private Async Sub BtnRightsAd_Click(k_sender As Object, e As EventArgs) Handles btnRightsAd.Click
+        Await OpenRightsAsync("AD", "ADECHIT")
+    End Sub
 
-            If Not ServerHasRole(k_cod) Then
-                Revert(k_index, k_cod, k_previous)
-                KBotMessage.Show("Rolul " & k_cod & " nu există pe server. Apăsați butonul de creare a rolului, de jos.",
-                                 "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    Private Async Sub BtnRightsVr_Click(k_sender As Object, e As EventArgs) Handles btnRightsVr.Click
+        Await OpenRightsAsync("VR", "VERCON")
+    End Sub
+
+    ''' <summary>Opens the rights dialog of one application for the account in the chosen row.</summary>
+    Private Async Function OpenRightsAsync(k_section As String, k_application As String) As Task
+        Try
+            Dim k_link As AccountLink = CurrentLink()
+            If k_link Is Nothing Then
+                KBotMessage.Show("Alegeți întâi un rând din tabel.", "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
-
-            Dim k_ok As Boolean = False
-            Await UiRun.Guard("RightsView.Grid_CellValueChanged", _context,
-                Async Function()
-                    Dim k_verb As String = If(k_on, "grant", "revoke")
-                    _context.Say(If(k_on, "Se dă ", "Se retrage ") & k_cod & " pentru " & k_link.Un & " în " & k_link.Dc & "...")
-                    Await _context.Client.CallAsync(Of RoleChange)(k_verb, "--un", k_link.Un, "--dc", k_link.Dc, "--cod", k_cod)
-                    If k_on Then
-                        If Not k_link.Roles.Contains(k_cod) Then k_link.Roles.Add(k_cod)
-                    Else
-                        k_link.Roles.Remove(k_cod)
-                    End If
-                    k_ok = True
-                    _context.Say("Gata: " & k_cod & If(k_on, " dat", " retras") & " pentru " & k_link.Un & ".")
-                End Function)
-            If Not k_ok Then Revert(k_index, k_cod, k_previous)
+            If _roles.Roles.Count = 0 Then Await LoadAsync()
+            Dim k_roles As List(Of RoleInfo) = _roles.Roles.Where(Function(k_r) String.Equals(k_r.Section, k_section, StringComparison.Ordinal)).
+                OrderBy(Function(k_r) k_r.Id).ToList()
+            If k_roles.Count = 0 Then
+                KBotMessage.Show("Pe server nu există niciun drept " & k_application & ".", "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Using k_form As New RightsForm(k_application, k_link, k_roles, AddressOf ApplyRightsAsync)
+                k_form.ShowDialog(FindForm())
+            End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("RightsView.Grid_CellValueChanged", ex)
+            GlobalErrorLog.Write("RightsView.OpenRightsAsync", ex)
         End Try
-    End Sub
+    End Function
 
-    Private Sub Revert(k_rowIndex As Integer, k_key As String, k_value As Boolean)
-        _filling = True
+    ''' <summary>Gives or takes away roles for one account in one database, with ONE call; answers whether the server accepted.</summary>
+    Private Async Function ApplyRightsAsync(k_link As AccountLink, k_codes As IReadOnlyList(Of String), k_give As Boolean) As Task(Of Boolean)
+        Dim k_ok As Boolean = False
         Try
-            grid(k_key, k_rowIndex) = k_value
-        Finally
-            _filling = False
+            Await UiRun.Guard("RightsView.ApplyRightsAsync", _context,
+                Async Function()
+                    _context.Say(If(k_give, "Se dau ", "Se retrag ") & k_codes.Count.ToString(CultureInfo.InvariantCulture) & " drepturi pentru " & k_link.Un & " în " & k_link.Dc & "...")
+                    Await _context.Client.CallAsync(Of RoleChange)(If(k_give, "grant", "revoke"), "--un", k_link.Un, "--dc", k_link.Dc, "--cod", String.Join(",", k_codes))
+                    For Each k_cod As String In k_codes
+                        If k_give Then
+                            If Not k_link.Roles.Contains(k_cod) Then k_link.Roles.Add(k_cod)
+                        Else
+                            k_link.Roles.Remove(k_cod)
+                        End If
+                    Next
+                    k_ok = True
+                    _context.Say("Gata: drepturile lui " & k_link.Un & " în " & k_link.Dc & " au fost " & If(k_give, "date.", "retrase."))
+                End Function)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RightsView.ApplyRightsAsync", ex)
         End Try
-    End Sub
+        Return k_ok
+    End Function
 
     ' ------------------------------------------------------------------
     ' Buttons
@@ -181,33 +181,6 @@ Public Class RightsView
             GlobalErrorLog.Write("RightsView.BtnRefresh_Click", ex)
         End Try
     End Sub
-
-    Private Async Sub BtnAllAd_Click(k_sender As Object, e As EventArgs) Handles btnAllAd.Click
-        Await ChangeAllAsync("grant", "Toate drepturile ADECHIT", True)
-    End Sub
-
-    Private Async Sub BtnNoAd_Click(k_sender As Object, e As EventArgs) Handles btnNoAd.Click
-        Await ChangeAllAsync("revoke", "Retragerea drepturilor ADECHIT", False)
-    End Sub
-
-    Private Async Function ChangeAllAsync(k_verb As String, k_caption As String, k_give As Boolean) As Task
-        Try
-            Dim k_link As AccountLink = CurrentLink()
-            If k_link Is Nothing Then
-                KBotMessage.Show("Alegeți întâi un rând din tabel.", "Drepturi", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
-            If Not UiRun.Confirm(If(k_give, "Dau contului ", "Retrag de la contul ") & k_link.Un & " toate drepturile ADECHIT în " & k_link.Dc & "?", k_caption) Then Return
-            Await UiRun.Guard("RightsView.ChangeAllAsync", _context,
-                Async Function()
-                    Await _context.Client.CallAsync(Of RoleChange)(k_verb, "--un", k_link.Un, "--dc", k_link.Dc, "--cod", "@AD")
-                    _context.Say("Gata: drepturile ADECHIT ale lui " & k_link.Un & " în " & k_link.Dc & " au fost " & If(k_give, "date.", "retrase."))
-                End Function)
-            Await LoadAsync()
-        Catch ex As Exception
-            GlobalErrorLog.Write("RightsView.ChangeAllAsync", ex)
-        End Try
-    End Function
 
     Private Function KbRoleNames() As List(Of String)
         Return _roles.Roles.Where(Function(k_r) k_r.Section = "KB").
@@ -312,7 +285,7 @@ Public Class RightsView
                 Return
             End If
             If Not UiRun.Confirm("Scot contul " & k_link.Un & " din baza " & k_link.Dc & "?" & vbLf &
-                                 "Nu va mai putea lucra în această bază și își pierde drepturile ADECHIT din ea.", "Scoate din bază") Then Return
+                                 "Nu va mai putea lucra în această bază și își pierde drepturile ADECHIT și VERCON din ea.", "Scoate din bază") Then Return
             Await UiRun.Guard("RightsView.BtnRemove_Click", _context,
                 Async Function()
                     Await _context.Client.CallRawAsync("acct-remove", "--un", k_link.Un, "--dc", k_link.Dc)

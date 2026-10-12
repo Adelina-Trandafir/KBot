@@ -4,17 +4,19 @@ routes/portal/drepturi.py). Nothing here touches a database at import time.
 Every API call needs the portal session, the unit the page was opened for (X-Vercon-Unit) and the VR right
 of the operation. A business call goes through `scoped(...)`: the context is verified again on the server, the TYPE
 must allow the operation, the context revision must match and a write needs the current lock token.
-Real business endpoints arrive with VC06+."""
+Business endpoints: nomenclatures and settings (VC06-01, nom_routes.py); documents arrive with VC06-02+."""
 import logging
 from functools import wraps
 
 from flask import Blueprint, Response, current_app, g, jsonify, request, send_from_directory
 
-from . import capabilities, diagnostics, operations
+from . import capabilities, diagnostics, doc_routes, nom_routes, operations
 from .capabilities import FormUnavailable
 from .connection import connection  # noqa: F401  re-exported for the repositories of VC03+
-from .context import EmptyProvider, SelectionInvalid, resolve
+from .context import SelectionInvalid, resolve
 from .lock import Busy, LockLost, LockService, SqlLockStore
+from .nomenclatoare import FORM_KINDS, NomError
+from .provider import SqlProvider
 
 SECTION = "VR"
 
@@ -31,9 +33,11 @@ def _refuse(status, reason, message):
     return jsonify(error=message, reason=reason), status
 
 
-def create_blueprint(authenticate=None, rights=None, preview=False, provider=None, lock_factory=None):
+def create_blueprint(authenticate=None, rights=None, preview=False, provider=None, lock_factory=None, open_db=None):
     bp = Blueprint('vercon', __name__)
-    provider = provider or EmptyProvider()   # the real provider (VC_* tables) arrives with the migrator
+    provider = provider or SqlProvider()   # the VC_* tables of the unit database (the preview passes a fixture one)
+    if open_db is None and not preview:
+        open_db = connection   # the preview has no database: its nomenclature calls answer 503
     # lock_factory(db_name) -> LockService of that DC database (VC_ContextLock); the preview passes an in-memory one.
     if lock_factory is None:
         def lock_factory(db_name):
@@ -75,6 +79,9 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
                     except LockLost as error:
                         diagnostics.refusal(operation, context, rid, 'LOCK_LOST')
                         response = _refuse(409, 'LOCK_LOST', str(error))
+                    except NomError as error:
+                        diagnostics.refusal(operation, context, rid, error.reason)
+                        response = (jsonify(error=str(error), reason=error.reason, fields=error.fields), error.status)
                     except FormUnavailable as error:
                         diagnostics.refusal(operation, context, rid, error.reason)
                         response = _refuse(error.status, error.reason, str(error))
@@ -163,7 +170,7 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
         occupied = bool(gest.get('occupied_by')) or _other_holds(_locks(), gest, ctx['selection']['subunit'])
         capabilities.check_open(form, gest['type'], operations.effective(g.vercon_operations, gest['type']), occupied)
         return {'form': form, 'type': gest['type'], 'selection': ctx['selection'], 'version': ctx['version'], 'write': capabilities.form_writes(form),
-                'columns': capabilities.columns_for(form, gest['type'])}
+                'nom': list(FORM_KINDS.get(form, ())), 'columns': capabilities.columns_for(form, gest['type'])}
 
     @bp.post('/api/vercon/gestiune/type')
     @guard('configure')
@@ -210,6 +217,8 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
         ctx = _resolved(body)
         return {'released': _locks().release(ctx['selection']['subunit'], ctx['selection']['gestiune'], request.headers.get('X-Vercon-Lock'), g.portal['email'])}
 
+    nom_routes.register(bp, guard, scoped, open_db)
+    doc_routes.register(bp, guard, scoped, open_db)
     bp.scoped = scoped   # the door business routes (VC06+) use
     return bp
 

@@ -613,7 +613,7 @@ Relatii business cu atribut diferit de 4352 (cascade update+delete):
 | IntrariStorno.IdIntrare / IdProdus | referinta in cod; fara relatie declarata |
 | ProduseM.IdProdus | referinta la ProduseP; fara relatie declarata |
 | OI_Transfer.IDC_OLD | vechiul detinator; fara relatie declarata |
-| NIR.IdMasina, IdStorno, IDFV; Iesiri_H.IdMasina, IdRetur; OI_Predare.IdBonConsum, IdMasinaP; OI_Produse.IDBP/IDBT/IDBC/IDBO/IDM | nu se deduc parinti dupa nume |
+| NIR.IdMasina, IDFV; Iesiri_H.IdMasina, IdRetur; OI_Predare.IdBonConsum, IdMasinaP; OI_Produse.IDBP/IDBT/IDBC/IDBO/IDM | nu se deduc parinti dupa nume |
 | OI_Predare.IDBP, OI_Transfer.IDBT, OI_Casare.IDBC | **grup, nu cheie unica** (PK este ID). FK simplu spre ele este interzis; normalizare in antete cu `GroupSourceKey` si pastrarea ID-ului de linie |
 | LegBCLA.IdBonConsum | fara unicitate declarata; cardinalitatea reala se pastreaza |
 | Retetar.IdFel | PK; nu se inventeaza ingrediente multiple |

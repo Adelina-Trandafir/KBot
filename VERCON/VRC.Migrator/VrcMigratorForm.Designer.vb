@@ -29,14 +29,15 @@ Partial Class VrcMigratorForm
     Friend WithEvents txtUtilizator As KBot.Controls.KBotTextField
     Friend WithEvents lblParola As System.Windows.Forms.Label
     Friend WithEvents txtParola As KBot.Controls.KBotTextField
-    Friend WithEvents btnCale As System.Windows.Forms.Button
-    Friend WithEvents ofdCale As System.Windows.Forms.OpenFileDialog
+    Friend WithEvents lblDc As System.Windows.Forms.Label
+    Friend WithEvents txtDc As KBot.Controls.KBotTextField
     Friend WithEvents lblSubunitate As System.Windows.Forms.Label
     Friend WithEvents txtSubunitate As KBot.Controls.KBotTextField
     Friend WithEvents dgvPlan As KBot.Controls.KBotDataView
     Friend WithEvents btnVerifica As System.Windows.Forms.Button
     Friend WithEvents btnExportaPlan As System.Windows.Forms.Button
     Friend WithEvents btnTesteaza As System.Windows.Forms.Button
+    Friend WithEvents btnParteneri As System.Windows.Forms.Button
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
     Friend WithEvents btnOpreste As System.Windows.Forms.Button
     Friend WithEvents btnDiagnostic As System.Windows.Forms.Button
@@ -84,14 +85,15 @@ Partial Class VrcMigratorForm
         txtUtilizator = New KBot.Controls.KBotTextField()
         lblParola = New System.Windows.Forms.Label()
         txtParola = New KBot.Controls.KBotTextField()
-        btnCale = New System.Windows.Forms.Button()
-        ofdCale = New System.Windows.Forms.OpenFileDialog()
+        lblDc = New System.Windows.Forms.Label()
+        txtDc = New KBot.Controls.KBotTextField()
         lblSubunitate = New System.Windows.Forms.Label()
         txtSubunitate = New KBot.Controls.KBotTextField()
         dgvPlan = New KBot.Controls.KBotDataView()
         btnVerifica = New System.Windows.Forms.Button()
         btnExportaPlan = New System.Windows.Forms.Button()
         btnTesteaza = New System.Windows.Forms.Button()
+        btnParteneri = New System.Windows.Forms.Button()
         btnMigreaza = New System.Windows.Forms.Button()
         btnOpreste = New System.Windows.Forms.Button()
         btnDiagnostic = New System.Windows.Forms.Button()
@@ -150,9 +152,9 @@ Partial Class VrcMigratorForm
         tlpSurse.Controls.Add(dgvFisiere, 0, 1)
         tlpSurse.SetRowSpan(dgvFisiere, 5)
         tlpSurse.Controls.Add(btnFolder, 1, 1)
-        tlpSurse.Controls.Add(btnToate, 1, 2)
-        tlpSurse.Controls.Add(btnNiciunul, 1, 3)
-        tlpSurse.Controls.Add(btnCiteste, 1, 4)
+        tlpSurse.Controls.Add(btnCiteste, 1, 2)
+        tlpSurse.Controls.Add(btnToate, 1, 3)
+        tlpSurse.Controls.Add(btnNiciunul, 1, 4)
         tlpSurse.Controls.Add(btnSalveaza, 1, 5)
         tlpSurse.Dock = DockStyle.Fill
         tlpSurse.Name = "tlpSurse"
@@ -231,7 +233,7 @@ Partial Class VrcMigratorForm
         '
         btnToate.Dock = DockStyle.Fill
         btnToate.Name = "btnToate"
-        btnToate.TabIndex = 3
+        btnToate.TabIndex = 4
         btnToate.Text = "Bifează toate"
         btnToate.UseVisualStyleBackColor = True
         '
@@ -239,7 +241,7 @@ Partial Class VrcMigratorForm
         '
         btnNiciunul.Dock = DockStyle.Fill
         btnNiciunul.Name = "btnNiciunul"
-        btnNiciunul.TabIndex = 4
+        btnNiciunul.TabIndex = 5
         btnNiciunul.Text = "Debifează toate"
         btnNiciunul.UseVisualStyleBackColor = True
         '
@@ -247,7 +249,7 @@ Partial Class VrcMigratorForm
         '
         btnCiteste.Dock = DockStyle.Fill
         btnCiteste.Name = "btnCiteste"
-        btnCiteste.TabIndex = 5
+        btnCiteste.TabIndex = 3
         btnCiteste.Text = "Citește bifatele"
         btnCiteste.UseVisualStyleBackColor = True
         '
@@ -276,28 +278,30 @@ Partial Class VrcMigratorForm
         tlpPlan.Controls.Add(tlpServer, 0, 0)
         tlpPlan.SetColumnSpan(tlpServer, 2)
         tlpPlan.Controls.Add(dgvPlan, 0, 1)
-        tlpPlan.SetRowSpan(dgvPlan, 6)
+        tlpPlan.SetRowSpan(dgvPlan, 7)
         tlpPlan.Controls.Add(btnVerifica, 1, 1)
         tlpPlan.Controls.Add(btnExportaPlan, 1, 2)
         tlpPlan.Controls.Add(btnTesteaza, 1, 3)
-        tlpPlan.Controls.Add(btnMigreaza, 1, 4)
-        tlpPlan.Controls.Add(btnOpreste, 1, 5)
-        tlpPlan.Controls.Add(btnDiagnostic, 1, 6)
+        tlpPlan.Controls.Add(btnParteneri, 1, 4)
+        tlpPlan.Controls.Add(btnMigreaza, 1, 5)
+        tlpPlan.Controls.Add(btnOpreste, 1, 6)
+        tlpPlan.Controls.Add(btnDiagnostic, 1, 7)
         tlpPlan.Dock = DockStyle.Fill
         tlpPlan.Name = "tlpPlan"
-        tlpPlan.RowCount = 7
+        tlpPlan.RowCount = 8
         tlpPlan.RowStyles.Add(New RowStyle(SizeType.Absolute, 30.0F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
-        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 16.66F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
+        tlpPlan.RowStyles.Add(New RowStyle(SizeType.Percent, 14.28F))
         tlpPlan.TabIndex = 0
         '
         ' tlpServer
         '
-        tlpServer.ColumnCount = 11
+        tlpServer.ColumnCount = 12
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40.0F))
@@ -306,7 +310,8 @@ Partial Class VrcMigratorForm
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 50.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
-        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110.0F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 95.0F))
+        tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 100.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 80.0F))
         tlpServer.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         tlpServer.Controls.Add(lblGazda, 0, 0)
@@ -317,9 +322,10 @@ Partial Class VrcMigratorForm
         tlpServer.Controls.Add(txtUtilizator, 5, 0)
         tlpServer.Controls.Add(lblParola, 6, 0)
         tlpServer.Controls.Add(txtParola, 7, 0)
-        tlpServer.Controls.Add(btnCale, 8, 0)
-        tlpServer.Controls.Add(lblSubunitate, 9, 0)
-        tlpServer.Controls.Add(txtSubunitate, 10, 0)
+        tlpServer.Controls.Add(lblDc, 8, 0)
+        tlpServer.Controls.Add(txtDc, 9, 0)
+        tlpServer.Controls.Add(lblSubunitate, 10, 0)
+        tlpServer.Controls.Add(txtSubunitate, 11, 0)
         tlpServer.Dock = DockStyle.Fill
         tlpServer.Name = "tlpServer"
         tlpServer.RowCount = 1
@@ -387,19 +393,26 @@ Partial Class VrcMigratorForm
         txtParola.TabIndex = 7
         txtParola.UseSystemPasswordChar = True
         '
-        ' btnCale
+        ' lblDc
         '
-        btnCale.Dock = DockStyle.Fill
-        btnCale.Name = "btnCale"
-        btnCale.TabIndex = 8
-        btnCale.Text = "Din cale.accdb…"
-        btnCale.UseVisualStyleBackColor = True
+        lblDc.Dock = DockStyle.Fill
+        lblDc.Name = "lblDc"
+        lblDc.TabIndex = 8
+        lblDc.Text = "DC destinație"
+        lblDc.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtDc
+        '
+        txtDc.BackColor = Color.Transparent
+        txtDc.Dock = DockStyle.Fill
+        txtDc.Name = "txtDc"
+        txtDc.TabIndex = 9
         '
         ' lblSubunitate
         '
         lblSubunitate.Dock = DockStyle.Fill
         lblSubunitate.Name = "lblSubunitate"
-        lblSubunitate.TabIndex = 9
+        lblSubunitate.TabIndex = 10
         lblSubunitate.Text = "Subunitate"
         lblSubunitate.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -408,7 +421,7 @@ Partial Class VrcMigratorForm
         txtSubunitate.BackColor = Color.Transparent
         txtSubunitate.Dock = DockStyle.Fill
         txtSubunitate.Name = "txtSubunitate"
-        txtSubunitate.TabIndex = 10
+        txtSubunitate.TabIndex = 11
         '
         ' dgvPlan
         '
@@ -466,6 +479,14 @@ Partial Class VrcMigratorForm
         btnTesteaza.TabIndex = 4
         btnTesteaza.Text = "Testează"
         btnTesteaza.UseVisualStyleBackColor = True
+        '
+        ' btnParteneri
+        '
+        btnParteneri.Dock = DockStyle.Fill
+        btnParteneri.Name = "btnParteneri"
+        btnParteneri.TabIndex = 8
+        btnParteneri.Text = "Parteneri ANAF…"
+        btnParteneri.UseVisualStyleBackColor = True
         '
         ' btnMigreaza
         '
@@ -529,11 +550,6 @@ Partial Class VrcMigratorForm
         sfdRaport.Filter = "Markdown (*.md)|*.md"
         sfdRaport.Title = "Salvați raportul de profilare"
         '
-        ' ofdCale
-        '
-        ofdCale.Filter = "cale.accdb|cale.accdb;cale.mdb|Access (*.accdb;*.mdb)|*.accdb;*.mdb"
-        ofdCale.Title = "Alegeți cale.accdb (tabelul Cale)"
-        '
         ' sfdPlan
         '
         sfdPlan.DefaultExt = "json"
@@ -542,12 +558,14 @@ Partial Class VrcMigratorForm
         '
         ' tipVrc
         '
-        tipVrc.SetToolTipHeader(btnCale, "Denumirea subunității")
-        tipVrc.SetToolTipText(btnCale, "Citește tabelul Cale din cale.accdb (doar citire) și ia denumirea rândului al cărui drum se termină cu numele folderului ales. Rândurile cu AnDate 2100 (OI, MF) nu denumesc subunitatea.")
+        tipVrc.SetToolTipHeader(txtDc, "Baza destinație (DC)")
+        tipVrc.SetToolTipText(txtDc, "Se propune UNIT.DC din fișiere. Se poate schimba pentru o primă rulare pe o bază de test (de exemplu 000_DEMO); transferul se scrie în baza din acest câmp.")
         tipVrc.SetToolTipHeader(btnVerifica, "Verifică planul")
         tipVrc.SetToolTipText(btnVerifica, "Verifică asocierea fișier → gestiune / tip / an și arată motivele concrete pentru care transferul nu poate începe.")
         tipVrc.SetToolTipHeader(btnTesteaza, "Testează")
         tipVrc.SetToolTipText(btnTesteaza, "Verifică serverul: baza DC, tabelele VC_, subunitatea nouă și furnizorii fără partener. Nu scrie nimic.")
+        tipVrc.SetToolTipHeader(btnParteneri, "Parteneri din ANAF")
+        tipVrc.SetToolTipText(btnParteneri, "Pentru furnizorii fără partener cu același cod fiscal: interoghează ANAF și vă lasă să bifați sursa-sector a fiecăruia. Partenerii pregătiți se scriu în Parteneri abia la «Migrează», în aceeași tranzacție cu transferul. Aici nu se scrie nimic.")
         tipVrc.SetToolTipHeader(btnMigreaza, "Migrează")
         tipVrc.SetToolTipText(btnMigreaza, "Transferul unic al subunității, într-o singură tranzacție. După COMMIT subunitatea nu mai poate fi importată.")
         tipVrc.SetToolTipHeader(btnOpreste, "Oprește")

@@ -15,6 +15,7 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - Un angajament cu rezervari gresite apare cu rosu in lista; la trecerea mouse-ului vedeti ce valori nu se potrivesc.
 - Meniul din stanga-jos al rezervarilor nu mai are «Reanalizeaza rezervarile».
 - Optiuni avansate: «Setari» > «FOREXE» > «Istoric (avansat)» sterge ultima luna din istoric, doar daca nu are DDF sau ORD.
+- Descarcarea nu mai calculeaza rezervarile unei luni de la valorile unei luni mai vechi.
 - Ajutor: «Rezervari» si «Optiuni avansate» descriu butonul «Repara» si stergerea ultimei luni.
 
 ## 1.1.2.1 (09.10.2026)

@@ -4,7 +4,7 @@ Everything recorded about each slice. The index in `../KBOT_STATUS.md` says what
 
 ---
 
-## Slice 0110 — public site (sub-slices 0110-01 .. 0110-12) (landing, request form, read-only user area)
+## Slice 0110 — public site (sub-slices 0110-01 .. 0110-13) (landing, request form, read-only user area)
 
 Plan: `C:UsersAdelina Trandafir.claudeplanspasted-content-id-62ae-directii-sait-robust-mccarthy.md`.
 Locked decisions (operator, 05.10.2026): read-only viewing of MariaDB data, no editing, no PDF; no FOREXE;
@@ -26,6 +26,17 @@ info@avatarsoft.ro; all roles may enter; the JS session monitor in `JS_COMPONENT
 | 0110-10 | Portal: pe calculator fiecare card al angajamentului are arborele lui (Istoric, Rezervari, Receptii, Extrase, Plati, Fundamentari, Ordonantari: «Toate...» > luna > ziua / documentul, cu totaluri, ca in K-BOT; Sumar fara arbore, ca in K-BOT); grupările pe data scoase din toate cardurile in ambele moduri (Istoric neschimbat); cardul «Documente» inlocuit de «Fundamentari» si «Ordonantari» (liniile documentului + PDF-ul semnat; notele CAB in dosarul lor din Ordonantari) | GATA pe cod, probat in browser cu date inventate (calculator + telefon); **nevazut pe ecran, baza reala neincercata, server nedeployat** | `SLICE-0110-10-portal-carduri-arbori.md` |
 | 0110-11 | Portal, Administrare: cardul «Coloane» (coloane vizibile, pozitie, latime, o coloana care se extinde, pentru TOATE grilele sitului; se pastreaza in browser, se aplica pe grilele reale pentru administrator; fisier JSON de dat dezvoltatorului, care il pune in `grid-layouts.defaults.js`) | GATA pe cod, probat in browser cu date inventate; **nevazut pe ecran; Clasificatii/Parteneri neprobate in preview; asteapta fisierul cu alegerile administratorului**; server nedeployat | `SLICE-0110-11-portal-coloane-grile.md` |
 | 0110-12 | Portal, DOAR calculator: detalii sub grila (Istoric: descriere + valori; Plati: extrasul bancar), meniul de vizualizare din antetul arborelui Extrase (antet + operatii / operatii + detalii), Fundamentari si Ordonantari cu navbar Vizualizare | Document, informatiile din header (DDF: antet; ORD: filtru beneficiar + subsol); reparat arborele fara casuta de cautare | GATA pe cod, probat in browser cu date inventate; **nevazut pe ecran, baza reala neincercata, server nedeployat** | `SLICE-0110-12-portal-carduri-detalii.md` |
+
+---
+
+## Slice 0110-13 — certificate login network message
+
+12.10.2026: GATA local. `NETWORK` afișează o problemă de comunicare și recomandă
+verificarea adresei paginii; numai `CERT_ABSENT` spune că serverul nu a primit
+certificatul. Configurația CORS și memorarea certificatului în Chrome neschimbate.
+Verificat doar sintactic; de publicat `PYTHON/static/js/portal/certificat.js`, apoi
+Ctrl+F5. Fără DDL sau restart backend.
+Worklog: `SLICE-0110-13-certificat-mesaj-retea.md`.
 
 ---
 

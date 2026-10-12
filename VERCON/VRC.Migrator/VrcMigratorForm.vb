@@ -24,6 +24,8 @@ Public Class VrcMigratorForm
     Private _cts As CancellationTokenSource = Nothing
     Private _logPath As String = String.Empty
     Private _committed As Boolean
+    ''' <summary>Partners prepared from ANAF; inserted by «Migrează» inside the transfer transaction. Dropped when other files are chosen or read.</summary>
+    Private _prepared As New List(Of VrcNewPartner)()
 
     Public Sub New()
         InitializeComponent()
@@ -33,7 +35,10 @@ Public Class VrcMigratorForm
         Try
             Dim k_tip = dgvPlan.Columns.First(Function(k_c) k_c.Key = "tip")
             k_tip.ComboItems = VrcPlan.GestiuneTypes.Cast(Of Object).ToList()
-            txtPort.Text = "3306"
+            Dim k_saved = VrcSettings.Load()
+            txtGazda.Text = k_saved.Host
+            txtPort.Text = k_saved.Port.ToString(CultureInfo.InvariantCulture)
+            txtUtilizator.Text = k_saved.User
             SetState(VrcRunState.Unread, "Alegeți folderul cu bazele subunității.")
         Catch ex As Exception
             GlobalErrorLog.Write("VrcMigratorForm.Load", ex)
@@ -44,7 +49,45 @@ Public Class VrcMigratorForm
     Private Sub SetState(k_state As VrcRunState, k_text As String)
         _state = k_state
         lblStare.Text = $"[{StateText(k_state)}] {k_text}"
+        ApplyStateLook(k_state)
         UpdateButtons()
+    End Sub
+
+    ''' <summary>Dark green = success, orange = failed with rollback, red = critical (unknown result, blocked); the theme colour otherwise.</summary>
+    Private Sub ApplyStateLook(k_state As VrcRunState)
+        Dim k_palette = KBot.Theming.ThemeManager.Current.Palette
+        Select Case k_state
+            Case VrcRunState.CommitConfirmed, VrcRunState.Reconciled
+                lblStare.ForeColor = ControlPaint.Dark(k_palette.SuccessColor)
+                lblStare.Font = New Font(lblStare.Font, FontStyle.Bold)
+            Case VrcRunState.RollbackConfirmed
+                lblStare.ForeColor = k_palette.WarningColor
+                lblStare.Font = New Font(lblStare.Font, FontStyle.Bold)
+            Case VrcRunState.ResultUnknown, VrcRunState.Blocked
+                lblStare.ForeColor = k_palette.ErrorColor
+                lblStare.Font = New Font(lblStare.Font, FontStyle.Bold)
+            Case Else
+                lblStare.ResetForeColor()
+                lblStare.Font = New Font(lblStare.Font, FontStyle.Regular)
+        End Select
+    End Sub
+
+    ''' <summary>The report, with its first line (the verdict) in the colour of the outcome.</summary>
+    Private Sub ShowReport(k_report As String, k_state As VrcRunState)
+        rtbRaport.Text = k_report
+        Dim k_end As Integer = rtbRaport.Text.IndexOf(vbLf, StringComparison.Ordinal)
+        If k_end <= 0 Then Return
+        Dim k_palette = KBot.Theming.ThemeManager.Current.Palette
+        Dim k_color As Color
+        Select Case k_state
+            Case VrcRunState.CommitConfirmed, VrcRunState.Reconciled : k_color = ControlPaint.Dark(k_palette.SuccessColor)
+            Case VrcRunState.RollbackConfirmed : k_color = k_palette.WarningColor
+            Case Else : k_color = k_palette.ErrorColor
+        End Select
+        rtbRaport.Select(0, k_end)
+        rtbRaport.SelectionColor = k_color
+        rtbRaport.SelectionFont = New Font(rtbRaport.Font, FontStyle.Bold)
+        rtbRaport.Select(0, 0)
     End Sub
 
     Private Shared Function StateText(k_state As VrcRunState) As String
@@ -73,6 +116,7 @@ Public Class VrcMigratorForm
         btnVerifica.Enabled = k_idle AndAlso k_hasPlan AndAlso Not _committed
         btnExportaPlan.Enabled = k_idle AndAlso k_hasPlan
         btnTesteaza.Enabled = k_idle AndAlso k_hasPlan AndAlso Not _committed
+        btnParteneri.Enabled = k_idle AndAlso k_hasPlan AndAlso Not _committed
         btnMigreaza.Enabled = k_idle AndAlso _state = VrcRunState.Tested AndAlso Not _committed
         btnOpreste.Enabled = _busy AndAlso _cts IsNot Nothing AndAlso _state = VrcRunState.InImport
         btnDiagnostic.Enabled = k_idle AndAlso k_hasPlan
@@ -84,6 +128,7 @@ Public Class VrcMigratorForm
             If fbdFolder.ShowDialog(Me) <> DialogResult.OK Then Return
             Dim k_ignored As New List(Of String)()
             _files = VrcSourceFile.Scan(fbdFolder.SelectedPath, k_ignored)
+            _prepared.Clear()
             _profiles.Clear()
             dgvPlan.ClearRows()
             lblFolder.Text = fbdFolder.SelectedPath
@@ -163,6 +208,7 @@ Public Class VrcMigratorForm
             rtbRaport.Clear()
             Dim k_progress As Action(Of String) = Sub(k_text) BeginInvoke(Sub() lblStare.Text = k_text)
             _profiles = Await Task.Run(Function() k_chosen.Select(Function(k_f) VrcProfiler.Profile(k_f, k_progress)).ToList())
+            _prepared.Clear()
             _chosen = k_chosen
             _lastReport = VrcReport.ToMarkdown(_profiles)
             rtbRaport.Text = _lastReport
@@ -215,9 +261,16 @@ Public Class VrcMigratorForm
         Finally
             dgvPlan.EndUpdate()
         End Try
-        If txtSubunitate.Text.Trim().Length = 0 Then
-            Dim k_dc As String = Nothing
-            If _profiles.Count > 0 AndAlso _profiles(0).Config.TryGetValue("UNIT.DC", k_dc) Then txtSubunitate.Text = String.Empty
+        ' The unit name is UNIT.NumeUnitate of the data bases; it should be the same everywhere. If not, the last one found is used
+        ' (newest year first to last) and the operator can still change it by hand.
+        Dim k_fileDc = _profiles.Select(Function(k_p) If(k_p.Config.ContainsKey("UNIT.DC"), k_p.Config("UNIT.DC"), "")).Where(Function(k_d) k_d.Length > 0 AndAlso k_d <> "NULL").LastOrDefault()
+        txtDc.Text = If(k_fileDc, String.Empty)
+        Dim k_names = VrcPlan.UnitNames(_profiles)
+        If k_names.Count > 0 Then
+            txtSubunitate.Text = k_names.Last()
+            If k_names.Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1 Then
+                rtbRaport.AppendText(Environment.NewLine & $"ATENȚIE: numele unității diferă între fișiere ({String.Join(" | ", k_names.Distinct(StringComparer.OrdinalIgnoreCase))}); s-a luat ultimul: «{k_names.Last()}». Îl puteți modifica în câmpul Subunitate." & Environment.NewLine)
+            End If
         End If
     End Sub
 
@@ -235,7 +288,7 @@ Public Class VrcMigratorForm
 
     ''' <summary>The plan as the grid and the fields say it now.</summary>
     Private Function CurrentPlan() As VrcPlan
-        Dim k_plan As New VrcPlan() With {.SubunitName = txtSubunitate.Text}
+        Dim k_plan As New VrcPlan() With {.SubunitName = txtSubunitate.Text, .TargetDc = txtDc.Text, .NewPartners = _prepared}
         For k_i As Integer = 0 To dgvPlan.RowCount - 1
             Dim k_row = dgvPlan.Rows(k_i)
             Dim k_year As Integer
@@ -297,32 +350,16 @@ Public Class VrcMigratorForm
         End Try
     End Sub
 
-    ' ---- the name of the subunit comes from cale.accdb ------------------------------------------------------------------------
-    Private Sub btnCale_Click(sender As Object, e As EventArgs) Handles btnCale.Click
-        Try
-            If lblFolder.Text.Length = 0 OrElse lblFolder.Text.StartsWith("Niciun", StringComparison.Ordinal) Then
-                SetState(_state, "Alegeți întâi folderul cu bazele: denumirea se caută după numele lui.")
-                Return
-            End If
-            If ofdCale.ShowDialog(Me) <> DialogResult.OK Then Return
-            Dim k_rows = VrcCale.Read(ofdCale.FileName)
-            Dim k_matches = VrcCale.Match(k_rows, lblFolder.Text)
-            Dim k_names = VrcCale.Names(k_matches)
-            If k_names.Count = 0 Then
-                SetState(_state, $"În tabelul Cale nu există niciun rând (în afara celor 2100) cu drumul care se termină cu «{IO.Path.GetFileName(lblFolder.Text.TrimEnd("\"c))}». Scrieți denumirea.")
-                Return
-            End If
-            txtSubunitate.Text = k_names(0)
-            _testedHash = String.Empty
-            Dim k_dcs = k_matches.Select(Function(k_r) k_r.Dc).Where(Function(k_d) k_d.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-            Dim k_note As String = If(k_names.Count > 1, $" Atenție: mai multe denumiri pentru acest drum ({String.Join(" | ", k_names)}); verificați.", String.Empty)
-            SetState(_state, $"Denumirea subunității: «{k_names(0)}» (din Cale; DC în Cale: {If(k_dcs.Count = 0, "—", String.Join(", ", k_dcs))}).{k_note}")
-        Catch ex As Exception
-            Fail("VrcMigratorForm.Cale", "cale.accdb nu a putut fi citit.", ex)
-        End Try
+    ' ---- server ------------------------------------------------------------------------------------------------------------------
+    ''' <summary>After the server answered: host, port and user (never the password) are the defaults of the next run.</summary>
+    Private Sub RememberServer()
+        Dim k_port As Integer
+        If Integer.TryParse(txtPort.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, k_port) Then
+            Dim k_settings As New VrcSettings() With {.Host = txtGazda.Text.Trim(), .Port = k_port, .User = txtUtilizator.Text.Trim()}
+            k_settings.Save()
+        End If
     End Sub
 
-    ' ---- server ------------------------------------------------------------------------------------------------------------------
     Private Function BuildServer() As TargetServer
         Dim k_port As Integer
         If txtGazda.Text.Trim().Length = 0 OrElse txtUtilizator.Text.Trim().Length = 0 OrElse
@@ -331,6 +368,17 @@ Public Class VrcMigratorForm
         End If
         Return New TargetServer(New TargetConnection(txtGazda.Text.Trim(), CUInt(k_port), txtUtilizator.Text.Trim(), txtParola.Text))
     End Function
+
+    ''' <summary>Like ADE.Migrator: any change of the server, the destination base or the subunit drops the test; Testează must be pressed again.</summary>
+    Private Sub InputsChanged(sender As Object, e As EventArgs) Handles txtGazda.TextChanged, txtPort.TextChanged, txtUtilizator.TextChanged, txtParola.TextChanged, txtDc.TextChanged, txtSubunitate.TextChanged
+        Try
+            If _busy OrElse _state <> VrcRunState.Tested Then Return
+            _testedHash = String.Empty
+            SetState(VrcRunState.PlanRead, "Datele serverului, DC-ul sau subunitatea s-au schimbat: apăsați din nou «Testează».")
+        Catch ex As Exception
+            GlobalErrorLog.Write("VrcMigratorForm.InputsChanged", ex)
+        End Try
+    End Sub
 
     ' ---- step 3a: Testează ---------------------------------------------------------------------------------------------------------
     Private Async Sub btnTesteaza_Click(sender As Object, e As EventArgs) Handles btnTesteaza.Click
@@ -350,6 +398,7 @@ Public Class VrcMigratorForm
             Dim k_suppliers As List(Of String) = Nothing
             If k_problems.Count = 0 Then k_suppliers = Await Task.Run(Function() VrcWriter.UnmatchedSuppliers(k_server, k_plan))
             _busy = False
+            RememberServer()
             Dim k_sb As New StringBuilder(PlanText(k_plan))
             k_sb.AppendLine()
             If k_problems.Count > 0 Then
@@ -362,6 +411,7 @@ Public Class VrcMigratorForm
                 Return
             End If
             k_sb.AppendLine("SERVER — gata: baza, tabelele VC_, subunitatea nouă.")
+            If _prepared.Count > 0 Then k_sb.AppendLine($"{_prepared.Count} parteneri pregătiți din ANAF vor fi adăugați în Parteneri în aceeași tranzacție cu transferul (cad odată cu el dacă transferul eșuează).")
             If k_suppliers IsNot Nothing AndAlso k_suppliers.Count > 0 Then
                 k_sb.AppendLine($"AVERTIZARE: {k_suppliers.Count} furnizori fără partener KBOT cu același cod fiscal (NIR-urile lor se importă fără partener): {String.Join(", ", k_suppliers.Take(20))}{If(k_suppliers.Count > 20, "…", "")}")
             End If
@@ -374,6 +424,25 @@ Public Class VrcMigratorForm
         Finally
             _busy = False
             UpdateButtons()
+        End Try
+    End Sub
+
+    ' ---- step 3a bis: partners from ANAF -------------------------------------------------------------------------------------------
+    Private Sub btnParteneri_Click(sender As Object, e As EventArgs) Handles btnParteneri.Click
+        Try
+            Dim k_plan = CurrentPlan()
+            If Not k_plan.IsComplete Then
+                SetState(_state, "Planul trebuie să fie complet (vezi «Verifică planul») ca să se știe baza DC și fișierele cu furnizori.")
+                Return
+            End If
+            Dim k_server = BuildServer()
+            Using k_form As New VrcPartnersForm(k_server, k_plan)
+                k_form.ShowDialog(Me)
+                RememberServer()
+                lblStare.Text = $"{k_form.PreparedCount} parteneri pregătiți din ANAF: se scriu în {k_plan.Dc} la «Migrează», în aceeași tranzacție cu transferul. Apăsați «Testează» ca să vedeți avertismentul actualizat."
+            End Using
+        Catch ex As Exception
+            Fail("VrcMigratorForm.Parteneri", "Fereastra de parteneri nu a putut fi deschisă.", ex)
         End Try
     End Sub
 
@@ -406,7 +475,7 @@ Public Class VrcMigratorForm
             _cts = Nothing
             Dim k_report = k_result.ToMarkdown(k_plan)
             _lastReport = k_report
-            rtbRaport.Text = k_report
+            ShowReport(k_report, k_result.State)
             SaveRunFiles(k_report)
             If k_result.State = VrcRunState.CommitConfirmed Then _committed = True
             SetState(k_result.State, k_result.Message)
@@ -489,6 +558,7 @@ Public Class VrcMigratorForm
     Private Sub Fail(k_source As String, k_message As String, k_ex As Exception)
         GlobalErrorLog.Write(k_source, k_ex)
         lblStare.Text = k_message
+        ApplyStateLook(VrcRunState.Blocked)
         KBotMessage.Show(k_message & Environment.NewLine & k_ex.Message, "VRC.Migrator", MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
 

@@ -989,6 +989,7 @@ CREATE TABLE `Parteneri`  (
   `Adresa` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `Tip` varchar(255) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL,
   `Ascuns` tinyint(4) NULL DEFAULT NULL,
+  `Provenienta` varchar(30) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT 'De unde a venit randul: MIGRARE_VERCON, manual, avacont; gol = migrare_kbot',
   `DataAdugare` datetime NULL DEFAULT current_timestamp(),
   `DataModificare` datetime NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`IdPartener`) USING BTREE,

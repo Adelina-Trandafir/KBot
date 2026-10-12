@@ -435,6 +435,7 @@ nullable, so the plan's §5.3 guard has nothing to catch here.
 | Adresa | Adresa | = `varchar(255) NULL` |
 | Tip | Tip | = `varchar(255) NULL` both sides. Values are `"1"` / `"2"` — text holding a number, on both sides, so no conversion |
 | **Ascuns** | **Ascuns** | ⚠ = Access `Boolean NOT NULL DEFAULT 0` ▸ `tinyint(4) NULL`. **The target HAS this column** and the Flask route does not write it. It should travel |
+| — | **Provenienta** | ▸ `varchar(30) NULL`, added 12.10.2026 (`sql/Parteneri_Provenienta.sql`). The migrator does NOT write it: empty = `migrare_kbot`. Other values: `MIGRARE_VERCON` (VRC.Migrator, partners from ANAF), `manual` (K-BOT Parteneri window), `avacont` (Access sync routes `/api/parteneri/syncdb` and `/upsert`) |
 | — | IdPartener | `AUTO_INCREMENT`, assigned |
 | IdPartener (Access) | ✗ | ⚠ Integer, **7605…7621** — see F6: these are *live ids on this server*, not dead ones. **Do not send** |
 | IDPART | ✗ | Integer `1,2,3…` — a third, purely local sequence |

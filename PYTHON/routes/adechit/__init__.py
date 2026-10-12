@@ -254,11 +254,15 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
     def report_output(repo, kind, output):
         # SLICE-ADE9-01: every report is a read of the current subunit; nothing is written or numbered here.
         from . import reports, report_render
-        require(output in ('pdf', 'print'), 'OUTPUT', 'Format de raport necunoscut.', 404)
+        require(output in ('pdf', 'print', 'xlsx'), 'OUTPUT', 'Format de raport necunoscut.', 404)
         built = reports.build(repo, g.portal['db_name'], kind, request.args)
         if output == 'pdf':
             response = send_file(BytesIO(report_render.pdf_bytes(built)), mimetype='application/pdf', as_attachment=True,
                                  download_name=secure_filename(built['filename'] + '.pdf'), max_age=0)
+        elif output == 'xlsx':
+            from . import report_excel
+            response = send_file(BytesIO(report_excel.xlsx_bytes(built, request.args, report_excel.configured_widths(repo, built))), mimetype=report_excel.MIMETYPE,
+                                 as_attachment=True, download_name=secure_filename(built['filename'] + '.xlsx'), max_age=0)
         else:
             response = Response(report_render.html_page(built), mimetype='text/html')
             response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'"

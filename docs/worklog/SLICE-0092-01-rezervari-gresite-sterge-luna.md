@@ -91,3 +91,14 @@ NEDOVEDIT: cum au ajuns randurile in tabel dupa septembrie (migrare cu ID explic
 `FX_Rezervari` din august au ant 130423 (nu cel din istoric): par venite din Access, nu calculate de K-BOT.
 Remediu propus (neaplicat): pasul 7 sa marcheze si randurile pe care 3b si 5 le-au prelucrat din stoc; seed-ul sa nu depinda de MAX(ID)
 ci de ordinea (zi, Rez_Ord, ID); plus un script care pune `Prelucrat = 1` pe randurile cu tip de lant deja calculat.
+
+## Prevenire pentru viitor (12.10.2026, operatorul: «sa nu mai apara de acum incolo»; ce e deja gresit il repara userul prin «Repara»)
+Date (verificate de operator pe baza reala): iulie 489 de randuri pe `Prelucrat = 0` (25 angajamente), august 244 (7), iunie 4; TOATE au tip calculat.
+Cod, `PYTHON/routes/forexe/prelucrare_pasi.py` + `prelucrare.py`:
+- `_SEED_LAST_ANG_SQL` si `_SEED_TIPRAND_SQL` nu mai cer `Prelucrat = 1`: un rand cu tip de lant a trecut prin 3b, oricare ar fi steagul. Asta
+  opreste greseala la urmatoarea descarcare chiar pe randurile deja ramase pe 0 (fara script SQL).
+- NOU `step7b_marcheaza_rezervari_tipate(cursor, cod)`, apelat dupa `step7_actualizeaza_rezolvat`: pune `Prelucrat = 1` pe randurile de rezervare
+  ale angajamentului care au acum tip (cele luate din stoc de 3b nu erau marcate de nimeni). Recepțiile si platile nu se ating.
+- Netestat: nimic rulat (nici pe MariaDB, nici pytest); `ast.parse` trece. `tests/test_forexe_prelucrare_pasi.py` nu are teste pe seed (nu s-au rulat).
+- Ramas: daca vreodata sosesc randuri VECHI dupa unele mai noi (migrare), seed-ul ramane `MAX(ID)` si le-ar lega dupa cele noi; neacoperit.
+- Nu s-a facut script SQL pentru `Prelucrat` (operatorul nu vrea sa repare el datele vechi).

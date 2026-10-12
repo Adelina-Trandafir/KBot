@@ -507,7 +507,9 @@
      "cls": "CHEIE",
      "nullable": true,
      "link": {
-      "kind": "open"
+      "kind": "logical",
+      "parent": "NIR",
+      "parentField": "IdIntrare"
      }
     },
     {

@@ -24,7 +24,7 @@ export function createApi({ getUnit, signal, extraHeaders = () => ({}) }) {
     const k_response = await fetch(k_path, { ...k_options, headers: k_headers, signal });
     const k_result = await k_response.json().catch(() => ({}));
     if (k_response.status === 401 || k_result.reason === 'UNITATE_NEDESCHISA') { toPortal(k_response.status === 401); throw new Error(k_result.error || 'Autentificați-vă.'); }
-    if (!k_response.ok) throw Object.assign(new Error(k_result.error || `Eroare HTTP ${k_response.status}`), { reason: k_result.reason, requestId: k_response.headers.get('X-Request-Id') || k_id });
+    if (!k_response.ok) throw Object.assign(new Error(k_result.error || `Eroare HTTP ${k_response.status}`), { reason: k_result.reason, status: k_response.status, fields: k_result.fields || null, requestId: k_response.headers.get('X-Request-Id') || k_id });
     return k_result;
   };
 }

@@ -80,27 +80,31 @@ def _html_block(block, landscape):
 
 
 def html_page(model):
+    from .report_excel import dialog_html
     landscape = bool(model['landscape'])
-    css = [url_for('static', filename='css/adechit-report.css', _external=True)]
+    css = [url_for('static', filename='css/adechit-report.css', _external=True),
+           url_for('static', filename='css/adechit-export.css', _external=True)]
     if landscape:
         css.append(url_for('static', filename='css/adechit-report-landscape.css', _external=True))
     script = url_for('static', filename='js/adechit/report-print.js', _external=True)
+    excel_script = url_for('static', filename='js/adechit/report-excel.js', _external=True)
     body = ''.join(_html_block(block, landscape) for block in model['blocks'])
     footer = f'<footer class="rpt-footer">{escape(model["footer"])}</footer>' if model.get('footer') else ''
     links = ''.join(f'<link rel="stylesheet" href="{escape(href)}">' for href in css)
     return (f'<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<title>{escape(model["title"])}</title>{links}<script src="{escape(script)}" defer></script></head>'
+            f'<title>{escape(model["title"])}</title>{links}<script src="{escape(excel_script)}" defer></script><script src="{escape(script)}" defer></script></head>'
             f'<body class="rpt{" rpt-wide" if landscape else ""}"><nav class="rpt-bar">'
             f'<button id="report-print" type="button" title="Listare la imprimanta implicită">🖨️ Listare</button>'
             f'<button id="report-printer" type="button" title="Alegeți imprimanta">🖨️ Selecție imprimantă</button>'
             f'<button id="report-pdf" type="button" title="Salvează raportul ca PDF">📄 Export PDF</button>'
+            f'<button id="report-excel" type="button" title="Alege coloanele și exportă raportul în Excel">📊 Export Excel</button>'
             f'<span class="rpt-bar-gap"></span>'
             f'<button id="report-zoom-out" type="button" title="Micșorează (doar pe ecran)">➖</button>'
             f'<span id="report-zoom-level" class="rpt-zoom">100%</span>'
             f'<button id="report-zoom-in" type="button" title="Mărește (doar pe ecran)">➕</button>'
             f'<span class="rpt-bar-gap"></span>'
             f'<button id="report-back" type="button" title="Închide raportul">⬅ Înapoi</button></nav>'
-            f'<main>{body}</main>{footer}</body></html>')
+            f'<main>{body}</main>{footer}{dialog_html(model)}</body></html>')
 
 
 # ---- PDF -----------------------------------------------------------------------------------------------------------

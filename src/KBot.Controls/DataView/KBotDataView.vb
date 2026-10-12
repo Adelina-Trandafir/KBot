@@ -83,6 +83,9 @@ Public Class KBotDataView
     ''' <summary>Click simplu pe o celulă.</summary>
     Public Event CellClick As EventHandler(Of KBotCellEventArgs)
 
+    ''' <summary>Click simplu pe titlul unei coloane (RowIndex = -1). Nu se ridică după o redimensionare a coloanei.</summary>
+    Public Event HeaderClick As EventHandler(Of KBotCellEventArgs)
+
     ''' <summary>Dublu-click pe o celulă.</summary>
     Public Event CellDoubleClick As EventHandler(Of KBotCellEventArgs)
 

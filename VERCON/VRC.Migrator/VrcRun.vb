@@ -18,6 +18,8 @@ End Enum
 Public NotInheritable Class VrcIssue
 
     Public Property SourceFile As String = String.Empty
+    ''' <summary>VC_ImportSources.SourceId of the plan source (a file can feed two: Alimente and Materiale); 0 = none.</summary>
+    Public Property SourceId As Long
     Public Property TableName As String = String.Empty
     Public Property SourceKey As String = String.Empty
     Public Property FieldName As String = String.Empty
@@ -60,7 +62,25 @@ Public NotInheritable Class VrcRunResult
     Public Property ImportId As Long
     Public Property Issues As New List(Of VrcIssue)()
     Public Property Counts As New List(Of VrcCount)()
+    ''' <summary>One line per partner prepared from ANAF: added in the transfer transaction, or why not.</summary>
+    Public Property NewPartnerLines As New List(Of String)()
     Public Property Seconds As Double
+
+    ''' <summary>The outcome in one clear line: success, rolled back (nothing written), unknown or critical.</summary>
+    Public ReadOnly Property Verdict As String
+        Get
+            Select Case State
+                Case VrcRunState.CommitConfirmed, VrcRunState.Reconciled
+                    Return "SUCCES — transferul este confirmat (COMMIT); datele sunt pe server."
+                Case VrcRunState.RollbackConfirmed, VrcRunState.StopRequested
+                    Return "ANULAT (rollback) — transferul NU a reușit; nimic nu a rămas pe server, nici partenerii din ANAF."
+                Case VrcRunState.ResultUnknown
+                    Return "EROARE CRITICĂ — COMMIT trimis fără răspuns; verificați cu «Diagnostic». Nu repetați transferul."
+                Case Else
+                    Return "EROARE — transferul nu a pornit sau nu s-a terminat."
+            End Select
+        End Get
+    End Property
 
     Public ReadOnly Property Blockers As Integer
         Get
@@ -71,6 +91,8 @@ Public NotInheritable Class VrcRunResult
     ''' <summary>Readable report of the run: result, counts per table, findings.</summary>
     Public Function ToMarkdown(k_plan As VrcPlan) As String
         Dim k_sb As New StringBuilder()
+        k_sb.AppendLine(Verdict)
+        k_sb.AppendLine()
         k_sb.AppendLine("# VRC.Migrator — raport de migrare")
         k_sb.AppendLine()
         k_sb.AppendLine($"- DC `{k_plan.Dc}`, subunitate «{k_plan.SubunitName.Trim()}», plan `{k_plan.Hash()}`.")
@@ -85,6 +107,14 @@ Public NotInheritable Class VrcRunResult
             k_sb.AppendLine($"| {k_c.Gestiune} | {k_c.TableName} | {If(k_c.Year = 0, "—", k_c.Year.ToString(Globalization.CultureInfo.InvariantCulture))} | {k_c.SourceRows:N0} | {k_c.SkippedRows:N0} | {k_c.TargetRows:N0} | {If(k_c.SumDifferences.Count = 0, "egale", String.Join("; ", k_c.SumDifferences))} | {If(k_c.Matches, "ok", "**DIFERENȚĂ**")} |")
         Next
         k_sb.AppendLine()
+        If NewPartnerLines.Count > 0 Then
+            k_sb.AppendLine("## Parteneri din ANAF (confirmați sau anulați odată cu transferul, aceeași tranzacție)")
+            k_sb.AppendLine()
+            For Each k_line In NewPartnerLines
+                k_sb.AppendLine("- " & k_line)
+            Next
+            k_sb.AppendLine()
+        End If
         k_sb.AppendLine("## Constatări")
         k_sb.AppendLine()
         If Issues.Count = 0 Then
