@@ -372,7 +372,10 @@ Public Class SetariJurnalView
             _taiat = rezultat.Truncated
             ActualizeazaBadgeuri()
             AplicaFiltrul()
-            If strangeZilele Then grila.CollapseAllGroups()
+            If strangeZilele Then
+                grila.CollapseAllGroups()
+                grila.ExpandGroup(Date.Today.ToString("dd.MM.yyyy", Globalization.CultureInfo.InvariantCulture))   ' today is the day being read
+            End If
         Catch ex As OperationCanceledException
             ' Cancellation is the normal path (a second selection), not an error.
         Catch ex As Exception

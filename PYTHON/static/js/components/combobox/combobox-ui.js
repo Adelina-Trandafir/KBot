@@ -34,7 +34,7 @@ export const comboboxUIMixin = {
       this.container.parentElement.classList.add('show-only-icon');
     }
 
-    const arrowIcon = this.options.readonly ? '<div class="combobox-arrow">🔽</div>' : '';
+    const arrowIcon = this.options.readonly ? '<div class="combobox-arrow">🔽</div>' : this.options.showArrow ? '<button type="button" class="combobox-arrow" tabindex="-1" aria-label="Afișează lista">▾</button>' : '';
 
     // ✨ Prefix icon container (opțional)
     const prefixIconHtml = this.options.prefixIcon

@@ -14,17 +14,19 @@ necorectate»** de pe pagina de start, cu angajamentul **«ERRRRRRRRRR»**. K-BO
 la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB** (formularul F1135).
 
 ## Unde le găsești
-<!-- slice: 0084, 0088 -->
+<!-- slice: 0084, 0088, 0113, 0114 -->
 
 - Imediat după conectarea la FOREXE, dacă sunt operațiuni noi, se deschide singură fereastra de
   corectare.
-- Oricând, din **MENIU › (!) Operațiuni necorelate**. Intrarea apare doar când există
-  operațiuni necorelate; atunci și butonul MENIU poartă semnul **(!)**.
+- Oricând, din ribbon: **Angajamente › Verificări › «Operațiuni necorelate»**. Butonul apare doar cât
+  există operațiuni necorelate.
+- Fereastra de corectare se deschide ca pagină a ferestrei principale; o închizi cu «Închide» din ribbon
+  sau cu Esc.
 
-<!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. -->
+<!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. Deschideți-o din ribbon, Angajamente › Verificări › «Operațiuni necorelate». -->
 
 ## Cum faci nota
-<!-- slice: 0088 -->
+<!-- slice: 0088, 0113 -->
 
 1. Pentru **fiecare** operațiune alegi **angajamentul** și **indicatorul** căruia îi aparține.
    Un rând complet primește o bifă.
@@ -33,7 +35,7 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 3. K-BOT face PDF-ul notei și te întreabă **«Vrei să încarci NOTA DE CORECȚIE în CAB?»**. La «Da»,
    robotul o încarcă în FOREXE, la transmiterea documentelor electronice.
 
-«Ieșire» nu salvează nimic în plus: operațiunile rămân în K-BOT și le reiei data viitoare.
+Închiderea («Închide» din ribbon sau Esc) nu salvează nimic în plus: operațiunile rămân în K-BOT și le reiei data viitoare.
 
 ## Vederea «Note corecție»
 <!-- slice: 0088, 0097, 0000-14, 0078-08 -->

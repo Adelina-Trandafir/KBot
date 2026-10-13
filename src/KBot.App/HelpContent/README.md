@@ -88,11 +88,15 @@ A picture the help needs is written as ONE line, where the picture should appear
 - `caption:` Romanian, shown under the picture / in the «Imagine lipsă» box and in the list.
 - `goto:` where K-BOT goes before the shot (optional):
   `view:<navViews key>` (sumar, istoric, rezervari, receptii, plati, extrase, browser, ddf, ord,
-  notecab) · `menu:<header menu key>` (angajament_nou, extrase, efactura, clasificatii, parteneri,
-  operatiuni_necorelate; `jurnal` and `setari` exist too, but open the settings window -- use
-  `setari:<page>` instead; `angajament_forexe` exists too but starts the robot -- do not use it
-  for a capture, a tour step or `open:`) · `setari:<page>` (info, aplicatie, forexe, multithread, pagina, extrase, tema,
-  autentificare, foldere, jurnal) · `help` (this topic) / `help:<topic id>`.
+  notecab) · `menu:<key>` -- the key of a row of the old MENIU, which the ribbon still runs (angajament_nou,
+  extrase, efactura = «Vânzare», clasificatii, parteneri, operatiuni_necorelate, jurnal = the «Jurnal activitate»
+  macheta since 0118; `setari` exists too but opens the settings on their first page -- use `setari:<page>` instead;
+  `angajament_forexe` exists too but starts the robot -- do not use it for a capture, a tour step or `open:`) ·
+  `setari:<page>` (info, aplicatie, forexe, multithread, pagina, extrase, tema, autentificare, foldere; `jurnal` and
+  `istoric` left the settings in 0118) · `help` (this topic) / `help:<topic id>`.
+  Not reachable by `goto:` yet (13.10.2026, slices 0113-0119): the opening page «Acasă», a ribbon tab, «Istoric
+  versiuni», «E-Factura Cumpărare», «Conturi Unitate», «Date Unitate», «Token ANAF» -- use `prepare:` for them. Since
+  0113 `view:` does not bring the list of angajamente to the front when another page is on screen (worklog 0000-69).
 - `prepare:` Romanian, what the operator sets up by hand before «Capturează» (optional).
 - `redo:` + `why:` (slice 0000-34, optional, always together): the picture is OUT OF DATE because a later
   change altered that screen. `redo: 2026-10-01 22:48` is the moment of the change (`yyyy-MM-dd HH:mm`),
@@ -101,8 +105,8 @@ A picture the help needs is written as ONE line, where the picture should appear
   at the top of the preparation box); taking the picture again, or loading one, clears it by itself.
   A picture that does not exist yet is just «lipsă». Leave the tag in place afterwards; it does no harm.
 
-The operator takes them from «Meniu › ADMIN › Capturi pentru ajutor» (capture mode: Setări › Aplicație,
-visible only with the advanced options). Each «Fă poza» goes to `goto`, shows `prepare` in a
+The operator takes them from the ribbon, «Configurări › Administrare › Capturi pentru ajutor» (slice 0114; before,
+«Meniu › ADMIN»; capture mode: Setări › Aplicație, visible only with the advanced options). Each «Fă poza» goes to `goto`, shows `prepare` in a
 floating bar, freezes the screen and saves the marked area to `<AppDir>\Help\img\` and, on a
 repository build, to `src\KBot.App\HelpContent\img\` too. The capture mode itself is NOT
 described in the help.

@@ -18,6 +18,11 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   screen (one folder per window when several have tours) and «Deschide ajutorul complet (F1)».
   The **login window has no «?»** (slice 0097-02, operator: `LoginForm.capBar.ShowHelpButton =
   False`); F1 still works there.
+- The **«Ajutor» button** pinned at the right of the main window's ribbon (slice 0114, help 0000-70): with no macheta
+  on screen (the opening page «Acasă») it opens the help window AS A PAGE of `AvacontMain` (`HelpService.ShowHelpPage`,
+  macheta `ajutor` of the registry); with a macheta or the list of angajamente on screen it opens that screen's «?»
+  popup under the button. Since 0113 every macheta is a page of `AvacontMain`; for what that did to `goto:`, tours and
+  tutorials see `docs/worklog/SLICE-0000-69-ajutor-machete-ca-pagini.md` (proposals waiting for the operator).
 - The **search** (slice 0000-18) takes a typed question: filler words, diacritics and word
   endings do not matter, not every word must match, and it finds SECTIONS (a hit opens the page
   at its `## ` heading). A hit whose topic has `open:` carries «Deschide «...»» (0000-19); one
@@ -74,7 +79,9 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   (`HelpService.InitialTourSeen`) when that tour ends past its last step -- however it was started
   -- or is closed with the box ticked; Setări › Aplicație «Arată turul ferestrei principale la
   pornirea K-BOT» turns it back on. A director never gets it (the tour's part is not visible).
-  Renaming or removing `tur-fereastra` means changing `InitialTourId` too.
+  Renaming or removing `tur-fereastra` means changing `InitialTourId` too. **Since slice 0113 (13.10.2026) it does
+  not start**: the list of angajamente is hidden behind the opening page and the tour's MENIU step has no button;
+  fixing it is an open thread of 0113.
 - **The initial tutorial** (slice 000T-07): the short tutorial `tutoriale-intro` (a message, the «?» button, the «Tutoriale» list of
   the popup) starts by itself after the initial tour is over or not owed (`HelpService.StartInitialTutorial`, called from the
   end of `StartInitialTour`), while `AppSettings.ShowInitialTutorial` is on. It is a **mandatory** tutorial (`mandatory: yes`, slice 000T-08: it cannot be closed before its last step; a press

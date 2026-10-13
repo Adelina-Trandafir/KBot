@@ -301,9 +301,10 @@ Friend Module Program
             If DirectorForm.EsteDirector(session) Then
                 shell = provider.GetRequiredService(Of DirectorForm)()
             Else
-                shell = provider.GetRequiredService(Of KbotForm)()
+                ' AvacontMain step 1: the main window hosts the shell (KbotForm) as its page.
+                shell = provider.GetRequiredService(Of AvacontMain)()
             End If
-            Dim k_kbotShell As KbotForm = TryCast(shell, KbotForm)
+            Dim k_kbotShell As KbotForm = TryCast(shell, AvacontMain)?.Shell
             If k_kbotShell IsNot Nothing Then
                 ' The PDF template download runs on a worker thread outside ApiClient: on a 401 it asks the shell
                 ' (UI thread) to re-sign the operator in, then retries once.
@@ -415,6 +416,15 @@ Friend Module Program
         ' Context de sesiune (înlocuiește glob*): singleton gol, populat de login
         ' (LoginForm -> Populate). ApiClient citește token-ul din aceeași instanță.
         services.AddSingleton(Of SessionContext)()
+        ' The history of opened machete: per operator and unit, in memory only -- it starts empty on every run.
+        services.AddSingleton(Of MachetaHistory)(
+            Function(sp)
+                Dim k_session As SessionContext = sp.GetRequiredService(Of SessionContext)()
+                Return New MachetaHistory(New MemoryMachetaHistoryStore(),
+                    Function() If(String.IsNullOrEmpty(k_session.OperatorName) OrElse String.IsNullOrEmpty(k_session.DbName),
+                                  String.Empty, k_session.OperatorName & "__" & k_session.DbName))
+            End Function)
+        services.AddSingleton(Of MachetaRegistry)()
 
         ' Adresa serverului e o constantă în ApiOptions (hostname public, ne-secret).
         ' Nimic despre adresă nu se mai citește din mediu / config de pe PC-ul clientului.
@@ -509,6 +519,7 @@ Friend Module Program
 
         ' Forms.
         services.AddTransient(Of KbotForm)()
+        services.AddTransient(Of AvacontMain)()
         services.AddTransient(Of DirectorForm)()
         services.AddTransient(Of LoginForm)()
         ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul

@@ -22,9 +22,10 @@ export function createApi({ getUnit, signal, extraHeaders = () => ({}) }) {
     const k_id = requestId();
     const k_headers = { Accept: 'application/json', 'X-Portal-Token': portalToken(), 'X-Request-Id': k_id, ...(getUnit() ? { 'X-Vercon-Unit': getUnit() } : {}), ...extraHeaders(), ...(k_options.headers || {}) };
     const k_response = await fetch(k_path, { ...k_options, headers: k_headers, signal });
-    const k_result = await k_response.json().catch(() => ({}));
-    if (k_response.status === 401 || k_result.reason === 'UNITATE_NEDESCHISA') { toPortal(k_response.status === 401); throw new Error(k_result.error || 'Autentificați-vă.'); }
+    const k_binary = k_options.responseType === 'arrayBuffer';
+    const k_result = k_response.ok && k_binary ? null : await k_response.json().catch(() => ({}));
+    if (k_response.status === 401 || k_result?.reason === 'UNITATE_NEDESCHISA') { toPortal(k_response.status === 401); throw new Error(k_result?.error || 'Autentificați-vă.'); }
     if (!k_response.ok) throw Object.assign(new Error(k_result.error || `Eroare HTTP ${k_response.status}`), { reason: k_result.reason, status: k_response.status, fields: k_result.fields || null, requestId: k_response.headers.get('X-Request-Id') || k_id });
-    return k_result;
+    return k_binary ? k_response.arrayBuffer() : k_result;
   };
 }

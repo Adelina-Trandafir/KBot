@@ -45,7 +45,7 @@ export const editing = {
     this._activeKey = key;
     if (column.editor === 'list') {
       const items = typeof column.options === 'function' ? column.options(row) : (column.options || []);
-      state.combo = new Combobox(host, { staticData: items, readonly: !column.searchable,
+      state.combo = new Combobox(host, { staticData: items, readonly: !column.searchable, showArrow: column.showArrow,
         onSearch: column.onSearch ? (query) => column.onSearch(query, row) : async (query) => items.filter((item) => String(item.label || item.text || '').toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
         onSelect: (value) => { state.raw = value; state.value = value; } });
       const selected = items.find((item) => String(item.value) === String(row[key]));

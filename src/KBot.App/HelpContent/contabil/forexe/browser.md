@@ -37,9 +37,9 @@ Robotul lucrează la o singură preluare odată. Dacă salvezi altceva cât înc
 și nu preia a doua operațiune: descarcă angajamentul din iconița lui după ce se termină.
 
 ## Un angajament nou făcut direct în FOREXE
-<!-- slice: 0097-02 -->
+<!-- slice: 0097-02, 0114 -->
 
-**MENIU › Adăugare angajamente... › Creează angajament în FOREXE** te duce la formularul
+Din ribbon, **Angajamente › Adăugare › «Creează în FOREXE»** te duce la formularul
 «Angajament nou» din pagina FOREXE:
 
 1. în lista de angajamente nu mai rămâne nimic selectat;

@@ -78,7 +78,7 @@ Partial Public NotInheritable Class AcroPdfViewer
             End If
             If idObject <> AdobeNativeMethods.OBJID_WINDOW OrElse idChild <> 0 Then Return
 
-            Dim k_form As Form = _panel.FindForm()
+            Dim k_form As Form = _panel.TopLevelForm()
             If k_form IsNot Nothing AndAlso k_form.IsHandleCreated AndAlso hwnd = k_form.Handle Then
                 ' Enabled again after a modal box.
                 If eventType = AdobeNativeMethods.EVENT_OBJECT_STATECHANGE Then ReadModeOnEvent()

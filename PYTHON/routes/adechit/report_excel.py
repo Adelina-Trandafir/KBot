@@ -3,34 +3,11 @@ import re
 from decimal import Decimal
 from html import escape
 from io import BytesIO
-import unicodedata
+from reporting.excel_widths import column_key, configured_widths, ColumnWidths
 
 from .domain import DomainError, require
 
 MIMETYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-
-
-def column_key(column, index):
-    if column.get('key'):
-        return column['key']
-    text = unicodedata.normalize('NFKD', column['label'].replace('-\n', ''))
-    text = ''.join(char for char in text if not unicodedata.combining(char))
-    return re.sub(r'[^A-Z0-9]+', '_', text.upper()).strip('_') or ('NR_CRT' if index == 0 else f'COLOANA_{index + 1}')
-
-
-def configured_widths(repo, model):
-    """Read shared settings on each export; no DDL, writes or schema synchronization."""
-    if repo.sqlite or not model.get('report_name'):
-        return {}
-    from mysql.connector.errors import ProgrammingError
-    try:
-        rows = repo.query('SELECT CHEIE_COLOANA, LATIME FROM AVACONT_COMUN.RAPOARTE_EXCEL_COLOANE WHERE NUME_RAPORT=%s',
-                          (model['report_name'],))
-    except ProgrammingError as error:
-        if error.errno == 1146:  # The user has not created the settings table yet.
-            return {}
-        raise
-    return {row['CHEIE_COLOANA']: float(row['LATIME']) for row in rows if 0 < float(row['LATIME']) <= 255}
 
 
 def table_schemas(model):
@@ -92,7 +69,7 @@ def xlsx_bytes(model, args, column_widths=None):
     width = max(2, max((sum(f'{table}:{index}' in chosen for index in range(len(labels)))
                         for table, labels in enumerate(schemas)), default=0))
     line = 1
-    configured_dimensions = {}
+    widths = ColumnWidths(column_widths)
     edge = Side(style='thin', color='A6A6A6')
     border = Border(left=edge, right=edge, top=edge, bottom=edge)
     tints = {'d': 'F9EDED', 'c': 'E6EDD7', 'z': 'DFE5ED'}
@@ -133,13 +110,10 @@ def xlsx_bytes(model, args, column_widths=None):
             if block.get('head', True):
                 for output, index in enumerate(kept, 1):
                     column = columns[index]
-                    configured = (column_widths or {}).get(column_key(column, index))
-                    if configured is not None:
-                        configured_dimensions[output] = max(configured_dimensions.get(output, 0), configured)
                     write(line, output, column['label'], bold=True, align='center', grid=True,
                           fill=tints.get(column.get('tint'), 'ECECEC'))
-                    sheet.column_dimensions[get_column_letter(output)].width = max(
-                        sheet.column_dimensions[get_column_letter(output)].width, min(55, max(14, column['w'] / 100)))
+                    dimension = sheet.column_dimensions[get_column_letter(output)]
+                    dimension.width = widths.observe(output, column_key(column, index), column['w'], dimension.width)
                 sheet.row_dimensions[line].height = 16 * max(len(columns[index]['label'].split('\n')) for index in kept)
                 if sheet.freeze_panes is None:
                     sheet.freeze_panes = f'A{line + 1}'
@@ -171,6 +145,10 @@ def xlsx_bytes(model, args, column_widths=None):
                 full_row(text, align='center')
         elif kind == 'text':
             full_row(block['text'], bold=block.get('bold', False), align=block.get('align', 'left'))
+        elif kind == 'richtext':
+            from .report_richtext import plain_text
+            for paragraph in block['paragraphs']:
+                full_row(plain_text([paragraph]), align=paragraph['align'])
         elif kind == 'box':
             if block.get('title'):
                 full_row(block['title'], bold=True)
@@ -183,6 +161,9 @@ def xlsx_bytes(model, args, column_widths=None):
             full_row('    |    '.join(block['heads']))
             line += 2
         elif kind in ('spacer', 'break'):
+            if kind == 'break' and model.get('payment_notice'):
+                from openpyxl.worksheet.pagebreak import Break
+                sheet.row_breaks.append(Break(id=line - 1))
             line += 1
         else:
             raise DomainError('REPORT_BLOCK', 'Bloc de raport necunoscut.', 500)
@@ -190,7 +171,7 @@ def xlsx_bytes(model, args, column_widths=None):
         full_row(model['footer'])
     for index in range(1, width + 1):
         dimension = sheet.column_dimensions[get_column_letter(index)]
-        dimension.width = configured_dimensions.get(index, max(dimension.width, 20))
+        dimension.width = widths.final(index, dimension.width)
     sheet.sheet_view.showGridLines = False
     sheet.page_setup.orientation = 'landscape' if model['landscape'] else 'portrait'
     sheet.page_setup.paperSize = sheet.PAPERSIZE_A4

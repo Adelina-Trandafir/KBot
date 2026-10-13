@@ -518,7 +518,7 @@ Public Class RezervariView
     ''' două motive — niciun angajament ales și un angajament fără rezervări — cer răspunsuri
     ''' diferite.</para>
     ''' </remarks>
-    Private Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+    Private Async Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
         Try
             If String.IsNullOrWhiteSpace(_requestedCod) Then
                 KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
@@ -533,7 +533,7 @@ Public Class RezervariView
                 Return
             End If
             Using f As New GraficRezervariForm(_requestedCod, _rows)
-                f.ShowDialog(FindForm())
+                Await AvacontMain.ShowMachetaAsync(Me, f, MachetaRef.Create(KbotForm.MachetaGrafic, "cod", _requestedCod))
             End Using
         Catch ex As Exception
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment

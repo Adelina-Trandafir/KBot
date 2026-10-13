@@ -7,19 +7,21 @@ parent: contabil
 screens: HelpForm, KBotHelpPopup
 keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza, tutorial, tutoriale, tutorial initial, tutorialul de inceput, ce sunt tutorialele, nu mai arata tutorialul, pas cu pas, invata, sari peste, pas optional, iesi din tutorial, ma opresc, intunecat
 ---
-<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T -->
-Ajutorul se deschide în două feluri:
+<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T, 0114 -->
+Ajutorul se deschide în trei feluri:
 
 - **F1**, în orice fereastră: se deschide direct fereastra de ajutor, la pagina despre ce ai pe
   ecran.
 - Butonul **?** din bara de titlu a fiecărei ferestre: se deschide un **meniu mic**, chiar sub
   buton, cu o căsuță de căutare, pagina ecranului tău, tururile ghidate și tutorialele. Fereastra de
   **conectare** nu are acest buton; acolo ajutorul se deschide cu F1.
+- Butonul **«Ajutor»** din dreapta ribbonului: pe pagina «Acasă» deschide ajutorul ca pagină; cu o machetă pe ecran
+  deschide meniul «?» al ei — [Butonul «Ajutor» din ribbon](topic:contabil.ajutor.buton).
 
 ## Meniul «?»
 <!-- slice: 0000-20, 0000-24, 0000-27, 000T -->
 
-<!-- capture: ajutor-meniu | caption: Meniul «?» deschis din fereastra principală | redo: 2026-10-05 08:53 | why: 000T-07: grupul «Tutoriale» are acum două tutoriale (și la 0000-50 se adăugase grupul) | prepare: Selectați un angajament și vederea «Rezervări», apoi apăsați «?» din bara de titlu. Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
+<!-- capture: ajutor-meniu | caption: Meniul «?» deschis din fereastra principală | redo: 2026-10-05 08:53 | why: 000T-07: grupul «Tutoriale» are acum două tutoriale (și la 0000-50 se adăugase grupul) | prepare: Deschideți «Lista angajamentelor» din ribbon, selectați un angajament și vederea «Rezervări», apoi apăsați «Ajutor» din dreapta ribbonului (sau «?» din bara de titlu). Meniul se închide când dați clic în altă parte: faceți poza cu Win+Shift+S și încărcați-o cu «Încarcă». -->
 
 - Sus e **căsuța de căutare** (vezi mai jos). Sub ea, meniul e împărțit în părți; fiecare parte
   are un titlu colorat, subliniat, iar rândurile de sub el sunt ale lui.
@@ -56,12 +58,12 @@ ferestrei — sau caută în cuprins.
 > îmbunătăți ajutorul. Nu scrie în căsuță nume, coduri fiscale sau alte date personale.
 
 ## Butoanele unui rezultat
-<!-- slice: 0000-19, 0000-20 -->
+<!-- slice: 0000-19, 0000-20, 0113 -->
 
 Sub unele rezultate sunt butoane:
 
 - **«Deschide «...»»** te duce la ecranul despre care e vorba (o vedere a angajamentului, o
-  fereastră din MENIU sau o pagină din Setări). Dacă vederea nu există pentru angajamentul
+  machetă din ribbon sau o pagină din Setări). Dacă vederea nu există pentru angajamentul
   selectat, K-BOT îți spune și o deschizi singur după ce alegi în arbore un angajament care o are.
 - **«Tur ghidat»** pornește turul acelei pagini.
 
@@ -73,7 +75,7 @@ căutai); un clic pe aceeași stea o retrage. Poți da nota și în fereastra de
 citit pagina: întrebarea din meniu merge acolo cu tot cu rezultatele ei.
 
 ## Tururile ghidate
-<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24, 0097-02, 0000-30, 0000-31 -->
+<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24, 0097-02, 0000-30, 0000-31, 0114 -->
 
 Un tur îți arată pe ecran, pas cu pas, unde e fiecare lucru: un chenar colorat în jurul
 butonului sau al listei și o bulă cu **Înapoi**, **Înainte** și **Închide**, al cărei vârf arată
@@ -88,8 +90,6 @@ Ce K-BOT ascunde acum din cauza stării sau a datelor (de exemplu o vedere pe ca
 «Browser FOREXE» cât nu ești conectat, un buton din banda FOREXE, semnul «+» când nu e nimic de
 făcut) devine **vizibil în pasul care vorbește despre el**, iar bula adaugă o notă: îl vezi doar
 pentru tur. Textul pasului spune ce faci ca să apară pe bune. După pas, elementul se ascunde la loc.
-Pașii despre meniul MENIU îl deschid pentru tine, cu rândurile care se văd doar uneori («Jurnal activitate»,
-«(!) Operațiuni necorelate»), și îl închid când treci mai departe.
 Sunt sărite doar butoanele care nu au loc deloc pe ecranul tău (de exemplu lista e goală).
 
 Îl pornești din meniul «?» (**Tururi ghidate** sau butonul **«Tur ghidat»** al unui rezultat), din pagina lui de ajutor
@@ -214,10 +214,11 @@ După ce alegi din meniu apare fereastra obișnuită de tipărire din Windows, u
 și cuprins.
 
 ## Fereastra de ajutor stă deasupra
-<!-- slice: 0000-23 -->
+<!-- slice: 0000-23, 0114 -->
 
-Fereastra de ajutor stă **mereu deasupra** celorlalte ferestre K-BOT, ca s-o poți citi în timp ce
-lucrezi. Cât rulează un tur, ea se ascunde în bara de activități și revine singură la sfârșit.
+Deschisă cu **F1** sau din meniul «?», fereastra de ajutor stă **mereu deasupra** celorlalte ferestre K-BOT, ca s-o
+poți citi în timp ce lucrezi. Deschisă din butonul «Ajutor» de pe pagina «Acasă», ea este o **pagină** a ferestrei
+principale și se închide cu «Închide» din ribbon. Cât rulează un tur, ea se ascunde în bara de activități și revine singură la sfârșit.
 
 Dacă o altă fereastră K-BOT deschide o **întrebare sau un mesaj care trebuie închis înainte de
 orice altceva** (de exemplu o confirmare), fereastra de ajutor **se închide singură**, ca să nu

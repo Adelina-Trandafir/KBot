@@ -202,7 +202,7 @@ Partial Public NotInheritable Class AcroPdfViewer
     End Function
 
     Private Sub AttachScreenForm()
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         If k_form Is _screenForm Then Return
         If _screenForm IsNot Nothing Then RemoveHandler _screenForm.Resize, AddressOf OnScreenStateChanged
         _screenForm = k_form

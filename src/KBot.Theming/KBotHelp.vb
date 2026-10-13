@@ -18,7 +18,8 @@ Public Interface IKBotHelpProvider
     ''' the screen, the guided tours) under <paramref name="anchorScreenRect"/>, the button's
     ''' rectangle in screen coordinates. F1 keeps going to <see cref="ShowHelp"/>.
     ''' </summary>
-    Sub ShowHelpMenu(origin As Control, anchorScreenRect As Drawing.Rectangle)
+    ''' <param name="k_withTours">False = no guided tours and no tutorials in the popup (the ribbon's help button).</param>
+    Sub ShowHelpMenu(origin As Control, anchorScreenRect As Drawing.Rectangle, Optional k_withTours As Boolean = True)
 
 End Interface
 
@@ -125,10 +126,10 @@ Public NotInheritable Class KBotHelp
     ''' <paramref name="anchorScreenRect"/>. Same contract as <see cref="Request"/>: callers check
     ''' <see cref="IsAvailable"/> first.
     ''' </summary>
-    Public Shared Sub RequestMenu(origin As Control, anchorScreenRect As Drawing.Rectangle)
+    Public Shared Sub RequestMenu(origin As Control, anchorScreenRect As Drawing.Rectangle, Optional k_withTours As Boolean = True)
         Dim p As IKBotHelpProvider = Provider
         If p Is Nothing Then Throw New InvalidOperationException("KBotHelp.RequestMenu called with no help provider installed.")
-        p.ShowHelpMenu(origin, anchorScreenRect)
+        p.ShowHelpMenu(origin, anchorScreenRect, k_withTours)
     End Sub
 
 End Class

@@ -26,11 +26,8 @@ Partial Class SetariForm
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
@@ -146,18 +143,6 @@ Partial Class SetariForm
         KBotNavItem6.Image = My.Resources.Resources.folder_open
         KBotNavItem6.Key = "foldere"
         KBotNavItem6.Text = "Căi fișiere"
-        KBotNavItem7.Align = KBotNavAlign.Far
-        KBotNavItem7.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Accessories_text_editor_512_resized
-        KBotNavItem7.Key = "jurnal"
-        KBotNavItem7.Text = "Jurnal"
-        KBotNavItem11.Align = KBotNavAlign.Far
-        KBotNavItem11.Image = My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32
-        KBotNavItem11.Key = "istoric"
-        KBotNavItem11.Text = "Istoric versiuni"
-        KBotNavItem8.Align = KBotNavAlign.Far
-        KBotNavItem8.IsSeparator = True
-        KBotNavItem8.Key = "jur2"
-        KBotNavItem8.Text = Nothing
         navViews.Items.Add(KBotNavItem1)
         navViews.Items.Add(KBotNavItem2)
         navViews.Items.Add(KBotNavItem3)
@@ -168,9 +153,6 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)
-        navViews.Items.Add(KBotNavItem11)
-        navViews.Items.Add(KBotNavItem7)
-        navViews.Items.Add(KBotNavItem8)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"

@@ -699,4 +699,29 @@ Public Class DdfEditSectiuneaAPage
             GlobalErrorLog.Write("DdfEditSectiuneaAPage.ApplyTheme", ex)
         End Try
     End Sub
+
+    ' ---- The action row can sit on the form's bottom row, beside «Salveaza documentul» ---------------
+
+    Private _actionsHost As TableLayoutPanel
+    Private _actionsRowHeight As Single
+
+    ''' <summary>Moves the row «Adauga rand / Sterge randul / state» into <paramref name="k_host"/> (column <paramref name="k_column"/>) so the buttons share one line.</summary>
+    Friend Sub AttachActionsTo(k_host As TableLayoutPanel, k_column As Integer)
+        If _actionsHost IsNot Nothing Then Return
+        _actionsRowHeight = tlyRoot.RowStyles(1).Height
+        tlyRoot.Controls.Remove(tlyButoane)
+        tlyRoot.RowStyles(1).Height = 0
+        k_host.Controls.Add(tlyButoane, k_column, 0)
+        _actionsHost = k_host
+        ThemeManager.Apply(tlyButoane)
+    End Sub
+
+    ''' <summary>Puts the action row back in this page (it leaves the page's tab).</summary>
+    Friend Sub DetachActions()
+        If _actionsHost Is Nothing Then Return
+        _actionsHost.Controls.Remove(tlyButoane)
+        tlyRoot.Controls.Add(tlyButoane, 0, 1)
+        tlyRoot.RowStyles(1).Height = _actionsRowHeight
+        _actionsHost = Nothing
+    End Sub
 End Class

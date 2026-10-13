@@ -63,4 +63,4 @@ Nu există o regulă sigură — de asta te întreabă K-BOT. Te ajută, în ord
 O așezare automată **poate fi greșită** (două recepții pot avea aceeași valoare în momente diferite).
 Verifică-le ca pe ale tale — nimic nu se scrie până nu salvezi.
 
-<!-- capture: asocieri-tragere | caption: Un instantaneu tras din coș peste recepția lui | goto: view:receptii | prepare: Deschideți Asocieri pe un angajament cu instantanee neașezate și începeți să trageți unul peste o recepție; faceți poza cât țineți mouse-ul apăsat. -->
+<!-- capture: asocieri-tragere | caption: Un instantaneu tras din coș peste recepția lui | goto: view:receptii | prepare: Deschideți Asocieri pe un angajament cu instantanee neașezate și începeți să trageți unul peste o recepție; faceți poza cât țineți mouse-ul apăsat. | redo: 2026-10-13 17:30 | why: 0113: fereastra Asocieri e o pagină a ferestrei principale, fără bara ei de titlu și fără «Renunță» -->

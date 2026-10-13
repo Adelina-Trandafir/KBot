@@ -317,12 +317,12 @@ Public Class SumarView
     ''' The partners are written on its DDF; nothing on this view changes, so there is nothing to
     ''' reload afterwards.
     ''' </summary>
-    Private Sub btnPartners_Click(sender As Object, e As EventArgs) Handles btnPartners.Click
+    Private Async Sub btnPartners_Click(sender As Object, e As EventArgs) Handles btnPartners.Click
         Try
             Dim cod As String = _requestedCod
             If String.IsNullOrWhiteSpace(cod) OrElse _partnersReauth Is Nothing Then Return
             Using f As New SumarPartnersForm(_apiClient, cod, _partnersReauth)
-                f.ShowDialog(FindForm())
+                Await AvacontMain.ShowMachetaAsync(Me, f, MachetaRef.Create(KbotForm.MachetaSumarParteneri, "cod", cod))
             End Using
         Catch ex As Exception
             ' Boundary UI (button): logged and said.

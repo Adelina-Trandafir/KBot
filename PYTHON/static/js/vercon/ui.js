@@ -5,7 +5,6 @@ import { Combobox } from '../components/combobox/combobox.js';
 import { DatePicker } from '../components/datepicker/datepicker.js';
 import { openMenu, closeMenu } from '../adechit/menu.js';
 import { showMessage } from '../portal/messages.js';
-import { createPdfView } from '../portal/pdfview.js';
 import { snapshotPdf } from './snapshot-pdf.js';
 import { parse, format } from './fields.js';
 
@@ -43,7 +42,7 @@ export function field(column, value, editable, onChange, owner) {
     source = el('input', { type: 'hidden', value: value == null ? '' : String(value) });
     const host = el('div', { className: 'vc-field__combo' }); label.append(host, source);
     const items = (column.options || []).map((item) => ({ value: String(item.value ?? item.id), label: item.label }));
-    const combo = owner.own(new Combobox(host, { placeholder: column.placeholder || 'Alegeți…', readonly: false,
+    const combo = owner.own(new Combobox(host, { placeholder: column.placeholder || 'Alegeți…', readonly: false, showArrow: column.showArrow,
       onSearch: async (query) => items.filter((item) => item.label.toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
       onSelect: (id) => { combo._pendingSelection = false; source.value = id; source.dispatchEvent(new Event('change', { bubbles: true })); } }));
     combo.setValue(source.value, items.find((item) => item.value === source.value)?.label || column.fallback || ''); combo.setEnabled(editable);
@@ -78,13 +77,15 @@ export function grid(host, options, owner) {
     columns: options.columns.map((item) => ({ width: 120, ...item })) });
   owner?.own(instance); return instance;
 }
-export function paintTree(host, nodes, { selected, onSelect, onAction, title = 'Documente salvate', checkable = false, onCheckChange } = {}, owner) {
+export function paintTree(host, nodes, { selected, onSelect, onAction, title = 'Documente salvate', checkable = false, onCheckChange, branchChecks = false, showSearchBox = true, collapsed = false } = {}, owner) {
   host.replaceChildren();
   const body = el('div', { className: 'vc-tree-body' }); host.append(el('h4', { textContent: title }), body);
-  const tree = new TreeView(body, { inline: true, autoCollapse: false, autoResize: false, indent: 14, checkable, onCheckChange,
+  const tree = new TreeView(body, { inline: true, autoCollapse: false, autoResize: false, indent: 14, checkable, onCheckChange, branchChecks, showSearchBox,
     onSelect: (selection) => { if (String(selection.id).startsWith('doc:')) onSelect?.(String(selection.id).slice(4)); } });
-  owner?.own(tree);
-  tree.setData(nodes); tree.expandAllNodes(nodes); tree.treeContainer.replaceChildren(); tree.isTreeRendered = false;
+  owner?.own(() => { if (collapsed) host._vcExpanded = new Set(tree.expandedNodes); tree.destroy(); });
+  tree.setData(nodes);
+  if (collapsed) tree.expandedNodes = new Set(host._vcExpanded || []); else tree.expandAllNodes(nodes);
+  tree.treeContainer.replaceChildren(); tree.isTreeRendered = false;
   if (selected != null) tree.selectedValue = `doc:${selected}`;
   if (nodes.length) tree.renderTree(''); else tree.renderNoResults();
   const action = (event) => {
@@ -137,14 +138,12 @@ export function preview(title, sections, owner) {
   return view;
 }
 // Reports that return PDF use the same PDF.js viewer as Portal; no endpoint is invented by the UI.
-export async function pdfPreview(title, data, owner) {
-  const view = modal(title, owner); const host = el('div', { className: 'vc-pdf' }); view.body.append(host);
-  const pdf = createPdfView(host); view.scope.own(() => { void pdf.clear(); });
-  const blobUrl = URL.createObjectURL(new Blob([data], { type: 'application/pdf' })); view.scope.own(() => URL.revokeObjectURL(blobUrl));
-  const close = el('button', { type: 'button', textContent: 'Închide' }); close.addEventListener('click', view.close);
-  const download = el('a', { href: blobUrl, download: title.replace(/[<>:"/\\|?*]/g, '_') + '.pdf', textContent: 'Descarcă PDF' });
-  const print = el('button', { type: 'button', textContent: 'Tipărește' }); print.addEventListener('click', () => { const frame = window.open(blobUrl, '_blank'); if (frame) frame.addEventListener('load', () => frame.print(), { once: true }); });
-  view.footer.append(close, download, print);
-  try { await pdf.open(data); } catch (error) { showMessage(host, error.message, 'error'); }
-  return view;
+export async function snapshotPreview(title, sections, owner, isCurrent = () => true) {
+  const data = await snapshotPdf(title, sections);
+  if (isCurrent()) return pdfPreview(title, data, owner, isCurrent);
+}
+
+export async function pdfPreview(title, data, owner, isCurrent = () => true) {
+  const { openPdfReport } = await import('./pdf-preview.js');
+  if (isCurrent()) return openPdfReport(title, data, owner);
 }

@@ -78,7 +78,7 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Sub ShowLog()
         Try
-            SetariForm.ShowFor(Me, _setariFactory).ShowPage("jurnal")
+            DeschideJurnal()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ShowLog", ex)
             KBotMessage.Show(Me, "Jurnalul nu a putut fi deschis. Detalii în jurnalul de erori.",
@@ -89,7 +89,7 @@ Partial Public Class KbotForm
     ''' <summary>Opens the settings window (modeless, one instance): the header menu row «Configurare K-BOT».</summary>
     Private Sub ShowSettings()
         Try
-            SetariForm.ShowFor(Me, _setariFactory)
+            SetariForm.ShowFor(Me, _setariFactory, MachetaRef.Create(MachetaSetari))
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ShowSettings", ex)
             KBotMessage.Show(Me, "Fereastra de setări nu a putut fi deschisă. Detalii în jurnalul de erori.",

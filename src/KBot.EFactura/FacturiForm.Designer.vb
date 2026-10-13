@@ -177,7 +177,7 @@ Partial Class FacturiForm
         capBar.OptionButtonImage = CType(resources.GetObject("capBar.OptionButtonImage"), Drawing.Image)
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
-        capBar.ShowOptionsButton = True
+        capBar.ShowOptionsButton = False
         capBar.ShowTextScaleSlider = False
         capBar.Size = New System.Drawing.Size(1394, 66)
         capBar.TabIndex = 0

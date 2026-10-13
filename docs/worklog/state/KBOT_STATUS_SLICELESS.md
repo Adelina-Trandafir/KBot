@@ -5,6 +5,12 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 13.10.2026) - E-Factura: environment confirmed.** All 00EF DDL scripts are run on `AVACONT_SURSA` /
+  `AVACONT_COMUN`; the server code is on the VPS (`/root/AVACONT`, no `PYTHON/` folder); `cryptography` is in the venv;
+  `/etc/avacont/efactura.env` is complete and loaded by systemd (`avacont` active); the operator says the «E-Factura»
+  window and the certificate step work. Nothing at ANAF tried with a real invoice yet. No code changed.
+  See `SLICELESS-efactura-mediu-vps.md`.
+
 - **No slice (operator, 11.10.2026) - PLAN_Securitate_API: new system built NEXT TO the legacy one; nothing legacy deleted.**
   Done in code: S1 server + client (mandatory change of the initial password, restricted `password_change` session,
   real MariaDB policy, AuthVersion revocation, `must-change` in admin_cli, `ForcedPasswordChangeForm`), bearer template

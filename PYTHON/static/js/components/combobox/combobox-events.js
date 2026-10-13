@@ -16,6 +16,10 @@ export const comboboxEventsMixin = {
       this.addDOMListener(this.input, 'keydown', (e) => this.handleKeydown(e));
       this.addDOMListener(this.input, 'blur', (e) => this.handleBlur(e));
     } else {
+      if (this.arrow) {
+        this.addDOMListener(this.arrow, 'mousedown', (event) => event.preventDefault());
+        this.addDOMListener(this.arrow, 'click', () => this.handleReadonlyClick());
+      }
       this.addDOMListener(this.input, 'input', (e) => this.handleInput(e));
       this.addDOMListener(this.input, 'keydown', (e) => this.handleKeydown(e));
       this.addDOMListener(this.input, 'focus', () => this.handleFocus());

@@ -20,6 +20,7 @@ Partial Class MainForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem14 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
@@ -63,6 +64,7 @@ Partial Class MainForm
         viewPublish = New PushFilesView()
         viewOnce = New OnceQueryView()
         viewLogin = New LoginResetView()
+        viewVerconReports = New VerconReportsView()
         CType(navViews, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
@@ -287,6 +289,10 @@ Partial Class MainForm
         navViews.Items.Add(KBotNavItem11)
         navViews.Items.Add(KBotNavItem12)
         navViews.Items.Add(KBotNavItem13)
+        KBotNavItem14.Key = "vercon-reports"
+        KBotNavItem14.Text = "Rapoarte VERCON"
+        KBotNavItem14.AutoSize = True
+        navViews.Items.Add(KBotNavItem14)
         navViews.Location = New Point(0, 0)
         navViews.Margin = New Padding(0)
         navViews.Name = "navViews"
@@ -310,6 +316,9 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewPublish)
         pnlViews.Controls.Add(viewOnce)
         pnlViews.Controls.Add(viewLogin)
+        pnlViews.Controls.Add(viewVerconReports)
+        viewVerconReports.Dock = DockStyle.Fill
+        viewVerconReports.Visible = False
         pnlViews.Dock = DockStyle.Fill
         pnlViews.Location = New Point(0, 40)
         pnlViews.Margin = New Padding(0)
@@ -524,4 +533,5 @@ Partial Class MainForm
     Friend WithEvents viewPublish As PushFilesView
     Friend WithEvents viewOnce As OnceQueryView
     Friend WithEvents viewLogin As LoginResetView
+    Friend WithEvents viewVerconReports As VerconReportsView
 End Class

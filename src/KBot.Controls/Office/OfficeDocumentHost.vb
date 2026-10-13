@@ -982,7 +982,7 @@ Public NotInheritable Class OfficeDocumentHost
     ''' </summary>
     Private Sub HookHostForm()
         UnhookHostForm()
-        _hostForm = _surface.FindForm()
+        _hostForm = _surface.TopLevelForm()
         If _hostForm Is Nothing Then Return
         AddHandler _hostForm.FormClosing, AddressOf HostFormClosing
     End Sub

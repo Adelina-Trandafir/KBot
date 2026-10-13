@@ -231,7 +231,7 @@ Partial Public NotInheritable Class AcroPdfViewer
         ' Keys sent while script alerts come and go did not hold (old surface, 24.09.2026): wait for the burst to end
         ' (the trap's ScriptBurstEnded re-checks).
         If _saveTrap IsNot Nothing AndAlso _saveTrap.InScriptBurst Then Return $"script alerts within the last {ActiveXBurstQuietMs} ms"
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         If k_form Is Nothing OrElse Not k_form.IsHandleCreated Then Return "no form"
         If Not AdobeNativeMethods.IsWindowEnabled(k_form.Handle) Then Return "form disabled (a modal box is up)"
         Dim k_foreground As IntPtr = AdobeNativeMethods.GetForegroundWindow()

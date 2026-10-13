@@ -1,6 +1,6 @@
 # ADECHIT — interfața și regulile actuale
 
-Actualizat: 12.10.2026, SLICE-ADE6-26. Acest document consolidează rezultatul
+Actualizat: 13.10.2026, SLICE-ADE9-04. Acest document consolidează rezultatul
 threadului ADE1-05/06 și ADE6-05–17. Regulile de mai jos înlocuiesc descrierile
 intermediare ale interfeței din workloguri; acestea rămân dovezi istorice.
 Starea implementării este în [status](../ADECHIT_STATUS.md).
@@ -342,6 +342,28 @@ Emailurile conflictuale nou introduse sunt refuzate cu identificarea celuilalt p
   informare; salvarea este refuzată numai de regula de mai sus.
 
 ## Rapoarte (SLICE-ADE9-01)
+
+<!-- slice: ADE9-04 -->
+Butonul **Situație de plată**, sub Situație lunară, folosește aceeași bifă
+**Toate grupele?**. Raportul A4 portret are coloanele Nr. crt., Numele și prenumele,
+restanță (SID), bani în cont (SIC), taxa lunară integrală și de plată, cu formula
+**SID + ZileLuna × TaxaZilnica − SIC**. Zilele configurate și taxa sunt ale lunii
+selectate; prezența și încasările din luna curentă nu reduc taxa din acest raport.
+Pentru lunile vechi fără ZileLuna se folosește numărul de zile lucrătoare, ca în
+prezență. Sumele negative se păstrează și reprezintă creditul rămas.
+Toate grupele înseamnă automat fiecare grupă pe pagină nouă, indiferent de
+**Separă grupe?**; textul configurat se repetă sub fiecare tabel.
+
+Din **meniu → Text situație de plată**, cu dreptul Catalog, se editează textul
+pentru subunitatea curentă: liste, aldine/cursive/subliniere, aliniere, trei fonturi,
+mărimi 8–24 pt și șapte culori. Există și mod sursă HTML; lipirea în editorul
+vizual adaugă text simplu. Variabilele [UNITATE], [CONT], [COD_FISCAL], [GRUPA],
+[LUNA] și [AN] sunt înlocuite cu datele raportului. [CONT] este primul cont al
+unității; un cont ales explicit poate fi scris direct în text. HTML-ul este limitat
+la formatarea acceptată; scripturile, imaginile și linkurile sunt eliminate.
+Formatarea se păstrează în listare/PDF; Excel include nota ca text simplu.
+În PDF se folosesc fonturile standard sans/serif/mono și DejaVu pentru diacritice.
+Textul lung sau grupele numeroase pot continua pe mai multe pagini.
 
 Panoul «Rapoarte» din dreapta ecranului Prezență listează sau descarcă în PDF: Situație lunară (grupa aleasă, «Toate grupele?»,
 «Separă grupe?»), Registru casă și Raport bancă (între «Dată început» și «Dată sfârșit», completate cu luna aleasă),

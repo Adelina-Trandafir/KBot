@@ -11,6 +11,7 @@ ALL = frozenset(TYPES)
 
 # key -> (label, group, types, needs) ; needs = the VR operation the form requires (routes/vercon/operations.py)
 FORMS = {
+    "stocuri":        ("Stocuri",                 "Stocuri",      ALL,                          "raport"),
     "produse":        ("Produse",                 "Configurari",  ALL,                          "nomenclatoare"),
     "categorii":      ("Categorii / Conturi",     "Configurari",  ALL,                          "nomenclatoare"),
     "tva":            ("Cote TVA",               "Configurari",  ALL,                          "nomenclatoare"),
@@ -30,7 +31,7 @@ FORMS = {
     "bp":             ("Bon de predare",          "OI / MF",      frozenset({OI, MF}),          "oi_predare"),
     "bt":             ("Bon de transfer",         "OI / MF",      frozenset({OI, MF}),          "oi_transfer"),
     "bs":             ("Bon de casare",           "OI / MF",      frozenset({OI, MF}),          "oi_casare"),
-    "rapoarte":       ("Rapoarte",                "Rapoarte",     ALL,                          "raport"),
+    "rapoarte":       ("Rapoarte",                "Rapoarte",     frozenset({MATERIALE, ALIMENTE}), "raport"),
 }
 
 # Documents that have a header + lines editor (the others are lists / settings handled in later slices).

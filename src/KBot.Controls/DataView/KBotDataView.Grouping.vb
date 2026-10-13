@@ -857,6 +857,27 @@ Partial Class KBotDataView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Desface grupul de pe <paramref name="level"/> a cărui cheie (textul afișat al valorii) e cea dată. Întoarce True
+    ''' dacă grupul există și se putea strânge; False dacă nu e niciun grup cu cheia aceea.
+    ''' </summary>
+    Public Function ExpandGroup(key As String, Optional level As Integer = 0) As Boolean
+        Try
+            EnsureBands()
+            For Each nod In _groups
+                If nod.Level <> level OrElse Not String.Equals(nod.Key, key, StringComparison.Ordinal) Then Continue For
+                If Not _activeLevels(nod.Level).EffectiveCollapsible Then Return False
+                _defaultsApplied.Add(nod.Path)   ' ca CollapsedByDefault să nu-l strângă la următoarea reconstrucție
+                SetPathCollapsed(nod.Path, False)
+                Return True
+            Next
+            Return False
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.ExpandGroup", ex)
+            Throw
+        End Try
+    End Function
+
     Private Sub SetAllGroupsCollapsed(collapsed As Boolean, level As Integer)
         EnsureBands()
         Dim schimbat As Boolean = False

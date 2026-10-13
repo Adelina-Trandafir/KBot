@@ -9,6 +9,8 @@ import { bindCatalogs } from './catalogs.js';
 import { bindAnnual } from './annual.js';
 import { bindReports, outputReport } from './reports.js';
 import { bindHelp } from './help.js';
+import { bindNoticeConfig } from './payment-notice-config.js';
+import { bindBankAssociations } from './bank-associations.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
@@ -863,10 +865,12 @@ async function logoutNow() {
 
 function bind() {
   const catalogs = state.payers = bindCatalogs({ api, context: () => state.context, refresh: () => loadContext(true).catch(report), moveToSubunit });
+  const bankAssociations = bindBankAssociations({ api, context: () => state.context, refresh: () => loadContext(true), monthId: () => state.monthId });
   const annual = bindAnnual({ api, refresh: () => loadContext(true), message: (text) => showMessage($('ade-message'), text, 'info') });
   state.annual = annual;
   wireLongPress();
   bindHelp({ fetchOutput, report });
+  const noticeConfig = bindNoticeConfig({ api, context: () => state.context, report });
   state.reports = bindReports({ fetchOutput, report,
     snapshot: () => ({ month: state.context ? selectedMonth() : null, monthId: state.monthId, groupId: state.groupId, selected: state.selected }) });
   $('ade-search').addEventListener('input', filterGrid);
@@ -892,14 +896,16 @@ function bind() {
     document.documentElement.dataset.theme = k_dark ? 'light' : 'dark';
     state.grid?.setTheme(k_dark ? 'modern' : 'dark');
   };
-  // Plătitori, Taxe and the theme live in one menu at the right end of the header; the two windows keep their own buttons (hidden).
+  // The application menu sits next to the brand, like the portal menu.
   $('ade-menu').addEventListener('click', () => {
     const k_dark = document.documentElement.dataset.theme === 'dark';
     openMenu($('ade-menu'), [
       { icon: '👥', label: 'Plătitori', run: () => $('ade-payers').click() },
+      { icon: '🏦', label: 'Asociere extrase cu copii', run: () => bankAssociations.open() },
       { icon: '💶', label: 'Taxe', run: () => $('ade-taxes').click() },
+      { icon: '📝', label: 'Text situație de plată', run: () => noticeConfig.open() },
       { icon: k_dark ? '☀️' : '🌙', label: k_dark ? 'Tema luminoasă' : 'Tema întunecată', rule: true, run: toggleTheme },
-    ], { label: 'Meniu', align: 'right', iconRight: true, below: $('ade-menu').closest('header') });
+    ], { label: 'Meniu', below: $('ade-menu').closest('header') });
   });
   // The «A» opens the applications of the account (ADECHIT is this page, so it is not listed).
   $('ade-apps').addEventListener('click', () => {

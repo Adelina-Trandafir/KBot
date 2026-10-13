@@ -48,7 +48,16 @@ Partial Public Class KbotForm
                     _extraseForm = Nothing
                     ReloadExtraseView()
                 End Sub
-            _extraseForm.Show(Me)
+            ' Step 2 pilot: inside the main window the window is a page of the work area.
+            Dim k_main As AvacontMain = TryCast(HostForm, AvacontMain)
+            If k_main IsNot Nothing Then
+                If Not k_main.ShowPage(_extraseForm, MachetaRef.Create(MachetaExtrase)) Then
+                    _extraseForm.Dispose()   ' another page refused to close: stay where we are
+                    _extraseForm = Nothing
+                End If
+            Else
+                _extraseForm.Show(Me)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideExtrasele", ex)
             KBotMessage.Show(Me, "Fereastra extraselor de cont nu s-a putut deschide: " & ex.Message,

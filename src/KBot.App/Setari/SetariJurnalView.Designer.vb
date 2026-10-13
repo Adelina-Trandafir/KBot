@@ -50,6 +50,7 @@ Partial Class SetariJurnalView
         lblDeLa = New Label()
         lblPanaLa = New Label()
         pnlGrila = New Panel()
+        splitJurnal = New SplitContainer()
         noticeGol = New KBotNotice()
         tlyFooter = New KBotTableLayoutPanel()
         busy = New KBotBusyBar()
@@ -61,6 +62,10 @@ Partial Class SetariJurnalView
         CType(chipNiveluri, ComponentModel.ISupportInitialize).BeginInit()
         CType(grila, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
+        CType(splitJurnal, ComponentModel.ISupportInitialize).BeginInit()
+        splitJurnal.Panel1.SuspendLayout()
+        splitJurnal.Panel2.SuspendLayout()
+        splitJurnal.SuspendLayout()
         pnlFisiere.SuspendLayout()
         tlyFilter.SuspendLayout()
         tlyFilterActual.SuspendLayout()
@@ -319,8 +324,7 @@ Partial Class SetariJurnalView
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(pnlFisiere, 0, 0)
         tlyMain.Controls.Add(tlyFilter, 1, 0)
-        tlyMain.Controls.Add(pnlGrila, 1, 1)
-        tlyMain.Controls.Add(txtDetaliu, 1, 2)
+        tlyMain.Controls.Add(splitJurnal, 1, 1)
         tlyMain.Controls.Add(tlyFooter, 0, 3)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
@@ -329,8 +333,9 @@ Partial Class SetariJurnalView
         tlyMain.RowCount = 4
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 205F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 0F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 105F))
+        tlyMain.SetRowSpan(splitJurnal, 2)
         tlyMain.Size = New Size(960, 735)
         tlyMain.TabIndex = 0
         ' 
@@ -444,6 +449,28 @@ Partial Class SetariJurnalView
         pnlGrila.TabIndex = 2
         pnlGrila.Tag = "Card"
         ' 
+        ' splitJurnal
+        ' 
+        splitJurnal.Dock = DockStyle.Fill
+        splitJurnal.Location = New Point(8, 100)
+        splitJurnal.Margin = New Padding(0)
+        splitJurnal.Name = "splitJurnal"
+        splitJurnal.Orientation = Orientation.Horizontal
+        ' 
+        ' splitJurnal.Panel1
+        ' 
+        splitJurnal.Panel1.Controls.Add(pnlGrila)
+        splitJurnal.Panel1MinSize = 100
+        ' 
+        ' splitJurnal.Panel2
+        ' 
+        splitJurnal.Panel2.Controls.Add(txtDetaliu)
+        splitJurnal.Panel2MinSize = 60
+        splitJurnal.Size = New Size(952, 530)
+        splitJurnal.SplitterDistance = 320
+        splitJurnal.SplitterWidth = 9
+        splitJurnal.TabIndex = 2
+        ' 
         ' noticeGol
         ' 
         noticeGol.BackColor = Color.Transparent
@@ -546,6 +573,10 @@ Partial Class SetariJurnalView
         tlyFilterActual.ResumeLayout(False)
         tlyFilterActual.PerformLayout()
         pnlGrila.ResumeLayout(False)
+        splitJurnal.Panel1.ResumeLayout(False)
+        splitJurnal.Panel2.ResumeLayout(False)
+        CType(splitJurnal, ComponentModel.ISupportInitialize).EndInit()
+        splitJurnal.ResumeLayout(False)
         tlyFooter.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
@@ -565,6 +596,7 @@ Partial Class SetariJurnalView
     Friend WithEvents txtPanaLa As KBotTextField
     Friend WithEvents btnReimprospateaza As Button
     Friend WithEvents pnlGrila As Panel
+    Friend WithEvents splitJurnal As SplitContainer
     Friend WithEvents grila As KBotDataView
     Friend WithEvents noticeGol As KBotNotice
     Friend WithEvents txtDetaliu As KBotTextBox

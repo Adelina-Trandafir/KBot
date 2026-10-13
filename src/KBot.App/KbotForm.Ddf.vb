@@ -98,7 +98,7 @@ Partial Public Class KbotForm
            String.Equals(_currentInfo.CodAngajament, cod, StringComparison.OrdinalIgnoreCase) Then
             surse = If(_currentInfo.Surse, String.Empty)
         End If
-        DeschideEditorulDdf(draft, programDinIndicatori:=True, surseIndicatori:=surse)
+        Await DeschideEditorulDdfAsync(draft, programDinIndicatori:=True, surseIndicatori:=surse)
     End Function
 
     ''' <summary>
@@ -138,7 +138,7 @@ Partial Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulDdf(draft, stare)
+        Await DeschideEditorulDdfAsync(draft, stare)
     End Function
 
     ''' <summary>
@@ -147,7 +147,7 @@ Partial Public Class KbotForm
     ''' «Trimite in FOREXE». Slice 0087: reached from the header menu (<c>menuNou</c>), no longer
     ''' from its own button.
     ''' </summary>
-    Private Sub DeschideAngajamentNou()
+    Private Async Sub DeschideAngajamentNou()
         Try
             If String.IsNullOrWhiteSpace(_session.DbName) Then
                 KBotMessage.Show(Me, "Nu există o unitate deschisă: autentificați-vă întâi.",
@@ -156,7 +156,7 @@ Partial Public Class KbotForm
             End If
             Dim draft As DdfDraft = DdfDraftFactory.ForNewAngajament(
                 DdfDraftFactory.NewManualCode(), _session.DbName, _session.CodProgram, Date.Today)
-            DeschideEditorulDdf(draft, DdfRevisionState.Draft)
+            Await DeschideEditorulDdfAsync(draft, DdfRevisionState.Draft)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideAngajamentNou", ex)
             KBotMessage.Show(Me, "Documentul pentru angajamentul nou nu a putut fi deschis. Detalii în jurnalul de erori.",
@@ -245,15 +245,18 @@ Partial Public Class KbotForm
         ' Both entries (empty revision and prefilled one): the program comes from the indicators
         ' (FX_Indicatori.SS -> DefaProgram), never from the last revision or the session -- operator,
         ' 26.09.2026. The editor maps the node's sources once it has the DefaProgram map.
-        DeschideEditorulDdf(draft, DdfRevisionState.Draft, cuIndicatori, If(info.Surse, String.Empty),
-                            programDinIndicatori:=True)
+        Await DeschideEditorulDdfAsync(draft, DdfRevisionState.Draft, cuIndicatori, If(info.Surse, String.Empty),
+                                       programDinIndicatori:=True)
     End Function
 
-    ''' <summary>Opens the editor MODALLY and, on a save, reloads the view onto what was written.</summary>
-    Private Sub DeschideEditorulDdf(draft As DdfDraft, Optional stare As DdfRevisionState = DdfRevisionState.Draft,
-                                    Optional cuIndicatori As Boolean = False,
-                                    Optional surseIndicatori As String = "",
-                                    Optional programDinIndicatori As Boolean = False)
+    ''' <summary>
+    ''' Opens the editor as a page of the main window and, when it closes, on a save reloads the view onto what
+    ''' was written. Returns when the editor has closed (what ShowDialog used to do).
+    ''' </summary>
+    Private Async Function DeschideEditorulDdfAsync(draft As DdfDraft, Optional stare As DdfRevisionState = DdfRevisionState.Draft,
+                                                    Optional cuIndicatori As Boolean = False,
+                                                    Optional surseIndicatori As String = "",
+                                                    Optional programDinIndicatori As Boolean = False) As Task
         If draft Is Nothing Then Return
         ' Slice 0081-02: a brand-new K-BOT angajament is not in the tree yet; after its save the
         ' tree is reloaded ONTO it, so the operator lands on what they just created.
@@ -279,7 +282,7 @@ Partial Public Class KbotForm
                 .PornesteCuIndicatorii = cuIndicatori,
                 .SurseIndicatori = If(surseIndicatori, String.Empty),
                 .ProgramDinIndicatori = programDinIndicatori}
-            f.ShowDialog(Me)
+            If Not Await ShowMachetaAsync(f, CodRef(MachetaDdfEdit, draft.CodAngajament)) Then Return
             If f.SAuSalvatModificari AndAlso angajamentNou Then
                 ReincarcaArborelePe(draft.CodAngajament)
             ElseIf f.SAuSalvatModificari Then
@@ -291,7 +294,7 @@ Partial Public Class KbotForm
                                 iddfDocument:=f.IddfSalvat)
             End If
         End Using
-    End Sub
+    End Function
 
     ''' <summary>
     ''' The Rezervari footer RIGHT icon, «Repară» (operator, 12.10.2026; it replaced the refresh from

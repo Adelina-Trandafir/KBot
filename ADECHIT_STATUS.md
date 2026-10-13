@@ -1,6 +1,6 @@
 # ADECHIT — STATUS și plan de portare
 
-Actualizat: **12.10.2026**. Sursa unică pentru starea proiectului ADECHIT.
+Actualizat: **13.10.2026**. Sursa unică pentru starea proiectului ADECHIT.
 Acest fișier spune ce este planificat, ce este scris și ce este verificat.
 Dacă realitatea diferă, actualizăm statusul în aceeași intervenție.
 
@@ -57,7 +57,7 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE6 | Grupe, plătitori, taxe și prezență | ADE6-26 SCRIS LOCAL: alegerea lunii din alt an colapsează anul selectat anterior; fără teste; ADE6-25 deadlock AD_Lock nevalidat MariaDB | [ADE6](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade6) |
 | SLICE-ADE7 | Calculul situațiilor și ciclul lunar, paritate 1 la 1 | ADE7-04 SCRIS LOCAL: închidere anuală august exclusiv desktop, mutări Ctrl/Shift/drag-and-drop și grupe noi validate; UI/server nevalidate | [ADE7](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade7) |
 | SLICE-ADE8 | Încasări, chitanțe, alte documente și restituiri | ADE8-05 SCRIS LOCAL: meniu PC chitanțe, listare și PDF; mail fără acțiune; funcțional/vizual neprobat | [ADE8](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade8) |
-| SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-01 SCRIS LOCAL: rapoartele (listare + PDF) din panoul Rapoarte; nerulate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
+| SLICE-ADE9 | Rapoarte, verificarea completă și predarea pentru server | ADE9-04 SCRIS LOCAL: Situație de plată, HTML configurabil per subunitate, listare/PDF/Excel; SQL și probe neexecutate; ADE9-02/03 planificate | [ADE9](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ade9) |
 | SLICE-ADE10 | Subunități în același DC: schemă, API, migrator, selector | ADE10-01–05 SCRIS LOCAL: AD_05 nerulat, migrator construit, nimic testat sau publicat | [ADE10](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ade10) |
 | SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-05 SCRIS LOCAL — copil + părinte într-un formular, linkuri în eroarea de email, dublu clic, mesaj „similare”; UI neprobat | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
 | SLICE-AD12 | Ajutor ADECHIT: buton «?», cuprins + text formatat, imprimare, PDF | AD12-01 SCRIS LOCAL; conținut actualizat în ADE6-24; aspect/imprimare/PDF neprobate | [AD12](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad12) |
@@ -70,6 +70,13 @@ ADE0–ADE9 sunt alocate prin acest plan. Subfeliile planificate și următoarel
 sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
 ## Current focus
+
+- **ADE9-04 (13.10.2026):** raport Situație de plată după imagine, cu formula
+  SID + taxa lunară integrală − SIC, editor de text HTML per subunitate și grupe
+  separate automat pe pagini noi. SCRIS LOCAL; fără teste sau verificări executate.
+  DDL `sql/AD_10_raport_situatie_plata.sql` necesar, neexecutat; seed Excel opțional
+  separat. [Worklog](docs/worklog/SLICE-ADE9-04-situatie-plata-html.md).
+  Următoarea subfelie de rapoarte: **ADE9-05**.
 
 - **ADE6-26 (12.10.2026):** alegerea unei luni din alt an în arborele LUNA / ANUL
   colapsează anul selectat anterior și păstrează extins anul noii luni.

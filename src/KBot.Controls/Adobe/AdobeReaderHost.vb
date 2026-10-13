@@ -334,7 +334,7 @@ Public NotInheritable Class AdobeReaderHost
         Dim surface As ControlHostSurface = TryCast(_host, ControlHostSurface)
         If surface Is Nothing Then Return True
         If Not surface.Control.Visible Then Return False
-        Dim form As Form = surface.Control.FindForm()
+        Dim form As Form = surface.Control.TopLevelForm()
         Return form Is Nothing OrElse form.WindowState <> FormWindowState.Minimized
     End Function
 
@@ -349,7 +349,7 @@ Public NotInheritable Class AdobeReaderHost
                 AddHandler panel.ParentChanged, AddressOf OnScreenStateChanged
             End If
         End If
-        Dim form As Form = panel?.FindForm()
+        Dim form As Form = panel?.TopLevelForm()
         If form IsNot _screenForm Then
             If _screenForm IsNot Nothing Then RemoveHandler _screenForm.Resize, AddressOf OnScreenStateChanged
             _screenForm = form
@@ -1062,7 +1062,7 @@ Public NotInheritable Class AdobeReaderHost
     ' Reached from LaunchAndHostAsync (wrapped).
     Private Sub WatchClosingForm()
         Dim surface As ControlHostSurface = TryCast(_host, ControlHostSurface)
-        Dim form As Form = surface?.Control.FindForm()
+        Dim form As Form = surface?.Control.TopLevelForm()
         If form Is _closingForm Then Return
         UnwatchClosingForm()
         _closingForm = form

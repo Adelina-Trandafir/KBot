@@ -70,13 +70,13 @@ dacă folosește datele din memorie: **«Da»** — imediat, fără robot; **«N
 (durează, dar aduce orice s-a schimbat între timp).
 
 ## Asocierile — ce trebuie să hotărăști
-<!-- slice: 0048-04, 0055, 0056, 0058, 0000-12 -->
+<!-- slice: 0048-04, 0055, 0056, 0058, 0000-12, 0113 -->
 
 După citire, K-BOT propune unde se așază față de recepții fiecare modificare din istoricul
 FOREXE (fiecare «instantaneu»). Dacă totul se potrivește, salvarea se face direct, fără nicio
-întrebare. Dacă rămâne ceva nehotărât, se deschide fereastra **Asocieri**:
+întrebare. Dacă rămâne ceva nehotărât, se deschide fereastra **Asocieri**, ca pagină a ferestrei principale:
 
-<!-- capture: asocieri-propunere | caption: Fereastra «Asocieri» după o descărcare | prepare: Descărcați un angajament care are recepții noi, până se deschide fereastra de asocieri. -->
+<!-- capture: asocieri-propunere | caption: Fereastra «Asocieri» după o descărcare | prepare: Descărcați un angajament care are recepții noi, până se deschide fereastra de asocieri. | redo: 2026-10-13 17:30 | why: 0113: fereastra Asocieri e o pagină a ferestrei principale, fără bara ei de titlu și fără «Renunță» -->
 
 Aici spui, pentru fiecare instantaneu adus de descărcare, a cărei recepții este. E pasul cel mai
 important al descărcării, explicat pe larg în

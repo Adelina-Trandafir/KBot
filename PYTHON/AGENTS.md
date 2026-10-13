@@ -1,0 +1,11 @@
+# Reguli pentru toate paginile și modulele PYTHON
+
+Se aplică împreună cu instrucțiunile din `../AGENTS.md`.
+
+- CSS-ul se scrie în fișiere `.css` separate de HTML, JavaScript și Python. Nu se introduc blocuri `<style>`, șiruri de stylesheet în JS sau atribute `style` pentru stilizare. Valorile dinamice necesare controalelor (dimensiuni, poziționare, variabile CSS) se gestionează prin API-ul controlului.
+- Fiecare aplicație are un stylesheet de intrare, cu importuri ordonate, și module CSS pe responsabilități: structură/context/navigare, pagini sau familii de documente, nomenclatoare, rapoarte/preview și adaptări responsive. Nu se concentrează toate paginile într-un singur fișier CSS.
+- CSS-ul controalelor comune rămâne lângă componentele lor. Adaptările specifice unei aplicații se scriu în CSS-ul aplicației, cu selectori limitați la acea aplicație.
+- La separarea unui stylesheet existent se păstrează ordinea cascadei, selectorii, valorile, media queries și rezolvarea URL-urilor relative. Nu se combină reorganizarea cu schimbări vizuale necerute.
+- Niciun modul de cod propriu (Python, JS, CSS, HTML) nu trebuie să depășească aproximativ 1000 de linii. Dacă se apropie de limită, se separă pe responsabilități, cu interfețe explicite. Nu se comprimă codul și nu se mută arbitrar linii pentru a ascunde depășirea. Bibliotecile terțe și fișierele generate nu se rescriu pentru această limită.
+- Progresul VERCON se consemnează în `../implementare_vercon_v2.md` după fiecare pagină/slice, cu fișierele modificate, starea reală și limitările verificării.
+- Toate rapoartele exportate în Excel folosesc modulul comun `reporting/excel_widths.py`, independent de aplicație: citire la fiecare export din `AVACONT_COMUN.RAPOARTE_EXCEL_COLOANE`, după `NUME_RAPORT` și `CHEIE_COLOANA`; cheile sunt stabile, independente de litera Excel. Se reutilizează `configured_widths`, `column_key` și `ColumnWidths`. Lățimile configurate prevalează asupra machetei; fallback-ul și alegerea lățimii maxime când mai multe tabele folosesc aceeași coloană Excel păstrează logica inițială ADECHIT. Nu se creează automat tabela și nu se execută SQL de configurare.

@@ -1,0 +1,19 @@
+.vc-field { min-width: 0; display: flex; flex-direction: column; gap: 4px; font-size: .9em; }
+.vc-field > input:not([type="hidden"]), .vc-field .combobox-input, .vc-field .kdp__field { width: 100%; box-sizing: border-box; min-height: 32px; }
+.vc-field__combo { width: 100%; }
+.vc-field-error:empty { display: none; }
+.vc-field-error, .vc-save-status[role="alert"] { color: var(--err-ink); }
+.vc-save-status { margin-right: auto; }
+.vc-doc__bar { border-top: 1px solid var(--line); padding-top: 10px; }
+.vc-actions button { border: 1px solid var(--line); border-radius: 5px; padding: 7px 14px; background: transparent; color: inherit; cursor: pointer; }
+.vc-actions button:disabled { opacity: .45; cursor: default; }
+.vc-actions .is-primary { background: var(--primary-color); color: white; }
+.vc-actions .is-danger { color: var(--err-ink); }
+.vc-dgv { min-width: 0; height: 340px; width: 100%; }
+.vc-dgv.vc-dgv--small { height: 98px; }
+.vc-dgv.vc-dgv--meal { height: 220px; }
+.vc-dgv .dgv { height: 100%; }
+.vc-dgv .dgv__cell { font-size: 13px; }
+.vc-dgv .dgv__editor { font-size: inherit; }
+.vc-dgv .dgv__footer-action { white-space: nowrap; }
+.vc-dgv .dgv__footer-action:disabled { opacity: .4; cursor: default; }

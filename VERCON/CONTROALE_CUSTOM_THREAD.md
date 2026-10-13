@@ -95,6 +95,10 @@ Toate căile de mai jos sunt relative la `PYTHON/static`.
 
 ## Reguli pentru continuare
 
+VC08-02 (12.10.2026, cod nerulat): `js/vercon/depreciation.js` compune dialogul comun, DatePicker și DataGrid readonly pentru amortizarea la dată a activului selectat; previewul/PDF folosesc adaptoarele comune. CSS separat `vercon-mf.css`, formatter zecimal exact comun `decimal-text.js`. Se deschide din meniul rândului Registru MF numai cu drept de raport și fără ciornă activă. Rezultatele/previewul sunt invalidate la schimbarea datei; scope-ul închide controalele și ignoră răspunsurile întârziate. Nu s-au rulat teste/browser pentru acest slice.
+
+Actualizare 12.10.2026: CSS-ul VERCON/ADECHIT/PORTAL este separat în module cu importuri ordonate; regulile globale sunt în `PYTHON/AGENTS.md` (inclusiv ~1000 linii/modul). Pagina Stocuri (`js/vercon/stock.js`, VC08-01) reutilizează DataGrid, TreeView, DatePicker, Combobox și previewul comun; CSS propriu `vercon-stock.css`. La solicitarea utilizatorului au trecut verificarea identității CSS și încărcarea importurilor în Chromium, 10 probe sintetice ale motorului și un fixture browser pentru Stocuri. Nu s-a verificat integrarea MariaDB. Evidența și limitele sunt în jurnalul implementării și worklog VC08-01.
+
 1. Toate familiile reutilizabile de mai sus intră în proiectarea VERCON; o variantă se activează doar unde fluxul o cere.
 2. Aspectul compact NIR, diferența consultare/editor, draftul și protocolul de salvare rămân contracte ale paginii; componentele sunt adaptoare UI ale acestor contracte.
 3. Fără teste/rulări/alte verificări fără solicitare explicită a utilizatorului; citirea codului și proiectarea sunt permise. Pentru această hartă nu s-au rulat teste sau aplicația.

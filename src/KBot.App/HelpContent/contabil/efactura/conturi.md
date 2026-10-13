@@ -7,10 +7,10 @@ parent: contabil.efactura
 screens: ConturiForm
 keywords: conturi, conturile unitatii, cont emitent, iban, banca, cont bancar, cont nou, date unitate, unitate emitenta
 ---
-<!-- slice: 00EF-12, 00EF-13, 0000-56, 0000-58 -->
-Fereastra **«E-Factura — conturile unității»** ține lista conturilor bancare (IBAN) ale **unității care emite facturile**. Sunt conturile tale, nu ale partenerilor cărora le plătești. Se deschide din fereastra facturilor emise, cu butonul cu litera K din bara de titlu, rândul **«Conturi Unitate»** (celălalt rând, «Date Unitate», deschide datele unității — vezi [E-Factura: facturile emise](topic:contabil.efactura)). Pe o factură, contul se alege în vederea **Generale**.
+<!-- slice: 00EF-12, 00EF-13, 0000-56, 0000-58, 0119 -->
+Fereastra **«E-Factura — conturile unității»** ține lista conturilor bancare (IBAN) ale **unității care emite facturile**. Sunt conturile tale, nu ale partenerilor cărora le plătești. Se deschide din ribbon, **Configurări › Unitate › «Conturi Unitate»**, fără să ai nevoie de macheta facturilor (butonul de lângă, «Date Unitate», deschide datele unității — vezi [E-Factura: facturile emise](topic:contabil.efactura)). Dacă macheta facturilor e deschisă, lista ei de conturi se actualizează singură. Pe o factură, contul se alege în vederea **Generale**.
 
-<!-- capture: conturi-unitate | caption: Fereastra «E-Factura — conturile unității» | prepare: Din fereastra de facturi apăsați butonul K din bara de titlu și alegeți «Conturi Unitate», pe o unitate care are deja două-trei conturi salvate. -->
+<!-- capture: conturi-unitate | caption: Fereastra «E-Factura — conturile unității» | prepare: Din ribbon, Configurări › Unitate › «Conturi Unitate», pe o unitate care are deja două-trei conturi salvate. -->
 
 ## Ce vezi
 <!-- slice: 00EF-12, 0000-56 -->

@@ -10,19 +10,14 @@
 <script type="module" src="/static/js/vercon/app.js"></script></head>
 <body class="portal vc-page"><header class="header vc-header">
 <button class="brand vc-brand" id="vc-apps" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Aplicații"><svg class="vc-brand__icon" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#309eff"/><text x="16" y="24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="800" fill="#fff">V</text></svg><span class="vc-brand__name">VERCON</span></button>
-<label class="vc-global-search"><span aria-hidden="true">⌕</span><input id="vc-search" type="search" placeholder="Caută în pagina curentă…" aria-label="Caută în pagina curentă"></label>
-<div class="vc-header__right"><span id="vc-context" class="vc-header__context"></span><button id="vc-help" type="button">ⓘ Ajutor</button><button id="vc-theme" type="button" aria-label="Schimbă tema">☀</button><button id="vc-unit" type="button">Schimbă unitatea</button><span id="vc-session-timer" class="vc-session-timer" role="timer" hidden>⏱ <b>05:00</b></span></div></header>
+<section class="vc-selectors" aria-label="Contextul de lucru">
+  <div id="vc-subunit-combo" class="vc-picker"></div>
+  <div id="vc-gestiune-combo" class="vc-picker"></div>
+  <div id="vc-year-combo" class="vc-picker vc-picker--year"></div>
+</section>
+<div class="vc-header__right"><span id="vc-context" class="vc-header__context"></span><button id="vc-help" type="button">ⓘ Ajutor</button><button id="vc-theme" type="button" aria-label="Schimbă tema">☀</button><span id="vc-session-timer" class="vc-session-timer" role="timer" hidden>⏱ <b>05:00</b></span></div></header>
 <main class="vc-main">
   <p id="vc-message" class="msg" role="status"></p>
-  <section class="vc-selectors" aria-label="Contextul de lucru">
-    <span id="vc-unit-label" class="vc-unit-label"></span>
-    <div id="vc-subunit-combo" class="vc-picker"></div>
-    <div id="vc-gestiune-combo" class="vc-picker"></div>
-    <div id="vc-year-combo" class="vc-picker"></div>
-    <div class="vc-type" id="vc-type-box" hidden><div id="vc-type-combo"></div></div>
-    <span id="vc-access" class="vc-access" role="status"></span>
-  </section>
-  <p id="vc-bar" class="vc-bar" aria-live="polite"></p>
   <section id="vc-state" class="vc-state" aria-live="polite" data-state="loading"><p>Se încarcă…</p></section>
   <nav id="vc-menu" class="vc-menu" aria-label="Operații" hidden></nav>
   <section id="vc-work" class="vc-work" hidden></section>

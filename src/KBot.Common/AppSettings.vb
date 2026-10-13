@@ -211,6 +211,21 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property StartMaximized As Boolean = False
 
+    ''' <summary>AvacontMain: the ribbon is folded to its tab names (double click on a tab). Remembered between runs.</summary>
+    Public Property RibbonCollapsed As Boolean = False
+
+    ''' <summary>The opening page: the side panel is folded to its icon strip. Remembered between runs.</summary>
+    Public Property HomeSidebarCollapsed As Boolean = False
+
+    ''' <summary>The main window has already been shown maximized once to everyone (the one-time offer of AvacontMain). Never reset.</summary>
+    Public Property FullScreenOffered As Boolean = False
+
+    ''' <summary>The opening page: the «Ce este nou» card is folded to its title. Remembered between runs.</summary>
+    Public Property HomeNewsCollapsed As Boolean = False
+
+    ''' <summary>The version of K-BOT for which the opening page last showed «Ce este nou» open: a different (updated) version opens it again.</summary>
+    Public Property NewsSeenVersion As String = String.Empty
+
     ''' <summary>
     ''' Slice 0000-23: the text size of the help window's pages, in percent of the normal size
     ''' (which already follows the K-BOT text size). One of <see cref="HelpTextPercentChoices"/>.
@@ -645,6 +660,11 @@ Public NotInheritable Class AppSettings
             .ShowInitialTutorial = ShowInitialTutorial,
             .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
+            .RibbonCollapsed = RibbonCollapsed,
+            .HomeSidebarCollapsed = HomeSidebarCollapsed,
+            .FullScreenOffered = FullScreenOffered,
+            .HomeNewsCollapsed = HomeNewsCollapsed,
+            .NewsSeenVersion = NewsSeenVersion,
             .ForexeShowPageMenu = ForexeShowPageMenu,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
@@ -714,6 +734,11 @@ Public NotInheritable Class AppSettings
         If dto.ShowInitialTutorial.HasValue Then s.ShowInitialTutorial = dto.ShowInitialTutorial.Value
         If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
+        If dto.RibbonCollapsed.HasValue Then s.RibbonCollapsed = dto.RibbonCollapsed.Value
+        If dto.HomeSidebarCollapsed.HasValue Then s.HomeSidebarCollapsed = dto.HomeSidebarCollapsed.Value
+        If dto.FullScreenOffered.HasValue Then s.FullScreenOffered = dto.FullScreenOffered.Value
+        If dto.HomeNewsCollapsed.HasValue Then s.HomeNewsCollapsed = dto.HomeNewsCollapsed.Value
+        If dto.NewsSeenVersion IsNot Nothing Then s.NewsSeenVersion = dto.NewsSeenVersion
         If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
@@ -795,6 +820,11 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowInitialTutorial As Boolean?
     Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?
+    Public Property RibbonCollapsed As Boolean?
+    Public Property HomeSidebarCollapsed As Boolean?
+    Public Property FullScreenOffered As Boolean?
+    Public Property HomeNewsCollapsed As Boolean?
+    Public Property NewsSeenVersion As String
     Public Property ForexeShowPageMenu As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)

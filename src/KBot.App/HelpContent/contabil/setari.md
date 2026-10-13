@@ -4,16 +4,18 @@ title: Setări și aspect
 part: contabil
 order: 80
 parent: contabil
-screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView, SetariJurnalView, LogViewerForm, LogClearDialog
-keywords: setari, tema, marime text, jurnal, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, tutorial initial, tutorialul de inceput, nu mai arata tutorialul, mini-meniu, meniul din pagina
+screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView
+keywords: setari, configurare, configurare k-bot, tema, marime text, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, tutorial initial, tutorialul de inceput, nu mai arata tutorialul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
-<!-- slice: 0072, 0072-01, 0000-29, 0100-02, fara-felie -->
-Butonul **MENIU** al ferestrei principale are două rânduri pentru această fereastră:
-**Configurare K-BOT** o deschide, iar **Jurnal activitate** o deschide direct pe pagina **Jurnal**
-(rândul se poate ascunde din pagina **Aplicație**).
+<!-- slice: 0072, 0072-01, 0100-02, 0113, 0114, 0118 -->
+Setările se deschid din ribbon, **Configurări › Configurare › «Configurare K-BOT»**, ca pagină a ferestrei
+principale; le închizi cu **«Închide»** din dreapta ribbonului sau cu Esc ([Ribbonul](topic:contabil.ribbon)).
+Jurnalele și istoria versiunilor nu mai sunt pagini aici: au machetele lor, **«Jurnal activitate»** și **«Istoric
+versiuni»**, în același grup al ribbonului — [Jurnal activitate](topic:contabil.jurnal),
+[Actualizarea K-BOT](topic:contabil.actualizare).
 
-<!-- capture: setari | caption: Fereastra «Setări» | goto: setari:aplicatie | redo: 2026-10-06 12:00 | why: 0078-14: pagina «Aplicație» are un comutator nou, «Avertizează dacă Adobe e mai vechi de 2025» (sub tutorialul de început); înainte, 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
+<!-- capture: setari | caption: Setările, deschise ca pagină a ferestrei principale | goto: setari:aplicatie | redo: 2026-10-13 17:30 | why: 0113 / 0118: setările sunt acum o pagină a ferestrei principale (fără bara de titlu proprie și fără «Închide»), iar paginile «Istoric versiuni» și «Jurnal» au ieșit din lista din stânga; înainte, 0078-14: pagina «Aplicație» are un comutator nou, «Avertizează dacă Adobe e mai vechi de 2025» (sub tutorialul de început); înainte, 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
 
 | Pagina | Ce găsești |
 |--------|------------|
@@ -23,18 +25,17 @@ Butonul **MENIU** al ferestrei principale are două rânduri pentru această fer
 | **Descărcări multiple** | **apare doar dacă unitatea permite descărcarea pe mai multe taburi** — câte angajamente se descarcă deodată și actualizarea la conectare — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla) |
 | **Extrase** | coloanele grilelor de extrase — vezi [Extrase de cont](topic:contabil.vederi.extrase) |
 | **Autentificare** | ce ține minte fereastra de conectare, ce se întâmplă când expiră sesiunea și adresa serverului K-BOT — mai jos |
-| **Jurnal** | jurnalele K-BOT, pentru când ceva nu merge |
 
 Setările se salvează pe măsură ce le schimbi.
 
 ## Pagina «Aplicație»: cum e grupată fila «Generale»
-<!-- slice: 0100, 0100-02 -->
+<!-- slice: 0100, 0100-02, 0114 -->
 
 Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare nu s-a schimbat:
 
 | Grupul | Ce conține |
 |--------|-----------|
-| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe, rândul «Jurnal activitate» din meniul MENIU |
+| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
 | **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
 
@@ -42,13 +43,14 @@ Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —
 [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Pagina «Aplicație»: pornirea K-BOT
-<!-- slice: 0097-02, 000T-07, 0000-51, 0078-14 -->
+<!-- slice: 0097-02, 000T-07, 0000-51, 0078-14, 0113 -->
 
 Din grupul **Fereastra principală**:
 
-- **«Fereastra principală pornește mărită (pe tot ecranul)»** — **debifată la început.** Bifată,
-  fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în
-  mijlocul ecranului. Se aplică de la următoarea pornire.
+- **«Fereastra principală pornește mărită (pe tot ecranul)»** — la prima pornire după actualizarea care a adus
+  ribbonul, K-BOT o **bifează o dată**, ca să vezi noua fereastră pe tot ecranul. De atunci alegerea e a ta: bifată,
+  fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în mijlocul ecranului.
+  Se aplică de la următoarea pornire.
 - **«Arată turul ferestrei principale la pornirea K-BOT»** — **debifată la început.** Cât e debifată,
   turul ferestrei principale nu pornește singur; îl pornești din meniul «?». O bifezi dacă vrei să
   pornească singur la fiecare pornire. Se debifează singură după ce ai văzut turul până la capăt
@@ -125,23 +127,8 @@ Cu [opțiunile avansate](topic:avansat) mai apar:
 Butonul de **temă** din bara de titlu (lângă «?») schimbă culorile K-BOT (Clasic, Întunecat,
 Modern...). Tot acolo, **Mărime text** mărește sau micșorează textul și controalele.
 
-## Mesajele K-BOT
-<!-- slice: fara-felie -->
+## Jurnalele și mesajele K-BOT
+<!-- slice: 0118 -->
 
-Orice mesaj pe care ți-l arată K-BOT se scrie și în jurnalul de mesaje, așa că îl poți regăsi
-după ce ai apăsat OK: **Setări › Jurnal**.
-
-## Golirea jurnalelor
-<!-- slice: 0031-04, 0000-07 -->
-
-Pe pagina **Jurnal**, **«Golește jurnale…»** deschide lista fișierelor de jurnal de pe calculatorul
-tău, cu mărimea și numărul de intrări ale fiecăruia. La deschidere nu e nimic bifat.
-
-1. Bifează fișierele de șters.
-2. Apasă **«Șterge»**. K-BOT îți spune exact ce dispare și cât ocupă, și cere confirmarea.
-
-**Ștergerea nu se poate anula.** Un fișier folosit chiar acum de K-BOT nu se poate șterge; unul
-ținut deschis de alt program se golește în loc să se șteargă. Jurnalele serverului nu se ating de
-aici.
-
-> Înainte să golești jurnalele după o problemă, trimite-le întâi cui te ajută.
+Jurnalele (și mesajele pe care ți le-a arătat K-BOT) nu mai sunt o pagină a setărilor: le citești și le golești din
+**Configurări › Configurare › «Jurnal activitate»** — [Jurnal activitate](topic:contabil.jurnal).

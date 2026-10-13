@@ -9,7 +9,7 @@ keywords: parteneri, furnizori, beneficiari, cod fiscal, cui, anaf, iban, banca,
 open: menu:parteneri
 ---
 <!-- slice: 0087, 0093 -->
-<!-- capture: parteneri | caption: Fereastra «Parteneri» | goto: menu:parteneri | prepare: Alegeți un partener cu cod fiscal, IBAN și adresă completate. -->
+<!-- capture: parteneri | caption: Fereastra «Parteneri» | goto: menu:parteneri | prepare: Alegeți un partener cu cod fiscal, IBAN și adresă completate. | redo: 2026-10-13 17:30 | why: 0113: «Parteneri» e o pagină a ferestrei principale, fără bara ei de titlu și fără «Ieșire» -->
 
 Lista din stânga are partenerii unității care au **cod fiscal**, câte unul pe cod fiscal.
 
@@ -27,12 +27,12 @@ La salvare:
 Mesajele ANAF: cod invalid, cod negăsit sau ANAF indisponibil.
 
 ## Lista și tabelul «Coduri angajament»
-<!-- slice: 0087, 0093, 0000-14 -->
+<!-- slice: 0087, 0093, 0000-14, 0113 -->
 
 - **Capul listei**: **lupa** caută după o parte din cod sau din denumire; bifa **«Ascunde partenerii
   fără activitate»** lasă doar partenerii care apar pe un document (DDF sau ORD).
 - **«Coduri angajament»** — tabelul de sub datele partenerului (clasificație, cont bancar asociat,
   cod angajament, cod indicator). **«+»** din subsolul tabelului adaugă un rând, pe care îl
   completezi direct în tabel; **✕** de pe un rând îl scoate.
-- **«Adăugare»**, **«Salvare»**, **«Ștergere»**, **«Renunță»**, **«Ieșire»** — butoanele de jos ale
-  ferestrei.
+- **«Adăugare»**, **«Salvare»**, **«Ștergere»**, **«Renunță»** (anulează modificările nesalvate ale
+  partenerului) — butoanele de jos. Macheta se închide cu **«Închide»** din ribbon sau cu Esc.

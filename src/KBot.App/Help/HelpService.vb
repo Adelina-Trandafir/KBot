@@ -217,12 +217,12 @@ Public NotInheritable Class HelpService
     ''' control of that window, the tours of that window only (its views, no other window), «Deschide ajutorul complet» (the
     ''' same as F1). One popup at a time.
     ''' </summary>
-    Public Sub ShowHelpMenu(origin As Control, anchorScreenRect As Rectangle) Implements IKBotHelpProvider.ShowHelpMenu
+    Public Sub ShowHelpMenu(origin As Control, anchorScreenRect As Rectangle, Optional k_withTours As Boolean = True) Implements IKBotHelpProvider.ShowHelpMenu
         Try
             If _popup IsNot Nothing AndAlso Not _popup.IsDisposed Then _popup.Close()
             Dim keys As List(Of String) = ScreenKeys(origin)
             Dim rootWindow As Form = origin.FindForm()
-            Dim session As New HelpSearchSession(Me, HelpSearchSession.WherePopup, Function() PopupHomeRows(keys, rootWindow))
+            Dim session As New HelpSearchSession(Me, HelpSearchSession.WherePopup, Function() PopupHomeRows(keys, rootWindow, k_withTours))
             Dim popup As New KBotHelpPopup(session)
             AddHandler popup.FullHelpRequested,
                 Sub()
@@ -234,7 +234,8 @@ Public NotInheritable Class HelpService
                     End Try
                 End Sub
             _popup = popup
-            popup.ShowUnder(anchorScreenRect, origin.FindForm())
+            ' The popup's owner must be a top-level window: a hosted page is not one.
+            popup.ShowUnder(anchorScreenRect, TryCast(origin.TopLevelControl, Form))
         Catch ex As Exception
             GlobalErrorLog.Write("HelpService.ShowHelpMenu", ex)
             Throw
@@ -257,7 +258,7 @@ Public NotInheritable Class HelpService
     ''' tours of the window whose «?» was pressed (its views only) -- listed directly when one window has tours, one folder per
     ''' window (titled with its caption, the top one open) when several have.
     ''' </summary>
-    Private Function PopupHomeRows(keys As List(Of String), rootWindow As Form) As IList(Of KBotHelpRow)
+    Private Function PopupHomeRows(keys As List(Of String), rootWindow As Form, k_withTours As Boolean) As IList(Of KBotHelpRow)
         Dim rows As New List(Of KBotHelpRow)()
         Dim parts As List(Of HelpPart) = VisibleParts()
         Dim topic As HelpTopic = TopicForKeys(keys, parts)
@@ -266,7 +267,7 @@ Public NotInheritable Class HelpService
             rows.Add(New KBotHelpRow(KBotHelpRowKind.Topic, topic.Title) With {
                 .Tag = topic, .ToolTipText = "Deschide pagina de ajutor despre ce ai pe ecran."})
         End If
-        Dim groups As List(Of HelpPopupTours.WindowTours) = HelpPopupTours.Collect(Library, parts, rootWindow)
+        Dim groups As List(Of HelpPopupTours.WindowTours) = If(k_withTours, HelpPopupTours.Collect(Library, parts, rootWindow), New List(Of HelpPopupTours.WindowTours)())
         If groups.Count > 0 Then
             rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tururi ghidate"))
             If groups.Count = 1 Then
@@ -282,8 +283,7 @@ Public NotInheritable Class HelpService
         End If
         ' Slice 000T: the interactive tutorials -- they cross windows, so every window's «?» lists them
         ' all; the ones that start in this window come first.
-        Dim flows As List(Of TutorialFlow) = Library.Tutorials.Where(Function(f) parts.Contains(f.Part) AndAlso TutorialAvailable(f)).
-            OrderByDescending(Function(f) rootWindow IsNot Nothing AndAlso String.Equals(rootWindow.GetType().Name, f.Starts, StringComparison.OrdinalIgnoreCase)).ToList()
+        Dim flows As List(Of TutorialFlow) = Library.Tutorials.Where(Function(f) k_withTours AndAlso parts.Contains(f.Part) AndAlso TutorialAvailable(f)).            OrderByDescending(Function(f) rootWindow IsNot Nothing AndAlso String.Equals(rootWindow.GetType().Name, f.Starts, StringComparison.OrdinalIgnoreCase)).ToList()
         If flows.Count > 0 Then
             ' Slice 000T-07: the key lets the tutorial of the start ring this block (KBotHelpList part «tutorials»).
             rows.Add(New KBotHelpRow(KBotHelpRowKind.Header, "Tutoriale") With {.Key = KBotHelpList.PartTutorials})
@@ -577,6 +577,26 @@ Public NotInheritable Class HelpService
             _form = New HelpForm(Me)
         End If
         Return _form
+    End Function
+
+    ''' <summary>
+    ''' The help window as a page of the main window (the ribbon's help button, when no macheta is open): the home of the
+    ''' help, in place of a window of its own. With no main window it is the window it always was. False = not shown.
+    ''' </summary>
+    Friend Function ShowHelpPage(k_main As AvacontMain) As Boolean
+        Try
+            Dim k_window As HelpForm = EnsureWindow()
+            k_window.ContextKeys = New List(Of String)()
+            k_window.ShowHome()
+            If k_main Is Nothing Then
+                Present(k_window)
+                Return True
+            End If
+            Return k_main.ShowPage(k_window, MachetaRef.Create(KbotForm.MachetaAjutor))
+        Catch ex As Exception
+            GlobalErrorLog.Write("HelpService.ShowHelpPage", ex)
+            Throw
+        End Try
     End Function
 
     Private Shared Sub Present(window As HelpForm)

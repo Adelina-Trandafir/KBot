@@ -100,7 +100,7 @@ Partial Public Class KbotForm
             Try
                 Using f As New CabNoteForm(shown, prep, notesApi, _session.NumeUnitate, _session.CF,
                                            AddressOf UploadCabNoteAsync)
-                    f.ShowDialog(Me)
+                    If Not Await ShowMachetaAsync(f, MachetaRef.Create(MachetaCabNote)) Then Return
                     If f.SavedNotes.Count > 0 Then
                         TryCast(_activeView, NoteCabView)?.Reincarca()
                         AprindePoartaNotelor(f.SavedNotes)
@@ -147,6 +147,7 @@ Partial Public Class KbotForm
         item.ForeColor = If(palette Is Nothing, Color.Empty, palette.ErrorColor)
         _menuMarked = count > 0
         ApplyMenuButtonText()
+        RaiseEvent MenuStateChanged(Me, EventArgs.Empty)   ' the ribbon in AvacontMain follows (KbotForm.Host.vb)
         tips.SetToolTipText(btnMeniu, If(count > 0,
             $"Există {count} operațiuni «ERRRRRRRRRR» din FOREXE necorelate cu un angajament: Meniu → «Operațiuni necorelate».",
             "Adăugarea angajamentelor, extrasele, clasificațiile bugetare și partenerii."))

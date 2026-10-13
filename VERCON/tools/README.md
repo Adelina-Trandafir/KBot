@@ -15,6 +15,7 @@ Ordinea: inventar -> dump_schema -> dictionar -> schite -> schite_render -> mapa
 
 - `lib_tz.js` — cititorul TZ_SCHEMA si clasificarea coloanelor (folosite de `dictionar.js` si `ddl.js`).
 - `ddl.js` — genereaza `sql/VC_02_business.sql` si `SCHEMA_VC_RELATII.mmd` (`node VERCON/tools/ddl.js`; doar citeste `VERCON_ACCESS`).
-- `preview.py` + `preview_fixture.json` — launcher local pentru pagina VERCON (vezi `docs/worklog/SLICE-VC01-04-*`).
+- `preview.py` — aceeași pornire reală cu `000_DEMO` prin SSH; numai `--fixtures` pornește vechea demonstrație fără MariaDB din `preview_fixture.json`.
+- `Start-Localhost.ps1` / `Stop-Localhost.ps1` + `local_ssh.py` — formularele și API-urile reale din codul local, conectate prin SSH exclusiv la `000_DEMO`; vezi [LOCALHOST.md](LOCALHOST.md). Nu execută modificări de schemă.
 - `ddl.js` scrie si `PYTHON/routes/vercon/tables.py` (domeniul fiecarui tabel, folosit de `repository.py`).
 - `expected.js` — genereaza `VERCON/VRC.Migrator/expected_schema.json` (schema asteptata, incorporata in migrator).

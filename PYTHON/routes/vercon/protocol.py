@@ -121,42 +121,13 @@ def raise_counter(cursor, ctx, kind, number):
 # Every movement of a variant, signed, with the date it counts from. Cancelled documents do not count. Receipts count
 # from the invoice date (DataFc, as the Access query did), returns and consumption from the bon date, a storno from
 # the date of the storno document. Stock never goes negative: the check runs inside the transaction of every write.
-_MOVEMENTS = (
-    'SELECT i.IdProdus AS p, DATE(COALESCE(n.DataFc, n.Data)) AS d, i.Cant AS q FROM VC_Intrari i '
-    'JOIN VC_NIR n ON n.SubunitId=i.SubunitId AND n.GestiuneId=i.GestiuneId AND n.ExercitiuId=i.ExercitiuId AND n.IdIntrare=i.IdIntrare '
-    'WHERE i.SubunitId=%(s)s AND i.GestiuneId=%(g)s AND i.ExercitiuId=%(e)s AND n.Anulat=0 AND COALESCE(n.Storno,0)=0 {f_in} '
-    'UNION ALL '
-    'SELECT r.IdProdus, DATE(h.DataBC), r.Cant FROM VC_IesiriRetur r '
-    'JOIN VC_Iesiri_H h ON h.SubunitId=r.SubunitId AND h.GestiuneId=r.GestiuneId AND h.ExercitiuId=r.ExercitiuId AND h.IdBonConsum=r.IdBonConsum '
-    'WHERE r.SubunitId=%(s)s AND r.GestiuneId=%(g)s AND r.ExercitiuId=%(e)s AND h.Anulat=0 {f_r} '
-    'UNION ALL '
-    'SELECT o.IdProdus, DATE(h.DataBC), -o.Cant FROM VC_Iesiri o '
-    'JOIN VC_Iesiri_H h ON h.SubunitId=o.SubunitId AND h.GestiuneId=o.GestiuneId AND h.ExercitiuId=o.ExercitiuId AND h.IdBonConsum=o.IdBonConsum '
-    'WHERE o.SubunitId=%(s)s AND o.GestiuneId=%(g)s AND o.ExercitiuId=%(e)s AND h.Anulat=0 {f_o} '
-    'UNION ALL '
-    'SELECT s.IdProdus, DATE(COALESCE(n.DataFc, n.Data)), -s.Cant FROM VC_IntrariStorno s '
-    'JOIN VC_NIR n ON n.SubunitId=s.SubunitId AND n.GestiuneId=s.GestiuneId AND n.ExercitiuId=s.ExercitiuId AND n.IdIntrare=s.IdIntrare '
-    'WHERE s.SubunitId=%(s)s AND s.GestiuneId=%(g)s AND s.ExercitiuId=%(e)s AND n.Anulat=0 AND s.Anulat=0 {f_s}'
-)
-
-
 def movements(cursor, ctx, products=None, exclude=None):
     """[(product, date, signed quantity)]. `exclude` = ('bc'|'br'|'nir'|'storno', id): a document left out of the sum (the one
     being edited: its draft is validated separately and must not count twice)."""
-    products = sorted({int(p) for p in products}) if products else None
-    marks = {'f_in': '', 'f_r': '', 'f_o': '', 'f_s': ''}
-    params = {'s': ctx['subunit'], 'g': ctx['gestiune'], 'e': ctx['exercitiu']}
-    if products:
-        listed = ','.join(str(p) for p in products)   # integers built above, never client text
-        marks = {'f_in': 'AND i.IdProdus IN (%s)' % listed, 'f_r': 'AND r.IdProdus IN (%s)' % listed,
-                 'f_o': 'AND o.IdProdus IN (%s)' % listed, 'f_s': 'AND s.IdProdus IN (%s)' % listed}
-    if exclude:
-        kind, doc_id = exclude[0], int(exclude[1])
-        key = {'nir': ('f_in', 'AND n.IdIntrare<>%d' % doc_id), 'storno': ('f_s', 'AND n.IdIntrare<>%d' % doc_id),
-               'bc': ('f_o', 'AND h.IdBonConsum<>%d' % doc_id), 'br': ('f_r', 'AND h.IdBonConsum<>%d' % doc_id)}[kind]
-        marks[key[0]] += ' ' + key[1]
-    cursor.execute(_MOVEMENTS.format(**marks), params)
-    return [(row['p'], row['d'], int(row['q'])) for row in cursor.fetchall()]
+    from .stock_source import warehouse
+    # Preserve the existing protocol API (empty products means all); new read services
+    # can explicitly select no variants without accidentally reading the entire ledger.
+    return [(row['p'], row['d'], row['q']) for row in warehouse(cursor, ctx, products or None, exclude)]
 
 
 def available(cursor, ctx, on_date, products=None, exclude=None):

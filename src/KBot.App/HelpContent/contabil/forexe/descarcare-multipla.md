@@ -16,9 +16,9 @@ Această variantă e **oprită la început**. O pornești din **Setări › Desc
 există **doar dacă descărcarea pe mai multe taburi e permisă pentru unitatea ta**.
 
 ## Cum o pornești
-<!-- slice: 0100, 0100-02 -->
+<!-- slice: 0100, 0100-02, 0114 -->
 
-Deschide **Setări** (butonul **MENIU** › «Configurare K-BOT») și alege pagina **Descărcări multiple**.
+Deschide **Setări** (din ribbon, **Configurări › Configurare › «Configurare K-BOT»**) și alege pagina **Descărcări multiple**.
 
 > **Nu vezi pagina în listă?** Atunci descărcarea pe mai multe taburi nu e permisă pentru unitatea la care
 > ești conectat: toate descărcările merg una câte una. Cere celui care administrează K-BOT să o permită.

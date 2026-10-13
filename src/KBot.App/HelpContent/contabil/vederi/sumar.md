@@ -28,14 +28,14 @@ Coloanele tabelului se pot sorta și filtra din **pâlnia** capului de coloană;
 **TOTALURI**, însumează ce se vede — [Arborii și tabelele](topic:contabil.liste).
 
 ## Asociază parteneri
-<!-- slice: 0084-02, 0000-28, 0000-30 -->
+<!-- slice: 0084-02, 0000-28, 0000-30, 0113 -->
 Butonul **Asociază parteneri**, în dreapta datelor angajamentului, apare doar când angajamentul are
 un document de fundamentare (DDF; îl faci din vederea «Rezervări», cu semnul «+»): partenerii se asociază documentului. Fără document, butonul nu se vede.
 
-În fereastra care se deschide vezi partenerii deja asociați. Alegi un partener din listă (scrii
+Macheta care se deschide (ca pagină a ferestrei principale) arată partenerii deja asociați. Alegi un partener din listă (scrii
 începutul numelui sau al codului fiscal) și apeși **Asociază**; apare în tabel cu rolul «De adăugat».
-Poți alege câți parteneri ai nevoie. **Salvează** îi trimite pe toți odată; **Renunță** închide
-fereastra fără să asocieze nimic.
+Poți alege câți parteneri ai nevoie. **Salvează** îi trimite pe toți odată; **«Închide»** din ribbon
+(sau Esc) închide macheta fără să asocieze nimic și te întoarce la «Sumar».
 
 - Un partener deja asociat nu mai apare în listă și nu se adaugă a doua oară.
 - De aici partenerii doar se adaugă: cei deja asociați rămân. Pe unul ales și încă nesalvat îl poți

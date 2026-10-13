@@ -146,6 +146,10 @@ OI_Predare: efect de magazie (iesire) si crestere a detinerii; **nu** se aduna r
 
 **Contract**: calcul pe activ (nu pe join); `ValoareLunara` la `ZEC`-ul gestiunii (nu 2 fix) cu restul la ultima luna; `DurataNormala=0/NULL` nu produce impartire invalida; luni calendaristice exacte (inclusiv februarie bisect); `DateDiff("m")` din Access numara schimbarile de luna calendaristica (nu luni complete) — comparator cerut in VC08-02. `ValoareLuna` si `ValoareLunara` (aceasta apare doar in baza MF) se mapeaza explicit.
 
+### 3.5.1 Implementarea locală VC08-02
+
+**Implementare locală VC08-02, 12.10.2026:** [motor amortizare și reguli concretizate](../docs/worklog/SLICE-VC08-02-motor-amortizare.md). Motorul pornește de la prima BP neanulată, fără `Abs` înainte de predare, adaugă DF, păstrează începutul la transfer și oprește la casarea integrală. Baza este `ProduseP.PUTVA`, ca în sursa `Amortizare.sql`; corecția web închide exact restul în ultima lună și folosește valoarea lunară la ZEC. `ValoareLuna` este primară, `ValoareLunara` fallback la NULL; ambele surse rămân păstrate. DNF/DF/date invalide și cantitățile ambigue au diagnostice, nu totaluri fictive. Este proiecție cu parametrii curenți, nu replay istoric. Comparatorul sintetic pe activ este **pregătit, neexecutat**; paritatea pe date reale nu este declarată.
+
 ### 3.6 Salvare FC/BC/BR/FCS/OI si inchidere an
 
 Protocolul de scriere este cel din PLAN (sesiune + acces exclusiv + tranzactie + RequestKey + calcul + audit + COMMIT). Defectele de atomicitate (N10) se rezolva prin tranzactie unica: variante, MF (`ProduseM`), registrul OI, `LegBCLA`. `IntrariStorno.PUTVA` si `IesiriRetur.PUTVA` sunt `Long` in sursa: se citesc ca intregi, se reprezinta exact in `SCARA` gestiunii (fara fractiune inventata; copiate ca in sursa, fara calcul la migrare); diferenta fata de `ProduseP.PUTVA` este in proveniență (Alimente: 8 linii storno).

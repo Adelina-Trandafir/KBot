@@ -133,6 +133,81 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
         require(isinstance(body, dict), 'JSON', 'Este necesară o cerere JSON.', 400)
         return service.idempotent(repo, request.headers.get('Idempotency-Key'), operation, body, lambda: function(body))
 
+    @bp.get('/api/adechit/bank-extracts')
+    @guard('read')
+    def bank_extracts(repo):
+        from .bank_associations import available
+        return available(repo, request.args)
+
+    @bp.get('/api/adechit/bank-extracts/periods')
+    @guard('read')
+    def bank_extract_periods(repo):
+        from .bank_associations import available_periods
+        return available_periods(repo)
+
+    @bp.get('/api/adechit/bank-extracts/payers')
+    @guard('read')
+    def bank_extract_payers(repo):
+        from .bank_associations import payer_history
+        child_id = request.args.get('IDP', '')
+        require(child_id.isdigit(), 'FILTER', 'Filtru de copil invalid.', 400)
+        return {'rows': payer_history(repo, int(child_id))}
+
+    @bp.post('/api/adechit/bank-extracts/associate')
+    @guard('collect')
+    def bank_extract_associate(repo):
+        from .bank_associations import associate
+        require('catalog' in g.ade_operations, 'FORBIDDEN',
+                'Asocierea necesită drepturile de încasare și de modificare a plătitorilor.', 403)
+        return command(repo, 'bank-extract-associate', lambda body: associate(repo, g.portal['db_name'], body, g.portal['email']))
+
+    @bp.get('/api/adechit/bank-extracts/defaults')
+    @guard('read')
+    def bank_extract_defaults(repo):
+        from .bank_associations import default_explanation
+        month_id = request.args.get('IDL', '')
+        require(month_id.isdigit(), 'FILTER', 'Filtru de lună invalid.', 400)
+        return {'explanation': default_explanation(repo, int(month_id))}
+
+    @bp.get('/api/adechit/bank-extracts/preview')
+    @guard('read')
+    def bank_extract_preview(repo):
+        from .bank_preview import preview
+        return preview(repo, request.args)
+
+    @bp.post('/api/adechit/bank-extracts/selected')
+    @guard('collect')
+    def bank_extract_selected(repo):
+        from .bank_preview import save_selected
+        require('catalog' in g.ade_operations, 'FORBIDDEN',
+                'Generarea necesită drepturile de încasare și de modificare a plătitorilor.', 403)
+        return command(repo, 'bank-extract-selected', lambda body: save_selected(repo, g.portal['db_name'], body, g.portal['email']))
+
+    @bp.get('/api/adechit/payment-notice/config')
+    @guard('read')
+    def payment_notice_config(repo):
+        from .payment_notice import configuration
+        from .report_richtext import editable_html
+        result = configuration(repo)
+        result['preview'] = editable_html(result['html'])
+        return result
+
+    @bp.post('/api/adechit/payment-notice/config')
+    @guard('catalog')
+    def payment_notice_config_save(repo):
+        from .payment_notice import save_configuration
+        return command(repo, 'payment-notice-config', lambda body: save_configuration(repo, body))
+
+    @bp.post('/api/adechit/payment-notice/preview')
+    @guard('read')
+    def payment_notice_preview(repo):
+        from .payment_notice import MAX_HTML
+        from .report_richtext import editable_html
+        body = request.get_json(silent=True)
+        require(isinstance(body, dict) and isinstance(body.get('html'), str) and len(body['html']) <= MAX_HTML,
+                'REPORT_HTML', 'Textul HTML trebuie să aibă cel mult 30.000 de caractere.', 400)
+        return {'preview': editable_html(body['html'])}
+
     @bp.post('/api/adechit/catalog/<table>')
     @guard('catalog')
     def catalog(repo, table):

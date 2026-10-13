@@ -54,12 +54,25 @@ Public Class SetariForm
 
     ''' <summary>
     ''' Shows the window modeless, owned by <paramref name="host"/>; if one is already open
-    ''' for that host it is brought to the front instead.
+    ''' for that host it is brought to the front instead. Inside <c>AvacontMain</c> it is a page of the
+    ''' work area; Nothing = the page already open there refused to close, so nothing was shown.
     ''' </summary>
-    Public Shared Function ShowFor(host As Form, factory As Func(Of SetariForm)) As SetariForm
+    Public Shared Function ShowFor(host As Form, factory As Func(Of SetariForm), Optional k_ref As MachetaRef = Nothing) As SetariForm
         ArgumentNullException.ThrowIfNull(host)
         ArgumentNullException.ThrowIfNull(factory)
         Try
+            ' Step 2: inside the main window the settings are a page of its work area, not an owned window.
+            Dim k_main As AvacontMain = TryCast(TryCast(host, KbotForm)?.HostForm, AvacontMain)
+            If k_main IsNot Nothing Then
+                Dim k_open As SetariForm = TryCast(k_main.CurrentPage, SetariForm)
+                If k_open IsNot Nothing Then Return k_open
+                Dim k_page As SetariForm = factory()
+                If Not k_main.ShowPage(k_page, k_ref) Then
+                    k_page.Dispose()   ' another page refused to close: stay where we are
+                    Return Nothing
+                End If
+                Return k_page
+            End If
             For Each f As Form In host.OwnedForms
                 Dim existing As SetariForm = TryCast(f, SetariForm)
                 If existing IsNot Nothing Then
@@ -265,8 +278,6 @@ Public Class SetariForm
                 Case "extrase" : Return New SetariExtraseView()
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
-                Case "jurnal" : Return New SetariJurnalView() With {.ApiClient = _apiClient}
-                Case "istoric" : Return New SetariIstoricView()
                 Case "foldere" : Return New SetariFolder()
                 Case Else
                     Throw New ArgumentException($"Pagină de setări necunoscută: '{key}'.", NameOf(key))

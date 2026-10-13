@@ -21,6 +21,9 @@ Imports KBot.Common
 Public NotInheritable Class ServerGateHandler
     Inherits DelegatingHandler
 
+    ''' <summary>Raised (from any thread) after a write request got a success answer: whoever lists recent actions may look again.</summary>
+    Public Shared Event WriteSucceeded As EventHandler
+
     Private ReadOnly _gate As ServerGate
     Private ReadOnly _timeout As TimeSpan
 
@@ -44,7 +47,9 @@ Public NotInheritable Class ServerGateHandler
 
             Await _gate.EnterAsync(cancellationToken).ConfigureAwait(False)
             Try
-                Return Await SendTimedAsync(request, bufferBody:=True, cancellationToken).ConfigureAwait(False)
+                Dim k_answer As HttpResponseMessage = Await SendTimedAsync(request, bufferBody:=True, cancellationToken).ConfigureAwait(False)
+                If k_answer.IsSuccessStatusCode Then RaiseEvent WriteSucceeded(Nothing, EventArgs.Empty)
+                Return k_answer
             Finally
                 _gate.Leave()
             End Try

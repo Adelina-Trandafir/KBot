@@ -4,18 +4,18 @@ title: Tokenul ANAF: obținerea și reînnoirea
 part: contabil
 order: 76
 parent: contabil.efactura
-screens: TokenForm, CertificatePickerForm, FacturiForm.btnToken
+screens: TokenForm, CertificatePickerForm
 keywords: token, token anaf, autorizare, autorizeaza, reinnoire, reinnoieste tokenul, certificat, certificat calificat, card, pin, expirat, expira, valabil pana, spv, cui, ultima eroare
 ---
-<!-- slice: 00EF-05, 0000-54, 0000-55, 0000-56 -->
+<!-- slice: 00EF-05, 0000-54, 0000-55, 0000-56, 0115, 0119 -->
 Pentru a trimite facturi la ANAF, K-BOT are nevoie de un **token ANAF** al unității: o autorizare pe care o dai o singură dată, cu **certificatul calificat** al unității (cel de pe token sau card), și o reînnoiești cam o dată pe an. Tokenul rămâne pe serverul K-BOT; **nu ajunge pe calculatorul tău**.
 
-Fereastra **«E-Factura — tokenul ANAF»** se deschide din fereastra facturilor emise, cu butonul **«Token ANAF»** din subsol (vezi [E-Factura: facturile emise](topic:contabil.efactura)).
+Fereastra **«E-Factura — tokenul ANAF»** se deschide din ribbon, **E-Factura › ANAF › «Token ANAF»**; nu e nevoie să ai deschisă macheta facturilor (vezi [E-Factura: facturile emise](topic:contabil.efactura)). Starea tokenului se vede și în [panoul lateral](topic:contabil.panou), la «Token E-Factura».
 
-<!-- capture: efactura-token | caption: Fereastra «E-Factura — tokenul ANAF» | prepare: Din fereastra de facturi apăsați «Token ANAF», pe o unitate care are deja un token, ca să se vadă data de expirare și certificatul. -->
+<!-- capture: efactura-token | caption: Fereastra «E-Factura — tokenul ANAF» | prepare: Din ribbon, E-Factura › ANAF › «Token ANAF», pe o unitate care are deja un token, ca să se vadă data de expirare și certificatul. -->
 
 ## Ce arată fereastra
-<!-- slice: 00EF-05, 0000-54, 0000-56 -->
+<!-- slice: 00EF-05, 0000-54, 0000-56, 0115 -->
 
 Sus, o frază spune starea tokenului:
 
@@ -24,7 +24,7 @@ Sus, o frază spune starea tokenului:
 - **«Tokenul ANAF al unității a expirat sau ANAF nu l-a mai primit…»** — nu se pot face apeluri către ANAF până îl reînnoiești; apasă **«Reînnoiește tokenul»**;
 - **«Serverul nu este pregătit pentru E-Factura.»** — serverul K-BOT nu are încă datele aplicației ANAF; butonul de autorizare rămâne stins. Nu ai ce face de la calculatorul tău: anunță administratorul K-BOT.
 
-Dacă tokenul mai merge, dar expiră în **cel mult 7 zile**, apare și un chenar galben: «Tokenul expiră în … zile. Reînnoiți-l din timp…». Avertismentul se vede **în această fereastră**, când o deschizi; nu apare singur în alte părți ale K-BOT.
+Dacă tokenul mai merge, dar expiră în **cel mult 7 zile**, apare și un chenar galben: «Tokenul expiră în … zile. Reînnoiți-l din timp…». Avertismentul se vede **în această fereastră**, când o deschizi, și în panoul lateral, unde rândul «Token E-Factura» spune câte zile mai are tokenul.
 
 Dedesubt vezi: unitatea, **codul fiscal (CUI)** pentru care s-a dat tokenul, **certificatul folosit**, **cine a făcut autorizarea și când** și, dacă a fost o problemă, **ultima eroare**. Rândurile care nu au încă valoare rămân goale.
 

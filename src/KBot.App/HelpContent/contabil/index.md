@@ -6,12 +6,15 @@ order: 0
 screens: KbotForm
 keywords: prezentare, fereastra principala, flux
 ---
-<!-- slice: 0000-03, 0000-52 -->
+<!-- slice: 0000-03, 0000-52, 0113, 0114, 0115 -->
 K-BOT ține evidența angajamentelor bugetare ale unității și le leagă de **FOREXE** (sistemul de
 control al angajamentelor al Ministerului Finanțelor): citește din FOREXE rezervările, recepțiile
 și plățile, face documentele de fundamentare (DDF) și le trimite înapoi în FOREXE.
 
-<!-- capture: fereastra-principala | caption: Fereastra principală K-BOT | goto: view:sumar | prepare: Selectați un angajament în lista din stânga, ca vederea «Sumar» să arate date. -->
+<!-- capture: fereastra-principala | caption: Fereastra principală K-BOT | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament, ca vederea «Sumar» să arate date. | redo: 2026-10-13 17:30 | why: 0113 / 0114 / 0115: fereastra principală are ribbon în locul butonului MENIU și panoul lateral în stânga; lista angajamentelor e o pagină a ei -->
+
+Toate comenzile sunt în [ribbon](topic:contabil.ribbon), sus; K-BOT pornește pe pagina [«Acasă»](topic:contabil.acasa),
+iar fiecare machetă se deschide ca pagină a [ferestrei principale](topic:contabil.fereastra).
 
 ## Lucrul de zi cu zi, pe scurt
 <!-- slice: 0001, 0034, 0055, 0060, 0048-04, 0081, 0076, 0000-12 -->

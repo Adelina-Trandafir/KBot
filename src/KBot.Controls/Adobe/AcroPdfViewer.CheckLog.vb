@@ -72,7 +72,7 @@ Partial Public NotInheritable Class AcroPdfViewer
     End Function
 
     Private Function DescribeForm() As String
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         If k_form Is Nothing OrElse Not k_form.IsHandleCreated Then Return "(none)"
         Return $"{HexOf(k_form.Handle)} enabled={AdobeNativeMethods.IsWindowEnabled(k_form.Handle)} state={k_form.WindowState}"
     End Function

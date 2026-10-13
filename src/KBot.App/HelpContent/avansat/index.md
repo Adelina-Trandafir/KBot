@@ -12,9 +12,9 @@ cum afișează documentele, cum arată pagina FOREXE, tema și scalarea, foldere
 Sunt ascunse ca un operator să nu le schimbe din greșeală.
 
 ## Cum le pornești
-<!-- slice: 0072-02, 0000-29, 0100-02, fara-felie -->
+<!-- slice: 0072-02, 0100-02, 0114 -->
 
-1. Deschide **Setări** (butonul **MENIU** › «Configurare K-BOT»), pagina **Aplicație**.
+1. Deschide **Setări** (din ribbon, **Configurări › Configurare › «Configurare K-BOT»**), pagina **Aplicație**.
 2. Bifează **«Activează opțiuni avansate»**. K-BOT cere **parola** opțiunilor avansate.
 3. Cu parola corectă apar:
    - fila **Documente** în pagina «Aplicație»;

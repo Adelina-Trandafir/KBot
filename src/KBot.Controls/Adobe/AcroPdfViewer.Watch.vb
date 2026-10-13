@@ -63,7 +63,7 @@ Partial Public NotInheritable Class AcroPdfViewer
         _seenPageView = False
         _seenAdobeBox = False
         _seenFocusInside = False
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         _formEnabled = k_form Is Nothing OrElse Not k_form.IsHandleCreated OrElse AdobeNativeMethods.IsWindowEnabled(k_form.Handle)
         _formForegroundAtLoad = k_form IsNot Nothing AndAlso k_form.IsHandleCreated AndAlso
                                 AdobeNativeMethods.GetForegroundWindow() = k_form.Handle
@@ -147,7 +147,7 @@ Partial Public NotInheritable Class AcroPdfViewer
             ' Focus arrives with the client object id; everything else only for the window itself.
             If eventType <> EVENT_OBJECT_FOCUS AndAlso (idObject <> AdobeNativeMethods.OBJID_WINDOW OrElse idChild <> 0) Then Return
 
-            Dim k_form As Form = _panel.FindForm()
+            Dim k_form As Form = _panel.TopLevelForm()
             If k_form IsNot Nothing AndAlso k_form.IsHandleCreated AndAlso hwnd = k_form.Handle Then
                 OnFormEvent(eventType, k_form, k_lag)
                 ReadModeOnEvent()   ' Ctrl+H (AcroPdfViewer.ReadMode.vb), not check-only
@@ -234,7 +234,7 @@ Partial Public NotInheritable Class AcroPdfViewer
         End If
         _lastRect(hwnd) = k_rect
         Dim k_owner As IntPtr = AdobeNativeMethods.GetWindow(hwnd, AdobeNativeMethods.GW_OWNER)
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         Dim k_ownerText As String = If(k_owner = IntPtr.Zero, "none",
                                        If(k_form IsNot Nothing AndAlso k_form.IsHandleCreated AndAlso k_owner = k_form.Handle,
                                           "K-BOT form", HexOf(k_owner)))
@@ -299,7 +299,7 @@ Partial Public NotInheritable Class AcroPdfViewer
     ' Posted from the WinEvent callback: log and swallow.
     Private Sub Reactivate(k_took As String)
         Try
-            Dim k_form As Form = _panel.FindForm()
+            Dim k_form As Form = _panel.TopLevelForm()
             If k_form Is Nothing OrElse _host Is Nothing OrElse Not _host.IsHandleCreated Then Return
             k_form.Activate()
             _host.Focus()

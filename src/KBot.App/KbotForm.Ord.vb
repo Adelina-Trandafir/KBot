@@ -80,7 +80,7 @@ Partial Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulOrd(draft)
+        Await DeschideEditorulOrdAsync(draft)
     End Function
 
     ''' <summary>
@@ -109,11 +109,11 @@ Partial Public Class KbotForm
             busyBar.Running = False
         End Try
 
-        DeschideEditorulOrd(draft)
+        Await DeschideEditorulOrdAsync(draft)
     End Function
 
-    ''' <summary>Opens the editor MODALLY and, on a save, reloads the view onto the written document.</summary>
-    Private Sub DeschideEditorulOrd(draft As OrdDraft)
+    ''' <summary>Opens the editor as a page of the main window and, when it closes, on a save reloads the view onto the written document.</summary>
+    Private Async Function DeschideEditorulOrdAsync(draft As OrdDraft) As Task
         If draft Is Nothing Then Return
 
         Using f As New OrdEditForm(_apiClient, draft,
@@ -121,14 +121,14 @@ Partial Public Class KbotForm
                                    Function(op) WithReauth(Of PutAtasamentResponse)(op),
                                    Function(op) WithReauth(Of PdfDownloadResult)(op),
                                    Function(op) WithReauth(Of Integer)(op))
-            f.ShowDialog(Me)
+            If Not Await ShowMachetaAsync(f, CodRef(MachetaOrdEdit, draft.CodAngajament)) Then Return
             If f.SAuSalvatModificari Then
                 ' What stayed on screen is no longer true: the lines changed, the covered
                 ' payments changed, and a new ordonantare was not even there.
                 DupaScriereaOrdonantarii(f.IdordpSalvat)
             End If
         End Using
-    End Sub
+    End Function
 
     ''' <summary>
     ''' «Sterge» -- the confirmation names the number, the date and the total, and SAYS what

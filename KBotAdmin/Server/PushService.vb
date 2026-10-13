@@ -84,6 +84,9 @@ Public NotInheritable Class PushService
                 k_settings.IncludeExtensions.Select(Function(k_e) If(k_e, String.Empty).Trim().TrimStart("."c).ToLowerInvariant()),
                 StringComparer.OrdinalIgnoreCase)
 
+            ' One listing of the whole server tree instead of one SFTP stat per file; Nothing = fall back to stat.
+            Dim k_listing As Dictionary(Of String, RemoteEntry) = ListRemote(k_settings, k_remoteRoot, k_onLine)
+
             Using k_sftp As New SftpSession(k_settings)
                 k_sftp.Connect()
                 For Each k_localFile As String In Directory.EnumerateFiles(k_localRoot, "*", SearchOption.AllDirectories)
@@ -112,7 +115,17 @@ Public NotInheritable Class PushService
                     Dim k_localUtc As DateTime = File.GetLastWriteTimeUtc(k_localFile)
                     Dim k_remoteUtc As DateTime
                     Dim k_remoteSize As Long
-                    Dim k_exists As Boolean = k_sftp.TryGetRemote(k_remotePath, k_remoteUtc, k_remoteSize)
+                    Dim k_exists As Boolean
+                    If k_listing IsNot Nothing Then
+                        Dim k_entry As RemoteEntry = Nothing
+                        k_exists = k_listing.TryGetValue(k_relRemote, k_entry)
+                        If k_exists Then
+                            k_remoteUtc = k_entry.MtimeUtc
+                            k_remoteSize = k_entry.Size
+                        End If
+                    Else
+                        k_exists = k_sftp.TryGetRemote(k_remotePath, k_remoteUtc, k_remoteSize)
+                    End If
                     Dim k_state As PushState
                     If Not k_exists Then
                         k_state = PushState.NewOnServer
@@ -153,6 +166,50 @@ Public NotInheritable Class PushService
         Catch ex As Exception
             GlobalErrorLog.Write("PushService.Scan", ex)
             Throw
+        End Try
+    End Function
+
+    Private Structure RemoteEntry
+        Public Size As Long
+        Public MtimeUtc As DateTime
+    End Structure
+
+    ''' <summary>
+    ''' Every file under the remote root in ONE ssh command (path relative to the root, size, mtime).
+    ''' Nothing when the command cannot run, so the caller falls back to one SFTP stat per file.
+    ''' </summary>
+    Private Shared Function ListRemote(k_settings As AdminSettings, k_remoteRoot As String, k_onLine As Action(Of String)) As Dictionary(Of String, RemoteEntry)
+        Try
+            Dim k_root As String = If(k_remoteRoot = String.Empty, "/", k_remoteRoot)
+            Dim k_quoted As String = "'" & k_root.Replace("'", "'\''") & "'"
+            Dim k_result As SshResult
+            Using k_ssh As New SshSession(k_settings)
+                k_ssh.Connect()
+                k_result = k_ssh.Run("LC_ALL=C find " & k_quoted & " -type f -printf '%P\t%s\t%T@\n'")
+            End Using
+            If k_result.ExitStatus <> 0 AndAlso k_result.StdOut = String.Empty Then
+                k_onLine?.Invoke("Listare server indisponibilă (cod " & k_result.ExitStatus.ToString(Globalization.CultureInfo.InvariantCulture) & "), verificare fișier cu fișier.")
+                Return Nothing
+            End If
+            Dim k_map As New Dictionary(Of String, RemoteEntry)(StringComparer.Ordinal)
+            For Each k_line As String In k_result.StdOut.Split(ControlChars.Lf)
+                If k_line = String.Empty Then Continue For
+                Dim k_parts As String() = k_line.TrimEnd(ControlChars.Cr).Split(ControlChars.Tab)
+                If k_parts.Length < 3 Then Continue For
+                Dim k_size As Long
+                Dim k_epoch As Double
+                If Not Long.TryParse(k_parts(1), Globalization.NumberStyles.Integer, Globalization.CultureInfo.InvariantCulture, k_size) Then Continue For
+                If Not Double.TryParse(k_parts(2), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_epoch) Then Continue For
+                k_map(k_parts(0)) = New RemoteEntry With {
+                    .Size = k_size,
+                    .MtimeUtc = DateTime.SpecifyKind(DateTime.UnixEpoch.AddSeconds(Math.Floor(k_epoch)), DateTimeKind.Utc)}
+            Next
+            k_onLine?.Invoke("Server: " & k_map.Count.ToString(Globalization.CultureInfo.InvariantCulture) & " fișiere listate.")
+            Return k_map
+        Catch ex As Exception
+            GlobalErrorLog.Write("PushService.ListRemote", ex)
+            k_onLine?.Invoke("Listare server eșuată, verificare fișier cu fișier.")
+            Return Nothing
         End Try
     End Function
 

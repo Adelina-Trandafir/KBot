@@ -105,3 +105,89 @@ Operator, 08.10.2026. A message window of our own (`KBot.ControlsMessageBox`: `K
 - A changed button set is applied as written; code that tests the old set will misread the answer (the editor warns).
 - 0112-04: apply `sql/0112_04_fx_raport_erori.sql` on the server and deploy `PYTHON/routes/error_report.py` + `main.py` BEFORE publishing the client; never run, button/tooltip unseen; body-size limit of the proxy unchecked.
 - Help: screenshots with a native message box are stale (listed in 0000-0009 Open threads).
+
+---
+
+## Slices 0113–0120 — the new main window (AvacontMain), recorded 13.10.2026
+
+Built and tried on screen in the copy `KBOT_TEST`, brought into `KBOT\src` on 13.10.2026 (~17:15); round-by-round
+history in `KBOT_TEST\MERGE_NOTES.md`. Recorded after the merge as work already done. 0120 lives in
+[KBOT_STATUS_0120-0129.md](KBOT_STATUS_0120-0129.md).
+
+**Locked decisions (operator, 13.10.2026):**
+- every macheta opens as a **page** of the main window, one at a time (was MDI / modal); small dialogs, monitoring
+  windows, login and the director window stay separate windows; machete lose their own close buttons (ribbon
+  «Închide», Esc);
+- the history of machete («Machete deschise») is kept **only for the session** (`MemoryMachetaHistoryStore`);
+- recent actions are rows of the server table `Jurnal`, written for a **white list of routes** (`_LABELS`), no schema change;
+- the orange accents of `KBOT_TEST` were **for the test only**; they were not brought into `KBOT`.
+
+## Slice 0113 — main window AvacontMain + machete as pages
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0113 | `AvacontMain` (caption bar + busy bar taken from `KbotForm`, ribbon, side panel, page area); `KbotForm` hosted and loaded behind the opening page; every macheta a page (`ShowPage` / `ShowMachetaAsync`), title in the main caption bar; own close buttons hidden (`HideCloseButtons`), Esc kept; start maximized offered once (`FullScreenOffered`); Adobe / Office find the top-level window (`TopLevelForm`) | GATA pe cod (build of the merge 0/0; 99 failing tests = the same as before), seen on screen only in `KBOT_TEST`; help 0000-69 | [SLICE-0113](../SLICE-0113-fereastra-principala-machete-pagini.md) |
+
+### Open threads — 0113
+
+- **The initial help tour no longer starts**: `PornesteTurulInitial` checks `Visible`, the shell is hidden at start
+  (Acasă on screen), and the tour is anchored on `btnMeniu` (hidden). To be fixed separately (operator, 13.10.2026).
+- **FileVersion** of `KBot.Api`, `KBot.Common`, `KBot.Controls`, `KBot.Theming`, `KBot.EFactura` (and `KBot.App`)
+  not bumped for 0113–0120. To be done separately (operator, 13.10.2026).
+- `menuNou` / `btnMeniu` still in `KbotForm`, hidden; the ribbon mirrors and runs them. Removed only when asked.
+- Help navigation (`goto:` of captures / tours / `open:`) after the move: see the 0000-69 worklog («Navigarea
+  ajutorului») — `view:` and `menu:` do not bring the list of angajamente to the front, `setari:jurnal` is gone, no
+  `goto:` for the opening page, the ribbon tabs or «Istoric versiuni». Code change proposed, waiting for the operator.
+
+## Slice 0114 — KBotRibbon + pinned «Ajutor» / «Închide»
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0114 | `KBotRibbon` (tabs Angajamente / Date / E-Factura / Configurări, groups, large/small buttons, fold by double click or chevron, `RibbonCollapsed`); replaces MENIU (`RunMenuEntry`, `MirrorMenuTo`, `MenuStateChanged`); pinned «Ajutor» (help page with no macheta, else the full «?» menu of the macheta) and «Închide» (closes the macheta; from the list back to Acasă; absent on Acasă; the app closes only from X); orange accents NOT brought | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST` (orange); help 0000-70 | [SLICE-0114](../SLICE-0114-ribbon.md) |
+
+### Open threads — 0114
+
+- `KBotRibbon.md` (control documentation) and its line in `CONTROLS.md`: not written.
+- The Setări › Aplicație switch still reads «Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»
+  (`chkLogViewer`); it now drives the ribbon button. Stale on-screen text, code not changed.
+- No keyboard navigation, no fly-out while folded, no drop-down buttons (on purpose, first version).
+
+## Slice 0115 — opening page «Acasă» + side panel
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0115 | `AcasaPage` («Ce este nou» card, opens by itself once after an update — `NewsSeenVersion`, `HomeNewsCollapsed`; new logo bottom-right; no banner); side panel `KBotSidePanel` beside every page: Machete deschise, Acțiuni recente, Informații, Erori din sesiune (`GlobalErrorLog.RecentErrors` / `Written`); folds to an icon strip (`HomeSidebarCollapsed`); `ButtonStyles.ApplyTransparent` | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST`; help 0000-71 | [SLICE-0115](../SLICE-0115-acasa-panou-lateral.md) |
+
+## Slice 0116 — macheta registry
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0116 | `MachetaRef` / `MachetaRegistry` / `MachetaHistory` (KBot.Common); history only in the session; one opening = one entry; `OpenRegistered` = the single opening point from menu / ribbon; views noted by `NoteViewOpened`; reopening switches year, selects the angajament, opens the view (editors reopen in the DDF / ORD view); unsaved new angajament («!») not recorded | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST`; help 0000-71 | [SLICE-0116](../SLICE-0116-registrul-de-machete.md) |
+
+## Slice 0117 — recent actions
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0117 | Client of `GET /api/actiuni?n=10` (`RecentAction`, `IActionsApi`, `ApiClient.Actions.vb`); list in the side panel, read again 2 s after the last write of a burst (`ServerGateHandler.WriteSucceeded`); old server → 404 → empty list. Server half (`routes/actiuni.py`, `after_request` into `Jurnal` for the white-listed routes) exists ONLY in `KBOT_TEST\PYTHON` | GATA pe cod — client only (build of the merge 0/0); **server not delivered**; help 0000-71 | [SLICE-0117](../SLICE-0117-actiuni-recente.md) |
+
+### Open threads — 0117
+
+- Bring `KBOT_TEST\PYTHON\routes\actiuni.py` (+ 2 lines in `main.py`) into `KBOT\PYTHON` and deploy; until then
+  «Acțiuni recente» is empty for everybody.
+
+## Slice 0118 — «Jurnal activitate» and «Istoric versiuni» as machete
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0118 | Both pages left `SetariForm` (designer + `CreateView`); `JurnalPage` / `IstoricVersiuniPage` host `SetariJurnalView` / `SetariIstoricView` as pages (ribbon Configurări › Configurare); journal: today's day expanded (`KBotDataView.ExpandGroup`), adjustable splitter grid / detail (`splitJurnal`) | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST`; help 0000-72 | [SLICE-0118](../SLICE-0118-jurnal-istoric-machete.md) |
+
+## Slice 0119 — E-Factura on the ribbon
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0119 | Tab E-Factura: group E-Factura («Vânzare» = `FacturiForm`, «Cumpărare» = `PrimiteForm` as page), group ANAF («Token ANAF», «Sincronizează facturi primite», dialogs); the title-bar options of `FacturiForm` hidden (`ShowOptionsButton = False`); «Conturi Unitate» / «Date Unitate» in Configurări › Unitate, open without the E-Factura window (`RunUnitCommand`; an open `FacturiForm` hears the change) | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST`; help 0000-73 | [SLICE-0119](../SLICE-0119-efactura-ribbon.md) |
+
+### Open threads — 0119
+
+- `FacturiForm.Trimitere.vb` still tells the operator «Reînnoiți tokenul cu butonul «Token ANAF» din subsolul
+  ferestrei.»; the button is on the ribbon (E-Factura › ANAF). Stale on-screen text, code not changed.

@@ -19,11 +19,11 @@ Partial Public Class KbotForm
         End Get
     End Property
 
-    Private Sub DeschideCatalogulDeMesaje()
+    Private Async Sub DeschideCatalogulDeMesaje()
 #If DEBUG Then
         Try
             Using k_form As New Global.KBot.DevHarness.MessageCatalogForm()
-                k_form.ShowDialog(Me)
+                Await ShowMachetaAsync(k_form, MachetaRef.Create(MachetaMesaje))
             End Using
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideCatalogulDeMesaje", ex)

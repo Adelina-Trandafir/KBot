@@ -1,11 +1,11 @@
-"""Local-only VERCON launcher (SLICE-VC01-04). Never imported or shipped by the production application.
+"""Local VERCON entry point. Default CLI uses 000_DEMO through SSH.
 
 Two fictional DCs, two subunits in the first one, gestiuni of every type (MATERIALE / ALIMENTE / OI / MF)
 and open/closed years, all from preview_fixture.json. No MariaDB, no network: the portal session is
 replaced by a local stand-in, the VERCON blueprint and its guard are the real ones.
 
     PYTHON\\.venv\\Scripts\\python.exe VERCON\\tools\\preview.py --port 5053
-    reset: nothing to reset -- the fixture is read-only and the launcher keeps no state on disk.
+    --fixtures: historical navigation-only preview; no access to MariaDB.
     switch DC: /vercon/preview/unit/preview  or  /vercon/preview/unit/preview2
 """
 import argparse
@@ -160,8 +160,13 @@ def port_is_busy(port):
 
 
 if __name__ == '__main__':
+    if '--fixtures' not in sys.argv:
+        from local_ssh import main
+        main()
+        sys.exit(0)
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=5053)
+    parser.add_argument('--fixtures', action='store_true')
     args = parser.parse_args()
     if port_is_busy(args.port):
         sys.exit('Portul %d este ocupat. Opriti procesul care il foloseste sau alegeti alt port cu --port.' % args.port)

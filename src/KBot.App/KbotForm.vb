@@ -386,7 +386,8 @@ Partial Public Class KbotForm
     Protected Overrides Sub OnLoad(e As EventArgs)
         MyBase.OnLoad(e)
         Try
-            If AppSettings.Current.StartMaximized Then WindowState = FormWindowState.Maximized
+            ' Hosted (AvacontMain): the window state belongs to the host, which applies it itself.
+            If HostForm Is Nothing AndAlso AppSettings.Current.StartMaximized Then WindowState = FormWindowState.Maximized
         Catch ex As Exception
             ' UI boundary (Load): log and swallow -- the window opens at its normal size.
             GlobalErrorLog.Write("MainForm.OnLoad", ex)

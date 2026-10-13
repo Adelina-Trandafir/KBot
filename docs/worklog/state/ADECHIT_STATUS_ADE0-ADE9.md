@@ -450,10 +450,11 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE9-01 | Situații de debitori, fișe, registru de casă și rapoartele incluse | SCRIS LOCAL 10.10.2026 — 8 rapoarte + dispoziție de plată; nerulat, SQL/PDF neprobate; SituatieDebitori veche exclusă, Factură neconstruită; [worklog](../SLICE-ADE9-01-rapoarte.md) |
 | SLICE-ADE9-02 | Probă completă pe 5050 și documentația fluxului de lucru | PLANIFICAT |
 | SLICE-ADE9-03 | Pachet pentru AvacontPush, instrucțiuni SQL și consemnarea probelor utilizatorului | PLANIFICAT |
+| SLICE-ADE9-04 | Situație de plată A4 portret, HTML configurabil per subunitate, grupe pe pagini noi, listare/PDF/Excel | SCRIS LOCAL 13.10.2026 — fără teste; DDL și seed neexecutate; [worklog](../SLICE-ADE9-04-situatie-plata-html.md) |
 
 ### Current focus
 
-- Depinde de ADE1–ADE8; următoarea subfelie liberă: **ADE9-04**.
+- Depinde de ADE1–ADE8; următoarea subfelie liberă: **ADE9-05**.
 - Probă completă: grupă → copil/plătitor → prezență → calcul → încasare/chitanță →
   restituire/anulare → situație → închidere → luna următoare; roluri și unități diferite.
 - Probele relevante de regresie includ grilele existente, sesiunile, logarea,
@@ -464,6 +465,9 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 ### Open threads
 
 - Lista rapoartelor și variantele condiționate sunt în maparea ADE0-02 și planul ADE9-01; fără facturi/bonuri fiscale.
+- ADE9-04: aplicați manual AD_10_raport_situatie_plata.sql per bază ADE; seedul
+  AD_10_raport_situatie_plata_excel.sql este opțional, după AD_08 pentru AVACONT_COMUN.
+  Editorul HTML, datele reale, paginarea și exporturile rămân de probat de utilizator.
 - Exporturile, importul SIIR și trimiterea de mesaje din vechea aplicație se inventariază
   în ADE0; nu sunt declarate automat necesare sau implementate în prima versiune.
 - Validarea pe server și tipărirea reală rămân în așteptare până la confirmarea utilizatorului.

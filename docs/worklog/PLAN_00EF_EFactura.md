@@ -138,7 +138,7 @@ it): authorisation time + `EF_REFRESH_DAYS` (365, to be confirmed in 00EF-03).
 `EF_REDIRECT_URI`, `EF_AUTH_URL`, `EF_TOKEN_URL`, `EF_TOKEN_KEY` (encrypts the tokens in the database), `EF_REFRESH_DAYS`. An
 `EnvironmentFile` and not `Environment=` lines, because `systemctl show` prints `Environment=` values to any user.
 
-## 00EF-02 data model (written, NOT run)
+## 00EF-02 data model (written; RUN and confirmed present on `AVACONT_COMUN` / `AVACONT_SURSA`, operator, 13.10.2026)
 
 `sql/00EF_02_efactura_unitate.sql` (run on `AVACONT_SURSA`, then schema sync to every unit database; 9 tables) and `sql/00EF_02_efactura_comun.sql` (`AVACONT_COMUN`: `EF_Token`,
 `EF_TokenStart`, `EF_UM`). Why the token table is common and not per unit: the server's refresh job walks one table; `Unitati(DC, CF)` is there.
@@ -167,7 +167,7 @@ Mapping and decisions are in the headers of the two files.
 
 ## Open questions now
 
-1. **Server prerequisites for 00EF-03** (not mine to decide): the library for encrypting the tokens (`cryptography` is NOT in the project's venv; it must be installed on the VPS too) and the three secret values placed in `/etc/avacont/efactura.env` by the operator.
+1. **Server prerequisites for 00EF-03** — DONE and confirmed by the operator, 13.10.2026 (`SLICELESS-efactura-mediu-vps.md`): `cryptography` 50.0.2 is in the VPS venv (`/root/AVACONT/.venv`), `/etc/avacont/efactura.env` is complete and its key round-trips, systemd loads it (`EnvironmentFiles=` shown), service `avacont` active. On the VPS the code sits in `/root/AVACONT` (no `PYTHON/` folder).
 2. **Rows of `EF_UM`**: written by the operator on the server in `AVACONT_COMUN` (not migrated); the file is `Surse/RawExport/tables/TABLE_VALUES/EF_UM.txt`.
 3. **Invoice numbering**: Access made `NumarFactura` unique on its own; the new key is (series, number). ANSWERED (operator, 06.10.2026): the existing Access invoices ARE imported, by the Migrator tab «E-Factura» (00EF-03, already written: `Factura` + `FacturaC` with their own series and number). The server numbers a new invoice as highest number of its series + 1, so after the import the sequence continues by itself; `NumarInitial` only matters for a series with no invoice. Caveat: if old invoices carry a series different from `EF_Furnizor.SerieFactura` (T3), the current series restarts at `NumarInitial`.
 4. **`Factura.Corectata`** and **`IdFacturaA/SerieFacturaA/NumarFacturaA`**: ANSWERED in 00EF-06 from `EFACTURA_ADD.bSAV_Click`: `Corectata` = an accepted invoice resent as type 384; `IdFacturaA` = the invoice a storno cancels (the storno repeats its lines negated and is saved together with the replacement). See `SLICE-00EF-06-server-facturi-xml.md`.

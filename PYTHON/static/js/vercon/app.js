@@ -1,7 +1,7 @@
 // slice VC02-01/02: VERCON working page. The context (DC -> subunit -> gestiune -> year) is resolved by the server on
 // every change; the page keeps only the last ACCEPTED answer. A response is accepted only if it answers the latest
 // request (sequence number) and carries the version the server computed for it. The menu comes from the server
-// (type + rights + occupation) and is never decided here. Cleanup: one AbortController tied to `pagehide`.
+// (type + rights + occupation); retired navigation entries are hidden locally. Cleanup: one AbortController tied to `pagehide`.
 import { openMenu } from '../adechit/menu.js';
 import { startSessionTimer } from '../adechit/session.js';
 import { Combobox } from '../components/combobox/combobox.js';
@@ -14,6 +14,8 @@ import { mountEditor } from './editor.js';
 import { mountDocuments } from './docs.js';
 import { mountLista } from './lista.js';
 import { mountMf } from './mf.js';
+import { mountStock } from './stock.js';
+import { mountReports } from './reports.js';
 import { mountNomenclator, mountSettings } from './nomenclatoare.js';
 import { createLock } from './lock.js';
 import { createSaver } from './save.js';
@@ -30,7 +32,7 @@ const api = createApi({
   extraHeaders: () => ({ ...(lock?.token ? { 'X-Vercon-Lock': lock.token } : {}), ...(state.ctx ? { 'X-Vercon-Version': state.ctx.version } : {}) }),
 });
 lock = createLock({ api, signal: lifetime.signal, getUnit: () => state.unit,
-  onLost: (k_message) => { $('vc-access').textContent = 'Consultare • acces pierdut'; showMessage($('vc-message'), `${k_message} Datele dvs. au rămas în formular, dar nu mai pot fi salvate fără o nouă ocupare.`, 'error'); } });
+  onLost: (k_message) => { showMessage($('vc-message'), `${k_message} Datele dvs. au rămas în formular, dar nu mai pot fi salvate fără o nouă ocupare.`, 'error'); } });
 const combos = {};
 const pageUi = scope();
 let formSequence = 0, formLoading = false;
@@ -81,27 +83,9 @@ function applyContext(k_ctx) {
     if (k_found) k_combo.setValue(k_found.value, k_found.label); else k_combo.clear();
   };
   k_set('subunit', k_opt.subunits.map((k_s) => ({ value: String(k_s.id), label: k_s.name })), k_sel.subunit);
-  k_set('gestiune', k_opt.gestiuni.map((k_g) => ({ value: String(k_g.id), label: `${k_g.name} (${k_g.type})` })), k_sel.gestiune);
+  k_set('gestiune', k_opt.gestiuni.map((k_g) => ({ value: String(k_g.id), label: k_g.name })), k_sel.gestiune);
   k_set('year', k_opt.years.map((k_y) => ({ value: String(k_y), label: String(k_y) })), k_sel.year);
-  const k_subunit = k_opt.subunits.find((k_s) => k_s.id === k_sel.subunit);
-  const k_gest = k_opt.gestiuni.find((k_g) => k_g.id === k_sel.gestiune);
-  $('vc-bar').textContent = [state.unit, k_subunit?.name, k_gest ? `${k_gest.name} · ${k_gest.type}` : null, k_sel.year ? (k_ctx.year_mode === 'filter' ? `filtru an ${k_sel.year}` : `exercițiu ${k_sel.year}`) : null].filter(Boolean).join('  ›  ');
-  paintType(k_ctx);
   paintMenu(k_ctx);
-}
-
-function paintType(k_ctx) {
-  const k_box = $('vc-type-box'); const k_select = combos.type;
-  const k_gest = k_ctx.selection.gestiune;
-  k_box.hidden = !k_gest;
-  if (!k_gest) return;
-  const k_types = ['MATERIALE', 'ALIMENTE', 'OI', 'MF'];
-  k_select.options.staticData = k_types.map((k_t) => ({ value: k_t, label: k_t }));
-  k_select.setValue(k_ctx.selection.type, k_ctx.selection.type);
-  // After the first data the type is immutable; before it, the operator may still set it.
-  k_select.setEnabled(!k_ctx.type_locked && k_ctx.operations.includes('configure'));
-  k_select.input.title = k_ctx.type_locked ? 'Tipul nu se mai poate schimba: gestiunea conține date.' : 'Tipul se poate alege cât timp gestiunea nu are date.';
-  $('vc-access').textContent = lock.holds(k_ctx.selection) ? '🔒 Acces exclusiv' : 'Consultare';
 }
 
 function paintMenu(k_ctx) {
@@ -110,6 +94,7 @@ function paintMenu(k_ctx) {
   k_nav.replaceChildren();
   const k_groups = new Map();
   for (const k_item of k_ctx.menu) {
+    if (k_item.key === 'stocuri') continue;
     if (!k_groups.has(k_item.group)) k_groups.set(k_item.group, []);
     k_groups.get(k_item.group).push(k_item);
   }
@@ -176,11 +161,18 @@ async function openForm(k_key) {
   }
   closeForm();
   state.form = k_key; state.columns = k_open.columns; state.revision = 1;
-  $('vc-search').value = '';
   writePreference(`form.${k_sel.type}`, k_key);               // per type: an MF choice is never applied to Alimente
   paintMenu(state.ctx);
-  paintType(state.ctx);
   const k_work = $('vc-work'); k_work.hidden = false;
+  if (k_key === 'rapoarte') {
+    state.editor = mountReports(k_work, { api, sel: () => state.ctx.selection });
+    return;
+  }
+  if (k_key === 'stocuri') {
+    state.editor = mountStock(k_work, { api, sel: () => state.ctx.selection, signal: lifetime.signal,
+      openForm: (key) => openForm(key).catch(report), canOpen: (key) => state.ctx.menu.some((item) => item.key === key && item.enabled) });
+    return;
+  }
   if (k_open.nom?.length || k_key === 'setari') {   // nomenclatures and gestiune settings (VC06-01)
     const k_args = { api, sel: () => state.ctx.selection, signal: lifetime.signal };
     state.editor = k_open.nom?.length ? mountNomenclator(k_work, { ...k_args, kinds: k_open.nom }) : mountSettings(k_work, k_args);
@@ -231,7 +223,7 @@ async function start() {
     const k_who = await k_me.json().catch(() => ({}));
     if (!k_who.db_name) { toPortal(false); return; }
     state.unit = k_who.db_name;
-    $('vc-unit-label').textContent = `Unitate: ${k_who.db_name}`;
+    $('vc-subunit-combo').title = `Unitate: ${k_who.db_name}`;
     $('vc-context').textContent = k_who.email || '';
     await loadContext({});
   } catch (k_error) {
@@ -246,15 +238,6 @@ function bind() {
   makeCombo('subunit', 'vc-subunit-combo', 'Subunitate', (k_v) => { if (String(k_v) !== String(k_sel().subunit)) change({ subunit: k_v }).catch(report); });
   makeCombo('gestiune', 'vc-gestiune-combo', 'Gestiune', (k_v) => { if (String(k_v) !== String(k_sel().gestiune)) change({ subunit: k_sel().subunit, gestiune: k_v }).catch(report); });
   makeCombo('year', 'vc-year-combo', 'An', (k_v) => { if (String(k_v) !== String(k_sel().year)) change({ subunit: k_sel().subunit, gestiune: k_sel().gestiune, year: k_v }).catch(report); });
-  makeCombo('type', 'vc-type-combo', 'Tip', async (k_type) => {
-    try {
-      if (!(await allowLeave())) { applyContext(state.ctx); return; }
-      await api('/api/vercon/gestiune/type', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subunit: k_sel().subunit, gestiune: k_sel().gestiune, type: k_type }) });
-      closeForm(); await loadContext(k_sel());
-    } catch (k_error) { report(k_error); applyContext(state.ctx); }
-  });
-  $('vc-search').addEventListener('input', () => state.editor?.search?.($('vc-search').value), { signal: lifetime.signal });
-  $('vc-unit').addEventListener('click', async () => { if (await allowLeave()) { await lock.release(); toPortal(false); } }, { signal: lifetime.signal });
   $('vc-theme').addEventListener('click', () => {
     const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = theme;
     try { localStorage.setItem('kbot-portal-theme', theme); } catch (_) { /* The theme still applies to this visit. */ }

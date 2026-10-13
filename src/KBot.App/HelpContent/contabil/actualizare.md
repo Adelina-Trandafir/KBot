@@ -4,8 +4,8 @@ title: Actualizarea K-BOT
 part: contabil
 order: 90
 parent: contabil
-screens: UpdateProgressForm, SetariInfoView.btnActualizari
-keywords: actualizare, versiune noua, update, cauta actualizari, descarcare, repornire
+screens: UpdateProgressForm, SetariInfoView.btnActualizari, IstoricVersiuniPage, SetariIstoricView
+keywords: actualizare, versiune noua, update, cauta actualizari, descarcare, repornire, istoric versiuni, ce s-a schimbat, noutati, versiuni anterioare
 ---
 <!-- slice: 0067 -->
 K-BOT se actualizează singur, de pe serverul K-BOT.
@@ -44,3 +44,13 @@ Cât se descarcă, fereastra **«Actualizare K-BOT»** arată progresul.
 
 Dacă apare «Lipsește ... din folderul aplicației», instalează o dată versiunea nouă din pachetul
 de instalare; de acolo încolo actualizările se fac singure.
+
+## Ce a adus fiecare versiune: «Istoric versiuni»
+<!-- slice: 0118, 0115 -->
+
+Ce s-a schimbat în fiecare versiune de K-BOT, de la cea mai nouă, vezi în macheta **«Istoric versiuni»**: din ribbon,
+**Configurări › Configurare › «Istoric versiuni»**. Se deschide ca pagină a ferestrei principale; o închizi cu
+«Închide» din ribbon sau cu Esc. (Înainte era o pagină din Setări.) Ultimele trei versiuni se văd și pe pagina
+[«Acasă»](topic:contabil.acasa), în cardul «Ce este nou», care se desface singur după fiecare actualizare.
+
+<!-- capture: istoric-versiuni | caption: Macheta «Istoric versiuni» | prepare: Din ribbon, Configurări › Configurare › «Istoric versiuni». -->

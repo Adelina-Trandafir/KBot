@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 _PAGE_HEADERS = {
     'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
     'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-                               "img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'",
+                               "img-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob:; "
+                               "frame-ancestors 'none'; base-uri 'none'",
 }
 
 

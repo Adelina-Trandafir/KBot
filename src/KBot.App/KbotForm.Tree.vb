@@ -103,12 +103,16 @@ Partial Public Class KbotForm
     ''' the tree is not an error: it behaves exactly like Nothing -- no view stays open on an
     ''' angajament that disappeared from the list.
     ''' </param>
+    ' The tree rows by cod, rebuilt with _treeInfos.
+    Private ReadOnly _treeNodes As New Dictionary(Of String, AdvancedTreeControl.TreeItem)(StringComparer.OrdinalIgnoreCase)
+
     Private Sub PopulateTree(rows As IReadOnlyList(Of AngajamentTreeInfo),
                              Optional codSelectat As String = Nothing)
         Try
             ArgumentNullException.ThrowIfNull(rows)
             tree.Clear()
             _treeInfos.Clear()
+            _treeNodes.Clear()
             _treeOrder.Clear()
             _nodLantNeinchis.Clear()
 
@@ -155,6 +159,7 @@ Partial Public Class KbotForm
 
                 If Not _treeInfos.ContainsKey(cod) Then _treeOrder.Add(cod)
                 _treeInfos(cod) = info
+                _treeNodes(cod) = node   ' for SelectAngajament (KbotForm.Machete.vb)
                 If codSelectat IsNot Nothing AndAlso
                    String.Equals(cod, codSelectat, StringComparison.OrdinalIgnoreCase) Then
                     nodDeSelectat = node

@@ -768,6 +768,11 @@ Public Class DdfEditForm
             If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, page) Then
                 DirectCast(previous, Control).Visible = False
             End If
+            ' «Adauga rand» / «Sterge randul» of section A live on the bottom row, beside «Salveaza», while that page shows.
+            Dim leaving As DdfEditSectiuneaAPage = TryCast(previous, DdfEditSectiuneaAPage)
+            If leaving IsNot Nothing AndAlso Not ReferenceEquals(previous, page) Then leaving.DetachActions()
+            Dim entering As DdfEditSectiuneaAPage = TryCast(page, DdfEditSectiuneaAPage)
+            If entering IsNot Nothing Then entering.AttachActionsTo(tlySubsol, 1)
             page.SetDraft(_draft)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditForm.ActivatePage", ex)

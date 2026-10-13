@@ -34,6 +34,24 @@ Public Module ButtonStyles
     End Sub
 
     ''' <summary>
+    ''' A button with no body of its own, for a bar: flat, no border, the bar shows through, and only the
+    ''' hover and press tint (a mix of the bar's colour and the text colour). <paramref name="k_backdrop"/>
+    ''' is the colour of whatever the button sits on; <paramref name="k_fore"/> the colour of its glyph or text.
+    ''' </summary>
+    Public Sub ApplyTransparent(b As Button, scheme As ThemeScheme, k_backdrop As Color, k_fore As Color)
+        ArgumentNullException.ThrowIfNull(b)
+        ArgumentNullException.ThrowIfNull(scheme)
+        ModernRenderer.DetachButton(b)
+        b.FlatStyle = FlatStyle.Flat
+        b.FlatAppearance.BorderSize = 0
+        b.UseVisualStyleBackColor = False
+        b.BackColor = Color.Transparent
+        b.ForeColor = k_fore
+        b.FlatAppearance.MouseOverBackColor = ThemeShapes.Blend(k_backdrop, k_fore, 0.18)
+        b.FlatAppearance.MouseDownBackColor = ThemeShapes.Blend(k_backdrop, k_fore, 0.32)
+    End Sub
+
+    ''' <summary>
     ''' Buton secundar — plat, fără chenar, fundal SurfaceAlt, text accent. Nu trebuie
     ''' să concureze cu acțiunea primară.
     ''' </summary>

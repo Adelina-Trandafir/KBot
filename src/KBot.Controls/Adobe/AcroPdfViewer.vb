@@ -164,7 +164,7 @@ Partial Public NotInheritable Class AcroPdfViewer
     Private _form As Form
 
     Private Sub WatchFormClose()
-        Dim k_form As Form = _panel.FindForm()
+        Dim k_form As Form = _panel.TopLevelForm()
         If k_form Is _form Then Return
         If _form IsNot Nothing Then RemoveHandler _form.FormClosed, AddressOf OnFormClosed
         _form = k_form

@@ -4,24 +4,48 @@ title: Fereastra principală
 part: contabil
 order: 20
 parent: contabil
-screens: KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnMeniu, KbotForm.btnInfo, InternalInfoForm, GrupeForm
-keywords: grupe, grupa, alias, culoare grupa, arbore, lista angajamente, meniu, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, adaugare angajamente, fereastra marita, tot ecranul, maximizat, la pornire
+screens: AvacontMain, KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnInfo, InternalInfoForm, GrupeForm
+keywords: grupe, grupa, alias, culoare grupa, arbore, lista angajamente, lista angajamentelor, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, fereastra marita, tot ecranul, maximizat, la pornire, macheta, machete, pagina, pagini, ferestre, inchide macheta
 ---
-<!-- slice: 0006, 0086, 0097-03 -->
-Fereastra principală are cinci zone.
-
-<!-- capture: fereastra-zone | caption: Zonele ferestrei principale | goto: view:sumar | prepare: Selectați un angajament cu date, ca toate zonele să fie pline. -->
+<!-- slice: 0006, 0086, 0097-03, 0113, 0114, 0115 -->
+K-BOT lucrează într-o singură **fereastră principală**:
 
 | Zona | Ce este |
 |------|---------|
-| **Sus** | bara de titlu cu **unitatea** (sau alegerea ei), **anul** și **sursa/sectorul**, apoi butonul **MENIU** și utilizatorul conectat |
+| **Sus** | bara de titlu cu **unitatea** (sau alegerea ei), **anul** și **sursa/sectorul**; sub ea **ribbonul**, cu toate comenzile — [Ribbonul](topic:contabil.ribbon) |
+| **Stânga** | **panoul lateral**: machetele deschise, acțiunile recente, informații, erorile — [Panoul lateral](topic:contabil.panou) |
+| **Restul** | **pagina** pe care lucrezi: «Acasă» la pornire ([Pagina «Acasă»](topic:contabil.acasa)), **lista angajamentelor** sau o altă machetă (Extrase de cont, Clasificații, un editor, Setări…) |
+
+**Lista angajamentelor** (Angajamente › Navigare › «Lista angajamentelor» în ribbon) are, la rândul ei, patru zone:
+
+<!-- capture: fereastra-zone | caption: Fereastra principală cu lista angajamentelor: ribbonul, panoul lateral, vederile, lista și vederea aleasă | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament cu date, ca toate zonele să fie pline. | redo: 2026-10-13 17:30 | why: 0113 / 0114: butonul MENIU a fost înlocuit de ribbon, în stânga a apărut panoul lateral, iar lista angajamentelor e o pagină a ferestrei principale -->
+
+| Zona | Ce este |
+|------|---------|
 | **Stânga** | bara de **vederi** (Sumar, Istoric, Rezervări...) |
 | **Mijloc** | **Lista angajamentelor** — alegi aici angajamentul pe care lucrezi |
 | **Dreapta** | vederea aleasă, pentru angajamentul selectat |
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
+## Machetele se deschid ca pagini
+<!-- slice: 0113, 0114 -->
+
+Fiecare machetă — Extrase de cont, Clasificații bugetare, Parteneri, Setări, Jurnal activitate, E-Factura, editoarele
+DDF și de ordonanțare, legăturile recepțiilor, operațiunile necorelate, graficul rezervărilor, asocierea partenerilor —
+se deschide **în fereastra principală**, în locul paginii de pe ecran, **una câte una**. Titlul ei apare în bara de
+titlu a ferestrei.
+
+- O machetă se închide cu **«Închide»** din dreapta ribbonului sau cu **Esc**; machetele nu mai au butoanele lor de
+  închidere («Închide», «Ieșire», «Renunță» la editoare). Dacă ai modificări nesalvate, macheta te întreabă, ca
+  înainte.
+- Când închizi o machetă, revine pagina de dedesubt: «Acasă» sau lista angajamentelor, cum le-ai lăsat.
+- Dacă deschizi altă machetă cât una e pe ecran, cea de pe ecran se închide întâi; dacă are modificări nesalvate și
+  alegi să rămâi în ea, cea nouă nu se mai deschide.
+- Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE, coada robotului, «Informații
+  interne» și fereastra de ajutor deschisă cu F1 rămân ferestre separate.
+
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -36,7 +60,7 @@ Fereastra principală are cinci zone.
 - Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
 - Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
   existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).
-- Iconița **din stânga, jos** deschide fereastra **Extrase de cont** — [Extrase](topic:contabil.vederi.extrase).
+- Iconița **din stânga, jos** deschide macheta **Extrase de cont** — [Extrase](topic:contabil.vederi.extrase).
 - Un angajament scris cu **roșu** are recepții al căror lanț **nu se închide**: ultimul instantaneu al recepției nu are valoarea ei. Ținând mouse-ul pe rând vezi, pentru fiecare recepție, data, valoarea ultimului instantaneu și valoarea recepției. Se repară în fereastra de asociere — [Lanțul nu se închide](topic:contabil.asocieri.cazuri). Un lanț care se termină cu rândul de ștergere nu se socotește.
 - Același **roșu** îl are și un angajament cu **rezervări greșite**: o rezervare nu pornește de la valoarea la care s-a oprit cea de dinaintea ei. Ținând mouse-ul pe rând vezi ziua, indicatorul și valorile; dacă are ambele probleme, apar ambele mesaje. Se repară din vederea «Rezervări» — [Rezervări greșite și repararea lor](topic:contabil.vederi.rezervari).
 - Angajamentele descărcate sau actualizate de la pornirea programului sunt **subliniate** în listă. Sublinierea dispare când închideți programul.
@@ -44,7 +68,7 @@ Fereastra principală are cinci zone.
 - Când mai multe acțiuni FOREXE așteaptă una după alta, se deschide fereastra **Coada robotului**; ea se închide singură după ce coada s-a golit. Butonul **«Coadă N»** din banda FOREXE o deschide oricând, dar se vede doar cât coada are ceva în ea — [Coada robotului](topic:contabil.forexe.coada).
 
 ## Grupele de angajamente
-<!-- slice: 0008-02, 000T-12 -->
+<!-- slice: 0008-02, 000T-12, 0113 -->
 
 O grupă strânge laolaltă angajamente care merg împreună. Un angajament poate fi în mai multe grupe. Fiecare grupă are un nume și o culoare.
 
@@ -59,7 +83,7 @@ O grupă strânge laolaltă angajamente care merg împreună. Un angajament poat
 
 ### Fereastra «Grupe de angajamente»
 
-Se deschide din **«Editează grupe...»** și blochează fereastra principală cât e deschisă. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
+Se deschide din **«Editează grupe...»**, ca pagină a ferestrei principale, în locul listei de angajamente; o închizi cu «Închide» din ribbon (sau Esc) și lista revine, cu grupele la zi. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
 
 <!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din rotița listei › Grupe › Editează grupe... Alegeți o grupă cu mai multe angajamente. -->
 
@@ -110,7 +134,7 @@ angajamente și toate ecranele. Sursa/sectorul se ține minte pentru data viitoa
 angajamente e sortată după dată, **Sursă/Sector** nu se vede.
 
 ## Unitatea de lucru
-<!-- slice: 0097 -->
+<!-- slice: 0097, 0113 -->
 
 Bara de titlu arată unitatea pe care lucrezi: «K-BOT — Numele unității».
 
@@ -120,7 +144,8 @@ ceară din nou parola**, ca după o conectare: lista de angajamente, anul, sursa
 se reîncarcă pentru unitatea nouă, iar ea se ține minte pentru conectarea următoare (dacă în
 Setări › Autentificare e bifată «Ține minte și unitatea aleasă»).
 
-<!-- capture: unitate-selector | caption: Alegerea unității din bara de titlu | goto: view:sumar | prepare: Conectați-vă cu un utilizator care are acces la cel puțin două unități, apoi faceți clic pe numele unității din bara de titlu. -->
+<!-- capture: unitate-selector | caption: Alegerea unității din bara de titlu | goto: view:sumar | prepare: Conectați-vă cu un utilizator care are acces la cel puțin două unități, deschideți «Lista angajamentelor» din ribbon, apoi faceți clic pe numele unității din bara de titlu. | redo: 2026-10-13 17:30 | why: 0114: sub bara de titlu nu mai e butonul MENIU, ci ribbonul -->
+
 
 Dacă ești **conectat la FOREXE**, K-BOT închide singur conexiunea înainte să treacă pe unitatea
 nouă: conexiunea aparține unității pe care o părăsești, iar ce descarcă robotul se scrie în baza
@@ -134,33 +159,27 @@ Schimbarea **nu se poate face**:
 - spre o unitate pe care ai rolul **«Director»** — ea se deschide în fereastra de semnare, după o
   conectare nouă.
 
-> Ferestrele deschise separat (Extrase de cont, Nomenclatoare…) nu se schimbă singure: închide-le
-> și deschide-le din nou după ce ai trecut pe altă unitate.
+> O machetă deschisă (Extrase de cont, Clasificații bugetare…) nu se schimbă singură: închide-o
+> și deschide-o din nou după ce ai trecut pe altă unitate.
 
-## MENIU
-<!-- slice: 0087, 0084, 0088, 0095-02, 0097-02, 0000-29, 0000-31, 00EF-05, 00EF-08, 0000-54, 0000-55, fara-felie -->
+## Comenzile: ribbonul
+<!-- slice: 0114 -->
 
-- **Adăugare angajamente...** — un dosar cu două rânduri:
-  - **Angajament nou** — îl faci în K-BOT și îl trimiți apoi în FOREXE — [Angajament nou](topic:contabil.ddf.nou);
-  - **Creează angajament în FOREXE** — îl faci de mână, direct în pagina FOREXE — [Un angajament nou făcut direct în FOREXE](topic:contabil.forexe.browser).
-- **(!) Operațiuni necorelate** — apare doar când există — [Operațiuni necorelate](topic:contabil.notecab)
-- **Extrase** — fereastra «Extrase de cont»
-- **E-Factura** — facturile electronice emise ale unității și, din butonul «Token ANAF», tokenul ANAF — [E-Factura: facturile emise și tokenul ANAF](topic:contabil.efactura)
-- **Nomenclatoare › Clasificații bugetare / Parteneri** — [Nomenclatoare](topic:contabil.nomenclatoare)
-- **Jurnal activitate** — jurnalele K-BOT; rândul lipsește dacă l-ai ascuns din Setări › Aplicație — [Setări și aspect](topic:contabil.setari)
-- **Configurare K-BOT** — fereastra de setări — [Setări și aspect](topic:contabil.setari)
-
-Când există operațiuni necorelate, butonul MENIU poartă semnul **(!)**.
+Butonul **MENIU** nu mai există: comenzile lui (angajament nou, operațiuni necorelate, extrase, nomenclatoare,
+E-Factura, jurnal, setări) sunt în **ribbon**, pe file. Unde a ajuns fiecare rând al meniului:
+[Ribbonul](topic:contabil.ribbon). Operațiunile necorelate au butonul lor, **Angajamente › Verificări ›
+«Operațiuni necorelate»**, care apare doar cât ai operațiuni necorelate de rezolvat.
 
 ## Cum pornește fereastra
-<!-- slice: 0097-02 -->
+<!-- slice: 0097-02, 0113, 0115 -->
 
-Fereastra principală pornește la mărimea ei obișnuită, în mijlocul ecranului. Dacă o vrei
-**mărită pe tot ecranul** de la pornire, bifează în **Setări › Aplicație** «Fereastra principală
-pornește mărită (pe tot ecranul)» — [Setări și aspect](topic:contabil.setari).
+K-BOT pornește pe pagina [«Acasă»](topic:contabil.acasa); lista angajamentelor se încarcă în spate și o deschizi din
+ribbon. Fereastra pornește la mărimea ei obișnuită, în mijlocul ecranului, sau **mărită pe tot ecranul** dacă e bifat
+în **Setări › Aplicație** «Fereastra principală pornește mărită (pe tot ecranul)». La prima pornire după actualizarea
+care a adus ribbonul, K-BOT bifează o dată această opțiune; apoi alegerea e a ta —
+[Setări și aspect](topic:contabil.setari).
 
-La primele porniri, K-BOT îți arată singur **turul ferestrei principale** —
-[Tururile ghidate](topic:contabil.ajutor).
+K-BOT se închide din **X**-ul ferestrei (dreapta sus); «Închide» din ribbon închide doar macheta de pe ecran.
 
 ## Butonul ⓘ
 <!-- slice: fara-felie -->

@@ -412,6 +412,11 @@
         "size": 255,
         "default": ""
       },
+      "FelDoc": {
+        "type": "Text",
+        "size": 255,
+        "default": ""
+      },
       "DataDoc": {
         "type": "Date/Time",
         "size": 8,

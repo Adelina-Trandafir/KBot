@@ -82,6 +82,13 @@ export function bindReports({ fetchOutput, snapshot, report }) {
     if (k_all.checked) { k_params.all = '1'; if (k_split.checked) k_params.split = '1'; } else k_params.group = k_now.groupId;
     return run('situation', k_params, false, 'Situație lunară');
   });
+  k_click('ade-rep-payment-notice', () => {
+    const k_now = k_month();
+    if (!k_all.checked && k_now.groupId == null) throw new Error('Alegeți grupa sau bifați «Toate grupele».');
+    const k_params = { month: k_now.monthId };
+    if (k_all.checked) k_params.all = '1'; else k_params.group = k_now.groupId;
+    return run('payment-notice', k_params, false, 'Situație de plată');
+  });
   const k_range = () => {
     if (!k_start.iso || !k_end.iso) throw new Error('Completați data de început și data de sfârșit.');
     return { start: k_start.iso, end: k_end.iso };

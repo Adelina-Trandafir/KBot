@@ -18,7 +18,7 @@ from datetime import datetime
 
 from flask import g, request
 
-from . import documents, lista, mf, oi, protocol
+from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
 
@@ -104,6 +104,9 @@ def register(bp, guard, scoped, open_db):
     def request_id():
         return (request.headers.get('X-Request-Id') or '')[:64] or None
 
+    stock_routes.register(bp, guard, scoped, session, build)
+    report_routes.register(bp, guard, scoped, session, build)
+
     # ---- reads -----------------------------------------------------------------------------------------------------
     @bp.get('/api/vercon/doc/<family>/list')
     @guard('read')
@@ -132,6 +135,16 @@ def register(bp, guard, scoped, open_db):
             out = backend(family).lookups(cursor, ctx, family)
         out.update({'scale': ctx['scale'], 'zec': ctx['zec'], 'year': ctx['an'], 'closed': ctx['closed'], 'today': datetime.now().strftime('%Y-%m-%d')})
         return out
+
+    @bp.get('/api/vercon/doc/nir/number')
+    @guard('read')
+    def receipt_number_check():
+        _need('nir')
+        vctx = scoped('read')
+        exclude = documents._int(request.args.get('exclude'))
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, 'nir', False)
+            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude)
 
     @bp.get('/api/vercon/doc/<family>/sources')
     @guard('read')
@@ -212,7 +225,23 @@ def register(bp, guard, scoped, open_db):
             ctx, _ = build(cursor, vctx, None, False)
             if ctx['type'] != 'MF':
                 raise FormUnavailable('FORM_NOT_AVAILABLE', 'Evidența MF există doar la gestiunile de tip MF.', 403)
-            return {'assets': mf.assets(cursor, ctx), 'scale': ctx['scale'], 'zec': ctx['zec'], 'can_write': True}
+            return {'assets': mf.assets(cursor, ctx), 'scale': ctx['scale'], 'zec': ctx['zec'], 'can_write': True,
+                    'can_report': 'raport' in g.vercon_operations}
+
+    @bp.get('/api/vercon/mf/depreciation')
+    @guard('raport')
+    def mf_depreciation():
+        vctx = scoped('raport')
+        on_date = protocol.to_date(request.args.get('date'), 'Data calculului')
+        raw_variant = request.args.get('variant')
+        variant = None
+        if raw_variant is not None:
+            variant = documents._int(raw_variant)
+            if variant is None or variant <= 0:
+                raise NomError('INVALID', 'Mijlocul fix selectat este invalid.', 422)
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, None, False)
+            return depreciation_read.read(cursor, ctx, on_date, variant)
 
     @bp.put('/api/vercon/mf/assets/<int:variant>')
     @guard('read')

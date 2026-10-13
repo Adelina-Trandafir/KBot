@@ -25,6 +25,9 @@ backup/
 AvacontPush/
 _push/
 
+# Configurări de rapoarte salvate de proprietar; nu se suprascriu la publicare.
+/instance/vercon-reports/
+
 # Fișiere locale de lucru
 .vs/
 *.bak

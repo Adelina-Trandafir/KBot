@@ -8,10 +8,11 @@ screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescr
 keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, parteneri, asociere, mai multi parteneri, fisiere, salveaza
 open: view:ddf
 ---
-<!-- slice: 0051, 0081-02 -->
-Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia».
+<!-- slice: 0051, 0081-02, 0113 -->
+Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia», ca pagină a ferestrei
+principale.
 
-<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. -->
+<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu «Adaugă rând» și «Șterge rândul» lângă «Salvează documentul» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-13 17:30 | why: 0113 / 0120: editorul e o pagină a ferestrei principale, fără bara lui de titlu și fără «Renunță»; «Adaugă rând / Șterge rândul» au trecut pe rândul de jos, lângă «Salvează documentul» -->
 
 ## Antetul
 <!-- slice: 0081-09, 0081-10, 0094-02, 0094-03 -->
@@ -30,7 +31,11 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
-<!-- slice: 0081-08, 0081-12, 0102, 0108 -->
+<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120 -->
+
+Cât e deschisă pagina **Secțiunea A**, butoanele ei, **Adaugă rând** și **Șterge rândul**, stau pe **rândul de jos** al
+editorului, lângă **Salvează documentul**; pe celelalte pagini rândul de jos are doar butoanele editorului.
+
 
 - **Adaugă rând** deschide fereastra rândului nou:
   - **Sursă / sector** al rândului;
@@ -81,10 +86,11 @@ pentru documentele cu mai mulți.
 Poți asocia parteneri și din vederea «Sumar» — [Sumar](topic:contabil.vederi.sumar).
 
 ## Salvarea
-<!-- slice: 0051, 0081-12 -->
+<!-- slice: 0051, 0081-12, 0113 -->
 
 **Salvează documentul** trimite tot documentul într-o singură tranzacție. Rândurile din Secțiunea A
 cu valoarea 0 se scot la salvare, după ce confirmi. Dacă nu rămâne niciun rând cu valoare,
 documentul **nu** se salvează.
 
-**Renunță** închide fără să salveze nimic; numerele rezervate se eliberează.
+Editorul nu mai are butonul «Renunță»: **«Închide»** din ribbon (sau Esc) îl închide fără să salveze nimic; numerele
+rezervate se eliberează.

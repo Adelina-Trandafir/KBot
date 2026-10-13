@@ -1,0 +1,22 @@
+/* Recepție: uniform fields, explicit invoice -> NIR actions, equal amount columns. */
+.vc-doc__header--nir { grid-template-columns: repeat(4,minmax(0,260px)); gap: 48px; padding-top: 12px; }
+.vc-doc--nir .vc-header-group { gap: 12px; grid-template-rows: minmax(70px,auto) minmax(70px,auto) auto; }
+.vc-doc--nir .vc-field { position: relative; }
+.vc-doc--nir .vc-field .combobox-input { padding-right: 30px; }
+.vc-doc--nir .combobox-arrow { color: var(--primary-color); cursor: pointer; font-size: 19px; pointer-events: auto; border: 0; background: transparent; padding: 0 4px; }
+.vc-nir-copy { position: absolute; top: 22px; right: -40px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--primary-color); font-size: 22px; cursor: pointer; }
+.vc-nir-stock { position: absolute; right: 0; top: 0; display: flex; align-items: center; gap: 4px; font-size: .85em; white-space: nowrap; }
+.vc-doc--nir .vc-nir-stock input { min-height: 0; width: auto; }
+.vc-doc--nir .vc-doc__lines, .vc-doc--nir .vc-doc__bar { max-width: 1450px; }
+.vc-doc--nir .vc-doc__lines .vc-dgv { height: clamp(360px,58vh,650px); }
+.vc-doc--nir .dgv__editor .combobox-input { padding-right: 28px; }
+@media (max-width: 1200px) {
+  .vc-doc__header--nir { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 40px; }
+  .vc-nir-stock { position: static; order: -1; white-space: normal; }
+}
+@media (max-width: 800px) {
+  .vc-doc .vc-doc__header--nir { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px 40px; padding-right: 32px; }
+}
+@media (max-width: 500px) {
+  .vc-doc .vc-doc__header--nir { grid-template-columns: 1fr; }
+}

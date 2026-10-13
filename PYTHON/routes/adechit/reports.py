@@ -507,13 +507,15 @@ def financial_report(repo, unit, args):
     return model('Situația financiară', 'Situatia_financiara', blocks, landscape=True, font=7.5)
 
 
-BUILDERS = {'situation': situation_report, 'cash': cash_register_report, 'bank': bank_report, 'cancelled': cancelled_report,
+from .payment_notice import payment_notice_report
+
+BUILDERS = {'payment-notice': payment_notice_report, 'situation': situation_report, 'cash': cash_register_report, 'bank': bank_report, 'cancelled': cancelled_report,
             'account': account_report, 'debtor': debtor_report, 'payment-order': payment_order, 'financial': financial_report}
 
 
 HIDDEN = {'debtor', 'financial'}   # buttons hidden from the panel; the code stays in case they come back
 
-REPORT_NAMES = {'situation': 'ADECHIT_SITUATIE_DEBITORI', 'cash': 'ADECHIT_REGISTRU_CASA',
+REPORT_NAMES = {'payment-notice': 'ADECHIT_SITUATIE_PLATA', 'situation': 'ADECHIT_SITUATIE_DEBITORI', 'cash': 'ADECHIT_REGISTRU_CASA',
                 'bank': 'ADECHIT_RAPORT_BANCA', 'cancelled': 'ADECHIT_DOCUMENTE_ANULATE',
                 'account': 'ADECHIT_FISA_CONT', 'debtor': 'ADECHIT_FISA_DEBITOR',
                 'payment-order': 'ADECHIT_DISPOZITIE_PLATA', 'financial': 'ADECHIT_SITUATIE_FINANCIARA'}

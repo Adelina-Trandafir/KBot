@@ -74,14 +74,14 @@ Partial Public Class KbotForm
                     CreeazaAngajamentInForexe()
                 Case "extrase"
                     ' Slice 0095-02: the «Extrase de cont» window (KbotForm.Extrase.vb).
-                    DeschideExtrasele()
+                    OpenRegistered(MachetaExtrase, AddressOf DeschideExtrasele)
                 Case "efactura"
                     ' Slice 00EF-05: the E-Factura token window (KbotForm.EFactura.vb).
-                    DeschideEFactura()
+                    OpenRegistered(MachetaEFacturaVanzare, AddressOf DeschideEFactura)
                 Case "clasificatii"
-                    DeschideClasificatiile()
+                    OpenRegistered(MachetaClasificatii, AddressOf DeschideClasificatiile)
                 Case "parteneri"
-                    DeschidePartenerii()
+                    OpenRegistered(MachetaParteneri, AddressOf DeschidePartenerii)
                 Case HelpCaptureMenuKey
                     ' Slice 0000-02: the help screenshot list (KbotForm.HelpCapture.vb).
                     DeschideCapturileAjutorului()
@@ -90,14 +90,14 @@ Partial Public Class KbotForm
                     DeschideDesignerulDeTutoriale()
                 Case MessageCatalogMenuKey
                     ' Slice 0112: the message catalog (KbotForm.MessageCatalog.vb), Debug build only.
-                    DeschideCatalogulDeMesaje()
+                    OpenRegistered(MachetaMesaje, AddressOf DeschideCatalogulDeMesaje)
                 Case "jurnal"
-                    ShowLog()
+                    OpenRegistered(MachetaJurnal, AddressOf ShowLog)
                 Case "setari"
-                    ShowSettings()
+                    OpenRegistered(MachetaSetari, AddressOf ShowSettings)
                 Case UncorrelatedMenuKey
                     ' Slice 0088: every stored ERR operation no note covers yet.
-                    OpenUncorrelatedFromMenu()
+                    OpenRegistered(MachetaCabNote, AddressOf OpenUncorrelatedFromMenu)
                 Case Else
                     Throw New ArgumentException($"Unknown menu key '{e.Key}'.", NameOf(e))
             End Select
@@ -148,7 +148,10 @@ Partial Public Class KbotForm
             If Not NomenclatoareContext("Clasificații bugetare", api, gate) Then Return
             _clasificatiiForm = New ClasificatiiForm(api, gate, _session.An)
             AddHandler _clasificatiiForm.FormClosed, Sub() _clasificatiiForm = Nothing
-            _clasificatiiForm.Show(Me)
+            If Not ShowMachetaPage(_clasificatiiForm, MachetaRef.Create(MachetaClasificatii, "an", _session.An.ToString(Globalization.CultureInfo.InvariantCulture))) Then
+                _clasificatiiForm.Dispose()   ' another page refused to close: stay where we are
+                _clasificatiiForm = Nothing
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideClasificatiile", ex)
             KBotMessage.Show(Me, "Fereastra clasificațiilor nu a putut fi deschisă. Detalii în jurnalul de erori.",
@@ -167,7 +170,10 @@ Partial Public Class KbotForm
             If Not NomenclatoareContext("Parteneri", api, gate) Then Return
             _parteneriForm = New ParteneriForm(api, gate, _session.SectorSursa)
             AddHandler _parteneriForm.FormClosed, Sub() _parteneriForm = Nothing
-            _parteneriForm.Show(Me)
+            If Not ShowMachetaPage(_parteneriForm, MachetaRef.Create(MachetaParteneri)) Then
+                _parteneriForm.Dispose()
+                _parteneriForm = Nothing
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschidePartenerii", ex)
             KBotMessage.Show(Me, "Fereastra partenerilor nu a putut fi deschisă. Detalii în jurnalul de erori.",

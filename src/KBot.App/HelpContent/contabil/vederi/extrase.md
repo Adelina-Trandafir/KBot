@@ -8,14 +8,15 @@ screens: ExtraseView, ExtraseForm, ExtrasePanel
 keywords: extrase, snm, extras de cont, operatii, antet, platitor, cui
 open: view:extrase
 ---
-<!-- slice: 0080-02, 0080-03 -->
+<!-- slice: 0080-02, 0080-03, 0113, 0114 -->
 Extrasele de cont (SNM) se văd în două locuri:
 
 - vederea **Extrase** — doar operațiunile angajamentului selectat;
-- fereastra **Extrase de cont** — toate extrasele unității, cu sau fără angajament. Se deschide
-  din **MENIU › Extrase** sau din iconița din stânga, jos, a listei de angajamente.
+- macheta **Extrase de cont** — toate extrasele unității, cu sau fără angajament. Se deschide, ca pagină a
+  ferestrei principale, din ribbon, **Date › Documente › «Extrase»**, sau din iconița din stânga, jos, a listei de
+  angajamente. O închizi cu «Închide» din ribbon sau cu Esc.
 
-<!-- capture: extrase-fereastra | caption: Fereastra «Extrase de cont» | goto: menu:extrase | prepare: Alegeți în arbore o lună cu extrase. -->
+<!-- capture: extrase-fereastra | caption: Macheta «Extrase de cont» | goto: menu:extrase | prepare: Alegeți în arbore o lună cu extrase. | redo: 2026-10-13 17:30 | why: 0113: «Extrase de cont» e o pagină a ferestrei principale, fără bara ei de titlu și fără «Închide» -->
 
 ## Arborele și cele două moduri de afișare
 <!-- slice: 0096 -->

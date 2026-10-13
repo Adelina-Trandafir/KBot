@@ -1,6 +1,8 @@
 # VERCON — catalogul rapoartelor (SLICE-VC00-04)
 
-Generat de `VERCON/tools/mapare.js`. Starea: DOCUMENTAT; nicio generare implementata (VC08-03). 61 rapoarte in export; cele care refera Coduri sunt EXCLUSE (N06) si nu se investigheaza.
+Inventarul de mai jos este generat de `VERCON/tools/mapare.js` și descrie sursele Access. 61 rapoarte în export; cele care referă Coduri sunt EXCLUSE (N06) și nu se investighează.
+
+Actualizare 13.10.2026: generarea pentru Materiale/Alimente este **IMPLEMENTAT_LOCAL, NERULAT** în `PYTHON/routes/vercon/report_*.py`. OI/MF sunt amânate la cererea utilizatorului. Catalogul activ este `report_catalog.py`; subreports alimentare sunt incluse în lista zilnică. Sursele SQL, machetele și antetul/subsolul sunt configurabile per unitate din KbotAdmin. Toate exporturile Excel folosesc modulul comun `PYTHON/reporting/excel_widths.py` și `AVACONT_COMUN.RAPOARTE_EXCEL_COLOANE`. Capturi, implementare și limite: [worklog VC08-03](../docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md). Nicio validare vizuală sau interogare reală executată în această etapă.
 
 Coloane: **Familie** (din denumire), **Surse** (tabele citite transitiv prin interogarile din RecordSource), **Capabilitate** (MAT/OI/MF/AL: da/nu/de verificat), **Parametri din formular** (`[Forms]![...]`/`TempVars` in interogari — de inlocuit cu parametri expliciti), **Sectiuni** (inclusiv grupari), schita.
 

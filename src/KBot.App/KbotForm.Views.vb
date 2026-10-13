@@ -16,6 +16,7 @@ Partial Public Class KbotForm
     Private Sub NavViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
         Try
             ActivateView(key)
+            NoteViewOpened(key)   ' KbotForm.Machete.vb: the history of the opened machete
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.navViews_SelectionChanged", ex)
         End Try

@@ -1,7 +1,7 @@
 // Existing preview protocol, with the same shared controls as the real document screens.
 import { confirmBox } from '../utils/confirm-box.js';
 import { format, parse } from './fields.js';
-import { el, scope, field, column, grid, rowMenu, preview, showMessage } from './ui.js';
+import { el, scope, field, column, grid, rowMenu, snapshotPreview, showMessage } from './ui.js';
 export function mountEditor(host, opts) {
   const { draft, columns, saver } = opts, headerUi = scope(), linesUi = scope(), dialogs = scope(), inputs = new Map();
   let disposed = false, linesGrid, baseline = snapshot();
@@ -72,10 +72,10 @@ export function mountEditor(host, opts) {
   });
   previewButton.addEventListener('click', async () => {
     if (!await commit() || disposed) return;
-    preview('Document • ciornă', [
+    try { await snapshotPreview('Document • ciornă', [
       { title: 'Antet', columns: [{ key: 'label', title: 'Câmp', width: 240 }, { key: 'value', title: 'Valoare', width: 440 }], rows: columns.header.map((spec) => ({ label: spec.label, value: format(draft.header()[spec.key], spec) })) },
       { title: 'Produse', columns: columns.lines.map((spec) => column(spec, { editable: false })), rows: draft.rows().map((row) => ({ ...row.cells })) },
-    ], dialogs);
+    ], dialogs, () => !disposed); } catch (error) { report(error); }
   });
   paintHeader(); paintLines();
   return { isDirty: dirty, destroy: () => { disposed = true; headerUi.clear(); linesUi.clear(); dialogs.clear(); host.replaceChildren(); } };

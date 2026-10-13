@@ -94,7 +94,7 @@ Partial Public Class KbotForm
                                      .First(Function(i) String.Equals(i.Key, key, StringComparison.OrdinalIgnoreCase))))
                     Return Nothing
                 Case "setari"
-                    SetariForm.ShowFor(Me, _setariFactory).ShowPage(key)
+                    SetariForm.ShowFor(Me, _setariFactory)?.ShowPage(key)
                     Return Nothing
                 Case Else
                     Throw New ArgumentException("Unknown capture target kind '" & kind & "'.", NameOf(target))

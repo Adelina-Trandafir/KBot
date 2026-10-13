@@ -51,6 +51,20 @@ Partial Public Class FacturiForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' The unit's data were saved from the «Date Unitate» window of the main window's ribbon (this window is not what opened
+    ''' it): the issuer this window keeps follows what was saved.
+    ''' </summary>
+    Public Sub UnitDataChangedElsewhere(k_furnizor As EFacturaFurnizor)
+        If k_furnizor IsNot Nothing Then SetFurnizor(k_furnizor)
+        ApplyMode()
+    End Sub
+
+    ''' <summary>The unit's accounts were edited from the main window's ribbon: the «Cont emitent» combo offers the new list.</summary>
+    Public Sub UnitAccountsChangedElsewhere()
+        Dim k_task As Task = ReloadConturiAsync()
+    End Sub
+
     ' Slice 00EF-19: the window with all the received invoices of the year; one at a time, asking again brings it forward.
     Private Sub OpenPrimite()
         If _api Is Nothing Then Return

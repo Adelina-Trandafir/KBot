@@ -8,8 +8,8 @@ screens: ClasificatiiForm, ClasificatiiAddForm
 keywords: clasificatii, clasificatie bugetara, indicatori, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat, verificare buget, credit bugetar, diferenta, trimite in access
 open: menu:clasificatii
 ---
-<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105, 0107-02, 0107 -->
-<!-- capture: clasificatii | caption: Fereastra «Clasificații bugetare» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. | redo: 2026-10-02 18:00 | why: 0103-04 / 0103-06: două butoane noi în subsol, «Verifică bugetul» și «Trimite în Access» -->
+<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105, 0107-02, 0107, 0113 -->
+<!-- capture: clasificatii | caption: Fereastra «Clasificații bugetare» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. | redo: 2026-10-13 17:30 | why: 0113: fereastra e o pagină a ferestrei principale, fără bara ei de titlu și fără «Închide»; înainte, 0103-04 / 0103-06: două butoane noi în subsol, «Verifică bugetul» și «Trimite în Access» -->
 
 - **Arborele** din stânga: Capitol › Subcapitol › Articol › Alineat, cu denumirile alături. Implicit arată doar clasificațiile cu **mișcare** în anul de lucru: cele care au vreun trimestru de buget sau de rectificare diferit de zero. Bifează **«Arată toate clasificațiile»**, de sub arbore, ca să le vezi pe toate cele configurate. Bifa din dreapta, **«Arată DOAR clasificațiile folosite în FOREXE»**, lasă în arbore numai clasificațiile pentru care FOREXE a raportat un credit bugetar; are prioritate față de cealaltă bifă.
 - În dreapta, pentru clasificația aleasă:
