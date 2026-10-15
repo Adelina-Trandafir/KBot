@@ -91,3 +91,25 @@ Folosește controlul WebBrowser existent și Markdig 0.45.0 (aceeași versiune c
 ajutorul KBot.App). HTML-ul din textul sursă este dezactivat; imaginile și linkurile
 active sunt eliminate. Stilurile urmăresc tema la deschiderea ferestrei.
 Modificare de sursă: fără teste, compilare, lansare aplicație sau comenzi Git.
+
+## Feluri de mâncare din TIP — revizie 15.10.2026
+
+`VC_FeluriMancare` se construiește din valorile distincte `TIP` din MicDejun,
+Dejun și Cina, pe toți anii unei gestiuni. Denumirile sunt „Felul 1”, „Felul 2”,
+etc.; diferențele de majuscule, spații și zerouri inițiale se normalizează.
+Explicațiile meselor rămân în tabelele meselor. Vechea tabelă Access
+FeluriMancare nu mai este sursa acestui nomenclator.
+
+`IdFel` țintă este cheia noului nomenclator, derivată din `TIP`; valoarea
+`IdFel` din Access nu este folosită pentru această asociere. `TIP` și
+`Explicatie` de pe rândul sursă se păstrează. Un TIP gol produce IdFel NULL;
+un TIP nenul care nu respectă forma „Felul n” oprește importul cu o constatare
+X13. Asocierea TIP → IDFel este inclusă în VC_IdMap și în constatările N11.
+Versiunea regulilor planului este `VC05-MEAL-TYPES-2026-10-15`.
+
+Pentru date deja migrate este pregătit `sql/VC_Feluri_din_TIP.sql`, de executat
+manual în baza DC după completarea ID-urilor subunității și gestiunii.
+Completează nomenclatorul din TIP și corectează referințele celor trei mese,
+fără ștergerea înregistrărilor existente sau modificarea schemei.
+
+Nu s-au executat SQL-uri, importuri, compilări sau teste pentru această revizie.

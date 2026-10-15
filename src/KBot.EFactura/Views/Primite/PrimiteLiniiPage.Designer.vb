@@ -25,15 +25,15 @@ Partial Class PrimiteLiniiPage
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
-        Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         gridLinii = New KBotDataView()
-        gridCote = New KBotDataView()
+        tlyPagina = New KBotTableLayoutPanel()
+        tlySus = New KBotTableLayoutPanel()
+        rtbNote = New KBotRichTextEditor()
+        lblFurnizor = New KBotHtmlLabel()
         CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(gridCote, System.ComponentModel.ISupportInitialize).BeginInit()
+        tlyPagina.SuspendLayout()
+        tlySus.SuspendLayout()
         SuspendLayout()
         '
         ' gridLinii
@@ -118,99 +118,89 @@ Partial Class PrimiteLiniiPage
         gridLinii.Columns.Add(KBotDataColumn7)
         gridLinii.Dock = System.Windows.Forms.DockStyle.Fill
         gridLinii.FillColumnKey = "denumire"
+        gridLinii.Font = New System.Drawing.Font("Calibri", 10.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
         gridLinii.FooterCaption = "TOTAL LINII"
         gridLinii.FooterVisible = True
-        gridLinii.Location = New System.Drawing.Point(3, 3)
+        gridLinii.Location = New System.Drawing.Point(0, 208)
         gridLinii.Margin = New System.Windows.Forms.Padding(0)
         gridLinii.Name = "gridLinii"
         gridLinii.ReadOnlyGrid = True
-        gridLinii.Size = New System.Drawing.Size(751, 400)
+        gridLinii.Size = New System.Drawing.Size(751, 312)
         gridLinii.TabIndex = 0
-        tips.SetToolTipHeader(gridLinii, "Conținutul facturii")
-        tips.SetToolTipText(gridLinii, "Liniile așa cum le-a scris furnizorul în XML, cu codul CPV al fiecăreia. O linie fără cod CPV apare cu roșu închis. Tabelul se citește doar.")
         '
-        ' gridCote
+        ' tlyPagina: the supplier and the notes on top (40%), the lines under them (60%)
         '
-        gridCote.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridCote.ColumnFillMode = KBotFillMode.SpecificColumn
-        KBotDataColumn8.AggregateFormatString = Nothing
-        KBotDataColumn8.FormatString = Nothing
-        KBotDataColumn8.HeaderText = "Categorie"
-        KBotDataColumn8.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn8.Key = "categorie"
-        KBotDataColumn8.OptionGroup = Nothing
-        KBotDataColumn8.ReadOnly = True
-        KBotDataColumn8.Width = 90
-        KBotDataColumn9.AggregateFormatString = Nothing
-        KBotDataColumn9.DecimalPlaces = 2
-        KBotDataColumn9.Format = KBotFormat.Standard
-        KBotDataColumn9.FormatString = Nothing
-        KBotDataColumn9.HeaderText = "Cotă TVA %"
-        KBotDataColumn9.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn9.Key = "cota"
-        KBotDataColumn9.OptionGroup = Nothing
-        KBotDataColumn9.ReadOnly = True
-        KBotDataColumn9.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        KBotDataColumn9.ValueType = KBotValueType.Number
-        KBotDataColumn9.Width = 100
-        KBotDataColumn10.Aggregate = KBotAggregate.Sum
-        KBotDataColumn10.AggregateFormatString = Nothing
-        KBotDataColumn10.DecimalPlaces = 2
-        KBotDataColumn10.Format = KBotFormat.Standard
-        KBotDataColumn10.FormatString = Nothing
-        KBotDataColumn10.HeaderText = "Bază impozabilă"
-        KBotDataColumn10.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn10.Key = "baza"
-        KBotDataColumn10.OptionGroup = Nothing
-        KBotDataColumn10.ReadOnly = True
-        KBotDataColumn10.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        KBotDataColumn10.ValueType = KBotValueType.Number
-        KBotDataColumn10.Width = 140
-        KBotDataColumn11.Aggregate = KBotAggregate.Sum
-        KBotDataColumn11.AggregateFormatString = Nothing
-        KBotDataColumn11.DecimalPlaces = 2
-        KBotDataColumn11.Format = KBotFormat.Standard
-        KBotDataColumn11.FormatString = Nothing
-        KBotDataColumn11.HeaderText = "TVA"
-        KBotDataColumn11.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn11.Key = "tva"
-        KBotDataColumn11.OptionGroup = Nothing
-        KBotDataColumn11.ReadOnly = True
-        KBotDataColumn11.TextAlign = System.Drawing.ContentAlignment.MiddleRight
-        KBotDataColumn11.ValueType = KBotValueType.Number
-        KBotDataColumn11.Width = 120
-        gridCote.Columns.Add(KBotDataColumn8)
-        gridCote.Columns.Add(KBotDataColumn9)
-        gridCote.Columns.Add(KBotDataColumn10)
-        gridCote.Columns.Add(KBotDataColumn11)
-        gridCote.Dock = System.Windows.Forms.DockStyle.Bottom
-        gridCote.FillColumnKey = "baza"
-        gridCote.FooterCaption = "TOTAL TVA"
-        gridCote.FooterVisible = True
-        gridCote.Location = New System.Drawing.Point(3, 403)
-        gridCote.Margin = New System.Windows.Forms.Padding(0)
-        gridCote.Name = "gridCote"
-        gridCote.ReadOnlyGrid = True
-        gridCote.Size = New System.Drawing.Size(751, 120)
-        gridCote.TabIndex = 1
-        tips.SetToolTipHeader(gridCote, "TVA pe cote")
-        tips.SetToolTipText(gridCote, "O factură poate avea mai multe cote de TVA; fiecare este un rând, cu baza și TVA-ul ei.")
+        tlyPagina.ColumnCount = 1
+        tlyPagina.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        tlyPagina.Controls.Add(tlySus, 0, 0)
+        tlyPagina.Controls.Add(gridLinii, 0, 1)
+        tlyPagina.Dock = System.Windows.Forms.DockStyle.Fill
+        tlyPagina.Location = New System.Drawing.Point(3, 3)
+        tlyPagina.Margin = New System.Windows.Forms.Padding(0)
+        tlyPagina.Name = "tlyPagina"
+        tlyPagina.RowCount = 2
+        tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 40.0!))
+        tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 60.0!))
+        tlyPagina.Size = New System.Drawing.Size(751, 520)
+        tlyPagina.TabIndex = 0
+        '
+        ' tlySus: the supplier on the left, a small gap, the notes on the right
+        '
+        tlySus.ColumnCount = 3
+        tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 42.0!))
+        tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 6.0!))
+        tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 58.0!))
+        tlySus.Controls.Add(lblFurnizor, 0, 0)
+        tlySus.Controls.Add(rtbNote, 2, 0)
+        tlySus.Dock = System.Windows.Forms.DockStyle.Fill
+        tlySus.Location = New System.Drawing.Point(0, 0)
+        tlySus.Margin = New System.Windows.Forms.Padding(0, 0, 0, 4)
+        tlySus.Name = "tlySus"
+        tlySus.RowCount = 1
+        tlySus.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        tlySus.Size = New System.Drawing.Size(751, 204)
+        tlySus.TabIndex = 0
+        '
+        ' lblFurnizor
+        '
+        lblFurnizor.Dock = System.Windows.Forms.DockStyle.Fill
+        lblFurnizor.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
+        lblFurnizor.Location = New System.Drawing.Point(0, 0)
+        lblFurnizor.Margin = New System.Windows.Forms.Padding(0)
+        lblFurnizor.Name = "lblFurnizor"
+        lblFurnizor.Size = New System.Drawing.Size(311, 204)
+        lblFurnizor.TabIndex = 0
+        '
+        ' rtbNote
+        '
+        rtbNote.Dock = System.Windows.Forms.DockStyle.Fill
+        rtbNote.EditorFont = New System.Drawing.Font("Calibri", 10.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
+        rtbNote.FooterVisible = False
+        rtbNote.HeaderVisible = False
+        rtbNote.Location = New System.Drawing.Point(317, 0)
+        rtbNote.Margin = New System.Windows.Forms.Padding(0)
+        rtbNote.Name = "rtbNote"
+        rtbNote.Size = New System.Drawing.Size(434, 204)
+        rtbNote.TabIndex = 1
         '
         ' PrimiteLiniiPage
         '
         AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        Controls.Add(gridLinii)
-        Controls.Add(gridCote)
+        Controls.Add(tlyPagina)
         Name = "PrimiteLiniiPage"
         Padding = New System.Windows.Forms.Padding(3)
         Size = New System.Drawing.Size(757, 526)
         CType(gridLinii, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(gridCote, System.ComponentModel.ISupportInitialize).EndInit()
+        tlyPagina.ResumeLayout(False)
+        tlySus.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents gridLinii As KBotDataView
-    Friend WithEvents gridCote As KBotDataView
+    Friend WithEvents tlyPagina As KBotTableLayoutPanel
+    Friend WithEvents tlySus As KBotTableLayoutPanel
+    Friend WithEvents lblFurnizor As KBotHtmlLabel
+    Friend WithEvents rtbNote As KBotRichTextEditor
 End Class

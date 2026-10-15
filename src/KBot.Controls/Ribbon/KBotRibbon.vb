@@ -9,8 +9,9 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' The ribbon: a tab strip over a panel of captioned groups of icon buttons, like Office's. It
-''' replaces the single MENIU drop-down of the main window. Everything is drawn here (no child
-''' controls), so it themes through <see cref="IThemedControl"/> only.
+''' replaces the single MENIU drop-down of the main window. The tabs, groups and buttons are drawn here; the only
+''' child controls are the <see cref="KBotRibbonField"/> inputs (slice 0114-01), which are the KBot combo / text box,
+''' placed in the group's panel and hidden with it. It themes through <see cref="IThemedControl"/>.
 '''
 ''' <para><b>Model.</b> <see cref="Tabs"/> -> groups -> buttons, authored in the designer through
 ''' the stock collection editors (see <see cref="KBotRibbonButton"/>). A tab, group or button with
@@ -144,6 +145,13 @@ Public NotInheritable Class KBotRibbon
         End Get
         Set(k_value As KBotToolTip)
             _tooltip = k_value
+            For Each k_tab As KBotRibbonTab In _tabs
+                For Each k_group As KBotRibbonGroup In k_tab.Groups
+                    For Each k_field As KBotRibbonField In k_group.Fields
+                        ApplyFieldTip(k_field)
+                    Next
+                Next
+            Next
         End Set
     End Property
 
@@ -205,6 +213,90 @@ Public NotInheritable Class KBotRibbon
                 Throw New InvalidOperationException("A pinned ribbon button has no key or a duplicate one (" & k_button.Text & ").")
             End If
         Next
+        For Each k_tab As KBotRibbonTab In _tabs
+            For Each k_group As KBotRibbonGroup In k_tab.Groups
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    If String.IsNullOrWhiteSpace(k_field.Key) OrElse Not k_seen.Add(k_field.Key) Then
+                        Throw New InvalidOperationException("A ribbon field has no key or a duplicate one (" & k_field.ToString() & ").")
+                    End If
+                Next
+            Next
+        Next
+    End Sub
+
+    ''' <summary>The field with this key anywhere in the ribbon; Nothing when there is none.</summary>
+    Public Function FindField(k_key As String) As KBotRibbonField
+        For Each k_tab As KBotRibbonTab In _tabs
+            For Each k_group As KBotRibbonGroup In k_tab.Groups
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    If String.Equals(k_field.Key, k_key, StringComparison.Ordinal) Then Return k_field
+                Next
+            Next
+        Next
+        Return Nothing
+    End Function
+
+    ' ---- Fields (slice 0114-01) ---------------------------------------------------------------
+
+    ''' <summary>Makes the real control of a field (not at design time: nothing is sited there) and puts it on the ribbon, hidden until placed.</summary>
+    Friend Sub AttachField(k_field As KBotRibbonField)
+        If k_field Is Nothing OrElse k_field.Control IsNot Nothing Then Return
+        If KBotDesignTime.IsDesignTime(Me) Then Return
+        Dim k_control As Control
+        If k_field.Kind = KBotRibbonFieldKind.Text Then
+            Dim k_box As New KBotTextBox() With {
+                .PlaceholderText = k_field.PlaceholderText, .MaxLength = k_field.MaxLength, .Visible = False, .Text = k_field.PendingText}
+            AddHandler k_box.TextChanged, Sub(k_s, k_e) FieldTextChanged(k_field, k_box)
+            k_control = k_box
+        Else
+            Dim k_combo As New KBotComboBox() With {.Editable = False, .Visible = False}
+            For Each k_row As String In k_field.Items
+                k_combo.Items.Add(k_row)
+            Next
+            If k_field.PendingIndex >= 0 AndAlso k_field.PendingIndex < k_combo.Items.Count Then k_combo.SelectedIndex = k_field.PendingIndex
+            k_control = k_combo
+        End If
+        k_control.Enabled = k_field.Enabled
+        k_field.Control = k_control
+        Controls.Add(k_control)
+        Dim k_themed As IThemedControl = TryCast(k_control, IThemedControl)
+        If k_themed IsNot Nothing AndAlso _scheme IsNot Nothing Then k_themed.ApplyTheme(_scheme)
+        ApplyFieldTip(k_field)
+        InvalidateLayout()
+    End Sub
+
+    Friend Sub DetachField(k_field As KBotRibbonField)
+        If k_field Is Nothing OrElse k_field.Control Is Nothing Then Return
+        Dim k_control As Control = k_field.Control
+        k_field.Control = Nothing
+        Controls.Remove(k_control)
+        k_control.Dispose()
+    End Sub
+
+    ' DigitsOnly: what is not a digit is dropped as soon as it appears (typed or pasted).
+    Private _fixingField As Boolean
+
+    Private Sub FieldTextChanged(k_field As KBotRibbonField, k_box As KBotTextBox)
+        Try
+            If _fixingField OrElse Not k_field.DigitsOnly Then Return
+            Dim k_clean As String = New String(k_box.Text.Where(Function(k_c) k_c >= "0"c AndAlso k_c <= "9"c).ToArray())
+            If String.Equals(k_clean, k_box.Text, StringComparison.Ordinal) Then Return
+            _fixingField = True
+            Try
+                k_box.Text = k_clean
+            Finally
+                _fixingField = False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FieldTextChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub ApplyFieldTip(k_field As KBotRibbonField)
+        If _tooltip Is Nothing OrElse k_field.Control Is Nothing Then Return
+        If String.IsNullOrEmpty(k_field.ToolTipText) AndAlso String.IsNullOrEmpty(k_field.ToolTipHeader) Then Return
+        _tooltip.SetToolTipHeader(k_field.Control, k_field.ToolTipHeader)
+        _tooltip.SetToolTipText(k_field.Control, k_field.ToolTipText)
     End Sub
 
     ''' <summary>Call after changing a button / group / tab from code (Visible, Text, Enabled, colour).</summary>
@@ -287,6 +379,14 @@ Public NotInheritable Class KBotRibbon
         If k_scheme Is Nothing Then Return
         _scheme = k_scheme
         BackColor = k_scheme.Palette.SurfaceColor
+        For Each k_tab As KBotRibbonTab In _tabs
+            For Each k_group As KBotRibbonGroup In k_tab.Groups
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    Dim k_themed As IThemedControl = TryCast(k_field.Control, IThemedControl)
+                    If k_themed IsNot Nothing Then k_themed.ApplyTheme(k_scheme)
+                Next
+            Next
+        Next
         InvalidateLayout()
         UpdateHeight()
     End Sub
@@ -330,6 +430,9 @@ Public NotInheritable Class KBotRibbon
         If Not k_group.Visible Then Return False
         For Each k_button As KBotRibbonButton In k_group.Buttons
             If k_button.Visible Then Return True
+        Next
+        For Each k_field As KBotRibbonField In k_group.Fields
+            If k_field.Visible Then Return True
         Next
         Return False
     End Function
@@ -422,7 +525,38 @@ Public NotInheritable Class KBotRibbon
         If _layoutValid AndAlso k_key = _layoutKey Then Return
         _layoutKey = k_key
         _layoutValid = True
+        ComputeLayout()
+        ApplyFieldControls()
+    End Sub
 
+    ' The field controls follow the slots the layout gave them: placed and shown, or hidden (hidden tab, folded ribbon, hidden field).
+    Private Sub ApplyFieldControls()
+        For Each k_tab As KBotRibbonTab In _tabs
+            For Each k_group As KBotRibbonGroup In k_tab.Groups
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    Dim k_control As Control = k_field.Control
+                    If k_control Is Nothing Then Continue For
+                    k_control.Enabled = k_field.Enabled
+                    If k_field.Bounds.IsEmpty Then
+                        k_control.Visible = False
+                    Else
+                        k_control.Bounds = k_field.Bounds
+                        k_control.Visible = True
+                    End If
+                Next
+            Next
+        Next
+    End Sub
+
+    ' The height the real control of a field wants at its font (0 while there is none, e.g. at design time).
+    Private Function FieldHeight(k_field As KBotRibbonField) As Integer
+        Dim k_combo As KBotComboBox = TryCast(k_field.Control, KBotComboBox)
+        If k_combo IsNot Nothing Then Return k_combo.PreferredHeight
+        If k_field.Control IsNot Nothing Then Return k_field.Control.GetPreferredSize(Size.Empty).Height
+        Return 0
+    End Function
+
+    Private Sub ComputeLayout()
         ' Nothing is hit-testable until placed.
         For Each k_tab As KBotRibbonTab In _tabs
             k_tab.Bounds = Rectangle.Empty
@@ -431,6 +565,9 @@ Public NotInheritable Class KBotRibbon
                 k_group.CaptionBounds = Rectangle.Empty
                 For Each k_button As KBotRibbonButton In k_group.Buttons
                     k_button.Bounds = Rectangle.Empty
+                Next
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    k_field.Bounds = Rectangle.Empty
                 Next
             Next
         Next
@@ -487,6 +624,32 @@ Public NotInheritable Class KBotRibbon
                 End If
             Next
             PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
+            ' The fields: one column after the buttons, a row each (three at most), the widest sets the width.
+            Dim k_fields As New List(Of KBotRibbonField)()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                If k_field.Visible AndAlso k_fields.Count < 3 Then k_fields.Add(k_field)
+            Next
+            If k_fields.Count > 0 Then
+                Dim k_fieldW As Integer = 0
+                For Each k_field As KBotRibbonField In k_fields
+                    k_fieldW = Math.Max(k_fieldW, Px(Math.Max(40, k_field.Width)))
+                Next
+                ' The KBot combo / text box keep the height their font asks for (the combo forces it), so a row is that
+                ' tall, never the 22 px of a small button: the rows stack with a small gap, centred above the group caption.
+                Dim k_rowH As Integer = Px(SmallRowHeight) - Px(2)
+                For Each k_field As KBotRibbonField In k_fields
+                    k_rowH = Math.Max(k_rowH, FieldHeight(k_field))
+                Next
+                Dim k_gap As Integer = Px(3)
+                Dim k_block As Integer = k_fields.Count * k_rowH + (k_fields.Count - 1) * k_gap
+                Dim k_area As Integer = PanelPx() - k_captionH - Px(6)
+                Dim k_fieldTop As Integer = k_panelTop + Px(4) + Math.Max(0, (k_area - k_block) \ 2)
+                k_cx += Px(4)
+                For k_i As Integer = 0 To k_fields.Count - 1
+                    k_fields(k_i).Bounds = New Rectangle(k_cx, k_fieldTop + k_i * (k_rowH + k_gap), k_fieldW, k_rowH)
+                Next
+                k_cx += k_fieldW + Px(4)
+            End If
             Dim k_groupW As Integer = Math.Max(k_cx - k_gx + k_pad, TextWidth(k_group.Text, CaptionFont()) + Px(16))
             k_group.Bounds = New Rectangle(k_gx, k_panelTop, k_groupW, PanelPx())
             k_group.CaptionBounds = New Rectangle(k_gx, k_panelTop + PanelPx() - k_captionH - Px(2), k_groupW, k_captionH)

@@ -87,19 +87,18 @@ export function openMenu(k_anchor, k_entries, { label = 'Meniu', align = 'left',
   const k_gutter = k_barButton ? 0 : 8;
   const k_placedLeft = Math.max(k_gutter, Math.min(k_left, innerWidth - k_menu.offsetWidth - k_gutter));
   k_menu.style.left = `${k_placedLeft}px`;
-  const k_anchorIcon = k_anchor.querySelector('.kmenu-item__icon');
-  if (k_anchorIcon) {
-    // Keep the popup edges under the button; widen the icon band to align the emojis.
-    const k_source = k_anchorIcon.getBoundingClientRect();
-    const k_center = k_source.left + k_source.width / 2;
-    const k_popupStyle = getComputedStyle(k_menu);
-    const k_border = parseFloat(iconRight ? k_popupStyle.borderRightWidth : k_popupStyle.borderLeftWidth) || 0;
-    const k_distance = iconRight ? k_placedLeft + k_menu.offsetWidth - k_border - k_center : k_center - k_placedLeft - k_border;
-    k_menu.style.setProperty('--_menu-icon-column', `${Math.max(30, Math.min(k_distance * 2, k_menu.clientWidth - 24))}px`);
-  }
+  // The icon band keeps the same compact CSS width for every popup, independently of its anchor icon.
   // `below`: an element (the header) whose lower edge the menu hangs from, instead of the button's own
-  const k_top = up ? k_rect.top - k_menu.offsetHeight - 2 : (below ? below.getBoundingClientRect().bottom - 1 : k_rect.bottom + (k_anchorIcon ? 0 : 2)); // bar popups touch their button
-  k_menu.style.top = `${Math.max(8, Math.min(k_top, innerHeight - k_menu.offsetHeight - 8))}px`;
+  const k_top = up ? k_rect.top - k_menu.offsetHeight - 2 : (below ? below.getBoundingClientRect().bottom - 1 : k_rect.bottom + (k_barButton ? 0 : 2)); // bar popups touch their button
+  const k_placedTop = Math.max(8, Math.min(k_top, innerHeight - k_menu.offsetHeight - 8));
+  k_menu.style.top = `${k_placedTop}px`;
+  if (k_barButton && !up && !below && Math.abs(k_placedTop - k_rect.bottom) < .5) {
+    const k_joinStart = Math.max(0, Math.min(k_menuWidth, k_rect.left + 1 - k_placedLeft));
+    const k_joinEnd = Math.max(k_joinStart, Math.min(k_menuWidth, k_rect.right - 1 - k_placedLeft));
+    k_menu.style.setProperty('--_menu-join-start', `${k_joinStart}px`);
+    k_menu.style.setProperty('--_menu-join-end', `${k_joinEnd}px`);
+    k_menu.classList.add('kmenu-popup--joined');
+  }
   const k_items = [...k_menu.querySelectorAll('button:not(:disabled)')]; k_items[0]?.focus({ preventScroll: true });
   k_menu.addEventListener('keydown', (k_event) => {
     const k_at = k_items.indexOf(document.activeElement);

@@ -26,7 +26,7 @@ End Class
 ''' target is read back and compared with what was converted; any difference or blocking finding rolls everything back.
 ''' An unanswered COMMIT is reported as unknown, never as cancelled.
 ''' </summary>
-Friend NotInheritable Class VrcRunner
+Partial Friend NotInheritable Class VrcRunner
 
     Private Const MapBatch As Integer = 400
     Private Const MaxBlockersShown As Integer = 200
@@ -268,7 +268,11 @@ Friend NotInheritable Class VrcRunner
         Dim k_used = UsedProducts(k_gest)
         For Each k_table In VrcTargetSchema.Tables().Where(Function(k_t) Not k_t.IsExercise)
             _cancel.ThrowIfCancellationRequested()
-            MigrateShared(k_gest, k_table, k_used)
+            If k_table.Name = "FeluriMancare" Then
+                MigrateDishTypes(k_gest, k_table)
+            Else
+                MigrateShared(k_gest, k_table, k_used)
+            End If
             StopIfBlocked(k_table.Name)
         Next
         For Each k_source In k_gest.Sources
@@ -536,7 +540,12 @@ Friend NotInheritable Class VrcRunner
             If k_column.Link = VrcLinkKind.Skip OrElse k_column.Link = VrcLinkKind.Supplier Then Continue For
             Dim k_raw As Object = Nothing
             k_row.TryGetValue(k_column.Name, k_raw)
-            Dim k_converted As Object = ConvertColumn(k_gest, k_source, k_sourceIndex, k_table, k_column, k_raw, k_key, k_ok)
+            Dim k_converted As Object
+            If k_column.Link = VrcLinkKind.MealType Then
+                k_converted = MealDishId(k_gest, k_source, k_table, k_row, k_key, k_ok)
+            Else
+                k_converted = ConvertColumn(k_gest, k_source, k_sourceIndex, k_table, k_column, k_raw, k_key, k_ok)
+            End If
             k_values.Add(k_converted)
             If (k_column.FieldClass = "VALOARE-INT" OrElse k_column.FieldClass = "COTA") AndAlso k_converted IsNot Nothing AndAlso Not TypeOf k_converted Is DBNull Then
                 k_sums(k_column.Name) = CDec(k_converted)

@@ -184,7 +184,8 @@ for (const t of order) {
     let link = null;
     if (c[0] === 'CHEIE') {
       const key = `${t}.${f.n}`;
-      if (t === 'NIR' && f.n === 'IDF') link = { kind: 'supplier' };
+      if (['MicDejun', 'Dejun', 'Cina'].includes(t) && f.n === 'IdFel') link = { kind: 'meal_type' }; // derive from TIP, never from the Access IdFel
+      else if (t === 'NIR' && f.n === 'IDF') link = { kind: 'supplier' };
       else if (SKIP_FIELDS[t]?.has(f.n)) link = { kind: 'skip' };
       else if (f.type === 'AutoNumber') link = { kind: 'tech' };   // a technical row number that is not the primary key (LABC.ID, ProduseM.IDPMF): carries no reference
       else if (fk) link = { kind: 'fk', parent: fk.p, parentField: fk.pf };

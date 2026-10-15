@@ -163,7 +163,13 @@ def lista(dc, year=None, month=None, q=None, iddf=None, cui=None):
            + f" ORDER BY p.DataFact DESC, p.IdPrimita DESC LIMIT {MAX_LIST}")
     with F._unit(dc, SQL_FILES) as conn:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute(sql, tuple(params))
+        # The number of booked operations of each invoice (EF_PrimiteOperatii, filled by the migrator). The table may not exist
+        # yet (its script was not run): then every invoice has 0, and the list still works.
+        cursor.execute("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() "
+                       "AND TABLE_NAME = 'EF_PrimiteOperatii'")
+        has_ops = bool(cursor.fetchone()["n"])
+        ops = ("(SELECT COUNT(*) FROM EF_PrimiteOperatii o WHERE o.IdPrimita = p.IdPrimita)" if has_ops else "0")
+        cursor.execute(sql.replace("FROM EF_Primite p", f", {ops} AS NrOperatii FROM EF_Primite p", 1), tuple(params))
         return {"facturi": [_plain(row) for row in cursor.fetchall()]}
 
 

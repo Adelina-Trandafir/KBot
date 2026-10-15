@@ -278,6 +278,16 @@ Public NotInheritable Class AdobeReaderHost
     End Property
     Private _saveTrapEnabled As Boolean
 
+    ''' <summary>Slice 00EF-31: see <see cref="AdobeSaveTrap.ChooseSavePath"/> (the operator picks where a save goes).</summary>
+    Public Property ChooseSavePath As Func(Of String, String)
+        Get
+            Return _saveTrap.ChooseSavePath
+        End Get
+        Set(value As Func(Of String, String))
+            _saveTrap.ChooseSavePath = value
+        End Set
+    End Property
+
     ''' <summary>
     ''' Slice 0078-05: send Adobe's Read Mode (Ctrl+H) once the document is laid out, so the toolbars
     ''' are hidden by Adobe itself. True by default; the bench may switch it off.

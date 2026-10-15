@@ -20,7 +20,6 @@ Partial Class FacturiForm
         components = New ComponentModel.Container()
         Dim KBotMenuItem1 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem2 As KBotMenuItem = New KBotMenuItem()
-        Dim KBotMenuItem3 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem4 As KBotMenuItem = New KBotMenuItem()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FacturiForm))
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
@@ -136,15 +135,11 @@ Partial Class FacturiForm
         KBotMenuItem2.Image = My.Resources.Resources.kbot_64
         KBotMenuItem2.Key = "date"
         KBotMenuItem2.Text = "Date Unitate"
-        KBotMenuItem3.Image = My.Resources.Resources.anaf
-        KBotMenuItem3.Key = "primite"
-        KBotMenuItem3.Text = "Sincronizează facturi primite"
         mnuUnitate.Items.Add(KBotMenuItem1)
         mnuUnitate.Items.Add(KBotMenuItem2)
         KBotMenuItem4.Image = My.Resources.Resources.invoice
         KBotMenuItem4.Key = "listaprimite"
         KBotMenuItem4.Text = "Facturi primite"
-        mnuUnitate.Items.Add(KBotMenuItem3)
         mnuUnitate.Items.Add(KBotMenuItem4)
         ' 
         ' tlyMain

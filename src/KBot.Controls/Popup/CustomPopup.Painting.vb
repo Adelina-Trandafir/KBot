@@ -51,6 +51,8 @@ Partial Public Class CustomPopup
                     DrawSeparator(g, r, padX)
                 ElseIf Items(i).IsSlider Then
                     DrawSliderRow(g, i, r, padX, gutter)
+                ElseIf Items(i).IsInput Then
+                    DrawInputRow(g, i, r, padX)
                 Else
                     DrawRow(g, i, r, padX, gutter)
                 End If

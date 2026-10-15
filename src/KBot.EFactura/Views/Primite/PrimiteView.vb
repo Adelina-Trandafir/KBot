@@ -16,9 +16,10 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Slice 00EF-18 -- the received e-invoices as one control, used by the «E-Factura» view of the DDF (KBot.App) and by the window with
-''' all the received invoices. On the left a TREE: a root «Toate facturile», under it the months, under each month the invoices
-''' (the dot says whether it was opened: orange = new). On the right the chosen invoice, in VIEWS chosen from a horizontal bar (the
-''' pattern of the DDF view): «Linii» (the lines and the VAT per rate), «Factură PDF» (its own bar: the classic invoice K-BOT draws, the one ANAF
+''' all the received invoices. On the left a TREE: a root «Toate facturile», under it the months, under each month the suppliers
+''' (grouped by tax code), under each supplier the invoices (date, number, amount; the dot is neutral for now, its colour will carry a meaning to be decided).
+''' The header of the tree has the search button and the filter-options button. On the right the chosen invoice, in VIEWS chosen from
+''' a horizontal bar (the pattern of the DDF view): the first view (the supplier and the notes above, the lines below), «Factură PDF» (its own bar: the classic invoice K-BOT draws, the one ANAF
 ''' draws, and a popup with the attached files), «Atașamente» (the list, to save a file) and «Mesaje» (the last two only when the invoice has some). A right click on an invoice
 ''' offers «Salvează ca ZIP» and «Salvează ca XML» and, in the DDF view, the manual link.
 '''
@@ -35,9 +36,9 @@ Public Class PrimiteView
     ' The views of the horizontal bar (the keys of navDetaliu's items, written in the designer).
     Private Const ViewLinii As String = "linii"
     Private Const ViewPdf As String = "pdf"
-    Private Const ViewAtasamente As String = "atasamente"
     Private Const ViewMesaje As String = "mesaje"
-    Private Const ViewObservatii As String = "observatii"
+    ' The view «XML Factura» (aligned right in the bar): the XML of the invoice, in the XmlViz control (slice 00EF-36).
+    Private Const ViewXml As String = "xml"
 
     Private Const MenuZip As String = "zip"
     Private Const MenuXml As String = "xml"
@@ -64,7 +65,17 @@ Public Class PrimiteView
     Private _treeLoading As Boolean
     Private _seq As Integer
     Private _pdfSeq As Integer
-    Private _filter As String = String.Empty
+    Private _syncing As Boolean
+    Private _xmlSeq As Integer
+    Private _xmlShownId As Integer
+
+    ' Slice 00EF-35 -- the options of the header menu (the session's, not stored): what is shown, how the tree is grouped.
+    Private _onlyWithoutOperations As Boolean
+    Private _onlyNew As Boolean
+    Private _groupBySupplier As Boolean
+    Private _ascending As Boolean
+    ' The invoices this session brought from ANAF: only those are known to be new.
+    Private ReadOnly _newIds As New HashSet(Of Integer)()
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -94,8 +105,17 @@ Public Class PrimiteView
         pgPdf.ViewerFactory = k_viewerFactory
         ' While a document is still opening in Adobe no other row may be clicked (the same gate the other trees use).
         AdobeOpenGate.LockWhileOpening(tree)
-        AddHandler pgAtasamente.gridAtasamente.CellDoubleClick, AddressOf GridAtasamente_CellDoubleClick
     End Sub
+
+    ''' <summary>The invoices the list holds now (empty before the first successful read). A snapshot: a new read replaces it.</summary>
+    Public ReadOnly Property Items As IReadOnlyList(Of EFacturaPrimita)
+        Get
+            Return _items
+        End Get
+    End Property
+
+    ''' <summary>True once the list was read successfully at least once (slice 00EF-32: «what is new» needs a list to compare with).</summary>
+    Public ReadOnly Property ListLoaded As Boolean
 
     ''' <summary>The DDF the list is for, or Nothing for all the invoices of the year.</summary>
     Public ReadOnly Property IdDdf As Integer?
@@ -152,7 +172,6 @@ Public Class PrimiteView
             Dim k_ddfChanged As Boolean = Not Nullable.Equals(_idDdf, k_idDdf)
             _idDdf = k_idDdf
             chkToate.Visible = _idDdf.HasValue
-            txtCauta.Visible = Not _idDdf.HasValue
             If k_ddfChanged Then
                 chkToate.Checked = False
                 ClearDetail()
@@ -180,6 +199,7 @@ Public Class PrimiteView
             End If
             If IsDisposed OrElse k_mySeq <> _seq Then Return
             _items = k_list
+            _ListLoaded = True
             _linked = k_linkedIds
             BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
             If _shownId > 0 AndAlso Not _nodes.ContainsKey(_shownId) Then ClearDetail()
@@ -208,24 +228,6 @@ Public Class PrimiteView
         End Try
     End Sub
 
-    ''' <summary>The text in the search box narrows the tree (supplier, tax code or number). UI boundary: logs and swallows.</summary>
-    Private Sub TxtCauta_TextChanged(sender As Object, e As EventArgs) Handles txtCauta.TextChanged
-        Try
-            _filter = txtCauta.Text.Trim()
-            If _items.Count > 0 Then BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteView.TxtCauta_TextChanged", ex)
-        End Try
-    End Sub
-
-    ' The invoices the tree shows: all, or those matching the search text.
-    Private Function ShownItems() As List(Of EFacturaPrimita)
-        If _filter.Length = 0 Then Return _items
-        Return _items.Where(Function(k_x) k_x.Furnizor.Contains(_filter, StringComparison.CurrentCultureIgnoreCase) OrElse
-                                          k_x.Cui.Contains(_filter, StringComparison.CurrentCultureIgnoreCase) OrElse
-                                          k_x.NrFact.Contains(_filter, StringComparison.CurrentCultureIgnoreCase)).ToList()
-    End Function
-
     Private Sub ShowProblem(k_text As String)
         ntfMesaj.Show(k_text, NoticeKind.Error)
         ntfMesaj.Visible = True
@@ -233,7 +235,20 @@ Public Class PrimiteView
 
     ' ── The tree ────────────────────────────────────────────────────────────────
 
-    ''' <summary>Rebuilds the tree from <c>_items</c>: the root «Toate facturile», the months newest first, the invoices of a month newest first.</summary>
+    ' The invoices the tree shows: all, minus what the header menu filtered out.
+    Private Function ShownItems() As List(Of EFacturaPrimita)
+        Dim k_list As IEnumerable(Of EFacturaPrimita) = _items
+        If _onlyWithoutOperations Then k_list = k_list.Where(Function(k_x) k_x.NrOperatii = 0)
+        If _onlyNew Then k_list = k_list.Where(Function(k_x) _newIds.Contains(k_x.IdPrimita))
+        Return k_list.ToList()
+    End Function
+
+    ''' <summary>
+    ''' Rebuilds the tree from <c>_items</c> (less what the header menu filters out). Grouped by month (the default): the root «Toate
+    ''' facturile», the months newest first, under a month the suppliers (by tax code, in name order), under a supplier its invoices.
+    ''' Grouped by supplier: the suppliers are the roots, in name order, and their invoices are under them, ascending or descending by
+    ''' date. The search of the tree's header narrows it; the tree is not rebuilt when an invoice is opened.
+    ''' </summary>
     Private Sub BuildTree(k_selectId As Integer?)
         _treeLoading = True
         Try
@@ -242,34 +257,13 @@ Public Class PrimiteView
             Dim k_scheme As ThemeScheme = ThemeManager.Current
             If k_scheme Is Nothing Then Return
             Dim k_palette As ThemePalette = k_scheme.Palette
-            Dim k_folder As Image = FacturaIcons.Client(k_palette, tree.LeftIconSize.Width)
+            Dim k_icon As Image = FacturaIcons.Client(k_palette, tree.LeftIconSize.Width)
             Dim k_shown As List(Of EFacturaPrimita) = ShownItems()
-            Dim k_total As Decimal = k_shown.Sum(Function(k_x) k_x.Total)
-            Dim k_root As AdvancedTreeControl.TreeItem = tree.AddItem(
-                "R", $"Toate facturile ({k_shown.Count})~~~{k_total.ToString("N2", _ro)}",
-                pLeftIconClosed:=k_folder, pLeftIconOpen:=k_folder, pExpanded:=True)
-            k_root.Bold = True
-            Dim k_months As IEnumerable(Of IGrouping(Of Integer, EFacturaPrimita)) =
-                k_shown.GroupBy(Function(k_x) MonthKey(k_x)).OrderByDescending(Function(k_g) k_g.Key)
-            For Each k_group As IGrouping(Of Integer, EFacturaPrimita) In k_months
-                Dim k_hasSelected As Boolean = k_selectId.HasValue AndAlso k_group.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
-                Dim k_sum As Decimal = k_group.Sum(Function(k_x) k_x.Total)
-                Dim k_month As AdvancedTreeControl.TreeItem = tree.AddItem(
-                    "M_" & k_group.Key.ToString(CultureInfo.InvariantCulture),
-                    $"{MonthLabel(k_group.Key)}~~~{k_sum.ToString("N2", _ro)}", k_root,
-                    pLeftIconClosed:=k_folder, pLeftIconOpen:=k_folder, pExpanded:=k_hasSelected)
-                k_month.Bold = True
-                For Each k_p As EFacturaPrimita In k_group.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita)
-                    Dim k_dot As Image = FacturaIcons.StateDot(DotOf(k_p), k_palette, tree.LeftIconSize.Width)
-                    Dim k_caption As String = $"{If(k_p.Tip = "NC", "NC ", String.Empty)}{k_p.NrFact} · {k_p.Furnizor}~~~{k_p.Total.ToString("N2", _ro)}"
-                    Dim k_leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
-                        "P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_month,
-                        pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
-                    k_leaf.Tag = k_p
-                    k_leaf.Tooltip = TooltipOf(k_p)
-                    _nodes(k_p.IdPrimita) = k_leaf
-                Next
-            Next
+            If _groupBySupplier Then
+                BuildSupplierTree(k_shown, k_selectId, k_icon, k_palette)
+            Else
+                BuildMonthTree(k_shown, k_selectId, k_icon, k_palette)
+            End If
             Dim k_node As AdvancedTreeControl.TreeItem = Nothing
             If k_selectId.HasValue AndAlso _nodes.TryGetValue(k_selectId.Value, k_node) Then tree.SelectAndReveal(k_node)
             tree.Invalidate()
@@ -277,6 +271,93 @@ Public Class PrimiteView
             _treeLoading = False
         End Try
     End Sub
+
+    Private Sub BuildMonthTree(k_shown As List(Of EFacturaPrimita), k_selectId As Integer?, k_icon As Image, k_palette As ThemePalette)
+        Dim k_total As Decimal = k_shown.Sum(Function(k_x) k_x.Total)
+        Dim k_root As AdvancedTreeControl.TreeItem = tree.AddItem(
+            "R", $"Toate facturile ({k_shown.Count})~~~{k_total.ToString("N2", _ro)}",
+            pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=True)
+        k_root.Bold = True
+        Dim k_months As IEnumerable(Of IGrouping(Of Integer, EFacturaPrimita)) =
+            k_shown.GroupBy(Function(k_x) MonthKey(k_x)).OrderByDescending(Function(k_g) k_g.Key)
+        For Each k_group As IGrouping(Of Integer, EFacturaPrimita) In k_months
+            Dim k_monthId As String = k_group.Key.ToString(CultureInfo.InvariantCulture)
+            Dim k_hasSelected As Boolean = k_selectId.HasValue AndAlso k_group.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
+            Dim k_sum As Decimal = k_group.Sum(Function(k_x) k_x.Total)
+            Dim k_month As AdvancedTreeControl.TreeItem = tree.AddItem(
+                "M_" & k_monthId, $"{MonthLabel(k_group.Key)}~~~{k_sum.ToString("N2", _ro)}", k_root,
+                pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_hasSelected)
+            k_month.Bold = True
+            Dim k_suppliers As IEnumerable(Of IGrouping(Of String, EFacturaPrimita)) =
+                k_group.GroupBy(Function(k_x) SupplierKey(k_x)).
+                        OrderBy(Function(k_g) SupplierName(k_g), StringComparer.CurrentCultureIgnoreCase)
+            For Each k_supGroup As IGrouping(Of String, EFacturaPrimita) In k_suppliers
+                Dim k_supHasSelected As Boolean = k_selectId.HasValue AndAlso k_supGroup.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
+                AddSupplierNode(k_supGroup, "S_" & k_monthId & "_" & k_supGroup.Key, k_month, k_supHasSelected, True, k_icon, k_palette)
+            Next
+        Next
+    End Sub
+
+    Private Sub BuildSupplierTree(k_shown As List(Of EFacturaPrimita), k_selectId As Integer?, k_icon As Image, k_palette As ThemePalette)
+        Dim k_suppliers As IEnumerable(Of IGrouping(Of String, EFacturaPrimita)) =
+            k_shown.GroupBy(Function(k_x) SupplierKey(k_x)).
+                    OrderBy(Function(k_g) SupplierName(k_g), StringComparer.CurrentCultureIgnoreCase)
+        For Each k_supGroup As IGrouping(Of String, EFacturaPrimita) In k_suppliers
+            Dim k_supHasSelected As Boolean = k_selectId.HasValue AndAlso k_supGroup.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
+            AddSupplierNode(k_supGroup, "S_" & k_supGroup.Key, Nothing, k_supHasSelected, False, k_icon, k_palette)
+        Next
+    End Sub
+
+    ' A supplier row and its invoices. Under a month the invoices are newest first; with the supplier as the root they follow the
+    ' operator's choice (ascending / descending by date).
+    Private Sub AddSupplierNode(k_supGroup As IGrouping(Of String, EFacturaPrimita), k_key As String,
+                                k_parent As AdvancedTreeControl.TreeItem, k_expanded As Boolean, k_underMonth As Boolean,
+                                k_icon As Image, k_palette As ThemePalette)
+        Dim k_supSum As Decimal = k_supGroup.Sum(Function(k_x) k_x.Total)
+        Dim k_supplier As AdvancedTreeControl.TreeItem = tree.AddItem(
+            k_key, $"{SupplierName(k_supGroup)}~~~{k_supSum.ToString("N2", _ro)}", k_parent,
+            pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_expanded)
+        k_supplier.Tooltip = SupplierTooltip(k_supGroup)
+        If Not k_underMonth Then k_supplier.Bold = True
+        Dim k_invoices As IEnumerable(Of EFacturaPrimita)
+        If Not k_underMonth AndAlso _ascending Then
+            k_invoices = k_supGroup.OrderBy(Function(k_x) k_x.DataFact).ThenBy(Function(k_x) k_x.IdPrimita)
+        Else
+            k_invoices = k_supGroup.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita)
+        End If
+        For Each k_p As EFacturaPrimita In k_invoices
+            Dim k_dot As Image = FacturaIcons.StateDot(DotOf(k_p), k_palette, tree.LeftIconSize.Width)
+            Dim k_date As String = If(k_p.DataFact.HasValue, k_p.DataFact.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "fără dată")
+            Dim k_caption As String = $"{k_date} · {If(k_p.Tip = "NC", "NC ", String.Empty)}{k_p.NrFact}~~~{k_p.Total.ToString("N2", _ro)}"
+            Dim k_leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
+                "P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_supplier,
+                pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
+            k_leaf.Tag = k_p
+            k_leaf.Tooltip = TooltipOf(k_p)
+            _nodes(k_p.IdPrimita) = k_leaf
+        Next
+    End Sub
+
+    ' The supplier of an invoice by its tax code (the key of the group); an invoice with no code falls back to the name written on it.
+    Private Shared Function SupplierKey(k_p As EFacturaPrimita) As String
+        If Not String.IsNullOrWhiteSpace(k_p.CuiNormalizat) Then Return k_p.CuiNormalizat.Trim()
+        Return "N" & k_p.Furnizor.Trim().ToUpperInvariant()
+    End Function
+
+    ' The name shown for a supplier: the one on its newest invoice (the same code may be written with different names).
+    Private Shared Function SupplierName(k_group As IEnumerable(Of EFacturaPrimita)) As String
+        Dim k_newest As EFacturaPrimita = k_group.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita).First()
+        If Not String.IsNullOrWhiteSpace(k_newest.Furnizor) Then Return k_newest.Furnizor.Trim()
+        If Not String.IsNullOrWhiteSpace(k_newest.Cui) Then Return k_newest.Cui.Trim()
+        Return "Furnizor necunoscut"
+    End Function
+
+    Private Shared Function SupplierTooltip(k_group As IEnumerable(Of EFacturaPrimita)) As String
+        Dim k_list As List(Of EFacturaPrimita) = k_group.ToList()
+        Dim k_cui As String = k_list.Select(Function(k_x) k_x.Cui).FirstOrDefault(Function(k_c) Not String.IsNullOrWhiteSpace(k_c))
+        Return $"{SupplierName(k_list)}" & If(String.IsNullOrWhiteSpace(k_cui), String.Empty, $" ({k_cui})") & vbLf &
+               $"{k_list.Count} facturi · {k_list.Sum(Function(k_x) k_x.Total).ToString("N2", _ro)}"
+    End Function
 
     ' yyyymm of the invoice date; 0 = no date.
     Private Shared Function MonthKey(k_p As EFacturaPrimita) As Integer
@@ -288,11 +369,11 @@ Public Class PrimiteView
         Return $"{_monthNames(k_key Mod 100 - 1)} {k_key \ 100}"
     End Function
 
-    ' The dot: orange = never opened; grey ring = not linked to this DDF (the «all» list); green = opened.
+    ' The dot: a grey ring = not linked to this DDF (the «all» list); otherwise a neutral dot. Whether a message was opened is NOT
+    ' shown (operator, 15.10.2026): the colour of the dot will mean something else, to be decided.
     Private Function DotOf(k_p As EFacturaPrimita) As String
-        If k_p.Nou Then Return EFacturaStare.Incarcata
         If _idDdf.HasValue AndAlso Not _linked.ContainsKey(k_p.IdPrimita) Then Return EFacturaStare.Ciorna
-        Return EFacturaStare.Acceptata
+        Return FacturaIcons.StareNeutra
     End Function
 
     Private Function TooltipOf(k_p As EFacturaPrimita) As String
@@ -309,7 +390,6 @@ Public Class PrimiteView
                 k_lines.Add("Nelegată de acest DDF (clic dreapta pentru a o lega).")
             End If
         End If
-        If k_p.Nou Then k_lines.Add("Nouă: nu a fost deschisă încă.")
         Return String.Join(vbLf, k_lines)
     End Function
 
@@ -317,27 +397,18 @@ Public Class PrimiteView
         _shownId = 0
         _detail = Nothing
         gridLinii().ClearRows()
-        gridCote().ClearRows()
-        gridAtasamente().ClearRows()
+        pgLinii.ClearSupplier()
         gridMesaje().ClearRows()
-        navDetaliu.SetItemVisible(ViewAtasamente, False)
         navDetaliu.SetItemVisible(ViewMesaje, False)
-        navDetaliu.SetItemVisible(ViewObservatii, False)
-        pgObservatii.SetNotes(Nothing)
+        navDetaliu.SetItemVisible(ViewXml, False)
+        _xmlShownId = 0
+        pgXml.Clear()
         pgPdf.SetAttachments(Nothing)
         pgPdf.ReleaseDocument()
     End Sub
 
     Private Function gridLinii() As KBotDataView
         Return pgLinii.gridLinii
-    End Function
-
-    Private Function gridCote() As KBotDataView
-        Return pgLinii.gridCote
-    End Function
-
-    Private Function gridAtasamente() As KBotDataView
-        Return pgAtasamente.gridAtasamente
     End Function
 
     Private Function gridMesaje() As KBotDataView
@@ -374,22 +445,15 @@ Public Class PrimiteView
             If IsDisposed OrElse k_mySeq <> _seq OrElse k_id <> _shownId Then Return
             _detail = k_detail
             FillLines(k_detail)
-            FillAttachments(k_detail)
+            pgPdf.SetAttachments(k_detail.Atasamente)
             FillMessages(k_detail)
-            pgObservatii.SetNotes(k_detail.Note)
-            navDetaliu.SetItemVisible(ViewAtasamente, k_detail.Atasamente.Count > 0)
             ' «Mesaje» is always there: it is where a message to the supplier is written.
             navDetaliu.SetItemVisible(ViewMesaje, True)
-            navDetaliu.SetItemVisible(ViewObservatii, k_detail.Note.Count > 0)
-            Dim k_key As String = navDetaliu.SelectedKey
-            If (k_key = ViewAtasamente AndAlso k_detail.Atasamente.Count = 0) OrElse
-               (k_key = ViewObservatii AndAlso k_detail.Note.Count = 0) Then
-                navDetaliu.SelectedKey = ViewLinii
-                ShowPage(ViewLinii)
-            ElseIf k_key = ViewPdf Then
-                RefreshPdf()
-            End If
-            If k_detail.Factura.Nou Then Await MarkReadAsync(k_id).ConfigureAwait(True)
+            navDetaliu.SetItemVisible(ViewXml, True)
+            If navDetaliu.SelectedKey = ViewXml Then RefreshXml()
+            ' The attached files and the notes of the XML have no view of their own any more (operator, 15.10.2026): the files
+            ' are in the popup of «Factura PDF», the notes are above the lines of «Continut».
+            If navDetaliu.SelectedKey = ViewPdf Then RefreshPdf()
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
@@ -398,23 +462,6 @@ Public Class PrimiteView
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.ShowInvoiceAsync", ex)
             ShowProblem("Factura nu a putut fi citită. Detalii în jurnalul de erori.")
-        End Try
-    End Function
-
-    ' The message is no longer new: stored on the server, the dot turns green.
-    Private Async Function MarkReadAsync(k_id As Integer) As Task
-        Try
-            Await _gate.RunAsync(Function() _api.MarkPrimitaCititaAsync(k_id, _cts.Token)).ConfigureAwait(True)
-            If IsDisposed Then Return
-            For Each k_p As EFacturaPrimita In _items
-                If k_p.IdPrimita = k_id Then k_p.Nou = False
-            Next
-            BuildTree(k_id)
-        Catch ex As OperationCanceledException
-            ' The host was closed.
-        Catch ex As Exception
-            ' Only the dot is lost: the invoice itself was shown.
-            GlobalErrorLog.Write("PrimiteView.MarkReadAsync", ex)
         End Try
     End Function
 
@@ -437,41 +484,10 @@ Public Class PrimiteView
         Finally
             k_lines.EndUpdate()
         End Try
-        Dim k_rates As KBotDataView = gridCote()
-        k_rates.BeginUpdate()
-        Try
-            k_rates.ClearRows()
-            For Each k_c As EFacturaPrimitaCota In k_detail.Cote
-                Dim k_row As KBotDataRow = k_rates.AddRow()
-                k_row("categorie") = k_c.Categorie
-                k_row("cota") = k_c.CotaTva
-                k_row("baza") = k_c.Baza
-                k_row("tva") = k_c.Tva
-            Next
-        Finally
-            k_rates.EndUpdate()
-        End Try
+        pgLinii.ShowSupplier(k_detail)
     End Sub
 
-    Private Sub FillAttachments(k_detail As EFacturaPrimitaDetaliu)
-        pgPdf.SetAttachments(k_detail.Atasamente)
-        Dim k_grid As KBotDataView = gridAtasamente()
-        k_grid.BeginUpdate()
-        Try
-            k_grid.ClearRows()
-            For Each k_a As EFacturaPrimitaAtasament In k_detail.Atasamente
-                Dim k_row As KBotDataRow = k_grid.AddRow()
-                k_row.Tag = k_a
-                k_row("nume") = k_a.Nume
-                k_row("mime") = k_a.Mime
-                k_row("octeti") = k_a.Octeti
-            Next
-        Finally
-            k_grid.EndUpdate()
-        End Try
-    End Sub
-
-    ' «Mesaje»: only the messages of the E-Factura system about the invoice (the notes of the XML are in «Observații»).
+    ' «Mesaje»: only the messages of the E-Factura system about the invoice (the notes of the XML are above the lines of «Continut»).
     Private Sub FillMessages(k_detail As EFacturaPrimitaDetaliu)
         Dim k_grid As KBotDataView = gridMesaje()
         k_grid.BeginUpdate()
@@ -489,6 +505,34 @@ Public Class PrimiteView
 
     ' ── The views ───────────────────────────────────────────────────────────────
 
+    ' Reads the XML of the invoice shown and gives it to the view (only when it is the view on screen, and once per invoice).
+    ' UI boundary (async Sub): logs and tells the operator in the view.
+    Private Async Sub RefreshXml()
+        Try
+            Dim k_d As EFacturaPrimitaDetaliu = _detail
+            If k_d Is Nothing OrElse _shownId = 0 Then
+                pgXml.Clear()
+                Return
+            End If
+            Dim k_id As Integer = k_d.Factura.IdPrimita
+            If _xmlShownId = k_id Then Return
+            Dim k_mySeq As Integer = Interlocked.Increment(_xmlSeq)
+            pgXml.ShowNotice("Se aduce XML-ul facturii…")
+            Dim k_bytes As Byte() = Await _gate.RunAsync(Function() _api.GetPrimitaXmlAsync(k_id, _cts.Token)).ConfigureAwait(True)
+            If IsDisposed OrElse k_mySeq <> _xmlSeq Then Return
+            pgXml.ShowXml(System.Text.Encoding.UTF8.GetString(k_bytes).TrimStart(ChrW(&HFEFF)))
+            _xmlShownId = k_id
+        Catch ex As OperationCanceledException
+            ' The host was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("PrimiteView.RefreshXml", ex)
+            If Not IsDisposed Then pgXml.ShowNotice(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.RefreshXml", ex)
+            If Not IsDisposed Then pgXml.ShowNotice("XML-ul facturii nu a putut fi citit. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
     Private Sub NavDetaliu_SelectionChanged(k_key As String) Handles navDetaliu.SelectionChanged
         Try
             ShowPage(k_key)
@@ -500,9 +544,9 @@ Public Class PrimiteView
     Private Sub ShowPage(k_key As String)
         pgLinii.Visible = String.Equals(k_key, ViewLinii, StringComparison.Ordinal)
         pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
-        pgAtasamente.Visible = String.Equals(k_key, ViewAtasamente, StringComparison.Ordinal)
         pgMesaje.Visible = String.Equals(k_key, ViewMesaje, StringComparison.Ordinal)
-        pgObservatii.Visible = String.Equals(k_key, ViewObservatii, StringComparison.Ordinal)
+        pgXml.Visible = String.Equals(k_key, ViewXml, StringComparison.Ordinal)
+        If pgXml.Visible Then RefreshXml()
         If pgPdf.Visible Then RefreshPdf()
     End Sub
 
@@ -579,7 +623,7 @@ Public Class PrimiteView
             Dim k_isImage As Boolean = k_file.Mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase) OrElse
                                        {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff"}.Contains(k_ext)
             If Not k_isPdf AndAlso Not k_isImage Then
-                pgPdf.ShowNotice($"«{k_file.Nume}» nu se poate afișa aici. Îl puteți salva din vederea «Atașamente» (dublu clic).")
+                pgPdf.ShowNotice($"«{k_file.Nume}» nu se poate afișa aici.")
                 Return
             End If
             pgPdf.ShowNotice("Se deschide atașamentul…")
@@ -636,6 +680,289 @@ Public Class PrimiteView
             GlobalErrorLog.Write("PrimiteView.PgMesaje_SendRequested", ex)
             ShowProblem("Mesajul nu a putut fi trimis. Detalii în jurnalul de erori.")
         End Try
+    End Sub
+
+    ' ── Tree header ─────────────────────────────────────────────────────────────
+
+    Private Const OptFaraOperatii As String = "fara_operatii"
+    Private Const OptNoi As String = "noi"
+    Private Const OptPeFurnizor As String = "grup_furnizor"
+    Private Const OptPeLuna As String = "grup_luna"
+    Private Const OptCrescator As String = "ord_cresc"
+    Private Const OptDescrescator As String = "ord_desc"
+
+    ''' <summary>
+    ''' The options button of the tree's header opens the menu of what is shown and how the tree is grouped (slice 00EF-35):
+    ''' two filters (the invoices with no operations in AVACONT; the invoices brought in this session -- offered only when this session
+    ''' brought some, otherwise nothing tells which are new), a separator, the grouping (only the one that is NOT in force is
+    ''' offered: it is the switch), and, with the supplier as the root, a separator and the two orders of its invoices.
+    ''' UI boundary: logs and swallows.
+    ''' </summary>
+    Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+        Try
+            ' A second press on the button CLOSES the menu (the press already closed it, so without this guard it would reopen at once).
+            If CustomPopup.ClosedJustNow Then Return
+            Dim k_anchor As Rectangle = tree.HeaderRightIconRect
+            If k_anchor.IsEmpty Then Return
+            Dim k_items As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(OptFaraOperatii, "Afișare facturi fără operații în AVACONT") With {.Checked = _onlyWithoutOperations}}
+            If _newIds.Count > 0 Then
+                k_items.Add(New CustomPopupItem(OptNoi, "Afișare facturi noi") With {.Checked = _onlyNew})
+            End If
+            k_items.Add(CustomPopupItem.Separator())
+            If _groupBySupplier Then
+                k_items.Add(New CustomPopupItem(OptPeLuna, "Grupare după lună"))
+                k_items.Add(CustomPopupItem.Separator())
+                k_items.Add(New CustomPopupItem(OptCrescator, "Ordonare crescătoare facturi") With {.Checked = _ascending})
+                k_items.Add(New CustomPopupItem(OptDescrescator, "Ordonare descrescătoare facturi") With {.Checked = Not _ascending})
+            Else
+                k_items.Add(New CustomPopupItem(OptPeFurnizor, "Grupare după furnizor"))
+            End If
+            Dim k_menu As New CustomPopup(k_items)
+            AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) OptionChosen(k_args.Item.Key)
+            k_menu.ShowBelow(tree, k_anchor)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.Tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ' A row of the options menu: the option changes and the tree is built again with the shown invoice kept. UI boundary: logs and swallows.
+    Private Sub OptionChosen(k_key As String)
+        Try
+            Select Case k_key
+                Case OptFaraOperatii
+                    _onlyWithoutOperations = Not _onlyWithoutOperations
+                Case OptNoi
+                    _onlyNew = Not _onlyNew
+                Case OptPeFurnizor
+                    _groupBySupplier = True
+                Case OptPeLuna
+                    _groupBySupplier = False
+                Case OptCrescator
+                    _ascending = True
+                Case OptDescrescator
+                    _ascending = False
+                Case Else
+                    Throw New ArgumentException($"Rând necunoscut în meniul de opțiuni: {k_key}", NameOf(k_key))
+            End Select
+            BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.OptionChosen", ex)
+        End Try
+    End Sub
+
+    ' ── «Actualizare…»: the footer of the tree (slice 00EF-33) ─────────────────────
+
+    Private Const FooterIdleText As String = "Actualizare…"
+    Private Const SyncCaption As String = "Sincronizează facturi primite"
+    Private Const SyncBatch As Integer = 20
+
+    ' The rows of the popup's list, and the days each one stands for (the first is the usual one).
+    Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
+
+    ''' <summary>Raised with the line that tells how an update goes (the same text the footer shows); a host may show it too.</summary>
+    Public Event SyncStatus(k_text As String)
+
+    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        OpenSyncPopup()
+    End Sub
+
+    Private Sub Tree_FooterCaptionClicked(e As MouseEventArgs) Handles tree.FooterCaptionClicked
+        OpenSyncPopup()
+    End Sub
+
+    Private Const MenuZileCombo As String = "zile_combo"
+    Private Const MenuZileText As String = "zile_text"
+
+    ' The button of the footer opens the standard popup menu with two input rows: a list of the preset periods (picking one starts the
+    ' update) and a box for a number of days (Enter starts it). UI boundary: logs and swallows.
+    Private Sub OpenSyncPopup()
+        Try
+            If _api Is Nothing OrElse _syncing Then Return
+            If CustomPopup.ClosedJustNow Then Return
+            Dim k_band As Rectangle = tree.FooterBandRect
+            If k_band.IsEmpty Then Return
+            Dim k_items As New List(Of CustomPopupItem) From {
+                CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus:",
+                                      SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile")),
+                CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "zile", 2, True)}
+            Dim k_menu As New CustomPopup(k_items)
+            AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) SyncMenuAnswered(k_args.Item)
+            ' Over the button: above the footer, its right edge on the button's right edge.
+            Dim k_icon As Rectangle = tree.FooterRightIconRect
+            k_menu.ShowAboveRightAligned(tree, k_band, If(k_icon.IsEmpty, k_band.Right, k_icon.Right))
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.OpenSyncPopup", ex)
+        End Try
+    End Sub
+
+    ' The answer of the popup: the list (a preset period) or the box (days written by hand).
+    Private Sub SyncMenuAnswered(k_item As CustomPopupItem)
+        If String.Equals(k_item.Key, MenuZileCombo, StringComparison.Ordinal) Then
+            PickedDays(k_item.ComboSelectedIndex)
+        ElseIf String.Equals(k_item.Key, MenuZileText, StringComparison.Ordinal) Then
+            TypedDays(k_item.InputText)
+        Else
+            Throw New ArgumentException($"Rând necunoscut în meniul de actualizare: {k_item.Key}", NameOf(k_item))
+        End If
+    End Sub
+
+    ' The list: the row is one of the preset periods. UI boundary (async Sub): logs and swallows.
+    Private Async Sub PickedDays(k_index As Integer)
+        Try
+            Dim k_days As Integer = SyncDayChoices(Math.Max(0, Math.Min(SyncDayChoices.Length - 1, k_index)))
+            Await SyncFromAnafAsync(k_days).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.PickedDays", ex)
+            If Not IsDisposed Then
+                KBotMessage.Show(FindForm(), "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                                 SyncCaption, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        End Try
+    End Sub
+
+    ' The box: Enter with a number of days. Empty or out of 1-60 = nothing starts, the operator is told. UI boundary: logs and swallows.
+    Private Async Sub TypedDays(k_text As String)
+        Try
+            Dim k_days As Integer
+            If Not Integer.TryParse(k_text, NumberStyles.None, CultureInfo.InvariantCulture, k_days) OrElse k_days < 1 OrElse k_days > 60 Then
+                KBotMessage.Show(FindForm(), "Numărul de zile trebuie să fie între 1 și 60.", SyncCaption,
+                                 MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+            Await SyncFromAnafAsync(k_days).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.TypedDays", ex)
+            If Not IsDisposed Then
+                KBotMessage.Show(FindForm(), "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                                 SyncCaption, MessageBoxButtons.OK, MessageBoxIcon.Error)
+            End If
+        End Try
+    End Sub
+
+    Private Sub SetSyncStatus(k_text As String, k_footer As String)
+        If IsDisposed Then Return
+        tree.FooterCaption = k_footer
+        tree.Invalidate()
+        RaiseEvent SyncStatus(k_text)
+    End Sub
+
+    ''' <summary>
+    ''' Brings the received invoices of the last <paramref name="k_days"/> days (1 to 60) from ANAF, a batch at a time, until the server
+    ''' says nothing is left; the progress is the footer's caption (and <see cref="SyncStatus"/>), then the list is read again when
+    ''' something was added, and the end tells what came: a window with the NEW invoices, or «Nu există facturi noi pe serverul ANAF.».
+    ''' The server skips what it already has, so it can be run again and again. One at a time (a second call returns at once).
+    ''' A failure is logged and thrown to the caller.
+    ''' </summary>
+    Public Async Function SyncFromAnafAsync(k_days As Integer) As Task
+        Try
+            If k_days < 1 OrElse k_days > 60 Then Throw New ArgumentOutOfRangeException(NameOf(k_days), "Zile între 1 și 60.")
+            If _api Is Nothing OrElse _syncing Then Return
+            _syncing = True
+            Try
+                Dim k_problems As New List(Of String)()
+                Dim k_done As Integer
+                Dim k_total As Integer
+                Dim k_added As Boolean
+                Dim k_addedCount As Integer
+                ' What is new = what was not in the list before: the list is read first if it never was.
+                If Not ListLoaded Then Await LoadAsync(_idDdf).ConfigureAwait(True)
+                Dim k_before As New HashSet(Of Integer)(_items.Select(Function(k_x) k_x.IdPrimita))
+                Dim k_baseline As Boolean = ListLoaded
+                SetSyncStatus("Se citește lista de mesaje de la ANAF…", "Se citește lista de la ANAF…")
+                Do
+                    Dim k_answer As EFacturaSincronizare = Await _gate.RunAsync(
+                        Function() _api.SyncPrimiteAsync(k_days, SyncBatch, _cts.Token)).ConfigureAwait(True)
+                    If IsDisposed Then Return
+                    If k_total = 0 Then k_total = k_answer.Adaugate + k_answer.Ramase + k_answer.Erori.Count
+                    k_done += k_answer.Adaugate + k_answer.Erori.Count
+                    If k_answer.Adaugate > 0 Then k_added = True
+                    k_addedCount += k_answer.Adaugate
+                    k_problems.AddRange(k_answer.Erori)
+                    If k_total > 0 Then
+                        Dim k_of As String = $"{Math.Min(k_done, k_total).ToString(CultureInfo.CurrentCulture)} din {k_total.ToString(CultureInfo.CurrentCulture)}"
+                        SetSyncStatus("Se aduc facturile de la ANAF… " & k_of, "Se aduc… " & k_of)
+                    End If
+                    ' Stop when nothing is left, or when a whole batch brought nothing (the same messages would come back forever).
+                    If k_answer.Ramase = 0 OrElse k_answer.Adaugate = 0 Then Exit Do
+                Loop
+                SetSyncStatus(If(k_problems.Count = 0, "Facturile primite sunt la zi.",
+                                 "Sincronizarea s-a încheiat, dar unele mesaje nu au putut fi citite."), FooterIdleText)
+                If k_added Then Await LoadAsync(_idDdf).ConfigureAwait(True)
+                If IsDisposed Then Return
+                If k_problems.Count > 0 Then
+                    KBotMessage.Show(FindForm(), "Nu s-au putut citi:" & vbLf & String.Join(vbLf, k_problems.Take(4)) &
+                                     If(k_problems.Count > 4, vbLf & "…", String.Empty),
+                                     SyncCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                End If
+                ShowSyncResult(k_added, k_addedCount, k_baseline, k_before, k_problems.Count > 0)
+            Finally
+                _syncing = False
+                If Not IsDisposed Then tree.FooterCaption = FooterIdleText
+            End Try
+        Catch ex As OperationCanceledException
+            ' The host was closed.
+        Catch ex As ApiException
+            If Not IsDisposed Then
+                If NoMessagesAnswer(ex.Message) Then
+                    ' ANAF answers «there are no messages in the last N days» as an error text: that is NOT a problem, only news
+                    ' (operator, 15.10.2026) -- an info message, nothing in the error log.
+                    RaiseEvent SyncStatus("Facturile primite sunt la zi.")
+                    KBotMessage.Show(FindForm(), "Nu există facturi noi pe serverul ANAF.", SyncCaption,
+                                     MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Else
+                    GlobalErrorLog.Write("PrimiteView.SyncFromAnafAsync", ex)
+                    RaiseEvent SyncStatus("Sincronizarea s-a oprit.")
+                    KBotMessage.Show(FindForm(), ex.Message, SyncCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                End If
+            Else
+                GlobalErrorLog.Write("PrimiteView.SyncFromAnafAsync", ex)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.SyncFromAnafAsync", ex)
+            If Not IsDisposed Then RaiseEvent SyncStatus("Sincronizarea s-a oprit.")
+            Throw
+        End Try
+    End Function
+
+    ' ANAF's text for «no messages in the period» («Nu exista mesaje in ultimele N zile pentru cif=...»), in any case or with diacritics.
+    Private Shared Function NoMessagesAnswer(k_text As String) As Boolean
+        Return Not String.IsNullOrEmpty(k_text) AndAlso
+               Regex.IsMatch(k_text, "nu\s+exist\w*\s+mesaje", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+    End Function
+
+    ' What the end of an update tells: a window with the NEW invoices (those not in the list before), or an info message. Nothing new
+    ' and no unreadable message = «Nu există facturi noi pe serverul ANAF.»; brought but not in this list (another year than the one
+    ' chosen in K-BOT, or the list could not be compared) = a message with the count.
+    Private Sub ShowSyncResult(k_added As Boolean, k_addedCount As Integer, k_baseline As Boolean,
+                               k_before As HashSet(Of Integer), k_hadProblems As Boolean)
+        If Not k_added Then
+            If Not k_hadProblems Then
+                KBotMessage.Show(FindForm(), "Nu există facturi noi pe serverul ANAF.", SyncCaption,
+                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
+            End If
+            Return
+        End If
+        Dim k_new As List(Of EFacturaPrimita) = If(k_baseline,
+            _items.Where(Function(k_x) Not k_before.Contains(k_x.IdPrimita)).ToList(), New List(Of EFacturaPrimita)())
+        If k_new.Count = 0 Then
+            KBotMessage.Show(FindForm(), $"S-au descărcat {k_addedCount.ToString(CultureInfo.CurrentCulture)} facturi noi de la ANAF" &
+                             If(k_baseline, ", dar nu sunt din anul ales în K-BOT.", "."),
+                             SyncCaption, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        ' Known to be new for the rest of the session: the header menu can show only them.
+        For Each k_x As EFacturaPrimita In k_new
+            _newIds.Add(k_x.IdPrimita)
+        Next
+        ' The same sentence the window shows is kept in the operator's message log (nothing the operator read is lost).
+        OperatorLog.Write("PrimiteView.SyncFromAnafAsync", SyncCaption,
+                          $"S-au descărcat {k_new.Count.ToString(CultureInfo.CurrentCulture)} facturi noi: " &
+                          String.Join(", ", k_new.Take(20).Select(Function(k_x) $"{k_x.NrFact} ({k_x.Furnizor})")),
+                          KBotLogLevel.Info)
+        Using k_dialog As New SincronizareNoiForm(k_new)
+            k_dialog.ShowDialog(FindForm())
+        End Using
     End Sub
 
     ' ── Menu and files ──────────────────────────────────────────────────────────
@@ -739,34 +1066,6 @@ Public Class PrimiteView
         If k_base.Length = 0 Then k_base = "factura_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture)
         Return Regex.Replace(k_base, "[^A-Za-z0-9_.-]", "_") & "." & k_extension
     End Function
-
-    ''' <summary>Double click on an attached file saves it. UI boundary (async Sub): logs and swallows.</summary>
-    Private Async Sub GridAtasamente_CellDoubleClick(sender As Object, e As KBotCellEventArgs)
-        Try
-            Dim k_d As EFacturaPrimitaDetaliu = _detail
-            If k_d Is Nothing OrElse e Is Nothing OrElse e.RowIndex < 0 OrElse e.RowIndex >= gridAtasamente().RowCount Then Return
-            Dim k_a As EFacturaPrimitaAtasament = TryCast(gridAtasamente().Rows(e.RowIndex).Tag, EFacturaPrimitaAtasament)
-            If k_a Is Nothing Then Return
-            Dim k_id As Integer = k_d.Factura.IdPrimita
-            Dim k_ext As String = Path.GetExtension(k_a.Nume).TrimStart("."c)
-            Using k_dialog As New SaveFileDialog() With {
-                .FileName = Regex.Replace(k_a.Nume, "[^A-Za-z0-9_.-]", "_"), .OverwritePrompt = True}
-                If k_dialog.ShowDialog(FindForm()) <> DialogResult.OK Then Return
-                Dim k_path As String = k_dialog.FileName
-                Dim k_bytes As Byte() = Await _gate.RunAsync(
-                    Function() _api.GetPrimitaAtasamentAsync(k_id, k_a.Index, _cts.Token)).ConfigureAwait(True)
-                File.WriteAllBytes(k_path, k_bytes)
-            End Using
-        Catch ex As OperationCanceledException
-            ' The host was closed.
-        Catch ex As ApiException
-            GlobalErrorLog.Write("PrimiteView.GridAtasamente_CellDoubleClick", ex)
-            ShowProblem(ex.Message)
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteView.GridAtasamente_CellDoubleClick", ex)
-            ShowProblem("Fișierul nu a putut fi salvat. Detalii în jurnalul de erori.")
-        End Try
-    End Sub
 
     ' ── Theme ───────────────────────────────────────────────────────────────────
 

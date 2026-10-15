@@ -77,6 +77,39 @@ Public Class ReaderHostPreview
     ' Slice 0099: the print watch of the document on screen (Nothing when none is shown).
     Private _printWatch As IDisposable
 
+    ''' <summary>
+    ''' Slice 00EF-31 (operator, 15.10.2026): True = Adobe's Save is still trapped, but it no longer overwrites the document
+    ''' on screen: K-BOT shows its own «Salveaza» dialog, so the operator chooses WHETHER to save and WHERE (Cancel = nothing is
+    ''' saved). False (default) = every save goes back onto the document (the signing flow). Set once, before the first document.
+    ''' </summary>
+    <System.ComponentModel.Browsable(False),
+     System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)>
+    Public Property UserChoosesSave As Boolean
+        Get
+            Return _userChoosesSave
+        End Get
+        Set(value As Boolean)
+            _userChoosesSave = value
+            Dim k_chooser As Func(Of String, String) = Nothing
+            If value Then k_chooser = New Func(Of String, String)(AddressOf ChooseSaveFile)
+            _host.ChooseSavePath = k_chooser
+            If _acro IsNot Nothing Then _acro.ChooseSavePath = k_chooser
+        End Set
+    End Property
+    Private _userChoosesSave As Boolean
+
+    ' The chooser the trap calls (UI thread) with the name Adobe offered: the operator's own dialog; Nothing = do not save.
+    Private Function ChooseSaveFile(k_offered As String) As String
+        Dim k_name As String = Path.GetFileName(If(k_offered, String.Empty).Trim())
+        If k_name.Length = 0 Then k_name = "document.pdf"
+        Using k_dialog As New SaveFileDialog() With {
+            .Title = "Salvează documentul", .Filter = "Document PDF (*.pdf)|*.pdf", .DefaultExt = "pdf",
+            .AddExtension = True, .OverwritePrompt = True, .FileName = k_name}
+            If k_dialog.ShowDialog(FindForm()) <> DialogResult.OK Then Return Nothing
+            Return k_dialog.FileName
+        End Using
+    End Function
+
     ''' <summary>Slice 0078: a trapped save finished (argument = the document path). For the bench.</summary>
     Public Event DocumentSaved As Action(Of String)
     ''' <summary>Slice 0078: a save was cancelled by the trap (argument = Romanian reason). For the bench.</summary>
@@ -382,6 +415,7 @@ Public Class ReaderHostPreview
                     .PrimerPath = System.IO.Path.Combine(AppContext.BaseDirectory, "empty_pdf.pdf")}
                 ' Slice 0078-15 (operator, 07.10.2026): the rebuilt viewer traps Save As exactly like the hosted window.
                 _acro.SaveTrapEnabled = True
+                If _userChoosesSave Then _acro.ChooseSavePath = New Func(Of String, String)(AddressOf ChooseSaveFile)
                 AddHandler _acro.DocumentSaved, AddressOf OnDocumentSaved
                 AddHandler _acro.SaveTrapFailed, AddressOf OnSaveTrapFailed
                 AddHandler _acro.SaveKeysSent, AddressOf OnSaveKeysSent

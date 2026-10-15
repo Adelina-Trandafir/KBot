@@ -113,9 +113,16 @@ def _clean(cursor, repo, ctx, exercise, body):
             if not text:
                 continue                                  # an empty row is not a dish (as in Access)
             dish = _int(item.get('IdFel')) if item.get('IdFel') not in (None, '') else None
-            if dish is not None and not _exists(repo, 'VC_FeluriMancare', 'IDFel', dish):
-                errors['m.%s.items.%d' % (key, index)] = 'Felul ales nu există în această gestiune.'
-            items.append({'IdFel': dish, 'Tip': _text(item.get('Tip'), 'm.%s.items.%d' % (key, index), errors, False, 50), 'Explicatie': text})
+            tip = _text(item.get('Tip'), 'm.%s.items.%d' % (key, index), errors, False, 50)
+            if dish is not None:
+                dishes = repo.select('VC_FeluriMancare', {'IDFel': dish}, columns=('IDFel', 'DenFel'))
+                if not dishes:
+                    errors['m.%s.items.%d' % (key, index)] = 'Felul ales nu există în această gestiune.'
+                elif not tip:
+                    tip = dishes[0]['DenFel']
+                    if tip and len(tip) > 50:
+                        errors['m.%s.items.%d' % (key, index)] = 'Denumirea felului poate avea cel mult 50 de caractere.'
+            items.append({'IdFel': dish, 'Tip': tip, 'Explicatie': text})
         out['meals'][key] = {'P': portions, 'D': distributed, 'price': price, 'value': value, 'items': items}
     bons = body.get('bons')
     if bons is None:

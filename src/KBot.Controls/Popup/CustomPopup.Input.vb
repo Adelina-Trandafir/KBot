@@ -25,6 +25,16 @@ Partial Public Class CustomPopup
         Try
             Dim code As Keys = keyData And Keys.KeyCode
 
+            ' Slice 00EF-34: with the keyboard in a text box / list of the popup, the keys are theirs (digits are not access
+            ' letters there, Enter answers from the box); only Esc is still the popup's.
+            If InputHasFocus() Then
+                If code = Keys.Escape Then
+                    CloseWith(Nothing, -1)
+                    Return True
+                End If
+                Return MyBase.ProcessCmdKey(msg, keyData)
+            End If
+
             ' Windows aprinde sublinierile de acces la prima tastă apăsată în meniu.
             RevealMnemonics()
 

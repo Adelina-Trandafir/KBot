@@ -12,7 +12,8 @@ Imports KBot.Theming
 '   - «E-Factura Vanzare»  (key efactura_vanzare): the invoices the unit issues (FacturiForm);
 '   - «E-Factura Cumparare» (key efactura_cumparare): the invoices received from ANAF (PrimiteForm);
 '   - the unit's commands that were in the title bar of the issued-invoices window (accounts, unit data), the
-'     received-invoices synchronisation and the ANAF token step.
+'     received-invoices synchronisation (slice 0114-01 / 00EF-30: a ribbon button and two inputs, shown while the «Cumparare» page is on
+'     screen; no dialog) and the ANAF token step.
 ' Each machete is a page of the main window, one at a time; asking again brings the open one to the front.
 Partial Public Class KbotForm
 
@@ -70,7 +71,7 @@ Partial Public Class KbotForm
             Dim k_api As IEFacturaApi = Nothing
             Dim k_gate As ReauthGate = Nothing
             If Not EFacturaContext("E-Factura Cumpărare", k_api, k_gate) Then Return
-            _primiteForm = New PrimiteForm(k_api, k_gate, _session.NumeUnitate, _session.An, Function() New FacturaPdfViewer())
+            _primiteForm = New PrimiteForm(k_api, k_gate, _session.NumeUnitate, _session.An, Function() New FacturaPdfViewer(True))
             AddHandler _primiteForm.FormClosed, Sub() _primiteForm = Nothing
             If Not ShowMachetaPage(_primiteForm, MachetaRef.Create(MachetaEFacturaCumparare)) Then
                 _primiteForm.Dispose()
@@ -94,8 +95,6 @@ Partial Public Class KbotForm
                     DeschideEFactura()
                 Case MachetaEFacturaCumparare
                     DeschideEFacturaCumparare()
-                Case "ef_primite_sync"
-                    OpenSincronizarePrimite()
                 Case "ef_token"
                     OpenTokenAnaf()
                 Case Else
@@ -145,14 +144,20 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
-    ' Slice 00EF-18: brings the received invoices from ANAF (the dialog does the work, a batch at a time).
-    Private Sub OpenSincronizarePrimite()
-        Dim k_api As IEFacturaApi = Nothing
-        Dim k_gate As ReauthGate = Nothing
-        If Not EFacturaContext("Sincronizează facturi primite", k_api, k_gate) Then Return
-        Using k_dialog As New SincronizarePrimiteForm(k_api, k_gate)
-            k_dialog.ShowDialog(Me)
-        End Using
+    ''' <summary>
+    ''' Slice 00EF-30: brings the received invoices from ANAF for the last <paramref name="k_days"/> days, from the ribbon (no dialog
+    ''' any more): the «Cumparare» page shows the progress on its bottom line and reads its list again. Nothing happens when that
+    ''' page is not open (the ribbon shows the button only then). UI boundary (async Sub): logs and tells the operator.
+    ''' </summary>
+    Friend Async Sub SyncPrimite(k_days As Integer)
+        Try
+            If _primiteForm Is Nothing OrElse _primiteForm.IsDisposed Then Return
+            Await _primiteForm.SyncFromAnafAsync(k_days).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SyncPrimite", ex)
+            KBotMessage.Show(Me, "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                             "Sincronizează facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
     End Sub
 
     ' Slice 00EF-05: the ANAF token step (the certificate, the signature that authorises the unit).

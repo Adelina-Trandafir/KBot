@@ -32,6 +32,7 @@ Partial Public Class ApiClient
         Public Property Ref As String
         Public Property IdPrimitaRef As Integer?
         Public Property Nou As Integer
+        Public Property NrOperatii As Integer
         Public Property legatura As String
     End Class
 
@@ -378,7 +379,7 @@ Partial Public Class ApiClient
             .CuiNormalizat = If(w.CuiNormalizat, String.Empty), .Furnizor = If(w.DenumireP, String.Empty),
             .Adresa = If(w.Adresa, String.Empty), .Atasament = If(w.Atasament, String.Empty), .Tip = If(w.Tip, "FC"),
             .Semn = If(w.Semn = 0, 1, w.Semn), .Ref = If(w.Ref, String.Empty), .IdPrimitaRef = w.IdPrimitaRef,
-            .Nou = w.Nou <> 0, .Legatura = If(w.legatura, String.Empty)}
+            .Nou = w.Nou <> 0, .NrOperatii = w.NrOperatii, .Legatura = If(w.legatura, String.Empty)}
     End Function
 
 End Class

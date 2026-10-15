@@ -1,12 +1,15 @@
 Option Strict On
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
 
 ''' <summary>
 ''' Slice 00EF-19 -- «E-Factura — facturi primite»: ALL the received invoices of the unit for the year chosen in K-BOT, in the same control the
-''' DDF view uses (<see cref="PrimiteView"/>): the tree by months with the search box above it, the views on the right. At the bottom,
-''' «Sincronizează cu ANAF» (the same dialog as the menu of the issued-invoice window) and «Reîmprospătează». The window holds no rules;
+''' DDF view uses (<see cref="PrimiteView"/>): the tree by months and suppliers with the search in its header, the views on the right. At the
+''' bottom, a line of state. The update from ANAF is the footer of the tree («Actualizare…», slice 00EF-33; the work is
+''' <see cref="PrimiteView.SyncFromAnafAsync"/>) and the ribbon button (slice 00EF-30) calls the same method through
+''' <see cref="SyncFromAnafAsync"/>. There is no «Reîmprospătează»: a re-read of the database is not wanted. The window holds no rules;
 ''' what is shown and what the buttons do come from the server (slice 00EF-17).
 ''' </summary>
 Public Class PrimiteForm
@@ -14,7 +17,6 @@ Public Class PrimiteForm
     Private ReadOnly _api As IEFacturaApi
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _year As Integer
-    Private _busy As Boolean
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -36,6 +38,7 @@ Public Class PrimiteForm
         _gate = k_gate
         _year = k_year
         primite.Initialize(k_api, k_gate, k_viewerFactory, k_year)
+        AddHandler primite.SyncStatus, AddressOf Primite_SyncStatus
         capBar.Text = "Facturi primite" & If(k_year > 0, $" {k_year}", String.Empty) &
                       If(String.IsNullOrWhiteSpace(k_unitName), String.Empty, " — " & k_unitName)
     End Sub
@@ -50,34 +53,23 @@ Public Class PrimiteForm
         End Try
     End Sub
 
-    Private Async Sub BtnReimprospateaza_Click(sender As Object, e As EventArgs) Handles btnReimprospateaza.Click
+    ' The state line of the update (the control also shows it in the footer of its tree). UI boundary: logs and swallows.
+    Private Sub Primite_SyncStatus(k_text As String)
         Try
-            If _busy OrElse _api Is Nothing Then Return
-            _busy = True
-            Await primite.LoadAsync(Nothing).ConfigureAwait(True)
+            If Not IsDisposed Then lblStare.Text = k_text
         Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteForm.BtnReimprospateaza_Click", ex)
-        Finally
-            _busy = False
+            GlobalErrorLog.Write("PrimiteForm.Primite_SyncStatus", ex)
         End Try
     End Sub
 
-    Private Async Sub BtnSincronizeaza_Click(sender As Object, e As EventArgs) Handles btnSincronizeaza.Click
-        Try
-            If _busy OrElse _api Is Nothing Then Return
-            _busy = True
-            Dim k_added As Boolean
-            Using k_dialog As New SincronizarePrimiteForm(_api, _gate)
-                k_dialog.ShowDialog(Me)
-                k_added = k_dialog.AdaugatCeva
-            End Using
-            If k_added AndAlso Not IsDisposed Then Await primite.LoadAsync(Nothing).ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteForm.BtnSincronizeaza_Click", ex)
-        Finally
-            _busy = False
-        End Try
-    End Sub
+    ''' <summary>
+    ''' Slice 00EF-30 / 00EF-33: brings the received invoices of the last <paramref name="k_days"/> days (1 to 60) from ANAF; the
+    ''' ribbon button calls this. The work and what the end tells are the control's (<see cref="PrimiteView.SyncFromAnafAsync"/>).
+    ''' </summary>
+    Public Async Function SyncFromAnafAsync(k_days As Integer) As Task
+        If _api Is Nothing Then Return
+        Await primite.SyncFromAnafAsync(k_days).ConfigureAwait(True)
+    End Function
 
     Private Sub BtnIesire_Click(sender As Object, e As EventArgs) Handles btnIesire.Click
         Try

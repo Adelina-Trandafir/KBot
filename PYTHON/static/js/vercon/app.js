@@ -91,7 +91,7 @@ function applyContext(k_ctx) {
 // one emoji per operation (the key comes from the server menu)
 const MENU_ICONS = {
   nir: '🧾', storno: '↩️', bc: '📤', br: '🔄', lista_alimente: '🥗', mf_registru: '📒', bp: '🤝', bt: '🚚', bs: '🗑️', rapoarte: '📊',
-  produse: '📦', categorii: '🗂️', tva: '🧮', comisie_nir: '👥', comisie_inventar: '📋', parteneri: '🏢', gestionari: '🧑‍💼', setari: '🏫', feluri: '🍲', inchidere_an: '🔒',
+  produse: '📦', baza_date: '🗂️', comisii: '👥', parteneri: '🏢', gestionari: '🧑‍💼', setari: '🏫', inchidere_an: '🔒',
 };
 let mainMenu = null;   // the Menu control (js/components/menu) that draws the operations bar
 function paintMenu(k_ctx) {

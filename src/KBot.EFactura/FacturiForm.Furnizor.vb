@@ -41,8 +41,6 @@ Partial Public Class FacturiForm
                     OpenConturi()
                 Case "date"
                     OpenDateUnitate()
-                Case "primite"
-                    OpenSincronizarePrimite()
                 Case "listaprimite"
                     OpenPrimite()
             End Select
@@ -75,14 +73,6 @@ Partial Public Class FacturiForm
         _primiteForm = New PrimiteForm(_api, _gate, _unitName, _year, _viewerFactory)
         AddHandler _primiteForm.FormClosed, Sub() _primiteForm = Nothing
         _primiteForm.Show(Me)
-    End Sub
-
-    ' Slice 00EF-18: brings the received invoices from ANAF (the dialog does the work, a batch at a time).
-    Private Sub OpenSincronizarePrimite()
-        If _busy OrElse _api Is Nothing Then Return
-        Using k_dialog As New SincronizarePrimiteForm(_api, _gate)
-            k_dialog.ShowDialog(Me)
-        End Using
     End Sub
 
     Private Sub OpenConturi()

@@ -144,6 +144,7 @@ history in `KBOT_TEST\MERGE_NOTES.md`. Recorded after the merge as work already 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
 | 0114 | `KBotRibbon` (tabs Angajamente / Date / E-Factura / Configurări, groups, large/small buttons, fold by double click or chevron, `RibbonCollapsed`); replaces MENIU (`RunMenuEntry`, `MirrorMenuTo`, `MenuStateChanged`); pinned «Ajutor» (help page with no macheta, else the full «?» menu of the macheta) and «Închide» (closes the macheta; from the list back to Acasă; absent on Acasă; the app closes only from X); orange accents NOT brought | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST` (orange); help 0000-70 | [SLICE-0114](../SLICE-0114-ribbon.md) |
+| 0114-01 | **Ribbon: câmpuri în grup + butoane condiționate** (15.10.2026): `KBotRibbonField` (Combo fără tastare / Text, `DigitsOnly`, `MaxLength`, tooltip) în `KBotRibbonGroup.Fields`, controalele KBot create de ribbon și puse în panou; `FindField`; fila E-Factura: «Cumpărare» înaintea lui «Vânzare», «Sincronizează facturi primite» + lista de zile + caseta de zile vizibile doar cât macheta «Cumpărare» e pe ecran | GATA pe cod (build curat KBot.App); **nimic rulat, nevăzut pe ecran** | `SLICE-0114-01-ribbon-campuri.md` |
 
 ### Open threads — 0114
 

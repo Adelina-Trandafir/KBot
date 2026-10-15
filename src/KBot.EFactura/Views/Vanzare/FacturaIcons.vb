@@ -19,6 +19,9 @@ Friend NotInheritable Class FacturaIcons
     Private Shared ReadOnly _cache As New Dictionary(Of String, Image)(StringComparer.Ordinal)
     Private Shared ReadOnly _sync As New Object()
 
+    ''' <summary>The state of a received invoice's dot while its colour has no meaning yet: a plain neutral dot (slice 00EF-29).</summary>
+    Friend Const StareNeutra As String = "neutra"
+
     ''' <summary>
     ''' The state of an invoice as a dot: grey ring = not sent, orange = sent and not confirmed, green = accepted, red = refused
     ''' (operator, 07.10.2026).
@@ -33,6 +36,8 @@ Friend NotInheritable Class FacturaIcons
                 k_color = k_palette.SuccessColor
             Case EFacturaStare.Refuzata
                 k_color = k_palette.ErrorColor
+            Case StareNeutra
+                k_color = k_palette.TextDimColor
             Case Else
                 k_color = k_palette.TextDimColor
                 k_hollow = True

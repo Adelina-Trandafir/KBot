@@ -20,27 +20,26 @@ Partial Class PrimiteView
         components = New System.ComponentModel.Container()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
         tree = New AdvancedTreeControl()
         chkToate = New System.Windows.Forms.CheckBox()
-        txtCauta = New KBotTextField()
         pnlDetaliu = New System.Windows.Forms.Panel()
+        pnlNav = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
         pgLinii = New PrimiteLiniiPage()
         pgPdf = New PrimitePdfPage()
-        pgAtasamente = New PrimiteAtasamentePage()
         pgMesaje = New PrimiteMesajePage()
-        pgObservatii = New PrimiteObservatiiPage()
+        pgXml = New XmlViz()
         navDetaliu = New KBotNavList()
         ntfMesaj = New KBotNotice()
         tlyBody.SuspendLayout()
         pnlArbore.SuspendLayout()
         pnlDetaliu.SuspendLayout()
+        pnlNav.SuspendLayout()
         pnlPages.SuspendLayout()
         CType(navDetaliu, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
@@ -65,27 +64,12 @@ Partial Class PrimiteView
         '
         pnlArbore.Controls.Add(tree)
         pnlArbore.Controls.Add(chkToate)
-        pnlArbore.Controls.Add(txtCauta)
         pnlArbore.Dock = System.Windows.Forms.DockStyle.Fill
         pnlArbore.Location = New System.Drawing.Point(0, 0)
         pnlArbore.Margin = New System.Windows.Forms.Padding(0)
         pnlArbore.Name = "pnlArbore"
         pnlArbore.Size = New System.Drawing.Size(320, 600)
         pnlArbore.TabIndex = 0
-        '
-        ' txtCauta
-        '
-        txtCauta.BackColor = System.Drawing.Color.Transparent
-        txtCauta.Dock = System.Windows.Forms.DockStyle.Top
-        txtCauta.Location = New System.Drawing.Point(0, 0)
-        txtCauta.MaxLength = 100
-        txtCauta.Name = "txtCauta"
-        txtCauta.PlaceholderText = "Caută după furnizor sau număr…"
-        txtCauta.Size = New System.Drawing.Size(320, 48)
-        txtCauta.TabIndex = 2
-        tips.SetToolTipHeader(txtCauta, "Căutare")
-        tips.SetToolTipText(txtCauta, "Arată în arbore doar facturile al căror furnizor, cod fiscal sau număr conține textul scris.")
-        txtCauta.Visible = False
         '
         ' chkToate
         '
@@ -109,6 +93,17 @@ Partial Class PrimiteView
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
+        tree.FooterBackColor = Drawing.SystemColors.Control
+        tree.FooterCaption = "Actualizare…"
+        tree.FooterCaptionFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
+        tree.FooterHeight = 30
+        tree.FooterIconSize = New System.Drawing.Size(18, 18)
+        tree.FooterRightIcon = My.Resources.Resources.refresh
+        tree.FooterRightIconTooltip = "Aduce de la ANAF facturile noi." & vbLf & "Alegeți perioada sau scrieți numărul de zile (1-60)."
+        tree.FooterSeparatorColor = Drawing.Color.Gainsboro
+        tree.FooterSeparatorWidth = 2
+        tree.FooterTextAlign = Drawing.ContentAlignment.MiddleRight
+        tree.FooterVisible = True
         tree.ExpanderSize = 10
         tree.Font = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
         tree.HeaderBackColor = Drawing.SystemColors.Control
@@ -118,13 +113,16 @@ Partial Class PrimiteView
         tree.HeaderForeColor = Drawing.Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New System.Drawing.Size(18, 18)
+        tree.HeaderRightIcon = My.Resources.Resources.filter
+        tree.HeaderRightIconTooltip = "Opțiunile arborelui: filtrele și gruparea facturilor."
+        tree.HeaderSearchIcon = My.Resources.Resources.search
+        tree.HeaderSearchIconTooltip = "Deschide banda de căutare peste arbore." & vbLf & "ESC golește căutarea și o închide."
         tree.HeaderSeparatorColor = Drawing.Color.Gainsboro
         tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.ItemHeight = 24
         tree.LeftIconSize = New System.Drawing.Size(14, 14)
-        tree.LeftTextWidth = 100
         tree.Location = New System.Drawing.Point(0, 28)
         tree.Margin = New System.Windows.Forms.Padding(0)
         tree.MinimumCollapsedWidth = 120
@@ -134,8 +132,16 @@ Partial Class PrimiteView
         tree.PaddingTreeEnd = 8
         tree.PaddingTreeStart = 8
         tree.ReserveRightIconSpace = False
+        tree.RightTextWidth = 96
         tree.RightClickSelects = False
         tree.RightIconSize = New System.Drawing.Size(14, 14)
+        tree.SearchBarFont = New System.Drawing.Font("Calibri", 9.0!)
+        tree.SearchBoxBackColor = Drawing.SystemColors.Control
+        tree.SearchClearButton = True
+        tree.SearchClearButtonHoverColor = Drawing.SystemColors.Control
+        tree.SearchDefaultText = "... tastează minim 3 caractere ..."
+        tree.SearchSeparatorColor = Drawing.SystemColors.ActiveBorder
+        tree.SearchSeparatorWidth = 2
         tree.ShowRightIconOnHover = False
         tree.Size = New System.Drawing.Size(320, 572)
         tree.TabIndex = 0
@@ -143,7 +149,7 @@ Partial Class PrimiteView
         ' pnlDetaliu
         '
         pnlDetaliu.Controls.Add(pnlPages)
-        pnlDetaliu.Controls.Add(navDetaliu)
+        pnlDetaliu.Controls.Add(pnlNav)
         pnlDetaliu.Controls.Add(ntfMesaj)
         pnlDetaliu.Dock = System.Windows.Forms.DockStyle.Fill
         pnlDetaliu.Location = New System.Drawing.Point(320, 0)
@@ -157,14 +163,13 @@ Partial Class PrimiteView
         '
         pnlPages.Controls.Add(pgLinii)
         pnlPages.Controls.Add(pgPdf)
-        pnlPages.Controls.Add(pgAtasamente)
         pnlPages.Controls.Add(pgMesaje)
-        pnlPages.Controls.Add(pgObservatii)
+        pnlPages.Controls.Add(pgXml)
         pnlPages.Dock = System.Windows.Forms.DockStyle.Fill
-        pnlPages.Location = New System.Drawing.Point(0, 40)
+        pnlPages.Location = New System.Drawing.Point(0, 30)
         pnlPages.Margin = New System.Windows.Forms.Padding(0)
         pnlPages.Name = "pnlPages"
-        pnlPages.Size = New System.Drawing.Size(680, 476)
+        pnlPages.Size = New System.Drawing.Size(680, 486)
         pnlPages.TabIndex = 2
         '
         ' pgLinii
@@ -186,16 +191,6 @@ Partial Class PrimiteView
         pgPdf.TabIndex = 1
         pgPdf.Visible = False
         '
-        ' pgAtasamente
-        '
-        pgAtasamente.Dock = System.Windows.Forms.DockStyle.Fill
-        pgAtasamente.Location = New System.Drawing.Point(0, 0)
-        pgAtasamente.Margin = New System.Windows.Forms.Padding(0)
-        pgAtasamente.Name = "pgAtasamente"
-        pgAtasamente.Size = New System.Drawing.Size(680, 476)
-        pgAtasamente.TabIndex = 2
-        pgAtasamente.Visible = False
-        '
         ' pgMesaje
         '
         pgMesaje.Dock = System.Windows.Forms.DockStyle.Fill
@@ -206,19 +201,31 @@ Partial Class PrimiteView
         pgMesaje.TabIndex = 3
         pgMesaje.Visible = False
         '
-        ' pgObservatii
+        ' pgXml
         '
-        pgObservatii.Dock = System.Windows.Forms.DockStyle.Fill
-        pgObservatii.Location = New System.Drawing.Point(0, 0)
-        pgObservatii.Margin = New System.Windows.Forms.Padding(0)
-        pgObservatii.Name = "pgObservatii"
-        pgObservatii.Size = New System.Drawing.Size(680, 476)
-        pgObservatii.TabIndex = 4
-        pgObservatii.Visible = False
+        pgXml.Dock = System.Windows.Forms.DockStyle.Fill
+        pgXml.Location = New System.Drawing.Point(0, 0)
+        pgXml.Margin = New System.Windows.Forms.Padding(0)
+        pgXml.Name = "pgXml"
+        pgXml.Padding = New System.Windows.Forms.Padding(3)
+        pgXml.Size = New System.Drawing.Size(680, 486)
+        pgXml.TabIndex = 5
+        pgXml.Visible = False
+        '
+        ' pnlNav: the bar of views is as high as the header of the tree and starts where the grids do (3 px from the tree)
+        '
+        pnlNav.Controls.Add(navDetaliu)
+        pnlNav.Dock = System.Windows.Forms.DockStyle.Top
+        pnlNav.Location = New System.Drawing.Point(0, 0)
+        pnlNav.Margin = New System.Windows.Forms.Padding(0)
+        pnlNav.Name = "pnlNav"
+        pnlNav.Padding = New System.Windows.Forms.Padding(3, 0, 3, 0)
+        pnlNav.Size = New System.Drawing.Size(680, 30)
+        pnlNav.TabIndex = 0
         '
         ' navDetaliu
         '
-        navDetaliu.Dock = System.Windows.Forms.DockStyle.Top
+        navDetaliu.Dock = System.Windows.Forms.DockStyle.Fill
         navDetaliu.IconSize = 18
         navDetaliu.ItemCornerRadius = 2
         navDetaliu.ItemPadding = New System.Windows.Forms.Padding(0)
@@ -230,31 +237,26 @@ Partial Class PrimiteView
         KBotNavItem2.Image = My.Resources.Resources.invoice
         KBotNavItem2.Key = "pdf"
         KBotNavItem2.Text = "Factură PDF"
-        KBotNavItem3.AutoSize = True
-        KBotNavItem3.Image = My.Resources.Resources.attach
-        KBotNavItem3.Key = "atasamente"
-        KBotNavItem3.Text = "Atașamente"
-        KBotNavItem3.Visible = False
         KBotNavItem4.AutoSize = True
         KBotNavItem4.Image = My.Resources.Resources.cells
         KBotNavItem4.Key = "mesaje"
         KBotNavItem4.Text = "Mesaje"
         KBotNavItem4.Visible = False
-        KBotNavItem5.AutoSize = True
-        KBotNavItem5.Image = My.Resources.Resources.table
-        KBotNavItem5.Key = "observatii"
-        KBotNavItem5.Text = "Observații"
-        KBotNavItem5.Visible = False
         navDetaliu.Items.Add(KBotNavItem1)
         navDetaliu.Items.Add(KBotNavItem2)
-        navDetaliu.Items.Add(KBotNavItem3)
         navDetaliu.Items.Add(KBotNavItem4)
-        navDetaliu.Items.Add(KBotNavItem5)
+        KBotNavItem6.Align = KBotNavAlign.Far
+        KBotNavItem6.AutoSize = True
+        KBotNavItem6.Image = My.Resources.Resources.table
+        KBotNavItem6.Key = "xml"
+        KBotNavItem6.Text = "XML Factură"
+        KBotNavItem6.Visible = False
+        navDetaliu.Items.Add(KBotNavItem6)
         navDetaliu.Location = New System.Drawing.Point(0, 0)
         navDetaliu.Name = "navDetaliu"
         navDetaliu.Orientation = KBotNavOrientation.Horizontal
         navDetaliu.SelectedKey = Nothing
-        navDetaliu.Size = New System.Drawing.Size(680, 40)
+        navDetaliu.Size = New System.Drawing.Size(674, 30)
         navDetaliu.TabIndex = 0
         '
         ' ntfMesaj
@@ -279,6 +281,7 @@ Partial Class PrimiteView
         tlyBody.ResumeLayout(False)
         pnlArbore.ResumeLayout(False)
         pnlDetaliu.ResumeLayout(False)
+        pnlNav.ResumeLayout(False)
         pnlPages.ResumeLayout(False)
         CType(navDetaliu, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
@@ -288,15 +291,14 @@ Partial Class PrimiteView
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents pnlArbore As System.Windows.Forms.Panel
     Friend WithEvents chkToate As System.Windows.Forms.CheckBox
-    Friend WithEvents txtCauta As KBotTextField
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents pnlDetaliu As System.Windows.Forms.Panel
+    Friend WithEvents pnlNav As System.Windows.Forms.Panel
     Friend WithEvents pnlPages As System.Windows.Forms.Panel
     Friend WithEvents pgLinii As PrimiteLiniiPage
     Friend WithEvents pgPdf As PrimitePdfPage
-    Friend WithEvents pgAtasamente As PrimiteAtasamentePage
     Friend WithEvents pgMesaje As PrimiteMesajePage
-    Friend WithEvents pgObservatii As PrimiteObservatiiPage
+    Friend WithEvents pgXml As XmlViz
     Friend WithEvents navDetaliu As KBotNavList
     Friend WithEvents ntfMesaj As KBotNotice
 End Class

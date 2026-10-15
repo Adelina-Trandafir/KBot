@@ -36,7 +36,7 @@ Public Class EFacturaView
         _reauthDdf = k_reauthDdf
         Dim k_eFactura As IEFacturaApi = TryCast(k_api, IEFacturaApi)
         If k_eFactura Is Nothing Then Throw New InvalidOperationException("The API client does not implement IEFacturaApi.")
-        primite.Initialize(k_eFactura, k_gate, Function() New FacturaPdfViewer(), 0)
+        primite.Initialize(k_eFactura, k_gate, Function() New FacturaPdfViewer(True), 0)
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey

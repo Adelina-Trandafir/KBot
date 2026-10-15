@@ -16,7 +16,7 @@ etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul cone
 <!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butoanele «Ajutor» și «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. -->
 
 ## Filele și butoanele
-<!-- slice: 0114, 0118, 0119 -->
+<!-- slice: 0114, 0118, 0119, 0114-01, 0000-76 -->
 
 | Fila | Grupul | Butoanele |
 |------|--------|-----------|
@@ -25,8 +25,8 @@ etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul cone
 | | Verificări | **Operațiuni necorelate** — **apare doar când ai operațiuni necorelate de rezolvat** — [Operațiuni necorelate](topic:contabil.notecab) |
 | **Date** | Nomenclatoare | **Clasificații bugetare**, **Parteneri** — [Nomenclatoare](topic:contabil.nomenclatoare) |
 | | Documente | **Extrase** — toate extrasele de cont ale unității — [Extrase de cont](topic:contabil.vederi.extrase) |
-| **E-Factura** | E-Factura | **Vânzare** (facturile emise), **Cumpărare** (facturile primite) — [E-Factura](topic:contabil.efactura) |
-| | ANAF | **Token ANAF** — [Tokenul ANAF](topic:contabil.efactura.token); **Sincronizează facturi primite** |
+| **E-Factura** | E-Factura | **Cumpărare** (facturile primite), **Vânzare** (facturile emise) — [E-Factura](topic:contabil.efactura) |
+| | ANAF | **Token ANAF** — [Tokenul ANAF](topic:contabil.efactura.token); **Sincronizează facturi primite**, cu lista de zile și caseta pentru zile — **apar doar cât e deschisă macheta «Cumpărare»** |
 | **Configurări** | Configurare | **Jurnal activitate** — **apare doar cât e pornit în Setări › Aplicație** — [Jurnal activitate](topic:contabil.jurnal); **Configurare K-BOT** — [Setări și aspect](topic:contabil.setari); **Istoric versiuni** — [Actualizarea K-BOT](topic:contabil.actualizare) |
 | | Unitate | **Conturi Unitate** — [Conturile unității emitente](topic:contabil.efactura.conturi); **Date Unitate** — datele unității ca emitent de facturi |
 

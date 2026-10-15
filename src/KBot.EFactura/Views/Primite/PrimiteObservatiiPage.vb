@@ -18,13 +18,35 @@ Public Class PrimiteObservatiiPage
         rtbObservatie.Editabil = False
     End Sub
 
+    ''' <summary>
+    ''' A note as it is shown: the empty lines are dropped (a line that is only spaces too) and each line is trimmed, so the text is
+    ''' one block (operator, 15.10.2026). A note with nothing in it gives an empty string.
+    ''' </summary>
+    Friend Shared Function CleanNote(k_note As String) As String
+        If String.IsNullOrWhiteSpace(k_note) Then Return String.Empty
+        Dim k_lines As IEnumerable(Of String) = k_note.Split({ControlChars.Cr, ControlChars.Lf}, StringSplitOptions.RemoveEmptyEntries).
+            Select(Function(k_l) k_l.Trim()).Where(Function(k_l) k_l.Length > 0)
+        Return String.Join(vbCrLf, k_lines)
+    End Function
+
+    ''' <summary>The notes of an invoice with the blank ones left out and the empty lines of each one dropped.</summary>
+    Friend Shared Function CleanNotes(k_notes As IEnumerable(Of String)) As List(Of String)
+        Dim k_result As New List(Of String)()
+        If k_notes Is Nothing Then Return k_result
+        For Each k_note As String In k_notes
+            Dim k_clean As String = CleanNote(k_note)
+            If k_clean.Length > 0 Then k_result.Add(k_clean)
+        Next
+        Return k_result
+    End Function
+
     ''' <summary>Shows the notes of the invoice on screen (Nothing or empty = none); the first one is selected.</summary>
     Public Sub SetNotes(k_notes As IEnumerable(Of String))
         gridObservatii.BeginUpdate()
         Try
             gridObservatii.ClearRows()
             If k_notes IsNot Nothing Then
-                For Each k_note As String In k_notes
+                For Each k_note As String In CleanNotes(k_notes)
                     Dim k_row As KBotDataRow = gridObservatii.AddRow()
                     k_row.Tag = k_note
                     k_row("text") = FirstLine(k_note)

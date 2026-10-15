@@ -130,6 +130,21 @@ Public NotInheritable Class AdobeSaveTrap
     ' End of the current script-error burst (the sweep runs at ScriptBurstIntervalMs until then).
     Private _burstUntil As DateTime = DateTime.MinValue
     Private _lastDialog As IntPtr = IntPtr.Zero
+
+    ' Slice 00EF-31 (operator, 15.10.2026): the operator CHOOSES whether the document is saved and where.
+    ' While the chooser is up, the Save As (off screen) waits in _choosing; the path picked is kept in _chosenPath until
+    ' that save is over, and is what is written in the dialog instead of the document's own path.
+    Private _choosing As IntPtr = IntPtr.Zero
+    Private _chosenPath As String
+    Private _syncContext As System.Threading.SynchronizationContext
+
+    ''' <summary>
+    ''' Slice 00EF-31: when set, a Save As of this document is NOT written onto the document's own path: the function is
+    ''' called (UI thread, outside the sweep) with the file name Adobe offered and answers the full path the operator chose,
+    ''' or Nothing = the operator does not want to save (Adobe's dialog is cancelled, no failure is raised). Set by a viewer
+    ''' that lets the operator keep a copy wherever they want (the received invoices).
+    ''' </summary>
+    Public Property ChooseSavePath As Func(Of String, String)
     ' Confirm prompts already answered (answered once, not on every sweep).
     Private ReadOnly _answered As New HashSet(Of IntPtr)()
     ' CLOSING (operator, 01.10.2026): K-BOT is closing this trap's document. Adobe then asks «Do you
@@ -592,6 +607,10 @@ Public NotInheritable Class AdobeSaveTrap
             Tr($"Handle {AcroPdfTraceLog.Hex(hwnd)}: this is the pending Save As -> left to CheckPending")
             Return
         End If
+        If hwnd = _choosing Then
+            Tr($"Handle {AcroPdfTraceLog.Hex(hwnd)}: the operator is choosing where to save -> left alone")
+            Return
+        End If
 
         ' Handed to another running trap: its business, not ours.
         Dim owner As AdobeSaveTrap = Nothing
@@ -716,6 +735,12 @@ Public NotInheritable Class AdobeSaveTrap
     Private Sub HandleSaveAs(hwnd As IntPtr, facts As AdobeDialogFacts)
         ' Off screen FIRST: the operator must not get a chance to type a folder.
         MoveOffScreen(hwnd)
+        ' Slice 00EF-31: the operator picks the file in K-BOT's own dialog; the save then goes on with their path.
+        If ChooseSavePath IsNot Nothing AndAlso _chosenPath Is Nothing Then
+            BeginChoose(hwnd)
+            Return
+        End If
+        Dim target As String = If(_chosenPath, _targetPath)
         If hwnd <> _lastDialog Then _presses = 0
         _lastDialog = hwnd
         _presses += 1
@@ -736,13 +761,13 @@ Public NotInheritable Class AdobeSaveTrap
             Cancel(hwnd, "Caseta cu numele fișierului nu a fost găsită în dialogul «Salvare ca».")
             Return
         End If
-        Dim wrote As Boolean = AdobeNativeMethods.WriteText(edit, _targetPath)
+        Dim wrote As Boolean = AdobeNativeMethods.WriteText(edit, target)
         Dim readBack As String = AdobeNativeMethods.ReadText(edit)
         Tr($"HandleSaveAs {AcroPdfTraceLog.Hex(hwnd)}: WriteText -> {wrote}, read back «{readBack}», " &
-           $"same path={AdobeSaveDialogFilter.SamePath(readBack, _targetPath)}")
-        If Not AdobeSaveDialogFilter.SamePath(readBack, _targetPath) Then
+           $"same path={AdobeSaveDialogFilter.SamePath(readBack, target)}")
+        If Not AdobeSaveDialogFilter.SamePath(readBack, target) Then
             _pending = IntPtr.Zero
-            Cancel(hwnd, $"Numele din dialog («{readBack}») nu a putut fi fixat pe «{_targetPath}».")
+            Cancel(hwnd, $"Numele din dialog («{readBack}») nu a putut fi fixat pe «{target}».")
             Return
         End If
 
@@ -754,7 +779,47 @@ Public NotInheritable Class AdobeSaveTrap
         Dim posted As Boolean = AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND,
                                                                New IntPtr(AdobeNativeMethods.IDOK), IntPtr.Zero)
         Tr($"HandleSaveAs {AcroPdfTraceLog.Hex(hwnd)}: PostMessage(WM_COMMAND, IDOK) -> {posted}; " & StateText())
-        Report($"«Salvare» apăsat pe {_targetPath}.")
+        Report($"«Salvare» apăsat pe {target}.")
+    End Sub
+
+    ' Slice 00EF-31: the Save As of Adobe is parked off screen and the operator's chooser is shown from a posted callback
+    ' (never inside a sweep: a modal dialog there would run the sweep again under itself). The chooser's answer decides:
+    ' a path -> the Save As goes on with it (HandleSaveAs again); Nothing -> Adobe's dialog is cancelled, quietly.
+    Private Sub BeginChoose(hwnd As IntPtr)
+        If _choosing <> IntPtr.Zero Then Return
+        _choosing = hwnd
+        Claims(hwnd) = Me
+        Dim offered As String = AdobeNativeMethods.ReadText(FindFileNameEdit(hwnd))
+        Report($"Dialog «Salvare ca» 0x{hwnd.ToInt64():X}: operatorul alege unde se salvează (nume propus «{offered}»).")
+        If _syncContext Is Nothing Then _syncContext = If(System.Threading.SynchronizationContext.Current, New System.Threading.SynchronizationContext())
+        _syncContext.Post(Sub(k_state) RunChooser(hwnd, offered), Nothing)
+    End Sub
+
+    ' Posted callback: UI boundary -- logs and swallows; a failure cancels Adobe's dialog so nothing is left hanging.
+    Private Sub RunChooser(hwnd As IntPtr, offered As String)
+        Dim k_answer As String = Nothing
+        Try
+            Dim k_chooser As Func(Of String, String) = ChooseSavePath
+            If k_chooser IsNot Nothing Then k_answer = k_chooser.Invoke(offered)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.RunChooser", ex)
+            k_answer = Nothing
+        End Try
+        Try
+            _choosing = IntPtr.Zero
+            If Not AdobeNativeMethods.IsWindow(hwnd) Then Return
+            If String.IsNullOrWhiteSpace(k_answer) Then
+                ' The operator does not want to save: Adobe's dialog is closed, nothing is raised.
+                AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND, New IntPtr(AdobeNativeMethods.IDCANCEL), IntPtr.Zero)
+                Report("Salvare anulată de operator.")
+                If _paused AndAlso Not IsBusy Then HaltWatching()
+                Return
+            End If
+            _chosenPath = k_answer
+            HandleSaveAs(hwnd, GatherFacts(hwnd))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.RunChooser", ex)
+        End Try
     End Sub
 
     Private Sub HandleConfirm(hwnd As IntPtr, facts As AdobeDialogFacts)
@@ -866,7 +931,8 @@ Public NotInheritable Class AdobeSaveTrap
             _hiddenSince = Nothing
         End If
         If gone Then
-            Dim path As String = _targetPath
+            Dim path As String = If(_chosenPath, _targetPath)
+            _chosenPath = Nothing
             _pending = IntPtr.Zero
             _hiddenSince = Nothing
             Report($"«Salvare ca» încheiat ({If(_confirmed, "cu", "fără")} confirmare de suprascriere): {path}")
@@ -1074,6 +1140,7 @@ Public NotInheritable Class AdobeSaveTrap
     End Sub
 
     Private Sub Cancel(hwnd As IntPtr, reason As String)
+        _chosenPath = Nothing
         Dim posted As Boolean = AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND,
                                                                New IntPtr(AdobeNativeMethods.IDCANCEL), IntPtr.Zero)
         Tr($"Cancel {AcroPdfTraceLog.Hex(hwnd)}: PostMessage(WM_COMMAND, IDCANCEL) -> {posted}; reason: {reason}")

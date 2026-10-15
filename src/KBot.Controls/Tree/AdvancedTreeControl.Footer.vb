@@ -255,6 +255,16 @@ Partial Public Class AdvancedTreeControl
         Return New Rectangle(Math.Max(0, Me.Width - PaddingTreeEndPx - latime), top, latime, inaltime)
     End Function
 
+    ''' <summary>Slice 00EF-34: the whole footer band, in client coordinates (empty = no footer). A popup opens from it.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property FooterBandRect As Rectangle
+        Get
+            If Not _footerVisible Then Return Rectangle.Empty
+            Return New Rectangle(0, Math.Max(0, Me.Height - _footerHeight), Math.Max(1, Me.Width), Math.Max(1, _footerHeight))
+        End Get
+    End Property
+
     ''' <summary>Dreptunghiul curent al iconiței din dreapta subsolului (gol = nu se vede).</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
@@ -352,6 +362,9 @@ Partial Public Class AdvancedTreeControl
         Dim leftRect As Rectangle = FooterLeftIconRect
         If Not leftRect.IsEmpty AndAlso leftRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterLeftIconClicked(e)
+        ElseIf Not KBotDesignTime.IsDesignTime(Me) Then
+            ' Slice 00EF-33: the rest of the band is the caption's: a host that makes it a button listens to this.
+            RaiseEvent FooterCaptionClicked(e)
         End If
         Return True                       ' banda e a subsolului, indiferent unde s-a apăsat
     End Function

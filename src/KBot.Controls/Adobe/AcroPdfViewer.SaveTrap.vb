@@ -82,6 +82,16 @@ Partial Public NotInheritable Class AcroPdfViewer
         End Set
     End Property
 
+    ''' <summary>Slice 00EF-31: see <see cref="AdobeSaveTrap.ChooseSavePath"/> (the operator picks where a save goes).</summary>
+    Public Property ChooseSavePath As Func(Of String, String)
+        Get
+            Return _saveTrap.ChooseSavePath
+        End Get
+        Set(value As Func(Of String, String))
+            _saveTrap.ChooseSavePath = value
+        End Set
+    End Property
+
     ' Before a load: a save of the previous document finishes first, and replacing it is closing it (Adobe may ask
     ' «save changes?»). Returns True when a document is being replaced. Reached from ShowDocument (wrapped).
     Private Function BeforeLoadSaveTrap() As Boolean

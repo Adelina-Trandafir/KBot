@@ -18,6 +18,10 @@ from flask import g, request
 from . import nomenclatoare as nom
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
+from .nomenclator_usage import annotate, category_statement
+from .nomenclator_stock import product_statement
+from .nomenclator_products import used_products
+from . import cpv_catalog
 
 _DEFAULT_ZEC = 4
 _DEFAULT_SCARA = 4
@@ -58,6 +62,20 @@ def register(bp, guard, scoped, open_db):
     def request_id():
         return (request.headers.get('X-Request-Id') or '')[:64] or None
 
+    @bp.get('/api/vercon/cpv')
+    @guard('read')
+    def cpv_read():
+        scoped('read')
+        with session(False) as cursor:
+            return cpv_catalog.read(cursor, request.args.get('parent'), request.args.get('name', ''), request.args.get('code', ''))
+
+    @bp.get('/api/vercon/cpv/<code>')
+    @guard('read')
+    def cpv_detail(code):
+        scoped('read')
+        with session(False) as cursor:
+            return cpv_catalog.detail(cursor, code)
+
     @bp.get('/api/vercon/nom/<kind>')
     @guard('read')
     def nom_list(kind):
@@ -67,9 +85,31 @@ def register(bp, guard, scoped, open_db):
         with session(False) as cursor:
             repo = repo_of(cursor, ctx)
             rows = nom.list_rows(repo, kind, gest_type, scale, request.args.get('parent'))
+            rows = annotate(cursor, who['subunit'], who['gestiune'], kind, rows)
             options = nom.lookups(repo, kind, gest_type)
+            labels = options
+            if kind == 'produse':
+                used = used_products(cursor, ctx)
+                rows = [{**row, 'used_in_year': row['id'] in used} for row in rows]
+                labels = {**options, 'IdMasina': [{'id': row['IdMasina'], 'label': row['Masina'] or ''}
+                          for row in repo.select('VC_Masini', columns=('IdMasina', 'Masina'))]}
         return {'kind': kind, 'label': nom.SPECS[kind]['label'], 'columns': nom.columns_for(kind, gest_type), 'rows': rows,
-                'lookups': options, 'scale': scale, 'can_write': 'nomenclatoare' in g.vercon_operations}
+                'lookups': options, 'labels': labels, 'scale': scale,
+                'can_write': kind != 'variante' and 'nomenclatoare' in g.vercon_operations}
+
+    @bp.get('/api/vercon/nom/produse/<int:row_id>/statement')
+    @guard('read')
+    def nom_product_statement(row_id):
+        ctx = scoped('read')
+        with session(False) as cursor:
+            return product_statement(cursor, ctx, row_id)
+
+    @bp.get('/api/vercon/nom/categorii/<int:row_id>/statement')
+    @guard('read')
+    def nom_category_statement(row_id):
+        ctx = scoped('read')
+        with session(False) as cursor:
+            return category_statement(cursor, ctx, row_id)
 
     @bp.post('/api/vercon/nom/<kind>')
     @guard('nomenclatoare')

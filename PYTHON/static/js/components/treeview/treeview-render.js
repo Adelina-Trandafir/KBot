@@ -75,8 +75,8 @@ export const treeViewRenderMixin = {
       const isExpanded = this.expandedNodes.has(nodeIdStr);
       const currentPath = [...parentPath, { id: node.id, label: nodeLabel }];
       const pathString = currentPath.map((p) => `${p.id},${p.label}`).join(';');
-      const isSelectable =
-        this.options.selectableLevel === null || this.options.selectableLevel === level;
+      const isSelectable = node.selectable !== false &&
+        (this.options.selectableLevel === null || this.options.selectableLevel === level);
 
       // Verifică stilizarea pentru search
       const isMatched = this.matchedNodes.has(nodeIdStr);
@@ -116,6 +116,7 @@ export const treeViewRenderMixin = {
     <div class="treeview-item-wrapper">
       <div class="${itemClasses}" 
            data-value="${this.escapeHtml(nodeIdStr)}"
+           data-selectable="${node.selectable !== false}"
            data-text="${this.escapeHtml(nodeLabel)}"
            data-level="${level}"
            data-has-children="${hasChildren}"

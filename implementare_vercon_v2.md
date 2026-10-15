@@ -568,3 +568,471 @@ Schimbarea se aplică controlului comun, inclusiv variantelor inline/dropdown
 și culorilor din tema dark, fără suprascrierea culorilor de către aplicație.
 
 Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### 2026-10-15 — Nomenclatoare în DGV, Baza de date, Comisii și feluri din TIP
+
+Nomenclatoarele folosesc acum numai grile editabile, cu rând gol pentru adăugare,
+salvare pe celulă/rând complet și meniul ⋮ pentru activare/dezactivare și
+reîncercarea salvării. Formularul lateral din captura utilizatorului este eliminat.
+Produsele și variantele de preț păstrează legătura părinte–copil în două grile.
+Ciornele incomplete și salvările neconfirmate sunt păstrate separat; crearea
+folosește în continuare RequestKey, iar actualizările folosesc Version.
+
+În Configurări, cele cinci intrări individuale Categorii / Conturi, Cote TVA,
+Feluri de mâncare, Comisie Recepție și Comisie Inventariere sunt înlocuite cu:
+- Baza de date: categorii în stânga; TVA în dreapta sus; feluri în dreapta jos.
+- Comisii: Comisie Recepție NIR și Comisie Inventariere, suprapuse pe toată
+  lățimea și înălțimea disponibilă a spațiului de lucru cu limitele existente.
+
+Grilele folosesc înălțimi relative la spațiul de lucru, fără VH propriu.
+Coloanele de date au ponderi egale; Stare și ⋮ au lățimi fixe, ⋮ rămâne 36 px.
+Calculul lățimilor utilizează API-ul proportionalWidths al DGV, care scade
+scrollbarul vertical și bordurile; panourile includ paddingul în border-box,
+iar antetul ⋮ nu mai impune paddingul standard de 44 px într-o coloană de 36 px.
+Nu sunt aplicate preferințe vechi care ar reintroduce lățimi sau coloane ascunse.
+
+Sub categorii este o mini fișă valorică pentru anul selectat: SI, Intrări,
+Ieșiri și SF, cu afișare la două zecimale și calcul prin serviciul existent de
+stoc. Documentele STOC_INITIAL din interval intră în SI. Evaluarea folosește
+prețul curent al variantei, conform contractului existent al serviciului de stoc.
+TVA nu are mini fișă. Dezactivarea categoriei este refuzată dacă are mișcări în
+oricare exercițiu, inclusiv pentru produse inactive; TVA este protejat dacă este
+utilizat de produse prin liniile VC_Intrari, inclusiv legăturile migrate care
+păstrează doar valoarea numerică TVA. Refuzul se aplică și pe server, indiferent
+de starea meniului clientului.
+
+VRC.Migrator generează VC_FeluriMancare din TIP distinct în MicDejun, Dejun și
+Cina, pe toți anii gestiunii, și completează IdFel țintă din acest nomenclator.
+IdFel din Access nu mai este interpretat ca referință către feluri. Nomenclatorul
+nu primește explicațiile meselor; TIP și Explicatie ale rândurilor se păstrează.
+Denumirile Felul n sunt normalizate; un TIP neconform blochează importul cu X13,
+un TIP gol rămâne fără referință. Maparea este consemnată în VC_IdMap și N11,
+iar versiunea regulilor planului este actualizată. Lista de alimente alege TIP
+prin nomenclator și asociază și IdFel, păstrând textele istorice deja salvate.
+
+Fișiere modificate/adăugate:
+- PYTHON/static/js/vercon/nomenclatoare.js
+- PYTHON/static/js/vercon/nomenclator-grid.js
+- PYTHON/static/js/vercon/app.js
+- PYTHON/static/js/vercon/lista.js
+- PYTHON/static/css/vercon-nomenclatoare.css
+- PYTHON/routes/vercon/capabilities.py
+- PYTHON/routes/vercon/nomenclatoare.py
+- PYTHON/routes/vercon/nomenclator_usage.py
+- PYTHON/routes/vercon/nom_routes.py
+- PYTHON/routes/vercon/lista.py
+- VERCON/VRC.Migrator/VrcRunner.vb
+- VERCON/VRC.Migrator/VrcRunner.Dishes.vb
+- VERCON/VRC.Migrator/VrcTargetSchema.vb
+- VERCON/VRC.Migrator/target_schema.json
+- VERCON/VRC.Migrator/VrcPlan.vb
+- VERCON/VRC.Migrator/README.md
+- VERCON/tools/ddl.js (descrierea regulii meal_type; generatorul nu a fost rulat)
+- sql/VC_Feluri_din_TIP.sql
+- implementare_vercon_v2.md
+
+SQL-ul este pregătit pentru executare manuală pe o gestiune deja migrată, după
+completarea ID-urilor subunității și gestiunii. Nu modifică schema, nu șterge
+nomenclatoare și nu este executat automat.
+
+Stare: modificări de sursă, fără teste, compilări, rulare în browser, importuri,
+SQL executat sau alte verificări, conform AGENTS.md. Afișarea efectivă și
+comportamentul în aplicație nu sunt confirmate prin rulare.
+
+### 2026-10-15 — Produse: grilă pe 70%, istoric prețuri și arbore de fișe de magazie
+
+Ecranul Produselor folosește acum o coloană stângă de 70% din lățimea
+interioară disponibilă, pe toată înălțimea grilei. Coloana dreaptă primește
+restul spațiului după un interval orizontal de 20 px. Titlurile sunt pe o
+linie de layout comună; grila produselor ocupă două rânduri egale de conținut,
+iar istoricul prețurilor ocupă primul dintre ele, adică exact jumătate din
+înălțimea grilei produselor. În jumătatea dreaptă inferioară este fișa de magazie.
+Nu sunt introduse dimensiuni VH sau măsurători JS pentru această geometrie.
+
+Ordinea coloanelor este Categorie / cont, Denumire produs, UM, CPV, apoi
+extensiile existente pentru MF și coloanele tehnice. Categoria are 300 px,
+UM 100 px, CPV 200 px, iar Denumirea umple spațiul rămas peste minimul ei.
+Lățimile fixe nu sunt convertite în ponderi procentuale. Pe spații prea
+înguste pentru lățimile cerute, grila produselor permite derulare orizontală.
+Filtrele din antet sunt vizibile pe Denumire, CPV și Cont. Filtrarea și
+căutarea Contului folosesc denumirea categoriei, inclusiv când categoria
+legată produsului este inactivă; opțiunile editorului rămân cele active.
+Căutarea generală a ecranului se aplică produselor, pe cele trei câmpuri.
+
+Istoricul prețurilor se afișează în dreapta sus și include implicit toate
+variantele, active și inactive. La selectarea produsului se încarcă arborele
+variantelor de preț; fiecare ramură deschide fișa sa de magazie. Selectarea
+unui rând de preț deschide aceeași fișă. Variantele cu același preț rămân
+identități separate, cu codul și ID-ul variantei disponibile în arbore.
+Fișa are Data, Document, Cantitate, Sold și footer Stoc, cu afișare la două
+zecimale ca la NIR; prețurile din arbore păstrează patru zecimale.
+
+Endpointul read-only /api/vercon/nom/produse/<id>/statement folosește contextul
+serverului, exercițiul selectat, registrul warehouse și algoritmul existent
+de sold cantitativ. Returnează ultimele 20 de mișcări în ordine descrescătoare
+pentru fiecare variantă; soldurile și Stoc includ toate mișcările eligibile,
+inclusiv cele anterioare începutului intervalului pentru OI/MF. Variantele
+fără mișcări sunt incluse. Calculul cantitativ nu cere preț de evaluare,
+pentru a permite și istoricul migrat cu preț negativ sau NULL. Răspunsurile
+întârziate sunt ignorate la schimbarea produsului; variantele produsului
+precedent nu rămân editabile în timpul încărcării noului produs.
+
+Fișiere modificate/adăugate:
+- PYTHON/static/js/vercon/nomenclator-grid.js
+- PYTHON/static/js/vercon/product-nomenclator.js
+- PYTHON/static/js/vercon/product-stock.js
+- PYTHON/static/css/vercon-products.css
+- PYTHON/static/css/vercon.css
+- PYTHON/routes/vercon/nomenclator_stock.py
+- PYTHON/routes/vercon/nom_routes.py
+- PYTHON/static/js/dgv/datagrid.js
+- PYTHON/static/js/dgv/engine.js
+- implementare_vercon_v2.md
+
+DGV transmite formatterul către motorul de filtrare pentru a folosi aceleași
+valori afișate în checklist; noul callback opțional filterValue permite
+condițiilor de filtrare pe Cont să compare eticheta păstrând ID-ul în date.
+
+Stare: modificări de sursă; fără teste, compilări, verificări în browser,
+interogări executate pe baze de date sau modificări de schemă, conform
+AGENTS.md. Aspectul și comportamentul nu sunt confirmate prin rulare.
+
+### 2026-10-15 — Produse: prețuri numai din NIR, produse folosite și selector CPV lazy
+
+Grila Istoric prețuri este eliminată complet din ecranul Produselor. În
+nomenclatoare, variantele sunt numai pentru citire: create/update/active
+pentru kind=variante sunt refuzate în serviciu. Scrierea automată a prețurilor
+din fluxul NIR, care folosește repository-ul documentelor, rămâne disponibilă.
+Coloana dreaptă este ocupată integral de arbore și fișa de magazie. Arborele
+are un singur nivel, fiecare nod afișând prețul cu TVA și prima dată a unui
+NIR neanulat care folosește varianta, din toți anii gestiunii. În lipsa unui
+astfel de document se afișează „fără dată”, fără dată inventată.
+
+Produsele afișate implicit sunt cele active, folosite în anul selectat în
+context. Folosirea este calculată pe server din documentele de stoc valide,
+iar pentru OI/MF include și predările, transferurile și casările din anul
+respectiv. Căutarea locală din antetul nomenclatorului nu mai este inserată
+în pagină. Butonul Afișare folosește openMenu din controlul comun existent,
+cu două opțiuni bifabile: Afișează TOATE produsele și Afișează produse INACTIVE.
+Realegerea opțiunii bifate revine la produsele folosite în an. Schimbarea
+vizibilității păstrează selecția eligibilă sau golește fișa produsului ascuns.
+
+CPV se alege prin butonul „...” din dreapta codului, vizibil numai pe celula
+CPV selectată. Deschide o pagină internă CPV, cu cele două căutări după
+Denumire și Cod, fonturile controalelor site-ului și Înapoi la produse.
+Pagina păstrează rândul și ciorna nomenclatorului. „➕” apare la hover pe
+fiecare nod real, inclusiv la nivelele superioare, și la focus pentru acces
+prin tastatură. Alegerea scrie codul în rândul inițial și îl salvează folosind
+revizia și auditul nomenclatorului; la eroare pagina rămâne deschisă pentru
+reîncercare. Pentru un produs nou incomplet, alegerea rămâne în ciorna rândului.
+Un CPV nou atribuit este validat pe server în AVACONT_COMUN.CPV.
+
+Endpointul read-only /api/vercon/cpv citește schema CPV/Expl/L1–L7 din
+MariaDB_Schema/AVACONT_COMUN.sql. Nodurile au drept identitate CPV.CPV;
+nivelurile și prefixele codului determină ramurile, inclusiv legarea unui
+nivel sărit de cel mai apropiat părinte existent. La deschidere se citesc
+numai rădăcinile; la expandare numai copiii direcți ai acelei ramuri.
+Se reutilizează TreeView și modelul de placeholder/pending/cache din NIR,
+fără încărcarea tuturor celor aproximativ 10.000 de înregistrări în client.
+Ramurile sunt memorate în pagina deschisă și răspunsurile lor în server timp
+de 5 minute, cu cel mult 512 intrări de cache; catalogul comun nu conține aici
+date specifice utilizatorului. Căutările externe au debounce de 300 ms,
+rezultate flat, numărătoare totală și maximum 200 de înregistrări reale.
+Peste limită apare rândul „Plus încă N alte înregistrări. Ajustați căutarea
+pentru un rezultat mai restrâns.”, fără icon, selecție sau acțiune la mouse
+ori Enter. Răspunsurile întârziate sunt ignorate după schimbarea căutării.
+
+Utilizatorul a confirmat că a adăugat deja cheia primară CPV.CPV. Nu s-a
+pregătit DDL și nu s-a executat nicio modificare de schemă sau comandă SQL.
+
+Fișiere modificate/adăugate:
+- PYTHON/routes/vercon/cpv_catalog.py
+- PYTHON/routes/vercon/nomenclator_products.py
+- PYTHON/routes/vercon/nomenclator_stock.py
+- PYTHON/routes/vercon/nomenclatoare.py
+- PYTHON/routes/vercon/nom_routes.py
+- PYTHON/static/js/vercon/cpv-picker.js
+- PYTHON/static/js/vercon/product-nomenclator.js
+- PYTHON/static/js/vercon/product-stock.js
+- PYTHON/static/js/vercon/nomenclator-grid.js
+- PYTHON/static/js/dgv/datagrid.js
+- PYTHON/static/css/dgv.css
+- PYTHON/static/js/components/treeview/treeview-render.js
+- PYTHON/static/js/components/treeview/treeview-interactions.js
+- PYTHON/static/css/vercon-products.css
+- PYTHON/static/css/vercon-cpv.css
+- PYTHON/static/css/vercon.css
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă, fără teste, compilări, verificări în browser sau
+interogări executate pe baze de date, conform AGENTS.md. Afișarea efectivă,
+rezultatele SQL și performanța nu sunt confirmate prin rulare.
+
+### 2026-10-15 — Selecție până la marginea arborelui și CPV în ModalFrame
+
+În arborele plat al prețurilor, rândurile nu mai au margine de început sau
+padding propriu. Fundalul și bara selecției încep la marginea părintelui.
+Insetul calculat de TreeView în --tv-node-start este aplicat etichetei;
+paddingul vertical de 4 px este mutat tot pe text. Poziția textului și
+înălțimea rândurilor sunt păstrate. Regula este limitată la arborele de
+prețuri din VERCON, fără schimbarea indentării arborilor ierarhici comuni.
+
+Selectorul CPV folosește acum componenta comună ModalFrame, deja încărcată
+în VERCON, cu width=1000 și height=600 prin API-ul controlului și limite
+CSS maxime de 1000 × 600 px. Controlul reduce fereastra pe ecrane mici,
+folosește backdrop-ul blurat existent și păstrează navigarea Tab în popup.
+Produsele rămân vizibile în fundal, inactive până la închidere. Butonul
+Închide și Escape folosesc ciclul de închidere al modalului; după alegerea
+CPV, modalul este distrus și focusul revine la controlul inițial. Escape
+nu mai este capturat separat de selector, pentru a respecta popup-urile
+interioare gestionate de ModalFrame. Citirea lazy și căutările CPV sunt
+păstrate.
+
+Fișiere modificate:
+- PYTHON/static/js/vercon/cpv-picker.js
+- PYTHON/static/js/vercon/product-nomenclator.js
+- PYTHON/static/css/vercon-cpv.css
+- PYTHON/static/css/vercon-products.css
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; fără teste, compilări sau verificări în browser,
+conform AGENTS.md. Aspectul efectiv nu este confirmat prin rulare.
+
+### 2026-10-15 — Caption comun ModalFrame și descrierea CPV curent
+
+ModalFrame deține acum bara caption și butonul „×”, cu stiluri comune
+pentru hover, apăsare și focus. Proprietățile title, caption și showClose
+permit generarea barei, reutilizarea unui header existent sau ascunderea
+ei/butonului. Click pe „×” cere același onRequestClose ca Escape, păstrând
+decizia paginii privind salvarea ori renunțarea. La închidere sunt eliminate
+controalele generate și listener-ele. Documentele reutilizează bara lor de
+titlu; selectorul CPV folosește caption-ul generat, fără buton local Închide.
+
+La deschiderea selectorului pentru un produs cu CPV, descrierea codului
+apare sub denumirea produsului. Citirea folosește ruta GET dedicată
+/api/vercon/cpv/<code>, cu guard și context scoped, și un SELECT parametrizat
+după cheia CPV.CPV. Nu încarcă întregul catalog și nu schimbă citirea lazy
+a ramurilor. Sunt afișate mesaje pentru încărcare, descriere absentă sau
+eroare; răspunsurile sosite după închidere sunt ignorate. Dimensiunea maximă
+1000 × 600 și fundalul blurat rămân gestionate de modal.
+
+Documentația controlului din VERCON/CONTROALE_CUSTOM_THREAD.md a fost
+actualizată după modificările de cod, cu API-ul și ciclul de viață caption.
+
+Fișiere modificate:
+- PYTHON/static/js/components/modal-frame/modal-frame.js
+- PYTHON/static/css/modal-frame.css
+- PYTHON/static/js/vercon/docs.js
+- PYTHON/static/js/vercon/cpv-picker.js
+- PYTHON/static/css/vercon-cpv.css
+- PYTHON/routes/vercon/cpv_catalog.py
+- PYTHON/routes/vercon/nom_routes.py
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; nu s-au rulat teste, compilări, verificări în
+browser sau interogări pe baze de date, conform AGENTS.md. Nu s-a pregătit
+DDL și nu s-a modificat schema MariaDB. Aspectul și funcționarea nu sunt
+confirmate prin rulare.
+
+### 2026-10-15 — Filtrare DGV comună și adăugare produse pe rând
+
+Indicatorul filtrului activ din controlul comun DataGrid folosește o pâlnie
+SVG în locul săgeții, cu fontul butonului redus cu 2 pt. Popupul și iconul
+sunt separate în filtering.js. Rândul gol de adăugare nu participă la
+filtrare, valori distincte ori totalurile footerului; draftul nou rămâne
+vizibil la completare. Opțiunea singleNewRow păstrează un singur draft.
+
+În Produse, Categorie / cont are 240 px (80% din 300), Stare este eliminată,
+iar Denumire rămâne coloana care umple spațiul disponibil. Lângă titlu apare
+butonul ➕, cu tooltip „Adauga produs nou”. La click, DGV afișează numai
+rândul nou și deschide editorul denumirii. Valorile celulelor rămân locale
+până la finalizarea rândului, inclusiv când se folosește selectorul CPV.
+
+Validarea rândului cere Denumire, UM și Categorie / cont; schema de validare
+server cere acum și UM. Mesajele folosesc sistemele comune showMessage și
+confirmBox. Lipsa CPV permite salvarea după avertizare și alegerea explicită
+a continuării fără cod. Finalizarea se face la părăsirea rândului, Enter în
+ultima celulă editabilă sau „Salvează rândul” din meniul ⋮. Escape permite
+anularea draftului prin comportamentul comun al grilei.
+
+După creare se recitește lista cu toate produsele, păstrând filtrele DGV,
+sortarea și lățimile. Produsul nou este selectat și adus în zona vizibilă.
+Dacă nu corespunde filtrului curent, este afișat temporar la final; filtrul
+rămâne activ, iar excepția dispare la următoarea modificare a filtrării.
+Documentația controlului comun a fost actualizată la final.
+
+Fișiere modificate/adăugate:
+- PYTHON/static/js/dgv/datagrid.js
+- PYTHON/static/js/dgv/editing.js
+- PYTHON/static/js/dgv/filtering.js
+- PYTHON/static/css/dgv.css
+- PYTHON/static/js/vercon/product-nomenclator.js
+- PYTHON/static/js/vercon/nomenclator-grid.js
+- PYTHON/static/css/vercon-products.css
+- PYTHON/routes/vercon/nomenclatoare.py
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; fără teste, compilări, browser sau interogări
+executate pe baze de date, conform AGENTS.md. Nu s-a modificat schema
+MariaDB. Aspectul și funcționarea nu sunt confirmate prin rulare.
+
+### 2026-10-15 — Aspect buton Adaugă produs
+
+Butonul ➕ de lângă Produse are acum 44 × 40 px, icon de 24 px, colțuri
+rotunjite și centrare flex. Are cursor pointer când este disponibil,
+fundal și bordură evidențiate la hover și contur la focus din tastatură.
+Starea dezactivată păstrează cursorul normal și opacitate redusă.
+
+Fișiere modificate:
+- PYTHON/static/css/vercon-products.css
+- implementare_vercon_v2.md
+
+Stare: modificări CSS; fără teste sau verificări executate, conform
+AGENTS.md. Aspectul efectiv nu este confirmat prin rulare.
+
+### 2026-10-15 — Componentă comună ActionAddButton pentru Produse și NIR
+
+Adăugată componenta ActionAddButton în static/js/components/action-add-button,
+cu JS, CSS și fișier MD propriu. Creează un button nativ, doar cu icon sau
+cu text și icon în stânga/dreapta. Stilul este cel folosit la Produse:
+înălțime 40 px, varianta doar icon de 44 px lățime, cursor pointer, fundal
+și bordură la hover, focus vizibil și stare disabled. Fonturile sunt
+configurabile prin --action-add-button-font-size și --action-add-button-icon-size;
+și dimensiunile/culorile sunt variabile CSS documentate.
+
+Produse și butonul Adaugă din antetul arborelui NIR folosesc aceeași
+componentă și același CSS. NIR păstrează mărimea textului și iconului
+anterioare prin variabile. CSS-ul local de aspect al celor două butoane
+a fost eliminat. Regula generică pentru butoanele barei de nomenclatoare
+exclude controlul comun. Instanțele sunt distruse odată cu pagina/scope-ul
+arborelui. Acțiunile existente de adăugare sunt păstrate.
+
+Documentația componentei a fost scrisă la final, cu exemple, opțiuni, API,
+variabile CSS și responsabilități de cleanup; inventarul comun a fost
+actualizat.
+
+Fișiere modificate/adăugate:
+- PYTHON/static/js/components/action-add-button/action-add-button.js
+- PYTHON/static/js/components/action-add-button/action-add-button.css
+- PYTHON/static/js/components/action-add-button/ActionAddButton.md
+- PYTHON/static/js/vercon/nomenclator-grid.js
+- PYTHON/static/js/vercon/docs.js
+- PYTHON/static/css/vercon-products.css
+- PYTHON/static/css/vercon-receipt-context.css
+- PYTHON/static/css/vercon-integration.css
+- PYTHON/static/vercon.html
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă, fără teste, compilări sau verificări executate,
+conform AGENTS.md. Aspectul și funcționarea în browser nu sunt confirmate
+prin rulare. Nu s-au executat interogări și nu s-a modificat schema MariaDB.
+
+### 2026-10-15 — Denumire specifică ActionAddButton
+
+La cererea utilizatorului, componenta de adăugare se numește ActionAddButton,
+în directorul static/js/components/action-add-button, cu fișierele
+action-add-button.js, action-add-button.css și ActionAddButton.md.
+Importurile din Produse și NIR, linkul CSS al paginii, clasele k-action-add-button
+și variabilele --action-add-button-* folosesc aceeași denumire. Documentația
+componentei și inventarul comun au fost actualizate. Comportamentul și
+aspectul rămân cele implementate anterior.
+
+Fișiere afectate: directorul componentei (JS, CSS, MD), vercon/docs.js,
+vercon/nomenclator-grid.js, css/vercon-integration.css,
+css/vercon-receipt-context.css, static/vercon.html,
+VERCON/CONTROALE_CUSTOM_THREAD.md și implementare_vercon_v2.md.
+
+Stare: redenumire în surse; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Buton NIR doar cu icon
+
+Eliminat textul „Adaugă” din butonul de adăugare al arborelui NIR.
+ActionAddButton folosește varianta doar cu ➕; tooltipul și numele accesibil
+„Adaugă NIR”, stilul și acțiunea sunt păstrate. Exemplul din documentația
+componentei a fost actualizat.
+
+Fișiere modificate:
+- PYTHON/static/js/vercon/docs.js
+- PYTHON/static/js/components/action-add-button/ActionAddButton.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Padding condiționat pentru titlul arborelui
+
+Adăugat selectorul CSS .vc-doc__tree h4:has(button): padding sus, jos și
+stânga de 4 px numai când titlul conține un buton. Paddingul din dreapta
+și aspectul titlurilor fără buton sunt păstrate.
+
+Fișiere modificate:
+- PYTHON/static/css/vercon-documente-panels.css
+- implementare_vercon_v2.md
+
+Stare: modificare CSS; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Corecție latură padding titlu cu buton
+
+La precizarea utilizatorului, regula .vc-doc__tree h4:has(button) aplică
+4 px sus, jos și dreapta. Paddingul din stânga rămâne cel existent.
+Titlurile fără buton își păstrează aspectul.
+
+Fișiere modificate:
+- PYTHON/static/css/vercon-documente-panels.css
+- implementare_vercon_v2.md
+
+Stare: modificare CSS; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Bandă colorată uniformă în submeniuri
+
+Eliminat din controlul comun Menu calculul care lărgea coloana iconurilor
+pentru alinierea lor cu iconul din meniul principal. Submeniurile folosesc
+acum banda colorată CSS de 30 px, ca popupul Afișare produse, cu emoji
+centrate în ea. Poziția popupului, textele, dimensiunile și animațiile
+existente sunt păstrate. Documentația comună a fost actualizată.
+
+Fișiere modificate:
+- PYTHON/static/js/components/menu/menu.js
+- PYTHON/static/css/menu.css
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Butonul de meniu deschis continuă chenarul popupului
+
+Adăugat chenar superior și lateral pe butonul cu dropdown deschis, fără
+latura de jos. Se folosesc aceeași culoare --line, grosime de 1 px și
+colțuri superioare de 3 px ca la popup. Pseudo-elementul nu modifică
+geometria butonului. Marcajul inferior de selecție este ascuns doar în
+starea deschisă. Linia superioară a popupului este întreruptă sub buton,
+prin gradient și coordonate calculate în API-ul controlului, pentru efectul
+unei singure piese. Restul liniei rămâne când popupul este mai lat.
+
+Joncțiunea se aplică popupurilor barei lipite sub buton, fără up/below sau
+deplasare verticală la marginea ecranului. Acțiunile, banda iconurilor și
+animațiile rămân cele existente. Documentația comună a fost actualizată.
+
+Fișiere modificate:
+- PYTHON/static/css/menu.css
+- PYTHON/static/js/components/menu/menu.js
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificări de sursă; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-15 — Umbră dropdown doar jos și dreapta
+
+Modificat stilul comun .kmenu-popup: umbră deplasată 4 px spre dreapta și
+jos, blur 10 px; clip-path păstrează extensia doar pe aceste două laturi.
+Astfel nu apare umbră deasupra sau în stânga dropdownului. Documentația
+comună a fost actualizată.
+
+Fișiere modificate:
+- PYTHON/static/css/menu.css
+- VERCON/CONTROALE_CUSTOM_THREAD.md
+- implementare_vercon_v2.md
+
+Stare: modificare CSS; fără teste sau verificări executate, conform AGENTS.md.

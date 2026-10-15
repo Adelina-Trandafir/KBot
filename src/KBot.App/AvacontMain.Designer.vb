@@ -57,6 +57,8 @@ Partial Class AvacontMain
         Dim KBotRibbonButton21 As KBot.Controls.KBotRibbonButton = New KBot.Controls.KBotRibbonButton()
         Dim KBotRibbonButton22 As KBot.Controls.KBotRibbonButton = New KBot.Controls.KBotRibbonButton()
         Dim KBotRibbonButton23 As KBot.Controls.KBotRibbonButton = New KBot.Controls.KBotRibbonButton()
+        Dim KBotRibbonField1 As KBot.Controls.KBotRibbonField = New KBot.Controls.KBotRibbonField()
+        Dim KBotRibbonField2 As KBot.Controls.KBotRibbonField = New KBot.Controls.KBotRibbonField()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New KBot.Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New KBot.Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New KBot.Controls.KBotSidePanelSection()
@@ -192,8 +194,8 @@ Partial Class AvacontMain
         KBotRibbonButton16.Text = "Vânzare"
         KBotRibbonButton16.ToolTipHeader = "E-Factura Vânzare"
         KBotRibbonButton16.ToolTipText = "Facturile emise de unitate: lista, factura, trimiterea la ANAF."
-        KBotRibbonGroup8.Buttons.Add(KBotRibbonButton16)
         KBotRibbonGroup8.Buttons.Add(KBotRibbonButton21)
+        KBotRibbonGroup8.Buttons.Add(KBotRibbonButton16)
         KBotRibbonGroup8.Text = "E-Factura"
         KBotRibbonButton17.Image = My.Resources.Resources.credit_card
         KBotRibbonButton17.Key = "unitate_conturi"
@@ -225,7 +227,30 @@ Partial Class AvacontMain
         KBotRibbonButton20.Key = "ef_primite_sync"
         KBotRibbonButton20.Text = "Sincronizează facturi primite"
         KBotRibbonButton20.ToolTipHeader = "Sincronizează facturi primite"
-        KBotRibbonButton20.ToolTipText = "Aduce de la ANAF facturile primite în ultimele 7-60 de zile."
+        KBotRibbonButton20.ToolTipText = "Aduce de la ANAF facturile primite în perioada aleasă alături (7-60 de zile)."
+        KBotRibbonButton20.Visible = False
+        KBotRibbonField1.Key = "ef_primite_zile_combo"
+        KBotRibbonField1.Kind = KBot.Controls.KBotRibbonFieldKind.Combo
+        KBotRibbonField1.Items.Add("Ultimele 7 zile")
+        KBotRibbonField1.Items.Add("Ultimele 15 zile")
+        KBotRibbonField1.Items.Add("Ultimele 30 zile")
+        KBotRibbonField1.Items.Add("Ultimele 45 zile")
+        KBotRibbonField1.Items.Add("Ultimele 60 zile")
+        KBotRibbonField1.ToolTipHeader = "Perioada sincronizării"
+        KBotRibbonField1.ToolTipText = "Câte zile în urmă se aduc facturile primite. Se folosește doar dacă nu ai scris un număr de zile în caseta de dedesubt."
+        KBotRibbonField1.Visible = False
+        KBotRibbonField1.Width = 150
+        KBotRibbonField2.DigitsOnly = True
+        KBotRibbonField2.Key = "ef_primite_zile_text"
+        KBotRibbonField2.Kind = KBot.Controls.KBotRibbonFieldKind.Text
+        KBotRibbonField2.MaxLength = 2
+        KBotRibbonField2.PlaceholderText = "sau scrie zilele (1-60)"
+        KBotRibbonField2.ToolTipHeader = "Număr de zile"
+        KBotRibbonField2.ToolTipText = "Scrie un număr între 1 și 60: sincronizarea ia atunci această perioadă, nu pe cea din lista de deasupra. Gol = se folosește lista."
+        KBotRibbonField2.Visible = False
+        KBotRibbonField2.Width = 150
+        KBotRibbonGroup9.Fields.Add(KBotRibbonField1)
+        KBotRibbonGroup9.Fields.Add(KBotRibbonField2)
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup8)
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup9)
         KBotRibbonTab4.Text = "E-Factura"

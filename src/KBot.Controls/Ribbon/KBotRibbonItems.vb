@@ -98,6 +98,192 @@ Public NotInheritable Class KBotRibbonButton
 
 End Class
 
+''' <summary>What a <see cref="KBotRibbonField"/> is (slice 0114-01).</summary>
+Public Enum KBotRibbonFieldKind
+    ''' <summary>A list to pick from; the operator cannot type in it (KBotComboBox, not editable).</summary>
+    Combo = 0
+
+    ''' <summary>A one-line text box (KBotTextBox).</summary>
+    Text = 1
+End Enum
+
+''' <summary>
+''' A small input that stands in a group next to its buttons (slice 0114-01): a combo to pick from, or a text box. Authored
+''' in the designer (Group -> Fields); the ribbon creates the real KBot control, places it in the group's panel and hides it with
+''' the group. Small: it takes one row of the three of a column, like a small button. Its value is read from code
+''' (<see cref="Text"/>, <see cref="SelectedIndex"/>) when a command needs it; there is no event.
+''' </summary>
+Public NotInheritable Class KBotRibbonField
+
+    Private _text As String = String.Empty
+    Private _selectedIndex As Integer
+    Private ReadOnly _items As New Collection(Of String)()
+
+    Public Sub New()
+    End Sub
+
+    <Category("K-BOT")>
+    <Description("Identifier of the field. Non-empty and unique in the whole ribbon (also against the buttons).")>
+    Public Property Key As String
+
+    <Category("K-BOT")>
+    <Description("Combo = pick from Items, no typing. Text = a text box.")>
+    <DefaultValue(KBotRibbonFieldKind.Combo)>
+    Public Property Kind As KBotRibbonFieldKind = KBotRibbonFieldKind.Combo
+
+    <Category("K-BOT")>
+    <Description("The rows of a Combo field.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    Public ReadOnly Property Items As Collection(Of String)
+        Get
+            Return _items
+        End Get
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Width in pixels at 96 dpi (scaled with the screen).")>
+    <DefaultValue(130)>
+    Public Property Width As Integer = 130
+
+    <Category("K-BOT")>
+    <Description("False = takes no room and is not drawn. Call KBotRibbon.InvalidateLayout after changing it from code.")>
+    <DefaultValue(True)>
+    Public Property Visible As Boolean = True
+
+    <Category("K-BOT")>
+    <Description("False = dimmed and does not react.")>
+    <DefaultValue(True)>
+    Public Property Enabled As Boolean = True
+
+    <Category("K-BOT")>
+    <Description("Text kind: the grey hint shown while the box is empty.")>
+    <DefaultValue("")>
+    Public Property PlaceholderText As String = String.Empty
+
+    <Category("K-BOT")>
+    <Description("Text kind: the longest text; 0 = no limit.")>
+    <DefaultValue(0)>
+    Public Property MaxLength As Integer
+
+    <Category("K-BOT")>
+    <Description("Text kind: only the digits 0-9 are kept (anything else typed or pasted is dropped).")>
+    <DefaultValue(False)>
+    Public Property DigitsOnly As Boolean
+
+    <Category("K-BOT")>
+    <Description("Tooltip title.")>
+    <DefaultValue("")>
+    Public Property ToolTipHeader As String = String.Empty
+
+    <Category("K-BOT")>
+    <Description("Tooltip body.")>
+    <DefaultValue("")>
+    Public Property ToolTipText As String = String.Empty
+
+    ''' <summary>The row picked in a Combo field (-1 = none). Runtime state, never serialized.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property SelectedIndex As Integer
+        Get
+            Dim k_combo As KBot.Controls.KBotComboBox = TryCast(Control, KBot.Controls.KBotComboBox)
+            If k_combo IsNot Nothing Then Return k_combo.SelectedIndex
+            Return _selectedIndex
+        End Get
+        Set(k_value As Integer)
+            _selectedIndex = k_value
+            Dim k_combo As KBot.Controls.KBotComboBox = TryCast(Control, KBot.Controls.KBotComboBox)
+            If k_combo IsNot Nothing Then k_combo.SelectedIndex = k_value
+        End Set
+    End Property
+
+    ''' <summary>The text of a Text field (what the operator typed; empty = nothing). Runtime state, never serialized.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property Text As String
+        Get
+            Dim k_box As KBot.Controls.KBotTextBox = TryCast(Control, KBot.Controls.KBotTextBox)
+            If k_box IsNot Nothing Then Return k_box.Text
+            Return _text
+        End Get
+        Set(k_value As String)
+            _text = If(k_value, String.Empty)
+            Dim k_box As KBot.Controls.KBotTextBox = TryCast(Control, KBot.Controls.KBotTextBox)
+            If k_box IsNot Nothing Then k_box.Text = _text
+        End Set
+    End Property
+
+    ''' <summary>The real control the ribbon made for this field (Nothing at design time). Derived state.</summary>
+    Friend Property Control As System.Windows.Forms.Control
+
+    ''' <summary>The slot computed by the last layout pass (Empty when hidden). Derived state.</summary>
+    Friend Property Bounds As Rectangle
+
+    ''' <summary>The value kept while there is no control yet (applied when the ribbon creates it).</summary>
+    Friend ReadOnly Property PendingText As String
+        Get
+            Return _text
+        End Get
+    End Property
+
+    Friend ReadOnly Property PendingIndex As Integer
+        Get
+            Return _selectedIndex
+        End Get
+    End Property
+
+    Public Overrides Function ToString() As String
+        Return If(String.IsNullOrWhiteSpace(Key), "<no key>", Key) & " (" & Kind.ToString() & ")"
+    End Function
+
+End Class
+
+''' <summary>The fields of one group; the ribbon makes / drops their controls as they come and go.</summary>
+Public NotInheritable Class KBotRibbonFieldCollection
+    Inherits Collection(Of KBotRibbonField)
+
+    Private _owner As KBotRibbon
+
+    Friend Property Owner As KBotRibbon
+        Get
+            Return _owner
+        End Get
+        Set(k_value As KBotRibbon)
+            _owner = k_value
+            If k_value Is Nothing Then Return
+            For Each k_field As KBotRibbonField In Me
+                k_value.AttachField(k_field)
+            Next
+        End Set
+    End Property
+
+    Protected Overrides Sub InsertItem(k_index As Integer, k_item As KBotRibbonField)
+        If k_item Is Nothing Then Throw New ArgumentNullException(NameOf(k_item))
+        MyBase.InsertItem(k_index, k_item)
+        _owner?.AttachField(k_item)
+        _owner?.InvalidateLayout()
+    End Sub
+
+    Protected Overrides Sub RemoveItem(k_index As Integer)
+        Dim k_field As KBotRibbonField = Me(k_index)
+        MyBase.RemoveItem(k_index)
+        _owner?.DetachField(k_field)
+        _owner?.InvalidateLayout()
+    End Sub
+
+    Protected Overrides Sub ClearItems()
+        Dim k_old As New List(Of KBotRibbonField)(Me)
+        MyBase.ClearItems()
+        For Each k_field As KBotRibbonField In k_old
+            _owner?.DetachField(k_field)
+        Next
+        _owner?.InvalidateLayout()
+    End Sub
+
+    Protected Overrides Sub SetItem(k_index As Integer, k_item As KBotRibbonField)
+        Throw New NotSupportedException("Replace a ribbon field by removing it and adding the new one.")
+    End Sub
+End Class
+
 ''' <summary>The buttons of one group.</summary>
 Public NotInheritable Class KBotRibbonButtonCollection
     Inherits Collection(Of KBotRibbonButton)
@@ -131,6 +317,7 @@ End Class
 Public NotInheritable Class KBotRibbonGroup
 
     Private ReadOnly _buttons As New KBotRibbonButtonCollection()
+    Private ReadOnly _fields As New KBotRibbonFieldCollection()
 
     Public Sub New()
     End Sub
@@ -138,6 +325,15 @@ Public NotInheritable Class KBotRibbonGroup
     Public Sub New(k_text As String)
         Me.Text = If(k_text, String.Empty)
     End Sub
+
+    <Category("K-BOT")>
+    <Description("The small inputs (combo / text box) of the group, placed in a column after its buttons (slice 0114-01).")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    Public ReadOnly Property Fields As KBotRibbonFieldCollection
+        Get
+            Return _fields
+        End Get
+    End Property
 
     <Category("K-BOT")>
     <Description("The caption under the group.")>
@@ -163,6 +359,7 @@ Public NotInheritable Class KBotRibbonGroup
 
     Friend Sub SetOwner(k_owner As KBotRibbon)
         _buttons.Owner = k_owner
+        _fields.Owner = k_owner
     End Sub
 
     Public Overrides Function ToString() As String

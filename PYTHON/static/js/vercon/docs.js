@@ -7,6 +7,7 @@ import { receiptTree } from './receipt-tree.js';
 import { ModalFrame } from '../components/modal-frame/modal-frame.js';
 import { subText, subHundredths, numberText } from './receipt-number.js';
 import { receiptContext } from './receipt-context.js';
+import { ActionAddButton } from '../components/action-add-button/action-add-button.js';
 
 // Keep the modal implementation available; receipt editing temporarily stays inline.
 const RECEIPT_MODAL_ENABLED = false;
@@ -30,7 +31,7 @@ export function mountDocuments(host, opts) {
   const state = { docs: [], lookups: null, doc: null, draft: null, mode: 'view', dirty: false, requestKey: null, pendingBody: null, canWrite: false, closed: false, zec: 4, eligible: [], sources: [], available: {}, busy: false };
   const headerUi = scope(), linesUi = scope(), treeUi = scope(), dialogs = scope();
   const inputs = new Map(), errors = new Map();
-  let savedTree = null, treeDirty = true, linesGrid = null, availabilityTimer = null, numberTimer = null, numberSequence = 0, availabilitySequence = 0, openSequence = 0, eligibleSequence = 0;
+  let savedTree = null, treeAddButton = null, treeDirty = true, linesGrid = null, availabilityTimer = null, numberTimer = null, numberSequence = 0, availabilitySequence = 0, openSequence = 0, eligibleSequence = 0;
   const status = el('span', { className: 'vc-save-status', role: 'status' });
   const say = (text, bad = false) => showMessage(status, text, bad ? 'error' : 'info');
   const report = (error) => { if (!abort.signal.aborted && error.name !== 'AbortError') say(error.message || 'Operația a eșuat.', true); };
@@ -135,7 +136,7 @@ export function mountDocuments(host, opts) {
   let frame = null;
   function syncModal() {
     const modal = editing() && (family !== 'nir' || RECEIPT_MODAL_ENABLED);
-    if (modal && !frame) { frame = new ModalFrame(main, { width: 1240, height: 800, onRequestClose: () => discard().catch(report) }); frame.open(); root.classList.add('is-modal'); }
+    if (modal && !frame) { frame = new ModalFrame(main, { width: 1240, height: 800, caption: title.parentElement, onRequestClose: () => discard().catch(report) }); frame.open(); root.classList.add('is-modal'); }
     else if (!modal && frame) { frame.close(); frame = null; root.classList.remove('is-modal'); }
   }
   function paint() {
@@ -369,14 +370,13 @@ export function mountDocuments(host, opts) {
     if (family !== 'nir') return;
     const heading = treeHost.querySelector(':scope > h4');
     if (!heading) return;
-    let button = heading.querySelector('.vc-receipt-tree__add');
-    if (!button) {
-      button = el('button', { type: 'button', className: 'vc-receipt-tree__add', 'aria-label': 'Adaugă NIR' },
-        el('span', { textContent: 'Adaugă' }), el('span', { textContent: '➕', 'aria-hidden': 'true' }));
-      button.addEventListener('click', () => add().catch(report), { signal: abort.signal });
-      heading.append(button);
+    if (!treeAddButton || treeAddButton.element.parentElement !== heading) {
+      treeAddButton?.destroy();
+      treeAddButton = new ActionAddButton(heading, { className: 'vc-receipt-tree__add',
+        title: 'Adaugă NIR', onClick: () => add().catch(report) });
+      treeUi.own(treeAddButton);
     }
-    button.disabled = !state.canWrite;
+    treeAddButton.setEnabled(state.canWrite);
   }
   function paintBar() {
     bar.replaceChildren(); const button = (text, action, attrs = {}) => { const node = el('button', { type: 'button', textContent: text, ...attrs }); node.addEventListener('click', () => Promise.resolve(action()).catch(report), { signal: abort.signal }); return node; };

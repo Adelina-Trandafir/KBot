@@ -6,6 +6,23 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.4 (15.10.2026)
+
+<!-- felii: 0113, 0114, 0114-01, 0115, 0116, 0117, 0118, 0119, 0120, 0000-69, 0000-70, 0000-71, 0000-72, 0000-73, 0000-74, 00EF-27, 00EF-29, 00EF-30, 00EF-31, 00EF-32, 00EF-33, 00EF-34, 00EF-35, 00EF-36, 0000-75, 0000-76, 0000-77, 0000-78, 0000-79, 0000-80, 0000-81 -->
+
+- K-BOT porneste intr-o singura fereastra principala, pe pagina «Acasa»; ferestrele se deschid in ea, ca pagini.
+- Sus e un ribbon cu filele «Angajamente», «Date», «E-Factura», «Configurari»; a luat locul butonului MENIU.
+- «Inchide» (dreapta) inchide pagina deschisa; din lista angajamentelor te duce la «Acasa». Esc inchide la fel.
+- «Ajutor» din ribbon da ajutorul paginii deschise; dublu clic pe o fila strange ribbonul.
+- «Acasa» are cardul «Ce este nou», cu noutatile ultimelor versiuni; se desface singur dupa fiecare actualizare.
+- Panou in stanga: «Machete deschise» (revii la o pagina cu un clic), «Actiuni recente», «Informatii», «Erori».
+- «Jurnal activitate» si «Istoric versiuni» sunt pagini proprii, in ribbon: «Configurari» > «Configurare».
+- Editorul DDF: «Adauga rand» si «Sterge randul» stau pe randul lui «Salveaza documentul».
+- E-Factura: «Cumparare» e inaintea lui «Vanzare»; «Conturi Unitate» si «Date Unitate» sunt in «Configurari».
+- Facturile primite: arbore pe furnizori sau pe luni, cu cautare si optiuni de filtrare in antetul lui.
+- Se aduc de la ANAF din «Actualizare...» (subsolul arborelui) sau din ribbon; la final apare lista facturilor noi.
+- «Continut» arata CPV (rosu cand lipseste) si observatiile; nou «XML Factura»; PDF-ul se salveaza unde alegeti.
+
 ## 1.1.2.2 (12.10.2026)
 
 <!-- release: utc=2026-10-12T10:45:12Z -->

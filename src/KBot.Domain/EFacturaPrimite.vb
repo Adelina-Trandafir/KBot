@@ -49,6 +49,9 @@ Public NotInheritable Class EFacturaPrimita
     ''' <summary>The message was never opened.</summary>
     Public Property Nou As Boolean
 
+    ''' <summary>How many booked operations (AVACONT) the invoice has; 0 = none (also when the server has no such table yet).</summary>
+    Public Property NrOperatii As Integer
+
     ''' <summary>In a list asked for a DDF: «auto» (the supplier is a partner of the DDF) or «manual» (the operator linked it); else empty.</summary>
     Public Property Legatura As String = String.Empty
 

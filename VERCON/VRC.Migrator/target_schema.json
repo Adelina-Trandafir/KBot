@@ -1350,7 +1350,7 @@
      "cls": "CHEIE",
      "nullable": true,
      "link": {
-      "kind": "open"
+      "kind": "meal_type"
      }
     },
     {
@@ -1389,7 +1389,7 @@
      "cls": "CHEIE",
      "nullable": true,
      "link": {
-      "kind": "open"
+      "kind": "meal_type"
      }
     },
     {
@@ -1428,7 +1428,7 @@
      "cls": "CHEIE",
      "nullable": true,
      "link": {
-      "kind": "open"
+      "kind": "meal_type"
      }
     },
     {

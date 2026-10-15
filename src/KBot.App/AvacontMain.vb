@@ -1,6 +1,8 @@
+Imports System.Globalization
 Imports KBot.Common
 Imports KBot.Controls
 Imports KBot.Domain
+Imports KBot.EFactura
 Imports KBot.Theming
 
 ''' <summary>
@@ -166,8 +168,10 @@ Public Class AvacontMain
                 Case "efactura_vanzare", "efactura_cumparare"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
-                Case "ef_token", "ef_primite_sync"
+                Case "ef_token"
                     _kbot.RunEFacturaCommand(e.Key)
+                Case "ef_primite_sync"
+                    RunPrimiteSync()
                 Case "unitate_conturi", "unitate_date"
                     _kbot.RunUnitCommand(e.Key)
                 Case Else
@@ -179,6 +183,56 @@ Public Class AvacontMain
             ' UI boundary (click handler): log and swallow; the entry told the operator what it had to.
             GlobalErrorLog.Write("AvacontMain.Ribbon_ItemClicked", ex)
         End Try
+    End Sub
+
+    ' ---- «Sincronizeaza facturi primite» (slice 0114-01 / 00EF-30) ----------------------------------
+
+    Private Const KeyPrimiteSync As String = "ef_primite_sync"
+    Private Const KeyPrimiteZileCombo As String = "ef_primite_zile_combo"
+    Private Const KeyPrimiteZileText As String = "ef_primite_zile_text"
+
+    ' The rows of the combo, in order (the combo shows them as «Ultimele N zile»); the first is the default.
+    Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
+
+    ' The button and its two inputs exist only while the page of the received invoices is the one on screen.
+    Private Sub UpdatePrimiteSyncControls()
+        Dim k_show As Boolean = TypeOf CurrentPage Is PrimiteForm
+        Dim k_button As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
+        Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
+        Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
+        If k_button Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing Then Return
+        If k_button.Visible = k_show AndAlso k_combo.Visible = k_show AndAlso k_text.Visible = k_show Then Return
+        k_button.Visible = k_show
+        k_combo.Visible = k_show
+        k_text.Visible = k_show
+        ribbon.InvalidateLayout()
+    End Sub
+
+    ' The days to bring: the number written in the box when there is one (1 to 60), else the combo (7 by default).
+    ' False = the number written is not valid (the operator was told).
+    Private Function ReadSyncDays(ByRef k_days As Integer) As Boolean
+        Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
+        Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
+        Dim k_typed As String = If(k_text Is Nothing, String.Empty, k_text.Text.Trim())
+        If k_typed.Length > 0 Then
+            Dim k_number As Integer
+            If Not Integer.TryParse(k_typed, NumberStyles.None, CultureInfo.InvariantCulture, k_number) OrElse k_number < 1 OrElse k_number > 60 Then
+                KBotMessage.Show(Me, "Numărul de zile trebuie să fie între 1 și 60.",
+                                 "Sincronizează facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return False
+            End If
+            k_days = k_number
+            Return True
+        End If
+        Dim k_index As Integer = If(k_combo Is Nothing, 0, k_combo.SelectedIndex)
+        k_days = SyncDayChoices(Math.Max(0, Math.Min(SyncDayChoices.Length - 1, k_index)))
+        Return True
+    End Function
+
+    Private Sub RunPrimiteSync()
+        Dim k_days As Integer
+        If Not ReadSyncDays(k_days) Then Return
+        _kbot.SyncPrimite(k_days)
     End Sub
 
     Private Shared ReadOnly ShellEntries As New HashSet(Of String)(StringComparer.Ordinal) From {
@@ -228,6 +282,7 @@ Public Class AvacontMain
 
     ' «Inchide» is there while a macheta is on screen (a page, or the shell); on the opening page it is gone.
     Private Sub UpdateCloseButton()
+        UpdatePrimiteSyncControls()
         Dim k_button As KBotRibbonButton = ribbon.FindButton("pagina_inchide")
         If k_button Is Nothing Then Return
         Dim k_visible As Boolean = (_page IsNot Nothing AndAlso Not _page.IsDisposed) OrElse _baseIsShell

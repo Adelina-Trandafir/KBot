@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Collections.ObjectModel
 Imports System.ComponentModel
+Imports System.Linq
 Imports System.Drawing
 Imports KBot.Common
 
@@ -99,6 +100,29 @@ Public NotInheritable Class CustomPopupItem
         Return it
     End Function
 
+    ''' <summary>
+    ''' Slice 00EF-34: a COMBO row -- a caption line and under it a KBot combo box to pick from (no typing). Picking a row closes the
+    ''' popup and raises <c>ItemClicked</c> for this item; <see cref="ComboSelectedIndex"/> is then the row picked. It starts with no row
+    ''' picked, so picking the first row counts too.
+    ''' </summary>
+    Public Shared Function Combo(key As String, text As String, rows As IEnumerable(Of String)) As CustomPopupItem
+        ArgumentNullException.ThrowIfNull(rows)
+        Return New CustomPopupItem() With {
+            .Key = key, .Text = If(text, String.Empty), .IsCombo = True, .ComboRows = rows.ToArray()}
+    End Function
+
+    ''' <summary>
+    ''' Slice 00EF-34: a TEXT row -- a caption line and under it a KBot text box. ENTER closes the popup and raises <c>ItemClicked</c>
+    ''' for this item; <see cref="InputText"/> is then what was written (trimmed, may be empty). <paramref name="digitsOnly"/> keeps
+    ''' only 0-9; the range of the number is the caller's to check.
+    ''' </summary>
+    Public Shared Function TextInput(key As String, text As String, placeholder As String,
+                                     maxLength As Integer, digitsOnly As Boolean) As CustomPopupItem
+        Return New CustomPopupItem() With {
+            .Key = key, .Text = If(text, String.Empty), .IsTextInput = True, .InputPlaceholder = If(placeholder, String.Empty),
+            .InputMaxLength = Math.Max(0, maxLength), .InputDigitsOnly = digitsOnly}
+    End Function
+
     <Category("K-BOT")>
     <Description("Identificatorul folosit de SelectedKey / ItemByKey. Trebuie să fie nevid și unic. Ignorat pe separatori.")>
     Public Property Key As String
@@ -158,6 +182,55 @@ Public NotInheritable Class CustomPopupItem
     <Description("True => rândul e un CURSOR care se trage, nu un rând care se apasă. Nu închide meniul; ridică SliderValueChanged.")>
     <DefaultValue(False)>
     Public Property IsSlider As Boolean
+
+    <Category("K-BOT")>
+    <Description("True => rândul e o listă (combo) din care se alege, fără tastare. Alegerea închide meniul și ridică ItemClicked.")>
+    <DefaultValue(False)>
+    Public Property IsCombo As Boolean
+
+    <Category("K-BOT")>
+    <Description("True => rândul e o casetă de text. Enter închide meniul și ridică ItemClicked.")>
+    <DefaultValue(False)>
+    Public Property IsTextInput As Boolean
+
+    ''' <summary>True for the combo and text rows: they hold a control, are never highlighted and have no access letter.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property IsInput As Boolean
+        Get
+            Return IsCombo OrElse IsTextInput
+        End Get
+    End Property
+
+    ''' <summary>Combo rows: the rows of the list.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property ComboRows As String() = Array.Empty(Of String)()
+
+    ''' <summary>Combo rows: the row picked (-1 = none yet). Read it in <c>ItemClicked</c>.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property ComboSelectedIndex As Integer = -1
+
+    ''' <summary>Text rows: the grey hint of the empty box.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property InputPlaceholder As String = String.Empty
+
+    ''' <summary>Text rows: the longest text (0 = no limit).</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property InputMaxLength As Integer
+
+    ''' <summary>Text rows: only 0-9 stay in the box.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property InputDigitsOnly As Boolean
+
+    ''' <summary>Text rows: what is written (the starting text, then what Enter answered). Read it in <c>ItemClicked</c>.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property InputText As String = String.Empty
 
     <Category("K-BOT")>
     <Description("Capătul de jos al cursorului. Ignorat dacă IsSlider e False.")>
@@ -258,7 +331,7 @@ Public NotInheritable Class CustomPopupItem
         Get
             ' Un CURSOR n-are literă de acces: litera ALEGE un rând, iar un cursor nu se alege, se
             ' trage. O literă care doar mută evidențierea pe el ar promite o alegere inexistentă.
-            If IsSeparator OrElse IsSlider OrElse Not Enabled Then Return PopupMnemonic.None
+            If IsSeparator OrElse IsSlider OrElse IsInput OrElse Not Enabled Then Return PopupMnemonic.None
             Dim litera As Char = PopupMnemonic.Extract(Text)
             If Not PopupMnemonic.IsTypable(litera) Then Return PopupMnemonic.None
             Return litera
@@ -268,6 +341,10 @@ Public NotInheritable Class CustomPopupItem
     ''' <summary>Ce arată lista din stânga dialogului de colecții.</summary>
     Public Overrides Function ToString() As String
         If IsSeparator Then Return "──────── separator ────────"
+        If IsInput Then
+            Return If(String.IsNullOrWhiteSpace(Key), "<fără cheie>", Key) & " — " & If(IsCombo, "listă", "casetă") &
+                   " «" & PopupMnemonic.Strip(If(Text, String.Empty)) & "»"
+        End If
         If IsSlider Then
             Dim cheieCursor As String = If(String.IsNullOrWhiteSpace(Key), "<fără cheie>", Key)
             Return cheieCursor & " — cursor «" & PopupMnemonic.Strip(If(Text, String.Empty)) & "» " &

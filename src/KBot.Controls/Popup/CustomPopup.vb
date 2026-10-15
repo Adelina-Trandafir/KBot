@@ -509,6 +509,11 @@ Public Class CustomPopup
 
             ' MyBase, nu Me: scrisul temei nu are voie să treacă drept alegere a apelantului.
             MyBase.BackColor = EffectiveBackColor
+            ' Slice 00EF-34: the controls of the input rows are children of this window, which ThemeManager stops at.
+            For Each k_control As Control In _inputControls.Values
+                Dim k_themed As IThemedControl = TryCast(k_control, IThemedControl)
+                If k_themed IsNot Nothing Then k_themed.ApplyTheme(scheme)
+            Next
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("CustomPopup.ApplyTheme", ex)
@@ -565,6 +570,24 @@ Public Class CustomPopup
                  sus.X + anchorRect.Width, sus.Y)
     End Sub
 
+    ' Slice 00EF-34: set by ShowAboveRightAligned, read by ShowCore AFTER the layout (the size of the popup is not known before).
+    Private _rightEdgeScreen As Integer?
+    Private _bottomEdgeScreen As Integer?
+
+    ''' <summary>
+    ''' Slice 00EF-34: opens the popup ABOVE <paramref name="bandRect"/> (client coordinates of <paramref name="anchor"/>, e.g. the
+    ''' footer band of a tree) with its RIGHT edge on <paramref name="rightEdge"/> (client X): the menu of a button at the right end of
+    ''' a band stands over that button, not at the far left of the band. Kept inside the working area like every other popup.
+    ''' </summary>
+    Public Sub ShowAboveRightAligned(anchor As Control, bandRect As Rectangle, rightEdge As Integer)
+        ArgumentNullException.ThrowIfNull(anchor)
+        If bandRect.IsEmpty Then Throw New ArgumentException("Dreptunghiul de ancorare e gol.", NameOf(bandRect))
+        Dim k_top As Point = anchor.PointToScreen(New Point(rightEdge, bandRect.Top))
+        _rightEdgeScreen = k_top.X
+        _bottomEdgeScreen = k_top.Y
+        ShowCore(anchor, k_top, k_top.X, k_top.Y)
+    End Sub
+
     ' Drumul comun: măsoară, așază pe ecranul potrivit, arată și ia focusul.
     ' Punct de intrare (creare de fereastră, geometrie de ecran) => loghează și RE-ARUNCĂ.
     Private Sub ShowCore(anchor As Control, at As Point, altRight As Integer, altBottom As Integer)
@@ -579,6 +602,9 @@ Public Class CustomPopup
             InvalidateLayout()
 
             EnsureLayout()
+            ' Slice 00EF-34: placed by its right / bottom edge (known only now that the size is).
+            If _rightEdgeScreen.HasValue Then at.X = _rightEdgeScreen.Value - _naturalSize.Width
+            If _bottomEdgeScreen.HasValue Then at.Y = _bottomEdgeScreen.Value - _naturalSize.Height
             Dim wa As Rectangle = Screen.FromPoint(at).WorkingArea
             Bounds = FitToWorkArea(_naturalSize, at, altRight, altBottom, wa)
             _scroll = 0
@@ -597,6 +623,8 @@ Public Class CustomPopup
             ' Fără asta fereastra apare, dar tastele rămân la formularul de dedesubt.
             Activate()
             Focus()
+            ' Slice 00EF-34: a popup with a text box or a list opens with the keyboard in it.
+            FocusFirstInput()
         Catch ex As Exception
             ' Dacă deschiderea a crăpat DUPĂ ce am aprins butonul, îl stingem aici: altfel ar
             ' rămâne aprins la nesfârșit, arătând un meniu care nu s-a deschis niciodată.
@@ -848,6 +876,7 @@ Public Class CustomPopup
         Dim clamped As Integer = Math.Max(0, Math.Min(MaxScroll, _scroll + delta))
         If clamped = _scroll Then Return
         _scroll = clamped
+        PlaceInputControls()
         Invalidate()
     End Sub
 
@@ -888,6 +917,7 @@ Public Class CustomPopup
             Dim rowH As Integer = EffectiveRowHeight()
             Dim sepH As Integer = ThemeShapes.ScaleDpi(ScaleRef, SeparatorLogical)
 
+            EnsureInputControls()
             Dim textW As Integer = 0
             For Each it As CustomPopupItem In _items
                 If it.IsSeparator Then Continue For
@@ -903,6 +933,8 @@ Public Class CustomPopup
                                                        SliderValueWidthLogical +
                                                        SliderMinTrackLogical)
                 End If
+                ' Slice 00EF-34: a row with a control is never narrower than the control needs.
+                If it.IsInput Then latime = Math.Max(latime, InputMinWidth())
                 If latime > textW Then textW = latime
             Next
 
@@ -918,12 +950,13 @@ Public Class CustomPopup
 
             Dim y As Integer = BorderThickness + padY
             For i As Integer = 0 To _items.Count - 1
-                Dim h As Integer = If(_items(i).IsSeparator, sepH, rowH)
+                Dim h As Integer = If(_items(i).IsSeparator, sepH, If(_items(i).IsInput, InputRowHeight(_items(i)), rowH))
                 _rows(i) = New Rectangle(BorderThickness, y, w - BorderThickness * 2, h)
                 y += h
             Next
 
             _naturalSize = New Size(w, y + padY + BorderThickness)
+            PlaceInputControls()
         Catch ex As Exception
             ' Frontieră de UI: geometria e chemată din pictură și din hit-test, unde un throw ar
             ' dărâma procesul. Un meniu gol e vizibil imediat, spre deosebire de un log tăcut.
@@ -967,7 +1000,7 @@ Public Class CustomPopup
     Friend Function IsSelectable(index As Integer) As Boolean
         If index < 0 OrElse index >= _items.Count Then Return False
         Dim it As CustomPopupItem = _items(index)
-        Return Not it.IsSeparator AndAlso it.Enabled
+        Return Not it.IsSeparator AndAlso it.Enabled AndAlso Not it.IsInput
     End Function
 
     ' Fontul se poate schimba (ShowCore îl ia de la gazdă) => rândurile se remăsoară.

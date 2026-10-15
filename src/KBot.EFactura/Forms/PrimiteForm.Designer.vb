@@ -24,8 +24,6 @@ Partial Class PrimiteForm
         primite = New PrimiteView()
         pnlJos = New System.Windows.Forms.Panel()
         lblStare = New System.Windows.Forms.Label()
-        btnReimprospateaza = New System.Windows.Forms.Button()
-        btnSincronizeaza = New System.Windows.Forms.Button()
         btnIesire = New System.Windows.Forms.Button()
         pnlCard.SuspendLayout()
         pnlJos.SuspendLayout()
@@ -71,8 +69,6 @@ Partial Class PrimiteForm
         ' pnlJos
         '
         pnlJos.Controls.Add(lblStare)
-        pnlJos.Controls.Add(btnReimprospateaza)
-        pnlJos.Controls.Add(btnSincronizeaza)
         pnlJos.Controls.Add(btnIesire)
         pnlJos.Dock = System.Windows.Forms.DockStyle.Bottom
         pnlJos.Location = New System.Drawing.Point(3, 847)
@@ -93,32 +89,6 @@ Partial Class PrimiteForm
         lblStare.Size = New System.Drawing.Size(634, 42)
         lblStare.TabIndex = 3
         lblStare.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        ' btnReimprospateaza
-        '
-        btnReimprospateaza.Dock = System.Windows.Forms.DockStyle.Right
-        btnReimprospateaza.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnReimprospateaza.Location = New System.Drawing.Point(767, 8)
-        btnReimprospateaza.Name = "btnReimprospateaza"
-        btnReimprospateaza.Size = New System.Drawing.Size(200, 42)
-        btnReimprospateaza.TabIndex = 2
-        btnReimprospateaza.Text = "Reîmprospătează"
-        tips.SetToolTipHeader(btnReimprospateaza, "Reîmprospătează")
-        tips.SetToolTipText(btnReimprospateaza, "Citește din nou lista facturilor primite din baza de date (nu cheamă ANAF).")
-        btnReimprospateaza.UseVisualStyleBackColor = True
-        '
-        ' btnSincronizeaza
-        '
-        btnSincronizeaza.Dock = System.Windows.Forms.DockStyle.Right
-        btnSincronizeaza.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnSincronizeaza.Location = New System.Drawing.Point(967, 8)
-        btnSincronizeaza.Name = "btnSincronizeaza"
-        btnSincronizeaza.Size = New System.Drawing.Size(219, 42)
-        btnSincronizeaza.TabIndex = 1
-        btnSincronizeaza.Text = "Sincronizează cu ANAF"
-        tips.SetToolTipHeader(btnSincronizeaza, "Sincronizează cu ANAF")
-        tips.SetToolTipText(btnSincronizeaza, "Aduce de la ANAF facturile primite în ultimele zile (cel mult 60) și le scrie în baza de date.")
-        btnSincronizeaza.UseVisualStyleBackColor = True
         '
         ' btnIesire
         '
@@ -162,7 +132,5 @@ Partial Class PrimiteForm
     Friend WithEvents primite As PrimiteView
     Friend WithEvents pnlJos As System.Windows.Forms.Panel
     Friend WithEvents lblStare As System.Windows.Forms.Label
-    Friend WithEvents btnReimprospateaza As System.Windows.Forms.Button
-    Friend WithEvents btnSincronizeaza As System.Windows.Forms.Button
     Friend WithEvents btnIesire As System.Windows.Forms.Button
 End Class

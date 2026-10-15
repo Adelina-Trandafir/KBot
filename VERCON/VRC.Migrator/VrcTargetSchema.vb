@@ -21,6 +21,8 @@ Public Enum VrcLinkKind
     Open = 6
     ''' <summary>A technical row number that is not the primary key (an extra AutoNumber): not a reference, stored as NULL.</summary>
     Technical = 7
+    ''' <summary>Meal IdFel is derived from the source Tip label, never from the Access IdFel.</summary>
+    MealType = 8
 End Enum
 
 Public NotInheritable Class VrcTargetColumn
@@ -99,6 +101,8 @@ Public NotInheritable Class VrcTargetSchema
                                         k_column.Link = VrcLinkKind.Skip
                                     Case "tech"
                                         k_column.Link = VrcLinkKind.Technical
+                                    Case "meal_type"
+                                        k_column.Link = VrcLinkKind.MealType
                                     Case Else
                                         k_column.Link = VrcLinkKind.Open
                                 End Select

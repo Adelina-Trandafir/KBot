@@ -118,7 +118,8 @@ Creat 13.10.2026. `new CheckBox(container, options)` adaugă `<label class="cb">
 
 ### ModalFrame și unelte de debug
 
-- `js/components/modal-frame/modal-frame.js` + `css/modal-frame.css` (14.10.2026): `new ModalFrame(element, { width, height, onRequestClose })`, apoi `open()` / `close()` / `setSize(w, h)` / `destroy()`. Transformă un element deja aflat în pagină într-o fereastră modală cu dimensiune fixă (nu depășește 96% × 94% din ecran), centrată fără `transform` (listele și calendarele din ea sunt `position: fixed`), peste un fundal blurat ca la `confirmBox`. Elementul nu se mută în DOM. Esc cere `onRequestClose()` (pagina decide dacă întreabă de modificări), dar nu dacă era pentru o listă, un calendar sau un meniu deschis; Tab / Shift+Tab rămân în fereastră. Folosit la adăugarea / modificarea documentelor (`docs.js`, 1240 × 800 deocamdată).
+- `js/components/modal-frame/modal-frame.js` + `css/modal-frame.css` (actualizat 15.10.2026): `new ModalFrame(element, { width, height, title, caption, showClose, onRequestClose })`, apoi `open()` / `close()` / `setSize(w, h)` / `destroy()`. Transformă un element deja aflat în pagină într-o fereastră modală cu dimensiune fixă (nu depășește 96% × 94% din ecran), centrată fără `transform` (listele și calendarele din ea sunt `position: fixed`), peste un fundal blurat ca la `confirmBox`. Elementul nu se mută în DOM. Esc cere `onRequestClose()` (pagina decide dacă întreabă de modificări), dar nu dacă era pentru o listă, un calendar sau un meniu deschis; Tab / Shift+Tab rămân în fereastră. Folosit la adăugarea / modificarea documentelor (`docs.js`, 1240 × 800) și la selectorul CPV (`cpv-picker.js`, maximum 1000 × 600).
+- **Caption și închidere, proprietăți comune ModalFrame:** `caption: true` implicit creează un header ca primul copil al ferestrei; `title` este textul său (fallback la `aria-label` al ferestrei). Containerul paginii trebuie să permită acest rând suplimentar în layout. `caption: HTMLElement` reutilizează bara existentă, păstrând titlul și controalele ei; documentele transmit `title.parentElement`, fără dublarea titlului. `caption: false` dezactivează bara. `showClose: true` implicit adaugă în dreapta un buton discret „×”, numai dacă există `onRequestClose`; `showClose: false` ascunde butonul, fără schimbarea comportamentului Escape. Butonul și Escape cer aceeași acțiune `onRequestClose()`, fără a închide forțat fereastra: pagina păstrează protecția salvării și confirmarea renunțării. Stilurile normale, hover, active și focus sunt ale componentei comune; butonul are eticheta accesibilă „Închide” și tooltip „Închide (Esc)”. `close()` / `destroy()` elimină bara generată sau doar butonul și clasa comună din bara reutilizată, împreună cu listener-ele; redeschiderea recreează caption-ul.
 - `js/utils/debug-tools.js` = **modul de test, unica sursă de adevăr** (14.10.2026). Comutatorul e pe server: `GET /api/test-mode` (`routes/portal/portal.py`), `TEST_MODE = True` / `False` în `config.py` de pe server (dacă lipsește, variabila de mediu `KBOT_TEST_MODE`; pornit implicit; se aplică după repornirea serviciului, iar paginile îl citesc la încărcare). Modulul întreabă o dată, înaintea oricărui modul care îl importă (top-level await), apoi: exportă `testMode` / `isTestMode()`; setează `window.MIXIN_DEBUG_OVERRIDE` (la care se uită listener tracker și celelalte mixin-uri vechi); **oprit: `console.log` / `info` / `debug` nu mai scriu nimic** (warn și error rămân); `registerDebugTool(nume, fn, ajutor)` expune `window.kbotDebug[nume]` doar când e pornit; `debugLog(...)`. Vechile `event-bus`, `instances-registry`, `listener-tracker-debug` urmăresc acum acest comutator (nu mai decid singure: nici hostname, nici `true` fix). Toate paginile încarcă fișierul primul. Cod nou: `import { testMode } from '.../utils/debug-tools.js'`, nu verificări proprii. Nu se poate afla de pe server dacă a răspuns: dacă serverul nu răspunde, modul de test e oprit. `kbotDebug.help()` listează uneltele; prima: `kbotDebug.modalSize(lățime, înălțime)` (redimensionează ferestrele ModalFrame; fără argumente revine la mărimile paginilor).
 
 ### Meniuri, dialoguri, PDF
@@ -159,3 +160,62 @@ Actualizare 12.10.2026: CSS-ul VERCON/ADECHIT/PORTAL este separat în module cu 
 2. Aspectul compact NIR, diferența consultare/editor, draftul și protocolul de salvare rămân contracte ale paginii; componentele sunt adaptoare UI ale acestor contracte.
 3. Fără teste/rulări/alte verificări fără solicitare explicită a utilizatorului; citirea codului și proiectarea sunt permise. Pentru această hartă nu s-au rulat teste sau aplicația.
 4. Nu se modifică scheme MariaDB și nu se adaugă creare automată de schemă; eventualul SQL se pregătește în fișiere pentru operator, conform AGENTS.md.
+
+### DataGrid — filtrare și salvare pe rând (15.10.2026)
+
+- Indicatorul unui filtru activ este o pâlnie SVG care moștenește culoarea butonului; săgeata rămâne pentru coloanele fără filtru activ. Fontul butonului comun de filtrare este redus cu 2 pt. Iconul și popupul de filtrare sunt în `js/dgv/filtering.js`, separat de `datagrid.js` pentru dimensiunea modulelor.
+- Cu `newRowAlwaysVisible`, rândul gol recunoscut prin `isBlankRow(row)` și draftul nou în lucru sunt afișate la final, în afara filtrării, sortării și grupării datelor. Rândul gol nu furnizează valori pentru checklistul filtrului și nu intră în numărul de rânduri ori în totalurile footerului. Valorile goale ale înregistrărilor reale rămân filtrabile. `singleNewRow: true` oprește generarea unui al doilea rând gol cât timp există un draft nou în editare; implicit este `false`, păstrând comportamentul NIR.
+- `onRowLeave({ row, nextRow })` poate finaliza asincron un rând după verificarea `rowIssue` / `confirmRowIssue`; `false` oprește navigarea. Se aplică la mouse, tastatură și ieșirea focusului, nu doar la Enter. `suspendRowLeave()` poate amâna finalizarea cât timp un selector al rândului este deschis; selectorul CPV îl folosește pentru a permite completarea codului înainte de salvarea produsului.
+- `refreshRows()` reafișează valorile locale fără înlocuirea rândurilor sau pierderea draftului, selecției și filtrelor; cere confirmarea prealabilă a editorului de celulă. `setRows()` resetează starea rândului editat anterior, păstrând filtrele și sortarea; opțiunea `keepWidths: true` păstrează și lățimile.
+- `selectRow(id, { reveal: true })` selectează și aduce rândul în zona vizibilă. Dacă filtrul îl exclude, îl afișează temporar la final fără a șterge filtrul. Excepția dispare la următoarea schimbare/ștergere de filtru sau la înlocuirea listei prin `setRows()`.
+- În nomenclatorul Produse, `rowSave` păstrează schimbările locale pe celule și salvează întregul rând la finalizare sau din comanda „Salvează rândul”. Denumirea, UM și categoria sunt obligatorii inclusiv pe server; CPV este opțional, cu avertizare prin dialogul comun înainte de salvare. Butonul „➕” de lângă titlu izolează draftul nou; după adăugare se recitește lista completă, păstrând filtrele DGV și selectând produsul nou.
+
+Stare: modificări de sursă; fără teste sau verificări executate, conform AGENTS.md.
+
+### ActionAddButton — buton comun de adăugare (15.10.2026)
+
+`js/components/action-add-button/action-add-button.js` exportă `ActionAddButton`;
+stylesheet-ul și documentația completă sunt lângă el: `action-add-button.css`
+și `ActionAddButton.md`. `new ActionAddButton(containerOrNull, { icon: '➕', label,
+iconPosition, title, ariaLabel, disabled, className, onClick })` creează un
+buton nativ accesibil prin `.element`. API: `setEnabled`, `setIcon`,
+`setLabel`, `destroy`. Iconul este decorativ, iar butonul are tooltip și nume
+accesibil. Listener-ele sunt eliminate la demontare.
+
+Stil unic pentru Produse și Adaugă NIR: 44 px lățime în varianta doar icon,
+40 px înălțime, cursor pointer, hover cu fundal și bordură, focus vizibil,
+stare disabled. `--action-add-button-font-size` controlează textul și
+`--action-add-button-icon-size` iconul; dimensiunile și culorile au la rândul lor
+variabile documentate în MD. NIR păstrează textul `--fs-ms` și iconul
+`--fs-lg`, cu aceeași carcasă de buton ca Produse. CSS-ul paginilor păstrează
+numai poziționarea și aceste variabile, fără duplicarea stilului butonului.
+Nu s-au rulat teste sau verificări, conform AGENTS.md.
+
+### Meniu popup — bandă compactă pentru iconuri (15.10.2026)
+
+Submeniurile barei folosesc aceeași bandă colorată de 30 px ca popupurile
+obișnuite (de exemplu Afișare produse). Iconurile sunt centrate în bandă
+prin CSS. Controlul nu mai calculează lățimea benzii după poziția iconului
+butonului părinte. Se păstrează poziționarea popupului sub buton, dimensiunile
+și animațiile existente; iconRight plasează aceeași bandă în dreapta.
+Implementare: js/components/menu/menu.js și css/menu.css.
+
+### Meniu — chenar comun pentru butonul deschis și popup (15.10.2026)
+
+Butonul barei cu aria-haspopup="menu" și aria-expanded="true" are chenar
+de 1 px în culoarea --line, colțuri superioare de 3 px și latura de jos
+deschisă, ca popupul să pară continuarea sa. Chenarul este desenat prin
+pseudo-element, fără schimbarea dimensiunilor butonului; sublinierea de
+selecție este ascunsă cât timp dropdownul este deschis și revine la închidere.
+
+Popupurile barei ating marginea de jos a butonului inclusiv fără icon.
+Clasa kmenu-popup--joined întrerupe linia superioară numai pe segmentul
+comun cu butonul; restul chenarului este păstrat. Segmentul este calculat
+în coordonatele popupului prin variabilele interne --_menu-join-start/end.
+Se aplică numai popupurilor deschise imediat sub buton, fără up/below și
+fără deplasare verticală impusă de marginea ecranului. Banda compactă și
+varianta iconRight sunt păstrate. Implementarea este comună, în menu.js/CSS.
+
+Actualizare 15.10.2026: umbra dropdownurilor comune este vizibilă numai jos
+și în dreapta. CSS-ul folosește box-shadow 4px 4px 10px și clip-path cu
+extensie de 20 px doar pe aceste laturi, eliminând dispersia de sus/stânga.

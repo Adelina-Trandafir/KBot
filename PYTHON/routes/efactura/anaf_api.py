@@ -250,7 +250,11 @@ def lista_mesaje(token, cui, days):
     if not isinstance(payload, dict):
         raise EfEroare("Răspunsul ANAF nu poate fi citit.", "ANAF_RASPUNS", 502)
     if payload.get("eroare"):
-        raise EfEroare("ANAF: " + clean(payload["eroare"]), "ANAF_EROARE", 502)
+        text = clean(payload["eroare"])
+        # «Nu exista mesaje in ultimele N zile pentru cif=...» is how ANAF says the list is empty: no messages, not a failure.
+        if re.match(r"^\s*nu\s+exist\w*\s+mesaje", text, re.IGNORECASE):
+            return []
+        raise EfEroare("ANAF: " + text, "ANAF_EROARE", 502)
     out = []
     for item in payload.get("mesaje") or []:
         if isinstance(item, dict):

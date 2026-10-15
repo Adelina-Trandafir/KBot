@@ -62,3 +62,10 @@ single sink all three close paths go through — a host flag would leak on the p
 - Flat menu only: no submenus, no checkable rows, no multi-column layout, no scrolling for
   very long lists.
 - `WS_EX_TOOLWINDOW` (no taskbar button) + `CS_DROPSHADOW` (the usual menu shadow).
+
+## Input rows: combo and text box (slice 00EF-34)
+`CustomPopupItem.Combo(key, text, rows)` and `CustomPopupItem.TextInput(key, text, placeholder, maxLength, digitsOnly)`. A row is a
+caption line with the real KBot control under it (`KBotComboBox` not editable / `KBotTextBox`), made by `CustomPopup.Inputs.vb`.
+Picking a row of the combo, or Enter in the box, closes the popup and raises `ItemClicked` for that item; read
+`Item.ComboSelectedIndex` (starts at -1: picking the first row counts) or `Item.InputText`. An input row is never highlighted, has no
+access letter, and while an input has the focus every key is its own (only Esc closes the popup). `DigitsOnly` keeps 0-9.
