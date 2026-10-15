@@ -36,6 +36,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import quoteattr
 import zipfile
 from dataclasses import dataclass
 
@@ -145,6 +146,24 @@ def upload(token, cui, xml_bytes):
         logger.error("[efactura] ANAF upload: no usable index_incarcare in the answer")
         raise EfEroare("ANAF nu a dat numărul încărcării.", "ANAF_RASPUNS", 502)
     return UploadResult(index, "")
+
+
+def trimite_mesaj(token, cui, id_solicitare, text):
+    """Sends the buyer's message about an invoice (upload standard RASP, the Access `TrimiteMesajFactura`): the body is
+    `<header xmlns="mfp:anaf:dgti:spv:reqMesaj:v1" index_incarcare="<id_solicitare>" message="<text>"/>`. ANAF's refusal (an
+    `Errors` child) is raised as `EfEroare` with ANAF's text. Returns the `index_incarcare` ANAF gave to the message ("" when it
+    gave none)."""
+    if not is_id(id_solicitare):
+        raise EfEroare("Identificatorul facturii este invalid.", "ANAF_RASPUNS", 409)
+    body = ('<?xml version="1.0" encoding="UTF-8"?><header xmlns="mfp:anaf:dgti:spv:reqMesaj:v1" index_incarcare=%s message=%s/>'
+            % (quoteattr(str(id_solicitare)), quoteattr(text))).encode("utf-8")
+    url = f"{BASE}/upload?standard=RASP&cif={urllib.parse.quote(str(cui), safe='')}"
+    root = _root(_bounded(_call("mesaj", "POST", url, token, body, "application/xml", TIMEOUT_UPLOAD), "mesaj"), "mesaj")
+    children = list(root)
+    if children:
+        raise EfEroare("ANAF a refuzat mesajul: " + (_first_attribute(children[0]) or "fără motiv."), "ANAF_MESAJ", 409)
+    index = root.attrib.get("index_incarcare", "").strip()
+    return index if is_id(index) else ""
 
 
 def stare(token, id_incarcare):

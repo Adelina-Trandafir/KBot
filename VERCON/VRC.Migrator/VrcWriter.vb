@@ -67,6 +67,7 @@ Public NotInheritable Class VrcWriter
                     Next
                 Next
                 If Not k_ready Then Return k_found
+                k_found.AddRange(DecimalStorageProblems(k_cn, k_plan.Dc))
 
                 For Each k_table In k_tables.Where(Function(k_x) k_x.Name.StartsWith("VC_", StringComparison.Ordinal))
                     Using k_cmd As New MySqlCommand("SELECT ENGINE, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=@t", k_cn)
@@ -152,6 +153,36 @@ Public NotInheritable Class VrcWriter
             End Using
         End Using
         Return k_result
+    End Function
+
+    ''' <summary>Refuse the old scaled-INT schema before any direct decimal value can be written.</summary>
+    Friend Shared Function DecimalStorageProblems(k_cn As MySqlConnection, k_database As String) As List(Of String)
+        Dim k_found As New List(Of String)()
+        Dim k_expected As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase) From {"VC_Settings.IntValue"}
+        For Each k_t In VrcTargetSchema.Tables()
+            For Each k_c In k_t.Columns.Where(Function(k_x) k_x.FieldClass = "VALOARE-INT" OrElse k_x.FieldClass = "COTA")
+                k_expected.Add(k_t.TargetName & "." & k_c.Name)
+            Next
+        Next
+        Using k_cmd As New MySqlCommand("SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@d", k_cn)
+            k_cmd.Parameters.AddWithValue("@d", k_database)
+            Using k_reader = k_cmd.ExecuteReader()
+                While k_reader.Read()
+                    Dim k_key = k_reader.GetString(0) & "." & k_reader.GetString(1)
+                    If Not k_expected.Remove(k_key) Then Continue While
+                    If Not String.Equals(k_reader.GetString(2), "decimal", StringComparison.OrdinalIgnoreCase) OrElse
+                       k_reader.IsDBNull(3) OrElse k_reader.IsDBNull(4) OrElse
+                       Convert.ToInt32(k_reader.GetValue(3), CultureInfo.InvariantCulture) <> 20 OrElse
+                       Convert.ToInt32(k_reader.GetValue(4), CultureInfo.InvariantCulture) <> 4 Then
+                        k_found.Add($"{k_key} trebuie să fie DECIMAL(20,4). Aplicați VC_precizie_valori_4_zecimale.sql pe sursă și sincronizați schema în «{k_database}».")
+                    End If
+                End While
+            End Using
+        End Using
+        For Each k_missing In k_expected
+            k_found.Add($"Lipsește coloana {k_missing} necesară stocării DECIMAL(20,4).")
+        Next
+        Return k_found
     End Function
 
     ' ---- Migrează ---------------------------------------------------------------------------------------------------------

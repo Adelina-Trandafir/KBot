@@ -3,7 +3,7 @@ Imports System.Text
 
 ''' <summary>
 ''' Value conversions of the transfer (SLICE-VC05-03). Pure functions: no database, no file. Values are exact: a value that needs
-''' more decimals than the scale, or does not fit INT, is REFUSED (reported), never rounded or cut silently.
+''' more than four decimals, or does not fit DECIMAL(20,4), is REFUSED, never rounded or cut silently.
 ''' </summary>
 Friend NotInheritable Class VrcConvert
 
@@ -11,6 +11,7 @@ Friend NotInheritable Class VrcConvert
     Private Const IntMin As Decimal = -2147483648D
     ''' <summary>Access stores Double: 8497.0226 can come back as 8497.022600000001. Anything closer to a whole unit than this is whole.</summary>
     Private Const Noise As Decimal = 0.0000001D
+    Private Const DecimalNoise As Decimal = 0.000000001D
 
     Private Sub New()
     End Sub
@@ -29,20 +30,18 @@ Friend NotInheritable Class VrcConvert
         Return Convert.ToDecimal(k_value, CultureInfo.InvariantCulture)
     End Function
 
-    ''' <summary>value x 10^scale as an exact INT. Returns False with a reason when it has more decimals than the scale or does not fit.</summary>
-    Friend Shared Function Scaled(k_value As Decimal, k_scale As Integer, ByRef k_result As Integer, ByRef k_reason As String) As Boolean
-        Dim k_factor As Decimal = CDec(Math.Pow(10, k_scale))
-        Dim k_scaled As Decimal = k_value * k_factor
-        Dim k_rounded As Decimal = Math.Round(k_scaled, 0, MidpointRounding.AwayFromZero)
-        If Math.Abs(k_scaled - k_rounded) > Noise * k_factor Then
-            k_reason = $"are mai multe zecimale decât scara {k_scale}"
+    ''' <summary>The unscaled value for DECIMAL(20,4); only Access floating point noise is removed.</summary>
+    Friend Shared Function StoredDecimal(k_value As Decimal, ByRef k_result As Decimal, ByRef k_reason As String) As Boolean
+        Dim k_rounded As Decimal = Math.Round(k_value, 4, MidpointRounding.AwayFromZero)
+        If Math.Abs(k_value - k_rounded) >= DecimalNoise Then
+            k_reason = "are mai mult de 4 zecimale"
             Return False
         End If
-        If k_rounded > IntMax OrElse k_rounded < IntMin Then
-            k_reason = $"nu încape în INT la scara {k_scale}"
+        If Math.Abs(k_rounded) >= 10000000000000000D Then
+            k_reason = "nu încape în DECIMAL(20,4)"
             Return False
         End If
-        k_result = CInt(k_rounded)
+        k_result = k_rounded
         Return True
     End Function
 

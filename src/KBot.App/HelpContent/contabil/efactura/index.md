@@ -159,14 +159,14 @@ Cât timp scrii sau modifici o factură, aceste vederi nu se văd. Dacă nu exis
 Butonul **«Token ANAF»** din ribbon (**E-Factura › ANAF**) deschide fereastra tokenului, unde vezi starea lui și îl obții sau îl reînnoiești cu certificatul calificat al unității. Pașii, mesajele și ce faci când ceva nu merge sunt în [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
 
 ## Facturile primite
-<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119 -->
+<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119, 00EF-25, 00EF-26, 00EF-27 -->
 
 În bara din stânga a ferestrei principale apare vederea **«E-Factura»** doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Starea se citește odată cu arborele: după o sincronizare sau după ce legi o factură, fila apare când arborele se reîmprospătează. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
 
 - În stânga este un arbore: rădăcina **«Toate facturile»**, sub ea lunile (cea mai nouă prima), iar sub fiecare lună facturile, cu furnizorul și totalul. Punctul portocaliu înseamnă o factură pe care nu ai deschis-o încă; după ce o deschizi devine verde;
 - vederea arată facturile furnizorilor care sunt parteneri ai fundamentării angajamentului (se compară codul fiscal, fără «RO» și fără spații), plus cele pe care le-ai legat chiar tu. Cu bifa **«Arată toate facturile primite»** vezi și celelalte (cu punct gri); clic dreapta pe una și **«Leagă de acest DDF»** o leagă de fundamentare, iar **«Scoate legătura cu acest DDF»** desface o legătură făcută de tine;
 - clic dreapta pe o factură oferă și **«Salvează ca ZIP»** (arhiva semnată de ANAF, păstrată împreună cu factura; dacă lipsește, K-BOT o aduce din nou de la ANAF) și **«Salvează ca XML»** (factura din arhivă);
-- în dreapta, pe bara de vederi: **Linii** (liniile scrise de furnizor și, dedesubt, TVA-ul pe fiecare cotă — o factură poate avea mai multe), **Factură PDF** (factura clasică pe care furnizorul a atașat-o, iar dacă nu a atașat niciuna, cea desenată de ANAF), **Atașamente** (doar dacă factura are fișiere atașate; dublu clic pe un fișier îl salvează) și **Mesaje** (doar dacă factura are note sau mesaje).
+- în dreapta, pe bara de vederi: **Conținut** (liniile scrise de furnizor, fiecare cu codul lui CPV, și, dedesubt, TVA-ul pe fiecare cotă — o factură poate avea mai multe; la facturile aduse de la ANAF de acum înainte, o linie fără cod CPV apare cu roșu închis; la cele aduse mai demult coloana CPV rămâne goală), **Factură PDF** (are propria bară, cu **Factură clasică** — factura întocmită de K-BOT din datele ei, în formatul unei facturi obișnuite —, **Factură ANAF** — factura desenată de ANAF — și, doar dacă factura are fișiere atașate, **Atașamente**: un clic deschide o listă cu numele fișierelor, iar cel ales se deschide în aceeași fereastră, fie că e PDF sau imagine; dacă nu alegi nimic, rămâne ce vedeai), **Atașamente** (doar dacă factura are fișiere atașate; dublu clic pe un fișier îl salvează), **Mesaje** (mesajele schimbate prin sistemul E-Factura despre factură, cu data lor; sub listă scrii un mesaj pentru furnizor și apeși **«Trimite»** — după o întrebare de confirmare, mesajul pleacă prin ANAF și nu mai poate fi retras) și **Observații** (doar dacă factura are observații: ce a scris furnizorul în factură; un clic pe un rând arată dedesubt textul întreg al observației).
 
 Facturile se aduc de la ANAF din ribbon, **E-Factura › ANAF › «Sincronizează facturi primite»**, vezi mai jos.
 
@@ -181,13 +181,13 @@ Din ribbon, **E-Factura › ANAF › «Sincronizează facturi primite»** deschi
 - sincronizarea are nevoie de un token ANAF valabil (butonul **«Token ANAF»**, alături în ribbon).
 
 ## E-Factura Cumpărare: «Facturi primite»
-<!-- slice: 00EF-19, 00EF-20, 0000-62, 0000-63, 0113, 0119 -->
+<!-- slice: 00EF-19, 00EF-20, 0000-62, 0000-63, 0113, 0119, 00EF-27 -->
 
 Toate facturile primite de unitate, pe anul ales în K-BOT, se văd în macheta **«Facturi primite»**. O deschizi din ribbon, **E-Factura › E-Factura › «Cumpărare»**, ca pagină a ferestrei principale; o închizi cu **«Închide»** din ribbon sau cu Esc.
 
 <!-- capture: efactura-cumparare | caption: Macheta «Facturi primite», deschisă din E-Factura › Cumpărare | prepare: Din ribbon, E-Factura › Cumpărare, pe o unitate care are facturi primite; alegeți o factură din arbore. -->
 
-- fereastra are același arbore și aceleași vederi ca vederea «E-Factura» de la fundamentare (rădăcina «Toate facturile», lunile, **Linii**, **Factură PDF**, **Atașamente**, **Mesaje**; clic dreapta oferă «Salvează ca ZIP» și «Salvează ca XML»), dar fără lista „doar a unui DDF";
+- fereastra are același arbore și aceleași vederi ca vederea «E-Factura» de la fundamentare (rădăcina «Toate facturile», lunile, **Conținut**, **Factură PDF**, **Atașamente**, **Mesaje**, **Observații**; clic dreapta oferă «Salvează ca ZIP» și «Salvează ca XML»), dar fără lista „doar a unui DDF";
 - deasupra arborelui este o casetă de căutare: scrii o parte din numele furnizorului, din codul lui fiscal sau din numărul facturii și arborele rămâne doar cu facturile potrivite;
 - **«Sincronizează cu ANAF»** deschide aceeași fereastră de sincronizare ca butonul din ribbon (vezi mai sus) și, după ce a adus facturi noi, lista se citește din nou;
 - clic dreapta pe o factură oferă și **«Leagă de un DDF…»**: se deschide o listă a fundamentărilor, cu o casetă de căutare (după angajament, obiect, partener sau cod fiscal); alegi una (dublu clic o alege direct) și apeși **«Leagă»**. Legăturile făcute de tine se văd în vederea «E-Factura» a angajamentului respectiv; după ce ai deschis factura (clic pe ea), meniul ei oferă și **«Scoate legătura cu …»** pentru fiecare;

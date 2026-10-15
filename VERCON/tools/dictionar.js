@@ -22,8 +22,8 @@ Starea: DOCUMENTAT. Nimic implementat, nimic validat pe server.
 | Clasa sursa | Tinta MariaDB | Nota |
 |---|---|---|
 | CHEIE (AutoNumber/Long de legatura) | \`INT UNSIGNED\` generat | Cheia sursa se citeste **semnata** (ID-uri random pot fi negative) si se pastreaza in \`VC_IdMap\`. |
-| VALOARE-INT (cantitati, preturi, valori) | \`INT\` (cu semn) | Scalat 10^SCARA, SCARA = scara de stocare a gestiunii (Alimente 4, MF 2, OI 3); afisarea foloseste NR.ZEC al gestiunii, rotunjit in sus la jumatate. Vezi CONTRACT_CALCULE §1. Pretul are CHECK >= 0. |
-| COTA (TVA.TVA) | \`INT\` | cota x 10000 (0,19 -> 1900). |
+| VALOARE-INT (cantitati, preturi, valori) | \`DECIMAL(20,4)\` | Valori directe, maximum 4 zecimale. ZEC controleaza doar afisarea si calculele. Denumirea clasei ramane pentru compatibilitate. |
+| COTA (TVA.TVA) | \`DECIMAL(20,4)\` | Cota fractionara directa: 0,21 pentru 21%, fara scalare. |
 | NUMAR / INT | \`INT\` | nu se scaleaza. |
 | TEXT | \`VARCHAR(n)\` utf8mb3_general_ci | fara eliminarea diacriticelor; trunchierea se raporteaza. |
 | DATA | \`DATETIME\` | \`Data\`, \`DataFc\`, \`DataBC\`, \`DataSalvare\`, \`DataIntrare\` nu se substituie reciproc. |

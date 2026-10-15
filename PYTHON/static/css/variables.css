@@ -7,6 +7,10 @@
     --err-bg: #fdeceb;
     --err-ink: #8f1d17;
     --err-line: #f1b5b1;
+    /* A control marked as wrong (it failed validation, or a required one was left empty): the SAME background and border on every control
+       (TextBox, list, date, grid cell). Use these, never a literal colour. */
+    --err-control-backcolor: #fbe4e2;
+    --err-control-bordercolor: #c0392b;
     /* Layout */
     --header-height: 50px;
     --modal-header-height: 40px;
@@ -74,8 +78,8 @@
     /* Modal Vars */
     --modal-header-background: linear-gradient(135deg, #005dae 0%, #004683 100%);
     --modal-border-radius-header: 12px 12px 0 0;
-    --modal-header-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --modal-header-font: bold 16px var(--modal-header-font-family);
+    --modal-header-font-family: var(--font-ui);
+    --modal-header-font: bold var(--fs-lg) var(--modal-header-font-family);
     --modal-header-font-color-light: #fff;
     --modal-header-font-color-dark: #000;
 

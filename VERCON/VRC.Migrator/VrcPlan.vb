@@ -37,10 +37,10 @@ End Class
 Public NotInheritable Class VrcPlan
 
     Public Const PlanVersion As String = "1"
-    Public Const RuleVersion As String = "VC05-2026-10-12"
+    Public Const RuleVersion As String = "VC05-COPY-SOURCE-2026-10-14"
 
     Public Shared ReadOnly GestiuneTypes As String() = {"MATERIALE", "ALIMENTE", "OI", "MF"}
-    Private Const IntMax As Double = 2147483647.0
+    Private Const DecimalLimit As Double = 10000000000000000.0
 
     Public Property Dc As String = String.Empty
     ''' <summary>The base the operator typed as destination; empty = the DC of the files (UNIT.DC). A different one is a deliberate choice (a test base).</summary>
@@ -247,7 +247,7 @@ Public NotInheritable Class VrcPlan
         Next
     End Sub
 
-    ''' <summary>One precision for the whole subunit: ZEC = the largest NR.ZEC read, Scale = the smallest scale &gt;= ZEC that holds every value exactly.</summary>
+    ''' <summary>ZEC retains calculation/display precision; storage is always direct DECIMAL(20,4).</summary>
     Private Sub CheckPrecision()
         Dim k_zecs As New SortedSet(Of Integer)()
         Dim k_needed As Integer = 0
@@ -268,14 +268,14 @@ Public NotInheritable Class VrcPlan
         Next
         Zec = If(k_zecs.Count > 0, k_zecs.Max, 4)
         If k_zecs.Count > 1 Then Warnings.Add($"ZEC diferă între surse ({String.Join(", ", k_zecs)}); se alege cel mai mare ({Zec}) pentru toată subunitatea.")
-        Scale = Math.Min(4, Math.Max(Zec, k_needed))
+        Scale = 4 ' Fixed database precision; independent of calculation/display ZEC.
         If Zec > 4 Then Blockers.Add($"ZEC {Zec} depășește scara maximă 4.")
         For Each k_s In DistinctSources().Where(Function(k_x) k_x.Profile.ReadError.Length = 0)
             For Each k_t In k_s.Profile.Tables
                 For Each k_f In k_t.Fields.Where(Function(k_x) k_x.FieldClass = "VALOARE-INT" AndAlso k_x.NonNull > 0)
                     Dim k_max As Double = Math.Max(Math.Abs(k_f.Minimum), Math.Abs(k_f.Maximum))
-                    If k_max * Math.Pow(10, Scale) > IntMax Then
-                        Blockers.Add($"{k_s.Profile.FileName}: {k_t.Name}.{k_f.Name} (maxim {k_max.ToString("0.####", CultureInfo.InvariantCulture)}) nu încape în INT la scara {Scale}.")
+                    If k_max >= DecimalLimit Then
+                        Blockers.Add($"{k_s.Profile.FileName}: {k_t.Name}.{k_f.Name} (maxim {k_max.ToString("0.####", CultureInfo.InvariantCulture)}) nu încape în DECIMAL(20,4).")
                     End If
                 Next
             Next
@@ -295,18 +295,19 @@ Public NotInheritable Class VrcPlan
                 If k_s.Profile.Split.Unclassified > 0 Then Warnings.Add($"{k_name}: {k_s.Profile.Split.Unclassified:N0} documente fără cont și fără linii care să le plaseze; merg la Materiale.")
             End If
             For Each k_l In k_s.Profile.LineSigns
-                If k_l.BothNegative > 0 Then Blockers.Add($"{k_name}: {k_l.BothNegative:N0} linii din {k_l.Table} au și cantitatea, și prețul negative; corectați-le în sursă.")
-                If k_l.NegativePriceOnly > 0 Then Warnings.Add($"{k_name}: {k_l.NegativePriceOnly:N0} linii din {k_l.Table} au preț negativ; la migrare prețul devine pozitiv și cantitatea negativă.")
+                If k_l.BothNegative > 0 Then Warnings.Add($"{k_name}: {k_l.BothNegative:N0} linii din {k_l.Table} au și cantitatea, și prețul negative; ambele se păstrează ca în Access.")
+                If k_l.NegativePriceOnly > 0 Then Warnings.Add($"{k_name}: {k_l.NegativePriceOnly:N0} linii din {k_l.Table} au preț negativ; prețul și cantitatea se păstrează ca în Access, fără schimbarea semnelor.")
                 If k_l.NegativeQuantityOnly > 0 Then Warnings.Add($"{k_name}: {k_l.NegativeQuantityOnly:N0} linii din {k_l.Table} au cantitate negativă (se păstrează).")
             Next
             If k_s.Profile.ProductCheck IsNot Nothing Then
                 Dim k_c = k_s.Profile.ProductCheck
-                If k_c.NegativeUsed > 0 Then Blockers.Add($"{k_name}: {k_c.NegativeUsed:N0} rânduri ProduseP cu PUTVA negativ sunt folosite în documente; corectați-le în sursă.")
+                If k_c.NegativeUsed > 0 Then Warnings.Add($"{k_name}: {k_c.NegativeUsed:N0} rânduri ProduseP cu PUTVA negativ sunt folosite în documente; valoarea se păstrează ca în Access.")
                 If k_c.Total > k_c.Used Then Warnings.Add($"{k_name}: {(k_c.Total - k_c.Used):N0} din {k_c.Total:N0} rânduri ProduseP nu au folosire și nu se transferă.")
             End If
             For Each k_h In k_s.Profile.HeaderChecks
-                If k_h.DiffOverOneLeu > 0 Then Warnings.Add($"{k_name}: {k_h.DiffOverOneLeu:N0} antete {k_h.HeaderTable} diferă cu mai mult de 1 leu de suma liniilor; totalul devine suma liniilor (N02).")
-                If k_h.HeaderNull > 0 Then Warnings.Add($"{k_name}: {k_h.HeaderNull:N0} antete {k_h.HeaderTable} cu total NULL; totalul devine suma liniilor.")
+                If k_h.HeaderZero > 0 Then Warnings.Add($"{k_name}: {k_h.HeaderZero:N0} antete {k_h.HeaderTable} cu total 0; se păstrează 0, fără completare din linii.")
+                If k_h.DiffOverOneLeu > 0 Then Warnings.Add($"{k_name}: {k_h.DiffOverOneLeu:N0} antete {k_h.HeaderTable} diferă cu mai mult de 1 leu de suma liniilor; se păstrează totalul antetului din Access, fără recalculare.")
+                If k_h.HeaderNull > 0 Then Warnings.Add($"{k_name}: {k_h.HeaderNull:N0} antete {k_h.HeaderTable} cu total NULL; se păstrează NULL.")
             Next
         Next
     End Sub

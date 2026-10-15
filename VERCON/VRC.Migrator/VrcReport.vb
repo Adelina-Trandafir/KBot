@@ -10,7 +10,7 @@ Public NotInheritable Class VrcReport
     Private Sub New()
     End Sub
 
-    Private Const IntMax As Double = 2147483647.0
+    Private Const DecimalLimit As Double = 10000000000000000.0
 
     Public Shared Function ToMarkdown(k_profiles As IEnumerable(Of VrcFileProfile)) As String
         Dim k_sb As New StringBuilder()
@@ -71,7 +71,7 @@ Public NotInheritable Class VrcReport
 
         If k_p.HeaderChecks.Count > 0 Then
             k_sb.AppendLine()
-            k_sb.AppendLine("### Antete față de suma liniilor (N01/N02) — doar numărate")
+            k_sb.AppendLine("### Antete față de suma liniilor — doar informativ, valorile sursei se păstrează")
             k_sb.AppendLine()
             k_sb.AppendLine("| Antet | Antete | Antet 0 | Antet NULL | Diferență > 1 leu | Diferență maximă | Fără linii |")
             k_sb.AppendLine("|---|---:|---:|---:|---:|---:|---:|")
@@ -104,7 +104,7 @@ Public NotInheritable Class VrcReport
             k_sb.AppendLine()
             k_sb.AppendLine("### Semne cantitate / preț pe liniile documentelor")
             k_sb.AppendLine()
-            k_sb.AppendLine("| Tabel | Linii | Preț negativ (se inversează, avertisment) | Cantitate negativă (avertisment) | AMBELE negative (BLOCANT) |")
+            k_sb.AppendLine("| Tabel | Linii | Preț negativ (se păstrează) | Cantitate negativă (se păstrează) | AMBELE negative (se păstrează) |")
             k_sb.AppendLine("|---|---:|---:|---:|---:|")
             For Each k_l In k_p.LineSigns
                 k_sb.AppendLine($"| {k_l.Table} | {k_l.Lines:N0} | {k_l.NegativePriceOnly:N0} | {k_l.NegativeQuantityOnly:N0} | {If(k_l.BothNegative > 0, "**" & k_l.BothNegative.ToString("N0", CultureInfo.InvariantCulture) & "**", "0")} |")
@@ -112,7 +112,7 @@ Public NotInheritable Class VrcReport
         End If
     End Sub
 
-    ''' <summary>Suggestions for the plan: type from the flags, ZEC, the storage scale that holds every value exactly, INT capacity.</summary>
+    ''' <summary>Suggestions for the plan: type, calculation/display ZEC and DECIMAL(20,4) capacity.</summary>
     Private Shared Sub AppendSuggestions(k_sb As StringBuilder, k_p As VrcFileProfile)
         k_sb.AppendLine()
         k_sb.AppendLine("### Propuneri pentru plan (nu sunt decizii)")
@@ -148,9 +148,8 @@ Public NotInheritable Class VrcReport
         If k_needed > 4 Then
             k_sb.AppendLine("- **BLOCAJ:** există valori cu mai mult de 4 zecimale; scara maximă permisă este 4.")
         Else
-            k_sb.AppendLine($"- Scara de stocare propusă: **{k_needed}** (cea mai mică scară ≥ ZEC care reprezintă exact toate valorile citite).")
-            Dim k_scaled As Double = k_maxAbs * Math.Pow(10, k_needed)
-            k_sb.AppendLine($"- Cea mai mare valoare pe coloană: {Num(k_maxAbs)} → {k_scaled:N0} la scara {k_needed} față de limita INT {IntMax:N0}: {If(k_scaled <= IntMax, "încape", "**NU ÎNCAPE**")}.")
+            k_sb.AppendLine("- Stocare: **DECIMAL(20,4)**, valori directe cu maximum 4 zecimale, independent de ZEC.")
+            k_sb.AppendLine($"- Cea mai mare valoare pe coloană: {Num(k_maxAbs)}; în DECIMAL(20,4): {If(k_maxAbs < DecimalLimit, "încape", "**NU ÎNCAPE**")}.")
             k_sb.AppendLine("- Capacitatea totalurilor (sume pe document/gestiune) se verifică la construirea planului (VC05-02).")
         End If
     End Sub

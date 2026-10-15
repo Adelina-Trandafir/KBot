@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `VC_Gestiuni` (
   `Type` VARCHAR(10) NOT NULL COMMENT 'MATERIALE, ALIMENTE, OI or MF',
   `State` VARCHAR(24) NOT NULL DEFAULT 'IN_PREGATIRE' COMMENT 'IN_PREGATIRE, IMPORTATA_IN_REVIZIE, ACTIVA, ARHIVATA',
   `Zec` TINYINT UNSIGNED NOT NULL DEFAULT 4 COMMENT 'decimals shown and used in calculations (NR.ZEC of the gestiune)',
-  `Scara` TINYINT UNSIGNED NOT NULL DEFAULT 4 COMMENT 'storage scale: values are INT * 10^Scara; >= Zec',
+  `Scara` TINYINT UNSIGNED NOT NULL DEFAULT 4 COMMENT 'fixed storage precision 4; decimal values are not scaled',
   `Populated` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'set by the service at the first data; freezes Type and Scara',
   `Active` TINYINT(1) NOT NULL DEFAULT 1,
   `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

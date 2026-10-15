@@ -113,6 +113,7 @@ Public Class VrcMigratorForm
         btnNiciunul.Enabled = k_idle AndAlso _files.Count > 0
         btnCiteste.Enabled = k_idle AndAlso _files.Count > 0 AndAlso Not _committed
         btnSalveaza.Enabled = k_idle AndAlso _lastReport.Length > 0
+        btnRaportHtml.Enabled = k_idle AndAlso Not String.IsNullOrWhiteSpace(rtbRaport.Text)
         btnVerifica.Enabled = k_idle AndAlso k_hasPlan AndAlso Not _committed
         btnExportaPlan.Enabled = k_idle AndAlso k_hasPlan
         btnTesteaza.Enabled = k_idle AndAlso k_hasPlan AndAlso Not _committed
@@ -120,6 +121,28 @@ Public Class VrcMigratorForm
         btnMigreaza.Enabled = k_idle AndAlso _state = VrcRunState.Tested AndAlso Not _committed
         btnOpreste.Enabled = _busy AndAlso _cts IsNot Nothing AndAlso _state = VrcRunState.InImport
         btnDiagnostic.Enabled = k_idle AndAlso k_hasPlan
+    End Sub
+
+    Private Sub ReportTextChanged(sender As Object, e As EventArgs) Handles rtbRaport.TextChanged
+        btnRaportHtml.Enabled = Not _busy AndAlso Not String.IsNullOrWhiteSpace(rtbRaport.Text)
+    End Sub
+
+    Private Sub BtnRaportHtml_Click(sender As Object, e As EventArgs) Handles btnRaportHtml.Click
+        Try
+            If _busy OrElse String.IsNullOrWhiteSpace(rtbRaport.Text) Then Return
+            Dim k_report As String = rtbRaport.Text
+            If _profiles.Count > 0 AndAlso Not k_report.Contains("# VRC.Migrator — raport de profilare", StringComparison.Ordinal) Then
+                k_report &= Environment.NewLine & Environment.NewLine & "---" & Environment.NewLine & Environment.NewLine &
+                            VrcReport.ToMarkdown(_profiles)
+            End If
+            Using k_form As New VrcReportForm(k_report, lblStare.Text)
+                k_form.ShowDialog(Me)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("VrcMigratorForm.RaportHtml", ex)
+            KBotMessage.Show("Raportul HTML nu a putut fi deschis." & Environment.NewLine & ex.Message,
+                             "VRC.Migrator", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
     End Sub
 
     ' ---- step 1: folder and reading (VC05-01) -------------------------------------------------------------------------------

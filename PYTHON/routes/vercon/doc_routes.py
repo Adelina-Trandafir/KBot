@@ -18,7 +18,7 @@ from datetime import datetime
 
 from flask import g, request
 
-from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number
+from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
 
@@ -124,6 +124,8 @@ def register(bp, guard, scoped, open_db):
         if RIGHT[family] not in g.vercon_operations:
             raise FormUnavailable('FORBIDDEN', 'Nu aveți dreptul necesar pentru această operație VERCON.', 403)
 
+    receipt_context.register(bp, guard, scoped, session, build, _need)
+
     @bp.get('/api/vercon/doc/<family>/lookups')
     @guard('read')
     def doc_lookups(family):
@@ -133,8 +135,30 @@ def register(bp, guard, scoped, open_db):
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
             out = backend(family).lookups(cursor, ctx, family)
+            if family == 'nir' and not isinstance(out.get('products'), list):
+                out['products'] = receipt_choices.products(cursor, ctx['subunit'], ctx['gestiune'])
         out.update({'scale': ctx['scale'], 'zec': ctx['zec'], 'year': ctx['an'], 'closed': ctx['closed'], 'today': datetime.now().strftime('%Y-%m-%d')})
         return out
+
+    @bp.get('/api/vercon/doc/nir/tree')
+    @guard('read')
+    def receipt_tree_level():
+        """One level of the saved-receipts tree: level=parties | months&party= | documents&party=&month=YYYY-MM."""
+        _need('nir')
+        vctx = scoped('read')
+        level, party = request.args.get('level', 'parties'), request.args.get('party')
+        if level not in ('parties', 'months', 'documents') or (level != 'parties' and party is None):
+            raise NomError('INVALID', 'Cerere invalidă.', 400)
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, 'nir', False)
+            if level == 'parties':
+                items = receipt_tree.parties(cursor, ctx)
+            elif level == 'months':
+                items = receipt_tree.months(cursor, ctx, party)
+            else:
+                items = receipt_tree.documents(cursor, ctx, party, request.args.get('month'))
+        return {'level': level, 'items': items, 'year': ctx['an'], 'closed': ctx['closed'], 'scale': ctx['scale'], 'zec': ctx['zec'],
+                'can_write': RIGHT['nir'] in g.vercon_operations}
 
     @bp.get('/api/vercon/doc/nir/number')
     @guard('read')
@@ -144,7 +168,7 @@ def register(bp, guard, scoped, open_db):
         exclude = documents._int(request.args.get('exclude'))
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, 'nir', False)
-            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude)
+            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0)
 
     @bp.get('/api/vercon/doc/<family>/sources')
     @guard('read')
@@ -270,8 +294,8 @@ def register(bp, guard, scoped, open_db):
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, None, False)
             stock = protocol.available(cursor, ctx, on, products or None, exclude)
-        from .numeric import from_int
-        return {'date': on.isoformat(), 'available': {str(k): format(from_int(v, ctx['scale']), 'f') for k, v in stock.items()}}
+        from .numeric import from_stored
+        return {'date': on.isoformat(), 'available': {str(k): format(from_stored(v, ctx['scale']), 'f') for k, v in stock.items()}}
 
     # ---- writes ----------------------------------------------------------------------------------------------------
     @bp.post('/api/vercon/doc/<family>')

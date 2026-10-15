@@ -43,6 +43,7 @@ Partial Public Class ApiClient
         Public Property NrLinie As String
         Public Property Denumire As String
         Public Property Explicatie As String
+        Public Property Cpv As String
         Public Property Unit As String
         Public Property Cant As Decimal
         Public Property Pret As Decimal
@@ -69,6 +70,17 @@ Partial Public Class ApiClient
         Public Property octeti As Long
     End Class
 
+    Private NotInheritable Class EFacturaPrimitaParteWire
+        Public Property nume As String
+        Public Property cui As String
+        Public Property adresa As String
+    End Class
+
+    Private NotInheritable Class EFacturaPrimitaPlataWire
+        Public Property cod As String
+        Public Property cont As String
+    End Class
+
     Private NotInheritable Class EFacturaPrimitaDdfWire
         Public Property IDDF As Integer
         Public Property CodAngajament As String
@@ -86,6 +98,8 @@ Partial Public Class ApiClient
         Public Property note As List(Of String)
         Public Property mesaje As List(Of EFacturaPrimitaMesajWire)
         Public Property atasamente As List(Of EFacturaPrimitaAtasamentWire)
+        Public Property cumparator As EFacturaPrimitaParteWire
+        Public Property plati As List(Of EFacturaPrimitaPlataWire)
         Public Property legaturi As EFacturaPrimitaLegaturiWire
     End Class
 
@@ -181,7 +195,7 @@ Partial Public Class ApiClient
                 For Each w As EFacturaPrimitaLinieWire In wire.linii
                     k_result.Linii.Add(New EFacturaPrimitaLinie() With {
                         .NrLinie = If(w.NrLinie, String.Empty), .Denumire = If(w.Denumire, String.Empty),
-                        .Explicatie = If(w.Explicatie, String.Empty), .Unit = If(w.Unit, String.Empty),
+                        .Explicatie = If(w.Explicatie, String.Empty), .Cpv = w.Cpv, .Unit = If(w.Unit, String.Empty),
                         .Cant = w.Cant, .Pret = w.Pret, .Valoare = w.Valoare})
                 Next
             End If
@@ -204,6 +218,16 @@ Partial Public Class ApiClient
                     Dim w As EFacturaPrimitaAtasamentWire = wire.atasamente(k_i)
                     k_result.Atasamente.Add(New EFacturaPrimitaAtasament() With {
                         .Index = k_i, .Nume = If(w.nume, String.Empty), .Mime = If(w.mime, String.Empty), .Octeti = w.octeti})
+                Next
+            End If
+            If wire.cumparator IsNot Nothing Then
+                k_result.Cumparator = New EFacturaPrimitaParte() With {
+                    .Nume = If(wire.cumparator.nume, String.Empty), .Cui = If(wire.cumparator.cui, String.Empty),
+                    .Adresa = If(wire.cumparator.adresa, String.Empty)}
+            End If
+            If wire.plati IsNot Nothing Then
+                For Each w As EFacturaPrimitaPlataWire In wire.plati
+                    k_result.Plati.Add(New EFacturaPrimitaPlata() With {.Cod = If(w.cod, String.Empty), .Cont = If(w.cont, String.Empty)})
                 Next
             End If
             If wire.legaturi IsNot Nothing Then
@@ -251,6 +275,21 @@ Partial Public Class ApiClient
         As Task(Of Byte()) Implements IEFacturaApi.GetPrimitaAtasamentAsync
         Return GetPrimitaFileAsync(k_idPrimita, "atasamente/" & k_index.ToString(CultureInfo.InvariantCulture),
                                    "citirea atașamentului facturii primite", ct)
+    End Function
+
+    Public Async Function SendPrimitaMesajAsync(k_idPrimita As Integer, k_text As String, ct As CancellationToken) _
+        As Task Implements IEFacturaApi.SendPrimitaMesajAsync
+        Try
+            ArgumentException.ThrowIfNullOrWhiteSpace(k_text)
+            Await SendEFacturaAsync(HttpMethod.Post, PrimitaPath(k_idPrimita, "mesaj"),
+                                    JsonSerializer.Serialize(New Dictionary(Of String, String) From {{"mesaj", k_text}}, _json),
+                                    "trimiterea mesajului despre factura primită", ct).ConfigureAwait(False)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SendPrimitaMesajAsync", ex)
+            Throw
+        End Try
     End Function
 
     Public Async Function LinkPrimitaAsync(k_idPrimita As Integer, k_idDdf As Integer, ct As CancellationToken) _

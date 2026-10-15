@@ -191,7 +191,7 @@ Friend NotInheritable Class EfConverter
                 Case EfKind.Amount
                     Dim d = Convert.ToDecimal(k_raw, CultureInfo.InvariantCulture)
                     Dim rounded = Math.Round(d, k_column.Scale, MidpointRounding.AwayFromZero)
-                    Dim limit = CDec(Math.Pow(10, 18 - k_column.Scale))
+                    Dim limit = CDec(Math.Pow(10, 20 - k_column.Scale))
                     If Math.Abs(rounded) >= limit Then Return Problem(EfIssueKind.Blocking, $"{d} este prea mare pentru coloană")
                     k_result = rounded
                     If rounded <> d Then

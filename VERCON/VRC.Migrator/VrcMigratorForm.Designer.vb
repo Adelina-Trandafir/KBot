@@ -18,6 +18,9 @@ Partial Class VrcMigratorForm
     Friend WithEvents btnSalveaza As System.Windows.Forms.Button
     Friend WithEvents grpRaport As System.Windows.Forms.GroupBox
     Friend WithEvents rtbRaport As System.Windows.Forms.RichTextBox
+    Friend WithEvents tlpRaport As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents lblRaportHtml As System.Windows.Forms.Label
+    Friend WithEvents btnRaportHtml As System.Windows.Forms.Button
     Friend WithEvents grpPlan As System.Windows.Forms.GroupBox
     Friend WithEvents tlpPlan As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents tlpServer As Global.KBot.Controls.KBotTableLayoutPanel
@@ -74,6 +77,9 @@ Partial Class VrcMigratorForm
         btnSalveaza = New System.Windows.Forms.Button()
         grpRaport = New System.Windows.Forms.GroupBox()
         rtbRaport = New System.Windows.Forms.RichTextBox()
+        tlpRaport = New Global.KBot.Controls.KBotTableLayoutPanel()
+        lblRaportHtml = New System.Windows.Forms.Label()
+        btnRaportHtml = New System.Windows.Forms.Button()
         grpPlan = New System.Windows.Forms.GroupBox()
         tlpPlan = New Global.KBot.Controls.KBotTableLayoutPanel()
         tlpServer = New Global.KBot.Controls.KBotTableLayoutPanel()
@@ -111,6 +117,7 @@ Partial Class VrcMigratorForm
         grpSurse.SuspendLayout()
         tlpSurse.SuspendLayout()
         grpRaport.SuspendLayout()
+        tlpRaport.SuspendLayout()
         SuspendLayout()
         '
         ' tlpRoot
@@ -514,12 +521,46 @@ Partial Class VrcMigratorForm
         '
         ' grpRaport
         '
-        grpRaport.Controls.Add(rtbRaport)
+        grpRaport.Controls.Add(tlpRaport)
         grpRaport.Dock = DockStyle.Fill
         grpRaport.Name = "grpRaport"
         grpRaport.TabIndex = 2
         grpRaport.TabStop = False
         grpRaport.Text = "Raport / jurnal"
+        '
+        ' tlpRaport
+        '
+        tlpRaport.ColumnCount = 2
+        tlpRaport.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        tlpRaport.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150.0F))
+        tlpRaport.RowCount = 2
+        tlpRaport.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
+        tlpRaport.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpRaport.Controls.Add(lblRaportHtml, 0, 0)
+        tlpRaport.Controls.Add(btnRaportHtml, 1, 0)
+        tlpRaport.Controls.Add(rtbRaport, 0, 1)
+        tlpRaport.SetColumnSpan(rtbRaport, 2)
+        tlpRaport.Dock = DockStyle.Fill
+        tlpRaport.Name = "tlpRaport"
+        tlpRaport.TabIndex = 0
+        '
+        ' lblRaportHtml
+        '
+        lblRaportHtml.Dock = DockStyle.Fill
+        lblRaportHtml.Name = "lblRaportHtml"
+        lblRaportHtml.Text = "Rezultatele verificării pot fi deschise și ca raport HTML."
+        lblRaportHtml.TextAlign = ContentAlignment.MiddleLeft
+        lblRaportHtml.TabIndex = 0
+        '
+        ' btnRaportHtml
+        '
+        btnRaportHtml.Dock = DockStyle.Fill
+        btnRaportHtml.Enabled = False
+        btnRaportHtml.FlatStyle = FlatStyle.Flat
+        btnRaportHtml.Name = "btnRaportHtml"
+        btnRaportHtml.Text = "Raport HTML…"
+        btnRaportHtml.TabIndex = 1
+        btnRaportHtml.UseVisualStyleBackColor = True
         '
         ' rtbRaport
         '
@@ -578,6 +619,8 @@ Partial Class VrcMigratorForm
         tipVrc.SetToolTipText(btnCiteste, "Citește bazele bifate în mod doar-citire și face raportul. Nu scrie nimic în Access și nu atinge serverul.")
         tipVrc.SetToolTipHeader(btnSalveaza, "Salvează raportul")
         tipVrc.SetToolTipText(btnSalveaza, "Salvează raportul ca fișier Markdown. Conține numere și intervale, nu rânduri de date.")
+        tipVrc.SetToolTipHeader(btnRaportHtml, "Raport HTML")
+        tipVrc.SetToolTipText(btnRaportHtml, "Deschide rezultatul curent și detaliile profilării într-o fereastră cu tabele și constatări formatate. Folosește rezultatele deja citite.")
         '
         ' VrcMigratorForm
         '
@@ -598,6 +641,7 @@ Partial Class VrcMigratorForm
         grpSurse.ResumeLayout(False)
         tlpSurse.ResumeLayout(False)
         grpRaport.ResumeLayout(False)
+        tlpRaport.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 

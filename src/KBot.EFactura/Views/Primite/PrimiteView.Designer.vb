@@ -22,6 +22,7 @@ Partial Class PrimiteView
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
@@ -31,9 +32,10 @@ Partial Class PrimiteView
         pnlDetaliu = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
         pgLinii = New PrimiteLiniiPage()
-        pgPdf = New VanzarePdfPage()
+        pgPdf = New PrimitePdfPage()
         pgAtasamente = New PrimiteAtasamentePage()
         pgMesaje = New PrimiteMesajePage()
+        pgObservatii = New PrimiteObservatiiPage()
         navDetaliu = New KBotNavList()
         ntfMesaj = New KBotNotice()
         tlyBody.SuspendLayout()
@@ -129,6 +131,7 @@ Partial Class PrimiteView
         tree.Name = "tree"
         tree.PaddingExpanderGap = 8
         tree.PaddingIconGap = 8
+        tree.PaddingTreeEnd = 8
         tree.PaddingTreeStart = 8
         tree.ReserveRightIconSpace = False
         tree.RightClickSelects = False
@@ -156,6 +159,7 @@ Partial Class PrimiteView
         pnlPages.Controls.Add(pgPdf)
         pnlPages.Controls.Add(pgAtasamente)
         pnlPages.Controls.Add(pgMesaje)
+        pnlPages.Controls.Add(pgObservatii)
         pnlPages.Dock = System.Windows.Forms.DockStyle.Fill
         pnlPages.Location = New System.Drawing.Point(0, 40)
         pnlPages.Margin = New System.Windows.Forms.Padding(0)
@@ -202,6 +206,16 @@ Partial Class PrimiteView
         pgMesaje.TabIndex = 3
         pgMesaje.Visible = False
         '
+        ' pgObservatii
+        '
+        pgObservatii.Dock = System.Windows.Forms.DockStyle.Fill
+        pgObservatii.Location = New System.Drawing.Point(0, 0)
+        pgObservatii.Margin = New System.Windows.Forms.Padding(0)
+        pgObservatii.Name = "pgObservatii"
+        pgObservatii.Size = New System.Drawing.Size(680, 476)
+        pgObservatii.TabIndex = 4
+        pgObservatii.Visible = False
+        '
         ' navDetaliu
         '
         navDetaliu.Dock = System.Windows.Forms.DockStyle.Top
@@ -211,7 +225,7 @@ Partial Class PrimiteView
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Image = My.Resources.Resources.table
         KBotNavItem1.Key = "linii"
-        KBotNavItem1.Text = "Linii"
+        KBotNavItem1.Text = "Conținut"
         KBotNavItem2.AutoSize = True
         KBotNavItem2.Image = My.Resources.Resources.invoice
         KBotNavItem2.Key = "pdf"
@@ -226,10 +240,16 @@ Partial Class PrimiteView
         KBotNavItem4.Key = "mesaje"
         KBotNavItem4.Text = "Mesaje"
         KBotNavItem4.Visible = False
+        KBotNavItem5.AutoSize = True
+        KBotNavItem5.Image = My.Resources.Resources.table
+        KBotNavItem5.Key = "observatii"
+        KBotNavItem5.Text = "Observații"
+        KBotNavItem5.Visible = False
         navDetaliu.Items.Add(KBotNavItem1)
         navDetaliu.Items.Add(KBotNavItem2)
         navDetaliu.Items.Add(KBotNavItem3)
         navDetaliu.Items.Add(KBotNavItem4)
+        navDetaliu.Items.Add(KBotNavItem5)
         navDetaliu.Location = New System.Drawing.Point(0, 0)
         navDetaliu.Name = "navDetaliu"
         navDetaliu.Orientation = KBotNavOrientation.Horizontal
@@ -273,9 +293,10 @@ Partial Class PrimiteView
     Friend WithEvents pnlDetaliu As System.Windows.Forms.Panel
     Friend WithEvents pnlPages As System.Windows.Forms.Panel
     Friend WithEvents pgLinii As PrimiteLiniiPage
-    Friend WithEvents pgPdf As VanzarePdfPage
+    Friend WithEvents pgPdf As PrimitePdfPage
     Friend WithEvents pgAtasamente As PrimiteAtasamentePage
     Friend WithEvents pgMesaje As PrimiteMesajePage
+    Friend WithEvents pgObservatii As PrimiteObservatiiPage
     Friend WithEvents navDetaliu As KBotNavList
     Friend WithEvents ntfMesaj As KBotNotice
 End Class

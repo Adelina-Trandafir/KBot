@@ -17,12 +17,12 @@ const VALUE = new Set(['Cant', 'Pret', 'TVA@Intrari', 'Valoare', 'PUTVA', 'Valoa
 const KEYRE = /^(ID|Id)([A-Z_]|$)|^IDC|^IDF|^IDB|^IDM|^IDOI|^IDPMF|^IDFel|^IdFel/;
 function cls(table, f) {
   const k = f.n, key = k + '@' + table;
-  if (table === 'TVA' && k === 'TVA') return ['COTA', 'INT = cota x 10000 (scara fixa a cotei, independenta de zecimalele subunitatii)'];
+  if (table === 'TVA' && k === 'TVA') return ['COTA', 'DECIMAL(20,4) = cota directa, independenta de zecimalele gestiunii'];
   if (table === 'Setari' && k === 'V') return ['CONFIG', 'nu se copiaza; cheie tipizata in VC_Settings (INT); valorile reale: -1/0 sau ZEC'];
   if (table === 'NIR' && k === 'Numar') return ['NUMAR', 'INT (numar document; negativ la storno/seria istorica); NU se scaleaza; fractia (document inserat intre doua numere) in NumarSub, in sutimi'];
   if (VALUE.has(k) || VALUE.has(key)) {
-    if (f.type === 'Long') return ['VALOARE-INT', 'INT scalat 10^SCARA, SCARA pe gestiune (sursa Long: fara fractiune de inventat)'];
-    return ['VALOARE-INT', 'INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare)'];
+    if (f.type === 'Long') return ['VALOARE-INT', 'DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat)'];
+    return ['VALOARE-INT', 'DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare)'];
   }
   if (f.type === 'AutoNumber' || (f.type === 'Long' && KEYRE.test(k))) return ['CHEIE', 'cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap'];
   if (f.type === 'Text') return ['TEXT', `VARCHAR(${Math.min(f.size, 255)})  utf8mb3_general_ci; zerouri initiale pastrate`];

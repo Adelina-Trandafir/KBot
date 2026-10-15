@@ -3,6 +3,8 @@
 -- ADD CONSTRAINT / CREATE TRIGGER that already exists -- that means the rules are already there. Not run from this chat.
 -- The same rules are enforced by the service; this file is a second line of defence, not the only one.
 
+-- Preturile negative legacy sunt acceptate la stocare pentru migrarea fidela.
+-- Aplicatia web valideaza separat documentele noi; migratorul nu corecteaza semne.
 -- ===== CHECK constraints =====
 ALTER TABLE `VC_Gestiuni` ADD CONSTRAINT `ck_VC_Gestiune_Type` CHECK (`Type` IN ('MATERIALE','ALIMENTE','OI','MF'));
 ALTER TABLE `VC_Gestiuni` ADD CONSTRAINT `ck_VC_Gestiune_State` CHECK (`State` IN ('IN_PREGATIRE','IMPORTATA_IN_REVIZIE','ACTIVA','ARHIVATA'));
@@ -13,23 +15,13 @@ ALTER TABLE `VC_ContextLock` ADD CONSTRAINT `ck_VC_Lock_Expiry` CHECK (`ExpiresA
 ALTER TABLE `VC_IdMap` ADD CONSTRAINT `ck_VC_IdMap_Kind` CHECK (`Kind` IN ('ROW','GROUP','ASSET'));
 ALTER TABLE `VC_MigrationIssues` ADD CONSTRAINT `ck_VC_Issue_Severity` CHECK (`Severity` IN ('BLOCAJ','AVERTIZARE','CONVERSIE'));
 ALTER TABLE `VC_AnnualClosings` ADD CONSTRAINT `ck_VC_Closing_order` CHECK (`FromExercitiuId` <> `ToExercitiuId`);
-ALTER TABLE `VC_ProduseP` ADD CONSTRAINT `ck_ProduseP_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
-ALTER TABLE `VC_OI_Produse` ADD CONSTRAINT `ck_OI_Produse_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
 ALTER TABLE `VC_NIR` ADD CONSTRAINT `ck_NIR_TipDoc` CHECK (`TipDoc` IN ('NIR','STOC_INITIAL'));
 ALTER TABLE `VC_NIR` ADD CONSTRAINT `ck_NIR_StocInitial_fara_partener` CHECK (`TipDoc` <> 'STOC_INITIAL' OR `IdPartener` IS NULL);
 ALTER TABLE `VC_NIR` ADD CONSTRAINT `ck_NIR_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
-ALTER TABLE `VC_Intrari` ADD CONSTRAINT `ck_Intrari_Pret_nonneg` CHECK (`Pret` IS NULL OR `Pret` >= 0);
-ALTER TABLE `VC_Intrari` ADD CONSTRAINT `ck_Intrari_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
-ALTER TABLE `VC_IntrariStorno` ADD CONSTRAINT `ck_IntrariStorno_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
 ALTER TABLE `VC_IntrariStorno` ADD CONSTRAINT `ck_IntrariStorno_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
 ALTER TABLE `VC_Iesiri_H` ADD CONSTRAINT `ck_Iesiri_H_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
-ALTER TABLE `VC_Iesiri` ADD CONSTRAINT `ck_Iesiri_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
-ALTER TABLE `VC_IesiriRetur` ADD CONSTRAINT `ck_IesiriRetur_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
-ALTER TABLE `VC_OI_Predare` ADD CONSTRAINT `ck_OI_Predare_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
 ALTER TABLE `VC_OI_Predare` ADD CONSTRAINT `ck_OI_Predare_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
-ALTER TABLE `VC_OI_Transfer` ADD CONSTRAINT `ck_OI_Transfer_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
 ALTER TABLE `VC_OI_Transfer` ADD CONSTRAINT `ck_OI_Transfer_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
-ALTER TABLE `VC_OI_Casare` ADD CONSTRAINT `ck_OI_Casare_PUTVA_nonneg` CHECK (`PUTVA` IS NULL OR `PUTVA` >= 0);
 ALTER TABLE `VC_OI_Casare` ADD CONSTRAINT `ck_OI_Casare_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
 ALTER TABLE `VC_LABC` ADD CONSTRAINT `ck_LABC_motiv` CHECK (`Anulat` = 0 OR (`MotivAnulare` IS NOT NULL AND `MotivAnulare` <> ''));
 

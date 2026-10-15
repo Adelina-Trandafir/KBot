@@ -64,6 +64,20 @@ Public NotInheritable Class EFacturaPrimitaLinie
     Public Property NrLinie As String = String.Empty
     Public Property Denumire As String = String.Empty
     Public Property Explicatie As String = String.Empty
+
+    ''' <summary>
+    ''' The CPV code of the line (<c>ItemClassificationCode</c> listID «STI»). <c>Nothing</c> = the line was stored before the
+    ''' column existed (not read); empty = the invoice was read and the line has no such code.
+    ''' </summary>
+    Public Property Cpv As String
+
+    ''' <summary>True when the invoice was read and this line carries no CPV code.</summary>
+    Public ReadOnly Property CpvLipsa As Boolean
+        Get
+            Return Cpv IsNot Nothing AndAlso Cpv.Length = 0
+        End Get
+    End Property
+
     Public Property Unit As String = String.Empty
     Public Property Cant As Decimal
     Public Property Pret As Decimal
@@ -95,6 +109,19 @@ Public NotInheritable Class EFacturaPrimitaAtasament
     Public Property Octeti As Long
 End Class
 
+''' <summary>The buyer of a received invoice, as the supplier wrote it in the XML.</summary>
+Public NotInheritable Class EFacturaPrimitaParte
+    Public Property Nume As String = String.Empty
+    Public Property Cui As String = String.Empty
+    Public Property Adresa As String = String.Empty
+End Class
+
+''' <summary>An account the supplier asks to be paid into (the means code and the IBAN).</summary>
+Public NotInheritable Class EFacturaPrimitaPlata
+    Public Property Cod As String = String.Empty
+    Public Property Cont As String = String.Empty
+End Class
+
 ''' <summary>A DDF an invoice is linked to.</summary>
 Public NotInheritable Class EFacturaPrimitaDdf
     Public Property IdDdf As Integer
@@ -109,6 +136,8 @@ Public NotInheritable Class EFacturaPrimitaDetaliu
     Public ReadOnly Property Note As New List(Of String)()
     Public ReadOnly Property Mesaje As New List(Of EFacturaPrimitaMesaj)()
     Public ReadOnly Property Atasamente As New List(Of EFacturaPrimitaAtasament)()
+    Public Property Cumparator As New EFacturaPrimitaParte()
+    Public ReadOnly Property Plati As New List(Of EFacturaPrimitaPlata)()
     Public ReadOnly Property LegaturiAuto As New List(Of EFacturaPrimitaDdf)()
     Public ReadOnly Property LegaturiManuale As New List(Of EFacturaPrimitaDdf)()
 End Class

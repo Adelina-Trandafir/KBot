@@ -2,6 +2,10 @@
 
 Apply on top of the root `CLAUDE.md`. (Written without diacritics, RULE 0.)
 
+## REGULA 00 - config.py NU ESTE ATINS NICIODATA
+
+ORICE schimbare posibila a `config.py` PE SERVER este STRICT INTERZISA: nicio trimitere, copiere, suprascriere, editare sau stergere, prin niciun script. `PYTHON/config.py` de pe acest PC este un MOCK; cel real exista doar pe server. Acelasi lucru pentru alte fisiere cu secrete (`*.env`, `admin_settings.json`, chei). `tools/Push-Changed.ps1` le exclude in cod (trei verificari) si nu are comutator care sa ridice regula. O setare care cere `config.py` (de ex. `TEST_MODE`) o pune operatorul, de mana, pe server.
+
 ## CSS / code structure
 
 - CSS is written in separate `.css` files, apart from HTML, JavaScript and Python. No `<style>` blocks, no stylesheet strings in JS, no `style` attributes for styling. Dynamic values a control needs (sizes, positioning, CSS variables) go through the control's API.

@@ -32,7 +32,7 @@ Friend NotInheritable Class FacturaPdf
 
     ' ── The fonts ───────────────────────────────────────────────────────────────
 
-    Private NotInheritable Class Fonts
+    Friend NotInheritable Class Fonts
 
         Friend ReadOnly Normal As Font
         Friend ReadOnly Bold As Font
@@ -43,6 +43,8 @@ Friend NotInheritable Class FacturaPdf
         Private ReadOnly _fold As Boolean
 
         Friend Sub New()
+            ' .NET has no code page 1250 until the provider is registered; the standard-font fallback below needs it.
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance)
             Dim k_regular As BaseFont = Nothing
             Dim k_bold As BaseFont = Nothing
             Try

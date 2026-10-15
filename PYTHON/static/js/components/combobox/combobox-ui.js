@@ -24,6 +24,8 @@ export const comboboxUIMixin = {
     if (this.options.readonly) {
       this.container.classList.add('readonly');
     }
+    const simple = this.options.dropDownStyle === 'simple';
+    if (simple) this.container.classList.add('simple');
 
     // ✨ Adaugă clasă pentru prefix icon
     if (this.options.prefixIcon) {
@@ -34,7 +36,7 @@ export const comboboxUIMixin = {
       this.container.parentElement.classList.add('show-only-icon');
     }
 
-    const arrowIcon = this.options.readonly ? '<div class="combobox-arrow">🔽</div>' : this.options.showArrow ? '<button type="button" class="combobox-arrow" tabindex="-1" aria-label="Afișează lista">▾</button>' : '';
+    const arrowIcon = simple ? '<div class="combobox-arrow">▾</div>' : this.options.readonly ? '<div class="combobox-arrow">🔽</div>' : this.options.showArrow ? '<button type="button" class="combobox-arrow" tabindex="-1" aria-label="Afișează lista">▾</button>' : '';
 
     // ✨ Prefix icon container (opțional)
     const prefixIconHtml = this.options.prefixIcon
@@ -90,6 +92,7 @@ export const comboboxUIMixin = {
     this.dropdown.classList.remove('hidden');
 
     this.isVisible = true;
+    this.markMultilineOptions();
     this.positionDropdown();
   },
 
@@ -127,7 +130,10 @@ export const comboboxUIMixin = {
     // --combobox-min-width (set in CSS on the dropdown) keeps a narrow field from giving a cramped list
     const minWidth = parseFloat(getComputedStyle(this.dropdown).getPropertyValue('--combobox-min-width')) || 0;
     const grow = parseFloat(getComputedStyle(this.dropdown).getPropertyValue('--combobox-grow')) || 1;
-    const width = Math.min(Math.max(rect.width, minWidth) * grow, viewportWidth - 16);
+    const listMin = Math.max(minWidth, this.options.dropDownMinWidth || 0);
+    // the stylesheet caps the list at 320px; an explicit minimum width lifts the cap so the list can be wider than its box
+    this.dropdown.style.maxWidth = this.options.dropDownMinWidth > 0 ? 'none' : '';
+    const width = Math.min(Math.max(rect.width, listMin) * grow, viewportWidth - 16);
     const left = Math.max(8, Math.min(rect.left, viewportWidth - width - 8));
     this.dropdown.style.width = `${width}px`;
 
@@ -213,6 +219,24 @@ export const comboboxUIMixin = {
       .join('');
 
     this.dropdown.innerHTML = html;
+    if (this.isVisible) this.markMultilineOptions();
+  },
+
+  /**
+   * Marchează cu `is-multiline` opțiunile al căror text se rupe pe mai multe rânduri, ca stilul să poată
+   * strânge paddingul vertical al acestora (CSS nu poate detecta ruperea textului). Se măsoară numai cât timp
+   * dropdown-ul e vizibil și are lățimea finală; fără layout (dropdown ascuns) nu se marchează nimic.
+   */
+  markMultilineOptions() {
+    this.dropdown.querySelectorAll('.combobox-option').forEach((option) => {
+      const range = document.createRange();
+      range.selectNodeContents(option);
+      const first = range.getClientRects()[0];
+      option.classList.toggle(
+        'is-multiline',
+        !!first && first.height > 0 && range.getBoundingClientRect().height > first.height * 1.5,
+      );
+    });
   },
 
   /**

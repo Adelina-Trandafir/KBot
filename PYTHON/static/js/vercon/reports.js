@@ -1,5 +1,5 @@
 // Period / report type / data selection, with the existing VERCON controls and theme.
-import { el, scope, field, paintTree, pdfPreview, showMessage } from './ui.js';
+import { el, scope, field, paintTree, pdfPreview, showMessage, CheckBox } from './ui.js';
 import { mountSelection, selectionFilters, selectionError } from './report-selection.js';
 import { paintReportBlock, reportNodes } from './report-result.js';
 import { downloadFile } from './pdf-preview.js';
@@ -30,9 +30,8 @@ export function mountReports(host, { api, sel }) {
     value => { state.start = value; invalidate(); void lookups(); }, owner);
   const end = field({ key: 'end', label: 'Dată sfârșit', type: 'date' }, state.end, true,
     value => { state.end = value; invalidate(); void lookups(); }, owner);
-  const showOutput = el('input', { type: 'checkbox' });
-  const options = el('section', { className: 'vc-reports__options' }, el('h4', { textContent: 'Opțiuni afișare' }),
-    el('label', { className: 'vc-reports__check' }, showOutput, 'Afișează rezultatul în pagină'));
+  const options = el('section', { className: 'vc-reports__options' }, el('h4', { textContent: 'Opțiuni afișare' }));
+  const showOutput = owner.own(new CheckBox(options, { label: 'Afișează rezultatul în pagină', className: 'vc-reports__check' })).input;
   left.append(periods.node, begin.node, end.node, options);
   const center = el('section', { className: 'vc-reports__types' });
   const right = el('section', { className: 'vc-reports__selection' }, el('h4', { textContent: 'Selectare date' }),

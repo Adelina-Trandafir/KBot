@@ -24,12 +24,13 @@ Accesul local se bazează pe conexiunea SSH a administratorului și oferă toate
 
 Machetele și sursele personalizate ale rapoartelor locale se păstrează separat în `VERCON/tools/.local/report-config/000_DEMO`. Inițial sunt folosite machetele implicite din codul local, ca să se poată testa modificările noi.
 
-Fișierele HTML, CSS și JS se recitesc la reîncărcarea paginii. Pentru modificări Python, oprește și pornește launcherul:
+Fișierele HTML, CSS și JS se recitesc la reîncărcarea paginii. Pentru modificări Python, repornește serverul:
 
 ```powershell
-.\VERCON\tools\Stop-Localhost.ps1
-.\VERCON\tools\Start-Localhost.ps1
+.\VERCON\tools\Restart-Localhost.ps1
 ```
+
+`Restart-Localhost.ps1` oprește serverul care ține portul (pornit cu `Start-Localhost.ps1` sau de mână cu `preview.py`) și îl pornește din nou în fundal. Nu oprește niciodată un program străin care ocupă portul. Separat: `Stop-Localhost.ps1` oprește, `Start-Localhost.ps1` pornește. Eroarea «Portul localhost este deja ocupat» înseamnă că serverul rulează deja: folosește Restart, nu pornește încă unul.
 
 Jurnalele sunt în `VERCON/tools/.local/localhost-5053.out.log` și `.err.log`. Pentru rulare în terminal și erori vizibile imediat: `Start-Localhost.ps1 -Foreground` (Ctrl+C oprește serverul și tunelul).
 

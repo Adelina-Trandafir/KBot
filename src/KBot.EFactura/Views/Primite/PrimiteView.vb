@@ -18,8 +18,8 @@ Imports KBot.Theming
 ''' Slice 00EF-18 -- the received e-invoices as one control, used by the «E-Factura» view of the DDF (KBot.App) and by the window with
 ''' all the received invoices. On the left a TREE: a root «Toate facturile», under it the months, under each month the invoices
 ''' (the dot says whether it was opened: orange = new). On the right the chosen invoice, in VIEWS chosen from a horizontal bar (the
-''' pattern of the DDF view): «Linii» (the lines and the VAT per rate), «Factură PDF» (the classic PDF the supplier embedded in the XML,
-''' else the one ANAF draws), «Atașamente» and «Mesaje» (the last two only when the invoice has some). A right click on an invoice
+''' pattern of the DDF view): «Linii» (the lines and the VAT per rate), «Factură PDF» (its own bar: the classic invoice K-BOT draws, the one ANAF
+''' draws, and a popup with the attached files), «Atașamente» (the list, to save a file) and «Mesaje» (the last two only when the invoice has some). A right click on an invoice
 ''' offers «Salvează ca ZIP» and «Salvează ca XML» and, in the DDF view, the manual link.
 '''
 ''' <para>Two modes. WITHOUT a DDF (<see cref="LoadAsync"/> with Nothing): every received invoice of the year. WITH a DDF: the invoices of
@@ -37,6 +37,7 @@ Public Class PrimiteView
     Private Const ViewPdf As String = "pdf"
     Private Const ViewAtasamente As String = "atasamente"
     Private Const ViewMesaje As String = "mesaje"
+    Private Const ViewObservatii As String = "observatii"
 
     Private Const MenuZip As String = "zip"
     Private Const MenuXml As String = "xml"
@@ -321,6 +322,9 @@ Public Class PrimiteView
         gridMesaje().ClearRows()
         navDetaliu.SetItemVisible(ViewAtasamente, False)
         navDetaliu.SetItemVisible(ViewMesaje, False)
+        navDetaliu.SetItemVisible(ViewObservatii, False)
+        pgObservatii.SetNotes(Nothing)
+        pgPdf.SetAttachments(Nothing)
         pgPdf.ReleaseDocument()
     End Sub
 
@@ -372,11 +376,14 @@ Public Class PrimiteView
             FillLines(k_detail)
             FillAttachments(k_detail)
             FillMessages(k_detail)
+            pgObservatii.SetNotes(k_detail.Note)
             navDetaliu.SetItemVisible(ViewAtasamente, k_detail.Atasamente.Count > 0)
-            navDetaliu.SetItemVisible(ViewMesaje, k_detail.Note.Count > 0 OrElse k_detail.Mesaje.Count > 0)
+            ' «Mesaje» is always there: it is where a message to the supplier is written.
+            navDetaliu.SetItemVisible(ViewMesaje, True)
+            navDetaliu.SetItemVisible(ViewObservatii, k_detail.Note.Count > 0)
             Dim k_key As String = navDetaliu.SelectedKey
             If (k_key = ViewAtasamente AndAlso k_detail.Atasamente.Count = 0) OrElse
-               (k_key = ViewMesaje AndAlso k_detail.Note.Count = 0 AndAlso k_detail.Mesaje.Count = 0) Then
+               (k_key = ViewObservatii AndAlso k_detail.Note.Count = 0) Then
                 navDetaliu.SelectedKey = ViewLinii
                 ShowPage(ViewLinii)
             ElseIf k_key = ViewPdf Then
@@ -418,9 +425,10 @@ Public Class PrimiteView
             k_lines.ClearRows()
             For Each k_l As EFacturaPrimitaLinie In k_detail.Linii
                 Dim k_row As KBotDataRow = k_lines.AddRow()
+                k_row.Tag = k_l
                 k_row("nr") = k_l.NrLinie
                 k_row("denumire") = k_l.Denumire
-                k_row("explicatie") = k_l.Explicatie
+                k_row("cpv") = k_l.Cpv
                 k_row("um") = k_l.Unit
                 k_row("cant") = k_l.Cant
                 k_row("pret") = k_l.Pret
@@ -446,6 +454,7 @@ Public Class PrimiteView
     End Sub
 
     Private Sub FillAttachments(k_detail As EFacturaPrimitaDetaliu)
+        pgPdf.SetAttachments(k_detail.Atasamente)
         Dim k_grid As KBotDataView = gridAtasamente()
         k_grid.BeginUpdate()
         Try
@@ -462,21 +471,15 @@ Public Class PrimiteView
         End Try
     End Sub
 
+    ' «Mesaje»: only the messages of the E-Factura system about the invoice (the notes of the XML are in «Observații»).
     Private Sub FillMessages(k_detail As EFacturaPrimitaDetaliu)
         Dim k_grid As KBotDataView = gridMesaje()
         k_grid.BeginUpdate()
         Try
             k_grid.ClearRows()
-            For Each k_n As String In k_detail.Note
-                Dim k_row As KBotDataRow = k_grid.AddRow()
-                k_row("fel") = "Notă din factură"
-                k_row("data") = String.Empty
-                k_row("text") = k_n
-            Next
             For Each k_m As EFacturaPrimitaMesaj In k_detail.Mesaje
                 Dim k_row As KBotDataRow = k_grid.AddRow()
-                k_row("fel") = "Mesaj"
-                k_row("data") = If(k_m.DataMesaj.HasValue, k_m.DataMesaj.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
+                k_row("data") = If(k_m.DataMesaj.HasValue, k_m.DataMesaj.Value.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture), String.Empty)
                 k_row("text") = k_m.Mesaj
             Next
         Finally
@@ -499,12 +502,14 @@ Public Class PrimiteView
         pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
         pgAtasamente.Visible = String.Equals(k_key, ViewAtasamente, StringComparison.Ordinal)
         pgMesaje.Visible = String.Equals(k_key, ViewMesaje, StringComparison.Ordinal)
+        pgObservatii.Visible = String.Equals(k_key, ViewObservatii, StringComparison.Ordinal)
         If pgPdf.Visible Then RefreshPdf()
     End Sub
 
     ''' <summary>
-    ''' Opens the PDF of the shown invoice: the classic PDF the supplier embedded in the XML when there is one, else the one ANAF's service
-    ''' draws from the XML. A failure becomes a line inside the viewer. UI boundary (async Sub): logs and swallows.
+    ''' Opens the document the bar of «Factură PDF» asks for: the classic invoice K-BOT draws from the stored data, or the one ANAF's
+    ''' service draws from the XML (an attachment is opened by <see cref="PgPdf_AttachmentChosen"/>). A failure becomes a line inside
+    ''' the viewer. UI boundary (async Sub): logs and swallows.
     ''' </summary>
     Private Async Sub RefreshPdf()
         Try
@@ -513,21 +518,26 @@ Public Class PrimiteView
                 pgPdf.ShowNotice("Alegeți o factură din arbore.")
                 Return
             End If
-            Dim k_embedded As EFacturaPrimitaAtasament = k_d.Atasamente.FirstOrDefault(
-                Function(k_a) k_a.Mime.Contains("pdf", StringComparison.OrdinalIgnoreCase) OrElse k_a.Nume.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-            Dim k_stamp As String = $"{k_d.Factura.IdPrimita}|{If(k_embedded Is Nothing, "anaf", "atas" & k_embedded.Index.ToString(CultureInfo.InvariantCulture))}"
+            Dim k_mode As String = pgPdf.Mode
+            If String.Equals(k_mode, PrimitePdfPage.ModeAttachments, StringComparison.Ordinal) Then Return
+            Dim k_id As Integer = k_d.Factura.IdPrimita
+            Dim k_stamp As String = $"{k_id}|{k_mode}"
             If String.Equals(k_stamp, pgPdf.Stamp, StringComparison.Ordinal) Then Return
             Dim k_mySeq As Integer = Interlocked.Increment(_pdfSeq)
-            Dim k_id As Integer = k_d.Factura.IdPrimita
-            pgPdf.ShowNotice(If(k_embedded Is Nothing, "Se aduce factura de la ANAF…", "Se deschide factura atașată…"))
-            Dim k_bytes As Byte() = Await _gate.RunAsync(
-                Function() If(k_embedded Is Nothing, _api.GetPrimitaPdfAsync(k_id, _cts.Token),
-                              _api.GetPrimitaAtasamentAsync(k_id, k_embedded.Index, _cts.Token))).ConfigureAwait(True)
-            If IsDisposed OrElse k_mySeq <> _pdfSeq Then Return
-            TempPdfStore.EnsureRoot()
             Dim k_label As String = Regex.Replace(k_d.Factura.NrFact, "[^A-Za-z0-9_.-]", "_")
-            Dim k_path As String = TempPdfStore.PathFor($"primita_{k_label}_{DateTime.Now:HHmmssfff}.pdf")
-            File.WriteAllBytes(k_path, k_bytes)
+            Dim k_path As String
+            If String.Equals(k_mode, PrimitePdfPage.ModeAnaf, StringComparison.Ordinal) Then
+                pgPdf.ShowNotice("Se aduce factura de la ANAF…")
+                Dim k_bytes As Byte() = Await _gate.RunAsync(Function() _api.GetPrimitaPdfAsync(k_id, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed OrElse k_mySeq <> _pdfSeq Then Return
+                TempPdfStore.EnsureRoot()
+                k_path = TempPdfStore.PathFor($"primita_anaf_{k_label}_{DateTime.Now:HHmmssfff}.pdf")
+                File.WriteAllBytes(k_path, k_bytes)
+            Else
+                TempPdfStore.EnsureRoot()
+                k_path = TempPdfStore.PathFor($"primita_{k_label}_{DateTime.Now:HHmmssfff}.pdf")
+                FacturaPrimitaPdf.Write(k_path, k_d)
+            End If
             pgPdf.ShowDocument(k_path)
             pgPdf.Stamp = k_stamp
         Catch ex As OperationCanceledException
@@ -538,6 +548,93 @@ Public Class PrimiteView
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.RefreshPdf", ex)
             If Not IsDisposed Then pgPdf.ShowNotice("Documentul nu a putut fi pregătit. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
+    ' The bar of the «Factură PDF» view moved to «Factură clasică» / «Factură ANAF». UI boundary: logs and swallows.
+    Private Sub PgPdf_ModeChanged(k_mode As String) Handles pgPdf.ModeChanged
+        Try
+            If pgPdf.Visible Then RefreshPdf()
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.PgPdf_ModeChanged", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The operator chose an attachment in the popup: it opens in the same document area (a PDF in the viewer, an image in the
+    ''' picture box; any other kind is only named, the «Atașamente» view saves it). UI boundary (async Sub): logs and swallows.
+    ''' </summary>
+    Private Async Sub PgPdf_AttachmentChosen(k_index As Integer) Handles pgPdf.AttachmentChosen
+        Try
+            Dim k_d As EFacturaPrimitaDetaliu = _detail
+            If k_d Is Nothing Then Return
+            Dim k_file As EFacturaPrimitaAtasament = k_d.Atasamente.FirstOrDefault(Function(k_a) k_a.Index = k_index)
+            If k_file Is Nothing Then Return
+            Dim k_id As Integer = k_d.Factura.IdPrimita
+            Dim k_stamp As String = $"{k_id}|atas{k_index.ToString(CultureInfo.InvariantCulture)}"
+            If String.Equals(k_stamp, pgPdf.Stamp, StringComparison.Ordinal) Then Return
+            Dim k_mySeq As Integer = Interlocked.Increment(_pdfSeq)
+            Dim k_ext As String = Path.GetExtension(k_file.Nume).ToLowerInvariant()
+            Dim k_isPdf As Boolean = k_file.Mime.Contains("pdf", StringComparison.OrdinalIgnoreCase) OrElse k_ext = ".pdf"
+            Dim k_isImage As Boolean = k_file.Mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase) OrElse
+                                       {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff"}.Contains(k_ext)
+            If Not k_isPdf AndAlso Not k_isImage Then
+                pgPdf.ShowNotice($"«{k_file.Nume}» nu se poate afișa aici. Îl puteți salva din vederea «Atașamente» (dublu clic).")
+                Return
+            End If
+            pgPdf.ShowNotice("Se deschide atașamentul…")
+            Dim k_bytes As Byte() = Await _gate.RunAsync(
+                Function() _api.GetPrimitaAtasamentAsync(k_id, k_index, _cts.Token)).ConfigureAwait(True)
+            If IsDisposed OrElse k_mySeq <> _pdfSeq Then Return
+            If k_isPdf Then
+                Dim k_label As String = Regex.Replace(k_d.Factura.NrFact, "[^A-Za-z0-9_.-]", "_")
+                TempPdfStore.EnsureRoot()
+                Dim k_path As String = TempPdfStore.PathFor($"primita_atas_{k_label}_{k_index.ToString(CultureInfo.InvariantCulture)}_{DateTime.Now:HHmmssfff}.pdf")
+                File.WriteAllBytes(k_path, k_bytes)
+                pgPdf.ShowDocument(k_path)
+            Else
+                pgPdf.ShowImage(k_bytes)
+            End If
+            pgPdf.Stamp = k_stamp
+        Catch ex As OperationCanceledException
+            ' The host was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("PrimiteView.PgPdf_AttachmentChosen", ex)
+            If Not IsDisposed Then pgPdf.ShowNotice(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.PgPdf_AttachmentChosen", ex)
+            If Not IsDisposed Then pgPdf.ShowNotice("Atașamentul nu a putut fi deschis. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The operator wrote a message for the supplier and pressed «Trimite»: after a confirmation it goes through ANAF, the invoice is read
+    ''' again and the new message shows in the list. A failure becomes a line in the notice. UI boundary (async Sub): logs and swallows.
+    ''' </summary>
+    Private Async Sub PgMesaje_SendRequested(k_text As String) Handles pgMesaje.SendRequested
+        Try
+            Dim k_id As Integer = _shownId
+            If k_id = 0 Then Return
+            If KBotMessage.Show(FindForm(), "Trimiteți mesajul furnizorului, prin ANAF? Mesajul nu mai poate fi retras.", "Mesaj către furnizor",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+            ntfMesaj.Visible = False
+            pgMesaje.SetBusy(True)
+            Try
+                Await _gate.RunAsync(Function() _api.SendPrimitaMesajAsync(k_id, k_text, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed Then Return
+                pgMesaje.ClearInput()
+            Finally
+                If Not IsDisposed Then pgMesaje.SetBusy(False)
+            End Try
+            If _shownId = k_id Then Await ShowInvoiceAsync(k_id).ConfigureAwait(True)
+        Catch ex As OperationCanceledException
+            ' The host was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("PrimiteView.PgMesaje_SendRequested", ex)
+            ShowProblem(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.PgMesaje_SendRequested", ex)
+            ShowProblem("Mesajul nu a putut fi trimis. Detalii în jurnalul de erori.")
         End Try
     End Sub
 

@@ -11,7 +11,7 @@
 .vc-pill[hidden] { display: none; }
 .vc-doc__header { margin-bottom: 10px; }
 .vc-doc__header select, .vc-doc__header input { padding: 4px 6px; }
-.vc-doc__header input[readonly] { background: transparent; border-color: transparent; }
+.vc-doc__header input[readonly]:not(.combobox-input) { background: transparent; border-color: transparent; }
 .vc-hint { font-size: .8em; opacity: .7; }
 .vc-doc__lines { overflow-x: auto; }
 .vc-lines--doc th { background: rgba(48, 158, 255, .1); font-weight: 600; font-size: .85em; white-space: nowrap; }
@@ -31,3 +31,4 @@
 .vc-doc__tree details details { margin-left: 10px; }
 .vc-doc__tree .vc-nom__leaf { padding-left: 12px; font-size: .9em; }
 @media (max-width: 800px) { .vc-doc { grid-template-columns: 1fr; } }
+

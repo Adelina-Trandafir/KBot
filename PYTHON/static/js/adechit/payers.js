@@ -2,6 +2,7 @@ import { confirmBox } from '../utils/confirm-box.js';
 import { DataGrid, ValueType } from '../dgv/datagrid.js';
 import { Combobox } from '../components/combobox/combobox.js';
 import { DatePicker } from '../components/datepicker/datepicker.js';
+import { TextBox } from '../components/textbox/textbox.js';
 import { showMessage } from '../portal/messages.js';
 import { cnpMessage } from './cnp.js';
 
@@ -150,11 +151,20 @@ export function bindPayers({ api, context, refresh, moveToSubunit }) {
   function field(key, label, value, type = 'text', parent = body, pre = '') {
     const row = document.createElement('label'); row.className = 'ade-form-field';
     const caption = document.createElement('span'); caption.textContent = label;
-    const input = document.createElement('input'); input.name = pre + key; input.id = `ade-field-${pre}${key}`;
-    input.type = type; input.setAttribute('aria-label', label);
-    if (type === 'checkbox') input.checked = Boolean(value); else input.value = value ?? '';
-    input.maxLength = context().schema[type === 'checkbox' ? 'Platitori' : 'Platitori_sub']?.fields[key]?.size || 255;
-    row.append(caption, input); parent.append(row);
+    row.append(caption);
+    const size = context().schema[type === 'checkbox' ? 'Platitori' : 'Platitori_sub']?.fields[key]?.size || 255;
+    let input;
+    if (type === 'text') {   // a plain text field is the shared TextBox (its input carries the same name / id / maxLength)
+      const box = new TextBox(row, { name: pre + key, id: `ade-field-${pre}${key}`, ariaLabel: label, value, maxLength: size, allowCopyPaste: true });
+      controls.push(box); input = box.input;
+    } else {
+      input = document.createElement('input'); input.name = pre + key; input.id = `ade-field-${pre}${key}`;
+      input.type = type; input.setAttribute('aria-label', label);
+      if (type === 'checkbox') input.checked = Boolean(value); else input.value = value ?? '';
+      input.maxLength = size;
+      row.append(input);
+    }
+    parent.append(row);
     if (type === 'date') {
       const picker = new DatePicker(input); controls.push(picker);
     }

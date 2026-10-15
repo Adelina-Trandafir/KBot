@@ -81,18 +81,6 @@ Partial Public Class MigratorForm
         End Try
     End Sub
 
-    Private Sub btnEfZip_Click(sender As Object, e As EventArgs) Handles btnEfZip.Click
-        Try
-            Using dialog As New FolderBrowserDialog()
-                dialog.Description = "Alegeți folderul cu arhivele ANAF (fact<id>.zip)"
-                If Directory.Exists(txtEfZip.Text.Trim()) Then dialog.SelectedPath = txtEfZip.Text.Trim()
-                If dialog.ShowDialog(Me) = DialogResult.OK Then txtEfZip.Text = dialog.SelectedPath
-            End Using
-        Catch ex As Exception
-            GlobalErrorLog.Write("MigratorForm.btnEfZip_Click", ex)
-        End Try
-    End Sub
-
     Private Sub BrowseAccess(k_box As KBot.Controls.KBotTextField, k_title As String)
         Using dialog As New OpenFileDialog()
             dialog.Title = k_title
@@ -118,7 +106,6 @@ Partial Public Class MigratorForm
             .AccessPassword = AccessPassword(),
             .IssuedFile = txtEfEmise.Text.Trim(),
             .ReceivedFile = txtEfPrimite.Text.Trim(),
-            .ZipFolder = txtEfZip.Text.Trim(),
             .UnitCui = txtCodFiscal.Text.Trim(),
             .DoFurnizor = chkEfFurnizor.Checked,
             .DoClienti = chkEfClienti.Checked,
@@ -136,7 +123,7 @@ Partial Public Class MigratorForm
     Private Shared Function EfFingerprint(k_options As EfImportOptions) As String
         Return String.Join("|", {
             k_options.Server.Describe(), k_options.UnitDatabase, k_options.CommonDatabase,
-            k_options.IssuedFile, k_options.ReceivedFile, k_options.ZipFolder, k_options.UnitCui,
+            k_options.IssuedFile, k_options.ReceivedFile, k_options.UnitCui,
             k_options.DoFurnizor.ToString(), k_options.DoClienti.ToString(),
             k_options.DoEmise.ToString(), k_options.DoPrimite.ToString()})
     End Function

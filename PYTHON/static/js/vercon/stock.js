@@ -1,5 +1,5 @@
 // VC08-01: balances and warehouse statements from the same server stock engine.
-import { el, scope, field, grid, column, paintTree, preview, showMessage } from './ui.js';
+import { el, scope, field, grid, column, paintTree, preview, showMessage, CheckBox } from './ui.js';
 import { decimalText as numberText } from './decimal-text.js';
 
 const months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
@@ -24,9 +24,8 @@ export function mountStock(host, { api, sel, signal, openForm, canOpen }) {
   const end = field({ key: 'end', label: 'Până la', type: 'date', required: true }, state.end, true, (value) => { state.end = value; invalidate(); }, owner);
   const refresh = el('button', { type: 'button', textContent: 'Calculează' });
   refresh.addEventListener('click', () => void load());
-  const only = el('input', { type: 'checkbox', checked: true });
-  only.addEventListener('change', () => paint());
-  filters.append(begin.node, end.node, refresh, el('label', { className: 'vc-stock__only' }, only, 'Doar produse cu stoc'));
+  filters.append(begin.node, end.node, refresh);
+  const only = owner.own(new CheckBox(filters, { label: 'Doar produse cu stoc', checked: true, className: 'vc-stock__only', onChange: () => paint() })).input;
   if (['OI', 'MF'].includes(sel().type)) {
     const ledger = field({ key: 'ledger', label: 'Evidență', type: 'select', options: [
       { value: 'warehouse', label: 'Magazie' }, { value: 'custody', label: 'Deținători' },

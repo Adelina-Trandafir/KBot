@@ -1,5 +1,105 @@
 # Implementare VERCON v2
 
+## Actualizare 14.10.2026 — macheta NIR: antet obligatoriu înainte de grid, meniu «Factură Cumpărare (NIR)», `dropDownStyle`
+
+**Fișiere:** `js/vercon/docs.js`, `js/vercon/ui.js`, `js/vercon/app.js`, `js/dgv/datagrid.js`, `js/dgv/editing.js`, `js/components/combobox/combobox.js` + `combobox-ui.js`, `css/dgv.css`, `css/combobox.css`, `css/vercon-receptie.css`, `css/vercon-documente-base.css`, `routes/vercon/capabilities.py`.
+- **Stoc inițial:** bifa ascunde complet «Furnizor» și «Număr factură» (și le golește); la debifare reapar. Celula Furnizor păstrează doar bifa.
+- **Aliniere celule grid (fără antet):** `#` și `UM` centrate (opțiune nouă de coloană `align: 'center'` → clasa `is-center`); Preț fără TVA, TVA %, Valoare fără TVA, TVA (lei), Total cu TVA la dreapta (NIR).
+- **Grid blocat până se completează antetul:** `editGuard` / `onEditBlocked` în DataGrid; `headerLock()` în `docs.js` cere toate câmpurile obligatorii (la NIR și «Comisie», dacă gestiunea are comisii); click în grid sau «+ Adaugă rând» arată mesajul cu câmpurile lipsă și marchează câmpurile goale. Regula e pe client; serverul nu cere comisia.
+- **Cont unic:** dacă gestiunea are un singur cont (alimente), «Categorie / Cont» (și «Cont de intrare» / «Cont primitor») e preselectat și dezactivat.
+- **Meniu NIR:** butonul se numește «Factură Cumpărare (NIR)» (server) și deschide un meniu popup: Adăugare (macheta nouă direct: pagina se montează cu `startAdd`, fără să deseneze întâi ecranul de consultare; dacă pagina e deja deschisă, `startAdd()`), Editare / Modificare (comportamentul de până acum), separator, Listare (fără acțiune încă). Serverul Flask trebuie repornit pentru noua etichetă.
+- **Buton «+ Adaugă rând»:** acțiunea din subsolul gridului stă la stânga, cu text la ~10px de margine (`has-action` în `dgv.css`; celula acțiunii nu mai moștenește alinierea centrată a primei coloane, `#`). «Comisie» e și ea `dropDownStyle: 'simple'`.
+- **Grid produse NIR:** rând nou gol mereu vizibil (`newRowAlwaysVisible`) și Esc în două trepte (celulă, apoi rând nevalidat) — vezi `VERCON/CONTROALE_CUSTOM_THREAD.md`, DataGrid. Liniile goale nu se salvează.
+- **Tastatura în antet (toate documentele):** Tab / Shift+Tab și Enter merg de la un control editabil la următorul, ca într-un formular Access; se sar bifele, butoanele (săgeți de listă, calendar) și controalele dezactivate sau invizibile; după ultimul control, Enter / Tab pornește editarea în primul rând al gridului (`onHeaderKey` în `docs.js`). Combobox-ul cu scriere păstrează primul rezultat la Tab. Nu se poate deschide încă o listă simplă de la tastatură.
+- **Grid produse NIR, părăsirea rândului:** rândul editat e judecat la plecare; dacă e incomplet apare «Rând incomplet» cu «Continuă editarea» (implicit) / «Anulează rândul»; la ieșirea focusului din grid niciun editor nu rămâne deschis (vezi `CONTROALE_CUSTOM_THREAD.md`, DataGrid).
+- **Cotă TVA din antet (NIR):** se dezactivează (cu explicație în tooltip) de îndată ce există cel puțin un rând completat în grid (rândul nou gol nu contează) și se reactivează dacă rândurile dispar (`syncVatLock` în `docs.js`).
+- **Editorul de documente ca fereastră modală:** adăugarea / modificarea se face într-un `ModalFrame` (dimensiune fixă, fundal blurat, arborele rămâne în spate); mărime de încercat din consolă doar pe localhost: `kbotDebug.modalSize(w, h)` (vezi `CONTROALE_CUSTOM_THREAD.md`). Nevăzut pe ecran.
+- **Mod de test (o singură sursă de adevăr):** comutator pe server (`/api/test-mode`, `TEST_MODE` în `config.py` de pe server, implicit pornit) citit de `utils/debug-tools.js`; oprit = consola tace (log/info/debug) și `kbotDebug` nu există; event-bus, instances-registry și listener-tracker îl urmăresc. Cere repornirea serviciului Flask. Nevăzut pe ecran.
+- **Tipografie, o singură sursă:** `PYTHON/static/css/typography.css` (baza `--fs-base` = 14px; trepte `--fs-2xs … --fs-2xl` = baza ± N; roluri `--fs-control` / `--fs-label` / `--fs-table` / `--fs-hint`; familii `--font-ui` / `--font-heading` / `--font-mono`), încărcat primul pe toate paginile aplicației web (nu și site-ul de prezentare). 167 de valori absolute din `static/css` migrate (lista completă: `VERCON/TIPOGRAFIE_MIGRARE.md`); documentele de tipărire și valorile `em` rămân neschimbate. Încercare live (doar mod de test): `kbotDebug.fontBase(px)`, `fontFamily(...)`, `fontReset()`. Nevăzut pe ecran: mărimile apropiate au fost normalizate la cea mai apropiată treaptă (unele controale s-au schimbat cu 1–2px, iar reducerile responsive mici pot coincide acum cu mărimea de bază).
+- **Arbori și meniu:** arborele ia `--fs-base` și nu mai ascultă bold / italic / culori fixe (se configurează per arbore prin `--tv-*`, vezi `CONTROALE_CUSTOM_THREAD.md`); meniul de operații din VERCON are `--fs-xl`. Nevăzut pe ecran.
+- **Control de meniu (`Menu`):** bara și popup-ul într-un singur control (`js/components/menu/menu.js`, `css/menu.css`); bara de operații din VERCON și toate popup-urile (`openMenu`, inclusiv `iconRight`, `checkable`, `below`, `up`) îl folosesc; `adechit/menu.js` re-exportă. Rămân de migrat: meniul propriu din ADECHIT, `portal/menu.js`, meniul grid-ului. Nevăzut pe ecran.
+- **Combobox, opțiuni noi:** `dropDownOnEnter`, `maxResults` (expus), `dropDownMinWidth` — vezi `VERCON/CONTROALE_CUSTOM_THREAD.md`.
+- **Combobox `dropDownStyle`:** `'search'` | `'simple'` (vezi `VERCON/CONTROALE_CUSTOM_THREAD.md`, secțiunea Combobox); folosit la «Cotă TVA».
+- **Verificare:** doar verificare de sintaxă (`node --check`); nimic nu a fost deschis în browser.
+
+## Actualizare 13.10.2026 — TextBox și CheckBox comune; arborele NU se mai reconstruiește la click pe un document
+
+**Controale noi** (documentate în `VERCON/CONTROALE_CUSTOM_THREAD.md`, secțiunile TextBox și CheckBox):
+- `js/components/textbox/textbox.js` + `css/textbox.css`: câmp de text cu comutatoare (`type` text/int/decimal/money/search, `required`, `readOnly`, `maxLength`, `min`, `textAlign`, `casing`, `selectOnFocus`, `clearable`, `errorColor`, `placeholder`, `name`, `id`, `ariaLabel`) și callback-uri `onInput` / `onCommit` / `onError`. **Validare:** nimic nu se judecă la tastare; `validate()` este încercarea (la salvare) și un eșec pune câmpul în starea de eroare (culoare `errorColor`); un câmp aflat în eroare se judecă din nou la pierderea focusului și iese din eroare când textul e valid. `money`: sumă pentru citire în afara focusului (`1.234,50`), cifrele exacte rămân pentru `getValue()`.
+- `js/components/checkbox/checkbox.js` + `css/checkbox.css`: casetă de bifat cu etichetă (`labelSide`, `className`, `onChange`).
+- `js/utils/field-format.js` (nou, partajat): `parse` / `validate` / `format` / `formatMoney`, mutate din `vercon/fields.js`, care le re-exportă (importurile VERCON nu s-au schimbat).
+- Pagini: `vercon.html` și `adechit.html` încarcă noile fișiere CSS, înaintea CSS-ului aplicației.
+
+**Migrate:** `field()` din `js/vercon/ui.js` (text/int/decimal; lista și data rămân Combobox / DatePicker; numerele rămân aliniate la stânga în formulare); `docs.js` (`showErrors` pune câmpurile cu eroare în starea de eroare: obligatoriu gol = culoare fără mesaj, ca înainte; bifa «Stoc inițial»); `reports.js` și `stock.js` (câte o casetă); `js/adechit/payers.js` (câmpurile de tip `text`; `tel` / `email` / `date` / `checkbox` neschimbate). **Nemigrate, intenționat:** editorul de celulă din DataGrid (decizie: se revede, după un test de overhead pe o listă mare), căutările din `nomenclatoare.js` / `datagrid.js`, casetele din ADECHIT și din DataGrid.
+
+**Arbore (raportat de utilizator):** la click pe un document, `paint()` → `paintSaved()` distrugea și reconstruia tot arborele (scroll pierdut, ramuri redeschise din set). Acum arborele rămâne viu: la selecție se mută doar marcajul (`markSelected`, ui.js, fără redesenare); datele noi (după încărcare / salvare / anulare) se desenează pe loc cu `refreshTree` (păstrează ramurile deschise, selecția și scroll-ul), semnalate prin `treeDirty`. Arborele ascuns în timpul editării nu mai e distrus.
+
+**Regula câmpurilor obligatorii (feedback utilizator):** niciun control obligatoriu nu mai e marcat roz de la început; marcajul apare doar (1) la pierderea focusului gol și (2) la evenimentul de validare ridicat la o încercare de salvare (`scope().validate()` în ui.js, apelat din `showErrors` în docs.js), la care răspund TextBox (starea de eroare), câmpurile listă / dată din `field()` și grila. Grila: `DataGrid.validate()` și `_requiredShown` / `_seen` în `dgv/editing.js`, folosite de `dgv/datagrid.js` la desenarea celulelor; o celulă obligatorie goală se marchează doar după ce a fost părăsită sau după validare. Atenție: schimbă un comportament al grilei partajate (`dgv/`); în codul de azi numai VERCON declară coloane `required` (căutat în `adechit/`, `portal/`), deci alte ecrane nu sunt afectate.
+
+**Tooltip la eroare:** `TextBox` (opțiunea `errorTooltip`, implicit pornită) pune mesajul de eroare ca `title`; tooltip-ul existent al câmpului se înlocuiește pe durata erorii și se restaurează după. La fel câmpurile listă / dată din `field()` și celulele obligatorii goale marcate din grilă (`datagrid.js`). În `docs.js` am scos `setError('')` pentru câmpurile obligatorii goale, care ar fi șters mesajul pus de `validate()`.
+
+**Feedback pe formular (5 puncte, 13.10.2026):**
+1. **O singură culoare de eroare:** variabilele `--err-control-backcolor` / `--err-control-bordercolor` (`css/variables.css`, temă închisă în `portal-theme.css`) folosite de TextBox, câmpurile listă / dată și celulele grilei. Dispare `--vc-required-back`.
+2. **Nimic scris pe ecran la eroare, doar tooltip:** `field()` nu mai creează span-ul de eroare; `error.textContent = mesaj` devine culoare + tooltip (și pentru `nomenclatoare.js`, `lista.js`, `editor.js`, care îl foloseau); mesajul de la linii e tooltip pe grilă. Linia de stare din bara de jos a rămas.
+3. **Numărul NIR se verifică la părăsirea câmpului** (`onLeave` în TextBox, `leaveNumber` în docs.js), nu la tastare (debounce-ul a fost scos) și rămâne verificat la salvare. Rezultatul e starea de eroare a casetei.
+4. **Sub-număr NIR (707,1):** caseta îngustă din aceeași celulă (`attachSub` în docs.js, `js/vercon/receipt-number.js`, CSS în `vercon-receptie.css`). **Server:** `documents.py` (`_sub_number`, `_sub_text`, `_numarsub_column` — o singură căutare în `information_schema` pe cerere, ținută în `ctx`; `_nir_number_taken` și `_assign_number` primesc `sub`; creare și editare scriu `NumarSub`; un sub-număr nu mută contorul), `receipt_number.py` și `doc_routes.py` (`/number?sub=`). Regula este cea decisă la 12.10.2026 (`DECIZII_DESCHISE.md`): 707,1 = 707 + 10, cel mult 2 zecimale, unic pe (Numar, NumarSub). Vizualizarea și previzualizarea arată «707,1». **Nerezolvat:** lista din arbore și rapoartele nu afișează sub-numărul (arborele nu arată numărul; rapoartele citesc `NumarSub` din `receipts.sql`, neverificat), iar ordinea documentelor după (Numar, NumarSub) nu a fost aplicată în interogările de listă. **Python modificat: serverul local trebuie repornit.**
+5. **Text care nu trece validarea primește culoarea de eroare:** un câmp cu text se judecă la pierderea focusului (nu doar cele obligatorii).
+
+**`allowCopyPaste` în TextBox** (la solicitarea utilizatorului): copierea / tăierea / lipirea / plasarea de text sunt blocate implicit; se pornește per control (`allowCopyPaste: true`; în VERCON per coloană în `field()`, în ADECHIT `payers.js` îl pornește ca să păstreze comportamentul de până acum). Tratarea lipirii din `docs.js` (`,5` lipit în numărul NIR) a rămas, cum s-a cerut; cu opțiunea oprită nu se mai ajunge la ea decât dacă un câmp o pornește. Câmpurile VERCON afectate acum: toate cele de text din `field()` (de ex. «Număr factură»).
+
+**`mouseCursor` în TextBox** (la solicitarea utilizatorului): `ibeam` (implicit) sau `arrow`, orice altă valoare = `ibeam`, fără excepție; `setMouseCursor`. Câmpurile disabled au mereu săgeata; cele readOnly au cursorul ales (implicit de text; înainte aveau săgeata).
+
+**Neverificat:** niciuna dintre aceste modificări nu a fost rulată în browser; doar verificare de sintaxă JS. Riscuri de aspect de urmărit la prima deschidere: (1) VERCON — înălțimea/chenarul câmpurilor de text (stilul vechi `.vc-field > input` nu mai se potrivește pe `<input>`-ul din `.tb`; reluat prin `.vc-field .tb__input`); (2) ADECHIT — chenarul/inelul de focus al câmpurilor de text din formularele de plătitori (TextBox adaugă `outline` la focus, ADECHIT are propriul stil de input); (3) mărimea fontului câmpurilor (TextBox nu setează `font`, ca să rămână ca până acum). Testul de overhead pentru DataGrid nu a fost făcut.
+
+## Actualizare 13.10.2026 — arbore NIR încărcat la cerere, bifă «Stoc inițial», listă Combobox
+
+**Arborele «Documente salvate» al NIR (la solicitarea utilizatorului).** La deschiderea paginii NIR se citesc numai furnizorii; lunile unui furnizor se citesc la deschiderea lui, iar recepțiile unei luni la deschiderea lunii. Fiecare ramură nedeschisă are un copil-substituent (`Se încarcă…`) ca să apară săgeata. Structura: furnizor → `Luna/An` (ex. `Ianuarie/2026`) → recepție, a cărei etichetă este data NIR și valoarea (fără număr, fără factură); anulatele rămân marcate. Ordinea furnizorilor ca înainte (cel cu recepția cea mai nouă primul). Familia storno și bonurile păstrează lista veche.
+
+- Server: `PYTHON/routes/vercon/receipt_tree.py` (nou: `parties`, `months`, `documents`; furnizorul se identifică prin numele afișat, golul = recepții fără furnizor/stoc inițial; luna se filtrează pe interval de date, nu pe funcție aplicată coloanei) și ruta `GET /api/vercon/doc/nir/tree?level=parties|months|documents&party=&month=YYYY-MM` în `doc_routes.py`, cu același context verificat, drept `receptie` și aceeași formă a răspunsului (`can_write`, `closed`, `zec`, `scale`). `/list` rămâne neschimbat pentru celelalte familii.
+- Pagină: `PYTHON/static/js/vercon/receipt-tree.js` (nou: cache pe niveluri, noduri cu id stabil după nume/lună, deduplicarea cererilor, reîncărcarea după salvare/anulare cu deschiderea ramurii documentului curent); `docs.js` (încărcarea inițială, `refresh`, `onToggle`); `ui.js` (`refreshTree`, `docNode`). Dacă o ramură nu se poate încărca, nodul se închide și eroarea apare în linia de stare; deschiderea următoare reîncearcă.
+- **Control custom modificat:** `TreeView` primește opțiunea `onToggle(nodeId, isOpen)` (`components/treeview/treeview-nodes.js`, `treeview.js`); documentată în `VERCON/CONTROALE_CUSTOM_THREAD.md`, secțiunea TreeView.
+
+**Corecții ale arborelui NIR (13.10.2026, după feedback):**
+- **Bug reparat:** la sosirea datelor unei ramuri, arborele pierdea toate ramurile deschise. Cauza: `setData` → `updateResults` → `clearLocalSearch()` golește `expandedNodes` (`treeview-search.js:33`), iar `refreshTree` nu le punea la loc (`paintTree` o făcea). `refreshTree` (ui.js) salvează și restaurează acum nodurile deschise și selecția, plus poziția de scroll. Neverificat în browser după corecție.
+- **Un singur furnizor deschis odată:** opțiune nouă, opțională, `exclusiveRoots` în `TreeView` (implicit oprită; pornită doar pentru arborele NIR). Fiind separată de `autoCollapse` (care nu poate închide rădăcini). După salvare, ramura documentului curent se deschide și celelalte rădăcini se închid.
+- **Rândul unei recepții:** `DD.MM.YYYY • nr. factură` (la stânga) și valoarea aliniată numai ea la dreapta, fără «lei», cu mereu 2 zecimale și separator de mii (`1.234.567,89`). Câmp nou de nod în `TreeView`: `rightText` (stil în `css/treeview/treeview_inline.css`; tema închisă în `portal-theme.css`). Formatorul `formatMoney` (`fields.js`) rotunjește pe șirul zecimal (nu pe numere în virgulă mobilă), cu rotunjire în sus la jumătate; verificat pe 14 valori de probă, în afara aplicației. Alte afișări de sume din VERCON nu au fost schimbate.
+
+**Bifa «Stoc inițial (fără furnizor)»** stă pe linia etichetei «Furnizor *», aliniată la dreapta cu combo-ul (`vercon-receptie.css`: scoasă suprascrierea `position: static` de sub 1200px, care o muta sub combo; textul se scurtează cu «…» când nu încape). Verificat pe ecran înainte de modificarea arborelui.
+
+**Combobox în VERCON:** o opțiune lungă are liniile apropiate (`vercon-controls.css`: `line-height: 1.15`, `max-height: none`, numai `.portal.vc-page`), iar când textul ocupă mai mult de un rând, paddingul vertical scade cu 2px sus și jos, minim 1px (6px; 4px sub 400px lățime). **Control custom modificat:** `components/combobox/combobox-ui.js` primește `markMultilineOptions` (clasa `is-multiline`, apelată din `show()` și `renderResults`); stilul e numai în VERCON. Nu s-a verificat pe ecran. Documentat în `CONTROALE_CUSTOM_THREAD.md`, secțiunea Combobox.
+
+**Server local:** serverul pe 5053 rula cod Python mai vechi decât `receipt_choices.py` și provoca eroarea «Serverul nu a trimis lista produselor»; repornit cu `Stop-Localhost.ps1` / `Start-Localhost.ps1`. `Start-Localhost.ps1` nu pornește sub Windows PowerShell 5.1 fără `Add-Type -AssemblyName System.Net.Http` înainte (scriptul nu a fost modificat).
+
+Verificare: sintaxă JS (cele 5 fișiere) și Python (`py_compile`) trecute. **Arborele nou nu a fost rulat** (nici în browser, nici cu interogări către 000_DEMO); necesită repornirea serverului local, fiindcă s-a modificat Python. Nicio schemă modificată, fără operații de scriere în baza de date.
+
+## Actualizare 13.10.2026 — eroare la încărcarea produselor NIR
+
+Utilizatorul a raportat `Cannot read properties of undefined (reading 'filter')` în `productOptions` și a precizat că a publicat modificările și repornit serverul. Ipoteza anterioară a asistentului privind un server nerepornit nu este susținută și a fost retrasă. În sursele locale, `documents.lookups(..., 'nir')` include deja `products`; cauza diferenței față de răspunsul serverului nu a fost stabilită prin examinarea surselor. Nu s-a inspectat sau executat aplicația de pe server.
+
+Corecții scrise: `PYTHON/static/js/vercon/docs.js` folosește un acces protejat comun la catalog și validează răspunsul înainte de montarea documentelor; un răspuns fără catalog este refuzat explicit, fără a prezenta o listă goală ca rezultat valid. Consola înregistrează ruta și numele proprietăților primite, fără valori de produs/furnizor. `PYTHON/routes/vercon/doc_routes.py` garantează lista pentru NIR la nivelul rutei: dacă modulul nu o furnizează, o citește direct din `VC_Produse` prin `receipt_choices.products`, cu subunitatea și gestiunea verificate. Nu se revine la selectarea variantelor de preț.
+
+Stare: **CORECȚII_LOCALE_SCRISE, CAUZĂ_PE_SERVER_NECONFIRMATĂ**. Fără teste, porniri/reporniri, cereri către server sau operații SQL, conform cererii utilizatorului. Nu se declară problema de pe server rezolvată prin execuție.
+
+## Actualizare 13.10.2026 — feedback recepție: fundal, selecții și ciornă
+
+Pagina și headerul albastru ocupă întreaga fereastră, inclusiv la rezoluții mari. Limitarea de 1440px se aplică numai documentului/spațiului de lucru; limitarea verticală de 1080px se aplică numai acestui spațiu. În jur rămâne fundalul bleu existent. Antetul recepției are un bloc centrat de maximum 1076px (patru câmpuri de 260px și trei intervale de 12px), cu etichete/câmpuri aliniate la stânga. Fonturile comboboxurilor VERCON și ale opțiunilor lor sunt mărite cu 2pt față de dimensiunile existente, inclusiv regula desktop din portal.
+
+Selecțiile NIR citesc produsele active direct din `VC_Produse`, fără duplicare după variante/prețuri și fără preț în etichetă. NIR trimite acum `product` pe fiecare linie; serverul verifică produsul/contul și rezolvă varianta după prețul cu TVA calculat la salvare, reutilizând o variantă activă potrivită sau inserând datele unei variante noi în tranzacția documentului. Nu suprascrie prețurile altor variante. Contractul vechi cu `variant` rămâne acceptat de server; familiile de ieșire/surse își păstrează selecțiile proprii. MF folosește de asemenea lista directă a produselor, păstrând scrierea registrului existentă.
+
+Furnizorii sunt filtrați în SQL: numai cei vizibili cu cod fiscal nevid; grupare după codul fiscal curățat de spații exterioare și numele aferent primului `IdPartener` din fiecare grup (echivalent determinist pentru FIRST). Salvarea unei recepții obișnuite respinge și un furnizor fără cod fiscal trimis în afara listei.
+
+Câmpurile obligatorii goale din formular și celulele grilei primesc fundal roz încă de la deschiderea ciornei; culoarea revine după completare/selecție. Mesajele pentru lipsa valorilor obligatorii nu mai adaugă rânduri sub câmpuri ori sub grilă. Erorile privind valori completate, dar incorecte, rămân explicite. În stoc inițial, furnizorul și numărul facturii nu sunt marcate obligatorii. Grila NIR permite trecerea directă între celule la click/Tab/Enter și păstrează valorile nefinalizate în ciornă; validarea strictă se execută la salvare/previzualizare. Opțiunea de editare incompletă este explicită și activată numai pentru NIR, fără schimbarea regulilor altor aplicații.
+
+Fișiere: `PYTHON/static/css/vercon-workspace.css`, `vercon-receptie.css`, `vercon-controls.css`; `PYTHON/static/js/vercon/docs.js`, `ui.js`; `PYTHON/static/js/dgv/datagrid.js`, `editing.js`; `PYTHON/routes/vercon/documents.py`, `receipt_choices.py`. Stare: **IMPLEMENTAT_LOCAL, NERULAT**. La cererea explicită a utilizatorului, nu s-au rulat teste, verificări în aplicație sau SQL și nu s-a pornit/repornit/oprit niciun proces. Fără modificări de schemă. Modificările Python necesită repornirea manuală a serverului de către utilizator.
+
+## Actualizare 13.10.2026 — corecții de dimensiuni și încadrare în fereastră
+
+Cerere: cele cinci capturi de feedback pentru recepție; săgețile desenate indicau mărirea câmpurilor, nu butoane de copiere. Eliminat butoanele introduse greșit și textele informative de sub câmpuri; explicațiile rămân în tooltip, iar erorile reale rămân vizibile. Antet cu lățime egală de 260px pentru toate cele patru coloane, distanță orizontală de 12px și verticală de 8px, fără rânduri minime de 70px. Coloana Cantitate NIR folosește ponderea 64 în loc de 128; macheta grilei are cheie nouă pentru ca vechile lățimi salvate să nu prevaleze.
+
+Pagina este limitată la 1440px. Limita de 2048px citită din ADECHIT a fost respinsă explicit de utilizator și înlocuită. Plafonul vertical adoptat este 1080px. Sub aceste limite folosește spațiul disponibil al ferestrei; peste ele este centrată pe ambele axe, cu fundal alb exterior. Headerul, navigarea și paddingurile sunt incluse în înălțime. Documentul și tabelul folosesc înălțimea rămasă prin flex/grid, înlocuind înălțimea NIR impusă prin clamp. Scrollul documentului HTML este eliminat; tabelele și panourile își gestionează conținutul în interior. Adaptate înălțimile listei de alimente și ale paginii de rapoarte la același spațiu disponibil.
+
+Fișiere: `PYTHON/static/js/vercon/docs.js`, `PYTHON/static/css/vercon-receptie.css`, `PYTHON/static/css/vercon-workspace.css`, `PYTHON/static/css/vercon.css`. Stare: **IMPLEMENTAT_LOCAL, NERULAT**. Au fost citite sursele și captura de proiectare; fără teste, build, verificări în browser, interogări sau modificări MariaDB.
+
 ## Actualizare 13.10.2026 — remedierea accesului localhost
 
 Probleme identificate: pagina launcherului SSH nu avea marcajul separat cerut pentru evitarea redirecționării client spre loginul portalului; `preview.py`, comanda folosită de utilizator, continua să pornească demonstrația cu date fictive. Mesajul inițial de pornire a fost insuficient pentru confirmarea accesului real. Sonda PowerShell `Invoke-RestMethod localhost` nu ajungea la server în acest mediu.
@@ -188,3 +288,283 @@ Rescris `js/vercon/lista.js`: trei panouri de mese alăturate, fiecare cu un sin
 ### 5. Predare, transfer și casare
 
 Predare: cont de intrare → primitor/cont primitor și produse din cont. Transfer/casare: Combobox produse din loturile eligibile ale predătorului, cu protecție împotriva dublării aceluiași lot în draft. Casarea nu are primitor. Fără panouri Perioada/Deținători; arborele familiei în dreapta în consultare. Schimbarea predătorului cere confirmarea eliminării liniilor existente. Footer Adaugă rând, total și meniul ⋮ comune. Anularea folosește reasonBox; istoricul și previzualizarea ciornei/documentului folosesc dialogul și DataGrid comune. Payloadurile, reviziile și cheile de creare păstrate; nicio schemă schimbată. Nerulat/netestat.
+
+
+## 14.10.2026 — valori uniforme DECIMAL(20,4), reset demo și reimport
+
+Decizie confirmată: cantități, prețuri, sume și cote TVA fracționare se stochează
+direct în DECIMAL(20,4), independent de precizia calculelor/afișării. Vechea
+migrare VC există doar în demo; se golește și se reia, fără conversia datelor existente.
+
+- SQL manual: `sql/VC_DEMO_golire_pentru_decimal.sql` golește numai datele VC din
+  `000_DEMO`, inclusiv markerii și auditul; păstrează tabelele, interogările și restul
+  modulelor. `sql/VC_precizie_valori_4_zecimale.sql` înlocuiește propunerea BIGINT.
+  `sql/00EF_24_primite_linii_precizie.sql` acoperă EF emise/primite și totalurile TVA.
+- Scheme și generator: `VC_AVACONT_SURSA.sql`, `00EF_02_efactura_unitate.sql`,
+  `00EF_17_primite_tva.sql`, `VERCON/tools/ddl.js`, `lib_tz.js`, `ddl_parts/tables_01.sql`
+  și `tables_03.sql`. Clasa internă VALOARE-INT este păstrată, cu tip efectiv Decimal.
+- VRC.Migrator: conversie directă, precizie fixă 4, capacitate DECIMAL, reconciliere
+  decimală și blocare înainte de scriere pe schema INT veche (VrcConvert, VrcRunner,
+  VrcPlan, VrcReport, VrcWriter). KBot.Migrator: cantități/sume la 4 zecimale și
+  cerință de schemă DECIMAL(20,4) în EfImporter/EfTableSpec; Corectata rămâne întreg.
+- Web VC: numeric, documente, nomenclatoare, bonuri, OI/MF, liste de alimente,
+  stocuri, rapoarte și amortizare folosesc Decimal direct. Sunt eliminate conversiile
+  la int care ar pierde fracțiuni. TVA este fracție directă, fără x10000.
+  Setările disting Zec de precizia fixă 4; modificarea Zec nu rescrie documentele.
+- Documentație: CONTRACT_CALCULE, DICTIONAR_DATE, generatorul dicționarului și README
+  migrator actualizate cu noul model și ordinea aplicării.
+
+Stare: modificări de sursă și SQL pregătite, neaplicate pe server. Nu s-au rulat
+compilări, teste, probe sau migrări, conform AGENTS.md. Sunt necesare aplicarea
+manuală a SQL-urilor, sincronizarea schemei, compilarea migratoarelor, actualizarea
+aplicației web și reimportul demo. Datele EF deja rotunjite nu se recuperează prin ALTER.
+
+
+## 14.10.2026 — VRC copiază valorile sursei fără recalculări
+
+Eliminate ApplyHeaderTotal/ApplyPriceSign și agregările folosite pentru completarea
+antetelor în VrcRunner. Totaluri NIR/BC, inclusiv 0/NULL, semnele cantităților și
+prețurilor se păstrează. Valorile negative devin avertismente în VrcPlan/VrcReport,
+nu blocaje și nu corecții. Logul de import precizează regula. Numerotarea actuală
+rămâne după ultimul număr real, conform clarificării explicite a utilizatorului.
+
+Schema acceptă valori legacy cu semn: generatorul ddl.js și VC_Reguli_DC.sql nu
+mai adaugă CHECK-uri de preț nenegativ. SQL manual VC_IMPORT_valori_sursa.sql
+elimină numai CHECK-urile vechi pe AVACONT_SURSA și 000_DEMO, dacă există.
+Validările/calculul documentelor noi în web rămân neschimbate. Reconcilierea de
+copiere sursă/țintă rămâne; diferențele antet/linii nu sunt diferențe de copiere.
+Documentația CONTRACT_CALCULE/DECIZII_DESCHISE/README a fost actualizată.
+
+Stare: surse și SQL pregătite; nu s-au executat SQL-uri, compilări, teste sau migrări.
+
+
+## 14.10.2026 — popup HTML pentru rezultatele VRC.Migrator
+
+Adăugat Raport HTML… în Designer-ul formularului principal, disponibil după
+obținerea unui raport și când utilitarul nu este ocupat. Deschide VrcReportForm
+cu rezultatul curent și profilarea deja disponibilă; fără recitire Access/server.
+Tabelele Markdown sunt formatate prin Markdig 0.45.0; blocajele/avertizările sunt
+evidențiate, iar stilul folosește tema curentă. Popup resizabil, salvare HTML complet
+și Închide/Escape. Controlul HTML și layout-ul sunt declarate în Designer.
+
+Fișiere: VrcMigratorForm.vb/.Designer.vb, VrcReportForm.vb/.Designer.vb,
+VrcReportHtml.vb/.css, VRC.Migrator.vbproj, README. HTML-ul sursă este dezactivat,
+linkurile/imaginile active eliminate și navigarea limitată la documentul local.
+Stare: surse modificate; la cererea utilizatorului nu s-au rulat teste, compilări,
+aplicația sau comenzi Git. Executabilul existent nu a fost recompilat.
+
+## 15.10.2026 — selectoarele din antetul VERCON
+
+În `PYTHON/static/css/vercon-controls.css`, cele trei combo-uri de context
+(Subunitate, Gestiune, An) au înălțimea de 28 px și raza colțurilor de 7,5 px,
+ca selectorul de subunitate din ADECHIT. Tranziția implicită `all .2s ease`
+este dezactivată pe aceste trei câmpuri pentru a elimina animația fundalului
+la ieșirea mouse-ului din hover; evidențierea existentă la hover se păstrează.
+
+Stare: CSS modificat; fără teste sau verificări în browser, conform AGENTS.md.
+
+## 15.10.2026 — aspectul și deschiderea meniului comun
+
+În `PYTHON/static/css/menu.css`, variabila `--hover-backcolor` controlează
+fundalul la hover, butonul cu dropdown deschis și banda iconițelor din popup.
+Valoarea implicită este `--sky-2`. Coloana iconițelor își păstrează lățimea
+inclusiv pentru etichete lungi. Deschiderea are o animație de 180 ms cu coborâre
+și dezvăluire progresivă, inversată pentru meniurile deschise deasupra;
+preferința de reducere a mișcării dezactivează animația.
+
+În `PYTHON/static/js/components/menu/menu.js`, popup-ul preia configurarea CSS
+de la buton și se poziționează cu centrul iconițelor sub emoticoana din bara
+de meniu, în limita spațiului disponibil pe ecran. Animația începe după
+poziționare. Modificarea se aplică tuturor aplicațiilor care folosesc controlul.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Corecție — dropdown pe toată lățimea butonului și dezvăluire vizibilă
+
+În aceleași două fișiere, dropdown-urile barei au acum lățimea exterioară
+a butonului și pornesc de la marginea lui. Alinierea emoticoanelor se obține
+prin lățimea benzii interioare, fără deplasarea întregului popup.
+Etichetele lungi se pot împărți pe mai multe rânduri în lățimea disponibilă.
+
+Animația anterioară cu clip-path de 180 ms este înlocuită cu o tranziție
+a înălțimii vizibile de la zero la înălțimea măsurată, în 320 ms. Starea
+închisă se afișează înainte de pornirea tranziției, prin două cadre succesive.
+La închidere se anulează cadrele și temporizatorul; după deschidere se
+restabilește derularea normală. Se păstrează preferința de reducere a mișcării.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Corecție — retragere laterală configurabilă și pornirea tranziției
+
+În `menu.css` și `js/components/menu/menu.js`, `--reduce-by: 2px` retrage
+fiecare margine a popup-ului față de buton (4 px în total), păstrând alinierea
+iconițelor prin recalcularea benzii. Variabila se poate seta pe containerul meniului.
+
+Identificată la analiza codului o eroare a tranziției: clasa de închidere activa
+și tranziția de la limita inițială a viewport-ului spre zero, iar deschiderea
+o inversa înainte ca limita să ajungă sub înălțimea conținutului. Starea
+închisă are acum `transition: none`; tranziția este activată doar pe starea
+dezvăluită, după aplicarea și măsurarea stării zero. `--mn-reveal-duration`
+configurează durata, implicit 420 ms. Curățarea urmărește sfârșitul tranziției
+și are un temporizator de rezervă calculat din durata efectivă.
+Eliminată dezactivarea tranziției prin prefers-reduced-motion pentru acest
+control, conform solicitării explicite a efectului vizibil.
+
+Stare: surse modificate; cauza identificată prin analiza codului, fără teste
+sau verificări în browser, conform AGENTS.md.
+
+### Lățime minimă a dropdown-ului configurabilă pentru fiecare buton
+
+În `PYTHON/static/js/components/menu/menu.js`, fiecare element al barei acceptă
+`dropdownMinWidth`, număr de pixeli pentru lățimea minimă exterioară a propriului
+popup. Proprietatea este transmisă către `openMenu`, care o aplică prin variabila
+dinamică `--_menu-min-width`. În `PYTHON/static/css/menu.css`, minima prevalează
+asupra lățimii butonului când este mai mare, fiind limitată la lățimea ecranului.
+Omiterea proprietății păstrează lățimea butonului și retragerea `--reduce-by`.
+
+În `PYTHON/static/js/vercon/app.js`, butonul Configurări are
+`dropdownMinWidth: 320`, pentru mai mult spațiu destinat etichetelor.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Configurări mai îngust și deplasare între dropdown-uri
+
+În `PYTHON/static/js/vercon/app.js`, minima dropdown-ului Configurări scade
+cu 30%, de la 320 la 224 px.
+
+În `PYTHON/static/js/components/menu/menu.js` și `PYTHON/static/css/menu.css`,
+trecerea prin click la alt buton cu dropdown din aceeași bară pornește panoul
+nou din poziția și dimensiunile vizibile ale celui curent. Poziția, lățimea
+și înălțimea trec către noul buton în 280 ms, fără scalarea textului.
+Listenerul de pointerdown păstrează popup-ul până la click-ul noului buton,
+pentru a putea captura geometria înainte de închidere. Schimbările rapide
+reiau mișcarea de la poziția intermediară curentă. Prima deschidere păstrează
+dezvăluirea existentă; închiderea anulează cadrele și temporizatorul tranziției.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Meniu INTRARI / IESIRI pentru alimente și materiale
+
+În `PYTHON/static/js/vercon/app.js`, gestiunile ALIMENTE și MATERIALE grupează
+operațiile existente în două butoane:
+
+- INTRARI: Factură cumpărare (NIR), Factură Stornare (fără FCS), apoi separator
+  și Listare, păstrată din meniul anterior. Adăugare nu mai apare în acest meniu;
+  alegerea facturii deschide consultarea existentă, fără adăugare automată.
+- IESIRI: Bon Consum, Bon Retur, apoi separator și Lista Alimente când operația
+  este prezentă în meniul primit de la server (numai la ALIMENTE).
+
+Butoanele separate pentru storno, retur și lista de alimente sunt înlocuite de
+submeniuri. Fiecare element păstrează cheia formularului, deschiderea și starea
+enabled/reason de la server. Butonul părinte este disponibil dacă există cel
+puțin un copil disponibil, iar selecția activă urmărește cheia copilului.
+Minimele dropdown-urilor sunt 260 px pentru INTRARI și 224 px pentru IESIRI.
+Configurări, Rapoarte și meniurile OI/MF își păstrează structura anterioară.
+Listare păstrează acțiunea goală existentă; nu s-a implementat o funcție nouă.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### NIR — editare în pagină și fișe în locul arborelui de furnizori
+
+În `PYTHON/static/js/vercon/docs.js`, `RECEIPT_MODAL_ENABLED = false` oprește
+temporar popup-ul la adăugare/modificare NIR; implementarea ModalFrame rămâne
+disponibilă și celelalte familii de documente își păstrează comportamentul.
+Arborele NIR rămâne montat în coloana lui, cu nodurile și derularea păstrate.
+Este ascuns numai conținutul arborelui în timpul editării, fără modificarea
+coloanelor sau a poziției documentului. La salvare sau Renunță reapare arborele.
+Adaugă este mutat din bara de jos în antetul arborelui: text urmat de iconița
+din dreapta. Disponibilitatea urmează dreptul de adăugare/perioada existentă.
+
+Modul nou `PYTHON/static/js/vercon/receipt-context.js` și CSS separat
+`PYTHON/static/css/vercon-receipt-context.css`, importat din `vercon.css`:
+fișa furnizorului este aliniată cu antetul NIR până la Produse recepționate;
+fișa de magazie începe exact la nivelul DGV-ului și îi urmează înălțimea.
+Dimensiunile sunt sincronizate prin ResizeObserver și variabile dinamice;
+fișele sunt poziționate în interiorul coloanei existente, fără contribuție
+la dimensiunile documentului. Pe layout-ul mobil existent se împart în două
+panouri suprapuse în spațiul arborelui de sub document.
+
+Fișa produsului urmărește selecția și valorile confirmate ale celulelor.
+Un rând incomplet/fără preț valid sau rândul nou gol păstrează ultima fișă
+validă. Se păstrează o copie a ultimei combinații valide inclusiv dacă prețul
+aceluiași rând este șters temporar. În lipsa oricărui rând valid se afișează
+îndrumarea de completare. Ștergerea rândului memorat îi elimină fișa.
+Răspunsurile întârziate sunt ignorate după schimbarea selecției/ciornei/modului.
+
+Backend nou `PYTHON/routes/vercon/receipt_context.py`, înregistrat din
+`doc_routes.py`: două citiri protejate de accesul la NIR și contextul rezolvat
+pe server, fără scrieri sau creare de variante de preț. Fișa furnizorului arată
+ultimele 12 facturi/storno salvate și totalul lor în exercițiul curent, până
+la data facturii; include identitățile aceluiași cod fiscal. Nu reprezintă un
+sold de plată și nu introduce plăți inexistente în sursele curente.
+Fișa de magazie reutilizează motorul de stoc existent, identificând varianta
+după produs și preț cu TVA calculat pe server; arată ultimele 20 de mișcări
+și stocul la dată. La MF se păstrează identitatea distinctă a activului.
+Datele sunt cele salvate; ciorna nu este inclusă în rulajele afișate.
+
+Stare: implementare în surse, analiză de design; fără teste, pornire a aplicației,
+verificări în browser sau SQL executat, conform AGENTS.md. Nicio schemă modificată.
+
+### Fișe NIR — spațiul de sus recuperat și afișare cu două zecimale
+
+În `PYTHON/static/js/vercon/receipt-context.js` și
+`PYTHON/static/css/vercon-receipt-context.css`, fișa furnizorului începe acum
+de la marginea superioară a coloanei, iar înălțimea crește cu spațiul recuperat.
+Limita inferioară rămâne la Produse recepționate; fișa de magazie și documentul
+nu își schimbă poziția. Ambele fișe afișează valori, prețuri, cantități, solduri
+și totaluri cu exact două zecimale, prin formatare decimală textuală.
+Calculele și precizia datelor salvate rămân cele existente.
+
+Notele precizează acum „Ultimele … din …”: tabelele scurte afișează ultimele
+12 documente / 20 mișcări, dar totalurile folosesc întregul set eligibil până
+la data facturii. Ciorna nesalvată nu este inclusă în rulajele afișate.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Fișe NIR — eliminarea notelor de subsol
+
+În `PYTHON/static/js/vercon/receipt-context.js` sunt eliminate complet notele
+de subsol cu numărul de documente/mișcări, data-limită și mențiunea despre ciornă.
+Fișele păstrează datele, totalurile și afișarea cu două zecimale.
+
+Stare: sursă modificată; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Fișe NIR — etichetă total și cele mai noi înregistrări primele
+
+În `PYTHON/static/js/vercon/receipt-context.js`, eticheta devine „Total facturi”,
+fără „− storno”. Textul anterior descria formula totalului, nu o sumă distinctă
+de facturi storno. Calculul existent rămâne neschimbat.
+
+În `PYTHON/routes/vercon/receipt_context.py`, rândurile ambelor fișe sunt
+returnate în ordinea descrescătoare a datei. Calculul soldurilor de magazie
+rămâne cronologic, iar inversarea se aplică numai listei afișate.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### Fișe NIR — totalurile în benzile albastre de jos
+
+În `PYTHON/static/js/vercon/receipt-context.js`, Total facturi și Stoc sunt
+elemente footer. În `PYTHON/static/css/vercon-receipt-context.css`, acestea
+ocupă benzile albastre de la baza fișelor, cu delimitare și text centrat vertical.
+Fișa furnizorului se extinde până la începutul fișei de magazie, folosind spațiul
+de la nivelul titlului Produse recepționate pentru footer. Fișa de magazie se
+extinde până la marginea inferioară a coloanei, cu footer sub nivelul grilei.
+Înălțimile benzilor sunt calculate după geometria documentului; tabelele se
+derulează separat, iar totalurile rămân fixe. Panourile sunt în continuare
+poziționate în coloana existentă, fără deplasarea antetului sau a DGV-ului.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.
+
+### TreeView comun — evidențiere de la începutul vizibil al nodului
+
+În `PYTHON/static/js/components/treeview/treeview-render.js` și
+`PYTHON/static/css/treeview/treeview_items.css`, indentarea trece din padding
+în marginea exterioară a rândului. Controlul setează dinamic `--tv-node-start`,
+iar CSS păstrează 4 px în interior înaintea conținutului vizibil, limitați de
+marginea arborelui. La frunze, spațiul fostului expander invizibil intră tot
+în marginea exterioară. Textul, bifele și expanderele își păstrează poziția;
+fundalul hover/selecție și bara albastră încep la noua margine a nodului.
+Schimbarea se aplică controlului comun, inclusiv variantelor inline/dropdown
+și culorilor din tema dark, fără suprascrierea culorilor de către aplicație.
+
+Stare: surse modificate; fără teste sau verificări în browser, conform AGENTS.md.

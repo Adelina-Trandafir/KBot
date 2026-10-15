@@ -22,7 +22,7 @@ FORMS = {
     "setari":         ("Unitate / setari",        "Configurari",  ALL,                          "configure"),
     "feluri":         ("Feluri de mancare",       "Configurari",  frozenset({ALIMENTE}),        "nomenclatoare"),
     "inchidere_an":   ("Inchidere an",            "Configurari",  frozenset({MATERIALE, ALIMENTE}), "close"),
-    "nir":            ("NIR",                     "Intrari",      ALL,                          "receptie"),
+    "nir":            ("Factură Cumpărare (NIR)",  "Intrari",      ALL,                          "receptie"),
     "storno":         ("Factura stornare (FCS)",   "Intrari",      ALL,                          "storno"),
     "bc":             ("Bon de consum",           "Iesiri",       frozenset({MATERIALE, ALIMENTE}), "consum"),
     "br":             ("Retur",                   "Iesiri",       frozenset({MATERIALE, ALIMENTE}), "retur"),

@@ -22,7 +22,7 @@ End Class
 ''' SLICE-VC05-03/04/05: the ONE transfer of a subunit. One MariaDB transaction holds everything (subunit, gestiuni, exercises,
 ''' the import marker, every row, the id map, the findings, the counters); nothing is visible until the single COMMIT. The
 ''' transfer is driven by <see cref="VrcTargetSchema"/>: parents first, every key remapped through the id map, values exact
-''' (INT x 10^scale), the decided rules applied (N01/N02, price sign, opening stock, ProduseP only when used). Before COMMIT the
+''' (unscaled DECIMAL(20,4)), with source amounts and signs unchanged (including NULL/zero headers). Before COMMIT the
 ''' target is read back and compared with what was converted; any difference or blocking finding rolls everything back.
 ''' An unanswered COMMIT is reported as unknown, never as cancelled.
 ''' </summary>
@@ -73,7 +73,7 @@ Friend NotInheritable Class VrcRunner
         Public Property GestiuneId As Long
         Public Property ExerciseId As Long
         Public Property Table As VrcTargetTable
-        Public Property Sums As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        Public Property Sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
     End Class
 
     Friend Sub New(k_server As TargetServer, k_plan As VrcPlan, k_user As String, k_cancel As CancellationToken, k_log As Action(Of String))
@@ -102,8 +102,16 @@ Friend NotInheritable Class VrcRunner
             End If
             Log($"Conectare la {_server.Describe()}, baza {_plan.Dc}…")
             _cn = _server.Open(_plan.Dc)
+            Dim k_schemaProblems = VrcWriter.DecimalStorageProblems(_cn, _plan.Dc)
+            If k_schemaProblems.Count > 0 Then
+                _result.State = VrcRunState.Blocked
+                _result.Message = String.Join(Environment.NewLine, k_schemaProblems)
+                Log(_result.Message)
+                Return _result
+            End If
             _tx = _cn.BeginTransaction()
             Log("Tranzacție unică deschisă; nimic nu devine vizibil înainte de COMMIT.")
+            Log("Valorile documentelor se copiază din Access: fără recalcularea totalurilor, TVA, prețurilor, cantităților sau semnelor. Numerotarea rămâne după ultimul număr real.")
             CreateContext()
             OpenSources()
             AddPreparedPartners()
@@ -265,10 +273,9 @@ Friend NotInheritable Class VrcRunner
         Next
         For Each k_source In k_gest.Sources
             _currentSourceName = k_source.Profile.FileName
-            Dim k_lineSums As New Dictionary(Of String, Dictionary(Of String, Decimal))(StringComparer.OrdinalIgnoreCase)
             For Each k_table In VrcTargetSchema.Tables().Where(Function(k_t) k_t.IsExercise)
                 _cancel.ThrowIfCancellationRequested()
-                MigrateExercise(k_gest, k_source, k_table, k_lineSums)
+                MigrateExercise(k_gest, k_source, k_table)
                 StopIfBlocked(k_table.Name)
             Next
         Next
@@ -415,16 +422,13 @@ Friend NotInheritable Class VrcRunner
     End Sub
 
     ' ---- exercise tables ---------------------------------------------------------------------------------------------
-    Private Sub MigrateExercise(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable,
-                                k_lineSums As Dictionary(Of String, Dictionary(Of String, Decimal)))
+    Private Sub MigrateExercise(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable)
         Dim k_rows = ReadRows(k_source, k_table.Name)
         If k_rows.Count = 0 Then Return
         Dim k_exercise As Long = k_gest.ExerciseIds(k_source)
         Dim k_sourceIndex As Integer = _plan.Sources.IndexOf(k_source)
         Dim k_tracked = Track(k_gest, k_exercise, k_table, k_gest.Name, k_source.Year)
         k_tracked.Count.SourceRows = k_rows.Count
-        If k_table.Name = "NIR" Then EnsureSums(k_source, k_lineSums, "NIR", "Intrari", "IdIntrare")
-        If k_table.Name = "Iesiri_H" Then EnsureSums(k_source, k_lineSums, "Iesiri_H", "Iesiri", "IdBonConsum")
         Dim k_suppliers As Dictionary(Of String, String) = If(k_table.Name = "NIR", SupplierCodes(k_source), Nothing)
         Dim k_pending As New List(Of PendingRow)()
         Dim k_n As Integer = 0
@@ -436,7 +440,7 @@ Friend NotInheritable Class VrcRunner
                 AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.PrimaryKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
                 Continue For
             End If
-            Dim k_extra As New ExtraContext() With {.LineSums = k_lineSums, .Suppliers = k_suppliers}
+            Dim k_extra As New ExtraContext() With {.Suppliers = k_suppliers}
             Dim k_values = BuildRow(k_gest, k_source, k_table, k_row, k_key, k_tracked, k_exercise, k_extra)
             If k_values Is Nothing Then Continue For
             k_pending.Add(New PendingRow() With {.Key = k_key, .Values = k_values, .Source = k_source, .Contributors = New List(Of VrcPlanSource) From {k_source}})
@@ -475,25 +479,8 @@ Friend NotInheritable Class VrcRunner
     Private ReadOnly _deferred As New List(Of DeferredLink)()
 
     Private NotInheritable Class ExtraContext
-        Public Property LineSums As Dictionary(Of String, Dictionary(Of String, Decimal))
         Public Property Suppliers As Dictionary(Of String, String)
     End Class
-
-    ''' <summary>Sum of the line totals (with VAT, per line) for each header key: input of the N01/N02 rule.</summary>
-    Private Sub EnsureSums(k_source As VrcPlanSource, k_store As Dictionary(Of String, Dictionary(Of String, Decimal)),
-                           k_headerTable As String, k_lineTable As String, k_key As String)
-        If k_store.ContainsKey(k_headerTable) Then Return
-        Dim k_sums As New Dictionary(Of String, Decimal)(StringComparer.Ordinal)
-        For Each k_row In ReadRows(k_source, k_lineTable, {k_key, "ValoareCUTVA"})
-            Dim k_id As String = VrcConvert.KeyText(k_row(k_key))
-            If k_id.Length = 0 Then Continue For
-            Dim k_value As Decimal = If(VrcConvert.ToDecimal(k_row("ValoareCUTVA")), 0D)
-            Dim k_sum As Decimal = 0D
-            k_sums.TryGetValue(k_id, k_sum)
-            k_sums(k_id) = k_sum + k_value
-        Next
-        k_store(k_headerTable) = k_sums
-    End Sub
 
     ''' <summary>Furnizori.IDF → tax code of the source, for the partner match.</summary>
     Private Function SupplierCodes(k_source As VrcPlanSource) As Dictionary(Of String, String)
@@ -539,12 +526,11 @@ Friend NotInheritable Class VrcRunner
         Dim k_values As New List(Of Object) From {_subunitId, k_gest.Id}
         If k_table.IsExercise Then k_values.Add(k_exercise)
         Dim k_sourceIndex As Integer = _plan.Sources.IndexOf(k_source)
-        Dim k_sums As New Dictionary(Of String, Long)(StringComparer.OrdinalIgnoreCase)
+        Dim k_sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
         Dim k_ok As Boolean = True
 
         If k_table.Name = "NIR" Then _currentNumarSub = 0
-        If k_table.Name = "NIR" Then _currentRowIsStock = VrcConvert.IsOpeningStock(Convert.ToString(k_row("NrFact"), CultureInfo.InvariantCulture))
-        ApplyRowRules(k_gest, k_source, k_table, k_row, k_key, k_extra, k_ok)
+        ReportSourceSigns(k_source, k_table, k_row, k_key)
 
         For Each k_column In k_table.Columns
             If k_column.Link = VrcLinkKind.Skip OrElse k_column.Link = VrcLinkKind.Supplier Then Continue For
@@ -553,14 +539,14 @@ Friend NotInheritable Class VrcRunner
             Dim k_converted As Object = ConvertColumn(k_gest, k_source, k_sourceIndex, k_table, k_column, k_raw, k_key, k_ok)
             k_values.Add(k_converted)
             If (k_column.FieldClass = "VALOARE-INT" OrElse k_column.FieldClass = "COTA") AndAlso k_converted IsNot Nothing AndAlso Not TypeOf k_converted Is DBNull Then
-                k_sums(k_column.Name) = CLng(k_converted)
+                k_sums(k_column.Name) = CDec(k_converted)
             End If
         Next
         If k_table.Name = "NIR" Then AddNirExtras(k_source, k_row, k_key, k_extra, k_values)
         If Not k_ok Then Return Nothing
 
         For Each k_pair In k_sums
-            Dim k_sum As Long = 0
+            Dim k_sum As Decimal = 0D
             k_tracked.Sums.TryGetValue(k_pair.Key, k_sum)
             k_tracked.Sums(k_pair.Key) = k_sum + k_pair.Value
         Next
@@ -677,82 +663,18 @@ Friend NotInheritable Class VrcRunner
         _deferred.RemoveAll(Function(k_d) k_d.TableName = k_table.Name)
     End Sub
 
-    ''' <summary>Rules that change the raw values of a row before the generic conversion: price sign, N01/N02, opening stock numbers.</summary>
-    Private Sub ApplyRowRules(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable, k_row As Dictionary(Of String, Object),
-                              k_key As String, k_extra As ExtraContext, ByRef k_ok As Boolean)
-        Select Case k_table.Name
-            Case "Intrari", "Iesiri", "IesiriRetur"
-                ApplyPriceSign(k_source, k_table.Name, k_row, k_key, k_ok)
-            Case "ProduseP"
-                Dim k_price As Decimal? = VrcConvert.ToDecimal(k_row("PUTVA"))
-                If k_price.HasValue AndAlso k_price.Value < 0D Then
-                    AddIssue(k_source, k_table.Name, k_key, "PUTVA", "X01", "BLOCAJ", k_price.Value.ToString("0.####", CultureInfo.InvariantCulture), String.Empty,
-                             "Preț negativ într-un rând ProduseP folosit în documente; corectați-l în sursă.")
-                    k_ok = False
-                End If
-            Case "NIR"
-                ApplyHeaderTotal(k_source, k_table.Name, k_row, k_key, "Valoare", "NIR", k_extra, k_ok)
-            Case "Iesiri_H"
-                ApplyHeaderTotal(k_source, k_table.Name, k_row, k_key, "ValoareBC", "Iesiri_H", k_extra, k_ok)
-        End Select
-    End Sub
-
-    ''' <summary>Price made positive and quantity negative (same absolute value) on document lines; both negative is blocking.</summary>
-    Private Sub ApplyPriceSign(k_source As VrcPlanSource, k_table As String, k_row As Dictionary(Of String, Object), k_key As String, ByRef k_ok As Boolean)
-        Dim k_quantity As Decimal? = VrcConvert.ToDecimal(k_row("Cant"))
-        Dim k_priceColumns = {"Pret", "PUTVA", "PU"}.Where(Function(k_c) k_row.ContainsKey(k_c)).ToList()
-        Dim k_negative = k_priceColumns.Where(Function(k_c)
-                                                  Dim k_p As Decimal? = VrcConvert.ToDecimal(k_row(k_c))
-                                                  Return k_p.HasValue AndAlso k_p.Value < 0D
-                                              End Function).ToList()
-        If k_negative.Count = 0 Then
-            If k_quantity.HasValue AndAlso k_quantity.Value < 0D Then
-                AddIssue(k_source, k_table, k_key, "Cant", "X08", "AVERTIZARE", k_quantity.Value.ToString("0.####", CultureInfo.InvariantCulture),
-                         k_quantity.Value.ToString("0.####", CultureInfo.InvariantCulture), "Cantitate negativă păstrată ca în sursă.")
-            End If
-            Return
-        End If
-        If k_quantity.HasValue AndAlso k_quantity.Value < 0D Then
-            AddIssue(k_source, k_table, k_key, String.Join("/", k_negative), "X09", "BLOCAJ", "Cant " & k_quantity.Value.ToString("0.####", CultureInfo.InvariantCulture), String.Empty,
-                     "Cantitatea și prețul sunt ambele negative; corectați linia în sursă.")
-            k_ok = False
-            Return
-        End If
-        Dim k_originalText As String = String.Join(", ", k_priceColumns.Select(Function(k_c) k_c & "=" & Convert.ToString(VrcConvert.ToDecimal(k_row(k_c)), CultureInfo.InvariantCulture))) &
-                                       ", Cant=" & Convert.ToString(k_quantity, CultureInfo.InvariantCulture)
-        For Each k_c In k_priceColumns
-            Dim k_p As Decimal? = VrcConvert.ToDecimal(k_row(k_c))
-            If k_p.HasValue Then k_row(k_c) = Math.Abs(k_p.Value)
+    ''' <summary>Report unusual source signs without changing any value or blocking the import.</summary>
+    Private Sub ReportSourceSigns(k_source As VrcPlanSource, k_table As VrcTargetTable,
+                                  k_row As Dictionary(Of String, Object), k_key As String)
+        For Each k_field In {"Cant", "Pret", "PUTVA", "PU"}
+            Dim k_raw As Object = Nothing
+            If Not k_row.TryGetValue(k_field, k_raw) Then Continue For
+            Dim k_value As Decimal? = VrcConvert.ToDecimal(k_raw)
+            If Not k_value.HasValue OrElse k_value.Value >= 0D Then Continue For
+            Dim k_text = k_value.Value.ToString("0.########", CultureInfo.InvariantCulture)
+            AddIssue(k_source, k_table.Name, k_key, k_field, "X08", "AVERTIZARE", k_text, k_text,
+                     "Valoare negativă în Access: se păstrează exact, fără schimbarea semnului sau recalcularea altor câmpuri.")
         Next
-        If k_quantity.HasValue Then k_row("Cant") = -Math.Abs(k_quantity.Value) Else k_row("Cant") = 0D
-        AddIssue(k_source, k_table, k_key, String.Join("/", k_negative), "X01", "AVERTIZARE", k_originalText,
-                 String.Join(", ", k_priceColumns.Select(Function(k_c) k_c & "=" & Convert.ToString(VrcConvert.ToDecimal(k_row(k_c)), CultureInfo.InvariantCulture))) & ", Cant=" & Convert.ToString(VrcConvert.ToDecimal(k_row("Cant")), CultureInfo.InvariantCulture),
-                 "Preț negativ: prețul devine pozitiv, cantitatea negativă (aceeași valoare absolută).")
-    End Sub
-
-    ''' <summary>N01/N02: target total = sum of the lines when the header is 0 or differs by more than 1 leu; otherwise the header.</summary>
-    Private Sub ApplyHeaderTotal(k_source As VrcPlanSource, k_table As String, k_row As Dictionary(Of String, Object), k_key As String,
-                                 k_valueColumn As String, k_store As String, k_extra As ExtraContext, ByRef k_ok As Boolean)
-        Dim k_header As Decimal? = VrcConvert.ToDecimal(k_row(k_valueColumn))
-        Dim k_sums As Dictionary(Of String, Decimal) = Nothing
-        If k_extra Is Nothing OrElse Not k_extra.LineSums.TryGetValue(k_store, k_sums) Then Return
-        Dim k_sum As Decimal = 0D
-        Dim k_hasLines As Boolean = k_sums.TryGetValue(k_key, k_sum)
-        Dim k_text As Func(Of Decimal?, String) = Function(k_v) If(k_v.HasValue, k_v.Value.ToString("0.####", CultureInfo.InvariantCulture), "NULL")
-        If Not k_hasLines Then
-            AddIssue(k_source, k_table, k_key, k_valueColumn, "N03", "AVERTIZARE", k_text(k_header), k_text(k_header), "Document fără linii: totalul antetului rămâne neschimbat.")
-            Return
-        End If
-        If Not k_header.HasValue Then
-            k_row(k_valueColumn) = k_sum
-            AddIssue(k_source, k_table, k_key, k_valueColumn, "N00", "AVERTIZARE", "NULL", k_text(k_sum), "Total antet lipsă (NULL): se folosește suma liniilor.")
-        ElseIf k_header.Value = 0D Then
-            k_row(k_valueColumn) = k_sum
-            AddIssue(k_source, k_table, k_key, k_valueColumn, "N01", "CONVERSIE", "0", k_text(k_sum), "Antet 0: totalul devine suma liniilor (cu TVA).")
-        ElseIf Math.Abs(k_header.Value - k_sum) > 1D Then
-            k_row(k_valueColumn) = k_sum
-            AddIssue(k_source, k_table, k_key, k_valueColumn, "N02", "AVERTIZARE", k_text(k_header), k_text(k_sum), "Antetul diferă cu mai mult de 1 leu de suma liniilor: totalul devine suma liniilor (cu TVA).")
-        End If
     End Sub
 
     ''' <summary>One column of a row, converted by its class and link. A refused value is reported as blocking and the row is not written.</summary>
@@ -783,14 +705,13 @@ Friend NotInheritable Class VrcRunner
             Case "VALOARE-INT", "COTA"
                 k_number = VrcConvert.ToDecimal(k_raw)
                 If Not k_number.HasValue Then Return Nothing
-                Dim k_scale As Integer = If(k_column.FieldClass = "COTA", 4, _plan.Scale)
-                Dim k_int As Integer
-                If Not VrcConvert.Scaled(k_number.Value, k_scale, k_int, k_reason) Then
+                Dim k_decimal As Decimal
+                If Not VrcConvert.StoredDecimal(k_number.Value, k_decimal, k_reason) Then
                     AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X11", "BLOCAJ", k_number.Value.ToString("0.########", CultureInfo.InvariantCulture), String.Empty, $"Valoarea {k_reason}.")
                     k_ok = False
                     Return Nothing
                 End If
-                Return k_int
+                Return k_decimal
             Case "NUMAR"
                 Return ConvertDocumentNumber(k_source, k_table, k_column, k_raw, k_key, k_ok)
             Case "INT"
@@ -814,22 +735,12 @@ Friend NotInheritable Class VrcRunner
         End Select
     End Function
 
-    ''' <summary>NIR.Numar: a negative number is accepted only for an opening stock (NrFact contains «stoc»); a fraction is cut toward zero with a finding.</summary>
+    ''' <summary>NIR.Numar keeps its sign; a fractional number is represented losslessly by Numar and NumarSub.</summary>
     Private Function ConvertDocumentNumber(k_source As VrcPlanSource, k_table As VrcTargetTable, k_column As VrcTargetColumn, k_raw As Object,
                                            k_key As String, ByRef k_ok As Boolean) As Object
         Dim k_number As Decimal? = VrcConvert.ToDecimal(k_raw)
         If Not k_number.HasValue Then Return Nothing
         Dim k_value As Decimal = k_number.Value
-        If k_value < 0D Then
-            Dim k_stock As Boolean = False
-            If _currentRowIsStock Then k_stock = True
-            If Not k_stock Then
-                AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X02", "BLOCAJ", k_value.ToString("0.####", CultureInfo.InvariantCulture), String.Empty,
-                         "Număr de document negativ la un document care nu este stoc inițial (NrFact nu conține «stoc»).")
-                k_ok = False
-                Return Nothing
-            End If
-        End If
         _currentNumarSub = 0
         Dim k_cut As Decimal = Math.Truncate(k_value)
         If k_cut <> k_value Then
@@ -854,8 +765,6 @@ Friend NotInheritable Class VrcRunner
         Return k_result
     End Function
 
-    ' set by AddNirExtras' pre-pass: whether the NIR row being converted is an opening stock
-    Private _currentRowIsStock As Boolean
     ' set by ConvertDocumentNumber: the fraction of the NIR number in hundredths (707.1 -> 10)
     Private _currentNumarSub As Integer
 
@@ -967,11 +876,11 @@ Friend NotInheritable Class VrcRunner
                 k_si = VrcConvert.ToDecimal(k_row("SI_LA"))
             Next
             If k_si.HasValue AndAlso k_si.Value <> 0D Then
-                Dim k_scaled As Integer
+                Dim k_decimal As Decimal
                 Dim k_reason As String = String.Empty
-                If VrcConvert.Scaled(k_si.Value, _plan.Scale, k_scaled, k_reason) Then
+                If VrcConvert.StoredDecimal(k_si.Value, k_decimal, k_reason) Then
                     Insert("INSERT INTO VC_Settings (SubunitId, GestiuneId, SettingKey, IntValue) VALUES (@s, @g, 'SI_LA', @v)",
-                           "@s", CType(_subunitId, Object), "@g", k_gest.Id, "@v", k_scaled)
+                           "@s", CType(_subunitId, Object), "@g", k_gest.Id, "@v", k_decimal)
                 Else
                     AddIssue(k_latest, "NR", "1", "SI_LA", "X11", "BLOCAJ", k_si.Value.ToString("0.########", CultureInfo.InvariantCulture), String.Empty, $"Soldul inițial Alimente {k_reason}.")
                 End If
@@ -1063,9 +972,9 @@ Friend NotInheritable Class VrcRunner
                     If k_reader.Read() Then
                         k_tracked.Count.TargetRows = k_reader.GetInt64(0)
                         For k_i As Integer = 0 To k_columns.Count - 1
-                            Dim k_read As Long = Convert.ToInt64(k_reader.GetValue(k_i + 1), CultureInfo.InvariantCulture)
+                            Dim k_read As Decimal = Convert.ToDecimal(k_reader.GetValue(k_i + 1), CultureInfo.InvariantCulture)
                             If k_read <> k_tracked.Sums(k_columns(k_i)) Then
-                                k_tracked.Count.SumDifferences.Add($"{k_columns(k_i)}: convertit {k_tracked.Sums(k_columns(k_i)):N0}, în MariaDB {k_read:N0}")
+                                k_tracked.Count.SumDifferences.Add($"{k_columns(k_i)}: convertit {k_tracked.Sums(k_columns(k_i)):N4}, în MariaDB {k_read:N4}")
                             End If
                         Next
                     End If

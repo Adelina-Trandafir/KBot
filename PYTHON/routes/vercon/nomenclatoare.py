@@ -9,7 +9,7 @@ Rules, the same for every nomenclature:
   * every change carries the revision (Version) the client saw; an old revision is a conflict, never an overwrite;
   * a create carries a RequestKey (VC_Operations): a lost answer is replayed, never applied twice;
   * every change writes a VC_Audit row in the same transaction (the CNP of a client is masked there);
-  * values are validated here, whatever the page did: length, required, VAT 0-100%, price >= 0 on the INT/scale of
+  * values are validated here, whatever the page did: length, required, VAT 0-100%, price >= 0 on the DECIMAL(20,4) of
     the gestiune (refused, never rounded, when it has more decimals than the scale).
 Pure rules + statements over a ScopedRepository; no connection is opened here.
 """
@@ -162,8 +162,8 @@ def _clean_one(field, raw, scale, repo):
             if kind == 'percent':
                 if number > 100:
                     return None, 'Cota nu poate depăși 100%.'
-                return numeric.vat_to_int(number / 100), None
-            return numeric.to_int(number, scale), None
+                return numeric.vat_to_stored(number / 100), None
+            return numeric.to_stored(number, scale), None
         except numeric.NumericError as error:
             return None, str(error)
     if kind == 'ref':
@@ -208,9 +208,9 @@ def present(spec, gestiune_type, row, scale):
         if value is None:
             out[field['key']] = None
         elif field['type'] == 'percent':
-            out[field['key']] = _plain(numeric.from_int(value, numeric.VAT_SCALE) * 100)
+            out[field['key']] = _plain(numeric.from_stored(value, numeric.VAT_SCALE) * 100)
         elif field['type'] == 'money':
-            out[field['key']] = format(numeric.from_int(value, scale), 'f')
+            out[field['key']] = format(numeric.from_stored(value, scale), 'f')
         else:
             out[field['key']] = value
     return out
@@ -258,7 +258,7 @@ def audit(cursor, ctx, operation, table, row_key, before, after, request_key, re
 
 
 def _freeze_scale(cursor, ctx):
-    """The first stored price fixes the scale (and with it the type) of the gestiune: values are INT * 10^Scara."""
+    """The first stored price fixes the scale (and with it the type) of the gestiune: values are direct DECIMAL(20,4)."""
     cursor.execute('UPDATE VC_Gestiuni SET Populated=1 WHERE SubunitId=%s AND GestiuneId=%s AND Populated=0',
                    (ctx['subunit'], ctx['gestiune']))
 

@@ -9,8 +9,8 @@ Starea: DOCUMENTAT. Nimic implementat, nimic validat pe server.
 | Clasa sursa | Tinta MariaDB | Nota |
 |---|---|---|
 | CHEIE (AutoNumber/Long de legatura) | `INT UNSIGNED` generat | Cheia sursa se citeste **semnata** (ID-uri random pot fi negative) si se pastreaza in `VC_IdMap`. |
-| VALOARE-INT (cantitati, preturi, valori) | `INT` (cu semn) | Scalat 10^SCARA, SCARA = scara de stocare a gestiunii (Alimente 4, MF 2, OI 3); afisarea foloseste NR.ZEC al gestiunii, rotunjit in sus la jumatate. Vezi CONTRACT_CALCULE §1. Pretul are CHECK >= 0. |
-| COTA (TVA.TVA) | `INT` | cota x 10000 (0,19 -> 1900). |
+| VALOARE-INT (cantitati, preturi, valori) | `DECIMAL(20,4)` | Valori directe, maximum 4 zecimale. ZEC controleaza doar afisarea si calculele. Denumirea clasei ramane pentru compatibilitate. |
+| COTA (TVA.TVA) | `DECIMAL(20,4)` | Cota fractionara directa: 0,21 pentru 21%, fara scalare. |
 | NUMAR / INT | `INT` | nu se scaleaza. |
 | TEXT | `VARCHAR(n)` utf8mb3_general_ci | fara eliminarea diacriticelor; trunchierea se raporteaza. |
 | DATA | `DATETIME` | `Data`, `DataFc`, `DataBC`, `DataSalvare`, `DataIntrare` nu se substituie reciproc. |
@@ -29,9 +29,9 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: —
 | ID | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | Denumire | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | UM | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| PU | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Cant | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Valoare | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PU | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Valoare | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE
@@ -158,9 +158,9 @@ Randuri (alimente/MF/OI): Alimente: 3196; Mijloace_Fixe: 154; Obiecte_Inventar: 
 | ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdBonConsum | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `IdBonConsum` (IdBonConsum); `IdProdus` (IdProdus); `Iesiri_H_IdBonConsum__Iesiri_IdBonConsum` (IdBonConsum) FOREIGN; `ProdusePIesiri` (IdProdus) FOREIGN
@@ -174,8 +174,8 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 | ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdBonConsum | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Long | 4 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune (sursa Long: fara fractiune de inventat) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Long | 4 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat) |
 | DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `idbc` (IdBonConsum); `IdProdus` (IdProdus); `Iesiri_HIesiriRetur` (IdBonConsum) FOREIGN; `ProdusePIesiriRetur` (IdProdus) FOREIGN
@@ -192,7 +192,7 @@ Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 7; Obiecte_Inventar: 96
 | IDC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NumarBC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DataBC | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| ValoareBC | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareBC | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | Retur | Yes/No | 1 | nu | No | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
 | DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
@@ -209,12 +209,12 @@ Randuri (alimente/MF/OI): Alimente: 1671; Mijloace_Fixe: 156; Obiecte_Inventar: 
 | IdIntrare | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IDTVA | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Pret | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| TVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Valoare | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Pret | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| TVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Valoare | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `IdProdus` (IdProdus); `NIR_IdIntrare__Intrari_IdIntrare` (IdIntrare) FOREIGN; `ProdusePIntrari` (IdProdus) FOREIGN; `PUTVA` (PUTVA); `TVAIntrari` (IDTVA) FOREIGN
@@ -228,8 +228,8 @@ Randuri (alimente/MF/OI): Alimente: 8; Mijloace_Fixe: 2; Obiecte_Inventar: 2
 | ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdIntrare | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Long | 4 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune (sursa Long: fara fractiune de inventat) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Long | 4 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat) |
 | DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `idintrare` (IdIntrare); `IdProdus` (IdProdus)
@@ -244,9 +244,9 @@ Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 | IdLista | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NumarLA | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | DATALA | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| ValoareBon | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DEP | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareLista | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareBon | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| DEP | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareLista | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 
 Indexuri/chei (export): `IdLista` (IdLista) PRIMARY UNIQUE
 
@@ -272,16 +272,16 @@ Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 | ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IDLISTA | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | MicDejun_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VMD | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| MicDejun_V | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| VMD | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| MicDejun_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | MicDejun_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | Dejun_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VD | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Dejun_V | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| VD | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Dejun_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Dejun_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | Cina_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VC | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Cina_V | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| VC | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cina_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Cina_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | Comentarii | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 
@@ -328,7 +328,7 @@ Randuri (alimente/MF/OI): Alimente: 192; Mijloace_Fixe: 2; Obiecte_Inventar: 4
 | NrFact | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | Data | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 | Numar | Double | 8 | nu | 0 | NUMAR | INT (numar document; negativ la storno/seria istorica); NU se scaleaza; fractia (document inserat intre doua numere) in NumarSub, in sutimi |
-| Valoare | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Valoare | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataFc | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 | Storno | Yes/No | 1 | nu | No | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
 | FurnizorV | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
@@ -347,7 +347,7 @@ Randuri (alimente/MF/OI): Alimente: 1; Mijloace_Fixe: 1; Obiecte_Inventar: 1
 | NIR | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | NRFCT | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
 | NRBC | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| SI_LA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| SI_LA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | ZEC | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE
@@ -365,9 +365,9 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NRBC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DATABC | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
@@ -388,9 +388,9 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 154; Obiecte_Inventar: 152
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NRBP | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DATABP | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
@@ -410,9 +410,9 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 154; Obiecte_Inventar: 152
 | IDM | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IDC_PTC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
 Indexuri/chei (export): `Clienti_IDC__OI_Produse_IDC_PTC` (IDC_PTC) FOREIGN; `IDBC` (IDBC); `IDBO` (IDBO); `IDBP` (IDBP); `IDBT` (IDBT); `IDC_PTC` (IDC_PTC); `IDM` (IDM); `IDOI` (IDOI) PRIMARY UNIQUE; `IdProdus` (IdProdus); `ProdusePOI_Produse` (IdProdus) FOREIGN; `PUTVA` (PUTVA)
@@ -431,9 +431,9 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | NRBT | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DATABT | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 
@@ -467,7 +467,7 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 12; Obiecte_Inventar: —
 | DataIntrare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
 | DNF | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
 | DF | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
-| ValoareLuna | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| ValoareLuna | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 
 Indexuri/chei (export): —
 
@@ -479,7 +479,7 @@ Randuri (alimente/MF/OI): Alimente: 2304; Mijloace_Fixe: 156; Obiecte_Inventar: 
 |---|---|---:|---|---|---|---|
 | IdProdus | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | ID | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
 | COD | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 
@@ -493,7 +493,7 @@ Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
 |---|---|---:|---|---|---|---|
 | IdFel | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | Continut | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Cantitate | Double | 8 | nu |  | VALOARE-INT | INT scalat 10^SCARA, SCARA pe gestiune; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| Cantitate | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
 | AlteDetalii | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | UM | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
 | CPV | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
@@ -519,7 +519,7 @@ Randuri (alimente/MF/OI): Alimente: 6; Mijloace_Fixe: 4; Obiecte_Inventar: 4
 | Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
 |---|---|---:|---|---|---|---|
 | IdTVA | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| TVA | Double | 8 | nu | 0 | COTA | INT = cota x 10000 (scara fixa a cotei, independenta de zecimalele subunitatii) |
+| TVA | Double | 8 | nu | 0 | COTA | DECIMAL(20,4), cota fractionara directa |
 | Explicatie | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
 
 Indexuri/chei (export): `IdTVA` (IdTVA) PRIMARY UNIQUE

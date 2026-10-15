@@ -99,3 +99,13 @@ Sursa: raportul de profilare pe `tz_2025` / `tz_2026` (047_GR47). Toate mesajele
 | Anul exercițiului la tz_2100 | Cel mai mic an din `NIR.Data`. Decis 12.10.2026. |
 | Motor Access | Toți utilizatorii au Access pe 64 de biți; nu se testează 32 de biți. |
 
+
+
+### Revizie 14.10.2026 — migrare fără recalcularea valorilor
+
+Decizie utilizator: VRC copiază valorile din Access, chiar dacă antetul nu corespunde
+liniilor. Aceasta înlocuiește regulile istorice N01/N02 de corectare la migrare și
+regulile de inversare a semnelor. Totalurile 0/NULL, prețurile și cantitățile negative
+rămân în sursă și în țintă identice. Diferențele sunt doar raportate. Numerotarea după
+ultimul număr real rămâne explicit neschimbată; calculele documentelor noi din web
+rămân în codul aplicației și nu sunt aplicate datelor migrate.

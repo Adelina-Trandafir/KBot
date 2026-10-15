@@ -8,7 +8,7 @@ distributed) + the food items of each meal (VC_MicDejun / VC_Dejun / VC_Cina) + 
 Rules: the bons are created separately and only CHOSEN here (a bon of this gestiune and exercise, not cancelled, not in
 another list); saving writes the header, the meals and the whole set of links in ONE transaction and never creates or
 re-saves a bon and never repeats a consumption; the value of a meal is portions x value of a portion (rounded once at the
-gestiune's ZEC, stored at its SCARA); the value of the list is the sum of the meals; the difference is the value of the
+gestiune's ZEC, stored directly as DECIMAL(20,4)); the value of the list is the sum of the meals; the difference is the value of the
 list minus the sum of the bons; a recipe changed later does not rewrite a saved list (the list keeps its own text and
 values). Cancelling a list frees its bons.
 """
@@ -98,9 +98,9 @@ def _clean(cursor, repo, ctx, exercise, body):
             errors['m.%s.VMD' % key] = 'Valoarea unei porții nu poate fi negativă.'
         elif portions is not None and portions >= 0:
             try:
-                numeric.to_int(price, ctx['scale'])
+                numeric.to_stored(price, ctx['scale'])
                 value = numeric.calc_round(Decimal(portions) * price, ctx['zec'])
-                numeric.to_int(value, ctx['scale'])
+                numeric.to_stored(value, ctx['scale'])
             except numeric.NumericError as error:
                 errors['m.%s.VMD' % key] = str(error)
         items = []
@@ -134,9 +134,9 @@ def _write_meals(repo, ctx, list_id, parsed, now):
     total = 0
     for key, (table, p, v, value_col, d) in MEALS.items():
         meal = parsed['meals'][key]
-        stored = numeric.to_int(meal['value'], scale)
+        stored = numeric.to_stored(meal['value'], scale)
         total += stored
-        summary[p], summary[v], summary[value_col], summary[d] = meal['P'], numeric.to_int(meal['price'], scale), stored, meal['D']
+        summary[p], summary[v], summary[value_col], summary[d] = meal['P'], numeric.to_stored(meal['price'], scale), stored, meal['D']
         for item in meal['items']:
             repo.insert(table, {'IdLista': list_id, 'IdFel': item['IdFel'], 'Tip': item['Tip'], 'Explicatie': item['Explicatie']})
     repo.insert('VC_ListaAlimente', summary)
@@ -153,7 +153,7 @@ def _link_bons(repo, list_id, bons):
 def _bons_total(cursor, ctx, list_id):
     row = _one(cursor, 'SELECT COALESCE(SUM(h.ValoareBC),0) AS t FROM VC_LegBCLA l JOIN VC_Iesiri_H h ON h.SubunitId=l.SubunitId AND h.GestiuneId=l.GestiuneId AND h.ExercitiuId=l.ExercitiuId '
                        'AND h.IdBonConsum=l.IdBonConsum WHERE l.SubunitId=%s AND l.GestiuneId=%s AND l.ExercitiuId=%s AND l.IdLista=%s AND h.Anulat=0', (*_scope(ctx), list_id))
-    return int(row['t'])
+    return Decimal(row['t'])
 
 
 def _number(cursor, ctx, manual, errors, exclude=None):

@@ -15,6 +15,7 @@
 //
 // The data logic (formats, filters, sort, grouping, aggregates) is in engine.js and has no DOM.
 
+import { testMode } from '../utils/debug-tools.js';
 import {
   ValueType, Operator, allowedOperators, operatorCaption, operandCount,
   formatValue, aggregate, aggregatesFor, buildItems, groupCaption, filterIsActive, createFilter, isBlank,
@@ -43,6 +44,7 @@ const DEFAULTS = {
   layoutId: null, // the id the layout provider is asked for
   layout: null, // an explicit layout; wins over the provider
   proportionalWidths: false, // treat column widths as weights of the available viewport width
+  newRowAlwaysVisible: false, // editable grid always ends with one empty new row; needs onNewRow() (creates it) and isBlankRow(row); optional onCancelNewRow(row)
 };
 
 const COLUMN_DEFAULTS = {
@@ -85,7 +87,7 @@ export class DataGrid {
   constructor(container, options = {}) {
     if (!(container instanceof HTMLElement)) throw new Error('DataGrid needs a container element');
     this._abort = new AbortController();
-    ListenerTracker.applyTo(this, { debugMode: false, logPrefix: 'DataGrid' });
+    ListenerTracker.applyTo(this, { debugMode: testMode, logPrefix: 'DataGrid' });
     this._registryName = `DataGrid-${++gridSequence}`;
     registerInstance(this._registryName, this);
     this._opts = { ...DEFAULTS, ...options };
@@ -187,6 +189,8 @@ export class DataGrid {
     if (this.hasEdit) throw new Error('Confirmați sau anulați editarea înainte de reîncărcare.');
     if (!Array.isArray(rows)) throw new Error('setRows needs an array');
     this._rows = rows;
+    this._pendingRow = null; this._newSlot = null;
+    this.ensureNewRow();
     this._selection.clear();
     this._selectionAnchor = null;
     if (this._opts.layoutId && typeof DataGrid.rowSink === 'function') DataGrid.rowSink(this._opts.layoutId, rows);
@@ -306,6 +310,7 @@ export class DataGrid {
     this._window.addEventListener('dblclick', (ev) => this._onRowDblClick(ev), { signal });
     this._window.addEventListener('mouseover', (ev) => this._tipIfClipped(ev), { signal });
     root.addEventListener('keydown', (ev) => this._onKey(ev), { signal });
+    root.addEventListener('focusout', (ev) => this._onFocusOut(ev), { signal });
     document.addEventListener('pointerdown', (ev) => {
       if (this._popup && !this._popup.contains(ev.target)) this._closePopup();
     }, { signal, capture: true });
@@ -674,7 +679,10 @@ export class DataGrid {
           });
           cell.replaceChildren(button); cell.classList.add('is-action');
         }
-        if (this.canEdit(item.row, col)) cell.classList.add('is-editable');
+        if (this.canEdit(item.row, col)) {
+          cell.classList.add('is-editable');
+          if (col.required && this._requiredShown(item.row, col.key) && (item.row[col.key] == null || String(item.row[col.key]).trim() === '')) { cell.classList.add('is-required-empty'); cell.title = 'Campul este obligatoriu.'; }
+        }
         if (this._edit?.row === item.row && this._edit.key === col.key) {
           cell.textContent = '';
           cell.append(this._edit.host);
@@ -699,6 +707,7 @@ export class DataGrid {
     cell.dataset.key = col.key;
     cell.style.width = `${this._w(col)}px`;
     if (this._isRight(col)) cell.classList.add('is-right');
+    else if (col.align === 'center') cell.classList.add('is-center');   // body cells only: the header keeps its own look
     cell.textContent = text;
     return cell;
   }
@@ -769,6 +778,8 @@ export class DataGrid {
       if (ci === 0 && this._opts.footerAction) {
         const action = this._opts.footerAction;
         const button = el('button', 'dgv__footer-action', action.label);
+        cell.classList.remove('is-center', 'is-right');   // the action sits at the left edge of the grid, whatever the first column's alignment
+        if (!action.withCaption) cell.classList.add('has-action');
         cell.style.width = `${cols.slice(0, actionSpan).reduce((sum, item) => sum + this._w(item), 0)}px`;
         button.type = 'button';
         button.disabled = !!action.disabled;
@@ -801,9 +812,11 @@ export class DataGrid {
     this._activeKey = key;
     if (hit.item.kind === 'gh') { this._toggleGroup(hit.item); return; }
     if (hit.item.kind !== 'row') return;
+    if (!await this._leaveRow(hit.item.row)) return;   // the row that was being edited is judged first
+    if (this._destroyed) return;
     this._select(hit.item.row, ev);
     if (this._opts.multiSelect) { this._root.focus({ preventScroll: true }); return; }
-    if (matchMedia('(min-width: 981px) and (pointer: fine)').matches && this.beginEdit(hit.item.row, key)) return;
+    if ((this._opts.singleClickEdit || matchMedia('(min-width: 981px) and (pointer: fine)').matches) && this.beginEdit(hit.item.row, key)) return;
     this._root.focus({ preventScroll: true });
   }
 
@@ -814,6 +827,7 @@ export class DataGrid {
   }
 
   _select(row, event = {}) {
+    this._leavePendingRow(row);
     this._selected = row;
     if (this._opts.multiSelect) {
       const ordered = this._items.filter((item) => item.kind === 'row').map((item) => item.row);
@@ -837,8 +851,9 @@ export class DataGrid {
     if (this._opts.multiSelect) this._emit('onSelectionChange', this.getSelectedRows());
   }
 
-  _onKey(ev) {
+  async _onKey(ev) {
     if (this._edit) return;
+    if (ev.key === 'Escape') { if (this.cancelPendingRow()) ev.preventDefault(); return; }
     if (ev.key === 'Enter' && this._selected) {
       if (this.beginEdit(this._selected, this._activeKey || this._visibleColumns().find((c) => this.canEdit(this._selected, c))?.key)) ev.preventDefault();
       return;
@@ -855,6 +870,7 @@ export class DataGrid {
     if (next === null) return;
     ev.preventDefault();
     const itemIndex = dataIdx[next];
+    if (!await this._leaveRow(this._items[itemIndex].row)) return;
     if (this._opts.multiSelect) this._select(this._items[itemIndex].row, ev);
     else this._selected = this._items[itemIndex].row;
     this._ensureVisible(itemIndex);

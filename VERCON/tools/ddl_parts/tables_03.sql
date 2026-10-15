@@ -108,12 +108,12 @@ CREATE TABLE IF NOT EXISTS `VC_AnnualClosings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- Setari/NR of the Access base, typed, per gestiune. Not copied: the type flags (MF, OBINV: they became VC_Gestiuni.Type)
--- and NR.ZEC (became VC_Gestiuni.Zec). IntValue is scaled by VC_Gestiuni.Scara only for keys that hold a value (SI_LA).
+-- and NR.ZEC (became VC_Gestiuni.Zec). IntValue contains direct decimal amounts (SI_LA) or whole configuration values.
 CREATE TABLE IF NOT EXISTS `VC_Settings` (
   `SubunitId` INT UNSIGNED NOT NULL,
   `GestiuneId` INT UNSIGNED NOT NULL,
   `SettingKey` VARCHAR(40) NOT NULL,
-  `IntValue` INT NOT NULL,
+  `IntValue` DECIMAL(20,4) NOT NULL,
   `Version` BIGINT NOT NULL DEFAULT 1,
   PRIMARY KEY (`SubunitId`, `GestiuneId`, `SettingKey`),
   CONSTRAINT `fk_VC_Setting_Gestiune` FOREIGN KEY (`SubunitId`, `GestiuneId`) REFERENCES `VC_Gestiuni` (`SubunitId`, `GestiuneId`) ON DELETE RESTRICT

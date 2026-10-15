@@ -5,8 +5,13 @@ $taskPidFile = Join-Path $PSScriptRoot ".local\localhost-$Port.pid"
 if (-not (Test-Path -LiteralPath $taskPidFile)) { Write-Host 'Nu exista o pornire salvata pentru acest port.'; return }
 $taskProcessId = [int](Get-Content -LiteralPath $taskPidFile -Raw)
 $taskProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $taskProcessId" -ErrorAction SilentlyContinue
+# A saved PID whose process is not this launcher (gone, reused by another program, or unreadable) is stale: forget it, never kill it.
+if ($taskProcess -and -not ([string]$taskProcess.CommandLine).Contains($taskLauncher)) {
+    Remove-Item -LiteralPath $taskPidFile
+    Write-Host 'PID-ul salvat nu mai apartine VERCON; l-am sters fara sa opresc nimic.'
+    return
+}
 if ($taskProcess) {
-    if (-not $taskProcess.CommandLine.Contains($taskLauncher)) { throw 'PID-ul apartine altui proces. Nu il opresc.' }
     # The Windows venv launcher can spawn another Python process; include its SSH tunnel.
     function Stop-LocalChild([int]$taskParentId) {
         $taskChildren = @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $taskParentId")

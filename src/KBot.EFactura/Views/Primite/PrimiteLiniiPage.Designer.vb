@@ -55,15 +55,15 @@ Partial Class PrimiteLiniiPage
         KBotDataColumn2.Key = "denumire"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
-        KBotDataColumn2.Width = 260
+        KBotDataColumn2.Width = 348
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderText = "Explicație"
+        KBotDataColumn3.HeaderText = "CPV"
         KBotDataColumn3.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn3.Key = "explicatie"
+        KBotDataColumn3.Key = "cpv"
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
-        KBotDataColumn3.Width = 220
+        KBotDataColumn3.Width = 132
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Um"
@@ -126,8 +126,8 @@ Partial Class PrimiteLiniiPage
         gridLinii.ReadOnlyGrid = True
         gridLinii.Size = New System.Drawing.Size(751, 400)
         gridLinii.TabIndex = 0
-        tips.SetToolTipHeader(gridLinii, "Liniile facturii")
-        tips.SetToolTipText(gridLinii, "Liniile așa cum le-a scris furnizorul în XML. Tabelul se citește doar.")
+        tips.SetToolTipHeader(gridLinii, "Conținutul facturii")
+        tips.SetToolTipText(gridLinii, "Liniile așa cum le-a scris furnizorul în XML, cu codul CPV al fiecăreia. O linie fără cod CPV apare cu roșu închis. Tabelul se citește doar.")
         '
         ' gridCote
         '

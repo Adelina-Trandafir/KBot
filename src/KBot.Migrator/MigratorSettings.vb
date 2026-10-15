@@ -127,9 +127,6 @@ Public NotInheritable Class MigratorSettings
     <JsonPropertyName("efReceivedFile")>
     Public Property EfReceivedFile As String = String.Empty
 
-    <JsonPropertyName("efZipFolder")>
-    Public Property EfZipFolder As String = "C:\AVACONT\efactura"
-
     ''' <summary>Reads the settings file, or returns defaults when there is none.</summary>
     Public Shared Function Load() As MigratorSettings
         Try

@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS `EF_PrimiteTVA` (
   `IdTva` int(11) NOT NULL AUTO_INCREMENT,
   `IdPrimita` int(11) NOT NULL,
   `Categorie` varchar(8) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL DEFAULT NULL COMMENT 'UBL TaxCategory/ID: S, Z, E, AE, ...',
-  `CotaTVA` decimal(6,2) NOT NULL DEFAULT 0.00,
-  `Baza` decimal(18,2) NOT NULL DEFAULT 0.00 COMMENT 'Taxable amount',
-  `TVA` decimal(18,2) NOT NULL DEFAULT 0.00,
+  `CotaTVA` decimal(20,4) NOT NULL DEFAULT 0.0000,
+  `Baza` decimal(20,4) NOT NULL DEFAULT 0.0000 COMMENT 'Taxable amount',
+  `TVA` decimal(20,4) NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`IdTva`) USING BTREE,
   INDEX `IX_EF_PrimiteTVA_IdPrimita`(`IdPrimita` ASC) USING BTREE,
   CONSTRAINT `FK_EF_PrimiteTVA_Primita` FOREIGN KEY (`IdPrimita`) REFERENCES `EF_Primite` (`IdPrimita`) ON DELETE CASCADE ON UPDATE CASCADE

@@ -1,5 +1,7 @@
 param([int]$Port = 5053, [string]$Actor = 'localhost-ssh@local.test', [switch]$Foreground)
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 does not load this assembly by itself (PowerShell 7 does).
+Add-Type -AssemblyName System.Net.Http
 $taskRepo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $taskPython = Join-Path $taskRepo 'PYTHON\.venv\Scripts\python.exe'
 $taskLauncher = Join-Path $PSScriptRoot 'local_ssh.py'
@@ -23,7 +25,8 @@ $taskPidFile = Join-Path $taskLocal "localhost-$Port.pid"
 if (Test-Path -LiteralPath $taskPidFile) {
     $taskExistingId = [int](Get-Content -LiteralPath $taskPidFile -Raw)
     $taskExisting = Get-CimInstance Win32_Process -Filter "ProcessId = $taskExistingId" -ErrorAction SilentlyContinue
-    if ($taskExisting -and $taskExisting.CommandLine.Contains($taskLauncher)) {
+    # CommandLine is empty for a process that is gone or that cannot be read: then the saved PID is stale and nothing is running.
+    if ($taskExisting -and ([string]$taskExisting.CommandLine).Contains($taskLauncher)) {
         try {
             $taskStatus = Read-LocalStatus
             if ($taskStatus.application -eq 'vercon_local_ssh' -and $taskStatus.database -eq '000_DEMO' -and $taskStatus.ready) {

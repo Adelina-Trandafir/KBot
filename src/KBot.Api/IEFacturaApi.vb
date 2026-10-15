@@ -144,6 +144,9 @@ Public Interface IEFacturaApi
     ''' <summary>GET .../atasamente/{n} -- the n-th (0-based) file embedded in the XML.</summary>
     Function GetPrimitaAtasamentAsync(k_idPrimita As Integer, k_index As Integer, ct As CancellationToken) As Task(Of Byte())
 
+    ''' <summary>POST .../mesaj -- sends a message about the received invoice through ANAF (the buyer's message); the server keeps it with the invoice.</summary>
+    Function SendPrimitaMesajAsync(k_idPrimita As Integer, k_text As String, ct As CancellationToken) As Task
+
     ''' <summary>POST .../asociere -- links the invoice to a DDF by the operator's own choice.</summary>
     Function LinkPrimitaAsync(k_idPrimita As Integer, k_idDdf As Integer, ct As CancellationToken) As Task
 

@@ -1,4 +1,4 @@
-# SLICELESS — E-Factura: environment confirmed (13.10.2026)
+# SLICE-00EF-28 — E-Factura: environment confirmed (13.10.2026)
 
 Not a code change. The operator ran the checks below and reported the results in chat; this file
 records what is now CONFIRMED so the older "not run / not deployed" lines are read in that light.
@@ -29,12 +29,12 @@ Nothing in the repo code. Status notes only: the prerequisites listed as open in
 ## Still NOT verified
 
 - Anything called at ANAF with a real invoice (upload with the PDF attachment, status, download of the zip).
-- The refused-invoice dead end (`id_descarcare` = `Err`), the other open threads in
+- The other open threads in
   `state/KBOT_STATUS_0000-0009.md` → Open threads.
 - That the service account can WRITE in `AVACONT_COMUN` from the unit connection («Date Unitate», conturi).
 - The 7-day expiry note on the main window (never built).
 
 ## Files touched
 
-`docs/worklog/SLICELESS-efactura-mediu-vps.md` (new), `PLAN_00EF_EFactura.md`,
-`state/KBOT_STATUS_0000-0009.md`, `state/KBOT_STATUS_SLICELESS.md`, `KBOT_STATUS.md`. No code, no tests.
+`docs/worklog/SLICE-00EF-28-mediu-vps.md` (new), `PLAN_00EF_EFactura.md`,
+`state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md`. No code, no tests. (First logged as sliceless; moved to 00EF-28 on 15.10.2026, operator: all E-Factura work sits in an EF slice.)
