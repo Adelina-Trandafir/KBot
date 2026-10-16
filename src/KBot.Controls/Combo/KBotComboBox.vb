@@ -78,6 +78,7 @@ Partial Public Class KBotComboBox
     ' -- Typing in the box --------------------------------------------------------------
     Private _editable As Boolean = False
     Private _limitToList As Boolean = True
+    Private _placeholderText As String = String.Empty
 
     ' The last ACCEPTED text: what the field goes back to when LimitToList is on and the operator
     ' typed something that is not in the list. Kept up to date on every selection change, except
@@ -389,6 +390,23 @@ Partial Public Class KBotComboBox
                 WriteDisplayText(String.Empty)
             End If
             UpdateEditVisibility()
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Slice 00EF-37: the pale text shown on the face while nothing is selected (not editable). It is NOT a row of the list and
+    ''' cannot be picked; empty = nothing shown.
+    ''' </summary>
+    <Category("K-BOT Combo")>
+    <Description("Pale text shown while no row is selected. Not a row of the list.")>
+    <DefaultValue("")>
+    Public Property PlaceholderText As String
+        Get
+            Return _placeholderText
+        End Get
+        Set(value As String)
+            _placeholderText = If(value, String.Empty)
             Invalidate()
         End Set
     End Property
@@ -1441,9 +1459,11 @@ Partial Public Class KBotComboBox
             ' The text belongs to the text box while it shows -- we would draw it twice.
             If _edit.Visible Then Return
             Dim caption As String = Text
+            Dim pale As Boolean = (caption.Length = 0)
+            If pale Then caption = _placeholderText
             If caption.Length = 0 Then Return
             TextRenderer.DrawText(g, caption, Font, TextArea(),
-                                  If(Enabled, ForeColor, ThemeManager.Current.Palette.DisabledTextColor),
+                                  If(Enabled AndAlso Not pale, ForeColor, ThemeManager.Current.Palette.DisabledTextColor),
                                   HorizontalFlags() Or TextFormatFlags.VerticalCenter Or TextFormatFlags.SingleLine Or
                                   TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix)
         Catch ex As Exception

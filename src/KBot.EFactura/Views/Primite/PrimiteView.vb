@@ -783,10 +783,10 @@ Public Class PrimiteView
             If CustomPopup.ClosedJustNow Then Return
             Dim k_band As Rectangle = tree.FooterBandRect
             If k_band.IsEmpty Then Return
-            Dim k_combo As CustomPopupItem = CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus:",
+            Dim k_combo As CustomPopupItem = CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus",
                 SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile"))
             k_combo.Image = My.Resources.Resources.anaf
-            Dim k_text As CustomPopupItem = CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "zile", 2, True)
+            Dim k_text As CustomPopupItem = CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "Între 1 și 60 de zile", 2, True)
             k_text.Image = My.Resources.Resources.anaf
             ' Under the two ANAF rows, a separator, then the other way to update: read the list again from the K-BOT server.
             Dim k_items As New List(Of CustomPopupItem) From {

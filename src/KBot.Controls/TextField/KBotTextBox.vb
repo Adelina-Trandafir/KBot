@@ -273,6 +273,24 @@ Public NotInheritable Class KBotTextBox
         End Set
     End Property
 
+    ''' <summary>
+    ''' Slice 00EF-37: keep the pale <see cref="PlaceholderText"/> on screen while the box has the focus and is still empty (it goes
+    ''' away with the first character). Without this the placeholder hides as soon as the box is entered, so a box that takes the focus
+    ''' when its window opens would never show it.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Keep the placeholder visible while the box is focused and empty.")>
+    <DefaultValue(False)>
+    Public Property PlaceholderWhileFocused As Boolean
+        Get
+            Return _inner.KeepPlaceholder
+        End Get
+        Set(v As Boolean)
+            _inner.KeepPlaceholder = v
+            _inner.Invalidate()
+        End Set
+    End Property
+
     <Category("K-BOT")>
     <Description("Alinierea textului în casetă.")>
     <DefaultValue(HorizontalAlignment.Left)>
@@ -719,6 +737,7 @@ Public NotInheritable Class KBotTextBox
             _textTema = p.InputTextColor
             _chenarTema = p.InputBorderColor
             _chenarFocusTema = p.AccentColor
+            _inner.PlaceholderColor = p.DisabledTextColor
             AplicaFundalTema()
             ' Barele sunt copii IThemedControl, dar ThemeManager NU coboară în ele decât prin
             ' ApplyToNestedThemed; le dăm schema direct, ca să fie corecte și când cadrul e
@@ -1133,18 +1152,51 @@ Public NotInheritable Class KBotTextBox
         Private Const EM_SCROLLCARET As Integer = &HB7
         Private Const EM_LINESCROLL As Integer = &HB6
 
+        Private Const WM_PAINT As Integer = &HF
+
         ''' <summary>Vederea S-AR PUTEA să se fi mutat — gazda recitește și pune barele la loc.</summary>
         Public Event ViewChanged As EventHandler
+
+        ''' <summary>Slice 00EF-37: the placeholder is drawn here also while the box is focused and empty.</summary>
+        Public KeepPlaceholder As Boolean
+        Public PlaceholderColor As Color = SystemColors.GrayText
 
         ' WndProc rămâne NEîmbrăcat în Try (regula casei: contractul de mesaje al ferestrei nu se
         ' rupe; plasa e Application.ThreadException).
         Protected Overrides Sub WndProc(ByRef m As Message)
             MyBase.WndProc(m)
+            If m.Msg = WM_PAINT AndAlso KeepPlaceholder AndAlso Focused AndAlso TextLength = 0 AndAlso
+               Not String.IsNullOrEmpty(PlaceholderText) Then
+                DrawFocusedPlaceholder()
+            End If
             Select Case m.Msg
                 Case WM_KEYDOWN, WM_KEYUP, WM_CHAR, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MOUSEMOVE,
                      WM_MOUSEWHEEL, WM_PASTE, WM_CUT, WM_SIZE, EM_SCROLLCARET, EM_LINESCROLL
                     RaiseEvent ViewChanged(Me, EventArgs.Empty)
             End Select
+        End Sub
+
+        ' The native placeholder hides when the box is focused; this draws it on the formatting rectangle of the edit control.
+        ' Painting boundary: logs and swallows.
+        Private Sub DrawFocusedPlaceholder()
+            Try
+                Dim k_rc As RECT
+                SendMessage(Handle, EM_GETRECT, IntPtr.Zero, k_rc)
+                Dim k_area As New Rectangle(k_rc.Left, k_rc.Top, Math.Max(1, k_rc.Right - k_rc.Left), Math.Max(1, k_rc.Bottom - k_rc.Top))
+                Using k_g As Graphics = CreateGraphics()
+                    TextRenderer.DrawText(k_g, PlaceholderText, Font, k_area, PlaceholderColor,
+                                          TextFormatFlags.Left Or TextFormatFlags.Top Or TextFormatFlags.NoPadding Or
+                                          TextFormatFlags.EndEllipsis Or TextFormatFlags.SingleLine)
+                End Using
+            Catch ex As Exception
+                GlobalErrorLog.Write("KBotTextBox.DrawFocusedPlaceholder", ex)
+            End Try
+        End Sub
+
+        ' A first character (or the last one deleted) repaints the whole box, so the drawn placeholder never lingers.
+        Protected Overrides Sub OnTextChanged(e As EventArgs)
+            MyBase.OnTextChanged(e)
+            If KeepPlaceholder Then Invalidate()
         End Sub
 
     End Class

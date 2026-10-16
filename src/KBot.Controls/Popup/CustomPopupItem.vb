@@ -101,7 +101,7 @@ Public NotInheritable Class CustomPopupItem
     End Function
 
     ''' <summary>
-    ''' Slice 00EF-34: a COMBO row -- a caption line and under it a KBot combo box to pick from (no typing). Picking a row closes the
+    ''' Slice 00EF-34: a COMBO row -- one row with a KBot combo box to pick from (no typing); <paramref name="text"/> is the pale text on its face while nothing is picked (not a row of the list). Picking a row closes the
     ''' popup and raises <c>ItemClicked</c> for this item; <see cref="ComboSelectedIndex"/> is then the row picked. It starts with no row
     ''' picked, so picking the first row counts too.
     ''' </summary>
@@ -112,7 +112,7 @@ Public NotInheritable Class CustomPopupItem
     End Function
 
     ''' <summary>
-    ''' Slice 00EF-34: a TEXT row -- a caption line and under it a KBot text box. ENTER closes the popup and raises <c>ItemClicked</c>
+    ''' Slice 00EF-34: a TEXT row -- one row with a KBot text box showing <paramref name="placeholder"/> in pale text while it is empty (also while it has the focus). ENTER closes the popup and raises <c>ItemClicked</c>
     ''' for this item; <see cref="InputText"/> is then what was written (trimmed, may be empty). <paramref name="digitsOnly"/> keeps
     ''' only 0-9; the range of the number is the caller's to check.
     ''' </summary>

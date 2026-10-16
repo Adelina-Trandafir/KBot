@@ -64,8 +64,11 @@ single sink all three close paths go through — a host flag would leak on the p
 - `WS_EX_TOOLWINDOW` (no taskbar button) + `CS_DROPSHADOW` (the usual menu shadow).
 
 ## Input rows: combo and text box (slice 00EF-34)
-`CustomPopupItem.Combo(key, text, rows)` and `CustomPopupItem.TextInput(key, text, placeholder, maxLength, digitsOnly)`. A row is a
-caption line with the real KBot control under it (`KBotComboBox` not editable / `KBotTextBox`), made by `CustomPopup.Inputs.vb`.
+`CustomPopupItem.Combo(key, text, rows)` and `CustomPopupItem.TextInput(key, text, placeholder, maxLength, digitsOnly)`. A row is ONE
+row like any other (icon band on the left, the real KBot control on the rest: `KBotComboBox` not editable / `KBotTextBox`), made by
+`CustomPopup.Inputs.vb` (00EF-37: no caption line any more). The `text` of a combo is its pale text while nothing is picked
+(`KBotComboBox.PlaceholderText`, not a row of the list); the placeholder of a text row stays visible while the box is empty, also
+focused (`KBotTextBox.PlaceholderWhileFocused`), and goes away with the first character.
 Picking a row of the combo, or Enter in the box, closes the popup and raises `ItemClicked` for that item; read
 `Item.ComboSelectedIndex` (starts at -1: picking the first row counts) or `Item.InputText`. An input row is never highlighted, has no
 access letter, and while an input has the focus every key is its own (only Esc closes the popup). `DigitsOnly` keeps 0-9.

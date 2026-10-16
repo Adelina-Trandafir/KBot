@@ -9,7 +9,7 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slice 00EF-34 -- the INPUT rows of a <see cref="CustomPopup"/>: a <b>combo</b> (a list to pick from, no typing;
 ''' <see cref="CustomPopupItem.Combo"/>) and a <b>text box</b> (<see cref="CustomPopupItem.TextInput"/>). A row of that kind is a
-''' caption line with the real KBot control under it, so the popup stays one window and one theme. Picking a row of the combo, or
+''' row of its own with the real KBot control on it (icon band on the left, like any row), so the popup stays one window and one theme. Picking a row of the combo, or
 ''' Enter in the text box, closes the popup and raises <see cref="ItemClicked"/> for THAT item, which then carries the answer
 ''' (<see cref="CustomPopupItem.ComboSelectedIndex"/> / <see cref="CustomPopupItem.InputText"/>) -- the same way a row is chosen.
 '''
@@ -19,7 +19,7 @@ Imports KBot.Theming
 Partial Public Class CustomPopup
 
     Private Const InputMinWidthLogical As Integer = 190
-    Private Const InputGapLogical As Integer = 4
+    Private Const InputGapLogical As Integer = 2   ' air above and below the control, inside its row
 
     Private ReadOnly _inputControls As New Dictionary(Of CustomPopupItem, Control)()
     Private _fixingInput As Boolean
@@ -31,7 +31,8 @@ Partial Public Class CustomPopup
             If Not k_item.IsInput OrElse _inputControls.ContainsKey(k_item) Then Continue For
             Dim k_control As Control
             If k_item.IsCombo Then
-                Dim k_combo As New KBotComboBox() With {.Editable = False}
+                ' The item's text is the pale text of the face while nothing is picked (it is not a row of the list).
+                Dim k_combo As New KBotComboBox() With {.Editable = False, .PlaceholderText = k_item.Text}
                 For Each k_row As String In k_item.ComboRows
                     k_combo.Items.Add(k_row)
                 Next
@@ -43,7 +44,8 @@ Partial Public Class CustomPopup
                 k_control = k_combo
             Else
                 Dim k_box As New KBotTextBox() With {
-                    .PlaceholderText = k_item.InputPlaceholder, .MaxLength = k_item.InputMaxLength, .Text = k_item.InputText}
+                    .PlaceholderText = k_item.InputPlaceholder, .PlaceholderWhileFocused = True,
+                    .MaxLength = k_item.InputMaxLength, .Text = k_item.InputText}
                 Dim k_textItem As CustomPopupItem = k_item
                 AddHandler k_box.FieldKeyDown, Sub(k_s, k_e) InputKeyDown(k_textItem, k_box, k_e)
                 AddHandler k_box.TextChanged, Sub(k_s, k_e) InputTextChanged(k_textItem, k_box)
@@ -69,9 +71,9 @@ Partial Public Class CustomPopup
         Return k_control.GetPreferredSize(Size.Empty).Height
     End Function
 
-    ''' <summary>The height of an input row: the caption line, a small gap, the control.</summary>
+    ''' <summary>The height of an input row: the control and a little air above and below (never under a plain row).</summary>
     Friend Function InputRowHeight(k_item As CustomPopupItem) As Integer
-        Return EffectiveRowHeight() + ThemeShapes.ScaleDpi(ScaleRef, InputGapLogical) + InputControlHeight(k_item)
+        Return Math.Max(EffectiveRowHeight(), InputControlHeight(k_item) + 2 * ThemeShapes.ScaleDpi(ScaleRef, InputGapLogical))
     End Function
 
     ''' <summary>The width an input row asks for (so a popup of inputs is never narrower than the control needs).</summary>
@@ -79,40 +81,30 @@ Partial Public Class CustomPopup
         Return ThemeShapes.ScaleDpi(ScaleRef, InputMinWidthLogical)
     End Function
 
-    ' The real controls follow the rows (the content scrolls under the window): placed under the caption line of the row.
+    ' The real controls follow the rows (the content scrolls under the window): on the row, right of the icon band, centred.
     Private Sub PlaceInputControls()
         If _inputControls.Count = 0 Then Return
         Dim k_padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
-        Dim k_lineH As Integer = EffectiveRowHeight() + ThemeShapes.ScaleDpi(ScaleRef, InputGapLogical)
+        Dim k_gutter As Integer = IconGutter()
         For k_i As Integer = 0 To _items.Count - 1
             Dim k_control As Control = Nothing
             If Not _inputControls.TryGetValue(_items(k_i), k_control) Then Continue For
             If k_i >= _rows.Length Then Continue For
             Dim k_row As Rectangle = _rows(k_i)
-            Dim k_h As Integer = Math.Max(1, k_row.Height - k_lineH)
-            k_control.Bounds = New Rectangle(k_row.Left + k_padX, k_row.Top + k_lineH - _scroll,
-                                             Math.Max(1, k_row.Width - 2 * k_padX), k_h)
+            Dim k_h As Integer = Math.Min(k_row.Height, InputControlHeight(_items(k_i)))
+            k_control.Bounds = New Rectangle(k_row.Left + k_padX + k_gutter, k_row.Top + (k_row.Height - k_h) \ 2 - _scroll,
+                                             Math.Max(1, k_row.Width - 2 * k_padX - k_gutter), k_h)
             k_control.Visible = True
         Next
     End Sub
 
-    ' The caption line of an input row (the control itself is a child window).
+    ' An input row paints only its icon (the control itself is a child window, with its own pale text).
     Private Sub DrawInputRow(k_g As Graphics, k_index As Integer, k_row As Rectangle, k_padX As Integer)
         Dim k_item As CustomPopupItem = Items(k_index)
-        Dim k_fore As Color = If(k_item.Enabled, EffectiveItemForeColor, EffectiveDisabledForeColor)
-        Dim k_lineH As Integer = EffectiveRowHeight()
-        Dim k_gutter As Integer = IconGutter()
-        ' The icon (if the item has one) sits on the caption line, in the same band as the icons of the plain rows.
-        If k_gutter > 0 AndAlso k_item.Image IsNot Nothing Then
-            Dim k_side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
-            Dim k_dest As New Rectangle(k_row.Left + k_padX, k_row.Top + (k_lineH - k_side) \ 2, k_side, k_side)
-            KBotNavList.DrawItemImage(k_g, k_item.Image, k_dest, k_item.Enabled)
-        End If
-        Dim k_text As New Rectangle(k_row.Left + k_padX + k_gutter, k_row.Top,
-                                    Math.Max(0, k_row.Width - 2 * k_padX - k_gutter), k_lineH)
-        If k_text.Width <= 0 Then Return
-        TextRenderer.DrawText(k_g, If(k_item.Text, String.Empty), Font, k_text, k_fore,
-                              MeasureFlags() Or TextFormatFlags.EndEllipsis)
+        If IconGutter() <= 0 OrElse k_item.Image Is Nothing Then Return
+        Dim k_side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
+        Dim k_dest As New Rectangle(k_row.Left + k_padX, k_row.Top + (k_row.Height - k_side) \ 2, k_side, k_side)
+        KBotNavList.DrawItemImage(k_g, k_item.Image, k_dest, k_item.Enabled)
     End Sub
 
     ' The focus goes to the first input when the popup opens (a text box first: that is where one types).
