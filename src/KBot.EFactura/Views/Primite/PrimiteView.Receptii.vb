@@ -54,6 +54,8 @@ Partial Public Class PrimiteView
 
     Private Sub ApplyKe(k_state As EFacturaKeStare)
         _ke = k_state
+        ' An invoice that is already linked goes on with the angajament of its first link.
+        If String.IsNullOrEmpty(_keCod) AndAlso k_state.Legaturi.Count > 0 Then _keCod = k_state.Legaturi(0).CodAngajament
         navDetaliu.SetItemVisible(ViewReceptii, True)
         pgReceptii.ShowState(k_state, KeRobot.Current IsNot Nothing)
         FillKeLines(k_state)
@@ -73,6 +75,8 @@ Partial Public Class PrimiteView
     Private Sub ClearKe()
         Interlocked.Increment(_keSeq)
         _ke = Nothing
+        ' The angajament chosen last belongs to the invoice it was chosen on: another invoice starts without one.
+        _keCod = String.Empty
         pgReceptii.Clear()
         navDetaliu.SetItemVisible(ViewReceptii, False)
     End Sub

@@ -246,7 +246,13 @@ def _angajamente_candidate(cursor, row, links):
     cursor.execute("SELECT CodAngajament, Descriere, Alias, Stare FROM FX_Angajamente WHERE CodAngajament IN ("
                    + ", ".join(["%s"] * len(codes)) + ")", tuple(codes))
     info = {r["CodAngajament"]: r for r in cursor.fetchall()}
-    return [{"CodAngajament": code, "Descriere": (info.get(code) or {}).get("Alias") or (info.get(code) or {}).get("Descriere") or "",
+    def _name(code):
+        # alias (the short name given in K-BOT) and description (the one the site shows): both, so the accountant recognises it
+        item = info.get(code) or {}
+        alias, desc = (item.get("Alias") or "").strip(), (item.get("Descriere") or "").strip()
+        return f"{alias} — {desc}" if alias and desc and alias != desc else (alias or desc)
+
+    return [{"CodAngajament": code, "Descriere": _name(code),
              "Stare": (info.get(code) or {}).get("Stare") or "", "Sursa": found[code]} for code in codes]
 
 

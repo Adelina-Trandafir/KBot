@@ -439,6 +439,7 @@ Public Class PrimiteView
     Private Async Function ShowInvoiceAsync(k_id As Integer) As Task
         Try
             ntfMesaj.Visible = False
+            If k_id <> _shownId Then _keCod = String.Empty   ' slice KE02: the angajament chosen last belongs to the previous invoice
             _shownId = k_id
             Dim k_mySeq As Integer = Interlocked.Increment(_seq)
             Dim k_detail As EFacturaPrimitaDetaliu = Await _gate.RunAsync(

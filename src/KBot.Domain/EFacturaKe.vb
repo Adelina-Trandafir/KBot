@@ -127,7 +127,10 @@ Public NotInheritable Class EFacturaKeAngajamentAlegere
 
     Public ReadOnly Property Eticheta As String
         Get
-            Return If(String.IsNullOrWhiteSpace(AliasName), Descriere, AliasName)
+            ' The alias is the short name the operator gave in K-BOT; the description is the one the site shows: both are recognised.
+            If String.IsNullOrWhiteSpace(AliasName) Then Return Descriere
+            If String.IsNullOrWhiteSpace(Descriere) Then Return AliasName
+            Return $"{AliasName} — {Descriere}"
         End Get
     End Property
 End Class

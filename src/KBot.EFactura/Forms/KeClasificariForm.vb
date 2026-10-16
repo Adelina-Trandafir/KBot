@@ -189,7 +189,9 @@ Public Class KeClasificariForm
                 Dim k_current As String = Convert.ToString(k_row(ColClsf), CultureInfo.InvariantCulture)
                 If k_line IsNot Nothing AndAlso k_line.IdClsf.HasValue AndAlso _labelOf.ContainsKey(k_line.IdClsf.Value) Then
                     k_row(ColClsf) = _labelOf(k_line.IdClsf.Value)
-                ElseIf String.IsNullOrEmpty(k_current) Then
+                ElseIf String.IsNullOrEmpty(k_current) OrElse
+                       (Not String.Equals(k_current, NeAleasa, StringComparison.Ordinal) AndAlso Not _byLabel.ContainsKey(k_current)) Then
+                    ' a choice made from another angajament's list is not one of these: the cell goes back to «not chosen»
                     k_row(ColClsf) = NeAleasa
                 End If
             Next
