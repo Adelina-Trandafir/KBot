@@ -156,4 +156,27 @@ Public Interface IEFacturaApi
     ''' <summary>GET /api/efactura/primite-ddf -- the DDFs a received invoice can be linked to (newest first, at most 300), narrowed by <paramref name="k_query"/> (slice 00EF-20).</summary>
     Function GetDdfAlegereAsync(k_query As String, ct As CancellationToken) As Task(Of List(Of EFacturaDdfAlegere))
 
+    ' ── Slices KE01..KE07: the links of a received invoice with receptions (PYTHON/routes/efactura/primite_ke_routes.py) ──
+
+    ''' <summary>GET /api/efactura/primite/{id}/ke -- the lines with their values WITH VAT, the totals per classification, the links, the angajamente it can go to.</summary>
+    Function GetKeAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaKeStare)
+
+    ''' <summary>PUT .../ke/clasificatii -- the classification of the lines (only IdLinie and IdClsf of <paramref name="k_linii"/> are sent; Nothing clears one). «Contabil» only.</summary>
+    Function SetKeClasificatiiAsync(k_idPrimita As Integer, k_linii As IEnumerable(Of EFacturaKeLinie), ct As CancellationToken) As Task(Of EFacturaKeStare)
+
+    ''' <summary>GET /api/efactura/ke/angajamente -- the angajamente to pick from when the supplier has no DDF, narrowed by <paramref name="k_query"/>.</summary>
+    Function GetKeAngajamenteAsync(k_query As String, ct As CancellationToken) As Task(Of List(Of EFacturaKeAngajamentAlegere))
+
+    ''' <summary>GET /api/efactura/ke/angajament/{cod}/receptii -- the indicators and the receptions of an angajament, with what invoices already cover.</summary>
+    Function GetKeReceptiiAsync(k_cod As String, ct As CancellationToken) As Task(Of EFacturaKeReceptiiAngajament)
+
+    ''' <summary>POST .../ke/verifica -- checks an allocation (indicator exists, amounts fit) and gives the rows the robot needs. «Contabil» only.</summary>
+    Function VerifyKeAsync(k_idPrimita As Integer, k_cerere As EFacturaKeCerere, ct As CancellationToken) As Task(Of EFacturaKeVerificare)
+
+    ''' <summary>POST .../ke/legaturi -- writes the links of one reception (for a new or modified one: AFTER the robot saved it). «Contabil» only.</summary>
+    Function AddKeLegaturiAsync(k_idPrimita As Integer, k_cerere As EFacturaKeCerere, ct As CancellationToken) As Task(Of EFacturaKeStare)
+
+    ''' <summary>DELETE .../ke/legaturi/{id} -- removes one link row. «Contabil» only.</summary>
+    Function RemoveKeLegaturaAsync(k_idPrimita As Integer, k_idLegatura As Integer, ct As CancellationToken) As Task(Of EFacturaKeStare)
+
 End Interface

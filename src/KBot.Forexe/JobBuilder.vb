@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Collections.Generic
 Imports KBot.Common
+Imports KBot.Domain
 
 Namespace KBot.Forexe
 
@@ -318,6 +319,75 @@ Namespace KBot.Forexe
             }
             job.Parameters(WorkflowCatalog.VarCodAngajament) = cod
             job.Parameters(WorkflowCatalog.VarMotivDefinitivare) = If(motiv, String.Empty)
+            Return job
+        End Function
+
+        ' ── Slices KE05 / KE07: the reception workflows ──────────────────────────────────
+
+        ''' <summary>The indicator rows the reception workflows fill: «ClsfSal», «Clsf», «CodIndicator» and the value in the site's spelling.</summary>
+        Private Shared Function RandurileReceptiei(cerere As KeReceptieDeSalvat) As String
+            Dim randuri As New List(Of Dictionary(Of String, String))()
+            For Each r As KeReceptieRand In cerere.Randuri
+                randuri.Add(New Dictionary(Of String, String)(StringComparer.Ordinal) From {
+                    {"ClsfSal", r.ClsfSal},
+                    {"Clsf", r.Clsf},
+                    {"CodIndicator", r.CodIndicator},
+                    {"Valoare", DdfSendInputs.FormatSuma(CDbl(r.Valoare))}})
+            Next
+            Return DdfSendInputs.ToJson(randuri)
+        End Function
+
+        ''' <summary>
+        ''' «Receptie Noua»: ADDS one reception to an angajament (type, date, description with the K-BOT marker, the value of each indicator).
+        ''' Every variable is always sent: an unsent one would reach the page as literal placeholder text.
+        ''' </summary>
+        Public Shared Function BuildReceptieNoua(cerere As KeReceptieDeSalvat) As JobRequest
+            ArgumentNullException.ThrowIfNull(cerere)
+            If String.IsNullOrWhiteSpace(cerere.CodAngajament) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cerere))
+            End If
+            If cerere.Randuri.Count = 0 Then
+                Throw New ArgumentException("The reception has no row to write.", NameOf(cerere))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "ReceptieNoua",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ReceptieNouaFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cerere.CodAngajament
+            job.Parameters(WorkflowCatalog.VarTipReceptie) = cerere.TipReceptie
+            job.Parameters(WorkflowCatalog.VarDataReceptie) =
+                cerere.Data.ToString(WorkflowCatalog.DataReceptieFormat, Globalization.CultureInfo.InvariantCulture)
+            job.Parameters(WorkflowCatalog.VarDescriereReceptie) = If(cerere.Descriere, String.Empty)
+            job.Parameters(WorkflowCatalog.VarDateReceptie) = RandurileReceptiei(cerere)
+            Return job
+        End Function
+
+        ''' <summary>
+        ''' «Receptie Modificata»: finds ONE reception of an angajament by its date and total (and the marker K-BOT wrote, when it knows one),
+        ''' raises the value of the indicator rows and saves. All variables are always sent (the pattern may be empty: it then matches anything).
+        ''' </summary>
+        Public Shared Function BuildReceptieModificata(cerere As KeReceptieDeSalvat) As JobRequest
+            ArgumentNullException.ThrowIfNull(cerere)
+            If String.IsNullOrWhiteSpace(cerere.CodAngajament) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(cerere))
+            End If
+            If Not cerere.DataTinta.HasValue OrElse Not cerere.SumaTinta.HasValue Then
+                Throw New ArgumentException("The reception to change has no date or total.", NameOf(cerere))
+            End If
+            If cerere.Randuri.Count = 0 Then
+                Throw New ArgumentException("The reception has no row to write.", NameOf(cerere))
+            End If
+            Dim job As New JobRequest With {
+                .WorkflowName = "ReceptieModificata",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.ReceptieModificataFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = cerere.CodAngajament
+            job.Parameters(WorkflowCatalog.VarDataTinta) =
+                cerere.DataTinta.Value.ToString(WorkflowCatalog.DataReceptieFormat, Globalization.CultureInfo.InvariantCulture)
+            job.Parameters(WorkflowCatalog.VarSumaTinta) = DdfSendInputs.FormatSuma(CDbl(cerere.SumaTinta.Value))
+            job.Parameters(WorkflowCatalog.VarMarcajRegex) = If(cerere.MarcajRegex, String.Empty)
+            job.Parameters(WorkflowCatalog.VarMarcajNou) = If(cerere.Marcaj, String.Empty)
+            job.Parameters(WorkflowCatalog.VarDateReceptie) = RandurileReceptiei(cerere)
             Return job
         End Function
 

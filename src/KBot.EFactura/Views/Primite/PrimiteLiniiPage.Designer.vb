@@ -25,6 +25,8 @@ Partial Class PrimiteLiniiPage
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         gridLinii = New KBotDataView()
         tlyPagina = New KBotTableLayoutPanel()
@@ -109,6 +111,27 @@ Partial Class PrimiteLiniiPage
         KBotDataColumn7.TextAlign = System.Drawing.ContentAlignment.MiddleRight
         KBotDataColumn7.ValueType = KBotValueType.Number
         KBotDataColumn7.Width = 100
+        KBotDataColumn8.Aggregate = KBotAggregate.Sum
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.DecimalPlaces = 2
+        KBotDataColumn8.Format = KBotFormat.Standard
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Valoare cu TVA"
+        KBotDataColumn8.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn8.Key = "cuTva"
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.ReadOnly = True
+        KBotDataColumn8.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        KBotDataColumn8.ValueType = KBotValueType.Number
+        KBotDataColumn8.Width = 110
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "Clasificație"
+        KBotDataColumn9.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn9.Key = "clsf"
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.ReadOnly = True
+        KBotDataColumn9.Width = 150
         gridLinii.Columns.Add(KBotDataColumn1)
         gridLinii.Columns.Add(KBotDataColumn2)
         gridLinii.Columns.Add(KBotDataColumn3)
@@ -116,6 +139,8 @@ Partial Class PrimiteLiniiPage
         gridLinii.Columns.Add(KBotDataColumn5)
         gridLinii.Columns.Add(KBotDataColumn6)
         gridLinii.Columns.Add(KBotDataColumn7)
+        gridLinii.Columns.Add(KBotDataColumn8)
+        gridLinii.Columns.Add(KBotDataColumn9)
         gridLinii.Dock = System.Windows.Forms.DockStyle.Fill
         gridLinii.FillColumnKey = "denumire"
         gridLinii.Font = New System.Drawing.Font("Calibri", 10.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))

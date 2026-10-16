@@ -32,6 +32,7 @@ Partial Class SetariAplicatieView
         chkAvertismentAdobe = New CheckBox()
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
+        chkKeZi = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAdobeClasic = New CheckBox()
@@ -134,6 +135,20 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkReceptii, "Recepțiile de descărcat")
         tips.SetToolTipText(chkReceptii, "Bifat: apăsarea obișnuită aduce tot; debifat: nimic până nu alegi." & vbLf & "Cerut configurabil de operator la 10.09.2026.")
         chkReceptii.UseVisualStyleBackColor = True
+        '
+        ' chkKeZi
+        '
+        chkKeZi.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkKeZi, 2)
+        chkKeZi.Location = New Point(4, 155)
+        chkKeZi.Margin = New Padding(4, 0, 4, 10)
+        chkKeZi.Name = "chkKeZi"
+        chkKeZi.Size = New Size(462, 26)
+        chkKeZi.TabIndex = 13
+        chkKeZi.Text = "La o factură primită, nu permite a doua recepție nouă în aceeași zi"
+        tips.SetToolTipHeader(chkKeZi, "O recepție pe zi")
+        tips.SetToolTipText(chkKeZi, "Bifat: dacă angajamentul are deja o recepție la data aleasă, «Recepție nouă» nu merge; se modifică recepția existentă." & vbLf & "Debifat: se poate face și a doua recepție în aceeași zi.")
+        chkKeZi.UseVisualStyleBackColor = True
         '
         ' chkStartMaximized
         '
@@ -561,14 +576,16 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(cboVerbose, 1, 7)
         tlyComutatoare.Controls.Add(chkShowBrowser, 0, 8)
         tlyComutatoare.Controls.Add(chkReceptii, 0, 9)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 10)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 11)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 12)
+        tlyComutatoare.Controls.Add(chkKeZi, 0, 10)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 11)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 12)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 13)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 14
+        tlyComutatoare.RowCount = 15
+        tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -893,6 +910,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkAvertismentAdobe As CheckBox
     Friend WithEvents chkAvansate As CheckBox
     Friend WithEvents chkCapturi As CheckBox
+    Friend WithEvents chkKeZi As CheckBox
     Friend WithEvents lblGrupFereastra As Label
     Friend WithEvents lblGrupForexe As Label
     Friend WithEvents lblGrupAvansat As Label

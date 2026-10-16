@@ -73,6 +73,12 @@ Public NotInheritable Class AppSettings
     ''' <summary>The reception picker opens with every reception already ticked.</summary>
     Public Property ReceptiiCheckedOnOpen As Boolean = True
 
+    ''' <summary>
+    ''' Slice KE06: K-BOT refuses a NEW reception on an angajament that already has one on the same date (the accountant changes that one
+    ''' instead). Off by default: a reception K-BOT writes carries its own numbers (the marker), so the day does not identify it.
+    ''' </summary>
+    Public Property KeBlockSameDayReception As Boolean = False
+
     ' ── Multi-thread downloads (slice 0100) ──────────────────────────────
 
     ''' <summary>Fewest FOREXE tabs a multi-thread download can use.</summary>
@@ -647,6 +653,7 @@ Public NotInheritable Class AppSettings
             .ShowBrowserButton = ShowBrowserButton,
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
+            .KeBlockSameDayReception = KeBlockSameDayReception,
             .MultiThreadDownloads = MultiThreadDownloads,
             .DownloadThreads = DownloadThreads,
             .AutoUpdateOnConnect = AutoUpdateOnConnect,
@@ -711,6 +718,7 @@ Public NotInheritable Class AppSettings
         If dto.ShowBrowserButton.HasValue Then s.ShowBrowserButton = dto.ShowBrowserButton.Value
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
+        If dto.KeBlockSameDayReception.HasValue Then s.KeBlockSameDayReception = dto.KeBlockSameDayReception.Value
         If dto.MultiThreadDownloads.HasValue Then s.MultiThreadDownloads = dto.MultiThreadDownloads.Value
         ' A count / a number of days out of range in the file (hand-edited) keeps the default.
         If dto.DownloadThreads.HasValue AndAlso
@@ -807,6 +815,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowBrowserButton As Boolean?
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
+    Public Property KeBlockSameDayReception As Boolean?
     Public Property MultiThreadDownloads As Boolean?
     Public Property DownloadThreads As Integer?
     Public Property AutoUpdateOnConnect As Boolean?

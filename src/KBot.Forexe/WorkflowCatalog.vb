@@ -188,6 +188,25 @@ Namespace KBot.Forexe
         ''' <summary>The indicator table «Creare Angajament» scrapes at its end.</summary>
         Public Const TabelIndicatori As String = "TabelIndicatori"
 
+        ' Slices KE05 / KE07: the reception workflows (plan docs/KE_PLAN.md), next to the sending ones.
+        Public Const ReceptieNouaFile As String = "Creare\adlop - Receptie Noua.wfl"
+        Public Const ReceptieModificataFile As String = "Creare\adlop - Receptie Modificata.wfl"
+
+        ' Their variables (checked in the files). DATE_RECEPTIE (VarDateReceptie) holds the indicator rows as a JSON array.
+        Public Const VarTipReceptie As String = "TIP_RECEPTIE"
+        Public Const VarDataReceptie As String = "DATA_RECEPTIE"
+        Public Const VarDescriereReceptie As String = "DESCRIERE_RECEPTIE"
+        Public Const VarDataTinta As String = "DATA_TINTA"
+        Public Const VarSumaTinta As String = "SUMA_TINTA"
+        Public Const VarMarcajRegex As String = "MARCAJ_REGEX"
+        Public Const VarMarcajNou As String = "MARCAJ_NOU"
+
+        ''' <summary>What the reception workflows read at their end: the text of the site's success element, empty when it did not show up.</summary>
+        Public Const VarMesajSalvare As String = "MesajSalvare"
+
+        ''' <summary>«1» when «Receptie Modificata» found the row, changed it and clicked save; «0» when no row matched (nothing was saved).</summary>
+        Public Const VarGasita As String = "GASITA"
+
         ''' <summary>Calea absolută a unui .wfl din folderul Workflows de lângă executabil.</summary>
         Public Shared Function ResolvePath(fileName As String) As String
             Return Path.Combine(KBotPaths.FolderWorkflows, fileName)

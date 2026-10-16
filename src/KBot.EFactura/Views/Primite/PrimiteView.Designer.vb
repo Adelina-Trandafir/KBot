@@ -22,6 +22,7 @@ Partial Class PrimiteView
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
@@ -33,6 +34,7 @@ Partial Class PrimiteView
         pgLinii = New PrimiteLiniiPage()
         pgPdf = New PrimitePdfPage()
         pgMesaje = New PrimiteMesajePage()
+        pgReceptii = New PrimiteReceptiiPage()
         pgXml = New XmlViz()
         navDetaliu = New KBotNavList()
         ntfMesaj = New KBotNotice()
@@ -164,6 +166,7 @@ Partial Class PrimiteView
         pnlPages.Controls.Add(pgLinii)
         pnlPages.Controls.Add(pgPdf)
         pnlPages.Controls.Add(pgMesaje)
+        pnlPages.Controls.Add(pgReceptii)
         pnlPages.Controls.Add(pgXml)
         pnlPages.Dock = System.Windows.Forms.DockStyle.Fill
         pnlPages.Location = New System.Drawing.Point(0, 30)
@@ -200,6 +203,16 @@ Partial Class PrimiteView
         pgMesaje.Size = New System.Drawing.Size(680, 476)
         pgMesaje.TabIndex = 3
         pgMesaje.Visible = False
+        '
+        ' pgReceptii
+        '
+        pgReceptii.Dock = System.Windows.Forms.DockStyle.Fill
+        pgReceptii.Location = New System.Drawing.Point(0, 0)
+        pgReceptii.Margin = New System.Windows.Forms.Padding(0)
+        pgReceptii.Name = "pgReceptii"
+        pgReceptii.Size = New System.Drawing.Size(680, 476)
+        pgReceptii.TabIndex = 4
+        pgReceptii.Visible = False
         '
         ' pgXml
         '
@@ -245,6 +258,12 @@ Partial Class PrimiteView
         navDetaliu.Items.Add(KBotNavItem1)
         navDetaliu.Items.Add(KBotNavItem2)
         navDetaliu.Items.Add(KBotNavItem4)
+        KBotNavItem7.AutoSize = True
+        KBotNavItem7.Image = My.Resources.Resources.invoice
+        KBotNavItem7.Key = "receptii"
+        KBotNavItem7.Text = "Recepții"
+        KBotNavItem7.Visible = False
+        navDetaliu.Items.Add(KBotNavItem7)
         KBotNavItem6.Align = KBotNavAlign.Far
         KBotNavItem6.AutoSize = True
         KBotNavItem6.Image = My.Resources.Resources.table
@@ -298,6 +317,7 @@ Partial Class PrimiteView
     Friend WithEvents pgLinii As PrimiteLiniiPage
     Friend WithEvents pgPdf As PrimitePdfPage
     Friend WithEvents pgMesaje As PrimiteMesajePage
+    Friend WithEvents pgReceptii As PrimiteReceptiiPage
     Friend WithEvents pgXml As XmlViz
     Friend WithEvents navDetaliu As KBotNavList
     Friend WithEvents ntfMesaj As KBotNotice

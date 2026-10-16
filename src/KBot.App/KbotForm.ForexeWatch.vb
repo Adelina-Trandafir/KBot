@@ -44,11 +44,13 @@ Partial Public Class KbotForm
     ''' <summary>Subscribes to the coordinator; called once from Load, after Bind.</summary>
     Private Sub LeagaUrmarirea()
         AddHandler _controller.OperatiuneCapturata, AddressOf Controller_OperatiuneCapturata
+        LeagaRobotulKe()   ' slices KE05 / KE07 - KbotForm.KeRobot.vb
     End Sub
 
     ''' <summary>The coordinator is a singleton: a subscription left behind would keep the shell alive.</summary>
     Private Sub DezleagaUrmarirea()
         RemoveHandler _controller.OperatiuneCapturata, AddressOf Controller_OperatiuneCapturata
+        DezleagaRobotulKe()   ' slices KE05 / KE07 - KbotForm.KeRobot.vb
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)

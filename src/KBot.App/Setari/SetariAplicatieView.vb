@@ -222,6 +222,7 @@ Public Class SetariAplicatieView
             chkLogViewer.Checked = s.LogViewerEnabled
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
+            chkKeZi.Checked = s.KeBlockSameDayReception
             chkStartMaximized.Checked = s.StartMaximized
             chkTurInitial.Checked = s.ShowInitialTour
             chkTutorialInitial.Checked = s.ShowInitialTutorial
@@ -297,6 +298,13 @@ Public Class SetariAplicatieView
     Private Sub ChkReceptii_CheckedChanged(sender As Object, e As EventArgs) Handles chkReceptii.CheckedChanged
         SalveazaComutator(Sub(s) s.ReceptiiCheckedOnOpen = chkReceptii.Checked,
                           If(chkReceptii.Checked, "Selectorul de recepții pornește cu tot bifat.", "Selectorul de recepții pornește gol."))
+    End Sub
+
+    ' Slice KE06: a new reception for an invoice is refused when the angajament already has one on that date.
+    Private Sub ChkKeZi_CheckedChanged(sender As Object, e As EventArgs) Handles chkKeZi.CheckedChanged
+        SalveazaComutator(Sub(s) s.KeBlockSameDayReception = chkKeZi.Checked,
+                          If(chkKeZi.Checked, "«Recepție nouă» nu mai merge într-o zi în care angajamentul are deja o recepție.",
+                             "«Recepție nouă» poate face și a doua recepție în aceeași zi."))
     End Sub
 
     ' Slice 0097-02: the main window opens maximized. Read once, when the window opens.

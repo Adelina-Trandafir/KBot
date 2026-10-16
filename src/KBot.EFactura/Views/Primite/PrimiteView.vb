@@ -401,6 +401,7 @@ Public Class PrimiteView
         gridMesaje().ClearRows()
         navDetaliu.SetItemVisible(ViewMesaje, False)
         navDetaliu.SetItemVisible(ViewXml, False)
+        ClearKe()   ' slice KE03: the links with receptions
         _xmlShownId = 0
         pgXml.Clear()
         pgPdf.SetAttachments(Nothing)
@@ -451,6 +452,8 @@ Public Class PrimiteView
             navDetaliu.SetItemVisible(ViewMesaje, True)
             navDetaliu.SetItemVisible(ViewXml, True)
             If navDetaliu.SelectedKey = ViewXml Then RefreshXml()
+            ' Slice KE03: the links with receptions (and the value with VAT of every line) come from the server in their own call.
+            Await LoadKeAsync(k_id).ConfigureAwait(True)
             ' The attached files and the notes of the XML have no view of their own any more (operator, 15.10.2026): the files
             ' are in the popup of «Factura PDF», the notes are above the lines of «Continut».
             If navDetaliu.SelectedKey = ViewPdf Then RefreshPdf()
@@ -545,6 +548,7 @@ Public Class PrimiteView
         pgLinii.Visible = String.Equals(k_key, ViewLinii, StringComparison.Ordinal)
         pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
         pgMesaje.Visible = String.Equals(k_key, ViewMesaje, StringComparison.Ordinal)
+        pgReceptii.Visible = String.Equals(k_key, ViewReceptii, StringComparison.Ordinal)
         pgXml.Visible = String.Equals(k_key, ViewXml, StringComparison.Ordinal)
         If pgXml.Visible Then RefreshXml()
         If pgPdf.Visible Then RefreshPdf()

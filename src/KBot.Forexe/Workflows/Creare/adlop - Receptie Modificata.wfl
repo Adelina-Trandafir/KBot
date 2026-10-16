@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- V1.0 - 16.10.2026: K-BOT slice KE07 (plan docs/KE_PLAN.md).
+     CHANGES ONE EXISTING RECEPTION of an angajament, for a received e-invoice: finds the right row of the list of receptions, opens it with
+     its eye (the form is the same as «Adauga», operator, 16.10.2026), checks it is the right one, writes the new values and saves.
+
+     HOW THE ROW IS FOUND. The list gives only Tip, Data, Suma (and the eye): the description is inside the form. So the rows that have the date
+     {{DATA_TINTA}} AND the total {{SUMA_TINTA}} are the candidates; each one is opened, its description is read and, when K-BOT knows a marker
+     it wrote (pattern {{MARCAJ_REGEX}}), the description must match it; with no marker known (an old reception) the first candidate is taken.
+     A candidate that does not match is left with the browser's back button and the next one is tried. If none matches NOTHING is saved
+     (GASITA stays 0) and K-BOT tells the operator "reception not found for sure".
+
+     Variables from K-BOT (all always sent):
+       {{COD_ANGAJAMENT}}, {{DATA_TINTA}} (zz/ll/aaaa), {{SUMA_TINTA}} (the total as the list writes it: 272.401,00),
+       {{MARCAJ_REGEX}} (may be EMPTY; has no colon: IfVar splits on colons), {{MARCAJ_NOU}} (the marker «(IDRH: n; IDR: m)» K-BOT reserved,
+       appended to the description that is already there)
+       DATE_RECEPTIE - JSON array, one object per indicator row to change: { "ClsfSal", "Clsf", "CodIndicator", "Valoare" } where Valoare is the
+       WHOLE new value of the field (the old value plus what the invoice adds), in the site's spelling (1.380,00).
+
+     What it leaves for K-BOT: GASITA ("1" = the row was found, changed and the save was clicked), MesajSalvare (the success element's text,
+     EMPTY when it did not show up in time; K-BOT then re-reads the receptions to see whether it was saved anyway).
+     The save click is marked commits="true": in a dry run the robot stops right before it. -->
+<Workflow name="Receptie modificata pentru {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="forexe.mfinante.gov.ro">
+
+  <Log message="Modific o recepție pe {{COD_ANGAJAMENT}}..." level="success" />
+
+  <!-- OBLIGATORIU LA INCEPUT -->
+  <IfExists selector="#select2-drop-mask" timeout="1">
+    <Click selector="#select2-drop-mask" force="true" LogValue="Resetare interfata" />
+  </IfExists>
+  <Click selector="#statlogo" waitNavigation="true" timeout="10" />
+
+  <!-- CAUTARE ANGAJAMENT + DESCHIDERE MODIFICARE -->
+  <Click selector="a:has-text('Listă angajamente')" waitNavigation="false" timeout="5" LogValue="Click Listă angajamente" />
+  <Fill selector="input[name='cod']" value="{{COD_ANGAJAMENT}}" clear="true" timeout="5" LogValue="Caut angajamentul {{COD_ANGAJAMENT}}" />
+  <Click selector="button:has-text('Caută')" waitNavigation="false" timeout="5" LogValue="Click Caută" />
+
+  <IfExists selector=".alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')" timeout="1">
+    <Log message="EROARE: Angajamentul {{COD_ANGAJAMENT}} nu există în listă!" level="error" />
+    <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit. Opresc execuţia." />
+  </IfExists>
+
+  <WaitFor selector="a[href*='exportToXLS']" timeout="5" LogValue="Aştept lista de rezultate" />
+  <Click selector="a.haction i.glyphicon-list:visible" timeout="10" LogValue="Click iconiţa detalii angajament" />
+  <WaitFor selector=".divaction" state="visible" timeout="10" />
+  <Click selector=".divaction a:has-text('Modificare')" waitNavigation="true" timeout="5" LogValue="Click Modificare" />
+  <WaitFor selector="li.tab0" timeout="5" LogValue="Aştept formularul de modificare" />
+
+  <!-- DATE DIN K-BOT -->
+  <SetInternalVar name="DATE_RECEPTIE" value="{{!DATE_RECEPTIE|Array randuri de modificat|type=JSON}}" />
+  <SetInternalVar name="GASITA" value="0" />
+  <SetInternalVar name="MesajSalvare" value="" />
+
+  <!-- LISTA RECEPTIILOR -->
+  <Click selector="ul.nav.nav-tabs > li.tab1" waitNavigation="false" timeout="5" LogValue="Apas pe tab Receptii" />
+  <WaitFor selector="li.tab1.active" state="visible" timeout="10" />
+  <WaitFor selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15" />
+
+  <ScrapeTable selector="table.table-striped.table-bordered.table-condensed" saveTo="ListaReceptii" timeout="15" />
+
+  <ForEachVar source="ListaReceptii" itemPrefix="L" indexVariable="idx">
+
+    <IfVar value="[[GASITA]]" compare="eq:0">
+      <IfVar value="[[L.Data]]" compare="eq:{{DATA_TINTA}}">
+        <IfVar value="[[L.Suma]]" compare="eq:{{SUMA_TINTA}}">
+
+          <Log message="Candidat [[idx]]: [[L.Tip]] / [[L.Data]] / [[L.Suma]] — deschid recepția..." level="info" />
+          <!-- nth-child is 1-based, exactly like idx -->
+          <Click selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+                 waitNavigation="false" timeout="15" />
+          <WaitFor selector="h3.heading:has-text('Modifică recepție')" timeout="15" />
+          <WaitFor selector="select[name='receptie']" timeout="15" />
+          <Read selector="textarea[name='descriere']" saveTo="DescriereForm" />
+
+          <!-- is it the right one? (the marker K-BOT wrote, when K-BOT knows one) -->
+          <IfVar value="[[DescriereForm]]" compare="regex:{{MARCAJ_REGEX}}">
+
+            <SetInternalVar name="GASITA" value="1" />
+            <Log message="✓ Recepția [[idx]] este cea căutată." level="success" />
+
+            <!-- the K-BOT marker goes at the end of what is already written -->
+            <Fill selector="form.form-horizontal textarea[name='descriere']" value="[[DescriereForm]] {{MARCAJ_NOU}}" clear="true" timeout="5"
+                  LogValue="Adaug marcajul K-BOT în descriere" />
+
+            <ForEachVar source="DATE_RECEPTIE" itemPrefix="V" indexVariable="jdx">
+              <Log message="Rândul [[jdx]]: [[V.Clsf]] = [[V.Valoare]]" level="info" />
+              <FindInTable
+                selector="table.table-striped"
+                fieldName="Sector - Sursa - Indicator"
+                value="[[V.ClsfSal]]"
+                fieldTransform="regex:/^[0-9]{2}[A-Z]-\s*/g:|stripNonAlphaNum"
+                timeout="30">
+                <Fill selector="input[name*='valoare']" value="[[V.Valoare]]" clear="true" />
+              </FindInTable>
+            </ForEachVar>
+
+            <Screenshot saveTo="Poza_Receptie" LogValue="Captură ecran — recepția modificată" />
+
+            <Click selector="button:has-text('Salvează')" commits="true" waitNavigation="true" timeout="5" isCheckpoint="true"
+                   LogValue="Apas Salvează" />
+            <IfExists selector=".alert.alert-success" timeout="8">
+              <Read selector=".alert.alert-success" saveTo="MesajSalvare" />
+            </IfExists>
+
+            <Else>
+              <Log message="Recepția [[idx]] nu poartă marcajul căutat; trec la următoarea." level="warning" />
+              <!-- Browser back: the page's own "Inapoi" asks for a confirmation in a modal -->
+              <GoBack />
+              <WaitFor selector="li.tab1.active" state="visible" timeout="15" />
+            </Else>
+          </IfVar>
+
+        </IfVar>
+      </IfVar>
+    </IfVar>
+
+  </ForEachVar>
+
+  <IfVar value="[[GASITA]]" compare="eq:0">
+    <Log message="Nicio recepție din listă nu se potrivește (data {{DATA_TINTA}}, suma {{SUMA_TINTA}}). Nu s-a salvat nimic." level="error" />
+  </IfVar>
+
+</Workflow>

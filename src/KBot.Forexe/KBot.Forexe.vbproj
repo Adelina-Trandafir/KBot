@@ -134,6 +134,13 @@
     <None Update="Workflows\Creare\adlop - Derulare Angajament.wfl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Slices KE05 / KE07: the reception workflows (a new reception, a changed one), in the same folder. -->
+    <None Update="Workflows\Creare\adlop - Receptie Noua.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Workflows\Creare\adlop - Receptie Modificata.wfl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

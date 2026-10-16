@@ -239,6 +239,10 @@ function Test-SliceId([string]$id, [string]$where) {
     elseif ($id -match '^00EF(-\d{2})?$') {
         $ok = ($statusIndex -match '(?m)^\|\s*00EF[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
     }
+    # Slice KE (received invoice <-> reception <-> payment links): the id is KE or KEnn, with a worklog or a row in the index.
+    elseif ($id -match '^KE(\d{2})?$') {
+        $ok = ($statusIndex -match '(?m)^\|\s*KE[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
     elseif ($id -match '^(\d{4})(-\d{2})?$') {
         $ok = ($statusIndex -match "(?m)^\|\s*$($Matches[1])[\s|/-]") -or
               [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
