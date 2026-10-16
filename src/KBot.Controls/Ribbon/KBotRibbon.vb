@@ -44,6 +44,7 @@ Public NotInheritable Class KBotRibbon
 
     Private ReadOnly _tabs As New KBotRibbonTabCollection()
     Private ReadOnly _pinned As New KBotRibbonButtonCollection()
+    Private ReadOnly _rightGroup As New KBotRibbonGroup()
     Private _selectedTab As Integer
     Private _collapsed As Boolean
     Private _rightText As String = String.Empty
@@ -72,6 +73,7 @@ Public NotInheritable Class KBotRibbon
         SetStyle(ControlStyles.Selectable, False)
         _tabs.Owner = Me
         _pinned.Owner = Me
+        _rightGroup.SetOwner(Me)
     End Sub
 
     ' ---- Model ------------------------------------------------------------------------------
@@ -91,6 +93,16 @@ Public NotInheritable Class KBotRibbon
     Public ReadOnly Property PinnedButtons As KBotRibbonButtonCollection
         Get
             Return _pinned
+        End Get
+    End Property
+
+    <Category("K-BOT")>
+    <Description("The group at the right end of the panel, outside the tabs and before the large pinned buttons (slice 0114-03): the same on every tab, shown only while it has a visible button or field, and not shown while the ribbon is folded. A host shows and hides its buttons / fields (and sets its caption) for the view on screen. Its right edge line is the separator before the pinned buttons.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    <TypeConverter(GetType(ExpandableObjectConverter))>
+    Public ReadOnly Property RightGroup As KBotRibbonGroup
+        Get
+            Return _rightGroup
         End Get
     End Property
 
@@ -145,11 +157,9 @@ Public NotInheritable Class KBotRibbon
         End Get
         Set(k_value As KBotToolTip)
             _tooltip = k_value
-            For Each k_tab As KBotRibbonTab In _tabs
-                For Each k_group As KBotRibbonGroup In k_tab.Groups
-                    For Each k_field As KBotRibbonField In k_group.Fields
-                        ApplyFieldTip(k_field)
-                    Next
+            For Each k_group As KBotRibbonGroup In AllGroups()
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    ApplyFieldTip(k_field)
                 Next
             Next
         End Set
@@ -180,11 +190,9 @@ Public NotInheritable Class KBotRibbon
 
     ''' <summary>The button with this key anywhere in the ribbon; Nothing when there is none.</summary>
     Public Function FindButton(k_key As String) As KBotRibbonButton
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_button As KBotRibbonButton In k_group.Buttons
-                    If String.Equals(k_button.Key, k_key, StringComparison.Ordinal) Then Return k_button
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_button As KBotRibbonButton In k_group.Buttons
+                If String.Equals(k_button.Key, k_key, StringComparison.Ordinal) Then Return k_button
             Next
         Next
         For Each k_button As KBotRibbonButton In _pinned
@@ -196,16 +204,14 @@ Public NotInheritable Class KBotRibbon
     ''' <summary>Every key must be non-empty and unique; throws otherwise (a clash would route a click to the wrong command).</summary>
     Public Sub ValidateKeys()
         Dim k_seen As New HashSet(Of String)(StringComparer.Ordinal)
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_button As KBotRibbonButton In k_group.Buttons
-                    If String.IsNullOrWhiteSpace(k_button.Key) Then
-                        Throw New InvalidOperationException("A ribbon button has no key (" & k_button.Text & ").")
-                    End If
-                    If Not k_seen.Add(k_button.Key) Then
-                        Throw New InvalidOperationException("Duplicate ribbon key '" & k_button.Key & "'.")
-                    End If
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_button As KBotRibbonButton In k_group.Buttons
+                If String.IsNullOrWhiteSpace(k_button.Key) Then
+                    Throw New InvalidOperationException("A ribbon button has no key (" & k_button.Text & ").")
+                End If
+                If Not k_seen.Add(k_button.Key) Then
+                    Throw New InvalidOperationException("Duplicate ribbon key '" & k_button.Key & "'.")
+                End If
             Next
         Next
         For Each k_button As KBotRibbonButton In _pinned
@@ -213,27 +219,33 @@ Public NotInheritable Class KBotRibbon
                 Throw New InvalidOperationException("A pinned ribbon button has no key or a duplicate one (" & k_button.Text & ").")
             End If
         Next
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_field As KBotRibbonField In k_group.Fields
-                    If String.IsNullOrWhiteSpace(k_field.Key) OrElse Not k_seen.Add(k_field.Key) Then
-                        Throw New InvalidOperationException("A ribbon field has no key or a duplicate one (" & k_field.ToString() & ").")
-                    End If
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                If String.IsNullOrWhiteSpace(k_field.Key) OrElse Not k_seen.Add(k_field.Key) Then
+                    Throw New InvalidOperationException("A ribbon field has no key or a duplicate one (" & k_field.ToString() & ").")
+                End If
             Next
         Next
     End Sub
 
     ''' <summary>The field with this key anywhere in the ribbon; Nothing when there is none.</summary>
     Public Function FindField(k_key As String) As KBotRibbonField
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_field As KBotRibbonField In k_group.Fields
-                    If String.Equals(k_field.Key, k_key, StringComparison.Ordinal) Then Return k_field
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                If String.Equals(k_field.Key, k_key, StringComparison.Ordinal) Then Return k_field
             Next
         Next
         Return Nothing
+    End Function
+
+    ' Every group of the ribbon: those of every tab, then the right group (slice 0114-03).
+    Private Iterator Function AllGroups() As IEnumerable(Of KBotRibbonGroup)
+        For Each k_tab As KBotRibbonTab In _tabs
+            For Each k_group As KBotRibbonGroup In k_tab.Groups
+                Yield k_group
+            Next
+        Next
+        Yield _rightGroup
     End Function
 
     ' ---- Fields (slice 0114-01) ---------------------------------------------------------------
@@ -379,12 +391,10 @@ Public NotInheritable Class KBotRibbon
         If k_scheme Is Nothing Then Return
         _scheme = k_scheme
         BackColor = k_scheme.Palette.SurfaceColor
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_field As KBotRibbonField In k_group.Fields
-                    Dim k_themed As IThemedControl = TryCast(k_field.Control, IThemedControl)
-                    If k_themed IsNot Nothing Then k_themed.ApplyTheme(k_scheme)
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                Dim k_themed As IThemedControl = TryCast(k_field.Control, IThemedControl)
+                If k_themed IsNot Nothing Then k_themed.ApplyTheme(k_scheme)
             Next
         Next
         InvalidateLayout()
@@ -531,19 +541,17 @@ Public NotInheritable Class KBotRibbon
 
     ' The field controls follow the slots the layout gave them: placed and shown, or hidden (hidden tab, folded ribbon, hidden field).
     Private Sub ApplyFieldControls()
-        For Each k_tab As KBotRibbonTab In _tabs
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                For Each k_field As KBotRibbonField In k_group.Fields
-                    Dim k_control As Control = k_field.Control
-                    If k_control Is Nothing Then Continue For
-                    k_control.Enabled = k_field.Enabled
-                    If k_field.Bounds.IsEmpty Then
-                        k_control.Visible = False
-                    Else
-                        k_control.Bounds = k_field.Bounds
-                        k_control.Visible = True
-                    End If
-                Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                Dim k_control As Control = k_field.Control
+                If k_control Is Nothing Then Continue For
+                k_control.Enabled = k_field.Enabled
+                If k_field.Bounds.IsEmpty Then
+                    k_control.Visible = False
+                Else
+                    k_control.Bounds = k_field.Bounds
+                    k_control.Visible = True
+                End If
             Next
         Next
     End Sub
@@ -560,20 +568,14 @@ Public NotInheritable Class KBotRibbon
         ' Nothing is hit-testable until placed.
         For Each k_tab As KBotRibbonTab In _tabs
             k_tab.Bounds = Rectangle.Empty
-            For Each k_group As KBotRibbonGroup In k_tab.Groups
-                k_group.Bounds = Rectangle.Empty
-                k_group.CaptionBounds = Rectangle.Empty
-                For Each k_button As KBotRibbonButton In k_group.Buttons
-                    k_button.Bounds = Rectangle.Empty
-                Next
-                For Each k_field As KBotRibbonField In k_group.Fields
-                    k_field.Bounds = Rectangle.Empty
-                Next
-            Next
+        Next
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            ClearGroupBounds(k_group)
         Next
 
         For Each k_pinnedButton As KBotRibbonButton In _pinned
             k_pinnedButton.Bounds = Rectangle.Empty
+            k_pinnedButton.SeparatorX = -1
         Next
 
         Dim k_tabH As Integer = Px(TabStripHeight)
@@ -588,6 +590,10 @@ Public NotInheritable Class KBotRibbon
             Dim k_pw As Integer = SmallWidth(k_pinned.Text)
             k_pinned.Bounds = New Rectangle(k_pinX - k_pw, Px(2), k_pw, k_tabH - Px(4))
             k_pinX -= k_pw + Px(2)
+            If k_pinned.SeparatorBefore AndAlso PinnedVisibleBefore(k_p) Then
+                k_pinned.SeparatorX = k_pinX - Px(3)
+                k_pinX -= Px(6)
+            End If
         Next
         Dim k_x As Integer = Px(8)
         For Each k_tab As KBotRibbonTab In _tabs
@@ -604,56 +610,10 @@ Public NotInheritable Class KBotRibbon
         If k_active Is Nothing Then Return
 
         Dim k_panelTop As Integer = k_tabH
-        Dim k_captionH As Integer = Px(GroupCaptionHeight)
         Dim k_gx As Integer = Px(4)
-        Dim k_pad As Integer = Px(6)
         For Each k_group As KBotRibbonGroup In k_active.Groups
             If Not GroupShown(k_group) Then Continue For
-            Dim k_cx As Integer = k_gx + k_pad
-            Dim k_small As New List(Of KBotRibbonButton)()
-            For Each k_button As KBotRibbonButton In k_group.Buttons
-                If Not k_button.Visible Then Continue For
-                If k_button.Large Then
-                    PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
-                    Dim k_w As Integer = LargeWidth(k_button.Text)
-                    k_button.Bounds = New Rectangle(k_cx, k_panelTop + Px(4), k_w, PanelPx() - k_captionH - Px(6))
-                    k_cx += k_w
-                Else
-                    k_small.Add(k_button)
-                    If k_small.Count = 3 Then PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
-                End If
-            Next
-            PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
-            ' The fields: one column after the buttons, a row each (three at most), the widest sets the width.
-            Dim k_fields As New List(Of KBotRibbonField)()
-            For Each k_field As KBotRibbonField In k_group.Fields
-                If k_field.Visible AndAlso k_fields.Count < 3 Then k_fields.Add(k_field)
-            Next
-            If k_fields.Count > 0 Then
-                Dim k_fieldW As Integer = 0
-                For Each k_field As KBotRibbonField In k_fields
-                    k_fieldW = Math.Max(k_fieldW, Px(Math.Max(40, k_field.Width)))
-                Next
-                ' The KBot combo / text box keep the height their font asks for (the combo forces it), so a row is that
-                ' tall, never the 22 px of a small button: the rows stack with a small gap, centred above the group caption.
-                Dim k_rowH As Integer = Px(SmallRowHeight) - Px(2)
-                For Each k_field As KBotRibbonField In k_fields
-                    k_rowH = Math.Max(k_rowH, FieldHeight(k_field))
-                Next
-                Dim k_gap As Integer = Px(3)
-                Dim k_block As Integer = k_fields.Count * k_rowH + (k_fields.Count - 1) * k_gap
-                Dim k_area As Integer = PanelPx() - k_captionH - Px(6)
-                Dim k_fieldTop As Integer = k_panelTop + Px(4) + Math.Max(0, (k_area - k_block) \ 2)
-                k_cx += Px(4)
-                For k_i As Integer = 0 To k_fields.Count - 1
-                    k_fields(k_i).Bounds = New Rectangle(k_cx, k_fieldTop + k_i * (k_rowH + k_gap), k_fieldW, k_rowH)
-                Next
-                k_cx += k_fieldW + Px(4)
-            End If
-            Dim k_groupW As Integer = Math.Max(k_cx - k_gx + k_pad, TextWidth(k_group.Text, CaptionFont()) + Px(16))
-            k_group.Bounds = New Rectangle(k_gx, k_panelTop, k_groupW, PanelPx())
-            k_group.CaptionBounds = New Rectangle(k_gx, k_panelTop + PanelPx() - k_captionH - Px(2), k_groupW, k_captionH)
-            k_gx += k_groupW + 1
+            k_gx += PlaceGroup(k_group, k_gx, k_panelTop) + 1
         Next
 
         ' The Large pinned buttons: right end of the panel, a thin line to their left.
@@ -665,8 +625,103 @@ Public NotInheritable Class KBotRibbon
             k_pinned.CenterV = True
             k_pinned.Bounds = New Rectangle(k_panelRight - k_pw, k_panelTop + Px(4), k_pw, PanelPx() - Px(8))
             k_panelRight -= k_pw + Px(2)
+            If k_pinned.SeparatorBefore AndAlso PinnedVisibleBefore(k_p) Then
+                k_pinned.SeparatorX = k_panelRight - Px(3)
+                k_panelRight -= Px(6)
+            End If
+        Next
+
+        ' The right group (slice 0114-03): the same on every tab, against the large pinned buttons; its right edge line
+        ' is the separator before them.
+        If GroupShown(_rightGroup) Then
+            Dim k_rgW As Integer = PlaceGroup(_rightGroup, 0, k_panelTop)
+            ShiftGroup(_rightGroup, k_panelRight - Px(2) - k_rgW)
+        End If
+    End Sub
+
+    Private Shared Sub ClearGroupBounds(k_group As KBotRibbonGroup)
+        k_group.Bounds = Rectangle.Empty
+        k_group.CaptionBounds = Rectangle.Empty
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            k_button.Bounds = Rectangle.Empty
+        Next
+        For Each k_field As KBotRibbonField In k_group.Fields
+            k_field.Bounds = Rectangle.Empty
         Next
     End Sub
+
+    ' Moves a placed group (its box, caption, buttons and fields) k_dx to the right.
+    Private Shared Sub ShiftGroup(k_group As KBotRibbonGroup, k_dx As Integer)
+        k_group.Bounds = New Rectangle(k_group.Bounds.X + k_dx, k_group.Bounds.Y, k_group.Bounds.Width, k_group.Bounds.Height)
+        k_group.CaptionBounds = New Rectangle(k_group.CaptionBounds.X + k_dx, k_group.CaptionBounds.Y, k_group.CaptionBounds.Width, k_group.CaptionBounds.Height)
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            If k_button.Bounds.IsEmpty Then Continue For
+            k_button.Bounds = New Rectangle(k_button.Bounds.X + k_dx, k_button.Bounds.Y, k_button.Bounds.Width, k_button.Bounds.Height)
+        Next
+        For Each k_field As KBotRibbonField In k_group.Fields
+            If k_field.Bounds.IsEmpty Then Continue For
+            k_field.Bounds = New Rectangle(k_field.Bounds.X + k_dx, k_field.Bounds.Y, k_field.Bounds.Width, k_field.Bounds.Height)
+        Next
+    End Sub
+
+    ' Places one group's buttons and fields with its left edge at k_gx and returns the group's width.
+    Private Function PlaceGroup(k_group As KBotRibbonGroup, k_gx As Integer, k_panelTop As Integer) As Integer
+        Dim k_captionH As Integer = Px(GroupCaptionHeight)
+        Dim k_pad As Integer = Px(6)
+        Dim k_cx As Integer = k_gx + k_pad
+        Dim k_small As New List(Of KBotRibbonButton)()
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            If Not k_button.Visible Then Continue For
+            If k_button.Large Then
+                PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
+                Dim k_w As Integer = LargeWidth(k_button.Text)
+                k_button.Bounds = New Rectangle(k_cx, k_panelTop + Px(4), k_w, PanelPx() - k_captionH - Px(6))
+                k_cx += k_w
+            Else
+                k_small.Add(k_button)
+                If k_small.Count = 3 Then PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
+            End If
+        Next
+        PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
+        ' The fields: one column after the buttons, a row each (three at most), the widest sets the width.
+        Dim k_fields As New List(Of KBotRibbonField)()
+        For Each k_field As KBotRibbonField In k_group.Fields
+            If k_field.Visible AndAlso k_fields.Count < 3 Then k_fields.Add(k_field)
+        Next
+        If k_fields.Count > 0 Then
+            Dim k_fieldW As Integer = 0
+            For Each k_field As KBotRibbonField In k_fields
+                k_fieldW = Math.Max(k_fieldW, Px(Math.Max(40, k_field.Width)))
+            Next
+            ' The KBot combo / text box keep the height their font asks for (the combo forces it), so a row is that
+            ' tall, never the 22 px of a small button: the rows stack with a small gap, centred above the group caption.
+            Dim k_rowH As Integer = Px(SmallRowHeight) - Px(2)
+            For Each k_field As KBotRibbonField In k_fields
+                k_rowH = Math.Max(k_rowH, FieldHeight(k_field))
+            Next
+            Dim k_gap As Integer = Px(3)
+            Dim k_block As Integer = k_fields.Count * k_rowH + (k_fields.Count - 1) * k_gap
+            Dim k_area As Integer = PanelPx() - k_captionH - Px(6)
+            Dim k_fieldTop As Integer = k_panelTop + Px(4) + Math.Max(0, (k_area - k_block) \ 2)
+            k_cx += Px(4)
+            For k_i As Integer = 0 To k_fields.Count - 1
+                k_fields(k_i).Bounds = New Rectangle(k_cx, k_fieldTop + k_i * (k_rowH + k_gap), k_fieldW, k_rowH)
+            Next
+            k_cx += k_fieldW + Px(4)
+        End If
+        Dim k_groupW As Integer = Math.Max(k_cx - k_gx + k_pad, TextWidth(k_group.Text, CaptionFont()) + Px(16))
+        k_group.Bounds = New Rectangle(k_gx, k_panelTop, k_groupW, PanelPx())
+        k_group.CaptionBounds = New Rectangle(k_gx, k_panelTop + PanelPx() - k_captionH - Px(2), k_groupW, k_captionH)
+        Return k_groupW
+    End Function
+
+    ' True when a pinned button earlier in the collection (to the left of the one at k_index) is visible.
+    Private Function PinnedVisibleBefore(k_index As Integer) As Boolean
+        For k_i As Integer = 0 To k_index - 1
+            If _pinned(k_i).Visible Then Return True
+        Next
+        Return False
+    End Function
 
     ' ---- Painting ---------------------------------------------------------------------------
 
@@ -695,6 +750,15 @@ Public NotInheritable Class KBotRibbon
             For Each k_pinnedButton As KBotRibbonButton In _pinned
                 If Not k_pinnedButton.Bounds.IsEmpty Then PaintButton(k_g, k_p, k_pinnedButton)
             Next
+            ' The thin line left of a pinned button that asked for one (slice 0114-02).
+            Using k_sepPen As New Pen(k_p.BorderColor)
+                For Each k_pinnedButton As KBotRibbonButton In _pinned
+                    If k_pinnedButton.SeparatorX < 0 OrElse k_pinnedButton.Bounds.IsEmpty Then Continue For
+                    Dim k_y1 As Integer = If(_collapsed, Px(6), k_tabH + Px(10))
+                    Dim k_y2 As Integer = If(_collapsed, k_tabH - Px(6), Height - Px(12))
+                    k_g.DrawLine(k_sepPen, k_pinnedButton.SeparatorX, k_y1, k_pinnedButton.SeparatorX, k_y2)
+                Next
+            End Using
             If Not _collapsed Then PaintGroups(k_g, k_p)
         Catch ex As Exception
             ' UI boundary (OnPaint): log and swallow.
@@ -762,19 +826,25 @@ Public NotInheritable Class KBotRibbon
 
     Private Sub PaintGroups(k_g As Graphics, k_p As ThemePalette)
         Dim k_active As KBotRibbonTab = ActiveTab()
-        If k_active Is Nothing Then Return
-        For Each k_group As KBotRibbonGroup In k_active.Groups
-            If k_group.Bounds.IsEmpty Then Continue For
-            For Each k_button As KBotRibbonButton In k_group.Buttons
-                If Not k_button.Bounds.IsEmpty Then PaintButton(k_g, k_p, k_button)
+        If k_active IsNot Nothing Then
+            For Each k_group As KBotRibbonGroup In k_active.Groups
+                PaintGroup(k_g, k_p, k_group)
             Next
-            TextRenderer.DrawText(k_g, k_group.Text, CaptionFont(), k_group.CaptionBounds, k_p.TextDimColor,
-                                  TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or
-                                  TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
-            Using k_pen As New Pen(k_p.BorderColor)
-                k_g.DrawLine(k_pen, k_group.Bounds.Right, k_group.Bounds.Top + Px(6), k_group.Bounds.Right, k_group.Bounds.Bottom - Px(6))
-            End Using
+        End If
+        PaintGroup(k_g, k_p, _rightGroup)
+    End Sub
+
+    Private Sub PaintGroup(k_g As Graphics, k_p As ThemePalette, k_group As KBotRibbonGroup)
+        If k_group.Bounds.IsEmpty Then Return
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            If Not k_button.Bounds.IsEmpty Then PaintButton(k_g, k_p, k_button)
         Next
+        TextRenderer.DrawText(k_g, k_group.Text, CaptionFont(), k_group.CaptionBounds, k_p.TextDimColor,
+                              TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or
+                              TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
+        Using k_pen As New Pen(k_p.BorderColor)
+            k_g.DrawLine(k_pen, k_group.Bounds.Right, k_group.Bounds.Top + Px(6), k_group.Bounds.Right, k_group.Bounds.Bottom - Px(6))
+        End Using
     End Sub
 
     Private Sub PaintButton(k_g As Graphics, k_p As ThemePalette, k_button As KBotRibbonButton)
@@ -856,12 +926,19 @@ Public NotInheritable Class KBotRibbon
         Next
         If _collapsed Then Return Nothing
         Dim k_active As KBotRibbonTab = ActiveTab()
-        If k_active Is Nothing Then Return Nothing
-        For Each k_group As KBotRibbonGroup In k_active.Groups
-            If k_group.Bounds.IsEmpty OrElse Not k_group.Bounds.Contains(k_point) Then Continue For
-            For Each k_button As KBotRibbonButton In k_group.Buttons
-                If Not k_button.Bounds.IsEmpty AndAlso k_button.Bounds.Contains(k_point) Then Return k_button
+        If k_active IsNot Nothing Then
+            For Each k_group As KBotRibbonGroup In k_active.Groups
+                Dim k_found As KBotRibbonButton = ButtonInGroup(k_group, k_point)
+                If k_found IsNot Nothing Then Return k_found
             Next
+        End If
+        Return ButtonInGroup(_rightGroup, k_point)
+    End Function
+
+    Private Shared Function ButtonInGroup(k_group As KBotRibbonGroup, k_point As Point) As KBotRibbonButton
+        If k_group.Bounds.IsEmpty OrElse Not k_group.Bounds.Contains(k_point) Then Return Nothing
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            If Not k_button.Bounds.IsEmpty AndAlso k_button.Bounds.Contains(k_point) Then Return k_button
         Next
         Return Nothing
     End Function

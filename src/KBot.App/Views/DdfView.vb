@@ -39,7 +39,7 @@ Imports KBot.Theming
 '''     face culoarea rădăcinii să depindă de ordinea de parcurgere. Accidental, nu intenționat.
 ''' </summary>
 Public Class DdfView
-    Implements IAngajamentView, IThemedControl, IReleasesDocument
+    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     '
@@ -368,6 +368,21 @@ Public Class DdfView
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.ReleaseDocument", ex)
+        End Try
+    End Sub
+
+    ' Slice 0113-01: the shell is about to be put away (another page or a modal window takes the work area): the navigation bar
+    ' moves to the tab without a PDF and the document is let go, so Adobe is closed while nobody looks at it. The bar stays
+    ' shown. On the print list (a month / «Toate reviziile») the «Documente» tab shows no Adobe, so it stays.
+    Public Sub PutAway() Implements IPutAway.PutAway
+        Try
+            If String.Equals(navSub.SelectedKey, PAGE_PDF, StringComparison.Ordinal) AndAlso Not IsListTab(PAGE_PDF) Then
+                navSub.SelectedKey = PAGE_PREVIEW
+            End If
+            ReleaseDocument()
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.PutAway", ex)
+            Throw
         End Try
     End Sub
 

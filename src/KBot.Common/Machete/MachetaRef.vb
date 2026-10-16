@@ -82,7 +82,8 @@ Public NotInheritable Class MachetaType
 
     Public Sub New(k_key As String, k_title As String, k_iconKey As String,
                    k_opener As Func(Of MachetaRef, Task(Of Boolean)),
-                   Optional k_titleFor As Func(Of MachetaRef, String) = Nothing)
+                   Optional k_titleFor As Func(Of MachetaRef, String) = Nothing,
+                   Optional k_inHistory As Boolean = True)
         If String.IsNullOrWhiteSpace(k_key) Then Throw New ArgumentException("A macheta type needs a key.", NameOf(k_key))
         ArgumentNullException.ThrowIfNull(k_opener)
         Key = k_key
@@ -90,6 +91,7 @@ Public NotInheritable Class MachetaType
         IconKey = k_iconKey
         Opener = k_opener
         _titleFor = k_titleFor
+        InHistory = k_inHistory
     End Sub
 
     Public ReadOnly Property Key As String
@@ -98,6 +100,12 @@ Public NotInheritable Class MachetaType
     ''' <summary>A key the UI maps to an icon; free text for the registry.</summary>
     Public ReadOnly Property IconKey As String
     Public ReadOnly Property Opener As Func(Of MachetaRef, Task(Of Boolean))
+
+    ''' <summary>
+    ''' False = never listed in the history of machete (slice 0113-01: the modal windows -- editors, links, charts -- are answered
+    ''' and gone; they are not machete one comes back to).
+    ''' </summary>
+    Public ReadOnly Property InHistory As Boolean
 
     ''' <summary>The line shown in the history for one reference («Sumar · AAB2EF77C9X»).</summary>
     Public Function TitleFor(k_ref As MachetaRef) As String
@@ -113,6 +121,9 @@ Public NotInheritable Class MachetaEntry
     Public Property Title As String = String.Empty
     Public Property Args As Dictionary(Of String, String) = New Dictionary(Of String, String)()
     Public Property Moment As Date
+
+    ''' <summary>True while the macheta is open (slice 0113-01). Open entries come first, in the order they were opened; closed ones follow, the one closed last at the end.</summary>
+    Public Property IsOpen As Boolean
 
     Public Function ToRef() As MachetaRef
         Return New MachetaRef(TypeKey, Args)

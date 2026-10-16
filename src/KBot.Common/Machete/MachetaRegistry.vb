@@ -58,14 +58,24 @@ Public NotInheritable Class MachetaRegistry
         Dim k_type As MachetaType = Find(k_ref.TypeKey)
         Dim k_notesBefore As Integer = _noteCount
         Dim k_shown As Boolean = Await k_type.Opener(k_ref).ConfigureAwait(True)
-        If k_shown AndAlso _noteCount = k_notesBefore Then History.Record(k_ref, k_type.TitleFor(k_ref))
+        If k_shown AndAlso _noteCount = k_notesBefore AndAlso k_type.InHistory Then History.Record(k_ref, k_type.TitleFor(k_ref))
         Return k_shown
     End Function
 
-    ''' <summary>A macheta the caller's own code has just shown: only the history is told.</summary>
-    Public Sub Note(k_ref As MachetaRef)
+    ''' <summary>
+    ''' A macheta the caller's own code has just shown: only the history is told. <paramref name="k_open"/> = it stays open now (a page): it
+    ''' takes its place among the open ones and keeps it until it closes (<see cref="NoteClosed"/>). A type that is not in the history is ignored.
+    ''' </summary>
+    Public Sub Note(k_ref As MachetaRef, Optional k_open As Boolean = False)
         ArgumentNullException.ThrowIfNull(k_ref)
         _noteCount += 1
-        History.Record(k_ref, Find(k_ref.TypeKey).TitleFor(k_ref))
+        Dim k_type As MachetaType = Find(k_ref.TypeKey)
+        If k_type.InHistory Then History.Record(k_ref, k_type.TitleFor(k_ref), k_open)
+    End Sub
+
+    ''' <summary>An open macheta closed: in the history it goes to the end of the list, in italics.</summary>
+    Public Sub NoteClosed(k_ref As MachetaRef)
+        ArgumentNullException.ThrowIfNull(k_ref)
+        If Find(k_ref.TypeKey).InHistory Then History.MarkClosed(k_ref.Id)
     End Sub
 End Class

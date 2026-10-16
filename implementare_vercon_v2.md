@@ -1305,3 +1305,321 @@ Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Nu s-au rulat teste, build, browser,
 verificări automate sau SQL, conform AGENTS.md. Nu s-au modificat baze, nu
 s-a făcut publicare sau commit. Modificările fără legătură din KBot.App și
 Surse rămân în afara implementării.
+
+### 2026-10-16 — ComboTree în DGV: căutare suprapusă și selecție NIR
+
+Corectat în surse selectorul ComboTree după captura și logurile furnizate:
+câmpul de căutare se suprapune peste controlul din celulă, cu poziția,
+lățimea și înălțimea lui. Inputul folosește border-box și nu depășește
+celula; lista are dimensiuni independente și minWidth (300 px în NIR),
+limitată la viewport, cu deschidere în sus/jos ca înainte.
+
+Clickurile pe rândurile arborelui păstrează focusul în editor, astfel încât
+DGV să nu încheie editarea la mousedown înainte de procesarea clickului.
+Alegerea unui produs confirmă imediat editarea celulei prin onCellSave.
+Tastarea în oricare dintre inputuri invalidează selecția anterioară;
+Escape/Tab din popup anulează/confirmă editarea în DGV. Căutările amânate
+sunt oprite la închiderea popupului.
+
+Adăugată opțiunea ComboTree selectParents, implicit false și dezactivată
+explicit pentru coloana Produs în NIR. Clickul pe rădăcină/ramură doar
+extinde/restrânge când opțiunea este false; true permite selecția părintelui.
+Expanderul nu selectează, indiferent de opțiune. Aceeași regulă se aplică
+selecției cu Enter.
+
+Fișiere: PYTHON/static/js/components/combotree/combotree.js,
+PYTHON/static/css/combotree/combotree.css, PYTHON/static/js/dgv/editing.js,
+PYTHON/static/js/vercon/docs.js și acest jurnal.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Analiză de proiectare pe surse,
+captură și loguri; fără teste, build, browser sau verificări automate,
+conform AGENTS.md. Fără SQL sau modificări de baze de date.
+
+### 2026-10-16 — Pagină locală de probă pentru DGV + ComboTree
+
+La cererea utilizatorului, adăugat tools/ComboTreePreview cu index.html,
+demo.js, demo.css, preview_server.py și README.md. Folosește componentele
+reale din PYTHON/static, 18 rânduri și un arbore fictiv cu trei categorii,
+produse și o subramură. Include selectParents, lățimi ale coloanei de
+160/234/360 px, minimum dropdown 300/420/560 px, jurnalul schimbărilor,
+valoarea confirmată și resetarea datelor. CSS separat, importuri ordonate.
+
+Server Python standard library, numai pe 127.0.0.1:5052; nu importă
+aplicația sau modulele bazei de date. Fișierele demonstrației sunt în tools,
+în afara aplicației publicate; datele rămân în memoria paginii.
+
+Stare: server pornit și pagina deschisă în browser. La cererea de probă
+s-au efectuat interacțiuni în browser: restrângerea categoriei păstrează
+lista deschisă, alegerea produselor actualizează Produs/UM și jurnalul,
+căutarea ALMETTE filtrează la cele două produse. Dimensiunile DOM pentru
+coloana de 160 px: input și căutare au aceeași poziție și dimensiuni
+(159,33 × 33,33 px), lista are 420 px. Nu s-au rulat suite automate;
+celelalte combinații rămân disponibile pentru probe manuale. Fără SQL
+sau modificări de baze de date.
+
+### 2026-10-16 — ComboTree: tastatură și focus automat în Cantitate
+
+La cererea utilizatorului, coloana Produs din Adăugare NIR configurează
+focusAfterSelect: Cant. Editorul DGV confirmă alegerea și începe editarea
+Cantității din același rând numai dacă salvarea celulei reușește și nu a
+început între timp altă editare. Pagina de probă folosește aceeași opțiune
+pentru coloana quantity.
+
+Navigarea ComboTree este separată în combotree-keyboard.js. Sus/jos din
+textbox mută focusul în arbore și parcurge nodurile vizibile, cu derulare.
+În arbore, stânga restrânge nodul deschis sau merge la părinte; dreapta
+extinde nodul sau intră în primul copil. Reafișarea arborelui păstrează
+nodul activ. Tastele de text revin în căutare și introduc caracterul;
+stânga/dreapta în textbox păstrează mișcarea nativă a cursorului. Enter
+urmează aceeași cale ca un click pe eticheta nodului, inclusiv pentru
+părinți și checkboxuri. Popupul primește focus sincron, astfel încât un
+timer de la deschidere să nu fure focusul din arbore sau din Cantitate.
+
+Fișiere: PYTHON/static/js/components/combotree/combotree.js,
+combotree-keyboard.js, PYTHON/static/js/dgv/editing.js,
+PYTHON/static/js/vercon/docs.js, tools/ComboTreePreview/demo.js,
+index.html, README.md și acest jurnal.
+
+Stare: implementat în surse; serverul de probă repornit pe 127.0.0.1:5052,
+pagina deschisă și lăsată disponibilă. Probe în browser autorizate de
+cerere: selecția cu click și Enter mută focusul în Cantitate, sus/jos
+mută focusul în arbore, stânga/dreapta restrâng/extind și navighează
+părinte/copil, tastarea din arbore revine la căutare, stânga în textbox
+mută cursorul. Enter pe rădăcină restrânge/extinde fără selecție când
+selectParents este false. Nu s-au rulat suite automate sau NIR pe baza
+reală; integrarea Adăugare NIR este modificată în surse. Fără SQL sau
+modificări de baze de date.
+
+### 2026-10-16 — ComboTree: corecții după proba utilizatorului în browser
+
+Reprodus focusul greșit după click în celula DGV: beginEdit selecta inputul
+original după ce ComboTree focaliza căutarea suprapusă. focusEdit alege acum
+explicit câmpul vizibil de căutare pentru editorul tree și îl folosește la
+intrarea în editare, refocalizare și erori. Tastarea directă după click nu
+mai ajunge în inputul de dedesubt.
+
+Reprodus nodul activ invizibil: clasa highlighted exista, dar stilul comun
+TreeView avea fundalul comentat. Adăugat marcaj albastru numai pentru
+ComboTree; eliminat chenarul de focus al listei în favoarea marcajului
+nodului. updateHighlight derulează imediat numai lista pentru a păstra
+nodul activ integral vizibil. Dezactivate tranzițiile listei/rândurilor și
+ancorarea automată a derulării în popupul ComboTree.
+
+Fișiere: PYTHON/static/js/dgv/editing.js,
+PYTHON/static/js/components/combotree/combotree-keyboard.js,
+PYTHON/static/css/combotree/combotree.css și acest jurnal.
+
+Probe în pagina locală, autorizate de cererea utilizatorului: click urmat
+de tastare prin focusul curent, fără focalizare suplimentară a textboxului;
+săgeți trimise tot către focusul curent, cu marcaj vizibil și derulare
+repetată până la INVENTAR; nod activ integral vizibil și scroll păstrat
+la citirea ulterioară. Enter pe produs păstrează trecerea în Cantitate,
+iar tastarea din arbore revine în căutare. Proba anterioară cu locatori
+care focalizau explicit textboxul nu surprinsese focusul greșit la click.
+Serverul 5052 rămâne pornit, pagina reîncărcată și disponibilă. Nu s-au
+rulat suite automate sau NIR pe baza reală; fără SQL sau modificări de baze.
+
+### 2026-10-16 — DGV: aspectul și formatul celulei păstrate la editare
+
+La cererea utilizatorului, editoarele text/numerice pornesc cu textul
+formatat prin același formatValue folosit de celulă. Prețul 0.5550 este
+afișat și în editare ca 0,5550. Dacă textul nu se schimbă, rămâne valoarea
+internă originală, fără conversie, rotunjire sau salvare suplimentară.
+Parserul numeric implicit acceptă formatul românesc cu grupare pentru
+standard/currency/euro și păstrează semantica formatului percent; parserul
+explicit al coloanei continuă să aibă prioritate.
+
+Celulele transmit acum alinierea textului și către editor, iar inputurile
+moștenesc fontul, spațierea și stilul cifrelor. Paddingul editorului ține
+cont de bordură pentru a păstra poziția textului. Căutarea suprapusă
+ComboTree primește aspectul inputului din celulă prin API-ul controlului,
+după montarea editorului în DGV.
+
+Extinsă pagina tools/ComboTreePreview cu Preț, Valoare, UM editabil,
+două rânduri identice și comutator font 15/20 px pentru comparație.
+Fișiere: PYTHON/static/js/dgv/editing.js, PYTHON/static/css/dgv.css,
+PYTHON/static/js/components/combotree/combotree.js,
+PYTHON/static/css/combotree/combotree.css,
+tools/ComboTreePreview/demo.js, demo.css, index.html, README.md și jurnalul.
+
+Stare: serverul local 5052 repornit, pagina deschisă și lăsată cu Preț
+în editare. Probe locale cerute explicit: textul 0,5550 și alinierea dreapta
+identice înainte/după click; font Calibri, 20 px, greutate 400, linie 20 px
+identic în celulă și editor; test și la 15 px; UM centrat; căutare ComboTree
+la 20 px. Confirmarea nemodificată nu emite salvare. 1.234,50 modificat în
+1.234,60 se salvează numeric 1234.6; prețul original rămâne șirul 0.5550.
+Fără suite automate sau probe NIR pe baze reale; fără SQL/modificări de baze.
+
+### 2026-10-16 — DGV: eliminarea conturului negru de focus
+
+Eliminat outline-ul nativ al browserului pentru inputurile editorului DGV
+(exceptând checkboxurile). Rămâne bordura explicită în culoarea accentului
+grilei, inclusiv la focus; regula existentă pentru aria-invalid rămâne activă.
+Fișier: PYTHON/static/css/dgv.css. Continuarea probei locale pe portul 5052,
+fără suite automate, SQL sau operații pe baze de date.
+
+### 2026-10-16 — NIR: ValoareFC și butonul de corecție în antet
+
+În adăugare/editare NIR, ValoareFC este aliniat la dreapta și afișat în
+formatul standard cerut explicit: 1,234.56 (virgulă la mii, punct la
+zecimale, două zecimale). TextBox money primește opțional numberLocale
+en-US; celelalte controale își păstrează formatul. Citirea și colectarea
+antetului folosesc valoarea canonică a controlului, nu textul cu grupare.
+
+Mutat butonul Corectează din bara de jos lângă ValoareFC, ca ⚖️ cu tooltip
+și etichetă accesibilă. Utilizatorul a clarificat pragul inițial >=1:
+regula aprobată este diferență nenulă de cel mult 1 leu, în valoare absolută.
+Butonul respectă acest prag și restricțiile existente pentru corecții AUTO,
+drepturi și salvarea în curs. Acțiunea recitește condițiile după confirmarea
+editării curente a grilei.
+
+La orice diferență validă față de totalul calculat al liniilor, textul
+ValoareFC devine roșu și bold; revine la aspectul normal când totalurile
+sunt egale. Starea este actualizată la editarea antetului, la calculul
+totalurilor și după răspunsurile de validare/corecție. Comparația folosește
+unități întregi BigInt la precizia documentului, pentru limite exacte la
+zero și un leu. Nu s-a modificat algoritmul de corecție de pe server.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, ui.js,
+receipt-reconciliation.js (nou),
+PYTHON/static/js/components/textbox/textbox.js,
+PYTHON/static/css/vercon-receptie.css și acest jurnal.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Serverul local de probă de pe portul
+5052 a fost oprit la cererea utilizatorului. Numai analiză de proiectare
+pe surse; fără teste locale, browser, build, verificări automate sau SQL.
+Fără modificări de baze de date.
+
+### 2026-10-16 — NIR: rânduri corectate, antet și bară de acțiuni
+
+Aplicate cerințele vizuale din capturile utilizatorului:
+- Eliminată coloana Calcul/AUTO din specificațiile grilei NIR. calc_mode
+  rămâne metadată internă pentru calcule, blocări, salvare și revenirea
+  corecțiilor. Rândurile GROSS sunt bold și italic, prin opțiunea nouă
+  rowClassName a DGV, aplicată și la reafișarea rândurilor virtualizate.
+- Înlocuit emoji-ul de corecție cu un SVG monocrom în currentColor,
+  folosind culoarea temei și păstrând un contrast mai bun când e dezactivat.
+  Tooltipul și regula de activare aprobate rămân aceleași.
+- Numărul facturii este centrat numai în textbox; numărul NIR, inclusiv
+  auto și sub-numărul opțional, este aliniat la dreapta.
+- Fontul grilei de linii NIR este micșorat cu 1 pt, inclusiv antetul,
+  celulele și editoarele care îl moștenesc. Celelalte grile nu se schimbă.
+- Eliminat butonul Adaugă rând din footerul NIR; se păstrează mecanismul
+  existent al rândului gol pentru introducere și totalurile din footer.
+- Bara din adăugare/editare NIR are trei coloane: Renunță la stânga,
+  mesaje la mijloc, Salvează NIR la dreapta. Mesajele se încadrează în
+  spațiul lor și nu schimbă pozițiile butoanelor. Previzualizează nu mai
+  este creat în această bară în timpul adăugării/editării; rămâne la consultare.
+- Mesajul fără mișcări din Fișa de magazie este acum simplu: PRODUS NOU.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, receipt-context.js,
+PYTHON/static/js/dgv/datagrid.js, PYTHON/static/css/vercon-receptie.css
+și acest jurnal.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Nu s-au executat teste, browser,
+build sau verificări automate, conform cererii. Serverul local 5052 nu
+a fost repornit. Fără SQL sau modificări de baze de date.
+
+### 2026-10-16 — NIR: Stoc inițial în titlu și butoane cu lățimi egale
+
+Mutată bifa Stoc inițial (fără furnizor) din câmpul Furnizor în bara de
+titlu, imediat după titlu. Marcajul Ciornă este împins la dreapta panoului.
+Bifa rămâne disponibilă în adăugare, ca înainte, cu aceeași logică pentru
+furnizor, factură și stoc inițial. Containerul ei este golit la refacerea
+antetului, iar controlul este curățat prin scope-ul existent.
+
+Corectată cauza întinderii butonului Salvează când nu există mesaj:
+showMessage ascunde span-ul gol, ceea ce lăsa butonul în coloana flexibilă.
+Mesajele au acum un container permanent; Renunță și Salvează au poziții
+grid explicite și aceeași lățime compactă, 8em. Spațiul rămas la mijloc
+este gol sau conține mesajul, fără să deplaseze ori să lățească butoanele.
+
+Fișiere: PYTHON/static/js/vercon/docs.js,
+PYTHON/static/css/vercon-receptie.css și acest jurnal.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, browser, build sau
+verificări automate, conform cererii. Serverul 5052 rămâne oprit.
+Fără SQL sau modificări de baze de date.
+
+### 2026-10-16 — VERCON: efect unitar pentru butoane
+
+Adăugat vercon-button-effects.css, importat la sfârșitul stylesheetului de
+intrare. Toate butoanele VERCON, inclusiv acțiunile din grile, dialoguri și
+elementele role=button, primesc același feedback: contur evidențiat în
+culoarea temei, umbră și ridicare vizuală de 1 px la hover/focus din tastatură;
+la apăsare revin și primesc o umbră interioară. Efectul nu modifică lățimea
+sau poziția din layout. Butoanele dezactivate nu primesc efectul interactiv.
+Umbra este adaptată pentru dark, iar prefers-reduced-motion păstrează
+evidențierea fără mișcare sau tranziții.
+
+Fișiere: PYTHON/static/css/vercon-button-effects.css (nou), vercon.css
+și acest jurnal. Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, browser,
+build sau verificări automate; serverul local 5052 rămâne oprit.
+Fără SQL sau modificări de baze de date.
+
+### 2026-10-16 — ComboTree: Tab din căutare către controlul următor
+
+Tab din căutarea popupului închide lista și reia navigarea de la inputul
+original al ComboTree, fără să-l redeschidă la refocalizare. Shift+Tab
+folosește direcția inversă. Tratat explicit Tab și pe popup, deoarece
+listenerul comun al căutării TreeView nu includea această tastă.
+
+Selectorul Categorie / cont din NIR transmite navigarea prin onTab către
+ordinea existentă a controalelor din antet. Evenimentul este interpretat
+în raport cu inputul din formular, nu cu popupul mutat în body/dialog.
+În DGV rămâne prioritară tratarea existentă în capture pentru confirmarea
+celulei și trecerea la următoarea/precedenta celulă.
+
+Fișiere: PYTHON/static/js/components/combotree/combotree-keyboard.js,
+PYTHON/static/js/vercon/receipt-allocation.js, docs.js și acest jurnal.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, browser, build sau
+verificări automate. Serverul local 5052 rămâne oprit; fără SQL/operații pe baze.
+
+### 2026-10-16 — NIR: acțiuni integrate, selecție furnizor și total corectat
+
+Săgețile ComboBox/ComboTree, calendarul și butoanele de ștergere din
+textbox/căutare sunt excluse din efectul comun de ridicare. Un stylesheet
+VERCON separat aliniază acțiunile de listă și calendar în interiorul
+câmpului, cu lățime de 28 px, colțurile din dreapta și hover comun din
+paleta temei, inclusiv pentru lista simplă Comisie. Eliminat hoverul verde
+al ComboTree; arborii inline păstrează săgeata dropdown ascunsă.
+
+Clickul pe opțiunea ComboBox și pe săgeată anulează activarea implicită
+a etichetei label, care putea refocaliza inputul și redeschide lista după
+prima selecție. Închiderea/selecția, schimbarea căutării și distrugerea
+controlului invalidează căutările întârziate pentru a evita redeschiderea
+de către un răspuns vechi.
+
+ValoareFC devine roșu bold numai când există diferență și cel puțin un
+rând diferit de rândul gol automat. Eliminată identitatea redundantă a
+furnizorului din fișa laterală; identitatea produsului rămâne afișată.
+
+La afișarea NIR se păstrează valorile validate de server. Recalcularea
+din paintLines/draftRows cu numere binare putea altera un rând normal
+după corecție, producând diferența de 0,0001 lei față de totalul validat.
+Recalcularea la modificarea datelor rămâne urmată de validarea existentă.
+Footerul NIR însumează exact zecimalele cu BigInt, prin același modul ca
+reconcilierea. Mesajul de corecție folosește formatul numeric al grilei.
+
+Fișiere: PYTHON/static/css/vercon-button-effects.css,
+vercon-control-actions.css (nou), vercon.css;
+PYTHON/static/js/components/combobox/combobox-events.js,
+combobox-search.js, combobox-ui.js, combobox.js;
+PYTHON/static/js/vercon/docs.js, receipt-reconciliation.js,
+receipt-context.js și acest jurnal.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de surse/design;
+fără teste, browser, build sau alte verificări executate, conform
+instrucțiunilor proiectului. Serverul local 5052 nu a fost repornit.
+Fără SQL sau modificări de baze de date.
+
+### 2026-10-16 — VERCON: meniuri fără conturul comun la hover
+
+Excluse butoanele barei de meniu și opțiunile popupurilor din efectele
+comune de buton, inclusiv hover, focus și apăsare. Meniurile păstrează
+stilurile controlului Menu, fără border, contur interior sau ridicare
+adăugate de stylesheetul VERCON pentru butoanele obișnuite.
+
+Fișiere: PYTHON/static/css/vercon-button-effects.css și acest jurnal.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste sau alte verificări
+executate, conform instrucțiunilor proiectului. Serverul 5052 nu a fost
+repornit. Fără modificări de baze de date.

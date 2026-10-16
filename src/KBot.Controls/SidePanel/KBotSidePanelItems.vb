@@ -55,6 +55,11 @@ Public NotInheritable Class KBotSidePanelRow
         ForeColor = Color.Empty
     End Sub
 
+    <Category("K-BOT")>
+    <Description("True = the main text is written in italics (Line style).")>
+    <DefaultValue(False)>
+    Public Property Italic As Boolean
+
     ''' <summary>Whatever the caller wants back with the click (never serialized).</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>

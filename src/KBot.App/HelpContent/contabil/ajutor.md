@@ -7,16 +7,14 @@ parent: contabil
 screens: HelpForm, KBotHelpPopup
 keywords: F1, manual, cautare, intrebare, meniul ajutor, tur ghidat, stele, nota, util, istoric, marime text, text mai mare, deasupra, se inchide, tur initial, turul de la pornire, nu mai arata turul, tipareste, imprima, imprimanta, listare, export, salveaza manualul, PDF, deruleaza, tutorial, tutoriale, tutorial initial, tutorialul de inceput, ce sunt tutorialele, nu mai arata tutorialul, pas cu pas, invata, sari peste, pas optional, iesi din tutorial, ma opresc, intunecat
 ---
-<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T, 0114 -->
-Ajutorul se deschide în trei feluri:
+<!-- slice: 0000-01, 0000-04, 0000-20, 0097-02, 000T, 0114, 0114-02, 0000-85 -->
+Ajutorul se deschide în două feluri:
 
 - **F1**, în orice fereastră: se deschide direct fereastra de ajutor, la pagina despre ce ai pe
   ecran.
 - Butonul **?** din bara de titlu a fiecărei ferestre: se deschide un **meniu mic**, chiar sub
   buton, cu o căsuță de căutare, pagina ecranului tău, tururile ghidate și tutorialele. Fereastra de
   **conectare** nu are acest buton; acolo ajutorul se deschide cu F1.
-- Butonul **«Ajutor»** din dreapta ribbonului: pe pagina «Acasă» deschide ajutorul ca pagină; cu o machetă pe ecran
-  deschide meniul «?» al ei — [Butonul «Ajutor» din ribbon](topic:contabil.ajutor.buton).
 
 ## Meniul «?»
 <!-- slice: 0000-20, 0000-24, 0000-27, 000T -->
@@ -214,11 +212,10 @@ După ce alegi din meniu apare fereastra obișnuită de tipărire din Windows, u
 și cuprins.
 
 ## Fereastra de ajutor stă deasupra
-<!-- slice: 0000-23, 0114 -->
+<!-- slice: 0000-23, 0114, 0114-02, 0000-85 -->
 
 Deschisă cu **F1** sau din meniul «?», fereastra de ajutor stă **mereu deasupra** celorlalte ferestre K-BOT, ca s-o
-poți citi în timp ce lucrezi. Deschisă din butonul «Ajutor» de pe pagina «Acasă», ea este o **pagină** a ferestrei
-principale și se închide cu «Închide» din ribbon. Cât rulează un tur, ea se ascunde în bara de activități și revine singură la sfârșit.
+poți citi în timp ce lucrezi. Cât rulează un tur, ea se ascunde în bara de activități și revine singură la sfârșit.
 
 Dacă o altă fereastră K-BOT deschide o **întrebare sau un mesaj care trebuie închis înainte de
 orice altceva** (de exemplu o confirmare), fereastra de ajutor **se închide singură**, ca să nu

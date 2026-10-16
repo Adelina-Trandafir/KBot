@@ -13,7 +13,7 @@ Imports KBot.Theming
 ''' hands its id over; the list, the views and the links are the control's. An angajament without a DDF shows nothing.
 ''' </summary>
 Public Class EFacturaView
-    Implements IAngajamentView, IReleasesDocument, IThemedContainer
+    Implements IAngajamentView, IReleasesDocument, IThemedContainer, IPutAway
 
     Private ReadOnly _api As IApiClient
     Private ReadOnly _reauthDdf As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo))
@@ -74,6 +74,11 @@ Public Class EFacturaView
 
     Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
         primite.ReleaseDocument()
+    End Sub
+
+    ''' <summary>Slice 0113-01: put away -- the control moves to a view without a PDF and lets the document go.</summary>
+    Public Sub PutAway() Implements IPutAway.PutAway
+        primite.PutAway()
     End Sub
 
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme

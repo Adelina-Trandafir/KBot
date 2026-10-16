@@ -24,6 +24,7 @@ Partial Class CommandsView
         cmbCommand = New KBotComboBox()
         btnRun = New KBotButton()
         btnCopy = New KBotButton()
+        txtParam = New KBotTextBox()
         lblDesc = New Label()
         txtOutput = New KBotTextBox()
         lblState = New Label()
@@ -64,6 +65,7 @@ Partial Class CommandsView
         tlyBar.Controls.Add(cmbCommand, 0, 0)
         tlyBar.Controls.Add(btnRun, 1, 0)
         tlyBar.Controls.Add(btnCopy, 2, 0)
+        tlyBar.Controls.Add(txtParam, 3, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -108,6 +110,20 @@ Partial Class CommandsView
         btnCopy.Text = "Copiază"
         tips.SetToolTipHeader(btnCopy, "Copiază")
         tips.SetToolTipText(btnCopy, "Pune rezultatul în clipboard.")
+        '
+        ' txtParam (shown only for a command that needs a typed value, e.g. the code of an angajament)
+        '
+        txtParam.Dock = DockStyle.Left
+        txtParam.Location = New Point(590, 0)
+        txtParam.Margin = New Padding(0, 4, 8, 8)
+        txtParam.MaxLength = 60
+        txtParam.Name = "txtParam"
+        txtParam.PlaceholderText = "Cod angajament"
+        txtParam.Size = New Size(240, 32)
+        txtParam.TabIndex = 3
+        tips.SetToolTipHeader(txtParam, "Valoarea comenzii")
+        tips.SetToolTipText(txtParam, "Codul angajamentului. Apare doar la comenzile care au nevoie de el și dispare când alegi altă comandă." & vbLf & "Comanda cere o bază anume aleasă în arbore, nu <TOATE BAZELE>.")
+        txtParam.Visible = False
         '
         ' lblDesc
         '
@@ -170,6 +186,7 @@ Partial Class CommandsView
     Friend WithEvents cmbCommand As KBotComboBox
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents btnCopy As KBotButton
+    Friend WithEvents txtParam As KBotTextBox
     Friend WithEvents lblDesc As Label
     Friend WithEvents txtOutput As KBotTextBox
     Friend WithEvents lblState As Label

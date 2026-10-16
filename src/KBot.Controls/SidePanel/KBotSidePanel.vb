@@ -440,7 +440,7 @@ Public NotInheritable Class KBotSidePanel
                 TextRenderer.DrawText(k_g, k_row.DetailText, SmallFont(), New Rectangle(k_x + k_w - k_detailW, k_rect.Top, k_detailW, k_rect.Height),
                                       k_p.TextDimColor, TextFormatFlags.Right Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or TextFormatFlags.SingleLine)
             End If
-            TextRenderer.DrawText(k_g, k_row.Text, Font, New Rectangle(k_x, k_rect.Top, Math.Max(0, k_w - k_detailW), k_rect.Height), k_color, k_flags)
+            TextRenderer.DrawText(k_g, k_row.Text, If(k_row.Italic, ItalicFont(), Font), New Rectangle(k_x, k_rect.Top, Math.Max(0, k_w - k_detailW), k_rect.Height), k_color, k_flags)
         End If
     End Sub
 

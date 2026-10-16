@@ -40,6 +40,22 @@ Partial Public Class FacturiForm
         navDetaliu.SelectedKey = k_key
     End Sub
 
+    ''' <summary>
+    ''' Slice 0113-01: the window is about to be put away (another page or a modal window takes the work area): the bar moves to the
+    ''' first view (no PDF) and the three viewers let their documents go, so Adobe is closed while nobody looks at it. The bar stays shown.
+    ''' </summary>
+    Public Sub PutAway() Implements IPutAway.PutAway
+        Try
+            If IsPdfView(navDetaliu.SelectedKey) Then SelectView(ViewGenerale)
+            pgPdf.ReleaseDocument()
+            pgAnaf.ReleaseDocument()
+            pgEroare.ReleaseDocument()
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.PutAway", ex)
+            Throw
+        End Try
+    End Sub
+
     Private Sub NavDetaliu_SelectionChanged(k_key As String) Handles navDetaliu.SelectionChanged
         Try
             ShowPage(k_key)

@@ -37,7 +37,8 @@ Partial Public Class KbotForm
     Private Sub DeschideExtrasele()
         Try
             If _extraseForm IsNot Nothing AndAlso Not _extraseForm.IsDisposed Then
-                _extraseForm.Activate()
+                ' Open already (maybe put away behind another page): back to the front.
+                If Not ShowMachetaPage(_extraseForm, MachetaRef.Create(MachetaExtrase)) Then _extraseForm.Activate()
                 Return
             End If
             _extraseForm = New ExtraseForm(_apiClient,

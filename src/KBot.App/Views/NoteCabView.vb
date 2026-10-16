@@ -26,7 +26,7 @@ Imports KBot.Theming
 ''' through the shell's <c>UploadCabNoteAsync</c> (the same step as the note window).</para>
 ''' </summary>
 Public Class NoteCabView
-    Implements IAngajamentView, IThemedControl, IReleasesDocument
+    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway
 
     Private Const PageView As String = "vizualizare"
     Private Const PageDocument As String = "document"
@@ -203,6 +203,21 @@ Public Class NoteCabView
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("NoteCabView.ReleaseDocument", ex)
+        End Try
+    End Sub
+
+    ' Slice 0113-01: the shell is about to be put away: the navigation bar moves to the tab without a PDF and the documents are
+    ' let go, so Adobe is closed while nobody looks at it. The bar stays shown.
+    Public Sub PutAway() Implements IPutAway.PutAway
+        Try
+            Dim k_key As String = navSub.SelectedKey
+            If String.Equals(k_key, PageDocument, StringComparison.Ordinal) OrElse String.Equals(k_key, PageReceipt, StringComparison.Ordinal) Then
+                navSub.SelectedKey = PageView
+            End If
+            ReleaseDocument()
+        Catch ex As Exception
+            GlobalErrorLog.Write("NoteCabView.PutAway", ex)
+            Throw
         End Try
     End Sub
 

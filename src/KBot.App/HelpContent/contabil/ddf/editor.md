@@ -8,11 +8,12 @@ screens: DdfEditForm, DdfEditSectiuneaAPage, DdfEditSectiuneaBPage, DdfEditDescr
 keywords: editor, antet, sectiunea a, sectiunea b, cual, revizie, clasificatie, partener, parteneri, asociere, mai multi parteneri, fisiere, salveaza
 open: view:ddf
 ---
-<!-- slice: 0051, 0081-02, 0113 -->
-Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia», ca pagină a ferestrei
-principale.
+<!-- slice: 0051, 0081-02, 0113, 0113-01 -->
+Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la «Modifică revizia», ca **fereastră a lui**,
+cu bara lui de titlu, mai mică decât spațiul de lucru, în mijlocul ferestrei principale. Cât e deschis nu poți lucra în
+fereastra principală.
 
-<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu «Adaugă rând» și «Șterge rândul» lângă «Salvează documentul» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-13 17:30 | why: 0113 / 0120: editorul e o pagină a ferestrei principale, fără bara lui de titlu și fără «Renunță»; «Adaugă rând / Șterge rândul» au trecut pe rândul de jos, lângă «Salvează documentul» -->
+<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu «Adaugă rând» și «Șterge rândul» lângă «Salvează documentul» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-16 12:00 | why: 0113-01: editorul e din nou o fereastră cu bara lui de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 ## Antetul
 <!-- slice: 0081-09, 0081-10, 0094-02, 0094-03 -->
@@ -86,11 +87,10 @@ pentru documentele cu mai mulți.
 Poți asocia parteneri și din vederea «Sumar» — [Sumar](topic:contabil.vederi.sumar).
 
 ## Salvarea
-<!-- slice: 0051, 0081-12, 0113 -->
+<!-- slice: 0051, 0081-12, 0113, 0113-01 -->
 
 **Salvează documentul** trimite tot documentul într-o singură tranzacție. Rândurile din Secțiunea A
 cu valoarea 0 se scot la salvare, după ce confirmi. Dacă nu rămâne niciun rând cu valoare,
 documentul **nu** se salvează.
 
-Editorul nu mai are butonul «Renunță»: **«Închide»** din ribbon (sau Esc) îl închide fără să salveze nimic; numerele
-rezervate se eliberează.
+**«Renunță»** închide editorul fără să salveze nimic; numerele rezervate se eliberează.

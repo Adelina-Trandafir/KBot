@@ -26,7 +26,7 @@ export function receiptAllocation({ api, selection, draft, mode }) {
       children: catalog.products.filter(item => item.category === account.id).map(item => ({ id: String(item.id), label: item.name })) }))
       .filter(node => node.children.length);
   }
-  function accountField(owner, editable, onChange) {
+  function accountField(owner, editable, onChange, onTab) {
     ensure();
     const node = el('label', { className: 'vc-field vc-receipt-accounts', 'data-field': 'Accounts' }, el('span', { textContent: 'Categorie / cont' + (editable ? ' *' : '') }));
     const host = el('div'); node.append(host);
@@ -35,7 +35,7 @@ export function receiptAllocation({ api, selection, draft, mode }) {
       children: choices.filter(a => a.destination === root.id).map(a => ({ id: String(a.id), label: a.label })) }))
       .filter(root => root.children.length || root.id === `destination:${current()}`);
     let loading = true;
-    const combo = owner.own(new ComboTree(host, { nodes: treeNodes, checkable: true, branchChecks: false,
+    const combo = owner.own(new ComboTree(host, { nodes: treeNodes, checkable: true, branchChecks: false, onTab,
       expanded: [`destination:${current()}`], placeholder: 'Bifați conturile…',
       formatCheckSummary: count => count ? `${count} conturi selectate` : 'Bifați conturile…',
       onCheckChange: ids => {

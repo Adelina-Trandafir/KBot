@@ -50,7 +50,7 @@ Partial Public Class KbotForm
                                         Function(op) WithReauth(Of AsociereStare)(op),
                                         Function(op) WithReauth(Of AsociereRezultat)(op),
                                         DenumireAngajament(cod))
-                If Not Await ShowMachetaAsync(f, CodRef(MachetaAsociere, cod)) Then Return False
+                If Not Await ShowModalAsync(f, CodRef(MachetaAsociere, cod)) Then Return False
                 If Not f.SAuSalvatModificari Then Return False
                 ' The tree, not only the view (operator, 10.09.2026): a moved link can turn
                 ' the node's Are* flags on or off, and `LoadTreeAsync` with the selection kept

@@ -9,6 +9,7 @@ live site or seen on screen, no test written or run.**
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | KE01 | Data model, amounts with VAT, server routes, client contract | GATA pe cod (build curat, SQL nerulat, server nedeployat) | `SLICE-KE01-modelul-legaturii-si-calculele.md` | `EF_PrimiteReceptii`, `EF_PrimiteLinii.IdClsf` / `CotaTVA` (`sql/KE_01_primite_receptii.sql`); `primite_ke.py`, `primite_ke_routes.py`; `EFacturaKe.vb`, `ApiClient.EFactura.Ke.vb`. Every write: role `Contabil`, checked on the server. |
+| KE01-02 | Diagnostic: everything about one angajament in one table | GATA pe cod, **SQL nerulat** | `SLICE-KE01-02-fisa-angajament.md` | `sql/KE_01_02_fisa_angajament.sql`: `AVACONT_COMUN.FX_FisaAngajament(db, cod)`; `DIAG` rows first (indicator vs Clasificatii, invoice line vs indicator, reception value per classification, links), then every table as JSON. |
 | KE02 | The angajament and the classification of each line | GATA pe cod | `SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | `KeClasificariForm`, `KeAngajamentForm`; two new columns in «Continut». |
 | KE03 | The «Receptii» view of an invoice | GATA pe cod | `SLICE-KE03-vederea-receptii.md` | `PrimiteReceptiiPage`, `PrimiteView.Receptii.vb`. |
 | KE04 | Link to an existing reception | GATA pe cod | `SLICE-KE04-legare-de-receptie-existenta.md` | `KeLegaForm` (mode «existenta»), `verifica` / `leaga`. |

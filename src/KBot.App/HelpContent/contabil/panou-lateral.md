@@ -11,7 +11,7 @@ keywords: panou lateral, panoul din stanga, machete deschise, machete recente, u
 În stânga ferestrei principale, lângă **orice pagină** («Acasă», lista angajamentelor sau o machetă), stă panoul
 lateral. Are patru secțiuni: **Machete deschise**, **Acțiuni recente**, **Informații** și **Erori din sesiune**.
 
-<!-- capture: panou-lateral | caption: Panoul lateral, cu cele patru secțiuni desfăcute | prepare: Deschideți două-trei machete și o vedere a unui angajament, ca «Machete deschise» să aibă rânduri; apoi reveniți la «Acasă». Prindeți panoul pe toată înălțimea lui. -->
+<!-- capture: panou-lateral | caption: Panoul lateral, cu cele patru secțiuni desfăcute | prepare: Deschideți două-trei machete și o vedere a unui angajament, ca «Machete deschise» să aibă rânduri; apoi reveniți la «Acasă». Prindeți panoul pe toată înălțimea lui. | redo: 2026-10-16 12:00 | why: 0113-01: «Machete deschise» e o stivă — deschisele sus, închisele în italice jos -->
 
 - Un clic pe **titlul unei secțiuni** o strânge sau o desface.
 - Butonul din **bara de sus** a panoului îl strânge la o **bandă îngustă**, doar cu pictogramele secțiunilor; un clic
@@ -21,25 +21,28 @@ lateral. Are patru secțiuni: **Machete deschise**, **Acțiuni recente**, **Info
 <!-- capture: panou-lateral-strans | caption: Panoul lateral strâns la banda cu pictograme | prepare: Strângeți panoul lateral cu butonul din bara lui de sus. După captură, desfaceți-l la loc. -->
 
 ## Machete deschise
-<!-- slice: 0116 -->
+<!-- slice: 0116, 0113-01 -->
 
-Ultimele **10** machete pe care le-ai deschis **de la pornirea K-BOT**, cea mai recentă sus: ferestrele din ribbon
-(Extrase de cont, Clasificații bugetare, Setări…), lista angajamentelor, dar și **vederile unui angajament** și
-editoarele lui, cu codul angajamentului în titlu (de exemplu «Rezervări · cod»). Dacă o deschizi din nou, urcă sus,
-nu apare de două ori.
+Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
 
-Un **clic pe un rând** o deschide din nou:
+- sus sunt machetele **deschise acum**, în ordinea în care le-ai deschis. **Ordinea nu se schimbă** cât timp rămân
+  deschise: dacă treci de la una la alta, rândurile stau pe loc. O machetă nouă se adaugă după ultima deschisă;
+- machetele **închise** sunt scrise **cu litere italice** și stau jos, în coadă; cea închisă ultima e la capăt. Dacă
+  deschizi din nou una închisă, ea iese din coadă și se pune după ultima deschisă;
+- când lista e plină, ies din ea cele **închise**, începând cu cea închisă de cel mai mult timp, ca machetele deschise
+  să rămână vizibile cât mai mult.
 
-- o machetă din ribbon se deschide ca de obicei;
-- o vedere a unui angajament: K-BOT aduce lista angajamentelor pe ecran, trece pe **anul** ei dacă e din alt an,
-  alege **angajamentul** în listă și deschide **vederea**;
-- un editor de document (DDF sau ordonanțare) se redeschide în vederea **Fundamentare** sau **Ordonanțare** a
-  angajamentului; de acolo deschizi documentul din nou. Ce nu ai salvat în editor nu se păstrează.
+În listă apar paginile din ribbon (Extrase de cont, Clasificații bugetare, Setări…) și **lista angajamentelor**.
+**Vederile unui angajament** (Sumar, Rezervări…) **nu apar**, și nici **ferestrele care cer un răspuns** (editoarele DDF și
+de ordonanțare, Asocieri, Operațiuni necorelate, graficul rezervărilor, Grupele).
 
-Dacă nu se poate, K-BOT spune de ce: anul nu mai e disponibil pentru unitate, angajamentul nu e în lista curentă
-(ascuns sau din altă sursă/sector) sau vederea nu există pentru acel angajament.
+Un **clic pe un rând** o aduce pe ecran sau o deschide din nou:
 
-Lista se **golește la închiderea K-BOT**. Un angajament nou, încă nesalvat, nu apare în ea.
+- o pagină deschisă revine în față, așa cum o lăsaseși;
+- o machetă din ribbon, închisă, se deschide ca de obicei;
+- lista angajamentelor revine pe ecran, cu angajamentul și vederea pe care le-ai lăsat.
+
+Lista se **golește la închiderea K-BOT**.
 
 ## Acțiuni recente
 <!-- slice: 0117 -->

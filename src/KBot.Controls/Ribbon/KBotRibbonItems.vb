@@ -82,8 +82,16 @@ Public NotInheritable Class KBotRibbonButton
         ForeColor = Color.Empty
     End Sub
 
+    <Category("K-BOT")>
+    <Description("Pinned buttons only: draws a thin separator line to the left of this button, while another pinned button is visible to its left. Alone, the line is not drawn.")>
+    <DefaultValue(False)>
+    Public Property SeparatorBefore As Boolean
+
     ''' <summary>The slot computed by the last layout pass (Empty when hidden). Derived state: never serialized.</summary>
     Friend Property Bounds As Rectangle
+
+    ''' <summary>X of the separator line drawn left of a pinned button by the last layout pass (-1 = none). Derived state.</summary>
+    Friend Property SeparatorX As Integer = -1
 
     ''' <summary>True for a pinned Large button: icon and text are centred in the whole height of the panel. Derived state.</summary>
     Friend Property CenterV As Boolean

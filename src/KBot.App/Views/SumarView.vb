@@ -45,6 +45,25 @@ Public Class SumarView
     ' simply never shows the button.
     Private ReadOnly _partnersReauth As SumarPartnersReauth
 
+    ' Slice 0084-04: can the angajament on screen be associated with partners (it has a DDF)? The ribbon button follows it.
+    Private _canAssociatePartners As Boolean
+
+    ''' <summary>True when the angajament shown has a DDF, so «Asociaza parteneri» has something to write to.</summary>
+    Friend ReadOnly Property CanAssociatePartners As Boolean
+        Get
+            Return _canAssociatePartners
+        End Get
+    End Property
+
+    ''' <summary>Raised when <see cref="CanAssociatePartners"/> changed (the ribbon button enables / dims).</summary>
+    Friend Event PartnersAvailabilityChanged As EventHandler
+
+    Private Sub SetCanAssociatePartners(k_value As Boolean)
+        If _canAssociatePartners = k_value Then Return
+        _canAssociatePartners = k_value
+        RaiseEvent PartnersAvailabilityChanged(Me, EventArgs.Empty)
+    End Sub
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo)),
                    Optional partnersReauth As SumarPartnersReauth = Nothing)
@@ -101,7 +120,7 @@ Public Class SumarView
             If String.IsNullOrWhiteSpace(cod) Then
                 ' Invalidează orice răspuns aflat în zbor (vezi _requestedCod).
                 _requestedCod = Nothing
-                btnPartners.Visible = False
+                SetCanAssociatePartners(False)
                 ClearHeader()
                 grid.ClearRows()
                 ShowEmpty("Selectați un angajament din arbore.")
@@ -111,8 +130,8 @@ Public Class SumarView
             _requestedCod = cod
 
             ' Slice 0084-02: the partners are associated with the angajament's DDF, so an
-            ' angajament that has none has nothing to associate with and the button is not shown.
-            btnPartners.Visible = _partnersReauth IsNot Nothing AndAlso info.AreDDF
+            ' angajament that has none has nothing to associate with and the ribbon button is dimmed.
+            SetCanAssociatePartners(_partnersReauth IsNot Nothing AndAlso info.AreDDF)
 
             ' THE HEADER IS FILLED NOW, from the tree row (operator, 08.09.2026).
             ' An angajament that is only in the list -- added by the footer's right icon, with a
@@ -302,10 +321,6 @@ Public Class SumarView
 
             lblEmpty.ForeColor = scheme.Palette.TextDimColor
             lblEmpty.BackColor = scheme.Palette.SurfaceAltColor
-
-            ' Slice 0084-02: the traversal does not carry the generic button rules into the
-            ' children of an IThemedControl, so the house style is applied by hand.
-            ButtonStyles.ApplySecondary(btnPartners, scheme)
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.
             GlobalErrorLog.Write("SumarView.ApplyTheme", ex)
@@ -315,18 +330,20 @@ Public Class SumarView
     ''' <summary>
     ''' Slice 0084-02: opens the window that associates the angajament with one or more partners.
     ''' The partners are written on its DDF; nothing on this view changes, so there is nothing to
-    ''' reload afterwards.
+    ''' reload afterwards. Slice 0084-03: a real modal popup over the shell, not a page of it.
+    ''' Slice 0084-04: started from the ribbon button «Asociaza parteneri» (visible while this view is on screen),
+    ''' not from a button of the view.
     ''' </summary>
-    Private Async Sub btnPartners_Click(sender As Object, e As EventArgs) Handles btnPartners.Click
+    Friend Sub OpenPartnersWindow()
         Try
             Dim cod As String = _requestedCod
-            If String.IsNullOrWhiteSpace(cod) OrElse _partnersReauth Is Nothing Then Return
+            If String.IsNullOrWhiteSpace(cod) OrElse _partnersReauth Is Nothing OrElse Not _canAssociatePartners Then Return
             Using f As New SumarPartnersForm(_apiClient, cod, _partnersReauth)
-                Await AvacontMain.ShowMachetaAsync(Me, f, MachetaRef.Create(KbotForm.MachetaSumarParteneri, "cod", cod))
+                f.ShowDialog(FindForm())
             End Using
         Catch ex As Exception
-            ' Boundary UI (button): logged and said.
-            GlobalErrorLog.Write("SumarView.btnPartners_Click", ex)
+            ' Boundary UI (ribbon button): logged and said.
+            GlobalErrorLog.Write("SumarView.OpenPartnersWindow", ex)
             KBotMessage.Show(FindForm(), "Fereastra de asociere a partenerilor nu s-a putut deschide. Detalii în jurnalul de erori.",
                              "Asociază parteneri", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try

@@ -64,8 +64,12 @@ Public Class SetariForm
             ' Step 2: inside the main window the settings are a page of its work area, not an owned window.
             Dim k_main As AvacontMain = TryCast(TryCast(host, KbotForm)?.HostForm, AvacontMain)
             If k_main IsNot Nothing Then
-                Dim k_open As SetariForm = TryCast(k_main.CurrentPage, SetariForm)
-                If k_open IsNot Nothing Then Return k_open
+                ' Slice 0113-01: open already -- on screen or put away behind another page -- it comes back to the front.
+                Dim k_open As SetariForm = k_main.FindPage(Of SetariForm)()
+                If k_open IsNot Nothing Then
+                    k_main.ShowPage(k_open, k_ref)
+                    Return k_open
+                End If
                 Dim k_page As SetariForm = factory()
                 If Not k_main.ShowPage(k_page, k_ref) Then
                     k_page.Dispose()   ' another page refused to close: stay where we are

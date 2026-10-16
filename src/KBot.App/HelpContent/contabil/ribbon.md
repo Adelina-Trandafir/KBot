@@ -7,13 +7,13 @@ parent: contabil
 screens: AvacontMain.ribbon
 keywords: ribbon, banda, file, fila, grup, comenzi, meniu, MENIU, unde e meniul, unde a disparut meniul, strange ribbonul, ascunde banda, inchide macheta, iesire, adaugare angajamente, nomenclatoare, configurare, administrare, unitate
 ---
-<!-- slice: 0114 -->
+<!-- slice: 0114, 0114-02, 0000-85 -->
 Sus, sub bara de titlu, fereastra principală are **ribbonul**: o bandă cu **file** — **Angajamente**, **Date**,
 **E-Factura**, **Configurări**. Fiecare filă are butoane strânse în **grupuri**, cu numele grupului dedesubt.
 Ribbonul a luat locul butonului **MENIU**: tot ce era în meniu e acum aici. Ținând mouse-ul pe un buton vezi o
 etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul conectat.
 
-<!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butoanele «Ajutor» și «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. -->
+<!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butonul «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. -->
 
 ## Filele și butoanele
 <!-- slice: 0114, 0118, 0119, 0114-01, 0000-76 -->
@@ -36,20 +36,20 @@ aduce întâi pe ecran.
 <!-- capture: ribbon-configurari | caption: Fila «Configurări» a ribbonului | prepare: Alegeți fila «Configurări» a ribbonului, cu «Jurnal activitate» pornit în Setări › Aplicație. -->
 
 ## Strângerea ribbonului
-<!-- slice: 0114 -->
+<!-- slice: 0114, 0114-02, 0000-85 -->
 
 Ca să ai mai mult loc pentru lucru, ribbonul se poate **strânge**: **dublu clic** pe numele unei file sau clic pe
-**săgeata** din dreapta lui. Rămân doar numele filelor, iar butoanele «Ajutor» și «Închide» se fac mici, lângă ele.
+**săgeata** din dreapta lui. Rămân doar numele filelor, iar butoanele din dreapta («Închide» și, când e cazul, «Asociază parteneri») se fac mici, lângă ele.
 Un **clic pe o filă** desface ribbonul la loc. K-BOT ține minte cum l-ai lăsat și pornește data viitoare la fel.
 
-<!-- capture: ribbon-strans | caption: Ribbonul strâns: doar numele filelor, cu «Ajutor» și «Închide» mici | prepare: Deschideți «Lista angajamentelor», apoi dați dublu clic pe numele unei file din ribbon. După captură, desfaceți ribbonul la loc cu un clic pe o filă. -->
+<!-- capture: ribbon-strans | caption: Ribbonul strâns: doar numele filelor, cu «Închide» mic | prepare: Deschideți «Lista angajamentelor», apoi dați dublu clic pe numele unei file din ribbon. După captură, desfaceți ribbonul la loc cu un clic pe o filă. -->
 
-## Butoanele din dreapta: «Ajutor» și «Închide»
-<!-- slice: 0113, 0114 -->
+## Butoanele din dreapta: «Închide» și cele ale paginii
+<!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85 -->
 
-Cele două butoane stau în dreapta ribbonului, pe **orice filă**:
+Butoanele din dreapta ribbonului stau pe **orice filă**, și cu ribbonul strâns. Ajutorul nu mai are buton aici: îl deschizi cu **F1** sau cu **?** din bara de titlu — [Ajutorul](topic:contabil.ajutor).
 
-- **«Ajutor»** — ajutorul pentru ce ai pe ecran — [Butonul «Ajutor»](topic:contabil.ajutor.buton).
+- **Grupul din dreapta** — un grup cu nume (acum «Sumar»), în dreapta panoului, înaintea lui «Închide», despărțit de el printr-o linie subțire; pe orice filă. Are butoane doar pentru **vederea de pe ecran**: acum **«Asociază parteneri»**, cât e pe ecran vederea «Sumar» a listei angajamentelor. Grupul dispare când treci la altă vedere sau la altă machetă. E stins (gri) când angajamentul n-are document de fundamentare — [Vederea «Sumar»](topic:contabil.vederi.sumar).
 - **«Închide»** — închide **macheta de pe ecran** (Extrase de cont, Clasificații, un editor, Setări…). Dacă ai
   modificări nesalvate, macheta te întreabă, ca înainte. Din **lista angajamentelor** te întoarce la
   [«Acasă»](topic:contabil.acasa), fără să piardă angajamentul și vederea alese. Pe pagina «Acasă» butonul nu

@@ -88,6 +88,8 @@ Public Class CommandInfo
     Public Property Title As String = String.Empty
     Public Property Description As String = String.Empty
     Public Property Writes As Boolean
+    ''' <summary>Label of the one value the command needs typed (empty = none); such a command runs on ONE database only.</summary>
+    Public Property Param As String = String.Empty
 End Class
 
 Public Class CommandsResult
@@ -100,6 +102,8 @@ Public Class CommandBlock
     Public Property Columns As New List(Of String)()
     Public Property Rows As New List(Of List(Of String))()
     Public Property Note As String = String.Empty
+    ''' <summary>True: print each row as one untruncated line instead of an aligned column table.</summary>
+    Public Property Raw As Boolean
 End Class
 
 Public Class CommandResult

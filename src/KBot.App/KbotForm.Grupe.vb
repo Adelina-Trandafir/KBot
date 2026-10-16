@@ -184,17 +184,9 @@ Partial Public Class KbotForm
             If Not GrupeContext(k_api, k_gate) Then Return
             Dim k_changed As Boolean
             Using k_form As New GrupeForm(k_api, k_gate)
-                Dim k_main As AvacontMain = TryCast(HostForm, AvacontMain)
-                If k_main IsNot Nothing Then
-                    ' Inside the main window the editor is a page of the work area (step 2); the code below
-                    ' resumes when it closes, exactly where the modal call used to return.
-                    Dim k_closed As New TaskCompletionSource(Of Boolean)()
-                    AddHandler k_form.FormClosed, Sub(k_s, k_e) k_closed.TrySetResult(True)
-                    If Not k_main.ShowPage(k_form, MachetaRef.Create(MachetaGrupe)) Then Return   ' another page refused to close
-                    Await k_closed.Task.ConfigureAwait(True)
-                Else
-                    k_form.ShowDialog(Me)
-                End If
+                ' Slice 0113-01: a modal window of its own (caption bar, smaller than the work area); the code below
+                ' resumes when it closes. Without the main window (the Debug bench) it is the dialog it always was.
+                If Not Await ShowModalAsync(k_form, MachetaRef.Create(MachetaGrupe)) Then Return
                 k_changed = k_form.Modificat
             End Using
             If Not k_changed OrElse IsDisposed Then Return

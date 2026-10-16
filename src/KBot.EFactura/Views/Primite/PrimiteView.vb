@@ -31,7 +31,7 @@ Imports KBot.Theming
 ''' The embedded PDF viewer lives in KBot.App; the host passes a factory (as for the issued invoices).</para>
 ''' </summary>
 Public Class PrimiteView
-    Implements IThemedContainer
+    Implements IThemedContainer, IPutAway
 
     ' The views of the horizontal bar (the keys of navDetaliu's items, written in the designer).
     Private Const ViewLinii As String = "linii"
@@ -140,6 +140,20 @@ Public Class PrimiteView
     ''' <summary>Lets go of the PDF on screen (the view is put away).</summary>
     Public Sub ReleaseDocument()
         pgPdf.ReleaseDocument()
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0113-01: the window is about to be put away (another page or a modal window takes the work area): the bar moves to the
+    ''' first view (the lines, no PDF) and the PDF is let go, so Adobe is closed while nobody looks at it. The bar stays shown.
+    ''' </summary>
+    Public Sub PutAway() Implements IPutAway.PutAway
+        Try
+            If String.Equals(navDetaliu.SelectedKey, ViewPdf, StringComparison.Ordinal) Then navDetaliu.SelectedKey = ViewLinii
+            pgPdf.ReleaseDocument()
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.PutAway", ex)
+            Throw
+        End Try
     End Sub
 
     Private Sub PrimiteView_Load(sender As Object, e As EventArgs) Handles MyBase.Load

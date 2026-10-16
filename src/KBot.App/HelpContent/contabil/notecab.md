@@ -14,16 +14,15 @@ necorectate»** de pe pagina de start, cu angajamentul **«ERRRRRRRRRR»**. K-BO
 la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB** (formularul F1135).
 
 ## Unde le găsești
-<!-- slice: 0084, 0088, 0113, 0114 -->
+<!-- slice: 0084, 0088, 0113, 0114, 0113-01 -->
 
 - Imediat după conectarea la FOREXE, dacă sunt operațiuni noi, se deschide singură fereastra de
   corectare.
 - Oricând, din ribbon: **Angajamente › Verificări › «Operațiuni necorelate»**. Butonul apare doar cât
   există operațiuni necorelate.
-- Fereastra de corectare se deschide ca pagină a ferestrei principale; o închizi cu «Închide» din ribbon
-  sau cu Esc.
+- Fereastra de corectare se deschide ca fereastră peste fereastra principală; o închizi cu «Ieșire» sau cu Esc.
 
-<!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. Deschideți-o din ribbon, Angajamente › Verificări › «Operațiuni necorelate». -->
+<!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. Deschideți-o din ribbon, Angajamente › Verificări › «Operațiuni necorelate». | redo: 2026-10-16 12:00 | why: 0113-01: fereastra e o fereastră cu bara ei de titlu, mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 ## Cum faci nota
 <!-- slice: 0088, 0113 -->

@@ -13,6 +13,7 @@ Imports KBot.Common
 ''' what is shown and what the buttons do come from the server (slice 00EF-17).
 ''' </summary>
 Public Class PrimiteForm
+    Implements IPutAway
 
     Private ReadOnly _api As IEFacturaApi
     Private ReadOnly _gate As ReauthGate
@@ -70,6 +71,11 @@ Public Class PrimiteForm
         If _api Is Nothing Then Return
         Await primite.SyncFromAnafAsync(k_days).ConfigureAwait(True)
     End Function
+
+    ''' <summary>Slice 0113-01: put away -- the control moves to a view without a PDF and lets the document go.</summary>
+    Public Sub PutAway() Implements IPutAway.PutAway
+        primite.PutAway()
+    End Sub
 
     Private Sub BtnIesire_Click(sender As Object, e As EventArgs) Handles btnIesire.Click
         Try

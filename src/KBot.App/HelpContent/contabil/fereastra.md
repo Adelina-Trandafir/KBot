@@ -27,25 +27,35 @@ K-BOT lucrează într-o singură **fereastră principală**:
 | **Dreapta** | vederea aleasă, pentru angajamentul selectat |
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
-## Machetele se deschid ca pagini
-<!-- slice: 0113, 0114 -->
+## Pagini și ferestre
+<!-- slice: 0113, 0114, 0113-01 -->
 
-Fiecare machetă — Extrase de cont, Clasificații bugetare, Parteneri, Setări, Jurnal activitate, E-Factura, editoarele
-DDF și de ordonanțare, legăturile recepțiilor, operațiunile necorelate, graficul rezervărilor, asocierea partenerilor —
-se deschide **în fereastra principală**, în locul paginii de pe ecran, **una câte una**. Titlul ei apare în bara de
-titlu a ferestrei.
+K-BOT are două feluri de machete.
 
-- O machetă se închide cu **«Închide»** din dreapta ribbonului sau cu **Esc**; machetele nu mai au butoanele lor de
-  închidere («Închide», «Ieșire», «Renunță» la editoare). Dacă ai modificări nesalvate, macheta te întreabă, ca
-  înainte.
-- Când închizi o machetă, revine pagina de dedesubt: «Acasă» sau lista angajamentelor, cum le-ai lăsat.
-- Dacă deschizi altă machetă cât una e pe ecran, cea de pe ecran se închide întâi; dacă are modificări nesalvate și
-  alegi să rămâi în ea, cea nouă nu se mai deschide.
-- Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE, coada robotului, «Informații
-  interne» și fereastra de ajutor deschisă cu F1 rămân ferestre separate.
+**Pagini** — Extrase de cont, Clasificații bugetare, Parteneri, Setări, Jurnal activitate, Istoric versiuni, Ajutor,
+E-Factura Vânzare și Cumpărare. Se deschid **în fereastra principală**, în locul paginii de pe ecran, cu titlul în bara de
+titlu a ferestrei, și **rămân deschise** cât timp nu le închizi: dacă deschizi alta, prima se ascunde, cu tot ce ai
+scris în ea, și revine când o ceri din nou (din ribbon sau din **Machete deschise** din panoul lateral).
+
+- O pagină se închide cu **«Închide»** din dreapta ribbonului sau cu **Esc**. Dacă ai modificări nesalvate, pagina te
+  întreabă, ca înainte.
+- Când închizi pagina de pe ecran, revine cea folosită înainte; când nu mai e niciuna, revine «Acasă» sau lista
+  angajamentelor, cum le-ai lăsat.
+- Când treci la altă pagină, K-BOT **închide documentul PDF** care era deschis în pagina pe care o lași și o mută pe o
+  filă fără PDF (bara de file rămâne la locul ei). Când te întorci, apeși din nou fila cu documentul și el se deschide.
+- La închiderea K-BOT, fiecare pagină rămasă deschisă este adusă pe ecran și te întreabă dacă are ceva nesalvat.
+
+**Ferestre** — editoarele DDF și de ordonanțare, legăturile recepțiilor, operațiunile necorelate, graficul
+rezervărilor și fereastra «Grupe de angajamente». Se deschid ca **ferestre ale lor**, cu bara lor de titlu, **mai mici
+decât spațiul de lucru**, în mijlocul ferestrei principale (pot acoperi și panoul lateral). Cât sunt deschise, nu poți
+lucra în fereastra principală; se închid cu butoanele lor («Renunță», «Închide» sau «Ieșire», după fereastră). Paginile
+rămân cum erau când fereastra se închide; documentul PDF din pagina de dedesubt se închide când se deschide fereastra.
+
+Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE, coada robotului, «Informații
+interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -83,9 +93,9 @@ O grupă strânge laolaltă angajamente care merg împreună. Un angajament poat
 
 ### Fereastra «Grupe de angajamente»
 
-Se deschide din **«Editează grupe...»**, ca pagină a ferestrei principale, în locul listei de angajamente; o închizi cu «Închide» din ribbon (sau Esc) și lista revine, cu grupele la zi. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
+Se deschide din **«Editează grupe...»**, ca fereastră a ei, cu bara ei de titlu, peste fereastra principală; o închizi cu **«Ieșire»** și lista rămâne cum era, cu grupele la zi. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
 
-<!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din rotița listei › Grupe › Editează grupe... Alegeți o grupă cu mai multe angajamente. -->
+<!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din rotița listei › Grupe › Editează grupe... Alegeți o grupă cu mai multe angajamente. | redo: 2026-10-16 12:00 | why: 0113-01: fereastra Grupe e o fereastră cu bara ei de titlu și cu «Ieșire», nu o pagină a ferestrei principale -->
 
 - **Angajamente negrupate**: tabelul arată angajamentele care nu sunt în nicio grupă. **Trage un rând** cu mouse-ul peste o grupă din arbore: angajamentul intră în acea grupă pe loc, fără să mai apeși «Salvează». Tutorial: «Adaugă un angajament într-o grupă existentă».
 

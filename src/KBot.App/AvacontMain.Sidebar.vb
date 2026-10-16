@@ -305,10 +305,12 @@ Partial Public Class AvacontMain
             If IsDisposed Then Return
             Dim k_section As KBotSidePanelSection = sidebar.FindSection("machete")
             k_section.Rows.Clear()
+            ' Slice 0113-01: the open machete first, in the order they were opened; the closed ones after them, in italics.
             For Each k_entry As MachetaEntry In _registry.History.Recent()
                 k_section.Rows.Add(New KBotSidePanelRow(k_entry.Title, String.Empty, "macheta") With {
                     .Tag = k_entry,
-                    .ToolTipText = k_entry.Title & vbLf & "Clic pentru a o deschide din nou."})
+                    .Italic = Not k_entry.IsOpen,
+                    .ToolTipText = k_entry.Title & vbLf & If(k_entry.IsOpen, "Deschisă. Clic pentru a o aduce în față.", "Închisă. Clic pentru a o deschide din nou.")})
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.FillMachete", ex)

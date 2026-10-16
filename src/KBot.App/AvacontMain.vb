@@ -8,8 +8,10 @@ Imports KBot.Theming
 ''' <summary>
 ''' The application's main window. It owns the header (caption bar with the year / SS / unit selectors,
 ''' busy bar, the ribbon) and the side panel, and gives the rest of its area to the page it hosts: the
-''' opening page, the shell (<see cref="KbotForm"/>, kept loaded and only shown or hidden) or any machete
-''' (a stand-alone form shown as a page, one at a time). The header controls of the shell are the same
+''' opening page, the shell (<see cref="KbotForm"/>, kept loaded and only shown or hidden) or any page
+''' (a stand-alone form hosted as a page: several stay open, one on screen -- slice 0113-01). The windows the
+''' operator must answer (editors, links, charts) are not pages: they open as modal windows of their own
+''' (<see cref="ShowModalAsync"/>). The header controls of the shell are the same
 ''' instances KbotForm declares (so its <c>Handles capBar...</c> keep working); they are only
 ''' re-parented here, which is why <c>KbotForm</c> still works on its own (the Debug bench).
 ''' </summary>
@@ -61,6 +63,7 @@ Public Class AvacontMain
         ribbon.RightText = k_shell.lblOperator.Text
         AddHandler ribbon.CollapsedChanged, AddressOf Ribbon_CollapsedChanged
         AddHandler k_shell.MenuStateChanged, AddressOf SyncRibbon
+        AddHandler k_shell.ActiveViewChanged, AddressOf Shell_ActiveViewChanged
         AddHandler k_shell.lblOperator.TextChanged, AddressOf Operator_TextChanged
         AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
 
@@ -128,17 +131,26 @@ Public Class AvacontMain
 
     ' A hosted form does not get FormClosing when its host closes: ask it to close here, so its
     ' own checks run (the browser leaves the view's panel before the window is destroyed).
+    ' Slice 0113-01: every open page is asked, the most recently used first, and each one is brought to the front
+    ' first -- its own question about unsaved changes must be seen, not asked over a page that is hidden.
     Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
         MyBase.OnFormClosing(e)
         Try
             If e.Cancel OrElse _kbot.IsDisposed Then Return
+            Do While _pages.Count > 0
+                Dim k_open As Form = _pages(_pages.Count - 1)
+                If k_open.IsDisposed Then
+                    _pages.Remove(k_open)
+                    Continue Do
+                End If
+                If Not ReferenceEquals(_page, k_open) Then MakeFront(k_open)
+                k_open.Close()
+                If Not k_open.IsDisposed Then
+                    e.Cancel = True   ' the open page refused to close (unsaved changes)
+                    Return
+                End If
+            Loop
             _closing = True
-            If _page IsNot Nothing AndAlso Not _page.IsDisposed Then _page.Close()
-            If _page IsNot Nothing AndAlso Not _page.IsDisposed Then
-                e.Cancel = True   ' the open page refused to close (unsaved changes)
-                _closing = False
-                Return
-            End If
             _kbot.Close()
             If Not _kbot.IsDisposed Then
                 e.Cancel = True   ' the shell refused to close
@@ -157,8 +169,8 @@ Public Class AvacontMain
     Private Sub Ribbon_ItemClicked(sender As Object, e As KBotRibbonItemClickedEventArgs) Handles ribbon.ItemClicked
         Try
             Select Case e.Key
-                Case "ajutor"
-                    ShowRibbonHelp()
+                Case "sumar_parteneri"
+                    _kbot.OpenSumarPartners()
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
                 Case "pagina_inchide"
@@ -283,6 +295,7 @@ Public Class AvacontMain
     ' «Inchide» is there while a macheta is on screen (a page, or the shell); on the opening page it is gone.
     Private Sub UpdateCloseButton()
         UpdatePrimiteSyncControls()
+        UpdateSumarPartnersButton()
         Dim k_button As KBotRibbonButton = ribbon.FindButton("pagina_inchide")
         If k_button Is Nothing Then Return
         Dim k_visible As Boolean = (_page IsNot Nothing AndAlso Not _page.IsDisposed) OrElse _baseIsShell
@@ -291,17 +304,35 @@ Public Class AvacontMain
         ribbon.InvalidateLayout()
     End Sub
 
-    ' The help button of the ribbon. With a macheta on screen: the popup of the caption bar's «?» for it (search, the topic of
-    ' the screen, its tours and tutorials). With none (the opening page): the help window itself, as a page, which the
-    ' history of machete lists like any other.
-    Private Sub ShowRibbonHelp()
-        If Not KBotHelp.IsAvailable Then Return
-        Dim k_front As Control = If(_page IsNot Nothing AndAlso Not _page.IsDisposed, CType(_page, Control), If(_baseIsShell, _kbot, Nothing))
-        If k_front Is Nothing Then
-            _kbot.OpenRegistered(KbotForm.MachetaAjutor, Sub() TryCast(KBotHelp.Provider, HelpService)?.ShowHelpPage(Me))
-        Else
-            KBotHelp.RequestMenu(k_front, ribbon.ButtonScreenBounds("ajutor"))
-        End If
+    ' ---- The right group: what the view on screen offers (slice 0084-04 / 0114-03) -------------------------
+    ' The ribbon's RightGroup stands at the right of the panel, before «Inchide». Its buttons (and fields) are made in the designer
+    ' with Visible = False; this window shows them while their view is on screen and sets the group's caption. More buttons, and
+    ' other elements, for the same or another view go into the same group the same way.
+
+    Private Const KeySumarParteneri As String = "sumar_parteneri"
+
+    ' «Asociaza parteneri»: there while the «Sumar» view of the shell is the one on screen; dimmed when the angajament has no DDF.
+    Private Sub UpdateSumarPartnersButton()
+        Dim k_button As KBotRibbonButton = ribbon.FindButton(KeySumarParteneri)
+        If k_button Is Nothing Then Return
+        Dim k_show As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell AndAlso
+                                String.Equals(_kbot.ActiveViewKey, "sumar", StringComparison.Ordinal)
+        Dim k_enabled As Boolean = k_show AndAlso _kbot.CanAssociatePartners
+        If k_button.Visible = k_show AndAlso k_button.Enabled = k_enabled Then Return
+        k_button.Visible = k_show
+        k_button.Enabled = k_enabled
+        If k_show Then ribbon.RightGroup.Text = "Sumar"
+        ribbon.InvalidateLayout()
+    End Sub
+
+    ' UI boundary (event of the shell): log and swallow.
+    Private Sub Shell_ActiveViewChanged(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse _kbot.IsDisposed Then Return
+            UpdateSumarPartnersButton()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.Shell_ActiveViewChanged", ex)
+        End Try
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
@@ -311,10 +342,16 @@ Public Class AvacontMain
         MyBase.OnFormClosed(e)
     End Sub
 
-    ' ---- Pages: one stand-alone form at a time, in the work area ------------------------------------
+    ' ---- Pages: stand-alone forms hosted in the work area; they stay open, one on screen -------------
+    ' Slice 0113-01. A page that another page (or the base) covers is put away, not closed: it stays open, hidden, with
+    ' what the operator typed in it, and comes back when it is asked for again. Modal windows are not pages (see ShowModal).
 
-    Private _page As Form
-    Private _pageBar As KBotCaptionBar
+    ''' <summary>Every open page, the most recently used LAST (the one on screen, when a page is on screen).</summary>
+    Private ReadOnly _pages As New List(Of Form)()
+    Private ReadOnly _pageBars As New Dictionary(Of Form, KBotCaptionBar)()
+    Private ReadOnly _pageRefs As New Dictionary(Of Form, MachetaRef)()   ' what the history knows each open page as
+    Private Shared ReadOnly ShellRef As MachetaRef = MachetaRef.Create(KbotForm.MachetaAngajamente)
+    Private _page As Form   ' the page on screen; Nothing = the base (the opening page or the shell)
 
     ''' <summary>The page shown in place of the shell now; Nothing = the shell.</summary>
     Friend ReadOnly Property CurrentPage As Form
@@ -324,41 +361,33 @@ Public Class AvacontMain
     End Property
     Private _savedCaption As String
 
+    ''' <summary>The open page of the given type -- on screen or put away -- or Nothing when there is none.</summary>
+    Friend Function FindPage(Of T As Form)() As T
+        For Each k_open As Form In _pages
+            Dim k_found As T = TryCast(k_open, T)
+            If k_found IsNot Nothing AndAlso Not k_open.IsDisposed Then Return k_found
+        Next
+        Return Nothing
+    End Function
+
     ''' <summary>
-    ''' Shows a stand-alone form as the page of the work area, in place of the shell (one page at a
-    ''' time; the page under it stays behind, hidden, and comes back when the page closes). The page's own
-    ''' title bar goes: its title moves to this window's caption bar (and follows it when it changes), and it
-    ''' closes the way it always did (its own «Inchide» button, Escape, a cancel button). False = the page
-    ''' already open refused to close (unsaved changes), so nothing was shown.
+    ''' Shows a stand-alone form as a page of the work area. The page that was on screen (or the shell / the opening page)
+    ''' is put away -- <see cref="PutAwayFront"/> first, so no Adobe stays open behind -- and stays open, hidden; a page
+    ''' that is open already (put away) just comes back to the front. The page's own title bar goes: its title moves to
+    ''' this window's caption bar (and follows it when it changes), and it closes the way it always did (the ribbon's
+    ''' «Inchide», Escape, a cancel button). Always True (kept for the callers that tested a refusal to close).
     ''' </summary>
     Friend Function ShowPage(k_page As Form, Optional k_ref As MachetaRef = Nothing) As Boolean
         Try
             ArgumentNullException.ThrowIfNull(k_page)
-            If ReferenceEquals(_page, k_page) Then
-                If k_ref IsNot Nothing Then _registry.Note(k_ref)   ' asked again: it comes back to the top of the history
-                Return True
+            If Not ReferenceEquals(_page, k_page) Then
+                If _pages.Contains(k_page) Then
+                    MakeFront(k_page)   ' open and put away: it comes back
+                Else
+                    OpenNewPage(k_page)
+                End If
             End If
-            If _page IsNot Nothing AndAlso Not _page.IsDisposed Then
-                _page.Close()
-                If _page IsNot Nothing AndAlso Not _page.IsDisposed Then Return False   ' the open page refused to close (unsaved changes)
-            End If
-
-            _page = k_page
-            _savedCaption = _kbot.capBar.Text
-
-            PrepareHosted(k_page)
-            _pageBar = HidePageTitleBar(k_page)
-
-            AddHandler k_page.FormClosed, AddressOf Page_FormClosed
-            AddHandler k_page.TextChanged, AddressOf PageTitleChanged
-            If _pageBar IsNot Nothing Then AddHandler _pageBar.TextChanged, AddressOf PageTitleChanged
-            SetBaseVisible(False)
-            pnlHost.Controls.Add(k_page)
-            k_page.Show()
-            k_page.BringToFront()
-            UpdatePageCaption()   ' after Show: most forms write their title in Load
-            If k_ref IsNot Nothing Then _registry.Note(k_ref)   ' the history of opened machete
-            UpdateCloseButton()
+            If k_ref IsNot Nothing Then NotePageOpen(k_page, k_ref)
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.ShowPage", ex)
@@ -366,30 +395,122 @@ Public Class AvacontMain
         End Try
     End Function
 
-    ''' <summary>
-    ''' Shows a form as a page and returns when it has closed -- what <c>ShowDialog</c> used to do for the
-    ''' code that opened it. False = the page already open refused to close, so the form was not shown.
-    ''' </summary>
-    Friend Async Function ShowPageAndWaitAsync(k_page As Form, k_ref As MachetaRef) As Task(Of Boolean)
-        Dim k_closed As New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
-        AddHandler k_page.FormClosed, Sub(k_s, k_e) k_closed.TrySetResult(True)
-        If Not ShowPage(k_page, k_ref) Then Return False
-        Await k_closed.Task.ConfigureAwait(True)
-        Return True
-    End Function
+    ' The history hears that the page is open. Its place among the open machete is the one it got when it opened: asking for it
+    ' again changes nothing there. A page that comes back under another reference (another year) closes the old line.
+    Private Sub NotePageOpen(k_page As Form, k_ref As MachetaRef)
+        Dim k_old As MachetaRef = Nothing
+        If _pageRefs.TryGetValue(k_page, k_old) AndAlso Not k_old.Equals(k_ref) Then _registry.NoteClosed(k_old)
+        _pageRefs(k_page) = k_ref
+        _registry.Note(k_ref, True)
+    End Sub
+
+    ' Hosts a form that was not open: the front is put away, the form becomes the front.
+    Private Sub OpenNewPage(k_page As Form)
+        PutFrontAway()
+        PrepareHosted(k_page)
+        Dim k_bar As KBotCaptionBar = HidePageTitleBar(k_page)
+        _pageBars(k_page) = k_bar
+        AddHandler k_page.FormClosed, AddressOf Page_FormClosed
+        AddHandler k_page.TextChanged, AddressOf PageTitleChanged
+        If k_bar IsNot Nothing Then AddHandler k_bar.TextChanged, AddressOf PageTitleChanged
+        _pages.Add(k_page)
+        _page = k_page
+        pnlHost.Controls.Add(k_page)
+        k_page.Show()
+        k_page.BringToFront()
+        UpdatePageCaption()   ' after Show: most forms write their title in Load
+        UpdateCloseButton()
+    End Sub
+
+    ' Brings an open page (put away) to the front; the front is put away.
+    Private Sub MakeFront(k_page As Form)
+        If ReferenceEquals(_page, k_page) Then Return
+        PutFrontAway()
+        _page = k_page
+        _pages.Remove(k_page)
+        _pages.Add(k_page)   ' the most recently used goes last
+        k_page.Visible = True
+        k_page.BringToFront()
+        UpdatePageCaption()
+        UpdateCloseButton()
+    End Sub
+
+    ' What is on screen -- a page or the base -- is put away (its Adobe closed, see PutAwayFront) and hidden. A page stays
+    ' open; the base keeps the caption it had, for when it comes back.
+    Private Sub PutFrontAway()
+        PutAwayFront()
+        If _page IsNot Nothing Then
+            _page.Visible = False
+        Else
+            _savedCaption = _kbot.capBar.Text
+            SetBaseVisible(False)
+        End If
+    End Sub
 
     ''' <summary>
-    ''' For code that opened a form modally: shows it as a page of the main window and waits for it to close;
-    ''' with no main window (the Debug bench) it is the modal dialog it always was.
+    ''' Slice 0113-01: what is on screen is about to be covered (another page, the other base, or a modal window): it moves to a
+    ''' tab without a PDF -- its navigation bar stays shown -- and lets its documents go, so Adobe is closed while nobody looks
+    ''' at it. Coming back, the operator is on that tab and picks the PDF tab to open the document again. A failure is logged and
+    ''' does not stop the operator from moving on.
     ''' </summary>
-    Friend Shared Async Function ShowMachetaAsync(k_owner As Control, k_form As Form, k_ref As MachetaRef) As Task(Of Boolean)
+    Friend Sub PutAwayFront()
+        Try
+            If _page IsNot Nothing AndAlso Not _page.IsDisposed Then
+                TryCast(_page, IPutAway)?.PutAway()
+            ElseIf _baseIsShell Then
+                _kbot.PutAway()
+            End If
+        Catch ex As Exception
+            ' UI boundary: closing Adobe is a courtesy to the next window; a failure here must not stop the navigation.
+            GlobalErrorLog.Write("AvacontMain.PutAwayFront", ex)
+        End Try
+    End Sub
+
+    ' ---- Modal windows ---------------------------------------------------------------------------------
+
+    ''' <summary>
+    ''' For code that opens a window the operator must answer before going on (the DDF / ORD editors, the reception links, the
+    ''' uncorrelated operations, the reservations chart, the groups, the message catalog): a window of its own, with its own
+    ''' caption bar, smaller than the work area, centred on the main window (it may cover the side panel), and returns when
+    ''' it closed. With no main window (the Debug bench) it is the dialog it always was.
+    ''' </summary>
+    Friend Shared Function ShowModalAsync(k_owner As Control, k_form As Form, k_ref As MachetaRef) As Task(Of Boolean)
         Dim k_main As AvacontMain = Current
         If k_main Is Nothing OrElse k_main.IsDisposed Then
             k_form.ShowDialog(If(k_owner Is Nothing, Nothing, k_owner.FindForm()))
-            Return True
+            Return Task.FromResult(True)
         End If
-        Return Await k_main.ShowPageAndWaitAsync(k_form, k_ref).ConfigureAwait(True)
+        Return Task.FromResult(k_main.ShowModal(k_form, k_ref))
     End Function
+
+    ' The page or shell on screen is put away first (its Adobe closed: the editors bring their own, and all the viewers
+    ' share one Acrobat broker); the window then does not touch the pages, so they are as they were when it closes.
+    Private Function ShowModal(k_form As Form, k_ref As MachetaRef) As Boolean
+        Try
+            ArgumentNullException.ThrowIfNull(k_form)
+            PutAwayFront()
+            FitModal(k_form)
+            k_form.ShowDialog(Me)   ' not recorded: a modal window is answered and gone, it is not a macheta to come back to
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.ShowModal", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Smaller than the work area (a margin all round), centred on this window; a window the designer made bigger is cut down.
+    Private Sub FitModal(k_form As Form)
+        Dim k_margin As Integer = LogicalToDeviceUnits(16)
+        Dim k_cap As New Size(Math.Max(k_margin, pnlHost.ClientSize.Width - 2 * k_margin),
+                              Math.Max(k_margin, pnlHost.ClientSize.Height - 2 * k_margin))
+        k_form.StartPosition = FormStartPosition.CenterParent
+        Dim k_max As Size = k_form.MaximumSize   ' 0 = no limit on that axis
+        k_cap = New Size(If(k_max.Width > 0, Math.Min(k_max.Width, k_cap.Width), k_cap.Width),
+                         If(k_max.Height > 0, Math.Min(k_max.Height, k_cap.Height), k_cap.Height))
+        k_form.MinimumSize = New Size(Math.Min(k_form.MinimumSize.Width, k_cap.Width), Math.Min(k_form.MinimumSize.Height, k_cap.Height))
+        k_form.MaximumSize = k_cap
+        k_form.Size = New Size(Math.Min(k_form.Width, k_cap.Width), Math.Min(k_form.Height, k_cap.Height))
+    End Sub
 
     ' A stand-alone form becomes a docked page: no frame, no size rules of its own, no own placement.
     Private Shared Sub PrepareHosted(k_page As Form)
@@ -476,12 +597,12 @@ Public Class AvacontMain
         End If
     End Sub
 
-    ''' <summary>Brings the opening page to the front (closing the open page first). False = that page refused.</summary>
+    ''' <summary>Brings the opening page to the front. The open pages stay open behind it (slice 0113-01). Always True.</summary>
     Friend Function ShowHome() As Boolean
         Return SwitchBase(False)
     End Function
 
-    ''' <summary>Brings the shell (angajamente tree and views) to the front. False = the open page refused to close.</summary>
+    ''' <summary>Brings the shell (angajamente tree and views) to the front. The open pages stay open behind it (slice 0113-01). Always True.</summary>
     Friend Function ShowShell() As Boolean
         Return SwitchBase(True)
     End Function
@@ -489,10 +610,17 @@ Public Class AvacontMain
     Private Function SwitchBase(k_shell As Boolean) As Boolean
         Try
             If _page IsNot Nothing AndAlso Not _page.IsDisposed Then
-                _page.Close()
-                If _page IsNot Nothing AndAlso Not _page.IsDisposed Then Return False
+                ' Slice 0113-01: the page on screen is put away, not closed; the base comes back with the caption it had.
+                PutAwayFront()
+                _page.Visible = False
+                _page = Nothing
+                _kbot.capBar.Text = _savedCaption
+            ElseIf _baseIsShell AndAlso Not k_shell Then
+                PutAwayFront()   ' the shell leaves the screen for the opening page
             End If
             _baseIsShell = k_shell
+            ' The list of angajamente is a macheta too: open while it is the base, closed when the opening page takes its place.
+            If k_shell Then _registry.Note(ShellRef, True) Else _registry.NoteClosed(ShellRef)
             _kbot.Visible = k_shell
             _home.Visible = Not k_shell
             If k_shell Then
@@ -535,7 +663,9 @@ Public Class AvacontMain
     ' only there), otherwise the form's text.
     Private Sub UpdatePageCaption()
         If _page Is Nothing OrElse _page.IsDisposed Then Return
-        Dim k_title As String = If(_pageBar IsNot Nothing AndAlso _pageBar.Text.Length > 0, _pageBar.Text, _page.Text)
+        Dim k_bar As KBotCaptionBar = Nothing
+        _pageBars.TryGetValue(_page, k_bar)
+        Dim k_title As String = If(k_bar IsNot Nothing AndAlso k_bar.Text.Length > 0, k_bar.Text, _page.Text)
         If k_title.Length > 0 Then _kbot.capBar.Text = k_title
     End Sub
 
@@ -547,21 +677,45 @@ Public Class AvacontMain
         End Try
     End Sub
 
-    ' The page closed: the page under it is back, with the caption it had.
+    ' The page closed (from the ribbon, Escape, or by itself). When it was the one on screen, the page used before it comes
+    ' back (slice 0113-01), and with none left the base, with the caption it had. A page closed while put away changes nothing
+    ' on screen.
     Private Sub Page_FormClosed(sender As Object, e As FormClosedEventArgs)
         Try
             Dim k_closed As Form = TryCast(sender, Form)
-            If k_closed IsNot Nothing Then
-                RemoveHandler k_closed.FormClosed, AddressOf Page_FormClosed
-                RemoveHandler k_closed.TextChanged, AddressOf PageTitleChanged
+            If k_closed Is Nothing Then Return
+            RemoveHandler k_closed.FormClosed, AddressOf Page_FormClosed
+            RemoveHandler k_closed.TextChanged, AddressOf PageTitleChanged
+            Dim k_bar As KBotCaptionBar = Nothing
+            If _pageBars.TryGetValue(k_closed, k_bar) Then
+                If k_bar IsNot Nothing Then RemoveHandler k_bar.TextChanged, AddressOf PageTitleChanged
+                _pageBars.Remove(k_closed)
+            End If
+            _pages.Remove(k_closed)
+            Dim k_ref As MachetaRef = Nothing
+            If _pageRefs.TryGetValue(k_closed, k_ref) Then
+                _pageRefs.Remove(k_closed)
+                If Not _closing Then _registry.NoteClosed(k_ref)   ' the history: it goes to the end, in italics
             End If
             If Not ReferenceEquals(_page, k_closed) Then Return
-            If _pageBar IsNot Nothing Then RemoveHandler _pageBar.TextChanged, AddressOf PageTitleChanged
-            _pageBar = Nothing
             _page = Nothing
             If _closing OrElse IsDisposed OrElse Disposing OrElse _kbot.IsDisposed Then Return
-            _kbot.capBar.Text = _savedCaption
-            SetBaseVisible(True)
+            Dim k_next As Form = Nothing
+            For k_index As Integer = _pages.Count - 1 To 0 Step -1
+                If Not _pages(k_index).IsDisposed Then
+                    k_next = _pages(k_index)
+                    Exit For
+                End If
+            Next
+            If k_next IsNot Nothing Then
+                _page = k_next
+                k_next.Visible = True
+                k_next.BringToFront()
+                UpdatePageCaption()
+            Else
+                _kbot.capBar.Text = _savedCaption
+                SetBaseVisible(True)
+            End If
             UpdateCloseButton()
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.Page_FormClosed", ex)

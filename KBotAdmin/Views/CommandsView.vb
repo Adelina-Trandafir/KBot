@@ -48,6 +48,10 @@ Public Class CommandsView
         Dim k_target As String = If(_context.IsAll, AdminContext.AllDatabasesCaption, _context.SelectedDb)
         Dim k_command As CommandInfo = CurrentCommand()
         lblDesc.Text = If(k_command Is Nothing, String.Empty, k_command.Description & "   Țintă: " & k_target)
+        ' the typed value exists only for a command that needs it; another choice in the combo makes the box disappear
+        Dim k_needsParam As Boolean = k_command IsNot Nothing AndAlso k_command.Param <> String.Empty
+        txtParam.Visible = k_needsParam
+        If k_needsParam Then txtParam.PlaceholderText = k_command.Param
     End Sub
 
     Private Function CurrentCommand() As CommandInfo
@@ -63,13 +67,24 @@ Public Class CommandsView
         Try
             Dim k_command As CommandInfo = CurrentCommand()
             If k_command Is Nothing Then Return
+            Dim k_param As String = String.Empty
+            If k_command.Param <> String.Empty Then
+                ' a command with a typed value runs on ONE database: refuse «all databases» before anything goes to the server
+                If _context.RequireSingleDb("Comanda «" & k_command.Title & "»") = String.Empty Then Return
+                k_param = txtParam.Text.Trim()
+                If k_param = String.Empty Then
+                    KBotMessage.Show("Scrieți " & k_command.Param.ToLowerInvariant() & ".", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    txtParam.Focus()
+                    Return
+                End If
+            End If
             Dim k_target As String = If(_context.IsAll, "TOATE bazele", "baza " & _context.SelectedDb)
             If k_command.Writes AndAlso Not UiRun.Confirm("Comanda «" & k_command.Title & "» scrie în " & k_target & "." & vbLf & "Continuați?", "Comenzi") Then Return
             Await UiRun.Guard("CommandsView.BtnRun_Click", _context,
                 Async Function()
                     _context.Say("Se rulează «" & k_command.Title & "» pe " & k_target & "...")
                     Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", k_command.Name, "--db", _context.DbArgument)
+                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", k_command.Name, "--db", _context.DbArgument, "--param", k_param)
                     txtOutput.Text = RenderResult(k_result)
                     lblState.Text = k_result.Blocks.Count.ToString(CultureInfo.InvariantCulture) & " blocuri, " &
                                     (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
@@ -97,6 +112,16 @@ Public Class CommandsView
         Dim k_sb As New StringBuilder()
         For Each k_block As CommandBlock In k_result.Blocks
             k_sb.AppendLine("== " & k_block.Db & " - " & k_block.Title & " ==")
+            If k_block.Raw Then
+                ' one untruncated line per row (the result is meant to be copied and handed over)
+                For Each k_row As List(Of String) In k_block.Rows
+                    k_sb.AppendLine(String.Join(" | ", k_row))
+                Next
+                If k_block.Rows.Count = 0 Then k_sb.AppendLine("(niciun rând)")
+                If k_block.Note <> String.Empty Then k_sb.AppendLine(k_block.Note)
+                k_sb.AppendLine()
+                Continue For
+            End If
             Dim k_widths(k_block.Columns.Count - 1) As Integer
             For k_i As Integer = 0 To k_block.Columns.Count - 1
                 k_widths(k_i) = Math.Min(MaxColumnWidth, k_block.Columns(k_i).Length)

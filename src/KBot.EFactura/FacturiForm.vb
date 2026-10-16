@@ -27,6 +27,7 @@ Imports KBot.Theming
 ''' customer view; FacturiForm.Furnizor = the issuer the window keeps and the title-bar menu «Conturi Unitate» / «Date Unitate»; FacturiForm.Linii = the lines grid and the units of measure.</para>
 ''' </summary>
 Public Class FacturiForm
+    Implements IPutAway
 
     ''' <summary>What the right side is doing: showing an invoice, typing a new one, or modifying a draft.</summary>
     Private Enum EditMode

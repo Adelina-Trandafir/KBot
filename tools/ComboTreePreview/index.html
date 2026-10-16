@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DGV + ComboTree · Probă locală</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/preview/demo.css">
+  <script src="/static/js/utils/css.js"></script>
+  <script src="/static/js/utils/z-max.js"></script>
+  <script type="module" src="/preview/demo.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">VERCON · Probă locală</p>
+      <h1>DGV + ComboTree</h1>
+      <p>Click în Preț pentru a compara formatul și fontul cu rândul de dedesubt. Coloana Produs păstrează arborele de probă.</p>
+    </header>
+    <section class="toolbar" aria-label="Opțiuni de probă">
+      <label><input id="parents" type="checkbox"> Permite selecția părinților</label>
+      <label>Lățime produs
+        <select id="width"><option value="234">234 px · ca în NIR</option><option value="160">160 px · îngust</option><option value="360">360 px · lat</option></select>
+      </label>
+      <label>Minimum dropdown
+        <select id="minimum"><option value="420">420 px</option><option value="300">300 px</option><option value="560">560 px</option></select>
+      </label>
+      <button id="reset" type="button">Resetează datele</button>
+      <label>Font grilă
+        <select id="font-size"><option value="15">15 px</option><option value="20" selected>20 px</option></select>
+      </label>
+    </section>
+    <p class="hint">Sus/jos intră în arbore. În arbore, stânga/dreapta restrânge/extinde; tastarea revine la căutare. În textbox, stânga/dreapta mută cursorul. Enter = click. După alegere, focusul trece în Cantitate.</p>
+    <p class="hint">Preț: 0,5550 · Valoare: 1.234,50 · UM centrat · Observații la stânga. Primele două rânduri au aceleași valori pentru comparația la editare.</p>
+    <div id="grid" aria-label="DGV de probă"></div>
+    <p id="status" role="status">Se încarcă grila…</p>
+    <section class="details">
+      <div><h2>Ultima valoare confirmată</h2><pre id="selection">Nicio selecție încă.</pre></div>
+      <div><h2>Evenimente</h2><ol id="events" reversed></ol></div>
+    </section>
+    <p class="hint">Datele sunt fictive și se păstrează numai în această pagină. Pentru deschidere în sus, editează unul dintre ultimele rânduri vizibile.</p>
+  </main>
+</body>
+</html>

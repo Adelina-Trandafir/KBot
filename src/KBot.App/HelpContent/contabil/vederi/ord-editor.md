@@ -8,11 +8,11 @@ screens: OrdEditForm, OrdBeneficiariPage, OrdDocumentePage, OrdAtasamentePage, O
 keywords: editor ordonantare, beneficiari, documente justificative, atasamente, imagini, salveaza ordonantarea, cod fiscal, iban
 open: view:ord
 ---
-<!-- slice: 0049, 0049-02, 0113 -->
-Editorul **«Ordonanțare de plată»** se deschide, ca pagină a ferestrei principale, la o ordonanțare nouă și la «Modifică
-ordonanțarea».
+<!-- slice: 0049, 0049-02, 0113, 0113-01 -->
+Editorul **«Ordonanțare de plată»** se deschide, ca fereastră a lui, cu bara lui de titlu, mai mică decât spațiul de
+lucru, la o ordonanțare nouă și la «Modifică ordonanțarea». Cât e deschis nu poți lucra în fereastra principală.
 
-<!-- capture: ord-editor | caption: Editorul de ordonanțare, pagina «Beneficiari» | goto: view:ord | prepare: Clic dreapta pe o ordonanțare din arbore › «Modifică ordonanțarea». | redo: 2026-10-13 17:30 | why: 0113: editorul e o pagină a ferestrei principale, fără bara lui de titlu și fără «Renunță» -->
+<!-- capture: ord-editor | caption: Editorul de ordonanțare, pagina «Beneficiari» | goto: view:ord | prepare: Clic dreapta pe o ordonanțare din arbore › «Modifică ordonanțarea». | redo: 2026-10-16 12:00 | why: 0113-01: editorul e din nou o fereastră cu bara lui de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 **Sus** e antetul: codul angajamentului, obiectul DDF, **numărul** (la o ordonanțare nouă: «se
 alocă la salvare»), **data** și totalul. Data e cea care se scrie în document; plățile acoperite
@@ -59,7 +59,7 @@ Imaginile atașate ordonanțării:
 Imaginile se încarcă pe server **după** salvarea ordonanțării.
 
 ## Salvarea
-<!-- slice: 0049, 0049-02, 0113 -->
+<!-- slice: 0049, 0049-02, 0113, 0113-01 -->
 
 **«Salvează ordonanțarea»** verifică întâi tot și, dacă lipsește ceva, spune **toate** problemele
 deodată: data, compartimentul, CUAL, denumirea / codul fiscal / contul unui beneficiar,
@@ -70,5 +70,4 @@ salvează toată, ori nimic.
 Dacă o imagine nu se poate încărca după salvare, ordonanțarea **rămâne salvată** și K-BOT spune ce
 imagine lipsește; o adaugi din nou cu «Modifică ordonanțarea».
 
-Editorul se deschide ca pagină a ferestrei principale și nu mai are butonul «Renunță»: **«Închide»** din ribbon
-(sau Esc) îl închide fără să salveze nimic.
+**«Renunță»** închide editorul fără să salveze nimic.

@@ -113,7 +113,7 @@ Partial Public Class KbotForm
                     ' window says what for.
                     _robotQueue.SetNote($"«{cod}»: așteaptă fereastra de asociere")
                     Try
-                        If Not Await ShowMachetaAsync(f, CodRef(MachetaAsociere, cod)) Then Return False
+                        If Not Await ShowModalAsync(f, CodRef(MachetaAsociere, cod)) Then Return False
                     Finally
                         _robotQueue.SetNote(String.Empty)
                     End Try

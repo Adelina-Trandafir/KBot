@@ -282,7 +282,7 @@ Partial Public Class KbotForm
                 .PornesteCuIndicatorii = cuIndicatori,
                 .SurseIndicatori = If(surseIndicatori, String.Empty),
                 .ProgramDinIndicatori = programDinIndicatori}
-            If Not Await ShowMachetaAsync(f, CodRef(MachetaDdfEdit, draft.CodAngajament)) Then Return
+            If Not Await ShowModalAsync(f, CodRef(MachetaDdfEdit, draft.CodAngajament)) Then Return
             If f.SAuSalvatModificari AndAlso angajamentNou Then
                 ReincarcaArborelePe(draft.CodAngajament)
             ElseIf f.SAuSalvatModificari Then

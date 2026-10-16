@@ -8,7 +8,7 @@ screens: AsociereForm.treeLant, AsociereForm.gridLant, AsociereForm.pnlGrafice, 
 keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, grafic, distributie, benzi, evolutia valorii, plata, total receptii la data platii
 ---
 <!-- slice: 0048-04, 0000-12 -->
-<!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. | redo: 2026-10-13 17:30 | why: 0113: fereastra Asocieri e o pagină a ferestrei principale, fără bara ei de titlu și fără «Renunță» -->
+<!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. | redo: 2026-10-16 12:00 | why: 0113-01: fereastra Asocieri e o fereastră cu bara ei de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
@@ -74,13 +74,13 @@ ecranul — bună la angajamentele cu multe recepții.
 <!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». -->
 
 ## Butoanele
-<!-- slice: 0048-04, 0058, 0056-02, 0113 -->
+<!-- slice: 0048-04, 0058, 0056-02, 0113, 0113-01 -->
 
 | Buton | Ce face |
 |-------|---------|
 | **Salvează legăturile** | scrie ce ai hotărât. După o descărcare se aprinde abia când **fiecare** instantaneu adus de descărcare are o hotărâre; legăturile vechi se scriu doar dacă le-ai mutat. |
 | **Golește așezările** | doar după o descărcare: pune înapoi în coș tot ce a adus descărcarea și anulează marcajele tale; legăturile vechi pe care le-ai mutat revin la cum sunt pe server |
-| **«Închide»** din ribbon (sau Esc) | fereastra nu mai are butonul ei «Renunță»: se închide de aici, fără să scrie nimic (vezi mai jos ce înseamnă după o descărcare) |
+| **«Renunță»** | închide fereastra fără să scrie nimic (vezi mai jos ce înseamnă după o descărcare) |
 
 Banda de mesaje de sus spune mereu cât mai e de făcut, de exemplu «Mai sunt 3 instantanee
 neașezate...» sau «Toate instantaneele au primit o hotărâre — poți salva descărcarea.»

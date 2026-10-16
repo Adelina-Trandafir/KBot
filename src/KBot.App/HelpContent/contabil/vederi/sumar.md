@@ -28,14 +28,14 @@ Coloanele tabelului se pot sorta și filtra din **pâlnia** capului de coloană;
 **TOTALURI**, însumează ce se vede — [Arborii și tabelele](topic:contabil.liste).
 
 ## Asociază parteneri
-<!-- slice: 0084-02, 0000-28, 0000-30, 0113 -->
-Butonul **Asociază parteneri**, în dreapta datelor angajamentului, apare doar când angajamentul are
-un document de fundamentare (DDF; îl faci din vederea «Rezervări», cu semnul «+»): partenerii se asociază documentului. Fără document, butonul nu se vede.
+<!-- slice: 0084-02, 0084-03, 0084-04, 0114-02, 0114-03, 0000-28, 0000-30, 0000-84, 0000-85, 0113 -->
+Butonul **Asociază parteneri** stă în **ribbon**, în grupul **«Sumar»** din dreapta, înaintea lui «Închide» (despărțit de el printr-o linie subțire), și se vede **doar cât e pe ecran vederea «Sumar»**. Partenerii se asociază documentului de fundamentare (DDF; îl faci din vederea «Rezervări», cu semnul «+»): fără document, butonul e stins (gri).
 
-Macheta care se deschide (ca pagină a ferestrei principale) arată partenerii deja asociați. Alegi un partener din listă (scrii
+Se deschide o fereastră de dialog (popup) peste «Sumar», care arată partenerii deja asociați. Cât timp e deschisă,
+restul aplicației așteaptă. Alegi un partener din listă (scrii
 începutul numelui sau al codului fiscal) și apeși **Asociază**; apare în tabel cu rolul «De adăugat».
-Poți alege câți parteneri ai nevoie. **Salvează** îi trimite pe toți odată; **«Închide»** din ribbon
-(sau Esc) închide macheta fără să asocieze nimic și te întoarce la «Sumar».
+Poți alege câți parteneri ai nevoie. **Salvează** îi trimite pe toți odată și închide fereastra; **Renunță**
+(sau Esc) o închide fără să asocieze nimic și te întoarce la «Sumar».
 
 - Un partener deja asociat nu mai apare în listă și nu se adaugă a doua oară.
 - De aici partenerii doar se adaugă: cei deja asociați rămân. Pe unul ales și încă nesalvat îl poți

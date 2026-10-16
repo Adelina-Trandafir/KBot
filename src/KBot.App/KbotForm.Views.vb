@@ -48,10 +48,53 @@ Partial Public Class KbotForm
             End If
             ' Only the ACTIVE view gets the context; the others get it when activated.
             view.SetContext(_currentInfo)
+            RaiseEvent ActiveViewChanged(Me, EventArgs.Empty)   ' the ribbon's page buttons follow (AvacontMain)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.ActivateView", ex)
             Throw
         End Try
+    End Sub
+
+    ''' <summary>Raised when another view of the left navigation became the active one, or the active view changed what
+    ''' the ribbon offers for it (slice 0084-04).</summary>
+    Friend Event ActiveViewChanged As EventHandler
+
+    ''' <summary>The key of the view on screen in the shell («sumar», «rezervari», ...); empty when none yet.</summary>
+    Friend ReadOnly Property ActiveViewKey As String
+        Get
+            Return If(_activeView Is Nothing, String.Empty, _activeView.ViewKey)
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' Slice 0113-01: the main window is about to put the shell away (another page or a modal window takes the work area): the
+    ''' view on screen moves to a tab without a PDF and lets its document go, so Adobe is closed while nobody looks at it.
+    ''' The navigation bars stay shown. Views that hold no document do nothing.
+    ''' </summary>
+    Friend Sub PutAway()
+        Try
+            TryCast(_activeView, IPutAway)?.PutAway()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KbotForm.PutAway", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>True when the «Sumar» view is on screen and its angajament has a DDF to associate partners with.</summary>
+    Friend ReadOnly Property CanAssociatePartners As Boolean
+        Get
+            Dim k_sumar As SumarView = TryCast(_activeView, SumarView)
+            Return k_sumar IsNot Nothing AndAlso k_sumar.CanAssociatePartners
+        End Get
+    End Property
+
+    ''' <summary>The ribbon's «Asociaza parteneri»: opens the popup of the «Sumar» view on screen.</summary>
+    Friend Sub OpenSumarPartners()
+        TryCast(_activeView, SumarView)?.OpenPartnersWindow()
+    End Sub
+
+    Private Sub SumarPartnersAvailabilityChanged(sender As Object, e As EventArgs)
+        If ReferenceEquals(sender, _activeView) Then RaiseEvent ActiveViewChanged(Me, EventArgs.Empty)
     End Sub
 
     Private Function CreateView(key As String) As IAngajamentView
@@ -60,10 +103,15 @@ Partial Public Class KbotForm
                 ' The first real view (slice 0011). It gets the API client + the shell's 401
                 ' net, so the re-login policy stays in one place.
                 ' Slice 0084-02: plus the 401 net of the «Asociaza parteneri» window.
-                Case "sumar" : Return New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op),
-                                                    New SumarPartnersReauth(
-                                                        Function(op) WithReauth(Of List(Of DdfPartener))(op),
-                                                        Function(op) WithReauth(Of DdfParteneriAsociati)(op)))
+                ' Slice 0084-04: the «Asociaza parteneri» button is in the ribbon; the view tells the shell (and the
+                ' ribbon through it) when the angajament on screen can be associated.
+                Case "sumar"
+                    Dim k_sumar As New SumarView(_apiClient, Function(op) WithReauth(Of SumarInfo)(op),
+                                                 New SumarPartnersReauth(
+                                                     Function(op) WithReauth(Of List(Of DdfPartener))(op),
+                                                     Function(op) WithReauth(Of DdfParteneriAsociati)(op)))
+                    AddHandler k_sumar.PartnersAvailabilityChanged, AddressOf SumarPartnersAvailabilityChanged
+                    Return k_sumar
                 Case "indicatori" : Return New PlaceholderView(key, "Indicatori")
                 Case "istoric" : Return New IstoricView(_apiClient, Function(op) WithReauth(Of IstoricInfo)(op))
                 Case "revizii" : Return New PlaceholderView(key, "Revizii")

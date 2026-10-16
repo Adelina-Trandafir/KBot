@@ -45,7 +45,7 @@ export function receiptContext(host, { root, main, headerHost, linesHost, treeHo
     panel.append(el('div', { className: 'vc-receipt-card__body' }, el('table', {}, el('thead', {}, head), body)));
   }
   function renderSupplier(data) {
-    supplier.replaceChildren(el('h4', { textContent: 'Fișă furnizor' }), el('p', { className: 'vc-receipt-card__identity', textContent: data.name, title: data.fiscal_code }));
+    supplier.replaceChildren(el('h4', { textContent: 'Fișă furnizor' }));
     if (data.rows.length) table(supplier, [
       ['Data', (row) => day(row.date)], ['Factură', (row) => `${row.kind === 'Storno' ? 'Storno ' : ''}${row.invoice}`],
       ['Valoare', (row) => money(row.value), true],
@@ -60,7 +60,7 @@ export function receiptContext(host, { root, main, headerHost, linesHost, treeHo
       ['Data', (row) => day(row.date)], ['Document', (row) => `${kinds[row.kind] || row.kind} ${row.number ?? ''}`],
       ['Cant.', (row) => money(row.quantity), true], ['Sold', (row) => money(row.balance), true],
     ], data.rows);
-    else product.append(el('p', { className: 'vc-receipt-card__message', textContent: 'Fără mișcări salvate pentru acest produs și preț până la data aleasă.' }));
+    else product.append(el('p', { className: 'vc-receipt-card__message', textContent: 'PRODUS NOU' }));
     product.append(el('footer', { className: 'vc-receipt-card__total', textContent: `Stoc: ${money(data.closing)} ${data.um}` }));
   }
   function refresh(row) {

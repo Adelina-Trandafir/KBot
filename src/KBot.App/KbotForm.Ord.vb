@@ -121,7 +121,7 @@ Partial Public Class KbotForm
                                    Function(op) WithReauth(Of PutAtasamentResponse)(op),
                                    Function(op) WithReauth(Of PdfDownloadResult)(op),
                                    Function(op) WithReauth(Of Integer)(op))
-            If Not Await ShowMachetaAsync(f, CodRef(MachetaOrdEdit, draft.CodAngajament)) Then Return
+            If Not Await ShowModalAsync(f, CodRef(MachetaOrdEdit, draft.CodAngajament)) Then Return
             If f.SAuSalvatModificari Then
                 ' What stayed on screen is no longer true: the lines changed, the covered
                 ' payments changed, and a new ordonantare was not even there.

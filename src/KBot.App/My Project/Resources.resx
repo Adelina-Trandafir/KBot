@@ -199,9 +199,6 @@
   <data name="FX_ORANGE_48" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Umut-Pulat-Tulliana-2-File-temporary.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="left" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\left.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -223,8 +220,14 @@
   <data name="vertical" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\vertical.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="ef_intrari" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ef_intrari.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="FX_ORANGE_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Skip_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Skip_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="FX_WHITE_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_WHITE_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -246,9 +249,6 @@
   </data>
   <data name="Folder_blue_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Folder_blue_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Next_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Next_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Papirus-Team-Papirus-Apps-Preferences-desktop-theme.24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -277,11 +277,17 @@
   <data name="cells" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\cells.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="Everaldo-Crystal-Clear-App-xmag-search.48" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Everaldo-Crystal-Clear-App-xmag-search.48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="collapse_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\collapse_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="FX_RED_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_RED_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Umut-Pulat-Tulliana-2-File-locked.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Umut-Pulat-Tulliana-2-File-locked.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -292,8 +298,8 @@
   <data name="zoom-in" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\zoom-in.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Everaldo-Crystal-Clear-App-xmag-search.48" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Everaldo-Crystal-Clear-App-xmag-search.48.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Next_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Next_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Icojam-Blue-Bits-Pinion-settings.24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Icojam-Blue-Bits-Pinion-settings.24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -328,11 +334,14 @@
   <data name="FX_REFRESH_DARK_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_REFRESH_DARK_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="FX_RED_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\FX_RED_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="FX_ORANGE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_ORANGE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="FX_RED_16" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FX_RED_16.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Umut-Pulat-Tulliana-2-File-temporary.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="FX_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -345,12 +354,6 @@
   </data>
   <data name="kbot_64" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\kbot_64.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ajutor_128" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\ajutor_128.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="kbot_logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\kbot_logo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="ThemeEditor" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ThemeEditor.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -388,14 +391,17 @@
   <data name="FX_WHITE_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\FX_WHITE_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Papirus-Team-Papirus-Apps-Accessories-text-editor.512_resized.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="ajutor_128" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ajutor_128.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Fatcow-Farm-Fresh-Check-boxes.32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="minus_red" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\minus_red.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="kbot_logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\kbot_logo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Stop_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\Stop_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
@@ -430,7 +436,7 @@
   <data name="expand_24" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\expand_24.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Skip_Green_32" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Skip_Green_32.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="ef_iesiri" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ef_iesiri.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

@@ -133,7 +133,7 @@ fără ordonanțare se poate corecta, fie că e veche, fie că abia a venit.
 - **«Instantaneul este deja pe această recepție.»** — nimic de făcut.
 
 ## După o descărcare: salvare sau renunțare
-<!-- slice: 0055, 0058, 0056-02, 0113 -->
+<!-- slice: 0055, 0058, 0056-02, 0113, 0113-01 -->
 
 - **Salvarea** se poate face abia când fiecare instantaneu adus de descărcare are o hotărâre:
   așezat, «fără schimbare» sau pe o recepție nouă.
@@ -150,7 +150,7 @@ fără ordonanțare se poate corecta, fie că e veche, fie că abia a venit.
 - **«Golește așezările»** te duce înapoi la început: tot ce a adus descărcarea trece în coș, iar
   marcajele tale se anulează. Legăturile vechi pe care le-ai mutat aici revin la cum sunt pe
   server; cele neatinse nu se schimbă.
-- **Renunțarea** — închiderea ferestrei cu «Închide» din ribbon sau cu Esc — **aruncă toată descărcarea**: nimic nu ajunge în tabele —
+- **Renunțarea** — închiderea ferestrei cu «Renunță» — **aruncă toată descărcarea**: nimic nu ajunge în tabele —
   nici recepțiile, nici plățile, nici istoricul. K-BOT întreabă întâi; descărcarea va trebui reluată.
 
 În fereastra deschisă **oricând** (din Recepții), «Salvează legăturile» scrie doar ce ai schimbat, iar

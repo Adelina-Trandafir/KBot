@@ -31,7 +31,7 @@ Imports KBot.Theming
 ''' `aggOrd` / `aggRev`).
 ''' </summary>
 Public Class OrdView
-    Implements IAngajamentView, IThemedControl, IReleasesDocument
+    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     ' Designerul le scrie ca LITERALE în navSub.Items, deci cele două trebuie să rămână în
@@ -453,6 +453,20 @@ Public Class OrdView
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.ReleaseDocument", ex)
+        End Try
+    End Sub
+
+    ' Slice 0113-01: the shell is about to be put away: the navigation bar moves to the tab without a PDF and the document is let
+    ' go, so Adobe is closed while nobody looks at it. The bar stays shown (the print list shows no Adobe, so that tab stays).
+    Public Sub PutAway() Implements IPutAway.PutAway
+        Try
+            If String.Equals(navSub.SelectedKey, PAGE_DOCUMENT, StringComparison.Ordinal) AndAlso Not IsListTab(PAGE_DOCUMENT) Then
+                navSub.SelectedKey = PAGE_VIZUALIZARE
+            End If
+            ReleaseDocument()
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.PutAway", ex)
+            Throw
         End Try
     End Sub
 

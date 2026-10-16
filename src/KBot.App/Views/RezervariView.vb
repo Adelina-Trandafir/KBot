@@ -533,7 +533,7 @@ Public Class RezervariView
                 Return
             End If
             Using f As New GraficRezervariForm(_requestedCod, _rows)
-                Await AvacontMain.ShowMachetaAsync(Me, f, MachetaRef.Create(KbotForm.MachetaGrafic, "cod", _requestedCod))
+                Await AvacontMain.ShowModalAsync(Me, f, MachetaRef.Create(KbotForm.MachetaGrafic, "cod", _requestedCod))
             End Using
         Catch ex As Exception
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment

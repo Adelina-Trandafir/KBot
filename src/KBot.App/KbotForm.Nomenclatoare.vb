@@ -140,7 +140,8 @@ Partial Public Class KbotForm
     Private Sub DeschideClasificatiile()
         Try
             If _clasificatiiForm IsNot Nothing AndAlso Not _clasificatiiForm.IsDisposed Then
-                _clasificatiiForm.Activate()
+                ' Open already (maybe put away behind another page): back to the front.
+                ShowMachetaPage(_clasificatiiForm, MachetaRef.Create(MachetaClasificatii, "an", _session.An.ToString(Globalization.CultureInfo.InvariantCulture)))
                 Return
             End If
             Dim api As INomenclatoareApi = Nothing
@@ -162,7 +163,8 @@ Partial Public Class KbotForm
     Private Sub DeschidePartenerii()
         Try
             If _parteneriForm IsNot Nothing AndAlso Not _parteneriForm.IsDisposed Then
-                _parteneriForm.Activate()
+                ' Open already (maybe put away behind another page): back to the front.
+                ShowMachetaPage(_parteneriForm, MachetaRef.Create(MachetaParteneri))
                 Return
             End If
             Dim api As INomenclatoareApi = Nothing

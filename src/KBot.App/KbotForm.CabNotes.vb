@@ -100,7 +100,7 @@ Partial Public Class KbotForm
             Try
                 Using f As New CabNoteForm(shown, prep, notesApi, _session.NumeUnitate, _session.CF,
                                            AddressOf UploadCabNoteAsync)
-                    If Not Await ShowMachetaAsync(f, MachetaRef.Create(MachetaCabNote)) Then Return
+                    If Not Await ShowModalAsync(f, MachetaRef.Create(MachetaCabNote)) Then Return
                     If f.SavedNotes.Count > 0 Then
                         TryCast(_activeView, NoteCabView)?.Reincarca()
                         AprindePoartaNotelor(f.SavedNotes)
