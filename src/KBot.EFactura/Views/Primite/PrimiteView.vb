@@ -773,6 +773,7 @@ Public Class PrimiteView
 
     Private Const MenuZileCombo As String = "zile_combo"
     Private Const MenuZileText As String = "zile_text"
+    Private Const MenuServer As String = "server"
 
     ' The button of the footer opens the standard popup menu with two input rows: a list of the preset periods (picking one starts the
     ' update) and a box for a number of days (Enter starts it). UI boundary: logs and swallows.
@@ -782,10 +783,15 @@ Public Class PrimiteView
             If CustomPopup.ClosedJustNow Then Return
             Dim k_band As Rectangle = tree.FooterBandRect
             If k_band.IsEmpty Then Return
+            Dim k_combo As CustomPopupItem = CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus:",
+                SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile"))
+            k_combo.Image = My.Resources.Resources.anaf
+            Dim k_text As CustomPopupItem = CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "zile", 2, True)
+            k_text.Image = My.Resources.Resources.anaf
+            ' Under the two ANAF rows, a separator, then the other way to update: read the list again from the K-BOT server.
             Dim k_items As New List(Of CustomPopupItem) From {
-                CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus:",
-                                      SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile")),
-                CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "zile", 2, True)}
+                k_combo, k_text, CustomPopupItem.Separator(),
+                New CustomPopupItem(MenuServer, "Sincronizează cu serverul", My.Resources.Resources.refresh)}
             Dim k_menu As New CustomPopup(k_items)
             AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) SyncMenuAnswered(k_args.Item)
             ' Over the button: above the footer, its right edge on the button's right edge.
@@ -802,9 +808,22 @@ Public Class PrimiteView
             PickedDays(k_item.ComboSelectedIndex)
         ElseIf String.Equals(k_item.Key, MenuZileText, StringComparison.Ordinal) Then
             TypedDays(k_item.InputText)
+        ElseIf String.Equals(k_item.Key, MenuServer, StringComparison.Ordinal) Then
+            ReloadFromServer()
         Else
             Throw New ArgumentException($"Rând necunoscut în meniul de actualizare: {k_item.Key}", NameOf(k_item))
         End If
+    End Sub
+
+    ' «Sincronizează cu serverul»: the list is read again from the K-BOT server (what ANAF brought is already there); the shown
+    ' invoice stays shown. UI boundary (async Sub): LoadAsync tells the operator of a failure itself.
+    Private Async Sub ReloadFromServer()
+        Try
+            If _syncing Then Return
+            Await LoadAsync(_idDdf).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.ReloadFromServer", ex)
+        End Try
     End Sub
 
     ' The list: the row is one of the preset periods. UI boundary (async Sub): logs and swallows.

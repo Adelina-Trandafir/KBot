@@ -100,7 +100,16 @@ Partial Public Class CustomPopup
     Private Sub DrawInputRow(k_g As Graphics, k_index As Integer, k_row As Rectangle, k_padX As Integer)
         Dim k_item As CustomPopupItem = Items(k_index)
         Dim k_fore As Color = If(k_item.Enabled, EffectiveItemForeColor, EffectiveDisabledForeColor)
-        Dim k_text As New Rectangle(k_row.Left + k_padX, k_row.Top, Math.Max(0, k_row.Width - 2 * k_padX), EffectiveRowHeight())
+        Dim k_lineH As Integer = EffectiveRowHeight()
+        Dim k_gutter As Integer = IconGutter()
+        ' The icon (if the item has one) sits on the caption line, in the same band as the icons of the plain rows.
+        If k_gutter > 0 AndAlso k_item.Image IsNot Nothing Then
+            Dim k_side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
+            Dim k_dest As New Rectangle(k_row.Left + k_padX, k_row.Top + (k_lineH - k_side) \ 2, k_side, k_side)
+            KBotNavList.DrawItemImage(k_g, k_item.Image, k_dest, k_item.Enabled)
+        End If
+        Dim k_text As New Rectangle(k_row.Left + k_padX + k_gutter, k_row.Top,
+                                    Math.Max(0, k_row.Width - 2 * k_padX - k_gutter), k_lineH)
         If k_text.Width <= 0 Then Return
         TextRenderer.DrawText(k_g, If(k_item.Text, String.Empty), Font, k_text, k_fore,
                               MeasureFlags() Or TextFormatFlags.EndEllipsis)

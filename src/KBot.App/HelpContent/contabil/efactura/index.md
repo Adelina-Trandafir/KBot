@@ -159,7 +159,7 @@ Cât timp scrii sau modifici o factură, aceste vederi nu se văd. Dacă nu exis
 Butonul **«Token ANAF»** din ribbon (**E-Factura › ANAF**) deschide fereastra tokenului, unde vezi starea lui și îl obții sau îl reînnoiești cu certificatul calificat al unității. Pașii, mesajele și ce faci când ceva nu merge sunt în [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
 
 ## Facturile primite
-<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119, 00EF-25, 00EF-26, 00EF-27, 00EF-29, 0000-75, 00EF-31, 0000-77, 00EF-35, 0000-80, 00EF-36, 0000-81 -->
+<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119, 00EF-25, 00EF-26, 00EF-27, 00EF-29, 0000-75, 00EF-31, 0000-77, 00EF-35, 0000-80, 00EF-36, 0000-81, 00EF-37, 0000-82 -->
 
 În bara din stânga a ferestrei principale apare vederea **«E-Factura»** doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Starea se citește odată cu arborele: după o sincronizare sau după ce legi o factură, fila apare când arborele se reîmprospătează. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
 
@@ -179,7 +179,7 @@ Butonul **E-Factura › ANAF › «Sincronizează facturi primite»** se vede do
 - o **listă** cu perioada: ultimele 7 (implicit), 15, 30, 45 sau 60 de zile; în ea nu se scrie, doar se alege;
 - o **casetă pentru zile**, goală la început: scrii un număr între 1 și 60 și sincronizarea ia atunci acest număr de zile, nu pe cel din listă. Dacă o lași goală, se folosește lista. Un număr în afara intervalului 1–60 nu pornește sincronizarea și primești un mesaj.
 
-**Din subsolul arborelui**: sub arborele facturilor primite (în macheta «Cumpărare» și în vederea «E-Factura» de la fundamentare) este un subsol **«Actualizare…»**. Un clic pe el deschide deasupra lui un mic meniu cu o **listă** a perioadelor (7, 15, 30, 45, 60 de zile) — alegerea unei perioade pornește actualizarea — și o **casetă** în care scrii un număr de zile între 1 și 60; **Enter** pornește actualizarea. Un număr în afara intervalului nu pornește nimic și primești un mesaj; Esc sau un clic în afara meniului îl închid. Cât durează, subsolul scrie cât s-a adus.
+**Din subsolul arborelui**: sub arborele facturilor primite (în macheta «Cumpărare» și în vederea «E-Factura» de la fundamentare) este un subsol **«Actualizare…»**. Un clic pe el deschide deasupra lui un mic meniu cu o **listă** a perioadelor (7, 15, 30, 45, 60 de zile) — alegerea unei perioade pornește actualizarea — și o **casetă** în care scrii un număr de zile între 1 și 60; **Enter** pornește actualizarea. Un număr în afara intervalului nu pornește nimic și primești un mesaj; Rândurile cu perioade au pictograma ANAF. Sub ele, după o linie de separare, este rândul **«Sincronizează cu serverul»**: citește din nou lista facturilor de pe serverul K-BOT (nu merge la ANAF), iar factura afișată rămâne afișată. Esc sau un clic în afara meniului îl închid. Cât durează o actualizare de la ANAF, subsolul scrie cât s-a adus.
 
 Apeși butonul (sau alegi din meniul subsolului) și sincronizarea pornește direct, fără fereastră:
 
