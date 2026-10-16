@@ -72,3 +72,13 @@ focused (`KBotTextBox.PlaceholderWhileFocused`), and goes away with the first ch
 Picking a row of the combo, or Enter in the box, closes the popup and raises `ItemClicked` for that item; read
 `Item.ComboSelectedIndex` (starts at -1: picking the first row counts) or `Item.InputText`. An input row is never highlighted, has no
 access letter, and while an input has the focus every key is its own (only Esc closes the popup). `DigitsOnly` keeps 0-9.
+
+## Icon bar (slice 00EF-34, operator 16.10.2026)
+The icons of the rows sit on a coloured vertical bar along the whole height of the popup, as the Windows 7 menus had
+(`CustomPopup.IconBar.vb`). It exists only while some row has an icon. Properties (settable in the designer file of the host or in code):
+- `IconBarVisible` (default True; False = icons on the plain background as before),
+- `IconBarSide` (`PopupIconBarSide.Left` default / `Right`): with **Right** the text of the rows is aligned right, the check mark and the
+  chevron move to the left end, the combo / text box of the input rows align right too,
+- `IconBarColor` (Empty = from the theme: the background with 14% of the accent; `EffectiveIconBarColor`).
+The geometry is shared through `BarOnRight`, `IconBarWidth`, `LeftInset` / `RightInset`, `IconRectOf`, `TextRectOf`
+(painting, sliders, input rows, capture redaction). `IconGutter` now includes the padding before the icon when the bar is on.

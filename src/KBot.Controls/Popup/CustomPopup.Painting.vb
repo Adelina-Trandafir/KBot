@@ -26,6 +26,10 @@ Partial Public Class CustomPopup
                 Using b As New SolidBrush(EffectiveBackColor)
                     g.FillPath(b, path)
                 End Using
+                ' Slice 00EF-34: the icon bar, inside the rounded frame; the outline is drawn over its edge.
+                g.SetClip(path)
+                DrawIconBar(g)
+                g.ResetClip()
                 ' Conturul e ce desprinde meniul de fereastra de dedesubt — fundalul singur l-ar
                 ' face să pară o pată de aceeași culoare cu formularul.
                 Using pen As New Pen(EffectiveBorderColor)
@@ -88,8 +92,7 @@ Partial Public Class CustomPopup
         End If
 
         If gutter > 0 AndAlso it.Image IsNot Nothing Then
-            Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
-            Dim dest As New Rectangle(r.Left + padX, r.Top + (r.Height - side) \ 2, side, side)
+            Dim dest As Rectangle = IconRectOf(r)
             ' Aceeași desaturare pentru elementele dezactivate ca în bara de navigare — ajutorul
             ' e Friend Shared pe KBotNavList tocmai ca să nu existe două matrice de culoare.
             KBotNavList.DrawItemImage(g, it.Image, dest, it.Enabled)
@@ -99,20 +102,22 @@ Partial Public Class CustomPopup
         If it.Checked AndAlso checkW > 0 Then DrawCheckMark(g, r, padX, fore)
         If it.Submenu AndAlso checkW > 0 Then DrawChevron(g, r, padX, fore)
 
-        Dim textLeft As Integer = r.Left + padX + gutter
-        Dim tr As New Rectangle(textLeft, r.Top, Math.Max(0, r.Right - padX - checkW - textLeft), r.Height)
+        Dim tr As Rectangle = TextRectOf(r, checkW)
         If tr.Width <= 0 Then Return
         ' EndEllipsis peste steagurile de măsurare: taie doar ce oricum n-ar fi încăput în
         ' MaximumPopupWidth, deci nu schimbă lățimea calculată pentru textele care încap.
-        TextRenderer.DrawText(g, If(it.Text, String.Empty), Font, tr, fore,
-                              MeasureFlags() Or TextFormatFlags.EndEllipsis)
+        ' Slice 00EF-34: with the icon bar on the right the text is right-aligned.
+        Dim flags As TextFormatFlags = MeasureFlags() Or TextFormatFlags.EndEllipsis
+        If BarOnRight() Then flags = flags Or TextFormatFlags.Right
+        TextRenderer.DrawText(g, If(it.Text, String.Empty), Font, tr, fore, flags)
     End Sub
 
     ' Slice 0777: the check mark of a Checked row, right-aligned inside the padding, in the
     ' row's own text colour (so it follows the highlight and the disabled state with the text).
     Private Sub DrawCheckMark(g As Graphics, r As Rectangle, padX As Integer, fore As Color)
         Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical)
-        Dim box As New Rectangle(r.Right - padX - side, r.Top + (r.Height - side) \ 2, side, side)
+        ' With the bar on the right the check band is at the LEFT end of the row.
+        Dim box As New Rectangle(If(BarOnRight(), r.Left + padX, r.Right - padX - side), r.Top + (r.Height - side) \ 2, side, side)
         Dim pts As PointF() = {
             New PointF(box.Left, box.Top + side * 0.55F),
             New PointF(box.Left + side * 0.38F, box.Bottom - side * 0.1F),
@@ -129,12 +134,12 @@ Partial Public Class CustomPopup
     Private Sub DrawChevron(g As Graphics, r As Rectangle, padX As Integer, fore As Color)
         Dim side As Integer = ThemeShapes.ScaleDpi(ScaleRef, CheckMarkLogical)
         Dim w As Single = side * 0.45F
-        Dim x As Single = r.Right - padX - w
+        Dim atLeft As Boolean = BarOnRight()   ' bar on the right: chevron at the left end, pointing left
+        Dim x As Single = If(atLeft, r.Left + padX, r.Right - padX - w)
         Dim y As Single = r.Top + (r.Height - side) / 2.0F
-        Dim pts As PointF() = {
-            New PointF(x, y + side * 0.1F),
-            New PointF(x + w, y + side * 0.5F),
-            New PointF(x, y + side * 0.9F)}
+        Dim pts As PointF() = If(atLeft,
+            New PointF() {New PointF(x + w, y + side * 0.1F), New PointF(x, y + side * 0.5F), New PointF(x + w, y + side * 0.9F)},
+            New PointF() {New PointF(x, y + side * 0.1F), New PointF(x + w, y + side * 0.5F), New PointF(x, y + side * 0.9F)})
         Using pen As New Pen(fore, Math.Max(1.5F, ThemeShapes.ScaleDpi(ScaleRef, 2)))
             pen.LineJoin = LineJoin.Round
             pen.StartCap = LineCap.Round

@@ -87,7 +87,6 @@ Partial Class SetariTemaView
         ' cboScheme
         '
         cboScheme.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboScheme.CornerRadius = 4
         cboScheme.Location = New Point(138, 25)
         cboScheme.Margin = New Padding(4, 0, 4, 0)
         cboScheme.Name = "cboScheme"
@@ -215,7 +214,6 @@ Partial Class SetariTemaView
         ' cboScalingMode
         '
         cboScalingMode.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboScalingMode.CornerRadius = 4
         cboScalingMode.Location = New Point(158, 52)
         cboScalingMode.Margin = New Padding(4, 0, 4, 8)
         cboScalingMode.Name = "cboScalingMode"

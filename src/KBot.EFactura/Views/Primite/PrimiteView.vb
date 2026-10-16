@@ -792,7 +792,7 @@ Public Class PrimiteView
             Dim k_items As New List(Of CustomPopupItem) From {
                 k_combo, k_text, CustomPopupItem.Separator(),
                 New CustomPopupItem(MenuServer, "Sincronizează cu serverul", My.Resources.Resources.refresh)}
-            Dim k_menu As New CustomPopup(k_items)
+            Dim k_menu As New CustomPopup(k_items) With {.IconBarSide = PopupIconBarSide.Right}   ' bar and text on the right, by the button
             AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) SyncMenuAnswered(k_args.Item)
             ' Over the button: above the footer, its right edge on the button's right edge.
             Dim k_icon As Rectangle = tree.FooterRightIconRect

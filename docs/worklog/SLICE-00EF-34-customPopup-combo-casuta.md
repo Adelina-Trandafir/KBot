@@ -33,3 +33,27 @@ Nothing seen on screen.
   Enter in the box, Esc, a popup taller than the screen with an input row in it.
 - The invalid-number warning is shown while the popup is still closing (it is raised from `ItemClicked`).
 - `CustomPopupTests` has no case for the new rows.
+
+## Follow-up (16.10.2026): the coloured ICON BAR (operator: «in slice-ul de popup»)
+Asked: «iconitele din meniu pe o bara colorata verticala, ca in Windows 7; din designer.vb stanga sau dreapta; daca e dreapta, textul
+aliniat la dreapta». It did not exist yet (icons sat in a band on the plain background).
+- New `PopupIconBarSide` (Left / Right) and `CustomPopup.IconBar.vb`: properties `IconBarVisible` (True), `IconBarSide` (Left),
+  `IconBarColor` (Empty = theme: `Blend(SurfaceAlt, Accent, 0.14)`), geometry helpers; the bar is painted inside the rounded frame,
+  with a fine line on its inner edge.
+- Painting / sliders / input rows / capture redaction use the helpers; with the bar on the right the text is right-aligned, the check
+  mark and chevron are at the left end, the input controls (`KBotComboBox`, `KBotTextBox`) get `TextAlign = Right` (also the
+  placeholder drawn over a focused box).
+- The bar is ON by default, so EVERY popup that has an icon changes its look.
+
+### Files touched
+`src/KBot.Controls/Popup/PopupIconBarSide.vb`, `CustomPopup.IconBar.vb` (new), `CustomPopup.vb`, `CustomPopup.Painting.vb`,
+`CustomPopup.Slider.vb`, `CustomPopup.Inputs.vb`, `CustomPopup.CaptureRedaction.vb`, `CustomPopup.md`, `KBotTextBox.vb`.
+
+### Test results
+`dotnet build src/KBot.App`: 0 warnings, 0 errors. Nothing run, nothing seen on screen; no test.
+
+### Unverified / deferred
+- Not seen: the bar in the three themes (colour 14% accent), at other DPIs, with the rounded frame; the right-bar layout (text, check
+  mark, chevron, slider rows, input rows); a popup with a mix of rows with and without icons.
+- Slider rows keep their label on the left (only the icon band moves). No sample on the DevHarness.
+- Help: every capture that shows a popup menu with icons is stale (listed in the 0000 Open threads).

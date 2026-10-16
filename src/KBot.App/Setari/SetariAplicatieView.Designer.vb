@@ -85,7 +85,6 @@ Partial Class SetariAplicatieView
         ' cboVerbose
         '
         cboVerbose.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboVerbose.CornerRadius = 4
         cboVerbose.Location = New Point(404, 0)
         cboVerbose.Margin = New Padding(4, 0, 4, 10)
         cboVerbose.Name = "cboVerbose"
@@ -259,7 +258,6 @@ Partial Class SetariAplicatieView
         ' cboAdobeMotor
         '
         cboAdobeMotor.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboAdobeMotor.CornerRadius = 4
         cboAdobeMotor.Location = New Point(404, 0)
         cboAdobeMotor.Margin = New Padding(4, 0, 4, 10)
         cboAdobeMotor.Name = "cboAdobeMotor"
@@ -394,7 +392,6 @@ Partial Class SetariAplicatieView
         ' cboExcelRibbon
         '
         cboExcelRibbon.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboExcelRibbon.CornerRadius = 4
         cboExcelRibbon.Location = New Point(404, 409)
         cboExcelRibbon.Margin = New Padding(4, 0, 4, 10)
         cboExcelRibbon.Name = "cboExcelRibbon"
@@ -407,7 +404,6 @@ Partial Class SetariAplicatieView
         '
         cboSortare.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         tlyArbore.SetColumnSpan(cboSortare, 2)
-        cboSortare.CornerRadius = 4
         cboSortare.Location = New Point(404, 0)
         cboSortare.Margin = New Padding(4, 0, 4, 10)
         cboSortare.Name = "cboSortare"
@@ -420,7 +416,6 @@ Partial Class SetariAplicatieView
         '
         cboOrdine.Anchor = AnchorStyles.Left Or AnchorStyles.Right
         tlyArbore.SetColumnSpan(cboOrdine, 2)
-        cboOrdine.CornerRadius = 4
         cboOrdine.Location = New Point(404, 47)
         cboOrdine.Margin = New Padding(4, 0, 4, 10)
         cboOrdine.Name = "cboOrdine"

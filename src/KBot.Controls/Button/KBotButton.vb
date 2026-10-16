@@ -207,7 +207,7 @@ Public Class KBotButton
             End If
 
             Dim k_rect As New Rectangle(0, 0, Width - 1, Height - 1)
-            Dim k_radius As Integer = ThemeShapes.ScaleDpi(Me, k_scheme.Style.CornerRadius)
+            Dim k_radius As Integer = ThemeShapes.CornerRadiusPx(Me, -1)
             Using k_path As GraphicsPath = ThemeShapes.RoundedRect(k_rect, k_radius)
                 Using k_brush As New SolidBrush(k_back)
                     k_g.FillPath(k_brush, k_path)

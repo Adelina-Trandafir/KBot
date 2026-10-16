@@ -122,7 +122,6 @@ Partial Class SetariExtraseView
         ' cboGrila
         '
         cboGrila.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboGrila.CornerRadius = 4
         cboGrila.Location = New Point(72, 2)
         cboGrila.Margin = New Padding(4, 0, 4, 0)
         cboGrila.Name = "cboGrila"

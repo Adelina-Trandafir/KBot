@@ -48,7 +48,6 @@ Partial Class AdobeGazduireForm
         ' cboAdobeInst
         ' 
         cboAdobeInst.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboAdobeInst.CornerRadius = 4
         cboAdobeInst.Location = New Point(267, 8)
         cboAdobeInst.Margin = New Padding(4, 0, 4, 10)
         cboAdobeInst.Name = "cboAdobeInst"
@@ -60,7 +59,6 @@ Partial Class AdobeGazduireForm
         ' cboAdobeDetach
         ' 
         cboAdobeDetach.Anchor = AnchorStyles.Left Or AnchorStyles.Right
-        cboAdobeDetach.CornerRadius = 4
         cboAdobeDetach.Location = New Point(267, 55)
         cboAdobeDetach.Margin = New Padding(4, 0, 4, 10)
         cboAdobeDetach.Name = "cboAdobeDetach"

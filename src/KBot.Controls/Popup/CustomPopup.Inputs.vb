@@ -32,7 +32,8 @@ Partial Public Class CustomPopup
             Dim k_control As Control
             If k_item.IsCombo Then
                 ' The item's text is the pale text of the face while nothing is picked (it is not a row of the list).
-                Dim k_combo As New KBotComboBox() With {.Editable = False, .PlaceholderText = k_item.Text}
+                Dim k_combo As New KBotComboBox() With {.Editable = False, .PlaceholderText = k_item.Text,
+                                                 .TextAlign = If(BarOnRight(), HorizontalAlignment.Right, HorizontalAlignment.Left)}
                 For Each k_row As String In k_item.ComboRows
                     k_combo.Items.Add(k_row)
                 Next
@@ -45,6 +46,7 @@ Partial Public Class CustomPopup
             Else
                 Dim k_box As New KBotTextBox() With {
                     .PlaceholderText = k_item.InputPlaceholder, .PlaceholderWhileFocused = True,
+                    .TextAlign = If(BarOnRight(), HorizontalAlignment.Right, HorizontalAlignment.Left),
                     .MaxLength = k_item.InputMaxLength, .Text = k_item.InputText}
                 Dim k_textItem As CustomPopupItem = k_item
                 AddHandler k_box.FieldKeyDown, Sub(k_s, k_e) InputKeyDown(k_textItem, k_box, k_e)
@@ -86,13 +88,14 @@ Partial Public Class CustomPopup
         If _inputControls.Count = 0 Then Return
         Dim k_padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
         Dim k_gutter As Integer = IconGutter()
+        Dim k_left As Integer = LeftInset()
         For k_i As Integer = 0 To _items.Count - 1
             Dim k_control As Control = Nothing
             If Not _inputControls.TryGetValue(_items(k_i), k_control) Then Continue For
             If k_i >= _rows.Length Then Continue For
             Dim k_row As Rectangle = _rows(k_i)
             Dim k_h As Integer = Math.Min(k_row.Height, InputControlHeight(_items(k_i)))
-            k_control.Bounds = New Rectangle(k_row.Left + k_padX + k_gutter, k_row.Top + (k_row.Height - k_h) \ 2 - _scroll,
+            k_control.Bounds = New Rectangle(k_row.Left + k_padX + k_left, k_row.Top + (k_row.Height - k_h) \ 2 - _scroll,
                                              Math.Max(1, k_row.Width - 2 * k_padX - k_gutter), k_h)
             k_control.Visible = True
         Next
@@ -102,8 +105,7 @@ Partial Public Class CustomPopup
     Private Sub DrawInputRow(k_g As Graphics, k_index As Integer, k_row As Rectangle, k_padX As Integer)
         Dim k_item As CustomPopupItem = Items(k_index)
         If IconGutter() <= 0 OrElse k_item.Image Is Nothing Then Return
-        Dim k_side As Integer = ThemeShapes.ScaleDpi(ScaleRef, ImageSize)
-        Dim k_dest As New Rectangle(k_row.Left + k_padX, k_row.Top + (k_row.Height - k_side) \ 2, k_side, k_side)
+        Dim k_dest As Rectangle = IconRectOf(k_row)
         KBotNavList.DrawItemImage(k_g, k_item.Image, k_dest, k_item.Enabled)
     End Sub
 

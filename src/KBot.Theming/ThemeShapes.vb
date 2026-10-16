@@ -29,6 +29,17 @@ Public Module ThemeShapes
     End Function
 
     ''' <summary>
+    ''' Slice 00EF-37: THE place the corner radius of the controls comes from. <paramref name="pinnedLogical"/> is what the operator set
+    ''' on the control (logical px, -1 = «not set»); not set = the radius of the current theme (<c>Style.CornerRadius</c>, one number per
+    ''' scheme in <c>BuiltInSchemes</c>). Returns DPI-scaled px, never below 0. Combo, text boxes, date pickers, popups and buttons all
+    ''' read it, so changing the number of a scheme changes them together.
+    ''' </summary>
+    Public Function CornerRadiusPx(ctrl As Control, pinnedLogical As Integer) As Integer
+        Dim logical As Integer = If(pinnedLogical >= 0, pinnedLogical, ThemeManager.Current.Style.CornerRadius)
+        Return ScaleDpi(ctrl, Math.Max(0, logical))
+    End Function
+
+    ''' <summary>
     ''' Cale dreptunghi cu colțuri rotunjite. <paramref name="radius"/> e deja în px
     ''' scalați. radius &lt;= 0 => dreptunghi simplu. Diametrul e limitat la latura mică.
     ''' </summary>

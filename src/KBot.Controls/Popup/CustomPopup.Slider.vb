@@ -141,8 +141,8 @@ Partial Public Class CustomPopup
         Dim valW As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderValueWidthLogical)
         Dim eticheta As Integer = SliderLabelWidth(index)
 
-        Dim stanga As Integer = r.Left + padX + IconGutter() + eticheta + gap
-        Dim dreapta As Integer = r.Right - padX - valW - gap
+        Dim stanga As Integer = r.Left + padX + LeftInset() + eticheta + gap
+        Dim dreapta As Integer = r.Right - padX - RightInset() - valW - gap
         Dim latime As Integer = dreapta - stanga
         If latime <= 0 Then Return Rectangle.Empty
 
@@ -330,7 +330,7 @@ Partial Public Class CustomPopup
         ' un fundal plin ar promite o apăsare care nu face nimic. Doar șina se aprinde (mai jos).
         Dim eticheta As String = PopupMnemonic.Strip(If(it.Text, String.Empty))
         If eticheta.Length > 0 Then
-            Dim tr As New Rectangle(r.Left + padX + gutter, r.Top, SliderLabelWidth(index), r.Height)
+            Dim tr As New Rectangle(r.Left + padX + LeftInset(), r.Top, SliderLabelWidth(index), r.Height)
             TextRenderer.DrawText(g, eticheta, Font, tr, fore, MeasureFlags())
         End If
 
@@ -390,7 +390,7 @@ Partial Public Class CustomPopup
 
         ' Valoarea, la dreapta, aliniată la dreapta ca cifrele să nu joace de la un pas la altul.
         Dim valW As Integer = ThemeShapes.ScaleDpi(ScaleRef, SliderValueWidthLogical)
-        Dim vr As New Rectangle(r.Right - padX - valW, r.Top, valW, r.Height)
+        Dim vr As New Rectangle(r.Right - padX - RightInset() - valW, r.Top, valW, r.Height)
         TextRenderer.DrawText(g, SliderValueText(it), Font, vr, fore,
                               TextFormatFlags.Right Or TextFormatFlags.VerticalCenter Or
                               TextFormatFlags.SingleLine Or TextFormatFlags.NoPrefix)

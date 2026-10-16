@@ -1255,8 +1255,7 @@ Public NotInheritable Class KBotDatePicker
     ' =====================================================================
 
     Private Function EffectiveRadius() As Integer
-        Dim logic As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
-        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logic))
+        Return ThemeShapes.CornerRadiusPx(Me, _cornerRadius)
     End Function
 
     Protected Overrides Sub OnPaint(e As PaintEventArgs)

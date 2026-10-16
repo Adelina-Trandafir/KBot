@@ -506,6 +506,8 @@ Public Class CustomPopup
             ' Separatorul e conturul tras spre fundal: o linie plină de culoarea ramei taie meniul
             ' în două în loc să grupeze rândurile.
             _autoSeparator = ThemeShapes.Blend(p.BorderColor, p.SurfaceAltColor, 0.45)
+            ' Slice 00EF-34: the icon bar = the background with a little of the accent.
+            _autoIconBar = ThemeShapes.Blend(p.SurfaceAltColor, p.AccentColor, 0.14)
 
             ' MyBase, nu Me: scrisul temei nu are voie să treacă drept alegere a apelantului.
             MyBase.BackColor = EffectiveBackColor
@@ -970,6 +972,8 @@ Public Class CustomPopup
         If side <= 0 Then Return 0
         For Each it As CustomPopupItem In _items
             If Not it.IsSeparator AndAlso it.Image IsNot Nothing Then
+                ' Slice 00EF-34: with the coloured bar the band also holds the padding before the icon (the bar is padX + icon + padX wide).
+                If _iconBarVisible Then Return ThemeShapes.ScaleDpi(ScaleRef, PadXLogical) + side + ThemeShapes.ScaleDpi(ScaleRef, IconGapLogical)
                 Return side + ThemeShapes.ScaleDpi(ScaleRef, IconGapLogical)
             End If
         Next
@@ -1033,8 +1037,7 @@ Public Class CustomPopup
     End Sub
 
     Friend Function EffectiveRadius() As Integer
-        Dim logical As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
-        Return ThemeShapes.ScaleDpi(ScaleRef, Math.Max(0, logical))
+        Return ThemeShapes.CornerRadiusPx(ScaleRef, _cornerRadius)
     End Function
 
     ''' <summary>

@@ -1308,10 +1308,11 @@ Partial Public Class KBotComboBox
         _edit.ForeColor = If(Enabled, ForeColor, ThemeManager.Current.Palette.DisabledTextColor)
     End Sub
 
-    ' The effective radius, in DPI-scaled px.
+    ' The effective radius, in DPI-scaled px. A combo embedded in a grid cell (CellEditorMode) is NEVER rounded, whatever the theme or
+    ' the property say (operator, 16.10.2026: controls embedded in the data view get no corner radius).
     Private Function EffectiveRadius() As Integer
-        Dim logical As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
-        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
+        If _cellEditorMode Then Return 0
+        Return ThemeShapes.CornerRadiusPx(Me, _cornerRadius)
     End Function
 
     ' =====================================================================

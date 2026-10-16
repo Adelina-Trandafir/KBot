@@ -239,7 +239,6 @@ Partial Class LoginForm
         '
         cboUnit.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
         tlpBody.SetColumnSpan(cboUnit, 2)
-        cboUnit.CornerRadius = 4
         cboUnit.Enabled = False
         cboUnit.Font = New Font("Segoe UI", 10.0F)
         cboUnit.Location = New Point(44, 583)

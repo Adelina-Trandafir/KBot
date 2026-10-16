@@ -650,8 +650,7 @@ Public NotInheritable Class KBotTextField
 
     ' The effective radius, in DPI-scaled px: the property if the operator set it, else the theme's.
     Private Function EffectiveRadius() As Integer
-        Dim logical As Integer = If(_cornerRadius >= 0, _cornerRadius, ThemeManager.Current.Style.CornerRadius)
-        Return ThemeShapes.ScaleDpi(Me, Math.Max(0, logical))
+        Return ThemeShapes.CornerRadiusPx(Me, _cornerRadius)
     End Function
 
     ' ===== Painting: rounded fill + outline (accent while focused) + optional eye ==============

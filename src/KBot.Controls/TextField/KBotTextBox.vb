@@ -81,7 +81,7 @@ Public NotInheritable Class KBotTextBox
     ' ── Aspect ────────────────────────────────────────────────────────────────
     Private _grosimeChenar As Integer = 1        ' px LOGICI
     Private _grosimeChenarFocus As Integer = 1   ' px LOGICI
-    Private _raza As Integer = 4                 ' px LOGICI
+    Private _raza As Integer = -1                ' px LOGICI; -1 = din tema (Style.CornerRadius), ca la combo
     ' Every air below is LOGICAL px, one side at a time (C2). The defaults reproduce the
     ' geometry the control had when the air was a single number: 6 px between outline and
     ' text, the bars inset 6 px from the outline and glued to the text.
@@ -525,14 +525,14 @@ Public NotInheritable Class KBotTextBox
     End Property
 
     <Category("K-BOT")>
-    <Description("Raza colțurilor (px logici). 0 = colțuri drepte.")>
-    <DefaultValue(4)>
+    <Description("Raza colțurilor (px logici). -1 = din temă (la fel ca lista și celelalte câmpuri), 0 = colțuri drepte.")>
+    <DefaultValue(-1)>
     Public Property CornerRadius As Integer
         Get
             Return _raza
         End Get
         Set(v As Integer)
-            Dim nou As Integer = Math.Max(0, v)
+            Dim nou As Integer = Math.Max(-1, v)
             If _raza = nou Then Return
             _raza = nou
             Invalidate()
@@ -911,7 +911,7 @@ Public NotInheritable Class KBotTextBox
             g.SmoothingMode = SmoothingMode.AntiAlias
 
             Dim grosime As Integer = ThemeShapes.ScaleDpi(Me, If(_areFocus, _grosimeChenarFocus, _grosimeChenar))
-            Dim raza As Integer = ThemeShapes.ScaleDpi(Me, _raza)
+            Dim raza As Integer = ThemeShapes.CornerRadiusPx(Me, _raza)
 
             ' Conturul se desenează PE mijlocul liniei, deci cadrul se strânge cu jumătate de
             ' grosime ca să nu iasă din control.
@@ -1183,10 +1183,12 @@ Public NotInheritable Class KBotTextBox
                 Dim k_rc As RECT
                 SendMessage(Handle, EM_GETRECT, IntPtr.Zero, k_rc)
                 Dim k_area As New Rectangle(k_rc.Left, k_rc.Top, Math.Max(1, k_rc.Right - k_rc.Left), Math.Max(1, k_rc.Bottom - k_rc.Top))
+                Dim k_flags As TextFormatFlags = TextFormatFlags.Top Or TextFormatFlags.NoPadding Or
+                                                 TextFormatFlags.EndEllipsis Or TextFormatFlags.SingleLine
+                k_flags = k_flags Or If(TextAlign = HorizontalAlignment.Right, TextFormatFlags.Right,
+                                        If(TextAlign = HorizontalAlignment.Center, TextFormatFlags.HorizontalCenter, TextFormatFlags.Left))
                 Using k_g As Graphics = CreateGraphics()
-                    TextRenderer.DrawText(k_g, PlaceholderText, Font, k_area, PlaceholderColor,
-                                          TextFormatFlags.Left Or TextFormatFlags.Top Or TextFormatFlags.NoPadding Or
-                                          TextFormatFlags.EndEllipsis Or TextFormatFlags.SingleLine)
+                    TextRenderer.DrawText(k_g, PlaceholderText, Font, k_area, PlaceholderColor, k_flags)
                 End Using
             Catch ex As Exception
                 GlobalErrorLog.Write("KBotTextBox.DrawFocusedPlaceholder", ex)

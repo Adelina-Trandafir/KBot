@@ -73,7 +73,6 @@ Partial Class OrdEditForm
         dtpData.BackColor = SystemColors.Window
         dtpData.ButtonPadding = New Padding(1)
         dtpData.ButtonWidth = 18
-        dtpData.CornerRadius = 4
         dtpData.Dock = DockStyle.Fill
         dtpData.FocusBorderColor = SystemColors.Highlight
         dtpData.ForeColor = SystemColors.ActiveCaptionText
