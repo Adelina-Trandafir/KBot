@@ -1,5 +1,11 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## Revizie infrastructură schemă — 16.10.2026
+
+VRC.Migrator reutilizează `KBot.Migrator.TargetSchema.Load` și `WriteOrder.Derive` pentru schema reală și ordinea FK. Maparea Access este `import_map.json`, generată de `tools/import_map.js`, fără tipuri SQL/nulabilitate pentru țintă. Sursa structurii este AVACONT_SURSA de pe server; DDL-urile noi sunt incrementale, aplicate manual și sincronizate separat. Eliminat scriptul complet generat `sql/VC_AVACONT_SURSA.sql`, generatorul său `tools/ddl.js` și fragmentele de creare. Referințele la acestea și la `target_schema.json` din registrul istoric de mai jos descriu livrările vechi. `VC_Golire.sql` rămâne un script istoric cu listă fixă, fără regenerare și fără rol de descriere a schemei actuale.
+
+Stare revizie: **IMPLEMENTAT ÎN SURSE**, fără build, teste, verificări automate sau rulare MariaDB. Validarea pe server din 12.10 nu certifică această revizie.
+
 Actualizat: 12.10.2026 (corecții mockupuri/documentație UI). Stari folosite (PLAN §Reguli de implementare): PLANIFICAT, IN_LUCRU, IMPLEMENTAT_LOCAL, VERIFICAT_LOCAL, VALIDAT_SERVER, ACCEPTAT. Un document scris sau un build trecut nu este validare. **Singurul lucru validat pe server este transferul VC05 pe 000_DEMO (12.10.2026); nimic nu este ACCEPTAT.**
 
 ## Corecții vizuale și fluxuri — 12.10.2026
@@ -57,6 +63,7 @@ Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `d
 | SLICE-VC06-03 | BC + `protocol.check_timeline`, disponibil la data; [worklog](../docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md) | **IMPLEMENTAT_LOCAL** | BC, stoc negativ interzis pe zile in aceeasi tranzactie, disponibil informativ. Doar sintaxa verificata; nerulat |
 | SLICE-VC06-04 | BR (retur) si FCS (storno); [worklog](../docs/worklog/SLICE-VC06-04-br-si-fcs.md) | **IMPLEMENTAT_LOCAL** | Retur/storno partial si multiplu, cantitati eligibile, pret din documentul sursa. Doar sintaxa verificata; nerulat |
 | SLICE-VC06-05 | editare/anulare/istoric; [worklog](../docs/worklog/SLICE-VC06-05-editare-anulare-si-traseul-documentului.md) | **IMPLEMENTAT_LOCAL** | Revizie, perioada inchisa, motiv la anulare, dependente, audit. Doar sintaxa verificata; nerulat |
+| SLICE-VC06-06 | Facturi comune, corecții AUTO, validări NIR și schemă unică; [worklog](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md) | **IMPLEMENTAT_LOCAL** | Extensie 16.10.2026; cod și DDL manual pregătite. Fără build, teste, verificări automate, browser sau SQL. VRC folosește infrastructura KBot.Migrator; schema nu se creează automat |
 | SLICE-VC07-01 | `lista.py`, `js/vercon/lista.js`, nomenclator Feluri; [worklog](../docs/worklog/SLICE-VC07-01-lista-alimente.md) | **IMPLEMENTAT_LOCAL** | Lista cu mese, feluri si mai multe BC-uri (1:N), popup Alege B.C., salvare atomica, anulare care elibereaza bonurile. Retetarul neimplementat. Doar sintaxa verificata; nerulat |
 | SLICE-VC07-02 | `oi.py` (BP), registrul OI, `docs.js`; [worklog](../docs/worklog/SLICE-VC07-02-oi-predare-si-registrul-detinatorului.md) | **IMPLEMENTAT_LOCAL** | Predare = BC creat (stoc) + OI_Predare + registru (detinere), fara dublare; id-uri noi dintr-un contor. Doar sintaxa verificata; nerulat |
 | SLICE-VC07-03 | `oi.py` (BT, BS); [worklog](../docs/worklog/SLICE-VC07-03-oi-transfer-si-casare.md) | **IMPLEMENTAT_LOCAL** | Transfer net zero si casare pe loturi, cantitate eligibila, pret pozitiv. Doar sintaxa verificata; nerulat |

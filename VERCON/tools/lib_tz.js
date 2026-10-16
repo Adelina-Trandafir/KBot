@@ -1,4 +1,4 @@
-// Shared by dictionar.js and ddl.js: TZ_SCHEMA reader and the column classification (VC00-02/VC03-02).
+// Shared by dictionar.js and import_map.js: TZ_SCHEMA reader and Access column classification.
 const fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const TZ = path.join(ROOT, 'VERCON_ACCESS', 'Databases', 'TZ_SCHEMA');

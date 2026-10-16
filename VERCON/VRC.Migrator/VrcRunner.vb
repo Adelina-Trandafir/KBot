@@ -21,7 +21,7 @@ End Class
 ''' <summary>
 ''' SLICE-VC05-03/04/05: the ONE transfer of a subunit. One MariaDB transaction holds everything (subunit, gestiuni, exercises,
 ''' the import marker, every row, the id map, the findings, the counters); nothing is visible until the single COMMIT. The
-''' transfer is driven by <see cref="VrcTargetSchema"/>: parents first, every key remapped through the id map, values exact
+''' transfer is driven by <see cref="VrcImportMap"/>: parents first, every key remapped through the id map, values exact
 ''' (unscaled DECIMAL(20,4)), with source amounts and signs unchanged (including NULL/zero headers). Before COMMIT the
 ''' target is read back and compared with what was converted; any difference or blocking finding rolls everything back.
 ''' An unanswered COMMIT is reported as unknown, never as cancelled.
@@ -44,6 +44,8 @@ Partial Friend NotInheritable Class VrcRunner
 
     Private _cn As MySqlConnection
     Private _tx As MySqlTransaction
+    Private _targetSchema As TargetSchema
+    Private _importTables As List(Of VrcImportTable)
     Private _subunitId As Long
     Private _importId As Long
     Private _gestiuni As New List(Of GestInfo)()
@@ -72,7 +74,7 @@ Partial Friend NotInheritable Class VrcRunner
         Public Property Count As VrcCount
         Public Property GestiuneId As Long
         Public Property ExerciseId As Long
-        Public Property Table As VrcTargetTable
+        Public Property Table As VrcImportTable
         Public Property Sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
     End Class
 
@@ -102,13 +104,15 @@ Partial Friend NotInheritable Class VrcRunner
             End If
             Log($"Conectare la {_server.Describe()}, baza {_plan.Dc}…")
             _cn = _server.Open(_plan.Dc)
-            Dim k_schemaProblems = VrcWriter.DecimalStorageProblems(_cn, _plan.Dc)
+            _targetSchema = TargetSchema.Load(_cn, _plan.Dc)
+            Dim k_schemaProblems = VrcWriter.SchemaProblems(_targetSchema)
             If k_schemaProblems.Count > 0 Then
                 _result.State = VrcRunState.Blocked
                 _result.Message = String.Join(Environment.NewLine, k_schemaProblems)
                 Log(_result.Message)
                 Return _result
             End If
+            _importTables = VrcImportMap.OrderedTables(_targetSchema)
             _tx = _cn.BeginTransaction()
             Log("Tranzacție unică deschisă; nimic nu devine vizibil înainte de COMMIT.")
             Log("Valorile documentelor se copiază din Access: fără recalcularea totalurilor, TVA, prețurilor, cantităților sau semnelor. Numerotarea rămâne după ultimul număr real.")
@@ -120,6 +124,7 @@ Partial Friend NotInheritable Class VrcRunner
                 MigrateGestiune(k_gest)
             Next
             WriteCounters()
+            AttachHistoricalInvoices()
             If _result.Blockers > 0 Then Throw New VrcBlockedException("Există constatări care blochează transferul.")
             _cancel.ThrowIfCancellationRequested()
             Log("Reconciliere înainte de COMMIT: numărători și sume, sursă față de țintă…")
@@ -266,7 +271,7 @@ Partial Friend NotInheritable Class VrcRunner
     ' ====================================================================================================================
     Private Sub MigrateGestiune(k_gest As GestInfo)
         Dim k_used = UsedProducts(k_gest)
-        For Each k_table In VrcTargetSchema.Tables().Where(Function(k_t) Not k_t.IsExercise)
+        For Each k_table In _importTables.Where(Function(k_t) Not k_t.IsExercise)
             _cancel.ThrowIfCancellationRequested()
             If k_table.Name = "FeluriMancare" Then
                 MigrateDishTypes(k_gest, k_table)
@@ -277,7 +282,7 @@ Partial Friend NotInheritable Class VrcRunner
         Next
         For Each k_source In k_gest.Sources
             _currentSourceName = k_source.Profile.FileName
-            For Each k_table In VrcTargetSchema.Tables().Where(Function(k_t) k_t.IsExercise)
+            For Each k_table In _importTables.Where(Function(k_t) k_t.IsExercise)
                 _cancel.ThrowIfCancellationRequested()
                 MigrateExercise(k_gest, k_source, k_table)
                 StopIfBlocked(k_table.Name)
@@ -358,16 +363,16 @@ Partial Friend NotInheritable Class VrcRunner
     ''' <summary>Every column the rules and the conversion look at, so a column missing from a file is NULL instead of a missing key.</summary>
     Private Shared Function ExpectedColumns(k_table As String) As IEnumerable(Of String)
         Dim k_names As New List(Of String) From {"NrFact", "IDF", "Cant", "Pret", "PUTVA", "PU", "Numar", "NumarBC", "NumarLA", "Valoare", "ValoareBC", "IdProdus"}
-        Dim k_schema = VrcTargetSchema.Find(k_table)
+        Dim k_schema = VrcImportMap.Find(k_table)
         If k_schema IsNot Nothing Then
-            If k_schema.PrimaryKey.Length > 0 Then k_names.Add(k_schema.PrimaryKey)
+            If k_schema.SourceKey.Length > 0 Then k_names.Add(k_schema.SourceKey)
             k_names.AddRange(k_schema.Columns.Select(Function(k_c) k_c.Name))
         End If
         Return k_names
     End Function
 
     ' ---- shared (gestiune-level) tables ------------------------------------------------------------------------------
-    Private Sub MigrateShared(k_gest As GestInfo, k_table As VrcTargetTable, k_used As HashSet(Of Long))
+    Private Sub MigrateShared(k_gest As GestInfo, k_table As VrcImportTable, k_used As HashSet(Of Long))
         Dim k_merged As New Dictionary(Of String, (Source As VrcPlanSource, Row As Dictionary(Of String, Object), Contributors As List(Of VrcPlanSource)))(StringComparer.Ordinal)
         Dim k_order As New List(Of String)()
         Dim k_total As Long = 0
@@ -375,9 +380,9 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_n As Integer = 0
             For Each k_row In ReadRows(k_source, k_table.Name)
                 k_n += 1
-                Dim k_key As String = If(k_table.PrimaryKey.Length > 0, VrcConvert.KeyText(k_row(k_table.PrimaryKey)), $"{k_source.Profile.FileName}#{k_n}")
+                Dim k_key As String = If(k_table.SourceKey.Length > 0, VrcConvert.KeyText(k_row(k_table.SourceKey)), $"{k_source.Profile.FileName}#{k_n}")
                 If k_key.Length = 0 Then
-                    AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.PrimaryKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
+                    AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.SourceKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
                     Continue For
                 End If
                 If k_merged.ContainsKey(k_key) Then
@@ -426,7 +431,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Sub
 
     ' ---- exercise tables ---------------------------------------------------------------------------------------------
-    Private Sub MigrateExercise(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable)
+    Private Sub MigrateExercise(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcImportTable)
         Dim k_rows = ReadRows(k_source, k_table.Name)
         If k_rows.Count = 0 Then Return
         Dim k_exercise As Long = k_gest.ExerciseIds(k_source)
@@ -439,9 +444,9 @@ Partial Friend NotInheritable Class VrcRunner
         For Each k_row In k_rows
             k_n += 1
             If k_n Mod CheckEvery = 0 Then _cancel.ThrowIfCancellationRequested()
-            Dim k_key As String = If(k_table.PrimaryKey.Length > 0, VrcConvert.KeyText(k_row(k_table.PrimaryKey)), $"#{k_n}")
+            Dim k_key As String = If(k_table.SourceKey.Length > 0, VrcConvert.KeyText(k_row(k_table.SourceKey)), $"#{k_n}")
             If k_key.Length = 0 Then
-                AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.PrimaryKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
+                AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.SourceKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
                 Continue For
             End If
             Dim k_extra As New ExtraContext() With {.Suppliers = k_suppliers}
@@ -500,7 +505,7 @@ Partial Friend NotInheritable Class VrcRunner
     ' One row: convert → insert → remember the new key
     ' ====================================================================================================================
     ''' <summary>The columns written for a table, in the order the values of <see cref="BuildRow"/> come.</summary>
-    Private Shared Function InsertColumns(k_table As VrcTargetTable) As List(Of String)
+    Friend Shared Function InsertColumns(k_table As VrcImportTable) As List(Of String)
         Dim k_names As New List(Of String) From {"SubunitId", "GestiuneId"}
         If k_table.IsExercise Then k_names.Add("ExercitiuId")
         For Each k_c In k_table.Columns
@@ -511,7 +516,7 @@ Partial Friend NotInheritable Class VrcRunner
         Return k_names
     End Function
 
-    Private Function Track(k_gest As GestInfo, k_exercise As Long, k_table As VrcTargetTable, k_gestiuneName As String, k_year As Integer) As TrackedCount
+    Private Function Track(k_gest As GestInfo, k_exercise As Long, k_table As VrcImportTable, k_gestiuneName As String, k_year As Integer) As TrackedCount
         Dim k_id As String = $"{k_gest.Id}|{k_exercise}|{k_table.Name}"
         Dim k_tracked As TrackedCount = Nothing
         If Not _counts.TryGetValue(k_id, k_tracked) Then
@@ -524,7 +529,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>Converts one row to the values of its INSERT. Nothing is written here. Returns Nothing when the row is refused (a blocking finding was recorded).</summary>
-    Private Function BuildRow(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable,
+    Private Function BuildRow(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcImportTable,
                               k_row As Dictionary(Of String, Object), k_key As String, k_tracked As TrackedCount,
                               k_exercise As Long, k_extra As ExtraContext) As List(Of Object)
         Dim k_values As New List(Of Object) From {_subunitId, k_gest.Id}
@@ -552,6 +557,18 @@ Partial Friend NotInheritable Class VrcRunner
             End If
         Next
         If k_table.Name = "NIR" Then AddNirExtras(k_source, k_row, k_key, k_extra, k_values)
+        Dim k_names = InsertColumns(k_table)
+        For k_i As Integer = 0 To k_names.Count - 1
+            Dim k_target = _targetSchema.Column(k_table.TargetName, k_names(k_i))
+            Dim k_value = k_values(k_i)
+            If (k_value Is Nothing OrElse TypeOf k_value Is DBNull) AndAlso Not k_target.IsNullable Then
+                AddIssue(k_source, k_table.Name, k_key, k_names(k_i), "X05", "BLOCAJ", "NULL", String.Empty, "Schema reală MariaDB nu permite NULL în această coloană.")
+                k_ok = False
+            ElseIf TypeOf k_value Is String AndAlso k_target.CharacterMaxLength.HasValue AndAlso CLng(DirectCast(k_value, String).Length) > k_target.CharacterMaxLength.Value Then
+                AddIssue(k_source, k_table.Name, k_key, k_names(k_i), "X07", "BLOCAJ", DirectCast(k_value, String), String.Empty, $"Textul depășește limita de {k_target.CharacterMaxLength.Value} caractere din schema reală.")
+                k_ok = False
+            End If
+        Next
         If Not k_ok Then Return Nothing
 
         For Each k_pair In k_sums
@@ -567,7 +584,7 @@ Partial Friend NotInheritable Class VrcRunner
     ''' Writes the converted rows as multi-row INSERTs (a round trip per row was the whole cost of a large table, as in ADE.Migrator),
     ''' then reads back the keys the server gave them. Returns one new key per pending row, -1 for a row MariaDB refused.
     ''' </summary>
-    Private Function InsertPending(k_gest As GestInfo, k_table As VrcTargetTable, k_exercise As Long, k_pending As List(Of PendingRow)) As List(Of Long)
+    Private Function InsertPending(k_gest As GestInfo, k_table As VrcImportTable, k_exercise As Long, k_pending As List(Of PendingRow)) As List(Of Long)
         Dim k_ids As New List(Of Long)(k_pending.Count)
         If k_pending.Count = 0 Then Return k_ids
         Dim k_names = InsertColumns(k_table)
@@ -606,7 +623,7 @@ Partial Friend NotInheritable Class VrcRunner
         Return k_ids
     End Function
 
-    Private Function InsertOne(k_head As String, k_table As VrcTargetTable, k_row As PendingRow) As Long
+    Private Function InsertOne(k_head As String, k_table As VrcImportTable, k_row As PendingRow) As Long
         Try
             Using k_cmd As New MySqlCommand(String.Empty, _cn, _tx)
                 Dim k_sql As New StringBuilder(k_head)
@@ -628,9 +645,9 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>The keys the server gave to the rows of the INSERT that just ran, in row order. The subunit is new and locked until COMMIT, so its rows from <paramref name="k_first"/> up are exactly this batch.</summary>
-    Private Function ReadNewKeys(k_gest As GestInfo, k_table As VrcTargetTable, k_exercise As Long, k_first As Long, k_expected As Integer) As List(Of Long)
+    Private Function ReadNewKeys(k_gest As GestInfo, k_table As VrcImportTable, k_exercise As Long, k_first As Long, k_expected As Integer) As List(Of Long)
         Dim k_ids As New List(Of Long)(k_expected)
-        Dim k_key As String = If(k_table.PrimaryKey.Length > 0, k_table.PrimaryKey, "RowId")
+        Dim k_key As String = _targetSchema.Columns(k_table.TargetName).Single(Function(k_c) k_c.IsAutoIncrement).Name
         Dim k_sql As String = $"SELECT `{k_key}` FROM `{k_table.TargetName}` WHERE SubunitId=@s AND GestiuneId=@g" & If(k_table.IsExercise, " AND ExercitiuId=@e", "") &
                               $" AND `{k_key}`>=@f ORDER BY `{k_key}` LIMIT {k_expected}"
         Using k_cmd As New MySqlCommand(k_sql, _cn, _tx)
@@ -651,10 +668,10 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>Sets the references to rows of the same table (written as NULL) now that every row of the table has its key.</summary>
-    Private Sub ResolveDeferred(k_gest As GestInfo, k_table As VrcTargetTable)
+    Private Sub ResolveDeferred(k_gest As GestInfo, k_table As VrcImportTable)
         Dim k_mine = _deferred.Where(Function(k_d) k_d.TableName = k_table.Name).ToList()
         If k_mine.Count = 0 Then Return
-        Dim k_key As String = If(k_table.PrimaryKey.Length > 0, k_table.PrimaryKey, "RowId")
+        Dim k_key As String = _targetSchema.Columns(k_table.TargetName).Single(Function(k_c) k_c.IsAutoIncrement).Name
         For Each k_link In k_mine
             Dim k_child As Long = 0
             Dim k_parent As Long = 0
@@ -673,7 +690,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Sub
 
     ''' <summary>Report unusual source signs without changing any value or blocking the import.</summary>
-    Private Sub ReportSourceSigns(k_source As VrcPlanSource, k_table As VrcTargetTable,
+    Private Sub ReportSourceSigns(k_source As VrcPlanSource, k_table As VrcImportTable,
                                   k_row As Dictionary(Of String, Object), k_key As String)
         For Each k_field In {"Cant", "Pret", "PUTVA", "PU"}
             Dim k_raw As Object = Nothing
@@ -687,8 +704,8 @@ Partial Friend NotInheritable Class VrcRunner
     End Sub
 
     ''' <summary>One column of a row, converted by its class and link. A refused value is reported as blocking and the row is not written.</summary>
-    Private Function ConvertColumn(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_table As VrcTargetTable,
-                                   k_column As VrcTargetColumn, k_raw As Object, k_key As String, ByRef k_ok As Boolean) As Object
+    Private Function ConvertColumn(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_table As VrcImportTable,
+                                   k_column As VrcImportColumn, k_raw As Object, k_key As String, ByRef k_ok As Boolean) As Object
         Dim k_number As Decimal? = Nothing
         Dim k_reason As String = String.Empty
         Select Case k_column.Link
@@ -745,7 +762,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>NIR.Numar keeps its sign; a fractional number is represented losslessly by Numar and NumarSub.</summary>
-    Private Function ConvertDocumentNumber(k_source As VrcPlanSource, k_table As VrcTargetTable, k_column As VrcTargetColumn, k_raw As Object,
+    Private Function ConvertDocumentNumber(k_source As VrcPlanSource, k_table As VrcImportTable, k_column As VrcImportColumn, k_raw As Object,
                                            k_key As String, ByRef k_ok As Boolean) As Object
         Dim k_number As Decimal? = VrcConvert.ToDecimal(k_raw)
         If Not k_number.HasValue Then Return Nothing
@@ -777,17 +794,13 @@ Partial Friend NotInheritable Class VrcRunner
     ' set by ConvertDocumentNumber: the fraction of the NIR number in hundredths (707.1 -> 10)
     Private _currentNumarSub As Integer
 
-    Private Function ConvertReference(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_table As VrcTargetTable,
-                                      k_column As VrcTargetColumn, k_raw As Object, k_key As String, ByRef k_ok As Boolean) As Object
+    Private Function ConvertReference(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_table As VrcImportTable,
+                                      k_column As VrcImportColumn, k_raw As Object, k_key As String, ByRef k_ok As Boolean) As Object
         Dim k_value As Decimal? = VrcConvert.ToDecimal(k_raw)
         If Not k_value.HasValue OrElse k_value.Value = 0D Then
-            If Not k_column.Nullable Then
-                AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X05", "BLOCAJ", If(k_value.HasValue, "0", "NULL"), String.Empty, "Referință obligatorie lipsă.")
-                k_ok = False
-            End If
             Return Nothing
         End If
-        Dim k_parent = VrcTargetSchema.Find(k_column.Parent)
+        Dim k_parent = VrcImportMap.Find(k_column.Parent)
         Dim k_textKey As String = VrcConvert.KeyText(k_raw)
         Dim k_mapKey As String = If(k_parent IsNot Nothing AndAlso k_parent.IsExercise, $"S{k_sourceIndex}|{k_column.Parent}|{k_textKey}", $"G{k_gest.Id}|{k_column.Parent}|{k_textKey}")
         If String.Equals(k_column.Parent, k_table.Name, StringComparison.OrdinalIgnoreCase) Then
@@ -804,7 +817,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>OI group labels get a fresh number per gestiune; the same label of the same source and column name gets the same number everywhere.</summary>
-    Private Function GroupNumber(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_column As VrcTargetColumn, k_label As String) As Long
+    Private Function GroupNumber(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_column As VrcImportColumn, k_label As String) As Long
         Dim k_mapKey As String = $"S{k_sourceIndex}|group:{k_column.GroupName}|{k_label}"
         Dim k_number As Long = 0
         If _map.TryGetValue(k_mapKey, k_number) Then Return k_number
@@ -845,7 +858,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Sub
 
     ''' <summary>Last real number per exercise: NIR, BC and list. The Access counters (NR.*) are not used.</summary>
-    Private Sub TrackNumbering(k_gest As GestInfo, k_exercise As Long, k_table As VrcTargetTable, k_row As Dictionary(Of String, Object))
+    Private Sub TrackNumbering(k_gest As GestInfo, k_exercise As Long, k_table As VrcImportTable, k_row As Dictionary(Of String, Object))
         Dim k_kind As String = Nothing
         Dim k_number As Long? = Nothing
         Select Case k_table.Name

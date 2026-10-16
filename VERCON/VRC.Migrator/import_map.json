@@ -1,0 +1,1252 @@
+{
+  "generated": "VERCON/tools/import_map.js",
+  "tables": [
+    {
+      "name": "Masini",
+      "vname": "VC_Masini",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "Masina",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "TIP",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdMasina"
+    },
+    {
+      "name": "Produse",
+      "vname": "VC_Produse",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "DenumireP",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "UM",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "CPV",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "CC",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "DNF",
+          "cls": "INT",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "ProduseP",
+      "vname": "VC_ProduseP",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "ID",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Produse",
+            "parentField": "ID"
+          }
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "COD",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdProdus"
+    },
+    {
+      "name": "ProduseM",
+      "vname": "VC_ProduseM",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "IDPMF",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "tech"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "DataIntrare",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "DNF",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "DF",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "ValoareLuna",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareLunara",
+          "cls": "VALOARE-INT",
+          "link": null
+        }
+      ],
+      "source_key": null
+    },
+    {
+      "name": "Clienti",
+      "vname": "VC_Clienti",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "Denumire",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Adresa",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "CF",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "J",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "CNP",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Cont",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IDC"
+    },
+    {
+      "name": "ComisieNIR",
+      "vname": "VC_ComisieNIR",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "Receptie1",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie2",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie3",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie4",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdComisie"
+    },
+    {
+      "name": "ComisieInventar",
+      "vname": "VC_ComisieInventar",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "Receptie1",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie2",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie3",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Receptie4",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdComisieInv"
+    },
+    {
+      "name": "TVA",
+      "vname": "VC_TVA",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "TVA",
+          "cls": "COTA",
+          "link": null
+        },
+        {
+          "name": "Explicatie",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdTVA"
+    },
+    {
+      "name": "FeluriMancare",
+      "vname": "VC_FeluriMancare",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "DenFel",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Explicatie",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IDFel"
+    },
+    {
+      "name": "Retetar",
+      "vname": "VC_Retetar",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "Continut",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Cantitate",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "AlteDetalii",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "UM",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "CPV",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdFel"
+    },
+    {
+      "name": "OI_Produse",
+      "vname": "VC_OI_Produse",
+      "scope": "G",
+      "columns": [
+        {
+          "name": "IDBP",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBP"
+          }
+        },
+        {
+          "name": "IDBT",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBT"
+          }
+        },
+        {
+          "name": "IDBC",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBC"
+          }
+        },
+        {
+          "name": "IDBO",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "open"
+          }
+        },
+        {
+          "name": "IDM",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "open"
+          }
+        },
+        {
+          "name": "IDC_PTC",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "IDOI"
+    },
+    {
+      "name": "NIR",
+      "vname": "VC_NIR",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdComisie",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ComisieNIR",
+            "parentField": "IdComisie"
+          }
+        },
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "IDF",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "supplier"
+          }
+        },
+        {
+          "name": "IDFV",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "skip"
+          }
+        },
+        {
+          "name": "IdStorno",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "NIR",
+            "parentField": "IdIntrare"
+          }
+        },
+        {
+          "name": "NrFact",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Data",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "Numar",
+          "cls": "NUMAR",
+          "link": null
+        },
+        {
+          "name": "Valoare",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataFc",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "Storno",
+          "cls": "BOOL",
+          "link": null
+        },
+        {
+          "name": "FurnizorV",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "IdIntrare"
+    },
+    {
+      "name": "Intrari",
+      "vname": "VC_Intrari",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdIntrare",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "NIR",
+            "parentField": "IdIntrare"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "IDTVA",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "TVA",
+            "parentField": "IdTVA"
+          }
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Pret",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "TVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Valoare",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "IntrariStorno",
+      "vname": "VC_IntrariStorno",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdIntrare",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "NIR",
+            "parentField": "IdIntrare"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "Iesiri_H",
+      "vname": "VC_Iesiri_H",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "IdRetur",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "open"
+          }
+        },
+        {
+          "name": "IDC",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "NumarBC",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DataBC",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "ValoareBC",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Expl",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Retur",
+          "cls": "BOOL",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "IdBonConsum"
+    },
+    {
+      "name": "Iesiri",
+      "vname": "VC_Iesiri",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdBonConsum",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Iesiri_H",
+            "parentField": "IdBonConsum"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "IesiriRetur",
+      "vname": "VC_IesiriRetur",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdBonConsum",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Iesiri_H",
+            "parentField": "IdBonConsum"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "OI_Predare",
+      "vname": "VC_OI_Predare",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IDBP",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBP"
+          }
+        },
+        {
+          "name": "IdBonConsum",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Iesiri_H",
+            "parentField": "IdBonConsum"
+          }
+        },
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "IdMasinaP",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "open"
+          }
+        },
+        {
+          "name": "IDC_BP",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "NRBP",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DATABP",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Expl",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "OI_Transfer",
+      "vname": "VC_OI_Transfer",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IDBT",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBT"
+          }
+        },
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "IDC_BT",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "IDC_OLD",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "NRBT",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DATABT",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Expl",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "OI_Casare",
+      "vname": "VC_OI_Casare",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IDBC",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "group",
+            "group": "IDBC"
+          }
+        },
+        {
+          "name": "IdMasina",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
+          }
+        },
+        {
+          "name": "IDC_BC",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Clienti",
+            "parentField": "IDC"
+          }
+        },
+        {
+          "name": "IdProdus",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "ProduseP",
+            "parentField": "IdProdus"
+          }
+        },
+        {
+          "name": "NRBC",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DATABC",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "Cant",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "PUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareCUTVA",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Expl",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "DataSalvare",
+          "cls": "DATA",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "LABC",
+      "vname": "VC_LABC",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "ID",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "tech"
+          }
+        },
+        {
+          "name": "NumarLA",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "DATALA",
+          "cls": "DATA",
+          "link": null
+        },
+        {
+          "name": "ValoareBon",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "DEP",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "ValoareLista",
+          "cls": "VALOARE-INT",
+          "link": null
+        }
+      ],
+      "source_key": "IdLista"
+    },
+    {
+      "name": "ListaAlimente",
+      "vname": "VC_ListaAlimente",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IDLISTA",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "LABC",
+            "parentField": "IdLista"
+          }
+        },
+        {
+          "name": "MicDejun_P",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "VMD",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "MicDejun_V",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "MicDejun_D",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "Dejun_P",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "VD",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Dejun_V",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Dejun_D",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "Cina_P",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "VC",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Cina_V",
+          "cls": "VALOARE-INT",
+          "link": null
+        },
+        {
+          "name": "Cina_D",
+          "cls": "INT",
+          "link": null
+        },
+        {
+          "name": "Comentarii",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "ID"
+    },
+    {
+      "name": "LegBCLA",
+      "vname": "VC_LegBCLA",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdBonConsum",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "Iesiri_H",
+            "parentField": "IdBonConsum"
+          }
+        },
+        {
+          "name": "IdLista",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "LABC",
+            "parentField": "IdLista"
+          }
+        }
+      ],
+      "source_key": null
+    },
+    {
+      "name": "MicDejun",
+      "vname": "VC_MicDejun",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdLista",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "LABC",
+            "parentField": "IdLista"
+          }
+        },
+        {
+          "name": "IdFel",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "meal_type"
+          }
+        },
+        {
+          "name": "Tip",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Explicatie",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "Id"
+    },
+    {
+      "name": "Dejun",
+      "vname": "VC_Dejun",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdLista",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "LABC",
+            "parentField": "IdLista"
+          }
+        },
+        {
+          "name": "IdFel",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "meal_type"
+          }
+        },
+        {
+          "name": "Tip",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Explicatie",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "Id"
+    },
+    {
+      "name": "Cina",
+      "vname": "VC_Cina",
+      "scope": "E",
+      "columns": [
+        {
+          "name": "IdLista",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "fk",
+            "parent": "LABC",
+            "parentField": "IdLista"
+          }
+        },
+        {
+          "name": "IdFel",
+          "cls": "CHEIE",
+          "link": {
+            "kind": "meal_type"
+          }
+        },
+        {
+          "name": "Tip",
+          "cls": "TEXT",
+          "link": null
+        },
+        {
+          "name": "Explicatie",
+          "cls": "TEXT",
+          "link": null
+        }
+      ],
+      "source_key": "Id"
+    }
+  ]
+}

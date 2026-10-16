@@ -18,7 +18,7 @@ from datetime import datetime
 
 from flask import g, request
 
-from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context
+from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, invoices
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
 
@@ -60,6 +60,10 @@ def register(bp, guard, scoped, open_db):
         if open_db is None:
             raise FormUnavailable('NO_DATABASE', 'Această secțiune nu este disponibilă în previzualizarea locală.', 503)
         with open_db(g.portal['db_name']) as conn:
+            if write:
+                # A common invoice can be allocated from different gestiuni. After its
+                # row lock is obtained, budget reads must see the preceding commit.
+                conn.start_transaction(isolation_level='READ COMMITTED')
             cursor = conn.cursor(dictionary=True)
             try:
                 yield cursor
@@ -83,6 +87,9 @@ def register(bp, guard, scoped, open_db):
         exercise = protocol.exercise_of(cursor, sel['subunit'], sel['gestiune'], gest['type'], sel['year'])
         if write:
             protocol.ensure_open(exercise)
+            cursor.execute('SELECT GestiuneId FROM VC_Gestiuni WHERE SubunitId=%s AND GestiuneId=%s FOR UPDATE',
+                           (sel['subunit'], sel['gestiune']))
+            cursor.fetchone()
         return {'subunit': sel['subunit'], 'gestiune': sel['gestiune'], 'exercitiu': exercise['id'], 'email': g.portal['email'], 'type': gest['type'],
                 'zec': int(gest.get('zec', _DEFAULT_ZEC)), 'scale': int(gest.get('scara', _DEFAULT_SCARA)), 'year': sel['year'], 'an': exercise['an'],
                 'closed': exercise['closed']}, exercise
@@ -103,6 +110,10 @@ def register(bp, guard, scoped, open_db):
 
     def request_id():
         return (request.headers.get('X-Request-Id') or '')[:64] or None
+
+    def read_document(cursor, ctx, family, doc_id):
+        doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
+        return invoices.enrich(cursor, ctx, doc) if family == 'nir' else doc
 
     stock_routes.register(bp, guard, scoped, session, build)
     report_routes.register(bp, guard, scoped, session, build)
@@ -125,6 +136,7 @@ def register(bp, guard, scoped, open_db):
             raise FormUnavailable('FORBIDDEN', 'Nu aveți dreptul necesar pentru această operație VERCON.', 403)
 
     receipt_context.register(bp, guard, scoped, session, build, _need)
+    receipt_routes.register(bp, guard, scoped, session, build, repo_of, _need)
 
     @bp.get('/api/vercon/doc/<family>/lookups')
     @guard('read')
@@ -168,7 +180,7 @@ def register(bp, guard, scoped, open_db):
         exclude = documents._int(request.args.get('exclude'))
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, 'nir', False)
-            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0)
+            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'))
 
     @bp.get('/api/vercon/doc/<family>/sources')
     @guard('read')
@@ -217,7 +229,7 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
-            return backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
+            return read_document(cursor, ctx, family, doc_id)
 
     @bp.get('/api/vercon/doc/<family>/<int:doc_id>/history')
     @guard('read')
@@ -318,7 +330,7 @@ def register(bp, guard, scoped, open_db):
                 result = create_fn(family)(cursor, repo_of(cursor, ctx), ctx, exercise, data, key, request_id())
                 protocol.remember(cursor, ctx, key, fp, result)
                 was_replay = False
-            doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, result['id'])
+            doc = read_document(cursor, ctx, family, result['id'])
         return {'result': result, 'document': doc, 'replayed': was_replay}
 
     def _need_write(family):
@@ -334,8 +346,13 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped(RIGHT[family], data)
         with session(True) as cursor:
             ctx, exercise = build(cursor, vctx, family, True)
-            result = edit_fn(family)(cursor, repo_of(cursor, ctx), ctx, exercise, doc_id, data, request_id())
-            doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
+            key = str(data.get('request_key') or '')[:64]
+            fp = protocol.fingerprint('edit', family, doc_id, data.get('version'), data.get('header'), data.get('lines'))
+            replay = protocol.replayed(cursor, ctx, key, fp) if key else None
+            result = replay if replay is not None else edit_fn(family)(cursor, repo_of(cursor, ctx), ctx, exercise, doc_id, data, request_id())
+            if key and replay is None:
+                protocol.remember(cursor, ctx, key, fp, result)
+            doc = read_document(cursor, ctx, family, doc_id)
         return {'result': result, 'document': doc}
 
     @bp.post('/api/vercon/doc/<family>/<int:doc_id>/cancel')
@@ -347,6 +364,11 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped(RIGHT[family], data)
         with session(True) as cursor:
             ctx, _ = build(cursor, vctx, family, True)
-            result = cancel_fn(family)(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
-            doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
+            key = str(data.get('request_key') or '')[:64]
+            fp = protocol.fingerprint('cancel', family, doc_id, data.get('version'), data.get('reason'))
+            replay = protocol.replayed(cursor, ctx, key, fp) if key else None
+            result = replay if replay is not None else cancel_fn(family)(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
+            if key and replay is None:
+                protocol.remember(cursor, ctx, key, fp, result)
+            doc = read_document(cursor, ctx, family, doc_id)
         return {'result': result, 'document': doc}

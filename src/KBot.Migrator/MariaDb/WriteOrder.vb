@@ -51,6 +51,13 @@ Public NotInheritable Class WriteOrder
     ''' <exception cref="WriteOrderCycleException">The tables in scope form a cycle.</exception>
     Public Shared Function Derive(schema As TargetSchema,
                                   tablesInScope As IEnumerable(Of String)) As List(Of String)
+        Return Derive(schema, tablesInScope, Nothing)
+    End Function
+
+    ''' <summary>The live-FK order, augmented by dependencies required by the source conversion.</summary>
+    Public Shared Function Derive(schema As TargetSchema,
+                                  tablesInScope As IEnumerable(Of String),
+                                  additionalDependencies As IEnumerable(Of (Parent As String, Child As String))) As List(Of String)
         Try
             Dim scope As New List(Of String)(tablesInScope)
             Dim inScope As New HashSet(Of String)(scope, StringComparer.OrdinalIgnoreCase)
@@ -78,6 +85,19 @@ Public NotInheritable Class WriteOrder
                 children(fk.ParentTable).Add(fk.ChildTable)
                 pending(fk.ChildTable) += 1
             Next
+
+            ' Source conversions may require a parent even when MariaDB declares no FK.
+            ' Keep those edges in this same sorter instead of maintaining a second graph in each migrator.
+            If additionalDependencies IsNot Nothing Then
+                For Each dependency In additionalDependencies
+                    If Not inScope.Contains(dependency.Parent) OrElse Not inScope.Contains(dependency.Child) Then Continue For
+                    If String.Equals(dependency.Parent, dependency.Child, StringComparison.OrdinalIgnoreCase) Then Continue For
+                    Dim edge = dependency.Parent & " -> " & dependency.Child
+                    If Not edges.Add(edge) Then Continue For
+                    children(dependency.Parent).Add(dependency.Child)
+                    pending(dependency.Child) += 1
+                Next
+            End If
 
             ' Kahn, taking ready tables in the caller's original order so a run with no
             ' constraints at all reproduces the list it was given rather than reordering

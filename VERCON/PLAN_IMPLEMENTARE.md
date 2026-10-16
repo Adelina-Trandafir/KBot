@@ -655,6 +655,12 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 **Livrabile:** operații de corecție și istoric document. **Acceptare:** ștergerea BC legat nu lasă lista fără relație; revizie veche produce conflict; document închis nu este editabil prin apel API direct. NIR/BC/retur/storno au același protocol și succes numai după commit.
 
+### SLICE-VC06-06 — facturi comune, corecții NIR și schemă unică
+
+**Extensie autorizată la 16.10.2026.** Cronologie NIR, TVA comun în antet, total exact prin corecție cu TVA real, rânduri AUTO nemodificabile cu ștergere/revenire în grup, factură repartizată între conturi/gestiuni/subunități și migrarea conservatoare a fragmentelor istorice. Include reutilizarea cititorului de schemă și a sortării din KBot.Migrator, cu AVACONT_SURSA de pe server drept sursă unică de structură și DDL-uri incrementale manuale.
+
+**Livrabile și stare:** [worklog VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md). **IMPLEMENTAT_LOCAL, FĂRĂ EXECUȚIE**: fără build, teste sau SQL; nu este validat server și nu este acceptat prin această consemnare.
+
 ## Slice VC07 — specificul Alimente, OI și MF
 
 **Dependențe:** VC06 și VC00-03/VC00-04; rezultatele de stoc disponibile din contract/VC08-01 înainte de acceptarea fluxurilor dependente.

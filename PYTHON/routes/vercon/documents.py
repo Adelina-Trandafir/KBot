@@ -338,9 +338,9 @@ def _guard_dependents(cursor, ctx, family, doc_id, action):
         if _one(cursor, 'SELECT 1 FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdStorno=%s AND Anulat=0 LIMIT 1', (s, g, e, doc_id)):
             raise NomError('HAS_STORNO', 'Recepția are storno: anulați mai întâi storno-ul, apoi puteți modifica sau anula recepția.', 409)
         if _one(cursor, 'SELECT 1 FROM VC_Intrari i JOIN VC_ProduseP p ON p.SubunitId=i.SubunitId AND p.GestiuneId=i.GestiuneId AND p.IdProdus=i.IdProdus '
-                        'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s AND (EXISTS (SELECT 1 FROM VC_OI_Predare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus) '
-                        'OR EXISTS (SELECT 1 FROM VC_OI_Transfer x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus) '
-                        'OR EXISTS (SELECT 1 FROM VC_OI_Casare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus)) LIMIT 1', (s, g, e, doc_id)):
+                        'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s AND (EXISTS (SELECT 1 FROM VC_OI_Predare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
+                        'OR EXISTS (SELECT 1 FROM VC_OI_Transfer x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
+                        'OR EXISTS (SELECT 1 FROM VC_OI_Casare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0)) LIMIT 1', (s, g, e, doc_id)):
             raise NomError('DOC_LINKED', 'Un produs al recepției apare deja în registrul OI/MF: documentul nu mai poate fi %s.' % what, 409)
     if family == 'bc':
         if _one(cursor, 'SELECT 1 FROM VC_Iesiri_H WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdRetur=%s AND COALESCE(Retur,0)=1 AND Anulat=0 LIMIT 1', (s, g, e, doc_id)):
@@ -365,256 +365,12 @@ def _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, base_version):
 
 
 # ---- NIR (receipt) ---------------------------------------------------------------------------------------------------
-def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None):
-    """Validated header + lines of a receipt (family nir) or of a storno (family storno). Errors are keyed 'h.<field>' /
-    'l|<row key>|<field>' so the page can mark them."""
-    errors = {}
-    header = body.get('header') if isinstance(body.get('header'), dict) else {}
-    raw_lines = body.get('lines') if isinstance(body.get('lines'), list) else []
-    out = {'cols': {}, 'lines': [], 'declared': None}
-    cols = out['cols']
-    doc_type = 'NIR' if family == 'storno' else (header.get('TipDoc') or 'NIR')
-    if doc_type not in ('NIR', 'STOC_INITIAL'):
-        errors['h.TipDoc'] = 'Tip de document necunoscut.'
-    cols['TipDoc'] = doc_type
-    cols['Storno'] = 1 if family == 'storno' else 0
-    # supplier
-    partner = None
-    if family == 'storno':
-        partner = source['IdPartener'] if source else None
-    else:
-        partner_id = _int(header.get('IdPartener'))
-        if doc_type == 'STOC_INITIAL' and partner_id is None:
-            partner = None
-        elif partner_id is None or not _one(cursor, "SELECT 1 FROM Parteneri WHERE IdPartener=%s AND COALESCE(Ascuns,0)=0 AND NULLIF(TRIM(CodFiscal),'') IS NOT NULL", (partner_id,)):
-            errors['h.IdPartener'] = 'Alegeți furnizorul.'
-        else:
-            partner = partner_id
-    cols['IdPartener'] = partner
-    if partner:
-        row = _one(cursor, 'SELECT DenumirePartener FROM Parteneri WHERE IdPartener=%s', (partner,))
-        cols['FurnizorV'] = (row['DenumirePartener'] if row else None)
-    else:
-        cols['FurnizorV'] = None
-    cols['NrFact'] = _text(header.get('NrFact'), 'h.NrFact', errors, required=doc_type == 'NIR' or family == 'storno')
-    if doc_type == 'STOC_INITIAL' and not cols['NrFact']:
-        cols['NrFact'] = 'STOC INITIAL'
-    cols['DataFc'] = protocol.to_date(header.get('DataFc'), 'Data facturii', None, errors, 'h.DataFc')
-    cols['Data'] = protocol.to_date(header.get('Data'), 'Data NIR', exercise if ctx['type'] not in ('OI', 'MF') else None, errors, 'h.Data')
-    for field, table, pk in (('IdMasina', 'VC_Masini', 'IdMasina'), ('IdComisie', 'VC_ComisieNIR', 'IdComisie')):
-        value = _int(header.get(field))
-        if header.get(field) not in (None, '') and (value is None or not _exists(repo, table, pk, value)):
-            errors['h.' + field] = 'Valoarea aleasă nu există în această gestiune.'
-        cols[field] = value
-    if family == 'nir' and cols['IdMasina'] is None and 'h.IdMasina' not in errors:
-        errors['h.IdMasina'] = 'Alegeți categoria / contul.'
-    if family == 'storno':
-        cols['IdStorno'] = source['IdIntrare'] if source else None
-        if source and cols['DataFc'] and source['DataFc'] and cols['DataFc'] < source['DataFc'].date():
-            errors['h.DataFc'] = 'Data storno nu poate fi înaintea facturii storno-ate.'
-    declared = _dec(header.get('Valoare'))
-    if header.get('Valoare') not in (None, '') and (declared is None or declared < 0):
-        errors['h.Valoare'] = 'Introduceți o valoare pozitivă.'
-    out['declared'] = declared
-    # lines
-    if not raw_lines:
-        errors['lines'] = 'Documentul nu are nicio linie.'
-    if len(raw_lines) > _MAX_LINES:
-        errors['lines'] = 'Cel mult %d linii pe document.' % _MAX_LINES
-    mf = ctx['type'] == 'MF' and family == 'nir'
-    for index, raw in enumerate(raw_lines[:_MAX_LINES]):
-        raw = raw if isinstance(raw, dict) else {}
-        key = _line_key(raw, index)
-        line = {'key': key, 'id': _int(raw.get('id'))}
-        bad = lambda field, message, key=key: errors.__setitem__('l|%s|%s' % (key, field), message)
-        cant, pret = _dec(raw.get('Cant')), _dec(raw.get('Pret'))
-        if cant is None or cant <= 0:
-            bad('Cant', 'Cantitatea trebuie să fie pozitivă.')
-        if pret is None or pret < 0:
-            bad('Pret', 'Prețul nu poate fi negativ.')
-        rate = None
-        if family == 'nir':
-            tva_id = _int(raw.get('IDTVA'))
-            tva_row = repo.select('VC_TVA', {'IdTVA': tva_id}) if tva_id is not None else []
-            if not tva_row:
-                bad('IDTVA', 'Alegeți cota TVA.')
-            else:
-                rate = Decimal(tva_row[0]['TVA'] or 0)
-                line['IDTVA'] = tva_id
-        if mf:
-            product = _int(raw.get('product'))
-            if product is None or not _exists(repo, 'VC_Produse', 'ID', product, True):
-                bad('product', 'Alegeți produsul.')
-            line['product'] = product
-            if product is not None and cols['IdMasina'] is not None and _account_of_product(repo, product) != cols['IdMasina']:
-                bad('product', _NOT_IN_ACCOUNT)
-            line['COD'] = _text(raw.get('code'), 'l|%s|code' % key, errors, True, 255)
-            line['data_intrarii'] = protocol.to_date(raw.get('data_intrarii'), 'Data intrării', None, errors, 'l|%s|data_intrarii' % key)
-            dnf, df = _int(raw.get('DNF')), _int(raw.get('DF') if raw.get('DF') not in (None, '') else 0)
-            if dnf is None or dnf < 1:
-                bad('DNF', 'Durata normală trebuie să fie de cel puțin 1 lună.')
-            if df is None or df < 0:
-                bad('DF', 'Durata folosită nu poate fi negativă.')
-            if cant is not None and cant != cant.to_integral_value():
-                bad('Cant', 'Un mijloc fix se recepționează în bucăți întregi.')
-            line['DNF'], line['DF'] = dnf, df or 0
-        elif family == 'nir' and 'product' in raw:
-            product = _int(raw.get('product'))
-            if product is None or not _exists(repo, 'VC_Produse', 'ID', product, True):
-                bad('product', 'Alegeți produsul.')
-            line['product'] = product
-            if product is not None and cols['IdMasina'] is not None and _account_of_product(repo, product) != cols['IdMasina']:
-                bad('product', _NOT_IN_ACCOUNT)
-        else:
-            variant = _int(raw.get('variant'))
-            if variant is None or not _exists(repo, 'VC_ProduseP', 'IdProdus', variant, True):
-                bad('variant', 'Alegeți produsul.')
-            line['variant'] = variant
-            if variant is not None and cols['IdMasina'] is not None and _account_of_variant(repo, variant) != cols['IdMasina']:
-                bad('variant', _NOT_IN_ACCOUNT)
-        if cant is not None and pret is not None and (rate is not None or family == 'storno'):
-            try:
-                if family == 'nir':
-                    line['v'] = receipt_line(cant, pret, rate, ctx['zec'], ctx['scale'])
-                    if mf and line.get('DNF'):
-                        line['ValoareLuna'] = numeric.to_stored(numeric.calc_round(numeric.from_stored(line['v']['ValoareCUTVA'], ctx['scale']) / line['DNF'], ctx['zec']), ctx['scale'])
-            except numeric.NumericError as error:
-                bad('Cant', str(error))
-        out['lines'].append(line)
-    _fail(errors)
-    return out
-
-
-def _nir_header_values(ctx, parsed, total_int, number):
-    cols = dict(parsed['cols'])
-    cols['Valoare'] = total_int
-    cols['Numar'] = -number if cols['Storno'] else number
-    return cols
-
-
-def _nir_total(ctx, parsed, errors_ok=True):
-    total_calc = total_of([l['v'] for l in parsed['lines']], ctx['scale'])
-    total, _ = numeric.header_total(parsed['declared'], total_calc)
-    try:
-        return numeric.to_stored(total, ctx['scale'])
-    except numeric.NumericError as error:
-        raise NomError('INVALID', 'Corectați câmpurile marcate.', 422, {'h.Valoare': str(error)})
-
-
-def create_nir(cursor, repo, ctx, exercise, body, request_key, request_id):
-    parsed = _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
-    errors = {}
-    header = body.get('header') or {}
-    sub = _sub_number(header.get('NumarSub'), errors)
-    if sub and not _numarsub_column(cursor, ctx):
-        errors['h.Numar'] = 'Sub-numerele NIR nu sunt disponibile în această bază de date.'
-    number = None
-    if not errors:
-        number, _ = _assign_number(cursor, ctx, 'nir', header.get('Numar'), errors, sub=sub)
-    _fail(errors)
-    total_int = _nir_total(ctx, parsed)
-    now = datetime.now()
-    values = _nir_header_values(ctx, parsed, total_int, number)
-    if _numarsub_column(cursor, ctx):
-        values['NumarSub'] = sub
-    nir_id = repo.insert('VC_NIR', values)
-    for line in parsed['lines']:
-        _write_receipt_line(cursor, repo, ctx, nir_id, line, now)
-    protocol.freeze(cursor, ctx)
-    result = {'id': nir_id, 'number': number}
-    protocol.audit(cursor, ctx, 'nir.create', 'VC_NIR', nir_id, None, {'header': parsed['cols'], 'total': total_int, 'lines': len(parsed['lines'])}, request_key, request_id)
-    return result
-
-
-def _has_numarsub(cursor):
-    row = _one(cursor, "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='VC_NIR' AND COLUMN_NAME='NumarSub' LIMIT 1")
-    return bool(row)
-
-
-def _write_receipt_line(cursor, repo, ctx, nir_id, line, now, existing=None):
-    """Insert a receipt line (and, on MF, the new asset: variant + register row). `existing` = the stored line when editing."""
-    v = line['v']
-    variant = line.get('variant')
-    if ctx['type'] == 'MF':
-        if existing is None:
-            variant = repo.insert('VC_ProduseP', {'ID': line['product'], 'PUTVA': v['PUTVA'], 'COD': line['COD'], 'DataSalvare': now})
-            repo.insert('VC_ProduseM', {'IdProdus': variant, 'DataIntrare': line['data_intrarii'], 'DNF': line['DNF'], 'DF': line['DF'], 'ValoareLuna': line['ValoareLuna']})
-        else:
-            variant = existing['IdProdus']
-            repo.update('VC_ProduseP', {'PUTVA': v['PUTVA'], 'COD': line['COD'], 'DataSalvare': now}, {'IdProdus': variant}, bump_version=True)
-            repo.update('VC_ProduseM', {'DataIntrare': line['data_intrarii'], 'DNF': line['DNF'], 'DF': line['DF'], 'ValoareLuna': line['ValoareLuna']}, {'IdProdus': variant}, bump_version=True)
-    elif line.get('product') is not None:
-        variant = receipt_choices.price_variant(repo, line['product'], v['PUTVA'], now, existing)
-    values = {'IdIntrare': nir_id, 'IdProdus': variant, 'IDTVA': line['IDTVA'], 'Cant': v['Cant'], 'Pret': v['Pret'], 'TVA': v['TVA'],
-              'Valoare': v['Valoare'], 'PUTVA': v['PUTVA'], 'ValoareCUTVA': v['ValoareCUTVA'], 'DataSalvare': now}
-    return repo.insert('VC_Intrari', values) if existing is None else _update_line(repo, 'VC_Intrari', existing['ID'], values)
-
-
-def _update_line(repo, table, line_id, values):
-    values = {k: v for k, v in values.items() if k not in ('IdIntrare', 'IdBonConsum')}
-    if repo.update(table, values, {'ID': line_id}, bump_version=True) != 1:
-        raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    return line_id
-
-
-def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
-    table, pk, before = _load_for_write(repo, ctx, 'nir', doc_id, body.get('version'))
-    _guard_dependents(cursor, ctx, 'nir', doc_id, 'edit')
-    parsed = _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
-    errors = {}
-    header = body.get('header') or {}
-    manual = header.get('Numar')
-    number = abs(before['Numar'] or 0)
-    before_sub = int(before.get('NumarSub') or 0)
-    sub = _sub_number(header.get('NumarSub'), errors) if 'NumarSub' in header else before_sub   # an old client that sends none keeps it
-    if sub and not _numarsub_column(cursor, ctx):
-        errors['h.Numar'] = 'Sub-numerele NIR nu sunt disponibile în această bază de date.'
-    wanted = manual if manual not in (None, '') else number
-    if not errors and (_int(str(wanted)) != number or sub != before_sub):
-        number, _ = _assign_number(cursor, ctx, 'nir', wanted, errors, exclude=doc_id, sub=sub)
-    _fail(errors)
-    total_int = _nir_total(ctx, parsed)
-    stored = _all(cursor, 'SELECT ID, IdProdus FROM VC_Intrari WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (*_scope(ctx), doc_id))
-    by_id = {r['ID']: r for r in stored}
-    touched = {r['IdProdus'] for r in stored}
-    now = datetime.now()
-    kept = set()
-    for line in parsed['lines']:
-        existing = by_id.get(line['id']) if line['id'] else None
-        if line['id'] and existing is None:
-            raise NomError('CONFLICT', 'O linie a documentului nu mai există. Reîncărcați documentul.', 409)
-        kept_id = _write_receipt_line(cursor, repo, ctx, doc_id, line, now, existing)
-        kept.add(kept_id)
-        touched.add(line.get('variant') or (existing or {}).get('IdProdus'))
-    for row in stored:
-        if row['ID'] not in kept:
-            repo.delete('VC_Intrari', {'ID': row['ID']})
-            if ctx['type'] == 'MF':
-                _drop_asset(repo, row['IdProdus'])
-    touched.update(r['IdProdus'] for r in _all(cursor, 'SELECT IdProdus FROM VC_Intrari WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (*_scope(ctx), doc_id)))
-    values = {k: v for k, v in _nir_header_values(ctx, parsed, total_int, number).items() if k not in ('Storno', 'TipDoc')}
-    if _numarsub_column(cursor, ctx):
-        values['NumarSub'] = sub
-    if repo.update('VC_NIR', values, {'IdIntrare': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
-        raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    protocol.check_timeline(cursor, ctx, touched)
-    protocol.audit(cursor, ctx, 'nir.update', 'VC_NIR', doc_id, {'Numar': before['Numar'], 'Valoare': before['Valoare'], 'NrFact': before['NrFact']},
-                   {'header': parsed['cols'], 'total': total_int, 'lines': len(parsed['lines'])}, None, request_id)
-    return {'id': doc_id, 'number': number}
-
-
-def _drop_asset(repo, variant):
-    try:
-        repo.delete('VC_ProduseM', {'IdProdus': variant})
-        repo.delete('VC_ProduseP', {'IdProdus': variant})
-    except Exception as error:   # a foreign key refuses it: the asset is used somewhere else
-        if getattr(error, 'errno', None) == 1451:
-            raise NomError('DOC_LINKED', 'Un mijloc fix al recepției este folosit în alt document și nu poate fi scos.', 409)
-        raise
-
-
 def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
+    from . import invoices
     reason = _check_cancel_input(body)
+    link = invoices.link_of(cursor, ctx, doc_id) if family == 'nir' and invoices.ready(cursor) else None
+    if link:
+        invoices.load(cursor, link['FACTURA_ID'], lock=True)
     table, pk, before = _load_for_write(repo, ctx, family, doc_id, body.get('version'))
     _guard_dependents(cursor, ctx, family, doc_id, 'cancel')
     _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, before['Version'])
@@ -623,6 +379,8 @@ def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
                        'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (reason, ctx['email'], *_scope(ctx), doc_id))
     products = _document_variants(cursor, ctx, family, doc_id)
     protocol.check_timeline(cursor, ctx, products)
+    if link:
+        invoices.refresh_state(cursor, link['FACTURA_ID'])
     protocol.audit(cursor, ctx, family + '.cancel', table, doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason}, None, request_id)
     return {'id': doc_id}
 
@@ -959,6 +717,8 @@ def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
     protocol.audit(cursor, ctx, 'br.update', 'VC_Iesiri_H', doc_id, {'NumarBC': before['NumarBC'], 'ValoareBC': before['ValoareBC']}, {'header': cols, 'total': total, 'lines': len(lines)}, None, request_id)
     return {'id': doc_id, 'number': text}
 
+
+from .receipts import create_nir, edit_nir, _has_numarsub
 
 CREATE = {'nir': create_nir, 'storno': create_storno, 'bc': create_bc, 'br': create_br}
 EDIT = {'nir': edit_nir, 'storno': edit_storno, 'bc': edit_bc, 'br': edit_br}

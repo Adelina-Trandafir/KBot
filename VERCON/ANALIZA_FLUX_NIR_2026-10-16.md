@@ -236,7 +236,7 @@ Schimbarea cotei din antet aplică noua cotă tuturor rândurilor reale ale NIR-
 
 La adăugare se poate păstra cota de antet ca valoare inițială pentru rânduri noi. La modificare ea este derivată din rândurile existente, nu dintr-un câmp gol al ciornei. Serverul recalculează și validează toate rândurile afectate.
 
-Dacă documentul avea corecție, nu se adaugă încă o dată diferența veche peste noile calcule: se reface previzualizarea corecției din valorile de bază și aceeași țintă declarată. În modelul facturii comune, acest selector rămâne local NIR-ului; cote uniforme într-un NIR nu implică o cotă uniformă în toate recepțiile facturii.
+Dacă documentul are un rând auto-calculat, acesta nu poate fi editat nici prin propagarea TVA din antet. Selectorul comun rămâne vizibil dacă toate cotele coincid, dar schimbarea lui cere întâi ștergerea corecției cu revenire în grupul de origine. În modelul facturii comune, selectorul rămâne local NIR-ului; cote uniforme într-un NIR nu implică o cotă uniformă în toate recepțiile facturii.
 
 ## 7. Corecția exactă la ValoareFC
 
@@ -273,7 +273,7 @@ Reguli de aplicare propuse:
 4. Prețul/valoarea rezultatului nu poate deveni negativ. Mutarea cantității între variante este supusă verificării de stoc, inclusiv la modificarea unui NIR deja consumat.
 5. Pentru MF se păstrează identitatea activului, cantitatea 1 și se recalculează valoarea de intrare/amortizarea în aceleași limite de dependențe.
 6. La cote mixte se ajustează un rând ales explicit; nu se schimbă cotele tuturor liniilor pentru a obține totalul. Dacă factura furnizează și baze/TVA pe cote, se verifică separat acele ținte; numai totalul cu TVA nu determină unic repartiția între cote.
-7. Modificarea produsului, cantității, cotei sau valorii declarate invalidează vechea ajustare și generează o nouă previzualizare; corecțiile nu se acumulează la fiecare salvare.
+7. Conform completării utilizatorului, rândul auto-calculat este nemodificabil. Singura operație de rând este ștergerea cu revenirea cantității în grupul de origine, la prețul și cota originale, apoi recalcularea grupului și simularea stocului. Dacă grupul nu mai există, se reconstruiește fragmentul original. Revenirea este refuzată dacă lasă stoc negativ pe varianta corectată. O altă corecție se aplică numai după această revenire; nu se acumulează diferențe la fiecare salvare.
 8. Se păstrează în audit valorile inițiale, diferența, rândul/fragmentul, modul de calcul și valorile finale. Corecția trebuie reflectată în costul recepționat, în document și în rapoarte; nu poate fi o diferență ascunsă numai în antet.
 
 Propun păstrarea plafonului de 1 leu pentru comanda automată de ajustare, ca protecție împotriva lipsei unor rânduri sau a unei repartizări incomplete. Peste plafon se corectează datele/repartizarea, fără înlocuirea automată a ValoareFC. Plafonul nu este o toleranță la finalizare: după corecție diferența trebuie să fie exact zero. Dacă ValoareFC nu este încă introdusă, documentul poate rămâne în lucru cu un total calculat; finalizarea față de factura furnizorului cere o țintă explicită. Zero introdus explicit și valoare lipsă sunt situații diferite.
@@ -377,4 +377,6 @@ Asocierea factură–NIR se adaugă printr-o completare separată și reluabilă
 5. Simularea ciornei și validarea atomică a recepțiilor afectate, inclusiv ocuparea mai multor contexte.
 6. Migrarea conservatoare, reconcilierea explicită a fragmentelor și fluxul de rezultat necunoscut.
 
-Documentul consemnează analiza și propunerea. În această rundă s-a modificat numai acest document; nu s-au implementat reguli în aplicație, nu s-a pregătit/aplicat DDL și nu s-au rulat teste sau interogări pe baze de date.
+## 11. Implementarea autorizată ulterior, 16.10.2026
+
+Utilizatorul a cerut implementarea și a adăugat blocarea rândurilor auto-calculate, cu ștergere/revenire în grupul original. Codul și DDL-ul pregătit sunt descrise în [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md). Starea este implementare în surse, fără execuție, compilare, teste, browser sau operații pe MariaDB. DDL-ul trebuie executat de utilizator și sincronizat înaintea folosirii fluxului nou.

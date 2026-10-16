@@ -18,7 +18,7 @@ Partial Friend NotInheritable Class VrcRunner
     End Function
 
     ''' <summary>One nomenclature per gestiune from distinct meal TIPs across all its years.</summary>
-    Private Sub MigrateDishTypes(k_gest As GestInfo, k_table As VrcTargetTable)
+    Private Sub MigrateDishTypes(k_gest As GestInfo, k_table As VrcImportTable)
         Dim k_types As New SortedDictionary(Of String, List(Of (Source As VrcPlanSource, TableName As String)))(StringComparer.Ordinal)
         For Each k_source In k_gest.Sources
             For Each k_meal In MealTables
@@ -48,6 +48,7 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_row As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {
                 {"DenFel", k_pair.Key}, {"Explicatie", Nothing}}
             Dim k_values = BuildRow(k_gest, k_source, k_table, k_row, k_pair.Key, k_tracked, 0, Nothing)
+            If k_values Is Nothing Then Continue For
             k_pending.Add(New PendingRow() With {.Key = k_pair.Key, .Values = k_values, .Source = k_source,
                           .Contributors = k_pair.Value.Select(Function(k_c) k_c.Source).Distinct().ToList()})
         Next
@@ -67,7 +68,7 @@ Partial Friend NotInheritable Class VrcRunner
         Log($"{k_gest.Name}: {k_types.Count} feluri de mâncare distincte din TIP (MicDejun / Dejun / Cina); fără explicații în nomenclator.")
     End Sub
 
-    Private Function MealDishId(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcTargetTable,
+    Private Function MealDishId(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcImportTable,
                                 k_row As Dictionary(Of String, Object), k_key As String, ByRef k_ok As Boolean) As Object
         Dim k_label As String
         Try

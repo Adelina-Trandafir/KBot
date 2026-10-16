@@ -11,7 +11,7 @@ Imports MySqlConnector
 ''' transfer (<see cref="Run"/>) and the read-only diagnostic after a lost answer (<see cref="Diagnose"/>). Nothing here
 ''' alters the structure of a database (no DDL) or writes to Access.
 ''' </summary>
-Public NotInheritable Class VrcWriter
+Partial Public NotInheritable Class VrcWriter
 
     ''' <summary>Control tables the transfer needs, with the columns it writes.</summary>
     Private Shared ReadOnly ControlTables As (Name As String, Columns As String())() = {
@@ -24,6 +24,11 @@ Public NotInheritable Class VrcWriter
         ("VC_MigrationIssues", {"IssueId", "ImportId", "SourceId", "TableName", "SourceKey", "FieldName", "RuleCode", "Severity", "OriginalValue", "TargetValue", "Justification"}),
         ("VC_Numbering", {"SubunitId", "GestiuneId", "ExercitiuId", "Kind", "LastNumber"}),
         ("VC_Settings", {"SubunitId", "GestiuneId", "SettingKey", "IntValue"}),
+        ("VC_FACTURI", {"ID", "PARTENER_ID", "NUMAR", "DATA", "MONEDA", "TOTAL", "TOTAL_CONFIRMAT", "STARE", "MIGRATA", "LOCALA", "REUNITA_IN", "VERSION", "CREAT_DE"}),
+        ("VC_FACTURI_LINII", {"ID", "FACTURA_ID", "DENUMIRE", "UM", "CANT", "COTA", "VALOARE", "RECONSTRUITA"}),
+        ("VC_NIR_FACTURI", {"ID", "FACTURA_ID", "SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "NIR_ID", "TOTAL_SURSA", "SOURCE_ID", "SOURCE_KEY"}),
+        ("VC_FACTURI_REPARTIZARI", {"NIR_FACTURA_ID", "FACTURA_LINIE_ID", "SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "INTRARE_ID", "CANT", "VALOARE"}),
+        ("VC_NIR_CALCULE", {"SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "INTRARE_ID", "TOTAL_BRUT", "PRET_INITIAL", "ORIGINE_JSON"}),
         ("Parteneri", {"IdPartener", "CodFiscal"})}
 
     Private Sub New()
@@ -43,32 +48,10 @@ Public NotInheritable Class VrcWriter
                 Return k_found
             End If
             Using k_cn = k_server.Open(k_plan.Dc)
-                Dim k_ready As Boolean = True
-                Dim k_tables As New List(Of (Name As String, Columns As String()))(ControlTables)
-                For Each k_t In VrcTargetSchema.Tables()
-                    Dim k_names As New List(Of String) From {"SubunitId", "GestiuneId"}
-                    If k_t.IsExercise Then k_names.Add("ExercitiuId")
-                    k_names.AddRange(k_t.Columns.Where(Function(k_c) k_c.Link <> VrcLinkKind.Skip AndAlso k_c.Link <> VrcLinkKind.Supplier).Select(Function(k_c) k_c.Name))
-                    If k_t.Name = "NIR" Then k_names.AddRange({"IdPartener", "CodFiscalSursa", "TipDoc"})
-                    k_tables.Add((k_t.TargetName, k_names.ToArray()))
-                Next
-                For Each k_table In k_tables
-                    Dim k_have = ColumnsOf(k_cn, k_plan.Dc, k_table.Name)
-                    If k_have.Count = 0 Then
-                        k_found.Add($"Lipsește tabelul {k_table.Name}. Aplicați schema VERCON (VC_AVACONT_SURSA.sql, sincronizare) pe baza «{k_plan.Dc}».")
-                        k_ready = False
-                        Continue For
-                    End If
-                    For Each k_column In k_table.Columns
-                        If Not k_have.Contains(k_column) Then
-                            k_found.Add($"Lipsește coloana {k_table.Name}.{k_column}.")
-                            k_ready = False
-                        End If
-                    Next
-                Next
-                If Not k_ready Then Return k_found
-                k_found.AddRange(DecimalStorageProblems(k_cn, k_plan.Dc))
-
+                Dim k_schema = TargetSchema.Load(k_cn, k_plan.Dc)
+                k_found.AddRange(SchemaProblems(k_schema))
+                If k_found.Count > 0 Then Return k_found
+                Dim k_tables = RequiredTables()
                 For Each k_table In k_tables.Where(Function(k_x) k_x.Name.StartsWith("VC_", StringComparison.Ordinal))
                     Using k_cmd As New MySqlCommand("SELECT ENGINE, TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=@t", k_cn)
                         k_cmd.Parameters.AddWithValue("@t", k_table.Name)
@@ -141,50 +124,6 @@ Public NotInheritable Class VrcWriter
         End Try
     End Function
 
-    Private Shared Function ColumnsOf(k_cn As MySqlConnection, k_database As String, k_table As String) As HashSet(Of String)
-        Dim k_result As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-        Using k_cmd As New MySqlCommand("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@d AND TABLE_NAME=@t", k_cn)
-            k_cmd.Parameters.AddWithValue("@d", k_database)
-            k_cmd.Parameters.AddWithValue("@t", k_table)
-            Using k_reader = k_cmd.ExecuteReader()
-                While k_reader.Read()
-                    k_result.Add(k_reader.GetString(0))
-                End While
-            End Using
-        End Using
-        Return k_result
-    End Function
-
-    ''' <summary>Refuse the old scaled-INT schema before any direct decimal value can be written.</summary>
-    Friend Shared Function DecimalStorageProblems(k_cn As MySqlConnection, k_database As String) As List(Of String)
-        Dim k_found As New List(Of String)()
-        Dim k_expected As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase) From {"VC_Settings.IntValue"}
-        For Each k_t In VrcTargetSchema.Tables()
-            For Each k_c In k_t.Columns.Where(Function(k_x) k_x.FieldClass = "VALOARE-INT" OrElse k_x.FieldClass = "COTA")
-                k_expected.Add(k_t.TargetName & "." & k_c.Name)
-            Next
-        Next
-        Using k_cmd As New MySqlCommand("SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, NUMERIC_PRECISION, NUMERIC_SCALE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@d", k_cn)
-            k_cmd.Parameters.AddWithValue("@d", k_database)
-            Using k_reader = k_cmd.ExecuteReader()
-                While k_reader.Read()
-                    Dim k_key = k_reader.GetString(0) & "." & k_reader.GetString(1)
-                    If Not k_expected.Remove(k_key) Then Continue While
-                    If Not String.Equals(k_reader.GetString(2), "decimal", StringComparison.OrdinalIgnoreCase) OrElse
-                       k_reader.IsDBNull(3) OrElse k_reader.IsDBNull(4) OrElse
-                       Convert.ToInt32(k_reader.GetValue(3), CultureInfo.InvariantCulture) <> 20 OrElse
-                       Convert.ToInt32(k_reader.GetValue(4), CultureInfo.InvariantCulture) <> 4 Then
-                        k_found.Add($"{k_key} trebuie să fie DECIMAL(20,4). Aplicați VC_precizie_valori_4_zecimale.sql pe sursă și sincronizați schema în «{k_database}».")
-                    End If
-                End While
-            End Using
-        End Using
-        For Each k_missing In k_expected
-            k_found.Add($"Lipsește coloana {k_missing} necesară stocării DECIMAL(20,4).")
-        Next
-        Return k_found
-    End Function
-
     ' ---- Migrează ---------------------------------------------------------------------------------------------------------
     ''' <summary>The one transfer. Never throws for a data problem: the result carries the state (rollback, commit, unknown) and the findings.</summary>
     Public Shared Function Run(k_server As TargetServer, k_plan As VrcPlan, k_user As String, k_cancel As CancellationToken, k_log As Action(Of String)) As VrcRunResult
@@ -231,7 +170,7 @@ Public NotInheritable Class VrcWriter
                 k_sb.AppendLine()
                 k_sb.AppendLine("| Tabel | Rânduri în subunitate |")
                 k_sb.AppendLine("|---|---:|")
-                For Each k_table In VrcTargetSchema.Tables()
+                For Each k_table In VrcImportMap.Tables()
                     Using k_cmd As New MySqlCommand($"SELECT COUNT(*) FROM `{k_table.TargetName}` WHERE SubunitId=@s", k_cn)
                         k_cmd.Parameters.AddWithValue("@s", k_subunitId)
                         k_sb.AppendLine($"| {k_table.TargetName} | {Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture):N0} |")

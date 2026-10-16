@@ -205,3 +205,20 @@ Toate deschid bazele `ReadOnly`, nu citesc continut (doar agregate) si nu pornes
 
 
 Revizie finală migrare 14.10.2026: exemplele și măsurătorile istorice N01/N02 de mai sus descriu diferențe observate; VRC nu le repară. Valorile efective ale sursei sunt păstrate. Numerotarea actuală este păstrată explicit la cererea utilizatorului.
+
+## Revizie 16.10.2026 — factură comună și corecție NIR exactă
+
+Cerință aprobată: pentru NIR-urile noi, diferența față de valoarea declarată nu
+se acceptă doar în antet. Suma liniilor trebuie egalată exact. Corecția automată
+(de cel mult 1 leu) păstrează TVA real prin calcul invers din brut, identificat
+prin existența metadatelor în VC_NIR_CALCULE. Această regulă înlocuiește N01/N02 pentru salvarea NIR-urilor noi;
+nu recalculează importurile istorice și nu schimbă aici regulile celorlalte bonuri.
+
+Rândurile AUTO sunt nemodificabile; singura operație este ștergerea cu revenirea
+cantității în grupul original, recalculare și simularea stocului pentru ambele
+variante. La o factură comună, fiecare NIR se egalează cu propria valoare
+repartizată; la finalizarea completă, totalul recepțiilor active este ValoareFC.
+Antetele Access nu sunt însumate automat ca total global de factură.
+
+Implementare și activare: [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md).
+Stare: surse și DDL pregătit, fără teste, compilări sau operații pe baze.

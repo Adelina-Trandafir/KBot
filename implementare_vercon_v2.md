@@ -1036,3 +1036,171 @@ Fișiere modificate:
 - implementare_vercon_v2.md
 
 Stare: modificare CSS; fără teste sau verificări executate, conform AGENTS.md.
+
+### 2026-10-16 — Factură comună, validări NIR și corecții automate nemodificabile
+
+Cerere utilizator: implementarea analizei FC/NIR, inclusiv cronologia dată–număr,
+TVA comun în antet, egalitatea exactă cu valoarea declarată, factura repartizată
+între conturi/gestiuni/subunități și migrarea conservatoare din Access.
+Completare explicită: rândurile auto-calculate nu se editează; ștergerea returnează
+cantitatea în grupul original și este refuzată dacă lasă stoc negativ.
+
+Implementat în surse:
+- Logica NIR separată din documents.py în receipts.py; motor comun de simulare a
+  ciornei și validare finală, fără scriere de variante la previzualizare.
+- Cronologie după (Numar, NumarSub) în seria calendaristică a gestiunii, cu
+  pozițiile anulate păstrate și refuzul mutării unui NIR în alt an.
+- TVA de antet derivat din rânduri, ascuns pentru cote mixte; propagare validată
+  pentru cota comună. Rândurile AUTO blochează propagarea până la revenire.
+- Corecție inversă din brut cu TVA real, diferență automată de cel mult 1 leu,
+  egalitate exactă a totalului, variantă de preț distinctă și metadate persistente.
+- Rânduri AUTO nemodificabile; originea, cantitatea și prețul inițial sunt
+  persistate. Ștergerea revine în grup și simulează ambele variante. Permisiunile
+  pentru rândurile noi și reveniri sunt note opace în STORE, legate de DC,
+  utilizator, context și document; nu se cere o cheie de configurare nouă.
+- Factură comună în DC, linii și repartizări către NIR-uri locale; cantități și
+  valori bugetate, recepții parțiale, reconciliere exactă și reunire explicită a
+  fragmentelor. Interfață nouă în butonul Factură comună al paginii NIR.
+- Endpoint de lot atomic pentru mai multe contexte, cu token/revizie pentru
+  fiecare destinație; blocări ordonate și tranzacții READ COMMITTED pentru a citi
+  alocările deja confirmate după blocarea antetului comun.
+- Chei de repetare pentru editare/anulare, cu păstrarea comenzii în UI când
+  răspunsul este necunoscut. Dependențele OI/MF anulate nu mai blochează numai
+  prin existența rândurilor lor în istoric.
+- Liniile istorice nemodificate nu sunt recalculate la o editare de antet.
+  Asocierea facturii nu rescrie documentele sau mișcările migrate.
+- VRC.Migrator creează fragmente provizorii, păstrează antetul sursă și maparea
+  originală; pentru importuri existente există asociere reluabilă, fără reimport.
+
+Fișiere principale adăugate/modificate:
+- PYTHON/routes/vercon/{receipts,receipt_rules,receipt_auto,receipt_number,
+  receipt_routes,invoices,documents,doc_routes,__init__,protocol}.py
+- PYTHON/static/js/vercon/{docs,invoices}.js
+- PYTHON/static/css/{vercon,vercon-invoices}.css
+- VERCON/VRC.Migrator/{VrcRunner.Invoices,VrcRunner,VrcWriter}.vb
+- sql/VC_FACTURI_NIR_20261016.sql, sql/VC_AVACONT_SURSA.sql, VERCON/tools/ddl.js
+- VERCON/ANALIZA_FLUX_NIR_2026-10-16.md, VERCON/FACTURI_NIR_IMPLEMENTARE.md
+
+Activare: utilizatorul execută fișierul SQL și sincronizează schema în DC-uri,
+apoi publică sursele împreună. Aplicația nu creează schema. Fluxul economic nou
+este în RON; catalogul DNF se importă numai dacă există în sursa profilată.
+Interfața permite recepții locale în etape; endpointul receive-batch acoperă
+loturile trimise simultan. Rândurile Access deja corectate la TVA 0% nu sunt
+marcate retroactiv AUTO, deoarece sursa nu conține o dovadă sigură a originii.
+
+Stare: implementare în surse, fără execuție. Nu s-au rulat teste, compilări,
+verificări automate, browser sau interogări pe baze de date, conform AGENTS.md.
+Nu s-a modificat nicio schemă MariaDB și nu s-a făcut publicare sau commit.
+
+### 2026-10-16 — Separarea clasificărilor MF de schema facturilor
+
+Utilizatorul a anunțat nomenclatorul comun AVACONT_COMUN.VC_ClasificariMF.
+Eliminat catalogul local VC_MF_CLASIFICARI din cele două fișiere DDL propuse,
+din cerințele de schemă ale facturilor Python și ale migratorului și din
+copierea clasificărilor Access la import. VC_ProduseM rămâne registrul activelor.
+
+Fișiere modificate: PYTHON/routes/vercon/invoices.py,
+VERCON/VRC.Migrator/VrcWriter.vb, VERCON/VRC.Migrator/VrcRunner.Invoices.vb,
+sql/VC_FACTURI_NIR_20261016.sql, sql/VC_AVACONT_SURSA.sql,
+PYTHON/routes/vercon/receipts.py, VERCON/FACTURI_NIR_IMPLEMENTARE.md și
+implementare_vercon_v2.md.
+
+După actualizarea exportului MariaDB_Schema/AVACONT_COMUN.sql de utilizator,
+validarea DNF din receipts.py citește AVACONT_COMUN.VC_ClasificariMF prin
+Cod=VC_Produse.CC; limitele din ani se compară în luni cu DNF al activului.
+Limitele NULL sau clasificările neasociate păstrează comportamentul anterior
+fără interval inventat. Nomenclatorul comun este doar citit de validarea NIR.
+
+Stare: implementat în surse, fără execuție. Nu s-au rulat teste, compilări,
+verificări automate sau interogări MariaDB și nu s-a executat DDL.
+
+### 2026-10-16 — Sursă unică pentru schema MariaDB și infrastructură comună de import
+
+Cerere: VRC.Migrator să reutilizeze mecanismul KBot.Migrator și să nu mai
+genereze o a doua descriere fizică a schemei AVACONT_SURSA.
+
+Implementat în surse:
+- VRC folosește KBot.Migrator.TargetSchema.Load pentru schema reală a DC-ului,
+  atât la Testează, cât și imediat înaintea tranzacției de transfer. Baza
+  AVACONT_SURSA de pe server rămâne referința pentru sincronizarea separată;
+  dump-urile locale nu sunt citite de migrator.
+- Aceeași poartă SchemaProblems verifică tabelele/coloanele necesare,
+  coloanele obligatorii fără valori implicite și fără mapare, coloanele
+  generate, identitatea AUTO_INCREMENT și contractul DECIMAL(20,4). Lista
+  coloanelor business este reutilizată din scriere, nu întreținută separat.
+- Ordinea tabelelor folosește WriteOrder.Derive din KBot.Migrator, cu FK
+  reale și dependențe logice Access. Suprasarcina veche este păstrată;
+  fazele nomenclatoare/documente sunt controlate înainte de import.
+- NULL și limitele textelor se verifică după metadatele reale. Identitatea
+  generată se citește din MariaDB, fără presupunerea RowId sau a numelui
+  cheii Access pentru cheia fizică a țintei.
+- target_schema.json/VrcTargetSchema au fost înlocuite cu
+  import_map.json/VrcImportMap: numai identitatea rândului sursă, clasele de
+  conversie și regulile de remapare. Nulabilitatea nu mai este cache-uită în
+  resursa încorporată. expected_schema.json rămâne descrierea sursei Access.
+- Eliminat sql/VC_AVACONT_SURSA.sql, VERCON/tools/ddl.js și fragmentele sale
+  tables_01.sql/tables_03.sql. Noul tools/import_map.js emite numai maparea,
+  domeniile aplicației și diagrama orientativă; nu emite SQL.
+- DDL-urile incrementale rămân pentru aplicare manuală. Nu s-a adăugat
+  creare sau reparare automată de baze/tabele în VRC. VC_Golire.sql este
+  păstrat ca listă istorică fixă, fără regenerare și fără rol de schemă.
+
+Fișiere principale: src/KBot.Migrator/MariaDb/WriteOrder.vb,
+src/KBot.Migrator/KBot.Migrator.vbproj, VERCON/VRC.Migrator/{VrcImportMap,
+VrcWriter,VrcWriter.Schema,VrcRunner,VrcRunner.Dishes}.vb,
+VERCON/VRC.Migrator/{import_map.json,VRC.Migrator.vbproj,README.md},
+VERCON/tools/{import_map.js,lib_tz.js,README.md},
+PYTHON/routes/vercon/{tables,lock}.py, VERCON/{SCHEMA_VC.md,
+SCHEMA_VC_RELATII.mmd,VERCON_STATUS.md,FACTURI_NIR_IMPLEMENTARE.md},
+sql/VC_Golire.sql și acest jurnal. Fișierele vechi de schemă/mapare au fost
+eliminate sau înlocuite conform listei de mai sus.
+
+Versiuni sursă: VRC.Migrator 0.2.0.0; KBot.Migrator 1.19.0.0.
+AssemblyVersion rămâne stabil; publicarea VRC trebuie să includă biblioteca
+KBot.Migrator actualizată pentru noua suprasarcină de sortare.
+
+Stare: implementat în surse, necompilat și nerulat. Nu s-au executat teste,
+verificări automate, generatorul mapării, interogări pe server sau SQL.
+S-au făcut citiri și analiză de proiectare în surse. Nu s-a făcut publicare,
+commit sau modificare a vreunei baze de date.
+
+### 2026-10-16 — Calcul invers NIR identificat prin existența metadatelor
+
+Cerere: eliminarea modului de calcul redundant din persistența corecțiilor.
+Înregistrarea în VC_NIR_CALCULE indică direct calculul invers din totalul cu
+TVA. Se păstrează TOTAL_BRUT, PRET_INITIAL și ORIGINE_JSON.
+
+Implementat în surse:
+- invoices.write_calculation nu mai scrie modul de calcul. Citirea selectează
+  explicit doar identificatorul liniei și cele trei valori necesare; derivă
+  calc_mode=GROSS în API când există înregistrarea de metadate.
+- Blocarea editării rândurilor AUTO, semnarea lor, calculul invers la recitire
+  și ștergerea cu revenire în grup păstrează același contract API.
+- DDL-ul de creare și cerințele de schemă ale VRC.Migrator nu mai includ
+  coloana redundantă. Versiunea sursă VRC.Migrator devine 0.2.1.0.
+- Documentația descrie existența înregistrării drept indicator al calculului
+  invers. Nu există script de migrare/eliminare: utilizatorul a confirmat că
+  nu a aplicat încă DDL-ul în MariaDB.
+
+Fișiere modificate: PYTHON/routes/vercon/invoices.py,
+VERCON/VRC.Migrator/{VrcWriter.vb,VRC.Migrator.vbproj},
+sql/VC_FACTURI_NIR_20261016.sql, VERCON/FACTURI_NIR_IMPLEMENTARE.md și
+implementare_vercon_v2.md.
+
+Stare: modificări în surse, fără execuție. Nu s-au rulat teste, compilări,
+verificări automate sau interogări pe baze și nu s-a aplicat SQL.
+
+### 2026-10-16 — Grupare în SLICE-VC06-06 și pregătire staging
+
+La cererea utilizatorului, modificările din acest thread sunt grupate în
+SLICE-VC06-06 — facturi comune, corecții NIR și schemă unică. Adăugat worklog
+dedicat în docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md
+și înregistrat slice-ul în VERCON/PLAN_IMPLEMENTARE.md și VERCON/VERCON_STATUS.md.
+Documentul FACTURI_NIR_IMPLEMENTARE trimite la slice; contractul calculelor
+descrie corecția prin existența metadatelor, iar README-ul VRC indică versiunea
+curentă 0.2.1.0.
+
+Pregătirea indexului Git folosește o listă explicită a fișierelor acestui thread,
+inclusiv înlocuirile și ștergerile aprobate; Surse/EF_SURSA și
+Surse/SURSA_XFA_WRITTER sunt excluse. Nu s-au rulat teste, compilări sau SQL.
+Nu se execută commit; utilizatorul a cerut staging și un mesaj scurt de commit.

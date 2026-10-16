@@ -13,9 +13,8 @@ Generatoare pentru livrabilele VC00. Toate sunt doar-citire fata de `VERCON_ACCE
 
 Ordinea: inventar -> dump_schema -> dictionar -> schite -> schite_render -> mapare. Nu porneste Access, nu ruleaza VBA, nu scrie in baze.
 
-- `lib_tz.js` — cititorul TZ_SCHEMA si clasificarea coloanelor (folosite de `dictionar.js` si `ddl.js`).
-- `ddl.js` — genereaza `sql/VC_02_business.sql` si `SCHEMA_VC_RELATII.mmd` (`node VERCON/tools/ddl.js`; doar citeste `VERCON_ACCESS`).
+- `lib_tz.js` — cititorul TZ_SCHEMA și clasificarea coloanelor Access (folosite de `dictionar.js` și `import_map.js`).
+- `import_map.js` — generează regulile Access din `VRC.Migrator/import_map.json`, domeniile aplicației din `PYTHON/routes/vercon/tables.py` și diagrama mapării `SCHEMA_VC_RELATII.mmd`. Nu generează SQL. Structura fizică provine din AVACONT_SURSA de pe server; VRC o citește prin infrastructura KBot.Migrator. Înlocuiește vechiul `ddl.js`, eliminat împreună cu scriptul complet de creare.
 - `preview.py` — aceeași pornire reală cu `000_DEMO` prin SSH; numai `--fixtures` pornește vechea demonstrație fără MariaDB din `preview_fixture.json`.
 - `Start-Localhost.ps1` / `Stop-Localhost.ps1` + `local_ssh.py` — formularele și API-urile reale din codul local, conectate prin SSH exclusiv la `000_DEMO`; vezi [LOCALHOST.md](LOCALHOST.md). Nu execută modificări de schemă.
-- `ddl.js` scrie si `PYTHON/routes/vercon/tables.py` (domeniul fiecarui tabel, folosit de `repository.py`).
-- `expected.js` — genereaza `VERCON/VRC.Migrator/expected_schema.json` (schema asteptata, incorporata in migrator).
+- `expected.js` — generează `VERCON/VRC.Migrator/expected_schema.json` (structura așteptată a sursei Access, folosită de profiler; nu este schema țintă MariaDB).

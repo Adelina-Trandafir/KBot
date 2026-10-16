@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <FileVersion>0.1.0.0</FileVersion>
+    <FileVersion>0.2.1.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -28,7 +28,9 @@
   </ItemGroup>
 
   <!-- Reads the VERCON Access files (tz_*.accdb) READ-ONLY and profiles them (SLICE-VC05-01). It writes nothing to Access.
-       SLICE-VC05-02..05 add the plan and the single atomic transfer into MariaDB (MySqlConnector; TargetServer from KBot.Migrator). The expected schema comes from VERCON/tools/expected.js. -->
+       SLICE-VC05-02..05 add the plan and the single atomic transfer into MariaDB.
+       TargetServer, TargetSchema and WriteOrder are reused from KBot.Migrator.
+       expected_schema describes the Access source; import_map contains source conversion/remapping rules only. -->
   <ItemGroup>
     <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
     <PackageReference Include="MySqlConnector" Version="2.6.2" />
@@ -37,7 +39,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="expected_schema.json" LogicalName="VRC.Migrator.expected_schema.json" />
-    <EmbeddedResource Include="target_schema.json" LogicalName="VRC.Migrator.target_schema.json" />
+    <EmbeddedResource Include="import_map.json" LogicalName="VRC.Migrator.import_map.json" />
     <EmbeddedResource Include="VrcReportHtml.css" LogicalName="VRC.Migrator.VrcReportHtml.css" />
   </ItemGroup>
 

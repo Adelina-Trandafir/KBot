@@ -1,16 +1,22 @@
 # VERCON — schema MariaDB `VC_` (SLICE-VC03)
 
-Stare: **IMPLEMENTAT_LOCAL** (scripturi scrise). **Nimic aplicat pe MariaDB, nimic rulat** — nici preflight, nici proba. Deci nimic VERIFICAT_LOCAL / VALIDAT_SERVER.
+Revizie 16.10.2026: **sursa unică a structurii este baza AVACONT_SURSA de pe server**, sincronizată separat în DC-uri. Dump-urile din `MariaDB_Schema` sunt fotografii pentru analiză. Scriptul complet generat și fragmentele sale de creare au fost eliminate; schimbările noi se livrează ca DDL incremental pentru aplicare manuală de operator.
+
+VRC.Migrator reutilizează `KBot.Migrator.TargetSchema.Load` pentru a citi coloanele, tipurile, regulile NULL/default, coloanele generate, cheile și FK din DC-ul real. `WriteOrder.Derive` stabilește ordinea după FK; maparea importului Access adaugă numai regulile de conversie, remapare și fazele nomenclatoare/documente. Aceeași poartă de compatibilitate rulează în Testează și înaintea tranzacției. VRC nu creează și nu repară automat structura.
+
+Stare a acestei revizii: **IMPLEMENTAT ÎN SURSE**, fără compilare, teste, verificări automate sau acces la baze de date. Secțiunile de model de mai jos sunt explicații de proiectare, nu un substitut pentru schema reală.
 
 | Fisier | Continut | Cum se obtine |
 |---|---|---|
-| `sql/VC_AVACONT_SURSA.sql` | **toate tabelele** (ierarhie, 26 business, import/audit/setari/numerotare), instructiuni simple, `CREATE TABLE IF NOT EXISTS`, fara proceduri sau DELIMITER | **generat**: `node VERCON/tools/ddl.js` (piesele scrise de mana sunt in `VERCON/tools/ddl_parts/`) |
-| `sql/VC_Reguli_DC.sql` | CHECK-uri si triggere (optional, pe fiecare DC) | generat de acelasi script |
+| `MariaDB_Schema/AVACONT_SURSA.sql` | fotografia locală a structurii de referință | export furnizat de operator; nu este citit de migrator |
+| `VRC.Migrator/import_map.json` | identitatea sursei, clase de conversie și remapări Access, fără declarații fizice ale țintei | `node VERCON/tools/import_map.js` |
+| `sql/VC_FACTURI_NIR_20261016.sql` | modificările incrementale pentru facturi/NIR | SQL manual pentru operator |
+| `sql/VC_Reguli_DC.sql` | CHECK-uri și triggere opționale, propunere istorică pentru fiecare DC | fișier păstrat separat; nu mai este regenerat de instrumentul de mapare |
 | `sql/VC_00_preflight.sql` | verificari doar-citire inainte (pe AVACONT_SURSA) | scris de mana |
 | `sql/VC_99_probe.sql` | 13 probe ale regulilor, cu rollback (pe un DC de test) | scris de mana |
-| `VERCON/SCHEMA_VC_RELATII.mmd` | diagrama relatiilor (Mermaid) | generat |
+| `VERCON/SCHEMA_VC_RELATII.mmd` | diagramă orientativă a relațiilor de import, fără autoritate asupra structurii MariaDB | instrumentul de mapare |
 
-**Cum ajunge in DC-uri:** rulezi `VC_AVACONT_SURSA.sql` O SINGURA DATA pe `AVACONT_SURSA`; sincronizarea schemei din KBotAdmin duce tabelele, coloanele, cheile si cheile externe in fiecare DC. **Sincronizarea nu duce CHECK-uri si triggere** (verificat in `routes/schema_sync`: citeste doar tabele, coloane, chei, indexuri, chei externe, charset). De aceea pretul >= 0, tipul/scara inghetate dupa populare, OI/MF neinchise si motivul de anulare sunt impuse **si de serviciu**; `VC_Reguli_DC.sql` este o a doua linie de aparare, optionala. Unicitatile si cheile externe (import unic, acces exclusiv, context compus) ajung prin sincronizare.
+**Cum ajunge în DC-uri:** operatorul aplică DDL-ul incremental pe `AVACONT_SURSA`, apoi sincronizează schema prin mecanismul comun. Pentru baze noi, KBot.Migrator are deja copierea structurii direct din baza de referință prin `SHOW CREATE TABLE`; VRC nu dublează această funcție. Sincronizarea nu duce CHECK-uri și triggere; acestea și regulile aplicației se administrează separat.
 
 ## Ierarhie (VC03-01)
 
@@ -25,7 +31,7 @@ DC = baza de date. `VC_Subunitati` → `VC_Gestiuni` (tip, stare, `Zec`, `Scara`
 
 - Fiecare are `SubunitId`, `GestiuneId` si, pentru documente anuale, `ExercitiuId`; **toate FK sunt compuse pe context**, deci o linie nu poate referi un antet sau un produs din alta gestiune (proba P4/P5).
 - Gestiune: Masini, Produse, ProduseP, ProduseM, Clienti, ComisieNIR, ComisieInventar, TVA, FeluriMancare, Retetar, OI_Produse. Gestiune + exercitiu: NIR, Intrari, IntrariStorno, Iesiri_H, Iesiri, IesiriRetur, OI_Predare, OI_Transfer, OI_Casare, LABC, ListaAlimente, LegBCLA, MicDejun, Dejun, Cina.
-- Valori = `INT` scalat `10^Scara`; cota TVA = `INT` x 10000; preturi `CHECK >= 0` (`Pret`, `PUTVA`, `PU`).
+- Valorile și cotele folosesc `DECIMAL(20,4)` direct, conform contractului actual de conversie, fără stocare INT scalată. VRC compară acest contract cu tipurile citite din schema reală.
 - `RESTRICT` peste tot; niciun `CASCADE` peste istoric. Anularea ca la ADECHIT: `Anulat` + motiv obligatoriu (CHECK) pe NIR, IntrariStorno, Iesiri_H, LABC, OI_Predare/Transfer/Casare. Nomenclatoarele au `Activ`.
 - Cheile sursa nu se stocheaza: MariaDB genereaza cheile, `VC_IdMap` tine perechea. Tabelele a caror cheie primara este si FK (LegBCLA) si cele fara cheie simpla (ProduseM) primesc `RowId`.
 
@@ -50,10 +56,10 @@ DC = baza de date. `VC_Subunitati` → `VC_Gestiuni` (tip, stare, `Zec`, `Scara`
 
 **Decis de utilizator:** o listă de alimente poate avea mai multe bonuri de consum. [FLUXURI_UI](FLUXURI_UI.md) și [CONTRACT_CALCULE](CONTRACT_CALCULE.md) definesc selecția, totalurile și salvarea atomică a setului. Un BC nu este ales pentru altă listă și nu apare de două ori în aceeași listă.
 
-În bazele Access această opțiune **nu există**: `LegBCLA.IdLista` este unic, adică o listă are exact un BC (1=1). Listă 1:N BC este o funcționalitate nouă a sistemului web. **DDL-ul și generatorul sunt aliniate (12.10.2026):** `VC_LegBCLA` are `RowId` tehnic, FK contextuale către `VC_LABC` și `VC_Iesiri_H`, index neunic `ix_LegBCLA_IdLista`, iar `uq_LegBCLA_IdBonConsum` (contextual) garantează că un BC aparține unei singure liste, deci apare o singură dată în ea (MariaDB admite mai multe NULL). Unicitatea `IdLista` din Access nu se copiază. Generatorul `tools/ddl.js` tratează explicit relația LABC→LegBCLA (one-to-one în Access) ca 1:N. Protecția concurentă a atribuirii este dată de cheia unică; serviciul VC07-01 trebuie să prindă eroarea de duplicat și să o raporteze ca „BC deja asociat altei liste".
+În bazele Access această opțiune **nu există**: `LegBCLA.IdLista` este unic, adică o listă are exact un BC (1=1). Listă 1:N BC este o funcționalitate nouă a sistemului web. Modelul decis la 12.10.2026 pentru `VC_LegBCLA` folosește `RowId` tehnic, FK contextuale către `VC_LABC` și `VC_Iesiri_H`, index neunic pe `IdLista` și unicitate contextuală pe `IdBonConsum`. Unicitatea `IdLista` din Access nu se copiază prin import. Structura efectivă a acestor chei se citește din MariaDB, fără a regenera tabelele din relațiile Access.
 
 Migrarea păstrează legăturile istorice și proveniența; asocierile incompatibile cu regula țintă se diagnostichează înainte de import, fără ștergere/deduplicare tacită. Alinierea DDL și probele de cardinalitate/rollback rămân de implementat, nu sunt validate prin PNG-uri.
 
-## Ce nu s-a facut
+## Limita acestei revizii
 
-Nu s-a aplicat nimic pe MariaDB si nu s-a rulat nicio probă, deci **nu s-a dovedit** ca scripturile se compileaza pe MariaDB. Preflight + VC_99 sunt scrise pentru asta (VC03-05) si asteapta o rulare pe o baza de test.
+Nu s-a aplicat DDL, nu s-a compilat și nu s-au rulat teste sau probe pe baze de date în această revizie. Confirmările istorice de aplicare a schemei și de import din registrul VERCON nu certifică noua versiune a cititorului/mapării.

@@ -36,7 +36,15 @@ Nerulat pe baze reale. Pașii:
 4. Dacă răspunsul la COMMIT se pierde, starea este REZULTAT_NECUNOSCUT: folosiți **Diagnostic** (doar citire); nu repetați transferul.
 5. Jurnalul și raportul sunt în `Logs\vrc_migrare_<data>.log` și `.md`.
 
-Reguli decise (12.10.2026): numerotarea pornește de la ultimul număr real, nu din NR.*; ProduseP se transferă doar cu folosire; valorile documentelor sunt copiate ca în Access (revizie 14.10.2026): semnele și totalurile, inclusiv 0/NULL, nu se corectează; diferențele sunt doar raportate. Detalii: `DECIZII_DESCHISE.md`, secțiunea F. Schema țintă a scriitorului este `target_schema.json`, generat de `node VERCON/tools/ddl.js`.
+Reguli decise (12.10.2026): numerotarea pornește de la ultimul număr real, nu din NR.*; ProduseP se transferă doar cu folosire; valorile documentelor sunt copiate ca în Access (revizie 14.10.2026): semnele și totalurile, inclusiv 0/NULL, nu se corectează; diferențele sunt doar raportate. Detalii: `DECIZII_DESCHISE.md`, secțiunea F.
+
+Revizie 16.10.2026: sursa unică a structurii este baza AVACONT_SURSA de pe server, sincronizată separat în DC-uri. La verificare și înaintea transferului, VRC citește schema reală a DC-ului prin `KBot.Migrator.TargetSchema.Load` și stabilește ordinea după FK prin `WriteOrder.Derive`, aceleași clase folosite de KBot.Migrator. Nu creează baze sau tabele și nu repară automat schema. Incompatibilitățile opresc importul înainte de tranzacție.
+
+`import_map.json`, produs de `node VERCON/tools/import_map.js`, conține numai identitatea rândurilor sursă, clasele de conversie și remaparea referințelor Access; nu declară tipuri SQL, chei generate sau nulabilitate pentru țintă. Câmpurile obligatorii, coloanele generate, limitele textelor și cheia AUTO_INCREMENT se citesc din MariaDB. Legăturile logice Access și fazele nomenclatoare/documente sunt verificate suplimentar față de ordinea FK. Scriptul complet generat și vechiul `target_schema.json` au fost eliminate; schimbările de structură se livrează în DDL-uri incrementale pentru aplicare manuală.
+
+Sortarea comună acceptă acum și dependențele logice Access, adăugate la FK-urile reale în același graf. Semnătura existentă cu două argumente este păstrată pentru apelanții KBot; noua suprasarcină este folosită de VRC. Versiuni sursă curente în slice-ul VC06-06: VRC.Migrator 0.2.1.0 și KBot.Migrator 1.19.0.0, cu AssemblyVersion neschimbat. La publicare se livrează împreună executabilul VRC și biblioteca KBot.Migrator actualizată.
+
+Stare pentru această revizie: implementat în surse; fără compilare, teste sau rulare pe server. Generatorul mapării nu a fost executat; resursa existentă a fost transformată pentru a elimina metadatele fizice ale țintei și a păstra regulile de import.
 
 ## Stocare DECIMAL — 14.10.2026
 
