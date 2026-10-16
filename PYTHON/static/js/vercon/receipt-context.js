@@ -5,7 +5,7 @@ import { decimalText } from './decimal-text.js';
 
 const kinds = { nir: 'NIR', storno: 'Storno', bc: 'BC', br: 'Retur', bp: 'Predare' };
 
-export function receiptContext(host, { root, main, headerHost, linesHost, treeHost, api, selection, context, validLine, blankLine }) {
+export function receiptContext(host, { root, main, headerHost, linesHost, treeHost, api, selection, lineSelection, context, validLine, blankLine }) {
   const supplier = el('section', { className: 'vc-receipt-card', 'aria-label': 'Fișa furnizorului' });
   const product = el('section', { className: 'vc-receipt-card', 'aria-label': 'Fișa de magazie' });
   const panels = el('div', { className: 'vc-receipt-context', hidden: true }, supplier, product);
@@ -30,7 +30,7 @@ export function receiptContext(host, { root, main, headerHost, linesHost, treeHo
     message(panel, title, 'Se încarcă…');
     request.timer = setTimeout(async () => {
       try {
-        const data = await api(`/api/vercon/doc/nir/${name}-statement?${params}`);
+        const data = await api(`/api/vercon/doc/nir/${name}-statement?${params}`, { headers: { 'X-Vercon-Version': '' } });
         if (destroyed || !visible || sequence !== request.sequence) return;
         render(data);
       } catch (error) {
@@ -92,7 +92,8 @@ export function receiptContext(host, { root, main, headerHost, linesHost, treeHo
     if (!line || !validLine(line) || !date.ok) {
       stop('product'); message(product, 'Fișă de magazie', !date.ok ? 'Completați data facturii.' : 'Selectați un rând validat, cu produs, cantitate, preț și TVA.');
     } else {
-      const params = new URLSearchParams(base);
+      const params = new URLSearchParams(lineSelection ? Object.entries(lineSelection(line)).filter(([, value]) => value != null && value !== '') : base);
+      if (date.ok) params.set('date', date.value);
       params.set('product', line.product); params.set('price', line.Pret); params.set('vat', line.IDTVA);
       if (line.variant) params.set('variant', line.variant);
       load('product', product, 'Fișă de magazie', params, renderProduct);

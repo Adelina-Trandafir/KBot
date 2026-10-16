@@ -1,5 +1,7 @@
 # VERCON — registrul deciziilor (SLICE-VC00-05)
 
+**Actualizare 16.10.2026 — SLICE-VC06-06:** secțiunea G consemnează deciziile aprobate pentru introducerea NIR cu mai multe conturi/destinații și blocarea contului produselor cu mișcare. Acestea prevalează asupra propunerilor anterioare privind un NIR pe cont sau un editor separat de factură. Stare a acestei completări: **IMPLEMENTAT ÎN SURSE, NERULAT**.
+
 Stare: ALINIAT la plan, 12.10.2026 (runda 3 + corecțiile vizuale ale utilizatorului). Autoritare sunt secțiunile din [PLAN_IMPLEMENTARE](PLAN_IMPLEMENTARE.md) datate 11.10.2026, runda 3, și 12.10.2026, corecții UI/fluxuri. Distinge: **DECIS** (utilizator, nu se redeschide), **PROPUS** (model, de verificat) si **DESCHIS** (fara raspuns).
 
 ## A. Decise de utilizator
@@ -109,3 +111,36 @@ regulile de inversare a semnelor. Totalurile 0/NULL, prețurile și cantitățil
 rămân în sursă și în țintă identice. Diferențele sunt doar raportate. Numerotarea după
 ultimul număr real rămâne explicit neschimbată; calculele documentelor noi din web
 rămân în codul aplicației și nu sunt aplicate datelor migrate.
+
+## G. Decizii NIR și contul produsului — 16.10.2026, SLICE-VC06-06
+
+Sursa: cerințele și clarificările explicite ale utilizatorului din threadul
+VC06-06. Nu sunt propuneri ale modelului. Implementarea a fost autorizată și
+scrisă în surse în același slice, fără teste, build, browser sau SQL executate.
+
+| ID | Temă | Decizie aprobată |
+|---|---|---|
+| VC06-06-D01 | Ecran unic | Factura se introduce direct în Adăugare NIR, cu toate produsele în aceeași grilă. Butonul «Factură comună» și macheta separată respinsă au fost eliminate din surse. Legătura internă a facturii cu recepțiile rămâne o responsabilitate a aplicației. |
+| VC06-06-D02 | Conturi disponibile | Selectorul folosește conturile tuturor subunităților din DC-ul curent. Nu se blochează dacă destinația curentă are un singur cont; se blochează numai dacă există un singur cont în întregul DC, selectat automat. |
+| VC06-06-D03 | Arbore conturi | Control custom cu subunitățile ca rădăcini și conturile ca frunze cu checkbox. Rădăcina curentă apare mereu prima și expandată; restul sunt inițial restrânse. Termenii Alimente/Materiale/OI/MF sunt destinațiile folosite în cerința de interfață; nu se redefinește aici ierarhia tehnică DC → subunitate → gestiune. |
+| VC06-06-D04 | Mai multe conturi în aceeași subunitate | Rămâne un singur NIR. Câmpul Număr NIR rămâne disponibil, conform regulilor existente de număr manual/automat, unicitate și cronologie. Selectarea mai multor conturi nu impune singură «auto». |
+| VC06-06-D05 | Conturi din subunități diferite | Număr NIR devine inactiv și afișează «auto». La salvare se formează câte un NIR pentru fiecare subunitate, cu toate conturile sale selectate; numerele se alocă în seriile destinațiilor respective în aceeași tranzacție. |
+| VC06-06-D06 | Alegerea produsului | Produsele provin din conturile bifate. Editorul celulei Produs este un ComboTree: rădăcini conturile, noduri produsele, cu căutare prin tastare. Conturile cu aceeași denumire din destinații diferite sunt identificabile fără ambiguitate. |
+| VC06-06-D07 | Poziționarea ComboTree | Popupul are o înălțime minimă utilizabilă; se deschide în jos când încape, altfel în sus. Conținutul are scroll intern și rămâne accesibil în spațiul vizibil, inclusiv în apropierea marginii grilei. Nu este decisă o valoare numerică în pixeli. |
+| VC06-06-D08 | Comisie | Câmpul Comisie se mută sub Data Facturii și ocupă două coloane, până la marginea la care se termină Data NIR. |
+| VC06-06-D09 | Contul liniei | Se determină prin relația existentă `VC_Intrari.IdProdus → VC_ProduseP.IdProdus`, `VC_ProduseP.ID → VC_Produse.ID`, `VC_Produse.IdMasina → VC_Masini.IdMasina`, cu contextul aferent. Nu se adaugă o coloană de cont în rândul NIR. |
+| VC06-06-D10 | Istoric produs | Dacă un produs are mișcări prin oricare variantă de preț, în orice an, contul său nu mai poate fi modificat. Fără mișcări, contul rămâne editabil. Restricția se aplică în interfață și obligatoriu în server, inclusiv la apel API direct. Celelalte câmpuri păstrează regulile lor de editare. |
+| VC06-06-D11 | Migrare Access | În sursa Access un NIR are un singur cont din unitatea respectivă. Pentru aceste decizii nu se schimbă migratorul, nu se copiază contul antetului în linii și nu se implementează în import noul model de introducere. Remaparea existentă produs/preț/document este suficientă. NIR-urile, numerele și valorile sursă rămân păstrate. |
+
+Consecință implementată: validarea NIR nu mai obligă toate
+produsele să aparțină unui singur cont din antet. Conturile documentului se
+deduc din produsele liniilor; contul unic din antetul istoric nu limitează un
+NIR nou cu mai multe conturi. Blocarea modificării contului produsului cu
+mișcare protejează încadrarea istorică fără duplicarea contului în document.
+
+Ținta ValoareFC, TVA real, cronologia, disponibilul și regulile AUTO decise
+anterior rămân aplicabile. Editorul folosește `receipt-allocation.js` și
+ComboTree, iar salvarea atomică folosește `receipt_distribution.py` și
+`receipt_destinations.py`. Trasabilitate: [worklog VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md)
+și [fluxul UI](FLUXURI_UI.md#7-decizii-nir-din-16102026--vc06-06).
+

@@ -1,57 +1,136 @@
-# Facturi comune și validări NIR — implementare 16.10.2026
+# Editor NIR, repartizare și corecții — 16.10.2026
 
-Slice: [SLICE-VC06-06 — facturi comune, corecții NIR și schemă unică](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md).
+Slice: [SLICE-VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md).
+Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Nu s-au rulat teste, compilări,
+browser sau SQL și nu s-au modificat baze de date.
 
-Stare: **IMPLEMENTAT ÎN SURSE, FĂRĂ EXECUȚIE**. Nu s-au rulat teste, compilări, verificări automate, browser sau interogări pe baze de date. Nu s-a aplicat DDL. Funcționarea în mediul utilizatorului nu este confirmată prin rulare.
+## Introducere și salvare
 
-## Activare
+Factura se introduce direct în Adăugare NIR. Butonul «Factură comună» și
+macheta separată au fost eliminate, inclusiv modulul JS și stylesheetul ei.
+Modelul intern al facturilor rămâne pentru legătura dintre recepții.
 
-1. Utilizatorul execută `sql/VC_FACTURI_NIR_20261016.sql` pe baza de schemă `AVACONT_SURSA`, apoi sincronizează schema spre DC-urile folosite. Baza `AVACONT_SURSA` de pe server este sursa unică a structurii; dump-urile locale sunt fotografii pentru analiză. Scriptul complet generat `VC_AVACONT_SURSA.sql` a fost eliminat. Aplicația nu creează sau repară automat schema.
-2. Se publică împreună modulele Python, JavaScript și CSS modificate. Scrierile NIR cer noua schemă și răspund explicit cu `INVOICE_SCHEMA_REQUIRED` dacă nu este disponibilă; consultarea documentelor vechi rămâne disponibilă.
-3. Pentru importuri viitoare se folosește sursa nouă VRC.Migrator. Acesta reutilizează `KBot.Migrator.TargetSchema.Load` pentru schema reală și `WriteOrder.Derive` pentru ordinea cheilor străine; verifică cerințele importului înainte de transfer și creează fragmentele de factură în tranzacția importului. `import_map.json` descrie doar conversia/remaparea datelor Access, fără tipuri SQL sau reguli de nulabilitate pentru țintă.
-4. Pentru date deja importate: în pagina NIR → **Factură comună → Asociază istoricul gestiunii**. Operația este reluabilă și nu reimportă subunitatea. La editarea unui NIR istoric neasociat, asocierea provizorie a acelui document se face în tranzacția editării.
+Categorie/cont este un ComboTree cu toate conturile active din DC. Rădăcinile
+sunt destinațiile existente, identificate prin perechea SubunitId/GestiuneId;
+în limbajul interfeței sunt subunitățile Alimente/Materiale/OI/MF. Rădăcina
+curentă este prima și expandată, celelalte sunt restrânse. Numai conturile
+au checkbox. Unicul cont din întregul DC este selectat automat și controlul
+blocat; unicul cont local nu împiedică alegerea altor destinații.
 
-## Folosire
+Produs folosește ComboTree în celula DGV, cu conturile bifate ca rădăcini și
+produsele lor dedesubt. Căutarea se face prin tastare. Popupul este separat de
+zona decupată a grilei, are înălțime utilă minimă de 220 px și înălțime dorită
+de 320 px; alege spațiul de sus când cel de jos este insuficient. Într-un
+viewport mai mic se limitează la spațiul disponibil și folosește scroll intern.
+Comisia este sub Data Facturii și ocupă coloanele facturii și NIR-ului.
 
-- Data NIR este limitată de datele numerelor mai mici/mari din aceeași serie anuală; se ține cont de subnumere și de pozițiile documentelor anulate. Data nu mută un NIR existent în altă serie anuală. O anomalie istorică neschimbată nu renumerotează documentele.
-- La modificare, cota TVA din antet este derivată din rânduri. Pentru cote mixte sau necunoscute este ascunsă. Pentru o cotă comună este afișată; schimbarea propagă TVA și recalculează întreaga ciornă înainte de acceptare. Dacă există rânduri automate, propagarea este blocată până la revenirea corecțiilor.
-- **Corectează la valoarea NIR** folosește rândul selectat sau primul rând eligibil, păstrează cota reală și acceptă o diferență de cel mult 1 leu. După corecție suma liniilor este exact valoarea declarată. Cantitatea totală a produsului se păstrează; se izolează cel mult o bucată pentru prețul ajustat. Existența rândului în `VC_NIR_CALCULE` indică calculul invers din totalul cu TVA; se păstrează totalul brut, prețul inițial și originea corecției. La citire, serverul derivă marcajul API `calc_mode=GROSS` din existența înregistrării; nu se stochează un mod de calcul separat.
-- Rândurile marcate **AUTO** sunt nemodificabile în toate coloanele. **Șterge** returnează fragmentul în grupul original și recalculează; dacă grupul nu mai există, fragmentul original este reconstruit. Revenirea trece prin simularea stocului pentru ambele variante. Originea și permisiunea revenirii sunt validate și în server, nu numai prin blocarea celulelor.
-- Previzualizările de ciornă nu scriu documente, variante sau numere în MariaDB. Identitățile pentru rândurile automate și reveniri folosesc note opace ale utilizatorului/DC în STORE-ul portalului, cu expirare de 8 ore. Documentele salvate primesc note noi la recitire. Nu se cere o cheie de configurare nouă.
-- **Factură comună** permite introducerea facturii furnizorului și a liniilor/valorilor sale, alegerea ei pentru NIR-ul curent, consultarea recepțiilor din toate destinațiile și reconcilierea explicită.
-- Pentru o factură repartizată, NIR-ul are **Valoare aferentă acestui NIR**; ValoareFC globală este afișată distinct. Fiecare rând NIR se leagă de o linie a facturii. Se păstrează recepțiile parțiale; nu se corectează artificial partea nerecepționată. Cantitățile și valorile unei linii noi de factură nu pot fi depășite de recepțiile active.
-- Pentru cazul simplu, fără o factură comună aleasă, salvarea NIR creează factura locală și liniile aferente. O valoare declarată lipsă produce un total calculat al NIR-ului, dar nu un total global confirmat al facturii.
-- **Finalizează reconcilierea** cere egalitate exactă pe cantități și valori ale liniilor și între totalul recepțiilor active și ValoareFC confirmată. Totalurile provizorii din migrare nu sunt prezentate drept totaluri globale certe.
-- Datele facturii comune cu recepții nu se schimbă tacit prin editorul unui singur NIR. Factura locală a unui singur NIR se poate actualiza în aceeași tranzacție cu acesta. Fluxul economic este în RON; conversia valutară nu este introdusă implicit.
-- Salvările de creare/editare/anulare păstrează cheia cererii pentru repetarea unui răspuns neconfirmat. În server, repetarea aceleiași comenzi nu aplică din nou documentul.
+Mai multe conturi ale aceleiași rădăcini rămân într-un singur NIR, cu număr
+editabil. Numai conturi din rădăcini diferite impun «auto» inactiv. Serverul
+grupează liniile după destinație și alocă numerele în seriile lor la salvare;
+nu creează documente goale pentru conturile fără produse.
 
-## Migrare și proveniență
+Salvarea ocupă destinațiile suplimentare numai pe durata tranzacției, în
+ordine stabilă, și respectă ocuparea altui utilizator sau a altei file.
+Verifică exercițiile, comisiile, numerele, cronologia, produsele, cotele TVA,
+disponibilul și egalitatea exactă a totalului cu ValoareFC. O eroare anulează
+întregul lot. Aceeași cheie de cerere permite reluarea unui răspuns neconfirmat
+fără dublarea documentelor. După salvare se afișează destinațiile și numerele
+generate; fiecare NIR se consultă și se modifică în contextul său.
 
-VRC creează câte un fragment provizoriu pentru fiecare NIR obișnuit. `VC_NIR_FACTURI.TOTAL_SURSA` păstrează antetul original, inclusiv NULL, zero și diferențe față de linii. `SOURCE_ID`/`SOURCE_KEY` reutilizează mapările existente. Liniile reconstruite rămân distincte de liniile confirmate ale unei facturi introduse în web.
+Comisia aleasă trebuie să existe cu aceiași patru membri în fiecare
+destinație selectată. Aplicația nu creează comisii sau exerciții automat.
+Materiale/Alimente folosesc anul curent ales; MF/OI folosesc contextul
+multianual existent. Precizia și cotele TVA sunt cele ale destinației produsului.
 
-Reunirea se face explicit din meniul fragmentului în lista de facturi, către factura deschisă. Se cere același furnizor, număr, dată și monedă; după reunire totalul global rămâne neconfirmat până la introducerea lui de operator. Antetele fragmentelor nu sunt însumate automat. NIR-urile și mișcările lor nu se modifică prin reunire. Liniile istorice reconstruite nemodificate, inclusiv cantități sau valori speciale, sunt păstrate exact.
+## Conturi, TVA și AUTO
 
-Stocurile inițiale rămân fără factură. Nu se deduce retroactiv că un rând Access la 0% a fost creat de corecție: sursa nu are o marcă sigură pentru această concluzie. Blocarea AUTO se aplică rândurilor generate de noul mecanism.
+Contul liniei se deduce prin Intrari → ProduseP → Produse → Masini. Nu se
+adaugă o coloană redundantă. Antetul păstrează IdMasina pentru un singur cont;
+pentru mai multe conturi este NULL. Consultarea listează conturile liniilor.
 
-Catalogul de clasificări MF este comun: `AVACONT_COMUN.VC_ClasificariMF`, administrat separat de migrarea gestiunilor. Validarea DNF din NIR leagă `Cod` de `VC_Produse.CC` și convertește limitele `DNF_MIN`/`DNF_MAX` din ani în luni. Limitele NULL nu impun o restricție pe acea parte; când nu există o clasificare asociată, rămâne regula duratei pozitive. Migratorul nu mai copiază limitele din Access în cataloage locale și nu scrie în nomenclatorul comun. `VC_ProduseM` păstrează durata aleasă pentru fiecare activ. Structura și datele de referință au fost citite din exportul actualizat `MariaDB_Schema/AVACONT_COMUN.sql`; nu s-au executat interogări pe server.
+Contul produsului cu mișcări prin oricare variantă de preț, în orice an, este
+blocat în nomenclator și în server. Verificarea include mișcările anulate și
+variantele inactive. Schimbarea contului și prima mișcare folosesc aceeași
+blocare a gestiunii. Fără mișcări contul rămâne editabil; celelalte câmpuri
+păstrează propriile reguli.
 
-## Contract API
+La modificare, cota TVA din antet este vizibilă numai dacă toate liniile au
+aceeași cotă cunoscută. Schimbarea ei propagă procentul către ID-ul TVA local
+al fiecărui produs și recalculează. O cotă lipsă într-o destinație blochează
+operația. Rândurile AUTO cer întâi revenirea corecției.
 
-- `POST /api/vercon/doc/nir/validate`: ciornă completă sau numai rânduri calculabile; `action=validate|adjust|undo_adjustment`, `line_key`, `id`, `version`. Ultimele două acțiuni întorc liniile rezultate; revenirea întoarce un token care se păstrează în `undo_tokens` până la salvare.
-- `GET /api/vercon/invoices`: lista/candidații facturilor din DC, cu filtre opționale `partner`, `number`, `date`.
-- `GET /api/vercon/invoices/<id>`: antet, linii, cantități/valori recepționate și NIR-uri din toate subunitățile/gestiunile asociate.
-- `POST /api/vercon/invoices/save|merge|backfill|finalize`: comenzi cu `request_key`, context verificat și ocuparea gestiunii curente. Reunirea/asocierea istoricului nu modifică mișcări sau valori istorice.
-- `POST /api/vercon/invoices/receive-batch`: salvare atomică a unui lot explicit. Cere `invoice_id`, `version`, `request_key` și `receipts`. Fiecare recepție are contextul, `context_version`, `lock_token`, antetul și liniile sale; la editare include `id` și `version`. Toate gestiunile se validează și se blochează în ordine stabilă. Se repetă verificarea ocupărilor înainte de commit. Interfața NIR permite recepția în etape; endpointul de lot oferă operația atomică pentru clienții care trimit mai multe destinații simultan.
+«Corectează la valoarea facturii» egalează exact totalul cu valoarea declarată
+pentru o diferență de cel mult 1 leu, păstrând TVA real. Izolează cel mult o
+bucată din rândul ales și aplică un calcul invers din brut. Existența
+înregistrării în VC_NIR_CALCULE indică acest calcul; metadatele rețin totalul
+brut, prețul inițial și originea. API derivă calc_mode=GROSS la citire.
 
-Tabele noi în DC: `VC_FACTURI`, `VC_FACTURI_LINII`, `VC_NIR_FACTURI`, `VC_FACTURI_REPARTIZARI`, `VC_NIR_CALCULE`. Catalogul comun MF nu este inclus în acest DDL și nu condiționează disponibilitatea schemei de facturi. Nu se modifică identificatorii documentelor existente. `NumarSub` este adăugată de fișierul SQL numai dacă schema veche nu o are.
+Rândurile AUTO nu se editează. Ștergerea readuce fragmentul în grupul de origine
+și recalculează, cu simularea stocului ambelor variante înaintea scrierii.
+Serverul validează originea prin tokenuri opace cu expirare, inclusiv pentru
+ciorne; nu se bazează numai pe blocarea celulelor. Previzualizările nu
+creează documente, numere ori variante de preț în MariaDB.
 
-## Fișiere principale
+La editarea recepțiilor create de acest editor, liniile interne ale facturii
+deținute exclusiv de NIR urmează modificarea și revenirea AUTO în aceeași
+tranzacție. Auditul existent identifică facturile create prin repartizare;
+nu se rescriu astfel țintele istorice ori liniile împărțite cu alte NIR-uri.
+Pentru o factură repartizată cu ValoareFC confirmată, editarea trebuie să
+păstreze exact totalul global; valoarea altor NIR-uri nu este schimbată tacit.
 
-- `PYTHON/routes/vercon/receipts.py`, `receipt_rules.py`, `receipt_auto.py`, `receipt_number.py`: validări, calcul, originea corecțiilor, simulare și scriere NIR.
-- `PYTHON/routes/vercon/invoices.py`, `receipt_routes.py`: facturi comune, repartizări, reconciliere, asociere istoric și loturi.
-- `documents.py`, `doc_routes.py`, `__init__.py`, `protocol.py`: integrare, dependențe active, anulare și repetarea comenzilor.
-- `PYTHON/static/js/vercon/docs.js`, `invoices.js`, `PYTHON/static/css/vercon-invoices.css`, `vercon.css`: editor, blocarea AUTO și interfața facturii comune.
-- `VERCON/VRC.Migrator/VrcRunner.Invoices.vb`, `VrcRunner.vb`, `VrcWriter.vb`: schema cerută și asocierea provizorie la import.
-- `sql/VC_FACTURI_NIR_20261016.sql`: DDL incremental manual; `VERCON/tools/import_map.js`: mapare Access și domenii de acces ale aplicației, fără generare SQL.
+Cronologia numerelor și subnumerelor rămâne obligatorie la schimbarea datei;
+NIR-ul existent nu este mutat în altă serie anuală. Documentele anulate își
+păstrează poziția. Valorile istorice neschimbate sunt păstrate exact.
 
-Nu s-au făcut commit, publicare sau modificări de baze de date din această conversație.
+## Migrare și schemă
+
+Importul Access nu se schimbă pentru noul selector: sursa are un NIR cu un
+singur cont local, iar remaparea produs/preț/document este suficientă. Nu se
+copiază artificial contul în linii și nu se regrupează automat istoricul.
+
+Mecanismul existent creează fragmente provizorii de factură per NIR importat;
+TOTAL_SURSA păstrează antetul original, inclusiv NULL, zero și diferențe.
+Antetele nu se însumează ca total global confirmat. Asocierea/reconcilierea
+istoricului rămâne în API; vechea machetă a fost eliminată. La modificarea
+unui NIR istoric neasociat, asocierea provizorie se face în tranzacția editării.
+Stocurile inițiale rămân fără factură. Corecțiile Access la 0% nu primesc
+retroactiv marcaj AUTO, deoarece sursa nu păstrează o origine sigură.
+
+Nu este necesar DDL suplimentar pentru noul editor sau blocarea contului.
+Rămâne necesară schema facturilor din [VC_FACTURI_NIR_20261016.sql](../sql/VC_FACTURI_NIR_20261016.sql),
+aplicată manual de utilizator pe AVACONT_SURSA și sincronizată în DC-uri:
+VC_FACTURI, VC_FACTURI_LINII, VC_NIR_FACTURI, VC_FACTURI_REPARTIZARI și
+VC_NIR_CALCULE; NumarSub se adaugă dacă lipsește. Scrierea răspunde cu
+INVOICE_SCHEMA_REQUIRED dacă schema lipsește. Aplicația nu creează schema.
+
+AVACONT_SURSA de pe server este sursa unică de structură. Dump-urile sunt
+fotografii pentru analiză. VRC reutilizează KBot.Migrator.TargetSchema.Load
+și WriteOrder.Derive; import_map.json descrie conversia/remaparea sursei.
+Scriptul complet generat de schemă a fost eliminat anterior.
+
+Clasificările MF folosesc AVACONT_COMUN.VC_ClasificariMF, administrat separat.
+DNF_MIN/DNF_MAX sunt ani convertiți în luni la validarea DNF; durata activului
+rămâne în VC_ProduseM. Nu există catalog MF local nou.
+
+## Integrare în surse
+
+- `receipt_destinations.py`: catalog DC, contexte, comisii și ocupări temporare.
+- `receipt_distribution.py`: GET `/api/vercon/doc/nir/destinations`, POST
+  `/api/vercon/doc/nir/distribution/validate` și `/distribution`, calcul și
+  salvare atomică pentru editorul de adăugare.
+- `receipts.py`, `receipt_rules.py`, `receipt_auto.py`, `receipt_number.py`:
+  validarea/scrierea locală, cronologie, calcul și AUTO; editarea folosește
+  în continuare PUT `/api/vercon/doc/nir/<id>` și POST `/nir/validate`.
+- `documents.py`, `invoices.py`, `doc_routes.py`: conturile din produse,
+  facturile interne și integrarea rutelor. API-ul de facturi/loturi rămâne
+  disponibil pentru consumatorii existenți, fără ecranul respins.
+- `docs.js`, `receipt-allocation.js`, `receipt-context.js`: antetul, grila,
+  repartizarea și fișa produsului în contextul său.
+- `components/combotree/combotree.js`, `dgv/editing.js`,
+  `components/treeview/treeview.js`: selectorul comun și integrarea în celulă.
+- `nomenclatoare.py`, `nomenclator_usage.py`, `nomenclator-grid.js`: blocarea
+  contului produsului cu mișcări în UI și API.
+- `css/combotree/combotree.css`, `vercon-receipt-destinations.css`, `vercon.css`:
+  stilurile comune și poziționarea antetului.
+
+Contract autoritar: [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).

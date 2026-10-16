@@ -1204,3 +1204,104 @@ Pregătirea indexului Git folosește o listă explicită a fișierelor acestui t
 inclusiv înlocuirile și ștergerile aprobate; Surse/EF_SURSA și
 Surse/SURSA_XFA_WRITTER sunt excluse. Nu s-au rulat teste, compilări sau SQL.
 Nu se execută commit; utilizatorul a cerut staging și un mesaj scurt de commit.
+
+### 2026-10-16 — SQL manual pentru repetarea migrării pe 000_DEMO
+
+Cerere: golirea tabelelor VERCON din 000_DEMO pentru un nou import de test.
+Adăugat sql/VC_DEMO_golire_vercon.sql: bloc anonim MariaDB care citește
+tabelele VC_ existente din information_schema și generează/execută TRUNCATE
+numai cu nume calificate în 000_DEMO, la rularea manuală de către operator.
+Include facturile/corecțiile noi dacă există și șterge și markerii de import;
+nu depinde de lista fixă istorică. Restaurează FOREIGN_KEY_CHECKS la final și
+în caz de eroare. Nu creează proceduri sau tabele; nu atinge Parteneri ori
+AVACONT_COMUN. TRUNCATE nu este tranzacțional; o eroare poate lăsa un reset
+parțial, raportat prin eroarea MariaDB.
+
+Stare: fișier SQL pregătit, nerulat. S-au consultat sursele locale și
+documentația oficială MariaDB pentru sintaxă; fără teste, interogări pe
+server sau schimbări de baze de date. Indexul Git pregătit anterior nu a
+fost modificat pentru această completare.
+
+### 2026-10-16 — VC06-06, decizii pentru NIR cu mai multe conturi
+
+Cerere: consemnarea deciziilor aprobate în documentele VC, fără cod încă.
+Adăugat registrul VC06-06-D01–D11 în VERCON/DECIZII_DESCHISE.md și aliniat
+fluxurile UI, planul, statusul, schema explicată, contractul calculelor,
+analiza NIR, documentul implementării anterioare, README-ul migratorului și
+worklog-ul SLICE-VC06-06.
+
+Decizii: factura direct în Adăugare NIR, fără buton/machetă separată;
+arbore de conturi din întregul DC, rădăcina curentă prima/expandată;
+blocare selector numai pentru un singur cont global; ComboTree produse cu
+căutare, înălțime minimă utilizabilă și deschidere în sus când nu încape;
+Comisie pe două coloane sub Data Facturii. Mai multe conturi din aceeași
+subunitate rămân în același NIR, cu numărul disponibil. Numai subunități
+diferite impun «auto» și NIR-uri distincte, numerotate la salvare.
+
+Contul liniei se deduce prin relația existentă ProduseP → Produse → cont,
+fără câmp nou în linie. Contul unui produs cu mișcări, în orice an și prin
+oricare variantă, nu mai poate fi schimbat, cu verificare UI și server.
+Fără mișcări, rămâne editabil. Importul Access nu se adaptează la acest nou
+flux: sursa are un NIR cu un singur cont din unitatea respectivă.
+
+Stare la consemnarea inițială: decizii documentate; implementarea autorizată ulterior este descrisă în continuare. Notele prevalează asupra
+propunerilor contrare și disting explicit sursele anterioare de macheta
+respinsă. Modificate numai fișiere Markdown. Fără cod, SQL, teste, build,
+verificări automate sau operații pe baze. Indexul Git nu a fost modificat;
+nu s-a făcut commit. Modificările fără legătură din KBot.App rămân intacte.
+
+
+### 2026-10-16 — VC06-06, implementarea editorului NIR pe mai multe conturi
+
+La cererea explicită a utilizatorului, implementate în același slice deciziile
+VC06-06-D01–D11. Eliminată macheta separată de factură și butonul ei; factura
+se introduce în Adăugare NIR, cu toate produsele într-o singură grilă.
+
+Implementat:
+- Arbore pentru conturile întregului DC: rădăcina curentă prima/expandată,
+  celelalte restrânse; checkbox pe conturi; selector blocat numai pentru
+  un singur cont global. Mai multe conturi din aceeași destinație rămân într-un
+  NIR cu număr editabil; numai destinații diferite impun «auto».
+- ComboTree comun în celula Produs: conturi → produse, căutare la tastare,
+  popup cu înălțime minimă utilă, deschidere sus când este nevoie și scroll
+  în viewport. Adaptate focusul popupului în DGV și inițializarea TreeView
+  înainte de atașarea containerului în pagină.
+- Comisia sub Data Facturii pe două coloane, până la marginea Data NIR.
+- Salvare atomică a facturii și câte unui NIR per destinație cu produse;
+  validări pe întregul lot, ocupări temporare în ordine stabilă, serii locale,
+  cronologie și repetarea sigură a cererii. Nu se creează documente goale.
+- TVA și precizia produselor sunt ale destinației lor; propagarea din antet
+  mapează procentul către ID-ul TVA local. Fișa produsului folosește contextul
+  produsului. Consultarea antetului și a facturii derivă conturile din linii.
+- Nu există câmp nou de cont per linie. IdMasina în antet este NULL pentru
+  conturi multiple și contul derivat pentru cazul unic.
+- Contul produsului cu mișcări în orice an și prin orice variantă este blocat
+  în UI și server; verificarea include variante inactive și mișcări anulate.
+  Schimbarea contului este serializată cu documentele, inclusiv prima mișcare.
+- AUTO rămâne nemodificabil, cu ștergere/revenire în grup și simularea stocului.
+  La editarea unui NIR generat de noul flux, liniile facturii deținute exclusiv
+  de acel NIR urmează schimbările și revenirile; nu se rescriu ținte istorice
+  ori împărțite cu alte NIR-uri. Originea noului flux este în auditul existent,
+  fără coloană nouă. ValoareFC confirmată rămâne exact totalul recepțiilor.
+
+Fișiere noi: PYTHON/routes/vercon/receipt_destinations.py,
+receipt_distribution.py; PYTHON/static/js/vercon/receipt-allocation.js;
+PYTHON/static/js/components/combotree/combotree.js;
+PYTHON/static/css/combotree/combotree.css și vercon-receipt-destinations.css.
+Integrări: doc_routes.py, documents.py, receipts.py, invoices.py,
+nomenclatoare.py, nomenclator_usage.py, docs.js, receipt-context.js,
+nomenclator-grid.js, dgv/editing.js, components/treeview/treeview.js și vercon.css.
+Eliminate: PYTHON/static/js/vercon/invoices.js și static/css/vercon-invoices.css.
+
+Actualizate documentele DECIZII_DESCHISE, FLUXURI_UI, PLAN_IMPLEMENTARE,
+VERCON_STATUS, SCHEMA_VC, CONTRACT_CALCULE, ANALIZA_FLUX_NIR_2026-10-16,
+FACTURI_NIR_IMPLEMENTARE, README VRC și worklog-ul SLICE-VC06-06.
+Importul Access nu se schimbă pentru acest flux și nu este necesar DDL nou.
+Rămâne SQL-ul manual al schemei de facturi pregătit anterior. Comisiile cu
+aceiași membri și exercițiile trebuie să existe în destinațiile selectate;
+aplicația nu creează automat structuri sau nomenclatoare.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Nu s-au rulat teste, build, browser,
+verificări automate sau SQL, conform AGENTS.md. Nu s-au modificat baze, nu
+s-a făcut publicare sau commit. Modificările fără legătură din KBot.App și
+Surse rămân în afara implementării.

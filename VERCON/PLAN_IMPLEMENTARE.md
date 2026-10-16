@@ -661,6 +661,10 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 **Livrabile și stare:** [worklog VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md). **IMPLEMENTAT_LOCAL, FĂRĂ EXECUȚIE**: fără build, teste sau SQL; nu este validat server și nu este acceptat prin această consemnare.
 
+**Decizii ulterioare în același slice — IMPLEMENTAT ÎN SURSE, NERULAT:** se elimină macheta și butonul separat «Factură comună». Adăugare NIR primește arbore cu checkbox pentru conturile întregului DC; rădăcina curentă este prima/expandată, restul restrânse, iar blocarea selectorului se face numai pentru un singur cont global. Produs folosește ComboTree cu căutare, înălțime minimă utilizabilă și deschidere în sus când nu încape în jos. Comisia ocupă două coloane sub Data Facturii. Mai multe conturi din aceeași subunitate rămân într-un singur NIR, cu numărul disponibil; numai subunități diferite impun «auto» și alocarea numerelor la salvare.
+
+**Model implementat și criterii pentru acceptare:** contul liniei se deduce prin ProduseP → Produse → cont, fără coloană suplimentară. Editarea produsului cu mișcări în orice an/prin orice variantă nu poate modifica acel cont, nici prin apel API direct. Importul Access nu se schimbă pentru această funcționalitate nouă. Consultarea și calculele pe cont folosesc produsele liniilor; antetul păstrează contul numai pentru cazul unic. Salvarea repartizată validează întregul lot și rezervă temporar destinațiile suplimentare în aceeași tranzacție. Reguli complete: [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06). Codul este scris; nu s-au rulat build, teste, browser sau acceptare pe server.
+
 ## Slice VC07 — specificul Alimente, OI și MF
 
 **Dependențe:** VC06 și VC00-03/VC00-04; rezultatele de stoc disponibile din contract/VC08-01 înainte de acceptarea fluxurilor dependente.

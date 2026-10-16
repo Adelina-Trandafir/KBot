@@ -1,5 +1,7 @@
 # VERCON — fluxuri de lucru și stări ale interfeței
 
+**Actualizare 16.10.2026, VC06-06:** secțiunea 7 înlocuiește cerințele anterioare despre selectorul de cont/produs și ecranul separat al facturii. Include numerotarea clarificată de utilizator. **IMPLEMENTAT ÎN SURSE, NERULAT**. Restul regulilor rămân valabile unde nu sunt înlocuite explicit.
+
 Actualizat: 12.10.2026, **revizia 2**. Decizii de interfață primite de la utilizator în [Corectii_mockup-uri_01](MOCKUPURI/Corectii_mockup-uri_01/) și în mesajul ulterior cu cinci atașamente: tabelul NIR este unica referință vizuală, iar o listă de alimente poate avea mai multe BC-uri. Ultima revizie prevalează asupra propunerilor contradictorii anterioare. Documentare și mockupuri; comportamentele de mai jos nu sunt declarate implementate în aplicație.
 
 ## 1. Stările comune ale documentelor
@@ -84,3 +86,36 @@ Nu se introduc transferuri între gestiuni/subunități: D12 rămâne în afara 
 ## 6. Legătura cu planul și mockupurile
 
 Acoperire: VC02-02/03/04/05, VC03-02 (cardinalitate), VC06-02/03/05, VC07-01/02/03. [Mockupuri corectate, revizia 2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md). Stocuri, NIR și Rapoarte sunt păstrate identic; BC, Alimente și OI au grilele corectate.
+
+## 7. Decizii NIR din 16.10.2026 — VC06-06
+
+Regulile autoritare sunt [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+Factura se completează în ecranul Adăugare NIR. Butonul «Factură comună» și
+macheta separată din implementarea anterioară au fost eliminate din surse.
+
+1. Categorie/Cont este un arbore custom cu toate conturile DC-ului: rădăcini
+   subunitățile, frunze conturile cu checkbox. Destinația curentă este prima,
+   expandată; celelalte rădăcini sunt inițial restrânse. Unicul cont din DC este
+   selectat automat și controlul blocat. Existența unui singur cont doar în
+   destinația curentă nu blochează controlul.
+2. Mai multe conturi în aceeași subunitate produc un singur NIR; numărul rămâne
+   disponibil conform regulilor existente. Numai selectarea conturilor din
+   subunități diferite dezactivează numărul și afișează «auto». Numerele se alocă
+   la salvare pentru fiecare destinație, iar conturile aceleiași destinații
+   rămân în același NIR.
+3. În DGV, Produs folosește un ComboTree cu rădăcini conturile selectate și
+   produse dedesubt. Căutarea prin tastare rămâne disponibilă. Popupul are
+   înălțime minimă utilizabilă și scroll intern; se deschide în jos dacă încape,
+   altfel în sus, fără să fie tăiat de grilă. Nu este stabilită o înălțime în pixeli.
+4. Comisie se mută sub Data Facturii și ocupă două coloane, până la capătul
+   câmpului Data NIR.
+5. Contul rândului rezultă din produsul selectat și varianta sa, fără un câmp
+   nou de cont în linia persistentă. Dacă produsul are mișcări în oricare an,
+   editarea sa nu mai permite schimbarea contului; serverul aplică aceeași
+   restricție, independent de controlul din interfață.
+
+Această secțiune nu schimbă migrarea Access. Noul flux, ComboTree și blocarea
+contului sunt implementate în surse, fără rulare. Rădăcinile poartă contextul
+existent subunitate/gestiune; fiecare NIR se consultă și se modifică ulterior
+în destinația sa. Comisia se identifică prin aceiași patru membri în
+destinațiile alese; lipsa ei blochează întregul lot, fără creare automată.

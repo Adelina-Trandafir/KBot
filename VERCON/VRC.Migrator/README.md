@@ -1,5 +1,13 @@
 # VRC.Migrator — utilizare (SLICE-VC05-01)
 
+**Clarificare VC06-06, 16.10.2026:** noile decizii de interfață NIR nu cer
+adaptarea importului Access la mai multe conturi pe document. Sursa veche are
+un NIR cu un singur cont din unitatea respectivă; relațiile importate dintre
+linie, variantă de preț și produs determină deja contul. Nu se copiază contul
+antetului într-o coloană nouă a liniei și nu se reunesc documente istorice
+pentru noul flux. Această clarificare nu retrage infrastructura comună de
+schemă implementată anterior. [Decizii D09–D11](../DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+
 Utilitar Windows separat pentru transferul **unic** Access → MariaDB al unei subunități VERCON. În această felie știe
 doar să **citească și să profileze**; planul, testarea și migrarea vin cu VC05-02/03.
 

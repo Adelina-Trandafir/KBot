@@ -5,8 +5,8 @@ One write = one transaction (the route owns it): header, lines, MF rows, numberi
 are committed together or not at all. Rules shared by the four families:
   * the values of a NEW document are computed here, from the quantity, the price and the VAT rate, once per line at the
     gestiune's ZEC (CONTRACT_CALCULE section 2.2) and stored directly as DECIMAL(20,4); nothing the page computed is trusted;
-  * the header total follows N01/N02 (a declared total of 0, empty, or more than 1 leu away from the lines' sum is
-    replaced by the sum);
+  * a NIR's declared total must equal the lines exactly (receipt_rules); other document families retain their
+    existing header-total rules. Historical unchanged values are preserved;
   * a price is never negative and a quantity is always positive; stock never goes negative (protocol.check_timeline);
   * a saved document is edited only while its period is open, with the revision the page saw, and is never deleted: it is
     cancelled with a reason and stays visible as cancelled;
@@ -166,11 +166,11 @@ def get_document(cursor, repo, ctx, family, doc_id):
         h = rows[0]
         partner = _one(cursor, 'SELECT DenumirePartener, CodFiscal FROM Parteneri WHERE IdPartener=%s', (h['IdPartener'],)) if h['IdPartener'] else None
         if family == 'nir':
-            lines = _all(cursor, 'SELECT i.ID, i.IdProdus, pp.ID AS Produs, pp.COD, pr.DenumireP, pr.UM, i.Cant, i.Pret, i.IDTVA, i.PUTVA, i.Valoare, i.TVA, i.ValoareCUTVA, '
+            lines = _all(cursor, 'SELECT i.ID, i.IdProdus, pp.ID AS Produs, pp.COD, pr.DenumireP, pr.UM, pr.IdMasina AS Category, i.Cant, i.Pret, i.IDTVA, i.PUTVA, i.Valoare, i.TVA, i.ValoareCUTVA, '
                                  'm.DataIntrare, m.DNF, m.DF, m.ValoareLuna FROM VC_Intrari i ' + _name_join('i') +
                                  ' LEFT JOIN VC_ProduseM m ON m.SubunitId=i.SubunitId AND m.GestiuneId=i.GestiuneId AND m.IdProdus=i.IdProdus '
                                  'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s ORDER BY i.ID', (s, g, e, doc_id))
-            out_lines = [{'id': r['ID'], 'variant': r['IdProdus'], 'product': r['Produs'], 'name': r['DenumireP'], 'um': r['UM'], 'code': r['COD'],
+            out_lines = [{'id': r['ID'], 'variant': r['IdProdus'], 'product': r['Produs'], 'name': r['DenumireP'], 'um': r['UM'], 'code': r['COD'], 'category': r['Category'],
                           'Cant': _money(r['Cant'], scale), 'Pret': _money(r['Pret'], scale), 'IDTVA': r['IDTVA'], 'PUTVA': _money(r['PUTVA'], scale),
                           'Valoare': _money(r['Valoare'], scale), 'TVA': _money(r['TVA'], scale), 'ValoareCUTVA': _money(r['ValoareCUTVA'], scale),
                           'data_intrarii': _iso(r['DataIntrare']), 'DNF': r['DNF'], 'DF': r['DF'], 'ValoareLuna': _money(r['ValoareLuna'], scale)} for r in lines]

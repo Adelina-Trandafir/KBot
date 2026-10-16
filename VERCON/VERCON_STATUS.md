@@ -1,5 +1,11 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## VC06-06 — implementarea noului editor NIR, 16.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06). Eliminată macheta separată și butonul «Factură comună». Adăugare NIR folosește arbore de conturi din întregul DC și ComboTree pentru produse, cu căutare și poziționare în viewport. Mai multe conturi din aceeași destinație rămân în același NIR; numai destinații diferite impun «auto». Salvarea întregii repartizări este atomică, cu rezervarea temporară a destinațiilor suplimentare și alocarea numerelor la salvare. Contul liniei se deduce prin produs; schimbarea contului unui produs cu mișcări este blocată în UI și API. Importul Access nu se schimbă pentru acest flux. [Worklog slice](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md).
+
+Fără teste, build, browser sau SQL executate. Nu se declară validare pe server ori acceptare vizuală. Noile rădăcini de interfață (Alimente/Materiale/OI/MF) folosesc contextele tehnice SubunitId/GestiuneId existente. Detaliile de activare și comisiile pe destinații sunt în [documentul implementării](FACTURI_NIR_IMPLEMENTARE.md).
+
 ## Revizie infrastructură schemă — 16.10.2026
 
 VRC.Migrator reutilizează `KBot.Migrator.TargetSchema.Load` și `WriteOrder.Derive` pentru schema reală și ordinea FK. Maparea Access este `import_map.json`, generată de `tools/import_map.js`, fără tipuri SQL/nulabilitate pentru țintă. Sursa structurii este AVACONT_SURSA de pe server; DDL-urile noi sunt incrementale, aplicate manual și sincronizate separat. Eliminat scriptul complet generat `sql/VC_AVACONT_SURSA.sql`, generatorul său `tools/ddl.js` și fragmentele de creare. Referințele la acestea și la `target_schema.json` din registrul istoric de mai jos descriu livrările vechi. `VC_Golire.sql` rămâne un script istoric cu listă fixă, fără regenerare și fără rol de descriere a schemei actuale.

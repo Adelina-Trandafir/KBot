@@ -2,67 +2,91 @@
 
 Data: 16.10.2026. Stare: **IMPLEMENTAT_LOCAL, FĂRĂ EXECUȚIE**.
 
-Extensie autorizată de utilizator la VC06, cu integrare în infrastructura VC03/VC05.
-Reunește lucrul din acest thread: regulile NIR rezultate din analiza Access FC,
-facturile repartizate, corecțiile AUTO și reutilizarea infrastructurii KBot.Migrator.
-Nu certifică funcționarea prin build, teste sau rulare pe server.
+Slice-ul include implementarea noului editor NIR aprobată ulterior în același
+thread: [VC06-06-D01–D11](../../VERCON/DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+Documentația și sursele descriu acum același flux. Macheta separată de factură
+respinsă de utilizator a fost eliminată.
 
 ## Comportament implementat în surse
 
-- Cronologia numerelor și subnumerelor NIR limitează modificarea datei în seria
-  anuală. Modificarea liniilor, scoaterea lor și anularea folosesc regulile de
-  dependențe și disponibil, cu simularea stocului înaintea scrierii.
-- TVA în antetul de modificare este derivat din rânduri și vizibil pentru o cotă
-  comună. Schimbarea propagă cota și recalculează; rândurile AUTO cer mai întâi
-  revenirea corecției.
-- Corecția de cel mult 1 leu egalează exact suma liniilor cu valoarea declarată,
-  păstrând TVA real prin calcul invers din totalul brut. Rândul AUTO nu se editează;
-  ștergerea lui returnează fragmentul în grupul original și verifică stocul ambelor
-  variante. Originea și permisiunea revenirii sunt validate și în server.
-- Existența înregistrării în `VC_NIR_CALCULE` identifică calculul invers. Tabelul
-  păstrează totalul brut, prețul inițial și originea, fără un mod de calcul redundant.
-- Factura comună are linii și repartizări către NIR-uri din conturi, gestiuni și
-  subunități diferite ale aceluiași DC. Recepțiile pot fi parțiale; reconcilierea
-  completă cere egalități exacte. Endpointul de lot acceptă mai multe contexte
-  explicit, într-o singură tranzacție.
-- Migrarea păstrează câte un fragment provizoriu pentru fiecare NIR istoric și
-  valoarea sursă separat; nu însumează antetele ca total global și nu regrupează
-  automat facturile. Asocierea istoricului existent este reluabilă, fără reimport.
-- Validarea DNF la recepția MF citește nomenclatorul comun
-  `AVACONT_COMUN.VC_ClasificariMF`; durata aleasă rămâne în `VC_ProduseM`.
-- VRC reutilizează `KBot.Migrator.TargetSchema.Load` și `WriteOrder.Derive` pentru
-  schema reală a DC-ului și ordinea după FK plus dependențele logice Access.
-  `import_map.json` păstrează doar regulile sursei. Eliminat scriptul complet
-  generat de creare și generatorul lui; AVACONT_SURSA de pe server rămâne unica
-  referință de structură, sincronizată separat în DC-uri.
+- Introducerea facturii direct în Adăugare NIR, cu toate produsele în aceeași
+  grilă; eliminate butonul și modulul UI «Factură comună».
+- Arbore de conturi din întregul DC: rădăcina curentă prima și expandată,
+  celelalte restrânse; checkbox numai pe conturi. Unicul cont global blochează
+  selectorul; unicul cont local permite alegerea altor destinații.
+- Mai multe conturi din aceeași destinație produc un NIR, cu număr editabil.
+  Numai destinații diferite impun «auto». Liniile se grupează după contextul
+  SubunitId/GestiuneId existent; numerele se alocă la salvare în seriile lor.
+- ComboTree comun pentru produs în DGV: conturi → produse, căutare la tastare,
+  înălțime utilă minimă, deschidere deasupra când spațiul inferior este
+  insuficient, limitare la viewport și scroll intern. Grila recunoaște focusul
+  din popup, inclusiv câmpul de căutare separat de celulă.
+- Comisia ocupă două coloane sub Data Facturii, până la capătul Data NIR.
+- Salvarea întregii facturi și a NIR-urilor sale este atomică. Contextele
+  suplimentare se ocupă temporar în ordine stabilă; o destinație ocupată
+  blochează tot lotul. Se validează toate produsele, perioadele, comisiile,
+  numerele, cronologia, stocurile și totalurile înaintea scrierii. Repetarea
+  aceleiași cereri nu dublează documentele.
+- Contul liniei se deduce din ProduseP → Produse → Masini; nu există câmp nou
+  redundant. Antetul păstrează IdMasina pentru cazul unic, altfel NULL.
+  Consultarea și metadatele facturii folosesc conturile produselor liniilor.
+- Contul produsului cu mișcări prin orice variantă, în orice an, este blocat
+  în UI și server. Blocarea include variante inactive și mișcări anulate;
+  serializarea cu scrierile documentelor protejează și prima mișcare.
+- Cronologia numerelor/subnumerelor limitează schimbarea datei NIR. Modificarea
+  și scoaterea liniilor/anularea păstrează regulile de dependențe și stoc.
+- TVA comun în antet la modificare numai când toate liniile au aceeași cotă
+  cunoscută; propagare a procentului către cota locală a fiecărui produs.
+- Corecție de cel mult 1 leu pentru egalitate exactă cu ValoareFC, păstrând TVA
+  real prin calcul invers. Existența în VC_NIR_CALCULE indică mecanismul.
+  Rândurile AUTO nu se editează; ștergerea returnează fragmentul în grupul
+  original și verifică stocul ambelor variante, cu origine validată în server.
+- Editarea și revenirea AUTO sincronizează liniile interne de factură ale
+  NIR-ului creat prin noul flux, identificate prin auditul existent. Nu ating
+  liniile altor recepții sau țintele istorice. Totalul global confirmat rămâne
+  exact ValoareFC; o modificare incompatibilă este refuzată atomic.
+- Importul Access nu se adaptează noului selector: un NIR sursă are un singur
+  cont local. Remaparea existentă produs/preț/document este suficientă.
+- Migrarea păstrează fragmente provizorii și antetele originale separat;
+  nu însumează antetele ca total global confirmat și nu regrupează istoricul.
+- DNF MF folosește AVACONT_COMUN.VC_ClasificariMF, în ani convertiți în luni;
+  durata activului rămâne în VC_ProduseM.
+- VRC reutilizează KBot.Migrator.TargetSchema.Load și WriteOrder.Derive.
+  AVACONT_SURSA de pe server rămâne sursa unică a structurii, iar import_map
+  păstrează regulile sursei. Scriptul complet generat a fost eliminat anterior.
 
 ## Livrabile
 
-- Analiza și contractul: [analiza NIR](../../VERCON/ANALIZA_FLUX_NIR_2026-10-16.md),
-  [contractul calculelor](../../VERCON/CONTRACT_CALCULE.md),
-  [implementare și activare](../../VERCON/FACTURI_NIR_IMPLEMENTARE.md).
-- Backend: modulele `receipts`, `receipt_rules`, `receipt_auto`, `receipt_number`,
-  `invoices`, `receipt_routes` și integrarea în rutele/documentele VERCON.
-- Interfață: editorul NIR, modulul facturilor comune și stylesheet separat.
-- Migrator: `VrcRunner.Invoices`, `VrcImportMap`, `VrcWriter.Schema`, adaptările
-  scriitorului și suprasarcina comună `KBot.Migrator.WriteOrder.Derive`.
-- SQL manual: [VC_FACTURI_NIR_20261016.sql](../../sql/VC_FACTURI_NIR_20261016.sql).
-  Cele cinci tabele sunt `VC_FACTURI`, `VC_FACTURI_LINII`, `VC_NIR_FACTURI`,
-  `VC_FACTURI_REPARTIZARI`, `VC_NIR_CALCULE`; se adaugă și `NumarSub` dacă lipsește.
-- Registrul implementării: [implementare_vercon_v2](../../implementare_vercon_v2.md).
+- Backend nou: `receipt_destinations.py`, `receipt_distribution.py`.
+- Integrare backend: `doc_routes.py`, `documents.py`, `receipts.py`, `invoices.py`,
+  `nomenclatoare.py`, `nomenclator_usage.py`; mecanismele anterioare de calcul,
+  AUTO, cronologie și facturi rămân reutilizate.
+- Frontend: `receipt-allocation.js`, `docs.js`, `receipt-context.js`,
+  `nomenclator-grid.js`, ComboTree comun, integrarea în `dgv/editing.js` și
+  inițializarea TreeView în containere încă neatașate paginii.
+- CSS: `combotree/combotree.css`, `vercon-receipt-destinations.css`, `vercon.css`.
+  Eliminate `js/vercon/invoices.js` și `css/vercon-invoices.css`.
+- Livrările anterioare ale slice-ului: adaptările VRC/Migrator pentru schema
+  reală, ordinea FK și fragmentele provizorii; SQL incremental manual
+  [VC_FACTURI_NIR_20261016.sql](../../sql/VC_FACTURI_NIR_20261016.sql).
+- Documentație aliniată: DECIZII_DESCHISE, FLUXURI_UI, PLAN_IMPLEMENTARE,
+  VERCON_STATUS, SCHEMA_VC, CONTRACT_CALCULE, ANALIZA_FLUX_NIR_2026-10-16,
+  FACTURI_NIR_IMPLEMENTARE, README VRC.Migrator și implementare_vercon_v2.
 
-## Activare și limite
+## Activare și limitele consemnării
 
-Utilizatorul aplică DDL-ul pe AVACONT_SURSA și sincronizează schema în DC-uri.
-Nu există creare sau reparare automată în VRC ori aplicație. Utilizatorul a
-confirmat că nu a executat încă acest DDL; nu este necesar un script de eliminare
-a coloanei redundante. Publicarea VRC 0.2.1.0 include KBot.Migrator 1.19.0.0.
+Utilizatorul aplică DDL-ul facturilor pe AVACONT_SURSA și sincronizează schema
+în DC-uri. Noul editor și blocarea contului nu cer un DDL suplimentar.
+Aplicația și VRC nu creează/repară schema automat. Nu s-a pregătit un script
+pentru eliminarea coloanei redundante, deoarece utilizatorul a confirmat că
+nu aplicase încă DDL-ul. VRC 0.2.1.0 include KBot.Migrator 1.19.0.0.
 
-Fluxul economic este în RON. Interfața recepționează în etape; loturile cu mai multe
-destinații sunt disponibile prin endpoint. Corecțiile Access vechi la 0% nu sunt
-marcate retroactiv AUTO. Detaliile și celelalte limite sunt în documentul de
-implementare legat mai sus.
+Fluxul este în RON. Comisia trebuie să existe cu aceiași membri în destinațiile
+alese; aplicația nu creează nomenclatoare sau exerciții automat. Fiecare NIR
+rezultat se consultă/modifică în contextul său. API-ul de facturi istorice și
+reconciliere rămâne disponibil, fără vechiul ecran respins.
 
-Nu s-au rulat teste, compilări, verificări automate, browser sau SQL. Nu s-au
-modificat baze de date și nu s-a făcut publicare. Se pregătește numai staging-ul
-modificărilor din acest thread; directoarele sursă fără legătură rămân în afară.
+Nu s-au rulat teste, build, browser, verificări automate sau SQL. Nu s-au
+modificat baze, nu s-a făcut publicare sau commit. Citirea surselor pentru
+proiectare nu certifică funcționarea în mediul utilizatorului. Modificările
+fără legătură din KBot.App și directoarele Surse nu fac parte din acest slice.

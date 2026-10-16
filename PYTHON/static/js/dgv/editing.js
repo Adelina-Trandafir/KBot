@@ -1,5 +1,6 @@
 // SLICE-ADE2-01/02: opt-in cell editing, independent of recycled row elements.
 import { Combobox } from '../components/combobox/combobox.js';
+import { ComboTree } from '../components/combotree/combotree.js';
 import { DatePicker } from '../components/datepicker/datepicker.js';
 import eventBus from '../event-bus/event-bus.js';
 
@@ -81,9 +82,10 @@ export const editing = {
   },
   // The focus left the grid: no editor stays open (the cell is saved, or dropped when it cannot be saved), then the row is judged.
   _onFocusOut(ev) {
-    if (this._destroyed || this._leaving || (ev.relatedTarget && this._root.contains(ev.relatedTarget))) return;
+    const owns = target => target && (this._root.contains(target) || this._edit?.combo?.dropdown?.contains(target));
+    if (this._destroyed || this._leaving || owns(ev.relatedTarget)) return;
     setTimeout(async () => {
-      if (this._destroyed || this._leaving || this._edit?.pending || !document.hasFocus() || this._root.contains(document.activeElement)) return;
+      if (this._destroyed || this._leaving || this._edit?.pending || !document.hasFocus() || owns(document.activeElement)) return;
       if (this._edit) { if (!await this.commitEdit() && this._edit && !this._edit.pending) this.cancelEdit(true); }
       if (!this._destroyed && !this._edit) await this._leaveRow(null);
     }, 0);
@@ -136,10 +138,18 @@ export const editing = {
     this._edit = state;
     this._activeKey = key;
     const markRequired = () => {
-      const value = column.editor === 'list' ? state.value : state.input?.value;
+      const value = ['list', 'tree'].includes(column.editor) ? state.value : state.input?.value;
       state.host.closest('.dgv__cell')?.classList.toggle('is-required-empty', !!column.required && this._requiredShown(state.row, key) && (value == null || String(value).trim() === ''));
     };
-    if (column.editor === 'list') {
+    if (column.editor === 'tree') {
+      const nodes = typeof column.nodes === 'function' ? column.nodes(row) : column.nodes || [];
+      state.combo = new ComboTree(host, { nodes, expanded: nodes.map(node => String(node.id)),
+        onSelect: choice => { state.value = choice.id; state.raw = choice.id; markRequired(); } });
+      state.combo.setValue(row[key], column.formatter?.(row[key], row) || '');
+      state.input = state.combo.input;
+      state.combo.dropdown.addEventListener('focusout', event => this._onFocusOut(event), { signal: state.abort.signal });
+      state.input.addEventListener('input', () => { state.value = null; markRequired(); }, { signal: state.abort.signal });
+    } else if (column.editor === 'list') {
       const items = typeof column.options === 'function' ? column.options(row) : (column.options || []);
       state.combo = new Combobox(host, { staticData: items, readonly: !column.searchable, showArrow: column.showArrow, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth,
         onSearch: column.onSearch ? (query) => column.onSearch(query, row) : async (query) => items.filter((item) => String(item.label || item.text || '').toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
@@ -180,7 +190,7 @@ export const editing = {
       event.stopPropagation();
       if (event.key === 'Enter' || event.key === 'Tab') {
         event.preventDefault(); this.commitEdit(event.shiftKey ? -1 : 1);
-      } else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && column.editor !== 'list' && column.editor !== 'date') {
+      } else if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && !['list', 'tree', 'date'].includes(column.editor)) {
         // Up/Down save (only when changed) and move the editor to the same column of the next/previous row.
         event.preventDefault(); this.commitEdit(event.key === 'ArrowDown' ? 'down' : 'up');
       }
@@ -242,7 +252,7 @@ export const editing = {
       let value;
       try {
         value = state.column.editor === 'checkbox' ? state.input.checked
-          : state.column.editor === 'list' ? state.value : parseCell(String(state.raw), state.column);
+          : ['list', 'tree'].includes(state.column.editor) ? state.value : parseCell(String(state.raw), state.column);
       } catch (error) {
         // Document drafts preserve unfinished input; document Save performs strict validation.
         if (!this._opts.allowIncompleteEdits) throw error;

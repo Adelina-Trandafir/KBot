@@ -51,8 +51,11 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
         if header.get(field) not in (None, '') and (value is None or not _exists(repo, table, pk, value)):
             errors['h.' + field] = 'Valoarea aleasă nu există în această gestiune.'
         cols[field] = value
-    if family == 'nir' and cols['IdMasina'] is None and 'h.IdMasina' not in errors:
-        errors['h.IdMasina'] = 'Alegeți categoria / contul.'
+    selected = body.get('accounts')
+    if family == 'nir' and selected is not None:
+        if not isinstance(selected, list) or not selected or any(_int(value) is None for value in selected):
+            errors['h.Accounts'] = 'Bifați cel puțin un cont.'
+        selected = {_int(value) for value in selected} if isinstance(selected, list) else set()
     if family == 'storno':
         cols['IdStorno'] = source['IdIntrare'] if source else None
         if source and cols['DataFc'] and source['DataFc'] and cols['DataFc'] < source['DataFc'].date():
@@ -73,6 +76,10 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
         key = _line_key(raw, index)
         line = {'key': key, 'id': _int(raw.get('id')), 'invoice_line': _int(raw.get('invoice_line'))}
         old = (stored or {}).get(line['id'])
+        if family == 'nir' and selected is not None:
+            account = _account_of_product(repo, _int(raw.get('product')))
+            if account not in selected and not (account is None and old and unchanged(raw, old, mf)):
+                errors['l|%s|product' % key] = 'Produsul nu aparține conturilor bifate.'
         if old and old.get('calc_mode') == 'GROSS' and (not unchanged(raw, old, mf) or _int(raw.get('invoice_line')) != old.get('invoice_line')):
             if line['id'] not in undo_ids or raw.get('calc_mode') == 'GROSS':
                 errors['lines'] = 'Rândurile auto-calculate pot fi numai șterse cu revenire în grupul de origine.'
@@ -113,8 +120,6 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
             if product is None or not _exists(repo, 'VC_Produse', 'ID', product, True):
                 bad('product', 'Alegeți produsul.')
             line['product'] = product
-            if product is not None and cols['IdMasina'] is not None and _account_of_product(repo, product) != cols['IdMasina']:
-                bad('product', _NOT_IN_ACCOUNT)
             line['COD'] = _text(raw.get('code'), 'l|%s|code' % key, errors, True, 255)
             line['data_intrarii'] = protocol.to_date(raw.get('data_intrarii'), 'Data intrării', None, errors, 'l|%s|data_intrarii' % key)
             dnf, df = _int(raw.get('DNF')), _int(raw.get('DF') if raw.get('DF') not in (None, '') else 0)
@@ -147,14 +152,12 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
             if product is None or not _exists(repo, 'VC_Produse', 'ID', product, True):
                 bad('product', 'Alegeți produsul.')
             line['product'] = product
-            if product is not None and cols['IdMasina'] is not None and _account_of_product(repo, product) != cols['IdMasina']:
-                bad('product', _NOT_IN_ACCOUNT)
         else:
             variant = _int(raw.get('variant'))
             if variant is None or not _exists(repo, 'VC_ProduseP', 'IdProdus', variant, True):
                 bad('variant', 'Alegeți produsul.')
             line['variant'] = variant
-            if variant is not None and cols['IdMasina'] is not None and _account_of_variant(repo, variant) != cols['IdMasina']:
+            if family != 'nir' and variant is not None and cols['IdMasina'] is not None and _account_of_variant(repo, variant) != cols['IdMasina']:
                 bad('variant', _NOT_IN_ACCOUNT)
         if cant is not None and pret is not None and (rate is not None or family == 'storno'):
             try:
@@ -188,6 +191,10 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
         if old.get('calc_mode') == 'GROSS' and old_id not in ids and old_id not in undo_ids:
             errors['lines'] = 'Ștergerea corecției cere revenirea cantității în grupul de origine.'
     _fail(errors)
+    if family == 'nir':
+        accounts = {_account_of_product(repo, row['product']) if row.get('product') is not None
+                    else _account_of_variant(repo, row.get('variant')) for row in out['lines']}
+        cols['IdMasina'] = next(iter(accounts)) if len(accounts) == 1 else None
     return out
 
 
@@ -202,11 +209,11 @@ def _nir_total(ctx, parsed, errors_ok=True):
     return receipt_rules.exact_total(parsed)
 
 
-def create_nir(cursor, repo, ctx, exercise, body, request_key, request_id):
+def create_nir(cursor, repo, ctx, exercise, body, request_key, request_id, parsed=None):
     from . import invoices
     invoices.require(cursor)
     body = {**body, 'id': None}
-    parsed = _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
+    parsed = parsed if parsed is not None else _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
     errors = {}
     header = body.get('header') or {}
     sub = _sub_number(header.get('NumarSub'), errors)

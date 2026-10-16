@@ -1,0 +1,9 @@
+.combotree { width: 100%; min-width: 0; }
+.combotree .treeview-input { width: 100%; min-width: 0; }
+.combotree .treeview-input.is-invalid { border-color: var(--danger-color, #b42318); }
+.combotree-popup { position: fixed; display: flex; flex-direction: column; box-sizing: border-box; max-width: calc(100vw - 16px); min-height: 0; }
+.combotree-popup.hidden { display: none; }
+.combotree-popup .treeview-search-wrapper { flex: 0 0 auto; }
+.combotree-popup .treeview-dropdown { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.dgv__editor .combotree { height: 100%; }
+.dgv__editor .combotree .treeview-input { height: 100%; }

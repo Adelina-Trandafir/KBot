@@ -76,11 +76,15 @@ def read(cursor, invoice_id):
     receipts = _all(cursor, 'SELECT f.ID AS link, f.SUBUNIT_ID AS subunit, f.GESTIUNE_ID AS gestiune, '
                    'f.EXERCITIU_ID AS exercise, f.NIR_ID AS id, f.TOTAL_SURSA AS source_total, '
                    'n.Numar AS number, n.NumarSub AS sub_number, n.Data AS day, n.Valoare AS total, n.Anulat AS cancelled, '
-                   's.Name AS subunit_name, g.Name AS gestiune_name, m.Masina AS account '
+                   's.Name AS subunit_name, g.Name AS gestiune_name, '
+                   '(SELECT GROUP_CONCAT(DISTINCT m.Masina ORDER BY m.Masina SEPARATOR \', \') FROM VC_Intrari i '
+                   'JOIN VC_ProduseP pp ON pp.SubunitId=i.SubunitId AND pp.GestiuneId=i.GestiuneId AND pp.IdProdus=i.IdProdus '
+                   'JOIN VC_Produse p ON p.SubunitId=pp.SubunitId AND p.GestiuneId=pp.GestiuneId AND p.ID=pp.ID '
+                   'JOIN VC_Masini m ON m.SubunitId=p.SubunitId AND m.GestiuneId=p.GestiuneId AND m.IdMasina=p.IdMasina '
+                   'WHERE i.SubunitId=n.SubunitId AND i.GestiuneId=n.GestiuneId AND i.ExercitiuId=n.ExercitiuId AND i.IdIntrare=n.IdIntrare) AS account '
                    'FROM VC_NIR_FACTURI f JOIN VC_NIR n ON n.SubunitId=f.SUBUNIT_ID AND n.GestiuneId=f.GESTIUNE_ID '
                    'AND n.ExercitiuId=f.EXERCITIU_ID AND n.IdIntrare=f.NIR_ID '
                    'JOIN VC_Subunitati s ON s.SubunitId=f.SUBUNIT_ID JOIN VC_Gestiuni g ON g.GestiuneId=f.GESTIUNE_ID '
-                   'LEFT JOIN VC_Masini m ON m.SubunitId=n.SubunitId AND m.GestiuneId=n.GestiuneId AND m.IdMasina=n.IdMasina '
                    'WHERE f.FACTURA_ID=%s ORDER BY f.SUBUNIT_ID,f.GESTIUNE_ID,n.Data,n.Numar', (invoice_id,))
     def plain(value):
         return None if value is None else format(Decimal(value), 'f')
@@ -256,6 +260,19 @@ def receipt_saved(cursor, ctx, nir_id, parsed, invoice_id, current, request_id=N
         return
     new_invoice = not invoice_id
     auto = new_invoice or bool(load(cursor, invoice_id)['LOCALA'])
+    # The unified editor created its invoice lines from receipts, rather than
+    # from separately entered supplier targets. Only those lines can follow a
+    # local edit/undo automatically; imported or explicitly shared targets keep
+    # their existing allocation rules. The creation audit identifies this flow.
+    owned = set(current.get('_allocations', {}).values()) if current and current['FACTURA_ID'] == invoice_id else set()
+    managed = bool(not auto and current and current['FACTURA_ID'] == invoice_id and _one(cursor,
+                   "SELECT 1 FROM VC_Audit WHERE Operation='invoice.distribution' AND TableName='VC_FACTURI' AND RowKey=%s LIMIT 1",
+                   (str(invoice_id),)))
+    if managed and owned:
+        shared = _one(cursor, 'SELECT 1 FROM VC_FACTURI_REPARTIZARI WHERE FACTURA_LINIE_ID IN (' +
+                      ','.join(['%s'] * len(owned)) + ') AND NIR_FACTURA_ID<>%s LIMIT 1', (*sorted(owned), current['ID']))
+        if shared:
+            raise NomError('INVOICE_LINE_SHARED', 'O linie a facturii este împărțită cu altă recepție. Repartizarea trebuie corectată împreună.', 409)
     if new_invoice:
         cols = parsed['cols']
         cursor.execute('INSERT INTO VC_FACTURI (PARTENER_ID,NUMAR,DATA,TOTAL,TOTAL_CONFIRMAT,LOCALA,CREAT_DE) '
@@ -270,12 +287,16 @@ def receipt_saved(cursor, ctx, nir_id, parsed, invoice_id, current, request_id=N
                        (invoice_id, *_scope(ctx), nir_id))
         link_id = cursor.lastrowid
     allowed = {r['ID']: r for r in _all(cursor, 'SELECT * FROM VC_FACTURI_LINII WHERE FACTURA_ID=%s', (invoice_id,))}
+    if managed and any(allowed.get(identity, {}).get('RECONSTRUITA') for identity in owned):
+        managed = False
     used = set()
     for line in parsed['lines']:
         line_id = line.get('invoice_line')
         if not line_id and current and current['FACTURA_ID'] == invoice_id:
             line_id = current.get('_allocations', {}).get(line.get('id'))
-        if auto:
+        if managed and line_id and line_id not in owned:
+            raise NomError('INVOICE_LINE', 'Linia facturii nu aparține acestei recepții.', 422)
+        if auto or managed:
             values = (line.get('name') or 'Produs recepționat', line['v']['Cant'], line.get('rate'), line['v']['ValoareCUTVA'])
             if line_id in allowed and line_id not in used:
                 cursor.execute('UPDATE VC_FACTURI_LINII SET DENUMIRE=%s,CANT=%s,COTA=%s,VALOARE=%s WHERE ID=%s AND FACTURA_ID=%s', (*values, line_id, invoice_id))
@@ -290,11 +311,18 @@ def receipt_saved(cursor, ctx, nir_id, parsed, invoice_id, current, request_id=N
                        'VALUES (%s,%s,%s,%s,%s,%s,%s,%s)',
                        (link_id, line_id, *_scope(ctx), line['saved_id'], line['v']['Cant'], line['v']['ValoareCUTVA']))
         used.add(line_id)
-    if auto:
-        for unused in set(allowed) - used:
+    if auto or managed:
+        for unused in (set(allowed) if auto else owned) - used:
             cursor.execute('DELETE FROM VC_FACTURI_LINII WHERE ID=%s AND FACTURA_ID=%s', (unused, invoice_id))
+    if auto:
         cursor.execute('UPDATE VC_FACTURI SET TOTAL=%s,TOTAL_CONFIRMAT=%s,VERSION=VERSION+1 WHERE ID=%s',
                        (parsed['declared'], int(parsed['declared'] is not None), invoice_id))
+    if managed and load(cursor, invoice_id)['TOTAL_CONFIRMAT']:
+        target = load(cursor, invoice_id)['TOTAL']
+        received = sum((row['amount'] or Decimal(0) for row in amounts(cursor, invoice_id)), Decimal(0))
+        if target != received:
+            raise NomError('INVOICE_TOTAL', 'Totalul recepțiilor (%s) trebuie să rămână exact ValoareFC (%s).' % (received, target), 422,
+                           {'h.Valoare': 'Păstrați valoarea repartizată acestui NIR sau corectați rândurile.'})
     refresh_state(cursor, invoice_id)
     if current and current['FACTURA_ID'] != invoice_id:
         refresh_state(cursor, current['FACTURA_ID'])

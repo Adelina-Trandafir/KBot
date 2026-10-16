@@ -1,6 +1,8 @@
 # FC / NIR — validările Access și flux propus pentru web
 
-Data: 16.10.2026. Analiză statică a surselor; fără rularea aplicației, teste, interogări sau modificări de baze de date. Nu s-a modificat codul aplicației.
+**Clarificare ulterioară, VC06-06 (16.10.2026):** [deciziile VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06) înlocuiesc propunerile de mai jos care presupun un NIR pe cont sau un editor separat al facturii. Un NIR nou poate avea mai multe conturi din aceeași subunitate, determinate prin produsele liniilor; nu se adaugă cont în linie. Numai destinațiile diferite impun numere «auto» și NIR-uri separate. Migratorul păstrează modelul Access, iar contul produselor cu mișcare este blocat la editare în UI și server. **Implementare în surse, fără rulare**; analiza Access de mai jos rămâne o descriere a sursei vechi.
+
+Data: 16.10.2026. Analiză statică a surselor; fără rularea aplicației, teste, interogări sau modificări de baze de date. La redactarea analizei inițiale nu s-a modificat codul aplicației; implementarea ulterioară este descrisă în FACTURI_NIR_IMPLEMENTARE.md.
 
 Comportamentele descrise ca existente rezultă din sursa citită. Recomandările sunt propuneri și nu înlocuiesc automat deciziile aprobate din proiect. Completările din aceeași zi consemnează cerințele utilizatorului despre cronologia numerelor, TVA comun în antet, egalitatea exactă cu ValoareFC și factura repartizată între mai multe destinații. Preferința explicită pentru corecție este păstrarea cotei reale de TVA; varianta de 0% din Access era o simplificare intenționată.
 
@@ -380,3 +382,4 @@ Asocierea factură–NIR se adaugă printr-o completare separată și reluabilă
 ## 11. Implementarea autorizată ulterior, 16.10.2026
 
 Utilizatorul a cerut implementarea și a adăugat blocarea rândurilor auto-calculate, cu ștergere/revenire în grupul original. Codul și DDL-ul pregătit sunt descrise în [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md). Starea este implementare în surse, fără execuție, compilare, teste, browser sau operații pe MariaDB. DDL-ul trebuie executat de utilizator și sincronizat înaintea folosirii fluxului nou.
+

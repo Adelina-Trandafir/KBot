@@ -18,7 +18,7 @@ from datetime import datetime
 
 from flask import g, request
 
-from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, invoices
+from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, receipt_distribution, invoices
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
 
@@ -137,6 +137,7 @@ def register(bp, guard, scoped, open_db):
 
     receipt_context.register(bp, guard, scoped, session, build, _need)
     receipt_routes.register(bp, guard, scoped, session, build, repo_of, _need)
+    receipt_distribution.register(bp, guard, scoped, session, build, repo_of, _need)
 
     @bp.get('/api/vercon/doc/<family>/lookups')
     @guard('read')
