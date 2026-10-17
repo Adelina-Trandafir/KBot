@@ -42,6 +42,12 @@ export const editing = {
     }
     input.focus({ preventScroll: true });
     if (select) input.select?.();
+    if (state.column.editor === 'list' && state.combo.options.readonly && state.combo.options.dropDownOnEnter) {
+      // Wait until the click that selected/rebuilt this row has finished bubbling.
+      requestAnimationFrame(() => {
+        if (!this._destroyed && this._edit === state && document.activeElement === input && !state.combo.isVisible) state.combo.showAllOptions();
+      });
+    }
   },
   canEdit(row, column) {
     return !!this._opts.editable && !!column?.editable
@@ -186,7 +192,7 @@ export const editing = {
     } else if (column.editor === 'list') {
       const items = typeof column.options === 'function' ? column.options(row) : (column.options || []);
       // allowCustom keeps typed text as the value; other list editors still require a selection.
-      state.combo = new Combobox(host, { staticData: items, readonly: !(column.searchable || column.allowCustom), autoHighlightMatch: !column.allowCustom, showArrow: column.showArrow, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth,
+      state.combo = new Combobox(host, { staticData: items, readonly: !(column.searchable || column.allowCustom), autoHighlightMatch: !column.allowCustom, showArrow: column.showArrow, dropDownOnEnter: typeof column.dropDownOnEnter === 'function' ? column.dropDownOnEnter(row) : column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth,
         onSearch: column.onSearch ? (query) => column.onSearch(query, row) : async (query) => items.filter((item) => String(item.label || item.text || '').toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
         onSelect: (value) => { state.raw = value; state.value = value; markRequired(); } });
       const selected = items.find((item) => String(item.value) === String(row[key]));

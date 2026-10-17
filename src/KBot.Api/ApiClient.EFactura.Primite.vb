@@ -34,6 +34,14 @@ Partial Public Class ApiClient
         Public Property Nou As Integer
         Public Property NrOperatii As Integer
         Public Property legatura As String
+        Public Property Receptii As List(Of EFacturaPrimitaReceptieWire)
+    End Class
+
+    Private NotInheritable Class EFacturaPrimitaReceptieWire
+        Public Property DataR As String
+        Public Property Descriere As String
+        Public Property Suma As Decimal
+        Public Property AsteaptaDescarcarea As Boolean
     End Class
 
     Private NotInheritable Class EFacturaPrimiteListWire
@@ -372,7 +380,7 @@ Partial Public Class ApiClient
     End Sub
 
     Private Shared Function ToPrimita(w As EFacturaPrimitaWire) As EFacturaPrimita
-        Return New EFacturaPrimita() With {
+        Dim k_result As New EFacturaPrimita() With {
             .IdPrimita = w.IdPrimita, .IdSol = If(w.IdSol, String.Empty), .NrFact = If(w.NrFact, String.Empty),
             .DataFact = ParseDay(w.DataFact), .DataScad = ParseDay(w.DataScad), .CotaTva = w.CotaTVA, .Tva = w.TVA,
             .Valoare = w.Valoare, .Total = w.Total, .Cui = If(w.CUI, String.Empty),
@@ -380,6 +388,14 @@ Partial Public Class ApiClient
             .Adresa = If(w.Adresa, String.Empty), .Atasament = If(w.Atasament, String.Empty), .Tip = If(w.Tip, "FC"),
             .Semn = If(w.Semn = 0, 1, w.Semn), .Ref = If(w.Ref, String.Empty), .IdPrimitaRef = w.IdPrimitaRef,
             .Nou = w.Nou <> 0, .NrOperatii = w.NrOperatii, .Legatura = If(w.legatura, String.Empty)}
+        If w.Receptii IsNot Nothing Then
+            For Each k_r As EFacturaPrimitaReceptieWire In w.Receptii
+                k_result.Receptii.Add(New EFacturaPrimitaReceptie() With {
+                    .DataR = ParseDay(k_r.DataR), .Descriere = If(k_r.Descriere, String.Empty), .Suma = k_r.Suma,
+                    .AsteaptaDescarcarea = k_r.AsteaptaDescarcarea})
+            Next
+        End If
+        Return k_result
     End Function
 
 End Class

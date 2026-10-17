@@ -4,10 +4,11 @@ import { format, formatMoney, parse } from './fields.js';
 import { el, scope, field, column, grid, paintTree, groupedNodes, docNode, modal, rowMenu, openMenu, showMessage } from './ui.js';
 import { documentReport } from './document-report.js';
 import { ActionAddButton } from '../components/action-add-button/action-add-button.js';
+import { receiptTotal } from './receipt-reconciliation.js';
 
 const MEALS = [['md', 'Mic dejun'], ['d', 'Dejun'], ['c', 'Cină / Gustare']];
 const MONTHS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
-const TOTALS = [['Valoare', 'Valoare listă'], ['bons_total', 'Total BC'], ['diff', 'Diferență']];
+const TOTALS = [['prior', 'Sold anterior'], ['Valoare', 'Valoare listă'], ['bons_total', 'Total bon\nconsum'], ['diff', 'Diferență'], ['closing', 'Sold']];
 const blankDish = () => ({ key: key(), IdFel: null, Tip: '', Explicatie: '' });
 const isBlankDish = (row) => !row.IdFel && !String(row.Tip || '').trim() && !String(row.Explicatie || '').trim();
 const dishKey = (row) => row.IdFel != null ? 'id:' + row.IdFel : 'text:' + String(row.Tip || '').trim().toLocaleLowerCase('ro');
@@ -18,11 +19,12 @@ const amount = (value) => format(value, { type: 'decimal' });
 export function mountLista(host, opts) {
   const state = { docs: [], lookups: { dishes: [] }, doc: null, draft: null, mode: 'view', dirty: false, canWrite: false, closed: false, zec: 4, request: null };
   const headUi = scope(), mealUi = scope(), bonsUi = scope(), treeUi = scope(), dialogs = scope();
-  const inputs = new Map(); let disposed = false, generation = 0, bonsGrid;
+  const inputs = new Map(); let disposed = false, generation = 0, balanceSequence = 0, openingBalance = null, bonsGrid;
   const status = el('span', { className: 'vc-save-status', role: 'status' });
   const title = el('h3'), pill = el('span', { className: 'vc-pill' });
   const head = el('div', { className: 'vc-grid vc-doc__header' }), meals = el('div', { className: 'vc-lista__meals' });
   const bons = el('div', { className: 'vc-lista__bons' }), bar = el('div', { className: 'vc-actions vc-doc__bar' }), treeHost = el('aside', { className: 'vc-doc__tree' });
+  const totalsWrap = el('div', { className: 'vc-lista__totals-wrap' });
   const overview = el('div', { className: 'vc-lista__overview' }, head, bons);
   const root = el('section', { className: 'vc-doc vc-doc--lista' }, el('div', { className: 'vc-doc__main' }, el('div', { className: 'vc-doc__titlebar' }, title, pill), overview, meals, bar), treeHost);
   host.replaceChildren(root);
@@ -55,9 +57,12 @@ export function mountLista(host, opts) {
     const v = value(); title.textContent = editing() ? 'Listă de alimente • ' + (state.mode === 'add' ? 'listă nouă' : 'modificare') : state.doc ? 'Listă de alimente • nr. ' + state.doc.number : 'Liste de alimente';
     pill.textContent = editing() ? 'Ciornă' : state.doc ? state.doc.annulled ? 'Anulată' : 'Salvată' : ''; pill.hidden = !pill.textContent;
     pill.dataset.state = editing() ? 'draft' : state.doc?.annulled ? 'annulled' : 'saved';
-    headUi.clear(); inputs.clear(); head.replaceChildren();
+    headUi.clear(); inputs.clear(); head.replaceChildren(); totalsWrap.replaceChildren(); totalsWrap.hidden = !v; openingBalance = null;
     if (v) for (const spec of [{ key: 'Numar', label: 'Număr listă', type: 'int', min: 1 }, { key: 'Data', label: 'Data', type: 'date', required: true }, { key: 'Comentarii', label: 'Comentarii', type: 'text' }]) {
-      const f = field(spec, v.header[spec.key], editing(), (raw) => { state.draft.header[spec.key] = raw; state.dirty = true; }, headUi);
+      const f = field(spec, v.header[spec.key], editing(), (raw) => {
+        state.draft.header[spec.key] = raw; state.dirty = true;
+        if (spec.key === 'Data') void refreshPriorTotals();
+      }, headUi);
       if (spec.key === 'Numar') { f.input.placeholder = 'Automat'; f.input.title = 'Lăsați gol pentru numerotare automată.'; }
       inputs.set(spec.key, f); head.append(f.node);
     } else head.append(el('p', { className: 'vc-nom__empty', textContent: 'Alegeți o listă salvată sau adăugați una nouă.' }));
@@ -67,9 +72,45 @@ export function mountLista(host, opts) {
         const f = field({ key: name, label, type: 'text', textAlign: 'center' }, '', false, null, headUi);
         inputs.set(name, f); totalsHost.append(f.node);
       }
-      head.append(totalsHost);
+      totalsWrap.append(totalsHost);
+      head.append(totalsWrap);
     }
     paintMeals(); paintBons(); paintBar(); paintSaved(); freezePending();
+    void refreshPriorTotals();
+  }
+  function paintBalance(name, raw, previous = false) {
+    const f = inputs.get(name); if (!f) return;
+    let label = previous ? 'Sold anterior' : 'Sold';
+    if (raw != null) label = (number(raw) < 0 ? 'Economii' : 'Depășiri') + (previous ? '\nAnterioare' : '');
+    f.node.firstElementChild.textContent = label;
+    f.input.setAttribute('aria-label', label.replace('\n', ' '));
+    f.input._box.setValue(raw == null ? '' : formatMoney(String(raw).replace(/^-/, '')));
+  }
+  function paintPriorTotals(values, hint) {
+    openingBalance = null;
+    if (values?.economy !== '' && values?.economy != null) openingBalance = '-' + values.economy;
+    else if (values?.overrun !== '' && values?.overrun != null) openingBalance = values.overrun;
+    paintBalance('prior', openingBalance, true);
+    const f = inputs.get('prior');
+    if (f) f.input.title = f.node.title = hint;
+    totals();
+  }
+  async function refreshPriorTotals() {
+    const sequence = ++balanceSequence, token = generation, v = value();
+    if (!v) return;
+    const parsed = parse(v.header.Data, { type: 'date', required: true });
+    if (!parsed.ok) { paintPriorTotals(null, 'Alegeți data listei pentru calcul.'); return; }
+    const date = parsed.value;
+    const isCurrent = () => !disposed && sequence === balanceSequence && token === generation && value()?.header.Data === date;
+    paintPriorTotals(null, 'Se calculează soldul anterior datei listei…');
+    const exclude = state.mode !== 'add' && state.doc ? '&exclude=' + state.doc.id : '';
+    try {
+      const values = await opts.api(url('/balance', '&date=' + encodeURIComponent(date) + exclude));
+      if (isCurrent()) paintPriorTotals(values, 'Cumulat înainte de ' + dateText(date) + ', conform raportului.');
+    } catch (error) {
+      if (!isCurrent()) return;
+      paintPriorTotals(null, 'Soldul anterior nu a putut fi calculat.'); report(error);
+    }
   }
   function mealValue(meal) { return (number(meal.P) * number(meal.VMD)).toFixed(state.zec); }
   function rememberExplanations(doc) {
@@ -108,14 +149,23 @@ export function mountLista(host, opts) {
       dishGrid = grid(dishesHost, { layoutId: 'vercon.lista.' + id + '.dishes.v2', layout: { fill: 'Explicatie' }, rowKey: 'key', rows: meal.items, editable: editing(), singleClickEdit: true,
         newRowAlwaysVisible: editing(), isBlankRow: isBlankDish, onNewRow: () => { const row = blankDish(); meal.items.push(row); return row; }, onCancelNewRow: dropDish,
         columns: [
-          column({ key: 'Tip', label: 'FELUL', type: 'text', max: 50 }, { width: 90, editor: 'list',
-            options: state.lookups.dishes.map((dish) => ({ value: dish.label, label: dish.label })), filter: false, sortable: false }),
+          column({ key: 'Tip', label: 'FELUL', type: 'text', max: 50 }, { width: 57, minWidth: 57, fixedWidth: true, editor: 'list', dropDownMinWidth: 120,
+            dropDownOnEnter: row => !row.Tip && row.IdFel == null,
+            options: row => state.lookups.dishes.filter(dish => !meal.items.some(item => item.key !== row.key && (
+              item.IdFel != null && String(item.IdFel) === String(dish.id)
+              || String(item.Tip || '').trim().toLocaleLowerCase('ro') === dish.label.trim().toLocaleLowerCase('ro')
+            ))).map(dish => ({ value: dish.label, label: dish.label })), filter: false, sortable: false }),
           column({ key: 'Explicatie', label: 'Explicații', type: 'text', max: 255 }, { width: 100, editor: 'list', searchable: true, allowCustom: true, showArrow: true, dropDownMinWidth: 300, options: explanationOptions, filter: false, sortable: false }),
           { key: 'actions', title: '⋮', width: 30, minWidth: 30, editable: false, filter: false, sortable: false, display: 'button', actionText: '⋮' }],
         footer: false,
         onCellSave: ({ row, key: cell, value: raw }) => {
           const item = meal.items.find((it) => it.key === row.key); const patch = { [cell]: raw };
-          if (cell === 'Tip') patch.IdFel = state.lookups.dishes.find((dish) => dish.label === raw)?.id ?? null;
+          if (cell === 'Tip') {
+            patch.IdFel = state.lookups.dishes.find((dish) => dish.label === raw)?.id ?? null;
+            if (raw && meal.items.some(other => other.key !== row.key && dishKey(other) === dishKey({ ...patch, Tip: raw }))) {
+              throw new Error('Felul ales este deja folosit la această masă.');
+            }
+          }
           Object.assign(item, patch); dishGrid.ensureNewRow(); state.dirty = true; return patch;
         },
         onEditError: ({ error }) => report(error),
@@ -152,6 +202,10 @@ export function mountLista(host, opts) {
     const diff = editing() ? (number(listTotal) - number(bcTotal)).toFixed(state.zec) : state.doc.header.diff;
     bonsGrid.setFooter({ values: { receiver: 'TOTAL BC', total: amount(bcTotal) } });
     for (const [name, raw] of [['Valoare', listTotal], ['bons_total', bcTotal], ['diff', diff]]) inputs.get(name)?.input._box.setValue(formatMoney(raw));
+    // Report sign: closing balance = previous balance - (list value - BC total).
+    const opposite = diff == null ? null : String(diff).startsWith('-') ? String(diff).slice(1) : '-' + diff;
+    const closing = openingBalance == null || opposite == null ? null : receiptTotal([{ balance: openingBalance }, { balance: opposite }], 'balance', 4);
+    paintBalance('closing', closing);
   }
   async function chooseBon() {
     if (!editing() || !await commit()) return; const token = generation, draft = state.draft;
@@ -203,7 +257,8 @@ export function mountLista(host, opts) {
     sections.push({ title: 'Bonuri asociate', columns: [column({ key: 'number', label: 'BC', type: 'int' }), column({ key: 'date', label: 'Data', type: 'date' }), column({ key: 'receiver', label: 'Primitor' }, { width: 260 }), column({ key: 'total', label: 'Valoare', type: 'decimal' })], rows: v.bons });
     const token = generation, draft = state.draft, doc = editing() ? null : state.doc;
     await documentReport({ api: opts.api, selection: opts.sel(), family: 'lista', document: doc,
-      title: editing() ? 'Listă de alimente • Ciornă nesalvată' : 'Listă de alimente nr. ' + state.doc.number,
+      title: editing() ? 'Listă de alimente • Ciornă nesalvată' + (v.header.Numar ? ' nr. ' + v.header.Numar : '') : 'Listă de alimente nr. ' + state.doc.number,
+      date: v.header.Data,
       sections, owner: dialogs, isCurrent: () => !disposed && token === generation && draft === state.draft });
   }
   function paintBar() {

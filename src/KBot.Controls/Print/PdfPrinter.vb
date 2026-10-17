@@ -6,7 +6,7 @@ Imports KBot.Common
 Imports KBot.Controls
 
 ''' <summary>The printer the operator picked, and how many copies the dialog asked for.</summary>
-Friend NotInheritable Class PrinterChoice
+Public NotInheritable Class PrinterChoice
     Public ReadOnly Property PrinterName As String
     Public ReadOnly Property Copies As Integer
 
@@ -26,7 +26,7 @@ End Class
 ''' PDF program that registers «printto» -- Adobe Reader does, and K-BOT already requires it for the
 ''' document pane. Without one, <see cref="PrintAsync"/> throws the shell's own message.</para>
 ''' </summary>
-Friend NotInheritable Class PdfPrinter
+Public NotInheritable Class PdfPrinter
 
     ' A print that does not return in this time is reported as failed. The handler process leaves as
     ' soon as the job is in the queue, so this is generous.

@@ -11,7 +11,7 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slices KE03..KE07 -- the view «Receptii» of a received invoice: how much of the invoice (with VAT) receptions already cover, and the links. Above, one
 ''' line with the total, what is allocated and the rest; under it the links, one per reception and classification; at the bottom the buttons of the accountant:
-''' the classifications of the lines, link to an existing reception, a new reception, modify a reception, remove a link. Anyone else sees the same
+''' link to an existing reception (the classifications of the lines are chosen in that window), a new reception, modify a reception, remove a link. Anyone else sees the same
 ''' figures and no buttons. The page only OWNS its controls (declared in its designer file); what it shows and what the buttons do are the work of
 ''' <see cref="PrimiteView"/>, which the page tells through its events.
 ''' </summary>
@@ -19,9 +19,6 @@ Public Class PrimiteReceptiiPage
     Implements IThemedContainer
 
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
-
-    ''' <summary>The accountant wants to choose the classification of each line.</summary>
-    Public Event ClassificationsRequested()
 
     ''' <summary>The accountant wants a link of this kind: one of <see cref="EFacturaKeTip"/>.</summary>
     Public Event LinkRequested(k_tip As String)
@@ -41,7 +38,7 @@ Public Class PrimiteReceptiiPage
                           $"rest: {Money(k_stare.Rest)}   ·   {k_text}"
         Dim k_notes As New List(Of String)()
         If k_stare.FaraClasificatie <> 0D OrElse k_stare.Linii.Any(Function(k_l) Not k_l.IdClsf.HasValue) Then
-            k_notes.Add("Unele linii nu au clasificație: alegeți-o din «Clasificații pe linii».")
+            k_notes.Add("Unele linii nu au clasificație: se alege la «Leagă de recepție».")
         End If
         If k_stare.NealocatLiniilor <> 0D Then
             k_notes.Add($"Din total, {Money(k_stare.NealocatLiniilor)} nu se explică prin linii (o reducere sau un cost pe toată factura); nu se alocă pe linii.")
@@ -134,15 +131,7 @@ Public Class PrimiteReceptiiPage
         End Try
     End Sub
 
-    ' UI boundary for the five handlers below: they only raise the page's events; the work is the view's.
-    Private Sub BtnClasificatii_Click(sender As Object, e As EventArgs) Handles btnClasificatii.Click
-        Try
-            RaiseEvent ClassificationsRequested()
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteReceptiiPage.BtnClasificatii_Click", ex)
-        End Try
-    End Sub
-
+    ' UI boundary for the four handlers below: they only raise the page's events; the work is the view's.
     Private Sub BtnExistenta_Click(sender As Object, e As EventArgs) Handles btnExistenta.Click
         Try
             RaiseEvent LinkRequested(EFacturaKeTip.Existenta)

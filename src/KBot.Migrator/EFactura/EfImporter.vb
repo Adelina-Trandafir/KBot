@@ -45,6 +45,9 @@ Public NotInheritable Class EfImporter
     Private _classificationProblems As Dictionary(Of (Integer, Integer), (Matches As Integer, Rows As Integer))
     Private _umKnown As HashSet(Of String)
     Private _umUsed As Dictionary(Of String, Integer)
+    ' Slice 00EF-38: received invoices read in this pass, and the ones already in the target before it (those are never linked here)
+    Private _linkInvoices As List(Of EfLinkInvoice)
+    Private _receivedBefore As HashSet(Of Integer)
     Private _stepsDone As Integer
 
     Public Sub New(k_options As EfImportOptions, k_say As Action(Of String),
@@ -129,7 +132,10 @@ Public NotInheritable Class EfImporter
                 DoFurnizor(k_write, k_report, accessIssued, cnUnit, txUnit, plans, totalSteps)
             End If
 
-            If _options.DoPrimite Then _classificationPairs = LoadClassificationPairs(cnUnit, txUnit)
+            If _options.DoPrimite Then
+                _classificationPairs = LoadClassificationPairs(cnUnit, txUnit)
+                If TableExists(cnUnit, "EF_Primite", txUnit) Then _receivedBefore = LoadTargetIntKeys(cnUnit, txUnit, "EF_Primite", "IdPrimita")
+            End If
 
             ' --- the tables, parents before children -----------------------------------------------------
             For Each spec In BuildSpecs()
@@ -144,6 +150,8 @@ Public NotInheritable Class EfImporter
                 DoReceivedReferences(k_write, k_report, accessReceived, cnUnit, txUnit)
                 k_token.ThrowIfCancellationRequested()
                 DoReceivedCpv(k_write, k_report, accessReceived, cnUnit, txUnit, k_token)
+                k_token.ThrowIfCancellationRequested()
+                DoReceptionLinks(k_write, k_report, cnUnit, txUnit, plans, totalSteps)
             End If
             If _options.DoEmise Then ReportUnknownUm(k_report)
             If _options.DoPrimite Then ReportClassificationProblems(k_report)
@@ -184,6 +192,8 @@ Public NotInheritable Class EfImporter
         _classificationProblems = New Dictionary(Of (Integer, Integer), (Matches As Integer, Rows As Integer))()
         _umKnown = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         _umUsed = New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+        _linkInvoices = New List(Of EfLinkInvoice)()
+        _receivedBefore = New HashSet(Of Integer)()
     End Sub
 
     Private Function StepCount() As Integer
@@ -191,7 +201,7 @@ Public NotInheritable Class EfImporter
         If _options.DoFurnizor Then total += 1
         If _options.DoClienti Then total += 1
         If _options.DoEmise Then total += 2
-        If _options.DoPrimite Then total += 6
+        If _options.DoPrimite Then total += 7
         Return Math.Max(total, 1)
     End Function
 
@@ -567,10 +577,52 @@ Public NotInheritable Class EfImporter
                          Return If(_messageIds.Contains(If(sol, String.Empty).Trim()), EfRowDecision.Keep, EfRowDecision.LeaveOut)
                      End Function
         Dim idAt = s.IndexOf("IdPrimita")
+        Dim nrAt = s.IndexOf("NrFact")
+        Dim dateAt = s.IndexOf("DataFact")
+        Dim totalAt = s.IndexOf("Total")
+        Dim cuiAt = s.IndexOf("CuiNormalizat")
+        Dim signAt = s.IndexOf("Semn")
         s.AfterRow = Sub(row As Object())
                          _receivedIds.Add(Convert.ToInt32(row(idAt), CultureInfo.InvariantCulture))
+                         ' what the automatic linking to receptions needs (slice 00EF-38); the total carries the invoice sign, as the K-BOT view reads it
+                         Dim k_sign As Integer = If(row(signAt) Is DBNull.Value, 1, Convert.ToInt32(row(signAt), CultureInfo.InvariantCulture))
+                         _linkInvoices.Add(New EfLinkInvoice With {
+                             .IdPrimita = Convert.ToInt32(row(idAt), CultureInfo.InvariantCulture),
+                             .NrFact = If(TryCast(row(nrAt), String), String.Empty),
+                             .Cui = If(TryCast(row(cuiAt), String), String.Empty),
+                             .Total = If(row(totalAt) Is DBNull.Value, 0D, Convert.ToDecimal(row(totalAt), CultureInfo.InvariantCulture)) * k_sign,
+                             .DataFact = If(TypeOf row(dateAt) Is DateTime, CType(DirectCast(row(dateAt), DateTime), DateTime?), Nothing)})
                      End Sub
         Return s
+    End Function
+
+    ''' <summary>
+    ''' Slice 00EF-38. Fourth pass over the received invoices: links to the receptions that already exist, only where the match is certain
+    ''' (the rules are in <see cref="EfReceptionLinker"/>). Only the invoices this run adds are looked at.
+    ''' </summary>
+    Private Sub DoReceptionLinks(k_write As Boolean, k_report As EfImportReport, k_cn As MySqlConnection, k_tx As MySqlTransaction,
+                                 k_plans As List(Of EfTablePlan), k_total As Integer)
+        Dim k_plan As New EfTablePlan("EF_PrimiteReceptii", _options.UnitDatabase)
+        k_plans.Add(k_plan)
+        Dim k_fresh = _linkInvoices.Where(Function(k_i) Not _receivedBefore.Contains(k_i.IdPrimita)).ToList()
+        Dim k_linker As New EfReceptionLinker(k_cn, k_tx, _say)
+        Dim k_proposals = k_linker.Propose(k_fresh, k_report, k_plan)
+        If k_write AndAlso k_proposals.Count > 0 AndAlso Not k_report.HasBlocking Then k_linker.Write(k_proposals, k_report, k_plan)
+        Advance(k_total, "EF_PrimiteReceptii")
+    End Sub
+
+    Private Shared Function LoadTargetIntKeys(k_cn As MySqlConnection, k_tx As MySqlTransaction, k_table As String, k_column As String) As HashSet(Of Integer)
+        Dim k_keys As New HashSet(Of Integer)()
+        Using k_cmd = k_cn.CreateCommand()
+            k_cmd.Transaction = k_tx
+            k_cmd.CommandText = "SELECT " & TargetServer.Quote(k_column) & " FROM " & TargetServer.Quote(k_table)
+            Using k_reader = k_cmd.ExecuteReader()
+                While k_reader.Read()
+                    k_keys.Add(k_reader.GetInt32(0))
+                End While
+            End Using
+        End Using
+        Return k_keys
     End Function
 
     Private Function ReceivedChild(k_source As String, k_target As String, k_key As String, k_keySource As String) As EfTableSpec

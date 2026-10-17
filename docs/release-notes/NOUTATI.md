@@ -6,6 +6,26 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.5 (17.10.2026)
+
+<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98 -->
+
+- Ribbon: filele sunt «Configurari», «Angajamente» (la pornire), «E-Factura», «Extrase»; «Date» e grup.
+- «Descarca extrase» e doar in ribbon, in grupul din dreapta; nu mai e in «Extrase de cont» si in arbori.
+- Grupul din dreapta tine de fereastra: «Editeaza grupe», «Sincronizeaza facturi primite» cu campurile lui.
+- «Sincronizeaza facturi primite»: lista de zile se deschide, al doilea camp e casuta de text; fara alegere, 7 zile.
+- Lista angajamentelor: «Actualizeaza» din subsol are meniu: «Descarca angajamente NOI» / «...VRAC».
+- Randul «Grupe» apare doar daca exista grupe; butonul E-Factura din bara vederilor sta sub «Extrase».
+- Rezervari: «Grafice», butonul documentului si «Repara...» sunt in ribbon; arborele nu mai are butoane sus si jos.
+- Receptii: «Asociaza receptii» si «Reface din istoric...» sunt in ribbon; in arbore ramane «Actualizeaza».
+- Vederea E-Factura a angajamentului: facturile legate de DDF, pe luni; fara bifa «arata tot» si fara furnizor.
+- E-Factura Vanzare: fara lista de luni, randurile din arbore nu mai sunt taiate, «Atasamente» e in «Continut».
+- Facturi primite: fara banda goala de jos; «Actualizeaza» din subsol are iconita listei; arbori mai ingusti.
+- Ferestrele modale se maximizeaza in zona paginilor. Panoul din stanga: buton de strangere jos, doar actiunile de azi.
+- Facturi primite: «Toate facturile» fara numar, lunile fara an (anul apare doar daca sunt mai multi ani).
+- Clic pe «Toate facturile»: lista cu bife, «Listeaza», «Salveaza XML», «...» pe rand si «Receptie asociata».
+- Clasificatia liniilor se alege in «Leaga de receptie»; butonul «Clasificatii pe linii» nu mai exista.
+
 ## 1.1.2.4 (15.10.2026)
 
 <!-- felii: 0113, 0114, 0114-01, 0115, 0116, 0117, 0118, 0119, 0120, 0000-69, 0000-70, 0000-71, 0000-72, 0000-73, 0000-74, 00EF-27, 00EF-29, 00EF-30, 00EF-31, 00EF-32, 00EF-33, 00EF-34, 00EF-35, 00EF-36, 0000-75, 0000-76, 0000-77, 0000-78, 0000-79, 0000-80, 0000-81 -->

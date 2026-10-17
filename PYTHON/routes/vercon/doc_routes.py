@@ -218,7 +218,9 @@ def register(bp, guard, scoped, open_db):
             vctx = scoped('read')
             with session(False) as cursor:
                 ctx, _ = build(cursor, vctx, family, False)
-                return {'lines': oi.eligible(cursor, ctx, holder, (family, exclude) if exclude else None)}
+                on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data bonului')
+                return {'lines': oi.eligible(cursor, ctx, holder, (family, exclude) if exclude else None, on,
+                                             documents._int(request.args.get('account')))}
         if family not in ('storno', 'br'):
             raise NomError('FAMILY_UNKNOWN', 'Acest document nu are sursă.', 404)
         source = documents._int(request.args.get('source'))
@@ -261,6 +263,25 @@ def register(bp, guard, scoped, open_db):
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, 'lista', False)
             return {'bons': lista.eligible_bons(cursor, ctx, exclude)}
+
+    @bp.get('/api/vercon/doc/lista/balance')
+    @guard('read')
+    def lista_balance():
+        from . import food_balance, report_data
+
+        _need('lista')
+        vctx = scoped('read')
+        exclude = documents._int(request.args.get('exclude'))
+        if request.args.get('exclude') is not None and (exclude is None or exclude <= 0):
+            raise NomError('INVALID', 'Lista exclusă este invalidă.', 422)
+        with session(False) as cursor:
+            ctx, exercise = build(cursor, vctx, 'lista', False)
+            day = protocol.to_date(request.args.get('date'), 'Data listei', exercise)
+            source = report_data.Source(cursor, g.portal['db_name'], ctx, {
+                'start': day.replace(month=1, day=1), 'end': day, 'document': exclude,
+            })
+            values = food_balance.columns(food_balance.before(source, day, exclude), ctx['scale'])
+        return {'date': day.isoformat(), **values}
 
     @bp.get('/api/vercon/mf/assets')
     @guard('read')

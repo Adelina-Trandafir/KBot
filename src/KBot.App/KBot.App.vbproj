@@ -248,5 +248,33 @@
 	  <Compile Update="KbotForm.Parallel.vb">
 		  <DependentUpon>KbotForm.vb</DependentUpon>
 	  </Compile>
+	  <Compile Update="KbotForm.EFactura.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Grupe.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Host.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.KeRobot.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Machete.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.MessageCatalog.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Pagini.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+	  <Compile Update="KbotForm.Tutorial.vb">
+		  <DependentUpon>KbotForm.vb</DependentUpon>
+	  </Compile>
+
+	  <Compile Update="AvacontMain.Sidebar.vb">
+		  <DependentUpon>AvacontMain.vb</DependentUpon>
+	  </Compile>
   </ItemGroup>
 </Project>

@@ -2293,3 +2293,338 @@ reducere orizontală de 30%, păstrând poziționarea în antet.
 Fișiere: PYTHON/static/css/vercon-lista.css; implementare_vercon_v2.md.
 Stare: IMPLEMENTAT ÎN SURSE. Fără teste sau verificări de execuție,
 conform AGENTS.md. Necesită publicarea CSS-ului modificat.
+
+### 2026-10-17 — Lista de alimente: economii și depășiri anterioare
+
+Sub cele trei totaluri existente sunt două TextBox-uri needitabile:
+Economii anterioare și Depășiri anterioare. Sunt compacte și centrate,
+cu separator de mii și două zecimale, inclusiv la focus. Coloana fără
+sold rămâne goală, conform recapitulării raportului.
+
+Calculul comun este în food_balance.py și este folosit atât de raportul
+Listei de Alimente, cât și de noua citire GET /api/vercon/doc/lista/balance.
+Se reutilizează sursele configurate food_history și settings ale raportului,
+cu același context subunitate/gestiune/exercițiu. Soldul anterior în semnul
+raportului este SI_LA minus suma DEP a listelor cu data strict mai mică
+decât data listei; soldul negativ devine economie, cel pozitiv depășire.
+Sursa implicită exclude listele anulate. Diferențele lipsă produc aceeași
+eroare ca în raport, fără înlocuire artificială cu zero.
+
+Valorile se citesc la deschiderea listei, adăugare/modificare și la schimbarea
+datei. În modificare este exclusă lista curentă, inclusiv când data ei este
+mutată după data salvată. Răspunsurile întârziate nu se aplică altei liste
+sau altei date. Citirea respectă dreptul Alimente și contextul serverului;
+calculele folosesc Decimal și nu modifică documentele sau soldul inițial.
+
+Fișiere: PYTHON/routes/vercon/food_balance.py (nou), report_food.py,
+doc_routes.py; PYTHON/static/js/vercon/lista.js;
+PYTHON/static/css/vercon-lista-totals.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate, rulare în browser sau acces la baza de date,
+conform AGENTS.md. Necesită publicarea surselor și restartul serviciului
+Python. Nu s-au publicat surse și nu s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: recapitulare pe cinci coloane
+
+Recapitularea urmează exemplul primit: sold anterior, Valoare listă,
+Total bon consum, Diferență și sold final. Fiecare coloană are 150 px,
+cu eticheta bold deasupra valorii, separatoare și fontul aplicației.
+Blocul este centrat pe un singur rând, sub zona antet/bonuri, pe ambele
+coloane ale zonei de sus. La lățimi insuficiente se poate derula blocul,
+fără comprimarea coloanelor. Înlocuiește cele trei totaluri urmate de
+cele două câmpuri distincte pentru economii/depășiri anterioare.
+
+Prima etichetă este Economii Anterioare SAU Depășiri Anterioare, iar
+ultima Economii SAU Depășiri, după semnul soldului în convenția raportului.
+Valorile acestor două câmpuri sunt absolute, cu separator de mii și două
+zecimale. Pentru sold zero se folosește convenția raportului: Depășiri.
+Până la primirea calculului anterior, câmpurile de sold rămân fără valoare.
+
+Soldul final = soldul anterior - diferența listei (Valoare listă - Total BC),
+echivalent cu rândul La finele perioadei din raport. Se recalculează și în
+ciornă când se schimbă mesele sau bonurile. Suma soldului anterior și a
+diferenței cu semn invers folosește receiptTotal, cu aritmetică BigInt la
+precizia de stocare de patru zecimale; afișarea păstrează două zecimale.
+
+Fișiere: PYTHON/static/js/vercon/lista.js;
+PYTHON/static/css/vercon-lista-totals.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate sau rulare în browser, conform AGENTS.md. Necesită
+publicarea fișierelor JS/CSS modificate. Nu s-au publicat surse și nu
+s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: recapitularea în interiorul antetului
+
+vc-lista__totals-wrap, cu vc-lista__totals în interior, este acum copil
+al vc-grid vc-doc__header, imediat după Comentarii, conform structurii
+cerute. Nu mai este copil separat al vc-lista__overview.
+CSS-ul ajustat de utilizator a fost păstrat fără modificări.
+
+Fișiere: PYTHON/static/js/vercon/lista.js; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste sau verificări de execuție,
+conform AGENTS.md. Necesită publicarea modulului JS modificat.
+
+### 2026-10-17 — Lista de alimente: editori FELUL și Explicații
+
+Coloana FELUL are lățime fixă 57 px prin configurația DGV și padding zero
+în antet prin CSS. Dropdown-ul are minimum 120 px pentru citirea opțiunilor.
+Lista opțiunilor se calculează la deschiderea editorului și omite felurile
+folosite pe alte rânduri ale aceleiași mese; rândul curent nu se exclude.
+După eliminarea unui rând, felul revine între opțiuni. Salvarea locală a
+celulei refuză și o alegere duplicată. La intrarea în celula FELUL a unui
+rând fără fel, dropdown-ul se deschide automat după încheierea clickului.
+
+Logul primit arată un blur urmat de click/deschidere și apoi expirarea
+unui timer de 150 ms. Comboboxul readonly păstrează focusul la mousedown,
+iar timerul de blur nu mai închide o listă redeschisă ulterior și respectă
+focusul din dropdown. DGV păstrează focusul editorului când reconstruiește
+rândurile virtualizate. Deschiderea automată verifică editorul și focusul
+curent înainte de a afișa lista.
+
+Containerul real al editorului este simultan dgv__editor și
+combobox-container. Regula comună CSS acoperă acum și acest caz, eliminând
+limita implicită de 300 px și lăsând editorul să ocupe toată celula.
+În Lista de alimente, celula editată și inputul Explicații au padding zero;
+opțiunile dropdown-ului sunt pe un singur rând, cu elipsă, fără hscroll.
+CSS-ul recapitulării modificat de utilizator nu a fost schimbat.
+
+Fișiere: PYTHON/static/js/vercon/lista.js;
+PYTHON/static/js/dgv/editing.js, datagrid.js;
+PYTHON/static/js/components/combobox/combobox-events.js;
+PYTHON/static/css/dgv.css, vercon-lista.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiza logului, a codului și a designului;
+fără teste, verificări automate sau rulare în browser, conform AGENTS.md.
+Necesită publicarea fișierelor JS/CSS modificate. Nu s-au publicat surse
+și nu s-au modificat scheme sau date MariaDB.
+### 2026-10-17 — Raport Lista de alimente: antet și recapitulare
+
+S-a eliminat secțiunea tipărită Bonuri de consum asociate; citirea bonurilor
+și refuzul unui bon anulat se păstrează. Intervalul raportului nu mai este
+tipărit sub titlul ListaAlimente2015; filtrarea perioadei rămâne activă.
+Numărul/data listei sunt centrate în PDF, rezultatul în pagină și Excel.
+Recapitularea (drepturi, cheltuieli, porții) are fontul cu 1 pt mai mic
+decât configurația coloanei sau fontul raportului, cu minimum 5 pt.
+Alocația se afișează cu 0 zecimale, Efectiv (inclusiv totalul), Economii și
+Depășiri cu 2 zecimale. Calculele și valorile sursă își păstrează precizia.
+Regulile se aplică la generare și machetelor salvate, fără rescrierea lor.
+
+Limitele textului din PDF.js se corectează prin invalidarea cache-ului de
+font după redimensionarea canvasului de măsurare. Redimensionarea readuce
+fontul real la 10px, dar cache-ul vechi împiedica aplicarea fontului cerut
+la primul text de aceeași dimensiune cu proba de ascendență. Titlul își
+păstrează dimensiunea, centrarea și desenarea PDF; se corectează selecția.
+
+Fișiere: PYTHON/routes/vercon/report_food.py, report_service.py,
+report_model.py, report_body.py, report_output.py, report_validation.py;
+PYTHON/static/js/vercon/report-result.js;
+PYTHON/static/css/vercon-rapoarte.css;
+PYTHON/static/vendor/pdfjs/pdf.min.js și README.md; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE. Ulterior, utilizatorul a cerut server local
+pentru testare și a ales date demonstrative. În acel mediu s-au deschis
+formularul și PDF-ul, s-au observat soldurile și formatarea cerută, iar
+exportul Excel a răspuns HTTP 200. Limitele titlului din textLayer au trecut
+de la aproximativ 844px la 281px pe pagina de 792px (scaleX 3,06172 → 1,02057).
+Fără suită de teste, fără publicare și fără acces MariaDB.
+
+### 2026-10-17 — Server local VERCON cu date demonstrative
+
+La cererea explicită pentru probă pe localhost, cu alegerea datelor demo,
+s-a adăugat tools/VerconPreview: launcher PowerShell în prim-plan/fundal,
+oprire cu identificarea procesului, pagină de intrare, date fictive în
+memorie și endpoint-uri numai pentru Lista de alimente și raportul ei.
+Folosește interfața reală și generarea report_service/report_food/PDF/Excel,
+cu DemoSource injectat explicit. Semnătura report_service.build acceptă
+opțional sursa datelor; fluxul de producție păstrează Source SQL implicit.
+
+Serverul nu importă main.py, nu înregistrează blueprint-urile SQL și nu
+deschide conexiuni MariaDB. Datele, salvările și snapshot-urile există
+numai în memorie; nicio schemă sau configurare de raport nu se modifică.
+Ascultă numai pe 127.0.0.1:5053, cu verificarea Host și Origin la scrieri.
+Portul 5052 era ocupat de alt proces, care nu a fost modificat sau oprit.
+
+Fișiere noi: tools/VerconPreview/preview_server.py, demo_data.py,
+index.html, preview.css, Start-VerconPreview.ps1, Stop-VerconPreview.ps1,
+README.md și .gitignore. Backend comun: report_service.py.
+
+Stare: PORNIT LOCAL pe http://localhost:5053/. Verificări limitate la
+cererea explicită de probă: health, deschiderea formularului, soldurile,
+generarea/vizualizarea PDF și răspunsul exportului Excel. Nu s-a rulat
+suita de teste. Salvarea demonstrativă este pentru interfață și nu
+validează stocuri, drepturi, tranzacții sau concurența din MariaDB.
+Celelalte module Vercon nu sunt încă incluse în acest preview.
+
+### 2026-10-17 — Raport Lista de alimente: tabel compact și semnături la bază
+
+Spațiul de 2 mm dintre banda ALIMENTE și antetul tabelului a fost eliminat
+și adăugat deasupra benzii, după mesele servite. Banda se păstrează cu
+tabelul următor la paginare. Rândul Feluri de mâncare a fost eliminat,
+păstrând etichetele meselor și explicațiile salvate.
+
+În tabelul de alimente, antetul are fontul cu 1 pt mai mic, iar conținutul
+cu 2 pt mai mic decât configurația inițială a coloanei/fontul raportului,
+cu minimum 5 pt. Cantitățile, prețurile și valorile au două zecimale.
+TOTAL ALIMENTE este footer al tabelului comun celor două jumătăți,
+cu eticheta la stânga, suma la dreapta și fundalul antetului. Totalul se
+calculează din valorile originale și se formatează numai la afișare.
+Footerul nu se separă la paginare de ultimul rând de alimente.
+
+Casetele finale Întocmit/Confirmat/Gestionar/Bucătar sunt aliniate la
+baza cadrului ultimei pagini, deasupra subsolului, prin TopPadder.
+Grupul final nu se fragmentează între pagini. Aprobările din partea
+superioară a documentului își păstrează poziția.
+
+Modelul comun transmite separat header_size și vizibilitatea antetului.
+Excel preia dimensiunile fonturilor, ascunderea rândului Feluri de mâncare
+și footerul cu suma la dreapta; lățimile continuă prin modulul comun.
+Rezultatul HTML ascunde antetul felurilor și afișează noul footer.
+
+Fișiere: PYTHON/routes/vercon/report_food.py, report_body.py,
+report_output.py, report_validation.py;
+PYTHON/static/js/vercon/report-result.js;
+PYTHON/static/css/vercon-rapoarte.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE și încărcat pe serverul demonstrativ local
+http://localhost:5053/. Designul PDF pentru lista demo 130 a fost examinat
+în browser, inclusiv baza paginii. Fără suită de teste sau alte verificări
+automate; cazurile cu mai multe pagini și noul export Excel nu au fost
+executate. Fără acces MariaDB și fără publicare pe serverul real.
+
+### 2026-10-17 — Raport Lista de alimente: grilă pentru pix și delimitări antet
+
+Secțiunea din dreapta antetului a fost înlocuită cu grila pentru completare
+manuală din referință: Mese servite / Mic dejun / Dejun / Cină și rândurile
+Efectiv la hrană, Porții preparate, Rămase, Distribuite. Toate cele 12 celule
+de completat sunt șiruri goale, fără preluarea porțiilor sau distribuitului,
+fără zerouri sau marcaje de valoare lipsă. Antetul grilei este alb, iar
+etichetele sunt accentuate. Structura se aplică și machetelor vechi salvate,
+fără rescrierea configurației pe disc sau a documentelor.
+
+Casetele Aprobat și Vizat compartiment financiar contabil au fiecare
+jumătate din lățimea anterioară (25% din lățimea utilă), la extremitățile
+paginii, cu spațiu alb de 50% între ele. Înălțimea pentru semnare rămâne
+14 mm. Spațiul dintre casete nu are chenar sau separator orizontal.
+
+Cele două delimitări verticale dintre secțiunile antetului au 1,5 pt,
+echivalentul a 2 px CSS. Numai ultimul rând gol al recapitulării centrale
+are cele trei celule reunite, eliminând liniile verticale interioare;
+marginile secțiunii și liniile celorlalte rânduri rămân.
+
+Fișiere: PYTHON/routes/vercon/report_food.py, report_layouts.py,
+report_body.py, report_output.py;
+PYTHON/static/js/vercon/report-result.js;
+PYTHON/static/css/vercon-rapoarte.css; implementare_vercon_v2.md.
+Excel preia grila goală, antetul alb și celulele reunite ale recapitulării.
+Rezultatul HTML preia casetele de aprobare separate.
+
+Stare: IMPLEMENTAT ÎN SURSE și încărcat în preview-ul local de pe 5053.
+Designul PDF al listei demo 130 a fost examinat în browser. Fără teste
+sau verificări automate și fără execuția noului export Excel; fără
+acces MariaDB sau publicare pe serverul real.
+
+### 2026-10-17 — Raport Lista de alimente: linii uniforme și footer în prima secțiune
+
+Antetul are acum linii uniforme de 0,75 pt (1 px CSS), fără separatoarele
+de 2 px dintre secțiuni. Antetul grilei pentru completare cu pixul este
+colorat cu același gri #ececec ca celelalte secțiuni; celulele de completat
+rămân goale. Ultimul rând din prima secțiune este un footer gri: primele
+trei celule sunt reunite pentru eticheta TOTAL, eliminând cele două linii
+verticale interioare, iar valoarea rămâne la dreapta în ultima coloană.
+Unirea rândului gol din secțiunea centrală se păstrează.
+
+Rendererul PDF păstrează culoarea și accentuarea la nivel de celulă când
+unește tabelele paralele; doar prima secțiune are footerul colorat.
+Fișiere: PYTHON/routes/vercon/report_food.py, report_output.py;
+implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE, serverul demo 5053 repornit și PDF-ul listei
+130 regenerat. Designul a fost examinat în browser. Fără teste sau alte
+verificări automate, fără acces MariaDB și fără publicare pe serverul real.
+
+### 2026-10-17 — Rapoarte: antet VERCON cu meniu, document și dată
+
+Antetul comun al previzualizărilor afișează butonul VERCON cu iconița
+preluată din antetul principal și același meniu de aplicații. Navigarea
+reutilizează protecția modificărilor nesalvate și eliberarea ocupării.
+Butonul copiat nu duplică ID-ul vc-apps; meniul se deschide în dialog.
+
+Titlul este urmat de data documentului pentru NIR, BC, retur, FCS,
+celelalte documente și listele de alimente, inclusiv ciorne. În pagina
+Rapoarte, selecția unui document afișează eticheta lui cu data în format
+românesc; selecțiile multiple afișează numărul documentelor și perioada,
+iar rapoartele centralizate afișează perioada. Previzualizările de stocuri,
+mijloace fixe și amortizare transmit perioada sau data corespunzătoare.
+Antetul permite trecerea pe mai multe rânduri pe ecrane înguste.
+Modificarea privește fereastra de previzualizare; macheta PDF rămâne
+cea a raportului.
+
+Fișiere: PYTHON/static/js/vercon/application-menu.js, report-header.js,
+app.js, ui.js, pdf-preview.js, document-report.js, docs.js, lista.js,
+reports.js, stock.js, depreciation.js, mf.js, editor.js;
+PYTHON/static/css/vercon-preview.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste sau verificări runtime, conform
+instrucțiunilor proiectului. Fără modificări în baza de date.
+
+### 2026-10-17 — NIR, BC, retur și FCS: ordonare alfabetică în arbore
+
+Furnizorii și primitorii de la primul nivel al arborilor de documente
+salvate sunt ordonați alfabetic după eticheta afișată, cu regulile limbii
+române și fără diferențiere între majuscule și minuscule. Ordonarea se
+aplică la afișare și reîmprospătare, inclusiv după încărcarea unei ramuri
+NIR. Ordinea existentă a datelor/lunilor și documentelor din interiorul
+ramurilor se păstrează.
+
+Fișiere: PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE. Nu s-au rulat teste sau alte verificări,
+conform instrucțiunilor proiectului. Fără modificări în baza de date.
+
+### 2026-10-17 — Obiecte de inventar: conturi multiple, BP/BT/BS și rapoarte
+
+La cererea utilizatorului, s-au implementat completările OI, cu selecție
+independentă între conturile de magazie și cele de folosință. Nu există un
+singur cont implicit pentru gestiune. BP păstrează perechea sursă–destinație
+aleasă; BT/BS pot lua loturi de pe conturi diferite, păstrând pe fiecare
+linie contul, proveniența și prețul. Loturile cu prețuri diferite rămân
+distincte chiar când au aceeași variantă și același document de primire.
+
+Editorul OI este în pagină, cu arborele ascuns în editare, grile compacte,
+alegere prin arbore cont–produs/lot, adăugare și totaluri în footer. Casarea
+nu are primitor. Disponibilul se calculează la data bonului și ține cont
+de documentele ulterioare; serverul revalidează cronologia în tranzacție.
+Protecția documentelor dependente, drepturile, motivul anulării și ciorna
+la eșec folosesc mecanismele existente. Valorile ciornelor OI se calculează
+exact cu BigInt; prețurile istorice și calculul serverului rămân păstrate.
+
+Evidența în folosință folosește contul mișcării, separat de contul produsului
+din magazie. Rapoartele OI au fost activate: bonuri și centralizatoare
+BP/BT/BS, balanță, solduri, fișe/situații pe deținător/produs și inventariere.
+Conturile în folosință au filtru propriu. Perioada are arbore multianual de
+la primul NIR/BP, cu numai ultimul an expandat inițial. PDF și Excel
+folosesc snapshotul comun și modulul comun de lățimi Excel. Sursele SELECT
+suplimentare și machetele sunt disponibile și în KBotAdmin. MF rămâne
+amânat pentru rapoarte. Nu s-a presupus o clasificare a conturilor după
+prefix și nu s-a schimbat nomenclatorul sau schema.
+
+Fișiere backend: PYTHON/routes/vercon/oi.py, oi_custody.py, doc_routes.py,
+protocol.py, stock_source.py, stock.py, capabilities.py, report_catalog.py,
+report_data.py, report_oi.py, report_routes.py, report_service.py,
+report_layouts.py, report_body.py, report_store.py;
+PYTHON/routes/admin_cli/vercon_reports.py.
+Fișiere frontend: PYTHON/static/js/vercon/docs.js, oi-ui.js, oi-values.js,
+consumption-ui.js, stock.js, reports.js, report-selection.js,
+report-result.js, document-report.js;
+PYTHON/static/css/vercon-oi.css, vercon.css.
+Resurse: PYTHON/reports/vercon/queries/oi_documents.sql,
+custody_ledger.sql, oi_accounts.sql, oi_holders.sql; README.md din același
+director de rapoarte. Detalii în
+docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, verificări de sintaxă,
+build, browser, HTTP, acces MariaDB ori publicare. Machetele OI și fluxurile
+pe date reale așteaptă probele cerute ulterior de utilizator. Nu s-a
+modificat schema și nu s-a adăugat creare automată de tabele. Serverul
+demonstrativ existent nu a fost extins sau repornit pentru această lucrare.
+

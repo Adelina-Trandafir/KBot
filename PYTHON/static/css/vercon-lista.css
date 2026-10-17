@@ -16,6 +16,24 @@
 /* Narrow headers must fit their column widths, just like the body cells. */
 .vc-doc--lista .vc-dgv .dgv__hc[data-key="actions"],
 .vc-doc--lista .vc-dgv .dgv__hc[data-key="ordinal"] { padding-inline: 0; }
+.vc-doc--lista .vc-lista__dishes .dgv__hc[data-key="Tip"] { padding: 0; }
+.vc-doc--lista .vc-lista__dishes .dgv__cell:has(> .dgv__editor) { padding: 0; }
+.vc-doc--lista .vc-lista__dishes .dgv__cell[data-key="Explicatie"] .combobox-input {
+  padding: 0;
+  border-radius: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.vc-doc--lista .vc-lista__dishes .combobox-dropdown { overflow-x: hidden; }
+.vc-doc--lista .vc-lista__dishes .combobox-option {
+  display: block;
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .vc-doc--lista .vc-doc__tree > h4 { display: flex; align-items: center; gap: 8px; }
 .vc-doc--lista .vc-lista__tree-add {
   margin-inline-start: auto;

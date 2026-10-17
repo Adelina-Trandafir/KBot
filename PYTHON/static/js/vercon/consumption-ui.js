@@ -47,7 +47,7 @@ export function consumptionCategory(owner, spec, value, editable, onChange, onTa
       pending.finally(() => { pending = null; });
     },
   }));
-  combo.setValue(input.value, spec.options.find(item => String(item.value) === input.value)?.label || '');
+  combo.setValue(input.value, spec.options.find(item => String(item.value) === input.value)?.label || spec.fallback || '');
   combo.disabled = !editable;
   combo.input.disabled = !editable;
   combo.input.setAttribute('aria-label', spec.label);

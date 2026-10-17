@@ -12,8 +12,7 @@ Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Theming
 
-' Slices KE01..KE07 -- the links of the shown invoice with receptions: the view «Receptii», the classifications of the lines and the
-' windows that link to an existing reception, make a new one or change one. The rules (amounts with VAT, what is left, who may write)
+' Slices KE01..KE07 -- the links of the shown invoice with receptions: the view «Receptii», the windows that link to an existing reception, make a new one or change one. The rules (amounts with VAT, what is left, who may write)
 ' are the server's; the robot that writes in FOREXE is the shell's (<see cref="KeRobot"/>). Plan: docs/KE_PLAN.md.
 Partial Public Class PrimiteView
 
@@ -93,21 +92,6 @@ Partial Public Class PrimiteView
 
     ' ── The buttons of the view ─────────────────────────────────────────────────
 
-    ' UI boundary (event handler): logs and swallows; the window the accountant chose the classifications in.
-    Private Sub PgReceptii_ClassificationsRequested() Handles pgReceptii.ClassificationsRequested
-        Try
-            If _ke Is Nothing OrElse _shownId = 0 Then Return
-            Using k_f As New KeClasificariForm(_api, _gate, _shownId, InvoiceLabel(), _ke, _keCod)
-                If k_f.ShowDialog(FindForm()) <> DialogResult.OK OrElse k_f.Salvata Is Nothing Then Return
-                If k_f.CodAngajament.Length > 0 Then _keCod = k_f.CodAngajament
-                ApplyKe(k_f.Salvata)
-            End Using
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteView.PgReceptii_ClassificationsRequested", ex)
-            Notify("Clasificațiile liniilor nu au putut fi alese. Detalii în jurnalul de erori.", MessageBoxIcon.Error)
-        End Try
-    End Sub
-
     ' UI boundary (async Sub): the accountant wants a link of one of the three kinds.
     Private Async Sub PgReceptii_LinkRequested(k_tip As String) Handles pgReceptii.LinkRequested
         Try
@@ -135,6 +119,7 @@ Partial Public Class PrimiteView
             Dim k_id As Integer = _shownId
             Dim k_state As EFacturaKeStare = Await _gate.RunAsync(
                 Function() _api.RemoveKeLegaturaAsync(k_id, k_idLegatura, _cts.Token)).ConfigureAwait(True)
+            _listStale = True
             If IsDisposed OrElse k_id <> _shownId Then Return
             ApplyKe(k_state)
         Catch ex As OperationCanceledException
@@ -172,6 +157,15 @@ Partial Public Class PrimiteView
             Dim k_request As EFacturaKeCerere = k_f.Cerere
             _keCod = k_request.CodAngajament
 
+            ' 0. The classifications the accountant chose for the lines (slice 00EF-39): saved first, the server's check reads them from the lines.
+            If k_f.ClasificariSchimbate Then
+                Dim k_chosen As List(Of EFacturaKeLinie) = k_f.Clasificari
+                Dim k_saved As EFacturaKeStare = Await _gate.RunAsync(
+                    Function() _api.SetKeClasificatiiAsync(k_id, k_chosen, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed OrElse k_id <> _shownId Then Return
+                ApplyKe(k_saved)
+            End If
+
             ' 1. The server's check: the indicator exists, the amounts fit. A problem stops here, before anything reaches FOREXE.
             Dim k_check As EFacturaKeVerificare = Await _gate.RunAsync(
                 Function() _api.VerifyKeAsync(k_id, k_request, _cts.Token)).ConfigureAwait(True)
@@ -201,6 +195,7 @@ Partial Public Class PrimiteView
     Private Async Function WriteLinkAsync(k_id As Integer, k_request As EFacturaKeCerere) As Task
         Dim k_state As EFacturaKeStare = Await _gate.RunAsync(
             Function() _api.AddKeLegaturiAsync(k_id, k_request, _cts.Token)).ConfigureAwait(True)
+        _listStale = True
         If IsDisposed OrElse k_id <> _shownId Then Return
         ApplyKe(k_state)
     End Function

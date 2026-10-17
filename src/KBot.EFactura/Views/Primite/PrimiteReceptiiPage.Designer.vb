@@ -28,7 +28,6 @@ Partial Class PrimiteReceptiiPage
         lblNota = New System.Windows.Forms.Label()
         pnlButoane = New System.Windows.Forms.Panel()
         tlyButoane = New KBotTableLayoutPanel()
-        btnClasificatii = New KBotButton()
         btnExistenta = New KBotButton()
         btnNoua = New KBotButton()
         btnModifica = New KBotButton()
@@ -128,17 +127,15 @@ Partial Class PrimiteReceptiiPage
         '
         ' tlyButoane
         '
-        tlyButoane.ColumnCount = 5
-        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 20.0!))
-        tlyButoane.Controls.Add(btnClasificatii, 0, 0)
-        tlyButoane.Controls.Add(btnExistenta, 1, 0)
-        tlyButoane.Controls.Add(btnNoua, 2, 0)
-        tlyButoane.Controls.Add(btnModifica, 3, 0)
-        tlyButoane.Controls.Add(btnScoate, 4, 0)
+        tlyButoane.ColumnCount = 4
+        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
+        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
+        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
+        tlyButoane.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 25.0!))
+        tlyButoane.Controls.Add(btnExistenta, 0, 0)
+        tlyButoane.Controls.Add(btnNoua, 1, 0)
+        tlyButoane.Controls.Add(btnModifica, 2, 0)
+        tlyButoane.Controls.Add(btnScoate, 3, 0)
         tlyButoane.Dock = System.Windows.Forms.DockStyle.Fill
         tlyButoane.Location = New System.Drawing.Point(0, 0)
         tlyButoane.Margin = New System.Windows.Forms.Padding(0)
@@ -148,26 +145,14 @@ Partial Class PrimiteReceptiiPage
         tlyButoane.Size = New System.Drawing.Size(751, 50)
         tlyButoane.TabIndex = 0
         '
-        ' btnClasificatii
-        '
-        btnClasificatii.Dock = System.Windows.Forms.DockStyle.Fill
-        btnClasificatii.Location = New System.Drawing.Point(0, 0)
-        btnClasificatii.Margin = New System.Windows.Forms.Padding(0, 4, 4, 4)
-        btnClasificatii.Name = "btnClasificatii"
-        btnClasificatii.Size = New System.Drawing.Size(146, 42)
-        btnClasificatii.TabIndex = 0
-        btnClasificatii.Text = "Clasificații pe linii…"
-        tips.SetToolTipHeader(btnClasificatii, "Clasificațiile liniilor")
-        tips.SetToolTipText(btnClasificatii, "Alege, pentru fiecare linie a facturii, clasificația din angajament. O recepție se face pe clasificații.")
-        '
         ' btnExistenta
         '
         btnExistenta.Dock = System.Windows.Forms.DockStyle.Fill
-        btnExistenta.Location = New System.Drawing.Point(150, 0)
+        btnExistenta.Location = New System.Drawing.Point(0, 0)
         btnExistenta.Margin = New System.Windows.Forms.Padding(0, 4, 4, 4)
         btnExistenta.Name = "btnExistenta"
-        btnExistenta.Size = New System.Drawing.Size(146, 42)
-        btnExistenta.TabIndex = 1
+        btnExistenta.Size = New System.Drawing.Size(184, 42)
+        btnExistenta.TabIndex = 0
         btnExistenta.Text = "Leagă de recepție…"
         tips.SetToolTipHeader(btnExistenta, "Leagă de o recepție existentă")
         tips.SetToolTipText(btnExistenta, "Leagă factura de o recepție care are deja valoarea. Nu schimbă nimic în FOREXE.")
@@ -175,11 +160,11 @@ Partial Class PrimiteReceptiiPage
         ' btnNoua
         '
         btnNoua.Dock = System.Windows.Forms.DockStyle.Fill
-        btnNoua.Location = New System.Drawing.Point(300, 0)
+        btnNoua.Location = New System.Drawing.Point(188, 0)
         btnNoua.Margin = New System.Windows.Forms.Padding(0, 4, 4, 4)
         btnNoua.Name = "btnNoua"
-        btnNoua.Size = New System.Drawing.Size(146, 42)
-        btnNoua.TabIndex = 2
+        btnNoua.Size = New System.Drawing.Size(184, 42)
+        btnNoua.TabIndex = 1
         btnNoua.Text = "Recepție nouă…"
         tips.SetToolTipHeader(btnNoua, "Recepție nouă")
         tips.SetToolTipText(btnNoua, "Creează în FOREXE o recepție cu valoarea facturii (sau o parte din ea) și o leagă de factură.")
@@ -187,11 +172,11 @@ Partial Class PrimiteReceptiiPage
         ' btnModifica
         '
         btnModifica.Dock = System.Windows.Forms.DockStyle.Fill
-        btnModifica.Location = New System.Drawing.Point(450, 0)
+        btnModifica.Location = New System.Drawing.Point(376, 0)
         btnModifica.Margin = New System.Windows.Forms.Padding(0, 4, 4, 4)
         btnModifica.Name = "btnModifica"
-        btnModifica.Size = New System.Drawing.Size(146, 42)
-        btnModifica.TabIndex = 3
+        btnModifica.Size = New System.Drawing.Size(184, 42)
+        btnModifica.TabIndex = 2
         btnModifica.Text = "Modifică recepția…"
         tips.SetToolTipHeader(btnModifica, "Modifică recepția")
         tips.SetToolTipText(btnModifica, "Mărește în FOREXE o recepție care nu ajunge pentru factură și o leagă de factură.")
@@ -200,11 +185,11 @@ Partial Class PrimiteReceptiiPage
         '
         btnScoate.Dock = System.Windows.Forms.DockStyle.Fill
         btnScoate.Enabled = False
-        btnScoate.Location = New System.Drawing.Point(600, 0)
+        btnScoate.Location = New System.Drawing.Point(564, 0)
         btnScoate.Margin = New System.Windows.Forms.Padding(0, 4, 0, 4)
         btnScoate.Name = "btnScoate"
-        btnScoate.Size = New System.Drawing.Size(151, 42)
-        btnScoate.TabIndex = 4
+        btnScoate.Size = New System.Drawing.Size(187, 42)
+        btnScoate.TabIndex = 3
         btnScoate.Text = "Scoate legătura"
         tips.SetToolTipHeader(btnScoate, "Scoate legătura")
         tips.SetToolTipText(btnScoate, "Șterge legătura aleasă din tabel. Recepția din FOREXE nu se atinge.")
@@ -243,7 +228,6 @@ Partial Class PrimiteReceptiiPage
     Friend WithEvents lblNota As System.Windows.Forms.Label
     Friend WithEvents pnlButoane As System.Windows.Forms.Panel
     Friend WithEvents tlyButoane As KBotTableLayoutPanel
-    Friend WithEvents btnClasificatii As KBotButton
     Friend WithEvents btnExistenta As KBotButton
     Friend WithEvents btnNoua As KBotButton
     Friend WithEvents btnModifica As KBotButton

@@ -12,12 +12,14 @@ Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
-''' Slices KE04..KE07 -- the window where the accountant says how an invoice is covered by a reception. One window, three modes
+''' Slices KE04..KE07, 00EF-39 -- the window where the accountant says how an invoice is covered by a reception. One window, three modes
 ''' (<see cref="EFacturaKeTip"/>): link to an EXISTING reception that already has the value, make a NEW reception for the invoice (type, date, description
 ''' and the value on each classification), or MODIFY an existing reception that is too small (its values grow by the allocated amounts). The window only
 ''' COLLECTS: it reads the angajament's receptions and indicators from the server, proposes the amounts (the rest of the invoice on each classification,
 ''' cut to what the reception still has when the reception exists) and, on OK, hands back <see cref="Cerere"/> and the fields of the form.
-''' What follows (the server's check, the robot, the write of the link) is the work of <see cref="PrimiteView"/>.
+''' It also collects the classification of each LINE of the invoice (slice 00EF-39; it used to be a window of its own): the choices are the indicators of the
+''' angajament, and the amounts to allocate are the lines' values added up per chosen classification. The choices are handed back in <see cref="Clasificari"/>.
+''' What follows (saving the choices, the server's check, the robot, the write of the link) is the work of <see cref="PrimiteView"/>.
 ''' </summary>
 Public Class KeLegaForm
 
@@ -33,6 +35,11 @@ Public Class KeLegaForm
     Private Const ColRDescriere As String = "descriere"
     Private Const ColRTotal As String = "total"
     Private Const ColRRest As String = "rest"
+    Private Const NeAleasa As String = "(nealeasă)"
+    Private Const ColLNr As String = "nr"
+    Private Const ColLDenumire As String = "denumire"
+    Private Const ColLCuTva As String = "cuTva"
+    Private Const ColLClsf As String = "clsf"
 
     Private ReadOnly _api As IEFacturaApi
     Private ReadOnly _gate As ReauthGate
@@ -42,6 +49,8 @@ Public Class KeLegaForm
     Private ReadOnly _mode As String
     Private ReadOnly _stare As EFacturaKeStare
     Private ReadOnly _tipuri As String() = {"Avans", "Partial", "Final"}
+    Private ReadOnly _byLabel As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+    Private ReadOnly _labelOf As New Dictionary(Of Integer, String)()
     Private _data As EFacturaKeReceptiiAngajament
     Private _seq As Integer
     Private _filling As Boolean
@@ -60,6 +69,12 @@ Public Class KeLegaForm
 
     ''' <summary>The description of a new reception, without the K-BOT marker (the marker is appended later).</summary>
     Public ReadOnly Property DescriereReceptie As String = String.Empty
+
+    ''' <summary>The classification of every line of the invoice as chosen in the window (<c>IdClsf</c> Nothing = not chosen); valid when the window closed with OK.</summary>
+    Public ReadOnly Property Clasificari As New List(Of EFacturaKeLinie)()
+
+    ''' <summary>At least one line got a classification different from the one it had when the window opened.</summary>
+    Public ReadOnly Property ClasificariSchimbate As Boolean
 
     ''' <summary>The indicators of the angajament chosen (the robot needs their codes).</summary>
     Public ReadOnly Property Indicatori As IReadOnlyList(Of EFacturaKeIndicator)
@@ -95,6 +110,7 @@ Public Class KeLegaForm
         _mode = k_mode
         _stare = k_stare
         cmbAngajament.CaptionSelector = Function(k_o) CaptionOf(k_o)
+        FillLines()
         cmbTip.Items.AddRange(_tipuri.Cast(Of Object)())
         cmbTip.SelectedIndex = Array.IndexOf(_tipuri, "Final")
         dtpData.Value = k_dataImplicita
@@ -135,19 +151,19 @@ Public Class KeLegaForm
                 Text = capBar.Text
                 btnOk.Text = "Leagă"
                 tips.SetToolTipText(btnOk, "Leagă factura de recepția aleasă, pe sumele de mai jos. Recepția nu se schimbă.")
-                lblAntet.Text = $"Factura {_invoiceLabel}: alege recepția care o acoperă și sumele alocate pe fiecare clasificație."
+                lblAntet.Text = $"Factura {_invoiceLabel}: alege clasificația fiecărei linii, recepția care o acoperă și sumele alocate pe fiecare clasificație."
             Case EFacturaKeTip.Noua
                 capBar.Text = "E-Factura — recepție nouă"
                 Text = capBar.Text
                 btnOk.Text = "Creează recepția"
                 tips.SetToolTipText(btnOk, "Creează în FOREXE recepția cu valorile de mai jos și o leagă de factură.")
-                lblAntet.Text = $"Factura {_invoiceLabel}: recepția nouă se face cu valoarea facturii (sau doar cu o parte din ea)."
+                lblAntet.Text = $"Factura {_invoiceLabel}: alege clasificația fiecărei linii; recepția nouă se face cu valoarea facturii (sau doar cu o parte din ea)."
             Case Else
                 capBar.Text = "E-Factura — modificarea unei recepții"
                 Text = capBar.Text
                 btnOk.Text = "Modifică recepția"
                 tips.SetToolTipText(btnOk, "Mărește în FOREXE recepția aleasă cu sumele de mai jos și o leagă de factură.")
-                lblAntet.Text = $"Factura {_invoiceLabel}: alege recepția care nu ajunge; valorile ei cresc cu sumele alocate."
+                lblAntet.Text = $"Factura {_invoiceLabel}: alege clasificația fiecărei linii și recepția care nu ajunge; valorile ei cresc cu sumele alocate."
         End Select
         gridAloc.Column(ColValRecep).Visible = If(k_nou, KBotColumnVisibility.Hidden, KBotColumnVisibility.Visible)
         gridAloc.Column(ColRestRecep).Visible = If(_mode = EFacturaKeTip.Existenta, KBotColumnVisibility.Visible, KBotColumnVisibility.Hidden)
@@ -161,9 +177,6 @@ Public Class KeLegaForm
             If cmbAngajament.SelectedIndex < 0 AndAlso cmbAngajament.Items.Count = 1 Then cmbAngajament.SelectedIndex = 0
             If cmbAngajament.Items.Count = 0 Then
                 ShowNotice("Furnizorul nu are niciun DDF legat: alegeți angajamentul cu «Alt angajament…».", NoticeKind.Warning)
-            End If
-            If _stare.FaraClasificatie <> 0D OrElse _stare.PeClasificatie.Count = 0 Then
-                ShowNotice("Unele linii nu au clasificație. Alegeți-o întâi, din «Clasificații pe linii».", NoticeKind.Warning)
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KeLegaForm.KeLegaForm_Load", ex)
@@ -195,6 +208,7 @@ Public Class KeLegaForm
                 Function() _api.GetKeReceptiiAsync(k_a.CodAngajament, _cts.Token)).ConfigureAwait(True)
             If IsDisposed OrElse k_mySeq <> _seq Then Return
             _data = k_data
+            ApplyIndicators()
             FillReceptii()
             FillAlocari()
         Catch ex As OperationCanceledException
@@ -251,7 +265,7 @@ Public Class KeLegaForm
         Try
             gridAloc.ClearRows()
             Dim k_rec As EFacturaKeReceptie = If(_mode = EFacturaKeTip.Noua, Nothing, ChosenReceptie())
-            For Each k_c As EFacturaKeClasificatie In _stare.PeClasificatie
+            For Each k_c As EFacturaKeClasificatie In ClassesOfLines()
                 If Math.Abs(k_c.Rest) < 0.005D Then Continue For
                 Dim k_ind As EFacturaKeIndicator = IndicatorOf(k_c.IdClsf)
                 Dim k_row As KBotDataRow = gridAloc.AddRow()
@@ -276,6 +290,151 @@ Public Class KeLegaForm
             _filling = False
         End Try
         RefreshOk()
+    End Sub
+
+    ' ── The lines of the invoice and their classifications (slice 00EF-39; the logic of the old window «Clasificatiile liniilor») ──
+
+    Private Sub FillLines()
+        gridLinii.BeginUpdate()
+        Try
+            gridLinii.ClearRows()
+            For Each k_l As EFacturaKeLinie In _stare.Linii
+                Dim k_row As KBotDataRow = gridLinii.AddRow()
+                k_row.Tag = k_l
+                k_row(ColLNr) = k_l.NrLinie
+                k_row(ColLDenumire) = k_l.Denumire
+                k_row(ColLCuTva) = CDbl(k_l.ValoareCuTva)
+                k_row(ColLClsf) = If(k_l.IdClsf.HasValue, If(k_l.Clsf, String.Empty), NeAleasa)
+            Next
+        Finally
+            gridLinii.EndUpdate()
+        End Try
+    End Sub
+
+    ' The indicators of the angajament are the choices; a classification a line already has that is not one of them stays visible.
+    Private Sub ApplyIndicators()
+        _byLabel.Clear()
+        _labelOf.Clear()
+        Dim k_choices As New List(Of Object) From {NeAleasa}
+        For Each k_i As EFacturaKeIndicator In _data.Indicatori
+            If Not k_i.IdClsf.HasValue OrElse _labelOf.ContainsKey(k_i.IdClsf.Value) Then Continue For
+            Dim k_label As String = If(String.IsNullOrWhiteSpace(k_i.Denumire), k_i.Clsf, $"{k_i.Clsf}  {k_i.Denumire}")
+            _byLabel(k_label) = k_i.IdClsf.Value
+            _labelOf(k_i.IdClsf.Value) = k_label
+            k_choices.Add(k_label)
+        Next
+        If _data.Indicatori.Count = 0 Then
+            ShowNotice("Angajamentul nu are indicatori: o recepție nu poate fi făcută până nu are rezervări (documentul de fundamentare).", NoticeKind.Warning)
+        End If
+        For Each k_l As EFacturaKeLinie In _stare.Linii
+            If k_l.IdClsf.HasValue AndAlso Not _labelOf.ContainsKey(k_l.IdClsf.Value) Then
+                Dim k_label As String = $"{k_l.Clsf} (nu e indicator al angajamentului)"
+                _byLabel(k_label) = k_l.IdClsf.Value
+                _labelOf(k_l.IdClsf.Value) = k_label
+                k_choices.Add(k_label)
+            End If
+        Next
+        _filling = True
+        Try
+            gridLinii.Column(ColLClsf).ComboItems = k_choices
+            For Each k_row As KBotDataRow In gridLinii.Rows
+                Dim k_line As EFacturaKeLinie = TryCast(k_row.Tag, EFacturaKeLinie)
+                Dim k_current As String = Convert.ToString(k_row(ColLClsf), CultureInfo.InvariantCulture)
+                If k_line IsNot Nothing AndAlso k_line.IdClsf.HasValue AndAlso _labelOf.ContainsKey(k_line.IdClsf.Value) Then
+                    k_row(ColLClsf) = _labelOf(k_line.IdClsf.Value)
+                ElseIf String.IsNullOrEmpty(k_current) OrElse
+                       (Not String.Equals(k_current, NeAleasa, StringComparison.Ordinal) AndAlso Not _byLabel.ContainsKey(k_current)) Then
+                    ' a choice made from another angajament's list is not one of these: the cell goes back to «not chosen»
+                    k_row(ColLClsf) = NeAleasa
+                End If
+            Next
+        Finally
+            _filling = False
+        End Try
+        gridLinii.Invalidate()
+    End Sub
+
+    ' The classification the row stands for: the one picked from the list; before any angajament was opened the line keeps what it has.
+    Private Function ChosenClass(k_row As KBotDataRow) As Integer?
+        Dim k_line As EFacturaKeLinie = TryCast(k_row.Tag, EFacturaKeLinie)
+        If k_line Is Nothing Then Return Nothing
+        Dim k_text As String = Convert.ToString(k_row(ColLClsf), CultureInfo.InvariantCulture)
+        Dim k_id As Integer = 0
+        If Not String.IsNullOrWhiteSpace(k_text) AndAlso Not String.Equals(k_text, NeAleasa, StringComparison.Ordinal) AndAlso
+           _byLabel.TryGetValue(k_text, k_id) Then Return k_id
+        If _byLabel.Count = 0 AndAlso k_line.IdClsf.HasValue Then Return k_line.IdClsf
+        Return Nothing
+    End Function
+
+    ' The classifications the lines now stand for, with the value of their lines (WITH VAT, the invoice's sign), what links already allocate
+    ' and what is left. This replaces what the server used to answer from the saved classifications of the lines.
+    Private Function ClassesOfLines() As List(Of EFacturaKeClasificatie)
+        Dim k_classes As New List(Of EFacturaKeClasificatie)()
+        For Each k_row As KBotDataRow In gridLinii.Rows
+            Dim k_line As EFacturaKeLinie = TryCast(k_row.Tag, EFacturaKeLinie)
+            Dim k_id As Integer? = ChosenClass(k_row)
+            If k_line Is Nothing OrElse Not k_id.HasValue Then Continue For
+            Dim k_idValue As Integer = k_id.Value
+            Dim k_c As EFacturaKeClasificatie = k_classes.FirstOrDefault(Function(k_x) k_x.IdClsf = k_idValue)
+            If k_c Is Nothing Then
+                Dim k_ind As EFacturaKeIndicator = IndicatorOf(k_idValue)
+                k_c = New EFacturaKeClasificatie() With {
+                    .IdClsf = k_idValue,
+                    .Clsf = If(k_ind IsNot Nothing, k_ind.Clsf, If(String.IsNullOrWhiteSpace(k_line.Clsf), Convert.ToString(k_row(ColLClsf), CultureInfo.InvariantCulture), k_line.Clsf)),
+                    .Alocat = _stare.Legaturi.Where(Function(k_g) k_g.IdClsf = k_idValue).Sum(Function(k_g) k_g.Suma)}
+                k_classes.Add(k_c)
+            End If
+            k_c.Valoare += k_line.ValoareCuTva
+        Next
+        For Each k_c As EFacturaKeClasificatie In k_classes
+            k_c.Rest = k_c.Valoare - k_c.Alocat
+        Next
+        Return k_classes
+    End Function
+
+    ' Only a choice from the list is accepted in a cell.
+    Private Sub GridLinii_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) Handles gridLinii.CellValidating
+        Try
+            If e.ColumnKey <> ColLClsf Then Return
+            Dim k_text As String = Convert.ToString(e.ProposedValue, CultureInfo.InvariantCulture)
+            If String.IsNullOrWhiteSpace(k_text) Then
+                e.ProposedValue = NeAleasa
+            ElseIf Not String.Equals(k_text, NeAleasa, StringComparison.Ordinal) AndAlso Not _byLabel.ContainsKey(k_text) Then
+                e.Cancel = True
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.GridLinii_CellValidating", ex)
+            e.Cancel = True
+        End Try
+    End Sub
+
+    ' A classification changed: the amounts to allocate follow.
+    Private Sub GridLinii_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) Handles gridLinii.CellValueChanged
+        Try
+            If Not _filling AndAlso e.ColumnKey = ColLClsf Then FillAlocari()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.GridLinii_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ' The first line's choice goes on all the lines (the usual invoice has one classification).
+    Private Sub BtnToate_Click(sender As Object, e As EventArgs) Handles btnToate.Click
+        Try
+            If gridLinii.RowCount = 0 Then Return
+            Dim k_first As String = Convert.ToString(gridLinii.Rows(0)(ColLClsf), CultureInfo.InvariantCulture)
+            _filling = True
+            Try
+                For Each k_row As KBotDataRow In gridLinii.Rows
+                    k_row(ColLClsf) = k_first
+                Next
+            Finally
+                _filling = False
+            End Try
+            gridLinii.Invalidate()
+            FillAlocari()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.BtnToate_Click", ex)
+        End Try
     End Sub
 
     ' A typed amount must be a number (ro-RO: «1.234,56»); empty = 0.
@@ -384,10 +543,22 @@ Public Class KeLegaForm
                     Return
                 End If
             End If
+            Dim k_chosen As New List(Of EFacturaKeLinie)()
+            Dim k_changed As Boolean = False
+            For Each k_row As KBotDataRow In gridLinii.Rows
+                Dim k_line As EFacturaKeLinie = TryCast(k_row.Tag, EFacturaKeLinie)
+                If k_line Is Nothing Then Continue For
+                Dim k_id As Integer? = ChosenClass(k_row)
+                If Not Nullable.Equals(k_id, k_line.IdClsf) Then k_changed = True
+                k_chosen.Add(New EFacturaKeLinie() With {.IdLinie = k_line.IdLinie, .IdClsf = k_id})
+            Next
             Dim k_cerere As New EFacturaKeCerere() With {.CodAngajament = k_a.CodAngajament, .Tip = _mode}
             If k_rec IsNot Nothing Then k_cerere.Idrr = k_rec.Idrr
             k_cerere.Alocari.AddRange(k_amounts)
             _Cerere = k_cerere
+            _Clasificari.Clear()
+            _Clasificari.AddRange(k_chosen)
+            _ClasificariSchimbate = k_changed
             _Receptie = k_rec
             If _mode = EFacturaKeTip.Noua Then
                 _TipReceptie = Convert.ToString(cmbTip.SelectedItem, CultureInfo.InvariantCulture)

@@ -4,6 +4,23 @@ Imports System.Collections.Generic
 ' Slice 00EF-18 -- what the received-invoice routes of the server answer (PYTHON/routes/efactura/primite_routes.py, slice 00EF-17).
 ' Plain data, no logic. Amounts are as the supplier wrote them (a credit note may be negative or carry Semn = -1).
 
+''' <summary>A reception a received invoice is linked to, as the list of invoices carries it (slice 00EF-42).</summary>
+Public NotInheritable Class EFacturaPrimitaReceptie
+
+    ''' <summary>The date of the reception; Nothing while it waits for the download that brings it into K-BOT.</summary>
+    Public Property DataR As Date?
+
+    ''' <summary>The description written on the reception (without the K-BOT marker).</summary>
+    Public Property Descriere As String = String.Empty
+
+    ''' <summary>What the links of THIS invoice allocate on the reception (all classifications added), with VAT, with the sign of the invoice.</summary>
+    Public Property Suma As Decimal
+
+    ''' <summary>The reception is not known to K-BOT yet (the download that brings it has not run).</summary>
+    Public Property AsteaptaDescarcarea As Boolean
+
+End Class
+
 ''' <summary>A received e-invoice (<c>EF_Primite</c>): the header, as listed and as detailed.</summary>
 Public NotInheritable Class EFacturaPrimita
 
@@ -54,6 +71,9 @@ Public NotInheritable Class EFacturaPrimita
 
     ''' <summary>In a list asked for a DDF: «auto» (the supplier is a partner of the DDF) or «manual» (the operator linked it); else empty.</summary>
     Public Property Legatura As String = String.Empty
+
+    ''' <summary>The receptions the invoice is linked to (slice 00EF-42), one item per reception; empty when it has none (or the list comes from a server without them).</summary>
+    Public ReadOnly Property Receptii As New List(Of EFacturaPrimitaReceptie)()
 
     Public ReadOnly Property Eticheta As String
         Get

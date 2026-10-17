@@ -27,14 +27,21 @@ Partial Class KeLegaForm
         Dim KBotDataColumn9 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
         Dim KBotDataColumn10 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
         Dim KBotDataColumn11 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn12 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn13 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn14 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
+        Dim KBotDataColumn15 As Global.KBot.Controls.KBotDataColumn = New Global.KBot.Controls.KBotDataColumn()
         tips = New Global.KBot.Controls.KBotToolTip(components)
         pnlCard = New System.Windows.Forms.Panel()
         gridAloc = New Global.KBot.Controls.KBotDataView()
         ntfMesaj = New Global.KBot.Controls.KBotNotice()
         pnlJos = New System.Windows.Forms.Panel()
         btnRenunta = New System.Windows.Forms.Button()
+        btnToate = New System.Windows.Forms.Button()
+        lblSep2 = New System.Windows.Forms.Label()
         btnOk = New System.Windows.Forms.Button()
         lblSep1 = New System.Windows.Forms.Label()
+        gridLinii = New Global.KBot.Controls.KBotDataView()
         pnlRec = New System.Windows.Forms.Panel()
         gridReceptii = New Global.KBot.Controls.KBotDataView()
         pnlNoua = New System.Windows.Forms.Panel()
@@ -58,6 +65,7 @@ Partial Class KeLegaForm
         tlyNoua.SuspendLayout()
         pnlAng.SuspendLayout()
         CType(gridAloc, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(gridReceptii, System.ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         '
@@ -67,13 +75,14 @@ Partial Class KeLegaForm
         pnlCard.Controls.Add(ntfMesaj)
         pnlCard.Controls.Add(pnlJos)
         pnlCard.Controls.Add(pnlRec)
+        pnlCard.Controls.Add(gridLinii)
         pnlCard.Controls.Add(pnlAng)
         pnlCard.Controls.Add(lblAntet)
         pnlCard.Controls.Add(capBar)
         pnlCard.Dock = System.Windows.Forms.DockStyle.Fill
         pnlCard.Location = New System.Drawing.Point(2, 2)
         pnlCard.Name = "pnlCard"
-        pnlCard.Size = New System.Drawing.Size(946, 676)
+        pnlCard.Size = New System.Drawing.Size(946, 796)
         pnlCard.TabIndex = 0
         pnlCard.Tag = "Card"
         '
@@ -156,11 +165,11 @@ Partial Class KeLegaForm
         gridAloc.FillColumnKey = "clsf"
         gridAloc.FooterCaption = "TOTAL"
         gridAloc.FooterVisible = True
-        gridAloc.Location = New System.Drawing.Point(0, 344)
+        gridAloc.Location = New System.Drawing.Point(0, 494)
         gridAloc.Margin = New System.Windows.Forms.Padding(0)
         gridAloc.Name = "gridAloc"
-        gridAloc.Size = New System.Drawing.Size(946, 214)
-        gridAloc.TabIndex = 4
+        gridAloc.Size = New System.Drawing.Size(946, 184)
+        gridAloc.TabIndex = 5
         tips.SetToolTipHeader(gridAloc, "Sumele alocate")
         tips.SetToolTipText(gridAloc, "Pentru fiecare clasificație a facturii: cât din rest acoperă recepția. Sumele pot fi scăzute pentru o plată parțială. Coloana «De alocat» se scrie.")
         '
@@ -168,7 +177,7 @@ Partial Class KeLegaForm
         '
         ntfMesaj.BackColor = System.Drawing.Color.Transparent
         ntfMesaj.Dock = System.Windows.Forms.DockStyle.Bottom
-        ntfMesaj.Location = New System.Drawing.Point(0, 558)
+        ntfMesaj.Location = New System.Drawing.Point(0, 678)
         ntfMesaj.Margin = New System.Windows.Forms.Padding(4)
         ntfMesaj.Name = "ntfMesaj"
         ntfMesaj.Size = New System.Drawing.Size(946, 60)
@@ -179,10 +188,12 @@ Partial Class KeLegaForm
         ' pnlJos
         '
         pnlJos.Controls.Add(btnRenunta)
+        pnlJos.Controls.Add(btnToate)
+        pnlJos.Controls.Add(lblSep2)
         pnlJos.Controls.Add(btnOk)
         pnlJos.Controls.Add(lblSep1)
         pnlJos.Dock = System.Windows.Forms.DockStyle.Bottom
-        pnlJos.Location = New System.Drawing.Point(0, 618)
+        pnlJos.Location = New System.Drawing.Point(0, 738)
         pnlJos.Name = "pnlJos"
         pnlJos.Padding = New System.Windows.Forms.Padding(8)
         pnlJos.Size = New System.Drawing.Size(946, 58)
@@ -202,6 +213,27 @@ Partial Class KeLegaForm
         tips.SetToolTipHeader(btnRenunta, "Renunță")
         tips.SetToolTipText(btnRenunta, "Închide fereastra fără să facă nimic.")
         btnRenunta.UseVisualStyleBackColor = True
+        '
+        ' btnToate
+        '
+        btnToate.Dock = System.Windows.Forms.DockStyle.Right
+        btnToate.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnToate.Location = New System.Drawing.Point(464, 8)
+        btnToate.Name = "btnToate"
+        btnToate.Size = New System.Drawing.Size(230, 42)
+        btnToate.TabIndex = 3
+        btnToate.Text = "Ca la prima linie"
+        tips.SetToolTipHeader(btnToate, "Ca la prima linie")
+        tips.SetToolTipText(btnToate, "Pune pe toate liniile clasificația aleasă la prima linie.")
+        btnToate.UseVisualStyleBackColor = True
+        '
+        ' lblSep2
+        '
+        lblSep2.Dock = System.Windows.Forms.DockStyle.Right
+        lblSep2.Location = New System.Drawing.Point(694, 8)
+        lblSep2.Name = "lblSep2"
+        lblSep2.Size = New System.Drawing.Size(12, 42)
+        lblSep2.TabIndex = 4
         '
         ' btnOk
         '
@@ -224,15 +256,72 @@ Partial Class KeLegaForm
         lblSep1.Size = New System.Drawing.Size(12, 42)
         lblSep1.TabIndex = 1
         '
+        ' gridLinii: one row per line of the invoice; the classification is chosen from the indicators of the angajament
+        '
+        gridLinii.AutoSizeColumnsMode = Global.KBot.Controls.KBotAutoSizeMode.None
+        gridLinii.ColumnFillMode = Global.KBot.Controls.KBotFillMode.SpecificColumn
+        KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.FormatString = Nothing
+        KBotDataColumn12.HeaderText = "Nr"
+        KBotDataColumn12.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn12.Key = "nr"
+        KBotDataColumn12.OptionGroup = Nothing
+        KBotDataColumn12.ReadOnly = True
+        KBotDataColumn12.Width = 44
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = "Denumire"
+        KBotDataColumn13.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn13.Key = "denumire"
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.ReadOnly = True
+        KBotDataColumn13.Width = 300
+        KBotDataColumn14.Aggregate = Global.KBot.Controls.KBotAggregate.Sum
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.DecimalPlaces = 2
+        KBotDataColumn14.Format = Global.KBot.Controls.KBotFormat.Standard
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "Valoare cu TVA"
+        KBotDataColumn14.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn14.Key = "cuTva"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.ReadOnly = True
+        KBotDataColumn14.TextAlign = System.Drawing.ContentAlignment.MiddleRight
+        KBotDataColumn14.ValueType = Global.KBot.Controls.KBotValueType.Number
+        KBotDataColumn14.Width = 120
+        KBotDataColumn15.AggregateFormatString = Nothing
+        KBotDataColumn15.ColumnType = Global.KBot.Controls.KBotColumnType.Combo
+        KBotDataColumn15.FormatString = Nothing
+        KBotDataColumn15.HeaderText = "Clasificație"
+        KBotDataColumn15.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn15.Key = "clsf"
+        KBotDataColumn15.OptionGroup = Nothing
+        KBotDataColumn15.Width = 330
+        gridLinii.Columns.Add(KBotDataColumn12)
+        gridLinii.Columns.Add(KBotDataColumn13)
+        gridLinii.Columns.Add(KBotDataColumn14)
+        gridLinii.Columns.Add(KBotDataColumn15)
+        gridLinii.Dock = System.Windows.Forms.DockStyle.Top
+        gridLinii.FillColumnKey = "denumire"
+        gridLinii.FooterCaption = "TOTAL"
+        gridLinii.FooterVisible = True
+        gridLinii.Location = New System.Drawing.Point(0, 174)
+        gridLinii.Margin = New System.Windows.Forms.Padding(0)
+        gridLinii.Name = "gridLinii"
+        gridLinii.Size = New System.Drawing.Size(946, 150)
+        gridLinii.TabIndex = 3
+        tips.SetToolTipHeader(gridLinii, "Liniile facturii")
+        tips.SetToolTipText(gridLinii, "Alege pentru fiecare linie clasificația din angajament (se alege întâi angajamentul). Sumele de mai jos se calculează pe clasificații.")
+        '
         ' pnlRec: the receptions of the angajament, or the form of a new one
         '
         pnlRec.Controls.Add(gridReceptii)
         pnlRec.Controls.Add(pnlNoua)
         pnlRec.Dock = System.Windows.Forms.DockStyle.Top
-        pnlRec.Location = New System.Drawing.Point(0, 174)
+        pnlRec.Location = New System.Drawing.Point(0, 324)
         pnlRec.Name = "pnlRec"
         pnlRec.Size = New System.Drawing.Size(946, 170)
-        pnlRec.TabIndex = 3
+        pnlRec.TabIndex = 4
         '
         ' gridReceptii
         '
@@ -475,12 +564,12 @@ Partial Class KeLegaForm
         AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         CancelButton = btnRenunta
-        ClientSize = New System.Drawing.Size(950, 680)
+        ClientSize = New System.Drawing.Size(950, 800)
         Controls.Add(pnlCard)
         FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         MaximizeBox = False
         MinimizeBox = False
-        MinimumSize = New System.Drawing.Size(860, 560)
+        MinimumSize = New System.Drawing.Size(860, 660)
         Name = "KeLegaForm"
         Padding = New System.Windows.Forms.Padding(2)
         ShowInTaskbar = False
@@ -493,6 +582,7 @@ Partial Class KeLegaForm
         tlyNoua.ResumeLayout(False)
         pnlAng.ResumeLayout(False)
         CType(gridAloc, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(gridLinii, System.ComponentModel.ISupportInitialize).EndInit()
         CType(gridReceptii, System.ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
@@ -518,6 +608,9 @@ Partial Class KeLegaForm
     Friend WithEvents gridAloc As Global.KBot.Controls.KBotDataView
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents pnlJos As System.Windows.Forms.Panel
+    Friend WithEvents gridLinii As Global.KBot.Controls.KBotDataView
+    Friend WithEvents btnToate As System.Windows.Forms.Button
+    Friend WithEvents lblSep2 As System.Windows.Forms.Label
     Friend WithEvents btnOk As System.Windows.Forms.Button
     Friend WithEvents lblSep1 As System.Windows.Forms.Label
     Friend WithEvents btnRenunta As System.Windows.Forms.Button

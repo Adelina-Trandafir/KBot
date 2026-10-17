@@ -35,6 +35,7 @@ Partial Class PrimiteView
         pgMesaje = New PrimiteMesajePage()
         pgReceptii = New PrimiteReceptiiPage()
         pgXml = New XmlViz()
+        pgLista = New PrimiteListaPage()
         navDetaliu = New KBotNavList()
         ntfMesaj = New KBotNotice()
         tlyBody.SuspendLayout()
@@ -133,6 +134,7 @@ Partial Class PrimiteView
         '
         ' pnlDetaliu
         '
+        pnlDetaliu.Controls.Add(pgLista)
         pnlDetaliu.Controls.Add(pnlPages)
         pnlDetaliu.Controls.Add(pnlNav)
         pnlDetaliu.Controls.Add(ntfMesaj)
@@ -143,6 +145,16 @@ Partial Class PrimiteView
         pnlDetaliu.Size = New System.Drawing.Size(680, 600)
         pnlDetaliu.TabIndex = 1
         pnlDetaliu.Tag = "Card"
+        '
+        ' pgLista: the list of all the invoices, shown instead of the bar and the pages while the root of the tree is chosen
+        '
+        pgLista.Dock = System.Windows.Forms.DockStyle.Fill
+        pgLista.Location = New System.Drawing.Point(0, 0)
+        pgLista.Margin = New System.Windows.Forms.Padding(0)
+        pgLista.Name = "pgLista"
+        pgLista.Size = New System.Drawing.Size(680, 516)
+        pgLista.TabIndex = 3
+        pgLista.Visible = False
         '
         ' pnlPages
         '
@@ -301,6 +313,7 @@ Partial Class PrimiteView
     Friend WithEvents pgMesaje As PrimiteMesajePage
     Friend WithEvents pgReceptii As PrimiteReceptiiPage
     Friend WithEvents pgXml As XmlViz
+    Friend WithEvents pgLista As PrimiteListaPage
     Friend WithEvents navDetaliu As KBotNavList
     Friend WithEvents ntfMesaj As KBotNotice
 End Class

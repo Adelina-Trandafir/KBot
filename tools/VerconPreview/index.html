@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VERCON · probă locală</title>
+  <link rel="stylesheet" href="/preview.css">
+</head>
+<body>
+  <main>
+    <p class="badge">DEMO LOCAL · DATE FICTIVE</p>
+    <h1>VERCON pe calculatorul tău</h1>
+    <p>Interfața și generatorul de rapoarte folosesc sursele curente din proiect.
+       Listele, mesele și bonurile sunt demonstrative și rămân numai în memoria acestui proces.</p>
+    <p><a class="button" href="/vercon">Deschide VERCON</a></p>
+    <h2>Lista de alimente</h2>
+    <p>În VERCON: <strong>IEȘIRI → Lista Alimente</strong>, apoi deschide o listă din arborele din dreapta.
+       Poți modifica mesele, felurile și bonurile, salva în memorie și deschide <strong>Previzualizare</strong>.</p>
+    <p>Pentru raport: <strong>Rapoarte → Liste de alimente → ListaAlimente2015</strong>,
+       bifează un document și apasă <strong>Listare</strong> sau <strong>Export Excel</strong>.</p>
+    <div class="reports">
+      <a href="/preview/report/130.pdf" target="_blank" rel="noopener">PDF direct · lista 130 / 08.10.2026</a>
+      <a href="/preview/report/130.xlsx">Excel direct · lista 130 / 08.10.2026</a>
+    </div>
+    <h2>Cum lucrăm</h2>
+    <p>După modificări HTML, CSS sau JavaScript, reîncarcă pagina.
+       După modificări Python, repornește serverul. Regenerarea raportului preia noua machetă;
+       un PDF deja deschis păstrează versiunea cu care a fost generat.</p>
+    <p>La repornire, modificările datelor demo se pierd. Serverul nu se conectează la MariaDB,
+       nu trimite e-mailuri și nu folosește conturi reale.</p>
+    <p>Acest preview acoperă Lista de alimente și raportul ei. Salvările demonstrative nu validează
+       stocurile, tranzacțiile MariaDB, drepturile sau blocarea simultană din aplicația reală.</p>
+  </main>
+</body>
+</html>

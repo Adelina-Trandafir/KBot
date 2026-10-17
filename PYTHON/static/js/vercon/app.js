@@ -22,6 +22,7 @@ import { createLock } from './lock.js';
 import { createSaver } from './save.js';
 import { writePreference } from './documents.js';
 import { el, preview, scope } from './ui.js';
+import { bindApplicationMenu } from './application-menu.js';
 
 const $ = (k_id) => document.getElementById(k_id);
 const lifetime = new AbortController();   // everything below is bound to this signal
@@ -315,14 +316,11 @@ function bind() {
       { key: 'at', title: 'Data', width: 210 }, { key: 'level', title: 'Tip', width: 90 }, { key: 'message', title: 'Mesaj', width: 600 },
     ], rows: messageHistory() }], pageUi) },
   ]), { signal: lifetime.signal });
-  $('vc-apps').addEventListener('click', () => {
-    openMenu($('vc-apps'), [
-      { icon: '🏢', label: $('vc-context').textContent || 'Contul curent', disabled: true },
-      { icon: '🤖', label: 'K-BOT', rule: true, run: async () => { if (await allowLeave()) { await lock.release(); window.location.href = '/portal'; } } },
-      { icon: '📋', label: 'ADECHIT', run: async () => { if (await allowLeave()) { await lock.release(); window.location.href = '/adechit'; } } },
-      { icon: '📒', label: 'Avacont · în curând', disabled: true },
-    ], { label: 'Aplicații', below: $('vc-apps').closest('header') });
-  }, { signal: lifetime.signal });
+  bindApplicationMenu($('vc-apps'), {
+    context: () => $('vc-context').textContent,
+    navigate: path => (async () => { if (await allowLeave()) { await lock.release(); window.location.href = path; } })().catch(report),
+    signal: lifetime.signal,
+  });
   const stopTimer = portalToken() ? startSessionTimer({ token: portalToken, host: $('vc-session-timer'), onExpired: logoutNow }) : null;
   // Native tab-exit prompts are intentionally absent; in-app navigation uses confirmBox.
   addEventListener('app:session-expired', () => { lifetime.abort(); lock.release(true); }, { once: true });

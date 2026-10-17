@@ -158,6 +158,8 @@ Public Class PrimiteView
         tree.Clear()
         _nodes.Clear()
         ClearDetail()
+        ShowDetailSurface()
+        pgLista.SetItems(Nothing)
     End Sub
 
     ''' <summary>Lets go of the PDF on screen (the view is put away).</summary>
@@ -208,7 +210,10 @@ Public Class PrimiteView
             If _api Is Nothing Then Return
             Dim k_ddfChanged As Boolean = Not Nullable.Equals(_idDdf, k_idDdf)
             _idDdf = k_idDdf
-            If k_ddfChanged Then ClearDetail()
+            If k_ddfChanged Then
+                ClearDetail()
+                ShowDetailSurface()
+            End If
             ntfMesaj.Clear()
             ntfMesaj.Visible = False
             Dim k_mySeq As Integer = Interlocked.Increment(_seq)
@@ -270,6 +275,7 @@ Public Class PrimiteView
         Try
             tree.Clear()
             _nodes.Clear()
+            _rootNode = Nothing
             Dim k_scheme As ThemeScheme = ThemeManager.Current
             If k_scheme Is Nothing Then Return
             Dim k_palette As ThemePalette = k_scheme.Palette
@@ -281,7 +287,17 @@ Public Class PrimiteView
                 BuildMonthTree(k_shown, k_selectId, k_icon, k_palette)
             End If
             Dim k_node As AdvancedTreeControl.TreeItem = Nothing
-            If k_selectId.HasValue AndAlso _nodes.TryGetValue(k_selectId.Value, k_node) Then tree.SelectAndReveal(k_node)
+            If _listShown Then
+                ' The list is on screen: it follows the new tree and the root stays the chosen row (no root = the list goes away).
+                If _rootNode Is Nothing Then
+                    ShowDetailSurface()
+                Else
+                    FillList()
+                    tree.SelectAndReveal(_rootNode)
+                End If
+            ElseIf k_selectId.HasValue AndAlso _nodes.TryGetValue(k_selectId.Value, k_node) Then
+                tree.SelectAndReveal(k_node)
+            End If
             tree.Invalidate()
         Finally
             _treeLoading = False
@@ -291,9 +307,12 @@ Public Class PrimiteView
     Private Sub BuildMonthTree(k_shown As List(Of EFacturaPrimita), k_selectId As Integer?, k_icon As Image, k_palette As ThemePalette)
         Dim k_total As Decimal = k_shown.Sum(Function(k_x) k_x.Total)
         Dim k_root As AdvancedTreeControl.TreeItem = tree.AddItem(
-            "R", $"Toate facturile ({k_shown.Count})~~~{k_total.ToString("N2", _ro)}",
+            RootKey, $"Toate facturile~~~{k_total.ToString("N2", _ro)}",
             pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=True)
         k_root.Bold = True
+        _rootNode = k_root
+        ' The year is left out of a month's name (slice 00EF-40); it comes back only when the list holds more than one year, so two Septembers cannot be mistaken.
+        Dim k_severalYears As Boolean = k_shown.Where(Function(k_x) k_x.DataFact.HasValue).Select(Function(k_x) k_x.DataFact.Value.Year).Distinct().Count() > 1
         Dim k_months As IEnumerable(Of IGrouping(Of Integer, EFacturaPrimita)) =
             k_shown.GroupBy(Function(k_x) MonthKey(k_x)).OrderByDescending(Function(k_g) k_g.Key)
         For Each k_group As IGrouping(Of Integer, EFacturaPrimita) In k_months
@@ -301,7 +320,7 @@ Public Class PrimiteView
             Dim k_hasSelected As Boolean = k_selectId.HasValue AndAlso k_group.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
             Dim k_sum As Decimal = k_group.Sum(Function(k_x) k_x.Total)
             Dim k_month As AdvancedTreeControl.TreeItem = tree.AddItem(
-                "M_" & k_monthId, $"{MonthLabel(k_group.Key)}~~~{k_sum.ToString("N2", _ro)}", k_root,
+                "M_" & k_monthId, $"{MonthLabel(k_group.Key, k_severalYears)}~~~{k_sum.ToString("N2", _ro)}", k_root,
                 pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_hasSelected)
             k_month.Bold = True
             If _angajamentView Then
@@ -389,9 +408,9 @@ Public Class PrimiteView
         Return If(k_p.DataFact.HasValue, k_p.DataFact.Value.Year * 100 + k_p.DataFact.Value.Month, 0)
     End Function
 
-    Private Shared Function MonthLabel(k_key As Integer) As String
+    Private Shared Function MonthLabel(k_key As Integer, k_withYear As Boolean) As String
         If k_key = 0 Then Return "Fără dată"
-        Return $"{_monthNames(k_key Mod 100 - 1)} {k_key \ 100}"
+        Return If(k_withYear, $"{_monthNames(k_key Mod 100 - 1)} {k_key \ 100}", _monthNames(k_key Mod 100 - 1))
     End Function
 
     ' The dot: a grey ring = not linked to this DDF (cannot happen now that the list holds only the linked ones); otherwise a neutral dot. Whether a message was opened is NOT
@@ -446,6 +465,11 @@ Public Class PrimiteView
     Private Async Sub Tree_NodeMouseUp(k_node As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If _treeLoading OrElse k_node Is Nothing Then Return
+            ' The root «Toate facturile» shows the list of all the invoices (slice 00EF-41); a month has no page of its own.
+            If String.Equals(k_node.Key, RootKey, StringComparison.Ordinal) Then
+                If e Is Nothing OrElse e.Button = MouseButtons.Left Then Await ShowListSurfaceAsync().ConfigureAwait(True)
+                Return
+            End If
             Dim k_p As EFacturaPrimita = TryCast(k_node.Tag, EFacturaPrimita)
             If k_p Is Nothing Then Return
             If e IsNot Nothing AndAlso e.Button = MouseButtons.Right Then
@@ -453,6 +477,8 @@ Public Class PrimiteView
                 Return
             End If
             If e IsNot Nothing AndAlso e.Button <> MouseButtons.Left Then Return
+            ' Coming back from the list: the bar and the pages return, and the invoice that was shown stays shown.
+            If _listShown Then ShowDetailSurface()
             If k_p.IdPrimita = _shownId Then Return
             Await ShowInvoiceAsync(k_p.IdPrimita).ConfigureAwait(True)
         Catch ex As Exception
