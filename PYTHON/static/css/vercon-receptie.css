@@ -44,6 +44,9 @@
 .vc-doc--nir .vc-doc__lines .vc-dgv .dgv { --dgv-size: calc(var(--fs-ms) - 1pt); }
 .vc-doc--nir .vc-doc__lines .vc-dgv .dgv__cell { font-size: var(--dgv-size); }
 .vc-doc--nir .vc-nir-line--corrected { font-weight: 700; font-style: italic; }
+.vc-doc--nir .vc-nir-line--external { font-style: italic; }
+.vc-doc--nir .vc-nir-line--external:not(.vc-nir-line--corrected) { font-weight: 400; }
+.vc-doc--nir .vc-nir-line--external .dgv__cell-action { visibility: hidden; }
 .vc-doc--nir .vc-doc__bar.vc-doc__bar--nir-editing {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr) max-content;

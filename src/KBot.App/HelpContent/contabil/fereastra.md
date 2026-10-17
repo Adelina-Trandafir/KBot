@@ -18,7 +18,7 @@ K-BOT lucrează într-o singură **fereastră principală**:
 
 **Lista angajamentelor** (Angajamente › Navigare › «Lista angajamentelor» în ribbon) are, la rândul ei, patru zone:
 
-<!-- capture: fereastra-zone | caption: Fereastra principală cu lista angajamentelor: ribbonul, panoul lateral, vederile, lista și vederea aleasă | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament cu date, ca toate zonele să fie pline. | redo: 2026-10-13 17:30 | why: 0113 / 0114: butonul MENIU a fost înlocuit de ribbon, în stânga a apărut panoul lateral, iar lista angajamentelor e o pagină a ferestrei principale -->
+<!-- capture: fereastra-zone | caption: Fereastra principală cu lista angajamentelor: ribbonul, panoul lateral, vederile, lista și vederea aleasă | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament cu date, ca toate zonele să fie pline. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113 / 0114: butonul MENIU a fost înlocuit de ribbon, în stânga a apărut panoul lateral, iar lista angajamentelor e o pagină a ferestrei principale -->
 
 | Zona | Ce este |
 |------|---------|
@@ -28,7 +28,7 @@ K-BOT lucrează într-o singură **fereastră principală**:
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Pagini și ferestre
-<!-- slice: 0113, 0114, 0113-01 -->
+<!-- slice: 0113, 0114, 0113-01, 0114-20, 0000-92 -->
 
 K-BOT are două feluri de machete.
 
@@ -47,7 +47,8 @@ scris în ea, și revine când o ceri din nou (din ribbon sau din **Machete desc
 
 **Ferestre** — editoarele DDF și de ordonanțare, legăturile recepțiilor, operațiunile necorelate, graficul
 rezervărilor și fereastra «Grupe de angajamente». Se deschid ca **ferestre ale lor**, cu bara lor de titlu, **mai mici
-decât spațiul de lucru**, în mijlocul ferestrei principale (pot acoperi și panoul lateral). Cât sunt deschise, nu poți
+decât spațiul de lucru**, în mijlocul ferestrei principale. Cu butonul de maximizare (unde îl au), o fereastră ocupă tot **spațiul paginilor**: sub
+ribbon și lângă panoul lateral, nu tot ecranul. Cât sunt deschise, nu poți
 lucra în fereastra principală; se închid cu butoanele lor («Renunță», «Închide» sau «Ieșire», după fereastră). Paginile
 rămân cum erau când fereastra se închide; documentul PDF din pagina de dedesubt se închide când se deschide fereastra.
 
@@ -55,22 +56,24 @@ Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE
 interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01, 0114-05, 0000-89, 0114-11, 0114-12, 0114-13, 0000-90 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
   angajament — [Cât se deschide un document](topic:contabil.liste).
 - **Lupa** din capul listei deschide căutarea; **Esc** o golește și o închide. Toate butoanele comune
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
-- **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată). Meniul ei are
-  și rândul **«Actualizează angajamente...»**: bifezi angajamentele de adus la zi din FOREXE. Cu
-  descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în coadă, unul după altul
-  — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
-- Meniul rotiței are și rândul **«Grupe»**: alegi o grupă ca să vezi în listă doar angajamentele ei (vezi mai jos «Grupele de angajamente»).
+- **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
+- Meniul rotiței are și rândul **«Grupe»**, **doar cât există cel puțin o grupă**: alegi o grupă ca să vezi în listă doar angajamentele ei (vezi mai jos «Grupele de angajamente»). Grupele se fac din ribbon, cu **«Editează grupe»**.
 - Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
-- Iconița **din dreapta, jos** actualizează lista din FOREXE: angajamentele noi se adaugă, cele
-  existente rămân cum sunt — [Lista de angajamente](topic:contabil.forexe.lista).
-- Iconița **din stânga, jos** deschide macheta **Extrase de cont** — [Extrase](topic:contabil.vederi.extrase).
+- Iconița **din dreapta, jos** (și textul «Actualizează» de lângă ea) deschide un meniu mic, deasupra ei, cu două rânduri:
+  **«Descarcă angajamente NOI»** aduce din FOREXE lista angajamentelor — cele noi se adaugă, cele existente rămân cum sunt
+  — [Lista de angajamente](topic:contabil.forexe.lista); **«Actualizează angajamente VRAC»** deschide fereastra în care bifezi
+  angajamentele de adus la zi din FOREXE (cu descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în coadă,
+  unul după altul) — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
+- Cât lista e pe ecran, ribbonul are în dreapta, lângă «Închide», grupul **«Lista angajamentelor»**, cu **«Editează grupe»** și
+  **«Descarcă extrase»** — [Ribbonul](topic:contabil.ribbon).
+- Extrasele de cont noi se descarcă din ribbon, **Extrase › Descărcare › «Descarcă extrase»** (lista nu mai are iconiță pentru asta) — [Extrase](topic:contabil.vederi.extrase).
 - Un angajament scris cu **roșu** are recepții al căror lanț **nu se închide**: ultimul instantaneu al recepției nu are valoarea ei. Ținând mouse-ul pe rând vezi, pentru fiecare recepție, data, valoarea ultimului instantaneu și valoarea recepției. Se repară în fereastra de asociere — [Lanțul nu se închide](topic:contabil.asocieri.cazuri). Un lanț care se termină cu rândul de ștergere nu se socotește.
 - Același **roșu** îl are și un angajament cu **rezervări greșite**: o rezervare nu pornește de la valoarea la care s-a oprit cea de dinaintea ei. Ținând mouse-ul pe rând vezi ziua, indicatorul și valorile; dacă are ambele probleme, apar ambele mesaje. Se repară din vederea «Rezervări» — [Rezervări greșite și repararea lor](topic:contabil.vederi.rezervari).
 - Angajamentele descărcate sau actualizate de la pornirea programului sunt **subliniate** în listă. Sublinierea dispare când închideți programul.
@@ -78,13 +81,15 @@ interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 - Când mai multe acțiuni FOREXE așteaptă una după alta, se deschide fereastra **Coada robotului**; ea se închide singură după ce coada s-a golit. Butonul **«Coadă N»** din banda FOREXE o deschide oricând, dar se vede doar cât coada are ceva în ea — [Coada robotului](topic:contabil.forexe.coada).
 
 ## Grupele de angajamente
-<!-- slice: 0008-02, 000T-12, 0113 -->
+<!-- slice: 0008-02, 000T-12, 0113, 0114-11, 0114-13, 0000-90 -->
 
 O grupă strânge laolaltă angajamente care merg împreună. Un angajament poate fi în mai multe grupe. Fiecare grupă are un nume și o culoare.
 
-**Rotița** din capul listei › **«Grupe»** deschide o listă cu grupele, în ordine alfabetică, fiecare cu culoarea ei. Sub ele, după o linie de despărțire, e rândul **«Editează grupe...»**. Rândul «Grupe» are o săgeată în dreapta: lista grupelor se deschide lângă el, iar meniul rotiței rămâne deschis.
+Grupele se fac și se schimbă din ribbon, cu butonul **«Editează grupe»** din grupul **«Lista angajamentelor»** (în dreapta, lângă «Închide»; se vede cât lista angajamentelor e pe ecran).
 
-<!-- capture: grupe-meniu | caption: Rotița listei › «Grupe»: grupele și «Editează grupe...» | prepare: Aveți cel puțin două grupe făcute, de culori diferite. Apăsați rotița listei și apoi rândul «Grupe». -->
+**Rotița** din capul listei › **«Grupe»** deschide o listă cu grupele, în ordine alfabetică, fiecare cu culoarea ei. Rândul «Grupe» **apare doar cât există cel puțin o grupă** (sau cât e aleasă una); are o săgeată în dreapta: lista grupelor se deschide lângă el, iar meniul rotiței rămâne deschis.
+
+<!-- capture: grupe-meniu | caption: Rotița listei › «Grupe»: grupele | prepare: Aveți cel puțin două grupe făcute, de culori diferite. Apăsați rotița listei și apoi rândul «Grupe». | redo: 2026-10-17 20:00 | why: 0114-11: «Editează grupe...» a ieșit din meniu (e butonul din ribbon); 0114-13: rândul «Grupe» apare doar cu cel puțin o grupă -->
 
 - Alegând o grupă, lista arată **doar angajamentele ei**. Pe fiecare rând apare **aliasul** angajamentului (dacă nu are alias, denumirea), iar textul are culoarea grupei. Rândurile cu roșu, cele cu lanț care nu se închide, rămân roșii. Capul listei spune ce grupă e aleasă.
 - Cât o grupă e aleasă, meniul are în plus rândul **«Toate angajamentele»**, care readuce lista întreagă. Atunci lista cuprinde angajamentele grupei din **toți anii și din toate sursele**, așa că alegerea **Sursă/Sector** din bara de titlu și rândurile de sortare din meniul rotiței dispar până revii la «Toate angajamentele».
@@ -93,9 +98,9 @@ O grupă strânge laolaltă angajamente care merg împreună. Un angajament poat
 
 ### Fereastra «Grupe de angajamente»
 
-Se deschide din **«Editează grupe...»**, ca fereastră a ei, cu bara ei de titlu, peste fereastra principală; o închizi cu **«Ieșire»** și lista rămâne cum era, cu grupele la zi. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
+Se deschide din butonul **«Editează grupe»** al ribbonului, ca fereastră a ei, cu bara ei de titlu, peste fereastra principală; o închizi cu **«Ieșire»** și lista rămâne cum era, cu grupele la zi. Tutorial: «Deschide fereastra «Grupe de angajamente»» (din meniul «?»). În stânga e arborele, cu primul rând **«Angajamente negrupate»**, apoi grupele. În dreapta: denumirea grupei, culoarea (butonul deschide paleta de culori) și tabelul cu angajamente.
 
-<!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din rotița listei › Grupe › Editează grupe... Alegeți o grupă cu mai multe angajamente. | redo: 2026-10-16 12:00 | why: 0113-01: fereastra Grupe e o fereastră cu bara ei de titlu și cu «Ieșire», nu o pagină a ferestrei principale -->
+<!-- capture: grupe-fereastra | caption: Fereastra «Grupe de angajamente» cu o grupă aleasă | prepare: Deschideți din ribbon, grupul «Lista angajamentelor» › Editează grupe. Alegeți o grupă cu mai multe angajamente. | redo: 2026-10-16 12:00 | why: 0113-01: fereastra Grupe e o fereastră cu bara ei de titlu și cu «Ieșire», nu o pagină a ferestrei principale -->
 
 - **Angajamente negrupate**: tabelul arată angajamentele care nu sunt în nicio grupă. **Trage un rând** cu mouse-ul peste o grupă din arbore: angajamentul intră în acea grupă pe loc, fără să mai apeși «Salvează». Tutorial: «Adaugă un angajament într-o grupă existentă».
 
@@ -116,7 +121,7 @@ Se deschide din **«Editează grupe...»**, ca fereastră a ei, cu bara ei de ti
 **Tutoriale** (în meniul «?», la «Tutoriale»): «Deschide fereastra «Grupe de angajamente»» (din fereastra principală), apoi, din fereastra grupelor: «Adaugă o grupă nouă», «Scoate un angajament dintr-o grupă» și «Adaugă un angajament într-o grupă existentă».
 
 ## Vederile
-<!-- slice: 0018, 0074, 0088, 0097, 0000-30, 0000-31 -->
+<!-- slice: 0018, 0074, 0088, 0097, 0000-30, 0000-31, 0114-14, 0000-90 -->
 
 O vedere apare doar dacă angajamentul selectat are date de acel fel; altfel butonul ei **nu se vede** în bara vederilor (nu e gri, lipsește). Când nu ai ales niciun angajament, se văd doar «Sumar» și, cât ești conectat la FOREXE, «Browser FOREXE». Ce trebuie să fie adevărat ca să apară fiecare:
 
@@ -128,6 +133,7 @@ O vedere apare doar dacă angajamentul selectat are date de acel fel; altfel but
 | Recepții | angajamentul are recepții |
 | Plăți | angajamentul are plăți |
 | Extrase | angajamentul are operațiuni în extrasele de cont |
+| E-Factura | fundamentarea angajamentului are facturi primite; butonul stă sub «Extrase», sus, printre vederile de lucru (nu mai e jos, lângă Fundamentare și Ordonanțare) — [E-Factura](topic:contabil.efactura) |
 | Browser FOREXE | ești conectat la FOREXE (butonul «Conectare» din banda de jos) |
 | Fundamentare | angajamentul are document de fundamentare (se face din «Rezervări», cu semnul «+») |
 | Ordonanțare | angajamentul are ordonanțări (se fac din «Plăți», cu semnul «+») |
@@ -154,7 +160,7 @@ ceară din nou parola**, ca după o conectare: lista de angajamente, anul, sursa
 se reîncarcă pentru unitatea nouă, iar ea se ține minte pentru conectarea următoare (dacă în
 Setări › Autentificare e bifată «Ține minte și unitatea aleasă»).
 
-<!-- capture: unitate-selector | caption: Alegerea unității din bara de titlu | goto: view:sumar | prepare: Conectați-vă cu un utilizator care are acces la cel puțin două unități, deschideți «Lista angajamentelor» din ribbon, apoi faceți clic pe numele unității din bara de titlu. | redo: 2026-10-13 17:30 | why: 0114: sub bara de titlu nu mai e butonul MENIU, ci ribbonul -->
+<!-- capture: unitate-selector | caption: Alegerea unității din bara de titlu | goto: view:sumar | prepare: Conectați-vă cu un utilizator care are acces la cel puțin două unități, deschideți «Lista angajamentelor» din ribbon, apoi faceți clic pe numele unității din bara de titlu. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0114: sub bara de titlu nu mai e butonul MENIU, ci ribbonul -->
 
 
 Dacă ești **conectat la FOREXE**, K-BOT închide singur conexiunea înainte să treacă pe unitatea

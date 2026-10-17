@@ -12,7 +12,7 @@ open: view:ddf
 Documentul de fundamentare (DDF) justifică fiecare rezervare de credite a unui angajament. K-BOT
 îl face, îl semnezi în K-BOT, iar K-BOT îl trimite în FOREXE și completează singur ce vine de acolo.
 
-<!-- capture: ddf-vedere | caption: Vederea «Fundamentare» cu reviziile unui angajament | goto: view:ddf | prepare: Selectați un angajament cu cel puțin două revizii DDF și alegeți una în arbore. -->
+<!-- capture: ddf-vedere | caption: Vederea «Fundamentare» cu reviziile unui angajament | goto: view:ddf | prepare: Selectați un angajament cu cel puțin două revizii DDF și alegeți una în arbore. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Drumul unei revizii
 <!-- slice: 0078-06, 0081, 0000-14 -->
@@ -67,7 +67,7 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 - Cât Adobe încă deschide documentul unei revizii (sau un fișier din «Fișiere»), arborele și lista
   de fișiere nu primesc alt rând — [Cât se deschide un document](topic:contabil.liste).
 
-<!-- capture: ddf-document | caption: Pagina «Document PDF» a unei revizii semnate | goto: view:ddf | prepare: Alegeți o revizie semnată din arbore și deschideți pagina «Document PDF». -->
+<!-- capture: ddf-document | caption: Pagina «Document PDF» a unei revizii semnate | goto: view:ddf | prepare: Alegeți o revizie semnată din arbore și deschideți pagina «Document PDF». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Lista de tipărire
 <!-- slice: 0099, 0101 -->
@@ -83,14 +83,14 @@ Când dai clic pe o **lună** sau pe **«Toate reviziile»**, bara cu pagini ră
 | **Listat** | bifat dacă documentul a fost tipărit măcar o dată |
 | **Nr. tipăriri** | de câte ori a fost tipărit |
 
-<!-- capture: ddf-lista-tiparire | caption: Lista de tipărire a reviziilor, pe «Toate reviziile» | goto: view:ddf | prepare: Selectați un angajament cu mai multe revizii, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate reviziile», apoi pe pagina «Documente». -->
+<!-- capture: ddf-lista-tiparire | caption: Lista de tipărire a reviziilor, pe «Toate reviziile» | goto: view:ddf | prepare: Selectați un angajament cu mai multe revizii, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate reviziile», apoi pe pagina «Documente». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 Iconița din capul coloanei cu bife deschide un meniu:
 
 - **«Selectează / deselectează toate»** — bifează toate rândurile, sau le debifează dacă erau toate bifate;
 - **«Selectează / deselectează doar cele nelistate»** — la fel, dar doar pe rândurile cu 0 tipăriri; cele deja listate rămân cum erau.
 
-<!-- capture: ddf-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ddf | prepare: Pe pagina «Documente» a rădăcinii «Toate reviziile», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
+<!-- capture: ddf-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ddf | prepare: Pe pagina «Documente» a rădăcinii «Toate reviziile», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 Jos sunt două butoane, care lucrează pe rândurile **bifate**:
 

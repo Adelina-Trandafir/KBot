@@ -2,7 +2,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class GrupeForm
-    Inherits Global.KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

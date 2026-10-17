@@ -11,7 +11,7 @@ open: view:ddf
 O revizie **semnată pe A** se trimite în FOREXE din vederea «Fundamentare»: alege revizia cu clic
 stânga, apoi **clic dreapta** pe ea › **Trimite în FOREXE**. Trebuie să fii conectat la FOREXE.
 
-<!-- capture: ddf-trimite-meniu | caption: Meniul reviziei, cu «Trimite în FOREXE» | goto: view:ddf | prepare: Alegeți o revizie în starea «Semnat A — gata de trimis» și faceți clic dreapta pe ea. -->
+<!-- capture: ddf-trimite-meniu | caption: Meniul reviziei, cu «Trimite în FOREXE» | goto: view:ddf | prepare: Alegeți o revizie în starea «Semnat A — gata de trimis» și faceți clic dreapta pe ea. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Ce face robotul
 <!-- slice: 0081-03, 0081-04, 0081-05, 0078-06 -->

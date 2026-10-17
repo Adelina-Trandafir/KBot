@@ -478,6 +478,10 @@ Public Module NativeMethods
     ''' </summary>
     Friend Sub ApplyMinMaxInfo(lParam As IntPtr, f As Form)
         If f Is Nothing OrElse Not f.IsHandleCreated Then Return
+        ' A modal window kept inside the area of the pages (AvacontMain.FitModal): WinForms already wrote its
+        ' MaximizedBounds into the message, the work area must not replace them.
+        Dim k_themed As KBotThemedForm = TryCast(f, KBotThemedForm)
+        If k_themed IsNot Nothing AndAlso k_themed.HasMaximizedBounds Then Return
         Try
             Dim mmi As MINMAXINFO = Marshal.PtrToStructure(Of MINMAXINFO)(lParam)
             Dim scr As Screen = Screen.FromHandle(f.Handle)

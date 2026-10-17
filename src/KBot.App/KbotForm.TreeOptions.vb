@@ -29,8 +29,6 @@ Partial Public Class KbotForm
     Private Const TREE_SORT_DATE As String = "sort-date"
     Private Const TREE_COL_COD As String = "col-cod"
     Private Const TREE_COL_SURSE As String = "col-surse"
-    ' Slice 0100 / 0109: the «update angajamente» window (multi-thread: downloaded together; otherwise queued one by one).
-    Private Const TREE_UPDATE_MANY As String = "update-many"
     ' Slice 0008-02: the «Grupe» folder (KbotForm.Grupe.vb).
     Private Const TREE_GRUPE As String = "grupe"
 
@@ -282,10 +280,14 @@ Partial Public Class KbotForm
 
     ''' <summary>
     ''' Two sort rows (the one in force checked), a separator, two column rows (checked =
-    ''' shown under the sort in force). The icons are placeholders the operator may change.
+    ''' shown under the sort in force), and -- only when at least one group exists (slice 0114-13) -- the «Grupe» row.
+    ''' The icons are placeholders the operator may change. Async because the groups are asked of the server first;
+    ''' UI boundary (fire-and-forget from the click handlers): logs and swallows.
     ''' </summary>
-    Private Sub ShowTreeOptionsMenu(anchor As Control, anchorRect As Rectangle)
+    Private Async Sub ShowTreeOptionsMenu(anchor As Control, anchorRect As Rectangle)
         Try
+            Dim aresGrupe As Boolean = Await ExistaGrupeAsync().ConfigureAwait(True)
+            If IsDisposed Then Return
             Dim s As AppSettings = AppSettings.Current
             Dim coloane As Image = My.Resources.Resources.cells
             Dim rows As New List(Of CustomPopupItem)()
@@ -305,12 +307,15 @@ Partial Public Class KbotForm
                     .Checked = s.TreeShowSurse}
             })
 
-            ' Slice 0100 / 0109: the angajamente to update in one go (the window is KbotForm.Parallel.vb's).
-            ' Always offered: multi-thread downloads them together, otherwise they join the robot queue.
-            rows.Add(CustomPopupItem.Separator())
-            rows.Add(New CustomPopupItem(TREE_UPDATE_MANY, "&Actualizează angajamente...", FxIcons.RefreshIcon()))
-            ' Slice 0008-02: the groups of angajamente (their menu opens at the mouse).
-            rows.Add(New CustomPopupItem(TREE_GRUPE, "&Grupe", My.Resources.Resources.folder_open) With {.Submenu = True})
+            ' Slice 0100 / 0109 -> 0114-12: «Actualizeaza angajamente...» is not here any more: it is the «VRAC» row of the
+            ' popup of the tree footer (KbotForm.Download.vb).
+            ' Slice 0008-02 / 0114-13: the groups of angajamente (their menu opens beside the row). The row is there only when
+            ' a group exists (an active group counts: it must be possible to go back to «Toate angajamentele»); the groups
+            ' are made in the ribbon, with «Editeaza grupe» (slice 0114-11).
+            If aresGrupe OrElse _grupaActiva IsNot Nothing Then
+                rows.Add(CustomPopupItem.Separator())
+                rows.Add(New CustomPopupItem(TREE_GRUPE, "&Grupe", My.Resources.Resources.folder_open) With {.Submenu = True})
+            End If
 
             ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
             Dim menu As New CustomPopup(rows)
@@ -334,11 +339,6 @@ Partial Public Class KbotForm
         Try
             ' Slice 000T-10: a tutorial waiting for a row of this list (sorting, the update window).
             RaiseEvent TutorialSignal(SignalTreeMenuPrefix & e.Item.Key)
-            ' Slice 0100 / 0109: not a setting -- it opens the «update angajamente» window.
-            If String.Equals(e.Item.Key, TREE_UPDATE_MANY, StringComparison.Ordinal) Then
-                DeschideActualizareaMultipla()
-                Return
-            End If
             ' Slice 0008-02: not a setting -- it opens the groups menu.
             If String.Equals(e.Item.Key, TREE_GRUPE, StringComparison.Ordinal) Then
                 DeschideMeniulGrupe()

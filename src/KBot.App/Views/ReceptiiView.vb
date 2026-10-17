@@ -32,7 +32,7 @@ Imports KBot.Theming
 ''' anteturile și liniile lipsă.
 ''' </summary>
 Public Class ReceptiiView
-    Implements IAngajamentView, IThemedControl
+    Implements IAngajamentView, IThemedControl, IViewRibbon
 
     ' Cheile coloanelor grilei — o singură definiție, folosită la creare și la umplere,
     ' ca un typo să nu ajungă o coloană goală în producție.
@@ -58,6 +58,12 @@ Public Class ReceptiiView
     ' Format românesc: separator de mii «.» și zecimală «,» (1.091.940,00).
     Private Shared ReadOnly _roCulture As New CultureInfo("ro-RO")
 
+    ' Butoanele vederii din ribbon (grupul vederii; cheile din designerul AvacontMain). Slice 0114-16: au luat locul iconițelor
+    ' din antetul (legăturile) si din stânga subsolului (refacerea din istoric) arborelui; în arbore a rămas doar «Actualizează».
+    Private Const KEY_REFACE As String = "receptii_reface"
+    Private Const KEY_ASOCIERE As String = "receptii_asociere"
+    Private Shared ReadOnly _ribbonKeys As String() = {KEY_REFACE, KEY_ASOCIERE}
+
     Private ReadOnly _apiClient As IApiClient
     ' Plasa 401 a shell-ului (MainForm.WithReauth), specializată pe ReceptiiInfo:
     ' politica de re-login rămâne într-un singur loc, vederea doar o folosește.
@@ -74,6 +80,9 @@ Public Class ReceptiiView
     ' Codul angajamentului CERUT ultima dată — vezi stale-guard din LoadAsync (identic cu
     ' Sumar/Rezervări): operatorul parcurge arborele rapid, iar un răspuns depășit se aruncă.
     Private _requestedCod As String
+
+    ' Angajamentul din arbore (cu lanțurile neînchise): «Reface din istoric...» apare doar când are erori de reparat.
+    Private _info As AngajamentTreeInfo
 
     ' Ultimele date încărcate — păstrate ca ApplyTheme să reconstruiască arborele
     ' (re-tintarea iconițelor) fără o nouă cerere de rețea. `_plati` alimentează
@@ -98,13 +107,12 @@ Public Class ReceptiiView
     Private ReadOnly _reimprospateaza As Action(Of String)
 
     ''' <summary>
-    ''' Refacerea instantaneelor și liniilor LIPSĂ din istoric (felia 0062) — iconița din
-    ''' STÂNGA subsolului arborelui. Vine de la shell din același motiv ca celelalte două:
+    ''' Refacerea instantaneelor și liniilor LIPSĂ din istoric (felia 0062) — butonul «Reface din istoric...»
+    ''' din ribbon (felia 0114-16; până atunci iconița din STÂNGA subsolului arborelui). Vine de la shell din același motiv ca celelalte două:
     ''' apelul are nevoie de plasa de re-autentificare pe o formă de răspuns proprie
     ''' (<see cref="ReceptiiRebuildResult"/>), iar politica aia trăiește într-un singur loc.
     '''
-    ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
-    ''' face nimic.</para>
+    ''' <para>Nothing = gazda nu o oferă. Atunci butonul lipsește, nu rămâne unul care nu face nimic.</para>
     ''' </summary>
     Private ReadOnly _rebuildMissing As Action(Of String)
 
@@ -121,44 +129,31 @@ Public Class ReceptiiView
         _deschideLegaturi = deschideLegaturi
         _reimprospateaza = reimprospateaza
         _rebuildMissing = rebuildMissing
-        If _deschideLegaturi Is Nothing Then
-            tree.HeaderRightIcon = Nothing
-            tree.HeaderRightIconTooltip = String.Empty
-        End If
         If _reimprospateaza Is Nothing Then
             tree.FooterRightIcon = Nothing
             tree.FooterRightIconTooltip = String.Empty
-        End If
-        If _rebuildMissing Is Nothing Then
-            tree.FooterLeftIcon = Nothing
-            tree.FooterLeftIconTooltip = String.Empty
         End If
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
     ''' <summary>
-    ''' Iconița din antetul arborelui deschide editorul de legături recepție ▸ instantaneu.
+    ''' Butonul «Asociază recepții» din ribbon deschide editorul de legături recepție ▸ instantaneu (felia 0114-16; până atunci
+    ''' iconița din antetul arborelui).
     '''
     ''' <para>ORICÂND, nu doar după o descărcare — cerința operatorului din 29.08.2026, și
     ''' totodată ce făcea și Access prin gazda `frmFX_ASOC`. Are nevoie doar de angajamentul
     ''' selectat; dacă nu e niciunul, spune asta în loc să deschidă o fereastră goală.</para>
     ''' </summary>
-    Private Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
-        Try
-            If _deschideLegaturi Is Nothing Then Return
-            If String.IsNullOrWhiteSpace(_requestedCod) Then
-                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
-                                "K-BOT — Legăturile recepțiilor",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
-            _deschideLegaturi(_requestedCod)
-        Catch ex As Exception
-            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
-            ' ar cădea pe firul de UI.
-            GlobalErrorLog.Write("ReceptiiView.tree_HeaderRightIconClicked", ex)
-        End Try
+    Private Sub DeschideLegaturi()
+        If _deschideLegaturi Is Nothing Then Return
+        If String.IsNullOrWhiteSpace(_requestedCod) Then
+            KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                            "K-BOT — Legăturile recepțiilor",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _deschideLegaturi(_requestedCod)
     End Sub
 
     ''' <summary>
@@ -190,8 +185,8 @@ Public Class ReceptiiView
     End Sub
 
     ''' <summary>
-    ''' Iconița din STÂNGA subsolului arborelui cere refacerea, din istoric, a instantaneelor
-    ''' și liniilor care lipsesc din FX_Receptii_H / FX_Receptii (felia 0062).
+    ''' Butonul «Reface din istoric...» din ribbon cere refacerea, din istoric, a instantaneelor
+    ''' și liniilor care lipsesc din FX_Receptii_H / FX_Receptii (felia 0062; din 0114-16 din ribbon).
     ''' </summary>
     ''' <remarks>
     ''' Cererea operatorului din 15.09.2026: Access pierde IDRH/IDRR pe anteturi, iar după
@@ -199,18 +194,68 @@ Public Class ReceptiiView
     ''' Shell-ul face proba, cere confirmarea, scrie și reîncarcă arborele cu nodul păstrat —
     ''' ceea ce împinge singur contextul nou încoace, deci vederea nu se reîncarcă de aici.
     ''' </remarks>
-    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+    Private Sub RefaDinIstoric()
+        If _rebuildMissing Is Nothing Then Return
+        If String.IsNullOrWhiteSpace(_requestedCod) Then
+            KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                            "K-BOT — Recepții", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _rebuildMissing(_requestedCod)
+    End Sub
+
+    ' ── The buttons of the view in the ribbon (slice 0114-16) ────────────────────────────────
+
+    ''' <summary>Raised when what the ribbon buttons of this view show has changed (the window asks again).</summary>
+    Public Event RibbonStateChanged As EventHandler Implements IViewRibbon.RibbonStateChanged
+
+    Public ReadOnly Property RibbonCaption As String Implements IViewRibbon.RibbonCaption
+        Get
+            Return "Recepții"
+        End Get
+    End Property
+
+    Public ReadOnly Property RibbonKeys As IReadOnlyList(Of String) Implements IViewRibbon.RibbonKeys
+        Get
+            Return _ribbonKeys
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' «Reface din istoric...» exists only while the angajament has errors to repair: a reception whose chain does not close
+    ''' (the same list that paints its row red in the main tree, slice 0101) -- and the host runs the rebuild. «Asociaza receptii» is
+    ''' there while the view has an angajament and the host opens the link editor.
+    ''' </summary>
+    Public Function RibbonButtonState(k_key As String) As ViewButtonState Implements IViewRibbon.RibbonButtonState
+        Select Case k_key
+            Case KEY_REFACE
+                Return If(_rebuildMissing IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.LantNeinchis.Count > 0,
+                          ViewButtonState.Enabled, ViewButtonState.Hidden)
+            Case KEY_ASOCIERE
+                Return If(_deschideLegaturi IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(_requestedCod),
+                          ViewButtonState.Enabled, ViewButtonState.Hidden)
+            Case Else
+                Throw New ArgumentException($"Buton de ribbon necunoscut pentru Recepții: '{k_key}'.", NameOf(k_key))
+        End Select
+    End Function
+
+    Public Function RibbonButtonText(k_key As String) As String Implements IViewRibbon.RibbonButtonText
+        Return String.Empty
+    End Function
+
+    ''' <summary>A press on one of the buttons. UI boundary: logs and swallows.</summary>
+    Public Sub RunRibbonButton(k_key As String) Implements IViewRibbon.RunRibbonButton
         Try
-            If _rebuildMissing Is Nothing Then Return
-            If String.IsNullOrWhiteSpace(_requestedCod) Then
-                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
-                                "K-BOT — Recepții", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
-            _rebuildMissing(_requestedCod)
+            Select Case k_key
+                Case KEY_REFACE
+                    RefaDinIstoric()
+                Case KEY_ASOCIERE
+                    DeschideLegaturi()
+                Case Else
+                    Throw New ArgumentException($"Buton de ribbon necunoscut pentru Recepții: '{k_key}'.", NameOf(k_key))
+            End Select
         Catch ex As Exception
-            ' Graniță de UI: se loghează și se înghite.
-            GlobalErrorLog.Write("ReceptiiView.Tree_FooterLeftIconClicked", ex)
+            GlobalErrorLog.Write("ReceptiiView.RunRibbonButton", ex)
         End Try
     End Sub
 
@@ -296,6 +341,7 @@ Public Class ReceptiiView
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
             Dim cod As String = If(info Is Nothing, Nothing, info.CodAngajament)
+            _info = info
             If String.IsNullOrWhiteSpace(cod) Then
                 _requestedCod = Nothing
                 _rows = Nothing
@@ -874,11 +920,13 @@ Public Class ReceptiiView
         lblEmpty.Text = message
         lblEmpty.Visible = True
         split.Visible = False
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)   ' the ribbon buttons follow the angajament shown
     End Sub
 
     Private Sub ShowContent()
         lblEmpty.Visible = False
         split.Visible = True
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)
     End Sub
 
     ' ── Formatare / iconițe ──────────────────────────────────────────────────

@@ -8,7 +8,7 @@ screens: AsociereForm.treeLant, AsociereForm.gridLant, AsociereForm.pnlGrafice, 
 keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, grafic, distributie, benzi, evolutia valorii, plata, total receptii la data platii
 ---
 <!-- slice: 0048-04, 0000-12 -->
-<!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați iconița din dreapta, sus, a arborelui de recepții. | redo: 2026-10-16 12:00 | why: 0113-01: fereastra Asocieri e o fereastră cu bara ei de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
+<!-- capture: asocieri-fereastra | caption: Fereastra Asocieri, cu recepțiile în stânga și instantaneele neașezate în dreapta | goto: view:receptii | prepare: Selectați un angajament cu mai multe recepții modificate, apoi apăsați butonul «Asociază recepții» din ribbon. | redo: 2026-10-17 21:00 | why: 0114-16: fereastra se deschide din butonul «Asociaza receptii» din ribbon; 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113-01: fereastra Asocieri e o fereastră cu bara ei de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
@@ -60,7 +60,7 @@ Două vederi, alese din dreapta:
 - **Distribuție** — «AȘEZAREA INSTANTANEELOR»: câte o **bandă** pe recepție, cu un marcaj pe fiecare
   instantaneu, iar jos banda celor neașezate. Marcajele se pot trage și ele.
 
-<!-- capture: asocieri-grafic | caption: Graficul «Tot angajamentul», cu reperele plăților | goto: view:receptii | prepare: Deschideți Asocieri, alegeți «Grafic» și fila «Tot angajamentul», apoi țineți mouse-ul pe un reper de plată. -->
+<!-- capture: asocieri-grafic | caption: Graficul «Tot angajamentul», cu reperele plăților | goto: view:receptii | prepare: Deschideți Asocieri, alegeți «Grafic» și fila «Tot angajamentul», apoi țineți mouse-ul pe un reper de plată. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 **Reperele verticale sunt plățile.** Ținând mouse-ul pe unul vezi socoteala ordonanțării de atunci:
 plata (data, suma), **«Total recepții la data plății»**, **«Plăți anterioare»** și **«Diferență
@@ -71,7 +71,7 @@ instantaneu stă, probabil, pe recepția greșită.**
 **«Grafice și benzi»** deschide graficul și benzile într-o fereastră separată, pe care o poți mări cât
 ecranul — bună la angajamentele cu multe recepții.
 
-<!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». -->
+<!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Butoanele
 <!-- slice: 0048-04, 0058, 0056-02, 0113, 0113-01 -->

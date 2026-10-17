@@ -22,11 +22,7 @@ Partial Class PrimiteForm
         capBar = New KBotCaptionBar()
         pnlCard = New System.Windows.Forms.Panel()
         primite = New PrimiteView()
-        pnlJos = New System.Windows.Forms.Panel()
-        lblStare = New System.Windows.Forms.Label()
-        btnIesire = New System.Windows.Forms.Button()
         pnlCard.SuspendLayout()
-        pnlJos.SuspendLayout()
         SuspendLayout()
         '
         ' capBar
@@ -66,52 +62,13 @@ Partial Class PrimiteForm
         primite.Size = New System.Drawing.Size(1170, 760)
         primite.TabIndex = 0
         '
-        ' pnlJos
-        '
-        pnlJos.Controls.Add(lblStare)
-        pnlJos.Controls.Add(btnIesire)
-        pnlJos.Dock = System.Windows.Forms.DockStyle.Bottom
-        pnlJos.Location = New System.Drawing.Point(3, 847)
-        pnlJos.Margin = New System.Windows.Forms.Padding(0)
-        pnlJos.Name = "pnlJos"
-        pnlJos.Padding = New System.Windows.Forms.Padding(8)
-        pnlJos.Size = New System.Drawing.Size(1194, 58)
-        pnlJos.TabIndex = 2
-        pnlJos.Tag = "Card"
-        '
-        ' lblStare
-        '
-        lblStare.AutoEllipsis = True
-        lblStare.Dock = System.Windows.Forms.DockStyle.Fill
-        lblStare.Location = New System.Drawing.Point(133, 8)
-        lblStare.Name = "lblStare"
-        lblStare.Padding = New System.Windows.Forms.Padding(12, 0, 12, 0)
-        lblStare.Size = New System.Drawing.Size(634, 42)
-        lblStare.TabIndex = 3
-        lblStare.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        '
-        ' btnIesire
-        '
-        btnIesire.Dock = System.Windows.Forms.DockStyle.Left
-        btnIesire.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnIesire.Location = New System.Drawing.Point(8, 8)
-        btnIesire.Name = "btnIesire"
-        btnIesire.Size = New System.Drawing.Size(125, 42)
-        btnIesire.TabIndex = 0
-        btnIesire.Text = "Ieșire"
-        tips.SetToolTipHeader(btnIesire, "Ieșire")
-        tips.SetToolTipText(btnIesire, "Închide fereastra facturilor primite.")
-        btnIesire.UseVisualStyleBackColor = True
-        '
         ' PrimiteForm
         '
         AutoFitToTheme = False
         AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        CancelButton = btnIesire
         ClientSize = New System.Drawing.Size(1200, 908)
         Controls.Add(pnlCard)
-        Controls.Add(pnlJos)
         Controls.Add(capBar)
         FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
         MinimizeBox = False
@@ -122,7 +79,6 @@ Partial Class PrimiteForm
         StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Text = "E-Factura — facturi primite"
         pnlCard.ResumeLayout(False)
-        pnlJos.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -130,7 +86,4 @@ Partial Class PrimiteForm
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents pnlCard As System.Windows.Forms.Panel
     Friend WithEvents primite As PrimiteView
-    Friend WithEvents pnlJos As System.Windows.Forms.Panel
-    Friend WithEvents lblStare As System.Windows.Forms.Label
-    Friend WithEvents btnIesire As System.Windows.Forms.Button
 End Class

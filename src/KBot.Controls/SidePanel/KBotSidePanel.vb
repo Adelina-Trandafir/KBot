@@ -28,7 +28,7 @@ Public NotInheritable Class KBotSidePanel
     Implements IThemedControl
 
     ' Logical (96 dpi) measures.
-    Private Const BarHeight As Integer = 28
+    Private Const ButtonMargin As Integer = 6   ' air around the fold button, like the navigation list's
     Private Const HeaderHeight As Integer = 30
     Private Const LineRowHeight As Integer = 24
     Private Const StackedRowHeight As Integer = 42
@@ -41,6 +41,10 @@ Public NotInheritable Class KBotSidePanel
     Private _collapsed As Boolean
     Private _expandedWidth As Integer = 270
     Private _tooltip As KBotToolTip
+    Private _collapseButtonSize As Integer = 18
+    Private _collapseButtonText As String = String.Empty
+    Private _collapseImageExpanded As Image
+    Private _collapseImageCollapsed As Image
 
     Private _scheme As ThemeScheme
     Private _layoutValid As Boolean
@@ -105,6 +109,77 @@ Public NotInheritable Class KBotSidePanel
             UpdateWidth()
         End Set
     End Property
+
+    <Category("K-BOT")>
+    <Description("Side of the fold button at the bottom of the panel, in logical pixels (96 dpi). Implicit 18; 0 = no button.")>
+    <DefaultValue(18)>
+    Public Property CollapseButtonSize As Integer
+        Get
+            Return _collapseButtonSize
+        End Get
+        Set(k_value As Integer)
+            Dim k_clamped As Integer = Math.Max(0, k_value)
+            If k_clamped = _collapseButtonSize Then Return
+            _collapseButtonSize = k_clamped
+            InvalidateLayout()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Text written beside the fold button while the panel is unfolded (nothing while it is folded). Empty = no text.")>
+    <DefaultValue("")>
+    Public Property CollapseButtonText As String
+        Get
+            Return _collapseButtonText
+        End Get
+        Set(k_value As String)
+            _collapseButtonText = If(k_value, String.Empty)
+            Invalidate()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Icon of the fold button while the panel is unfolded (the one that folds it). Nothing = a drawn chevron. Not owned by the panel.")>
+    Public Property CollapseExpandedImage As Image
+        Get
+            Return _collapseImageExpanded
+        End Get
+        Set(k_value As Image)
+            If ReferenceEquals(k_value, _collapseImageExpanded) Then Return
+            _collapseImageExpanded = k_value
+            Invalidate()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("Icon of the fold button while the panel is folded (the one that unfolds it). Nothing = a drawn chevron. Not owned by the panel.")>
+    Public Property CollapseCollapsedImage As Image
+        Get
+            Return _collapseImageCollapsed
+        End Get
+        Set(k_value As Image)
+            If ReferenceEquals(k_value, _collapseImageCollapsed) Then Return
+            _collapseImageCollapsed = k_value
+            Invalidate()
+        End Set
+    End Property
+
+    ' A reference type has no usable DefaultValue in VB: «unset» is said with ShouldSerialize/Reset (a freshly dropped panel writes no line).
+    Private Function ShouldSerializeCollapseExpandedImage() As Boolean
+        Return _collapseImageExpanded IsNot Nothing
+    End Function
+
+    Private Sub ResetCollapseExpandedImage()
+        CollapseExpandedImage = Nothing
+    End Sub
+
+    Private Function ShouldSerializeCollapseCollapsedImage() As Boolean
+        Return _collapseImageCollapsed IsNot Nothing
+    End Function
+
+    Private Sub ResetCollapseCollapsedImage()
+        CollapseCollapsedImage = Nothing
+    End Sub
 
     <Category("K-BOT")>
     <Description("The tooltip component that shows the rows' tooltips. Without it no tooltip is shown.")>
@@ -242,12 +317,36 @@ Public NotInheritable Class KBotSidePanel
 
     ' ---- Layout (content coordinates: y = 0 is the top of the first header) ----------------------
 
+    ' The sections start at the very top: the fold button sits in a band at the bottom (slice 0115-01).
     Private Function ViewTop() As Integer
-        Return Px(BarHeight)
+        Return 0
+    End Function
+
+    ' Height of the band at the bottom that holds the fold button (0 without a button).
+    Private Function BandHeight() As Integer
+        Return If(_collapseButtonSize <= 0, 0, Px(_collapseButtonSize) + 2 * Px(ButtonMargin))
     End Function
 
     Private Function ViewHeight() As Integer
-        Return Math.Max(0, Height - ViewTop())
+        Return Math.Max(0, Height - ViewTop() - BandHeight())
+    End Function
+
+    ' The fold button: bottom left, like the navigation list's.
+    Private Function ButtonRect() As Rectangle
+        If _collapseButtonSize <= 0 Then Return Rectangle.Empty
+        Dim k_side As Integer = Px(_collapseButtonSize)
+        Return New Rectangle(Px(ButtonMargin), Height - Px(ButtonMargin) - k_side, k_side, k_side)
+    End Function
+
+    ' What a click on the fold control reaches: the button and, while unfolded, the text beside it (all the way to the right).
+    Private Function ButtonHitRect() As Rectangle
+        Dim k_button As Rectangle = ButtonRect()
+        If k_button.IsEmpty Then Return Rectangle.Empty
+        Dim k_air As Integer = Px(ButtonMargin) \ 2
+        If Not _collapsed AndAlso _collapseButtonText.Length > 0 Then
+            Return Rectangle.FromLTRB(k_button.Left - k_air, k_button.Top - k_air, Width - Px(ButtonMargin), k_button.Bottom + k_air)
+        End If
+        Return Rectangle.Inflate(k_button, k_air, k_air)
     End Function
 
     Private Function MaxScroll() As Integer
@@ -292,10 +391,6 @@ Public NotInheritable Class KBotSidePanel
         Return New Rectangle(k_rect.Left, k_rect.Top + ViewTop() - _scroll, k_rect.Width, k_rect.Height)
     End Function
 
-    Private Function BarRect() As Rectangle
-        Return New Rectangle(0, 0, Width, ViewTop())
-    End Function
-
     Private Function StripSlot(k_index As Integer) As Rectangle
         Return New Rectangle(0, ViewTop() + k_index * Px(StripSlotHeight), Width, Px(StripSlotHeight))
     End Function
@@ -310,7 +405,6 @@ Public NotInheritable Class KBotSidePanel
             k_g.SmoothingMode = SmoothingMode.AntiAlias
             k_g.Clear(k_p.SurfaceColor)
 
-            PaintBar(k_g, k_p)
             If _collapsed Then
                 PaintStrip(k_g, k_p)
             Else
@@ -322,6 +416,7 @@ Public NotInheritable Class KBotSidePanel
                 k_g.ResetClip()
                 PaintScrollIndicator(k_g, k_p)
             End If
+            PaintBand(k_g, k_p)
             Using k_pen As New Pen(k_p.BorderColor)
                 k_g.DrawLine(k_pen, Width - 1, 0, Width - 1, Height)
             End Using
@@ -331,22 +426,47 @@ Public NotInheritable Class KBotSidePanel
         End Try
     End Sub
 
-    Private Sub PaintBar(k_g As Graphics, k_p As ThemePalette)
-        Dim k_bar As Rectangle = BarRect()
-        If _hotBar Then FillRounded(k_g, Rectangle.Inflate(New Rectangle(k_bar.Right - Px(30), k_bar.Top, Px(28), k_bar.Height), -Px(2), -Px(3)), k_p.ButtonHoverColor)
-        ' Chevron: points left to fold, right to unfold.
-        Dim k_cx As Integer = If(_collapsed, k_bar.Width \ 2, k_bar.Right - Px(16))
-        Dim k_cy As Integer = k_bar.Top + k_bar.Height \ 2
-        Dim k_s As Integer = Px(4)
-        Using k_pen As New Pen(k_p.TextDimColor, Math.Max(1.0F, Px(2) / 2.0F))
-            If _collapsed Then
-                k_g.DrawLines(k_pen, New Point() {New Point(k_cx - k_s \ 2, k_cy - k_s), New Point(k_cx + k_s \ 2, k_cy), New Point(k_cx - k_s \ 2, k_cy + k_s)})
-            Else
-                k_g.DrawLines(k_pen, New Point() {New Point(k_cx + k_s \ 2, k_cy - k_s), New Point(k_cx - k_s \ 2, k_cy), New Point(k_cx + k_s \ 2, k_cy + k_s)})
-            End If
+    ' The band at the bottom: a line above it and the fold button at its left (the icons of the navigation list's button, or a chevron).
+    Private Sub PaintBand(k_g As Graphics, k_p As ThemePalette)
+        Dim k_button As Rectangle = ButtonRect()
+        If k_button.IsEmpty Then Return
+        Dim k_bandTop As Integer = Height - BandHeight()
+        ' The band is its own strip, never part of the scrolled content: it is painted opaque over whatever is under it.
+        Using k_brush As New SolidBrush(k_p.SurfaceColor)
+            k_g.FillRectangle(k_brush, 0, k_bandTop, Width - 1, Height - k_bandTop)
         End Using
         Using k_pen As New Pen(k_p.BorderColor)
-            k_g.DrawLine(k_pen, 0, k_bar.Bottom - 1, Width, k_bar.Bottom - 1)
+            k_g.DrawLine(k_pen, 0, k_bandTop, Width, k_bandTop)
+        End Using
+        If _hotBar Then FillRounded(k_g, ButtonHitRect(), k_p.ButtonHoverColor)
+        If Not _collapsed AndAlso _collapseButtonText.Length > 0 Then
+            Dim k_textLeft As Integer = k_button.Right + Px(ButtonMargin)
+            TextRenderer.DrawText(k_g, _collapseButtonText, Font,
+                                  New Rectangle(k_textLeft, k_button.Top, Math.Max(0, Width - k_textLeft - Px(ButtonMargin) - 1), k_button.Height),
+                                  If(_hotBar, k_p.TextColor, k_p.TextDimColor),
+                                  TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or
+                                  TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
+        End If
+
+        Dim k_glyph As Image = If(_collapsed, _collapseImageCollapsed, _collapseImageExpanded)
+        If k_glyph IsNot Nothing Then
+            Dim k_inset As Integer = Math.Max(1, k_button.Width \ 9)
+            Dim k_dest As New Rectangle(k_button.Left + k_inset, k_button.Top + k_inset,
+                                        Math.Max(1, k_button.Width - 2 * k_inset), Math.Max(1, k_button.Height - 2 * k_inset))
+            KBotNavList.DrawItemImage(k_g, k_glyph, k_dest, True)
+            Return
+        End If
+        ' No icon given: a chevron that points to where the panel goes (left to fold it, right to unfold it).
+        Dim k_cx As Single = k_button.Left + k_button.Width / 2.0F
+        Dim k_cy As Single = k_button.Top + k_button.Height / 2.0F
+        Dim k_arm As Single = k_button.Width / 5.0F
+        Dim k_tip As Single = If(_collapsed, k_cx + k_arm, k_cx - k_arm)
+        Dim k_tail As Single = If(_collapsed, k_cx - k_arm, k_cx + k_arm)
+        Using k_pen As New Pen(k_p.TextDimColor, Math.Max(1.4F, k_button.Width / 10.0F))
+            k_pen.StartCap = LineCap.Round
+            k_pen.EndCap = LineCap.Round
+            k_pen.LineJoin = LineJoin.Round
+            k_g.DrawLines(k_pen, New PointF() {New PointF(k_tail, k_cy - k_arm), New PointF(k_tip, k_cy), New PointF(k_tail, k_cy + k_arm)})
         End Using
     End Sub
 
@@ -367,7 +487,7 @@ Public NotInheritable Class KBotSidePanel
 
     Private Sub PaintSection(k_g As Graphics, k_p As ThemePalette, k_section As KBotSidePanelSection)
         Dim k_head As Rectangle = ToView(k_section.HeaderBounds)
-        If k_head.Bottom < ViewTop() OrElse k_head.Top > Height Then
+        If k_head.Bottom < ViewTop() OrElse k_head.Top > ViewTop() + ViewHeight() Then
             ' Header out of view; its rows may still show.
         Else
             Using k_brush As New SolidBrush(ThemeShapes.Blend(k_p.SurfaceColor, k_p.BorderColor, 0.45))
@@ -414,7 +534,7 @@ Public NotInheritable Class KBotSidePanel
         End If
         For Each k_row As KBotSidePanelRow In k_section.Rows
             Dim k_rect As Rectangle = ToView(k_row.Bounds)
-            If k_rect.Bottom < ViewTop() OrElse k_rect.Top > Height Then Continue For
+            If k_rect.Bottom < ViewTop() OrElse k_rect.Top > ViewTop() + ViewHeight() Then Continue For
             PaintRow(k_g, k_p, k_section, k_row, k_rect)
         Next
     End Sub
@@ -468,8 +588,13 @@ Public NotInheritable Class KBotSidePanel
 
     ' ---- Input ------------------------------------------------------------------------------
 
+    ' True when the point is over the sections (above the band of the fold button).
+    Private Function InView(k_point As Point) As Boolean
+        Return k_point.Y >= ViewTop() AndAlso k_point.Y < ViewTop() + ViewHeight()
+    End Function
+
     Private Function SectionHeaderAt(k_point As Point) As KBotSidePanelSection
-        If _collapsed OrElse k_point.Y < ViewTop() Then Return Nothing
+        If _collapsed OrElse Not InView(k_point) Then Return Nothing
         For Each k_section As KBotSidePanelSection In _sections
             If k_section.Visible AndAlso ToView(k_section.HeaderBounds).Contains(k_point) Then Return k_section
         Next
@@ -478,7 +603,7 @@ Public NotInheritable Class KBotSidePanel
 
     Private Function RowAt(k_point As Point, ByRef k_owner As KBotSidePanelSection) As KBotSidePanelRow
         k_owner = Nothing
-        If _collapsed OrElse k_point.Y < ViewTop() Then Return Nothing
+        If _collapsed OrElse Not InView(k_point) Then Return Nothing
         For Each k_section As KBotSidePanelSection In _sections
             If Not k_section.Visible OrElse k_section.Collapsed Then Continue For
             For Each k_row As KBotSidePanelRow In k_section.Rows
@@ -492,7 +617,7 @@ Public NotInheritable Class KBotSidePanel
     End Function
 
     Private Function SlotAt(k_point As Point) As Integer
-        If Not _collapsed OrElse k_point.Y < ViewTop() Then Return -1
+        If Not _collapsed OrElse Not InView(k_point) Then Return -1
         Dim k_index As Integer = 0
         For Each k_section As KBotSidePanelSection In _sections
             If Not k_section.Visible Then Continue For
@@ -502,8 +627,9 @@ Public NotInheritable Class KBotSidePanel
         Return -1
     End Function
 
+    ' The button plus its air all round, so it is easy to hit.
     Private Function BarButtonHit(k_point As Point) As Boolean
-        Return BarRect().Contains(k_point) AndAlso (_collapsed OrElse k_point.X >= Width - Px(32))
+        Return ButtonHitRect().Contains(k_point)
     End Function
 
     Protected Overrides Sub OnMouseMove(k_e As MouseEventArgs)
@@ -518,6 +644,7 @@ Public NotInheritable Class KBotSidePanel
             Dim k_slot As Integer = SlotAt(k_e.Location)
             If ReferenceEquals(k_row, _hotRow) AndAlso ReferenceEquals(k_header, _hotHeader) AndAlso k_bar = _hotBar AndAlso k_slot = _hotSlot Then Return
             Dim k_rowChanged As Boolean = Not ReferenceEquals(k_row, _hotRow)
+            Dim k_tipChanged As Boolean = k_rowChanged OrElse k_slot <> _hotSlot OrElse k_bar <> _hotBar
             _hotRow = k_row
             _hotHeader = k_header
             _hotBar = k_bar
@@ -525,7 +652,14 @@ Public NotInheritable Class KBotSidePanel
             Cursor = If(k_bar OrElse k_header IsNot Nothing OrElse k_slot >= 0 OrElse (k_row IsNot Nothing AndAlso Not String.IsNullOrEmpty(k_row.Key)),
                         Cursors.Hand, Cursors.Default)
             Invalidate()
-            If k_rowChanged Then ShowRowTip(k_row)
+            If Not k_tipChanged Then Return
+            If k_bar Then
+                ShowButtonTip()
+            ElseIf k_slot >= 0 Then
+                ShowSlotTip(k_slot)
+            Else
+                ShowRowTip(k_row)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("KBotSidePanel.OnMouseMove", ex)
         End Try
@@ -534,10 +668,92 @@ Public NotInheritable Class KBotSidePanel
     Private Sub ShowRowTip(k_row As KBotSidePanelRow)
         If _tooltip Is Nothing Then Return
         _tooltip.HideNow()
-        If k_row Is Nothing OrElse String.IsNullOrEmpty(k_row.ToolTipText) Then Return
+        If k_row Is Nothing Then Return
+        Dim k_image As Image = Nothing
+        If k_row.ToolTipImageProvider IsNot Nothing Then k_image = k_row.ToolTipImageProvider.Invoke()
+        If String.IsNullOrEmpty(k_row.ToolTipText) AndAlso String.IsNullOrEmpty(k_row.ToolTipHeader) AndAlso k_image Is Nothing Then Return
         Dim k_view As Rectangle = ToView(k_row.Bounds)
-        _tooltip.ShowAt(Me, New KBotToolTipContent() With {.Text = k_row.ToolTipText}, PointToScreen(New Point(k_view.Left + Px(SidePad), k_view.Bottom)))
+        _tooltip.ShowAt(Me, New KBotToolTipContent() With {
+                        .Text = k_row.ToolTipText,
+                        .HeaderText = If(String.IsNullOrEmpty(k_row.ToolTipHeader), Nothing, k_row.ToolTipHeader),
+                        .BodyImage = k_image},
+                        PointToScreen(New Point(k_view.Left + Px(SidePad), k_view.Bottom)))
     End Sub
+
+    Private Sub ShowButtonTip()
+        If _tooltip Is Nothing Then Return
+        _tooltip.HideNow()
+        Dim k_button As Rectangle = ButtonRect()
+        If k_button.IsEmpty Then Return
+        _tooltip.ShowAt(Me, New KBotToolTipContent() With {
+                        .Text = If(_collapsed, "Desfă panoul lateral.", "Strânge panoul lateral la o bandă îngustă, doar cu pictogramele secțiunilor.") & vbLf &
+                                "K-BOT ține minte cum l-ai lăsat."},
+                        PointToScreen(New Point(k_button.Right, k_button.Top - Px(20))))
+    End Sub
+
+    ' A folded panel shows no rows: the tooltip over a section's icon lists what the section holds.
+    Private Sub ShowSlotTip(k_index As Integer)
+        If _tooltip Is Nothing Then Return
+        _tooltip.HideNow()
+        Dim k_section As KBotSidePanelSection = SectionAtSlot(k_index)
+        If k_section Is Nothing Then Return
+        _tooltip.ShowAt(Me, New KBotToolTipContent() With {
+                        .HeaderText = k_section.Title,
+                        .HeaderIcon = k_section.Icon,
+                        .Text = SectionSummary(k_section)},
+                        PointToScreen(New Point(Width - Px(16), StripSlot(k_index).Top - Px(14))))
+    End Sub
+
+    Private Function SectionAtSlot(k_index As Integer) As KBotSidePanelSection
+        Dim k_at As Integer = 0
+        For Each k_section As KBotSidePanelSection In _sections
+            If Not k_section.Visible Then Continue For
+            If k_at = k_index Then Return k_section
+            k_at += 1
+        Next
+        Return Nothing
+    End Function
+
+    Private Const SummaryLines As Integer = 12
+
+    ' One line per row: «text   detail» (a stacked row: «caption: text»), italics and colours as in the open panel.
+    Private Function SectionSummary(k_section As KBotSidePanelSection) As String
+        If k_section.Rows.Count = 0 Then
+            Return If(String.IsNullOrEmpty(k_section.EmptyText), "(nimic de arătat)", k_section.EmptyText)
+        End If
+        Dim k_dim As String = HexColor(Palette().TextDimColor)
+        Dim k_text As New System.Text.StringBuilder()
+        Dim k_shown As Integer = 0
+        For Each k_row As KBotSidePanelRow In k_section.Rows
+            If k_shown >= SummaryLines Then
+                k_text.Append(vbLf).Append("… și încă ").Append(k_section.Rows.Count - k_shown).Append(" mai jos")
+                Exit For
+            End If
+            If k_shown > 0 Then k_text.Append(vbLf)
+            Dim k_line As String
+            If k_section.RowStyle = KBotSidePanelRowStyle.Stacked Then
+                k_line = "<b>" & EscapeMarkup(k_row.DetailText) & ":</b> " & EscapeMarkup(k_row.Text)
+            Else
+                k_line = EscapeMarkup(k_row.Text) & If(String.IsNullOrEmpty(k_row.DetailText), String.Empty, "   <color=" & k_dim & ">" & EscapeMarkup(k_row.DetailText) & "</color>")
+            End If
+            If k_row.Italic Then k_line = "<i>" & k_line & "</i>"
+            If Not k_row.ForeColor.IsEmpty Then k_line = "<color=" & HexColor(k_row.ForeColor) & ">" & k_line & "</color>"
+            k_text.Append(k_line)
+            k_shown += 1
+        Next
+        Return k_text.ToString()
+    End Function
+
+    Private Shared Function HexColor(k_color As Color) As String
+        Return "#" & k_color.R.ToString("X2", System.Globalization.CultureInfo.InvariantCulture) &
+               k_color.G.ToString("X2", System.Globalization.CultureInfo.InvariantCulture) &
+               k_color.B.ToString("X2", System.Globalization.CultureInfo.InvariantCulture)
+    End Function
+
+    ' The tooltip's markup tags start with «<»: a zero-width space after it keeps a «<b>» that is part of a message from being read as one.
+    Private Shared Function EscapeMarkup(k_text As String) As String
+        Return If(k_text, String.Empty).Replace("<", "<" & ChrW(&H200B))
+    End Function
 
     Protected Overrides Sub OnMouseLeave(k_e As EventArgs)
         MyBase.OnMouseLeave(k_e)

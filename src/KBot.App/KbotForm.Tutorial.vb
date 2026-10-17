@@ -49,18 +49,21 @@ Partial Public Class KbotForm
 
     ''' <summary>
     ''' Anchor prefix (slice 000T-10): <c>popup.&lt;key&gt;</c> = that row of the pop-up list that is open now (the main tree's
-    ''' options list: <c>popup.sort-name</c>, <c>popup.sort-date</c>, <c>popup.update-many</c>...).
+    ''' options list: <c>popup.sort-name</c>, <c>popup.sort-date</c>...; slice 0114-12: the footer popup's <c>popup.noi</c> / <c>popup.vrac</c>).
     ''' </summary>
     Friend Const AnchorPopupPrefix As String = "popup."
 
     ''' <summary>
     ''' Anchor prefix (slice 000T-12): <c>grupe.&lt;key&gt;</c> = that row of the groups submenu that is open now
-    ''' (<c>grupe.grupe-editeaza</c> = the «Editeaza grupe...» row).
+    ''' (a row per group; «Editeaza grupe...» is not here any more, it is the ribbon button, slice 0114-11).
     ''' </summary>
     Friend Const AnchorGrupePrefix As String = "grupe."
 
     ''' <summary>Signal prefix (slice 000T-10): <c>tree-menu:&lt;key&gt;</c> = that row of the tree options list was chosen.</summary>
     Friend Const SignalTreeMenuPrefix As String = "tree-menu:"
+
+    ''' <summary>Signal prefix (slice 0114-12): <c>footer-menu:noi</c> / <c>footer-menu:vrac</c> = that row of the popup of the tree footer was chosen.</summary>
+    Friend Const SignalFooterMenuPrefix As String = "footer-menu:"
 
     ''' <summary>Signal prefix (slice 000T-10): <c>selector-unit</c> / <c>-year</c> / <c>-ss</c> = another choice in that selector of the title bar.</summary>
     Friend Const SignalSelectorPrefix As String = "selector-"

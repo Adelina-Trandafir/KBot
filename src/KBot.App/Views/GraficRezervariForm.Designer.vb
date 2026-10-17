@@ -20,7 +20,7 @@ Imports KBot.Controls
 ' AutoScaleMode.Dpi (felia 0066-02). Cele doua se schimba INTOTDEAUNA impreuna.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class GraficRezervariForm
-    Inherits Global.KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

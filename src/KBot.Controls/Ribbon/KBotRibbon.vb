@@ -45,6 +45,7 @@ Public NotInheritable Class KBotRibbon
     Private ReadOnly _tabs As New KBotRibbonTabCollection()
     Private ReadOnly _pinned As New KBotRibbonButtonCollection()
     Private ReadOnly _rightGroup As New KBotRibbonGroup()
+    Private ReadOnly _formGroup As New KBotRibbonGroup()
     Private _selectedTab As Integer
     Private _collapsed As Boolean
     Private _rightText As String = String.Empty
@@ -74,6 +75,7 @@ Public NotInheritable Class KBotRibbon
         _tabs.Owner = Me
         _pinned.Owner = Me
         _rightGroup.SetOwner(Me)
+        _formGroup.SetOwner(Me)
     End Sub
 
     ' ---- Model ------------------------------------------------------------------------------
@@ -103,6 +105,16 @@ Public NotInheritable Class KBotRibbon
     Public ReadOnly Property RightGroup As KBotRibbonGroup
         Get
             Return _rightGroup
+        End Get
+    End Property
+
+    <Category("K-BOT")>
+    <Description("The group of the FORM (macheta) on screen, slice 0114-06: at the very right of the panel, next to the large pinned buttons («Inchide»); the group of the VIEW (RightGroup) stands to its left. Same on every tab, shown only while it has a visible button or field, not shown while the ribbon is folded. A host shows and hides its buttons / fields (and sets its caption) for the form on screen.")>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Content)>
+    <TypeConverter(GetType(ExpandableObjectConverter))>
+    Public ReadOnly Property FormGroup As KBotRibbonGroup
+        Get
+            Return _formGroup
         End Get
     End Property
 
@@ -246,14 +258,35 @@ Public NotInheritable Class KBotRibbon
             Next
         Next
         Yield _rightGroup
+        Yield _formGroup
     End Function
 
     ' ---- Fields (slice 0114-01) ---------------------------------------------------------------
 
-    ''' <summary>Makes the real control of a field (not at design time: nothing is sited there) and puts it on the ribbon, hidden until placed.</summary>
+    ''' <summary>
+    ''' A field was added to a group. Its real control is NOT made here: the designer adds a field to the collection BEFORE it sets
+    ''' the field's kind, rows and hint (the generated code adds first, sets the properties further down), so a control made now
+    ''' would be a combo with no rows whatever the field says. The control is made by <see cref="EnsureFieldControls"/> on the first
+    ''' layout, when the properties are all in (slice 0114-18).
+    ''' </summary>
     Friend Sub AttachField(k_field As KBotRibbonField)
-        If k_field Is Nothing OrElse k_field.Control IsNot Nothing Then Return
+        If k_field Is Nothing Then Return
+        InvalidateLayout()
+    End Sub
+
+    ' Makes the real control of every field that has none yet (not at design time: nothing is sited there).
+    Private Sub EnsureFieldControls()
         If KBotDesignTime.IsDesignTime(Me) Then Return
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                MakeFieldControl(k_field)
+            Next
+        Next
+    End Sub
+
+    ' Makes the real control of a field and puts it on the ribbon, hidden until placed.
+    Private Sub MakeFieldControl(k_field As KBotRibbonField)
+        If k_field Is Nothing OrElse k_field.Control IsNot Nothing Then Return
         Dim k_control As Control
         If k_field.Kind = KBotRibbonFieldKind.Text Then
             Dim k_box As New KBotTextBox() With {
@@ -261,7 +294,7 @@ Public NotInheritable Class KBotRibbon
             AddHandler k_box.TextChanged, Sub(k_s, k_e) FieldTextChanged(k_field, k_box)
             k_control = k_box
         Else
-            Dim k_combo As New KBotComboBox() With {.Editable = False, .Visible = False}
+            Dim k_combo As New KBotComboBox() With {.Editable = False, .Visible = False, .PlaceholderText = k_field.PlaceholderText}
             For Each k_row As String In k_field.Items
                 k_combo.Items.Add(k_row)
             Next
@@ -274,7 +307,6 @@ Public NotInheritable Class KBotRibbon
         Dim k_themed As IThemedControl = TryCast(k_control, IThemedControl)
         If k_themed IsNot Nothing AndAlso _scheme IsNot Nothing Then k_themed.ApplyTheme(_scheme)
         ApplyFieldTip(k_field)
-        InvalidateLayout()
     End Sub
 
     Friend Sub DetachField(k_field As KBotRibbonField)
@@ -535,6 +567,7 @@ Public NotInheritable Class KBotRibbon
         If _layoutValid AndAlso k_key = _layoutKey Then Return
         _layoutKey = k_key
         _layoutValid = True
+        EnsureFieldControls()   ' the layout needs their height; made now, not when the designer added the field (see AttachField)
         ComputeLayout()
         ApplyFieldControls()
     End Sub
@@ -631,8 +664,13 @@ Public NotInheritable Class KBotRibbon
             End If
         Next
 
-        ' The right group (slice 0114-03): the same on every tab, against the large pinned buttons; its right edge line
-        ' is the separator before them.
+        ' Right to left (slice 0114-06): the large pinned buttons («Inchide»), the group of the FORM, the group of the VIEW.
+        ' Each group's right edge line is the separator before the one to its right.
+        If GroupShown(_formGroup) Then
+            Dim k_fgW As Integer = PlaceGroup(_formGroup, 0, k_panelTop)
+            ShiftGroup(_formGroup, k_panelRight - Px(2) - k_fgW)
+            k_panelRight -= k_fgW + Px(2)
+        End If
         If GroupShown(_rightGroup) Then
             Dim k_rgW As Integer = PlaceGroup(_rightGroup, 0, k_panelTop)
             ShiftGroup(_rightGroup, k_panelRight - Px(2) - k_rgW)
@@ -832,6 +870,7 @@ Public NotInheritable Class KBotRibbon
             Next
         End If
         PaintGroup(k_g, k_p, _rightGroup)
+        PaintGroup(k_g, k_p, _formGroup)
     End Sub
 
     Private Sub PaintGroup(k_g As Graphics, k_p As ThemePalette, k_group As KBotRibbonGroup)
@@ -932,6 +971,8 @@ Public NotInheritable Class KBotRibbon
                 If k_found IsNot Nothing Then Return k_found
             Next
         End If
+        Dim k_inForm As KBotRibbonButton = ButtonInGroup(_formGroup, k_point)
+        If k_inForm IsNot Nothing Then Return k_inForm
         Return ButtonInGroup(_rightGroup, k_point)
     End Function
 

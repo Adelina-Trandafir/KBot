@@ -21,23 +21,19 @@ target: ReceptiiView.tree
 part: header.search
 Caută în arbore: scrii și arborele arată doar ce se potrivește. Esc golește căutarea și închide banda.
 
-## Arbore › Asocieri
-<!-- slice: 0048-04, 0000-23, 0056-02 -->
-target: ReceptiiView.tree
-part: header.right
-Deschide fereastra Asocieri, unde corectezi unde e așezat fiecare instantaneu din istoric față de recepții. Se poate deschide oricând. Legăturile unui angajament cu o ordonanțare din ziua instantaneului sau de după ea se văd, dar nu se mai pot muta.
-
-## Arbore › Reface din istoric
-<!-- slice: 0062, 0000-23 -->
-target: ReceptiiView.tree
-part: footer.left
-Reface din istoric instantaneele și liniile de recepție care lipsesc. Întâi numără ce lipsește și te întreabă; scrie doar după ce confirmi. Anteturile refăcute apar în Asocieri, la «Instantanee neașezate».
-
-## Arbore › Reîmprospătează
-<!-- slice: 0060, 0000-23 -->
+## Arbore › Actualizează
+<!-- slice: 0060, 0000-23, 0114-16, 0000-91 -->
 target: ReceptiiView.tree
 part: footer.right
-Reîmprospătează recepțiile din FOREXE; întâi alegi care, în fereastra «Ce recepții reîmprospătez?».
+Reîmprospătează recepțiile din FOREXE; întâi alegi care, în fereastra «Ce recepții reîmprospătez?». E singurul buton rămas în arbore; celelalte sunt în ribbon.
+
+## Ribbon › Asociază recepții
+<!-- slice: 0048-04, 0000-23, 0056-02, 0114-16, 0000-91 -->
+Butoanele vederii sunt în ribbon, în grupul «Recepții» din dreapta (lângă grupul «Lista angajamentelor»). «Asociază recepții» deschide fereastra Asocieri, unde corectezi unde e așezat fiecare instantaneu din istoric față de recepții. Se poate deschide oricând. Legăturile unui angajament cu o ordonanțare din ziua instantaneului sau de după ea se văd, dar nu se mai pot muta.
+
+## Ribbon › Reface din istoric...
+<!-- slice: 0062, 0000-23, 0114-16, 0000-91 -->
+Reface din istoric instantaneele și liniile de recepție care lipsesc. Apare doar când angajamentul are erori de reparat (o recepție al cărei lanț nu se închide, scrisă cu roșu în lista principală). Întâi numără ce lipsește și te întreabă; scrie doar după ce confirmi. Anteturile refăcute apar în Asocieri, la «Instantanee neașezate».
 
 ## Grila pe clasificații
 <!-- slice: 0015 -->

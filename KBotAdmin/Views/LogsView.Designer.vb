@@ -29,6 +29,7 @@ Partial Class LogsView
         chkFollow = New CheckBox()
         btnRefresh = New KBotButton()
         btnCopy = New KBotButton()
+        btnClear = New KBotButton()
         logBox = New KBotLogBox()
         lblState = New Label()
         tmrFollow = New Timer(components)
@@ -60,7 +61,7 @@ Partial Class LogsView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 7
+        tlyBar.ColumnCount = 8
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 140F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
@@ -68,6 +69,7 @@ Partial Class LogsView
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 110F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 96F))
         tlyBar.Controls.Add(cmbFile, 0, 0)
         tlyBar.Controls.Add(cmbLevel, 1, 0)
         tlyBar.Controls.Add(cmbGens, 2, 0)
@@ -75,6 +77,7 @@ Partial Class LogsView
         tlyBar.Controls.Add(chkFollow, 4, 0)
         tlyBar.Controls.Add(btnRefresh, 5, 0)
         tlyBar.Controls.Add(btnCopy, 6, 0)
+        tlyBar.Controls.Add(btnClear, 7, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -161,13 +164,25 @@ Partial Class LogsView
         '
         btnCopy.Dock = DockStyle.Fill
         btnCopy.Location = New Point(782, 0)
-        btnCopy.Margin = New Padding(0, 2, 0, 6)
+        btnCopy.Margin = New Padding(0, 2, 6, 6)
         btnCopy.Name = "btnCopy"
         btnCopy.Size = New Size(90, 36)
         btnCopy.TabIndex = 6
         btnCopy.Text = "Copiază"
         tips.SetToolTipHeader(btnCopy, "Copiază")
         tips.SetToolTipText(btnCopy, "Pune în clipboard liniile afișate acum, ca text simplu.")
+        '
+        ' btnClear
+        '
+        btnClear.Dock = DockStyle.Fill
+        btnClear.Location = New Point(878, 0)
+        btnClear.Margin = New Padding(0, 2, 0, 6)
+        btnClear.Name = "btnClear"
+        btnClear.Size = New Size(90, 36)
+        btnClear.TabIndex = 7
+        btnClear.Text = "Golește"
+        tips.SetToolTipHeader(btnClear, "Golește")
+        tips.SetToolTipText(btnClear, "Șterge din fișierele de jurnal de pe server: tot, sau păstrează ultima zi ori ultima săptămână." & vbLf & "Se aplică fișierului ales în lista din stânga (sau tuturor).")
         '
         ' logBox
         '
@@ -222,6 +237,7 @@ Partial Class LogsView
     Friend WithEvents chkFollow As CheckBox
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents btnCopy As KBotButton
+    Friend WithEvents btnClear As KBotButton
     Friend WithEvents logBox As KBotLogBox
     Friend WithEvents lblState As Label
     Friend WithEvents tmrFollow As Timer

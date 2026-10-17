@@ -23,9 +23,10 @@ Imports KBot.Theming
 ''' draws, and a popup with the attached files), «Atașamente» (the list, to save a file) and «Mesaje» (the last two only when the invoice has some). A right click on an invoice
 ''' offers «Salvează ca ZIP» and «Salvează ca XML» and, in the DDF view, the manual link.
 '''
-''' <para>Two modes. WITHOUT a DDF (<see cref="LoadAsync"/> with Nothing): every received invoice of the year. WITH a DDF: the invoices of
-''' the DDF — the supplier is one of its partners (compared by tax code, «RO» and spaces ignored) or the operator linked it by hand; a
-''' tick shows ALL the invoices, the unlinked ones with a grey dot, so one can be linked to this DDF from its menu.</para>
+''' <para>Two modes. WITHOUT a DDF (<see cref="LoadAsync"/> with Nothing): every received invoice of the year. WITH a DDF: ONLY the invoices
+''' of the DDF — the supplier is one of its partners (compared by tax code, «RO» and spaces ignored) or the operator linked it by hand
+''' (slice 0114-17: the tick that showed all the invoices, with the unlinked ones in grey, is gone from the view of the angajament; an
+''' invoice is linked to a DDF from the window with all the received invoices).</para>
 '''
 ''' <para>The control holds no rules: what is linked to what, the amounts and the files come from the server (slice 00EF-17).
 ''' The embedded PDF viewer lives in KBot.App; the host passes a factory (as for the issued invoices).</para>
@@ -74,6 +75,9 @@ Public Class PrimiteView
     Private _onlyNew As Boolean
     Private _groupBySupplier As Boolean
     Private _ascending As Boolean
+    ' Slice 0114-22 -- the view of an angajament (see AngajamentView) and the filter icon the designer gave the header.
+    Private _angajamentView As Boolean
+    Private _filterIcon As Image
     ' The invoices this session brought from ANAF: only those are known to be new.
     Private ReadOnly _newIds As New HashSet(Of Integer)()
 
@@ -114,6 +118,26 @@ Public Class PrimiteView
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 0114-22: True when the control is the VIEW of an angajament (the shell's «E-Factura» view), False when it is the window with all
+    ''' the received invoices. The view has no options button in the header of its tree and no supplier level: «Toate facturile» / month / invoice.
+    ''' </summary>
+    <System.ComponentModel.Category("K-BOT")>
+    <System.ComponentModel.DefaultValue(False)>
+    <System.ComponentModel.Description("Vederea unui angajament: fără butonul de opțiuni din antetul arborelui și fără nivelul Furnizor.")>
+    Public Property AngajamentView As Boolean
+        Get
+            Return _angajamentView
+        End Get
+        Set(k_value As Boolean)
+            If _angajamentView = k_value Then Return
+            _angajamentView = k_value
+            ' The designer sets the icon of the header before it sets this property: keep it, to give it back.
+            If k_value AndAlso tree.HeaderRightIcon IsNot Nothing Then _filterIcon = tree.HeaderRightIcon
+            tree.HeaderRightIcon = If(k_value, Nothing, _filterIcon)
+        End Set
+    End Property
+
     ''' <summary>True once the list was read successfully at least once (slice 00EF-32: «what is new» needs a list to compare with).</summary>
     Public ReadOnly Property ListLoaded As Boolean
 
@@ -130,7 +154,6 @@ Public Class PrimiteView
         _idDdf = Nothing
         _items = New List(Of EFacturaPrimita)()
         _linked = New Dictionary(Of Integer, String)()
-        chkToate.Visible = False
         ntfMesaj.Visible = False
         tree.Clear()
         _nodes.Clear()
@@ -185,31 +208,18 @@ Public Class PrimiteView
             If _api Is Nothing Then Return
             Dim k_ddfChanged As Boolean = Not Nullable.Equals(_idDdf, k_idDdf)
             _idDdf = k_idDdf
-            chkToate.Visible = _idDdf.HasValue
-            If k_ddfChanged Then
-                chkToate.Checked = False
-                ClearDetail()
-            End If
+            If k_ddfChanged Then ClearDetail()
             ntfMesaj.Clear()
             ntfMesaj.Visible = False
             Dim k_mySeq As Integer = Interlocked.Increment(_seq)
-            Dim k_all As Boolean = Not _idDdf.HasValue OrElse chkToate.Checked
+            ' With a DDF the server answers only the invoices linked to it (by the supplier or by hand); without one, those of the year.
             Dim k_list As List(Of EFacturaPrimita) = Await _gate.RunAsync(
-                Function() _api.GetPrimiteAsync(If(_idDdf.HasValue, Nothing, YearFilter()), Nothing, Nothing,
-                                                If(k_all AndAlso _idDdf.HasValue, Nothing, _idDdf), _cts.Token)).ConfigureAwait(True)
+                Function() _api.GetPrimiteAsync(If(_idDdf.HasValue, Nothing, YearFilter()), Nothing, Nothing, _idDdf, _cts.Token)).ConfigureAwait(True)
             Dim k_linkedIds As New Dictionary(Of Integer, String)()
             If _idDdf.HasValue Then
-                If k_all Then
-                    Dim k_mine As List(Of EFacturaPrimita) = Await _gate.RunAsync(
-                        Function() _api.GetPrimiteAsync(Nothing, Nothing, Nothing, _idDdf, _cts.Token)).ConfigureAwait(True)
-                    For Each k_p As EFacturaPrimita In k_mine
-                        k_linkedIds(k_p.IdPrimita) = k_p.Legatura
-                    Next
-                Else
-                    For Each k_p As EFacturaPrimita In k_list
-                        k_linkedIds(k_p.IdPrimita) = k_p.Legatura
-                    Next
-                End If
+                For Each k_p As EFacturaPrimita In k_list
+                    k_linkedIds(k_p.IdPrimita) = k_p.Legatura
+                Next
             End If
             If IsDisposed OrElse k_mySeq <> _seq Then Return
             _items = k_list
@@ -233,15 +243,6 @@ Public Class PrimiteView
         Return If(_year > 0, CType(_year, Integer?), Nothing)
     End Function
 
-    Private Async Sub ChkToate_CheckedChanged(sender As Object, e As EventArgs) Handles chkToate.CheckedChanged
-        Try
-            If _treeLoading Then Return
-            Await LoadAsync(_idDdf).ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteView.ChkToate_CheckedChanged", ex)
-        End Try
-    End Sub
-
     Private Sub ShowProblem(k_text As String)
         ntfMesaj.Show(k_text, NoticeKind.Error)
         ntfMesaj.Visible = True
@@ -259,7 +260,8 @@ Public Class PrimiteView
 
     ''' <summary>
     ''' Rebuilds the tree from <c>_items</c> (less what the header menu filters out). Grouped by month (the default): the root «Toate
-    ''' facturile», the months newest first, under a month the suppliers (by tax code, in name order), under a supplier its invoices.
+    ''' facturile», the months newest first, under a month the suppliers (by tax code, in name order), under a supplier its invoices;
+    ''' in the view of an angajament there is no supplier level: the invoices are directly under their month (slice 0114-22).
     ''' Grouped by supplier: the suppliers are the roots, in name order, and their invoices are under them, ascending or descending by
     ''' date. The search of the tree's header narrows it; the tree is not rebuilt when an invoice is opened.
     ''' </summary>
@@ -302,6 +304,10 @@ Public Class PrimiteView
                 "M_" & k_monthId, $"{MonthLabel(k_group.Key)}~~~{k_sum.ToString("N2", _ro)}", k_root,
                 pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_hasSelected)
             k_month.Bold = True
+            If _angajamentView Then
+                AddInvoiceNodes(k_group.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita), k_month, k_palette)
+                Continue For
+            End If
             Dim k_suppliers As IEnumerable(Of IGrouping(Of String, EFacturaPrimita)) =
                 k_group.GroupBy(Function(k_x) SupplierKey(k_x)).
                         OrderBy(Function(k_g) SupplierName(k_g), StringComparer.CurrentCultureIgnoreCase)
@@ -339,12 +345,17 @@ Public Class PrimiteView
         Else
             k_invoices = k_supGroup.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita)
         End If
+        AddInvoiceNodes(k_invoices, k_supplier, k_palette)
+    End Sub
+
+    ' The invoice rows (leaves) under a parent: a supplier, or in the view of an angajament a month.
+    Private Sub AddInvoiceNodes(k_invoices As IEnumerable(Of EFacturaPrimita), k_parent As AdvancedTreeControl.TreeItem, k_palette As ThemePalette)
         For Each k_p As EFacturaPrimita In k_invoices
             Dim k_dot As Image = FacturaIcons.StateDot(DotOf(k_p), k_palette, tree.LeftIconSize.Width)
             Dim k_date As String = If(k_p.DataFact.HasValue, k_p.DataFact.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "fără dată")
             Dim k_caption As String = $"{k_date} · {If(k_p.Tip = "NC", "NC ", String.Empty)}{k_p.NrFact}~~~{k_p.Total.ToString("N2", _ro)}"
             Dim k_leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
-                "P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_supplier,
+                "P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_parent,
                 pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
             k_leaf.Tag = k_p
             k_leaf.Tooltip = TooltipOf(k_p)
@@ -383,7 +394,7 @@ Public Class PrimiteView
         Return $"{_monthNames(k_key Mod 100 - 1)} {k_key \ 100}"
     End Function
 
-    ' The dot: a grey ring = not linked to this DDF (the «all» list); otherwise a neutral dot. Whether a message was opened is NOT
+    ' The dot: a grey ring = not linked to this DDF (cannot happen now that the list holds only the linked ones); otherwise a neutral dot. Whether a message was opened is NOT
     ' shown (operator, 15.10.2026): the colour of the dot will mean something else, to be decided.
     Private Function DotOf(k_p As EFacturaPrimita) As String
         If _idDdf.HasValue AndAlso Not _linked.ContainsKey(k_p.IdPrimita) Then Return EFacturaStare.Ciorna
@@ -713,19 +724,20 @@ Public Class PrimiteView
     ''' <summary>
     ''' The options button of the tree's header opens the menu of what is shown and how the tree is grouped (slice 00EF-35):
     ''' two filters (the invoices with no operations in AVACONT; the invoices brought in this session -- offered only when this session
-    ''' brought some, otherwise nothing tells which are new), a separator, the grouping (only the one that is NOT in force is
+    ''' brought some, otherwise nothing tells which are new, and never in the view of an angajament, slice 0114-17), a separator, the grouping (only the one that is NOT in force is
     ''' offered: it is the switch), and, with the supplier as the root, a separator and the two orders of its invoices.
     ''' UI boundary: logs and swallows.
     ''' </summary>
     Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
         Try
+            If _angajamentView Then Return   ' the view has no button; a stray click does nothing
             ' A second press on the button CLOSES the menu (the press already closed it, so without this guard it would reopen at once).
             If CustomPopup.ClosedJustNow Then Return
             Dim k_anchor As Rectangle = tree.HeaderRightIconRect
             If k_anchor.IsEmpty Then Return
             Dim k_items As New List(Of CustomPopupItem) From {
                 New CustomPopupItem(OptFaraOperatii, "Afișare facturi fără operații în AVACONT") With {.Checked = _onlyWithoutOperations}}
-            If _newIds.Count > 0 Then
+            If _newIds.Count > 0 AndAlso Not _idDdf.HasValue Then
                 k_items.Add(New CustomPopupItem(OptNoi, "Afișare facturi noi") With {.Checked = _onlyNew})
             End If
             k_items.Add(CustomPopupItem.Separator())
@@ -770,9 +782,9 @@ Public Class PrimiteView
         End Try
     End Sub
 
-    ' ── «Actualizare…»: the footer of the tree (slice 00EF-33) ─────────────────────
+    ' ── «Actualizeaza»: the footer of the tree (slice 00EF-33; the caption and the icon are those of the angajament tree, slice 0114-17) ──
 
-    Private Const FooterIdleText As String = "Actualizare…"
+    Private Const FooterIdleText As String = "Actualizează"
     Private Const SyncCaption As String = "Sincronizează facturi primite"
     Private Const SyncBatch As Integer = 20
 
@@ -1111,8 +1123,6 @@ Public Class PrimiteView
         Try
             If k_scheme Is Nothing Then Return
             BackColor = k_scheme.Palette.SurfaceAltColor
-            chkToate.ForeColor = k_scheme.Palette.TextColor
-            chkToate.BackColor = k_scheme.Palette.SurfaceAltColor
             If _items.Count > 0 Then BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.ApplyTheme", ex)

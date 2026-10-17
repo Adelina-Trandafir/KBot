@@ -34,7 +34,7 @@ Imports KBot.Controls
 ' de la alt dpi turteste sau umfla fereastra la deschidere, fara ca designerul s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class AsociereForm
-    Inherits Global.KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

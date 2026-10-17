@@ -42,33 +42,6 @@ Partial Public Class FacturiForm
         If _facturi.Count > 0 Then BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
     End Sub
 
-    Private Shared ReadOnly _monthNames As String() = {"Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie",
-                                                       "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"}
-
-    ''' <summary>Fills the month filter above the tree: all the months, then one per month; the tree shows everything first.</summary>
-    Private Sub InitMonths()
-        cmbLuna.Items.Clear()
-        cmbLuna.Items.Add(If(_year > 0, $"Toate lunile {_year}", "Toate lunile"))
-        For Each k_name As String In _monthNames
-            cmbLuna.Items.Add(k_name)
-        Next
-        cmbLuna.SelectedIndex = 0
-    End Sub
-
-    ''' <summary>The month chosen in the filter (1-12), or 0 for all the months.</summary>
-    Private Function ChosenMonth() As Integer
-        Return Math.Max(0, cmbLuna.SelectedIndex)
-    End Function
-
-    Private Sub CmbLuna_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbLuna.SelectedIndexChanged
-        Try
-            If _treeLoading OrElse _loading Then Return
-            BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
-        Catch ex As Exception
-            GlobalErrorLog.Write("FacturiForm.CmbLuna_SelectedIndexChanged", ex)
-        End Try
-    End Sub
-
     ''' <summary>Rebuilds the tree from <c>_facturi</c>: a root per client (alphabetical), the newest invoice first under it.</summary>
     Private Sub BuildTree(k_selectId As Integer?)
         _treeLoading = True
@@ -81,8 +54,7 @@ Partial Public Class FacturiForm
             Dim k_clientIcon As Image = FacturaIcons.Client(k_palette, tree.LeftIconSize.Width)
             Dim k_moreIcon As Image = FacturaIcons.More(k_palette, tree.RightIconSize.Width)
             Dim k_groups As IEnumerable(Of IGrouping(Of Integer, EFacturaFactura)) =
-                _facturi.Where(Function(k_x) ChosenMonth() = 0 OrElse k_x.DataFactura.Month = ChosenMonth()).
-                         GroupBy(Function(k_x) k_x.IdClient).
+                _facturi.GroupBy(Function(k_x) k_x.IdClient).
                          OrderBy(Function(k_g) NameOfClient(k_g.First()), StringComparer.CurrentCultureIgnoreCase)
             For Each k_group As IGrouping(Of Integer, EFacturaFactura) In k_groups
                 Dim k_hasSelected As Boolean = k_selectId.HasValue AndAlso k_group.Any(Function(k_x) k_x.IdFactura = k_selectId.Value)

@@ -39,7 +39,6 @@ Public Class FacturiForm
     ' The views of the horizontal bar (the keys of navDetaliu's items, written in the designer).
     Private Const ViewGenerale As String = "generale"
     Private Const ViewCumparator As String = "cumparator"
-    Private Const ViewAtasamente As String = "atasamente"
     Private Const ViewContinut As String = "continut"
     Private Const ViewPdf As String = "pdf"
     Private Const ViewAnaf As String = "anaf"
@@ -108,7 +107,6 @@ Public Class FacturiForm
             If _api Is Nothing Then Return
             InitCounties()
             InitSectors()
-            InitMonths()
             SelectView(ViewGenerale)
             ShowInvoice(Nothing)
             ApplyMode()
@@ -376,7 +374,6 @@ Public Class FacturiForm
         gridLinii.ReadOnlyGrid = Not k_edit
         ApplyClientMode(k_edit)
         btnAdauga.Enabled = Not _busy AndAlso _furnizor IsNot Nothing
-        cmbLuna.Enabled = Not _busy AndAlso _mode = EditMode.Viewing
         btnModifica.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateModifica
         btnSalveaza.Enabled = Not _busy AndAlso k_edit
         btnRenunta.Enabled = Not _busy AndAlso k_edit

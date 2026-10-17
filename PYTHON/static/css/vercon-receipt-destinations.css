@@ -5,7 +5,9 @@
 .vc-doc__header--allocation .vc-field[data-field="DataFc"] { grid-column: 2; grid-row: 2; }
 .vc-doc__header--allocation .vc-field[data-field="Numar"] { grid-column: 3; grid-row: 1; }
 .vc-doc__header--allocation .vc-field[data-field="Data"] { grid-column: 3; grid-row: 2; }
-.vc-doc__header--allocation .vc-field[data-field="IdComisie"] { grid-column: 2 / 4; grid-row: 3; }
+.vc-doc__header--allocation .vc-field[data-field="IdComisie"] { grid-column: 1 / 3; grid-row: 3; }
+/* Positioning already uses the input width; lift the shared dropdown's 320px cap. */
+.vc-doc__header--allocation .vc-field[data-field="IdComisie"] .combobox-dropdown { max-width: none; }
 .vc-doc__header--allocation .vc-field[data-field="Valoare"] { grid-column: 4; grid-row: 1; }
 .vc-doc__header--allocation .vc-field[data-field="_vat"] { grid-column: 4; grid-row: 2; }
 .vc-page .vc-receipt-accounts .combotree .treeview-input { box-sizing: border-box; min-height: 32px; padding-right: 28px; text-overflow: ellipsis; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; }

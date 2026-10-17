@@ -43,7 +43,7 @@ Imports KBot.Controls
 ' to show it.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class DdfEditForm
-    Inherits Global.KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

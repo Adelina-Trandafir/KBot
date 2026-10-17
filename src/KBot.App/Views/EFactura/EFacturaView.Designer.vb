@@ -21,6 +21,7 @@ Partial Class EFacturaView
         '
         ' primite
         '
+        primite.AngajamentView = True
         primite.Dock = System.Windows.Forms.DockStyle.Fill
         primite.Location = New System.Drawing.Point(0, 0)
         primite.Margin = New System.Windows.Forms.Padding(0)

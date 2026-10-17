@@ -353,6 +353,9 @@ def enrich(cursor, ctx, doc):
         invoice = read(cursor, link['FACTURA_ID'])
         doc['invoice'] = invoice
         doc['header']['FacturaId'] = invoice['id']
+        if not invoice['local'] and not doc['annulled']:
+            from .receipt_invoice_view import other_lines
+            doc['other_lines'] = other_lines(cursor, ctx, doc, invoice['id'])
     return doc
 
 

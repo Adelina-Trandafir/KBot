@@ -44,6 +44,19 @@ Public NotInheritable Class KBotSidePanelRow
     Public Property ToolTipText As String = String.Empty
 
     <Category("K-BOT")>
+    <Description("Title of the tooltip shown over the row. Empty = none.")>
+    <DefaultValue("")>
+    Public Property ToolTipHeader As String = String.Empty
+
+    ''' <summary>
+    ''' Asked for each time the tooltip of the row is about to open: the picture shown under its text (Nothing = no picture).
+    ''' The picture belongs to the caller; the tooltip never disposes it. Never serialized.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property ToolTipImageProvider As Func(Of Image)
+
+    <Category("K-BOT")>
     <Description("Colour of the main text. Empty = the theme's.")>
     Public Property ForeColor As Color = Color.Empty
 

@@ -132,6 +132,7 @@ colour, `FooterTextAlign`), `FooterLeftIcon` / `FooterRightIcon` (+ `*IconKey`,
 `FooterIconSize`, hover colours, tooltips), `FooterBackColor`, `FooterForeColor`,
 `FooterBackStyle` + `FooterGradientEndColor`, `FooterSeparatorColor/Width`,
 `ShowFooterLeftIcon` / `ShowFooterRightIcon` / `Footer*Rect` (read-only).
+The caption belongs to the icons: with no visible icon (none set, or the collapse button took their side) the caption is hidden too and `FooterCaptionClicked` is not raised.
 Collapse: `FooterCollapseButton = False`, `FooterCollapseButtonSize = 16`,
 `FooterCollapseButtonPosition` (`Right` | `Left`), `FooterCollapseExpandedImage` /
 `…CollapsedImage` (+ their `*Key`), `MinimumCollapsedWidth = 100`, `Collapsed`,

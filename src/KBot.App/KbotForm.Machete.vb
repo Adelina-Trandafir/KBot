@@ -120,7 +120,7 @@ Partial Public Class KbotForm
     ''' main window) and returns when it has closed -- ShowDialog, for the code that opened it. The page or shell on screen
     ''' is put away first (slice 0113-01).
     ''' </summary>
-    Friend Function ShowModalAsync(k_form As Form, k_ref As MachetaRef) As Task(Of Boolean)
+    Friend Function ShowModalAsync(k_form As KBotModalForm, k_ref As MachetaRef) As Task(Of Boolean)
         Return AvacontMain.ShowModalAsync(Me, k_form, Recordable(k_ref))
     End Function
 

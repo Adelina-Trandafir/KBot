@@ -27,18 +27,12 @@ target: ExtrasePanel.tree
 part: header.right
 Alege cum se văd datele: «antet + operații» (sus anteturile, jos operațiunile antetului ales) sau «operații + detalii» (sus operațiunile, jos operațiunea aleasă, întreagă).
 
-## Arbore › Descarcă extrasele
-<!-- slice: 0057, 0080-03, 0000-23 -->
-target: ExtrasePanel.tree
-part: footer.right
-Descarcă extrasele de cont (SNM) din FOREXE; K-BOT se conectează întâi, dacă nu ești conectat.
-
 ## Grilele
 <!-- slice: 0080-02, 0080-03 -->
 target: ExtrasePanel.innerSplit
 Sus: anteturile (sau operațiunile) perioadei alese. Jos: operațiunile antetului selectat (sau operațiunea selectată, întreagă). În modul operații + detalii, coloanele Data bancă, Plătitor și CUI se pot filtra și grupa din capul coloanei.
 
-## Descarcă extrasele
-<!-- slice: 0057, 0080-03 -->
-target: ExtraseForm.btnDescarca
-Descarcă extrasele din FOREXE; K-BOT se conectează întâi, dacă nu ești conectat. Ce coloane se văd alegi în Setări › Extrase.
+## Coloanele
+<!-- slice: 0080-03, 0114-08, 0000-90 -->
+target: ExtraseForm
+Ce coloane se văd alegi în Setări › Extrase. Extrasele noi se aduc din ribbon, cu «Descarcă extrase» din grupul din dreapta (lângă «Închide»); macheta nu mai are butonul ei de descărcare.

@@ -59,6 +59,10 @@ Public Class AvacontMain
 
         ' The ribbon replaces the MENIU drop-down: a click goes to the same handler the menu used.
         ribbon.ValidateKeys()
+        ' The days list of «Sincronizeaza facturi primite» starts with no row picked (its hint «Perioada de adus» shows, as in the
+        ' popup of the invoices tree); nothing picked and nothing typed = 7 days (see ReadSyncDays).
+        Dim k_daysCombo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
+        If k_daysCombo IsNot Nothing Then k_daysCombo.SelectedIndex = -1
         ribbon.Collapsed = AppSettings.Current.RibbonCollapsed
         ribbon.RightText = k_shell.lblOperator.Text
         AddHandler ribbon.CollapsedChanged, AddressOf Ribbon_CollapsedChanged
@@ -171,6 +175,8 @@ Public Class AvacontMain
             Select Case e.Key
                 Case "sumar_parteneri"
                     _kbot.OpenSumarPartners()
+                Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere"
+                    _kbot.RunViewRibbonButton(e.Key)
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
                 Case "pagina_inchide"
@@ -184,6 +190,10 @@ Public Class AvacontMain
                     _kbot.RunEFacturaCommand(e.Key)
                 Case "ef_primite_sync"
                     RunPrimiteSync()
+                Case KeyExtraseDescarca
+                    _kbot.DescarcaExtraseDinRibbon()
+                Case KeyGrupeEditeaza
+                    _kbot.DeschideEditorulGrupe()
                 Case "unitate_conturi", "unitate_date"
                     _kbot.RunUnitCommand(e.Key)
                 Case Else
@@ -206,21 +216,43 @@ Public Class AvacontMain
     ' The rows of the combo, in order (the combo shows them as «Ultimele N zile»); the first is the default.
     Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
 
-    ' The button and its two inputs exist only while the page of the received invoices is the one on screen.
-    Private Sub UpdatePrimiteSyncControls()
-        Dim k_show As Boolean = TypeOf CurrentPage Is PrimiteForm
-        Dim k_button As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
+    ' ---- The group of the FORM on screen (slice 0114-06 / 0114-07) ------------------------------------------------------
+    ' Right to left on the ribbon: «Inchide», the group of the FORM (this one), the group of the VIEW («Sumar» ...). What stands in
+    ' the form group depends on the form on screen, never on a view of it:
+    '   - the shell (KbotMain, with all its views): «Editeaza grupe», «Descarca extrase»;
+    '   - the «Extrase de cont» window: «Descarca extrase»;
+    '   - the received invoices window: «Sincronizeaza facturi primite» and its two inputs.
+    ' The group goes when none of them applies (the ribbon skips a group with nothing visible).
+
+    Private Const KeyExtraseDescarca As String = "extrase_descarca"
+    Private Const KeyGrupeEditeaza As String = "grupe_editeaza"
+
+    Private Sub UpdateFormGroup()
+        Dim k_page As Form = CurrentPage
+        Dim k_shell As Boolean = k_page Is Nothing AndAlso _baseIsShell
+        Dim k_extrase As Boolean = TypeOf k_page Is ExtraseForm
+        Dim k_primite As Boolean = TypeOf k_page Is PrimiteForm
+        Dim k_groups As KBotRibbonButton = ribbon.FindButton(KeyGrupeEditeaza)
+        Dim k_download As KBotRibbonButton = ribbon.FindButton(KeyExtraseDescarca)
+        Dim k_sync As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
         Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
         Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
-        If k_button Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing Then Return
-        If k_button.Visible = k_show AndAlso k_combo.Visible = k_show AndAlso k_text.Visible = k_show Then Return
-        k_button.Visible = k_show
-        k_combo.Visible = k_show
-        k_text.Visible = k_show
+        If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing Then Return
+        Dim k_caption As String = If(k_shell, "Lista angajamentelor", If(k_extrase, "Extrase de cont", If(k_primite, "Facturi primite", String.Empty)))
+        Dim k_showGroups As Boolean = k_shell
+        Dim k_showDownload As Boolean = k_shell OrElse k_extrase
+        If k_groups.Visible = k_showGroups AndAlso k_download.Visible = k_showDownload AndAlso k_sync.Visible = k_primite AndAlso
+           k_combo.Visible = k_primite AndAlso k_text.Visible = k_primite AndAlso String.Equals(ribbon.FormGroup.Text, k_caption, StringComparison.Ordinal) Then Return
+        k_groups.Visible = k_showGroups
+        k_download.Visible = k_showDownload
+        k_sync.Visible = k_primite
+        k_combo.Visible = k_primite
+        k_text.Visible = k_primite
+        ribbon.FormGroup.Text = k_caption
         ribbon.InvalidateLayout()
     End Sub
 
-    ' The days to bring: the number written in the box when there is one (1 to 60), else the combo (7 by default).
+    ' The days to bring: the number written in the box when there is one (1 to 60), else the row picked in the list, else 7.
     ' False = the number written is not valid (the operator was told).
     Private Function ReadSyncDays(ByRef k_days As Integer) As Boolean
         Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
@@ -294,8 +326,8 @@ Public Class AvacontMain
 
     ' «Inchide» is there while a macheta is on screen (a page, or the shell); on the opening page it is gone.
     Private Sub UpdateCloseButton()
-        UpdatePrimiteSyncControls()
-        UpdateSumarPartnersButton()
+        UpdateFormGroup()
+        UpdateViewGroup()
         Dim k_button As KBotRibbonButton = ribbon.FindButton("pagina_inchide")
         If k_button Is Nothing Then Return
         Dim k_visible As Boolean = (_page IsNot Nothing AndAlso Not _page.IsDisposed) OrElse _baseIsShell
@@ -304,32 +336,59 @@ Public Class AvacontMain
         ribbon.InvalidateLayout()
     End Sub
 
-    ' ---- The right group: what the view on screen offers (slice 0084-04 / 0114-03) -------------------------
-    ' The ribbon's RightGroup stands at the right of the panel, before «Inchide». Its buttons (and fields) are made in the designer
-    ' with Visible = False; this window shows them while their view is on screen and sets the group's caption. More buttons, and
-    ' other elements, for the same or another view go into the same group the same way.
+    ' ---- The view group: what the view on screen offers (slice 0084-04 / 0114-03 / 0114-15) -------------------------
+    ' The ribbon's RightGroup stands at the right of the panel, left of the form group. Its buttons (and fields) are made in the
+    ' designer with Visible = False; this window shows them while their view is on screen and sets the group's caption. The «Sumar»
+    ' view has its own button («Asociaza parteneri»); every other view that wants buttons implements IViewRibbon and answers which of
+    ' them it wants, in what state, and what each one does. More buttons for the same or another view go into the same group the same way.
 
     Private Const KeySumarParteneri As String = "sumar_parteneri"
 
-    ' «Asociaza parteneri»: there while the «Sumar» view of the shell is the one on screen; dimmed when the angajament has no DDF.
-    Private Sub UpdateSumarPartnersButton()
-        Dim k_button As KBotRibbonButton = ribbon.FindButton(KeySumarParteneri)
-        If k_button Is Nothing Then Return
-        Dim k_show As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell AndAlso
-                                String.Equals(_kbot.ActiveViewKey, "sumar", StringComparison.Ordinal)
-        Dim k_enabled As Boolean = k_show AndAlso _kbot.CanAssociatePartners
-        If k_button.Visible = k_show AndAlso k_button.Enabled = k_enabled Then Return
-        k_button.Visible = k_show
-        k_button.Enabled = k_enabled
-        If k_show Then ribbon.RightGroup.Text = "Sumar"
-        ribbon.InvalidateLayout()
+    ' Every button of the view group, with the view that owns it (the keys are the ones written in the designer).
+    Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
+        "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere"}
+
+    Private Sub UpdateViewGroup()
+        Dim k_onShell As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell
+        Dim k_sumar As Boolean = k_onShell AndAlso String.Equals(_kbot.ActiveViewKey, "sumar", StringComparison.Ordinal)
+        Dim k_view As IViewRibbon = If(k_onShell, _kbot.ActiveViewRibbon, Nothing)
+        Dim k_changed As Boolean
+        For Each k_key As String In ViewGroupKeys
+            Dim k_button As KBotRibbonButton = ribbon.FindButton(k_key)
+            If k_button Is Nothing Then Continue For
+            Dim k_state As ViewButtonState = ViewButtonState.Hidden
+            Dim k_text As String = String.Empty
+            If String.Equals(k_key, KeySumarParteneri, StringComparison.Ordinal) Then
+                If k_sumar Then k_state = If(_kbot.CanAssociatePartners, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+            ElseIf k_view IsNot Nothing AndAlso k_view.RibbonKeys.Contains(k_key) Then
+                k_state = k_view.RibbonButtonState(k_key)
+                k_text = If(k_view.RibbonButtonText(k_key), String.Empty)
+            End If
+            Dim k_show As Boolean = k_state <> ViewButtonState.Hidden
+            Dim k_enabled As Boolean = k_state = ViewButtonState.Enabled
+            If k_button.Visible <> k_show OrElse k_button.Enabled <> k_enabled Then
+                k_button.Visible = k_show
+                k_button.Enabled = k_enabled
+                k_changed = True
+            End If
+            If k_text.Length > 0 AndAlso Not String.Equals(k_button.Text, k_text, StringComparison.Ordinal) Then
+                k_button.Text = k_text
+                k_changed = True
+            End If
+        Next
+        Dim k_caption As String = If(k_sumar, "Sumar", If(k_view Is Nothing, String.Empty, k_view.RibbonCaption))
+        If k_caption.Length > 0 AndAlso Not String.Equals(ribbon.RightGroup.Text, k_caption, StringComparison.Ordinal) Then
+            ribbon.RightGroup.Text = k_caption
+            k_changed = True
+        End If
+        If k_changed Then ribbon.InvalidateLayout()
     End Sub
 
     ' UI boundary (event of the shell): log and swallow.
     Private Sub Shell_ActiveViewChanged(sender As Object, e As EventArgs)
         Try
             If IsDisposed OrElse _kbot.IsDisposed Then Return
-            UpdateSumarPartnersButton()
+            UpdateViewGroup()
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.Shell_ActiveViewChanged", ex)
         End Try
@@ -399,7 +458,10 @@ Public Class AvacontMain
     ' again changes nothing there. A page that comes back under another reference (another year) closes the old line.
     Private Sub NotePageOpen(k_page As Form, k_ref As MachetaRef)
         Dim k_old As MachetaRef = Nothing
-        If _pageRefs.TryGetValue(k_page, k_old) AndAlso Not k_old.Equals(k_ref) Then _registry.NoteClosed(k_old)
+        If _pageRefs.TryGetValue(k_page, k_old) AndAlso Not k_old.Equals(k_ref) Then
+            _registry.NoteClosed(k_old)
+            DropSnapshot(k_old.Id)
+        End If
         _pageRefs(k_page) = k_ref
         _registry.Note(k_ref, True)
     End Sub
@@ -439,6 +501,7 @@ Public Class AvacontMain
     ' open; the base keeps the caption it had, for when it comes back.
     Private Sub PutFrontAway()
         PutAwayFront()
+        CaptureFront()   ' slice 0115-01: the picture of «Machete deschise», as the operator leaves it
         If _page IsNot Nothing Then
             _page.Visible = False
         Else
@@ -474,7 +537,7 @@ Public Class AvacontMain
     ''' caption bar, smaller than the work area, centred on the main window (it may cover the side panel), and returns when
     ''' it closed. With no main window (the Debug bench) it is the dialog it always was.
     ''' </summary>
-    Friend Shared Function ShowModalAsync(k_owner As Control, k_form As Form, k_ref As MachetaRef) As Task(Of Boolean)
+    Friend Shared Function ShowModalAsync(k_owner As Control, k_form As KBotModalForm, k_ref As MachetaRef) As Task(Of Boolean)
         Dim k_main As AvacontMain = Current
         If k_main Is Nothing OrElse k_main.IsDisposed Then
             k_form.ShowDialog(If(k_owner Is Nothing, Nothing, k_owner.FindForm()))
@@ -485,7 +548,7 @@ Public Class AvacontMain
 
     ' The page or shell on screen is put away first (its Adobe closed: the editors bring their own, and all the viewers
     ' share one Acrobat broker); the window then does not touch the pages, so they are as they were when it closes.
-    Private Function ShowModal(k_form As Form, k_ref As MachetaRef) As Boolean
+    Private Function ShowModal(k_form As KBotModalForm, k_ref As MachetaRef) As Boolean
         Try
             ArgumentNullException.ThrowIfNull(k_form)
             PutAwayFront()
@@ -499,16 +562,23 @@ Public Class AvacontMain
     End Function
 
     ' Smaller than the work area (a margin all round), centred on this window; a window the designer made bigger is cut down.
-    Private Sub FitModal(k_form As Form)
+    ' Maximised, the window fills the area of the pages (under the ribbon, beside the side panel), not the whole screen:
+    ' MaximizedBounds (relative to the monitor, as WM_GETMINMAXINFO wants it) says where, and MaximumSize is that area so
+    ' Windows does not cut the maximised size back down to the opening size.
+    Private Sub FitModal(k_form As KBotModalForm)
         Dim k_margin As Integer = LogicalToDeviceUnits(16)
-        Dim k_cap As New Size(Math.Max(k_margin, pnlHost.ClientSize.Width - 2 * k_margin),
-                              Math.Max(k_margin, pnlHost.ClientSize.Height - 2 * k_margin))
+        Dim k_host As Rectangle = pnlHost.RectangleToScreen(pnlHost.ClientRectangle)
+        Dim k_cap As New Size(Math.Max(k_margin, k_host.Width - 2 * k_margin),
+                              Math.Max(k_margin, k_host.Height - 2 * k_margin))
         k_form.StartPosition = FormStartPosition.CenterParent
         Dim k_max As Size = k_form.MaximumSize   ' 0 = no limit on that axis
         k_cap = New Size(If(k_max.Width > 0, Math.Min(k_max.Width, k_cap.Width), k_cap.Width),
                          If(k_max.Height > 0, Math.Min(k_max.Height, k_cap.Height), k_cap.Height))
         k_form.MinimumSize = New Size(Math.Min(k_form.MinimumSize.Width, k_cap.Width), Math.Min(k_form.MinimumSize.Height, k_cap.Height))
-        k_form.MaximumSize = k_cap
+        k_form.MaximumSize = New Size(If(k_max.Width > 0, Math.Min(k_max.Width, k_host.Width), k_host.Width),
+                                      If(k_max.Height > 0, Math.Min(k_max.Height, k_host.Height), k_host.Height))
+        Dim k_origin As Point = Screen.FromControl(Me).Bounds.Location
+        k_form.SetMaximizedBounds(New Rectangle(k_host.X - k_origin.X, k_host.Y - k_origin.Y, k_host.Width, k_host.Height))
         k_form.Size = New Size(Math.Min(k_form.Width, k_cap.Width), Math.Min(k_form.Height, k_cap.Height))
     End Sub
 
@@ -612,6 +682,7 @@ Public Class AvacontMain
             If _page IsNot Nothing AndAlso Not _page.IsDisposed Then
                 ' Slice 0113-01: the page on screen is put away, not closed; the base comes back with the caption it had.
                 PutAwayFront()
+                CaptureFront()
                 _page.Visible = False
                 _page = Nothing
                 _kbot.capBar.Text = _savedCaption
@@ -620,7 +691,12 @@ Public Class AvacontMain
             End If
             _baseIsShell = k_shell
             ' The list of angajamente is a macheta too: open while it is the base, closed when the opening page takes its place.
-            If k_shell Then _registry.Note(ShellRef, True) Else _registry.NoteClosed(ShellRef)
+            If k_shell Then
+                _registry.Note(ShellRef, True)
+            Else
+                _registry.NoteClosed(ShellRef)
+                DropSnapshot(ShellRef.Id)
+            End If
             _kbot.Visible = k_shell
             _home.Visible = Not k_shell
             If k_shell Then
@@ -695,6 +771,7 @@ Public Class AvacontMain
             Dim k_ref As MachetaRef = Nothing
             If _pageRefs.TryGetValue(k_closed, k_ref) Then
                 _pageRefs.Remove(k_closed)
+                DropSnapshot(k_ref.Id)
                 If Not _closing Then _registry.NoteClosed(k_ref)   ' the history: it goes to the end, in italics
             End If
             If Not ReferenceEquals(_page, k_closed) Then Return

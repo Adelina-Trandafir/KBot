@@ -12,7 +12,7 @@ open: view:istoric
 Toate rândurile de istoric ale angajamentului, așa cum le are FOREXE: fiecare rezervare,
 recepție și plată, cu data, valorile, descrierea și observațiile.
 
-<!-- capture: istoric | caption: Vederea «Istoric» | goto: view:istoric | prepare: Selectați un angajament cu istoric bogat. -->
+<!-- capture: istoric | caption: Vederea «Istoric» | goto: view:istoric | prepare: Selectați un angajament cu istoric bogat. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 - **Arborele**: «Tot istoricul», apoi lunile și zilele. Clic pe o lună sau zi restrânge lista la
   ea; clic pe «Tot istoricul» o arată întreagă.

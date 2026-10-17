@@ -4,7 +4,7 @@ Imports KBot.Common
 Imports KBot.Theming
 
 ''' <summary>
-''' Slice 00EF-09 -- the view «Conținut» of the invoice window: the lines of the invoice (the grid).
+''' Slice 00EF-09 -- the view «Conținut» of the invoice window: the lines of the invoice (the grid) and, in its footer, the tick «Atașează factura originală» (slice 0114-23: it was the view «Atașamente»).
 ''' The page only OWNS its controls (all of them declared in its designer file); what they show and what the buttons do is the
 ''' window's (FacturiForm), which is where the invoice, the server and the edit mode live.
 ''' </summary>

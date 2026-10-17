@@ -13,6 +13,10 @@ Public Class LogsView
     Private ReadOnly _gensCaptions As String() = {"Doar fișierul curent", "+ ultima copie", "+ 3 copii", "+ toate copiile"}
     Private ReadOnly _gensValues As Integer() = {0, 1, 3, 5}
 
+    Private Const ClearAll As String = "all"
+    Private Const ClearKeepDay As String = "day"
+    Private Const ClearKeepWeek As String = "week"
+
     Private _context As AdminContext
     Private _files As New List(Of LogFileInfo)()
     Private _entries As New List(Of ServerLogEntry)()
@@ -227,6 +231,55 @@ Public Class LogsView
             GlobalErrorLog.Write("LogsView.BtnCopy_Click", ex)
         End Try
     End Sub
+
+    ''' <summary>The three ways to empty: everything, or keep the last day / the last week.</summary>
+    Private Sub BtnClear_Click(k_sender As Object, e As EventArgs) Handles btnClear.Click
+        Try
+            If _context Is Nothing Then Return
+            ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
+            Dim k_menu As New CustomPopup(New List(Of CustomPopupItem) From {
+                New CustomPopupItem(ClearAll, "&Tot"),
+                New CustomPopupItem(ClearKeepDay, "Păstrează ultima &zi"),
+                New CustomPopupItem(ClearKeepWeek, "Păstrează ultima &săptămână")
+            })
+            AddHandler k_menu.ItemClicked, AddressOf ClearMenu_ItemClicked
+            k_menu.ShowBelow(btnClear)
+        Catch ex As Exception
+            GlobalErrorLog.Write("LogsView.BtnClear_Click", ex)
+        End Try
+    End Sub
+
+    Private Async Sub ClearMenu_ItemClicked(k_sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            Await ClearAsync(e.Item.Key)
+        Catch ex As Exception
+            GlobalErrorLog.Write("LogsView.ClearMenu_ItemClicked", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Asks, then empties the chosen file (or all of them) on the server and reads the page again.</summary>
+    Private Async Function ClearAsync(k_keep As String) As Task
+        Dim k_fileIndex As Integer = cmbFile.SelectedIndex
+        Dim k_fileKey As String = If(k_fileIndex > 0 AndAlso k_fileIndex - 1 < _files.Count, _files(k_fileIndex - 1).Key, String.Empty)
+        Dim k_target As String = If(k_fileKey = String.Empty, "toate fișierele de jurnal", "fișierul " & _files(k_fileIndex - 1).Label)
+        Dim k_what As String
+        Select Case k_keep
+            Case ClearKeepDay : k_what = "Se păstrează doar ultima zi."
+            Case ClearKeepWeek : k_what = "Se păstrează doar ultima săptămână."
+            Case Else : k_what = "Se șterge TOT, inclusiv copiile rotite."
+        End Select
+        If Not UiRun.Confirm("Se golesc " & k_target & " de pe server." & vbCrLf & k_what & vbCrLf & vbCrLf &
+                             "Nu se poate anula. Continuați?", "Golește logurile") Then Return
+        Await UiRun.Guard("LogsView.ClearAsync", _context,
+            Async Function()
+                _context.Say("Se golesc logurile...")
+                Dim k_args As New List(Of String) From {"--keep", k_keep}
+                If k_fileKey <> String.Empty Then k_args.AddRange({"--file", k_fileKey})
+                Dim k_result As ClearLogsResult = Await _context.Client.CallAsync(Of ClearLogsResult)("logs-clear", k_args.ToArray())
+                _context.Say("Golit: s-au eliberat " & UiRun.FormatBytes(k_result.Freed) & " din " & k_result.Files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere.")
+            End Function)
+        Await LoadAsync(True)
+    End Function
 
     Private Sub ChkFollow_CheckedChanged(k_sender As Object, e As EventArgs) Handles chkFollow.CheckedChanged
         tmrFollow.Enabled = chkFollow.Checked AndAlso Visible

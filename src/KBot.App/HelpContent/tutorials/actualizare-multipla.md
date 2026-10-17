@@ -8,18 +8,18 @@ host-key: actualizare-multipla
 ---
 <!-- slice: 000T-10 -->
 
-## Iconița de opțiuni a arborelui
-<!-- slice: 000T-10 -->
+## Iconița de actualizare a arborelui
+<!-- slice: 000T-10, 0114-12, 0000-90 -->
 target: KbotForm.tree
-part: header.right
+part: footer.right
 wait: click
-Apasă <b>iconița din dreapta antetului</b> listei de angajamente. Se deschide lista cu opțiunile arborelui.
+Apasă <b>iconița de reîmprospătare</b> din dreapta jos, sub lista de angajamente (sau textul «Actualizează» de lângă ea). Se deschide un meniu mic, deasupra ei.
 
-## «Actualizează angajamente...»
-<!-- slice: 000T-10 -->
-anchor: popup.update-many
+## «Actualizează angajamente VRAC»
+<!-- slice: 000T-10, 0114-12, 0000-90 -->
+anchor: popup.vrac
 wait: opens:ActualizareMultiplaForm
-Alege <b>«Actualizează angajamente...»</b>. Se deschide fereastra cu lista angajamentelor.
+Alege <b>«Actualizează angajamente VRAC»</b>. Se deschide fereastra cu lista angajamentelor.
 
 ## Lista angajamentelor
 <!-- slice: 000T-10 -->

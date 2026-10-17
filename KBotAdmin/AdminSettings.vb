@@ -35,12 +35,12 @@ Public Class AdminSettings
 
     ''' <summary>Folders and patterns the scan skips (a plain name = any path segment, *.ext = by extension).</summary>
     Public Property IgnorePatterns As List(Of String) = New List(Of String) From {
-        ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj"
+        ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj", "*.sql", "AGENTS.md", "CLAUDE.md"
     }
 
     ''' <summary>The only extensions that are pushed (no leading dot).</summary>
     Public Property IncludeExtensions As List(Of String) = New List(Of String) From {
-        "py", "json", "xml", "yaml", "yml", "ini", "cfg", "toml", "txt", "sql", "html", "css", "js", "md", "png", "svg", "jpg", "webp", "ico"
+        "cfg", "css", "html", "ico", "ini", "jpg", "js", "json", "md", "png", "py", "sql", "svg", "toml", "txt", "webp", "xml", "yaml", "yml"
     }
 
     ''' <summary>The folder to push: the setting, else the PYTHON folder of the repository this exe was built in.</summary>

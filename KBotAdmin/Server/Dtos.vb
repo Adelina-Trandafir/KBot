@@ -145,6 +145,21 @@ Public Class LogsResult
     Public Property ServerTime As String = String.Empty
 End Class
 
+Public Class ClearedLogFile
+    Public Property Key As String = String.Empty
+    Public Property Label As String = String.Empty
+    Public Property Before As Long
+    Public Property After As Long
+    Public Property DeletedCopies As Integer
+End Class
+
+Public Class ClearLogsResult
+    Public Property Keep As String = String.Empty
+    Public Property Cut As String = String.Empty
+    Public Property Files As New List(Of ClearedLogFile)()
+    Public Property Freed As Long
+End Class
+
 Public Class AuditRow
     Public Property Id As Long
     Public Property Moment As String = String.Empty

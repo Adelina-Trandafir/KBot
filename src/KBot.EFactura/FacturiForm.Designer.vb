@@ -25,7 +25,6 @@ Partial Class FacturiForm
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
@@ -41,13 +40,11 @@ Partial Class FacturiForm
         pnlCard = New System.Windows.Forms.Panel()
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
-        cmbLuna = New KBotComboBox()
         tree = New AdvancedTreeControl()
         pnlDetaliu = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
         pgGenerale = New VanzareGeneralePage()
         pgCumparator = New VanzareCumparatorPage()
-        pgAtasamente = New VanzareAtasamentePage()
         pgContinut = New VanzareContinutPage()
         pgPdf = New VanzareFacturaPdfPage()
         pgAnaf = New VanzareFacturaAnafPage()
@@ -204,8 +201,8 @@ Partial Class FacturiForm
         ' tlyBody
         ' 
         tlyBody.ColumnCount = 2
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F))
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 22.5F))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 77.5F))
         tlyBody.Controls.Add(pnlArbore, 0, 0)
         tlyBody.Controls.Add(pnlDetaliu, 1, 0)
         tlyBody.Dock = System.Windows.Forms.DockStyle.Fill
@@ -220,24 +217,12 @@ Partial Class FacturiForm
         ' pnlArbore
         ' 
         pnlArbore.Controls.Add(tree)
-        pnlArbore.Controls.Add(cmbLuna)
         pnlArbore.Dock = System.Windows.Forms.DockStyle.Fill
         pnlArbore.Location = New System.Drawing.Point(0, 0)
         pnlArbore.Margin = New System.Windows.Forms.Padding(0)
         pnlArbore.Name = "pnlArbore"
         pnlArbore.Size = New System.Drawing.Size(411, 754)
         pnlArbore.TabIndex = 0
-        ' 
-        ' cmbLuna
-        ' 
-        cmbLuna.Dock = System.Windows.Forms.DockStyle.Top
-        cmbLuna.Location = New System.Drawing.Point(0, 0)
-        cmbLuna.Margin = New System.Windows.Forms.Padding(0)
-        cmbLuna.Name = "cmbLuna"
-        cmbLuna.Size = New System.Drawing.Size(411, 37)
-        cmbLuna.TabIndex = 1
-        tips.SetToolTipHeader(cmbLuna, "Luna facturilor")
-        tips.SetToolTipText(cmbLuna, "Arată în arbore doar facturile din luna aleasă. Anul este cel ales în K-BOT.")
         ' 
         ' tree
         ' 
@@ -261,7 +246,6 @@ Partial Class FacturiForm
         tree.Indent = 8
         tree.ItemHeight = 24
         tree.LeftIconSize = New System.Drawing.Size(14, 14)
-        tree.LeftTextWidth = 100
         tree.Location = New System.Drawing.Point(0, 0)
         tree.Margin = New System.Windows.Forms.Padding(0)
         tree.MinimumCollapsedWidth = 120
@@ -293,7 +277,6 @@ Partial Class FacturiForm
         ' 
         pnlPages.Controls.Add(pgGenerale)
         pnlPages.Controls.Add(pgCumparator)
-        pnlPages.Controls.Add(pgAtasamente)
         pnlPages.Controls.Add(pgContinut)
         pnlPages.Controls.Add(pgPdf)
         pnlPages.Controls.Add(pgAnaf)
@@ -327,18 +310,6 @@ Partial Class FacturiForm
         pgCumparator.Size = New System.Drawing.Size(959, 630)
         pgCumparator.TabIndex = 1
         pgCumparator.Visible = False
-        ' 
-        ' pgAtasamente
-        ' 
-        pgAtasamente.Dock = System.Windows.Forms.DockStyle.Fill
-        pgAtasamente.Font = New System.Drawing.Font("Calibri", 9F)
-        pgAtasamente.Location = New System.Drawing.Point(0, 0)
-        pgAtasamente.Margin = New System.Windows.Forms.Padding(0)
-        pgAtasamente.Name = "pgAtasamente"
-        pgAtasamente.Padding = New System.Windows.Forms.Padding(6)
-        pgAtasamente.Size = New System.Drawing.Size(959, 630)
-        pgAtasamente.TabIndex = 3
-        pgAtasamente.Visible = False
         ' 
         ' pgContinut
         ' 
@@ -403,10 +374,6 @@ Partial Class FacturiForm
         KBotNavItem3.Image = My.Resources.Resources.table
         KBotNavItem3.Key = "continut"
         KBotNavItem3.Text = "Conținut"
-        KBotNavItem4.AutoSize = True
-        KBotNavItem4.Image = My.Resources.Resources.attach
-        KBotNavItem4.Key = "atasamente"
-        KBotNavItem4.Text = "Atașamente"
         KBotNavItem5.AutoSize = True
         KBotNavItem5.Image = My.Resources.Resources.invoice
         KBotNavItem5.Key = "pdf"
@@ -425,7 +392,6 @@ Partial Class FacturiForm
         navDetaliu.Items.Add(KBotNavItem1)
         navDetaliu.Items.Add(KBotNavItem2)
         navDetaliu.Items.Add(KBotNavItem3)
-        navDetaliu.Items.Add(KBotNavItem4)
         navDetaliu.Items.Add(KBotNavItem5)
         navDetaliu.Items.Add(KBotNavItem6)
         navDetaliu.Items.Add(KBotNavItem7)
@@ -452,8 +418,8 @@ Partial Class FacturiForm
         ' 
         tlySubsol.AutoFitToTheme = False
         tlySubsol.ColumnCount = 2
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 30F))
-        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 70F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 22.5F))
+        tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 77.5F))
         tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
         tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
         tlySubsol.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 20F))
@@ -569,14 +535,12 @@ Partial Class FacturiForm
     Friend WithEvents pnlCard As System.Windows.Forms.Panel
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents pnlArbore As System.Windows.Forms.Panel
-    Friend WithEvents cmbLuna As KBotComboBox
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents pnlDetaliu As System.Windows.Forms.Panel
     Friend WithEvents navDetaliu As KBotNavList
     Friend WithEvents pnlPages As System.Windows.Forms.Panel
     Friend WithEvents pgGenerale As VanzareGeneralePage
     Friend WithEvents pgCumparator As VanzareCumparatorPage
-    Friend WithEvents pgAtasamente As VanzareAtasamentePage
     Friend WithEvents pgContinut As VanzareContinutPage
     Friend WithEvents pgPdf As VanzareFacturaPdfPage
     Friend WithEvents pgAnaf As VanzareFacturaAnafPage

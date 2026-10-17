@@ -13,7 +13,7 @@ Vederea arată rezervările angajamentului selectat aici. Dacă nu e niciunul se
 ## Arborele rezervărilor
 <!-- slice: 0014, 0092 -->
 target: RezervariView.tree
-Rezervările, pe luni și zile. Rezervarea inițială apare o singură dată, în ziua în care a devenit definitivă. Urmează, pe rând, butoanele arborelui.
+Rezervările, pe luni și zile. Rezervarea inițială apare o singură dată, în ziua în care a devenit definitivă. Urmează butoanele arborelui și, apoi, cele din ribbon.
 
 ## Arbore › Lupa
 <!-- slice: 0027, 0000-23 -->
@@ -21,29 +21,23 @@ target: RezervariView.tree
 part: header.search
 Caută în arbore: scrii și arborele arată doar ce se potrivește. Esc golește căutarea și închide banda.
 
-## Arbore › Graficul rezervărilor
-<!-- slice: 0061-02, 0000-23 -->
-target: RezervariView.tree
-part: header.right
-Deschide, într-o fereastră separată, evoluția rezervărilor angajamentului și totalurile lui pe luni.
-
 ## Arbore › Semnul «+»
 <!-- slice: 0014, 0081-02, 0000-23, 0000-30 -->
 target: RezervariView.tree
 part: node.icon
 Stă pe rezervarea pentru care nu există încă document de fundamentare și pornește documentul pentru ea. Dacă nicio rezervare nu mai are nevoie de document, semnul nu se vede.
 
-## Arbore › Acțiunile documentului
-<!-- slice: 0060, 0081-02, fara-felie, 0000-23, 0000-27, 0000-30 -->
-target: RezervariView.tree
-part: footer.left
-Meniul documentului de fundamentare pe acest angajament (apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au): Adaugă rezervare, Definitivează, Derulează, Generează PDF final (cele care se pot face acum).
+## Ribbon › Grafice
+<!-- slice: 0061-02, 0000-23, 0114-15, 0000-91 -->
+Butoanele vederii sunt în ribbon, în grupul «Rezervări» din dreapta (lângă grupul «Lista angajamentelor»). «Grafice» deschide, într-o fereastră separată, evoluția rezervărilor angajamentului și totalurile lui pe luni.
 
-## Arbore › Repară
-<!-- slice: 0060, 0000-23, 0092-01, 0000-68 -->
-target: RezervariView.tree
-part: footer.right
-Repară rezervările acestui angajament din istoric, fără nicio descărcare din FOREXE: îți arată întâi câte rânduri se schimbă și scrie abia după ce confirmi. Iconița se vede doar când angajamentul are rezervări greșite (acelea îl fac roșu în lista principală) și repararea nu se face într-o lună cu revizii.
+## Ribbon › Acțiunile documentului
+<!-- slice: 0060, 0081-02, fara-felie, 0000-23, 0000-27, 0000-30, 0114-15, 0000-91 -->
+Butonul își schimbă numele după ce se poate face acum: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final (documentul de fundamentare al angajamentului). Apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au.
+
+## Ribbon › Repară...
+<!-- slice: 0060, 0000-23, 0092-01, 0000-68, 0114-15, 0000-91 -->
+Repară rezervările acestui angajament din istoric, fără nicio descărcare din FOREXE: îți arată întâi câte rânduri se schimbă și scrie abia după ce confirmi. Butonul se vede doar când angajamentul are rezervări greșite (acelea îl fac roșu în lista principală) și repararea nu se face într-o lună cu revizii.
 
 ## Valorile pe clasificații
 <!-- slice: 0014 -->

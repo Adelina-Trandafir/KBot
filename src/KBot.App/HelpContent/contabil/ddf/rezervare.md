@@ -7,13 +7,13 @@ parent: contabil.ddf
 keywords: adauga rezervare, definitiveaza, deruleaza, genereaza pdf final, revizie noua, indicatori existenti
 open: view:rezervari
 ---
-<!-- slice: 0081-02, 0078-06, 0000-30 -->
-Iconița din **stânga, jos, a arborelui din vederea Rezervări** deschide acțiunile documentului
+<!-- slice: 0081-02, 0078-06, 0000-30, 0114-15, 0000-91 -->
+Butonul din ribbon, din grupul **«Rezervări»** (în dreapta, cât vederea Rezervări e pe ecran), deschide acțiunile documentului
 de fundamentare pentru angajamentul selectat. Meniul arată **o singură** acțiune, cea potrivită
-stării angajamentului. Iconița **se vede doar** când în arbore nu mai e nicio rezervare cu «+» (o rezervare
-de adus din FOREXE în K-BOT); până apeși «+» pe ele, iconița lipsește.
+stării angajamentului, iar butonul poartă numele ei (Adaugă rezervare / Definitivează / Derulează / Generează PDF final). Butonul **se vede doar** când în arbore nu mai e nicio rezervare cu «+» (o rezervare
+de adus din FOREXE în K-BOT); până apeși «+» pe ele, butonul lipsește.
 
-<!-- capture: rezervari-meniu-ddf | caption: Meniul DDF din subsolul arborelui de rezervări | goto: view:rezervari | prepare: Selectați un angajament «În derulare» și apăsați iconița din stânga, jos, a arborelui. -->
+<!-- capture: rezervari-meniu-ddf | caption: Meniul DDF de pe butonul din ribbon al vederii Rezervări | goto: view:rezervari | prepare: Selectați un angajament «În derulare» și apăsați butonul din ribbon, din grupul «Rezervări». | redo: 2026-10-17 21:00 | why: 0114-15: meniul documentului se deschide din butonul din ribbon; 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 | Angajamentul | Ultima revizie | Meniul oferă |
 |--------------|----------------|--------------|

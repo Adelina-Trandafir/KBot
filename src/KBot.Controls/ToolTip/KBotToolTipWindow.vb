@@ -82,6 +82,12 @@ Friend NotInheritable Class KBotToolTipWindow
     Private _footerLayout As KBotRichText.RichLayout
     Private _headerIconRect As Rectangle
     Private _footerIconRect As Rectangle
+    Private _imageRect As Rectangle   ' the picture under the body (BodyImage); empty = none
+
+    ' Logical size the picture is fitted into (smaller pictures are not enlarged).
+    Private Const ImageMaxWidth As Integer = 300
+    Private Const ImageMaxHeight As Integer = 220
+    Private Const ImageGap As Integer = 6
 
     Private ReadOnly _autoHide As New Timer()
 
@@ -288,6 +294,7 @@ Friend NotInheritable Class KBotToolTipWindow
         _footerRect = Rectangle.Empty
         _headerIconRect = Rectangle.Empty
         _footerIconRect = Rectangle.Empty
+        _imageRect = Rectangle.Empty
         _sepTop = -1
         _sepBottom = -1
 
@@ -306,7 +313,10 @@ Friend NotInheritable Class KBotToolTipWindow
                                   (Not String.IsNullOrEmpty(antetText) OrElse antetIcon IsNot Nothing)
         Dim areSubsol As Boolean = _style.Footer.Visible AndAlso
                                    (Not String.IsNullOrEmpty(subsolText) OrElse subsolIcon IsNot Nothing)
-        Dim areCorp As Boolean = Not String.IsNullOrEmpty(_content.Text)
+        Dim areText As Boolean = Not String.IsNullOrEmpty(_content.Text)
+        Dim poza As Image = _content.BodyImage
+        Dim arePoza As Boolean = poza IsNot Nothing AndAlso poza.Width > 0 AndAlso poza.Height > 0
+        Dim areCorp As Boolean = areText OrElse arePoza
 
         Dim latimeMax As Integer = 0
         Dim y As Integer = padT
@@ -351,11 +361,23 @@ Friend NotInheritable Class KBotToolTipWindow
             End If
 
             ' ── Corp ─────────────────────────────────────────────────────────
-            If areCorp Then
+            If areText Then
                 _bodyLayout = LayoutOf(_content.Text, _bodyFont, _fore, g, maxBody)
                 _bodyRect = New Rectangle(padL, y, _bodyLayout.Width, _bodyLayout.Height)
                 latimeMax = Math.Max(latimeMax, _bodyLayout.Width)
                 y += _bodyLayout.Height
+            End If
+
+            ' ── Poza de sub corp ─────────────────────────────────────────────
+            If arePoza Then
+                If areText Then y += Dpi(ImageGap)
+                Dim scara As Double = Math.Min(1.0, Math.Min(Dpi(Math.Min(ImageMaxWidth, _style.MaxWidth)) / CDbl(poza.Width),
+                                                             Dpi(ImageMaxHeight) / CDbl(poza.Height)))
+                Dim pozaW As Integer = Math.Max(1, CInt(Math.Round(poza.Width * scara)))
+                Dim pozaH As Integer = Math.Max(1, CInt(Math.Round(poza.Height * scara)))
+                _imageRect = New Rectangle(padL, y, pozaW, pozaH)
+                latimeMax = Math.Max(latimeMax, pozaW)
+                y += pozaH
             End If
 
             ' ── Linia de deasupra subsolului ─────────────────────────────────
@@ -451,6 +473,13 @@ Friend NotInheritable Class KBotToolTipWindow
             DrawSeparator(g, _sepTop)
             If _bodyRect.Height > 0 Then
                 KBotRichText.Draw(g, _bodyLayout, _bodyRect, ContentAlignment.TopLeft)
+            End If
+            If _imageRect.Width > 0 AndAlso _content.BodyImage IsNot Nothing Then
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic
+                g.DrawImage(_content.BodyImage, _imageRect)
+                Using pen As New Pen(_border)
+                    g.DrawRectangle(pen, New Rectangle(_imageRect.X, _imageRect.Y, _imageRect.Width - 1, _imageRect.Height - 1))
+                End Using
             End If
             DrawSeparator(g, _sepBottom)
             DrawBand(g, _style.Footer, _footerRect, _footerIconRect,

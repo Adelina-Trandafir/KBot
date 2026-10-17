@@ -27,7 +27,6 @@ Partial Class PrimiteView
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
         tree = New AdvancedTreeControl()
-        chkToate = New System.Windows.Forms.CheckBox()
         pnlDetaliu = New System.Windows.Forms.Panel()
         pnlNav = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
@@ -49,8 +48,8 @@ Partial Class PrimiteView
         ' tlyBody
         '
         tlyBody.ColumnCount = 2
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 32.0!))
-        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 68.0!))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 24.0!))
+        tlyBody.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 76.0!))
         tlyBody.Controls.Add(pnlArbore, 0, 0)
         tlyBody.Controls.Add(pnlDetaliu, 1, 0)
         tlyBody.Dock = System.Windows.Forms.DockStyle.Fill
@@ -65,28 +64,12 @@ Partial Class PrimiteView
         ' pnlArbore
         '
         pnlArbore.Controls.Add(tree)
-        pnlArbore.Controls.Add(chkToate)
         pnlArbore.Dock = System.Windows.Forms.DockStyle.Fill
         pnlArbore.Location = New System.Drawing.Point(0, 0)
         pnlArbore.Margin = New System.Windows.Forms.Padding(0)
         pnlArbore.Name = "pnlArbore"
         pnlArbore.Size = New System.Drawing.Size(320, 600)
         pnlArbore.TabIndex = 0
-        '
-        ' chkToate
-        '
-        chkToate.AutoSize = False
-        chkToate.Dock = System.Windows.Forms.DockStyle.Top
-        chkToate.Location = New System.Drawing.Point(0, 0)
-        chkToate.Margin = New System.Windows.Forms.Padding(0)
-        chkToate.Name = "chkToate"
-        chkToate.Padding = New System.Windows.Forms.Padding(8, 0, 0, 0)
-        chkToate.Size = New System.Drawing.Size(320, 28)
-        chkToate.TabIndex = 1
-        chkToate.Text = "Arată toate facturile primite"
-        tips.SetToolTipText(chkToate, "Lista cuprinde și facturile care nu sunt legate de acest DDF. Clic dreapta pe una o leagă de DDF.")
-        chkToate.UseVisualStyleBackColor = True
-        chkToate.Visible = False
         '
         ' tree
         '
@@ -96,11 +79,11 @@ Partial Class PrimiteView
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.FooterBackColor = Drawing.SystemColors.Control
-        tree.FooterCaption = "Actualizare…"
+        tree.FooterCaption = "Actualizează"
         tree.FooterCaptionFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.FooterHeight = 30
         tree.FooterIconSize = New System.Drawing.Size(18, 18)
-        tree.FooterRightIcon = My.Resources.Resources.refresh
+        tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Aduce de la ANAF facturile noi." & vbLf & "Alegeți perioada sau scrieți numărul de zile (1-60)."
         tree.FooterSeparatorColor = Drawing.Color.Gainsboro
         tree.FooterSeparatorWidth = 2
@@ -125,7 +108,7 @@ Partial Class PrimiteView
         tree.Indent = 8
         tree.ItemHeight = 24
         tree.LeftIconSize = New System.Drawing.Size(14, 14)
-        tree.Location = New System.Drawing.Point(0, 28)
+        tree.Location = New System.Drawing.Point(0, 0)
         tree.Margin = New System.Windows.Forms.Padding(0)
         tree.MinimumCollapsedWidth = 120
         tree.Name = "tree"
@@ -145,7 +128,7 @@ Partial Class PrimiteView
         tree.SearchSeparatorColor = Drawing.SystemColors.ActiveBorder
         tree.SearchSeparatorWidth = 2
         tree.ShowRightIconOnHover = False
-        tree.Size = New System.Drawing.Size(320, 572)
+        tree.Size = New System.Drawing.Size(320, 600)
         tree.TabIndex = 0
         '
         ' pnlDetaliu
@@ -220,7 +203,7 @@ Partial Class PrimiteView
         pgXml.Location = New System.Drawing.Point(0, 0)
         pgXml.Margin = New System.Windows.Forms.Padding(0)
         pgXml.Name = "pgXml"
-        pgXml.Padding = New System.Windows.Forms.Padding(3)
+        pgXml.Padding = New System.Windows.Forms.Padding(3, 3, 3, 0)
         pgXml.Size = New System.Drawing.Size(680, 486)
         pgXml.TabIndex = 5
         pgXml.Visible = False
@@ -309,7 +292,6 @@ Partial Class PrimiteView
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents pnlArbore As System.Windows.Forms.Panel
-    Friend WithEvents chkToate As System.Windows.Forms.CheckBox
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents pnlDetaliu As System.Windows.Forms.Panel
     Friend WithEvents pnlNav As System.Windows.Forms.Panel

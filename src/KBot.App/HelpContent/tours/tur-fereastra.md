@@ -30,10 +30,10 @@ part: header.search
 Deschide banda de căutare peste listă: scrii o parte din nume și lista arată doar angajamentele care se potrivesc. Esc golește căutarea și închide banda.
 
 ## Lista › Rotița
-<!-- slice: 0777, 0000-23, 0109 -->
+<!-- slice: 0777, 0000-23, 0109, 0114-12, 0114-13, 0000-90 -->
 target: KbotForm.tree
 part: header.right
-Opțiunile listei: sortarea (după nume sau după dată) și coloanele care se văd (codul, sursele). Aceleași opțiuni sunt și în Setări › Aplicație › KBOT. Ultimul rând al meniului, «Actualizează angajamente...», deschide o fereastră în care bifezi mai multe angajamente de adus la zi din FOREXE: cu descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în «Coada robotului» și se fac una după alta, ca la apăsări succesive pe iconița de reîmprospătare.
+Opțiunile listei: sortarea (după nume sau după dată) și coloanele care se văd (codul, sursele). Aceleași opțiuni sunt și în Setări › Aplicație › KBOT. Rândul «Grupe» apare doar cât există cel puțin o grupă; grupele se fac din ribbon, cu «Editează grupe».
 
 ## Lista › Reîmprospătarea unui angajament
 <!-- slice: 0034, 0098, 0000-23 -->
@@ -41,17 +41,11 @@ target: KbotForm.tree
 part: node.icon
 Butonul de la capătul unui rând apare doar când ții mouse-ul pe rând; acum îl vezi pe un rând ca exemplu. Reîmprospătează din FOREXE angajamentul acela: întâi alegi ce recepții se citesc din nou, apoi robotul îl citește. Dacă apeși pe mai multe rânduri la rând, descărcările intră în «Coada robotului» și se fac una după alta.
 
-## Lista › Extrase de cont
-<!-- slice: 0080-03, 0095-02, 0000-23 -->
-target: KbotForm.tree
-part: footer.left
-Iconița din stânga, jos, deschide fereastra «Extrase de cont», cu toate extrasele unității. Descărcarea extraselor din FOREXE se face de acolo.
-
 ## Lista › Actualizează
-<!-- slice: 0034, 0000-23 -->
+<!-- slice: 0034, 0000-23, 0114-12, 0000-90 -->
 target: KbotForm.tree
 part: footer.right
-Iconița din dreapta, jos, aduce din FOREXE angajamentele noi. Cele noi se adaugă în listă; cele existente rămân neatinse.
+Iconița din dreapta, jos (și textul «Actualizează» de lângă ea) deschide un meniu cu două rânduri: «Descarcă angajamente NOI» aduce din FOREXE angajamentele noi (cele noi se adaugă în listă, cele existente rămân neatinse), iar «Actualizează angajamente VRAC» deschide o fereastră în care bifezi mai multe angajamente de adus la zi: cu descărcarea pe mai multe taburi pornită se descarcă deodată, altfel intră în «Coada robotului» și se fac una după alta.
 
 ## Vederile
 <!-- slice: 0018, 0088, 0000-30 -->

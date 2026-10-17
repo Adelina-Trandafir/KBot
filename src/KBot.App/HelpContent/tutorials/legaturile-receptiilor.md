@@ -22,11 +22,9 @@ wait: tab:receptii
 Apasă butonul <b>«Recepții»</b> din stânga ferestrei.
 
 ## Editorul de legături
-<!-- slice: 000T-10 -->
-target: KbotForm>ReceptiiView.tree
-part: header.right
+<!-- slice: 000T-10, 0114-16, 0000-91 -->
 wait: opens:AsociereForm
-Apasă <b>iconița din dreapta antetului arborelui</b>: se deschide editorul de legături recepție › instantaneu.<BR>
+În ribbon, în grupul <b>«Recepții»</b> din dreapta (lângă «Închide»), apasă butonul <b>«Asociază recepții»</b>: se deschide editorul de legături recepție › instantaneu.<BR>
 <mark>Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta.</mark>
 
 ## Ce vezi în fereastră

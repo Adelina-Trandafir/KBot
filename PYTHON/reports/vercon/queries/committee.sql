@@ -1,1 +1,1 @@
-SELECT IdComisie,Receptie1,Receptie2,Receptie3,Receptie4 FROM {{TABLE:VC_ComisieNIR}}
+SELECT c.IdComisie,c.Receptie1,c.Receptie2,c.Receptie3,c.Receptie4 FROM {{TABLE:VC_ComisieNIR}} c

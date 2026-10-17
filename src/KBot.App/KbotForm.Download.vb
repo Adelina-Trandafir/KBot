@@ -13,8 +13,64 @@ Imports KBot.Forexe
 ''' </summary>
 Partial Public Class KbotForm
 
+    ' Slice 0114-12: the rows of the popup that the footer button («Actualizeaza») opens.
+    Private Const FOOTER_NOI As String = "noi"
+    Private Const FOOTER_VRAC As String = "vrac"
+
     ''' <summary>
-    ''' The RIGHT icon of the tree footer (slice 0057) = refresh the angajamente list
+    ''' The RIGHT icon of the tree footer and its text open a small popup ABOVE the footer (slice 0114-12, operator 17.10.2026) with the
+    ''' two ways to update: «Descarca angajamente NOI» (the list refresh this icon used to do alone) and «Actualizeaza angajamente
+    ''' VRAC» (the window where the operator ticks the angajamente, which used to be a row of the tree options menu).
+    ''' </summary>
+    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+        OpenFooterUpdateMenu()
+    End Sub
+
+    Private Sub Tree_FooterCaptionClicked(e As MouseEventArgs) Handles tree.FooterCaptionClicked
+        OpenFooterUpdateMenu()
+    End Sub
+
+    ' UI boundary: logs and swallows.
+    Private Sub OpenFooterUpdateMenu()
+        Try
+            ' A second press on the button CLOSES the popup (the press already closed it, so without this it would reopen at once).
+            If CustomPopup.ClosedJustNow Then Return
+            Dim k_band As Rectangle = tree.FooterBandRect
+            If k_band.IsEmpty Then Return
+            Dim k_items As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(FOOTER_NOI, "Descarcă angajamente NOI", My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32),
+                New CustomPopupItem(FOOTER_VRAC, "Actualizează angajamente VRAC", FxIcons.RefreshIcon())}
+            Dim k_menu As New CustomPopup(k_items) With {.IconBarSide = PopupIconBarSide.Right}   ' bar and text on the right, by the button
+            AddHandler k_menu.ItemClicked, AddressOf FooterUpdateMenu_ItemClicked
+            Dim k_icon As Rectangle = tree.FooterRightIconRect
+            k_menu.ShowAboveRightAligned(tree, k_band, If(k_icon.IsEmpty, k_band.Right, k_icon.Right))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.OpenFooterUpdateMenu", ex)
+        End Try
+    End Sub
+
+    Private Sub FooterUpdateMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            ' Slice 000T-10: a tutorial waiting for a row of this popup.
+            RaiseEvent TutorialSignal(SignalFooterMenuPrefix & e.Item.Key)
+            Select Case e.Item.Key
+                Case FOOTER_NOI
+                    DescarcaAngajamenteNoi()
+                Case FOOTER_VRAC
+                    DeschideActualizareaMultipla()
+                Case Else
+                    ' No silent no-ops: a row added to the popup and forgotten here must show.
+                    Throw New ArgumentException("Rând necunoscut în meniul de actualizare: «" & e.Item.Key & "».")
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.FooterUpdateMenu_ItemClicked", ex)
+            KBotMessage.Show(Me, "Opțiunea nu a putut fi aplicată: " & ex.Message, "Listă angajamente",
+                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' «Descarca angajamente NOI» (slice 0057 / 0114-12) = refresh the angajamente list
     ''' from FOREXE.
     ''' </summary>
     ''' <remarks>
@@ -27,7 +83,7 @@ Partial Public Class KbotForm
     ''' period only (a year + an SS), so an angajament from another period would look new
     ''' to it.
     ''' </remarks>
-    Private Async Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+    Private Async Sub DescarcaAngajamenteNoi()
         Try
             ' Slice 0098: through the robot queue, in the order the operator asked.
             Await _robotQueue.RunAsync("lista", "Lista de angajamente", AddressOf DescarcaListaAsync)
@@ -35,7 +91,7 @@ Partial Public Class KbotForm
             ' Duplicate or taken out of the queue: the console already said it.
         Catch ex As Exception
             ' UI boundary (async Sub): cannot re-throw -- log it and say why.
-            GlobalErrorLog.Write("MainForm.tree_FooterRightIconClicked", ex)
+            GlobalErrorLog.Write("MainForm.DescarcaAngajamenteNoi", ex)
             KBotMessage.Show(Me, "Actualizarea listei de angajamente a eșuat: " & ex.Message,
                             "Listă angajamente", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try

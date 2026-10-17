@@ -68,7 +68,6 @@ Partial Public Class FacturiForm
     Private Sub ShowPage(k_key As String)
         pgGenerale.Visible = String.Equals(k_key, ViewGenerale, StringComparison.Ordinal)
         pgCumparator.Visible = String.Equals(k_key, ViewCumparator, StringComparison.Ordinal)
-        pgAtasamente.Visible = String.Equals(k_key, ViewAtasamente, StringComparison.Ordinal)
         pgContinut.Visible = String.Equals(k_key, ViewContinut, StringComparison.Ordinal)
         pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
         pgAnaf.Visible = String.Equals(k_key, ViewAnaf, StringComparison.Ordinal)

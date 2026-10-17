@@ -8,25 +8,11 @@ host-key: grupe-meniu
 ---
 <!-- slice: 000T-12 -->
 
-## Iconița de opțiuni a arborelui
-<!-- slice: 000T-12 -->
-target: KbotForm.tree
-part: header.right
-wait: click
-Apasă <b>iconița din dreapta antetului</b> listei de angajamente (rotița). Se deschide lista cu opțiunile arborelui.
-
-## «Grupe»
-<!-- slice: 000T-12 -->
-anchor: popup.grupe
-wait: anchor:grupe.grupe-editeaza
-Alege <b>«Grupe»</b>. Lista rămâne deschisă, iar lângă ea apare <b>lista grupelor</b>: grupele în ordine alfabetică, fiecare în culoarea ei, iar jos rândul «Editează grupe...».<BR>
-<mark>Dacă alegi o grupă, lista de angajamente arată doar angajamentele ei.</mark>
-
-## «Editează grupe...»
-<!-- slice: 000T-12 -->
-anchor: grupe.grupe-editeaza
+## «Editează grupe» din ribbon
+<!-- slice: 000T-12, 0114-11, 0000-90 -->
 wait: opens:GrupeForm
-Alege <b>«Editează grupe...»</b>. Se deschide fereastra în care adaugi și modifici grupele.
+Cât e pe ecran lista angajamentelor, ribbonul are în dreapta, lângă «Închide», grupul <b>«Lista angajamentelor»</b>. Apasă în el butonul <b>«Editează grupe»</b>. Se deschide fereastra în care adaugi și modifici grupele.<BR>
+<mark>Rândul «Grupe» din meniul rotiței listei (cu grupele, ca să vezi doar angajamentele uneia) apare doar cât există cel puțin o grupă; dacă alegi o grupă, lista de angajamente arată doar angajamentele ei.</mark>
 
 ## Fereastra grupelor
 <!-- slice: 000T-12 -->

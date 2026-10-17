@@ -118,7 +118,7 @@ Partial Public Class AdvancedTreeControl
 
         ' ── Caption (text îmbogățit, în spațiul rămas) ───────────────────
         Dim availW As Integer = Math.Max(0, rx - x)
-        If String.IsNullOrEmpty(_footerCaption) OrElse availW <= 0 Then Return
+        If Not FooterCaptionShown() OrElse availW <= 0 Then Return
 
         Dim fmt As StringFormat = StringFormat.GenericTypographic
         fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
@@ -225,6 +225,18 @@ Partial Public Class AdvancedTreeControl
     ''' </summary>
     Private Function ButonPeLatura(latura As En_FooterButtonPosition) As Boolean
         Return _footerCollapseButton AndAlso _footerCollapseButtonPosition = latura
+    End Function
+
+    ''' <summary>
+    ''' Textul subsolului se vede? Textul e eticheta iconiței (slice 00EF-33: «Actualizare…» lângă
+    ''' pictograma de reîmprospătare). Când au fost puse iconițe, dar niciuna nu se vede (butonul de
+    ''' strângere le-a luat colțul) SAU gazda le-a scos (<c>FooterRightIcon = Nothing</c>, ca la
+    ''' «Actualizează» din Extrase când descărcarea nu e permisă), textul se ascunde odată cu ele —
+    ''' altfel rămâne un text fără buton.
+    ''' </summary>
+    Private Function FooterCaptionShown() As Boolean
+        If String.IsNullOrEmpty(_footerCaption) Then Return False
+        Return ShowFooterLeftIcon() OrElse ShowFooterRightIcon()
     End Function
 
     ''' <summary>Iconița din stânga se vede? (există ȘI butonul nu i-a luat colțul)</summary>
@@ -362,8 +374,9 @@ Partial Public Class AdvancedTreeControl
         Dim leftRect As Rectangle = FooterLeftIconRect
         If Not leftRect.IsEmpty AndAlso leftRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterLeftIconClicked(e)
-        ElseIf Not KBotDesignTime.IsDesignTime(Me) Then
+        ElseIf Not KBotDesignTime.IsDesignTime(Me) AndAlso FooterCaptionShown() Then
             ' Slice 00EF-33: the rest of the band is the caption's: a host that makes it a button listens to this.
+            ' Hidden caption (its icon is hidden) = no invisible button.
             RaiseEvent FooterCaptionClicked(e)
         End If
         Return True                       ' banda e a subsolului, indiferent unde s-a apăsat

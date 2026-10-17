@@ -35,10 +35,8 @@ Partial Public Class FacturiForm
     Private WithEvents btnClientSalveaza As System.Windows.Forms.Button
     Private WithEvents btnClientSterge As System.Windows.Forms.Button
 
-    ' VanzareAtasamentePage (pgAtasamente): 1 of 3 controls are used by the window's code
+    ' VanzareContinutPage (pgContinut): 3 of 5 controls are used by the window's code
     Private WithEvents chkAtasament As System.Windows.Forms.CheckBox
-
-    ' VanzareContinutPage (pgContinut): 2 of 4 controls are used by the window's code
     Private WithEvents btnLinieNoua As System.Windows.Forms.Button
     Private WithEvents gridLinii As KBotDataView
 
@@ -67,7 +65,7 @@ Partial Public Class FacturiForm
         btnClientNou = pgCumparator.btnClientNou
         btnClientSalveaza = pgCumparator.btnClientSalveaza
         btnClientSterge = pgCumparator.btnClientSterge
-        chkAtasament = pgAtasamente.chkAtasament
+        chkAtasament = pgContinut.chkAtasament
         btnLinieNoua = pgContinut.btnLinieNoua
         gridLinii = pgContinut.gridLinii
     End Sub

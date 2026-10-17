@@ -305,10 +305,8 @@ Partial Class KbotForm
         tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCaptionForeColor = SystemColors.ActiveCaptionText
         tree.FooterHeight = 30
-        tree.FooterLeftIcon = My.Resources.Resources.credit_card
-        tree.FooterLeftIconTooltip = "Descarcă extrasele de cont noi din FOREXE și le importă." & vbLf & "Fereastra cu toate extrasele bazei: MENIU ▸ Extrase."
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
-        tree.FooterRightIconTooltip = "Actualizează lista de angajamente din FOREXE." & vbLf & "Cele noi se adaugă; cele existente rămân neatinse."
+        tree.FooterRightIconTooltip = "Actualizează angajamentele din FOREXE." & vbLf & "Alegi: descarcă angajamentele NOI (cele existente rămân neatinse) sau le actualizezi VRAC pe cele bifate."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
@@ -444,7 +442,6 @@ Partial Class KbotForm
         KBotNavItem11.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Check_boxes_32
         KBotNavItem11.Key = "notecab"
         KBotNavItem11.Text = "Note corecție"
-        KBotNavItem12.Align = KBotNavAlign.Far
         KBotNavItem12.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
         KBotNavItem12.Key = "efactura"
         KBotNavItem12.Text = "E-Factura"
@@ -454,12 +451,12 @@ Partial Class KbotForm
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)
+        navViews.Items.Add(KBotNavItem12)
         navViews.Items.Add(KBotNavItem7)
         navViews.Items.Add(KBotNavItem8)
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
         navViews.Items.Add(KBotNavItem11)
-        navViews.Items.Add(KBotNavItem12)
         navViews.Location = New Point(11, 13)
         navViews.Margin = New Padding(4, 5, 4, 5)
         navViews.Name = "navViews"

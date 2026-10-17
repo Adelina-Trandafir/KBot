@@ -21,7 +21,7 @@ Imports KBot.Controls
 ' de la alt dpi turteste sau umfla fereastra la deschidere, fara ca designerul s-o arate.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OrdEditForm
-    Inherits Global.KBot.Theming.KBotShellForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

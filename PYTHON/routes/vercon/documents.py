@@ -139,11 +139,11 @@ def list_documents(cursor, ctx, family):
     s, g, e = _scope(ctx)
     scale = ctx['scale']
     if family in ('nir', 'storno'):
-        rows = _all(cursor, 'SELECT n.IdIntrare, n.Numar, n.Data, n.DataFc, n.NrFact, n.Valoare, n.IdPartener, n.IdStorno, n.TipDoc, n.Anulat, n.Version, '
+        rows = _all(cursor, 'SELECT n.IdIntrare, n.Numar, COALESCE(n.NumarSub,0) AS sub_number, n.Data, n.DataFc, n.NrFact, n.Valoare, n.IdPartener, n.IdStorno, n.TipDoc, n.Anulat, n.Version, '
                             'COALESCE(p.DenumirePartener, n.FurnizorV) AS Partener FROM VC_NIR n LEFT JOIN Parteneri p ON p.IdPartener=n.IdPartener '
                             'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND COALESCE(n.Storno,0)=%s ORDER BY n.Data DESC, n.Numar DESC',
                     (s, g, e, 1 if family == 'storno' else 0))
-        return [{'id': r['IdIntrare'], 'number': abs(r['Numar'] or 0), 'date': _iso(r['Data']), 'invoice_date': _iso(r['DataFc']), 'invoice': r['NrFact'],
+        return [{'id': r['IdIntrare'], 'number': abs(r['Numar'] or 0), 'sub_number': r['sub_number'], 'date': _iso(r['Data']), 'invoice_date': _iso(r['DataFc']), 'invoice': r['NrFact'],
                  'total': _money(r['Valoare'], scale), 'party_id': r['IdPartener'], 'party': r['Partener'] or '', 'doc_type': r['TipDoc'],
                  'source': r['IdStorno'], 'annulled': bool(r['Anulat']), 'version': r['Version']} for r in rows]
     rows = _all(cursor, 'SELECT h.IdBonConsum, h.NumarBC, h.DataBC, h.ValoareBC, h.IDC, h.IdMasina, h.IdRetur, h.Anulat, h.Version, c.Denumire AS Primitor, '
@@ -181,11 +181,21 @@ def get_document(cursor, repo, ctx, family, doc_id):
                           'PUTVA': _money(r['PUTVA'], scale), 'ValoareCUTVA': _money(
                               numeric.to_stored(numeric.calc_round(numeric.from_stored(r['Cant'], scale) * numeric.from_stored(r['PUTVA'] or 0, scale), ctx['zec']), scale), scale)}
                          for r in lines]
+        source_label = None
+        if family == 'storno':
+            from .storno_stock import enrich_lines
+            enrich_lines(cursor, ctx, h['IdStorno'], out_lines)
+            source_rows = repo.select('VC_NIR', {'IdIntrare': h['IdStorno']})
+            if source_rows:
+                source = source_rows[0]
+                source_label = 'NIR %s%s • %s • %s' % (
+                    abs(source['Numar'] or 0), _sub_text(source.get('NumarSub') or 0), source['NrFact'] or '',
+                    source['Data'].strftime('%d.%m.%Y') if source['Data'] else '')
         return {'family': family, 'id': doc_id, 'version': h['Version'], 'annulled': bool(h['Anulat']), 'reason': h['MotivAnulare'],
                 'annulled_by': h['AnulatDe'], 'number': abs(h['Numar'] or 0), 'sub_number': h.get('NumarSub', 0), 'doc_type': h['TipDoc'],
                 'header': {'IdPartener': h['IdPartener'], 'party': partner['DenumirePartener'] if partner else h['FurnizorV'], 'NrFact': h['NrFact'],
                            'DataFc': _iso(h['DataFc']), 'Data': _iso(h['Data']), 'Valoare': _money(h['Valoare'], scale), 'IdMasina': h['IdMasina'],
-                           'IdComisie': h['IdComisie'], 'source': h['IdStorno']},
+                           'IdComisie': h['IdComisie'], 'source': h['IdStorno'], 'source_label': source_label},
                 'lines': out_lines}
     rows = repo.select('VC_Iesiri_H', {'IdBonConsum': doc_id})
     if not rows or bool(rows[0].get('Retur') or 0) != (family == 'br'):
@@ -391,24 +401,18 @@ def _document_variants(cursor, ctx, family, doc_id):
 
 
 # ---- FCS (storno of a receipt) -----------------------------------------------------------------------------------------
-def storno_eligible(cursor, ctx, nir_id, exclude=None):
-    """The lines of a receipt with what is still left to storno: [{variant, name, um, qty, done, left, Pret, PUTVA, IDTVA}]."""
-    s, g, e = _scope(ctx)
-    scale = ctx['scale']
-    rows = _all(cursor, 'SELECT i.IdProdus, pr.DenumireP, pr.UM, SUM(i.Cant) AS q, MIN(i.PUTVA) AS putva FROM VC_Intrari i ' + _name_join('i') +
-                ' WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s GROUP BY i.IdProdus, pr.DenumireP, pr.UM ORDER BY pr.DenumireP', (s, g, e, nir_id))
-    done = {r['IdProdus']: Decimal(r['q']) for r in _all(
-        cursor, 'SELECT x.IdProdus, SUM(x.Cant) AS q FROM VC_IntrariStorno x JOIN VC_NIR n ON n.SubunitId=x.SubunitId AND n.GestiuneId=x.GestiuneId AND n.ExercitiuId=x.ExercitiuId AND n.IdIntrare=x.IdIntrare '
-                'WHERE x.SubunitId=%s AND x.GestiuneId=%s AND x.ExercitiuId=%s AND n.IdStorno=%s AND n.Anulat=0 AND x.Anulat=0 AND n.IdIntrare<>%s GROUP BY x.IdProdus',
-        (s, g, e, nir_id, exclude or 0))}
-    return [{'variant': r['IdProdus'], 'name': r['DenumireP'], 'um': r['UM'], 'qty': _money(Decimal(r['q']), scale), 'done': _money(done.get(r['IdProdus'], 0), scale),
-             'left': _money(Decimal(r['q']) - done.get(r['IdProdus'], 0), scale), 'PUTVA': _money(r['putva'], scale)} for r in rows]
+def storno_eligible(cursor, ctx, nir_id, exclude=None, on=None):
+    from .storno_stock import eligible
+    return eligible(cursor, ctx, nir_id, exclude, on)
 
 
-def _clean_stornolines(cursor, ctx, source_id, raw_lines, exclude=None):
+def _clean_stornolines(cursor, ctx, source_id, raw_lines, exclude=None, on=None):
     errors = {}
-    eligible = {l['variant']: l for l in storno_eligible(cursor, ctx, source_id, exclude)}
+    eligible = {l['variant']: l for l in storno_eligible(cursor, ctx, source_id, exclude, on)}
     lines, used = [], set()
+    raw_lines = raw_lines if isinstance(raw_lines, list) else []
+    if len(raw_lines) > _MAX_LINES:
+        errors['lines'] = 'Cel mult %d linii pe document.' % _MAX_LINES
     if not raw_lines:
         errors['lines'] = 'Alegeți cel puțin un produs de stornat.'
     for index, raw in enumerate(raw_lines[:_MAX_LINES]):
@@ -416,10 +420,14 @@ def _clean_stornolines(cursor, ctx, source_id, raw_lines, exclude=None):
         key = _line_key(raw, index)
         variant, cant = _int(raw.get('variant')), _dec(raw.get('Cant'))
         entry = eligible.get(variant)
-        if entry is None or variant in used:
-            errors['l|%s|variant' % key] = 'Produsul nu face parte din recepție sau a fost ales de două ori.'
+        identity = None
+        if entry:
+            product = entry['product'] if entry['product'] is not None else ('variant', variant)
+            identity = (product, Decimal(entry['PUTVA'] or '0'))
+        if entry is None or identity in used:
+            errors['l|%s|variant' % key] = 'Produsul nu este disponibil din recepție sau combinația produs + preț a fost aleasă de două ori.'
             continue
-        used.add(variant)
+        used.add(identity)
         if cant is None or cant <= 0:
             errors['l|%s|Cant' % key] = 'Cantitatea trebuie să fie pozitivă.'
             continue
@@ -459,13 +467,16 @@ def create_storno(cursor, repo, ctx, exercise, body, request_key, request_id):
     if cols['IdComisie'] is not None and not _exists(repo, 'VC_ComisieNIR', 'IdComisie', cols['IdComisie']):
         errors['h.IdComisie'] = 'Valoarea aleasă nu există în această gestiune.'
     _fail(errors)
-    lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'))
-    number, _ = _assign_number(cursor, ctx, 'storno', header.get('Numar'), errors)
+    lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'), on=cols['Data'])
+    from . import receipt_number
+    sub = _sub_number(header.get('NumarSub'), errors)
+    _fail(errors)
+    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar'), sub, cols['Data'])
     _fail(errors)
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     values = {**cols, 'Valoare': total, 'Numar': -number}
     if _has_numarsub(cursor):
-        values['NumarSub'] = 0
+        values['NumarSub'] = sub
     doc_id = repo.insert('VC_NIR', values)
     now = datetime.now()
     for line in lines:
@@ -478,10 +489,12 @@ def create_storno(cursor, repo, ctx, exercise, body, request_key, request_id):
 
 def edit_storno(cursor, repo, ctx, exercise, doc_id, body, request_id):
     table, pk, before = _load_for_write(repo, ctx, 'storno', doc_id, body.get('version'))
-    source = _source_nir(repo, before['IdStorno'])
+    source = _source_nir(repo, _int(body.get('source')) if 'source' in body else before['IdStorno'])
     header = body.get('header') if isinstance(body.get('header'), dict) else {}
     errors = {}
-    cols = {'NrFact': _text(header.get('NrFact'), 'h.NrFact', errors, True),
+    cols = {'IdStorno': source['IdIntrare'], 'IdPartener': source['IdPartener'], 'FurnizorV': source['FurnizorV'], 'IdMasina': source['IdMasina'],
+            'IdComisie': _int(header.get('IdComisie')) if header.get('IdComisie') not in (None, '') else None,
+            'NrFact': _text(header.get('NrFact'), 'h.NrFact', errors, True),
             'DataFc': protocol.to_date(header.get('DataFc'), 'Data facturii storno', None, errors, 'h.DataFc'),
             'Data': protocol.to_date(header.get('Data'), 'Data NIR', exercise if ctx['type'] not in ('OI', 'MF') else None, errors, 'h.Data')}
     if cols['DataFc'] and source['DataFc'] and cols['DataFc'] < source['DataFc'].date():
@@ -491,13 +504,18 @@ def edit_storno(cursor, repo, ctx, exercise, doc_id, body, request_id):
         if cols['IdComisie'] is None or not _exists(repo, 'VC_ComisieNIR', 'IdComisie', cols['IdComisie']):
             errors['h.IdComisie'] = 'Valoarea aleasă nu există în această gestiune.'
     _fail(errors)
-    lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'), exclude=doc_id)
-    number = abs(before['Numar'] or 0)
-    manual = header.get('Numar')
-    if manual not in (None, '') and _int(manual) != number:
-        number, _ = _assign_number(cursor, ctx, 'storno', manual, errors, exclude=doc_id)
+    lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'), exclude=doc_id, on=cols['Data'])
+    old_day = before['Data'].date() if hasattr(before['Data'], 'date') else before['Data']
+    if old_day and cols['Data'].year != old_day.year:
+        errors['h.Data'] = 'Data FCS nu poate muta documentul în altă serie anuală.'
+    from . import receipt_number
+    sub = _sub_number(header.get('NumarSub', before.get('NumarSub', 0)), errors)
+    _fail(errors)
+    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar') or abs(before['Numar'] or 0), sub, cols['Data'], doc_id)
     _fail(errors)
     cols['Numar'] = -number
+    if _has_numarsub(cursor):
+        cols['NumarSub'] = sub
     cols['Valoare'] = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     repo.delete('VC_IntrariStorno', {'IdIntrare': doc_id})
     now = datetime.now()

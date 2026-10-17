@@ -29,7 +29,6 @@ Partial Class ExtraseForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
-        btnDescarca = New Button()
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         pnlCard = New Panel()
@@ -42,22 +41,6 @@ Partial Class ExtraseForm
         pnlCard.SuspendLayout()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        ' 
-        ' btnDescarca
-        ' 
-        btnDescarca.AutoSize = True
-        btnDescarca.Dock = DockStyle.Fill
-        btnDescarca.FlatStyle = FlatStyle.Flat
-        btnDescarca.Location = New Point(1497, 6)
-        btnDescarca.Margin = New Padding(0)
-        btnDescarca.Name = "btnDescarca"
-        btnDescarca.Padding = New Padding(12, 4, 12, 4)
-        btnDescarca.Size = New Size(291, 66)
-        btnDescarca.TabIndex = 0
-        btnDescarca.Text = "Descarcă extrasele din FOREXE"
-        tips.SetToolTipHeader(btnDescarca, "Descarcă extrasele")
-        tips.SetToolTipText(btnDescarca, "Descarcă extrasele de cont (SNM) noi din FOREXE și le importă." & vbLf & "Se conectează întâi, dacă nu există sesiune; lista se reîncarcă după import.")
-        btnDescarca.UseVisualStyleBackColor = True
         ' 
         ' tlyMain
         ' 
@@ -133,11 +116,9 @@ Partial Class ExtraseForm
         ' tlySubsol
         ' 
         tlySubsol.AutoFitToTheme = False
-        tlySubsol.ColumnCount = 3
+        tlySubsol.ColumnCount = 2
         tlySubsol.ColumnStyles.Add(New ColumnStyle())
         tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle())
-        tlySubsol.Controls.Add(btnDescarca, 2, 0)
         tlySubsol.Controls.Add(lblStare, 1, 0)
         tlySubsol.Controls.Add(btnInchide, 0, 0)
         tlySubsol.Dock = DockStyle.Fill
@@ -205,7 +186,6 @@ Partial Class ExtraseForm
     Friend WithEvents panel As ExtrasePanel
     Friend WithEvents lblEmpty As Label
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
-    Friend WithEvents btnDescarca As Button
     Friend WithEvents btnInchide As Button
     Friend WithEvents lblStare As Label
 End Class

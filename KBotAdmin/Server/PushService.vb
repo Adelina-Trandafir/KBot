@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.IO
+Imports System.Text.RegularExpressions
 
 Public Enum PushState
     NewOnServer
@@ -108,7 +109,9 @@ Public NotInheritable Class PushService
 
                     Dim k_ext As String = Path.GetExtension(k_rel).TrimStart("."c).ToLowerInvariant()
                     k_extFound(k_ext) = k_extFound.GetValueOrDefault(k_ext) + 1
-                    If k_ext = String.Empty OrElse Not k_accepted.Contains(k_ext) Then Continue For
+                    ' An explicit !path in .pushignore also includes a runtime asset whose extension is unchecked.
+                    Dim k_explicit As Boolean = k_ruled.HasValue AndAlso Not k_ruled.Value
+                    If k_ext = String.Empty OrElse (Not k_accepted.Contains(k_ext) AndAlso Not k_explicit) Then Continue For
 
                     Dim k_relRemote As String = k_rel.Replace("\"c, "/"c)
                     Dim k_remotePath As String = k_remoteRoot & "/" & k_relRemote
@@ -246,7 +249,11 @@ Public NotInheritable Class PushService
         End Try
     End Function
 
-    ''' <summary>The first plain pattern (a path segment, or *.ext) that holds the file back, or empty.</summary>
+    ''' <summary>
+    ''' The first pattern that holds the file back, or empty. A pattern is a name or a wildcard
+    ''' (<c>*</c> any run of characters, <c>?</c> one character) matched against every path segment, so
+    ''' <c>bin</c>, <c>*.pyc</c> and <c>schema_diff*.sql</c> all work; one with a slash is matched against the whole path.
+    ''' </summary>
     Private Shared Function FirstMatchingPattern(k_relativePath As String, k_patterns As List(Of String)) As String
         If k_patterns Is Nothing Then Return String.Empty
         Dim k_rel As String = k_relativePath.Replace("\"c, "/"c)
@@ -254,15 +261,29 @@ Public NotInheritable Class PushService
         For Each k_pattern As String In k_patterns
             Dim k_p As String = If(k_pattern, String.Empty).Trim()
             If k_p = String.Empty Then Continue For
-            If k_p.StartsWith("*.", StringComparison.Ordinal) Then
-                If k_rel.EndsWith(k_p.Substring(1), StringComparison.OrdinalIgnoreCase) Then Return k_p
+            Dim k_matcher As Regex = WildcardToRegex(k_p.Replace("\"c, "/"c).Trim("/"c))
+            If k_p.Contains("/") OrElse k_p.Contains("\") Then
+                If k_matcher.IsMatch(k_rel) Then Return k_p
             Else
                 For Each k_segment As String In k_segments
-                    If String.Equals(k_segment, k_p, StringComparison.OrdinalIgnoreCase) Then Return k_p
+                    If k_matcher.IsMatch(k_segment) Then Return k_p
                 Next
             End If
         Next
         Return String.Empty
+    End Function
+
+    Private Shared ReadOnly WildcardCache As New Dictionary(Of String, Regex)(StringComparer.Ordinal)
+
+    Private Shared Function WildcardToRegex(k_glob As String) As Regex
+        SyncLock WildcardCache
+            Dim k_found As Regex = Nothing
+            If WildcardCache.TryGetValue(k_glob, k_found) Then Return k_found
+            Dim k_body As String = "^" & Regex.Escape(k_glob).Replace("\*", ".*").Replace("\?", ".") & "$"
+            Dim k_regex As New Regex(k_body, RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+            WildcardCache(k_glob) = k_regex
+            Return k_regex
+        End SyncLock
     End Function
 
 End Class

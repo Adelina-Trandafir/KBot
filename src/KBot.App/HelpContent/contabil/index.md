@@ -11,7 +11,7 @@ K-BOT ține evidența angajamentelor bugetare ale unității și le leagă de **
 control al angajamentelor al Ministerului Finanțelor): citește din FOREXE rezervările, recepțiile
 și plățile, face documentele de fundamentare (DDF) și le trimite înapoi în FOREXE.
 
-<!-- capture: fereastra-principala | caption: Fereastra principală K-BOT | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament, ca vederea «Sumar» să arate date. | redo: 2026-10-13 17:30 | why: 0113 / 0114 / 0115: fereastra principală are ribbon în locul butonului MENIU și panoul lateral în stânga; lista angajamentelor e o pagină a ei -->
+<!-- capture: fereastra-principala | caption: Fereastra principală K-BOT | goto: view:sumar | prepare: Deschideți «Lista angajamentelor» din ribbon și selectați un angajament, ca vederea «Sumar» să arate date. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113 / 0114 / 0115: fereastra principală are ribbon în locul butonului MENIU și panoul lateral în stânga; lista angajamentelor e o pagină a ei -->
 
 Toate comenzile sunt în [ribbon](topic:contabil.ribbon), sus; K-BOT pornește pe pagina [«Acasă»](topic:contabil.acasa),
 iar fiecare machetă se deschide ca pagină a [ferestrei principale](topic:contabil.fereastra).

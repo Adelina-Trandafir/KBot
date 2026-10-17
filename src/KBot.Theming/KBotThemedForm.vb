@@ -66,6 +66,22 @@ Public Class KBotThemedForm
         Font = KBotFonts.Base
     End Sub
 
+    ''' <summary>
+    ''' Where the window goes when maximised: a rectangle relative to the monitor's top-left corner (what Windows asks
+    ''' through WM_GETMINMAXINFO). <see cref="Form.MaximizedBounds"/> is Protected, so the shell that hosts a modal window
+    ''' uses this to keep it inside the area of the pages.
+    ''' </summary>
+    Public Sub SetMaximizedBounds(k_bounds As Rectangle)
+        MaximizedBounds = k_bounds
+    End Sub
+
+    ''' <summary>True when <see cref="SetMaximizedBounds"/> was used: the maximised place is then not the work area of the monitor.</summary>
+    Friend ReadOnly Property HasMaximizedBounds As Boolean
+        Get
+            Return MaximizedBounds <> Rectangle.Empty
+        End Get
+    End Property
+
     ' ── Slice 0062: the two switches ──────────────────────────────────────────
 
     ''' <summary>

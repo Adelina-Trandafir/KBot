@@ -30,7 +30,7 @@ obicei te interesează doar una sau două — cele la care s-a schimbat ceva pe 
 să pornească robotul, K-BOT deschide fereastra **«Ce recepții reîmprospătez?»**, cu recepțiile pe
 care le are deja pentru acest angajament:
 
-<!-- capture: selectie-receptii | caption: Fereastra «Ce recepții reîmprospătez?» | goto: view:receptii | prepare: Apăsați iconița din dreapta, jos, a arborelui de recepții (sau iconița de reîmprospătare a unui angajament care are deja recepții), ca să se deschidă fereastra. -->
+<!-- capture: selectie-receptii | caption: Fereastra «Ce recepții reîmprospătez?» | goto: view:receptii | prepare: Apăsați iconița din dreapta, jos, a arborelui de recepții (sau iconița de reîmprospătare a unui angajament care are deja recepții), ca să se deschidă fereastra. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 | Coloana | Ce arată |
 |---------|----------|

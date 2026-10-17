@@ -1,2 +1,5 @@
-.vc-lista__totals { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0; }
-.vc-lista__totals span { border: 1px solid var(--line); padding: 5px 12px; font-size: .9em; font-variant-numeric: tabular-nums; }
+.vc-lista__totals { grid-column: 1 / -1; justify-self: center; width: min(100%,480px); display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; min-width: 0; }
+.vc-lista__totals .vc-field { min-width: 0; text-align: center; }
+@media (max-width: 800px) {
+  .vc-lista__totals { grid-template-columns: 1fr; width: min(100%,180px); }
+}

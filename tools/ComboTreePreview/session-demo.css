@@ -1,0 +1,7 @@
+.session-demo .vc-main { display: block; overflow: auto; padding: 24px; }
+.session-demo h1 { font-size: 1.5em; }
+.session-demo .vc-selectors span { flex: 1; padding: 5px 10px; background: var(--card); color: var(--ink); border-radius: 4px; }
+.session-demo .vc-actions { flex-wrap: wrap; }
+.session-demo__field { display: block; margin: 20px; font-weight: 600; }
+.session-demo__field textarea { display: block; box-sizing: border-box; width: 100%; margin-top: 8px; padding: 10px; font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 4px; }
+.session-ended main { max-width: 700px; margin: 60px auto; padding: 24px; }

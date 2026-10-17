@@ -9,9 +9,9 @@ from .nomenclatoare import NomError
 
 def chronology(cursor, ctx, number, sub, day, exclude=None):
     from .documents import _all, _sub_text
-    rows = _all(cursor, 'SELECT IdIntrare, Numar, COALESCE(NumarSub,0) AS sub, DATE(Data) AS day '
+    rows = _all(cursor, 'SELECT IdIntrare, ABS(Numar) AS Numar, COALESCE(NumarSub,0) AS sub, DATE(Data) AS day, COALESCE(Storno,0) AS storno '
                 'FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND YEAR(Data)=%s '
-                "AND COALESCE(Storno,0)=0 AND Numar>0 AND TipDoc<>'STOC_INITIAL' AND IdIntrare<>%s",
+                "AND Numar<>0 AND TipDoc<>'STOC_INITIAL' AND IdIntrare<>%s",
                 (ctx['subunit'], ctx['gestiune'], day.year, exclude or 0))
     pair = (number, sub)
     earlier = [r for r in rows if (r['Numar'], r['sub']) < pair and r['day']]
@@ -20,8 +20,8 @@ def chronology(cursor, ctx, number, sub, day, exclude=None):
     high = min(later, key=lambda r: r['day']) if later else None
     if (low and day < low['day']) or (high and day > high['day']):
         def describe(row):
-            return '%s (NIR %s%s)' % (row['day'].strftime('%d.%m.%Y'), row['Numar'], _sub_text(row['sub']))
-        message = 'Data NIR trebuie să fie între %s și %s.' % (
+            return '%s (%s %s%s)' % (row['day'].strftime('%d.%m.%Y'), 'FCS' if row['storno'] else 'NIR', row['Numar'], _sub_text(row['sub']))
+        message = 'Data NIR/FCS trebuie să fie între %s și %s.' % (
             describe(low) if low else 'începutul anului', describe(high) if high else 'sfârșitul anului')
         raise NomError('NIR_CHRONOLOGY', message, 422, {'h.Data': message})
     return {'minimum': low['day'].isoformat() if low else None,

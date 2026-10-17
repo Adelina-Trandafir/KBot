@@ -14,12 +14,9 @@ requires: forexe
 K-BOT aduce din FOREXE <b>extrasele de cont noi</b> și le importă în baza de date. Se descarcă doar ce e mai nou decât ultimul extras importat.<BR>
 <mark>Acest tutorial apare doar cât ești conectat la FOREXE.</mark>
 
-## Iconița din stânga jos
-<!-- slice: 000T-10 -->
-target: KbotForm.tree
-part: footer.left
-wait: click
-Apasă <b>iconița cu cardul</b> din stânga jos, sub lista de angajamente. Descărcarea pornește imediat.<BR>
+## Butonul din ribbon
+<!-- slice: 000T-10, 0114-05, 0000-89, 0114-09, 0000-90 -->
+În ribbon, în <b>grupul din dreapta</b>, lângă «Închide», apasă butonul <b>«Descarcă extrase»</b>. Se vede doar cât e pe ecran lista angajamentelor sau macheta «Extrase de cont». Descărcarea pornește imediat. Apasă «Înainte».<BR>
 <mark>Dacă robotul FOREXE mai are o lucrare în curs, descărcarea așteaptă la rând în «Coada robotului».</mark>
 
 ## Urmărește progresul

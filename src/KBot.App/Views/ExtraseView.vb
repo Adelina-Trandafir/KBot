@@ -13,9 +13,9 @@ Imports KBot.Theming
 ''' Data from GET /api/forexe/extrase/lista?cod=, always through the shell's re-login net; the
 ''' tree, the grids and the detail are <see cref="ExtrasePanel"/>.
 '''
-''' <para>The right icon of the tree footer downloads the SNM statements -- the same action as
-''' the left icon of the main tree used to be (operator, 24.09.2026) -- and the view reloads
-''' when the import wrote something.</para>
+''' <para>The tree footer has NO download icon any more (operator, 17.10.2026): the statements are downloaded
+''' from the «Descarca extrase» button of the ribbon, which is there while the Extrase window or the shell is
+''' on screen (<c>KbotForm.DescarcaExtraseDinRibbon</c>, which reloads this view after an import).</para>
 ''' </summary>
 Public Class ExtraseView
     Implements IAngajamentView, IThemedControl
@@ -23,26 +23,18 @@ Public Class ExtraseView
     Private ReadOnly _apiClient As IApiClient
     Private ReadOnly _withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo))
 
-    ''' <summary>
-    ''' The shell's download-and-import of the statements. Returns True when something was
-    ''' imported. Nothing = the host does not offer it, and the footer icon goes out.
-    ''' </summary>
-    Private ReadOnly _descarca As Func(Of Task(Of Boolean))
-
     ' The code asked for last -- the stale-guard of LoadAsync, as in every view.
     Private _requestedCod As String
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo)),
-                   Optional descarca As Func(Of Task(Of Boolean)) = Nothing)
+                   withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo)))
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        _descarca = descarca
         panel.Mode = ExtrasePanelMode.Angajament
-        panel.ShowDownloadIcon = _descarca IsNot Nothing
+        panel.ShowDownloadIcon = False   ' the download is the ribbon button, not a tree icon
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
@@ -108,18 +100,6 @@ Public Class ExtraseView
             GlobalErrorLog.Write("ExtraseView.LoadAsync", ex)
             panel.ClearData()
             ShowEmpty("Extrasele nu au putut fi încărcate. Detalii în jurnalul de erori.")
-        End Try
-    End Sub
-
-    ' The footer icon: download + import through the shell, then reload if anything came in.
-    Private Async Sub Panel_DescarcaCerut(sender As Object, e As EventArgs) Handles panel.DescarcaCerut
-        Try
-            If _descarca Is Nothing Then Return
-            Dim importat As Boolean = Await _descarca().ConfigureAwait(True)
-            If importat Then Reincarca()
-        Catch ex As Exception
-            ' UI boundary (async Sub): the shell already told the operator what failed.
-            GlobalErrorLog.Write("ExtraseView.Panel_DescarcaCerut", ex)
         End Try
     End Sub
 

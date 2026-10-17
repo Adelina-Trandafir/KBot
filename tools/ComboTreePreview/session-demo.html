@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sesiune 3 / 2 / 1 / 0 · Probă locală</title><link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/css/typography.css"><link rel="stylesheet" href="/static/css/variables.css">
+  <link rel="stylesheet" href="/static/css/portal.css"><link rel="stylesheet" href="/static/css/vercon.css">
+  <link rel="stylesheet" href="/static/css/confirm-box.css"><link rel="stylesheet" href="/preview/session-demo.css">
+  <script type="module" src="/preview/session-demo.js"></script>
+</head>
+<body class="portal vc-page session-demo">
+  <header class="header vc-header">
+    <span class="vc-brand"><strong>VERCON · Probă locală</strong></span>
+    <section class="vc-selectors" aria-label="Context de probă"><span>Grădinița 47</span><span>Materiale</span><span>2026</span></section>
+    <span id="vc-session-timer" class="vc-session-timer" role="timer">⏱ <b>03:00</b></span>
+    <div class="vc-header__right"><span class="vc-header__context">cont de probă</span></div>
+  </header>
+  <main class="vc-main">
+    <h1>Deconectare automată</h1>
+    <p>3 minute: lucru normal. La 2 minute: avertizare custom. La 1 minut: avertizare serioasă și header portocaliu. La zero: închidere fără confirmare.</p>
+    <div class="vc-actions">
+      <button id="start" class="is-primary" type="button">Pornește testul de 3 minute</button>
+      <button id="open-form" type="button">Deschide formular cu modificări nesalvate</button>
+      <button id="open-window" type="button">Deschide fereastră de probă</button>
+      <button id="restart" type="button">Reia de la început</button>
+    </div>
+    <p id="status" role="status">Pregătit. Cronometrul începe numai când apăsați Pornește.</p>
+    <label class="session-demo__field">Text nesalvat<textarea id="draft" rows="5" placeholder="Scrieți aici; la expirare se pierde, fără întrebare."></textarea></label>
+    <p>Date fictive, fără autentificare și fără acces la baze de date. Se folosește timerul comun din aplicație, cu pragurile scurtate doar aici.</p>
+  </main>
+</body>
+</html>

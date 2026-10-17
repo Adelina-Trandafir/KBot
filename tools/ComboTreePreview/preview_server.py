@@ -18,7 +18,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if route in ("/", "/demo"):
             target = HERE / "index.html"
-        elif route in ("/preview/demo.js", "/preview/demo.css"):
+        elif route in ("/session-demo", "/session-ended"):
+            target = HERE / (route.lstrip('/') + '.html')
+        elif route in ("/preview/demo.js", "/preview/demo.css", "/preview/session-demo.js", "/preview/session-demo.css"):
             target = HERE / route.rsplit("/", 1)[1]
         elif route.startswith("/static/"):
             target = (STATIC / route[len("/static/"):]).resolve()
@@ -53,6 +55,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print(f"DGV / ComboTree: http://localhost:{args.port}/demo", flush=True)
+    print(f"Session 3/2/1/0: http://localhost:{args.port}/session-demo", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

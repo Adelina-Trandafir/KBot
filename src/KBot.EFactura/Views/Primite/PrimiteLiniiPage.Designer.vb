@@ -214,7 +214,7 @@ Partial Class PrimiteLiniiPage
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Controls.Add(tlyPagina)
         Name = "PrimiteLiniiPage"
-        Padding = New System.Windows.Forms.Padding(3)
+        Padding = New System.Windows.Forms.Padding(3, 3, 3, 0)
         Size = New System.Drawing.Size(757, 526)
         CType(gridLinii, System.ComponentModel.ISupportInitialize).EndInit()
         tlyPagina.ResumeLayout(False)

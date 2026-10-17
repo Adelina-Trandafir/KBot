@@ -1,5 +1,22 @@
 # DGV + ComboTree pe localhost
 
+## Probă sesiune 3 / 2 / 1 / 0
+
+Deschide http://localhost:5052/session-demo și apasă **Pornește testul de
+3 minute**. Cronometrul este vizibil între selectorii de context și cont.
+La 02:00 apare primul mesaj custom; la 01:00 apare mesajul serios și
+headerul devine portocaliu; la 00:00 se închid formularele/ferestrele de
+probă și pagina trece direct la `/session-ended`, fără confirmare nativă.
+
+Poți lăsa text nesalvat, un formular sau o fereastră de probă deschise.
+Mesajul custom arată timpul rămas și poate fi închis cu Am înțeles; aceasta
+nu prelungește sesiunea. Testul folosește direct timerul și dialogurile
+comune din aplicație. Numai pragurile sunt injectate pentru localhost;
+aplicația păstrează avertizările la 15 și 5 minute. Nicio autentificare,
+cerere de logout reală sau conexiune la baze de date nu este folosită aici.
+
+## Probă DGV / ComboTree
+
 Din rădăcina repository-ului:
 
 ```powershell

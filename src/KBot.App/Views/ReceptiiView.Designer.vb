@@ -73,8 +73,6 @@ Partial Class ReceptiiView
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
-        tree.FooterLeftIcon = My.Resources.Resources.database
-        tree.FooterLeftIconTooltip = resources.GetString("tree.FooterLeftIconTooltip")
         tree.FooterRightIcon = My.Resources.Resources.Jonas_Rask_Danish_Royalty_Free_Refresh_32
         tree.FooterRightIconTooltip = "Reîmprospătează recepțiile din FOREXE (întreabă întâi pe care)."
         tree.FooterSeparatorColor = Color.Gainsboro
@@ -89,8 +87,6 @@ Partial Class ReceptiiView
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
-        tree.HeaderRightIcon = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
-        tree.HeaderRightIconTooltip = resources.GetString("tree.HeaderRightIconTooltip")
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2

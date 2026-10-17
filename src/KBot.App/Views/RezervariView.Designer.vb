@@ -68,17 +68,12 @@ Partial Class RezervariView
         tree.ExpanderSize = 10
         tree.Font = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         tree.FooterBackColor = SystemColors.Control
-        tree.FooterCaption = "Repară"
         tree.FooterCaptionFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         tree.FooterCollapseButtonPosition = AdvancedTreeControl.En_FooterButtonPosition.Left
         tree.FooterCollapseCollapsedImage = My.Resources.Resources.expand_24
         tree.FooterCollapseExpandedImage = My.Resources.Resources.collapse_24
         tree.FooterHeight = 30
         tree.FooterIconSize = New Size(18, 18)
-        tree.FooterLeftIcon = My.Resources.Resources.plus_green
-        tree.FooterLeftIconTooltip = "Acțiunile documentului de fundamentare pe acest angajament" & vbLf & "(Adaugă rezervare / Definitivează / Derulează / Generează PDF final)."
-        tree.FooterRightIcon = My.Resources.Resources.Icojam_Blue_Bits_Pinion_settings_24
-        tree.FooterRightIconTooltip = "Repară rezervările acestui angajament din istoric (fără descărcare din FOREXE)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi."
         tree.FooterSeparatorColor = Color.Gainsboro
         tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = ContentAlignment.MiddleRight
@@ -91,8 +86,6 @@ Partial Class RezervariView
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
-        tree.HeaderRightIcon = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
-        tree.HeaderRightIconTooltip = "Graficul rezervărilor" & vbLf & "Deschide, într-o fereastră de sine stătătoare, evoluția rezervărilor angajamentului și totalurile lui pe luni." & vbLf & "Sunt aceleași sume pe care le scrie arborele — nimic nu se cere din nou de la server."
         tree.HeaderSearchIconTooltip = "Caută în arbore." & vbLf & "ESC golește căutarea și închide banda."
         tree.HeaderSeparatorColor = Color.Gainsboro
         tree.HeaderSeparatorWidth = 2

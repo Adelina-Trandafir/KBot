@@ -46,4 +46,4 @@ Arată notele care privesc angajamentul selectat: arborele cu notele, rândurile
 Cât Adobe încă deschide documentul, arborele nu primește altă notă —
 [Cât se deschide un document](topic:contabil.liste).
 
-<!-- capture: note-corectie | caption: Vederea «Note corecție» | goto: view:notecab | prepare: Selectați un angajament pentru care s-a făcut o notă de corecție. -->
+<!-- capture: note-corectie | caption: Vederea «Note corecție» | goto: view:notecab | prepare: Selectați un angajament pentru care s-a făcut o notă de corecție. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->

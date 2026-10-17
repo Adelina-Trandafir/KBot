@@ -27,3 +27,11 @@
   (the list's own drop-down window is no-activate, so it should not close the popup by deactivation; untested), Enter in the box.
 - The caption alignment of the footer (right, as in the Recepții tree) next to the refresh picture.
 - Two entry points exist now (ribbon and footer); say if the ribbon ones should go.
+
+## Follow-up (17.10.2026): the footer text goes with its icon
+Operator: when the footer icon (right or left) is hidden, its text must hide too; otherwise the text stays with no button.
+- `AdvancedTreeControl.Footer.vb`: new `FooterCaptionShown()`. Caption empty = hidden; no visible footer icon (`ShowFooterLeftIcon` / `ShowFooterRightIcon` both False: the collapse button took their side, OR the host set the icon to Nothing, e.g. `ExtrasePanel.ShowDownloadIcon = False`) = hidden. (First version kept the text when no icon was set at all; the operator showed the Extrase screen where it stayed: fixed same day.)
+  `DrawFooter` draws the caption only if `FooterCaptionShown()`, and `HandleFooterMouseDown` no longer raises `FooterCaptionClicked` for a hidden caption (no invisible button).
+- `AdvancedTreeControl.md`: one line in the Footer section.
+- Build: `dotnet build src/KBot.App` : 0 warnings, 0 errors. Not seen on screen.
+- Consequence: a tree footer can no longer show a caption alone; no tree in the app does.

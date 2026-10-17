@@ -12,7 +12,7 @@ open: view:ord
 Editorul **«Ordonanțare de plată»** se deschide, ca fereastră a lui, cu bara lui de titlu, mai mică decât spațiul de
 lucru, la o ordonanțare nouă și la «Modifică ordonanțarea». Cât e deschis nu poți lucra în fereastra principală.
 
-<!-- capture: ord-editor | caption: Editorul de ordonanțare, pagina «Beneficiari» | goto: view:ord | prepare: Clic dreapta pe o ordonanțare din arbore › «Modifică ordonanțarea». | redo: 2026-10-16 12:00 | why: 0113-01: editorul e din nou o fereastră cu bara lui de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
+<!-- capture: ord-editor | caption: Editorul de ordonanțare, pagina «Beneficiari» | goto: view:ord | prepare: Clic dreapta pe o ordonanțare din arbore › «Modifică ordonanțarea». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113-01: editorul e din nou o fereastră cu bara lui de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 **Sus** e antetul: codul angajamentului, obiectul DDF, **numărul** (la o ordonanțare nouă: «se
 alocă la salvare»), **data** și totalul. Data e cea care se scrie în document; plățile acoperite

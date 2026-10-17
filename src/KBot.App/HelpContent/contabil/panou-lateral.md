@@ -7,21 +7,24 @@ parent: contabil
 screens: AvacontMain.sidebar
 keywords: panou lateral, panoul din stanga, machete deschise, machete recente, ultimele machete, redeschide, actiuni recente, ce am salvat, salvari, informatii, token e-factura, versiunea, rol, baza, perioada, erori, erori din sesiune, strange panoul
 ---
-<!-- slice: 0115 -->
+<!-- slice: 0115, 0115-01 -->
 În stânga ferestrei principale, lângă **orice pagină** («Acasă», lista angajamentelor sau o machetă), stă panoul
 lateral. Are patru secțiuni: **Machete deschise**, **Acțiuni recente**, **Informații** și **Erori din sesiune**.
 
-<!-- capture: panou-lateral | caption: Panoul lateral, cu cele patru secțiuni desfăcute | prepare: Deschideți două-trei machete și o vedere a unui angajament, ca «Machete deschise» să aibă rânduri; apoi reveniți la «Acasă». Prindeți panoul pe toată înălțimea lui. | redo: 2026-10-16 12:00 | why: 0113-01: «Machete deschise» e o stivă — deschisele sus, închisele în italice jos -->
+<!-- capture: panou-lateral | caption: Panoul lateral, cu cele patru secțiuni desfăcute | prepare: Deschideți două-trei machete și o vedere a unui angajament, ca «Machete deschise» să aibă rânduri; apoi reveniți la «Acasă». Prindeți panoul pe toată înălțimea lui. | redo: 2026-10-17 12:00 | why: 0115-01: butonul de strângere a coborât sub «Erori din sesiune»; 0113-01: «Machete deschise» e o stivă -->
 
 - Un clic pe **titlul unei secțiuni** o strânge sau o desface.
-- Butonul din **bara de sus** a panoului îl strânge la o **bandă îngustă**, doar cu pictogramele secțiunilor; un clic
-  pe o pictogramă (sau din nou pe buton) îl desface. K-BOT ține minte cum l-ai lăsat.
+- Butonul «Ascunde meniul lateral» din **partea de jos** a panoului (sub «Erori din sesiune», mereu lipit de marginea de jos, chiar și când secțiunile se derulează; cu aceeași pictogramă ca butonul care strânge lista
+  din stânga) îl strânge la o **bandă îngustă**, doar cu pictogramele secțiunilor; un clic pe o pictogramă (sau din nou
+  pe buton) îl desface. K-BOT ține minte cum l-ai lăsat, **și la următoarea pornire**.
+- Cât panoul e strâns, **ținând mouse-ul pe o pictogramă** vezi, într-o etichetă, ce conține secțiunea ei (rândurile
+  machetelor, acțiunilor, informațiilor sau erorilor).
 - Când secțiunile nu încap, **rotița mouse-ului** le derulează.
 
-<!-- capture: panou-lateral-strans | caption: Panoul lateral strâns la banda cu pictograme | prepare: Strângeți panoul lateral cu butonul din bara lui de sus. După captură, desfaceți-l la loc. -->
+<!-- capture: panou-lateral-strans | caption: Panoul lateral strâns la banda cu pictograme | prepare: Strângeți panoul lateral cu butonul din partea lui de jos. După captură, desfaceți-l la loc. | redo: 2026-10-17 12:00 | why: 0115-01: butonul a coborât jos -->
 
 ## Machete deschise
-<!-- slice: 0116, 0113-01 -->
+<!-- slice: 0116, 0113-01, 0115-01 -->
 
 Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
 
@@ -36,6 +39,9 @@ Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
 **Vederile unui angajament** (Sumar, Rezervări…) **nu apar**, și nici **ferestrele care cer un răspuns** (editoarele DDF și
 de ordonanțare, Asocieri, Operațiuni necorelate, graficul rezervărilor, Grupele).
 
+Ținând mouse-ul pe o machetă **deschisă**, apare o **poză** a ei, așa cum a rămas când ai deschis altceva (e o poză,
+nu o fereastră vie). Pe o machetă **închisă** nu apare nimic.
+
 Un **clic pe un rând** o aduce pe ecran sau o deschide din nou:
 
 - o pagină deschisă revine în față, așa cum o lăsaseși;
@@ -45,11 +51,11 @@ Un **clic pe un rând** o aduce pe ecran sau o deschide din nou:
 Lista se **golește la închiderea K-BOT**.
 
 ## Acțiuni recente
-<!-- slice: 0117 -->
+<!-- slice: 0117, 0115-01 -->
 
-Ultimele **10** lucruri **salvate de tine pe server**, pe unitatea pe care lucrezi, cel mai recent sus: textul
-salvării și ora (doar ora pentru azi; ziua și ora pentru zilele dinainte). Ținând mouse-ul pe un rând vezi data și
-ora întregi. Lista se actualizează singură, la câteva secunde după ce salvezi ceva. Cât nu e nimic de arătat, scrie
+Ultimele **10** lucruri **salvate de tine azi pe server**, pe unitatea pe care lucrezi, cel mai recent sus: textul
+salvării și ora. Lista **începe din nou în fiecare zi**: la miezul nopții se golește și acțiunile de ieri sau mai vechi
+nu se mai arată. Ținând mouse-ul pe un rând vezi data și ora întregi. Lista se actualizează singură, la câteva secunde după ce salvezi ceva. Cât nu e nimic de arătat, scrie
 **«Nicio acțiune încă»**.
 
 ## Informații

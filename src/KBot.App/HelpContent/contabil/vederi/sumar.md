@@ -11,7 +11,7 @@ open: view:sumar
 <!-- slice: 0011, 0000-14, 0108 -->
 Prima privire asupra angajamentului.
 
-<!-- capture: sumar | caption: Vederea «Sumar» | goto: view:sumar | prepare: Selectați un angajament cu mai mulți indicatori. -->
+<!-- capture: sumar | caption: Vederea «Sumar» | goto: view:sumar | prepare: Selectați un angajament cu mai mulți indicatori. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 **Sus**, datele angajamentului: codul, data din FOREXE, data creării și a definitivării, starea,
 dacă a fost încărcat / preluat și descrierea.

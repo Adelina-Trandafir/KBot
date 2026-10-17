@@ -117,7 +117,7 @@ Partial Class PrimiteMesajePage
         Controls.Add(gridMesaje)
         Controls.Add(pnlTrimite)
         Name = "PrimiteMesajePage"
-        Padding = New System.Windows.Forms.Padding(3)
+        Padding = New System.Windows.Forms.Padding(3, 3, 3, 0)
         Size = New System.Drawing.Size(757, 526)
         CType(gridMesaje, System.ComponentModel.ISupportInitialize).EndInit()
         pnlTrimite.ResumeLayout(False)

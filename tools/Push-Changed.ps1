@@ -61,8 +61,17 @@ function Test-Protected([string]$rel) {
     return $false
 }
 
+function Test-ReportResource([string]$rel) {
+    # Runtime report resources are not database installation scripts. Keep this narrow
+    # inclusion aligned with PYTHON/.pushignore; ordinary SQL stays subject to the filters.
+    return ($rel -match '^reports/vercon/queries/[^/]+\.sql$' -or
+        $rel -match '^static/fonts/DejaVuSansMono(?:-Bold|-Oblique)?\.ttf$' -or
+        $rel -in @('static/fonts/DejaVuSans.ttf', 'static/fonts/LICENSE-DejaVu.txt'))
+}
+
 function Test-Wanted([string]$rel) {
     if (Test-Protected $rel) { return $false }   # RULE 00
+    if (Test-ReportResource $rel) { return $true }
     if ($extensions -notcontains ([IO.Path]::GetExtension($rel).ToLowerInvariant())) { return $false }
     foreach ($segment in $rel.Split('/')) { foreach ($pattern in $ignore) { if ($segment -like $pattern) { return $false } } }
     return $true
@@ -75,7 +84,7 @@ function Walk([string]$dir, [string]$prefix) {
         $rel = $prefix + $item.Name
         $skip = $false
         foreach ($pattern in $ignore) { if ($item.Name -like $pattern) { $skip = $true; break } }
-        if ($skip) { continue }
+        if ($skip -and ($item.PSIsContainer -or -not (Test-ReportResource $rel))) { continue }
         if ($item.PSIsContainer) { Walk $item.FullName ($rel + '/') }
         elseif (Test-Wanted $rel) { $candidates.Add($rel) }
     }

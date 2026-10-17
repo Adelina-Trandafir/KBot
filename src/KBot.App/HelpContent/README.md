@@ -81,7 +81,7 @@ search or exported manual carries them. `Check-Help.ps1` fails on a missing or u
 A picture the help needs is written as ONE line, where the picture should appear:
 
 ```
-<!-- capture: ddf-revizii-1 | caption: Lista reviziilor DDF | goto: view:ddf | prepare: Selectați un angajament cu cel puțin două revizii. -->
+<!-- capture: ddf-revizii-1 | caption: Lista reviziilor DDF | goto: view:ddf | prepare: Selectați un angajament cu cel puțin două revizii. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 ```
 
 - `capture:` the id = file name `img/<id>.png` (lower-case ASCII, digits, dashes; unique).

@@ -6,8 +6,9 @@ Imports KBot.Common
 
 ''' <summary>
 ''' Slice 00EF-19 -- «E-Factura — facturi primite»: ALL the received invoices of the unit for the year chosen in K-BOT, in the same control the
-''' DDF view uses (<see cref="PrimiteView"/>): the tree by months and suppliers with the search in its header, the views on the right. At the
-''' bottom, a line of state. The update from ANAF is the footer of the tree («Actualizare…», slice 00EF-33; the work is
+''' DDF view uses (<see cref="PrimiteView"/>): the tree by months and suppliers with the search in its header, the views on the right. Nothing
+''' below it (slice 0114-21: the strip with «Ieșire» and the state line is gone; the ribbon closes the window and the tree footer
+''' shows the state). The update from ANAF is the footer of the tree («Actualizează», slice 00EF-33; the work is
 ''' <see cref="PrimiteView.SyncFromAnafAsync"/>) and the ribbon button (slice 00EF-30) calls the same method through
 ''' <see cref="SyncFromAnafAsync"/>. There is no «Reîmprospătează»: a re-read of the database is not wanted. The window holds no rules;
 ''' what is shown and what the buttons do come from the server (slice 00EF-17).
@@ -39,7 +40,6 @@ Public Class PrimiteForm
         _gate = k_gate
         _year = k_year
         primite.Initialize(k_api, k_gate, k_viewerFactory, k_year)
-        AddHandler primite.SyncStatus, AddressOf Primite_SyncStatus
         capBar.Text = "Facturi primite" & If(k_year > 0, $" {k_year}", String.Empty) &
                       If(String.IsNullOrWhiteSpace(k_unitName), String.Empty, " — " & k_unitName)
     End Sub
@@ -51,15 +51,6 @@ Public Class PrimiteForm
             Await primite.LoadAsync(Nothing).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteForm.PrimiteForm_Load", ex)
-        End Try
-    End Sub
-
-    ' The state line of the update (the control also shows it in the footer of its tree). UI boundary: logs and swallows.
-    Private Sub Primite_SyncStatus(k_text As String)
-        Try
-            If Not IsDisposed Then lblStare.Text = k_text
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteForm.Primite_SyncStatus", ex)
         End Try
     End Sub
 
@@ -75,14 +66,6 @@ Public Class PrimiteForm
     ''' <summary>Slice 0113-01: put away -- the control moves to a view without a PDF and lets the document go.</summary>
     Public Sub PutAway() Implements IPutAway.PutAway
         primite.PutAway()
-    End Sub
-
-    Private Sub BtnIesire_Click(sender As Object, e As EventArgs) Handles btnIesire.Click
-        Try
-            Close()
-        Catch ex As Exception
-            GlobalErrorLog.Write("PrimiteForm.BtnIesire_Click", ex)
-        End Try
     End Sub
 
 End Class

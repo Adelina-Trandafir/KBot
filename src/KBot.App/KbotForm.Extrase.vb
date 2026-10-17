@@ -6,8 +6,8 @@ Imports KBot.Domain
 Imports KBot.Forexe
 
 ''' <summary>
-''' The bank statements (slices 0057 / 0080 / 0095-02) -- the left icon of the tree footer
-''' (direct download), «Meniu → Extrase» (the «Extrase de cont» window), and the download +
+''' The bank statements (slices 0057 / 0080 / 0095-02) -- the ribbon's «Descarca extrase» (direct download;
+''' the tree footer icon is gone, 17.10.2026), «Meniu → Extrase» (the «Extrase de cont» window), and the download +
 ''' import shared with the Extrase view and that window (slice 0086 split out of KbotForm.vb).
 ''' </summary>
 Partial Public Class KbotForm
@@ -15,19 +15,8 @@ Partial Public Class KbotForm
     ' The «Extrase de cont» window opened from the header menu (slice 0095-02); one at a time.
     Private _extraseForm As ExtraseForm
 
-    ''' <summary>
-    ''' The LEFT icon of the tree footer downloads the SNM bank statements directly again
-    ''' (slice 0095-02, operator 29.09.2026), as in slice 0057. The «Extrase de cont» window it
-    ''' opened since 0080-03 moved to the header menu («Meniu → Extrase»).
-    ''' </summary>
-    Private Async Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
-        Try
-            If Await DescarcaExtraseAsync(Me) Then ReloadExtraseView()
-        Catch ex As Exception
-            ' UI boundary (async void): log and swallow; DescarcaExtraseAsync told the operator.
-            GlobalErrorLog.Write("MainForm.Tree_FooterLeftIconClicked", ex)
-        End Try
-    End Sub
+    ' The tree footers carry NO download icon any more (operator, 17.10.2026): the download is the «Descarca extrase»
+    ' button of the ribbon (DescarcaExtraseDinRibbon), there while the Extrase window or the shell is on screen.
 
     ''' <summary>
     ''' «Meniu → Extrase» (slice 0095-02): the «Extrase de cont» window, standalone (modeless) like
@@ -41,9 +30,7 @@ Partial Public Class KbotForm
                 If Not ShowMachetaPage(_extraseForm, MachetaRef.Create(MachetaExtrase)) Then _extraseForm.Activate()
                 Return
             End If
-            _extraseForm = New ExtraseForm(_apiClient,
-                                           Function(op) WithReauth(Of ExtraseInfo)(op),
-                                           Function(owner) DescarcaExtraseAsync(owner))
+            _extraseForm = New ExtraseForm(_apiClient, Function(op) WithReauth(Of ExtraseInfo)(op))
             AddHandler _extraseForm.FormClosed,
                 Sub()
                     _extraseForm = Nothing
@@ -66,11 +53,26 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' The «Descarca extrase» button of the ribbon's Extrase tab (on the ribbon only while the Extrase window or the
+    ''' shell is on screen): the download + import, then the open Extrase view / window reload.
+    ''' </summary>
+    Friend Async Sub DescarcaExtraseDinRibbon()
+        Try
+            If Await DescarcaExtraseAsync(Me) Then ReloadExtraseView()
+        Catch ex As Exception
+            ' UI boundary (async void): log and swallow; DescarcaExtraseAsync told the operator.
+            GlobalErrorLog.Write("MainForm.DescarcaExtraseDinRibbon", ex)
+        End Try
+    End Sub
+
     ' The open Extrase view (if any) follows an import.
     Private Sub ReloadExtraseView()
         If IsDisposed Then Return
         Dim vedere As IAngajamentView = Nothing
         If _views.TryGetValue("extrase", vedere) Then TryCast(vedere, ExtraseView)?.Reincarca()
+        ' Slice 0114-08: the window is reloaded too (its own download button is gone; the ribbon's one reaches it here).
+        If _extraseForm IsNot Nothing AndAlso Not _extraseForm.IsDisposed Then _extraseForm.Reincarca()
     End Sub
 
     ''' <summary>

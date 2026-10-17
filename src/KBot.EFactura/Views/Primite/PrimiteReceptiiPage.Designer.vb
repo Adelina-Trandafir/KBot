@@ -230,7 +230,7 @@ Partial Class PrimiteReceptiiPage
         Controls.Add(pnlButoane)
         Controls.Add(lblRezumat)
         Name = "PrimiteReceptiiPage"
-        Padding = New System.Windows.Forms.Padding(3)
+        Padding = New System.Windows.Forms.Padding(3, 3, 3, 0)
         Size = New System.Drawing.Size(757, 526)
         CType(gridLegaturi, System.ComponentModel.ISupportInitialize).EndInit()
         pnlButoane.ResumeLayout(False)

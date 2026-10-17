@@ -34,7 +34,7 @@ arată și se poartă la fel peste tot; butoanele proprii fiecărei vederi sunt 
   la o fâșie, ca tabelul din dreapta să aibă tot locul. Cât e strâns, ținând mouse-ul pe un rând
   vezi rândul întreg, ieșit spre dreapta; încă un clic pe buton desface arborele.
 
-<!-- capture: liste-subsol-arbore | caption: Subsolul unui arbore, cu butonul de strângere și iconița din dreapta | goto: view:ord | prepare: Selectați un angajament cu ordonanțări; ținteți doar subsolul arborelui. -->
+<!-- capture: liste-subsol-arbore | caption: Subsolul unui arbore, cu butonul de strângere și iconița din dreapta | goto: view:ord | prepare: Selectați un angajament cu ordonanțări; ținteți doar subsolul arborelui. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Cât se deschide un document
 <!-- slice: 0078-08 -->
@@ -60,7 +60,7 @@ file:
 **OK** aplică, **Anulează** renunță. O pâlnie **plină, colorată** înseamnă că pe coloana aceea e pus
 un filtru: tabelul nu arată toate rândurile.
 
-<!-- capture: liste-meniu-coloana | caption: Meniul unei coloane: Sortare, Filtrare, Grupare | goto: view:istoric | prepare: Selectați un angajament cu istoric și apăsați pâlnia unei coloane. -->
+<!-- capture: liste-meniu-coloana | caption: Meniul unei coloane: Sortare, Filtrare, Grupare | goto: view:istoric | prepare: Selectați un angajament cu istoric și apăsați pâlnia unei coloane. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Subsolul tabelului
 <!-- slice: 0017-01, 0028-02 -->

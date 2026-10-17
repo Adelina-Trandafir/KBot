@@ -74,7 +74,7 @@ Titlul ferestrei arată **codul și denumirea** angajamentului la care lucrezi.
 
 - **După o descărcare** din FOREXE, dacă a rămas ceva nehotărât — fereastra «Așezarea recepțiilor
   descărcate». Vezi [Descărcarea unui angajament](topic:contabil.forexe.descarcare).
-- **Oricând**, din vederea **Recepții**: iconița din dreapta, sus, a arborelui — fereastra
+- **Oricând**, din vederea **Recepții**: butonul **«Asociază recepții»** din ribbon (grupul «Recepții», în dreapta) — fereastra
   «Legăturile recepțiilor».
 
 Mai departe: [Fereastra, pe părți](topic:contabil.asocieri.fereastra) ·

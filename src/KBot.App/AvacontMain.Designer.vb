@@ -32,7 +32,6 @@ Partial Class AvacontMain
         Dim KBotRibbonButton5 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonGroup3 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton6 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
-        Dim KBotRibbonTab2 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup4 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton7 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton8 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
@@ -59,6 +58,14 @@ Partial Class AvacontMain
         Dim KBotRibbonButton19 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton20 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton21 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton22 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton23 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton24 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton25 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton26 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton27 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton28 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonTab5 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -90,12 +97,52 @@ Partial Class AvacontMain
         KBotRibbonButton1.ToolTipHeader = "Asociază parteneri"
         KBotRibbonButton1.ToolTipText = "Asociază angajamentul cu unul sau mai mulți parteneri." & vbLf &"Asocierea se scrie pe documentul de fundamentare; un partener deja asociat nu se adaugă a doua oară."
         KBotRibbonButton1.Visible = False
+        KBotRibbonButton24.Image = My.Resources.Resources.Icojam_Blue_Bits_Pinion_settings_24
+        KBotRibbonButton24.Key = "rezervari_repara"
+        KBotRibbonButton24.Text = "Repară..."
+        KBotRibbonButton24.ToolTipHeader = "Repară rezervările"
+        KBotRibbonButton24.ToolTipText = "Repară rezervările acestui angajament din istoric (fără descărcare din FOREXE)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi."
+        KBotRibbonButton24.Visible = False
+        KBotRibbonButton25.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
+        KBotRibbonButton25.Key = "rezervari_grafic"
+        KBotRibbonButton25.Text = "Grafice"
+        KBotRibbonButton25.ToolTipHeader = "Graficul rezervărilor"
+        KBotRibbonButton25.ToolTipText = "Deschide, într-o fereastră de sine stătătoare, evoluția rezervărilor angajamentului și totalurile lui pe luni." & vbLf & "Sunt aceleași sume pe care le scrie arborele — nimic nu se cere din nou de la server."
+        KBotRibbonButton25.Visible = False
+        KBotRibbonButton26.Image = My.Resources.Resources.plus_green
+        KBotRibbonButton26.Key = "rezervari_adauga"
+        KBotRibbonButton26.Text = "Adaugă rezervare"
+        KBotRibbonButton26.ToolTipHeader = "Document de fundamentare"
+        KBotRibbonButton26.ToolTipText = "Acțiunile documentului de fundamentare pe acest angajament" & vbLf & "(Adaugă rezervare / Definitivează / Derulează / Generează PDF final). Butonul își schimbă numele după ce se poate face acum."
+        KBotRibbonButton26.Visible = False
+        KBotRibbonButton27.Image = My.Resources.Resources.database
+        KBotRibbonButton27.Key = "receptii_reface"
+        KBotRibbonButton27.Text = "Reface din istoric..."
+        KBotRibbonButton27.ToolTipHeader = "Reface din istoric"
+        KBotRibbonButton27.ToolTipText = "Reface din istoric instantaneele și liniile de recepție care lipsesc." & vbLf & "Întâi numără ce lipsește și întreabă; scrie doar după confirmare." & vbLf & "Anteturile refăcute apar în dosarul «Instantanee neașezate» și se așază din editorul de legături."
+        KBotRibbonButton27.Visible = False
+        KBotRibbonButton28.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotRibbonButton28.Key = "receptii_asociere"
+        KBotRibbonButton28.Text = "Asociază recepții"
+        KBotRibbonButton28.ToolTipHeader = "Legăturile recepțiilor"
+        KBotRibbonButton28.ToolTipText = "Deschide editorul de legături recepție ▸ instantaneu de istoric." & vbLf & "Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta."
+        KBotRibbonButton28.Visible = False
         KBotRibbonButton2.Image = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
         KBotRibbonButton2.Key = "pagina_inchide"
         KBotRibbonButton2.Text = "Închide"
         KBotRibbonButton2.ToolTipHeader = "Închide"
         KBotRibbonButton2.ToolTipText = "Închide macheta de pe ecran. Din lista angajamentelor revii la «Acasă». Aplicația se închide din X-ul ferestrei."
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton1)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton24)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton25)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton26)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton27)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton28)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton23)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton22)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton13)
+        ribbon.FormGroup.Fields.Add(KBotRibbonField1)
+        ribbon.FormGroup.Fields.Add(KBotRibbonField2)
         ribbon.PinnedButtons.Add(KBotRibbonButton2)
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1
@@ -143,17 +190,28 @@ Partial Class AvacontMain
         KBotRibbonButton8.ToolTipText = "Partenerii unității și codurile lor fiscale."
         KBotRibbonGroup4.Buttons.Add(KBotRibbonButton7)
         KBotRibbonGroup4.Buttons.Add(KBotRibbonButton8)
-        KBotRibbonGroup4.Text = "Nomenclatoare"
+        KBotRibbonGroup4.Text = "Date"
         KBotRibbonButton9.Image = My.Resources.Resources.binvoice
         KBotRibbonButton9.Key = "extrase"
         KBotRibbonButton9.Text = "Extrase"
         KBotRibbonButton9.ToolTipHeader = "Extrase de cont"
-        KBotRibbonButton9.ToolTipText = "Toate extrasele de cont ale bazei; de aici se pot descărca și cele noi din FOREXE."
+        KBotRibbonButton9.ToolTipText = "Toate extrasele de cont ale bazei. Cele noi se descarcă din FOREXE cu «Descarcă extrase»."
         KBotRibbonGroup5.Buttons.Add(KBotRibbonButton9)
         KBotRibbonGroup5.Text = "Documente"
-        KBotRibbonTab2.Groups.Add(KBotRibbonGroup4)
-        KBotRibbonTab2.Groups.Add(KBotRibbonGroup5)
-        KBotRibbonTab2.Text = "Date"
+        KBotRibbonButton22.Image = My.Resources.Resources.Sekkyumu_Developpers_Web_Browser_32
+        KBotRibbonButton22.Key = "extrase_descarca"
+        KBotRibbonButton22.Text = "Descarcă extrase"
+        KBotRibbonButton22.ToolTipHeader = "Descarcă extrase"
+        KBotRibbonButton22.ToolTipText = "Descarcă din FOREXE extrasele de cont noi și le importă în bază."
+        KBotRibbonButton22.Visible = False
+        KBotRibbonButton23.Image = My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32
+        KBotRibbonButton23.Key = "grupe_editeaza"
+        KBotRibbonButton23.Text = "Editează grupe"
+        KBotRibbonButton23.ToolTipHeader = "Editează grupe"
+        KBotRibbonButton23.ToolTipText = "Grupele de angajamente: le creezi, le schimbi, le ștergi și alegi ce angajamente intră în fiecare."
+        KBotRibbonButton23.Visible = False
+        KBotRibbonTab5.Groups.Add(KBotRibbonGroup5)
+        KBotRibbonTab5.Text = "Extrase"
         KBotRibbonButton10.Image = My.Resources.Resources.ef_intrari
         KBotRibbonButton10.Key = "efactura_cumparare"
         KBotRibbonButton10.Text = "Cumpărare"
@@ -179,28 +237,26 @@ Partial Class AvacontMain
         KBotRibbonButton13.ToolTipText = "Aduce de la ANAF facturile primite în perioada aleasă alături (7-60 de zile)."
         KBotRibbonButton13.Visible = False
         KBotRibbonGroup7.Buttons.Add(KBotRibbonButton12)
-        KBotRibbonGroup7.Buttons.Add(KBotRibbonButton13)
         KBotRibbonField1.Items.Add("Ultimele 7 zile")
         KBotRibbonField1.Items.Add("Ultimele 15 zile")
         KBotRibbonField1.Items.Add("Ultimele 30 zile")
         KBotRibbonField1.Items.Add("Ultimele 45 zile")
         KBotRibbonField1.Items.Add("Ultimele 60 zile")
         KBotRibbonField1.Key = "ef_primite_zile_combo"
+        KBotRibbonField1.PlaceholderText = "Perioada de adus"
         KBotRibbonField1.ToolTipHeader = "Perioada sincronizării"
-        KBotRibbonField1.ToolTipText = "Câte zile în urmă se aduc facturile primite. Se folosește doar dacă nu ai scris un număr de zile în caseta de dedesubt."
+        KBotRibbonField1.ToolTipText = "Câte zile în urmă se aduc facturile primite. Se folosește doar dacă nu ai scris un număr de zile în caseta de dedesubt; fără nicio alegere se aduc ultimele 7 zile."
         KBotRibbonField1.Visible = False
         KBotRibbonField1.Width = 150
         KBotRibbonField2.DigitsOnly = True
         KBotRibbonField2.Key = "ef_primite_zile_text"
         KBotRibbonField2.Kind = KBot.Controls.KBotRibbonFieldKind.Text
         KBotRibbonField2.MaxLength = 2
-        KBotRibbonField2.PlaceholderText = "sau scrie zilele (1-60)"
+        KBotRibbonField2.PlaceholderText = "Între 1 și 60 de zile"
         KBotRibbonField2.ToolTipHeader = "Număr de zile"
         KBotRibbonField2.ToolTipText = "Scrie un număr între 1 și 60: sincronizarea ia atunci această perioadă, nu pe cea din lista de deasupra. Gol = se folosește lista."
         KBotRibbonField2.Visible = False
         KBotRibbonField2.Width = 150
-        KBotRibbonGroup7.Fields.Add(KBotRibbonField1)
-        KBotRibbonGroup7.Fields.Add(KBotRibbonField2)
         KBotRibbonGroup7.Text = "ANAF"
         KBotRibbonTab3.Groups.Add(KBotRibbonGroup6)
         KBotRibbonTab3.Groups.Add(KBotRibbonGroup7)
@@ -256,18 +312,24 @@ Partial Class AvacontMain
         KBotRibbonGroup10.Buttons.Add(KBotRibbonButton20)
         KBotRibbonGroup10.Buttons.Add(KBotRibbonButton21)
         KBotRibbonGroup10.Text = "Administrare"
+        KBotRibbonTab4.Groups.Add(KBotRibbonGroup4)
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup8)
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup9)
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup10)
         KBotRibbonTab4.Text = "Configurări"
-        ribbon.Tabs.Add(KBotRibbonTab1)
-        ribbon.Tabs.Add(KBotRibbonTab2)
-        ribbon.Tabs.Add(KBotRibbonTab3)
         ribbon.Tabs.Add(KBotRibbonTab4)
+        ribbon.Tabs.Add(KBotRibbonTab1)
+        ribbon.Tabs.Add(KBotRibbonTab3)
+        ribbon.Tabs.Add(KBotRibbonTab5)
+        ribbon.SelectedTabIndex = 1
         ribbon.Tooltip = tips
         ' 
         ' sidebar
         ' 
+        sidebar.CollapseButtonSize = 14
+        sidebar.CollapseCollapsedImage = My.Resources.Resources.expand_24
+        sidebar.CollapseButtonText = "Ascunde meniul lateral"
+        sidebar.CollapseExpandedImage = My.Resources.Resources.collapse_24
         sidebar.Dock = DockStyle.Left
         sidebar.ExpandedWidth = 203
         sidebar.Location = New Point(1, 186)

@@ -164,7 +164,7 @@ Public NotInheritable Class KBotRibbonField
     Public Property Enabled As Boolean = True
 
     <Category("K-BOT")>
-    <Description("Text kind: the grey hint shown while the box is empty.")>
+    <Description("Text kind: the grey hint shown while the box is empty. Combo kind: the pale text shown while no row is picked.")>
     <DefaultValue("")>
     Public Property PlaceholderText As String = String.Empty
 

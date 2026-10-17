@@ -75,6 +75,7 @@ export function receiptAllocation({ api, selection, draft, mode }) {
   }
   return {
     async load() {
+      reopen = null;
       catalog = await api('/api/vercon/doc/nir/destinations?' + new URLSearchParams(selection()));
       return catalog;
     },

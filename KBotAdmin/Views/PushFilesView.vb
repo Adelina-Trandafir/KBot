@@ -281,7 +281,7 @@ Public Class PushFilesView
                 For Each k_stat As PushExtensionStat In _scan.Extensions
                     k_seen.Add(k_stat.Extension)
                     AddExtRow(k_stat.Extension, k_stat.Accepted, k_stat.Found.ToString(CultureInfo.InvariantCulture),
-                              If(k_stat.Accepted, k_stat.ToSend.ToString(CultureInfo.InvariantCulture), String.Empty))
+                              If(k_stat.Accepted OrElse k_stat.ToSend > 0, k_stat.ToSend.ToString(CultureInfo.InvariantCulture), String.Empty))
                 Next
             End If
             For Each k_ext As String In Settings.IncludeExtensions.OrderBy(Function(k_e) k_e, StringComparer.OrdinalIgnoreCase)

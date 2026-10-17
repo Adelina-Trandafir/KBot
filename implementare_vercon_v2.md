@@ -1623,3 +1623,673 @@ Fișiere: PYTHON/static/css/vercon-button-effects.css și acest jurnal.
 Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste sau alte verificări
 executate, conform instrucțiunilor proiectului. Serverul 5052 nu a fost
 repornit. Fără modificări de baze de date.
+
+### 2026-10-17 — NIR: factură cumulată și păstrarea secțiunii la schimbarea gestiunii
+
+Ascunse marcajele Ciornă și Salvat din titlul NIR; marcajul Anulat rămâne
+pentru documentele anulate. Celelalte familii de documente își păstrează
+marcajele existente.
+
+Pentru facturile comune, ValoareFC arată totalul facturii, cu fallback la
+totalul recepționat când factura nu are o valoare declarată. Arborele NIR
+folosește aceeași valoare cumulată, citită într-o interogare pe luna deschisă.
+Sumele locale persistate în VC_NIR nu se schimbă. Nu se reunesc implicit
+facturi istorice fără legătura comună existentă.
+
+Adăugat un modul de citire a liniilor celorlalte NIR-uri active asociate
+facturii. Sunt furnizate separat de liniile documentului local, cu chei
+distincte, destinație, TVA, precizie și marcajul existent al corecției.
+Grila le afișează împreună și însumează exact toate rândurile. Liniile din
+alte gestiuni sunt italic, fără bold; liniile corectate sunt italic+bold,
+inclusiv când sunt externe. Rândul gol automat rămâne ultimul.
+
+Liniile externe sunt numai pentru consultare: nu pot fi editate sau
+șterse și nu intră în payloadul de validare/salvare. În editarea unui NIR
+dintr-o factură comună, ValoareFC cumulată este read-only; se păstrează
+intern ținta locală a NIR-ului pentru corecție și salvare. Reconcilierea
+vizuală folosește totalul întregii facturi. Corecția operează numai pe
+liniile locale. Previzualizarea/raportul continuă să primească antetul și
+liniile locale; interogările rapoartelor oficiale nu au fost modificate.
+
+Schimbarea contextului păstrează secțiunea disponibilă în noul meniu.
+Paginile de documente reîncarcă datele în același panou, fără demontarea
+structurii paginii. Dacă secțiunea nu există în noua gestiune, este aleasă
+NIR, dacă este disponibilă (de exemplu BC -> OI/MF). Pentru factura deja
+deschisă, se redeschide NIR-ul legat din noua gestiune/an, dacă există.
+Alte tipuri de pagini se remontează în aceeași secțiune selectată.
+
+Selecția documentului este izolată per context; cererile vechi sunt
+anulate înaintea schimbării. API-ul comun combină semnalul paginii cu
+semnalul cererii. Se păstrează confirmarea abandonării modificărilor;
+schimbarea este blocată pe durata unei operații de scriere sau cu un
+rezultat neconfirmat. Ocuparea gestiunii este eliberată și reacordată
+conform fluxului existent. Refuzul preluării unei gestiuni ocupate nu
+reactivează datele vechi sub noua selecție.
+
+Fișiere: PYTHON/routes/vercon/receipt_invoice_view.py (nou), invoices.py,
+receipt_tree.py; PYTHON/static/js/vercon/receipt-invoice-view.js (nou),
+docs.js, app.js, api.js, receipt-allocation.js;
+PYTHON/static/css/vercon-receptie.css și acest jurnal.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de surse/design;
+fără teste, browser, build sau alte verificări executate, conform
+instrucțiunilor proiectului. Asocierea facturilor și reîncărcarea la
+schimbarea contextului necesită confirmare în utilizare. Serverul local
+5052 nu a fost repornit. Fără SQL executat sau modificări de scheme.
+
+### 2026-10-16 — NIR: Comisie sub Categorie și salvare după editarea celulei
+
+Comisie începe din prima coloană, sub Categorie / cont, și ocupă primele
+două coloane ale antetului. Pe ecrane înguste se păstrează adaptarea
+existentă la două coloane sau la o singură coloană.
+
+Identificată în surse o oprire fără mesaj a salvării: blurul celulei
+DGV pornește confirmarea asincronă, iar clickul ulterior pe Salvează
+apela commitEdit în timp ce aceeași confirmare era pending. DGV returna
+false, iar formularul abandona salvarea. commitEdit reutilizează acum
+promisiunea acelei confirmări, astfel încât salvarea o așteaptă, fără
+trimiterea de două ori a modificării celulei.
+
+Formularul rezervă starea busy înaintea confirmării controalelor, pentru
+a evita salvări concurente. La NIR, verificarea de părăsire a rândului
+este suspendată în această etapă; validarea strictă a documentului
+continuă să blocheze rândurile incomplete. Fiecare oprire din cauza
+câmpurilor sau a celulei are mesaj în bara de acțiuni; câmpurile din
+antet care blochează salvarea sunt enumerate. Mesajul de rezultat
+neconfirmat se aplică numai după inițierea cererii de scriere, păstrând
+cheia de idempotentă și ciorna pentru reluare.
+
+Fișiere: PYTHON/static/css/vercon-receipt-destinations.css,
+PYTHON/static/js/dgv/editing.js, PYTHON/static/js/vercon/docs.js și acest
+jurnal. Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Cauza identificată prin
+analiză de surse; nu a fost reprodusă în browser. Fără teste, build sau
+alte verificări executate, conform instrucțiunilor proiectului.
+Serverul local 5052 nu a fost repornit. Fără SQL sau modificări de baze.
+
+### 2026-10-16 — NIR: lista Comisie la lățimea casetei
+
+Eliminată limita CSS comună de 320 px numai pentru dropdownul Comisie
+din antetul NIR. Poziționarea controlului calculează deja lățimea după
+input; lista poate ocupa acum aceeași lățime ca acea casetă pe două
+coloane, cu limita existentă de încadrare în viewport.
+
+Fișiere: PYTHON/static/css/vercon-receipt-destinations.css și acest jurnal.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste sau alte verificări
+executate, conform instrucțiunilor proiectului. Serverul 5052 nu a fost
+repornit. Fără modificări de baze de date.
+
+### 2026-10-17 — Sesiune: avertizări custom, ieșire fără confirmare și probă locală
+
+Eliminate toate apelurile native alert/confirm/prompt și protecțiile
+beforeunload găsite în sursele web proprii. Erau prezente la ieșirea din
+VERCON, ADECHIT (plătitori/nomenclatoare), înregistrare și în eroarea PDF
+a raportului ADECHIT. Navigarea internă păstrează confirmările custom;
+în ADECHIT schimbarea aplicației verifică explicit editările nesalvate.
+Închiderea sau reîncărcarea filei nu mai produce o întrebare Chrome.
+
+Adăugat messageBox cu un singur buton în controlul comun confirm-box,
+cu actualizarea textului, închidere programatică și suport pentru
+fereastra raportului. Timerul comun VERCON/ADECHIT afișează la 15 minute
+un mesaj custom cu timpul rămas și recomandarea de încheiere/salvare;
+la 5 minute îl înlocuiește cu mesajul serios, iar headerul devine
+portocaliu. Mesajele apar o singură dată pe prag în pagina curentă și
+nu prelungesc sesiunea. Timerul este vizibil în ultimele 15 minute;
+în VERCON a fost mutat între selectorii de context și cont/ajutor.
+
+La expirare sunt oprite timerele, este blocată interacțiunea, se închid
+dialogurile și ferestrele scriptate de raport/chitanță/ajutor urmărite de
+aplicație, apoi se navighează imediat la autentificare. Logoutul este
+trimis keepalive, fără a aștepta rețeaua. VERCON anulează cererile paginii
+și eliberează ocuparea gestiunii. Expirarea monitorului portalului nu
+mai așteaptă cele 3 secunde ale unei notificări. Confirmările de abandon
+nu sunt parcurse la expirare, inclusiv cu modificări nesalvate.
+
+Probă locală izolată în tools/ComboTreePreview: /session-demo pornește
+la click un interval de 3 minute cu același modul comun, dar praguri
+120/60 secunde. Se pot lăsa text, formular și fereastră de probă deschise.
+La zero se trece direct la /session-ended. Numai demo-ul folosește
+pragurile scurtate; configurația publicată păstrează 15/5 minute.
+
+Validare cerută explicit de utilizator:
+- Verificare sintactică Node pentru cele 13 module JS modificate;
+  repetată pentru cele 3 module ADECHIT ajustate ulterior: fără erori.
+- Căutarea în sursele web proprii nu mai găsește apeluri native sau
+  beforeunload care să genereze confirmarea browserului.
+- Toate cele 7 rute/asseturi principale ale probei: HTTP 200.
+- Parcurs real în in-app browser, 3 minute: text nesalvat și formular
+  deschis; observat primul dialog custom, apoi mesajul serios la 01:00.
+  Headerul are rgb(198, 91, 0) în etapa critică. Fără erori în consola
+  paginii. La zero, navigare automată la /session-ended cu formularul
+  și avertizarea lăsate deschise; getJsDialog nu raportează dialog nativ.
+- Pagina a fost readusă la starea Pregătit, 03:00, pentru proba utilizatorului.
+
+Fișiere: PYTHON/static/js/utils/confirm-box.js, session-exit.js (nou);
+PYTHON/static/js/adechit/session.js, app.js, catalogs.js, payers.js,
+reports.js, help.js; PYTHON/static/js/vercon/app.js, api.js;
+PYTHON/static/js/session/session-monitoring.js;
+PYTHON/static/js/inregistrare/wizard.js; PYTHON/static/vercon.html;
+PYTHON/static/css/confirm-box.css, vercon-base.css, adechit-layout.css;
+tools/ComboTreePreview/preview_server.py, session-demo.html,
+session-demo.js, session-demo.css, session-ended.html, README.md.
+
+Stare: IMPLEMENTAT ÎN SURSE, probă locală efectuată. Serverul 5052 este
+PORNIT la cererea utilizatorului, numai pe localhost. Nu s-a folosit
+sesiune reală sau acces la baze de date; logoutul backend în producție
+nu a fost exercitat. Fără SQL executat sau modificări de scheme.
+
+### 2026-10-17 — Previzualizare: resurse de raport omise la publicare
+
+Traceback-urile furnizate pentru 16/17 octombrie indică FileNotFoundError
+pentru /root/AVACONT/reports/vercon/queries/metadata.sql. Fișierul există în
+surse. Filtrul implicit KBotAdmin exclude *.sql; fontul PDF .ttf nu este nici
+el în lista implicită de extensii publicate. Citirea reușită `VR op=read`
+trimisă inițial nu diagnostichează operația de raport.
+
+PYTHON/.pushignore include explicit cele 11 interogări SELECT ale rapoartelor,
+fontul DejaVuSans și licența. KBotAdmin/Server/PushService.vb și
+AvacontPush/Form1.vb respectă includerea explicită și peste filtrul extensiilor,
+fără a extinde global lista configurată. KBotAdmin/Views/PushFilesView.vb
+afișează numărul de fișiere de trimis și pentru astfel de excepții.
+tools/Push-Changed.ps1 include aceleași resurse și în etapa de enumerare,
+păstrând interdicția pentru fișierele protejate. README-ul din
+PYTHON/reports/vercon explică republicarea și utilizarea unui executabil vechi.
+
+report_store.py și report_output.py întorc 503/REPORT_RESOURCE_MISSING cu
+resursa lipsă în locul mesajului generic de server. docs.js afișează și codul
+cererii pentru corelare cu logs. api.js oprește fluxul cu AbortError după
+redirectul de autentificare, astfel încât pagina care se închide să nu mai
+afișeze o eroare suplimentară de operație.
+
+Răspunsul SESIUNE_EXPIRATA rămâne distinct de această eroare de instalare:
+previzualizarea trimite tokenul prin wrapperul API existent. Traceback-urile
+primite nu stabilesc cauza invalidării sesiunii. Nu s-a eliminat sau ocolit
+autentificarea.
+
+Stare: IMPLEMENTAT ÎN SURSE; necesită publicarea resurselor și codului pe
+server. Doar analiză de surse/design, fără teste, build, cereri de raport sau
+conectare/publicare pe server în această intervenție, conform AGENTS.md.
+Fără SQL executat, fără modificări de schemă. Serverul local 5052 nu a fost
+oprit sau repornit în această intervenție.
+
+### 2026-10-17 — Previzualizare: aliasuri în sursele SQL ale rapoartelor
+
+După publicarea completă, logul utilizatorului de la 08:24:32 arată eroarea
+MariaDB 1064 la source.rows('committee'). Interogarea implicită nu avea alias
+după markerul VC_ComisieNIR. report_query.execute înlocuiește markerul cu
+un subquery filtrat pe context, iar MariaDB cere alias după acest subquery.
+Aceeași omisiune exista în sursele food_history și settings.
+
+Corectate PYTHON/reports/vercon/queries/committee.sql, food_history.sql și
+settings.sql: aliasuri explicite c/h/s și coloane calificate, păstrând
+numele câmpurilor întoarse și filtrarea existentă. README-ul rapoartelor
+documentează cerința și configurările personalizate, care nu se suprascriu.
+Fișierele schema_diff*.sql rămân în afara publicării aplicației; sunt
+rezultate pentru analiza diferențelor de schemă, fără rol în previzualizare.
+
+Stare: CORECTAT ÎN SURSE, necesită republicarea celor trei fișiere SELECT.
+Interogările implicite se citesc la cerere, deci această corecție SQL nu
+necesită repornirea serviciului. Dacă există versiuni personalizate ale
+acestor surse, ele trebuie corectate explicit în editor. Doar analiză de
+surse/design; fără teste sau execuții SQL, fără acces/publicare pe server
+și fără modificări de schemă, conform AGENTS.md.
+
+### 2026-10-17 — Previzualizare PDF pe întreg spațiul disponibil
+
+PYTHON/static/css/vercon-preview.css: dialogul PDF din VERCON ocupă întregul
+viewport, fără margini sau colțuri rotunjite, cu bara de acțiuni deasupra și
+vizualizatorul extins în spațiul rămas. Selectorul specific aplicației are
+prioritate peste lățimea implicită de 420px din confirm-box.css, încărcat
+ulterior. Butoanele barei au prioritate peste min-width-ul comun al
+confirmărilor și se distribuie pe rânduri doar când spațiul o cere.
+
+Stare: IMPLEMENTAT ÎN SURSE. Doar analiză de surse/design; fără teste sau
+probă în browser, conform AGENTS.md. Pentru publicare este necesar numai
+fișierul vercon-preview.css, fără restart de serviciu. Fără acces la baze
+de date sau publicare pe server.
+
+### 2026-10-17 — Macheta NIR după referința vizuală a utilizatorului
+
+Referința cerută înlocuiește aspectul generic al PDF-ului NIR: A4 orizontal,
+titlu centrat și unitate dedesubt, monospațiat cu diacritice, tabel compact
+pentru factură/recepție/comandă cu antet reunit, furnizor/adresă în același
+chenar cu textul de recepție, documente însoțitoare pe o singură bandă,
+opt coloane de produse fără coloana separată TVA, TOTALURI numai în cele
+două celule din dreapta, diagonală în spațiul liber și certificarea comisiei
+în partea de jos. Nu se copiază datele exemplului ca valori fixe; unitatea,
+furnizorul, comisia și subsolul provin din document/configurare. Numărul de
+pagini este cel real, nu valoarea 3 din captura exemplu.
+
+Noul report_reception.py construiește documentele din rândurile deja filtrate
+pe context și desenează formularul. Paginația folosește înălțimile măsurate,
+repetă antetul și antetul produselor și păstrează totalul numai la sfârșitul
+documentului. Textul lung se încadrează pe mai multe rânduri; o linie/antet
+care nu încape întoarce REPORT_LAYOUT, fără trunchiere tacită. Cantitățile
+conform documentului ascund doar zerourile finale, fără rotunjire la întreg.
+Codul articolului revine la identificatorul variantei dacă nu există COD;
+numărul NIR păstrează subnumărul exprimat în sutimi. Totalurile folosesc
+report_model.total și precizia gestiunii, fără recalcularea valorilor salvate.
+
+report_layouts.py: formular implicit nir-classic pentru NIR/NIR_SFP, opt
+coloane, font 11pt, titlu 24pt și orientare orizontală. report_validation.py
+acceptă explicit formularul; report_service.py include documentele în
+snapshot; report_output.py selectează rendererul. Restul rapoartelor folosesc
+rendererul existent. Definițiile personalizate din instance/ nu sunt
+rescrise; cele vechi fără form rămân generice. Rendererul clasic fixează
+structura celulelor după referință, editorul liber rămâne pentru generic.
+
+Adăugate static/fonts/DejaVuSansMono.ttf, DejaVuSansMono-Bold.ttf și
+DejaVuSansMono-Oblique.ttf din distribuția Matplotlib v3.10.7, cu licența
+DejaVu deja inclusă. PYTHON/.pushignore și tools/Push-Changed.ps1 le includ
+explicit. README-ul rapoartelor documentează formularul și publicarea.
+
+Stare: IMPLEMENTAT ÎN SURSE, fără probă vizuală de PDF sau teste, conform
+AGENTS.md. Skillul PDF a fost citit pentru proiectarea machetei; regula
+utilizatorului de a nu executa verificări are prioritate față de fluxul de
+randare/validare al skillului. Analiza de surse a inclus contractul Table /
+minRowHeights din dependența locală, fără execuția rendererului. Nu se afirmă
+potrivire vizuală verificată cu exemplul. Necesită publicarea modulelor
+Python și a celor trei fonturi, repornirea serviciului și regenerarea
+previzualizării. Fără acces/execuții SQL, modificări de schemă sau publicare
+pe server în această intervenție.
+
+### 2026-10-17 — Corecție orientare NIR: A4 portret și zoom inițial 100%
+
+La precizarea utilizatorului, orientarea orizontală din intervenția anterioară
+este înlocuită cu A4 portret. report_reception.py folosește A4 atât pentru
+calculul lățimii/înălțimii utile, cât și pentru pagina PDF. Tabelele păstrează
+proporțiile în lățimea portret, iar zona de certificare/subsolul se raportează
+la noua înălțime. report_layouts.py: NIR/NIR_SFP portret, font implicit 8pt,
+titlu 16pt; textele auxiliare din renderer sunt ajustate pentru noua lățime.
+
+createPdfView din static/js/portal/pdfview.js acceptă initialScale, cu
+valoarea implicită page-width păstrată pentru portal. VERCON/pdf-preview.js
+transmite page-actual: fiecare raport deschis pornește la 100%, folosind
+același mod ca butonul existent 100%. Mărirea/micșorarea și potrivirea
+lățimii rămân disponibile. README-ul rapoartelor reflectă cerința corectată.
+
+Stare: IMPLEMENTAT ÎN SURSE; fără teste, PDF de probă sau browser, conform
+AGENTS.md. Necesită publicarea celor două module Python și a celor două
+module JS modificate, repornirea serviciului pentru Python și regenerarea
+previzualizării. Fără execuții SQL, modificări de schemă sau publicare pe server.
+
+### 2026-10-17 — FCS folosește exact macheta NIR
+
+report_layouts.default trimite documentele storno la aceeași definiție NIR,
+inclusiv titlul, coloanele, antetul, fonturile, totalurile și certificarea.
+report_store._path folosește aceeași configurare layout-nir.json pentru
+NIR și NIR_Storno la citire/salvare, deci machetele nu pot diverge după o
+editare în administrare. Eventualul layout-nir_storno.json vechi este
+păstrat, fără rescriere sau ștergere, dar nu mai este consultat. Versiunile
+și istoricul de configurare rămân cele ale machetei comune.
+
+report_service include și familia storno în datele rendererului comun
+nir-classic. report_reception rămâne aceeași implementare A4 portret, fără
+ramificații vizuale pentru FCS. Selecția și autorizarea documentelor storno
+rămân specifice raportului NIR_Storno; cantitatea este preluată exact din
+sursă, fără negare suplimentară sau abs. Calculul existent al valorii storno
+din cantitate/preț, unde tabela nu are total stocat, nu a fost modificat.
+
+Limitare observată în surse și comunicată utilizatorului: documents.py,
+_clean_stornolines, validează cantități pozitive, iar create_storno / edit_storno
+le salvează astfel. Rendererul nu transformă acele valori în negative.
+Această intervenție privește macheta, fără schimbarea convenției de salvare
+sau a datelor existente. README-ul rapoartelor documentează macheta comună.
+
+Stare: IMPLEMENTAT ÎN SURSE; fără teste sau PDF de probă, conform AGENTS.md.
+Necesită publicarea report_layouts.py, report_store.py, report_service.py
+și report_reception.py, restartul serviciului și regenerarea raportului.
+Fără SQL executat, modificări de schemă sau publicare pe server.
+
+### 2026-10-17 — Cantitate și valori negative la afișarea FCS
+
+Utilizatorul a corectat convenția: cantitățile storno sunt salvate pozitive,
+iar raportul trebuie să arate stornarea cu minus. report_data.py adaugă
+storno_display, aplicat numai sursei explicite a documentelor FCS după
+conversia exactă a valorilor. Copia pentru raport primește -abs pentru
+quantity, value, vat și header_value; prețul unitar rămâne neschimbat.
+Valorile deja negative nu își schimbă semnul, NULL rămâne NULL și zero nu
+primește minus. Operațiile Decimal copy_abs/copy_negate nu rotunjesc cifre.
+Rendererul comun, blocurile pentru rezultat și exportul Excel primesc
+aceleași linii semnate, deci valoarea și totalul FCS sunt negative.
+
+Nu se modifică datele salvate, validarea de introducere sau convenția de
+stoc. Ramurile centralizatoarelor/referatelor, care aplicau deja scăderea
+stornării, nu primesc o a doua negare. document-report.js normalizează
+Cant/Valoare/ValoareCUTVA/TVA și în copiile pentru previzualizarea de rezervă
+(inclusiv cititorul fără dreptul distinct de raport), fără a modifica
+obiectele formularului. README-ul rapoartelor reflectă convenția actualizată.
+
+Stare: IMPLEMENTAT ÎN SURSE; fără teste, PDF de probă sau browser, conform
+AGENTS.md. Necesită republicarea report_data.py și document-report.js,
+restartul serviciului și regenerarea raportului. Fără execuții SQL,
+modificări de schemă sau publicare pe server.
+
+### 2026-10-17 — FCS: formular în ecranul normal și stoc la data documentului
+
+Adăugarea și modificarea FCS folosesc spațiul normal de lucru al recepțiilor.
+Antetul are patru coloane; Recepția stornată și Comisie ocupă fiecare două
+coloane. Recepția se alege prin ComboTree, grupată pe furnizori, dintre
+NIR-urile cu produse eligibile din gestiunea curentă la Data FCS. Facturile
+repartizate în mai multe gestiuni oferă numai recepția și liniile locale.
+
+Grila are coloanele Produs, UM, Cantitate, Preț, TVA %, Valoare, TVA și TOTAL,
+cu rând nou permanent, selecție ComboTree și eliminarea rândurilor ca la NIR.
+Produsele sunt exclusiv variantele din recepția selectată care mai au stoc
+la Data FCS. Prețul și TVA sunt preluate din recepția sursă; salvarea păstrează
+convenția existentă Cant pozitiv / preț cu TVA stocat în VC_IntrariStorno.
+Cantitatea este limitată pe server atât de restul nestornat din NIR, cât și
+de stocul variantei la Data FCS. FCS viitoare rezervă în continuare cantitatea
+din sursă; documentul editat este exclus din calcul pentru a nu fi numărat
+de două ori. Validarea cronologică integrală a stocului rămâne la salvare.
+
+În editare, arborele salvat este înlocuit de mini fișa furnizorului și mini
+fișa de magazie a produsului selectat, la Data FCS, cu autorizare pentru FCS.
+Nu există buton de previzualizare în acest mod; Renunță este la stânga,
+Salvează FCS la dreapta. În consultare, adăugarea este în antetul arborelui
+FCS salvate și butonul + Adaugă de jos este eliminat.
+
+Numerotarea anuală NIR/FCS este comună în gestiune, comparând ABS(Numar) și
+NumarSub; numerele anulate rămân ocupate. Pentru o FCS nouă introdusă înaintea
+unui NIR sau FCS ulterior se propune un sub-număr disponibil, cu maximum două
+zecimale. Data și unicitatea se validează din nou sub blocarea tranzacției.
+NIR-urile iau și FCS în calcul la propunerea următorului număr și la limitele
+cronologice. Convenția existentă de stocare a numărului FCS negativ rămâne.
+Se utilizează coloana existentă NumarSub; nu se creează automat scheme.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, storno-editor.js, receipt-context.js;
+PYTHON/static/css/vercon.css, vercon-storno.css;
+PYTHON/routes/vercon/documents.py, storno_stock.py, doc_routes.py,
+receipt_context.py, receipt_number.py, receipt_rules.py.
+
+Stare: IMPLEMENTAT ÎN SURSE. Au fost făcute doar analize de cod și de design;
+fără teste, compilare, verificări automate, browser sau acces la baza de date,
+conform AGENTS.md. Funcționarea în aplicație nu este confirmată prin execuție.
+Necesită publicarea surselor și repornirea serviciului Python. Nu s-a publicat
+pe server și nu s-au executat SQL sau modificări de schemă MariaDB.
+
+### 2026-10-17 — Sesiune web configurabilă, reînnoită la refresh
+
+Durata sesiunii portalului, comună VERCON/ADECHIT/K-BOT web, se citește la
+pornirea serviciului din PORTAL_SESSION_MINUTES în config.py. Valoarea
+implicită este 30 de minute. Se acceptă un întreg strict pozitiv; o setare
+invalidă produce o eroare explicită la pornire. Setarea se adaugă manual în
+config.py pe server. Fișierul exemplu local creat inițial a fost eliminat la
+cererea utilizatorului. Configurația privată a serverului nu a fost accesată
+și nu a fost modificată.
+
+POST /api/portal/session/renew reînnoiește numai o sesiune încă valabilă.
+Se păstrează tokenul, identitatea și unitatea deschisă; renewed_at reține
+începutul noii perioade, separat de momentul autentificării issued_at.
+Timerul comun VERCON/ADECHIT și monitorul portalului solicită reînnoirea la
+inițializarea paginii. Refreshul/încărcarea paginii începe o nouă perioadă de
+durata configurată. Pollingul, revenirea într-un tab și activitatea obișnuită
+nu repornesc termenul. Sesiunile expirate necesită autentificare din nou.
+Fereastra existentă de reutilizare a codului după verificarea parolei rămâne
+separată de durata sesiunii și nu se prelungește prin refresh.
+
+Contoarele confirmă cu serverul expirarea înainte de deconectare, pentru a
+respecta o reînnoire făcută într-o altă pagină care folosește același token.
+Avertismentele locale sunt retrase/reprogramate când termenul este prelungit.
+
+Fișiere: PYTHON/routes/portal/session_settings.py, portal.py;
+PYTHON/static/js/adechit/session.js;
+PYTHON/static/js/session/session-monitoring.js,
+session-monitoring-extension.js, session-monitoring-timers.js.
+
+Stare: IMPLEMENTAT ÎN SURSE, fără teste sau verificări de execuție, conform
+AGENTS.md. Necesită publicarea modulelor modificate, configurarea pe server
+și repornirea serviciului Python. Fără publicare pe server, acces la baza
+de date, execuții SQL sau modificări de schemă MariaDB.
+
+### 2026-10-17 — FCS fără selecții repetate, cache mini fișe și eliminare Listare NIR
+
+ComboTree Produs din FCS exclude combinațiile produs + preț cu TVA deja
+introduse în DGV. Lista se construiește din ciorna actuală la fiecare
+deschidere; eliminarea sau schimbarea unui rând eliberează combinația.
+Același produs la alt preț rămâne disponibil. Prețurile sunt normalizate
+exact la cele patru zecimale stocate, fără comparare prin numere binare.
+Validarea de salvare pe server și protecția la editarea celulei refuză
+repetarea aceleiași combinații, inclusiv dacă are alt identificator de variantă.
+
+Mini fișele de magazie din editorul comun NIR/FCS sunt păstrate într-un cache
+în memoria instanței editorului: maximum 128 de fișe, valabilitate două minute
+de la răspuns, cu eliminarea celor utilizate cel mai demult când se atinge
+limita. Cheia include parametrii compleți ai fișei: contextul, data și
+varianta sau produsul/prețul/TVA, după familie. Revenirea pe un rând cu o
+fișă validă o afișează imediat. Cererile încă în curs sunt reutilizate;
+erorile nu sunt păstrate. Răspunsurile sosite după o invalidare nu repopulează
+cache-ul. Nu se utilizează localStorage sau sessionStorage.
+
+Cache-ul se golește la schimbarea ciornei/documentului, ieșirea din editare
+(inclusiv după salvare), schimbarea contextului și distrugerea editorului.
+Schimbarea datei/prețului/variantei utilizează altă cheie. Fișele sunt doar
+informative; verificarea stocului la salvare rămâne pe server.
+
+Listare a fost eliminată atât din submeniul NIR, cât și din meniul grupat
+INTRARI care adăuga aceeași opțiune fără acțiune.
+
+Fișiere: PYTHON/static/js/vercon/app.js, docs.js, storno-editor.js,
+receipt-context.js, statement-cache.js; PYTHON/routes/vercon/documents.py.
+
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste, verificări automate, browser sau
+acces la baza de date, conform AGENTS.md. Necesită publicarea modulelor
+modificate și restartul serviciului pentru validarea Python. Nu s-au făcut
+publicări pe server, execuții SQL sau modificări de schemă MariaDB.
+
+### 2026-10-17 — Cache mini fișe de magazie configurabil în config.py
+
+Configurația cache-ului NIR/FCS se citește din config.py la pornirea
+serviciului: VERCON_MINI_STOCK_CACHE_ENABLED este True implicit, iar
+VERCON_MINI_STOCK_CACHE_SECONDS este 120 implicit. False dezactivează
+cache-ul; valoarea 0 pentru durată îl dezactivează de asemenea. Activarea
+trebuie să fie bool, durata un întreg nenegativ de secunde; valorile invalide
+produc o eroare explicită la pornire.
+
+Endpointul lookups trimite editorului numai aceste două valori publice;
+restul configurației nu este expus. Editorul aplică politica la încărcarea
+datelor și la schimbarea contextului. Durata nu mai este fixată la două
+minute în JavaScript. Când este dezactivat, răspunsurile nu sunt păstrate
+în cache și revenirile pe alte rânduri cer din nou fișele de la server.
+Limita de 128 de fișe și regulile de invalidare existente se păstrează când
+cache-ul este activ.
+
+Nu s-a creat niciun nou fișier de exemplu pentru configurare. Exemplul
+PYTHON/config_sesiune.example.py creat anterior a fost eliminat, la cererea
+utilizatorului, pentru a nu fi inclus accidental în publicarea pe server.
+Setările de pus în config.py au fost furnizate direct în conversație.
+
+Fișiere: PYTHON/routes/vercon/receipt_context.py, doc_routes.py;
+PYTHON/static/js/vercon/docs.js, receipt-context.js, statement-cache.js;
+eliminat PYTHON/config_sesiune.example.py.
+
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste, verificări automate, browser sau
+acces la baza de date, conform AGENTS.md. Necesită publicarea modificărilor,
+setarea valorilor în config.py și restartul serviciului Python. Config.py
+nu a fost citit sau modificat; fără publicare pe server ori modificări MariaDB.
+
+### 2026-10-17 — FCS fără comparație între valoarea din antet și totalul liniilor
+
+În docs.js, totals se oprește pentru familia storno după actualizarea
+totalurilor DGV. Nu se mai calculează diferența între valoarea salvată în
+antet și suma liniilor și nu se mai creează mesajul de reconciliere de sub
+grilă, nici la vizualizare, nici la adăugare/modificare. Totalurile produselor
+și comportamentul celorlalte familii rămân cele existente.
+
+Fișier modificat: PYTHON/static/js/vercon/docs.js.
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste, verificări de execuție, browser sau
+acces la baza de date, conform AGENTS.md. Necesită publicarea modulului JS
+modificat. Nu s-au publicat surse și nu s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Bonuri de consum: arbore, editare în pagină și mini fișe
+
+Arborele BC este grupat după Primitor și lună, cu data și numărul bonului
+în etichetă și valoarea cu două zecimale aliniată la dreapta, ca la NIR.
+Identificatorii ramurilor sunt stabili; după salvare/anulare se deschide
+ramura documentului selectat. Butonul comun de adăugare este în antetul
+arborelui, iar „+ Adaugă” din bara de jos a fost eliminat pentru BC.
+
+Adăugarea și modificarea BC rămân în pagina curentă. Primitorul folosește
+Combobox cu tastare și săgeată, categoria folosește ComboTree cu selecția
+unui singur cont din gestiunea curentă. Primul rând are Primitor, Categorie,
+Număr și Data, iar Explicații ocupă primele trei coloane ale rândului doi.
+În editare, Renunță este la stânga, Salvează bonul la dreapta, iar acțiunea
+de previzualizare a ciornei a fost eliminată. Previzualizarea documentelor
+salvate rămâne disponibilă.
+
+DGV folosește mecanismul NIR cu rând gol permanent și ignoră rândurile goale
+la salvare; acțiunea „Adaugă rând” din footer a fost eliminată pentru BC.
+Produsul rămâne Combobox cu tastare, cu trecere la Cantitate după selecție.
+„Disponibil” este înainte de Cantitate; stocul informativ se citește la data
+bonului și în consultare. În modificare, cantitățile documentului curent
+sunt excluse din calculul disponibilului, ca în comportamentul existent.
+
+Coloana laterală din editare afișează fișa gestionarului selectat și fișa
+de magazie a produsului de pe rândul curent. Fișa gestionarului citește
+bonurile și retururile salvate, neanulate, din contextul/exercițiul curent
+până la data bonului: ultimele 12 documente și totalul consumului net
+(BC minus retururi). Fișa de magazie reutilizează serviciul de stoc și
+politica de cache configurabilă din config.py. Fișele nu includ ciorna.
+Noile citiri respectă dreptul BC și contextul subunitate/gestiune/exercițiu.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, consumption-ui.js,
+receipt-context.js; PYTHON/static/css/vercon.css, vercon-consumption.css;
+PYTHON/routes/vercon/receipt_context.py, doc_routes.py;
+implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Au fost făcute numai citiri de cod și analiză
+de design. Fără teste, verificări automate, rulare în browser sau acces
+la baza de date, conform AGENTS.md. Necesită publicarea surselor și
+restartul serviciului Python. Nu s-au publicat surse și nu s-au modificat
+scheme sau date MariaDB.
+
+### 2026-10-17 — BC: disponibil consecvent, fonturi și spațiul mini fișelor
+
+Diferența dintre Disponibil în consultare și modificare provenea din
+excluderea BC-ului salvat numai în modificare. Acum ambele moduri cer
+stocul la data aleasă fără consumul BC-ului curent, folosind aceeași
+excludere de document. La adăugare nu se exclude niciun document salvat;
+celelalte consumuri și retururi rămân în calcul. Această regulă înlocuiește
+comportamentul de consultare descris în intrarea precedentă.
+
+Comboboxurile VERCON (câmpul și opțiunile listei) folosesc variabila
+--vc-combobox-font-size, cu 1px mai mică decât dimensiunea anterioară,
+păstrând diferențierea existentă între desktop și ecranele mici.
+
+Mini fișele NIR/FCS/BC folosesc același font UI și dimensiunea comună
+--vc-mini-statement-font-size = calc(var(--fs-sm) - 1pt), inclusiv pentru
+antet, identitate, note, tabel, mesaje și total. Tabelele au layout fix și
+coloane explicite pentru dată și cifre. Document/Factură primește numai
+lățimea rămasă; textele lungi sunt pe un singur rând, cu elipsă și text
+complet în tooltip. Corpul permite numai derulare verticală și rezervă
+spațiul scrollbarului, fără extinderea tabelului pe orizontală.
+
+Antetele NIR și BC au aceeași înălțime minimă comună pe desktop, calculată
+pentru trei rânduri de câmpuri și două intervale de 12px. Câmpurile BC
+rămân pe primele două rânduri, iar spațiul liber de dedesubt mărește și
+fișa gestionarului, a cărei limită inferioară urmărește începutul DGV.
+Pe ecranele mici rămâne organizarea responsive existentă.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, receipt-context.js;
+PYTHON/static/css/vercon-controls.css, vercon-documente-layout.css,
+vercon-receipt-context.css; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate, rulare în browser sau acces la baza de date, conform
+AGENTS.md. Necesită publicarea fișierelor JS/CSS modificate. Nu s-au
+publicat surse și nu s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: antet, mese și arbore
+
+Antetul listei are două coloane: Număr listă și Data pe primul rând,
+Comentarii pe ambele coloane. Sub Comentarii sunt trei TextBox-uri
+needitabile (Valoare listă, Total BC, Diferență), actualizate din ciornă.
+DGV-ul separat al acestor trei totaluri a fost eliminat. Antetul și
+bonurile asociate împart acum zona de sus în două părți egale.
+
+În fiecare masă, sumarul are numai Porții, Preț și Valoare. Coloana D
+nu mai apare în pagină; valoarea istorică rămâne păstrată la salvare.
+Tabelele felurilor au FELUL, Explicații și meniul de rând; coloanele
+ordinal și Porții au fost eliminate. Explicații ocupă spațiul rămas.
+Adăugarea se face prin rândul gol permanent în editare, fără acțiune de
+adăugare în footer. Rândurile complet goale nu se trimit la salvare.
+Previzualizarea ciornei folosește aceleași denumiri și omite rândul gol.
+
+Explicații folosește Combobox cu tastare liberă și sugestii pentru felul
+selectat. Sugestiile se citesc din textele listelor neanulate ale
+subunității/gestiunii/exercițiului curent și includ textele ciornei.
+Textul nou se salvează odată cu lista și devine sugestie reutilizabilă.
+Editorul comun DGV acceptă opțiunea allowCustom; doar coloanele care o
+activează păstrează textul liber și dezactivează alegerea automată a
+primei sugestii. Celelalte coloane își păstrează comportamentul.
+
+Butonul comun ActionAddButton este în antetul arborelui și respectă
+dreptul de scriere/perioada închisă. Butonul + Adaugă din bara paginii
+a fost eliminat. Arborele are două niveluri: Lună/An (lunile în română)
+și lista cu numărul și data în etichetă, valoarea la dreapta ca la NIR.
+Ramurile lunilor au identificatori stabili.
+
+Fișiere: PYTHON/static/js/vercon/lista.js;
+PYTHON/static/css/vercon-lista.css, vercon-lista-totals.css;
+PYTHON/routes/vercon/lista.py; PYTHON/static/js/dgv/editing.js;
+PYTHON/static/js/components/combobox/combobox-search.js;
+implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate, rulare în browser sau acces la baza de date,
+conform AGENTS.md. Necesită publicarea surselor și restartul serviciului
+Python. Nu s-au publicat surse și nu s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: derulare orizontală și bara de editare
+
+Antetele coloanelor înguste actions și ordinal aveau padding lateral de
+22 px, ceea ce impunea o lățime efectivă de minimum 45 px, chiar când
+DGV calcula o coloană mai îngustă. Antetul depășea astfel suma lățimilor
+rândurilor și provoca derulare orizontală cu spațiu gol în dreapta,
+inclusiv fără suficiente rânduri pentru derulare verticală.
+
+În Lista de Alimente, paddingul lateral al acestor două antete este
+acum zero. Corecția se aplică atât bonurilor asociate, cât și celor trei
+tabele de feluri; mecanismul de derulare și calculul lățimilor rămân
+active pentru situațiile în care conținutul chiar depășește grila.
+Butonul Previzualizare a fost eliminat din bara de adăugare/modificare.
+
+Fișiere: PYTHON/static/css/vercon-lista.css;
+PYTHON/static/js/vercon/lista.js; implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate sau rulare în browser, conform AGENTS.md. Necesită
+publicarea fișierelor JS/CSS modificate. Nu s-au publicat surse și nu
+s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: totaluri compacte și tipografie
+
+Grupul Valoare listă / Total BC / Diferență este centrat sub Comentarii,
+cu lățime totală de cel mult 480 px și trei câmpuri egale. Etichetele și
+valorile sunt centrate. Pe ecrane mici, câmpurile se așază vertical,
+cu lățime maximă de 180 px. Valorile folosesc formatMoney: separator
+de mii punct, virgulă zecimală și două zecimale (de exemplu 2.592,00).
+TextBox-urile needitabile afișează textul formatat inclusiv când primesc
+focus; calculele și valorile trimise la salvare își păstrează precizia.
+
+Toate etichetele câmpurilor din antetul Listei de Alimente sunt bold.
+Fontul antetelor DGV este redus cu 1 pt față de fs-table, iar cel al
+celulelor/rândurilor/footerului cu 1 pt față de fs-ms. Editorii de celule
+moștenesc fontul celulelor. Selectorii sunt limitați la Lista de Alimente.
+
+Fișiere: PYTHON/static/js/vercon/lista.js;
+PYTHON/static/css/vercon-lista.css, vercon-lista-totals.css;
+implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE. Numai analiză de cod și design; fără teste,
+verificări automate sau rulare în browser, conform AGENTS.md. Necesită
+publicarea fișierelor JS/CSS modificate. Nu s-au publicat surse și nu
+s-au modificat scheme sau date MariaDB.
+
+### 2026-10-17 — Lista de alimente: Număr și Data mai înguste
+
+Câmpurile Număr listă și Data ocupă acum 70% din lățimea coloanei lor,
+reducere orizontală de 30%, păstrând poziționarea în antet.
+
+Fișiere: PYTHON/static/css/vercon-lista.css; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste sau verificări de execuție,
+conform AGENTS.md. Necesită publicarea CSS-ului modificat.

@@ -29,6 +29,7 @@ Partial Class VanzareContinutPage
         tlyContinut = New KBotTableLayoutPanel()
         tlyLinii = New KBotTableLayoutPanel()
         btnLinieNoua = New System.Windows.Forms.Button()
+        chkAtasament = New System.Windows.Forms.CheckBox()
         gridLinii = New KBotDataView()
         CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
         tlyContinut.SuspendLayout()
@@ -41,14 +42,16 @@ Partial Class VanzareContinutPage
         tlyContinut.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         tlyContinut.Controls.Add(tlyLinii, 0, 0)
         tlyContinut.Controls.Add(gridLinii, 0, 1)
+        tlyContinut.Controls.Add(chkAtasament, 0, 2)
         tlyContinut.Dock = System.Windows.Forms.DockStyle.Fill
         tlyContinut.Location = New System.Drawing.Point(3, 3)
         tlyContinut.Margin = New System.Windows.Forms.Padding(0)
         tlyContinut.Name = "tlyContinut"
         tlyContinut.Padding = New System.Windows.Forms.Padding(8)
-        tlyContinut.RowCount = 2
+        tlyContinut.RowCount = 3
         tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
         tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34.0!))
         tlyContinut.Size = New System.Drawing.Size(743, 556)
         tlyContinut.TabIndex = 0
         '
@@ -78,6 +81,17 @@ Partial Class VanzareContinutPage
         btnLinieNoua.Text = "Linie nouă"
         tips.SetToolTipText(btnLinieNoua, "Adaugă o linie la sfârșitul facturii; se completează direct în tabel (unitatea de măsură implicită este XPP, bucată).")
         btnLinieNoua.UseVisualStyleBackColor = True
+        '
+        ' chkAtasament: the footer of the view («Atașamente» is no longer a view of its own)
+        '
+        chkAtasament.Anchor = System.Windows.Forms.AnchorStyles.Left
+        chkAtasament.AutoSize = True
+        chkAtasament.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        chkAtasament.Margin = New System.Windows.Forms.Padding(0)
+        chkAtasament.Name = "chkAtasament"
+        chkAtasament.TabIndex = 2
+        chkAtasament.Text = "Atașează factura originală"
+        tips.SetToolTipText(chkAtasament, "Alegerea se păstrează pe factură. Se modifică doar cât timp factura este o ciornă (netrimisă).")
         '
         ' gridLinii
         '
@@ -191,4 +205,5 @@ Partial Class VanzareContinutPage
     Friend WithEvents tlyLinii As KBotTableLayoutPanel
     Friend WithEvents btnLinieNoua As System.Windows.Forms.Button
     Friend WithEvents gridLinii As KBotDataView
+    Friend WithEvents chkAtasament As System.Windows.Forms.CheckBox
 End Class

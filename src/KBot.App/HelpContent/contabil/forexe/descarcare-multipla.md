@@ -39,17 +39,18 @@ Dacă la o conectare următoare unitatea nu mai permite descărcarea pe mai mult
 Setări, iar descărcările merg din nou una câte una; bifele tale rămân salvate pentru când se permite din nou.
 
 ## Alegi angajamentele de actualizat
-<!-- slice: 0100, 0109 -->
+<!-- slice: 0100, 0109, 0114-12, 0000-90 -->
 
-Meniul iconiței din capul listei de angajamente (cea de la sortare și coloane) are un rând în
-plus: **«Actualizează angajamente...»**. Rândul se vede **mereu**, cu descărcarea pe mai multe
-taburi pornită sau nu.
+Meniul iconiței din **subsolul** listei de angajamente (iconița de actualizare din dreapta, jos, sau textul «Actualizează» de lângă ea) are două rânduri:
+**«Descarcă angajamente NOI»** (aduce lista, vezi [Lista de angajamente](topic:contabil.forexe.lista)) și **«Actualizează angajamente VRAC»**.
+Rândul «VRAC» se vede **mereu**, cu descărcarea pe mai multe
+taburi pornită sau nu. (Înainte, rândul era în meniul rotiței din capul listei; acolo nu mai e.)
 
-<!-- capture: arbore-meniu-actualizare | caption: Meniul listei de angajamente, cu «Actualizează angajamente...» | prepare: Porniți descărcarea pe mai multe taburi în Setări › Descărcări multiple, apoi apăsați iconița din dreapta capului listei de angajamente și țineți meniul deschis. -->
+<!-- capture: arbore-meniu-actualizare | caption: Meniul din subsolul listei de angajamente, cu «Actualizează angajamente VRAC» | prepare: Apăsați iconița de actualizare din colțul de jos al listei de angajamente și țineți meniul deschis. | redo: 2026-10-17 20:00 | why: 0114-12: rândul «Actualizează angajamente...» a trecut din meniul rotiței în meniul din subsolul listei -->
 
 Se deschide fereastra **«Actualizează angajamente»**, cu toate angajamentele din listă:
 
-<!-- capture: actualizare-multipla | caption: Fereastra «Actualizează angajamente» | prepare: Porniți descărcarea pe mai multe taburi (Setări › Descărcări multiple), deschideți meniul listei și alegeți «Actualizează angajamente...». Bifați câteva rânduri. -->
+<!-- capture: actualizare-multipla | caption: Fereastra «Actualizează angajamente» | prepare: Porniți descărcarea pe mai multe taburi (Setări › Descărcări multiple), deschideți meniul din subsolul listei și alegeți «Actualizează angajamente VRAC». Bifați câteva rânduri. -->
 
 | Coloana | Ce arată |
 |---------|----------|

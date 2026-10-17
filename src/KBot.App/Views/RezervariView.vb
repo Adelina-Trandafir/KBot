@@ -17,7 +17,7 @@ Imports KBot.Theming
 ''' re-autentificare a shell-ului (401 -> re-login -> reia o dată).
 ''' </summary>
 Public Class RezervariView
-    Implements IAngajamentView, IThemedControl
+    Implements IAngajamentView, IThemedControl, IViewRibbon
 
     ' Cheile coloanelor grilei — o singură definiție, folosită la creare și la umplere,
     ' ca un typo să nu ajungă o coloană goală în producție.
@@ -36,6 +36,13 @@ Public Class RezervariView
     Private Const ICO_MICSORARE As String = "down"  ' frunză: Micșorare ▼
     Private Const ICO_INITIALA As String = "equal"  ' frunză: Inițială «=»
     Private Const ICO_PLUS As String = "plus"       ' iconița dreapta «adaugă DDF»
+
+    ' Butoanele vederii din ribbon (grupul vederii; cheile din designerul AvacontMain). Slice 0114-15: au luat locul iconițelor
+    ' din antetul si subsolul arborelui (graficul, «Adaugă» si «Repară»), scoase de acolo.
+    Private Const KEY_REPARA As String = "rezervari_repara"
+    Private Const KEY_GRAFIC As String = "rezervari_grafic"
+    Private Const KEY_ADAUGA As String = "rezervari_adauga"
+    Private Shared ReadOnly _ribbonKeys As String() = {KEY_REPARA, KEY_GRAFIC, KEY_ADAUGA}
 
     ' Key of the "Toate rezervarile" root (same shape as ReceptiiView.ROOT_KEY). Friend for tests.
     Friend Const ROOT_KEY As String = "all"
@@ -75,34 +82,27 @@ Public Class RezervariView
     Private ReadOnly _executaComanda As Action(Of DdfComanda)
 
     ''' <summary>
-    ''' Repararea rezervărilor angajamentului (cererea operatorului, 12.10.2026) — iconița din DREAPTA
-    ''' subsolului arborelui. A luat locul reîmprospătării din FOREXE (felia 0060): refă din istoric
-    ''' lanțul rezervărilor, fără nicio descărcare. Vine de la shell din același motiv ca
+    ''' Repararea rezervărilor angajamentului (cererea operatorului, 12.10.2026) — butonul «Repară...» din ribbon
+    ''' (felia 0114-15; până atunci iconița din DREAPTA subsolului arborelui). A luat locul reîmprospătării din FOREXE
+    ''' (felia 0060): refă din istoric lanțul rezervărilor, fără nicio descărcare. Vine de la shell din același motiv ca
     ''' <see cref="_executaComanda"/>.
     '''
-    ''' <para>Nothing = gazda nu o oferă. Atunci iconița se STINGE, nu rămâne un buton care nu
-    ''' face nimic.</para>
+    ''' <para>Nothing = gazda nu o oferă. Atunci butonul lipsește, nu rămâne unul care nu face nimic.</para>
     ''' </summary>
     Private ReadOnly _repara As Action(Of String)
 
-    ' ── Slice 0081-02: the footer LEFT icon -- ONE icon, ONE option at most ─────────────────
+    ' ── Slice 0081-02: the document actions -- ONE button, ONE option at most (the ribbon, slice 0114-15) ──────
     ''' <summary>Reads the angajament's DDF (revisions + header) through the shell's 401 net.
     ''' Nothing = the host offers no DDF actions; the icon is then hidden.</summary>
     Private ReadOnly _citesteDdf As Func(Of String, Task(Of DdfInfo))
     ''' <summary>Runs the chosen option in the shell (editor, FOREXE workflows, final PDF).</summary>
     Private ReadOnly _actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo)
-    ''' <summary>The icon as the designer set it, put back whenever there is an option to offer.</summary>
-    Private ReadOnly _iconitaMeniu As Image
-    ''' <summary>The «Repara» icon and tooltip as the designer set them; shown only while the angajament
-    ''' has broken reservations (operator, 12.10.2026).</summary>
-    Private ReadOnly _iconitaRepara As Image
-    Private ReadOnly _tooltipRepara As String
     ''' <summary>The tree node of the angajament shown (state, description) -- the options need it.</summary>
     Private _info As AngajamentTreeInfo
-    ''' <summary>The option the icon offers now; None = the icon is hidden.</summary>
+    ''' <summary>The option the ribbon button «Adauga» offers now; None = the button is hidden.</summary>
     Private _optiune As RezervariMenuOption = RezervariMenuOption.None
     ''' <summary>True while the tree holds a leaf with the "+" (a reservation still to bring from
-    ''' FOREXE into K-BOT); the footer left icon stays hidden until none is left.</summary>
+    ''' FOREXE into K-BOT); the ribbon button «Adauga» stays hidden until none is left.</summary>
     Private _areFrunzaCuPlus As Boolean
 
     Public Sub New(apiClient As IApiClient,
@@ -120,19 +120,14 @@ Public Class RezervariView
         _repara = repara
         _citesteDdf = citesteDdf
         _actiuneMeniu = actiuneMeniu
-        _iconitaMeniu = tree.FooterLeftIcon
-        tree.HelpDemoFooterLeftIcon = _iconitaMeniu   ' slice 0000-30: the tour shows it while the view hides it
-        _iconitaRepara = tree.FooterRightIcon
-        _tooltipRepara = tree.FooterRightIconTooltip
         AratatOptiunea(RezervariMenuOption.None)
         'BuildColumns()
         ShowEmpty("Selectați un angajament din arbore.")
     End Sub
 
     ''' <summary>
-    ''' Slice 0081-02: works out the ONE option of the footer LEFT icon for the angajament just
-    ''' loaded (plan 0081-04, the menu table) and shows or hides the icon. The tree has no
-    ''' «disabled» look for a footer icon, so «nothing to offer» hides it.
+    ''' Slice 0081-02: works out the ONE option of the ribbon button «Adauga» for the angajament just
+    ''' loaded (plan 0081-04, the menu table) and shows or hides the button: «nothing to offer» hides it.
     ''' UI boundary (fire-and-forget from LoadAsync): logs and hides the icon on any failure.
     ''' </summary>
     Private Async Sub ActualizeazaMeniulAsync(cod As String)
@@ -157,62 +152,101 @@ Public Class RezervariView
 
     Private Sub AratatOptiunea(optiune As RezervariMenuOption)
         _optiune = optiune
-        ' The icon shows only when there is a document option to pick (the re-analysis lives on the
-        ' footer RIGHT icon, «Repara», not here -- operator, 12.10.2026).
-        ' Operator, 01.10.2026: while a leaf still carries the "+" (to be added from FOREXE), the
-        ' footer icon is hidden -- the "+" is the only thing to do first.
-        If _actiuneMeniu Is Nothing OrElse _info Is Nothing OrElse _areFrunzaCuPlus OrElse
-           optiune = RezervariMenuOption.None OrElse
-           String.IsNullOrWhiteSpace(_info.CodAngajament) Then
-            tree.FooterLeftIcon = Nothing
-            tree.FooterLeftIconTooltip = String.Empty
-        Else
-            tree.FooterLeftIcon = _iconitaMeniu
-            tree.FooterLeftIconTooltip = RezervariMenu.Label(optiune)
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)
+    End Sub
+
+    ' ── The buttons of the view in the ribbon (slice 0114-15) ────────────────────────────────
+
+    ''' <summary>Raised when what the ribbon buttons of this view show has changed (the window asks again).</summary>
+    Public Event RibbonStateChanged As EventHandler Implements IViewRibbon.RibbonStateChanged
+
+    Public ReadOnly Property RibbonCaption As String Implements IViewRibbon.RibbonCaption
+        Get
+            Return "Rezervări"
+        End Get
+    End Property
+
+    Public ReadOnly Property RibbonKeys As IReadOnlyList(Of String) Implements IViewRibbon.RibbonKeys
+        Get
+            Return _ribbonKeys
+        End Get
+    End Property
+
+    ''' <summary>
+    ''' «Repara...» exists only while the angajament has broken reservations (the same list that paints its row red in the main
+    ''' tree) and the host runs the repair (operator, 12.10.2026). «Grafic» is there while the view has an angajament, dimmed while
+    ''' it has no reservation to draw. «Adauga» is the one document option of the angajament (see <see cref="RezervariMenu"/>); it
+    ''' is hidden while a leaf still carries the «+» (operator, 01.10.2026: the «+» is the only thing to do first).
+    ''' </summary>
+    Public Function RibbonButtonState(k_key As String) As ViewButtonState Implements IViewRibbon.RibbonButtonState
+        Select Case k_key
+            Case KEY_REPARA
+                Return If(_repara IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.RezervariGresite.Count > 0,
+                          ViewButtonState.Enabled, ViewButtonState.Hidden)
+            Case KEY_GRAFIC
+                If String.IsNullOrWhiteSpace(_requestedCod) Then Return ViewButtonState.Hidden
+                Return If(_rows IsNot Nothing AndAlso _rows.Count > 0, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+            Case KEY_ADAUGA
+                Return If(_actiuneMeniu IsNot Nothing AndAlso _info IsNot Nothing AndAlso Not _areFrunzaCuPlus AndAlso
+                          _optiune <> RezervariMenuOption.None AndAlso Not String.IsNullOrWhiteSpace(_info.CodAngajament),
+                          ViewButtonState.Enabled, ViewButtonState.Hidden)
+            Case Else
+                Throw New ArgumentException($"Buton de ribbon necunoscut pentru Rezervări: '{k_key}'.", NameOf(k_key))
+        End Select
+    End Function
+
+    ''' <summary>«Adauga» takes the name of the option it offers (Adaugă rezervare / Definitivează / Derulează / Generează PDF final).</summary>
+    Public Function RibbonButtonText(k_key As String) As String Implements IViewRibbon.RibbonButtonText
+        If String.Equals(k_key, KEY_ADAUGA, StringComparison.Ordinal) AndAlso _optiune <> RezervariMenuOption.None Then
+            Return RezervariMenu.Label(_optiune)
         End If
-        AratatRepara()
-        tree.Invalidate()
-    End Sub
+        Return String.Empty
+    End Function
 
-    ''' <summary>
-    ''' The footer RIGHT icon, «Repara», exists only while the angajament has broken reservations (the
-    ''' same list that paints its row red in the main tree) and the host runs the repair. Operator, 12.10.2026.
-    ''' </summary>
-    Private Sub AratatRepara()
-        Dim k_arata As Boolean = _repara IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.RezervariGresite.Count > 0
-        tree.FooterRightIcon = If(k_arata, _iconitaRepara, Nothing)
-        tree.FooterRightIconTooltip = If(k_arata, _tooltipRepara, String.Empty)
-    End Sub
-
-    ''' <summary>
-    ''' Slice 0081-02: the footer LEFT icon opens a menu with the valid option only (operator,
-    ''' 25.09.2026: one icon, a menu -- the pattern of the main form's options menu).
-    ''' </summary>
-    Private Sub Tree_FooterLeftIconClicked(e As MouseEventArgs) Handles tree.FooterLeftIconClicked
+    ''' <summary>A press on one of the buttons. UI boundary: logs and swallows.</summary>
+    Public Sub RunRibbonButton(k_key As String) Implements IViewRibbon.RunRibbonButton
         Try
-            If _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
-            Dim info As AngajamentTreeInfo = _info
-            ' «Adauga rezervare» opens two entries (an empty revision / the existing indicators);
-            ' every other option is one entry. The key is the option's name, parsed back on click.
-            Dim intrari As New List(Of CustomPopupItem)()
-            For Each kv As KeyValuePair(Of RezervariMenuOption, String) In RezervariMenu.Intrari(_optiune)
-                intrari.Add(New CustomPopupItem(kv.Key.ToString(), kv.Value))
-            Next
-            Dim meniu As New CustomPopup(intrari)
-            AddHandler meniu.ItemClicked,
-                Sub(s As Object, ev As CustomPopupItemEventArgs)
-                    Try
-                        Dim optiune As RezervariMenuOption =
-                            [Enum].Parse(Of RezervariMenuOption)(ev.Item.Key)
-                        _actiuneMeniu(optiune, info)
-                    Catch ex As Exception
-                        GlobalErrorLog.Write("RezervariView.MeniuSubsol", ex)
-                    End Try
-                End Sub
-            meniu.ShowAtCursor(tree)
+            Select Case k_key
+                Case KEY_REPARA
+                    Repara()
+                Case KEY_GRAFIC
+                    OpenGrafic()
+                Case KEY_ADAUGA
+                    OpenAddMenu()
+                Case Else
+                    Throw New ArgumentException($"Buton de ribbon necunoscut pentru Rezervări: '{k_key}'.", NameOf(k_key))
+            End Select
         Catch ex As Exception
-            GlobalErrorLog.Write("RezervariView.Tree_FooterLeftIconClicked", ex)
+            GlobalErrorLog.Write("RezervariView.RunRibbonButton", ex)
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0081-02: «Adauga» opens a menu with the valid option only (operator, 25.09.2026: one button, a menu -- the pattern of
+    ''' the main form's options menu). It opens at the mouse, which is on the ribbon button that was pressed.
+    ''' </summary>
+    Private Sub OpenAddMenu()
+        If _actiuneMeniu Is Nothing OrElse _info Is Nothing Then Return
+        Dim info As AngajamentTreeInfo = _info
+        ' «Adauga rezervare» opens two entries (an empty revision / the existing indicators);
+        ' every other option is one entry. The key is the option's name, parsed back on click.
+        Dim intrari As New List(Of CustomPopupItem)()
+        For Each kv As KeyValuePair(Of RezervariMenuOption, String) In RezervariMenu.Intrari(_optiune)
+            intrari.Add(New CustomPopupItem(kv.Key.ToString(), kv.Value))
+        Next
+        If intrari.Count = 0 Then Return
+        Dim meniu As New CustomPopup(intrari)
+        AddHandler meniu.ItemClicked,
+            Sub(s As Object, ev As CustomPopupItemEventArgs)
+                Try
+                    Dim optiune As RezervariMenuOption =
+                        [Enum].Parse(Of RezervariMenuOption)(ev.Item.Key)
+                    _actiuneMeniu(optiune, info)
+                Catch ex As Exception
+                    GlobalErrorLog.Write("RezervariView.MeniuAdauga", ex)
+                End Try
+            End Sub
+        meniu.ShowAtCursor(Me)
     End Sub
 
     Public ReadOnly Property ViewKey As String Implements IAngajamentView.ViewKey
@@ -222,29 +256,22 @@ Public Class RezervariView
     End Property
 
     ''' <summary>
-    ''' Iconița din DREAPTA subsolului arborelui repară rezervările angajamentului selectat din
-    ''' istoricul lui (12.10.2026), în locul reîmprospătării din FOREXE (felia 0060, scoasă din vedere;
-    ''' calea veche rămâne în shell, neapelată de aici).
+    ''' Butonul «Repară...» din ribbon repară rezervările angajamentului selectat din istoricul lui (12.10.2026), în locul
+    ''' reîmprospătării din FOREXE (felia 0060, scoasă din vedere; calea veche rămâne în shell, neapelată de aici).
     ''' </summary>
     ''' <remarks>
     ''' <para>Shell-ul arată întâi ce s-ar schimba, cere confirmarea și abia apoi scrie; la
     ''' sfârșit reîncarcă arborele cu nodul păstrat, iar asta împinge singură contextul nou
     ''' încoace — vederea NU se reîncarcă de aici.</para>
     ''' </remarks>
-    Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
-        Try
-            If _repara Is Nothing Then Return
-            If String.IsNullOrWhiteSpace(_requestedCod) Then
-                KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
-                                "K-BOT — Rezervări", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
-            _repara(_requestedCod)
-        Catch ex As Exception
-            ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
-            ' ar cădea pe firul de UI.
-            GlobalErrorLog.Write("RezervariView.Tree_FooterRightIconClicked", ex)
-        End Try
+    Private Sub Repara()
+        If _repara Is Nothing Then Return
+        If String.IsNullOrWhiteSpace(_requestedCod) Then
+            KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
+                            "K-BOT — Rezervări", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        _repara(_requestedCod)
     End Sub
 
     ''' <summary>
@@ -507,8 +534,8 @@ Public Class RezervariView
     End Sub
 
     ''' <summary>
-    ''' Iconița din DREAPTA antetului arborelui deschide GRAFICUL rezervărilor (felia 0061-02) —
-    ''' același loc și același gest ca iconița din antetul recepțiilor.
+    ''' Butonul «Grafic» din ribbon deschide GRAFICUL rezervărilor (felia 0061-02; din 0114-15 din ribbon, nu din antetul
+    ''' arborelui) — același gest ca butonul «Asociază recepții» al recepțiilor.
     ''' </summary>
     ''' <remarks>
     ''' <para>Fereastra primește RÂNDURILE DEJA ÎNCĂRCATE, nu codul angajamentului: graficul și
@@ -518,7 +545,7 @@ Public Class RezervariView
     ''' două motive — niciun angajament ales și un angajament fără rezervări — cer răspunsuri
     ''' diferite.</para>
     ''' </remarks>
-    Private Async Sub tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+    Private Async Sub OpenGrafic()
         Try
             If String.IsNullOrWhiteSpace(_requestedCod) Then
                 KBotMessage.Show(Me, "Selectați întâi un angajament din arbore.",
@@ -538,7 +565,7 @@ Public Class RezervariView
         Catch ex As Exception
             ' Graniță de UI: se loghează și se înghite — un throw dintr-un tratator de eveniment
             ' ar cădea pe firul de UI.
-            GlobalErrorLog.Write("RezervariView.tree_HeaderRightIconClicked", ex)
+            GlobalErrorLog.Write("RezervariView.OpenGrafic", ex)
         End Try
     End Sub
 
@@ -687,11 +714,13 @@ Public Class RezervariView
         lblEmpty.Text = message
         lblEmpty.Visible = True
         split.Visible = False
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)   ' «Grafic» follows whether there is something to draw
     End Sub
 
     Private Sub ShowContent()
         lblEmpty.Visible = False
         split.Visible = True
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)
     End Sub
 
     ' ── Formatare / iconițe ──────────────────────────────────────────────────

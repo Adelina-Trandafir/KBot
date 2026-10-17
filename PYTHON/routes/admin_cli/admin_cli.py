@@ -33,6 +33,7 @@ Commands (all read-only unless marked WRITE):
     audit [--db D] [--un U] [--actions A,B] [--hours H] [--limit N]
     logs-meta                          the log files that exist
     logs [--file F] [--db D] [--gens G] [--since ISO] [--limit N]
+    logs-clear --keep all|day|week [--file F]    WRITE  empty the log files (all of them, or one), keeping nothing / the last day / the last week
     requests [--state S]               registration requests (InAsteptare, Esuata, Aprobata, Respinsa, toate)
     request --id N                     one request with the plan of its approval
     request-plan --id N [--db D] [--codes JSON]          the plan again, with the operator's edits
@@ -65,7 +66,7 @@ from datetime import datetime
 
 import mysql.connector
 
-from routes.admin_cli import admin_logs
+from routes.admin_cli import admin_logs, admin_logs_clear
 from routes.schema_sync.schema_common import (COMMON_DB, FORBIDDEN_TARGETS, SOURCE_DB, SchemaSyncError, connect,
                                               list_unit_databases)
 
@@ -792,6 +793,15 @@ def cmd_logs(args):
             "server_time": _iso(datetime.now())}
 
 
+def cmd_logs_clear(args):
+    try:
+        return admin_logs_clear.clear(args.keep, args.file or "")
+    except admin_logs_clear.ClearError as err:
+        raise AdminError(str(err))
+    except OSError as err:
+        raise AdminError("Jurnalele nu au putut fi golite: %s" % err)
+
+
 BACKUP_PLAN_DIR = "schema_diff"
 PLAN_SCAN_BYTES = 8 * 1024 * 1024      # how much of a schema plan is searched for the database name
 TEXT_MAX_BYTES = 2 * 1024 * 1024       # how much of a file the text view returns
@@ -1034,6 +1044,11 @@ def _parser():
     p.add_argument("--since", default="")
     p.add_argument("--limit", type=int, default=1500)
     p.set_defaults(fn=cmd_logs)
+
+    p = sub.add_parser("logs-clear")
+    p.add_argument("--keep", required=True, choices=("all", "day", "week"))
+    p.add_argument("--file", default="")
+    p.set_defaults(fn=cmd_logs_clear)
 
     sub.add_parser("once-history").set_defaults(fn=cmd_once_history)
 

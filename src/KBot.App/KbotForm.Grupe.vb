@@ -14,7 +14,8 @@ Imports KBot.Theming
 '''
 ''' <para><b>The menu.</b> The «Grupe» row of the tree options menu opens <c>menuGrupe</c> with the
 ''' groups in alphabetical order (each with a swatch icon and in its own colour), then a
-''' separator and «Editează grupe…», which opens the modal <see cref="GrupeForm"/>. The groups are
+''' (nothing after them: «Editează grupe…», which opens the modal <see cref="GrupeForm"/>, is the button of the shell's group in
+''' the ribbon since slice 0114-11, and the «Grupe» row is there only when a group exists, slice 0114-13). The groups are
 ''' read from the server every time the menu opens, so a group made on another PC shows at once.</para>
 '''
 ''' <para><b>The filter.</b> A chosen group narrows the tree to ITS angajamente only, each row
@@ -25,7 +26,6 @@ Imports KBot.Theming
 ''' </summary>
 Partial Public Class KbotForm
 
-    Private Const GRUPE_EDITEAZA As String = "grupe-editeaza"
     Private Const GRUPE_TOATE As String = "grupe-toate"
     Private Const GRUPA_PREFIX As String = "grupa-"
     Private Const TREE_HEADER_IMPLICIT As String = " LISTĂ ANGAJAMENTE"
@@ -48,6 +48,27 @@ Partial Public Class KbotForm
         If k_api Is Nothing Then Throw New InvalidOperationException("The API client does not implement IGrupeApi.")
         k_gate = New ReauthGate(Function(k_action) WithReauth(Of Object)(k_action))
         Return True
+    End Function
+
+    ''' <summary>
+    ''' True when the unit has at least one group (the «Grupe» row of the tree options menu is offered only then, slice 0114-13).
+    ''' No unit open, no API for groups or a failed read = False (logged; the menu simply has no row, nothing is shown to the operator).
+    ''' </summary>
+    Private Async Function ExistaGrupeAsync() As Task(Of Boolean)
+        Try
+            If String.IsNullOrWhiteSpace(_session.DbName) Then Return False
+            Dim k_api As IGrupeApi = TryCast(_apiClient, IGrupeApi)
+            If k_api Is Nothing Then Return False
+            Dim k_gate As New ReauthGate(Function(k_action) WithReauth(Of Object)(k_action))
+            Dim k_catalog As GrupeCatalog = Await k_gate.RunAsync(
+                Function() k_api.GetGrupeAsync(CancellationToken.None)).ConfigureAwait(True)
+            ' An active group may have been removed on another PC: the filter follows the server.
+            If Not IsDisposed Then ActualizeazaGrupaActiva(k_catalog)
+            Return k_catalog IsNot Nothing AndAlso k_catalog.Grupe.Count > 0
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ExistaGrupeAsync", ex)
+            Return False
+        End Try
     End Function
 
     Private Shared Function EscapeMeniu(k_text As String) As String
@@ -110,9 +131,6 @@ Partial Public Class KbotForm
                                                  If(k_active, "<b>" & k_name & "</b>", k_name), k_bmp) With {
                 .ForeColor = k_color, .Tag = k_g})
         Next
-        If menuGrupe.Items.Count > 0 Then menuGrupe.Items.Add(KBotMenuItem.Separator())
-        menuGrupe.Items.Add(New KBotMenuItem(GRUPE_EDITEAZA, "Editează grupe...",
-                                             My.Resources.Resources.Icojam_Blueberry_Basic_Options_2_32))
         For Each k_b As Bitmap In k_old
             k_b.Dispose()
         Next
@@ -141,9 +159,6 @@ Partial Public Class KbotForm
     Private Sub MenuGrupe_ItemClicked(sender As Object, e As KBotMenuItemClickedEventArgs) Handles menuGrupe.ItemClicked
         Try
             Select Case e.Key
-                Case GRUPE_EDITEAZA
-                    ' After the menus have closed: the modal window must not open under a live popup.
-                    BeginInvoke(New Action(AddressOf DeschideEditorulGrupe))
                 Case GRUPE_TOATE
                     _grupaActiva = Nothing
                     ReaplicaFiltruGrupa()
@@ -177,7 +192,7 @@ Partial Public Class KbotForm
     ''' read again - the chosen one may have changed - and the tree is reloaded, because the aliases
     ''' it shows come from the server. UI boundary: logs and shows.
     ''' </summary>
-    Private Async Sub DeschideEditorulGrupe()
+    Friend Async Sub DeschideEditorulGrupe()
         Try
             Dim k_api As IGrupeApi = Nothing
             Dim k_gate As ReauthGate = Nothing

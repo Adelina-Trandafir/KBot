@@ -61,10 +61,9 @@ part: header.right
 Iconița din dreapta antetului arborelui alege <b>modul de afișare</b>: «antet + operații» sau «operații + detalii». Funcționează ca în vederea «Extrase». Apasă «Înainte».
 
 ## Descărcarea din FOREXE
-<!-- slice: 000T-10 -->
-target: ExtraseForm.btnDescarca
-Butonul <b>«Descarcă extrasele din FOREXE»</b> aduce extrasele noi și le importă; lista se reîncarcă după import.<BR>
-<mark>Dacă nu există o sesiune FOREXE, K-BOT se conectează întâi.</mark> Apasă «Înainte».
+<!-- slice: 000T-10, 0114-08, 0114-09, 0000-90 -->
+Extrasele noi se aduc din <b>ribbon</b>, cu butonul <b>«Descarcă extrase»</b> din grupul din dreapta, lângă «Închide». Macheta nu mai are un buton de descărcare al ei.<BR>
+<mark>Dacă nu există o sesiune FOREXE, K-BOT se conectează întâi; lista se reîncarcă după import.</mark> Apasă «Înainte».
 
 ## Închide fereastra
 <!-- slice: 000T-10 -->

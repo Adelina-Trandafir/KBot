@@ -7,7 +7,7 @@ Imports KBot.Controls
 ' the form was authored at. Card: children in REVERSE dock order (Fill first, then Bottom, then Top).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class CabNoteForm
-    Inherits Global.KBot.Theming.KBotThemedForm
+    Inherits Global.KBot.Theming.KBotModalForm
 
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)

@@ -28,6 +28,9 @@ Partial Public Class KbotForm
             Dim view As IAngajamentView = Nothing
             If Not _views.TryGetValue(key, view) Then
                 view = CreateView(key)
+                ' Slice 0114-15: a view with buttons in the ribbon tells the window when they change.
+                Dim k_ribbonView As IViewRibbon = TryCast(view, IViewRibbon)
+                If k_ribbonView IsNot Nothing Then AddHandler k_ribbonView.RibbonStateChanged, AddressOf SumarPartnersAvailabilityChanged
                 Dim ctrl As System.Windows.Forms.Control = DirectCast(view, System.Windows.Forms.Control)
                 ctrl.Dock = DockStyle.Fill
                 ctrl.Visible = False
@@ -88,6 +91,18 @@ Partial Public Class KbotForm
         End Get
     End Property
 
+    ''' <summary>The view on screen when it has buttons in the ribbon's view group (slice 0114-15); Nothing otherwise.</summary>
+    Friend ReadOnly Property ActiveViewRibbon As IViewRibbon
+        Get
+            Return TryCast(_activeView, IViewRibbon)
+        End Get
+    End Property
+
+    ''' <summary>A press on a button of the ribbon's view group: the view on screen does what the button stands for.</summary>
+    Friend Sub RunViewRibbonButton(k_key As String)
+        ActiveViewRibbon?.RunRibbonButton(k_key)
+    End Sub
+
     ''' <summary>The ribbon's «Asociaza parteneri»: opens the popup of the «Sumar» view on screen.</summary>
     Friend Sub OpenSumarPartners()
         TryCast(_activeView, SumarView)?.OpenPartnersWindow()
@@ -138,10 +153,8 @@ Partial Public Class KbotForm
                 ' policy, one place where the editor opens.
                 Case "plati" : Return New PlatiView(_apiClient, Function(op) WithReauth(Of PlatiInfo)(op),
                                                     AddressOf ExecutaComandaOrd)
-                ' Slice 0080-02: the angajament's bank statements. Its footer icon downloads them
-                ' through the SAME DescarcaExtraseAsync as the «Extrase de cont» window.
-                Case "extrase" : Return New ExtraseView(_apiClient, Function(op) WithReauth(Of ExtraseInfo)(op),
-                                                        Function() DescarcaExtraseAsync(Me))
+                ' Slice 0080-02: the angajament's bank statements. The download is the ribbon button (no tree icon).
+                Case "extrase" : Return New ExtraseView(_apiClient, Function(op) WithReauth(Of ExtraseInfo)(op))
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session,
                                                 AddressOf ExecutaComandaDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,

@@ -32,6 +32,12 @@ Public NotInheritable Class KBotToolTipContent
     ''' <summary>Pictograma din subsol; <c>Nothing</c> = cea din stil.</summary>
     Public Property FooterIcon As Image = Nothing
 
+    ''' <summary>
+    ''' O poză sub corp (de pildă previzualizarea unei machete). <c>Nothing</c> = fără poză. Eticheta o desenează,
+    ''' o micșorează să încapă și NU o eliberează: poza e a celui care a cerut eticheta.
+    ''' </summary>
+    Public Property BodyImage As Image = Nothing
+
     ''' <summary>Stilul propriu al acestui conținut; <c>Nothing</c> = stilul componentei.</summary>
     Public Property Style As KBotToolTipStyle = Nothing
 
@@ -54,6 +60,7 @@ Public NotInheritable Class KBotToolTipContent
     ''' <summary>Are ceva de arătat? O etichetă complet goală nu se deschide.</summary>
     Friend Function IsEmpty(st As KBotToolTipStyle) As Boolean
         Return String.IsNullOrEmpty(Text) AndAlso
+               BodyImage Is Nothing AndAlso
                String.IsNullOrEmpty(EffectiveHeaderText(st)) AndAlso
                String.IsNullOrEmpty(EffectiveFooterText(st)) AndAlso
                EffectiveHeaderIcon(st) Is Nothing AndAlso
@@ -506,7 +513,8 @@ Public Class KBotToolTip
     ''' <summary>What the label SAYS, as one string — the key that tells it has changed.</summary>
     Private Shared Function FingerprintOf(content As KBotToolTipContent) As String
         If content Is Nothing Then Return Nothing
-        Return String.Concat(content.HeaderText, ChrW(1), content.Text, ChrW(1), content.FooterText)
+        Return String.Concat(content.HeaderText, ChrW(1), content.Text, ChrW(1), content.FooterText, ChrW(1),
+                             If(content.BodyImage Is Nothing, 0, System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(content.BodyImage)))
     End Function
 
     ' O singură fereastră per componentă, creată la prima afișare și moartă odată cu ea: la

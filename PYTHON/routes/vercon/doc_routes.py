@@ -148,6 +148,8 @@ def register(bp, guard, scoped, open_db):
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
             out = backend(family).lookups(cursor, ctx, family)
+            if family in ('nir', 'storno', 'bc'):
+                out['warehouse_statement_cache'] = receipt_context.cache_settings()
             if family == 'nir' and not isinstance(out.get('products'), list):
                 out['products'] = receipt_choices.products(cursor, ctx['subunit'], ctx['gestiune'])
         out.update({'scale': ctx['scale'], 'zec': ctx['zec'], 'year': ctx['an'], 'closed': ctx['closed'], 'today': datetime.now().strftime('%Y-%m-%d')})
@@ -173,15 +175,17 @@ def register(bp, guard, scoped, open_db):
         return {'level': level, 'items': items, 'year': ctx['an'], 'closed': ctx['closed'], 'scale': ctx['scale'], 'zec': ctx['zec'],
                 'can_write': RIGHT['nir'] in g.vercon_operations}
 
-    @bp.get('/api/vercon/doc/nir/number')
+    @bp.get('/api/vercon/doc/<family>/number')
     @guard('read')
-    def receipt_number_check():
-        _need('nir')
+    def receipt_number_check(family):
+        if family not in ('nir', 'storno'):
+            raise NomError('FAMILY_UNKNOWN', 'Acest document nu folosește seria NIR/FCS.', 404)
+        _need(family)
         vctx = scoped('read')
         exclude = documents._int(request.args.get('exclude'))
         with session(False) as cursor:
-            ctx, _ = build(cursor, vctx, 'nir', False)
-            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'))
+            ctx, _ = build(cursor, vctx, family, False)
+            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'), insert=family == 'storno')
 
     @bp.get('/api/vercon/doc/<family>/sources')
     @guard('read')
@@ -193,7 +197,12 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
-            rows = documents.list_documents(cursor, ctx, 'nir' if family == 'storno' else 'bc')
+            if family == 'storno':
+                from .storno_stock import sources
+                on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data FCS')
+                rows = sources(cursor, ctx, on, documents._int(request.args.get('exclude')))
+            else:
+                rows = documents.list_documents(cursor, ctx, 'bc')
         return {'documents': [r for r in rows if not r['annulled']]}
 
     @bp.get('/api/vercon/doc/<family>/eligible')
@@ -219,7 +228,8 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
-            lines = documents.storno_eligible(cursor, ctx, source, exclude) if family == 'storno' else documents.return_eligible(cursor, ctx, source, exclude)
+            on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data FCS') if family == 'storno' else None
+            lines = documents.storno_eligible(cursor, ctx, source, exclude, on) if family == 'storno' else documents.return_eligible(cursor, ctx, source, exclude)
         return {'lines': lines}
 
     @bp.get('/api/vercon/doc/<family>/<int:doc_id>')
@@ -348,7 +358,7 @@ def register(bp, guard, scoped, open_db):
         with session(True) as cursor:
             ctx, exercise = build(cursor, vctx, family, True)
             key = str(data.get('request_key') or '')[:64]
-            fp = protocol.fingerprint('edit', family, doc_id, data.get('version'), data.get('header'), data.get('lines'))
+            fp = protocol.fingerprint('edit', family, doc_id, data.get('version'), data.get('source'), data.get('header'), data.get('lines'))
             replay = protocol.replayed(cursor, ctx, key, fp) if key else None
             result = replay if replay is not None else edit_fn(family)(cursor, repo_of(cursor, ctx), ctx, exercise, doc_id, data, request_id())
             if key and replay is None:

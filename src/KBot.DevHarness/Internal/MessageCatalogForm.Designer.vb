@@ -3,7 +3,7 @@ Imports KBot.Controls
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class MessageCatalogForm
-    Inherits KBot.Theming.KBotThemedForm
+    Inherits KBot.Theming.KBotModalForm
 
     ' Debug bench for the message boxes: the grid on the left lists EVERY message box of the
     ' application (Config\mesaje_catalog.json); the panel on the right edits the selected one.

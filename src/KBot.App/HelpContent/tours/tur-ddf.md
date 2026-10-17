@@ -10,11 +10,10 @@ target: KbotForm.btnMeniu
 Un angajament NOU pornește din MENIU › Adăugare angajamente... › Angajament nou. O rezervare nouă pe un angajament existent pornește din vederea «Rezervări».
 
 ## Adaugă rezervare
-<!-- slice: 0081-02, 0081-04, 0000-23, 0000-27, 0000-30 -->
+<!-- slice: 0081-02, 0081-04, 0000-23, 0000-27, 0000-30, 0114-15, 0000-91 -->
 target: RezervariView.tree
-part: footer.left
 goto: view:rezervari
-Iconița din stânga, jos, a arborelui rezervărilor deschide acțiunile documentului potrivite stării angajamentului: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final. Ea apare doar când în arbore nu mai e nicio rezervare cu «+»: un «+» înseamnă o rezervare de adus din FOREXE în K-BOT, iar până o adaugi, iconița rămâne ascunsă. Ca să apară, apeși «+» pe rezervările care îl au.
+Butonul din ribbon, din grupul «Rezervări» (în dreapta), deschide acțiunile documentului potrivite stării angajamentului: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final (butonul își ia numele de la ce se poate face acum). El apare doar când în arbore nu mai e nicio rezervare cu «+»: un «+» înseamnă o rezervare de adus din FOREXE în K-BOT, iar până o adaugi, butonul rămâne ascuns. Ca să apară, apeși «+» pe rezervările care îl au.
 
 ## Reviziile documentului
 <!-- slice: 0081-01, 0097, 0000-15 -->

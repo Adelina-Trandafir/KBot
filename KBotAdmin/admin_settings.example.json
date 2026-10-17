@@ -8,5 +8,7 @@
   "HostKeyFingerprint": "",
   "LocalRoot": "",
   "PreserveMTime": true,
-  "ApiBaseUrl": "https://kbot.avatarsoft.ro"
+  "ApiBaseUrl": "https://kbot.avatarsoft.ro",
+  "IgnorePatterns": [".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj", "*.sql", "AGENTS.md", "CLAUDE.md"],
+  "IncludeExtensions": ["cfg", "css", "html", "ico", "ini", "jpg", "js", "json", "md", "png", "py", "sql", "svg", "toml", "txt", "webp", "xml", "yaml", "yml"]
 }

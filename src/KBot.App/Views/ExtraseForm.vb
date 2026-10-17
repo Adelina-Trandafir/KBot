@@ -12,8 +12,8 @@ Imports KBot.Theming
 ''' database -- headers with or without an angajament, operations with CodContract, with only
 ''' CodContract, or with neither (those stand for something other than an angajament). Opened
 ''' standalone (modeless) from «Meniu → Extrase» (slice 0095-02; before that, modal from the
-''' left icon of the main tree's footer, which downloads directly again); the download is the
-''' button in this window's footer.
+''' left icon of the main tree's footer); the download is the «Descarca extrase» button of the ribbon, in the group
+''' of this window (slice 0114-08: the window has no download button of its own any more).
 '''
 ''' <para>Data from GET /api/forexe/extrase/lista (no <c>cod</c>), through the shell's re-login
 ''' net. The body is <see cref="ExtrasePanel"/> in <see cref="ExtrasePanelMode.Toate"/> mode,
@@ -23,19 +23,15 @@ Public Class ExtraseForm
 
     Private ReadOnly _apiClient As IApiClient
     Private ReadOnly _withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo))
-    Private ReadOnly _descarca As Func(Of IWin32Window, Task(Of Boolean))
     Private _loading As Boolean
 
     Public Sub New(apiClient As IApiClient,
-                   withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo)),
-                   descarca As Func(Of IWin32Window, Task(Of Boolean)))
+                   withReauth As Func(Of Func(Of Task(Of ExtraseInfo)), Task(Of ExtraseInfo)))
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
-        ArgumentNullException.ThrowIfNull(descarca)
         InitializeComponent()
         _apiClient = apiClient
         _withReauth = withReauth
-        _descarca = descarca
     End Sub
 
     Private Sub ExtraseForm_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -60,7 +56,7 @@ Public Class ExtraseForm
             If IsDisposed Then Return
             If data Is Nothing OrElse (data.Antete.Count = 0 AndAlso data.Operatiuni.Count = 0) Then
                 panel.ClearData()
-                ShowEmpty("Baza nu are extrase de cont. «Descarcă extrasele din FOREXE» le aduce.")
+                ShowEmpty("Baza nu are extrase de cont. «Descarcă extrase», din ribbon, le aduce din FOREXE.")
                 SetStatus(String.Empty)
                 Return
             End If
@@ -83,23 +79,13 @@ Public Class ExtraseForm
         End Try
     End Sub
 
-    ' The real download button: the shell's download + import, then reload when anything came in.
-    Private Async Sub BtnDescarca_Click(sender As Object, e As EventArgs) Handles btnDescarca.Click
+    ''' <summary>Reads the statements again (after the ribbon's «Descarca extrase» imported something).</summary>
+    Friend Sub Reincarca()
         Try
-            SetBusy(True)
-            SetStatus("Se descarcă extrasele din FOREXE…")
-            Dim importat As Boolean
-            Try
-                importat = Await _descarca(Me).ConfigureAwait(True)
-            Finally
-                If Not IsDisposed Then SetBusy(False)
-            End Try
-            If IsDisposed Then Return
-            SetStatus(String.Empty)
-            If importat Then LoadAsync()
+            If Not IsDisposed Then LoadAsync()
         Catch ex As Exception
-            ' UI boundary (async Sub): the shell already told the operator what failed.
-            GlobalErrorLog.Write("ExtraseForm.BtnDescarca_Click", ex)
+            GlobalErrorLog.Write("ExtraseForm.Reincarca", ex)
+            Throw
         End Try
     End Sub
 
@@ -117,7 +103,6 @@ Public Class ExtraseForm
     End Sub
 
     Private Sub SetBusy(busy As Boolean)
-        btnDescarca.Enabled = Not busy
         UseWaitCursor = busy
     End Sub
 
@@ -149,7 +134,6 @@ Public Class ExtraseForm
             lblEmpty.ForeColor = p.TextDimColor
             lblEmpty.BackColor = p.SurfaceAltColor
             lblStare.ForeColor = p.TextDimColor
-            ButtonStyles.ApplyPrimary(btnDescarca, scheme)
             ButtonStyles.ApplySecondary(btnInchide, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("ExtraseForm.OnThemeChanged", ex)

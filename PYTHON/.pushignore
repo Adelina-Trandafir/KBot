@@ -10,6 +10,8 @@
 #
 # Ultima regulă care se potrivește câștigă, deci o negație se pune DUPĂ
 # regula pe care o desface.
+# O includere explicită (!) are prioritate și față de filtrul de extensii
+# din KBotAdmin/AvacontPush; nu bifează global extensia în setări.
 
 # Rezultatele lui schema_sync — se generează pe server, la fiecare rulare
 schema_diff/
@@ -27,6 +29,13 @@ _push/
 
 # Configurări de rapoarte salvate de proprietar; nu se suprascriu la publicare.
 /instance/vercon-reports/
+
+# Resurse de rulare ale rapoartelor, nu scripturi de instalare a bazei.
+# Se includ explicit chiar dacă filtrul general exclude SQL sau fonturi.
+!/reports/vercon/queries/*.sql
+!/static/fonts/DejaVuSans.ttf
+!/static/fonts/DejaVuSansMono*.ttf
+!/static/fonts/LICENSE-DejaVu.txt
 
 # Fișiere locale de lucru
 .vs/

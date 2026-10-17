@@ -26,7 +26,7 @@ Două drumuri:
 - **Din vederea Ordonanțare** — «Adaugă ordonanțare…» (clic dreapta pe un rând deja ales) sau iconița «Adaugă» din
   subsolul arborelui. K-BOT întreabă întâi **ziua**:
 
-<!-- capture: ord-ziua | caption: Fereastra «Ordonanțare nouă» — alegerea zilei | goto: view:ord | prepare: Clic dreapta pe arborele ordonanțărilor › «Adaugă ordonanțare…». -->
+<!-- capture: ord-ziua | caption: Fereastra «Ordonanțare nouă» — alegerea zilei | goto: view:ord | prepare: Clic dreapta pe arborele ordonanțărilor › «Adaugă ordonanțare…». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 Alegi ziua și apeși **«Generează»**. K-BOT pregătește ordonanțarea din plățile zilei și o
 deschide în [editor](topic:contabil.ord.editor). **Nimic nu se scrie până nu apeși «Salvează

@@ -11,7 +11,7 @@ open: view:ord
 <!-- slice: 0033, 0041, 0099, 0101 -->
 Ordonanțările de plată ale angajamentului, cu documentul fiecăreia.
 
-<!-- capture: ord | caption: Vederea «Ordonanțare» | goto: view:ord | prepare: Selectați un angajament care are ordonanțări, apoi o ordonanțare din arbore. -->
+<!-- capture: ord | caption: Vederea «Ordonanțare» | goto: view:ord | prepare: Selectați un angajament care are ordonanțări, apoi o ordonanțare din arbore. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 - **Arborele** listează ordonanțările pe luni, cu data și totalul fiecăreia, sub rădăcina
   **«Toate ordonanțările»** (clic pe ea = toate rândurile angajamentului).
@@ -63,14 +63,14 @@ Când dai clic pe o **lună** sau pe **«Toate ordonanțările»**, bara cu pagi
 | **Listat** | bifat dacă documentul a fost tipărit măcar o dată |
 | **Nr. tipăriri** | de câte ori a fost tipărit |
 
-<!-- capture: ord-lista-tiparire | caption: Lista de tipărire a ordonanțărilor, pe «Toate ordonanțările» | goto: view:ord | prepare: Selectați un angajament cu mai multe ordonanțări, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate ordonanțările», apoi pe pagina «Documente». -->
+<!-- capture: ord-lista-tiparire | caption: Lista de tipărire a ordonanțărilor, pe «Toate ordonanțările» | goto: view:ord | prepare: Selectați un angajament cu mai multe ordonanțări, unele semnate și tipărite, altele nu; clic pe rădăcina «Toate ordonanțările», apoi pe pagina «Documente». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 Iconița din capul coloanei cu bife deschide un meniu:
 
 - **«Selectează / deselectează toate»** — bifează toate rândurile, sau le debifează dacă erau toate bifate;
 - **«Selectează / deselectează doar cele nelistate»** — la fel, dar doar pe rândurile cu 0 tipăriri; cele deja listate rămân cum erau.
 
-<!-- capture: ord-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ord | prepare: Pe pagina «Documente» a rădăcinii «Toate ordonanțările», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. -->
+<!-- capture: ord-lista-meniu | caption: Meniul din capul coloanei cu bife | goto: view:ord | prepare: Pe pagina «Documente» a rădăcinii «Toate ordonanțările», apăsați iconița din capul coloanei cu bife și țineți meniul deschis. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 Jos sunt două butoane, care lucrează pe rândurile **bifate**:
 
@@ -98,9 +98,9 @@ Pe pagina **Document**:
   «Generează» pe o ordonanțare semnată răspunde «Documentul are cel puțin o semnătură, deci nu se
   mai generează din nou.»
 
-<!-- capture: ord-document | caption: Pagina «Document» a unei ordonanțări semnate | goto: view:ord | prepare: Selectați o ordonanțare semnată din arbore și deschideți pagina «Document». -->
+<!-- capture: ord-document | caption: Pagina «Document» a unei ordonanțări semnate | goto: view:ord | prepare: Selectați o ordonanțare semnată din arbore și deschideți pagina «Document». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
-<!-- capture: ord-semnaturi | caption: Semnăturile ordonanțării, în josul documentului | goto: view:ord | prepare: Selectați o ordonanțare semnată și deschideți pagina «Document»; derulați la semnături. -->
+<!-- capture: ord-semnaturi | caption: Semnăturile ordonanțării, în josul documentului | goto: view:ord | prepare: Selectați o ordonanțare semnată și deschideți pagina «Document»; derulați la semnături. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 
 ### Pașii în Adobe

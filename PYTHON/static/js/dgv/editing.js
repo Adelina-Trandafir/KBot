@@ -185,13 +185,18 @@ export const editing = {
       }, { capture: true, signal: state.abort.signal });
     } else if (column.editor === 'list') {
       const items = typeof column.options === 'function' ? column.options(row) : (column.options || []);
-      state.combo = new Combobox(host, { staticData: items, readonly: !column.searchable, showArrow: column.showArrow, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth,
+      // allowCustom keeps typed text as the value; other list editors still require a selection.
+      state.combo = new Combobox(host, { staticData: items, readonly: !(column.searchable || column.allowCustom), autoHighlightMatch: !column.allowCustom, showArrow: column.showArrow, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth,
         onSearch: column.onSearch ? (query) => column.onSearch(query, row) : async (query) => items.filter((item) => String(item.label || item.text || '').toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
         onSelect: (value) => { state.raw = value; state.value = value; markRequired(); } });
       const selected = items.find((item) => String(item.value) === String(row[key]));
       state.combo.setValue(row[key], selected?.label ?? selected?.text ?? String(row[key] ?? ''));
       state.input = state.combo.input;
-      if (column.searchable) state.input.addEventListener('input', () => { state.value = null; markRequired(); }, { signal: state.abort.signal });
+      if (column.searchable || column.allowCustom) state.input.addEventListener('input', () => {
+        state.raw = state.input.value;
+        state.value = column.allowCustom ? state.raw : null;
+        markRequired();
+      }, { signal: state.abort.signal });
     } else {
       state.input = document.createElement('input');
       state.input.type = column.editor === 'checkbox' ? 'checkbox' : column.editor === 'date' ? 'date' : 'text';
@@ -279,6 +284,15 @@ export const editing = {
   },
   async commitEdit(direction = 0) {
     const state = this._edit;
+    if (!state) return false;
+    // Blur and a form's Save may confirm the same cell concurrently. Both await
+    // the same operation instead of treating an in-flight confirmation as a failure.
+    const task = state.commitPromise ||= Promise.resolve().then(() => this._commitEdit(state, direction));
+    try { return await task; }
+    finally { if (state.commitPromise === task) state.commitPromise = null; }
+  },
+  async _commitEdit(state, direction) {
+    if (this._destroyed || this._edit !== state) return false;
     if (!state || state.pending) return false;
     try {
       if (state.picker) {
@@ -291,6 +305,7 @@ export const editing = {
       let value;
       try {
         value = state.column.editor === 'checkbox' ? state.input.checked
+          : state.column.editor === 'list' && state.column.allowCustom ? parseCell(String(state.value ?? ''), state.column)
           : ['list', 'tree'].includes(state.column.editor) ? state.value
           : state.initialText !== undefined && state.input.value === state.initialText ? state.value
           : parseCell(String(state.raw), state.column);

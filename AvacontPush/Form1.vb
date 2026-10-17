@@ -163,8 +163,9 @@ Partial Public Class Form1
                 Continue For
             End If
 
-            ' Push only allowed source/config extensions (py, json, xml, ...); skip the rest.
-            If Not IsIncludedExtension(rel, _settings.IncludeExtensions) Then Continue For
+            ' An explicit !path in .pushignore includes runtime assets even when their extension is unchecked.
+            Dim explicitlyIncluded As Boolean = ruled.HasValue AndAlso Not ruled.Value
+            If Not explicitlyIncluded AndAlso Not IsIncludedExtension(rel, _settings.IncludeExtensions) Then Continue For
 
             Dim relRemote = rel.Replace("\"c, "/"c)
             Dim remotePath = remoteRoot & "/" & relRemote

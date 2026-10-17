@@ -9,11 +9,17 @@ host-key: descarcare-angajamente-noi
 <!-- slice: 000T-10 -->
 
 ## Iconița din dreapta jos
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 0114-12, 0000-90 -->
 target: KbotForm.tree
 part: footer.right
 wait: click
-Apasă <b>iconița de reîmprospătare</b> din dreapta jos, sub lista de angajamente. K-BOT citește din FOREXE lista angajamentelor curente.<BR>
+Apasă <b>iconița de reîmprospătare</b> din dreapta jos, sub lista de angajamente (sau textul «Actualizează» de lângă ea). Se deschide un meniu mic, deasupra ei.
+
+## «Descarcă angajamente NOI»
+<!-- slice: 0114-12, 0000-90 -->
+anchor: popup.noi
+wait: signal:footer-menu:noi
+Alege <b>«Descarcă angajamente NOI»</b>. K-BOT citește din FOREXE lista angajamentelor curente.<BR>
 <mark>Cele noi se adaugă goale, doar cu antetul (fără indicatori, recepții sau plăți); cele existente rămân neatinse. Se trece prin «Coada robotului», dacă mai e o lucrare în curs.</mark>
 
 ## Urmărește progresul
