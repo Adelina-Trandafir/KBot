@@ -19,7 +19,12 @@ Friend NotInheritable Class VrcReportHtml
         Dim k_body = Markdown.ToHtml(PrepareMarkdown(k_report), Pipeline)
         ' Report values are text. Images in their Markdown must never request external content.
         k_body = Regex.Replace(k_body, "<img\b[^>]*>", String.Empty, RegexOptions.IgnoreCase)
-        k_body = Regex.Replace(k_body, "<a\b[^>]*>|</a>", String.Empty, RegexOptions.IgnoreCase)
+        ' Only «open folder» links (file:///) stay; every other link keeps its text and loses the address.
+        k_body = Regex.Replace(k_body, "<a\b([^>]*)>(.*?)</a>",
+                               Function(k_m As Match) As String
+                                   Dim k_href = Regex.Match(k_m.Groups(1).Value, "href=""(file:///[^""]*)""", RegexOptions.IgnoreCase)
+                                   Return If(k_href.Success, $"<a href=""{k_href.Groups(1).Value}"">{k_m.Groups(2).Value}</a>", k_m.Groups(2).Value)
+                               End Function, RegexOptions.IgnoreCase Or RegexOptions.Singleline)
         k_body = k_body.Replace("<h2>BLOCAJE", "<h2 class=""blocking"">BLOCAJE").
                         Replace("<h2>AVERTIZĂRI", "<h2 class=""warning"">AVERTIZĂRI").
                         Replace("<h2>SERVER — gata", "<h2 class=""success"">SERVER — gata")

@@ -55,7 +55,7 @@ Public NotInheritable Class VrcProfiler
     ''' <summary>Profiles one file. A read problem is returned in <see cref="VrcFileProfile.ReadError"/>, not thrown.</summary>
     Public Shared Function Profile(k_source As VrcSourceFile, k_progress As Action(Of String)) As VrcFileProfile
         Dim k_path As String = k_source.Path
-        Dim k_profile As New VrcFileProfile() With {.FileName = Path.GetFileName(k_path), .Kind = k_source.Kind, .Year = k_source.Year}
+        Dim k_profile As New VrcFileProfile() With {.FileName = Path.GetFileName(k_path), .FullPath = k_path, .Kind = k_source.Kind, .Year = k_source.Year}
         Try
             k_progress?.Invoke($"{k_profile.FileName}: hash…")
             k_profile.SizeBytes = New FileInfo(k_path).Length

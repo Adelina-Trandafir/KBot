@@ -141,6 +141,14 @@ def default(spec):
         else:
             groups = ['party'] if name != 'Referat_periodic_produs' else []
             signs = ['ÎNTOCMIT,\nResponsabil achiziții', 'VIZĂ CFP']
+    elif kind == 'depreciation':
+        columns = [NAME, col('code', 'Nr. inventar', 1.2), col('start_date', 'Prima predare', 1, 'date'),
+                   col('used_months', 'Luni folosite', .7, 'int'), col('remaining_months', 'Luni rămase', .7, 'int'),
+                   money('value', 'Valoare variantă'), money('monthly', 'Valoare lunară'),
+                   money('month_depreciation', 'Amortizare lună'), money('accumulated', 'Amortizare cumulată'),
+                   money('remaining', 'Valoare rămasă'), col('status', 'Stare', 1.3),
+                   col('issues_text', 'Observații', 2)]
+        groups, totals = [], []
     elif kind == 'food':
         columns, groups, totals = [], [], []
     if spec.get('ledger') == 'custody':
@@ -178,7 +186,7 @@ def default(spec):
         'font_size': 8,
         'title_size': 16 if kind == 'documents' and spec.get('family') == 'nir' else 15,
         'form': 'nir-classic' if kind == 'documents' and spec.get('family') == 'nir' else 'generic',
-        'landscape': kind in ('balance', 'inventory', 'product'),
+        'landscape': kind in ('balance', 'inventory', 'product', 'depreciation'),
         'table_width': 1, 'columns': columns, 'groups': groups, 'totals': totals, 'headers': headers,
         'signatures': signs, 'elements': [], 'sections': food_sections() if kind == 'food' else {},
         'reference': 'VERCON/FLUXURI_UI.md — Predare, transfer și casare OI/MF' if spec.get('ledger') == 'custody' or spec.get('family') in ('bp', 'bt', 'bs') else 'CAPTURI_RAPOARTE/Magazie-Alimente',
@@ -188,7 +196,9 @@ def default(spec):
                    'inventory', 'actual', 'plus', 'minus', 'value_plus', 'value_minus', 'inventory_value', 'loss_value', 'loss_quantity',
                    'control', 'signature', 'meal', 'portions', 'allocation', 'distributed', 'period', 'economy', 'overrun', 'Explicatie', 'receiver', 'md', 'd', 'c',
                    'warehouse_account', 'giver_name', 'entries', 'transfers_in', 'transfers_out', 'scrapping',
-                   'entries_value', 'transfers_in_value', 'transfers_out_value', 'scrapping_value']})
+                   'entries_value', 'transfers_in_value', 'transfers_out_value', 'scrapping_value',
+                   'start_date', 'used_months', 'remaining_months', 'monthly', 'month_depreciation',
+                   'accumulated', 'remaining', 'status', 'issues_text']})
 
 
 def unit_default(unit):

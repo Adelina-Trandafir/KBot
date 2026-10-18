@@ -1,4 +1,24 @@
-# VRC.Migrator — utilizare (SLICE-VC05-01)
+# VRC.Migrator — utilizare
+
+## Revizie OI/MF și ToolVersion — 18.10.2026
+
+Versiune în surse: **0.3.7.0**. [Contractul registrului OI/MF](../REGISTRU_OI_MF.md)
+documentează decizia confirmată și exemplul predare → transfer → casare.
+ID-urile interne P/T/C au un contor comun pe gestiune; `OI_Produse.IDBC`
+identifică bonul curent pentru toate familiile, iar `IDBO` identifică
+proveniența BP/BT numai la transfer/casare. Marcajele `IDBP`/`IDBT` se
+completează numai pentru familia lor. Generatorul mapării păstrează aceste reguli.
+
+`VC_Imports.ToolVersion` primește versiunea executabilului din FileVersionInfo,
+fără concatenarea numelui și a identificatorului lung al regulilor care a
+provocat eroarea «Data too long». Regula completă rămâne în rezumat și în
+manifest/hash. **Nu este necesară schimbarea schemei pentru această revizie.**
+
+Migratorul trebuie recompilat înainte de reluarea importului. Corecția nu
+repară retroactiv date deja migrate cu maparea veche. Stare: implementat
+în surse, fără build, teste sau import rulate de asistent după corecție.
+
+## Context și profilare
 
 **Clarificare VC06-06, 16.10.2026:** noile decizii de interfață NIR nu cer
 adaptarea importului Access la mai multe conturi pe document. Sursa veche are
@@ -8,12 +28,13 @@ antetului într-o coloană nouă a liniei și nu se reunesc documente istorice
 pentru noul flux. Această clarificare nu retrage infrastructura comună de
 schemă implementată anterior. [Decizii D09–D11](../DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
 
-Utilitar Windows separat pentru transferul **unic** Access → MariaDB al unei subunități VERCON. În această felie știe
-doar să **citească și să profileze**; planul, testarea și migrarea vin cu VC05-02/03.
+Utilitar Windows separat pentru citirea, profilarea și transferul **unic**
+Access → MariaDB al subunităților VERCON. Descrierea profilării provine din
+VC05-01; fluxul de planificare și transfer este descris în secțiunea Transferul.
 
 ## Ce face
 
-- Deschide fiecare bază **doar în mod citire** (`Mode=Read`); nu scrie nimic în Access, nu creează tabelul `Ver`, nu atinge MariaDB.
+- Profilarea deschide fiecare bază **doar în mod citire** (`Mode=Read`); nu scrie nimic în Access, nu creează tabelul `Ver` și nu scrie în MariaDB. Transferul în MariaDB este o operație separată, descrisă mai jos.
 - Calculează SHA-256 înainte și după citire: dacă diferă, raportul spune că fișierul s-a schimbat (se recitește pe o copie).
 - Pentru fiecare tabel așteptat: rânduri, coloane **lipsă** (absentă ≠ NULL) și coloane în plus; pentru coloanele numerice: valori, NULL, zero, negative, minim, maxim și zecimalele necesare.
 - Numără antetele NIR / bon de consum față de suma liniilor (N01/N02): antet 0, NULL, diferență > 1 leu. Nu modifică nimic.
@@ -37,7 +58,7 @@ x64, ca restul migratoarelor (furnizorul ACE este doar pe 64 de biți pe aceste 
 
 Nerulat pe baze reale. Pașii:
 
-1. După **Citește bifatele** apare planul: pe fiecare fișier alegeți **gestiunea** (denumire), **tipul** (MATERIALE, ALIMENTE, OI, MF) și **anul** exercițiului; completați **subunitatea** (propusă din UNIT.NumeUnitate al fișierelor; dacă diferă, se ia ultima găsită; o puteți modifica) și serverul. Propunerile vin din nume și steaguri, nu sunt aprobări. **Verifică planul** arată motivele concrete de blocare; **Exportă planul** salvează JSON (fără parole).
+1. După **Citește bifatele** apare planul: pe fiecare fișier alegeți **gestiunea** (denumire), **tipul** (MATERIALE, ALIMENTE, OI, MF) și **anul** exercițiului; **subunitatea** se alege **pe fiecare fișier** (coloana «Subunitate», propusă din UNIT.NumeUnitate al fișierului; o puteți modifica), deci un singur transfer poate duce mai multe subunități, fiecare cu propriile Alimente / Materiale / OI / MF (ZEC se alege tot pe subunitate); apoi serverul. Propunerile vin din nume și steaguri, nu sunt aprobări. **Verifică planul** arată motivele concrete de blocare; **Exportă planul** salvează JSON (fără parole).
 2. **Testează** verifică baza DC (din UNIT.DC), tabelele VC_* cu coloanele scrise, InnoDB și utf8mb3_general_ci, subunitatea nouă și furnizorii fără partener KBOT. Orice modificare a planului cere retestare.
    **Parteneri ANAF…** (opțional, după avertismentul cu furnizori fără partener): pentru fiecare cod fiscal lipsă se interoghează ANAF (v9, câte 100 de coduri pe cerere), operatorul bifează per furnizor sursa-sector (una sau mai multe; click pe titlul coloanei bifează tot) și «Pregătește pentru transfer» reține partenerii în plan. Nu se scrie nimic în DC din fereastră: **«Migrează» îi inserează în `Parteneri` pe aceeași tranzacție cu transferul**, deci dacă transferul eșuează sau este oprit nu rămâne niciunul. Un cod fiscal = un singur partener în DC; `IdUnitate` = cea mai mică unitate dintre SS bifate, `CodPartener` = următorul număr liber (minim 3 cifre) din acel SS, `Tip` = 1, `Provenienta` = `MIGRARE_VERCON` (coloană nouă în `Parteneri`: rulați întâi `sql/Parteneri_Provenienta.sql` pe AVACONT_SURSA și sincronizați DC-urile). Lista pregătită se pierde la alegerea altui folder / citirea altor fișiere. Raportul de migrare are secțiunea «Parteneri din ANAF».
 3. **Migrează** face tot transferul într-o tranzacție: nimic nu e vizibil înainte de COMMIT. **Oprește** anulează înainte de COMMIT. După COMMIT subunitatea nu mai poate fi importată (VC_Imports unic pe subunitate); nu există reimport.
@@ -129,3 +150,20 @@ Completează nomenclatorul din TIP și corectează referințele celor trei mese,
 fără ștergerea înregistrărilor existente sau modificarea schemei.
 
 Nu s-au executat SQL-uri, importuri, compilări sau teste pentru această revizie.
+
+## Contul lotului OI/MF până la casare — revizie 18.10.2026
+
+În 0.3.8.0, contul se moștenește din primirea BP în OI_Produse, urmărind
+IDBO prin eventualele transferuri succesive. Conturile TC greșite din
+Access sunt corectate în OI_Produse.IDM și în OI_Transfer/OI_Casare.IdMasina
+înaintea scrierii în țintă. Nu se schimbă Access, cantitățile, prețurile,
+valorile, semnele sau identificatorii bonurilor. Conturile BP distincte nu
+se cumulează. Ciclurile, sursele lipsă și proveniențele care duc la conturi
+diferite sunt blocaje X16. Conversiile N13 păstrează originalul și contul
+țintă, cu explicația contului de proveniență din sursă.
+
+Regula planului: VC05-OI-ACCOUNT-LINEAGE-2026-10-18.
+Referință: ../REGISTRU_OI_MF.md. Schimbarea cere recompilarea migratorului
+pentru importurile viitoare. Aplicația Python folosește deja aceeași
+moștenire la citirea datelor existente, fără UPDATE automat. Nu s-au rulat
+build, teste, importuri sau SQL pentru această revizie.

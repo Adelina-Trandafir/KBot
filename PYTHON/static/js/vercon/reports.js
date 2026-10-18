@@ -4,34 +4,33 @@ import { mountSelection, selectionFilters, selectionError } from './report-selec
 import { paintReportBlock, reportNodes } from './report-result.js';
 import { downloadFile } from './pdf-preview.js';
 import { format as formatField } from './fields.js';
+import { reportPeriod } from './report-period.js';
 
-const months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
-const endOfMonth = (year, month) => new Date(Date.UTC(year, month + 1, 0)).toISOString().slice(0, 10);
-
-export function mountReports(host, { api, sel }) {
+export function mountReports(host, { api, sel, reportName = null }) {
   const owner = scope(), selectionOwner = scope(), tablesOwner = scope();
   owner.own(() => selectionOwner.clear()); owner.own(() => tablesOwner.clear());
   const year = Number(sel().year);
-  const history = sel().type === 'OI';
+  const dateOnly = reportName === 'Amortizare';
   const state = { start: `${year}-01-01`, end: `${year}-12-31`, name: null, label: '', spec: null,
-    checked: [], documents: [], model: null, seq: 0, lookupSeq: 0, destroyed: false, loading: false, busy: false };
+    checked: [], documents: [], model: null, seq: 0, lookupSeq: 0, destroyed: false, loading: false, selectionLoading: false, busy: false };
   let selectionTree;
   const root = el('section', { className: 'vc-reports' });
-  const left = el('aside', { className: 'vc-reports__period' }, el('h4', { textContent: 'Selectează perioada' }));
-  const periods = history ? { node: el('div', { className: 'vc-reports__history' }) } : field({ key: 'period', label: 'Perioada', type: 'select', options: [
-    { id: 'all', label: `Anul ${year}` }, ...months.map((label, index) => ({ id: String(index), label }))
-  ] }, 'all', true, value => {
-    const month = value === 'all' ? null : Number(value);
-    state.start = month == null ? `${year}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    state.end = month == null ? `${year}-12-31` : endOfMonth(year, month);
+  const left = el('aside', { className: 'vc-reports__period' }, el('h4', { textContent: dateOnly ? 'Selectează data' : 'Selectează perioada' }));
+  const periods = reportPeriod(owner, (start, finish) => {
+    state.start = dateOnly ? finish : start; state.end = finish;
     begin.input._picker.setValue(new Date(state.start + 'T12:00:00'), false);
     end.input._picker.setValue(new Date(state.end + 'T12:00:00'), false);
     invalidate(); void lookups();
-  }, owner);
-  const begin = field({ key: 'start', label: 'Dată început', type: 'date' }, state.start, true,
-    value => { state.start = value; invalidate(); void lookups(); }, owner);
-  const end = field({ key: 'end', label: 'Dată sfârșit', type: 'date' }, state.end, true,
-    value => { state.end = value; invalidate(); void lookups(); }, owner);
+  });
+  const begin = field({ key: 'start', label: 'Dată început', type: 'date', required: true }, state.start, true,
+    value => { state.start = value; periods.sync(state.start, state.end); invalidate(); void lookups(); }, owner);
+  const end = field({ key: 'end', label: dateOnly ? 'La data' : 'Dată sfârșit', type: 'date', required: true }, state.end, true,
+    value => {
+      state.end = value;
+      if (dateOnly) { state.start = value; begin.input._picker.setValue(value ? new Date(value + 'T12:00:00') : null, false); }
+      periods.sync(state.start, state.end); invalidate(); void lookups();
+    }, owner);
+  periods.node.hidden = begin.node.hidden = dateOnly;
   const options = el('section', { className: 'vc-reports__options' }, el('h4', { textContent: 'Opțiuni afișare' }));
   const showOutput = owner.own(new CheckBox(options, { label: 'Afișează rezultatul în pagină', className: 'vc-reports__check' })).input;
   left.append(periods.node, begin.node, end.node, options);
@@ -48,10 +47,14 @@ export function mountReports(host, { api, sel }) {
   const query = (withFilters = true) => new URLSearchParams({ ...sel(), start: state.start, end: state.end,
     ...(withFilters ? selectionFilters(state.checked) : {}) });
   function available() {
-    const error = selectionError(state.spec, state.checked);
-    const disabled = !state.name || state.loading || state.busy || !!error;
+    const error = periodError() || selectionError(state.spec, state.checked);
+    const disabled = !state.name || state.loading || state.selectionLoading || state.busy || !!error;
     excel.disabled = list.disabled = disabled;
-    if (state.spec && !state.loading && !state.busy && error) status.textContent = error;
+    if ((state.spec || periodError()) && !state.loading && !state.busy && error) status.textContent = error;
+  }
+  function periodError() {
+    if (!state.start || !state.end) return 'Completați data de început și data de sfârșit.';
+    return state.start > state.end ? 'Data de început trebuie să fie înaintea datei de sfârșit.' : '';
   }
   function invalidate() {
     ++state.seq; state.model = null;
@@ -65,22 +68,40 @@ export function mountReports(host, { api, sel }) {
   showOutput.addEventListener('change', paintOutput);
   async function lookups() {
     if (!state.name || state.destroyed) return;
+    if (periodError()) { ++state.lookupSeq; state.loading = false; available(); return; }
     const name = state.name, seq = ++state.lookupSeq;
-    state.loading = true; state.spec = null; state.documents = []; available(); status.textContent = 'Se încarcă datele de selecție…';
+    state.loading = true; state.selectionLoading = false; state.spec = null; state.documents = []; available(); status.textContent = 'Se încarcă datele de selecție…';
     // A failed lookup must not leave the previous report's selectable data on screen.
     selectionOwner.clear(); right.replaceChildren(el('h4', { textContent: 'Selectare date' })); selectionTree = null;
     try {
-      const response = await api(`/api/vercon/reports/${encodeURIComponent(name)}/selection?${query(false)}`);
+      const endpoint = `/api/vercon/reports/${encodeURIComponent(name)}/selection`;
+      const base = query(false);
+      const initial = new URLSearchParams(base); initial.set('branch', 'root');
+      const response = await api(`${endpoint}?${initial}`);
       if (state.destroyed || seq !== state.lookupSeq || name !== state.name) return;
       state.spec = response.spec;
       state.documents = response.documents || [];
       selectionTree = mountSelection(right, response, state.checked, ids => {
         state.checked = ids; invalidate();
-      }, selectionOwner);
+      }, selectionOwner, {
+        loadBranch: (branch, recursive, signal) => {
+          const params = new URLSearchParams(base); params.set('branch', branch);
+          if (recursive) params.set('recursive', '1');
+          return api(`${endpoint}?${params}`, { signal });
+        },
+        onDocuments: documents => {
+          if (!state.destroyed && seq === state.lookupSeq) state.documents = documents;
+        },
+        onBusy: value => {
+          if (!state.destroyed && seq === state.lookupSeq) { state.selectionLoading = value; available(); }
+        },
+      });
+      await selectionTree.ready;
+      if (state.destroyed || seq !== state.lookupSeq || name !== state.name) return;
       state.checked = selectionTree.getCheckedLeaves();
       status.textContent = 'Alegeți datele, apoi Listare sau Export Excel.';
     } catch (error) {
-      if (!state.destroyed && seq === state.lookupSeq) showMessage(status, error.message, 'error');
+      if (!state.destroyed && seq === state.lookupSeq) { state.spec = null; showMessage(status, error.message, 'error'); }
     } finally {
       if (!state.destroyed && seq === state.lookupSeq) { state.loading = false; available(); }
     }
@@ -94,7 +115,7 @@ export function mountReports(host, { api, sel }) {
     return model;
   }
   function previewDetails() {
-    const period = { start: state.start, end: state.end };
+    const period = { start: state.spec?.kind === 'depreciation' ? state.end : state.start, end: state.end };
     if (!state.spec.filters.includes('document')) return { period };
     const selected = state.checked.filter(id => id.startsWith('document:')).map(id => id.slice('document:'.length));
     const documents = state.documents.filter(item => selected.includes(String(item.id)));
@@ -102,8 +123,8 @@ export function mountReports(host, { api, sel }) {
     return { documentLabel: selected.length ? `${selected.length} documente` : '', period };
   }
   async function exportReport(format) {
-    if (state.busy || state.loading || !state.name || selectionError(state.spec, state.checked) || !await owner.commit()) return;
-    if (state.destroyed || state.busy || state.loading || selectionError(state.spec, state.checked)) return;
+    if (state.busy || state.loading || state.selectionLoading || !state.name || periodError() || selectionError(state.spec, state.checked) || !await owner.commit()) return;
+    if (state.destroyed || state.busy || state.loading || state.selectionLoading || periodError() || selectionError(state.spec, state.checked)) return;
     const seq = state.seq;
     state.busy = true; available(); status.textContent = 'Se pregătește raportul…';
     try {
@@ -131,30 +152,17 @@ export function mountReports(host, { api, sel }) {
     try {
       const data = await api(`/api/vercon/reports/catalog?${new URLSearchParams(sel())}`);
       if (state.destroyed) return;
-      if (history) {
-        const years = data.years?.length ? data.years : [year];
-        const latest = Math.max(...years);
-        periods.node._vcExpanded = new Set([`history:${latest}`]);
-        paintTree(periods.node, years.map(value => ({ id: `history:${value}`, label: String(value),
-          children: [{ id: `doc:${value}:all`, label: 'Tot anul' },
-            ...months.map((label, month) => ({ id: `doc:${value}:${month}`, label }))] })), {
-          title: 'Ani / luni', collapsed: true, showSearchBox: false,
-          onSelect: value => {
-            const [selectedYear, selectedMonth] = value.split(':');
-            const month = selectedMonth === 'all' ? null : Number(selectedMonth);
-            state.start = `${selectedYear}-${month == null ? '01' : String(month + 1).padStart(2, '0')}-01`;
-            state.end = month == null ? `${selectedYear}-12-31` : endOfMonth(Number(selectedYear), month);
-            begin.input._picker.setValue(new Date(state.start + 'T12:00:00'), false);
-            end.input._picker.setValue(new Date(state.end + 'T12:00:00'), false);
-            invalidate(); void lookups();
-          },
-        }, owner);
-      }
-      paintTree(center, reportNodes(data.reports), { title: 'Tipul raportului', onSelect: name => {
-        ++state.lookupSeq; state.name = name; state.label = data.reports.find(item => item.id === name)?.label || name;
-        state.checked = []; state.spec = null; invalidate(); void lookups();
-      } }, owner);
-      status.textContent = 'Alegeți raportul și perioada.';
+      periods.configure(data, begin, end);
+      const reports = reportName ? data.reports.filter(item => item.id === reportName) : data.reports;
+      const selectReport = name => {
+        ++state.lookupSeq; state.name = name; state.label = reports.find(item => item.id === name)?.label || name;
+        state.checked = []; state.spec = null; invalidate(); return lookups();
+      };
+      const nodes = reportNodes(reports);
+      center._vcExpanded = new Set(nodes.map(node => node.id));
+      paintTree(center, nodes, { title: 'Tipul raportului', collapsed: true, onSelect: name => { void selectReport(name); } }, owner);
+      if (reportName && reports.length) await selectReport(reportName);
+      else status.textContent = 'Alegeți raportul și perioada.';
     } catch (error) { if (!state.destroyed) showMessage(status, error.message, 'error'); }
   })();
   return { ready, isDirty: () => false,

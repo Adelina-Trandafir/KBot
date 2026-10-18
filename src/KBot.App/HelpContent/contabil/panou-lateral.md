@@ -7,9 +7,16 @@ parent: contabil
 screens: AvacontMain.sidebar
 keywords: panou lateral, panoul din stanga, machete deschise, machete recente, ultimele machete, redeschide, actiuni recente, ce am salvat, salvari, informatii, token e-factura, versiunea, rol, baza, perioada, erori, erori din sesiune, strange panoul
 ---
-<!-- slice: 0115, 0115-01 -->
-În stânga ferestrei principale, lângă **orice pagină** («Acasă», lista angajamentelor sau o machetă), stă panoul
-lateral. Are patru secțiuni: **Machete deschise**, **Acțiuni recente**, **Informații** și **Erori din sesiune**.
+<!-- slice: 0115, 0115-01, 0115-02, 0000-106 -->
+Panoul lateral are patru secțiuni: **Machete deschise**, **Acțiuni recente**, **Informații** și **Erori din sesiune**.
+
+Implicit panoul stă **în spatele machetelor**: se vede în stânga ferestrei cât **nu e nicio machetă pe ecran** (pagina
+«Acasă»), iar când deschizi o machetă — o pagină din ribbon sau **lista angajamentelor** — el trece în spatele ei și
+macheta ocupă toată lățimea ferestrei. Ca panoul să se vadă **tot timpul**, **debifează** în **Setări › Aplicație ›
+Fereastra principală** căsuța **«Meniul lateral stă în spatele machetelor»** (se aplică imediat). Cât panoul stă în
+spatele machetelor, butonul **«Ascunde meniul lateral»** nu se mai afișează și panoul e mereu desfăcut (nu are rost să-l
+strângi, când se vede doar cât nu e nicio machetă pe ecran); cu căsuța debifată, butonul și felul în care ai lăsat panoul
+revin.
 
 <!-- capture: panou-lateral | caption: Panoul lateral, cu cele patru secțiuni desfăcute | prepare: Deschideți două-trei machete și o vedere a unui angajament, ca «Machete deschise» să aibă rânduri; apoi reveniți la «Acasă». Prindeți panoul pe toată înălțimea lui. | redo: 2026-10-17 12:00 | why: 0115-01: butonul de strângere a coborât sub «Erori din sesiune»; 0113-01: «Machete deschise» e o stivă -->
 

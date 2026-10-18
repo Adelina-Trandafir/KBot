@@ -145,6 +145,8 @@ def serialize(parsed, ctx=None, doc_id=None):
     for line in parsed['lines']:
         row = {'key': line['key'], 'id': line.get('id'), 'product': line.get('product'), 'variant': line.get('variant'),
                'IDTVA': line['IDTVA'], 'invoice_line': line.get('invoice_line')}
+        if line.get('has_warehouse_exit'):
+            row['has_warehouse_exit'] = True
         row.update({k: None if v is None else format(v, 'f') for k, v in line['v'].items()})
         if line.get('calculation'):
             row.update({'calc_mode': 'GROSS', 'gross_total': format(line['v']['ValoareCUTVA'], 'f'),
@@ -154,6 +156,12 @@ def serialize(parsed, ctx=None, doc_id=None):
             if src in line:
                 value = line[src]
                 row[dest] = value.isoformat() if hasattr(value, 'isoformat') else value
+        if line.get('new_product'):
+            row['new_product'] = line['new_product']
+        if line.get('DNF'):
+            from .receipt_products import monthly
+            value = line.get('ValoareLuna') if line.get('preserve') else monthly(line)
+            row['ValoareLuna'] = None if value is None else format(value, '.4f')
         if row.get('calc_mode') == 'GROSS' and ctx:
             from .receipt_auto import sign_row
             row['auto_token'] = sign_row(ctx, doc_id, row)

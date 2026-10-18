@@ -1011,6 +1011,24 @@ Public NotInheritable Class KBotDataColumn
     Public Property AutoHide As Boolean = False
 
     ''' <summary>
+    ''' Combo columns only: the edit is committed the moment the operator PICKS an item of the list with the mouse or Enter (the value is written and
+    ''' <c>CellValueChanged</c> is raised at once), instead of when he leaves the cell. Typing is not affected.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Combo: valoarea se scrie imediat ce operatorul alege un element din lista, nu cand paraseste celula.")>
+    <DefaultValue(False)>
+    Public Property CommitOnSelect As Boolean = False
+
+    ''' <summary>
+    ''' Combo columns of a GROUPED grid: the header band of every group gets a combo under this column. It shows the value all the rows of the group share (empty when they differ);
+    ''' picking an item raises <c>GroupHeaderValuePicked</c> so the host can put it on every row of the group.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Combo, grila grupata: banda de antet a grupului arata un combo sub aceasta coloana; alegerea se da gazdei, care o pune pe toate randurile grupului.")>
+    <DefaultValue(False)>
+    Public Property GroupHeaderCombo As Boolean = False
+
+    ''' <summary>
     ''' English (slice 0016): set by the auto-hide pass when THIS column was hidden for lack of
     ''' room (never by the caller). Recomputed from scratch every layout, so a widened grid
     ''' brings the column back. Friend — the caller toggles <see cref="AutoHide"/>, not this.

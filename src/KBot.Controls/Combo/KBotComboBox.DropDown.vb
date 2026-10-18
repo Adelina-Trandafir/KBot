@@ -35,6 +35,9 @@ Partial Public Class KBotComboBox
     <Description("The list closed.")>
     Public Event DropDownClosed As EventHandler
 
+    ''' <summary>Raised when the operator PICKS a row of the list (click or Enter in it); not when the text is typed or the selection is set from code.</summary>
+    Public Event ItemPicked As EventHandler
+
     ''' <summary>How many rows the list shows before it scrolls.</summary>
     <Category("K-BOT Combo")>
     <Description("How many rows the list shows before it scrolls. Minimum 1.")>
@@ -234,6 +237,7 @@ Partial Public Class KBotComboBox
         Try
             AcceptRow(itemIndex)
             If _editable Then _edit.Focus() Else Focus()
+            RaiseEvent ItemPicked(Me, EventArgs.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotComboBox.List_RowChosen", ex)
         End Try

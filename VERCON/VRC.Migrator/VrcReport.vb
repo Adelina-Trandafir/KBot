@@ -146,12 +146,11 @@ Public NotInheritable Class VrcReport
             Return
         End If
         If k_needed > 4 Then
-            k_sb.AppendLine("- **BLOCAJ:** există valori cu mai mult de 4 zecimale; scara maximă permisă este 4.")
-        Else
-            k_sb.AppendLine("- Stocare: **DECIMAL(20,4)**, valori directe cu maximum 4 zecimale, independent de ZEC.")
-            k_sb.AppendLine($"- Cea mai mare valoare pe coloană: {Num(k_maxAbs)}; în DECIMAL(20,4): {If(k_maxAbs < DecimalLimit, "încape", "**NU ÎNCAPE**")}.")
-            k_sb.AppendLine("- Capacitatea totalurilor (sume pe document/gestiune) se verifică la construirea planului (VC05-02).")
+            k_sb.AppendLine("- **ATENȚIE:** există valori cu mai mult de 4 zecimale (zgomot al câmpurilor Double din Access); la transfer se rotunjesc la 4 zecimale. Nu blochează.")
         End If
+        k_sb.AppendLine("- Stocare: **DECIMAL(20,4)**, valori directe cu maximum 4 zecimale, independent de ZEC.")
+        k_sb.AppendLine($"- Cea mai mare valoare pe coloană: {Num(k_maxAbs)}; în DECIMAL(20,4): {If(k_maxAbs < DecimalLimit, "încape", "**NU ÎNCAPE**")}.")
+        k_sb.AppendLine("- Capacitatea totalurilor (sume pe document/gestiune) se verifică la construirea planului (VC05-02).")
     End Sub
 
     Private Shared Function KindText(k_p As VrcFileProfile) As String

@@ -152,6 +152,13 @@ Public NotInheritable Class KBotDateEditBox
         UpdateFormattingRect()
     End Sub
 
+    ' The edit control resets its formatting rectangle on every size change, and WM_SIZE reaches WndProc BEFORE WinForms has updated ClientRectangle: after a resize the band
+    ' could keep the OLD, narrow width and clip the text after a few characters. ClientSizeChanged is raised once ClientRectangle is right.
+    Protected Overrides Sub OnClientSizeChanged(e As EventArgs)
+        MyBase.OnClientSizeChanged(e)
+        UpdateFormattingRect()
+    End Sub
+
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)
         UpdateFormattingRect()

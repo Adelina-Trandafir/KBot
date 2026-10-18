@@ -122,6 +122,21 @@ Public Interface IEFacturaApi
     ''' </summary>
     Function SyncPrimiteAsync(k_zile As Integer, k_limita As Integer, ct As CancellationToken) As Task(Of EFacturaSincronizare)
 
+    ' ── Slice 00EF-43: the exchange with the Access e-invoice store (PYTHON/routes/efactura/primite_access_routes.py) ─────────────
+
+    ''' <summary>GET /api/efactura/primite/access/stare -- the unit's tax code, digits only; the PC keeps only the Access messages of this code.</summary>
+    Function GetAccessCuiAsync(ct As CancellationToken) As Task(Of String)
+
+    ''' <summary>POST .../access/preia -- writes a batch of Access messages (natural keys: nothing here is overwritten); one transaction per message on the server.</summary>
+    Function PreiaAccessAsync(k_messages As IReadOnlyList(Of AccessEfMessage), ct As CancellationToken) As Task(Of EFacturaAccessPreluare)
+
+    ''' <summary>POST .../access/finalizeaza -- after the last batch: the references between the added invoices and their automatic link to receptions.</summary>
+    Function FinalizeazaAccessAsync(k_idPrimite As IReadOnlyList(Of Integer), k_references As IReadOnlyList(Of AccessEfReference),
+                                    ct As CancellationToken) As Task(Of EFacturaAccessFinal)
+
+    ''' <summary>POST .../access/exporta -- a batch of the year's messages whose id is not in <paramref name="k_have"/> (what the Access file has).</summary>
+    Function ExportaAccessAsync(k_year As Integer, k_have As IEnumerable(Of String), k_limit As Integer, ct As CancellationToken) As Task(Of EFacturaAccessExport)
+
     ''' <summary>GET /api/efactura/primite -- newest first; <paramref name="k_idDdf"/> = those of that DDF (partners' tax codes + manual links).</summary>
     Function GetPrimiteAsync(k_year As Integer?, k_month As Integer?, k_query As String, k_idDdf As Integer?,
                              ct As CancellationToken) As Task(Of List(Of EFacturaPrimita))
@@ -169,6 +184,9 @@ Public Interface IEFacturaApi
 
     ''' <summary>GET /api/efactura/ke/angajament/{cod}/receptii -- the indicators and the receptions of an angajament, with what invoices already cover.</summary>
     Function GetKeReceptiiAsync(k_cod As String, ct As CancellationToken) As Task(Of EFacturaKeReceptiiAngajament)
+
+    ''' <summary>GET /api/efactura/ke/angajament/{cod}/disponibil?data= -- the budget of each indicator on that day and the receptions before it (slice KE12-03).</summary>
+    Function GetKeDisponibilAsync(k_cod As String, k_zi As Date, ct As CancellationToken) As Task(Of EFacturaKeDisponibilZi)
 
     ''' <summary>POST .../ke/verifica -- checks an allocation (indicator exists, amounts fit) and gives the rows the robot needs. «Contabil» only.</summary>
     Function VerifyKeAsync(k_idPrimita As Integer, k_cerere As EFacturaKeCerere, ct As CancellationToken) As Task(Of EFacturaKeVerificare)

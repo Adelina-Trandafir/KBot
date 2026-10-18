@@ -11,6 +11,8 @@ Public NotInheritable Class VrcPlanSource
     Public Property Profile As VrcFileProfile
     ''' <summary>Name of the target gestiune; several files of one gestiune (the yearly bases) share it.</summary>
     Public Property GestiuneName As String = String.Empty
+    ''' <summary>The subunit this file belongs to. It is per database (file), not per plan: several subunits are transferred together, each with its own Alimente, Materiale, OI, MF.</summary>
+    Public Property SubunitName As String = String.Empty
     ''' <summary>MATERIALE, ALIMENTE, OI or MF.</summary>
     Public Property GestiuneType As String = String.Empty
     ''' <summary>Exercise year of the target. For a tz_&lt;year&gt; file it is the year of the file; for tz_2100 (not a year) the operator chooses.</summary>
@@ -37,7 +39,7 @@ End Class
 Public NotInheritable Class VrcPlan
 
     Public Const PlanVersion As String = "1"
-    Public Const RuleVersion As String = "VC05-MEAL-TYPES-2026-10-15"
+    Public Const RuleVersion As String = "VC05-OI-ACCOUNT-LINEAGE-2026-10-18"
 
     Public Shared ReadOnly GestiuneTypes As String() = {"MATERIALE", "ALIMENTE", "OI", "MF"}
     Private Const DecimalLimit As Double = 10000000000000000.0
@@ -45,7 +47,20 @@ Public NotInheritable Class VrcPlan
     Public Property Dc As String = String.Empty
     ''' <summary>The base the operator typed as destination; empty = the DC of the files (UNIT.DC). A different one is a deliberate choice (a test base).</summary>
     Public Property TargetDc As String = String.Empty
-    Public Property SubunitName As String = String.Empty
+    ''' <summary>Distinct subunit names of the sources (the plan is per database), in the order they first appear.</summary>
+    Public Function SubunitNames() As List(Of String)
+        Return Sources.Select(Function(k_s) If(k_s.SubunitName, String.Empty).Trim()).Where(Function(k_n) k_n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+    End Function
+
+    Private ReadOnly _zecBySubunit As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>ZEC of one subunit (the largest of its files, set by <see cref="Evaluate"/>); 4 when unknown.</summary>
+    Public Function ZecOf(k_subunit As String) As Integer
+        Dim k_zec As Integer = 4
+        If _zecBySubunit.TryGetValue(If(k_subunit, String.Empty).Trim(), k_zec) Then Return k_zec
+        Return 4
+    End Function
+
     ''' <summary>Partners prepared from ANAF (window «Parteneri ANAF»): inserted into Parteneri INSIDE the transfer transaction, so a failed transfer leaves none of them. Not part of <see cref="Hash"/>.</summary>
     Public Property NewPartners As New List(Of VrcNewPartner)()
     Public Property Zec As Integer = 4
@@ -128,12 +143,6 @@ Public NotInheritable Class VrcPlan
                 Blockers.Add("Planul nu are nicio sursă. Citiți fișierele și asociați-le.")
                 Return
             End If
-            If SubunitName Is Nothing OrElse SubunitName.Trim().Length = 0 Then
-                Blockers.Add("Completați denumirea subunității.")
-            ElseIf SubunitName.Trim().Length > 100 Then
-                Blockers.Add("Denumirea subunității poate avea cel mult 100 de caractere.")
-            End If
-
             CheckFiles()
             CheckAssociation()
             CheckPrecision()
@@ -191,8 +200,11 @@ Public NotInheritable Class VrcPlan
         Dim k_years As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         For Each k_file In Sources.GroupBy(Function(k_s) k_s.Source.Path, StringComparer.OrdinalIgnoreCase)
             Dim k_first = k_file.First()
+            If k_file.Select(Function(k_s) If(k_s.SubunitName, String.Empty).Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1 Then
+                Blockers.Add($"{k_first.Profile.Label}: rândurile fișierului au subunități diferite; un fișier aparține unei singure subunități.")
+            End If
             If k_first.Source.Kind <> VrcFileKind.Year Then Continue For
-            Dim k_name = k_first.Profile.FileName
+            Dim k_name = k_first.Profile.Label
             For Each k_type In {"ALIMENTE", "MATERIALE"}
                 If k_file.Where(Function(k_s) k_s.GestiuneType = k_type).Count() > 1 Then Blockers.Add($"{k_name}: tipul {k_type} apare de două ori; fiecare parte a fișierului se duce într-o singură gestiune.")
             Next
@@ -203,7 +215,13 @@ Public NotInheritable Class VrcPlan
             If Not k_split.HasAlimente AndAlso k_file.Any(Function(k_s) k_s.GestiuneType = "ALIMENTE") Then Blockers.Add($"{k_name}: planul are un rând ALIMENTE, dar fișierul nu are conturi de tip A sau liste.")
         Next
         For Each k_s In Sources
-            Dim k_name = k_s.Profile.FileName
+            Dim k_name = k_s.Profile.Label
+            Dim k_sub As String = If(k_s.SubunitName, String.Empty).Trim()
+            If k_sub.Length = 0 Then
+                Blockers.Add($"{k_name}: completați subunitatea.")
+            ElseIf k_sub.Length > 100 Then
+                Blockers.Add($"{k_name}: denumirea subunității poate avea cel mult 100 de caractere.")
+            End If
             If k_s.GestiuneName Is Nothing OrElse k_s.GestiuneName.Trim().Length = 0 Then
                 Blockers.Add($"{k_name}: alegeți gestiunea (denumirea).")
                 Continue For
@@ -232,17 +250,20 @@ Public NotInheritable Class VrcPlan
                 Warnings.Add($"{k_name}: anul exercițiului ({k_s.Year}) diferă de anul din numele fișierului ({k_s.Source.Year}).")
             End If
 
+            ' A gestiune belongs to a subunit: the same name (Alimente) in two subunits is two gestiuni, not a duplicate.
+            Dim k_ownerKey As String = k_sub & "|" & k_s.GestiuneName.Trim()
+            Dim k_ownerText As String = $"«{k_s.GestiuneName.Trim()}» a subunității «{k_sub}»"
             Dim k_known As String = Nothing
-            If k_types.TryGetValue(k_s.GestiuneName.Trim(), k_known) AndAlso k_known <> k_s.GestiuneType Then
-                Blockers.Add($"Gestiunea «{k_s.GestiuneName.Trim()}» are tipuri diferite ({k_known} și {k_s.GestiuneType}).")
+            If k_types.TryGetValue(k_ownerKey, k_known) AndAlso k_known <> k_s.GestiuneType Then
+                Blockers.Add($"Gestiunea {k_ownerText} are tipuri diferite ({k_known} și {k_s.GestiuneType}).")
             End If
-            k_types(k_s.GestiuneName.Trim()) = k_s.GestiuneType
-            If Not k_years.Add($"{k_s.GestiuneName.Trim()}|{k_s.Year}") Then
-                Blockers.Add($"Gestiunea «{k_s.GestiuneName.Trim()}» are două surse pentru anul {k_s.Year}.")
+            k_types(k_ownerKey) = k_s.GestiuneType
+            If Not k_years.Add($"{k_ownerKey}|{k_s.Year}") Then
+                Blockers.Add($"Gestiunea {k_ownerText} are două surse pentru anul {k_s.Year}.")
             End If
             If k_s.GestiuneType = "OI" OrElse k_s.GestiuneType = "MF" Then
-                Dim k_same = Sources.Where(Function(k_o) String.Equals(k_o.GestiuneName, k_s.GestiuneName, StringComparison.OrdinalIgnoreCase)).Count()
-                If k_same > 1 Then Blockers.Add($"Gestiunea «{k_s.GestiuneName.Trim()}» ({k_s.GestiuneType}) are o singură bază multianuală; nu se împarte pe ani.")
+                Dim k_same = Sources.Where(Function(k_o) String.Equals(If(k_o.SubunitName, String.Empty).Trim(), k_sub, StringComparison.OrdinalIgnoreCase) AndAlso String.Equals(k_o.GestiuneName, k_s.GestiuneName, StringComparison.OrdinalIgnoreCase)).Count()
+                If k_same > 1 Then Blockers.Add($"Gestiunea {k_ownerText} ({k_s.GestiuneType}) are o singură bază multianuală; nu se împarte pe ani.")
             End If
         Next
     End Sub
@@ -250,16 +271,21 @@ Public NotInheritable Class VrcPlan
     ''' <summary>ZEC retains calculation/display precision; storage is always direct DECIMAL(20,4).</summary>
     Private Sub CheckPrecision()
         Dim k_zecs As New SortedSet(Of Integer)()
+        Dim k_zecsBySubunit As New Dictionary(Of String, SortedSet(Of Integer))(StringComparer.OrdinalIgnoreCase)
         Dim k_needed As Integer = 0
         For Each k_s In DistinctSources().Where(Function(k_x) k_x.Profile.ReadError.Length = 0)
             Dim k_zec As Integer = 4
             Dim k_raw As String = Nothing
             If k_s.Profile.Config.TryGetValue("NR.ZEC", k_raw) Then Integer.TryParse(k_raw, NumberStyles.Integer, CultureInfo.InvariantCulture, k_zec)
             k_zecs.Add(k_zec)
+            Dim k_ownSubunit As String = If(k_s.SubunitName, String.Empty).Trim()
+            If Not k_zecsBySubunit.ContainsKey(k_ownSubunit) Then k_zecsBySubunit(k_ownSubunit) = New SortedSet(Of Integer)()
+            k_zecsBySubunit(k_ownSubunit).Add(k_zec)
             For Each k_t In k_s.Profile.Tables
                 For Each k_f In k_t.Fields.Where(Function(k_x) k_x.FieldClass = "VALOARE-INT" AndAlso k_x.NonNull > 0)
                     If k_f.MaxDecimals > 4 Then
-                        Blockers.Add($"{k_s.Profile.FileName}: {k_t.Name}.{k_f.Name} are valori cu mai mult de 4 zecimale; scara maximă este 4.")
+                        ' Not a blocker (operator, 18.10.2026): Access Double noise; the transfer rounds to 4 decimals.
+                        Warnings.Add($"{k_s.Profile.Label}: {k_t.Name}.{k_f.Name} are valori cu mai mult de 4 zecimale; se rotunjesc la 4 zecimale la transfer.")
                     Else
                         k_needed = Math.Max(k_needed, k_f.MaxDecimals)
                     End If
@@ -267,15 +293,20 @@ Public NotInheritable Class VrcPlan
             Next
         Next
         Zec = If(k_zecs.Count > 0, k_zecs.Max, 4)
-        If k_zecs.Count > 1 Then Warnings.Add($"ZEC diferă între surse ({String.Join(", ", k_zecs)}); se alege cel mai mare ({Zec}) pentru toată subunitatea.")
+        ' ZEC is per subunit (operator, 18.10.2026): the largest ZEC of the files of THAT subunit.
+        _zecBySubunit.Clear()
+        For Each k_pair In k_zecsBySubunit
+            _zecBySubunit(k_pair.Key) = k_pair.Value.Max
+            If k_pair.Value.Count > 1 Then Warnings.Add($"ZEC diferă între sursele subunității «{k_pair.Key}» ({String.Join(", ", k_pair.Value)}); se alege cel mai mare ({k_pair.Value.Max}) pentru toată subunitatea.")
+            If k_pair.Value.Max > 4 Then Blockers.Add($"ZEC {k_pair.Value.Max} (subunitatea «{k_pair.Key}») depășește scara maximă 4.")
+        Next
         Scale = 4 ' Fixed database precision; independent of calculation/display ZEC.
-        If Zec > 4 Then Blockers.Add($"ZEC {Zec} depășește scara maximă 4.")
         For Each k_s In DistinctSources().Where(Function(k_x) k_x.Profile.ReadError.Length = 0)
             For Each k_t In k_s.Profile.Tables
                 For Each k_f In k_t.Fields.Where(Function(k_x) k_x.FieldClass = "VALOARE-INT" AndAlso k_x.NonNull > 0)
                     Dim k_max As Double = Math.Max(Math.Abs(k_f.Minimum), Math.Abs(k_f.Maximum))
                     If k_max >= DecimalLimit Then
-                        Blockers.Add($"{k_s.Profile.FileName}: {k_t.Name}.{k_f.Name} (maxim {k_max.ToString("0.####", CultureInfo.InvariantCulture)}) nu încape în DECIMAL(20,4).")
+                        Blockers.Add($"{k_s.Profile.Label}: {k_t.Name}.{k_f.Name} (maxim {k_max.ToString("0.####", CultureInfo.InvariantCulture)}) nu încape în DECIMAL(20,4).")
                     End If
                 Next
             Next
@@ -285,7 +316,7 @@ Public NotInheritable Class VrcPlan
     ''' <summary>Findings of the reader that the decided rules turn into blockers (the ones that are only warnings are listed too).</summary>
     Private Sub CheckData()
         For Each k_s In DistinctSources().Where(Function(k_x) k_x.Profile.ReadError.Length = 0)
-            Dim k_name = k_s.Profile.FileName
+            Dim k_name = k_s.Profile.Label
             Dim k_nir = k_s.Profile.Tables.FirstOrDefault(Function(k_t) String.Equals(k_t.Name, "NIR", StringComparison.OrdinalIgnoreCase))
             Dim k_number = k_nir?.Fields.FirstOrDefault(Function(k_f) k_f.Name = "Numar")
             If k_number IsNot Nothing AndAlso k_number.MaxDecimals > 2 Then Blockers.Add($"{k_name}: NIR.Numar are valori cu mai mult de 2 zecimale; NumarSub păstrează cel mult 2.")
@@ -316,10 +347,11 @@ Public NotInheritable Class VrcPlan
     ''' <summary>Canonical text of everything the transfer depends on: context, precision, rules and every source with its hash.</summary>
     Private Function Canonical() As String
         Dim k_sb As New StringBuilder()
-        k_sb.Append("plan=").Append(PlanVersion).Append(";rules=").Append(RuleVersion).Append(";dc=").Append(Dc).Append(";subunit=").Append(SubunitName.Trim())
-        k_sb.Append(";zec=").Append(Zec).Append(";scale=").Append(Scale).AppendLine()
-        For Each k_s In Sources.OrderBy(Function(k_x) k_x.GestiuneName, StringComparer.OrdinalIgnoreCase).ThenBy(Function(k_x) k_x.Year).ThenBy(Function(k_x) k_x.Profile.FileName, StringComparer.OrdinalIgnoreCase)
-            k_sb.Append(k_s.Profile.FileName).Append("|"c).Append(k_s.Profile.HashBefore).Append("|"c).Append(k_s.GestiuneName.Trim()).Append("|"c).Append(k_s.GestiuneType).Append("|"c).Append(k_s.Year).AppendLine()
+        k_sb.Append("plan=").Append(PlanVersion).Append(";rules=").Append(RuleVersion).Append(";dc=").Append(Dc)
+        k_sb.Append(";zec=").Append(String.Join(",", SubunitNames().OrderBy(Function(k_n) k_n, StringComparer.OrdinalIgnoreCase).Select(Function(k_n) k_n & ":" & ZecOf(k_n).ToString(CultureInfo.InvariantCulture))))
+        k_sb.Append(";scale=").Append(Scale).AppendLine()
+        For Each k_s In Sources.OrderBy(Function(k_x) k_x.SubunitName, StringComparer.OrdinalIgnoreCase).ThenBy(Function(k_x) k_x.GestiuneName, StringComparer.OrdinalIgnoreCase).ThenBy(Function(k_x) k_x.Year).ThenBy(Function(k_x) k_x.Profile.FileName, StringComparer.OrdinalIgnoreCase)
+            k_sb.Append(k_s.SubunitName.Trim()).Append("|"c).Append(k_s.Profile.FileName).Append("|"c).Append(k_s.Profile.HashBefore).Append("|"c).Append(k_s.GestiuneName.Trim()).Append("|"c).Append(k_s.GestiuneType).Append("|"c).Append(k_s.Year).AppendLine()
         Next
         Return k_sb.ToString()
     End Function
@@ -336,10 +368,10 @@ Public NotInheritable Class VrcPlan
             Dim k_sources As New List(Of Object)()
             For Each k_s In Sources
                 k_sources.Add(New With {.file = k_s.Profile.FileName, .sha256 = k_s.Profile.HashBefore, .sizeBytes = k_s.Profile.SizeBytes,
-                                        .gestiune = k_s.GestiuneName.Trim(), .type = k_s.GestiuneType, .year = k_s.Year})
+                                        .subunit = k_s.SubunitName.Trim(), .gestiune = k_s.GestiuneName.Trim(), .type = k_s.GestiuneType, .year = k_s.Year})
             Next
             Dim k_doc = New With {
-                .planVersion = PlanVersion, .ruleVersion = RuleVersion, .dc = Dc, .subunit = SubunitName.Trim(), .zec = Zec, .scale = Scale,
+                .planVersion = PlanVersion, .ruleVersion = RuleVersion, .dc = Dc, .subunits = SubunitNames().Select(Function(k_n) New With {.name = k_n, .zec = ZecOf(k_n)}).ToList(), .scale = Scale,
                 .planHash = Hash(), .complete = IsComplete, .blockers = Blockers, .warnings = Warnings, .sources = k_sources}
             Return JsonSerializer.Serialize(k_doc, New JsonSerializerOptions() With {.WriteIndented = True, .Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping})
         Catch ex As Exception

@@ -230,7 +230,7 @@ function Test-SliceId([string]$id, [string]$where) {
     if ($script:knownSlice.ContainsKey($id)) { return }
     $ok = $false
     if ($id -eq 'fara-felie') { $ok = $true }
-    elseif ($id -match '^0000-\d{2}$') { $ok = [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id-*.md") }
+    elseif ($id -match '^0000-\d{2,3}$') { $ok = [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id-*.md") }
     # Slice 000T (interactive tutorials): the id is 000T or 000T-NN, with a worklog or a row in the index.
     elseif ($id -match '^000T(-\d{2})?$') {
         $ok = ($statusIndex -match '(?m)^\|\s*000T[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")

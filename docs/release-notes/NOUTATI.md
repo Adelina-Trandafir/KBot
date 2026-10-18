@@ -6,10 +6,23 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
-## 1.1.2.5 (17.10.2026)
+## 1.1.2.4 (17.10.2026)
+<!-- release: utc=2026-10-17T14:35:52Z -->
 
-<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98 -->
+<!-- felii: 0113, 0114, 0114-01, 0115, 0116, 0117, 0118, 0119, 0120, 0000-69, 0000-70, 0000-71, 0000-72, 0000-73, 0000-74, 00EF-27, 00EF-29, 00EF-30, 00EF-31, 00EF-32, 00EF-33, 00EF-34, 00EF-35, 00EF-36, 0000-75, 0000-76, 0000-77, 0000-78, 0000-79, 0000-80, 0000-81, 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98, 00EF-43, 0114-24, 0115-02, KE09, KE10, KE11, KE12, KE12-02, KE12-03, KE12-04 -->
 
+- K-BOT porneste intr-o singura fereastra principala, pe pagina «Acasa»; ferestrele se deschid in ea, ca pagini.
+- Sus e un ribbon cu filele «Angajamente», «Date», «E-Factura», «Configurari»; a luat locul butonului MENIU.
+- «Inchide» (dreapta) inchide pagina deschisa; din lista angajamentelor te duce la «Acasa». Esc inchide la fel.
+- «Ajutor» din ribbon da ajutorul paginii deschise; dublu clic pe o fila strange ribbonul.
+- «Acasa» are cardul «Ce este nou», cu noutatile ultimelor versiuni; se desface singur dupa fiecare actualizare.
+- Panou in stanga: «Machete deschise» (revii la o pagina cu un clic), «Actiuni recente», «Informatii», «Erori».
+- «Jurnal activitate» si «Istoric versiuni» sunt pagini proprii, in ribbon: «Configurari» > «Configurare».
+- Editorul DDF: «Adauga rand» si «Sterge randul» stau pe randul lui «Salveaza documentul».
+- E-Factura: «Cumparare» e inaintea lui «Vanzare»; «Conturi Unitate» si «Date Unitate» sunt in «Configurari».
+- Facturile primite: arbore pe furnizori sau pe luni, cu cautare si optiuni de filtrare in antetul lui.
+- Se aduc de la ANAF din «Actualizare...» (subsolul arborelui) sau din ribbon; la final apare lista facturilor noi.
+- «Continut» arata CPV (rosu cand lipseste) si observatiile; nou «XML Factura»; PDF-ul se salveaza unde alegeti.
 - Ribbon: filele sunt «Configurari», «Angajamente» (la pornire), «E-Factura», «Extrase»; «Date» e grup.
 - «Descarca extrase» e doar in ribbon, in grupul din dreapta; nu mai e in «Extrase de cont» si in arbori.
 - Grupul din dreapta tine de fereastra: «Editeaza grupe», «Sincronizeaza facturi primite» cu campurile lui.
@@ -25,23 +38,15 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - Facturi primite: «Toate facturile» fara numar, lunile fara an (anul apare doar daca sunt mai multi ani).
 - Clic pe «Toate facturile»: lista cu bife, «Listeaza», «Salveaza XML», «...» pe rand si «Receptie asociata».
 - Clasificatia liniilor se alege in «Leaga de receptie»; butonul «Clasificatii pe linii» nu mai exista.
-
-## 1.1.2.4 (15.10.2026)
-
-<!-- felii: 0113, 0114, 0114-01, 0115, 0116, 0117, 0118, 0119, 0120, 0000-69, 0000-70, 0000-71, 0000-72, 0000-73, 0000-74, 00EF-27, 00EF-29, 00EF-30, 00EF-31, 00EF-32, 00EF-33, 00EF-34, 00EF-35, 00EF-36, 0000-75, 0000-76, 0000-77, 0000-78, 0000-79, 0000-80, 0000-81 -->
-
-- K-BOT porneste intr-o singura fereastra principala, pe pagina «Acasa»; ferestrele se deschid in ea, ca pagini.
-- Sus e un ribbon cu filele «Angajamente», «Date», «E-Factura», «Configurari»; a luat locul butonului MENIU.
-- «Inchide» (dreapta) inchide pagina deschisa; din lista angajamentelor te duce la «Acasa». Esc inchide la fel.
-- «Ajutor» din ribbon da ajutorul paginii deschise; dublu clic pe o fila strange ribbonul.
-- «Acasa» are cardul «Ce este nou», cu noutatile ultimelor versiuni; se desface singur dupa fiecare actualizare.
-- Panou in stanga: «Machete deschise» (revii la o pagina cu un clic), «Actiuni recente», «Informatii», «Erori».
-- «Jurnal activitate» si «Istoric versiuni» sunt pagini proprii, in ribbon: «Configurari» > «Configurare».
-- Editorul DDF: «Adauga rand» si «Sterge randul» stau pe randul lui «Salveaza documentul».
-- E-Factura: «Cumparare» e inaintea lui «Vanzare»; «Conturi Unitate» si «Date Unitate» sunt in «Configurari».
-- Facturile primite: arbore pe furnizori sau pe luni, cu cautare si optiuni de filtrare in antetul lui.
-- Se aduc de la ANAF din «Actualizare...» (subsolul arborelui) sau din ribbon; la final apare lista facturilor noi.
-- «Continut» arata CPV (rosu cand lipseste) si observatiile; nou «XML Factura»; PDF-ul se salveaza unde alegeti.
+- Facturi primite, doar cu Access: «Trimite in Access» si «Preia din Access», in grupul din dreapta al ribbonului.
+- Ribbon strans: un clic pe o fila ii arata butoanele doar cat ai nevoie, peste fereastra, fara sa mute paginile; dublu clic il desface.
+- Setari > Aplicatie: «Panglica din fereastra principala e compacta» micsoreaza iconitele si textul din ribbon, pentru ecrane mici.
+- Pagina noua «Receptii» (ribbon, fila E-Factura, dupa «Cumparare»): bifati facturi si faceti o receptie pentru toate.
+- In ea alegeti: «Receptie noua», «Leaga de o receptie existenta» sau «Modifica o receptie existenta».
+- Arborele ei are cautare, porneste inchis, aduce facturile noi primele; produsele au casete de bifat (debifat = 0).
+- In vederile facturilor primite, formularul receptiei ia locul tabelului de legaturi; «Scoate legatura» nu mai exista.
+- Receptie noua: suma si data se scriu cum le cere FOREXE; daca le respinge, vedeti mesajul lui si nu se salveaza nimic.
+- Setari > Aplicatie: «Meniul lateral sta in spatele machetelor» (bifat implicit) ascunde panoul din stanga cand e o pagina.
 
 ## 1.1.2.2 (12.10.2026)
 

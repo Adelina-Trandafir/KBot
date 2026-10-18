@@ -28,4 +28,31 @@ Public NotInheritable Class AccessBridgeImpl
         Return AccessBudgetSender.Send(unitFile, idClsfAcc, budget, corrections)
     End Function
 
+    ' ---- Slice 00EF-43: the received e-invoices in the Access store -------------------------------------
+
+    Public Function ResolveEFacturaStore(registryPath As String, an As Integer) As String _
+        Implements IAccessBridge.ResolveEFacturaStore
+        Return AccessEfStore.ResolveStore(registryPath, an)
+    End Function
+
+    Public Function ListEFacturaMessageIds(storeFile As String) As List(Of String) _
+        Implements IAccessBridge.ListEFacturaMessageIds
+        Return AccessEfStore.ListMessageIds(storeFile)
+    End Function
+
+    Public Function ListEFacturaUnitMessageIds(storeFile As String, cuiNormalizat As String) As List(Of String) _
+        Implements IAccessBridge.ListEFacturaUnitMessageIds
+        Return AccessEfStore.ListUnitMessageIds(storeFile, cuiNormalizat)
+    End Function
+
+    Public Function ReadEFacturaMessages(storeFile As String, idSol As IEnumerable(Of String)) As List(Of AccessEfMessage) _
+        Implements IAccessBridge.ReadEFacturaMessages
+        Return AccessEfStore.ReadMessages(storeFile, idSol)
+    End Function
+
+    Public Function WriteEFacturaMessages(storeFile As String, messages As IEnumerable(Of AccessEfMessage)) As AccessEfWriteResult _
+        Implements IAccessBridge.WriteEFacturaMessages
+        Return AccessEfStore.WriteMessages(storeFile, messages)
+    End Function
+
 End Class

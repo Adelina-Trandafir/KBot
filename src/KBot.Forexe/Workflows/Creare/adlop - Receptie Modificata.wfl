@@ -49,6 +49,7 @@
   <SetInternalVar name="DATE_RECEPTIE" value="{{!DATE_RECEPTIE|Array randuri de modificat|type=JSON}}" />
   <SetInternalVar name="GASITA" value="0" />
   <SetInternalVar name="MesajSalvare" value="" />
+  <SetInternalVar name="MesajEroare" value="" />
 
   <!-- LISTA RECEPTIILOR -->
   <Click selector="ul.nav.nav-tabs > li.tab1" waitNavigation="false" timeout="5" LogValue="Apas pe tab Receptii" />
@@ -97,8 +98,14 @@
 
             <Click selector="button:has-text('Salvează')" commits="true" waitNavigation="true" timeout="5" isCheckpoint="true"
                    LogValue="Apas Salvează" />
-            <IfExists selector=".alert.alert-success" timeout="8">
-              <Read selector=".alert.alert-success" saveTo="MesajSalvare" />
+            <!-- Either box ends the wait; the error (e.g. «CAB-0031 - Datele introduse nu sunt valide») means NOT saved. -->
+            <IfExists selector=".alert.alert-success, .alert.alert-error" timeout="8">
+              <IfExists selector=".alert.alert-error" timeout="1">
+                <Read selector=".alert.alert-error strong" saveTo="MesajEroare" />
+              </IfExists>
+              <IfExists selector=".alert.alert-success" timeout="1">
+                <Read selector=".alert.alert-success" saveTo="MesajSalvare" />
+              </IfExists>
             </IfExists>
 
             <Else>

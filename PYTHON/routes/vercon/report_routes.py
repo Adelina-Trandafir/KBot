@@ -1,8 +1,7 @@
-"""Report catalog, filters, snapshots and exact exports for Materiale/Alimente/OI."""
+"""Report catalog, filters, snapshots and exact exports for all VERCON types."""
 from decimal import Decimal
-from datetime import date
 from flask import Response, current_app, g, request
-from . import report_catalog, report_data, report_output, report_service, report_excel, protocol, stock
+from . import report_catalog, report_data, report_output, report_service, report_excel, report_period, report_selection, protocol, stock
 from .nomenclatoare import NomError
 from .stock_routes import optional_id
 
@@ -51,19 +50,10 @@ def register(bp, guard, scoped, session, build):
     @guard('raport')
     def catalog():
         vctx = scoped('raport')
-        years = []
-        if vctx['gestiune']['type'] == 'OI':
-            with session(False) as cursor:
-                ctx, _ = build(cursor, vctx, None, False)
-                cursor.execute('SELECT MIN(y) AS first_year,MAX(y) AS last_year FROM ('
-                               'SELECT YEAR(COALESCE(Data,DataFc)) AS y FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s '
-                               'UNION ALL SELECT YEAR(DATABP) FROM VC_OI_Predare WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s) history',
-                               (ctx['subunit'], ctx['gestiune'], ctx['exercitiu']) * 2)
-                limits = cursor.fetchone()
-                last = max(date.today().year, ctx['year'], (limits or {}).get('last_year') or 0)
-                first = (limits or {}).get('first_year') or last
-                years = list(range(first, last + 1))
-        return {'reports': report_catalog.catalog(vctx['gestiune']['type']), 'years': years}
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, None, False)
+            period = report_period.catalog_period(cursor, ctx)
+        return {'reports': report_catalog.catalog(vctx['gestiune']['type']), **period}
 
     @bp.get('/api/vercon/reports/<name>/selection')
     @guard('raport')
@@ -74,6 +64,9 @@ def register(bp, guard, scoped, session, build):
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, None, False)
             source = report_data.Source(cursor, g.portal['db_name'], ctx, params)
+            branch = request.args.get('branch')
+            if branch is not None:
+                return report_selection.selection_branch(source, spec, branch, recursive=request.args.get('recursive') == '1')
             variants = list(source.metadata().values())
             categories = {r['category']: r['account'] for r in variants}
             documents, suppliers, receivers = {}, {}, {}

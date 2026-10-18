@@ -313,6 +313,16 @@ Utilitar Windows separat în `VERCON/VRC.Migrator`, cu executabil **`VRC.Migrato
 
 Manifestul canonic include `PlanVersion`, `RuleVersion`, contract numeric, surse/hashuri, profilurile schema, contextul țintă pentru fiecare sursă, dispoziția fiecărui tabel, mapările/opțiunile și deciziile. Hashul planului include transformările și contextul, nu doar fișierul. Parole/tokenuri și rânduri personale nu intră în manifestul public.
 
+**Decizie OI/MF confirmată la 18.10.2026:** ID-urile interne P/T/C sunt
+alocate dintr-o secvență comună pe gestiune, separat de numerele afișate ale
+bonurilor. `OI_Produse.IDBC` identifică bonul curent pentru toate familiile;
+`IDBP`/`IDBT` marchează predarea/transferul, iar `IDBO` este proveniența BP/BT
+numai la transfer/casare. Documentele și toate referințele lor reutilizează
+aceeași mapare. [Contract și compatibilitate VBA](REGISTRU_OI_MF.md).
+`VC_Imports.ToolVersion` păstrează versiunea executabilului, iar identificatorul
+complet al regulilor rămâne în rezumat și în manifest/hash; aceste corecții
+nu necesită schimbarea schemei și nu repară retroactiv date deja migrate.
+
 ### Transfer unic pe subunitate și atomicitate
 
 - Snapshotul citit trebuie să fie stabil: preferabil copie de lucru făcută cu Access oprit pentru scrieri; hash înainte/după extracție și înainte de import. Deschiderea read-only nu garantează că alt utilizator nu scrie în fișier. Dacă snapshotul se schimbă, se recitește și se reprofilează.

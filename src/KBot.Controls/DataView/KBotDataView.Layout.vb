@@ -498,6 +498,8 @@ Partial Class KBotDataView
             UpdateScrollBars()
             ' Slice 0085: an open editor follows its cell (width, font, DPI, theme colours).
             PlaceEditor()
+            ' Slice KE11: the combo of a group header does not follow a moving layout: it closes.
+            If _groupEditGroup >= 0 AndAlso groupCombo.Visible AndAlso Not groupCombo.ContainsFocus Then CloseGroupEditor()
         Finally
             _inLayout = False
         End Try

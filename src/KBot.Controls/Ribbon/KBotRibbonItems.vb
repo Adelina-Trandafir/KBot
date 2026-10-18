@@ -87,6 +87,11 @@ Public NotInheritable Class KBotRibbonButton
     <DefaultValue(False)>
     Public Property SeparatorBefore As Boolean
 
+    <Category("K-BOT")>
+    <Description("Large button of a group: draws a thin separator line to the right of this button (the next buttons of the group follow after it). Alone at the end of the group, the line is not drawn. Slice KE12.")>
+    <DefaultValue(False)>
+    Public Property SeparatorAfter As Boolean
+
     ''' <summary>The slot computed by the last layout pass (Empty when hidden). Derived state: never serialized.</summary>
     Friend Property Bounds As Rectangle
 

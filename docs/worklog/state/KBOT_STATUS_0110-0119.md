@@ -176,13 +176,14 @@ history in `KBOT_TEST\MERGE_NOTES.md`. Recorded after the merge as work already 
 | 0114-21 | **Facturi primite: banda goală de jos scoasă** (17.10.2026, cererea operatorului): banda `pnlJos` (butonul «Ieșire», ascuns în ribbon, și linia de stare, care repeta subsolul arborelui) lăsa spațiu alb; scoasă cu controalele ei. Build curat; nevăzut pe ecran. `SLICE-0114-21-facturi-primite-fara-banda-de-jos.md`. |
 | 0114-22 | **E-Factura VIEW: fără butonul de opțiuni din antet și fără nivelul Furnizor** (17.10.2026, cererea operatorului): proprietatea `PrimiteView.AngajamentView` (True în `EFacturaView`): arborele e «Toate facturile» / lună / factură; macheta «Facturi primite» neschimbată. Build curat; nevăzut pe ecran. Ajutor: 0000-93; `SLICE-0114-22-efactura-vedere-fara-buton-antet-si-furnizor.md`. |
 | 0114-23 | **E-Factura: fără padding jos pe subviziuni, arbori mai înguști, «Atașamente» în «Conținut»** (17.10.2026, cererea operatorului): paginile vederii/ferestrei «Facturi primite» au `Padding(3,3,3,0)`; arborele «Facturi primite» 24 % (era 32), «Vânzare» 22,5 % (era 30); vederea «Atașamente» a facturii emise scoasă, bifa «Atașează factura originală» e subsolul vederii «Conținut». Build curat; nevăzut pe ecran. Ajutor: 0000-94; `SLICE-0114-23-efactura-subvederi-fara-padding-jos-arbore-ingust-atasamente-in-continut.md`. |
+| 0114-24 | **Ribbon: mod compact + panou temporar cât e strâns** (18.10.2026, cererea operatorului): `AppSettings.RibbonCompact` + bifa «Panglica din fereastra principală e compactă» în Setări › Aplicație; `KBotRibbon.Compact` micșorează fila, iconițele (32→24, 16→14), rândurile, textul (×0,88) și câmpurile ribbonului; `AvacontMain` îl aplică la pornire și la `AppSettings.Changed` (imediat). Ribbon strâns: clic pe filă deschide panoul filei ca suprapunere (`KBotRibbonFlyout`, copil al formei, fără să mute pagina), cu grupurile filei + grupul machetei și al vederii; se închide după un buton (înainte de `ItemClicked`), la clic în altă parte, Esc, pierderea focusului ferestrei; dublu clic pe filă sau săgeata îl desface definitiv. Build curat; nerulat, nevăzut. Ajutor: 0000-100; `SLICE-0114-24-ribbon-compact-si-panou-temporar.md`. |
 
 ### Open threads — 0114
 
 - `KBotRibbon.md` (control documentation) and its line in `CONTROLS.md`: not written.
 - The Setări › Aplicație switch still reads «Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»
   (`chkLogViewer`); it now drives the ribbon button. Stale on-screen text, code not changed.
-- No keyboard navigation, no fly-out while folded, no drop-down buttons (on purpose, first version).
+- No keyboard navigation, no drop-down buttons (on purpose, first version). The fly-out while folded came with 0114-24 (never run).
 
 ## Slice 0115 — opening page «Acasă» + side panel
 
@@ -190,6 +191,7 @@ history in `KBOT_TEST\MERGE_NOTES.md`. Recorded after the merge as work already 
 |------:|------|--------|---------|
 | 0115 | `AcasaPage` («Ce este nou» card, opens by itself once after an update — `NewsSeenVersion`, `HomeNewsCollapsed`; new logo bottom-right; no banner); side panel `KBotSidePanel` beside every page: Machete deschise, Acțiuni recente, Informații, Erori din sesiune (`GlobalErrorLog.RecentErrors` / `Written`); folds to an icon strip (`HomeSidebarCollapsed`); `ButtonStyles.ApplyTransparent` | GATA pe cod (build of the merge 0/0), seen only in `KBOT_TEST`; help 0000-71 | [SLICE-0115](../SLICE-0115-acasa-panou-lateral.md) |
 | 0115-01 | Side panel (17.10.2026): fold button moved to the bottom (icons of `navViews`; `CollapseButtonSize` / `CollapseExpandedImage` / `CollapseCollapsedImage`); tooltip per section over the icons of the folded strip; picture of an open macheta in the tooltip of its «Machete deschise» row (`KBotToolTipContent.BodyImage`, `AvacontMain.CaptureFront`), none for a closed one; «Acțiuni recente» only today, emptied at midnight; the folded state was already remembered (`HomeSidebarCollapsed`) | GATA pe cod (build 0/0), nevăzut pe ecran; picture of hosted Adobe / browser parts may be blank; help 0000-87 | [SLICE-0115-01](../SLICE-0115-01-panou-lateral-buton-jos-si-etichete.md) |
+| 0115-02 | Side panel behind the pages (18.10.2026): `AppSettings.SidebarBehindPages` (default on) + tick in Setări › Aplicație; `AvacontMain.ApplySidebarPlacement` hides the panel while a macheta (page or shell) is on screen when the tick is on, shown with none on screen or tick off; the macheta takes the full width | GATA pe cod (build 0/0), nevăzut pe ecran; help 0000-106 | [SLICE-0115-02](../SLICE-0115-02-panou-lateral-in-spatele-machetelor.md) |
 
 ## Slice 0116 — macheta registry
 

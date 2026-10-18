@@ -63,6 +63,7 @@ Public Class AvacontMain
         ' popup of the invoices tree); nothing picked and nothing typed = 7 days (see ReadSyncDays).
         Dim k_daysCombo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
         If k_daysCombo IsNot Nothing Then k_daysCombo.SelectedIndex = -1
+        ribbon.Compact = AppSettings.Current.RibbonCompact
         ribbon.Collapsed = AppSettings.Current.RibbonCollapsed
         ribbon.RightText = k_shell.lblOperator.Text
         AddHandler ribbon.CollapsedChanged, AddressOf Ribbon_CollapsedChanged
@@ -77,6 +78,7 @@ Public Class AvacontMain
         pnlHost.Controls.Add(_home)
 
         InitSidebar()
+        ApplySidebarPlacement()
         UpdateCloseButton()
     End Sub
 
@@ -183,13 +185,15 @@ Public Class AvacontMain
                     CloseCurrent()
                 Case "istoric_versiuni"
                     _kbot.OpenRegistered(KbotForm.MachetaIstoricVersiuni, AddressOf _kbot.DeschideIstoricVersiuni)
-                Case "efactura_vanzare", "efactura_cumparare"
+                Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
                 Case "ef_token"
                     _kbot.RunEFacturaCommand(e.Key)
                 Case "ef_primite_sync"
                     RunPrimiteSync()
+                Case KeyAccessTrimite, KeyAccessPreia
+                    _kbot.RunPrimiteAccess(e.Key)
                 Case KeyExtraseDescarca
                     _kbot.DescarcaExtraseDinRibbon()
                 Case KeyGrupeEditeaza
@@ -212,6 +216,9 @@ Public Class AvacontMain
     Private Const KeyPrimiteSync As String = "ef_primite_sync"
     Private Const KeyPrimiteZileCombo As String = "ef_primite_zile_combo"
     Private Const KeyPrimiteZileText As String = "ef_primite_zile_text"
+    ' Slice 00EF-43: the two buttons of the received invoices window that talk to the Access e-invoice store (Access clients only).
+    Private Const KeyAccessTrimite As String = "ef_access_trimite"
+    Private Const KeyAccessPreia As String = "ef_access_preia"
 
     ' The rows of the combo, in order (the combo shows them as «Ultimele N zile»); the first is the default.
     Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
@@ -221,7 +228,8 @@ Public Class AvacontMain
     ' the form group depends on the form on screen, never on a view of it:
     '   - the shell (KbotMain, with all its views): «Editeaza grupe», «Descarca extrase»;
     '   - the «Extrase de cont» window: «Descarca extrase»;
-    '   - the received invoices window: «Sincronizeaza facturi primite» and its two inputs.
+    '   - the received invoices window: «Sincronizeaza facturi primite» and its two inputs, and -- only for a client that also runs the Access
+'     application (slice 00EF-43) -- «Trimite in Access» and «Preia din Access».
     ' The group goes when none of them applies (the ribbon skips a group with nothing visible).
 
     Private Const KeyExtraseDescarca As String = "extrase_descarca"
@@ -237,17 +245,24 @@ Public Class AvacontMain
         Dim k_sync As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
         Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
         Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
-        If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing Then Return
+        Dim k_toAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessTrimite)
+        Dim k_fromAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessPreia)
+        If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing OrElse
+           k_toAccess Is Nothing OrElse k_fromAccess Is Nothing Then Return
+        Dim k_access As Boolean = k_primite AndAlso AccessFeature.Enabled
         Dim k_caption As String = If(k_shell, "Lista angajamentelor", If(k_extrase, "Extrase de cont", If(k_primite, "Facturi primite", String.Empty)))
         Dim k_showGroups As Boolean = k_shell
         Dim k_showDownload As Boolean = k_shell OrElse k_extrase
         If k_groups.Visible = k_showGroups AndAlso k_download.Visible = k_showDownload AndAlso k_sync.Visible = k_primite AndAlso
-           k_combo.Visible = k_primite AndAlso k_text.Visible = k_primite AndAlso String.Equals(ribbon.FormGroup.Text, k_caption, StringComparison.Ordinal) Then Return
+           k_combo.Visible = k_primite AndAlso k_text.Visible = k_primite AndAlso k_toAccess.Visible = k_access AndAlso k_fromAccess.Visible = k_access AndAlso
+           String.Equals(ribbon.FormGroup.Text, k_caption, StringComparison.Ordinal) Then Return
         k_groups.Visible = k_showGroups
         k_download.Visible = k_showDownload
         k_sync.Visible = k_primite
         k_combo.Visible = k_primite
         k_text.Visible = k_primite
+        k_toAccess.Visible = k_access
+        k_fromAccess.Visible = k_access
         ribbon.FormGroup.Text = k_caption
         ribbon.InvalidateLayout()
     End Sub
@@ -307,7 +322,15 @@ Public Class AvacontMain
     End Sub
 
     Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
-        If IsHandleCreated AndAlso Not IsDisposed Then SyncRibbon(sender, e)
+        Try
+            If Not IsHandleCreated OrElse IsDisposed Then Return
+            ' Slice 0114-24: the compact switch of Setari > Aplicatie takes effect at once (no-op when it did not change).
+            ribbon.Compact = AppSettings.Current.RibbonCompact
+            ApplySidebarPlacement()
+            SyncRibbon(sender, e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.AppSettings_Changed", ex)
+        End Try
     End Sub
 
     ''' <summary>
@@ -326,6 +349,7 @@ Public Class AvacontMain
 
     ' «Inchide» is there while a macheta is on screen (a page, or the shell); on the opening page it is gone.
     Private Sub UpdateCloseButton()
+        ApplySidebarPlacement()
         UpdateFormGroup()
         UpdateViewGroup()
         Dim k_button As KBotRibbonButton = ribbon.FindButton("pagina_inchide")

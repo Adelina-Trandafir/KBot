@@ -521,6 +521,20 @@ Public Class KBotDataView
     ''' rând/coloană). Aceeași rezoluție ca la pictare — și baza pentru blocarea
     ''' input-ului/editării (0010-05/06).
     ''' </summary>
+    ''' <summary>The host's <c>CellFormatting</c> says this cell may not be edited although it is shown as active (<c>ReadOnlyCell</c>).</summary>
+    Public Function IsCellReadOnly(colKey As String, rowIndex As Integer) As Boolean
+        Try
+            Dim col As KBotDataColumn = Column(colKey)
+            Dim row As KBotDataRow = _rows(rowIndex)
+            _probeCellArgs.Reset(col, row, rowIndex, row(colKey), String.Empty, BackColor, ForeColor, CellFontFor(col), col.TextAlign, True)
+            RaiseEvent CellFormatting(Me, _probeCellArgs)
+            Return _probeCellArgs.ReadOnlyCell
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.IsCellReadOnly", ex)
+            Throw
+        End Try
+    End Function
+
     Public Function IsCellEnabled(colKey As String, rowIndex As Integer) As Boolean
         Try
             Dim col As KBotDataColumn = Column(colKey)   ' cheie necunoscută => ArgumentException

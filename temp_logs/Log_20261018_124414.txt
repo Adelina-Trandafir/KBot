@@ -1,0 +1,958 @@
+[12:53:39]   Lansare browser...
+[12:53:39]   Lansare browser (Blank)...
+[12:53:39]   [Policy] Regula este deja configurată corect. Nu sunt necesare modificări.
+[12:53:42]   Stealth aplicat cu succes.
+[12:53:42] ✓ Browser poziționat (Ready).
+[12:53:42]   Autentificare...
+[12:53:42]   Execut: adlop - Conectare.wfl...
+[12:53:42]   Pornesc execuția pașilor pentru: FOREXEBUG - Conectare
+[12:53:42]   [Throttle] Dezactivat.
+[12:53:42] ► Navighez la: https://mfinante.gov.ro/web/forexepublic
+[12:53:43]   [MAIN] Pasul 1/6: Log
+[12:53:43]   Încep workflow FOREXEBUG
+[12:53:43]   [MAIN] Pasul 2/6: WaitFor [body]
+[12:53:43] ► Aștept element: body (visible)
+[12:53:43]   [MAIN] Pasul 3/6: IfExists [button.navaplwebbar-toggle >> visible=true]
+[12:53:43] ► Verific existența: button.navaplwebbar-toggle >> visible=true
+[12:53:44]   [MAIN] Pasul 4/6: AuthClick [a[href*='forexe.mfinante'] >> visible=true]
+[12:53:44] Deschid fereastra de autentificare
+[12:53:44]   [Auth] Aștept navigarea către: https://forexe.mfinante.gov.ro/ ...
+[12:53:44]   [Auth] Santinelă de eșec (URL): **/vdesk/hangup.php3**
+[12:53:44]   [Auth] Santinelă de eșec (element): table#main_table.logout_page
+[12:53:48] ✓ [Auth] Succes! Am ajuns la: https://forexe.mfinante.gov.ro/
+[12:53:48]   [MAIN] Pasul 5/6: Click [a[href*='forexe.mfinante.gov.ro/CABWeb'] >> visible=true]
+[12:53:48] ► Click pe: a[href*='forexe.mfinante.gov.ro/CABWeb'] >> visible=true [TAB NOU]
+[12:53:48]   Aștept deschiderea noului tab (ExpectNewTab=True)...
+[12:53:48] ✓ Context mutat pe noul tab: https://forexe.mfinante.gov.ro/CABWeb/home
+[12:53:53]   [MAIN] Pasul 6/6: Log
+[12:53:53]   Verific dacă pagina s-a încărcat corect sau s-a blocat...
+[12:53:53] ✓ Conectare reușită!
+[12:54:18]   [Andocare] Bara browserului ascunsă: 108 px.
+[12:54:18]   [Andocare] Browserul este copilul panoului gazdă.
+[12:54:18]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:18]   [Urmărire] Setările paginii (stiluri, unelte dezvoltator) au fost trimise în pagină.
+[12:54:18]   [Urmărire] Pagina arată niciun angajament.
+[12:54:18]   [Urmărire] Meniul K-BOT e în pagină; urmăresc operațiunile FOREXE.
+[12:54:18]   Rulez workflow-ul 'DeschideAngajament' pe sesiunea existentă...
+[12:54:18]   Pornesc execuția pașilor pentru: Deschide angajament AAB2MAATKA4
+[12:54:18]   [Throttle] Dezactivat.
+[12:54:18]   [MAIN] Pasul 1/14: IfExists [#select2-drop-mask]
+[12:54:18] ► Verific existența: #select2-drop-mask
+[12:54:19]   [MAIN] Pasul 2/14: Click [#statlogo]
+[12:54:19] ► Click pe: #statlogo 
+[12:54:20]   [MAIN] Pasul 3/14: Log
+[12:54:20] ══ Caut și deschid angajamentul AAB2MAATKA4 ══
+[12:54:20]   [MAIN] Pasul 4/14: WaitFor [a:has-text('Listă angajamente')]
+[12:54:20] ► Aștept element: a:has-text('Listă angajamente') (visible)
+[12:54:20]   [MAIN] Pasul 5/14: Click [a:has-text('Listă angajamente')]
+[12:54:20] ► Click pe: a:has-text('Listă angajamente') 
+[12:54:20]   [MAIN] Pasul 6/14: Fill [input[name='cod']]
+[12:54:20] ► Completez: input[name='cod'] cu 'AAB2MAATKA4'
+[12:54:21]   [MAIN] Pasul 7/14: Click [button:has-text('Caută')]
+[12:54:21] ► Click pe: button:has-text('Caută') 
+[12:54:21]   [MAIN] Pasul 8/14: IfExists [.alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')]
+[12:54:21] ► Verific existența: .alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')
+[12:54:22]   [MAIN] Pasul 9/14: WaitFor [a[href*='exportToXLS']]
+[12:54:22] ► Aștept element: a[href*='exportToXLS'] (visible)
+[12:54:22]   [MAIN] Pasul 10/14: Click [a.haction i.glyphicon-list:visible]
+[12:54:22] ► Click pe: a.haction i.glyphicon-list:visible 
+[12:54:22]   [MAIN] Pasul 11/14: WaitFor [.divaction]
+[12:54:22] ► Aștept element: .divaction (visible)
+[12:54:22]   [MAIN] Pasul 12/14: Click [.divaction a:has-text('Modificare')]
+[12:54:22] ► Click pe: .divaction a:has-text('Modificare') 
+[12:54:23]   [MAIN] Pasul 13/14: WaitFor [li.tab0]
+[12:54:23] ► Aștept element: li.tab0 (visible)
+[12:54:23]   [MAIN] Pasul 14/14: Log
+[12:54:23] ✓ Angajament AAB2MAATKA4 deschis în modul Modificare.
+[12:54:23]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:54:44]   [Andocare] Browser detașat și ascuns.
+[12:54:44]   [Andocare] Browserul este copilul panoului gazdă.
+[12:54:44]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:44]   [Urmărire] Setările paginii (stiluri, unelte dezvoltator) au fost trimise în pagină.
+[12:54:44]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:54:44]   [Urmărire] Meniul K-BOT e în pagină; urmăresc operațiunile FOREXE.
+[12:54:45]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:45]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:46]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:49]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:51]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:54:51]   [Recorder] Înregistrare pornită.
+[12:54:55]   [Urmărire] fotografiez lista rezervărilor înainte de modificare
+[12:54:55]   [Capturi] Am fotografiat pagina înainte de modificare.
+[12:54:55] ► [Urmărire] A început «Rezervare» pe «AAB2MAATKA4».
+[12:54:55]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:55:22]   [Urmărire] salvare apăsată
+[12:55:32]   [Urmărire] cer marcajul K-BOT pentru rezervare
+[12:55:32]   [Urmărire] Marcajul (IDREV: 452) a fost pus în motivul rezervării.
+[12:55:32]   [Urmărire] salvare apăsată
+[12:55:32]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:55:33] ✓ [Urmărire] «Rezervare» s-a salvat — angajament «AAB2MAATKA4» (salvare confirmată).
+[12:55:45]   Rulez workflow-ul 'RezervariEditate' pe sesiunea existentă...
+[12:55:45]   Pornesc execuția pașilor pentru: Rezervări editate AAB2MAATKA4
+[12:55:45]   [Throttle] Dezactivat.
+[12:55:45]   [MAIN] Pasul 1/16: Log
+[12:55:45] ══ Rezervările s-au încheiat — citesc antetul angajamentului ══
+[12:55:45]   [MAIN] Pasul 2/16: WaitFor [.well.well-small h4 span:nth-child(2)]
+[12:55:45] ► Aștept element: .well.well-small h4 span:nth-child(2) (visible)
+[12:55:45]   [MAIN] Pasul 3/16: Read [.well.well-small h4 span:nth-child(2)]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small h4 span:nth-child(2)
+[12:55:45] ✓ [Read] 'AAB2MAATKA4' -> Salvat în {{CodAngajament}}
+[12:55:45]   [MAIN] Pasul 4/16: Read [.well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child
+[12:55:45] ✓ [Read] '18/01/2026' -> Salvat în {{DataAngajament}}
+[12:55:45]   [MAIN] Pasul 5/16: IfExists [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[12:55:45] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[12:55:45] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:55:45]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[12:55:45] ✓ [Read] '18/01/2026' -> Salvat în {{DataInceputDerulare}}
+[12:55:45]   [MAIN] Pasul 6/16: IfExists [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[12:55:45] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[12:55:45] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:55:45]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[12:55:45] ✓ [Read] '18/01/2026 10:48:44' -> Salvat în {{UltimaModificare}}
+[12:55:45]   [MAIN] Pasul 7/16: Read [.well.well-small div.pull-left p]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small div.pull-left p
+[12:55:45] ✓ [Read] '2026 - VP - Internate si cantine pt elevi: Hrana pt oameni: Metro' -> Salvat în {{DescriereAngajament}}
+[12:55:45]   [MAIN] Pasul 8/16: Read [.well.well-small span.label]
+[12:55:45] ► [Read] Inițializez citirea: .well.well-small span.label
+[12:55:45] ✓ [Read] 'În derulare' -> Salvat în {{StareAngajament}}
+[12:55:45]   [MAIN] Pasul 9/16: Log
+[12:55:45] ══ Istoricul angajamentului (de la sfârșit, până la 12/10/2026 18:16:57) ══
+[12:55:45]   [MAIN] Pasul 10/16: Click [li.tab0 a]
+[12:55:45] ► Click pe: li.tab0 a 
+[12:55:46]   [MAIN] Pasul 11/16: WaitFor [li.tab0.active]
+[12:55:46] ► Aștept element: li.tab0.active (visible)
+[12:55:46]   [MAIN] Pasul 12/16: Click [button.btn-success:has-text('Istoric')]
+[12:55:46] ► Click pe: button.btn-success:has-text('Istoric') 
+[12:55:46]   [MAIN] Pasul 13/16: WaitFor [h3.heading:has-text('Istoric angajament')]
+[12:55:46] ► Aștept element: h3.heading:has-text('Istoric angajament') (visible)
+[12:55:46]   [MAIN] Pasul 14/16: IfExists [table.table-striped tbody tr]
+[12:55:46] ► Verific existența: table.table-striped tbody tr
+[12:55:46] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:55:46]      ╚► [IF] Pasul 1/2: ScrapeTable [table.table-striped]
+[12:55:46]   [ScrapeTable] Încep extragerea: table.table-striped
+[12:55:46]   [ScrapeTable] Navighez la ultima pagina (page=last)...
+[12:55:47] ► Procesez pagina 1 [fizic: 10]
+[12:55:47]   [ScrapeTable] exitIfCellEquals declanșat la rândul 1.
+[12:55:47] ✓ [ScrapeTable] Finalizat (exit condiție). Total 1 rânduri în 'TabelIstoric'.
+[12:55:47]      ╚► [IF] Pasul 2/2: Log
+[12:55:47] ✓ ✓ Istoric citit.
+[12:55:47]   [MAIN] Pasul 15/16: IfExists [button.btn-default:has-text('Înapoi')]
+[12:55:47] ► Verific existența: button.btn-default:has-text('Înapoi')
+[12:55:47] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:55:47]      ╚► [IF] Pasul 1/2: Click [button.btn-default:has-text('Înapoi')]
+[12:55:47] ► Click pe: button.btn-default:has-text('Înapoi') 
+[12:55:48]      ╚► [IF] Pasul 2/2: WaitFor [li.tab0]
+[12:55:48] ► Aștept element: li.tab0 (visible)
+[12:55:48]   [MAIN] Pasul 16/16: Log
+[12:55:48] ✓ ══ Istoricul rezervărilor angajamentului AAB2MAATKA4 a fost citit. ══
+[12:55:48]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:55:56] ► [Urmărire] A început «Recepție nouă» pe «AAB2MAATKA4».
+[12:55:57]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:56:17]   [Urmărire] cer marcajul K-BOT pentru receptie
+[12:56:17]   [Urmărire] Marcajul (IDRH: 714; IDR: 894) a fost pus în descrierea recepției.
+[12:56:17]   [Urmărire] salvare apăsată
+[12:56:21]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:56:22] ✓ [Urmărire] «Recepție nouă» s-a salvat — angajament «AAB2MAATKA4» (salvare confirmată).
+[12:56:24]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:56:24] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[12:56:24] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[12:56:24] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[12:56:24]   Rulez workflow-ul 'ReceptieEditata' pe sesiunea existentă...
+[12:56:24]   Pornesc execuția pașilor pentru: Recepție editată AAB2MAATKA4
+[12:56:24]   [Throttle] Dezactivat.
+[12:56:24]   [MAIN] Pasul 1/19: Log
+[12:56:24] ══ Recepția salvată în FOREXE — citesc antetul angajamentului ══
+[12:56:24]   [MAIN] Pasul 2/19: WaitFor [.well.well-small h4 span:nth-child(2)]
+[12:56:24] ► Aștept element: .well.well-small h4 span:nth-child(2) (visible)
+[12:56:24]   [MAIN] Pasul 3/19: Read [.well.well-small h4 span:nth-child(2)]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small h4 span:nth-child(2)
+[12:56:24] ✓ [Read] 'AAB2MAATKA4' -> Salvat în {{CodAngajament}}
+[12:56:24]   [MAIN] Pasul 4/19: Read [.well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child
+[12:56:24] ✓ [Read] '18/01/2026' -> Salvat în {{DataAngajament}}
+[12:56:24]   [MAIN] Pasul 5/19: IfExists [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[12:56:24] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[12:56:24] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:24]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[12:56:24] ✓ [Read] '18/01/2026' -> Salvat în {{DataInceputDerulare}}
+[12:56:24]   [MAIN] Pasul 6/19: IfExists [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[12:56:24] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[12:56:24] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:24]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[12:56:24] ✓ [Read] '18/01/2026 10:48:44' -> Salvat în {{UltimaModificare}}
+[12:56:24]   [MAIN] Pasul 7/19: Read [.well.well-small div.pull-left p]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small div.pull-left p
+[12:56:24] ✓ [Read] '2026 - VP - Internate si cantine pt elevi: Hrana pt oameni: Metro' -> Salvat în {{DescriereAngajament}}
+[12:56:24]   [MAIN] Pasul 8/19: Read [.well.well-small span.label]
+[12:56:24] ► [Read] Inițializez citirea: .well.well-small span.label
+[12:56:24] ✓ [Read] 'În derulare' -> Salvat în {{StareAngajament}}
+[12:56:24]   [MAIN] Pasul 9/19: Log
+[12:56:24] ══ Citesc recepția salvată (ULTIMA) ══
+[12:56:24]   [MAIN] Pasul 10/19: IfExists [li.tab1]
+[12:56:24] ► Verific existența: li.tab1
+[12:56:24] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:24]      ╚► [IF] Pasul 1/3: Click [li.tab1 a]
+[12:56:24] ► Click pe: li.tab1 a 
+[12:56:25]      ╚► [IF] Pasul 2/3: WaitFor [li.tab1.active]
+[12:56:25] ► Aștept element: li.tab1.active (visible)
+[12:56:25]      ╚► [IF] Pasul 3/3: IfExists [table.table-striped.table-bordered.table-condensed tbody tr]
+[12:56:25] ► Verific existența: table.table-striped.table-bordered.table-condensed tbody tr
+[12:56:25] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:25]      ╚► [IF] Pasul 1/2: ScrapeTable [table.table-striped.table-bordered.table-condensed]
+[12:56:25]   [ScrapeTable] Încep extragerea: table.table-striped.table-bordered.table-condensed
+[12:56:25] ► Procesez pagina 1
+[12:56:25]   [ScrapeTable] 22 rânduri păstrate (din 22).
+[12:56:25] ✓ [ScrapeTable] Finalizat. Total 22 rânduri în 'ListaReceptii'.
+[12:56:25]      ╚► [IF] Pasul 2/2: ForEachVar
+[12:56:25]   [ForEachVar] 22 elemente în 'ListaReceptii'.
+[12:56:25]   --- [ForEachVar] Iterația 1 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 1 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 2 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 2 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 3 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 3 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 4 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 4 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 5 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 5 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 6 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 6 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 7 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 7 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 8 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 8 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 9 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 9 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 10 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 10 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 11 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 11 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 12 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:25] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:25] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:25]   [ForEachVar] Rând colectat la iterația 12 (8 câmpuri).
+[12:56:25]   --- [ForEachVar] Iterația 13 din 22 ---
+[12:56:25]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:25]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:25] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:25]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:25]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:25]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:25]   [IfVar] 'false' eq 'true' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:25]   [IfVar] '0' eq '1' -> False
+[12:56:25]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:25]   [IfVar] Execut ramura Else.
+[12:56:25] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 13 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 14 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 14 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 15 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 15 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 16 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 16 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 17 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 17 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 18 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 18 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 19 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 19 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 20 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 20 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 21 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'false' eq 'true' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '0' eq '1' -> False
+[12:56:26]   [IfVar] Conditie NEINDEPLINITA.
+[12:56:26]   [IfVar] Execut ramura Else.
+[12:56:26] ✓ [SetInternalVar] [[Detaliu]] = '[]'
+[12:56:26] ✓ [SetInternalVar] [[TipReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[DescriereReceptie]] = ''
+[12:56:26] ✓ [SetInternalVar] [[CodIndicator]] = ''
+[12:56:26]   [ForEachVar] Rând colectat la iterația 21 (8 câmpuri).
+[12:56:26]   --- [ForEachVar] Iterația 22 din 22 ---
+[12:56:26]   [ForEachVar] Câmpuri: Tip, Data, Suma, Col_4
+[12:56:26]      ╚► [IF] Pasul 1/3: SetInternalVar
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '0'
+[12:56:26]      ╚► [IF] Pasul 2/3: IfVar
+[12:56:26]   [IfVar] 'ULTIMA' eq 'ULTIMA' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   [IfVar] 'true' eq 'true' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26] ✓ [SetInternalVar] [[Citita]] = '1'
+[12:56:26]      ╚► [IF] Pasul 3/3: IfVar
+[12:56:26]   [IfVar] '1' eq '1' -> True
+[12:56:26]   [IfVar] Conditie indeplinita. Execut ramura principala.
+[12:56:26]   Citesc recepția 22: Final / 19/10/2026 / 6.949,89...
+[12:56:26] ► Click pe: table.table-striped.table-bordered.table-condensed tbody tr:nth-child(22) .glyphicon-eye-open 
+[12:56:27] ► Aștept element: h3.heading:has-text('Modifică recepție') (visible)
+[12:56:27] ► Aștept element: select[name='receptie'] (visible)
+[12:56:27] ► [Read] Inițializez citirea: select[name='receptie']
+[12:56:27] ✓ [Read] 'Final' -> Salvat în {{TipReceptie}}
+[12:56:27] ► [Read] Inițializez citirea: textarea[name='descriere']
+[12:56:27] ✓ [Read] 'Plata facturi alimente (IDRH: 714; IDR: 894)' -> Salvat în {{DescriereReceptie}}
+[12:56:27]   [ScrapeTable] Încep extragerea: table.table-striped.table-bordered.table-hover.table-condensed
+[12:56:27] ► Procesez pagina 1
+[12:56:27]   [ScrapeTable] 1 rânduri păstrate (din 1).
+[12:56:27]   [ScrapeTable] Butonul Next nu mai e disponibil. Gata.
+[12:56:27] ✓ [ScrapeTable] Finalizat. Total 1 rânduri în 'Detaliu'.
+[12:56:27] ► [Read] Inițializez citirea: table.table-striped.table-bordered.table-hover.table-condensed tbody tr:first-child td:nth-child(1) span
+[12:56:27] ✓ [Read] 'AAB' -> Salvat în {{CodIndicator}}
+[12:56:27] ✓ ✓ Recepția 22 citită. Revin la listă...
+[12:56:27] ► Naviguez înapoi (Browser Back)...
+[12:56:27] ✓ [GoBack] Navigare realizată.
+[12:56:27] ► Aștept element: li.tab1.active (visible)
+[12:56:27]   [ForEachVar] Rând colectat la iterația 22 (8 câmpuri).
+[12:56:27] ✓ [ForEachVar] Colecție salvată → 'ListaReceptii_results' (22 rânduri).
+[12:56:27] ✓ [ForEachVar] Finalizat.
+[12:56:27]   [MAIN] Pasul 11/19: Log
+[12:56:28] ══ Istoricul angajamentului (de la sfârșit, până la 18/10/2026 12:55:32) ══
+[12:56:28]   [MAIN] Pasul 12/19: Click [li.tab0 a]
+[12:56:28] ► Click pe: li.tab0 a 
+[12:56:28]   [MAIN] Pasul 13/19: WaitFor [li.tab0.active]
+[12:56:28] ► Aștept element: li.tab0.active (visible)
+[12:56:28]   [MAIN] Pasul 14/19: Click [button.btn-success:has-text('Istoric')]
+[12:56:28] ► Click pe: button.btn-success:has-text('Istoric') 
+[12:56:29]   [MAIN] Pasul 15/19: WaitFor [h3.heading:has-text('Istoric angajament')]
+[12:56:29] ► Aștept element: h3.heading:has-text('Istoric angajament') (visible)
+[12:56:29]   [MAIN] Pasul 16/19: IfExists [table.table-striped tbody tr]
+[12:56:29] ► Verific existența: table.table-striped tbody tr
+[12:56:29] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:29]      ╚► [IF] Pasul 1/2: ScrapeTable [table.table-striped]
+[12:56:29]   [ScrapeTable] Încep extragerea: table.table-striped
+[12:56:29]   [ScrapeTable] Navighez la ultima pagina (page=last)...
+[12:56:29] ► Procesez pagina 1 [fizic: 10]
+[12:56:29]   [ScrapeTable] exitIfCellEquals declanșat la rândul 2.
+[12:56:29] ✓ [ScrapeTable] Finalizat (exit condiție). Total 2 rânduri în 'TabelIstoric'.
+[12:56:29]      ╚► [IF] Pasul 2/2: Log
+[12:56:29] ✓ ✓ Istoric citit.
+[12:56:29]   [MAIN] Pasul 17/19: IfExists [button.btn-default:has-text('Înapoi')]
+[12:56:29] ► Verific existența: button.btn-default:has-text('Înapoi')
+[12:56:29] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:29]      ╚► [IF] Pasul 1/2: Click [button.btn-default:has-text('Înapoi')]
+[12:56:29] ► Click pe: button.btn-default:has-text('Înapoi') 
+[12:56:30]      ╚► [IF] Pasul 2/2: WaitFor [li.tab0]
+[12:56:30] ► Aștept element: li.tab0 (visible)
+[12:56:30]   [MAIN] Pasul 18/19: IfExists [li.tab1]
+[12:56:30] ► Verific existența: li.tab1
+[12:56:30] ✓ Element vizibil detectat. Intru pe ramura DA.
+[12:56:30]      ╚► [IF] Pasul 1/2: Click [li.tab1 a]
+[12:56:30] ► Click pe: li.tab1 a 
+[12:56:31]      ╚► [IF] Pasul 2/2: WaitFor [li.tab1.active]
+[12:56:31] ► Aștept element: li.tab1.active (visible)
+[12:56:31]   [MAIN] Pasul 19/19: Log
+[12:56:31] ✓ ══ Recepția și istoricul angajamentului AAB2MAATKA4 au fost citite. ══
+[12:56:31]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[12:56:34]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:35]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:35]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:36]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:38]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:46]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:46]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:47]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:48]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:49]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:50]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:51]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[12:56:55]   [Recorder] Înregistrare oprită.
+[12:56:55]   [Andocare] Browser detașat și ascuns.
+[12:56:55]   [Recorder] Înregistrare oprită.
+[13:05:50]   [Andocare] Browserul este copilul panoului gazdă.
+[13:05:50]   [Andocare] Fereastra browserului se mutase în panou; am pus-o la loc.
+[13:05:50]   [Urmărire] Setările paginii (stiluri, unelte dezvoltator) au fost trimise în pagină.
+[13:05:50]   [Urmărire] Pagina arată angajamentul «AAB2MAATKA4».
+[13:05:50]   [Urmărire] Meniul K-BOT e în pagină; urmăresc operațiunile FOREXE.
+[13:06:01]   Rulez workflow-ul 'DeschideAngajament' pe sesiunea existentă...
+[13:06:01]   Pornesc execuția pașilor pentru: Deschide angajament AAB2MA3AKCT
+[13:06:01]   [Throttle] Dezactivat.
+[13:06:01] ► Url gresithttps://forexe.mfinante.gov.ro/CABWeb/contract?5 Navighez la: https://forexe.mfinante.gov.ro/CABWeb/home
+[13:06:01]   [MAIN] Pasul 1/14: IfExists [#select2-drop-mask]
+[13:06:01] ► Verific existența: #select2-drop-mask
+[13:06:02]   [MAIN] Pasul 2/14: Click [#statlogo]
+[13:06:02] ► Click pe: #statlogo 
+[13:06:03]   [MAIN] Pasul 3/14: Log
+[13:06:03] ══ Caut și deschid angajamentul AAB2MA3AKCT ══
+[13:06:03]   [MAIN] Pasul 4/14: WaitFor [a:has-text('Listă angajamente')]
+[13:06:03] ► Aștept element: a:has-text('Listă angajamente') (visible)
+[13:06:03]   [MAIN] Pasul 5/14: Click [a:has-text('Listă angajamente')]
+[13:06:03] ► Click pe: a:has-text('Listă angajamente') 
+[13:06:03]   [MAIN] Pasul 6/14: Fill [input[name='cod']]
+[13:06:03] ► Completez: input[name='cod'] cu 'AAB2MA3AKCT'
+[13:06:03]   [MAIN] Pasul 7/14: Click [button:has-text('Caută')]
+[13:06:03] ► Click pe: button:has-text('Caută') 
+[13:06:04]   [MAIN] Pasul 8/14: IfExists [.alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')]
+[13:06:04] ► Verific existența: .alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')
+[13:06:05]   [MAIN] Pasul 9/14: WaitFor [a[href*='exportToXLS']]
+[13:06:05] ► Aștept element: a[href*='exportToXLS'] (visible)
+[13:06:05]   [MAIN] Pasul 10/14: Click [a.haction i.glyphicon-list:visible]
+[13:06:05] ► Click pe: a.haction i.glyphicon-list:visible 
+[13:06:05]   [MAIN] Pasul 11/14: WaitFor [.divaction]
+[13:06:05] ► Aștept element: .divaction (visible)
+[13:06:05]   [MAIN] Pasul 12/14: Click [.divaction a:has-text('Modificare')]
+[13:06:05] ► Click pe: .divaction a:has-text('Modificare') 
+[13:06:06]   [MAIN] Pasul 13/14: WaitFor [li.tab0]
+[13:06:06] ► Aștept element: li.tab0 (visible)
+[13:06:06]   [MAIN] Pasul 14/14: Log
+[13:06:06] ✓ Angajament AAB2MA3AKCT deschis în modul Modificare.
+[13:06:06]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:06:10]   [Urmărire] fotografiez lista rezervărilor înainte de modificare
+[13:06:10]   [Capturi] Am fotografiat pagina înainte de modificare.
+[13:06:10] ► [Urmărire] A început «Rezervare» pe «AAB2MA3AKCT».
+[13:06:10]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:06:24]   [Urmărire] salvare apăsată
+[13:06:33]   [Urmărire] cer marcajul K-BOT pentru rezervare
+[13:06:33]   [Urmărire] Marcajul (IDREV: 456) a fost pus în motivul rezervării.
+[13:06:33]   [Urmărire] salvare apăsată
+[13:06:34]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:06:34] ✓ [Urmărire] «Rezervare» s-a salvat — angajament «AAB2MA3AKCT» (salvare confirmată).
+[13:06:36]   Rulez workflow-ul 'RezervariEditate' pe sesiunea existentă...
+[13:06:36]   Pornesc execuția pașilor pentru: Rezervări editate AAB2MA3AKCT
+[13:06:36]   [Throttle] Dezactivat.
+[13:06:36]   [MAIN] Pasul 1/16: Log
+[13:06:36] ══ Rezervările s-au încheiat — citesc antetul angajamentului ══
+[13:06:36]   [MAIN] Pasul 2/16: WaitFor [.well.well-small h4 span:nth-child(2)]
+[13:06:36] ► Aștept element: .well.well-small h4 span:nth-child(2) (visible)
+[13:06:36]   [MAIN] Pasul 3/16: Read [.well.well-small h4 span:nth-child(2)]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small h4 span:nth-child(2)
+[13:06:36] ✓ [Read] 'AAB2MA3AKCT' -> Salvat în {{CodAngajament}}
+[13:06:36]   [MAIN] Pasul 4/16: Read [.well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child
+[13:06:36] ✓ [Read] '18/01/2026' -> Salvat în {{DataAngajament}}
+[13:06:36]   [MAIN] Pasul 5/16: IfExists [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[13:06:36] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[13:06:36] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:06:36]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[13:06:36] ✓ [Read] '18/01/2026' -> Salvat în {{DataInceputDerulare}}
+[13:06:36]   [MAIN] Pasul 6/16: IfExists [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[13:06:36] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[13:06:36] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:06:36]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[13:06:36] ✓ [Read] '18/01/2026 10:10:50' -> Salvat în {{UltimaModificare}}
+[13:06:36]   [MAIN] Pasul 7/16: Read [.well.well-small div.pull-left p]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small div.pull-left p
+[13:06:36] ✓ [Read] '2026 - VP - Alte bunuri si servicii pt intretinere si functionare:Gisera Electro Lift' -> Salvat în {{DescriereAngajament}}
+[13:06:36]   [MAIN] Pasul 8/16: Read [.well.well-small span.label]
+[13:06:36] ► [Read] Inițializez citirea: .well.well-small span.label
+[13:06:36] ✓ [Read] 'În derulare' -> Salvat în {{StareAngajament}}
+[13:06:36]   [MAIN] Pasul 9/16: Log
+[13:06:36] ══ Istoricul angajamentului (de la sfârșit, până la 24/09/2026 18:21:10) ══
+[13:06:36]   [MAIN] Pasul 10/16: Click [li.tab0 a]
+[13:06:36] ► Click pe: li.tab0 a 
+[13:06:37]   [MAIN] Pasul 11/16: WaitFor [li.tab0.active]
+[13:06:37] ► Aștept element: li.tab0.active (visible)
+[13:06:37]   [MAIN] Pasul 12/16: Click [button.btn-success:has-text('Istoric')]
+[13:06:37] ► Click pe: button.btn-success:has-text('Istoric') 
+[13:06:38]   [MAIN] Pasul 13/16: WaitFor [h3.heading:has-text('Istoric angajament')]
+[13:06:38] ► Aștept element: h3.heading:has-text('Istoric angajament') (visible)
+[13:06:38]   [MAIN] Pasul 14/16: IfExists [table.table-striped tbody tr]
+[13:06:38] ► Verific existența: table.table-striped tbody tr
+[13:06:38] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:06:38]      ╚► [IF] Pasul 1/2: ScrapeTable [table.table-striped]
+[13:06:38]   [ScrapeTable] Încep extragerea: table.table-striped
+[13:06:38]   [ScrapeTable] Navighez la ultima pagina (page=last)...
+[13:06:38] ► Procesez pagina 1 [fizic: 5]
+[13:06:38]   [ScrapeTable] exitIfCellEquals declanșat la rândul 1.
+[13:06:38] ✓ [ScrapeTable] Finalizat (exit condiție). Total 1 rânduri în 'TabelIstoric'.
+[13:06:38]      ╚► [IF] Pasul 2/2: Log
+[13:06:38] ✓ ✓ Istoric citit.
+[13:06:38]   [MAIN] Pasul 15/16: IfExists [button.btn-default:has-text('Înapoi')]
+[13:06:38] ► Verific existența: button.btn-default:has-text('Înapoi')
+[13:06:38] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:06:38]      ╚► [IF] Pasul 1/2: Click [button.btn-default:has-text('Înapoi')]
+[13:06:38] ► Click pe: button.btn-default:has-text('Înapoi') 
+[13:06:40]      ╚► [IF] Pasul 2/2: WaitFor [li.tab0]
+[13:06:40] ► Aștept element: li.tab0 (visible)
+[13:06:40]   [MAIN] Pasul 16/16: Log
+[13:06:40] ✓ ══ Istoricul rezervărilor angajamentului AAB2MA3AKCT a fost citit. ══
+[13:06:40]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:06:49]   [Andocare] Browser detașat și ascuns.
+[13:07:25] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[13:07:25]   Rulez workflow-ul 'ReceptieNoua' pe sesiunea existentă...
+[13:07:25]   Pornesc execuția pașilor pentru: Receptie noua pentru AAB2MA3AKCT
+[13:07:25]   [Throttle] Dezactivat.
+[13:07:25] ⚠ [Validare JSON] 'DATE_RECEPTIE' obiect[0]: câmpul 'CodIndicator' există în JSON dar nu este folosit în WFL.
+[13:07:25]   [MAIN] Pasul 1/25: Log
+[13:07:25] ✓ Adaug o recepție nouă pe AAB2MA3AKCT...
+[13:07:25]   [MAIN] Pasul 2/25: IfExists [#select2-drop-mask]
+[13:07:25] ► Verific existența: #select2-drop-mask
+[13:07:26]   [MAIN] Pasul 3/25: Click [#statlogo]
+[13:07:26] ► Click pe: #statlogo 
+[13:07:27]   [MAIN] Pasul 4/25: Click [a:has-text('Listă angajamente')]
+[13:07:27] Click Listă angajamente
+[13:07:28]   [MAIN] Pasul 5/25: Fill [input[name='cod']]
+[13:07:28] Caut angajamentul AAB2MA3AKCT
+[13:07:28]   [MAIN] Pasul 6/25: Click [button:has-text('Caută')]
+[13:07:28] Click Caută
+[13:07:29]   [MAIN] Pasul 7/25: IfExists [.alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')]
+[13:07:29] ► Verific existența: .alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')
+[13:07:30]   [MAIN] Pasul 8/25: WaitFor [a[href*='exportToXLS']]
+[13:07:30] Aştept lista de rezultate
+[13:07:30]   [MAIN] Pasul 9/25: Click [a.haction i.glyphicon-list:visible]
+[13:07:30] Click iconiţa detalii angajament
+[13:07:30]   [MAIN] Pasul 10/25: WaitFor [.divaction]
+[13:07:30] ► Aștept element: .divaction (visible)
+[13:07:30]   [MAIN] Pasul 11/25: Click [.divaction a:has-text('Modificare')]
+[13:07:30] Click Modificare
+[13:07:31]   [MAIN] Pasul 12/25: WaitFor [li.tab0]
+[13:07:31] Aştept formularul de modificare
+[13:07:31]   [MAIN] Pasul 13/25: SetInternalVar
+[13:07:31]   [SetInternalVar] 'DATE_RECEPTIE' vine din exterior. Sar.
+[13:07:31]   [MAIN] Pasul 14/25: Click [ul.nav.nav-tabs > li.tab1]
+[13:07:31] Apas pe tab Receptii
+[13:07:32]   [MAIN] Pasul 15/25: WaitFor [li.tab1.active]
+[13:07:32] ► Aștept element: li.tab1.active (visible)
+[13:07:32]   [MAIN] Pasul 16/25: Click [button:has-text('Adaugă')]
+[13:07:32] Apas «Adaugă»
+[13:07:32]   [MAIN] Pasul 17/25: WaitFor [form.form-horizontal]
+[13:07:32] ► Aștept element: form.form-horizontal (visible)
+[13:07:32]   [MAIN] Pasul 18/25: Select [form.form-horizontal select[name='receptie']]
+[13:07:32] Selectez tipul recepției Final
+[13:07:32]   [MAIN] Pasul 19/25: Fill [form.form-horizontal input[name='data']]
+[13:07:32] Completez data recepției
+[13:07:32]   [MAIN] Pasul 20/25: Fill [form.form-horizontal textarea[name='descriere']]
+[13:07:32] Completez descrierea recepției
+[13:07:32]   [MAIN] Pasul 21/25: ForEachVar
+[13:07:33]   [ForEachVar] 1 elemente în 'DATE_RECEPTIE'.
+[13:07:33]   --- [ForEachVar] Iterația 1 din 1 ---
+[13:07:33]   [ForEachVar] Câmpuri: ClsfSal, Clsf, CodIndicator, Valoare
+[13:07:33]      ╚► [IF] Pasul 1/2: Log
+[13:07:33]   Rândul 1: 65.10.04.02.20.01.30 = 302.50
+[13:07:33]      ╚► [IF] Pasul 2/2: FindInTable [table.table-striped]
+[13:07:33] ► [FindInTable] Caut în 'table.table-striped' (First) unde 'Sector - Sursa - Indicator' == '650402200130'
+[13:07:33] ✓ [FindInTable] Rând găsit la indexul 0.
+[13:07:33]   [FindInTable] Execut 1 acțiuni copil pe rândul 0.
+[13:07:33] ► [FindInTable:Fill] input[name*='valoare'] = '302.50'
+[13:07:33] ✓ [ForEachVar] Finalizat.
+[13:07:33]   [MAIN] Pasul 22/25: Screenshot
+[13:07:33] Captură ecran — recepția completată
+[13:07:33] ✓ [Screenshot] Base64 salvat în [[Poza_Receptie]].
+[13:07:33]   [MAIN] Pasul 23/25: Click [button:has-text('Salvează')]
+[13:07:33] Apas Salvează
+[13:07:33]   [MAIN] Pasul 24/25: SetInternalVar
+[13:07:33] ✓ [SetInternalVar] [[MesajSalvare]] = ''
+[13:07:33]   [MAIN] Pasul 25/25: IfExists [.alert.alert-success]
+[13:07:33] ► Verific existența: .alert.alert-success
+[13:07:41]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:07:41] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[13:07:41] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[13:07:41] ⚠ Atribut lipsă: value (în elementul <SetInternalVar>)
+[13:07:41]   Rulez workflow-ul 'ReceptieEditata' pe sesiunea existentă...
+[13:07:41]   Pornesc execuția pașilor pentru: Recepție editată AAB2MA3AKCT
+[13:07:41]   [Throttle] Dezactivat.
+[13:07:41]   [MAIN] Pasul 1/19: Log
+[13:07:41] ══ Recepția salvată în FOREXE — citesc antetul angajamentului ══
+[13:07:41]   [MAIN] Pasul 2/19: WaitFor [.well.well-small h4 span:nth-child(2)]
+[13:07:41] ► Aștept element: .well.well-small h4 span:nth-child(2) (visible)
+[13:07:41]   [MAIN] Pasul 3/19: Read [.well.well-small h4 span:nth-child(2)]
+[13:07:41] ► [Read] Inițializez citirea: .well.well-small h4 span:nth-child(2)
+[13:07:41] ✓ [Read] 'AAB2MA3AKCT' -> Salvat în {{CodAngajament}}
+[13:07:41]   [MAIN] Pasul 4/19: Read [.well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child]
+[13:07:41] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child
+[13:07:41] ✓ [Read] '18/01/2026' -> Salvat în {{DataAngajament}}
+[13:07:41]   [MAIN] Pasul 5/19: IfExists [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[13:07:41] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[13:07:41] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:07:41]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child]
+[13:07:41] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Dată început')) span:last-child
+[13:07:41] ✓ [Read] '18/01/2026' -> Salvat în {{DataInceputDerulare}}
+[13:07:41]   [MAIN] Pasul 6/19: IfExists [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[13:07:41] ► Verific existența: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[13:07:41] ✓ Element vizibil detectat. Intru pe ramura DA.
+[13:07:41]      ╚► [IF] Pasul 1/1: Read [.well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child]
+[13:07:41] ► [Read] Inițializez citirea: .well.well-small div.clearfix:has(strong:has-text('Ultima modificare')) span:last-child
+[13:07:41] ✓ [Read] '18/01/2026 10:10:50' -> Salvat în {{UltimaModificare}}
+[13:07:41]   [MAIN] Pasul 7/19: Read [.well.well-small div.pull-left p]
+[13:07:41] ► [Read] Inițializez citirea: .well.well-small div.pull-left p
+[13:07:42] ✓ [Read] '2026 - VP - Alte bunuri si servicii pt intretinere si functionare:Gisera Electro Lift' -> Salvat în {{DescriereAngajament}}
+[13:07:42]   [MAIN] Pasul 8/19: Read [.well.well-small span.label]
+[13:07:42] ► [Read] Inițializez citirea: .well.well-small span.label
+[13:07:42] ✓ [Read] 'În derulare' -> Salvat în {{StareAngajament}}
+[13:07:42]   [MAIN] Pasul 9/19: Log
+[13:07:42] ══ Citesc recepția salvată (19/10/2026) ══
+[13:07:42]   [MAIN] Pasul 10/19: IfExists [li.tab1]
+[13:07:42] ► Verific existența: li.tab1
+[13:07:57]   Elementul nu e vizibil. Intru pe ramura ELSE.
+[13:07:57]      ╚► [IF] Pasul 1/1: Log
+[13:07:57] ⚠ Tabul Recepții (tab1) nu este disponibil pentru AAB2MA3AKCT.
+[13:07:57]   [MAIN] Pasul 11/19: Log
+[13:07:57] ══ Istoricul angajamentului (de la sfârșit, până la 18/10/2026 13:06:33) ══
+[13:07:57]   [MAIN] Pasul 12/19: Click [li.tab0 a]
+[13:07:57] ► Click pe: li.tab0 a 
+[13:08:12]   Eroare la executare workflow: Timeout 15000ms exceeded.
+Call log:
+  -   - waiting for Locator("li.tab0 a") to be visible
+[13:08:12]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:08:12] ✗ Eroare rulare 'ReceptieEditata': Timeout 15000ms exceeded.
+Call log:
+  -   - waiting for Locator("li.tab0 a") to be visible
+[13:08:12]   [DIAG][STACK] System.TimeoutException: Timeout 15000ms exceeded.
+Call log:
+  -   - waiting for Locator("li.tab0 a") to be visible
+   at WorkflowExecutor.ExecuteAsync(Workflow workflow) in C:\Users\Adelina Trandafir\source\repos\KBOT\src\KBot.Forexe\Executor\WorkflowExecutor.Flow.vb:line 86
+   at KBot.Forexe.ForexeRunner.RunJobAsync(JobRequest job, IProgress`1 progress, CancellationToken ct) in C:\Users\Adelina Trandafir\source\repos\KBOT\src\KBot.Forexe\ForexeRunner.vb:line 644
+   at KBot.Forexe.ForexeRunner.RunJobAsync(JobRequest job, IProgress`1 progress, CancellationToken ct) in C:\Users\Adelina Trandafir\source\repos\KBOT\src\KBot.Forexe\ForexeRunner.vb:line 651
+[13:08:17]   [Andocare] Browserul este copilul panoului gazdă.
+[13:08:17]   [Urmărire] Setările paginii (stiluri, unelte dezvoltator) au fost trimise în pagină.
+[13:08:17]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:08:17]   [Urmărire] Meniul K-BOT e în pagină; urmăresc operațiunile FOREXE.
+[13:10:15]   [Urmărire] Pagina arată niciun angajament.
+[13:10:21]   Rulez workflow-ul 'DeschideAngajament' pe sesiunea existentă...
+[13:10:21]   Pornesc execuția pașilor pentru: Deschide angajament AAB2MA3AKCT
+[13:10:21]   [Throttle] Dezactivat.
+[13:10:21]   [MAIN] Pasul 1/14: IfExists [#select2-drop-mask]
+[13:10:21] ► Verific existența: #select2-drop-mask
+[13:10:22]   [MAIN] Pasul 2/14: Click [#statlogo]
+[13:10:22] ► Click pe: #statlogo 
+[13:10:24]   [MAIN] Pasul 3/14: Log
+[13:10:24] ══ Caut și deschid angajamentul AAB2MA3AKCT ══
+[13:10:24]   [MAIN] Pasul 4/14: WaitFor [a:has-text('Listă angajamente')]
+[13:10:24] ► Aștept element: a:has-text('Listă angajamente') (visible)
+[13:10:24]   [MAIN] Pasul 5/14: Click [a:has-text('Listă angajamente')]
+[13:10:24] ► Click pe: a:has-text('Listă angajamente') 
+[13:10:24]   [MAIN] Pasul 6/14: Fill [input[name='cod']]
+[13:10:24] ► Completez: input[name='cod'] cu 'AAB2MA3AKCT'
+[13:10:24]   [MAIN] Pasul 7/14: Click [button:has-text('Caută')]
+[13:10:24] ► Click pe: button:has-text('Caută') 
+[13:10:25]   [MAIN] Pasul 8/14: IfExists [.alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')]
+[13:10:25] ► Verific existența: .alert.alert-warning:has-text('Căutarea nu a întors niciun rezultat!')
+[13:10:26]   [MAIN] Pasul 9/14: WaitFor [a[href*='exportToXLS']]
+[13:10:26] ► Aștept element: a[href*='exportToXLS'] (visible)
+[13:10:26]   [MAIN] Pasul 10/14: Click [a.haction i.glyphicon-list:visible]
+[13:10:26] ► Click pe: a.haction i.glyphicon-list:visible 
+[13:10:26]   [MAIN] Pasul 11/14: WaitFor [.divaction]
+[13:10:26] ► Aștept element: .divaction (visible)
+[13:10:26]   [MAIN] Pasul 12/14: Click [.divaction a:has-text('Modificare')]
+[13:10:26] ► Click pe: .divaction a:has-text('Modificare') 
+[13:10:27]   [MAIN] Pasul 13/14: WaitFor [li.tab0]
+[13:10:27] ► Aștept element: li.tab0 (visible)
+[13:10:27]   [MAIN] Pasul 14/14: Log
+[13:10:27] ✓ Angajament AAB2MA3AKCT deschis în modul Modificare.
+[13:10:27]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:10:35]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».
+[13:10:44]   [Urmărire] Pagina arată angajamentul «AAB2MA3AKCT».

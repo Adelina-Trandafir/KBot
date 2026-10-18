@@ -50,6 +50,12 @@ Public NotInheritable Class KBotCellFormattingEventArgs
     Public Property Enabled As Boolean
 
     ''' <summary>
+    ''' The cell shows normally (not greyed) but cannot be edited: a click selects it and opens no editor. Default False; the handler may raise it.
+    ''' Only the editing probe (<c>CanEdit</c>) reads it.
+    ''' </summary>
+    Public Property ReadOnlyCell As Boolean
+
+    ''' <summary>
     ''' Culoarea bordurilor acestei celule (slice 0085-03). Implicit: cea a coloanei
     ''' (<see cref="KBotDataColumn.CellBorderColor"/>); <c>Color.Empty</c> = culoarea liniilor de
     ''' grila din tema.
@@ -79,6 +85,7 @@ Public NotInheritable Class KBotCellFormattingEventArgs
         Me.Font = font
         Me.Alignment = alignment
         Me.Enabled = enabled
+        Me.ReadOnlyCell = False
     End Sub
 
 End Class

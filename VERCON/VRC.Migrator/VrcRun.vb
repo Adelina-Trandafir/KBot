@@ -18,6 +18,8 @@ End Enum
 Public NotInheritable Class VrcIssue
 
     Public Property SourceFile As String = String.Empty
+    ''' <summary>Full path of the source file (report only; VC_MigrationIssues keeps the name).</summary>
+    Public Property SourceFullPath As String = String.Empty
     ''' <summary>VC_ImportSources.SourceId of the plan source (a file can feed two: Alimente and Materiale); 0 = none.</summary>
     Public Property SourceId As Long
     Public Property TableName As String = String.Empty
@@ -54,12 +56,25 @@ Public NotInheritable Class VrcCount
 
 End Class
 
+''' <summary>One subunit created by the transfer: its name and the ids of the subunit and of its import marker.</summary>
+Public NotInheritable Class VrcSubunitResult
+
+    Public Property Name As String = String.Empty
+    Public Property SubunitId As Long
+    Public Property ImportId As Long
+
+End Class
+
 Public NotInheritable Class VrcRunResult
 
     Public Property State As VrcRunState = VrcRunState.InImport
     Public Property Message As String = String.Empty
+    ''' <summary>Id of the FIRST subunit (the report lists all in <see cref="Subunits"/>).</summary>
     Public Property SubunitId As Long
+    ''' <summary>Import marker of the first subunit.</summary>
     Public Property ImportId As Long
+    ''' <summary>Every subunit of the transfer (one per name in the plan), each with its own marker.</summary>
+    Public Property Subunits As New List(Of VrcSubunitResult)()
     Public Property Issues As New List(Of VrcIssue)()
     Public Property Counts As New List(Of VrcCount)()
     ''' <summary>One line per partner prepared from ANAF: added in the transfer transaction, or why not.</summary>
@@ -88,47 +103,249 @@ Public NotInheritable Class VrcRunResult
         End Get
     End Property
 
-    ''' <summary>Readable report of the run: result, counts per table, findings.</summary>
+    ''' <summary>
+    ''' Readable report of the run, written for the operator (18.10.2026): the result in one sentence, then each problem to fix in plain words
+    ''' (where, what is wrong, what to do, the Access query), then what is only informative. No ids, no rule codes, no empty tables.
+    ''' </summary>
     Public Function ToMarkdown(k_plan As VrcPlan) As String
         Dim k_sb As New StringBuilder()
+        Dim k_committed As Boolean = State = VrcRunState.CommitConfirmed OrElse State = VrcRunState.Reconciled
+        Dim k_rolledBack As Boolean = State = VrcRunState.RollbackConfirmed OrElse State = VrcRunState.StopRequested
+        Dim k_blocking = Issues.Where(Function(k_i) k_i.Severity = "BLOCAJ").ToList()
+        Dim k_groups = k_blocking.GroupBy(Function(k_i) k_i.RuleCode & "|" & k_i.TableName & "|" & k_i.FieldName, StringComparer.OrdinalIgnoreCase).
+                                  OrderBy(Function(k_g) k_g.Key, StringComparer.OrdinalIgnoreCase).ToList()
+        Dim k_unitNames = k_plan.SubunitNames()
+
         k_sb.AppendLine(Verdict)
         k_sb.AppendLine()
-        k_sb.AppendLine("# VRC.Migrator — raport de migrare")
+        k_sb.AppendLine("# Raport de migrare")
         k_sb.AppendLine()
-        k_sb.AppendLine($"- DC `{k_plan.Dc}`, subunitate «{k_plan.SubunitName.Trim()}», plan `{k_plan.Hash()}`.")
-        k_sb.AppendLine($"- Stare: **{State}**. {Message}")
-        k_sb.AppendLine($"- Durată: {Seconds:N1} s. ImportId: {ImportId}, SubunitId: {SubunitId}.")
+        k_sb.AppendLine($"Baza `{k_plan.Dc}` · {k_unitNames.Count} {If(k_unitNames.Count = 1, "subunitate", "subunități")} · durată {Seconds:N1} s")
         k_sb.AppendLine()
-        k_sb.AppendLine("## Numărători (sursă față de țintă, înainte de COMMIT)")
+        If Not k_committed Then
+            k_sb.AppendLine("Subunități: " & String.Join(", ", k_unitNames.Select(Function(k_unitName) $"«{k_unitName}»")) & ".")
+            k_sb.AppendLine()
+        End If
+
+        If k_groups.Count > 0 Then
+            Dim k_fileCount As Integer = k_blocking.Select(Function(k_i) PathOf(k_i)).Distinct(StringComparer.OrdinalIgnoreCase).Count()
+            k_sb.AppendLine($"**{k_groups.Count} {If(k_groups.Count = 1, "problemă", "probleme")} de rezolvat** ({Cases(k_blocking.Count)} în {k_fileCount} {If(k_fileCount = 1, "fișier", "fișiere")}). " &
+                            "Corectați datele în Access, apoi apăsați din nou «Citește bifatele» și «Migrează».")
+            k_sb.AppendLine()
+        ElseIf Message.Length > 0 Then
+            k_sb.AppendLine(Message)
+            k_sb.AppendLine()
+        End If
+
+        If k_committed Then
+            k_sb.AppendLine("## Subunități create")
+            k_sb.AppendLine()
+            For Each k_unit In k_unitNames
+                Dim k_made = Subunits.FirstOrDefault(Function(k_x) String.Equals(k_x.Name, k_unit, StringComparison.OrdinalIgnoreCase))
+                k_sb.AppendLine($"- «{k_unit}», ZEC {k_plan.ZecOf(k_unit)}{If(k_made Is Nothing, "", $" (SubunitId {k_made.SubunitId}, ImportId {k_made.ImportId})")}")
+            Next
+            k_sb.AppendLine()
+        End If
+
+        If NewPartnerLines.Count > 0 Then
+            If k_rolledBack Then
+                k_sb.AppendLine($"Parteneri din ANAF: {NewPartnerLines.Count} erau pregătiți, dar nu au fost adăugați (transferul a fost anulat).")
+                k_sb.AppendLine()
+            Else
+                k_sb.AppendLine("## Parteneri din ANAF (adăugați în aceeași tranzacție)")
+                k_sb.AppendLine()
+                For Each k_line In NewPartnerLines
+                    k_sb.AppendLine("- " & k_line)
+                Next
+                k_sb.AppendLine()
+            End If
+        End If
+
+        If k_groups.Count > 0 Then
+            k_sb.AppendLine("## Ce trebuie rezolvat")
+            k_sb.AppendLine()
+            Dim k_number As Integer = 0
+            For Each k_group In k_groups
+                k_number += 1
+                AppendProblem(k_sb, k_number, k_group.ToList())
+            Next
+        End If
+
+        If Counts.Count > 0 Then
+            k_sb.AppendLine("## Verificarea numărătorilor (sursă față de țintă, înainte de COMMIT)")
+            k_sb.AppendLine()
+            k_sb.AppendLine("| Gestiune | Tabel | An | Rânduri sursă | Netransferate | Rânduri țintă | Sume | Rezultat |")
+            k_sb.AppendLine("|---|---|---:|---:|---:|---:|---|---|")
+            For Each k_c In Counts
+                k_sb.AppendLine($"| {k_c.Gestiune} | {k_c.TableName} | {If(k_c.Year = 0, "—", k_c.Year.ToString(Globalization.CultureInfo.InvariantCulture))} | {k_c.SourceRows:N0} | {k_c.SkippedRows:N0} | {k_c.TargetRows:N0} | {If(k_c.SumDifferences.Count = 0, "egale", String.Join("; ", k_c.SumDifferences))} | {If(k_c.Matches, "ok", "**DIFERENȚĂ**")} |")
+            Next
+            k_sb.AppendLine()
+        End If
+
+        AppendInformative(k_sb)
+        If k_groups.Count = 0 AndAlso Issues.Count = 0 Then k_sb.AppendLine("Nicio constatare.")
+        Return k_sb.ToString()
+    End Function
+
+    ''' <summary>One problem to fix: title, what is wrong, where (files, with a few example rows each), what to do, the Access query.</summary>
+    Private Shared Sub AppendProblem(k_sb As StringBuilder, k_number As Integer, k_issues As List(Of VrcIssue))
+        Dim k_first = k_issues(0)
+        Dim k_text = Describe(k_issues)
+        Dim k_pk As String = KeyNameOf(k_first.TableName)
+        k_sb.AppendLine($"### {k_number}. {k_text.Title}")
         k_sb.AppendLine()
-        k_sb.AppendLine("| Gestiune | Tabel | An | Rânduri sursă | Netransferate | Rânduri țintă | Sume | Rezultat |")
-        k_sb.AppendLine("|---|---|---:|---:|---:|---:|---|---|")
-        For Each k_c In Counts
-            k_sb.AppendLine($"| {k_c.Gestiune} | {k_c.TableName} | {If(k_c.Year = 0, "—", k_c.Year.ToString(Globalization.CultureInfo.InvariantCulture))} | {k_c.SourceRows:N0} | {k_c.SkippedRows:N0} | {k_c.TargetRows:N0} | {If(k_c.SumDifferences.Count = 0, "egale", String.Join("; ", k_c.SumDifferences))} | {If(k_c.Matches, "ok", "**DIFERENȚĂ**")} |")
+        k_sb.AppendLine(k_text.What)
+        k_sb.AppendLine()
+        k_sb.AppendLine("**Unde:**")
+        k_sb.AppendLine()
+        For Each k_file In k_issues.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+            k_sb.AppendLine($"- `{k_file.Key}` ({Cases(k_file.Count())}){FolderLink(k_file.Key)}")
+            For Each k_i In k_file.Take(5)
+                k_sb.AppendLine("    - " & ExampleOf(k_i, k_pk))
+            Next
+            If k_file.Count() > 5 Then k_sb.AppendLine($"    - … și încă {k_file.Count() - 5:N0}")
         Next
         k_sb.AppendLine()
-        If NewPartnerLines.Count > 0 Then
-            k_sb.AppendLine("## Parteneri din ANAF (confirmați sau anulați odată cu transferul, aceeași tranzacție)")
-            k_sb.AppendLine()
-            For Each k_line In NewPartnerLines
-                k_sb.AppendLine("- " & k_line)
-            Next
-            k_sb.AppendLine()
-        End If
-        k_sb.AppendLine("## Constatări")
+        k_sb.AppendLine($"**Ce faceți:** {k_text.Todo}")
         k_sb.AppendLine()
-        If Issues.Count = 0 Then
-            k_sb.AppendLine("Nicio constatare.")
-        Else
-            For Each k_group In Issues.GroupBy(Function(k_i) k_i.Severity & "|" & k_i.RuleCode & "|" & k_i.TableName).OrderBy(Function(k_g) k_g.Key)
-                Dim k_first = k_group.First()
-                k_sb.AppendLine($"- **{k_first.Severity}** {k_first.RuleCode} în {k_first.TableName}: {k_group.Count():N0} cazuri. {k_first.Justification}")
-                For Each k_i In k_group.Take(5)
-                    k_sb.AppendLine($"  - {k_i.SourceFile}, cheie {k_i.SourceKey}{If(k_i.FieldName.Length > 0, ", " & k_i.FieldName, "")}: {k_i.OriginalValue} → {k_i.TargetValue}")
-                Next
+        Dim k_sql As String = VrcAccessSql.ForField(k_issues)
+        If k_sql.Length > 0 Then
+            k_sb.AppendLine("**Interogare Access** ca să vedeți rândurile (în fișierul de mai sus: Creare > Proiectare interogare > Vizualizare SQL):")
+            k_sb.AppendLine()
+            k_sb.AppendLine("```sql")
+            For Each k_line In k_sql.Split({vbCrLf, vbLf}, StringSplitOptions.RemoveEmptyEntries)
+                k_sb.AppendLine(k_line)
             Next
+            k_sb.AppendLine("```")
+            k_sb.AppendLine()
         End If
-        Return k_sb.ToString()
+    End Sub
+
+    ''' <summary>«ColumnKey = 4: Field = 2»: one affected row in words the operator can look up in Access.</summary>
+    Private Shared Function ExampleOf(k_issue As VrcIssue, k_pk As String) As String
+        Dim k_where As String = If(k_pk.Length > 0, $"{k_pk} = {k_issue.SourceKey}", $"rândul {k_issue.SourceKey}")
+        If k_issue.FieldName.Length = 0 OrElse k_issue.OriginalValue.Length = 0 Then Return k_where
+        Return $"{k_where}: {k_issue.FieldName} = {k_issue.OriginalValue}"
+    End Function
+
+    ''' <summary>The title, the explanation and the advice for one group of blocking findings (same rule, table and field), in plain Romanian.</summary>
+    Private Shared Function Describe(k_issues As List(Of VrcIssue)) As (Title As String, What As String, Todo As String)
+        Dim k_first = k_issues(0)
+        Dim k_table As String = k_first.TableName
+        Dim k_field As String = k_first.FieldName
+        Dim k_rows As String = If(k_issues.Count = 1, "1 rând", $"{k_issues.Count:N0} rânduri")
+        Dim k_column = ColumnOf(k_table, k_field)
+        Select Case k_first.RuleCode
+            Case "X05"
+                If String.Equals(k_first.OriginalValue, "NULL", StringComparison.OrdinalIgnoreCase) Then
+                    Return ($"{k_table}: {k_field} este gol, dar este obligatoriu",
+                            $"{k_rows} din {k_table} au câmpul {k_field} gol, iar MariaDB nu acceptă gol în această coloană.",
+                            "Completați valoarea în Access.")
+                End If
+                If k_column IsNot Nothing AndAlso k_column.Link = VrcLinkKind.Origin Then
+                    Return ($"{k_table}: {k_field} nu arată spre niciun bon",
+                            $"{k_rows} din {k_table} au {k_field} (bonul de origine) cu un număr care nu se găsește nici în OI_Predare (IDBP), nici în OI_Transfer (IDBT).",
+                            "Corectați valoarea sau adăugați bonul lipsă. Bonul poate fi într-un alt fișier al aceleiași gestiuni: atunci bifați și acel fișier.")
+                End If
+                Dim k_parent As String = If(k_column Is Nothing, String.Empty, k_column.Parent)
+                Dim k_parentKey As String = If(k_column Is Nothing, String.Empty, k_column.ParentField)
+                If k_parentKey.Length = 0 AndAlso k_parent.Length > 0 Then k_parentKey = KeyNameOf(k_parent)
+                Dim k_in As String = If(k_parent.Length = 0, "în tabelul-părinte",
+                                     If(String.Equals(k_parent, k_table, StringComparison.OrdinalIgnoreCase), $"tot în {k_table}", $"în {k_parent}")) &
+                                     If(k_parentKey.Length > 0, $" (coloana {k_parentKey})", String.Empty)
+                Return ($"{k_table}: {k_field} arată spre un rând care nu există",
+                        $"{k_rows} din {k_table} au {k_field} completat cu un număr care nu se găsește {k_in}.",
+                        $"Corectați {k_field} la rândurile de mai jos, sau goliți-l dacă legătura nu are rost. Rândul căutat poate fi într-un alt fișier al aceleiași gestiuni: atunci bifați și acel fișier.")
+            Case "X10"
+                Return ($"{k_table}: {k_field} are valori, dar nu se știe spre ce arată",
+                        $"{k_rows} din {k_table} au {k_field} diferit de 0, iar migratorul nu are încă o regulă pentru această legătură, deci nu poate transfera valoarea.",
+                        $"Nu se rezolvă corectând un singur rând: trebuie hotărât ce reprezintă {k_table}.{k_field}. Dacă valorile sunt rămășițe fără rost, le puteți pune pe 0 în Access.")
+            Case "X14"
+                Return ($"{k_table}: {k_field} poate însemna două lucruri",
+                        $"{k_rows} din {k_table} au {k_field} cu un număr care există și ca BP (OI_Predare), și ca BT (OI_Transfer); nu se poate stabili din care provine linia.",
+                        "Hotărâți regula (BP sau BT) înainte de transfer.")
+            Case "X11"
+                Return ($"{k_table}: {k_field} are o valoare prea mare",
+                        $"{k_rows} din {k_table} au {k_field} cu o valoare pe care MariaDB nu o poate păstra. {k_first.Justification}",
+                        "Corectați valoarea în Access (probabil o greșeală de tastare).")
+            Case "X12"
+                Return ($"{k_table}: {k_field} trebuie să fie număr întreg",
+                        $"{k_rows} din {k_table} au {k_field} cu zecimale sau în afara limitelor. {k_first.Justification}",
+                        "Corectați valoarea în Access.")
+            Case "X03"
+                Return ($"{k_table}: număr de document cu prea multe zecimale",
+                        $"{k_rows} din {k_table} au {k_field} cu mai mult de 2 zecimale; fracția nu încape în NumarSub.",
+                        "Corectați numărul în Access (cel mult 2 zecimale, de exemplu 4.1).")
+            Case "X13"
+                Return ($"{k_table}: Tip nu este «Felul 1», «Felul 2», …",
+                        $"{k_rows} din {k_table} au în Tip un text care nu poate deveni fel de mâncare. {k_first.Justification}",
+                        "Corectați Tip în Access: doar «Felul 1», «Felul 2» etc.")
+            Case "X06"
+                Return ($"{k_table}: rânduri fără cheie primară",
+                        $"{k_rows} din {k_table} nu au cheie primară și nu pot fi legate de nimic.",
+                        "Verificați tabelul în Access.")
+            Case Else
+                Return ($"{k_table}{If(k_field.Length > 0, "." & k_field, String.Empty)}: {k_first.Justification}",
+                        $"{k_rows}. {k_first.Justification}",
+                        "Corectați datele în Access.")
+        End Select
+    End Function
+
+    ''' <summary>What the transfer does by itself or notes without blocking: short lines, one per kind. Nothing here asks the operator to act.</summary>
+    Private Sub AppendInformative(k_sb As StringBuilder)
+        Dim k_info = Issues.Where(Function(k_i) k_i.Severity <> "BLOCAJ").ToList()
+        If k_info.Count = 0 Then Return
+        k_sb.AppendLine("## Doar de informare (nu blochează și nu cer nimic)")
+        k_sb.AppendLine()
+        Dim k_dishes = k_info.Where(Function(k_i) k_i.RuleCode = "N11").ToList()
+        If k_dishes.Count > 0 Then
+            Dim k_labels = k_dishes.Select(Function(k_i) k_i.OriginalValue).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(Function(k_s) k_s, StringComparer.OrdinalIgnoreCase)
+            Dim k_tables = k_dishes.Select(Function(k_i) k_i.TableName).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(Function(k_s) k_s, StringComparer.OrdinalIgnoreCase)
+            k_sb.AppendLine($"- Feluri de mâncare create automat din coloana Tip: {String.Join(", ", k_labels)} (din {String.Join(", ", k_tables)}).")
+        End If
+        For Each k_group In k_info.Where(Function(k_i) k_i.RuleCode <> "N11").
+                                   GroupBy(Function(k_i) k_i.RuleCode & "|" & k_i.TableName & "|" & k_i.FieldName, StringComparer.OrdinalIgnoreCase).
+                                   OrderBy(Function(k_g) k_g.Key, StringComparer.OrdinalIgnoreCase)
+            Dim k_first = k_group.First()
+            If k_first.RuleCode = "N12" Then
+                ' Orphan links kept as NULL: every row is listed, because the operator may want to fix them later.
+                k_sb.AppendLine($"- {k_first.TableName}.{k_first.FieldName}: {Cases(k_group.Count())} cu legătura goală. {k_first.Justification}")
+                For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Take(20).Select(Function(k_i) $"{KeyNameOf(k_i.TableName)} {k_i.SourceKey} (arăta spre {k_i.OriginalValue})")) & If(k_file.Count() > 20, $", … și încă {k_file.Count() - 20}", String.Empty))
+                Next
+                Continue For
+            End If
+            Dim k_example As String = If(k_first.OriginalValue.Length > 0 AndAlso k_first.TargetValue.Length > 0, $" Exemplu: {k_first.OriginalValue} → {k_first.TargetValue}.", String.Empty)
+            k_sb.AppendLine($"- {k_first.TableName}{If(k_first.FieldName.Length > 0, "." & k_first.FieldName, String.Empty)}: {Cases(k_group.Count())}. {k_first.Justification}{k_example}")
+        Next
+        k_sb.AppendLine()
+    End Sub
+
+    Private Shared Function Cases(k_count As Integer) As String
+        Return If(k_count = 1, "1 caz", $"{k_count:N0} cazuri")
+    End Function
+
+    ''' <summary>The source key column of a table (from the import map); empty when unknown.</summary>
+    Private Shared Function KeyNameOf(k_tableName As String) As String
+        Dim k_schema = VrcImportMap.Find(k_tableName)
+        Return If(k_schema Is Nothing, String.Empty, k_schema.SourceKey)
+    End Function
+
+    Private Shared Function ColumnOf(k_tableName As String, k_fieldName As String) As VrcImportColumn
+        If k_fieldName.Length = 0 Then Return Nothing
+        Dim k_schema = VrcImportMap.Find(k_tableName)
+        If k_schema Is Nothing Then Return Nothing
+        Return k_schema.Columns.FirstOrDefault(Function(k_c) String.Equals(k_c.Name, k_fieldName, StringComparison.OrdinalIgnoreCase))
+    End Function
+
+    Private Shared Function PathOf(k_issue As VrcIssue) As String
+        Return If(k_issue.SourceFullPath.Length > 0, k_issue.SourceFullPath, k_issue.SourceFile)
+    End Function
+
+    ''' <summary>« — [deschide folderul](file:///…)» for a real path; nothing for a bare name. The report view and the text box open it in Explorer.</summary>
+    Private Shared Function FolderLink(k_path As String) As String
+        If Not IO.Path.IsPathRooted(k_path) Then Return String.Empty
+        Return $" — [deschide folderul]({New Uri(k_path).AbsoluteUri})"
     End Function
 
 End Class

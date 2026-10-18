@@ -176,6 +176,27 @@ painted text. Font, colours and horizontal alignment come from the same
 `RowFormatting`/`CellFormatting` chain the painter runs; the painter skips that cell's text
 while it is open. It is re-placed on every layout pass (resize, column width, theme, DPI).
 
+`KBotGroupLevel.HeaderBorder = False` (slice KE12-02): a frame around the HEADER band of the group, a little more visible than the grid lines (the grid-line colour pushed 35% toward black, or toward white on a dark scheme).
+
+### Tick boxes (slice KE12-03)
+`CheckBoxes = KBotCheckBoxMode.None` (`None` | `All` | `RowsOnly`). A mode other than `None` makes the grid add, at RUN time only (never in the designer, so nothing is written in the form's file), a small first column
+with no header text, key `KBotDataView.CheckColumnKey` (`"__check"`), a `CheckBox` column of 30 logical px that cannot be resized. `All` also draws a tri-state tick box on the HEADER band of every group
+(all / some / none of its rows ticked; the triangle and the title move right of it); pressing it ticks every enabled row of the group, or clears them when all are ticked, and does not fold the group.
+The state of a row is the Boolean of that cell: `GetRowChecked(i)`, `SetRowChecked(i, v)` (code: raises nothing, row not dirty), `GetCheckedRows()`.
+The operator's tick raises `RowChecked` (`KBotRowCheckedEventArgs`: `RowIndex`, `Checked`, `Pending` = rows of the same gesture still to come, 0 on the last) and also `CellValueChanged`, like any CheckBox column.
+Files: `KBotCheckBoxMode.vb`, `Events/KBotRowCheckedEventArgs.vb`, `KBotDataView.CheckBoxes.vb`; hooks in `Input.vb` (`ActivateCell`, `HandleGroupBandMouseDown`) and `Grouping.Painting.vb` (header band).
+
+### Combo in a group header (slice KE11)
+`KBotDataColumn.GroupHeaderCombo = False` (combo columns, grouped grid): the header band of each group shows a combo under that column with the value ALL the rows of the group share
+(empty when they differ); a press on it opens the list instead of folding the group. Picking an item raises `GroupHeaderValuePicked` (`KBotGroupHeaderValueEventArgs`:
+`ColumnKey`, `Value`, `RowIndexes` = every row of the group). The grid writes nothing: the host puts the value in those rows. One floating `groupCombo` serves all headers.
+
+### Commit on pick, read-only cell (slice KE11)
+`KBotDataColumn.CommitOnSelect = False` (combo columns): the value is written, and `CellValueChanged` raised, the moment the operator PICKS an item of the
+list (`KBotComboBox.ItemPicked`: click or Enter in the list), not when he leaves the cell. Typing is unchanged.
+`KBotCellFormattingEventArgs.ReadOnlyCell` (default False): the handler raises it for ONE cell that must look normal (not greyed, unlike `Enabled = False`) but
+open no editor; `CanEdit` asks through `IsCellReadOnly(colKey, rowIndex)`. A click still selects the cell.
+
 ### The combo editor (slice 0094)
 The combo editor is a `KBotComboBox` in cell editor mode (no frame, no arrow, free height), placed
 like the text editor: one line high, vertically centred the same way, over the text rectangle

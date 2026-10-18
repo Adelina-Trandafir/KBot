@@ -165,7 +165,7 @@ Public NotInheritable Class AccessBudgetSender
 
     ' ---- helpers, reached only through the wrapped methods above --------------------------------
 
-    Private Shared Function OpenAccess(path As String) As OleDbConnection
+    Friend Shared Function OpenAccess(path As String) As OleDbConnection
         Dim failures As New List(Of String)()
         For Each provider As String In Providers
             For Each withPassword As Boolean In {False, True}

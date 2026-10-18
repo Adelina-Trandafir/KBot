@@ -34,10 +34,11 @@ export function paintReportBlock(block, target, owner) {
 
 export function reportNodes(reports) {
   reports = reports.filter(report => !['OI_Predare', 'OI_Transfer', 'OI_Casare'].includes(report.id));
-  const oi = reports.filter(report => report.ledger === 'custody' || ['bp', 'bt', 'bs'].includes(report.family));
+  const mf = reports.some(report => report.types.length === 1 && report.types[0] === 'MF');
+  const oi = reports.filter(report => report.ledger === 'custody' || ['bp', 'bt', 'bs'].includes(report.family) || report.kind === 'depreciation');
   if (oi.length) {
     const nodes = reports.filter(report => !oi.includes(report));
-    return [...(nodes.length ? reportNodes(nodes) : []), { id: 'oi-reports', label: 'Obiecte de inventar în folosință',
+    return [...(nodes.length ? reportNodes(nodes) : []), { id: 'oi-reports', label: mf ? 'Mijloace fixe' : 'Obiecte de inventar în folosință',
       children: [...new Set(oi.map(report => report.group))].map((group, index) => ({ id: `oi-reports:${index}`, label: group,
         children: oi.filter(report => report.group === group).map(report => ({ id: 'doc:' + report.id, label: report.label })) })) }];
   }

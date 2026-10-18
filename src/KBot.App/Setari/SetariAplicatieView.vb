@@ -220,6 +220,8 @@ Public Class SetariAplicatieView
             Dim s As AppSettings = AppSettings.Current
             SelecteazaVerbose(s.VerboseLogging)
             chkLogViewer.Checked = s.LogViewerEnabled
+            chkRibbonCompact.Checked = s.RibbonCompact
+            chkSidebarInSpate.Checked = s.SidebarBehindPages
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
             chkKeZi.Checked = s.KeBlockSameDayReception
@@ -283,6 +285,18 @@ Public Class SetariAplicatieView
 #End If
             RichTextBoxLogger.VerboseLogging = If(item.Value, buildDefault)
         End If
+    End Sub
+
+    ' Slice 0114-24: the ribbon of the main window follows at once (AvacontMain listens to AppSettings.Changed).
+    Private Sub ChkRibbonCompact_CheckedChanged(sender As Object, e As EventArgs) Handles chkRibbonCompact.CheckedChanged
+        SalveazaComutator(Sub(s) s.RibbonCompact = chkRibbonCompact.Checked,
+                          If(chkRibbonCompact.Checked, "Panglica este compactă.", "Panglica are mărimea obișnuită."))
+    End Sub
+
+    ' The side panel of the main window follows at once (AvacontMain listens to AppSettings.Changed).
+    Private Sub ChkSidebarInSpate_CheckedChanged(sender As Object, e As EventArgs) Handles chkSidebarInSpate.CheckedChanged
+        SalveazaComutator(Sub(s) s.SidebarBehindPages = chkSidebarInSpate.Checked,
+                          If(chkSidebarInSpate.Checked, "Meniul lateral stă în spatele machetelor.", "Meniul lateral se vede tot timpul."))
     End Sub
 
     Private Sub ChkLogViewer_CheckedChanged(sender As Object, e As EventArgs) Handles chkLogViewer.CheckedChanged

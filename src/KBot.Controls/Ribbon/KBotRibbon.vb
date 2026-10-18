@@ -24,23 +24,55 @@ Imports KBot.Theming
 ''' overridden (<see cref="SetBoundsCore"/>).</para>
 '''
 ''' <para><b>Collapsing.</b> Double click on a tab, or the chevron at the right, folds the ribbon
-''' to its tab names; a click on a tab while it is folded unfolds it again. The owner remembers the
-''' state through <see cref="CollapsedChanged"/>.</para>
+''' to its tab names; a double click on a tab (or the chevron) while it is folded unfolds it again.
+''' The owner remembers the state through <see cref="CollapsedChanged"/>.</para>
 '''
-''' <para><b>Not done on purpose (first version):</b> keyboard navigation (Alt key tips, arrows),
-''' drop-down buttons and a fly-out panel for the folded state.</para>
+''' <para><b>Fly-out (slice 0114-24).</b> A single click on a tab while the ribbon is folded opens its panel as a
+''' temporary overlay (<see cref="KBotRibbonFlyout"/>) over the page under the ribbon, without moving that page, like
+''' Office's collapsed ribbon. It closes after a button was used, on a click anywhere else, on Escape or when the window
+''' loses the focus; a click on a field (combo, text box) keeps it open.</para>
+'''
+''' <para><b>Compact (slice 0114-24).</b> <see cref="Compact"/> draws smaller icons and text and tighter rows, for low
+''' resolutions.</para>
+'''
+''' <para><b>Not done on purpose (first version):</b> keyboard navigation (Alt key tips, arrows) and
+''' drop-down buttons.</para>
 ''' </summary>
 <DefaultEvent("ItemClicked")>
 Public NotInheritable Class KBotRibbon
     Inherits Control
     Implements IThemedControl
 
-    ' Logical (96 dpi) measures.
-    Private Const TabStripHeight As Integer = 28
-    Private Const LargeIcon As Integer = 32
-    Private Const SmallIcon As Integer = 16
-    Private Const SmallRowHeight As Integer = 22
-    Private Const GroupCaptionHeight As Integer = 18
+    ' Logical (96 dpi) measures: the normal size, and the compact one (slice 0114-24).
+    Private ReadOnly Property TabStripHeight As Integer
+        Get
+            Return If(_compact, 22, 28)
+        End Get
+    End Property
+
+    Private ReadOnly Property LargeIcon As Integer
+        Get
+            Return If(_compact, 24, 32)
+        End Get
+    End Property
+
+    Private ReadOnly Property SmallIcon As Integer
+        Get
+            Return If(_compact, 14, 16)
+        End Get
+    End Property
+
+    Private ReadOnly Property SmallRowHeight As Integer
+        Get
+            Return If(_compact, 18, 22)
+        End Get
+    End Property
+
+    Private ReadOnly Property GroupCaptionHeight As Integer
+        Get
+            Return If(_compact, 14, 18)
+        End Get
+    End Property
 
     Private ReadOnly _tabs As New KBotRibbonTabCollection()
     Private ReadOnly _pinned As New KBotRibbonButtonCollection()
@@ -48,6 +80,12 @@ Public NotInheritable Class KBotRibbon
     Private ReadOnly _formGroup As New KBotRibbonGroup()
     Private _selectedTab As Integer
     Private _collapsed As Boolean
+    Private _compact As Boolean
+    Private _flyout As KBotRibbonFlyout
+    Private _flyoutOpen As Boolean
+    Private _flyoutForm As Form
+    Private _flyoutFilter As KBotRibbonFlyout.OutsideClickFilter
+    Private _fieldsCompactFont As Boolean
     Private _rightText As String = String.Empty
     Private _tooltip As KBotToolTip
 
@@ -62,8 +100,8 @@ Public NotInheritable Class KBotRibbon
     Private _hotChevron As Boolean
     Private _chevronRect As Rectangle
     Private _rightTextRect As Rectangle
-    Private _expandedByClickAt As Integer
 
+    Private _bodyFont As Font
     Private _boldFont As Font
     Private _captionFont As Font
     Private _rightFont As Font
@@ -141,10 +179,28 @@ Public NotInheritable Class KBotRibbon
         End Get
         Set(k_value As Boolean)
             If k_value = _collapsed Then Return
+            CloseFlyout()
             _collapsed = k_value
             InvalidateLayout()
             UpdateHeight()
             RaiseEvent CollapsedChanged(Me, EventArgs.Empty)
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("True = smaller icons, smaller text and tighter rows (for low resolutions).")>
+    <DefaultValue(False)>
+    Public Property Compact As Boolean
+        Get
+            Return _compact
+        End Get
+        Set(k_value As Boolean)
+            If k_value = _compact Then Return
+            CloseFlyout()
+            _compact = k_value
+            DisposeFonts()
+            InvalidateLayout()
+            UpdateHeight()
         End Set
     End Property
 
@@ -347,6 +403,7 @@ Public NotInheritable Class KBotRibbon
     Public Sub InvalidateLayout()
         _layoutValid = False
         If IsHandleCreated Then Invalidate()
+        If _flyoutOpen AndAlso _flyout IsNot Nothing AndAlso _flyout.IsHandleCreated Then _flyout.Invalidate()
     End Sub
 
     ' ---- Height -----------------------------------------------------------------------------
@@ -358,7 +415,7 @@ Public NotInheritable Class KBotRibbon
     ' The panel holds a large button (icon, two lines of caption) or three small ones, plus the group caption;
     ' the caption lines are measured from the font, so a bigger text size or another scaling never clips them.
     Private Function PanelPx() As Integer
-        Dim k_large As Integer = Px(4 + LargeIcon + 2 + 6) + 2 * Font.Height + Px(GroupCaptionHeight + 2)
+        Dim k_large As Integer = Px(4 + LargeIcon + 2 + 6) + 2 * BodyFont().Height + Px(GroupCaptionHeight + 2)
         Dim k_small As Integer = Px(6 + 3 * SmallRowHeight + GroupCaptionHeight + 4)
         Return Math.Max(k_large, k_small)
     End Function
@@ -394,25 +451,48 @@ Public NotInheritable Class KBotRibbon
 
     Protected Overrides Sub OnFontChanged(k_e As EventArgs)
         MyBase.OnFontChanged(k_e)
+        DisposeFonts()
+        InvalidateLayout()
+    End Sub
+
+    ' The body font is also set on the field controls, which may paint once more before they are given the new one:
+    ' it is retired (disposed with the ribbon), not disposed at once.
+    Private ReadOnly _retiredFonts As New List(Of Font)()
+
+    Private Sub DisposeFonts(Optional k_final As Boolean = False)
+        If _bodyFont IsNot Nothing Then _retiredFonts.Add(_bodyFont)
+        _bodyFont = Nothing
+        If k_final Then
+            For Each k_retired As Font In _retiredFonts
+                k_retired.Dispose()
+            Next
+            _retiredFonts.Clear()
+        End If
         _boldFont?.Dispose()
         _boldFont = Nothing
         _captionFont?.Dispose()
         _captionFont = Nothing
         _rightFont?.Dispose()
         _rightFont = Nothing
-        InvalidateLayout()
     End Sub
 
     Protected Overrides Sub OnSizeChanged(k_e As EventArgs)
         MyBase.OnSizeChanged(k_e)
         _layoutValid = False
+        If _flyoutOpen AndAlso _flyout IsNot Nothing AndAlso _flyout.Width <> Width Then CloseFlyout()
+    End Sub
+
+    Protected Overrides Sub OnVisibleChanged(k_e As EventArgs)
+        MyBase.OnVisibleChanged(k_e)
+        If Not Visible Then CloseFlyout()
     End Sub
 
     Protected Overrides Sub Dispose(k_disposing As Boolean)
         If k_disposing Then
-            _boldFont?.Dispose()
-            _captionFont?.Dispose()
-            _rightFont?.Dispose()
+            CloseFlyout()
+            _flyout?.Dispose()
+            _flyout = Nothing
+            DisposeFonts(True)
         End If
         MyBase.Dispose(k_disposing)
     End Sub
@@ -443,18 +523,25 @@ Public NotInheritable Class KBotRibbon
         Return Math.Max(Px(3), Math.Min(Px(8), Px(k_scheme.Style.CornerRadius)))
     End Function
 
+    ' The font of the captions of the buttons and of the inactive tabs: the control's own, or a smaller one when compact.
+    Private Function BodyFont() As Font
+        If Not _compact Then Return Font
+        If _bodyFont Is Nothing Then _bodyFont = New Font(Font.FontFamily, Math.Max(6.5F, Font.Size * 0.88F), Font.Style)
+        Return _bodyFont
+    End Function
+
     Private Function BoldFont() As Font
-        If _boldFont Is Nothing Then _boldFont = New Font(Font, FontStyle.Bold)
+        If _boldFont Is Nothing Then _boldFont = New Font(BodyFont(), FontStyle.Bold)
         Return _boldFont
     End Function
 
     Private Function CaptionFont() As Font
-        If _captionFont Is Nothing Then _captionFont = New Font(Font.FontFamily, Math.Max(6.0F, Font.Size - 1.0F), FontStyle.Regular)
+        If _captionFont Is Nothing Then _captionFont = New Font(BodyFont().FontFamily, Math.Max(6.0F, BodyFont().Size - 1.0F), FontStyle.Regular)
         Return _captionFont
     End Function
 
     Private Function RightFont() As Font
-        If _rightFont Is Nothing Then _rightFont = New Font(Font, FontStyle.Bold Or FontStyle.Italic)
+        If _rightFont Is Nothing Then _rightFont = New Font(BodyFont(), FontStyle.Bold Or FontStyle.Italic)
         Return _rightFont
     End Function
 
@@ -504,7 +591,7 @@ Public NotInheritable Class KBotRibbon
         Dim k_line As String = String.Empty
         For Each k_word As String In k_text.Split(New Char() {" "c}, StringSplitOptions.RemoveEmptyEntries)
             Dim k_try As String = If(k_line.Length = 0, k_word, k_line & " " & k_word)
-            If k_line.Length > 0 AndAlso TextWidth(k_try, Font) > k_width Then
+            If k_line.Length > 0 AndAlso TextWidth(k_try, BodyFont()) > k_width Then
                 k_lines.Add(k_line)
                 k_line = k_word
             Else
@@ -532,10 +619,10 @@ Public NotInheritable Class KBotRibbon
         Dim k_max As Integer = Px(124)
         Dim k_pad As Integer = Px(14)
         If String.IsNullOrEmpty(k_text) Then Return k_min
-        If TextWidth(k_text, Font) + k_pad <= k_min Then Return k_min
+        If TextWidth(k_text, BodyFont()) + k_pad <= k_min Then Return k_min
         Dim k_longest As Integer = 0
         For Each k_part As String In k_text.Split(New Char() {" "c}, StringSplitOptions.RemoveEmptyEntries)
-            k_longest = Math.Max(k_longest, TextWidth(k_part, Font))
+            k_longest = Math.Max(k_longest, TextWidth(k_part, BodyFont()))
         Next
         Dim k_width As Integer = Math.Max(k_min, k_longest + k_pad)
         Do While k_width < k_max AndAlso GreedyLines(k_text, k_width - k_pad).Count > 2
@@ -545,7 +632,7 @@ Public NotInheritable Class KBotRibbon
     End Function
 
     Private Function SmallWidth(k_text As String) As Integer
-        Return Px(6) + Px(SmallIcon) + Px(6) + TextWidth(k_text, Font) + Px(8)
+        Return Px(6) + Px(SmallIcon) + Px(6) + TextWidth(k_text, BodyFont()) + Px(8)
     End Function
 
     ' Puts the pending small buttons into one column (three at most) and moves k_x past it.
@@ -563,17 +650,38 @@ Public NotInheritable Class KBotRibbon
     End Sub
 
     Private Sub EnsureLayout()
-        Dim k_key As Integer = Px(1000) Xor (Width << 4) Xor If(_collapsed, 1, 0)
+        Dim k_key As Integer = Px(1000) Xor (Width << 4) Xor If(_collapsed, 1, 0) Xor If(_compact, 2, 0) Xor If(_flyoutOpen, 8, 0)
         If _layoutValid AndAlso k_key = _layoutKey Then Return
         _layoutKey = k_key
         _layoutValid = True
         EnsureFieldControls()   ' the layout needs their height; made now, not when the designer added the field (see AttachField)
+        ApplyFieldFonts()
         ComputeLayout()
         ApplyFieldControls()
     End Sub
 
+    ' Compact: the inputs take the smaller font too (their height follows it, and the layout needs that height).
+    ' Back to the inherited font when not compact any more.
+    Private Sub ApplyFieldFonts()
+        Dim k_changed As Boolean = _fieldsCompactFont <> _compact
+        _fieldsCompactFont = _compact
+        For Each k_group As KBotRibbonGroup In AllGroups()
+            For Each k_field As KBotRibbonField In k_group.Fields
+                Dim k_control As Control = k_field.Control
+                If k_control Is Nothing Then Continue For
+                If _compact Then
+                    k_control.Font = BodyFont()
+                ElseIf k_changed Then
+                    k_control.ResetFont()
+                End If
+            Next
+        Next
+    End Sub
+
     ' The field controls follow the slots the layout gave them: placed and shown, or hidden (hidden tab, folded ribbon, hidden field).
     Private Sub ApplyFieldControls()
+        ' While the fly-out is open the fields stand in it (its coordinates), otherwise on the ribbon itself.
+        Dim k_parent As Control = If(_flyoutOpen AndAlso _flyout IsNot Nothing, DirectCast(_flyout, Control), Me)
         For Each k_group As KBotRibbonGroup In AllGroups()
             For Each k_field As KBotRibbonField In k_group.Fields
                 Dim k_control As Control = k_field.Control
@@ -582,6 +690,7 @@ Public NotInheritable Class KBotRibbon
                 If k_field.Bounds.IsEmpty Then
                     k_control.Visible = False
                 Else
+                    If Not ReferenceEquals(k_control.Parent, k_parent) Then k_parent.Controls.Add(k_control)
                     k_control.Bounds = k_field.Bounds
                     k_control.Visible = True
                 End If
@@ -638,11 +747,12 @@ Public NotInheritable Class KBotRibbon
         Dim k_rightW As Integer = Math.Min(TextWidth(_rightText, RightFont()) + Px(12), Math.Max(0, k_pinX - k_x - Px(8)))
         _rightTextRect = New Rectangle(k_pinX - k_rightW, 0, k_rightW, k_tabH)
 
-        If _collapsed Then Return
+        ' Folded: nothing more, unless the fly-out is open -- then the panel is laid out in the fly-out's own coordinates (top 0).
+        If _collapsed AndAlso Not _flyoutOpen Then Return
         Dim k_active As KBotRibbonTab = ActiveTab()
         If k_active Is Nothing Then Return
 
-        Dim k_panelTop As Integer = k_tabH
+        Dim k_panelTop As Integer = If(_collapsed, 0, k_tabH)
         Dim k_gx As Integer = Px(4)
         For Each k_group As KBotRibbonGroup In k_active.Groups
             If Not GroupShown(k_group) Then Continue For
@@ -653,7 +763,7 @@ Public NotInheritable Class KBotRibbon
         Dim k_panelRight As Integer = Width - Px(8)
         For k_p As Integer = _pinned.Count - 1 To 0 Step -1
             Dim k_pinned As KBotRibbonButton = _pinned(k_p)
-            If Not k_pinned.Visible OrElse Not k_pinned.Large Then Continue For
+            If Not k_pinned.Visible OrElse Not k_pinned.Large OrElse _collapsed Then Continue For   ' folded: they stand in the tab strip, small
             Dim k_pw As Integer = LargeWidth(k_pinned.Text)
             k_pinned.CenterV = True
             k_pinned.Bounds = New Rectangle(k_panelRight - k_pw, k_panelTop + Px(4), k_pw, PanelPx() - Px(8))
@@ -682,6 +792,7 @@ Public NotInheritable Class KBotRibbon
         k_group.CaptionBounds = Rectangle.Empty
         For Each k_button As KBotRibbonButton In k_group.Buttons
             k_button.Bounds = Rectangle.Empty
+            k_button.SeparatorX = -1
         Next
         For Each k_field As KBotRibbonField In k_group.Fields
             k_field.Bounds = Rectangle.Empty
@@ -715,6 +826,11 @@ Public NotInheritable Class KBotRibbon
                 Dim k_w As Integer = LargeWidth(k_button.Text)
                 k_button.Bounds = New Rectangle(k_cx, k_panelTop + Px(4), k_w, PanelPx() - k_captionH - Px(6))
                 k_cx += k_w
+                ' Slice KE12: a thin line after the button, when another button of the group follows it.
+                If k_button.SeparatorAfter AndAlso VisibleButtonAfter(k_group, k_button) Then
+                    k_button.SeparatorX = k_cx + Px(3)
+                    k_cx += Px(6)
+                End If
             Else
                 k_small.Add(k_button)
                 If k_small.Count = 3 Then PlaceSmallColumn(k_small, k_cx, k_panelTop + Px(6))
@@ -751,6 +867,19 @@ Public NotInheritable Class KBotRibbon
         k_group.Bounds = New Rectangle(k_gx, k_panelTop, k_groupW, PanelPx())
         k_group.CaptionBounds = New Rectangle(k_gx, k_panelTop + PanelPx() - k_captionH - Px(2), k_groupW, k_captionH)
         Return k_groupW
+    End Function
+
+    ' True when a visible button of the group comes after k_button.
+    Private Shared Function VisibleButtonAfter(k_group As KBotRibbonGroup, k_button As KBotRibbonButton) As Boolean
+        Dim k_seen As Boolean = False
+        For Each k_other As KBotRibbonButton In k_group.Buttons
+            If ReferenceEquals(k_other, k_button) Then
+                k_seen = True
+            ElseIf k_seen AndAlso k_other.Visible Then
+                Return True
+            End If
+        Next
+        Return False
     End Function
 
     ' True when a pinned button earlier in the collection (to the left of the one at k_index) is visible.
@@ -826,7 +955,7 @@ Public NotInheritable Class KBotRibbon
                     End Using
                 End Using
             End If
-            TextRenderer.DrawText(k_g, k_tab.Text, If(k_isActive, BoldFont(), Font), k_rect,
+            TextRenderer.DrawText(k_g, k_tab.Text, If(k_isActive, BoldFont(), BodyFont()), k_rect,
                                   If(k_isActive, k_p.TextColor, k_p.TextDimColor),
                                   TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or TextFormatFlags.SingleLine)
             If k_isActive Then
@@ -878,6 +1007,12 @@ Public NotInheritable Class KBotRibbon
         For Each k_button As KBotRibbonButton In k_group.Buttons
             If Not k_button.Bounds.IsEmpty Then PaintButton(k_g, k_p, k_button)
         Next
+        Using k_sepPen As New Pen(k_p.BorderColor)
+            For Each k_button As KBotRibbonButton In k_group.Buttons
+                If k_button.SeparatorX < 0 OrElse k_button.Bounds.IsEmpty Then Continue For
+                k_g.DrawLine(k_sepPen, k_button.SeparatorX, k_group.Bounds.Top + Px(8), k_button.SeparatorX, k_group.CaptionBounds.Top - Px(2))
+            Next
+        End Using
         TextRenderer.DrawText(k_g, k_group.Text, CaptionFont(), k_group.CaptionBounds, k_p.TextDimColor,
                               TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or
                               TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
@@ -901,7 +1036,7 @@ Public NotInheritable Class KBotRibbon
         If k_button.Large AndAlso Not k_button.DrawSmall Then
             Dim k_icon As Integer = Px(LargeIcon)
             Dim k_lines As List(Of String) = WrapLines(k_button.Text, k_rect.Width - Px(4), 2)
-            Dim k_lineH As Integer = Font.Height
+            Dim k_lineH As Integer = BodyFont().Height
             ' A pinned button is centred in the whole height; the buttons of a group hang from the top (the group
             ' caption is below them).
             Dim k_top As Integer = k_rect.Top + Px(4)
@@ -913,7 +1048,7 @@ Public NotInheritable Class KBotRibbon
             DrawIcon(k_g, k_button, k_iconRect)
             Dim k_y As Integer = k_iconRect.Bottom + Px(2)
             For Each k_line As String In k_lines
-                TextRenderer.DrawText(k_g, k_line, Font, New Rectangle(k_rect.Left + Px(2), k_y, k_rect.Width - Px(4), k_lineH), k_color,
+                TextRenderer.DrawText(k_g, k_line, BodyFont(), New Rectangle(k_rect.Left + Px(2), k_y, k_rect.Width - Px(4), k_lineH), k_color,
                                       TextFormatFlags.HorizontalCenter Or TextFormatFlags.Top Or TextFormatFlags.NoPadding Or
                                       TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
                 k_y += k_lineH
@@ -923,7 +1058,7 @@ Public NotInheritable Class KBotRibbon
             Dim k_iconRect As New Rectangle(k_rect.Left + Px(6), k_rect.Top + (k_rect.Height - k_icon) \ 2, k_icon, k_icon)
             DrawIcon(k_g, k_button, k_iconRect)
             Dim k_textRect As New Rectangle(k_iconRect.Right + Px(6), k_rect.Top, k_rect.Right - k_iconRect.Right - Px(8), k_rect.Height)
-            TextRenderer.DrawText(k_g, k_button.Text, Font, k_textRect, k_color,
+            TextRenderer.DrawText(k_g, k_button.Text, BodyFont(), k_textRect, k_color,
                                   TextFormatFlags.Left Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding Or
                                   TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis)
         End If
@@ -954,6 +1089,192 @@ Public NotInheritable Class KBotRibbon
             End If
         Finally
             k_g.InterpolationMode = k_mode
+        End Try
+    End Sub
+
+    ' ---- Fly-out (slice 0114-24) ------------------------------------------------------------
+
+    ' Opens the panel of the selected tab over the page under the folded ribbon. The fly-out is a child of the form, on top of the
+    ' other controls and outside the docking, so the page does not move.
+    Private Sub OpenFlyout()
+        Try
+            If _flyoutOpen OrElse Not _collapsed OrElse Not IsHandleCreated OrElse KBotDesignTime.IsDesignTime(Me) Then Return
+            Dim k_form As Form = FindForm()
+            If k_form Is Nothing OrElse ActiveTab() Is Nothing Then Return
+            If _flyout Is Nothing Then _flyout = New KBotRibbonFlyout(Me)
+            _flyoutOpen = True
+            _layoutValid = False
+            EnsureLayout()   ' the panel is laid out in the fly-out's coordinates; the fields move into it
+            If Not ReferenceEquals(_flyout.Parent, k_form) Then k_form.Controls.Add(_flyout)
+            _flyout.Bounds = New Rectangle(k_form.PointToClient(PointToScreen(New Point(0, Height - 1))), New Size(Width, PanelPx() + 1))
+            _flyout.Visible = True
+            _flyout.BringToFront()
+            _flyoutForm = k_form
+            AddHandler k_form.Deactivate, AddressOf FlyoutHostChanged
+            AddHandler k_form.SizeChanged, AddressOf FlyoutHostChanged
+            AddHandler k_form.LocationChanged, AddressOf FlyoutHostChanged
+            _flyoutFilter = New KBotRibbonFlyout.OutsideClickFilter(Me)
+            Application.AddMessageFilter(_flyoutFilter)
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.OpenFlyout", ex)
+            CloseFlyout()
+        End Try
+    End Sub
+
+    ''' <summary>Closes the fly-out when it is open; the fields go back to the ribbon (hidden: the ribbon is folded).</summary>
+    Private Sub CloseFlyout()
+        If Not _flyoutOpen Then Return
+        _flyoutOpen = False
+        Try
+            If _flyoutFilter IsNot Nothing Then
+                Application.RemoveMessageFilter(_flyoutFilter)
+                _flyoutFilter = Nothing
+            End If
+            If _flyoutForm IsNot Nothing Then
+                RemoveHandler _flyoutForm.Deactivate, AddressOf FlyoutHostChanged
+                RemoveHandler _flyoutForm.SizeChanged, AddressOf FlyoutHostChanged
+                RemoveHandler _flyoutForm.LocationChanged, AddressOf FlyoutHostChanged
+                _flyoutForm = Nothing
+            End If
+            _tooltip?.HideNow()
+            _hotButton = Nothing
+            _pressedButton = Nothing
+            ' The fields must leave before the fly-out can ever be disposed with its children.
+            For Each k_group As KBotRibbonGroup In AllGroups()
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    Dim k_control As Control = k_field.Control
+                    If k_control Is Nothing OrElse _flyout Is Nothing OrElse Not ReferenceEquals(k_control.Parent, _flyout) Then Continue For
+                    k_control.Visible = False
+                    Controls.Add(k_control)
+                Next
+            Next
+            If _flyout IsNot Nothing Then _flyout.Visible = False
+            _layoutValid = False
+            If IsHandleCreated Then Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.CloseFlyout", ex)
+        End Try
+    End Sub
+
+    Private Sub FlyoutHostChanged(k_sender As Object, k_e As EventArgs)
+        CloseFlyout()
+    End Sub
+
+    ' The click that closes the fly-out: any mouse press in the form outside the fly-out and the tab strip (those two decide for
+    ' themselves). A press in a window of its own (the list of a combo) is not ours to judge.
+    Friend Sub FlyoutOutsideClick(k_hwnd As IntPtr)
+        Try
+            If Not _flyoutOpen OrElse _flyout Is Nothing Then Return
+            If _flyoutForm Is Nothing OrElse Not _flyoutForm.IsHandleCreated Then
+                CloseFlyout()
+                Return
+            End If
+            If AdobeNativeMethods.GetAncestor(k_hwnd, AdobeNativeMethods.GA_ROOT) <> _flyoutForm.Handle Then Return
+            Dim k_point As Point = Cursor.Position
+            If _flyout.RectangleToScreen(_flyout.ClientRectangle).Contains(k_point) Then Return
+            If RectangleToScreen(New Rectangle(0, 0, Width, Px(TabStripHeight))).Contains(k_point) Then Return
+            CloseFlyout()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutOutsideClick", ex)
+        End Try
+    End Sub
+
+    ' Escape closes the fly-out (and only that); a list of a combo of the fly-out that is open keeps its own Escape.
+    Friend Function FlyoutEscape() As Boolean
+        Try
+            If Not _flyoutOpen Then Return False
+            For Each k_group As KBotRibbonGroup In AllGroups()
+                For Each k_field As KBotRibbonField In k_group.Fields
+                    Dim k_combo As KBotComboBox = TryCast(k_field.Control, KBotComboBox)
+                    If k_combo IsNot Nothing AndAlso k_combo.DroppedDown Then Return False
+                Next
+            Next
+            CloseFlyout()
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutEscape", ex)
+            Return False
+        End Try
+    End Function
+
+    Friend Sub PaintFlyoutPanel(k_g As Graphics, k_size As Size)
+        EnsureLayout()
+        Dim k_p As ThemePalette = Palette()
+        k_g.SmoothingMode = SmoothingMode.AntiAlias
+        k_g.Clear(k_p.SurfaceAltColor)
+        PaintGroups(k_g, k_p)
+        Using k_pen As New Pen(k_p.BorderColor)
+            k_g.DrawRectangle(k_pen, 0, 0, k_size.Width - 1, k_size.Height - 1)
+        End Using
+    End Sub
+
+    Private Function FlyoutButtonAt(k_point As Point) As KBotRibbonButton
+        Dim k_active As KBotRibbonTab = ActiveTab()
+        If k_active IsNot Nothing Then
+            For Each k_group As KBotRibbonGroup In k_active.Groups
+                Dim k_found As KBotRibbonButton = ButtonInGroup(k_group, k_point)
+                If k_found IsNot Nothing Then Return k_found
+            Next
+        End If
+        Dim k_inForm As KBotRibbonButton = ButtonInGroup(_formGroup, k_point)
+        If k_inForm IsNot Nothing Then Return k_inForm
+        Return ButtonInGroup(_rightGroup, k_point)
+    End Function
+
+    Friend Sub FlyoutMouseMove(k_point As Point)
+        Try
+            If Not _flyoutOpen Then Return
+            EnsureLayout()
+            Dim k_button As KBotRibbonButton = FlyoutButtonAt(k_point)
+            If k_button IsNot Nothing AndAlso Not k_button.Enabled Then k_button = Nothing
+            If ReferenceEquals(k_button, _hotButton) Then Return
+            _hotButton = k_button
+            _flyout.Invalidate()
+            ShowButtonTip(k_button, _flyout)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutMouseMove", ex)
+        End Try
+    End Sub
+
+    Friend Sub FlyoutMouseLeave()
+        Try
+            _hotButton = Nothing
+            _pressedButton = Nothing
+            _tooltip?.HideNow()
+            If _flyout IsNot Nothing Then _flyout.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutMouseLeave", ex)
+        End Try
+    End Sub
+
+    Friend Sub FlyoutMouseDown(k_point As Point)
+        Try
+            If Not _flyoutOpen Then Return
+            EnsureLayout()
+            _tooltip?.HideNow()
+            Dim k_button As KBotRibbonButton = FlyoutButtonAt(k_point)
+            If k_button IsNot Nothing AndAlso k_button.Enabled Then
+                _pressedButton = k_button
+                _flyout.Invalidate()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutMouseDown", ex)
+        End Try
+    End Sub
+
+    ' The button is used: the fly-out goes first (so a window the command opens is not under it), then the command is raised.
+    Friend Sub FlyoutMouseUp(k_point As Point)
+        Try
+            Dim k_pressed As KBotRibbonButton = _pressedButton
+            _pressedButton = Nothing
+            If _flyout IsNot Nothing Then _flyout.Invalidate()
+            If k_pressed Is Nothing OrElse Not _flyoutOpen Then Return
+            If Not ReferenceEquals(FlyoutButtonAt(k_point), k_pressed) Then Return
+            CloseFlyout()
+            RaiseEvent ItemClicked(Me, New KBotRibbonItemClickedEventArgs(k_pressed))
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FlyoutMouseUp", ex)
         End Try
     End Sub
 
@@ -1015,8 +1336,9 @@ Public NotInheritable Class KBotRibbon
         End Try
     End Sub
 
-    Private Sub ShowButtonTip(k_button As KBotRibbonButton)
+    Private Sub ShowButtonTip(k_button As KBotRibbonButton, Optional k_origin As Control = Nothing)
         If _tooltip Is Nothing Then Return
+        If k_origin Is Nothing Then k_origin = Me   ' the fly-out passes itself: the button's bounds are in its coordinates
         _tooltip.HideNow()
         If k_button Is Nothing Then Return
         If String.IsNullOrEmpty(k_button.ToolTipText) AndAlso String.IsNullOrEmpty(k_button.ToolTipHeader) Then Return
@@ -1024,7 +1346,7 @@ Public NotInheritable Class KBotRibbon
             .Text = k_button.ToolTipText,
             .HeaderText = If(String.IsNullOrEmpty(k_button.ToolTipHeader), Nothing, k_button.ToolTipHeader)
         }
-        _tooltip.ShowAt(Me, k_content, PointToScreen(New Point(k_button.Bounds.Left, k_button.Bounds.Bottom + Px(2))))
+        _tooltip.ShowAt(k_origin, k_content, k_origin.PointToScreen(New Point(k_button.Bounds.Left, k_button.Bounds.Bottom + Px(2))))
     End Sub
 
     Protected Overrides Sub OnMouseLeave(k_e As EventArgs)
@@ -1053,15 +1375,24 @@ Public NotInheritable Class KBotRibbon
             End If
             Dim k_tab As KBotRibbonTab = TabAt(k_e.Location)
             If k_tab IsNot Nothing Then
-                SelectedTabIndex = _tabs.IndexOf(k_tab)
+                If k_e.Clicks >= 2 Then Return   ' a double click: OnMouseDoubleClick folds / unfolds
+                Dim k_index As Integer = _tabs.IndexOf(k_tab)
                 If _collapsed Then
-                    Collapsed = False
-                    _expandedByClickAt = Environment.TickCount
+                    ' Folded (slice 0114-24): a click opens the tab's panel as a fly-out, a click on the tab already open closes it.
+                    If _flyoutOpen AndAlso k_index = _selectedTab Then
+                        CloseFlyout()
+                    Else
+                        SelectedTabIndex = k_index
+                        OpenFlyout()
+                    End If
+                Else
+                    SelectedTabIndex = k_index
                 End If
                 Return
             End If
             Dim k_button As KBotRibbonButton = ButtonAt(k_e.Location)
             If k_button IsNot Nothing AndAlso k_button.Enabled Then
+                CloseFlyout()   ' a pinned button of the tab strip was pressed: the fly-out goes, the command runs
                 _pressedButton = k_button
                 Invalidate()
             End If
@@ -1085,13 +1416,12 @@ Public NotInheritable Class KBotRibbon
         End Try
     End Sub
 
-    ' Double click on a tab folds the ribbon -- unless this very click sequence has just unfolded it.
+    ' Double click on a tab folds the ribbon, or unfolds it for good when it is folded (a single click only opens the fly-out).
     Protected Overrides Sub OnMouseDoubleClick(k_e As MouseEventArgs)
         MyBase.OnMouseDoubleClick(k_e)
         Try
             If KBotDesignTime.IsDesignTime(Me) OrElse k_e.Button <> MouseButtons.Left Then Return
             If TabAt(k_e.Location) Is Nothing Then Return
-            If Environment.TickCount - _expandedByClickAt < SystemInformation.DoubleClickTime Then Return
             Collapsed = Not _collapsed
         Catch ex As Exception
             GlobalErrorLog.Write("KBotRibbon.OnMouseDoubleClick", ex)

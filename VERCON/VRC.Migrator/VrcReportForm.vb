@@ -42,6 +42,11 @@ Public Class VrcReportForm
 
     Private Sub WebRaport_Navigating(sender As Object, e As WebBrowserNavigatingEventArgs) Handles webRaport.Navigating
         If e.Url Is Nothing Then Return
+        If e.Url.IsFile Then
+            e.Cancel = True
+            VrcShell.RevealInExplorer(e.Url.LocalPath)
+            Return
+        End If
         Dim k_url = e.Url.AbsoluteUri
         e.Cancel = Not String.Equals(k_url, "about:blank", StringComparison.OrdinalIgnoreCase) AndAlso
                    Not k_url.StartsWith("about:blank#", StringComparison.OrdinalIgnoreCase)

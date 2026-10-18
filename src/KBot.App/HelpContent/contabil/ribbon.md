@@ -36,13 +36,19 @@ aduce întâi pe ecran.
 <!-- capture: ribbon-configurari | caption: Fila «Configurări» a ribbonului | prepare: Alegeți fila «Configurări» a ribbonului, cu «Jurnal activitate» pornit în Setări › Aplicație. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
 
 ## Strângerea ribbonului
-<!-- slice: 0114, 0114-02, 0000-85 -->
+<!-- slice: 0114, 0114-02, 0000-85, 0114-24, 0000-100 -->
 
 Ca să ai mai mult loc pentru lucru, ribbonul se poate **strânge**: **dublu clic** pe numele unei file sau clic pe
 **săgeata** din dreapta lui. Rămân doar numele filelor, iar butoanele din dreapta («Închide» și, când e cazul, «Asociază parteneri») se fac mici, lângă ele.
-Un **clic pe o filă** desface ribbonul la loc. K-BOT ține minte cum l-ai lăsat și pornește data viitoare la fel.
+Cât ribbonul e strâns, un **clic pe o filă** îi arată butoanele **doar pentru o clipă**, peste fereastră, fără să mute ce ai deschis dedesubt, ca în Office. Panoul se închide singur după ce ai apăsat un buton, la un clic în altă parte, la **Esc** sau când treci în altă fereastră; un clic pe o casetă din panou (de exemplu perioada de adus la facturile primite) îl ține deschis. Alt clic pe aceeași filă îl închide, iar un clic pe altă filă îi arată butoanele ei.
+Ca să desfaci ribbonul la loc, dă **dublu clic** pe o filă sau clic pe **săgeata** din dreapta. K-BOT ține minte cum l-ai lăsat și pornește data viitoare la fel.
 
-<!-- capture: ribbon-strans | caption: Ribbonul strâns: doar numele filelor, cu «Închide» mic | prepare: Deschideți «Lista angajamentelor», apoi dați dublu clic pe numele unei file din ribbon. După captură, desfaceți ribbonul la loc cu un clic pe o filă. | redo: 2026-10-17 21:00 | why: 0114-15/16: grupul vederii poate avea mai multe butoane (Rezervari, Receptii); 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
+<!-- capture: ribbon-strans | caption: Ribbonul strâns: doar numele filelor, cu «Închide» mic | prepare: Deschideți «Lista angajamentelor», apoi dați dublu clic pe numele unei file din ribbon. După captură, desfaceți ribbonul la loc cu dublu clic pe o filă. | redo: 2026-10-17 21:00 | why: 0114-15/16: grupul vederii poate avea mai multe butoane (Rezervari, Receptii); 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
+
+## Ribbon compact
+<!-- slice: 0114-24, 0000-100 -->
+
+Pe un ecran mic ribbonul poate ocupa prea mult. În **Setări › Aplicație** bifezi **«Panglica din fereastra principală e compactă (iconițe și text mai mici)»**: butoanele au iconițe și text mai mici, rândurile sunt mai strânse și ribbonul ia mai puțin din înălțimea ferestrei. Se aplică imediat, fără repornire; debifat, ribbonul are mărimea obișnuită — [Setări](topic:contabil.setari).
 
 ## Butoanele din dreapta: «Închide» și cele ale paginii
 <!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85, 0114-15, 0114-16, 0000-91 -->

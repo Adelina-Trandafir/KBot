@@ -19,9 +19,11 @@ Partial Public Class KbotForm
 
     Friend Const MachetaEFacturaVanzare As String = "efactura_vanzare"
     Friend Const MachetaEFacturaCumparare As String = "efactura_cumparare"
+    Friend Const MachetaEFacturaReceptii As String = "efactura_receptii"
 
     Private _efacturaForm As FacturiForm
     Private _primiteForm As PrimiteForm
+    Private _receptiiForm As KeLegaForm
 
     ' The API and the re-login net of E-Factura; False (after telling the operator) when no unit is open.
     Private Function EFacturaContext(k_caption As String, ByRef k_api As IEFacturaApi, ByRef k_gate As ReauthGate) As Boolean
@@ -84,6 +86,29 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>Slice KE12, «E-Factura Receptii»: the page where received invoices are linked to receptions (existing, new, modified).</summary>
+    Private Sub DeschideEFacturaReceptii()
+        Try
+            If _receptiiForm IsNot Nothing AndAlso Not _receptiiForm.IsDisposed Then
+                ShowMachetaPage(_receptiiForm, MachetaRef.Create(MachetaEFacturaReceptii))
+                Return
+            End If
+            Dim k_api As IEFacturaApi = Nothing
+            Dim k_gate As ReauthGate = Nothing
+            If Not EFacturaContext("E-Factura Recepții", k_api, k_gate) Then Return
+            _receptiiForm = New KeLegaForm(k_api, k_gate, _session.NumeUnitate, _session.An)
+            AddHandler _receptiiForm.FormClosed, Sub() _receptiiForm = Nothing
+            If Not ShowMachetaPage(_receptiiForm, MachetaRef.Create(MachetaEFacturaReceptii)) Then
+                _receptiiForm.Dispose()
+                _receptiiForm = Nothing
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DeschideEFacturaReceptii", ex)
+            KBotMessage.Show(Me, "Pagina recepțiilor nu a putut fi deschisă. Detalii în jurnalul de erori.",
+                             "E-Factura Recepții", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     ''' <summary>
     ''' A button of the E-Factura tab of the ribbon. The two unit commands (accounts, unit data) work on the issued
     ''' invoices window, which comes to the front first (its issuer follows what «Date Unitate» saves).
@@ -95,6 +120,8 @@ Partial Public Class KbotForm
                     DeschideEFactura()
                 Case MachetaEFacturaCumparare
                     DeschideEFacturaCumparare()
+                Case MachetaEFacturaReceptii
+                    DeschideEFacturaReceptii()
                 Case "ef_token"
                     OpenTokenAnaf()
                 Case Else
@@ -157,6 +184,29 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.SyncPrimite", ex)
             KBotMessage.Show(Me, "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
                              "Sincronizează facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 00EF-43: «Trimite in Access» (<c>ef_access_trimite</c>) and «Preia din Access» (<c>ef_access_preia</c>) of the ribbon's form group, shown only for
+    ''' a client that also runs the Access application while the received invoices window is on screen. The work and what the end tells are the window's.
+    ''' UI boundary (async Sub): logs and tells the operator.
+    ''' </summary>
+    Friend Async Sub RunPrimiteAccess(k_key As String)
+        Try
+            If _primiteForm Is Nothing OrElse _primiteForm.IsDisposed Then Return
+            Select Case k_key
+                Case "ef_access_trimite"
+                    Await _primiteForm.TrimiteInAccessAsync().ConfigureAwait(True)
+                Case "ef_access_preia"
+                    Await _primiteForm.PreiaDinAccessAsync().ConfigureAwait(True)
+                Case Else
+                    Throw New ArgumentException($"Unknown Access command '{k_key}'.", NameOf(k_key))
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.RunPrimiteAccess", ex)
+            KBotMessage.Show(Me, "Comanda Access nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                             "Facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 

@@ -125,9 +125,18 @@ Partial Class KBotDataView
         ' Agregatele, dacă nivelul le cere pe banda asta — stratificate ca la subsolul grilei.
         Dim cuAgregate As Boolean = If(antet, nivel.ShowHeaderAggregates, nivel.ShowFooterAggregates)
         If cuAgregate Then DrawGroupAggregates(g, nod, bandRect, _groupArgs.Font, _groupArgs.ForeColor)
+        If antet Then DrawGroupHeaderCombos(g, nod, bandRect, _groupArgs.Font, _groupArgs.ForeColor)
+        If antet Then DrawGroupCheck(g, nod, bandRect)
 
         ' Titlul, după agregate (stă peste banda deja umplută) și înaintea liniei de despărțire.
         DrawGroupCaption(g, nod, nivel, bandRect, cuAgregate, strans, antet)
+
+        ' Slice KE12-02: the frame of a header band (a little more visible than the grid lines).
+        If antet AndAlso nivel.HeaderBorder Then
+            Using k_pen As New Pen(Blend(_cGroupSep, If(_schemeIsDark, Color.White, Color.Black), 0.35))
+                g.DrawRectangle(k_pen, bandRect.Left, bandRect.Top, bandRect.Width - 1, bandRect.Height - 1)
+            End Using
+        End If
 
         ' Linia de despărțire sub bandă — aceeași cu cea dintre rânduri, ca banda să nu pară
         ' lipită de rândul de sub ea.
@@ -140,6 +149,8 @@ Partial Class KBotDataView
                                  antet As Boolean)
         Dim capat As Integer = If(cuAgregate, FirstAggregatedColumnLeft(), Integer.MaxValue)
         Dim stanga As Integer = GroupIndentFor(nod.Level) + ScaleDpi(KBotDataColumn.HeaderTextPad)
+        ' Slice KE12-03: a header with a tick box (CheckBoxes = All) starts its triangle and title after it.
+        If antet Then stanga += GroupCheckOffset()
         Dim dreapta As Integer = Math.Min(bandRect.Right, capat)
         If dreapta <= stanga Then Return
 
@@ -170,7 +181,7 @@ Partial Class KBotDataView
     Friend Function GroupExpanderRect(bandRect As Rectangle, level As Integer) As Rectangle
         Dim latura As Integer = ScaleDpi(9)
         If bandRect.Height < latura Then Return Rectangle.Empty
-        Dim stanga As Integer = bandRect.Left + GroupIndentFor(level) + ScaleDpi(KBotDataColumn.HeaderTextPad)
+        Dim stanga As Integer = bandRect.Left + GroupIndentFor(level) + ScaleDpi(KBotDataColumn.HeaderTextPad) + GroupCheckOffset()
         Return New Rectangle(stanga, bandRect.Top + (bandRect.Height - latura) \ 2, latura, latura)
     End Function
 

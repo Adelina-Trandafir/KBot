@@ -15,7 +15,8 @@ Imports KBot.Forexe
 ''' Plan docs/KE_PLAN.md.
 '''
 ''' <para><b>How a save is confirmed.</b> The workflow leaves the text of the site's success element (<c>MesajSalvare</c>). When it is there the
-''' reception is saved. Only when it is NOT there, the read-back is also used as a check: the reception is saved if the history of the angajament
+''' reception is saved. When the site's red error box shows instead (<c>MesajEroare</c>) the reception is NOT saved: its text goes to the operator
+''' and nothing is read back. Only when it is NOT there, the read-back is also used as a check: the reception is saved if the history of the angajament
 ''' holds its K-BOT marker. Either way the read-back runs, because the new rows of the history have to come into K-BOT.</para>
 ''' </summary>
 Partial Public Class KbotForm
@@ -82,6 +83,13 @@ Partial Public Class KbotForm
             End If
             If k_run.StoppedBeforeSave Then
                 Return New KeReceptieSalvata() With {.Mesaj = "Mod probă: robotul s-a oprit înainte de salvare. Nu s-a salvat nimic în FOREXE."}
+            End If
+            ' The site's red error box: the reception was NOT saved, so there is nothing to read back.
+            Dim k_eroare As String = Nothing
+            If k_run.Data.TryGetValue(WorkflowCatalog.VarMesajEroare, k_eroare) AndAlso Not String.IsNullOrWhiteSpace(k_eroare) Then
+                GlobalErrorLog.Write("MainForm.SalveazaReceptieKeInCoadaAsync", New InvalidOperationException("FOREXE a respins recepția: " & k_eroare.Trim()))
+                Return New KeReceptieSalvata() With {
+                    .Mesaj = "FOREXE a respins recepția și nu s-a salvat nimic: " & k_eroare.Trim()}
             End If
             Dim k_text As String = Nothing
             Dim k_seen As Boolean = k_run.Data.TryGetValue(WorkflowCatalog.VarMesajSalvare, k_text) AndAlso Not String.IsNullOrWhiteSpace(k_text)

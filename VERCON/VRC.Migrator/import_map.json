@@ -335,22 +335,23 @@
           "name": "IDBC",
           "cls": "CHEIE",
           "link": {
-            "kind": "group",
-            "group": "IDBC"
+            "kind": "oi_document"
           }
         },
         {
           "name": "IDBO",
           "cls": "CHEIE",
           "link": {
-            "kind": "open"
+            "kind": "origin"
           }
         },
         {
           "name": "IDM",
           "cls": "CHEIE",
           "link": {
-            "kind": "open"
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
           }
         },
         {
@@ -559,7 +560,8 @@
           "link": {
             "kind": "logical",
             "parent": "NIR",
-            "parentField": "IdIntrare"
+            "parentField": "IdIntrare",
+            "orphan": "null"
           }
         },
         {
@@ -607,7 +609,10 @@
           "name": "IdRetur",
           "cls": "CHEIE",
           "link": {
-            "kind": "open"
+            "kind": "logical",
+            "parent": "Iesiri_H",
+            "parentField": "IdBonConsum",
+            "orphan": "null"
           }
         },
         {
@@ -774,7 +779,9 @@
           "name": "IdMasinaP",
           "cls": "CHEIE",
           "link": {
-            "kind": "open"
+            "kind": "logical",
+            "parent": "Masini",
+            "parentField": "IdMasina"
           }
         },
         {

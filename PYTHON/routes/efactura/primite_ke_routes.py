@@ -17,12 +17,13 @@ session's. The rules are in primite_ke.py. Every WRITE needs the role «Contabil
   POST   /api/efactura/primite/<id>/ke/verifica        body { CodAngajament, Tip, IDRR?, alocari: [{ IdClsf, Suma }] }
                                                        -> { ok, probleme, avertismente, randuri: [{ IdClsf, CodAI, CodIndicator, Clsf, ClsfSal, SS,
                                                                                                   Suma, ValoareVeche?, ValoareNoua? }] }
+  GET    /api/efactura/ke/angajament/<cod>/disponibil?data=aaaa-ll-zz   (KE12-03) -> { ziua, indicatori: [{ IdClsf, CodIndicator, Buget|null, Receptii }], avertismente }
   POST   /api/efactura/primite/<id>/ke/legaturi        body { CodAngajament, Tip, IDRR?, IDRH?, IDR?, alocari } -> 201, the state as GET
   DELETE /api/efactura/primite/<id>/ke/legaturi/<idl>  -> the state as GET
 
 Errors are `{ "error": "<text>", "reason": "<CODE>" }`. Audit journal: EF_KE_CLASIFICARE, EF_KE_LEGA, EF_KE_STERGE.
 """
-from flask import g
+from flask import g, request
 
 from . import efactura_bp, primite_ke
 from .factura_routes import _audit, _body, _guarded, _json, _query_text
@@ -81,6 +82,13 @@ def ke_angajamente():
 @_guarded("ke/receptii")
 def ke_receptii(cod):
     return _json(primite_ke.receptii_angajament(g.session.db_name, cod))
+
+
+@efactura_bp.route("/api/efactura/ke/angajament/<path:cod>/disponibil", methods=["GET"])
+@require_session
+@_guarded("ke/disponibil")
+def ke_disponibil(cod):
+    return _json(primite_ke.disponibil(g.session.db_name, cod, request.args.get("data")))
 
 
 @efactura_bp.route("/api/efactura/primite/<int:id_primita>/ke/verifica", methods=["POST"])

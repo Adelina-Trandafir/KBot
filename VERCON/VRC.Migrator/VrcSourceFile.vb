@@ -69,6 +69,22 @@ Public NotInheritable Class VrcSourceFile
     End Function
 
     ''' <summary>
+    ''' A file the operator picked BY HAND: the choice is respected even when the name is not tz_*. Only tz.mdb / tz.accdb and
+    ''' files that are not Access bases are refused (Nothing). A name outside the tz_ pattern becomes <see cref="VrcFileKind.Other"/>, ticked.
+    ''' </summary>
+    Public Shared Function FromChosenPath(k_path As String) As VrcSourceFile
+        Dim k_file As VrcSourceFile = FromPath(k_path)
+        If k_file IsNot Nothing Then
+            k_file.Selected = True
+            Return k_file
+        End If
+        Dim k_extension As String = IO.Path.GetExtension(k_path).ToLowerInvariant()
+        If k_extension <> ".accdb" AndAlso k_extension <> ".mdb" Then Return Nothing
+        If String.Equals(IO.Path.GetFileNameWithoutExtension(k_path), "tz", StringComparison.OrdinalIgnoreCase) Then Return Nothing
+        Return New VrcSourceFile() With {.Path = k_path, .SizeBytes = New FileInfo(k_path).Length, .Kind = VrcFileKind.Other, .Selected = True}
+    End Function
+
+    ''' <summary>
     ''' All candidate files of <paramref name="k_folder"/> (that folder only, both .accdb and .mdb, a year in both formats
     ''' gives two rows). <paramref name="k_ignored"/> receives the names that were skipped on purpose.
     ''' </summary>

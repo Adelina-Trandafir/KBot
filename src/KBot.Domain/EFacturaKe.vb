@@ -148,6 +148,25 @@ Public NotInheritable Class EFacturaKeIndicator
     Public Property Ss As String = String.Empty
 End Class
 
+''' <summary>Slice KE12-03: what an indicator has on a day -- the budget of its classification then and the receptions taken BEFORE that day (the rule of the fundamentation document).</summary>
+Public NotInheritable Class EFacturaKeDisponibil
+    Public Property IdClsf As Integer?
+    Public Property CodIndicator As String = String.Empty
+
+    ''' <summary>The budget on the day; Nothing = none known (the cells stay empty and nothing is checked).</summary>
+    Public Property Buget As Decimal?
+
+    Public Property Receptii As Decimal
+End Class
+
+''' <summary>The answer of <c>GetKeDisponibilAsync</c>.</summary>
+Public NotInheritable Class EFacturaKeDisponibilZi
+    Public ReadOnly Property Indicatori As New List(Of EFacturaKeDisponibil)()
+
+    ''' <summary>What the server tells about the budget (a classification that fell back to today's credit).</summary>
+    Public ReadOnly Property Avertismente As New List(Of String)()
+End Class
+
 ''' <summary>One classification of a reception: its value now, what invoices cover, what is left.</summary>
 Public NotInheritable Class EFacturaKeReceptieClasificatie
     Public Property IdClsf As Integer

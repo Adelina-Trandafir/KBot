@@ -42,6 +42,7 @@ Public NotInheritable Class KBotSidePanel
     Private _expandedWidth As Integer = 270
     Private _tooltip As KBotToolTip
     Private _collapseButtonSize As Integer = 18
+    Private _collapseButtonVisible As Boolean = True
     Private _collapseButtonText As String = String.Empty
     Private _collapseImageExpanded As Image
     Private _collapseImageCollapsed As Image
@@ -121,6 +122,21 @@ Public NotInheritable Class KBotSidePanel
             Dim k_clamped As Integer = Math.Max(0, k_value)
             If k_clamped = _collapseButtonSize Then Return
             _collapseButtonSize = k_clamped
+            InvalidateLayout()
+        End Set
+    End Property
+
+    <Category("K-BOT")>
+    <Description("False = the fold button and its band at the bottom are not shown (the panel cannot be folded by the operator). Implicit True.")>
+    <DefaultValue(True)>
+    Public Property CollapseButtonVisible As Boolean
+        Get
+            Return _collapseButtonVisible
+        End Get
+        Set(k_value As Boolean)
+            If k_value = _collapseButtonVisible Then Return
+            _collapseButtonVisible = k_value
+            _hotBar = False
             InvalidateLayout()
         End Set
     End Property
@@ -324,7 +340,7 @@ Public NotInheritable Class KBotSidePanel
 
     ' Height of the band at the bottom that holds the fold button (0 without a button).
     Private Function BandHeight() As Integer
-        Return If(_collapseButtonSize <= 0, 0, Px(_collapseButtonSize) + 2 * Px(ButtonMargin))
+        Return If(_collapseButtonSize <= 0 OrElse Not _collapseButtonVisible, 0, Px(_collapseButtonSize) + 2 * Px(ButtonMargin))
     End Function
 
     Private Function ViewHeight() As Integer
@@ -333,7 +349,7 @@ Public NotInheritable Class KBotSidePanel
 
     ' The fold button: bottom left, like the navigation list's.
     Private Function ButtonRect() As Rectangle
-        If _collapseButtonSize <= 0 Then Return Rectangle.Empty
+        If _collapseButtonSize <= 0 OrElse Not _collapseButtonVisible Then Return Rectangle.Empty
         Dim k_side As Integer = Px(_collapseButtonSize)
         Return New Rectangle(Px(ButtonMargin), Height - Px(ButtonMargin) - k_side, k_side, k_side)
     End Function

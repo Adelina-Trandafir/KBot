@@ -52,6 +52,14 @@ End Class
 Public NotInheritable Class VrcFileProfile
 
     Public Property FileName As String = String.Empty
+    ''' <summary>Full path of the file as the operator chose it (the same name can exist in several folders).</summary>
+    Public Property FullPath As String = String.Empty
+    ''' <summary>What the messages show to identify the file: the full path, or the name when the path is not known.</summary>
+    Public ReadOnly Property Label As String
+        Get
+            Return If(FullPath.Length > 0, FullPath, FileName)
+        End Get
+    End Property
     Public Property Kind As VrcFileKind
     ''' <summary>Exercise year of a year file; 0 for a special base (tz_2100 is not a year).</summary>
     Public Property Year As Integer

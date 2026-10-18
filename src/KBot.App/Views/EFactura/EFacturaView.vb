@@ -66,6 +66,8 @@ Public Class EFacturaView
                 GlobalErrorLog.Write("EFacturaView.SetContext",
                                      New InvalidOperationException($"Angajamentul {k_cod} are {k_ddf.Antet.Count} DDF-uri; facturile primite se arata pentru primul."))
             End If
+            ' Slice KE12-04: the view «Recepții» of an invoice works on this angajament (its choice is not shown).
+            primite.AngajamentCode = k_cod
             Await primite.LoadAsync(k_antet.Iddf).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("EFacturaView.SetContext", ex)

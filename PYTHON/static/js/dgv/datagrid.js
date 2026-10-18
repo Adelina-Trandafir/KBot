@@ -557,7 +557,7 @@ export class DataGrid {
         cell.classList.add('is-action');
       } else {
         const title = el('span', 'dgv__title', col.title);
-        title.title = col.title;
+        title.title = col.tooltip || col.title;
         cell.appendChild(title);
       }
 
@@ -936,7 +936,7 @@ export class DataGrid {
   _tipIfClipped(ev) {
     const cell = ev.target.closest('.dgv__cell');
     if (!cell || cell.classList.contains('is-band')) return;
-    cell.title = cell.scrollWidth > cell.clientWidth ? cell.textContent : '';
+    cell.title = this._col(cell.dataset.key)?.tooltip || (cell.scrollWidth > cell.clientWidth ? cell.textContent : '');
   }
 
   _emit(name, payload) {

@@ -46,8 +46,8 @@ Partial Friend NotInheritable Class VrcRunner
     Private _tx As MySqlTransaction
     Private _targetSchema As TargetSchema
     Private _importTables As List(Of VrcImportTable)
-    Private _subunitId As Long
-    Private _importId As Long
+    Private ReadOnly _importOfSource As New Dictionary(Of Long, Long)()
+    Private ReadOnly _subunitOfGestiune As New Dictionary(Of Long, Long)()
     Private _gestiuni As New List(Of GestInfo)()
     Private ReadOnly _access As New Dictionary(Of String, OleDbConnection)(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _partitions As New Dictionary(Of String, VrcPartition)(StringComparer.OrdinalIgnoreCase)
@@ -65,6 +65,9 @@ Partial Friend NotInheritable Class VrcRunner
         Public Property Name As String = String.Empty
         Public Property GestiuneType As String = String.Empty
         Public Property Id As Long
+        Public Property SubunitName As String = String.Empty
+        Public Property SubunitId As Long
+        Public Property ImportId As Long
         ''' <summary>Sources of this gestiune, oldest exercise first.</summary>
         Public Property Sources As New List(Of VrcPlanSource)()
         Public Property ExerciseIds As New Dictionary(Of VrcPlanSource, Long)()
@@ -124,7 +127,9 @@ Partial Friend NotInheritable Class VrcRunner
                 MigrateGestiune(k_gest)
             Next
             WriteCounters()
-            AttachHistoricalInvoices()
+            For Each k_unit In _result.Subunits
+                AttachHistoricalInvoices(k_unit.SubunitId)
+            Next
             If _result.Blockers > 0 Then Throw New VrcBlockedException("Există constatări care blochează transferul.")
             _cancel.ThrowIfCancellationRequested()
             Log("Reconciliere înainte de COMMIT: numărători și sume, sursă față de țintă…")
@@ -139,7 +144,7 @@ Partial Friend NotInheritable Class VrcRunner
             k_commitSent = True
             _tx.Commit()
             _result.State = VrcRunState.CommitConfirmed
-            _result.Message = "Transferul a fost confirmat (COMMIT). Subunitatea este închisă pentru orice alt import."
+            _result.Message = "Transferul a fost confirmat (COMMIT). Subunitățile transferate sunt închise pentru orice alt import."
             Log(_result.Message)
         Catch ex As OperationCanceledException
             RollbackQuietly()
@@ -200,30 +205,53 @@ Partial Friend NotInheritable Class VrcRunner
     ' Context: subunit, gestiuni, exercises, the marker, the sources
     ' ====================================================================================================================
     Private Sub CreateContext()
-        _subunitId = Insert("INSERT INTO VC_Subunitati (Name) VALUES (@n)", "@n", CType(_plan.SubunitName.Trim(), Object))
-        _result.SubunitId = _subunitId
-        _importId = Insert("INSERT INTO VC_Imports (SubunitId, ConfirmedBy, ToolVersion, PlanHash) VALUES (@s, @u, @v, @h)",
-                           "@s", CType(_subunitId, Object), "@u", _user, "@v", "VRC.Migrator " & VrcPlan.RuleVersion, "@h", _plan.Hash())
-        _result.ImportId = _importId
-        Log($"Subunitatea «{_plan.SubunitName.Trim()}» (id {_subunitId}) și markerul de import (id {_importId}) sunt create în tranzacție.")
+        Dim k_toolVersion As String = FileVersionInfo.GetVersionInfo(GetType(VrcRunner).Assembly.Location).FileVersion
+        ' One subunit per name in the plan, each with its own import marker, all in the same transaction.
+        For Each k_unit In _plan.SubunitNames()
+            Dim k_unitName As String = k_unit
+            Dim k_subunitId As Long = Insert("INSERT INTO VC_Subunitati (Name) VALUES (@n)", "@n", CType(k_unitName, Object))
+            Dim k_importId As Long = Insert("INSERT INTO VC_Imports (SubunitId, ConfirmedBy, ToolVersion, PlanHash) VALUES (@s, @u, @v, @h)",
+                                            "@s", CType(k_subunitId, Object), "@u", _user, "@v", k_toolVersion, "@h", _plan.Hash())
+            _result.Subunits.Add(New VrcSubunitResult() With {.Name = k_unitName, .SubunitId = k_subunitId, .ImportId = k_importId})
+            If _result.Subunits.Count = 1 Then
+                _result.SubunitId = k_subunitId
+                _result.ImportId = k_importId
+            End If
+            Log($"Subunitatea «{k_unitName}» (id {k_subunitId}) și markerul de import (id {k_importId}) sunt create în tranzacție.")
 
-        For Each k_group In _plan.Sources.GroupBy(Function(k_s) k_s.GestiuneName.Trim(), StringComparer.OrdinalIgnoreCase)
-            Dim k_first = k_group.First()
-            Dim k_gest As New GestInfo() With {.Name = k_group.Key, .GestiuneType = k_first.GestiuneType}
-            k_gest.Id = Insert("INSERT INTO VC_Gestiuni (SubunitId, Name, Type, State, Zec, Scara, Populated) VALUES (@s, @n, @t, 'IMPORTATA_IN_REVIZIE', @z, @c, 1)",
-                               "@s", CType(_subunitId, Object), "@n", k_gest.Name, "@t", k_gest.GestiuneType, "@z", _plan.Zec, "@c", _plan.Scale)
-            For Each k_source In k_group.OrderBy(Function(k_s) k_s.Year)
-                k_gest.Sources.Add(k_source)
-                k_gest.ExerciseIds(k_source) = Insert("INSERT INTO VC_Exercitii (SubunitId, GestiuneId, An) VALUES (@s, @g, @a)",
-                                                      "@s", CType(_subunitId, Object), "@g", k_gest.Id, "@a", k_source.Year)
-                _sourceIds(k_source) = Insert("INSERT INTO VC_ImportSources (ImportId, SubunitId, GestiuneId, SourceFile, SourceHash, SourceYear, SizeBytes) VALUES (@i, @s, @g, @f, @h, @y, @z)",
-                                              "@i", CType(_importId, Object), "@s", _subunitId, "@g", k_gest.Id, "@f", k_source.Profile.FileName, "@h", k_source.Profile.HashBefore,
-                                              "@y", k_source.Year, "@z", k_source.Profile.SizeBytes)
+            Dim k_inUnit = _plan.Sources.Where(Function(k_s) String.Equals(k_s.SubunitName.Trim(), k_unitName, StringComparison.OrdinalIgnoreCase)).ToList()
+            For Each k_group In k_inUnit.GroupBy(Function(k_s) k_s.GestiuneName.Trim(), StringComparer.OrdinalIgnoreCase)
+                Dim k_first = k_group.First()
+                Dim k_gest As New GestInfo() With {.Name = k_group.Key, .GestiuneType = k_first.GestiuneType, .SubunitName = k_unitName, .SubunitId = k_subunitId, .ImportId = k_importId}
+                k_gest.Id = Insert("INSERT INTO VC_Gestiuni (SubunitId, Name, Type, State, Zec, Scara, Populated) VALUES (@s, @n, @t, 'IMPORTATA_IN_REVIZIE', @z, @c, 1)",
+                                   "@s", CType(k_subunitId, Object), "@n", k_gest.Name, "@t", k_gest.GestiuneType, "@z", _plan.ZecOf(k_unitName), "@c", _plan.Scale)
+                _subunitOfGestiune(k_gest.Id) = k_subunitId
+                For Each k_source In k_group.OrderBy(Function(k_s) k_s.Year)
+                    k_gest.Sources.Add(k_source)
+                    k_gest.ExerciseIds(k_source) = Insert("INSERT INTO VC_Exercitii (SubunitId, GestiuneId, An) VALUES (@s, @g, @a)",
+                                                          "@s", CType(k_subunitId, Object), "@g", k_gest.Id, "@a", k_source.Year)
+                    _sourceIds(k_source) = Insert("INSERT INTO VC_ImportSources (ImportId, SubunitId, GestiuneId, SourceFile, SourceHash, SourceYear, SizeBytes) VALUES (@i, @s, @g, @f, @h, @y, @z)",
+                                                  "@i", CType(k_importId, Object), "@s", k_subunitId, "@g", k_gest.Id, "@f", k_source.Profile.FileName, "@h", k_source.Profile.HashBefore,
+                                                  "@y", k_source.Year, "@z", k_source.Profile.SizeBytes)
+                    _importOfSource(_sourceIds(k_source)) = k_importId
+                Next
+                _gestiuni.Add(k_gest)
+                Log($"Gestiunea «{k_gest.Name}» ({k_gest.GestiuneType}) a subunității «{k_unitName}», {k_gest.Sources.Count} sursă/surse.")
             Next
-            _gestiuni.Add(k_gest)
-            Log($"Gestiunea «{k_gest.Name}» ({k_gest.GestiuneType}), {k_gest.Sources.Count} sursă/surse.")
         Next
     End Sub
+
+    ''' <summary>The subunit a gestiune belongs to (ids are unique across the transfer).</summary>
+    Private Function SubunitOf(k_gestiuneId As Long) As Long
+        Return _subunitOfGestiune(k_gestiuneId)
+    End Function
+
+    ''' <summary>The import marker a finding belongs to: the one of its source file; findings without a source go to the first marker.</summary>
+    Private Function ImportOf(k_issue As VrcIssue) As Long
+        Dim k_import As Long = 0
+        If k_issue.SourceId > 0 AndAlso _importOfSource.TryGetValue(k_issue.SourceId, k_import) Then Return k_import
+        Return _result.Subunits(0).ImportId
+    End Function
 
     Private Function Insert(k_sql As String, ParamArray k_args As Object()) As Long
         Using k_cmd As New MySqlCommand(k_sql, _cn, _tx)
@@ -521,7 +549,7 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_tracked As TrackedCount = Nothing
         If Not _counts.TryGetValue(k_id, k_tracked) Then
             k_tracked = New TrackedCount() With {
-                .Count = New VrcCount() With {.Gestiune = k_gestiuneName, .TableName = k_table.TargetName, .Year = k_year},
+                .Count = New VrcCount() With {.Gestiune = If(_plan.SubunitNames().Count > 1, k_gest.SubunitName & " / " & k_gestiuneName, k_gestiuneName), .TableName = k_table.TargetName, .Year = k_year},
                 .GestiuneId = k_gest.Id, .ExerciseId = k_exercise, .Table = k_table}
             _counts(k_id) = k_tracked
         End If
@@ -532,7 +560,7 @@ Partial Friend NotInheritable Class VrcRunner
     Private Function BuildRow(k_gest As GestInfo, k_source As VrcPlanSource, k_table As VrcImportTable,
                               k_row As Dictionary(Of String, Object), k_key As String, k_tracked As TrackedCount,
                               k_exercise As Long, k_extra As ExtraContext) As List(Of Object)
-        Dim k_values As New List(Of Object) From {_subunitId, k_gest.Id}
+        Dim k_values As New List(Of Object) From {k_gest.SubunitId, k_gest.Id}
         If k_table.IsExercise Then k_values.Add(k_exercise)
         Dim k_sourceIndex As Integer = _plan.Sources.IndexOf(k_source)
         Dim k_sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
@@ -548,6 +576,11 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_converted As Object
             If k_column.Link = VrcLinkKind.MealType Then
                 k_converted = MealDishId(k_gest, k_source, k_table, k_row, k_key, k_ok)
+            ElseIf k_column.Link = VrcLinkKind.OiDocument Then
+                k_converted = ConvertOiDocument(k_gest, k_source, k_sourceIndex, k_table, k_row, k_key, k_ok)
+            ElseIf (k_table.Name = "OI_Produse" AndAlso k_column.Name = "IDM") OrElse
+                   ((k_table.Name = "OI_Transfer" OrElse k_table.Name = "OI_Casare") AndAlso k_column.Name = "IdMasina") Then
+                k_converted = ConvertOiAccount(k_gest, k_source, k_sourceIndex, k_table, k_column, k_row, k_key, k_ok)
             Else
                 k_converted = ConvertColumn(k_gest, k_source, k_sourceIndex, k_table, k_column, k_raw, k_key, k_ok)
             End If
@@ -651,7 +684,7 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_sql As String = $"SELECT `{k_key}` FROM `{k_table.TargetName}` WHERE SubunitId=@s AND GestiuneId=@g" & If(k_table.IsExercise, " AND ExercitiuId=@e", "") &
                               $" AND `{k_key}`>=@f ORDER BY `{k_key}` LIMIT {k_expected}"
         Using k_cmd As New MySqlCommand(k_sql, _cn, _tx)
-            k_cmd.Parameters.AddWithValue("@s", _subunitId)
+            k_cmd.Parameters.AddWithValue("@s", k_gest.SubunitId)
             k_cmd.Parameters.AddWithValue("@g", k_gest.Id)
             If k_table.IsExercise Then k_cmd.Parameters.AddWithValue("@e", k_exercise)
             k_cmd.Parameters.AddWithValue("@f", k_first)
@@ -667,6 +700,20 @@ Partial Friend NotInheritable Class VrcRunner
         Return k_ids
     End Function
 
+    ''' <summary>True for a link whose missing parent does not block (map key «orphan»: «null»).</summary>
+    Private Shared Function OrphanToNull(k_table As VrcImportTable, k_columnName As String) As Boolean
+        Return k_table.Columns.Any(Function(k_c) String.Equals(k_c.Name, k_columnName, StringComparison.OrdinalIgnoreCase) AndAlso k_c.OrphanToNull)
+    End Function
+
+    ''' <summary>N12: the parent of a link is gone from the source (deleted or changed in the old program); the row is kept with the link empty (nothing is lost; the link can be made again later).</summary>
+    Private Sub AddOrphanNote(k_source As VrcPlanSource, k_tableName As String, k_key As String, k_columnName As String, k_parentKey As String)
+        Dim k_text As String = "Legătura arată spre un rând care nu mai există în Access (șters sau modificat în programul vechi). Rândul se transferă, cu legătura goală; legătura se poate reface ulterior în aplicația online."
+        If String.Equals(k_tableName, "IntrariStorno", StringComparison.OrdinalIgnoreCase) Then
+            k_text &= " Atenție: fără recepția (NIR) de care aparține, rândul nu intră în stoc și în fișa de magazie până nu este legat."
+        End If
+        AddIssue(k_source, k_tableName, k_key, k_columnName, "N12", "CONVERSIE", k_parentKey, "NULL", k_text)
+    End Sub
+
     ''' <summary>Sets the references to rows of the same table (written as NULL) now that every row of the table has its key.</summary>
     Private Sub ResolveDeferred(k_gest As GestInfo, k_table As VrcImportTable)
         Dim k_mine = _deferred.Where(Function(k_d) k_d.TableName = k_table.Name).ToList()
@@ -677,7 +724,11 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_parent As Long = 0
             If Not _map.TryGetValue(k_link.ChildMapKey, k_child) Then Continue For   ' the row itself was refused: already a finding
             If Not _map.TryGetValue(k_link.ParentMapKey, k_parent) Then
-                AddIssue(k_link.Source, k_table.Name, k_link.ChildKey, k_link.Column, "X05", "BLOCAJ", k_link.ParentKey, String.Empty, $"Părintele din {k_table.Name} nu există (rând orfan).")
+                If OrphanToNull(k_table, k_link.Column) Then
+                    AddOrphanNote(k_link.Source, k_table.Name, k_link.ChildKey, k_link.Column, k_link.ParentKey)   ' stays NULL, the row is kept
+                Else
+                    AddIssue(k_link.Source, k_table.Name, k_link.ChildKey, k_link.Column, "X05", "BLOCAJ", k_link.ParentKey, String.Empty, $"Părintele din {k_table.Name} nu există (rând orfan).")
+                End If
                 Continue For
             End If
             Using k_cmd As New MySqlCommand($"UPDATE `{k_table.TargetName}` SET `{k_link.Column}`=@p WHERE `{k_key}`=@i", _cn, _tx)
@@ -715,6 +766,8 @@ Partial Friend NotInheritable Class VrcRunner
                 Dim k_group As Decimal? = VrcConvert.ToDecimal(k_raw)
                 If Not k_group.HasValue OrElse k_group.Value = 0D Then Return Nothing
                 Return GroupNumber(k_gest, k_source, k_sourceIndex, k_column, VrcConvert.KeyText(k_raw))
+            Case VrcLinkKind.Origin
+                Return ConvertOrigin(k_gest, k_source, k_sourceIndex, k_table, k_column, k_raw, k_key, k_ok)
             Case VrcLinkKind.Technical
                 Return Nothing
             Case VrcLinkKind.Open
@@ -811,17 +864,60 @@ Partial Friend NotInheritable Class VrcRunner
         End If
         Dim k_target As Long = 0
         If _map.TryGetValue(k_mapKey, k_target) Then Return k_target
+        If k_column.OrphanToNull Then
+            AddOrphanNote(k_source, k_table.Name, k_key, k_column.Name, k_textKey)
+            Return Nothing
+        End If
         AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X05", "BLOCAJ", k_textKey, String.Empty, $"Părintele din {k_column.Parent} nu există (rând orfan).")
         k_ok = False
         Return Nothing
     End Function
 
-    ''' <summary>OI group labels get a fresh number per gestiune; the same label of the same source and column name gets the same number everywhere.</summary>
+    ''' <summary>
+    ''' OI_Produse.IDBO is the bon the object came from: a BP or a BT. The value is looked up among the IDBP labels of OI_Predare and the
+    ''' IDBT labels of OI_Transfer of the same source; the number written is the one that BP / BT got (same group, same number).
+    ''' Found in both: blocked, the operator decides. Found in neither: orphan.
+    ''' </summary>
+    Private Function ConvertOrigin(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_table As VrcImportTable,
+                                   k_column As VrcImportColumn, k_raw As Object, k_key As String, ByRef k_ok As Boolean) As Object
+        Dim k_value As Decimal? = VrcConvert.ToDecimal(k_raw)
+        If Not k_value.HasValue OrElse k_value.Value = 0D Then Return Nothing
+        Dim k_label As String = VrcConvert.KeyText(k_raw)
+        Dim k_labels = OiDocumentLabels(k_source, k_sourceIndex)
+        Dim k_inBp As Boolean = k_labels("IDBP").Contains(k_label)
+        Dim k_inBt As Boolean = k_labels("IDBT").Contains(k_label)
+        If k_inBp AndAlso k_inBt Then
+            AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X14", "BLOCAJ", k_label, String.Empty,
+                     "Originea există și ca BP (OI_Predare.IDBP), și ca BT (OI_Transfer.IDBT); nu se poate stabili din care provine linia. Decideți regula înainte de transfer.")
+            k_ok = False
+            Return Nothing
+        End If
+        If Not k_inBp AndAlso Not k_inBt Then
+            AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X05", "BLOCAJ", k_label, String.Empty,
+                     "Originea nu există nici în OI_Predare (IDBP), nici în OI_Transfer (IDBT) (rând orfan).")
+            k_ok = False
+            Return Nothing
+        End If
+        Dim k_group As New VrcImportColumn() With {.Name = k_column.Name, .Link = VrcLinkKind.Group, .GroupName = If(k_inBp, "IDBP", "IDBT")}
+        Return GroupNumber(k_gest, k_source, k_sourceIndex, k_group, k_label)
+    End Function
+
+    ''' <summary>The non-zero values of one bon column of one table of the source, as the canonical key text.</summary>
+    Private Function OriginLabels(k_source As VrcPlanSource, k_tableName As String, k_columnName As String) As HashSet(Of String)
+        Dim k_labels As New HashSet(Of String)(StringComparer.Ordinal)
+        For Each k_row In ReadRows(k_source, k_tableName)
+            Dim k_number As Decimal? = VrcConvert.ToDecimal(k_row(k_columnName))
+            If k_number.HasValue AndAlso k_number.Value <> 0D Then k_labels.Add(VrcConvert.KeyText(k_row(k_columnName)))
+        Next
+        Return k_labels
+    End Function
+
+    ''' <summary>Typed source documents share one target sequence per gestiune. Every reference reuses that document's mapping.</summary>
     Private Function GroupNumber(k_gest As GestInfo, k_source As VrcPlanSource, k_sourceIndex As Integer, k_column As VrcImportColumn, k_label As String) As Long
         Dim k_mapKey As String = $"S{k_sourceIndex}|group:{k_column.GroupName}|{k_label}"
         Dim k_number As Long = 0
         If _map.TryGetValue(k_mapKey, k_number) Then Return k_number
-        Dim k_counterKey As String = $"{k_gest.Id}|{k_column.GroupName}"
+        Dim k_counterKey As String = $"{k_gest.Id}|OI_DOCUMENT"
         Dim k_next As Long = 0
         _groupCounters.TryGetValue(k_counterKey, k_next)
         k_next += 1
@@ -888,7 +984,7 @@ Partial Friend NotInheritable Class VrcRunner
         For Each k_pair In _lastNumber
             Dim k_parts = k_pair.Key.Split("|"c)
             Insert("INSERT INTO VC_Numbering (SubunitId, GestiuneId, ExercitiuId, Kind, LastNumber) VALUES (@s, @g, @e, @k, @n)",
-                   "@s", CType(_subunitId, Object), "@g", CLng(k_parts(0)), "@e", CLng(k_parts(1)), "@k", k_parts(2), "@n", k_pair.Value)
+                   "@s", CType(SubunitOf(CLng(k_parts(0))), Object), "@g", CLng(k_parts(0)), "@e", CLng(k_parts(1)), "@k", k_parts(2), "@n", k_pair.Value)
         Next
         Log($"Numerotare: {_lastNumber.Count} contoare pornite de la ultimul număr real (nu din NR.*).")
         For Each k_gest In _gestiuni.Where(Function(k_g) k_g.GestiuneType = "ALIMENTE")
@@ -902,7 +998,7 @@ Partial Friend NotInheritable Class VrcRunner
                 Dim k_reason As String = String.Empty
                 If VrcConvert.StoredDecimal(k_si.Value, k_decimal, k_reason) Then
                     Insert("INSERT INTO VC_Settings (SubunitId, GestiuneId, SettingKey, IntValue) VALUES (@s, @g, 'SI_LA', @v)",
-                           "@s", CType(_subunitId, Object), "@g", k_gest.Id, "@v", k_decimal)
+                           "@s", CType(k_gest.SubunitId, Object), "@g", k_gest.Id, "@v", k_decimal)
                 Else
                     AddIssue(k_latest, "NR", "1", "SI_LA", "X11", "BLOCAJ", k_si.Value.ToString("0.########", CultureInfo.InvariantCulture), String.Empty, $"Soldul inițial Alimente {k_reason}.")
                 End If
@@ -937,7 +1033,7 @@ Partial Friend NotInheritable Class VrcRunner
                          k_original As String, k_target As String, k_text As String)
         If k_severity = "BLOCAJ" AndAlso _result.Issues.Where(Function(k_i) k_i.Severity = "BLOCAJ").Count() >= MaxBlockersShown Then Return
         _result.Issues.Add(New VrcIssue() With {
-            .SourceFile = k_source.Profile.FileName, .SourceId = SourceIdOf(k_source), .TableName = k_table, .SourceKey = k_key, .FieldName = If(k_field, String.Empty), .RuleCode = k_rule,
+            .SourceFile = k_source.Profile.FileName, .SourceFullPath = k_source.Source.Path, .SourceId = SourceIdOf(k_source), .TableName = k_table, .SourceKey = k_key, .FieldName = If(k_field, String.Empty), .RuleCode = k_rule,
             .Severity = k_severity, .OriginalValue = If(k_original, String.Empty), .TargetValue = If(k_target, String.Empty), .Justification = k_text})
     End Sub
 
@@ -954,7 +1050,7 @@ Partial Friend NotInheritable Class VrcRunner
                 k_cmd.Parameters.Add(New MySqlParameter() With {.ParameterName = k_name})
             Next
             For Each k_issue In _result.Issues.Where(Function(k_x) k_x.Severity <> "BLOCAJ")
-                k_cmd.Parameters("@i").Value = _importId
+                k_cmd.Parameters("@i").Value = ImportOf(k_issue)
                 k_cmd.Parameters("@s").Value = If(k_issue.SourceId > 0, CType(k_issue.SourceId, Object), DBNull.Value)
                 k_cmd.Parameters("@t").Value = Trunc(k_issue.TableName, 40)
                 k_cmd.Parameters("@k").Value = Trunc(k_issue.SourceKey, 100)
@@ -987,7 +1083,7 @@ Partial Friend NotInheritable Class VrcRunner
             k_sql.Append($" FROM `{k_tracked.Table.TargetName}` WHERE SubunitId=@s AND GestiuneId=@g")
             If k_tracked.Table.IsExercise Then k_sql.Append(" AND ExercitiuId=@e")
             Using k_cmd As New MySqlCommand(k_sql.ToString(), _cn, _tx)
-                k_cmd.Parameters.AddWithValue("@s", _subunitId)
+                k_cmd.Parameters.AddWithValue("@s", SubunitOf(k_tracked.GestiuneId))
                 k_cmd.Parameters.AddWithValue("@g", k_tracked.GestiuneId)
                 If k_tracked.Table.IsExercise Then k_cmd.Parameters.AddWithValue("@e", k_tracked.ExerciseId)
                 Using k_reader = k_cmd.ExecuteReader()
@@ -1006,19 +1102,25 @@ Partial Friend NotInheritable Class VrcRunner
         Next
     End Sub
 
+    ''' <summary>Closes the marker of EVERY subunit with its own summary (its tables and its findings).</summary>
     Private Sub FinishImport()
-        Dim k_summary = New With {
-            .planHash = _plan.Hash(),
-            .ruleVersion = VrcPlan.RuleVersion,
-            .scale = _plan.Scale,
-            .zec = _plan.Zec,
-            .tables = _result.Counts.Select(Function(k_c) New With {k_c.Gestiune, .table = k_c.TableName, k_c.Year, .source = k_c.SourceRows, .skipped = k_c.SkippedRows, .target = k_c.TargetRows}).ToList(),
-            .findings = _result.Issues.GroupBy(Function(k_i) k_i.Severity & "/" & k_i.RuleCode).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.Count())}
-        Using k_cmd As New MySqlCommand("UPDATE VC_Imports SET Summary=@j, ConfirmedAt=NOW() WHERE ImportId=@i", _cn, _tx)
-            k_cmd.Parameters.AddWithValue("@j", JsonSerializer.Serialize(k_summary))
-            k_cmd.Parameters.AddWithValue("@i", _importId)
-            k_cmd.ExecuteNonQuery()
-        End Using
+        For Each k_unit In _result.Subunits
+            Dim k_subunitId As Long = k_unit.SubunitId
+            Dim k_importId As Long = k_unit.ImportId
+            Dim k_counts = _counts.Values.Where(Function(k_t) SubunitOf(k_t.GestiuneId) = k_subunitId).Select(Function(k_t) k_t.Count).ToList()
+            Dim k_summary = New With {
+                .planHash = _plan.Hash(),
+                .ruleVersion = VrcPlan.RuleVersion,
+                .scale = _plan.Scale,
+                .zec = _plan.ZecOf(k_unit.Name),
+                .tables = k_counts.Select(Function(k_c) New With {k_c.Gestiune, .table = k_c.TableName, k_c.Year, .source = k_c.SourceRows, .skipped = k_c.SkippedRows, .target = k_c.TargetRows}).ToList(),
+                .findings = _result.Issues.Where(Function(k_i) ImportOf(k_i) = k_importId).GroupBy(Function(k_i) k_i.Severity & "/" & k_i.RuleCode).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.Count())}
+            Using k_cmd As New MySqlCommand("UPDATE VC_Imports SET Summary=@j, ConfirmedAt=NOW() WHERE ImportId=@i", _cn, _tx)
+                k_cmd.Parameters.AddWithValue("@j", JsonSerializer.Serialize(k_summary))
+                k_cmd.Parameters.AddWithValue("@i", k_importId)
+                k_cmd.ExecuteNonQuery()
+            End Using
+        Next
     End Sub
 
 End Class

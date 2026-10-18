@@ -24,6 +24,8 @@ Partial Class SetariAplicatieView
         tips = New KBotToolTip(components)
         cboVerbose = New KBotComboBox()
         chkLogViewer = New CheckBox()
+        chkRibbonCompact = New CheckBox()
+        chkSidebarInSpate = New CheckBox()
         chkShowBrowser = New CheckBox()
         chkReceptii = New CheckBox()
         chkStartMaximized = New CheckBox()
@@ -149,6 +151,34 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkKeZi, "O recepție pe zi")
         tips.SetToolTipText(chkKeZi, "Bifat: dacă angajamentul are deja o recepție la data aleasă, «Recepție nouă» nu merge; se modifică recepția existentă." & vbLf & "Debifat: se poate face și a doua recepție în aceeași zi.")
         chkKeZi.UseVisualStyleBackColor = True
+        '
+        ' chkRibbonCompact
+        '
+        chkRibbonCompact.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkRibbonCompact, 2)
+        chkRibbonCompact.Location = New Point(4, 83)
+        chkRibbonCompact.Margin = New Padding(4, 0, 4, 10)
+        chkRibbonCompact.Name = "chkRibbonCompact"
+        chkRibbonCompact.Size = New Size(462, 26)
+        chkRibbonCompact.TabIndex = 14
+        chkRibbonCompact.Text = "Panglica din fereastra principală e compactă (iconițe și text mai mici)"
+        tips.SetToolTipHeader(chkRibbonCompact, "Panglica compactă")
+        tips.SetToolTipText(chkRibbonCompact, "Bifat: butoanele panglicii au iconițe și text mai mici, iar panglica ocupă mai puțin din ecran. Se potrivește pe rezoluții mici." & vbLf & "Debifat: panglica are mărimea obișnuită." & vbLf & "Se aplică imediat.")
+        chkRibbonCompact.UseVisualStyleBackColor = True
+        '
+        ' chkSidebarInSpate
+        '
+        chkSidebarInSpate.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkSidebarInSpate, 2)
+        chkSidebarInSpate.Location = New Point(4, 119)
+        chkSidebarInSpate.Margin = New Padding(4, 0, 4, 10)
+        chkSidebarInSpate.Name = "chkSidebarInSpate"
+        chkSidebarInSpate.Size = New Size(462, 26)
+        chkSidebarInSpate.TabIndex = 15
+        chkSidebarInSpate.Text = "Meniul lateral stă în spatele machetelor"
+        tips.SetToolTipHeader(chkSidebarInSpate, "Meniul lateral")
+        tips.SetToolTipText(chkSidebarInSpate, "Bifat: meniul lateral (machete deschise, acțiuni recente, informații, erori) se vede doar când nu e nicio machetă pe ecran (pagina «Acasă»); cât o machetă e deschisă, el stă în spatele ei și macheta ocupă toată lățimea ferestrei." & vbLf & "Debifat: meniul lateral se vede tot timpul, în stânga ferestrei." & vbLf & "Se aplică imediat.")
+        chkSidebarInSpate.UseVisualStyleBackColor = True
         '
         ' chkStartMaximized
         '
@@ -571,20 +601,22 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(chkTutorialInitial, 0, 3)
         tlyComutatoare.Controls.Add(chkAvertismentAdobe, 0, 4)
         tlyComutatoare.Controls.Add(chkLogViewer, 0, 5)
-        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 6)
-        tlyComutatoare.Controls.Add(lblVerbose, 0, 7)
-        tlyComutatoare.Controls.Add(cboVerbose, 1, 7)
-        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 8)
-        tlyComutatoare.Controls.Add(chkReceptii, 0, 9)
-        tlyComutatoare.Controls.Add(chkKeZi, 0, 10)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 11)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 12)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 13)
+        tlyComutatoare.Controls.Add(chkRibbonCompact, 0, 6)
+        tlyComutatoare.Controls.Add(chkSidebarInSpate, 0, 7)
+        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 8)
+        tlyComutatoare.Controls.Add(lblVerbose, 0, 9)
+        tlyComutatoare.Controls.Add(cboVerbose, 1, 9)
+        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 10)
+        tlyComutatoare.Controls.Add(chkReceptii, 0, 11)
+        tlyComutatoare.Controls.Add(chkKeZi, 0, 12)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 13)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 14)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 15)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 15
+        tlyComutatoare.RowCount = 17
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -600,7 +632,9 @@ Partial Class SetariAplicatieView
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.Size = New Size(904, 676)
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.Size = New Size(904, 712)
         tlyComutatoare.TabIndex = 1
         '
         ' lblVerbose
@@ -902,6 +936,8 @@ Partial Class SetariAplicatieView
     Friend WithEvents lblVerbose As Label
     Friend WithEvents cboVerbose As KBotComboBox
     Friend WithEvents chkLogViewer As CheckBox
+    Friend WithEvents chkRibbonCompact As CheckBox
+    Friend WithEvents chkSidebarInSpate As CheckBox
     Friend WithEvents chkShowBrowser As CheckBox
     Friend WithEvents chkReceptii As CheckBox
     Friend WithEvents chkStartMaximized As CheckBox

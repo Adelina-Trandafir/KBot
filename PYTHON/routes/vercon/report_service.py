@@ -54,12 +54,17 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None):
         if layout['value'].get('form') == 'nir-classic' and spec.get('family') in ('nir', 'storno'):
             receptions = report_reception.documents(rows, committees)
         blocks = report_body.build(spec, layout['value'], rows, ctx, identity['value'], committees)
+        if spec['kind'] == 'depreciation':
+            notes.append('Amortizare la data de sfârșit selectată, cu parametrii curenți din registru și prețul curent al variantei. '
+                         'Calculul folosește întregul istoric; data de început nu limitează amortizarea cumulată. '
+                         'Observațiile din tabel indică activele care necesită corectarea datelor.')
         if spec.get('ledger') == 'custody' or spec['kind'] in ('balance', 'product', 'accounts', 'final', 'inventory', 'statement'):
             notes.append('Stoc evaluat la prețul curent al variantei; documentele păstrează valorile proprii.')
         if (params.get('supplier') is not None or params.get('supplier_ids') is not None) and spec['kind'] == 'statement':
             notes.append('Furnizorul selectează variantele recepționate de la acesta. Fișa păstrează toate mișcările variantelor; consumurile nu au o alocare istorică pe furnizori.')
     title = layout['value']['title']
-    period = report_body.date(params['start']) + ' — ' + report_body.date(params['end'])
+    period = ('La data ' + report_body.date(params['end']) if spec['kind'] == 'depreciation'
+              else report_body.date(params['start']) + ' — ' + report_body.date(params['end']))
     values = {'UNITATE': identity['value']['name'], 'CUI': identity['value']['fiscal_code'],
               'ADRESA': identity['value']['address'], 'GESTIUNE': gestiune_name,
               'ANTET': identity['value']['header'], 'SUBSOL': identity['value']['footer'],

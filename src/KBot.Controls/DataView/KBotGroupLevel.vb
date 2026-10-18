@@ -471,6 +471,24 @@ Public NotInheritable Class KBotGroupLevel
     ' ASPECT — gol / Nothing = din temă
     ' ══════════════════════════════════════════════════════════════════════════
 
+    ''' <summary>
+    ''' Slice KE12-02: the header band gets a frame a little more visible than the lines between cells (the grid-line colour of the scheme, pushed toward the text colour). False (default) = no frame.
+    ''' </summary>
+    <Category("K-BOT: Grupare")>
+    <Description("Antetul grupului are un chenar putin mai vizibil decat liniile dintre celule.")>
+    <DefaultValue(False)>
+    Public Property HeaderBorder As Boolean
+        Get
+            Return _headerBorder
+        End Get
+        Set(value As Boolean)
+            If _headerBorder = value Then Return
+            _headerBorder = value
+            Notifica(structural:=False)
+        End Set
+    End Property
+    Private _headerBorder As Boolean = False
+
     ''' <summary>Fundalul benzii de antet. <c>Color.Empty</c> (implicit) = din schema activă.</summary>
     <Category("K-BOT: Grupare")>
     <Description("Fundalul benzii de antet a grupului. Gol = culoarea din schema activă.")>

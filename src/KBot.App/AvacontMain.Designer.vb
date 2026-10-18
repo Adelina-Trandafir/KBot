@@ -40,6 +40,7 @@ Partial Class AvacontMain
         Dim KBotRibbonTab3 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup6 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton10 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton31 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton11 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonGroup7 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton12 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
@@ -65,6 +66,8 @@ Partial Class AvacontMain
         Dim KBotRibbonButton26 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton27 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton28 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton29 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton30 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonTab5 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -127,6 +130,18 @@ Partial Class AvacontMain
         KBotRibbonButton28.ToolTipHeader = "Legăturile recepțiilor"
         KBotRibbonButton28.ToolTipText = "Deschide editorul de legături recepție ▸ instantaneu de istoric." & vbLf & "Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta."
         KBotRibbonButton28.Visible = False
+        KBotRibbonButton29.Image = My.Resources.Resources.export
+        KBotRibbonButton29.Key = "ef_access_trimite"
+        KBotRibbonButton29.Text = "Trimite în Access"
+        KBotRibbonButton29.ToolTipHeader = "Trimite în Access"
+        KBotRibbonButton29.ToolTipText = "Adaugă în magazinul Access de facturi al anului mesajele pe care K-BOT le are și Access nu: facturile, liniile, notele și mesajele lor." & vbLf & "Ce există deja în Access rămâne neschimbat; operațiunile contabile nu se trimit."
+        KBotRibbonButton29.Visible = False
+        KBotRibbonButton30.Image = My.Resources.Resources.database
+        KBotRibbonButton30.Key = "ef_access_preia"
+        KBotRibbonButton30.Text = "Preia din Access"
+        KBotRibbonButton30.ToolTipHeader = "Preia din Access"
+        KBotRibbonButton30.ToolTipText = "Aduce în K-BOT facturile primite ale unității din magazinul Access al anului, cu liniile, notele, mesajele și operațiunile lor." & vbLf & "Ce există deja în K-BOT rămâne neschimbat; facturile noi se leagă de recepții doar acolo unde potrivirea e sigură."
+        KBotRibbonButton30.Visible = False
         KBotRibbonButton2.Image = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
         KBotRibbonButton2.Key = "pagina_inchide"
         KBotRibbonButton2.Text = "Închide"
@@ -141,6 +156,8 @@ Partial Class AvacontMain
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton23)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton22)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton13)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton29)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton30)
         ribbon.FormGroup.Fields.Add(KBotRibbonField1)
         ribbon.FormGroup.Fields.Add(KBotRibbonField2)
         ribbon.PinnedButtons.Add(KBotRibbonButton2)
@@ -217,12 +234,19 @@ Partial Class AvacontMain
         KBotRibbonButton10.Text = "Cumpărare"
         KBotRibbonButton10.ToolTipHeader = "E-Factura Cumpărare"
         KBotRibbonButton10.ToolTipText = "Facturile primite de la ANAF: toate ale anului, cu căutare."
+        KBotRibbonButton31.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Check_boxes_32
+        KBotRibbonButton31.Key = "efactura_receptii"
+        KBotRibbonButton31.SeparatorAfter = True
+        KBotRibbonButton31.Text = "Recepții"
+        KBotRibbonButton31.ToolTipHeader = "E-Factura Recepții"
+        KBotRibbonButton31.ToolTipText = "Leagă facturile primite de recepții: bifezi facturile, alegi angajamentul și recepția (nouă, existentă sau modificată)."
         KBotRibbonButton11.Image = My.Resources.Resources.ef_iesiri
         KBotRibbonButton11.Key = "efactura_vanzare"
         KBotRibbonButton11.Text = "Vânzare"
         KBotRibbonButton11.ToolTipHeader = "E-Factura Vânzare"
         KBotRibbonButton11.ToolTipText = "Facturile emise de unitate: lista, factura, trimiterea la ANAF."
         KBotRibbonGroup6.Buttons.Add(KBotRibbonButton10)
+        KBotRibbonGroup6.Buttons.Add(KBotRibbonButton31)
         KBotRibbonGroup6.Buttons.Add(KBotRibbonButton11)
         KBotRibbonGroup6.Text = "E-Factura"
         KBotRibbonButton12.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32

@@ -29,13 +29,13 @@ versiuni»**, în același grup al ribbonului — [Jurnal activitate](topic:cont
 Setările se salvează pe măsură ce le schimbi.
 
 ## Pagina «Aplicație»: cum e grupată fila «Generale»
-<!-- slice: 0100, 0100-02, 0114 -->
+<!-- slice: 0100, 0100-02, 0114, 0114-24, 0000-100, 0115-02, 0000-106 -->
 
 Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare nu s-a schimbat:
 
 | Grupul | Ce conține |
 |--------|-----------|
-| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
+| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe, comutatorul **«Panglica din fereastra principală e compactă»** (iconițe și text mai mici în ribbon, pentru ecrane mici; se aplică imediat — [Ribbonul](topic:contabil.ribbon)), comutatorul **«Meniul lateral stă în spatele machetelor»** (bifat, implicit, panoul lateral se vede doar cât nu e nicio machetă pe ecran, iar o machetă deschisă ocupă toată lățimea; debifat, panoul se vede tot timpul; se aplică imediat — [Panoul lateral](topic:contabil.panou)) și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
 | **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
 

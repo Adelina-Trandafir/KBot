@@ -18,6 +18,9 @@ Partial Class KBotDataView
     ''' <summary>The floating combo editor (hidden by default): a KBotComboBox in cell editor mode (slice 0094), placed on the cell text like editText.</summary>
     Friend WithEvents editCombo As KBotComboBox
 
+    ''' <summary>The floating combo of a group header (hidden by default), slice KE11: a KBotComboBox in cell editor mode, placed over the header cell of a column with <c>GroupHeaderCombo</c>.</summary>
+    Friend WithEvents groupCombo As KBotComboBox
+
     ''' <summary>The vertical scroll bar.</summary>
     Friend WithEvents vScroll As VScrollBar
 
@@ -27,6 +30,7 @@ Partial Class KBotDataView
     Private Sub InitializeComponent()
         Me.editText = New TextBox()
         Me.editCombo = New KBotComboBox()
+        Me.groupCombo = New KBotComboBox()
         Me.vScroll = New VScrollBar()
         Me.hScroll = New HScrollBar()
         Me.SuspendLayout()
@@ -41,6 +45,10 @@ Partial Class KBotDataView
         '
         Me.editCombo.Visible = False
         '
+        ' groupCombo -- floating combo of a group header
+        '
+        Me.groupCombo.Visible = False
+        '
         ' vScroll -- vertical bar (placed/shown by virtualization, slice 0010-02)
         '
         Me.vScroll.Visible = False
@@ -53,6 +61,7 @@ Partial Class KBotDataView
         '
         Me.Controls.Add(Me.editText)
         Me.Controls.Add(Me.editCombo)
+        Me.Controls.Add(Me.groupCombo)
         Me.Controls.Add(Me.vScroll)
         Me.Controls.Add(Me.hScroll)
         Me.ResumeLayout(False)

@@ -152,6 +152,7 @@ Public Class PrimiteView
     Public Sub ClearAll()
         _seq += 1
         _idDdf = Nothing
+        _angajamentCode = String.Empty
         _items = New List(Of EFacturaPrimita)()
         _linked = New Dictionary(Of Integer, String)()
         ntfMesaj.Visible = False

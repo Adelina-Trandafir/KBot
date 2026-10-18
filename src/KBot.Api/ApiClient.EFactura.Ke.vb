@@ -114,6 +114,18 @@ Partial Public Class ApiClient
         Public Property receptii As List(Of KeReceptieWire)
     End Class
 
+    Private NotInheritable Class KeDisponibilIndWire
+        Public Property IdClsf As Integer?
+        Public Property CodIndicator As String
+        Public Property Buget As Decimal?
+        Public Property Receptii As Decimal
+    End Class
+
+    Private NotInheritable Class KeDisponibilWire
+        Public Property indicatori As List(Of KeDisponibilIndWire)
+        Public Property avertismente As List(Of String)
+    End Class
+
     Private NotInheritable Class KeRandWire
         Public Property IdClsf As Integer
         Public Property CodAI As String
@@ -231,6 +243,32 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetKeReceptiiAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetKeDisponibilAsync(k_cod As String, k_zi As Date, ct As CancellationToken) _
+        As Task(Of EFacturaKeDisponibilZi) Implements IEFacturaApi.GetKeDisponibilAsync
+        Try
+            ArgumentException.ThrowIfNullOrWhiteSpace(k_cod)
+            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Get,
+                "/api/efactura/ke/angajament/" & Uri.EscapeDataString(k_cod.Trim()) & "/disponibil?data=" & k_zi.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Nothing,
+                "citirea bugetului și a recepțiilor pe indicatori", ct).ConfigureAwait(False)
+            Dim wire As KeDisponibilWire = JsonSerializer.Deserialize(Of KeDisponibilWire)(k_text, _json)
+            Dim k_result As New EFacturaKeDisponibilZi()
+            If wire Is Nothing Then Return k_result
+            If wire.indicatori IsNot Nothing Then
+                For Each w As KeDisponibilIndWire In wire.indicatori
+                    k_result.Indicatori.Add(New EFacturaKeDisponibil() With {
+                        .IdClsf = w.IdClsf, .CodIndicator = If(w.CodIndicator, String.Empty), .Buget = w.Buget, .Receptii = w.Receptii})
+                Next
+            End If
+            If wire.avertismente IsNot Nothing Then k_result.Avertismente.AddRange(wire.avertismente)
+            Return k_result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetKeDisponibilAsync", ex)
             Throw
         End Try
     End Function

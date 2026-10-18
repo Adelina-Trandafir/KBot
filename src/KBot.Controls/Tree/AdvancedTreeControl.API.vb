@@ -133,6 +133,36 @@ Partial Public Class AdvancedTreeControl
         Me.Invalidate()
     End Sub
 
+    ''' <summary>
+    ''' Removes one row (and the rows under it) WITHOUT touching the others: the rest of the tree keeps its expansion, its selection and its scroll. A row that is not in
+    ''' this tree is a no-op. Slice KE12-07 (the reception page drops the invoices a reception just covered, instead of rebuilding the whole tree).
+    ''' </summary>
+    Public Sub RemoveItem(pItem As TreeItem)
+        Try
+            If pItem Is Nothing Then Return
+            Dim siblings As List(Of TreeItem) = If(pItem.Parent IsNot Nothing, pItem.Parent.Children, Items)
+            If Not siblings.Remove(pItem) Then Return
+            ' The selection / hover on the removed row (or under it) goes away with it.
+            Dim k_walk As TreeItem = pSelectedItem
+            While k_walk IsNot Nothing
+                If k_walk Is pItem Then pSelectedItem = Nothing : Exit While
+                k_walk = k_walk.Parent
+            End While
+            k_walk = pHoveredItem
+            While k_walk IsNot Nothing
+                If k_walk Is pItem Then pHoveredItem = Nothing : Exit While
+                k_walk = k_walk.Parent
+            End While
+            ForgetSelection()
+            ForgetDropPreview()
+            MarkFiltersStale()
+            RefreshScrollVisibility()
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.RemoveItem", ex)
+        End Try
+    End Sub
+
     ' Metodă publică pentru a goli toate elementele din control
     Public Sub Clear()
         ' 1. Oprim orice desenare sau calcul de layout

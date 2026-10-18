@@ -2,8 +2,9 @@ Imports System.Globalization
 Imports System.Text
 
 ''' <summary>
-''' Value conversions of the transfer (SLICE-VC05-03). Pure functions: no database, no file. Values are exact: a value that needs
-''' more than four decimals, or does not fit DECIMAL(20,4), is REFUSED, never rounded or cut silently.
+''' Value conversions of the transfer (SLICE-VC05-03). Pure functions: no database, no file. A value with more than four decimals
+''' is ROUNDED to four (decided by the operator, 18.10.2026: Access Double fields do not round correctly and show noise such as 0.1E+6);
+''' a value that does not fit DECIMAL(20,4) is REFUSED.
 ''' </summary>
 Friend NotInheritable Class VrcConvert
 
@@ -11,7 +12,6 @@ Friend NotInheritable Class VrcConvert
     Private Const IntMin As Decimal = -2147483648D
     ''' <summary>Access stores Double: 8497.0226 can come back as 8497.022600000001. Anything closer to a whole unit than this is whole.</summary>
     Private Const Noise As Decimal = 0.0000001D
-    Private Const DecimalNoise As Decimal = 0.000000001D
 
     Private Sub New()
     End Sub
@@ -30,13 +30,9 @@ Friend NotInheritable Class VrcConvert
         Return Convert.ToDecimal(k_value, CultureInfo.InvariantCulture)
     End Function
 
-    ''' <summary>The unscaled value for DECIMAL(20,4); only Access floating point noise is removed.</summary>
+    ''' <summary>The value for DECIMAL(20,4): rounded to four decimals (away from zero). False only when it does not fit the column.</summary>
     Friend Shared Function StoredDecimal(k_value As Decimal, ByRef k_result As Decimal, ByRef k_reason As String) As Boolean
         Dim k_rounded As Decimal = Math.Round(k_value, 4, MidpointRounding.AwayFromZero)
-        If Math.Abs(k_value - k_rounded) >= DecimalNoise Then
-            k_reason = "are mai mult de 4 zecimale"
-            Return False
-        End If
         If Math.Abs(k_rounded) >= 10000000000000000D Then
             k_reason = "nu încape în DECIMAL(20,4)"
             Return False

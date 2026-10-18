@@ -1,9 +1,11 @@
 /* Access arrangement, using VERCON cards, colors and shared controls. */
-.vc-reports { display: grid; grid-template-columns: minmax(190px,240px) minmax(250px,340px) minmax(0,1fr); gap: 12px; align-items: stretch; }
+.vc-reports { display: grid; grid-template-columns: minmax(190px,240px) minmax(150px,204px) minmax(0,1fr); gap: 12px; align-items: stretch; }
 .vc-reports__period, .vc-reports__types, .vc-reports__selection { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--card); }
 .vc-reports__types, .vc-reports__selection { display: flex; flex-direction: column; height: clamp(420px,calc(100dvh - 230px),760px); overflow: hidden; }
 .vc-reports h4 { margin: 0; padding: 10px 12px; background: rgba(48,158,255,.1); border-bottom: 1px solid var(--line); color: var(--primary-color); font-size: .95em; }
 .vc-reports__period > .vc-field { margin: 12px; }
+.vc-reports__period .combotree { width: 100%; }
+.vc-reports__period .combotree .treeview-input { box-sizing: border-box; width: 100%; min-height: 32px; }
 .vc-reports__options { margin-top: 20px; border-top: 1px solid var(--line); }
 .vc-reports__check { display: flex; gap: 8px; align-items: start; padding: 12px; font-size: .9em; }
 .vc-reports .vc-tree-body { flex: 1 1 0; height: auto; min-height: 0; }

@@ -356,7 +356,7 @@ Namespace KBot.Forexe
             job.Parameters(WorkflowCatalog.VarCodAngajament) = cerere.CodAngajament
             job.Parameters(WorkflowCatalog.VarTipReceptie) = cerere.TipReceptie
             job.Parameters(WorkflowCatalog.VarDataReceptie) =
-                cerere.Data.ToString(WorkflowCatalog.DataReceptieFormat, Globalization.CultureInfo.InvariantCulture)
+                cerere.Data.ToString(WorkflowCatalog.DataReceptieFormularFormat, Globalization.CultureInfo.InvariantCulture)
             job.Parameters(WorkflowCatalog.VarDescriereReceptie) = If(cerere.Descriere, String.Empty)
             job.Parameters(WorkflowCatalog.VarDateReceptie) = RandurileReceptiei(cerere)
             Return job

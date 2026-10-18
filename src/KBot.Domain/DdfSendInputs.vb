@@ -65,7 +65,23 @@ Public NotInheritable Class DdfSendInputs
     ''' <summary>Variable prefix of every capture the sending workflows take.</summary>
     Public Const CapturePrefix As String = "Poza_"
 
-    Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
+    ''' <summary>
+    ''' The number spelling of forexecab: «,» decimal, «.» thousands. Built by hand on purpose: a plain
+    ''' <c>New CultureInfo("ro-RO")</c> honours the operator's Windows overrides (a «.» decimal separator
+    ''' set in Control Panel), and the value then reaches the site as «302.50» (CAB-0031, 18.10.2026).
+    ''' </summary>
+    Public Shared ReadOnly CulturaSite As CultureInfo = CreeazaCulturaSite()
+
+    Private Shared Function CreeazaCulturaSite() As CultureInfo
+        Dim k_cultura As New CultureInfo("ro-RO", False)
+        Dim k_format As NumberFormatInfo = CType(k_cultura.NumberFormat.Clone(), NumberFormatInfo)
+        k_format.NumberDecimalSeparator = ","
+        k_format.NumberGroupSeparator = "."
+        k_format.NumberGroupSizes = New Integer() {3}
+        k_format.NumberNegativePattern = 1
+        k_cultura.NumberFormat = k_format
+        Return k_cultura
+    End Function
 
     Private Sub New()
     End Sub
@@ -84,14 +100,14 @@ Public NotInheritable Class DdfSendInputs
     ''' <summary>An amount as the forexecab inputs take it: «1.380,00» (the example in
     ''' <c>Incarca Rezervare</c>'s header).</summary>
     Public Shared Function FormatSuma(value As Double) As String
-        Return value.ToString("#,##0.00", _ro)
+        Return value.ToString("#,##0.00", CulturaSite)
     End Function
 
     ''' <summary>An amount read from a forexecab page («1.380,00»); Nothing when it is not one.</summary>
     Public Shared Function ParseSuma(text As String) As Double?
         If String.IsNullOrWhiteSpace(text) Then Return Nothing
         Dim v As Double
-        If Double.TryParse(text.Trim(), NumberStyles.Number, _ro, v) Then Return v
+        If Double.TryParse(text.Trim(), NumberStyles.Number, CulturaSite, v) Then Return v
         Return Nothing
     End Function
 

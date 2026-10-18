@@ -16,6 +16,7 @@ Public Class AcasaPage
     Private ReadOnly _session As SessionContext
     Private _newsFilter As NoInteractionFilter
     Private _newsFullHeight As Integer
+    Private _newsSignature As String   ' what the news box was last filled with (see RefreshState)
     Private _arrowDown As Bitmap
     Private _arrowUp As Bitmap
 
@@ -44,15 +45,34 @@ Public Class AcasaPage
         End Try
     End Function
 
-    ''' <summary>Reads everything again. Called each time the page is brought back on screen.</summary>
+    ''' <summary>
+    ''' Reads everything again. Called each time the page is brought back on screen. The news box is written only when what it
+    ''' would show differs from what it shows now (text, font, colour, dpi): refilling the same text made it flash and jump back
+    ''' to the top every time the operator came back to this page.
+    ''' </summary>
     Public Sub RefreshState()
         Try
-            ReleaseNotesText.Fill(edNoutati.TextBox, ReleaseNotesText.HistoryBlocks(ReleaseNotesText.RecentVersions))
+            Dim k_blocks As List(Of NoteBlock) = ReleaseNotesText.HistoryBlocks(ReleaseNotesText.RecentVersions)
+            Dim k_box As RichTextBox = edNoutati.TextBox
+            Dim k_sign As String = NewsSignature(k_box, k_blocks)
+            If String.Equals(k_sign, _newsSignature, StringComparison.Ordinal) Then Return
+            ReleaseNotesText.Fill(k_box, k_blocks)
+            _newsSignature = k_sign
         Catch ex As Exception
             ' UI boundary (called from the host when the page is shown): log and swallow.
             GlobalErrorLog.Write("AcasaPage.RefreshState", ex)
         End Try
     End Sub
+
+    ' Everything that decides how the news box looks: the paragraphs, and the font / colour / dpi they are drawn with.
+    Private Shared Function NewsSignature(k_box As RichTextBox, k_blocks As IEnumerable(Of NoteBlock)) As String
+        Dim k_sb As New System.Text.StringBuilder()
+        k_sb.Append(k_box.Font.ToString()).Append("|"c).Append(k_box.ForeColor.ToArgb()).Append("|"c).Append(k_box.DeviceDpi).Append("|"c)
+        For Each k_block As NoteBlock In k_blocks
+            k_sb.Append(CInt(k_block.Kind)).Append(":"c).Append(k_block.Text).Append(ControlChars.Lf)
+        Next
+        Return k_sb.ToString()
+    End Function
 
     ' ---- «Ce este nou»: folding, and a text that can only be looked at -------------------------------
 

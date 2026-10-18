@@ -1,5 +1,28 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## Registrul OI/MF și migrator 0.3.7.0 — 18.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** decizia privind identitatea comună P/T/C
+este confirmată. `IDBC` din registru identifică bonul curent pentru toate
+operațiile; `IDBP`/`IDBT` marchează predarea/transferul, iar `IDBO` păstrează
+proveniența BP/BT numai la transfer/casare. Migratorul și aplicația sunt
+aliniate, fără schimbare de schemă și fără repararea automată a datelor
+deja migrate. [Contract, exemple și fișiere](REGISTRU_OI_MF.md).
+
+Eșec raportat de utilizator: rollback cu `Data too long for column ToolVersion`.
+Corecție în surse: `VC_Imports.ToolVersion` primește versiunea executabilului
+(`0.3.7.0`), cu regulile complete păstrate separat. Necesită recompilare;
+nu există încă o confirmare de import reușit după corecție. Fără teste,
+build, aplicație, migrator sau interogări MariaDB rulate de asistent.
+
+## VC06-04 — documente migrate fără sursă, 18.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** retururile fără bon sursă sunt marcate și se asociază manual cu un BC după validarea produselor și cantităților. Liniile de storno fără recepție au listă proprie în Factură storno, asociere manuală cu o FCS existentă sau anulare cu motiv. Scrierile folosesc context, drepturi, blocare, perioadă, versiune, audit și reluarea cererii; numai asocierea storno introduce mișcare în stoc. [Worklog și limite](../docs/worklog/SLICE-VC06-04-br-si-fcs.md). Criteriile de acceptare sunt descrise în [implementare_vercon_v2](../implementare_vercon_v2.md), fără rulare. Ajutorul web include fluxurile noi.
+
+Decizia OI/MF semnalată inițial aici a fost ulterior confirmată și implementată
+în surse; vezi revizia OI/MF de mai sus. Fără teste, build, verificări automate,
+browser, HTTP, SQL ori schimbări de schemă pentru acea corecție.
+
 ## VC06-06 — implementarea noului editor NIR, 16.10.2026
 
 **IMPLEMENTAT ÎN SURSE, NERULAT:** [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06). Eliminată macheta separată și butonul «Factură comună». Adăugare NIR folosește arbore de conturi din întregul DC și ComboTree pentru produse, cu căutare și poziționare în viewport. Mai multe conturi din aceeași destinație rămân în același NIR; numai destinații diferite impun «auto». Salvarea întregii repartizări este atomică, cu rezervarea temporară a destinațiilor suplimentare și alocarea numerelor la salvare. Contul liniei se deduce prin produs; schimbarea contului unui produs cu mișcări este blocată în UI și API. Importul Access nu se schimbă pentru acest flux. [Worklog slice](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md).
@@ -64,6 +87,7 @@ Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `d
 | SLICE-VC05-07 | `VrcPartnerStore.AddInTransaction`, `VrcPlan.NewPartners`; [worklog](../docs/worklog/SLICE-VC05-07-parteneri-in-tranzactia-transferului.md) | **VALIDAT_SERVER** (000_DEMO) | Partenerii se scriu în aceeași tranzacție cu transferul (cad odată cu el); **neprobat, ignorat la cererea operatorului (12.10.2026)**: eșec provocat după inserare |
 | SLICE-VC05-08 | `Parteneri.Provenienta` (`sql/Parteneri_Provenienta.sql`), rutele Parteneri; [worklog](../docs/worklog/SLICE-VC05-08-coloana-parteneri-provenienta.md) | **IMPLEMENTAT_LOCAL** | Compilat; **ALTER + sincronizare rulate de operator (12.10.2026)**; rutele Python deployate (confirmat de operator, 12.10.2026). Valori: MIGRARE_VERCON, manual, avacont; gol = migrare_kbot |
 | SLICE-VC05-09 | `VrcMigratorForm`, `VrcRunResult.Verdict`; [worklog](../docs/worklog/SLICE-VC05-09-rezultat-colorat-si-ordinea-butoanelor.md) | **IMPLEMENTAT_LOCAL** | Rezultat verde / portocaliu / roșu + propoziție la începutul raportului; «Citește» sub «Alege folder»; verificat pe ecran de operator (12.10.2026) |
+| SLICE-VC05-10 | `VrcMigratorForm` («+ Adaugă Baza Date…» selector de fișiere, coloana Folder, rotunjire la 4 zecimale în loc de blocaj); [worklog](../docs/worklog/SLICE-VC05-10-adauga-baza-date-mai-multe-foldere.md) | **IMPLEMENTAT_LOCAL** | Fișiere din mai multe foldere (Alimente / Materiale / OI / MF); compilat curat, nerulat, nevăzut. Regulile planului pe mai multe foldere neverificate |
 | SLICE-VC06-01 | `provider.py` (provider real VC_*), `nomenclatoare.py`, `nom_routes.py`, `js/vercon/nomenclatoare.js`; [worklog](../docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md) | **IMPLEMENTAT_LOCAL** | Categorii, produse + variante de pret, clienti/gestionari, TVA, comisii, setari (zecimale/scara); inactivare, revizie, RequestKey, audit. Doar sintaxa verificata; nerulat, nevazut pe ecran, nimic pe MariaDB |
 | SLICE-VC06-02 | `protocol.py`, `documents.py`, `doc_routes.py`, `js/vercon/docs.js`; [worklog](../docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md) | **IMPLEMENTAT_LOCAL** | NIR cu calcul pe server, N01/N02, numerotare, extensie MF (activ = varianta + ProduseM), arbore furnizor → data → factura. Doar sintaxa verificata; nerulat |
 | SLICE-VC06-03 | BC + `protocol.check_timeline`, disponibil la data; [worklog](../docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md) | **IMPLEMENTAT_LOCAL** | BC, stoc negativ interzis pe zile in aceeasi tranzactie, disponibil informativ. Doar sintaxa verificata; nerulat |

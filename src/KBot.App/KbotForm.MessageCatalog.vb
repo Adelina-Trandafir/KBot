@@ -19,8 +19,8 @@ Partial Public Class KbotForm
         End Get
     End Property
 
-    Private Async Sub DeschideCatalogulDeMesaje()
 #If DEBUG Then
+    Private Async Sub DeschideCatalogulDeMesaje()
         Try
             Using k_form As New Global.KBot.DevHarness.MessageCatalogForm()
                 Await ShowModalAsync(k_form, MachetaRef.Create(MachetaMesaje))
@@ -30,7 +30,11 @@ Partial Public Class KbotForm
             KBotMessage.Show(Me, "Catalogul de mesaje nu a putut fi deschis. Detalii în jurnalul de erori.",
                              "Mesaje", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
-#End If
     End Sub
+#Else
+    ' Release: no harness assembly, so nothing to open (and no Async -- it would have no Await, BC42356).
+    Private Sub DeschideCatalogulDeMesaje()
+    End Sub
+#End If
 
 End Class

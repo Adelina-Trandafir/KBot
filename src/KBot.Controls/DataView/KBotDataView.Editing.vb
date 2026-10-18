@@ -135,6 +135,19 @@ Partial Class KBotDataView
         AddHandler editCombo.KeyDown, AddressOf OnEditorKeyDown
         AddHandler editText.Leave, AddressOf OnEditorLeave
         AddHandler editCombo.Leave, AddressOf OnEditorLeave
+        AddHandler editCombo.ItemPicked, AddressOf OnEditorComboPicked
+        WireGroupEditor()
+    End Sub
+
+    ' A column with CommitOnSelect writes the value as soon as the operator picks an item of the list (not when he leaves the cell).
+    Private Sub OnEditorComboPicked(sender As Object, e As EventArgs)
+        Try
+            If _suppressEditorEvents OrElse Not _editing OrElse _editColumnKey Is Nothing Then Return
+            If Not Column(_editColumnKey).CommitOnSelect Then Return
+            CommitEdit()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnEditorComboPicked", ex)
+        End Try
     End Sub
 
     ' ========================================================================
@@ -152,7 +165,8 @@ Partial Class KBotDataView
             Dim col As KBotDataColumn = Column(colKey)
             If col.ReadOnly Then Return False
             If col.ColumnType <> KBotColumnType.Text AndAlso col.ColumnType <> KBotColumnType.Combo Then Return False
-            Return IsCellEnabled(colKey, rowIndex)
+            If Not IsCellEnabled(colKey, rowIndex) Then Return False
+            Return Not IsCellReadOnly(colKey, rowIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.CanEdit", ex)
             Throw

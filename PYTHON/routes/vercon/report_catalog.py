@@ -83,14 +83,14 @@ for name, label in {
 
 
 def spec_of(name, gest_type):
-    if gest_type not in (*G, 'OI'):
-        raise NomError('FORM_NOT_AVAILABLE', 'Rapoartele MF sunt amânate.', 403)
     spec = CATALOG.get(str(name).casefold())
     if not spec:
         raise NomError('REPORT_UNKNOWN', 'Raportul nu există sau este exclus din portare.', 404)
     if gest_type not in spec['types']:
         raise NomError('FORM_NOT_AVAILABLE', 'Raportul nu este disponibil pentru acest tip de gestiune.', 403)
-    if spec.get('ledger') == 'custody':
+    if spec['kind'] == 'depreciation':
+        filters = ['variant']
+    elif spec.get('ledger') == 'custody':
         filters = ['category', 'variant', 'receiver']
     elif spec.get('family') in ('bp', 'bt', 'bs'):
         filters = ['category', 'variant', 'receiver', 'document']
@@ -106,4 +106,4 @@ def spec_of(name, gest_type):
 
 
 def catalog(gest_type):
-    return [spec for spec in CATALOG.values() if gest_type in (*G, 'OI') and gest_type in spec['types']]
+    return [spec for spec in CATALOG.values() if gest_type in spec['types']]

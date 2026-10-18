@@ -140,6 +140,14 @@ Namespace KBot.Forexe
         Public Const DataReceptieFormat As String = "dd/MM/yyyy"
 
         ''' <summary>
+        ''' The date TYPED into the «Data» field of the reception form: <c>zz.ll.aaaa</c>. The separators are
+        ''' quoted literals, so no Windows date setting can change them (the unquoted «/» of
+        ''' <see cref="DataReceptieFormat"/> is the culture's date separator). Only for writing into the form;
+        ''' matching the list's «Data» cell keeps <see cref="DataReceptieFormat"/>.
+        ''' </summary>
+        Public Const DataReceptieFormularFormat As String = "dd'.'MM'.'yyyy"
+
+        ''' <summary>
         ''' Datele de sarit, in forma in care le citeste <c>&lt;IfVar&gt;</c> din .wfl: separate
         ''' prin virgula, fara spatii. O lista goala (sau Nothing) da sirul gol, adica «nu sari
         ''' peste niciuna».
@@ -203,6 +211,13 @@ Namespace KBot.Forexe
 
         ''' <summary>What the reception workflows read at their end: the text of the site's success element, empty when it did not show up.</summary>
         Public Const VarMesajSalvare As String = "MesajSalvare"
+
+        ''' <summary>
+        ''' What the reception workflows read when the site answers the save with its red error box
+        ''' (<c>.alert.alert-error strong</c>, e.g. «CAB-0031 - Datele introduse nu sunt valide»): the reception was NOT saved.
+        ''' Empty when the site showed no error.
+        ''' </summary>
+        Public Const VarMesajEroare As String = "MesajEroare"
 
         ''' <summary>«1» when «Receptie Modificata» found the row, changed it and clicked save; «0» when no row matched (nothing was saved).</summary>
         Public Const VarGasita As String = "GASITA"

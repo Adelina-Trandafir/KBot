@@ -25,6 +25,7 @@ Partial Public Class AvacontMain
     Private _forexeTone As Tone = Tone.Dim
     Private _errorsPending As Boolean
     Private _fillingErrors As Boolean
+    Private _applyingPlacement As Boolean
     Private _actionsSeq As Integer
     Private WithEvents _actionsTimer As New System.Windows.Forms.Timer() With {.Interval = 2000}
     Private WithEvents _midnightTimer As New System.Windows.Forms.Timer()   ' one shot per day: the list of recent actions starts over (slice 0115-01)
@@ -60,6 +61,33 @@ Partial Public Class AvacontMain
         AddHandler _registry.History.Changed, AddressOf History_Changed
         AddHandler ServerGateHandler.WriteSucceeded, AddressOf Server_WriteSucceeded
         ArmMidnightTimer()
+    End Sub
+
+    ''' <summary>
+    ''' The panel is hidden only while a macheta (a page, or the list of angajamente) is on screen and the setting says it is behind
+    ''' the machete; the macheta then takes the whole width. With none on screen (the opening page) it is shown, and always when
+    ''' the setting is off.
+    ''' </summary>
+    Private Sub ApplySidebarPlacement()
+        Try
+            Dim k_onMacheta As Boolean = (_page IsNot Nothing AndAlso Not _page.IsDisposed) OrElse _baseIsShell
+            Dim k_visible As Boolean = Not (AppSettings.Current.SidebarBehindPages AndAlso k_onMacheta)
+            ' Behind the machete the fold button has no purpose (the panel shows only when no macheta is on screen): it is not
+            ' shown and the panel is unfolded, without touching what the operator saved; with the setting off, the saved fold comes back.
+            Dim k_behind As Boolean = AppSettings.Current.SidebarBehindPages
+            _applyingPlacement = True
+            Try
+                sidebar.CollapseButtonVisible = Not k_behind
+                sidebar.Collapsed = If(k_behind, False, AppSettings.Current.HomeSidebarCollapsed)
+            Finally
+                _applyingPlacement = False
+            End Try
+            If sidebar.Visible = k_visible Then Return
+            sidebar.Visible = k_visible   ' its rows keep following the events while hidden
+        Catch ex As Exception
+            ' UI boundary (called when a page comes or goes): log and swallow.
+            GlobalErrorLog.Write("AvacontMain.ApplySidebarPlacement", ex)
+        End Try
     End Sub
 
     ' The singletons outlive this window: a subscription left behind would keep it alive.
@@ -465,6 +493,7 @@ Partial Public Class AvacontMain
 
     Private Sub Sidebar_CollapsedChanged(sender As Object, e As EventArgs) Handles sidebar.CollapsedChanged
         Try
+            If _applyingPlacement Then Return   ' set by the placement rule, not by the operator: not remembered
             AppSettings.Current.HomeSidebarCollapsed = sidebar.Collapsed
             AppSettings.Current.Save()
         Catch ex As Exception

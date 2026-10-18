@@ -17,7 +17,7 @@
        finds KBot.Access.dll at run time through KBot.Common.AccessBridge), so a package built without
        it simply has no Access code. KBot.App.vbproj builds it first (ReferenceOutputAssembly=false). -->
   <PropertyGroup>
-    <FileVersion>1.0.1.0</FileVersion>
+    <FileVersion>1.0.2.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 

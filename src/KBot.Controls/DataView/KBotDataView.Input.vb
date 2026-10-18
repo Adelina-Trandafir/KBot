@@ -169,6 +169,10 @@ Partial Class KBotDataView
         If bi < 0 Then Return False
         Dim banda As KBotBand = BandAt(bi)
         If banda.Kind = KBotGroupBandKind.Data Then Return False
+        ' Slice KE12-03: the tick box of a header (CheckBoxes = All) ticks the whole group instead of folding it.
+        If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso TryToggleGroupCheck(bi, location) Then Return True
+        ' Slice KE11: a header cell with a combo opens the combo instead of folding the group.
+        If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso TryOpenGroupHeaderCombo(bi, location.X) Then Return True
         If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso Not KBotDesignTime.IsDesignTime(Me) Then
             ToggleBandCollapse(bi)
         End If
@@ -459,6 +463,8 @@ Partial Class KBotDataView
                 _rows(rowIndex).IsDirty = True      ' comutare de operator => „editat”
                 InvalidateRow(rowIndex)
                 RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(colKey, rowIndex, oldValue, newValue))
+                ' Slice KE12-03: the tick box the grid itself offers (CheckBoxes) also says so with RowChecked.
+                If String.Equals(colKey, CheckColumnKey, StringComparison.Ordinal) Then RaiseEvent RowChecked(Me, New KBotRowCheckedEventArgs(rowIndex, newValue, 0))
 
             Case KBotColumnType.OptionButton
                 Dim oldValue As Object = _rows(rowIndex)(colKey)

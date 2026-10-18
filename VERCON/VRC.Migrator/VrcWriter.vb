@@ -64,20 +64,22 @@ Partial Public NotInheritable Class VrcWriter
                     End Using
                 Next
 
-                Using k_cmd As New MySqlCommand("SELECT s.SubunitId, (SELECT COUNT(*) FROM VC_Imports i WHERE i.SubunitId=s.SubunitId), (SELECT COUNT(*) FROM VC_Gestiuni g WHERE g.SubunitId=s.SubunitId) FROM VC_Subunitati s WHERE s.Name=@n", k_cn)
-                    k_cmd.Parameters.AddWithValue("@n", k_plan.SubunitName.Trim())
-                    Using k_reader = k_cmd.ExecuteReader()
-                        If k_reader.Read() Then
-                            If k_reader.GetInt64(1) > 0 Then
-                                k_found.Add($"Subunitatea «{k_plan.SubunitName.Trim()}» are deja un transfer confirmat; nu se mai poate migra (nu există reimport).")
-                            ElseIf k_reader.GetInt64(2) > 0 Then
-                                k_found.Add($"Subunitatea «{k_plan.SubunitName.Trim()}» există și are gestiuni; transferul cere o subunitate nouă.")
-                            Else
-                                k_found.Add($"Subunitatea «{k_plan.SubunitName.Trim()}» există deja; alegeți o altă denumire.")
+                For Each k_unit In k_plan.SubunitNames()
+                    Using k_cmd As New MySqlCommand("SELECT s.SubunitId, (SELECT COUNT(*) FROM VC_Imports i WHERE i.SubunitId=s.SubunitId), (SELECT COUNT(*) FROM VC_Gestiuni g WHERE g.SubunitId=s.SubunitId) FROM VC_Subunitati s WHERE s.Name=@n", k_cn)
+                        k_cmd.Parameters.AddWithValue("@n", k_unit)
+                        Using k_reader = k_cmd.ExecuteReader()
+                            If k_reader.Read() Then
+                                If k_reader.GetInt64(1) > 0 Then
+                                    k_found.Add($"Subunitatea «{k_unit}» are deja un transfer confirmat; nu se mai poate migra (nu există reimport).")
+                                ElseIf k_reader.GetInt64(2) > 0 Then
+                                    k_found.Add($"Subunitatea «{k_unit}» există și are gestiuni; transferul cere o subunitate nouă.")
+                                Else
+                                    k_found.Add($"Subunitatea «{k_unit}» există deja; alegeți o altă denumire.")
+                                End If
                             End If
-                        End If
+                        End Using
                     End Using
-                End Using
+                Next
             End Using
             Return k_found
         Catch ex As Exception

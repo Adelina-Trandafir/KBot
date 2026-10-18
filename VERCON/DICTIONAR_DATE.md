@@ -398,15 +398,22 @@ Indexuri/chei (export): `Clienti_IDC__OI_Predare_IDC_BP` (IDC_BP) FOREIGN; `ID` 
 
 ### OI_Produse
 
+**Clarificare confirmată la 18.10.2026:** `IDBC` identifică bonul curent
+pentru predare/transfer/casare; `IDBP` și `IDBT` marchează numai predarea,
+respectiv transferul. `IDBO` este proveniența BP/BT numai la transfer/casare.
+ID-urile bonurilor se remapează dintr-o secvență comună pe gestiune, păstrând
+familia sursă. [Contractul complet, exemple și compatibilitatea VBA](REGISTRU_OI_MF.md).
+Aceste coloane sunt referințe/grupuri, nu chei AUTO_INCREMENT independente.
+
 Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 154; Obiecte_Inventar: 1529
 
 | Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
 |---|---|---:|---|---|---|---|
 | IDOI | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBP | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBT | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBO | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
+| IDBP | Long | 4 | nu | 0 | CHEIE | ID de grup al predarii, numai la BP; remapat identic cu VC_OI_Predare.IDBP |
+| IDBT | Long | 4 | nu | 0 | CHEIE | ID de grup al transferului, numai la BT; remapat identic cu VC_OI_Transfer.IDBT |
+| IDBC | Long | 4 | nu | 0 | CHEIE | bonul curent BP/BT/BS, ales dupa marcajele IDBP/IDBT; aceeasi mapare ca documentul, nu grup separat rezervat casarii |
+| IDBO | Long | 4 | nu | 0 | CHEIE | provenienta BP/BT numai la transfer/casare; aceeasi mapare ca documentul sursa, inclusiv pe ambele laturi ale transferului |
 | IDM | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IDC_PTC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
 | IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |

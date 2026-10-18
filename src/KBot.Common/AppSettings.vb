@@ -220,6 +220,16 @@ Public NotInheritable Class AppSettings
     ''' <summary>AvacontMain: the ribbon is folded to its tab names (double click on a tab). Remembered between runs.</summary>
     Public Property RibbonCollapsed As Boolean = False
 
+    ''' <summary>Slice 0114-24: the ribbon of AvacontMain with smaller icons, smaller text and tighter rows (for low resolutions). Off by default.</summary>
+    Public Property RibbonCompact As Boolean = False
+
+    ''' <summary>
+    ''' The side panel of AvacontMain is behind the machete: while a macheta (a page, or the list of angajamente) is on screen it
+    ''' is hidden and the macheta takes the whole width; with no macheta on screen (the opening page) it is shown. On by default.
+    ''' Off: the panel is shown all the time.
+    ''' </summary>
+    Public Property SidebarBehindPages As Boolean = True
+
     ''' <summary>The opening page: the side panel is folded to its icon strip. Remembered between runs.</summary>
     Public Property HomeSidebarCollapsed As Boolean = False
 
@@ -668,6 +678,8 @@ Public NotInheritable Class AppSettings
             .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
             .RibbonCollapsed = RibbonCollapsed,
+            .RibbonCompact = RibbonCompact,
+            .SidebarBehindPages = SidebarBehindPages,
             .HomeSidebarCollapsed = HomeSidebarCollapsed,
             .FullScreenOffered = FullScreenOffered,
             .HomeNewsCollapsed = HomeNewsCollapsed,
@@ -743,6 +755,8 @@ Public NotInheritable Class AppSettings
         If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
         If dto.RibbonCollapsed.HasValue Then s.RibbonCollapsed = dto.RibbonCollapsed.Value
+        If dto.RibbonCompact.HasValue Then s.RibbonCompact = dto.RibbonCompact.Value
+        If dto.SidebarBehindPages.HasValue Then s.SidebarBehindPages = dto.SidebarBehindPages.Value
         If dto.HomeSidebarCollapsed.HasValue Then s.HomeSidebarCollapsed = dto.HomeSidebarCollapsed.Value
         If dto.FullScreenOffered.HasValue Then s.FullScreenOffered = dto.FullScreenOffered.Value
         If dto.HomeNewsCollapsed.HasValue Then s.HomeNewsCollapsed = dto.HomeNewsCollapsed.Value
@@ -830,6 +844,8 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?
     Public Property RibbonCollapsed As Boolean?
+    Public Property RibbonCompact As Boolean?
+    Public Property SidebarBehindPages As Boolean?
     Public Property HomeSidebarCollapsed As Boolean?
     Public Property FullScreenOffered As Boolean?
     Public Property HomeNewsCollapsed As Boolean?

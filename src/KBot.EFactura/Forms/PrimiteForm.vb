@@ -63,6 +63,18 @@ Public Class PrimiteForm
         Await primite.SyncFromAnafAsync(k_days).ConfigureAwait(True)
     End Function
 
+    ''' <summary>Slice 00EF-43: «Preia din Access» (ribbon). The work and what the end tells are the control's (<see cref="PrimiteView.PreiaDinAccessAsync"/>).</summary>
+    Public Async Function PreiaDinAccessAsync() As Task
+        If _api Is Nothing Then Return
+        Await primite.PreiaDinAccessAsync().ConfigureAwait(True)
+    End Function
+
+    ''' <summary>Slice 00EF-43: «Trimite in Access» (ribbon). The work and what the end tells are the control's (<see cref="PrimiteView.TrimiteInAccessAsync"/>).</summary>
+    Public Async Function TrimiteInAccessAsync() As Task
+        If _api Is Nothing Then Return
+        Await primite.TrimiteInAccessAsync().ConfigureAwait(True)
+    End Function
+
     ''' <summary>Slice 0113-01: put away -- the control moves to a view without a PDF and lets the document go.</summary>
     Public Sub PutAway() Implements IPutAway.PutAway
         primite.PutAway()

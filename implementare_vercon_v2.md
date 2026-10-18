@@ -2628,3 +2628,753 @@ pe date reale așteaptă probele cerute ulterior de utilizator. Nu s-a
 modificat schema și nu s-a adăugat creare automată de tabele. Serverul
 demonstrativ existent nu a fost extins sau repornit pentru această lucrare.
 
+### 2026-10-18 — Rapoarte: ComboTree perioadă, limite DI/DSF și ramuri inițiale
+
+Perioada folosește controlul comun ComboTree, cu tastare/căutare după an
+sau lună. Numai cel mai recent an cu documente este expandat la deschiderea
+listei; ceilalți ani pornesc închiși. Pentru Materiale/Alimente se păstrează
+numai exercițiul selectat în antet, conform precizării utilizatorului.
+Istoricul OI/MF ia în calcul NIR/FCS (data documentului și a facturii),
+ieșiri/retururi și toate bonurile BP/BT/BS, inclusiv transferuri și casări.
+Listele de alimente contribuie la limite pentru Alimente. Se expun numai
+anii cu documente; în lipsa documentelor se folosește anul selectat.
+
+Catalogul transmite limitele reale minime/maxime ale datelor. Conform
+precizării ulterioare a utilizatorului, alegerea anului/lunii completează
+DI/DSF cu perioada calendaristică integrală: 1 ianuarie–31 decembrie,
+respectiv prima–ultima zi a lunii, indiferent de mișcări. Toate lunile
+anilor disponibili sunt selectabile. Limitele calendarelor sunt extinse
+la începutul primului an și sfârșitul ultimului an disponibil. Datele se
+pot introduce și manual. Calendarele comune acceptă limite și ani disponibili,
+dezactivează zilele și navigarea în afara intervalului și afișează o grilă
+de ani în același popup la click pe an, cu paginare pentru istorice lungi.
+Limitele sunt aplicate și la tastare. Confirmarea unei date neschimbate
+nu mai emite schimbări care ar reîncărca inutil selecția raportului.
+
+Arborele tipurilor de rapoarte pornește cu rădăcinile deschise (nivel 0)
+și grupurile de la nivelul 1 închise. Rapoartele MF rămân indisponibile,
+conform catalogului și meniului existente; calculul perioadei recunoaște
+documentele comune OI/MF, fără activarea unor rapoarte noi.
+
+Fișiere: PYTHON/routes/vercon/report_period.py, report_routes.py;
+PYTHON/static/js/vercon/report-period.js, reports.js;
+PYTHON/static/js/components/datepicker/datepicker.js;
+PYTHON/static/css/datepicker.css, vercon-rapoarte.css;
+implementare_vercon_v2.md.
+
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. S-a analizat designul și integrarea
+cu controalele existente. Nu s-au rulat teste, verificări de sintaxă,
+build, browser, HTTP sau interogări MariaDB, conform instrucțiunilor
+proiectului. Fără modificări de schemă ori creare automată de tabele.
+
+### 2026-10-18 — Rapoarte: arbore tipuri mai îngust cu 40%
+
+În aranjarea cu trei coloane, lățimea coloanei cu tipurile de rapoarte
+scade de la 250–340 px la 150–204 px (60% din lățimea anterioară).
+Spațiul eliberat revine coloanei de selectare date. Aranjările responsive
+existente pentru ecrane mici se păstrează.
+
+Fișiere: PYTHON/static/css/vercon-rapoarte.css; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE. Fără teste sau verificări runtime,
+conform instrucțiunilor proiectului.
+
+### 2026-10-18 — Rapoarte: Selectare date închis la rădăcini și încărcare lazy
+
+Coloana Selectare date primește în continuare tot spațiul rămas în grila
+cu trei coloane. Arborele pornește cu toate rădăcinile închise și citește
+inițial numai definițiile filtrelor raportului. Ramurile se încarcă la
+expandare; Produse se citește pe niveluri cont–produs–variantă, cu filtre
+SQL parametrizate pentru contul/produsul cerut și cu delimitarea existentă
+la subunitate, gestiune și exercițiu. Sursele SELECT configurabile rămân
+folosite. Listele de furnizori, primitori/deținători, conturi de folosință
+și documente se citesc numai când se solicită ramura corespunzătoare.
+
+Bifarea unui grup citește descendenții lui înainte de selectare. Căutarea
+de minimum trei caractere încarcă ramurile rămase pentru a căuta și în
+datele încă neafișate. Ramurile citite se reutilizează pe durata selecției
+curente. La schimbarea perioadei, se revalidează numai ramurile care aveau
+bife și rădăcinile pornesc din nou închise. Cererile vechi sunt anulate la
+schimbarea raportului/perioadei sau închiderea paginii. Exportul așteaptă
+încărcarea selecției. Erorile unei ramuri permit reîncercarea la redeschidere.
+API-ul anterior de selecție completă rămâne disponibil fără parametrul branch.
+
+Corecție pentru eroarea 1054 raportată de utilizator din server: în
+catalogul perioadelor, DATALA se citește din antetul VC_LABC, conform
+sursei existente food_history.sql, în loc de VC_ListaAlimente.
+
+Fișiere: PYTHON/routes/vercon/report_selection.py, report_routes.py,
+report_data.py, report_query.py, report_period.py;
+PYTHON/static/js/vercon/report-selection.js, reports.js;
+implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Analiză de design a integrării cu
+arborele comun și sursele SQL existente. Fără teste, verificări de sintaxă,
+build, browser, HTTP ori interogări MariaDB, conform instrucțiunilor
+proiectului. Fără modificări de schemă ori creare automată de tabele.
+
+### 2026-10-18 — OI: corecție alias SQL la listarea BP/BT/BS
+
+Logul furnizat pentru lista bonurilor de casare indică eroarea MariaDB
+1064 la aliasul SQL neîncadrat `lines`. Interogarea comună de listare
+folosește acum aliasul `line_count`, iar răspunsul API păstrează câmpul
+`lines` așteptat de interfață. Corecția se aplică tuturor familiilor
+BP, BT și BS care folosesc aceeași interogare.
+
+Fișiere: PYTHON/routes/vercon/oi.py; implementare_vercon_v2.md.
+Stare: CORECTAT ÎN SURSE, NERULAT. Analiză de design pe baza logului și
+a sursei; fără teste, verificări runtime sau acces MariaDB, conform
+instrucțiunilor proiectului. Fără modificări de schemă.
+
+
+### 2026-10-18 — VC06-04: retururi si linii storno migrate fara sursa
+
+Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Implementarea cerintelor 3 si 3b din
+`VERCON/CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md`.
+
+Retururile cu `Retur=1` si `IdRetur IS NULL` apar cu **Fără bon sursă** in
+arbore si antet. In consultare, operatorul alege **Bonul returnat** si apasa
+**Asociază cu un bon de consum**. Ruta `POST /api/vercon/doc/br/<id>/link`
+valideaza contextul, starea, versiunea returului, tipul/starea BC si toate
+produsele, insumand cantitatile pe varianta. Foloseste disponibilul din
+`return_eligible(..., exclude=doc_id)`; mesajul `source` enumera produsele
+absente sau cantitatile neincadrate. Asocierea schimba numai `IdRetur` si
+`Version`, scrie audit `br.link` si intoarce versiunea/documentul actualizat.
+Nu modifica liniile, preturile, valorile sau stocul si nu apeleaza
+`check_timeline`. **Modifică** solicita asocierea prealabila pentru un retur
+orfan; dupa asociere se folosesc regulile normale. Anularea BR ramane pe
+fluxul existent, care nu solicita bonul sursa si aplica regulile de stoc.
+
+In **Factură storno**, butonul **Linii de storno fără recepție** deschide lista
+liniilor orfane, inclusiv cele anulate: produs, UM, cantitate, pret cu TVA,
+data salvarii si stare. Operatorul poate lega individual o linie de o FCS
+existenta sau o poate anula cu motiv. Rute: `GET /api/vercon/doc/storno/orphans`
+si `POST /api/vercon/doc/storno/orphans/<id>/link|cancel`. Asocierea cere FCS
+neanulata si receptie sursa valida din acelasi context; disponibilul include
+cantitatile deja stornate, inclusiv liniile existente pe FCS aleasa, si limita
+de stoc la data FCS, prin regulile storno existente. Pastreaza cantitatea si
+pretul liniei. Cresc versiunea liniei si versiunea antetului FCS, prevenind
+suprascrierea de catre un editor deschis anterior. `check_timeline`, actualizarea
+si auditul `storno.link` se executa in aceeasi tranzactie. Anularea orfanei
+scrie motiv, utilizator, data si audit; nu introduce o miscare in stoc.
+
+Toate scrierile cer dreptul familiei, context verificat, blocarea curenta,
+perioada deschisa si versiunea citita. UI trimite cheia cererii, pastreaza
+aceeasi cerere la raspuns pierdut si ofera reluarea ei. Nu se fac asocieri sau
+anulari automate. Ajutorul web descrie pasii operatorului (slice VC06-04).
+
+Criterii de acceptare pregatite, **TOATE NERULATE**:
+
+| Scenariu | Rezultat asteptat |
+| --- | --- |
+| BR fara `IdRetur`, consultare | Marcaj Fără bon sursă in lista si antet; alegerea BC disponibila numai cu drept si document activ. |
+| BR orfan, Modifica / PUT direct | Mesaj explicit de asociere prealabila, fara pierderea liniilor. |
+| Asociere BR cu BC potrivit | `IdRetur` completat, versiune +1, audit `br.link`; liniile, valorile si stocul neschimbate. |
+| BC fara produs sau cantitate ramasa insuficienta | Refuz la `source` cu toate produsele incompatibile; nicio modificare. Cantitatile mai multor linii ale aceleiasi variante sunt insumate. |
+| BR dupa asociere, Modifica | Editorul normal foloseste BC asociat si cantitatile eligibile. |
+| BR inainte/dupa asociere, Anuleaza | Fluxul obisnuit cu motiv si versiune, fara dependenta de existenta sursei; regulile existente de stoc raman aplicabile. |
+| Anularea BC cu retur asociat activ | Blocata de `_guard_dependents` pana la anularea returului. |
+| Lista storno fara receptie | Afiseaza liniile din context, cantitate, pret, data salvarii, stare; cele anulate raman vizibile si nu se pot lega. |
+| Legare storno de FCS potrivita | Legatura si versiunile cresc; audit; linia incepe sa conteze in stoc numai dupa commit. |
+| Storno: produs absent, depasire, sursa nevalida sau cronologie negativa | Refuz si rollback integral, inclusiv versiunea antetului. |
+| Anularea unei linii storno orfane | Motiv obligatoriu, `Anulat=1`, versiune +1 si audit; ramane in lista, fara efect in stoc. |
+| Context diferit, perioada inchisa, blocare lipsa, versiune veche | Refuz fara modificari. |
+| Raspuns pierdut la asociere/anulare orfana | Reia aceeasi cerere cu aceeasi cheie, fara dublarea efectului sau auditului. |
+
+Fisiere: `PYTHON/routes/vercon/documents.py`, `doc_routes.py`,
+`migration_links.py` (nou); `PYTHON/static/js/vercon/docs.js`,
+`orphan-storno.js` (nou), `app.js`; `PYTHON/static/css/vercon.css`,
+`vercon-migration.css` (nou); `VERCON/VERCON_STATUS.md`;
+`docs/worklog/SLICE-VC06-04-br-si-fcs.md`; `implementare_vercon_v2.md`.
+
+Limite: doar analiza de design prin citirea surselor si a dumpului local de
+schema. Fara teste, build, verificare de sintaxa, browser, HTTP, interogari
+MariaDB ori verificari automate. Nicio modificare de schema, nicio creare
+automata de tabele. `config.py`, rapoartele, AGENTS.md si migratorul nu au fost
+modificate in aceasta lucrare. Sursele sunt locale, fara deploy/commit/push.
+
+Decizie deschisa, NEIMPLEMENTATA: identificatorii OI BP/BT/BC numerotati separat
+in migrator pot produce coliziuni intre loturi. Avertismentul este inclus in
+ajutor; pana la decizia operatorului pentru contorul unic in migrator, loturile
+OI migrate nu se folosesc ca reper. Nu s-au schimbat fluxurile subunitatilor,
+IDM/IdMasinaP/IDBO, NumarSub sau CodFiscalSursa.
+
+### 2026-10-18 — OI: versiunea listei ca text și jurnalizare după serializare
+
+Diagnosticul SQL executat de utilizator în 000_DEMO a confirmat charset
+și collation binary pentru expresia CONCAT a versiunii la BP și BS.
+Lista comună BP/BT/BS citește acum separat MAX(ID) și SUM(Version),
+apoi construiește în Python textul versiunii în același format ca
+_rev: id-maxim–sumă-versiuni, cu separatorul ASCII '-'. Răspunsul API
+păstrează cheia version, fără a expune rezultatul binar al CONCAT.
+
+În guard-ul VERCON, mesajul success se emite după pregătirea răspunsului
+JSON, astfel încât o eroare de serializare să nu mai fie precedată de
+un succes pentru aceeași cerere.
+
+Fișiere: PYTHON/routes/vercon/oi.py, PYTHON/routes/vercon/__init__.py;
+implementare_vercon_v2.md.
+Stare: CORECTAT ÎN SURSE, NERULAT. Fără teste, verificări automate,
+browser, HTTP ori interogări MariaDB executate de asistent, conform
+instrucțiunilor proiectului. Schema, datele și VRC.Migrator nu au fost
+modificate în această corecție. Fără deploy.
+
+### 2026-10-18 — Meniu: selecție progresivă Subunitate / Gestiune / An
+
+La deschiderea paginii, dintre selectorii contextului se afișează doar
+Subunitate. Endpoint-ul context cere alegerea explicită a subunității,
+inclusiv când există una singură; celelalte apeluri păstrează comportamentul
+anterior al resolverului. După alegerea subunității, o gestiune unică se
+selectează automat pe server și selectorul ei rămâne ascuns. Selectorul
+Gestiune apare numai pentru subunități cu mai multe gestiuni. Anul apare
+după stabilirea gestiunii, cu ultima valoare disponibilă selectată conform
+regulii existente; operațiile continuă să provină din contextul serverului.
+
+Gestiunea și anul sunt ascunse și în HTML-ul inițial, înaintea încărcării
+JavaScript. Controalele ascunse sunt dezactivate, iar resetarea contextului
+golește opțiunile vechi. Ajutorul din aplicație descrie noua succesiune.
+Se păstrează confirmarea modificărilor nesalvate la schimbarea contextului.
+
+Fișiere: PYTHON/routes/vercon/context.py, __init__.py;
+PYTHON/static/vercon.html; PYTHON/static/js/vercon/app.js;
+PYTHON/static/css/vercon-controls.css; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Analiză de design prin citirea
+surselor; fără teste, verificări automate, browser, HTTP ori interogări
+MariaDB, conform instrucțiunilor proiectului. Fără modificări de schemă,
+migrator, deploy, commit sau push.
+
+### 2026-10-18 — Meniu comun și Fluxuri / Mișcări pentru OI/MF
+
+Configurări, Intrări și Rapoarte sunt comune tuturor tipurilor de gestiune.
+Intrări grupează NIR și Factură Stornare pentru toate tipurile, cu deschiderea
+paginii de consultare. Ieșiri apare la Alimente/Materiale cu Bon Consum și
+Bon Retur; Lista Alimente rămâne exclusiv la Alimente. OI/MF primesc
+Fluxuri / Mișcări cu Bon Predare, Bon Transfer și Bon Casare; MF adaugă
+Amortizare și Registru MF. Grupurile folosesc disponibilitatea și motivul
+dezactivării primite de la server; verificarea la deschiderea directă
+păstrează aceleași reguli de tip, drepturi și ocupare.
+
+Rapoartele MF nu mai sunt excluse global din catalog și din formular.
+Pentru raportul Amortizare se reutilizează proiecția existentă depreciation_read,
+cu întregul istoric până la data calculului, filtre de variante și observații
+pe activ. Macheta implicită are coloane de durate, valori și stare, fără
+totalizarea implicită a activelor neeligibile. Opțiunea Amortizare din meniu
+deschide direct acest raport, cu un singur câmp La data și exporturile comune
+PDF/Excel. Din Rapoarte, calculul folosește data de sfârșit a perioadei, explicată
+în notele raportului. Exportul Excel păstrează modulul comun de lățimi.
+Rapoartele de deținere MF sunt grupate în arbore sub Mijloace fixe.
+
+Fișiere: PYTHON/static/js/vercon/app.js, reports.js, report-result.js;
+PYTHON/routes/vercon/capabilities.py, report_catalog.py, report_data.py,
+report_layouts.py, report_service.py, report_routes.py;
+implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Analiză de design prin citirea
+surselor; fără teste, verificări automate, browser, HTTP ori interogări
+MariaDB, conform instrucțiunilor proiectului. Fără modificări de schemă,
+migrator, deploy, commit sau push.
+
+### 2026-10-18 — Bonuri OI/MF: arbore direct și conturi BP
+
+Arborii BP/BT/BS afișează direct deținătorul și bonurile, fără nivelul lunii.
+BT se grupează după primitor; BS după predător, fiind document fără primitor.
+Gruparea folosește identitatea deținătorului, iar bonurile sunt ordonate după
+număr descrescător, apoi dată și ID, cu număr și valoare în nod.
+În BP, contul de folosință este sub contul de magazie, în aceeași coloană.
+Listele țin cont de TIP OIM/OIF sau MFM/MFF; conturile neclasificate (NULL)
+rămân eligibile conform regulilor existente. Un singur cont eligibil este
+selectat automat și controlul este disabled, prin mecanismul comun existent.
+
+Fișiere: PYTHON/static/js/vercon/oi-ui.js; PYTHON/static/css/vercon-oi.css;
+PYTHON/routes/vercon/oi.py.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de design din surse;
+fără teste, verificări automate, browser, HTTP sau interogări MariaDB.
+
+### 2026-10-18 — Produse MF și clasificări din catalogul comun
+
+La MF, grila produselor ocupă toată lățimea disponibilă; cele două panouri
+din dreapta nu mai sunt montate. Celula CC are selector cu aceeași fereastră,
+căutare și arbore ca CPV, parametrizat pentru Clasificare MF. Catalogul este
+citit exclusiv din AVACONT_COMUN.VC_ClasificariMF (Cod, Denumire, DNF_MIN,
+DNF_MAX); intervalul de durată este prezentat în ani. Se salvează codul CC
+prin protocolul produselor existent, cu validarea existenței în catalog.
+Nu se creează și nu se modifică structura catalogului comun.
+
+Fișiere: PYTHON/static/js/vercon/product-nomenclator.js, cpv-picker.js,
+nomenclator-grid.js; PYTHON/static/css/vercon-products.css;
+PYTHON/routes/vercon/mf_classifications.py, nom_routes.py, nomenclatoare.py.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Structura catalogului nu a fost
+interogată; coloanele provin din referințele și contractele existente.
+Fără teste, verificări automate, browser, HTTP sau interogări MariaDB.
+
+### 2026-10-18 — Produse OI: fișa traseului și deținerea curentă
+
+Fișa inferioară din dreapta arată traseul variantei de produs: recepție,
+storno, predare, transfer între gestionari/deținători și casare, cu date,
+documente, cantități, cont și gestiunea curentă. Utilizatorul a clarificat
+că solicitarea privește gestionarii/deținătorii, nu transferuri între
+alte gestiuni sau subunități. Sunt folosite identitățile produsului și
+variatelor din context, fără asocieri după denumire.
+
+Istoricul este multianual și păstrează toate documentele active. BC-ul
+generat de BP nu dublează predarea în fișă. Transferul este afișat o dată,
+cu sursa și destinația; soldurile curente folosesc separat registrul
+magaziei și cel al deținătorilor, până la data curentă. Cantitățile rămase
+sunt afișate în magazie și la fiecare deținător/cont. Documentele viitoare
+pot apărea în istoric, dar nu intră în poziția curentă.
+
+Fișiere: PYTHON/routes/vercon/product_movements.py, nomenclator_stock.py;
+PYTHON/static/js/vercon/product-stock.js; PYTHON/static/css/vercon-products.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, verificări automate,
+browser, HTTP sau interogări MariaDB; numai analiză de design din surse.
+
+### 2026-10-18 — Baza de date: Feluri numai la Alimente și TIP controlat
+
+Feluri de mâncare este oferit numai gestiunilor ALIMENTE, inclusiv prin
+filtrarea nomenclatoarelor la deschiderea formularului și refuzul API-urilor
+directe de listare/scriere pentru celelalte tipuri. În lipsa panoului Feluri,
+TVA ocupă întreaga înălțime a coloanei din dreapta.
+
+TIP este un combo comun în grila categoriilor: NULL este permis peste tot;
+MAGAZIE/FOLOSINȚĂ reprezintă OIM/OIF la OI și MFM/MFF la MF; ALIMENTE apare
+numai la Alimente; Materiale permite numai NULL. Alte valori sunt respinse
+la salvare pe server. Valorile vechi nu sunt modificate automat.
+
+Fișiere: PYTHON/routes/vercon/nomenclatoare.py, nom_routes.py, __init__.py;
+PYTHON/static/js/vercon/nomenclator-grid.js;
+PYTHON/static/css/vercon-nomenclatoare.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, verificări automate,
+browser, HTTP sau interogări MariaDB; fără migrare automată a datelor.
+
+### 2026-10-18 — Intrări: antet rearanjat și consultare/editare MF
+
+Număr NIR și Data NIR schimbă poziția cu Număr factură și Data facturii,
+pentru toate gestiunile. ValoareFC devine Valoare Reală Factură și este
+poziționată sub data facturii; protocolul și calculul valorii se păstrează.
+
+La MF, consultarea folosește coloanele obișnuite NIR. Arborele furnizorilor
+ocupă 70% din coloana dreaptă, iar restul este panoul Informații Mijloc Fix,
+legat de rândul selectat: Număr inventar, Data intrare, Durata normală
+folosire, Durata folosită, Valoare lunară, cu etichete și casete readonly.
+La adăugare/modificare, coloana dreaptă este ascunsă complet și grila se
+extinde. Coloanele MF suplimentare vizibile sunt Nr. Inv., Data MF,
+Durata Folosită și Val. Luna. Durata normală se preia din produs și rămâne
+în payload/validare; valoarea lunară păstrează calculul existent. Grila MF
+are preferințe separate pentru consultare și editare.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, receipt-mf-info.js;
+PYTHON/static/css/vercon-receptie.css, vercon-receipt-destinations.css.
+Stare generală: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste, verificări
+automate, browser, HTTP sau interogări MariaDB, conform instrucțiunilor
+proiectului. Fără DDL, modificări de schemă, deploy, commit sau push.
+
+### 2026-10-18 — Intrări: conturi MAGAZIE, produse noi în DGV și reguli MF
+
+La adăugare în MF/OI, catalogul conturilor este limitat la gestiunea curentă
+și la conturile MAGAZIE (MFM/OIM, respectiv eticheta istorică MAGAZIE).
+Mai multe conturi ale aceleiași destinații pot fi bifate; unicul cont eligibil
+este autoselectat și controlul dezactivat. Serverul aplică aceleași restricții
+pentru produsele recepționate și pentru cererile de repartizare.
+
+DGV recunoaște denumirea unui produs nou în editorul arbore, activează UM și
+continuă cu clasificarea obligatorie pentru MF, apoi cu CPV opțional pentru
+toate tipurile. Închiderea CPV fără alegere cere confirmarea avertismentului.
+Închiderea clasificării fără alegere oprește continuarea și păstrează rândul
+incomplet. Dacă sunt bifate mai multe conturi, după UM se cere contul produsului
+nou dintre cele bifate. Produsele noi au identități temporare în ciornă și sunt
+inserate numai în tranzacția de salvare a NIR-ului, o singură dată pentru toate
+copiile care folosesc același produs nou.
+
+MF: Nr. Inv. obligatoriu, propus din maximul numerelor numerice salvate/local,
+cu verificare în ciornă și pe server. Data MF implicit din Data NIR, obligatorie,
+centrată și fără depășirea datei NIR. Cantitatea este 1, ne-editabilă. DF este
+obligatorie, implicit 0. DNF devine vizibilă și editabilă în limitele clasificării
+transformate din ani în luni. DNF, DF, V. Luna au aceeași lățime și tooltipurile
+cerute. Formula VBA (Pret + Pret * TVA) / DNF folosește rotunjirea half-even
+la 4 zecimale atât în ciornă, cât și pe server; la corecția automată se păstrează
+valoarea brută corectată. Afișarea valorii lunare are exact 4 zecimale, inclusiv
+în panoul de consultare, independent de preferințele generale.
+
+Meniul rândului MF include Multiplică rând: copie imediat după sursă, identitate
+nouă de linie/activ, Nr. Inv. incrementat până la unul liber și focus pe copie.
+Catalogul produselor și numerele de inventar se reîncarcă după salvarea NIR.
+
+Fișiere: PYTHON/routes/vercon/receipt_products.py, receipt_destinations.py,
+receipts.py, receipt_rules.py; PYTHON/static/js/vercon/receipt-product-entry.js,
+receipt-allocation.js, docs.js, cpv-picker.js, receipt-mf-info.js;
+PYTHON/static/js/dgv/editing.js, datagrid.js;
+PYTHON/static/css/vercon-receptie.css, vercon-receipt-destinations.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de design din surse;
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+Fără DDL, modificări de schemă, deploy, commit sau push.
+
+### 2026-10-18 — Combouri: denumirea selecției unice
+
+Controlul comun TreeView/ComboTree cu bife afișează denumirea elementului
+când există o singură selecție, inclusiv la autoselectarea contului unic și
+când controlul este dezactivat. Rezumatul cu numărul selecțiilor este folosit
+în continuare la selecții multiple. Câmpul intern rămâne gol pentru a păstra
+comportamentul de căutare al controlului.
+Fișier: PYTHON/static/js/components/treeview/treeview-checkable.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — Intrări MF: DGV fără Cantitate și Cotă TVA
+
+În gestiunile MF, grila NIR de consultare și editare nu mai construiește
+coloanele Cantitate și Cotă TVA (IDTVA). Lățimea lor implicită cumulată,
+90 + 100, se transferă coloanei Produs (234 -> 424), păstrând ponderile
+celorlalte coloane. Versiunea layoutului MF devine v3 pentru ca preferințele
+anterioare să nu restaureze vechea lățime a produsului. Cantitatea 1 și cota
+TVA rămân în modelul rândului, în validări, calcule și payloadul de salvare;
+selectorul Cotă TVA din antet și coloana cu valoarea TVA se păstrează.
+Fișier: PYTHON/static/js/vercon/docs.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — MF: mesaj DNF cu clasificare și limite; status centrat
+
+Mesajul pentru DNF în afara intervalului indică acum codul clasificării și
+limitele în luni: Pentru clasificarea cccc durata (in luni) de folosire minima
+este nn si maxima mm. Același format este folosit în interfață și pe server.
+Lipsa clasificării sau a limitelor valide are un mesaj distinct, fără limite
+inventate. Textul vc-save-status este centrat; în containerul mesajelor
+documentului, statusul ocupă lățimea disponibilă pentru centrarea efectivă.
+Fișiere: PYTHON/static/js/vercon/receipt-product-entry.js;
+PYTHON/routes/vercon/receipt_products.py, receipts.py;
+PYTHON/static/css/vercon-controls.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — Clasificări MF: selecție numai pentru elemente cu DNF
+
+Selectorul comun de clasificări MF oferă plusul de selecție numai pentru
+înregistrările cu limite DNF valide. Regula se aplică indiferent de nivel
+(root, nod intermediar, frunză), atât în arbore, cât și în rezultatele căutării.
+Elementele fără DNF rămân vizibile și pot fi expandate. Handlerul selecției
+refuză aceleași elemente. Catalogul CPV păstrează comportamentul existent.
+Fișier: PYTHON/static/js/vercon/cpv-picker.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — DGV: ștergerea erorii după validarea/anularea rândului
+
+Mesajul de eroare din vc-save-status este eliminat când rândul devine valid,
+la părăsirea cu succes a rândului, la anularea unui rând nou ori restabilirea
+unui rând existent și după scoaterea cu succes a rândului/corecției. Mesajul
+nu se șterge când operația eșuează sau când se salvează doar o celulă iar
+rândul rămâne invalid. Mesajele informative sunt păstrate.
+Fișier: PYTHON/static/js/vercon/docs.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — Adăugare intrări MF: padding antet DGV de 2px
+
+Celulele antetului DGV au padding stânga/dreapta de 2px numai în modul de
+adăugare a unui NIR MF. Starea is-adding delimitează regula de consultare
+și modificare; celulele produselor păstrează paddingul existent.
+Fișiere: PYTHON/static/js/vercon/docs.js;
+PYTHON/static/css/vercon-receptie.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări.
+
+### 2026-10-18 — Modificare NIR MF: numai active fără ieșire; alinieri fișă MF
+
+La modificarea unui NIR MF, DGV-ul afișează numai activele care NU au și
+ieșire neanulată din contul de intrare. Identificarea este pe IdProdus
+(activ/variantă), SubunitId/GestiuneId și contul produsului; caută în
+VC_Iesiri cu antet VC_Iesiri_H neanulat, neretur și cantitate pozitivă,
+fără limitare la anul curent. O ieșire anulată nu ascunde activul.
+Consultarea NIR-ului păstrează toate liniile. Filtrarea se aplică și
+rândurilor MF din contextul facturii comune afișate în grilă.
+
+Liniile cu ieșire rămân în ciornă și în totalul/reconcilierea facturii,
+dar sunt excluse din grila de modificare și totalurile ei vizibile.
+Serverul recitește starea, refuză modificarea activelor cu ieșire și
+păstrează liniile originale chiar dacă lipsesc din cererea clientului.
+Nu sunt șterse sau rescrise la salvarea celorlalte active. Modificarea
+cotei TVA din antet și corecția totalului folosesc doar liniile editabile.
+
+Panoul Informații Mijloc Fix: Nr. inventar și Data intrare centrate;
+DNF/DF la dreapta cu unitatea Luni, valoarea lunară la dreapta,
+în continuare cu exact 4 zecimale, conform imaginii utilizatorului.
+
+Fișiere: PYTHON/routes/vercon/receipt_mf_edit.py, documents.py, receipts.py,
+receipt_rules.py, receipt_invoice_view.py;
+PYTHON/static/js/vercon/docs.js, receipt-invoice-view.js, receipt-mf-info.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse,
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+Fără modificări de schemă și fără executare SQL.
+
+### 2026-10-18 — Bonuri MF/OI: grupare opțională după dată
+
+Sub arborele bonurilor BP/BT/BS apare checkboxul Ordoneaza dupa Dată,
+bifat implicit la deschiderea paginii. Bifat: rădăcini lună în română/an,
+în ordine cronologică descrescătoare, cu TOTAL pe lună; bonurile copil
+arată tip/număr, dată și valoare și sunt sortate descrescător după dată,
+apoi după număr și identitate. Totalurile însumează exact valorile
+bonurilor neanulate; bonurile anulate rămân vizibile cu marcajul existent.
+Înregistrările fără dată sunt grupate separat la sfârșit.
+
+Debifat: se reutilizează gruparea existentă pe gestionar, cu aceleași
+etichete și ordonare ca înainte. Comutarea reface numai arborele și
+păstrează documentul selectat. Checkboxul este sub zona derulabilă a
+arborelui și urmează ciclul de viață al controalelor paginii.
+
+Fișiere: PYTHON/static/js/vercon/oi-tree-order.js, docs.js;
+PYTHON/static/css/vercon-oi.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse,
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+
+### 2026-10-18 — Bonuri MF/OI: număr implicit separat P/T/C și produse cu disponibil pozitiv
+
+La adăugarea BP/BT/BS, Număr este completat cu următorul număr din seria
+proprie tipului de bon. Propunerea ia maximul numerelor existente și al
+contorului acelei serii, inclusiv documentele anulate. Numărul este verificat
+la părăsirea câmpului și la salvare; același număr poate exista pe tipuri
+diferite de bon, dar nu pe două bonuri ale aceluiași tip în aceeași gestiune.
+Propunerea este doar citire; contorul avansează în tranzacția salvării,
+sub blocarea contextului existentă. Numerotarea comună internă a identităților
+PTC se păstrează separat de numărul afișat al fiecărui tip.
+
+Clarificare explicită a utilizatorului: la predare se filtrează stocul din
+magazie; la transfer/casare, stocul rămas la predător. Selectorul Produs
+include numai disponibil pozitiv la data bonului. La modificare se exclude
+mișcarea proprie a bonului (BC-ul asociat pentru BP, documentul TC în
+registrul deținătorului). Se scad și cantitățile din celelalte rânduri ale
+ciornei, păstrând disponibilul rândului editat. Produsele/loturile cu 0
+nu mai apar și nu generează categorii goale în arbore. BP preîncarcă stocul
+la deschiderea editorului și îl reîncarcă la schimbarea datei; verificările
+tranzacționale de stoc și cronologie rămân obligatorii la salvare.
+
+Logica UI a numerotării a fost separată din docs.js într-un modul dedicat,
+păstrând și comportamentul NIR/FCS, pentru dimensiunea și responsabilitățile
+modulului comun de documente.
+Fișiere: PYTHON/routes/vercon/oi_number.py, oi.py, doc_routes.py;
+PYTHON/static/js/vercon/document-number.js, oi-product-choices.js, oi-ui.js, docs.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse,
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+Fără DDL, modificări de schemă, commit, push sau deploy.
+
+### 2026-10-18 — Identitate comună P/T/C și semantica registrului OI/MF
+
+Clarificare utilizator: în OI_Produse, IDBC identifică bonul curent pentru
+predare, transfer sau casare. IDBP este completat numai la predare, IDBT
+numai la transfer; casarea nu are marcaj dedicat. IDBO este proveniența
+BP/BT pentru transfer/casare, pe ambele laturi ale transferului.
+
+Migratorul alocă ID-uri interne dintr-o secvență comună pe gestiune, dar
+păstrează identitatea sursă distinctă după fișier și familie. Documentele,
+marcajele IDBP/IDBT, IDBC curent și IDBO reutilizează aceeași mapare.
+Resolver separat pentru IDBC al registrului, cu verificarea documentului
+sursă; IDBC gol/0 la predare/transfer (VBA vechi) se completează din marcaj.
+Referințele contradictorii, proveniențele lipsă și cele ambigue blochează
+importul cu explicații. Generatorul import_map.js păstrează regulile
+oi_document și origin. Versiunea regulilor planului a fost actualizată.
+
+Aplicația Python identifică familia din IDBP/IDBT, respectiv casare dacă
+ambele sunt goale; nu mai cere exclusivitate între IDBP/IDBT și IDBC.
+Bonurile noi scriu IDBC pentru toate familiile. Citirea loturilor și
+ștergerea registrului la modificare/anulare disting casările de celelalte
+tipuri care folosesc IDBC. Pentru date deja migrate, IDBC nenul care diferă
+de marcaj produce eroare explicită cu IDOI și valorile; nu se ignoră și
+nu se repară automat. Numerotarea afișată a bonurilor, cantitățile,
+prețurile, valorile și semnele rămân neschimbate.
+
+Fișiere: VERCON/VRC.Migrator/VrcRunner.vb, VrcRunner.Oi.vb,
+VrcImportMap.vb, import_map.json, VrcPlan.vb; VERCON/tools/import_map.js;
+PYTHON/routes/vercon/oi.py, oi_custody.py.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse,
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+Fără DDL sau modificări de schemă. Datele deja migrate nu au fost modificate;
+corecția importului nu le remapează retroactiv.
+
+### 2026-10-18 — Alinierea completă a aplicației la registrul OI/MF
+
+Citirea registrului și construirea rândurilor noi sunt centralizate în
+oi_custody: identificarea familiei BP/BT/BS, IDBC comun al bonului curent,
+IDBO numai pentru proveniența transferului/casării și tolerarea IDBC=0
+din VBA vechi la BP/BT. Primirea prin transfer formează un lot identificat
+prin transferul curent; scăderea consumă lotul indicat în IDBO.
+
+Reîncărcarea loturilor unui bon folosește aceeași citire și verificare a
+referințelor. Protecția la modificare/anulare caută transferurile/casările
+ulterioare prin IDBO în evenimentele normalizate, excluzând documentul
+propriu prin perechea familie/ID. Ștergerea registrului rămâne delimitată
+după familie, inclusiv pentru casare, deoarece IDBC este comun.
+
+Proveniența IDBO este verificată în bonurile BP/BT active pentru produs:
+trebuie să existe, să fie neambiguă, să nu indice propriul bon și să nu
+fie ulterioară mișcării. Erorile arată poziția IDOI și referința afectată.
+Nu se corectează automat legăturile istorice deja migrate incorect.
+Rapoartele de stoc/amortizare citesc separat tabelele documentelor P/T/C
+și păstrează cheile lor specifice; nu interpretează IDBC din registru ca
+o coloană dedicată casării. Nu au necesitat schimbări pentru această regulă.
+
+Fișiere: PYTHON/routes/vercon/oi_custody.py, oi.py.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse,
+fără teste, build, verificări automate, browser, HTTP sau interogări MariaDB.
+Fără modificări de schemă sau modificări ale datelor existente.
+
+### 2026-10-18 — Bonuri PTC: editare ca la BC și mini-fișe TC
+
+La adăugare/modificare BP/BT/BS, bara de acțiuni are Renunță în stânga,
+mesajele în centru și Salvează bonul în dreapta, fără previzualizare.
+Grilele păstrează permanent rândul gol de adăugare și nu mai afișează
+butonul Adaugă rând. Rândul gol nu intră în documentul trimis la salvare;
+schimbarea predătorului nu mai cere confirmare pentru un simplu rând gol.
+
+La BP, arborele rămâne vizibil și este dezactivat în timpul editării,
+inclusiv adăugarea și ordonarea. În PTC, arborele și checkboxul folosesc
+aceleași rânduri de layout ca grila și bara de acțiuni: arborele se termină
+la baza zonei grilei, iar checkboxul rămâne în stânga, centrat pe verticală
+în rândul de jos.
+
+La BT/BS dispar din grilă coloanele Cont în folosință și Lot proveniență,
+iar disponibilul se numește Disponibil. Identitatea lotului și contul sunt
+păstrate în ciornă și în validarea de stoc. În editare, coloana din stânga
+afișează fișa predătorului, fișa primitorului numai la BT și mișcările
+produsului selectat. Istoricul include BP/BT/BS cu număr, dată și valoare,
+iar pentru produs și cantitatea și traseul predător–primitor. Fișele
+deținătorilor semnează negativ ieșirile și pozitiv intrările.
+
+Citirea fișelor este exclusiv read-only, delimitată de subunitate, gestiune,
+exercițiu și data bonului; bonurile anulate și ciorna nesalvată nu sunt
+incluse. Cererile depășite sunt ignorate la schimbarea selecției/contextului.
+Editorul sub-numărului NIR/FCS a fost separat într-un modul dedicat pentru
+a păstra dimensiunea modulului comun de documente.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, oi-context.js, oi-tree-order.js,
+document-subnumber.js; PYTHON/static/css/vercon-oi.css;
+PYTHON/routes/vercon/oi_context.py, doc_routes.py.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse.
+Fără teste, build, browser, HTTP sau interogări MariaDB, conform regulilor
+proiectului. Alinierea vizuală nu a fost verificată în aplicație.
+Fără DDL, modificări de schemă sau modificări ale datelor existente.
+
+### 2026-10-18 — Migrator: valoare compactă pentru VC_Imports.ToolVersion
+
+Raport utilizator: rollback la crearea contextului, înaintea migrării,
+cu Data too long for column ToolVersion. Câmpul primea numele migratorului
+concatenat cu identificatorul lung al regulilor. Acum primește versiunea
+reală a executabilului din FileVersionInfo (0.3.7.0). Identificatorul complet
+al regulilor rămâne în rezumatul importului și în manifest/hashul planului.
+Nu se trunchiază identificatorul regulilor și nu se schimbă schema.
+
+Fișiere: VERCON/VRC.Migrator/VrcRunner.vb, VRC.Migrator.vbproj.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste, build, rulare migrator
+sau interogări MariaDB. Necesită recompilarea executabilului înaintea
+repetării migrării. Nu s-au modificat schema sau datele existente.
+
+### 2026-10-18 — Documentarea contractului OI/MF și a corecției ToolVersion
+
+Creat VERCON/REGISTRU_OI_MF.md ca referință durabilă: sensurile IDBC/IDBP/
+IDBT/IDBO/IDOI, exemplul predare → transfer → casare înainte și după
+remapare, lotul primit prin transfer, compatibilitatea IDBC=0 din VBA vechi,
+ID-urile interne comune distincte de numerele bonurilor, validările,
+diagnosticul care nu mai trebuie folosit și limitele reparării istoricului.
+Include eroarea ToolVersion raportată de utilizator, corecția din 0.3.7.0,
+păstrarea RuleVersion și faptul că nu este necesară schimbarea schemei.
+
+Aliniate VERCON/DICTIONAR_DATE.md, PLAN_IMPLEMENTARE.md, VERCON_STATUS.md,
+VRC.Migrator/README.md și CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md. Eliminate
+afirmațiile depășite că identitatea comună OI/MF ar fi încă o decizie
+deschisă sau că aplicația nu ar fi fost aliniată pentru această regulă.
+Celelalte cerințe istorice nu sunt declarate rezolvate prin această actualizare.
+
+Stare: DOCUMENTAT, pe baza deciziilor utilizatorului și surselor modificate.
+Numai fișiere Markdown schimbate în această etapă; fără teste, build,
+verificări automate, aplicație, migrator sau interogări MariaDB rulate.
+Nu există confirmare de import reușit după corecția ToolVersion.
+
+### 2026-10-18 — Bon transfer: Primitor și Predător diferiți
+
+Selectoarele bonului de transfer exclud reciproc deținătorul ales în celălalt
+câmp, la fiecare căutare, atât la adăugare, cât și la modificare. Alegerea
+aceleiași persoane este respinsă și la schimbarea câmpului; validarea locală
+marchează ambele câmpuri și blochează salvarea unei asemenea ciorne.
+Validarea existentă pe server continuă să respingă transferurile către sine.
+Adaptorul comun de câmpuri acceptă opțiuni calculate din starea curentă;
+listele statice își păstrează comportamentul.
+
+Fișiere: PYTHON/static/js/vercon/docs.js, ui.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Fără modificări de schemă sau modificări ale datelor existente.
+
+### 2026-10-18 — Mini-fișele transfer/casare în dreapta
+
+Corecție de poziționare cerută de utilizator: toate mini-fișele BT/BS sunt
+în coloana din dreapta, cu formularul și grila în stânga. Se păstrează
+ordinea predător, primitor (numai BT), mișcări produs. Ordinea DOM urmează
+formularul, apoi panourile. Pe ecrane înguste se păstrează așezarea sub formular.
+
+Fișiere: PYTHON/static/css/vercon-oi.css, PYTHON/static/js/vercon/oi-context.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; fără teste sau alte verificări,
+conform instrucțiunilor proiectului.
+
+### 2026-10-18 — Diagnostic disponibil BT pentru produs predat și casat
+
+Pregătit sql/VC_DIAG_disponibil_transfer.sql pentru cazul din captură:
+BADEA ION / CALCULATOR PORTABIL ASUS, BP 27 și BS 5. Scriptul identifică
+contextul și varianta, afișează documentele cu semnele așteptate, registrul
+brut al variantei pentru toți deținătorii și cheia de grupare folosită în
+aplicație (proveniență, variantă, cont, preț), cu soldurile la data bonului.
+ID-urile contextului se completează explicit; nu se alege arbitrar prima
+variantă sau primul context. IDBC comun și marcajele BP/BT sunt interpretate
+conform contractului documentat. Fără corecții automate sau ocolirea
+registrului prin calcul paralel al disponibilului.
+
+Stare: SQL DE DIAGNOSTIC PREGĂTIT, NERULAT. Nicio interogare MariaDB,
+verificare în aplicație sau test rulat. Cauza concretă a diferenței din
+captură nu este încă demonstrată. Nu s-au modificat schema sau datele.
+
+### 2026-10-18 — Cauza confirmată a disponibilului BP 27 / BS 5
+
+Rezultatele SQL furnizate de utilizator pentru 000_DEMO, subunitate 10,
+gestiune 8, exercițiu 9, deținător 164, variantă 3878 confirmă:
+BP ID 12 și BS ID 38 au sold net 0 în bonuri. Registrul conține ambele
+mișcări și același lot de proveniență 12/preț 4408,1600, dar IDOI 1821 are
++1 pe IDM 34 (MF IN FOLOSINTA), iar IDOI 1848 are -1 pe IDM 33 (MF IN MAGAZIE).
+Gruparea pe lot/variantă/cont/preț separă cele două rânduri: +1 pe contul 34
+rămâne eligibil, iar grupa -1 de pe contul 33 nu are intrare pozitivă și
+este omisă de batches. Acesta este mecanismul demonstrat al simptomului.
+Originea nepotrivirii (date Access sau migrare) nu este încă demonstrată.
+
+Extins diagnosticul cu secțiunea 6: ambele conturi din BP și mapările ROW
+ale liniilor/conturilor pentru comparația cu sursa Access. Nu se schimbă
+contul, proveniența sau cheia de grupare în lipsa acestei comparații.
+Stare: CAUZĂ IMEDIATĂ IDENTIFICATĂ din rezultatele utilizatorului; SQL
+suplimentar pregătit, nerulat de asistent. Fără teste sau alte verificări
+rulate, fără modificări de cod funcțional, date ori schemă.
+
+### 2026-10-18 — Cont OI/MF moștenit din BP până la casare, în aplicație și migrator
+
+Utilizatorul a confirmat eroarea de cont din Access și a cerut ambele
+corecții: aplicația ignoră contul TC divergent, iar migratorul îl corectează
+urmărind proveniența. Reperul este contul primirii BP din registru, nu
+IdMasina din documentul TC și nu contul de magazie al produsului.
+
+Noul oi_accounts.py rezolvă recursiv IDBO prin BP/BT, pe variantă și preț,
+cu memoizare și detectarea ciclurilor/proveniențelor ambigue. Citirea
+registrului păstrează IDM brut separat și oferă contul efectiv moștenit.
+Disponibilul și cronologia folosesc aceeași grupare cu contul efectiv;
+BP-uri distincte nu se amestecă. TC se reîncarcă folosind registrul și
+cantitatea/prețul liniei. La salvare, contul trimis de client nu schimbă
+lotul; contul se preia din lotul eligibil și se scrie pe liniile noi.
+Evidența și rapoartele păstrează cantitățile/datele sursei SQL configurate,
+dar încadrează liniile pe contul rezolvat din proveniență; numele contului
+este actualizat corespunzător. Nicio citire nu rescrie datele existente.
+
+Migratorul are resolver separat pe fiecare sursă, cu index pentru primiri
+și linii TC și memoizarea conturilor. BuildRow convertește IDM/IdMasina TC
+înaintea remapării cheii contului; nu modifică dicționarele/fișierele Access.
+Conversiile N13 consemnează originalul, ținta și contul de proveniență;
+X16 blochează sursele lipsă, ciclurile sau conturile ambigue. FileVersion
+este 0.3.8.0; RuleVersion VC05-OI-ACCOUNT-LINEAGE-2026-10-18.
+
+Pentru cazul furnizat, BS ID 38/IDOI 1848 moștenește contul 34 al BP ID 12,
+în loc de 33; rezultatul așteptat este +1-1=0 pe același lot și excluderea
+produsului din lista eligibilă. Acesta este un rezultat de design, nu o
+probă executată. SQL-ul de diagnostic păstrează explicit cheile BRUTE.
+
+Fișiere: PYTHON/routes/vercon/oi_accounts.py, oi_custody.py, oi.py,
+stock_source.py, report_data.py, report_oi.py;
+VERCON/VRC.Migrator/VrcRunner.OiAccounts.vb, VrcRunner.vb, VrcPlan.vb,
+VRC.Migrator.vbproj, README.md; VERCON/REGISTRU_OI_MF.md;
+sql/VC_DIAG_disponibil_transfer.sql.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse.
+Fără teste, verificări automate, build, import, HTTP sau SQL executat.
+Nu s-au modificat schema, datele MariaDB sau sursa Access. Migratorul
+necesită recompilare; importurile deja făcute nu sunt rescrise automat.

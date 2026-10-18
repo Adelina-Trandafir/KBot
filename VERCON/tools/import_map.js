@@ -31,7 +31,7 @@ const LOGICAL = {
   'NIR.IdMasina': 'Masini', 'Iesiri_H.IdMasina': 'Masini', 'OI_Casare.IdMasina': 'Masini', 'OI_Predare.IdMasina': 'Masini', 'OI_Transfer.IdMasina': 'Masini',
   'OI_Predare.IdBonConsum': 'Iesiri_H', 'NIR.IdStorno': 'NIR',
 };
-const GROUPS = new Set(['OI_Predare.IDBP', 'OI_Transfer.IDBT', 'OI_Casare.IDBC', 'OI_Produse.IDBP', 'OI_Produse.IDBT', 'OI_Produse.IDBC']);
+const GROUPS = new Set(['OI_Predare.IDBP', 'OI_Transfer.IDBT', 'OI_Casare.IDBC', 'OI_Produse.IDBP', 'OI_Produse.IDBT']);
 
 // Stable source dependency order is only a tie-breaker for the live-FK sorter.
 const order = [], active = new Set();
@@ -58,10 +58,12 @@ for (const t of order) {
       if (['MicDejun', 'Dejun', 'Cina'].includes(t) && field.n === 'IdFel') link = { kind: 'meal_type' };
       else if (t === 'NIR' && field.n === 'IDF') link = { kind: 'supplier' };
       else if (SKIP_FIELDS[t]?.has(field.n)) link = { kind: 'skip' };
+      else if (key === 'OI_Produse.IDBC') link = { kind: 'oi_document' };
+      else if (key === 'OI_Produse.IDBO') link = { kind: 'origin' };
+      else if (GROUPS.has(key)) link = { kind: 'group', group: field.n };
       else if (field.type === 'AutoNumber') link = { kind: 'tech' };
       else if (fk) link = { kind: 'fk', parent: fk.p, parentField: fk.pf };
       else if (LOGICAL[key]) link = { kind: 'logical', parent: LOGICAL[key], parentField: info[LOGICAL[key]].sourceKey };
-      else if (GROUPS.has(key)) link = { kind: 'group', group: field.n };
       else link = { kind: 'open' };
     }
     columns.push({ name: field.n, cls: fieldClass, link });

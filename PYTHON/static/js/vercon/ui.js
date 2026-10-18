@@ -68,11 +68,12 @@ export function field(column, value, editable, onChange, owner) {
   if (column.type === 'ref' || column.type === 'select') {
     source = el('input', { type: 'hidden', value: value == null ? '' : String(value) });
     const host = el('div', { className: 'vc-field__combo' }); label.append(host, source);
-    const items = (column.options || []).map((item) => ({ value: String(item.value ?? item.id), label: item.label }));
+    const items = () => (typeof column.options === 'function' ? column.options() : column.options || [])
+      .map((item) => ({ value: String(item.value ?? item.id), label: item.label }));
     const combo = owner.own(new Combobox(host, { placeholder: column.placeholder || 'Alegeți…', dropDownStyle: column.dropDownStyle, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth, showArrow: column.showArrow,
-      onSearch: async (query) => items.filter((item) => item.label.toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
+      onSearch: async (query) => items().filter((item) => item.label.toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
       onSelect: (id) => { combo._pendingSelection = false; source.value = id; source.dispatchEvent(new Event('change', { bubbles: true })); } }));
-    combo.setValue(source.value, items.find((item) => item.value === source.value)?.label || column.fallback || ''); combo.setEnabled(editable);
+    combo.setValue(source.value, items().find((item) => item.value === source.value)?.label || column.fallback || ''); combo.setEnabled(editable);
     combo.input.setAttribute('aria-label', column.label); tipTarget = combo.input; source._combo = combo;
     combo.input.addEventListener('input', () => { source.value = ''; combo._pendingSelection = true; error.textContent = ''; markRequired(); });
     combo.input.addEventListener('blur', () => setTimeout(touch, 200));   // after the click that picks an option has landed

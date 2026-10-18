@@ -12,7 +12,7 @@ Public Enum VrcLinkKind
     ForeignKey = 1
     ''' <summary>Documented Access reference without a declared source relation; also remapped.</summary>
     Logical = 2
-    ''' <summary>OI group label: renumbered per gestiune, consistent across the tables that share the column name.</summary>
+    ''' <summary>OI document label: a typed source identity, allocated from one common sequence per gestiune.</summary>
     Group = 3
     ''' <summary>NIR.IDF: the supplier, matched to a KBOT partner by tax code.</summary>
     Supplier = 4
@@ -24,6 +24,10 @@ Public Enum VrcLinkKind
     Technical = 7
     ''' <summary>Meal IdFel is derived from the source Tip label, never from the Access IdFel.</summary>
     MealType = 8
+    ''' <summary>OI_Produse.IDBO: the bon the object came from, a BP (IDBP of OI_Predare) or a BT (IDBT of OI_Transfer); the source value does not say which, so it is looked up in both.</summary>
+    Origin = 9
+    ''' <summary>OI_Produse.IDBC: the current BP/BT/BS, selected using the row's IDBP and IDBT markers.</summary>
+    OiDocument = 10
 End Enum
 
 Public NotInheritable Class VrcImportColumn
@@ -36,6 +40,10 @@ Public NotInheritable Class VrcImportColumn
     Public Property Parent As String = String.Empty
     ''' <summary>Group namespace (the Access column name) for <see cref="VrcLinkKind.Group"/>.</summary>
     Public Property GroupName As String = String.Empty
+    ''' <summary>Key column of the parent table named by the map (for the report's Access queries); empty = the parent's source key.</summary>
+    Public Property ParentField As String = String.Empty
+    ''' <summary>True when a value without a parent does NOT block: the row is written with the link empty (NULL) and the case is noted (map key «orphan»: «null»).</summary>
+    Public Property OrphanToNull As Boolean
 
 End Class
 
@@ -84,6 +92,10 @@ Public NotInheritable Class VrcImportMap
                                 .FieldClass = k_c.GetProperty("cls").GetString()}
                             Dim k_link As JsonElement = k_c.GetProperty("link")
                             If k_link.ValueKind = JsonValueKind.Object Then
+                                Dim k_parentField As JsonElement
+                                If k_link.TryGetProperty("parentField", k_parentField) AndAlso k_parentField.ValueKind = JsonValueKind.String Then k_column.ParentField = k_parentField.GetString()
+                                Dim k_orphan As JsonElement
+                                If k_link.TryGetProperty("orphan", k_orphan) AndAlso k_orphan.ValueKind = JsonValueKind.String Then k_column.OrphanToNull = String.Equals(k_orphan.GetString(), "null", StringComparison.OrdinalIgnoreCase)
                                 Select Case k_link.GetProperty("kind").GetString()
                                     Case "fk"
                                         k_column.Link = VrcLinkKind.ForeignKey
@@ -102,6 +114,10 @@ Public NotInheritable Class VrcImportMap
                                         k_column.Link = VrcLinkKind.Technical
                                     Case "meal_type"
                                         k_column.Link = VrcLinkKind.MealType
+                                    Case "origin"
+                                        k_column.Link = VrcLinkKind.Origin
+                                    Case "oi_document"
+                                        k_column.Link = VrcLinkKind.OiDocument
                                     Case Else
                                         k_column.Link = VrcLinkKind.Open
                                 End Select

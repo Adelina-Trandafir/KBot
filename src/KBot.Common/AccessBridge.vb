@@ -47,6 +47,29 @@ Public Interface IAccessBridge
     ''' </summary>
     Function SendBudget(unitFile As String, idClsfAcc As Integer, budget As BudgetVersion,
                         corrections As IEnumerable(Of RectificareBugetara)) As AccessSendResult
+
+    ' ---- Slice 00EF-43: the received e-invoices in the Access store ef_<year>.accdb (tables EF, EFT, EFS, EFT_C, EFT_M, EFT_O) ----
+
+    ''' <summary>
+    ''' The e-invoice store of year <paramref name="an"/>: <c>ef_&lt;an&gt;.accdb</c> in the <c>EFACTURA</c> folder next to the registry
+    ''' <paramref name="registryPath"/>. Throws <see cref="InvalidOperationException"/> (Romanian message) when the registry or the file is missing.
+    ''' </summary>
+    Function ResolveEFacturaStore(registryPath As String, an As Integer) As String
+
+    ''' <summary>The <c>id_sol</c> of EVERY message in the store (whoever it belongs to): what the store already has.</summary>
+    Function ListEFacturaMessageIds(storeFile As String) As List(Of String)
+
+    ''' <summary>The <c>id_sol</c> of the messages of the unit whose tax code is <paramref name="cuiNormalizat"/> (compared without «RO» and spaces).</summary>
+    Function ListEFacturaUnitMessageIds(storeFile As String, cuiNormalizat As String) As List(Of String)
+
+    ''' <summary>The messages named by <paramref name="idSol"/> with their invoices, lines, notes, ANAF messages and booked operations (EFT_O).</summary>
+    Function ReadEFacturaMessages(storeFile As String, idSol As IEnumerable(Of String)) As List(Of AccessEfMessage)
+
+    ''' <summary>
+    ''' Adds <paramref name="messages"/> to the store in one transaction: a message the store already has is left as it is; the rest go into EF, EFT,
+    ''' EFS, EFT_C and EFT_M under fresh Access numbers. EFT_O (the accounting) is never written.
+    ''' </summary>
+    Function WriteEFacturaMessages(storeFile As String, messages As IEnumerable(Of AccessEfMessage)) As AccessEfWriteResult
 End Interface
 
 ''' <summary>

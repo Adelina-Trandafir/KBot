@@ -7,7 +7,7 @@
      Variables from K-BOT (all always sent):
        {{COD_ANGAJAMENT}}      - the angajament code
        {{TIP_RECEPTIE}}        - the text of the type in the site's list: Avans / Partial / Final
-       {{DATA_RECEPTIE}}       - the date as the site writes it: zz/ll/aaaa
+       {{DATA_RECEPTIE}}       - the date typed into the form: zz.ll.aaaa
        {{DESCRIERE_RECEPTIE}}  - the description, ENDING with the K-BOT marker «(IDRH: n; IDR: m)» K-BOT reserved
        DATE_RECEPTIE           - JSON array, one object per indicator row:
          [ { "ClsfSal": "650302100101", "Clsf": "65.03.02.10.01.01", "CodIndicator": "AAB", "Valoare": "1.380,00" } ]
@@ -17,6 +17,9 @@
      What it leaves for K-BOT (variables read at the end):
        MesajSalvare - the text of the site's success element (.alert.alert-success), EMPTY when the element did not show up
                       in time. K-BOT then re-reads the list of receptions to see whether the reception was saved anyway.
+       MesajEroare  - the text of the site's error element (.alert.alert-error strong, e.g. «CAB-0031 - Datele introduse nu sunt valide...»),
+                      EMPTY when the site showed none. When it is filled the reception was NOT saved: K-BOT shows it and stops.
+     {{DATA_RECEPTIE}} is typed as zz.ll.aaaa and the values of DATE_RECEPTIE use «,» as the decimal separator, whatever Windows says.
      The save click is marked commits="true": in a dry run the robot stops right before it. -->
 <Workflow name="Receptie noua pentru {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="forexe.mfinante.gov.ro">
 
@@ -80,8 +83,16 @@
          LogValue="Apas Salvează" />
 
   <SetInternalVar name="MesajSalvare" value="" />
-  <IfExists selector=".alert.alert-success" timeout="8">
-    <Read selector=".alert.alert-success" saveTo="MesajSalvare" />
+  <SetInternalVar name="MesajEroare" value="" />
+  <!-- Either element ends the wait: the site answers with the green success box or with the red error box
+       (e.g. «CAB-0031 - Datele introduse nu sunt valide»). The error is looked at FIRST: a page that shows it was not saved. -->
+  <IfExists selector=".alert.alert-success, .alert.alert-error" timeout="8">
+    <IfExists selector=".alert.alert-error" timeout="1">
+      <Read selector=".alert.alert-error strong" saveTo="MesajEroare" />
+    </IfExists>
+    <IfExists selector=".alert.alert-success" timeout="1">
+      <Read selector=".alert.alert-success" saveTo="MesajSalvare" />
+    </IfExists>
   </IfExists>
 
 </Workflow>
