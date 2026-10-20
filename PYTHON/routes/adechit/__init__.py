@@ -326,6 +326,8 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
 
     from . import report_routes
     report_routes.register(bp, guard)
+    from . import working_days_routes
+    working_days_routes.register(bp, guard, command)
 
     @bp.post('/api/adechit/cancel')
     @guard('cancel')

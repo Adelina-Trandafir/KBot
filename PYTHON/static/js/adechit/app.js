@@ -14,6 +14,7 @@ import { bindReports, outputReport, closeReportPreviews } from './reports.js';
 import { bindHelp } from './help.js';
 import { bindNoticeConfig } from './payment-notice-config.js';
 import { bindBankAssociations } from './bank-associations.js';
+import { bindWorkingDays } from './working-days.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
@@ -55,7 +56,7 @@ async function api(path, options = {}) {
     result = await response.json().catch(() => ({}));
   } finally { if (writing) state.pending -= 1; }
   if (response.status === 401 || result.reason === 'UNITATE_NEDESCHISA') { toPortal(response.status === 401); throw new Error(result.error || 'Autentificați-vă.'); }
-  if (!response.ok) throw Object.assign(new Error(result.error || `Eroare HTTP ${response.status}`), { reason: result.reason, details: result.details });
+  if (!response.ok) throw Object.assign(new Error(result.error || `Eroare HTTP ${response.status}`), { status: response.status, reason: result.reason, details: result.details });
   return result;
 }
 
@@ -866,6 +867,7 @@ function bind() {
   wireLongPress();
   bindHelp({ fetchOutput, report });
   const noticeConfig = bindNoticeConfig({ api, context: () => state.context, report });
+  const workingDays = bindWorkingDays({ api, context: () => state.context, year: () => selectedMonth()?.Anul, refresh: () => loadContext(true), report });
   state.reports = bindReports({ fetchOutput, report,
     snapshot: () => ({ month: state.context ? selectedMonth() : null, monthId: state.monthId, groupId: state.groupId, selected: state.selected }) });
   $('ade-search').addEventListener('input', filterGrid);
@@ -898,6 +900,7 @@ function bind() {
       { icon: '👥', label: 'Plătitori', run: () => $('ade-payers').click() },
       { icon: '🏦', label: 'Asociere extrase cu copii', run: () => bankAssociations.open() },
       { icon: '💶', label: 'Taxe', run: () => $('ade-taxes').click() },
+      { icon: '📅', label: 'Zile lucrătoare pe luni', run: () => workingDays.open() },
       { icon: '📝', label: 'Text situație de plată', run: () => noticeConfig.open() },
       { icon: k_dark ? '☀️' : '🌙', label: k_dark ? 'Tema luminoasă' : 'Tema întunecată', rule: true, run: toggleTheme },
     ], { label: 'Meniu', below: $('ade-menu').closest('header') });

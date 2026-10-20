@@ -17,6 +17,7 @@ import { adjustableReceiptLine, receiptAdjustmentState, adjustmentError } from '
 import { sharedReceipt, invoiceRows, receiptGridRows, invoiceValue, receiptLineClass, linkedReceipt } from './receipt-invoice-view.js';
 import { stornoSourceField, stornoProductNodes, stornoProductKey, calculateStorno } from './storno-editor.js';
 import { consumptionCategory } from './consumption-ui.js';
+import { consumptionEditor } from './consumption-editor.js';
 import { oiAccount, oiProductNodes } from './oi-ui.js';
 import { oiTreeOrder } from './oi-tree-order.js';
 import { documentTreeOrder, monthKey } from './document-tree-order.js';
@@ -109,10 +110,14 @@ export function mountDocuments(host, opts) {
   if (treeHost !== savedHost) savedHost.append(treeHost);
   const mfInfo = family === 'nir' ? receiptMfInfo(savedHost) : null;
   const side = inline && !custody ? receiptContext(savedHost, { root, main, headerHost, linesHost, treeHost, family,
-    api: opts.api, selection: opts.sel, lineSelection: line => allocation ? allocation.selectionForProduct(line.product) : opts.sel(), context: () => ({ draft: state.draft }),
+    api: opts.api, selection: opts.sel, lineSelection: line => allocation ? allocation.selectionForProduct(line.product) : opts.sel(), context: () => ({ draft: state.draft, excludeBC: family === 'bc' && state.mode === 'edit' ? state.doc?.id : null }),
     validLine: (line) => !isBlankLine(line) && (['storno', 'bc'].includes(family) ? !!line.variant : !lineProblems(line).length),
     blankLine: (line) => isBlankLine(line) }) : null;
   const custodySide = config.holder ? oiContext(root, { family, api: opts.api, selection: opts.sel, draft: () => state.draft }) : null;
+  const bc = family === 'bc' ? consumptionEditor({ state, inputs, api: opts.api, selection: opts.sel, changed: () => {
+    if (linesGrid && !linesGrid.hasEdit) linesGrid.setRows(editing() ? draftRows() : state.doc.lines.map((row, index) => ({ ...row, key: `saved:${row.id}`, _index: index + 1 })), { keepWidths: true });
+    side?.refresh(linesGrid?.getSelectedRows()[0]);
+  } }) : null;
 
   function headerSpecs() {
     const lookup = state.lookups || {}, specs = [], ref = (name, label, items, required = true) => ({ key: name, label, type: 'ref', required, showArrow: inline, options: options(items), ...(custody && state.mode !== 'add' ? { fallback: state.doc?.header.labels?.[name] || '' } : {}) });
@@ -205,11 +210,11 @@ export function mountDocuments(host, opts) {
   async function allowDiscard() { if (state.pendingBody || pendingCancel || pendingLink) { say('Rezultatul operației nu este confirmat. Reluați aceeași operație înainte de a schimba documentul.', true); return false; } return !state.dirty && !headerUi.dirty() && !linesUi.dirty() || await confirmBox('Renunțați la modificările nesalvate?', { title: 'Modificări nesalvate', yes: 'Renunț', no: 'Rămân aici', warning: true }); }
   async function open(id) {
     if (state.busy || !await allowDiscard()) return; const sequence = ++openSequence, doc = await opts.api(url(`/${id}`)); if (sequence !== openSequence || abort.signal.aborted) return;
-    Object.assign(state, { doc, draft: null, mode: 'view', dirty: false, requestKey: null, pendingBody: null, returnSource: null }); say(''); paint();
+    Object.assign(state, { doc, draft: null, mode: 'view', dirty: false, requestKey: null, pendingBody: null, returnSource: null }); say(doc.order_message || ''); paint();
   }
   function draftFromDoc(doc) { return { source: doc.header.source ?? null, tip: doc.doc_type || 'NIR', invoice: doc.invoice, header: { ...doc.header, Numar: String(doc.number ?? '').replace(/\D/g, ''), NumarSub: Number(doc.sub_number) || 0 }, lines: doc.lines.map((line) => newLine({ ...line, _savedCode: line.code })) }; }
-  async function add() { if (!await allowDiscard()) return; allocation?.clearDraftProducts(); const today = state.lookups.today; Object.assign(state, { mode: 'add', dirty: false, requestKey: null, pendingBody: null, draft: { source: null, tip: 'NIR', vat: null, autoNumber: true, header: { Data: today, DataFc: today, NumarSub: 0 }, lines: config.source && family !== 'storno' || config.holder ? [] : [newLine()] } }); say(''); if (family === 'bp') await loadWarehouseStock(); paint(); if (family === 'storno') await refreshStornoSources(); if (receipt || custody) await checkNumber(true); }
-  async function edit() { if (!state.doc || !state.canWrite || state.doc.annulled || state.busy || state.pendingBody || pendingCancel || pendingLink) return; if (orphanReturn()) { say('Returul nu are bon sursă. Alegeți Bonul returnat și folosiți Asociază cu un bon de consum, apoi puteți modifica returul.', true); inputs.get('source')?._combo?.input.focus(); return; } allocation?.clearDraftProducts(); state.mode = 'edit'; state.draft = draftFromDoc(state.doc); state.dirty = false; say(''); if (family === 'storno') await refreshStornoSources(); if (config.source || config.holder) await eligible(); if (family === 'bp') await loadWarehouseStock(); paint(); }
+  async function add() { if (!await allowDiscard()) return; allocation?.clearDraftProducts(); const today = state.lookups.today; Object.assign(state, { mode: 'add', dirty: false, requestKey: null, pendingBody: null, draft: { source: null, tip: 'NIR', vat: null, autoNumber: true, header: { Data: today, DataFc: today, NumarSub: 0 }, lines: config.source && family !== 'storno' || config.holder ? [] : [newLine()] } }); say(''); if (family === 'bp') await loadWarehouseStock(); paint(); if (family === 'storno') await refreshStornoSources(); if (receipt || custody || bc) await checkNumber(true); }
+  async function edit() { if (!state.doc || !state.canWrite || state.doc.annulled || state.busy || state.pendingBody || pendingCancel || pendingLink) return; if (state.doc.order_locked) { say(state.doc.order_message, true); return; } if (orphanReturn()) { say('Returul nu are bon sursă. Alegeți Bonul returnat și folosiți Asociază cu un bon de consum, apoi puteți modifica returul.', true); inputs.get('source')?._combo?.input.focus(); return; } allocation?.clearDraftProducts(); state.mode = 'edit'; state.draft = draftFromDoc(state.doc); state.dirty = false; say(''); if (family === 'storno') await refreshStornoSources(); if (config.source || config.holder) await eligible(); if (family === 'bp') await loadWarehouseStock(); paint(); }
   async function discard() { if (!await allowDiscard()) return; allocation?.clearDraftProducts(); state.mode = 'view'; state.draft = null; state.dirty = false; state.requestKey = null; state.pendingBody = null; say(''); paint(); }
   let sourceSequence = 0;
   function refreshStornoSources() {
@@ -446,14 +451,15 @@ export function mountDocuments(host, opts) {
         }
         continue;
       }
-      // a single account in the gestiune (e.g. food) is chosen for the operator and cannot be changed
-      const only = ['IdMasina', 'IdMasinaP'].includes(spec.key) && spec.options.length === 1 ? spec.options[0] : null;
+      // Auto-select singleton accounts and BC receivers, preserving other saved receivers.
+      const singleReceiver = family === 'bc' && spec.key === 'IDC' && (state.mode === 'add' || header.IDC == null || String(header.IDC) === String(spec.options?.[0]?.value));
+      const only = (['IdMasina', 'IdMasinaP'].includes(spec.key) || singleReceiver) && spec.options.length === 1 ? spec.options[0] : null;
       if (only && editing()) header[spec.key] = only.value;
       const sharedIdentity = family === 'nir' && state.draft?.invoice && !state.draft.invoice.local && ['IdPartener', 'NrFact', 'DataFc'].includes(spec.key);
       const automatic = family === 'nir' && editing() && allocation.multi() && spec.key === 'Numar';
       const fieldSpec = { ...spec,
         ...(family === 'nir' && spec.key === 'NrFact' ? { textAlign: 'center' } : {}),
-        ...((receipt || custody) && spec.key === 'Numar' ? { textAlign: 'right', ...(automatic ? { type: 'text' } : { onLeave: subnumber.leave }) } : {}),
+        ...((receipt || custody || bc) && spec.key === 'Numar' ? { textAlign: 'right', ...(automatic ? { type: 'text' } : { onLeave: subnumber.leave }) } : {}),
         ...(family === 'nir' && spec.key === 'Valoare' ? { label: 'Valoare Reală Factură (lei)', textAlign: 'right', displayFormat: 'standard', numberLocale: 'en-US' } : {}) };
       const invoiceAmount = family === 'nir' && spec.key === 'Valoare';
       const value = invoiceAmount ? invoiceValue(invoiceDoc(), header) : header[spec.key];
@@ -528,6 +534,7 @@ export function mountDocuments(host, opts) {
       }, headerUi); vat.node.classList.add('vc-nir-vat'); headerHost.append(vat.node); vatInput = vat.input; syncVatLock();
     }
     if (state.doc?.annulled && !editing()) headerHost.append(el('p', { textContent: `Motiv anulare: ${state.doc.reason || ''}` }));
+    bc?.syncDate();
   }
   // An error message for a place that is not a field (the lines grid) is a tooltip, never text on the screen: assigning '' clears it.
   const tooltipSink = (node) => ({ get textContent() { return node.title; }, set textContent(text) { if (text) node.title = text; else node.removeAttribute('title'); } });
@@ -551,7 +558,7 @@ export function mountDocuments(host, opts) {
   // The NIR grid always ends with one empty row (the new row, as in an Access datasheet); an empty line is never saved.
   const isBlankLine = (line) => !line.product && !line.variant && [line.Cant, line.Pret].every((value) => value == null || String(value).trim() === '');
   // NIR amounts returned by validation are authoritative; rendering must not recalculate them with binary floats.
-  const displayLine = line => family === 'nir' ? line : calculate(line);
+  const displayLine = line => { if (bc && line.variant) line.avail = bc.remaining(line); return family === 'nir' ? line : calculate(line); };
   const draftRows = () => { const rows = gridRows(state.draft.lines).map(displayLine); rows.forEach((row, index) => { row._index = index + 1; }); return rows; };
   function dropLine(line) { state.draft.lines = state.draft.lines.filter((other) => other.key !== line.key); linesGrid.setRows(draftRows(), { keepWidths: true }); totals(); availability(); side?.refresh(); custodySide?.refresh(); clearRowError(); }
   // A line that was edited is judged when the operator leaves it: what is missing or wrong (the same rules as the save) and the question.
@@ -580,7 +587,7 @@ export function mountDocuments(host, opts) {
         ...(family === 'nir' && spec.key === 'data_intrarii' ? { align: 'center' } : {}),
         ...(family === 'nir' && ['DNF', 'DF', 'ValoareLuna'].includes(spec.key) ? { width: 100, minWidth: 100, fixedWidth: true } : {}),
         ...(family === 'nir' && spec.key === 'ValoareLuna' ? { formatter: value => value == null || value === '' ? '' : new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(number(value)) } : {}),
-        ...(family === 'bc' && spec.product ? { editor: 'list', searchable: true, focusAfterSelect: 'Cant', dropDownMinWidth: 300 } : {}),
+        ...(family === 'bc' && spec.product ? { editor: 'tree', nodes: row => bc.nodes(variants().filter(inAccount), row), selectParents: false, focusAfterSelect: 'Cant', dropDownMinWidth: 360, dropDownClassName: 'vc-bc-products', formatter: value => variant(value)?.name || rows.find(row => String(row.variant) === String(value))?.name || '' } : {}),
         ...(custody && spec.product ? { editor: 'tree', nodes: row => oiProductNodes(config.holder ? holderChoices(state.eligible, state.draft?.lines || [], row) : warehouseChoices(variants().filter(inAccount), state.available, state.draft?.lines || [], row), state.lookups.categories || [], !!config.holder),
           selectParents: false, focusAfterSelect: 'Cant', dropDownMinWidth: 430,
           formatter: value => !editing() && config.holder ? String(value ?? '') : config.holder ? state.eligible[Number(value)]?.name || rows.find(row => row._choice === value)?.name || '' : variant(value)?.name || rows.find(row => String(row.variant) === String(value))?.name || '' } : {}),
@@ -617,6 +624,7 @@ export function mountDocuments(host, opts) {
           productEntry.defaults(line);
         }
         try {
+          bc?.validate(line, name);
           if (family === 'nir' && name === 'um') { await productEntry.finishProduct(line); line.IDTVA = allocation.defaultTax(line.product, allocation.tax(line.IDTVA)?.percent ?? allocation.tax(state.draft.vat)?.percent); productEntry.defaults(line); }
           if (family === 'nir' && ['code', 'DNF', 'data_intrarii'].includes(name) && productEntry.issues(line).length) throw new Error(productEntry.issues(line).join('; '));
           if (family === 'bp' && name === 'variant' && state.draft.lines.some(other => other !== line && other.variant === line.variant)) throw new Error('Produsul este deja pe bon. Modificați cantitatea rândului existent.');
@@ -658,7 +666,7 @@ export function mountDocuments(host, opts) {
     const blank = (value) => value == null || String(value).trim() === '';
     const missing = headerSpecs().filter((spec) => spec.required && (spec.key === 'Accounts' ? !allocation.selectedAccounts().length : blank(inputs.get(spec.key)?.value ?? state.draft.header[spec.key]))).map((spec) => spec.label);
     if (config.source && !state.draft.source) missing.unshift(config.source);
-    return missing.length ? `Completați mai întâi antetul documentului: ${missing.join(', ')}.` : '';
+    return missing.length ? `Completați mai întâi antetul documentului: ${missing.join(', ')}.` : bc?.lockMessage() || '';
   }
   function lockedLines({ message }) { say(message, true); headerUi.validate(); }
   async function addLine(item) {
@@ -701,6 +709,7 @@ export function mountDocuments(host, opts) {
     note.textContent = note.hidden ? '' : `Valoare în antet: ${format(invoiceValue(invoiceDoc(), state.doc.header), { type: 'decimal' })} lei. Diferență față de liniile documentului: ${format(fixed(difference, state.zec), { type: 'decimal' })} lei.`;
   }
   function availability() {
+    if (bc) { bc.syncDate(); void bc.load().catch(report); return; }
     clearTimeout(availabilityTimer); const sequence = ++availabilitySequence;
     if (!bon() || !editing() && (family !== 'bc' || !state.doc)) return;
     const document = editing() ? state.draft : state.doc, inEdit = editing(), savedId = state.doc?.id;
@@ -748,7 +757,7 @@ export function mountDocuments(host, opts) {
     treeUi.clear(); savedTree = null; if (savedHost.hidden) return; treeDirty = false;
     savedTree = paintTree(treeHost, treeNodes(), { title: family === 'bc' ? 'Bonuri salvate' : family === 'storno' ? 'FCS salvate' : 'Documente salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onToggle: lazy ? opened : undefined, onSelect: (id) => open(Number(id)).catch(report), onAction: (id, anchor) => {
       const doc = lazy ? receipts.find(id) : state.docs.find((item) => String(item.id) === id); if (!doc) return; const run = async (action) => { if (state.doc?.id !== doc.id) await open(doc.id); if (state.doc?.id === doc.id) await action(); };
-      openMenu(anchor, [...(doc.source_missing ? [{ icon: '↔', label: 'Asociază cu un bon de consum', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }] : []), { icon: '✎', label: 'Modifică', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled, run: () => run(cancel).catch(report) }], { align: 'right' });
+      openMenu(anchor, [...(doc.source_missing ? [{ icon: '↔', label: 'Asociază cu un bon de consum', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }] : []), { icon: '✎', label: 'Modifică', disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(cancel).catch(report) }], { align: 'right' });
     } }, treeUi);
     paintTreeAdd();
   }
@@ -778,7 +787,7 @@ export function mountDocuments(host, opts) {
         button(`Salvează ${family === 'bc' || custody ? 'bonul' : family === 'storno' ? 'FCS' : 'NIR'}`, save, { className: 'is-primary vc-doc__save', 'data-retry-save': 'true' }));
       return;
     }
-    if (editing()) bar.append(button('Renunță', discard), button('Previzualizează', preview), button(`Salvează ${family === 'nir' ? 'NIR' : 'bonul'}`, save, { className: 'is-primary', 'data-retry-save': 'true' })); else { if (!inline) bar.append(button('+ Adaugă', add, { disabled: !state.canWrite })); if (state.doc) bar.append(button('Modifică', edit, { disabled: !state.canWrite || state.doc.annulled }), button('Previzualizează', preview)); }
+    if (editing()) bar.append(button('Renunță', discard), button('Previzualizează', preview), button(`Salvează ${family === 'nir' ? 'NIR' : 'bonul'}`, save, { className: 'is-primary', 'data-retry-save': 'true' })); else { if (!inline) bar.append(button('+ Adaugă', add, { disabled: !state.canWrite })); if (state.doc) bar.append(button('Modifică', edit, { disabled: !state.canWrite || state.doc.annulled || state.doc.order_locked }), button('Previzualizează', preview)); }
     bar.append(status); if (state.closed) bar.append(el('span', { className: 'vc-hint', textContent: 'Perioadă închisă: numai consultare.' }));
   }
   function collect() {
@@ -869,7 +878,7 @@ export function mountDocuments(host, opts) {
       state.requestKey ||= key(); state.pendingBody ||= structuredClone({ ...data.body, ...(state.mode === 'edit' ? { version: state.doc.version } : {}) });
       submitted = true;
       const result = await json(state.mode === 'add' ? 'POST' : 'PUT', state.mode === 'add' ? family === 'nir' ? '/distribution' : '' : `/${state.doc.id}`, { ...state.pendingBody, request_key: state.requestKey });
-      if (abort.signal.aborted) return; Object.assign(state, { doc: result.document, mode: 'view', draft: null, dirty: false, requestKey: null, pendingBody: null }); paint(); say(result.receipts ? 'Salvat: ' + result.receipts.map(item => `${item.name} · NIR ${item.number}`).join('; ') : result.replayed ? 'Salvat (cererea fusese deja aplicată).' : 'Salvat.'); try { if (family === 'nir') { await load(); if (!abort.signal.aborted) paint(); } await refresh(); if (!abort.signal.aborted) paintSaved(); } catch (error) { report(error); } }
+      if (abort.signal.aborted) return; Object.assign(state, { doc: result.document, mode: 'view', draft: null, dirty: false, requestKey: null, pendingBody: null }); paint(); say(result.receipts ? 'Salvat: ' + result.receipts.map(item => `${item.name} · NIR ${item.number}`).join('; ') : result.result?.recalculated_lists?.length ? 'Salvat. Economiile / depășirile listei de alimente asociate au fost recalculate.' : result.replayed ? 'Salvat (cererea fusese deja aplicată).' : 'Salvat.'); try { if (family === 'nir') { await load(); if (!abort.signal.aborted) paint(); } await refresh(); if (!abort.signal.aborted) paintSaved(); } catch (error) { report(error); } }
     catch (error) {
       if (error.fields) showErrors(error.fields);
       if (submitted && error.status && error.status < 500) { state.requestKey = null; state.pendingBody = null; }
@@ -908,6 +917,7 @@ export function mountDocuments(host, opts) {
   }
   async function cancel() {
     const doc = state.doc; if (!doc || !state.canWrite || doc.annulled || state.busy || pendingLink) return;
+    if (doc.order_locked && !pendingCancel) { say(doc.order_message, true); return; }
     if (!pendingCancel) {
       const reason = await reasonBox(`Anulați ${config.title.toLocaleLowerCase('ro')} nr. ${doc.number}?`, { title: 'Anulare document', yes: 'Anulează', no: 'Renunță' });
       if (reason == null) return; pendingCancel = { reason, version: doc.version, request_key: key(), id: doc.id };

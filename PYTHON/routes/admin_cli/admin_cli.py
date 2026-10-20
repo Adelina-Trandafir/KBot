@@ -45,6 +45,8 @@ Commands (all read-only unless marked WRITE):
     backups [--db D]                   the dump files and schema plans (of one database when D is given)
     backup-text --path P               the text of one dump / plan file (first 2 MB)
     backup --db D                      WRITE  dump one database to backup/
+    demo-clone-plan --from DB          what emptying 000_DEMO and cloning DB into it would do (nothing is written)
+    demo-clone --from DB               WRITE  dump 000_DEMO, empty it, clone DB into it keeping 000_DEMO's tax code and DC
     visits [--days N] [--bots]
 
 The schema SYNC itself is not here: KBotAdmin runs routes.schema_sync.schema_sync directly, as
@@ -865,6 +867,8 @@ def _parser():
     p.set_defaults(fn=cmd_visits)
     from routes.admin_cli import vercon_reports
     vercon_reports.register(sub)
+    from routes.admin_cli import admin_demo
+    admin_demo.register(sub)
     return parser
 
 

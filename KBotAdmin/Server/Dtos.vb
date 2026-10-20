@@ -348,3 +348,44 @@ Public Class LinkResult
     Public Property Link As String
     Public Property Lines As New List(Of String)()
 End Class
+
+' ---- Clonare in 000_DEMO (verbs demo-clone-plan / demo-clone, routes/admin_cli/admin_demo.py) ----
+
+Public Class DemoCloneTable
+    Public Property Table As String = String.Empty
+    Public Property DemoRows As Long
+    Public Property SourceRows As Long
+    Public Property Copy As Boolean
+    Public Property Note As String = String.Empty
+End Class
+
+Public Class DemoCloneRewrite
+    Public Property Table As String = String.Empty
+    Public Property Column As String = String.Empty
+    Public Property Kind As String = String.Empty
+    Public Property Rows As Long
+End Class
+
+Public Class DemoCloneResultRow
+    Public Property Table As String = String.Empty
+    Public Property Rows As Long
+    Public Property Expected As Long
+End Class
+
+Public Class DemoClonePlan
+    Public Property Source As String = String.Empty
+    Public Property Target As String = String.Empty
+    Public Property DemoCf As String = String.Empty
+    Public Property SourceCf As String = String.Empty
+    Public Property RewriteCf As Boolean
+    Public Property Warnings As New List(Of String)()
+    Public Property Rewrites As New List(Of DemoCloneRewrite)()
+    Public Property Tables As New List(Of DemoCloneTable)()
+    Public Property DemoTotal As Long
+    Public Property SourceTotal As Long
+    ' filled only after a real run
+    Public Property Backup As String = String.Empty
+    Public Property Results As New List(Of DemoCloneResultRow)()
+    Public Property CopiedTotal As Long
+    Public Property FurnizorCf As String = String.Empty
+End Class

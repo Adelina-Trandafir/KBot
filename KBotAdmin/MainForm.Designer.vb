@@ -21,6 +21,7 @@ Partial Class MainForm
         components = New ComponentModel.Container()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem14 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem15 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
@@ -65,6 +66,7 @@ Partial Class MainForm
         viewOnce = New OnceQueryView()
         viewLogin = New LoginResetView()
         viewVerconReports = New VerconReportsView()
+        viewDemo = New DemoCloneView()
         CType(navViews, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
@@ -233,7 +235,7 @@ Partial Class MainForm
         ' navViews
         '
         tips.SetToolTipHeader(navViews, "Paginile programului")
-        tips.SetToolTipText(navViews, "Comenzi: interogări sigure pe baza aleasă sau pe toate." & vbLf & "Diferență schemă: ce diferă de AVACONT_SURSA (doar citire)." & vbLf & "Sincronizare: aduce schema bazelor la schema sursei." & vbLf & "Drepturi: ce poate face fiecare cont în ADECHIT." & vbLf & "Loguri: jurnalele serverului, colorate." & vbLf & "Jurnal: ce s-a făcut în conturi." & vbLf & "Vizite: cine a deschis pagina de prezentare." & vbLf & "Server: disc, memorie, certificat, servicii." & vbLf & "Copii: copii de siguranță ale bazelor." & vbLf & "Cereri: cereri de conturi noi, de aprobat sau respins." & vbLf & "Interogări unice: rulează o dată un text SQL pe toate bazele." & vbLf & "Resetare Login: șterge încercările de login eșuate ale utilizatorilor." & vbLf & "Publicare: trimite fișierele din PYTHON pe server și repornește serviciul.")
+        tips.SetToolTipText(navViews, "Comenzi: interogări sigure pe baza aleasă sau pe toate." & vbLf & "Diferență schemă: ce diferă de AVACONT_SURSA (doar citire)." & vbLf & "Sincronizare: aduce schema bazelor la schema sursei." & vbLf & "Drepturi: ce poate face fiecare cont în ADECHIT." & vbLf & "Loguri: jurnalele serverului, colorate." & vbLf & "Jurnal: ce s-a făcut în conturi." & vbLf & "Vizite: cine a deschis pagina de prezentare." & vbLf & "Server: disc, memorie, certificat, servicii." & vbLf & "Copii: copii de siguranță ale bazelor." & vbLf & "Cereri: cereri de conturi noi, de aprobat sau respins." & vbLf & "Interogări unice: rulează o dată un text SQL pe toate bazele." & vbLf & "Resetare Login: șterge încercările de login eșuate ale utilizatorilor." & vbLf & "Publicare: trimite fișierele din PYTHON pe server și repornește serviciul." & vbLf & "Clonare DEMO: golește 000_DEMO și copiază în el o altă bază, păstrând codul fiscal și DC-ul lui 000_DEMO.")
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Key = "comenzi"
         KBotNavItem1.Text = "Comenzi"
@@ -293,6 +295,10 @@ Partial Class MainForm
         KBotNavItem14.Text = "Rapoarte VERCON"
         KBotNavItem14.AutoSize = True
         navViews.Items.Add(KBotNavItem14)
+        KBotNavItem15.Key = "demo"
+        KBotNavItem15.Text = "Clonare DEMO"
+        KBotNavItem15.AutoSize = True
+        navViews.Items.Add(KBotNavItem15)
         navViews.Location = New Point(0, 0)
         navViews.Margin = New Padding(0)
         navViews.Name = "navViews"
@@ -317,6 +323,9 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewOnce)
         pnlViews.Controls.Add(viewLogin)
         pnlViews.Controls.Add(viewVerconReports)
+        pnlViews.Controls.Add(viewDemo)
+        viewDemo.Dock = DockStyle.Fill
+        viewDemo.Visible = False
         viewVerconReports.Dock = DockStyle.Fill
         viewVerconReports.Visible = False
         pnlViews.Dock = DockStyle.Fill
@@ -534,4 +543,5 @@ Partial Class MainForm
     Friend WithEvents viewOnce As OnceQueryView
     Friend WithEvents viewLogin As LoginResetView
     Friend WithEvents viewVerconReports As VerconReportsView
+    Friend WithEvents viewDemo As DemoCloneView
 End Class

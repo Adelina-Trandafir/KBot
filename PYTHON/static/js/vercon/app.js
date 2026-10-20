@@ -89,7 +89,7 @@ function applyContext(k_ctx) {
   k_set('gestiune', k_opt.gestiuni.map((k_g) => ({ value: String(k_g.id), label: k_g.name })), k_sel.gestiune);
   k_set('year', k_opt.years.map((k_y) => ({ value: String(k_y), label: String(k_y) })), k_sel.year);
   const k_showGestiune = k_sel.subunit != null && k_opt.gestiuni.length > 1;
-  const k_showYear = k_sel.gestiune != null && k_opt.years.length > 0;
+  const k_showYear = k_sel.gestiune != null && k_opt.years.length > 0 && !['MF', 'OI'].includes(k_sel.type);
   $('vc-gestiune-combo').hidden = !k_showGestiune;
   $('vc-year-combo').hidden = !k_showYear;
   combos.gestiune.setEnabled(k_showGestiune);

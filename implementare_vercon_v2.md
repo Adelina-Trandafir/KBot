@@ -4090,3 +4090,195 @@ PYTHON/routes/vercon/report_catalog.py, report_service.py; implementare_vercon_v
 Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
 Fără teste sau alte verificări, conform instrucțiunilor proiectului.
 Necesită publicarea Python/JS/CSS și repornirea serviciului.
+
+### 2026-10-20 — Simplificare meniu rapoarte Mijloace Fixe
+
+În RAPOARTE → Mijloace Fixe, bonurile sunt primele rapoarte, direct sub
+rădăcină, în ordinea Bon Predare, Bon Transfer, Bon Casare. Nodul intermediar
+BONURI OI / MF dispare. MF Balanta este redenumit Balanta, iar MF Balanta
+SUBINV este ascuns din meniul rapoartelor. MF Lista Inventar devine Lista
+Inventar și este mutat direct sub Mijloace Fixe, eliminând nodul intermediar
+INVENTAR DETINATORI. Arborele păstrează afișarea comună cu majuscule.
+Schimbările structurii sunt limitate la MF; rapoartele OI își păstrează gruparea.
+Fișiere: PYTHON/routes/vercon/report_catalog.py;
+PYTHON/static/js/vercon/report-result.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-20 — Arbori Selectare date specifici rapoartelor MF
+
+Rapoartele din Mijloace Fixe nu mai folosesc rădăcinile generale Conturi în
+folosință, Primitori și Documente. Bon Predare/Transfer/Casare folosesc primitor
+→ bon cu număr, dată și valoare → produse. Bonurile sunt ordonate descrescător
+după dată și număr. Balanta folosește cont → produse, iar Lista Inventar
+folosește cont → primitor → produse, pe conturile din registrul de folosință.
+Amortizare folosește contul produsului → clasificarea MF → produse. Opțiunea
+Grupează după Primitori, nebifată inițial, schimbă arborele în primitor →
+clasificare → produse. Deținerea este calculată din istoricul mișcărilor până
+la data raportului; activele fără deținere pozitivă au ramura Fără primitor.
+Clasificarea provine din CC și catalogul comun existent, prin SELECT cu context.
+Produsele includ numărul de inventar și UM, fără nivel separat pentru variante.
+Ramurile sunt pliate și lazy; bifarea unei ramuri, Selectează TOATE și căutarea
+folosesc încărcarea recursivă comună. Schimbarea raportului MF sau a opțiunii
+de grupare resetează arborele și selecțiile. Restul rapoartelor păstrează regula
+existentă de reutilizare a selecțiilor pe categorie.
+Selecția MF are identificatori compuși și filtrare în modelul comun pentru
+afișare, PDF și Excel: cont/produs pentru balanță, cont/primitor/produs pentru
+inventar, primitor/bon/produs pentru bonuri și cont/primitor/variantă pentru
+amortizare. Aceeași variantă nu este calculată de mai multe ori în amortizare
+dacă este selectată din mai multe ramuri. Opțiunea de grupare schimbă arborele
+de selecție; macheta exportului și formulele de amortizare rămân cele existente.
+Fișiere: PYTHON/routes/vercon/report_mf.py (nou), report_mf_selection.py (nou),
+report_catalog.py, report_selection.py, report_routes.py, report_service.py,
+report_data.py; PYTHON/static/js/vercon/reports.js, report-selection.js;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-20 — MF/OI fără selector de an și perioade de raportare până azi
+
+Selectorul An din meniul principal este ascuns și dezactivat pentru MF și OI.
+Contextul intern al istoricului comun este păstrat pentru rutele existente.
+La deschiderea rapoartelor MF/OI, perioada implicită este 1 ianuarie din anul
+curent până azi, calculată în Europe/Bucharest, cu fallback UTC dacă baza de
+fusuri orare nu este instalată. Anul curent este disponibil în selectorul
+perioadei inclusiv când ultimele documente sunt din ani anteriori.
+TOTI ANII este prima opțiune la rădăcina arborelui perioadelor MF/OI. Selectarea
+ei completează data de început cu prima dată efectivă a mișcărilor și data de
+sfârșit cu azi. Istoricul folosește liniile documentelor neanulate de intrare,
+storno, ieșire, retur și BP/BT/BS, în contextul gestiunii; intrările folosesc
+data efectivă COALESCE(DataFc,Data). Fără mișcări, începutul este 1 ianuarie
+din anul curent. Dacă toate documentele sunt în viitor, intervalul este azi–azi.
+Calendarele permit și anii intermediari fără mișcări pentru alegerea manuală
+a intervalelor. Gestiunile cu exerciții anuale păstrează comportamentul existent.
+Fișiere: PYTHON/static/js/vercon/app.js, report-period.js;
+PYTHON/routes/vercon/report_period.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-20 — Ani descrescători și expandare după ultimul an cu date
+
+Arborele perioadelor afișează anii descrescător, cu TOTI anii păstrat ca prima
+opțiune. Pentru MF/OI, anul curent se deschide automat numai dacă este ultimul
+an cu date efective. Catalogul transmite separat latest_data_year, calculat
+înainte de adăugarea anului curent fără mișcări; acest an adăugat nu declanșează
+expandarea. În celelalte cazuri MF/OI, toate ramurile anuale pornesc pliate.
+Fișiere: PYTHON/static/js/vercon/report-period.js;
+PYTHON/routes/vercon/report_period.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-20 — Corecție compatibilitate expandare an curent
+
+Arborele perioadelor acceptă și răspunsurile catalogului care încă nu conțin
+latest_data_year: în acest caz folosește latest_year. Valorile anilor sunt
+normalizate numeric înainte de comparație. Un latest_data_year explicit null
+continuă să însemne lipsă de mișcări și nu deschide anul curent. Configurația
+expanded se aplică prin API-ul ComboTree după setData și se sincronizează
+și cu starea expandedNodes, pentru afișarea inițială și redeschiderea listei.
+Cu răspunsul vechi, latest_year este singura informație disponibilă despre
+ultimul an; distincția dintre anul cu date și cel adăugat fără mișcări necesită
+și versiunea Python care transmite latest_data_year.
+Fișiere: PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; analiză de design, fără reproducere UI.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea JS; regula exactă a anului cu date necesită catalogul Python actualizat.
+
+### 2026-10-20 — BC: număr propus, produse cu stoc și sumar produs
+
+La adăugare BC se propune următorul număr, editabil, prin citirea seriei BC
+și a contorului existent. Sugestia nu rezervă numărul și nu modifică baza;
+salvarea păstrează verificarea existentă a numerelor manuale și actualizarea
+contorului în tranzacție. Numerele modificate sunt reverificate la părăsirea
+câmpului, fără reguli de sub-număr NIR/FCS pentru BC.
+Editorul Produs din DGV este TreeCombo: produs → variante cu preț și stoc,
+limitat la contul ales și stocul pozitiv la data bonului, diminuat cu celelalte
+linii din ciornă. La modificare/consultare disponibilul exclude consumul
+salvat al BC-ului curent. Încărcările sunt asociate documentului și datei;
+răspunsurile depășite sunt ignorate, iar alegerea produselor este blocată cât
+timp stocul nu este disponibil. Schimbarea datei înainte de primul produs
+reîncarcă lista. După alegerea primului produs, data și butonul calendarului
+sunt dezactivate; eliminarea tuturor produselor permite din nou schimbarea datei.
+Cantitatea introdusă este confruntată cu disponibilul ciornei, în plus față
+de validarea exactă existentă pe server la salvare.
+Panoul din stânga jos înlocuiește Fișa de magazie cu Stoc produs: identitate,
+dată, preț, total intrări, total ieșiri și stoc disponibil, în UM. Totalurile
+sunt cantități pe întregul istoric al variantei până la data bonului, calculate
+exact din mișcările salvate neanulate; în editare este exclus BC-ul curent.
+Nu se limitează la ultimele 20 de mișcări sau la începutul anului. Ciorna
+nesalvată nu este inclusă în totalurile istorice din panou.
+Popup-ul TreeCombo BC nu are derulare orizontală: etichetele lungi se împart
+pe rânduri. Clasa popup-ului este transmisă opțional prin editorul comun DGV;
+CSS-ul este limitat la BC.
+Fișiere: PYTHON/routes/vercon/consumption_number.py (nou), consumption_stock.py
+(nou), doc_routes.py, receipt_context.py; PYTHON/static/js/vercon/
+consumption-editor.js (nou), consumption-ui.js, document-number.js, docs.js,
+receipt-context.js; PYTHON/static/js/dgv/editing.js;
+PYTHON/static/css/vercon-consumption.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS/CSS și repornirea serviciului.
+
+### 2026-10-20 — ComboTree: căutarea păstrează descendenții produsului găsit
+
+ComboTree activează includeDescendantsOnMatch în filtrarea comună a arborelui.
+Când denumirea sau cuvintele-cheie ale unui părinte corespund căutării,
+rezultatul păstrează și deschide întreaga sa ramură, inclusiv variantele de
+preț selectabile. Când corespunde numai un copil, sunt păstrați copilul și
+strămoșii săi. Astfel, căutarea unui produs în BC permite alegerea prețului.
+Se folosesc exclusiv nodurile deja furnizate controlului, păstrând filtrarea
+produselor fără stoc. TreeView-urile care nu activează opțiunea păstrează
+filtrarea existentă.
+Fișiere: PYTHON/static/js/components/combotree/combotree.js;
+PYTHON/static/js/components/treeview/treeview-search.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea JS și reîncărcarea paginii.
+
+### 2026-10-20 — BC asociat unei liste: editare și recalculare; ordine inversă cronologică
+
+Editarea BC-ului nu mai este blocată de simpla asociere cu o listă de alimente.
+După actualizarea liniilor, totalului BC și validarea stocului, se recalculează
+ValoareBon din toate BC-urile active ale listei și DEP = ValoareLista − ValoareBon.
+Lista primește o versiune nouă și audit, în aceeași tranzacție cu BC-ul;
+orice eroare anulează întreaga modificare. Mesele și valoarea listei se păstrează.
+Mesajul salvării confirmă recalcularea economiilor / depășirilor.
+
+Modificarea și anularea sunt limitate la ultimul BC activ, respectiv ultima
+listă activă, separat pe familie, în subunitatea/gestiunea/exercițiul curent.
+Ordine: data documentului, apoi ID descrescător pentru documente din aceeași zi.
+Documentele anulate nu intră în ordonare; după anularea ultimului, precedentul
+devine ultimul. Schimbarea datei ultimului document nu îl poate muta înaintea
+precedentului. Pentru editarea BC-ului asociat, lista recalculată trebuie să fie
+și ea ultima listă activă, protejând listele anterioare. Anularea unui BC legat
+necesită în continuare scoaterea lui din listă sau anularea listei; retururile
+active continuă să protejeze BC-ul sursă. Nu se introduce ștergere fizică.
+
+API-ul transmite blocarea cronologică și explicația în rezumate/documente;
+interfața dezactivează Modifică/Anulează pentru documentele anterioare și arată
+motivul la deschidere. Serverul aplică aceeași regulă în operațiile de scriere,
+sub blocarea tranzacțională existentă a gestiunii.
+
+Fișiere: PYTHON/routes/vercon/document_order.py (nou),
+food_list_recalculation.py (nou), documents.py, lista.py, doc_routes.py;
+PYTHON/static/js/vercon/docs.js, lista.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Fără modificări de schemă MariaDB. Necesită publicarea Python/JS, repornirea
+serviciului și reîncărcarea paginii.
+
+### 2026-10-20 — BC: primitor unic selectat automat
+
+La adăugarea unui BC, dacă lista conține exact un primitor, acesta este
+completat automat în ciornă, iar câmpul Primitor / gestionar este dezactivat.
+Cu mai mulți primitori, alegerea rămâne manuală. În modificare, regula se
+aplică dacă primitorul existent coincide cu unica opțiune sau lipsește;
+un primitor istoric diferit nu este înlocuit automat.
+Fișiere: PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea JS și reîncărcarea paginii.

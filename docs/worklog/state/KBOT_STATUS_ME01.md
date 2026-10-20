@@ -36,3 +36,5 @@ Operator request, 10.10.2026: an administration program for the OWNER only. Desk
 - Help: none (KBotAdmin is not for clients). `KBot.Controls` gained `KBotLogBox` (FileVersion 1.65.0.0); no K-BOT window changed.
 
 - **ME01-02 (12.10.2026):** drepturile ADECHIT si VERCON nu mai sunt coloane in DGV; doua butoane deschid RightsForm (DGV cu drepturile unul sub altul, Explicatie + Bifa, click pe titlul Bifei = bifeaza/debifeaza tot). Compilat curat, nerulat. [worklog](../SLICE-ME01-02-drepturi-adechit-vercon-macheta.md)
+
+- **ME01-04 (20.10.2026):** pagina nouă «Clonare DEMO»: golește 000_DEMO și clonează în el baza aleasă în arbore; DC devine 000_DEMO peste tot, codul fiscal al sursei devine cel al lui 000_DEMO (EF_Furnizor.CodFiscal păstrat din 000_DEMO). Copie de siguranță întâi, apoi totul într-o singură tranzacție. Server: `routes/admin_cli/admin_demo.py` (verbele `demo-clone-plan`, `demo-clone`) — de împins cu PYTHON. Compilat curat (KBotAdmin, 0 avertismente), NERULAT pe server. [worklog](../SLICE-ME01-04-clonare-demo.md)

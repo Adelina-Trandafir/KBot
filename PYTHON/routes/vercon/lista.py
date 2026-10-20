@@ -15,7 +15,7 @@ values). Cancelling a list frees its bons.
 from datetime import datetime
 from decimal import Decimal
 
-from . import lista_bc, numeric, protocol
+from . import document_order, lista_bc, numeric, protocol
 from .documents import _all, _dec, _exists, _fail, _int, _money, _one, _scope, _text, _iso
 from .nomenclatoare import NomError
 
@@ -221,7 +221,9 @@ def edit(cursor, repo, ctx, exercise, doc_id, body, request_id):
     version = _int(body.get('version'))
     if version is None or before['Version'] != version:
         raise NomError('CONFLICT', 'Lista a fost modificată de altcineva. Reîncărcați lista.', 409, {'version': before['Version']})
+    document_order.require_latest(cursor, ctx, 'lista', doc_id)
     parsed = _clean(cursor, repo, ctx, exercise, body)
+    document_order.require_position(cursor, ctx, 'lista', doc_id, parsed['date'])
     errors = {}
     number = before['NumarLA']
     manual = (body.get('header') or {}).get('Numar')
@@ -253,6 +255,7 @@ def cancel(cursor, repo, ctx, family, doc_id, body, request_id):
     version = _int(body.get('version'))
     if version is None or before['Version'] != version:
         raise NomError('CONFLICT', 'Lista a fost modificată de altcineva. Reîncărcați lista.', 409)
+    document_order.require_latest(cursor, ctx, 'lista', doc_id)
     freed = lista_bc.current(repo, doc_id)
     repo.delete('VC_LegBCLA', {'IdLista': doc_id})   # the bons are free again; they are not touched
     cursor.execute('UPDATE VC_LABC SET Anulat=1, MotivAnulare=%s, AnulatDe=%s, AnulatLa=NOW(), Version=Version+1 WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdLista=%s',

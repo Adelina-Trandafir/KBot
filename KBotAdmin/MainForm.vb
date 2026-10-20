@@ -43,6 +43,7 @@ Public Class MainForm
         _views("unice") = viewOnce
         _views("login") = viewLogin
         _views("vercon-reports") = viewVerconReports
+        _views("demo") = viewDemo
         For Each k_view As Control In _views.Values
             DirectCast(k_view, IAdminView).Attach(_context)
         Next

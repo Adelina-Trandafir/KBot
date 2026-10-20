@@ -5,7 +5,7 @@ import { configureComboTreeKeyboard } from './combotree-keyboard.js';
 
 export class ComboTree extends TreeView {
   constructor(host, options = {}) {
-    super(host, { autoCollapse: false, autoResize: false, selectableLevel: null, selectParents: false, ...options });
+    super(host, { autoCollapse: false, autoResize: false, selectableLevel: null, selectParents: false, includeDescendantsOnMatch: true, ...options });
     this.createElements();
     this.container.classList.add('combotree');
     this.arrow.textContent = '▾';
