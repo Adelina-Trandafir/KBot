@@ -17,6 +17,8 @@ from routes.vercon.nomenclatoare import NomError
 from demo_data import CTX, DISHES, SELECTION, YEAR, DemoData, DemoSource, fail
 
 UNIT = 'LOCAL_VERCON_DEMO'
+ISSUER = {'name': 'Unitate demonstrativă', 'fiscal_code': '', 'address': 'Adresă demonstrativă',
+          'subunit_name': 'Subunitate DEMO'}
 VERSION = 'vercon-local-demo-v1'
 
 
@@ -191,7 +193,11 @@ def build_app():
             fail('Intervalul raportului este invalid.')
         source = DemoSource(data, params)
         # Use the actual builder and renderers. Only the data source is synthetic.
-        return report_service.build(None, UNIT, dict(CTX), name, params, 'Alimente DEMO', source=source)
+        return report_service.build(None, UNIT, dict(CTX), name, params, 'Alimente DEMO', source=source, issuer=ISSUER)
+
+    @app.get('/api/vercon/reports/identity')
+    def report_identity():
+        return jsonify(ISSUER)
 
     @app.get('/api/vercon/reports/<name>/generate')
     def generate(name):

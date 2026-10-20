@@ -15,9 +15,9 @@ wait: select
 Alege în arbore <b>o grupă existentă</b> (nu rândul «Angajamente negrupate»).
 
 ## Angajamentele grupei
-<!-- slice: 000T-12 -->
+<!-- slice: 000T-12, 000T-13 -->
 target: GrupeForm.gridAng
-Tabelul arată <b>doar angajamentele grupei</b>, toate bifate. Apasă «Înainte».
+Tabelul arată <b>doar angajamentele grupei</b>, toate bifate. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Debifează
 <!-- slice: 000T-12 -->

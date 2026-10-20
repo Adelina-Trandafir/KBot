@@ -168,11 +168,18 @@ Public NotInheritable Class ClasificatiiAddResult
     Public Property Existing As Integer
 End Class
 
-''' <summary>One row of <c>Parteneri_Coduri</c> («Coduri angajament»).</summary>
+''' <summary>
+''' One row of the supplier's «Coduri angajament» (slice 0121-03): an indicator of one of its angajamente
+''' (<c>Parteneri_Angajamente_Indicatori</c>), or the angajament alone while it has no indicator (<see cref="CodInd"/>
+''' empty, <see cref="Id"/> Nothing, <see cref="IdLeg"/> set). The rows belong to the supplier's CodFiscal.
+''' </summary>
 Public NotInheritable Class PartenerCod
-    ''' <summary>Nothing = a row added in the window, not saved yet.</summary>
+    ''' <summary>The indicator row. Nothing = a row added in the window, or an angajament without indicator.</summary>
     Public Property Id As Integer?
-    Public Property IdClsf As Integer
+    ''' <summary>The link supplier-angajament. Nothing = a row added in the window, not saved yet.</summary>
+    Public Property IdLeg As Integer?
+    ''' <summary>Shown only (from FX_Indicatori by CodAI); Nothing = the indicator is not known to FX_Indicatori.</summary>
+    Public Property IdClsf As Integer?
     Public Property Clsf As String = String.Empty
     Public Property DenumireClsf As String = String.Empty
     Public Property ContBancar As String = String.Empty
@@ -234,6 +241,8 @@ Public NotInheritable Class PartenerSaveRequest
     Public Property Partner As Partener
     ''' <summary>The codes as the grid shows them (new rows have no id).</summary>
     Public Property Coduri As New List(Of PartenerCod)()
-    ''' <summary>Ids of saved codes removed in the window.</summary>
+    ''' <summary>Ids (<see cref="PartenerCod.Id"/>) of saved indicators removed in the window.</summary>
     Public Property CoduriSterse As New List(Of Integer)()
+    ''' <summary>Ids (<see cref="PartenerCod.IdLeg"/>) of saved angajamente without indicator removed in the window.</summary>
+    Public Property LegaturiSterse As New List(Of Integer)()
 End Class

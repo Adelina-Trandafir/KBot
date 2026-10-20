@@ -85,8 +85,9 @@ Public NotInheritable Class LoginForm
 
     ''' <summary>
     ''' Slice 0097 -- «Tine minte parola pana la repornirea calculatorului». The box is on the
-    ''' window only with the advanced options on and its switch in «Setari → Autentificare»
-    ''' (<see cref="AppSettings.RememberPasswordInEffect"/>); the window grows by its row only then.
+    ''' window whenever its switch in «Setari → Autentificare» is on, which it is by default; only
+    ''' changing that switch needs the advanced options (<see cref="AppSettings.RememberPasswordInEffect"/>).
+    ''' The window grows by its row only when the box is shown.
     ''' A pair stored for this Windows session (<see cref="SessionCredentials"/>) fills both fields
     ''' and ticks the box. Without the box, a stored pair is not used at all.
     ''' </summary>

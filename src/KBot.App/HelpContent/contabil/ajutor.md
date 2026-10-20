@@ -73,7 +73,7 @@ căutai); un clic pe aceeași stea o retrage. Poți da nota și în fereastra de
 citit pagina: întrebarea din meniu merge acolo cu tot cu rezultatele ei.
 
 ## Tururile ghidate
-<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24, 0097-02, 0000-30, 0000-31, 0114 -->
+<!-- slice: 0000-04, 0000-20, 0000-23, 0000-24, 0097-02, 0000-30, 0000-31, 0114, 000T-13, 0000-107 -->
 
 Un tur îți arată pe ecran, pas cu pas, unde e fiecare lucru: un chenar colorat în jurul
 butonului sau al listei și o bulă cu **Înapoi**, **Înainte** și **Închide**, al cărei vârf arată
@@ -93,17 +93,11 @@ Sunt sărite doar butoanele care nu au loc deloc pe ecranul tău (de exemplu lis
 Îl pornești din meniul «?» (**Tururi ghidate** sau butonul **«Tur ghidat»** al unui rezultat), din pagina lui de ajutor
 («▶ Tur ghidat: ...») sau din pagina de start a ajutorului, unde sunt toate.
 
-**Turul ferestrei principale nu pornește singur** (la început). Dacă bifezi în **Setări › Aplicație**
-«Arată turul ferestrei principale la pornirea K-BOT», pornește la fiecare pornire a K-BOT, până când:
-
-- îl vezi **până la capăt** (apeși «Gata» la ultimul pas), sau
-- bifezi pe bula lui **«Nu mai arăta turul inițial»** și îl închizi.
-
-Dacă doar îl închizi, fără bifă, pornește din nou data viitoare. Din meniul «?» îl poți porni
-oricând — [Setări și aspect](topic:contabil.setari).
+**Turul ferestrei principale nu pornește singur.** Îl pornești tu, din meniul «?». La pornirea K-BOT vine, în locul lui, un
+tutorial scurt — [Tutorialul de început](topic:contabil.ajutor).
 
 ## Tutorialele
-<!-- slice: 000T -->
+<!-- slice: 000T, 000T-13, 0000-107 -->
 
 Un **tutorial** te duce pas cu pas printr-o treabă de la un capăt la altul — de exemplu «Adaugă o
 revizie pe baza unei rezervări existente», de la alegerea angajamentului până la «Salvează
@@ -127,10 +121,10 @@ ce urmează și, când ai făcut, trece singur la pasul următor.
   peste toți pașii opționali care urmează, până la primul pas obligatoriu. Dacă nu mai urmează niciunul,
   tutorialul se încheie și bula se închide, fără întrebare.
 - Butonul **«Înapoi»** din bulă te întoarce la pasul dinainte, ca să-l revezi; ce ai făcut între
-  timp nu se desface. Pasul revăzut nu se termină singur: apeși **«Înainte»** sau îl faci din nou.
+  timp nu se desface. Pasul revăzut nu se termină singur: apeși **«Înainte»** (săgeata verde cu bară, jos în dreapta, ⇥) sau îl faci din nou.
   Nu te poți întoarce într-o fereastră pe care ai lăsat-o în urmă (de exemplu din document la
   lista de sub el).
-- Unii pași cer doar să apeși **«Înainte»** după ce ai terminat, de exemplu când completezi un text
+- Unii pași cer doar să apeși **«Înainte»** (săgeata verde cu bară, jos în dreapta, ⇥) după ce ai terminat, de exemplu când completezi un text
   lung.
 - Dacă faci **altceva decât pasul cerut** — apeși în zona întunecată sau scrii în altă parte —
   K-BOT întreabă **«Vrei să ieși din tutorial?»**. **Da** oprește tutorialul; **Nu** îl lasă pe același
@@ -149,22 +143,29 @@ Un tutorial pornește dintr-o anumită fereastră (de obicei cea principală). D
 K-BOT îți spune să o deschizi întâi.
 
 ## Tutorialul de început
-<!-- slice: 000T-07, 0000-51 -->
+<!-- slice: 000T-07, 0000-51, 000T-13, 0000-107 -->
 
-La pornirea K-BOT, **după turul ferestrei principale** (cât acela mai e de văzut), pornește singur
-un tutorial foarte scurt, **«Ce sunt tutorialele»**: un mesaj despre tutoriale, apoi chenarul pe
-butonul **«?»** al ferestrei — apeși tu pe el — și, în meniul care se deschide, chenarul pe lista
-**Tutoriale**.
+La pornirea K-BOT pornește singur un tutorial scurt, **«Primii pași în K-BOT»**. Te duce prin fereastra principală, în
+ordinea asta, și **așteaptă să faci tu fiecare pas** (K-BOT nu apasă nimic în locul tău):
 
-**Acest tutorial nu se poate închide la jumătate: trebuie parcurs până la capăt.** Butonul de
-ieșire din bulă e dezactivat, iar dacă apeși în afara lui sau închizi meniul «?» înainte de pasul lui, K-BOT îți
-spune că trebuie să ajungi la final și te duce înapoi la pasul în care puteai deschide meniul.
+1. fila **Configurări** a panglicii de sus;
+2. fila **E-Factura**;
+3. butonul **Token ANAF** — se deschide fereastra tokenului;
+4. **Reînnoiește tokenul** — pas opțional, doar dacă tokenul a expirat sau expiră curând;
+5. **Închide**, ca să te întorci în fereastra principală;
+6. fila **Extrase**, apoi fila **Angajamente**;
+7. butonul **Lista angajamentelor**;
+8. alegi un angajament din arbore;
+9. butoanele din dreapta sus ale panglicii (se schimbă după pagina deschisă);
+10. **Închide**, ca să părăsești lista angajamentelor;
+11. butonul cardului **«Ce este nou»** de pe pagina «Acasă», care îl strânge sau îl deschide.
 
-Pornește singur la fiecare pornire, până când îl vezi **până la capăt** (apeși «Gata» la ultimul
-pas). Îl poți relua oricând din meniul **«?»**, la **Tutoriale**. Ca să nu mai pornească singur
-(sau să pornească iar), debifezi sau bifezi în **Setări › Aplicație** «Arată tutorialul de început
-la pornirea K-BOT»; tutorialul
-**«Pornește sau oprește tutorialul de început»** te duce acolo pas cu pas — [Setări și aspect](topic:contabil.setari).
+Îl poți opri oricând cu **«Mă opresc»**; pe bula lui e și caseta **«Nu mai arăta tutorialul de început»**.
+
+Pornește singur la fiecare pornire, până când îl vezi **până la capăt** (apeși «Gata» la ultimul pas) sau bifezi caseta
+de pe bulă. Dacă doar îl închizi, fără bifă, pornește din nou data viitoare. Îl poți relua oricând din meniul **«?»**,
+la **Tutoriale**. Ca să nu mai pornească singur (sau să pornească iar), debifezi sau bifezi în **Configurare K-BOT ›
+Aplicație › Generale** «Arată tutorialul de început la pornirea K-BOT» — [Setări și aspect](topic:contabil.setari).
 
 ## Fereastra de ajutor
 <!-- slice: 0000-01, 0000-20, 0000-23, 0000-32 -->

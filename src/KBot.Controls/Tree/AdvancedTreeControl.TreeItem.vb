@@ -29,6 +29,9 @@
         Friend ResolvedCols As List(Of ColumnDef) = Nothing   ' banda proprie a randului (cache), rezolvata din ColHeaderText
         Public HasCheckBox As Boolean = False
 
+        ''' <summary>Slice KE13: the box is drawn grey and a press on it changes nothing (the host sets the state with SetItemCheckState); the row itself still selects.</summary>
+        Public CheckLocked As Boolean = False
+
         ' Dacă True, iconița din dreapta e vizibilă DOAR la hover pe acest nod,
         ' indiferent de setarea globală ShowRightIconOnHover de pe control.
         Public ShowRightIconOnHover As Boolean = False

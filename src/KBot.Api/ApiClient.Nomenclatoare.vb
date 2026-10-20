@@ -135,7 +135,8 @@ Partial Public Class ApiClient
 
     Private NotInheritable Class PartnerCodeWire
         Public Property id As Integer?
-        Public Property id_clsf As Integer
+        Public Property id_leg As Integer?
+        Public Property id_clsf As Integer?
         Public Property clsf As String
         Public Property denumire_clsf As String
         Public Property cont_bancar As String
@@ -184,6 +185,7 @@ Partial Public Class ApiClient
         Public Property partner As PartnerWire
         Public Property coduri As List(Of PartnerCodeWire)
         Public Property coduri_sterse As List(Of Integer)
+        Public Property legaturi_sterse As List(Of Integer)
     End Class
 
     Private NotInheritable Class PartnerSaveResponse
@@ -427,7 +429,7 @@ Partial Public Class ApiClient
                     .Tip = If(w.tip, String.Empty), .Ascuns = w.ascuns, .Activ = w.activ}
                 For Each c As PartnerCodeWire In If(w.coduri, New List(Of PartnerCodeWire)())
                     p.Coduri.Add(New PartenerCod() With {
-                        .Id = c.id, .IdClsf = c.id_clsf, .Clsf = If(c.clsf, String.Empty),
+                        .Id = c.id, .IdLeg = c.id_leg, .IdClsf = c.id_clsf, .Clsf = If(c.clsf, String.Empty),
                         .DenumireClsf = If(c.denumire_clsf, String.Empty),
                         .ContBancar = If(c.cont_bancar, String.Empty), .CodAng = If(c.cod_ang, String.Empty),
                         .CodInd = If(c.cod_ind, String.Empty)})
@@ -465,9 +467,10 @@ Partial Public Class ApiClient
                     .cont_iban = p.ContIban, .banca = p.Banca, .adresa = p.Adresa, .tip = p.Tip,
                     .ascuns = p.Ascuns},
                 .coduri = request.Coduri.Select(Function(c) New PartnerCodeWire() With {
-                    .id = c.Id, .id_clsf = c.IdClsf, .cont_bancar = c.ContBancar,
+                    .id = c.Id, .id_leg = c.IdLeg, .cont_bancar = c.ContBancar,
                     .cod_ang = c.CodAng, .cod_ind = c.CodInd}).ToList(),
-                .coduri_sterse = request.CoduriSterse.ToList()
+                .coduri_sterse = request.CoduriSterse.ToList(),
+                .legaturi_sterse = request.LegaturiSterse.ToList()
             }
             Dim respText As String = Await SendNomenclatoareAsync(HttpMethod.Post, $"{NomenclatoareRoot}/parteneri",
                                                                   wire, "salvarea partenerului", ct).ConfigureAwait(False)

@@ -78,12 +78,12 @@ why: Descrierea scurtă ajută la recunoașterea documentului în listă, dar do
 Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.<BR> <mark>Pentru Revizia 0, descrierea reprezintă numele angajamentului din CAB. Pentru restul reviziilor, acesta este completat implicit cu ”mărire” sau ”creștere” in funcție de valoarea rezervării.</mark>
 
 ## Element fundamentare
-<!-- slice: 000T -->
+<!-- slice: 000T, 000T-13 -->
 target: DdfEditSectiuneaAPage.grd
 when: editable
 optional: yes
 why: Celula se completează de mână doar la un document care nu vine din rezervări; la unul făcut din rezervări rândurile sunt gata și acest pas nu apare.
-Completează celula «Element fundamentare» de pe primul rând, apoi apasă «Înainte».<BR>
+Completează celula «Element fundamentare» de pe primul rând, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).<BR>
 <mark>Pentru ușurarea muncii contabilului, această celulă este completată în mod implicit cu denumirea clasificației folosite. Dacă se dorește modificarea ei, se poate suprascrie.</mark>
 
 ## Fila «Descriere»
@@ -96,11 +96,11 @@ why: Descrierea lungă nu e obligatorie.
 Dacă dorești și modificarea câmpului «Descriere Lungă», deschide fila «Descriere».
 
 ## Descriere lungă
-<!-- slice: 000T -->
+<!-- slice: 000T, 000T-13 -->
 target: DdfEditDescrierePage.edtLunga
 optional: yes
 why: Descrierea lungă nu e obligatorie.
-Scrie descrierea lungă a documentului, apoi apasă «Înainte».<BR>
+Scrie descrierea lungă a documentului, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).<BR>
 <mark>În caseta «Descriere Lungă» se poate scrie text formatat sau se poate lipi un text scris într-un editor de texte (precum Microsoft Word). Acesta își va păstra formatarea.</mark>
 
 ## Fila «Fișiere»

@@ -301,9 +301,9 @@ Partial Public Class KbotForm
     ''' FOREXE): the same dry-run / confirm / write flow as the footer menu's «Reanalizează rezervările».
     ''' UI boundary (Async Sub handed to the view): every failure is logged and shown, never thrown.
     ''' </summary>
-    Private Async Sub ReparaRezervari(cod As String)
+    Private Async Sub ReparaRezervari(cod As String, greseli As IReadOnlyList(Of RezervareGresita))
         Try
-            Await ReanalizeazaRezervariAsync(cod).ConfigureAwait(True)
+            Await ReanalizeazaRezervariAsync(cod, greseli).ConfigureAwait(True)
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ReparaRezervari", ex)
             KBotMessage.Show(Me, ex.Message, "Reanalizarea rezervărilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -320,7 +320,7 @@ Partial Public Class KbotForm
     ''' Val_Rezervare_Ant/Dif and R_Anterioara/R_Valoare. Dry run first, so the operator sees the
     ''' real numbers before anything is written; the tree reloads with the selection kept.
     ''' </summary>
-    Private Async Function ReanalizeazaRezervariAsync(cod As String) As Task
+    Private Async Function ReanalizeazaRezervariAsync(cod As String, greseli As IReadOnlyList(Of RezervareGresita)) As Task
         If String.IsNullOrWhiteSpace(cod) Then Return
         Const titlu As String = "Reanalizarea rezervărilor"
 
@@ -343,19 +343,13 @@ Partial Public Class KbotForm
             Return
         End If
 
-        Dim exemple As New System.Text.StringBuilder()
-        For Each d As RezervareCorectata In proba.Details.Take(8)
-            exemple.AppendLine($"  • {d.Data}, {d.Indicator}: {d.OldValue:N2} → {d.NewValue:N2} (anterioară {d.OldPrevious:N2} → {d.NewPrevious:N2})")
-        Next
-        Dim intrebare As String =
-            $"«{cod}»: din {proba.HistoryRows} rânduri de istoric, {proba.HistoryToCorrect} au ordinea, tipul sau " &
-            $"diferența greșite, iar {proba.ReservationsToCorrect} rezervări își schimbă valoarea." & vbCrLf & vbCrLf &
-            exemple.ToString() & Semnalari(proba) & vbCrLf & vbCrLf &
-            "Nu se descarcă nimic din FOREXE. Continuați?"
-        If KBotMessage.Show(Me, intrebare, titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                            MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
-            Return
-        End If
+        ' Slice 0114-25: a modal window shows what was detected and what the repair will write (it replaced a message
+        ' box with eight examples); «Repară» = go on, «Renunță» = nothing is written.
+        Dim raspuns As DialogResult
+        Using dlg As New RezervariReparaForm(cod, greseli, proba)
+            raspuns = dlg.ShowDialog(Me)
+        End Using
+        If raspuns <> DialogResult.OK Then Return
 
         Dim rezultat As RezervariReanalizaResult
         busyBar.Running = True

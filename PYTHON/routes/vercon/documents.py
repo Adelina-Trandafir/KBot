@@ -178,6 +178,9 @@ def get_document(cursor, repo, ctx, family, doc_id):
                           'data_intrarii': _iso(r['DataIntrare']), 'DNF': r['DNF'], 'DF': r['DF'], 'ValoareLuna': _money(r['ValoareLuna'], scale)} for r in lines]
             from .receipt_mf_edit import annotate
             annotate(cursor, ctx, out_lines)
+            from .receipt_adjustment import annotate as annotate_adjustment
+            stock_day = h['DataFc'] or h['Data']
+            annotate_adjustment(cursor, ctx, out_lines, stock_day.date() if hasattr(stock_day, 'date') else stock_day)
         else:
             lines = _all(cursor, 'SELECT s.ID, s.IdProdus, pr.DenumireP, pr.UM, s.Cant, s.PUTVA FROM VC_IntrariStorno s ' + _name_join('s') +
                                  ' WHERE s.SubunitId=%s AND s.GestiuneId=%s AND s.ExercitiuId=%s AND s.IdIntrare=%s ORDER BY s.ID', (s, g, e, doc_id))
@@ -355,7 +358,9 @@ def _guard_dependents(cursor, ctx, family, doc_id, action):
     if family == 'nir':
         if _one(cursor, 'SELECT 1 FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdStorno=%s AND Anulat=0 LIMIT 1', (s, g, e, doc_id)):
             raise NomError('HAS_STORNO', 'Recepția are storno: anulați mai întâi storno-ul, apoi puteți modifica sau anula recepția.', 409)
-        if _one(cursor, 'SELECT 1 FROM VC_Intrari i JOIN VC_ProduseP p ON p.SubunitId=i.SubunitId AND p.GestiuneId=i.GestiuneId AND p.IdProdus=i.IdProdus '
+        # Edits protect issued MF rows in _clean_nir and retain stock for all exits
+        # through simulate/check_timeline. Registry use alone cannot block a free unit.
+        if action != 'edit' and _one(cursor, 'SELECT 1 FROM VC_Intrari i JOIN VC_ProduseP p ON p.SubunitId=i.SubunitId AND p.GestiuneId=i.GestiuneId AND p.IdProdus=i.IdProdus '
                         'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s AND (EXISTS (SELECT 1 FROM VC_OI_Predare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
                         'OR EXISTS (SELECT 1 FROM VC_OI_Transfer x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
                         'OR EXISTS (SELECT 1 FROM VC_OI_Casare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0)) LIMIT 1', (s, g, e, doc_id)):

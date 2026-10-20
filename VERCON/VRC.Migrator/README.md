@@ -1,5 +1,50 @@
 # VRC.Migrator — utilizare
 
+## IntrariStorno fără NIR storno părinte — 19.10.2026
+
+Versiune curentă în surse: **0.3.10.0**, reguli
+`VC05-STORNO-PARENTS-2026-10-19`. Decizie explicită a utilizatorului:
+se identifică NIR-urile cu bifa `Storno` din aceeași sursă/gestiune, apoi
+se importă numai liniile `IntrariStorno` cu `IdIntrare` în acel set.
+Dacă nu există niciun NIR bifat Storno, toate liniile IntrariStorno se ignoră.
+Un NIR existent fără bifa Storno nu este un părinte valid pentru aceste linii.
+
+Liniile fără părinte eligibil sunt omise **înainte** de conversia IdProdus
+și a celorlalte câmpuri: nu blochează importul, chiar dacă produsul lipsește.
+Nu sunt importate cu IdIntrare NULL. Raportul N15 le listează cu ID-ul,
+IdIntrare și IdProdus originale; reconcilierea le numără la rânduri ignorate
+și nu le include în sumele transferate. Storno-urile cu părinte eligibil
+păstrează toate validările, inclusiv existența produsului. Variantele folosite
+numai de aceste storno-uri valide sunt incluse în produsele migrate.
+
+Regula înlocuiește pentru importurile noi politica veche N12 de păstrare a
+liniilor storno fără NIR cu legătura NULL. Nu elimină date din importuri deja
+făcute și nu schimbă asocierea manuală din web pentru orfani deja existenți.
+Access rămâne nemodificat. Implementat în surse, fără teste/build/import;
+necesită recompilarea migratorului, fără modificarea schemei.
+
+## Proveniență OI/MF după refacerea unui bon — 19.10.2026
+
+Versiune în surse: **0.3.9.0**, reguli `VC05-OI-ORIGIN-RECOVERY-2026-10-19`.
+Un IDBO nenul care nu mai există nici în predări, nici în transferuri poate
+fi recuperat dintr-o singură primire BP/BT existentă în aceeași sursă.
+Se cer același produs, preț, deținător și cont, dată document cel mult egală
+cu data mișcării și cantitate rămasă suficientă după celelalte ieșiri,
+inclusiv cele ulterioare. Pentru transfer se folosesc predătorul din bon
+și ambele laturi, cu cantități egale; asocierea se aplică pe ambele rânduri.
+DataSalvare nu limitează căutarea: o predare refăcută ulterior poate avea
+aceeași dată document ca predarea dispărută.
+
+Corecția se face într-un snapshot în memorie, comun conversiei IDBO și
+rezolvării contului moștenit; Access rămâne nemodificat. Raportul listează
+fiecare IDOI și legătura veche/nouă ca N14/CONVERSIE. Dacă nu există o
+singură primire compatibilă, X17 blochează importul cu motivul concret.
+Nu se inventează bonuri și nu se înlocuiesc referințe care există deja.
+
+Detalii și exemplu: [contractul OI/MF](../REGISTRU_OI_MF.md).
+Implementat în surse, fără teste/build/import pentru această corecție.
+Necesită recompilarea migratorului, fără schimbarea schemei.
+
 ## Revizie OI/MF și ToolVersion — 18.10.2026
 
 Versiune în surse: **0.3.7.0**. [Contractul registrului OI/MF](../REGISTRU_OI_MF.md)

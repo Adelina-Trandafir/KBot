@@ -72,22 +72,7 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   a part not on screen is skipped -- unless it is only HIDDEN by state, data or a setting: then (slice
   0000-30) it is shown for the step, with a note, and its text says how to get it for real
   (`IKBotHelpReveal`, `HelpContent/README.md`). Names and rules: `HelpContent/README.md`, «Guided tours».
-- **The initial tour** (slice 0097-02): the main window's tour (`HelpService.InitialTourId` =
-  `tur-fereastra`) also starts by itself, once `KbotForm` has loaded its data
-  (`HelpService.StartInitialTour`), at every start while `AppSettings.ShowInitialTour` is on. Its
-  bubble carries the box «Nu mai arăta turul inițial». The setting goes off
-  (`HelpService.InitialTourSeen`) when that tour ends past its last step -- however it was started
-  -- or is closed with the box ticked; Setări › Aplicație «Arată turul ferestrei principale la
-  pornirea K-BOT» turns it back on. A director never gets it (the tour's part is not visible).
-  Renaming or removing `tur-fereastra` means changing `InitialTourId` too. **Since slice 0113 (13.10.2026) it does
-  not start**: the list of angajamente is hidden behind the opening page and the tour's MENIU step has no button;
-  fixing it is an open thread of 0113.
-- **The initial tutorial** (slice 000T-07): the short tutorial `tutoriale-intro` (a message, the «?» button, the «Tutoriale» list of
-  the popup) starts by itself after the initial tour is over or not owed (`HelpService.StartInitialTutorial`, called from the
-  end of `StartInitialTour`), while `AppSettings.ShowInitialTutorial` is on. It is a **mandatory** tutorial (`mandatory: yes`, slice 000T-08: it cannot be closed before its last step; a press
-  outside it says so); the setting goes off (`HelpService.InitialTutorialSeen`) when it ends past its last step; Setări › Aplicație ›
-  Generale turns it back on. The popup's «Tutoriale» header row has `Key = tutorials` so the
-  tutorial can ring that block (`KBotHelpList` part `tutorials`). Renaming `tutoriale-intro` means changing `InitialTutorialId` too.
+- **The tutorial of the start** (slice 000T-13): `tutorial-pornire` («Primii pași în K-BOT»: the ribbon tabs, the ANAF token window, the list of angajamente, the right-hand buttons, the «Ce este nou» card) starts by itself when the main window (`AvacontMain`) is open and `KbotForm` has loaded its data (`KbotForm.PornesteTutorialulDePornire` -> `HelpService.StartOpeningTutorial`), while `AppSettings.ShowStartTutorial` is on. Not mandatory; its bubble carries the box «Nu mai arăta tutorialul de început». The setting goes off (`HelpService.OpeningTutorialSeen`) when it ends past its last step or with the box ticked; Setări › Aplicație › Generale turns it back on. It replaced the initial tour (0097-02: the tour `tur-fereastra` stays in the «?» list but never starts by itself) and the tutorial about the tutorials (000T-07). The main window answers the ribbon anchors / signals (`AvacontMain.Tutorial.vb`, `KBotRibbon.TabScreenBounds` / `RightEndScreenBounds` / `TabClicked`), and the tutorial veil now covers the whole main window, not only the hosted page (`TutorialRunner.RootWindow`). Renaming `tutorial-pornire` means changing `HelpService.OpeningTutorialId` too.
 - **Capture blur** (slice 0000-23, operator tool, NOT described in the help): the capture tool
   blurs, on the frozen screen and before the operator chooses, the TEXT (never a whole bar or
   menu) of the login's user and unit, the other units' names, anything «RO» + digits, 13 digits in

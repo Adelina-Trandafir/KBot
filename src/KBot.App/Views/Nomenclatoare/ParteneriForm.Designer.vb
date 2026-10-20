@@ -24,6 +24,7 @@ Partial Class ParteneriForm
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         chkFaraActivitate = New CheckBox()
         txtCod = New KBotTextField()
@@ -122,12 +123,12 @@ Partial Class ParteneriForm
         gridCoduri.BackColor = SystemColors.Window
         gridCoduri.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
-        KBotDataColumn1.ColumnType = KBotColumnType.Combo
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clasificatie"
         KBotDataColumn1.OptionGroup = Nothing
+        KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.Width = 170
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
@@ -168,12 +169,21 @@ Partial Class ParteneriForm
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.ReadOnly = True
         KBotDataColumn6.Visible = KBotColumnVisibility.Hidden
+        KBotDataColumn7.AggregateFormatString = Nothing
+        KBotDataColumn7.FormatString = Nothing
+        KBotDataColumn7.HeaderText = "Id legătură"
+        KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn7.Key = "id_leg"
+        KBotDataColumn7.OptionGroup = Nothing
+        KBotDataColumn7.ReadOnly = True
+        KBotDataColumn7.Visible = KBotColumnVisibility.Hidden
         gridCoduri.Columns.Add(KBotDataColumn1)
         gridCoduri.Columns.Add(KBotDataColumn2)
         gridCoduri.Columns.Add(KBotDataColumn3)
         gridCoduri.Columns.Add(KBotDataColumn4)
         gridCoduri.Columns.Add(KBotDataColumn5)
         gridCoduri.Columns.Add(KBotDataColumn6)
+        gridCoduri.Columns.Add(KBotDataColumn7)
         tlyDetalii.SetColumnSpan(gridCoduri, 2)
         gridCoduri.Dock = DockStyle.Fill
         gridCoduri.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
@@ -192,7 +202,7 @@ Partial Class ParteneriForm
         gridCoduri.Size = New Size(819, 314)
         gridCoduri.TabIndex = 16
         tips.SetToolTipHeader(gridCoduri, "Coduri angajament")
-        tips.SetToolTipText(gridCoduri, "O clasificație o singură dată pe partener." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvare».")
+        tips.SetToolTipText(gridCoduri, "Codurile aparțin codului fiscal al furnizorului." & vbLf & "«Cod ang.» și «Cod ind.» alcătuiesc indicatorul; clasificația se arată din FOREXE, doar pentru citire." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvare».")
         ' 
         ' btnSterge
         ' 

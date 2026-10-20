@@ -22,6 +22,12 @@ def annotate(cursor, ctx, lines):
             'AND o.IdProdus IN (' + ','.join(['%s'] * len(variants)) + ')',
             (ctx['subunit'], ctx['gestiune'], *variants))
         issued = {row['IdProdus'] for row in cursor.fetchall()}
+        for table in ('VC_OI_Predare', 'VC_OI_Transfer', 'VC_OI_Casare'):
+            cursor.execute(
+                'SELECT DISTINCT IdProdus FROM ' + table +
+                ' WHERE SubunitId=%s AND GestiuneId=%s AND Anulat=0 AND IdProdus IN (' +
+                ','.join(['%s'] * len(variants)) + ')', (ctx['subunit'], ctx['gestiune'], *variants))
+            issued.update(row['IdProdus'] for row in cursor.fetchall())
     for line in lines:
         line['has_warehouse_exit'] = line.get('variant') in issued
 

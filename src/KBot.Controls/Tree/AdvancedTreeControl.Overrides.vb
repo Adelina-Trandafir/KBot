@@ -314,7 +314,7 @@ Partial Public Class AdvancedTreeControl
         ' =================================================================
         If NodeHasCheckControl(it) Then
             Dim chkRect = GetCheckBoxRect(it)
-            If chkRect.Contains(e.Location) Then
+            If chkRect.Contains(e.Location) AndAlso Not it.CheckLocked Then
 
                 If _radioButtonLevel >= 0 AndAlso it.Level = _radioButtonLevel Then
                     ' --- RADIO: deselectăm frații, ștergem checkboxurile copiilor nodeOff ---

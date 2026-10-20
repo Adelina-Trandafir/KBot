@@ -22,9 +22,9 @@ wait: opens:ActualizareMultiplaForm
 Alege <b>«Actualizează angajamente VRAC»</b>. Se deschide fereastra cu lista angajamentelor.
 
 ## Lista angajamentelor
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ActualizareMultiplaForm.grilaAngajamente
-Lista are <b>aceeași ordine ca arborele</b>. Pe fiecare rând vezi codul, denumirea, starea și data ultimei actualizări. Apasă «Înainte».
+Lista are <b>aceeași ordine ca arborele</b>. Pe fiecare rând vezi codul, denumirea, starea și data ultimei actualizări. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifează cele vechi
 <!-- slice: 000T-10 -->
@@ -35,9 +35,9 @@ why: Poți bifa angajamentele și de mână, fără acest buton.
 Butonul <b>«Bifează cele neactualizate de ... zile»</b> bifează dintr-un clic angajamentele descărcate deja, dar neactualizate de cel puțin numărul de zile din Setări › Aplicație.
 
 ## Bifează angajamentele
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ActualizareMultiplaForm.grilaAngajamente
-Bifează în prima coloană <b>angajamentele pe care vrei să le aduci la zi</b>. Sub listă vezi câte ai bifat. Apoi apasă «Înainte».
+Bifează în prima coloană <b>angajamentele pe care vrei să le aduci la zi</b>. Sub listă vezi câte ai bifat. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Actualizează
 <!-- slice: 000T-10 -->

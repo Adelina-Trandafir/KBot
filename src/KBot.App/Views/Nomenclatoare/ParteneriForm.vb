@@ -31,27 +31,15 @@ Public Class ParteneriForm
     Private Const ColCodInd As String = "cod_ind"
     Private Const ColDelete As String = "sterge"
     Private Const ColId As String = "id"
+    Private Const ColIdLeg As String = "id_leg"
     Private Const DeleteCaption As String = "✕"
-
-    ''' <summary>One classification offered in the «Clasificatie» combo of the codes grid.</summary>
-    Private NotInheritable Class ClsfChoice
-        Public Property IdClsf As Integer
-        Public Property Clsf As String = String.Empty
-        Public Property Ss As String = String.Empty
-        Public Property Denumire As String = String.Empty
-        Public Property IdUnitate As Integer?
-
-        Public Overrides Function ToString() As String
-            Return If(String.IsNullOrEmpty(Ss), Clsf, $"{Clsf} ({Ss})")
-        End Function
-    End Class
 
     Private ReadOnly _api As INomenclatoareApi
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _ss As String
     Private ReadOnly _deletedCodes As New List(Of Integer)()
+    Private ReadOnly _deletedLegs As New List(Of Integer)()
     Private _catalog As ParteneriCatalog
-    Private _choices As New List(Of ClsfChoice)()
     Private _current As Partener
     Private _currentNode As AdvancedTreeControl.TreeItem
     Private _dirty As Boolean
@@ -102,8 +90,6 @@ Public Class ParteneriForm
                 Function() _api.GetParteneriAsync(CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return
             _catalog = catalog
-            _choices = catalog.Clasificatii.Select(Function(c) New ClsfChoice() With {
-                .IdClsf = c.IdClsf, .Clsf = c.Clsf, .Ss = c.Ss, .Denumire = c.Denumire, .IdUnitate = c.IdUnitate}).ToList()
             BuildTree(selectId)
             Dim selected As Partener = If(selectId.HasValue,
                 catalog.Partners.FirstOrDefault(Function(p) Nullable.Equals(p.IdPartener, selectId)), Nothing)
@@ -207,6 +193,7 @@ Public Class ParteneriForm
         Try
             _current = p
             _deletedCodes.Clear()
+            _deletedLegs.Clear()
             txtCod.Text = If(p?.CodPartener, String.Empty)
             txtCodFiscal.Text = If(p?.CodFiscal, String.Empty)
             _cfChecked = NormalizeCf(p?.CodFiscal)
@@ -219,8 +206,7 @@ Public Class ParteneriForm
             chkAscuns.Checked = p IsNot Nothing AndAlso p.Ascuns
             FillCodes(p)
             tlyDetalii.Enabled = p IsNot Nothing
-            lblCoduri.Text = If(p Is Nothing, "Coduri angajament",
-                                If(p.IdPartener.HasValue, $"Coduri angajament — {p.Denumire}", "Coduri angajament — partener nou"))
+            UpdateCodesState()
         Finally
             _loading = False
         End Try
@@ -228,7 +214,6 @@ Public Class ParteneriForm
     End Sub
 
     Private Sub FillCodes(p As Partener)
-        gridCoduri.Column(ColClsf).ComboItems = ChoicesFor(p).Cast(Of Object)().ToList()
         gridCoduri.BeginUpdate()
         Try
             gridCoduri.ClearRows()
@@ -236,8 +221,8 @@ Public Class ParteneriForm
             For Each c As PartenerCod In p.Coduri
                 Dim row As KBotDataRow = gridCoduri.AddRow()
                 row(ColId) = If(c.Id.HasValue, CObj(c.Id.Value), Nothing)
-                row(ColClsf) = If(CObj(_choices.FirstOrDefault(Function(x) x.IdClsf = c.IdClsf)),
-                                  New ClsfChoice() With {.IdClsf = c.IdClsf, .Clsf = c.Clsf, .Denumire = c.DenumireClsf})
+                row(ColIdLeg) = If(c.IdLeg.HasValue, CObj(c.IdLeg.Value), Nothing)
+                row(ColClsf) = c.Clsf
                 row(ColCont) = c.ContBancar
                 row(ColCodAng) = c.CodAng
                 row(ColCodInd) = c.CodInd
@@ -249,23 +234,37 @@ Public Class ParteneriForm
         gridCoduri.ClearDirty()
     End Sub
 
-    ' The classifications of the partner's own unit; all of them when the unit has none.
-    Private Function ChoicesFor(p As Partener) As List(Of ClsfChoice)
-        If p Is Nothing Then Return _choices
-        Dim own As List(Of ClsfChoice)
-        If p.IdPartener.HasValue Then
-            own = _choices.Where(Function(c) c.IdUnitate.HasValue AndAlso c.IdUnitate.Value = p.IdUnitate).ToList()
-        Else
-            own = _choices.Where(Function(c) String.Equals(c.Ss, p.Ss, StringComparison.Ordinal)).ToList()
-        End If
-        Return If(own.Count > 0, own, _choices)
+    ' Slice 0121-03: the codes belong to the supplier's fiscal code. They can be edited only while a fiscal code is typed
+    ' and, for a saved partner, is still the saved one (a changed code is saved first; the codes of the new code are then read).
+    Private Function CodesAllowed() As Boolean
+        If _current Is Nothing Then Return False
+        Dim k_cf As String = NormalizeCf(txtCodFiscal.Text)
+        If k_cf.Length = 0 Then Return False
+        Return Not _current.IdPartener.HasValue OrElse
+               String.Equals(k_cf, NormalizeCf(_current.CodFiscal), StringComparison.Ordinal)
     End Function
+
+    Private Sub UpdateCodesState()
+        gridCoduri.Enabled = CodesAllowed()
+        If _current Is Nothing Then
+            lblCoduri.Text = "Coduri angajament"
+        ElseIf NormalizeCf(txtCodFiscal.Text).Length = 0 Then
+            lblCoduri.Text = "Coduri angajament — introduceți întâi codul fiscal"
+        ElseIf Not CodesAllowed() Then
+            lblCoduri.Text = "Coduri angajament — salvați întâi noul cod fiscal"
+        ElseIf _current.IdPartener.HasValue Then
+            lblCoduri.Text = $"Coduri angajament — {_current.Denumire}"
+        Else
+            lblCoduri.Text = "Coduri angajament — partener nou"
+        End If
+    End Sub
 
     Private Sub Field_TextChanged(sender As Object, e As EventArgs) _
         Handles txtCod.TextChanged, txtCodFiscal.TextChanged, txtDenumire.TextChanged,
                 txtIban.TextChanged, txtBanca.TextChanged, txtAdresa.TextChanged, chkAscuns.CheckedChanged
         Try
             If Not _loading AndAlso _current IsNot Nothing Then SetDirty(True)
+            If Not _loading Then UpdateCodesState()
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.Field_TextChanged", ex)
         End Try
@@ -383,21 +382,7 @@ Public Class ParteneriForm
 
     Private Sub GridCoduri_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) Handles gridCoduri.CellValidating
         Try
-            If e.ColumnKey = ColClsf Then
-                If TypeOf e.ProposedValue Is ClsfChoice Then Return
-                Dim text As String = Convert.ToString(e.ProposedValue, CultureInfo.CurrentCulture).Trim()
-                Dim match As ClsfChoice = ChoicesFor(_current).FirstOrDefault(
-                    Function(c) String.Equals(c.ToString(), text, StringComparison.OrdinalIgnoreCase) OrElse
-                                String.Equals(c.Clsf, text, StringComparison.OrdinalIgnoreCase))
-                If match Is Nothing Then
-                    e.Cancel = True
-                    SetStatus($"«{text}» nu este o clasificație a unității; alegeți din listă.")
-                    Return
-                End If
-                e.ProposedValue = match
-            Else
-                e.ProposedValue = Convert.ToString(e.ProposedValue, CultureInfo.CurrentCulture).Trim()
-            End If
+            e.ProposedValue = Convert.ToString(e.ProposedValue, CultureInfo.CurrentCulture).Trim()
             SetStatus(String.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.GridCoduri_CellValidating", ex)
@@ -414,7 +399,7 @@ Public Class ParteneriForm
 
     Private Sub GridCoduri_FooterRightIconClicked(sender As Object, e As EventArgs) Handles gridCoduri.FooterRightIconClicked
         Try
-            If _current Is Nothing OrElse _busy Then Return
+            If _current Is Nothing OrElse _busy OrElse Not CodesAllowed() Then Return
             If Not gridCoduri.CommitPendingEdit() Then Return
             Dim row As KBotDataRow = gridCoduri.AddRow()
             row(ColDelete) = DeleteCaption
@@ -422,7 +407,7 @@ Public Class ParteneriForm
             SetDirty(True)
             Dim index As Integer = gridCoduri.RowCount - 1
             gridCoduri.EnsureVisible(index)
-            gridCoduri.EditCell(ColClsf, index)
+            gridCoduri.EditCell(ColCodAng, index)
         Catch ex As Exception
             GlobalErrorLog.Write("ParteneriForm.GridCoduri_FooterRightIconClicked", ex)
         End Try
@@ -433,7 +418,12 @@ Public Class ParteneriForm
             If e.ColumnKey <> ColDelete OrElse _busy Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= gridCoduri.RowCount Then Return
             Dim id As Object = gridCoduri(ColId, e.RowIndex)
-            If id IsNot Nothing Then _deletedCodes.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
+            Dim k_idLeg As Object = gridCoduri(ColIdLeg, e.RowIndex)
+            If id IsNot Nothing Then
+                _deletedCodes.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
+            ElseIf k_idLeg IsNot Nothing Then
+                _deletedLegs.Add(Convert.ToInt32(k_idLeg, CultureInfo.InvariantCulture))
+            End If
             gridCoduri.RemoveRowAt(e.RowIndex)
             SetDirty(True)
         Catch ex As Exception
@@ -489,7 +479,7 @@ Public Class ParteneriForm
                                  "Ștergere partener", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
-            If KBotMessage.Show(Me, $"Ștergeți partenerul «{_current.Denumire}» și codurile lui de angajament?",
+            If KBotMessage.Show(Me, $"Ștergeți partenerul «{_current.Denumire}»?" & vbLf & "Codurile de angajament legate de codul lui fiscal rămân.",
                                 "Ștergere partener", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
                                 MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then Return
             Dim id As Integer = _current.IdPartener.Value
@@ -560,7 +550,8 @@ Public Class ParteneriForm
                 .ContIban = txtIban.Text.Trim(), .Banca = txtBanca.Text.Trim(), .Adresa = txtAdresa.Text.Trim(),
                 .Ascuns = chkAscuns.Checked}
             Dim request As New PartenerSaveRequest() With {.Partner = p, .Coduri = codes,
-                                                            .CoduriSterse = New List(Of Integer)(_deletedCodes)}
+                                                            .CoduriSterse = New List(Of Integer)(_deletedCodes),
+                                                            .LegaturiSterse = New List(Of Integer)(_deletedLegs)}
             SetBusy(True, "Se salvează partenerul…")
             Dim id As Integer
             Try
@@ -586,33 +577,35 @@ Public Class ParteneriForm
         End Try
     End Function
 
-    ' The codes as the grid shows them; the first row without a classification (or a classification
-    ' used twice) is reported and opened.
+    ' The codes as the grid shows them; the first row without «Cod ang.» (or a code used twice) is reported and opened.
     Private Function ReadCodes(ByRef problem As String) As List(Of PartenerCod)
-        Dim list As New List(Of PartenerCod)()
-        Dim seen As New HashSet(Of Integer)()
+        Dim k_list As New List(Of PartenerCod)()
+        Dim k_seen As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         For i As Integer = 0 To gridCoduri.RowCount - 1
             Dim row As KBotDataRow = gridCoduri.Rows(i)
-            Dim choice As ClsfChoice = TryCast(row(ColClsf), ClsfChoice)
-            If choice Is Nothing Then
-                problem = $"Codurile de angajament, rândul {i + 1}: alegeți clasificația."
-            ElseIf Not seen.Add(choice.IdClsf) Then
-                problem = $"Codurile de angajament, rândul {i + 1}: clasificația {choice.Clsf} apare de două ori."
+            Dim k_codAng As String = Convert.ToString(row(ColCodAng), CultureInfo.CurrentCulture).Trim()
+            Dim k_codInd As String = Convert.ToString(row(ColCodInd), CultureInfo.CurrentCulture).Trim()
+            If k_codAng.Length = 0 Then
+                problem = $"Codurile de angajament, rândul {i + 1}: completați «Cod ang.»."
+            ElseIf Not k_seen.Add(k_codAng & "|" & k_codInd) Then
+                problem = $"Codurile de angajament, rândul {i + 1}: " &
+                          $"{If(k_codInd.Length = 0, k_codAng, k_codAng & "-" & k_codInd)} apare de două ori."
             End If
             If problem IsNot Nothing Then
                 gridCoduri.EnsureVisible(i)
-                gridCoduri.EditCell(ColClsf, i)
-                Return list
+                gridCoduri.EditCell(ColCodAng, i)
+                Return k_list
             End If
-            Dim idValue As Object = row(ColId)
-            list.Add(New PartenerCod() With {
-                .Id = If(idValue Is Nothing, CType(Nothing, Integer?), Convert.ToInt32(idValue, CultureInfo.InvariantCulture)),
-                .IdClsf = choice.IdClsf,
+            Dim k_id As Object = row(ColId)
+            Dim k_idLeg As Object = row(ColIdLeg)
+            k_list.Add(New PartenerCod() With {
+                .Id = If(k_id Is Nothing, CType(Nothing, Integer?), Convert.ToInt32(k_id, CultureInfo.InvariantCulture)),
+                .IdLeg = If(k_idLeg Is Nothing, CType(Nothing, Integer?), Convert.ToInt32(k_idLeg, CultureInfo.InvariantCulture)),
                 .ContBancar = Convert.ToString(row(ColCont), CultureInfo.CurrentCulture).Trim(),
-                .CodAng = Convert.ToString(row(ColCodAng), CultureInfo.CurrentCulture).Trim(),
-                .CodInd = Convert.ToString(row(ColCodInd), CultureInfo.CurrentCulture).Trim()})
+                .CodAng = k_codAng,
+                .CodInd = k_codInd})
         Next
-        Return list
+        Return k_list
     End Function
 
     Private Sub BtnIesire_Click(sender As Object, e As EventArgs) Handles btnIesire.Click

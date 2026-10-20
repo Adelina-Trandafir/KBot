@@ -35,8 +35,8 @@ export const treeViewCheckableMixin = {
   },
 
   /** Replaces the tree. Checks on codes that no longer exist are dropped. */
-  setData(nodes) {
-    this.updateResults(nodes || [], '');
+  setData(nodes, { preserveExpanded = false } = {}) {
+    this.updateResults(nodes || [], '', { preserveExpanded });
     this.isTreeRendered = false;
     this._buildCheckIndex();
     for (const id of [...this.checkedLeaves]) {

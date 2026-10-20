@@ -139,7 +139,7 @@ Partial Class AccountForm
         ' lblInfo
         '
         tips.SetToolTipHeader(lblInfo, "Ce se întâmplă")
-        tips.SetToolTipText(lblInfo, "Se scrie doar legătura cont–bază în AVACONT_COMUN. Operația intră în jurnalul de activitate.")
+        tips.SetToolTipText(lblInfo, "Se salvează legătura cont–bază și se sincronizează privilegiile MariaDB pentru toate bazele contului. Operația intră în jurnalul de activitate.")
         tlyMain.SetColumnSpan(lblInfo, 2)
         lblInfo.Dock = DockStyle.Fill
         lblInfo.Location = New Point(16, 136)

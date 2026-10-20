@@ -52,6 +52,25 @@ Public NotInheritable Class AppUpdateService
         _accessApi = accessApi
     End Sub
 
+    ''' <summary>
+    ''' Name of the marker file publish-debug.ps1 drops next to KBot.App.exe. Its presence is what
+    ''' tells a Debug build that it was INSTALLED (copied to another PC) and so must look for updates,
+    ''' as opposed to a Debug run from the developer's own bin\Debug, which must never replace itself.
+    ''' </summary>
+    Public Const PUBLISHED_DEBUG_MARKER As String = "debug-update-check.flag"
+
+    ''' <summary>True when the marker file sits next to the running application (see <see cref="PUBLISHED_DEBUG_MARKER"/>).</summary>
+    Public Shared ReadOnly Property IsPublishedDebug As Boolean
+        Get
+            Try
+                Return File.Exists(Path.Combine(AppContext.BaseDirectory, PUBLISHED_DEBUG_MARKER))
+            Catch ex As Exception
+                GlobalErrorLog.Write("AppUpdateService.IsPublishedDebug", ex)
+                Return False
+            End Try
+        End Get
+    End Property
+
     ''' <summary>The running KBot.App FileVersion -- the number the server's <c>version</c> is compared with.</summary>
     Public Shared ReadOnly Property CurrentVersion As Version
         Get
@@ -121,8 +140,12 @@ Public NotInheritable Class AppUpdateService
             If info Is Nothing Then
                 Return New CheckResult With {.Decision = UpdateDecision.UpToDate, .Info = Nothing, .Current = current, .Access = access}
             End If
+            Dim k_decision As UpdateDecision = UpdatePolicy.Decide(current, info.Version, info.Minimum)
+            ' A hand-copied Debug build is a stop-gap: the moment the server publishes a newer
+            ' (Release) version, that version is mandatory, whatever the server's minimum says.
+            If IsPublishedDebug AndAlso k_decision = UpdateDecision.Available Then k_decision = UpdateDecision.Required
             Return New CheckResult With {
-                .Decision = UpdatePolicy.Decide(current, info.Version, info.Minimum),
+                .Decision = k_decision,
                 .Info = info,
                 .Current = current,
                 .Access = access}

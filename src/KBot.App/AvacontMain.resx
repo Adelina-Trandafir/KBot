@@ -120,4 +120,108 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <data name="KBotRibbonButton3.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        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
+</value>
+  </data>
+  <data name="KBotRibbonButton3.ToolTipText" xml:space="preserve">
+    <value>Adaugă în magazinul Access de facturi al anului mesajele pe care K-BOT le are și Access nu: facturile, liniile, notele și mesajele lor.
+Ce există deja în Access rămâne neschimbat; operațiunile contabile nu se trimit.</value>
+  </data>
+  <data name="KBotRibbonButton4.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        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
+</value>
+  </data>
+  <data name="KBotRibbonButton4.ToolTipText" xml:space="preserve">
+    <value>Aduce în K-BOT facturile primite ale unității din magazinul Access al anului, cu liniile, notele, mesajele și operațiunile lor.
+Ce există deja în K-BOT rămâne neschimbat; facturile noi se leagă de recepții doar acolo unde potrivirea e sigură.</value>
+  </data>
+  <data name="KBotRibbonButton5.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAW
+        JQAAFiUBSVIk8AAABIZJREFUWEe1V2tsFFUUPrSk+EzAR0TUiNE/Sn9owg8SDUHiD40aExOiKLGJxLnT
+        SknxTUksBkHFNNrQ+ANbEQ1gmjR7Z4ZtebWFFrv0ha3UwAJLH/Rdtu22233vHnPvMrszd3bJtpQv+bKZ
+        vWe+75x7z9w7A5ApJPUeKFCeAZm+ALKWC5L6EJSUZIlhC4uP6QqQlWIgtBWIEgRCESSK/JfYYiDRAZBo
+        BRBtHQAsEm+fP/JsS0FSfgaJBuJmGdEBsrJGlJo7JLoaCO1NYZBkYhYsjAChXwPgPGdDrl4Pks0rCq/a
+        WYff2p142jmOfW4fDk35saNvEvc39uCrZc2Yna+ICVbMvT9IzXNAbNNGoUc+q8W/2gYwGsNb4sKAB1/c
+        2yjOxm7RIj02VOWATDuNAs/vasDBSb/olRbhSAzzD3UaE4jAR/Rl0So1ZHWr0Xzl9hM4Oh0QPXByNoQN
+        l8bxWPcoXhufFYeRTdSmynZjEt2woSpbtDOjsGwJENugflOWrOCZyzdMwiyZvAMdmFOQXOtFhOKa789g
+        y7UJU+y0P4xPbj+eTEJS3hYtzZDV14zVv1l+ziTYP+HDp4pPGKtKkDVgv9tnimeoPNtrjFNFSzOIrcwo
+        qnYOJ4TYlK4vPWsxXrbNzk1S9WaDc1xM2MN7LC0IbdKDF+crOBMIJ8QcLrfF/PV9jpTNyaZ+y+EuzJLN
+        8XGqO+K9wPYHkRLt0QPZ2hmx2+5MiDz4SQ0edPSnrJo1pWndU1KZAVl1WwiEjuhBud/UmYSLqi7w/9/6
+        5RwOT1mrnvKF8MOD53lDWg0zJEjUpV88/uUxk0FFUy8ebrlu+k/H0X9HeLxFcK4EQuv0C7Z+bm9Q9DLB
+        7Q3hB791WKp+Z38b3zktBgKZx0t7G/H9yvZ4s4JMfzAGHGlNXTED7RzCFV9Yq17+eS1PvLVnAu/bqlnG
+        dT78aQ02u9wJvdKTV/kSrDUGrf2xydJoE94gvlfRbqmacWmRHZuvJkW1rmHr4XSTfzr6eUz3oAf31Dhx
+        9Z7TyM6BbCDUaQysPj9osEf0hSJYol7k1etJ3Fuo4bu/tqFrzGuKHfEE+BMjmucUqDgbjGAoEuUzlhjj
+        yFc2GYOZwOXRGZMwQzQW43sAOwcC4ag4jMFIFF/56W+LOSPbvNj9YzNB80xysLObKPXGG5746jh2XfeI
+        Hmnh8YXxjXKHxZiRLevGijaMxRA9/jDf7lnso6yfkjui9hgQJXEoMd69RcPvap3oDUZEvwSYKFv3p3ek
+        Pi/uL9QwkuaFovTkFUMCDHJ1LhA6JIo8sM2Om//4B39v7uPHcdOVG1jdMYjFtv/w2ZJTFlMjs2UFd9kv
+        8T2FwR+KYnm9C/fVu/jMmBNgILaVICstotDtUu8BdrRbe0BEScNikJQiIHRYFJov55aAjrwDdwFRNgJR
+        jtx8Uw6DzJ7x1M/5rTi/BEQU1iyB/EPLoODo8vgHidUoHRcmASPYxwvJ/MNl4RNgIIpNNErHO5SAtk40
+        Ssc7kwCDRDXRLBXZ6x57/ndqF81jtw2+g9Ix0TBT/g8B3taKde2WugAAAABJRU5ErkJggg==
+</value>
+  </data>
+  <data name="KBotRibbonButton11.ToolTipText" xml:space="preserve">
+    <value>Reface din istoric instantaneele și liniile de recepție care lipsesc.
+Întâi numără ce lipsește și întreabă; scrie doar după confirmare.
+Anteturile refăcute apar în dosarul «Instantanee neașezate» și se așază din editorul de legături.</value>
+  </data>
+  <data name="KBotRibbonButton12.ToolTipText" xml:space="preserve">
+    <value>Deschide editorul de legături recepție ▸ instantaneu de istoric.
+Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta.</value>
+  </data>
 </root>

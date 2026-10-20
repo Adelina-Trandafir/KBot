@@ -41,9 +41,9 @@ wait: select
 Alege din arbore un <b>Alineat</b> (ultimul nivel). Rectificările se completează pentru o clasificație anume.
 
 ## Rectificările anului
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridRectificari
-Aici sunt <b>rectificările bugetare ale anului</b> pentru clasificația aleasă: numărul documentului, data și cele patru trimestre. În subsol vezi totalurile. Apasă «Înainte».
+Aici sunt <b>rectificările bugetare ale anului</b> pentru clasificația aleasă: numărul documentului, data și cele patru trimestre. În subsol vezi totalurile. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă o rectificare
 <!-- slice: 000T-10 -->
@@ -53,23 +53,23 @@ wait: click
 Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl completezi direct în tabel.
 
 ## Completează rândul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridRectificari
-Scrie <b>numărul documentului</b>, <b>data</b> și valorile pe trimestre, apoi apasă «Înainte».<BR>
+Scrie <b>numărul documentului</b>, <b>data</b> și valorile pe trimestre, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).<BR>
 <mark>«Nr. doc.» și data sunt obligatorii, iar data trebuie să fie în anul de lucru.</mark>
 
 ## Editează sau șterge o rectificare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridRectificari
 optional: yes
 why: Treci peste pas dacă nu ai de modificat o rectificare existentă.
 Ca să <b>modifici</b> o rectificare existentă, scrie peste valorile din rând. <b>«✕»</b> de pe rând o șterge.<BR>
-<mark>Nimic nu se scrie în baza de date până nu apeși «Salvează».</mark> Apoi apasă «Înainte».
+<mark>Nimic nu se scrie în baza de date până nu apeși «Salvează».</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bugetul în vigoare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridTotal
-Rândul acesta adună <b>ultimul buget</b> și <b>toate rectificările</b>, pe trimestre, ca să vezi efectul rectificării. Apasă «Înainte».
+Rândul acesta adună <b>ultimul buget</b> și <b>toate rectificările</b>, pe trimestre, ca să vezi efectul rectificării. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează
 <!-- slice: 000T-10 -->

@@ -331,6 +331,7 @@ paket-files/
 
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
+PYTHON/instance/adechit-reports/
 *.pyc
 
 # Python virtual environments (local, per-machine)
@@ -539,3 +540,6 @@ PYTHON/data/*.mmdb
 /jurnale_alti_utilizatori
 /VERCON/CAPTURI_RAPOARTE/Magazie-Alimente
 /VERCON/CAPTURI_SCHIMBARI_V1
+
+# VRC.Migrator local publish (never delivered; see publish-vrc-migrator.ps1)
+/_VrcMigrator

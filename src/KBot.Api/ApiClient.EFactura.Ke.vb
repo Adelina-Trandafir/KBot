@@ -342,6 +342,130 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    ' ── Slice KE16: bulk proposals ──────────────────────────────────────────────
+
+    Private NotInheritable Class KePropunereReceptieWire
+        Public Property IDRR As Integer
+        Public Property CodAngajament As String
+        Public Property DataR As String
+        Public Property TipReceptie As String
+        Public Property Descriere As String
+        Public Property IdClsf As Integer
+        Public Property Clsf As String
+        Public Property Rest As Decimal
+        Public Property Zile As Integer?
+        Public Property InFereastra As Boolean
+    End Class
+
+    Private NotInheritable Class KePropunereFacturaWire
+        Public Property IdPrimita As Integer
+        Public Property NrFact As String
+        Public Property DataFact As String
+        Public Property Furnizor As String
+        Public Property Total As Decimal
+        Public Property candidate As List(Of KePropunereReceptieWire)
+        Public Property propunere As Integer?
+        Public Property motiv As String
+    End Class
+
+    Private NotInheritable Class KePropuneriWire
+        Public Property zile_dupa_factura As Integer
+        Public Property omise As Integer
+        Public Property facturi As List(Of KePropunereFacturaWire)
+    End Class
+
+    Private NotInheritable Class KeAplicaWire
+        Public Property legate As Integer
+    End Class
+
+    Public Async Function GetKePropuneriAsync(k_idFacturi As IEnumerable(Of Integer), k_angajamente As IEnumerable(Of String), ct As CancellationToken) _
+        As Task(Of EFacturaKePropuneri) Implements IEFacturaApi.GetKePropuneriAsync
+        Try
+            ArgumentNullException.ThrowIfNull(k_idFacturi)
+            Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
+                {"facturi", k_idFacturi.ToList()}, {"angajamente", If(k_angajamente Is Nothing, New List(Of String)(), k_angajamente.ToList())}}, _json)
+            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, "/api/efactura/ke/propuneri", k_body,
+                                                           "căutarea recepțiilor potrivite facturilor", ct).ConfigureAwait(False)
+            Dim wire As KePropuneriWire = JsonSerializer.Deserialize(Of KePropuneriWire)(k_text, _json)
+            If wire Is Nothing Then Throw New ApiException("Serverul nu a trimis propunerile.")
+            Dim k_result As New EFacturaKePropuneri() With {.ZileDupaFactura = wire.zile_dupa_factura, .Omise = wire.omise}
+            If wire.facturi IsNot Nothing Then
+                For Each f As KePropunereFacturaWire In wire.facturi
+                    Dim k_f As New EFacturaKePropunereFactura() With {
+                        .IdPrimita = f.IdPrimita, .NrFact = If(f.NrFact, String.Empty), .DataFact = ParseDay(f.DataFact),
+                        .Furnizor = If(f.Furnizor, String.Empty), .Total = f.Total, .Propunere = f.propunere, .Motiv = If(f.motiv, String.Empty)}
+                    If f.candidate IsNot Nothing Then
+                        For Each c As KePropunereReceptieWire In f.candidate
+                            k_f.Candidate.Add(New EFacturaKePropunereReceptie() With {
+                                .Idrr = c.IDRR, .CodAngajament = If(c.CodAngajament, String.Empty), .DataR = ParseDay(c.DataR),
+                                .TipReceptie = If(c.TipReceptie, String.Empty), .Descriere = If(c.Descriere, String.Empty), .IdClsf = c.IdClsf,
+                                .Clsf = If(c.Clsf, String.Empty), .Rest = c.Rest, .Zile = c.Zile, .InFereastra = c.InFereastra})
+                        Next
+                    End If
+                    k_result.Facturi.Add(k_f)
+                Next
+            End If
+            Return k_result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetKePropuneriAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function ApplyKePropuneriAsync(k_legaturi As IEnumerable(Of EFacturaKeLegaturaMasa), k_angajamente As IEnumerable(Of String), ct As CancellationToken) _
+        As Task(Of Integer) Implements IEFacturaApi.ApplyKePropuneriAsync
+        Try
+            ArgumentNullException.ThrowIfNull(k_legaturi)
+            Dim k_items As New List(Of Dictionary(Of String, Object))()
+            For Each k_l As EFacturaKeLegaturaMasa In k_legaturi
+                k_items.Add(New Dictionary(Of String, Object) From {{"IdPrimita", k_l.IdPrimita}, {"CodAngajament", k_l.CodAngajament}, {"IDRR", k_l.Idrr}})
+            Next
+            Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
+                {"legaturi", k_items}, {"angajamente", If(k_angajamente Is Nothing, New List(Of String)(), k_angajamente.ToList())}}, _json)
+            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, "/api/efactura/ke/propuneri/aplica", k_body,
+                                                           "legarea în bloc a facturilor de recepții", ct).ConfigureAwait(False)
+            Dim wire As KeAplicaWire = JsonSerializer.Deserialize(Of KeAplicaWire)(k_text, _json)
+            Return If(wire Is Nothing, 0, wire.legate)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.ApplyKePropuneriAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function LinkSupplierAngajamentAsync(k_cui As String, k_codAngajament As String, ct As CancellationToken) _
+        As Task Implements IEFacturaApi.LinkSupplierAngajamentAsync
+        Try
+            Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
+                {"cod_fiscal", k_cui}, {"cod_angajament", k_codAngajament}}, _json)
+            Await SendEFacturaAsync(HttpMethod.Post, "/api/forexe/parteneri/angajament", k_body,
+                                    "legarea furnizorului de angajament", ct).ConfigureAwait(False)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.LinkSupplierAngajamentAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function UnlinkSupplierAngajamentAsync(k_cui As String, k_codAngajament As String, ct As CancellationToken) _
+        As Task Implements IEFacturaApi.UnlinkSupplierAngajamentAsync
+        Try
+            Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
+                {"cod_fiscal", k_cui}, {"cod_angajament", k_codAngajament}}, _json)
+            Await SendEFacturaAsync(HttpMethod.Post, "/api/forexe/parteneri/angajament/scoate", k_body,
+                                    "scoaterea legăturii furnizorului cu angajamentul", ct).ConfigureAwait(False)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.UnlinkSupplierAngajamentAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' ── Helpers ─────────────────────────────────────────────────────────────────
 
     Private Shared Function AlocariOf(k_cerere As EFacturaKeCerere) As List(Of Dictionary(Of String, Object))

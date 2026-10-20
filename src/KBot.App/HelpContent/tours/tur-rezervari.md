@@ -5,10 +5,10 @@ part: contabil
 topic: contabil.vederi.rezervari
 ---
 ## Alege un angajament
-<!-- slice: 0014 -->
+<!-- slice: 0014, 000T-13 -->
 target: KbotForm.tree
 goto: view:rezervari
-Vederea arată rezervările angajamentului selectat aici. Dacă nu e niciunul selectat, alege acum unul care are rezervări, apoi apasă «Înainte».
+Vederea arată rezervările angajamentului selectat aici. Dacă nu e niciunul selectat, alege acum unul care are rezervări, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Arborele rezervărilor
 <!-- slice: 0014, 0092 -->
@@ -36,8 +36,8 @@ Butoanele vederii sunt în ribbon, în grupul «Rezervări» din dreapta (lâng�
 Butonul își schimbă numele după ce se poate face acum: Adaugă rezervare, Definitivează, Derulează sau Generează PDF final (documentul de fundamentare al angajamentului). Apare doar când nu mai e nicio rezervare cu «+» în arbore; ca să apară, apeși «+» pe rezervările care îl au.
 
 ## Ribbon › Repară...
-<!-- slice: 0060, 0000-23, 0092-01, 0000-68, 0114-15, 0000-91 -->
-Repară rezervările acestui angajament din istoric, fără nicio descărcare din FOREXE: îți arată întâi câte rânduri se schimbă și scrie abia după ce confirmi. Butonul se vede doar când angajamentul are rezervări greșite (acelea îl fac roșu în lista principală) și repararea nu se face într-o lună cu revizii.
+<!-- slice: 0060, 0000-23, 0092-01, 0000-68, 0114-15, 0000-91, 0114-25, 0000-110 -->
+Repară rezervările acestui angajament din istoric, fără nicio descărcare din FOREXE: într-o fereastră îți arată întâi ce s-a detectat greșit și ce se va rescrie, și scrie abia după ce apeși «Repară». Butonul se vede doar când angajamentul are rezervări greșite (acelea îl fac roșu în lista principală) și repararea nu se face într-o lună cu revizii (fereastra se deschide oricum; refuzul apare la «Repară»).
 
 ## Valorile pe clasificații
 <!-- slice: 0014 -->

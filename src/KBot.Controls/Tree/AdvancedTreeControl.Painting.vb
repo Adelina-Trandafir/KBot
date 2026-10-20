@@ -113,7 +113,7 @@ Partial Public Class AdvancedTreeControl
 
         Dim chkSize As Integer = _checkBoxSize
         Dim chkRect As New Rectangle(xBase, midY - (chkSize \ 2), chkSize, chkSize)
-        Dim accentColor As Color = Color.DodgerBlue
+        Dim accentColor As Color = If(it.CheckLocked, Color.FromArgb(170, 170, 170), Color.DodgerBlue)
         Dim borderColor As Color = Color.FromArgb(180, 180, 180)
 
         Dim oldSmooth = g.SmoothingMode

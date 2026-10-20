@@ -62,6 +62,11 @@ Public Class MainForm
     ''' <summary>Coming back to the program (taskbar, Alt+Tab) must show an open message box, not hide it behind this window.</summary>
     Protected Overrides Sub WndProc(ByRef m As Message)
         MyBase.WndProc(m)
+        If m.Msg = SingleInstance.ShowMessage Then
+            ' A second launch asked this (maybe tray-hidden) instance to come forward.
+            BeginInvoke(New Action(AddressOf ShowFromTray))
+            Return
+        End If
         If (m.Msg = WM_ACTIVATEAPP OrElse m.Msg = WM_ACTIVATE OrElse m.Msg = WM_NCACTIVATE) AndAlso IsHandleCreated Then
             BeginInvoke(New Action(AddressOf ModalGuard.RaiseModal))
         End If

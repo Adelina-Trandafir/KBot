@@ -264,6 +264,10 @@ Public NotInheritable Class VrcRunResult
                 Return ($"{k_table}: {k_field} poate însemna două lucruri",
                         $"{k_rows} din {k_table} au {k_field} cu un număr care există și ca BP (OI_Predare), și ca BT (OI_Transfer); nu se poate stabili din care provine linia.",
                         "Hotărâți regula (BP sau BT) înainte de transfer.")
+            Case "X17"
+                Return ($"{k_table}: proveniența dispărută nu poate fi recuperată univoc",
+                        $"{k_rows}. {k_first.Justification}",
+                        "Verificați bonul de proveniență și primirile pentru același produs, preț, deținător și cont, cu dată compatibilă și cantitate disponibilă. Corectați referința în Access dacă asocierea nu poate fi stabilită univoc.")
             Case "X11"
                 Return ($"{k_table}: {k_field} are o valoare prea mare",
                         $"{k_rows} din {k_table} au {k_field} cu o valoare pe care MariaDB nu o poate păstra. {k_first.Justification}",
@@ -307,11 +311,25 @@ Public NotInheritable Class VrcRunResult
                                    GroupBy(Function(k_i) k_i.RuleCode & "|" & k_i.TableName & "|" & k_i.FieldName, StringComparer.OrdinalIgnoreCase).
                                    OrderBy(Function(k_g) k_g.Key, StringComparer.OrdinalIgnoreCase)
             Dim k_first = k_group.First()
+            If k_first.RuleCode = "N15" Then
+                k_sb.AppendLine($"- IntrariStorno: {Cases(k_group.Count())} ignorate, fără NIR părinte bifat Storno. Nu blochează importul și nu sunt scrise în țintă.")
+                For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Select(Function(k_i) $"ID {k_i.SourceKey} ({k_i.OriginalValue})")))
+                Next
+                Continue For
+            End If
             If k_first.RuleCode = "N12" Then
                 ' Orphan links kept as NULL: every row is listed, because the operator may want to fix them later.
                 k_sb.AppendLine($"- {k_first.TableName}.{k_first.FieldName}: {Cases(k_group.Count())} cu legătura goală. {k_first.Justification}")
                 For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
                     k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Take(20).Select(Function(k_i) $"{KeyNameOf(k_i.TableName)} {k_i.SourceKey} (arăta spre {k_i.OriginalValue})")) & If(k_file.Count() > 20, $", … și încă {k_file.Count() - 20}", String.Empty))
+                Next
+                Continue For
+            End If
+            If k_first.RuleCode = "N14" Then
+                k_sb.AppendLine($"- Proveniențe OI/MF recuperate univoc: {Cases(k_group.Count())}. Referințele sunt corectate numai în import; fișierele Access rămân nemodificate.")
+                For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Select(Function(k_i) $"IDOI {k_i.SourceKey}: IDBO {k_i.OriginalValue} → {k_i.TargetValue}")))
                 Next
                 Continue For
             End If

@@ -35,6 +35,7 @@ Partial Class RightsView
         grid = New KBotDataView()
         tlyFoot = New KBotTableLayoutPanel()
         lblState = New Label()
+        btnSqlSync = New KBotButton()
         btnEnsure = New KBotButton()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -161,7 +162,7 @@ Partial Class RightsView
         btnRole.TabIndex = 4
         btnRole.Text = "Rol K-BOT…"
         tips.SetToolTipHeader(btnRole, "Rolul K-BOT")
-        tips.SetToolTipText(btnRole, "Schimbă rolul K-BOT al contului rândului ales (contabil, director, administrator, secretar).")
+        tips.SetToolTipText(btnRole, "Schimbă rolul K-BOT și sincronizează privilegiile MariaDB." & vbLf & "Contabil: toate datele bazelor atribuite, fără administrare de server sau structură.")
         '
         ' btnRemove
         '
@@ -173,7 +174,7 @@ Partial Class RightsView
         btnRemove.TabIndex = 5
         btnRemove.Text = "Scoate din bază"
         tips.SetToolTipHeader(btnRemove, "Scoate din bază")
-        tips.SetToolTipText(btnRemove, "Desface legătura contului cu baza și îi șterge drepturile ADECHIT din ea." & vbLf & "Utilizatorul MariaDB nu se șterge.")
+        tips.SetToolTipText(btnRemove, "Desface legătura contului cu baza și îi șterge drepturile ADECHIT / VERCON din ea." & vbLf & "Retrage și accesul SQL la bază; utilizatorul MariaDB nu se șterge.")
         '
         ' grid
         '
@@ -229,11 +230,13 @@ Partial Class RightsView
         ' tlyFoot
         '
         tlyFoot.AutoFitToTheme = False
-        tlyFoot.ColumnCount = 2
+        tlyFoot.ColumnCount = 3
         tlyFoot.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyFoot.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 220F))
         tlyFoot.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 230F))
         tlyFoot.Controls.Add(lblState, 0, 0)
-        tlyFoot.Controls.Add(btnEnsure, 1, 0)
+        tlyFoot.Controls.Add(btnSqlSync, 1, 0)
+        tlyFoot.Controls.Add(btnEnsure, 2, 0)
         tlyFoot.Dock = DockStyle.Fill
         tlyFoot.Location = New Point(8, 520)
         tlyFoot.Margin = New Padding(0)
@@ -255,6 +258,17 @@ Partial Class RightsView
         lblState.Size = New Size(654, 40)
         lblState.TabIndex = 0
         lblState.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' btnSqlSync
+        '
+        btnSqlSync.Dock = DockStyle.Fill
+        btnSqlSync.Margin = New Padding(0, 4, 6, 4)
+        btnSqlSync.Name = "btnSqlSync"
+        btnSqlSync.Size = New Size(214, 32)
+        btnSqlSync.TabIndex = 1
+        btnSqlSync.Text = "Aplică drepturile MariaDB"
+        tips.SetToolTipHeader(btnSqlSync, "Drepturile reale MariaDB")
+        tips.SetToolTipText(btnSqlSync, "Recalculează privilegiile SQL ale contului ales pentru toate bazele lui, după rolurile existente." & vbLf & "Retrage privilegiile vechi și închide conexiunile MariaDB ale contului. Contabilul primește acces la toate datele bazelor lui, fără administrare de server sau structură.")
         '
         ' btnEnsure
         '
@@ -296,5 +310,6 @@ Partial Class RightsView
     Friend WithEvents grid As KBotDataView
     Friend WithEvents tlyFoot As KBotTableLayoutPanel
     Friend WithEvents lblState As Label
+    Friend WithEvents btnSqlSync As KBotButton
     Friend WithEvents btnEnsure As KBotButton
 End Class

@@ -188,20 +188,13 @@ Public NotInheritable Class AppSettings
     Public Property HelpCaptureMode As Boolean = False
 
     ''' <summary>
-    ''' Slice 0097-02: the main window's guided tour can start by itself at every start of K-BOT, until
-    ''' it was seen to its last step or the operator ticked «Nu mai arata turul initial» on its
-    ''' bubble (both write False here). Off by default for a new install (only the initial tutorial
-    ''' starts by itself); «Setari -> Aplicatie» turns it on.
+    ''' Slice 000T-13: the short tutorial of the start (the ribbon tabs, the token, the list of angajamente, the
+    ''' news card) starts by itself when K-BOT opens. Goes False when it was seen to its last step or the operator
+    ''' ticked «Nu mai arata tutorialul de inceput» on its bubble. «Setari -> Aplicatie -> Generale» turns it back on.
+    ''' It replaces the two older start-up helpers (the main window's tour, 0097-02, and the tutorial about the
+    ''' tutorials, 000T-07): their keys are not read any more, so every install sees the new tutorial once.
     ''' </summary>
-    Public Property ShowInitialTour As Boolean = False
-
-    ''' <summary>
-    ''' Slice 000T-07: the short tutorial about the tutorials (a message, the «?» button, the list of
-    ''' tutorials) starts by itself at K-BOT's start, once the initial tour is not owed any more. Goes
-    ''' False when it was seen to its last step (it is mandatory: it cannot be closed before that).
-    ''' «Setari -> Generale» turns it back on.
-    ''' </summary>
-    Public Property ShowInitialTutorial As Boolean = True
+    Public Property ShowStartTutorial As Boolean = True
 
     ''' <summary>
     ''' The advice shown at K-BOT's start when the installed Adobe is not the free Adobe Acrobat
@@ -549,7 +542,8 @@ Public NotInheritable Class AppSettings
 
     ''' <summary>
     ''' Slice 0097: the login window shows «Tine minte parola pana la repornirea calculatorului».
-    ''' The box itself is shown only with the advanced options on (<see cref="RememberPasswordInEffect"/>).
+    ''' On by default and independent of the advanced options (<see cref="RememberPasswordInEffect"/>);
+    ''' only CHANGING it needs the advanced options (the switch in «Setari -> Autentificare» is greyed out without them).
     ''' </summary>
     Public Property RememberPasswordOption As Boolean = True
 
@@ -571,7 +565,7 @@ Public NotInheritable Class AppSettings
     ''' <summary>Slice 0097: the «Tine minte parola» box is on the login window.</summary>
     Public ReadOnly Property RememberPasswordInEffect As Boolean
         Get
-            Return AdvancedOptions AndAlso RememberPasswordOption
+            Return RememberPasswordOption
         End Get
     End Property
 
@@ -673,8 +667,7 @@ Public NotInheritable Class AppSettings
             .AdvancedOptions = AdvancedOptions,
             .HelpCaptureMode = HelpCaptureMode,
             .HelpTextPercent = HelpTextPercent,
-            .ShowInitialTourOptIn = ShowInitialTour,
-            .ShowInitialTutorial = ShowInitialTutorial,
+            .ShowStartTutorial = ShowStartTutorial,
             .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
             .RibbonCollapsed = RibbonCollapsed,
@@ -749,9 +742,8 @@ Public NotInheritable Class AppSettings
         If dto.HelpTextPercent.HasValue AndAlso HelpTextPercentChoices.Contains(dto.HelpTextPercent.Value) Then
             s.HelpTextPercent = dto.HelpTextPercent.Value
         End If
-        ' The tour is opt-in since 09.10.2026: the old "ShowInitialTour" key (True for everyone before) is ignored, so no existing install keeps it on.
-        If dto.ShowInitialTourOptIn.HasValue Then s.ShowInitialTour = dto.ShowInitialTourOptIn.Value
-        If dto.ShowInitialTutorial.HasValue Then s.ShowInitialTutorial = dto.ShowInitialTutorial.Value
+        ' The old start-up keys ("ShowInitialTourOptIn", "ShowInitialTutorial") are ignored on purpose (slice 000T-13).
+        If dto.ShowStartTutorial.HasValue Then s.ShowStartTutorial = dto.ShowStartTutorial.Value
         If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
         If dto.RibbonCollapsed.HasValue Then s.RibbonCollapsed = dto.RibbonCollapsed.Value
@@ -839,8 +831,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AdvancedOptions As Boolean?
     Public Property HelpCaptureMode As Boolean?
     Public Property HelpTextPercent As Integer?
-    Public Property ShowInitialTourOptIn As Boolean?
-    Public Property ShowInitialTutorial As Boolean?
+    Public Property ShowStartTutorial As Boolean?
     Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?
     Public Property RibbonCollapsed As Boolean?

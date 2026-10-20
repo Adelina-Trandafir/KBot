@@ -27,7 +27,7 @@ Public NotInheritable Class AdeWriter
     Private Sub New()
     End Sub
 
-    ''' <summary>Every table the migration writes, in insertion order, with the two it builds itself.</summary>
+    ''' <summary>Every destination in the plan, including derived rows and any erroneous documents.</summary>
     Private Shared Function AllTargets(k_plan As AdePlan) As List(Of AdeTable)
         Return k_plan.Tables.Select(Function(t) t.Table).ToList()
     End Function
@@ -104,7 +104,11 @@ Public NotInheritable Class AdeWriter
                 For Each k_table In AllTargets(k_plan)
                     Dim k_have = ColumnsOf(k_cn, k_dc, k_table.Target)
                     If k_have.Count = 0 Then
-                        k_found.Add($"Lipsește tabelul {k_table.Target}. Rulați întâi sql/AD_03_schema_finala.sql și sql/AD_05_subunitati.sql pe baza «{k_dc}».")
+                        If k_table.Name = "DateEronate" Then
+                            k_found.Add($"Lipsește tabelul AD_DateEronate. Aplicați sql/AD_12_date_eronate.sql numai pe AVACONT_SURSA, apoi sincronizați baza «{k_dc}» prin KBotAdmin.")
+                        Else
+                            k_found.Add($"Lipsește tabelul {k_table.Target}. Rulați întâi sql/AD_03_schema_finala.sql și sql/AD_05_subunitati.sql pe baza «{k_dc}».")
+                        End If
                         k_schemaReady = False
                         Continue For
                     End If
@@ -117,6 +121,7 @@ Public NotInheritable Class AdeWriter
                     End If
                 Next
                 For Each k_pair In {("AD_Subunits", {"SubunitId", "Name", "Active"}), ("AD_ReceiptConfig", {"SubunitId", "Serie", "Numar", "Explicatie"}),
+                                    ("AD_Lock", {"ID"}),
                                     ("AD_PortalParents", {"CNP", "Email", "CodAccesPortal"}),
                                     ("AD_Platitori_sub", {"CodAccesPortal"}),
                                     ("AD_IdMap", {"SubunitId", "ImportHash", "TableName", "SourceId", "TargetId"}),
@@ -135,6 +140,10 @@ Public NotInheritable Class AdeWriter
                     Next
                 Next
                 If Not k_schemaReady Then Return k_found
+
+                Using k_parentLock As New MySqlCommand("SELECT ID FROM AD_Lock WHERE ID=0", k_cn)
+                    If k_parentLock.ExecuteScalar() Is Nothing Then k_found.Add(MissingParentLockMessage(k_dc))
+                End Using
 
                 ' The destination subunit: an existing one must be active and completely empty.
                 Dim k_existing = FindSubunit(k_cn, Nothing, k_subunit.Trim())
@@ -192,6 +201,12 @@ Public NotInheritable Class AdeWriter
         Return k_names
     End Function
 
+    Private Shared Function MissingParentLockMessage(k_dc As String) As String
+        Return $"În baza «{k_dc}» lipsește rândul AD_Lock cu ID=0 (blocarea comună a portalului). " &
+            "Sincronizarea schemei nu adaugă datele de inițializare. Executați manual sql/AD_12_lock_portal_seed.sql " &
+            "în baza destinație indicată, apoi apăsați «Testează»."
+    End Function
+
     ''' <summary>Writes the whole plan in one transaction. Returns committed counts, or Nothing when stopped before COMMIT.</summary>
     Public Shared Function Write(k_server As TargetServer, k_dc As String, k_source As AdeSource, k_plan As AdePlan,
                                  k_subunit As String, k_progress As IProgress(Of String), k_cancel As CancellationToken,
@@ -220,7 +235,7 @@ Public NotInheritable Class AdeWriter
                         Try
                             If RollbackIfStopped(k_tx, k_cancel, k_dump) Then Return Nothing
                             Using k_parentLock As New MySqlCommand("SELECT ID FROM AD_Lock WHERE ID=0 FOR UPDATE", k_cn, k_tx)
-                                If k_parentLock.ExecuteScalar() Is Nothing Then Throw New InvalidOperationException("Sincronizați schema AD_08 și rulați AD_08_02_interogare_unica.sql prin AvacontPush înainte de migrare.")
+                                If k_parentLock.ExecuteScalar() Is Nothing Then Throw New InvalidOperationException(MissingParentLockMessage(k_dc))
                             End Using
                             Dim k_subunitId = EnsureSubunit(k_cn, k_tx, k_subunitName, k_plan, k_dump, k_progress)
                             Dim k_maps As New Dictionary(Of String, Dictionary(Of Long, Long))(StringComparer.OrdinalIgnoreCase)

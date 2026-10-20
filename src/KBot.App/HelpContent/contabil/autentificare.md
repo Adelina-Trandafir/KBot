@@ -48,10 +48,11 @@ Dacă serverul refuză reconectarea singură (de exemplu parola s-a schimbat în
 fereastra. La **pornirea** K-BOT fereastra de conectare apare întotdeauna.
 
 ## «Ține minte parola până la repornirea calculatorului»
-<!-- slice: 0097 -->
+<!-- slice: 0097, 0097-04 -->
 
-Bifa aceasta, sub parolă, apare doar cu [opțiunile avansate](topic:avansat) pornite (și dacă nu a
-fost ascunsă din Setări › Autentificare).
+Bifa aceasta apare sub parolă, indiferent dacă [opțiunile avansate](topic:avansat) sunt pornite sau
+nu, atât timp cât nu a fost ascunsă din Setări › Autentificare. Starea ei se schimbă doar cu
+opțiunile avansate pornite.
 
 - Bifată: parola se păstrează **criptată, pentru contul tău Windows**, până la repornirea
   calculatorului sau ieșirea din Windows. Până atunci, la pornire, fereastra de conectare vine cu

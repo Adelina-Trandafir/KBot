@@ -226,9 +226,17 @@ def _legaturi(cursor, id_primita):
     return out
 
 
+def _are_legaturi_furnizor(cursor):
+    """Does the unit database have the supplier <-> angajament links (sql/P121_01, slice 0121)? A database without them keeps working."""
+    cursor.execute("SELECT COUNT(*) AS n FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() "
+                   "AND TABLE_NAME = 'Parteneri_Angajamente'")
+    return int((cursor.fetchone() or {}).get("n") or 0) > 0
+
+
 def _angajamente_candidate(cursor, row, links):
-    """The angajamente an invoice can be linked to: those of its DDFs (the supplier's partner link or the manual link) and those
-    it is already linked to. [{CodAngajament, Descriere, Stare, Sursa}]"""
+    """The angajamente an invoice can be linked to: those of its DDFs (the supplier's partner link or the manual link), those the
+    SUPPLIER is linked to (Parteneri_Angajamente, by its normalized tax code, slice 0121-05: «furnizor») and those it is already
+    linked to. [{CodAngajament, Descriere, Stare, Sursa}]"""
     found = {}
     cursor.execute("SELECT DISTINCT d.CodAngajament FROM EF_PrimiteAsocieri a JOIN FX_DDF d ON d.IDDF = a.IDDF WHERE a.IdPrimita = %s",
                    (row["IdPrimita"],))
@@ -238,6 +246,11 @@ def _angajamente_candidate(cursor, row, links):
                    + primite._PARTNER_CUI + " = %s", (row["CuiNormalizat"] or "-",))
     for item in cursor.fetchall():
         found.setdefault(item["CodAngajament"], "ddf")
+    if row["CuiNormalizat"] and _are_legaturi_furnizor(cursor):
+        cursor.execute("SELECT DISTINCT CodAng FROM Parteneri_Angajamente WHERE CodFiscal = %s", (row["CuiNormalizat"],))
+        for item in cursor.fetchall():
+            if item["CodAng"]:
+                found.setdefault(item["CodAng"], "furnizor")
     for link in links:
         found[link["CodAngajament"]] = "legatura"
     if not found:

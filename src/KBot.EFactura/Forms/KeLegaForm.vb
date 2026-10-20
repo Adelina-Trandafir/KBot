@@ -45,6 +45,7 @@ Public Class KeLegaForm
     Private Const ColAng As String = "ang"
     Private Const ColOpt As String = "opt"
     Private Const MenuRemove As String = "elimina"
+    Private Const MenuOnlyAssociated As String = "doar-asociate"
     Private Const NeAleasa As String = "(nealeasă)"
     Private Const Tolerance As Decimal = 0.005D
 
@@ -62,8 +63,11 @@ Public Class KeLegaForm
         Public Property Cod As String = String.Empty
         Public Property Descriere As String = String.Empty
 
-        ' «ddf», «legatura» (as the server says) or «alegere» (added in this window).
+        ' «ddf», «legatura» or «furnizor» (as the server says), or «fix».
         Public Property Sursa As String = String.Empty
+
+        ' Slice KE14: a reception is linked to an invoice on this angajament: it can no longer be taken off the list.
+        Public Property Linked As Boolean
 
         Public ReadOnly Property Eticheta As String
             Get
@@ -90,7 +94,9 @@ Public Class KeLegaForm
     Private ReadOnly _invoices As New Dictionary(Of Integer, EFacturaPrimita)()
     Private ReadOnly _nodes As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
     Private ReadOnly _order As New List(Of Integer)()
-    Private ReadOnly _added As New List(Of AngItem)()
+    ' An angajament picked in the table belongs to the SUPPLIER, not to the invoice (operator, 19.10.2026): since slice 0121-05 the pick is saved on the server (the supplier's link by tax code) and comes back as a candidate with the source «furnizor»; nothing is kept in memory.
+    Private _browsedKey As String = String.Empty
+    Private _browsedId As Integer
     Private ReadOnly _angByLabel As New Dictionary(Of String, EFacturaKeAngajamentAlegere)(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _angCache As New Dictionary(Of String, EFacturaKeReceptiiAngajament)(StringComparer.OrdinalIgnoreCase)
     Private _allAng As New List(Of EFacturaKeAngajamentAlegere)()
@@ -120,6 +126,15 @@ Public Class KeLegaForm
     Private _dispoWarning As String = String.Empty
     Private _dispoSeq As Integer
     Private _descrAuto As String = String.Empty
+    ' Slice KE13: the invoices as last read, and whether the tree shows only the ones a reception is linked to (the option of the header icon).
+    Private _lastList As New List(Of EFacturaPrimita)()
+    Private _onlyAssociated As Boolean
+    ' Slice KE14: the invoice on screen is one a reception already covers (pressed in the tree): its products, the reception it is linked to, nothing can be changed, «Elimină asociere».
+    Private _viewing As EFacturaPrimita
+    Private _viewState As EFacturaKeStare
+    Private _viewSeq As Integer
+    Private _recTotalHeader As String = String.Empty
+    Private ReadOnly _viewDispo As New Dictionary(Of String, EFacturaKeDisponibilZi)(StringComparer.OrdinalIgnoreCase)
 
     ''' <summary>Embedded variant only: a reception was made or linked; the host reads the invoice again and gives it back through <see cref="ShowInvoice"/>.</summary>
     Public Event Committed As EventHandler
@@ -178,13 +193,21 @@ Public Class KeLegaForm
         Return If(k_p.DataFact.HasValue, k_p.DataFact.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "fără dată")
     End Function
 
-    ' The suppliers (by name), under each its invoices (newest first, by date), a tick on every row.
-    Private Sub BuildTree(k_candidates As IEnumerable(Of EFacturaPrimita), Optional k_keepCovered As Boolean = False)
+    ' Slice KE13: what the tree lists. EVERY invoice with a value (the ones a reception covers too: they are ticked and locked); the option of the header icon narrows it to the
+    ' invoices a reception is linked to.
+    Private Function ShowsInTree(k_p As EFacturaPrimita) As Boolean
+        If Math.Abs(k_p.Total) < 0.01D Then Return False   ' nothing to receive
+        Return Not _onlyAssociated OrElse k_p.Receptii.Count > 0
+    End Function
+
+    ' The suppliers (by name), under each its invoices (newest first, by date), a tick on every row. k_keepAll: the host gave the invoices and wants every one of them listed.
+    Private Sub BuildTree(k_candidates As IEnumerable(Of EFacturaPrimita), Optional k_keepAll As Boolean = False)
         tree.Clear()
         _nodes.Clear()
         _order.Clear()
         _invoices.Clear()
-        Dim k_shown As List(Of EFacturaPrimita) = k_candidates.Where(Function(k_x) k_keepCovered OrElse Not IsCovered(k_x)).ToList()
+        _lastList = k_candidates.ToList()
+        Dim k_shown As List(Of EFacturaPrimita) = _lastList.Where(Function(k_x) k_keepAll OrElse ShowsInTree(k_x)).ToList()
         For Each k_p As EFacturaPrimita In k_shown
             _invoices(k_p.IdPrimita) = k_p
         Next
@@ -202,22 +225,145 @@ Public Class KeLegaForm
                 Dim k_leaf As AdvancedTreeControl.TreeItem = tree.AddItem("P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_sup)
                 k_leaf.Tag = k_p
                 k_leaf.HasCheckBox = True
+                StyleLeaf(k_leaf, k_p)
                 _nodes(k_p.IdPrimita) = k_leaf
                 _order.Add(k_p.IdPrimita)
             Next
+            StyleSupplier(k_sup)
         Next
+        ShowTreeTotal()
         tree.Invalidate()
     End Sub
 
+    ' The suppliers the angajamente table is about now: those of the ticked invoices, else the one pressed in the tree ("" when none).
+    Private Function ContextKeys() As List(Of String)
+        Dim k_keys As New List(Of String)()
+        For Each k_id As Integer In _checked
+            Dim k_inv As EFacturaPrimita = Nothing
+            If _invoices.TryGetValue(k_id, k_inv) AndAlso Not k_keys.Contains(SupplierKey(k_inv)) Then k_keys.Add(SupplierKey(k_inv))
+        Next
+        If k_keys.Count = 0 Then k_keys.Add(If(_browsed IsNot Nothing, _browsedKey, String.Empty))
+        Return k_keys
+    End Function
+
+    ' The tax code of the supplier a key stands for; empty when its invoices carry none (the key is then built from the name).
+    Private Function SupplierCui(k_key As String) As String
+        For Each k_inv As EFacturaPrimita In _invoices.Values
+            If Not String.IsNullOrWhiteSpace(k_inv.CuiNormalizat) AndAlso String.Equals(SupplierKey(k_inv), k_key, StringComparison.Ordinal) Then
+                Return k_inv.CuiNormalizat.Trim()
+            End If
+        Next
+        Return String.Empty
+    End Function
+
+    ' The state of the invoices the angajamente table is about (ticked, else the one pressed) is read again, after the supplier's links changed.
+    Private Async Function RefreshContextStatesAsync() As Task
+        ' The states kept for every invoice of those suppliers are stale now (their candidates); the ones on screen are read again.
+        Dim k_keys As List(Of String) = ContextKeys()
+        For Each k_inv As EFacturaPrimita In _invoices.Values
+            If k_keys.Contains(SupplierKey(k_inv)) Then _states.Remove(k_inv.IdPrimita)
+        Next
+        For Each k_id As Integer In _checked.ToList()
+            Dim k_idNow As Integer = k_id
+            _states(k_idNow) = Await _gate.RunAsync(Function() _api.GetKeAsync(k_idNow, _cts.Token)).ConfigureAwait(True)
+            If IsDisposed Then Return
+        Next
+        If _checked.Count = 0 AndAlso _browsed IsNot Nothing AndAlso _browsedId <> 0 Then
+            Dim k_idBrowsed As Integer = _browsedId
+            _browsed = Await _gate.RunAsync(Function() _api.GetKeAsync(k_idBrowsed, _cts.Token)).ConfigureAwait(True)
+            _states(k_idBrowsed) = _browsed
+        End If
+    End Function
+
+    ' Slice KE16: the invoices of a supplier that have no reception linked at all.
+    Private Shared Function FreeInvoices(k_sup As AdvancedTreeControl.TreeItem) As List(Of EFacturaPrimita)
+        Return k_sup.Children.Select(Function(k_c) TryCast(k_c.Tag, EFacturaPrimita)).
+            Where(Function(k_p) k_p IsNot Nothing AndAlso k_p.Receptii.Count = 0 AndAlso Math.Abs(k_p.Total) >= 0.01D).ToList()
+    End Function
+
+    ' Slice KE16: a supplier that has invoices without a reception gets, while the mouse is over its row, the button that opens the window of proposals (bulk link, 1 invoice = 1 reception).
+    Private Sub StyleSupplier(k_sup As AdvancedTreeControl.TreeItem)
+        Dim k_free As Integer = If(_embedded, 0, FreeInvoices(k_sup).Count)
+        If k_free > 0 Then
+            k_sup.RightIcon = FacturaIcons.Link(ThemeManager.Current.Palette, tree.RightIconSize.Width)
+            k_sup.ShowRightIconOnHover = True
+            k_sup.Tooltip = $"{k_free} {If(k_free = 1, "factură fără recepție", "facturi fără recepție")}. Butonul din dreapta rândului propune legarea lor de recepții."
+        Else
+            k_sup.RightIcon = Nothing
+            k_sup.ShowRightIconOnHover = False
+            k_sup.Tooltip = String.Empty
+        End If
+    End Sub
+
+    ' UI boundary (async Sub): the button of a supplier. The window only PROPOSES (nothing is saved until the accountant presses «Leagă» in it); when it wrote links the invoices are read again.
+    Private Async Sub Tree_RightIconClicked(k_node As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.RightIconClicked
+        Try
+            If _api Is Nothing OrElse k_node Is Nothing OrElse _busy Then Return
+            Dim k_free As List(Of EFacturaPrimita) = FreeInvoices(k_node)
+            If k_free.Count = 0 Then Return
+            Dim k_written As Integer
+            ' The supplier's angajamente are saved on the server (slice 0121-05): the window needs none sent.
+            Using k_dialog As New KePropuneriForm(_api, _gate, SupplierName(k_free), k_free.Select(Function(k_p) k_p.IdPrimita), New List(Of String)())
+                If k_dialog.ShowDialog(Me) <> DialogResult.OK Then Return
+                k_written = k_dialog.Legate
+            End Using
+            If IsDisposed Then Return
+            Await ReloadAsync(True).ConfigureAwait(True)
+            If IsDisposed Then Return
+            ShowNotice($"{k_written} {If(k_written = 1, "factură legată", "facturi legate")} de recepții.", NoticeKind.Success)
+        Catch ex As OperationCanceledException
+            ' The window was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("KeLegaForm.Tree_RightIconClicked", ex)
+            ShowNotice(ex.Message, NoticeKind.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.Tree_RightIconClicked", ex)
+            ShowNotice("Propunerile nu au putut fi făcute. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' Slice KE13: an invoice a reception already covers is ticked and locked (it is not received again; it can only be un-associated, from the right-click menu), written in the dim
+    ' text colour; the tooltip says by which receptions. Any other invoice is a plain row with an empty tick. The embedded variant works on ONE invoice, ticked by the host: no lock there.
+    Private Sub StyleLeaf(k_leaf As AdvancedTreeControl.TreeItem, k_p As EFacturaPrimita)
+        Dim k_locked As Boolean = Not _embedded AndAlso IsCovered(k_p) AndAlso Math.Abs(k_p.Total) >= 0.01D
+        k_leaf.CheckLocked = k_locked
+        k_leaf.NodeForeColor = If(k_locked, ThemeManager.Current.Palette.TextDimColor, System.Drawing.Color.Empty)
+        k_leaf.Tooltip = AssociationTip(k_p)
+        tree.SetItemCheckState(k_leaf, If(k_locked, AdvancedTreeControl.TreeCheckState.Checked, AdvancedTreeControl.TreeCheckState.Unchecked))
+    End Sub
+
+    Private Shared Function AssociationTip(k_p As EFacturaPrimita) As String
+        If k_p.Receptii.Count = 0 Then Return String.Empty
+        Dim k_sum As Decimal = k_p.Receptii.Sum(Function(k_r) k_r.Suma)
+        Dim k_head As String = If(IsCovered(k_p), "Recepționată integral.", $"Recepționată parțial: {k_sum.ToString("N2", _ro)} din {k_p.Total.ToString("N2", _ro)}.")
+        Dim k_lines As IEnumerable(Of String) = k_p.Receptii.Select(
+            Function(k_r) $"{If(k_r.DataR.HasValue, k_r.DataR.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "recepție încă nedescărcată")} · {k_r.Suma.ToString("N2", _ro)}")
+        Return k_head & vbLf & String.Join(vbLf, k_lines) & vbLf & "Un clic pe factură arată recepția și produsele ei."
+    End Function
+
+    ' The footer of the tree: what the listed invoices add up to (it also hides the half row the viewport cuts at the bottom).
+    Private Sub ShowTreeTotal()
+        tree.FooterCaption = "TOTAL  " & _invoices.Values.Sum(Function(k_x) k_x.Total).ToString("N2", _ro) & "  "
+        tree.HeaderCaption = If(_onlyAssociated, " FACTURI ASOCIATE CU RECEPȚII", " FACTURI PRIMITE")
+    End Sub
+
     Private Function CheckedIds() As List(Of Integer)
-        Return _order.Where(Function(k_id) _nodes(k_id).CheckState = AdvancedTreeControl.TreeCheckState.Checked).ToList()
+        Return _order.Where(Function(k_id) _nodes(k_id).CheckState = AdvancedTreeControl.TreeCheckState.Checked AndAlso Not _nodes(k_id).CheckLocked).ToList()
     End Function
 
     ' UI boundary (async Sub): a row of the tree was pressed. The angajamente belong to the SUPPLIER, not to the invoice: pressing a supplier (or an invoice) shows
     ' the angajamente of that supplier right away, without a tick (KE12-05). Once an invoice is ticked, the ticks decide.
     Private Async Sub Tree_NodeMouseDown(k_node As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseDown
         Try
-            If _api Is Nothing OrElse k_node Is Nothing OrElse _checked.Count > 0 Then Return
+            If _api Is Nothing OrElse k_node Is Nothing Then Return
+            ' Slice KE14: a press on an invoice a reception covers shows it (read-only); a press on any other row brings the page back.
+            Dim k_pressed As EFacturaPrimita = TryCast(k_node.Tag, EFacturaPrimita)
+            If k_pressed IsNot Nothing AndAlso k_node.CheckLocked Then
+                BeginView(k_pressed)
+                Return
+            End If
+            If _viewing IsNot Nothing Then LeaveViewing()
+            If _checked.Count > 0 Then Return
             Dim k_idPrimita As Integer
             Dim k_invoice As EFacturaPrimita = TryCast(k_node.Tag, EFacturaPrimita)
             If k_invoice IsNot Nothing Then
@@ -236,6 +382,9 @@ Public Class KeLegaForm
             End If
             If IsDisposed OrElse k_mySeq <> _browseSeq OrElse _checked.Count > 0 Then Return
             _browsed = k_state
+            Dim k_browsedInvoice As EFacturaPrimita = Nothing
+            _browsedId = k_idPrimita
+            _browsedKey = If(_invoices.TryGetValue(k_idPrimita, k_browsedInvoice), SupplierKey(k_browsedInvoice), String.Empty)
             FillAngajamente()
         Catch ex As OperationCanceledException
             ' The window was closed.
@@ -251,12 +400,335 @@ Public Class KeLegaForm
     ' UI boundary (async Sub): a tick changed.
     Private Async Sub Tree_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         Try
+            If _viewing IsNot Nothing Then LeaveViewing()
             Await SyncCheckedAsync().ConfigureAwait(True)
         Catch ex As OperationCanceledException
             ' The window was closed.
         Catch ex As Exception
             GlobalErrorLog.Write("KeLegaForm.Tree_NodeChecked", ex)
             ShowNotice("Facturile bifate nu au putut fi citite. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' Slice KE13: the options icon of the header -- «Arată facturile asociate» shows ONLY the invoices a reception is linked to (a tick in the menu while it is on).
+    Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
+        Try
+            ' A second press on the icon CLOSES the menu (the press already closed it, so without this guard it would reopen at once).
+            If CustomPopup.ClosedJustNow Then Return
+            Dim k_anchor As System.Drawing.Rectangle = tree.HeaderRightIconRect
+            If k_anchor.IsEmpty Then Return
+            Dim k_rows As New List(Of CustomPopupItem)()
+            k_rows.Add(New CustomPopupItem(MenuOnlyAssociated, "Arată facturile &asociate", My.Resources.Resources.invoice) With {.Checked = _onlyAssociated})
+            Dim k_menu As New CustomPopup(k_rows)
+            AddHandler k_menu.ItemClicked, AddressOf OptionsMenu_ItemClicked
+            k_menu.ShowBelow(tree, k_anchor)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.Tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    ' UI boundary: the option changed -> the tree is built again from the invoices already read; nothing is ticked afterwards.
+    Private Sub OptionsMenu_ItemClicked(k_sender As Object, k_args As CustomPopupItemEventArgs)
+        Try
+            If Not String.Equals(k_args.Item.Key, MenuOnlyAssociated, StringComparison.Ordinal) Then Return
+            _onlyAssociated = Not _onlyAssociated
+            Interlocked.Increment(_syncSeq)
+            _browsed = Nothing
+            _checked = New List(Of Integer)()
+            RebuildTree(_lastList)
+            ApplyChecked()
+            If _nodes.Count = 0 Then
+                ShowNotice(If(_onlyAssociated, "Nicio factură primită nu este asociată cu o recepție în această perioadă.", "Nu există facturi primite în această perioadă."), NoticeKind.Warning)
+            Else
+                ntfMesaj.Visible = False
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.OptionsMenu_ItemClicked", ex)
+            ShowNotice("Opțiunea nu a putut fi aplicată. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' ── The view of an invoice a reception covers (slice KE14) ──────────────────────
+
+    ' UI boundary (async Sub): a press on an invoice a reception covers. Refused while other invoices are ticked (what was typed on their lines would be lost).
+    Private Async Sub BeginView(k_invoice As EFacturaPrimita)
+        Try
+            If _api Is Nothing OrElse _busy Then Return
+            If _viewing IsNot Nothing AndAlso _viewing.IdPrimita = k_invoice.IdPrimita Then Return
+            If _checked.Count > 0 Then
+                ShowNotice("Sunt facturi bifate. Debifați-le ca să vedeți recepția unei facturi deja rezolvate.", NoticeKind.Warning)
+                Return
+            End If
+            Interlocked.Increment(_browseSeq)
+            Interlocked.Increment(_syncSeq)
+            Dim k_mySeq As Integer = Interlocked.Increment(_viewSeq)
+            Dim k_id As Integer = k_invoice.IdPrimita
+            Dim k_state As EFacturaKeStare = Nothing
+            If Not _states.TryGetValue(k_id, k_state) Then
+                k_state = Await _gate.RunAsync(Function() _api.GetKeAsync(k_id, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed OrElse k_mySeq <> _viewSeq Then Return
+                _states(k_id) = k_state
+            End If
+            If IsDisposed OrElse k_mySeq <> _viewSeq OrElse _checked.Count > 0 Then Return
+            EnterViewing(k_invoice, k_state)
+        Catch ex As OperationCanceledException
+            ' The page was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("KeLegaForm.BeginView", ex)
+            ShowNotice(ex.Message, NoticeKind.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.BeginView", ex)
+            ShowNotice("Recepția facturii nu a putut fi citită. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' The right side shows only what the invoice already has: its products (nothing can be changed), the angajament and the reception it is linked to, the amounts by
+    ' classification; no «Recepție nouă», no choice of what to do. Under the receptions: the button «Elimină asociere» (the footer bar is hidden meanwhile).
+    Private Sub EnterViewing(k_invoice As EFacturaPrimita, k_state As EFacturaKeStare)
+        Interlocked.Increment(_angSeq)
+        Interlocked.Increment(_othersSeq)
+        _viewing = k_invoice
+        _viewState = k_state
+        _browsed = Nothing
+        _data = Nothing
+        _angCod = String.Empty
+        ntfMesaj.Visible = False
+        If _recTotalHeader.Length = 0 Then _recTotalHeader = gridReceptii.Column(ColRTotal).HeaderText
+        gridReceptii.Column(ColRTotal).HeaderText = "Valoare factură"
+        gridReceptii.Column(ColRRest).Visible = KBotColumnVisibility.Hidden
+        gridLinii.ReadOnlyGrid = True
+        gridAng.ReadOnlyGrid = True
+        navMod.Visible = False
+        pnlMod.Visible = False
+        pnlNoua.Visible = False
+        gridReceptii.Visible = True
+        gridAloc.Column(ColARestRecep).Visible = KBotColumnVisibility.Hidden
+        btnElimina.Visible = True
+        pnlJos.Visible = False
+        FillViewedLines(k_invoice, k_state)
+        FillAngajamente()
+        FillReceptii()
+        _viewDispo.Clear()
+        FillViewedAlocari(k_state)
+        BeginViewedDispo(k_state, _viewSeq)
+        UpdateTitles()
+        RefreshOk()
+        If Not k_state.PoateScrie Then ShowNotice("Numai un utilizator cu rolul «Contabil» poate elimina asocierea facturilor cu recepțiile.", NoticeKind.Warning)
+    End Sub
+
+    ' Back to the page as it works: the tabs, the form of a new reception, the lines of the ticked invoices (none, or what the ticks say).
+    Private Sub LeaveViewing()
+        If _viewing Is Nothing Then Return
+        _viewing = Nothing
+        _viewState = Nothing
+        Interlocked.Increment(_viewSeq)
+        gridLinii.ReadOnlyGrid = False
+        gridAng.ReadOnlyGrid = False
+        If _recTotalHeader.Length > 0 Then gridReceptii.Column(ColRTotal).HeaderText = _recTotalHeader
+        gridReceptii.Column(ColRRest).Visible = KBotColumnVisibility.Visible
+        btnElimina.Visible = False
+        pnlJos.Visible = True
+        navMod.Visible = True
+        pnlMod.Visible = String.Equals(navMod.SelectedKey, TabExistente, StringComparison.Ordinal)
+        ApplyMode()
+        ApplyChecked()
+        FillReceptii()
+    End Sub
+
+    Private Sub FillViewedLines(k_invoice As EFacturaPrimita, k_state As EFacturaKeStare)
+        _filling = True
+        gridLinii.BeginUpdate()
+        Try
+            gridLinii.ClearRows()
+            Dim k_group As String = $"{If(k_invoice.Tip = "NC", "NC ", String.Empty)}{k_invoice.NrFact} / {DateText(k_invoice)}"
+            For Each k_line As EFacturaKeLinie In k_state.Linii
+                Dim k_row As KBotDataRow = gridLinii.AddRow()
+                k_row.Tag = New LineTag() With {.Invoice = k_invoice, .Linie = k_line}
+                k_row(KBotDataView.CheckColumnKey) = True
+                k_row(ColFactura) = k_group
+                k_row(ColLDenumire) = k_line.Denumire
+                k_row(ColLCuTva) = CDbl(k_line.ValoareCuTva)
+                k_row(ColLRec) = CDbl(k_line.ValoareCuTva)
+                k_row(ColLClsf) = InitialLabel(k_line)
+            Next
+        Finally
+            gridLinii.EndUpdate()
+            _filling = False
+        End Try
+    End Sub
+
+    ' The angajamente of the links of the invoice (no empty row, no button).
+    Private Sub FillViewedAngajamente()
+        Dim k_items As New List(Of AngItem)()
+        If _viewState IsNot Nothing Then
+            For Each k_link As EFacturaKeLegatura In _viewState.Legaturi
+                If k_items.Any(Function(k_a) String.Equals(k_a.Cod, k_link.CodAngajament, StringComparison.OrdinalIgnoreCase)) Then Continue For
+                Dim k_known As EFacturaKeAngajament = _viewState.Angajamente.FirstOrDefault(
+                    Function(k_a) String.Equals(k_a.CodAngajament, k_link.CodAngajament, StringComparison.OrdinalIgnoreCase))
+                Dim k_description As String = If(k_known Is Nothing, String.Empty, k_known.Descriere)
+                If String.IsNullOrWhiteSpace(k_description) Then
+                    Dim k_choice As EFacturaKeAngajamentAlegere = _allAng.FirstOrDefault(
+                        Function(k_a) String.Equals(k_a.CodAngajament, k_link.CodAngajament, StringComparison.OrdinalIgnoreCase))
+                    If k_choice IsNot Nothing Then k_description = k_choice.Descriere
+                End If
+                k_items.Add(New AngItem() With {.Cod = k_link.CodAngajament, .Descriere = k_description, .Sursa = "legatura", .Linked = True})
+            Next
+        End If
+        _items = k_items
+        _angFilling = True
+        gridAng.BeginUpdate()
+        Try
+            gridAng.ClearRows()
+            For Each k_a As AngItem In k_items
+                Dim k_row As KBotDataRow = gridAng.AddRow()
+                k_row.Tag = k_a
+                k_row(ColAng) = k_a.Eticheta
+                k_row(ColOpt) = String.Empty
+            Next
+        Finally
+            gridAng.EndUpdate()
+            _angFilling = False
+        End Try
+    End Sub
+
+    ' ONLY the receptions the invoice is linked to, one row each (what the invoice takes of it).
+    Private Sub FillViewedReceptii()
+        gridReceptii.BeginUpdate()
+        Try
+            gridReceptii.ClearRows()
+            If _viewState Is Nothing Then Return
+            Dim k_groups As IEnumerable(Of IGrouping(Of String, EFacturaKeLegatura)) = _viewState.Legaturi.GroupBy(
+                Function(k_l) If(k_l.Idrr.HasValue, "R" & k_l.Idrr.Value.ToString(CultureInfo.InvariantCulture),
+                                 "H" & k_l.Idrh.GetValueOrDefault().ToString(CultureInfo.InvariantCulture) & "/" & k_l.Idr.GetValueOrDefault().ToString(CultureInfo.InvariantCulture)))
+            For Each k_group As IGrouping(Of String, EFacturaKeLegatura) In k_groups
+                Dim k_first As EFacturaKeLegatura = k_group.First()
+                Dim k_row As KBotDataRow = gridReceptii.AddRow()
+                k_row(ColRData) = If(k_first.DataR.HasValue, k_first.DataR.Value.ToString("dd.MM.yyyy", _ro),
+                                     If(k_first.AsteaptaDescarcarea, "în așteptare", String.Empty))
+                k_row(ColRTip) = k_first.TipReceptie
+                k_row(ColRDescriere) = k_first.DescriereR
+                k_row(ColRTotal) = CDbl(k_group.Sum(Function(k_l) k_l.Suma))
+            Next
+            If gridReceptii.RowCount > 0 Then gridReceptii.CurrentRowIndex = 0
+        Finally
+            gridReceptii.EndUpdate()
+        End Try
+    End Sub
+
+    ' The key of the budget answer of one angajament on the day of a reception.
+    Private Shared Function ViewKey(k_link As EFacturaKeLegatura) As String
+        Dim k_day As Date = If(k_link.DataR.HasValue, k_link.DataR.Value.Date, Date.Today)
+        Return k_link.CodAngajament & "|" & k_day.ToString("yyyyMMdd", CultureInfo.InvariantCulture)
+    End Function
+
+    ' The amounts of the links by classification and angajament; Buget / Receptii / Disponibil / Ramas as in the form of a reception, on the day of the reception
+    ' (the answers come in with BeginViewedDispo and the table is laid out again each time).
+    Private Sub FillViewedAlocari(k_state As EFacturaKeStare)
+        _filling = True
+        gridAloc.BeginUpdate()
+        Try
+            gridAloc.ClearRows()
+            For Each k_group As IGrouping(Of String, EFacturaKeLegatura) In k_state.Legaturi.GroupBy(
+                    Function(k_l) k_l.CodAngajament & "|" & k_l.IdClsf.ToString(CultureInfo.InvariantCulture)).OrderBy(
+                    Function(k_g) k_g.First().Clsf, StringComparer.CurrentCultureIgnoreCase)
+                Dim k_first As EFacturaKeLegatura = k_group.First()
+                Dim k_row As KBotDataRow = gridAloc.AddRow()
+                Dim k_value As Decimal = k_group.Sum(Function(k_l) k_l.Suma)
+                k_row(ColAClsf) = k_first.Clsf
+                k_row(ColAValRecep) = CDbl(k_value)
+                Dim k_answer As EFacturaKeDisponibilZi = Nothing
+                If _viewDispo.TryGetValue(ViewKey(k_first), k_answer) Then
+                    Dim k_d As EFacturaKeDisponibil = k_answer.Indicatori.FirstOrDefault(
+                        Function(k_x) k_x.IdClsf.HasValue AndAlso k_x.IdClsf.Value = k_first.IdClsf)
+                    If k_d IsNot Nothing Then
+                        k_row(ColAReceptii) = CDbl(k_d.Receptii)
+                        If k_d.Buget.HasValue Then
+                            Dim k_available As Decimal = k_d.Buget.Value - k_d.Receptii
+                            k_row(ColABuget) = CDbl(k_d.Buget.Value)
+                            k_row(ColADisponibil) = CDbl(k_available)
+                            k_row(ColARamas) = CDbl(k_available - k_value)
+                        End If
+                    End If
+                End If
+            Next
+        Finally
+            gridAloc.EndUpdate()
+            _filling = False
+        End Try
+    End Sub
+
+    ' UI boundary (async Sub): asks the server, once for each angajament and reception day of the links, for the budget and the receptions before that day.
+    Private Async Sub BeginViewedDispo(k_state As EFacturaKeStare, k_seq As Integer)
+        Try
+            If _api Is Nothing Then Return
+            For Each k_link As EFacturaKeLegatura In k_state.Legaturi
+                Dim k_key As String = ViewKey(k_link)
+                If _viewDispo.ContainsKey(k_key) Then Continue For
+                Dim k_cod As String = k_link.CodAngajament
+                Dim k_day As Date = If(k_link.DataR.HasValue, k_link.DataR.Value.Date, Date.Today)
+                Dim k_answer As EFacturaKeDisponibilZi = Nothing
+                If Not _dispoCache.TryGetValue(k_key, k_answer) Then
+                    k_answer = Await _gate.RunAsync(Function() _api.GetKeDisponibilAsync(k_cod, k_day, _cts.Token)).ConfigureAwait(True)
+                    If IsDisposed OrElse k_seq <> _viewSeq Then Return
+                    _dispoCache(k_key) = k_answer
+                End If
+                If IsDisposed OrElse k_seq <> _viewSeq Then Return
+                _viewDispo(k_key) = k_answer
+                FillViewedAlocari(k_state)
+            Next
+        Catch ex As OperationCanceledException
+            ' The page was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("KeLegaForm.BeginViewedDispo", ex)
+            ShowNotice(ex.Message, NoticeKind.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.BeginViewedDispo", ex)
+            ShowNotice("Bugetul și recepțiile pe indicatori nu au putut fi citite. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' UI boundary: the button under the receptions of a resolved invoice on view.
+    Private Sub BtnElimina_Click(sender As Object, e As EventArgs) Handles btnElimina.Click
+        Try
+            If _viewing IsNot Nothing Then BeginUnlink(_viewing)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.BtnElimina_Click", ex)
+        End Try
+    End Sub
+
+    ' UI boundary (async Sub): every link the invoice has with a reception is removed in K-BOT (the receptions in FOREXE are not touched); the tree is refreshed.
+    Private Async Sub BeginUnlink(k_invoice As EFacturaPrimita)
+        Try
+            If _busy OrElse IsDisposed Then Return
+            If KBotMessage.Show(Me, $"Eliminați asocierea facturii {k_invoice.NrFact} cu recepția? Recepția din FOREXE nu se atinge.",
+                                "Recepții", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+            SetBusy(True)
+            Try
+                Dim k_id As Integer = k_invoice.IdPrimita
+                Dim k_state As EFacturaKeStare = Await _gate.RunAsync(Function() _api.GetKeAsync(k_id, _cts.Token)).ConfigureAwait(True)
+                If IsDisposed Then Return
+                If Not k_state.PoateScrie Then
+                    ShowNotice("Numai un utilizator cu rolul «Contabil» poate elimina asocierea facturilor cu recepțiile.", NoticeKind.Warning)
+                    Return
+                End If
+                For Each k_link As EFacturaKeLegatura In k_state.Legaturi.ToList()
+                    Dim k_idLink As Integer = k_link.IdLegatura
+                    Await _gate.RunAsync(Function() _api.RemoveKeLegaturaAsync(k_id, k_idLink, _cts.Token)).ConfigureAwait(True)
+                    If IsDisposed Then Return
+                Next
+                Await ReloadAsync(True).ConfigureAwait(True)
+                If Not IsDisposed Then ShowNotice($"Asocierea facturii {k_invoice.NrFact} cu recepția a fost eliminată.", NoticeKind.Success)
+            Finally
+                If Not IsDisposed Then SetBusy(False)
+            End Try
+        Catch ex As OperationCanceledException
+            ' The page was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("KeLegaForm.BeginUnlink", ex)
+            ShowNotice(ex.Message, NoticeKind.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("KeLegaForm.BeginUnlink", ex)
+            ShowNotice("Asocierea nu a putut fi eliminată. Detalii în jurnalul de erori.", NoticeKind.Error)
         End Try
     End Sub
 
@@ -364,6 +836,11 @@ Public Class KeLegaForm
     End Function
 
     Private Sub UpdateTitles()
+        If _viewing IsNot Nothing Then
+            lblTitluLinii.Text = $"Produse Factura {_viewing.NrFact} / {DateText(_viewing)}"
+            lblTitluDate.Text = "Recepția asociată"
+            Return
+        End If
         Select Case _checked.Count
             Case 0 : lblTitluLinii.Text = "Produse factură"
             Case 1 : lblTitluLinii.Text = $"Produse Factura {_invoices(_checked(0)).NrFact} / {DateText(_invoices(_checked(0)))}"
@@ -418,11 +895,18 @@ Public Class KeLegaForm
         End Try
     End Sub
 
-    ' After a reception: only the invoices that are covered now leave the tree (a supplier left with none goes too); the rest stays as it was (expanded or not, scrolled),
-    ' unticked, with its numbers refreshed (KE12-07).
-    Private Sub PruneTree(k_list As IEnumerable(Of EFacturaPrimita))
+    ' After a reception (or an un-association): the tree stays as it was (expanded or not, scrolled), every row unticked and with its numbers refreshed; the invoices a reception
+    ' covers now become ticked and locked (KE13). An invoice that is gone (or has no value) leaves, a supplier left with none goes too. When the tree shows only the associated
+    ' invoices the list can gain rows, so it is built again (the suppliers keep their open / closed state).
+    Private Sub RefreshTree(k_list As IEnumerable(Of EFacturaPrimita))
+        Dim k_fresh As List(Of EFacturaPrimita) = k_list.ToList()
+        If _onlyAssociated Then
+            RebuildTree(k_fresh)
+            Return
+        End If
+        _lastList = k_fresh
         Dim k_now As New Dictionary(Of Integer, EFacturaPrimita)()
-        For Each k_p As EFacturaPrimita In k_list
+        For Each k_p As EFacturaPrimita In k_fresh
             k_now(k_p.IdPrimita) = k_p
         Next
         Dim k_suppliers As New List(Of AdvancedTreeControl.TreeItem)()
@@ -430,7 +914,7 @@ Public Class KeLegaForm
             Dim k_node As AdvancedTreeControl.TreeItem = _nodes(k_id)
             Dim k_p As EFacturaPrimita = Nothing
             If k_node.Parent IsNot Nothing AndAlso Not k_suppliers.Contains(k_node.Parent) Then k_suppliers.Add(k_node.Parent)
-            If Not k_now.TryGetValue(k_id, k_p) OrElse IsCovered(k_p) Then
+            If Not k_now.TryGetValue(k_id, k_p) OrElse Not ShowsInTree(k_p) Then
                 Dim k_parent As AdvancedTreeControl.TreeItem = k_node.Parent
                 tree.RemoveItem(k_node)
                 _nodes.Remove(k_id)
@@ -440,7 +924,7 @@ Public Class KeLegaForm
             Else
                 _invoices(k_id) = k_p
                 k_node.Tag = k_p
-                tree.SetItemCheckState(k_node, AdvancedTreeControl.TreeCheckState.Unchecked)
+                StyleLeaf(k_node, k_p)
             End If
         Next
         ' The total of a supplier is what its remaining invoices add up to.
@@ -448,6 +932,21 @@ Public Class KeLegaForm
             If k_sup.Children.Count = 0 Then Continue For
             Dim k_rest As List(Of EFacturaPrimita) = k_sup.Children.Select(Function(k_c) TryCast(k_c.Tag, EFacturaPrimita)).Where(Function(k_x) k_x IsNot Nothing).ToList()
             If k_rest.Count > 0 Then k_sup.Caption = $"{SupplierName(k_rest)}~~~{k_rest.Sum(Function(k_x) k_x.Total).ToString("N2", _ro)}"
+            StyleSupplier(k_sup)
+        Next
+        ShowTreeTotal()
+        tree.Invalidate()
+    End Sub
+
+    ' The tree built again from these invoices; the suppliers that were open stay open.
+    Private Sub RebuildTree(k_list As IEnumerable(Of EFacturaPrimita))
+        Dim k_open As New HashSet(Of String)()
+        For Each k_node As AdvancedTreeControl.TreeItem In _nodes.Values
+            If k_node.Parent IsNot Nothing AndAlso k_node.Parent.Expanded Then k_open.Add(k_node.Parent.Key)
+        Next
+        BuildTree(k_list)
+        For Each k_node As AdvancedTreeControl.TreeItem In _nodes.Values
+            If k_node.Parent IsNot Nothing AndAlso k_open.Contains(k_node.Parent.Key) Then k_node.Parent.Expanded = True
         Next
         tree.Invalidate()
     End Sub
@@ -560,7 +1059,6 @@ Public Class KeLegaForm
         _browsed = Nothing
         _data = Nothing
         _angCod = String.Empty
-        _added.Clear()
         txtDescriere.Text = String.Empty
         _descrAuto = String.Empty
         _dataAuto = Date.MinValue
@@ -603,10 +1101,13 @@ Public Class KeLegaForm
         _browsed = Nothing
         _data = Nothing
         _checked = New List(Of Integer)()
-        If k_keepTree Then PruneTree(k_list) Else BuildTree(k_list)
+        LeaveViewing()
+        If k_keepTree Then RefreshTree(k_list) Else BuildTree(k_list)
         ApplyChecked()
         FillReceptii()
-        If _nodes.Count = 0 Then ShowNotice("Nu există facturi primite de recepționat în această perioadă.", NoticeKind.Warning)
+        If _nodes.Count = 0 Then
+            ShowNotice(If(_onlyAssociated, "Nicio factură primită nu este asociată cu o recepție în această perioadă.", "Nu există facturi primite în această perioadă."), NoticeKind.Warning)
+        End If
     End Function
 
     ' UI boundary: the date of a new reception changed -> the budget and the receptions before it are asked again.
@@ -751,6 +1252,10 @@ Public Class KeLegaForm
     ' The rows: the angajamente the ticked invoices can go to (the server's candidates: DDF of the supplier, links already made) and the ones
     ' added here; then ALWAYS an empty row. The angajament in use stays the current row.
     Private Sub FillAngajamente()
+        If _viewing IsNot Nothing Then
+            FillViewedAngajamente()
+            Return
+        End If
         Dim k_items As New List(Of AngItem)()
         Dim k_seen As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         ' The view of an angajament: that angajament and no other.
@@ -764,6 +1269,13 @@ Public Class KeLegaForm
             If _states.TryGetValue(k_id, k_state) Then k_sources.Add(k_state)
         Next
         If _checked.Count = 0 AndAlso _browsed IsNot Nothing Then k_sources.Add(_browsed)
+        ' Slice KE14: an angajament a reception of these invoices is linked to cannot be taken off the list (its button is hidden).
+        Dim k_linked As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        For Each k_state As EFacturaKeStare In k_sources
+            For Each k_link As EFacturaKeLegatura In k_state.Legaturi
+                k_linked.Add(k_link.CodAngajament)
+            Next
+        Next
         If _fixedAng.Length > 0 Then k_sources.Clear()
         For Each k_state As EFacturaKeStare In k_sources
             For Each k_a As EFacturaKeAngajament In k_state.Angajamente
@@ -772,11 +1284,9 @@ Public Class KeLegaForm
                 End If
             Next
         Next
-        If _fixedAng.Length = 0 Then
-            For Each k_a As AngItem In _added
-                If k_seen.Add(k_a.Cod) Then k_items.Add(k_a)
-            Next
-        End If
+        For Each k_a As AngItem In k_items
+            k_a.Linked = k_linked.Contains(k_a.Cod)
+        Next
         _items = k_items
         FillAngajamenteChoices()
         _angFilling = True
@@ -788,7 +1298,7 @@ Public Class KeLegaForm
                 k_row.Tag = k_a
                 ' In a view of the invoices the code of the angajament is not shown: only its description (the code when it has none).
                 k_row(ColAng) = If(_embedded AndAlso Not String.IsNullOrWhiteSpace(k_a.Descriere), k_a.Descriere, k_a.Eticheta)
-                k_row(ColOpt) = "…"
+                k_row(ColOpt) = If(k_a.Linked, String.Empty, "…")
             Next
             Dim k_empty As KBotDataRow = gridAng.AddRow()
             k_empty.Tag = Nothing
@@ -830,7 +1340,7 @@ Public Class KeLegaForm
             If String.Equals(e.ColumnKey, ColAng, StringComparison.Ordinal) Then
                 If k_real Then e.ReadOnlyCell = True
             ElseIf String.Equals(e.ColumnKey, ColOpt, StringComparison.Ordinal) Then
-                If Not k_real Then e.Text = String.Empty
+                If Not k_real OrElse CType(e.Row.Tag, AngItem).Linked Then e.Text = String.Empty
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("KeLegaForm.GridAng_CellFormatting", ex)
@@ -840,7 +1350,7 @@ Public Class KeLegaForm
     ' UI boundary (async Sub): the current row of the angajamente changed: that angajament is the one of the reception.
     Private Sub GridAng_SelectionChanged(sender As Object, e As EventArgs) Handles gridAng.SelectionChanged
         Try
-            If _angFilling Then Return
+            If _angFilling OrElse _viewing IsNot Nothing Then Return
             Dim k_item As AngItem = TryCast(gridAng.CurrentRow?.Tag, AngItem)
             If k_item IsNot Nothing Then BeginUseAngajament(k_item.Cod)
         Catch ex As Exception
@@ -933,7 +1443,21 @@ Public Class KeLegaForm
             End If
             If k_found IsNot Nothing Then
                 If Not _items.Any(Function(k_i) String.Equals(k_i.Cod, k_found.CodAngajament, StringComparison.OrdinalIgnoreCase)) Then
-                    _added.Add(New AngItem() With {.Cod = k_found.CodAngajament, .Descriere = k_found.Eticheta, .Sursa = "alegere"})
+                    ' Slice 0121-05: the pick is saved for the SUPPLIER (its tax code); it comes back from the server as a candidate.
+                    Dim k_saved As Boolean
+                    For Each k_key As String In ContextKeys()
+                        Dim k_cui As String = SupplierCui(k_key)
+                        If k_cui.Length = 0 Then
+                            ShowNotice("Furnizorul nu are cod fiscal pe factură: angajamentul nu se poate lega de el.", NoticeKind.Warning)
+                            Continue For
+                        End If
+                        Dim k_codNow As String = k_found.CodAngajament
+                        Await _gate.RunAsync(Function() _api.LinkSupplierAngajamentAsync(k_cui, k_codNow, _cts.Token)).ConfigureAwait(True)
+                        If IsDisposed Then Return
+                        k_saved = True
+                    Next
+                    If k_saved Then Await RefreshContextStatesAsync().ConfigureAwait(True)
+                    If IsDisposed Then Return
                 End If
                 _angCod = k_found.CodAngajament
             End If
@@ -955,7 +1479,7 @@ Public Class KeLegaForm
             If Not String.Equals(e.ColumnKey, ColOpt, StringComparison.Ordinal) Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= gridAng.RowCount Then Return
             Dim k_item As AngItem = TryCast(gridAng.Rows(e.RowIndex).Tag, AngItem)
-            If k_item Is Nothing Then Return
+            If k_item Is Nothing OrElse k_item.Linked Then Return
             Dim k_menu As New CustomPopup(New List(Of CustomPopupItem) From {New CustomPopupItem(MenuRemove, "&Elimină asociere")})
             AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) BeginRemoveAssociation(k_item)
             k_menu.ShowAt(gridAng, Control.MousePosition)
@@ -969,8 +1493,19 @@ Public Class KeLegaForm
     ' receptions, is not made here and cannot be removed here.
     Private Async Sub BeginRemoveAssociation(k_item As AngItem)
         Try
-            If String.Equals(k_item.Sursa, "alegere", StringComparison.Ordinal) Then
-                _added.RemoveAll(Function(k_a) String.Equals(k_a.Cod, k_item.Cod, StringComparison.OrdinalIgnoreCase))
+            If String.Equals(k_item.Sursa, "furnizor", StringComparison.Ordinal) Then
+                ' Slice 0121-05: an angajament picked for the supplier is the supplier's link (with its indicators), removed for the suppliers of the invoices shown.
+                If KBotMessage.Show(Me, $"Scoateți legătura furnizorului cu angajamentul {k_item.Cod}? Dispar și indicatorii legați de ea. Recepțiile din FOREXE nu se ating.",
+                                    "Recepții", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+                For Each k_key As String In ContextKeys()
+                    Dim k_cui As String = SupplierCui(k_key)
+                    If k_cui.Length = 0 Then Continue For
+                    Dim k_codNow As String = k_item.Cod
+                    Await _gate.RunAsync(Function() _api.UnlinkSupplierAngajamentAsync(k_cui, k_codNow, _cts.Token)).ConfigureAwait(True)
+                    If IsDisposed Then Return
+                Next
+                Await RefreshContextStatesAsync().ConfigureAwait(True)
+                If IsDisposed Then Return
                 FillAngajamente()
                 Return
             End If
@@ -1010,6 +1545,10 @@ Public Class KeLegaForm
     ' ── Receptions of the angajament ────────────────────────────────────────────
 
     Private Sub FillReceptii()
+        If _viewing IsNot Nothing Then
+            FillViewedReceptii()
+            Return
+        End If
         gridReceptii.BeginUpdate()
         Try
             gridReceptii.ClearRows()
@@ -1037,6 +1576,7 @@ Public Class KeLegaForm
 
     Private Sub GridReceptii_SelectionChanged(sender As Object, e As EventArgs) Handles gridReceptii.SelectionChanged
         Try
+            If _viewing IsNot Nothing Then Return
             RecomputeDefaults()
             FillAlocari()
             UpdateTitles()
@@ -1224,7 +1764,7 @@ Public Class KeLegaForm
                 End If
                 Dim k_value As Decimal = CType(gridLinii.Rows(e.RowIndex).Tag, LineTag).Linie.ValoareCuTva
                 If k_number <> 0D AndAlso (Math.Sign(k_number) <> Math.Sign(k_value) OrElse Math.Abs(k_number) > Math.Abs(k_value) + Tolerance) Then
-                    ShowNotice($"Suma recepționată a liniei nu poate depăși valoarea ei ({k_value.ToString("N2", _ro)}) și are semnul facturii.", NoticeKind.Warning)
+                    ShowNotice($"Suma recepționată a liniei nu poate depăși valoarea ei ({Fmt(k_value)}) și are semnul facturii.", NoticeKind.Warning)
                     e.Cancel = True
                     Return
                 End If
@@ -1421,6 +1961,15 @@ Public Class KeLegaForm
                     k_row(ColARestRecep) = If(k_pc IsNot Nothing, CDbl(k_pc.Rest), 0.0R)
                 End If
             Next
+            ' Where the chosen reception still has rest but no line stands: shown too, so «Rest recepție existentă» of the lines (0.00) is not a riddle (operator, 19.10.2026).
+            If k_rec IsNot Nothing Then
+                For Each k_other As EFacturaKeReceptieClasificatie In k_rec.PeClasificatie.Where(
+                        Function(k_x) Math.Abs(k_x.Rest) >= Tolerance AndAlso Not k_name.ContainsKey(k_x.IdClsf)).OrderBy(Function(k_x) k_x.Clsf, StringComparer.Ordinal)
+                    Dim k_extra As KBotDataRow = gridAloc.AddRow()
+                    k_extra(ColAClsf) = $"{If(_labelOf.ContainsKey(k_other.IdClsf), _labelOf(k_other.IdClsf), k_other.Clsf)}  (recepția are rest aici; nicio linie nu e pe ea)"
+                    k_extra(ColARestRecep) = CDbl(k_other.Rest)
+                Next
+            End If
         Finally
             gridAloc.EndUpdate()
             _filling = False
@@ -1428,7 +1977,12 @@ Public Class KeLegaForm
         RefreshOk()
     End Sub
 
-    ' A typed amount must be a number (ro-RO: «1.234,56»); empty = 0.
+    ' A number as the grids show it: the operator's own regional format (a dot or a comma for the decimals), the same one the cells are painted and typed in.
+    Private Shared Function Fmt(k_value As Decimal) As String
+        Return k_value.ToString("N2", CultureInfo.CurrentCulture)
+    End Function
+
+    ' A typed amount must be a number in the operator's own regional format (the cells are painted in it, so «77.49» is 77.49 for a dot user, not 7749); empty = 0.
     Private Shared Function ReadNumber(k_value As Object, ByRef k_number As Decimal) As Boolean
         If k_value Is Nothing OrElse TypeOf k_value Is DBNull Then
             k_number = 0D
@@ -1438,13 +1992,13 @@ Public Class KeLegaForm
             k_number = Math.Round(CDec(DirectCast(k_value, Double)), 2)
             Return True
         End If
-        Dim k_text As String = Convert.ToString(k_value, _ro).Trim()
+        Dim k_text As String = Convert.ToString(k_value, CultureInfo.CurrentCulture).Trim()
         If k_text.Length = 0 Then
             k_number = 0D
             Return True
         End If
         Dim k_parsed As Decimal
-        If Decimal.TryParse(k_text, NumberStyles.Number Or NumberStyles.AllowLeadingSign, _ro, k_parsed) Then
+        If Decimal.TryParse(k_text, NumberStyles.Number Or NumberStyles.AllowLeadingSign, CultureInfo.CurrentCulture, k_parsed) Then
             k_number = Math.Round(k_parsed, 2)
             Return True
         End If
@@ -1452,23 +2006,44 @@ Public Class KeLegaForm
     End Function
 
     ' An existing reception takes only what it still has on each classification: the sum over all the ticked invoices is checked here.
-    Private Function ReceptionFitProblem() As String
+    ' k_fromLineValues = nothing is typed or proposed (every amount was cut to 0 because the reception has no rest on the classification of the lines): the check is then
+    ' made with what the lines are worth (less what the invoice already has linked), so the operator is told why «Leagă» stays disabled instead of seeing nothing.
+    Private Function ReceptionFitProblem(Optional k_fromLineValues As Boolean = False) As String
         If _mode <> EFacturaKeTip.Existenta Then Return Nothing
         Dim k_rec As EFacturaKeReceptie = ChosenReceptie()
         If k_rec Is Nothing Then Return Nothing
         Dim k_total As New Dictionary(Of Integer, Decimal)()
         For Each k_id As Integer In _checked
-            For Each k_pair As KeyValuePair(Of Integer, Decimal) In AmountsOf(k_id)
-                k_total(k_pair.Key) = k_total.GetValueOrDefault(k_pair.Key) + k_pair.Value
-            Next
+            If k_fromLineValues Then
+                Dim k_wanted As New Dictionary(Of Integer, Decimal)()
+                For Each k_row As KBotDataRow In RowsOf(k_id)
+                    Dim k_cls As Integer? = ChosenClass(k_row)
+                    If Not IsIncluded(k_row) OrElse Not k_cls.HasValue Then Continue For
+                    k_wanted(k_cls.Value) = k_wanted.GetValueOrDefault(k_cls.Value) + CType(k_row.Tag, LineTag).Linie.ValoareCuTva
+                Next
+                For Each k_l As EFacturaKeLegatura In _states(k_id).Legaturi
+                    If k_wanted.ContainsKey(k_l.IdClsf) Then k_wanted(k_l.IdClsf) -= k_l.Suma
+                Next
+                For Each k_pair As KeyValuePair(Of Integer, Decimal) In k_wanted
+                    If Math.Abs(k_pair.Value) >= Tolerance Then k_total(k_pair.Key) = k_total.GetValueOrDefault(k_pair.Key) + k_pair.Value
+                Next
+            Else
+                For Each k_pair As KeyValuePair(Of Integer, Decimal) In AmountsOf(k_id)
+                    k_total(k_pair.Key) = k_total.GetValueOrDefault(k_pair.Key) + k_pair.Value
+                Next
+            End If
         Next
         For Each k_pair As KeyValuePair(Of Integer, Decimal) In k_total
             Dim k_pc As EFacturaKeReceptieClasificatie = k_rec.PeClasificatie.FirstOrDefault(Function(k_x) k_x.IdClsf = k_pair.Key)
             Dim k_left As Decimal = If(k_pc IsNot Nothing, k_pc.Rest, 0D)
             If Math.Sign(k_left) <> Math.Sign(k_pair.Value) OrElse Math.Abs(k_pair.Value) > Math.Abs(k_left) + Tolerance Then
                 Dim k_label As String = If(_labelOf.ContainsKey(k_pair.Key), _labelOf(k_pair.Key), k_pair.Key.ToString(CultureInfo.InvariantCulture))
-                Return $"Recepția aleasă nu are destul rest pe {k_label}: rest {k_left.ToString("N2", _ro)}, de alocat {k_pair.Value.ToString("N2", _ro)}. " &
-                       "Scădeți «Recepționată», modificați recepția sau faceți una nouă."
+                ' Say where the reception DOES have rest, so a sum in «Rest nealocat» of the list is not a mystery when this classification has none.
+                Dim k_elsewhere As List(Of String) = k_rec.PeClasificatie.Where(Function(k_x) k_x.IdClsf <> k_pair.Key AndAlso Math.Abs(k_x.Rest) >= Tolerance).
+                    Select(Function(k_x) $"{If(_labelOf.ContainsKey(k_x.IdClsf), _labelOf(k_x.IdClsf), k_x.Clsf)} ({Fmt(k_x.Rest)})").ToList()
+                Dim k_hint As String = If(k_elsewhere.Count > 0, $" Recepția are rest pe: {String.Join("; ", k_elsewhere)}. Alegeți clasificația liniilor în acord cu ea sau o altă recepție.",
+                                          " Scădeți «Recepționată», modificați recepția sau faceți una nouă.")
+                Return $"Recepția aleasă nu are destul rest pe {k_label}: rest {Fmt(k_left)}, de alocat {Fmt(k_pair.Value)}." & k_hint
             End If
         Next
         Return Nothing
@@ -1491,14 +2066,18 @@ Public Class KeLegaForm
             Dim k_ind As EFacturaKeIndicator = IndicatorOf(k_pair.Key)
             Dim k_available As Decimal = k_d.Buget.Value - k_d.Receptii
             If k_pair.Value > k_available + Tolerance Then
-                Return $"Nu există rezervare suficientă pe {If(k_ind IsNot Nothing, k_ind.Clsf, k_pair.Key.ToString(CultureInfo.InvariantCulture))}: disponibil {k_available.ToString("N2", _ro)}, " &
-                       $"de recepționat {k_pair.Value.ToString("N2", _ro)}. Scădeți «Recepționată» sau faceți întâi o revizie de rezervare (documentul de fundamentare)."
+                Return $"Nu există rezervare suficientă pe {If(k_ind IsNot Nothing, k_ind.Clsf, k_pair.Key.ToString(CultureInfo.InvariantCulture))}: disponibil {Fmt(k_available)}, " &
+                       $"de recepționat {Fmt(k_pair.Value)}. Scădeți «Recepționată» sau faceți întâi o revizie de rezervare (documentul de fundamentare)."
             End If
         Next
         Return Nothing
     End Function
 
     Private Sub RefreshOk()
+        If _viewing IsNot Nothing Then
+            btnElimina.Enabled = _viewState IsNot Nothing AndAlso _viewState.PoateScrie AndAlso Not _busy
+            Return
+        End If
         Dim k_any As Boolean = _checked.Any(Function(k_id) AmountsOf(k_id).Count > 0)
         Dim k_ok As Boolean = k_any AndAlso _data IsNot Nothing AndAlso _checked.All(Function(k_id) _states(k_id).PoateScrie)
         If _mode <> EFacturaKeTip.Noua Then k_ok = k_ok AndAlso ChosenReceptie() IsNot Nothing
@@ -1506,6 +2085,10 @@ Public Class KeLegaForm
         Dim k_problem As String = AvailabilityProblem()
         If k_problem Is Nothing AndAlso k_ok Then
             k_problem = ReceptionFitProblem()
+            k_kind = NoticeKind.Warning
+        ElseIf k_problem Is Nothing AndAlso Not k_any AndAlso _mode = EFacturaKeTip.Existenta AndAlso _data IsNot Nothing Then
+            ' Every sum was cut to 0 (the reception has nothing on the classification of the lines): say it, do not just leave «Leagă» grey.
+            k_problem = ReceptionFitProblem(True)
             k_kind = NoticeKind.Warning
         End If
         If k_problem IsNot Nothing Then

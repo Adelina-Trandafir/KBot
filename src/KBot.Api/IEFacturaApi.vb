@@ -128,11 +128,14 @@ Public Interface IEFacturaApi
     Function GetAccessCuiAsync(ct As CancellationToken) As Task(Of String)
 
     ''' <summary>POST .../access/preia -- writes a batch of Access messages (natural keys: nothing here is overwritten); one transaction per message on the server.</summary>
-    Function PreiaAccessAsync(k_messages As IReadOnlyList(Of AccessEfMessage), ct As CancellationToken) As Task(Of EFacturaAccessPreluare)
+    ''' <remarks><paramref name="k_context"/> goes to the server's journal only (slice 00EF-44); it changes nothing in what is written.</remarks>
+    Function PreiaAccessAsync(k_messages As IReadOnlyList(Of AccessEfMessage), k_context As AccessPreluareContext,
+                              ct As CancellationToken) As Task(Of EFacturaAccessPreluare)
 
     ''' <summary>POST .../access/finalizeaza -- after the last batch: the references between the added invoices and their automatic link to receptions.</summary>
+    ''' <remarks><paramref name="k_context"/> goes to the server's journal only (slice 00EF-44).</remarks>
     Function FinalizeazaAccessAsync(k_idPrimite As IReadOnlyList(Of Integer), k_references As IReadOnlyList(Of AccessEfReference),
-                                    ct As CancellationToken) As Task(Of EFacturaAccessFinal)
+                                    k_context As AccessPreluareContext, ct As CancellationToken) As Task(Of EFacturaAccessFinal)
 
     ''' <summary>POST .../access/exporta -- a batch of the year's messages whose id is not in <paramref name="k_have"/> (what the Access file has).</summary>
     Function ExportaAccessAsync(k_year As Integer, k_have As IEnumerable(Of String), k_limit As Integer, ct As CancellationToken) As Task(Of EFacturaAccessExport)
@@ -196,5 +199,17 @@ Public Interface IEFacturaApi
 
     ''' <summary>DELETE .../ke/legaturi/{id} -- removes one link row. «Contabil» only.</summary>
     Function RemoveKeLegaturaAsync(k_idPrimita As Integer, k_idLegatura As Integer, ct As CancellationToken) As Task(Of EFacturaKeStare)
+
+    ''' <summary>POST /api/efactura/ke/propuneri -- slice KE16: for the given invoices that have no link, the receptions that have, whole, their value, and the one proposed. Reads only. <paramref name="k_angajamente"/> = the angajamente picked in the page for the supplier (they count for every invoice of the supplier). «Contabil» only.</summary>
+    Function GetKePropuneriAsync(k_idFacturi As IEnumerable(Of Integer), k_angajamente As IEnumerable(Of String), ct As CancellationToken) As Task(Of EFacturaKePropuneri)
+
+    ''' <summary>POST /api/efactura/ke/propuneri/aplica -- slice KE16: writes the links the accountant confirmed (one invoice on one whole reception), all or none. Answers how many were written. «Contabil» only.</summary>
+    Function ApplyKePropuneriAsync(k_legaturi As IEnumerable(Of EFacturaKeLegaturaMasa), k_angajamente As IEnumerable(Of String), ct As CancellationToken) As Task(Of Integer)
+
+    ''' <summary>POST /api/forexe/parteneri/angajament -- slice 0121-05: links the supplier (by its tax code) to the angajament picked in the page «Recepții», with the angajament's indicators when missing. The link belongs to the supplier, not to the invoice.</summary>
+    Function LinkSupplierAngajamentAsync(k_cui As String, k_codAngajament As String, ct As CancellationToken) As Task
+
+    ''' <summary>POST /api/forexe/parteneri/angajament/scoate -- slice 0121-05: removes the supplier's link with the angajament, with its indicators.</summary>
+    Function UnlinkSupplierAngajamentAsync(k_cui As String, k_codAngajament As String, ct As CancellationToken) As Task
 
 End Interface

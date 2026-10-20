@@ -30,9 +30,9 @@ why: Reîncarci lista doar dacă certificatul tău nu apare în ea.
 Dacă certificatul tău nu se vede în listă (de exemplu tokenul tocmai a fost introdus), apasă <b>reîncărcarea listei</b>.
 
 ## Alege certificatul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: CertificateSelectionForm.lstCertificates
-Din listă alege <b>certificatul tău</b>, apoi apasă «Înainte» aici.<BR>
+Din listă alege <b>certificatul tău</b>, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) aici.<BR>
 <mark>Prima poziție din listă este certificatul confirmat data trecută.</mark>
 
 ## Confirmă

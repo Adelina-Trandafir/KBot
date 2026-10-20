@@ -161,6 +161,7 @@ Public NotInheritable Class Verifier
 
                 Step1("Se rezolvă partenerii…")
                 CheckParteneriResolution(report, maps)
+                CheckPartnerLinks(report, cn, schema, maps)
                 cancel.ThrowIfCancellationRequested()
 
                 Step1("Se caută rânduri deja scrise…")
@@ -246,6 +247,11 @@ Public NotInheritable Class Verifier
             If Not schema.HasTable(map.TargetTable) Then
                 report.Add(Finding.TABEL_LIPSA, FindingClass.Blocant, map.TargetTable, String.Empty,
                            $"Tabelul «{map.TargetTable}» nu există în baza-țintă.")
+            End If
+            If map.WritesPartnerLinks AndAlso Not schema.HasTable(map.CompanionTable) Then
+                report.Add(Finding.TABEL_LIPSA, FindingClass.Blocant, map.CompanionTable, String.Empty,
+                           $"Tabelul «{map.CompanionTable}» nu există în baza-țintă (se scrie odată cu " &
+                           $"«{map.TargetTable}»). Scriptul sql/P121_01_parteneri_angajamente.sql trebuie rulat și sincronizat.")
             End If
         Next
     End Sub
@@ -376,6 +382,11 @@ Public NotInheritable Class Verifier
                                  clasificatii As List(Of ClasificatieRow))
         For Each map In maps
             If Not schema.HasTable(map.TargetTable) Then Continue For
+
+            If map.WritesPartnerLinks Then
+                CheckPartnerLinkColumns(report, schema, map)
+                Continue For
+            End If
 
             Dim accessColumns = AccessColumnsFor(map)
             Dim plan = ColumnPlan.Build(map, accessColumns, schema)
@@ -730,6 +741,166 @@ Public NotInheritable Class Verifier
                            $"Partenerii unității {unit.IdUnitate} nu au putut fi citiți: {ex.Message}")
             End Try
         Next
+    End Sub
+
+    ' ---- gate: the supplier <-> angajament links (slice 0121-02) ---------------------
+
+    ''' <summary>
+    ''' The columns the two link tables get, and the 1364 guard on them: a NOT NULL column without a default
+    ''' that the writer never names would make every INSERT fail.
+    ''' </summary>
+    Private Shared Sub CheckPartnerLinkColumns(report As VerificationReport, schema As TargetSchema, map As TableMap)
+        Dim k_written As New Dictionary(Of String, String())(StringComparer.OrdinalIgnoreCase) From {
+            {map.TargetTable, PartnerLinkColumns},
+            {map.CompanionTable, PartnerLinkIndicatorColumns}
+        }
+        For Each k_entry In k_written
+            If Not schema.HasTable(k_entry.Key) Then Continue For
+            report.WrittenColumns(k_entry.Key) = k_entry.Value.ToList()
+            Dim k_names As New HashSet(Of String)(k_entry.Value, StringComparer.OrdinalIgnoreCase)
+            For Each k_column In k_entry.Value
+                If schema.Column(k_entry.Key, k_column) Is Nothing Then
+                    report.Add(Finding.COLOANA_OBLIGATORIE, FindingClass.Blocant, k_entry.Key, k_column,
+                               $"Coloana «{k_column}» nu există în «{k_entry.Key}». Structura trebuie sincronizată " &
+                               "din AVACONT_SURSA (sql/P121_01_parteneri_angajamente.sql).")
+                End If
+            Next
+            For Each k_required In schema.RequiredColumns(k_entry.Key)
+                If k_names.Contains(k_required.Name) Then Continue For
+                report.Add(Finding.COLOANA_OBLIGATORIE, FindingClass.Blocant, k_entry.Key, k_required.Name,
+                           $"«{k_required.Name}» este NOT NULL, fără implicit și necompletată de server, dar nu se " &
+                           "află în lista de coloane scrise. MariaDB ar răspunde 1364.")
+            Next
+        Next
+    End Sub
+
+    ''' <summary>Columns <c>TransferRunner.WritePartnerLinks</c> names on the link table.</summary>
+    Friend Shared ReadOnly PartnerLinkColumns As String() = {"CodFiscal", "CodAng"}
+    ''' <summary>Columns <c>TransferRunner.WritePartnerLinks</c> names on the indicator table.</summary>
+    Friend Shared ReadOnly PartnerLinkIndicatorColumns As String() = {"IdLegAng", "CodAI", "CodInd", "ContBancar"}
+
+    ''' <summary>
+    ''' The report on <c>ParteneriAng</c> before it becomes links: how many links and indicators, which partners
+    ''' were left out and why, what was merged, what looks wrong. Nothing here blocks except an unreadable file -
+    ''' every row ends up written, merged or listed.
+    ''' </summary>
+    Private Sub CheckPartnerLinks(report As VerificationReport, cn As MySqlConnection, schema As TargetSchema,
+                                  maps As IEnumerable(Of TableMap))
+        Dim k_map = maps.FirstOrDefault(Function(m) m.WritesPartnerLinks)
+        If k_map Is Nothing Then Return
+
+        Dim k_links As PartnerLinkSet
+        Try
+            k_links = PartnerLinkReader.Read(_request)
+        Catch ex As Exception
+            GlobalErrorLog.Write("Verifier.CheckPartnerLinks", ex)
+            report.Add(Finding.PARTENER_NEREZOLVAT, FindingClass.Blocant, k_map.TargetTable, String.Empty,
+                       $"«ParteneriAng» nu a putut fi citit din Access: {ex.Message}")
+            Return
+        End Try
+
+        Dim k_indicators = k_links.IndicatorCount()
+        report.Add(Finding.LEGATURI_PARTENERI, FindingClass.Informativ, k_map.TargetTable, String.Empty,
+                   $"«ParteneriAng»: {k_links.RowsRead} rânduri citite ▸ {k_links.Links.Count} legături " &
+                   $"furnizor–angajament în «{k_map.TargetTable}» și {k_indicators} indicatori în " &
+                   $"«{k_map.CompanionTable}»; {k_links.DuplicatesMerged} rânduri repetate au fost combinate.",
+                   k_links.Links.Count)
+
+        If k_links.UnitsWithoutTable.Count > 0 Then
+            report.Add(Finding.TABEL_LIPSA, FindingClass.Informativ, "ParteneriAng", String.Empty,
+                       "Fișierul Access nu are tabelul «ParteneriAng» la unitățile: " &
+                       String.Join(", ", k_links.UnitsWithoutTable) & ".")
+        End If
+
+        AddPartnerList(report, Finding.PARTENER_FARA_COD_FISCAL, k_map, k_links.PartnersWithoutCodFiscal,
+                       "furnizori fără cod fiscal; nu se leagă de angajamente (rămân doar în «Parteneri»)")
+        AddPartnerList(report, Finding.PARTENER_LIPSA_ACCESS, k_map, k_links.PartnersNotFound,
+                       "coduri de partener din «ParteneriAng» care nu există în «Parteneri» al unității; rândurile nu se scriu")
+        AddPartnerList(report, Finding.LEGATURA_FARA_ANGAJAMENT, k_map, k_links.RowsWithoutCodAng,
+                       "furnizori cu rânduri fără «CodAng»; fără angajament nu se poate face legătura")
+
+        If k_links.RowsWithoutCodInd > 0 Then
+            report.Add(Finding.LEGATURA_FARA_ANGAJAMENT, FindingClass.Informativ, k_map.CompanionTable, "CodInd",
+                       $"{k_links.RowsWithoutCodInd} rânduri au «CodAng» dar nu au «CodInd»: legătura se scrie, " &
+                       "indicatorul nu.", CInt(Math.Min(k_links.RowsWithoutCodInd, Integer.MaxValue)))
+        End If
+
+        If k_links.BankAccountConflicts.Count > 0 Then
+            report.Add(New Finding(Finding.CONT_BANCAR_DIFERIT, FindingClass.Atentie, k_map.CompanionTable, "ContBancar",
+                       $"{k_links.BankAccountConflicts.Count} indicatori apar cu două conturi bancare diferite; " &
+                       "rămâne primul citit.", k_links.BankAccountConflicts.Count).
+                       WithDetail(String.Join(Environment.NewLine, k_links.BankAccountConflicts)))
+        End If
+
+        If k_links.CrossUnitConflicts.Count > 0 Then
+            report.Add(New Finding(Finding.LEGATURI_CONFLICT_UNITATI, FindingClass.Atentie, k_map.TargetTable, "CodAng",
+                       $"{k_links.CrossUnitConflicts.Count} furnizori au pe aceeași clasificație angajamente diferite " &
+                       "în unități diferite (se aștepta să nu se întâmple). Toate se scriu; cheia e (CodFiscal, CodAng).",
+                       k_links.CrossUnitConflicts.Count).
+                       WithDetail(String.Join(Environment.NewLine, k_links.CrossUnitConflicts)))
+        End If
+
+        If k_links.NonNumericCodFiscal.Count > 0 Then
+            report.Add(New Finding(Finding.COD_FISCAL_NENUMERIC, FindingClass.Informativ, k_map.TargetTable, "CodFiscal",
+                       $"{k_links.NonNumericCodFiscal.Count} coduri fiscale nu sunt numai cifre după normalizare " &
+                       "(CNP sau cod străin); se scriu așa cum ies din normalizare.", k_links.NonNumericCodFiscal.Count).
+                       WithDetail(String.Join(Environment.NewLine,
+                                  k_links.NonNumericCodFiscal.Select(Function(p) $"{p.Key}  (în Access: «{p.Value}»)"))))
+        End If
+
+        CheckKnownIndicators(report, cn, schema, k_map, k_links)
+    End Sub
+
+    Private Shared Sub AddPartnerList(report As VerificationReport, k_kind As String, k_map As TableMap,
+                                      k_rows As List(Of PartnerRowCount), k_what As String)
+        If k_rows.Count = 0 Then Return
+        Dim k_total = k_rows.Sum(Function(r) r.Rows)
+        report.Add(New Finding(k_kind, FindingClass.Atentie, k_map.TargetTable, String.Empty,
+                   $"{k_rows.Count} {k_what} ({k_total} rânduri).", k_total).
+                   WithDetail(String.Join(Environment.NewLine,
+                              k_rows.OrderBy(Function(r) r.IdUnitate).ThenBy(Function(r) r.CodPartener, StringComparer.OrdinalIgnoreCase).
+                              Select(Function(r) r.ToString()))))
+    End Sub
+
+    ''' <summary>
+    ''' A <c>CodAI</c> of a link that no <c>FX_Indicatori</c> holds - neither the target's nor the FOREXE files' - is
+    ''' reported but still written (no foreign key: the angajament may come later).
+    ''' </summary>
+    Private Sub CheckKnownIndicators(report As VerificationReport, cn As MySqlConnection, schema As TargetSchema,
+                                     k_map As TableMap, k_links As PartnerLinkSet)
+        If k_links.IndicatorCount() = 0 Then Return
+
+        Dim k_known As HashSet(Of String)
+        Try
+            k_known = PartnerLinkReader.ReadKnownIndicators(_request, cn, schema)
+        Catch ex As Exception
+            GlobalErrorLog.Write("Verifier.CheckKnownIndicators", ex)
+            report.Add(Finding.INDICATOR_LIPSA_FX, FindingClass.Atentie, k_map.CompanionTable, "CodAI",
+                       $"«FX_Indicatori» nu a putut fi citit, deci «CodAI» nu s-a verificat: {ex.Message}")
+            Return
+        End Try
+
+        If k_known.Count = 0 Then
+            report.Add(Finding.INDICATOR_LIPSA_FX, FindingClass.Informativ, k_map.CompanionTable, "CodAI",
+                       "«FX_Indicatori» e gol în țintă și nu s-a găsit în fișierele FOREXE, deci «CodAI» nu s-a putut verifica.")
+            Return
+        End If
+
+        Dim k_missing As New List(Of String)()
+        Dim k_sample As New List(Of String)()
+        For Each k_link In k_links.Links
+            For Each k_indicator In k_link.Indicators
+                If k_known.Contains(k_indicator.CodAI) Then Continue For
+                k_missing.Add($"{k_indicator.CodAI}  (CodFiscal {k_link.CodFiscal})")
+                If k_sample.Count < 5 Then k_sample.Add(k_indicator.CodAI)
+            Next
+        Next
+        If k_missing.Count = 0 Then Return
+
+        report.Add(New Finding(Finding.INDICATOR_LIPSA_FX, FindingClass.Atentie, k_map.CompanionTable, "CodAI",
+                   $"{k_missing.Count} indicatori ({String.Join(", ", k_sample)}…) nu se găsesc în «FX_Indicatori»; " &
+                   "se scriu oricum.", k_missing.Count).
+                   WithDetail(String.Join(Environment.NewLine, k_missing)))
     End Sub
 
     Private Shared Function ReadPartnerCodes(cn As OleDbConnection) As HashSet(Of String)

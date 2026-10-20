@@ -89,7 +89,7 @@ Public Class RezervariView
     '''
     ''' <para>Nothing = gazda nu o oferă. Atunci butonul lipsește, nu rămâne unul care nu face nimic.</para>
     ''' </summary>
-    Private ReadOnly _repara As Action(Of String)
+    Private ReadOnly _repara As Action(Of String, IReadOnlyList(Of RezervareGresita))
 
     ' ── Slice 0081-02: the document actions -- ONE button, ONE option at most (the ribbon, slice 0114-15) ──────
     ''' <summary>Reads the angajament's DDF (revisions + header) through the shell's 401 net.
@@ -108,7 +108,7 @@ Public Class RezervariView
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of RezervariInfo)), Task(Of RezervariInfo)),
                    Optional executaComanda As Action(Of DdfComanda) = Nothing,
-                   Optional repara As Action(Of String) = Nothing,
+                   Optional repara As Action(Of String, IReadOnlyList(Of RezervareGresita)) = Nothing,
                    Optional citesteDdf As Func(Of String, Task(Of DdfInfo)) = Nothing,
                    Optional actiuneMeniu As Action(Of RezervariMenuOption, AngajamentTreeInfo) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
@@ -260,9 +260,10 @@ Public Class RezervariView
     ''' reîmprospătării din FOREXE (felia 0060, scoasă din vedere; calea veche rămâne în shell, neapelată de aici).
     ''' </summary>
     ''' <remarks>
-    ''' <para>Shell-ul arată întâi ce s-ar schimba, cere confirmarea și abia apoi scrie; la
-    ''' sfârșit reîncarcă arborele cu nodul păstrat, iar asta împinge singură contextul nou
-    ''' încoace — vederea NU se reîncarcă de aici.</para>
+    ''' <para>Shell-ul arată întâi, într-o fereastră modală (felia 0114-25), ce s-a detectat și ce urmează să facă
+    ''' repararea, cere confirmarea și abia apoi scrie; la sfârșit reîncarcă arborele cu nodul păstrat, iar asta
+    ''' împinge singură contextul nou încoace — vederea NU se reîncarcă de aici. Lista rezervărilor greșite
+    ''' (cea care face rândul roșu) pleacă o dată cu codul, ca fereastra să le arate.</para>
     ''' </remarks>
     Private Sub Repara()
         If _repara Is Nothing Then Return
@@ -271,7 +272,7 @@ Public Class RezervariView
                             "K-BOT — Rezervări", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
-        _repara(_requestedCod)
+        _repara(_requestedCod, If(_info IsNot Nothing, _info.RezervariGresite, Array.Empty(Of RezervareGresita)()))
     End Sub
 
     ''' <summary>

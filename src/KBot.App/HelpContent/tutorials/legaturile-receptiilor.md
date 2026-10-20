@@ -28,50 +28,50 @@ wait: opens:AsociereForm
 <mark>Se poate deschide oricând, nu doar după o descărcare. Legăturile pe care s-a construit o ordonanțare sau peste care s-au calculat plăți rămân vizibile, dar nu se mai pot muta.</mark>
 
 ## Ce vezi în fereastră
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.lblIntro
-Textul de aici spune pe scurt ce se poate face: tragi un instantaneu peste recepția lui sau înapoi, la dreapta, ca să-l desprinzi. Apasă «Înainte».
+Textul de aici spune pe scurt ce se poate face: tragi un instantaneu peste recepția lui sau înapoi, la dreapta, ca să-l desprinzi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Recepții și lanțurile lor
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.treeLant
 Arborele din stânga are <b>recepțiile angajamentului</b>, iar sub fiecare recepție <b>lanțul ei de instantanee</b> (starea recepției în timp).<BR>
-<mark>Locul unui instantaneu în lanț îl dă ora lui; în timpul tragerii se vede unde ar cădea.</mark> Apasă «Înainte».
+<mark>Locul unui instantaneu în lanț îl dă ora lui; în timpul tragerii se vede unde ar cădea.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Instantanee neașezate
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.treeLibere
-Arborele din dreapta are <b>instantaneele care nu aparțin încă niciunei recepții</b>. Ele se așază tragându-le peste recepția lor. Apasă «Înainte».
+Arborele din dreapta are <b>instantaneele care nu aparțin încă niciunei recepții</b>. Ele se așază tragându-le peste recepția lor. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Tabelul recepției alese
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.gridLant
-Sub arborele cu lanțuri vezi <b>liniile instantaneului ales</b>: indicatorul, SSI, creditul și valoarea. Alege un instantaneu ca să le vezi. Apasă «Înainte».
+Sub arborele cu lanțuri vezi <b>liniile instantaneului ales</b>: indicatorul, SSI, creditul și valoarea. Alege un instantaneu ca să le vezi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Tabelul instantaneului neașezat
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.gridLibere
-Sub arborele cu instantanee neașezate vezi <b>liniile instantaneului ales de acolo</b>, ca să recunoști ce recepție i se potrivește înainte să-l tragi. Apasă «Înainte».
+Sub arborele cu instantanee neașezate vezi <b>liniile instantaneului ales de acolo</b>, ca să recunoști ce recepție i se potrivește înainte să-l tragi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Mută o asociere
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.treeLant
 <b>Trage</b> un instantaneu peste recepția lui, sau înapoi la dreapta ca să-l desprinzi. Cu <b>Ctrl</b> sau <b>Shift</b> alegi mai multe deodată și le tragi împreună.<BR>
-<mark>Clic dreapta pe un instantaneu: «Desprinde de recepție», «Începe o recepție nouă», «Nu consemnează nicio schimbare» / «Consemnează o schimbare».</mark> Apasă «Înainte» după ce ai mutat ce voiai.
+<mark>Clic dreapta pe un instantaneu: «Desprinde de recepție», «Începe o recepție nouă», «Nu consemnează nicio schimbare» / «Consemnează o schimbare».</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) după ce ai mutat ce voiai.
 
 ## Grafice și benzi
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.btnGrafice
 optional: yes
 why: Graficele sunt doar un ajutor vizual; nu schimbă nimic în date.
-Butonul <b>«Grafice și benzi»</b> deschide, într-o fereastră pe care o poți mări cât ecranul, evoluția valorii și așezarea instantaneelor. Apasă «Înainte».
+Butonul <b>«Grafice și benzi»</b> deschide, într-o fereastră pe care o poți mări cât ecranul, evoluția valorii și așezarea instantaneelor. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Golește așezările
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: AsociereForm.btnReseteaza
 optional: yes
 why: Folosești golirea doar dacă vrei să o iei de la capăt cu modificările nesalvate.
-<b>«Golește așezările»</b> anulează tot ce ai mutat până acum și te întoarce la ce e salvat. Apasă «Înainte».
+<b>«Golește așezările»</b> anulează tot ce ai mutat până acum și te întoarce la ce e salvat. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează legăturile
 <!-- slice: 000T-10 -->

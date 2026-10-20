@@ -119,7 +119,19 @@ Friend Module Program
                 ' Pe Debug, dezvoltatorul alege fereastra de pornire dintr-o listă tematizată
                 ' (StartupLauncherForm). Apare DOAR în build-ul Debug; Release-ul nu are nicio
                 ' alegere de făcut.
-                RunLauncher(provider)
+                '
+                ' A Debug build INSTALLED on another PC (publish-debug.ps1 leaves a marker file next to
+                ' the exe) checks exactly like Release, so a test copy cannot silently fall behind.
+                ' A Debug run from the developer's own bin\Debug has no marker and never checks: it
+                ' would overwrite itself. Same flow as Release below.
+                Dim k_updatePending As Boolean = False
+                If AppUpdateService.IsPublishedDebug Then
+                    Dim k_updates As AppUpdateService = provider.GetRequiredService(Of AppUpdateService)()
+                    ResolveClientKindAtStartup(k_updates)
+                    If k_updates.RunStartupCheck() Then Return
+                    k_updatePending = Not ClientProfile.AccessKnown
+                End If
+                RunLauncher(provider, k_updatePending)
 #Else
                 ' Release, BEFORE the login gate: the update check (slice 0067). True = the updater
                 ' was started (or a mandatory update was refused) and the process exits now, so
@@ -161,7 +173,7 @@ Friend Module Program
     ''' O cheie necunoscută ARUNCĂ: dacă cineva adaugă o pornire în <c>StartupLauncherForm.PORNIRI</c>
     ''' și uită dispecerul, trebuie să afle imediat, nu să vadă un proces care iese tăcut.
     ''' </summary>
-    Private Sub RunLauncher(provider As ServiceProvider)
+    Private Sub RunLauncher(provider As ServiceProvider, k_updatePending As Boolean)
         Dim alegere As String
         Using launcher As New StartupLauncherForm()
             AppScreen.SetReference(launcher)   ' the first window: every dialog after it lands on its screen (slice 0062)
@@ -171,7 +183,7 @@ Friend Module Program
 
         Select Case alegere
             Case StartupLauncherForm.KEY_APLICATIE
-                RunShellWithLogin(provider)
+                RunShellWithLogin(provider, k_updatePending)
             Case StartupLauncherForm.KEY_BANC
                 RunHarness(provider)
             Case StartupLauncherForm.KEY_JURNALE

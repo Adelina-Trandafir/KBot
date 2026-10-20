@@ -491,6 +491,21 @@ Public NotInheritable Class KBotRibbonTabCollection
     End Sub
 End Class
 
+''' <summary>Raised when a tab of the ribbon is pressed (slice 000T-13).</summary>
+Public NotInheritable Class KBotRibbonTabClickedEventArgs
+    Inherits EventArgs
+
+    Public Sub New(k_tab As KBotRibbonTab, k_index As Integer)
+        Tab = k_tab
+        Index = k_index
+    End Sub
+
+    Public ReadOnly Property Tab As KBotRibbonTab
+
+    ''' <summary>The position of the tab in <see cref="KBotRibbon.Tabs"/>.</summary>
+    Public ReadOnly Property Index As Integer
+End Class
+
 ''' <summary>Raised when a ribbon button is clicked.</summary>
 Public NotInheritable Class KBotRibbonItemClickedEventArgs
     Inherits EventArgs

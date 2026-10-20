@@ -24,6 +24,21 @@ dotnet run --project KBotAdmin\KBotAdmin.vbproj
   `python -m routes.admin_cli.admin_cli <verb>` and reads one JSON object back; no free SQL is ever sent.
 
 ## Window
+
+Account rights also synchronize the user's real MariaDB privileges (ME01-03).
+Before publishing this version, manually set up the separate privileged account
+using `sql/SEC03_kbotadmin_privilegii.sql` and server-side `DB_CONFIG_DREPTURI`.
+New personal MariaDB accounts can start with USAGE only (CREATE USER with a
+password, without initial ALL PRIVILEGES); assigning their application roles
+then grants the necessary data access.
+No schema changes or setup SQL are run automatically. Missing configuration
+refuses the rights change. Use **Aplică drepturile MariaDB** on existing accounts
+to remove their old broad grants without changing application roles. It applies
+to all assigned databases and all host variants of that username and closes
+the user's MariaDB connections. Accountants get data DML in their own databases,
+without server/schema administration. See
+`docs/worklog/SLICE-ME01-03-privilegii-mariadb.md` for policy and recovery details.
+
 - Always the **Classic** theme (`ThemeManager.InitializeFixed`), whatever theme K-BOT has saved; nothing is written to the
   theme settings. Uses `KBot.Controls` and `KBot.Theming` by project reference.
 - Icon `KBotAdmin.ico` (K-BOT's blue rounded square with an X): exe, windows, caption bar, tray.

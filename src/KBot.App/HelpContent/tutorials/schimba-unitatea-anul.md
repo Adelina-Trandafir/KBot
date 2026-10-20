@@ -9,9 +9,9 @@ host-key: schimba-unitatea-anul
 <!-- slice: 000T-10 -->
 
 ## Unde se schimbă
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: KbotForm.capBar
-În <b>bara de titlu</b> a ferestrei principale sunt trei selectoare: <b>unitatea</b>, <b>anul</b> și <b>sursa/sectorul</b>. Fiecare apare doar când ai de ales între cel puțin două variante, așa că unele pot lipsi. Apasă «Înainte».
+În <b>bara de titlu</b> a ferestrei principale sunt trei selectoare: <b>unitatea</b>, <b>anul</b> și <b>sursa/sectorul</b>. Fiecare apare doar când ai de ales între cel puțin două variante, așa că unele pot lipsi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Unitatea
 <!-- slice: 000T-10 -->

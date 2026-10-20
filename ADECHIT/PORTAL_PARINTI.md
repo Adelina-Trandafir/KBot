@@ -42,6 +42,16 @@ când nu mai există ambiguități. Introducerea unui conflict nou rămâne refu
 
 ## Dashboard și fișă
 
+<!-- slice: ADE9-07 -->
+Comenzile pentru fișă deschid imediat fereastra comună de raport, cu indicator
+de încărcare. Se poate pregăti o singură fișă sau un singur export în aceeași
+pagină. **Imprimă** afișează acum PDF-ul în aplicație; tipărirea se pornește din
+bara de acțiuni. **PDF** păstrează descărcarea fișierului, cu loading până la
+pregătirea lui. Din preview, **Export Excel** permite alegerea coloanelor;
+filtrele intervalului sunt păstrate. Erorile apar în fereastra de raport.
+La schimbarea copilului/deconectare, previzualizările se închid. Această
+integrare este scrisă local, fără probe funcționale sau vizuale.
+
 <!-- slice: AD11-02 -->
 Portalul părinților se derulează vertical și pe mobil până la fișa de cont.
 Opțiunile selectorului copilului folosesc font 16px și rânduri de minimum 44px.

@@ -71,6 +71,7 @@ Public Class AvacontMain
         AddHandler k_shell.ActiveViewChanged, AddressOf Shell_ActiveViewChanged
         AddHandler k_shell.lblOperator.TextChanged, AddressOf Operator_TextChanged
         AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
+        HookTutorialSignals()
 
         ' The opening page. The shell is loaded behind it (OnShown) and reached from the ribbon.
         _home = New AcasaPage(k_session)
@@ -205,6 +206,8 @@ Public Class AvacontMain
                     If ShellEntries.Contains(e.Key) AndAlso Not ShowShell() Then Return
                     _kbot.RunMenuEntry(e.Key)
             End Select
+            ' Slice 000T-13: a tutorial waits for the press; raised once the command has run, so the page it opens is on screen.
+            RaiseEvent TutorialSignal(SignalRibbonPrefix & e.Key)
         Catch ex As Exception
             ' UI boundary (click handler): log and swallow; the entry told the operator what it had to.
             GlobalErrorLog.Write("AvacontMain.Ribbon_ItemClicked", ex)

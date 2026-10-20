@@ -451,10 +451,15 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 | SLICE-ADE9-02 | Probă completă pe 5050 și documentația fluxului de lucru | PLANIFICAT |
 | SLICE-ADE9-03 | Pachet pentru AvacontPush, instrucțiuni SQL și consemnarea probelor utilizatorului | PLANIFICAT |
 | SLICE-ADE9-04 | Situație de plată A4 portret, HTML configurabil per subunitate, grupe pe pagini noi, listare/PDF/Excel | SCRIS LOCAL 13.10.2026 — fără teste; DDL și seed neexecutate; [worklog](../SLICE-ADE9-04-situatie-plata-html.md) |
+| SLICE-ADE9-05 | Sistem comun cu VERCON: motor PDF/Excel, snapshot autentificat și previzualizare PDF în aplicație | SCRIS LOCAL 19.10.2026 — numai analiză de design; fără teste/probe; [worklog](../SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md) |
+| SLICE-ADE9-06 | Butoane ADECHIT în stil VERCON, în special Rapoarte; feedback CSS comun | SCRIS LOCAL 19.10.2026 — fără teste/probe vizuale; [worklog](../SLICE-ADE9-06-butoane-stil-vercon.md) |
+| SLICE-ADE9-07 | O singură generare/export în pregătire, fereastră imediată cu loading și erori în raport | SCRIS LOCAL 19.10.2026 — numai analiză de design; fără teste/probe; [worklog](../SLICE-ADE9-07-rapoarte-loading-blocare.md) |
+| SLICE-ADE9-08 | Resetarea și ascunderea notificării generale de eroare la următoarea acțiune | SCRIS LOCAL 19.10.2026 — fără teste/probe; [worklog](../SLICE-ADE9-08-resetare-eroare-la-actiune.md) |
+| SLICE-ADE9-09 | Textul panoului Rapoarte cu 2pt mai mic, dimensiunile butoanelor păstrate | SCRIS LOCAL 19.10.2026 — fără teste/probe vizuale; [worklog](../SLICE-ADE9-09-text-rapoarte-minus-2pt.md) |
 
 ### Current focus
 
-- Depinde de ADE1–ADE8; următoarea subfelie liberă: **ADE9-05**.
+- Depinde de ADE1–ADE8; următoarea subfelie liberă: **ADE9-10**.
 - Probă completă: grupă → copil/plătitor → prezență → calcul → încasare/chitanță →
   restituire/anulare → situație → închidere → luna următoare; roluri și unități diferite.
 - Probele relevante de regresie includ grilele existente, sesiunile, logarea,
@@ -464,6 +469,14 @@ Plan: [ADE9 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
 
 ### Open threads
 
+- ADE9-08/09: de probat resetarea notificării generale după interacțiune și
+  reducerea textelor din Rapoarte cu păstrarea dimensiunii butoanelor.
+- ADE9-07: de probat clicuri repetate/rapoarte diferite în pregătire, loading
+  până la prima pagină, erori, închidere/context și exporturile părinților.
+- ADE9-06: de publicat CSS-ul comun și adaptoarele ambelor aplicații; aspect,
+  hover/focus și stări dezactivate de probat de utilizator.
+- ADE9-05: publicare comună ADECHIT + VERCON și probe de către utilizator: PDF,
+  Excel cu coloane selectate, paginare, imprimare, expirare și izolare între contexte.
 - Lista rapoartelor și variantele condiționate sunt în maparea ADE0-02 și planul ADE9-01; fără facturi/bonuri fiscale.
 - ADE9-04: aplicați manual AD_10_raport_situatie_plata.sql per bază ADE; seedul
   AD_10_raport_situatie_plata_excel.sql este opțional, după AD_08 pentru AVACONT_COMUN.

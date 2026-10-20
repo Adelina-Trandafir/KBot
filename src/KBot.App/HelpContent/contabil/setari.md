@@ -35,7 +35,7 @@ Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare 
 
 | Grupul | Ce conține |
 |--------|-----------|
-| **Fereastra principală** | pornirea mărită, turul inițial, avertismentul despre Adobe, comutatorul **«Panglica din fereastra principală e compactă»** (iconițe și text mai mici în ribbon, pentru ecrane mici; se aplică imediat — [Ribbonul](topic:contabil.ribbon)), comutatorul **«Meniul lateral stă în spatele machetelor»** (bifat, implicit, panoul lateral se vede doar cât nu e nicio machetă pe ecran, iar o machetă deschisă ocupă toată lățimea; debifat, panoul se vede tot timpul; se aplică imediat — [Panoul lateral](topic:contabil.panou)) și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
+| **Fereastra principală** | pornirea mărită, tutorialul de început, avertismentul despre Adobe, comutatorul **«Panglica din fereastra principală e compactă»** (iconițe și text mai mici în ribbon, pentru ecrane mici; se aplică imediat — [Ribbonul](topic:contabil.ribbon)), comutatorul **«Meniul lateral stă în spatele machetelor»** (bifat, implicit, panoul lateral se vede doar cât nu e nicio machetă pe ecran, iar o machetă deschisă ocupă toată lățimea; debifat, panoul se vede tot timpul; se aplică imediat — [Panoul lateral](topic:contabil.panou)) și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
 | **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
 
@@ -43,7 +43,7 @@ Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —
 [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla).
 
 ## Pagina «Aplicație»: pornirea K-BOT
-<!-- slice: 0097-02, 000T-07, 0000-51, 0078-14, 0113 -->
+<!-- slice: 0097-02, 000T-07, 0000-51, 0078-14, 0113, 000T-13, 0000-107 -->
 
 Din grupul **Fereastra principală**:
 
@@ -51,15 +51,11 @@ Din grupul **Fereastra principală**:
   ribbonul, K-BOT o **bifează o dată**, ca să vezi noua fereastră pe tot ecranul. De atunci alegerea e a ta: bifată,
   fereastra principală se deschide mărită pe tot ecranul; debifată, la mărimea ei obișnuită, în mijlocul ecranului.
   Se aplică de la următoarea pornire.
-- **«Arată turul ferestrei principale la pornirea K-BOT»** — **debifată la început.** Cât e debifată,
-  turul ferestrei principale nu pornește singur; îl pornești din meniul «?». O bifezi dacă vrei să
-  pornească singur la fiecare pornire. Se debifează singură după ce ai văzut turul până la capăt
-  sau ai bifat «Nu mai arăta turul inițial» pe bula lui — [Tururile ghidate](topic:contabil.ajutor).
-- **«Arată tutorialul de început la pornirea K-BOT»** — **bifată la început.** Cât e bifată,
-  tutorialul scurt despre tutoriale pornește singur la pornire, după turul ferestrei principale
-  (dacă acela mai e de văzut). Nu se poate închide la jumătate: se parcurge până la capăt. Se debifează
-  singură după ce l-ai văzut până la capăt; o bifezi din nou dacă vrei să-l revezi la pornire. Cum faci asta pas cu pas îți arată tutorialul «Pornește sau oprește tutorialul de
-  început» — [Tutorialele](topic:contabil.ajutor).
+- **«Arată tutorialul de început la pornirea K-BOT»** — **bifată la început.** Cât e bifată, la pornire
+  K-BOT te duce printr-un tutorial scurt al ferestrei principale (filele panglicii, tokenul ANAF, lista angajamentelor,
+  cardul «Ce este nou»). Se debifează singură după ce l-ai văzut până la capăt sau ai bifat «Nu mai arăta tutorialul de
+  început» pe bula lui; o bifezi din nou dacă vrei să-l revezi la pornire. Turul ferestrei principale nu mai pornește
+  singur; îl găsești la «?», sub «Tururi ghidate» — [Tutorialele](topic:contabil.ajutor).
 - **«Avertizează dacă Adobe e mai vechi de 2025»** — **bifată la început.** Cât e bifată, la
   pornire K-BOT îți spune, într-o fereastră, dacă Adobe de pe calculator e mai vechi de versiunea
   2025 și îți recomandă **Adobe Acrobat Reader gratuit**, versiunea 2025 sau mai nouă: pe un Acrobat
@@ -92,7 +88,7 @@ conexiunea FOREXE se închide oricum:
   Bifeaz-o dacă unitățile tale au certificate diferite.
 
 ## Pagina «Autentificare»
-<!-- slice: 0063, 0072, 0097 -->
+<!-- slice: 0063, 0072, 0097, 0097-04 -->
 
 **«Fereastra de autentificare»** — ce ține minte fereastra de conectare pe acest calculator:
 
@@ -110,10 +106,13 @@ conexiunea FOREXE se închide oricum:
   conectare în fereastră, K-BOT se reconectează singur, fără fereastră. Poți alege între 10 minute
   și o oră; cu opțiunile avansate, și 5 minute sau până la 8 ore.
 
-Cu [opțiunile avansate](topic:avansat) mai apar:
+**«Arată în fereastra de autentificare bifa «Ține minte parola până la repornirea
+calculatorului»»** — ascunde sau arată bifa aceea sub parolă. Se vede mereu și își păstrează starea
+fără opțiunile avansate, dar **se poate schimba doar cu [opțiunile avansate](topic:avansat)**
+pornite.
 
-- **«Arată în fereastra de autentificare bifa «Ține minte parola până la repornirea
-  calculatorului»»** — ascunde sau arată bifa aceea sub parolă;
+Cu opțiunile avansate mai apare:
+
 - **«Uită parola memorată»** — șterge parola ținută minte pentru sesiunea Windows curentă.
 
 **«Serverul»** — adresa serverului K-BOT și timpul maxim de așteptare. Adresa e fixată în program

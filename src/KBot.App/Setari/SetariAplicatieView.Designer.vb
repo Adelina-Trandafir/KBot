@@ -29,7 +29,6 @@ Partial Class SetariAplicatieView
         chkShowBrowser = New CheckBox()
         chkReceptii = New CheckBox()
         chkStartMaximized = New CheckBox()
-        chkTurInitial = New CheckBox()
         chkTutorialInitial = New CheckBox()
         chkAvertismentAdobe = New CheckBox()
         chkAvansate = New CheckBox()
@@ -194,32 +193,18 @@ Partial Class SetariAplicatieView
         tips.SetToolTipText(chkStartMaximized, "Bifat: la pornirea K-BOT fereastra principală se deschide mărită pe tot ecranul." & vbLf & "Debifat: se deschide la mărimea ei obișnuită, în mijlocul ecranului." & vbLf & "Se aplică de la următoarea pornire.")
         chkStartMaximized.UseVisualStyleBackColor = True
         '
-        ' chkTurInitial
-        '
-        chkTurInitial.AutoSize = True
-        tlyComutatoare.SetColumnSpan(chkTurInitial, 2)
-        chkTurInitial.Location = New Point(4, 191)
-        chkTurInitial.Margin = New Padding(4, 0, 4, 10)
-        chkTurInitial.Name = "chkTurInitial"
-        chkTurInitial.Size = New Size(462, 26)
-        chkTurInitial.TabIndex = 3
-        chkTurInitial.Text = "Arată turul ferestrei principale la pornirea K-BOT"
-        tips.SetToolTipHeader(chkTurInitial, "Turul inițial")
-        tips.SetToolTipText(chkTurInitial, "Bifat: la fiecare pornire K-BOT îți arată, pas cu pas, fereastra principală." & vbLf & "Se debifează singur după ce ai văzut turul până la capăt" & vbLf & "sau ai bifat «Nu mai arăta turul inițial» pe bula lui.")
-        chkTurInitial.UseVisualStyleBackColor = True
-        '
         ' chkTutorialInitial
         '
         chkTutorialInitial.AutoSize = True
         tlyComutatoare.SetColumnSpan(chkTutorialInitial, 2)
-        chkTutorialInitial.Location = New Point(4, 227)
+        chkTutorialInitial.Location = New Point(4, 191)
         chkTutorialInitial.Margin = New Padding(4, 0, 4, 10)
         chkTutorialInitial.Name = "chkTutorialInitial"
         chkTutorialInitial.Size = New Size(462, 26)
         chkTutorialInitial.TabIndex = 13
         chkTutorialInitial.Text = "Arată tutorialul de început la pornirea K-BOT"
         tips.SetToolTipHeader(chkTutorialInitial, "Tutorialul de început")
-        tips.SetToolTipText(chkTutorialInitial, "Bifat: K-BOT îți arată, pe scurt, ce sunt tutorialele și unde le găsești (butonul «?»)." & vbLf & "Vine după turul inițial, dacă acela e încă bifat." & vbLf & "Nu poate fi închis la jumătate: se parcurge până la capăt." & vbLf & "Se debifează singur după ce l-ai văzut până la capăt.")
+        tips.SetToolTipText(chkTutorialInitial, "Bifat: la pornire K-BOT îți arată, pe scurt, panglica de sus: filele, tokenul ANAF, lista angajamentelor și butoanele din dreapta." & vbLf & "Îl poți opri oricând din bula lui." & vbLf & "Se debifează singur după ce l-ai văzut până la capăt sau ai bifat «Nu mai arăta tutorialul de început» pe bula lui.")
         chkTutorialInitial.UseVisualStyleBackColor = True
         '
         ' chkAvertismentAdobe
@@ -597,27 +582,25 @@ Partial Class SetariAplicatieView
         tlyComutatoare.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyComutatoare.Controls.Add(lblGrupFereastra, 0, 0)
         tlyComutatoare.Controls.Add(chkStartMaximized, 0, 1)
-        tlyComutatoare.Controls.Add(chkTurInitial, 0, 2)
-        tlyComutatoare.Controls.Add(chkTutorialInitial, 0, 3)
-        tlyComutatoare.Controls.Add(chkAvertismentAdobe, 0, 4)
-        tlyComutatoare.Controls.Add(chkLogViewer, 0, 5)
-        tlyComutatoare.Controls.Add(chkRibbonCompact, 0, 6)
-        tlyComutatoare.Controls.Add(chkSidebarInSpate, 0, 7)
-        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 8)
-        tlyComutatoare.Controls.Add(lblVerbose, 0, 9)
-        tlyComutatoare.Controls.Add(cboVerbose, 1, 9)
-        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 10)
-        tlyComutatoare.Controls.Add(chkReceptii, 0, 11)
-        tlyComutatoare.Controls.Add(chkKeZi, 0, 12)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 13)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 14)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 15)
+        tlyComutatoare.Controls.Add(chkTutorialInitial, 0, 2)
+        tlyComutatoare.Controls.Add(chkAvertismentAdobe, 0, 3)
+        tlyComutatoare.Controls.Add(chkLogViewer, 0, 4)
+        tlyComutatoare.Controls.Add(chkRibbonCompact, 0, 5)
+        tlyComutatoare.Controls.Add(chkSidebarInSpate, 0, 6)
+        tlyComutatoare.Controls.Add(lblGrupForexe, 0, 7)
+        tlyComutatoare.Controls.Add(lblVerbose, 0, 8)
+        tlyComutatoare.Controls.Add(cboVerbose, 1, 8)
+        tlyComutatoare.Controls.Add(chkShowBrowser, 0, 9)
+        tlyComutatoare.Controls.Add(chkReceptii, 0, 10)
+        tlyComutatoare.Controls.Add(chkKeZi, 0, 11)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 12)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 13)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 14)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 17
-        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.RowCount = 16
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -941,7 +924,6 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkShowBrowser As CheckBox
     Friend WithEvents chkReceptii As CheckBox
     Friend WithEvents chkStartMaximized As CheckBox
-    Friend WithEvents chkTurInitial As CheckBox
     Friend WithEvents chkTutorialInitial As CheckBox
     Friend WithEvents chkAvertismentAdobe As CheckBox
     Friend WithEvents chkAvansate As CheckBox

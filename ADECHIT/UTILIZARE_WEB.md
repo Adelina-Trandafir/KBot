@@ -1,11 +1,16 @@
 # ADECHIT — interfața și regulile actuale
 
-Actualizat: 13.10.2026, SLICE-ADE9-04. Acest document consolidează rezultatul
+Actualizat: 19.10.2026, SLICE-ADE9-08/09. Acest document consolidează rezultatul
 threadului ADE1-05/06 și ADE6-05–17. Regulile de mai jos înlocuiesc descrierile
 intermediare ale interfeței din workloguri; acestea rămân dovezi istorice.
 Starea implementării este în [status](../ADECHIT_STATUS.md).
 
 ## Pagina principală și controalele comune
+
+<!-- slice: ADE9-08 -->
+Notificarea generală de eroare de sub antet se șterge și se ascunde la următoarea
+acțiune: apăsare/clic, tastare, schimbarea unei valori sau trimiterea unui formular.
+Dacă noua acțiune eșuează, mesajul ei este afișat. Simplul hover nu ascunde eroarea.
 
 <!-- slice: AD11-01 -->
 <!-- slice: AD11-02 -->
@@ -343,6 +348,42 @@ Emailurile conflictuale nou introduse sunt refuzate cu identificarea celuilalt p
 
 ## Rapoarte (SLICE-ADE9-01)
 
+<!-- slice: ADE9-09 -->
+Titlul, etichetele bifelor și datelor și valorile din calendarele panoului sunt
+cu 2pt mai mici. Textul butoanelor de raport și dimensiunea pictogramei
+calendarului rămân cele existente.
+
+<!-- slice: ADE9-07 -->
+La apăsarea unei comenzi, fereastra raportului apare imediat cu mesajul
+**Se pregătește raportul…** și indicator de încărcare. Cât timp se pregătește
+un raport sau export, nu se poate porni altul în aceeași pagină; clicurile
+repetate nu adaugă solicitări. La previzualizare, indicatorul dispare după
+afișarea primei pagini. La descărcare, fereastra se închide când fișierul este
+pregătit și trimis browserului. O eroare apare în aceeași fereastră.
+Închiderea ferestrei în timpul unei cereri nu permite pornirea alteia până
+la terminarea cererii curente. Regula se aplică și chitanțelor, dispozițiilor
+de plată, exporturilor PDF/Excel și fișei din portalul părinților.
+
+<!-- slice: ADE9-06 -->
+Butoanele din panoul Rapoarte au același stil ca acțiunile VERCON: fontul
+interfeței, bordură simplă și contur cu umbră la trecerea mouse-ului sau la
+selectarea din tastatură. Butoanele indisponibile sunt estompate. Același
+feedback se aplică butoanelor de acțiune din ADECHIT.
+
+<!-- slice: ADE9-05 -->
+Rapoartele folosesc acum sistemul comun extras din VERCON: previzualizare PDF
+în aplicație, cu **Tipărește**, **Alege imprimanta**, **Descarcă PDF**, zoom,
+potrivire la lățime, 100%, navigare între pagini și **Închide**.
+**Export Excel** deschide selecția coloanelor. PDF-ul și Excel-ul pornesc din
+aceleași date generate, păstrate 10 minute pentru utilizatorul, unitatea și
+subunitatea curente. După expirare, închideți și generați raportul din nou.
+Pentru date actualizate generați un raport nou; exportul nu recalculează situația.
+Lățimile Excel configurate și valorile numerice ADECHIT se păstrează.
+Chitanțele se previzualizează în același control; imprimarea se pornește din bara
+raportului. Fișa PDF din portalul părinților folosește același motor de generare.
+La schimbarea contextului sau expirarea sesiunii, previzualizările se închid.
+
+
 <!-- slice: ADE9-04 -->
 Butonul **Situație de plată**, sub Situație lunară, folosește aceeași bifă
 **Toate grupele?**. Raportul A4 portret are coloanele Nr. crt., Numele și prenumele,
@@ -365,7 +406,7 @@ Formatarea se păstrează în listare/PDF; Excel include nota ca text simplu.
 În PDF se folosesc fonturile standard sans/serif/mono și DejaVu pentru diacritice.
 Textul lung sau grupele numeroase pot continua pe mai multe pagini.
 
-Panoul «Rapoarte» din dreapta ecranului Prezență listează sau descarcă în PDF: Situație lunară (grupa aleasă, «Toate grupele?»,
+Panoul «Rapoarte» din dreapta ecranului Prezență deschide previzualizarea PDF pentru: Situație lunară (grupa aleasă, «Toate grupele?»,
 «Separă grupe?»), Registru casă și Raport bancă (între «Dată început» și «Dată sfârșit», completate cu luna aleasă),
 Fișă cont și Fișă debitor (copilul selectat sau «Toți copiii din grupă»), Documente anulate și Situație financiară (luna aleasă).
 Pentru o restituire, butonul 📥 de pe rând oferă Dispoziția de plată. Rapoartele doar citesc: nu emit numere și nu schimbă situația.

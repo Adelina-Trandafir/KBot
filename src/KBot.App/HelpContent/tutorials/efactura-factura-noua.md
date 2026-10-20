@@ -52,9 +52,9 @@ wait: click
 Apasă <b>«Linie nouă»</b>: se adaugă o linie cu unitatea XPP (bucată) și cantitatea 1.
 
 ## Completează linia
-<!-- slice: 00EF-13, 0000-58 -->
+<!-- slice: 00EF-13, 0000-58, 000T-13 -->
 target: FacturiForm.gridLinii
-Scrie direct în tabel: <b>Conținut</b> (ce vinzi), <b>Um</b> (unitatea de măsură, din listă), <b>Cant</b> și <b>PU</b> (prețul). <b>Valoarea</b> se calculează singură. Poți adăuga câte linii ai nevoie. Apoi apasă «Înainte».
+Scrie direct în tabel: <b>Conținut</b> (ce vinzi), <b>Um</b> (unitatea de măsură, din listă), <b>Cant</b> și <b>PU</b> (prețul). <b>Valoarea</b> se calculează singură. Poți adăuga câte linii ai nevoie. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Generale
 <!-- slice: 00EF-13, 0000-58 -->
@@ -78,6 +78,6 @@ Apasă <b>«Salvare»</b>. Factura apare în arbore, la client, și rămâne <b>
 <mark>K-BOT nu salvează până nu are un client, o dată, un cont emitent și cel puțin o linie cu conținut și unitate de măsură; îți spune ce lipsește.</mark>
 
 ## Mai departe
-<!-- slice: 00EF-13, 0000-58 -->
+<!-- slice: 00EF-13, 0000-58, 000T-13 -->
 target: FacturiForm.tree
-Factura nouă se trimite la ANAF din <b>meniul ei</b> (semnul cu trei puncte din dreapta rândului, la survolare). Trimiterea, validarea și stornarea sunt explicate în ajutorul «E-Factura: facturile emise» (F1). Apasă «Înainte» ca să închei.
+Factura nouă se trimite la ANAF din <b>meniul ei</b> (semnul cu trei puncte din dreapta rândului, la survolare). Trimiterea, validarea și stornarea sunt explicate în ajutorul «E-Factura: facturile emise» (F1). Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) ca să închei.

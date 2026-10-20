@@ -26,10 +26,10 @@ why: Dacă fereastra «Extrase de cont» e deja deschisă, nu mai ai nevoie de a
 Din meniul deschis alege <b>«Extrase»</b>.
 
 ## Toate extrasele
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ExtraseForm.panel
 Fereastra arată <b>toate extrasele bazei de date</b>, nu doar ale unui angajament: cu sau fără angajament, cu cod de contract sau fără.<BR>
-<mark>Vederea «Extrase» din fereastra principală arată doar extrasele angajamentului ales.</mark> Apasă «Înainte».
+<mark>Vederea «Extrase» din fereastra principală arată doar extrasele angajamentului ales.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Arborele
 <!-- slice: 000T-10 -->
@@ -55,15 +55,15 @@ Aici e <b>operațiunea aleasă, în întregime</b>: număr și date, plătitor, 
 <mark>În această fereastră apar și patru rânduri în plus: codul angajamentului, indicatorul, referința destinatarului și codul programului.</mark>
 
 ## Modul de afișare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ExtraseForm>ExtrasePanel.tree
 part: header.right
-Iconița din dreapta antetului arborelui alege <b>modul de afișare</b>: «antet + operații» sau «operații + detalii». Funcționează ca în vederea «Extrase». Apasă «Înainte».
+Iconița din dreapta antetului arborelui alege <b>modul de afișare</b>: «antet + operații» sau «operații + detalii». Funcționează ca în vederea «Extrase». Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Descărcarea din FOREXE
-<!-- slice: 000T-10, 0114-08, 0114-09, 0000-90 -->
+<!-- slice: 000T-10, 0114-08, 0114-09, 0000-90, 000T-13 -->
 Extrasele noi se aduc din <b>ribbon</b>, cu butonul <b>«Descarcă extrase»</b> din grupul din dreapta, lângă «Închide». Macheta nu mai are un buton de descărcare al ei.<BR>
-<mark>Dacă nu există o sesiune FOREXE, K-BOT se conectează întâi; lista se reîncarcă după import.</mark> Apasă «Înainte».
+<mark>Dacă nu există o sesiune FOREXE, K-BOT se conectează întâi; lista se reîncarcă după import.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Închide fereastra
 <!-- slice: 000T-10 -->

@@ -1,6 +1,6 @@
 """Lazy report filter branches, read through the existing scoped SELECT sources."""
 from decimal import Decimal
-from . import stock
+from . import stock, report_incoming_selection, report_outgoing_selection
 from .nomenclatoare import NomError
 
 
@@ -14,7 +14,7 @@ def roots(spec):
         nodes.append(branch('selection:use-accounts', 'Conturi în folosință'))
     if 'variant' in spec['filters']:
         nodes.append(branch('selection:products', 'Produse'))
-    for key, label in [('supplier', 'Furnizori'), ('receiver', 'Primitori'), ('document', 'Documente')]:
+    for key, label in [('receiver', 'Primitori'), ('document', 'Documente')]:
         if key not in spec['filters']:
             continue
         if key == 'receiver':
@@ -82,11 +82,59 @@ def product_nodes(source, node_id, recursive):
     return nodes
 
 
-def selection_branch(source, spec, node_id, *, recursive=False):
+def document_suppliers(source, node_id):
+    supplier_key = None
+    if node_id.startswith('document-supplier:'):
+        supplier_key = node_id.split(':', 1)[1]
+        if supplier_key != 'none' and not supplier_key.isdecimal():
+            raise NomError('REPORT_BRANCH', 'Furnizor invalid.', 422)
+    groups, documents = {}, {}
+    for row in source.rows('receipts'):
+        day = row.get('movement_date') or row['date']
+        if row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']:
+            continue
+        supplier = str(row['supplier']) if row.get('supplier') is not None else 'none'
+        if supplier_key is not None and supplier != supplier_key:
+            continue
+        groups.setdefault(supplier, branch('document-supplier:' + supplier, row.get('party') or 'Fără furnizor'))
+        if supplier_key is not None:
+            documents[row['document']] = f"{row['family'].upper()} {row['number']} / {day} / {row.get('party') or ''}"
+    if supplier_key is None:
+        return {'nodes': sorted(groups.values(), key=lambda group: (group['label'].casefold(), group['id'])), 'documents': []}
+    return {'nodes': options(documents, 'document'),
+            'documents': [{'id': item, 'label': label} for item, label in documents.items() if item is not None]}
+
+
+def selection_branch(source, spec, node_id, *, recursive=False, documents=False, receivers=False):
+    if spec.get('outgoing_selection'):
+        mode = 'receivers' if receivers else 'documents' if documents else 'accounts'
+        return report_outgoing_selection.read(source, spec, node_id, recursive=recursive, mode=mode)
     allowed = {node['id'] for node in roots(spec)}
+    if node_id.startswith('document-supplier:') or node_id == 'selection:document' and spec.get('document_options'):
+        if not spec.get('document_options') or 'selection:document' not in allowed:
+            raise NomError('REPORT_BRANCH', 'Ramura nu este disponibilă pentru acest raport.', 422)
+        return document_suppliers(source, node_id)
     if node_id == 'root':
-        # No metadata, movements, partners or documents are read for the initial tree.
-        return {'spec': spec, 'nodes': roots(spec), 'documents': []}
+        if documents:
+            if not spec.get('document_options'):
+                raise NomError('REPORT_BRANCH', 'Modul documente nu este disponibil pentru acest raport.', 422)
+            return {'spec': spec, **document_suppliers(source, 'selection:document')}
+        if spec.get('incoming_selection'):
+            return {'spec': spec, **report_incoming_selection.read(source, spec, node_id)}
+        # Accounts are visible immediately; their products and variants stay lazy.
+        nodes = []
+        for node in roots(spec):
+            if node['id'] == 'selection:document' and spec.get('document_options'):
+                continue
+            if node['id'] == 'selection:products':
+                nodes.extend(product_nodes(source, node['id'], False))
+            else:
+                nodes.append(node)
+        return {'spec': spec, 'nodes': nodes, 'documents': []}
+    if node_id.startswith(('receipt-supplier:', 'nir-supplier:', 'receipt-account:', 'receipt-document:')):
+        if not spec.get('incoming_selection'):
+            raise NomError('REPORT_BRANCH', 'Ramura nu este disponibilă pentru acest raport.', 422)
+        return report_incoming_selection.read(source, spec, node_id, recursive=recursive)
     if node_id.startswith(('category:', 'product:')):
         if 'selection:products' not in allowed:
             raise NomError('REPORT_BRANCH', 'Filtrul de produse nu este disponibil.', 422)

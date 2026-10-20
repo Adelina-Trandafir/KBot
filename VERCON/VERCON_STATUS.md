@@ -1,5 +1,29 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## Migrator: storno fără NIR părinte ignorat — 19.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** 0.3.10.0 importă IntrariStorno numai dacă
+IdIntrare corespunde unui NIR cu bifa Storno din aceeași sursă/gestiune.
+Restul liniilor sunt omise înaintea verificării IdProdus, NON BLOCKING,
+cu raport N15 și reconciliere prin SkippedRows. Liniile valide păstrează
+verificările de produs și includ variantele folosite exclusiv de storno.
+Înlocuiește importarea storno-urilor orfane cu IdIntrare NULL; nu modifică
+datele deja migrate sau fluxurile web pentru orfanii existenți.
+[Regulă și versiune](VRC.Migrator/README.md). Fără teste/build/import,
+interogări sau modificări de schemă/date. Necesită recompilare.
+
+## Migrator: recuperare IDBO pentru bon refăcut — 19.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** 0.3.9.0 poate recupera un IDBO dispărut
+dintr-o singură primire BP/BT cu produs/preț/deținător/cont identice, dată
+document compatibilă și disponibil suficient. Snapshotul corectat este
+comun remapării IDBO și contului moștenit; transferul păstrează aceeași
+referință pe ambele laturi. N14 listează asocierile, X17 blochează cazurile
+fără candidat unic. [Regulă și exemplul IDOI 1576](REGISTRU_OI_MF.md).
+Fără teste, build sau import pentru codul nou; sursa Access a fost citită
+read-only în etapa de diagnostic solicitată de utilizator. Fără modificări
+de schemă, Access sau date MariaDB. Necesită recompilare.
+
 ## Registrul OI/MF și migrator 0.3.7.0 — 18.10.2026
 
 **IMPLEMENTAT ÎN SURSE, NERULAT:** decizia privind identitatea comună P/T/C

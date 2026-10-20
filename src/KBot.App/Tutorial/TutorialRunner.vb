@@ -44,6 +44,10 @@ Friend NotInheritable Class TutorialRunner
     Private _guardDown As Boolean
 
     Private _dim As TutorialDim
+    ' Slice 000T-13: while the step works in a window of its own (a modal one), the main window behind keeps its veil: a second
+    ' veil over it with a hole where that window stands.
+    Private _back As TutorialDim
+    Private _backOn As Boolean
     Private _frame As HelpTourFrame
     Private _bubble As HelpTourBubble
     Private _presenterHost As Form
@@ -521,7 +525,24 @@ Friend NotInheritable Class TutorialRunner
         If k_step.Anchor.Length > 0 Then rects.AddRange(AnchorRects(k_step.Anchor, control, k_host))
         If rects.Count = 0 AndAlso control IsNot Nothing Then rects.Add(ControlRect(control, k_step.Part))
         If k_host Is Nothing AndAlso control IsNot Nothing Then k_host = control.FindForm()
+        k_host = RootWindow(k_host)
         Return rects
+    End Function
+
+    ' Slice 000T-13: the main window, when the step works in another window of its own (the veil of that window covers only
+    ' itself, so the main window needs one more); Nothing when the host is the main window or the main window is not on screen.
+    Private Shared Function WindowBehind(k_host As Form) As Form
+        Dim k_main As Form = AvacontMain.Current
+        If k_main Is Nothing OrElse k_main.IsDisposed OrElse Not k_main.Visible OrElse k_main.WindowState = FormWindowState.Minimized Then Return Nothing
+        If k_host Is Nothing OrElse ReferenceEquals(k_host, k_main) Then Return Nothing
+        Return k_main
+    End Function
+
+    ' Slice 000T-13: a page hosted in the main window (the shell, the opening page) is no window of its own: the veil, the
+    ' ring and the bubble belong to the window that holds it, so the veil covers the ribbon and the side panel too.
+    Private Shared Function RootWindow(k_form As Form) As Form
+        If k_form Is Nothing OrElse k_form.TopLevel Then Return k_form
+        Return If(TryCast(k_form.TopLevelControl, Form), k_form)
     End Function
 
     Private Shared Function CaptionRect(k_host As Form) As Rectangle
@@ -554,7 +575,8 @@ Friend NotInheritable Class TutorialRunner
         Next
         _holes = everything
 
-        Dim key As String = host.Bounds.ToString() & "|" & String.Join(";", primary.Select(Function(r) r.ToString())) & "|" &
+        Dim behind As Form = WindowBehind(host)
+        Dim key As String = host.Bounds.ToString() & "|" & If(behind Is Nothing, String.Empty, behind.Bounds.ToString()) & "|" & String.Join(";", primary.Select(Function(r) r.ToString())) & "|" &
                             String.Join(";", everything.Select(Function(r) r.ToString()))
         If key = _layoutKey AndAlso _shownIndex = _index Then Return
 
@@ -593,6 +615,14 @@ Friend NotInheritable Class TutorialRunner
         Dim messageOnly As Boolean = st.Target.Length = 0 AndAlso st.Anchor.Length = 0
         _dimOn = st.DimRest AndAlso (primary.Count > 0 OrElse (_flow.Mandatory AndAlso messageOnly))
         If _dimOn Then _dim.Cover(host.RectangleToScreen(host.ClientRectangle), everything, CaptionRect(host))
+        _backOn = _dimOn AndAlso behind IsNot Nothing
+        If _backOn Then
+            If _back Is Nothing OrElse _back.IsDisposed Then
+                _back = New TutorialDim()
+                _back.Owner = behind
+            End If
+            _back.Cover(behind.Bounds, New Rectangle() {host.Bounds}, CaptionRect(behind))
+        End If
         Dim pointAt As Rectangle = Rectangle.Empty
         If primary.Count > 0 Then
             Dim union As Rectangle = primary(0)
@@ -630,6 +660,7 @@ Friend NotInheritable Class TutorialRunner
         Dim mine As Boolean = active IsNot Nothing AndAlso (ReferenceEquals(active, _presenterHost) OrElse ReferenceEquals(active, _bubble) OrElse
                                                              ReferenceEquals(active, _dim) OrElse ReferenceEquals(active, _frame))
         SetVisible(_dim, mine AndAlso _dimOn)
+        SetVisible(_back, mine AndAlso _dimOn AndAlso _backOn)
         SetVisible(_frame, anyOurs AndAlso _frameOn)
         If _shownIndex >= 0 Then SetVisible(_bubble, anyOurs)
     End Sub
@@ -672,14 +703,16 @@ Friend NotInheritable Class TutorialRunner
         Dim popup As KBotHelpPopup = TryCast(_presenterHost, KBotHelpPopup)
         If popup IsNot Nothing AndAlso Not popup.IsDisposed Then popup.CloseNow()
         If _bubble IsNot Nothing AndAlso Not _bubble.IsDisposed AndAlso _bubble.NeverAgain Then _neverAgain = True
-        For Each f As Form In New Form() {_dim, _frame}
+        For Each f As Form In New Form() {_dim, _frame, _back}
             If f IsNot Nothing AndAlso Not f.IsDisposed Then f.Close()
         Next
         If _bubble IsNot Nothing AndAlso Not _bubble.IsDisposed Then _bubble.CloseByRunner()
         _dim = Nothing
+        _back = Nothing
         _frame = Nothing
         _bubble = Nothing
         _presenterHost = Nothing
+        _backOn = False
         _dimOn = False
         _frameOn = False
     End Sub
@@ -817,7 +850,7 @@ Friend NotInheritable Class TutorialRunner
             If ReferenceEquals(_active, Me) Then _active = Nothing
             _onFinished?.Invoke()
             ' Slice 000T-07: seen to the end, or asked not to be shown again.
-            If _initial AndAlso (_completed OrElse _neverAgain) Then _service.InitialTutorialSeen()
+            If _initial AndAlso (_completed OrElse _neverAgain) Then _service.OpeningTutorialSeen()
         Catch ex As Exception
             GlobalErrorLog.Write("TutorialRunner.Finish", ex)
         End Try

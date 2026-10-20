@@ -35,16 +35,16 @@ why: Dacă fereastra «Adăugare / editare parteneri» e deja deschisă, nu mai 
 Alege <b>«Parteneri»</b>.
 
 ## Lista partenerilor
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ParteneriForm.tree
-Aici sunt <b>partenerii unității</b>. Alegi unul ca să-i vezi datele în dreapta și ca să-l editezi. Apasă «Înainte».
+Aici sunt <b>partenerii unității</b>. Alegi unul ca să-i vezi datele în dreapta și ca să-l editezi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifa «Ascunde partenerii fără activitate»
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ParteneriForm.chkFaraActivitate
 optional: yes
 why: Bifa e doar un filtru al listei; nu schimbă nimic în date.
-Bifată, lista <b>ascunde partenerii care nu apar pe niciun document</b> (DDF sau ORD). E util când lista e lungă și cauți un partener folosit. Apoi apasă «Înainte».
+Bifată, lista <b>ascunde partenerii care nu apar pe niciun document</b> (DDF sau ORD). E util când lista e lungă și cauți un partener folosit. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adăugare
 <!-- slice: 000T-10 -->
@@ -60,33 +60,33 @@ Scrie <b>codul fiscal</b> al partenerului, apoi apasă Enter sau treci în alt c
 <mark>La ieșirea din câmp (sau Enter) K-BOT caută codul fiscal la ANAF și completează singur denumirea și adresa. Un cod fiscal poate avea un singur partener.</mark>
 
 ## Denumirea
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ParteneriForm.txtDenumire
 optional: yes
 why: Denumirea se completează de la ANAF; o verifici sau o corectezi doar dacă e nevoie.
-Verifică <b>denumirea</b> adusă de la ANAF. Dacă codul fiscal nu a fost găsit, scrie-o tu. Apoi apasă «Înainte».
+Verifică <b>denumirea</b> adusă de la ANAF. Dacă codul fiscal nu a fost găsit, scrie-o tu. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Contul, banca și adresa
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ParteneriForm.txtIban
 optional: yes
 why: IBAN-ul, banca și adresa nu sunt obligatorii.
-Completează, dacă le ai, <b>contul IBAN principal</b> și <b>banca</b>; adresa vine de la ANAF. Câmpurile marcate cu * sunt obligatorii. Apoi apasă «Înainte».
+Completează, dacă le ai, <b>contul IBAN principal</b> și <b>banca</b>; adresa vine de la ANAF. Câmpurile marcate cu * sunt obligatorii. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Codurile de angajament
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13, 0121-03 -->
 target: ParteneriForm.gridCoduri
 optional: yes
-why: Codurile de angajament le adaugi doar dacă partenerul se leagă de anumite clasificații.
+why: Codurile de angajament le adaugi doar dacă partenerul are anumite angajamente.
 Aici legi partenerul de <b>coduri de angajament</b>. Cu <b>«+»</b> din subsol adaugi un rând, pe care îl completezi direct în tabel; <b>«✕»</b> îl șterge.<BR>
-<mark>O clasificație poate apărea o singură dată pe partener.</mark> Apoi apasă «Înainte».
+<mark>Același cod de angajament cu același cod de indicator nu poate apărea de două ori.</mark> Clasificația se arată doar pentru citire. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Partener ascuns
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ParteneriForm.chkAscuns
 optional: yes
 why: Un partener se ascunde doar când nu mai trebuie să apară în liste.
-Bifa <b>«Partener ascuns»</b> scoate partenerul din liste. E singura cale de a scăpa de un partener deja folosit pe documente, fiindcă acela nu se poate șterge. Apoi apasă «Înainte».
+Bifa <b>«Partener ascuns»</b> scoate partenerul din liste. E singura cale de a scăpa de un partener deja folosit pe documente, fiindcă acela nu se poate șterge. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvare
 <!-- slice: 000T-10 -->

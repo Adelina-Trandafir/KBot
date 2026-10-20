@@ -194,6 +194,35 @@ $LogsDir = Join-Path $PublishDir 'Logs'
 New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
 'Folder de loguri (creat la publish).' | Set-Content -Path (Join-Path $LogsDir '_keep.txt') -Encoding UTF8
 
+# --- 6a. Verificare de actualizare si pe Debug (felia 0067) ------------------------
+#  Un Debug INSTALLAT pe alt PC trebuie sa caute actualizari ca Release-ul, altfel ramane
+#  in urma fara sa stie nimeni. Doua lucruri il fac sa mearga:
+#   - KBot.Updater.exe langa aplicatie (la fel ca in publish-release.ps1, single-file);
+#   - fisierul-marcaj 'debug-update-check.flag': Program.vb verifica actualizarile doar
+#     daca il gaseste. Debug-ul rulat din bin\Debug (F5) nu il are => nu se inlocuieste singur.
+#  ATENTIE: actualizarea aduce pachetul Release (fara banc de teste) peste Debug.
+$UpdaterProj = Join-Path $SolutionRoot 'src\KBot.Updater\KBot.Updater.vbproj'
+if (-not (Test-Path $UpdaterProj)) { throw "Nu gasesc proiectul: $UpdaterProj" }
+$UpdaterStage = Join-Path $ArtifactsDir "_updater_$Stamp"
+if (Test-Path $UpdaterStage) { Remove-Item $UpdaterStage -Recurse -Force }
+Write-Host "Publish KBot.Updater (single-file) ..." -ForegroundColor Cyan
+& dotnet publish $UpdaterProj `
+    -c $Configuration `
+    -r $Rid `
+    --self-contained false `
+    -p:PublishSingleFile=true `
+    -o $UpdaterStage
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish KBot.Updater a esuat (ExitCode=$LASTEXITCODE)."
+}
+$UpdaterExe = Join-Path $UpdaterStage 'KBot.Updater.exe'
+if (-not (Test-Path -LiteralPath $UpdaterExe)) { throw "KBot.Updater.exe lipseste din $UpdaterStage dupa publish." }
+Copy-Item -LiteralPath $UpdaterExe -Destination (Join-Path $PublishDir 'KBot.Updater.exe') -Force
+Remove-Item $UpdaterStage -Recurse -Force
+'Marcaj: acest Debug instalat verifica actualizarile la pornire (AppUpdateService.PUBLISHED_DEBUG_MARKER).' |
+    Set-Content -Path (Join-Path $PublishDir 'debug-update-check.flag') -Encoding UTF8
+Write-Host "Updater OK + marcaj debug-update-check.flag in $PublishDir" -ForegroundColor Cyan
+
 # --- 6b. Manifest update (manifest.xml la radacina output-ului, inainte de zip) --
 #  Trebuie sa fie INAINTE de arhivare ca sa intre in .zip langa DLL-urile KBot.*.
 New-KBotManifest -PublishDir $PublishDir -Configuration $Configuration -Runtime $Rid | Out-Null
@@ -266,4 +295,5 @@ Write-Host "  Zip (manual) : $ZipPath  ($ZipSizeMB MB)  [fallback de dezarhivare
 Write-Host "  Necesita     : .NET Desktop Runtime 8 (win-x64) instalat pe PC-ul clientului."
 Write-Host "  Workflows    : $($wfls.Count) fisier(e) .wfl incluse deja in 'Workflows\'."
 Write-Host "  Migrare      : KBot.Migrator.exe (Access -> MariaDB) inclus in 'Migrare\'."
+Write-Host "  Actualizari  : Debug-ul instalat verifica serverul la pornire (KBot.Updater.exe + marcaj inclus)."
 Write-Host "  Browser      : prima rulare pe un PC nou cere '.\playwright.ps1 install chromium' (per-user)."

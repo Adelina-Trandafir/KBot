@@ -89,6 +89,32 @@ Friend NotInheritable Class FacturaIcons
                          End Sub)
     End Function
 
+    ''' <summary>Two links of a chain (slice KE16): the button that proposes the bulk link of a supplier's invoices to receptions.</summary>
+    Friend Shared Function Link(k_palette As ThemePalette, k_size As Integer) As Image
+        Dim k_color As Color = k_palette.TextColor
+        Return GetOrDraw($"link:{k_color.ToArgb()}:{k_size}", k_size,
+                         Sub(k_g)
+                             Using k_pen As New Pen(k_color, Math.Max(1.5F, k_size * 0.11F))
+                                 k_g.TranslateTransform(k_size / 2.0F, k_size / 2.0F)
+                                 k_g.RotateTransform(-45.0F)
+                                 Dim k_w As Single = k_size * 0.52F
+                                 Dim k_h As Single = k_size * 0.3F
+                                 Dim k_shift As Single = k_size * 0.17F
+                                 For Each k_dx As Single In New Single() {-k_shift, k_shift}
+                                     Using k_path As New GraphicsPath()
+                                         Dim k_x As Single = k_dx - k_w / 2.0F
+                                         Dim k_y As Single = -k_h / 2.0F
+                                         Dim k_d As Single = k_h
+                                         k_path.AddArc(k_x, k_y, k_d, k_d, 90.0F, 180.0F)
+                                         k_path.AddArc(k_x + k_w - k_d, k_y, k_d, k_d, 270.0F, 180.0F)
+                                         k_path.CloseFigure()
+                                         k_g.DrawPath(k_pen, k_path)
+                                     End Using
+                                 Next
+                             End Using
+                         End Sub)
+    End Function
+
     ''' <summary>A magnifier, for the tree's search band.</summary>
     Friend Shared Function Search(k_palette As ThemePalette, k_size As Integer) As Image
         Dim k_color As Color = k_palette.TextColor

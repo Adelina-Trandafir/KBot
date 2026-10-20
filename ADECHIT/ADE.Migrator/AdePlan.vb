@@ -67,7 +67,9 @@ Public NotInheritable Class AdePlan
                                  Optional k_childCnpIsParent As Boolean = False) As AdePlan
         Try
             Dim k_plan As New AdePlan(k_source.ReceiptConfig)
-            k_plan.ConvertTables(k_source)
+            Dim k_excluded = AdeErroneousData.Build(k_source, k_plan)
+            k_plan.ConvertTables(k_source, k_excluded)
+            k_plan.CheckReceiptNumbers()
             k_plan.FixLinks()
             k_plan.SetGroupTypes(k_groupTypes)
             k_plan.FillDerived(k_source)
@@ -91,7 +93,7 @@ Public NotInheritable Class AdePlan
 
     ' ---- 1. column by column ---------------------------------------------------------------------------------------
 
-    Private Sub ConvertTables(k_source As AdeSource)
+    Private Sub ConvertTables(k_source As AdeSource, k_excluded As HashSet(Of DataRow))
         For Each k_table In AdeSchema.Tables
             Dim k_src = k_source.Tables(k_table.Name)
             Dim k_planTable As New AdePlanTable(k_table, k_src.Rows.Count)
@@ -113,6 +115,7 @@ Public NotInheritable Class AdePlan
             Dim k_rounded As New Dictionary(Of String, (Count As Integer, Example As String))()
             Dim k_keys As New HashSet(Of Object)()
             For Each k_row As DataRow In k_src.Rows
+                If k_excluded.Contains(k_row) Then Continue For
                 Dim k_out As New Dictionary(Of String, Object)(StringComparer.Ordinal)
                 For Each k_col In k_table.Columns
                     Dim k_dc As DataColumn = Nothing
@@ -171,6 +174,37 @@ Public NotInheritable Class AdePlan
                 Return k_text
         End Select
     End Function
+
+    ''' <summary>Exact duplicate receipt numbers must be resolved before the subunit-wide unique key is written.</summary>
+    Private Sub CheckReceiptNumbers()
+        Dim k_series As New Dictionary(Of String, Dictionary(Of Integer, List(Of Dictionary(Of String, Object))))(StringComparer.Ordinal)
+        For Each k_row In Find("Chitante").Rows
+            Dim k_serie = TryCast(k_row("Serie"), String)
+            ' A SQL unique key permits repeats when any component is NULL.
+            If k_serie Is Nothing OrElse k_row("Numar") Is Nothing Then Continue For
+            Dim k_number = CInt(k_row("Numar"))
+            Dim k_numbers As Dictionary(Of Integer, List(Of Dictionary(Of String, Object))) = Nothing
+            If Not k_series.TryGetValue(k_serie, k_numbers) Then
+                k_numbers = New Dictionary(Of Integer, List(Of Dictionary(Of String, Object)))()
+                k_series.Add(k_serie, k_numbers)
+            End If
+            Dim k_rows As List(Of Dictionary(Of String, Object)) = Nothing
+            If Not k_numbers.TryGetValue(k_number, k_rows) Then
+                k_rows = New List(Of Dictionary(Of String, Object))()
+                k_numbers.Add(k_number, k_rows)
+            End If
+            k_rows.Add(k_row)
+        Next
+        For Each k_serie In k_series
+            For Each k_number In k_serie.Value
+                If k_number.Value.Count < 2 Then Continue For
+                Dim k_examples = k_number.Value.Take(10).Select(
+                    Function(r) $"IDC={r("IDC")}, IDPL={r("IDPL")}, Data={Convert.ToString(r("Data"), CultureInfo.InvariantCulture)}")
+                Block($"Chitante: seria «{k_serie.Key}», numărul {k_number.Key} apare pe {k_number.Value.Count} rânduri din aceeași subunitate " &
+                      $"(ex.: {String.Join("; ", k_examples)}). Indexul uq_Sub_Serie_Numar cere o singură chitanță pentru fiecare serie și număr, inclusiv pentru chitanțe anulate și ani diferiți. Corectați dublurile în sursă.")
+            Next
+        Next
+    End Sub
 
     ' ---- 2. links that point nowhere -------------------------------------------------------------------------------
 

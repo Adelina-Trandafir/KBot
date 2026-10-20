@@ -336,6 +336,11 @@ Partial Friend NotInheritable Class VrcRunner
                     If k_id.HasValue Then k_used.Add(CLng(Math.Round(k_id.Value)))
                 Next
             Next
+            For Each k_row In ReadRows(k_source, "IntrariStorno")
+                If Not HasStornoParent(k_source, k_row) Then Continue For
+                Dim k_id As Decimal? = VrcConvert.ToDecimal(k_row("IdProdus"))
+                If k_id.HasValue Then k_used.Add(CLng(Math.Round(k_id.Value)))
+            Next
         Next
         Return k_used
     End Function
@@ -473,6 +478,11 @@ Partial Friend NotInheritable Class VrcRunner
             k_n += 1
             If k_n Mod CheckEvery = 0 Then _cancel.ThrowIfCancellationRequested()
             Dim k_key As String = If(k_table.SourceKey.Length > 0, VrcConvert.KeyText(k_row(k_table.SourceKey)), $"#{k_n}")
+            If k_table.Name = "IntrariStorno" AndAlso Not HasStornoParent(k_source, k_row) Then
+                k_tracked.Count.SkippedRows += 1
+                ReportSkippedStorno(k_source, k_row, If(k_key.Length > 0, k_key, $"#{k_n}"))
+                Continue For
+            End If
             If k_key.Length = 0 Then
                 AddIssue(k_source, k_table.Name, $"#{k_n}", k_table.SourceKey, "X06", "BLOCAJ", "NULL", String.Empty, "Rând fără cheie primară.")
                 Continue For
@@ -566,6 +576,10 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
         Dim k_ok As Boolean = True
 
+        If k_table.Name = "OI_Produse" Then
+            k_row = PrepareOiRegistryRow(k_source, k_sourceIndex, k_row, k_key, k_ok)
+            If Not k_ok Then Return Nothing
+        End If
         If k_table.Name = "NIR" Then _currentNumarSub = 0
         ReportSourceSigns(k_source, k_table, k_row, k_key)
 

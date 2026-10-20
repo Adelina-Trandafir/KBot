@@ -103,7 +103,7 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_account As String
         Try
             If Not _oiAccounts.TryGetValue(k_sourceIndex, k_resolver) Then
-                k_resolver = New OiAccounts(ReadRows(k_source, "OI_Produse"))
+                k_resolver = New OiAccounts(OriginRecovery(k_source, k_sourceIndex).Rows)
                 _oiAccounts(k_sourceIndex) = k_resolver
             End If
             k_account = If(k_table.Name = "OI_Produse", k_resolver.Account(k_row), k_resolver.DocumentAccount(k_table.Name, k_row))

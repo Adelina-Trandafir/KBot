@@ -32,7 +32,7 @@ Arborele nu mai are iconițe în cap sau în subsol (a rămas doar «+» de pe r
 | **Repară...** | **Repară rezervările** angajamentului, din istoric, fără nicio descărcare din FOREXE; apare doar când angajamentul are rezervări greșite — vezi mai jos |
 
 ## Rezervări greșite și repararea lor
-<!-- slice: 0092-01, 0000-68 -->
+<!-- slice: 0092-01, 0000-68, 0114-25, 0000-110 -->
 
 Dacă o lună a fost calculată de la valorile altei luni (de pildă o lună în care rezervările pornesc
 de la totalul de acum două luni, ca și cum luna dinainte nu ar fi existat), valorile rezervărilor
@@ -41,9 +41,8 @@ din ea și din cele de după ea ies greșite.
 - În lista principală, angajamentul cu rezervări greșite se scrie cu **roșu**. Ținând mouse-ul pe
   rând vezi, pentru fiecare rezervare greșită, ziua, indicatorul, valoarea anterioară care e acum
   și cea care ar trebui să fie. Dacă are și recepții cu lanțul neînchis, apar ambele mesaje.
-- În vederea «Rezervări» apare, în ribbon, butonul **«Repară...»**; el se vede **doar** cât timp angajamentul are rezervări greșite. Apasă-l. K-BOT îți arată întâi câte rânduri și câte rezervări se schimbă, cu câteva exemple, și
-  abia după ce confirmi scrie corecturile. **Nu se descarcă nimic din FOREXE.**
-- Repararea **nu se face** dacă ar atinge o lună care are **revizii** de fundamentare: K-BOT spune ce lună e și nu schimbă nimic.
+- În vederea «Rezervări» apare, în ribbon, butonul **«Repară...»**; el se vede **doar** cât timp angajamentul are rezervări greșite. Apasă-l. Se deschide o fereastră care îți arată, în două tabele, **ce s-a detectat** (rezervările care nu pornesc de la valoarea la care s-a oprit cea dinainte, cu valoarea de acum și cea care ar trebui) și **ce se va face** (fiecare rezervare care se rescrie, cu valoarea veche și cea nouă, plus câte rânduri de istoric se corectează și eventualele semnalări). Nu se scrie nimic până nu apeși **«Repară»**; cu **«Renunță»** închizi fereastra și rămâne totul ca înainte. **Nu se descarcă nimic din FOREXE.**
+- Fereastra se deschide **oricum**, chiar dacă repararea ar atinge o lună care are **revizii** de fundamentare. Dar în acel caz repararea **nu se face**: la apăsarea lui **«Repară»** K-BOT spune ce lună e și nu schimbă nimic.
 - După reparare, rândul din lista principală nu mai este roșu și butonul dispare.
 
 <!-- capture: grafic-rezervari | caption: Graficul rezervărilor | goto: view:rezervari | prepare: Apăsați butonul «Grafice» din ribbon, ca să se deschidă graficul. | redo: 2026-10-17 21:00 | why: 0114-15: graficul se deschide din butonul «Grafice» din ribbon; 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113-01: graficul e o fereastră cu bara lui de titlu și cu «Închide», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->

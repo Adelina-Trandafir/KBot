@@ -5,10 +5,10 @@ part: contabil
 topic: contabil.fereastra
 ---
 ## Bine ai venit
-<!-- slice: 0000-04, 0000-23, 0097-02 -->
+<!-- slice: 0000-04, 0000-23, 0097-02, 000T-13 -->
 target: KbotForm
 goto: view:sumar
-Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând. Turul pornește singur la fiecare pornire până îl vezi până la capăt; îl găsești oricând la «?».
+Acesta este un tur al ferestrei principale. Vârful bulei arată mereu locul despre care e vorba. Folosește «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) sau săgeata dreapta ca să treci mai departe și «Închide» sau Esc ca să ieși oricând. Turul pornește singur la fiecare pornire până îl vezi până la capăt; îl găsești oricând la «?».
 
 ## Butonul MENIU
 <!-- slice: 0087, 0084, 0088, 0097-02, 0000-29, 0000-30, 0000-31, 00EF-05, 00EF-08, 0000-54, 0000-55, fara-felie -->

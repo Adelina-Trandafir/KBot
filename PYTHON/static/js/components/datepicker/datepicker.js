@@ -9,6 +9,8 @@
  * options: { startDate: () => Date | null, min, max, years }.
  * Bounds are ISO dates; years optionally restricts the available calendar years.
  */
+import { layoutRect, layoutViewport } from '../../utils/layout-geometry.js';
+
 const MONTHS = ['ianuarie', 'februarie', 'martie', 'aprilie', 'mai', 'iunie', 'iulie', 'august', 'septembrie', 'octombrie', 'noiembrie', 'decembrie'];
 const WEEKDAYS = ['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sâ', 'Du'];
 
@@ -152,12 +154,13 @@ export class DatePicker {
   }
 
   place() {
-    const k_box = this.field.getBoundingClientRect();
-    const k_pop = this.popup.getBoundingClientRect();
+    const k_box = layoutRect(this.field);
+    const k_pop = layoutRect(this.popup);
+    const k_viewport = layoutViewport();
     const k_below = k_box.bottom + 2;
-    const k_top = k_below + k_pop.height > innerHeight ? Math.max(4, k_box.top - k_pop.height - 2) : k_below;
+    const k_top = k_below + k_pop.height > k_viewport.height ? Math.max(4, k_box.top - k_pop.height - 2) : k_below;
     this.popup.style.top = `${k_top}px`;
-    this.popup.style.left = `${Math.max(4, Math.min(k_box.left, innerWidth - k_pop.width - 4))}px`;
+    this.popup.style.left = `${Math.max(4, Math.min(k_box.left, k_viewport.width - k_pop.width - 4))}px`;
   }
 
   shift(k_months) {

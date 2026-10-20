@@ -20,7 +20,12 @@ Nu atingeți: `config.py`, fișierele `report_*` / `reports.js` / `report-*.js` 
    `IdRetur = NULL`. Cazul se notează în `VC_MigrationIssues` (`RuleCode = 'N12'`, `Severity = 'CONVERSIE'`,
    `FieldName = 'IdRetur'`, `SourceKey` = cheia veche a returului, `OriginalValue` = cheia veche a bonului dispărut).
    Exemplu real: `tz_2026` Alimente Cantina, 3 retururi (chei vechi 49, 51, 136, arătau spre 47, 50, 135).
-3. **`IntrariStorno.IdIntrare` poate fi NULL** (linii de storno al căror NIR a dispărut; exemplu `tz_2100`, chei vechi 7 și 8). Notate la fel (`N12`, `TableName = IntrariStorno`). Atenție: o linie de storno nu are antet propriu, iar `stock_source.py`, `ledger.sql` și `receipts.sql` o citesc prin `VC_NIR` pe `IdIntrare`; cu NULL ea nu intră în stoc și în fișă. Vezi secțiunea 3b.
+3. **Revizie 19.10.2026, 0.3.10.0:** liniile `IntrariStorno` fără un NIR părinte
+   bifat Storno sunt ignorate, NON BLOCKING, înaintea verificării produsului.
+   Nu se mai importă cu `IdIntrare=NULL`. N15 listează ID-ul, IdIntrare și
+   IdProdus originale; reconcilierea le include la rânduri ignorate. Validările
+   produsului rămân obligatorii pentru liniile cu părinte eligibil. Această
+   decizie înlocuiește politica veche N12 pentru storno; retururile nu sunt afectate.
 4. `OI_Produse.IDM` și `OI_Predare.IdMasinaP` arată acum spre `VC_Masini` (IdMasinaP = contul DIN care se transferă, IdMasina =
    contul ÎN care). `OI_Produse.IDBO` = numărul bonului de origine (BP sau BT), renumerotat la fel ca documentul.
 5. Valorile cu mai mult de 4 zecimale se rotunjesc la 4. `Tip` din mese (MicDejun, Dejun, Cina) devine `VC_FeluriMancare`.
@@ -66,7 +71,12 @@ Criterii de acceptare (de descris în `implementare_vercon_v2.md`, fără rulare
 potrivit reușește; asocierea cu un bon în care produsul lipsește sau cantitatea e depășită e respinsă cu motiv; după asociere
 „Modifică" funcționează ca la un retur normal; anularea merge înainte și după asociere.
 
-## 3b. De făcut: linii de storno fără recepție (`VC_IntrariStorno.IdIntrare IS NULL`)
+## 3b. Istoric: linii de storno deja migrate fără recepție (`VC_IntrariStorno.IdIntrare IS NULL`)
+
+**Actualizare 19.10.2026:** cerințele de mai jos privesc numai datele deja
+migrate. Începând cu 0.3.10.0, importurile noi omit liniile fără NIR bifat
+Storno, inclusiv când IdProdus este orfan; nu se creează noi rânduri fără părinte.
+Decizia nu cere ștergerea datelor deja existente în aplicație.
 
 Spre deosebire de retur, aici nu există document de afișat: liniile nu au antet. Cerințe minime:
 

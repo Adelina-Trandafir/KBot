@@ -20,12 +20,16 @@ session's. The rules are in primite_ke.py. Every WRITE needs the role «Contabil
   GET    /api/efactura/ke/angajament/<cod>/disponibil?data=aaaa-ll-zz   (KE12-03) -> { ziua, indicatori: [{ IdClsf, CodIndicator, Buget|null, Receptii }], avertismente }
   POST   /api/efactura/primite/<id>/ke/legaturi        body { CodAngajament, Tip, IDRR?, IDRH?, IDR?, alocari } -> 201, the state as GET
   DELETE /api/efactura/primite/<id>/ke/legaturi/<idl>  -> the state as GET
+  POST   /api/efactura/ke/propuneri                    (KE16) body { facturi: [IdPrimita], angajamente?: [CodAngajament] } -> { zile_dupa_factura, omise, facturi: [{ IdPrimita, NrFact, DataFact, Furnizor,
+                                                           Total, propunere (IDRR | null), motiv, candidate: [{ IDRR, CodAngajament, DataR, TipReceptie, Descriere,
+                                                           IdClsf, Clsf, Rest, Zile, InFereastra }] }] }   (reads only)
+  POST   /api/efactura/ke/propuneri/aplica             (KE16) body { legaturi: [{ IdPrimita, CodAngajament, IDRR }], angajamente?: [Cod] } -> 201 { legate }  (all or none)
 
 Errors are `{ "error": "<text>", "reason": "<CODE>" }`. Audit journal: EF_KE_CLASIFICARE, EF_KE_LEGA, EF_KE_STERGE.
 """
 from flask import g, request
 
-from . import efactura_bp, primite_ke
+from . import efactura_bp, primite_ke, primite_ke_propuneri
 from .factura_routes import _audit, _body, _guarded, _json, _query_text
 from .tokens import EfEroare
 from routes.auth.guard import require_session
@@ -114,6 +118,28 @@ def ke_leaga(id_primita):
                              body.get("alocari"))
     _audit("EF_KE_LEGA", str(id_primita), "cod=%s tip=%s" % (body.get("CodAngajament"), body.get("Tip")))
     return _json(state, 201)
+
+
+@efactura_bp.route("/api/efactura/ke/propuneri", methods=["POST"])
+@require_session
+@_guarded("ke/propuneri")
+def ke_propuneri():
+    body = _body()
+    if set(body) - {"facturi", "angajamente"}:
+        raise EfEroare("Corpul poate contine doar «facturi» si «angajamente».", "CAMP_NEPERMIS", 400)
+    return _json(primite_ke_propuneri.propuneri(g.session.db_name, _role(), body.get("facturi"), body.get("angajamente")))
+
+
+@efactura_bp.route("/api/efactura/ke/propuneri/aplica", methods=["POST"])
+@require_session
+@_guarded("ke/propuneri-aplica")
+def ke_propuneri_aplica():
+    body = _body()
+    if set(body) - {"legaturi", "angajamente"}:
+        raise EfEroare("Corpul poate contine doar «legaturi» si «angajamente».", "CAMP_NEPERMIS", 400)
+    answer = primite_ke_propuneri.aplica(g.session.db_name, _role(), g.session.username, body.get("legaturi"), body.get("angajamente"))
+    _audit("EF_KE_LEGA_MASA", "-", "legaturi=%d" % answer["legate"])
+    return _json(answer, 201)
 
 
 @efactura_bp.route("/api/efactura/primite/<int:id_primita>/ke/legaturi/<int:id_legatura>", methods=["DELETE"])

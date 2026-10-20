@@ -140,7 +140,8 @@ Public Class SetariAutentificareView
         cmbInterval.SelectedIndex = cel
         ActualizeazaIntervalul()
 
-        chkRememberPasswordOption.Visible = avansat
+        ' Always shown (its state counts for everybody); only the advanced options may change it.
+        chkRememberPasswordOption.Enabled = avansat
         chkRememberPasswordOption.Checked = s.RememberPasswordOption
         btnUitaParola.Visible = avansat
         btnUitaParola.Enabled = SessionCredentials.HasWindowsSessionPassword()

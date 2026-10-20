@@ -37,8 +37,9 @@ TITLES = {'Balanta_produse': 'Balanță stocuri produse', 'Fisa_Magazie': 'FIȘ�
           'Fisa_Magazie_BF': 'FIȘĂ DE MAGAZIE', 'Stoc_Final': 'Stoc final',
           'LISTA_INVENTAR': 'LISTĂ DE INVENTARIERE\nMAGAZIE', 'NIR': 'NOTĂ DE RECEPȚIE ȘI CONSTATARE DE DIFERENȚE',
           'NIR_SFP': 'NOTĂ DE RECEPȚIE ȘI CONSTATARE DE DIFERENȚE', 'NIR_Storno': 'NOTĂ DE RECEPȚIE — STORNO',
-          'Centralizator_BC': 'Centralizator Bonuri de Consum', 'Centralizator_Conturi': 'Centralizator conturi',
-          'Centralizator_Conturi_Furnizori': 'Situații furnizori', 'Centralizator_Furnizori': 'Situații furnizori',
+          'Bon_Consum': 'BONURI', 'Centralizator_BC': 'CENTRALIZATOR', 'Centralizator_Conturi': 'Centralizator conturi',
+          'Centralizator_Conturi_Furnizori': 'Situații furnizori', 'Centralizator_Furnizori': 'Situație Furnizori',
+          'nou_Furnizori': 'Centralizator Furnizori',
           'Consumuri_Produs': 'Situație consumuri / conturi', 'Consumuri_Unitati': 'Situație consumuri / gestionari',
           'Nota_Comanda': 'NOTĂ DE COMANDĂ', 'Referat_periodic_produs': 'REFERAT DE ACHIZIȚIE',
           'Referat_periodic_Intrari': 'REFERAT DE ACHIZIȚIE', 'Plan_Achizitii': 'Situație intrări produse în perioada',
@@ -116,7 +117,7 @@ def default(spec):
                        money('quantity', 'Cantitatea\neliberată'), PRICE, VALUE]
             signs = ['Data și semnătura', 'Șef compartiment', 'Gestionar', 'Primitor']
     elif kind == 'document_summary':
-        columns = [col('number', 'Număr bon consum', 1.4), col('date', 'Data'), VALUE, col('party', 'Primitor', 2.7)]
+        columns = [col('number', 'Număr bon', 1.4), col('date', 'Data'), VALUE, col('party', 'Primitor', 2.7)]
         groups, totals = ['account'], ['value']
     elif kind == 'receipts_summary':
         columns = [col('invoice', 'Serie/Număr fact.', 2), col('date', 'Dată'), col('number', 'NIR', .6), col('account', 'Cont', 2), VALUE]
@@ -202,7 +203,7 @@ def default(spec):
 
 
 def unit_default(unit):
-    return {'name': unit, 'fiscal_code': '', 'address': '', 'manager': '',
+    return {'name': '', 'fiscal_code': '', 'address': '', 'manager': '',
             'header': '{UNITATE}', 'footer': 'Raport generat în VERCON',
             'elements': [{'id': 'unit-name', 'band': 'header', 'text': '{ANTET}', 'x': 0, 'y': 0, 'w': .72, 'h': 12, 'size': 10},
                          {'id': 'footer-text', 'band': 'footer', 'text': '{SUBSOL}', 'x': 0, 'y': 0, 'w': .75, 'h': 12, 'size': 7},

@@ -162,7 +162,7 @@ Public Class RightsView
                         End If
                     Next
                     k_ok = True
-                    _context.Say("Gata: drepturile lui " & k_link.Un & " în " & k_link.Dc & " au fost " & If(k_give, "date.", "retrase."))
+                    _context.Say("Gata: drepturile lui " & k_link.Un & " au fost " & If(k_give, "date", "retrase") & "; privilegiile MariaDB au fost sincronizate pentru toate bazele contului.")
                 End Function)
         Catch ex As Exception
             GlobalErrorLog.Write("RightsView.ApplyRightsAsync", ex)
@@ -313,4 +313,24 @@ Public Class RightsView
         End Try
     End Sub
 
+    Private Async Sub BtnSqlSync_Click(k_sender As Object, e As EventArgs) Handles btnSqlSync.Click
+        Try
+            Dim k_link As AccountLink = CurrentLink()
+            Dim k_un As String = If(k_link IsNot Nothing, k_link.Un, _context.SelectedAccount)
+            If String.IsNullOrWhiteSpace(k_un) Then
+                KBotMessage.Show("Alegeți întâi contul din tabel sau din arborele din stânga.", "Drepturi MariaDB", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Await UiRun.Guard("RightsView.BtnSqlSync_Click", _context,
+                Async Function()
+                    _context.Say("Se sincronizează drepturile MariaDB pentru toate bazele lui " & k_un & "...")
+                    Await _context.Client.CallRawAsync("privileges-sync", "--un", k_un)
+                    _context.Say("Drepturile MariaDB ale lui " & k_un & " au fost sincronizate. Conexiunile MariaDB vechi au fost închise.")
+                End Function)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RightsView.BtnSqlSync_Click", ex)
+        End Try
+    End Sub
+
 End Class
+

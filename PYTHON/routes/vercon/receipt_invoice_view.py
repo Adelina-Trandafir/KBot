@@ -57,7 +57,7 @@ def other_lines(cursor, ctx, doc, invoice_id):
 
 
 def summary_totals(cursor, ctx, summaries):
-    """One batched lookup per opened month, without changing local stock totals."""
+    """One batched lookup per opened tree branch, without changing local stock totals."""
     if not summaries:
         return summaries
     from . import invoices

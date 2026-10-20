@@ -1,0 +1,31 @@
+# SLICE-KE16 - Page «Recepții»: bulk link of a supplier's invoices to receptions, as PROPOSALS (19.10.2026)
+
+Operator (19.10.2026): in the tree of suppliers of the page «Recepții», on hover of a supplier, a button opens a modal window that links the unlinked invoices in bulk. It must PROPOSE, not do. The rule stays «Reception = Invoice»; when several receptions and invoices have the same value, a tie-break: the reception date may be equal to the invoice date up to +2 days (receptions are usually made within 2 days of receiving the invoice). In the modal NO selection per invoice line and NO partial reception: 1 = 1.
+
+## What changed and why
+- **Server** (`PYTHON/routes/efactura/primite_ke_propuneri.py`, routes in `primite_ke_routes.py`):
+  - `POST /api/efactura/ke/propuneri {facturi:[IdPrimita]}` (reads only): for each invoice with NO link at all, the receptions of its angajamente (`_angajamente_candidate`: DDFs of the supplier + manual associations) that have rest on exactly ONE classification equal to the whole invoice total (same sign, `Receptie = Factura`); the invoice's lines must add up to the total and not carry two different classifications, and a classification already chosen on the lines must be the reception's (the accountant's choice is not overwritten). Several candidates: the one dated `invoice date .. +ZILE_DUPA_FACTURA (2) days`, if exactly one; none or several = no proposal, all candidates still listed. Two invoices on the same reception: only an invoice that is alone inside its window keeps it. Answer: per invoice the candidates (`Zile`, `InFereastra`), `propunere` (IDRR or null), `motiv`.
+  - `POST /api/efactura/ke/propuneri/aplica {legaturi:[{IdPrimita, CodAngajament, IDRR}]}`: re-checks EVERY pair against the database (still no link, reception still has exactly the value), then writes all in one transaction (lines without a classification get the reception's; one `EF_PrimiteReceptii` row of type `existenta`, `Suma` = invoice total, `UN` = the user), or nothing (409 `NU_MAI_ESTE_VALIDA`). Audit `EF_KE_LEGA_MASA`. Role «Contabil» on both.
+  - The date window is a constant on the server, not a setting.
+- **Client**: contract `EFacturaKePropuneri*` (`KBot.Domain/EFacturaKe.vb`), `GetKePropuneriAsync` / `ApplyKePropuneriAsync` (`IEFacturaApi`, `ApiClient.EFactura.Ke.vb`). New modal `KePropuneriForm` (+ Designer, all controls declared): top grid = the invoices (tick boxes, the reception proposed, its date, remarks), bottom grid = the candidates of the current invoice (double click chooses one and ticks the row), «Leagă (n)» / «Renunță», a notice bar. A tick needs a chosen reception; a reception goes to one ticked invoice only (refused with a notice).
+- **Tree** (`KeLegaForm`): a supplier that has invoices without a reception gets `RightIcon` (two chain links, `FacturaIcons.Link`) shown on hover only (per node `ShowRightIconOnHover`), `StyleSupplier` (also after `RefreshTree`); `Tree_RightIconClicked` opens the window, then reads the invoices again and says how many were linked.
+
+## Files touched
+`PYTHON/routes/efactura/primite_ke_propuneri.py` (new), `primite_ke_routes.py`; `src/KBot.Domain/EFacturaKe.vb`; `src/KBot.Api/IEFacturaApi.vb`, `ApiClient.EFactura.Ke.vb`; `src/KBot.EFactura/Forms/KePropuneriForm.vb` + `.Designer.vb` (new), `KeLegaForm.vb`, `Views/Vanzare/FacturaIcons.vb`; help `contabil/efactura/index.md` (0000-112).
+
+## Test results
+`dotnet build src\KBot.EFactura\KBot.EFactura.vbproj`: 0 warnings, 0 errors. Python: `py_compile` and `import` of the two modules OK (PYTHON\.venv). Nothing run against a database, nothing seen on screen, no test written (house rule).
+
+## Unverified / deferred
+- Server NOT deployed; the SQL of the new queries is reused from `primite_ke.py` (`_valori_receptii`, `_alocat_receptii`, `_SQL_INDICATORI`) but the new module was never run against data. The case that must come out: invoice 941 (81.54) -> reception 129 on `...20.01.30` in AAB2KPFMMMN.
+- Not seen on screen: the hover button (position next to the amount, tooltip on the whole supplier row), the two grids, the tick boxes in a `ReadOnlyGrid`-less grid.
+- Interpretation of the operator's date rule: reception date from the invoice date up to 2 days after (never before it). In the data seen (invoice 31.03, reception 17.04) the rule is not met; there it only matters when values repeat.
+- A reception with rest on SEVERAL classifications is never proposed (the invoice would need its lines split).
+- The window does not pick receptions of angajamente the supplier has no DDF / association for.
+
+## Update (19.10.2026, operator's first look at the window)
+Screenshot: supplier TRANSPORT CALATORI EXPRESS, 7 invoices of 208.00, every row «Nicio recepție cu același rest»; the table of angajamente of the page still showed AAB622THPNT of ANOTHER supplier (TESA MED SOLUTIONS). Operator's rule: **an angajament chosen in the table «Angajamente» belongs to the SUPPLIER, not to the invoice, whether an invoice or the supplier is pressed.**
+- Cause of the leftover row (read from the code): `KeLegaForm._added` (the angajamente picked in the empty row) was ONE list for the whole page, so it followed every supplier. Now `_added` is per supplier (`SupplierKey`): `ContextKeys` = the suppliers of the ticked invoices, else the one pressed in the tree; added / removed / shown by those keys.
+- Probable cause of «nicio recepție» (NOT seen in data): the server knew no angajament for that supplier (no DDF partner, nothing picked on its invoices), so there was nothing to compare. The reason now says so: «Furnizorul nu are niciun angajament: alegeți-l în tabelul «Angajamente» al paginii și deschideți din nou propunerile.»
+- The window sends to the server the angajamente picked in the page for the supplier (`angajamente` in both routes; they count for every invoice of the supplier, validated against `FX_Angajamente`); the server also takes, for a supplier, the manual associations and links of ANY of its invoices (`_cods_furnizor`), not only of the invoice itself.
+- Still memory only: what is picked in the table lives until the page is closed. A durable supplier <-> angajament link would be a write (e.g. a partner row of the DDF) and is not made: to decide with the operator.

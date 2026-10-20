@@ -29,6 +29,7 @@ _push/
 
 # Configurări de rapoarte salvate de proprietar; nu se suprascriu la publicare.
 /instance/vercon-reports/
+/instance/adechit-reports/
 
 # Resurse de rulare ale rapoartelor, nu scripturi de instalare a bazei.
 # Se includ explicit chiar dacă filtrul general exclude SQL sau fonturi.

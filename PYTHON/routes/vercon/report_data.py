@@ -69,6 +69,16 @@ def accepted(row, params, *, day='date', document=True):
     date = stock.day_of(row[day])
     if not params['start'] <= date <= params['end']:
         return False
+    receipts = params.get('receipt_selection')
+    if receipts and (('receipt-product', row.get('supplier'), row.get('category'), row.get('product')) not in receipts
+                     and ('receipt-document-product', row.get('supplier'), row.get('document'), row.get('product')) not in receipts):
+        return False
+    outgoing = params.get('outgoing_selection')
+    if outgoing:
+        scopes = (('account', row.get('category')), ('receiver', row.get('receiver')), ('all', None))
+        if not any((scope, scope_id, row.get('document'), product) in outgoing
+                   for scope, scope_id in scopes for product in (None, row.get('product'))):
+            return False
     checks = ('variant', 'category', 'supplier', 'receiver') + (('document',) if document else ())
     return all(selected(row.get(key), params, key) for key in checks)
 
@@ -88,12 +98,12 @@ def storno_display(row):
     return displayed
 
 
-def documents(source, family=None):
+def documents(source, family=None, *, include_returns=False):
     metadata, ctx = source.metadata(), source.ctx
     kind = 'receipts' if family in ('nir', 'storno') or family is None else 'consumption'
     out = []
     for raw in source.rows(kind):
-        if raw['annulled'] or family is not None and raw['family'] != family:
+        if raw['annulled'] or family is not None and raw['family'] != family and not (include_returns and raw['family'] == 'br'):
             continue
         info = metadata.get(raw['variant'])
         if info is None:
@@ -204,7 +214,12 @@ def dataset(source, spec):
         return rows
     family = spec.get('family')
     if kind in ('documents', 'document_summary'):
-        rows = documents(source, family)
+        rows = documents(source, None if spec.get('include_storno') else family, include_returns=spec.get('include_returns', False))
+        if spec.get('include_storno'):
+            rows = [storno_display(row) if row['family'] == 'storno' else row for row in rows]
+            rows.sort(key=lambda row: (row['date'], str(row['document'])), reverse=True)
+        if spec.get('include_returns') or spec.get('outgoing_selection'):
+            rows.sort(key=lambda row: (row['date'], str(row['document'])), reverse=True)
         if kind == 'document_summary':
             rows = aggregate(rows, ('document', 'category', 'account'), ('value',))
         return rows

@@ -60,14 +60,14 @@ Public Class AccountForm
             cmbDb.Enabled = k_grant
             If k_grant Then
                 Text = "Dă acces la o bază"
-                lblInfo.Text = "Contul primește acces la baza aleasă, cu rolul K-BOT ales. Drepturile ADECHIT se dau apoi din tabel."
+                lblInfo.Text = "Se acordă accesul și se sincronizează MariaDB pentru toate bazele contului. Drepturile ADECHIT / VERCON se dau separat."
             Else
                 Text = "Schimbă rolul K-BOT"
-                lblInfo.Text = "Se schimbă doar rolul K-BOT al contului în această bază."
+                lblInfo.Text = "Se schimbă rolul K-BOT și se sincronizează privilegiile MariaDB. Contabil: toate datele bazelor lui, fără administrare de server sau structură."
             End If
         Else
             Text = "Adaugă cont la bază"
-            lblInfo.Text = "Contul trebuie să existe deja ca utilizator MariaDB; aici se face doar legătura lui cu baza și rolul K-BOT."
+            lblInfo.Text = "Contul trebuie să existe deja în MariaDB. Legătura și rolul K-BOT determină și privilegiile SQL; drepturile vechi, mai largi, se retrag."
         End If
     End Sub
 

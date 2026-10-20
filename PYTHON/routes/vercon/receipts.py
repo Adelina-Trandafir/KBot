@@ -194,6 +194,15 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
             try:
                 if family == 'nir':
                     line['v'] = receipt_line(cant, pret, rate, ctx['zec'], ctx['scale'])
+                    if old and not mf and not old.get('calc_mode') and all(
+                            _dec(raw.get(field)) == _dec(old.get(field)) for field in ('product', 'IDTVA', 'Pret')):
+                        # A quantity split must retain the variant of the units already issued.
+                        unit = _dec(old.get('PUTVA'))
+                        if unit is not None:
+                            line['variant'] = old['variant']
+                            line['v']['PUTVA'] = unit
+                            line['v']['ValoareCUTVA'] = numeric.to_stored(numeric.calc_round(cant * unit, ctx['zec']))
+                            line['v']['TVA'] = line['v']['ValoareCUTVA'] - line['v']['Valoare']
                     if raw.get('calc_mode') == 'GROSS':
                         receipt_auto.verify_row(ctx, body.get('id'), raw)
                         gross = _dec(raw.get('gross_total'))

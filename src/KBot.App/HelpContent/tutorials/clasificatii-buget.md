@@ -42,9 +42,9 @@ Alege din arbore un <b>Alineat</b> (ultimul nivel).<BR>
 <mark>La un nod de mai sus bugetul se vede doar ca rezumat, fără rânduri de completat: ultimul buget al fiecărei clasificații de sub nod și totalul rectificărilor.</mark>
 
 ## Versiunile de buget
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridBuget
-Fiecare rând este <b>bugetul de la data din «Început» încolo</b>, pe cele patru trimestre. Documentul de fundamentare citește bugetul de la data revizuirii. Apasă «Înainte».
+Fiecare rând este <b>bugetul de la data din «Început» încolo</b>, pe cele patru trimestre. Documentul de fundamentare citește bugetul de la data revizuirii. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă o versiune
 <!-- slice: 000T-10 -->
@@ -55,22 +55,22 @@ Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl comp
 <mark>Prima versiune a anului începe la 01.01; următoarele propun data de azi, ziua în care se schimbă de obicei un buget.</mark>
 
 ## Completează rândul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridBuget
-Completează data din <b>«Început»</b> și cele <b>patru trimestre</b>, apoi apasă «Înainte».
+Completează data din <b>«Început»</b> și cele <b>patru trimestre</b>, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Editează sau șterge o versiune
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridBuget
 optional: yes
 why: Treci peste pas dacă nu ai de modificat o versiune existentă.
 Ca să <b>modifici</b> o versiune existentă, scrie peste valorile din rând. <b>«✕»</b> de pe rând o șterge.<BR>
-<mark>Nimic nu se scrie în baza de date până nu apeși «Salvează».</mark> Apoi apasă «Înainte».
+<mark>Nimic nu se scrie în baza de date până nu apeși «Salvează».</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bugetul în vigoare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.gridTotal
-Rândul acesta arată <b>ultimul buget</b> (cel cu data cea mai nouă) plus <b>toate rectificările</b>, pe trimestre. Se actualizează pe măsură ce completezi. Apasă «Înainte».
+Rândul acesta arată <b>ultimul buget</b> (cel cu data cea mai nouă) plus <b>toate rectificările</b>, pe trimestre. Se actualizează pe măsură ce completezi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează
 <!-- slice: 000T-10 -->

@@ -217,17 +217,21 @@ Public NotInheritable Class TableMaps
             Feeding(ResolutionTarget.Parteneri, "CodPartener").
             WithNote("«Ascuns» călătorește - ruta Flask nu-l scrie, dar ținta îl are."))
 
-        ' --- Parteneri_Coduri ------------------------------------------------------
-        ' In scope by operator decision, 23.08. The Access IdClsf is resolved into
-        ' IdClsf. Slice 0080-04: no raw copy into IdClsfAcc any more - the Access id lives
-        ' only in Clasificatii (operator, 25.09.2026).
-        maps.Add(New TableMap("ParteneriAng", "Parteneri_Coduri", SourceFile.UnitFile).
-            Add(ColumnMapping.FromPartener("IdPartener", "CodPartener", True)).
-            Add(ColumnMapping.FromClasificatie("IdClsf", "IdClsf", True)).
-            Rename("ContBanca", "ContBancar").
-            Exclude("Id", "Clsf", "DTQ").
-            WithNote("Singura redenumire e «ContBanca» ▸ «ContBancar». " &
-                     "IdClsf-ul Access se traduce în Clasificatii.IDClsf."))
+        ' --- Parteneri_Angajamente (+ Parteneri_Angajamente_Indicatori) ------------
+        ' Slice 0121-02. Access ParteneriAng used to land in Parteneri_Coduri through the
+        ' per-unit IdPartener; it now lands in TWO new tables keyed by the supplier's
+        ' normalized CodFiscal (read from the unit's own Access Parteneri), so the partner no
+        ' longer has to exist in the unit on the server. Parteneri_Coduri is NOT written any
+        ' more and stays on the server untouched until the operator drops it (0121-06).
+        ' Written by TransferRunner.WritePartnerLinks, not by the generic writer: one Access
+        ' row feeds a link (CodFiscal, CodAng) and one indicator (CodAI = CodAng-CodInd,
+        ' ContBanca). The Access IdClsf is not read at all: CodAI already gives it.
+        maps.Add(New TableMap("ParteneriAng", "Parteneri_Angajamente", SourceFile.UnitFile).
+            AsPartnerLinks("Parteneri_Angajamente_Indicatori").
+            WithNote("Fostul «ParteneriAng» nu mai merge în «Parteneri_Coduri»: se scrie în " &
+                     "«Parteneri_Angajamente» (CodFiscal normalizat + CodAng) și " &
+                     "«Parteneri_Angajamente_Indicatori» (CodAI, CodInd, ContBancar). " &
+                     "Partenerii fără cod fiscal nu se leagă; raportul de verificare îi listează."))
 
         Return maps
     End Function

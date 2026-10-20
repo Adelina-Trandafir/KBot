@@ -5,6 +5,58 @@ Decizie confirmată de utilizator la **18.10.2026**, pentru aplicația VERCON
 Această clarificare înlocuiește interpretarea anterioară în care exact una
 dintre coloanele `IDBP`, `IDBT`, `IDBC` trebuia completată în registru.
 
+## Recuperarea provenienței după refacerea unui bon — 19.10.2026
+
+**Revizie curentă în surse: 0.3.9.0**, reguli
+`VC05-OI-ORIGIN-RECOVERY-2026-10-19`. Această regulă completează validările
+stricte de mai jos pentru referințele dispărute din sursa Access.
+
+Caz real citit read-only la cererea utilizatorului: IDOI 1576, produs 2673,
+casare 2950051 / BS 1113 cu IDBO 2950049 inexistent. Singura primire găsită
+pentru produs este IDOI 1577, predare 2950052 / BP 72. Ambele documente au
+data 09.12.2025, deținător 35, cont 7, preț 1252,9924 și cantitate 1.
+Casarea a fost salvată pe 15.01.2026, iar predarea existentă pe 16.01.2026.
+Datele sunt compatibile cu o predare ștearsă/refăcută; istoricul ștergerii
+nu este demonstrat de starea actuală. Utilizatorul a autorizat tratarea
+automată a acestor cazuri în migrator, pe criterii de asociere univocă.
+
+Recuperarea este permisă numai pentru IDBO nenul **absent din ambele
+tabele BP/BT**, în aceeași sursă. Primirea înlocuitoare trebuie să aibă:
+
+- document BP/BT activ și poziție pozitivă în registru;
+- același produs și același preț;
+- același deținător predător și același cont brut din registru;
+- dată document anterioară sau egală cu data transferului/casării;
+- disponibil suficient după toate ieșirile deja legate, inclusiv cele ulterioare.
+
+Pentru transfer, predătorul se citește din IDC_OLD al bonului, nu din
+rândul pozitiv al primitorului. Minusul și plusul trebuie să identifice
+deținătorii corecți și cantități totale egale; aceeași înlocuire se aplică
+ambelor laturi. Propriul bon nu este candidat. Primiri compatibile în
+două bonuri diferite înseamnă ambiguitate dacă ambele au disponibil suficient.
+Un cont lipsă sau TC cu cont divergent combinat cu proveniență dispărută
+poate împiedica recuperarea; nu se relaxează criteriile pentru a ghici sursa.
+După recuperare, rezolvarea contului continuă să urmărească BP-ul inițial.
+
+Se folosește **data documentului**, nu DataSalvare: bonul refăcut poate
+fi salvat mai târziu. Rândurile aceluiași lot/document sunt însumate, iar
+cantitățile deja rezervate prin alte ieșiri nu sunt reutilizate. Ciclurile
+de proveniență rămân blocate de resolverul conturilor.
+
+`VrcRunner.OiOrigins.vb` construiește un snapshot clonat, comun conversiei
+IDBO și resolverului contului. Sursa Access și dicționarele originale nu
+sunt rescrise. Raportul N14/CONVERSIE listează fiecare poziție și referința
+veche → familia/ID-ul sursă recuperat; apoi se aplică remaparea normală a
+documentului. Nu se fabrică un bon pentru vechiul ID dispărut.
+Fără candidat unic: X17/BLOCAJ, cu motiv și rândul afectat. Un IDBO existent,
+dar contradictoriu sau ambiguu, nu este înlocuit prin această regulă.
+
+Pentru cazul analizat, asocierea așteptată este 2950049 → IDBP 2950052,
+în snapshotul de import al poziției 1576. Aceasta este concluzie de design,
+nu rezultat al unei rulări a codului nou. Nu s-au rulat teste, build sau
+migrare pentru această revizie și nu s-au modificat schema/datele existente.
+Este necesară recompilarea migratorului înaintea reluării importului.
+
 ## Semnificația coloanelor
 
 În `OI_Produse` din Access / `VC_OI_Produse` din MariaDB:
@@ -149,7 +201,9 @@ nu mai este un diagnostic valid pentru acest registru.**
 
 Erorile actuale indică poziția `IDOI` și referința contradictorie/lipsă.
 Datele deja migrate cu maparea veche nu sunt remapate retroactiv prin
-actualizarea codului. Repararea lor cere analiză separată a documentelor
+actualizarea codului. Recuperarea de mai sus se aplică numai importului
+din sursa Access, nu citirii datelor existente în MariaDB. Repararea
+acestora cere analiză separată a documentelor
 și a mapărilor sursă; nu se golește automat `IDBP`, `IDBT`, `IDBC` sau `IDBO`.
 
 ## ToolVersion și schema

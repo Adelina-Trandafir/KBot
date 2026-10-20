@@ -142,6 +142,29 @@ Public NotInheritable Class EFacturaAccessFinal
     Public Property Omisa As String = String.Empty
 End Class
 
+''' <summary>
+''' The PC's own account of a «Preia din Access» run, sent with each batch and with the end call so the server's journal (AVACONT_COMUN.Jurnal)
+''' can explain a short run without the log of this PC (slice 00EF-44). Counts and ids only; the file is named without its folder.
+''' </summary>
+Public NotInheritable Class AccessPreluareContext
+    Public Property An As Integer
+    Public Property Fisier As String = String.Empty
+    Public Property Cui As String = String.Empty
+    ''' <summary>The slice of ids being read now (1-based) and how many slices there are.</summary>
+    Public Property Lot As Integer
+    Public Property Loturi As Integer
+    ''' <summary>Ids asked of Access in this slice, and messages it returned for them.</summary>
+    Public Property Cerute As Integer
+    Public Property CititeInLot As Integer
+    ''' <summary>Messages read so far (all slices up to this one).</summary>
+    Public Property Citite As Integer
+    ''' <summary>How many ids Access listed for the unit.</summary>
+    Public Property AccesTotal As Integer
+    ''' <summary>Ids that were asked for and not returned: the first few, and how many in all.</summary>
+    Public ReadOnly Property Necitite As New List(Of String)()
+    Public Property NecititeTotal As Integer
+End Class
+
 ''' <summary>A batch of messages the server has and the Access file does not.</summary>
 Public NotInheritable Class EFacturaAccessExport
     Public ReadOnly Property Mesaje As New List(Of AccessEfMessage)()

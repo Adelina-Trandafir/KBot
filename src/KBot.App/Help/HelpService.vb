@@ -396,112 +396,44 @@ Public NotInheritable Class HelpService
         End Try
     End Sub
 
-    ''' <summary>The tour that runs by itself at start (slice 0097-02): the main window's.</summary>
-    Public Const InitialTourId As String = "tur-fereastra"
+    ''' <summary>The tutorial that runs by itself when K-BOT opens (slice 000T-13): the short walk through the ribbon.</summary>
+    Public Const OpeningTutorialId As String = "tutorial-pornire"
 
     ''' <summary>
-    ''' Slice 0097-02: starts the main window's tour without being asked, when it is still due
-    ''' (<see cref="AppSettings.ShowInitialTour"/>) and this login reads the part it belongs to (a
-    ''' director never gets it). Its bubble carries «Nu mai arata turul initial»; the tour stops
-    ''' being due once it was seen to its last step or closed with that box ticked
-    ''' (<see cref="InitialTourSeen"/>). Called by the main window after it has loaded.
+    ''' Slice 000T-13: starts the tutorial of the start without being asked, when it is still due
+    ''' (<see cref="AppSettings.ShowStartTutorial"/>), this login reads the part it belongs to and the main window is on
+    ''' screen. Its bubble carries «Nu mai arata tutorialul de inceput»; it stops being due once it was seen to its last
+    ''' step or closed with that box ticked (<see cref="OpeningTutorialSeen"/>). It replaces the main window's tour
+    ''' (0097-02) and the tutorial about the tutorials (000T-07), which used to start here. Called by the main window
+    ''' after it has loaded its data.
     ''' </summary>
-    Public Sub StartInitialTour()
+    Public Sub StartOpeningTutorial()
         Try
-            If Not AppSettings.Current.ShowInitialTour Then
-                StartInitialTutorial()
-                Return
-            End If
-            Dim tour As HelpTour = Library.FindTour(InitialTourId)
-            If tour Is Nothing Then Throw New InvalidOperationException("The initial tour '" & InitialTourId & "' is not in the help.")
-            If Not VisibleParts().Contains(tour.Part) Then
-                StartInitialTutorial()
-                Return
-            End If
-            ' Slice 000T-07: when the tour is over, the tutorial of the start gets its turn -- after the
-            ' tour has been marked seen (posted), and only if the tour is not owed any more.
-            Dim restore As Action = StepAside()
-            HelpTourRunner.Start(Me, tour,
-                                 Sub()
-                                     restore()
-                                     PostInitialTutorial()
-                                 End Sub, initial:=True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("HelpService.StartInitialTour", ex)
-            Throw
-        End Try
-    End Sub
-
-    ''' <summary>The tutorial that runs by itself at start (slice 000T-07): the short one about the tutorials.</summary>
-    Public Const InitialTutorialId As String = "tutoriale-intro"
-
-    ''' <summary>
-    ''' Slice 000T-07: starts the tutorial about the tutorials without being asked, when it is still due
-    ''' (<see cref="AppSettings.ShowInitialTutorial"/>), this login reads the part it belongs to, the main
-    ''' window is on screen and the initial tour is not owed (a tour still due goes first, see
-    ''' <see cref="StartInitialTour"/>). The tutorial is mandatory (<c>mandatory: yes</c>), so it stops being due
-    ''' only once seen to its last step (<see cref="InitialTutorialSeen"/>).
-    ''' </summary>
-    Public Sub StartInitialTutorial()
-        Try
-            If Not AppSettings.Current.ShowInitialTutorial Then Return
-            Dim flow As TutorialFlow = Library.FindTutorial(InitialTutorialId)
-            If flow Is Nothing Then Throw New InvalidOperationException("The initial tutorial '" & InitialTutorialId & "' is not in the help.")
-            If Not VisibleParts().Contains(flow.Part) Then Return
-            Dim tour As HelpTour = Library.FindTour(InitialTourId)
-            If AppSettings.Current.ShowInitialTour AndAlso tour IsNot Nothing AndAlso VisibleParts().Contains(tour.Part) Then Return
+            If Not AppSettings.Current.ShowStartTutorial Then Return
+            Dim k_flow As TutorialFlow = Library.FindTutorial(OpeningTutorialId)
+            If k_flow Is Nothing Then Throw New InvalidOperationException("The opening tutorial '" & OpeningTutorialId & "' is not in the help.")
+            If Not VisibleParts().Contains(k_flow.Part) Then Return
             ' Nobody asked for it: a window it cannot start in is not worth a message.
-            If flow.Starts.Length > 0 AndAlso HelpTourRunner.FindTarget(flow.Starts) Is Nothing Then Return
-            TutorialRunner.Start(Me, flow, StepAside(), k_initial:=True)
+            If k_flow.Starts.Length > 0 AndAlso HelpTourRunner.FindTarget(k_flow.Starts) Is Nothing Then Return
+            TutorialRunner.Start(Me, k_flow, StepAside(), k_initial:=True)
         Catch ex As Exception
-            GlobalErrorLog.Write("HelpService.StartInitialTutorial", ex)
-            Throw
-        End Try
-    End Sub
-
-    ' After the initial tour: later, on the window's own queue, so the tour's «seen» has been saved first.
-    ' UI boundary (posted action): logged, never shown -- nobody asked for it.
-    Private Sub PostInitialTutorial()
-        Dim main As Control = TryCast(MainWindow(), Control)
-        If main Is Nothing OrElse main.IsDisposed OrElse Not main.IsHandleCreated Then Return
-        main.BeginInvoke(New Action(
-            Sub()
-                Try
-                    StartInitialTutorial()
-                Catch ex As Exception
-                    GlobalErrorLog.Write("HelpService.PostInitialTutorial", ex)
-                End Try
-            End Sub))
-    End Sub
-
-    ''' <summary>
-    ''' Slice 000T-07: the tutorial of the start is not due any more (seen to the end, or the operator asked
-    ''' not to see it again). Saved at once; «Setari -> Generale» turns it back on.
-    ''' </summary>
-    Friend Sub InitialTutorialSeen()
-        Try
-            If Not AppSettings.Current.ShowInitialTutorial Then Return
-            Dim copy As AppSettings = AppSettings.Current.Clone()
-            copy.ShowInitialTutorial = False
-            copy.Save()
-        Catch ex As Exception
-            GlobalErrorLog.Write("HelpService.InitialTutorialSeen", ex)
+            GlobalErrorLog.Write("HelpService.StartOpeningTutorial", ex)
             Throw
         End Try
     End Sub
 
     ''' <summary>
-    ''' Slice 0097-02: the automatic tour is not due any more (seen to the end, or the operator
-    ''' asked not to see it again). Saved at once; «Setari -> Aplicatie» turns it back on.
+    ''' Slice 000T-13: the tutorial of the start is not due any more (seen to the end, or the operator asked not to
+    ''' see it again). Saved at once; «Setari -> Aplicatie -> Generale» turns it back on.
     ''' </summary>
-    Friend Sub InitialTourSeen()
+    Friend Sub OpeningTutorialSeen()
         Try
-            If Not AppSettings.Current.ShowInitialTour Then Return
-            Dim copy As AppSettings = AppSettings.Current.Clone()
-            copy.ShowInitialTour = False
-            copy.Save()
+            If Not AppSettings.Current.ShowStartTutorial Then Return
+            Dim k_copy As AppSettings = AppSettings.Current.Clone()
+            k_copy.ShowStartTutorial = False
+            k_copy.Save()
         Catch ex As Exception
-            GlobalErrorLog.Write("HelpService.InitialTourSeen", ex)
+            GlobalErrorLog.Write("HelpService.OpeningTutorialSeen", ex)
             Throw
         End Try
     End Sub

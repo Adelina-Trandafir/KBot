@@ -82,8 +82,24 @@ Partial Public Class ApiClient
         Public Property facturi As List(Of AccessInvoiceWire)
     End Class
 
+    ' Slice 00EF-44: the PC's account of the run, for the server's journal only. Lower-case names = the server's keys.
+    Private NotInheritable Class AccessContextWire
+        Public Property an As Integer
+        Public Property fisier As String
+        Public Property cui As String
+        Public Property lot As Integer
+        Public Property loturi As Integer
+        Public Property cerute As Integer
+        Public Property citite_lot As Integer
+        Public Property citite As Integer
+        Public Property acces_total As Integer
+        Public Property necitite_total As Integer
+        Public Property necitite As List(Of String)
+    End Class
+
     Private NotInheritable Class AccessPreiaBodyWire
         Public Property mesaje As List(Of AccessMessageWire)
+        Public Property context As AccessContextWire
     End Class
 
     Private NotInheritable Class AccessReferenceWire
@@ -96,6 +112,7 @@ Partial Public Class ApiClient
     Private NotInheritable Class AccessFinalBodyWire
         Public Property id_primite As List(Of Integer)
         Public Property referinte As List(Of AccessReferenceWire)
+        Public Property context As AccessContextWire
     End Class
 
     Private NotInheritable Class AccessExportBodyWire
@@ -179,11 +196,19 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function PreiaAccessAsync(k_messages As IReadOnlyList(Of AccessEfMessage), ct As CancellationToken) _
+    Private Shared Function ContextToWire(k_context As AccessPreluareContext) As AccessContextWire
+        If k_context Is Nothing Then Return Nothing
+        Return New AccessContextWire() With {
+            .an = k_context.An, .fisier = k_context.Fisier, .cui = k_context.Cui, .lot = k_context.Lot, .loturi = k_context.Loturi,
+            .cerute = k_context.Cerute, .citite_lot = k_context.CititeInLot, .citite = k_context.Citite, .acces_total = k_context.AccesTotal,
+            .necitite_total = k_context.NecititeTotal, .necitite = k_context.Necitite.ToList()}
+    End Function
+
+    Public Async Function PreiaAccessAsync(k_messages As IReadOnlyList(Of AccessEfMessage), k_context As AccessPreluareContext, ct As CancellationToken) _
         As Task(Of EFacturaAccessPreluare) Implements IEFacturaApi.PreiaAccessAsync
         Try
             ArgumentNullException.ThrowIfNull(k_messages)
-            Dim k_body As New AccessPreiaBodyWire() With {.mesaje = k_messages.Select(AddressOf ToWire).ToList()}
+            Dim k_body As New AccessPreiaBodyWire() With {.mesaje = k_messages.Select(AddressOf ToWire).ToList(), .context = ContextToWire(k_context)}
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, "/api/efactura/primite/access/preia",
                                                            JsonSerializer.Serialize(k_body, _json),
                                                            "preluarea facturilor din Access", ct).ConfigureAwait(False)
@@ -210,13 +235,13 @@ Partial Public Class ApiClient
     End Function
 
     Public Async Function FinalizeazaAccessAsync(k_idPrimite As IReadOnlyList(Of Integer), k_references As IReadOnlyList(Of AccessEfReference),
-                                                 ct As CancellationToken) As Task(Of EFacturaAccessFinal) _
+                                                 k_context As AccessPreluareContext, ct As CancellationToken) As Task(Of EFacturaAccessFinal) _
         Implements IEFacturaApi.FinalizeazaAccessAsync
         Try
             ArgumentNullException.ThrowIfNull(k_idPrimite)
             ArgumentNullException.ThrowIfNull(k_references)
             Dim k_body As New AccessFinalBodyWire() With {
-                .id_primite = k_idPrimite.ToList(),
+                .id_primite = k_idPrimite.ToList(), .context = ContextToWire(k_context),
                 .referinte = k_references.Select(Function(k_r) New AccessReferenceWire() With {
                     .IdSol = k_r.IdSol, .NrFact = k_r.NrFact, .RefIdSol = k_r.RefIdSol, .RefNrFact = k_r.RefNrFact}).ToList()}
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, "/api/efactura/primite/access/finalizeaza",

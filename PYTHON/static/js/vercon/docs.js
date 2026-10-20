@@ -3,7 +3,7 @@ import { confirmBox, reasonBox } from '../utils/confirm-box.js';
 import { format, parse } from './fields.js';
 import { documentReport } from './document-report.js';
 import { documentNumbers } from './document-number.js';
-import { el, scope, field, column, grid, paintTree, refreshTree, markSelected, groupedNodes, CheckBox, rowMenu, openMenu, showMessage, preview as openPreview } from './ui.js';
+import { el, scope, field, column, grid, paintTree, refreshTree, markSelected, CheckBox, rowMenu, openMenu, showMessage, preview as openPreview } from './ui.js';
 import { receiptTree } from './receipt-tree.js';
 import { ModalFrame } from '../components/modal-frame/modal-frame.js';
 import { numberText } from './receipt-number.js';
@@ -12,12 +12,14 @@ import { receiptContext } from './receipt-context.js';
 import { receiptMfInfo } from './receipt-mf-info.js';
 import { ActionAddButton } from '../components/action-add-button/action-add-button.js';
 import { receiptAllocation } from './receipt-allocation.js';
-import { receiptDifference, receiptTotal } from './receipt-reconciliation.js';
+import { receiptTotal } from './receipt-reconciliation.js';
+import { adjustableReceiptLine, receiptAdjustmentState, adjustmentError } from './receipt-adjustment.js';
 import { sharedReceipt, invoiceRows, receiptGridRows, invoiceValue, receiptLineClass, linkedReceipt } from './receipt-invoice-view.js';
 import { stornoSourceField, stornoProductNodes, stornoProductKey, calculateStorno } from './storno-editor.js';
-import { consumptionNodes, consumptionCategory, consumptionBranch } from './consumption-ui.js';
+import { consumptionCategory } from './consumption-ui.js';
 import { oiAccount, oiProductNodes } from './oi-ui.js';
 import { oiTreeOrder } from './oi-tree-order.js';
+import { documentTreeOrder, monthKey } from './document-tree-order.js';
 import { warehouseChoices, holderChoices, warehouseStock } from './oi-product-choices.js';
 import { oiLineValue } from './oi-values.js';
 import { oiContext } from './oi-context.js';
@@ -40,13 +42,12 @@ const key = () => crypto.randomUUID();
 const number = (value) => value == null || value === '' ? null : Number(String(value).replace(',', '.'));
 const fixed = (value, decimals) => value == null || !Number.isFinite(value) ? '' : value.toFixed(decimals);
 const dateText = (value) => format(value, { type: 'date' });
-const treeAlphabet = new Intl.Collator('ro', { sensitivity: 'base' });
 
 export function mountDocuments(host, opts) {
   const family = opts.family, config = families[family], abort = new AbortController();
   const receipt = ['nir', 'storno'].includes(family);
   const custody = ['bp', 'bt', 'bs'].includes(family);
-  const bonOrder = custody ? oiTreeOrder() : null;
+  const bonOrder = custody ? oiTreeOrder() : documentTreeOrder({ party: receipt ? 'party' : 'receiver' });
   const inline = receipt || family === 'bc' || custody;
   const sourceOptions = opts;
   let currentContext = { ...opts.sel() }, contextAbort = new AbortController(), loadGeneration = 0;
@@ -64,6 +65,8 @@ export function mountDocuments(host, opts) {
     return promise;
   }
   const inputs = new Map(), errors = new Map();
+  let adjustmentPending = false;
+  let treeOrderSequence = 0;
   let savedTree = null, treeAddButton = null, treeDirty = true, linesGrid = null, invoiceCorrectionButton = null, availabilityTimer = null, numberTimer = null, availabilitySequence = 0, openSequence = 0, eligibleSequence = 0;
   const status = el('span', { className: 'vc-save-status', role: 'status' });
   const say = (text, bad = false) => showMessage(status, text, bad ? 'error' : 'info');
@@ -72,9 +75,9 @@ export function mountDocuments(host, opts) {
   const query = () => new URLSearchParams(Object.entries(opts.sel()).filter(([, value]) => value != null && value !== ''));
   const url = (path, extra = '') => `/api/vercon/doc/${family}${path}?${query()}${extra}`;
   const json = (method, path, body) => opts.api(`/api/vercon/doc/${family}${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...opts.sel(), ...body }) });
-  // NIR: the saved receipts are read level by level, when the operator opens a supplier / a month (receipt-tree.js).
+  // NIR reads only month/supplier roots, then the documents of each opened root.
   const lazy = family === 'nir';
-  const createReceipts = () => receiptTree((params) => opts.api(url('/tree', `&${new URLSearchParams(params)}`)));
+  const createReceipts = () => receiptTree(params => opts.api(url('/tree', `&${new URLSearchParams(params)}`)), () => bonOrder.byDate);
   let receipts = lazy ? createReceipts() : null;
   const allocation = family === 'nir' ? receiptAllocation({ api: opts.api, selection: opts.sel, draft: () => state.draft, mode: () => state.mode }) : null;
   const numbering = documentNumbers({ family, state, allocation, selection: opts.sel, api: opts.api,
@@ -149,7 +152,6 @@ export function mountDocuments(host, opts) {
       if (mf() && editing()) specs.push(...mfColumns);
     } else specs.push({ key: 'PUTVA', label: 'Preț cu TVA (lei)', type: 'decimal' }, { key: 'ValoareCUTVA', label: 'Valoare (lei)', type: 'decimal' }); return specs;
   }
-  const docLabel = (doc) => `${receipt ? `${family.toUpperCase()} ${numberText(doc)} • ${doc.invoice || ''}` : `${family.toUpperCase()} ${doc.number}`} • ${format(doc.total, { type: 'decimal' })} lei${doc.source_missing ? ' • Fără bon sursă' : ''}${doc.annulled ? ' • anulat' : ''}`;
   const sourceLabel = (doc) => `${doc.invoice || doc.number} • ${dateText(doc.date)} • ${doc.party || doc.receiver || ''} • ${format(doc.total, { type: 'decimal' })} lei`;
   async function load() {
     const generation = ++loadGeneration;
@@ -166,15 +168,31 @@ export function mountDocuments(host, opts) {
   // The open nodes of the saved tree: of the live tree, or kept for the next one while it is hidden.
   const openNodes = () => savedTree ? savedTree.expandedNodes : (treeHost._vcExpanded ||= new Set());
   async function refresh() {
-    if (lazy) { const shown = await receipts.refresh(state.doc ? { party: state.doc.header.party || '', month: String(state.doc.header.Data || '').slice(0, 7) } : null); if (!abort.signal.aborted && shown.length) { const open = openNodes(), root = shown[0]; for (const id of [...open]) if (id.startsWith('party:') ? id !== root : id.startsWith('month:') && !id.startsWith(`month:${root.slice(6)}|`)) open.delete(id); shown.forEach((id) => open.add(id)); } treeDirty = true; return; }
+    if (lazy) {
+      const source = receipts, shown = await source.refresh(receiptTarget());
+      if (source !== receipts || abort.signal.aborted) return;
+      shown.forEach(id => openNodes().add(id)); treeDirty = true; return;
+    }
     const answer = await opts.api(url('/list')); if (!abort.signal.aborted) {
       state.docs = answer.documents; treeDirty = true;
-      if (family === 'bc' && state.doc) {
-        const expanded = openNodes(), branches = consumptionBranch(state.doc.header.receiver, state.doc.header.Data);
-        for (const id of [...expanded]) if (id.startsWith('receiver:') || id.startsWith('receiver-month:')) expanded.delete(id);
-        branches.forEach(id => expanded.add(id));
-      }
+      const selected = state.docs.find(doc => doc.id === state.doc?.id);
+      if (selected) openNodes().add(bonOrder.branch(selected));
     }
+  }
+  const receiptTarget = () => state.doc ? { party: state.doc.header.party || '', month: monthKey(state.doc.header.Data) } : null;
+  async function changeTreeOrder() {
+    const sequence = ++treeOrderSequence, source = receipts;
+    const tree = savedTree;
+    if (tree) tree.treeElement.inert = true;
+    try {
+      if (lazy) await source.load();
+      if (source !== receipts || sequence !== treeOrderSequence || abort.signal.aborted) return;
+      const selected = state.docs.find(doc => doc.id === state.doc?.id);
+      const shown = lazy ? await source.reveal(receiptTarget()) : selected ? [bonOrder.branch(selected)] : [];
+      if (source !== receipts || sequence !== treeOrderSequence || abort.signal.aborted) return;
+      openNodes().clear(); shown.forEach(id => openNodes().add(id));
+      treeDirty = true; paintSaved();
+    } finally { if (tree) tree.treeElement.inert = false; }
   }
   // A branch of the NIR tree was opened: its placeholder child stays until the server answers, then the real children replace it.
   async function opened(id, isOpen) {
@@ -278,6 +296,7 @@ export function mountDocuments(host, opts) {
         return newLine({ ...old, ...row, _productReady: item?.ready || old?._productReady, name: item?.name || old?.name || '', um: item?.um || old?.um || '' });
       }).concat(incomplete);
       if (result.undo_token) (draft.undo_tokens ||= []).push(result.undo_token);
+      if (sharedReceipt(invoiceDoc()) && result.declared != null) draft.header.Valoare = result.declared;
     } else {
       for (const row of result.lines) { const line = draft.lines.find(item => item.key === row.key); if (line) Object.assign(line, row); }
     }
@@ -289,12 +308,19 @@ export function mountDocuments(host, opts) {
     const input = inputs.get('Valoare'), result = input?._box?.result();
     const rows = displayRows(state.draft.lines);
     const decimals = Math.max(state.zec, ...rows.map(row => row.zec ?? allocation.precision(row) ?? state.zec));
-    const difference = receiptDifference(result?.ok ? result.value : null, rows, decimals);
+    const difference = receiptAdjustmentState({ declared: result?.ok ? result.value : null, rows,
+      local: state.draft.lines, decimals, mode: state.mode, savedLines: state.doc?.lines || [],
+      canWrite: state.canWrite, closed: state.closed, busy: state.busy, pending: state.pendingBody,
+      blank: isBlankLine, problems: lineProblems, name: row => row.name || product(row.product)?.name });
     input?.classList.toggle('has-total-difference', rows.some(row => !isBlankLine(row)) && difference.different);
-    const canCorrect = difference.canCorrect && state.draft.lines.some(row => !row.has_warehouse_exit && row.product && number(row.Cant) > 0)
-      && !state.draft.lines.some(row => row.calc_mode === 'GROSS') && state.canWrite && !state.busy && !state.pendingBody;
-    if (invoiceCorrectionButton) invoiceCorrectionButton.disabled = !canCorrect;
-    return canCorrect;
+    if (invoiceCorrectionButton) {
+      invoiceCorrectionButton.disabled = !difference.different;
+      invoiceCorrectionButton.title = difference.tooltip;
+    }
+    return difference;
+  }
+  function adjustableLine(row) {
+    return adjustableReceiptLine(row, state.mode, state.doc?.lines || []);
   }
   function attachInvoiceCorrection(item) {
     item.node.classList.add('vc-invoice-value');
@@ -303,25 +329,40 @@ export function mountDocuments(host, opts) {
     const box = item.input._box.element;
     box.replaceWith(row); row.append(box);
     const button = el('button', { type: 'button', className: 'vc-invoice-value__correct', disabled: true,
-      title: 'Corectează totalul produselor la ValoareFC. Disponibil pentru o diferență nenulă de cel mult 1 leu.',
+      title: 'Corectează o diferență nenulă de cel mult 1 leu, dacă există cel puțin 1 unitate rămasă în magazie, fără consum sau predare.',
       'aria-label': 'Corectează la valoarea facturii' });
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     icon.setAttribute('viewBox', '0 0 24 24');
     icon.setAttribute('aria-hidden', 'true');
     icon.innerHTML = '<path d="M12 3v18M7 21h10M4 7h16M5 7l-3 7h6L5 7Zm14 0-3 7h6l-3-7Z"/>';
     button.append(icon);
-    const onClick = event => { event.preventDefault(); correctTotal().catch(report); };
+    const onClick = event => { event.preventDefault(); correctTotal().catch(error => {
+      if (abort.signal.aborted || error.name === 'AbortError') return;
+      if (error.fields) showErrors(error.fields);
+      adjustmentError(error, syncInvoiceValue(), dialogs);
+    }); };
     button.addEventListener('click', onClick);
     headerUi.own(() => button.removeEventListener('click', onClick));
     row.append(button); invoiceCorrectionButton = button;
   }
   async function correctTotal() {
-    if (!await headerUi.commit() || !await linesUi.commit()) return;
-    if (!syncInvoiceValue()) return;
-    const selected = linesGrid?.getSelectedRows()[0];
-    if (!await confirmBox('Ajustați totalul la valoarea NIR, păstrând cota reală de TVA? Diferența poate fi cel mult 1 leu.', { yes: 'Corectează', no: 'Renunță' })) return;
-    const result = await validateDraft('adjust', selected && !selected.external && !isBlankLine(selected) ? selected.key : null);
-    if (result) { state.dirty = true; paintLines(); say(`Total corectat: ${format(receiptTotal(displayRows(result.lines), 'ValoareCUTVA', 4), { type: 'decimal' })} lei.`); }
+    if (adjustmentPending) return;
+    adjustmentPending = true;
+    try {
+      if (!await headerUi.commit() || !await linesUi.commit()) throw new Error('Finalizați sau corectați câmpul/celula aflată în editare înainte de ajustare.');
+      const check = syncInvoiceValue();
+      if (!check?.different) return;
+      if (check.reasons.length) throw new Error('Ajustarea nu poate fi aplicată în condițiile curente.');
+      const data = collect();
+      if (Object.keys(data.errors).length) {
+        showErrors(data.errors);
+        throw Object.assign(new Error('Completați sau corectați câmpurile marcate înainte de ajustare.'), { fields: data.errors });
+      }
+      const selected = linesGrid?.getSelectedRows()[0];
+      if (!await confirmBox('Ajustați totalul la valoarea NIR, păstrând cota reală de TVA? Diferența poate fi cel mult 1 leu.', { yes: 'Corectează', no: 'Renunță' })) return;
+      const result = await validateDraft('adjust', selected && adjustableLine(selected) ? selected.key : null);
+      if (result) { state.dirty = true; paintLines(); say(`Total corectat: ${format(receiptTotal(displayRows(result.lines), 'ValoareCUTVA', 4), { type: 'decimal' })} lei.`); }
+    } finally { adjustmentPending = false; syncInvoiceValue(); }
   }
   // The modal route is retained, but disabled for NIR while its context cards are in use.
   let frame = null;
@@ -457,6 +498,9 @@ export function mountDocuments(host, opts) {
       inputs.set(spec.key, item.input); errors.set(`h.${spec.key}`, item.error); if (spec.hint && editing()) item.input.title = spec.hint;
       if (receipt && spec.key === 'Numar' && editing() && !automatic) subnumber.attach(item, header);
       if (family === 'nir' && spec.key === 'Valoare') attachInvoiceCorrection(item);
+      if (family === 'nir' && spec.key === 'Valoare' && editing()) {
+        item.input.addEventListener('input', syncInvoiceValue, { signal: abort.signal });
+      }
       const index = ['IdPartener', 'IdMasina', 'IdComisie'].includes(spec.key) ? 0 : ['NrFact', 'DataFc'].includes(spec.key) ? 1 : spec.key === 'Valoare' ? 3 : 2; (groups ? groups[index] : headerHost).append(item.node);
       if (family === 'nir' && spec.key === 'IdPartener' && state.mode === 'add') {
         stockHost.hidden = false;
@@ -687,11 +731,7 @@ export function mountDocuments(host, opts) {
       } catch (error) { report(error); }
     }, 300);
   }
-  const treeNodes = () => {
-    const nodes = lazy ? receipts.nodes() : custody ? bonOrder.nodes(state.docs, family) : family === 'bc' ? consumptionNodes(state.docs) : groupedNodes(state.docs, config.groups.map((name) => (doc) => name === 'date' ? dateText(doc.date) : doc[name]), docLabel);
-    if (!custody || !bonOrder.byDate) nodes.sort((a, b) => treeAlphabet.compare(a.label, b.label));
-    return nodes;
-  };
+  const treeNodes = () => lazy ? receipts.nodes() : bonOrder.nodes(state.docs);
   function paintSaved() {
     savedHost.hidden = (!!config.holder || mf()) && editing();
     savedHost.inert = custody && editing();
@@ -706,15 +746,15 @@ export function mountDocuments(host, opts) {
       treeDirty = false; return;
     }
     treeUi.clear(); savedTree = null; if (savedHost.hidden) return; treeDirty = false;
-    savedTree = paintTree(treeHost, treeNodes(), { title: family === 'bc' ? 'Bonuri salvate' : family === 'storno' ? 'FCS salvate' : 'Documente salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onToggle: lazy ? opened : undefined, exclusiveRoots: lazy || family === 'bc', onSelect: (id) => open(Number(id)).catch(report), onAction: (id, anchor) => {
+    savedTree = paintTree(treeHost, treeNodes(), { title: family === 'bc' ? 'Bonuri salvate' : family === 'storno' ? 'FCS salvate' : 'Documente salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onToggle: lazy ? opened : undefined, onSelect: (id) => open(Number(id)).catch(report), onAction: (id, anchor) => {
       const doc = lazy ? receipts.find(id) : state.docs.find((item) => String(item.id) === id); if (!doc) return; const run = async (action) => { if (state.doc?.id !== doc.id) await open(doc.id); if (state.doc?.id === doc.id) await action(); };
       openMenu(anchor, [...(doc.source_missing ? [{ icon: '↔', label: 'Asociază cu un bon de consum', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }] : []), { icon: '✎', label: 'Modifică', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled, run: () => run(cancel).catch(report) }], { align: 'right' });
     } }, treeUi);
     paintTreeAdd();
   }
   function paintTreeAdd() {
+    bonOrder.mount(custody ? savedHost : treeHost, treeUi, changeTreeOrder, !editing(), report);
     if (!inline) return;
-    bonOrder?.mount(savedHost, treeUi, () => { treeDirty = true; paintSaved(); }, !editing());
     const heading = treeHost.querySelector(':scope > h4');
     if (!heading) return;
     if (!treeAddButton || treeAddButton.element.parentElement !== heading) {

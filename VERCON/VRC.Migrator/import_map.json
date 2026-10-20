@@ -560,8 +560,7 @@
           "link": {
             "kind": "logical",
             "parent": "NIR",
-            "parentField": "IdIntrare",
-            "orphan": "null"
+            "parentField": "IdIntrare"
           }
         },
         {

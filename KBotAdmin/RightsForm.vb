@@ -26,7 +26,10 @@ Public Class RightsForm
         _link = k_link
         _apply = k_apply
         Text = "Drepturi " & k_application
-        lblInfo.Text = k_link.Un & "  ·  baza " & k_link.Dc & vbLf & "Bifa dă dreptul pe loc. Click pe titlul coloanei «Bifă»: bifează / debifează tot."
+        lblInfo.Text = k_link.Un & "  ·  baza " & k_link.Dc & vbLf & "Bifa sincronizează și MariaDB. Click pe «Bifă»: bifează / debifează tot."
+        If String.Equals(k_link.Rol, "Contabil", StringComparison.OrdinalIgnoreCase) Then
+            lblInfo.Text &= vbLf & "Rolul Contabil păstrează acces SQL la toate datele acestei baze."
+        End If
         _filling = True
         grid.BeginUpdate()
         Try
@@ -62,10 +65,12 @@ Public Class RightsForm
             Dim k_on As Boolean = Convert.ToBoolean(e.NewValue, CultureInfo.InvariantCulture)
             Dim k_index As Integer = e.RowIndex
             _busy = True
+            grid.Enabled = False
             Try
                 Dim k_ok As Boolean = Await _apply(_link, New List(Of String) From {CodeAt(k_index)}, k_on)
                 If Not k_ok Then SetBox(k_index, Not k_on)
             Finally
+                grid.Enabled = True
                 _busy = False
             End Try
         Catch ex As Exception
@@ -91,6 +96,7 @@ Public Class RightsForm
             Next
             If k_changes.Count = 0 Then Return
             _busy = True
+            grid.Enabled = False
             Try
                 Dim k_ok As Boolean = Await _apply(_link, k_changes.Select(Function(k_i) CodeAt(k_i)).ToList(), k_target)
                 If k_ok Then
@@ -100,6 +106,7 @@ Public Class RightsForm
                     grid.Invalidate()
                 End If
             Finally
+                grid.Enabled = True
                 _busy = False
             End Try
         Catch ex As Exception

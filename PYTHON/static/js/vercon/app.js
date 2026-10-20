@@ -3,6 +3,7 @@
 // request (sequence number) and carries the version the server computed for it. The menu comes from the server
 // (type + rights + occupation); retired navigation entries are hidden locally. Cleanup: one AbortController tied to `pagehide`.
 import { openMenu, Menu } from '../components/menu/menu.js';
+import { bindMenuZoom } from '../components/menu/menu-zoom.js';
 import { startSessionTimer } from '../adechit/session.js';
 import { beginSessionExit } from '../utils/session-exit.js';
 import { Combobox } from '../components/combobox/combobox.js';
@@ -23,6 +24,7 @@ import { createSaver } from './save.js';
 import { writePreference } from './documents.js';
 import { el, preview, scope } from './ui.js';
 import { bindApplicationMenu } from './application-menu.js';
+import { bindReportIdentity } from './report-identity.js';
 
 const $ = (k_id) => document.getElementById(k_id);
 const lifetime = new AbortController();   // everything below is bound to this signal
@@ -99,7 +101,7 @@ function applyContext(k_ctx) {
 
 // one emoji per operation (the key comes from the server menu)
 const MENU_ICONS = {
-  nir: '🧾', storno: '↩️', bc: '📤', br: '🔄', lista_alimente: '🥗', mf_registru: '📒', amortizare: '📉', bp: '🤝', bt: '🚚', bs: '🗑️', rapoarte: '📊',
+  nir: '🧾', storno: '↩️', bc: '📤', br: '🔄', lista_alimente: '🥗', mf_registru: '📒', bp: '🤝', bt: '🚚', bs: '🗑️', rapoarte: '📊',
   produse: '📦', baza_date: '🗂️', comisii: '👥', parteneri: '🏢', gestionari: '🧑‍💼', setari: '🏫', inchidere_an: '🔒',
 };
 let mainMenu = null;   // the Menu control (js/components/menu) that draws the operations bar
@@ -125,7 +127,7 @@ function paintMenu(k_ctx) {
         ? [{ key: 'nir', label: 'Factură cumpărare (NIR)' }, { key: 'storno', label: 'Factură Stornare' }]
         : k_movements
         ? [{ key: 'bp', label: 'Bon Predare' }, { key: 'bt', label: 'Bon Transfer' }, { key: 'bs', label: 'Bon Casare' },
-          { key: 'amortizare', label: 'Amortizare', rule: true }, { key: 'mf_registru', label: 'Registru MF' }]
+          { key: 'mf_registru', label: 'Registru MF', rule: true }]
         : [{ key: 'bc', label: 'Bon Consum' }, { key: 'br', label: 'Bon Retur' }, { key: 'lista_alimente', label: 'Lista Alimente', rule: true }];
       const k_children = k_specs.flatMap((k_spec) => {
         const k_item = k_list.find((k_candidate) => k_candidate.key === k_spec.key);
@@ -216,9 +218,8 @@ async function openForm(k_key, { reload = false } = {}) {
   writePreference(`form.${k_sel.type}`, k_key);               // per type: an MF choice is never applied to Alimente
   paintMenu(state.ctx);
   const k_work = $('vc-work'); k_work.hidden = false;
-  if (k_key === 'rapoarte' || k_key === 'amortizare') {
-    state.editor = mountReports(k_work, { api, sel: () => state.ctx.selection,
-      reportName: k_key === 'amortizare' ? 'Amortizare' : null });
+  if (k_key === 'rapoarte') {
+    state.editor = mountReports(k_work, { api, sel: () => state.ctx.selection });
     return;
   }
   if (k_key === 'stocuri') {
@@ -325,5 +326,7 @@ function bind() {
   addEventListener('pagehide', () => { stopTimer?.(); pageUi.clear(); lock.release(true); state.editor?.destroy(); Object.values(combos).forEach((k_c) => k_c.destroy?.()); lifetime.abort(); }, { once: true });
 }
 
+bindReportIdentity(api, () => state.ctx?.selection);
+bindMenuZoom($('vc-help'));
 bind();
 start();

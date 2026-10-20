@@ -71,6 +71,7 @@ Partial Class KeLegaForm
         ntfMesaj = New Global.KBot.Controls.KBotNotice()
         pnlJos = New System.Windows.Forms.Panel()
         btnOk = New System.Windows.Forms.Button()
+        btnElimina = New System.Windows.Forms.Button()
         capBar = New Global.KBot.Controls.KBotCaptionBar()
         pnlCard.SuspendLayout()
         tlyMain.SuspendLayout()
@@ -138,21 +139,33 @@ Partial Class KeLegaForm
         tlySus.Size = New System.Drawing.Size(1300, 371)
         tlySus.TabIndex = 0
         '
-        ' tree: the received invoices, by supplier, with a tick each (the ones already covered by a reception are not listed)
+        ' tree: the received invoices, by supplier, with a tick each (the ones a reception already covers are ticked and locked, KE13)
         '
         tree.BorderColor = Drawing.SystemColors.ActiveBorder
         tree.CheckBoxes = True
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.ExpanderSize = 10
         tree.Font = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
+        tree.FooterBackColor = Drawing.SystemColors.Control
+        tree.FooterCaption = "TOTAL"
+        tree.FooterCaptionBackColor = Drawing.SystemColors.Control
+        tree.FooterCaptionFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
+        tree.FooterCaptionForeColor = Drawing.SystemColors.ActiveCaptionText
+        tree.FooterHeight = 30
+        tree.FooterSeparatorColor = Drawing.Color.Gainsboro
+        tree.FooterSeparatorWidth = 2
+        tree.FooterTextAlign = Drawing.ContentAlignment.MiddleRight
+        tree.FooterVisible = True
         tree.HasNodeIcons = False
         tree.HeaderBackColor = Drawing.SystemColors.Control
         tree.HeaderBackStyle = Global.KBot.Controls.AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
-        tree.HeaderCaption = " FACTURI DE RECEPȚIONAT"
+        tree.HeaderCaption = " FACTURI PRIMITE"
         tree.HeaderFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Drawing.Color.Black
         tree.HeaderHeight = 30
         tree.HeaderIconSize = New System.Drawing.Size(18, 18)
+        tree.HeaderRightIcon = My.Resources.Resources.settings
+        tree.HeaderRightIconTooltip = "Opțiunile arborelui: arată doar facturile asociate cu o recepție."
         tree.HeaderSearchIcon = My.Resources.Resources.search
         tree.HeaderSearchIconTooltip = "Deschide banda de căutare peste arbore." & vbLf & "ESC golește căutarea și o închide."
         tree.HeaderSeparatorColor = Drawing.Color.Gainsboro
@@ -178,7 +191,7 @@ Partial Class KeLegaForm
         tree.Size = New System.Drawing.Size(345, 371)
         tree.TabIndex = 0
         tips.SetToolTipHeader(tree, "Facturile de recepționat")
-        tips.SetToolTipText(tree, "Facturile primite, pe furnizori. Bifați cele care intră în această recepție. Lupa din antet caută după furnizor sau după numărul facturii. Cele deja acoperite de recepții nu apar.")
+        tips.SetToolTipText(tree, "Facturile primite, pe furnizori. Bifați cele care intră în această recepție. Cele deja recepționate sunt bifate și nu se mai pot schimba; un clic pe ele arată recepția și produsele lor. Lupa din antet caută după furnizor sau după numărul facturii.")
         '
         ' pnlLinii: the title and the lines of the ticked invoices
         '
@@ -386,6 +399,7 @@ Partial Class KeLegaForm
         '
         pnlRec.Controls.Add(gridReceptii)
         pnlRec.Controls.Add(pnlNoua)
+        pnlRec.Controls.Add(btnElimina)
         pnlRec.Controls.Add(pnlMod)
         pnlRec.Controls.Add(navMod)
         pnlRec.Dock = System.Windows.Forms.DockStyle.Fill
@@ -394,6 +408,20 @@ Partial Class KeLegaForm
         pnlRec.Name = "pnlRec"
         pnlRec.Size = New System.Drawing.Size(340, 325)
         pnlRec.TabIndex = 0
+        '
+        ' btnElimina: under the receptions, only while a resolved invoice is on view (KE14)
+        '
+        btnElimina.Dock = System.Windows.Forms.DockStyle.Bottom
+        btnElimina.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        btnElimina.Location = New System.Drawing.Point(0, 291)
+        btnElimina.Name = "btnElimina"
+        btnElimina.Size = New System.Drawing.Size(340, 34)
+        btnElimina.TabIndex = 4
+        btnElimina.Text = "Elimină asociere"
+        tips.SetToolTipHeader(btnElimina, "Elimină asociere")
+        tips.SetToolTipText(btnElimina, "Elimină legăturile facturii cu recepția (din K-BOT). Recepția din FOREXE nu se atinge.")
+        btnElimina.UseVisualStyleBackColor = True
+        btnElimina.Visible = False
         '
         ' navMod: the navbar of the reception -- a new one, or the existing ones (KE12-05)
         '
@@ -853,6 +881,7 @@ Partial Class KeLegaForm
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents pnlJos As System.Windows.Forms.Panel
     Friend WithEvents btnOk As System.Windows.Forms.Button
+    Friend WithEvents btnElimina As System.Windows.Forms.Button
     Friend WithEvents navMod As Global.KBot.Controls.KBotNavList
     Friend WithEvents pnlMod As System.Windows.Forms.Panel
     Friend WithEvents lblMod As System.Windows.Forms.Label

@@ -129,6 +129,23 @@ Public NotInheritable Class Finding
     ''' </summary>
     Public Const ANGAJAMENT_LIPSA As String = "ANGAJAMENT_LIPSA"
 
+    ''' <summary>Slice 0121-02: what <c>ParteneriAng</c> becomes (links, indicators, rows read) - always one line.</summary>
+    Public Const LEGATURI_PARTENERI As String = "LEGATURI_PARTENERI"
+    ''' <summary>Slice 0121-02: partners with no CodFiscal are never linked to angajamente; counted and listed.</summary>
+    Public Const PARTENER_FARA_COD_FISCAL As String = "PARTENER_FARA_COD_FISCAL"
+    ''' <summary>Slice 0121-02: a <c>ParteneriAng</c> row whose partner code is not in the unit's <c>Parteneri</c>.</summary>
+    Public Const PARTENER_LIPSA_ACCESS As String = "PARTENER_LIPSA_ACCESS"
+    ''' <summary>Slice 0121-02: a <c>ParteneriAng</c> row without <c>CodAng</c>: no link can be made.</summary>
+    Public Const LEGATURA_FARA_ANGAJAMENT As String = "LEGATURA_FARA_ANGAJAMENT"
+    ''' <summary>Slice 0121-02: same CodFiscal and classification, different CodAng, in two or more units.</summary>
+    Public Const LEGATURI_CONFLICT_UNITATI As String = "LEGATURI_CONFLICT_UNITATI"
+    ''' <summary>Slice 0121-02: two non-empty bank accounts on the same link and CodAI.</summary>
+    Public Const CONT_BANCAR_DIFERIT As String = "CONT_BANCAR_DIFERIT"
+    ''' <summary>Slice 0121-02: a CodAI of a link that is in neither the target nor the FOREXE files' <c>FX_Indicatori</c>.</summary>
+    Public Const INDICATOR_LIPSA_FX As String = "INDICATOR_LIPSA_FX"
+    ''' <summary>Slice 0121-02: CodFiscal values that are not all digits (CNP, foreign VAT ids).</summary>
+    Public Const COD_FISCAL_NENUMERIC As String = "COD_FISCAL_NENUMERIC"
+
     Public Sub New(kind As String, severity As FindingClass, table As String,
                    column As String, message As String, Optional rowCount As Integer = 0)
         Me.Kind = kind

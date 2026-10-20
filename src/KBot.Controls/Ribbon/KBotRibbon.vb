@@ -246,14 +246,46 @@ Public NotInheritable Class KBotRibbon
     Public Event ItemClicked As EventHandler(Of KBotRibbonItemClickedEventArgs)
 
     <Category("K-BOT")>
+    <Description("Raised when a tab is pressed with the left button (slice 000T-13), after it was selected -- also when it was the selected one already.")>
+    Public Event TabClicked As EventHandler(Of KBotRibbonTabClickedEventArgs)
+
+    <Category("K-BOT")>
     <Description("Raised when the ribbon is folded or unfolded.")>
     Public Event CollapsedChanged As EventHandler
 
     ''' <summary>The rectangle of the button with this key in SCREEN coordinates; Empty when it is not on show.</summary>
     Public Function ButtonScreenBounds(k_key As String) As Rectangle
+        EnsureLayout()   ' slice 000T-13: a tab just selected has not been laid out yet
         Dim k_button As KBotRibbonButton = FindButton(k_key)
         If k_button Is Nothing OrElse k_button.Bounds.IsEmpty Then Return Rectangle.Empty
         Return RectangleToScreen(k_button.Bounds)
+    End Function
+
+    ''' <summary>Slice 000T-13: the rectangle of the tab at this position in SCREEN coordinates; Empty when the tab is not shown.</summary>
+    Public Function TabScreenBounds(k_index As Integer) As Rectangle
+        If k_index < 0 OrElse k_index >= _tabs.Count Then Return Rectangle.Empty
+        EnsureLayout()
+        Dim k_tab As KBotRibbonTab = _tabs(k_index)
+        If k_tab.Bounds.IsEmpty Then Return Rectangle.Empty
+        Return RectangleToScreen(k_tab.Bounds)
+    End Function
+
+    ''' <summary>
+    ''' Slice 000T-13: the right-hand end of the panel in SCREEN coordinates -- the group of the view, the group of the form
+    ''' and the large pinned buttons («Inchide») together. Empty while the ribbon is folded or nothing is shown there.
+    ''' </summary>
+    Public Function RightEndScreenBounds() As Rectangle
+        EnsureLayout()
+        Dim k_union As Rectangle = Rectangle.Empty
+        For Each k_group As KBotRibbonGroup In New KBotRibbonGroup() {_rightGroup, _formGroup}
+            If k_group.Bounds.IsEmpty Then Continue For
+            k_union = If(k_union.IsEmpty, k_group.Bounds, Rectangle.Union(k_union, k_group.Bounds))
+        Next
+        For Each k_button As KBotRibbonButton In _pinned
+            If Not k_button.Visible OrElse k_button.Bounds.IsEmpty Then Continue For
+            k_union = If(k_union.IsEmpty, k_button.Bounds, Rectangle.Union(k_union, k_button.Bounds))
+        Next
+        Return If(k_union.IsEmpty, Rectangle.Empty, RectangleToScreen(k_union))
     End Function
 
     ''' <summary>The button with this key anywhere in the ribbon; Nothing when there is none.</summary>
@@ -1388,6 +1420,7 @@ Public NotInheritable Class KBotRibbon
                 Else
                     SelectedTabIndex = k_index
                 End If
+                RaiseEvent TabClicked(Me, New KBotRibbonTabClickedEventArgs(k_tab, k_index))
                 Return
             End If
             Dim k_button As KBotRibbonButton = ButtonAt(k_e.Location)

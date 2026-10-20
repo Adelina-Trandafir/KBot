@@ -5,6 +5,37 @@
 Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → MariaDB.
 Executabilul păstrează numele existent `ADE.Migrator.exe`.
 
+Documentele din `Plati` și `Retur` cu IDP/IDS către `Platitori`/`Platitori_sub`
+inexistente sunt excluse din tabelele obișnuite. Se exclud și `Chitante`/`AlteDoc`
+legate de aceste plăți sau de plăți inexistente. Rândurile originale complete
+(inclusiv coloanele care nu se migrează) se păstrează ca JSON în `AD_DateEronate`,
+cu motivul, cheia Access, anii detectați, fișierul și hash-ul sursei, în aceeași
+tranzacție și subunitate ca restul importului. Referințele NULL păstrează regula
+existentă pentru legături opționale. Alte tabele și alte legături păstrează regulile existente.
+
+Aceste documente blochează migrarea numai dacă data documentului sau luna asociată
+indică **2025 ori 2026** (ani ficși). Pentru chitanțe/alte documente fără an propriu
+identificabil, se folosesc data și luna plății asociate. Fără an identificabil,
+documentul se arhivează fără blocaj. Dacă există blocaje, nu se scrie nimic pe
+server, inclusiv în arhivă, până la corectarea sursei. Când există documente excluse,
+tabelul și numărul lor apar în plan și în rezultatul importului.
+
+DDL: `sql/AD_12_date_eronate.sql` se aplică **numai în AVACONT_SURSA**, apoi
+utilizatorul propagă structura prin **KBotAdmin**. Migratorul nu creează tabelul.
+
+Sincronizarea structurii nu copiază rândul de inițializare `AD_Lock.ID=0`, necesar
+pentru blocarea comună a portalului. Dacă lipsește, **Testează** semnalează acest
+lucru. Utilizatorul execută separat `sql/AD_12_lock_portal_seed.sql` în baza
+destinație (adaptează `USE` pentru DC-ul respectiv), apoi repetă **Testează**.
+Acesta este doar un seed pentru blocare; nu înlocuiește inițializarea datelor
+portalului din `AD_08_02_interogare_unica.sql` pentru baze cu date existente.
+
+Planul semnalează și chitanțele cu aceeași serie identică și același număr,
+afișând ID-urile Access (`IDC`, `IDPL`) și datele pentru identificarea dublurilor.
+Indexul `uq_Sub_Serie_Numar` impune unicitatea în întreaga subunitate, inclusiv
+între ani diferiți și pentru chitanțe anulate. Aceste dubluri nu intră în regula
+de arhivare pentru corespondențe lipsă și trebuie rezolvate separat în sursă.
+
 <!-- slice: ADE6-24 -->
 Emailul și CNP-ul educatorilor (`AD_Grupe_Educator.EMail/CNP`) sunt opționale și
 se completează numai în ADECHIT web. Baza Access nu conține aceste coloane;

@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.Collections.Generic
 Imports System.Globalization
+Imports System.IO
 Imports System.Linq
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -25,6 +26,7 @@ Partial Public Class PrimiteView
     Private Const AccessBatchBytes As Integer = 5 * 1024 * 1024
     Private Const AccessSendBatch As Integer = 20
     Private Const AccessShownProblems As Integer = 8
+    Private Const AccessShownNotRead As Integer = 20
 
     ''' <summary>The bridge when the Access features may be used now; Nothing (after telling the operator) when not.</summary>
     Private Function AccessBridgeOrTell(k_caption As String) As IAccessBridge
@@ -78,12 +80,17 @@ Partial Public Class PrimiteView
                 Dim k_added As New List(Of Integer)()
                 Dim k_references As New List(Of AccessEfReference)()
                 Dim k_done As Integer
+                ' Slice 00EF-44: what this PC saw, sent with every batch and with the end call so the server's journal can explain a short run.
+                Dim k_context As New AccessPreluareContext() With {
+                    .An = _year, .Fisier = Path.GetFileName(k_store), .Cui = k_cui, .AccesTotal = k_ids.Count,
+                    .Loturi = (k_ids.Count + AccessReadBatch - 1) \ AccessReadBatch}
                 For k_start As Integer = 0 To k_ids.Count - 1 Step AccessReadBatch
                     Dim k_slice As List(Of String) = k_ids.Skip(k_start).Take(AccessReadBatch).ToList()
                     Dim k_messages As List(Of AccessEfMessage) = Await Task.Run(Function() k_bridge.ReadEFacturaMessages(k_store, k_slice)).ConfigureAwait(True)
                     If IsDisposed Then Return
+                    NoteSlice(k_context, k_slice, k_messages, k_start \ AccessReadBatch + 1)
                     For Each k_part As List(Of AccessEfMessage) In SplitBySize(k_messages)
-                        Dim k_answer As EFacturaAccessPreluare = Await _gate.RunAsync(Function() _api.PreiaAccessAsync(k_part, _cts.Token)).ConfigureAwait(True)
+                        Dim k_answer As EFacturaAccessPreluare = Await _gate.RunAsync(Function() _api.PreiaAccessAsync(k_part, k_context, _cts.Token)).ConfigureAwait(True)
                         If IsDisposed Then Return
                         AddTo(k_total, k_answer)
                         k_added.AddRange(k_answer.IdPrimite)
@@ -102,7 +109,7 @@ Partial Public Class PrimiteView
                 Next
 
                 SetSyncStatus("Se leagă facturile noi de recepții…", "Se leagă…")
-                Dim k_final As EFacturaAccessFinal = Await _gate.RunAsync(Function() _api.FinalizeazaAccessAsync(k_added, k_references, _cts.Token)).ConfigureAwait(True)
+                Dim k_final As EFacturaAccessFinal = Await _gate.RunAsync(Function() _api.FinalizeazaAccessAsync(k_added, k_references, k_context, _cts.Token)).ConfigureAwait(True)
                 If IsDisposed Then Return
                 If k_total.FacturiNoi > 0 OrElse k_total.Operatii > 0 Then Await LoadAsync(_idDdf).ConfigureAwait(True)
                 SetSyncStatus(If(k_total.Erori.Count = 0, "Preluarea din Access s-a încheiat.", "Preluarea din Access s-a încheiat cu probleme."), FooterIdleText)
@@ -227,6 +234,20 @@ Partial Public Class PrimiteView
     End Function
 
     ' ---- helpers: reached only through the two wrapped boundaries above ----------------------------------------------------
+
+    ''' <summary>Records for the journal what one slice of ids gave: how many were asked, how many messages came back, and which ids did not.</summary>
+    Private Shared Sub NoteSlice(k_context As AccessPreluareContext, k_asked As List(Of String), k_read As List(Of AccessEfMessage), k_lot As Integer)
+        Dim k_back As New HashSet(Of String)(k_read.Select(Function(k_m) k_m.IdSol), StringComparer.OrdinalIgnoreCase)
+        For Each k_id As String In k_asked
+            If k_back.Contains(k_id) Then Continue For
+            k_context.NecititeTotal += 1
+            If k_context.Necitite.Count < AccessShownNotRead Then k_context.Necitite.Add(k_id)
+        Next
+        k_context.Lot = k_lot
+        k_context.Cerute = k_asked.Count
+        k_context.CititeInLot = k_read.Count
+        k_context.Citite += k_read.Count
+    End Sub
 
     ''' <summary>The messages in groups whose archives together stay under the budget (a request is capped by the server); one message is never split.</summary>
     Private Shared Iterator Function SplitBySize(k_messages As List(Of AccessEfMessage)) As IEnumerable(Of List(Of AccessEfMessage))

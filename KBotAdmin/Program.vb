@@ -15,6 +15,8 @@ Friend Module Program
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf OnUnhandledException
         AddHandler TaskScheduler.UnobservedTaskException, AddressOf OnUnobservedTaskException
 
+        If Not SingleInstance.TryAcquire() Then Return
+
         Try
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
@@ -44,6 +46,8 @@ Friend Module Program
         Catch ex As Exception
             GlobalErrorLog.Write("KBotAdmin.Main", ex)
             KBotMessage.Show("KBotAdmin nu a putut porni: " & ex.Message, "KBotAdmin", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            SingleInstance.Release()
         End Try
     End Sub
 

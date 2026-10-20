@@ -359,9 +359,9 @@ Partial Public Class KbotForm
                 ' The advice about the installed Adobe (free Reader 2025+ recommended); the
                 ' operator switches it off from its own window. Before the tour, which is posted.
                 AdobeAdvice.ShowIfDue(Me)
-                ' Slice 0097-02: the main window's tour, by itself, until it was seen to the end
-                ' or switched off. Last, so it rings a window that already has its data.
-                PornesteTurulInitial()
+                ' Slice 000T-13: the tutorial of the start, by itself, until it was seen to the end
+                ' or switched off. Last, so it walks through a window that already has its data.
+                PornesteTutorialulDePornire()
             Else
                 ' No session (possible only in the Debug harness): no data, no silent sample --
                 ' the list stays empty, honestly. The bar with no year / SS selector tells the story.
@@ -394,23 +394,26 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
-    ' Slice 0097-02: the automatic tour of the main window (HelpService decides whether it is due).
+    ' Slice 000T-13: the tutorial of the start (HelpService decides whether it is due). It belongs to the main window
+    ' (AvacontMain: the ribbon is there), so a shell on its own (the Debug bench) never starts it.
     ' Posted, not called: Load has just finished its last request and the window must paint the
-    ' data first. UI boundary: a tour that cannot start is logged, never told -- nobody asked for it.
-    Private Sub PornesteTurulInitial()
+    ' data first. UI boundary: a tutorial that cannot start is logged, never told -- nobody asked for it.
+    Private Sub PornesteTutorialulDePornire()
         Try
-            If IsDisposed OrElse Not IsHandleCreated Then Return
+            If IsDisposed OrElse Not IsHandleCreated OrElse HostForm Is Nothing Then Return
             BeginInvoke(New Action(
                 Sub()
                     Try
-                        If IsDisposed OrElse Not Visible OrElse WindowState = FormWindowState.Minimized Then Return
-                        TryCast(KBotHelp.Provider, HelpService)?.StartInitialTour()
+                        Dim k_main As Form = HostForm
+                        If IsDisposed OrElse k_main Is Nothing OrElse k_main.IsDisposed OrElse Not k_main.Visible OrElse
+                           k_main.WindowState = FormWindowState.Minimized Then Return
+                        TryCast(KBotHelp.Provider, HelpService)?.StartOpeningTutorial()
                     Catch ex As Exception
-                        GlobalErrorLog.Write("MainForm.PornesteTurulInitial", ex)
+                        GlobalErrorLog.Write("MainForm.PornesteTutorialulDePornire", ex)
                     End Try
                 End Sub))
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.PornesteTurulInitial", ex)
+            GlobalErrorLog.Write("MainForm.PornesteTutorialulDePornire", ex)
         End Try
     End Sub
 End Class

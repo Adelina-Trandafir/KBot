@@ -94,12 +94,17 @@ Public NotInheritable Class AdeSchema
                      S("Educator"), S("Grupa"))
     }
 
-    ''' <summary>The two tables the migrator builds itself (no Access counterpart).</summary>
+    ''' <summary>Derived educator history (no Access counterpart).</summary>
     Public Shared ReadOnly GrupeEducator As New AdeTable("Grupe_Educator", "IDGE",
         I("IDGE"), I("IDG"), S("Educator", 50), T("DeLa"), T("PanaLa"))
 
     Public Shared ReadOnly PlatitoriIstoric As New AdeTable("Platitori_Istoric", "IDI",
         I("IDI"), I("IDP"), T("Data"), S("Tip", 20), I("IDG_Vechi"), I("IDG_Nou"), B("Dedus"), S("Utilizator", 80), S("Nota"))
+
+    ''' <summary>Original orphan documents, without foreign keys to their missing Access parents.</summary>
+    Public Shared ReadOnly DateEronate As New AdeTable("DateEronate", "IDE",
+        I("IDE"), S("TabelSursa", 40), I("CheieSursa"), S("AniDetectati", 255), S("Motiv", 0),
+        S("DateSursa", 0), S("SourceHash", 64), S("SourceFile", 255))
 
     ''' <summary>Every foreign key of the written tables: child table, column, parent table.</summary>
     Public Shared ReadOnly Relations As (Child As String, Col As String, Parent As String)() = {

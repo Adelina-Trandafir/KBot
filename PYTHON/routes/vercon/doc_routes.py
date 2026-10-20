@@ -160,11 +160,11 @@ def register(bp, guard, scoped, open_db):
     @bp.get('/api/vercon/doc/nir/tree')
     @guard('read')
     def receipt_tree_level():
-        """One level of the saved-receipts tree: level=parties | months&party= | documents&party=&month=YYYY-MM."""
+        """Lazy roots (parties/months), then documents filtered by party or month."""
         _need('nir')
         vctx = scoped('read')
         level, party = request.args.get('level', 'parties'), request.args.get('party')
-        if level not in ('parties', 'months', 'documents') or (level != 'parties' and party is None):
+        if level not in ('parties', 'months', 'documents') or (level == 'documents' and party is None and request.args.get('month') is None):
             raise NomError('INVALID', 'Cerere invalidă.', 400)
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, 'nir', False)

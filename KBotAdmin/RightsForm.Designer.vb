@@ -46,7 +46,7 @@ Partial Class RightsForm
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(14, 12, 14, 12)
         tlyMain.RowCount = 3
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 74F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 48F))
         tlyMain.Size = New Size(640, 520)
@@ -61,7 +61,7 @@ Partial Class RightsForm
         lblInfo.Location = New Point(14, 12)
         lblInfo.Margin = New Padding(0)
         lblInfo.Name = "lblInfo"
-        lblInfo.Size = New Size(612, 52)
+        lblInfo.Size = New Size(612, 74)
         lblInfo.TabIndex = 0
         lblInfo.TextAlign = ContentAlignment.MiddleLeft
         '
@@ -96,11 +96,11 @@ Partial Class RightsForm
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "expl"
         grid.HeaderHeight = 32
-        grid.Location = New Point(14, 64)
+        grid.Location = New Point(14, 86)
         grid.Margin = New Padding(0)
         grid.MaxHeaderHeight = 48
         grid.Name = "grid"
-        grid.Size = New Size(612, 396)
+        grid.Size = New Size(612, 374)
         grid.TabIndex = 1
         tips.SetToolTipHeader(grid, "Drepturile")
         tips.SetToolTipText(grid, "Un rând = un drept. Bifa dă dreptul pe loc, fără bifă dreptul se retrage." & vbLf & "Click pe titlul coloanei «Bifă» bifează sau debifează toate drepturile.")

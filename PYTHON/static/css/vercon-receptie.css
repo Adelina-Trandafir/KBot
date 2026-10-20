@@ -1,4 +1,6 @@
 /* Equal receipt fields; annotation arrows describe widths, not actions. */
+.confirm-box--message.vc-receipt-adjustment-error { width: min(760px, calc(92 * var(--application-vw, 1vw))); }
+.vc-receipt-adjustment-error .confirm-box__text { max-height: calc(60 * var(--application-vh, 1vh)); overflow-y: auto; overflow-wrap: anywhere; }
 .vc-page .vc-doc__header--nir { width: min(100%,1076px); margin-inline: auto; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; padding-top: 0; }
 .vc-doc--nir .vc-header-group { gap: 8px; grid-template-rows: none; }
 .vc-doc--nir .vc-field { position: relative; }

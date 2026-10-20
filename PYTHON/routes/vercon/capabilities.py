@@ -27,7 +27,6 @@ FORMS = {
     "bp":             ("Bon de predare",          "Fluxuri",      frozenset({OI, MF}),          "oi_predare"),
     "bt":             ("Bon de transfer",         "Fluxuri",      frozenset({OI, MF}),          "oi_transfer"),
     "bs":             ("Bon de casare",           "Fluxuri",      frozenset({OI, MF}),          "oi_casare"),
-    "amortizare":     ("Amortizare",              "Fluxuri",      frozenset({MF}),              "raport"),
     "mf_registru":    ("Registru MF",             "Fluxuri",      frozenset({MF}),              "mf"),
     "rapoarte":       ("Rapoarte",                "Rapoarte",     ALL,                          "raport"),
 }

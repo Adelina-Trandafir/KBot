@@ -97,6 +97,10 @@ Public NotInheritable Class TransferRunner
                             Dim map = TableMaps.ByTarget(maps, targetTable)
                             If map Is Nothing Then Continue For
                             If map.Source = SourceFile.Derived Then Continue For
+                            If map.WritesPartnerLinks Then
+                                result.Tables.AddRange(WritePartnerLinks(cn, transaction, map, dump, cancel))
+                                Continue For
+                            End If
                             result.Tables.Add(WriteTable(cn, transaction, schema, map, dump, cancel))
                             If map.Derived.Any(Function(d) d.Kind = ColumnSourceKind.ExtrasHeaderRule) Then
                                 SayExtrasHeaderSummary(map, dump)
@@ -220,6 +224,122 @@ Public NotInheritable Class TransferRunner
             GlobalErrorLog.Write("TransferRunner.ReadUnitDetails", ex)
             Return (unit.NumeUnitate, String.Empty)
         End Try
+    End Function
+
+    ' ---- the supplier <-> angajament links (slice 0121-02) --------------------------------
+
+    ''' <summary>
+    ''' Writes <c>ParteneriAng</c> as links keyed by the supplier's normalized CodFiscal: one row per
+    ''' <c>(CodFiscal, CodAng)</c> and, under it, one per <c>CodAI</c>.
+    ''' </summary>
+    ''' <remarks>
+    ''' <para>
+    ''' The partner does NOT have to exist in the unit on the server: <see cref="PartnerLinkReader"/> takes the
+    ''' CodFiscal from the unit's own Access <c>Parteneri</c>. The shaping (merging repeats, leaving out the
+    ''' partners without a CodFiscal) is the one the verifier already reported; both read the same files.
+    ''' </para>
+    ''' <para>
+    ''' Both statements are upserts and a second run is harmless: the link finds its id back through
+    ''' <c>LAST_INSERT_ID(IdLegAng)</c>; an indicator fills <c>CodInd</c> / <c>ContBancar</c> only where they are
+    ''' still empty, so what the operator edited after the first run is never overwritten.
+    ''' </para>
+    ''' </remarks>
+    Private Function WritePartnerLinks(k_cn As MySqlConnection, k_transaction As MySqlTransaction,
+                                       k_map As TableMap, k_dump As SqlDumpWriter,
+                                       k_cancel As CancellationToken) As List(Of TableOutcome)
+        Dim k_linkOutcome As New TableOutcome(k_map.TargetTable)
+        Dim k_indicatorOutcome As New TableOutcome(k_map.CompanionTable)
+        k_linkOutcome.ColumnsWritten = Verifier.PartnerLinkColumns.Length
+        k_indicatorOutcome.ColumnsWritten = Verifier.PartnerLinkIndicatorColumns.Length
+        If Not String.IsNullOrEmpty(k_map.Note) Then k_dump.WriteComment(k_map.TargetTable, k_map.Note)
+
+        Dim k_set = PartnerLinkReader.Read(_request)
+        k_linkOutcome.RowsRead = k_set.RowsRead
+        k_indicatorOutcome.RowsRead = k_set.IndicatorCount()
+
+        Dim k_skipped = k_set.PartnersWithoutCodFiscal.Sum(Function(p) p.Rows) +
+                        k_set.PartnersNotFound.Sum(Function(p) p.Rows) +
+                        k_set.RowsWithoutCodAng.Sum(Function(p) p.Rows)
+        Dim k_summary = $"«{k_map.AccessTable}»: {k_set.RowsRead} rânduri citite; {k_skipped} lăsate pe dinafară " &
+                        $"({k_set.PartnersWithoutCodFiscal.Count} furnizori fără cod fiscal, " &
+                        $"{k_set.PartnersNotFound.Count} coduri de partener negăsite, " &
+                        $"{k_set.RowsWithoutCodAng.Count} furnizori cu rânduri fără CodAng); " &
+                        $"{k_set.DuplicatesMerged} rânduri repetate combinate."
+        Say(k_summary)
+        k_dump.WriteComment(k_map.TargetTable, k_summary)
+
+        Dim k_linkTable = TargetServer.Quote(k_map.TargetTable)
+        Dim k_indicatorTable = TargetServer.Quote(k_map.CompanionTable)
+        Dim k_linkSql = $"INSERT INTO {k_linkTable} (`CodFiscal`, `CodAng`) VALUES (@CodFiscal, @CodAng) " &
+                        "ON DUPLICATE KEY UPDATE `IdLegAng` = LAST_INSERT_ID(`IdLegAng`)"
+        Dim k_indicatorSql = $"INSERT INTO {k_indicatorTable} (`IdLegAng`, `CodAI`, `CodInd`, `ContBancar`) " &
+                             "VALUES (@IdLegAng, @CodAI, @CodInd, @ContBancar) ON DUPLICATE KEY UPDATE " &
+                             "`CodInd` = IF(`CodInd` IS NULL OR `CodInd` = '', VALUES(`CodInd`), `CodInd`), " &
+                             "`ContBancar` = IF(`ContBancar` IS NULL OR `ContBancar` = '', VALUES(`ContBancar`), `ContBancar`)"
+        Dim k_lookupSql = $"SELECT `IdLegAng` FROM {k_linkTable} WHERE `CodFiscal` = @CodFiscal AND `CodAng` = @CodAng"
+
+        Using k_linkCmd As New MySqlCommand(k_linkSql, k_cn, k_transaction)
+            Using k_indicatorCmd As New MySqlCommand(k_indicatorSql, k_cn, k_transaction)
+                Using k_lookupCmd As New MySqlCommand(k_lookupSql, k_cn, k_transaction)
+                    k_linkCmd.Parameters.Add("@CodFiscal", MySqlDbType.VarChar)
+                    k_linkCmd.Parameters.Add("@CodAng", MySqlDbType.VarChar)
+                    k_lookupCmd.Parameters.Add("@CodFiscal", MySqlDbType.VarChar)
+                    k_lookupCmd.Parameters.Add("@CodAng", MySqlDbType.VarChar)
+                    k_indicatorCmd.Parameters.Add("@IdLegAng", MySqlDbType.Int32)
+                    k_indicatorCmd.Parameters.Add("@CodAI", MySqlDbType.VarChar)
+                    k_indicatorCmd.Parameters.Add("@CodInd", MySqlDbType.VarChar)
+                    k_indicatorCmd.Parameters.Add("@ContBancar", MySqlDbType.VarChar)
+
+                    For Each k_link In k_set.Links
+                        k_cancel.ThrowIfCancellationRequested()
+
+                        Dim k_linkValues As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {
+                            {"CodFiscal", k_link.CodFiscal},
+                            {"CodAng", k_link.CodAng}
+                        }
+                        k_linkCmd.Parameters("@CodFiscal").Value = k_link.CodFiscal
+                        k_linkCmd.Parameters("@CodAng").Value = k_link.CodAng
+                        k_dump.WriteStatement(k_map.TargetTable,
+                                              RenderStatement(k_linkSql, Verifier.PartnerLinkColumns, k_linkValues))
+                        k_linkCmd.ExecuteNonQuery()
+                        k_linkOutcome.RowsWritten += 1
+
+                        Dim k_idLegAng = k_linkCmd.LastInsertedId
+                        If k_idLegAng = 0 Then
+                            k_lookupCmd.Parameters("@CodFiscal").Value = k_link.CodFiscal
+                            k_lookupCmd.Parameters("@CodAng").Value = k_link.CodAng
+                            k_idLegAng = Convert.ToInt64(k_lookupCmd.ExecuteScalar(), CultureInfo.InvariantCulture)
+                        End If
+
+                        For Each k_indicator In k_link.Indicators
+                            Dim k_indicatorValues As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {
+                                {"IdLegAng", k_idLegAng},
+                                {"CodAI", k_indicator.CodAI},
+                                {"CodInd", If(k_indicator.CodInd.Length = 0, CObj(DBNull.Value), k_indicator.CodInd)},
+                                {"ContBancar", If(k_indicator.ContBancar.Length = 0, CObj(DBNull.Value), k_indicator.ContBancar)}
+                            }
+                            For Each k_column In Verifier.PartnerLinkIndicatorColumns
+                                k_indicatorCmd.Parameters("@" & k_column).Value = k_indicatorValues(k_column)
+                            Next
+                            k_dump.WriteStatement(k_map.CompanionTable,
+                                                  RenderStatement(k_indicatorSql, Verifier.PartnerLinkIndicatorColumns, k_indicatorValues))
+                            k_indicatorCmd.ExecuteNonQuery()
+                            k_indicatorOutcome.RowsWritten += 1
+                        Next
+
+                        If k_linkOutcome.RowsWritten Mod BatchSize = 0 Then
+                            k_dump.FlushAll()
+                            _progress?.Invoke(k_map.TargetTable, k_linkOutcome.RowsWritten, k_set.Links.Count)
+                        End If
+                    Next
+                End Using
+            End Using
+        End Using
+
+        k_dump.FlushAll()
+        Say(Describe(k_linkOutcome))
+        Say(Describe(k_indicatorOutcome))
+        Return New List(Of TableOutcome) From {k_linkOutcome, k_indicatorOutcome}
     End Function
 
     ' ---- one table ------------------------------------------------------------------

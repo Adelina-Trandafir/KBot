@@ -87,6 +87,17 @@ Public NotInheritable Class TableMap
     ''' </summary>
     Public Property UnitScopeColumn As String
 
+    ''' <summary>
+    ''' True when this map is NOT written by the generic column-by-column writer: the supplier &lt;-&gt; angajament
+    ''' links of slice 0121-02. <c>ParteneriAng</c> becomes two tables (<see cref="TargetTable"/> and
+    ''' <see cref="CompanionTable"/>), keyed by the supplier's normalized CodFiscal; <see cref="PartnerLinkReader"/>
+    ''' shapes the rows and <c>TransferRunner.WritePartnerLinks</c> writes them.
+    ''' </summary>
+    Public Property WritesPartnerLinks As Boolean
+
+    ''' <summary>The second table a <see cref="WritesPartnerLinks"/> map writes (the indicators of the links).</summary>
+    Public Property CompanionTable As String
+
     ''' <summary>Free-text note shown in the log, explaining anything unusual.</summary>
     Public Property Note As String
 
@@ -181,6 +192,13 @@ Public NotInheritable Class TableMap
 
     Public Function WithNote(note As String) As TableMap
         Me.Note = note
+        Return Me
+    End Function
+
+    ''' <summary>See <see cref="WritesPartnerLinks"/>.</summary>
+    Public Function AsPartnerLinks(k_companionTable As String) As TableMap
+        WritesPartnerLinks = True
+        CompanionTable = k_companionTable
         Return Me
     End Function
 

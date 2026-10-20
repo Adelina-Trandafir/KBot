@@ -27,12 +27,18 @@ La salvare:
 Mesajele ANAF: cod invalid, cod negăsit sau ANAF indisponibil.
 
 ## Lista și tabelul «Coduri angajament»
-<!-- slice: 0087, 0093, 0000-14, 0113 -->
+<!-- slice: 0087, 0093, 0000-14, 0113, 0121-03 -->
 
 - **Capul listei**: **lupa** caută după o parte din cod sau din denumire; bifa **«Ascunde partenerii
   fără activitate»** lasă doar partenerii care apar pe un document (DDF sau ORD).
-- **«Coduri angajament»** — tabelul de sub datele partenerului (clasificație, cont bancar asociat,
-  cod angajament, cod indicator). **«+»** din subsolul tabelului adaugă un rând, pe care îl
-  completezi direct în tabel; **✕** de pe un rând îl scoate.
+- **«Coduri angajament»** — tabelul de sub datele partenerului: angajamentele furnizorului, legate de
+  **codul lui fiscal** (le vezi la fel oricând furnizorul apare cu același cod fiscal). Un rând are
+  clasificația (doar de citit, vine din FOREXE), cont bancar asociat, cod angajament și cod
+  indicator. **«+»** din subsolul tabelului adaugă un rând, pe care îl completezi direct în tabel;
+  **✕** de pe un rând îl scoate. Codul angajamentului e obligatoriu; un rând fără cod indicator ține
+  doar angajamentul. Același cod de angajament cu același cod de indicator nu poate apărea de două
+  ori. Cât timp codul fiscal nu e tastat (sau l-ai schimbat și nu ai salvat încă), tabelul e
+  dezactivat, iar titlul lui spune ce lipsește. Ștergerea unui partener lasă codurile de
+  angajament pe loc.
 - **«Adăugare»**, **«Salvare»**, **«Ștergere»**, **«Renunță»** (anulează modificările nesalvate ale
   partenerului) — butoanele de jos. Macheta se închide cu **«Închide»** din ribbon sau cu Esc.

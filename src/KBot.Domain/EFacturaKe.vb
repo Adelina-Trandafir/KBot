@@ -244,3 +244,58 @@ Public NotInheritable Class EFacturaKeVerificare
     Public ReadOnly Property Avertismente As New List(Of String)()
     Public ReadOnly Property Randuri As New List(Of EFacturaKeRand)()
 End Class
+
+' Slice KE16 -- bulk proposals: the not yet linked invoices of a supplier against the receptions that have, whole, their value
+' (PYTHON/routes/efactura/primite_ke_propuneri.py). One invoice = one reception, nothing partial.
+
+''' <summary>A reception that has, whole, the value of an invoice (its rest on ONE classification equals the invoice total).</summary>
+Public NotInheritable Class EFacturaKePropunereReceptie
+    Public Property Idrr As Integer
+    Public Property CodAngajament As String = String.Empty
+    Public Property DataR As Date?
+    Public Property TipReceptie As String = String.Empty
+    Public Property Descriere As String = String.Empty
+    Public Property IdClsf As Integer
+    Public Property Clsf As String = String.Empty
+    Public Property Rest As Decimal
+
+    ''' <summary>Days from the invoice date to the reception date (negative = before it); Nothing when one of the dates is missing.</summary>
+    Public Property Zile As Integer?
+
+    ''' <summary>The reception is dated from the invoice date up to the allowed number of days after it.</summary>
+    Public Property InFereastra As Boolean
+End Class
+
+''' <summary>An invoice the window looks at, the receptions that fit it and the one proposed (if any).</summary>
+Public NotInheritable Class EFacturaKePropunereFactura
+    Public Property IdPrimita As Integer
+    Public Property NrFact As String = String.Empty
+    Public Property DataFact As Date?
+    Public Property Furnizor As String = String.Empty
+    Public Property Total As Decimal
+    Public ReadOnly Property Candidate As New List(Of EFacturaKePropunereReceptie)()
+
+    ''' <summary>The reception (<c>Idrr</c>) the server proposes; Nothing = no proposal (see <see cref="Motiv"/>).</summary>
+    Public Property Propunere As Integer?
+
+    ''' <summary>Why there is no proposal (or no candidate); empty when there is one.</summary>
+    Public Property Motiv As String = String.Empty
+End Class
+
+''' <summary>The answer of <c>GetKePropuneriAsync</c>.</summary>
+Public NotInheritable Class EFacturaKePropuneri
+    ''' <summary>The reception may be dated up to this many days after the invoice (the rule that tells equal values apart).</summary>
+    Public Property ZileDupaFactura As Integer
+
+    ''' <summary>How many of the invoices asked for were left out because they already have a link.</summary>
+    Public Property Omise As Integer
+
+    Public ReadOnly Property Facturi As New List(Of EFacturaKePropunereFactura)()
+End Class
+
+''' <summary>One link the accountant confirmed in the window: the whole invoice on the whole reception.</summary>
+Public NotInheritable Class EFacturaKeLegaturaMasa
+    Public Property IdPrimita As Integer
+    Public Property CodAngajament As String = String.Empty
+    Public Property Idrr As Integer
+End Class

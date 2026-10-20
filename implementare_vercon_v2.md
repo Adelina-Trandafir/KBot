@@ -1,5 +1,83 @@
 # Implementare VERCON v2
 
+## Actualizare 19.10.2026 — loading imediat și blocarea generărilor simultane (ADE9-07)
+
+Rapoartele PDF, documentele oficiale, ciornele și exporturile Excel pornesc
+prin componenta comună înainte de generare. Fereastra apare imediat cu
+indicator de încărcare; o singură operație poate fi în pregătire în aceeași
+pagină. Nu există coadă de clicuri. La preview, loading-ul rămâne până când
+PDF.js a desenat prima pagină; erorile sunt afișate în aceeași fereastră.
+Exporturile au aceeași blocare până la pregătirea și predarea fișierului
+către browser. Regenerarea existentă la snapshot expirat rămâne în aceeași
+operație blocată.
+
+Fișiere VERCON: `static/js/vercon/reports.js`, `document-report.js`,
+`documents.js`, `ui.js`, `pdf-preview.js`; comune: `static/js/reporting/`,
+`static/js/portal/pdfview.js`, `static/css/report-preview.css`.
+[Predarea completă ADE9-07](docs/worklog/SLICE-ADE9-07-rapoarte-loading-blocare.md).
+SCRIS LOCAL, numai analiză de design; fără teste, browser, HTTP sau SQL.
+
+## Actualizare 19.10.2026 — feedback comun al butoanelor VERCON/ADECHIT (ADE9-06)
+
+`static/css/vercon-button-effects.css` importă acum
+`static/css/application-button-effects.css`, care păstrează efectele VERCON și
+le aplică și în ADECHIT. Culorile provin din temă; stările hover, focus,
+apăsare, dezactivare și mișcare redusă folosesc aceleași reguli. Butoanele
+integrate în controale și meniuri păstrează stilurile lor.
+
+Publicați ambele fișiere CSS împreună. SCRIS LOCAL, numai analiză de design;
+fără teste sau probe în browser. Detalii: [ADE9-06](docs/worklog/SLICE-ADE9-06-butoane-stil-vercon.md).
+
+## Actualizare 19.10.2026 — motor și previzualizare de rapoarte comune cu ADECHIT (ADE9-05)
+
+Motorul generic PDF/Excel și snapshot-urile sunt extrase în `PYTHON/reporting/`;
+VERCON păstrează adaptoarele sale, machetele configurate, cheile Excel duplicate
+și rendererul dedicat NIR. Vizualizatorul PDF și stilurile lui sunt comune în
+`static/js/reporting/` și `static/css/report-preview.css`; antetul și meniul de
+aplicații VERCON sunt furnizate de adaptorul existent.
+
+Fișiere VERCON: `routes/vercon/report_output.py`, `report_service.py`,
+`static/js/vercon/pdf-preview.js`, `static/css/vercon-preview.css`, `vercon.css`.
+Fișierele comune și predarea sunt în [worklog ADE9-05](docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md).
+SCRIS LOCAL; numai analiză de design din surse, fără teste, HTTP, browser sau SQL.
+Machetele/SQL-urile editabile VERCON și configurările din instance nu sunt migrate.
+
+## Actualizare 19.10.2026 — Rapoarte: conturi direct în selecție și Selectează TOATE
+
+Eliminată ramura Furnizori din arborele Selectare date. Rădăcina Produse
+nu mai este afișată: conturile apar direct la primul nivel, cu bife pentru
+selectarea întregului cont; produsele și variantele se încarcă la deschidere
+sau la bifarea contului. Încărcarea inițială citește metadatele conturilor,
+fără încărcarea recursivă a ramurilor. Se păstrează celelalte familii de
+filtre disponibile pentru raport.
+
+Antetele panourilor și opțiunilor sunt centrate orizontal și vertical.
+Antetul Selectare date include checkboxul comun „Selectează TOATE”, aliniat
+cu bifele conturilor. Corecție de așezare la cererea utilizatorului: checkboxul
+este la stânga, pe același rând cu titlul „Selectare date”; titlul rămâne
+centrat în întregul antet, iar ambele elemente sunt centrate vertical.
+Corecția este numai CSS, nerulată; fără teste sau verificări executate.
+Bifarea încarcă recursiv toate ramurile înainte de
+selectare, inclusiv ramurile închise; debifarea golește selecția. Bifa indică
+selecția parțială și este dezactivată în timpul încărcării. Căutarea nu
+limitează selecția tuturor datelor. Selecția integrală se transmite ca lipsă
+a filtrelor opționale, fără liste redundante de ID-uri; selecțiile obligatorii
+ale raportului se păstrează. Refacerea selecției după schimbarea
+perioadei reconciliază variantele împreună pentru toate conturile, fără să
+șteargă selecțiile valide din conturi diferite.
+
+Fișa Magazie BF păstrează produsul/varianta obligatorie, dar nu mai cere
+obligatoriu un furnizor, deoarece această selecție a fost eliminată din UI.
+În absența filtrului de furnizor sunt incluse datele tuturor furnizorilor;
+filtrarea existentă prin API rămâne disponibilă.
+
+Fișiere: PYTHON/routes/vercon/report_selection.py, report_catalog.py;
+PYTHON/static/js/vercon/report-selection.js, reports.js;
+PYTHON/static/css/vercon-rapoarte.css.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse.
+Fără teste, verificări automate, browser, HTTP sau SQL executat, conform
+instrucțiunilor proiectului. Nu s-au modificat schema sau datele MariaDB.
+
 ## Actualizare 14.10.2026 — macheta NIR: antet obligatoriu înainte de grid, meniu «Factură Cumpărare (NIR)», `dropDownStyle`
 
 **Fișiere:** `js/vercon/docs.js`, `js/vercon/ui.js`, `js/vercon/app.js`, `js/dgv/datagrid.js`, `js/dgv/editing.js`, `js/components/combobox/combobox.js` + `combobox-ui.js`, `css/dgv.css`, `css/combobox.css`, `css/vercon-receptie.css`, `css/vercon-documente-base.css`, `routes/vercon/capabilities.py`.
@@ -3378,3 +3456,637 @@ Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design din surse.
 Fără teste, verificări automate, build, import, HTTP sau SQL executat.
 Nu s-au modificat schema, datele MariaDB sau sursa Access. Migratorul
 necesită recompilare; importurile deja făcute nu sunt rescrise automat.
+### 2026-10-19 — Amortizare în arborele Rapoarte / Mijloace fixe
+
+Eliminată intrarea separată Amortizare din meniul Fluxuri / Mișcări și din
+catalogul formularelor. Raportul MF existent se selectează din Rapoarte,
+direct în secțiunea Mijloace fixe, fără subgrupul cu aceeași denumire.
+La selectarea amortizării, panoul perioadei afișează numai „La data”, iar
+cererile folosesc acea dată pentru ambele capete ale intervalului. Trecerea
+la alte rapoarte reafișează controalele de perioadă și păstrează începutul
+intervalului ales. Exporturile și restricția raportului la MF se reutilizează.
+
+Fișiere: PYTHON/routes/vercon/capabilities.py;
+PYTHON/static/js/vercon/app.js, reports.js, report-result.js.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Fără teste sau alte verificări
+executate, conform instrucțiunilor proiectului; numai analiză de design.
+Nu s-au modificat schema sau datele MariaDB.
+
+### 2026-10-19 — Migrator: recuperare univocă IDBO după refacerea unui bon
+
+Utilizatorul a cerut tratarea automată a cazului IDOI 1576: casare 2950051,
+produs 2673, IDBO 2950049 dispărut; primire unică existentă în BP 2950052,
+același produs/preț/deținător/cont, aceeași dată document și cantitate 1.
+Predarea a fost salvată ulterior casării, deci DataSalvare nu este criteriu
+de cronologie business. Aceste date au fost citite read-only la cererea
+utilizatorului în etapa anterioară, fără modificarea bazei originale.
+
+Noul VrcRunner.OiOrigins.vb clonează registrul și recuperează numai IDBO
+nenule inexistente atât în BP, cât și în BT. Cere primire/document active,
+potrivire exactă produs/preț/deținător/cont, dată document compatibilă și
+disponibil după toate celelalte ieșiri, inclusiv viitoare. Transferurile
+cer laturi minus/plus echilibrate și deținători conform bonului; predătorul
+se citește din IDC_OLD. Referința se corectează pe ambele laturi. Nu se
+alege arbitrar dintre mai mulți candidați și nu se fabrică bonuri.
+
+BuildRow și resolverul OiAccounts folosesc același snapshot normalizat,
+astfel IDBO și contul moștenit nu mai raportează erori contradictorii pentru
+un caz recuperabil. N14/CONVERSIE păstrează originalul, noul ID de sursă și
+familia; raportul enumeră fiecare IDOI. X17/BLOCAJ explică imposibilitatea
+recuperării înaintea conversiilor rândului. Sursa Access rămâne nemodificată.
+Versionare: FileVersion 0.3.9.0, RuleVersion VC05-OI-ORIGIN-RECOVERY-2026-10-19.
+
+Fișiere: VERCON/VRC.Migrator/VrcRunner.OiOrigins.vb, VrcRunner.vb,
+VrcRunner.OiAccounts.vb, VrcRun.vb, VrcPlan.vb, VRC.Migrator.vbproj, README.md;
+VERCON/REGISTRU_OI_MF.md, VERCON_STATUS.md, implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design pentru codul nou.
+Fără teste, verificări automate, build sau import. Nu s-au executat scrieri
+Access, SQL MariaDB sau schimbări de schemă. Necesită recompilare; datele
+deja migrate nu sunt reparate retroactiv.
+
+
+### 2026-10-19 — Migrator: IntrariStorno fără NIR storno părinte, ignorat NON BLOCKING
+
+Decizie explicită utilizator: se verifică NIR-urile cu Storno bifat, apoi
+corespondența IntrariStorno.IdIntrare; liniile fără părinte eligibil se
+ignoră fără blocarea importului, inclusiv când IdProdus nu există.
+
+VrcRunner.Storno.vb indexează NIR-urile eligibile pe sursă/gestiune.
+MigrateExercise filtrează înaintea validării cheii și conversiei câmpurilor,
+numără liniile la SkippedRows și emite N15 cu ID/IdIntrare/IdProdus originale.
+Aceste linii nu sunt scrise și nu intră în sumele de reconciliere. Lipsa
+oricărui NIR bifat Storno înseamnă omiterea tuturor liniilor IntrariStorno;
+un NIR cu Storno nebifat nu este părinte eligibil. Pentru liniile valide,
+produsul rămâne obligatoriu și toate validările se păstrează. UsedProducts
+include și variantele folosite numai de storno-urile cu părinte eligibil.
+Eliminată regula orphan:null de pe IntrariStorno.IdIntrare din import_map;
+generatorul o emite deja ca legătură normală spre NIR, fără orphan:null.
+Politica veche de importare a storno-urilor fără părinte cu IdIntrare NULL
+este înlocuită pentru importurile noi. Retururile și orfanii deja existenți
+în aplicația web nu sunt modificați.
+
+Versiuni: FileVersion 0.3.10.0; RuleVersion VC05-STORNO-PARENTS-2026-10-19.
+Fișiere: VERCON/VRC.Migrator/VrcRunner.Storno.vb, VrcRunner.vb,
+import_map.json, VrcRun.vb, VrcPlan.vb, VRC.Migrator.vbproj, README.md;
+VERCON/CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md, VERCON_STATUS.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design.
+Fără teste, verificări automate, build, import, citire Access sau SQL pentru
+această corecție. Fără modificări de schemă sau date existente. Necesită
+recompilarea executabilului înaintea repetării migrării.
+
+### 2026-10-19 — ME01-03: drepturi reale MariaDB din KBotAdmin
+
+Bifele ADECHIT / VERCON și adăugarea, schimbarea rolului ori scoaterea din
+bază sincronizează privilegiile MariaDB personale. Se retrag privilegiile
+vechi largi și se reconstruiește politica din toate legăturile contului,
+pentru toate variantele User@Host. Contabilii au acces la datele unităților
+atribuite, fără administrare de utilizatori, structură sau server. Numai
+GRANT SELECT/INSERT/UPDATE/DELETE pe tabele concrete, fără EXECUTE pe rutine
+sau acces personal la bazele comune/de sistem. Granularitatea SQL este pe
+tabele; validările de subunitate și operație rămân în API.
+
+Buton nou «Aplică drepturile MariaDB» pentru conturile existente. Configurație
+obligatorie DB_CONFIG_DREPTURI, separată de serviciu; SQL manual în
+sql/SEC03_kbotadmin_privilegii.sql. Conturi tehnice/proprietar protejate;
+roluri MariaDB moștenite / PROXY / PUBLIC cu privilegii cer intervenție DBA.
+Schimbările de metadate sunt tranzacționale, sincronizarea e serializată;
+la eroare se încearcă retragerea drepturilor parțiale. Conexiunile MariaDB
+personale vechi sunt închise. GRANT/REVOKE nu oferă atomicitate cu metadatele.
+
+Fișiere: PYTHON/routes/admin_cli/{admin_cli,admin_common,admin_rights,
+mariadb_privileges,privilege_policy}.py; KBotAdmin/Views/RightsView.vb și
+.Designer.vb, RightsForm.vb, AccountForm.vb și .Designer.vb, README.md;
+sql/SEC03_kbotadmin_privilegii.sql;
+docs/worklog/SLICE-ME01-03-privilegii-mariadb.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de design; fără teste,
+build, verificări automate, conexiuni MariaDB sau SQL executat. Necesită
+configurarea manuală a contului administrativ, publicarea surselor Python
+și recompilarea KBotAdmin. Conturile existente se normalizează explicit,
+individual; nu s-a făcut migrare automată a privilegiilor pe server.
+
+### 2026-10-19 — Balanță: produse alfabetic, pagină pe cont și filtrare fără mișcări
+
+Rapoartele de tip balanță (produse în magazie și balanțele OI/MF în
+folosință) ordonează produsele alfabetic în fiecare grup, fără diferențe
+între majuscule/minuscule și cu ordinea literelor românești.
+
+În Rapoarte, la selectarea unei balanțe, apar două opțiuni debifate inițial:
+«Grupează pe cont, cu pagină nouă» și «Afiseaza FARA miscari». Prima
+aduce contul la nivelul exterior al grupării și inserează pagină nouă între
+conturi, după totalul contului anterior; nu adaugă întrerupere după ultimul
+cont. Macheta standard păstrează gruparea pe cont și când opțiunea este
+debifată, fără pagini noi impuse. Machetele salvate nu sunt rescrise.
+
+Implicit se păstrează numai rândurile cu cel puțin una dintre cantitățile
+stoc inițial / intrări / ieșiri / stoc final diferită de zero în perioada
+aleasă. Comparația folosește valorile exacte înaintea rotunjirii de afișare,
+inclusiv stocuri negative sau sub precizia afișată. Bifarea «Afiseaza FARA
+miscari» păstrează toate rândurile furnizate anterior de calculul balanței.
+Istoricul folosit la calcularea stocului inițial nu se filtrează suplimentar.
+
+Opțiunile invalidează rezultatul precedent; ecranul, PDF și Excel primesc
+același model filtrat și ordonat. PDF folosește întreruperile de pagină,
+iar exportul Excel le înscrie ca întreruperi de rând pentru tipărire.
+
+Fișiere: PYTHON/routes/vercon/report_balance.py, report_routes.py,
+report_service.py, report_body.py, report_output.py;
+PYTHON/static/js/vercon/reports.js; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT. Numai analiză de design;
+fără teste, verificări automate sau verificare vizuală în aplicație,
+conform instrucțiunilor proiectului. Fără SQL executat, modificări de
+schemă sau date. Necesită publicarea surselor Python/JS.
+
+### 2026-10-19 — Rapoarte: eliminarea zonei de mesaje de sub selecție
+
+Eliminate elementele DOM pentru notele raportului (inclusiv «Stoc evaluat
+la prețul curent al variantei; documentele păstrează valorile proprii.»)
+și pentru mesajele de stare de lângă butoanele Listare / Export Excel.
+Nu mai există un container gol rezervat acestor mesaje. Erorile la
+încărcarea catalogului, selecției, ramurilor și la generare/export se
+afișează prin dialogul comun messageBox; dialogul se închide la părăsirea
+paginii. Motivele de indisponibilitate ale butoanelor rămân în tooltip,
+iar starea de încărcare este expusă prin aria-busy.
+
+Fișiere: PYTHON/static/js/vercon/reports.js, report-selection.js;
+PYTHON/static/css/vercon-rapoarte.css; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design.
+Fără teste, verificări automate sau verificare vizuală în aplicație,
+conform instrucțiunilor proiectului. Necesită publicarea fișierelor JS/CSS.
+Completare ME01-03: RightsForm.Designer.vb rezervă spațiu pentru explicația
+rolului Contabil; acesta păstrează acces SQL la toate datele bazei chiar
+dacă bifele limitează modulul web. Salvarea incertă a metadatelor este
+raportată explicit, fără a pretinde că rollback-ul a fost confirmat.
+
+### 2026-10-19 — Intrări: ajustare NIR salvat pe o unitate rămasă în magazie
+
+Ajustarea diferențelor nenule de cel mult 1 leu cere minimum 1 unitate
+disponibilă pe un rând eligibil. Pentru NIR-urile salvate se transmite
+cantitatea ajustabilă calculată pe server ca minim al stocului variantei
+de la data intrării până la ultima mișcare, limitată la cantitatea rândului.
+Predările OI/MF folosesc ieșirea BC din magazie; activele MF cu ieșiri sau
+referințe active în registru rămân protejate integral.
+
+Utilizarea unui produs în registru nu mai blochează integral modificarea
+NIR-ului: protecția MF pe rând și simularea cronologică a stocului rămân
+obligatorii. Anularea și NIR-urile cu storno își păstrează blocajele.
+Se separă exact 1 unitate pentru corecție, cu TVA real; restul păstrează
+prețul cu TVA și varianta inițială, inclusiv la salvarea unei linii istorice.
+Rândurile salvate nemodificate nu se recalculează în masă la ajustare.
+
+Dacă selecția nu este eligibilă, se alege alt rând disponibil. La factura
+comună, ținta NIR-ului este totalul facturii minus liniile celorlalte
+recepții, calculată pe server și păstrată pentru salvare. Butonul își
+actualizează disponibilitatea și la introducerea valorii facturii.
+Rămâne regula existentă: corecția automată deja prezentă se șterge cu
+revenire în grup înaintea unei noi ajustări.
+
+Fișiere: PYTHON/routes/vercon/receipt_adjustment.py, receipt_rules.py,
+receipt_routes.py, receipt_distribution.py, receipts.py, receipt_mf_edit.py,
+documents.py; PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design.
+Fără teste, verificări automate sau vizuale, conexiuni MariaDB, SQL
+executat ori modificări de schemă, conform instrucțiunilor proiectului.
+Necesită publicarea surselor Python/JS.
+
+### 2026-10-19 — Intrări: buton de ajustare activ la diferențe, cu explicații
+
+În adăugare/editare, butonul de ajustare rămâne activ pentru orice
+diferență nenulă cunoscută, inclusiv peste 1 leu, fără produse disponibile
+sau cu o corecție automată existentă. Aceste situații sunt motive explicate
+la apăsare și în tooltip, nu condiții de dezactivare a butonului.
+Fără diferență, butonul rămâne dezactivat. Protecția operațiilor de salvare
+în curs și regulile economice de ajustare se păstrează.
+
+Tooltipul prezintă valoarea facturii, totalul produselor, diferența exactă
+și blocajele cunoscute. Dacă nu există un produs eligibil, sunt enumerate
+produsele din NIR cu cantitatea rândului, cantitatea disponibilă pentru
+ajustare și motivul excluderii (ieșire/predare, stoc sub 1, cantitate sub 1,
+corecție existentă). Datele incomplete sunt explicate pe rând.
+
+La apăsare, blocajele locale și erorile întoarse de server se afișează
+prin messageBox-ul custom, cu titlul «Factura nu poate fi ajustată».
+Dialogul are zonă de detalii derulabilă pentru NIR-uri cu multe produse;
+se închide la eliberarea contextului/paginii. Serverul furnizează detalii
+pe produs pentru lipsa eligibilității și valorile concrete la depășirea
+plafonului. Nu se aplică ajustări pentru a obține aceste explicații.
+
+Fișiere: PYTHON/static/js/vercon/receipt-adjustment.js, docs.js,
+receipt-reconciliation.js; PYTHON/static/js/utils/confirm-box.js;
+PYTHON/static/css/vercon-receptie.css;
+PYTHON/routes/vercon/receipt_adjustment.py, receipt_rules.py,
+receipt_distribution.py; implementare_vercon_v2.md.
+Stare: IMPLEMENTAT ÎN SURSE, NERULAT; numai analiză de design.
+Fără teste, verificări automate/vizuale, SQL executat sau modificări
+de schemă, conform instrucțiunilor proiectului.
+Necesită publicarea surselor Python/JS/CSS.
+
+### 2026-10-19 — Zoom comun în bara de meniu VERCON / ADECHIT
+
+Buton de zoom lângă Ajutor, montat o singură dată în bara aplicației,
+prin controlul comun js/components/menu/menu-zoom.js și CSS alăturat.
+Slider 75–150%, cu valori intermediare și snap la 90%, 100%, 110%, 125%;
+procentele snap sunt disponibile și prin butoane. Indicatorul se schimbă
+în timpul tragerii, iar zoom-ul se aplică la încheierea gestului.
+Nivelul este comun celor două aplicații și se memorează în localStorage,
+păstrându-se la navigare, reîncărcare și redeschidere.
+
+Zoom-ul se aplică rădăcinii documentului, inclusiv dialogurilor.
+Geometria controalelor comune folosește pixeli de layout prin
+js/utils/layout-geometry.js; sunt adaptate meniurile, ComboBox,
+ComboTree, TreeView, DatePicker, ModalFrame și DataGrid, inclusiv
+redimensionarea coloanelor și poziționarea filtrelor. CSS-ul cu
+unități viewport folosește variabilele comune ale controlului,
+cu fallback pentru aplicațiile fără zoom. Imprimarea folosește 100%.
+Nu sunt instanțiate controale de zoom în paginile individuale.
+
+Fișiere: PYTHON/static/js/components/menu/menu-zoom.js și .css,
+js/utils/layout-geometry.js; js/vercon/app.js, receipt-context.js;
+js/adechit/app.js; modulele de geometrie din js/components și js/dgv;
+css/vercon.css, adechit.css și modulele CSS cu dimensiuni viewport.
+Lista detaliată: docs/worklog/SLICE-VC08-10-zoom-meniu-vercon-adechit.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
+conform instrucțiunilor proiectului. Necesită publicarea JS/CSS.
+
+### 2026-10-19 — NIR: valoare factură introdusă din numpad pe tastatură română
+
+Caseta valorii reale a facturii folosește format en-US, cu punct
+zecimal. Virgula trimisă de NumpadDecimal pe tastatura română era
+respinsă de parser, blocând ajustarea. TextBox normalizează acum
+tasta zecimală din numpad la separatorul câmpului (punct pentru
+en-US, virgulă în formatul implicit), pentru decimal și money.
+Inserarea respectă selecția/cursorul și emite input pentru actualizarea
+valorii din draft și a butonului de ajustare. Delete cu Num Lock oprit,
+modificatorii și validarea separatoarelor de mii rămân nemodificate.
+
+Fișiere: PYTHON/static/js/components/textbox/textbox.js;
+docs/worklog/SLICE-VC08-06-nir-valoare-factura-numpad.md;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
+conform instrucțiunilor proiectului. Necesită publicarea JavaScript.
+
+### 2026-10-19 — Toate rapoartele: antet unitate/subunitate, fără DC
+
+Antet comun de tip ADECHIT Situația Debitorilor: denumirea unității,
+codul fiscal și adresa în stânga, subunitatea activă în dreapta.
+Datele se citesc din AVACONT_COMUN.Unitati/Unitati_Date și VC_Subunitati,
+în contextul autentificat. Numele bazei nu mai este identitate implicită.
+Datele lipsă cer completare, fără revenire la DC. Textele configurărilor
+vechi care conțin identificatorul bazei sunt adaptate doar în memorie;
+nu se modifică datele economice sau configurările salvate.
+
+Antetul este aplicat PDF-urilor generice, NIR/FCS, Excel-ului, rezultatului
+în pagină și previzualizărilor PDF locale. PDF-urile și Excel-ul imprimat
+repetă antetul. NIR își recalculează poziția titlului și spațiul produselor.
+Snapshot-urile anterioare fără versiunea nouă de antet cer regenerare.
+Endpoint-ul contextual de identitate folosește dreptul de citire și
+permite păstrarea imprimării locale a documentelor/ciornelor. Preview-ul
+local are identitate demonstrativă explicită, fără bază de date.
+
+Fișiere: routes/vercon/report_identity.py, report_layouts.py,
+report_service.py, report_routes.py, report_reception.py;
+reporting/output.py; static/js/vercon/report-identity.js, app.js,
+snapshot-pdf.js, report-result.js, reports.js;
+static/css/vercon-rapoarte.css (toate sub PYTHON);
+tools/VerconPreview/preview_server.py; PYTHON/reports/vercon/README.md;
+docs/worklog/SLICE-VC08-07-antet-comun-rapoarte-fara-dc.md;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, build-uri, generări PDF/Excel, verificări automate/vizuale
+sau interogări MariaDB executate, conform instrucțiunilor proiectului.
+Fără modificări de schemă. Necesită publicare Python/JS/CSS și restart.
+
+### 2026-10-19 — Meniu VERCON: ADECHIT ca referință vizuală
+
+Diferențele veneau din stiluri separate: VERCON impunea 46px pentru bară,
+față de minimum 53px efectivi în ADECHIT pe desktop, padding lateral de
+12px în loc de 28px și alt marcaj/stil pentru Ajutor. Bara preia acum
+măsurile ADECHIT din componenta CSS comună application-header.css:
+53px desktop / 46px ecrane mici, inset 28px / 8px, maximum 2048px centrat.
+Butonul VERCON are tipografia și paddingul butonului ADECHIT; Ajutor
+folosește același «?» compact. Sunt aliniate acțiunile din dreapta și
+butonul Zoom. Tema întunecată și avertizarea de sesiune păstrează
+comportamentul de culoare al barei ADECHIT.
+
+ADECHIT scade înălțimea efectivă a barei din spațiul de lucru. VERCON
+păstrează rândul suplimentar al selectoarelor pe ecranele înguste.
+Fișiere: PYTHON/static/vercon.html; css/vercon.css, adechit.css;
+js/components/menu/application-header.css, menu-zoom.css (sub static);
+docs/worklog/SLICE-VC08-08-meniu-aspect-adechit.md; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
+conform instrucțiunilor proiectului. Necesită publicarea HTML/CSS.
+
+### 2026-10-19 — Intrări/Ieșiri: grupare în două niveluri și lazy fără redraw global
+
+Bifă «Grupeaza pe luni» sub arbore, comună documentelor NIR/FCS,
+BC/retur și Bonuri PTC (înlocuiește eticheta veche de ordonare PTC).
+Bifat: Luna în română / Anul → Data / NrDoc + valoare în dreapta.
+Debifat: Furnizor / Gestionar → Data / NrDoc + valoare în dreapta.
+Etichetele folosesc ellipsis și tooltip complet; NIR include subnumărul.
+Lunile și documentele sunt descrescătoare, furnizorii/gestionarii alfabetic.
+Se păstrează selecția la schimbarea modului, iar bifa revine la starea
+anterioară la eroare. Schimbarea grupării nu este permisă în editare.
+
+NIR rămâne lazy: rădăcini luni/furnizori, apoi documentele unei rădăcini.
+Endpoint-ul permite furnizor sau lună, cu același scope server-side;
+apelurile vechi cu ambele filtre rămân acceptate. Ramurile pot rămâne
+deschise simultan. TreeView folosește opțional reconciliere DOM după id,
+activată pentru arborii VERCON: expandarea și sosirea datelor lazy nu
+înlocuiesc rândurile/subarborii nemodificați. Refresh-ul nu mai golește
+containerul, păstrând expansiunea înainte de randare, selecția și scroll-ul.
+
+Fișiere: static/js/vercon/document-tree-order.js, oi-tree-order.js,
+receipt-tree.js, docs.js, ui.js; js/components/treeview/treeview-patch.js,
+treeview-render.js, treeview-search.js, treeview-checkable.js;
+static/css/vercon-document-tree.css, vercon.css;
+routes/vercon/receipt_tree.py, doc_routes.py, receipt_invoice_view.py
+(toate sub PYTHON); docs/worklog/SLICE-VC08-09-arbori-documente-doua-niveluri-lazy.md;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, build-uri, verificări automate/vizuale sau SQL executat,
+conform instrucțiunilor proiectului. Fără modificări de schemă.
+Necesită publicare Python/JS/CSS și repornirea serviciului.
+
+### 2026-10-19 — Aspectul bifelor din TreeView / ComboTree
+
+Casetele sunt centrate vertical pe rând, cu bordură de 1px. Semnul bifat
+folosește un SVG centrat, în locul bordurilor rotite cu poziții fixe;
+și semnul stării parțiale este centrat vertical.
+Fișier: PYTHON/static/css/treeview/treeview_checkbox.css (control comun).
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau verificări vizuale, conform instrucțiunilor proiectului.
+Necesită publicarea CSS-ului.
+
+### 2026-10-19 — TreeView fără efect de apăsare pe rând
+
+Eliminată regula `.treeview-item:active` care micșora rândul la 98% și
+adăuga umbră interioară la click. Se păstrează stilurile de selecție.
+Fișiere: PYTHON/static/css/treeview/treeview_items.css;
+JS_COMPONENTS/css/treeview/treeview_items.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări,
+conform instrucțiunilor proiectului. Necesită publicarea CSS-ului.
+
+### 2026-10-19 — Butoanele rapoartelor în antet
+
+Previzualizarea PDF comună ADECHIT/VERCON afișează comenzile în același
+antet cu informațiile raportului, aliniate la dreapta. Pe ecrane înguste
+comenzile pot trece pe rândul următor. Eliminată bara separată de deasupra PDF-ului.
+Fișiere: PYTHON/static/js/reporting/report-dialog.js, pdf-preview.js;
+PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau verificări vizuale. Necesită publicarea JS/CSS-ului.
+
+### 2026-10-19 — Tipografie uniformă în antetul rapoartelor
+
+Titlul, comenzile și indicatorii de pagină/zoom folosesc aceeași familie
+și mărime, din variabilele existente --font-ui și --fs-button.
+Titlul nu mai preia mărimea mai mare a titlurilor de dialog.
+Fișiere: PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări vizuale,
+conform instrucțiunilor proiectului. Necesită publicarea CSS-ului.
+
+### 2026-10-19 — Acțiuni cu emoticoane și meniu Export Raport
+
+Butoanele din antetul previzualizării PDF comune afișează doar emoticoane,
+cu tooltipuri explicative și etichete accesibile. Descărcările PDF/Excel
+sunt grupate sub Export Raport, folosind meniul comun; dispar butoanele
+separate de descărcare. Exportul Excel din previzualizarea rapoartelor
+VERCON folosește același snapshot și context ca PDF-ul afișat.
+Excel rămâne dezactivat pentru previzualizările care nu oferă acest format.
+Fișiere: PYTHON/static/js/reporting/pdf-preview.js;
+PYTHON/static/js/vercon/reports.js; PYTHON/static/css/report-preview.css;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau verificări vizuale, conform instrucțiunilor proiectului.
+Necesită publicarea JS/CSS-ului.
+
+### 2026-10-19 — Aliniere și aspect meniu Export Raport
+
+Meniul se aliniază la marginea stângă a butonului. Opțiunile folosesc
+stilul drept al meniului comun, fără colțurile rotunjite și bordurile
+moștenite de la butoanele dialogului. PDF folosește 📕, Excel 📗.
+Fișiere: PYTHON/static/js/reporting/pdf-preview.js;
+PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări vizuale,
+conform instrucțiunilor proiectului. Necesită publicarea JS/CSS-ului.
+
+### 2026-10-19 — Total general integrat în tabel, comun tuturor rapoartelor
+
+Rapoartele grupate VERCON adaugă TOTAL GENERAL ca ultim rând în tabelul
+ultimei grupe, cu aceleași coloane și valori calculate. Eliminată secțiunea
+separată cu titlu TOTAL GENERAL și antet de coloane repetat. Aceeași regulă
+se aplică situației ADECHIT cu grupe separate. Modificarea modelului comun
+de date păstrează structura în PDF și Excel, respectiv HTML-ul ADECHIT.
+Motorul PDF păstrează fiecare rând total împreună cu rândul precedent,
+pentru a evita totalurile izolate la schimbarea paginii.
+Fișiere: PYTHON/routes/vercon/report_body.py;
+PYTHON/routes/adechit/reports.py; PYTHON/reporting/output.py;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, generare de rapoarte sau verificări vizuale, conform
+instrucțiunilor proiectului. Fără acces sau modificări de schemă MariaDB.
+Necesită publicarea Python și repornirea serviciului; rapoartele se regenerează.
+
+### 2026-10-19 — Aspect Total general și eliminare pentru un singur grup
+
+TOTAL GENERAL este marcat distinct de subtotaluri: fundal identic cu banda
+categoriei (#f7f8f2), text bold și spațiu de 2 mm deasupra, păstrând coloanele
+tabelului și legătura cu rândul precedent la paginarea PDF. Stilul este comun
+PDF/Excel, cu echivalent pentru HTML-ul ADECHIT.
+Rapoartele grupate VERCON omit totalul general când există o singură grupă
+exterioară; fișele cu subtotaluri lunare îl omit când există cel mult o lună.
+ADECHIT omite totalul general suplimentar când există o singură grupă;
+în situația fără separare pe grupe, totalul unic poartă numele grupei.
+Fișiere: PYTHON/routes/vercon/report_body.py; PYTHON/routes/adechit/reports.py,
+report_model.py, report_render.py; PYTHON/reporting/output.py;
+PYTHON/static/css/adechit-report.css; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau generare/verificare de rapoarte, conform instrucțiunilor
+proiectului. Necesită publicarea Python/CSS, repornire și regenerarea rapoartelor.
+
+### 2026-10-19 — Păstrarea selecțiilor între rapoarte din aceeași categorie
+
+Schimbarea raportului în aceeași categorie din arbore păstrează controlul
+de selectare date, bifele, selecția, ramurile deschise, căutarea și derularea.
+Schimbarea categoriei reîncarcă datele și resetează bifele. Schimbarea perioadei
+păstrează reîncărcarea existentă. Catalogul include specificațiile filtrelor,
+astfel încât validarea și exportul să folosească regulile raportului curent
+chiar când arborele este păstrat. Rădăcinile arborelui de rapoarte se deschid
+explicit la inițializare; categoriile rămân pliate.
+Fișiere: PYTHON/static/js/vercon/reports.js, report-selection.js, ui.js;
+PYTHON/routes/vercon/report_catalog.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-19 — Ordine rapoarte și selectarea documentelor pe furnizor
+
+Fișa Magazie este prima în Magazie / Produse; FM1-u, FM2 și Fișa Magazie BF
+nu mai apar în arborele de rapoarte. Referat periodic produs este afișat
+ca Referat Periodic.
+Numai Referat Periodic, Plan Achiziții și Situație Intrări au opțiunea
+Afișează Documente, nebifată implicit. Pentru acestea dispare rădăcina
+Documente; bifarea opțiunii înlocuiește produsele din arborele din dreapta
+cu furnizori pliați la rădăcină. Documentele se încarcă lazy la deschiderea
+sau bifarea furnizorului. Se poate bifa un document sau furnizorul cu toate
+documentele sale. Filtrele produselor ascunse nu se aplică în modul documente.
+Debifarea restabilește produsele fără bife și elimină filtrul documentelor.
+Comutarea modului resetează căutarea, selecția rândului, derularea și ramurile
+deschise; noul conținut pornește pliat la rădăcină.
+Schimbarea între cele trei rapoarte păstrează selecțiile din aceeași categorie.
+Opțiunea afectează numai selectarea datelor; machetele PDF/Excel rămân existente.
+Fișiere: PYTHON/static/js/vercon/report-result.js, report-selection.js, reports.js;
+PYTHON/routes/vercon/report_catalog.py, report_selection.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-19 — Reset complet la comutarea Afișează Documente
+
+Înlocuită comutarea prin modificarea nodurilor controlului existent cu
+distrugerea controlului și montarea unui arbore nou, exclusiv pentru modul
+ales. Bifarea și debifarea șterg toate selecțiile și bifele, fără salvarea
+celor anterioare. Controlul vechi este eliminat imediat, inclusiv când perioada
+este invalidă; încărcările sale lazy sunt anulate.
+Cererea root include selection_mode=documents numai pentru modul documente;
+serverul returnează exclusiv rădăcinile furnizorilor, lazy, fără produse sau
+documente preîncărcate. Arborele nou are setul ramurilor deschise gol.
+Schimbarea raportului în aceeași categorie și același mod păstrează controlul
+și selecțiile, conform cerinței inițiale. Comutarea modului pornește de la zero.
+Fișiere: PYTHON/static/js/vercon/reports.js, report-selection.js;
+PYTHON/routes/vercon/report_selection.py, report_routes.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-19 — Corecție mod exclusiv Documente, cu încărcare lazy
+
+Corecția ulterioară a resetului complet la comutare este descrisă în secțiunea
+Reset complet la comutarea Afișează Documente; aceasta înlocuiește păstrarea
+selecțiilor între modurile produse și documente.
+
+Corectată implementarea inițială a opțiunii Afișează Documente: furnizorii
+înlocuiesc conținutul anterior, fără produse afișate simultan și fără filtre
+ascunse active. Cererea inițială returnează numai furnizorii ca rădăcini lazy,
+fără documentele lor. Deschiderea unei ramuri încarcă numai documentele
+furnizorului respectiv; bifarea furnizorului încarcă și selectează documentele
+sale prin mecanismul comun. Metadatele documentelor încărcate se cumulează
+pentru identificarea selecției în previzualizare. Răspunsurile pentru ramuri
+care au fost ascunse între timp nu modifică arborele activ.
+Fișiere: PYTHON/static/js/vercon/report-selection.js, reports.js;
+PYTHON/routes/vercon/report_selection.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS și repornirea serviciului.
+
+### 2026-10-19 — Valoare estimată în referate rotunjită în sus la zeci de lei
+
+În referatele de achiziție din Produse și Intrări, numai suma din textul
+VALOARE ESTIMATĂ se rotunjește în sus la multiplu de 10 lei, cu Decimal și
+ROUND_CEILING, și se afișează fără zecimale: 3.277,8900 devine 3.280 LEI.
+Un multiplu exact de 10 rămâne neschimbat. Valorile și totalurile tabelului
+păstrează calculul existent. Textul comun este folosit în pagină, PDF și Excel.
+Fișiere: PYTHON/routes/vercon/report_body.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python, repornirea serviciului și regenerarea rapoartelor.
+
+### 2026-10-19 — Magazie / Intrări: selecție pe furnizor și NIR cu stornări
+
+Schimbările sunt limitate la rapoartele din Magazie / Intrări. Arborele
+implicit are furnizori la rădăcină, conturi la nivelul următor și produse
+la al treilea nivel. NIR folosește clarificarea separată: furnizor → documente
+→ produse, fără cont. Rădăcinile sunt pliate, iar fiecare ramură este lazy;
+bifarea unei ramuri încarcă descendenții pentru selecția completă.
+NIR listează recepțiile și stornările în ordine descrescătoare după data
+documentului, inclusiv la generare. Eliminată obligația de a selecta un
+singur document NIR. Stornările păstrează valorile negative în modelul NIR.
+NIR SFP, NIR Storno și duplicatul Centralizator Conturi Furnizori nu mai apar
+în arborele rapoartelor; rămâne intrarea nou Furnizori cu raportul de furnizori.
+Referatul din Intrări se numește Referat Periodic. Nota Comandă și acest
+referat primesc Afișează Documente, nebifat inițial, fără rădăcina Documente
+în arborele implicit. Comutarea resetează selecțiile și înlocuiește arborele
+cu furnizori → documente, pliat și lazy, folosind mecanismul existent.
+Selecțiile de produse păstrează asocierea cu furnizorul/contul sau cu
+documentul, prin identificatori validați și filtrare în modelul raportului;
+nu se combină accidental produsele bifate de la furnizori diferiți.
+Schimbarea raportului păstrează controlul când categoria și structura
+arborelui coincid; trecerea la/de la structura NIR reîncarcă selecția.
+Arborele rapoartelor din Produse păstrează comportamentul anterior.
+Fișiere: PYTHON/routes/vercon/report_incoming_selection.py (nou),
+report_selection.py, report_catalog.py, report_routes.py, report_data.py,
+report_service.py; PYTHON/static/js/vercon/report-result.js,
+report-selection.js, reports.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS, repornirea serviciului și regenerarea rapoartelor.
+
+### 2026-10-19 — Subtotaluri integrate și denumiri rapoarte furnizori
+
+Subtotalul unei grupe cu o singură subgrupă nu se mai repetă: totalul
+subgrupei acoperă deja aceleași date. Pentru mai multe subgrupe, subtotalul
+se adaugă ca rând în ultimul tabel de detalii, fără tabel separat și fără
+antet de coloane sau subsol suplimentar. Corecția este în modelul comun,
+folosit de afișarea în pagină, PDF și Excel.
+Centralizator Furnizori se numește Situație Furnizori, iar nou Furnizori
+se numește Centralizator Furnizori. Denumirile se aplică în catalog și în
+titlurile rapoartelor generate, inclusiv pentru machete deja configurate.
+Identificatorii interni ai rapoartelor rămân aceiași.
+Fișiere: PYTHON/routes/vercon/report_body.py, report_catalog.py,
+report_layouts.py, report_service.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python, repornirea serviciului și regenerarea rapoartelor.
+
+### 2026-10-19 — Arbore rapoarte cu majuscule și selecție Ieșiri
+
+Toate etichetele arborelui rapoartelor sunt convertite la majuscule,
+inclusiv rădăcinile și categoriile OI/MF. Deschiderea unei ramuri închide
+ramurile surori; regula se aplică și rădăcinilor MAGAZIE/OI/MF și nu este
+ocolită prin Shift+click. Inițial este deschisă numai prima rădăcină.
+BON CONSUM este afișat ca BONURI și include consumuri și retururi. Arborele
+implicit este cont → bon → produs; Afișează Documente îl înlocuiește cu
+bon → produs. Bonurile sunt ordonate descrescător după dată în fiecare grupă.
+BUConsum, BUConsum F, BUConsum F1 și BonRetur nu mai apar în catalogul vizual.
+Centralizator BC devine CENTRALIZATOR. Arborele implicit este cont → bon,
+iar opțiunea Afișează Primitori îl înlocuiește cu primitor → bon, cu aceeași
+ordine descrescătoare. Primitorii sunt încărcați ca rădăcini fără bonuri
+preîncărcate. Ambele opțiuni sunt nebifate inițial și resetează selecțiile
+și controlul la comutare. Ramurile noi pornesc pliate și se încarcă lazy;
+bifarea ramurii și căutarea folosesc mecanismele comune de încărcare.
+Selecțiile păstrează asocierea exactă cont/primitor, bon și produs, inclusiv
+la generare. BONURI identifică separat fiecare consum/retur; CENTRALIZATOR
+păstrează sursa și calculul anterior al bonurilor de consum. Denumirile
+noi se aplică și titlurilor rapoartelor cu machete deja configurate.
+Fișiere: PYTHON/routes/vercon/report_outgoing_selection.py (nou),
+report_selection.py, report_routes.py, report_catalog.py, report_data.py,
+report_body.py, report_layouts.py, report_service.py;
+PYTHON/static/js/vercon/report-result.js, report-selection.js, reports.js,
+ui.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS, repornirea serviciului și regenerarea rapoartelor.
+
+### 2026-10-19 — Lățimi coloane și păstrarea arborelui pe categoria de nivel 1
+
+Coloana Tipul raportului este lărgită cu 10%: intervalul 150–204 px devine
+165–224,4 px. Diferența se scade din coloana perioadei (190–240 px devine
+175–219,6 px), păstrând spațiul coloanei Selectare date și distanțele dintre coloane.
+Selecția altui raport păstrează arborele din dreapta exclusiv după categoria
+de nivel 1 de sub rădăcină, indiferent de structura implicită a noului raport.
+Eliminată condiția suplimentară selectionKind care reîncărca arborele între
+BONURI și CENTRALIZATOR sau între NIR și celelalte rapoarte din INTRĂRI.
+Controlul, bifele, selecția rândului, căutarea, derularea, ramurile deschise
+și încărcările lazy curente rămân aceleași. Se invalidează doar rezultatul
+raportului generat. Schimbarea categoriei, perioadei sau comutarea explicită
+a opțiunilor arborelui păstrează reîncărcarea/resetul prevăzut.
+Filtrele bonurilor păstrate sunt acceptate și de celelalte rapoarte de
+consum din aceeași categorie, pentru a nu ignora selecția la generare.
+Fișiere: PYTHON/static/css/vercon-rapoarte.css;
+PYTHON/static/js/vercon/reports.js, report-selection.js;
+PYTHON/routes/vercon/report_catalog.py, report_service.py; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS/CSS și repornirea serviciului.

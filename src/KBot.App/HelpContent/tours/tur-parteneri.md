@@ -27,9 +27,9 @@ target: ParteneriForm.txtIban
 Banca se completează singură din IBAN, cât timp câmpul ei e gol.
 
 ## Coduri angajament
-<!-- slice: 0087, 0093, 0000-20 -->
+<!-- slice: 0087, 0093, 0000-20, 0121-03 -->
 target: ParteneriForm.gridCoduri
-Clasificația, contul bancar asociat, codul angajamentului și codul indicatorului. ✕ de pe un rând îl scoate.
+Angajamentele furnizorului, legate de codul lui fiscal: clasificația (doar de citit), contul bancar asociat, codul angajamentului și codul indicatorului. ✕ de pe un rând îl scoate. Tabelul se activează după ce codul fiscal e tastat.
 
 ## Coduri › Adaugă un cod
 <!-- slice: 0087, 0000-23 -->

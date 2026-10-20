@@ -35,17 +35,17 @@ why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevo
 Alege <b>«Clasificații bugetare»</b>.
 
 ## Arborele de clasificații
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.tree
-Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte».
+Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifele de sub arbore
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiForm.tlyBife
 optional: yes
 why: Bifele sunt doar filtre ale arborelui; nu schimbă nimic în date.
 <b>«Arată toate clasificațiile»</b> bifat: arborele arată toate clasificațiile configurate; debifat: doar cele cu mișcare în an (un trimestru de buget sau de rectificare diferit de zero).<BR>
-<mark>«Arată DOAR clasificațiile folosite în FOREXE» are prioritate: arată numai clasificațiile pentru care FOREXE a raportat un credit bugetar.</mark> Apasă «Înainte».
+<mark>«Arată DOAR clasificațiile folosite în FOREXE» are prioritate: arată numai clasificațiile pentru care FOREXE a raportat un credit bugetar.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Iconița «+» din subsolul arborelui
 <!-- slice: 000T-10 -->
@@ -55,21 +55,21 @@ wait: opens:ClasificatiiAddForm
 Apasă <b>«+»</b> din subsolul arborelui, cel de lângă «Adaugă clasificații». Se deschide fereastra de adăugare.
 
 ## 1. Sursa și sectorul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.flowSurse
-Bifează <b>sursele-sector</b> pentru care adaugi clasificațiile. Se pot alege doar sursele unității. Apoi apasă «Înainte».
+Bifează <b>sursele-sector</b> pentru care adaugi clasificațiile. Se pot alege doar sursele unității. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## 2. Clasificația funcțională
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.treeF
 Bifează în arbore <b>clasificațiile funcționale</b>.<BR>
-<mark>Se bifează pozițiile de pe ultimul nivel.</mark> Apoi apasă «Înainte».
+<mark>Se bifează pozițiile de pe ultimul nivel.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## 3. Clasificația economică
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.treeE
 Bifează în arbore <b>clasificațiile economice</b>.<BR>
-<mark>Bifarea unui articol bifează tot ce este sub el.</mark> Apoi apasă «Înainte».
+<mark>Bifarea unui articol bifează tot ce este sub el.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă clasificațiile
 <!-- slice: 000T-10 -->
