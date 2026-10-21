@@ -163,8 +163,8 @@ Partial Class SetariExtraseView
         grila.Name = "grila"
         grila.Size = New Size(1344, 580)
         grila.TabIndex = 3
-        tips.SetToolTipHeader(grila, "Coloanele grilei")
-        tips.SetToolTipText(grila, "Bifă = coloana se vede. Ordinea de aici e ordinea din grilă, de la stânga la dreapta." & vbLf & "Cel puțin o coloană rămâne bifată.")
+        ' tips.SetToolTipHeader(grila, "Coloanele grilei")
+        ' tips.SetToolTipText(grila, "Bifă = coloana se vede. Ordinea de aici e ordinea din grilă, de la stânga la dreapta." & vbLf & "Cel puțin o coloană rămâne bifată.")
         '
         ' tlyButoane
         '

@@ -135,8 +135,8 @@ Partial Class PrimiteListaPage
         grila.Name = "grila"
         grila.Size = New System.Drawing.Size(751, 457)
         grila.TabIndex = 0
-        tips.SetToolTipHeader(grila, "Toate facturile")
-        tips.SetToolTipText(grila, "Bifează facturile la care se aplică butoanele de jos. Butonul «…» de pe un rând se aplică numai acelui rând.")
+        ' tips.SetToolTipHeader(grila, "Toate facturile")
+        ' tips.SetToolTipText(grila, "Bifează facturile la care se aplică butoanele de jos. Butonul «…» de pe un rând se aplică numai acelui rând.")
         '
         ' pnlJos
         '

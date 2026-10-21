@@ -185,8 +185,8 @@ Partial Class CabNoteForm
         grdOperatii.ShrinkColumnsToFit = False
         grdOperatii.Size = New Size(1383, 428)
         grdOperatii.TabIndex = 0
-        tips.SetToolTipHeader(grdOperatii, "Operațiunile «ERRRRRRRRRR»")
-        tips.SetToolTipText(grdOperatii, resources.GetString("grdOperatii.ToolTipText"))
+        ' tips.SetToolTipHeader(grdOperatii, "Operațiunile «ERRRRRRRRRR»")
+        ' tips.SetToolTipText(grdOperatii, resources.GetString("grdOperatii.ToolTipText"))
         ' 
         ' cmbAngajament
         ' 

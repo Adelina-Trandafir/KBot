@@ -25,7 +25,7 @@ Partial Class VerconReportsView
         lblState = New Label()
         pnlEditor = New Panel()
         pnlUnit = New KBotTableLayoutPanel()
-        txtSql = New KBotTextBox()
+        txtSql = New KBotSqlBox()
         txtName = New KBotTextBox()
         txtFiscal = New KBotTextBox()
         txtAddress = New KBotTextBox()
@@ -73,9 +73,6 @@ Partial Class VerconReportsView
         lblState.TextAlign = ContentAlignment.MiddleLeft
         pnlEditor.Dock = DockStyle.Fill
         txtSql.Dock = DockStyle.Fill
-        txtSql.Multiline = True
-        txtSql.ScrollBars = ScrollBars.Both
-        txtSql.WordWrap = False
         txtSql.MaxLength = 100000
         pnlUnit.AutoFitToTheme = False
         pnlUnit.Dock = DockStyle.Fill
@@ -123,7 +120,7 @@ Partial Class VerconReportsView
     Friend WithEvents lblState As Label
     Friend WithEvents pnlEditor As Panel
     Friend WithEvents pnlUnit As KBotTableLayoutPanel
-    Friend WithEvents txtSql As KBotTextBox
+    Friend WithEvents txtSql As KBotSqlBox
     Friend WithEvents txtName As KBotTextBox
     Friend WithEvents txtFiscal As KBotTextBox
     Friend WithEvents txtAddress As KBotTextBox

@@ -13,7 +13,8 @@
           "Completați **prezența** fiecărui copil ([vezi Prezența](#prezenta)).",
           "Selectați un copil și înregistrați **încasările** sale ([vezi Încasări](#incasari)).",
           "La sfârșitul lunii, **închideți luna** ([vezi Închiderea lunii](#inchidere)).",
-          "Listați sau descărcați **rapoartele** ([vezi Rapoarte](#rapoarte))."
+          "Listați sau descărcați **rapoartele** ([vezi Rapoarte](#rapoarte)).",
+          "Deschideți **DISCUȚII** pentru conversația comună cu ceilalți utilizatori ([vezi Chat](#chat))."
         ]},
         {"note": "Cât timp nu ați ales luna și grupa, tabelul copiilor este gol. Este normal: alegeți mai întâi luna, apoi grupa."},
         {"p": "Notificarea de eroare de sub antet se șterge și se ascunde la următoarea acțiune: clic, tastare, schimbarea unei valori sau trimiterea unui formular. Dacă noua acțiune eșuează, apare mesajul ei. Simpla deplasare a mouse-ului nu ascunde eroarea.", "slice": "ADE9-08"},
@@ -307,6 +308,100 @@
           "**Sesiunea expiră** — contorul din bara de sus arată timpul rămas; după expirare sunteți trimis la autentificare.",
           "**Fereastra raportului nu se deschide** — permiteți ferestrele popup pentru pagina ADECHIT."
         ]}
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "Chat — DISCUȚII",
+      "blocks": [
+        {
+          "p": "DISCUȚII este conversația comună a utilizatorilor autentificați din VERCON, ADECHIT și K-BOT. Puteți citi mesaje, publica un mesaj și răspunde unui mesaj existent. Conversația este comună și independentă de unitatea, subunitatea, gestiunea, luna sau grupa selectată."
+        },
+        {
+          "h": "Deschiderea și închiderea panoului",
+          "id": "chat-panou"
+        },
+        {
+          "p": "Apăsați butonul plutitor **DISCUȚII**, cu simbolul de conversație. Panoul se deschide peste pagina curentă. Îl închideți din **×**, apăsând din nou butonul, prin **Escape** sau printr-un clic în exterior. Clicul din exterior continuă și acțiunea controlului apăsat."
+        },
+        {
+          "p": "Închiderea panoului păstrează textul netrimis și răspunsul pregătit cât timp rămâneți în aceeași pagină. Schimbarea aplicației, reîncărcarea paginii sau expirarea sesiunii poate pierde ciorna. Chatul este disponibil în paginile autentificate; previzualizările demonstrative pot să nu îl includă."
+        },
+        {
+          "h": "Filtrele VERCON, ADECHIT și K-BOT",
+          "id": "chat-filtre"
+        },
+        {
+          "p": "În zona **Afișează**, bifați aplicațiile ale căror mesaje doriți să le vedeți: **V — VERCON**, **A — ADECHIT**, **K — K-BOT**. Păstrați cel puțin o aplicație bifată. Filtrul se salvează pentru cont și se sincronizează între file la actualizarea următoare; schimbarea lui păstrează textul netrimis."
+        },
+        {
+          "note": "Filtrul schimbă afișarea, nu destinatarii sau accesul la conversație. Mesajul trimis primește marcajul aplicației din care scrieți: V din VERCON, A din ADECHIT sau K din K-BOT. Dacă ați ascuns acea aplicație prin filtru, mesajul este trimis, dar nu apare în lista curentă; panoul vă anunță acest lucru."
+        },
+        {
+          "h": "Trimiterea unui mesaj",
+          "id": "chat-trimitere"
+        },
+        {
+          "ol": [
+            "Deschideți DISCUȚII și alegeți cum doriți să apăreți: cu pseudonim sau cu nume.",
+            "Scrieți textul în caseta mesajului. Limita este de **4.000 de caractere**, indicată de contor; un mesaj gol nu poate fi trimis.",
+            "Apăsați **Trimite** sau **Enter**. Pentru un rând nou folosiți **Ctrl+Enter**; pe macOS puteți folosi **Cmd+Enter**.",
+            "După confirmarea trimiterii, caseta se golește și răspunsul pregătit se încheie. Dacă trimiterea eșuează, textul rămâne pentru reluare."
+          ]
+        },
+        {
+          "p": "Puteți scrie text, diacritice și emoji. Fiecare mesaj arată aplicația, autorul afișat și data/ora. Ora este prezentată în fusul folosit de browser."
+        },
+        {
+          "h": "Cu pseudonim sau cu nume",
+          "id": "chat-identitate"
+        },
+        {
+          "ul": [
+            "**Cu pseudonim** bifat: mesajul se publică folosind pseudonimul atribuit contului, afișat lângă opțiune.",
+            "**Cu pseudonim** debifat: apare câmpul pentru numele afișat. Completați-l înainte de trimitere; are maximum **80 de caractere**.",
+            "Numele afișat este declarat de dumneavoastră, fără verificarea identității. Adresa de e-mail a contului nu este introdusă automat ca nume public.",
+            "Modul ales se păstrează ca preferință, iar numele se salvează la trimiterea unui mesaj cu nume. Schimbarea numelui nu redenumește mesajele publicate anterior.",
+            "Pentru ceilalți participanți, mesajul și citatul unui răspuns arată identitatea folosită la publicare: numele sau pseudonimul. Legătura cu contul rămâne în evidența internă a serviciului."
+          ]
+        },
+        {
+          "h": "Răspuns la un mesaj",
+          "id": "chat-raspuns"
+        },
+        {
+          "ol": [
+            "Apăsați **Răspunde** sub mesajul ales.",
+            "Deasupra casetei de scriere apare destinatarul răspunsului și un fragment din textul sursă.",
+            "Scrieți răspunsul și trimiteți-l. Pentru a reveni la un mesaj independent, apăsați **× — Renunță la răspuns** înainte de trimitere."
+          ]
+        },
+        {
+          "p": "Răspunsul rămâne vizibil în conversația comună și include un scurt citat. Citatul poate proveni din altă aplicație decât cele bifate în filtrul curent. Comanda Răspunde nu deschide o conversație privată."
+        },
+        {
+          "h": "Mesaje necitite, istoric și actualizare",
+          "id": "chat-necitite"
+        },
+        {
+          "ul": [
+            "Butonul DISCUȚII arată numărul mesajelor necitite pentru aplicațiile filtrate; peste 99 apare **99+**. Mesajele proprii nu se numără ca necitite.",
+            "Mesajele sunt considerate citite când panoul este deschis, fila este vizibilă și focalizată, mesajele noi sunt încărcate și vă aflați la sfârșitul listei. Citirea unei aplicații nu marchează citite aplicațiile ascunse de filtru.",
+            "La deschidere se încarcă mesajele recente. **Mesaje mai vechi** aduce treptat istoricul anterior.",
+            "Dacă citiți mai sus și sosesc mesaje, folosiți **Mesaje noi** pentru a coborî la sfârșit.",
+            "Lista se actualizează automat periodic cât timp pagina este vizibilă. **↻ — Actualizează discuțiile** cere imediat actualizarea. Revenirea în filă reia actualizările."
+          ]
+        },
+        {
+          "h": "Conținut comun și probleme de conectare",
+          "id": "chat-probleme"
+        },
+        {
+          "p": "Mesajele se adresează participanților conversației comune, inclusiv din alte unități; nu sunt mesaje private și nu sunt întrebări către un asistent AI. Alegeți conținutul ținând cont de această audiență. Versiunea curentă oferă mesaje text și răspunsuri; nu are comenzi pentru atașamente, editarea sau ștergerea mesajelor publicate."
+        },
+        {
+          "p": "Dacă apare o eroare, păstrați textul și folosiți Actualizează discuțiile sau reluați trimiterea. Pentru o eroare persistentă, transmiteți administratorului mesajul afișat. La expirarea sesiunii, autentificați-vă din nou. Actualizările automate ale chatului nu prelungesc sesiunea aplicației."
+        }
       ]
     }
   ]

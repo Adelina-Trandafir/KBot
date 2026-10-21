@@ -8,7 +8,7 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 ## 1.1.2.5 (20.10.2026)
 
-<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98, 00EF-43, 0114-24, 0115-02, KE09, KE10, KE11, KE12, KE12-02, KE12-03, KE12-04, KE13, KE14, KE15, KE16, 0114-25, 0097-04, 0121-03, 0121-04, 0121-05, 000T-13, 0000-107, 0000-108, 0000-109, 0000-110, 0000-111, 0000-112, 0000-113, 0000-114 -->
+<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98, 00EF-43, 0114-24, 0115-02, KE09, KE10, KE11, KE12, KE12-02, KE12-03, KE12-04, KE13, KE14, KE15, KE16, 0114-25, 0097-04, 0121-03, 0121-04, 0121-05, 000T-13, 0000-107, 0000-108, 0000-109, 0000-110, 0000-111, 0000-112, 0000-113, 0000-114, KE17, 0000-115 -->
 
 - Ribbon: filele sunt «Configurari», «Angajamente» (la pornire), «E-Factura», «Extrase»; «Date» e grup.
 - «Descarca extrase» e doar in ribbon, in grupul din dreapta; nu mai e in «Extrase de cont» si in arbori.
@@ -38,6 +38,8 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - O factura rezolvata arata doar receptia ei si produsele, fara modificari; optiune: «Arata facturile asociate».
 - Sumele se scriu in formatul din Windows (77.49 sau 77,49); mesajul de rest arata unde mai are receptia rest.
 - Legare in bloc: la un furnizor, fereastra cu PROPUNERI (receptie = factura, pana la 2 zile dupa); nu leaga singura.
+- In ea: «Angajament» de ales cand factura are mai multe si «Receptie» (suma luata din factura, poate fi mai mica).
+- Receptiile sunt in doua grupe, cu aceeasi valoare si neasociate integral; coloana «Ramas» arata ce mai ramane din ele.
 - Angajamentul ales pentru un furnizor se tine minte pe codul fiscal; «Coduri angajament» merg tot dupa el.
 - Furnizorul asociat unui DDF primeste singur angajamentul si indicatorii lui; fara cod fiscal nu are coduri.
 - «Repara...» la Rezervari deschide o fereastra: ce s-a detectat si ce se va face; apoi «Renunta» sau «Repara».

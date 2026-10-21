@@ -4282,3 +4282,219 @@ Fișiere: PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md.
 Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
 Fără teste sau alte verificări, conform instrucțiunilor proiectului.
 Necesită publicarea JS și reîncărcarea paginii.
+
+### 2026-10-20 — VERCON: schimbarea perioadei direct peste raport
+
+Meniul raportului PDF are un buton calendar „Schimbă perioada”, furnizat numai
+de VERCON. Deschide un popup peste raport cu același ComboTree de ani/luni,
+aceleași casete și etichete de dată ca în pagina RAPOARTE. Pentru Amortizare
+se păstrează selecția unei singure date. Sunt reutilizate catalogul perioadelor,
+TOTI anii, ordinea descrescătoare și limitele calendarului.
+
+Popup-ul pornește de la perioada raportului afișat și aplică modificările numai
+la apăsarea „Schimbă perioada”. Regenerează același raport schimbând exclusiv
+start/end într-o copie a parametrilor originali; produsele, primitorii,
+documentele, gestiunea/exercițiul și opțiunile de grupare rămân neschimbate.
+Nu se reîncarcă arborele de selecții și nu se elimină bife după noul interval.
+Selectarea unui interval în popup nu schimbă formularul RAPOARTE din fundal.
+
+PDF-ul se redesenează în aceeași fereastră; titlul/perioada, tipărirea,
+descărcarea PDF și exportul Excel sunt actualizate pentru noul snapshot.
+La eșecul generării, popup-ul păstrează datele introduse și raportul anterior
+rămâne disponibil; dacă încărcarea PDF-ului nou eșuează, se reîncarcă PDF-ul
+anterior. Se poate reveni cu Renunță înainte de aplicare. Resursele popup-ului
+se închid odată cu raportul/pagina. Previzualizările oficiale ale documentelor
+VERCON primesc aceeași acțiune; ciornele locale nu au sursă pentru regenerare.
+
+Vizualizatorul comun are doar extensii opționale pentru acțiuni și înlocuirea
+PDF-ului; alte aplicații nu primesc butonul calendar. Nu sunt necesare rute
+noi sau modificări de schemă MariaDB.
+
+Fișiere: PYTHON/static/js/vercon/report-period-action.js (nou), reports.js,
+document-report.js, pdf-preview.js; PYTHON/static/js/reporting/pdf-preview.js,
+report-dialog.js; PYTHON/static/css/vercon-report-period.css (nou), vercon.css;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
+Necesită publicarea JS/CSS și reîncărcarea paginii.
+
+### 2026-10-20 — Perioade rapoarte: luni descrescătoare până la ultima mișcare
+
+Lunile din fiecare an sunt construite în ordine calendaristică descrescătoare,
+de la luna ultimei mișcări din acel an până la ianuarie. Sunt păstrate și lunile
+intermediare fără mișcări. Opțiunile TOTI anii și Tot anul rămân disponibile.
+Aceeași componentă este folosită în RAPOARTE și în popup-ul de schimbare a perioadei.
+
+Catalogul transmite last_movement_month separat de limitele pentru introducerea
+manuală a datelor. Pentru toate gestiunile se citesc mișcările reale din liniile
+de intrări/ieșiri, cu datele efective folosite de motorul stocului, inclusiv
+storno/retur; documentele anulate și antetele fără linii nu extind lunile.
+Pentru MF/OI se includ și bonurile active de predare/transfer/casare.
+Data unei liste de alimente nu prelungește intervalul mișcărilor.
+Anii sintetici fără mișcări au last_movement_month=0, fără luni fictive;
+perioadele implicite și posibilitatea introducerii manuale a datelor se păstrează.
+
+Fișiere: PYTHON/routes/vercon/report_period.py;
+PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
+Necesită publicarea Python/JS, repornirea serviciului și reîncărcarea paginii.
+
+### 2026-10-20 — Dropdown perioadă egal cu lățimea casetei combo
+
+Selectorul perioadei configurează minWidth=0, astfel încât dropdown-ul să aibă
+lățimea casetei care îl deschide, inclusiv în popup-ul de peste raport.
+ComboTree respectă acum valoarea explicită zero (fallback nullish în loc de ||);
+configurațiile fără minWidth păstrează minimul implicit de 300px. Poziționarea
+și redimensionarea folosesc în continuare geometria controlului și viewport-ul.
+Fișiere: PYTHON/static/js/components/combotree/combotree.js;
+PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
+Necesită publicarea JS și reîncărcarea paginii.
+
+### 2026-10-20 — Tooltip comun configurabil pentru ADECHIT, K-BOT și VERCON
+
+Notificările comune folosesc componenta tooltip, cu antet bold și ℹ️, închidere
+manuală, trei variante de aspect, culori, poziție și lățime configurabile.
+Întârzierea, animația și durata pe ecran se configurează separat; durata 0
+menține notificarea până la închidere. Temporizarea se suspendă la hover/focus
+și cât timp fila este ascunsă. Sunt afișate cel mult trei notificări simultan
+pentru fiecare context (pagina/dialog nativ), restul așteaptă. Mesajele
+înlocuite sau ale ferestrelor închise sunt anulate.
+
+Meniul aplicațiilor din toate cele trei pagini include Setări tooltip, cu
+previzualizare, revenire la implicit și salvare în browser pentru aceeași
+origine. VERCON păstrează mesajele contextuale și jurnalul din sesiune.
+ADECHIT afișează confirmările informative în tooltip; erorile rămân și în pagină.
+Notificările temporare de sesiune reutilizează componenta comună.
+
+La cererea utilizatorului, numele componentei este tooltip. Fișierele sunt în
+js/components/tooltip; API-ul este showTooltip, cu exporturi ES modules și
+prefix CSS kbot-tooltip. Containerul oprește moștenirea atributului title,
+pentru a evita afișarea unui tooltip nativ peste notificarea personalizată.
+
+Fișiere: PYTHON/static/js/components/tooltip/tooltip-config.js, tooltip.js,
+tooltip-settings.js, tooltip.css (noi); PYTHON/static/js/portal/messages.js,
+app.js, portal.js, apps-menu.js; PYTHON/static/js/adechit/app.js, payers.js;
+PYTHON/static/js/vercon/application-menu.js;
+PYTHON/static/js/session/session-monitoring-ui.js;
+docs/web-tooltip.md (nou); implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
+Nu sunt necesare rute noi sau modificări de schemă MariaDB.
+Necesită publicarea JS/CSS și reîncărcarea paginilor.
+
+### 2026-10-20 — Tooltipuri din title; proba butoanelor RAPOARTE și oprire pe mobil
+
+În ADECHIT, K-BOT și VERCON, adaptorul comun preia textul existent din title
+și elimină atributul din DOM, inclusiv pentru controalele create sau schimbate
+dinamic. Hover/focus afișează tooltipul personalizat lângă control, cu legătură
+aria-describedby. Escape, click și părăsirea controlului îl închid. Nu se
+înregistrează gesturi tactile sau apăsare lungă. Titlul accesibil al iframe-urilor
+se păstrează prin aria-label; titlul paginii din browser rămâne disponibil.
+
+Butoanele din vizualizatorul efectiv al raportului și din bara rapoartelor HTML
+ADECHIT au delay=100 ms și duration=20000 ms, explicit pentru proba cerută.
+Textele sunt cele din title, fără rescriere. Adaptorul este comun și rămâne
+în js/components/tooltip. Tooltipul unui control nu așteaptă coada notificărilor.
+
+Toate tooltipurile sunt dezactivate în modul mobil: viewport <=900 px,
+hover indisponibil sau pointer principal coarse. Atributele title sunt preluate
+și eliminate și pe mobil, iar trecerea la acest mod închide afișările active
+și le anulează pe cele întârziate. Mesajele contextuale ale paginii se păstrează.
+
+Fișiere: PYTHON/static/js/components/tooltip/tooltip-environment.js,
+tooltip-titles.js (noi), tooltip.js, tooltip.css, tooltip-settings.js;
+PYTHON/static/js/adechit/app.js, report-print.js;
+PYTHON/static/js/portal/portal.js; PYTHON/static/js/vercon/app.js;
+PYTHON/routes/adechit/report_render.py; docs/web-tooltip.md;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Nu au fost executate teste sau verificări automate; proba vizuală se face
+după publicare, conform solicitării. Fără SQL sau modificări de schemă.
+Necesită publicarea Python/JS/CSS, repornirea serviciului pentru raportul HTML
+ADECHIT și reîncărcarea paginilor.
+
+### 2026-10-20 — Tooltip compact, antet opțional și oprire pe nodurile Selectare date
+
+Antetul tooltipului este opțional (showHeader) și dezactivat implicit global,
+inclusiv la încărcarea preferințelor vechi fără această proprietate. Poate fi
+activat ulterior din setări sau la apel. Textul folosește --fs-2xs, bold italic,
+cu padding exterior de 2 px/latură. Bula se adaptează conținutului, până la
+lățimea maximă configurată, fără banda mare de antet. Fundalul implicit este
+galben pal, distinct de aplicație; tema întunecată are variantă contrastantă.
+Un indicator mic, poziționat din geometria controlului, pointează spre acesta.
+
+Pointerdown/click închide imediat tooltipul și blochează reapariția până la
+mișcarea mouse-ului în afara elementului apăsat. Schimbarea focusului,
+deschiderea unui meniu și refacerea DOM-ului sub cursor nu anulează blocarea.
+Zona nodurilor din RAPOARTE / Selectare date are tooltipurile dezactivate prin
+data-kbot-tooltip=off, inclusiv la încărcarea ramurilor și la redesenare;
+atributele native title sunt în continuare eliminate din acea zonă.
+
+Fișiere: PYTHON/static/js/components/tooltip/tooltip-config.js,
+tooltip-settings.js, tooltip.js, tooltip-titles.js, tooltip.css;
+PYTHON/static/js/vercon/report-selection.js; docs/web-tooltip.md;
+implementare_vercon_v2.md.
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
+Nu au fost rulate teste sau alte verificări, conform instrucțiunilor proiectului.
+Se păstrează oprirea completă pe mobil și timpii 100 ms / 20 s ai butoanelor
+din vizualizatorul de rapoarte. Necesită publicarea JS/CSS și reîncărcarea paginilor.
+
+### 2026-10-20 — UTC pentru momentele tehnice ale serverului AVACONT
+
+Salvările și anulările VERCON generate în Python folosesc acum utc_now(),
+independent de fusul sistemului. Conexiunile MariaDB ale aplicației impun UTC
+pe sesiune, astfel încât NOW(), valorile implicite și expirările comparate în
+SQL folosesc aceeași convenție. Aceeași regulă se aplică serverului FOREXE,
+e-Factura, jurnalelor, administrării și scripturilor auxiliare. Procesul web
+și comenzile administratorului folosesc UTC și pentru biblioteci/loguri.
+
+Data documentului, anul/perioada și implicitul „azi” rămân date calendaristice
+românești, prin bucharest_today(). Chatul păstrează salvarea UTC și afișarea
+existentă în browser. Istoricul și valorile importate nu sunt deplasate automat.
+
+Fișiere VERCON: routes/vercon/doc_routes.py, documents.py, lista.py,
+migration_links.py, nomenclatoare.py, oi.py, oi_context.py, receipt_products.py,
+receipts.py, report_service.py (toate sub PYTHON); comun: PYTHON/utils/clock.py
+(nou), database.py, logger.py, timing.py, asociere_log.py, main.py,
+gunicorn.conf.py. Politica și publicarea: PYTHON/docs/TIMEZONES.md (nou).
+Adaptate și modulele serverului pentru expirări FOREXE, semnături PDF,
+metadate/loguri/copii, conexiunile directe și datele implicite de activitate.
+Testul existent al semnăturilor PDF a fost adaptat conversiei UTC explicite.
+
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai revizuire de design pe surse.
+Nu s-au rulat teste, verificări de sintaxă, interogări sau comenzi pe server.
+Nu s-au modificat scheme sau setări globale MariaDB și nu s-a executat SQL.
+Publicarea necesită fișierele Python modificate împreună cu noul utils/clock.py
+și repornirea serviciului avacont. VPS-ul prezentat era deja pe Etc/UTC.
+
+
+### 2026-10-21 — VC09-01: Ajutor VERCON după modelul ADECHIT și chat în ambele ghiduri
+
+Ajutorul VERCON are cuprins cu subcapitole, text formatat și legături interne,
+imprimare și export PDF din același JSON. Acces: ? → Cum lucrez cu VERCON;
+Mesaje din sesiune rămâne disponibil. Sunt documentate contextul/drepturile,
+NIR și repartizarea facturii, ajustările de maximum 1 leu, storno, consum,
+retur, liste de alimente, BP/BT/BS, registru MF/amortizare, nomenclatoare,
+stocuri, rapoarte și exporturi, perioade și recuperări după migrare.
+Paginile Furnizori (Parteneri) și Închidere an sunt prezentate ca în pregătire.
+
+Ambele ajutoare includ capitolul DISCUȚII: conversație comună, filtre V/A/K,
+pseudonim/nume, trimitere și răspuns, istoric, necitite, actualizare, ciorne
+și sesiune. ADECHIT are și legătură din Primii pași.
+
+Fișiere: PYTHON/static/help/vercon.json (nou), adechit.json;
+PYTHON/static/js/help/help.js (nou), adechit/help.js, vercon/help.js (nou),
+vercon/app.js; PYTHON/static/css/vercon-help.css (nou), vercon.css;
+PYTHON/static/vercon.html; PYTHON/reporting/help_pdf.py (nou);
+PYTHON/routes/adechit/help_pdf.py; PYTHON/routes/vercon/help_pdf.py (nou),
+__init__.py; docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md (nou).
+Rendererul JS și cel PDF sunt comune; fiecare aplicație are conținutul său.
+Ruta PDF VERCON este protejată cu dreptul read și nu cere gestiune selectată.
+
+Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design pe surse.
+Nu s-au rulat teste, verificări de sintaxă, randări PDF sau probe în browser.
+Nu s-au executat SQL sau modificări de schemă MariaDB. Publicarea necesită
+JSON/JS/CSS și Python împreună, cu repornirea serviciului web pentru ruta PDF.

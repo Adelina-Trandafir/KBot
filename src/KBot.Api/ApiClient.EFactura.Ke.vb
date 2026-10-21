@@ -353,8 +353,17 @@ Partial Public Class ApiClient
         Public Property IdClsf As Integer
         Public Property Clsf As String
         Public Property Rest As Decimal
-        Public Property Zile As Integer?
-        Public Property InFereastra As Boolean
+    End Class
+
+    Private NotInheritable Class KePropunereAngajamentWire
+        Public Property CodAngajament As String
+        Public Property Descriere As String
+    End Class
+
+    Private NotInheritable Class KePropunereAleasaWire
+        Public Property IDRR As Integer
+        Public Property IdClsf As Integer
+        Public Property CodAngajament As String
     End Class
 
     Private NotInheritable Class KePropunereFacturaWire
@@ -363,14 +372,18 @@ Partial Public Class ApiClient
         Public Property DataFact As String
         Public Property Furnizor As String
         Public Property Total As Decimal
-        Public Property candidate As List(Of KePropunereReceptieWire)
-        Public Property propunere As Integer?
+        Public Property IdClsfLinii As Integer?
+        Public Property angajamente As List(Of String)
+        Public Property angajament As String
+        Public Property propunere As KePropunereAleasaWire
         Public Property motiv As String
     End Class
 
     Private NotInheritable Class KePropuneriWire
         Public Property zile_dupa_factura As Integer
         Public Property omise As Integer
+        Public Property angajamente As List(Of KePropunereAngajamentWire)
+        Public Property receptii As List(Of KePropunereReceptieWire)
         Public Property facturi As List(Of KePropunereFacturaWire)
     End Class
 
@@ -389,18 +402,29 @@ Partial Public Class ApiClient
             Dim wire As KePropuneriWire = JsonSerializer.Deserialize(Of KePropuneriWire)(k_text, _json)
             If wire Is Nothing Then Throw New ApiException("Serverul nu a trimis propunerile.")
             Dim k_result As New EFacturaKePropuneri() With {.ZileDupaFactura = wire.zile_dupa_factura, .Omise = wire.omise}
+            If wire.angajamente IsNot Nothing Then
+                For Each a As KePropunereAngajamentWire In wire.angajamente
+                    k_result.Angajamente.Add(New EFacturaKePropunereAngajament() With {.CodAngajament = If(a.CodAngajament, String.Empty), .Descriere = If(a.Descriere, String.Empty)})
+                Next
+            End If
+            If wire.receptii IsNot Nothing Then
+                For Each c As KePropunereReceptieWire In wire.receptii
+                    k_result.Receptii.Add(New EFacturaKePropunereReceptie() With {
+                        .Idrr = c.IDRR, .CodAngajament = If(c.CodAngajament, String.Empty), .DataR = ParseDay(c.DataR),
+                        .TipReceptie = If(c.TipReceptie, String.Empty), .Descriere = If(c.Descriere, String.Empty), .IdClsf = c.IdClsf,
+                        .Clsf = If(c.Clsf, String.Empty), .Rest = c.Rest})
+                Next
+            End If
             If wire.facturi IsNot Nothing Then
                 For Each f As KePropunereFacturaWire In wire.facturi
                     Dim k_f As New EFacturaKePropunereFactura() With {
                         .IdPrimita = f.IdPrimita, .NrFact = If(f.NrFact, String.Empty), .DataFact = ParseDay(f.DataFact),
-                        .Furnizor = If(f.Furnizor, String.Empty), .Total = f.Total, .Propunere = f.propunere, .Motiv = If(f.motiv, String.Empty)}
-                    If f.candidate IsNot Nothing Then
-                        For Each c As KePropunereReceptieWire In f.candidate
-                            k_f.Candidate.Add(New EFacturaKePropunereReceptie() With {
-                                .Idrr = c.IDRR, .CodAngajament = If(c.CodAngajament, String.Empty), .DataR = ParseDay(c.DataR),
-                                .TipReceptie = If(c.TipReceptie, String.Empty), .Descriere = If(c.Descriere, String.Empty), .IdClsf = c.IdClsf,
-                                .Clsf = If(c.Clsf, String.Empty), .Rest = c.Rest, .Zile = c.Zile, .InFereastra = c.InFereastra})
-                        Next
+                        .Furnizor = If(f.Furnizor, String.Empty), .Total = f.Total, .IdClsfLinii = f.IdClsfLinii,
+                        .Angajament = If(f.angajament, String.Empty), .Motiv = If(f.motiv, String.Empty)}
+                    If f.angajamente IsNot Nothing Then k_f.Angajamente.AddRange(f.angajamente)
+                    If f.propunere IsNot Nothing Then
+                        k_f.Propunere = New EFacturaKePropunereAleasa() With {
+                            .Idrr = f.propunere.IDRR, .IdClsf = f.propunere.IdClsf, .CodAngajament = If(f.propunere.CodAngajament, String.Empty)}
                     End If
                     k_result.Facturi.Add(k_f)
                 Next
@@ -420,7 +444,8 @@ Partial Public Class ApiClient
             ArgumentNullException.ThrowIfNull(k_legaturi)
             Dim k_items As New List(Of Dictionary(Of String, Object))()
             For Each k_l As EFacturaKeLegaturaMasa In k_legaturi
-                k_items.Add(New Dictionary(Of String, Object) From {{"IdPrimita", k_l.IdPrimita}, {"CodAngajament", k_l.CodAngajament}, {"IDRR", k_l.Idrr}})
+                k_items.Add(New Dictionary(Of String, Object) From {
+                    {"IdPrimita", k_l.IdPrimita}, {"CodAngajament", k_l.CodAngajament}, {"IDRR", k_l.Idrr}, {"IdClsf", k_l.IdClsf}, {"Suma", k_l.Suma}})
             Next
             Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
                 {"legaturi", k_items}, {"angajamente", If(k_angajamente Is Nothing, New List(Of String)(), k_angajamente.ToList())}}, _json)

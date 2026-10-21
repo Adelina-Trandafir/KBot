@@ -69,8 +69,8 @@ Partial Class PrimiteAtasamentePage
         gridAtasamente.ReadOnlyGrid = True
         gridAtasamente.Size = New System.Drawing.Size(751, 520)
         gridAtasamente.TabIndex = 0
-        tips.SetToolTipHeader(gridAtasamente, "Fișiere atașate")
-        tips.SetToolTipText(gridAtasamente, "Fișierele pe care furnizorul le-a pus în factura electronică. Dublu clic pe un fișier îl salvează.")
+        ' tips.SetToolTipHeader(gridAtasamente, "Fișiere atașate")
+        ' tips.SetToolTipText(gridAtasamente, "Fișierele pe care furnizorul le-a pus în factura electronică. Dublu clic pe un fișier îl salvează.")
         '
         ' PrimiteAtasamentePage
         '

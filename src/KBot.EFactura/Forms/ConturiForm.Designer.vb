@@ -93,8 +93,8 @@ Partial Class ConturiForm
         gridConturi.Name = "gridConturi"
         gridConturi.Size = New System.Drawing.Size(716, 220)
         gridConturi.TabIndex = 3
-        tips.SetToolTipHeader(gridConturi, "Conturile unității")
-        tips.SetToolTipText(gridConturi, "Scrieți IBAN-ul direct în tabel; banca se deduce din cont la salvare. «✕» șterge rândul. Totul se scrie la «Salvează».")
+        ' tips.SetToolTipHeader(gridConturi, "Conturile unității")
+        ' tips.SetToolTipText(gridConturi, "Scrieți IBAN-ul direct în tabel; banca se deduce din cont la salvare. «✕» șterge rândul. Totul se scrie la «Salvează».")
         '
         ' ntfMesaj
         '

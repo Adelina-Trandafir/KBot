@@ -37,8 +37,8 @@ Partial Class PushFilesView
         tlyBar = New KBotTableLayoutPanel()
         btnScan = New KBotButton()
         btnSend = New KBotButton()
-        chkRestart = New CheckBox()
-        chkIdentical = New CheckBox()
+        chkRestart = New KBotCheckBox()
+        chkIdentical = New KBotCheckBox()
         btnAll = New KBotButton()
         btnNone = New KBotButton()
         lblRoot = New Label()
@@ -573,8 +573,8 @@ Partial Class PushFilesView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents btnScan As KBotButton
     Friend WithEvents btnSend As KBotButton
-    Friend WithEvents chkRestart As CheckBox
-    Friend WithEvents chkIdentical As CheckBox
+    Friend WithEvents chkRestart As KBotCheckBox
+    Friend WithEvents chkIdentical As KBotCheckBox
     Friend WithEvents btnAll As KBotButton
     Friend WithEvents btnNone As KBotButton
     Friend WithEvents lblRoot As Label

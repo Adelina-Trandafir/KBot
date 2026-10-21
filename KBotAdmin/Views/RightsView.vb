@@ -115,13 +115,15 @@ Public Class RightsView
     ' The rights dialogs
     ' ------------------------------------------------------------------
 
-    Private Async Sub BtnRightsAd_Click(k_sender As Object, e As EventArgs) Handles btnRightsAd.Click
+    ''' <summary>The ribbon's «Drepturi ADECHIT».</summary>
+    Public Async Function OpenAdechitAsync() As Task
         Await OpenRightsAsync("AD", "ADECHIT")
-    End Sub
+    End Function
 
-    Private Async Sub BtnRightsVr_Click(k_sender As Object, e As EventArgs) Handles btnRightsVr.Click
+    ''' <summary>The ribbon's «Drepturi VERCON».</summary>
+    Public Async Function OpenVerconAsync() As Task
         Await OpenRightsAsync("VR", "VERCON")
-    End Sub
+    End Function
 
     ''' <summary>Opens the rights dialog of one application for the account in the chosen row.</summary>
     Private Async Function OpenRightsAsync(k_section As String, k_application As String) As Task
@@ -187,8 +189,8 @@ Public Class RightsView
             Select(Function(k_r) Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(k_r.Cod.Substring(3).ToLowerInvariant())).ToList()
     End Function
 
-    ''' <summary>Gives an existing account access to one more database: only the databases it is not linked to are offered.</summary>
-    Private Async Sub BtnGrant_Click(k_sender As Object, e As EventArgs) Handles btnGrant.Click
+    ''' <summary>The ribbon's «Acces la o bază»: gives an existing account access to one more database; only the databases it is not linked to are offered.</summary>
+    Public Async Function GrantDatabaseAsync() As Task
         Try
             Dim k_row As AccountLink = CurrentLink()
             Dim k_un As String = If(k_row IsNot Nothing, k_row.Un, _context.SelectedAccount)
@@ -230,9 +232,10 @@ Public Class RightsView
         Catch ex As Exception
             GlobalErrorLog.Write("RightsView.BtnGrant_Click", ex)
         End Try
-    End Sub
+    End Function
 
-    Private Async Sub BtnAdd_Click(k_sender As Object, e As EventArgs) Handles btnAdd.Click
+    ''' <summary>The ribbon's «Adaugă cont».</summary>
+    Public Async Function AddAccountAsync() As Task
         Try
             If _roles.Roles.Count = 0 Then Await LoadAsync()
             Dim k_dbs As List(Of String) = _context.Databases.Select(Function(k_d) k_d.Db).ToList()
@@ -252,9 +255,10 @@ Public Class RightsView
         Catch ex As Exception
             GlobalErrorLog.Write("RightsView.BtnAdd_Click", ex)
         End Try
-    End Sub
+    End Function
 
-    Private Async Sub BtnRole_Click(k_sender As Object, e As EventArgs) Handles btnRole.Click
+    ''' <summary>The ribbon's «Rol K-BOT».</summary>
+    Public Async Function ChangeRoleAsync() As Task
         Try
             Dim k_link As AccountLink = CurrentLink()
             If k_link Is Nothing Then
@@ -275,7 +279,7 @@ Public Class RightsView
         Catch ex As Exception
             GlobalErrorLog.Write("RightsView.BtnRole_Click", ex)
         End Try
-    End Sub
+    End Function
 
     Private Async Sub BtnRemove_Click(k_sender As Object, e As EventArgs) Handles btnRemove.Click
         Try

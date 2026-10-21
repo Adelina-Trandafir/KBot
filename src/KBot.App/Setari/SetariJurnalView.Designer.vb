@@ -242,8 +242,8 @@ Partial Class SetariJurnalView
         grila.ShrinkColumnsToFit = False
         grila.Size = New Size(944, 261)
         grila.TabIndex = 0
-        tips.SetToolTipHeader(grila, "Intrările jurnalului")
-        tips.SetToolTipText(grila, "Cele mai noi sus. Mesajul întreg al rândului selectat se citește în panoul de dedesubt.")
+        ' tips.SetToolTipHeader(grila, "Intrările jurnalului")
+        ' tips.SetToolTipText(grila, "Cele mai noi sus. Mesajul întreg al rândului selectat se citește în panoul de dedesubt.")
         ' 
         ' txtDetaliu
         ' 

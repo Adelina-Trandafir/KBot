@@ -10,6 +10,7 @@ export function reportPeriod(owner, onChange) {
   let ranges = new Map();
   const combo = owner.own(new ComboTree(host, {
     selectParents: true,
+    minWidth: 0,
     placeholder: 'Se încarcă perioadele…', searchPlaceholder: 'Tastează anul sau luna…',
     onSelect: selection => {
       const range = ranges.get(selection.id);
@@ -27,14 +28,16 @@ export function reportPeriod(owner, onChange) {
       const periods = [...data.periods].sort((first, second) => second.year - first.year);
       const nodes = periods.map(period => {
         const year = period.year;
+        const lastMonth = Math.max(0, Math.min(12, Number(period.last_movement_month ?? period.max?.slice(5, 7) ?? 0)));
         const range = (id, label, start, finish) => {
           ranges.set(id, { start, end: finish, label: `${label} / ${year}` });
           return { id, label, keywords: `${label} ${year} ${start.slice(5, 7)}` };
         };
         return { id: `year:${year}`, label: String(year), selectable: false, children: [
           range(`period:${year}:all`, 'Tot anul', `${year}-01-01`, `${year}-12-31`),
-          ...MONTHS.map((label, month) => range(`period:${year}:${month}`, label,
-            `${year}-${String(month + 1).padStart(2, '0')}-01`, monthEnd(year, month))),
+          ...Array.from({ length: lastMonth }, (_, index) => lastMonth - index - 1)
+            .map(month => range(`period:${year}:${month}`, MONTHS[month],
+              `${year}-${String(month + 1).padStart(2, '0')}-01`, monthEnd(year, month))),
         ] };
       });
       if (data.all_years) {

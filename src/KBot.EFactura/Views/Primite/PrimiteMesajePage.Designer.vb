@@ -60,8 +60,8 @@ Partial Class PrimiteMesajePage
         gridMesaje.ReadOnlyGrid = True
         gridMesaje.Size = New System.Drawing.Size(751, 410)
         gridMesaje.TabIndex = 0
-        tips.SetToolTipHeader(gridMesaje, "Mesaje")
-        tips.SetToolTipText(gridMesaje, "Mesajele schimbate prin sistemul E-Factura despre această factură.")
+        ' tips.SetToolTipHeader(gridMesaje, "Mesaje")
+        ' tips.SetToolTipText(gridMesaje, "Mesajele schimbate prin sistemul E-Factura despre această factură.")
         '
         ' pnlTrimite
         '

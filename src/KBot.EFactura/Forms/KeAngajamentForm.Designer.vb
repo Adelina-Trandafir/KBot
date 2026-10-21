@@ -109,8 +109,8 @@ Partial Class KeAngajamentForm
         gridAng.ReadOnlyGrid = True
         gridAng.Size = New System.Drawing.Size(796, 300)
         gridAng.TabIndex = 3
-        tips.SetToolTipHeader(gridAng, "Angajamentele")
-        tips.SetToolTipText(gridAng, "Alege angajamentul pe care se face recepția facturii. Dublu clic îl alege direct.")
+        ' tips.SetToolTipHeader(gridAng, "Angajamentele")
+        ' tips.SetToolTipText(gridAng, "Alege angajamentul pe care se face recepția facturii. Dublu clic îl alege direct.")
         '
         ' ntfMesaj
         '

@@ -46,8 +46,8 @@ Partial Class PrimiteObservatiiPage
         gridObservatii.ReadOnlyGrid = True
         gridObservatii.Size = New System.Drawing.Size(751, 350)
         gridObservatii.TabIndex = 0
-        tips.SetToolTipHeader(gridObservatii, "Observații")
-        tips.SetToolTipText(gridObservatii, "Observațiile scrise de furnizor în factura electronică. Textul întreg al celei alese se vede dedesubt.")
+        ' tips.SetToolTipHeader(gridObservatii, "Observații")
+        ' tips.SetToolTipText(gridObservatii, "Observațiile scrise de furnizor în factura electronică. Textul întreg al celei alese se vede dedesubt.")
         '
         ' rtbObservatie
         '

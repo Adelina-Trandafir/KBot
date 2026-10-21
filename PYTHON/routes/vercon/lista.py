@@ -12,7 +12,7 @@ gestiune's ZEC, stored directly as DECIMAL(20,4)); the value of the list is the 
 list minus the sum of the bons; a recipe changed later does not rewrite a saved list (the list keeps its own text and
 values). Cancelling a list frees its bons.
 """
-from datetime import datetime
+from utils.clock import bucharest_today, utc_now
 from decimal import Decimal
 
 from . import document_order, lista_bc, numeric, protocol
@@ -78,7 +78,7 @@ def lookups(cursor, ctx, family):
     return {'dishes': [{'id': r['IDFel'], 'label': r['DenFel'] or ''} for r in _all(
         cursor, 'SELECT IDFel, DenFel FROM VC_FeluriMancare WHERE SubunitId=%s AND GestiuneId=%s AND Activ=1 ORDER BY DenFel', (s, g))],
         'explanations': explanations,
-        'today': datetime.now().strftime('%Y-%m-%d')}
+        'today': bucharest_today().isoformat()}
 
 
 def eligible_bons(cursor, ctx, exclude_list=None):
@@ -202,7 +202,7 @@ def create(cursor, repo, ctx, exercise, body, request_key, request_id):
     number = _number(cursor, ctx, (body.get('header') or {}).get('Numar'), errors)
     _fail(errors)
     list_id = repo.insert('VC_LABC', {'NumarLA': number, 'DATALA': parsed['date'], 'ValoareBon': 0, 'DEP': 0, 'ValoareLista': 0})
-    total = _write_meals(repo, ctx, list_id, parsed, datetime.now())
+    total = _write_meals(repo, ctx, list_id, parsed, utc_now())
     _link_bons(repo, list_id, parsed['bons'])
     bons_total = _bons_total(cursor, ctx, list_id)
     repo.update('VC_LABC', {'ValoareBon': bons_total, 'ValoareLista': total, 'DEP': total - bons_total}, {'IdLista': list_id})
@@ -232,7 +232,7 @@ def edit(cursor, repo, ctx, exercise, doc_id, body, request_id):
     _fail(errors)
     for table in [m[0] for m in MEALS.values()] + ['VC_ListaAlimente']:
         repo.delete(table, {'IDLISTA' if table == 'VC_ListaAlimente' else 'IdLista': doc_id})
-    total = _write_meals(repo, ctx, doc_id, parsed, datetime.now())
+    total = _write_meals(repo, ctx, doc_id, parsed, utc_now())
     result = _link_bons(repo, doc_id, parsed['bons'])
     bons_total = _bons_total(cursor, ctx, doc_id)
     if repo.update('VC_LABC', {'NumarLA': number, 'DATALA': parsed['date'], 'ValoareBon': bons_total, 'ValoareLista': total, 'DEP': total - bons_total},

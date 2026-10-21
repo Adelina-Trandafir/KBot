@@ -16,7 +16,7 @@ Pure rules + statements over a ScopedRepository; no connection is opened here.
 import hashlib
 import json
 import re
-from datetime import datetime
+from utils.clock import utc_now
 from decimal import Decimal, InvalidOperation
 
 from . import numeric
@@ -288,7 +288,7 @@ def _fetch(repo, spec, row_id):
 
 
 def _stamped(spec, values):
-    return {**values, 'DataSalvare': datetime.now()} if spec['stamp'] else values
+    return {**values, 'DataSalvare': utc_now()} if spec['stamp'] else values
 
 
 def _has_money(spec):

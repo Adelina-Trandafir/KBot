@@ -23,8 +23,8 @@ Partial Class SyncView
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
         cmbMode = New KBotComboBox()
-        chkView = New CheckBox()
-        chkDestructive = New CheckBox()
+        chkView = New KBotCheckBox()
+        chkDestructive = New KBotCheckBox()
         btnRun = New KBotButton()
         lblTarget = New Label()
         logBox = New KBotLogBox()
@@ -234,8 +234,8 @@ Partial Class SyncView
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents cmbMode As KBotComboBox
-    Friend WithEvents chkView As CheckBox
-    Friend WithEvents chkDestructive As CheckBox
+    Friend WithEvents chkView As KBotCheckBox
+    Friend WithEvents chkDestructive As KBotCheckBox
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents lblTarget As Label
     Friend WithEvents logBox As KBotLogBox

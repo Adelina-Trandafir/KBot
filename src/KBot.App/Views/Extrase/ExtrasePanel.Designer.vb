@@ -356,8 +356,8 @@ Partial Class ExtrasePanel
         gridAntete.ShrinkColumnsToFit = False
         gridAntete.Size = New Size(697, 285)
         gridAntete.TabIndex = 0
-        tips.SetToolTipHeader(gridAntete, "Antetele extraselor")
-        tips.SetToolTipText(gridAntete, "Un rând pentru fiecare cont din extras (FX_Extrase_H), cu soldurile lui." & vbLf & "Rândul selectat își arată operațiunile în grila de dedesubt.")
+        ' tips.SetToolTipHeader(gridAntete, "Antetele extraselor")
+        ' tips.SetToolTipText(gridAntete, "Un rând pentru fiecare cont din extras (FX_Extrase_H), cu soldurile lui." & vbLf & "Rândul selectat își arată operațiunile în grila de dedesubt.")
         ' 
         ' gridZi
         ' 
@@ -612,8 +612,8 @@ Partial Class ExtrasePanel
         gridZi.ShrinkColumnsToFit = False
         gridZi.Size = New Size(697, 285)
         gridZi.TabIndex = 1
-        tips.SetToolTipHeader(gridZi, "Operațiunile zilei")
-        tips.SetToolTipText(gridZi, "Operațiunile din extras cu data băncii în ziua aleasă." & vbLf & "Rândul selectat se vede în întregime dedesubt.")
+        ' tips.SetToolTipHeader(gridZi, "Operațiunile zilei")
+        ' tips.SetToolTipText(gridZi, "Operațiunile din extras cu data băncii în ziua aleasă." & vbLf & "Rândul selectat se vede în întregime dedesubt.")
         gridZi.Visible = False
         ' 
         ' gridOperatiuni
@@ -868,8 +868,8 @@ Partial Class ExtrasePanel
         gridOperatiuni.ShrinkColumnsToFit = False
         gridOperatiuni.Size = New Size(697, 274)
         gridOperatiuni.TabIndex = 0
-        tips.SetToolTipHeader(gridOperatiuni, "Operațiunile antetului")
-        tips.SetToolTipText(gridOperatiuni, "Operațiunile din extras ale rândului selectat sus.")
+        ' tips.SetToolTipHeader(gridOperatiuni, "Operațiunile antetului")
+        ' tips.SetToolTipText(gridOperatiuni, "Operațiunile din extras ale rândului selectat sus.")
         ' 
         ' split
         ' 

@@ -84,7 +84,7 @@ export class ComboTree extends TreeView {
       const minimum = options.minHeight || 220, desired = options.dropdownHeight || 320;
       const down = below >= minimum || below >= above;
       const height = Math.min(Math.max(minimum, desired), down ? below : above);
-      const width = Math.min(Math.max(rect.width, options.minWidth || 300), viewport.width - 2 * margin);
+      const width = Math.min(Math.max(rect.width, options.minWidth ?? 300), viewport.width - 2 * margin);
       Object.assign(this.treeElement.style, { height: `${height}px`, width: `${width}px`,
         left: `${Math.max(margin, Math.min(rect.left, viewport.width - width - margin))}px`,
         top: `${down ? rect.bottom + gap : rect.top - gap - height}px`,

@@ -106,8 +106,8 @@ Partial Class SetariFolder
         gridFoldere.Name = "gridFoldere"
         gridFoldere.Size = New Size(750, 436)
         gridFoldere.TabIndex = 11
-        tips.SetToolTipHeader(gridFoldere, "Folderele în care scrie aplicația")
-        tips.SetToolTipText(gridFoldere, "Doar coloana «Calea configurată» se editează. Apasă «Salvează folderele» după.")
+        ' tips.SetToolTipHeader(gridFoldere, "Folderele în care scrie aplicația")
+        ' tips.SetToolTipText(gridFoldere, "Doar coloana «Calea configurată» se editează. Apasă «Salvează folderele» după.")
         ' 
         ' btnSalveazaFoldere
         ' 

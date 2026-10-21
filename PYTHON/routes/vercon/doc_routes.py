@@ -14,7 +14,7 @@ family = nir | storno | bc | br. A write needs the family's VR right, the CURREN
 revision the page saw; everything it touches is committed in ONE transaction or not at all.
 """
 from contextlib import contextmanager
-from datetime import datetime
+from utils.clock import bucharest_today
 
 from flask import g, request
 
@@ -156,7 +156,7 @@ def register(bp, guard, scoped, open_db):
                 out['warehouse_statement_cache'] = receipt_context.cache_settings()
             if family == 'nir' and not isinstance(out.get('products'), list):
                 out['products'] = receipt_choices.products(cursor, ctx['subunit'], ctx['gestiune'])
-        out.update({'scale': ctx['scale'], 'zec': ctx['zec'], 'year': ctx['an'], 'closed': ctx['closed'], 'today': datetime.now().strftime('%Y-%m-%d')})
+        out.update({'scale': ctx['scale'], 'zec': ctx['zec'], 'year': ctx['an'], 'closed': ctx['closed'], 'today': bucharest_today().isoformat()})
         return out
 
     @bp.get('/api/vercon/doc/nir/tree')
@@ -209,7 +209,7 @@ def register(bp, guard, scoped, open_db):
             ctx, _ = build(cursor, vctx, family, False)
             if family == 'storno':
                 from .storno_stock import sources
-                on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data FCS')
+                on = protocol.to_date(request.args.get('date') or bucharest_today().isoformat(), 'Data FCS')
                 rows = sources(cursor, ctx, on, documents._int(request.args.get('exclude')))
             else:
                 rows = documents.list_documents(cursor, ctx, 'bc')
@@ -228,7 +228,7 @@ def register(bp, guard, scoped, open_db):
             vctx = scoped('read')
             with session(False) as cursor:
                 ctx, _ = build(cursor, vctx, family, False)
-                on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data bonului')
+                on = protocol.to_date(request.args.get('date') or bucharest_today().isoformat(), 'Data bonului')
                 return {'lines': oi.eligible(cursor, ctx, holder, (family, exclude) if exclude else None, on,
                                              documents._int(request.args.get('account')))}
         if family not in ('storno', 'br'):
@@ -240,7 +240,7 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, family, False)
-            on = protocol.to_date(request.args.get('date') or datetime.now().strftime('%Y-%m-%d'), 'Data FCS') if family == 'storno' else None
+            on = protocol.to_date(request.args.get('date') or bucharest_today().isoformat(), 'Data FCS') if family == 'storno' else None
             lines = documents.storno_eligible(cursor, ctx, source, exclude, on) if family == 'storno' else documents.return_eligible(cursor, ctx, source, exclude)
         return {'lines': lines}
 

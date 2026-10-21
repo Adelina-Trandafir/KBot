@@ -200,6 +200,8 @@ Public Class BackupFile
     Public Property Size As Long
     Public Property Modified As String = String.Empty
     Public Property Kind As String = String.Empty
+    ''' <summary>The reason journaled when the dump was made (empty for schema plans and for dumps made before ME02-02).</summary>
+    Public Property Reason As String = String.Empty
 End Class
 
 Public Class BackupsResult
@@ -231,10 +233,24 @@ Public Class OnceHistoryResult
     Public Property Units As Integer
 End Class
 
-Public Class BackupMade
+''' <summary>One database of a dump run (the server's <c>backup</c> answer, ME02-02).</summary>
+Public Class BackupItem
     Public Property Db As String = String.Empty
     Public Property Path As String = String.Empty
+    Public Property Name As String = String.Empty
     Public Property Size As Long
+    ''' <summary>Why this database was not dumped; empty when it was.</summary>
+    Public Property [Error] As String = String.Empty
+    ''' <summary>The dump was made but its journal row was not written; empty when all went well.</summary>
+    Public Property JournalError As String = String.Empty
+End Class
+
+Public Class BackupRun
+    Public Property Reason As String = String.Empty
+    Public Property Results As New List(Of BackupItem)()
+    Public Property Made As Integer
+    Public Property Failed As Integer
+    Public Property TotalSize As Long
 End Class
 
 Public Class DiskInfo

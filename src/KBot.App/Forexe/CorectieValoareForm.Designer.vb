@@ -148,8 +148,8 @@ Partial Class CorectieValoareForm
         grdValori.ShrinkColumnsToFit = False
         grdValori.Size = New Size(606, 204)
         grdValori.TabIndex = 1
-        tips.SetToolTipHeader(grdValori, "Valorile instantaneului")
-        tips.SetToolTipText(grdValori, "Prima linie e totalul recepției la acel moment, apoi câte o linie pe indicator." & vbLf & "Totalul propus e suma liniilor și o urmărește cât timp modificați liniile; dacă îl tastați chiar dumneavoastră, rămâne cum l-ați pus. Se tastează doar în coloana «Valoare corectă». Totalul trebuie să fie egal cu suma liniilor.")
+        ' tips.SetToolTipHeader(grdValori, "Valorile instantaneului")
+        ' tips.SetToolTipText(grdValori, "Prima linie e totalul recepției la acel moment, apoi câte o linie pe indicator." & vbLf & "Totalul propus e suma liniilor și o urmărește cât timp modificați liniile; dacă îl tastați chiar dumneavoastră, rămâne cum l-ați pus. Se tastează doar în coloana «Valoare corectă». Totalul trebuie să fie egal cu suma liniilor.")
         '
         ' lblSume
         '

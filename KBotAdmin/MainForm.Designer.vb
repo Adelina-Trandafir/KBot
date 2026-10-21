@@ -1,4 +1,6 @@
-' The main window (slice ME01): databases tree and accounts tree on the left, the pages on the right.
+' The main window (slice ME01, ribbon since ME01-05): a ribbon on top, ONE tree on the left (the databases and, under each,
+' the accounts linked to it; or the users and, under each, their databases: the bar above the tree chooses), a «select all»
+' tick under it, the pages on the right.
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md); coordinates are in the 96 dpi the
 ' form was authored at and AutoScaleDimensions carries the same stamp.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
@@ -20,20 +22,44 @@ Partial Class MainForm
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem14 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem15 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem5 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem9 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem11 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
-        Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
+        Dim rbComenzi As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbUnice As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbSincronizare As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbDemo As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbDrepturi As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbRightsAd As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbRightsVr As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbAcctAdd As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbAcctGrant As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbAcctRole As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbCereri As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbLogin As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbLoguri As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbAudit As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbVizite As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbServer As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbCopii As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbCopiiLocale As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbPublicare As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbRapoarte As KBotRibbonButton = New KBotRibbonButton()
+        Dim rgRulare As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgSchema As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgPagina As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgAplicatii As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgConturi As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgCereri As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgJurnale As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgServer As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgPeServer As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgPeCalculator As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgFisiere As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgVercon As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rtBaze As KBotRibbonTab = New KBotRibbonTab()
+        Dim rtDrepturi As KBotRibbonTab = New KBotRibbonTab()
+        Dim rtMonitorizare As KBotRibbonTab = New KBotRibbonTab()
+        Dim rtCopii As KBotRibbonTab = New KBotRibbonTab()
+        Dim rtPublicare As KBotRibbonTab = New KBotRibbonTab()
         tips = New KBotToolTip(components)
         notify = New NotifyIcon(components)
         mnuTray = New ContextMenuStrip(components)
@@ -42,18 +68,18 @@ Partial Class MainForm
         mnuTray.SuspendLayout()
         pnlRoot = New Panel()
         capBar = New KBotCaptionBar()
+        ribbon = New KBotRibbon()
         pnlStatus = New Panel()
         busy = New KBotBusyBar()
         lblStatus = New Label()
         tlyMain = New KBotTableLayoutPanel()
+        splMain = New SplitContainer()
         tlyLeft = New KBotTableLayoutPanel()
+        navMode = New KBotNavList()
         treeDb = New AdvancedTreeControl()
-        treeAcc = New AdvancedTreeControl()
-        tlyRight = New KBotTableLayoutPanel()
-        navViews = New KBotNavList()
+        chkAll = New KBotCheckBox()
         pnlViews = New Panel()
         viewCommands = New CommandsView()
-        viewDiff = New DiffView()
         viewSync = New SyncView()
         viewRights = New RightsView()
         viewLogs = New LogsView()
@@ -67,18 +93,23 @@ Partial Class MainForm
         viewLogin = New LoginResetView()
         viewVerconReports = New VerconReportsView()
         viewDemo = New DemoCloneView()
-        CType(navViews, ComponentModel.ISupportInitialize).BeginInit()
+        viewLocalBackup = New LocalBackupView()
+        CType(navMode, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
         tlyMain.SuspendLayout()
+        CType(splMain, ComponentModel.ISupportInitialize).BeginInit()
+        splMain.Panel1.SuspendLayout()
+        splMain.Panel2.SuspendLayout()
+        splMain.SuspendLayout()
         tlyLeft.SuspendLayout()
-        tlyRight.SuspendLayout()
         pnlViews.SuspendLayout()
         SuspendLayout()
         '
-        ' pnlRoot
+        ' pnlRoot (children in reverse dock order: Fill first, then the Top / Bottom ones, the caption bar last = outermost)
         '
         pnlRoot.Controls.Add(tlyMain)
+        pnlRoot.Controls.Add(ribbon)
         pnlRoot.Controls.Add(pnlStatus)
         pnlRoot.Controls.Add(capBar)
         pnlRoot.Dock = DockStyle.Fill
@@ -107,6 +138,171 @@ Partial Class MainForm
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "KBotAdmin"
+        '
+        ' ribbon: the pages and the actions, grouped by what they are for
+        '
+        rbComenzi.Image = AdminIcons.Get("database")
+        rbComenzi.Key = "comenzi"
+        rbComenzi.Text = "Comenzi"
+        rbComenzi.ToolTipHeader = "Comenzi"
+        rbComenzi.ToolTipText = "Interogări sigure, hotărâte pe server, pe baza aleasă sau pe toate."
+        rbUnice.Image = AdminIcons.Get("once")
+        rbUnice.Key = "unice"
+        rbUnice.Text = "Interogări unice"
+        rbUnice.ToolTipHeader = "Interogări unice"
+        rbUnice.ToolTipText = "Rulează o dată un text SQL pe AVACONT_SURSA și pe bazele bifate, cu istoricul a ce a rulat."
+        rgRulare.Buttons.Add(rbComenzi)
+        rgRulare.Buttons.Add(rbUnice)
+        rgRulare.Text = "Rulare"
+        rbSincronizare.Image = AdminIcons.Get("sync")
+        rbSincronizare.Key = "sincronizare"
+        rbSincronizare.Text = "Sincronizare"
+        rbSincronizare.ToolTipHeader = "Sincronizare schemă"
+        rbSincronizare.ToolTipText = "Aduce schema bazelor la schema din AVACONT_SURSA. Previzualizarea e implicită; execuția cere confirmare."
+        rbDemo.Image = AdminIcons.Get("clone")
+        rbDemo.Key = "demo"
+        rbDemo.Text = "Clonare DEMO"
+        rbDemo.ToolTipHeader = "Clonare DEMO"
+        rbDemo.ToolTipText = "Golește 000_DEMO și copiază în el o altă bază, păstrând codul fiscal și DC-ul lui 000_DEMO."
+        rgSchema.Buttons.Add(rbSincronizare)
+        rgSchema.Buttons.Add(rbDemo)
+        rgSchema.Text = "Schemă și date"
+        rtBaze.Groups.Add(rgRulare)
+        rtBaze.Groups.Add(rgSchema)
+        rtBaze.Text = "Baze de date"
+        rbDrepturi.Image = AdminIcons.Get("rights")
+        rbDrepturi.Key = "drepturi"
+        rbDrepturi.Text = "Conturi și drepturi"
+        rbDrepturi.ToolTipHeader = "Conturi și drepturi"
+        rbDrepturi.ToolTipText = "Lista conturilor-în-baze și rolul K-BOT al fiecăruia."
+        rgPagina.Buttons.Add(rbDrepturi)
+        rgPagina.Text = "Pagina"
+        rbRightsAd.Image = AdminIcons.Get("rights_ad")
+        rbRightsAd.Key = "rights_ad"
+        rbRightsAd.Text = "Drepturi ADECHIT"
+        rbRightsAd.ToolTipHeader = "Drepturi ADECHIT"
+        rbRightsAd.ToolTipText = "Deschide fereastra cu drepturile ADECHIT ale contului din rândul ales."
+        rbRightsVr.Image = AdminIcons.Get("rights_vr")
+        rbRightsVr.Key = "rights_vr"
+        rbRightsVr.Text = "Drepturi VERCON"
+        rbRightsVr.ToolTipHeader = "Drepturi VERCON"
+        rbRightsVr.ToolTipText = "Deschide fereastra cu drepturile VERCON ale contului din rândul ales."
+        rgAplicatii.Buttons.Add(rbRightsAd)
+        rgAplicatii.Buttons.Add(rbRightsVr)
+        rgAplicatii.Text = "Drepturi pe aplicații"
+        rbAcctAdd.Image = AdminIcons.Get("account_add")
+        rbAcctAdd.Key = "acct_add"
+        rbAcctAdd.Text = "Adaugă cont"
+        rbAcctAdd.ToolTipHeader = "Adaugă cont"
+        rbAcctAdd.ToolTipText = "Leagă un cont de o bază, cu un rol K-BOT."
+        rbAcctGrant.Image = AdminIcons.Get("account_grant")
+        rbAcctGrant.Key = "acct_grant"
+        rbAcctGrant.Text = "Acces la o bază"
+        rbAcctGrant.ToolTipHeader = "Dă acces la o bază"
+        rbAcctGrant.ToolTipText = "Dă unui cont existent acces la încă o bază; se oferă doar bazele la care nu are deja acces."
+        rbAcctRole.Image = AdminIcons.Get("account_role")
+        rbAcctRole.Key = "acct_role"
+        rbAcctRole.Text = "Rol K-BOT"
+        rbAcctRole.ToolTipHeader = "Rol K-BOT"
+        rbAcctRole.ToolTipText = "Schimbă rolul K-BOT al contului din rândul ales, în baza lui."
+        rgConturi.Buttons.Add(rbAcctAdd)
+        rgConturi.Buttons.Add(rbAcctGrant)
+        rgConturi.Buttons.Add(rbAcctRole)
+        rgConturi.Text = "Conturi"
+        rbCereri.Image = AdminIcons.Get("requests")
+        rbCereri.Key = "cereri"
+        rbCereri.Text = "Cereri"
+        rbCereri.ToolTipHeader = "Cereri de conturi"
+        rbCereri.ToolTipText = "Cereri de conturi noi, de aprobat sau respins."
+        rbLogin.Image = AdminIcons.Get("login")
+        rbLogin.Key = "login"
+        rbLogin.Text = "Resetare Login"
+        rbLogin.ToolTipHeader = "Resetare Login"
+        rbLogin.ToolTipText = "Șterge încercările de login eșuate ale utilizatorilor și cere schimbarea parolei."
+        rgCereri.Buttons.Add(rbCereri)
+        rgCereri.Buttons.Add(rbLogin)
+        rgCereri.Text = "Conturi noi și login"
+        rtDrepturi.Groups.Add(rgPagina)
+        rtDrepturi.Groups.Add(rgAplicatii)
+        rtDrepturi.Groups.Add(rgConturi)
+        rtDrepturi.Groups.Add(rgCereri)
+        rtDrepturi.Text = "Drepturi"
+        rbLoguri.Image = AdminIcons.Get("logs")
+        rbLoguri.Key = "loguri"
+        rbLoguri.Text = "Loguri"
+        rbLoguri.ToolTipHeader = "Loguri"
+        rbLoguri.ToolTipText = "Jurnalele serverului, colorate: api, vba, forexe, asociere, schema_sync, gunicorn, ajutor."
+        rbAudit.Image = AdminIcons.Get("journal")
+        rbAudit.Key = "audit"
+        rbAudit.Text = "Jurnal"
+        rbAudit.ToolTipHeader = "Jurnal"
+        rbAudit.ToolTipText = "Ce s-a făcut în conturi: autentificări, eșecuri, acțiunile KBotAdmin."
+        rbVizite.Image = AdminIcons.Get("visits")
+        rbVizite.Key = "vizite"
+        rbVizite.Text = "Vizite"
+        rbVizite.ToolTipHeader = "Vizite"
+        rbVizite.ToolTipText = "Cine a deschis pagina de prezentare."
+        rgJurnale.Buttons.Add(rbLoguri)
+        rgJurnale.Buttons.Add(rbAudit)
+        rgJurnale.Buttons.Add(rbVizite)
+        rgJurnale.Text = "Jurnale"
+        rbServer.Image = AdminIcons.Get("server")
+        rbServer.Key = "server"
+        rbServer.Text = "Server"
+        rbServer.ToolTipHeader = "Server"
+        rbServer.ToolTipText = "Disc, memorie, certificat, servicii."
+        rgServer.Buttons.Add(rbServer)
+        rgServer.Text = "Server"
+        rtMonitorizare.Groups.Add(rgJurnale)
+        rtMonitorizare.Groups.Add(rgServer)
+        rtMonitorizare.Text = "Monitorizare"
+        rbCopii.Image = AdminIcons.Get("backup_server")
+        rbCopii.Key = "copii"
+        rbCopii.Text = "Copii server"
+        rbCopii.ToolTipHeader = "Copii server"
+        rbCopii.ToolTipText = "Copiile de siguranță ale bazelor, făcute și păstrate pe server."
+        rgPeServer.Buttons.Add(rbCopii)
+        rgPeServer.Text = "Pe server"
+        rbCopiiLocale.Image = AdminIcons.Get("backup_local")
+        rbCopiiLocale.Key = "copii-locale"
+        rbCopiiLocale.Text = "Copii locale"
+        rbCopiiLocale.ToolTipHeader = "Copii locale"
+        rbCopiiLocale.ToolTipText = "Copii criptate ale bazelor de unitate, păstrate pe acest calculator, cu istoric."
+        rgPeCalculator.Buttons.Add(rbCopiiLocale)
+        rgPeCalculator.Text = "Pe acest calculator"
+        rtCopii.Groups.Add(rgPeServer)
+        rtCopii.Groups.Add(rgPeCalculator)
+        rtCopii.Text = "Copii de siguranță"
+        rbPublicare.Image = AdminIcons.Get("publish")
+        rbPublicare.Key = "publicare"
+        rbPublicare.Text = "Publicare"
+        rbPublicare.ToolTipHeader = "Publicare"
+        rbPublicare.ToolTipText = "Trimite fișierele din PYTHON pe server și repornește serviciul."
+        rgFisiere.Buttons.Add(rbPublicare)
+        rgFisiere.Text = "Fișiere"
+        rbRapoarte.Image = AdminIcons.Get("reports")
+        rbRapoarte.Key = "vercon-reports"
+        rbRapoarte.Text = "Rapoarte VERCON"
+        rbRapoarte.ToolTipHeader = "Rapoarte VERCON"
+        rbRapoarte.ToolTipText = "SQL-ul, antetul și machetele rapoartelor VERCON ale unei unități."
+        rgVercon.Buttons.Add(rbRapoarte)
+        rgVercon.Text = "VERCON"
+        rtPublicare.Groups.Add(rgFisiere)
+        rtPublicare.Groups.Add(rgVercon)
+        rtPublicare.Text = "Publicare"
+        ribbon.Dock = DockStyle.Top
+        ribbon.Location = New Point(0, 44)
+        ribbon.Margin = New Padding(0)
+        ribbon.Name = "ribbon"
+        ribbon.SelectedTabIndex = 0
+        ribbon.Size = New Size(1278, 120)
+        ribbon.TabIndex = 3
+        ribbon.Tabs.Add(rtBaze)
+        ribbon.Tabs.Add(rtDrepturi)
+        ribbon.Tabs.Add(rtMonitorizare)
+        ribbon.Tabs.Add(rtCopii)
+        ribbon.Tabs.Add(rtPublicare)
+        ribbon.Tooltip = tips
         '
         ' pnlStatus
         '
@@ -149,168 +345,110 @@ Partial Class MainForm
         ' tlyMain
         '
         tlyMain.AutoFitToTheme = False
-        tlyMain.ColumnCount = 2
-        tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 300F))
+        tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyMain.Controls.Add(tlyLeft, 0, 0)
-        tlyMain.Controls.Add(tlyRight, 1, 0)
+        tlyMain.Controls.Add(splMain, 0, 0)
         tlyMain.Dock = DockStyle.Fill
-        tlyMain.Location = New Point(0, 44)
+        tlyMain.Location = New Point(0, 164)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(8, 8, 8, 4)
         tlyMain.RowCount = 1
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.Size = New Size(1278, 644)
+        tlyMain.Size = New Size(1278, 524)
         tlyMain.TabIndex = 1
         '
-        ' tlyLeft
+        ' splMain: the operator drags the bar between the tree and the pages to resize them
+        '
+        splMain.Dock = DockStyle.Fill
+        splMain.FixedPanel = FixedPanel.Panel1
+        splMain.Location = New Point(8, 8)
+        splMain.Margin = New Padding(0)
+        splMain.Name = "splMain"
+        splMain.Panel1.Controls.Add(tlyLeft)
+        splMain.Panel1MinSize = 180
+        splMain.Panel2.Controls.Add(pnlViews)
+        splMain.Panel2MinSize = 400
+        splMain.Size = New Size(1262, 512)
+        splMain.SplitterDistance = 300
+        splMain.SplitterWidth = 8
+        splMain.TabIndex = 0
+        tips.SetToolTipHeader(splMain, "Lățimea arborelui")
+        tips.SetToolTipText(splMain, "Trage de bara dintre arbore și pagini ca să le lărgești sau să le îngustezi.")
+        '
+        ' tlyLeft: the mode bar glued on top of the tree, the «select all» tick under it
         '
         tlyLeft.AutoFitToTheme = False
         tlyLeft.ColumnCount = 1
         tlyLeft.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyLeft.Controls.Add(treeDb, 0, 0)
-        tlyLeft.Controls.Add(treeAcc, 0, 1)
+        tlyLeft.Controls.Add(navMode, 0, 0)
+        tlyLeft.Controls.Add(treeDb, 0, 1)
+        tlyLeft.Controls.Add(chkAll, 0, 2)
         tlyLeft.Dock = DockStyle.Fill
-        tlyLeft.Location = New Point(8, 8)
-        tlyLeft.Margin = New Padding(0, 0, 8, 0)
+        tlyLeft.Location = New Point(0, 0)
+        tlyLeft.Margin = New Padding(0)
         tlyLeft.Name = "tlyLeft"
-        tlyLeft.RowCount = 2
-        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Percent, 58F))
-        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Percent, 42F))
-        tlyLeft.Size = New Size(292, 632)
+        tlyLeft.RowCount = 3
+        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
+        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
+        tlyLeft.Size = New Size(292, 512)
         tlyLeft.TabIndex = 0
         '
-        ' treeDb
+        ' navMode: what the tree shows first: the databases (left) or the users (right)
         '
+        KBotNavItem1.AutoSize = True
+        KBotNavItem1.Key = "baze"
+        KBotNavItem1.Text = "Baze de date"
+        KBotNavItem2.Align = KBotNavAlign.Far
+        KBotNavItem2.AutoSize = True
+        KBotNavItem2.Key = "utilizatori"
+        KBotNavItem2.Text = "Utilizatori"
+        navMode.Dock = DockStyle.Fill
+        navMode.IconSize = 0
+        navMode.Items.Add(KBotNavItem1)
+        navMode.Items.Add(KBotNavItem2)
+        navMode.Location = New Point(0, 0)
+        navMode.Margin = New Padding(0)
+        navMode.Name = "navMode"
+        navMode.Orientation = KBotNavOrientation.Horizontal
+        navMode.SelectedKey = "baze"
+        navMode.Size = New Size(292, 36)
+        navMode.TabIndex = 0
+        tips.SetToolTipHeader(navMode, "Ce arată arborele")
+        tips.SetToolTipText(navMode, "Baze date: bazele primele, conturile lor dedesubt." & vbLf & "Utilizatori: conturile primele, bazele lor dedesubt.")
+        '
+        ' treeDb: databases and accounts, with a tick on every row (no title above it)
+        '
+        treeDb.CheckBoxes = True
         treeDb.Dock = DockStyle.Fill
         treeDb.FooterVisible = False
-        treeDb.HeaderCaption = " BAZE DE DATE"
-        treeDb.HeaderHeight = 28
-        treeDb.HeaderVisible = True
+        treeDb.HeaderVisible = False
         treeDb.ItemHeight = 22
-        treeDb.Location = New Point(0, 0)
-        treeDb.Margin = New Padding(0, 0, 0, 6)
+        treeDb.Location = New Point(0, 36)
+        treeDb.Margin = New Padding(0)
         treeDb.Name = "treeDb"
         treeDb.RootExpander = False
-        treeDb.Size = New Size(292, 360)
-        treeDb.TabIndex = 0
-        tips.SetToolTipHeader(treeDb, "Bazele de date")
-        tips.SetToolTipText(treeDb, "Alege baza pe care lucrează paginile din dreapta." & vbLf & "<TOATE BAZELE> = toate bazele de unitate (fără AVACONT_SURSA și AVACONT_COMUN).")
+        treeDb.Size = New Size(292, 446)
+        treeDb.TabIndex = 1
+        tips.SetToolTipHeader(treeDb, "Bazele de date și conturile lor")
+        tips.SetToolTipText(treeDb, "Alege baza pe care lucrează paginile din dreapta." & vbLf & "<TOATE BAZELE> = toate bazele de unitate (fără AVACONT_SURSA și AVACONT_COMUN)." & vbLf & "Un cont legat de mai multe baze apare sub fiecare." & vbLf & "Un clic pe un cont alege baza lui și contul, pentru pagina «Conturi și drepturi»." & vbLf & "Căsuțele bifează rândurile; bifa unui rând cu copii bifează și copiii lui.")
         '
-        ' treeAcc
+        ' chkAll: ticks (or unticks) every row of the tree
         '
-        treeAcc.Dock = DockStyle.Fill
-        treeAcc.FooterVisible = False
-        treeAcc.HeaderCaption = " CONTURI"
-        treeAcc.HeaderHeight = 28
-        treeAcc.HeaderVisible = True
-        treeAcc.ItemHeight = 22
-        treeAcc.Location = New Point(0, 366)
-        treeAcc.Margin = New Padding(0)
-        treeAcc.Name = "treeAcc"
-        treeAcc.RootExpander = False
-        treeAcc.Size = New Size(292, 266)
-        treeAcc.TabIndex = 1
-        tips.SetToolTipHeader(treeAcc, "Conturile bazei")
-        tips.SetToolTipText(treeAcc, "Conturile legate de baza aleasă, cu rolul lor K-BOT." & vbLf & "Un clic pe un cont îl alege în pagina «Drepturi».")
-        '
-        ' tlyRight
-        '
-        tlyRight.AutoFitToTheme = False
-        tlyRight.ColumnCount = 1
-        tlyRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyRight.Controls.Add(navViews, 0, 0)
-        tlyRight.Controls.Add(pnlViews, 0, 1)
-        tlyRight.Dock = DockStyle.Fill
-        tlyRight.Location = New Point(308, 8)
-        tlyRight.Margin = New Padding(0)
-        tlyRight.Name = "tlyRight"
-        tlyRight.RowCount = 2
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyRight.Size = New Size(962, 632)
-        tlyRight.TabIndex = 1
-        '
-        ' navViews
-        '
-        tips.SetToolTipHeader(navViews, "Paginile programului")
-        tips.SetToolTipText(navViews, "Comenzi: interogări sigure pe baza aleasă sau pe toate." & vbLf & "Diferență schemă: ce diferă de AVACONT_SURSA (doar citire)." & vbLf & "Sincronizare: aduce schema bazelor la schema sursei." & vbLf & "Drepturi: ce poate face fiecare cont în ADECHIT." & vbLf & "Loguri: jurnalele serverului, colorate." & vbLf & "Jurnal: ce s-a făcut în conturi." & vbLf & "Vizite: cine a deschis pagina de prezentare." & vbLf & "Server: disc, memorie, certificat, servicii." & vbLf & "Copii: copii de siguranță ale bazelor." & vbLf & "Cereri: cereri de conturi noi, de aprobat sau respins." & vbLf & "Interogări unice: rulează o dată un text SQL pe toate bazele." & vbLf & "Resetare Login: șterge încercările de login eșuate ale utilizatorilor." & vbLf & "Publicare: trimite fișierele din PYTHON pe server și repornește serviciul." & vbLf & "Clonare DEMO: golește 000_DEMO și copiază în el o altă bază, păstrând codul fiscal și DC-ul lui 000_DEMO.")
-        KBotNavItem1.AutoSize = True
-        KBotNavItem1.Key = "comenzi"
-        KBotNavItem1.Text = "Comenzi"
-        KBotNavItem2.AutoSize = True
-        KBotNavItem2.Key = "diferenta"
-        KBotNavItem2.Text = "Diferență"
-        KBotNavItem3.AutoSize = True
-        KBotNavItem3.Key = "sincronizare"
-        KBotNavItem3.Text = "Sincronizare"
-        KBotNavItem4.AutoSize = True
-        KBotNavItem4.Key = "drepturi"
-        KBotNavItem4.Text = "Drepturi"
-        KBotNavItem5.AutoSize = True
-        KBotNavItem5.Key = "loguri"
-        KBotNavItem5.Text = "Loguri"
-        KBotNavItem6.AutoSize = True
-        KBotNavItem6.Key = "audit"
-        KBotNavItem6.Text = "Jurnal"
-        KBotNavItem7.AutoSize = True
-        KBotNavItem7.Key = "vizite"
-        KBotNavItem7.Text = "Vizite"
-        KBotNavItem8.AutoSize = True
-        KBotNavItem8.Key = "server"
-        KBotNavItem8.Text = "Server"
-        KBotNavItem9.AutoSize = True
-        KBotNavItem9.Key = "copii"
-        KBotNavItem9.Text = "Copii"
-        KBotNavItem10.AutoSize = True
-        KBotNavItem10.Key = "cereri"
-        KBotNavItem10.Text = "Cereri"
-        KBotNavItem11.AutoSize = True
-        KBotNavItem11.Key = "unice"
-        KBotNavItem11.Text = "Interogări unice"
-        KBotNavItem12.AutoSize = True
-        KBotNavItem12.Key = "login"
-        KBotNavItem12.Text = "Resetare Login"
-        KBotNavItem13.Align = KBotNavAlign.Far
-        KBotNavItem13.AutoSize = True
-        KBotNavItem13.Key = "publicare"
-        KBotNavItem13.Text = "Publicare"
-        navViews.Dock = DockStyle.Fill
-        navViews.IconSize = 0
-        navViews.Items.Add(KBotNavItem1)
-        navViews.Items.Add(KBotNavItem2)
-        navViews.Items.Add(KBotNavItem3)
-        navViews.Items.Add(KBotNavItem4)
-        navViews.Items.Add(KBotNavItem5)
-        navViews.Items.Add(KBotNavItem6)
-        navViews.Items.Add(KBotNavItem7)
-        navViews.Items.Add(KBotNavItem8)
-        navViews.Items.Add(KBotNavItem9)
-        navViews.Items.Add(KBotNavItem10)
-        navViews.Items.Add(KBotNavItem11)
-        navViews.Items.Add(KBotNavItem12)
-        navViews.Items.Add(KBotNavItem13)
-        KBotNavItem14.Key = "vercon-reports"
-        KBotNavItem14.Text = "Rapoarte VERCON"
-        KBotNavItem14.AutoSize = True
-        navViews.Items.Add(KBotNavItem14)
-        KBotNavItem15.Key = "demo"
-        KBotNavItem15.Text = "Clonare DEMO"
-        KBotNavItem15.AutoSize = True
-        navViews.Items.Add(KBotNavItem15)
-        navViews.Location = New Point(0, 0)
-        navViews.Margin = New Padding(0)
-        navViews.Name = "navViews"
-        navViews.Orientation = KBotNavOrientation.Horizontal
-        navViews.SelectedKey = Nothing
-        navViews.Size = New Size(962, 40)
-        navViews.TabIndex = 0
+        chkAll.Dock = DockStyle.Fill
+        chkAll.Location = New Point(0, 482)
+        chkAll.Margin = New Padding(0)
+        chkAll.Name = "chkAll"
+        chkAll.Size = New Size(292, 30)
+        chkAll.TabIndex = 2
+        chkAll.Text = "Selectează tot"
+        tips.SetToolTipHeader(chkAll, "Selectează tot")
+        tips.SetToolTipText(chkAll, "Bifează toate rândurile arborelui; bifat din nou, le debifează.")
         '
         ' pnlViews
         '
         pnlViews.Controls.Add(viewCommands)
-        pnlViews.Controls.Add(viewDiff)
         pnlViews.Controls.Add(viewSync)
         pnlViews.Controls.Add(viewRights)
         pnlViews.Controls.Add(viewLogs)
@@ -324,15 +462,18 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewLogin)
         pnlViews.Controls.Add(viewVerconReports)
         pnlViews.Controls.Add(viewDemo)
+        pnlViews.Controls.Add(viewLocalBackup)
+        viewLocalBackup.Dock = DockStyle.Fill
+        viewLocalBackup.Visible = False
         viewDemo.Dock = DockStyle.Fill
         viewDemo.Visible = False
         viewVerconReports.Dock = DockStyle.Fill
         viewVerconReports.Visible = False
         pnlViews.Dock = DockStyle.Fill
-        pnlViews.Location = New Point(0, 40)
+        pnlViews.Location = New Point(0, 0)
         pnlViews.Margin = New Padding(0)
         pnlViews.Name = "pnlViews"
-        pnlViews.Size = New Size(962, 592)
+        pnlViews.Size = New Size(962, 512)
         pnlViews.TabIndex = 1
         pnlViews.Tag = "Card"
         '
@@ -342,19 +483,9 @@ Partial Class MainForm
         viewCommands.Location = New Point(0, 0)
         viewCommands.Margin = New Padding(0)
         viewCommands.Name = "viewCommands"
-        viewCommands.Size = New Size(962, 592)
+        viewCommands.Size = New Size(962, 512)
         viewCommands.TabIndex = 0
         viewCommands.Visible = False
-        '
-        ' viewDiff
-        '
-        viewDiff.Dock = DockStyle.Fill
-        viewDiff.Location = New Point(0, 0)
-        viewDiff.Margin = New Padding(0)
-        viewDiff.Name = "viewDiff"
-        viewDiff.Size = New Size(962, 592)
-        viewDiff.TabIndex = 1
-        viewDiff.Visible = False
         '
         ' viewSync
         '
@@ -362,7 +493,7 @@ Partial Class MainForm
         viewSync.Location = New Point(0, 0)
         viewSync.Margin = New Padding(0)
         viewSync.Name = "viewSync"
-        viewSync.Size = New Size(962, 592)
+        viewSync.Size = New Size(962, 512)
         viewSync.TabIndex = 2
         viewSync.Visible = False
         '
@@ -372,7 +503,7 @@ Partial Class MainForm
         viewRights.Location = New Point(0, 0)
         viewRights.Margin = New Padding(0)
         viewRights.Name = "viewRights"
-        viewRights.Size = New Size(962, 592)
+        viewRights.Size = New Size(962, 512)
         viewRights.TabIndex = 3
         viewRights.Visible = False
         '
@@ -382,7 +513,7 @@ Partial Class MainForm
         viewLogs.Location = New Point(0, 0)
         viewLogs.Margin = New Padding(0)
         viewLogs.Name = "viewLogs"
-        viewLogs.Size = New Size(962, 592)
+        viewLogs.Size = New Size(962, 512)
         viewLogs.TabIndex = 4
         viewLogs.Visible = False
         '
@@ -392,7 +523,7 @@ Partial Class MainForm
         viewAudit.Location = New Point(0, 0)
         viewAudit.Margin = New Padding(0)
         viewAudit.Name = "viewAudit"
-        viewAudit.Size = New Size(962, 592)
+        viewAudit.Size = New Size(962, 512)
         viewAudit.TabIndex = 5
         viewAudit.Visible = False
         '
@@ -402,7 +533,7 @@ Partial Class MainForm
         viewVisits.Location = New Point(0, 0)
         viewVisits.Margin = New Padding(0)
         viewVisits.Name = "viewVisits"
-        viewVisits.Size = New Size(962, 592)
+        viewVisits.Size = New Size(962, 512)
         viewVisits.TabIndex = 6
         viewVisits.Visible = False
         '
@@ -412,7 +543,7 @@ Partial Class MainForm
         viewServer.Location = New Point(0, 0)
         viewServer.Margin = New Padding(0)
         viewServer.Name = "viewServer"
-        viewServer.Size = New Size(962, 592)
+        viewServer.Size = New Size(962, 512)
         viewServer.TabIndex = 7
         viewServer.Visible = False
         '
@@ -422,7 +553,7 @@ Partial Class MainForm
         viewBackups.Location = New Point(0, 0)
         viewBackups.Margin = New Padding(0)
         viewBackups.Name = "viewBackups"
-        viewBackups.Size = New Size(962, 592)
+        viewBackups.Size = New Size(962, 512)
         viewBackups.TabIndex = 8
         viewBackups.Visible = False
         '
@@ -432,7 +563,7 @@ Partial Class MainForm
         viewRequests.Location = New Point(0, 0)
         viewRequests.Margin = New Padding(0)
         viewRequests.Name = "viewRequests"
-        viewRequests.Size = New Size(962, 592)
+        viewRequests.Size = New Size(962, 512)
         viewRequests.TabIndex = 9
         viewRequests.Visible = False
         '
@@ -442,7 +573,7 @@ Partial Class MainForm
         viewPublish.Location = New Point(0, 0)
         viewPublish.Margin = New Padding(0)
         viewPublish.Name = "viewPublish"
-        viewPublish.Size = New Size(962, 592)
+        viewPublish.Size = New Size(962, 512)
         viewPublish.TabIndex = 10
         viewPublish.Visible = False
         '
@@ -452,7 +583,7 @@ Partial Class MainForm
         viewOnce.Location = New Point(0, 0)
         viewOnce.Margin = New Padding(0)
         viewOnce.Name = "viewOnce"
-        viewOnce.Size = New Size(962, 592)
+        viewOnce.Size = New Size(962, 512)
         viewOnce.TabIndex = 11
         viewOnce.Visible = False
         '
@@ -462,7 +593,7 @@ Partial Class MainForm
         viewLogin.Location = New Point(0, 0)
         viewLogin.Margin = New Padding(0)
         viewLogin.Name = "viewLogin"
-        viewLogin.Size = New Size(962, 592)
+        viewLogin.Size = New Size(962, 512)
         viewLogin.TabIndex = 12
         viewLogin.Visible = False
         '
@@ -501,12 +632,16 @@ Partial Class MainForm
         Padding = New Padding(1, 2, 1, 2)
         StartPosition = FormStartPosition.CenterScreen
         Text = "KBotAdmin"
-        CType(navViews, ComponentModel.ISupportInitialize).EndInit()
+        WindowState = FormWindowState.Maximized
+        CType(navMode, ComponentModel.ISupportInitialize).EndInit()
         pnlRoot.ResumeLayout(False)
         pnlStatus.ResumeLayout(False)
         tlyMain.ResumeLayout(False)
+        splMain.Panel1.ResumeLayout(False)
+        splMain.Panel2.ResumeLayout(False)
+        CType(splMain, ComponentModel.ISupportInitialize).EndInit()
+        splMain.ResumeLayout(False)
         tlyLeft.ResumeLayout(False)
-        tlyRight.ResumeLayout(False)
         pnlViews.ResumeLayout(False)
         mnuTray.ResumeLayout(False)
         ResumeLayout(False)
@@ -515,18 +650,18 @@ Partial Class MainForm
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents pnlRoot As Panel
     Friend WithEvents capBar As KBotCaptionBar
+    Friend WithEvents ribbon As KBotRibbon
     Friend WithEvents pnlStatus As Panel
     Friend WithEvents busy As KBotBusyBar
     Friend WithEvents lblStatus As Label
     Friend WithEvents tlyMain As KBotTableLayoutPanel
+    Friend WithEvents splMain As SplitContainer
     Friend WithEvents tlyLeft As KBotTableLayoutPanel
+    Friend WithEvents navMode As KBotNavList
     Friend WithEvents treeDb As AdvancedTreeControl
-    Friend WithEvents treeAcc As AdvancedTreeControl
-    Friend WithEvents tlyRight As KBotTableLayoutPanel
-    Friend WithEvents navViews As KBotNavList
+    Friend WithEvents chkAll As KBotCheckBox
     Friend WithEvents pnlViews As Panel
     Friend WithEvents viewCommands As CommandsView
-    Friend WithEvents viewDiff As DiffView
     Friend WithEvents viewSync As SyncView
     Friend WithEvents viewRights As RightsView
     Friend WithEvents viewLogs As LogsView
@@ -544,4 +679,5 @@ Partial Class MainForm
     Friend WithEvents viewLogin As LoginResetView
     Friend WithEvents viewVerconReports As VerconReportsView
     Friend WithEvents viewDemo As DemoCloneView
+    Friend WithEvents viewLocalBackup As LocalBackupView
 End Class

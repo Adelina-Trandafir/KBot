@@ -5,6 +5,7 @@ import { mountSelection, selectionHeader, selectionFilters, selectionError } fro
 import { paintReportBlock, paintReportLetterhead, reportNodes } from './report-result.js';
 import { format as formatField } from './fields.js';
 import { reportPeriod } from './report-period.js';
+import { reportPeriodAction } from './report-period-action.js';
 
 export function mountReports(host, { api, sel }) {
   const owner = scope(), selectionOwner = scope(), tablesOwner = scope();
@@ -13,7 +14,7 @@ export function mountReports(host, { api, sel }) {
   let dateOnly = false;
   const state = { start: `${year}-01-01`, end: `${year}-12-31`, name: null, label: '', spec: null, report: null, category: null,
     checked: [], documents: [], documentMode: false, selectionKind: '', model: null, seq: 0, lookupSeq: 0, destroyed: false, loading: false, selectionLoading: false, busy: false };
-  let selectionTree, errorBox;
+  let selectionTree, errorBox, periodCatalog;
   owner.own(() => errorBox?.close());
   const root = el('section', { className: 'vc-reports' });
   const periodTitle = el('h4', { textContent: 'Selectează perioada' });
@@ -202,6 +203,7 @@ export function mountReports(host, { api, sel }) {
           return { data, filename: filename + '.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
         };
         return { data, title: model.title, filename: filename + '.' + format, exportExcel,
+          toolbarActions: [reportPeriodAction({ api, name: state.name, params: query(), catalog: periodCatalog, dateOnly, isCurrent: current })],
           downloadOnly: format === 'xlsx', mime: format === 'xlsx'
             ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf' };
       }, owner, current, details);
@@ -215,6 +217,7 @@ export function mountReports(host, { api, sel }) {
     try {
       const data = await api(`/api/vercon/reports/catalog?${new URLSearchParams(sel())}`);
       if (state.destroyed) return;
+      periodCatalog = data;
       periods.configure(data, begin, end);
       const reports = data.reports;
       const nodes = reportNodes(reports), categories = new Map();

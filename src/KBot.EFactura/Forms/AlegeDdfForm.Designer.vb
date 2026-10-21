@@ -99,8 +99,8 @@ Partial Class AlegeDdfForm
         gridDdf.ReadOnlyGrid = True
         gridDdf.Size = New System.Drawing.Size(796, 300)
         gridDdf.TabIndex = 3
-        tips.SetToolTipHeader(gridDdf, "Fundamentările")
-        tips.SetToolTipText(gridDdf, "Alege fundamentarea de care se leagă factura. Dublu clic o alege direct.")
+        ' tips.SetToolTipHeader(gridDdf, "Fundamentările")
+        ' tips.SetToolTipText(gridDdf, "Alege fundamentarea de care se leagă factura. Dublu clic o alege direct.")
         '
         ' ntfMesaj
         '

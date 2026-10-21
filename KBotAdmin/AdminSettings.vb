@@ -30,6 +30,17 @@ Public Class AdminSettings
     ''' <summary>After an upload the remote time is set to the local one, so a new scan sees the file as identical.</summary>
     Public Property PreserveMTime As Boolean = True
 
+    ''' <summary>Folder of the local encrypted backup (slice ME02). Empty = not chosen yet.</summary>
+    Public Property BackupRoot As String = String.Empty
+
+    ''' <summary>How many daily / weekly / monthly copies of each database the retention keeps (ME02-08).</summary>
+    Public Property BackupKeepDaily As Integer = 14
+    Public Property BackupKeepWeekly As Integer = 8
+    Public Property BackupKeepMonthly As Integer = 12
+
+    ''' <summary>A periodic run is a full check (mode full) when the last full one is older than this many days (ME02-05).</summary>
+    Public Property BackupFullEveryDays As Integer = 7
+
     ''' <summary>Flask address for the admin routes of the Login page. https only.</summary>
     Public Property ApiBaseUrl As String = "https://kbot.avatarsoft.ro"
 

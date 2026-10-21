@@ -77,6 +77,30 @@ Public NotInheritable Class SftpSession
         End If
     End Sub
 
+    ''' <summary>Uploads bytes as a file readable by its owner only (the state file of the local backup, ME02).</summary>
+    Public Sub UploadBytes(k_bytes As Byte(), k_remotePath As String)
+        Try
+            EnsureRemoteDirectory(RemoteDirName(k_remotePath), New HashSet(Of String)())
+            Using k_stream As New MemoryStream(k_bytes)
+                _client.UploadFile(k_stream, k_remotePath, True)
+            End Using
+            _client.ChangePermissions(k_remotePath, 600S)       ' SSH.NET reads the digits as octal: 600 = rw------- (384 is refused: «Parameter 'mode'»)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SftpSession.UploadBytes", ex)
+            Throw
+        End Try
+    End Sub
+
+    ''' <summary>Deletes one remote file when it exists.</summary>
+    Public Sub DeleteRemote(k_remotePath As String)
+        Try
+            If _client.Exists(k_remotePath) Then _client.DeleteFile(k_remotePath)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SftpSession.DeleteRemote", ex)
+            Throw
+        End Try
+    End Sub
+
     ' SFTP has no "mkdir -p": walk from the root down.
     Private Sub EnsureRemoteDirectory(k_remoteDir As String, k_createdDirs As HashSet(Of String))
         Dim k_normalized As String = k_remoteDir.Replace("\"c, "/"c)

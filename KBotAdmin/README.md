@@ -49,14 +49,27 @@ without server/schema administration. See
 - Errors: `<AppDir>\Logs\harness_errors.log`; messages shown to the operator: `Logs\mesaje_operator.log`; the file push
   traces every step in `Logs\publicare.log`.
 
-## Pages (main bar)
-Comenzi · Diferență (schema difference, read-only) · Sincronizare (`schema_sync`, preview by default) · Drepturi (ADECHIT
+## Pages (ribbon, ME01-05)
+The window opens maximized. The ribbon has five tabs: **Baze de date** (Comenzi, Interogări unice, Sincronizare, Clonare DEMO), **Drepturi** (the page, the ADECHIT / VERCON rights windows, add account, access to a database, K-BOT role, Cereri, Resetare Login), **Monitorizare** (Loguri, Jurnal, Vizite, Server), **Copii de siguranță** (Copii server, Copii locale), **Publicare** (Publicare, Rapoarte VERCON). The left side is ONE tree with a tick on every row; the bar above it chooses «Baze de date» (the databases and, under each, its accounts; an account linked to several databases shows under each) or «Utilizatori» (the users and, under each, their databases); «Selectează tot» under it ticks every row (ME01-06; `AdminContext.CheckedDatabases` / `CheckedAccounts`, not used by any page yet). The «Diferență» page is no longer in the window (`DiffView*.vb` stay in the project, unused). `ButtonFit` widens button columns so a caption is never cut; `KBotSqlBox` (KBot.Controls) colours the SQL of the VERCON reports. Worklog: `docs/worklog/SLICE-ME01-05-ribbon-si-ajustari-vizuale.md`.
+
+### Pages
+
+Comenzi · Sincronizare (`schema_sync`, preview by default) · Drepturi (ADECHIT
 rights per account) · Loguri (all server logs, coloured: api, vba, forexe timing, asociere, schema_sync, gunicorn error and
 access, help feedback, one-time runner) · Jurnal · Vizite · Server · Copii (backups and schema plans; a chosen database
-keeps only its own; double click shows the SQL text) · Cereri (new-account requests: approve / reject) · **Interogări unice**
+keeps only its own; double click shows the SQL text; «Copie nouă» dumps the chosen database, or every unit database
+except 000_DEMO when «all databases» is chosen, and asks for a reason that is kept in the Jurnal and shown in the «Motiv» column, ME02-02) · Cereri (new-account requests: approve / reject) · **Interogări unice**
 (one text run once on AVACONT_SURSA and the ticked databases, with the history and the text of every query that ran) ·
 **Resetare Login** (failed-login counters through the admin API) · **Publicare**, right-aligned (the file push of
 AvacontPush: scan, tick, send, restart the service; grids of accepted extensions and ignore rules edited in place and saved
 in `admin_settings.json`). AvacontPush itself is untouched.
 
-Status and open threads: `docs/worklog/state/KBOT_STATUS_ME01.md`.
+**Copii locale** (ME02): encrypted copies of the unit databases on THIS PC, kept in the folder chosen with «Dosar...» (`BackupRoot` in
+`admin_settings.json`). Format and cryptography: `docs/ME02_FORMAT.md`; the server half is `routes/admin_cli/admin_snapshot.py` (read only).
+The page offers «Copie acum» (asks for a reason), «Verifică», «Export SQL» (a file for a scratch database `zz_...`), «Istoric rând»,
+«Curăță» (retention; manual copies are never removed by it) and «Șterge» (the only way a manual copy disappears). There is NO automatic
+nightly copy: at start-up the program asks whether to make today's copy when none exists (`MainForm.RemindLocalBackupAsync`). The switch
+`KBotAdmin.exe --backup` and `BackupScheduler` stay in the code but nothing in the window starts them. The passphrase is never stored; the key file
+`backup_key_<id>.dat` is protected by the Windows account (DPAPI) and is git-ignored.
+
+Status and open threads: `docs/worklog/state/KBOT_STATUS_ME01.md`, `docs/worklog/state/KBOT_STATUS_ME02.md`.

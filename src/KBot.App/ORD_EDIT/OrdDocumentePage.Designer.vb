@@ -97,8 +97,8 @@ Partial Class OrdDocumentePage
         grdBene.RowHeight = 22
         grdBene.Size = New Size(294, 566)
         grdBene.TabIndex = 0
-        tips.SetToolTipHeader(grdBene, "Beneficiarul")
-        tips.SetToolTipText(grdBene, "Primul rând, «< TOȚI BENEFICIARII >», ține documentele întregii ordonanțări." & vbLf & "Un beneficiar anume arată și documentele lui, și pe cele comune." & vbLf & "Când ordonanțarea are un singur beneficiar, rândul acela lipsește: n-ar spune nimic în plus.")
+        ' tips.SetToolTipHeader(grdBene, "Beneficiarul")
+        ' tips.SetToolTipText(grdBene, "Primul rând, «< TOȚI BENEFICIARII >», ține documentele întregii ordonanțări." & vbLf & "Un beneficiar anume arată și documentele lui, și pe cele comune." & vbLf & "Când ordonanțarea are un singur beneficiar, rândul acela lipsește: n-ar spune nimic în plus.")
         ' 
         ' btnAdaugaText
         ' 

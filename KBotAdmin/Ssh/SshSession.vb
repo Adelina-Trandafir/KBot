@@ -124,6 +124,75 @@ Public NotInheritable Class SshSession
         End Try
     End Function
 
+    ''' <summary>
+    ''' Like <see cref="RunStreaming"/> for output that can be GIGABYTES (the local backup, ME02): every complete stdout line goes to
+    ''' <paramref name="k_onLine"/> as it arrives and NOTHING is kept; of stderr only the last ~8 KB is returned. Lines can be
+    ''' several MB long (a page of PDFs). The handler runs on the calling (worker) thread.
+    ''' </summary>
+    Public Function RunStreamingLean(k_commandText As String, k_onLine As Action(Of String)) As SshResult
+        Try
+            EnsureConnected()
+            Using k_cmd As SshCommand = _client.CreateCommand(k_commandText)
+                Dim k_pending As IAsyncResult = k_cmd.BeginExecute()
+                Dim k_utf8 As New UTF8Encoding(False)
+                Dim k_outDecoder As Decoder = k_utf8.GetDecoder()
+                Dim k_errDecoder As Decoder = k_utf8.GetDecoder()
+                Dim k_outLine As New StringBuilder()
+                Dim k_errLine As New StringBuilder()
+                Dim k_errTail As New StringBuilder()
+                Do
+                    Dim k_moved As Boolean = PumpLean(k_cmd.OutputStream, k_outDecoder, k_outLine, String.Empty, k_onLine, Nothing)
+                    k_moved = PumpLean(k_cmd.ExtendedOutputStream, k_errDecoder, k_errLine, "[err] ", k_onLine, k_errTail) OrElse k_moved
+                    If k_pending.IsCompleted AndAlso Not k_moved Then Exit Do
+                    If Not k_moved Then Threading.Thread.Sleep(30)
+                Loop
+                k_cmd.EndExecute(k_pending)
+                If k_outLine.Length > 0 Then k_onLine?.Invoke(k_outLine.ToString())
+                If k_errLine.Length > 0 Then k_onLine?.Invoke("[err] " & k_errLine.ToString())
+                Return New SshResult With {
+                    .ExitStatus = If(k_cmd.ExitStatus, -1),
+                    .StdOut = String.Empty,
+                    .StdErr = k_errTail.ToString()
+                }
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("SshSession.RunStreamingLean", ex)
+            Throw
+        End Try
+    End Function
+
+    Private Shared Function PumpLean(k_stream As IO.Stream, k_decoder As Decoder, k_line As StringBuilder, k_prefix As String,
+                                     k_onLine As Action(Of String), k_tail As StringBuilder) As Boolean
+        Const TailCap As Integer = 8000
+        Dim k_moved As Boolean = False
+        Dim k_buffer(65535) As Byte
+        Dim k_chars(k_buffer.Length + 16) As Char
+        Do While k_stream.Length > 0
+            Dim k_count As Integer = k_stream.Read(k_buffer, 0, k_buffer.Length)
+            If k_count <= 0 Then Exit Do
+            k_moved = True
+            Dim k_written As Integer = k_decoder.GetChars(k_buffer, 0, k_count, k_chars, 0)
+            Dim k_pos As Integer = 0
+            Do While k_pos < k_written
+                Dim k_lf As Integer = Array.IndexOf(k_chars, ControlChars.Lf, k_pos, k_written - k_pos)
+                If k_lf < 0 Then
+                    k_line.Append(k_chars, k_pos, k_written - k_pos)
+                    Exit Do
+                End If
+                k_line.Append(k_chars, k_pos, k_lf - k_pos)
+                Dim k_text As String = k_prefix & k_line.ToString().TrimEnd(ControlChars.Cr)
+                k_line.Clear()
+                If k_tail IsNot Nothing Then
+                    k_tail.Append(k_text).Append(ControlChars.Lf)
+                    If k_tail.Length > TailCap Then k_tail.Remove(0, k_tail.Length - TailCap)
+                End If
+                k_onLine?.Invoke(k_text)
+                k_pos = k_lf + 1
+            Loop
+        Loop
+        Return k_moved
+    End Function
+
     Private Sub EnsureConnected()
         If _client Is Nothing OrElse Not _client.IsConnected Then
             Throw New ApplicationException("Nu există conexiune la server. Conectați-vă mai întâi.")

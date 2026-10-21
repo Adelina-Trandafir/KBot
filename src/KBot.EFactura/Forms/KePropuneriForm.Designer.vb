@@ -28,6 +28,11 @@ Partial Class KePropuneriForm
         Dim KBotDataColumn10 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn11 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
         Dim KBotDataColumn12 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn13 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn14 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn15 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotDataColumn16 As KBot.Controls.KBotDataColumn = New Controls.KBotDataColumn()
+        Dim KBotGroupLevel1 As KBot.Controls.KBotGroupLevel = New Controls.KBotGroupLevel()
         tips = New KBot.Controls.KBotToolTip(components)
         gridFact = New Controls.KBotDataView()
         gridCand = New Controls.KBotDataView()
@@ -84,12 +89,12 @@ Partial Class KePropuneriForm
         KBotDataColumn3.Width = 110
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderText = "Recepția propusă"
+        KBotDataColumn4.HeaderText = "Recepția"
         KBotDataColumn4.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "receptie"
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
-        KBotDataColumn4.Width = 300
+        KBotDataColumn4.Width = 240
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Data recepției"
@@ -106,9 +111,31 @@ Partial Class KePropuneriForm
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.ReadOnly = True
         KBotDataColumn6.Width = 320
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.DecimalPlaces = 2
+        KBotDataColumn13.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = "Recepție"
+        KBotDataColumn13.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn13.Key = "suma"
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.TextAlign = Drawing.ContentAlignment.MiddleRight
+        KBotDataColumn13.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn13.Width = 110
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.ColumnType = KBot.Controls.KBotColumnType.Combo
+        KBotDataColumn14.CommitOnSelect = True
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "Angajament"
+        KBotDataColumn14.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn14.Key = "ang"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.Width = 280
         gridFact.Columns.Add(KBotDataColumn1)
         gridFact.Columns.Add(KBotDataColumn2)
         gridFact.Columns.Add(KBotDataColumn3)
+        gridFact.Columns.Add(KBotDataColumn13)
+        gridFact.Columns.Add(KBotDataColumn14)
         gridFact.Columns.Add(KBotDataColumn4)
         gridFact.Columns.Add(KBotDataColumn5)
         gridFact.Columns.Add(KBotDataColumn6)
@@ -119,8 +146,8 @@ Partial Class KePropuneriForm
         gridFact.Name = "gridFact"
         gridFact.Size = New System.Drawing.Size(1494, 375)
         gridFact.TabIndex = 2
-        tips.SetToolTipHeader(gridFact, "Facturile neasociate")
-        tips.SetToolTipText(gridFact, "Bifează facturile pe care vrei să le legi de recepția propusă. O factură fără recepție propusă se bifează după ce alegi recepția în tabelul de jos.")
+        ' tips.SetToolTipHeader(gridFact, "Facturile neasociate")
+        ' tips.SetToolTipText(gridFact, "Bifează facturile pe care vrei să le legi de recepția aleasă. «Recepție» este suma pe care o primești din factură (o scrii tu, nu poate depăși valoarea facturii); «Angajament» se poate schimba când furnizorul are mai multe. O factură fără recepție aleasă se bifează după ce alegi recepția în tabelul de jos.")
         ' 
         ' gridCand
         ' 
@@ -178,22 +205,50 @@ Partial Class KePropuneriForm
         KBotDataColumn12.ReadOnly = True
         KBotDataColumn12.TextAlign = Drawing.ContentAlignment.MiddleCenter
         KBotDataColumn12.Width = 70
+        KBotDataColumn15.AggregateFormatString = Nothing
+        KBotDataColumn15.DecimalPlaces = 2
+        KBotDataColumn15.Format = KBot.Controls.KBotFormat.Standard
+        KBotDataColumn15.FormatString = Nothing
+        KBotDataColumn15.HeaderText = "Rămas"
+        KBotDataColumn15.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn15.Key = "ramas"
+        KBotDataColumn15.OptionGroup = Nothing
+        KBotDataColumn15.ReadOnly = True
+        KBotDataColumn15.TextAlign = Drawing.ContentAlignment.MiddleRight
+        KBotDataColumn15.ValueType = KBot.Controls.KBotValueType.Number
+        KBotDataColumn15.Width = 110
+        KBotDataColumn16.AggregateFormatString = Nothing
+        KBotDataColumn16.FormatString = Nothing
+        KBotDataColumn16.HeaderText = "Grup"
+        KBotDataColumn16.Key = "grup"
+        KBotDataColumn16.OptionGroup = Nothing
+        KBotDataColumn16.ReadOnly = True
+        KBotDataColumn16.Visible = KBot.Controls.KBotColumnVisibility.Hidden
         gridCand.Columns.Add(KBotDataColumn7)
         gridCand.Columns.Add(KBotDataColumn8)
         gridCand.Columns.Add(KBotDataColumn9)
         gridCand.Columns.Add(KBotDataColumn10)
         gridCand.Columns.Add(KBotDataColumn11)
+        gridCand.Columns.Add(KBotDataColumn15)
         gridCand.Columns.Add(KBotDataColumn12)
+        gridCand.Columns.Add(KBotDataColumn16)
         gridCand.Dock = System.Windows.Forms.DockStyle.Bottom
         gridCand.FillColumnKey = "descriere"
+        KBotGroupLevel1.ColumnKey = "grup"
+        KBotGroupLevel1.HeaderBorder = True
+        KBotGroupLevel1.HeaderCaptionFormat = "{1}"
+        KBotGroupLevel1.ShowFooter = False
+        KBotGroupLevel1.ShowFooterAggregates = False
+        KBotGroupLevel1.SortDirection = KBot.Controls.KBotSortDirection.Ascending
+        gridCand.Groups.Add(KBotGroupLevel1)
         gridCand.Location = New System.Drawing.Point(0, 564)
         gridCand.Margin = New System.Windows.Forms.Padding(0)
         gridCand.Name = "gridCand"
         gridCand.ReadOnlyGrid = True
-        gridCand.Size = New System.Drawing.Size(1494, 225)
+        gridCand.Size = New System.Drawing.Size(1494, 270)
         gridCand.TabIndex = 4
-        tips.SetToolTipHeader(gridCand, "Recepțiile posibile")
-        tips.SetToolTipText(gridCand, "Recepțiile care au, întregi, valoarea facturii alese sus. Dublu clic pe una o folosește pentru factură.")
+        ' tips.SetToolTipHeader(gridCand, "Recepțiile posibile")
+        ' tips.SetToolTipText(gridCand, "Recepțiile cu rest ale angajamentului facturii alese sus: întâi cele cu aceeași valoare ca suma de recepționat, apoi cele neasociate integral. «Rămas» = valoarea recepției minus tot ce i s-a asociat. Dublu clic pe una o folosește pentru factură.")
         ' 
         ' btnLeaga
         ' 
@@ -207,7 +262,7 @@ Partial Class KePropuneriForm
         btnLeaga.TabIndex = 0
         btnLeaga.Text = "Leagă"
         tips.SetToolTipHeader(btnLeaga, "Leagă")
-        tips.SetToolTipText(btnLeaga, "Leagă fiecare factură bifată de recepția ei, întreagă. Până aici nu s-a salvat nimic.")
+        tips.SetToolTipText(btnLeaga, "Leagă fiecare factură bifată de recepția ei, cu suma scrisă în «Recepție». Până aici nu s-a salvat nimic.")
         btnLeaga.UseVisualStyleBackColor = True
         ' 
         ' btnRenunta
@@ -251,7 +306,7 @@ Partial Class KePropuneriForm
         lblCand.Padding = New System.Windows.Forms.Padding(21, 12, 21, 6)
         lblCand.Size = New System.Drawing.Size(1494, 48)
         lblCand.TabIndex = 3
-        lblCand.Text = "Recepții cu aceeași valoare ca factura aleasă sus (dublu clic pe una o alege)"
+        lblCand.Text = "Recepțiile cu rest ale angajamentului facturii alese sus (dublu clic pe una o alege)"
         ' 
         ' ntfMesaj
         ' 

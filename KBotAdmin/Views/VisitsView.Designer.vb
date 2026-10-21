@@ -31,7 +31,7 @@ Partial Class VisitsView
         tlyBar = New KBotTableLayoutPanel()
         lblDays = New Label()
         cmbDays = New KBotComboBox()
-        chkBots = New CheckBox()
+        chkBots = New KBotCheckBox()
         btnRefresh = New KBotButton()
         grid = New KBotDataView()
         lblState = New Label()
@@ -268,7 +268,7 @@ Partial Class VisitsView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents lblDays As Label
     Friend WithEvents cmbDays As KBotComboBox
-    Friend WithEvents chkBots As CheckBox
+    Friend WithEvents chkBots As KBotCheckBox
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents grid As KBotDataView
     Friend WithEvents lblState As Label

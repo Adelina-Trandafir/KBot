@@ -231,8 +231,8 @@ Partial Class DdfEditLinieAForm
         grdValori.ShrinkColumnsToFit = False
         grdValori.Size = New Size(820, 118)
         grdValori.TabIndex = 12
-        tips.SetToolTipHeader(grdValori, "Valorile rândului")
-        tips.SetToolTipText(grdValori, "Se tastează doar valoarea curentă: obligatorie și diferită de 0." & vbLf & "Disponibil = buget − recepții; valoarea rămasă = disponibil − valoarea curentă.")
+        ' tips.SetToolTipHeader(grdValori, "Valorile rândului")
+        ' tips.SetToolTipText(grdValori, "Se tastează doar valoarea curentă: obligatorie și diferită de 0." & vbLf & "Disponibil = buget − recepții; valoarea rămasă = disponibil − valoarea curentă.")
         ' 
         ' btnOk
         ' 

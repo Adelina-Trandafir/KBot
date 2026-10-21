@@ -159,8 +159,8 @@ Partial Class SetariPaginaView
         grila.Name = "grila"
         grila.Size = New Size(944, 624)
         grila.TabIndex = 0
-        tips.SetToolTipHeader(grila, "Regulile paginii")
-        tips.SetToolTipText(grila, "Rândul ales se editează în câmpurile din dreapta; bifa «Activ» se schimbă direct aici." & vbLf & "Un rând debifat rămâne în listă, dar nu se pune în pagină.")
+        ' tips.SetToolTipHeader(grila, "Regulile paginii")
+        ' tips.SetToolTipText(grila, "Rândul ales se editează în câmpurile din dreapta; bifa «Activ» se schimbă direct aici." & vbLf & "Un rând debifat rămâne în listă, dar nu se pune în pagină.")
         '
         ' editor
         '

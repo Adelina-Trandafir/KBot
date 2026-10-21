@@ -27,3 +27,6 @@ Client:
 - A partner whose CodFiscal is edited keeps no link: the old links stay on the old CUI (by design: they belong to the supplier, not the partner row).
 - Old rows of `Parteneri_Coduri` are read by nobody now; they reach the new tables only through the Migrator (0121-02). Until that runs, the window shows empty codes.
 - Server files go to the VPS by the operator's hand (never by Claude).
+
+## Corrective 20.10.2026 - compatibility with the deployed client (App 1.1.2.4)
+Operator: the version in use is 1.1.2.4 (before 0121); it must keep working against the new server files. Read from the code: that client reads each code's `id_clsf` into a plain `Integer`, so the `null` the new server sent (link with no indicator, or a CodAI unknown to `FX_Indicatori`) would make the whole partner list fail to load. `partner_links.read_links` now sends `id_clsf: 0` (= unknown); the new client does not use the value. Remaining difference for 1.1.2.4: a code row with no «Cod ang.» is refused with a message (the link is keyed by CodAng). Not run against a database; `py_compile` OK.

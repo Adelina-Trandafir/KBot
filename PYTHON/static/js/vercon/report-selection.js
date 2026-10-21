@@ -86,6 +86,8 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
       onChange([...chosen]);
     },
   }, owner);
+  // Node labels are already visible; suppress both native and custom tooltips here.
+  tree.treeContainer.setAttribute('data-kbot-tooltip', 'off');
   const header = selectionHeader(owner, checked => { void selectAll(checked); });
   host.firstElementChild.replaceWith(header.node);
   const hint = el('p', { className: 'vc-hint', textContent: 'Deschideți ramurile pentru încărcare și bifați datele dorite. Fără bife într-o categorie de filtre se folosesc toate datele acesteia.' });

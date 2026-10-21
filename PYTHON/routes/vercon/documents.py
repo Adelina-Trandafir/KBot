@@ -15,7 +15,7 @@ are committed together or not at all. Rules shared by the four families:
     linked to the latest food list recalculates that list atomically; cancellation still requires unlinking it.
 Numbers: automatic, unique per gestiune + kind + exercise; a manual number is accepted only when free.
 """
-from datetime import datetime
+from utils.clock import utc_now
 from decimal import Decimal, InvalidOperation
 
 from . import document_order, numeric, protocol, receipt_choices
@@ -493,7 +493,7 @@ def create_storno(cursor, repo, ctx, exercise, body, request_key, request_id):
     if _has_numarsub(cursor):
         values['NumarSub'] = sub
     doc_id = repo.insert('VC_NIR', values)
-    now = datetime.now()
+    now = utc_now()
     for line in lines:
         repo.insert('VC_IntrariStorno', {'IdIntrare': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
     protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
@@ -533,7 +533,7 @@ def edit_storno(cursor, repo, ctx, exercise, doc_id, body, request_id):
         cols['NumarSub'] = sub
     cols['Valoare'] = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     repo.delete('VC_IntrariStorno', {'IdIntrare': doc_id})
-    now = datetime.now()
+    now = utc_now()
     for line in lines:
         repo.insert('VC_IntrariStorno', {'IdIntrare': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
     if repo.update('VC_NIR', cols, {'IdIntrare': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
@@ -582,8 +582,8 @@ def create_bc(cursor, repo, ctx, exercise, body, request_key, request_id):
     number, text = _assign_number(cursor, ctx, 'bc', header.get('Numar'), errors)
     _fail(errors)
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
-    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'Retur': 0, 'DataSalvare': datetime.now()})
-    now = datetime.now()
+    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'Retur': 0, 'DataSalvare': utc_now()})
+    now = utc_now()
     for line in lines:
         repo.insert('VC_Iesiri', {'IdBonConsum': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'ValoareCUTVA': line['ValoareCUTVA'], 'DataSalvare': now})
     protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
@@ -639,7 +639,7 @@ def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
     _fail(errors)
     # a saved line keeps its price: a line of the same variant is re-priced only when the page changed its quantity
     old_price = {r['IdProdus']: r['PUTVA'] for r in old_lines}
-    now = datetime.now()
+    now = utc_now()
     repo.delete('VC_Iesiri', {'IdBonConsum': doc_id})
     total_lines = []
     for line in lines:
@@ -720,8 +720,8 @@ def create_br(cursor, repo, ctx, exercise, body, request_key, request_id):
     number, text = _assign_number(cursor, ctx, 'br', header.get('Numar'), errors)
     _fail(errors)
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
-    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'IdRetur': source['IdBonConsum'], 'NumarBC': text, 'ValoareBC': total, 'Retur': 1, 'DataSalvare': datetime.now()})
-    now = datetime.now()
+    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'IdRetur': source['IdBonConsum'], 'NumarBC': text, 'ValoareBC': total, 'Retur': 1, 'DataSalvare': utc_now()})
+    now = utc_now()
     for line in lines:
         repo.insert('VC_IesiriRetur', {'IdBonConsum': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
     protocol.freeze(cursor, ctx)
@@ -746,7 +746,7 @@ def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
         _, text = _assign_number(cursor, ctx, 'br', manual, errors, exclude=doc_id)
     _fail(errors)
     repo.delete('VC_IesiriRetur', {'IdBonConsum': doc_id})
-    now = datetime.now()
+    now = utc_now()
     for line in lines:
         repo.insert('VC_IesiriRetur', {'IdBonConsum': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])

@@ -132,8 +132,8 @@ Partial Class AlegereUnitateForm
         grid.ShrinkColumnsToFit = False
         grid.Size = New Size(818, 224)
         grid.TabIndex = 3
-        tips.SetToolTipHeader(grid, "Unități posibile")
-        tips.SetToolTipText(grid, "Fiecare rând este o unitate căreia îi poate aparține clasificația." & vbLf & "Alegeți-o pe cea potrivită; dublu-click confirmă direct.")
+        ' tips.SetToolTipHeader(grid, "Unități posibile")
+        ' tips.SetToolTipText(grid, "Fiecare rând este o unitate căreia îi poate aparține clasificația." & vbLf & "Alegeți-o pe cea potrivită; dublu-click confirmă direct.")
         ' 
         ' chkRetine
         ' 

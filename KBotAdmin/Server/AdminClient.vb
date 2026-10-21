@@ -168,6 +168,57 @@ Public NotInheritable Class AdminClient
     End Function
 
     ''' <summary>
+    ''' Runs an admin_cli verb whose output is a stream of JSON lines too big to keep (the local backup, ME02): each stdout line
+    ''' goes to <paramref name="k_onLine"/> on a worker thread and nothing is accumulated. The answer holds the exit status and the tail of stderr.
+    ''' </summary>
+    Public Async Function StreamLinesAsync(k_onLine As Action(Of String), k_verb As String, ParamArray k_args As String()) As Task(Of SshResult)
+        Try
+            Dim k_command As String = CliCommand(k_verb, k_args)
+            Await _gate.WaitAsync().ConfigureAwait(True)
+            Try
+                Return Await Task.Run(Function() LiveSession().RunStreamingLean(k_command, k_onLine)).ConfigureAwait(True)
+            Finally
+                _gate.Release()
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdminClient.StreamLinesAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Puts a small file on the server (own SFTP connection, owner-only permissions).</summary>
+    Public Async Function UploadBytesAsync(k_bytes As Byte(), k_remotePath As String) As Task
+        Try
+            Await Task.Run(
+                Sub()
+                    Using k_sftp As New SftpSession(_settings)
+                        k_sftp.Connect()
+                        k_sftp.UploadBytes(k_bytes, k_remotePath)
+                    End Using
+                End Sub).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdminClient.UploadBytesAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Removes a file this program put on the server (best effort cleanup is the caller's choice).</summary>
+    Public Async Function DeleteRemoteAsync(k_remotePath As String) As Task
+        Try
+            Await Task.Run(
+                Sub()
+                    Using k_sftp As New SftpSession(_settings)
+                        k_sftp.Connect()
+                        k_sftp.DeleteRemote(k_remotePath)
+                    End Using
+                End Sub).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdminClient.DeleteRemoteAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Runs an arbitrary command line on the server and streams its lines (the schema sync). The line
     ''' handler runs on a worker thread.
     ''' </summary>

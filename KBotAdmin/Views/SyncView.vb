@@ -14,6 +14,9 @@ Public Class SyncView
     Private Shared ReadOnly ErrorWords As New Regex("\b(ERROR|CRITICAL|Traceback|E.EC)\b", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
     Private Shared ReadOnly WarnWords As New Regex("\b(WARN|WARNING|DISTRUCTIV[AE]?|refuz\w*|MISSING)\b", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
+    ' ME01-05: the server mentions a database the registry lists but the server does not have; it is not a target, so it is not shown.
+    Private Shared ReadOnly MissingDbLine As New Regex("listeaz.+nu exist.+ignorat", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+
     Private _context As AdminContext
     Private ReadOnly _lines As New List(Of KBotLogLine)()
     Private ReadOnly _queue As New ConcurrentQueue(Of String)()
@@ -122,7 +125,7 @@ Public Class SyncView
         Do While _queue.TryDequeue(k_line)
             Dim k_text As String = k_line
             If k_text.StartsWith("[err] ", StringComparison.Ordinal) Then k_text = k_text.Substring(6)
-            If k_text.Trim() = String.Empty Then Continue Do
+            If k_text.Trim() = String.Empty OrElse MissingDbLine.IsMatch(k_text) Then Continue Do
             Dim k_level As KBotLogLevel = KBotLogLevel.Info
             If ErrorWords.IsMatch(k_text) Then
                 k_level = KBotLogLevel.Error

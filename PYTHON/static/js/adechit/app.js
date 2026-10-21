@@ -5,6 +5,8 @@ import { DatePicker } from '../components/datepicker/datepicker.js';
 import { showMessage as paintMessage, clearMessageOnAction } from '../portal/messages.js';
 import { openMenu } from './menu.js';
 import { bindMenuZoom } from '../components/menu/menu-zoom.js';
+import { tooltipSettingsMenuEntry } from '../components/tooltip/tooltip-settings.js';
+import '../components/tooltip/tooltip-titles.js';
 import { layoutRect, layoutViewport } from '../utils/layout-geometry.js';
 import { startSessionTimer } from './session.js';
 import { beginSessionExit } from '../utils/session-exit.js';
@@ -18,8 +20,8 @@ import { bindWorkingDays } from './working-days.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
-// The notice strip stays empty unless something went wrong (operator, 10.10.2026): confirmations are not written there.
-function showMessage(k_element, k_text, k_kind) { paintMessage(k_element, k_kind === 'info' ? '' : k_text, k_kind); }
+// Confirmations use the shared tooltip; errors also remain beside the working area.
+function showMessage(k_element, k_text, k_kind) { paintMessage(k_element, k_text, k_kind, { inline: k_kind !== 'info' }); }
 const state = { context: null, unit: null, subunit: null, pending: 0, subunitCombo: null, showHiddenGroups: false, groupsSequence: 0, monthId: null, groupId: null, rows: [], shownRows: [],
   selected: null, grid: null, monthTree: null, groupTree: null, yearCombo: null, monthCombo: null, groupCombo: null, year: null, loadedYears: new Map(), groupsRequest: null, plan: { hidden: [], nameWidth: null }, ledger: 'receipt', request: 0,
   childFilter: { presence: 'all', payments: false, refunds: false }, leftCollapsed: false, annual: null };
@@ -912,6 +914,7 @@ function bind() {
       { icon: '🤖', label: 'K-BOT', rule: true, run: () => leaveApplication('/portal') },
       { icon: '🏗️', label: 'VERCON', run: () => leaveApplication('/vercon') },
       { icon: '📒', label: 'Avacont · în curând', disabled: true },
+      tooltipSettingsMenuEntry(),
     ], { label: 'Aplicații', below: $('ade-apps').closest('header') });
   });
   if (document.documentElement.dataset.adePreview !== 'true' && portalToken()) {

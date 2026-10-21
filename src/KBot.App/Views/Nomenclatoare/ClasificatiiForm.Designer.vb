@@ -202,8 +202,8 @@ Partial Class ClasificatiiForm
         gridBuget.RowHeight = 24
         gridBuget.Size = New Size(955, 200)
         gridBuget.TabIndex = 1
-        tips.SetToolTipHeader(gridBuget, "Bugetul clasificației, pe versiuni")
-        tips.SetToolTipText(gridBuget, "Fiecare rând este bugetul de la data din «Început» încolo (trimestrele 1 - 4); documentul de fundamentare citește bugetul de la data revizuirii." & vbLf & "«+» din subsol adaugă o versiune; «✕» o șterge. Totul se scrie la «Salvează».")
+        ' tips.SetToolTipHeader(gridBuget, "Bugetul clasificației, pe versiuni")
+        ' tips.SetToolTipText(gridBuget, "Fiecare rând este bugetul de la data din «Început» încolo (trimestrele 1 - 4); documentul de fundamentare citește bugetul de la data revizuirii." & vbLf & "«+» din subsol adaugă o versiune; «✕» o șterge. Totul se scrie la «Salvează».")
         ' 
         ' gridRectificari
         ' 
@@ -343,8 +343,8 @@ Partial Class ClasificatiiForm
         gridRectificari.Name = "gridRectificari"
         gridRectificari.Size = New Size(955, 422)
         gridRectificari.TabIndex = 3
-        tips.SetToolTipHeader(gridRectificari, "Rectificările bugetare ale anului")
-        tips.SetToolTipText(gridRectificari, "Nr. doc. și data sunt obligatorii; data trebuie să fie în anul de lucru." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvează».")
+        ' tips.SetToolTipHeader(gridRectificari, "Rectificările bugetare ale anului")
+        ' tips.SetToolTipText(gridRectificari, "Nr. doc. și data sunt obligatorii; data trebuie să fie în anul de lucru." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvează».")
         '
         ' gridTotal
         '
@@ -461,8 +461,8 @@ Partial Class ClasificatiiForm
         gridTotal.ShowHeader = False
         gridTotal.Size = New Size(955, 38)
         gridTotal.TabIndex = 4
-        tips.SetToolTipHeader(gridTotal, "Bugetul în vigoare, cu rectificări")
-        tips.SetToolTipText(gridTotal, "Ultimul buget (cel cu data cea mai nouă) plus TOATE rectificările de mai sus, pe trimestre." & vbLf & "La un nod, însumează toate clasificațiile de sub el.")
+        ' tips.SetToolTipHeader(gridTotal, "Bugetul în vigoare, cu rectificări")
+        ' tips.SetToolTipText(gridTotal, "Ultimul buget (cel cu data cea mai nouă) plus TOATE rectificările de mai sus, pe trimestre." & vbLf & "La un nod, însumează toate clasificațiile de sub el.")
         ' 
         ' btnSalveaza
         ' 

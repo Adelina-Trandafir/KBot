@@ -38,6 +38,8 @@
 
   <ItemGroup>
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <!-- ME02: the key of the local backup can be kept on this PC, protected by the Windows account (DPAPI). -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -48,6 +50,31 @@
 
   <ItemGroup>
     <EmbeddedResource Include="KBotAdmin.ico" LogicalName="KBotAdmin.ico" />
+  </ItemGroup>
+
+  <!-- ME01-05: the ribbon icons come from K-BOT's own icon stock, linked (not copied) so there is one source.
+       LogicalName "icon.<name>" is what AdminIcons.Get("<name>") asks for. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\database.png" LogicalName="icon.database" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png" LogicalName="icon.once" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Jonas-Rask-Danish-Royalty-Free-Refresh.32.png" LogicalName="icon.sync" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\export.png" LogicalName="icon.clone" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Pdf-exports.24.png" LogicalName="icon.reports" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Wefunction-Woofunction-Window-app-list-info.32.png" LogicalName="icon.logs" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\istoric_32.png" LogicalName="icon.journal" />
+    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Chart-curve.32.png" LogicalName="icon.visits" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png" LogicalName="icon.server" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png" LogicalName="icon.requests" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-locked.32.png" LogicalName="icon.login" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\credit-card.png" LogicalName="icon.rights" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\binvoice.png" LogicalName="icon.rights_ad" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\cells.png" LogicalName="icon.rights_vr" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\plus_green.png" LogicalName="icon.account_add" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\right_32.png" LogicalName="icon.account_grant" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\kbot_64.png" LogicalName="icon.account_role" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\save_32.png" LogicalName="icon.backup_server" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\folder_open.png" LogicalName="icon.backup_local" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\ef_iesiri.png" LogicalName="icon.publish" />
   </ItemGroup>
 
   <ItemGroup>

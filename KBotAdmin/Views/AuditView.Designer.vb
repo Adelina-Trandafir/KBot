@@ -141,7 +141,7 @@ Partial Class AuditView
         tips.SetToolTipText(btnRefresh, "Citește din nou jurnalul cu filtrele alese.")
         btnRefresh.Dock = DockStyle.Fill
         btnRefresh.Location = New Point(620, 0)
-        btnRefresh.Margin = New Padding(0, 2, 6, 6)
+        btnRefresh.Margin = New Padding(0, 4, 8, 8)
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Primary = True
         btnRefresh.Size = New Size(144, 36)

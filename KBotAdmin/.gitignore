@@ -7,3 +7,6 @@ Logs/
 # Build output
 bin/
 obj/
+
+# The key of the local backup, protected by this PC and this Windows account (ME02)
+backup_key_*.dat

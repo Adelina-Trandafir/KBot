@@ -28,8 +28,8 @@ Partial Class VerconReportDesignerForm
         cmbBand = New KBotComboBox()
         numFont = New NumericUpDown()
         numWidth = New NumericUpDown()
-        chkLandscape = New CheckBox()
-        chkBold = New CheckBox()
+        chkLandscape = New KBotCheckBox()
+        chkBold = New KBotCheckBox()
         btnAddField = New KBotButton()
         btnAddText = New KBotButton()
         btnDelete = New KBotButton()
@@ -155,8 +155,8 @@ Partial Class VerconReportDesignerForm
     Friend WithEvents cmbBand As KBotComboBox
     Friend WithEvents numFont As NumericUpDown
     Friend WithEvents numWidth As NumericUpDown
-    Friend WithEvents chkLandscape As CheckBox
-    Friend WithEvents chkBold As CheckBox
+    Friend WithEvents chkLandscape As KBotCheckBox
+    Friend WithEvents chkBold As KBotCheckBox
     Friend WithEvents btnAddField As KBotButton
     Friend WithEvents btnAddText As KBotButton
     Friend WithEvents btnDelete As KBotButton

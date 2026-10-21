@@ -27,6 +27,7 @@ Partial Class CommandsView
         txtParam = New KBotTextBox()
         lblDesc = New Label()
         txtOutput = New KBotTextBox()
+        txtExplain = New KBotTextBox()
         lblState = New Label()
         tlyMain.SuspendLayout()
         tlyBar.SuspendLayout()
@@ -40,16 +41,18 @@ Partial Class CommandsView
         tlyMain.Controls.Add(tlyBar, 0, 0)
         tlyMain.Controls.Add(lblDesc, 0, 1)
         tlyMain.Controls.Add(txtOutput, 0, 2)
-        tlyMain.Controls.Add(lblState, 0, 3)
+        tlyMain.Controls.Add(txtExplain, 0, 3)
+        tlyMain.Controls.Add(lblState, 0, 4)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(8)
-        tlyMain.RowCount = 4
+        tlyMain.RowCount = 5
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 28F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 240F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 28F))
         tlyMain.Size = New Size(900, 560)
         tlyMain.TabIndex = 0
@@ -155,6 +158,22 @@ Partial Class CommandsView
         tips.SetToolTipText(txtOutput, "Rezultatul comenzii, câte un bloc pe fiecare bază.")
         txtOutput.WordWrap = False
         '
+        ' txtExplain: what the chosen command does and what to expect from it (read-only, wraps)
+        '
+        txtExplain.CornerRadius = 0
+        txtExplain.Font = New Font("Segoe UI", 11.0F)
+        txtExplain.Dock = DockStyle.Fill
+        txtExplain.Location = New Point(8, 524)
+        txtExplain.Margin = New Padding(0, 6, 0, 0)
+        txtExplain.Name = "txtExplain"
+        txtExplain.ReadOnly = True
+        txtExplain.ScrollBars = ScrollBars.Vertical
+        txtExplain.Size = New Size(884, 234)
+        txtExplain.TabIndex = 3
+        tips.SetToolTipHeader(txtExplain, "Ce face și ce te aștepți")
+        tips.SetToolTipText(txtExplain, "Explicația comenzii alese și ce rezultat e normal. Se schimbă odată cu comanda din listă.")
+        txtExplain.WordWrap = True
+        '
         ' lblState
         '
         tips.SetToolTipHeader(lblState, "Starea")
@@ -165,7 +184,7 @@ Partial Class CommandsView
         lblState.Margin = New Padding(0)
         lblState.Name = "lblState"
         lblState.Size = New Size(884, 28)
-        lblState.TabIndex = 3
+        lblState.TabIndex = 4
         lblState.TextAlign = ContentAlignment.MiddleLeft
         '
         ' CommandsView
@@ -189,5 +208,6 @@ Partial Class CommandsView
     Friend WithEvents txtParam As KBotTextBox
     Friend WithEvents lblDesc As Label
     Friend WithEvents txtOutput As KBotTextBox
+    Friend WithEvents txtExplain As KBotTextBox
     Friend WithEvents lblState As Label
 End Class

@@ -182,8 +182,8 @@ Partial Class VanzareContinutPage
         gridLinii.Name = "gridLinii"
         gridLinii.Size = New System.Drawing.Size(727, 498)
         gridLinii.TabIndex = 1
-        tips.SetToolTipHeader(gridLinii, "Conținutul facturii")
-        tips.SetToolTipText(gridLinii, "Cantitatea și prețul se scriu direct în tabel; valoarea liniei se calculează. «✕» șterge linia. Totul se scrie la «Salvare».")
+        ' tips.SetToolTipHeader(gridLinii, "Conținutul facturii")
+        ' tips.SetToolTipText(gridLinii, "Cantitatea și prețul se scriu direct în tabel; valoarea liniei se calculează. «✕» șterge linia. Totul se scrie la «Salvare».")
         '
         ' VanzareContinutPage
         '

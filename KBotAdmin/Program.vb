@@ -15,6 +15,12 @@ Friend Module Program
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf OnUnhandledException
         AddHandler TaskScheduler.UnobservedTaskException, AddressOf OnUnobservedTaskException
 
+        ' ME02-05: the scheduled local backup runs with no window and leaves its result in Logs\copii_locale.log and in the exit code.
+        If BackupHeadless.IsRequested(Environment.GetCommandLineArgs().Skip(1)) Then
+            Environment.ExitCode = BackupHeadless.Run()
+            Return
+        End If
+
         If Not SingleInstance.TryAcquire() Then Return
 
         Try

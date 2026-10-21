@@ -1,5 +1,6 @@
 """Build once; screen and exports share a short-lived, user-scoped snapshot."""
 from datetime import date, datetime
+from utils.clock import utc_now
 from decimal import Decimal
 import hashlib
 import json
@@ -93,7 +94,7 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
              'blocks': heading + band('before') + blocks + band('after'),
              'notes': notes, 'context': {key: ctx[key] for key in ('subunit', 'gestiune', 'exercitiu', 'type', 'scale', 'zec')},
              'versions': {'layout': layout['version'], 'unit': identity['version'], 'queries': source.versions},
-             'generated_at': datetime.now().isoformat(timespec='seconds')}
+             'generated_at': utc_now().isoformat(timespec='seconds')}
     if receptions:
         model['receptions'] = receptions
     model = primitive(model)

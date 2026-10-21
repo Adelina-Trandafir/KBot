@@ -26,7 +26,7 @@ Partial Class LogsView
         cmbLevel = New KBotComboBox()
         cmbGens = New KBotComboBox()
         txtSearch = New KBotTextField()
-        chkFollow = New CheckBox()
+        chkFollow = New KBotCheckBox()
         btnRefresh = New KBotButton()
         btnCopy = New KBotButton()
         btnClear = New KBotButton()
@@ -153,7 +153,7 @@ Partial Class LogsView
         tips.SetToolTipText(btnRefresh, "Citește din nou fișierul ales cu filtrele curente.")
         btnRefresh.Dock = DockStyle.Fill
         btnRefresh.Location = New Point(672, 0)
-        btnRefresh.Margin = New Padding(0, 2, 6, 6)
+        btnRefresh.Margin = New Padding(0, 4, 8, 8)
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Primary = True
         btnRefresh.Size = New Size(104, 36)
@@ -164,7 +164,7 @@ Partial Class LogsView
         '
         btnCopy.Dock = DockStyle.Fill
         btnCopy.Location = New Point(782, 0)
-        btnCopy.Margin = New Padding(0, 2, 6, 6)
+        btnCopy.Margin = New Padding(0, 4, 8, 8)
         btnCopy.Name = "btnCopy"
         btnCopy.Size = New Size(90, 36)
         btnCopy.TabIndex = 6
@@ -176,7 +176,7 @@ Partial Class LogsView
         '
         btnClear.Dock = DockStyle.Fill
         btnClear.Location = New Point(878, 0)
-        btnClear.Margin = New Padding(0, 2, 0, 6)
+        btnClear.Margin = New Padding(0, 4, 0, 8)
         btnClear.Name = "btnClear"
         btnClear.Size = New Size(90, 36)
         btnClear.TabIndex = 7
@@ -234,7 +234,7 @@ Partial Class LogsView
     Friend WithEvents cmbLevel As KBotComboBox
     Friend WithEvents cmbGens As KBotComboBox
     Friend WithEvents txtSearch As KBotTextField
-    Friend WithEvents chkFollow As CheckBox
+    Friend WithEvents chkFollow As KBotCheckBox
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents btnCopy As KBotButton
     Friend WithEvents btnClear As KBotButton

@@ -44,15 +44,44 @@ Public Class CommandsView
         ShowTarget()
     End Sub
 
+    ' What to expect from each command, by the name the server gives it (verb «commands»). A command the server adds later and this list
+    ' does not know falls back to the generic sentence below.
+    Private Shared ReadOnly Expectations As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
+        {"ping", "Un singur rând pe bază: versiunea MariaDB, contul cu care s-a conectat serverul, charset-ul și collation-ul bazei și timpul de răspuns. Normal: charset utf8mb3, collation utf8mb3_general_ci, un timp de răspuns de câteva zeci de milisecunde. Altceva, sau sute de milisecunde, merită verificat."},
+        {"tables", "Lista tuturor tabelelor bazei, cele mai mari primele, cu mărimea în MB, motorul și collation-ul. Numărul de rânduri e doar estimat de server, nu exact. Se citește, nu se schimbă nimic."},
+        {"counts", "Numărul exact de rânduri al fiecărei tabele. Tabelele de peste 3 milioane de rânduri rămân pe estimare (nota de sub rezultat spune câte). Pe baze mari poate dura câteva secunde."},
+        {"processlist", "Conexiunile deschise acum pe bază: cine, în ce stare, de câte secunde și ce comandă rulează. Normal: puține rânduri. Multe rânduri cu timp mare arată conexiuni rămase agățate."},
+        {"journal", "Ultimele 50 de intrări din Jurnal pentru baza aleasă (cont, acțiune, țintă, rezultat), cele mai noi primele."},
+        {"activity", "Pentru fiecare cont al bazei: ultima acțiune și numărul de acțiuni din Jurnal. Un cont care lipsește din listă nu a făcut nimic înregistrat."},
+        {"charset", "Rezultatul bun este LISTA GOALĂ (nota spune că totul este utf8mb3_general_ci). Fiecare rând apărut este o coloană cu alt collation și trebuie corectată."},
+        {"analyze", "Rulează ANALYZE TABLE pe fiecare tabelă: se reînnoiesc doar statisticile, datele rămân neschimbate. Fiecare tabelă ar trebui să răspundă «OK». Cere confirmare, fiindcă scrie în statistici; pe baze mari poate dura."},
+        {"fisa_angajament", "Un tabel cu tot ce știe baza despre angajamentul scris: întâi rândurile DIAG (verificările calculate), apoi rândurile brute din toate tabelele. Cere o bază anume și codul angajamentului; nu merge pe <TOATE BAZELE>. Rândurile nu se trunchiază, ca rezultatul să poată fi copiat."}
+    }
+
     Private Sub ShowTarget()
         Dim k_target As String = If(_context.IsAll, AdminContext.AllDatabasesCaption, _context.SelectedDb)
         Dim k_command As CommandInfo = CurrentCommand()
         lblDesc.Text = If(k_command Is Nothing, String.Empty, k_command.Description & "   Țintă: " & k_target)
+        txtExplain.Text = If(k_command Is Nothing, String.Empty, ExplainCommand(k_command, k_target))
         ' the typed value exists only for a command that needs it; another choice in the combo makes the box disappear
         Dim k_needsParam As Boolean = k_command IsNot Nothing AndAlso k_command.Param <> String.Empty
         txtParam.Visible = k_needsParam
         If k_needsParam Then txtParam.PlaceholderText = k_command.Param
     End Sub
+
+    Private Shared Function ExplainCommand(k_command As CommandInfo, k_target As String) As String
+        Dim k_expect As String = Nothing
+        If Not Expectations.TryGetValue(k_command.Name, k_expect) Then
+            k_expect = "Rezultatul apare mai sus, câte un bloc pe fiecare bază; nota de sub fiecare bloc spune ce trebuie știut despre el."
+        End If
+        Dim k_sb As New StringBuilder()
+        k_sb.Append("Ce face: ").AppendLine(k_command.Description)
+        k_sb.Append("Ce te aștepți: ").AppendLine(k_expect)
+        k_sb.Append("Țintă: ").Append(k_target)
+        If k_command.Writes Then k_sb.Append("   (scrie în bază: cere confirmare)")
+        If k_command.Param <> String.Empty Then k_sb.Append("   (cere: ").Append(k_command.Param.ToLowerInvariant()).Append(")")
+        Return k_sb.ToString()
+    End Function
 
     Private Function CurrentCommand() As CommandInfo
         Dim k_index As Integer = cmbCommand.SelectedIndex

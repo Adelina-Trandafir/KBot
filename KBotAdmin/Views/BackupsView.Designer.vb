@@ -23,6 +23,7 @@ Partial Class BackupsView
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
@@ -94,9 +95,9 @@ Partial Class BackupsView
         btnMake.Primary = True
         btnMake.Size = New Size(254, 36)
         btnMake.TabIndex = 1
-        btnMake.Text = "Copie nouă pentru baza aleasă"
+        btnMake.Text = "Copie nouă"
         tips.SetToolTipHeader(btnMake, "Copie nouă")
-        tips.SetToolTipText(btnMake, "Face acum o copie (dump) a bazei alese, în dosarul backup de pe server." & vbLf & "Se cere o singură bază, nu <TOATE BAZELE>.")
+        tips.SetToolTipText(btnMake, "Face acum o copie (dump) în dosarul backup de pe server și cere un motiv." & vbLf & "Cu o bază aleasă în stânga: copia ei. Cu <TOATE BAZELE>: câte o copie pentru fiecare bază de unitate, fără 000_DEMO.")
         '
         ' grid
         '
@@ -143,6 +144,16 @@ Partial Class BackupsView
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
         KBotDataColumn4.Width = 150
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderText = "Motiv"
+        KBotDataColumn6.HeaderTooltip = "Motivul scris când s-a făcut copia (din jurnalul serverului). Gol la planurile de schemă și la copiile mai vechi."
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Key = "reason"
+        KBotDataColumn6.MinWidth = 120
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.Width = 260
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Calea pe server"
@@ -157,6 +168,7 @@ Partial Class BackupsView
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)
         grid.Columns.Add(KBotDataColumn4)
+        grid.Columns.Add(KBotDataColumn6)
         grid.Columns.Add(KBotDataColumn5)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "path"
@@ -168,7 +180,7 @@ Partial Class BackupsView
         grid.Size = New Size(884, 472)
         grid.TabIndex = 1
         tips.SetToolTipHeader(grid, "Fișierele")
-        tips.SetToolTipText(grid, "Copiile bazelor și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Cu o bază aleasă în stânga se văd doar copiile ei și planurile care o numesc." & vbLf & "Dublu clic pe un rând arată textul SQL al fișierului." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
+        tips.SetToolTipText(grid, "Copiile bazelor (cu motivul lor) și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Cu o bază aleasă în stânga se văd doar copiile ei și planurile care o numesc." & vbLf & "Dublu clic pe un rând arată textul SQL al fișierului." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
         '
         ' lblState
         '

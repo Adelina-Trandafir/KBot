@@ -201,8 +201,8 @@ Partial Class ParteneriForm
         gridCoduri.RowHeight = 24
         gridCoduri.Size = New Size(819, 314)
         gridCoduri.TabIndex = 16
-        tips.SetToolTipHeader(gridCoduri, "Coduri angajament")
-        tips.SetToolTipText(gridCoduri, "Codurile aparțin codului fiscal al furnizorului." & vbLf & "«Cod ang.» și «Cod ind.» alcătuiesc indicatorul; clasificația se arată din FOREXE, doar pentru citire." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvare».")
+        ' tips.SetToolTipHeader(gridCoduri, "Coduri angajament")
+        ' tips.SetToolTipText(gridCoduri, "Codurile aparțin codului fiscal al furnizorului." & vbLf & "«Cod ang.» și «Cod ind.» alcătuiesc indicatorul; clasificația se arată din FOREXE, doar pentru citire." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvare».")
         ' 
         ' btnSterge
         ' 

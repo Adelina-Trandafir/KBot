@@ -217,8 +217,8 @@ Partial Class DdfEditSectiuneaBPage
         grd.RowHeight = 28
         grd.ShrinkColumnsToFit = False
         grd.Size = New Size(1188, 578)
-        tips.SetToolTipHeader(grd, "Secțiunea B")
-        tips.SetToolTipText(grd, "Se recalculează întreagă din secțiunea A la fiecare modificare." & vbLf & "Ce se vede aici este ce se va salva.")
+        ' tips.SetToolTipHeader(grd, "Secțiunea B")
+        ' tips.SetToolTipText(grd, "Se recalculează întreagă din secțiunea A la fiecare modificare." & vbLf & "Ce se vede aici este ce se va salva.")
         grd.TabIndex = 0
         '
         ' lblNota

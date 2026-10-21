@@ -43,6 +43,15 @@ Public NotInheritable Class AdminContext
     ''' <summary>The account (e-mail) chosen in the accounts tree; empty when none.</summary>
     Public Property SelectedAccount As String = String.Empty
 
+    ''' <summary>The databases ticked in the tree (ME01-06); empty when none. Choosing a row (the clicked one) is <see cref="SelectedDb"/>; this is the ticks.</summary>
+    Public Property CheckedDatabases As IReadOnlyList(Of String) = New List(Of String)()
+
+    ''' <summary>The accounts ticked in the tree (ME01-06); empty when none.</summary>
+    Public Property CheckedAccounts As IReadOnlyList(Of String) = New List(Of String)()
+
+    ''' <summary>The local backup store once the operator has opened it in this run (slice ME02); Nothing until then.</summary>
+    Public Property LocalStore As BackupStore
+
     Public ReadOnly Property IsAll As Boolean
         Get
             Return _selectedDb = String.Empty

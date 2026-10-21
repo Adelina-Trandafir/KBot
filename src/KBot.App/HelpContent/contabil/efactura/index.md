@@ -183,7 +183,7 @@ O factură primită se plătește la un moment dat, întreagă sau în părți. 
 **Sumele sunt cu TVA** (suma de plată). Fiecare linie are cota ei de TVA din factură; centimele de rotunjire dintre linii și totalul facturii se pun pe ultima linie a cotei, ca liniile să dea exact totalul. Dacă totalul facturii are și o parte care nu se explică prin linii (de exemplu o reducere pe toată factura), partea aceea se arată în notă și nu se alocă pe linii. O factură de stornare are sumele cu minus, iar recepția ei este o recepție obișnuită, cu minus.
 
 ### Pagina «Recepții»
-<!-- slice: KE11, 0000-101, KE12, 0000-102, 0000-103, KE12-03, 0000-104, KE13, 0000-108, KE14, 0000-109, KE15, 0000-111, KE16, 0000-112, 0121-05, 0000-114 -->
+<!-- slice: KE11, 0000-101, KE12, 0000-102, 0000-103, KE12-03, 0000-104, KE13, 0000-108, KE14, 0000-109, KE15, 0000-111, KE16, 0000-112, 0121-05, 0000-114, KE17, 0000-115 -->
 
 Pagina se deschide din ribbon, fila **E-Factura**, cu butonul **«Recepții»**, chiar după **«Cumpărare»** (un separator îl desparte de «Vânzare»). Este o pagină a ferestrei principale, nu o fereastră peste ea: rămâne deschisă cât lucrezi în altă parte, ca «Cumpărare», și un nou clic pe buton o aduce în față. Își citește singură facturile primite ale anului ales în K-BOT. Aici alegi clasificațiile liniilor, sumele și recepția, într-un singur loc. Pagina are patru zone:
 
@@ -207,7 +207,13 @@ Butonul din subsol (**«Creează recepția»**, **«Leagă»** sau **«Modifică
 
 Sumele din **«Recepționată»** le scrii în formatul din Windows al calculatorului tău (cu punct sau cu virgulă la zecimale, ca în celelalte celule): cu punctul ca separator, «77.49» înseamnă 77,49. Când o recepție existentă nu are destul rest pe clasificația unei linii, mesajul din josul paginii spune și pe ce clasificații mai are rest, iar tabelul clasificațiilor (dreapta jos) arată un rând în plus pentru fiecare astfel de clasificație, ca să alegi clasificația potrivită sau altă recepție.
 
-**Legare în bloc, cu propuneri.** Când treci cu mouse-ul peste un furnizor din arbore care are facturi fără recepție, apare în dreapta rândului un buton cu două zale de lanț. Apasă-l și se deschide o fereastră cu facturile neasociate ale furnizorului și, pentru fiecare, recepția **propusă**: cea care are exact valoarea facturii (o factură = o recepție întreagă; nicio factură nu se împarte pe produse și nu se face recepție parțială). Dacă sunt mai multe recepții cu aceeași valoare, se ia cea datată de la data facturii până la cel mult 2 zile după ea. Dacă tot nu e una singură, factura rămâne nebifată: apeși rândul ei, vezi jos recepțiile posibile și alegi una cu dublu clic. Bifezi ce ești de acord să legi și apeși **«Leagă»**; până atunci nu se salvează nimic. O recepție se leagă de o singură factură. Doar rolul «Contabil» poate lega.
+**Legare în bloc, cu propuneri.** Când treci cu mouse-ul peste un furnizor din arbore care are facturi fără recepție, apare în dreapta rândului un buton cu două zale de lanț. Apasă-l și se deschide o fereastră cu facturile neasociate ale furnizorului. Pentru fiecare, K-BOT **propune** recepția care are exact valoarea facturii; dacă sunt mai multe cu aceeași valoare, o ia pe cea datată de la data facturii până la cel mult 2 zile după ea, iar dacă tot nu e una singură, factura rămâne nebifată. Pe fiecare rând poți:
+
+- **schimba angajamentul**, în coloana «Angajament», dacă factura are mai mult de unul (altfel angajamentul doar se vede);
+- **scrie în «Recepție» cât primești din factură**: implicit este valoarea ei și nu poate fi mai mare; o sumă mai mică înseamnă o recepție parțială, iar restul facturii rămâne de legat din pagina de recepții; 0 scoate recepția de pe rând;
+- **alege altă recepție** în tabelul de jos, cu dublu clic pe ea. Tabelul arată recepțiile cu rest ale angajamentului facturii, în două grupuri: întâi cele cu aceeași valoare ca suma de recepționat, apoi restul recepțiilor neasociate integral. Coloana **«Rămas»** este valoarea recepției minus tot ce i s-a asociat (și ce iau celelalte facturi bifate din fereastră); o recepție la care nu a mai rămas nimic dispare din listă.
+
+O recepție poate acoperi mai multe facturi, cât îi ajunge restul. Bifezi ce ești de acord să legi și apeși **«Leagă»**; până atunci nu se salvează nimic. Doar rolul «Contabil» poate lega.
 
 După ce recepția este salvată în FOREXE, K-BOT **citește din nou angajamentul** și o ia în baza lui, ca la orice descărcare, iar legătura cu factura se scrie abia atunci. Dacă FOREXE nu a arătat mesajul de reușită, K-BOT verifică singur, la citirea înapoi, dacă recepția chiar a fost salvată; dacă nu poate confirma, **nu leagă nimic** și îți spune să verifici în FOREXE înainte să încerci din nou. Cât durează, pagina este oprită.
 

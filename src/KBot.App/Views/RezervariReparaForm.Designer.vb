@@ -179,8 +179,8 @@ Partial Class RezervariReparaForm
         grdGreseli.ShrinkColumnsToFit = False
         grdGreseli.Size = New Size(746, 145)
         grdGreseli.TabIndex = 2
-        tips.SetToolTipHeader(grdGreseli, "Rezervările greșite")
-        tips.SetToolTipText(grdGreseli, "Aceleași rânduri care fac angajamentul roșu în lista principală." & vbLf & "«Anterioară acum» e ce ține rezervarea; «Ar trebui să fie» e valoarea la care s-a oprit rezervarea dinainte, pe același indicator.")
+        ' tips.SetToolTipHeader(grdGreseli, "Rezervările greșite")
+        ' tips.SetToolTipText(grdGreseli, "Aceleași rânduri care fac angajamentul roșu în lista principală." & vbLf & "«Anterioară acum» e ce ține rezervarea; «Ar trebui să fie» e valoarea la care s-a oprit rezervarea dinainte, pe același indicator.")
         '
         ' lblPlanCaption
         '
@@ -295,8 +295,8 @@ Partial Class RezervariReparaForm
         grdPlan.ShrinkColumnsToFit = False
         grdPlan.Size = New Size(746, 217)
         grdPlan.TabIndex = 5
-        tips.SetToolTipHeader(grdPlan, "Ce se schimbă")
-        tips.SetToolTipText(grdPlan, "Fiecare rând e o rezervare care se rescrie: valoarea ei și valoarea anterioară, din vechi în nou." & vbLf & "Nimic nu se scrie până nu apăsați «Repară».")
+        ' tips.SetToolTipHeader(grdPlan, "Ce se schimbă")
+        ' tips.SetToolTipText(grdPlan, "Fiecare rând e o rezervare care se rescrie: valoarea ei și valoarea anterioară, din vechi în nou." & vbLf & "Nimic nu se scrie până nu apăsați «Repară».")
         '
         ' txtNote
         '

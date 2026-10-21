@@ -41,3 +41,14 @@ Operator, 19.10.2026 (page «Recepții», KE16): an angajament picked for a supp
 - Operator, 19.10.2026: the Migrator part (0121-02) cannot be tested now - built only (Migrator FileVersion 1.21.0.0), never run: Access column names from `qFX_Ang_Part`, `LAST_INSERT_ID` fallback and the report figures to be checked on the first real «Verifică».
 - The real content of `Parteneri_Coduri` (is `CodAng` filled?) not seen: run the check queries at the end of `sql/0121_07_interogare_unica.sql` before the run. 0121-06 waits for 0121-07 and the last unit's Migrator run.
 - 0121-05: the picks of the page are durable now (supplier link by tax code); never run. A supplier whose invoices carry no tax code cannot have a pick saved.
+
+---
+
+## Slice 0122 — Partner only by CodFiscal, no IdPartener/CodPartener (ANALYSIS)
+
+Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `FX_ORD_TBL` and `VC_NIR` on `Parteneri.IdPartener` (outside the Access migration), so `Parteneri` can later hold one row per CodFiscal. The next update is mandatory, so old clients are not a constraint. Full analysis, sub-slices and open decisions: [SLICE-0122-parteneri-fara-idpartener.md](../SLICE-0122-parteneri-fara-idpartener.md).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0122 | Analysis of the IdPartener/CodPartener dependencies; plan 0122-01..07 (CodFiscal goes into `CodPartener`, `VC_NIR` gets the column) | PLAN decided by the operator, 20.10.2026 | [SLICE-0122](../SLICE-0122-parteneri-fara-idpartener.md) |
+| 0122-01 | Column `VC_NIR.CodPartener` (`sql/P122_01_vc_nir_codpartener.sql`) + one-time query that puts the normalized CodFiscal in `CodPartener` on SA, SB, ORD_TBL, VC_NIR (`sql/0122_01_interogare_unica.sql`) | SCRIS, NERULAT; the operator runs the DDL, the sync, then the query from KBotAdmin | [SLICE-0122-01](../SLICE-0122-01-codfiscal-in-codpartener.md) |

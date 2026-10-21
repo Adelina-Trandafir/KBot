@@ -256,8 +256,8 @@ Partial Class SetariAccessView
         gridRegistru.RowHeight = 24
         gridRegistru.Size = New Size(584, 250)
         gridRegistru.TabIndex = 3
-        tips.SetToolTipHeader(gridRegistru, "Tabelul «cai» din cale.accdb")
-        tips.SetToolTipText(gridRegistru, "Rândurile registrului pentru anul și sursa alese acum în K-BOT (coloanele AnDate și SURSA)." & vbLf & "Căile din FullPath și CaleForexe sunt afișate așa cum sunt scrise în registru.")
+        ' tips.SetToolTipHeader(gridRegistru, "Tabelul «cai» din cale.accdb")
+        ' tips.SetToolTipText(gridRegistru, "Rândurile registrului pentru anul și sursa alese acum în K-BOT (coloanele AnDate și SURSA)." & vbLf & "Căile din FullPath și CaleForexe sunt afișate așa cum sunt scrise în registru.")
         '
         ' dlgCale
         '
