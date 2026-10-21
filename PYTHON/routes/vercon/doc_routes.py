@@ -18,10 +18,10 @@ from utils.clock import bucharest_today
 
 from flask import g, request
 
-from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, receipt_distribution, invoices
+from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, receipt_distribution, invoices, efactura_queue
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
-from . import document_order, migration_links, oi_context
+from . import document_order, migration_links, oi_context, oi_register_repair
 
 RIGHT = {'nir': 'receptie', 'storno': 'storno', 'bc': 'consum', 'br': 'retur', 'bp': 'oi_predare', 'bt': 'oi_transfer', 'bs': 'oi_casare', 'lista': 'alimente'}
 FORM_OF = {'lista': 'lista_alimente'}   # the menu key of a family whose name differs
@@ -140,8 +140,10 @@ def register(bp, guard, scoped, open_db):
 
     receipt_context.register(bp, guard, scoped, session, build, _need)
     oi_context.register(bp, guard, scoped, session, build, _need)
+    oi_register_repair.register(bp, guard, scoped, session, build, repo_of, _need, RIGHT)
     receipt_routes.register(bp, guard, scoped, session, build, repo_of, _need)
     receipt_distribution.register(bp, guard, scoped, session, build, repo_of, _need)
+    efactura_queue.register(bp, guard, scoped, session, build, _need)   # VC06-07: invoices sent from K-BOT
 
     @bp.get('/api/vercon/doc/<family>/lookups')
     @guard('read')

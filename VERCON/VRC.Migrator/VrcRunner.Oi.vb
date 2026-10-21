@@ -34,7 +34,7 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_origin As String = OiLabel(k_row("IDBO"))
         If k_bp.Length > 0 AndAlso k_bt.Length > 0 Then
             AddIssue(k_source, k_table.Name, k_key, "IDBP/IDBT", "X15", "BLOCAJ", k_bp & "/" & k_bt, String.Empty,
-                     "Poziția indică simultan o predare și un transfer; tipul bonului curent este ambiguu.")
+                     "Poziția are completate și numărul bonului de predare, și numărul bonului de transfer; trebuie să fie doar unul dintre ele.")
             k_ok = False
             Return Nothing
         End If
@@ -43,33 +43,33 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_label As String = If(k_group = "IDBP", k_bp, If(k_group = "IDBT", k_bt, k_current))
         If k_label.Length = 0 Then
             AddIssue(k_source, k_table.Name, k_key, "IDBC", "X15", "BLOCAJ", "NULL/0", String.Empty,
-                     "Lipsește identificatorul bonului curent: IDBC și marcajele IDBP/IDBT sunt goale.")
+                     "Poziția nu are niciun bon completat (nici de predare, nici de transfer, nici de casare).")
             k_ok = False
             Return Nothing
         End If
         If k_group <> "IDBC" AndAlso k_current.Length > 0 AndAlso k_current <> k_label Then
             AddIssue(k_source, k_table.Name, k_key, "IDBC", "X15", "BLOCAJ", k_current, String.Empty,
-                     $"Bonul curent IDBC={k_current} contrazice marcajul {k_group}={k_label} din aceeași poziție.")
+                     $"Poziția are bonul curent {k_current}, dar și bonul de {If(k_group = "IDBP", "predare", "transfer")} {k_label}; cele două numere trebuie să fie același.")
             k_ok = False
             Return Nothing
         End If
         If Not OiDocumentLabels(k_source, k_sourceIndex)(k_group).Contains(k_label) Then
             AddIssue(k_source, k_table.Name, k_key, "IDBC", "X15", "BLOCAJ", k_label, String.Empty,
-                     $"Bonul curent nu există în documentele sursă pentru {k_group} (rând orfan).")
+                     $"Bonul de {If(k_group = "IDBP", "predare", If(k_group = "IDBT", "transfer", "casare"))} nr. {k_label}, scris pe această poziție, nu există în tabelul bonurilor ({If(k_group = "IDBP", "OI_Predare", If(k_group = "IDBT", "OI_Transfer", "OI_Casare"))}).")
             k_ok = False
             Return Nothing
         End If
 
         If k_group = "IDBP" AndAlso k_origin.Length > 0 Then
             AddIssue(k_source, k_table.Name, k_key, "IDBO", "X15", "BLOCAJ", k_origin, String.Empty,
-                     "Predarea nu are proveniență IDBO; aceasta se completează numai la transfer/casare.")
+                     "O poziție de predare nu trebuie să aibă bon de origine; acesta se completează doar la transfer sau casare.")
             k_ok = False
             Return Nothing
         End If
         Dim k_quantity As Decimal? = VrcConvert.ToDecimal(k_row("Cant"))
         If k_group <> "IDBP" AndAlso k_origin.Length = 0 AndAlso k_quantity.GetValueOrDefault() <> 0D Then
             AddIssue(k_source, k_table.Name, k_key, "IDBO", "X15", "BLOCAJ", "NULL/0", String.Empty,
-                     "Lipsește bonul de proveniență al unei poziții de transfer/casare cu cantitate nenulă.")
+                     "Poziția este un transfer sau o casare cu cantitate, dar nu are completat bonul din care a plecat obiectul (bonul de origine).")
             k_ok = False
             Return Nothing
         End If

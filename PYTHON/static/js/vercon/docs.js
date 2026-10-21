@@ -24,8 +24,9 @@ import { documentTreeOrder, monthKey } from './document-tree-order.js';
 import { warehouseChoices, holderChoices, warehouseStock } from './oi-product-choices.js';
 import { oiLineValue } from './oi-values.js';
 import { oiContext } from './oi-context.js';
-import { orphanStorno } from './orphan-storno.js';
+import { orphanStorno } from './orphan-storno.js'; import { repairRegister } from './oi-register-repair.js';
 import { receiptProductEntry, mfColumns, mfMonthly } from './receipt-product-entry.js';
+import { efacturaIntake } from './efactura-intake.js';
 
 // Keep the modal implementation available; receipt editing temporarily stays inline.
 const RECEIPT_MODAL_ENABLED = false;
@@ -81,6 +82,7 @@ export function mountDocuments(host, opts) {
   const createReceipts = () => receiptTree(params => opts.api(url('/tree', `&${new URLSearchParams(params)}`)), () => bonOrder.byDate);
   let receipts = lazy ? createReceipts() : null;
   const allocation = family === 'nir' ? receiptAllocation({ api: opts.api, selection: opts.sel, draft: () => state.draft, mode: () => state.mode }) : null;
+  const intake = family === 'nir' ? efacturaIntake({ api: opts.api, sel: opts.sel }) : null;   // VC06-07: invoices the accountant sent from K-BOT
   const numbering = documentNumbers({ family, state, allocation, selection: opts.sel, api: opts.api,
     aborted: () => abort.signal.aborted, controls: () => ({ input: inputs.get('Numar'), ...subnumber.controls() }),
     error: () => errors.get('h.Numar'), track: trackStorno });
@@ -151,6 +153,7 @@ export function mountDocuments(host, opts) {
     const specs = [{ key: family === 'nir' ? 'product' : 'variant', label: 'Produs', type: 'ref', product: true, editable: true, required: true }, { key: 'um', label: 'UM', ...(family === 'nir' ? { editable: true, required: true, max: 50 } : {}) },
       ...(['bc', 'bp'].includes(family) ? [{ key: 'avail', label: 'Disponibil', type: 'decimal' }] : []),
       { key: 'Cant', label: 'Cantitate', type: 'decimal', editable: true, required: true, min: 0 }];
+    if (family === 'nir' && editing() && state.draft?.efactura) specs.unshift({ key: 'ef_name', label: 'Din factura primită' });   // VC06-07: what the supplier wrote on the line
     if (family === 'nir') {
       specs.push({ key: 'Pret', label: 'Preț', type: 'decimal', editable: true, required: true, min: 0 }, { key: 'IDTVA', label: 'TVA %', type: 'ref', editable: true, required: true }, { key: 'Valoare', label: 'Valoare', type: 'decimal' }, { key: 'TVA', label: 'TVA', type: 'decimal' }, { key: 'ValoareCUTVA', label: 'TOTAL', type: 'decimal' });
 
@@ -216,6 +219,15 @@ export function mountDocuments(host, opts) {
   async function add() { if (!await allowDiscard()) return; allocation?.clearDraftProducts(); const today = state.lookups.today; Object.assign(state, { mode: 'add', dirty: false, requestKey: null, pendingBody: null, draft: { source: null, tip: 'NIR', vat: null, autoNumber: true, header: { Data: today, DataFc: today, NumarSub: 0 }, lines: config.source && family !== 'storno' || config.holder ? [] : [newLine()] } }); say(''); if (family === 'bp') await loadWarehouseStock(); paint(); if (family === 'storno') await refreshStornoSources(); if (receipt || custody || bc) await checkNumber(true); }
   async function edit() { if (!state.doc || !state.canWrite || state.doc.annulled || state.busy || state.pendingBody || pendingCancel || pendingLink) return; if (state.doc.order_locked) { say(state.doc.order_message, true); return; } if (orphanReturn()) { say('Returul nu are bon sursă. Alegeți Bonul returnat și folosiți Asociază cu un bon de consum, apoi puteți modifica returul.', true); inputs.get('source')?._combo?.input.focus(); return; } allocation?.clearDraftProducts(); state.mode = 'edit'; state.draft = draftFromDoc(state.doc); state.dirty = false; say(''); if (family === 'storno') await refreshStornoSources(); if (config.source || config.holder) await eligible(); if (family === 'bp') await loadWarehouseStock(); paint(); }
   async function discard() { if (!await allowDiscard()) return; allocation?.clearDraftProducts(); state.mode = 'view'; state.draft = null; state.dirty = false; state.requestKey = null; state.pendingBody = null; say(''); paint(); }
+  // VC06-07: the NIR starts from an invoice the accountant sent from K-BOT (efactura-intake.js fills the draft; the Administrator picks the product of each line).
+  async function fromEfactura() {
+    if (!intake || !state.canWrite || state.busy) return;
+    const detail = await intake.pick(); if (!detail) return;
+    if (state.mode === 'add') { if (state.dirty && !await confirmBox('Ciorna începută se înlocuiește cu factura aleasă. Continuați?', { title: 'Factură din e-Factura', yes: 'Înlocuiește', no: 'Renunță' })) return; allocation.clearDraftProducts(); }
+    else { await add(); if (state.mode !== 'add') return; }
+    const missing = intake.apply(detail, { draft: state.draft, allocation, newLine }); state.dirty = true; paint();
+    say(`Factura ${detail.number} (${detail.supplier || detail.cui || ''}) din e-Factura este în ciornă: alegeți produsul fiecărui rând.${detail.note ? ' Notă contabil: ' + detail.note : ''}${detail.partner ? '' : ' Furnizorul nu este în lista de parteneri: alegeți-l.'}${missing.length ? ' Unele conturi propuse sunt în altă gestiune și nu au putut fi bifate.' : ''}`);
+  }
   let sourceSequence = 0;
   function refreshStornoSources() {
     const draft = state.draft, sequence = ++sourceSequence, day = draft?.header.Data;
@@ -577,7 +589,7 @@ export function mountDocuments(host, opts) {
     const specs = lineSpecs().filter(spec => !compactMF || !['Cant', 'IDTVA'].includes(spec.key)), columns = [{ key: '_index', title: '#', width: 46, fixedWidth: true, filter: false, sortable: false, align: 'center' }];
     for (const spec of specs) {
       const choices = row => spec.product ? config.holder ? state.eligible.map((item, index) => ({ value: index, label: `${item.name} • ${item.um} • disponibil ${format(item.left ?? item.qty, { type: 'decimal' })}` })) : productOptions() : (family === 'nir' ? allocation.taxOptions(row) : state.lookups.vat || []).map((item) => ({ value: item.id, label: `${item.percent}%` }));
-      columns.push(column({ ...spec, type: spec.type || 'text' }, { width: spec.product || spec.key === 'name' ? compactMF ? 424 : 234 : inline && spec.key === 'Cant' ? 90 : spec.key === 'um' ? 64 : inline && ['Pret', 'IDTVA', 'Valoare', 'TVA', 'ValoareCUTVA'].includes(spec.key) ? 100 : 128, showArrow: inline, editable: editing() && !!spec.editable, filter: !editing(), sortable: !editing(),
+      columns.push(column({ ...spec, type: spec.type || 'text' }, { width: spec.product || spec.key === 'name' || spec.key === 'ef_name' ? compactMF ? 424 : 234 : inline && spec.key === 'Cant' ? 90 : spec.key === 'um' ? 64 : inline && ['Pret', 'IDTVA', 'Valoare', 'TVA', 'ValoareCUTVA'].includes(spec.key) ? 100 : 128, showArrow: inline, editable: editing() && !!spec.editable, filter: !editing(), sortable: !editing(),
         ...(spec.tooltip ? { tooltip: spec.tooltip } : {}),
         ...(spec.key === 'um' ? { align: 'center' } : receipt && ['Pret', 'IDTVA', 'Valoare', 'TVA', 'ValoareCUTVA'].includes(spec.key) ? { align: 'right' } : {}),
         ...(family === 'nir' && spec.editable ? { editable: row => editing() && !row.external && row.calc_mode !== 'GROSS' && (!spec.mfOnly || allocation.isMF(row)) && (spec.key !== 'um' || !!row.new_product) && (spec.key !== 'Cant' || !allocation.isMF(row)) } : {}),
@@ -779,7 +791,7 @@ export function mountDocuments(host, opts) {
     bar.classList.toggle('vc-doc__bar--nir-editing', inline && editing());
     if (pendingLink) { bar.append(button('Reia aceeași asociere', linkReturn), status); return; }
     if (pendingCancel) { bar.append(button('Reia aceeași anulare', cancel), status); return; }
-    if (!editing() && family === 'storno') bar.append(button('Linii de storno fără recepție', recoverStorno, { disabled: state.busy }));
+    if (!editing() && (family === 'storno' || custody)) bar.append(button(family === 'storno' ? 'Linii de storno fără recepție' : 'Reglare registru OI', recoverStorno, { disabled: state.busy }));
     if (!editing() && orphanReturn() && !state.doc.annulled) bar.append(button('Asociază cu un bon de consum', linkReturn, { disabled: !state.canWrite || state.busy }));
     if (inline && editing()) {
       const messages = el('div', { className: 'vc-doc__messages' }, status);
@@ -802,7 +814,7 @@ export function mountDocuments(host, opts) {
       if (localized && !localized.ok) { invalid[`h.${spec.key}`] = localized.message; continue; }
       const raw = localized ? localized.value : input?.value ?? state.draft.header[spec.key]; if (spec.type === 'ref') { out.header[spec.key] = raw === '' || raw == null ? null : Number(raw); if (spec.required && out.header[spec.key] == null && !(family === 'nir' && state.draft.tip === 'STOC_INITIAL' && spec.key === 'IdPartener')) invalid[`h.${spec.key}`] = 'Alegeți o valoare.'; } else { const result = parse(raw, spec); if (!result.ok) invalid[`h.${spec.key}`] = result.message; else out.header[spec.key] = result.value; }
     }
-    if (family === 'nir') { out.header.TipDoc = state.draft.tip; out.header.NumarSub = allocation.multi() ? 0 : Number(state.draft.header.NumarSub) || 0; out.header.FacturaId = state.draft.header.FacturaId ?? null; out.undo_tokens = state.draft.undo_tokens || []; out.accounts = [...state.draft.accounts]; }
+    if (family === 'nir') { out.header.TipDoc = state.draft.tip; out.header.NumarSub = allocation.multi() ? 0 : Number(state.draft.header.NumarSub) || 0; out.header.FacturaId = state.draft.header.FacturaId ?? null; out.undo_tokens = state.draft.undo_tokens || []; out.accounts = [...state.draft.accounts]; if (state.draft.efactura) out.efactura = state.draft.efactura; }
     if (family === 'storno') out.header.NumarSub = Number(state.draft.header.NumarSub) || 0;
     if (family === 'bt' && out.header.IDC_OLD != null && out.header.IDC_OLD === out.header.IDC_BT) {
       invalid['h.IDC_OLD'] = invalid['h.IDC_BT'] = 'Primitorul și predătorul trebuie să fie persoane diferite.';
@@ -910,7 +922,7 @@ export function mountDocuments(host, opts) {
   async function recoverStorno() {
     if (state.busy || editing()) return;
     state.busy = true; paintBar();
-    try { await orphanStorno({ api: opts.api, url, json, owner: dialogs, report, changed: async result => {
+    try { await (family === 'storno' ? orphanStorno : repairRegister)({ api: opts.api, url, json, owner: dialogs, report, changed: async result => {
       if (state.doc?.id === result.document_id) state.doc = await opts.api(url(`/${result.document_id}`));
       await refresh(); if (!abort.signal.aborted) paint();
     } }); } finally { state.busy = false; if (!abort.signal.aborted) paintBar(); }
@@ -982,5 +994,12 @@ export function mountDocuments(host, opts) {
     paint(); if (opts.startAdd) say('Nu aveți dreptul să adăugați documente în această gestiune.', true);
   }).catch(report);
   if (!opts.startAdd) paint();
-  return { ready, reloadContext, pauseContext, canChangeContext, startAdd: async () => { await ready; if (abort.signal.aborted) return; if (state.canWrite) await add(); else say('Nu aveți dreptul să adăugați documente în această gestiune.', true); }, isDirty: () => state.dirty || headerUi.dirty() || linesUi.dirty(), search: (text) => { const input = savedHost.querySelector('.treeview-search-input'); if (input) { input.value = text; input.dispatchEvent(new Event('input')); } }, destroy: () => { productEntry?.destroy(); frame?.destroy(); side?.destroy(); custodySide?.destroy(); mfInfo?.destroy(); abort.abort(); pauseContext(); [headerUi, linesUi, treeUi, dialogs].forEach((owner) => owner.clear()); host.replaceChildren(); } };
+  async function startEfactura() {
+    const context = currentContext;
+    await ready;
+    if (abort.signal.aborted || contextAbort.signal.aborted || currentContext !== context || !canChangeContext()) return;
+    if (!state.canWrite) { say('Nu aveți dreptul să adăugați documente în această gestiune.', true); return; }
+    await fromEfactura();
+  }
+  return { ready, reloadContext, pauseContext, canChangeContext, startEfactura, startAdd: async () => { await ready; if (abort.signal.aborted) return; if (state.canWrite) await add(); else say('Nu aveți dreptul să adăugați documente în această gestiune.', true); }, isDirty: () => state.dirty || headerUi.dirty() || linesUi.dirty(), search: (text) => { const input = savedHost.querySelector('.treeview-search-input'); if (input) { input.value = text; input.dispatchEvent(new Event('input')); } }, destroy: () => { productEntry?.destroy(); frame?.destroy(); side?.destroy(); custodySide?.destroy(); mfInfo?.destroy(); abort.abort(); pauseContext(); [headerUi, linesUi, treeUi, dialogs].forEach((owner) => owner.clear()); host.replaceChildren(); } };
 }

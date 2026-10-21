@@ -47,6 +47,8 @@ Public NotInheritable Class AdePlan
     ''' <summary>The conversions applied, one line each, for the operator to read.</summary>
     Public ReadOnly Property Notes As New List(Of String)()
     Public ReadOnly Property ReceiptConfig As AdeReceiptConfig
+    ''' <summary>Every receipt with the number Access gave it, before any change of the operator.</summary>
+    Public ReadOnly Property Receipts As New List(Of AdeReceipt)()
 
     Public ReadOnly Property HasBlocking As Boolean
         Get
@@ -62,13 +64,17 @@ Public NotInheritable Class AdePlan
 
     ''' <param name="k_educators">The names the operator settled on, per (group, text in Access). A text that is not in
     ''' the dictionary is split by the default rule.</param>
+    ''' <param name="k_receiptNumbers">The receipt numbers the operator changed, per IDC in Access (see <see cref="AdeReceiptNumbers"/>).</param>
     Public Shared Function Build(k_source As AdeSource, k_educators As IDictionary(Of (Integer, String), String),
                                  Optional k_groupTypes As IDictionary(Of Integer, Boolean) = Nothing,
-                                 Optional k_childCnpIsParent As Boolean = False) As AdePlan
+                                 Optional k_childCnpIsParent As Boolean = False,
+                                 Optional k_receiptNumbers As IDictionary(Of Integer, Integer) = Nothing) As AdePlan
         Try
             Dim k_plan As New AdePlan(k_source.ReceiptConfig)
             Dim k_excluded = AdeErroneousData.Build(k_source, k_plan)
             k_plan.ConvertTables(k_source, k_excluded)
+            k_plan.ReconstructPayers()
+            k_plan.ApplyReceiptNumbers(k_receiptNumbers)
             k_plan.CheckReceiptNumbers()
             k_plan.FixLinks()
             k_plan.SetGroupTypes(k_groupTypes)
@@ -175,6 +181,82 @@ Public NotInheritable Class AdePlan
         End Select
     End Function
 
+    ''' <summary>
+    ''' SS_Buget rows whose child (IDP) is no longer in Platitori: the child is rebuilt from what its monthly situations kept
+    ''' (name, CNP, group and «left» flag of the LATEST situation), plus one Platitori_sub row so the child has a payer record.
+    ''' The payer has no address or contact: Access kept none of them there. Without this the links block the migration.
+    ''' </summary>
+    Private Sub ReconstructPayers()
+        Dim k_children = Find("Platitori")
+        Dim k_payers = Find("Platitori_sub")
+        Dim k_known As New HashSet(Of Object)(k_children.Rows.Select(Function(k_r) k_r("IDP")).Where(Function(k_v) k_v IsNot Nothing))
+        Dim k_groups As New HashSet(Of Object)(Find("Grupe").Rows.Select(Function(k_r) k_r("IDG")).Where(Function(k_v) k_v IsNot Nothing))
+        Dim k_missing = Find("SS_Buget").Rows.Where(Function(k_r) k_r("IDP") IsNot Nothing AndAlso Not k_known.Contains(k_r("IDP"))).
+            GroupBy(Function(k_r) CInt(k_r("IDP"))).OrderBy(Function(k_g) k_g.Key).ToList()
+        If k_missing.Count = 0 Then Return
+        Dim k_nextPayer As Integer = k_payers.Rows.Where(Function(k_r) k_r("IDS") IsNot Nothing).Select(Function(k_r) CInt(k_r("IDS"))).DefaultIfEmpty(0).Max() + 1
+        For Each k_missingChild In k_missing
+            Dim k_latest = k_missingChild.OrderByDescending(Function(k_r) If(k_r("Anul") Is Nothing, 0, CInt(k_r("Anul")))).
+                ThenByDescending(Function(k_r) If(k_r("IDL") Is Nothing, 0, CInt(k_r("IDL")))).ToList()
+            Dim k_name = k_latest.Select(Function(k_r) TryCast(k_r("Nume"), String)).FirstOrDefault(Function(k_t) Not String.IsNullOrWhiteSpace(k_t))
+            Dim k_cnp = k_latest.Select(Function(k_r) TryCast(k_r("CNP"), String)).FirstOrDefault(Function(k_t) Not String.IsNullOrWhiteSpace(k_t))
+            Dim k_group As Object = k_latest.Select(Function(k_r) k_r("IDG")).FirstOrDefault(Function(k_v) k_v IsNot Nothing AndAlso k_groups.Contains(k_v))
+            Dim k_left As Boolean = k_latest(0)("Plecat") IsNot Nothing AndAlso CBool(k_latest(0)("Plecat"))
+            If k_name Is Nothing Then k_name = $"Reconstituit (IDP {k_missingChild.Key})"
+
+            Dim k_child = EmptyRow(k_children.Table)
+            k_child("IDP") = k_missingChild.Key
+            k_child("IDG") = k_group
+            k_child("Nume") = k_name
+            k_child("CNP") = k_cnp
+            k_child("Plecat") = k_left
+            k_child("SI") = 0
+            k_children.Rows.Add(k_child)
+
+            Dim k_payer = EmptyRow(k_payers.Table)
+            k_payer("IDS") = k_nextPayer
+            k_payer("IDP") = k_missingChild.Key
+            k_payer("Nume") = If(k_name.Length > 50, k_name.Substring(0, 50), k_name)
+            k_payer("TrimiteMail") = False
+            k_payer("Activ") = Not k_left
+            k_payers.Rows.Add(k_payer)
+            k_nextPayer += 1
+        Next
+        Notes.Add($"SS_Buget.IDP: {k_missing.Count} copii care nu mai existau în Platitori au fost reconstituiți din situațiile lunare " &
+                  $"(nume, CNP, grupă și «plecat» din ultima situație), fiecare cu câte un rând în Platitori_sub (doar numele copilului, fără adresă sau contact): " &
+                  $"IDP {String.Join(", ", k_missing.Take(10).Select(Function(k_g) k_g.Key))}{If(k_missing.Count > 10, ", …", String.Empty)}. Verificați-i după migrare.")
+    End Sub
+
+    Private Shared Function EmptyRow(k_table As AdeTable) As Dictionary(Of String, Object)
+        Dim k_row As New Dictionary(Of String, Object)(StringComparer.Ordinal)
+        For Each k_col In k_table.Columns
+            k_row(k_col.Name) = Nothing
+        Next
+        Return k_row
+    End Function
+
+    ''' <summary>Keeps the numbers Access gave (for the correction window), then applies the operator's changes.</summary>
+    Private Sub ApplyReceiptNumbers(k_numbers As IDictionary(Of Integer, Integer))
+        Dim k_rows = Find("Chitante").Rows
+        For Each k_row In k_rows
+            If k_row("IDC") Is Nothing Then Continue For
+            Receipts.Add(New AdeReceipt(CInt(k_row("IDC")), If(k_row("IDPL") Is Nothing, CType(Nothing, Integer?), CInt(k_row("IDPL"))),
+                                        If(k_row("Data") Is Nothing, CType(Nothing, DateTime?), CDate(k_row("Data"))), TryCast(k_row("Serie"), String),
+                                        If(k_row("Numar") Is Nothing, CType(Nothing, Integer?), CInt(k_row("Numar"))),
+                                        k_row("Anulata") IsNot Nothing AndAlso CBool(k_row("Anulata"))))
+        Next
+        If k_numbers Is Nothing OrElse k_numbers.Count = 0 Then Return
+        Dim k_changed As Integer = 0
+        For Each k_row In k_rows
+            Dim k_new As Integer
+            If k_row("IDC") IsNot Nothing AndAlso k_numbers.TryGetValue(CInt(k_row("IDC")), k_new) AndAlso Not Object.Equals(k_row("Numar"), k_new) Then
+                k_row("Numar") = k_new
+                k_changed += 1
+            End If
+        Next
+        If k_changed > 0 Then Notes.Add($"Chitante: {k_changed} numere schimbate de dumneavoastră în fereastra «Chitanțe dublate»; în Access rămân cele vechi.")
+    End Sub
+
     ''' <summary>Exact duplicate receipt numbers must be resolved before the subunit-wide unique key is written.</summary>
     Private Sub CheckReceiptNumbers()
         Dim k_series As New Dictionary(Of String, Dictionary(Of Integer, List(Of Dictionary(Of String, Object))))(StringComparer.Ordinal)
@@ -201,7 +283,7 @@ Public NotInheritable Class AdePlan
                 Dim k_examples = k_number.Value.Take(10).Select(
                     Function(r) $"IDC={r("IDC")}, IDPL={r("IDPL")}, Data={Convert.ToString(r("Data"), CultureInfo.InvariantCulture)}")
                 Block($"Chitante: seria «{k_serie.Key}», numărul {k_number.Key} apare pe {k_number.Value.Count} rânduri din aceeași subunitate " &
-                      $"(ex.: {String.Join("; ", k_examples)}). Indexul uq_Sub_Serie_Numar cere o singură chitanță pentru fiecare serie și număr, inclusiv pentru chitanțe anulate și ani diferiți. Corectați dublurile în sursă.")
+                      $"(ex.: {String.Join("; ", k_examples)}). Baza de date cere o singură chitanță pentru fiecare serie și număr, inclusiv pentru chitanțe anulate și din ani diferiți. Schimbați numerele din butonul «Chitanțe dublate…» sau corectați sursa.")
             Next
         Next
     End Sub

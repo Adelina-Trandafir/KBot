@@ -764,7 +764,7 @@ Partial Friend NotInheritable Class VrcRunner
             If Not k_value.HasValue OrElse k_value.Value >= 0D Then Continue For
             Dim k_text = k_value.Value.ToString("0.########", CultureInfo.InvariantCulture)
             AddIssue(k_source, k_table.Name, k_key, k_field, "X08", "AVERTIZARE", k_text, k_text,
-                     "Valoare negativă în Access: se păstrează exact, fără schimbarea semnului sau recalcularea altor câmpuri.")
+                     "Valoare negativă în Access. Se transferă neschimbată, cu semnul minus; nu se corectează nimic și nu se recalculează alte câmpuri.")
         Next
     End Sub
 
@@ -840,13 +840,13 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_hundredths As Decimal = Math.Abs(k_value - k_cut) * 100D
             If Math.Abs(k_hundredths - Math.Round(k_hundredths)) > 0.0001D Then
                 AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X03", "BLOCAJ", k_value.ToString("0.########", CultureInfo.InvariantCulture), String.Empty,
-                         "Număr de document cu mai mult de 2 zecimale; nu poate fi păstrat în NumarSub.")
+                         "Număr de document cu mai mult de 2 zecimale; zecimalele nu încap în subnumărul documentului.")
                 k_ok = False
                 Return Nothing
             End If
             _currentNumarSub = CInt(Math.Round(k_hundredths))
             AddIssue(k_source, k_table.Name, k_key, k_column.Name, "N10", "CONVERSIE", k_value.ToString("0.##", CultureInfo.InvariantCulture), $"{k_cut:0} + NumarSub {_currentNumarSub}",
-                     "Document introdus între două numere: partea întreagă rămâne în Numar, fracția (în sutimi) în NumarSub; ordinea cronologică se păstrează.")
+                     "Număr de document cu zecimale (document introdus între două numere). Partea întreagă rămâne numărul documentului, iar zecimalele devin subnumărul; ordinea documentelor nu se schimbă.")
         End If
         Dim k_result As Integer
         Dim k_reason As String = String.Empty
@@ -902,13 +902,13 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_inBt As Boolean = k_labels("IDBT").Contains(k_label)
         If k_inBp AndAlso k_inBt Then
             AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X14", "BLOCAJ", k_label, String.Empty,
-                     "Originea există și ca BP (OI_Predare.IDBP), și ca BT (OI_Transfer.IDBT); nu se poate stabili din care provine linia. Decideți regula înainte de transfer.")
+                     "Numărul bonului de origine există și ca bon de predare (OI_Predare), și ca bon de transfer (OI_Transfer); nu se știe din care a plecat obiectul. Hotărâți regula înainte de transfer.")
             k_ok = False
             Return Nothing
         End If
         If Not k_inBp AndAlso Not k_inBt Then
             AddIssue(k_source, k_table.Name, k_key, k_column.Name, "X05", "BLOCAJ", k_label, String.Empty,
-                     "Originea nu există nici în OI_Predare (IDBP), nici în OI_Transfer (IDBT) (rând orfan).")
+                     "Bonul de origine nu există nici în OI_Predare, nici în OI_Transfer.")
             k_ok = False
             Return Nothing
         End If
@@ -957,7 +957,7 @@ Partial Friend NotInheritable Class VrcRunner
                     k_idPartener = k_partner
                 ElseIf _missingSuppliers.Add($"{k_source.Profile.FileName}|{k_normalized}|{k_idf}") Then
                     AddIssue(k_source, "NIR", k_key, "IDF", "X04", "AVERTIZARE", If(k_code, "NULL"), "IdPartener NULL",
-                             "Furnizorul nu are partener KBOT cu același cod fiscal: documentul se importă fără partener; codul rămâne în CodFiscalSursa.")
+                             "Furnizorul nu are între partenerii KBOT niciunul cu același cod fiscal. Documentele lui se transferă fără partener; codul fiscal rămâne scris pe document, ca să-l puteți lega mai târziu.")
                 End If
             End If
         End If

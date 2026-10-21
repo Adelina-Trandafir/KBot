@@ -224,6 +224,9 @@ Public NotInheritable Class VrcRunResult
     ''' <summary>«ColumnKey = 4: Field = 2»: one affected row in words the operator can look up in Access.</summary>
     Private Shared Function ExampleOf(k_issue As VrcIssue, k_pk As String) As String
         Dim k_where As String = If(k_pk.Length > 0, $"{k_pk} = {k_issue.SourceKey}", $"rândul {k_issue.SourceKey}")
+        ' Account / origin findings carry their own sentence per row (it names the position, product and bon): show it instead of «IDM = 2».
+        If k_issue.RuleCode = "X16" Then Return k_issue.Justification
+        If k_issue.RuleCode = "X15" OrElse k_issue.RuleCode = "X17" Then Return $"{k_where}: {k_issue.Justification}"
         If k_issue.FieldName.Length = 0 OrElse k_issue.OriginalValue.Length = 0 Then Return k_where
         Return $"{k_where}: {k_issue.FieldName} = {k_issue.OriginalValue}"
     End Function
@@ -244,7 +247,7 @@ Public NotInheritable Class VrcRunResult
                 End If
                 If k_column IsNot Nothing AndAlso k_column.Link = VrcLinkKind.Origin Then
                     Return ($"{k_table}: {k_field} nu arată spre niciun bon",
-                            $"{k_rows} din {k_table} au {k_field} (bonul de origine) cu un număr care nu se găsește nici în OI_Predare (IDBP), nici în OI_Transfer (IDBT).",
+                            $"{k_rows} din {k_table} au {k_field} (bonul din care a plecat obiectul) cu un număr care nu se găsește nici în OI_Predare, nici în OI_Transfer.",
                             "Corectați valoarea sau adăugați bonul lipsă. Bonul poate fi într-un alt fișier al aceleiași gestiuni: atunci bifați și acel fișier.")
                 End If
                 Dim k_parent As String = If(k_column Is Nothing, String.Empty, k_column.Parent)
@@ -262,12 +265,26 @@ Public NotInheritable Class VrcRunResult
                         $"Nu se rezolvă corectând un singur rând: trebuie hotărât ce reprezintă {k_table}.{k_field}. Dacă valorile sunt rămășițe fără rost, le puteți pune pe 0 în Access.")
             Case "X14"
                 Return ($"{k_table}: {k_field} poate însemna două lucruri",
-                        $"{k_rows} din {k_table} au {k_field} cu un număr care există și ca BP (OI_Predare), și ca BT (OI_Transfer); nu se poate stabili din care provine linia.",
-                        "Hotărâți regula (BP sau BT) înainte de transfer.")
+                        $"{k_rows} din {k_table} au {k_field} cu un număr care există și ca bon de predare (OI_Predare), și ca bon de transfer (OI_Transfer); nu se știe din care a plecat obiectul.",
+                        "Hotărâți dacă numărul înseamnă bon de predare sau bon de transfer, înainte de transfer.")
+            Case "X15"
+                Return ($"{k_table}: bonul de pe poziții lipsește sau este greșit",
+                        $"{k_rows} din {k_table} au bonul curent sau bonul de origine lipsă ori completat greșit. Motivul este scris la fiecare rând de mai jos.",
+                        "Corectați bonul la rândurile de mai jos, în Access.")
+            Case "X16"
+                Dim k_origins = If(String.Equals(k_field, "IDBO", StringComparison.OrdinalIgnoreCase),
+                                   k_issues.Select(Function(k_i) k_i.OriginalValue).Where(Function(k_o) k_o.Length > 0).Distinct().
+                                            OrderBy(Function(k_o) k_o.PadLeft(12, "0"c), StringComparer.Ordinal).ToList(),
+                                   New List(Of String)())
+                Dim k_originText As String = If(k_origins.Count = 0, String.Empty,
+                    $" Bonuri de origine în cauză: {String.Join(", ", k_origins.Take(15))}{If(k_origins.Count > 15, ", …", String.Empty)}.")
+                Return ($"{k_table}: nu se poate afla contul obiectelor scoase",
+                        $"{k_rows} din {k_table} sunt scoateri (transfer sau casare) la care migratorul nu a putut afla în ce cont se afla obiectul. Contul se ia de la primirea inițială (linia din bonul de predare cu același produs), urmărind înapoi bonurile de origine; aici lanțul se rupe.{k_originText} Motivul exact este scris la fiecare rând de mai jos.",
+                        "Deschideți în Access tabelul OI_Predare și căutați bonul de mai sus (coloana IDBP = numărul bonului): trebuie să aibă o linie cu același produs ca poziția scoasă. Dacă produsul de pe poziția scoasă (OI_Produse, coloana IdProdus) sau cel de pe bon este greșit, corectați-l. Dacă bonul de origine este de fapt un transfer, căutați-l în OI_Transfer.")
             Case "X17"
-                Return ($"{k_table}: proveniența dispărută nu poate fi recuperată univoc",
-                        $"{k_rows}. {k_first.Justification}",
-                        "Verificați bonul de proveniență și primirile pentru același produs, preț, deținător și cont, cu dată compatibilă și cantitate disponibilă. Corectați referința în Access dacă asocierea nu poate fi stabilită univoc.")
+                Return ($"{k_table}: bonul de origine șters nu poate fi înlocuit automat",
+                        $"{k_rows} din {k_table} arată spre un bon de origine care nu mai există în Access. Migratorul a căutat singur primirea potrivită, dar nu a găsit exact una. Motivul este scris la fiecare rând de mai jos.",
+                        "Alegeți voi bonul corect: la rândurile de mai jos completați în Access câmpul IDBO cu numărul bonului de predare (sau de transfer) din care a plecat obiectul.")
             Case "X11"
                 Return ($"{k_table}: {k_field} are o valoare prea mare",
                         $"{k_rows} din {k_table} au {k_field} cu o valoare pe care MariaDB nu o poate păstra. {k_first.Justification}",
@@ -327,10 +344,39 @@ Public NotInheritable Class VrcRunResult
                 Continue For
             End If
             If k_first.RuleCode = "N14" Then
-                k_sb.AppendLine($"- Proveniențe OI/MF recuperate univoc: {Cases(k_group.Count())}. Referințele sunt corectate numai în import; fișierele Access rămân nemodificate.")
+                k_sb.AppendLine($"- {Cases(k_group.Count())} în care bonul de origine nu mai exista în Access: s-a găsit o singură primire potrivită și poziția a fost legată de ea. Se schimbă doar în transfer; fișierele Access rămân neatinse.")
                 For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
-                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Select(Function(k_i) $"IDOI {k_i.SourceKey}: IDBO {k_i.OriginalValue} → {k_i.TargetValue}")))
+                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Select(Function(k_i) $"poziția {k_i.SourceKey} (bonul {k_i.OriginalValue} lipsea; legată de {k_i.TargetValue})")))
                 Next
+                Continue For
+            End If
+            If k_first.RuleCode = "N16" Then
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} de poziții de primire din registru nu aveau produs; produsul a fost luat din linia bonului de predare cu aceeași cantitate și același preț, acolo unde exista o singură variantă. Fișierele Access rămân neatinse.")
+                Continue For
+            End If
+            If k_first.RuleCode = "N17" Then
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} de poziții de primire rămân fără produs, pentru că bonul nu arată o singură variantă sigură. Le reglați din VERCON, cu butonul «Reglare registru OI» din paginile bonurilor.")
+                Continue For
+            End If
+            If k_first.RuleCode = "X08" Then
+                Dim k_what As String = If(String.Equals(k_first.FieldName, "Cant", StringComparison.OrdinalIgnoreCase), "cantitate negativă", "preț negativ")
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} cu {k_what}. Se transferă exact cum sunt, cu minus; nu se corectează nimic.")
+                Continue For
+            End If
+            If k_first.RuleCode = "N10" Then
+                Dim k_parts = k_first.TargetValue.Split({" + NumarSub "}, StringSplitOptions.None)
+                Dim k_sample As String = If(k_parts.Length = 2, $" De exemplu {k_first.OriginalValue} devine numărul {k_parts(0)}, cu subnumărul {k_parts(1)}.", String.Empty)
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} cu număr de document cu zecimale (document introdus între două numere). Partea întreagă rămâne numărul documentului, zecimalele devin subnumărul; ordinea documentelor nu se schimbă.{k_sample}")
+                Continue For
+            End If
+            If k_first.RuleCode = "X04" Then
+                Dim k_codes = k_group.Select(Function(k_i) If(String.Equals(k_i.OriginalValue, "NULL", StringComparison.OrdinalIgnoreCase), "(fără cod fiscal)", k_i.OriginalValue)).
+                                      Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                k_sb.AppendLine($"- {k_first.TableName}: {k_group.Count():N0} {If(k_group.Count() = 1, "furnizor", "furnizori")} fără partener KBOT cu același cod fiscal ({String.Join(", ", k_codes.Take(10))}{If(k_codes.Count > 10, ", …", String.Empty)}). Documentele lor se transferă fără partener; codul fiscal rămâne scris pe document, ca să-i puteți lega mai târziu.")
+                Continue For
+            End If
+            If k_first.RuleCode = "N13" Then
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} în care contul scris pe linie diferă de contul bonului de predare inițial. Se folosește contul de la predare.")
                 Continue For
             End If
             Dim k_example As String = If(k_first.OriginalValue.Length > 0 AndAlso k_first.TargetValue.Length > 0, $" Exemplu: {k_first.OriginalValue} → {k_first.TargetValue}.", String.Empty)

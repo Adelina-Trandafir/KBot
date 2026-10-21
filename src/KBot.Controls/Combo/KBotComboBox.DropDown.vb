@@ -132,14 +132,64 @@ Partial Public Class KBotComboBox
             Dim exact As Integer = FindStringExact(Text)
             highlight = If(exact >= 0, exact, FirstPrefixMatch(Text))
         End If
-        Dim captions As List(Of String) = AllCaptions()
-        Dim rows As New List(Of KBotComboListRow)(captions.Count)
-        For i As Integer = 0 To captions.Count - 1
-            rows.Add(New KBotComboListRow(i, captions(i)))
+        Dim k_all As New List(Of Integer)(_items.Count)
+        For i As Integer = 0 To _items.Count - 1
+            k_all.Add(i)
         Next
+        Dim k_highlightRow As Integer
+        Dim rows As List(Of KBotComboListRow) = BuildRows(k_all, highlight, False, k_highlightRow)
         _openedByArrow = True
-        ShowRows(rows, highlight)
+        ShowRows(rows, k_highlightRow)
     End Sub
+
+    ''' <summary>
+    ''' The rows of the items <paramref name="k_indexes"/> (in the order given). Items that implement <see cref="IKBotComboGroupedItem"/> are listed under
+    ''' one header row per group (groups in the order they first appear, the ungrouped items first, plain); with none of them the rows are the plain ones
+    ''' of old. <paramref name="k_highlightRow"/> = the ROW of item <paramref name="k_highlightItem"/>; -1 when it is not listed, and then the first
+    ''' ITEM row when <paramref name="k_firstWhenNone"/> (a search result highlights its first hit, never a header).
+    ''' </summary>
+    Private Function BuildRows(k_indexes As IList(Of Integer), k_highlightItem As Integer, k_firstWhenNone As Boolean,
+                               ByRef k_highlightRow As Integer) As List(Of KBotComboListRow)
+        Dim k_rows As New List(Of KBotComboListRow)(k_indexes.Count + 4)
+        k_highlightRow = -1
+        Dim k_firstItemRow As Integer = -1
+
+        Dim k_order As New List(Of String)()
+        Dim k_members As New Dictionary(Of String, List(Of Integer))(StringComparer.CurrentCultureIgnoreCase)
+        Dim k_plain As New List(Of Integer)()
+        For Each k_i As Integer In k_indexes
+            Dim k_grouped As IKBotComboGroupedItem = TryCast(_items(k_i), IKBotComboGroupedItem)
+            Dim k_group As String = If(k_grouped Is Nothing, String.Empty, If(k_grouped.GroupCaption, String.Empty))
+            If k_group.Length = 0 Then
+                k_plain.Add(k_i)
+                Continue For
+            End If
+            Dim k_list As List(Of Integer) = Nothing
+            If Not k_members.TryGetValue(k_group, k_list) Then
+                k_list = New List(Of Integer)()
+                k_members.Add(k_group, k_list)
+                k_order.Add(k_group)
+            End If
+            k_list.Add(k_i)
+        Next
+
+        For Each k_i As Integer In k_plain
+            If k_i = k_highlightItem Then k_highlightRow = k_rows.Count
+            If k_firstItemRow < 0 Then k_firstItemRow = k_rows.Count
+            k_rows.Add(New KBotComboListRow(k_i, CaptionOf(_items(k_i))))
+        Next
+        For Each k_group As String In k_order
+            k_rows.Add(KBotComboListRow.Header(k_group))
+            For Each k_i As Integer In k_members(k_group)
+                If k_i = k_highlightItem Then k_highlightRow = k_rows.Count
+                If k_firstItemRow < 0 Then k_firstItemRow = k_rows.Count
+                Dim k_rowText As String = DirectCast(_items(k_i), IKBotComboGroupedItem).RowCaption
+                k_rows.Add(KBotComboListRow.InGroup(k_i, If(String.IsNullOrEmpty(k_rowText), CaptionOf(_items(k_i)), k_rowText), k_group))
+            Next
+        Next
+        If k_highlightRow < 0 AndAlso k_firstWhenNone Then k_highlightRow = k_firstItemRow
+        Return k_rows
+    End Function
 
     ' Only the «new item» row.
     Private Sub ShowNewItemRow()
@@ -213,12 +263,10 @@ Partial Public Class KBotComboBox
                     Return
                 End If
                 If _findAsYouType Then
-                    Dim rows As New List(Of KBotComboListRow)(hits.Count)
-                    For Each i As Integer In hits
-                        rows.Add(New KBotComboListRow(i, captions(i)))
-                    Next
+                    Dim k_highlightRow As Integer
+                    Dim rows As List(Of KBotComboListRow) = BuildRows(hits, -1, True, k_highlightRow)
                     Dim keepArrow As Boolean = _openedByArrow
-                    ShowRows(rows, 0)
+                    ShowRows(rows, k_highlightRow)
                     _openedByArrow = keepArrow
                     Return
                 End If

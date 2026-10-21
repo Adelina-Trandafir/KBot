@@ -17,6 +17,7 @@ import { bindHelp } from './help.js';
 import { bindNoticeConfig } from './payment-notice-config.js';
 import { bindBankAssociations } from './bank-associations.js';
 import { bindWorkingDays } from './working-days.js';
+import { bindChildSearch } from './child-search.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
@@ -232,6 +233,7 @@ function syncTreeSelection() {
 }
 
 function syncPickers() {
+  state.childSearch?.syncContext();
   if (!state.monthCombo || !state.context) return;
   syncTreeSelection();
   state.yearCombo.options.staticData = state.context.years.map((year) => ({ value: String(year), label: String(year) }));
@@ -277,23 +279,13 @@ async function saveAttendance({ row, value }) {
 
 const childFilterActive = () => state.childFilter.presence !== 'all' || state.childFilter.payments || state.childFilter.refunds;
 
-// The group, the search box and the footer filters (presence / payments / refunds) together decide which children are listed.
+// The header search navigates across groups; only group and footer filters decide the rows shown here.
 function visibleRows() {
-  const k_query = $('ade-search').value.trim().toLocaleLowerCase('ro-RO');
   const k_filter = state.childFilter;
   return state.rows.filter((row) => (state.groupId == null || row.IDG === state.groupId)
-    && (!k_query || `${row.Nume || ''} ${row.CNP || ''}`.toLocaleLowerCase('ro-RO').includes(k_query))
     && (k_filter.presence === 'all' || (Number(row.ZilePrezenta || 0) > 0) === (k_filter.presence === 'with'))
     && (!k_filter.payments || Number(row.TotalPlati || 0) !== 0)
     && (!k_filter.refunds || Number(row.Retur || 0) !== 0));
-}
-
-function filterGrid() {
-  state.shownRows = visibleRows();
-  state.selected = null;
-  $('ade-selected-child').textContent = 'Selectați un copil din tabel.';
-  state.grid?.setRows(state.shownRows, { keepWidths: true });
-  renderLedger();
 }
 
 // Phone layout (keep in step with the 980px breakpoint in adechit.css): the grid keeps Copil, Prezență and TOTAL;
@@ -408,6 +400,7 @@ function createGrid() {
 }
 
 async function loadSituation() {
+  state.childSearch?.syncContext();
   const own = ++state.request;
   state.rows = []; state.shownRows = []; state.selected = null; createGrid(); renderLedger();
   $('ade-selected-child').textContent = 'Selectați un copil din tabel.';
@@ -872,7 +865,8 @@ function bind() {
   const workingDays = bindWorkingDays({ api, context: () => state.context, year: () => selectedMonth()?.Anul, refresh: () => loadContext(true), report });
   state.reports = bindReports({ fetchOutput, report,
     snapshot: () => ({ month: state.context ? selectedMonth() : null, monthId: state.monthId, groupId: state.groupId, selected: state.selected }) });
-  $('ade-search').addEventListener('input', filterGrid);
+  state.childSearch = bindChildSearch({ container: $('ade-child-search'), state, api,
+    chooseGroup, loadSituation, toggleHiddenGroups, report });
   $('ade-show-hidden-groups').checked = false;
   $('ade-show-hidden-groups').addEventListener('change', (event) => toggleHiddenGroups(event.target.checked).catch(report));
   $('ade-refresh').addEventListener('click', () => loadSituation().catch(report));
@@ -1031,6 +1025,7 @@ async function loadContext(rebuildTrees = false) {
   const context = await readContext(rebuildTrees);
   state.context = { ...context, months: [], groups: [], years: [] }; state.unit = context.unit;
   state.subunit = context.subunit ? context.subunit.id : null;
+  state.childSearch?.syncContext();
   showSubunits(context);
   if (state.subunit == null) {
     // No subunit chosen yet (several in this unit, or none): nothing of the evidence is read until one is picked.

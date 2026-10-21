@@ -1,5 +1,15 @@
 # ADE.Migrator — utilizare
 
+<!-- slice: ADE10-07 -->
+
+**Chitanțe dublate și copii lipsă (ADE10-07).** Un copil din `SS_Buget.IDP` care nu mai există în `Platitori` este reconstituit din ultima
+situație lunară (nume, CNP, grupă, plecat) și primește un rând în `Platitori_sub` cu numele copilului; nota apare în conversii.
+Butonul **Chitanțe dublate…** (activ când planul găsește chitanțe cu aceeași serie și același număr) deschide o listă în care
+schimbați numărul de mână; după fiecare schimbare lista se verifică din nou. **Taie cifra miilor la cele mai vechi** schimbă toate
+chitanțele dintr-un grup în afară de cea mai nouă (1234 → 234), numai dacă numărul nou e liber. **Gata** refă planul; apoi
+repetați Testează. Access-ul nu se modifică. Numărul chitanței este întreg în baza de date, deci un sufix «.1» nu se poate scrie.
+Build curat; nerulat.
+
 <!-- slice: ADE5-05 -->
 
 Utilitar Windows separat, în stilul KBot.Migrator, pentru Access ADECHIT → MariaDB.

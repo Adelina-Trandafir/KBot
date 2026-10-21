@@ -21,6 +21,7 @@ Partial Friend NotInheritable Class VrcRunner
             AddDocuments("IDBP", k_bp)
             AddDocuments("IDBT", k_bt)
             AddDocuments("IDBC", k_bs)
+            FillReceiptProducts(k_bp)
             Dim k_groups As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
             For Each k_row In _rows
                 Dim k_position = VrcConvert.KeyText(k_row("IDOI")), k_family = Family(k_row)
@@ -48,6 +49,80 @@ Partial Friend NotInheritable Class VrcRunner
             Next
         End Sub
 
+        ''' <summary>Register position (IDOI) -> product taken from OI_Predare, for receipt rows the old program saved without one.</summary>
+        Private ReadOnly _filled As New Dictionary(Of String, String)(StringComparer.Ordinal)
+        ''' <summary>Receipt rows that stay without a product: no single product on the bon fits their quantity and price.</summary>
+        Private ReadOnly _unfilled As New HashSet(Of String)(StringComparer.Ordinal)
+
+        Private Shared Function GroupKey(k_bon As String, k_quantity As Decimal, k_price As Decimal?) As String
+            Return k_bon & "|" & k_quantity.ToString("G29", CultureInfo.InvariantCulture) & "|" &
+                   If(k_price.HasValue, k_price.Value.ToString("G29", CultureInfo.InvariantCulture), "NULL")
+        End Function
+
+        ''' <summary>
+        ''' A bon de predare receipt row of the register without IdProdus gets the product of the bon's own OI_Predare line with the same
+        ''' quantity and price, but only when that line is unambiguous: as many unused lines as empty rows, all of the same product.
+        ''' Anything less certain stays empty (VERCON's «Reglare registru OI» window settles it with the operator). Access is not changed.
+        ''' </summary>
+        Private Sub FillReceiptProducts(k_bp As List(Of Dictionary(Of String, Object)))
+            Dim k_taken As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+            Dim k_open As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
+            For Each k_row In _rows
+                Dim k_bon = OiLabel(k_row("IDBP"))
+                If k_bon.Length = 0 OrElse OiLabel(k_row("IDBT")).Length > 0 OrElse Quantity(k_row) <= 0D Then Continue For
+                Dim k_group = GroupKey(k_bon, Quantity(k_row), VrcConvert.ToDecimal(k_row("PUTVA")))
+                If OiLabel(k_row("IdProdus")).Length > 0 Then
+                    Dim k_key = k_group & "|" & VrcConvert.KeyText(k_row("IdProdus"))
+                    Dim k_count As Integer = 0
+                    k_taken.TryGetValue(k_key, k_count)
+                    k_taken(k_key) = k_count + 1
+                Else
+                    AddRow(k_open, k_group, k_row)
+                End If
+            Next
+            If k_open.Count = 0 Then Return
+            Dim k_free As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
+            For Each k_line In k_bp
+                Dim k_annulled As Object = Nothing
+                If k_line.TryGetValue("Anulat", k_annulled) AndAlso VrcConvert.ToDecimal(k_annulled).GetValueOrDefault() <> 0D Then Continue For
+                Dim k_bon = OiLabel(k_line("IDBP")), k_product = OiLabel(k_line("IdProdus"))
+                Dim k_quantity = VrcConvert.ToDecimal(k_line("Cant")).GetValueOrDefault()
+                If k_bon.Length = 0 OrElse k_product.Length = 0 OrElse k_quantity <= 0D Then Continue For
+                Dim k_group = GroupKey(k_bon, k_quantity, VrcConvert.ToDecimal(k_line("PUTVA")))
+                Dim k_left As Integer = 0
+                If k_taken.TryGetValue(k_group & "|" & k_product, k_left) AndAlso k_left > 0 Then
+                    k_taken(k_group & "|" & k_product) = k_left - 1
+                    Continue For
+                End If
+                AddRow(k_free, k_group, k_line)
+            Next
+            For Each k_pair In k_open
+                Dim k_candidates As List(Of Dictionary(Of String, Object)) = Nothing
+                k_free.TryGetValue(k_pair.Key, k_candidates)
+                Dim k_products As List(Of String) = If(k_candidates Is Nothing, New List(Of String)(),
+                    k_candidates.Select(Function(k_l) OiLabel(k_l("IdProdus"))).Distinct(StringComparer.Ordinal).ToList())
+                For Each k_row In k_pair.Value
+                    Dim k_position = VrcConvert.KeyText(k_row("IDOI"))
+                    If k_candidates IsNot Nothing AndAlso k_candidates.Count = k_pair.Value.Count AndAlso k_products.Count = 1 Then
+                        k_row("IdProdus") = k_candidates(0)("IdProdus")
+                        _filled(k_position) = k_products(0)
+                    Else
+                        _unfilled.Add(k_position)
+                    End If
+                Next
+            Next
+        End Sub
+
+        ''' <summary>The product filled in for this position from OI_Predare, or empty when none was.</summary>
+        Public Function FilledProduct(k_position As String) As String
+            Dim k_product As String = Nothing
+            Return If(_filled.TryGetValue(k_position, k_product), k_product, String.Empty)
+        End Function
+
+        Public Function StaysWithoutProduct(k_position As String) As Boolean
+            Return _unfilled.Contains(k_position)
+        End Function
+
         Private Shared Sub AddRow(k_index As Dictionary(Of String, List(Of Dictionary(Of String, Object))),
                                   k_key As String, k_row As Dictionary(Of String, Object))
             If Not k_index.ContainsKey(k_key) Then k_index(k_key) = New List(Of Dictionary(Of String, Object))()
@@ -73,6 +148,11 @@ Partial Friend NotInheritable Class VrcRunner
             Return If(k_bp.Length > 0, "IDBP", If(k_bt.Length > 0, "IDBT", "IDBC"))
         End Function
 
+        ''' <summary>«bonul de predare», «bonul de transfer» or «bonul de casare», for the operator-visible messages.</summary>
+        Private Shared Function DocName(k_family As String) As String
+            Return If(k_family = "IDBP", "bonul de predare", If(k_family = "IDBT", "bonul de transfer", "bonul de casare"))
+        End Function
+
         Private Shared Function Quantity(k_row As Dictionary(Of String, Object)) As Decimal
             Return VrcConvert.ToDecimal(k_row("Cant")).GetValueOrDefault()
         End Function
@@ -95,19 +175,19 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_family = Family(k_row), k_label = OiLabel(k_row(k_family))
             Dim k_lines As List(Of Dictionary(Of String, Object)) = Nothing
             If Not _documents.TryGetValue(DocumentKey(k_family, k_label, k_row), k_lines) Then
-                Throw New InvalidOperationException($"Bonul {k_family}={k_label} nu are linii active pentru produs/preț identice.")
+                Throw New InvalidOperationException($"Pe {DocName(k_family)} nr. {k_label} nu există nicio linie activă (neanulată) cu același produs și același preț.")
             End If
             Dim k_dayField = If(k_family = "IDBP", "DATABP", If(k_family = "IDBT", "DATABT", "DATABC"))
             Dim k_giverField = If(k_family = "IDBP", "IDC_BP", If(k_family = "IDBT", "IDC_OLD", "IDC_BC"))
             If k_lines.Any(Function(k_l) k_l(k_dayField) Is Nothing OrElse TypeOf k_l(k_dayField) Is DBNull) Then
-                Throw New InvalidOperationException($"Bonul {k_family}={k_label} are data lipsă.")
+                Throw New InvalidOperationException($"{DocName(k_family)} nr. {k_label} are linii fără dată completată.")
             End If
             Dim k_days = k_lines.Select(Function(k_l) Convert.ToDateTime(k_l(k_dayField), CultureInfo.InvariantCulture).Date).Distinct().ToList()
             Dim k_givers = k_lines.Select(Function(k_l) OiLabel(k_l(k_giverField))).Distinct(StringComparer.Ordinal).ToList()
             Dim k_receivers = If(k_family = "IDBT", k_lines.Select(Function(k_l) OiLabel(k_l("IDC_BT"))).Distinct(StringComparer.Ordinal).ToList(), k_givers)
             If k_days.Count <> 1 OrElse k_givers.Count <> 1 OrElse k_receivers.Count <> 1 OrElse
                k_givers(0).Length = 0 OrElse k_receivers(0).Length = 0 Then
-                Throw New InvalidOperationException($"Bonul {k_family}={k_label} are date/deținători lipsă sau neuniformi.")
+                Throw New InvalidOperationException($"{DocName(k_family)} nr. {k_label} are linii cu date sau persoane diferite (sau lipsă); pe toate liniile bonului trebuie să fie la fel.")
             End If
             Return (k_days(0), k_givers(0), k_receivers(0))
         End Function
@@ -115,16 +195,16 @@ Partial Friend NotInheritable Class VrcRunner
         Private Sub Recover(k_group As List(Of Dictionary(Of String, Object)))
             Dim k_first = k_group(0), k_family = Family(k_first), k_origin = OiLabel(k_first("IDBO"))
             Dim k_context = Context(k_first), k_account = OiLabel(k_first("IDM")), k_productPrice = ProductPrice(k_first)
-            Dim k_reason = $"IDBO={k_origin}: bonul sursă lipsește; "
+            Dim k_reason = $"Bonul de origine nr. {k_origin} nu mai există în Access (nici ca bon de predare, nici ca bon de transfer). Migratorul a încercat să găsească singur primirea corectă, dar "
             If k_account.Length = 0 OrElse Not VrcConvert.ToDecimal(k_first("PUTVA")).HasValue Then
-                Throw New InvalidOperationException(k_reason & "contul sau prețul nu permite recuperarea provenienței.")
+                Throw New InvalidOperationException(k_reason & "liniile nu au contul sau prețul completat.")
             End If
             Dim k_taken = k_group.Sum(Function(k_r) Math.Max(0D, -Quantity(k_r)))
             Dim k_received = k_group.Sum(Function(k_r) Math.Max(0D, Quantity(k_r)))
             If k_taken <= 0D OrElse (k_family = "IDBT" AndAlso k_taken <> k_received) OrElse
                (k_family = "IDBC" AndAlso k_received <> 0D) OrElse
                k_group.Any(Function(k_r) OiLabel(k_r("IDC_PTC")) <> If(Quantity(k_r) > 0D, k_context.Receiver, k_context.Giver)) Then
-                Throw New InvalidOperationException(k_reason & "laturile transferului/casării nu identifică univoc deținătorul și cantitatea.")
+                Throw New InvalidOperationException(k_reason & "liniile acestui transfer sau acestei casări nu arată clar cine a predat obiectul și ce cantitate.")
             End If
             Dim k_holderAccount = k_context.Giver & "|" & k_account
             Dim k_candidates As New List(Of (Family As String, Label As String))()
@@ -152,8 +232,8 @@ Partial Friend NotInheritable Class VrcRunner
             Next
             If k_candidates.Count <> 1 Then
                 Throw New InvalidOperationException(k_reason & If(k_candidates.Count = 0,
-                    "nu există o primire BP/BT compatibilă cu produsul, prețul, deținătorul, contul, data și disponibilul.",
-                    $"există {k_candidates.Count} primiri BP/BT compatibile; proveniența nu se alege arbitrar."))
+                    "nu a găsit nicio primire potrivită (același produs, același preț, aceeași persoană și același cont, dată anterioară și cantitate rămasă suficientă).",
+                    $"a găsit {k_candidates.Count} primiri la fel de potrivite și nu alege la întâmplare."))
             End If
             For Each k_row In k_group
                 Dim k_position = VrcConvert.KeyText(k_row("IDOI"))
@@ -196,10 +276,18 @@ Partial Friend NotInheritable Class VrcRunner
         Try
             Dim k_resolver = OriginRecovery(k_source, k_sourceIndex), k_row = k_resolver.RegistryRow(k_key)
             Dim k_family = k_resolver.ReplacementFamily(k_key)
+            Dim k_filledProduct = k_resolver.FilledProduct(k_key)
+            If k_filledProduct.Length > 0 Then
+                AddIssue(k_source, "OI_Produse", k_key, "IdProdus", "N16", "CONVERSIE", "NULL", k_filledProduct,
+                         "Poziția de primire din registru nu avea produs. Produsul a fost luat din linia bonului de predare cu aceeași cantitate și același preț (o singură variantă posibilă). Fișierul Access nu se modifică.")
+            ElseIf k_resolver.StaysWithoutProduct(k_key) Then
+                AddIssue(k_source, "OI_Produse", k_key, "IdProdus", "N17", "AVERTIZARE", "NULL", "NULL",
+                         "Poziția de primire din registru nu are produs și bonul nu arată o singură variantă sigură. Se transferă fără produs; o reglați din VERCON, butonul «Reglare registru OI» din paginile bonurilor.")
+            End If
             If k_family.Length > 0 Then
                 AddIssue(k_source, "OI_Produse", k_key, "IDBO", "N14", "CONVERSIE", OiLabel(k_original("IDBO")),
                          k_family & "=" & OiLabel(k_row("IDBO")) & " (sursă)",
-                         "Bonul de proveniență dispărut a fost asociat univoc cu o primire existentă: același produs, preț, deținător, cont, dată document compatibilă și cantitate disponibilă. Referința recuperată se remapează cu documentul; Access rămâne nemodificat.")
+                         "Bonul de origine nu mai exista în Access. S-a găsit o singură primire potrivită (același produs, preț, persoană și cont, dată anterioară și cantitate suficientă) și linia a fost legată de ea, numai în transfer. Fișierul Access nu se modifică.")
             End If
             Return k_row
         Catch ex As InvalidOperationException

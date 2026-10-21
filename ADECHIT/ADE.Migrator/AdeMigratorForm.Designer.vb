@@ -39,6 +39,7 @@ Partial Class AdeMigratorForm
     Friend WithEvents tlpActiune As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
+    Friend WithEvents btnChitante As System.Windows.Forms.Button
     Friend WithEvents btnStop As System.Windows.Forms.Button
     Friend WithEvents lblMigrationState As System.Windows.Forms.Label
     Friend WithEvents grpLog As System.Windows.Forms.GroupBox
@@ -110,6 +111,7 @@ Partial Class AdeMigratorForm
         tlpActiune = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblRezumat = New System.Windows.Forms.Label()
         btnMigreaza = New System.Windows.Forms.Button()
+        btnChitante = New System.Windows.Forms.Button()
         tlpJos = New Global.KBot.Controls.KBotTableLayoutPanel()
         grpTabele = New System.Windows.Forms.GroupBox()
         dgvTabele = New KBot.Controls.KBotDataView()
@@ -388,15 +390,17 @@ Partial Class AdeMigratorForm
         '
         ' tlpActiune
         '
-        tlpActiune.ColumnCount = 3
+        tlpActiune.ColumnCount = 4
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190.0F))
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
         tlpActiune.Controls.Add(lblRezumat, 0, 0)
-        tlpActiune.Controls.Add(btnMigreaza, 1, 0)
-        tlpActiune.Controls.Add(btnStop, 2, 0)
+        tlpActiune.Controls.Add(btnChitante, 1, 0)
+        tlpActiune.Controls.Add(btnMigreaza, 2, 0)
+        tlpActiune.Controls.Add(btnStop, 3, 0)
         tlpActiune.Controls.Add(lblMigrationState, 0, 1)
-        tlpActiune.SetColumnSpan(lblMigrationState, 3)
+        tlpActiune.SetColumnSpan(lblMigrationState, 4)
         tlpActiune.Dock = DockStyle.Fill
         tlpActiune.Name = "tlpActiune"
         tlpActiune.RowCount = 2
@@ -411,6 +415,15 @@ Partial Class AdeMigratorForm
         lblRezumat.TabIndex = 0
         lblRezumat.Text = "Alegeți fișierul Access și apăsați «Citește»."
         lblRezumat.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' btnChitante
+        '
+        btnChitante.Dock = DockStyle.Fill
+        btnChitante.Enabled = False
+        btnChitante.Name = "btnChitante"
+        btnChitante.TabIndex = 3
+        btnChitante.Text = "Chitanțe dublate…"
+        btnChitante.UseVisualStyleBackColor = True
         '
         ' btnMigreaza
         '
@@ -663,6 +676,8 @@ Partial Class AdeMigratorForm
         tipAde.SetToolTipHeader(chkChildCnpIsParent, "CNP-ul părintelui din Access")
         tipAde.SetToolTipText(chkChildCnpIsParent, "Dacă CNP-ul copilului din Access aparține părintelui, copiază Platitori.CNP în CNP_Platitor pentru plătitorii asociați. După schimbare, apăsați «Testează».")
         tipAde.SetToolTipText(btnTesteaza, "Verifică parola, baza cu numele DC-ului și dacă tabelele AD_ sunt create și goale.")
+        tipAde.SetToolTipHeader(btnChitante, "Chitanțe dublate")
+        tipAde.SetToolTipText(btnChitante, "Se activează când planul găsește chitanțe cu aceeași serie și același număr. Deschide o listă în care schimbați numerele de mână sau aplicați regula pentru cele mai vechi. Access-ul nu este modificat.")
         tipAde.SetToolTipHeader(btnMigreaza, "Migrează")
         tipAde.SetToolTipText(btnMigreaza, "Scrie planul verificat într-o singură tranzacție. Motivele blocării sunt afișate lângă buton și în jurnal.")
         '

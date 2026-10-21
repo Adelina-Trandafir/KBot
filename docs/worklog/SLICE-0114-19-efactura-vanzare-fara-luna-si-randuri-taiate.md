@@ -11,4 +11,4 @@ The month list above the tree of the issued invoices (`cmbLuna`, its fill, handl
 
 ## Unverified / deferred
 - Not seen on screen: the new buttons in the view group, the popup of the document button (opens at the mouse), the fields in the ribbon, the tree rows of the issued invoices.
-- Item 7.3 is open: needs the id stored in `EF_Facturi.id_descarcare` of an invoice that fails, and the error text of the «Factura ANAF» view.
+- Item 7.3 CLOSED by the operator (21.10.2026). Had needed the id stored in `EF_Facturi.id_descarcare` of an invoice that fails, and the error text of the «Factura ANAF» view.

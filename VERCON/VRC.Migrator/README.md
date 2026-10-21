@@ -1,5 +1,23 @@
 # VRC.Migrator — utilizare
 
+## Obiecte de inventar: primirea din OI_Predare, produs completat în registru — 21.10.2026 (SLICE-VC09-05)
+
+Versiune în surse: **0.3.11.0**. Doar sursele; nerulat.
+
+- **Contul unei scoateri (transfer/casare)** se află acum din linia de primire a bonului din `OI_Predare`
+  (bon + produs, fără preț, ca în programul Access), nu din rândurile de primire ale `OI_Produse`,
+  care au adesea `IdProdus` gol. Contul este `IdMasina` de pe linia din `OI_Predare`. Primirile prin bon de
+  transfer se iau în continuare din registru, cu lanțul prin transferuri neschimbat.
+- **Produsul lipsă din registru** se completează la transfer pentru pozițiile de primire BP: se ia produsul
+  liniei bonului din `OI_Predare` cu aceeași cantitate și același preț, numai când există exact atâtea linii
+  libere câte poziții goale și toate au același produs. Restul rămân fără produs (raport N17) și se reglează din
+  VERCON, butonul «Reglare registru OI». Raport N16 pentru cele completate. Fișierele Access nu se modifică.
+- Mesajele de blocaj și din secțiunea «Doar de informare» sunt rescrise în limbaj clar; blocajul X16 are titlu
+  general și câte un rând explicit pentru fiecare poziție.
+
+Regula veche din secțiunea «Contul lotului OI/MF până la casare» (primirea căutată în `OI_Produse`, cu preț) este
+înlocuită de aceasta pentru primirile BP.
+
 ## IntrariStorno fără NIR storno părinte — 19.10.2026
 
 Versiune curentă în surse: **0.3.10.0**, reguli

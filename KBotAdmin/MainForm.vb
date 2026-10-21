@@ -93,6 +93,8 @@ Public Class MainForm
             TrayLog.Snapshot(Me, "after Hide")
             ShowInTaskbar = False
             TrayLog.Snapshot(Me, "after ShowInTaskbar=False")
+            HideNativeWindow()
+            TrayLog.Snapshot(Me, "after HideNativeWindow")
             ' The maximized window leaves its picture on the screen (it vanishes at the first click on it): ask the desktop to repaint that area.
             BeginInvoke(New Action(Sub() RepaintDesktop(k_area)))
             LogWindowsLaterAsync()
@@ -123,6 +125,26 @@ Public Class MainForm
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.OnHandleCreated", ex)
         End Try
+    End Sub
+
+    Private Const SW_HIDE As Integer = 0
+
+    <Runtime.InteropServices.DllImport("user32.dll")>
+    Private Shared Function ShowWindow(k_handle As IntPtr, k_command As Integer) As Boolean
+    End Function
+
+    <Runtime.InteropServices.DllImport("user32.dll")>
+    Private Shared Function IsWindowVisible(k_handle As IntPtr) As Boolean
+    End Function
+
+    ''' <summary>
+    ''' Changing ShowInTaskbar makes a NEW window handle, and for this maximized window the new one is created VISIBLE although the form is hidden
+    ''' (minimizare_tray.log: WinForms Visible=False, the system's IsWindowVisible=True): that was the picture left on the screen after the first
+    ''' close; the second close hid it because the handle was not made again. Hides the new handle too.
+    ''' </summary>
+    Private Sub HideNativeWindow()
+        If Visible OrElse Not IsHandleCreated Then Return
+        If IsWindowVisible(Handle) Then ShowWindow(Handle, SW_HIDE)
     End Sub
 
     Private Const RDW_INVALIDATE As Integer = &H1

@@ -66,6 +66,8 @@ Public Class AdeMigratorForm
     Private _lastMigrationState As String = String.Empty
     Private _targetCheckError As String = String.Empty
     Private _initializing As Boolean = True
+    ''' <summary>The receipt numbers the operator changed, per IDC in Access; cleared when another file is read.</summary>
+    Private _receiptEdits As New Dictionary(Of Integer, Integer)()
 
     Public Sub New()
         InitializeComponent()
@@ -273,6 +275,7 @@ Public Class AdeMigratorForm
                 _plan = Nothing
                 _targetProblems = Nothing
                 _targetCounts = Nothing
+                _receiptEdits.Clear()
                 _source = Await Task.Run(Function() AdeSource.Read(k_path))
                 _settings.LastFile = k_path
                 SavePreferences()
@@ -378,13 +381,28 @@ Public Class AdeMigratorForm
         _targetProblems = Nothing
         _targetCounts = Nothing
         RefreshMigrateButton()
-        _plan = AdePlan.Build(_source, ReadEducators(), ReadGroupTypes(), chkChildCnpIsParent.Checked)
+        _plan = AdePlan.Build(_source, ReadEducators(), ReadGroupTypes(), chkChildCnpIsParent.Checked, _receiptEdits)
         _targetProblems = Nothing
         ShowPlan()
         For Each finding In _plan.Findings
             AppendLog(If(finding.Blocking, "BLOCAJ ACCESS", "OBSERVAȚIE"), finding.Text)
         Next
         RefreshMigrateButton()
+    End Sub
+
+    ''' <summary>The window where the numbers of doubled receipts are changed by hand; the plan is rebuilt with the new numbers.</summary>
+    Private Sub BtnChitante_Click(sender As Object, e As EventArgs) Handles btnChitante.Click
+        If _busy OrElse _source Is Nothing OrElse _plan Is Nothing Then Return
+        Try
+            Using k_form As New AdeReceiptsForm(_plan.Receipts, _receiptEdits)
+                If k_form.ShowDialog(Me) <> DialogResult.OK Then Return
+                _receiptEdits = k_form.Edits
+            End Using
+            RebuildPlan()
+            Say($"Numere de chitanțe schimbate: {_receiptEdits.Count}. Planul a fost refăcut; apăsați «Testează» înainte de migrare.")
+        Catch ex As Exception
+            ShowOperationError("AdeMigratorForm.Receipts", "Refacerea planului după schimbarea numerelor de chitanțe a eșuat.", ex)
+        End Try
     End Sub
 
     Private Sub ChildCnpIsParent_CheckedChanged(sender As Object, e As EventArgs) Handles chkChildCnpIsParent.CheckedChanged
@@ -563,6 +581,7 @@ Public Class AdeMigratorForm
             reasons.AddRange(_targetProblems)
         End If
         btnMigreaza.Enabled = reasons.Count = 0
+        btnChitante.Enabled = Not _busy AndAlso _plan IsNot Nothing AndAlso AdeReceiptNumbers.Duplicated(_plan.Receipts).Count > 0
         Dim state = If(reasons.Count = 0, "Migrarea poate porni.", "Migrare blocată: " & reasons(0))
         If reasons.Count > 1 Then state &= $" Mai sunt {reasons.Count - 1} motive; vedeți jurnalul de mai jos."
         lblMigrationState.Text = state

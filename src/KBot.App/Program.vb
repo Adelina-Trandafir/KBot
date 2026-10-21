@@ -525,6 +525,12 @@ Friend Module Program
             Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IHelpFeedbackApi))
         services.AddSingleton(Of HelpService)()
 
+        ' Slice CHAT-08: the shared chat (the robot of the opening page and its speech bubble). ApiClient does the HTTP;
+        ' the service is the one object that polls and tells the page.
+        services.AddSingleton(Of IChatApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IChatApi))
+        services.AddSingleton(Of ChatService)()
+
         ' Slice 0112-04: an error message can be sent to the server from the title bar of the message window.
         services.AddSingleton(Of IErrorReportApi)(
             Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IErrorReportApi))

@@ -4498,3 +4498,139 @@ Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design pe surse.
 Nu s-au rulat teste, verificări de sintaxă, randări PDF sau probe în browser.
 Nu s-au executat SQL sau modificări de schemă MariaDB. Publicarea necesită
 JSON/JS/CSS și Python împreună, cu repornirea serviciului web pentru ruta PDF.
+
+
+### 2026-10-21 — VC09-02: Capturi anonimizate în help, CPV/clasificări MF și timer
+
+Capturi reale din VERCON DEMO (Local, MF, Alimente Cantina, OI), realizate
+în browserul in-app: documente și fișe, Configurări, rapoarte, clasificări MF,
+CPV, registru/amortizare, liste de alimente, chat, context și timer.
+Contul conectat, identificatorii și numele persoanelor sunt mascate opac.
+Cataloagele au și capturi de căutare; ferestrele sunt decupate pentru lizibilitate.
+Nu au fost salvate/anulate documente și nu au fost trimise mesaje în chat.
+La Alimente Cantina s-a preluat ocuparea de la altă filă a aceluiași cont DEMO.
+
+Conținutul VERCON include capitole distincte CPV și Clasificări MF, cu pașii
+de acces/alegere și diferența ani în catalog / luni în DNF. Ambele helpuri
+explică timerul: 15/5 minute, închiderea avertizării, salvarea înainte de
+refresh și pierderea ciornelor la expirare. Capturile din această tranșă sunt
+VERCON; ADECHIT primește explicațiile comune pentru sesiune.
+
+Fișiere: PYTHON/static/help/vercon.json, adechit.json;
+PYTHON/static/help/images/vercon/ (JPEG-uri anonimizate, manifest, README);
+PYTHON/static/js/help/help.js; PYTHON/static/css/adechit-help.css;
+PYTHON/reporting/help_pdf.py; tools/HelpCapture/Protect-WebHelpCapture.ps1;
+docs/worklog/SLICE-VC09-02-capturi-ajutor.md; implementare_vercon_v2.md.
+Motorul comun include imagini/legende în dialog, imprimare și PDF.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Examinare vizuală a capturilor cerute de
+utilizator; fără teste, verificări de sintaxă sau randare a exportului PDF.
+Fără SQL sau modificări de schemă. Publicare: JSON + imagini + JS/CSS + Python
+împreună; repornirea serviciului pentru rendererul Python.
+
+Completare VC09-02: set final 24 de capturi, inclusiv timerul real și
+avertizarea critică apărută după pragul de 5 minute. Avertizarea a fost
+închisă după captură; originalele temporare au fost șterse, iar proiectul
+păstrează numai JPEG-urile anonimizate și manifestul public.
+
+### 2026-10-21 — VC09-03: Simplificare Gestionari, Rapoarte și totaluri în copaci
+
+Gestionari afișează numai Denumire și Locatie; CF, Nr. reg. com., CNP și
+Cont au fost scoase din specificația nomenclatorului. Locatie este doar
+eticheta vizibilă pentru Adresa; coloana internă și valorile istorice ale
+câmpurilor eliminate sunt păstrate. Rapoarte nu mai are checkboxul și zona
+de afișare a rezultatului în pagină. Listare și Export Excel păstrează fluxul
+existent, iar Opțiuni afișare este ascuns când nu există opțiuni specifice.
+Sumele grupurilor lunare de documente OI/MF apar fără prefixul TOTAL.
+
+Fișiere: PYTHON/routes/vercon/nomenclatoare.py;
+PYTHON/static/js/vercon/reports.js, document-tree-order.js;
+docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
+verificări automate sau probe în browser. Fără SQL sau modificări de schemă.
+Publicare: cele trei fișiere de aplicație și repornirea serviciului web.
+Helpul și imaginile așteaptă publicarea și confirmarea utilizatorului, apoi
+vor fi actualizate pe baza interfeței reale de pe server.
+
+### 2026-10-21 — VC09-04: Help și capturi după publicarea interfeței
+
+După confirmarea publicării de către utilizator, au fost refăcute în
+browserul in-app capturile 07 (Gestionari cu Denumire/Locatie), 09 și 10
+(Rapoarte și perioadă fără checkboxul eliminat), 22 (bon OI, sume în copac
+fără prefix TOTAL). Datele personale sunt mascate opac; originalele
+temporare au fost șterse. Nu au fost modificate datele gestiunii.
+
+Helpul VERCON descrie coloanele actuale din Gestionari, totalurile numerice
+ale grupurilor lunare și opțiunile specifice rapoartelor. A fost eliminată
+descrierea afișării rezultatului în pagină.
+
+Fișiere: PYTHON/static/help/vercon.json;
+PYTHON/static/help/images/vercon/{07-configurari-gestionari.jpg,
+09-rapoarte-selectie.jpg,10-rapoarte-perioada.jpg,22-bon-predare-oi.jpg,
+manifest.json,README.md}; docs/worklog/SLICE-VC09-04-help-dupa-publicarea-interfetei.md;
+implementare_vercon_v2.md.
+
+Stare: ACTUALIZAT LOCAL, NEPUBLICAT. Examinare vizuală a celor patru capturi
+cerute; fără teste, verificări automate sau randare PDF. Fără SQL sau
+modificări de schemă. Publicare: JSON și cele patru JPEG-uri împreună;
+această tranșă nu necesită repornirea serviciului web.
+
+### 2026-10-21 — VC06-07 / VC06-08: NIR din facturile primite prin e-Factura
+
+Contabilul trimite din K-BOT o factură primită (felia 00EF-45/47, `docs/EV_PLAN.md`); Administratorul o preia în „Adăugare NIR”. Nimic nu se copiază:
+K-BOT scrie `EF_PrimiteVercon` / `EF_PrimiteVerconLinii` (cu TOATE liniile și, opțional, contul propus pe fiecare), VERCON le citește din aceeași bază.
+
+- **VC06-07 (citire, completare):** `routes/vercon/efactura_queue.py` — `GET /api/vercon/doc/nir/efactura` (lista celor care așteaptă, pe unitate, nu pe gestiune) și
+  `GET .../efactura/<id>` (antetul, furnizorul găsit în `Parteneri` după cod fiscal, liniile cu cantitate, preț, cotă TVA și contul propus). `js/vercon/efactura-intake.js`:
+  fereastra cu lista („NIR din e-Factura…” / „Din e-Factura…” în bara NIR) și `apply` care completează ciorna: furnizor, număr, data facturii, valoarea facturii, conturile propuse
+  (bifate în „Categorie / cont”; un cont din altă gestiune decât cele oferite de context nu se bifează și se spune) și liniile **fără produs** (coloana „Din factura primită” arată
+  textul furnizorului). Administratorul alege produsul fiecărei linii. `docs.js`: import, butoane, funcția `fromEfactura`, `efactura` în corpul salvării, coloana — `docs.js` are acum 999 de linii (la limita de ~1000).
+- **VC06-08 (scriere):** `POST .../efactura/<id>/return` — returnează factura contabilului cu motiv obligatoriu (3–500 caractere), `RETURNATA`. `receipt_distribution.save`: când corpul are
+  `efactura`, `efactura_queue.close` rulează în **aceeași tranzacție** cu salvarea NIR-ului: trimiterea devine `PRELUATA` și NIR-urile create intră în `EF_PrimiteVerconNir`; o trimitere care nu mai
+  așteaptă (retrasă, preluată de altul) oprește tot salvarea. O trimitere `PRELUATA` ale cărei NIR-uri sunt toate anulate sau șterse reapare în listă (calculat la citire).
+- Fără tabelele K-BOT (`sql/EV_01_primite_vercon.sql`) lista răspunde `available: false`, goală; nimic nu cade. Ajutorul VERCON (`static/help/vercon.json`): secțiunea „NIR dintr-o factură trimisă de contabil”.
+
+Fișiere: PYTHON/routes/vercon/efactura_queue.py (nou), doc_routes.py, receipt_distribution.py; PYTHON/static/js/vercon/efactura-intake.js (nou), docs.js; PYTHON/static/css/vercon-efactura.css (nou), vercon.css;
+PYTHON/static/help/vercon.json; docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md, SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md; implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Doar `py_compile`, import Python și `node --check`; fără teste, browser, SQL sau MariaDB. Necesită SQL-ul K-BOT rulat (EV_01) și serverul K-BOT 00EF-45 pentru ca lista să aibă ce arăta.
+Publicare: cele trei fișiere Python, `efactura-intake.js`, `docs.js`, `vercon-efactura.css`, `vercon.css`, `vercon.json` și repornirea serviciului web.
+
+### 2026-10-21 — Portal: conectare cu certificat lângă Continuă
+
+În formularul comun `/portal`, inclusiv `/portal?next=%2Fvercon`, butonul
+„Intră cu certificat digital” este mutat în stânga lui „Continuă”, pe același
+rând, aliniat cu marginea stângă a selectorului Aplicația. Separatorul „sau”
+este eliminat. Textul butoanelor se poate împărți pe rânduri la lățimi mici.
+Formularele de autentificare și cod permit derularea paginii sub 901 px,
+pentru acces la toate controalele când înălțimea disponibilă este mică.
+
+Fișiere: PYTHON/static/portal.html; PYTHON/static/css/portal-certificate.css,
+portal-signin.css; implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de design pe surse; fără teste,
+verificări automate sau probe în browser, conform instrucțiunilor proiectului.
+Publicare: HTML și cele două fișiere CSS împreună.
+
+### 2026-10-21 — SLICE-VC09-05: Reglare registru OI (VERCON) și produs completat la migrare
+
+Registrul `OI_Produse` migrat are pozițiile de primire (BP) fără produs, iar Balanța OI refuza să se listeze («contul nu
+poate fi stabilit»). Fereastra **Reglare registru OI** (butonul din bara paginilor Bon de predare / transfer / casare) listează
+aceste poziții cu produsul propus din liniile bonului (aceeași cantitate și același preț): Sigur, De verificat (mai multe
+produse la fel de potrivite, în ordinea liniilor), De ales, Fără linie potrivită. «Aplică propunerile sigure» sau produs ales
+pe o poziție. Se scrie numai `IdProdus`, cu revizie, sub blocarea gestiunii, cu audit și cheie de cerere; după aplicare se
+afișează dacă registrul mai are o altă problemă. Mesajele din `oi_accounts.py` și `oi_custody.py` sunt rescrise în română
+clară și trimit la fereastră. Migratorul 0.3.11.0 completează produsul sigur din `OI_Predare` și ia contul scoaterii din
+aceeași sursă (ca în Access).
+
+Fișiere: PYTHON/routes/vercon/oi_register_repair.py (nou), doc_routes.py, oi_accounts.py, oi_custody.py;
+PYTHON/static/js/vercon/oi-register-repair.js (nou), docs.js; PYTHON/static/css/vercon-migration.css;
+PYTHON/static/help/vercon.json; VERCON/VRC.Migrator/*; docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md;
+VERCON/VERCON_STATUS.md; implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Doar `py_compile`, `node --check` și build-ul migratorului; fără teste, browser, SQL sau
+MariaDB. Fereastra nu a fost deschisă. Nu se deschide automat la prima intrare în VERCON.
+Publicare: `oi_register_repair.py`, `doc_routes.py`, `oi_accounts.py`, `oi_custody.py`, `oi-register-repair.js`, `docs.js`,
+`vercon-migration.css`, `vercon.json` și repornirea serviciului web.

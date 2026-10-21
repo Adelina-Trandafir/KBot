@@ -16,12 +16,13 @@ Subunități în același DC (plan: [plan_subunitati.md](../../../ADECHIT/plan_s
 | SLICE-ADE10-03 | ADE.Migrator: subunitate nouă/existentă, ID-uri remapate, serie și contor în subunitate | CONSTRUIT LOCAL — build curat, nerulat | [Migrator](../SLICE-ADE10-03-migrator-subunitati.md) |
 | SLICE-ADE10-04 | Selectorul „Subunitate", comutarea per filă cu reîncărcare | SCRIS LOCAL — neprobat în browser | [Interfață](../SLICE-ADE10-04-interfata-subunitati.md) |
 | SLICE-ADE10-06 | Corecturi după review: snapshot înainte de blocare, reverificare completă în migrator, comutare fără pierderi, reconciliere, amprente vechi, acces pe utilizator, sincronizare PK | SCRIS LOCAL — netestat | [ADE10-02…05](../SLICE-ADE10-02-api-subunitati.md) |
+| SLICE-ADE10-07 | ADE.Migrator: copii reconstituiți din SS_Buget (Platitori + Platitori_sub), fereastra «Chitanțe dublate…» cu numere editabile, reverificare după fiecare schimbare și regula «taie cifra miilor» | CONSTRUIT LOCAL — build curat, nerulat, fereastra nevăzută | [Migrator](../SLICE-ADE10-07-migrator-chitante-dublate-si-platitori-reconstituiti.md) |
 | SLICE-ADE10-05 | Predarea: ordinea SQL/publicare, probele utilizatorului, deciziile luate | DOCUMENTAT LOCAL | [Predare](../SLICE-ADE10-05-predare-subunitati.md) |
 
 ### Current focus
 
 - Implementarea planului este scrisă local; urmează testarea de către utilizator conform ADE10-05.
-  Următoarea subfelie liberă: **ADE10-07**.
+  Următoarea subfelie liberă: **ADE10-08**.
 
 ### Open threads
 

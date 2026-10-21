@@ -212,4 +212,25 @@ Public Interface IEFacturaApi
     ''' <summary>POST /api/forexe/parteneri/angajament/scoate -- slice 0121-05: removes the supplier's link with the angajament, with its indicators.</summary>
     Function UnlinkSupplierAngajamentAsync(k_cui As String, k_codAngajament As String, ct As CancellationToken) As Task
 
+    ' ── Slices 00EF-45 / 00EF-47 (EV01, EV03): a received invoice SENT to VERCON (PYTHON/routes/efactura/primite_vercon_routes.py; plan docs/EV_PLAN.md) ──
+    ' Writes are for the role «Contabil» only (the server answers 403 ROL_INTERZIS otherwise).
+
+    ''' <summary>GET /api/efactura/vercon/conturi -- the accounts of every active gestiune of VERCON (MF and OI too), grouped by gestiune: the tree the accountant picks from.</summary>
+    Function GetVerconConturiAsync(ct As CancellationToken) As Task(Of List(Of EFacturaVerconGestiune))
+
+    ''' <summary>GET /api/efactura/vercon/stari -- one short line per invoice that was ever sent (for the list of received invoices).</summary>
+    Function GetVerconStariAsync(ct As CancellationToken) As Task(Of List(Of EFacturaVerconSumar))
+
+    ''' <summary>GET .../primite/{id}/vercon -- the lines with their value WITH VAT and the proposed account, the active sending, the history, whether it can be sent.</summary>
+    Function GetVerconAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
+
+    ''' <summary>POST .../primite/{id}/vercon -- sends the invoice: ALL its lines, each with the proposed account (<c>IdMasina</c> Nothing = none), and an optional note for the Administrator.</summary>
+    Function SendVerconAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), k_observatie As String, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
+
+    ''' <summary>PUT .../primite/{id}/vercon/conturi -- changes the proposed accounts while the sending waits.</summary>
+    Function SetVerconConturiAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
+
+    ''' <summary>DELETE .../primite/{id}/vercon/{idTrimitere} -- takes the sending back while it waits.</summary>
+    Function WithdrawVerconAsync(k_idPrimita As Integer, k_idTrimitere As Integer, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
+
 End Interface

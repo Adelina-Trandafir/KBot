@@ -24,6 +24,8 @@ Data: 2026-10-20. Toate fisierele acestui proiect sunt in `PYTHON`, conform ceri
 | SLICE-CHAT-05 | Revenire la utf8mb4 pentru emoji | DDL pregatit pentru executare manuala |
 | SLICE-CHAT-06 | Diagnostic 503 | Cauza raportata: seed neexecutat; diagnostic adaugat |
 | SLICE-CHAT-07 | Inchidere, tastatura, polling si antet DISCUTII | Cod actualizat; fara teste sau probe in browser |
+| SLICE-CHAT-08 | Bula mobila si pozitionare in viewport | Cod actualizat; fara teste sau probe in browser |
+| SLICE-CHAT-09 | Mesaje compacte si alinierea compozitorului | Cod actualizat; fara teste sau probe in browser |
 
 ## Model si limite de acces
 
@@ -66,6 +68,8 @@ Textele utilizatorilor sunt introduse in DOM ca text, nu HTML. Actualizarea este
 Enter trimite mesajul; Ctrl+Enter insereaza un rand nou la cursor, in limita de 4000 de caractere. Compozitia IME nu declanseaza trimiterea si mentinerea tastei Enter apasate nu repeta trimiteri. Panoul se inchide la apasare in exterior, fara sa anuleze actiunea controlului apasat si fara sa-i preia focalizarea. Ciorna ramane pastrata. Inchiderea reprogrameaza polling-ul la intervalul pentru panoul inchis.
 
 Antetul are albastrul #3b5a85 din antetele aplicatiilor (variabila existenta --avacont-blue unde este definita), cu text si butoane albe. Titlul si butonul plutitor folosesc acelasi simbol 💬 si textul DISCUTII. Subtitlul a fost eliminat. Marcajele V/A/K raman pe mesaje si in filtru.
+
+Actualizare 2026-10-21, SLICE-CHAT-08: bula DISCUȚII se muta prin tragere cu mouse-ul. Clicul simplu continua sa deschida/inchida panoul. Miscarea trebuie sa depaseasca 6 pixeli de ecran pentru a deveni tragere, iar clicul generat la finalul tragerii nu deschide accidental panoul. Pozitia este limitata la zona vizibila si retinuta local in browser ca proportii ale spatiului disponibil, fara cereri catre server. La redimensionare, modificarea zoom-ului aplicatiei sau schimbarea dimensiunii butonului, pozitia este readaptata. Panoul deschis se pozitioneaza in zona vizibila, deasupra, dedesubt sau lateral fata de bula, in functie de spatiul disponibil. Logica si valorile dinamice de pozitionare sunt gestionate de API-ul componentei din `components/chat/chat-position.js`; CSS-ul ramane separat.
 
 ## Activare manuala
 

@@ -18,110 +18,122 @@ Partial Class AcasaPage
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
+        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AcasaPage))
         tips = New KBotToolTip(components)
+        btnNoutati = New Button()
         pnlCentru = New Panel()
         pnlNoutati = New Panel()
         edNoutati = New KBotRichTextEditor()
         pnlNoutatiHead = New Panel()
         lblNoutati = New Label()
-        btnNoutati = New Button()
-        picLogo = New PictureBox()
+        picLogo = New KBotChatRobot()
+        bubble = New KBotChatBubble()
         pnlCentru.SuspendLayout()
         pnlNoutati.SuspendLayout()
         pnlNoutatiHead.SuspendLayout()
-        CType(picLogo, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        '
+        ' 
+        ' btnNoutati
+        ' 
+        btnNoutati.Dock = DockStyle.Right
+        btnNoutati.FlatStyle = FlatStyle.Flat
+        btnNoutati.Location = New Point(811, 0)
+        btnNoutati.Margin = New Padding(0)
+        btnNoutati.Name = "btnNoutati"
+        btnNoutati.Size = New Size(44, 44)
+        btnNoutati.TabIndex = 1
+        btnNoutati.TabStop = False
+        tips.SetToolTipHeader(btnNoutati, "Ce este nou")
+        tips.SetToolTipText(btnNoutati, "Strânge sau desface lista cu schimbările ultimelor versiuni.")
+        btnNoutati.UseVisualStyleBackColor = True
+        ' 
         ' pnlCentru
-        '
+        ' 
+        pnlCentru.Controls.Add(bubble)
         pnlCentru.Controls.Add(pnlNoutati)
         pnlCentru.Controls.Add(picLogo)
         pnlCentru.Dock = DockStyle.Fill
         pnlCentru.Location = New Point(0, 0)
         pnlCentru.Margin = New Padding(0)
         pnlCentru.Name = "pnlCentru"
-        pnlCentru.Size = New Size(1920, 840)
+        pnlCentru.Size = New Size(1386, 771)
         pnlCentru.TabIndex = 0
-        '
+        ' 
         ' pnlNoutati
-        '
+        ' 
         pnlNoutati.Anchor = AnchorStyles.Top Or AnchorStyles.Right
         pnlNoutati.Controls.Add(edNoutati)
         pnlNoutati.Controls.Add(pnlNoutatiHead)
-        pnlNoutati.Location = New Point(1061, 12)
+        pnlNoutati.Location = New Point(527, 12)
         pnlNoutati.Margin = New Padding(0)
         pnlNoutati.Name = "pnlNoutati"
         pnlNoutati.Size = New Size(855, 560)
         pnlNoutati.TabIndex = 2
-        '
+        ' 
         ' edNoutati
-        '
-        edNoutati.CollapseButton = False
+        ' 
         edNoutati.Dock = DockStyle.Fill
+        edNoutati.Font = New Font("Calibri", 9F)
         edNoutati.FooterVisible = False
         edNoutati.HeaderVisible = False
-        edNoutati.Location = New Point(4, 44)
+        edNoutati.Location = New Point(0, 44)
         edNoutati.Margin = New Padding(0)
         edNoutati.Name = "edNoutati"
-        edNoutati.Size = New Size(847, 512)
+        edNoutati.Size = New Size(855, 516)
         edNoutati.TabIndex = 1
-        '
+        ' 
         ' pnlNoutatiHead
-        '
+        ' 
         pnlNoutatiHead.Controls.Add(lblNoutati)
         pnlNoutatiHead.Controls.Add(btnNoutati)
         pnlNoutatiHead.Dock = DockStyle.Top
-        pnlNoutatiHead.Location = New Point(4, 0)
+        pnlNoutatiHead.Location = New Point(0, 0)
         pnlNoutatiHead.Margin = New Padding(0)
         pnlNoutatiHead.Name = "pnlNoutatiHead"
-        pnlNoutatiHead.Size = New Size(847, 44)
+        pnlNoutatiHead.Size = New Size(855, 44)
         pnlNoutatiHead.TabIndex = 0
-        '
+        ' 
         ' lblNoutati
-        '
+        ' 
         lblNoutati.Dock = DockStyle.Fill
-        lblNoutati.Font = New Font("Segoe UI Semibold", 11.0F)
+        lblNoutati.Font = New Font("Segoe UI Semibold", 11F)
         lblNoutati.Location = New Point(0, 0)
         lblNoutati.Margin = New Padding(0)
         lblNoutati.Name = "lblNoutati"
         lblNoutati.Padding = New Padding(0, 0, 10, 0)
-        lblNoutati.Size = New Size(803, 44)
+        lblNoutati.Size = New Size(811, 44)
         lblNoutati.TabIndex = 0
         lblNoutati.Text = "Ce este nou"
         lblNoutati.TextAlign = ContentAlignment.MiddleRight
-        '
-        ' btnNoutati
-        '
-        btnNoutati.Dock = DockStyle.Right
-        btnNoutati.FlatStyle = FlatStyle.Flat
-        btnNoutati.Location = New Point(803, 0)
-        btnNoutati.Margin = New Padding(0)
-        btnNoutati.Name = "btnNoutati"
-        btnNoutati.Size = New Size(44, 44)
-        btnNoutati.TabIndex = 1
-        btnNoutati.TabStop = False
-        btnNoutati.ImageAlign = ContentAlignment.MiddleCenter
-        tips.SetToolTipHeader(btnNoutati, "Ce este nou")
-        tips.SetToolTipText(btnNoutati, "Strânge sau desface lista cu schimbările ultimelor versiuni.")
-        btnNoutati.UseVisualStyleBackColor = True
-        '
+        ' 
         ' picLogo
-        '
+        ' 
         picLogo.Anchor = AnchorStyles.Bottom Or AnchorStyles.Right
-        picLogo.Image = My.Resources.Resources.kbot_logo
-        picLogo.Location = New Point(1736, 656)
+        picLogo.Image = CType(resources.GetObject("picLogo.Image"), Image)
+        picLogo.Location = New Point(1202, 587)
         picLogo.Margin = New Padding(0)
         picLogo.Name = "picLogo"
         picLogo.Size = New Size(160, 160)
-        picLogo.SizeMode = PictureBoxSizeMode.Zoom
         picLogo.TabIndex = 1
         picLogo.TabStop = False
-        '
+        tips.SetToolTipHeader(picLogo, "Discuții")
+        tips.SetToolTipText(picLogo, "Deschide mesajele schimbate cu ceilalți utilizatori ai K-BOT, VERCON și ADECHIT.")
+        ' 
+        ' bubble
+        ' 
+        bubble.Anchor = AnchorStyles.None
+        bubble.Location = New Point(700, 20)
+        bubble.Margin = New Padding(0)
+        bubble.Name = "bubble"
+        bubble.Size = New Size(570, 700)
+        bubble.TabIndex = 3
+        bubble.Visible = False
+        ' 
         ' AcasaPage
-        '
-        AutoScaleDimensions = New SizeF(144.0F, 144.0F)
+        ' 
+        AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1920, 840)
+        ClientSize = New Size(1386, 771)
         Controls.Add(pnlCentru)
         FormBorderStyle = FormBorderStyle.None
         Name = "AcasaPage"
@@ -131,7 +143,6 @@ Partial Class AcasaPage
         pnlCentru.ResumeLayout(False)
         pnlNoutati.ResumeLayout(False)
         pnlNoutatiHead.ResumeLayout(False)
-        CType(picLogo, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
@@ -142,5 +153,6 @@ Partial Class AcasaPage
     Friend WithEvents pnlNoutatiHead As Panel
     Friend WithEvents lblNoutati As Label
     Friend WithEvents btnNoutati As Button
-    Friend WithEvents picLogo As PictureBox
+    Friend WithEvents picLogo As KBotChatRobot
+    Friend WithEvents bubble As KBotChatBubble
 End Class

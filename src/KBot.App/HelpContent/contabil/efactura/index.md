@@ -4,8 +4,8 @@ title: E-Factura: facturile emise
 part: contabil
 order: 75
 parent: contabil
-screens: FacturiForm, DateUnitateForm, PrimiteForm, KeLegaForm, KeAngajamentForm, SetariAplicatieView.chkKeZi
-keywords: efactura, e-factura, factura electronica, facturi emise, arbore, trimitere, trimite factura, validare, stornare, storno, factura clasica, pdf, eroare anaf, factura, client, cumparator, date unitate, unitate emitenta, cont emitent, iban, unitate de masura, linii, ciorna, serie, numar factura, anaf, token, certificat, certificat calificat, autorizare, reinnoire, spv, pin, expirat, vanzare, cumparare, facturi primite, ribbon e-factura, receptie, recepție, receptii, legare factura, legare de receptie, alocare, clasificatie, clasificatiile liniilor, indicator, avans, partial, final, plata factura, modifica receptia, receptie noua, storno receptie
+screens: FacturiForm, DateUnitateForm, PrimiteForm, KeLegaForm, KeAngajamentForm, SetariAplicatieView.chkKeZi, VerconForm
+keywords: vercon, trimite la vercon, trimitere la vercon, nir, administrator, cont vercon, efactura, e-factura, factura electronica, facturi emise, arbore, trimitere, trimite factura, validare, stornare, storno, factura clasica, pdf, eroare anaf, factura, client, cumparator, date unitate, unitate emitenta, cont emitent, iban, unitate de masura, linii, ciorna, serie, numar factura, anaf, token, certificat, certificat calificat, autorizare, reinnoire, spv, pin, expirat, vanzare, cumparare, facturi primite, ribbon e-factura, receptie, recepție, receptii, legare factura, legare de receptie, alocare, clasificatie, clasificatiile liniilor, indicator, avans, partial, final, plata factura, modifica receptia, receptie noua, storno receptie
 open: menu:efactura
 ---
 <!-- slice: 00EF-05, 00EF-08, 00EF-09, 00EF-13, 00EF-16, 0000-54, 0000-55, 0000-57, 0000-58, 0000-60, 0113, 0119, 0114-01, 00EF-30, 0000-76, KE03, 0000-83, 0114-10, 0114-14, 0000-90 -->
@@ -155,7 +155,7 @@ Cât timp scrii sau modifici o factură, aceste vederi nu se văd. Dacă nu exis
 Butonul **«Token ANAF»** din ribbon (**E-Factura › ANAF**) deschide fereastra tokenului, unde vezi starea lui și îl obții sau îl reînnoiești cu certificatul calificat al unității. Pașii, mesajele și ce faci când ceva nu merge sunt în [Tokenul ANAF: obținerea și reînnoirea](topic:contabil.efactura.token).
 
 ## Facturile primite
-<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119, 00EF-25, 00EF-26, 00EF-27, 00EF-29, 0000-75, 00EF-31, 0000-77, 00EF-35, 0000-80, 00EF-36, 0000-81, 00EF-37, 0000-82, KE02, KE03, 0000-83, 0114-10, 0114-14, 0000-90, 0114-17, 0000-91, 0114-22, 0000-93, 00EF-40, 0000-96, 00EF-41, 0000-97, 00EF-42, 0000-98 -->
+<!-- slice: 00EF-18, 00EF-21, 00EF-22, 00EF-23, 0000-61, 0000-64, 0000-65, 0000-66, 0119, 00EF-25, 00EF-26, 00EF-27, 00EF-29, 0000-75, 00EF-31, 0000-77, 00EF-35, 0000-80, 00EF-36, 0000-81, 00EF-37, 0000-82, KE02, KE03, 0000-83, 0114-10, 0114-14, 0000-90, 0114-17, 0000-91, 0114-22, 0000-93, 00EF-40, 0000-96, 00EF-41, 0000-97, 00EF-42, 0000-98, 00EF-47, 0000-116, 00EF-48, 0000-117 -->
 
 În bara din stânga a ferestrei principale apare vederea **«E-Factura»**, sub «Extrase», sus, doar pentru un angajament a cărui fundamentare (DDF) are facturi primite — legate de furnizorii ei sau de tine; la celelalte angajamente nu se vede. Starea se citește odată cu arborele: după o sincronizare sau după ce legi o factură, fila apare când arborele se reîmprospătează. Ea arată facturile electronice primite de la furnizori, aduse de la ANAF.
 
@@ -222,6 +222,20 @@ După ce recepția este salvată în FOREXE, K-BOT **citește din nou angajament
 **Dacă FOREXE refuză recepția** (de exemplu cu mesajul «CAB-0031 - Datele introduse nu sunt valide»), K-BOT îți arată mesajul site-ului, **nu leagă nimic** și nu mai citește angajamentul. Data se scrie în FOREXE cu puncte (zz.ll.aaaa) și sumele cu virgulă la zecimale, oricum ar fi setat Windows-ul.
 
 <!-- capture: efactura-receptii | caption: Vederea «Recepții» a unei facturi primite | prepare: Din ribbon, E-Factura › Cumpărare, alegeți o factură primită care are deja o clasificație aleasă și deschideți vederea «Recepții». -->
+
+## Trimiterea la Vercon
+<!-- slice: 00EF-45, 00EF-47, 0000-116, 00EF-48, 0000-117 -->
+
+O factură primită cu produse sau materiale care intră în gestiunea unității se trimite la **Vercon**, ca Administratorul să o preia într-un NIR. **Tu decizi** ce se trimite; Administratorul vede doar ce ai trimis. Doar un utilizator cu rolul **«Contabil»** poate trimite.
+
+- Din ribbon, fila **«E-Factura»**, apasă **«Trimite la Vercon»**. Se deschide pagina **«Trimite la Vercon»**, la fel ca «Cumpărare» sau «Recepții»: rămâne deschisă până o închizi.
+- În **stânga** este arborele facturilor primite din anul ales (fără notele de credit): pe luni și furnizori, ca în «Cumpărare». Butonul din dreapta antetului arborelui schimbă gruparea în **«Grupare după furnizor»** și înapoi. Fiecare factură are data, numărul, totalul și, după număr, un cuvânt care spune ce s-a întâmplat cu ea în Vercon: **trimisă**, **preluată** sau **returnată**; cu mouse-ul deasupra vezi textul întreg. Bifează facturile de trimis. Bifa unei **luni** sau a unui **furnizor** le bifează pe toate facturile lui: în dreapta apare câte un grup pentru fiecare factură. O factură **preluată** într-un NIR rămâne bifată în gri și nu se mai trimite.
+- În **dreapta** apar liniile facturilor bifate, grupate pe factură. Se trimit **toate** liniile fiecărei facturi.
+- Pe fiecare linie poți alege, dacă vrei, **contul din Vercon**. Lista arată conturile grupate pe gestiune, din toate gestiunile; un clic pe numele unei gestiuni o strânge sau o desface, iar dacă tastezi o parte din numele contului sau al gestiunii, rămân doar rândurile potrivite. Contul ales pe rândul unei facturi se scrie pe toate liniile ei. **«(fără cont)»** lasă alegerea Administratorului.
+- Contul este o **propunere**: Administratorul îl găsește ales când preia factura și îl poate schimba.
+- Sub tabel vezi unde merg liniile (câte pe fiecare gestiune și cu ce valoare, plus cele fără cont). În câmpul de sus poți scrie o **notă** pentru Administrator.
+- Nu se trimit notele de credit (storno). Furnizorul trebuie să fie în lista de parteneri a unității; dacă numărul facturii pare deja înregistrat în Vercon, pagina te avertizează.
+- Sfatul unei facturi din arbore spune unde e ea: **«Trimisă, așteaptă Administratorul»**, **«Preluată în NIR …»** (cu numărul NIR) sau **«Returnată: motivul»**. Dacă bifezi (singură) o factură trimisă care încă așteaptă, în dreapta vezi conturile propuse, butonul devine **«Salvează conturile»** și apare **«Retrage de la Vercon»**. O factură returnată sau retrasă se poate trimite din nou. Dacă un NIR făcut din ea este anulat în Vercon, factura așteaptă iarăși Administratorul.
 
 ## Sincronizarea facturilor primite
 <!-- slice: 00EF-18, 0000-61, 0119, 0114-01, 00EF-30, 0000-76, 00EF-32, 0000-78, 00EF-33, 0000-79, 00EF-34, 0114-10, 0114-14, 0000-90, 0114-17, 0114-18, 0000-91 -->

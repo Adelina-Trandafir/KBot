@@ -33,7 +33,12 @@ Friend NotInheritable Class KBotComboList
     Private Const SCROLL_WIDTH As Integer = 8
 
     Private ReadOnly _combo As KBotComboBox
+    ' _rows = the rows SHOWN; _allRows = every row the combo handed over (group headers included, the rows of a folded group too).
     Private ReadOnly _rows As New List(Of KBotComboListRow)()
+    Private ReadOnly _allRows As New List(Of KBotComboListRow)()
+    Private ReadOnly _collapsed As New HashSet(Of String)(StringComparer.CurrentCultureIgnoreCase)
+    Private _anchor As Rectangle
+    Private _minWidth As Integer
     Private _selected As Integer = -1
     Private _top As Integer = 0
 
@@ -96,6 +101,13 @@ Friend NotInheritable Class KBotComboList
         End Get
     End Property
 
+    ''' <summary>Is the highlighted row a group header (slice 00EF-46)? Enter or a click on it folds / unfolds the group.</summary>
+    Public ReadOnly Property SelectedIsHeader As Boolean
+        Get
+            Return _selected >= 0 AndAlso _selected < _rows.Count AndAlso _rows(_selected).IsHeader
+        End Get
+    End Property
+
     ''' <summary>Is the highlighted row the «new item» row?</summary>
     Public ReadOnly Property SelectedIsNewItem As Boolean
         Get
@@ -110,9 +122,17 @@ Friend NotInheritable Class KBotComboList
     ''' </summary>
     Public Sub ShowRows(rows As List(Of KBotComboListRow), owner As Form, anchor As Rectangle,
                         minWidth As Integer, highlight As Integer)
-        _rows.Clear()
-        _rows.AddRange(rows)
-        _selected = If(highlight >= 0 AndAlso highlight < _rows.Count, highlight, -1)
+        _allRows.Clear()
+        _allRows.AddRange(rows)
+        _anchor = anchor
+        _minWidth = minWidth
+        ' The highlighted row must be seen: a group that is folded and holds it is unfolded.
+        If highlight >= 0 AndAlso highlight < _allRows.Count AndAlso _allRows(highlight).GroupKey IsNot Nothing Then
+            _collapsed.Remove(_allRows(highlight).GroupKey)
+        End If
+        Dim k_target As KBotComboListRow = If(highlight >= 0 AndAlso highlight < _allRows.Count, _allRows(highlight), Nothing)
+        RebuildVisible()
+        _selected = If(k_target IsNot Nothing, _rows.IndexOf(k_target), -1)
         _top = 0
         _dragging = False
 
@@ -128,7 +148,39 @@ Friend NotInheritable Class KBotComboList
     ''' <summary>Follows the box when it moves or changes size while the list is open.</summary>
     Public Sub Reposition(anchor As Rectangle, minWidth As Integer)
         If Not Visible Then Return
+        _anchor = anchor
+        _minWidth = minWidth
         Place(anchor, minWidth)
+        Invalidate()
+    End Sub
+
+    ' The shown rows = every row except those of a folded group (the headers always stay).
+    Private Sub RebuildVisible()
+        _rows.Clear()
+        For Each k_row As KBotComboListRow In _allRows
+            If k_row.IsHeader OrElse k_row.GroupKey Is Nothing OrElse Not _collapsed.Contains(k_row.GroupKey) Then _rows.Add(k_row)
+        Next
+    End Sub
+
+    ''' <summary>The combo's items changed: forget which groups were folded.</summary>
+    Public Sub ResetGroups()
+        _collapsed.Clear()
+    End Sub
+
+    ''' <summary>Folds / unfolds the group of the highlighted header row (Enter on it).</summary>
+    Public Sub ToggleSelectedHeader()
+        If SelectedIsHeader Then ToggleGroup(_selected)
+    End Sub
+
+    ' Folds / unfolds the group of the header at shown row k_index; the header stays highlighted, the window takes the new height.
+    Private Sub ToggleGroup(k_index As Integer)
+        If k_index < 0 OrElse k_index >= _rows.Count OrElse Not _rows(k_index).IsHeader Then Return
+        Dim k_header As KBotComboListRow = _rows(k_index)
+        If Not _collapsed.Remove(k_header.GroupKey) Then _collapsed.Add(k_header.GroupKey)
+        RebuildVisible()
+        _selected = _rows.IndexOf(k_header)
+        Place(_anchor, _minWidth)
+        If _selected >= 0 Then EnsureVisible(_selected, centre:=False)
         Invalidate()
     End Sub
 
@@ -251,12 +303,22 @@ Friend NotInheritable Class KBotComboList
                         g.FillRectangle(b, r)
                     End Using
                 End If
-                Dim textArea As New Rectangle(r.Left + padX, r.Top, Math.Max(0, r.Width - padX), r.Height)
+                ' Slice 00EF-46: the rows of a group are indented under their header, which carries a fold triangle.
+                Dim k_step As Integer = ThemeShapes.ScaleDpi(_combo, 16)
+                Dim k_left As Integer = padX + If(_rows(i).GroupKey IsNot Nothing, k_step, 0)
+                Dim textArea As New Rectangle(r.Left + k_left, r.Top, Math.Max(0, r.Width - k_left), r.Height)
                 Dim fore As Color = If(sel, _combo.EffectiveSelectionForeColor, _combo.ForeColor)
                 Const flags As TextFormatFlags = TextFormatFlags.VerticalCenter Or TextFormatFlags.Left Or
                                                  TextFormatFlags.EndEllipsis Or TextFormatFlags.NoPrefix Or
                                                  TextFormatFlags.SingleLine
-                If _rows(i).IsNewItem Then
+                If _rows(i).IsHeader Then
+                    ' The header sits at the row's left edge (not indented): triangle, then the group in bold.
+                    textArea = New Rectangle(r.Left + padX + k_step, r.Top, Math.Max(0, r.Width - padX - k_step), r.Height)
+                    DrawFoldTriangle(g, New Rectangle(r.Left + padX, r.Top, k_step, r.Height), _collapsed.Contains(_rows(i).GroupKey), fore)
+                    Using f As New Font(_combo.Font, FontStyle.Bold)
+                        TextRenderer.DrawText(g, _rows(i).Caption, f, textArea, fore, flags)
+                    End Using
+                ElseIf _rows(i).IsNewItem Then
                     ' The «new item» row is an action, not a value: italic, so it never reads as one.
                     Using f As New Font(_combo.Font, FontStyle.Italic)
                         TextRenderer.DrawText(g, _rows(i).Caption, f, textArea, fore, flags)
@@ -279,6 +341,22 @@ Friend NotInheritable Class KBotComboList
         Catch ex As Exception
             GlobalErrorLog.Write("KBotComboList.OnPaint", ex)
         End Try
+    End Sub
+
+    ' The fold triangle of a group header: pointing right when folded, down when open.
+    Private Shared Sub DrawFoldTriangle(g As Graphics, k_area As Rectangle, k_folded As Boolean, k_color As Color)
+        Dim k_size As Integer = Math.Max(3, k_area.Height \ 6)
+        Dim k_cx As Integer = k_area.Left + k_area.Width \ 2 - 1
+        Dim k_cy As Integer = k_area.Top + k_area.Height \ 2
+        Dim k_points As Point()
+        If k_folded Then
+            k_points = {New Point(k_cx - k_size \ 2, k_cy - k_size), New Point(k_cx - k_size \ 2, k_cy + k_size), New Point(k_cx + k_size \ 2 + 1, k_cy)}
+        Else
+            k_points = {New Point(k_cx - k_size, k_cy - k_size \ 2), New Point(k_cx + k_size, k_cy - k_size \ 2), New Point(k_cx, k_cy + k_size \ 2 + 1)}
+        End If
+        Using b As New SolidBrush(k_color)
+            g.FillPolygon(b, k_points)
+        End Using
     End Sub
 
     ' =====================================================================
@@ -328,7 +406,9 @@ Friend NotInheritable Class KBotComboList
 
             Dim i As Integer = RowAt(e.Location)
             If i < 0 Then Return
-            If _rows(i).IsNewItem Then
+            If _rows(i).IsHeader Then
+                ToggleGroup(i)
+            ElseIf _rows(i).IsNewItem Then
                 RaiseEvent NewItemChosen()
             Else
                 RaiseEvent RowChosen(_rows(i).ItemIndex)
@@ -364,11 +444,30 @@ Friend NotInheritable Class KBotComboListRow
     Public ReadOnly Property ItemIndex As Integer
     Public ReadOnly Property Caption As String
     Public ReadOnly Property IsNewItem As Boolean
+    ''' <summary>Slice 00EF-46: the group this row belongs to (a header's own key too); Nothing = a plain row.</summary>
+    Public ReadOnly Property GroupKey As String
+    ''' <summary>Slice 00EF-46: a group header row. It stands for no item; a click or Enter folds / unfolds its group.</summary>
+    Public ReadOnly Property IsHeader As Boolean
 
     Public Sub New(itemIndex As Integer, caption As String)
         Me.ItemIndex = itemIndex
         Me.Caption = If(caption, String.Empty)
     End Sub
+
+    ''' <summary>The row of item <paramref name="k_itemIndex"/> listed under the group <paramref name="k_groupKey"/>.</summary>
+    Public Shared Function InGroup(k_itemIndex As Integer, k_caption As String, k_groupKey As String) As KBotComboListRow
+        Dim k_row As New KBotComboListRow(k_itemIndex, k_caption)
+        k_row._GroupKey = k_groupKey
+        Return k_row
+    End Function
+
+    ''' <summary>The header row of the group <paramref name="k_groupKey"/>.</summary>
+    Public Shared Function Header(k_groupKey As String) As KBotComboListRow
+        Dim k_row As New KBotComboListRow(-1, k_groupKey)
+        k_row._GroupKey = k_groupKey
+        k_row._IsHeader = True
+        Return k_row
+    End Function
 
     ''' <summary>The row <see cref="KBotComboBox.OfferNewItem"/> shows when nothing matches.</summary>
     Public Shared Function NewItem(caption As String) As KBotComboListRow

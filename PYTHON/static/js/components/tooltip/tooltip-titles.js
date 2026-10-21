@@ -1,5 +1,6 @@
 import { ensureTooltipStyle, showTooltip } from './tooltip.js';
 import { tooltipMedia, tooltipsAllowed } from './tooltip-environment.js';
+import { treeTooltipTarget, treeNodeClipped, treeTooltipAllowed, treeTooltipText } from '../treeview/treeview-tooltip.js';
 
 const installed = new WeakMap();
 let nextId = 0;
@@ -8,18 +9,22 @@ let nextId = 0;
 // Event delegation avoids per-cell listeners in grids. No touch or long-press handlers.
 export function installTitleTooltips(doc = document) {
   if (installed.has(doc)) return installed.get(doc);
-  const win = doc.defaultView, texts = new WeakMap();
+  const win = doc.defaultView, texts = new WeakMap(), treeTexts = new WeakMap();
   const listeners = new AbortController(), opts = { signal: listeners.signal };
   if (tooltipsAllowed(win)) ensureTooltipStyle(doc);
   tooltipMedia(win).addEventListener('change', () => {
     if (tooltipsAllowed(win)) ensureTooltipStyle(doc);
   }, opts);
-  let current = null, hideTimer, suppressed = null;
+  let current = null, hideTimer, suppressed = null, hoverFrame = 0, hoverTarget = null;
+  const sizeObserver = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(() => {
+    if (current && !treeTooltipAllowed(current.source)) hide(true);
+  }) : null;
   const contains = target => target && current &&
     (current.source.contains(target) || current.notice.element?.contains(target));
   function hide(immediate = false) {
     clearTimeout(hideTimer);
     const previous = current; current = null;
+    sizeObserver?.disconnect();
     previous?.notice.close('trigger-left', immediate);
   }
   function suppress(node) {
@@ -55,6 +60,29 @@ export function installTitleTooltips(doc = document) {
   function sourceFor(target) {
     const element = target?.nodeType === 1 ? target : target?.parentElement;
     if (element?.closest('[data-kbot-tooltip="off"]')) return null;
+    const tree = treeTooltipTarget(element);
+    if (tree) {
+      let text = '';
+      const stop = tree.action || tree.scope;
+      for (let node = element; node; node = node.parentElement) {
+        collect(node);
+        if (!text && texts.has(node)) text = texts.get(node);
+        if (node === stop) break;
+      }
+      // Icon actions have their own help; they never inherit the row's title.
+      if (tree.action) {
+        if (!text) return null;
+        treeTexts.set(tree.action, text);
+        return tree.action;
+      }
+      if (!treeNodeClipped(tree.scope)) return null;
+      const label = tree.scope.querySelector('.treeview-label');
+      if (label) collect(label);
+      text ||= texts.get(tree.scope) || (label && texts.get(label)) || treeTooltipText(tree.scope);
+      if (!text) return null;
+      treeTexts.set(tree.scope, text);
+      return tree.scope;
+    }
     for (let node = element; node; node = node.parentElement) {
       collect(node);
       if (texts.has(node)) return node;
@@ -63,6 +91,7 @@ export function installTitleTooltips(doc = document) {
   }
   function show(node) {
     clearTimeout(hideTimer);
+    if (node && !treeTooltipAllowed(node)) { hide(true); return; }
     if (current?.source === node) return;
     hide();
     if (!node || node.disabled || !tooltipsAllowed(win) ||
@@ -72,9 +101,12 @@ export function installTitleTooltips(doc = document) {
     described.add(descriptionId); node.setAttribute('aria-describedby', [...described].join(' '));
     // Report buttons use the requested trial values, regardless of saved defaults.
     const reportButton = node.matches('button') && node.closest('.report-view, .rpt-bar');
-    const notice = showTooltip(texts.get(node), { source: node, anchor: node, descriptionId,
+    const notice = showTooltip(treeTexts.get(node) || texts.get(node), { source: node, anchor: node, descriptionId,
       ...(reportButton ? { delay: 100, duration: 20000 } : {}) });
     const entry = { source: node, notice }; current = entry;
+    if (treeTooltipTarget(node) && sizeObserver) {
+      for (let parent = node; parent; parent = parent.parentElement) sizeObserver.observe(parent);
+    }
     notice.closed.then(() => {
       const remaining = (node.getAttribute('aria-describedby') || '').split(/\s+/)
         .filter(value => value && value !== descriptionId);
@@ -96,7 +128,7 @@ export function installTitleTooltips(doc = document) {
       else record.addedNodes.forEach(scan);
     }
     if (current && (!current.source.isConnected || current.source.disabled ||
-      current.source.closest('[data-kbot-tooltip="off"]'))) hide(true);
+      current.source.closest('[data-kbot-tooltip="off"]') || !treeTooltipAllowed(current.source))) hide(true);
   });
   observer.observe(doc.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['title', 'disabled', 'data-kbot-tooltip'] });
   doc.addEventListener('pointerover', event => {
@@ -111,13 +143,23 @@ export function installTitleTooltips(doc = document) {
   // Only actual mouse movement out of the clicked control releases suppression.
   // Focus changes, menu opening and DOM replacement under the pointer do not.
   doc.addEventListener('pointermove', event => {
-    if (!suppressed || event.pointerType === 'touch') return;
-    const { element, bounds } = suppressed;
-    const inside = event.clientX >= bounds.left && event.clientX <= bounds.right &&
-      event.clientY >= bounds.top && event.clientY <= bounds.bottom;
-    if (inside || element.contains(event.target)) return;
-    suppressed = null;
-    if (tooltipsAllowed(win)) show(sourceFor(event.target));
+    if (event.pointerType === 'touch') return;
+    if (suppressed) {
+      const { element, bounds } = suppressed;
+      const inside = event.clientX >= bounds.left && event.clientX <= bounds.right &&
+        event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+      if (inside || element.contains(event.target)) return;
+      suppressed = null;
+      if (tooltipsAllowed(win)) show(sourceFor(event.target));
+    }
+    // Re-evaluate a hovered row after resizing without per-node listeners or measuring every event.
+    if (!event.buttons && tooltipsAllowed(win) && treeTooltipTarget(event.target)) {
+      hoverTarget = event.target;
+      if (!hoverFrame) hoverFrame = win.requestAnimationFrame(() => {
+        hoverFrame = 0;
+        if (hoverTarget?.isConnected && hoverTarget.matches(':hover')) show(sourceFor(hoverTarget));
+      });
+    }
   }, opts);
   doc.addEventListener('focusin', event => {
     if (current?.notice.element?.contains(event.target)) return;
@@ -139,7 +181,13 @@ export function installTitleTooltips(doc = document) {
     }
   }, { capture: true, ...opts });
   doc.addEventListener('visibilitychange', () => { if (doc.hidden) hide(); }, opts);
-  const stop = () => { hide(); observer.disconnect(); listeners.abort(); installed.delete(doc); };
+  const recheckTree = () => { if (current && !treeTooltipAllowed(current.source)) hide(true); };
+  win.addEventListener('resize', recheckTree, opts);
+  doc.addEventListener('scroll', recheckTree, { capture: true, ...opts });
+  const stop = () => {
+    hide(); win.cancelAnimationFrame(hoverFrame); sizeObserver?.disconnect();
+    observer.disconnect(); listeners.abort(); installed.delete(doc);
+  };
   win.addEventListener('pagehide', event => { if (event.persisted) hide(); else stop(); }, opts);
   installed.set(doc, stop);
   return stop;

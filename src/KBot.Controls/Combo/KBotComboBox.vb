@@ -332,6 +332,7 @@ Partial Public Class KBotComboBox
     ' An open list shows rows by item index: after any change it would point at the wrong items.
     Private Sub ItemsChanged()
         CloseDropDown()
+        If _list IsNot Nothing AndAlso Not _list.IsDisposed Then _list.ResetGroups()   ' slice 00EF-46: which groups were folded is forgotten
         If _updateCount = 0 Then Invalidate()
     End Sub
 
@@ -931,7 +932,10 @@ Partial Public Class KBotComboBox
                 If _editable Then Return False
                 _list.MoveToEdge(e.KeyCode = Keys.End)
             Case Keys.Enter
-                If _list.SelectedIsNewItem Then
+                If _list.SelectedIsHeader Then
+                    ' Slice 00EF-46: Enter on a group header folds / unfolds the group, the list stays open.
+                    _list.ToggleSelectedHeader()
+                ElseIf _list.SelectedIsNewItem Then
                     RequestNewItem()
                 ElseIf _list.SelectedItemIndex >= 0 Then
                     AcceptRow(_list.SelectedItemIndex)

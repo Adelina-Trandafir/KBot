@@ -20,10 +20,12 @@ Partial Public Class KbotForm
     Friend Const MachetaEFacturaVanzare As String = "efactura_vanzare"
     Friend Const MachetaEFacturaCumparare As String = "efactura_cumparare"
     Friend Const MachetaEFacturaReceptii As String = "efactura_receptii"
+    Friend Const MachetaEFacturaVercon As String = "efactura_vercon"
 
     Private _efacturaForm As FacturiForm
     Private _primiteForm As PrimiteForm
     Private _receptiiForm As KeLegaForm
+    Private _verconForm As VerconForm
 
     ' The API and the re-login net of E-Factura; False (after telling the operator) when no unit is open.
     Private Function EFacturaContext(k_caption As String, ByRef k_api As IEFacturaApi, ByRef k_gate As ReauthGate) As Boolean
@@ -109,6 +111,29 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>Slice 00EF-48, «E-Factura Trimite la Vercon»: the page where the accountant sends received invoices to VERCON (with the account proposed on each line).</summary>
+    Private Sub DeschideEFacturaVercon()
+        Try
+            If _verconForm IsNot Nothing AndAlso Not _verconForm.IsDisposed Then
+                ShowMachetaPage(_verconForm, MachetaRef.Create(MachetaEFacturaVercon))
+                Return
+            End If
+            Dim k_api As IEFacturaApi = Nothing
+            Dim k_gate As ReauthGate = Nothing
+            If Not EFacturaContext("E-Factura Trimite la Vercon", k_api, k_gate) Then Return
+            _verconForm = New VerconForm(k_api, k_gate, _session.NumeUnitate, _session.An)
+            AddHandler _verconForm.FormClosed, Sub() _verconForm = Nothing
+            If Not ShowMachetaPage(_verconForm, MachetaRef.Create(MachetaEFacturaVercon)) Then
+                _verconForm.Dispose()
+                _verconForm = Nothing
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.DeschideEFacturaVercon", ex)
+            KBotMessage.Show(Me, "Pagina de trimitere la Vercon nu a putut fi deschisă. Detalii în jurnalul de erori.",
+                             "E-Factura Trimite la Vercon", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     ''' <summary>
     ''' A button of the E-Factura tab of the ribbon. The two unit commands (accounts, unit data) work on the issued
     ''' invoices window, which comes to the front first (its issuer follows what «Date Unitate» saves).
@@ -122,6 +147,8 @@ Partial Public Class KbotForm
                     DeschideEFacturaCumparare()
                 Case MachetaEFacturaReceptii
                     DeschideEFacturaReceptii()
+                Case MachetaEFacturaVercon
+                    DeschideEFacturaVercon()
                 Case "ef_token"
                     OpenTokenAnaf()
                 Case Else

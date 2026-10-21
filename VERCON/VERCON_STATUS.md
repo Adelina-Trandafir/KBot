@@ -1,5 +1,14 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC09-05 — Reglare registru OI, produs completat la migrare — 21.10.2026
+
+**IMPLEMENTAT ÎN SURSE, NERULAT:** migratorul 0.3.11.0 ia primirea scoaterilor din `OI_Predare` (bon + produs, ca în
+Access) și completează produsul lipsă al pozițiilor de primire BP din registru numai când e sigur; restul (N17) se
+reglează în VERCON din fereastra nouă «Reglare registru OI» (butonul din paginile Bon de predare / transfer / casare).
+Mesajele migratorului și ale balanței OI sunt rescrise în română clară. [Worklog](../docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md).
+Doar build, `py_compile` și `node --check`; fără teste, rulări, browser sau SQL. Fereastra nu se deschide automat la
+prima intrare; datele deja migrate se reglează din fereastră.
+
 ## Migrator: storno fără NIR părinte ignorat — 19.10.2026
 
 **IMPLEMENTAT ÎN SURSE, NERULAT:** 0.3.10.0 importă IntrariStorno numai dacă
@@ -118,6 +127,7 @@ Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `d
 | SLICE-VC06-04 | BR (retur) si FCS (storno); [worklog](../docs/worklog/SLICE-VC06-04-br-si-fcs.md) | **IMPLEMENTAT_LOCAL** | Retur/storno partial si multiplu, cantitati eligibile, pret din documentul sursa. Doar sintaxa verificata; nerulat |
 | SLICE-VC06-05 | editare/anulare/istoric; [worklog](../docs/worklog/SLICE-VC06-05-editare-anulare-si-traseul-documentului.md) | **IMPLEMENTAT_LOCAL** | Revizie, perioada inchisa, motiv la anulare, dependente, audit. Doar sintaxa verificata; nerulat |
 | SLICE-VC06-06 | Facturi comune, corecții AUTO, validări NIR și schemă unică; [worklog](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md) | **IMPLEMENTAT_LOCAL** | Extensie 16.10.2026; cod și DDL manual pregătite. Fără build, teste, verificări automate, browser sau SQL. VRC folosește infrastructura KBot.Migrator; schema nu se creează automat |
+| SLICE-VC06-07 / 08 | NIR din facturile primite prin e-Factura: `efactura_queue.py`, `efactura-intake.js`, `docs.js`, `vercon-efactura.css`; [worklog 07](../docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md), [worklog 08](../docs/worklog/SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md); plan [EV_PLAN](../docs/EV_PLAN.md) | **IMPLEMENTAT_LOCAL** | 21.10.2026: lista facturilor trimise de contabil din K-BOT, completarea ciornei (furnizor, factură, valoare, conturi propuse, linii fără produs), returnarea cu motiv, închiderea trimiterii în tranzacția NIR-ului. Doar sintaxa verificată (py_compile, node --check); nerulat, fără browser/SQL. Cere `sql/EV_01_primite_vercon.sql` rulat și serverul K-BOT 00EF-45 |
 | SLICE-VC07-01 | `lista.py`, `js/vercon/lista.js`, nomenclator Feluri; [worklog](../docs/worklog/SLICE-VC07-01-lista-alimente.md) | **IMPLEMENTAT_LOCAL** | Lista cu mese, feluri si mai multe BC-uri (1:N), popup Alege B.C., salvare atomica, anulare care elibereaza bonurile. Retetarul neimplementat. Doar sintaxa verificata; nerulat |
 | SLICE-VC07-02 | `oi.py` (BP), registrul OI, `docs.js`; [worklog](../docs/worklog/SLICE-VC07-02-oi-predare-si-registrul-detinatorului.md) | **IMPLEMENTAT_LOCAL** | Predare = BC creat (stoc) + OI_Predare + registru (detinere), fara dublare; id-uri noi dintr-un contor. Doar sintaxa verificata; nerulat |
 | SLICE-VC07-03 | `oi.py` (BT, BS); [worklog](../docs/worklog/SLICE-VC07-03-oi-transfer-si-casare.md) | **IMPLEMENTAT_LOCAL** | Transfer net zero si casare pe loturi, cantitate eligibila, pret pozitiv. Doar sintaxa verificata; nerulat |

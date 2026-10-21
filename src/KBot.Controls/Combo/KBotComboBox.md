@@ -111,6 +111,17 @@ Classification: `00.00.00.00.00.00.00` — the operator types `65020402200101`, 
 it); Ctrl+V / Shift+Insert keep only what fits the slots; any other edit (Ctrl+X, the context-menu
 paste) is re-shaped after the fact. The engine is `KBotInputMask` (pure).
 
+## Grouped items: a two-level tree in the list (slice 00EF-46)
+An item that implements `IKBotComboGroupedItem` (`GroupCaption` = the header, `RowCaption` = the shorter text of its row under the header; the ready-made
+`KBotComboGroupedItem(text, group, rowText, tag)` is one, `ToString()` = `text`) is listed under ONE header row per group, in the order the groups first appear
+(the ungrouped items come first, plain). A header shows a fold triangle and the group in bold; a click on it, or Enter while it is highlighted, folds / unfolds the
+group and the list stays open (the window takes the new height). The rows of a group are indented. Nothing else changes: the headers exist only in the LIST window,
+`Items`, `SelectedIndex`, `FindStringExact`, `CommitText`, the arrow keys with the list closed and the typed search work on the items, so the grid's combo editor and
+the combo on a group header (`KBotDataColumn.GroupHeaderCombo`) take grouped items without any change. The search matches the **face text**, so typing a group's name
+finds all its items. A search result shows the matching items under their headers; the first MATCH (never a header) is highlighted. Which groups are folded is
+forgotten when `Items` changes. Items of one group should be added together (the list order is by group; stepping through the closed combo follows `Items`).
+Used for the accounts of Vercon under their gestiune («Trimite la Vercon», EV03). Not seen on screen; the width of the triangle and the indent are `16` logical px.
+
 ## Inside KBotDataView (slice 0094)
 The grid's combo editor is this control in **cell editor mode** (`Friend CellEditorMode`): no
 frame, no arrow, free height, text flush left. The grid places it one line high over the cell's

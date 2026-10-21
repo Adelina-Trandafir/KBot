@@ -70,6 +70,7 @@ Partial Class AvacontMain
         Dim KBotRibbonTab4 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup10 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton31 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton32 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -322,7 +323,13 @@ Partial Class AvacontMain
         KBotRibbonButton29.ToolTipHeader = "E-Factura Vânzare"
         KBotRibbonButton29.ToolTipText = "Facturile emise de unitate: lista, factura, trimiterea la ANAF."
         KBotRibbonGroup8.Buttons.Add(KBotRibbonButton27)
+        KBotRibbonButton32.Image = My.Resources.Resources.export
+        KBotRibbonButton32.Key = "efactura_vercon"
+        KBotRibbonButton32.Text = "Trimite la Vercon"
+        KBotRibbonButton32.ToolTipHeader = "Trimite la Vercon"
+        KBotRibbonButton32.ToolTipText = "Trimite facturile primite la Vercon, ca Administratorul să le preia într-un NIR. Poți propune contul din Vercon pentru fiecare linie."
         KBotRibbonGroup8.Buttons.Add(KBotRibbonButton29)
+        KBotRibbonGroup8.Buttons.Add(KBotRibbonButton32)
         KBotRibbonGroup8.Text = "E-Factura"
         KBotRibbonButton30.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotRibbonButton30.Key = "ef_token"

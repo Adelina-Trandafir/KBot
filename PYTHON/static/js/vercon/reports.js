@@ -2,14 +2,14 @@
 import { el, scope, field, paintTree, pdfPreview, CheckBox } from './ui.js';
 import { messageBox } from '../utils/confirm-box.js';
 import { mountSelection, selectionHeader, selectionFilters, selectionError } from './report-selection.js';
-import { paintReportBlock, paintReportLetterhead, reportNodes } from './report-result.js';
+import { reportNodes } from './report-result.js';
 import { format as formatField } from './fields.js';
 import { reportPeriod } from './report-period.js';
 import { reportPeriodAction } from './report-period-action.js';
 
 export function mountReports(host, { api, sel }) {
-  const owner = scope(), selectionOwner = scope(), tablesOwner = scope();
-  owner.own(() => selectionOwner.clear()); owner.own(() => tablesOwner.clear());
+  const owner = scope(), selectionOwner = scope();
+  owner.own(() => selectionOwner.clear());
   const year = Number(sel().year);
   let dateOnly = false;
   const state = { start: `${year}-01-01`, end: `${year}-12-31`, name: null, label: '', spec: null, report: null, category: null,
@@ -32,8 +32,7 @@ export function mountReports(host, { api, sel }) {
       state.end = value;
       periods.sync(state.start, state.end); invalidate(); void lookups();
     }, owner);
-  const options = el('section', { className: 'vc-reports__options' }, el('h4', { textContent: 'Opțiuni afișare' }));
-  const showOutput = owner.own(new CheckBox(options, { label: 'Afișează rezultatul în pagină', className: 'vc-reports__check' })).input;
+  const options = el('section', { className: 'vc-reports__options', hidden: true }, el('h4', { textContent: 'Opțiuni afișare' }));
   const balanceOptions = el('div', { hidden: true }); options.append(balanceOptions);
   const pageBreakAccounts = owner.own(new CheckBox(balanceOptions, { label: 'Grupează pe cont, cu pagină nouă',
     checked: false, className: 'vc-reports__check', onChange: invalidate })).input;
@@ -64,8 +63,7 @@ export function mountReports(host, { api, sel }) {
   const excel = el('button', { type: 'button', textContent: 'Export Excel', disabled: true });
   const list = el('button', { type: 'button', textContent: 'Listare', disabled: true, className: 'is-primary' });
   const actions = el('div', { className: 'vc-actions vc-reports__actions' }, excel, list);
-  const output = el('section', { className: 'vc-reports__output', hidden: true });
-  root.append(left, center, right, actions, output); host.replaceChildren(root);
+  root.append(left, center, right, actions); host.replaceChildren(root);
 
   const selectionKind = report => {
     if (report.mf_selection) return 'mf-' + report.mf_selection;
@@ -103,17 +101,8 @@ export function mountReports(host, { api, sel }) {
   }
   function invalidate() {
     ++state.seq; state.model = null;
-    tablesOwner.clear(); output.replaceChildren();
     available();
   }
-  function paintOutput() {
-    tablesOwner.clear(); output.replaceChildren(); output.hidden = !showOutput.checked;
-    if (showOutput.checked && state.model) {
-      paintReportLetterhead(state.model, output);
-      state.model.blocks.forEach(block => paintReportBlock(block, output, tablesOwner));
-    }
-  }
-  showOutput.addEventListener('change', paintOutput);
   async function lookups() {
     if (!state.name || state.destroyed) return;
     const name = state.name, seq = ++state.lookupSeq;
@@ -162,7 +151,7 @@ export function mountReports(host, { api, sel }) {
     if (state.model) return state.model;
     const model = await api(`/api/vercon/reports/${encodeURIComponent(state.name)}/generate?${query()}`);
     if (state.destroyed || seq !== state.seq) return null;
-    state.model = model; paintOutput();
+    state.model = model;
     return model;
   }
   function previewDetails() {
@@ -238,6 +227,7 @@ export function mountReports(host, { api, sel }) {
         documentOptions.hidden = !report.document_options;
         receiverOptions.hidden = !report.receiver_options;
         depreciationOptions.hidden = report.mf_selection !== 'depreciation';
+        options.hidden = balanceOptions.hidden && documentOptions.hidden && receiverOptions.hidden && depreciationOptions.hidden;
         dateOnly = report?.kind === 'depreciation';
         periodTitle.textContent = dateOnly ? 'Selectează data' : 'Selectează perioada';
         periods.node.hidden = begin.node.hidden = dateOnly;

@@ -41,7 +41,7 @@ lock = createLock({ api, signal: lifetime.signal, getUnit: () => state.unit,
   onLost: (k_message) => { showMessage($('vc-message'), `${k_message} Datele dvs. au rămas în formular, dar nu mai pot fi salvate fără o nouă ocupare.`, 'error'); } });
 const combos = {};
 const pageUi = scope();
-let formSequence = 0, formLoading = false, contextChanging = false;
+let formSequence = 0, formLoading = false, contextChanging = false, efacturaOpening = false;
 installLayouts();
 
 const paint = (k_kind, k_text) => {
@@ -137,6 +137,9 @@ function paintMenu(k_ctx) {
         return [{ ...k_spec, icon: MENU_ICONS[k_item.key], enabled: k_item.enabled, reason: k_item.reason || '',
           run: () => openForm(k_item.key).catch(report) }];
       });
+      const k_nir = k_incoming && !IS_PREVIEW ? k_list.find(k_item => k_item.key === 'nir') : null;
+      if (k_nir) k_children.push({ key: 'nir_efactura', label: 'NIR din e-Factura…', icon: '📥', rule: true,
+        enabled: k_nir.enabled, reason: k_nir.reason || '', run: () => openEfactura().catch(report) });
       if (k_children.length) k_items.push({ key: k_incoming ? '_intrari' : k_movements ? '_fluxuri' : '_iesiri',
         label: k_incoming ? 'Intrări' : k_movements ? 'Fluxuri / Mișcări' : 'Ieșiri', icon: k_incoming ? '📥' : k_movements ? '🔀' : '📤', group: k_group,
         dropdownMinWidth: k_incoming ? 260 : 224, enabled: k_children.some((k_child) => k_child.enabled !== false),
@@ -186,6 +189,21 @@ async function change(k_wanted) {
 }
 
 // ---- forms ------------------------------------------------------------------------------------------------------
+async function openEfactura() {
+  if (IS_PREVIEW || efacturaOpening || formLoading || contextChanging) return;
+  const version = state.ctx.version;
+  efacturaOpening = true;
+  try {
+    await openForm('nir');
+    if (state.form !== 'nir' || state.ctx.version !== version || contextChanging || formLoading) return;
+    mainMenu?.setBusy(true);
+    await state.editor?.startEfactura?.();
+  } finally {
+    efacturaOpening = false;
+    mainMenu?.setBusy(formLoading || contextChanging);
+  }
+}
+
 async function openForm(k_key, { reload = false } = {}) {
   if (contextChanging && !reload) return;
   if (formLoading) return;

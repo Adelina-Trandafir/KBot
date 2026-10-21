@@ -3,6 +3,7 @@ import { ActionAddButton } from '../action-add-button/action-add-button.js';
 import { TextBox } from '../textbox/textbox.js';
 import { CheckBox } from '../checkbox/checkbox.js';
 import { APPLICATIONS, applicationIcon } from './applications.js';
+import { ChatPosition } from './chat-position.js';
 
 function el(tag, className = '', text = '') {
   const item = document.createElement(tag);
@@ -30,6 +31,8 @@ export class ChatPanel {
     this.reply = null;
     this.element = el('div', 'kchat');
     this.launcher = this.button(this.element, ICON, TITLE, () => this.isOpen ? this.close() : this.open(), 'kchat__launcher');
+    this.launcher.options.title = 'DISCUȚII · Trageți cu mouse-ul pentru a muta bula';
+    this.launcher.element.title = this.launcher.options.title;
     this.launcher.element.setAttribute('aria-expanded', 'false');
     this.launcher.element.setAttribute('aria-controls', 'kbot-common-chat');
     this.panel = el('section', 'kchat__panel');
@@ -59,6 +62,7 @@ export class ChatPanel {
     this.panel.append(this.status);
     this.buildComposer();
     document.body.append(this.element);
+    this.positioning = new ChatPosition(this);
     this.log.addEventListener('scroll', () => {
       if (this.atBottom()) { this.jump.element.hidden = true; this.callbacks.onRead?.(); }
     }, { signal: this.abort.signal });
@@ -143,7 +147,7 @@ export class ChatPanel {
     this.name = new TextBox(this.nameHost, { maxLength: 80, allowCopyPaste: true,
       placeholder: 'Numele afișat la mesajele cu nume', ariaLabel: 'Numele afișat' });
     this.controls.push(this.name);
-    area.append(this.nameHost);
+    identity.append(this.nameHost);
     const entry = el('div', 'kchat__entry');
     this.text = new TextBox(entry, { multiline: true, rows: 3, maxLength: 4000, allowCopyPaste: true,
       placeholder: 'Scrieți un mesaj…', ariaLabel: 'Mesaj',
@@ -159,9 +163,9 @@ export class ChatPanel {
     const footer = el('div', 'kchat__composer-footer');
     this.length = el('span', 'kchat__length');
     footer.append(this.length);
+    footer.append(el('small', 'kchat__hint', 'Enter trimite. Ctrl+Enter adaugă un rând.'));
     this.send = this.button(footer, '➤', 'Trimite', () => this.requestSend(), 'kchat__send');
     area.append(footer);
-    area.append(el('small', 'kchat__hint', 'Enter trimite. Ctrl+Enter adaugă un rând.'));
     this.panel.append(area);
     this.paintIdentity();
     this.paintLength();
@@ -260,6 +264,10 @@ export class ChatPanel {
       const time = el('time', 'kchat__time', dateFormat.format(new Date(message.created_at)));
       time.dateTime = message.created_at;
       header.append(applicationIcon(message.application), author, time);
+      const actions = el('div', 'kchat__message-actions');
+      const action = new ActionAddButton(actions, { icon: '↩', label: '', title: 'Răspunde',
+        ariaLabel: 'Răspunde la mesaj', onClick: () => this.setReply(message) });
+      header.append(actions);
       article.append(header);
       if (message.reply) {
         const quote = el('blockquote', 'kchat__quote');
@@ -267,9 +275,6 @@ export class ChatPanel {
         article.append(quote);
       }
       article.append(el('p', 'kchat__body', message.text));
-      const actions = el('div', 'kchat__message-actions');
-      const action = new ActionAddButton(actions, { icon: '↩', label: 'Răspunde', onClick: () => this.setReply(message) });
-      article.append(actions);
       this.messages.set(message.id, message);
       this.rows.set(message.id, { article, action });
       fragment.append(article);
@@ -299,6 +304,7 @@ export class ChatPanel {
     this.isOpen = true; this.panel.hidden = false;
     this.launcher.element.setAttribute('aria-expanded', 'true');
     this.setLayer(Math.floor(window.ZIndexManager?.getNext?.() || 1000));
+    this.positioning.reflow();
     this.callbacks.onOpen?.();
     if (this.ready) this.text.focus(); else this.refresh.element.focus();
   }
@@ -315,6 +321,7 @@ export class ChatPanel {
   }
 
   destroy() {
+    this.positioning.destroy();
     this.abort.abort();
     for (const row of this.rows.values()) row.action.destroy();
     for (const control of this.controls) control.destroy();

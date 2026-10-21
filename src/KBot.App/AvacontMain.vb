@@ -34,7 +34,7 @@ Public Class AvacontMain
     Friend Shared Property Current As AvacontMain
 
     Public Sub New(k_shell As KbotForm, k_session As SessionContext, k_controller As ForexeController,
-                   k_registry As MachetaRegistry)
+                   k_registry As MachetaRegistry, k_chat As ChatService)
         InitializeComponent()
         If k_shell Is Nothing Then Throw New ArgumentNullException(NameOf(k_shell))
         _kbot = k_shell
@@ -74,7 +74,7 @@ Public Class AvacontMain
         HookTutorialSignals()
 
         ' The opening page. The shell is loaded behind it (OnShown) and reached from the ribbon.
-        _home = New AcasaPage(k_session)
+        _home = New AcasaPage(k_session, k_chat)
         PrepareHosted(_home)
         pnlHost.Controls.Add(_home)
 
@@ -186,7 +186,7 @@ Public Class AvacontMain
                     CloseCurrent()
                 Case "istoric_versiuni"
                     _kbot.OpenRegistered(KbotForm.MachetaIstoricVersiuni, AddressOf _kbot.DeschideIstoricVersiuni)
-                Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii"
+                Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
                 Case "ef_token"

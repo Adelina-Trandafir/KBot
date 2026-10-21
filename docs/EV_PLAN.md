@@ -4,6 +4,13 @@ Scris 20.10.2026, la cererea operatorului; rescris în aceeași zi cu deciziile 
 fișier) și ce e presupus sunt marcate. Familia **EV** (propunere de nume, ca KE): partea K-BOT și partea Vercon se țin
 împreună aici; numerotarea oficială (00EF-NN pe partea K-BOT, VCxx pe partea Vercon) se alege când pornește prima felie.
 
+**Stare (21.10.2026, după implementare):** EV01…EV05 sunt în cod, **nimic rulat**: SQL-ul (`sql/EV_01_primite_vercon.sql`) nerulat, serverul nedeployat, nimic văzut pe ecran sau în browser.
+Felii: EV01 = `00EF-45` (server K-BOT), EV02 = `00EF-46`, EV03 = `00EF-47` (fereastra + lista, ajutor `0000-116`), EV04 = `VC06-07`, EV05 = `VC06-08` (worklogurile `SLICE-…` din `docs/worklog/`).
+Unde codul diferă de plan, hotărăște codul:
+- **EV02** nu e un `KBotTreeComboBox` cu `AdvancedTreeControl`, ci **grupe pliabile în lista `KBotComboBox`** (antet de gestiune cu triunghi, conturile dedesubt); editorul de celulă și combo-ul de pe rândul de grupare merg neschimbate.
+- **EV03** (refăcut în `00EF-48`, la cererea operatorului: «un form de sine stătător pus în ribbon la E-Factura») este **pagina «Trimite la Vercon»**, un buton nou în grupul «E-Factura» al ribbonului (lângă Cumpărare și Vânzare): facturile primite ale anului în stânga, cu bifă și coloana «Vercon», liniile facturilor bifate în dreapta, cu contul din Vercon. Prima variantă (fereastră modală + coloană + buton în lista tuturor facturilor, `00EF-47`) a fost scoasă. **Nu** a livrat indicatorul de stare din arbore, filtrul din meniul arborelui și butonul din vederea unei facturi.
+- Lista «Din e-Factura» din Vercon nu e filtrată pe gestiune (D12). Cazul „din mai multe NIR-uri se anulează doar unul” (secțiunea 4) **nu** e construit.
+
 ## 1. Cerința
 
 Facturile primite din K-BOT (E-Factura › cumpărare) trebuie să ajungă în Vercon, ca Administratorul să le poată

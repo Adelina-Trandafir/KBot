@@ -1,6 +1,7 @@
 Option Strict On
 Imports KBot.Common
 Imports KBot.Controls
+Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
@@ -19,11 +20,16 @@ Public Class AcasaPage
     Private _newsSignature As String   ' what the news box was last filled with (see RefreshState)
     Private _arrowDown As Bitmap
     Private _arrowUp As Bitmap
+    Private ReadOnly _chat As ChatService
+    Private _outsideClick As OutsideClickFilter
 
-    Public Sub New(k_session As SessionContext)
+    Public Sub New(k_session As SessionContext, k_chat As ChatService)
         ArgumentNullException.ThrowIfNull(k_session)
+        ArgumentNullException.ThrowIfNull(k_chat)
         InitializeComponent()
         _session = k_session
+        _chat = k_chat
+        HookChat()
         edNoutati.Editabil = False
         MakeNewsReadOnly()
         ' After an update the news open by themselves, once; from then on the button decides.
@@ -165,6 +171,223 @@ Public Class AcasaPage
         End Sub
     End Class
 
+    ' ---- Discutii: the robot and its speech bubble (slice CHAT-08) ---------------------------------
+
+    Private Sub HookChat()
+        AddHandler _chat.StateChanged, AddressOf Chat_StateChanged
+        AddHandler _chat.MessagesReceived, AddressOf Chat_MessagesReceived
+        AddHandler _chat.Failed, AddressOf Chat_Failed
+        AddHandler _chat.BusyChanged, AddressOf Chat_BusyChanged
+        ' Once, for the whole run; a second page asking for it changes nothing.
+        _chat.Start()
+        If _chat.State IsNot Nothing Then Chat_StateChanged(_chat, _chat.State)
+    End Sub
+
+    Private Sub UnhookChat()
+        RemoveHandler _chat.StateChanged, AddressOf Chat_StateChanged
+        RemoveHandler _chat.MessagesReceived, AddressOf Chat_MessagesReceived
+        RemoveHandler _chat.Failed, AddressOf Chat_Failed
+        RemoveHandler _chat.BusyChanged, AddressOf Chat_BusyChanged
+    End Sub
+
+    ' The numbers of the news: the badge on the robot, who the operator is in the bubble.
+    Private Sub Chat_StateChanged(sender As Object, e As ChatState)
+        Try
+            Dim k_more As Boolean = e.unread > picLogo.UnreadCount AndAlso picLogo.UnreadCount > 0
+            picLogo.UnreadCount = e.unread
+            If k_more AndAlso Visible Then picLogo.Nudge()
+            bubble.SetState(e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Chat_StateChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub Chat_MessagesReceived(sender As Object, e As ChatMessagesEventArgs)
+        Try
+            Select Case e.Mode
+                Case ChatLoadMode.Latest
+                    bubble.ResetMessages()
+                    bubble.AddMessages(e.Messages, False)
+                    bubble.SetHasOlder(e.HasMore)
+                Case ChatLoadMode.Newer
+                    bubble.AddMessages(e.Messages, False)
+                Case ChatLoadMode.Older
+                    bubble.AddMessages(e.Messages, True)
+                    bubble.SetHasOlder(e.HasMore)
+            End Select
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Chat_MessagesReceived", ex)
+        End Try
+    End Sub
+
+    Private Sub Chat_Failed(sender As Object, e As String)
+        Try
+            If bubble.Visible Then bubble.SetStatus(e, True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Chat_Failed", ex)
+        End Try
+    End Sub
+
+    Private Sub Chat_BusyChanged(sender As Object, e As Boolean)
+        Try
+            bubble.SetBusy(e)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Chat_BusyChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub PicLogo_Click(sender As Object, e As EventArgs) Handles picLogo.Click
+        If bubble.Visible Then CloseBubble() Else OpenBubble()
+    End Sub
+
+    Private Async Sub OpenBubble()
+        Try
+            bubble.SetStatus(String.Empty, False)
+            PlaceBubble()
+            bubble.Visible = True
+            bubble.BringToFront()
+            ListenForOutsideClicks()
+            _chat.SetOpen(True)
+            Await _chat.OpenAsync()
+            bubble.ScrollToEnd()
+            bubble.FocusComposer()
+        Catch ex As Exception
+            ' UI boundary (async void): log and swallow.
+            GlobalErrorLog.Write("AcasaPage.OpenBubble", ex)
+        End Try
+    End Sub
+
+    Private Sub CloseBubble()
+        Try
+            bubble.Visible = False
+            StopListeningForOutsideClicks()
+            _chat.SetOpen(False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.CloseBubble", ex)
+        End Try
+    End Sub
+
+    ' The bubble stands above the robot, its tail's tip on the robot's head. Sizes are logical (96 dpi) scaled to this screen.
+    Private Sub PlaceBubble()
+        Dim k_scale As Single = DeviceDpi / 96.0F
+        Dim k_margin As Integer = CInt(8 * k_scale)
+        Dim k_width As Integer = CInt(380 * k_scale)
+        Dim k_tipX As Integer = picLogo.Left + picLogo.Width \ 2
+        Dim k_tipY As Integer = picLogo.Top + CInt(picLogo.Height * 0.12)
+        Dim k_height As Integer = Math.Max(CInt(240 * k_scale), Math.Min(CInt(520 * k_scale), k_tipY - k_margin))
+        Dim k_left As Integer = Math.Max(k_margin, k_tipX + bubble.TailFromRight - k_width)
+        Dim k_top As Integer = Math.Max(k_margin, k_tipY - k_height)
+        bubble.SetBounds(k_left, k_top, k_width, k_height)
+    End Sub
+
+    Private Sub PnlCentru_Resize(sender As Object, e As EventArgs) Handles pnlCentru.Resize
+        If bubble.Visible Then PlaceBubble()
+    End Sub
+
+    Private Sub Bubble_CloseRequested(sender As Object, e As EventArgs) Handles bubble.CloseRequested
+        CloseBubble()
+    End Sub
+
+    Private Async Sub Bubble_OlderRequested(sender As Object, e As EventArgs) Handles bubble.OlderRequested
+        Try
+            Await _chat.OlderAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Bubble_OlderRequested", ex)
+        End Try
+    End Sub
+
+    Private Async Sub Bubble_SendRequested(sender As Object, e As ChatSendEventArgs) Handles bubble.SendRequested
+        Try
+            If Await _chat.SendAsync(e.Text, e.Anonymous, e.DisplayName, e.ReplyTo) Then
+                bubble.ClearDraft()
+                bubble.ScrollToEnd()
+            End If
+            bubble.FocusComposer()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Bubble_SendRequested", ex)
+        End Try
+    End Sub
+
+    Private Async Sub Bubble_FilterChanged(sender As Object, e As IReadOnlyList(Of String)) Handles bubble.FilterChanged
+        Try
+            Await _chat.SaveApplicationsAsync(e)
+            ' A refusal leaves the server's set as it was: show that one again, not the box the operator just ticked.
+            If _chat.State IsNot Nothing Then bubble.SetState(_chat.State)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Bubble_FilterChanged", ex)
+        End Try
+    End Sub
+
+    Private Async Sub Bubble_AnonymousChanged(sender As Object, e As EventArgs) Handles bubble.AnonymousChanged
+        Try
+            Await _chat.SaveAnonymousAsync(bubble.Anonymous)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.Bubble_AnonymousChanged", ex)
+        End Try
+    End Sub
+
+    ' A press anywhere in K-BOT outside the bubble closes it. The press still goes on to what was under it (a button, a
+    ' list), and the robot is left out: its own click opens or closes the bubble.
+    Private Sub ListenForOutsideClicks()
+        If _outsideClick IsNot Nothing Then Return
+        _outsideClick = New OutsideClickFilter(AddressOf IsOutsideBubble, Sub() BeginInvoke(New Action(AddressOf CloseBubble)))
+        Application.AddMessageFilter(_outsideClick)
+    End Sub
+
+    Private Sub StopListeningForOutsideClicks()
+        If _outsideClick Is Nothing Then Return
+        Application.RemoveMessageFilter(_outsideClick)
+        _outsideClick = Nothing
+    End Sub
+
+    Private Function IsOutsideBubble() As Boolean
+        Dim k_point As Point = Control.MousePosition
+        If bubble.RectangleToScreen(bubble.ClientRectangle).Contains(k_point) Then Return False
+        If picLogo.RectangleToScreen(picLogo.ClientRectangle).Contains(k_point) Then Return False
+        Return True
+    End Function
+
+    ''' <summary>Looks at the mouse presses of the whole application (never swallows one) and says when one falls outside.</summary>
+    Private NotInheritable Class OutsideClickFilter
+        Implements IMessageFilter
+
+        Private Const WM_LBUTTONDOWN As Integer = &H201
+        Private Const WM_RBUTTONDOWN As Integer = &H204
+        Private Const WM_MBUTTONDOWN As Integer = &H207
+        Private Const WM_NCLBUTTONDOWN As Integer = &HA1
+        Private Const WM_NCRBUTTONDOWN As Integer = &HA4
+
+        Private ReadOnly _isOutside As Func(Of Boolean)
+        Private ReadOnly _onOutside As Action
+
+        Public Sub New(k_isOutside As Func(Of Boolean), k_onOutside As Action)
+            _isOutside = k_isOutside
+            _onOutside = k_onOutside
+        End Sub
+
+        Public Function PreFilterMessage(ByRef k_m As Message) As Boolean Implements IMessageFilter.PreFilterMessage
+            Select Case k_m.Msg
+                Case WM_LBUTTONDOWN, WM_RBUTTONDOWN, WM_MBUTTONDOWN, WM_NCLBUTTONDOWN, WM_NCRBUTTONDOWN
+                    Try
+                        If _isOutside() Then _onOutside()
+                    Catch ex As Exception
+                        GlobalErrorLog.Write("AcasaPage.OutsideClickFilter", ex)
+                    End Try
+            End Select
+            Return False
+        End Function
+    End Class
+
+    ' A page that is not on screen has no open bubble: the service goes back to asking only for the count.
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        Try
+            If Not Visible AndAlso bubble IsNot Nothing AndAlso bubble.Visible Then CloseBubble()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AcasaPage.OnVisibleChanged", ex)
+        End Try
+    End Sub
+
     ' ---- Theme -------------------------------------------------------------------------------
 
     Protected Overrides Sub OnThemeChanged()
@@ -184,6 +407,8 @@ Public Class AcasaPage
     End Sub
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
+        UnhookChat()
+        StopListeningForOutsideClicks()
         _arrowDown?.Dispose()
         _arrowUp?.Dispose()
         MyBase.OnFormClosed(e)

@@ -1,6 +1,6 @@
 // Shared ADECHIT / VERCON help: JSON, dialog, print and PDF.
 // Existing ade-help presentation classes preserve the ADECHIT appearance.
-// Text markup: **bold** and [text](#id); blocks: p, h (sub-title, optional id), ul, ol, note, table {head, rows}.
+// Text markup: **bold** and [text](#id); blocks: p, h, ul, ol, note, table, image {src, alt, caption}.
 import { outputReport } from '../adechit/reports.js';
 import { trackSessionWindow } from '../utils/session-exit.js';
 
@@ -41,6 +41,18 @@ function renderBlock(k_doc, k_block) {
     return k_list;
   }
   if (k_block.note) { const k_n = el(k_doc, 'p', 'ade-help-note'); inline(k_doc, k_n, k_block.note); return k_n; }
+  if (k_block.image) {
+    const k_spec = k_block.image;
+    if (!/^\/static\/help\/images\/[a-z0-9/_-]+\.(jpg|png|webp)$/.test(k_spec.src)) throw new Error('Cale de captură invalidă.');
+    const k_figure = el(k_doc, 'figure', 'ade-help-figure');
+    const k_link = el(k_doc, 'a'); k_link.href = k_spec.src; k_link.target = '_blank'; k_link.rel = 'noopener';
+    k_link.setAttribute('aria-label', `Mărește captura: ${k_spec.alt}`);
+    const k_image = el(k_doc, 'img'); k_image.src = k_spec.src; k_image.alt = k_spec.alt;
+    k_image.loading = k_doc === document ? 'lazy' : 'eager';
+    k_link.append(k_image); k_figure.append(k_link);
+    if (k_spec.caption) { const k_caption = el(k_doc, 'figcaption'); inline(k_doc, k_caption, k_spec.caption); k_figure.append(k_caption); }
+    return k_figure;
+  }
   if (k_block.table) {
     const k_table = el(k_doc, 'table'); const k_head = el(k_doc, 'thead'); const k_hr = el(k_doc, 'tr');
     for (const k_cell of k_block.table.head) k_hr.append(el(k_doc, 'th', '', k_cell));
@@ -98,7 +110,13 @@ function printHelp(k_content) {
   });
   k_doc.body.append(k_page);
   let k_done = false;
-  const k_print = () => { if (!k_done) { k_done = true; k_win.focus(); k_win.print(); } };
+  const k_print = async () => {
+    if (k_done) return;
+    k_done = true;
+    // The print dialog must wait for screenshot dimensions, including images outside the viewport.
+    await Promise.allSettled([...k_doc.images].map(k_image => k_image.decode()));
+    if (!k_win.closed) { k_win.focus(); k_win.print(); }
+  };
   k_css.addEventListener('load', k_print);
   setTimeout(k_print, 1500);   // the style sheet is cached after the first load: do not wait for an event that already fired
 }

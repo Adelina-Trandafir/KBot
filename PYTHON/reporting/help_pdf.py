@@ -49,6 +49,17 @@ def markup(text):
     return ''.join(out)
 
 
+def image_path(content_path, source):
+    prefix = '/static/help/images/'
+    if not isinstance(source, str) or not source.startswith(prefix):
+        raise HelpError('HELP_IMAGE', 'Calea capturii din ajutor nu este validă.', 500)
+    root = (Path(content_path).resolve().parent / 'images').resolve()
+    path = (root / source[len(prefix):]).resolve()
+    if not path.is_relative_to(root) or path.suffix.lower() not in ('.jpg', '.png', '.webp') or not path.is_file():
+        raise HelpError('HELP_IMAGE', 'O captură din ajutor lipsește sau are o cale invalidă.', 500)
+    return path
+
+
 def pdf_bytes(content_path, *, author):
     try:
         from reportlab.pdfbase import pdfmetrics
@@ -57,7 +68,7 @@ def pdf_bytes(content_path, *, author):
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.styles import ParagraphStyle
         from reportlab.lib.units import mm
-        from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from reportlab.platypus import Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
     except ImportError as error:
         raise HelpError('PDF_DEPENDENCY', 'Generarea PDF necesită instalarea dependențelor din requirements-adechit.txt pe server.', 503) from error
     with _font_lock:
@@ -75,6 +86,7 @@ def pdf_bytes(content_path, *, author):
                           borderWidth=0, borderPadding=(5, 6, 5, 6), leftIndent=8, rightIndent=4, spaceBefore=4, spaceAfter=9)
     cell = ParagraphStyle('help-cell', parent=base, fontSize=9, leading=12, spaceAfter=0)
     toc_style = ParagraphStyle('help-toc', parent=base, fontSize=11, leading=17, leftIndent=8, spaceAfter=0)
+    caption = ParagraphStyle('help-caption', parent=base, fontSize=8.5, leading=11, textColor=colors.HexColor('#555555'), spaceAfter=10)
 
     def anchored(style, text, anchor=None):
         return Paragraph((f'<a name="{anchor}"/>' if anchor else '') + escape(plain(text)), style)
@@ -99,6 +111,19 @@ def pdf_bytes(content_path, *, author):
                 story.append(Spacer(1, 4))
             elif 'note' in block:
                 story.append(Paragraph(markup(block['note']), note))
+            elif 'image' in block:
+                spec = block['image']
+                try:
+                    picture = Image(str(image_path(content_path, spec.get('src'))))
+                    ratio = min(usable / picture.imageWidth, 190 * mm / picture.imageHeight)
+                    picture.drawWidth = picture.imageWidth * ratio
+                    picture.drawHeight = picture.imageHeight * ratio
+                except (OSError, ValueError) as error:
+                    raise HelpError('HELP_IMAGE', 'O captură din ajutor nu a putut fi citită.', 500) from error
+                parts = [picture, Spacer(1, 4)]
+                if spec.get('caption'):
+                    parts.append(Paragraph(markup(spec['caption']), caption))
+                story.append(KeepTogether(parts))
             elif 'table' in block:
                 spec = block['table']
                 rows = [[Paragraph(f'<b>{escape(head)}</b>', cell) for head in spec['head']]]

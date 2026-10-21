@@ -6,9 +6,41 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.7 (21.10.2026)
+
+<!-- felii: 00EF-45, 00EF-46, 00EF-47, 00EF-48, 0114-24, 0114-25, 0000-116, 0000-117, 0000-118 -->
+
+- Pagina noua «Trimite la Vercon» (ribbon, fila E-Factura): trimiteti facturile primite, ca Administratorul sa le preia.
+- Arbore cu bife: luna > furnizor > factura sau furnizor > factura; bifa pe luna sau furnizor bifeaza toate facturile lui.
+- In dreapta, produsele facturilor bifate; la fiecare linie puteti propune «Cont Vercon», dintr-o lista pe gestiuni.
+- Lista de conturi are grupe care se strang si se desfac; cautarea gaseste un cont si dupa numele gestiunii.
+- Fiecare factura arata starea: trimisa, preluata sau returnata (cu motivul); una returnata se poate trimite din nou.
+- Factura preluata intr-un NIR se bifeaza singura si nu se mai poate schimba.
+- Eroarea la descarcarea facturii de la ANAF spune acum ce «id descarcare» s-a folosit.
+- «Repara...» la Rezervari: fereastra se deschide si pentru lunile cu revizii; refuzul apare abia la «Repara».
+- Ajutor: subiecte noi despre trimiterea la Vercon, plus un tutorial.
+
+## 1.1.2.6 (21.10.2026)
+<!-- release: utc=2026-10-21T09:08:28Z -->
+
+<!-- felii: CHAT-08, CHAT-09, KE17, 0000-115, 00EF-45, 00EF-46, 00EF-48, VC06-07, VC06-08, 0000-117, 0000-118 -->
+
+- E-Factura: buton nou «Trimite la Vercon», o pagina cu facturile primite, ca sa le preia Administratorul intr-un NIR.
+- Facturile sunt intr-un arbore pe luni si furnizori; «Grupare dupa furnizor» e in optiunile arborelui.
+- Bifa pe o luna sau pe un furnizor le bifeaza pe toate facturile lui; in dreapta apare un grup pentru fiecare factura.
+- Se trimit toate liniile; pe fiecare linie puteti propune contul din Vercon (lista pe gestiuni), doar ca propunere.
+- O factura trimisa care nu a fost preluata se poate retrage sau i se pot schimba conturile; cea returnata se retrimite.
+- In VERCON, la «Adaugare NIR», butonul «NIR din e-Factura...»: Administratorul preia factura sau o returneaza cu motiv.
+- Acasa: robotul K-BOT din colt se leagana si arata un numar rosu cand sunt mesaje noi; clic pe el deschide «Discutii».
+- «Discutii»: mesajele dintre utilizatorii K-BOT, VERCON si ADECHIT; scrieti cu pseudonim sau cu nume, Enter trimite.
+- In ele: «Raspunde» sub un mesaj, «Afiseaza» alege aplicatiile; un clic in afara balonului il inchide.
+- Propuneri de legare: «Angajament» de ales cand factura are mai multe si «Receptie» (suma luata, poate fi mai mica).
+- Receptiile sunt in doua grupe, cu aceeasi valoare si neasociate integral; coloana «Ramas» arata ce mai ramane din ele.
+- Ajutorul: subiecte noi despre discutii si despre trimiterea la Vercon, cu un tutorial.
+
 ## 1.1.2.5 (20.10.2026)
 
-<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98, 00EF-43, 0114-24, 0115-02, KE09, KE10, KE11, KE12, KE12-02, KE12-03, KE12-04, KE13, KE14, KE15, KE16, 0114-25, 0097-04, 0121-03, 0121-04, 0121-05, 000T-13, 0000-107, 0000-108, 0000-109, 0000-110, 0000-111, 0000-112, 0000-113, 0000-114, KE17, 0000-115 -->
+<!-- felii: 0114-04, 0114-05, 0114-06, 0114-07, 0114-08, 0114-09, 0114-10, 0114-11, 0114-12, 0114-13, 0114-14, 0114-15, 0114-16, 0114-17, 0114-18, 0114-19, 0114-20, 0114-21, 0114-22, 0114-23, 0115-01, 00EF-33, 00EF-38, 00EF-39, 00EF-40, 00EF-41, 00EF-42, 0000-95, 0000-96, 0000-97, 0000-98, 00EF-43, 0114-24, 0115-02, KE09, KE10, KE11, KE12, KE12-02, KE12-03, KE12-04, KE13, KE14, KE15, KE16, 0114-25, 0097-04, 0121-03, 0121-04, 0121-05, 000T-13, 0000-107, 0000-108, 0000-109, 0000-110, 0000-111, 0000-112, 0000-113, 0000-114 -->
 
 - Ribbon: filele sunt «Configurari», «Angajamente» (la pornire), «E-Factura», «Extrase»; «Date» e grup.
 - «Descarca extrase» e doar in ribbon, in grupul din dreapta; nu mai e in «Extrase de cont» si in arbori.
@@ -38,8 +70,6 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - O factura rezolvata arata doar receptia ei si produsele, fara modificari; optiune: «Arata facturile asociate».
 - Sumele se scriu in formatul din Windows (77.49 sau 77,49); mesajul de rest arata unde mai are receptia rest.
 - Legare in bloc: la un furnizor, fereastra cu PROPUNERI (receptie = factura, pana la 2 zile dupa); nu leaga singura.
-- In ea: «Angajament» de ales cand factura are mai multe si «Receptie» (suma luata din factura, poate fi mai mica).
-- Receptiile sunt in doua grupe, cu aceeasi valoare si neasociate integral; coloana «Ramas» arata ce mai ramane din ele.
 - Angajamentul ales pentru un furnizor se tine minte pe codul fiscal; «Coduri angajament» merg tot dupa el.
 - Furnizorul asociat unui DDF primeste singur angajamentul si indicatorii lui; fara cod fiscal nu are coduri.
 - «Repara...» la Rezervari deschide o fereastra: ce s-a detectat si ce se va face; apoi «Renunta» sau «Repara».
