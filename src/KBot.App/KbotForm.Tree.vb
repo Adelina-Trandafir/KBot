@@ -16,6 +16,9 @@ Partial Public Class KbotForm
     ' Slice 0101: the rows whose receptions do not close, kept so a theme switch can repaint them
     ' (the red is an explicit colour on the node, not «from the theme»).
     Private ReadOnly _nodLantNeinchis As New List(Of AdvancedTreeControl.TreeItem)()
+    ' Slice 0114-26: the rows with reservations linked to a revision that does not cover them -- an error of a
+    ' different kind, written in a different red (derived from the theme's error colour, see RosuAlternativ).
+    Private ReadOnly _nodLegaturiGresite As New List(Of AdvancedTreeControl.TreeItem)()
 
     ''' <summary>
     ''' Loads the tree from GET /api/forexe/tree for the selected period (year + SS), through
@@ -115,6 +118,7 @@ Partial Public Class KbotForm
             _treeNodes.Clear()
             _treeOrder.Clear()
             _nodLantNeinchis.Clear()
+            _nodLegaturiGresite.Clear()
 
             ' The view gate is applied ONCE, after the loop, when it is known whether the old
             ' node is still in the tree. Gating on Nothing up here, before the re-selection,
@@ -150,11 +154,17 @@ Partial Public Class KbotForm
                     .Value = FormatSurse(info.Surse)}
                 node.Bold = info.AreIndicatori   ' legacy: bold = has sources (indicatori)
                 node.Underline = _descarcateInSesiune.Contains(cod)   ' saved during this run
-                node.Tooltip = TooltipFor(info)
+                node.Tooltip = TooltipTabel(info)   ' slice 0114-26: a table at 11 pt; TooltipFor is the old plain-text path
                 If k_filtru IsNot Nothing Then node.NodeForeColor = k_culoareGrupa
                 ' Slice 0101: a reception whose chain does not close paints the whole row red.
                 ' Operator, 12.10.2026: so does a broken reservation chain (repaired from the Rezervari view).
-                If info.LantNeinchis.Count > 0 OrElse info.RezervariGresite.Count > 0 Then _nodLantNeinchis.Add(node)
+                If info.LantNeinchis.Count > 0 OrElse info.RezervariGresite.Count > 0 Then
+                    _nodLantNeinchis.Add(node)
+                ElseIf info.LegaturiGresite.Count > 0 Then
+                    ' Slice 0114-26 (operator, 23.10.2026): reservations linked to a revision that does not cover
+                    ' them -- the same kind of warning, a different red. The first kind wins when a row has both.
+                    _nodLegaturiGresite.Add(node)
+                End If
                 'node.ShowRightIconOnHover = True
 
                 If Not _treeInfos.ContainsKey(cod) Then _treeOrder.Add(cod)
@@ -209,7 +219,43 @@ Partial Public Class KbotForm
         For Each nod As AdvancedTreeControl.TreeItem In _nodLantNeinchis
             nod.NodeForeColor = paleta.ErrorColor
         Next
+        Dim k_rosuAlt As Color = RosuAlternativ(paleta.ErrorColor)
+        For Each nod As AdvancedTreeControl.TreeItem In _nodLegaturiGresite
+            nod.NodeForeColor = k_rosuAlt
+        Next
     End Sub
+
+    ''' <summary>
+    ''' Slice 0114-26: a second red for the second kind of error, taken from the theme's error colour by turning its
+    ''' hue towards crimson (-22 degrees) and keeping its saturation and lightness -- so it follows every theme and
+    ''' stays as readable as the first red, yet the two can be told apart at a glance.
+    ''' </summary>
+    Friend Shared Function RosuAlternativ(k_baza As Color) As Color
+        Dim k_nuanta As Single = k_baza.GetHue() - 22.0F
+        If k_nuanta < 0.0F Then k_nuanta += 360.0F
+        Dim k_sat As Single = k_baza.GetSaturation()
+        Dim k_luminozitate As Single = k_baza.GetBrightness()
+        Dim k_chroma As Single = (1.0F - Math.Abs(2.0F * k_luminozitate - 1.0F)) * k_sat
+        Dim k_sector As Single = k_nuanta / 60.0F
+        Dim k_x As Single = k_chroma * (1.0F - Math.Abs(k_sector Mod 2.0F - 1.0F))
+        Dim k_r As Single = 0.0F
+        Dim k_g As Single = 0.0F
+        Dim k_b As Single = 0.0F
+        Select Case CInt(Math.Floor(k_sector)) Mod 6
+            Case 0 : k_r = k_chroma : k_g = k_x
+            Case 1 : k_r = k_x : k_g = k_chroma
+            Case 2 : k_g = k_chroma : k_b = k_x
+            Case 3 : k_g = k_x : k_b = k_chroma
+            Case 4 : k_r = k_x : k_b = k_chroma
+            Case Else : k_r = k_chroma : k_b = k_x
+        End Select
+        Dim k_m As Single = k_luminozitate - k_chroma / 2.0F
+        Return Color.FromArgb(Canal(k_r + k_m), Canal(k_g + k_m), Canal(k_b + k_m))
+    End Function
+
+    Private Shared Function Canal(k_valoare As Single) As Integer
+        Return Math.Max(0, Math.Min(255, CInt(Math.Round(k_valoare * 255.0F))))
+    End Function
 
     ''' <summary>
     ''' The hover label of a tree row. Until 22.09.2026 it was the Descriere alone -- the very
@@ -288,6 +334,115 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.TooltipFor", ex)
             Return If(info.Descriere, String.Empty)
         End Try
+    End Function
+
+    ' Slice 0114-26 (operator, 23.10.2026): the font of the table tooltip of this tree, in points. The plain-text tooltip
+    ' above drew 8.5 pt in a pale grey on the popup's own back colour and could not be read; the table is the kind the
+    ' Receptii tree uses (label | value rows under a header), at 11 pt.
+    Private Const TOOLTIP_FONT_SIZE As String = "10"
+
+    ''' <summary>
+    ''' Slice 0114-26: the hover label of a tree row as a TABLE (the shape the Receptii tree uses, read by
+    ''' <c>TooltipTableParser</c>): a header with the description, then label | value rows -- code, state, dates,
+    ''' sources -- and, in the error colours of the theme, one block per warning. <see cref="TooltipFor"/> (plain
+    ''' lines) is the way it was written before and is no longer called; it stays until the operator says it goes.
+    ''' </summary>
+    Private Shared Function TooltipTabel(k_info As AngajamentTreeInfo) As String
+        If k_info Is Nothing Then Return String.Empty
+        Try
+            Dim k_paleta As ThemePalette = ThemeManager.Current?.Palette
+            Dim k_rosu As String = If(k_paleta Is Nothing, Nothing, HexDin(k_paleta.ErrorColor))
+            Dim k_rosuAlt As String = If(k_paleta Is Nothing, Nothing, HexDin(RosuAlternativ(k_paleta.ErrorColor)))
+            Dim k_ro As New Globalization.CultureInfo("ro-RO")
+            Dim k_sb As New System.Text.StringBuilder()
+
+            k_sb.Append("<table FontSize=""").Append(TOOLTIP_FONT_SIZE).Append(""">")
+            k_sb.Append("<header>")
+            TtCelula(k_sb, "Angajament", Nothing, True)
+            TtCelula(k_sb, If(k_info.Descriere, String.Empty).Trim(), Nothing, True)
+            k_sb.Append("</header>")
+
+            TtRand(k_sb, "Cod", If(k_info.CodAngajament, String.Empty).Trim(), Nothing)
+            TtRand(k_sb, "Stare", If(k_info.Stare, String.Empty).Trim(), Nothing)
+            If k_info.DataCreare.HasValue Then TtRand(k_sb, "Creat", k_info.DataCreare.Value.ToString("dd.MM.yyyy"), Nothing)
+            ' Slice 0777: the moment the date sort orders on, with its time part.
+            If k_info.DataAngajamentNou.HasValue Then
+                TtRand(k_sb, "Angajament nou (FOREXE)", k_info.DataAngajamentNou.Value.ToString("dd.MM.yyyy HH:mm:ss"), Nothing)
+            End If
+            ' Slice 0100: the last saved download from FOREXE.
+            If k_info.DataActualizare.HasValue Then TtRand(k_sb, "Actualizat", k_info.DataActualizare.Value.ToString("dd.MM.yyyy HH:mm"), Nothing)
+            If k_info.DataDefinitivare.HasValue Then TtRand(k_sb, "Definitivat", k_info.DataDefinitivare.Value.ToString("dd.MM.yyyy"), Nothing)
+            TtRand(k_sb, "Surse", FormatSurse(k_info.Surse), Nothing)
+            If k_info.Ascuns Then TtRand(k_sb, "Ascuns", "da", Nothing)
+
+            Const k_maxRanduri As Integer = 6
+
+            ' Slice 0101: what is wrong with the receptions, one row per reception.
+            If k_info.LantNeinchis.Count > 0 Then
+                TtRand(k_sb, "⚠ Lanțul nu se închide", "ultimul instantaneu nu are valoarea recepției", k_rosu, True)
+                For Each k_r As ReceptieNeinchisa In k_info.LantNeinchis
+                    TtRand(k_sb, $"Recepția din {k_r.DataReceptie:dd.MM.yyyy}",
+                           $"instantaneu {k_r.TotalUltimInstantaneu.ToString("N2", k_ro)}, recepție {k_r.ValoareReceptie.ToString("N2", k_ro)}",
+                           k_rosu)
+                Next
+            End If
+
+            ' Operator, 12.10.2026: a reservation that does not start from the end value of the one before it.
+            If k_info.RezervariGresite.Count > 0 Then
+                TtRand(k_sb, "⚠ Rezervări greșite", "valoarea anterioară nu e cea la care s-a oprit rezervarea dinainte", k_rosu, True)
+                For Each k_r As RezervareGresita In k_info.RezervariGresite.Take(k_maxRanduri)
+                    TtRand(k_sb, $"Rezervarea din {k_r.DataRezervare:dd.MM.yyyy}, {k_r.CodIndicator}",
+                           $"anterioară {k_r.Anterioara.ToString("N2", k_ro)}, ar trebui {k_r.Asteptata.ToString("N2", k_ro)}", k_rosu)
+                Next
+                If k_info.RezervariGresite.Count > k_maxRanduri Then
+                    TtRand(k_sb, $"… și încă {k_info.RezervariGresite.Count - k_maxRanduri}", String.Empty, k_rosu)
+                End If
+                TtRand(k_sb, "Se repară", "din vederea «Rezervări», butonul «Repară»", k_rosu)
+            End If
+
+            ' Slice 0114-26 (operator, 23.10.2026): reservations linked to a revision that does not cover them.
+            If k_info.LegaturiGresite.Count > 0 Then
+                TtRand(k_sb, "⚠ Rezervări legate greșit", "sunt legate de o revizie care nu le cuprinde, deci nu au «+»", k_rosuAlt, True)
+                For Each k_r As RezervareLegataGresit In k_info.LegaturiGresite.Take(k_maxRanduri)
+                    Dim k_zi As String = If(k_r.DataRevizie.HasValue, $" din {k_r.DataRevizie.Value:dd.MM.yyyy}", String.Empty)
+                    TtRand(k_sb, $"Rezervarea din {k_r.DataRezervare:dd.MM.yyyy}, {k_r.CodIndicator}",
+                           $"{k_r.Valoare.ToString("+#,##0.00;-#,##0.00;0.00", k_ro)}, legată de revizia {k_r.IdRevizie}{k_zi}", k_rosuAlt)
+                Next
+                If k_info.LegaturiGresite.Count > k_maxRanduri Then
+                    TtRand(k_sb, $"… și încă {k_info.LegaturiGresite.Count - k_maxRanduri}", String.Empty, k_rosuAlt)
+                End If
+                TtRand(k_sb, "Se repară", "din vederea «Rezervări», butonul «Repară»", k_rosuAlt)
+            End If
+
+            k_sb.Append("</table>")
+            Return k_sb.ToString()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.TooltipTabel", ex)
+            Return If(k_info.Descriere, String.Empty)
+        End Try
+    End Function
+
+    ' One <row> of the table tooltip: label | value. A row whose value is empty is left out, unless it is a
+    ' title of a block (k_titlu) or carries a colour of its own (the rest rows of a warning block).
+    Private Shared Sub TtRand(k_sb As System.Text.StringBuilder, k_eticheta As String, k_valoare As String,
+                              k_culoare As String, Optional k_titlu As Boolean = False)
+        If String.IsNullOrWhiteSpace(k_valoare) AndAlso Not k_titlu AndAlso k_culoare Is Nothing Then Return
+        k_sb.Append("<row>")
+        TtCelula(k_sb, k_eticheta, k_culoare, k_titlu)
+        TtCelula(k_sb, k_valoare, k_culoare, False)
+        k_sb.Append("</row>")
+    End Sub
+
+    Private Shared Sub TtCelula(k_sb As System.Text.StringBuilder, k_text As String, k_culoare As String, k_gros As Boolean)
+        k_sb.Append("<cell Align=""left""")
+        If k_gros Then k_sb.Append(" Bold=""1""")
+        If Not String.IsNullOrEmpty(k_culoare) Then k_sb.Append(" ForeColor=""").Append(k_culoare).Append(""""c)
+        k_sb.Append(">"c).Append(System.Security.SecurityElement.Escape(If(k_text, String.Empty))).Append("</cell>")
+    End Sub
+
+    ' "#RRGGBB" for the table tooltip's ForeColor (the parser takes this form).
+    Private Shared Function HexDin(k_culoare As Color) As String
+        Return $"#{k_culoare.R:X2}{k_culoare.G:X2}{k_culoare.B:X2}"
     End Function
 
     ' The list selection pushes the context (AngajamentTreeInfo) to the active view.

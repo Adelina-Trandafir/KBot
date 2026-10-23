@@ -236,7 +236,7 @@ export function mountReports(host, { api, sel }) {
         end.input.setAttribute('aria-label', dateOnly ? 'La data' : 'Dată sfârșit');
         end.input._picker.field.setAttribute('aria-label', dateOnly ? 'La data' : 'Dată sfârșit');
         state.name = name; state.label = report.label; state.report = report; state.category = category;
-        // MF reports have distinct trees and reload on report changes. The other
+        // OI/MF reports have distinct trees and reload on report changes. The other
         // reports retain the existing category-based selection reuse.
         if (sameCategory && (selectionTree || state.loading)) {
           state.spec = state.loading ? null : report; invalidate();

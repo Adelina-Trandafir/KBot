@@ -23,6 +23,11 @@ Public NotInheritable Class MarcajeRecente
 
     Public Const TipRezervare As String = "rezervare"
     Public Const TipReceptie As String = "receptie"
+    ''' <summary>
+    ''' Slice 0114-26: not a marker. The page asks it when the operator STARTS a reservation; the answer is "ok" or a
+    ''' refusal (the angajament still has reservations without a revision). Nothing is reserved or kept for it.
+    ''' </summary>
+    Public Const TipVerificaRezervare As String = "verifica-rezervare"
     Public Const CheieIdrev As String = "IDREV"
     Public Const CheieIdrh As String = "IDRH"
     Public Const CheieIdr As String = "IDR"

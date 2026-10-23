@@ -379,7 +379,8 @@ Public Class ApiClient
                                 .AreNoteCab = r.AreNoteCab,
                                 .ArePrimite = r.ArePrimite,
                                 .LantNeinchis = ParseLantNeinchis(r.LantNeinchis),
-                                .RezervariGresite = ParseRezervariGresite(r.RezervariGresite)
+                                .RezervariGresite = ParseRezervariGresite(r.RezervariGresite),
+                                .LegaturiGresite = ParseLegaturiGresite(r.LegaturiGresite)
                             })
                         Next
                     End If

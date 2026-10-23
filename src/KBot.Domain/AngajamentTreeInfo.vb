@@ -122,6 +122,10 @@ Public NotInheritable Class AngajamentTreeInfo
     ' previous reservation of the same indicator). Empty = every chain holds. Repaired from the Rezervari view.
     Public Property RezervariGresite As IReadOnlyList(Of RezervareGresita) = Array.Empty(Of RezervareGresita)()
 
+    ' Slice 0114-26: the reservations linked to a revision that does not cover them (so they never get their own
+    ' «+»). Empty = none. Freed from the Rezervari view, with the same repair button.
+    Public Property LegaturiGresite As IReadOnlyList(Of RezervareLegataGresit) = Array.Empty(Of RezervareLegataGresit)()
+
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)
     Public Property CodIndicator As String = String.Empty

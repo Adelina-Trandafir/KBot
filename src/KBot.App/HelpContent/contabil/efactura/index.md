@@ -224,11 +224,11 @@ După ce recepția este salvată în FOREXE, K-BOT **citește din nou angajament
 <!-- capture: efactura-receptii | caption: Vederea «Recepții» a unei facturi primite | prepare: Din ribbon, E-Factura › Cumpărare, alegeți o factură primită care are deja o clasificație aleasă și deschideți vederea «Recepții». -->
 
 ## Trimiterea la Vercon
-<!-- slice: 00EF-45, 00EF-47, 0000-116, 00EF-48, 0000-117 -->
+<!-- slice: 00EF-45, 00EF-47, 0000-116, 00EF-48, 0000-117, 0123-01, 0000-119 -->
 
 O factură primită cu produse sau materiale care intră în gestiunea unității se trimite la **Vercon**, ca Administratorul să o preia într-un NIR. **Tu decizi** ce se trimite; Administratorul vede doar ce ai trimis. Doar un utilizator cu rolul **«Contabil»** poate trimite.
 
-- Din ribbon, fila **«E-Factura»**, apasă **«Trimite la Vercon»**. Se deschide pagina **«Trimite la Vercon»**, la fel ca «Cumpărare» sau «Recepții»: rămâne deschisă până o închizi.
+- Din ribbon, fila **«VERCON»**, apasă **«Trimite la Vercon»**. Se deschide pagina **«Trimite la Vercon»**, la fel ca «Cumpărare» sau «Recepții»: rămâne deschisă până o închizi.
 - În **stânga** este arborele facturilor primite din anul ales (fără notele de credit): pe luni și furnizori, ca în «Cumpărare». Butonul din dreapta antetului arborelui schimbă gruparea în **«Grupare după furnizor»** și înapoi. Fiecare factură are data, numărul, totalul și, după număr, un cuvânt care spune ce s-a întâmplat cu ea în Vercon: **trimisă**, **preluată** sau **returnată**; cu mouse-ul deasupra vezi textul întreg. Bifează facturile de trimis. Bifa unei **luni** sau a unui **furnizor** le bifează pe toate facturile lui: în dreapta apare câte un grup pentru fiecare factură. O factură **preluată** într-un NIR rămâne bifată în gri și nu se mai trimite.
 - În **dreapta** apar liniile facturilor bifate, grupate pe factură. Se trimit **toate** liniile fiecărei facturi.
 - Pe fiecare linie poți alege, dacă vrei, **contul din Vercon**. Lista arată conturile grupate pe gestiune, din toate gestiunile; un clic pe numele unei gestiuni o strânge sau o desface, iar dacă tastezi o parte din numele contului sau al gestiunii, rămân doar rândurile potrivite. Contul ales pe rândul unei facturi se scrie pe toate liniile ei. **«(fără cont)»** lasă alegerea Administratorului.

@@ -493,6 +493,9 @@ Friend Module Program
         ' FOREXE only receives the Func (tip, cod) -> marker text.
         services.AddSingleton(Of IMarcajApi)(
             Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IMarcajApi))
+        ' Slice 0114-26: freeing the reservations linked to a revision that does not cover them (Rezervari view).
+        services.AddSingleton(Of IRezervariLegaturiApi)(
+            Function(sp) DirectCast(sp.GetRequiredService(Of IApiClient)(), IRezervariLegaturiApi))
         ' The captures of the FOREXE page (operator, 28.09.2026), uploaded by the shell after
         ' the ingest has written the records they hang off.
         services.AddSingleton(Of IForexeCapturiApi)(
@@ -504,6 +507,18 @@ Friend Module Program
         services.AddSingleton(Of Func(Of String, String, CancellationToken, Task(Of String)))(
             Function(sp)
                 Return Async Function(tip As String, cod As String, ct As CancellationToken)
+                           ' Slice 0114-26: the check that a reservation may begin is not a marker - nothing to keep.
+                           ' "ok" lets it begin; a refusal of the server (409: the angajament still has reservations
+                           ' without a revision) comes back as "blocat:" + the reason, which the page shows. Any
+                           ' other failure is thrown, and the FOREXE side lets the reservation begin.
+                           If String.Equals(tip, MarcajeRecente.TipVerificaRezervare, StringComparison.Ordinal) Then
+                               Try
+                                   Return Await sp.GetRequiredService(Of IMarcajApi)().RezervaMarcajAsync(tip, cod, ct)
+                               Catch ex As ApiException When ex.StatusCode.HasValue AndAlso ex.StatusCode.Value = 409
+                                   GlobalErrorLog.Write("Program.VerificaRezervare", ex)
+                                   Return "blocat:" & ex.Message
+                               End Try
+                           End If
                            Dim marcaj As String =
                                Await sp.GetRequiredService(Of IMarcajApi)().RezervaMarcajAsync(tip, cod, ct)
                            sp.GetRequiredService(Of MarcajeRecente)().Pune(tip, cod, marcaj)

@@ -13,4 +13,10 @@
     ''' <summary>Slice 00EF-33: a click in the footer band, outside the collapse button and the two icons (on the caption).</summary>
     Public Event FooterCaptionClicked(e As MouseEventArgs)
     Public Event SearchFinished(matchingItems As List(Of TreeItem), searchText As String)
+
+    ''' <summary>
+    ''' Slice 0123-02: the pause after typing is over and the search is about to run on the rows loaded so far. A host whose branches load on
+    ''' demand reads the rest here and calls <see cref="RerunSearch"/> when they are in.
+    ''' </summary>
+    Public Event SearchStarting(searchText As String)
 End Class

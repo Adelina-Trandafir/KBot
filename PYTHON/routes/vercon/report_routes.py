@@ -118,7 +118,8 @@ def register(bp, guard, scoped, session, build):
         vctx = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, None, False)
-            return report_identity.read(cursor, g.portal['db_name'], ctx)
+            return {**report_identity.read(cursor, g.portal['db_name'], ctx),
+                    'gestiune_name': vctx['gestiune'].get('name', '')}
 
     @bp.get('/api/vercon/reports/catalog')
     @guard('raport')
@@ -186,6 +187,16 @@ def register(bp, guard, scoped, session, build):
             ctx, _ = build(cursor, vctx, None, False)
             model = report_service.build(cursor, g.portal['db_name'], ctx, name, params, vctx['gestiune'].get('name', ''))
         return {**model, 'snapshot': cache().put(owner(ctx), model)}
+
+    @bp.delete('/api/vercon/reports/export/<token>')
+    @guard('raport')
+    def release(token):
+        # The viewer was closed: the saved model is not needed any more, so nothing stays on the disk.
+        vctx = scoped('raport')
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, None, False)
+        cache().release(owner(ctx), token)
+        return Response(status=204)
 
     @bp.get('/api/vercon/reports/export/<token>/<format_name>')
     @guard('raport')

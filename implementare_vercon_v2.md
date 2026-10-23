@@ -4634,3 +4634,60 @@ Stare: SCRIS LOCAL, NEPUBLICAT. Doar `py_compile`, `node --check` și build-ul m
 MariaDB. Fereastra nu a fost deschisă. Nu se deschide automat la prima intrare în VERCON.
 Publicare: `oi_register_repair.py`, `doc_routes.py`, `oi_accounts.py`, `oi_custody.py`, `oi-register-repair.js`, `docs.js`,
 `vercon-migration.css`, `vercon.json` și repornirea serviciului web.
+
+### 2026-10-23 — Rapoarte OI: două niveluri și selecție ca la MF
+
+MAGAZIE rămâne rădăcină separată în OI, cu toate rapoartele și grupările
+existente, ca în celelalte gestiuni. Numai ramura OBIECTE DE INVENTAR
+păstrează exact cele 11 rapoarte din referința primită, în ordinea și
+grupurile BONURI, PRODUSE, PRIMITORI. Cele două niveluri de grupare sunt
+Root (OBIECTE DE INVENTAR) și Niv1 (cele trei grupuri), apoi frunzele
+rapoartelor. Eliminarea inițială a MAGAZIE a fost o interpretare greșită,
+corectată local la solicitarea utilizatorului.
+
+Toate cele 11 rapoarte folosesc selecția ierarhică existentă MF, fără
+ramurile independente „Conturi în folosință” și „Deținători”: bonuri pe
+primitor–bon–produs, produse pe cont–produs și primitori pe cont–primitor–produs.
+Se reutilizează protocolul intern MF pentru selecții corelate și filtrarea
+aceluiași snapshot PDF/Excel. Schimbarea raportului reîncarcă selecția.
+
+Fișiere: PYTHON/routes/vercon/{report_catalog.py, report_mf.py,
+report_mf_selection.py, report_service.py};
+PYTHON/static/js/vercon/{report-result.js, reports.js};
+PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-rapoarte-oi-structura-si-selectie.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau generări PDF/Excel,
+conform instrucțiunilor proiectului. Fără SQL sau modificări de schemă.
+Publicare: cele patru module Python, cele două module JS și helpul JSON
+împreună, apoi repornirea serviciului web. Capturile existente se păstrează.
+
+### 2026-10-23 — Antet comun bonuri P/T/C și Consum
+
+Bonurile de predare, transfer, casare și consum folosesc antetul tabelar
+din referința primită: gestiune, număr document, Data cu Ziua/Luna/Anul,
+tip gestiune, Predător, Primitor, Nr. comandă și titlul bonului în celula
+unită vertical din dreapta. Retururile de consum folosesc aceeași structură.
+Se folosesc valorile bonului curent; Nr. comandă rămâne gol când lipsește
+din sursă. Explicațiile se păstrează sub antet.
+
+Structura este comună PDF/Excel și previzualizărilor locale de documente
+și ciorne. Listarea bonurilor MF salvate folosește raportul oficial MF
+când există dreptul de rapoarte, cu fallbackul local păstrat la lipsa lui.
+Machetele personalizate sunt adaptate în memorie pentru antetul comun;
+configurările salvate nu se rescriu. Excel păstrează modulul comun de lățimi.
+
+Fișiere: PYTHON/routes/vercon/{report_voucher.py (nou), report_body.py,
+report_service.py, report_routes.py}; PYTHON/reporting/{form_grid.py (nou),
+output.py}; PYTHON/static/js/vercon/{voucher-header.js (nou),
+document-report.js, docs.js, snapshot-pdf.js, report-result.js};
+PYTHON/static/css/vercon-rapoarte.css; PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-antet-comun-bonuri.md; implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
+verificări automate/de sintaxă, browser sau randări PDF/Excel, conform
+instrucțiunilor proiectului. Aspectul final nu a fost validat. Fără SQL sau
+modificări de schemă. Publicare: modulele Python/JS/CSS împreună, apoi
+repornirea serviciului web și regenerarea bonurilor.

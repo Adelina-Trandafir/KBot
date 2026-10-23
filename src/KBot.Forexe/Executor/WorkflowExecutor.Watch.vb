@@ -276,6 +276,12 @@ Partial Public Class WorkflowExecutor
     ' this ALWAYS answers - with the marker, or with an empty text and the reason.
     ' Async Sub from the Playwright callback: log and swallow, never rethrow.
     Private Async Sub RaspundeLaMarcaj(requestId As String, tip As String, cod As String)
+        ' Slice 0114-26: the page asks whether a reservation may BEGIN - not a marker, answered on its own.
+        If String.Equals(tip, MarcajeRecente.TipVerificaRezervare, StringComparison.Ordinal) Then
+            Await RaspundeLaPoarta(requestId, cod).ConfigureAwait(False)
+            Return
+        End If
+
         Dim marcaj As String = String.Empty
         Dim motiv As String = String.Empty
         Try
@@ -302,21 +308,56 @@ Partial Public Class WorkflowExecutor
                              $"Salvarea ({tip}) pe angajamentul «{cod}» primește marcajul {marcaj}.")
         End If
 
+        Await TrimiteRaspunsInPagina(requestId, marcaj, motiv).ConfigureAwait(False)
+    End Sub
+
+    ' Slice 0114-26 (operator, 23.10.2026): no reservation is started in the FOREXE page while the angajament has
+    ' reservations without a revision. The page holds the click that would start one until this answers: "ok" lets
+    ' it through, an empty text + the reason keeps it out and the page shows the reason. Only the server's refusal
+    ' stops the operator; a failure of the check itself lets the reservation begin (logged), because the page must
+    ' not become unusable when K-BOT cannot be reached.
+    Private Async Function RaspundeLaPoarta(requestId As String, cod As String) As Task
+        Dim raspuns As String = "ok"
+        Dim motiv As String = String.Empty
+        Try
+            If _marcajProvider IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(cod) Then
+                Dim k_text As String =
+                    If(Await _marcajProvider(MarcajeRecente.TipVerificaRezervare, cod.Trim(), CancellationToken.None),
+                       String.Empty)
+                Const k_prefix As String = "blocat:"
+                If k_text.StartsWith(k_prefix, StringComparison.Ordinal) Then
+                    raspuns = String.Empty
+                    motiv = k_text.Substring(k_prefix.Length).Trim()
+                End If
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.RaspundeLaPoarta", ex)
+            _logger.LogWarning($"[Urmărire] Nu am putut verifica rezervările fără revizie ale angajamentului «{cod}»: {ex.Message}. Rezervarea începe.")
+        End Try
+
+        If raspuns.Length = 0 Then
+            _logger.LogWarning($"[Urmărire] Rezervare oprită pe «{cod}»: {motiv}")
+        End If
+        Await TrimiteRaspunsInPagina(requestId, raspuns, motiv).ConfigureAwait(False)
+    End Function
+
+    ' The answer to the page's request: its `setMarcaj(id, text, message)`.
+    Private Async Function TrimiteRaspunsInPagina(requestId As String, text As String, motiv As String) As Task
         Try
             If _page Is Nothing OrElse _page.IsClosed Then Return
             Dim arg As String = New JObject(
                 New JProperty("id", requestId),
-                New JProperty("t", marcaj),
+                New JProperty("t", text),
                 New JProperty("m", motiv)).ToString(Newtonsoft.Json.Formatting.None)
             Await _page.EvaluateAsync(Of Object)(
                 "(a) => { const o = JSON.parse(a); if (window._kbotWatch && window._kbotWatch.setMarcaj) { window._kbotWatch.setMarcaj(o.id, o.t, o.m); } }",
                 arg)
         Catch ex As Exception
-            ' The page navigated meanwhile: its own timeout lets the save through unmarked.
-            GlobalErrorLog.Write("WorkflowExecutor.RaspundeLaMarcaj", ex)
-            _logger.LogDebug($"[Urmărire] Răspunsul cu marcajul nu a ajuns în pagină: {ex.Message}")
+            ' The page navigated meanwhile: its own timeout lets the save / the start through.
+            GlobalErrorLog.Write("WorkflowExecutor.TrimiteRaspunsInPagina", ex)
+            _logger.LogDebug($"[Urmărire] Răspunsul nu a ajuns în pagină: {ex.Message}")
         End Try
-    End Sub
+    End Function
 
     Private Shared Function BuildWatchEvent(obj As JObject) As ForexeWatchEvent
         Dim opName As String = TextOf(obj, "op")

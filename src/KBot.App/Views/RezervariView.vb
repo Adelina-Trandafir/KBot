@@ -181,7 +181,10 @@ Public Class RezervariView
     Public Function RibbonButtonState(k_key As String) As ViewButtonState Implements IViewRibbon.RibbonButtonState
         Select Case k_key
             Case KEY_REPARA
-                Return If(_repara IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.RezervariGresite.Count > 0,
+                ' Slice 0114-26: also while a reservation is linked to a revision that does not cover it (the second
+                ' red of the main tree) -- the shell frees it first, then re-walks the chain if that is broken too.
+                Return If(_repara IsNot Nothing AndAlso _info IsNot Nothing AndAlso
+                          (_info.RezervariGresite.Count > 0 OrElse _info.LegaturiGresite.Count > 0),
                           ViewButtonState.Enabled, ViewButtonState.Hidden)
             Case KEY_GRAFIC
                 If String.IsNullOrWhiteSpace(_requestedCod) Then Return ViewButtonState.Hidden

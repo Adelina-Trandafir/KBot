@@ -955,7 +955,7 @@ export function mountDocuments(host, opts) {
       { title: 'Antet', columns: [{ key: 'label', title: 'Câmp', width: 240 }, { key: 'value', title: 'Valoare', width: 580 }], rows: headerSpecs().map(spec => ({ label: spec.label, value: headerValue(spec) })) },
       { title: config.lines, columns: lineSpecs().map((spec) => ({ key: spec.product ? 'name' : spec.key, title: spec.label, width: spec.product ? 250 : 120, formatter: (value) => spec.key === 'IDTVA' ? `${state.lookups.vat.find(item => String(item.id) === String(value))?.percent ?? ''}%` : format(value, { type: spec.type === 'ref' ? 'text' : spec.type || 'text' }) })), rows: editing() ? state.draft.lines.filter((line) => family !== 'nir' || !isBlankLine(line)) : state.doc.lines },
     ];
-    await documentReport({ api: opts.api, selection: opts.sel(), family, document: doc,
+    await documentReport({ api: opts.api, selection: opts.sel(), family, document: doc, header,
       title: `${config.title}${editing() ? ` • Ciornă nesalvată${header.Numar ? ` nr. ${header.Numar}` : ''}` : ` nr. ${state.doc.number}`}`, date: header.Data, sections, owner: dialogs,
       isCurrent: () => !abort.signal.aborted && token === openSequence && draft === state.draft && (!doc || doc === state.doc) });
   }

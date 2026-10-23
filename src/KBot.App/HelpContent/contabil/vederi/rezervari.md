@@ -29,10 +29,10 @@ Arborele nu mai are iconițe în cap sau în subsol (a rămas doar «+» de pe r
 |-------|---------|
 | **Grafice** | **Graficul rezervărilor**: evoluția rezervărilor și totalurile pe luni, într-o fereastră a lui, mai mică decât spațiul de lucru; «Închide» te întoarce la «Rezervări». E stins cât angajamentul nu are rezervări |
 | **Adaugă rezervare** (își schimbă numele) | **acțiunile documentului de fundamentare** pe acest angajament (Adaugă rezervare / Definitivează / Derulează / Generează PDF final) — vezi [Adaugă rezervare, Definitivează, Derulează](topic:contabil.ddf.rezervare); apare doar când în arbore nu mai e nicio rezervare cu «+» (de adus din FOREXE în K-BOT) și are ce să facă |
-| **Repară...** | **Repară rezervările** angajamentului, din istoric, fără nicio descărcare din FOREXE; apare doar când angajamentul are rezervări greșite — vezi mai jos |
+| **Repară...** | **Repară rezervările** angajamentului, din istoric, fără nicio descărcare din FOREXE; apare doar când angajamentul are rezervări greșite sau rezervări legate greșit de o revizie — vezi mai jos |
 
 ## Rezervări greșite și repararea lor
-<!-- slice: 0092-01, 0000-68, 0114-25, 0000-110 -->
+<!-- slice: 0092-01, 0000-68, 0114-25, 0000-110, 0114-26, 0000-120 -->
 
 Dacă o lună a fost calculată de la valorile altei luni (de pildă o lună în care rezervările pornesc
 de la totalul de acum două luni, ca și cum luna dinainte nu ar fi existat), valorile rezervărilor
@@ -44,5 +44,17 @@ din ea și din cele de după ea ies greșite.
 - În vederea «Rezervări» apare, în ribbon, butonul **«Repară...»**; el se vede **doar** cât timp angajamentul are rezervări greșite. Apasă-l. Se deschide o fereastră care îți arată, în două tabele, **ce s-a detectat** (rezervările care nu pornesc de la valoarea la care s-a oprit cea dinainte, cu valoarea de acum și cea care ar trebui) și **ce se va face** (fiecare rezervare care se rescrie, cu valoarea veche și cea nouă, plus câte rânduri de istoric se corectează și eventualele semnalări). Nu se scrie nimic până nu apeși **«Repară»**; cu **«Renunță»** închizi fereastra și rămâne totul ca înainte. **Nu se descarcă nimic din FOREXE.**
 - Fereastra se deschide **oricum**, chiar dacă repararea ar atinge o lună care are **revizii** de fundamentare. Dar în acel caz repararea **nu se face**: la apăsarea lui **«Repară»** K-BOT spune ce lună e și nu schimbă nimic.
 - După reparare, rândul din lista principală nu mai este roșu și butonul dispare.
+
+## Rezervari legate gresit
+<!-- slice: 0114-26, 0000-120 -->
+
+O rezervare poate ajunge trecută ca avându-și revizia de fundamentare, deși revizia de care e legată **nu o cuprinde** (o revizie ține o singură zi și un singur fel de operațiune). Atunci rezervarea nu mai are «+», iar suma ei nu apare în nicio revizie.
+
+- În lista principală, angajamentul se scrie cu **un alt roșu** decât cel de la rezervările greșite. Ținând mouse-ul pe rând vezi rezervarea (ziua, indicatorul, valoarea) și revizia de care e legată.
+- În vederea «Rezervări», butonul **«Repară...»** din ribbon se vede și în acest caz. Apasă-l: K-BOT îți spune ce rezervări sunt legate greșit și, dacă răspunzi **«Da»**, le scoate din acea revizie și le lasă **fără revizie**, ca să primească «+». Nu se schimbă nicio sumă și nicio revizie; capturile rezervării se scot de pe revizia greșită și se pun din nou când îi faci revizia ei. Cu **«Nu»** nu se schimbă nimic.
+- Dacă angajamentul are și rezervări greșite de felul de mai sus, K-BOT le repară întâi pe acestea, apoi continuă cu repararea rezervărilor.
+- După reparare, apasă **«+»** pe rezervarea eliberată ca să-i faci revizia.
+
+Cât un angajament are rezervări fără revizie, în pagina FOREXE nu se pot începe rezervări noi — vezi [Browserul FOREXE](topic:contabil.forexe.browser).
 
 <!-- capture: grafic-rezervari | caption: Graficul rezervărilor | goto: view:rezervari | prepare: Apăsați butonul «Grafice» din ribbon, ca să se deschidă graficul. | redo: 2026-10-17 21:00 | why: 0114-15: graficul se deschide din butonul «Grafice» din ribbon; 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon); 0113-01: graficul e o fereastră cu bara lui de titlu și cu «Închide», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->

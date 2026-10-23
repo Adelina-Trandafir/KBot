@@ -112,6 +112,9 @@ Partial Public Class KbotForm
         InitializeComponent()
         ' Slice 0078-08: no new row while a document is still opening in Adobe (AdobeOpenGate).
         AdobeOpenGate.LockWhileOpening(tree)
+        ' Slice 0114-26: the row tooltip (it carries the error warnings) stays until the mouse moves to another
+        ' row or leaves the tree; 0 = no timer. It is a public field, so the designer never writes it.
+        tree.AutoHideTooltipMs = 0
         _forexeRunner = forexeRunner
         _session = session
         _apiClient = apiClient

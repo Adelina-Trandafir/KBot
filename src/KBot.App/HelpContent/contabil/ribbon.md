@@ -7,16 +7,16 @@ parent: contabil
 screens: AvacontMain.ribbon
 keywords: ribbon, banda, file, fila, grup, comenzi, meniu, MENIU, unde e meniul, unde a disparut meniul, strange ribbonul, ascunde banda, inchide macheta, iesire, adaugare angajamente, nomenclatoare, configurare, administrare, unitate
 ---
-<!-- slice: 0114, 0114-02, 0114-04, 0114-05, 0000-85, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90 -->
+<!-- slice: 0114, 0114-02, 0114-04, 0114-05, 0000-85, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, 0123-02 -->
 Sus, sub bara de titlu, fereastra principală are **ribbonul**: o bandă cu **file** — **Configurări**, **Angajamente**,
-**E-Factura**, **Extrase**. La pornire e aleasă fila **Angajamente**. Fiecare filă are butoane strânse în **grupuri**, cu numele grupului dedesubt.
+**E-Factura**, **Extrase**, **VERCON**, **ADECHIT**. La pornire e aleasă fila **Angajamente**. Fiecare filă are butoane strânse în **grupuri**, cu numele grupului dedesubt.
 Ribbonul a luat locul butonului **MENIU**: tot ce era în meniu e acum aici. Ținând mouse-ul pe un buton vezi o
 etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul conectat.
 
 <!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butonul «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. | redo: 2026-10-17 21:00 | why: 0114-15/16: grupul vederii poate avea mai multe butoane (Rezervari, Receptii); 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
 
 ## Filele și butoanele
-<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90 -->
+<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119 -->
 
 | Fila | Grupul | Butoanele |
 |------|--------|-----------|
@@ -29,6 +29,8 @@ etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul cone
 | **E-Factura** | E-Factura | **Cumpărare** (facturile primite), **Vânzare** (facturile emise) — [E-Factura](topic:contabil.efactura) |
 | | ANAF | **Token ANAF** — [Tokenul ANAF](topic:contabil.efactura.token); **Sincronizează facturi primite** a trecut în grupul din dreapta al machetei «Cumpărare» (vezi mai jos) |
 | **Extrase** | Documente | **Extrase** — toate extrasele de cont ale unității — [Extrase de cont](topic:contabil.vederi.extrase) |
+| **VERCON** | Vercon | **Rapoarte** — rapoartele gestiunii, cu perioadă, selecția datelor, previzualizare PDF și export Excel — [VERCON: Rapoarte](topic:contabil.vercon.rapoarte); **Trimite la Vercon** — trimite facturile primite la Vercon — [Trimiterea la Vercon](topic:contabil.efactura) |
+| **ADECHIT** | ADECHIT | **Rapoarte** — rapoartele evidenței, cu previzualizare PDF și export Excel — [ADECHIT: Rapoarte](topic:contabil.adechit) |
 
 Un buton care lucrează pe lista angajamentelor («Angajament nou», «Creează în FOREXE», «Operațiuni necorelate») o
 aduce întâi pe ecran.

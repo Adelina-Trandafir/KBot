@@ -115,6 +115,9 @@ Public NotInheritable Class GetTreeRow
     Public Property LantNeinchis As String
     ' Broken reservation chain, «yyyy-MM-dd~indicator~anterioara~asteptata» joined with «|»; null = none.
     Public Property RezervariGresite As String
+    ' Slice 0114-26: reservations linked to a revision that does not cover them,
+    ' «yyyy-MM-dd~indicator~idrev~valoare~yyyy-MM-dd(revizie)» joined with «|»; null = none.
+    Public Property LegaturiGresite As String
     ' Slice 0008-02: FX_Angajamente.Alias (null = none).
     <Text.Json.Serialization.JsonPropertyName("Alias")>
     Public Property AliasAng As String

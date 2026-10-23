@@ -71,6 +71,12 @@ Partial Class AvacontMain
         Dim KBotRibbonGroup10 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton31 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton32 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton34 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonTab5 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
+        Dim KBotRibbonGroup11 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
+        Dim KBotRibbonTab6 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
+        Dim KBotRibbonGroup12 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
+        Dim KBotRibbonButton33 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -169,7 +175,7 @@ Partial Class AvacontMain
         KBotRibbonButton8.Key = "rezervari_repara"
         KBotRibbonButton8.Text = "Repară..."
         KBotRibbonButton8.ToolTipHeader = "Repară rezervările"
-        KBotRibbonButton8.ToolTipText = "Repară rezervările acestui angajament din istoric (fără descărcare din FOREXE)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi."
+        KBotRibbonButton8.ToolTipText = "Repară rezervările acestui angajament din istoric (fără descărcare din FOREXE)." & vbLf & "Eliberează și rezervările legate de o revizie care nu le cuprinde, ca să primească «+»." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi."
         KBotRibbonButton8.Visible = False
         KBotRibbonButton9.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Chart_curve_32
         KBotRibbonButton9.Key = "rezervari_grafic"
@@ -329,7 +335,6 @@ Partial Class AvacontMain
         KBotRibbonButton32.ToolTipHeader = "Trimite la Vercon"
         KBotRibbonButton32.ToolTipText = "Trimite facturile primite la Vercon, ca Administratorul să le preia într-un NIR. Poți propune contul din Vercon pentru fiecare linie."
         KBotRibbonGroup8.Buttons.Add(KBotRibbonButton29)
-        KBotRibbonGroup8.Buttons.Add(KBotRibbonButton32)
         KBotRibbonGroup8.Text = "E-Factura"
         KBotRibbonButton30.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
         KBotRibbonButton30.Key = "ef_token"
@@ -350,10 +355,31 @@ Partial Class AvacontMain
         KBotRibbonGroup10.Text = "Documente"
         KBotRibbonTab4.Groups.Add(KBotRibbonGroup10)
         KBotRibbonTab4.Text = "Extrase"
+        KBotRibbonButton34.Image = My.Resources.Resources.print
+        KBotRibbonButton34.Key = "vercon_rapoarte"
+        KBotRibbonButton34.Text = "Rapoarte"
+        KBotRibbonButton34.ToolTipHeader = "Rapoarte VERCON"
+        KBotRibbonButton34.ToolTipText = "Rapoartele VERCON ale gestiunii: balanțe, fișe, recepții, consumuri, liste de alimente, obiecte de inventar și mijloace fixe, cu perioada, selecția datelor, previzualizare PDF și export Excel."
+        KBotRibbonGroup11.Buttons.Add(KBotRibbonButton34)
+        KBotRibbonGroup11.Buttons.Add(KBotRibbonButton32)
+        KBotRibbonGroup11.Text = "Vercon"
+        KBotRibbonTab5.Groups.Add(KBotRibbonGroup11)
+        KBotRibbonTab5.Text = "VERCON"
+        KBotRibbonButton33.Image = My.Resources.Resources.print
+        KBotRibbonButton33.Key = "adechit_rapoarte"
+        KBotRibbonButton33.Text = "Rapoarte"
+        KBotRibbonButton33.ToolTipHeader = "Rapoarte ADECHIT"
+        KBotRibbonButton33.ToolTipText = "Situația lunară, situația de plată, registrul de casă, raportul de bancă, fișa de cont și documentele anulate, cu previzualizare PDF și export Excel."
+        KBotRibbonGroup12.Buttons.Add(KBotRibbonButton33)
+        KBotRibbonGroup12.Text = "ADECHIT"
+        KBotRibbonTab6.Groups.Add(KBotRibbonGroup12)
+        KBotRibbonTab6.Text = "ADECHIT"
         ribbon.Tabs.Add(KBotRibbonTab1)
         ribbon.Tabs.Add(KBotRibbonTab2)
         ribbon.Tabs.Add(KBotRibbonTab3)
         ribbon.Tabs.Add(KBotRibbonTab4)
+        ribbon.Tabs.Add(KBotRibbonTab5)
+        ribbon.Tabs.Add(KBotRibbonTab6)
         ribbon.Tooltip = tips
         ' 
         ' sidebar

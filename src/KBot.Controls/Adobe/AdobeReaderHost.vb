@@ -707,7 +707,8 @@ Public NotInheritable Class AdobeReaderHost
     '  4. the K-BOT form holding the panel is ENABLED (no modal alert) and is the FOREGROUND window
     '     -- SendInput types into whatever has the keyboard;
     '  5. after SetFocus on the page view, the keyboard focus really is inside the hosted window.
-    ' Sent ONCE per document. When the conditions never hold, the operator is told to press Ctrl+H.
+    ' Since 23.10.2026 (slice 0123-04) Ctrl+H and Ctrl+2 are also decided by what the windows show -- see PlanKeys: Ctrl+H only while the panels
+    ' are proven showing (it TOGGLES), Ctrl+2 only after Ctrl+H took effect. When the conditions never hold, the operator is told to press Ctrl+H.
     ' Read Mode is a state of the open document: nothing of it is saved in Adobe's preferences.
 
     Private Const ReadModeTickMs As Integer = 150
@@ -733,6 +734,40 @@ Public NotInheritable Class AdobeReaderHost
     Private _focusFailures As Integer
     Private _retryNotBefore As DateTime = DateTime.MinValue
 
+    ' Slice 0123-04 (operator, 23.10.2026): Ctrl+H and Ctrl+2 are NOT sent blindly. Ctrl+H TOGGLES Read Mode, so it goes out only while the
+    ' windows prove the panels are showing; Ctrl+2 only once Ctrl+H took effect and the page view has settled. Facts the operator captured
+    ' (Window Detective, Acrobat DC hosted): panels showing = a window «AVTaskPaneView» 345 px wide at the right and the page view 1557 px of a 1902 px
+    ' host; Read Mode = the page view 1876 px of 1902 px. What the pane window does in Read Mode (destroyed / hidden) was NOT captured:
+    ' both are read as «hidden», and a missing pane window is waited for before it counts as «already in Read Mode».
+    Private Const PaneViewTitle As String = "AVTaskPaneView"
+    Private Const PaneHostTitle As String = "AVTaskPaneHostView"
+    Private Const MaxReadModeSends As Integer = 2
+    Private Const ReadModeRetryMs As Long = 700
+    Private Const ReadModeGiveUpMs As Long = 8000
+    Private Const PaneWaitMs As Double = 3000
+    Private Const PanelNarrowPx As Integer = 100
+    Private _hSends As Integer
+    Private ReadOnly _hClock As New Stopwatch()
+    Private _paneWaitSince As DateTime
+    Private _lastPageWidth As Integer = -1
+    Private _planNote As String
+
+    ''' <summary>What one look at the hosted window's tree says about the panels (see the note above).</summary>
+    Private NotInheritable Class PaneState
+        Public Property PaneSeen As Boolean
+        Public Property PaneVisible As Boolean
+        Public Property PageWidth As Integer
+        Public Property FrameWidth As Integer
+        Public Property Evidence As String = String.Empty
+
+        ''' <summary>Read Mode is OFF: a pane window shows, or the page view is clearly narrower than the host.</summary>
+        Public ReadOnly Property PanelsVisible As Boolean
+            Get
+                Return PaneVisible OrElse FrameWidth - PageWidth > PanelNarrowPx
+            End Get
+        End Property
+    End Class
+
     ''' <summary>
     ''' Slice 0078-05: raised (UI thread) when the save K-BOT asked for (<see cref="RequestSave"/>)
     ''' could not be sent to Adobe. Argument = the Romanian sentence for the operator, who must save
@@ -745,6 +780,11 @@ Public NotInheritable Class AdobeReaderHost
 
     ' Reached from LaunchAndHostAsync (wrapped).
     Private Sub ArmReadMode()
+        _hSends = 0
+        _hClock.Reset()
+        _paneWaitSince = DateTime.UtcNow
+        _lastPageWidth = -1
+        _planNote = Nothing
         QueueKey(VK_H)
         ' Slice 0078-13: F8 hides the right-hand toolbar. BEFORE Ctrl+2, so the zoom to the page width
         ' is taken once the pane is going away. Same for the old and the new Adobe (one code path).
@@ -930,6 +970,14 @@ Public NotInheritable Class AdobeReaderHost
             Return
         End If
 
+        ' Slice 0123-04: what goes out now. Decided from the windows BEFORE the focus moves into the document (waiting ticks must not
+        ' pull the keyboard focus out of K-BOT every 150 ms).
+        Dim planned As List(Of UShort) = PlanKeys(page)
+        If planned.Count = 0 Then
+            If _pendingKeys.Count = 0 Then _readModeTimer.Stop()
+            Return
+        End If
+
         ' After a failed attempt the Adobe window itself is focused first, then the page.
         If _focusFailures > 0 Then AdobeNativeMethods.SetFocus(_hostedWindow)
         AdobeNativeMethods.SetFocus(page)
@@ -953,8 +1001,12 @@ Public NotInheritable Class AdobeReaderHost
             Return
         End If
 
-        Dim keysToSend As List(Of UShort) = _pendingKeys.ToList()
-        DisarmReadMode()
+        ' What goes now leaves the queue (Ctrl+H and Ctrl+2 may stay queued while they wait for the windows; Ctrl+S is as before).
+        Dim keysToSend As List(Of UShort) = planned
+        For Each vk As UShort In keysToSend
+            _pendingKeys.Remove(vk)
+        Next
+        If _pendingKeys.Count = 0 Then _readModeTimer.Stop()
 
         For Each vk As UShort In keysToSend
             Dim keys As AdobeNativeMethods.INPUT() = If(vk = VK_F8,
@@ -970,6 +1022,10 @@ Public NotInheritable Class AdobeReaderHost
                 Runtime.InteropServices.Marshal.SizeOf(GetType(AdobeNativeMethods.INPUT)))
             If sent = keys.Length Then
                 Report($"{KeyName(vk)} trimis documentului.")
+                If vk = VK_H Then
+                    _hSends += 1
+                    _hClock.Restart()
+                End If
                 If vk = VK_S Then RaiseEvent SaveKeysSent()
             Else
                 Dim err As Integer = Runtime.InteropServices.Marshal.GetLastWin32Error()
@@ -978,6 +1034,91 @@ Public NotInheritable Class AdobeReaderHost
         Next
         ' Slice 0078-08: Adobe re-lays out after the keys; DocumentReady waits for that to settle.
         _windowWatcher.Poke()
+    End Sub
+
+    ' Slice 0123-04: the keys to send on THIS tick. Everything but Ctrl+H / Ctrl+2 (the save after a signature) goes as it always did.
+    '  - Ctrl+H queued: sent only while the panels are proven showing. Panels proven hidden = Read Mode is already on (Adobe kept it
+    '    from the previous document): neither Ctrl+H nor Ctrl+2 is sent. No pane window yet: wait (PaneWaitMs), Adobe may still be building its UI.
+    '  - Ctrl+H already sent, Ctrl+2 queued: panels still showing after ReadModeRetryMs -> Ctrl+H once more (at most MaxReadModeSends in all),
+    '    then it is given up; panels hidden -> Ctrl+2 once, when the page view's width is the same on two ticks in a row.
+    ' Called from TrySendPendingKeys (wrapped).
+    Private Function PlanKeys(page As IntPtr) As List(Of UShort)
+        Dim keys As New List(Of UShort)()
+        For Each vk As UShort In _pendingKeys
+            If vk <> VK_H AndAlso vk <> VK_2 Then keys.Add(vk)
+        Next
+        Dim hQueued As Boolean = _pendingKeys.Contains(VK_H)
+        Dim fitQueued As Boolean = _pendingKeys.Contains(VK_2)
+        If Not hQueued AndAlso Not fitQueued Then Return keys
+        Dim panes As PaneState = ReadPanes(page)
+
+        If hQueued Then
+            If panes.PanelsVisible Then
+                PlanNote($"Ctrl+H: {panes.Evidence} — panourile se văd, trimit Ctrl+H.")
+                keys.Insert(0, VK_H)
+            ElseIf Not panes.PaneSeen AndAlso (DateTime.UtcNow - _paneWaitSince).TotalMilliseconds < PaneWaitMs Then
+                PlanNote($"Ctrl+H: {panes.Evidence} — fereastra panoului nu există încă, aștept.")
+            Else
+                PlanNote($"Ctrl+H: {panes.Evidence} — panourile sunt ascunse (mod citire deja pornit): nu trimit Ctrl+H, nici Ctrl+2.")
+                _pendingKeys.Remove(VK_H)
+                _pendingKeys.Remove(VK_2)
+            End If
+            Return keys
+        End If
+
+        ' Only Ctrl+2 is queued: Ctrl+H went out (a queued Ctrl+2 without a sent Ctrl+H is dropped, it was never proven needed).
+        If _hSends = 0 Then
+            _pendingKeys.Remove(VK_2)
+            Return keys
+        End If
+        If panes.PanelsVisible Then
+            If _hClock.ElapsedMilliseconds < ReadModeRetryMs Then Return keys   ' its effect may still be on the way
+            If _hSends >= MaxReadModeSends Then
+                _pendingKeys.Remove(VK_2)
+                GiveUp(VK_H, $"ATENȚIE — Ctrl+H trimis de {_hSends} ori, dar panourile se văd încă ({panes.Evidence}); nu mai încerc și nu trimit Ctrl+2.")
+                Return keys
+            End If
+            PlanNote($"Ctrl+H: {panes.Evidence} — panourile se văd încă {_hClock.ElapsedMilliseconds} ms după trimitere, îl trimit din nou.")
+            keys.Insert(0, VK_H)
+            Return keys
+        End If
+        Dim settled As Boolean = panes.PageWidth = _lastPageWidth OrElse _hClock.ElapsedMilliseconds > ReadModeGiveUpMs
+        _lastPageWidth = panes.PageWidth
+        If Not settled Then
+            PlanNote($"Ctrl+2: {panes.Evidence} — panourile au dispărut, aștept să se așeze pagina.")
+            Return keys
+        End If
+        PlanNote($"Ctrl+2: {panes.Evidence} — pagina s-a așezat, trimit Ctrl+2.")
+        keys.Add(VK_2)
+        Return keys
+    End Function
+
+    ' One look at the hosted window: the pane windows (visible or not, how wide) and the page view against the host. Called from PlanKeys (wrapped).
+    Private Function ReadPanes(page As IntPtr) As PaneState
+        Dim state As New PaneState()
+        Dim seen As New List(Of String)()
+        For Each h As IntPtr In AdobeNativeMethods.Descendants(_hostedWindow)
+            Dim title As String = AdobeNativeMethods.GetTitle(h)
+            If Not String.Equals(title, PaneViewTitle, StringComparison.Ordinal) AndAlso
+               Not String.Equals(title, PaneHostTitle, StringComparison.Ordinal) Then Continue For
+            state.PaneSeen = True
+            Dim width As Integer = AdobeNativeMethods.RectInParent(h).Width
+            Dim shown As Boolean = width > 0 AndAlso AdobeNativeMethods.IsWindowVisible(h)
+            If shown Then state.PaneVisible = True
+            seen.Add($"{title} {If(shown, "vizibil", "ascuns")} {width} px")
+        Next
+        state.PageWidth = AdobeNativeMethods.RectInParent(page).Width
+        state.FrameWidth = AdobeNativeMethods.RectInParent(_hostedWindow).Width
+        state.Evidence = If(seen.Count = 0, "nicio fereastră de panou", String.Join(", ", seen)) &
+                         $"; pagina {state.PageWidth} px din {state.FrameWidth} px"
+        Return state
+    End Function
+
+    ' The decision is logged when it CHANGES (the timer ticks every 150 ms).
+    Private Sub PlanNote(note As String)
+        If String.Equals(note, _planNote, StringComparison.Ordinal) Then Return
+        _planNote = note
+        Report(note)
     End Sub
 
     ' Nothing when the pending keys may be sent now; otherwise why not (Romanian, for the log).

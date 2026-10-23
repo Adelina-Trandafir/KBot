@@ -73,6 +73,9 @@ from . import tree  # noqa: E402,F401
 from . import sumar  # noqa: E402,F401
 from . import rezervari  # noqa: E402,F401
 from . import rezervari_reanaliza  # noqa: E402,F401
+# rezervari_legaturi.py -> POST /api/forexe/rezervari/repara-legaturi + the finder the tree route
+# uses (slice 0114-26): reservations linked to a revision that does not cover them.
+from . import rezervari_legaturi  # noqa: E402,F401
 from . import istoric_luni  # noqa: E402,F401
 from . import receptii  # noqa: E402,F401
 from . import receptii_refacere  # noqa: E402,F401

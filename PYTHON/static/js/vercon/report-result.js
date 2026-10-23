@@ -8,7 +8,19 @@ export function paintReportLetterhead(model, target) {
 }
 
 export function paintReportBlock(block, target, owner) {
-  if (block.t === 'positioned') {
+  if (block.t === 'form_grid') {
+    const table = el('table', { className: 'vc-voucher-header' },
+      el('colgroup', {}, ...block.widths.map(() => el('col'))));
+    const body = el('tbody'); table.append(body);
+    block.heights.forEach((_, row) => {
+      body.append(el('tr', {}, ...block.cells.filter(cell => cell.row === row)
+        .sort((a, b) => a.column - b.column).map(cell => el(cell.bold ? 'th' : 'td', {
+          textContent: cell.text, colSpan: cell.colspan || 1, rowSpan: cell.rowspan || 1,
+          className: cell.column === 7 ? 'vc-voucher-header__title' : '',
+        }))));
+    });
+    target.append(table);
+  } else if (block.t === 'positioned') {
     block.elements.forEach(item => target.append(el('p', { textContent: item.text })));
   } else if (block.t === 'columns') {
     const row = el('div', { className: `vc-reports__columns vc-reports__columns--${block.children.length}` });
@@ -40,6 +52,17 @@ export function paintReportBlock(block, target, owner) {
 }
 
 function buildReportNodes(reports) {
+  if (reports.some(report => report.tree_group)) {
+    const warehouse = reports.filter(report => !report.tree_group);
+    const custody = reports.filter(report => report.tree_group);
+    const children = [...new Set(custody.map(report => report.tree_group))].map(group => ({
+      id: 'reports:' + group, label: group,
+      children: custody.filter(report => report.tree_group === group)
+        .map(report => ({ id: 'doc:' + report.id, label: report.label })),
+    }));
+    return [...(warehouse.length ? buildReportNodes(warehouse) : []),
+      { id: 'oi-reports', label: 'Obiecte de inventar', children }];
+  }
   reports = reports.filter(report => !['OI_Predare', 'OI_Transfer', 'OI_Casare', 'FM1-u', 'FM2', 'Fisa_Magazie_BF',
     'NIR_SFP', 'NIR_Storno', 'Centralizator_Conturi_Furnizori', 'BUConsum', 'BUConsum_F', 'BUConsum_F1', 'BonRetur',
     'MF_Balanta_Subinv'].includes(report.id));

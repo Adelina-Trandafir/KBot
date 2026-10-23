@@ -303,7 +303,18 @@ Partial Public Class KbotForm
     ''' </summary>
     Private Async Sub ReparaRezervari(cod As String, greseli As IReadOnlyList(Of RezervareGresita))
         Try
-            Await ReanalizeazaRezervariAsync(cod, greseli).ConfigureAwait(True)
+            ' Slice 0114-26 (operator, 23.10.2026): the same button also frees the reservations linked to a revision
+            ' that does not cover them. That goes FIRST: such a reservation counts as linked to a revision, and a
+            ' chain repair refuses the months that have linked reservations.
+            Dim k_info As AngajamentTreeInfo = Nothing
+            _treeInfos.TryGetValue(cod, k_info)
+            Dim k_areLegaturi As Boolean = k_info IsNot Nothing AndAlso k_info.LegaturiGresite.Count > 0
+            If k_areLegaturi Then
+                If Not Await ReparaLegaturiAsync(cod).ConfigureAwait(True) Then Return
+            End If
+            If Not k_areLegaturi OrElse (greseli IsNot Nothing AndAlso greseli.Count > 0) Then
+                Await ReanalizeazaRezervariAsync(cod, greseli).ConfigureAwait(True)
+            End If
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ReparaRezervari", ex)
             KBotMessage.Show(Me, ex.Message, "Reanalizarea rezervărilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -313,6 +324,82 @@ Partial Public Class KbotForm
                             "Reanalizarea rezervărilor", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0114-26: frees the reservations of the angajament that are linked to a DDF revision which does not cover
+    ''' them, so each gets its own revision and the «+» of the Rezervari tree comes back on it. Dry run first (the
+    ''' server lists what it would free), the operator confirms, then it writes and the tree reloads with the
+    ''' selection kept. Returns False when the operator said no or the call failed (nothing else should follow), True
+    ''' when it is done or there was nothing to do. Called from <see cref="ReparaRezervari"/>, which logs and shows
+    ''' the exceptions.
+    ''' </summary>
+    Private Async Function ReparaLegaturiAsync(cod As String) As Task(Of Boolean)
+        If String.IsNullOrWhiteSpace(cod) Then Return False
+        Const k_titlu As String = "Rezervări legate greșit"
+        Dim k_api As IRezervariLegaturiApi = TryCast(_apiClient, IRezervariLegaturiApi)
+        If k_api Is Nothing Then Throw New InvalidOperationException("The API client does not implement IRezervariLegaturiApi.")
+
+        Dim k_proba As RezervariLegaturiResult
+        busyBar.Running = True
+        Try
+            k_proba = Await WithReauth(Of RezervariLegaturiResult)(
+                Function() k_api.RepairReservationLinksAsync(cod, False, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+        If k_proba Is Nothing Then
+            AratEsecul(k_titlu)
+            Return False
+        End If
+
+        If k_proba.ToRepair = 0 Then
+            ' The tree row said otherwise: what it held is out of date, so it is read again.
+            KBotMessage.Show(Me, $"«{cod}»: nicio rezervare nu mai e legată greșit de o revizie. Nu este nimic de reparat.",
+                             k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Await LoadTreeAsync(pastreazaSelectia:=True)
+            Return True
+        End If
+
+        Dim k_ro As New Globalization.CultureInfo("ro-RO")
+        Dim k_linii As New List(Of String)()
+        For Each k_d As RezervareLegataGresit In k_proba.Details.Take(10)
+            Dim k_zi As String = If(k_d.DataRevizie.HasValue, $" din {k_d.DataRevizie.Value:dd.MM.yyyy}", String.Empty)
+            k_linii.Add($"  • rezervarea din {k_d.DataRezervare:dd.MM.yyyy}, {k_d.CodIndicator}: " &
+                        $"{k_d.Valoare.ToString("+#,##0.00;-#,##0.00;0.00", k_ro)}, legată de revizia {k_d.IdRevizie}{k_zi}")
+        Next
+        If k_proba.ToRepair > k_linii.Count Then k_linii.Add($"  • … și încă {k_proba.ToRepair - k_linii.Count}")
+        Dim k_intrebare As String =
+            $"«{cod}»: {k_proba.ToRepair} " & If(k_proba.ToRepair = 1, "rezervare e legată", "rezervări sunt legate") &
+            " de o revizie care nu " & If(k_proba.ToRepair = 1, "o cuprinde", "le cuprinde") & ", deci nu " &
+            If(k_proba.ToRepair = 1, "are", "au") & " «+» și nu " & If(k_proba.ToRepair = 1, "își poate", "își pot") &
+            " primi revizia:" & vbCrLf & vbCrLf & String.Join(vbCrLf, k_linii) & vbCrLf & vbCrLf &
+            "Repararea le scoate din acea revizie și le lasă fără revizie, ca să primească «+». " &
+            "Sumele și reviziile nu se schimbă. Continuați?"
+        If KBotMessage.Show(Me, k_intrebare, k_titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                            MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+            Return False
+        End If
+
+        Dim k_rezultat As RezervariLegaturiResult
+        busyBar.Running = True
+        Try
+            k_rezultat = Await WithReauth(Of RezervariLegaturiResult)(
+                Function() k_api.RepairReservationLinksAsync(cod, True, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+        If k_rezultat Is Nothing Then
+            AratEsecul(k_titlu)
+            Return False
+        End If
+
+        KBotMessage.Show(Me, $"«{cod}»: {k_rezultat.Repaired} " & If(k_rezultat.Repaired = 1, "rezervare a rămas", "rezervări au rămas") &
+                         " fără revizie și o pot primi acum (apăsați «+» în vederea «Rezervări»)." &
+                         If(k_rezultat.PicturesRemoved > 0, $" S-au scos {k_rezultat.PicturesRemoved} capturi de pe revizia greșită.", String.Empty),
+                         k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Await LoadTreeAsync(pastreazaSelectia:=True)
+        Return True
+    End Function
 
     ''' <summary>
     ''' «Reanalizează rezervările» from the Rezervari footer menu: re-walks the FX_Istoric chain of

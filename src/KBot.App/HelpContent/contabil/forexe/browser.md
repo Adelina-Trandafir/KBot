@@ -33,6 +33,11 @@ rezervare**, K-BOT preia singur modificarea, fără să mai apeși iconița de d
 | o recepție (nouă sau modificată) | descarcă acea recepție |
 | o rezervare | păstrează rândurile modificate și te întreabă «Ați terminat modificarea rezervărilor?» — **DA** le preia acum, **NU** te lasă să continui și te întreabă din nou după următoarea salvare |
 
+### Nu incepi o rezervare cat alta asteapta revizia
+<!-- slice: 0114-26, 0000-120 -->
+
+Dacă angajamentul are **rezervări fără revizie** de fundamentare (în vederea «Rezervări» au încă «+»), în pagină **nu poți începe o rezervare nouă** — nici cu **«Adaugă»**, nici deschizând (ochiul) o rezervare existentă. K-BOT arată un mesaj cu zilele rezervărilor care așteaptă, iar rezervarea nu începe. Mergi în vederea «Rezervări», apasă «+» pe fiecare rezervare până nu mai rămâne niciuna și abia apoi lucrezi în pagină. Vezi [Rezervări](topic:contabil.vederi.rezervari).
+
 Robotul lucrează la o singură preluare odată. Dacă salvezi altceva cât încă preia, K-BOT îți spune
 și nu preia a doua operațiune: descarcă angajamentul din iconița lui după ce se termină.
 

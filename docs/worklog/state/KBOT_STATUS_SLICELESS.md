@@ -5,6 +5,10 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 22.10.2026) - POST /api/tools/upload on its own key.** `_guard_upload()` in `routes/legacy_updater.py` (`LEGACY_UPLOAD_KEY` from the server config.py, header `X-Upload-Key`, no fallback to `API_KEY`); publisher is `AvacontUpdater` (not `Avacont_Uploader`), key in its git-ignored `secrets.vb`. py_compile + clean build only; operator must add the key to the server config.py by hand and upload the file. See `../SLICELESS-ef2-get-ef-token-inapoi.md` part 2.
+
+- **No slice (operator, 22.10.2026) - EF2 / EF.EXE: `GET /api/mfp/get_ef_token` back as a temporary bridge.** Added to `routes/legacy_updater.py` (same key guard + `LEGACY_UPDATER_ENABLED` switch), sends `token.zip` only; removed from the retired-paths test list. EF2 unchanged. `py_compile` only, nothing run or deployed; needs `API_KEY` + `token.zip` on the server (unverified). See `../SLICELESS-ef2-get-ef-token-inapoi.md`.
+
 - **No slice (operator, 11.10.2026) - PLAN_Securitate_API: new system built NEXT TO the legacy one; nothing legacy deleted.**
   Done in code: S1 server + client (mandatory change of the initial password, restricted `password_change` session,
   real MariaDB policy, AuthVersion revocation, `must-change` in admin_cli, `ForcedPasswordChangeForm`), bearer template

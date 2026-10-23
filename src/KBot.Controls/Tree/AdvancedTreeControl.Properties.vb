@@ -35,7 +35,7 @@ Partial Public Class AdvancedTreeControl
     ' The right press that was refused: its release goes with it (same idea as _pressWhileLocked).
     Private _rightPressIgnored As Boolean
 
-    ' Tooltip
+    ' Tooltip. 0 (or less) = the popup has no timer and stays until the hovered row changes or the mouse leaves.
     Public AutoHideTooltipMs As Integer = 5000
 
     ' FONTUL ARBORELUI = <see cref="Font"/> (partiala .Theming). A existat până acum o a DOUA

@@ -6,6 +6,7 @@ import hashlib
 import json
 from . import report_balance, report_body, report_catalog, report_data, report_food, report_store, report_output, report_reception, report_identity
 from .nomenclatoare import NomError
+from . import report_voucher
 from reporting.snapshots import Snapshots as ReportSnapshots
 
 
@@ -24,7 +25,7 @@ def primitive(value):
 def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer=None):
     spec = report_catalog.spec_of(name, ctx['type'])
     if params.get('mf_selection') and any(item[0] != spec.get('mf_selection') for item in params['mf_selection']):
-        raise NomError('REPORT_FILTER', 'Selecția MF nu corespunde raportului ales.', 422)
+        raise NomError('REPORT_FILTER', 'Selecția bunurilor OI / MF nu corespunde raportului ales.', 422)
     if params.get('receipt_selection') and not spec.get('incoming_selection'):
         raise NomError('REPORT_FILTER', 'Raportul nu folosește selecția produselor pe furnizori.', 422)
     if params.get('outgoing_selection') and not (spec.get('outgoing_selection') or spec.get('outgoing_filters')):
@@ -45,6 +46,9 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     issuer = report_identity.read(cursor, unit, ctx, issuer=issuer)
     identity = {**identity, 'value': report_identity.configured(identity['value'], issuer, unit)}
     layout = {**layout, 'value': report_identity.display_definition(layout['value'], unit, issuer['name'])}
+    if report_voucher.applies(spec):
+        # Each document must carry its own form header, also with saved layouts.
+        layout['value'] = {**layout['value'], 'groups': ['document']}
     if spec['id'] in ('Centralizator_Furnizori', 'nou_Furnizori', 'Bon_Consum', 'Centralizator_BC'):
         layout['value']['title'] = spec['label']
     layout['value']['elements'] = [e for e in layout['value'].get('elements', []) if e['band'] != 'header']
@@ -64,7 +68,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         if layout['value'].get('form') == 'nir-classic' and spec.get('family') in ('nir', 'storno'):
             receptions = report_reception.documents(rows, committees)
         blocks = report_body.build(spec, layout['value'], rows, ctx, identity['value'], committees,
-                                   page_break_accounts=spec['kind'] == 'balance' and params.get('page_break_accounts', False))
+                                   page_break_accounts=spec['kind'] == 'balance' and params.get('page_break_accounts', False),
+                                   gestiune_name=gestiune_name)
         if spec['kind'] == 'depreciation':
             notes.append('Amortizare la data de sfârșit selectată, cu parametrii curenți din registru și prețul curent al variantei. '
                          'Calculul folosește întregul istoric; data de început nu limitează amortizarea cumulată. '
@@ -84,8 +89,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         elements = [{**e, 'text': report_output.tokens(report_output.tokens(e['text'], values), values)}
                     for e in layout['value'].get('elements', []) if e['band'] == name]
         return [{'t': 'positioned', 'elements': elements}] if elements else []
-    heading = [{'t': 'title', 'text': title}]
-    if spec['id'] != 'ListaAlimente2015':
+    heading = [] if report_voucher.applies(spec) else [{'t': 'title', 'text': title}]
+    if spec['id'] != 'ListaAlimente2015' and not report_voucher.applies(spec):
         heading.append({'t': 'text', 'text': period})
     model = {'title': title, 'report_name': spec['id'], 'layout': layout['value'], 'identity': identity['value'],
              'letterhead_version': report_identity.VERSION,

@@ -52,7 +52,19 @@ Nu sunt scripturi de instalare și nu se execută manual.
 Contul din nomenclatorul produsului reprezintă proveniența din magazie.
 Contul în folosință provine din fiecare linie BP/BT/BS; nu se deduce din
 contul produsului și nu există un singur cont implicit pentru gestiune.
-Rapoartele în folosință se filtrează separat după conturi și deținători.
+În pagina Rapoarte OI, MAGAZIE rămâne rădăcină separată, cu toate rapoartele
+și grupările existente, ca în celelalte gestiuni. Numai ramura OBIECTE DE
+INVENTAR cuprinde cele 11 rapoarte din referința Access, în ordinea dată.
+Cele două niveluri de grupare sunt Root (OBIECTE DE INVENTAR) și Niv1
+(BONURI, PRODUSE, PRIMITORI), urmate de frunzele rapoartelor.
+Selecția datelor reutilizează mecanismul MF: primitor → bon → produs pentru
+bonuri, cont → produs pentru PRODUSE și cont → primitor → produs pentru
+PRIMITORI. Nu apar ramurile independente „Conturi în folosință” și
+„Deținători”. Identitatea bifelor păstrează legătura cont–primitor–produs,
+respectiv primitor–bon–produs; nu combină independent filtrele bifate.
+Cheia internă `mf_selection` și identificatorii `mf-item`/`mf-branch` sunt
+protocolul comun reutilizat de OI și MF; sursele și calculele OI se păstrează.
+Aliasurile folosite direct de documente rămân disponibile prin API.
 Listele totale însumează deținătorii numai în aceeași pereche cont–variantă.
 Transferurile apar cu minus la predător și plus la primitor, pe același cont.
 
@@ -65,6 +77,39 @@ Ecranul, PDF-ul și Excel-ul folosesc același snapshot. Lățimile Excel
 continuă să fie citite de modulul comun din configurarea existentă.
 Machetele implicite OI sunt funcționale în surse, dar fidelitatea lor
 vizuală și integrarea pe date reale nu sunt încă validate.
+
+## Antetul bonurilor P/T/C și Consum (2026-10-23)
+
+Bonurile de predare, transfer și casare OI/MF și bonurile de consum folosesc
+același antet tabelar după referința furnizată. Retururile de consum folosesc
+aceeași structură, cu titlul propriu. Antetul cuprinde denumirea gestiunii
+în celula superioară stângă, numărul documentului, Data cu Ziua/Luna/Anul,
+tipul gestiunii, Predător, Primitor și Nr. comandă. Titlul bonului ocupă
+celula din dreapta, unită pe înălțimea celor patru rânduri.
+
+Datele provin din bonul și gestiunea curente. La predare/consum, predătorul
+este Magazie; la transfer/casare se folosește predătorul documentului. La
+casare, Primitor rămâne gol. La retur, primitorul este Magazie. Nr. comandă
+se afișează numai dacă sursa îl furnizează; nu se înlocuiește cu numărul
+bonului. Explicațiile se păstrează sub antet. Datele din imaginea de referință
+nu sunt introduse ca valori fixe.
+
+Structura se aplică la generare și machetelor personalizate existente,
+numai în memorie, păstrând configurația salvată. Fiecare bon primește propriul
+antet, iar titlul și perioada nu se mai repetă separat deasupra lui.
+Snapshot-urile deja generate rămân cu structura lor; generați din nou bonul
+după publicare.
+
+`routes/vercon/report_voucher.py` construiește antetul comun; banda
+`form_grid` din `reporting/form_grid.py` gestionează celulele unite în PDF
+și Excel. Excel păstrează contractul `reporting/excel_widths.py`, cu chei
+stabile `ANTET_BON_*`; înălțimile antetului sunt calculate după aplicarea
+lățimilor finale, inclusiv cele configurate. Previzualizările locale ale
+ciornelor și listarea fără dreptul de rapoarte folosesc aceeași structură
+prin `static/js/vercon/voucher-header.js`. Bonurile MF salvate folosesc
+rapoartele oficiale MF când utilizatorul are dreptul necesar.
+
+Implementare locală, fără teste, randări sau verificări de execuție.
 
 ## Macheta NIR
 

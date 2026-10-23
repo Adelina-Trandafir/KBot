@@ -1,4 +1,4 @@
-"""Lazy MF trees, using the same scoped rows and identities as report generation."""
+"""Shared lazy OI/MF trees, with the same identities as report generation."""
 from urllib.parse import quote
 import re
 from . import report_mf, report_model, report_oi
@@ -14,7 +14,7 @@ def read(source, spec, node_id, *, recursive=False):
     if node_id != 'root':
         parts = node_id.split(':')
         if len(parts) < 3 or parts[:2] != ['mf-branch', mode] or len(parts) - 2 > len(dimensions):
-            raise NomError('REPORT_BRANCH', 'Ramură MF invalidă.', 422)
+            raise NomError('REPORT_BRANCH', 'Ramură OI / MF invalidă.', 422)
         path = parts[2:]
 
     def token(value):

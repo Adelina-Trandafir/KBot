@@ -90,6 +90,10 @@ Partial Public Class AdvancedTreeControl
 
         Private ReadOnly _autoHideTimer As New Timer() With {.Interval = 5000}
 
+        ' AutoHideTooltipMs <= 0: no timer at all; the tree hides the popup when the hovered row changes
+        ' or the mouse leaves it (HideAllTooltips).
+        Private _stayUntilMouseMoves As Boolean
+
         Private _BackColor As Color = Color.FromArgb(255, 255, 232) ' Galben tooltip clasic
         Public Property TT_BackColor As Color
             Get
@@ -153,6 +157,7 @@ Partial Public Class AdvancedTreeControl
             Try
                 _autoHideTimer.Stop()
                 _autoHideTimer.Interval = If(autoHideMs > 0, autoHideMs, 5000)
+                _stayUntilMouseMoves = autoHideMs <= 0
 
                 ' ── DETECȚIE MOD TABEL ──────────────────────────────────────────
                 _isTableMode = TooltipTableParser.IsTableXml(text)
@@ -183,7 +188,7 @@ Partial Public Class AdvancedTreeControl
 
                         TreeLogger.Info($"post-show: Visible={Me.Visible} Bounds={Me.Bounds} BackColor={Me.BackColor} TopMost={Me.TopMost} Handle={Me.IsHandleCreated}", "TT.dbg")
 
-                        _autoHideTimer.Start()
+                        If Not _stayUntilMouseMoves Then _autoHideTimer.Start()
                         Return
                     Else
                         ' XML invalid → mesaj de eroare VIZIBIL pe calea RichText
@@ -210,7 +215,7 @@ Partial Public Class AdvancedTreeControl
                 Me.Size = New Size(formW, formH)
                 ApplyOpaqueBackColor()
                 ForceShowTopMost()
-                _autoHideTimer.Start()
+                If Not _stayUntilMouseMoves Then _autoHideTimer.Start()
 
             Catch ex As Exception
                 TreeLogger.Err($"Error showing tooltip: {ex.Message}", "TooltipPopup.ShowTooltip")

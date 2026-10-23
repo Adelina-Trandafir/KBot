@@ -1523,9 +1523,72 @@
         if (!p) { return false; }
         delete marcajPending[id];
         clearTimeout(p.timer);
+        if (p.poarta) {
+            // The start check (slice 0114-26): "ok" lets the reservation begin; an empty text is the refusal and
+            // the message says why.
+            p.resolve({ blocat: text !== 'ok', mesaj: message || '' });
+            return true;
+        }
         if (!text && message) { emit('info', { message: 'marcajul K-BOT lipsește: ' + message }); }
         p.resolve(text || '');
         return true;
+    }
+
+    // ── The reservation gate (slice 0114-26) ─────────────────────────────────
+    // Operator, 23.10.2026: no reservation is started here while the angajament has reservations without a
+    // revision (each one needs its revision first, the «+» of the Rezervari view). The click that STARTS a
+    // reservation -- «Adauga» or the eye of a row on the reservations tab -- is held until K-BOT answers; the
+    // server decides (routes/forexe/marcaj.py, tip verifica-rezervare). An answer that does not come lets the
+    // click through: the page must not stop working because K-BOT cannot be reached.
+    var poartaBypass = false;  // true while a held click is replayed
+    var poartaBusy = false;    // a click is being held right now
+
+    // Asks .NET whether a reservation may begin; resolves {blocat, mesaj}.
+    function cerePoarta() {
+        return new Promise(function (resolve) {
+            if (typeof window._kbotWatchCallback !== 'function') { resolve({ blocat: false, mesaj: '' }); return; }
+            marcajSeq++;
+            var id = 'p' + Date.now() + '_' + marcajSeq;
+            var timer = setTimeout(function () {
+                if (!marcajPending[id]) { return; }
+                delete marcajPending[id];
+                emit('info', { message: 'K-BOT nu a răspuns în ' + (MARCAJ_TIMEOUT_MS / 1000) + ' s la verificarea rezervărilor; las rezervarea să înceapă' });
+                resolve({ blocat: false, mesaj: '' });
+            }, MARCAJ_TIMEOUT_MS);
+            marcajPending[id] = { resolve: resolve, timer: timer, poarta: true };
+            emit('marcaj', { tip: 'verifica-rezervare', requestId: id });
+        });
+    }
+
+    function onPoartaClick(e) {
+        if (suspended || poartaBypass || poartaBusy) { return; }
+        if (typeof window._kbotWatchCallback !== 'function') { return; }
+        if (state.op) { return; }                       // already inside an operation
+        if (!exists('li.tab0.active')) { return; }      // reservations tab only
+        var el = e.target;
+        if (!el || !el.tagName) { return; }
+        if (menu && menu.contains(el)) { return; }
+        if (!anyRuleMatches(el, OPS['rezervare'].start)) { return; }
+        var cod = readCod();
+        if (!cod) { return; }
+        var button = closestOf(el, 'a') || closestOf(el, 'button') || el;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        poartaBusy = true;
+        emit('info', { message: 'verific dacă angajamentul are rezervări fără revizie' });
+
+        cerePoarta().then(function (raspuns) {
+            poartaBusy = false;
+            if (raspuns.blocat) {
+                emit('info', { message: 'rezervare oprită: ' + (raspuns.mesaj || 'angajamentul are rezervări fără revizie') });
+                showBlockingMessage(raspuns.mesaj || 'Angajamentul are rezervări fără revizie de fundamentare.',
+                    'Rezervarea nu a început.');
+                return;
+            }
+            poartaBypass = true;
+            try { button.click(); } finally { poartaBypass = false; }
+        });
     }
 
     // The text with every K-BOT marker taken out and the new one appended.
@@ -2034,6 +2097,8 @@
         // Slice 0076: the marker holds a save click between the guard and the watcher.
         document.addEventListener('click', onMarcajClick, true);
         document.addEventListener('keydown', onMarcajKey, true);
+        // Slice 0114-26: the start of a reservation is held for the gate BEFORE the picture and the watcher.
+        document.addEventListener('click', onPoartaClick, true);
         // Section 14: the eye is held for the «before» picture BEFORE the watcher arms the
         // operation, so the picture shows the list the operator is about to change.
         document.addEventListener('click', onShotClick, true);

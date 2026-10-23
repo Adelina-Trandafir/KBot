@@ -42,3 +42,15 @@
 .vc-page .vc-report-letterhead { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 12px; }
 .vc-page .vc-report-letterhead p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
 .vc-page .vc-report-letterhead__subunit { text-align: right; }
+.vc-page .vc-voucher-header { width: 100%; border-collapse: collapse; table-layout: fixed; color: #000; background: #fff; }
+.vc-page .vc-voucher-header th, .vc-page .vc-voucher-header td { border: 1px solid #000; padding: 4px; text-align: center; vertical-align: middle; white-space: pre-wrap; overflow-wrap: anywhere; }
+.vc-page .vc-voucher-header tr:first-child { height: 48px; }
+.vc-page .vc-voucher-header__title { font-size: 1.2em; }
+.vc-page .vc-voucher-header col:nth-child(1) { width: 11.62%; }
+.vc-page .vc-voucher-header col:nth-child(2) { width: 6.88%; }
+.vc-page .vc-voucher-header col:nth-child(3) { width: 6.78%; }
+.vc-page .vc-voucher-header col:nth-child(4) { width: 6.88%; }
+.vc-page .vc-voucher-header col:nth-child(5) { width: 16.45%; }
+.vc-page .vc-voucher-header col:nth-child(6) { width: 16.17%; }
+.vc-page .vc-voucher-header col:nth-child(7) { width: 10.87%; }
+.vc-page .vc-voucher-header col:nth-child(8) { width: 24.35%; }

@@ -40,6 +40,10 @@ Partial Public Class ApiClient
                     If Not resp.IsSuccessStatusCode Then
                         Throw BuildApiException(respText, "rezervarea marcajului", CInt(resp.StatusCode))
                     End If
+                    ' Slice 0114-26: the check that a reservation may begin reserves nothing, so there is no marker
+                    ' to read - a 2xx IS the answer. A refusal (409 + the reason) was thrown above.
+                    If String.Equals(tip, MarcajeRecente.TipVerificaRezervare, StringComparison.Ordinal) Then Return "ok"
+
                     Dim payload As RezervaMarcajResponse =
                         JsonSerializer.Deserialize(Of RezervaMarcajResponse)(respText, _json)
                     If payload Is Nothing OrElse String.IsNullOrWhiteSpace(payload.marcaj) Then

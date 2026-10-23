@@ -8,11 +8,11 @@ host-key: efactura-vercon
 ---
 <!-- slice: 00EF-48, 0000-118 -->
 
-## Fila E-Factura
-<!-- slice: 00EF-48, 0000-118 -->
-anchor: ribbon-tab.e-factura
-wait: signal:ribbon-tab:e-factura
-Facturile primite de la furnizori ajung la <b>Vercon</b> prin pagina «Trimite la Vercon»: tu alegi ce se trimite, iar Administratorul le preia apoi într-un NIR.<br><br>Apasă fila <b>E-Factura</b> din panglica de sus.
+## Fila VERCON
+<!-- slice: 00EF-48, 0000-118, 0123-01, 0000-119 -->
+anchor: ribbon-tab.vercon
+wait: signal:ribbon-tab:vercon
+Facturile primite de la furnizori ajung la <b>Vercon</b> prin pagina «Trimite la Vercon»: tu alegi ce se trimite, iar Administratorul le preia apoi într-un NIR.<br><br>Apasă fila <b>VERCON</b> din panglica de sus.
 
 ## Butonul «Trimite la Vercon»
 <!-- slice: 00EF-48, 0000-118 -->

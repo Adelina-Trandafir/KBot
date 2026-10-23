@@ -52,3 +52,23 @@ Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `F
 |------:|------|--------|---------|
 | 0122 | Analysis of the IdPartener/CodPartener dependencies; plan 0122-01..07 (CodFiscal goes into `CodPartener`, `VC_NIR` gets the column) | PLAN decided by the operator, 20.10.2026 | [SLICE-0122](../SLICE-0122-parteneri-fara-idpartener.md) |
 | 0122-01 | Column `VC_NIR.CodPartener` (`sql/P122_01_vc_nir_codpartener.sql`) + one-time query that puts the normalized CodFiscal in `CodPartener` on SA, SB, ORD_TBL, VC_NIR (`sql/0122_01_interogare_unica.sql`) | SCRIS, NERULAT; the operator runs the DDL, the sync, then the query from KBotAdmin | [SLICE-0122-01](../SLICE-0122-01-codfiscal-in-codpartener.md) |
+
+---
+
+## Slice 0123 — VERCON and ADECHIT reports in K-BOT.app (native pages)
+
+Operator, 21.10.2026: bring the reports of the VERCON and ADECHIT sites into K-BOT as pages that look like the application (not a hosted web page), in two new ribbon tabs, VERCON and ADECHIT, each with a «Rapoarte» button; VERCON also holds «Trimite la Vercon». The reports stay computed by the server (same code as the site); K-BOT chooses the parameters, shows the PDF and saves the Excel. Decisions: ADECHIT first, VERCON with full parity afterwards; nothing may stay on the server (the snapshot system is kept but now deletes what is expired and releases a report when its viewer closes).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0123-01 | Tabs VERCON (with «Trimite la Vercon», moved) and ADECHIT; bearer bridge for the ADECHIT read routes; snapshot sweep + release (shared by ADECHIT and VERCON); page «ADECHIT Rapoarte» (six reports, PDF in Adobe surface, Excel); help 0000-119 | GATA pe cod (KBot.App build 0 warnings / 0 errors, py_compile ok); **server NEDEPLOYAT, nimic rulat, pagina nevazuta pe ecran** | [SLICE-0123-01](../SLICE-0123-01-adechit-rapoarte.md) |
+| 0123-03 | Corective dupa primul test (22.10.2026): bara de incarcare, subunitatea o singura data in antet (server: `report_identity.py`), Ctrl+2 o data dupa afisare (`FitWidthOnly`), cautarea copilului porneste si singura | GATA pe cod (build 0/0, py_compile ok); **server NEDEPLOYAT, nimic rulat**; cauza listei «Copil» gri NEDOVEDITA | [SLICE-0123-03](../SLICE-0123-03-corective-test-adechit-rapoarte.md) |
+| 0123-04 | Ctrl+H / Ctrl+2 ale controlului Adobe (fereastra gazduita) hotarate de ferestrele Adobe: Ctrl+H doar cand panourile se vad, Ctrl+2 doar dupa ce Ctrl+H a prins si pagina s-a asezat; `FitWidthOnly` din 0123-03 scos | GATA pe cod (build 0/0), **nimic rulat**; numele/starea ferestrei panoului in mod citire NECAPTURATE | [SLICE-0123-04](../SLICE-0123-04-ctrl-h-dupa-ferestre.md) |
+| 0123-02 | VERCON «Rapoarte» (23.10.2026): bridge `routes/vercon/kbot_bridge.py` + release route; page `VerconRapoarteForm` (Subunitate / Gestiune / An, tree combo of periods with months, dates, options, report tree, selection tree with lazy branches, Listare PDF, Export Excel); `AdvancedTreeControl.CompleteLazyLoad` / `SearchStarting`; help `contabil/vercon-rapoarte.md` | GATA pe cod (KBot.App build 0 warnings / 0 errors, py_compile ok); **server NEDEPLOYAT, nimic rulat sau vazut**; lazy tree and tick-an-unread-branch NEEXERSATE | [SLICE-0123-02](../SLICE-0123-02-vercon-rapoarte.md) |
+
+### Open threads — 0123
+
+- The server files of 0123-01 and 0123-02 (lists in the worklogs) are for the operator to publish; the bridges assume the K-BOT user name is the e-mail of the AD / VR roles.
+- Other VERCON server files + the site's `reports.js` / `report-result.js` were being changed in the same tree by someone else during 0123-02 (OI reports rework, `tree_group`); the page copies the site's report-tree / selection rules as of 23.10.2026 and must follow if they change.
+- Excel exports all columns (no column picker yet). VERCON «Rapoarte»: the period tree combo opens all years (the site opens the latest only).
+- Ajutor de actualizat: none (done in 0000-119); ribbon captures to redo are listed in the 0000-119 worklog.

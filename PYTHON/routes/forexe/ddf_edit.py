@@ -116,6 +116,7 @@ from . import forexe_bp
 from .budget_on_day import BudgetByDay
 from .ddf_parteneri import ParteneriInvalizi, citeste_parteneri, sincronizeaza_parteneri
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
+from .rezervari_legaturi import cheie_rezervare
 
 logger = logging.getLogger(__name__)
 
@@ -2180,13 +2181,36 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
     # (the «(IDREV: n)» marker, stored by ingest step 3b in FX_Istoric.IDREV) and that the
     # ingest could not link because the revision did not exist yet. Only the unlinked ones:
     # a link made above, or by hand, is not moved.
+    # Slice 0114-26 (operator, 23.10.2026): ONLY the ones the revision covers. A revision holds one day and one
+    # operation type, so a marked reservation of ANOTHER day / type is not its own: before this check, the
+    # revision of 30.06 of AAB2FTFNE46 took the reservation of 05.10 (+3000) just because its history row said
+    # the same number, and that reservation was left with no revision to make. When the save has no generated
+    # reservation (`idrz` empty -- lines typed by hand) the marker alone decides, as before.
     if rev_noua:
         cursor.execute(
-            "UPDATE FX_Rezervari R INNER JOIN FX_Istoric H ON H.ID = R.IDH "
-            "   SET R.IDREV = %s, R.AreDDF = TRUE "
+            "SELECT R.IDRZ, R.DataRezervare, R.EInitiala, R.EMarire "
+            "  FROM FX_Rezervari R INNER JOIN FX_Istoric H ON H.ID = R.IDH "
             " WHERE H.IDREV = %s AND R.CodAngajament = %s AND R.IDREV IS NULL",
-            (idrev, idrev, cod))
-        rezervari_legate += cursor.rowcount
+            (idrev, cod))
+        de_legat = cursor.fetchall() or []
+        if de_legat and idrz:
+            sabloane_rz = ", ".join(["%s"] * len(idrz))
+            cursor.execute(
+                f"SELECT DataRezervare, EInitiala, EMarire FROM FX_Rezervari WHERE IDRZ IN ({sabloane_rz})",
+                tuple(idrz))
+            chei_revizie = {cheie_rezervare(x) for x in (cursor.fetchall() or [])}
+            straine = [x for x in de_legat if cheie_rezervare(x) not in chei_revizie]
+            if straine:
+                logger.warning("[forexe.ddf_edit] revizia %s a angajamentului %s NU leaga rezervarile %s: "
+                               "alta zi sau alt tip de operatie decat ale reviziei",
+                               idrev, cod, [int(x["IDRZ"]) for x in straine])
+            de_legat = [x for x in de_legat if cheie_rezervare(x) in chei_revizie]
+        if de_legat:
+            sabloane_lg = ", ".join(["%s"] * len(de_legat))
+            cursor.execute(
+                f"UPDATE FX_Rezervari SET IDREV = %s, AreDDF = TRUE WHERE IDRZ IN ({sabloane_lg})",
+                (idrev,) + tuple(int(x["IDRZ"]) for x in de_legat))
+            rezervari_legate += cursor.rowcount
 
     # 8.1c Operator, 28.09.2026: the captures K-BOT took in the FOREXE page while the
     # operator was making these very reservations. They were filed on the reservation rows

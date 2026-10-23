@@ -56,7 +56,7 @@ Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE
 interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01, 0114-05, 0000-89, 0114-11, 0114-12, 0114-13, 0000-90 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01, 0114-05, 0000-89, 0114-11, 0114-12, 0114-13, 0000-90, 0114-26, 0000-120 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -76,6 +76,8 @@ interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 - Extrasele de cont noi se descarcă din ribbon, **Extrase › Descărcare › «Descarcă extrase»** (lista nu mai are iconiță pentru asta) — [Extrase](topic:contabil.vederi.extrase).
 - Un angajament scris cu **roșu** are recepții al căror lanț **nu se închide**: ultimul instantaneu al recepției nu are valoarea ei. Ținând mouse-ul pe rând vezi, pentru fiecare recepție, data, valoarea ultimului instantaneu și valoarea recepției. Se repară în fereastra de asociere — [Lanțul nu se închide](topic:contabil.asocieri.cazuri). Un lanț care se termină cu rândul de ștergere nu se socotește.
 - Același **roșu** îl are și un angajament cu **rezervări greșite**: o rezervare nu pornește de la valoarea la care s-a oprit cea de dinaintea ei. Ținând mouse-ul pe rând vezi ziua, indicatorul și valorile; dacă are ambele probleme, apar ambele mesaje. Se repară din vederea «Rezervări» — [Rezervări greșite și repararea lor](topic:contabil.vederi.rezervari).
+- Un angajament scris într-un **alt roșu** (mai spre carmin decât primul) are **rezervări legate greșit**: sunt trecute ca avându-și revizia, dar revizia lor nu le cuprinde, deci nu au «+». Ținând mouse-ul pe rând vezi rezervarea (ziua, indicatorul, valoarea) și revizia de care e legată. Se repară tot din vederea «Rezervări» — [Rezervări legate greșit](topic:contabil.vederi.rezervari).
+- Biletul care apare când ții mouse-ul pe un angajament e un **tabel cu litere mai mari**: sus descrierea, apoi codul, starea, datele și sursele, iar erorile de mai sus în culoarea lor roșie. Rămâne pe ecran până muți mouse-ul pe alt rând sau în afara listei.
 - Angajamentele descărcate sau actualizate de la pornirea programului sunt **subliniate** în listă. Sublinierea dispare când închideți programul.
 - Dacă apăsați reîmprospătarea pe mai multe angajamente cât timp se descarcă deja unul, pentru ele nu se mai deschide fereastra de alegere a recepțiilor: se descarcă toate.
 - Când mai multe acțiuni FOREXE așteaptă una după alta, se deschide fereastra **Coada robotului**; ea se închide singură după ce coada s-a golit. Butonul **«Coadă N»** din banda FOREXE o deschide oricând, dar se vede doar cât coada are ceva în ea — [Coada robotului](topic:contabil.forexe.coada).

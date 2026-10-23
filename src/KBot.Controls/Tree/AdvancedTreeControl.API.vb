@@ -163,6 +163,32 @@ Partial Public Class AdvancedTreeControl
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0123-02: the host has answered a <see cref="RequestLazyLoad"/> (the rows were added with <see cref="AddItem"/> under the node): the
+    ''' «Loading...» row goes, the node stops being lazy and the spinner stops when no node is waiting any more. Call it also when the answer is empty
+    ''' or failed (then the node just stops offering to open).
+    ''' </summary>
+    Public Sub CompleteLazyLoad(pItem As TreeItem)
+        Try
+            If pItem Is Nothing Then Return
+            pItem.Children.RemoveAll(Function(c) c.IsLoader)
+            pItem.LazyNode = False
+            If Not AnyLoaderRow(Items) Then LoadingTimer.Stop()
+            MarkFiltersStale()
+            RefreshScrollVisibility()
+            Me.Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.CompleteLazyLoad", ex)
+        End Try
+    End Sub
+
+    Private Shared Function AnyLoaderRow(pNodes As List(Of TreeItem)) As Boolean
+        For Each it As TreeItem In pNodes
+            If it.IsLoader OrElse AnyLoaderRow(it.Children) Then Return True
+        Next
+        Return False
+    End Function
+
     ' Metodă publică pentru a goli toate elementele din control
     Public Sub Clear()
         ' 1. Oprim orice desenare sau calcul de layout

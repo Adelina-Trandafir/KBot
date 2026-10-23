@@ -189,6 +189,10 @@ Public Class AvacontMain
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
+                Case "adechit_rapoarte"
+                    _kbot.OpenRegistered(e.Key, AddressOf _kbot.DeschideAdechitRapoarte)
+                Case "vercon_rapoarte"
+                    _kbot.OpenRegistered(e.Key, AddressOf _kbot.DeschideVerconRapoarte)
                 Case "ef_token"
                     _kbot.RunEFacturaCommand(e.Key)
                 Case "ef_primite_sync"

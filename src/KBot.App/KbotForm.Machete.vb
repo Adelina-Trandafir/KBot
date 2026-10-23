@@ -57,6 +57,8 @@ Partial Public Class KbotForm
         k_registry.Register(New MachetaType(MachetaEFacturaCumparare, "E-Factura Cumpărare", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFacturaCumparare)))
         k_registry.Register(New MachetaType(MachetaEFacturaReceptii, "E-Factura Recepții", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFacturaReceptii)))
         k_registry.Register(New MachetaType(MachetaEFacturaVercon, "E-Factura Trimite la Vercon", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFacturaVercon)))
+        k_registry.Register(New MachetaType(MachetaAdechitRapoarte, "ADECHIT Rapoarte", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideAdechitRapoarte)))
+        k_registry.Register(New MachetaType(MachetaVerconRapoarte, "VERCON Rapoarte", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideVerconRapoarte)))
         k_registry.Register(New MachetaType(MachetaIstoricVersiuni,"Istoric versiuni", "istoric", Function(k_ref) OpenPage(AddressOf DeschideIstoricVersiuni)))
         k_registry.Register(New MachetaType(MachetaAjutor, "Ajutor", "folder", AddressOf OpenHelpMachetaAsync))
         k_registry.Register(New MachetaType(MachetaAngajamente, "Lista angajamentelor", "folder_open", AddressOf OpenListaMachetaAsync))

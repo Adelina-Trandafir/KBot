@@ -452,10 +452,22 @@ Partial Public Class AdvancedTreeControl
         Try
             SearchDebounceTimer.Stop()
             If _searchTextBox IsNot Nothing Then
+                RaiseEvent SearchStarting(_searchTextBox.Text)
                 PerformSearch(_searchTextBox.Text)
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.OnSearchDebounceTimerTick", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Slice 0123-02: runs the search again on the text in the search box, over the rows loaded NOW (after a host added rows while the search was open).</summary>
+    Public Sub RerunSearch()
+        Try
+            If _searchTextBox Is Nothing OrElse _searchPlaceholderActive Then Return
+            MarkFiltersStale()
+            PerformSearch(_searchTextBox.Text)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.RerunSearch", ex)
         End Try
     End Sub
 
