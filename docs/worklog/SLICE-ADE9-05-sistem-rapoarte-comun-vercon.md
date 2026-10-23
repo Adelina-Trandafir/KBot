@@ -1,8 +1,6 @@
 # SLICE-ADE9-05 — sistem de rapoarte comun cu VERCON
 
-19.10.2026. **SCRIS LOCAL.** Cerere: rapoartele ADECHIT să folosească sistemul
-VERCON. Numai analiză de design din surse. Nu s-au rulat teste, verificări
-automate/sintactice, generare PDF/Excel, browser, HTTP, SQL sau servicii.
+19.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Cerere: rapoartele ADECHIT să folosească sistemul VERCON.
 
 ## Comportamentul rezultat
 

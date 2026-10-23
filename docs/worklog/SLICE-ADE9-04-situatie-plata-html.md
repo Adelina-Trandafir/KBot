@@ -1,8 +1,6 @@
 # SLICE-ADE9-04 — Situație de plată și text HTML configurabil
 
-13.10.2026. **SCRIS LOCAL.** Fără teste, compilări, probe vizuale, exporturi de probă
-sau alte verificări executate, conform cererii utilizatorului. SQL neexecutat;
-fără commit, push, publicare sau acces la MariaDB.
+13.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Comportament
 
@@ -60,6 +58,8 @@ DDL automat în aplicație. Revenire: restaurați fișierele anterioare; tabela 
 poate rămâne fără să afecteze versiunea veche. Nu sunt necesare ștergeri de date.
 
 ## Rămâne de probat de utilizator
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Lună deschisă/închisă, SID/SIC și taxa integrală, totaluri, o grupă/toate grupele,
 separarea paginilor, nota cu liste/culori/font/mărime și variabile, conflictele

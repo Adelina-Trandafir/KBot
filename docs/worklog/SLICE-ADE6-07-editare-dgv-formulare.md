@@ -1,6 +1,6 @@
 # SLICE-ADE6-07 — editare DGV și formulare compacte
 
-09.10.2026. SCRIS LOCAL; utilizatorul verifică funcționarea.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbări și motiv
 

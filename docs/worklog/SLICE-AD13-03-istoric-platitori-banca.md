@@ -22,5 +22,4 @@
 
 Modificate: bank-associations.js, adechit.html, bank_associations.py și
 routes/adechit/__init__.py. Nu sunt necesare modificări de schemă.
-Nu s-au rulat teste sau alte verificări executabile și nu s-a executat SQL,
-conform AGENTS.md. Stare: implementat în surse; browserul și MariaDB neprobate.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

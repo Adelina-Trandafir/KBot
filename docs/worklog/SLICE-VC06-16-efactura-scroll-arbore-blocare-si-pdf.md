@@ -1,7 +1,6 @@
-# eFactura: overflow, NIR asociat protejat și afișare PDF — 23.10.2026
+# SLICE-VC06-16 — eFactura: overflow, NIR asociat protejat și afișare PDF — 23.10.2026
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse. Fără
-teste, verificări automate/de sintaxă, browser, PDF generat sau MariaDB.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Dimensiunile dialogului
 

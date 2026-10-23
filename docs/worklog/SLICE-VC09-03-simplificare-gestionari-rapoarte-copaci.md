@@ -21,9 +21,7 @@ Fișiere modificate:
 - `PYTHON/static/js/vercon/document-tree-order.js`
 - `implementare_vercon_v2.md`
 
-Stare: scris local, nepublicat. Numai analiză de design pe surse; fără
-teste, verificări automate sau probe în browser, conform instrucțiunilor.
-Nu s-au executat SQL sau modificări de schemă.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Helpul și imaginile nu sunt actualizate în această tranșă: utilizatorul
 publică întâi modificările pe server și anunță când putem continua cu

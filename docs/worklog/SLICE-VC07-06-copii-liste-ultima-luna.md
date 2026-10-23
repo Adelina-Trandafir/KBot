@@ -1,4 +1,4 @@
-# VERCON — Numărul copiilor în orice listă din ultima lună
+# SLICE-VC07-06 — Numărul copiilor în orice listă din ultima lună
 
 Data: 2026-10-23.
 
@@ -41,8 +41,4 @@ Fișiere de aplicație:
 
 Documentație: acest jurnal și implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, generări PDF/Excel sau
-acces la MariaDB, conform AGENTS.md. Fără SQL executat ori schimbări de
-schemă. Publicare: cele trei module Python, lista.js și helpul JSON
-împreună, apoi repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

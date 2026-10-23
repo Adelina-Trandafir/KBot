@@ -1,7 +1,6 @@
 # SLICE-ADE6-26 — Colapsarea anului selectat anterior
 
-12.10.2026. SCRIS LOCAL, fără teste sau verificări executate, conform
-instrucțiunii utilizatorului.
+12.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -25,9 +24,11 @@ grupelor. Starea ramurilor este păstrată de mecanismul existent la salvare
 ## Rezultatele testelor
 
 Nu s-au rulat teste, verificări de sintaxă, server sau browser.
-Starea este SCRIS LOCAL, fără validare funcțională sau vizuală.
+Starea este TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Neverificat și predare
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Utilizatorul publică PYTHON/static/js/adechit/app.js prin AvacontPush și
 probează prima alegere din alt an, trecerea între ani și păstrarea ramurii

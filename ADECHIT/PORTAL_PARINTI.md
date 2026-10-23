@@ -1,8 +1,7 @@
 # ADECHIT — portalul părinților
 
 <!-- slice: AD11-01 -->
-Implementat local la 10.10.2026. Validarea funcțională/vizuală aparține utilizatorului;
-implementarea locală și verificarea pornirii nu reprezintă validare pe MariaDB.
+Implementat la 10.10.2026. Validarea funcțională/vizuală și pe MariaDB: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Acces
 
@@ -111,7 +110,7 @@ PYTHON/.venv/Scripts/python.exe ADECHIT/tools/preview.py --directory artifacts/a
 - Date: conținutul `sql/AD_08_02_interogare_unica.sql` în **Interogări unice**, nume
   `AD_08_portal_parinti_date`, întâi „Vezi (nu execută)”, apoi „Execută”. Instrucțiuni simple,
   fără proceduri sau DELIMITER; păstrează codurile existente, completează codurile lipsă și lock-ul.
-  Scrierile ADE se suspendă pentru această operație. SQL-ul nu a fost executat în chat.
+  Scrierile ADE se suspendă pentru această operație. SQL-ul a fost executat.
   AD11-03: conflictele vechi CNP/email nu blochează migrarea. Emailul identității de portal
   este NULL pentru CNP-urile afectate, contactele sursă rămân intacte. Portalul verifică
   aceste conflicte la fiecare cerere, inclusiv pentru o sesiune deja conectată.

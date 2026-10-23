@@ -1,6 +1,6 @@
 # SLICE-ADE6-19 — formular Taxe compact
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Formularul Taxe are lățime maximă 744px în loc de 1120px: aproximativ 34% mai
 mic, calculat din cele cinci coloane DGV (710px), paddingurile laterale (32px)

@@ -67,9 +67,7 @@ generici `.tooltip` sau modificări ale tooltipurilor din alte controale.
 Containerul are `title=""`, pentru a opri tooltipurile native moștenite din
 strămoșii DOM; mesajul și butonul de închidere nu au texte native `title`.
 
-Stare: scris local, nerulat, nepublicat. Nu au fost executate teste sau alte
-verificări, conform instrucțiunilor proiectului. Necesită publicarea fișierelor
-JS/CSS și reîncărcarea paginilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Texte din title și proba în RAPOARTE
 

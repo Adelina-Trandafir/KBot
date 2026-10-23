@@ -1,6 +1,6 @@
 # ADE7-04 — Închidere anuală august
 
-09.10.2026. Implementare locală, nepublicată.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -52,6 +52,8 @@ ERR_CONNECTION_TIMED_OUT; nu s-a realizat probă vizuală. Serverul local de pro
 a fost oprit. Nu există rezultate de test UI/server revendicate.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Aspectul și interacțiunea drag-and-drop în browser, navigarea repetată și tema.
 - Validarea reală MariaDB și publicarea prin AvacontPush, care aparțin utilizatorului.

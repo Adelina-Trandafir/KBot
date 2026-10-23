@@ -1,4 +1,4 @@
-# VERCON — Balanță OI, generare bonuri și selecție pe primitor
+# SLICE-VC08-13 — Balanță OI, generare bonuri și selecție pe primitor
 
 Data: 2026-10-23.
 
@@ -43,8 +43,4 @@ Documentație: PYTHON/reports/vercon/README.md;
 docs/worklog/VERCON-2026-10-23-rapoarte-oi-structura-si-selectie.md;
 implementare_vercon_v2.md și acest jurnal.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse și citire
-a jurnalelor locale disponibile; fără teste, verificări automate/de sintaxă,
-browser, randări PDF/Excel sau acces la MariaDB. Fără execuție SQL sau
-modificări de schemă. Publicare: modulele Python și JS și helpul JSON
-împreună, apoi repornirea serviciului web și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

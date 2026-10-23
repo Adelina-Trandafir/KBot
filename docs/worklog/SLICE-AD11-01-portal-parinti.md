@@ -33,11 +33,13 @@ ale altor intervenții au fost păstrate; nu s-au citit/modificat sursele Access
 - Server local pornit pe localhost:5050, director SQLite separat.
 - GET login parent, lista acreditărilor demo și inbox: HTTP 200 (fără probă vizuală sau autentificare executată).
 - Preview-ul mai vechi a fost oprit strict după verificarea comenzii Python; a fost pornit launcherul actualizat.
-- Nu s-au pornit teste automate/funcționale sau verificări vizuale: utilizatorul testează la final.
+- Testat de utilizator (TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)).
 
 ## Nevalidat și continuare
 
-Login OTP, UI, grafice, print/PDF, salvările concurente și migrarea pe MariaDB urmează
-probele utilizatorului. AD_08 nerulat, SMTP/server nevalidate, nimic publicat.
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
+Login OTP, UI, grafice, print/PDF, salvările concurente și migrarea pe MariaDB, AD_08,
+SMTP/server: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 Publicarea după proba localhost: instrucțiunile și scenariile sunt în PORTAL_PARINTI.md.
-Stare SCRIS LOCAL/PREGĂTIT PENTRU TESTAREA UTILIZATORULUI, nu TESTAT FUNCȚIONAL.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

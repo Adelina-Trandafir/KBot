@@ -1,6 +1,6 @@
 # SLICE-ADE6-17 — plătitor activ unic per copil
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 La crearea prin catalog a unui Platitori_sub, API forțează Activ=True și dezactivează
 ceilalți plătitori activi cu același IDP. La salvarea unui plătitor existent activ,

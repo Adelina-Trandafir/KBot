@@ -21,11 +21,13 @@ Operator request 23.10.2026. **Everything below is documents only: no code, no D
 - Deleting an account or a journal that has operations is BLOCKED. A salary-template article is never saved without at least one PC (VIRAMENT) row.
 - Subunit = another subordinate unit with its own accounting; it decides the chapter (65.01=01A, 65.02=02A, 65.10=02E, 65.11=01A). `Zec2` becomes a subunit setting.
 - Templates keep the base account only (rest composed at use); partner on a line: none / the operation's / fixed. `Chelt` stays: «effective expense», shown in a column of some reports.
+- Chart of accounts per subunit; `TZ_Subunitati` separate from `VC_Subunitati` and unlinked.
 - One posting service on the Flask server; the WinForms views only call the API.
 
 ## Open threads
 
-- **Not confirmed:** the data design (`proiect-de-date-etapa-1.md`), esp. plan per subunit, `TZ_Subunitati` vs `VC_Subunitati`, `Tip = M`, `DefaCont`/`DefaClase` in `AVACONT_COMUN`.
+- **Confirmed 23.10.2026:** the chart of accounts is per subunit; `TZ_Subunitati` is separate from `VC_Subunitati`, with NO link between them.
+- **Not confirmed:** the rest of the data design (`proiect-de-date-etapa-1.md`), `Tip = M`, `DefaCont`/`DefaClase` in `AVACONT_COMUN`.
 - **Not read:** `ParteneriForm` and slices 0121-0123 (do they require a fiscal code?).
 - **Stage 2 needs** the ALOP guide read first, then sheets for Note, OP9, Evidentieri/Plati, the «Contari» view of E-Factura, MF2019, ModificareNC1280, MODNRNC.
 - No help topic yet (`0000-NN`): nothing visible to the operator changed.

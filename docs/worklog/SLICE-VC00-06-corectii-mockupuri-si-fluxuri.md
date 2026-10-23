@@ -1,4 +1,4 @@
-# VERCON — corecții mockupuri și fluxuri
+# SLICE-VC00-06 — corecții mockupuri și fluxuri
 
 Data: 12.10.2026. Cerere: citirea adnotărilor din VERCON/MOCKUPURI/Corectii_mockup-uri_01, corectarea PNG-urilor și actualizarea fluxurilor afectate.
 

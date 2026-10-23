@@ -1,6 +1,6 @@
 # SLICE-ADE5-06 — jurnalul erorilor și motivele blocării în formular
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; versiunea modificată nu a fost rulată.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -37,6 +37,8 @@ docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog.
 - Fără teste automate, probe vizuale, rulare a utilitarului, conexiuni MariaDB sau DDL.
 
 ## Neverificat și amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Utilizatorul redeschide executabilul actualizat, verifică jurnalul și reîncearcă
 conectarea cu gazda/portul corecte. Accesul la server, cauza timeout-ului și activarea

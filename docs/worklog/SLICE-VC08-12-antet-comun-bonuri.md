@@ -1,4 +1,4 @@
-# VERCON — Antet comun pentru bonuri P/T/C și Consum
+# SLICE-VC08-12 — Antet comun pentru bonuri P/T/C și Consum
 
 Data: 2026-10-23.
 
@@ -38,10 +38,4 @@ Fișiere:
 - PYTHON/reports/vercon/README.md
 - implementare_vercon_v2.md și acest jurnal
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse. Conform
-AGENTS.md nu s-au rulat teste, verificări de sintaxă/execuție, randări
-PDF/Excel sau browser. Aspectul final pe date reale nu este validat.
-Fără SQL executat și fără modificări de schemă MariaDB. Publicare: modulele
-Python, JS și CSS de mai sus împreună, apoi repornirea serviciului web.
-Bonurile se generează din nou după publicare; snapshot-urile existente
-nu se rescriu.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

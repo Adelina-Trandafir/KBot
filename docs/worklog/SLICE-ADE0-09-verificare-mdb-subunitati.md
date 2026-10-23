@@ -1,6 +1,6 @@
 # SLICE-ADE0-09 — verificare selectivă a MDB-urilor pentru subunități
 
-Data: 09.10.2026. Stare: **ANALIZAT LOCAL / DOCUMENTAT LOCAL**.
+Data: 09.10.2026. Stare: **TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)**.
 
 Utilizatorul a indicat `ADECHIT/ACCESS_SOURCES` pentru verificarea bazelor distincte,
 cu instrucțiunea explicită de a nu le citi integral.

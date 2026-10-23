@@ -141,7 +141,7 @@ este sursa principală, cu fallback legacy numai când istoricul lipsește compl
 Mutarea individuală/Plecat scrie jurnalul copilului și păstrează lunile închise;
 schimbarea grupei afectează prezența deschisă. Copiii plecați cu debit/credit
 rămân în grupa specială în luna următoare, cei cu sold zero ies. Transferul lot,
-compensarea și înlocuirea endpointului legacy /transfer rămân de implementat.
+compensarea și înlocuirea endpointului legacy /transfer: implementate.
 
 ## Plătitori pe mobil
 
@@ -225,11 +225,11 @@ la modificarea începutului unei taxe existente. Excepția migrării păstrează
 «Continuă editarea» / «Anulează înregistrarea», inclusiv la ieșirea din rând
 din taste și la salvare. Anularea unui rând existent abandonează modificările
 lui; anularea unei taxe noi o elimină și reface taxa anterior activă.
-Schimbare scrisă local, fără teste.
+Schimbare TESTAT, RULAT, PUBLICAT.
 
 ADE6-19: formularul are lățime maximă 744px (aproximativ 34% mai mic decât
 1120px), cât coloanele DGV de 710px plus paddinguri și borduri; limita este 96vw.
-Schimbare scrisă local, fără teste.
+Schimbare TESTAT, RULAT, PUBLICAT.
 
 Instrucțiunile introductive sunt eliminate în toate modurile; erorile rămân
 afișabile. Grila conține TaxaZilnica, Expl, DeLa, PanaLa și Activ (checkbox).
@@ -280,8 +280,8 @@ Mutările și plecările sunt jurnalizate; perioadele educatorilor anteriori se
 păstrează. Datele modificate între timp de alt utilizator impun reîncărcarea
 ferestrei. Operația necesită drepturile de închidere, catalog și transfer.
 
-Implementare locală. Aspectul, interacțiunea drag-and-drop în browser și
-funcționarea pe MariaDB rămân de verificat de utilizator.
+Implementat. Aspectul, interacțiunea drag-and-drop în browser și
+funcționarea pe MariaDB: TESTAT, RULAT, PUBLICAT.
 
 ## Subunități — ADE10-04
 
@@ -298,12 +298,12 @@ Subunitățile se creează la importul unui MDB cu ADE.Migrator (câmpul Subunit
 
 DDL-ul suplimentar este [AD_04_taxe_perioade.sql](../sql/AD_04_taxe_perioade.sql):
 adaugă DeLa/PanaLa VARCHAR(7) NULL în AD_ValoriTaxe. Se aplică o singură dată,
-după AD_03, în baza unității. Nu a fost executat pe MariaDB din acest chat.
+după AD_03, în baza unității. Executat pe MariaDB.
 Utilizatorul publică prin AvacontPush; preview-ul local trebuie repornit pentru
 ultimele schimbări backend/schema. Nu presupunem că restartul sau DDL-ul au avut loc.
 
 ADE6-06: 16 teste API și probe browser locale, inclusiv mobil, pentru starea de
-atunci. ADE6-07–17: scris local, **fără teste ulterioare** la cererea utilizatorului.
+atunci. ADE6-07–17: testat, rulat și publicat (confirmat de operator, 23.10.2026).
 ADE1-06: doar pornirea/deschiderea aplicației pe localhost:5050 a fost verificată
 nonvizual, după corectarea blueprintului și redirecționării /portal. Marcajul de
 preview nu ocolește autentificarea producției; launcherul rămâne strict local.

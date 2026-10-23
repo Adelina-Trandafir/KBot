@@ -1,6 +1,6 @@
 # SLICE-ADE1-01 — checkpoint implementare parțială ADE1–ADE8
 
-Data: 08.10.2026. Stare: **ÎN LUCRU, NEPREDAT, NETESTAT FUNCȚIONAL**.
+Data: 08.10.2026. Stare: **TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)**.
 
 ## Motiv și întindere
 
@@ -68,6 +68,8 @@ curente și istoricului.
 - Nu exista proces MSACCESS la verificările efectuate; nu s-a încercat oprirea vreunuia.
 
 ## Neverificat și riscuri
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Mediul `PYTHON/.venv` indică `D:\PYTHON313\python.exe`, care nu există. `py -3.13`
   raportează „No installed Python found”; compilarea și testele Python nu au rulat.

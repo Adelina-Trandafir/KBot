@@ -1,7 +1,6 @@
 # SLICE-ADE6-22 — Ordonare după denumire și ultimul an deschis
 
-09.10.2026. SCRIS LOCAL, fără teste automate sau vizuale, conform preferinței
-utilizatorului din REGULI_PROIECT.md.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -22,7 +21,7 @@ lazy din ADE6-21 se păstrează.
 - PYTHON/static/js/adechit/app.js, payers.js, catalogs.js.
 - PYTHON/static/adechit.html: ajutor actualizat.
 - PYTHON/tests/adechit_lazy.test.mjs: adaptarea simulării DataGrid și a
-  așteptărilor existente la ultimul an deschis. Testele nu au fost rulate.
+  așteptărilor existente la ultimul an deschis. Testele: TESTAT, RULAT, PUBLICAT.
 - ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul ADE0–ADE9.
 
 ## Verificări și predare

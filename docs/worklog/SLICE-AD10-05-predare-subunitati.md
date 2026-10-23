@@ -46,6 +46,8 @@ Niciunul rulat. `dotnet build` ADE.Migrator curat; `ast.parse` pe Python. Teste 
 
 ## Neverificat / amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Tot ce depinde de MariaDB, de server și de ecran. Amânat explicit (plan §11): importuri istorice într-o
 subunitate populată, restricții individuale pe subunitate, rapoarte consolidate, administrarea subunităților din web.
 

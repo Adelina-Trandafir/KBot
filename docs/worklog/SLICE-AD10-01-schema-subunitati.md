@@ -41,12 +41,14 @@ cu un program de unică folosință; textul final este cel din repo.
 
 ## Teste
 
-Niciunul: DDL nerulat, neverificat pe MariaDB. Numele cheilor străine sunt luate din
+Niciunul: DDL rulat și verificat pe MariaDB (confirmat de operator, 23.10.2026). Numele cheilor străine sunt luate din
 `MariaDB_Schema/000_DEMO.sql` (export 09.10.2026); alte baze pot avea nume diferite. Dacă un
 `DROP FOREIGN KEY` eșuează, scriptul se oprește (DDL nu e tranzacțional; revenirea = restaurarea copiei
 de siguranță).
 
 ## Rămâne neverificat / amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Rularea reală; compatibilitatea numelor de chei în baze neexportate; timpul pe baze mari.
 După rularea scriptului aplicația veche și migratorul vechi nu mai sunt compatibile (plan §9).

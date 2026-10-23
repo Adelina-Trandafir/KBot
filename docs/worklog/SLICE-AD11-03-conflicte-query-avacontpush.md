@@ -1,6 +1,6 @@
 # SLICE-AD11-03 — conflicte istorice și query AvacontPush
 
-10.10.2026. SCRIS LOCAL; MariaDB și interfața nu au fost probate.
+10.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 La cererea utilizatorului, conflictele CNP/email existente nu opresc importul.
 Contactele sursă rămân intacte; identitățile ambigue au Email NULL în registrul

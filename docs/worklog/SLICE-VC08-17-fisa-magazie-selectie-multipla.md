@@ -1,6 +1,6 @@
-# Fișa de magazie — mai multe produse și prețuri
+# SLICE-VC08-17 — Fișa de magazie — mai multe produse și prețuri
 
-Data: 2026-10-23. Stare: SCRIS LOCAL, NEPUBLICAT.
+Data: 2026-10-23. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Eliminată restricția variant_required pentru Fisa_Magazie și variantele
 sale de raport FM1-u, FM2 și Fisa_Magazie_BF. Selectarea multiplă folosește

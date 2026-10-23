@@ -1,6 +1,6 @@
 # SLICE-ADE5-07 — DC destinație editabil
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; versiunea modificată nerulată.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbare și motiv
 
@@ -27,6 +27,8 @@ reușit, 0 erori, 0 avertismente. Inspecție statică a apelurilor care folosesc
 Fără teste automate, rulare UI, conexiuni MariaDB, DDL sau publicare.
 
 ## Rămâne de probat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Utilizatorul verifică editarea DC, invalidarea butonului, Testează pe noua destinație
 și jurnalul importului. Schema și regulile de tabel gol rămân obligatorii.

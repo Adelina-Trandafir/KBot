@@ -28,10 +28,11 @@ inregistreaza in `PYTHON/routes/schema_sync/schema_common.py`, stergere = `RESTR
 **TZ_Subunitati** - `IdSubunitate` PK, `Denumire`, `Capitol` varchar(5) (`65.01`), `SursaSector` varchar(3) FK
 `DefaSursaSector` (`01A`, `02E`...), `ZecimaleSalarii` tinyint (0/2: inlocuieste bifa `Zec2`), `Activ`. Unic pe `Capitol`.
 Subunitate = alta unitate subordonata cu contabilitatea ei (decis); capitolul si SS vin din ea (65.01=01A, 65.02=02A,
-65.10=02E, 65.11=01A). **O unitate fara subunitati are una implicita**, ca sa nu existe chei nule. DE VERIFICAT: relatia cu
-`VC_Subunitati` (VERCON) - tabel separat, ramane neatins; legarea celor doua se decide mai tarziu.
+65.10=02E, 65.11=01A). **O unitate fara subunitati are una implicita**, ca sa nu existe chei nule. **DECIS (operator, 23.10.2026):
+`TZ_Subunitati` este SEPARAT de `VC_Subunitati` (VERCON) si FARA nicio legatura intre ele** (fara cheie straina, fara coloana
+comuna, fara sincronizare). `VC_Subunitati` ramane neatins.
 
-**TZ_PlanCont** - `IdCont` PK, `IdSubunitate` FK, `Cont` FK `DefaCont`, `Analitic` varchar(10) NULL, `ClsfF`, `ClsfE` NULL,
+**TZ_PlanCont** (**pe subunitate - CONFIRMAT de operator, 23.10.2026**; un cont apartine unei singure subunitati) - `IdCont` PK, `IdSubunitate` FK, `Cont` FK `DefaCont`, `Analitic` varchar(10) NULL, `ClsfF`, `ClsfE` NULL,
 `SimbolCont` varchar(50) (compus: cont + sector + sursa + [ClsfF] + [ClsfE] + [.analitic]; unic pe subunitate), `Denumire`,
 `FelCont` char(1) (A/B/P), `Extra` tinyint, `Activ`. Fara `SID/SIC/RPC/RPD` (solduri separate), fara `ContLung`, fara `Expr1`/`TipCont`.
 Fara `An`: planul nu depinde de exercitiu; un cont iesit din uz se marcheaza `Activ = 0`. Stergere BLOCATA daca e folosit in
@@ -101,6 +102,5 @@ view in `KBot.App\Views\`, buton in ribbon (tab Configurari), ajutor `0000-NN`, 
 
 - `Tip = M` la antetul de sablon; `DefaNote.Tip` (1/2/4) si `Simpla`; coloana `CV` din `DefaClsfV`.
 - `ParteneriForm`/0121-0123: impun cod fiscal? (conditioneaza analiticele fara CF).
-- Planul pe subunitate (propus) vs pe unitate: un cont poate apartine mai multor subunitati?
-- Relatia `TZ_Subunitati` <-> `VC_Subunitati`.
+- (Rezolvat) planul de conturi pe subunitate; `TZ_Subunitati` fara legatura cu `VC_Subunitati`.
 - Daca `DefaCont`/`DefaClase` exista deja in COMUN dupa 16.10.2026.

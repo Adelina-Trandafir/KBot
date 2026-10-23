@@ -1,6 +1,6 @@
 # SLICE-ADE6-09 — mobil fără rândul de mesaje
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 La cererea utilizatorului, ade-notice-row este ascuns pe mobil (max-width 980px).
 Grila ade-main nu mai rezervă cei 24px ai mesajului. Primul rând al zonei de lucru

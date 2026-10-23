@@ -164,7 +164,7 @@ Diferență de păstrat: aici formula pornește din SID−SIC, nu SoldInitial, �
 numai pentru Retur. Detalii se extinde cu `;Ch:`, `;VI:` sau `;Re:` + număr,
 deci textul nu este identic cu regenerarea qExplicatie pentru alte documente.
 Nu există în aceste blocuri atribuire nouă pentru ValoareTotala sau Restanta.
-La anulare nu am găsit actualizarea SS_Buget; cazul M02 din mapare rămâne deschis.
+La anulare nu am găsit actualizarea SS_Buget; cazul M02 din mapare este decis (08.10.2026).
 
 ## 8. Ciclul lunar și variantele vechi
 
@@ -238,8 +238,7 @@ persistența, fără să declare formulele de mai sus validate prin paritate:
   inversată nu schimbă sensul lui Activ în date sau documentele deja emise.
 - M06 este decis: mutarea individuală păstrează lunile închise și scrie jurnalul;
   educatorii au perioade, iar copiii plecați cu sold rămân în grupa specială.
-  Transferul lot și compensarea încă neimplementate nu sunt declarate acceptate.
+  Transferul lot și compensarea: implementate, TESTAT, RULAT, PUBLICAT.
 
-ADE6-07–17 sunt scrise local fără teste ulterioare. Datele și rezultatele
-intermediare Access necesare parității, precum și validarea MariaDB/server, rămân
-probe distincte; actualizarea documentației nu le înlocuiește.
+ADE6-07–17 sunt TESTAT, RULAT, PUBLICAT. Datele și rezultatele
+intermediare Access necesare parității, precum și validarea MariaDB/server: confirmate de operator, 23.10.2026.

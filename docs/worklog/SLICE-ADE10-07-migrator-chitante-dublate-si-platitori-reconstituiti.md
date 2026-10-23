@@ -37,6 +37,8 @@ migratorului, fără deschiderea ferestrei (Designer-ul scris de mână, nicioda
 
 ## Nerezolvat / neverificat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 - Fereastra nu a fost văzută pe ecran; aspectul coloanelor, comportamentul editării în `KBotDataView` și butonul nou din
   `tlpActiune` rămân de probat.
 - Copiii reconstituiți primesc `SI = 0` și fără `DataIntrare`; `Platitori_sub.Activ` = nu «plecat». De confirmat dacă e bine.

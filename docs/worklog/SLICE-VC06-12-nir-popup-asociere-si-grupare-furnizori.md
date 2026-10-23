@@ -1,4 +1,4 @@
-# NIR: asociere în popup și grupare inițială pe furnizori — 23.10.2026
+# SLICE-VC06-12 — NIR: asociere în popup și grupare inițială pe furnizori — 23.10.2026
 
 «Asociază eFactura…» este disponibilă în meniul ⋮ al fiecărui NIR de
 cumpărare din arbore; butonul din footer a fost eliminat. Comanda deschide
@@ -17,7 +17,4 @@ PYTHON/static/help/vercon.json; implementare_vercon_v2.md;
 docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md;
 acest jurnal.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse. Fără
-teste, verificări automate/de sintaxă, browser sau MariaDB, conform
-instrucțiunilor proiectului. Nu necesită SQL nou. Publicare: fișierele JS
-și helpul împreună, apoi reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

@@ -1,6 +1,6 @@
 # SLICE-ADE5-12 — referințe la taxe lipsă importate ca NULL
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; fără teste sau migrare.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbare
 

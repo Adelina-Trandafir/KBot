@@ -1,7 +1,6 @@
-# eFactura: grile sursă, țintă vizibilă și memorare implicită — 23.10.2026
+# SLICE-VC06-14 — eFactura: grile sursă, țintă vizibilă și memorare implicită — 23.10.2026
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Eliminate complet din dialog paragraful vc-efi__hint și eticheta/bifa
 vc-efi__remember. Cele două butoane de asociere/propunere sunt pe rândul

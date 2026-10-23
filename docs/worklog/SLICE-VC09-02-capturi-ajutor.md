@@ -61,10 +61,7 @@ Fișiere:
 - docs/worklog/SLICE-VC09-02-capturi-ajutor.md;
 - implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Imaginile au fost examinate vizual pentru
-compoziție și mascarea datelor, în cadrul cererii explicite de capturi.
-Nu au fost rulate teste, verificări de sintaxă sau randări ale exportului PDF.
-Nu au fost executate SQL și nu au fost modificate scheme MariaDB.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Publicarea necesită împreună conținutul JSON, imaginile, JS/CSS și rendererul
 PDF Python; serviciul web trebuie repornit pentru codul Python actualizat.

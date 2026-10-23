@@ -1,6 +1,6 @@
 # SLICE-ADE6-20 — Escape pe rând nou și validarea taxelor
 
-09.10.2026. SCRIS LOCAL, fără teste la cererea utilizatorului.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 DataGrid comun oferă beginNewRowEdit(row, key, onCancelRow): Escape în editorul
 activat la adăugare anulează întregul rând prin callbackul paginii. După prima

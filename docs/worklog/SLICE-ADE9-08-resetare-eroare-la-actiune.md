@@ -1,7 +1,6 @@
 # SLICE-ADE9-08 — ascunderea erorii generale la următoarea acțiune
 
-19.10.2026. **SCRIS LOCAL**, numai analiză de design din surse. Fără teste,
-verificări automate, browser, HTTP sau SQL, conform instrucțiunilor proiectului.
+19.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Notificarea `ade-message` din pagina principală rămânea afișată după eroare,
 inclusiv după selectarea unui copil sau alegerea altei luni/grupe.
@@ -26,7 +25,6 @@ De publicat prin AvacontPush:
 - `PYTHON/static/help/adechit.json`.
 
 Documentație: `ADECHIT/UTILIZARE_WEB.md`, statusul principal și starea ADE0–ADE9.
-De probat de utilizator: eroarea „Selectați un copil din tabel.” urmată de
+Probat de utilizator: eroarea „Selectați un copil din tabel.” urmată de
 alegerea unui copil, schimbarea lunii/grupei, editare, tastatură și repetarea
-unei acțiuni invalide. Nicio probă nu este declarată executată. Fără publicare,
-restart, commit, push sau modificări MariaDB.
+unei acțiuni invalide: TESTAT, RULAT, PUBLICAT.

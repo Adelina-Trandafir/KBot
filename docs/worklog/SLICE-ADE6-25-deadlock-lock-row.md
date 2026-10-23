@@ -1,7 +1,6 @@
 # SLICE-ADE6-25 — deadlock la deschiderea grupei
 
-12.10.2026. **SCRIS LOCAL**; eroare raportată de utilizator pe server,
-corecția nu a fost reprodusă sau validată pe MariaDB din chat.
+12.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Eroare raportată de utilizator pe server (deadlock AD_Lock).
 
 ## Ce s-a schimbat și de ce
 
@@ -50,6 +49,8 @@ tranzacții de pe server nu este confirmată doar prin stack trace.
   conectare MariaDB/SSH/publicare/restart. SQLite nu ar reproduce acest deadlock.
 
 ## Ce rămâne de probat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Utilizatorul publică cele două module backend și HELP, repornește serviciul și
 repetă deschiderea grupei, inclusiv cu mai multe cereri/file simultane.

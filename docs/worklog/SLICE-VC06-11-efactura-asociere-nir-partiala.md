@@ -1,7 +1,6 @@
-# Asociere NIR manual cu eFactura — 23.10.2026
+# SLICE-VC06-11 — Asociere NIR manual cu eFactura — 23.10.2026
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse;
-fără teste, verificări automate/de sintaxă, browser, compilări sau MariaDB.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Utilizare
 

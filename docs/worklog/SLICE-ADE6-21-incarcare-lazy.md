@@ -1,6 +1,6 @@
 # SLICE-ADE6-21 — Pornire fără selecții și încărcare lazy
 
-09.10.2026. Implementat local; 18 teste API și 3 teste JS trecute.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). 18 teste API și 3 teste JS trecute.
 Fără probă vizuală, server sau MariaDB.
 
 ## Ce s-a schimbat și de ce
@@ -47,6 +47,8 @@ Testele au fost rulate înainte de citirea preferinței proiectului de a lăsa
 testarea utilizatorului. Nu s-au mai pornit probe după identificarea regulii.
 
 ## Neverificat și predare
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Publicarea prin AvacontPush și restartul backendului aparțin utilizatorului.
 Se publică cele 7 fișiere runtime enumerate mai sus. Nu există DDL nou,

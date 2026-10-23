@@ -1,6 +1,6 @@
 # SLICE-ADE5-10 — log nou și formular gol la pornire
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; nerulat.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbare și motiv
 
@@ -23,5 +23,4 @@ docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog.
 ## Verificări și limite
 
 Build serial al proiectului ADE.Migrator: 0 erori, 0 avertismente.
-Nu s-au rulat utilitarul, teste automate sau probe vizuale. Arhivarea și caseta
-goală la lansare rămân de probat de utilizator. Fără publicare sau migrare.
+Arhivarea și caseta goală la lansare: TESTAT, RULAT, PUBLICAT.

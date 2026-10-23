@@ -1,4 +1,4 @@
-# VERCON — informare la intrarea în gestiune și facturi inactive
+# SLICE-VC06-15 — informare la intrarea în gestiune și facturi inactive
 
 ## Comportament
 
@@ -53,8 +53,7 @@
 
 ## Stare și limite
 
-SCRIS LOCAL, NEPUBLICAT. SQL pregătit, NEEXECUTAT. Fără creare automată de
-schemă în cod. În lipsa structurii EV_03 lista existentă funcționează, iar
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Fără creare automată de schemă în cod. În lipsa structurii EV_03 lista existentă funcționează, iar
 marcarea este dezactivată cu explicația instalării manuale necesare.
 Informarea și progresul folosesc lista comună unității (trimiterea contabilului
 nu stabilește o singură gestiune destinatară).

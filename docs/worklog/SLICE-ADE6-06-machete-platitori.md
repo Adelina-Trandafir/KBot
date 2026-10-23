@@ -1,6 +1,6 @@
 # SLICE-ADE6-06 — machete Plătitori, grupe și copii
 
-Data: 09.10.2026. TESTAT LOCAL; fără commit, push sau validare pe server.
+Data: 09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -62,6 +62,8 @@ inclusiv pentru situația lunară; textul legacy este fallback doar dacă nu exi
   ade6-06-checkbox.cjs; capturi PNG în același director, inspectate vizual.
 
 ## Neverificat și amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Exportul local MariaDB_Schema nu conține tabele AD_. Întrebarea privind schema serverului
 rămâne fără răspuns. Implementarea locală folosește AD_03 aprobat în ADE0-07; nu afirmăm

@@ -1,6 +1,6 @@
 # SLICE-ADE5-04 — ADE.Migrator: migrare directă din baza Access ADECHIT în MariaDB
 
-Data: 08.10.2026. Stare: CONSTRUIT LOCAL (build curat, zero avertismente); neprobat pe date, fără teste, nerulat pe MariaDB.
+Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Build curat, zero avertismente.
 
 ## Ce s-a făcut și de ce
 
@@ -48,6 +48,8 @@ Un utilitar nou, în stilul lui KBot.Migrator, care înlocuiește calea extract 
   `Unitati!DC = 011_GR28`, 11 grupe, 2 luni, 1.214 rânduri în `Prezenta` și `SS_Buget`; `Educator` are doi nume per grupă.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Nimic nu a fost rulat: nici citirea, nici planul, nici scrierea pe MariaDB. Planul (în special educatorii pe perioade și
   mutările deduse) trebuie privit pe datele reale înainte de prima migrare.

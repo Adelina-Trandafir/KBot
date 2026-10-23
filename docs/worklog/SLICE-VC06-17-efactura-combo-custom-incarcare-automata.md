@@ -1,7 +1,6 @@
-# eFactura: ComboBox custom și încărcare automată — 23.10.2026
+# SLICE-VC06-17 — eFactura: ComboBox custom și încărcare automată — 23.10.2026
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Selectorul nativ select a fost înlocuit cu Combobox-ul comun, configurat
 dropDownStyle=simple, cu etichetă accesibilă și dropdown în dialog. Poate

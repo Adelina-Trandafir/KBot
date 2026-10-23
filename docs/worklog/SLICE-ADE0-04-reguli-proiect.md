@@ -1,6 +1,6 @@
 # SLICE-ADE0-04 — adoptarea regulilor proiectului
 
-Data: 08.10.2026. Stare: DOCUMENTAT LOCAL.
+Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -24,6 +24,8 @@ Intervenție exclusiv documentară; nu necesită teste de aplicație.
 
 ## Neverificat sau amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Nu s-a auditat sau rescris codul existent pentru conformitate în această intervenție.
 Nu s-au modificat sursele Access, implementarea, configurările serverului sau fișiere Claude.md.
-Fără commit, push sau acces Linux/MariaDB. Implementarea rămâne planificată.
+Fără commit, push sau acces Linux/MariaDB.

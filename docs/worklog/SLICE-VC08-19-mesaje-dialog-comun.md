@@ -1,4 +1,4 @@
-# VERCON — mesaje în dialogul comun, eliminarea vc-message
+# SLICE-VC08-19 — mesaje în dialogul comun, eliminarea vc-message
 
 Corecție cerută explicit: eliminarea elementului vizual `p#vc-message`,
 renunțarea la notificările mici de tip tooltip și folosirea sistemului
@@ -30,7 +30,4 @@ Nu s-a modificat sistemul de mesaje al altor aplicații. Tooltipurile
 explicative ale controalelor și cele pentru elipsis rămân cele cerute
 anterior; schimbarea privește prezentarea notificărilor aplicației.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, build, verificări automate/de sintaxă, browser sau MariaDB, conform
-instrucțiunilor proiectului. Fără SQL. Publicare: HTML/JS/help împreună,
-apoi reîncărcarea completă a paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

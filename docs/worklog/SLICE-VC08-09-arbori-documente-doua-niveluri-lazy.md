@@ -1,6 +1,6 @@
 # 2026-10-19 — Arbori Intrări/Ieșiri: două niveluri și actualizare lazy locală
 
-Stare: **SCRIS LOCAL**, nerulat și nepublicat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Sub arborii documentelor apare bifa «Grupeaza pe luni», inclusiv în
 Intrări și Ieșiri. Bonurile PTC folosesc același control, cu eticheta

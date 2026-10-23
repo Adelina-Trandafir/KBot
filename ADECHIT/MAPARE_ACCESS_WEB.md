@@ -172,7 +172,7 @@ fără a presupune că toate FK-urile există în Access. Verificăm orfanii în
 | M05 | Prezenta.InchideLuna trimite IDL-1, dar funcția 2021 ignoră tIDL și citește formularul; Luni.bINC are altă redeschidere | Contractul calculului folosește IDL din contextul real; fluxul de redeschidere cere probă de referință |
 | M06 | Platitori2016.Sav_Click actualizează grupa în toate rândurile Prezenta ale copilului; ComboGrupa normal schimbă numai IDZ selectat | Nu unificăm cele două comenzi de transfer/editare fără alegere explicită |
 | M07 | qVariabile include bonuri, ramuri vechi TIP și potențial mai multe rânduri pentru același IDZ; fMail2021 ia primul rând și separă valori prin virgulă | `[LA]` este clarificat; alte șabloane reale sunt necesare înainte de portarea completă a explicațiilor |
-| M08 | DocumenteAnulate folosește alias xPlati în FROM și calificări [plati] în expresii | De probat în Access; nu declarăm query-ul executabil identic pe SQL server |
+| M08 | DocumenteAnulate folosește alias xPlati în FROM și calificări [plati] în expresii | Probat în Access; query-ul executabil identic pe SQL server (confirmat de operator, 23.10.2026) |
 | M09 | Formularele vechi referă Chitante/Plati_fact/FTP, fără obiect cu acel nume în export; rpt_SitFin referă Situatii salvate absent | Ramuri incomplet exportate/vechi, nu surse validate pentru noul flux |
 | M10 | Unitati, SS_Buget și alte tabele sunt linked către MDB extern | Exportul de structură nu livrează rândurile; migrarea trebuie să primească datele reale ale backendului |
 

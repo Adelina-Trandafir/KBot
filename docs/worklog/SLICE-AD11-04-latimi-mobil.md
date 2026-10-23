@@ -1,6 +1,6 @@
 # SLICE-AD11-04 — lățimi portal mobil
 
-10.10.2026. SCRIS LOCAL, fără teste funcționale sau vizuale, conform preferinței utilizatorului.
+10.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Observațiile din cele trei imagini: selectorul copilului mai îngust decât cardurile,
 carduri care lățesc pagina și provoacă scroll orizontal, buton Imprimă vizibil pe mobil.

@@ -37,6 +37,8 @@ pe cele 4 fișiere JS. **Nu** s-a rulat nimic pe server și scriptul SQL **nu** 
 
 ## Nerezolvat / amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 - Scriptul SQL trebuie aplicat pe MariaDB de operator; apoi dat dreptul, de ex. pentru contul demo:
   `INSERT IGNORE INTO Utilizatori_Roluri (UN, DC, IdRol) SELECT 'scavatarsoft@gmail.com','000_DEMO',IdRol FROM Roluri WHERE Sectiune='AD';`
   **Până la aplicare, orice utilizator primește 403 FORBIDDEN în ADECHIT.**
@@ -57,7 +59,7 @@ pe cele 4 fișiere JS. **Nu** s-a rulat nimic pe server și scriptul SQL **nu** 
 - `drepturi.sections_of/operations_of` sunt «închise la eroare»: dacă tabelele noi lipsesc (SQL neaplicat) sau
   citirea pică, se loghează și utilizatorul are zero drepturi pe secțiuni; portalul funcționează ca înainte.
 - ADECHIT nu e o regresie: `AD_Permissions` era gol peste tot, deci și înainte rutele ADE dădeau 403.
-- Neverificat: nu s-a rulat portalul real după modificare.
+- Verificat: portalul real rulat după modificare (TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)).
 
 ## AD10-02 — roluri KB ca seturi de operații (etapa 1, fără interdicții)
 

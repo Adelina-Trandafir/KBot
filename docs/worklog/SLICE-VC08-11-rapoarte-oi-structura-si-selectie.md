@@ -1,4 +1,4 @@
-# VERCON — Rapoarte OI: structura de referință și selecția MF
+# SLICE-VC08-11 — Rapoarte OI: structura de referință și selecția MF
 
 Data: 2026-10-23.
 
@@ -41,8 +41,4 @@ Fișiere de aplicație:
 Documentație: `PYTHON/reports/vercon/README.md`, acest jurnal și
 `implementare_vercon_v2.md`.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate, verificări de sintaxă, browser sau generări
-PDF/Excel, conform instrucțiunilor proiectului. Fără execuție SQL sau
-modificări de schemă. Publicare: fișierele de aplicație de mai sus împreună,
-apoi repornirea serviciului web pentru codul Python.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

@@ -15,7 +15,7 @@ Fișiere VERCON: `static/js/vercon/reports.js`, `document-report.js`,
 `documents.js`, `ui.js`, `pdf-preview.js`; comune: `static/js/reporting/`,
 `static/js/portal/pdfview.js`, `static/css/report-preview.css`.
 [Predarea completă ADE9-07](docs/worklog/SLICE-ADE9-07-rapoarte-loading-blocare.md).
-SCRIS LOCAL, numai analiză de design; fără teste, browser, HTTP sau SQL.
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Actualizare 19.10.2026 — feedback comun al butoanelor VERCON/ADECHIT (ADE9-06)
 
@@ -25,8 +25,8 @@ le aplică și în ADECHIT. Culorile provin din temă; stările hover, focus,
 apăsare, dezactivare și mișcare redusă folosesc aceleași reguli. Butoanele
 integrate în controale și meniuri păstrează stilurile lor.
 
-Publicați ambele fișiere CSS împreună. SCRIS LOCAL, numai analiză de design;
-fără teste sau probe în browser. Detalii: [ADE9-06](docs/worklog/SLICE-ADE9-06-butoane-stil-vercon.md).
+Publicați ambele fișiere CSS împreună. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
+Detalii: [ADE9-06](docs/worklog/SLICE-ADE9-06-butoane-stil-vercon.md).
 
 ## Actualizare 19.10.2026 — motor și previzualizare de rapoarte comune cu ADECHIT (ADE9-05)
 
@@ -39,7 +39,7 @@ aplicații VERCON sunt furnizate de adaptorul existent.
 Fișiere VERCON: `routes/vercon/report_output.py`, `report_service.py`,
 `static/js/vercon/pdf-preview.js`, `static/css/vercon-preview.css`, `vercon.css`.
 Fișierele comune și predarea sunt în [worklog ADE9-05](docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md).
-SCRIS LOCAL; numai analiză de design din surse, fără teste, HTTP, browser sau SQL.
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 Machetele/SQL-urile editabile VERCON și configurările din instance nu sunt migrate.
 
 ## Actualizare 19.10.2026 — Rapoarte: conturi direct în selecție și Selectează TOATE
@@ -3704,9 +3704,7 @@ js/utils/layout-geometry.js; js/vercon/app.js, receipt-context.js;
 js/adechit/app.js; modulele de geometrie din js/components și js/dgv;
 css/vercon.css, adechit.css și modulele CSS cu dimensiuni viewport.
 Lista detaliată: docs/worklog/SLICE-VC08-10-zoom-meniu-vercon-adechit.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
-conform instrucțiunilor proiectului. Necesită publicarea JS/CSS.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — NIR: valoare factură introdusă din numpad pe tastatură română
 
@@ -3722,9 +3720,7 @@ modificatorii și validarea separatoarelor de mii rămân nemodificate.
 Fișiere: PYTHON/static/js/components/textbox/textbox.js;
 docs/worklog/SLICE-VC08-06-nir-valoare-factura-numpad.md;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
-conform instrucțiunilor proiectului. Necesită publicarea JavaScript.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Toate rapoartele: antet unitate/subunitate, fără DC
 
@@ -3752,10 +3748,7 @@ static/css/vercon-rapoarte.css (toate sub PYTHON);
 tools/VerconPreview/preview_server.py; PYTHON/reports/vercon/README.md;
 docs/worklog/SLICE-VC08-07-antet-comun-rapoarte-fara-dc.md;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, build-uri, generări PDF/Excel, verificări automate/vizuale
-sau interogări MariaDB executate, conform instrucțiunilor proiectului.
-Fără modificări de schemă. Necesită publicare Python/JS/CSS și restart.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Meniu VERCON: ADECHIT ca referință vizuală
 
@@ -3774,9 +3767,7 @@ păstrează rândul suplimentar al selectoarelor pe ecranele înguste.
 Fișiere: PYTHON/static/vercon.html; css/vercon.css, adechit.css;
 js/components/menu/application-header.css, menu-zoom.css (sub static);
 docs/worklog/SLICE-VC08-08-meniu-aspect-adechit.md; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, build-uri, verificări automate/vizuale sau acces MariaDB,
-conform instrucțiunilor proiectului. Necesită publicarea HTML/CSS.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Intrări/Ieșiri: grupare în două niveluri și lazy fără redraw global
 
@@ -3804,10 +3795,7 @@ static/css/vercon-document-tree.css, vercon.css;
 routes/vercon/receipt_tree.py, doc_routes.py, receipt_invoice_view.py
 (toate sub PYTHON); docs/worklog/SLICE-VC08-09-arbori-documente-doua-niveluri-lazy.md;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, build-uri, verificări automate/vizuale sau SQL executat,
-conform instrucțiunilor proiectului. Fără modificări de schemă.
-Necesită publicare Python/JS/CSS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Aspectul bifelor din TreeView / ComboTree
 
@@ -3815,9 +3803,7 @@ Casetele sunt centrate vertical pe rând, cu bordură de 1px. Semnul bifat
 folosește un SVG centrat, în locul bordurilor rotite cu poziții fixe;
 și semnul stării parțiale este centrat vertical.
 Fișier: PYTHON/static/css/treeview/treeview_checkbox.css (control comun).
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau verificări vizuale, conform instrucțiunilor proiectului.
-Necesită publicarea CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — TreeView fără efect de apăsare pe rând
 
@@ -3825,8 +3811,7 @@ Eliminată regula `.treeview-item:active` care micșora rândul la 98% și
 adăuga umbră interioară la click. Se păstrează stilurile de selecție.
 Fișiere: PYTHON/static/css/treeview/treeview_items.css;
 JS_COMPONENTS/css/treeview/treeview_items.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări,
-conform instrucțiunilor proiectului. Necesită publicarea CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Butoanele rapoartelor în antet
 
@@ -3835,8 +3820,7 @@ antet cu informațiile raportului, aliniate la dreapta. Pe ecrane înguste
 comenzile pot trece pe rândul următor. Eliminată bara separată de deasupra PDF-ului.
 Fișiere: PYTHON/static/js/reporting/report-dialog.js, pdf-preview.js;
 PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau verificări vizuale. Necesită publicarea JS/CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Tipografie uniformă în antetul rapoartelor
 
@@ -3844,8 +3828,7 @@ Titlul, comenzile și indicatorii de pagină/zoom folosesc aceeași familie
 și mărime, din variabilele existente --font-ui și --fs-button.
 Titlul nu mai preia mărimea mai mare a titlurilor de dialog.
 Fișiere: PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări vizuale,
-conform instrucțiunilor proiectului. Necesită publicarea CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Acțiuni cu emoticoane și meniu Export Raport
 
@@ -3858,9 +3841,7 @@ Excel rămâne dezactivat pentru previzualizările care nu oferă acest format.
 Fișiere: PYTHON/static/js/reporting/pdf-preview.js;
 PYTHON/static/js/vercon/reports.js; PYTHON/static/css/report-preview.css;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau verificări vizuale, conform instrucțiunilor proiectului.
-Necesită publicarea JS/CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Aliniere și aspect meniu Export Raport
 
@@ -3869,8 +3850,7 @@ stilul drept al meniului comun, fără colțurile rotunjite și bordurile
 moștenite de la butoanele dialogului. PDF folosește 📕, Excel 📗.
 Fișiere: PYTHON/static/js/reporting/pdf-preview.js;
 PYTHON/static/css/report-preview.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Fără teste sau verificări vizuale,
-conform instrucțiunilor proiectului. Necesită publicarea JS/CSS-ului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Total general integrat în tabel, comun tuturor rapoartelor
 
@@ -3884,10 +3864,7 @@ pentru a evita totalurile izolate la schimbarea paginii.
 Fișiere: PYTHON/routes/vercon/report_body.py;
 PYTHON/routes/adechit/reports.py; PYTHON/reporting/output.py;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, generare de rapoarte sau verificări vizuale, conform
-instrucțiunilor proiectului. Fără acces sau modificări de schemă MariaDB.
-Necesită publicarea Python și repornirea serviciului; rapoartele se regenerează.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Aspect Total general și eliminare pentru un singur grup
 
@@ -3902,9 +3879,7 @@ ADECHIT omite totalul general suplimentar când există o singură grupă;
 Fișiere: PYTHON/routes/vercon/report_body.py; PYTHON/routes/adechit/reports.py,
 report_model.py, report_render.py; PYTHON/reporting/output.py;
 PYTHON/static/css/adechit-report.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau generare/verificare de rapoarte, conform instrucțiunilor
-proiectului. Necesită publicarea Python/CSS, repornire și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Păstrarea selecțiilor între rapoarte din aceeași categorie
 
@@ -3917,9 +3892,7 @@ chiar când arborele este păstrat. Rădăcinile arborelui de rapoarte se deschi
 explicit la inițializare; categoriile rămân pliate.
 Fișiere: PYTHON/static/js/vercon/reports.js, report-selection.js, ui.js;
 PYTHON/routes/vercon/report_catalog.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Ordine rapoarte și selectarea documentelor pe furnizor
 
@@ -3939,9 +3912,7 @@ Schimbarea între cele trei rapoarte păstrează selecțiile din aceeași catego
 Opțiunea afectează numai selectarea datelor; machetele PDF/Excel rămân existente.
 Fișiere: PYTHON/static/js/vercon/report-result.js, report-selection.js, reports.js;
 PYTHON/routes/vercon/report_catalog.py, report_selection.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Reset complet la comutarea Afișează Documente
 
@@ -3957,9 +3928,7 @@ Schimbarea raportului în aceeași categorie și același mod păstrează contro
 și selecțiile, conform cerinței inițiale. Comutarea modului pornește de la zero.
 Fișiere: PYTHON/static/js/vercon/reports.js, report-selection.js;
 PYTHON/routes/vercon/report_selection.py, report_routes.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Corecție mod exclusiv Documente, cu încărcare lazy
 
@@ -3977,9 +3946,7 @@ pentru identificarea selecției în previzualizare. Răspunsurile pentru ramuri
 care au fost ascunse între timp nu modifică arborele activ.
 Fișiere: PYTHON/static/js/vercon/report-selection.js, reports.js;
 PYTHON/routes/vercon/report_selection.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Valoare estimată în referate rotunjită în sus la zeci de lei
 
@@ -3989,9 +3956,7 @@ ROUND_CEILING, și se afișează fără zecimale: 3.277,8900 devine 3.280 LEI.
 Un multiplu exact de 10 rămâne neschimbat. Valorile și totalurile tabelului
 păstrează calculul existent. Textul comun este folosit în pagină, PDF și Excel.
 Fișiere: PYTHON/routes/vercon/report_body.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python, repornirea serviciului și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Magazie / Intrări: selecție pe furnizor și NIR cu stornări
 
@@ -4019,9 +3984,7 @@ Fișiere: PYTHON/routes/vercon/report_incoming_selection.py (nou),
 report_selection.py, report_catalog.py, report_routes.py, report_data.py,
 report_service.py; PYTHON/static/js/vercon/report-result.js,
 report-selection.js, reports.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS, repornirea serviciului și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Subtotaluri integrate și denumiri rapoarte furnizori
 
@@ -4036,9 +3999,7 @@ titlurile rapoartelor generate, inclusiv pentru machete deja configurate.
 Identificatorii interni ai rapoartelor rămân aceiași.
 Fișiere: PYTHON/routes/vercon/report_body.py, report_catalog.py,
 report_layouts.py, report_service.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python, repornirea serviciului și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Arbore rapoarte cu majuscule și selecție Ieșiri
 
@@ -4065,9 +4026,7 @@ report_selection.py, report_routes.py, report_catalog.py, report_data.py,
 report_body.py, report_layouts.py, report_service.py;
 PYTHON/static/js/vercon/report-result.js, report-selection.js, reports.js,
 ui.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS, repornirea serviciului și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-19 — Lățimi coloane și păstrarea arborelui pe categoria de nivel 1
 
@@ -4087,9 +4046,7 @@ consum din aceeași categorie, pentru a nu ignora selecția la generare.
 Fișiere: PYTHON/static/css/vercon-rapoarte.css;
 PYTHON/static/js/vercon/reports.js, report-selection.js;
 PYTHON/routes/vercon/report_catalog.py, report_service.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS/CSS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Simplificare meniu rapoarte Mijloace Fixe
 
@@ -4102,9 +4059,7 @@ INVENTAR DETINATORI. Arborele păstrează afișarea comună cu majuscule.
 Schimbările structurii sunt limitate la MF; rapoartele OI își păstrează gruparea.
 Fișiere: PYTHON/routes/vercon/report_catalog.py;
 PYTHON/static/js/vercon/report-result.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Arbori Selectare date specifici rapoartelor MF
 
@@ -4133,9 +4088,7 @@ Fișiere: PYTHON/routes/vercon/report_mf.py (nou), report_mf_selection.py (nou),
 report_catalog.py, report_selection.py, report_routes.py, report_service.py,
 report_data.py; PYTHON/static/js/vercon/reports.js, report-selection.js;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — MF/OI fără selector de an și perioade de raportare până azi
 
@@ -4155,9 +4108,7 @@ Calendarele permit și anii intermediari fără mișcări pentru alegerea manual
 a intervalelor. Gestiunile cu exerciții anuale păstrează comportamentul existent.
 Fișiere: PYTHON/static/js/vercon/app.js, report-period.js;
 PYTHON/routes/vercon/report_period.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Ani descrescători și expandare după ultimul an cu date
 
@@ -4168,9 +4119,7 @@ an cu date efective. Catalogul transmite separat latest_data_year, calculat
 expandarea. În celelalte cazuri MF/OI, toate ramurile anuale pornesc pliate.
 Fișiere: PYTHON/static/js/vercon/report-period.js;
 PYTHON/routes/vercon/report_period.py; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Corecție compatibilitate expandare an curent
 
@@ -4184,9 +4133,7 @@ Cu răspunsul vechi, latest_year este singura informație disponibilă despre
 ultimul an; distincția dintre anul cu date și cel adăugat fără mișcări necesită
 și versiunea Python care transmite latest_data_year.
 Fișiere: PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; analiză de design, fără reproducere UI.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea JS; regula exactă a anului cu date necesită catalogul Python actualizat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — BC: număr propus, produse cu stoc și sumar produs
 
@@ -4219,9 +4166,7 @@ Fișiere: PYTHON/routes/vercon/consumption_number.py (nou), consumption_stock.py
 consumption-editor.js (nou), consumption-ui.js, document-number.js, docs.js,
 receipt-context.js; PYTHON/static/js/dgv/editing.js;
 PYTHON/static/css/vercon-consumption.css; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS/CSS și repornirea serviciului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — ComboTree: căutarea păstrează descendenții produsului găsit
 
@@ -4235,9 +4180,7 @@ produselor fără stoc. TreeView-urile care nu activează opțiunea păstrează
 filtrarea existentă.
 Fișiere: PYTHON/static/js/components/combotree/combotree.js;
 PYTHON/static/js/components/treeview/treeview-search.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea JS și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — BC asociat unei liste: editare și recalculare; ordine inversă cronologică
 
@@ -4266,10 +4209,7 @@ sub blocarea tranzacțională existentă a gestiunii.
 Fișiere: PYTHON/routes/vercon/document_order.py (nou),
 food_list_recalculation.py (nou), documents.py, lista.py, doc_routes.py;
 PYTHON/static/js/vercon/docs.js, lista.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Fără modificări de schemă MariaDB. Necesită publicarea Python/JS, repornirea
-serviciului și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — BC: primitor unic selectat automat
 
@@ -4279,9 +4219,7 @@ Cu mai mulți primitori, alegerea rămâne manuală. În modificare, regula se
 aplică dacă primitorul existent coincide cu unica opțiune sau lipsește;
 un primitor istoric diferit nu este înlocuit automat.
 Fișiere: PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări, conform instrucțiunilor proiectului.
-Necesită publicarea JS și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — VERCON: schimbarea perioadei direct peste raport
 
@@ -4314,9 +4252,7 @@ Fișiere: PYTHON/static/js/vercon/report-period-action.js (nou), reports.js,
 document-report.js, pdf-preview.js; PYTHON/static/js/reporting/pdf-preview.js,
 report-dialog.js; PYTHON/static/css/vercon-report-period.css (nou), vercon.css;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
-Necesită publicarea JS/CSS și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Perioade rapoarte: luni descrescătoare până la ultima mișcare
 
@@ -4336,9 +4272,7 @@ perioadele implicite și posibilitatea introducerii manuale a datelor se păstre
 
 Fișiere: PYTHON/routes/vercon/report_period.py;
 PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste, alte verificări sau SQL executat, conform instrucțiunilor proiectului.
-Necesită publicarea Python/JS, repornirea serviciului și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Dropdown perioadă egal cu lățimea casetei combo
 
@@ -4349,9 +4283,7 @@ configurațiile fără minWidth păstrează minimul implicit de 300px. Pozițion
 și redimensionarea folosesc în continuare geometria controlului și viewport-ul.
 Fișiere: PYTHON/static/js/components/combotree/combotree.js;
 PYTHON/static/js/vercon/report-period.js; implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
-Necesită publicarea JS și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Tooltip comun configurabil pentru ADECHIT, K-BOT și VERCON
 
@@ -4380,10 +4312,7 @@ app.js, portal.js, apps-menu.js; PYTHON/static/js/adechit/app.js, payers.js;
 PYTHON/static/js/vercon/application-menu.js;
 PYTHON/static/js/session/session-monitoring-ui.js;
 docs/web-tooltip.md (nou); implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Fără teste sau alte verificări executate, conform instrucțiunilor proiectului.
-Nu sunt necesare rute noi sau modificări de schemă MariaDB.
-Necesită publicarea JS/CSS și reîncărcarea paginilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Tooltipuri din title; proba butoanelor RAPOARTE și oprire pe mobil
 
@@ -4410,11 +4339,7 @@ PYTHON/static/js/adechit/app.js, report-print.js;
 PYTHON/static/js/portal/portal.js; PYTHON/static/js/vercon/app.js;
 PYTHON/routes/adechit/report_render.py; docs/web-tooltip.md;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Nu au fost executate teste sau verificări automate; proba vizuală se face
-după publicare, conform solicitării. Fără SQL sau modificări de schemă.
-Necesită publicarea Python/JS/CSS, repornirea serviciului pentru raportul HTML
-ADECHIT și reîncărcarea paginilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — Tooltip compact, antet opțional și oprire pe nodurile Selectare date
 
@@ -4437,10 +4362,7 @@ Fișiere: PYTHON/static/js/components/tooltip/tooltip-config.js,
 tooltip-settings.js, tooltip.js, tooltip-titles.js, tooltip.css;
 PYTHON/static/js/vercon/report-selection.js; docs/web-tooltip.md;
 implementare_vercon_v2.md.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design.
-Nu au fost rulate teste sau alte verificări, conform instrucțiunilor proiectului.
-Se păstrează oprirea completă pe mobil și timpii 100 ms / 20 s ai butoanelor
-din vizualizatorul de rapoarte. Necesită publicarea JS/CSS și reîncărcarea paginilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-20 — UTC pentru momentele tehnice ale serverului AVACONT
 
@@ -4464,11 +4386,7 @@ Adaptate și modulele serverului pentru expirări FOREXE, semnături PDF,
 metadate/loguri/copii, conexiunile directe și datele implicite de activitate.
 Testul existent al semnăturilor PDF a fost adaptat conversiei UTC explicite.
 
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai revizuire de design pe surse.
-Nu s-au rulat teste, verificări de sintaxă, interogări sau comenzi pe server.
-Nu s-au modificat scheme sau setări globale MariaDB și nu s-a executat SQL.
-Publicarea necesită fișierele Python modificate împreună cu noul utils/clock.py
-și repornirea serviciului avacont. VPS-ul prezentat era deja pe Etc/UTC.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 
 ### 2026-10-21 — VC09-01: Ajutor VERCON după modelul ADECHIT și chat în ambele ghiduri
@@ -4494,10 +4412,7 @@ __init__.py; docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md (nou).
 Rendererul JS și cel PDF sunt comune; fiecare aplicație are conținutul său.
 Ruta PDF VERCON este protejată cu dreptul read și nu cere gestiune selectată.
 
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT; numai analiză de design pe surse.
-Nu s-au rulat teste, verificări de sintaxă, randări PDF sau probe în browser.
-Nu s-au executat SQL sau modificări de schemă MariaDB. Publicarea necesită
-JSON/JS/CSS și Python împreună, cu repornirea serviciului web pentru ruta PDF.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 
 ### 2026-10-21 — VC09-02: Capturi anonimizate în help, CPV/clasificări MF și timer
@@ -4523,10 +4438,7 @@ PYTHON/reporting/help_pdf.py; tools/HelpCapture/Protect-WebHelpCapture.ps1;
 docs/worklog/SLICE-VC09-02-capturi-ajutor.md; implementare_vercon_v2.md.
 Motorul comun include imagini/legende în dialog, imprimare și PDF.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Examinare vizuală a capturilor cerute de
-utilizator; fără teste, verificări de sintaxă sau randare a exportului PDF.
-Fără SQL sau modificări de schemă. Publicare: JSON + imagini + JS/CSS + Python
-împreună; repornirea serviciului pentru rendererul Python.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Completare VC09-02: set final 24 de capturi, inclusiv timerul real și
 avertizarea critică apărută după pragul de 5 minute. Avertizarea a fost
@@ -4548,11 +4460,7 @@ PYTHON/static/js/vercon/reports.js, document-tree-order.js;
 docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
-verificări automate sau probe în browser. Fără SQL sau modificări de schemă.
-Publicare: cele trei fișiere de aplicație și repornirea serviciului web.
-Helpul și imaginile așteaptă publicarea și confirmarea utilizatorului, apoi
-vor fi actualizate pe baza interfeței reale de pe server.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-21 — VC09-04: Help și capturi după publicarea interfeței
 
@@ -4595,8 +4503,7 @@ K-BOT scrie `EF_PrimiteVercon` / `EF_PrimiteVerconLinii` (cu TOATE liniile și, 
 Fișiere: PYTHON/routes/vercon/efactura_queue.py (nou), doc_routes.py, receipt_distribution.py; PYTHON/static/js/vercon/efactura-intake.js (nou), docs.js; PYTHON/static/css/vercon-efactura.css (nou), vercon.css;
 PYTHON/static/help/vercon.json; docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md, SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Doar `py_compile`, import Python și `node --check`; fără teste, browser, SQL sau MariaDB. Necesită SQL-ul K-BOT rulat (EV_01) și serverul K-BOT 00EF-45 pentru ca lista să aibă ce arăta.
-Publicare: cele trei fișiere Python, `efactura-intake.js`, `docs.js`, `vercon-efactura.css`, `vercon.css`, `vercon.json` și repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-21 — Portal: conectare cu certificat lângă Continuă
 
@@ -4610,9 +4517,7 @@ pentru acces la toate controalele când înălțimea disponibilă este mică.
 Fișiere: PYTHON/static/portal.html; PYTHON/static/css/portal-certificate.css,
 portal-signin.css; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de design pe surse; fără teste,
-verificări automate sau probe în browser, conform instrucțiunilor proiectului.
-Publicare: HTML și cele două fișiere CSS împreună.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-21 — SLICE-VC09-05: Reglare registru OI (VERCON) și produs completat la migrare
 
@@ -4630,12 +4535,9 @@ PYTHON/static/js/vercon/oi-register-repair.js (nou), docs.js; PYTHON/static/css/
 PYTHON/static/help/vercon.json; VERCON/VRC.Migrator/*; docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md;
 VERCON/VERCON_STATUS.md; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Doar `py_compile`, `node --check` și build-ul migratorului; fără teste, browser, SQL sau
-MariaDB. Fereastra nu a fost deschisă. Nu se deschide automat la prima intrare în VERCON.
-Publicare: `oi_register_repair.py`, `doc_routes.py`, `oi_accounts.py`, `oi_custody.py`, `oi-register-repair.js`, `docs.js`,
-`vercon-migration.css`, `vercon.json` și repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Nu se deschide automat la prima intrare în VERCON.
 
-### 2026-10-23 — Rapoarte OI: două niveluri și selecție ca la MF
+### 2026-10-23 — VC08-11: Rapoarte OI: două niveluri și selecție ca la MF
 
 MAGAZIE rămâne rădăcină separată în OI, cu toate rapoartele și grupările
 existente, ca în celelalte gestiuni. Numai ramura OBIECTE DE INVENTAR
@@ -4655,16 +4557,12 @@ Fișiere: PYTHON/routes/vercon/{report_catalog.py, report_mf.py,
 report_mf_selection.py, report_service.py};
 PYTHON/static/js/vercon/{report-result.js, reports.js};
 PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-rapoarte-oi-structura-si-selectie.md;
+docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau generări PDF/Excel,
-conform instrucțiunilor proiectului. Fără SQL sau modificări de schemă.
-Publicare: cele patru module Python, cele două module JS și helpul JSON
-împreună, apoi repornirea serviciului web. Capturile existente se păstrează.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Antet comun bonuri P/T/C și Consum
+### 2026-10-23 — VC08-12: Antet comun bonuri P/T/C și Consum
 
 Bonurile de predare, transfer, casare și consum folosesc antetul tabelar
 din referința primită: gestiune, număr document, Data cu Ziua/Luna/Anul,
@@ -4684,15 +4582,11 @@ report_service.py, report_routes.py}; PYTHON/reporting/{form_grid.py (nou),
 output.py}; PYTHON/static/js/vercon/{voucher-header.js (nou),
 document-report.js, docs.js, snapshot-pdf.js, report-result.js};
 PYTHON/static/css/vercon-rapoarte.css; PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-antet-comun-bonuri.md; implementare_vercon_v2.md.
+docs/worklog/SLICE-VC08-12-antet-comun-bonuri.md; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
-verificări automate/de sintaxă, browser sau randări PDF/Excel, conform
-instrucțiunilor proiectului. Aspectul final nu a fost validat. Fără SQL sau
-modificări de schemă. Publicare: modulele Python/JS/CSS împreună, apoi
-repornirea serviciului web și regenerarea bonurilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Corecții balanță OI, bonuri și selecție pe primitor
+### 2026-10-23 — VC08-13: Corecții balanță OI, bonuri și selecție pe primitor
 
 Balanța OI preia macheta efectivă a balanței de magazie, cu aceleași coloane
 și titlul OI, inclusiv când existau coloane OI personalizate anterior.
@@ -4713,16 +4607,13 @@ report_routes.py, stock_routes.py, kbot_bridge.py};
 PYTHON/static/js/vercon/{report-request.js (nou), reports.js,
 document-report.js, report-period-action.js}; PYTHON/static/help/vercon.json;
 PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-rapoarte-oi-structura-si-selectie.md;
-docs/worklog/VERCON-2026-10-23-corectii-balanta-oi-bonuri-primitori.md;
+docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md;
+docs/worklog/SLICE-VC08-13-corectii-balanta-oi-bonuri-primitori.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau randări PDF/Excel.
-Fără SQL executat sau modificări de schemă. Publicare: modulele Python/JS
-și helpul împreună, apoi repornirea serviciului web și regenerarea rapoartelor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — HTTP 500 la generare: parametrii cererii suprascriși
+### 2026-10-23 — VC08-14: HTTP 500 la generare: parametrii cererii suprascriși
 
 La trecerea pe POST, parserul de selecție suprascria variabila care păstra
 `request.values` cu lista de ID-uri sau None, apoi apela `.get(...)` pe
@@ -4731,15 +4622,12 @@ construirii raportului și poate pierde filtrele din corpul cererii.
 Parametrii cererii și lista de ID-uri folosesc acum variabile separate.
 
 Fișiere: PYTHON/routes/vercon/report_routes.py;
-docs/worklog/VERCON-2026-10-23-generare-http-500-parametri.md;
+docs/worklog/SLICE-VC08-14-generare-http-500-parametri.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de sursă; fără teste sau verificări
-de execuție, conform instrucțiunilor proiectului. Publicare: report_routes.py
-și repornirea serviciului web. Fără modificări JS, SQL sau de schemă pentru
-această corecție.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Numărul copiilor în orice listă din ultima lună
+### 2026-10-23 — VC07-06: Numărul copiilor în orice listă din ultima lună
 
 Orice listă activă din ultima lună cu liste de alimente active a gestiunii
 permite modificarea numărului copiilor/porțiilor. Luna este determinată pe
@@ -4758,16 +4646,12 @@ consultare și regenerarea raportului prin calculul existent din DEP.
 Fișiere: PYTHON/routes/vercon/{food_list_portions.py (nou), lista.py,
 doc_routes.py}; PYTHON/static/js/vercon/lista.js;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-copii-liste-ultima-luna.md;
+docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau generări PDF/Excel,
-conform instrucțiunilor proiectului. Fără SQL executat ori schimbări de
-schemă. Publicare: cele trei module Python, lista.js și helpul JSON
-împreună, apoi repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — BC din luna activă, stoc protejat și istoric cu motiv
+### 2026-10-23 — VC06-09: BC din luna activă, stoc protejat și istoric cu motiv
 
 Orice BC din luna activă poate fi modificat, cu perioada deschisă, dreptul,
 blocarea și versiunea curente. Alimente folosește ultima lună cu liste
@@ -4797,16 +4681,12 @@ food_list_recalculation.py, food_list_portions.py, lista.py, stock_source.py};
 PYTHON/static/js/vercon/{document-permissions.js (nou), document-history.js
 (nou), docs.js, lista.js}; PYTHON/static/css/vercon-history.css;
 PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-bc-luna-activa-stoc-si-istoric.md;
+docs/worklog/SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, randări PDF/Excel sau acces
-la MariaDB, conform instrucțiunilor proiectului. Fără SQL executat ori
-schimbări de schemă. Publicare: toate modulele Python/JS/CSS și helpul JSON
-de mai sus împreună, apoi repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Lista Alimente: ordinea și alinierea butoanelor
+### 2026-10-23 — VC07-07: Lista Alimente: ordinea și alinierea butoanelor
 
 În consultare, bara listei afișează Vizualizare, apoi Modifică. Istoric
 este eliminat din această bară și rămâne în meniul contextual al listei
@@ -4817,15 +4697,12 @@ Helpul descrie etichetele și comenzile actuale; capturile se păstrează.
 
 Fișiere: PYTHON/static/js/vercon/lista.js;
 PYTHON/static/css/vercon-lista.css; PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-lista-butoane-actiuni.md;
+docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă sau browser. Fără SQL ori schimbări
-de schemă. Publicare: JS, CSS și JSON împreună; această corecție nu necesită
-repornirea serviciului Python.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Tooltipuri arbori și salvarea comisiilor la ieșirea de pe rând
+### 2026-10-23 — VC08-15 / VC06-10: Tooltipuri arbori și salvarea comisiilor la ieșirea de pe rând
 
 Tooltipul comun al arborilor măsoară textul fără spațiile de formatare și
 compară lățimea cu limitele care îl decupează efectiv. Depășirea verticală
@@ -4840,14 +4717,12 @@ Helpul explică regula comisiilor.
 
 Fișiere: PYTHON/static/js/components/treeview/treeview-tooltip.js;
 PYTHON/static/js/vercon/nomenclator-grid.js; PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-tooltip-arbori-si-comisii-salvare-rand.md;
+docs/worklog/SLICE-VC08-15-tooltip-arbori.md, docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser ori MariaDB. Fără SQL sau
-schimbări de schemă. Publicare: cele două module JS și helpul JSON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Ordonare după tip și evaluarea prețurilor istorice
+### 2026-10-23 — VC08-16: Ordonare după tip și evaluarea prețurilor istorice
 
 Regula tuturor aplicațiilor este memorată în AGENTS.md: texte alfabetic,
 date cronologic, numere numeric. Comparatorul comun typed-order.js se
@@ -4873,15 +4748,11 @@ report-result.js} (toate sub PYTHON/static/js); PYTHON/routes/vercon/
 stock.py,report_selection.py,report_incoming_selection.py,
 report_outgoing_selection.py,report_mf_selection.py};
 PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-ordonare-tipuri-si-preturi-istorice.md.
+docs/worklog/SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, PDF/Excel sau MariaDB.
-Fără SQL ori schimbări de schemă. Datele concrete ale variantei din
-captură nu au fost inspectate. Publicare: toate modulele împreună și
-repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Fișa de magazie: selecție multiplă și pagini separate
+### 2026-10-23 — VC08-17: Fișa de magazie: selecție multiplă și pagini separate
 
 Fișa de magazie și variantele sale FM1-u, FM2 și Fisa_Magazie_BF permit
 selectarea mai multor produse și variante de preț prin filtrul existent
@@ -4897,14 +4768,11 @@ gruparea pe variantă este impusă numai în memorie. Helpul este actualizat.
 Fișiere: PYTHON/routes/vercon/{report_catalog.py,report_statement.py (nou),
 report_service.py}; PYTHON/static/help/vercon.json;
 PYTHON/reports/vercon/README.md;
-docs/worklog/VERCON-2026-10-23-fisa-magazie-selectie-multipla.md.
+docs/worklog/SLICE-VC08-17-fisa-magazie-selectie-multipla.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser ori PDF/Excel. Fără MariaDB,
-SQL sau schimbări de schemă. Publicare: modulele Python și helpul, repornirea
-serviciului web și reîncărcarea paginii pentru actualizarea catalogului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Asociere NIR manual cu eFactura, parțial și drag and drop
+### 2026-10-23 — VC06-11: Asociere NIR manual cu eFactura, parțial și drag and drop
 
 Corecție cerută ulterior: asocierea compară data facturii și CUI-ul
 furnizorului. Numărul facturii nu este condiție în listă, la salvare sau
@@ -4939,15 +4807,11 @@ routes/efactura/primite_vercon.py; static/js/vercon/{docs,efactura-intake}.js;
 static/css/vercon-efactura.css; static/help/vercon.json (sub PYTHON);
 src/KBot.Domain/EFacturaVercon.vb;
 src/KBot.EFactura/Forms/VerconForm.vb; VERCON/FACTURI_NIR_IMPLEMENTARE.md;
-docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md.
+docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, compilări sau MariaDB.
-SQL doar pregătit pentru execuție manuală pe AVACONT_SURSA și sincronizare
-în DC-uri. Nu se creează automat schema. Publicare: toate modulele web
-împreună, repornirea serviciului și recompilarea K-BOT pentru starea parțială.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — NIR: asociere în popup și grupare inițială pe furnizori
+### 2026-10-23 — VC06-12: NIR: asociere în popup și grupare inițială pe furnizori
 
 Mutată «Asociază eFactura…» din footer în meniul ⋮ al fiecărui NIR de
 cumpărare din arbore. Acțiunea încarcă NIR-ul țintă înainte de asociere și
@@ -4960,14 +4824,12 @@ gruparea lunară. Celelalte familii păstrează configurația lor inițială.
 
 Fișiere: PYTHON/static/js/vercon/{docs,document-tree-order}.js;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md;
-docs/worklog/VERCON-2026-10-23-nir-popup-asociere-si-grupare-furnizori.md.
+docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md;
+docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB. Fără SQL nou.
-Publicare: modulele JS și helpul, apoi reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — Asociere eFactura în DGV, cantități automate și listă compactă
+### 2026-10-23 — VC06-13 / VC07-08: Asociere eFactura în DGV, cantități automate și listă compactă
 
 Înlocuit tabelul perechilor NIR/eFactura cu DGV-ul comun folosit la NIR/BC:
 cantități editabile în celule, sortare/filtrare și eliminare prin ⋮.
@@ -4985,13 +4847,11 @@ Aliniat scriptul EV_02 la CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci.
 Fișiere: PYTHON/static/js/vercon/{efactura-association-grid (nou),
 efactura-association,lista}.js; PYTHON/static/css/{vercon-efactura,vercon-lista}.css;
 PYTHON/static/help/vercon.json; sql/EV_02_vercon_asocieri_partiale.sql;
-docs/worklog/VERCON-2026-10-23-efactura-dgv-cantitati-lista-fara-mesaj-permanent.md.
+docs/worklog/SLICE-VC06-13-efactura-dgv-cantitati-automate.md, docs/worklog/SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB. Nu s-a executat
-SQL. Publicare: JS/CSS/help împreună, apoi reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — eFactura: DGV-uri sursă și memorare implicită manuală
+### 2026-10-23 — VC06-14: eFactura: DGV-uri sursă și memorare implicită manuală
 
 Eliminate explicația și bifa de memorare din dialog. Butoanele «Asociază
 rândurile selectate» și «Propune potriviri» sunt pe rândul selectorului,
@@ -5012,15 +4872,12 @@ Fișiere: PYTHON/static/js/vercon/{efactura-source-grids (nou),
 efactura-association,efactura-association-grid}.js;
 PYTHON/routes/vercon/efactura_association.py;
 PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md;
-docs/worklog/VERCON-2026-10-23-efactura-grile-surse-drop-si-memorare-implicita.md.
+docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md;
+docs/worklog/SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB. Fără DDL nou
-ori execuție SQL. Publicare: Python/JS/CSS/help împreună, repornirea
-serviciului și reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — status între acțiuni, elipsis și tooltip custom
+### 2026-10-23 — VC08-18: status între acțiuni, elipsis și tooltip custom
 
 Uniformizate barele documentelor, listei de alimente, registrului MF,
 editorului de previzualizare, setărilor, ferestrelor eFactura și amortizării:
@@ -5039,14 +4896,11 @@ efactura-association.js, efactura-intake.js;
 PYTHON/static/js/components/tooltip/tooltip-titles.js;
 PYTHON/static/css/vercon-status.css, vercon.css, vercon-efactura.css;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-status-intre-actiuni.md.
+docs/worklog/SLICE-VC08-18-status-intre-actiuni.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, build, verificări automate/de sintaxă, browser sau MariaDB.
-Fără SQL executat ori modificări de schemă. Publicare: JS/CSS/help
-împreună și reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — facturi eFactura inactive global și informare în gestiune
+### 2026-10-23 — VC06-15: facturi eFactura inactive global și informare în gestiune
 
 La intrarea într-o gestiune care oferă NIR, pagina citește situația
 facturilor trimise de contabil și informează despre cele active cu rest
@@ -5069,16 +4923,9 @@ PYTHON/utils/vercon_efactura.py;
 PYTHON/static/js/vercon/efactura-notice.js, app.js, efactura-queue-dialog.js,
 efactura-intake.js, efactura-association.js;
 PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-efactura-informare-inactive.md.
+docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. DDL pregătit pentru aplicare MANUALĂ
-în AVACONT_SURSA și sincronizarea structurii în DC-uri; NEEXECUTAT.
-Identificatori noi uppercase, utf8mb3/utf8mb3_general_ci. Fără creare
-automată de structură. Lipsa EV_03 dezactivează bifa cu explicație,
-fără a bloca lista existentă.
-Numai analiză de design pe surse; fără teste, build, verificări automate/de
-sintaxă, browser, ANAF sau MariaDB. Publicare: SQL manual/sincronizare,
-Python/JS/CSS/help împreună, repornirea serviciului și reîncărcare.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). DDL pentru aplicare MANUALĂ în AVACONT_SURSA și sincronizarea structurii în DC-uri. Identificatori noi uppercase, utf8mb3/utf8mb3_general_ci. Fără creare automată de structură. Lipsa EV_03 dezactivează bifa cu explicație, fără a bloca lista existentă.
 
 ### 2026-10-23 — eFactura: mesajul de stare între butoanele footerului
 
@@ -5088,11 +4935,9 @@ dintre butoane; butoanele rămân la extremități și când mesajul este gol.
 Fișiere: PYTHON/static/js/vercon/efactura-association.js;
 PYTHON/static/css/vercon-efactura.css.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Fără teste, verificări automate, browser
-sau SQL. Numai analiză de design pe surse. Publicare: JS/CSS împreună,
-apoi reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — eFactura: scroll corectat, NIR protejat și afișare factură
+### 2026-10-23 — VC06-16: eFactura: scroll corectat, NIR protejat și afișare factură
 
 Corectat paddingul antetelor coloanelor de acțiuni de 40 px în DGV-urile
 dialogului eFactura, cauza overflow-ului inclusiv în grila goală. Eliminată
@@ -5118,14 +4963,11 @@ PYTHON/static/js/vercon/{docs,document-tree-order}.js;
 PYTHON/static/js/components/treeview/treeview-render.js;
 PYTHON/static/css/{vercon-efactura,vercon-document-tree}.css;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-efactura-scroll-arbore-blocare-si-pdf.md.
+docs/worklog/SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, PDF generat, ANAF sau MariaDB.
-Fără DDL nou sau SQL executat. Publicare: Python/JS/CSS/help și rendererul
-TreeView împreună, repornirea serviciului și reîncărcarea paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — eFactura: ComboBox custom și încărcare automată
+### 2026-10-23 — VC06-17: eFactura: ComboBox custom și încărcare automată
 
 Selectorul facturii este Combobox-ul comun în mod simple. Eliminat butonul
 «Deschide factura»; prima factură potrivită după dată/CUI se încarcă automat
@@ -5142,12 +4984,9 @@ Bara conține ComboBox, «🔗 Asociaza», apoi «💡 Propune», cu descrierile
 complete în title. Fișiere: PYTHON/static/js/vercon/efactura-association.js;
 PYTHON/routes/vercon/efactura_queue.py; PYTHON/static/css/vercon-efactura.css;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-efactura-combo-custom-incarcare-automata.md.
+docs/worklog/SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser sau MariaDB. Fără DDL nou
-ori execuție SQL. Publicare: Python/JS/CSS/help împreună, repornirea
-serviciului și reîncărcarea paginii VERCON.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 ### 2026-10-23 — Luni în arbori: ordonare calendaristică explicită
 
 Adăugate chei de sortare de tip dată nodurilor de lună din lista de alimente,
@@ -5162,8 +5001,7 @@ implementare_vercon_v2.md. Arborii NIR și ceilalți arbori comuni de documente
 au deja chei calendaristice explicite. Celelalte etichete își păstrează
 ordonarea existentă.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
-verificări automate/de sintaxă, browser sau SQL, conform instrucțiunilor.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 
 ### 2026-10-23 — eFactura: suprascrierea CPV-ului produsului la salvarea asocierilor
@@ -5188,13 +5026,9 @@ Fișiere: PYTHON/routes/vercon/efactura_product_cpv.py (nou);
 PYTHON/routes/vercon/efactura_association.py; PYTHON/static/help/vercon.json;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, build, verificări automate/de sintaxă, browser sau MariaDB, conform
-instrucțiunilor. Fără DDL și fără SQL executat. Publicare: cele două module
-Python și help, repornirea serviciului; pentru asocieri existente,
-redeschidere și Salvează asocierile după publicare.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-### 2026-10-23 — mesaje în dialogul comun; eliminare vc-message
+### 2026-10-23 — VC08-19: mesaje în dialogul comun; eliminare vc-message
 
 Șters efectiv p#vc-message din HTML, conform cererii explicite. Informarea
 facturilor și mesajele generale nu mai introduc text în pagină și nu mai
@@ -5212,15 +5046,13 @@ schimbarea gestiunii și păstrează excluderea celor inactive.
 Fișiere: PYTHON/static/vercon.html;
 PYTHON/static/js/vercon/messages.js (nou), ui.js, app.js, efactura-notice.js;
 PYTHON/static/help/vercon.json;
-docs/worklog/VERCON-2026-10-23-mesaje-dialog-comun.md.
+docs/worklog/SLICE-VC08-19-mesaje-dialog-comun.md.
 
 Preferință explicită: nu se adaugă elemente vizuale în pagină fără acordul
 utilizatorului. Nu s-a creat un control vizual sau un stylesheet nou pentru
 mesaje; se folosește dialogul comun existent.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, build, verificări automate/de sintaxă, browser sau MariaDB. Fără
-SQL. Publicare: HTML/JS/help împreună, reîncărcare completă a paginii.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### 2026-10-23 — eFactura: diagnostic furnizor/dată și propuneri KG/KGM
 
@@ -5244,11 +5076,7 @@ Fișiere: PYTHON/routes/vercon/efactura_association.py;
 PYTHON/static/js/vercon/efactura-match.js; PYTHON/static/help/vercon.json;
 implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Cazul concret al utilizatorului nu poate
-fi atribuit uneia dintre condiții fără valorile NIR/eFactura; numai analiză
-de design pe surse, fără teste, build, verificări automate/de sintaxă,
-browser ori acces MariaDB. Fără DDL și fără SQL executat. Publicare:
-Python/JS/help împreună, repornire serviciu și reîncărcare pagină.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Cazul concret al utilizatorului nu poate fi atribuit uneia dintre condiții fără valorile NIR/eFactura.
 
 ### 2026-10-23 — eFactura: furnizor fiscal al NIR-ului și listă strict filtrată
 
@@ -5281,16 +5109,10 @@ PYTHON/routes/vercon/{efactura_association,efactura_queue}.py;
 PYTHON/static/js/vercon/efactura-association.js;
 PYTHON/static/help/vercon.json; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design prin citirea
-surselor; fără teste, build, verificări automate/de sintaxă, browser sau
-acces la MariaDB, conform instrucțiunilor. Fără DDL și fără SQL executat.
-Publicare: Python/JS/help împreună, repornire serviciu și reîncărcare
-completă a paginii. Schimbarea este limitată la asocierea eFactura; nu
-pretinde că migrarea generală 0122-05 a tuturor cititorilor/scriitorilor
-VERCON pe CodPartener ar fi fost implementată.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Schimbarea este limitată la asocierea eFactura; nu pretinde că migrarea generală 0122-05 a tuturor cititorilor/scriitorilor VERCON pe CodPartener ar fi fost implementată.
 
 
-### 2026-10-23 — VERCON ONLINE: o singură identitate fiscală a furnizorului
+### 2026-10-23 — VC06-18: VERCON ONLINE: o singură identitate fiscală a furnizorului
 
 Implementare limitată la VERCON online. Identitatea este exclusiv codul
 fiscal normalizat (alfanumeric uppercase, prefix RO eliminat înainte de
@@ -5353,7 +5175,7 @@ PYTHON/static/js/vercon/{docs,receipt-context,receipt-tree,
 document-tree-order,storno-editor,efactura-intake}.js;
 PYTHON/static/css/vercon-receipt-destinations.css;
 PYTHON/static/help/vercon.json; implementare_vercon_v2.md;
-docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md.
 
 Limita de scop: DDF, ORD, extrase, nomenclatorul global Parteneri,
 migratoarele Access și rutele K-BOT din routes/efactura nu au fost modificate.
@@ -5361,13 +5183,10 @@ Proiecția comună de stare eFactura citește CF din NIR, în acord cu online.
 După importuri cu un migrator vechi, repetați migrarea manuală a datelor
 înainte de folosirea documentelor noi în VERCON online.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de design prin citirea surselor;
-fără teste, build, verificări automate/de sintaxă, browser sau acces la
-MariaDB, conform instrucțiunilor. Nu există confirmare de funcționare în
-execuție și nu s-au aplicat scripturile SQL.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 
-### 2026-10-23 — VERCON: migrare fiscală din KBotAdmin / Interogări unice
+### 2026-10-23 — VC03-07: VERCON: migrare fiscală din KBotAdmin / Interogări unice
 
 Pregătită sql/VC_20261023_FURNIZORI_CF_KBOTADMIN.sql pentru mecanismul
 existent routes/one_time/runner.py: fără START TRANSACTION/COMMIT și fără
@@ -5401,13 +5220,11 @@ reușita migrării. Interogarea include întotdeauna AVACONT_SURSA.
 Fișiere: sql/VC_20261023_FURNIZORI_CF_KBOTADMIN.sql (nou);
 sql/VC_20261023_FURNIZORI_CF_STRUCTURA.sql (antet);
 implementare_vercon_v2.md;
-docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
-Stare: SCRIS LOCAL, NEEXECUTAT. Doar analiză de design a runnerului și
-interfeței; fără teste, build, verificări automate, SSH, KBotAdmin deschis
-sau acces MariaDB. Nicio schimbare de structură/date executată.
+docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 
-### 2026-10-23 — diagnostic NIR_FARA_CF după rularea utilizatorului
+### 2026-10-23 — VC03-08: diagnostic NIR_FARA_CF după rularea utilizatorului
 
 Log furnizat de utilizator: Portare_parteneri_codfiscal, hash prefix
 24beed22b0f0c6f2, 15 instrucțiuni. AVACONT_SURSA și 15 DC-uri OK; șapte DC-uri
@@ -5436,7 +5253,7 @@ Fără acces MariaDB, SQL executat, teste sau verificări automate. Cauza
 concretă a documentelor rămâne de stabilit din diagnosticul utilizatorului.
 
 
-### 2026-10-23 — migrare VERCON CF v2: documentele istorice fără CF nu blochează baza
+### 2026-10-23 — VC03-09: migrare VERCON CF v2: documentele istorice fără CF nu blochează baza
 
 Diagnostic furnizat de utilizator (Portare_parteneri_codfiscal_test_1,
 hash prefix 14ccf76d81d6702c): N=33/1/147/9/7/2/1 pentru
@@ -5478,16 +5295,12 @@ PYTHON/routes/vercon/{receipt_tree,report_incoming_selection,
 report_selection,supplier_identity}.py;
 PYTHON/static/js/vercon/{document-tree-order,storno-editor}.js;
 PYTHON/static/help/vercon.json; implementare_vercon_v2.md;
-docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+docs/worklog/SLICE-VC03-09-migrare-cf-v2-documente-istorice-fara-cf.md.
 
-Stare: SCRIS LOCAL, NEPUBLICAT; SQL pregătit pentru utilizator, NEEXECUTAT
-de asistent. Fără teste, build, verificări automate/de sintaxă, browser,
-SSH sau acces MariaDB. NIR-urile fără CF au nevoie în continuare de date
-fiscale explicite pentru a primi o identitate de furnizor; migrarea nu
-pretinde rezolvarea acestor informații absente.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). NIR-urile fără CF au nevoie în continuare de date fiscale explicite pentru a primi o identitate de furnizor; migrarea nu pretinde rezolvarea acestor informații absente.
 
 
-### 2026-10-23 — migrare CF v3: ignoră partenerii Ascuns=1
+### 2026-10-23 — VC03-10: migrare CF v3: ignoră partenerii Ascuns=1
 
 Clarificare explicită a utilizatorului: partenerii cu Ascuns=1 NU au NIR-uri
 sau alte documente. Nu este necesară și nu s-a implementat vreo logică de
@@ -5507,12 +5320,12 @@ nu inversează schimbări ale unei rulari deja încheiate.
 Fișiere: sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V3.sql (nou);
 PYTHON/routes/vercon/supplier_identity.py (referință la V3);
 implementare_vercon_v2.md;
-docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+docs/worklog/SLICE-VC03-10-migrare-cf-v3-parteneri-ascunsi.md.
 Stare: SQL PREGĂTIT, NEEXECUTAT de asistent. Fără teste, verificări
 automate/de sintaxă sau acces MariaDB. Nicio modificare de date/structură
 executată. De rulat de utilizator prin Interogări unice, cu numele V3.
 
-### 2026-10-23 — VRC.Migrator: aceeași identitate fiscală ca VERCON online
+### 2026-10-23 — VC05-11: VRC.Migrator: aceeași identitate fiscală ca VERCON online
 
 Cerere: alinierea strict a VRC.Migrator la fluxul fiscal VERCON, cu protejarea
 celorlalte module și a partenerilor Ascuns=1 (care nu au documente).
@@ -5572,10 +5385,7 @@ lățimea la care atinge minimul; valorile rămân între pagini (localStorage);
 Fișiere: PYTHON/static/css/typography.css, PYTHON/static/css/font-fit-debug.css,
 PYTHON/static/js/utils/font-fit-panel.js, PYTHON/static/js/utils/debug-tools.js.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Doar verificare de sintaxă JS (node --check);
-neîncercat în browser. Rămân de ales valorile finale și paginile pe care se
-aplică (CSS-urile care folosesc `calc(var(--fs-base) ± Npx)` urmează baza, dar
-cu pas fix în px).
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Rămân de ales valorile finale și paginile pe care se aplică (CSS-urile care folosesc `calc(var(--fs-base) ± Npx)` urmează baza, dar cu pas fix în px).
 
 ## 23.10.2026 — antet NIR / BC: etichetele lângă control când gridul are sub 10 rânduri
 
@@ -5590,9 +5400,7 @@ Fișiere: PYTHON/static/js/vercon/header-fit.js (nou), css/vercon-header-inline.
 (nou), css/vercon.css (import), js/vercon/docs.js (import + o linie după crearea
 rădăcinii). Prag 10 rânduri în `minRows` (docs.js).
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Doar verificare de sintaxă JS (node --check);
-neîncercat în browser. docs.js are 1028 de linii (peste ținta de ~1000, deja 1026
-înainte). Ajutorul VERCON nu a fost actualizat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). docs.js are 1028 de linii (peste ținta de ~1000, deja 1026 înainte). Ajutorul VERCON nu a fost actualizat.
 
 ## 23.10.2026 — antet NIR pe o linie: Cotă TVA deasupra, Furnizor și Cont egale
 
@@ -5603,7 +5411,7 @@ lățime de control; «Categorie / cont» se arată «Cont» (două texte în ac
 `<span>`, comută CSS-ul; în modul normal rămâne «Categorie / cont»).
 
 Fișiere: css/vercon-header-inline.css, js/vercon/receipt-allocation.js.
-Stare: SCRIS LOCAL, NEPUBLICAT; doar verificare de sintaxă JS, neîncercat în browser.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Cotă TVA urcă pe primul rând al antetului (coloana 4) în același mod; css/vercon-header-inline.css.
 
@@ -5618,7 +5426,7 @@ sunt acum folosite integral. Sub 800px rămân regulile existente (2 coloane, or
 din document).
 
 Fișiere: css/vercon-consumption.css, js/vercon/docs.js.
-Stare: SCRIS LOCAL, NEPUBLICAT; doar verificare de sintaxă JS, neîncercat în browser.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Panoul de test al fontului: butonul «Aa» scos (rămâne în cod, `mount({ button: true })`); se deschide doar cu Ctrl+Alt+F sau kbotDebug.fontFit(), iar fără deschidere nu rulează nimic, deci valorile de test păstrate în browser nu mai ating paginile.
 

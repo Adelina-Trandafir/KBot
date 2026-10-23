@@ -21,5 +21,7 @@ Fără teste automate sau verificări vizuale, conform preferinței proiectului.
 
 ## Nevalidat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Proba mobil/dropdown/print/PDF aparține utilizatorului pe localhost. Niciun SQL nou.
 Restart local pentru generatorul PDF; autentificarea trebuie reluată după restart.

@@ -1,6 +1,6 @@
-# Ordonare după tip și prețuri istorice în rapoarte
+# SLICE-VC08-16 — Ordonare după tip și prețuri istorice în rapoarte
 
-Data: 2026-10-23. Stare: SCRIS LOCAL, NEPUBLICAT.
+Data: 2026-10-23. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Regula cerută pentru toate aplicațiile este memorată în AGENTS.md:
 texte alfabetic în română, date cronologic și numere numeric, inclusiv

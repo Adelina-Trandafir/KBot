@@ -1,5 +1,6 @@
 # Project instructions
 
+- Orice lucrare se face pe un slice de forma `SLICE-wwnn-nn`, unde fiecare `w` este o literă sau o cifră, iar fiecare `n` este o cifră.
 - **REGULA 0 — Limita intervenției:** Dacă o modificare ar afecta mai mult decât scopul discutat și autorizat cu utilizatorul, asistentul se oprește și îl anunță înainte de a continua. Nu extinde automat modificarea la alte tabele, module, documente sau fluxuri.
 - The assistant has no authorization or access to modify MariaDB schemas. Prepare DDL and seed SQL as files for the user to execute; never execute schema changes or add automatic schema creation to application code. Applies to AVACONT_COMUN and all other MariaDB databases.
 - SQL supplied for AVACONT_COMUN must use uppercase identifiers for new tables and columns.

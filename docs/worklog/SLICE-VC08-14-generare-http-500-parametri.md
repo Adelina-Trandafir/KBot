@@ -1,4 +1,4 @@
-# VERCON — Corecție HTTP 500 la generarea rapoartelor
+# SLICE-VC08-14 — Corecție HTTP 500 la generarea rapoartelor
 
 Data: 2026-10-23.
 
@@ -19,8 +19,4 @@ nu este modificată de această corecție.
 Fișiere: PYTHON/routes/vercon/report_routes.py; implementare_vercon_v2.md;
 acest jurnal.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Cauza identificată prin analiză de sursă;
-fără teste, verificări automate/de sintaxă, browser, generări PDF/Excel sau
-acces la MariaDB, conform AGENTS.md. Publicare: report_routes.py și
-repornirea serviciului web. Nu sunt necesare schimbări JS, SQL sau de schemă
-pentru această corecție.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

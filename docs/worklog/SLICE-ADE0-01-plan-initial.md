@@ -1,6 +1,6 @@
 # SLICE-ADE0-01 — planul inițial ADECHIT
 
-Data: 07.10.2026. Stare: DOCUMENTAT LOCAL, numai documentație.
+Data: 07.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026), numai documentație.
 
 ## Ce s-a schimbat și de ce
 
@@ -37,6 +37,8 @@ din CODE_WORKFLOW. Nu s-a făcut commit sau push în această intervenție.
   Preview-ul 5050 nu este încă implementat sau pornit.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Niciun acces la server, MariaDB sau datele live; niciun SQL executat, niciun deploy.
 - Nu este încă terminată maparea tuturor fluxurilor active; aceasta este ADE0-02.

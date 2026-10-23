@@ -1,7 +1,7 @@
 # ADECHIT — subunitatea pe rapoarte și configurarea zilelor reale
 
 Data: 2026-10-20.
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Rapoarte
 
@@ -53,8 +53,7 @@ Nu sunt necesare modificări de schemă sau scripturi DDL/seed.
 
 ## Limitele verificării
 
-Numai analiză de design. Fără teste, alte verificări sau SQL executat,
-conform AGENTS.md. Nu au fost generate sau inspectate PDF-uri/Excel-uri.
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 Documentația furnizorului și sursa publică PHP descriu structura JSON folosită;
 endpoint-ul live `/api/2026` nu a putut fi citit prin instrumentul de browsing.
 Nu este confirmată funcționarea cererii HTTP de pe serverul aplicației.
@@ -84,15 +83,14 @@ versiunea anterioară. Nu s-a citit sau modificat starea serverului.
 Clientul API păstrează acum codul HTTP în eroare, iar macheta afișează un
 mesaj explicit despre actualizarea componentei Python în cazul 404.
 Fișiere suplimentare modificate: `PYTHON/static/js/adechit/app.js`,
-`PYTHON/static/js/adechit/working-days.js`. Fără teste sau alte verificări.
+`PYTHON/static/js/adechit/working-days.js`. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Eroare la afișarea coloanei Stare
 
 Formatterul DataGrid primește doar valoarea celulei. Coloana Stare presupunea
 incorect că primește și rândul, provocând eroarea la accesarea `row.closed`.
 În `working-days.js`, textul stării este acum calculat pe fiecare rând înainte
-de construirea grilei și afișat direct, fără formatter. Necesită publicarea
-fișierului JS și reîncărcarea paginii. Fără teste sau alte verificări.
+de construirea grilei și afișat direct, fără formatter. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Coloane și calcul din zile libere suplimentare
 
@@ -120,8 +118,7 @@ fișierului JS și reîncărcarea paginii. Fără teste sau alte verificări.
 Fișiere: `PYTHON/routes/adechit/working_days.py`,
 `PYTHON/static/js/adechit/working-days.js`,
 `PYTHON/static/css/adechit-working-days.css`.
-Numai analiză de design; fără teste, execuții de verificare, SQL sau publicare.
-Necesită publicarea Python/JS/CSS, repornirea serviciului și reîncărcarea paginii.
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Fundalul coloanei Zile Libere suplimentare
 
@@ -129,5 +126,4 @@ Fundalul `--sky-1` și fontul de la DGV Prezență se aplică acum întregii
 coloane, inclusiv pe rândurile închise, ca în grila principală. Regula inițială
 colora doar celulele cu clasa `is-editable`. Editorul numeric păstrează același
 fundal la introducerea valorii. Dreptul de editare al lunilor nu se schimbă.
-Fișier: `PYTHON/static/css/adechit-working-days.css`. Fără teste sau alte
-verificări executate; modificare locală, nepublicată.
+Fișier: `PYTHON/static/css/adechit-working-days.css`. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

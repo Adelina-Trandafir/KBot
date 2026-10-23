@@ -1,7 +1,6 @@
 # SLICE-AD11-05 — copil + părinte într-un singur formular, linkuri în erori, email pe copii activi
 
-11.10.2026. SCRIS LOCAL; doar verificări de sintaxă (node --check, py_compile). Nicio pagină
-rulată, nicio cerere trimisă; utilizatorul a probat parțial pe server (vezi „Nerezolvat”).
+11.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -56,6 +55,8 @@ Eroarea `AD_PortalParents lipsă` din 000_DEMO a venit din AD_08 neaplicat; util
 scripturile AD_08 / AD_08_02 și raportează „pare ok”.
 
 ## Nerezolvat / neverificat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Linkurile din mesajul de conflict nu au fost văzute funcționând; presupunerea (părinte din altă
   subunitate) a fost tratată prin comutarea subunității, dar neprobată.

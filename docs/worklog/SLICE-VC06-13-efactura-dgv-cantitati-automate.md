@@ -1,8 +1,6 @@
-# eFactura: DGV, cantități automate și listă alimente compactă — 23.10.2026
+# SLICE-VC06-13 — eFactura: DGV și cantități automate la asocierea NIR — 23.10.2026
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse. Fără
-teste, verificări automate/de sintaxă, browser sau MariaDB, conform
-instrucțiunilor proiectului.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Asocierea NIR/eFactura
 
@@ -27,20 +25,6 @@ cererii și este distrusă la închiderea dialogului. Stilurile butoanelor mari
 ale dialogului sunt limitate la acțiunile dialogului, fără a afecta
 butoanele și editorii DGV.
 
-## Lista de alimente
-
-La deschiderea unei liste nu se mai afișează automat mesajul de ordine
-cronologică și nici mesajul alternativ despre modificarea porțiilor. Spanul
-vc-save-status și containerul de mesaje nu sunt inserate în footer când nu
-există un mesaj activ sau o perioadă închisă. Nu este ascundere CSS a textului:
-elementul cu mesajul permanent nu se mai generează în documentul afișat.
-Pe ecrane înguste, footerul nu rezervă nici rândul secundar de mesaje dacă
-nu există containerul de mesaje.
-
-Mesajele unei operații în curs, erorile și confirmările rămân disponibile
-atunci când sunt necesare. Restricțiile existente asupra modificării și
-anulării, inclusiv excepția pentru porții în ultima lună, rămân aplicate.
-
 ## SQL și livrare
 
 Cele trei declarații din sql/EV_02_vercon_asocieri_partiale.sql au acum
@@ -49,10 +33,10 @@ Nu este necesară schimbarea structurii pentru DGV/cantități; nu s-a executat
 SQL și nu s-au modificat baze de date.
 
 Fișiere: PYTHON/static/js/vercon/efactura-association-grid.js (nou),
-efactura-association.js, lista.js; PYTHON/static/css/{vercon-efactura,vercon-lista}.css;
+efactura-association.js; PYTHON/static/css/vercon-efactura.css;
 PYTHON/static/help/vercon.json; sql/EV_02_vercon_asocieri_partiale.sql;
 implementare_vercon_v2.md; acest jurnal.
 
-Publicare necesară: cele trei module JS și CSS/help împreună, apoi
+Publicare necesară: modulele JS și CSS/help împreună, apoi
 reîncărcarea paginii. Scriptul SQL rămâne numai pentru execuție manuală de
 către utilizator, la instalarea structurii.

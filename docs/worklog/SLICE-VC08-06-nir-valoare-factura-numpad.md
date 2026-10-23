@@ -1,6 +1,6 @@
 # 2026-10-19 — Separator zecimal din numpad în valoarea facturii NIR
 
-Stare: **SCRIS LOCAL**, nerulat și nepublicat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Caseta valorii reale a facturii NIR folosește TextBox cu
 `numberLocale: 'en-US'`: afișare `1,234.56`, cu punct zecimal.

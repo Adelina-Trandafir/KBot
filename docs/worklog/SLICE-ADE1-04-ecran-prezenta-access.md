@@ -22,5 +22,7 @@ DataGrid, tema și mesajele comune.
 
 ## Neverificat sau amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Serverul real, autentificarea și MariaDB nu au fost testate. Transferul copilului rămâne
 dezactivat până la decizia M06; rapoartele din dreapta ecranului Access rămân în ADE9.

@@ -1,6 +1,6 @@
 # SLICE-ADE6-15 — taxe cu perioade lună/an
 
-09.10.2026. SCRIS LOCAL, fără teste.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbări
 

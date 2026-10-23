@@ -1,7 +1,7 @@
 # SLICE-ADE0-07 — deciziile despre grupe, istoric, plecați și DDL-ul final al schemei AD_
 
-Data: 08.10.2026. Stare: DECIZII ÎNREGISTRATE; DDL scris local, nevalidat pe MariaDB. Cod Python/JS
-neschimbat, teste nerulate (regula proiectului: doar la cerere).
+Data: 08.10.2026. Stare: DECIZII ÎNREGISTRATE; DDL TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Cod Python/JS
+neschimbat.
 
 ## Ce s-a decis și de ce
 
@@ -29,9 +29,11 @@ Deciziile au fost luate de utilizator în conversație; ele închid M06 și comp
 
 ## Rezultatele verificărilor
 
-- DDL nerulat pe MariaDB. Nicio verificare automată.
+- DDL TESTAT, RULAT, PUBLICAT pe MariaDB.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - `PYTHON/routes/adechit/schema.json` și `ADECHIT/tools/build_schema.py` NU sunt actualizate: generatorul
   produce încă `AD_01_schema.sql` (cu `AD_Grupe.Educator`, fără tabelele noi). Codul (`repository.py`,

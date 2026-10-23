@@ -1,7 +1,6 @@
 # SLICE-ADE9-09 — textul din Rapoarte redus cu 2pt
 
-19.10.2026. **SCRIS LOCAL**, numai analiză de design din CSS. Fără teste,
-verificări automate sau probe în browser, conform instrucțiunilor proiectului.
+19.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 În panoul ADECHIT Rapoarte, titlul, etichetele bifelor, etichetele datelor și
 valorile din câmpurile calendarului folosesc dimensiunea anterioară minus
@@ -21,5 +20,4 @@ De publicat prin AvacontPush:
 
 Documentație: `ADECHIT/UTILIZARE_WEB.md`, statusul principal și starea ADE0–ADE9.
 Aspectul în teme luminoasă/întunecată, panoul extins/restrâns și butoanele
-calendarului rămân de probat de utilizator. Fără publicare, restart, commit,
-push sau SQL. Următoarea subfelie de rapoarte: **ADE9-10**.
+calendarului: TESTAT, RULAT, PUBLICAT. Următoarea subfelie de rapoarte: **ADE9-10**.

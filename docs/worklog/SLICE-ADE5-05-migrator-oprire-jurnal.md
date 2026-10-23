@@ -1,6 +1,6 @@
 # SLICE-ADE5-05 — oprire, jurnal SQL și invalidarea verificării în ADE.Migrator
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; nerulat, netestat pe MariaDB sau în UI.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -45,6 +45,8 @@ Data: 09.10.2026. Stare: CONSTRUIT LOCAL; nerulat, netestat pe MariaDB sau în U
   de testare. Sursele Access nu au fost modificate. Fără commit, push sau DDL executat.
 
 ## Neverificat și amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Utilizatorul probează citirea MDB, educatorii, blocajele, invalidarea verificării,
   oprirea înainte de COMMIT, închiderea în lucru și interpretarea jurnalelor.

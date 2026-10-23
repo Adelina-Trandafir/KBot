@@ -31,6 +31,8 @@ Implementează secțiunea 8 (migrator) din [planul subunităților](../../ADECHI
 
 ## Rămâne neverificat / amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Migrarea efectivă a `baza_40.mdb` și `baza_47.mdb` (scenariile 1 și 9 și completările din secțiunea 12 a
 planului); completarea sau înlocuirea unei subunități populate rămâne în afara primei versiuni.
 

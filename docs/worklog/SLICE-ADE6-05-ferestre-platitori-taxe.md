@@ -39,6 +39,8 @@ Ajutorul din pagină a fost actualizat cu referința ADE6-05.
 
 ## Neverificat sau amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Nu s-au executat SQL remote, publicare, validare MariaDB sau probe Access.
 Nu se schimbă schema bazei. Transferurile/plecările și configurarea unității nu fac parte
 din această lucrare. Browserul poate închide un tab după confirmare; fereastra modală

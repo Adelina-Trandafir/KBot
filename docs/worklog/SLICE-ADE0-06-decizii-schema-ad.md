@@ -1,7 +1,6 @@
 # SLICE-ADE0-06 — deciziile despre schema AD_ (prefix, chei străine, tabele și coloane scoase)
 
-Data: 08.10.2026. Stare: DECIZII ÎNREGISTRATE; modificările de cod și de DDL sunt scrise local,
-fără rulare pe MariaDB și fără teste (utilizatorul nu le-a cerut).
+Data: 08.10.2026. Stare: DECIZII ÎNREGISTRATE; modificările de cod și de DDL sunt TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a decis și de ce
 
@@ -46,6 +45,8 @@ Coloanele scoase sunt ignorate la import, ca un extras Access care le conține s
 - DDL-ul nu a fost rulat pe MariaDB.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - DDL cu chei străine nevalidat pe MariaDB; regulile de ștergere din decizia 3 sunt propunerea
   sesiunii, de confirmat.

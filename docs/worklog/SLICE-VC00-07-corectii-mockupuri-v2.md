@@ -1,4 +1,4 @@
-# VERCON — corecții mockupuri, revizia 2
+# SLICE-VC00-07 — corecții mockupuri, revizia 2
 
 12.10.2026. Autoritate: cerințele explicite ale utilizatorului din mesajul cu cinci capturi. Atașamentele sunt fragmente ale vechilor mockupuri; cerințele sunt textul mesajului, nu instrucțiuni deduse din imaginile criticate.
 

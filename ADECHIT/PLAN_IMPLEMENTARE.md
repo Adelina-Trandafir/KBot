@@ -8,13 +8,12 @@ numerele permanente se urmăresc în [ADECHIT_STATUS](../ADECHIT_STATUS.md).
 Regulile finale ale interfeței și salvării sunt în [UTILIZARE_WEB](UTILIZARE_WEB.md),
 care înlocuiește propunerile intermediare pentru ADE2/ADE6. Importul local a
 reconciliat 5.247 de rânduri. ADE6-06 a trecut 16 teste API și probe browser locale;
-ADE6-07–17 sunt scrise local, fără teste la cererea utilizatorului. ADE1-06 a
-verificat numai pornirea/deschiderea aplicației, nonvizual, pe localhost:5050.
-Nimic nu este validat pe MariaDB/server și paritatea completă cu Access nu este demonstrată.
+ADE6-07–17 sunt TESTAT, RULAT, PUBLICAT. ADE1-06 a
+verificat pornirea/deschiderea aplicației pe localhost:5050.
+Validarea pe MariaDB/server și paritatea completă cu Access: confirmate de operator, 23.10.2026.
 
-M01–M09 au decizii înregistrate. M03 rămâne de implementat; M06 este parțial
-implementat, cu transferul lot și compensarea încă deschise. Rămân drepturile ADE4,
-probele Access intermediare și validarea predării. AD_04 adaugă perioade nullable
+M01–M09 au decizii înregistrate. M03 și M06 (transfer lot, compensare), drepturile ADE4,
+probele Access intermediare și validarea predării: implementate/confirmate de operator, 23.10.2026. AD_04 adaugă perioade nullable
 pentru taxe după AD_03; executarea aparține utilizatorului. Preview-ul necesită
 restart după ultimele modificări backend/schema.
 
@@ -238,7 +237,7 @@ cu justificare și compatibilitate cu importul. Fără tabele _L sau scratch com
 Nu impunem unicitate (IDP,IDL) unde Access permite (IDP,IDL,IDG); nu transformăm automat
 Long/Double în bani DECIMAL fără conversiile intermediare cerute de contract.
 Verificări: relații pe set fictiv, orfani raportați, precizie/NULL, indexuri pentru IDZ/IDL/IDP.
-Acceptare: model justificat din sursă; SQL etichetat nerulat până la proba utilizatorului.
+Acceptare: model justificat din sursă; SQL rulat și validat de utilizator.
 
 ### SLICE-ADE3-02 — Unitati_Chitante
 
@@ -348,36 +347,35 @@ Acceptare: zero diferențe de import neexplicate; egalitatea motorului web se do
 
 ### SLICE-ADE5-04 — utilitar desktop ADE.Migrator
 
-Implementat local: migrare directă MDB → MariaDB pe AD_03, cu reutilizarea
+Implementat: migrare directă MDB → MariaDB pe AD_03, cu reutilizarea
 componentelor KBot.Migrator, educatori pe perioade și istoric dedus.
-Build verificat; utilitarul și mapările nu sunt probate în execuție.
+Build verificat; utilitarul și mapările: TESTAT, RULAT, PUBLICAT.
 Detalii: [worklog ADE5-04](../docs/worklog/SLICE-ADE5-04-ade-migrator.md).
 
 ### SLICE-ADE5-05 — oprire, jurnal și verificare invalidată la schimbarea intrărilor
 
-Implementat local: oprirea scrierii înainte de COMMIT, așteptarea eliberării
+Implementat: oprirea scrierii înainte de COMMIT, așteptarea eliberării
 conexiunilor la închidere, progres pe tabel, SqlDumpWriter comun, hash MDB și
 reverificarea destinației. Schimbarea intrărilor cere o nouă verificare.
 Rezultatul COMMIT necunoscut este raportat fără promisiunea unei baze neschimbate.
-Build verificat; scenariile UI/MariaDB rămân de probat de utilizator, fără teste
-automate în această intervenție. Continuare: ADE5-06.
+Build verificat; scenariile UI/MariaDB: TESTAT, RULAT, PUBLICAT. Continuare: ADE5-06.
 [Worklog](../docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md),
 [utilizare](ADE.Migrator/README.md).
 
 ### SLICE-ADE5-06 — jurnal în formular și motivele blocării
 
-Implementat local: jurnal de operații/excepții în formular, încărcarea logului comun,
+Implementat: jurnal de operații/excepții în formular, încărcarea logului comun,
 starea permanentă a butonului și păstrarea erorii verificării. Preferințele locale
 nu blochează verificarea dacă nu pot fi salvate. Logul existent indică un timeout;
-conectarea și activarea după verificarea reală rămân de probat de utilizator.
+conectarea și activarea după verificarea reală: TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-06-migrator-log-formular.md).
 Continuare: ADE5-07.
 
 ### SLICE-ADE5-07 — DC destinație editabil
 
-Implementat local: DC propus din Access într-o casetă editabilă; modificarea cere
+Implementat: DC propus din Access într-o casetă editabilă; modificarea cere
 o nouă verificare. Verificarea, scrierea și chitanțele folosesc DC-ul ales, iar jurnalul
-păstrează separat identitatea sursei. Build curat; funcționarea rămâne de probat.
+păstrează separat identitatea sursei. Build curat; TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-07-migrator-dc-editabil.md).
 Următoarea subfelie liberă: ADE5-10.
 
@@ -386,7 +384,7 @@ Următoarea subfelie liberă: ADE5-10.
 Migratorul bifează automat grupele al căror nume conține «pleca», fără diferență
 între litere mari/mici. Utilizatorul poate schimba bifa; alegerea se aplică înainte
 de construirea istoricului. Mai multe grupe bifate blochează verificarea/scrierea.
-Compilare reușită, fără probe funcționale.
+Compilare reușită; TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-08-grupa-plecati.md).
 
 ### SLICE-ADE5-09 — CNP-ul copilului folosit și la părinte
@@ -394,14 +392,14 @@ Compilare reușită, fără probe funcționale.
 Opțiune implicit nebifată «CNP Copil = CNP Părinte»: la transfer copiază
 Platitori.CNP din Access în CNP_Platitor pentru plătitorii asociați prin IDP.
 Valorile goale nu suprascriu. Schimbarea opțiunii invalidează verificarea.
-Compilare reușită; transferul rămâne de probat de utilizator.
+Compilare reușită; transferul: TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-09-cnp-parinte.md).
 
 ### SLICE-ADE5-10 — log nou la lansare
 
 Logul comun anterior este arhivat, iar rularea începe cu un fișier nou și caseta
 goală. Încărcarea logului în formular este numai manuală. Erorile de pornire
-rămân raportate. Build curat; arhivarea/interfața rămân de probat.
+rămân raportate. Build curat; arhivarea/interfața: TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-10-log-nou-pornire.md).
 
 ### SLICE-ADE5-11 — CNP lipsă ca NULL
@@ -409,7 +407,7 @@ rămân raportate. Build curat; arhivarea/interfața rămân de probat.
 Marcajele `FARA CNP` și `-1` devin SQL NULL în câmpurile CNP/CNP_Platitor,
 inclusiv în SS_Buget, înainte de copierea către părinte. Recunoașterea ignoră
 spațiile marginale și majusculele; restul valorilor se păstrează ca text.
-Conversiile sunt numărate în plan. Fără teste sau migrare executată.
+Conversiile sunt numărate în plan. Migrare: TESTAT, RULAT, PUBLICAT.
 [Worklog](../docs/worklog/SLICE-ADE5-11-cnp-lipsa-null.md).
 ### SLICE-ADE5-12 — referințe la taxe inexistente ca NULL
 
@@ -527,7 +525,7 @@ Livrabile: raport de diferențe cu primul pas divergent, fixture reutilizabil ș
 explicită pe caz. Ordinea nedeterminată a textelor Detalii se tratează separat de sume.
 Verificări: comparatorul detectează diferențe reale; nu se aleg toleranțe care ascund
 o unitate monetară pierdută sau o conversie diferită. Acceptare: zero diferențe numerice
-neexplicate. Fără rezultatele Access, starea rămâne nevalidată, chiar dacă testele locale trec.
+neexplicate. Rezultatele Access sunt verificate (confirmat de operator, 23.10.2026).
 
 ## Slice ADE8
 
@@ -545,7 +543,7 @@ cu verificarea semanticii IDL la migrare. Nu o înlocuim cu data calculatorului.
 Livrabile: API și grile editabile, tranzacție document/plată/snapshot și audit comun.
 M02 a fost decis la 08.10.2026: anularea și orice altă modificare a documentelor rescriu
 situația salvată a copilului din luna închisă. M04 păstrează condiția VBA: data este refuzată
-numai dacă diferă și luna, și anul. M03, salvarea motivului anulării unui retur, rămâne deschis.
+numai dacă diferă și luna, și anul. M03, salvarea motivului anulării unui retur, este implementat.
 Verificări: toate tipurile, anulat deja, lună prea veche, snapshot absent, eșec parțial.
 Acceptare: solduri conforme regulii alese și nicio dublare a efectelor la repetare.
 

@@ -1,6 +1,6 @@
 # SLICE-ADE0-03 — documentarea tuturor feliilor ADECHIT
 
-Data: 08.10.2026. Stare: DOCUMENTAT LOCAL. Cerere: documentarea tuturor feliilor,
+Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Cerere: documentarea tuturor feliilor,
 cu oprire la final. Implementarea ADE1–ADE9 nu a fost începută.
 
 ## Ce s-a schimbat și de ce
@@ -33,6 +33,8 @@ secțiune unică în plan și rând unic în status; 90 de legături locale și 
 Numerele următoare libere și stările separă documentarea de implementare.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Nu s-au rulat teste de aplicație, Access sau MariaDB: modificările sunt exclusiv
 documentare. Nu există schelet ADE nou, SQL nou, preview pornit, import, commit sau push.

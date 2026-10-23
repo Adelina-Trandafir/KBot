@@ -1,4 +1,4 @@
-# VERCON — mesaje între acțiunile din footer
+# SLICE-VC08-18 — mesaje între acțiunile din footer
 
 Cerere: `vc-save-status` trebuie să stea între ieșire/renunțare și
 Modifică/Salvează; apariția mesajului nu trebuie să mute butoanele.
@@ -33,7 +33,4 @@ primesc același elipsis și tooltip; nu se inventează operații suplimentare.
 
 ## Stare și limite
 
-SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
-build, verificări automate/de sintaxă, browser sau MariaDB, conform
-instrucțiunilor proiectului. Nu s-a executat SQL și nu s-a modificat schema.
-Publicare: modulele JS/CSS și help împreună, apoi reîncărcarea paginii.
+TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

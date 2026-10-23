@@ -1,7 +1,6 @@
 # SLICE-ADE9-01 — rapoartele ADECHIT
 
-Stare: **SCRIS LOCAL**. Nerulat: nicio probă, nicio redare, nicio tipărire (preferința din REGULI_PROIECT §5).
-Verificat doar: `py_compile` pe fișierele Python și `node --input-type=module --check` pe JavaScript.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -22,6 +21,8 @@ Serverul doar citește: nu scrie rânduri și nu consumă numere de chitanță. 
 | Chitanta | deja făcută (ADE8) | neschimbată |
 
 ## Abateri față de Access (de confirmat)
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - **Registru/Bancă/Anulate**: sume cu 2 zecimale (Access arăta 0 zecimale; ar fi ascuns bani).
 - **Documente anulate**: Access filtrează după luna prezenței, deși antetul arată un interval; antetul arată acum luna.
@@ -54,6 +55,8 @@ Modificate: `routes/adechit/__init__.py` (ruta `GET /api/adechit/reports/<kind>/
 `static/adechit.html` (panou), `static/js/adechit/app.js` (legare panou, butonul dispoziției), `tests/adechit_lazy.test.mjs` (doar importurile simulate noi).
 
 ## De probat de utilizator
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 Fiecare raport pe date reale, listare + PDF; interogările SQL nu au fost rulate pe MariaDB (nici pe SQLite);
 `reportlab` lipsește din `.venv` local (PDF-ul se probează doar pe server); comparație cifre cu Access pe aceeași lună.

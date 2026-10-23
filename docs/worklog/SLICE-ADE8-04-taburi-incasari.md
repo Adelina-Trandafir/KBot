@@ -20,6 +20,8 @@ datei se propune SID la Chitanțe/Alte plăți și SIC la Restituiri, iar suma p
 
 ## Neverificat sau amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Configurația și numerotarea reală a chitanțelor necesită proba pe server. Pentru Alte plăți,
 interfața trimite automat tipul „Altă plată” și numărul „Fără număr”, deoarece cerința curentă
 lasă editabile numai data și valoarea. Anularea restituirii rămâne blocată de M03.

@@ -1,5 +1,41 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## Jurnalele VERCON-2026-… regrupate pe felii — 23.10.2026
+
+Jurnalele numite `VERCON-2026-10-12-*` și `VERCON-2026-10-23-*` erau de fapt subfelii VC. Au fost separate pe logică (furnizori CF, tooltip/comisii, DGV/listă) și redenumite `SLICE-VCxx-yy-*`; legăturile din `implementare_vercon_v2.md`, din acest registru și din documentele VERCON au fost actualizate.
+
+| Subfelie | Livrabile | Stare |
+|---|---|---|
+| SLICE-VC00-06 | Corecții mockupuri și fluxuri (12.10.2026); [worklog](../docs/worklog/SLICE-VC00-06-corectii-mockupuri-si-fluxuri.md) | **DOCUMENTAT** |
+| SLICE-VC00-07 | Corecții mockupuri, revizia 2 (12.10.2026); [worklog](../docs/worklog/SLICE-VC00-07-corectii-mockupuri-v2.md) | **DOCUMENTAT** |
+| SLICE-VC03-07 | Migrare fiscală din KBotAdmin / Interogări unice; [worklog](../docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC03-08 | Diagnostic NIR_FARA_CF după rularea utilizatorului; [worklog](../docs/worklog/SLICE-VC03-08-diagnostic-nir-fara-cf.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC03-09 | Migrare CF v2: documentele istorice fără CF nu blochează baza; [worklog](../docs/worklog/SLICE-VC03-09-migrare-cf-v2-documente-istorice-fara-cf.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC03-10 | Migrare CF v3: ignoră partenerii Ascuns=1; [worklog](../docs/worklog/SLICE-VC03-10-migrare-cf-v3-parteneri-ascunsi.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC05-11 | VRC.Migrator: aceeași identitate fiscală ca VERCON online (0.3.12.0); [worklog](../docs/worklog/SLICE-VC05-11-vrc-migrator-identitate-fiscala.md) | **SCRIS LOCAL, NEPUBLICAT** (singura excepție) |
+| SLICE-VC06-09 | BC în luna activă, stoc protejat și istoric cu motiv; [worklog](../docs/worklog/SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-10 | Salvarea comisiilor la ieșirea de pe rând; [worklog](../docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-11 | Asociere NIR manual cu eFactura, parțial, drag and drop; [worklog](../docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-12 | NIR: asociere în popup și grupare inițială pe furnizori; [worklog](../docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-13 | eFactura: DGV și cantități automate la asociere; [worklog](../docs/worklog/SLICE-VC06-13-efactura-dgv-cantitati-automate.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-14 | eFactura: grile sursă, țintă vizibilă, memorare implicită; [worklog](../docs/worklog/SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-15 | Informare la intrarea în gestiune și facturi inactive; [worklog](../docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-16 | eFactura: overflow, NIR asociat protejat, afișare PDF; [worklog](../docs/worklog/SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-17 | eFactura: ComboBox custom și încărcare automată; [worklog](../docs/worklog/SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC06-18 | VERCON online: furnizori exclusiv prin cod fiscal; [worklog](../docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC07-06 | Numărul copiilor în orice listă din ultima lună; [worklog](../docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC07-07 | Lista Alimente: ordinea și alinierea butoanelor; [worklog](../docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC07-08 | Lista de alimente compactă, fără mesaj permanent; [worklog](../docs/worklog/SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-11 | Rapoarte OI: structura de referință și selecția MF; [worklog](../docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-12 | Antet comun pentru bonuri P/T/C și Consum; [worklog](../docs/worklog/SLICE-VC08-12-antet-comun-bonuri.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-13 | Balanță OI, generare bonuri și selecție pe primitor; [worklog](../docs/worklog/SLICE-VC08-13-corectii-balanta-oi-bonuri-primitori.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-14 | Corecție HTTP 500 la generarea rapoartelor; [worklog](../docs/worklog/SLICE-VC08-14-generare-http-500-parametri.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-15 | Tooltipuri în arbori; [worklog](../docs/worklog/SLICE-VC08-15-tooltip-arbori.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-16 | Ordonare după tip și prețuri istorice în rapoarte; [worklog](../docs/worklog/SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-17 | Fișa de magazie: mai multe produse și prețuri; [worklog](../docs/worklog/SLICE-VC08-17-fisa-magazie-selectie-multipla.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-18 | Mesaje între acțiunile din footer; [worklog](../docs/worklog/SLICE-VC08-18-status-intre-actiuni.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+| SLICE-VC08-19 | Mesaje în dialogul comun, eliminarea vc-message; [worklog](../docs/worklog/SLICE-VC08-19-mesaje-dialog-comun.md) | **TESTAT, RULAT, PUBLICAT** (confirmat de operator, 23.10.2026) |
+
 ## SLICE-VC09-05 — Reglare registru OI, produs completat la migrare — 21.10.2026
 
 **IMPLEMENTAT ÎN SURSE, NERULAT:** migratorul 0.3.11.0 ia primirea scoaterilor din `OI_Predare` (bon + produs, ca în
@@ -72,7 +108,7 @@ Actualizat: 12.10.2026 (corecții mockupuri/documentație UI). Stari folosite (P
 
 ## Corecții vizuale și fluxuri — 12.10.2026
 
-Sursa: [Corectii_mockup-uri_01](MOCKUPURI/Corectii_mockup-uri_01/) și mesajul ulterior cu cinci atașamente, **revizia 2**. NIR este referința unică pentru toate grilele, fără padding mare; o listă de alimente poate avea mai multe BC-uri, în DGV cu valori per rând și total general. [FLUXURI_UI](FLUXURI_UI.md), PLAN, DECIZII, MAPARE, CONTRACT_CALCULE și PROBE_BROWSER sunt aliniate; SCHEMA_VC/DICTIONAR_DATE disting schema Access de cardinalitatea țintă solicitată. Acoperire vizuală în [indexul v2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md): consultare/editor, popup BC, predare și casare. Stocuri, NIR și Rapoarte sunt păstrate identic. Stare: **DOCUMENTAT**; PNG-urile nu certifică implementarea sau probele browser/API. DDL și generatorul sunt aliniate la 1:N (12.10.2026, `uq_LegBCLA_IdBonConsum`; în Access era 1=1, funcționalitate nouă); `VC_LegBCLA` 1:N aplicată pe AVACONT_SURSA și pe cele 20 de DC-uri (12.10.2026, confirmat de operator); regulile listă–BC sunt în `PYTHON/routes/vercon/lista_bc.py` (doar sintaxa verificată, nerulat, fără rute); restul VC07-01 rămâne PLANIFICAT. [Worklog v2](../docs/worklog/VERCON-2026-10-12-corectii-mockupuri-v2.md).
+Sursa: [Corectii_mockup-uri_01](MOCKUPURI/Corectii_mockup-uri_01/) și mesajul ulterior cu cinci atașamente, **revizia 2**. NIR este referința unică pentru toate grilele, fără padding mare; o listă de alimente poate avea mai multe BC-uri, în DGV cu valori per rând și total general. [FLUXURI_UI](FLUXURI_UI.md), PLAN, DECIZII, MAPARE, CONTRACT_CALCULE și PROBE_BROWSER sunt aliniate; SCHEMA_VC/DICTIONAR_DATE disting schema Access de cardinalitatea țintă solicitată. Acoperire vizuală în [indexul v2](MOCKUPURI/2026-10-12-corectate-v2/INDEX.md): consultare/editor, popup BC, predare și casare. Stocuri, NIR și Rapoarte sunt păstrate identic. Stare: **DOCUMENTAT**; PNG-urile nu certifică implementarea sau probele browser/API. DDL și generatorul sunt aliniate la 1:N (12.10.2026, `uq_LegBCLA_IdBonConsum`; în Access era 1=1, funcționalitate nouă); `VC_LegBCLA` 1:N aplicată pe AVACONT_SURSA și pe cele 20 de DC-uri (12.10.2026, confirmat de operator); regulile listă–BC sunt în `PYTHON/routes/vercon/lista_bc.py` (doar sintaxa verificată, nerulat, fără rute); restul VC07-01 rămâne PLANIFICAT. [Worklog v2](../docs/worklog/SLICE-VC00-07-corectii-mockupuri-v2.md).
 
 Regula numerotarii: feliile VC00-VC09, subfeliile `SLICE-VCxx-yy`; worklog in `docs/worklog/SLICE-VCxx-yy-*.md`. Documentatia: [PLAN](PLAN_IMPLEMENTARE.md) · [DETECTIE_VBA](DETECTIE_VBA.md) · [decizii](DECIZII_DESCHISE.md).
 

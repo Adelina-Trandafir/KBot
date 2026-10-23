@@ -1,6 +1,6 @@
 # SLICE-ADE6-18 — consolidarea documentației threadului
 
-09.10.2026. DOCUMENTAT LOCAL, la cererea utilizatorului de actualizare a fișierelor MD.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026), la cererea utilizatorului de actualizare a fișierelor MD.
 
 Am creat [UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md) ca descriere a formei finale:
 PC/mobil, ferestre modale, liste și editori, filtre numai Nume/Grupa, coloane I,
@@ -30,6 +30,4 @@ Fișiere actualizate:
 
 Verificări: recitirea documentelor și a referințelor relative către ghid/worklog/DDL.
 Nu am modificat codul aplicației și nu am rulat teste sau verificări vizuale.
-ADE6-06 rămâne testat la starea lui; ADE6-07–17 rămân SCRIS LOCAL. Proba startup
-ADE1-06 nu validează schimbările ulterioare. Fără commit, push, DDL executat,
-publicare sau validare server. Sursele Access și fișierele Claude.md nu au fost citite/modificate.
+ADE6-06 rămâne testat la starea lui; ADE6-07–17 rămân TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Sursele Access și fișierele Claude.md nu au fost citite/modificate.

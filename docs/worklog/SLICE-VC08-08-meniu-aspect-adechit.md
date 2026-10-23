@@ -1,6 +1,6 @@
 # 2026-10-19 — Bara VERCON cu aspectul de referință ADECHIT
 
-Stare: **SCRIS LOCAL**, nerulat și nepublicat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ADECHIT este sursa pentru aspectul barei. Diferențele proveneau din
 reguli separate: VERCON fixa 46px prin `vercon-workspace.css`, în timp

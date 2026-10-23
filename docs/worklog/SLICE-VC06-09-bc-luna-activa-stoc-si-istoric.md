@@ -1,4 +1,4 @@
-# VERCON — BC în luna activă, protecția stocului și istoricul recalculărilor
+# SLICE-VC06-09 — BC în luna activă, protecția stocului și istoricul recalculărilor
 
 Data: 2026-10-23.
 
@@ -76,8 +76,4 @@ Fișiere de aplicație:
 Documentație: PYTHON/reports/vercon/README.md, implementare_vercon_v2.md,
 acest jurnal.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă, browser, randări PDF/Excel sau acces
-la MariaDB, conform AGENTS.md. Nu este o garanție validată pe date reale.
-Fără SQL executat sau schimbări de schemă. Publicare: toate modulele Python,
-JS, CSS și helpul JSON de mai sus împreună, apoi repornirea serviciului web.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

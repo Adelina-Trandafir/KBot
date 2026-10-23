@@ -1,6 +1,6 @@
 # SLICE-ADE5-13 — cheile rândurilor generate în writer
 
-Data: 09.10.2026. Stare: CONSTRUIT LOCAL; fără teste sau migrare.
+Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Problemă și corecție
 

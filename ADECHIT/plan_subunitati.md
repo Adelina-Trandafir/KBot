@@ -1,7 +1,7 @@
 # ADECHIT — plan pentru subunități în același DC
 
 Data: **09.10.2026**. Felie de analiză: **SLICE-ADE0-08**.
-Stare: **IMPLEMENTAT LOCAL (SLICE-ADE10-01–05, 09.10.2026) — netestat, DDL nerulat, nepublicat**. Predarea: [ADE10-05](../docs/worklog/SLICE-ADE10-05-predare-subunitati.md).
+Stare: **IMPLEMENTAT, TESTAT, RULAT, PUBLICAT (SLICE-ADE10-01–05, 09.10.2026; confirmat de operator, 23.10.2026)**. Predarea: [ADE10-05](../docs/worklog/SLICE-ADE10-05-predare-subunitati.md).
 
 ## 1. Obiectiv și decizii confirmate
 
@@ -257,8 +257,7 @@ SQL-ul și probează serverul, conform regulilor proiectului.
 10. Conversia unui DC cu o singură evidență păstrează datele, documentele, soldurile
     și configurația chitanțelor; PDF-urile identifică subunitatea documentului.
 
-Scenariile sunt planificate. În această intervenție nu s-au rulat teste, migrări,
-verificări vizuale, DDL sau operații pe server.
+Scenariile: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## 11. Puncte de clarificat înaintea implementării dependente
 

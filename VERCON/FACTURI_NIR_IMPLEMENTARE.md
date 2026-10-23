@@ -4,7 +4,7 @@ Actualizare 23.10.2026: NIR-urile manuale se pot asocia pe poziții și cantită
 cu eFactura, prin drag and drop, cu propuneri CPV/cantitate și memorarea
 denumirilor confirmate per furnizor. Aceeași factură poate acoperi NIR-uri
 din subunități diferite. Detalii, limite și instalare în
-[jurnalul asocierii parțiale](../docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md).
+[jurnalul asocierii parțiale](../docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md).
 Necesită și `sql/EV_02_vercon_asocieri_partiale.sql`, pregătit pentru execuție
 manuală; nu a fost executat. Codul este local, nepublicat și nerulat.
 

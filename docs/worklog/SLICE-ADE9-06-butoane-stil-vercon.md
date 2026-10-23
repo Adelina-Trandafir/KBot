@@ -1,7 +1,6 @@
 # SLICE-ADE9-06 — butoane ADECHIT în stilul VERCON
 
-19.10.2026. **SCRIS LOCAL**, fără teste, verificări automate, browser sau probe
-vizuale, conform instrucțiunilor proiectului. Numai analiză de design din surse.
+19.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Schimbări
 

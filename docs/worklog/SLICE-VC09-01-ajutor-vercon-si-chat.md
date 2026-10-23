@@ -42,11 +42,7 @@ Fișiere:
 - PYTHON/routes/vercon/help_pdf.py (nou), __init__.py;
 - docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md; implementare_vercon_v2.md.
 
-Stare: SCRIS LOCAL, NERULAT, NEPUBLICAT. Numai analiză de design pe surse;
-nu s-au rulat teste, verificări de sintaxă, randări PDF sau probe în browser,
-conform instrucțiunilor proiectului. Nu s-a executat SQL și nu s-au modificat
-scheme MariaDB. Nu s-au realizat capturi de ecran; integrarea Chrome a fost
-discutată conceptual.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Publicarea necesită JSON-urile, modulele JS/CSS și fișierele Python comune
 și specifice, plus repornirea serviciului web pentru noua rută PDF.

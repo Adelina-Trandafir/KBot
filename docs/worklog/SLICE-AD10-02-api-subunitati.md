@@ -45,6 +45,8 @@ subunitatea). Nu s-au adăugat teste noi (regula proiectului).
 
 ## Rămâne neverificat / amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Toate fluxurile pe MariaDB; izolarea între subunități (scenariile 2–6 și 8 din plan) de probat de
 utilizator. Subunitățile se creează numai prin migrator sau SQL (nu există ecran de administrare,
 redenumire sau dezactivare). Restricții pe subunitate per utilizator — extensie viitoare (drepturile

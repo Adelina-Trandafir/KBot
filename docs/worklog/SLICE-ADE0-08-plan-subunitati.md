@@ -1,6 +1,6 @@
 # SLICE-ADE0-08 — plan pentru subunități în același DC
 
-Data: 09.10.2026. Stare: **DOCUMENTAT LOCAL**.
+Data: 09.10.2026. Stare: **TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)**.
 
 Utilizatorul a cerut un plan, fără cod, pentru coexistența mai multor evidențe MDB
 în același DC și comutarea între ele. A confirmat denumirea **Subunitate** și

@@ -1,6 +1,6 @@
 # SLICE-ADE6-13 — margine exterioară pe mobil
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Clarificarea utilizatorului cere spațiu între fereastră și marginile ecranului,
 păstrând paddingul interior deja implementat. Dialogul Plătitori mobil are acum

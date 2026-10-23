@@ -1,6 +1,6 @@
 # SLICE-ADE6-11 — coloane I
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Toate coloanele checkbox de stare din listele Grupe/Copii/Plătitori au titlul I,
 de la închis, pe PC și mobil. Coloanele folosesc filter:false în DataGrid comun,

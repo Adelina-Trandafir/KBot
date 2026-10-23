@@ -1,6 +1,6 @@
 # SLICE-ADE0-02 — mapare Access → web și contractul calculelor
 
-Data: 07.10.2026. Stare: DOCUMENTAT LOCAL. Fără implementare sau publicare.
+Data: 07.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a schimbat și de ce
 
@@ -37,6 +37,8 @@ inclusiv lipsa actualizării snapshotului în traseele de anulare găsite.
 - Nu s-au rulat teste de aplicație: intervenția adaugă numai documentație.
 
 ## Neverificat sau amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Rezultatele Access, conversiile ACE/ordinea evaluării, datele reale și rularea rapoartelor.
 - M01–M10, traseul real de redeschidere, anularea în lună închisă și rapoartele legacy.

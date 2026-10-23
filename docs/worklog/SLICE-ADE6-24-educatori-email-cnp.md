@@ -1,6 +1,6 @@
 # SLICE-ADE6-24 — Email și CNP opționale pentru educatori
 
-12.10.2026. **SCRIS LOCAL**. Ultima intervenție înaintea opririi momentane
+12.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Ultima intervenție înaintea opririi momentane
 a lucrului la ADECHIT solicitate de utilizator.
 
 ## Ce s-a schimbat și de ce
@@ -50,6 +50,8 @@ a lucrului la ADECHIT solicitate de utilizator.
   rămâne la utilizator, conform preferinței proiectului. Sintaxa nu validează fluxul.
 
 ## Neverificat / amânat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - DDL nerulat, KBotAdmin/publicare/restart neexecutate din chat.
 - Salvare/golire, erori de validare, conflict, grila PC/mobil și planul anual neprobate.

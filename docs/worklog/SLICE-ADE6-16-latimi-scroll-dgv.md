@@ -1,6 +1,6 @@
 # SLICE-ADE6-16 — lățimi DGV fără depășire accidentală
 
-09.10.2026. SCRIS LOCAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Utilizatorul a raportat scroll orizontal în toate cele trei liste Plătitori pe PC.
 În componenta comună, DGV avea width:100% plus borduri (content-box), iar lățimea

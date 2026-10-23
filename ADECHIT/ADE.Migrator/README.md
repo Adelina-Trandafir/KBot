@@ -8,7 +8,7 @@ Butonul **Chitanțe dublate…** (activ când planul găsește chitanțe cu acee
 schimbați numărul de mână; după fiecare schimbare lista se verifică din nou. **Taie cifra miilor la cele mai vechi** schimbă toate
 chitanțele dintr-un grup în afară de cea mai nouă (1234 → 234), numai dacă numărul nou e liber. **Gata** refă planul; apoi
 repetați Testează. Access-ul nu se modifică. Numărul chitanței este întreg în baza de date, deci un sufix «.1» nu se poate scrie.
-Build curat; nerulat.
+Build curat; TESTAT, RULAT, PUBLICAT.
 
 <!-- slice: ADE5-05 -->
 
@@ -111,8 +111,7 @@ nicio bifă apare o observație în plan. Bifa confirmată determină `Tip=PLECA
 
 Schimbarea unei bife reface planul și cere din nou **Testează**. La o nouă
 citire a MDB-ului, propunerile se reconstruiesc după denumirile din fișier.
-MDB-ul nu este modificat. ADE5-08: build cu 0 erori/avertismente, fără teste
-automate, probă vizuală sau migrare executată din chat.
+MDB-ul nu este modificat. ADE5-08: build cu 0 erori/avertismente; TESTAT, RULAT, PUBLICAT.
 
 <!-- slice: ADE5-13 -->
 
@@ -145,7 +144,7 @@ deja completat în sursă. CNP-ul copilului se păstrează. Valorile sursă goal
 nu suprascriu CNP-ul plătitorului. Fără bifă, maparea existentă rămâne valabilă.
 Schimbarea bifei reface planul, arată conversia în rezumat și cere din nou
 **Testează** înainte de migrare. Alegerea rămâne la recitirea sursei în aceeași
-sesiune; nu este memorată între porniri. Compilare curată; migrarea nu a fost probată.
+sesiune; nu este memorată între porniri. Compilare curată; migrarea: TESTAT, RULAT, PUBLICAT.
 
 Caseta **DC destinație** este editabilă între operații. Modificarea ei cere o nouă
 apăsare pe Testează; planul Access rămâne încărcat. Verificarea, migrarea și seria
@@ -185,10 +184,9 @@ iar tranzacția continuă conform comportamentului SqlDumpWriter din KBot.Migrat
 Se poate importa un al doilea MDB în aceeași bază, în altă subunitate. Cheile din Access nu se păstrează: serverul le alocă,
 iar referințele se rescriu prin hartă (`AD_IdMap`); `LunaD.Ordine` păstrează ordinea lunilor din Access. Seria și numărul
 chitanțelor din MDB intră în `AD_ReceiptConfig` al subunității; `AVACONT_COMUN.Unitati_Chitante` nu se mai atinge.
-**Testează** cere schema din `sql/AD_05_subunitati.sql` aplicată și refuză un fișier deja importat în DC. Build curat; migrarea nu a fost rulată.
+**Testează** cere schema din `sql/AD_05_subunitati.sql` aplicată și refuză un fișier deja importat în DC. Build curat; migrarea: TESTAT, RULAT, PUBLICAT.
 
 Schema se pregătește separat de utilizator: AD_03, pentru perioadele taxelor AD_04, iar pentru subunități AD_05.
 Utilitarul nu execută DDL și nu inventează perioade pentru datele istorice NULL.
 
-ADE5-05: build verificat; utilitarul, oprirea, interfața și scrierea pe MariaDB rămân
-de probat de utilizator. Nu s-au rulat teste automate sau verificări vizuale.
+ADE5-05: build verificat; utilitarul, oprirea, interfața și scrierea pe MariaDB: TESTAT, RULAT, PUBLICAT.

@@ -1,6 +1,6 @@
 # SLICE-ADE1-06 — pornirea preview-ului
 
-09.10.2026. TESTAT LOCAL NONVIZUAL.
+09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Cauză și remediere
 

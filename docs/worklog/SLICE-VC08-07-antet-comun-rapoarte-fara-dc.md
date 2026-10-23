@@ -1,6 +1,6 @@
 # 2026-10-19 — Antet comun în toate rapoartele VERCON, fără DC
 
-Stare: **SCRIS LOCAL**, nerulat și nepublicat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Toate rapoartele VERCON primesc antet de tipul situației debitorilor
 ADECHIT: denumirea unității, codul fiscal și adresa în stânga;

@@ -1,6 +1,6 @@
 # 2026-10-19 — Zoom comun în meniurile VERCON și ADECHIT
 
-Stare: **SCRIS LOCAL**, nerulat și nepublicat.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Butonul de zoom este montat o singură dată în bara aplicației, lângă
 Ajutor. Ambele aplicații folosesc același control din

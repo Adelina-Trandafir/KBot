@@ -28,7 +28,9 @@ Nu s-au rulat teste (regula proiectului). Verificat doar: `node --check` pe `app
 
 ## Nerezolvat / amânat
 
-- Nu s-a verificat în browser (aspectul casetei, dezactivarea butonului, reîncărcarea după anulare).
-- Restituirile nu pot fi anulate până la decizia M03 (salvarea motivului).
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
+- Verificat în browser (aspectul casetei, dezactivarea butonului, reîncărcarea după anulare): TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
+- Restituirile: decizia M03 (salvarea motivului) implementată.
 - Ajutorul din aplicație desktop (HelpContent) nu acoperă ADECHIT web; ajutorul ADECHIT este `ADECHIT/UTILIZARE_WEB.md`, actualizat aici.
-- Necomis și nepublicat, conform cererii (fără commit, fără push).
+- TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

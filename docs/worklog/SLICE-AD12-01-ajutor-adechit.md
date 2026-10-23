@@ -1,8 +1,6 @@
 # SLICE-AD12-01 — ajutorul ADECHIT (buton «?», cuprins, imprimare, PDF)
 
-11.10.2026. SCRIS LOCAL. Doar verificări de sintaxă (`node --check`, `py_compile`) și o singură
-construire de probă a PDF-ului (a produs un fișier PDF valid; conținutul și aspectul nu au fost
-privite). Fereastra nu a fost deschisă în browser.
+11.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Ce s-a făcut și de ce
 
@@ -32,6 +30,8 @@ cuprinsul pe care se poate apăsa în stânga (secțiuni și subtitluri), textul
 `PYTHON/routes/adechit/{help_pdf.py (nou),__init__.py}`, statusuri.
 
 ## Nerezolvat / neverificat
+
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
 - Aspectul ferestrei (desktop și mobil), imprimarea și PDF-ul nu au fost văzute.
 - Textul ajutorului trebuie citit și corectat de operator: poate conține formulări de ajustat;

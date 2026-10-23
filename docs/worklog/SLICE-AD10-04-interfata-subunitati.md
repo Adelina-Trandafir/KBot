@@ -28,6 +28,8 @@ actualizate cu referința ADE10-04.
 
 ## Rămâne neverificat / amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Aspectul în antet pe PC și telefon, comutarea cu două file deschise, tema închisă — de probat de utilizator.
 
 ## Corecturi după review (ADE10-06)

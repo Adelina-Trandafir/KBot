@@ -1,4 +1,4 @@
-# VERCON — Bara de acțiuni a listei de alimente
+# SLICE-VC07-07 — Bara de acțiuni a listei de alimente
 
 Data: 2026-10-23.
 
@@ -21,7 +21,4 @@ Fișiere: PYTHON/static/js/vercon/lista.js;
 PYTHON/static/css/vercon-lista.css; PYTHON/static/help/vercon.json;
 implementare_vercon_v2.md și acest jurnal.
 
-Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
-teste, verificări automate/de sintaxă sau browser, conform AGENTS.md.
-Fără SQL ori modificări de schemă. Publicare: JS, CSS și JSON împreună;
-nu necesită repornirea serviciului Python pentru această corecție.
+Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

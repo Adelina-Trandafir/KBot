@@ -20,4 +20,6 @@ tranzacțională pentru preluarea copiilor activi încă neincluși în luna și
 
 ## Neverificat sau amânat
 
+*Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
+
 Operația nu este probată pe MariaDB. Transferul rămâne blocat de M06.
