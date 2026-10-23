@@ -15,6 +15,7 @@ _ALLOWED = (
     ('GET', re.compile(r'/api/vercon/context')),
     ('GET', re.compile(r'/api/vercon/reports/catalog')),
     ('GET', re.compile(r'/api/vercon/reports/[A-Za-z0-9_ -]+/(selection|generate)')),
+    ('POST', re.compile(r'/api/vercon/reports/[A-Za-z0-9_ -]+/generate')),
     ('GET', re.compile(r'/api/vercon/reports/export/[A-Za-z0-9_-]+/(pdf|xlsx)')),
     ('DELETE', re.compile(r'/api/vercon/reports/export/[A-Za-z0-9_-]+')),
 )

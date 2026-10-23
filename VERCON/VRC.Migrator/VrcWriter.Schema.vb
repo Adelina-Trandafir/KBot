@@ -49,6 +49,8 @@ Partial Public NotInheritable Class VrcWriter
             Next
         Next
         CheckDecimal(k_schema, "VC_Settings", "IntValue", k_found)
+        CheckFiscalIdentity(k_schema, "VC_NIR", "IdPartener", k_found)
+        CheckFiscalIdentity(k_schema, "VC_FACTURI", "PARTENER_ID", k_found)
 
         If k_found.Count = 0 Then
             Try
@@ -61,6 +63,23 @@ Partial Public NotInheritable Class VrcWriter
         End If
         Return k_found
     End Function
+
+    ''' <summary>Both document headers use the same nullable textual fiscal identity; legacy IDs are not supplied.</summary>
+    Private Shared Sub CheckFiscalIdentity(k_schema As TargetSchema, k_table As String, k_legacy As String, k_found As List(Of String))
+        If Not k_schema.HasTable(k_table) Then Return ' Already reported by RequiredTables.
+        Dim k_column = k_schema.Column(k_table, "CodPartener")
+        If k_column Is Nothing Then
+            k_found.Add($"Pentru furnizorii prin cod fiscal, aplicați manual sql/VC_20261023_FURNIZORI_CF_STRUCTURA.sql pe bazele folosite de migrator ({k_table}.CodPartener lipsește).")
+        ElseIf Not String.Equals(k_column.DataType, "varchar", StringComparison.OrdinalIgnoreCase) OrElse
+               Not k_column.CharacterMaxLength.HasValue OrElse k_column.CharacterMaxLength.Value < 50 OrElse
+               Not k_column.IsNullable OrElse Not k_column.IsWritable OrElse k_column.IsAutoIncrement Then
+            k_found.Add($"{k_table}.CodPartener trebuie să fie text VARCHAR de minimum 50 de caractere, NULL permis și scriibil, pentru identitatea fiscală VERCON. Aplicați manual DDL-ul necesar; migratorul nu modifică structura.")
+        End If
+        Dim k_old = k_schema.Column(k_table, k_legacy)
+        If k_old IsNot Nothing AndAlso Not k_old.IsNullable Then
+            k_found.Add($"{k_table}.{k_legacy} trebuie să permită NULL: importul folosește exclusiv CodPartener ca identitate fiscală și nu furnizează ID-ul istoric. Corectați manual structura înainte de transfer.")
+        End If
+    End Sub
 
     Private Shared Sub CheckDecimal(k_schema As TargetSchema, k_table As String, k_name As String, k_found As List(Of String))
         Dim k_column = k_schema.Column(k_table, k_name)

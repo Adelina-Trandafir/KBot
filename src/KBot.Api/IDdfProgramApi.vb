@@ -14,4 +14,11 @@ Imports KBot.Domain
 Public Interface IDdfProgramApi
     ''' <summary>Every (program, SS, caption) row; the caller keeps its program's.</summary>
     Function GetDdfSurseProgramAsync(ct As CancellationToken) As Task(Of List(Of DdfSursaProgram))
+
+    ''' <summary>
+    ''' Slice 0114-27: <c>POST /api/forexe/ddf/repara-program</c> -- puts the program of <paramref name="cod"/>'s document
+    ''' right (the one of its indicators' SS: 01A -> 0000002510, otherwise 0000000000). <paramref name="apply"/> = False is the
+    ''' dry run (nothing is written); True writes <c>FX_DDF.Program</c> only.
+    ''' </summary>
+    Function RepairDdfProgramAsync(cod As String, apply As Boolean, ct As CancellationToken) As Task(Of DdfProgramRepairResult)
 End Interface

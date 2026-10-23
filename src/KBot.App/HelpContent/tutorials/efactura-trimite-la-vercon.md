@@ -34,10 +34,10 @@ why: Gruparea după furnizor e doar o altă înfățișare a arborelui; poți tr
 Butonul din <b>dreapta antetului arborelui</b> schimbă gruparea în <b>«Grupare după furnizor»</b> și înapoi. Bifele rămân. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifează facturile
-<!-- slice: 00EF-48, 0000-118 -->
+<!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122 -->
 target: VerconForm.tree
-Bifează <b>facturile de trimis</b>. Bifa unei <b>luni</b> sau a unui <b>furnizor</b> le bifează pe toate facturile lui, iar în dreapta apare câte un grup pentru fiecare factură.<BR>
-<mark>O factură deja preluată într-un NIR rămâne bifată în gri și nu se mai trimite. La un furnizor cu multe facturi, citirea durează puțin.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) după ce ai bifat.
+Bifează <b>facturile de trimis</b>, ale <b>unui singur furnizor</b> odată. Bifa unui <b>furnizor</b> le bifează pe toate facturile lui, iar în dreapta apare câte un grup pentru fiecare factură.<BR>
+<mark>Dacă bifezi o factură a altui furnizor, bifele primului se scot. O factură deja preluată într-un NIR rămâne bifată în gri și nu se mai trimite. La un furnizor cu multe facturi, citirea durează puțin.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥) după ce ai bifat.
 
 ## Liniile facturilor
 <!-- slice: 00EF-48, 0000-118 -->
@@ -45,13 +45,13 @@ target: VerconForm.gridLinii
 În dreapta vezi <b>liniile facturilor bifate</b>, grupate pe factură. Se trimit <b>toate</b> liniile fiecărei facturi; nu bifezi linii. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Contul din Vercon
-<!-- slice: 00EF-48, 0000-118 -->
+<!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122 -->
 target: VerconForm.gridLinii
-Pe fiecare linie poți alege, dacă vrei, <b>contul din Vercon</b>: lista arată conturile grupate pe gestiune, din toate gestiunile; un clic pe numele unei gestiuni o strânge sau o desface, iar dacă tastezi o parte din nume rămân doar rândurile potrivite. Contul ales pe <b>rândul unei facturi</b> (bara ei) se scrie pe toate liniile ei.<BR>
+Pe fiecare linie poți alege, dacă vrei, <b>contul din Vercon</b>: lista arată conturile grupate pe gestiune, din toate gestiunile; un clic pe numele unei gestiuni o strânge sau o desface, iar dacă tastezi o parte din nume rămân doar rândurile potrivite. Contul ales pe <b>rândul unei facturi</b> (bara ei) se scrie pe toate liniile ei; lista <b>«Cont pentru toate liniile»</b>, de lângă notă, îl scrie pe <b>toate liniile din tabel</b>.<BR>
 <mark>Contul este doar o propunere: Administratorul îl găsește ales când preia factura și îl poate schimba. «(fără cont)» lasă alegerea lui.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Nota pentru Administrator
-<!-- slice: 00EF-48, 0000-118 -->
+<!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122 -->
 target: VerconForm.txtNota
 optional: yes
 why: Nota e opțională; o scrii doar dacă ai ceva de spus Administratorului.

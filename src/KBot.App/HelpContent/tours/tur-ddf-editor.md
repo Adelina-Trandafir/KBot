@@ -26,10 +26,10 @@ target: DdfEditForm.navSub
 Documentul are mai multe pagini. Urmează pe rând fiecare; cea din dreapta, «Parteneri», stă singură, pentru că nu face parte din revizia propriu-zisă, și se vede doar când «Partener asociat» e bifat.
 
 ## Pagini › Secțiunea A
-<!-- slice: 0051, 0081-08, 0000-28 -->
+<!-- slice: 0051, 0081-08, 0000-28, 0081-13 -->
 target: DdfEditForm.navSub
 part: item:sectiunea-a
-Rândurile reviziei, pe clasificații: aici tastezi valorile. **Adaugă rând** deschide fereastra rândului nou; **Șterge rândul** scoate linia.
+Rândurile reviziei, pe clasificații: aici tastezi valorile. Un rând nou începe în **rândul gol** de la sfârșitul tabelului, alegând clasificația din listă; **✕** de la capătul unui rând îl scoate.
 
 ## Pagini › Secțiunea B
 <!-- slice: 0051, 0081-02, 0000-28, 0000-30 -->

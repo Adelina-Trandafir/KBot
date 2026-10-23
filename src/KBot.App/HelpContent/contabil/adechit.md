@@ -7,11 +7,11 @@ parent: contabil
 screens: AdechitRapoarteForm
 keywords: adechit, rapoarte, raport, situatie lunara, situatie de plata, registru de casa, raport banca, fisa cont, documente anulate, copil, grupa, luna, subunitate, pdf, excel, previzualizare, gradinita, taxa, debitori
 ---
-<!-- slice: 0123-01, 0123-03, 0000-119 -->
-Rapoartele evidenței **ADECHIT** se fac acum direct în K-BOT, cu aceleași cifre ca pe site. Din ribbon, fila **ADECHIT**, apasă **«Rapoarte»**. Se deschide o pagină care rămâne deschisă până o închizi. Ai nevoie de dreptul de citire în ADECHIT pentru unitate; dacă nu îl ai, pagina spune asta și nu arată nimic.
+<!-- slice: 0123-01, 0123-03, 0123-05, 0000-119 -->
+Rapoartele evidenței **ADECHIT** se fac acum direct în K-BOT, cu aceleași cifre ca pe site. Din ribbon, fila **ADECHIT** (apare doar dacă unitatea are date în ADECHIT), apasă **«Rapoarte»**. Se deschide o pagină care rămâne deschisă până o închizi. Ai nevoie de dreptul de citire în ADECHIT pentru unitate; dacă nu îl ai, pagina spune asta și nu arată nimic.
 
 ## Ce alegi în stânga
-<!-- slice: 0123-01, 0123-03, 0000-119 -->
+<!-- slice: 0123-01, 0123-03, 0123-05, 0000-119 -->
 
 - **Subunitate**: evidența pentru care faci raportul. Lista se poate schimba doar când unitatea are mai multe subunități la care ai acces.
 - **An** și **Luna**: lunile subunității, cea mai nouă prima. O lună închisă are în listă cuvântul **(închisă)**. La alegerea lunii se pune singură și perioada pentru registrul de casă și raportul de bancă, pe toată luna.
@@ -20,7 +20,7 @@ Rapoartele evidenței **ADECHIT** se fac acum direct în K-BOT, cu aceleași cif
 - **Caută copil**: scrii cel puțin 3 caractere din nume sau din CNP; căutarea pornește singură după o scurtă pauză de tastare (sau imediat, dacă apeși **Enter**). Copiii găsiți în luna aleasă apar în lista **Copil** (cu grupa și ultimele cifre din CNP, ca să deosebești omonimii). Se arată cel mult 100; dacă sunt mai mulți, restrânge căutarea.
 
 ## Rapoartele
-<!-- slice: 0123-01, 0123-03, 0000-119 -->
+<!-- slice: 0123-01, 0123-03, 0123-05, 0000-119 -->
 
 | Buton | Ce faci | Ce îți trebuie |
 |-------|---------|----------------|
@@ -34,7 +34,7 @@ Rapoartele evidenței **ADECHIT** se fac acum direct în K-BOT, cu aceleași cif
 Un buton este gri până când ai ales tot ce îi trebuie. Cât timp se așteaptă răspunsul serverului (un raport, o listă, o căutare), toate butoanele sunt gri și sub bara de titlu aleargă o bară de încărcare.
 
 ## Raportul pe ecran
-<!-- slice: 0123-01, 0123-03, 0000-119 -->
+<!-- slice: 0123-01, 0123-03, 0123-05, 0000-119 -->
 
 Raportul apare în dreapta, ca PDF, potrivit pe lățimea panoului. Îl poți tipări, salva sau mări cu butoanele vizualizatorului. Alt raport îl înlocuiește pe cel de pe ecran.
 

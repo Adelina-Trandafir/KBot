@@ -30,6 +30,10 @@ Public NotInheritable Class DdfSectionBInsert
         Public Property CapturesInDocument As Integer
         ''' <summary>What happened to NOTAFD.xml (Romanian, for the log).</summary>
         Public Property NotafdNote As String = String.Empty
+        ''' <summary>The program the signed section A carries (empty when it has none).</summary>
+        Public Property ProgramSectiuneaA As String = String.Empty
+        ''' <summary>The program written in section B (the document's, from its header).</summary>
+        Public Property ProgramSectiuneaB As String = String.Empty
     End Class
 
     Private Sub New()
@@ -116,8 +120,12 @@ Public NotInheritable Class DdfSectionBInsert
         Try
             Dim before As Byte() = SignedPdfFiles.ReadShared(signedPath)
             Dim formXml As String = Await Task.Run(Function() XfaSignedDocument.ReadFormData(before)).ConfigureAwait(True)
-            Dim program As String = SectionAProgram(formXml)
-            If program.Length = 0 Then program = If(fallbackProgram, String.Empty)
+            ' Slice 0114-27 (operator, 23.10.2026): section B carries the document's REAL program (its header), not whatever the
+            ' signed section A holds (an older interim document was signed with a placeholder program). The one in A is only
+            ' reported back so the caller can warn when the two differ.
+            Dim programA As String = SectionAProgram(formXml)
+            Dim program As String = If(fallbackProgram, String.Empty).Trim()
+            If program.Length = 0 Then program = programA
             Dim dataXml As String = BuildFillXml(ctx, antet, revizie, sb, capturi, program)
 
             TempPdfStore.EnsureRoot()
@@ -141,7 +149,8 @@ Public NotInheritable Class DdfSectionBInsert
             Dim afterXml As String = Await Task.Run(Function() XfaSignedDocument.ReadFormData(after)).ConfigureAwait(True)
             Return New Rezultat() With {
                 .PdfPath = target, .Rows = sb.Count, .Captures = If(capturi, New List(Of String)()).Count,
-                .CapturesInDocument = CountCaptures(afterXml), .NotafdNote = If(note, String.Empty)}
+                .CapturesInDocument = CountCaptures(afterXml), .NotafdNote = If(note, String.Empty),
+                .ProgramSectiuneaA = programA, .ProgramSectiuneaB = program}
         Catch ex As Exception
             GlobalErrorLog.Write("DdfSectionBInsert.InsertAsync", ex)
             Throw

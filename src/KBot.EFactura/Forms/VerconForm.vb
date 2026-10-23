@@ -32,9 +32,10 @@ Public Class VerconForm
     Private Const ColCont As String = "cont"
     Private Const FaraCont As String = "(fără cont)"
     Private Const FaraContGrup As String = "Fără cont"
-    Private Const NotaInitiala As String = "Bifează facturile de trimis (sau o lună, sau un furnizor întreg): merg la Vercon cu TOATE liniile lor. Pe fiecare linie poți propune contul din Vercon; " &
-                                           "ce alegi pe rândul unei facturi se scrie pe toate liniile ei. O linie fără cont rămâne pentru Administrator. Contul este doar o propunere. " &
+    Private Const NotaInitiala As String = "Bifează facturile de trimis (ale unui singur furnizor odată): merg la Vercon cu TOATE liniile lor. Poți alege un cont pentru toate liniile (lângă notă), " &
+                                           "pe antetul unei facturi sau pe fiecare linie. O linie fără cont rămâne pentru Administrator. Contul este doar o propunere. " &
                                            "Nu se trimite nimic până nu apeși butonul."
+    Private Const NotaUnFurnizor As String = "Se poate trimite un singur furnizor odată: facturile bifate la alți furnizori au fost debifate."
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
 
     ' What a row of the lines grid stands for: the invoice and the line.
@@ -53,6 +54,11 @@ Public Class VerconForm
     Private ReadOnly _order As New List(Of Integer)()
     ' The tree groups by month and supplier (the usual one) or by supplier alone.
     Private _groupBySupplier As Boolean
+    ' Only invoices of ONE supplier can be ticked: its key (Nothing = nothing ticked), and the notice for the grid when ticks of other suppliers were taken off.
+    Private _activeSupplier As String
+    Private _supplierNote As String = String.Empty
+    ' The combo of accounts is being filled by code (its change must not write on the lines).
+    Private _comboSync As Boolean
     ' What became of each invoice that was ever sent ({IdPrimita -> its short line}).
     Private _vercon As New Dictionary(Of Integer, EFacturaVerconSumar)()
     ' The state of each ticked invoice as the server gave it, kept while the page is open.
@@ -178,6 +184,7 @@ Public Class VerconForm
         Select Case k_s.Stare
             Case EFacturaVerconStare.Trimisa : Return If(k_s.Revenita, "Trimisă din nou (NIR anulat)", "Trimisă, așteaptă Administratorul")
             Case EFacturaVerconStare.Preluata : Return "Preluată în NIR " & String.Join(", ", k_s.Nir)
+            Case EFacturaVerconStare.Partiala : Return "Asociată parțial în NIR " & String.Join(", ", k_s.Nir)
             Case EFacturaVerconStare.Returnata : Return "Returnată: " & k_s.MotivReturnare
             Case Else : Return String.Empty
         End Select
@@ -224,6 +231,7 @@ Public Class VerconForm
         Select Case k_s.Stare
             Case EFacturaVerconStare.Trimisa : Return If(k_s.Revenita, "trimisă din nou", "trimisă")
             Case EFacturaVerconStare.Preluata : Return "preluată"
+            Case EFacturaVerconStare.Partiala : Return "asociată parțial"
             Case EFacturaVerconStare.Returnata : Return "returnată"
             Case Else : Return String.Empty
         End Select
@@ -248,8 +256,8 @@ Public Class VerconForm
                 Dim k_month As AdvancedTreeControl.TreeItem = tree.AddItem(
                     "M_" & k_monthId, $"{MonthLabel(k_months.Key, k_severalYears)}~~~{k_sum.ToString("N2", _ro)}",
                     pExpanded:=k_months.Any(Function(k_x) k_keepSet.Contains(k_x.IdPrimita)))
+                ' No tick on a month: it would tick several suppliers at once, and only one supplier can be sent at a time.
                 k_month.Bold = True
-                k_month.HasCheckBox = True
                 For Each k_group As IGrouping(Of String, EFacturaPrimita) In k_months.GroupBy(Function(k_x) SupplierKey(k_x)).
                         OrderBy(Function(k_g) SupplierName(k_g), StringComparer.CurrentCultureIgnoreCase)
                     AddSupplierNode(k_group, "S_" & k_monthId & "_" & k_group.Key, k_month, k_keepSet, False)
@@ -287,7 +295,7 @@ Public Class VerconForm
             _order.Add(k_p.IdPrimita)
             ' Taken over in a NIR: ticked and locked (grey), never sent again; the Administrator's NIR is the end of the road.
             Dim k_sent As EFacturaVerconSumar = Nothing
-            If _vercon.TryGetValue(k_p.IdPrimita, k_sent) AndAlso String.Equals(k_sent.Stare, EFacturaVerconStare.Preluata, StringComparison.Ordinal) Then
+            If _vercon.TryGetValue(k_p.IdPrimita, k_sent) AndAlso (String.Equals(k_sent.Stare, EFacturaVerconStare.Preluata, StringComparison.Ordinal) OrElse String.Equals(k_sent.Stare, EFacturaVerconStare.Partiala, StringComparison.Ordinal)) Then
                 k_leaf.CheckLocked = True
                 k_leaf.NodeForeColor = ThemeManager.Current.Palette.TextDimColor
                 tree.SetItemCheckState(k_leaf, AdvancedTreeControl.TreeCheckState.Checked)
@@ -315,6 +323,7 @@ Public Class VerconForm
     Private Async Sub Tree_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         Try
             If _busy Then Return
+            _supplierNote = KeepOneSupplier()
             UpdateStatus()
             Await SyncTicksAsync().ConfigureAwait(True)
         Catch ex As OperationCanceledException
@@ -324,6 +333,32 @@ Public Class VerconForm
             ShowNotice("Facturile bifate nu au putut fi citite. Detalii în jurnalul de erori.", NoticeKind.Error)
         End Try
     End Sub
+
+    ' Only one supplier can be ticked: when a tick brought a second one, the NEWLY ticked supplier stays and the ticks of the others are taken off. Returns the notice (empty = nothing taken off).
+    Private Function KeepOneSupplier() As String
+        Dim k_ticked As List(Of Integer) = TickedIds()
+        Dim k_keys As List(Of String) = k_ticked.Select(Function(k_x) SupplierOfId(k_x)).Distinct(StringComparer.Ordinal).ToList()
+        If k_keys.Count = 0 Then
+            _activeSupplier = Nothing
+            Return String.Empty
+        End If
+        If k_keys.Count = 1 Then
+            _activeSupplier = k_keys(0)
+            Return String.Empty
+        End If
+        Dim k_keep As String = k_keys.FirstOrDefault(Function(k_x) Not String.Equals(k_x, _activeSupplier, StringComparison.Ordinal))
+        If k_keep Is Nothing Then k_keep = k_keys(0)
+        For Each k_id As Integer In k_ticked
+            If Not String.Equals(SupplierOfId(k_id), k_keep, StringComparison.Ordinal) Then SetTick(k_id, False)
+        Next
+        _activeSupplier = k_keep
+        Return NotaUnFurnizor
+    End Function
+
+    Private Function SupplierOfId(k_idPrimita As Integer) As String
+        Dim k_p As EFacturaPrimita = TryCast(_nodes(k_idPrimita).Tag, EFacturaPrimita)
+        Return If(k_p Is Nothing, String.Empty, SupplierKey(k_p))
+    End Function
 
     ' The options button of the header: the grouping of the tree (only the one that is NOT in force is offered: it is the switch).
     Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
@@ -402,7 +437,22 @@ Public Class VerconForm
             Next
         Next
         gridLinii.Column(ColCont).ComboItems = _items
+        ' The combo beside the note offers the same items; it starts with nothing picked.
+        _comboSync = True
+        Try
+            cmbCont.Items.Clear()
+            cmbCont.Items.AddRange(_items)
+            cmbCont.SelectedIndex = -1
+        Finally
+            _comboSync = False
+        End Try
     End Sub
+
+    ' The account the combo beside the note holds: the face text of the picked item; «fără cont» while nothing is picked.
+    Private Function ComboAccount() As String
+        If cmbCont.SelectedIndex < 0 Then Return FaraCont
+        Return Convert.ToString(cmbCont.SelectedItem, CultureInfo.InvariantCulture)
+    End Function
 
     ' The IdMasina a cell stands for: Nothing for «fără cont» (or text that is not an account).
     Private Function AccountOf(k_cell As Object) As Integer?
@@ -437,6 +487,7 @@ Public Class VerconForm
         Select Case k_t.Stare
             Case EFacturaVerconStare.Trimisa : Return If(k_t.Revenita, "trimisă din nou (NIR anulat)", "trimisă")
             Case EFacturaVerconStare.Preluata : Return "preluată într-un NIR"
+            Case EFacturaVerconStare.Partiala : Return "asociată parțial în NIR-uri"
             Case EFacturaVerconStare.Returnata : Return "returnată"
             Case Else : Return "retrasă"
         End Select
@@ -486,7 +537,8 @@ Public Class VerconForm
                     ElseIf _modify AndAlso k_l.IdMasina.HasValue AndAlso _labelById.TryGetValue(k_l.IdMasina.Value, k_label) Then
                         k_row(ColCont) = k_label
                     Else
-                        k_row(ColCont) = FaraCont
+                        ' A line that has no choice yet takes the account held in the combo beside the note (none picked = «fără cont»).
+                        k_row(ColCont) = ComboAccount()
                     End If
                 Next
             Next
@@ -495,6 +547,10 @@ Public Class VerconForm
             _filling = False
         End Try
         ApplyMode(k_ids)
+        If _supplierNote.Length > 0 Then
+            k_notes.Add(_supplierNote)
+            _supplierNote = String.Empty
+        End If
         If k_notes.Count > 0 Then
             ShowNotice(String.Join(vbCrLf, k_notes), If(gridLinii.RowCount = 0 OrElse Not _canWrite, NoticeKind.Error, NoticeKind.Warning))
         Else
@@ -567,6 +623,7 @@ Public Class VerconForm
         Dim k_count As Integer = If(_busy, 0, InvoiceCount())
         btnTrimite.Enabled = k_count > 0 AndAlso _canWrite AndAlso Not _busy
         btnRetrage.Enabled = _modify AndAlso _canWrite AndAlso Not _busy
+        cmbCont.Enabled = _canWrite AndAlso Not _busy
         If _modify Then
             btnTrimite.Text = "Salvează conturile"
         Else
@@ -598,6 +655,26 @@ Public Class VerconForm
             UpdateSummary()
         Catch ex As Exception
             GlobalErrorLog.Write("VerconForm.GridLinii_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ' UI boundary: an account picked in the combo beside the note goes on ALL the lines of the grid (whatever invoices are ticked), whatever they had.
+    Private Sub CmbCont_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbCont.SelectedIndexChanged
+        Try
+            If _comboSync OrElse _filling OrElse cmbCont.SelectedIndex < 0 Then Return
+            Dim k_text As String = ComboAccount()
+            _filling = True
+            Try
+                For Each k_row As KBotDataRow In gridLinii.Rows
+                    k_row(ColCont) = k_text
+                Next
+            Finally
+                _filling = False
+            End Try
+            gridLinii.Invalidate()
+            UpdateSummary()
+        Catch ex As Exception
+            GlobalErrorLog.Write("VerconForm.CmbCont_SelectedIndexChanged", ex)
         End Try
     End Sub
 

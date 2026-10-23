@@ -10,11 +10,10 @@ Partial Public Class KbotForm
     Private Const HelpCaptureMenuKey As String = "capturi_ajutor"
     Private Const AdminMenuKey As String = "admin"
 
-    ''' <summary>True while the capture mode is usable: switched on AND advanced options on.</summary>
+    ''' <summary>True while the capture mode is switched on (the advanced options only allow changing it).</summary>
     Friend Shared ReadOnly Property HelpCaptureModeOn As Boolean
         Get
-            Dim s As AppSettings = AppSettings.Current
-            Return s.AdvancedOptions AndAlso s.HelpCaptureMode
+            Return AppSettings.Current.HelpCaptureMode
         End Get
     End Property
 

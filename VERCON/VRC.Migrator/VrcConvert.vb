@@ -73,7 +73,7 @@ Friend NotInheritable Class VrcConvert
             If Char.IsLetterOrDigit(k_c) Then k_sb.Append(k_c)
         Next
         Dim k_result As String = k_sb.ToString()
-        If k_result.StartsWith("RO", StringComparison.Ordinal) AndAlso k_result.Length > 2 AndAlso Char.IsDigit(k_result(2)) Then k_result = k_result.Substring(2)
+        If k_result.StartsWith("RO", StringComparison.Ordinal) AndAlso k_result.Length > 2 AndAlso k_result(2) >= "0"c AndAlso k_result(2) <= "9"c Then k_result = k_result.Substring(2)
         Return k_result
     End Function
 

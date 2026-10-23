@@ -7,6 +7,7 @@ import json
 from . import report_balance, report_body, report_catalog, report_data, report_food, report_store, report_output, report_reception, report_identity
 from .nomenclatoare import NomError
 from . import report_voucher
+from . import report_statement
 from reporting.snapshots import Snapshots as ReportSnapshots
 
 
@@ -40,6 +41,13 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     if params['start'] > params['end'] or ctx['type'] not in ('OI', 'MF') and (params['start'].year != ctx['an'] or params['end'].year != ctx['an']):
         raise NomError('REPORT_PERIOD', 'Alegeți un interval în exercițiul curent.', 422)
     layout = report_store.read(unit, 'layout', spec['id'])
+    balance_reference = None
+    if spec['id'] == 'OI_Balanta':
+        # Use the actual warehouse balance definition, including configured columns.
+        # Old saved OI layouts with transfer columns must not restore that structure.
+        reference = report_store.read(unit, 'layout', 'Balanta_produse')
+        balance_reference = reference['version']
+        layout = {**layout, 'value': {**reference['value'], 'title': layout['value']['title']}}
     identity = report_store.read(unit, 'unit')
     report_store.validate('layout', layout['value'])
     report_store.validate('unit', identity['value'])
@@ -67,7 +75,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         committees = {row['IdComisie']: row for row in source.rows('committee')} if spec.get('family') in ('nir', 'storno') else {}
         if layout['value'].get('form') == 'nir-classic' and spec.get('family') in ('nir', 'storno'):
             receptions = report_reception.documents(rows, committees)
-        blocks = report_body.build(spec, layout['value'], rows, ctx, identity['value'], committees,
+        body_builder = report_statement.build if spec['kind'] == 'statement' else report_body.build
+        blocks = body_builder(spec, layout['value'], rows, ctx, identity['value'], committees,
                                    page_break_accounts=spec['kind'] == 'balance' and params.get('page_break_accounts', False),
                                    gestiune_name=gestiune_name)
         if spec['kind'] == 'depreciation':
@@ -102,6 +111,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
              'generated_at': utc_now().isoformat(timespec='seconds')}
     if receptions:
         model['receptions'] = receptions
+    if balance_reference:
+        model['versions']['balance_reference'] = balance_reference
     model = primitive(model)
     model['data_hash'] = hashlib.sha256(json.dumps(model, ensure_ascii=False, sort_keys=True, default=str).encode()).hexdigest()
     return model

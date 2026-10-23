@@ -14,7 +14,7 @@
 .vc-reports__check { display: flex; gap: 8px; align-items: center; padding: 4px; font-size: .9em; }
 .vc-reports .vc-tree-body { flex: 1 1 0; height: auto; min-height: 0; }
 .vc-reports__selection > .vc-hint { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); }
-.vc-reports__actions { grid-column: 1 / -1; justify-content: flex-end; margin-top: 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.vc-reports__actions { grid-column: 1 / -1; justify-content: flex-end; margin-top: 0; padding-top: 10px; padding-bottom: 10px; border-top: 1px solid var(--line); }
 .vc-reports > .vc-reports__output { grid-column: 1 / -1; min-width: 0; }
 .vc-reports__output { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 12px; }
 .vc-reports__output[hidden] { display: none; }

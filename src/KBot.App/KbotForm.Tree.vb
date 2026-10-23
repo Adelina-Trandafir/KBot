@@ -19,6 +19,13 @@ Partial Public Class KbotForm
     ' Slice 0114-26: the rows with reservations linked to a revision that does not cover them -- an error of a
     ' different kind, written in a different red (derived from the theme's error colour, see RosuAlternativ).
     Private ReadOnly _nodLegaturiGresite As New List(Of AdvancedTreeControl.TreeItem)()
+    ' Slice 0114-27: the rows whose DDF holds a program that is not the one of its indicators' SS -- a third kind of error, a third red.
+    Private ReadOnly _nodProgramGresit As New List(Of AdvancedTreeControl.TreeItem)()
+
+    ' Hue turn of each alternative red, from the theme's error colour (degrees): crimson for the linked-reservation error
+    ' (slice 0114-26), orange-red for the wrong program (slice 0114-27).
+    Private Const GRADE_ROSU_LEGATURI As Single = -22.0F
+    Private Const GRADE_ROSU_PROGRAM As Single = 20.0F
 
     ''' <summary>
     ''' Loads the tree from GET /api/forexe/tree for the selected period (year + SS), through
@@ -119,6 +126,7 @@ Partial Public Class KbotForm
             _treeOrder.Clear()
             _nodLantNeinchis.Clear()
             _nodLegaturiGresite.Clear()
+            _nodProgramGresit.Clear()
 
             ' The view gate is applied ONCE, after the loop, when it is known whether the old
             ' node is still in the tree. Gating on Nothing up here, before the re-selection,
@@ -164,6 +172,10 @@ Partial Public Class KbotForm
                     ' Slice 0114-26 (operator, 23.10.2026): reservations linked to a revision that does not cover
                     ' them -- the same kind of warning, a different red. The first kind wins when a row has both.
                     _nodLegaturiGresite.Add(node)
+                ElseIf info.ProgramGresit IsNot Nothing Then
+                    ' Slice 0114-27 (operator, 23.10.2026): the DDF's program is not the one of its indicators' SS --
+                    ' a third red. The older kinds win when a row has more than one.
+                    _nodProgramGresit.Add(node)
                 End If
                 'node.ShowRightIconOnHover = True
 
@@ -223,16 +235,22 @@ Partial Public Class KbotForm
         For Each nod As AdvancedTreeControl.TreeItem In _nodLegaturiGresite
             nod.NodeForeColor = k_rosuAlt
         Next
+        Dim k_rosuProgram As Color = RosuAlternativ(paleta.ErrorColor, GRADE_ROSU_PROGRAM)
+        For Each nod As AdvancedTreeControl.TreeItem In _nodProgramGresit
+            nod.NodeForeColor = k_rosuProgram
+        Next
     End Sub
 
     ''' <summary>
     ''' Slice 0114-26: a second red for the second kind of error, taken from the theme's error colour by turning its
     ''' hue towards crimson (-22 degrees) and keeping its saturation and lightness -- so it follows every theme and
-    ''' stays as readable as the first red, yet the two can be told apart at a glance.
+    ''' stays as readable as the first red, yet the two can be told apart at a glance. Slice 0114-27: the turn is a parameter, so
+    ''' the third kind of error gets its own red the same way (<see cref="GRADE_ROSU_PROGRAM"/>).
     ''' </summary>
-    Friend Shared Function RosuAlternativ(k_baza As Color) As Color
-        Dim k_nuanta As Single = k_baza.GetHue() - 22.0F
+    Friend Shared Function RosuAlternativ(k_baza As Color, Optional k_grade As Single = GRADE_ROSU_LEGATURI) As Color
+        Dim k_nuanta As Single = k_baza.GetHue() + k_grade
         If k_nuanta < 0.0F Then k_nuanta += 360.0F
+        If k_nuanta >= 360.0F Then k_nuanta -= 360.0F
         Dim k_sat As Single = k_baza.GetSaturation()
         Dim k_luminozitate As Single = k_baza.GetBrightness()
         Dim k_chroma As Single = (1.0F - Math.Abs(2.0F * k_luminozitate - 1.0F)) * k_sat
@@ -251,6 +269,21 @@ Partial Public Class KbotForm
         End Select
         Dim k_m As Single = k_luminozitate - k_chroma / 2.0F
         Return Color.FromArgb(Canal(k_r + k_m), Canal(k_g + k_m), Canal(k_b + k_m))
+    End Function
+
+    ''' <summary>Slice 0114-27: where the disagreement is, in the operator's words («Revizia 3 (DDF)», «Ordonanțarea 12», «Indicatorii angajamentului»).</summary>
+    Friend Shared Function EtichetaDovadaProgram(k_dovada As DdfProgramDovada) As String
+        Select Case k_dovada.Sursa
+            Case DdfProgramSursa.Revizie : Return $"Revizia {k_dovada.Numar} (DDF)"
+            Case DdfProgramSursa.Ordonantare : Return $"Ordonanțarea {k_dovada.Numar}"
+            Case Else : Return "Indicatorii angajamentului"
+        End Select
+    End Function
+
+    ''' <summary>The SS found there and the program it calls for («SS 01A → program 0000002510»).</summary>
+    Friend Shared Function TextDovadaProgram(k_dovada As DdfProgramDovada) As String
+        If String.IsNullOrWhiteSpace(k_dovada.Program) Then Return $"SS {k_dovada.Ss}: mai multe programe"
+        Return $"SS {k_dovada.Ss} → program {k_dovada.Program}"
     End Function
 
     Private Shared Function Canal(k_valoare As Single) As Integer
@@ -353,6 +386,7 @@ Partial Public Class KbotForm
             Dim k_paleta As ThemePalette = ThemeManager.Current?.Palette
             Dim k_rosu As String = If(k_paleta Is Nothing, Nothing, HexDin(k_paleta.ErrorColor))
             Dim k_rosuAlt As String = If(k_paleta Is Nothing, Nothing, HexDin(RosuAlternativ(k_paleta.ErrorColor)))
+            Dim k_rosuProgram As String = If(k_paleta Is Nothing, Nothing, HexDin(RosuAlternativ(k_paleta.ErrorColor, GRADE_ROSU_PROGRAM)))
             Dim k_ro As New Globalization.CultureInfo("ro-RO")
             Dim k_sb As New System.Text.StringBuilder()
 
@@ -412,6 +446,25 @@ Partial Public Class KbotForm
                     TtRand(k_sb, $"… și încă {k_info.LegaturiGresite.Count - k_maxRanduri}", String.Empty, k_rosuAlt)
                 End If
                 TtRand(k_sb, "Se repară", "din vederea «Rezervări», butonul «Repară»", k_rosuAlt)
+            End If
+
+            ' Slice 0114-27 (operator, 23.10.2026): the DDF holds a program that is not the one of its indicators' SS.
+            If k_info.ProgramGresit IsNot Nothing Then
+                Dim k_pg As DdfProgramGresit = k_info.ProgramGresit
+                TtRand(k_sb, "⚠ Program greșit", "programul din antetul DDF nu se potrivește cu SS-ul datelor salvate", k_rosuProgram, True)
+                TtRand(k_sb, "Programul din antetul DDF", If(String.IsNullOrWhiteSpace(k_pg.Actual), "(gol)", k_pg.Actual), k_rosuProgram)
+                For Each k_d As DdfProgramDovada In k_pg.Dovezi.Take(k_maxRanduri)
+                    TtRand(k_sb, EtichetaDovadaProgram(k_d), TextDovadaProgram(k_d), k_rosuProgram)
+                Next
+                If k_pg.Dovezi.Count > k_maxRanduri Then
+                    TtRand(k_sb, $"… și încă {k_pg.Dovezi.Count - k_maxRanduri}", String.Empty, k_rosuProgram)
+                End If
+                TtRand(k_sb, "Programul corect", If(String.IsNullOrWhiteSpace(k_pg.Asteptat),
+                       "nu se poate stabili: datele țin de mai multe programe", k_pg.Asteptat), k_rosuProgram)
+                TtRand(k_sb, "Regula", "SS 01A are programul " & DdfSectiuneaAReguli.Program01A & ", orice alt SS " & DdfSectiuneaAReguli.ProgramImplicit, k_rosuProgram)
+                If Not String.IsNullOrWhiteSpace(k_pg.Asteptat) Then
+                    TtRand(k_sb, "Se repară", "din vederea «Fundamentare», butonul «Repară programul»", k_rosuProgram)
+                End If
             End If
 
             k_sb.Append("</table>")

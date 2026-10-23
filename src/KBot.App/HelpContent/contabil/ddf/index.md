@@ -45,7 +45,7 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 > începe alta pe același angajament.
 
 ## Vederea «Fundamentare»
-<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099, 0101, 0107 -->
+<!-- slice: 0020-02, 0033-02, 0081-04, 0097, 0000-14, 0078-08, 0099, 0101, 0107, 0114-27, 0000-121 -->
 
 - **Arborele**: rădăcina **«Toate reviziile»** (clic pe ea = tot documentul), lunile, apoi
   reviziile. **Clic dreapta** pe un rând **deja ales** (dă întâi clic stânga pe el; pe un rând
@@ -66,6 +66,16 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
   tipărire — vezi **Lista de tipărire**, la sfârșitul acestui ajutor.
 - Cât Adobe încă deschide documentul unei revizii (sau un fișier din «Fișiere»), arborele și lista
   de fișiere nu primesc alt rând — [Cât se deschide un document](topic:contabil.liste).
+- **Programul documentului** se alege după SS-ul datelor: **SS 01A** are programul **0000002510**, orice alt SS
+  **0000000000**. Nu depinde de sursa aleasă sus în fereastră (care poate fi ascunsă când lista e ordonată după
+  data creării). La deschiderea listei, K-BOT compară programul din antetul DDF cu SS-ul indicatorilor, al rândurilor
+  reviziilor DDF și al rândurilor ordonanțărilor. Dacă ceva nu se potrivește, rândul angajamentului apare în **al
+  treilea roșu**, iar ținând mouse-ul pe el vezi fiecare loc care nu se potrivește și programul corect.
+  Cât timp vederea «Fundamentare» e pe ecran, ribbonul are butonul **«Repară programul»**: îți arată ce se schimbă
+  și scrie doar după ce confirmi. Se schimbă numai programul din antet; sumele, reviziile și ordonanțările rămân.
+  PDF-ul unui document nou se face cu **programul din antetul
+  documentului**, nu cu cel al sesiunii. La un **angajament nou** programul rămâne **gol**: îl alegi tu în antet, iar
+  salvarea nu merge până nu l-ai ales.
 
 <!-- capture: ddf-document | caption: Pagina «Document PDF» a unei revizii semnate | goto: view:ddf | prepare: Alegeți o revizie semnată din arbore și deschideți pagina «Document PDF». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 

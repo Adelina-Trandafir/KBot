@@ -33,9 +33,13 @@ export function paintReportBlock(block, target, owner) {
   } else if (block.t === 'table') {
     const panel = el('div', { className: 'vc-reports__table' + (block.show_column_header === false ? ' vc-reports__table--no-header' : '') }); target.append(panel);
     const rows = block.rows.map((row, index) => ({ id: index, ...Object.fromEntries(row.cells.map((value, i) => [`c${i}`, typeof value === 'object' && value ? value.t : value])) }));
-    grid(panel, { rowKey: 'id', rows, footer: false, proportionalWidths: true,
+    grid(panel, { rowKey: 'id', rows, footer: false, proportionalWidths: true, defaultSort: false,
       ...(block.show_column_header === false ? { headerHeight: 0 } : {}),
-      columns: block.cols.map((c, i) => column({ key: `c${i}`, label: c.label }, { width: c.w, editable: false, align: c.align === 'r' ? 'right' : 'left' })) }, owner);
+      columns: block.cols.map((c, i) => column({ key: `c${i}`, label: c.label }, {
+        width: c.w, editable: false, align: c.align === 'r' ? 'right' : 'left',
+        sortType: ['decimal', 'int'].includes(c.type) ? 'number' : c.type === 'date' ? 'datetime' : 'text',
+        sortValue: (value, row) => block.raw?.[row.id]?.[c.key] ?? value,
+      })) }, owner);
   } else if (block.t === 'box') {
     const list = el('dl', { className: 'vc-reports__metadata' });
     block.rows.forEach(([label, value]) => list.append(el('dt', { textContent: label }), el('dd', { textContent: String(value ?? '') }))); target.append(list);

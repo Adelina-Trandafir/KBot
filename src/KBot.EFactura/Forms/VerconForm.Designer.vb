@@ -45,6 +45,8 @@ Partial Class VerconForm
         btnTrimite = New KBotButton()
         pnlNota = New System.Windows.Forms.Panel()
         txtNota = New KBotTextBox()
+        pnlGapNota = New System.Windows.Forms.Panel()
+        cmbCont = New KBotComboBox()
         lblNota = New System.Windows.Forms.Label()
         lblAntet = New System.Windows.Forms.Label()
         CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -166,27 +168,52 @@ Partial Class VerconForm
         lblNota.Location = New System.Drawing.Point(8, 4)
         lblNota.Margin = New System.Windows.Forms.Padding(0)
         lblNota.Name = "lblNota"
-        lblNota.Size = New System.Drawing.Size(190, 36)
+        lblNota.Size = New System.Drawing.Size(52, 36)
         lblNota.TabIndex = 0
-        lblNota.Text = "Notă pentru Administrator"
+        lblNota.Text = "Notă"
         lblNota.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
         '
         ' txtNota
         '
         txtNota.Dock = System.Windows.Forms.DockStyle.Fill
         txtNota.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
-        txtNota.Location = New System.Drawing.Point(198, 4)
+        txtNota.Location = New System.Drawing.Point(60, 4)
         txtNota.Margin = New System.Windows.Forms.Padding(0)
         txtNota.MaxLength = 500
         txtNota.Name = "txtNota"
-        txtNota.Size = New System.Drawing.Size(356, 36)
+        txtNota.Size = New System.Drawing.Size(186, 36)
         txtNota.TabIndex = 1
         tips.SetToolTipHeader(txtNota, "Notă pentru Administrator")
         tips.SetToolTipText(txtNota, "Un text scurt pe care Administratorul îl vede când preia factura (cel mult 500 de caractere). Se salvează o singură dată, la trimitere.")
         '
+        ' pnlGapNota
+        '
+        pnlGapNota.Dock = System.Windows.Forms.DockStyle.Right
+        pnlGapNota.Location = New System.Drawing.Point(246, 4)
+        pnlGapNota.Margin = New System.Windows.Forms.Padding(0)
+        pnlGapNota.Name = "pnlGapNota"
+        pnlGapNota.Size = New System.Drawing.Size(8, 36)
+        pnlGapNota.TabIndex = 2
+        '
+        ' cmbCont: one account for ALL the lines of the grid (whatever invoices are ticked); the same items as the column «Cont Vercon»
+        '
+        cmbCont.Dock = System.Windows.Forms.DockStyle.Right
+        cmbCont.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
+        cmbCont.Location = New System.Drawing.Point(254, 4)
+        cmbCont.Margin = New System.Windows.Forms.Padding(0)
+        cmbCont.MaxDropDownItems = 14
+        cmbCont.Name = "cmbCont"
+        cmbCont.PlaceholderText = "Cont pentru toate liniile"
+        cmbCont.Size = New System.Drawing.Size(300, 36)
+        cmbCont.TabIndex = 3
+        tips.SetToolTipHeader(cmbCont, "Cont Vercon pentru toate liniile")
+        tips.SetToolTipText(cmbCont, "Alege o dată un cont (sub gestiunea lui) și se scrie pe <b>toate</b> liniile din tabel, din toate facturile bifate. Pe o linie sau pe antetul unei facturi îl poți schimba apoi.")
+        '
         ' pnlNota
         '
         pnlNota.Controls.Add(txtNota)
+        pnlNota.Controls.Add(pnlGapNota)
+        pnlNota.Controls.Add(cmbCont)
         pnlNota.Controls.Add(lblNota)
         pnlNota.Dock = System.Windows.Forms.DockStyle.Top
         pnlNota.Location = New System.Drawing.Point(0, 96)
@@ -418,6 +445,8 @@ Partial Class VerconForm
     Friend WithEvents pnlNota As System.Windows.Forms.Panel
     Friend WithEvents lblNota As System.Windows.Forms.Label
     Friend WithEvents txtNota As KBotTextBox
+    Friend WithEvents pnlGapNota As System.Windows.Forms.Panel
+    Friend WithEvents cmbCont As KBotComboBox
     Friend WithEvents gridLinii As KBotDataView
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents ntfMesaj As KBotNotice

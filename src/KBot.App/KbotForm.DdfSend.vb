@@ -87,7 +87,15 @@ Partial Public Class KbotForm
         ' the «!» code is replaced, so this still holds on a resume.
         Dim angajamentNou As Boolean = draft.Manual AndAlso numarRev = 0
         Dim motiv As String = DdfSendInputs.Motiv(draft.Revizie.DescScurta, numarRev)
-        Dim program As String = If(String.IsNullOrWhiteSpace(draft.Program), _session.CodProgram, draft.Program)
+        ' Slice 0114-27 (operator, 23.10.2026): the program is the document's, never the session's. A document without one
+        ' is not sent (the editor refuses to save it, so this only meets an old document).
+        Dim program As String = If(draft.Program, String.Empty).Trim()
+        If program.Length = 0 Then
+            KBotMessage.Show(Me, "Documentul nu are program. Deschideți revizia, alegeți programul și salvați, sau folosiți " &
+                            "«Repară programul» din vederea DDF.",
+                            TitluTrimitere, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
 
         Dim intrebare As String = If(reluare,
             $"Reiau trimiterea reviziei {numarRev} a angajamentului «{codCurent}» în FOREXE?" & vbCrLf & vbCrLf &

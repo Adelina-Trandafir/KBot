@@ -63,6 +63,8 @@ Public NotInheritable Class VrcPartnerStore
         Try
             Dim k_report As New List(Of String)()
             Dim k_units = ReadSectorSources(k_cn, k_tx)
+            ' All existing fiscal codes, including Ascuns=1, prevent duplicate creation.
+            ' Existing rows are never changed/reactivated; legacy unit codes below only reserve occupied numbers.
             Dim k_existing As New HashSet(Of String)(StringComparer.Ordinal)
             Dim k_highest As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
             Using k_cmd As New MySqlCommand("SELECT P.CodFiscal, P.CodPartener, U.SursaSector FROM Parteneri P LEFT JOIN Unitati U ON U.IdUnitate = P.IdUnitate", k_cn, k_tx)
@@ -82,8 +84,13 @@ Public NotInheritable Class VrcPartnerStore
             End Using
 
             For Each k_item In k_items
-                If k_existing.Contains(k_item.TaxCode) Then
-                    k_report.Add($"{k_item.TaxCode}: există deja un partener cu acest cod fiscal; nu s-a adăugat.")
+                Dim k_fiscal As String = VrcConvert.NormalizeTaxCode(k_item.TaxCode)
+                If k_fiscal.Length = 0 OrElse k_fiscal.Length > 50 Then
+                    k_report.Add($"{k_item.TaxCode}: cod fiscal gol sau mai lung de 50 de caractere după normalizare; nu s-a adăugat.")
+                    Continue For
+                End If
+                If k_existing.Contains(k_fiscal) Then
+                    k_report.Add($"{k_fiscal}: există deja un partener cu acest cod fiscal (inclusiv ascuns); nu s-a adăugat și nu s-a modificat.")
                     Continue For
                 End If
                 Dim k_chosen = k_units.Where(Function(k_u) k_item.SectorSources.Contains(k_u.SS)).OrderBy(Function(k_u) k_u.IdUnitate).FirstOrDefault()
@@ -99,12 +106,12 @@ Public NotInheritable Class VrcPartnerStore
                     k_cmd.Parameters.AddWithValue("@u", k_chosen.IdUnitate)
                     k_cmd.Parameters.AddWithValue("@c", k_code)
                     k_cmd.Parameters.AddWithValue("@n", Cut(k_item.Name, 255))
-                    k_cmd.Parameters.AddWithValue("@f", k_item.TaxCode)
+                    k_cmd.Parameters.AddWithValue("@f", k_fiscal)
                     k_cmd.Parameters.AddWithValue("@a", Cut(k_item.Address, 255))
                     k_cmd.ExecuteNonQuery()
                 End Using
-                k_existing.Add(k_item.TaxCode)
-                k_report.Add($"{k_item.TaxCode}: adăugat ca {k_code} în unitatea {k_chosen.IdUnitate} ({k_chosen.SS}) — {k_item.Name}.")
+                k_existing.Add(k_fiscal)
+                k_report.Add($"{k_fiscal}: adăugat ca {k_code} în unitatea {k_chosen.IdUnitate} ({k_chosen.SS}) — {k_item.Name}.")
             Next
             Return k_report
         Catch ex As Exception

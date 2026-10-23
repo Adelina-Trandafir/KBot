@@ -1,5 +1,13 @@
 # Editor NIR, repartizare și corecții — 16.10.2026
 
+Actualizare 23.10.2026: NIR-urile manuale se pot asocia pe poziții și cantități
+cu eFactura, prin drag and drop, cu propuneri CPV/cantitate și memorarea
+denumirilor confirmate per furnizor. Aceeași factură poate acoperi NIR-uri
+din subunități diferite. Detalii, limite și instalare în
+[jurnalul asocierii parțiale](../docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md).
+Necesită și `sql/EV_02_vercon_asocieri_partiale.sql`, pregătit pentru execuție
+manuală; nu a fost executat. Codul este local, nepublicat și nerulat.
+
 Slice: [SLICE-VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md).
 Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Nu s-au rulat teste, compilări,
 browser sau SQL și nu s-au modificat baze de date.

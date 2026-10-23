@@ -16,7 +16,7 @@ Public Enum VrcLinkKind
     Group = 3
     ''' <summary>NIR.IDF: the supplier, matched to a KBOT partner by tax code.</summary>
     Supplier = 4
-    ''' <summary>Left out on purpose (the supplier columns replaced by IdPartener).</summary>
+    ''' <summary>Left out on purpose (supplier identity is written separately as normalized CF in CodPartener).</summary>
     Skip = 5
     ''' <summary>A key column nobody has classified: allowed only while every source value is NULL or 0.</summary>
     Open = 6

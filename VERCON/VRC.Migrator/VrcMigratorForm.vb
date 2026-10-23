@@ -650,7 +650,7 @@ Public Class VrcMigratorForm
             k_sb.AppendLine("SERVER — gata: baza, tabelele VC_, subunitățile noi.")
             If _prepared.Count > 0 Then k_sb.AppendLine($"{_prepared.Count} parteneri pregătiți din ANAF vor fi adăugați în Parteneri în aceeași tranzacție cu transferul (cad odată cu el dacă transferul eșuează).")
             If k_suppliers IsNot Nothing AndAlso k_suppliers.Count > 0 Then
-                k_sb.AppendLine($"AVERTIZARE: {k_suppliers.Count} furnizori fără partener KBOT cu același cod fiscal (NIR-urile lor se importă fără partener): {String.Join(", ", k_suppliers.Take(20))}{If(k_suppliers.Count > 20, "…", "")}")
+                k_sb.AppendLine($"AVERTIZARE: {k_suppliers.Count} coduri fiscale lipsă sau fără înregistrare în Parteneri: {String.Join(", ", k_suppliers.Take(20))}{If(k_suppliers.Count > 20, "…", "")}. Codurile fiscale disponibile se salvează direct pe NIR și factură; cele absente rămân NULL.")
             End If
             rtbRaport.Text = k_sb.ToString()
             _testedHash = k_plan.Hash()

@@ -4647,7 +4647,7 @@ corectată local la solicitarea utilizatorului.
 
 Toate cele 11 rapoarte folosesc selecția ierarhică existentă MF, fără
 ramurile independente „Conturi în folosință” și „Deținători”: bonuri pe
-primitor–bon–produs, produse pe cont–produs și primitori pe cont–primitor–produs.
+primitor–bon–produs, produse pe cont–produs și primitori pe primitor–cont–produs.
 Se reutilizează protocolul intern MF pentru selecții corelate și filtrarea
 aceluiași snapshot PDF/Excel. Schimbarea raportului reîncarcă selecția.
 
@@ -4691,3 +4691,939 @@ verificări automate/de sintaxă, browser sau randări PDF/Excel, conform
 instrucțiunilor proiectului. Aspectul final nu a fost validat. Fără SQL sau
 modificări de schemă. Publicare: modulele Python/JS/CSS împreună, apoi
 repornirea serviciului web și regenerarea bonurilor.
+
+### 2026-10-23 — Corecții balanță OI, bonuri și selecție pe primitor
+
+Balanța OI preia macheta efectivă a balanței de magazie, cu aceleași coloane
+și titlul OI, inclusiv când existau coloane OI personalizate anterior.
+Calculează un rând pe cont–variantă: SI din predări minus casări anterioare,
+Intrări numai din predările perioadei, Ieșiri numai din casările perioadei,
+SF = SI + Intrări − Ieșiri. Transferurile nu participă în această balanță.
+În PRIMITORI, Selectare date este grupată primitor → cont → produs.
+
+Generarea din browser trimite selecțiile prin POST în corp, cu contextul
+scurt în URL, inclusiv la listarea documentului și schimbarea perioadei.
+Exporturile snapshotului nu retrimit filtrele în URL. GET rămâne compatibil.
+Schimbarea elimină URL-urile foarte lungi; cauza exactă a HTTP 400 raportat
+nu este confirmată în lipsa jurnalului de pe server și a unei reproduceri.
+
+Fișiere: PYTHON/routes/vercon/{report_oi.py, report_layouts.py,
+report_service.py, report_mf_selection.py, report_catalog.py,
+report_routes.py, stock_routes.py, kbot_bridge.py};
+PYTHON/static/js/vercon/{report-request.js (nou), reports.js,
+document-report.js, report-period-action.js}; PYTHON/static/help/vercon.json;
+PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-rapoarte-oi-structura-si-selectie.md;
+docs/worklog/VERCON-2026-10-23-corectii-balanta-oi-bonuri-primitori.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau randări PDF/Excel.
+Fără SQL executat sau modificări de schemă. Publicare: modulele Python/JS
+și helpul împreună, apoi repornirea serviciului web și regenerarea rapoartelor.
+
+### 2026-10-23 — HTTP 500 la generare: parametrii cererii suprascriși
+
+La trecerea pe POST, parserul de selecție suprascria variabila care păstra
+`request.values` cu lista de ID-uri sau None, apoi apela `.get(...)` pe
+aceasta la citirea opțiunilor. Acest defect produce HTTP 500 înaintea
+construirii raportului și poate pierde filtrele din corpul cererii.
+Parametrii cererii și lista de ID-uri folosesc acum variabile separate.
+
+Fișiere: PYTHON/routes/vercon/report_routes.py;
+docs/worklog/VERCON-2026-10-23-generare-http-500-parametri.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de sursă; fără teste sau verificări
+de execuție, conform instrucțiunilor proiectului. Publicare: report_routes.py
+și repornirea serviciului web. Fără modificări JS, SQL sau de schemă pentru
+această corecție.
+
+### 2026-10-23 — Numărul copiilor în orice listă din ultima lună
+
+Orice listă activă din ultima lună cu liste de alimente active a gestiunii
+permite modificarea numărului copiilor/porțiilor. Luna este determinată pe
+toate exercițiile, nu din data calculatorului sau anul selectat. Pentru
+listele mai vechi din această lună, „Modifică numărul copiilor” permite
+numai Porții la cele trei mese. Restul câmpurilor și bonurile rămân protejate.
+Modificarea completă și anularea păstrează ordinea invers cronologică.
+
+O rută dedicată verifică dreptul, blocarea, perioada deschisă, luna, starea
+și versiunea listei; recalculează valorile meselor, valoarea listei și DEP
+cu Decimal la ZEC și salvează sumarul, antetul, versiunea și auditul în
+aceeași tranzacție. Modificarea porțiilor din formularul complet verifică
+aceeași lună. Economiile/depășirile listelor următoare se actualizează la
+consultare și regenerarea raportului prin calculul existent din DEP.
+
+Fișiere: PYTHON/routes/vercon/{food_list_portions.py (nou), lista.py,
+doc_routes.py}; PYTHON/static/js/vercon/lista.js;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-copii-liste-ultima-luna.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau generări PDF/Excel,
+conform instrucțiunilor proiectului. Fără SQL executat ori schimbări de
+schemă. Publicare: cele trei module Python, lista.js și helpul JSON
+împreună, apoi repornirea serviciului web.
+
+### 2026-10-23 — BC din luna activă, stoc protejat și istoric cu motiv
+
+Orice BC din luna activă poate fi modificat, cu perioada deschisă, dreptul,
+blocarea și versiunea curente. Alimente folosește ultima lună cu liste
+active (fallback BC dacă nu există liste), Materiale ultima lună cu BC
+active, pe toate exercițiile. Data rămâne în luna activă; retururile active,
+listele asociate din alte luni și stocurile deja deschise într-un an ulterior
+sunt protejate. Anularea păstrează regula ultimului document.
+
+Salvarea validează întregul istoric al variantelor vechi și noi prin
+check_timeline, inclusiv soldurile ulterioare bonului. Mișcările fără dată
+sau cantitate produc eroare explicită. Soldul negativ produce rollback
+complet, inclusiv pentru recalcularea listei și audit. Lista asociată se
+recalculează și dacă nu este ultima din luna activă.
+
+Istoricul BC afectate înregistrează stocul recalculat la sfârșit de zi;
+istoricul listelor afectate înregistrează DEP/EC și soldurile cumulative
+înainte/după. Cauza identifică bonul sau lista sursă prin număr, dată, ID,
+versiune și explicație lizibilă. Aceeași auditare se aplică modificării
+porțiilor. Liniile și prețurile bonurilor ulterioare se păstrează. Istoricul
+arată înregistrări expandabile cu motiv și Înainte/După, inclusiv din pagina
+Lista Alimente. Helpul descrie explicit ambele reguli ale ultimei luni
+deschise și istoricul recalculărilor.
+
+Fișiere: PYTHON/routes/vercon/{consumption_period.py (nou),
+recalculation_audit.py (nou), document_order.py, documents.py, doc_routes.py,
+food_list_recalculation.py, food_list_portions.py, lista.py, stock_source.py};
+PYTHON/static/js/vercon/{document-permissions.js (nou), document-history.js
+(nou), docs.js, lista.js}; PYTHON/static/css/vercon-history.css;
+PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-bc-luna-activa-stoc-si-istoric.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser, randări PDF/Excel sau acces
+la MariaDB, conform instrucțiunilor proiectului. Fără SQL executat ori
+schimbări de schemă. Publicare: toate modulele Python/JS/CSS și helpul JSON
+de mai sus împreună, apoi repornirea serviciului web.
+
+### 2026-10-23 — Lista Alimente: ordinea și alinierea butoanelor
+
+În consultare, bara listei afișează Vizualizare, apoi Modifică. Istoric
+este eliminat din această bară și rămâne în meniul contextual al listei
+din arbore. La adăugare sau modificare, inclusiv numai porții, Renunță
+este în stânga și Salvează lista în dreapta; Vizualizare nu apare.
+Mesajele ocupă spațiul dintre butoane sau rândul următor pe ecrane înguste.
+Helpul descrie etichetele și comenzile actuale; capturile se păstrează.
+
+Fișiere: PYTHON/static/js/vercon/lista.js;
+PYTHON/static/css/vercon-lista.css; PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-lista-butoane-actiuni.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă sau browser. Fără SQL ori schimbări
+de schemă. Publicare: JS, CSS și JSON împreună; această corecție nu necesită
+repornirea serviciului Python.
+
+### 2026-10-23 — Tooltipuri arbori și salvarea comisiilor la ieșirea de pe rând
+
+Tooltipul comun al arborilor măsoară textul fără spațiile de formatare și
+compară lățimea cu limitele care îl decupează efectiv. Depășirea verticală
+a dreptunghiului fontului peste propria casetă nu mai declanșează tooltipul.
+Ajutorul acțiunilor din dreapta își păstrează mecanismul separat.
+
+Comisiile de recepție și inventariere folosesc salvarea pe rând: editările
+celulelor rămân local până la schimbarea rândului sau ieșirea din tabel.
+Validarea este pe rând; rămâne comanda explicită de salvare/reîncercare.
+Un rând nou salvat permite continuarea navigării fără o a doua încercare.
+Helpul explică regula comisiilor.
+
+Fișiere: PYTHON/static/js/components/treeview/treeview-tooltip.js;
+PYTHON/static/js/vercon/nomenclator-grid.js; PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-tooltip-arbori-si-comisii-salvare-rand.md;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser ori MariaDB. Fără SQL sau
+schimbări de schemă. Publicare: cele două module JS și helpul JSON.
+
+### 2026-10-23 — Ordonare după tip și evaluarea prețurilor istorice
+
+Regula tuturor aplicațiilor este memorată în AGENTS.md: texte alfabetic,
+date cronologic, numere numeric. Comparatorul comun typed-order.js se
+aplică arborilor la fiecare nivel/randare și selectoarelor, inclusiv lazy.
+Grilele și filtrele compară după tip, prețurile zecimale fără pierderea
+cifrelor, iar referințele după etichete. Sortarea implicită a grilei este
+după prima coloană sortabilă. Documentele/lunile și variantele de preț au
+chei explicite; sensul descrescător al documentelor se păstrează.
+
+Rapoartele respingeau prețurile negative, contrar politicii importului
+care păstrează valorile sursei cu semn. stock_valuation.py acceptă acum
+prețurile istorice negative fără transformarea lor. Un preț lipsă sau
+nevalid produce diagnostic cu produs, variantă, cod și cont. Rândurile
+eliminate deja de opțiunile raportului nu blochează evaluarea. Fișa
+prețurilor afișează ID/cod pentru identificare. Helpul explică remedierea.
+
+Fișiere: AGENTS.md; PYTHON/static/js/utils/typed-order.js (nou);
+components/treeview/treeview-render.js și components/combobox/combobox-state.js;
+dgv/{datagrid.js,engine.js,filtering.js}; vercon/{ui.js,nomenclator-grid.js,
+document-tree-order.js,receipt-tree.js,product-stock.js,report-selection.js,
+report-result.js} (toate sub PYTHON/static/js); PYTHON/routes/vercon/
+{report_order.py (nou),stock_valuation.py (nou),report_data.py,report_oi.py,
+stock.py,report_selection.py,report_incoming_selection.py,
+report_outgoing_selection.py,report_mf_selection.py};
+PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-ordonare-tipuri-si-preturi-istorice.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser, PDF/Excel sau MariaDB.
+Fără SQL ori schimbări de schemă. Datele concrete ale variantei din
+captură nu au fost inspectate. Publicare: toate modulele împreună și
+repornirea serviciului web.
+
+### 2026-10-23 — Fișa de magazie: selecție multiplă și pagini separate
+
+Fișa de magazie și variantele sale FM1-u, FM2 și Fisa_Magazie_BF permit
+selectarea mai multor produse și variante de preț prin filtrul existent
+variant_ids. Eliminată restricția unei singure variante din catalog.
+
+report_statement.py construiește fișe independente pe variantă și introduce
+o pagină nouă între ele. Produsele sunt ordonate alfabetic și prețurile
+numeric; soldul inițial, mișcările, totalurile și semnăturile rămân proprii
+fiecărei fișe. Blocurile comune de întrerupere se aplică în PDF și la
+imprimarea Excelului. Machetele existente păstrează coloanele și stilul;
+gruparea pe variantă este impusă numai în memorie. Helpul este actualizat.
+
+Fișiere: PYTHON/routes/vercon/{report_catalog.py,report_statement.py (nou),
+report_service.py}; PYTHON/static/help/vercon.json;
+PYTHON/reports/vercon/README.md;
+docs/worklog/VERCON-2026-10-23-fisa-magazie-selectie-multipla.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser ori PDF/Excel. Fără MariaDB,
+SQL sau schimbări de schemă. Publicare: modulele Python și helpul, repornirea
+serviciului web și reîncărcarea paginii pentru actualizarea catalogului.
+
+### 2026-10-23 — Asociere NIR manual cu eFactura, parțial și drag and drop
+
+Corecție cerută ulterior: asocierea compară data facturii și CUI-ul
+furnizorului. Numărul facturii nu este condiție în listă, la salvare sau
+la calculul valabilității asocierilor; seria și spațiile pot diferi.
+Actualizate efactura_association.py, efactura_queue.py,
+utils/vercon_efactura.py, efactura-association.js, helpul și jurnalul slice-ului.
+Corecția nu necesită DDL nou. Fără teste sau alte verificări executate.
+
+În NIR-ul de cumpărare salvat apare «Asociază eFactura…». Două liste permit
+drag and drop între produse NIR și poziții eFactura, cu alternativă de
+selectare/buton. Cantitățile se împart pe mai multe rânduri și NIR-uri,
+inclusiv în subunități diferite; resturile sunt controlate pe ambele
+documente, în tranzacția salvării. UM diferite au cantități independente.
+
+Potrivirile sunt propuneri: denumiri confirmate anterior pentru furnizor,
+CPV exact și cantitate la ambiguități. Utilizatorul rezolvă restul și
+confirmă prin salvare. Corespondențele de denumiri se pot memora pentru
+CUI/gestiune/produs. Repetările ambigue nu sunt alese arbitrar.
+
+K-BOT și VERCON calculează aceeași stare PARTIALA până la acoperirea
+cantităților tuturor pozițiilor. Editarea NIR-ului invalidează asocierile
+reviziei anterioare și cere reconfirmare; anularea/dispariția eliberează
+cantitățile. Legăturile integrale vechi sunt păstrate fără conversie.
+Asocierea nu rescrie documente sau stocuri.
+
+Fișiere noi: sql/EV_02_vercon_asocieri_partiale.sql;
+PYTHON/utils/vercon_efactura.py;
+PYTHON/routes/vercon/efactura_association.py;
+PYTHON/static/js/vercon/{efactura-association,efactura-match}.js.
+Integrare: routes/vercon/{doc_routes,efactura_queue}.py;
+routes/efactura/primite_vercon.py; static/js/vercon/{docs,efactura-intake}.js;
+static/css/vercon-efactura.css; static/help/vercon.json (sub PYTHON);
+src/KBot.Domain/EFacturaVercon.vb;
+src/KBot.EFactura/Forms/VerconForm.vb; VERCON/FACTURI_NIR_IMPLEMENTARE.md;
+docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser, compilări sau MariaDB.
+SQL doar pregătit pentru execuție manuală pe AVACONT_SURSA și sincronizare
+în DC-uri. Nu se creează automat schema. Publicare: toate modulele web
+împreună, repornirea serviciului și recompilarea K-BOT pentru starea parțială.
+
+### 2026-10-23 — NIR: asociere în popup și grupare inițială pe furnizori
+
+Mutată «Asociază eFactura…» din footer în meniul ⋮ al fiecărui NIR de
+cumpărare din arbore. Acțiunea încarcă NIR-ul țintă înainte de asociere și
+păstrează restricțiile de drepturi, anulare, editare și operații neconfirmate.
+
+La deschiderea formularului NIR, «Grupeaza pe luni» este debifat; arborele
+afișează furnizorii alfabetic în română. Modul inițial este configurat
+explicit pentru NIR prin initialByDate, iar utilizatorul poate alege apoi
+gruparea lunară. Celelalte familii păstrează configurația lor inițială.
+
+Fișiere: PYTHON/static/js/vercon/{docs,document-tree-order}.js;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md;
+docs/worklog/VERCON-2026-10-23-nir-popup-asociere-si-grupare-furnizori.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau MariaDB. Fără SQL nou.
+Publicare: modulele JS și helpul, apoi reîncărcarea paginii VERCON.
+
+### 2026-10-23 — Asociere eFactura în DGV, cantități automate și listă compactă
+
+Înlocuit tabelul perechilor NIR/eFactura cu DGV-ul comun folosit la NIR/BC:
+cantități editabile în celule, sortare/filtrare și eliminare prin ⋮.
+Ambele cantități se propun automat cu minimul resturilor disponibile,
+inclusiv pentru UM scrise diferit (KG/KGM). Utilizatorul poate modifica
+separat cantitățile, cu validare exactă pe celulă și controlul resturilor
+în tranzacția serverului. Celula activă se confirmă înainte de operații.
+
+Lista de alimente nu mai generează mesajul cronologic permanent la
+deschiderea documentului. Spanul de stare și containerul său nu sunt în
+footer dacă nu au un mesaj activ; rămân erorile și confirmările operațiilor.
+Restricțiile operațiilor sunt păstrate.
+
+Aliniat scriptul EV_02 la CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci.
+Fișiere: PYTHON/static/js/vercon/{efactura-association-grid (nou),
+efactura-association,lista}.js; PYTHON/static/css/{vercon-efactura,vercon-lista}.css;
+PYTHON/static/help/vercon.json; sql/EV_02_vercon_asocieri_partiale.sql;
+docs/worklog/VERCON-2026-10-23-efactura-dgv-cantitati-lista-fara-mesaj-permanent.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau MariaDB. Nu s-a executat
+SQL. Publicare: JS/CSS/help împreună, apoi reîncărcarea paginii VERCON.
+
+### 2026-10-23 — eFactura: DGV-uri sursă și memorare implicită manuală
+
+Eliminate explicația și bifa de memorare din dialog. Butoanele «Asociază
+rândurile selectate» și «Propune potriviri» sunt pe rândul selectorului,
+după «Deschide factura», cu lățimea selectorului redusă.
+
+Listele NIR/eFactura de sus sunt acum DGV-uri comune, cu buton ↕️ pentru
+alegerea destinației, după modelul ADECHIT Prezență. La drag este evidențiat
+rândul eFactura țintă prin fundal și contur punctat. Rândurile fără rest
+dispar; reapar la reducerea/eliminarea unei asocieri. Sortarea, filtrarea
+și lățimile se păstrează la actualizări.
+
+Memoria denumirilor se completează implicit numai pentru perechile făcute
+prin drag ori editate manual, la salvarea asocierilor. Propunerile și
+asocierile din butoane nu generează singure memorie. Marcajul este per
+pereche, aplicat și de server, fără bifa/flagul global anterior.
+
+Fișiere: PYTHON/static/js/vercon/{efactura-source-grids (nou),
+efactura-association,efactura-association-grid}.js;
+PYTHON/routes/vercon/efactura_association.py;
+PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md;
+docs/worklog/VERCON-2026-10-23-efactura-grile-surse-drop-si-memorare-implicita.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau MariaDB. Fără DDL nou
+ori execuție SQL. Publicare: Python/JS/CSS/help împreună, repornirea
+serviciului și reîncărcarea paginii VERCON.
+
+### 2026-10-23 — status între acțiuni, elipsis și tooltip custom
+
+Uniformizate barele documentelor, listei de alimente, registrului MF,
+editorului de previzualizare, setărilor, ferestrelor eFactura și amortizării:
+grup stânga / mesaj cu lățime rămasă rezervată / Modifică ori Salvează.
+Apariția și lungimea mesajului nu schimbă poziția butoanelor. Statusul
+eFactura este în footer, inclusiv în selectorul facturilor de preluat.
+
+Toate elementele vc-save-status folosesc o singură linie cu elipsis.
+Opt-in-ul generic data-kbot-tooltip-overflow din tooltipul comun afișează
+conținutul integral la hover/focus numai dacă textul este trunchiat.
+Mesajele independente din nomenclatoare și CPV primesc aceeași tratare.
+
+Fișiere: PYTHON/static/js/vercon/status-bar.js, ui.js, docs.js, lista.js,
+editor.js, mf.js, nomenclatoare.js, depreciation.js,
+efactura-association.js, efactura-intake.js;
+PYTHON/static/js/components/tooltip/tooltip-titles.js;
+PYTHON/static/css/vercon-status.css, vercon.css, vercon-efactura.css;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-status-intre-actiuni.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, build, verificări automate/de sintaxă, browser sau MariaDB.
+Fără SQL executat ori modificări de schemă. Publicare: JS/CSS/help
+împreună și reîncărcarea paginii VERCON.
+
+### 2026-10-23 — facturi eFactura inactive global și informare în gestiune
+
+La intrarea într-o gestiune care oferă NIR, pagina citește situația
+facturilor trimise de contabil și informează despre cele active cu rest
+de preluat/asociat. Facturile complete și inactive nu ridică informarea.
+Cererile vechi sunt anulate/ignorate la schimbarea contextului, fără polling.
+
+Marcajul Inactiv este GLOBAL pe unitate, conform corecției explicite a
+utilizatorului: ascunderea de către un gestionar se aplică tuturor.
+Lista de preluare folosește DGV-ul comun cu bifă Inactiv. Lista și
+asocierea au filtre Active/Inactive/Toate, implicit Active. Restaurarea
+se face debifând Inactiv din Inactive/Toate. Facturile ascunse complet
+preluate rămân accesibile pentru restaurare. Nu se șterg asocieri/stocuri.
+Asocierile nesalvate sunt protejate înainte de schimbarea afișării.
+Stările parțiale din listă/informare se citesc în lot, fără bugete și
+verificări de structură separate pentru fiecare factură.
+
+Fișiere: sql/EV_03_vercon_facturi_inactive.sql;
+PYTHON/routes/vercon/efactura_visibility.py, efactura_queue.py, doc_routes.py;
+PYTHON/utils/vercon_efactura.py;
+PYTHON/static/js/vercon/efactura-notice.js, app.js, efactura-queue-dialog.js,
+efactura-intake.js, efactura-association.js;
+PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-efactura-informare-inactive.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. DDL pregătit pentru aplicare MANUALĂ
+în AVACONT_SURSA și sincronizarea structurii în DC-uri; NEEXECUTAT.
+Identificatori noi uppercase, utf8mb3/utf8mb3_general_ci. Fără creare
+automată de structură. Lipsa EV_03 dezactivează bifa cu explicație,
+fără a bloca lista existentă.
+Numai analiză de design pe surse; fără teste, build, verificări automate/de
+sintaxă, browser, ANAF sau MariaDB. Publicare: SQL manual/sincronizare,
+Python/JS/CSS/help împreună, repornirea serviciului și reîncărcare.
+
+### 2026-10-23 — eFactura: mesajul de stare între butoanele footerului
+
+Mutat vc-efi__status din corpul dialogului în footer, între «Închide» și
+«Salvează asocierile», în locul spacerului. Mesajul ocupă spațiul flexibil
+dintre butoane; butoanele rămân la extremități și când mesajul este gol.
+Fișiere: PYTHON/static/js/vercon/efactura-association.js;
+PYTHON/static/css/vercon-efactura.css.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Fără teste, verificări automate, browser
+sau SQL. Numai analiză de design pe surse. Publicare: JS/CSS împreună,
+apoi reîncărcarea paginii VERCON.
+
+### 2026-10-23 — eFactura: scroll corectat, NIR protejat și afișare factură
+
+Corectat paddingul antetelor coloanelor de acțiuni de 40 px în DGV-urile
+dialogului eFactura, cauza overflow-ului inclusiv în grila goală. Eliminată
+limita comună de 300 px numai pentru ComboBox-ul facturii; baza lui este
+460 px, cu restrângere la nevoie.
+
+NIR-urile cu asocieri active eFactura sunt bold italic în arbore și au
+editarea blocată în interfață și în _guard_dependents pe server, inclusiv
+la validarea ciornei. Metadatele sunt calculate pentru ramurile lazy,
+lista generală și documentul deschis, atât pentru legături integrale vechi,
+cât și pentru alocări noi valabile. Asocierea/eliminarea ei reîmprospătează
+documentul și arborele.
+
+Popupul nodului oferă «Afișează eFactura», cu alegere dacă există mai multe
+facturi asociate. Ruta PDF VERCON verifică asocierea în context și folosește
+XML-ul și conversia ANAF existente, cu vizualizatorul comun.
+
+Fișiere noi: PYTHON/routes/vercon/efactura_receipts.py;
+PYTHON/static/js/vercon/efactura-view.js.
+Modificate: PYTHON/utils/vercon_efactura.py;
+PYTHON/routes/vercon/{receipt_tree,invoices,documents,doc_routes,receipt_distribution}.py;
+PYTHON/static/js/vercon/{docs,document-tree-order}.js;
+PYTHON/static/js/components/treeview/treeview-render.js;
+PYTHON/static/css/{vercon-efactura,vercon-document-tree}.css;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-efactura-scroll-arbore-blocare-si-pdf.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser, PDF generat, ANAF sau MariaDB.
+Fără DDL nou sau SQL executat. Publicare: Python/JS/CSS/help și rendererul
+TreeView împreună, repornirea serviciului și reîncărcarea paginii.
+
+### 2026-10-23 — eFactura: ComboBox custom și încărcare automată
+
+Selectorul facturii este Combobox-ul comun în mod simple. Eliminat butonul
+«Deschide factura»; prima factură potrivită după dată/CUI se încarcă automat
+la deschidere, iar schimbarea opțiunii încarcă direct pozițiile alese.
+Filtrul opțional partner din lista API folosește CUI-ul normalizat; numărul
+facturii nu este criteriu. Facturile integrale din fluxul vechi nu sunt
+oferite în acest dialog.
+
+Schimbarea selecției protejează ciorna și confirmă celula în editare.
+Renunțarea la schimbare reface selecția facturii curente. Selectorul este
+blocat în timpul cererilor și pentru salvări neconfirmate.
+
+Bara conține ComboBox, «🔗 Asociaza», apoi «💡 Propune», cu descrierile
+complete în title. Fișiere: PYTHON/static/js/vercon/efactura-association.js;
+PYTHON/routes/vercon/efactura_queue.py; PYTHON/static/css/vercon-efactura.css;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-efactura-combo-custom-incarcare-automata.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, verificări automate/de sintaxă, browser sau MariaDB. Fără DDL nou
+ori execuție SQL. Publicare: Python/JS/CSS/help împreună, repornirea
+serviciului și reîncărcarea paginii VERCON.
+### 2026-10-23 — Luni în arbori: ordonare calendaristică explicită
+
+Adăugate chei de sortare de tip dată nodurilor de lună din lista de alimente,
+bonurile de consum pe primitori, perioada stocurilor și selectorul perioadei
+rapoartelor. Controlul comun folosește anul/luna reală, independent de
+denumirea românească. Sensul existent se păstrează: descrescător pentru
+documente și rapoarte, crescător pentru perioada stocurilor. În rapoarte,
+«TOTI anii» și «Tot anul» rămân înaintea perioadelor individuale.
+
+Fișiere: PYTHON/static/js/vercon/{consumption-ui,lista,stock,report-period}.js;
+implementare_vercon_v2.md. Arborii NIR și ceilalți arbori comuni de documente
+au deja chei calendaristice explicite. Celelalte etichete își păstrează
+ordonarea existentă.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără teste,
+verificări automate/de sintaxă, browser sau SQL, conform instrucțiunilor.
+
+
+### 2026-10-23 — eFactura: suprascrierea CPV-ului produsului la salvarea asocierilor
+
+Cauza: asocierea pe poziții citea CPV numai pentru propuneri; salvarea nu
+citea Cpv de pe poziția eFacturii și nu actualiza VC_Produse.
+La Salvează asocierile, toate perechile validate copiază acum CPV-ul din
+poziția eFactura în produsul nomenclatorului din subunitatea/gestiunea NIR,
+independent de memorarea denumirilor și de metoda asocierii. Se rezolvă
+codul complet din AVACONT_COMUN.CPV după cele opt cifre, inclusiv pentru
+surse cu cifră de control fără separator. CPV lipsă/cu format invalid nu
+șterge codul existent. Codurile absente din catalog și mai multe CPV-uri
+pentru același produs în aceeași cerere opresc întreaga salvare cu mesaj.
+Actualizarea și auditul CPV sunt în tranzacția asocierii; se incrementează
+Version și se actualizează DataSalvare numai la schimbare. Repetarea unei
+cereri confirmate folosește răspunsul idempotent. Eliminarea asocierii nu
+restaurează CPV anterior. Asocierile existente se pot resalva pentru copiere.
+Fluxul vechi de preluare integrală nu are mapare explicită a pozițiilor și
+nu este inclus în această schimbare.
+
+Fișiere: PYTHON/routes/vercon/efactura_product_cpv.py (nou);
+PYTHON/routes/vercon/efactura_association.py; PYTHON/static/help/vercon.json;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, build, verificări automate/de sintaxă, browser sau MariaDB, conform
+instrucțiunilor. Fără DDL și fără SQL executat. Publicare: cele două module
+Python și help, repornirea serviciului; pentru asocieri existente,
+redeschidere și Salvează asocierile după publicare.
+
+### 2026-10-23 — mesaje în dialogul comun; eliminare vc-message
+
+Șters efectiv p#vc-message din HTML, conform cererii explicite. Informarea
+facturilor și mesajele generale nu mai introduc text în pagină și nu mai
+folosesc notificări mici de tip tooltip. Se reutilizează messageBox din
+utils/confirm-box.js: dialog centrat, backdrop modal pe întreg ecranul și
+buton Am înțeles, același control ca la mesaje/confirmări existente.
+
+Adaptorul messages.js păstrează jurnalul sesiunii și textele statusurilor
+din barele de acțiuni deja autorizate, dezactivând tooltipul automat al
+mesajelor. ui.js îl exportă pentru notificările operațiilor și erorilor.
+Un mesaj nou înlocuiește notificarea modală curentă; eliminarea ecranului
+închide mesajul său. Informarea eFactura își închide propriul dialog la
+schimbarea gestiunii și păstrează excluderea celor inactive.
+
+Fișiere: PYTHON/static/vercon.html;
+PYTHON/static/js/vercon/messages.js (nou), ui.js, app.js, efactura-notice.js;
+PYTHON/static/help/vercon.json;
+docs/worklog/VERCON-2026-10-23-mesaje-dialog-comun.md.
+
+Preferință explicită: nu se adaugă elemente vizuale în pagină fără acordul
+utilizatorului. Nu s-a creat un control vizual sau un stylesheet nou pentru
+mesaje; se folosește dialogul comun existent.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design pe surse; fără
+teste, build, verificări automate/de sintaxă, browser sau MariaDB. Fără
+SQL. Publicare: HTML/JS/help împreună, reîncărcare completă a paginii.
+
+### 2026-10-23 — eFactura: diagnostic furnizor/dată și propuneri KG/KGM
+
+Analiză: furnizorul era deja comparat pe Parteneri.CodFiscal normalizat
+cu EF_Primite.CuiNormalizat; ID-ul identifica doar partenerul NIR, iar
+denumirea nu participa. Același mesaj generic acoperea și diferențele
+între VC_NIR.DataFc și EF_Primite.DataFact, ascunzând condiția respinsă.
+Separat acum mesajele pentru furnizor absent, CUI lipsă/diferit și dată
+lipsă/diferită; mesajele includ valorile comparate și explică Data facturii
+versus Data NIR. Criteriile furnizor/dată nu au fost relaxate.
+
+Propunerile cereau UM egală textual, deci KG/KGM nu erau echivalente.
+Adăugată această echivalență fără conversii numerice. Competitorii sunt
+acum filtrați prin aceleași criterii de eligibilitate ca perechea candidată,
+pentru a nu bloca o potrivire printr-o altă poziție cu UM incompatibilă
+sau o corespondență memorată neeligibilă. Rămân obligatorii restul pozitiv,
+CPV/corespondența memorată și lipsa ambiguității; încărcarea dialogului
+poate deja adăuga propunerile înainte de apăsarea butonului Propune.
+
+Fișiere: PYTHON/routes/vercon/efactura_association.py;
+PYTHON/static/js/vercon/efactura-match.js; PYTHON/static/help/vercon.json;
+implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Cazul concret al utilizatorului nu poate
+fi atribuit uneia dintre condiții fără valorile NIR/eFactura; numai analiză
+de design pe surse, fără teste, build, verificări automate/de sintaxă,
+browser ori acces MariaDB. Fără DDL și fără SQL executat. Publicare:
+Python/JS/help împreună, repornire serviciu și reîncărcare pagină.
+
+### 2026-10-23 — eFactura: furnizor fiscal al NIR-ului și listă strict filtrată
+
+Corectat diagnosticul introdus anterior: un Parteneri negăsit prin
+VC_NIR.IdPartener nu dovedește că furnizorul fiscal nu există. NIR-urile
+pot păstra identitatea fiscală în CodPartener (coloana pregătită de P122)
+sau, pentru documente migrate fără legătură rezolvată, în CodFiscalSursa.
+Nu au fost consultate datele concrete ale utilizatorului și nu se afirmă
+că una dintre aceste situații a fost confirmată în baza sa.
+
+Rezolvarea fiscală comună pentru asociere folosește, în ordine, primul
+cod normalizat nevid: CodPartener al NIR-ului dacă acea coloană există,
+CodFiscal al rândului Parteneri legat, CodFiscalSursa dacă este disponibil.
+Aceeași expresie se folosește în lista de facturi, deschiderea/salvarea
+asocierii și proiecția valabilității alocărilor (inclusiv bugete/stare și
+protecția NIR). Nu se modifică automat IdPartener ori antetul NIR-ului.
+Normalizarea SQL folosește CASE/SUBSTRING, fără backreference dependent
+de escaparea backslash-urilor; normalizează și CUI-ul eFacturii.
+
+Dialogul trimite acum numai ID-ul NIR-ului curent împreună cu contextul
+verificat. Serverul citește documentul din subunitate/gestiune/exercițiu și
+impune filtrul CUI + Data facturii din NIR. Nu depinde de un filtru partner
+opțional, furnizat de browser. Include_completed fără NIR valid este
+respins (și pentru JS vechi); CUI nedeterminabil oprește lista explicit.
+Active/Inactive/Toate și reîncărcarea după bifă păstrează filtrul. Lista
+generală de preluare NIR din eFactura și informarea globală rămân separate.
+
+Fișiere: PYTHON/utils/vercon_efactura.py;
+PYTHON/routes/vercon/{efactura_association,efactura_queue}.py;
+PYTHON/static/js/vercon/efactura-association.js;
+PYTHON/static/help/vercon.json; implementare_vercon_v2.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Numai analiză de design prin citirea
+surselor; fără teste, build, verificări automate/de sintaxă, browser sau
+acces la MariaDB, conform instrucțiunilor. Fără DDL și fără SQL executat.
+Publicare: Python/JS/help împreună, repornire serviciu și reîncărcare
+completă a paginii. Schimbarea este limitată la asocierea eFactura; nu
+pretinde că migrarea generală 0122-05 a tuturor cititorilor/scriitorilor
+VERCON pe CodPartener ar fi fost implementată.
+
+
+### 2026-10-23 — VERCON ONLINE: o singură identitate fiscală a furnizorului
+
+Implementare limitată la VERCON online. Identitatea este exclusiv codul
+fiscal normalizat (alfanumeric uppercase, prefix RO eliminat înainte de
+cifră; păstrează zerourile inițiale și codurile externe cu litere).
+CodPartener din VC_NIR și VC_FACTURI conține acest CF, nu codul intern al
+unei unități. Câmpurile IdPartener/PARTENER_ID existente rămân neatinse;
+nu mai sunt folosite pentru legături/citiri/salvări online.
+
+Un singur modul utils/vercon_suppliers.py gestionează normalizarea Python
+și SQL, selecția unei înregistrări de afișare pentru fiecare CF normalizat,
+căutarea în nomenclator și ordonarea românească. Nu alege după ID intern.
+Dublurile între unități sunt o singură identitate; nume identice cu CF-uri
+diferite rămân separate. Selectoarele și API-urile transportă CF ca text.
+
+Acoperire: selectare furnizor, citire/salvare NIR, storno, factura comună,
+repartizări și reunire fragmente, arbore lazy și arbore FCS, fișă furnizor,
+proveniența mișcărilor/stocurilor și filtrele/ramurile/selețiile rapoartelor,
+sursele SQL implicite, preluarea NIR din eFactura și asocierea pe poziții.
+Lista asocierii este filtrată server-side prin CF + data facturii citite
+din NIR-ul salvat; Active/Inactive/Toate păstrează filtrul. Validitatea
+alocărilor folosește aceeași cheie fiscală, fără fallback prin ID, nume sau
+CodFiscalSursa. Suprascrierea CPV la salvarea asocierilor rămâne activă.
+
+Sursele personalizate de rapoarte cu aliasuri explicite sunt adaptate în
+memorie (alias NIR.IdPartener -> CodPartener; alias Parteneri.IdPartener
+-> CodFiscal), fără rescrierea fișierelor utilizatorului. Relația Parteneri
+este deduplicată fiscal înainte de join, ca să nu multiplice valorile.
+Definițiile cu filtre literale pe vechiul ID sau referințe nemapabile sunt
+refuzate la executare și rămân accesibile la editare; un ID numeric nu
+este reinterpretat drept CF. Nu s-a executat nicio interogare de raport.
+
+SQL PREGĂTIT, NEEXECUTAT:
+- sql/VC_20261023_FURNIZORI_CF_STRUCTURA.sql: coloana CodPartener a NIR
+  (dacă lipsește) și aceeași coloană în VC_FACTURI, cu indexuri; fără ștergeri,
+  fără schimbări pe coloanele vechi. Manual pe AVACONT_SURSA, apoi sync.
+- sql/VC_20261023_FURNIZORI_CF_DATE.sql: migrare manuală în fiecare DC.
+  Completează/normalizează CF păstrând întâi valorile fiscale deja salvate;
+  numai acest fișier de tranziție citește vechile ID-uri pentru a recupera
+  CF din Parteneri; folosește CF sursă pentru NIR și NIR-uri legate unanim
+  pentru facturi fără partener rezolvat. Nu deduce furnizori după nume.
+  Listează CF-uri lipsă și neconcordanțe NIR/factură pentru rezolvare înainte
+  de publicare. Nu modifică valori, cantități, revizii sau ID-uri vechi.
+
+Ordine publicare: structura manuală + sync, scriptul de date în fiecare DC
+cu scrierile oprite, rezolvarea rezultatelor neclare, apoi toate modulele
+Python/JS/CSS/help și SQL-urile SELECT de rapoarte, repornire serviciu și
+reîncărcare completă browser. Guard-ul online indică fișierele necesare
+când coloanele fiscale nu sunt instalate. Nu creează automat structura.
+
+Fișiere noi: PYTHON/utils/vercon_suppliers.py;
+PYTHON/routes/vercon/supplier_identity.py; cele două scripturi SQL de mai sus.
+Fișiere modificate: PYTHON/utils/vercon_efactura.py;
+PYTHON/routes/vercon/{receipt_choices,receipts,documents,invoices,
+receipt_distribution,receipt_routes,receipt_tree,receipt_context,doc_routes,
+stock_source,stock,stock_routes,report_routes,report_selection,
+report_incoming_selection,report_query,report_store,efactura_association,
+efactura_queue}.py;
+PYTHON/reports/vercon/queries/{receipts,ledger}.sql;
+PYTHON/static/js/vercon/{docs,receipt-context,receipt-tree,
+document-tree-order,storno-editor,efactura-intake}.js;
+PYTHON/static/css/vercon-receipt-destinations.css;
+PYTHON/static/help/vercon.json; implementare_vercon_v2.md;
+docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+
+Limita de scop: DDF, ORD, extrase, nomenclatorul global Parteneri,
+migratoarele Access și rutele K-BOT din routes/efactura nu au fost modificate.
+Proiecția comună de stare eFactura citește CF din NIR, în acord cu online.
+După importuri cu un migrator vechi, repetați migrarea manuală a datelor
+înainte de folosirea documentelor noi în VERCON online.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Analiză de design prin citirea surselor;
+fără teste, build, verificări automate/de sintaxă, browser sau acces la
+MariaDB, conform instrucțiunilor. Nu există confirmare de funcționare în
+execuție și nu s-au aplicat scripturile SQL.
+
+
+### 2026-10-23 — VERCON: migrare fiscală din KBotAdmin / Interogări unice
+
+Pregătită sql/VC_20261023_FURNIZORI_CF_KBOTADMIN.sql pentru mecanismul
+existent routes/one_time/runner.py: fără START TRANSACTION/COMMIT și fără
+SELECT-uri finale ale căror rezultate runnerul le-ar consuma fără afișare.
+KBotAdmin păstrează tranzacția per bază și scrie registrul numai după
+reușita întregii migrări. Nu a fost schimbat runnerul sau KBotAdmin.
+
+Datele migrează ca în scriptul manual. Înainte de final, o gardă în tabelă
+temporară oprește baza cu eroare duplicate-key explicită dacă există
+NIR_FARA_CF, FACTURA_FARA_CF sau CF_FACTURA_DIFERIT_DE_NIR. Cheia duplicată
+este intenționată și indică motivul; nu depinde de CHECK sau strict mode.
+Runnerul face rollback la modificările de date și nu marchează baza ca
+rulată. Pe eroare de AVACONT_SURSA, runnerul nu continuă la DC-uri.
+După corectarea datelor, aceeași interogare poate fi reluată; bazele deja
+marcate sunt sărite. Scriptul manual și cele trei SELECT-uri diagnostice
+rămân disponibile separat în VC_20261023_FURNIZORI_CF_DATE.sql.
+
+Antetul scriptului de structură a fost adaptat pentru rulare și ca
+interogare unică, cu numele VC_20261023_FURNIZORI_CF_STRUCTURA. Poate rula
+pe AVACONT_SURSA + DC-urile bifate, apoi migrarea de date pe aceleași baze;
+alternativa structură manual pe sursă + sincronizare rămâne valabilă.
+DDL este pregătit în fișier și va fi executat exclusiv de utilizator.
+
+Pași KBotAdmin: Interogări unice -> Din fișier pentru structură, nume
+VC_20261023_FURNIZORI_CF_STRUCTURA, baze bifate, Vezi (nu execută), Execută.
+Apoi Din fișier pentru varianta KBOTADMIN; SCHIMBAȚI explicit numele în
+VC_20261023_FURNIZORI_CF_KBOTADMIN (UI păstrează numele anterior dacă nu e
+gol), aceleași baze, Vezi (nu execută), Execută. Publicați online după
+reușita migrării. Interogarea include întotdeauna AVACONT_SURSA.
+
+Fișiere: sql/VC_20261023_FURNIZORI_CF_KBOTADMIN.sql (nou);
+sql/VC_20261023_FURNIZORI_CF_STRUCTURA.sql (antet);
+implementare_vercon_v2.md;
+docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+Stare: SCRIS LOCAL, NEEXECUTAT. Doar analiză de design a runnerului și
+interfeței; fără teste, build, verificări automate, SSH, KBotAdmin deschis
+sau acces MariaDB. Nicio schimbare de structură/date executată.
+
+
+### 2026-10-23 — diagnostic NIR_FARA_CF după rularea utilizatorului
+
+Log furnizat de utilizator: Portare_parteneri_codfiscal, hash prefix
+24beed22b0f0c6f2, 15 instrucțiuni. AVACONT_SURSA și 15 DC-uri OK; șapte DC-uri
+s-au oprit în garda NIR_FARA_CF: 000_DEMO,001_GR23,005_CEVM,012_GR30,
+018_GRRS,030_SCTC,050_GRSA. Conform runnerului, datele din bazele eșuate
+sunt rollback și bazele nu sunt marcate. Cele trei rânduri raportate de
+mai multe baze OK sunt cele trei inserări tehnice în gardă, nu trei NIR-uri.
+
+Pregătit numai SQL de diagnostic:
+sql/VC_20261023_FURNIZORI_CF_DIAGNOSTIC_KBOTADMIN.sql,
+nume Portare_parteneri_codfiscal_diagnostic. Nu modifică tabelele de date;
+folosește exclusiv tabele temporare și transmite un sumar prin eroarea
+intenționată DIAG_CF (runnerul existent nu afișează rezultate SELECT).
+Sumarul include numărul NIR-urilor fără CF după regula exactă a migrării,
+numărul cazurilor cu normalizare mascată de prioritate, indicii textuale
+STOC/SOLD INITIAL (doar diagnostic, fără reclasificare), până la trei
+exemple IdIntrare/Numar și context, existența rândului partener și a CF sursă.
+Mesajele duplicate-key pot fi trunchiate de server; prefixul păstrează
+numărătorile, apoi exemplele. Baza cu rezultate diagnostice rămâne nemarcată
+și se poate reinteroga; fără rezultate se marchează normal în registru.
+
+Nu a fost modificat textul migrării originale deja executate pe unele baze;
+nu se va relansa alt text sub numele Portare_parteneri_codfiscal. Nu s-a
+relaxat garda, nu s-a inventat CF și nu s-a reclasificat vreun document.
+Fără acces MariaDB, SQL executat, teste sau verificări automate. Cauza
+concretă a documentelor rămâne de stabilit din diagnosticul utilizatorului.
+
+
+### 2026-10-23 — migrare VERCON CF v2: documentele istorice fără CF nu blochează baza
+
+Diagnostic furnizat de utilizator (Portare_parteneri_codfiscal_test_1,
+hash prefix 14ccf76d81d6702c): N=33/1/147/9/7/2/1 pentru
+000_DEMO/001_GR23/005_CEVM/012_GR30/018_GRRS/030_SCTC/050_GRSA,
+în total 200 de NIR-uri fără CF recuperabil prin sursele migrării.
+FMT=0 în toate bazele: nu sunt coduri valide mascate de ordinea normalizării.
+STOC=13/0/13/8/1/0/1, în total 36: numai indicii textuale, nu documente
+confirmate ca stoc inițial. Exemplele vizibile au P0,SRC0; nu se deduce
+că toate cele 200 au exact aceeași stare a vechii legături de partener.
+Diagnosticarea a creat doar tabele temporare, fără schimbarea datelor NIR.
+Numărul de rânduri OK include operațiile tehnice, nu documente modificate.
+
+Garda inițială era prea strictă pentru istoricul cu informații lipsă.
+Pregătit sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V2.sql,
+nume NOU Portare_parteneri_codfiscal_v2. Poate rula pe cele șapte baze
+rămase (sau pe toate țintele originale); sursa este inclusă automat.
+Vechile fișiere/nume/hash-uri înregistrate rămân neschimbate.
+
+V2 normalizează fiecare candidat fiscal înainte de alegerea priorității,
+completează CF-urile recuperabile, păstrează necunoscutele NULL și nu
+reclasifică NIR-uri pe baza textului STOC/SOLD INITIAL. Nu creează
+furnizori și nu deduce CF după nume. Nu există fallback de identitate
+în online; vechile chei sunt citite doar în fișierul de tranziție.
+Valorile/cantitățile/reviziile și coloanele istorice nu sunt modificate.
+DONE în registru înseamnă conversie aplicată, nu toate CF-urile rezolvate.
+Se păstrează rollback-ul pe contradicții între CF factura/NIR cunoscute
+și pe facturi care au NIR-uri legate cu mai multe CF-uri cunoscute.
+Un NULL și un CF cunoscut nu sunt tratate drept două identități contradictorii.
+
+În arborii NIR/FCS, selectorul de sursă storno și ramurile de rapoarte,
+grupul fără CF este etichetat explicit Fără cod fiscal, nu cu numele
+istoric arbitrar al primului document. Cantitățile și numele istorice pe
+document rămân vizibile; grupul nu reprezintă un furnizor dedus din nume.
+Asocierea eFactura rămâne interzisă fără CF. Antetul comun de deployment
+indică V2 drept migrare recomandată; help descrie documentele nerezolvate.
+
+Fișiere: sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V2.sql (nou);
+PYTHON/routes/vercon/{receipt_tree,report_incoming_selection,
+report_selection,supplier_identity}.py;
+PYTHON/static/js/vercon/{document-tree-order,storno-editor}.js;
+PYTHON/static/help/vercon.json; implementare_vercon_v2.md;
+docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+
+Stare: SCRIS LOCAL, NEPUBLICAT; SQL pregătit pentru utilizator, NEEXECUTAT
+de asistent. Fără teste, build, verificări automate/de sintaxă, browser,
+SSH sau acces MariaDB. NIR-urile fără CF au nevoie în continuare de date
+fiscale explicite pentru a primi o identitate de furnizor; migrarea nu
+pretinde rezolvarea acestor informații absente.
+
+
+### 2026-10-23 — migrare CF v3: ignoră partenerii Ascuns=1
+
+Clarificare explicită a utilizatorului: partenerii cu Ascuns=1 NU au NIR-uri
+sau alte documente. Nu este necesară și nu s-a implementat vreo logică de
+propagare/excludere pentru documente ale unor parteneri ascunși.
+
+Pregătit sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V3.sql,
+nume NOU Portare_parteneri_codfiscal_v3. Păstrează V2 și adaugă doar
+AND COALESCE(P.Ascuns,0)<>1 la cele două căutări în Parteneri (recuperarea
+CF pentru NIR și factura comună). NULL este tratat ca 0. Tabela Parteneri
+nu este actualizată, ca și în variantele precedente. Documentele istorice
+fără CF nu blochează baza; contradicțiile între CF-uri cunoscute rămân
+blocante. Nu se inventează CF și nu se reclasifică documente.
+
+Fișierele și interogările originale/V2 rămân neschimbate, deoarece pot
+fi deja înregistrate în Interogari_Unice. V3 folosește nume și hash noi;
+nu inversează schimbări ale unei rulari deja încheiate.
+Fișiere: sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V3.sql (nou);
+PYTHON/routes/vercon/supplier_identity.py (referință la V3);
+implementare_vercon_v2.md;
+docs/worklog/VERCON-2026-10-23-furnizori-exclusiv-cod-fiscal.md.
+Stare: SQL PREGĂTIT, NEEXECUTAT de asistent. Fără teste, verificări
+automate/de sintaxă sau acces MariaDB. Nicio modificare de date/structură
+executată. De rulat de utilizator prin Interogări unice, cu numele V3.
+
+### 2026-10-23 — VRC.Migrator: aceeași identitate fiscală ca VERCON online
+
+Cerere: alinierea strict a VRC.Migrator la fluxul fiscal VERCON, cu protejarea
+celorlalte module și a partenerilor Ascuns=1 (care nu au documente).
+
+Eliminat dicționarul CF → IdPartener și încărcarea ID-urilor din Parteneri.
+Importul NIR scrie direct CF normalizat în CodPartener, păstrând separat
+CodFiscalSursa; facturile provizorii copiază aceeași identitate din NIR în
+VC_FACTURI.CodPartener, fără PARTENER_ID. Lipsa rândului din Parteneri nu
+anulează CF-ul sursă. Lipsa CF/IDF nerecunoscut produce X04, valoare NULL;
+CF mai lung de 50 produce X07, fără trunchierea identității. Stocul inițial
+păstrează regula existentă și identitatea NULL. Normalizarea elimină RO doar
+înainte de 0–9, ca implementarea online, păstrând literele și zerourile inițiale.
+
+Actualizate mesajele preflight/raport/ANAF. Setul codurilor existente include
+și partenerii ascunși EXCLUSIV ca gardă împotriva propunerii/creării unui
+duplicat: nu se modifică/reactivează niciun partener existent. AddInTransaction
+normalizează și codul pregătit înaintea verificării existenței și a inserării.
+Numerele locale deja ocupate (inclusiv ascunse) se rezervă ca înainte pentru
+a evita coliziuni; codul local Parteneri.CodPartener nu leagă documentele.
+
+Controlul de schemă folosit de Testează și înaintea tranzacției cere CodPartener
+textual, scriibil, minimum 50, NULL permis, pe VC_NIR și VC_FACTURI; ID-urile
+istorice, dacă există, trebuie să permită NULL. DDL-ul existent este doar indicat
+utilizatorului, nu executat. Nu s-a introdus rularea automată a V3, reimport,
+actualizare a documentelor istorice sau creare automată de schemă.
+Versiune fișier VRC.Migrator: 0.3.12.0; RuleVersion:
+VC05-SUPPLIERS-CF-2026-10-23. CPV din Access păstrează maparea existentă;
+asocierea eFactura rămâne responsabilitatea aplicației online.
+
+Fișiere: VERCON/VRC.Migrator/VrcRunner.vb, VrcRunner.Invoices.vb,
+VrcWriter.vb, VrcWriter.Schema.vb, VrcConvert.vb, VrcPartnerStore.vb,
+VrcMigratorForm.vb, VrcPartnersForm.vb, VrcRun.vb, VrcImportMap.vb,
+VrcPlan.vb, VRC.Migrator.vbproj și README.md; jurnalul de față și
+implementare_vercon_v2.md. Nicio modificare în src/KBot.Migrator,
+ADE.Migrator, migratorul contabil, DDF/ORD/extrase sau maparea produselor.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Citire și analiză de proiectare în surse;
+fără teste, build, verificări automate/de sintaxă, rulare de executabil,
+importuri sau acces MariaDB/DDL, conform AGENTS.md. Executabilul existent
+în _VrcMigrator trebuie recompilat/publicat înainte de folosirea regulii noi.
+
+
+## 23.10.2026 — text care urmează lățimea ferestrei (panou de test)
+
+`typography.css`: fontul de bază `--fs-base` devine valoarea în vigoare acum
+(`clamp(min, max - (start - lățime) * rată, max)`), cu `--fs-max` (16px),
+`--fs-fit-start` (1920px), `--fs-fit-min` (11px) și `--fs-fit-rate` (0 = oprit,
+deci nicio schimbare vizibilă). Pașii `--fs-2xs … --fs-2xl` sunt acum proporții
+ale bazei (la 16px dau exact valorile vechi). Compus cu zoomul din meniu prin
+`--application-vw`.
+
+Panou de test, doar în modul test: butonul «Aa» (stânga jos), Ctrl+Alt+F sau
+`kbotDebug.fontFit()`. Glisoare pentru maxim, minim, lățimea de la care scade și
+lățimea la care atinge minimul; valorile rămân între pagini (localStorage);
+«Copiază valorile» dă liniile de pus în `typography.css`; «Resetare» le scoate.
+
+Fișiere: PYTHON/static/css/typography.css, PYTHON/static/css/font-fit-debug.css,
+PYTHON/static/js/utils/font-fit-panel.js, PYTHON/static/js/utils/debug-tools.js.
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Doar verificare de sintaxă JS (node --check);
+neîncercat în browser. Rămân de ales valorile finale și paginile pe care se
+aplică (CSS-urile care folosesc `calc(var(--fs-base) ± Npx)` urmează baza, dar
+cu pas fix în px).
+
+## 23.10.2026 — antet NIR / BC: etichetele lângă control când gridul are sub 10 rânduri
+
+Când gridul de produse nu poate afișa cel puțin 10 rânduri, antetul documentului
+(NIR și BC) primește clasa `is-labels-inline`: eticheta stă pe aceeași linie cu
+controlul, antetul nu depășește lățimea gridului (celulele pot să se micșoreze,
+eticheta lungă se taie cu «…»), iar cele trei rânduri rezervate pierd linia de
+etichetă. Numărarea se face pe antetul înalt (etichete deasupra), în același cadru
+cu comutarea, ca să nu apară pâlpâire la limită.
+
+Fișiere: PYTHON/static/js/vercon/header-fit.js (nou), css/vercon-header-inline.css
+(nou), css/vercon.css (import), js/vercon/docs.js (import + o linie după crearea
+rădăcinii). Prag 10 rânduri în `minRows` (docs.js).
+
+Stare: SCRIS LOCAL, NEPUBLICAT. Doar verificare de sintaxă JS (node --check);
+neîncercat în browser. docs.js are 1028 de linii (peste ținta de ~1000, deja 1026
+înainte). Ajutorul VERCON nu a fost actualizat.
+
+## 23.10.2026 — antet NIR pe o linie: Cotă TVA deasupra, Furnizor și Cont egale
+
+Doar în modul «etichete lângă control» (`is-labels-inline`): «Cotă TVA» are eticheta
+deasupra listei, într-o coloană îngustă; lățimea cedată merge la prima coloană
+(Furnizor, Cont, Comisie); Furnizor și Cont au aceeași lățime de etichetă, deci aceeași
+lățime de control; «Categorie / cont» se arată «Cont» (două texte în același
+`<span>`, comută CSS-ul; în modul normal rămâne «Categorie / cont»).
+
+Fișiere: css/vercon-header-inline.css, js/vercon/receipt-allocation.js.
+Stare: SCRIS LOCAL, NEPUBLICAT; doar verificare de sintaxă JS, neîncercat în browser.
+
+Cotă TVA urcă pe primul rând al antetului (coloana 4) în același mod; css/vercon-header-inline.css.
+
+Corecție: Cotă TVA — eticheta pe rândul 1, lista pe rândul 2 al grilei antetului (display: contents), aliniată cu celelalte controale; regulile NIR ale modului sunt acum doar peste 800px.
+
+## 23.10.2026 — antet BC pe trei rânduri
+
+Antetul bonului de consum (BC) are acum trei rânduri pe două coloane: Primitor |
+Număr BC; Cont | Data; Explicații pe toată lățimea. «Categorie / cont» se numește
+«Cont» la BC (în toate mărimile). Cele trei rânduri rezervate (documente-layout)
+sunt acum folosite integral. Sub 800px rămân regulile existente (2 coloane, ordinea
+din document).
+
+Fișiere: css/vercon-consumption.css, js/vercon/docs.js.
+Stare: SCRIS LOCAL, NEPUBLICAT; doar verificare de sintaxă JS, neîncercat în browser.
+
+Panoul de test al fontului: butonul «Aa» scos (rămâne în cod, `mount({ button: true })`); se deschide doar cu Ctrl+Alt+F sau kbotDebug.fontFit(), iar fără deschidere nu rulează nimic, deci valorile de test păstrate în browser nu mai ating paginile.
+
+## 23.10.2026 — Rapoarte: butoanele de jos prea sus
+
+Grila paginii Rapoarte avea patru rânduri declarate (minmax(0,1fr) auto auto auto); cu doar panouri și butoane, ultimele două rânduri goale își adăugau fiecare câte 12px de spațiu sub butoane. Acum un singur rând fix pentru panouri și rânduri automate dedesubt (grid-auto-rows). Fișier: css/vercon-workspace.css. Neîncercat în browser; ipoteza vine din CSS, nu dintr-o măsurătoare.
+
+Rapoarte: .vc-reports__actions are acum și padding-bottom: 10px (css/vercon-rapoarte.css).

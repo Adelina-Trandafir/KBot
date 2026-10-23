@@ -60,7 +60,8 @@ Public NotInheritable Class DdfPdfGenerator
                 capturi = Await CapturileAsync(att, citesteFisier).ConfigureAwait(True)
             End If
 
-            Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.FromSession(session)
+            ' Slice 0114-27: the program is the document's (its header), not the session's.
+            Dim ctx As DdfXmlBuilder.Context = DdfXmlBuilder.Context.ForDocument(session, antet)
             Dim xml As String = DdfXmlBuilder.BuildComplete(ctx, antet, revizie, linii, sb, att, mode, capturi)
 
             ' The generated document is UNSIGNED, so a derived artefact: the work area, never the

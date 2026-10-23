@@ -23,7 +23,8 @@ Friend NotInheritable Class OrdPdfGenerator
     Public Shared Async Function GenereazaAsync(api As IApiClient,
                                                 session As SessionContext,
                                                 ordonantare As OrdHeaderRow,
-                                                cod As String) As Task(Of String)
+                                                cod As String,
+                                                k_surse As String) As Task(Of String)
         Try
             ArgumentNullException.ThrowIfNull(api)
             ArgumentNullException.ThrowIfNull(ordonantare)
@@ -43,7 +44,8 @@ Friend NotInheritable Class OrdPdfGenerator
                 End If
             Next
 
-            Dim ctx As OrdXmlBuilder.Context = OrdXmlBuilder.Context.FromSession(session)
+            ' Slice 0114-27: the program is the angajament's (its indicators' SS), not the session's.
+            Dim ctx As OrdXmlBuilder.Context = OrdXmlBuilder.Context.ForAngajament(session, k_surse)
             Dim xml As String = OrdXmlBuilder.BuildComplete(ctx, draft, imagini)
 
             ' Unsigned -> a derived artefact: the work area, never the signed cache.

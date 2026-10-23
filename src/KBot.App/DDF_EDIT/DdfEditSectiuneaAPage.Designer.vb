@@ -7,8 +7,9 @@ Imports KBot.Controls
 ' which is a path that does not exist yet. `AplicaModulDeEditare` is where that is decided.
 '
 ' Columns, left to right as in Access. They are declared HERE, not built in code:
-'   Clasificatie          combo over GET /api/forexe/ddf/clasificatii      EDITABLE
-'   Clsf                  follows the combo                                read-only
+'   Clasificatie          grouped combo over the program's classifications EDITABLE (23.10.2026: the grid
+'                         has a permanent empty last row; picking there adds the line)
+'   Clsf                  follows the combo                                hidden
 '   Element fundamentare                                                   EDITABLE
 '   Parametrii                                                             EDITABLE
 '   Partener              only when the document has a partener            EDITABLE (gated)
@@ -18,6 +19,8 @@ Imports KBot.Controls
 '   Val. precedenta                                                        read-only
 '   Val. curenta          the ONLY editable value                          EDITABLE
 '   Val. ramasa           computed: Disponibil - Val. curenta              read-only
+'
+'   Sterge                button column, one per line (23.10.2026)
 '
 ' Slice 0081-12 (operator, 26.09.2026): the value columns are 90 wide, Standard format, and the
 ' grid has NO footer (no totals band). `ValTot` (ValPrec + ValCur) stays on the line and is
@@ -35,10 +38,9 @@ Imports KBot.Controls
 ' document generated from reservations is `grd.ReadOnlyGrid`: both refuse the edit and neither
 ' touches the paint. No grid in `OrdEditForm` uses `Enabled = False` either.
 '
-' There is NO `btnClsf`. Access had one, but its only appearance outside the designer is in a
-' function whose first statement is `Exit Function` -- a button that does nothing is exactly
-' the silent no-op the house rules forbid, and it was already refused once, in slice 0049.
-' The tree picker arrives by replacing the body of `AlegeClasificatie`, and nothing else.
+' There is NO `btnClsf`, no `btnAdauga` and no `btnSterge` (operator, 23.10.2026): the classification is picked in the
+' grid's own combo cell, a new line starts in the permanent empty last row and a line is deleted
+' with the button column `sterge`.
 '
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md).
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
@@ -70,9 +72,8 @@ Partial Class DdfEditSectiuneaAPage
         Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
-        btnAdauga = New Button()
-        btnSterge = New Button()
         tlyRoot = New KBotTableLayoutPanel()
         grd = New KBotDataView()
         tlyButoane = New KBotTableLayoutPanel()
@@ -81,32 +82,6 @@ Partial Class DdfEditSectiuneaAPage
         CType(grd, ComponentModel.ISupportInitialize).BeginInit()
         tlyButoane.SuspendLayout()
         SuspendLayout()
-        ' 
-        ' btnAdauga
-        ' 
-        btnAdauga.Dock = DockStyle.Fill
-        btnAdauga.Location = New Point(11, 8)
-        btnAdauga.Margin = New Padding(11, 8, 6, 8)
-        btnAdauga.Name = "btnAdauga"
-        btnAdauga.Size = New Size(269, 47)
-        btnAdauga.TabIndex = 0
-        btnAdauga.Text = "Adaugă rând"
-        tips.SetToolTipHeader(btnAdauga, "Adaugă un rând")
-        tips.SetToolTipText(btnAdauga, "Adaugă o linie nouă și deschide lista de clasificații." & vbLf & "Clasificațiile deja folosite nu apar în listă.")
-        btnAdauga.UseVisualStyleBackColor = True
-        ' 
-        ' btnSterge
-        ' 
-        btnSterge.Dock = DockStyle.Fill
-        btnSterge.Location = New Point(292, 8)
-        btnSterge.Margin = New Padding(6, 8, 6, 8)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Size = New Size(274, 47)
-        btnSterge.TabIndex = 1
-        btnSterge.Text = "Șterge rândul"
-        tips.SetToolTipHeader(btnSterge, "Șterge rândul")
-        tips.SetToolTipText(btnSterge, "Scoate linia selectată." & vbLf & "Rândul pereche din secțiunea B dispare odată cu ea.")
-        btnSterge.UseVisualStyleBackColor = True
         ' 
         ' tlyRoot
         ' 
@@ -129,18 +104,18 @@ Partial Class DdfEditSectiuneaAPage
         grd.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grd.BackColor = SystemColors.Window
         grd.BorderColor = SystemColors.ActiveBorder
-        grd.ColumnFillMode = KBotFillMode.FirstColumn
+        grd.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn1.ColumnType = KBotColumnType.Combo
+        KBotDataColumn1.CommitOnSelect = True
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clasificatie"
         KBotDataColumn1.OptionGroup = Nothing
-        KBotDataColumn1.Visible = KBotColumnVisibility.Hidden
-        KBotDataColumn1.Width = 300
+        KBotDataColumn1.Width = 170
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.FormatString = Nothing
@@ -150,6 +125,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn2.Key = "clsf"
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Visible = KBotColumnVisibility.Hidden
         KBotDataColumn2.Width = 170
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
@@ -268,6 +244,16 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
         KBotDataColumn11.ValueType = KBotValueType.Number
         KBotDataColumn11.Width = 90
+        KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.ColumnType = KBotColumnType.Button
+        KBotDataColumn12.FormatString = Nothing
+        KBotDataColumn12.HeaderText = ""
+        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn12.Key = "sterge"
+        KBotDataColumn12.MinWidth = 34
+        KBotDataColumn12.OptionGroup = Nothing
+        KBotDataColumn12.Resizable = False
+        KBotDataColumn12.Width = 34
         grd.Columns.Add(KBotDataColumn1)
         grd.Columns.Add(KBotDataColumn2)
         grd.Columns.Add(KBotDataColumn3)
@@ -279,7 +265,9 @@ Partial Class DdfEditSectiuneaAPage
         grd.Columns.Add(KBotDataColumn9)
         grd.Columns.Add(KBotDataColumn10)
         grd.Columns.Add(KBotDataColumn11)
+        grd.Columns.Add(KBotDataColumn12)
         grd.Dock = DockStyle.Fill
+        grd.FillColumnKey = "element_fund"
         grd.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         grd.HeaderBackColor = SystemColors.Control
         grd.HeaderSeparatorColor = SystemColors.ActiveBorder
@@ -292,13 +280,9 @@ Partial Class DdfEditSectiuneaAPage
         ' 
         ' tlyButoane
         ' 
-        tlyButoane.ColumnCount = 3
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 286F))
-        tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 286F))
+        tlyButoane.ColumnCount = 1
         tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyButoane.Controls.Add(btnAdauga, 0, 0)
-        tlyButoane.Controls.Add(btnSterge, 1, 0)
-        tlyButoane.Controls.Add(lblStare, 2, 0)
+        tlyButoane.Controls.Add(lblStare, 0, 0)
         tlyButoane.Dock = DockStyle.Fill
         tlyButoane.Location = New Point(0, 540)
         tlyButoane.Margin = New Padding(0)
@@ -314,10 +298,10 @@ Partial Class DdfEditSectiuneaAPage
         lblStare.Dock = DockStyle.Fill
         lblStare.Font = New Font("Calibri", 9F)
         lblStare.Location = New Point(578, 0)
-        lblStare.Margin = New Padding(6, 0, 11, 0)
+        lblStare.Margin = New Padding(11, 0, 11, 0)
         lblStare.Name = "lblStare"
         lblStare.Size = New Size(391, 63)
-        lblStare.TabIndex = 2
+        lblStare.TabIndex = 0
         lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' DdfEditSectiuneaAPage
@@ -339,7 +323,5 @@ Partial Class DdfEditSectiuneaAPage
     Friend WithEvents tlyRoot As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grd As Global.KBot.Controls.KBotDataView
     Friend WithEvents tlyButoane As Global.KBot.Controls.KBotTableLayoutPanel
-    Friend WithEvents btnAdauga As Button
-    Friend WithEvents btnSterge As Button
     Friend WithEvents lblStare As Label
 End Class

@@ -25,9 +25,11 @@ de adus din FOREXE în K-BOT); până apeși «+» pe ele, butonul lipsește.
 | anulat / reziliat / suspendat | — | nimic |
 
 ## Adaugă rezervare
-<!-- slice: 0081-02, 0081-12 -->
+<!-- slice: 0081-02, 0081-12, 0114-27, 0000-121 -->
 
-Pornește o **revizie nouă** a documentului. Alegi:
+Pornește o **revizie nouă** a documentului. La **revizia 0** a unui angajament descărcat din FOREXE, programul din antet
+pornește după sursa indicatorilor lui (sursa 01A: 0000002510, altfel 0000000000), nu după sursa aleasă în fereastră.
+Alegi:
 
 1. **Adaugă revizie goală** — Secțiunea A pornește goală;
 2. **Folosește indicatorii existenți** — Secțiunea A pornește cu câte un rând pentru fiecare

@@ -50,7 +50,7 @@ Partial Friend NotInheritable Class VrcRunner
                     Dim k_nir = k_row("IdIntrare"), k_gest = k_row("GestiuneId"), k_exercise = k_row("ExercitiuId")
                     Dim k_origin As Dictionary(Of String, Object) = Nothing
                     k_origins.TryGetValue(Plain(k_gest) & "|" & Plain(k_nir), k_origin)
-                    AddInvoiceParam(k_cmd, $"@p{k_i}", k_row("IdPartener"))
+                    AddInvoiceParam(k_cmd, $"@p{k_i}", k_row("CodPartener"))
                     AddInvoiceParam(k_cmd, $"@n{k_i}", If(k_row("NrFact"), String.Empty))
                     AddInvoiceParam(k_cmd, $"@d{k_i}", k_row("DataFc"))
                     AddInvoiceParam(k_cmd, $"@g{k_i}", k_gest)
@@ -59,7 +59,7 @@ Partial Friend NotInheritable Class VrcRunner
                     AddInvoiceParam(k_cmd, $"@v{k_i}", k_row("Valoare"))
                     AddInvoiceParam(k_cmd, $"@o{k_i}", If(k_origin Is Nothing, Nothing, k_origin("SourceId")))
                     AddInvoiceParam(k_cmd, $"@k{k_i}", If(k_origin Is Nothing, Nothing, k_origin("SourceKey")))
-                    k_sql.Append($"INSERT INTO VC_FACTURI (PARTENER_ID,NUMAR,DATA,TOTAL_CONFIRMAT,MIGRATA,STARE,CREAT_DE) VALUES (@p{k_i},@n{k_i},@d{k_i},0,1,'MIGRATA',@u);")
+                    k_sql.Append($"INSERT INTO VC_FACTURI (CodPartener,NUMAR,DATA,TOTAL_CONFIRMAT,MIGRATA,STARE,CREAT_DE) VALUES (@p{k_i},@n{k_i},@d{k_i},0,1,'MIGRATA',@u);")
                     k_sql.Append("SET @inv=LAST_INSERT_ID();")
                     k_sql.Append($"INSERT INTO VC_NIR_FACTURI (FACTURA_ID,SUBUNIT_ID,GESTIUNE_ID,EXERCITIU_ID,NIR_ID,TOTAL_SURSA,SOURCE_ID,SOURCE_KEY) VALUES (@inv,@s,@g{k_i},@e{k_i},@r{k_i},@v{k_i},@o{k_i},@k{k_i});")
                     k_sql.Append("SET @lnk=LAST_INSERT_ID();")

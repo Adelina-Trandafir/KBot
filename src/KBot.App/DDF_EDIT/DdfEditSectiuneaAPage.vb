@@ -31,13 +31,16 @@ Imports KBot.Theming
 ''' that itself: it raises <c>DraftModificat</c>, and the form rebuilds section B from section
 ''' A. One place, so the two can never drift.</para>
 '''
-''' <para><b>The picker's seam</b> (decision D16). The classification choice sits behind one
-''' private method, <see cref="AlegeClasificatieAsync"/>. Since slice 0081-08 it opens the line
-''' window <see cref="DdfEditLinieAForm"/> (every value of the line; the classification a
-''' find-as-you-type combo with the classification mask) -- from «Adauga rand» for a new line and
-''' from a double click on «Clsf» for an existing one. The in-grid combo column «Clasificatie»
-''' stays hidden in the designer and is no longer fed. There is deliberately no <c>btnClsf</c>
-''' -- a button with no behaviour is the silent no-op the house rules forbid.</para>
+''' <para><b>Entering lines straight in the grid</b> (operator, 23.10.2026; replaces the line window
+''' <see cref="DdfEditLinieAForm"/> of slice 0081-08 and the buttons «Adauga rand» / «Sterge randul»).
+''' The grid always ends with ONE EMPTY ROW: picking a classification in its «Clasificatie» cell turns
+''' it into a line (see <see cref="SchimbaClasificatia"/>) and a fresh empty row appears below.
+''' The cell is a grouped combo (<see cref="KBotComboGroupedItem"/>, one folding header per SS and
+''' per «in angajament» / «alte clasificatii») holding ONLY the classifications of the header's
+''' program that no other line uses. Picking one fills budget, receptions, available, previous
+''' value and remaining straight into the row. A line is removed with the button column «sterge».
+''' There is deliberately no <c>btnClsf</c> -- a button with no behaviour is the silent no-op the
+''' house rules forbid.</para>
 '''
 ''' <para>The page makes NO network requests: it asks the form for the classification list
 ''' through <see cref="SursaClasificatiilor"/>, which keeps its constructor parameterless and
@@ -59,6 +62,8 @@ Public Class DdfEditSectiuneaAPage
     Private Const COL_VAL_PREC As String = "val_prec"
     Private Const COL_VAL_CUR As String = "val_cur"
     Private Const COL_VAL_RAMASA As String = "val_ramasa"
+    Private Const COL_STERGE As String = "sterge"
+    Private Const CAPTION_STERGE As String = "✕"
 
     ''' <summary>How many characters the minted indicator code has, after the "!" prefix.
     ''' Access wrote <c>"!" &amp; GenerateUniqueSequence(3)</c>.</summary>
@@ -75,11 +80,11 @@ Public Class DdfEditSectiuneaAPage
     Private _suspenda As Boolean
     Private _sAuAdusClasificatiile As Boolean
     ''' <summary>Is the grid locked? True for a document generated from <c>FX_Rezervari</c>.
-    ''' The only thing that turns «Adauga rand» off (slice 0081-08).</summary>
+    ''' A locked grid has no empty row and no delete button.</summary>
     Private _doarCitire As Boolean
 
     ''' <summary>Slice 0081-09: what a NEW angajament's header still lacks. While it lacks
-    ''' anything, «Adauga rand» is off. Always empty for an angajament that exists.</summary>
+    ''' anything, the empty row's classification cell is read-only. Always empty for an angajament that exists.</summary>
     Private ReadOnly _lipsuriAntet As New List(Of String)()
     ''' <summary>Slice 0081-09: <c>AVACONT_COMUN.DefaProgram</c> as last fetched (all programs).</summary>
     Private ReadOnly _surseProgram As New List(Of DdfSursaProgram)()
@@ -116,30 +121,28 @@ Public Class DdfEditSectiuneaAPage
 
     ''' <summary>
     ''' Slice 0081-09: what a new angajament's header still lacks (empty = complete). Pushed by the
-    ''' form on every header edit; «Adauga rand» follows it.
+    ''' form on every header edit; the empty row follows it. The program may have changed too, so
+    ''' the classifications the combo offers are rebuilt.
     ''' </summary>
     Friend Sub SeteazaLipsurileAntetului(lipsuri As IEnumerable(Of String))
         _lipsuriAntet.Clear()
         If lipsuri IsNot Nothing Then _lipsuriAntet.AddRange(lipsuri)
-        AplicaButonulAdauga()
+        AplicaStareaRanduluiNou()
     End Sub
 
     ''' <summary>
-    ''' «Adauga rand» is on unless the grid is locked or -- for a new angajament -- the header is
-    ''' not complete yet; the tooltip says which.
+    ''' The empty row takes a classification unless the grid is locked or -- for a new angajament --
+    ''' the header is not complete yet (the status line says which); the combo is rebuilt for the
+    ''' program as it is now.
     ''' </summary>
-    Private Sub AplicaButonulAdauga()
-        btnAdauga.Enabled = Not _doarCitire AndAlso _lipsuriAntet.Count = 0
+    Private Sub AplicaStareaRanduluiNou()
         If _doarCitire Then Return
         If _lipsuriAntet.Count > 0 Then
-            Dim mesaj As String = "Completați întâi antetul: " & String.Join(", ", _lipsuriAntet) & "."
-            tips.SetToolTipText(btnAdauga, mesaj)
-            lblStare.Text = mesaj
-        Else
-            tips.SetToolTipText(btnAdauga, "Deschide fereastra unui rând nou în secțiunea A." & vbLf &
-                                           "Clasificațiile deja folosite nu apar în listă.")
-            If _draft IsNot Nothing Then ActualizeazaStarea()
+            lblStare.Text = "Completați întâi antetul: " & String.Join(", ", _lipsuriAntet) & "."
+        ElseIf _draft IsNot Nothing Then
+            ActualizeazaStarea()
         End If
+        grd.Invalidate()
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -185,12 +188,9 @@ Public Class DdfEditSectiuneaAPage
     Private Sub AplicaModulDeEditare()
         _doarCitire = _draft IsNot Nothing AndAlso _draft.DinRezervari
         grd.ReadOnlyGrid = _doarCitire
-        btnSterge.Enabled = Not _doarCitire
-        ' Slice 0081-08: «Adauga rand» does not follow the classification list (off when the
-        ' server list was empty or every classification was used left the operator a dead button
-        ' and no reason; the line window says why instead). Slice 0081-09: it follows the lock
-        ' and, for a new angajament, a complete header.
-        AplicaButonulAdauga()
+        grd.Column(COL_STERGE).Visible = If(_doarCitire, KBotColumnVisibility.Hidden, KBotColumnVisibility.Visible)
+        ' The empty row follows the lock and, for a new angajament, a complete header.
+        AplicaStareaRanduluiNou()
 
         If _doarCitire Then
             lblStare.Text = "Documentul este generat din rezervări: rândurile nu se modifică aici."
@@ -214,6 +214,8 @@ Public Class DdfEditSectiuneaAPage
                 r.Tag = a
                 ScrieRandul(r, a)
             Next
+            ' The permanent empty row (Tag Nothing): where the next line starts.
+            If Not _doarCitire Then grd.AddRow()
             AplicaGateulPartenerului()
             grd.ClearDirty()
         Finally
@@ -234,13 +236,17 @@ Public Class DdfEditSectiuneaAPage
         r(COL_VAL_PREC) = a.ValPrec
         r(COL_VAL_CUR) = a.ValCur
         r(COL_VAL_RAMASA) = DdfSectiuneaAReguli.ValoareRamasa(a.Buget, a.ValRec, a.ValCur)
+        r(COL_STERGE) = CAPTION_STERGE
     End Sub
 
-    ''' <summary>What a line shows in the classification cell. The code plus the name, which
-    ''' is what the operator reads to tell two neighbouring classifications apart.</summary>
-    Private Shared Function EtichetaClasificatiei(a As DdfDraftLinieA) As String
+    ''' <summary>What a line shows in the classification cell: the code (written as forexecab
+    ''' writes it) plus the classification's name -- what the operator reads to tell two neighbouring
+    ''' classifications apart. The name comes from the list when it is here, else from the line's
+    ''' element of fundamentation.</summary>
+    Private Function EtichetaClasificatiei(a As DdfDraftLinieA) As String
         If String.IsNullOrWhiteSpace(a.Clsf) Then Return String.Empty
-        Return a.Clsf & " — " & a.ElementFund
+        Dim k_c As DdfClasificatie = _clasificatii.FirstOrDefault(Function(k_x) a.IdClsf <> 0 AndAlso k_x.IdClsf = a.IdClsf)
+        Return DdfSendInputs.ForexeClsf(a.Clsf) & " — " & If(k_c Is Nothing, a.ElementFund, k_c.Denumire)
     End Function
 
     ''' <summary>
@@ -270,7 +276,7 @@ Public Class DdfEditSectiuneaAPage
             Try
                 Await AsiguraSurseleProgramelorAsync().ConfigureAwait(True)
             Catch ex As Exception
-                ' Only the count on the status line suffers; «Adauga rand» fetches again.
+                ' Only the count on the status line suffers; the combo is fed again on the next change.
                 GlobalErrorLog.Write("DdfEditSectiuneaAPage.AduClasificatiileLaDeschidere/surse-program", ex)
             End Try
             Await AsiguraClasificatiileAsync(fortat:=True).ConfigureAwait(True)
@@ -311,6 +317,8 @@ Public Class DdfEditSectiuneaAPage
     ''' </summary>
     Private Sub ActualizeazaStarea()
         If _doarCitire Then Return
+        ' Whatever moved the status (the list, the program, the lines in use) moved the combo.
+        ActualizeazaListaClasificatii()
         If _lipsuriAntet.Count > 0 Then
             ' The header message stays until the header is complete: it is the only reason the
             ' button is off.
@@ -386,83 +394,182 @@ Public Class DdfEditSectiuneaAPage
     End Function
 
     ''' <summary>
-    ''' THE SEAM FOR THE CLASSIFICATION PICKER (decision D16).
-    '''
-    ''' <para>Every path that lets the operator choose a classification for a line goes through
-    ''' here. Slice 0081-08: it opens <see cref="DdfEditLinieAForm"/> -- every value of the line in
-    ''' one window, the classification a find-as-you-type combo with the classification mask. A new
-    ''' line (<paramref name="linie"/> = <c>Nothing</c>) joins the draft only on OK; an existing one
-    ''' takes the edited copy back only on OK.</para>
-    '''
-    ''' <para>Slice 0081-09: the window first asks for the source / sector, out of the SSs of the
-    ''' document's program (<c>DefaProgram</c>) -- a new angajament and a new revision alike, since
-    ''' one angajament may carry lines on several SSs of its program.</para>
-    '''
-    ''' <para>Throws on a failed fetch of the list (the callers are UI boundaries).</para>
+    ''' Rebuilds what the «Clasificatie» combo offers (operator, 23.10.2026): ONLY the classifications of the header's
+    ''' program (<see cref="ClasificatiileLibere"/>: on one of the program's SSs, none already used by
+    ''' another line), the ones the angajament already has first, the proposed SS first among them.
+    ''' Grouped: one folding header per SS and per «din angajament» / «alte clasificatii».
+    ''' Called whenever the status line is (the list, the program or the lines in use moved).
     ''' </summary>
-    Private Async Function AlegeClasificatieAsync(linie As DdfDraftLinieA) As Task
-        If _doarCitire OrElse _draft Is Nothing Then Return
-        Dim nou As Boolean = linie Is Nothing
-        If nou AndAlso _lipsuriAntet.Count > 0 Then Return
+    Private Sub ActualizeazaListaClasificatii()
+        Dim k_items As New List(Of Object)()
+        If Not _doarCitire AndAlso _draft IsNot Nothing Then
+            Dim k_libere As List(Of DdfClasificatie) = ClasificatiileLibere(Nothing)
+            Dim k_propusa As String = If(SursaPropusa, String.Empty).Trim()
+            If k_propusa.Length > 0 Then
+                k_libere = k_libere.OrderBy(Function(k_x) If(DdfSectiuneaAReguli.AcelasiSs(k_x.Ss, k_propusa), 0, 1)).ToList()
+            End If
+            For Each k_c As DdfClasificatie In DdfSectiuneaAReguli.InAngajamentIntai(k_libere, _draft.Manual)
+                k_items.Add(New KBotComboGroupedItem(EtichetaListei(k_c), GrupulClasificatiei(k_c), String.Empty, k_c))
+            Next
+        End If
+        grd.Column(COL_CLASIFICATIE).ComboItems = k_items
+    End Sub
 
-        Await AsiguraClasificatiileAsync(fortat:=False).ConfigureAwait(True)
-        Try
-            Await AsiguraSurseleProgramelorAsync().ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfEditSectiuneaAPage.AlegeClasificatieAsync/surse-program", ex)
-        End Try
+    ''' <summary>What a classification shows in the list: the code (written as forexecab writes it), then the name.</summary>
+    Private Shared Function EtichetaListei(k_c As DdfClasificatie) As String
+        Return DdfSendInputs.ForexeClsf(k_c.Clsf) & " — " & k_c.Denumire
+    End Function
 
-        Dim surse As List(Of DdfSursaProgram) = SurseleProgramului()
-        If surse.Count = 0 Then
-            Dim motiv As String = If(_surseProgram.Count = 0,
-                "Sursele programelor (AVACONT_COMUN.DefaProgram) nu au putut fi aduse de pe server.",
-                $"Programul «{_draft.Program}» nu are nicio sursă / sector în DefaProgram.")
-            KBotMessage.Show(Me, motiv & vbCrLf & vbCrLf &
-                             "Fără sursă nu se poate alege clasificația rândului.",
-                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Information)
+    ''' <summary>The folding header a classification is listed under.</summary>
+    Private Function GrupulClasificatiei(k_c As DdfClasificatie) As String
+        Dim k_sursa As String = If(String.IsNullOrWhiteSpace(k_c.Ss), "fără sursă", "Sursa " & k_c.Ss.Trim())
+        Return k_sursa & If(DdfSectiuneaAReguli.EsteInAngajament(k_c, _draft.Manual), " — din angajament", " — alte clasificații")
+    End Function
+
+    ''' <summary>
+    ''' The classification cell was refused unless it holds a classification of the list: a picked item
+    ''' passes; typed text must be the cell's own text, or name one item of the list (the item is then
+    ''' put in its place). Empty text on the empty row is no choice at all.
+    ''' </summary>
+    Private Sub ValideazaClasificatia(e As KBotCellValidatingEventArgs)
+        If TypeOf e.ProposedValue Is KBotComboGroupedItem Then Return
+        Dim k_text As String = If(Convert.ToString(e.ProposedValue, _roCulture), String.Empty).Trim()
+        Dim k_linie As DdfDraftLinieA = TryCast(grd.Rows(e.RowIndex).Tag, DdfDraftLinieA)
+        If k_linie Is Nothing AndAlso k_text.Length = 0 Then Return
+        If k_linie IsNot Nothing AndAlso String.Equals(k_text, EtichetaClasificatiei(k_linie), StringComparison.Ordinal) Then Return
+
+        Dim k_gasit As KBotComboGroupedItem = Nothing
+        Dim k_oferite As IList(Of Object) = grd.Column(COL_CLASIFICATIE).ComboItems
+        If k_oferite IsNot Nothing Then
+            k_gasit = k_oferite.OfType(Of KBotComboGroupedItem)().FirstOrDefault(
+                Function(k_x) String.Equals(k_x.Text, k_text, StringComparison.OrdinalIgnoreCase))
+        End If
+        If k_gasit IsNot Nothing Then
+            e.ProposedValue = k_gasit
             Return
         End If
-        ActualizeazaStarea()
+        KBotMessage.Show(Me, $"Alegeți o clasificație din listă (clasificațiile programului «{_draft?.Program}» care nu sunt deja folosite).",
+                         "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        e.Cancel = True
+    End Sub
 
-        Dim oferite As List(Of DdfClasificatie) = ClasificatiileLibere(linie)
-        If oferite.Count = 0 Then
-            Dim motiv As String
-            If Not _clasificatii.Any(Function(c) Not c.EsteSeparator) Then
-                motiv = $"Serverul nu a trimis nicio clasificație pentru angajamentul «{_draft.CodAngajament}»."
-            ElseIf ClasificatiileProgramului(_clasificatii).Count = 0 Then
-                motiv = $"Nicio clasificație a angajamentului nu are o sursă a programului «{_draft.Program}» " &
-                        $"({String.Join(", ", surse.Select(Function(s) s.Ss))})."
-            Else
-                motiv = "Toate clasificațiile angajamentului sunt deja folosite în secțiunea A."
-            End If
-            KBotMessage.Show(Me, motiv & vbCrLf & vbCrLf & "Nu se poate adăuga un rând nou.",
-                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Information)
-            If nou Then Return
+    ''' <summary>
+    ''' A classification was picked in a row's cell. On the EMPTY row it starts a new line (which joins
+    ''' the draft, with a fresh empty row below it, and the cursor goes to its value); on a line it
+    ''' changes the line's classification. Either way budget, receptions, available, previous value and
+    ''' remaining are written into the row at once. Nothing was picked = the cell goes back to what the
+    ''' line says.
+    ''' </summary>
+    Private Sub SchimbaClasificatia(k_rand As KBotDataRow, k_valoare As Object)
+        Dim k_item As KBotComboGroupedItem = TryCast(k_valoare, KBotComboGroupedItem)
+        Dim k_c As DdfClasificatie = If(k_item Is Nothing, Nothing, TryCast(k_item.Tag, DdfClasificatie))
+        Dim k_linie As DdfDraftLinieA = TryCast(k_rand.Tag, DdfDraftLinieA)
+
+        If k_c Is Nothing Then
+            _suspenda = True
+            Try
+                k_rand(COL_CLASIFICATIE) = If(k_linie Is Nothing, String.Empty, EtichetaClasificatiei(k_linie))
+            Finally
+                _suspenda = False
+            End Try
+            Return
         End If
 
-        Dim deEditat As DdfDraftLinieA = If(linie, LinieNoua())
-        Dim alteCoduri As IEnumerable(Of String) =
-            _draft.LiniiA.Where(Function(l) Not ReferenceEquals(l, linie)).Select(Function(l) l.CodIndicator)
+        Dim k_nou As Boolean = k_linie Is Nothing
+        Dim k_denumireAnterioara As String = String.Empty
+        If k_nou Then
+            k_linie = LinieNoua()
+        Else
+            Dim k_idAnterior As Integer = k_linie.IdClsf
+            Dim k_anterioara As DdfClasificatie = _clasificatii.FirstOrDefault(Function(k_x) k_idAnterior <> 0 AndAlso k_x.IdClsf = k_idAnterior)
+            If k_anterioara IsNot Nothing Then k_denumireAnterioara = k_anterioara.Denumire
+        End If
+        AplicaClasificatia(k_linie, k_c, k_denumireAnterioara)
 
-        Using f As New DdfEditLinieAForm(deEditat, oferite, alteCoduri, surse, SursaPropusa, nou, _draft.Manual)
-            If f.ShowDialog(Me) <> DialogResult.OK Then Return
-            If nou Then
-                _draft.LiniiA.Add(f.Linie)
-            Else
-                DdfEditLinieAForm.CopiazaIn(f.Linie, linie)
+        _suspenda = True
+        Try
+            If k_nou Then
+                _draft.LiniiA.Add(k_linie)
+                k_rand.Tag = k_linie
             End If
-        End Using
+            ScrieRandul(k_rand, k_linie)
+            If k_nou Then grd.AddRow()
+        Finally
+            _suspenda = False
+        End Try
+        AplicaGateulPartenerului()
 
-        UmpleGrila()
         ActualizeazaStarea()
+        If _draft.Manual Then ReincarcaListaManualaAsync()
         RaiseEvent DraftModificat(Me, EventArgs.Empty)
 
-        Dim i As Integer = _draft.LiniiA.IndexOf(If(linie, _draft.LiniiA.Last()))
-        If i >= 0 AndAlso i < grd.RowCount Then
-            grd.CurrentRowIndex = i
-            grd.EnsureVisible(i)
+        If k_nou AndAlso IsHandleCreated Then
+            Dim k_index As Integer = _draft.LiniiA.IndexOf(k_linie)
+            BeginInvoke(New Action(Sub() EditeazaValoarea(k_index)))
         End If
-    End Function
+    End Sub
+
+    ''' <summary>
+    ''' Writes a classification's values into a line -- the port of <c>cmbClsf_AfterUpdate</c>. The
+    ''' derived values ride with the list (precomputed per classification for this angajament); an
+    ''' indicator code is minted only when the angajament has none for the classification AND the line
+    ''' does not already carry one for the SAME classification. The element of fundamentation starts as
+    ''' the classification's name -- but a text the operator wrote is not overwritten by a later pick.
+    ''' </summary>
+    Private Sub AplicaClasificatia(k_linie As DdfDraftLinieA, k_c As DdfClasificatie, k_denumireAnterioara As String)
+        Dim k_alta As Boolean = k_c.IdClsf <> k_linie.IdClsf
+        Dim k_element As String = If(k_linie.ElementFund, String.Empty).Trim()
+        If k_element.Length = 0 OrElse String.Equals(k_element, k_denumireAnterioara, StringComparison.Ordinal) Then
+            k_linie.ElementFund = k_c.Denumire
+        End If
+
+        k_linie.IdClsf = k_c.IdClsf
+        k_linie.Clsf = k_c.Clsf
+        k_linie.Ss = k_c.Ss
+        k_linie.IdUnitate = k_c.IdUnitate
+        k_linie.ValPrec = k_c.ValPrec
+        k_linie.ValRec = k_c.ValRec
+        ' A line built here is never from a reservation: its budget is the angajament's
+        ' FX_Indicatori.Credit_Bugetar for the classification (slice 0081-12).
+        k_linie.Buget = k_c.Buget
+        If Not String.IsNullOrWhiteSpace(k_c.CodIndicator) Then
+            k_linie.CodIndicator = k_c.CodIndicator
+        ElseIf k_alta OrElse String.IsNullOrWhiteSpace(k_linie.CodIndicator) Then
+            Dim k_alteCoduri As List(Of String) = _draft.LiniiA.Where(Function(k_x) Not ReferenceEquals(k_x, k_linie)).
+                Select(Function(k_x) k_x.CodIndicator).ToList()
+            k_linie.CodIndicator = DdfCodIndicator.GenereazaUnic(LUNGIME_COD_INDICATOR, k_alteCoduri)
+        End If
+        ' The partner is the header's, the same on every line (slice 0081-09): LinieNoua puts it.
+        k_linie.ValTot = Math.Round(k_linie.ValCur + k_linie.ValPrec, 2)
+    End Sub
+
+    ''' <summary>Opens the current value of a line for typing (after the classification was picked).</summary>
+    ' Boundary UI (BeginInvoke callback): logged and swallowed.
+    Private Sub EditeazaValoarea(k_index As Integer)
+        Try
+            If k_index < 0 OrElse k_index >= grd.RowCount Then Return
+            grd.CurrentRowIndex = k_index
+            grd.EnsureVisible(k_index)
+            grd.EditCell(COL_VAL_CUR, k_index)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditSectiuneaAPage.EditeazaValoarea", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' A MANUAL angajament's list depends on its first line (see <see cref="AsiguraClasificatiileAsync"/>),
+    ''' so every change of the lines fetches it again; the combo follows when it arrives.
+    ''' </summary>
+    ' Boundary UI async: logged; the combo keeps the list it had.
+    Private Async Sub ReincarcaListaManualaAsync()
+        Try
+            If _draft Is Nothing OrElse Not _draft.Manual Then Return
+            Await AsiguraClasificatiileAsync(fortat:=False).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditSectiuneaAPage.ReincarcaListaManualaAsync", ex)
+            lblStare.Text = "Clasificațiile nu au putut fi aduse de pe server."
+        End Try
+    End Sub
 
     ''' <summary>
     ''' A new line before its classification -- the port of <c>Form_BeforeInsert</c>: the
@@ -501,6 +608,10 @@ Public Class DdfEditSectiuneaAPage
         Try
             If _suspenda Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
+            If e.ColumnKey = COL_CLASIFICATIE Then
+                ValideazaClasificatia(e)
+                Return
+            End If
             Dim a As DdfDraftLinieA = TryCast(grd.Rows(e.RowIndex).Tag, DdfDraftLinieA)
             If a Is Nothing Then Return
 
@@ -550,6 +661,10 @@ Public Class DdfEditSectiuneaAPage
             If _suspenda Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
             Dim rand As KBotDataRow = grd.Rows(e.RowIndex)
+            If e.ColumnKey = COL_CLASIFICATIE Then
+                SchimbaClasificatia(rand, e.NewValue)
+                Return
+            End If
             Dim a As DdfDraftLinieA = TryCast(rand.Tag, DdfDraftLinieA)
             If a Is Nothing Then Return
 
@@ -590,79 +705,58 @@ Public Class DdfEditSectiuneaAPage
     End Sub
 
     ''' <summary>
-    ''' Adds a line: opens the line window on a new line (slice 0081-08). The line joins section
-    ''' A only when the window is confirmed -- «Renunta» leaves nothing behind.
+    ''' The empty row takes only a classification (and only once the header is complete); its delete
+    ''' button is dead and blank. A hint says what the row is for.
     ''' </summary>
-    ' Boundary UI async: logged and shown.
-    Private Async Sub BtnAdauga_Click(sender As Object, e As EventArgs) Handles btnAdauga.Click
+    ' Boundary UI (paint path): logged and swallowed.
+    Private Sub Grd_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles grd.CellFormatting
         Try
-            If _draft Is Nothing Then Return
-            btnAdauga.Enabled = False
-            Try
-                Await AlegeClasificatieAsync(Nothing).ConfigureAwait(True)
-            Finally
-                AplicaButonulAdauga()
-            End Try
+            If e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
+            If grd.Rows(e.RowIndex).Tag IsNot Nothing Then Return
+            Select Case e.ColumnKey
+                Case COL_CLASIFICATIE
+                    e.ReadOnlyCell = _lipsuriAntet.Count > 0
+                    If _lipsuriAntet.Count = 0 AndAlso String.IsNullOrEmpty(e.Text) Then
+                        e.Text = "Alegeți o clasificație pentru un rând nou…"
+                        e.ForeColor = ThemeManager.Current.Palette.TextDimColor
+                    End If
+                Case COL_STERGE
+                    e.Text = String.Empty
+                    e.Enabled = False
+                Case Else
+                    e.ReadOnlyCell = True
+            End Select
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfEditSectiuneaAPage.BtnAdauga_Click", ex)
-            KBotMessage.Show(Me, "Rândul nu a putut fi adăugat (lista de clasificații nu a putut fi adusă?)." &
-                            " Detalii în jurnalul de erori.",
-                            "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Error)
+            GlobalErrorLog.Write("DdfEditSectiuneaAPage.Grd_CellFormatting", ex)
         End Try
     End Sub
 
     ''' <summary>
-    ''' Removes a line. Its section-B twin goes with it, which needs no code here: section B
-    ''' is rebuilt from section A by the form when <c>DraftModificat</c> fires.
+    ''' Removes a line (its button column). Its section-B twin goes with it, which needs no code here:
+    ''' section B is rebuilt from section A by the form when <c>DraftModificat</c> fires.
     ''' </summary>
-    Private Sub BtnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
+    ' Boundary UI (event handler): logged and shown.
+    Private Sub Grd_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles grd.ButtonClick
         Try
-            If _draft Is Nothing Then Return
-            Dim i As Integer = grd.CurrentRowIndex
-            If i < 0 OrElse i >= grd.RowCount Then
-                KBotMessage.Show(Me, "Selectează întâi rândul de șters.", "Secțiunea A",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information)
-                Return
-            End If
-
-            Dim a As DdfDraftLinieA = TryCast(grd.Rows(i).Tag, DdfDraftLinieA)
+            If e.ColumnKey <> COL_STERGE OrElse _doarCitire OrElse _draft Is Nothing Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
+            Dim a As DdfDraftLinieA = TryCast(grd.Rows(e.RowIndex).Tag, DdfDraftLinieA)
             If a Is Nothing Then Return
 
-            If KBotMessage.Show(Me, $"Ștergi rândul «{a.Clsf}»?", "Secțiunea A",
+            If KBotMessage.Show(Me, $"Ștergi rândul «{DdfSendInputs.ForexeClsf(a.Clsf)}»?", "Secțiunea A",
                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
                 Return
             End If
 
             _draft.LiniiA.Remove(a)
-            UmpleGrila()
+            grd.RemoveRowAt(e.RowIndex)
             ' A classification just went back into the pool of free ones.
             ActualizeazaStarea()
+            If _draft.Manual Then ReincarcaListaManualaAsync()
             RaiseEvent DraftModificat(Me, EventArgs.Empty)
         Catch ex As Exception
-            GlobalErrorLog.Write("DdfEditSectiuneaAPage.BtnSterge_Click", ex)
+            GlobalErrorLog.Write("DdfEditSectiuneaAPage.Grd_ButtonClick", ex)
             KBotMessage.Show(Me, "Rândul nu a putut fi șters. Detalii în jurnalul de erori.",
-                            "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Double-clicking a line's classification opens the line window on it -- the same seam.
-    ''' Slice 0081-08: the column the operator SEES is «Clsf»; «Clasificatie» (the old in-grid
-    ''' combo) is hidden in the designer, so a handler that listened only to it never fired.
-    ''' Both keys open it now. The other editable cells keep their in-place editing.
-    ''' </summary>
-    ' Boundary UI async: logged and shown.
-    Private Async Sub Grd_CellDoubleClick(sender As Object, e As KBotCellEventArgs) Handles grd.CellDoubleClick
-        Try
-            If e.ColumnKey <> COL_CLASIFICATIE AndAlso e.ColumnKey <> COL_CLSF Then Return
-            If _doarCitire Then Return
-            If e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
-            Dim a As DdfDraftLinieA = TryCast(grd.Rows(e.RowIndex).Tag, DdfDraftLinieA)
-            If a Is Nothing Then Return
-            Await AlegeClasificatieAsync(a).ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("DdfEditSectiuneaAPage.Grd_CellDoubleClick", ex)
-            KBotMessage.Show(Me, "Rândul nu a putut fi deschis. Detalii în jurnalul de erori.",
                             "Secțiunea A", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -684,17 +778,6 @@ Public Class DdfEditSectiuneaAPage
             lblStare.ForeColor = p.TextDimColor
             lblStare.BackColor = Color.Transparent
 
-            ' The buttons under the grid go through the HOUSE STYLES, exactly as the ORD
-            ' editor's pages do. They have to be styled by hand: `ThemeManager.Traverse` does
-            ' not carry the generic rules into the children of a control that is itself an
-            ' `IThemedControl` -- and this page is one -- so they would stay system grey.
-            ' Writing raw palette colours here instead of calling `ButtonStyles` was the
-            ' incongruence: it skips `ModernRenderer`, so these came out flat squares next to
-            ' the ORD editor's rounded buttons, and no button carried the accent.
-            ' «Adauga» is the action, so it takes the accent; «Sterge» stays secondary -- a
-            ' destructive button is not dressed in the colour that invites the finger.
-            ButtonStyles.ApplyPrimary(btnAdauga, scheme)
-            ButtonStyles.ApplySecondary(btnSterge, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfEditSectiuneaAPage.ApplyTheme", ex)
         End Try
@@ -705,7 +788,7 @@ Public Class DdfEditSectiuneaAPage
     Private _actionsHost As TableLayoutPanel
     Private _actionsRowHeight As Single
 
-    ''' <summary>Moves the row «Adauga rand / Sterge randul / state» into <paramref name="k_host"/> (column <paramref name="k_column"/>) so the buttons share one line.</summary>
+    ''' <summary>Moves the status row into <paramref name="k_host"/> (column <paramref name="k_column"/>) so the buttons share one line.</summary>
     Friend Sub AttachActionsTo(k_host As TableLayoutPanel, k_column As Integer)
         If _actionsHost IsNot Nothing Then Return
         _actionsRowHeight = tlyRoot.RowStyles(1).Height

@@ -22,3 +22,6 @@ After the query the old rows have `IdPartener` NULL. Until the new `parteneri_ed
 - Nothing was run: the temporary-table statements follow the pattern of 0121_07 (which the operator ran), the UPDATE ... JOIN on a temporary table is new.
 - Real data not seen: how many rows still carry an IdPartener afterwards, and whether any row has an old unit code in `CodPartener` with no `IdPartener` (the third check query lists them).
 - `VC_FACTURI.PARTENER_ID` (no foreign key) is not covered: decide with Vercon (0122-05).
+
+## Follow-up 23.10.2026: 0122_01b
+The first check on one database found (a) the 246 `VC_NIR` rows not filled (the column was probably missing when the first query reached that block) and (b) 41 DDF/ORD rows holding an old unit code (025, 026) with no IdPartener. Written: `sql/0122_01b_interogare_unica.sql` (name in KBotAdmin `0122_01b_completari_codfiscal`): matches such a code to the partner of the same unit and fills `VC_NIR.CodPartener` (with `CodFiscalSursa` as fallback). The operator ran it on that database and `sql/0122_01_verificari.sql` came back clean. The other databases are still to be done.

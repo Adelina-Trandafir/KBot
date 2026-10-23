@@ -182,8 +182,8 @@ Public NotInheritable Class AppSettings
 
     ''' <summary>
     ''' Help screenshot mode (slice 0000-02): the «Capturi pentru ajutor» window is reachable from
-    ''' the menu and the help window. Shown in the settings only with <see cref="AdvancedOptions"/>
-    ''' and honoured only while that is on too. Not described in the help itself.
+    ''' the menu and the help window. Shown in the settings only with <see cref="AdvancedOptions"/>,
+    ''' but once saved it is honoured whether or not that stays on. Not described in the help itself.
     ''' </summary>
     Public Property HelpCaptureMode As Boolean = False
 
@@ -516,16 +516,16 @@ Public NotInheritable Class AppSettings
     ''' <summary>
     ''' Slice 0097: when the server session expires during work, the login window is shown again
     ''' (True) -- or K-BOT always logs back in by itself with the password of the last login (False).
-    ''' Only an operator with the advanced options may turn it off; without them it is always on
-    ''' (<see cref="ReloginPromptInEffect"/>).
+    ''' Only an operator with the advanced options may CHANGE it; the saved value applies and is shown
+    ''' as saved whether or not the advanced options are on afterwards (<see cref="ReloginPromptInEffect"/>).
     ''' </summary>
     Public Property ReloginPrompt As Boolean = True
 
     ''' <summary>
     ''' Slice 0097: the login window comes back at most once every so many minutes; an expiry
     ''' sooner than that after the last login typed in the window is covered silently. Without the
-    ''' advanced options it is kept between <see cref="ReloginMinutesMin"/> and
-    ''' <see cref="ReloginMinutesMax"/> (once every 10 minutes .. once an hour).
+    ''' advanced options the settings page offers 10 .. 60 minutes, but a saved value outside that
+    ''' range is still the one that applies (<see cref="ReloginMinutesInEffect"/>).
     ''' </summary>
     Public Property ReloginMinutes As Integer = 30
 
@@ -547,18 +547,23 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property RememberPasswordOption As Boolean = True
 
-    ''' <summary>Slice 0097: <see cref="ReloginPrompt"/> as it applies now.</summary>
+    ''' <summary>
+    ''' Slice 0097: <see cref="ReloginPrompt"/> as it applies now. Independent of the advanced options
+    ''' (operator, 23.10.2026): switching them off never turns the saved choice back on.
+    ''' </summary>
     Public ReadOnly Property ReloginPromptInEffect As Boolean
         Get
-            Return ReloginPrompt OrElse Not AdvancedOptions
+            Return ReloginPrompt
         End Get
     End Property
 
-    ''' <summary>Slice 0097: <see cref="ReloginMinutes"/> as it applies now.</summary>
+    ''' <summary>
+    ''' Slice 0097: <see cref="ReloginMinutes"/> as it applies now. Independent of the advanced options
+    ''' (operator, 23.10.2026): they only allow CHANGING a setting, never stop a saved one from applying.
+    ''' </summary>
     Public ReadOnly Property ReloginMinutesInEffect As Integer
         Get
-            If AdvancedOptions Then Return Math.Max(1, ReloginMinutes)
-            Return Math.Min(ReloginMinutesMax, Math.Max(ReloginMinutesMin, ReloginMinutes))
+            Return Math.Max(1, ReloginMinutes)
         End Get
     End Property
 

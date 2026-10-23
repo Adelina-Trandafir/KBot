@@ -5,6 +5,8 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 23.10.2026) - VERCON online: window «Parteneri dublati» (same name, different fiscal code) with merge.** `routes/vercon/supplier_merge.py` + `utils/vercon_suppliers.duplicate_key` + `static/js/vercon/supplier-duplicates.js`; opens once when Intrari opens and from `Intrari > Parteneri dublati...`; merge rewrites `VC_NIR` / `VC_FACTURI` `CodPartener` DC-wide and hides the merged `Parteneri`. Import + `node --check` only, SQL never run; help section added to `static/help/vercon.json`. See `../SLICELESS-vercon-parteneri-dublati.md`.
+
 - **No slice (operator, 22.10.2026) - POST /api/tools/upload on its own key.** `_guard_upload()` in `routes/legacy_updater.py` (`LEGACY_UPLOAD_KEY` from the server config.py, header `X-Upload-Key`, no fallback to `API_KEY`); publisher is `AvacontUpdater` (not `Avacont_Uploader`), key in its git-ignored `secrets.vb`. py_compile + clean build only; operator must add the key to the server config.py by hand and upload the file. See `../SLICELESS-ef2-get-ef-token-inapoi.md` part 2.
 
 - **No slice (operator, 22.10.2026) - EF2 / EF.EXE: `GET /api/mfp/get_ef_token` back as a temporary bridge.** Added to `routes/legacy_updater.py` (same key guard + `LEGACY_UPDATER_ENABLED` switch), sends `token.zip` only; removed from the retired-paths test list. EF2 unchanged. `py_compile` only, nothing run or deployed; needs `API_KEY` + `token.zip` on the server (unverified). See `../SLICELESS-ef2-get-ef-token-inapoi.md`.

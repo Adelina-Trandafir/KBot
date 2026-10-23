@@ -88,7 +88,7 @@ conexiunea FOREXE se închide oricum:
   Bifeaz-o dacă unitățile tale au certificate diferite.
 
 ## Pagina «Autentificare»
-<!-- slice: 0063, 0072, 0097, 0097-04 -->
+<!-- slice: 0063, 0072, 0097, 0097-04, 0097-05 -->
 
 **«Fereastra de autentificare»** — ce ține minte fereastra de conectare pe acest calculator:
 
@@ -101,7 +101,7 @@ conexiunea FOREXE se închide oricum:
 
 - **«Reafișează fereastra de autentificare când expiră sesiunea»** — bifată, K-BOT îți arată
   fereastra de conectare; debifată, se reconectează singur, cu parola scrisă la intrare. **Se poate
-  debifa doar cu opțiunile avansate**; fără ele e mereu bifată.
+  schimba doar cu opțiunile avansate**; dacă le oprești după aceea, bifa rămâne așa cum ai lăsat-o.
 - **«Reafișează cel mult o dată la»** — dacă sesiunea expiră mai devreme de atât după ultima
   conectare în fereastră, K-BOT se reconectează singur, fără fereastră. Poți alege între 10 minute
   și o oră; cu opțiunile avansate, și 5 minute sau până la 8 ore.

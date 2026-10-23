@@ -55,7 +55,6 @@ Partial Friend NotInheritable Class VrcRunner
     Private ReadOnly _map As New Dictionary(Of String, Long)(StringComparer.Ordinal)
     Private ReadOnly _pendingMap As New List(Of (SourceId As Long, TableName As String, Kind As String, SourceKey As String, TargetId As Long))()
     Private ReadOnly _groupCounters As New Dictionary(Of String, Long)(StringComparer.Ordinal)
-    Private ReadOnly _partners As New Dictionary(Of String, Long)(StringComparer.Ordinal)
     Private ReadOnly _missingSuppliers As New HashSet(Of String)(StringComparer.Ordinal)
     Private ReadOnly _counts As New Dictionary(Of String, TrackedCount)(StringComparer.Ordinal)
     Private ReadOnly _lastNumber As New Dictionary(Of String, Long)(StringComparer.Ordinal)
@@ -122,7 +121,6 @@ Partial Friend NotInheritable Class VrcRunner
             CreateContext()
             OpenSources()
             AddPreparedPartners()
-            LoadPartners()
             For Each k_gest In _gestiuni
                 MigrateGestiune(k_gest)
             Next
@@ -279,19 +277,6 @@ Partial Friend NotInheritable Class VrcRunner
         For Each k_line In _result.NewPartnerLines
             Log("Parteneri ANAF: " & k_line)
         Next
-    End Sub
-
-    ''' <summary>KBOT partners by normalised tax code. A code shared by several partners takes the lowest id (reported once).</summary>
-    Private Sub LoadPartners()
-        Using k_cmd As New MySqlCommand("SELECT IdPartener, CodFiscal FROM Parteneri WHERE CodFiscal IS NOT NULL AND CodFiscal <> '' ORDER BY IdPartener", _cn, _tx)
-            Using k_reader = k_cmd.ExecuteReader()
-                While k_reader.Read()
-                    Dim k_code As String = VrcConvert.NormalizeTaxCode(k_reader.GetString(1))
-                    If k_code.Length > 0 AndAlso Not _partners.ContainsKey(k_code) Then _partners(k_code) = k_reader.GetInt64(0)
-                End While
-            End Using
-        End Using
-        Log($"{_partners.Count:N0} parteneri KBOT cu cod fiscal.")
     End Sub
 
     ' ====================================================================================================================
@@ -529,7 +514,7 @@ Partial Friend NotInheritable Class VrcRunner
         Public Property Suppliers As Dictionary(Of String, String)
     End Class
 
-    ''' <summary>Furnizori.IDF → tax code of the source, for the partner match.</summary>
+    ''' <summary>Furnizori.IDF is only an Access-local reference used to read the source tax code; no partner ID is resolved.</summary>
     Private Function SupplierCodes(k_source As VrcPlanSource) As Dictionary(Of String, String)
         Dim k_codes As New Dictionary(Of String, String)(StringComparer.Ordinal)
         For Each k_row In ReadRows(k_source, "Furnizori", {"IDF", "CF"})
@@ -550,7 +535,7 @@ Partial Friend NotInheritable Class VrcRunner
             If k_c.Link = VrcLinkKind.Skip OrElse k_c.Link = VrcLinkKind.Supplier Then Continue For
             k_names.Add(k_c.Name)
         Next
-        If k_table.Name = "NIR" Then k_names.AddRange({"IdPartener", "CodFiscalSursa", "TipDoc", "NumarSub"})
+        If k_table.Name = "NIR" Then k_names.AddRange({"CodPartener", "CodFiscalSursa", "TipDoc", "NumarSub"})
         Return k_names
     End Function
 
@@ -603,7 +588,7 @@ Partial Friend NotInheritable Class VrcRunner
                 k_sums(k_column.Name) = CDec(k_converted)
             End If
         Next
-        If k_table.Name = "NIR" Then AddNirExtras(k_source, k_row, k_key, k_extra, k_values)
+        If k_table.Name = "NIR" Then AddNirExtras(k_source, k_row, k_key, k_extra, k_values, k_ok)
         Dim k_names = InsertColumns(k_table)
         For k_i As Integer = 0 To k_names.Count - 1
             Dim k_target = _targetSchema.Column(k_table.TargetName, k_names(k_i))
@@ -941,27 +926,33 @@ Partial Friend NotInheritable Class VrcRunner
         Return k_next
     End Function
 
-    ''' <summary>NIR only: IdPartener, CodFiscalSursa and TipDoc, appended in the order PrepareInsert declared them.</summary>
-    Private Sub AddNirExtras(k_source As VrcPlanSource, k_row As Dictionary(Of String, Object), k_key As String, k_extra As ExtraContext, k_values As List(Of Object))
+    ''' <summary>NIR only: normalized fiscal identity, source fiscal text, document kind and subnumber, in InsertColumns order.</summary>
+    Private Sub AddNirExtras(k_source As VrcPlanSource, k_row As Dictionary(Of String, Object), k_key As String, k_extra As ExtraContext, k_values As List(Of Object), ByRef k_ok As Boolean)
         Dim k_stock As Boolean = VrcConvert.IsOpeningStock(Convert.ToString(k_row("NrFact"), CultureInfo.InvariantCulture))
-        Dim k_idPartener As Object = Nothing
+        Dim k_fiscal As Object = Nothing
         Dim k_cf As Object = Nothing
         Dim k_idf As String = VrcConvert.KeyText(k_row("IDF"))
         Dim k_code As String = Nothing
         If k_idf.Length > 0 AndAlso k_extra IsNot Nothing AndAlso k_extra.Suppliers IsNot Nothing AndAlso k_extra.Suppliers.TryGetValue(k_idf, k_code) Then
             If k_code IsNot Nothing AndAlso k_code.Trim().Length > 0 Then k_cf = If(k_code.Trim().Length > 255, k_code.Trim().Substring(0, 255), k_code.Trim())
-            Dim k_normalized As String = VrcConvert.NormalizeTaxCode(k_code)
-            Dim k_partner As Long = 0
-            If Not k_stock Then
-                If k_normalized.Length > 0 AndAlso _partners.TryGetValue(k_normalized, k_partner) Then
-                    k_idPartener = k_partner
-                ElseIf _missingSuppliers.Add($"{k_source.Profile.FileName}|{k_normalized}|{k_idf}") Then
-                    AddIssue(k_source, "NIR", k_key, "IDF", "X04", "AVERTIZARE", If(k_code, "NULL"), "IdPartener NULL",
-                             "Furnizorul nu are între partenerii KBOT niciunul cu același cod fiscal. Documentele lui se transferă fără partener; codul fiscal rămâne scris pe document, ca să-l puteți lega mai târziu.")
+        End If
+        Dim k_normalized As String = VrcConvert.NormalizeTaxCode(k_code)
+        If Not k_stock Then
+            If k_normalized.Length > 0 Then
+                ' The source CF is the identity even when Parteneri has no matching display record.
+                ' BuildRow checks the actual destination length; fiscal identities are never truncated.
+                k_fiscal = k_normalized
+                If k_normalized.Length > 50 Then
+                    k_ok = False
+                    AddIssue(k_source, "NIR", k_key, "CodPartener", "X07", "BLOCAJ", k_normalized, String.Empty,
+                             "Codul fiscal normalizat depășește limita de 50 de caractere folosită de VERCON online; nu se trunchiază.")
                 End If
+            ElseIf _missingSuppliers.Add($"{k_source.Profile.FileName}|{k_idf}") Then
+                AddIssue(k_source, "NIR", k_key, "CodPartener", "X04", "AVERTIZARE", If(k_code, "NULL"), "CodPartener NULL",
+                         "Referința furnizorului din Access nu oferă un cod fiscal utilizabil. Documentul se transferă cu CodPartener NULL; asocierea la eFactura cere completarea explicită a codului fiscal.")
             End If
         End If
-        k_values.Add(k_idPartener)
+        k_values.Add(k_fiscal)
         k_values.Add(k_cf)
         k_values.Add(If(k_stock, "STOC_INITIAL", "NIR"))
         k_values.Add(_currentNumarSub)

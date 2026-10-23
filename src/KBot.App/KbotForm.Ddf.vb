@@ -154,8 +154,25 @@ Partial Public Class KbotForm
                                 "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
+
+            ' Operator, 23.10.2026: no new angajament while a downloaded one has reservations but
+            ' no document yet -- its DDF comes first.
+            Dim k_blocate As List(Of String) = AngajamenteCuRezervariFaraDdf()
+            If k_blocate.Count > 0 Then
+                Dim k_coduri As String = String.Join(", ", k_blocate.Take(8).Select(Function(k_cod) $"«{k_cod}»"))
+                If k_blocate.Count > 8 Then k_coduri &= $" și încă {k_blocate.Count - 8}"
+                KBotMessage.Show(Me, "Nu se poate crea un angajament nou: există " &
+                                 If(k_blocate.Count = 1, "un angajament descărcat care are rezervări", $"{k_blocate.Count} angajamente descărcate care au rezervări") &
+                                 " dar nu are document de fundamentare (DDF)." & vbCrLf & vbCrLf & k_coduri & vbCrLf & vbCrLf &
+                                 "Adăugați întâi DDF-ul din arborele Rezervări.",
+                                 "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+
+            ' Slice 0114-27 (operator, 23.10.2026): no program yet -- a new angajament has no indicators to derive it from and the
+            ' session's says nothing about it. The operator picks it in the header; saving without one is refused.
             Dim draft As DdfDraft = DdfDraftFactory.ForNewAngajament(
-                DdfDraftFactory.NewManualCode(), _session.DbName, _session.CodProgram, Date.Today)
+                DdfDraftFactory.NewManualCode(), _session.DbName, String.Empty, Date.Today)
             Await DeschideEditorulDdfAsync(draft, DdfRevisionState.Draft)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideAngajamentNou", ex)
@@ -163,6 +180,19 @@ Partial Public Class KbotForm
                             "Angajament nou", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' The codes of the angajamente in the tree that were downloaded with reservations but have no
+    ''' DDF (<c>AreRezervari</c> and not <c>AreDDF</c>); hidden ones do not count.
+    ''' </summary>
+    Private Function AngajamenteCuRezervariFaraDdf() As List(Of String)
+        If _treeRows Is Nothing Then Return New List(Of String)()
+        Return _treeRows.Where(Function(k_info) k_info IsNot Nothing AndAlso k_info.AreRezervari AndAlso
+                                                Not k_info.AreDDF AndAlso Not k_info.Ascuns AndAlso
+                                                Not String.IsNullOrWhiteSpace(k_info.CodAngajament)).
+                         Select(Function(k_info) k_info.CodAngajament).
+                         Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+    End Function
 
     ''' <summary>
     ''' Slice 0081-02 -- the option picked in the Rezervari footer menu. UI boundary (Async Sub
@@ -228,8 +258,13 @@ Partial Public Class KbotForm
             End If
 
             If revizii.Count = 0 Then
+                ' Slice 0114-27 (operator, 23.10.2026): revision 0 starts with the program of the indicators' SS
+                ' (01A -> 0000002510, otherwise 0000000000), NOT the session's: with «Ordonează după data creării» the
+                ' sector / source selector is hidden, so the session's SS says nothing about this angajament.
+                Dim k_program As String = DdfSectiuneaAReguli.ProgramPentruSurse(info.Surse)
+                If k_program.Length = 0 Then k_program = DdfSectiuneaAReguli.ProgramImplicit   ' mixed SSs: the editor warns
                 draft = DdfDraftFactory.ForFirstRevisionOfExisting(
-                    cod, _session.DbName, _session.CodProgram, info.Descriere, info.DataCreare, info.Stare, Date.Today)
+                    cod, _session.DbName, k_program, info.Descriere, info.DataCreare, info.Stare, Date.Today)
             Else
                 Dim ultima As RevizieRow = revizii.OrderByDescending(Function(r) r.NumarRev).First()
                 Dim iddf As Integer = ultima.Iddf
@@ -295,6 +330,90 @@ Partial Public Class KbotForm
             End If
         End Using
     End Function
+
+    ''' <summary>
+    ''' Slice 0114-27 (operator, 23.10.2026): the DDF ribbon button «Repară programul» -- puts the program of the angajament's
+    ''' document right, the one of its indicators' SS (01A -> 0000002510, otherwise 0000000000). Dry run first (the server says
+    ''' what it holds and what it should hold), the operator confirms, then it writes <c>FX_DDF.Program</c> only and the tree
+    ''' reloads with the selection kept (the row loses its red). UI boundary (Async Sub handed to the view): every failure is
+    ''' logged and shown, never thrown.
+    ''' </summary>
+    Private Async Sub ReparaProgramDdf(cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(cod) Then Return
+            Const k_titlu As String = "Programul documentului"
+            Dim k_api As IDdfProgramApi = TryCast(_apiClient, IDdfProgramApi)
+            If k_api Is Nothing Then Throw New InvalidOperationException("The API client does not implement IDdfProgramApi.")
+
+            Dim k_proba As DdfProgramRepairResult
+            busyBar.Running = True
+            Try
+                k_proba = Await WithReauth(Of DdfProgramRepairResult)(
+                    Function() k_api.RepairDdfProgramAsync(cod, False, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+            If k_proba Is Nothing Then
+                AratEsecul(k_titlu)
+                Return
+            End If
+
+            Dim k_actual As String = If(String.IsNullOrWhiteSpace(k_proba.Current), "(gol)", k_proba.Current)
+            Dim k_linii As New List(Of String)()
+            For Each k_d As DdfProgramDovada In k_proba.Details.Take(10)
+                k_linii.Add($"  • {KbotForm.EtichetaDovadaProgram(k_d)}: {KbotForm.TextDovadaProgram(k_d)}")
+            Next
+            If k_proba.Details.Count > k_linii.Count Then k_linii.Add($"  • … și încă {k_proba.Details.Count - k_linii.Count}")
+
+            If k_proba.ToRepair = 0 Then
+                ' Either the tree row was out of date (nothing disagrees any more) or the data call for several programs.
+                KBotMessage.Show(Me, If(k_proba.Details.Count = 0,
+                                 $"«{cod}»: nu este nimic de reparat la programul documentului.",
+                                 $"«{cod}»: antetul DDF are programul {k_actual}, dar datele salvate nu se potrivesc și țin de mai multe programe:" &
+                                 vbCrLf & vbCrLf & String.Join(vbCrLf, k_linii) & vbCrLf & vbCrLf &
+                                 "Programul nu se alege singur: verificați datele angajamentului.") &
+                                 If(k_proba.Warnings.Count > 0, vbCrLf & vbCrLf & String.Join(vbCrLf, k_proba.Warnings), String.Empty),
+                                 k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Await LoadTreeAsync(pastreazaSelectia:=True)
+                Return
+            End If
+
+            Dim k_intrebare As String =
+                $"«{cod}»: antetul DDF are programul {k_actual}, dar datele salvate cer programul {k_proba.Expected}:" &
+                vbCrLf & vbCrLf & String.Join(vbCrLf, k_linii) & vbCrLf & vbCrLf &
+                $"Regula: SS {DdfSectiuneaAReguli.Ss01A} are programul {DdfSectiuneaAReguli.Program01A}, orice alt SS " &
+                $"{DdfSectiuneaAReguli.ProgramImplicit}." & vbCrLf & vbCrLf &
+                "Repararea schimbă doar programul din antetul DDF; sumele, reviziile, ordonanțările și fișierele nu se ating. Continuați?"
+            If KBotMessage.Show(Me, k_intrebare, k_titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+                                MessageBoxDefaultButton.Button2) <> DialogResult.Yes Then
+                Return
+            End If
+
+            Dim k_rezultat As DdfProgramRepairResult
+            busyBar.Running = True
+            Try
+                k_rezultat = Await WithReauth(Of DdfProgramRepairResult)(
+                    Function() k_api.RepairDdfProgramAsync(cod, True, CancellationToken.None))
+            Finally
+                busyBar.Running = False
+            End Try
+            If k_rezultat Is Nothing Then
+                AratEsecul(k_titlu)
+                Return
+            End If
+
+            KBotMessage.Show(Me, $"«{cod}»: programul documentului este acum {k_rezultat.Expected}.",
+                             k_titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Await LoadTreeAsync(pastreazaSelectia:=True)
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ReparaProgramDdf", ex)
+            KBotMessage.Show(Me, ex.Message, "Programul documentului", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReparaProgramDdf", ex)
+            KBotMessage.Show(Me, "Programul documentului nu a putut fi reparat. Detalii în jurnalul de erori.",
+                            "Programul documentului", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
 
     ''' <summary>
     ''' The Rezervari footer RIGHT icon, «Repară» (operator, 12.10.2026; it replaced the refresh from

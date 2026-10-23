@@ -77,6 +77,7 @@ Partial Class AvacontMain
         Dim KBotRibbonTab6 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup12 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton33 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton35 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -201,12 +202,19 @@ Partial Class AvacontMain
         KBotRibbonButton12.ToolTipHeader = "Legăturile recepțiilor"
         KBotRibbonButton12.ToolTipText = resources.GetString("KBotRibbonButton12.ToolTipText")
         KBotRibbonButton12.Visible = False
+        KBotRibbonButton35.Image = My.Resources.Resources.Icojam_Blue_Bits_Pinion_settings_24
+        KBotRibbonButton35.Key = "ddf_repara_program"
+        KBotRibbonButton35.Text = "Repară programul"
+        KBotRibbonButton35.ToolTipHeader = "Repară programul documentului"
+        KBotRibbonButton35.ToolTipText = "Programul din antetul DDF nu se potrivește cu SS-ul datelor salvate: indicatorii, rândurile reviziilor DDF și ale ordonanțărilor (SS 01A are programul 0000002510, orice alt SS 0000000000)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi; se schimbă doar programul din antetul DDF."
+        KBotRibbonButton35.Visible = False
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton7)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton8)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton9)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton10)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton11)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton12)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton35)
         ribbon.SelectedTabIndex = 1
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1
@@ -365,6 +373,7 @@ Partial Class AvacontMain
         KBotRibbonGroup11.Text = "Vercon"
         KBotRibbonTab5.Groups.Add(KBotRibbonGroup11)
         KBotRibbonTab5.Text = "VERCON"
+        KBotRibbonTab5.Visible = False
         KBotRibbonButton33.Image = My.Resources.Resources.print
         KBotRibbonButton33.Key = "adechit_rapoarte"
         KBotRibbonButton33.Text = "Rapoarte"
@@ -374,6 +383,7 @@ Partial Class AvacontMain
         KBotRibbonGroup12.Text = "ADECHIT"
         KBotRibbonTab6.Groups.Add(KBotRibbonGroup12)
         KBotRibbonTab6.Text = "ADECHIT"
+        KBotRibbonTab6.Visible = False
         ribbon.Tabs.Add(KBotRibbonTab1)
         ribbon.Tabs.Add(KBotRibbonTab2)
         ribbon.Tabs.Add(KBotRibbonTab3)

@@ -26,10 +26,10 @@ Imports KBot.Domain
 '''   * sumele NOTAFD (<c>sum_rezv_crdt_ang_act</c> etc.) se CALCULEAZĂ (anterior+influență),
 '''     nu se citesc dintr-o coloană.
 '''
-''' Decizie §2.9 (rezolvată din sursă): codul de program vine din globalul de sesiune
-''' (<c>globCodProgram</c> -> <see cref="SessionContext.CodProgram"/>), NU din
-''' <c>FX_DDF.Program</c> — se scrie CA ATARE, fara valoare de rezerva (nu poate lipsi din sesiune), în
-''' Cell2/program, ignorând antetul.
+''' Decizie §2.9 ANULATĂ (operator, 23.10.2026, slice 0114-27): codul de program NU mai vine din sesiune
+''' (<c>globCodProgram</c>): cu «Ordonează după data creării» selectorul sector/sursă e ascuns, deci sesiunea nu spune nimic
+''' despre angajament. Vine din <c>FX_DDF.Program</c> (antetul documentului) prin <see cref="Context.ForDocument"/>, fără valoare
+''' de rezervă, în Cell2/program, și la fel în documentul interimar (nu mai există placeholder de program).
 '''
 ''' RISC DE FIDELITATE NEVERIFICAT: <c>EncodeBase64</c> din VBA folosea
 ''' <c>StrConv(…, vbFromUnicode)</c> = octeți ANSI (codul de pagină al sistemului). Aici
@@ -61,6 +61,22 @@ Public NotInheritable Class DdfXmlBuilder
                 .CodFiscal = If(s.CF, String.Empty),
                 .CodProgram = If(s.CodProgram, String.Empty)}
         End Function
+
+        ''' <summary>
+        ''' Slice 0114-27 (operator, 23.10.2026): the context of a REAL document. The unit's name and tax code come from the
+        ''' session; the program comes from the DOCUMENT'S header (<c>FX_DDF.Program</c>), never from the session -- with «Ordonează
+        ''' după data creării» the sector / source selector is hidden, so the session's program says nothing about the angajament.
+        ''' A header without a program is refused (throws): a document with an empty or borrowed program must not be produced.
+        ''' </summary>
+        Public Shared Function ForDocument(s As Global.KBot.Common.SessionContext, k_antet As DdfAntet) As Context
+            Dim k_program As String = If(k_antet?.Program, String.Empty).Trim()
+            If k_program.Length = 0 Then
+                Throw New InvalidOperationException("The document header has no program: the document cannot be produced.")
+            End If
+            Dim k_context As Context = FromSession(s)
+            k_context.CodProgram = k_program
+            Return k_context
+        End Function
     End Class
 
     ' ── Documentul complet ────────────────────────────────────────────────────
@@ -72,7 +88,7 @@ Public NotInheritable Class DdfXmlBuilder
     ''' <para>Slice 0081-02: <paramref name="mode"/> = <see cref="DdfPdfMode.Interim"/> for a revision
     ''' not sent yet -- no FOREXE capture rides along, and (slice 0078-04) section B is a PLACEHOLDER,
     ''' ticked: one row per section A row with Cod angajament = the stored «!…» code (0078-06; else
-    ''' «___________», 11), Indicator «___» and program «0000000000» (in A too) -- with B empty the
+    ''' «___________», 11) and Indicator «___» (the program is the document's real one, slice 0114-27) -- with B empty the
     ''' form's «Valideaza» never enables the signature field. The operator signs A on it; the real B
     ''' values are written into the signed file after the send (<c>DdfSectionBInsert</c>).
     ''' <see cref="DdfPdfMode.Final"/> is the whole document (the output before this slice).</para>
@@ -89,7 +105,7 @@ Public NotInheritable Class DdfXmlBuilder
                                          Optional mode As DdfPdfMode = DdfPdfMode.Final,
                                          Optional capturi As IEnumerable(Of String) = Nothing) As String
         Dim interim As Boolean = mode = DdfPdfMode.Interim
-        ' Slice 0078-04: the interim document carries a PLACEHOLDER section B (and program), ticked --
+        ' Slice 0078-04: the interim document carries a PLACEHOLDER section B (code and indicator only), ticked --
         ' with section B empty the form's «Valideaza» button never enables the signature field.
         If interim Then ctx = InterimContext(ctx)
         Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii, antet, sbRows), sbRows)
@@ -111,13 +127,14 @@ Public NotInheritable Class DdfXmlBuilder
     Public Const InterimCodAngajament As String = "___________"
     ''' <summary>Placeholder Indicator of the interim document.</summary>
     Public Const InterimIndicator As String = "___"
-    ''' <summary>Placeholder program code of the interim document, in section A AND section B.</summary>
-    Public Const InterimProgram As String = "0000000000"
-
-    ' The session globals with the placeholder program; the caller's context is not touched.
+    ' Slice 0114-27 (operator, 23.10.2026): the interim document used to carry a placeholder program («0000000000») in
+    ' sections A and B and in NOTAFD, so section A was SIGNED with a program that could be wrong (an 01A angajament must have
+    ' 0000002510) and section B copied it. The program is critical: the interim document now carries the REAL program of the
+    ' document (the caller's context, built by Context.ForDocument from the header). Only the code and the indicator of
+    ' section B stay placeholders.
     Private Shared Function InterimContext(ctx As Context) As Context
         Dim src As Context = If(ctx, New Context())
-        Return New Context() With {.NumeUnitate = src.NumeUnitate, .CodFiscal = src.CodFiscal, .CodProgram = InterimProgram}
+        Return New Context() With {.NumeUnitate = src.NumeUnitate, .CodFiscal = src.CodFiscal, .CodProgram = src.CodProgram}
     End Function
 
     ''' <summary>

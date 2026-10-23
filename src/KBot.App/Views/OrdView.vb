@@ -87,6 +87,9 @@ Public Class OrdView
 
     ' Codul angajamentului CERUT ultima dată — stale-guard (identic cu DDF/Plăți/Rezervări).
     Private _requestedCod As String
+    ''' <summary>Slice 0114-27: the distinct SSs of the selected angajament's indicators (the tree node's <c>Surse</c>); the
+    ''' ordonantare's program comes from them, not from the session.</summary>
+    Private _surse As String = String.Empty
 
     ' Ultimele date încărcate — păstrate ca ApplyTheme să reconstruiască arborele fără o nouă
     ' cerere de rețea, și ca un click în arbore să filtreze local.
@@ -480,6 +483,7 @@ Public Class OrdView
             End If
 
             _requestedCod = cod
+            _surse = If(info.Surse, String.Empty)
             ShowEmpty("Se încarcă ordonanțările…")
             ' Fire-and-forget deliberat (handler sincron al shell-ului): metoda își tratează
             ' singură TOATE erorile — vezi comentariul din DdfView/PlatiView.
@@ -777,7 +781,8 @@ Public Class OrdView
                 If Not EsteIncaTinta(cod, idordp) Then Return
 
                 ' 3. The XML (form1 + Attachments).
-                Dim ctx As OrdXmlBuilder.Context = OrdXmlBuilder.Context.FromSession(_session)
+                ' Slice 0114-27 (operator, 23.10.2026): the program is the angajament's, from its indicators' SS, not the session's.
+                Dim ctx As OrdXmlBuilder.Context = OrdXmlBuilder.Context.ForAngajament(_session, _surse)
                 Dim xml As String = OrdXmlBuilder.BuildComplete(ctx, draft, imagini)
 
                 ' 4. Unsigned -> derived artifact: the work area (TempPdf, wiped at start),
@@ -861,6 +866,7 @@ Public Class OrdView
     ' ── Stare goală / conținut ───────────────────────────────────────────────
     Private Sub ClearAll()
         _requestedCod = Nothing
+        _surse = String.Empty
         _ordonantari = Nothing
         _linii = Nothing
         _nodeLinii = Nothing
@@ -996,7 +1002,7 @@ Public Class OrdView
                 End Select
             End If
 
-            Return Await OrdPdfGenerator.GenereazaAsync(_apiClient, _session, ordonantare, cod).ConfigureAwait(True)
+            Return Await OrdPdfGenerator.GenereazaAsync(_apiClient, _session, ordonantare, cod, _surse).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.ObtainPrintPdfAsync", ex)
             Throw

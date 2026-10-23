@@ -1,6 +1,6 @@
 # SLICE-0122 - Break the dependency on Parteneri.IdPartener / CodPartener outside the Access migration (PLAN, 20.10.2026)
 
-**Status: ANALYSIS ONLY (20.10.2026). Nothing built, nothing run. Operator chose: the CodFiscal goes into CodPartener, no new column (see DECIDED). 0122-01 written 20.10.2026 (not run), see `SLICE-0122-01-codfiscal-in-codpartener.md`.**
+**Status: ANALYSIS ONLY (20.10.2026). Nothing built, nothing run. Operator chose: the CodFiscal goes into CodPartener, no new column (see DECIDED). 0122-01 and 0122-01b ran on one database (clean checks, 23.10.2026), see `SLICE-0122-01-codfiscal-in-codpartener.md`. 0122-02 and 0122-03 built 23.10.2026, not run, see `SLICE-0122-02-server-ddf-ord.md` and `SLICE-0122-03-cititori.md`.**
 
 ## Why
 Operator (20.10.2026): the same supplier exists as one `Parteneri` row per unit, and that "gets in the way terribly". Goal: outside the Access migration, a partner is identified ONLY by its normalized CodFiscal (same rule as slice 0121: letters and digits, upper case, leading «RO» before a digit dropped). Then `Parteneri` can later be reduced to one row per CodFiscal.
@@ -31,6 +31,9 @@ Server readers/writers of those columns:
 - `forexe/angajament_dump.py:107`: diagnostic dump, `Parteneri` by `CodPartener`.
 - `vercon/*` (`documents`, `receipts`, `receipt_choices`, `receipt_context`, `receipt_tree`, `receipt_distribution`, `invoices`, `report_query`, `stock_source`) + `reports/vercon/queries/{ledger,receipts}.sql` + `static/js/vercon/{docs,receipt-context}.js`: `VC_NIR.IdPartener` / `party_id` as the supplier key (the combo `receipt_choices` already groups by CodFiscal but stores `MIN(IdPartener)`).
 - Client: `DdfDraft`, `OrdDraft`, `ApiClient.vb` (DDF/ORD wire), `OrdBeneficiariPage` (lists `CodPartener` of the lines), `ParteneriForm` (the window itself: needs the row id, stays).
+- Added 23.10.2026 after a second inventory (Codex, checked against the code): the e-invoice -> Vercon flows also key by `IdPartener` after finding the partner by CodFiscal - `efactura/primite_vercon.py` (`_partener` returns the LOWEST `IdPartener` of the CUI, `_duplicate` searches `VC_NIR` by that one id, so a NIR saved under another unit's row is missed), `static/js/vercon/efactura-intake.js` (draft and NIR save), `routes/efactura/primite_vercon.py`; `utils/vercon_efactura.py` (`receipt_supplier_sql`) already reads `VC_NIR.CodPartener` when the column exists, then `Parteneri.CodFiscal` through the id, then `CodFiscalSursa`: a fallback chain that the filled `VC_NIR.CodPartener` makes unnecessary. The Access-side `VERCON/VRC.Migrator/VrcRunner.vb` resolves `Furnizori.IDF` -> CF -> `IdPartener` and writes `IdPartener` + `CodFiscalSursa` (Access migration: kept, but must also fill `VC_NIR.CodPartener`). **`IDF` is the supplier key of the OLD Vercon in Access, not `IDDF`.**
+- Sales e-invoices (`facturi_store.py`) use `EF_Clienti.IdClient`: a different subject (customers), not in 0122.
+- Working tree 23.10.2026: many `PYTHON/routes/vercon/*`, `efactura/primite_vercon.py` and `forexe/ddf_edit.py` carry uncommitted edits that are not from this slice. 0122-02 and 0122-05 re-read those files before touching them.
 
 NOT in scope (kept on purpose): the Access migration (`Migrator` `TableMaps`/`ResolutionMaps`, `routes/parteneri.py` X-Api-Key path, the `mig_*` snapshot tables and `proc_Mig_*` procedures in AVACONT_COMUN); `extrase.py` (`FX_DicPart`: CodFiscal -> CodPartener per unit, writes `FX_Extrase.CodPartener`) is not on the operator's list - it must be looked at before `Parteneri` is reduced to one row per CodFiscal.
 
@@ -59,3 +62,7 @@ Deployment order (operator, by hand): 0122-01 query -> server files + new client
 ## Open threads
 - Real data not seen: how many SA/SB/ORD_TBL rows are old vs new, how many point at a partner with no CodFiscal. The check queries of 0122-02 answer it.
 - Help: the visible change is small (the delete refusal message of «Parteneri»); recorded as `0000-NN` when 0122-04 is built.
+
+## Added 23.10.2026
+- 0122-08 (operator): hide (not delete) the `Parteneri` rows nothing uses, see `SLICE-0122-08-parteneri-nefolosite.md` (`sql/0122_08_interogare_unica.sql` + `_PREVIEW`). Written, not run.
+- Codex works on the Vercon side in parallel (`sql/VC_20261023_FURNIZORI_CF_*.sql`, `VC_FACTURI.CodPartener`, `utils/vercon_suppliers.py`): 0122-05 is NOT started here to avoid a second implementation.

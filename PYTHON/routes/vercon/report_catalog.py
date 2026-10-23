@@ -39,8 +39,8 @@ add('Centralizator_Conturi', 'accounts', group='Centralizatoare')
 add('Fisa_Produsului', 'product')
 add('Stoc_Final', 'final')
 add('LISTA_INVENTAR', 'inventory')
-add('Fisa_Magazie|FM1-u|FM2', 'statement', variant_required=True)
-add('Fisa_Magazie_BF', 'statement', variant_required=True)
+add('Fisa_Magazie|FM1-u|FM2', 'statement')
+add('Fisa_Magazie_BF', 'statement')
 add('OI_Balanta', 'balance', ('OI',), 'Obiecte de inventar', ledger='custody')
 add('MF_Balanta|MF_Balanta_Subinv', 'balance', ('MF',), 'Mijloace fixe', ledger='custody')
 add('OI_LISTA_INVENTAR|MF_LISTA_INVENTAR', 'inventory', ('OI', 'MF'),
@@ -139,6 +139,8 @@ def spec_of(name, gest_type):
         filters = ['category', 'variant', 'receiver', 'document']
     else:
         filters = ['category', 'variant', 'supplier', 'document']
+    if spec['id'] == 'OI_Balanta':
+        filters = ['category', 'variant']
     return {**spec, 'filters': filters,
             'mf_selection': selection_mode,
             'outgoing_filters': spec.get('family') in ('bc', 'br') or spec['kind'].startswith('consumption')}

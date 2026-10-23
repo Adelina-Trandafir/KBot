@@ -16,6 +16,8 @@ Public NotInheritable Class EFacturaVerconStare
     ''' <summary>The Administrator made a NIR from it.</summary>
     Public Const Preluata As String = "PRELUATA"
 
+    Public Const Partiala As String = "PARTIALA"
+
     ''' <summary>The Administrator sent it back, with a reason.</summary>
     Public Const Returnata As String = "RETURNATA"
 

@@ -115,8 +115,8 @@ Public Class SetariAutentificareView
 
     ''' <summary>
     ''' The «In timpul lucrului» section as the settings and the advanced options stand now.
-    ''' Without the advanced options the window cannot be switched off (the box is shown ticked and
-    ''' greyed out), the interval is 10..60 minutes, and the «Tine minte parola» switch is hidden.
+    ''' Without the advanced options the boxes are greyed out but keep the saved state (the window
+    ''' stays switched off if it was), the interval is 10..60 minutes, and the «Uita parola» button is hidden.
     ''' Called with <c>_suppress</c> raised.
     ''' </summary>
     Private Sub ArataReautentificarea()
@@ -126,13 +126,19 @@ Public Class SetariAutentificareView
         chkRelogin.Checked = s.ReloginPromptInEffect
         chkRelogin.Enabled = avansat
 
-        _minuteOferite = If(avansat, AppSettings.ReloginMinuteChoicesAdvanced, AppSettings.ReloginMinuteChoices)
+        ' The saved value always applies, so it is always in the list (even when the advanced options
+        ' that offered it are off now) -- the box never shows a value other than the one in force.
+        Dim curent As Integer = s.ReloginMinutesInEffect
+        Dim k_choices As New List(Of Integer)(If(avansat, AppSettings.ReloginMinuteChoicesAdvanced, AppSettings.ReloginMinuteChoices))
+        If Not k_choices.Contains(curent) Then
+            k_choices.Add(curent)
+            k_choices.Sort()
+        End If
+        _minuteOferite = k_choices
         cmbInterval.Items.Clear()
         For Each m As Integer In _minuteOferite
             cmbInterval.Items.Add(EtichetaMinute(m))
         Next
-        ' The closest offered value: a hand-edited file may hold one the list does not have.
-        Dim curent As Integer = s.ReloginMinutesInEffect
         Dim cel As Integer = 0
         For i As Integer = 1 To _minuteOferite.Count - 1
             If Math.Abs(_minuteOferite(i) - curent) < Math.Abs(_minuteOferite(cel) - curent) Then cel = i

@@ -44,6 +44,29 @@ Public NotInheritable Class DdfSectiuneaAReguli
         Return False
     End Function
 
+    ''' <summary>The SS whose program is <see cref="Program01A"/>; every other SS belongs to <see cref="ProgramImplicit"/>.</summary>
+    Public Const Ss01A As String = "01A"
+    Public Const Program01A As String = "0000002510"
+    Public Const ProgramImplicit As String = "0000000000"
+
+    ''' <summary>
+    ''' Slice 0114-27 (operator, 23.10.2026): the program a document starts with, from the SS of the angajament's indicators --
+    ''' <c>01A</c> gives <c>0000002510</c>, anything else (or no SS at all) gives <c>0000000000</c>. NEVER from the session: with
+    ''' «Ordonează după data creării» (how every operator works) the sector / source selector is hidden, so the session's SS says
+    ''' nothing about the angajament. Indicators on <c>01A</c> and on another SS together have no single program: empty, nothing guessed.
+    ''' The same rule as <c>program_pentru_surse</c> in <c>routes/forexe/ddf_program.py</c>.
+    ''' </summary>
+    ''' <param name="surseIndicatori">The distinct <c>FX_Indicatori.SS</c> joined by «;» or «,» (the tree node's <c>Surse</c>).</param>
+    Public Shared Function ProgramPentruSurse(surseIndicatori As String) As String
+        Dim k_unice As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        For Each k_ss As String In If(surseIndicatori, String.Empty).Split({";"c, ","c}, StringSplitOptions.RemoveEmptyEntries)
+            If k_ss.Trim().Length > 0 Then k_unice.Add(k_ss.Trim())
+        Next
+        Dim k_are01A As Boolean = k_unice.Contains(Ss01A)
+        If k_are01A AndAlso k_unice.Count > 1 Then Return String.Empty
+        Return If(k_are01A, Program01A, ProgramImplicit)
+    End Function
+
     ''' <summary>Are two SS codes the same? Trimmed, case ignored.</summary>
     Public Shared Function AcelasiSs(a As String, b As String) As Boolean
         Return String.Equals(If(a, String.Empty).Trim(), If(b, String.Empty).Trim(),

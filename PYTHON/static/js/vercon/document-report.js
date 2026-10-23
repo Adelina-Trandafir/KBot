@@ -3,6 +3,7 @@ import { pdfPreview } from './ui.js';
 import { snapshotPdf } from './snapshot-pdf.js';
 import { reportPeriodAction } from './report-period-action.js';
 import { voucherHeader } from './voucher-header.js';
+import { generateReport } from './report-request.js';
 
 const names = { nir: 'NIR', storno: 'NIR_Storno', bc: 'Bon_Consum', br: 'BonRetur', lista: 'ListaAlimente2015',
   bp: 'OI_Bon_BP', bt: 'OI_Bon_BT', bs: 'OI_Bon_BS' };
@@ -27,7 +28,7 @@ export async function documentReport({ api, selection, family, document, header 
       const year = ['OI', 'MF'].includes(selection.type) ? Number(document.header.Data.slice(0, 4)) : Number(selection.year);
       const params = new URLSearchParams({ ...selection, start: `${year}-01-01`, end: `${year}-12-31`, document: document.id });
       try {
-        const model = await api(`/api/vercon/reports/${encodeURIComponent(name)}/generate?${params}`);
+        const model = await generateReport(api, name, params);
         if (!current()) return null;
         const data = await api(`/api/vercon/reports/export/${model.snapshot}/pdf?${new URLSearchParams(selection)}`, { responseType: 'arrayBuffer' });
         return current() ? { data, title: model.title, filename: model.filename + '.pdf',

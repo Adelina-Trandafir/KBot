@@ -24,12 +24,12 @@ Partial Public NotInheritable Class VrcWriter
         ("VC_MigrationIssues", {"IssueId", "ImportId", "SourceId", "TableName", "SourceKey", "FieldName", "RuleCode", "Severity", "OriginalValue", "TargetValue", "Justification"}),
         ("VC_Numbering", {"SubunitId", "GestiuneId", "ExercitiuId", "Kind", "LastNumber"}),
         ("VC_Settings", {"SubunitId", "GestiuneId", "SettingKey", "IntValue"}),
-        ("VC_FACTURI", {"ID", "PARTENER_ID", "NUMAR", "DATA", "MONEDA", "TOTAL", "TOTAL_CONFIRMAT", "STARE", "MIGRATA", "LOCALA", "REUNITA_IN", "VERSION", "CREAT_DE"}),
+        ("VC_FACTURI", {"ID", "CodPartener", "NUMAR", "DATA", "MONEDA", "TOTAL", "TOTAL_CONFIRMAT", "STARE", "MIGRATA", "LOCALA", "REUNITA_IN", "VERSION", "CREAT_DE"}),
         ("VC_FACTURI_LINII", {"ID", "FACTURA_ID", "DENUMIRE", "UM", "CANT", "COTA", "VALOARE", "RECONSTRUITA"}),
         ("VC_NIR_FACTURI", {"ID", "FACTURA_ID", "SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "NIR_ID", "TOTAL_SURSA", "SOURCE_ID", "SOURCE_KEY"}),
         ("VC_FACTURI_REPARTIZARI", {"NIR_FACTURA_ID", "FACTURA_LINIE_ID", "SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "INTRARE_ID", "CANT", "VALOARE"}),
         ("VC_NIR_CALCULE", {"SUBUNIT_ID", "GESTIUNE_ID", "EXERCITIU_ID", "INTRARE_ID", "TOTAL_BRUT", "PRET_INITIAL", "ORIGINE_JSON"}),
-        ("Parteneri", {"IdPartener", "CodFiscal"})}
+        ("Parteneri", {"CodFiscal", "Ascuns"})}
 
     Private Sub New()
     End Sub
@@ -88,10 +88,12 @@ Partial Public NotInheritable Class VrcWriter
         End Try
     End Function
 
-    ''' <summary>Suppliers of the sources whose tax code matches no KBOT partner (warning only: those NIR are imported without a partner).</summary>
+    ''' <summary>Missing display records only: NIRs retain their normalized fiscal identity independently of Parteneri.</summary>
     Public Shared Function UnmatchedSuppliers(k_server As TargetServer, k_plan As VrcPlan) As List(Of String)
         Try
             Dim k_partners As New HashSet(Of String)(StringComparer.Ordinal)
+            ' Include hidden records ONLY in this existence set: never propose ANAF creation
+            ' or reactivation for an existing hidden partner. This is not a document link.
             Using k_cn = k_server.Open(k_plan.Dc)
                 Using k_cmd As New MySqlCommand("SELECT CodFiscal FROM Parteneri WHERE CodFiscal IS NOT NULL AND CodFiscal <> ''", k_cn)
                     Using k_reader = k_cmd.ExecuteReader()
@@ -102,16 +104,17 @@ Partial Public NotInheritable Class VrcWriter
                 End Using
             End Using
             For Each k_prepared In k_plan.NewPartners
-                k_partners.Add(k_prepared.TaxCode)   ' prepared from ANAF: added inside the transfer transaction
+                k_partners.Add(VrcConvert.NormalizeTaxCode(k_prepared.TaxCode))   ' prepared from ANAF: added inside the transfer transaction
             Next
             Dim k_missing As New SortedSet(Of String)(StringComparer.Ordinal)
             For Each k_source In k_plan.Sources
                 If k_source.Profile.Tables.All(Function(k_t) Not String.Equals(k_t.Name, "Furnizori", StringComparison.OrdinalIgnoreCase)) Then Continue For
                 Dim k_provider As String = String.Empty
                 Using k_cn = VrcAccess.OpenReadOnly(k_source.Source.Path, k_provider)
-                    Using k_cmd As New OleDbCommand("SELECT DISTINCT f.CF FROM Furnizori f INNER JOIN NIR n ON n.IDF = f.IDF", k_cn)
+                    Using k_cmd As New OleDbCommand("SELECT DISTINCT f.CF, n.NrFact FROM NIR n LEFT JOIN Furnizori f ON n.IDF = f.IDF", k_cn)
                         Using k_reader = k_cmd.ExecuteReader()
                             While k_reader.Read()
+                                If VrcConvert.IsOpeningStock(If(k_reader.IsDBNull(1), String.Empty, Convert.ToString(k_reader.GetValue(1), CultureInfo.InvariantCulture))) Then Continue While
                                 Dim k_code As String = If(k_reader.IsDBNull(0), String.Empty, VrcConvert.NormalizeTaxCode(Convert.ToString(k_reader.GetValue(0), CultureInfo.InvariantCulture)))
                                 If k_code.Length = 0 OrElse Not k_partners.Contains(k_code) Then k_missing.Add(If(k_code.Length = 0, "(fără cod fiscal)", k_code))
                             End While

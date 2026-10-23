@@ -6,19 +6,38 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.2.9 (23.10.2026)
+
+<!-- felii: 0081-13, 0097-05, 00EF-49, 0114-27, 0123-05, 0000-119, 0000-121, 0000-122 -->
+
+- DDF: programul vine din SS-ul indicatorilor (01A = 0000002510, altfel 0000000000); un angajament manual nou n-are program.
+- Fara program, DDF-ul nu se salveaza si nu se trimite; cele salvate gresit se repara cu «Repara programul» (ribbon).
+- In lista angajamentelor, programul gresit in DDF are un rosu nou; la trecerea mouse-ului vedeti ce nu se potriveste.
+- Angajament nou («+»): nu se poate cat timp exista angajamente cu rezervari, dar fara DDF; mesajul le numeste.
+- Editorul DDF, sectiunea A: grila are mereu un rand gol; «Sterge rand» e buton in grila; bugetul se completeaza singur.
+- «Clasificatie» e un arbore doar cu clasificatiile «Programului» ales.
+- «Trimite la Vercon»: «Cont pentru toate liniile» pune acelasi cont peste tot; se bifeaza un singur furnizor.
+- Filele VERCON si ADECHIT apar doar daca unitatea are date.
+- O setare salvata se aplica si fara optiuni avansate; bifa de reafisare a autentificarii nu se mai intoarce pe bifat.
+- Ajutor: subiecte noi despre programul DDF si contul pentru toate liniile.
+
 ## 1.1.2.7 (21.10.2026)
+<!-- release: utc=2026-10-23T08:09:17Z -->
 
-<!-- felii: 00EF-45, 00EF-46, 00EF-47, 00EF-48, 0114-24, 0114-25, 0000-116, 0000-117, 0000-118 -->
+<!-- felii: 00EF-45, 00EF-46, 00EF-47, 00EF-48, 0114-24, 0114-25, 0114-26, 0000-116, 0000-117, 0000-118, 0000-119, 0000-120, 0123-01, 0123-02, 0123-03, 0123-04 -->
 
-- Pagina noua «Trimite la Vercon» (ribbon, fila E-Factura): trimiteti facturile primite, ca Administratorul sa le preia.
-- Arbore cu bife: luna > furnizor > factura sau furnizor > factura; bifa pe luna sau furnizor bifeaza toate facturile lui.
-- In dreapta, produsele facturilor bifate; la fiecare linie puteti propune «Cont Vercon», dintr-o lista pe gestiuni.
-- Lista de conturi are grupe care se strang si se desfac; cautarea gaseste un cont si dupa numele gestiunii.
-- Fiecare factura arata starea: trimisa, preluata sau returnata (cu motivul); una returnata se poate trimite din nou.
-- Factura preluata intr-un NIR se bifeaza singura si nu se mai poate schimba.
+- Fila noua «VERCON» in ribbon, cu «Rapoarte» si «Trimite la Vercon» (mutat aici din fila E-Factura).
+- VERCON «Rapoarte»: alegeti subunitatea, gestiunea, anul, perioada (an sau luna) si datele; apoi PDF sau Excel.
+- Fila noua «ADECHIT» cu «Rapoarte»: situatie lunara, de plata, registru casa, raport banca, fisa cont, anulate.
+- Rapoartele ADECHIT si VERCON se vad ca PDF in pagina si se pot salva ca Excel, cu toate coloanele.
+- «Trimite la Vercon»: arbore cu bife luna > furnizor > factura; in dreapta produsele, cu «Cont Vercon» propus.
+- Lista de conturi are grupe pe gestiuni care se strang si se desfac; cautarea gaseste contul si dupa gestiune.
+- Fiecare factura arata starea: trimisa, preluata (nu se mai schimba) sau returnata, cu motiv; se poate retrimite.
 - Eroarea la descarcarea facturii de la ANAF spune acum ce «id descarcare» s-a folosit.
-- «Repara...» la Rezervari: fereastra se deschide si pentru lunile cu revizii; refuzul apare abia la «Repara».
-- Ajutor: subiecte noi despre trimiterea la Vercon, plus un tutorial.
+- Rezervari: «Repara...» se deschide si pentru lunile cu revizii; o rezervare legata gresit se elibereaza (+).
+- In pagina FOREXE nu incepeti o rezervare noua cat timp alta asteapta revizia; mesajul arata zilele.
+- Lista angajamentelor: biletul de pe rand e un tabel cu litere mai mari si sta pana mutati mouse-ul.
+- Ajutor: subiecte noi despre rapoartele VERCON si ADECHIT, trimiterea la Vercon si rezervarile legate gresit.
 
 ## 1.1.2.6 (21.10.2026)
 <!-- release: utc=2026-10-21T09:08:28Z -->

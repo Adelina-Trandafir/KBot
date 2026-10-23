@@ -112,9 +112,10 @@ from flask import request, g, current_app
 from routes.auth.guard import require_session
 from utils.database import get_kbot_connection, get_kbot_comun_connection
 
-from . import forexe_bp
+from . import forexe_bp, partner_links
 from .budget_on_day import BudgetByDay
 from .ddf_parteneri import ParteneriInvalizi, citeste_parteneri, sincronizeaza_parteneri
+from .ddf_program import program_pentru_angajament
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
 from .rezervari_legaturi import cheie_rezervare
 
@@ -632,7 +633,9 @@ def post_ddf_genereaza():
                 "salarii": _bool(angajament.get("Salarii")),
                 "data_creare": _iso_zi(angajament.get("DataCreare")),
                 "dc": dc,
-                "program": PROGRAME[0],
+                # Slice 0114-27 (operator, 23.10.2026): from the SS of the indicators (01A -> 0000002510,
+                # otherwise 0000000000), never the fixed first item and never the session's.
+                "program": program_pentru_angajament(cursor, cod),
                 "data_def": _iso_zi(angajament.get("DataDefinitivare")),
                 "incarcat": True,
                 "preluat": True,
@@ -955,8 +958,9 @@ def _linie_a_din_rand(r: dict) -> dict:
         "id_unitate": _int0(r.get("IdUnitate")),
         "element_fund": _txt(r.get("ElementFund")),
         "parametrii_fund": _txt(r.get("ParametriiFund")),
-        "cod_partener": _txt(r.get("CodPartener")),
-        "id_partener": _int0(r.get("IdPartener")),
+        "cod_partener": partner_links.normalize_cui(r.get("CodPartener")),
+        # Slice 0122-02: the supplier is the CodFiscal in "cod_partener"; the id is no longer read (kept on the wire as 0).
+        "id_partener": 0,
         "part_ind": _bool(r.get("PartInd")),
         "val_prec": _num(r.get("ValPrec")),
         "val_cur": _num(r.get("ValCur")),
@@ -979,8 +983,9 @@ def _linie_b_din_rand(r: dict) -> dict:
         "cod_ssi": _txt(r.get("CodSSI")),
         "ss": _txt(r.get("SS")),
         "id_unitate": _int0(r.get("IdUnitate")),
-        "cod_partener": _txt(r.get("CodPartener")),
-        "id_partener": _int0(r.get("IdPartener")),
+        "cod_partener": partner_links.normalize_cui(r.get("CodPartener")),
+        # Slice 0122-02: the supplier is the CodFiscal in "cod_partener"; the id is no longer read (kept on the wire as 0).
+        "id_partener": 0,
         "ca_anterior": _num(r.get("CA_Anterior")),
         "inf1": _num(r.get("Inf1")),
         "ca_curent": _num(r.get("CA_Curent")),
@@ -1125,7 +1130,7 @@ def get_ddf_draft(iddf, idrev):
 # server yet. They come back with the tree picker, not before.
 _SQL_CLSF_PE_ANGAJAMENT = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B JOIN FX_Indicatori i ON i.IdClsf = B.IdClsf WHERE i.CodAngajament = %s AND B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B WHERE B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE C.IDClsf IN (SELECT CC.IDClsf FROM Clasificatii CC "
     "                      JOIN FX_Indicatori I ON CC.IDClsf = I.IdClsf "
@@ -1135,7 +1140,7 @@ _SQL_CLSF_PE_ANGAJAMENT = (
 
 _SQL_CLSF_ACELASI_TITLU = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B JOIN FX_Indicatori i ON i.IdClsf = B.IdClsf WHERE i.CodAngajament = %s AND B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 3 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B WHERE B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 3 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE C.Titlu IN (SELECT CC.Titlu FROM Clasificatii CC "
     "                     JOIN FX_Indicatori I ON CC.IDClsf = I.IdClsf "
@@ -1153,7 +1158,7 @@ _SQL_CLSF_ACELASI_TITLU = (
 # (`left(Articol, 2)`), so the client passes it as a parameter and no substring is computed.
 _SQL_CLSF_MANUAL = (
     "SELECT C.IDClsf, C.Clsf, C.Denumire, C.SS, C.Titlu, C.IdUnitate, "
-    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B JOIN FX_Indicatori i ON i.IdClsf = B.IdClsf WHERE i.CodAngajament = %s AND B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
+    "       (SELECT COALESCE(SUM(sa.ValCur), 0) FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf)            AS ValPrec,        (SELECT COALESCE(SUM(r.Valoare), 0) FROM FX_Receptii r          WHERE r.CodAngajament = %s AND r.IdClsf = C.IDClsf)              AS ValRec,        (SELECT sa.CodIndicator FROM FX_DDF_REV_SA sa          WHERE sa.CodAngajament = %s AND sa.IdClsf = C.IDClsf LIMIT 1)    AS CodIndicator,        (SELECT COALESCE(MAX(B.CreditBugetar), 0) FROM FX_Indicatori_Buget B WHERE B.IdClsf = C.IDClsf)              AS Buget,        CONCAT(C.SS, C.ClsfSal) AS CodSSI, 1 AS SortOrd "
     "  FROM Clasificatii C "
     " WHERE (%s IS NULL OR C.Titlu = %s) "
     " ORDER BY C.Clsf"
@@ -1209,13 +1214,14 @@ def get_ddf_clasificatii():
         cursor = conn.cursor(dictionary=True)
 
         if manual:
-            # Four `cod`: ValPrec, ValRec, CodIndicator, Buget -- then the Titlu pair.
-            cursor.execute(_SQL_CLSF_MANUAL, (cod, cod, cod, cod, titlu, titlu))
+            # Three `cod`: ValPrec, ValRec, CodIndicator -- then the Titlu pair. Buget takes none:
+            # it is per classification, so a new angajament (no indicators yet) still has it.
+            cursor.execute(_SQL_CLSF_MANUAL, (cod, cod, cod, titlu, titlu))
             randuri = [_clsf_din_rand(r) for r in cursor.fetchall()]
         else:
-            cursor.execute(_SQL_CLSF_PE_ANGAJAMENT, (cod, cod, cod, cod, cod))
+            cursor.execute(_SQL_CLSF_PE_ANGAJAMENT, (cod, cod, cod, cod))
             grup1 = [_clsf_din_rand(r) for r in cursor.fetchall()]
-            cursor.execute(_SQL_CLSF_ACELASI_TITLU, (cod, cod, cod, cod, cod, cod))
+            cursor.execute(_SQL_CLSF_ACELASI_TITLU, (cod, cod, cod, cod, cod))
             grup3 = [_clsf_din_rand(r) for r in cursor.fetchall()]
 
             randuri = list(grup1)
@@ -1698,6 +1704,10 @@ def _valideaza_graf(cursor, sarcina: dict) -> dict:
         motive.append("Obiectul documentului este obligatoriu.")
     if not _txt(antet.get("comp")).strip():
         motive.append("Compartimentul lipsește.")
+    # Slice 0114-27 (operator, 23.10.2026): the program is never defaulted -- the operator picks it, or it comes from the
+    # indicators; a save without one is refused.
+    if not _txt(antet.get("program")).strip():
+        motive.append("Programul lipsește: alegeți programul documentului.")
     if _zi_ceruta(antet.get("data_creare"), "data_creare") is None:
         motive.append("Data creării lipsește.")
     if _int_or_none(antet.get("cual")) in (None, 0):
@@ -2083,8 +2093,9 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
         clsf = clasificatii.get(_int0(a.get("id_clsf")), {})
         valori = (
             iddf, idrev, cod, _txt(a.get("cod_indicator")),
-            _txt(a.get("cod_partener")) or None,
-            _int0(a.get("id_partener")) or None,
+            # Slice 0122-02: CodPartener holds the normalized CodFiscal of the supplier, IdPartener is never written.
+            partner_links.normalize_cui(a.get("cod_partener")) or None,
+            None,
             _int0(a.get("id_clsf")),
             _txt(clsf.get("Clsf")),
             _txt(a.get("element_fund")),
@@ -2112,8 +2123,8 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
         clsf = clasificatii.get(_int0(b.get("id_clsf")), {})
         valori = (
             iddf, idrev, cod, _txt(b.get("cod_indicator")),
-            _txt(b.get("cod_partener")) or None,
-            _int0(b.get("id_partener")) or None,
+            partner_links.normalize_cui(b.get("cod_partener")) or None,
+            None,
             _int0(b.get("id_clsf")),
             # CodSSI is resolved here, never taken from the client.
             _txt(clsf.get("CodSSI")),

@@ -17,7 +17,7 @@ la cele 11 rapoarte din imaginea furnizată, în această ordine:
 Fiecare raport OI reutilizează selecția ierarhică MF, inclusiv încărcarea
 la deschiderea ramurii, bifarea ramurilor și „Selectează TOATE”. Pentru
 bonuri se folosește primitor–bon–produs; pentru PRODUSE, cont–produs;
-pentru PRIMITORI, cont–primitor–produs. Ramurile independente „Conturi
+pentru PRIMITORI, primitor–cont–produs. Ramurile independente „Conturi
 în folosință” și „Deținători” nu mai apar la aceste rapoarte. Protocolul
 intern existent `mf_selection` transmite identitățile complete până la
 generarea snapshotului comun PDF/Excel. Schimbarea raportului reîncarcă

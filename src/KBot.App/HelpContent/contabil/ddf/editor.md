@@ -13,7 +13,7 @@ Editorul DDF se deschide la un angajament nou, la «Adaugă rezervare» și la �
 cu bara lui de titlu, mai mică decât spațiul de lucru, în mijlocul ferestrei principale. Cât e deschis nu poți lucra în
 fereastra principală.
 
-<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu «Adaugă rând» și «Șterge rândul» lângă «Salvează documentul» | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-16 12:00 | why: 0113-01: editorul e din nou o fereastră cu bara lui de titlu și cu «Renunță», mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
+<!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu rândul gol de la sfârșitul tabelului și butonul ✕ pe fiecare rând | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-23 12:00 | why: 0081-13: Secțiunea A nu mai are «Adaugă rând» / «Șterge rândul»; rândurile se adaugă în rândul gol al tabelului și se șterg cu ✕ -->
 
 ## Antetul
 <!-- slice: 0081-09, 0081-10, 0094-02, 0094-03 -->
@@ -32,29 +32,18 @@ fereastra principală.
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
-<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120 -->
+<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120, 0081-13 -->
 
-Cât e deschisă pagina **Secțiunea A**, butoanele ei, **Adaugă rând** și **Șterge rândul**, stau pe **rândul de jos** al
-editorului, lângă **Salvează documentul**; pe celelalte pagini rândul de jos are doar butoanele editorului.
+Tabelul din **Secțiunea A** se completează direct în el. La sfârșitul tabelului este mereu **un rând gol**: aici începi un rând nou.
 
+- **Rând nou**: în rândul gol, deschizi lista din celula **Clasificație** și alegi clasificația. Rândul se adaugă singur, iar dedesubt apare un nou rând gol. Cât timp antetul unui angajament nou nu e complet (programul, compartimentul, obiectul și, dacă e cazul, partenerul), celula rămâne blocată, iar sub tabel scrie ce lipsește.
+- **Lista de clasificații** arată doar clasificațiile **programului** ales în antet, grupate pe sursă; fiecare grup se poate strânge sau desfășura. Clasificațiile deja folosite în angajament apar primele, iar cele deja puse în Secțiunea A nu mai apar. Poți și să tastezi cifrele clasificației, ca să o găsești mai repede.
+- **Ce se completează singur** după alegere: bugetul, recepțiile, disponibilul (buget − recepții), valoarea precedentă și valoarea rămasă se văd imediat în rând. **Element fundamentare** (obligatoriu) primește denumirea clasificației, dar îl poți rescrie. Codul indicatorului este al clasificației, dacă angajamentul îl are deja; altfel se face unul nou, «!» + trei caractere.
+- **Valoarea curentă**: după alegerea clasificației, cursorul trece direct pe ea. Este obligatorie și diferită de 0. Pe rândurile aduse automat din rezervări, **bugetul** este cel pe care îl avea clasificația la data reviziei, din «Clasificații bugetare» (totalul versiunii în vigoare plus rectificările), nu cel de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar de azi și un mesaj te anunță. Pe un rând adăugat de tine, bugetul rămâne creditul bugetar de azi.
+- **Altă clasificație** pe un rând existent: deschizi lista din celula **Clasificație** a rândului și alegi alta.
+- **✕** de la capătul rândului îl scoate din tabel, după o confirmare; rândul pereche din Secțiunea B dispare odată cu el.
 
-- **Adaugă rând** deschide fereastra rândului nou:
-  - **Sursă / sector** al rândului;
-  - **Clasificația**: tastezi doar cifrele, punctele se pun singure. Clasificațiile deja folosite
-    în angajament apar primele; cele deja puse în Secțiunea A nu mai apar;
-  - **Element fundamentare** (obligatoriu): se completează cu denumirea clasificației, dar îl
-    poți rescrie;
-  - **Codul indicatorului**: al clasificației, dacă angajamentul îl are deja; altfel unul nou,
-    «!» + trei caractere;
-  - **Valorile**: tastezi doar **valoarea curentă**, obligatorie și diferită de 0. Se văd și
-    disponibilul (buget − recepții) și valoarea rămasă. Pe rândurile aduse automat din rezervări,
-    **bugetul** este cel pe care îl avea clasificația la data reviziei, din «Clasificații
-    bugetare» (totalul versiunii în vigoare plus rectificările), nu cel de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar
-    de azi și un mesaj te anunță. Pe un rând adăugat de tine cu «Adaugă rând», bugetul rămâne
-    creditul bugetar de azi.
-- **Șterge rândul** scoate linia; rândul pereche din Secțiunea B dispare odată cu ea.
-
-<!-- capture: ddf-rand-nou | caption: Fereastra «Rând nou în secțiunea A» | prepare: Apăsați «Adaugă rând» în Secțiunea A și alegeți o clasificație. -->
+Cât e deschisă pagina **Secțiunea A**, rândul de jos al editorului arată, lângă **Salvează documentul**, câte clasificații mai sunt de ales sau ce lipsește din antet.
 
 ## Secțiunea B, Descriere, Fișiere
 <!-- slice: 0081-02, 0000-30 -->

@@ -69,7 +69,7 @@ Public Class VrcPartnersForm
             _codes.Clear()
             _codes.AddRange(k_missing.Where(Function(k_c) Not k_c.StartsWith("(", StringComparison.Ordinal)))
             FillGrid()
-            lblStare.Text = $"{_codes.Count} furnizori fără partener; {PreparedCount} pregătiți pentru transfer." & If(k_noCode > 0, " Cei fără cod fiscal nu se pot căuta la ANAF; rămân fără partener.", String.Empty) &
+            lblStare.Text = $"{_codes.Count} furnizori fără înregistrare în Parteneri; {PreparedCount} pregătiți pentru transfer. Codul fiscal disponibil se păstrează pe documente." & If(k_noCode > 0, " Referințele fără cod fiscal nu se pot căuta la ANAF; documentele lor vor avea CodPartener NULL.", String.Empty) &
                             If(_units.Count = 0, " Baza nu are nicio unitate în Unitati: nu se pot pregăti parteneri.", String.Empty)
         Finally
             SetBusy(False)

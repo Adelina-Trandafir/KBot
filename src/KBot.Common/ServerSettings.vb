@@ -32,6 +32,10 @@ Public NotInheritable Class ServerSettings
     Public Const KeyMultithreadMax As String = "Multithread_Max"
     ''' <summary>Slice 0104: 1 = the unit also runs the Access application, 0 (or no row) = it does not.</summary>
     Public Const KeyAccess As String = "Access"
+    ''' <summary>Slice 0123-05: COMPUTED by the server (not a row of Setari): 1 = the unit database holds data in the AD_ tables (ADECHIT).</summary>
+    Public Const KeyAdechitDate As String = "AdechitDate"
+    ''' <summary>Slice 0123-05: COMPUTED by the server: 1 = the unit database holds data in the VC_ tables (VERCON).</summary>
+    Public Const KeyVerconDate As String = "VerconDate"
 
     ' Replaced as a whole on every Apply / Clear, so a reader never sees half a refresh.
     Private Shared _rows As IReadOnlyDictionary(Of String, ServerSettingRow) =
@@ -67,6 +71,20 @@ Public NotInheritable Class ServerSettings
         End Get
     End Property
 
+    ''' <summary>Slice 0123-05: the unit has data in the AD_ tables; the ADECHIT tab of the ribbon shows only then (no row = off).</summary>
+    Public Shared ReadOnly Property AdechitHasData As Boolean
+        Get
+            Return GetInt(KeyAdechitDate, 0) <> 0
+        End Get
+    End Property
+
+    ''' <summary>Slice 0123-05: the unit has data in the VC_ tables; the VERCON tab of the ribbon shows only then (no row = off).</summary>
+    Public Shared ReadOnly Property VerconHasData As Boolean
+        Get
+            Return GetInt(KeyVerconDate, 0) <> 0
+        End Get
+    End Property
+
     ''' <summary>The whole number stored under <paramref name="key"/>, else <paramref name="fallback"/>.</summary>
     Public Shared Function GetInt(key As String, fallback As Integer) As Integer
         Dim raw As String = RawValue(key)
@@ -97,6 +115,8 @@ Public NotInheritable Class ServerSettings
         Dim wasAllowed As Boolean = MultithreadAllowed
         Dim wasMax As Integer = MultithreadMax
         Dim wasAccess As Boolean = AccessEnabled
+        Dim wasAdechit As Boolean = AdechitHasData
+        Dim wasVercon As Boolean = VerconHasData
         Dim fresh As New Dictionary(Of String, ServerSettingRow)(StringComparer.OrdinalIgnoreCase)
         If rows IsNot Nothing Then
             For Each r As ServerSettingRow In rows
@@ -104,7 +124,8 @@ Public NotInheritable Class ServerSettings
             Next
         End If
         _rows = fresh
-        If wasAllowed <> MultithreadAllowed OrElse wasMax <> MultithreadMax OrElse wasAccess <> AccessEnabled Then
+        If wasAllowed <> MultithreadAllowed OrElse wasMax <> MultithreadMax OrElse wasAccess <> AccessEnabled OrElse
+           wasAdechit <> AdechitHasData OrElse wasVercon <> VerconHasData Then
             RaiseEvent Changed(Nothing, EventArgs.Empty)
         End If
     End Sub

@@ -84,12 +84,13 @@ Dacă un document nu poate fi tipărit sau salvat, la sfârșit primești un mes
 Numărul crește și când tipărești documentul din pagina **Document**.
 
 ## Documentul și semnarea
-<!-- slice: 0078, 0041, 0000-14, 0078-08, 0099 -->
+<!-- slice: 0078, 0041, 0000-14, 0078-08, 0099, 0114-27, 0000-121 -->
 
 Pe pagina **Document**:
 
 - Dacă ordonanțarea nu are încă PDF, apasă **«Generează»**: K-BOT face documentul din datele
-  salvate.
+  salvate. **Programul** din document se alege după sursa indicatorilor angajamentului (sursa 01A: 0000002510, orice
+  altă sursă: 0000000000), nu după sursa aleasă în fereastră.
 - Documentul se semnează în Adobe, chiar în fereastra K-BOT. După fiecare semnătură, K-BOT îl
   urcă pe server.
 - Cât Adobe încă deschide documentul, arborele din stânga nu primește alt rând — așteaptă câteva

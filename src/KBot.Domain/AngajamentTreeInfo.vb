@@ -125,6 +125,8 @@ Public NotInheritable Class AngajamentTreeInfo
     ' Slice 0114-26: the reservations linked to a revision that does not cover them (so they never get their own
     ' «+»). Empty = none. Freed from the Rezervari view, with the same repair button.
     Public Property LegaturiGresite As IReadOnlyList(Of RezervareLegataGresit) = Array.Empty(Of RezervareLegataGresit)()
+    ' Slice 0114-27: the DDF's program is not the one of its indicators' SS (01A -> 0000002510, otherwise 0000000000); Nothing = right.
+    Public Property ProgramGresit As DdfProgramGresit
 
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)

@@ -155,8 +155,10 @@ Partial Public Class KbotForm
                                                     AddressOf ExecutaComandaOrd)
                 ' Slice 0080-02: the angajament's bank statements. The download is the ribbon button (no tree icon).
                 Case "extrase" : Return New ExtraseView(_apiClient, Function(op) WithReauth(Of ExtraseInfo)(op))
+                ' Slice 0114-27: plus the ribbon button «Repară programul» (the DDF holds a program that is not the one of its
+                ' indicators' SS).
                 Case "ddf" : Return New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session,
-                                                AddressOf ExecutaComandaDdf)
+                                                AddressOf ExecutaComandaDdf, AddressOf ReparaProgramDdf)
                 Case "ord" : Return New OrdView(_apiClient, Function(op) WithReauth(Of OrdInfo)(op), _session,
                                                 AddressOf ExecutaComandaOrd)
                 ' Slice 0088: the CAB correction notes whose correction row went to this angajament.

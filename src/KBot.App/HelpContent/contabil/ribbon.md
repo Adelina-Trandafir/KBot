@@ -7,9 +7,9 @@ parent: contabil
 screens: AvacontMain.ribbon
 keywords: ribbon, banda, file, fila, grup, comenzi, meniu, MENIU, unde e meniul, unde a disparut meniul, strange ribbonul, ascunde banda, inchide macheta, iesire, adaugare angajamente, nomenclatoare, configurare, administrare, unitate
 ---
-<!-- slice: 0114, 0114-02, 0114-04, 0114-05, 0000-85, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, 0123-02 -->
+<!-- slice: 0114, 0114-02, 0114-04, 0114-05, 0000-85, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, 0123-02, 0123-05 -->
 Sus, sub bara de titlu, fereastra principală are **ribbonul**: o bandă cu **file** — **Configurări**, **Angajamente**,
-**E-Factura**, **Extrase**, **VERCON**, **ADECHIT**. La pornire e aleasă fila **Angajamente**. Fiecare filă are butoane strânse în **grupuri**, cu numele grupului dedesubt.
+**E-Factura**, **Extrase**, **VERCON**, **ADECHIT** (ultimele două apar **doar când unitatea are date** în VERCON, respectiv în ADECHIT). La pornire e aleasă fila **Angajamente**. Fiecare filă are butoane strânse în **grupuri**, cu numele grupului dedesubt.
 Ribbonul a luat locul butonului **MENIU**: tot ce era în meniu e acum aici. Ținând mouse-ul pe un buton vezi o
 etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul conectat.
 

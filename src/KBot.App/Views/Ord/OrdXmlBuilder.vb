@@ -53,6 +53,23 @@ Public NotInheritable Class OrdXmlBuilder
                 .CodFiscal = If(s.CF, String.Empty),
                 .CodProgram = If(s.CodProgram, String.Empty)}
         End Function
+
+        ''' <summary>
+        ''' Slice 0114-27 (operator, 23.10.2026): the context of a REAL ordonantare. The unit's name and tax code come from the
+        ''' session; the program comes from the angajament's own indicators (<paramref name="k_surse"/> = its distinct
+        ''' <c>FX_Indicatori.SS</c>: 01A -> 0000002510, otherwise 0000000000), never from the session -- with «Ordonează după data
+        ''' creării» the sector / source selector is hidden, so the session's program says nothing about the angajament. Indicators
+        ''' that span programs have no single one: throws, nothing is guessed.
+        ''' </summary>
+        Public Shared Function ForAngajament(s As Global.KBot.Common.SessionContext, k_surse As String) As Context
+            Dim k_program As String = DdfSectiuneaAReguli.ProgramPentruSurse(k_surse)
+            If k_program.Length = 0 Then
+                Throw New InvalidOperationException($"The indicators of the angajament span several programs (sources: {k_surse}): the ordonantare cannot be produced.")
+            End If
+            Dim k_context As Context = FromSession(s)
+            k_context.CodProgram = k_program
+            Return k_context
+        End Function
     End Class
 
     ' -- Complete document ----------------------------------------------------

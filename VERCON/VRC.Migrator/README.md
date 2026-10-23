@@ -122,7 +122,7 @@ x64, ca restul migratoarelor (furnizorul ACE este doar pe 64 de biți pe aceste 
 Nerulat pe baze reale. Pașii:
 
 1. După **Citește bifatele** apare planul: pe fiecare fișier alegeți **gestiunea** (denumire), **tipul** (MATERIALE, ALIMENTE, OI, MF) și **anul** exercițiului; **subunitatea** se alege **pe fiecare fișier** (coloana «Subunitate», propusă din UNIT.NumeUnitate al fișierului; o puteți modifica), deci un singur transfer poate duce mai multe subunități, fiecare cu propriile Alimente / Materiale / OI / MF (ZEC se alege tot pe subunitate); apoi serverul. Propunerile vin din nume și steaguri, nu sunt aprobări. **Verifică planul** arată motivele concrete de blocare; **Exportă planul** salvează JSON (fără parole).
-2. **Testează** verifică baza DC (din UNIT.DC), tabelele VC_* cu coloanele scrise, InnoDB și utf8mb3_general_ci, subunitatea nouă și furnizorii fără partener KBOT. Orice modificare a planului cere retestare.
+2. **Testează** verifică baza DC (din UNIT.DC), tabelele VC_* cu coloanele scrise, InnoDB și utf8mb3_general_ci, subunitatea nouă și codurile fiscale lipsă sau fără înregistrare în Parteneri. Codurile disponibile se păstrează direct pe documente, independent de existența rândului în Parteneri. Orice modificare a planului cere retestare.
    **Parteneri ANAF…** (opțional, după avertismentul cu furnizori fără partener): pentru fiecare cod fiscal lipsă se interoghează ANAF (v9, câte 100 de coduri pe cerere), operatorul bifează per furnizor sursa-sector (una sau mai multe; click pe titlul coloanei bifează tot) și «Pregătește pentru transfer» reține partenerii în plan. Nu se scrie nimic în DC din fereastră: **«Migrează» îi inserează în `Parteneri` pe aceeași tranzacție cu transferul**, deci dacă transferul eșuează sau este oprit nu rămâne niciunul. Un cod fiscal = un singur partener în DC; `IdUnitate` = cea mai mică unitate dintre SS bifate, `CodPartener` = următorul număr liber (minim 3 cifre) din acel SS, `Tip` = 1, `Provenienta` = `MIGRARE_VERCON` (coloană nouă în `Parteneri`: rulați întâi `sql/Parteneri_Provenienta.sql` pe AVACONT_SURSA și sincronizați DC-urile). Lista pregătită se pierde la alegerea altui folder / citirea altor fișiere. Raportul de migrare are secțiunea «Parteneri din ANAF».
 3. **Migrează** face tot transferul într-o tranzacție: nimic nu e vizibil înainte de COMMIT. **Oprește** anulează înainte de COMMIT. După COMMIT subunitatea nu mai poate fi importată (VC_Imports unic pe subunitate); nu există reimport.
 4. Dacă răspunsul la COMMIT se pierde, starea este REZULTAT_NECUNOSCUT: folosiți **Diagnostic** (doar citire); nu repetați transferul.
@@ -230,3 +230,45 @@ Referință: ../REGISTRU_OI_MF.md. Schimbarea cere recompilarea migratorului
 pentru importurile viitoare. Aplicația Python folosește deja aceeași
 moștenire la citirea datelor existente, fără UPDATE automat. Nu s-au rulat
 build, teste, importuri sau SQL pentru această revizie.
+
+## Furnizori exclusiv prin cod fiscal — 23.10.2026
+
+În sursele versiunii 0.3.12.0, identitatea furnizorului este codul fiscal normalizat,
+scris în VC_NIR.CodPartener și copiat identic în VC_FACTURI.CodPartener pentru
+fragmentul provizoriu al facturii. Se păstrează literele și zerourile inițiale;
+se elimină separatorii, se trece la majuscule și se elimină prefixul RO numai
+înaintea unei cifre 0–9, ca în VERCON online. IDF este citit exclusiv pentru
+urmărirea referinței locale NIR → Furnizori din Access și extragerea câmpului CF.
+Nu se rezolvă și nu se scrie IdPartener/PARTENER_ID; istoricul deja migrat nu
+este actualizat de acest import. CodFiscalSursa păstrează textul sursă conform
+regulii existente. Codul fiscal funcțional nu se trunchiază.
+
+Un cod fiscal disponibil se importă chiar dacă Parteneri nu conține un rând
+cu acel CF. Lipsa CF, inclusiv un IDF fără furnizor în sursă, produce avertizare
+X04 și CodPartener NULL în NIR/factură; asocierea la eFactura cere ulterior CF
+explicit. Un CF normalizat mai lung de 50 de caractere este blocaj X07.
+Regula existentă de identificare a stocului inițial rămâne; pentru acesta
+CodPartener este NULL și nu se generează fragment de factură.
+
+Partenerii existenți, inclusiv Ascuns=1, nu sunt modificați sau reactivați.
+Codurile lor sunt citite numai pentru a evita propunerea sau crearea unui
+partener duplicat prin ANAF. Conform clarificării utilizatorului, partenerii
+ascunși nu au documente; nu se introduc filtre de ștergere a documentelor.
+Crearea opțională din ANAF păstrează regulile existente pentru unitate și
+codul local Parteneri.CodPartener; acel cod local nu leagă documentele VERCON.
+CPV-ul produsului continuă să fie importat din Access prin maparea existentă;
+regulile de asociere cu eFactura sunt executate ulterior de aplicația online.
+
+Prerechizit manual: sql/VC_20261023_FURNIZORI_CF_STRUCTURA.sql pe bazele folosite.
+Controlul comun din Testează și dinaintea tranzacției cere CodPartener VARCHAR
+cu minimum 50 de caractere, NULL permis și scriibil, în ambele antete, precum
+și NULL permis pentru coloanele istorice ID dacă sunt prezente. Lipsa coloanelor
+oprește importul; nu se adaugă DDL automat. Datele deja importate se portează
+separat prin sql/VC_20261023_FURNIZORI_CF_KBOTADMIN_V3.sql, nu prin reimport.
+Regula planului: VC05-SUPPLIERS-CF-2026-10-23; planurile trebuie retestate de
+operator cu executabilul recompilat. Tranzacția, interdicția reimportului,
+remapările documentelor, valorile, cantitățile și reconcilierea rămân existente.
+
+Stare: modificare de surse, fără compilare, teste, importuri, acces MariaDB sau
+executare SQL. Executabilul din _VrcMigrator nu a fost regenerat.
+

@@ -71,6 +71,7 @@ Public Class AvacontMain
         AddHandler k_shell.ActiveViewChanged, AddressOf Shell_ActiveViewChanged
         AddHandler k_shell.lblOperator.TextChanged, AddressOf Operator_TextChanged
         AddHandler AppSettings.Changed, AddressOf AppSettings_Changed
+        AddHandler ServerSettings.Changed, AddressOf ServerSettings_Changed
         HookTutorialSignals()
 
         ' The opening page. The shell is loaded behind it (OnShown) and reached from the ribbon.
@@ -118,6 +119,7 @@ Public Class AvacontMain
             _home.Show()
             ShowHome()
             SyncRibbon(Me, EventArgs.Empty)
+            ApplyAppTabs()
             Activate()
         Catch ex As Exception
             ' UI boundary (Shown): log and swallow.
@@ -178,7 +180,7 @@ Public Class AvacontMain
             Select Case e.Key
                 Case "sumar_parteneri"
                     _kbot.OpenSumarPartners()
-                Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere"
+                Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program"
                     _kbot.RunViewRibbonButton(e.Key)
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
@@ -328,6 +330,46 @@ Public Class AvacontMain
         ribbon.RightText = _kbot.lblOperator.Text
     End Sub
 
+    ' Slice 0123-05: the VERCON and ADECHIT tabs show only while the open unit holds data in the VC_ / AD_ tables (what the server
+    ' computed for it, read after a login and after a change of unit; no answer = no data = the tabs stay out of sight).
+    ' ServerSettings.Changed is static and may fire on any thread: same shape as AppSettings_Changed.
+    Private Sub ServerSettings_Changed(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not IsHandleCreated Then Return
+            If InvokeRequired Then
+                BeginInvoke(New Action(AddressOf ApplyAppTabs))
+            Else
+                ApplyAppTabs()
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.ServerSettings_Changed", ex)
+        End Try
+    End Sub
+
+    Private Sub ApplyAppTabs()
+        Try
+            If IsDisposed Then Return
+            Dim k_changed As Boolean
+            For Each k_tab As KBotRibbonTab In ribbon.Tabs
+                Dim k_show As Boolean
+                If String.Equals(k_tab.Text, "VERCON", StringComparison.Ordinal) Then
+                    k_show = ServerSettings.VerconHasData
+                ElseIf String.Equals(k_tab.Text, "ADECHIT", StringComparison.Ordinal) Then
+                    k_show = ServerSettings.AdechitHasData
+                Else
+                    Continue For
+                End If
+                If k_tab.Visible <> k_show Then
+                    k_tab.Visible = k_show
+                    k_changed = True
+                End If
+            Next
+            If k_changed Then ribbon.InvalidateLayout()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.ApplyAppTabs", ex)
+        End Try
+    End Sub
+
     Private Sub AppSettings_Changed(sender As Object, e As EventArgs)
         Try
             If Not IsHandleCreated OrElse IsDisposed Then Return
@@ -377,7 +419,7 @@ Public Class AvacontMain
 
     ' Every button of the view group, with the view that owns it (the keys are the ones written in the designer).
     Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
-        "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere"}
+        "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program"}
 
     Private Sub UpdateViewGroup()
         Dim k_onShell As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell
@@ -427,6 +469,7 @@ Public Class AvacontMain
 
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         RemoveHandler AppSettings.Changed, AddressOf AppSettings_Changed   ' static event: must end with the window
+        RemoveHandler ServerSettings.Changed, AddressOf ServerSettings_Changed
         TearDownSidebar()
         If ReferenceEquals(Current, Me) Then Current = Nothing
         MyBase.OnFormClosed(e)

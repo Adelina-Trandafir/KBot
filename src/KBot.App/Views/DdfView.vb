@@ -39,7 +39,11 @@ Imports KBot.Theming
 '''     face culoarea rădăcinii să depindă de ordinea de parcurgere. Accidental, nu intenționat.
 ''' </summary>
 Public Class DdfView
-    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway
+    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway, IViewRibbon
+
+    ' Slice 0114-27: the view's button in the ribbon's view group (key written in the designer of AvacontMain).
+    Private Const KEY_REPARA_PROGRAM As String = "ddf_repara_program"
+    Private Shared ReadOnly _ribbonKeys As String() = {KEY_REPARA_PROGRAM}
 
     ' Cheile paginilor sub-navigării — o singură definiție, folosită la creare și la comutare.
     '
@@ -145,13 +149,25 @@ Public Class DdfView
     ''' </summary>
     Private ReadOnly _executaComanda As Action(Of DdfComanda)
 
+    ''' <summary>
+    ''' Slice 0114-27 (operator, 23.10.2026): puts the program of the angajament's document right -- the ribbon button «Repară
+    ''' programul». Runs in the shell (dry run, confirmation, write, tree reload) for the same reason as
+    ''' <see cref="_executaComanda"/>. Nothing = the host does not offer it; the button is then hidden.
+    ''' </summary>
+    Private ReadOnly _reparaProgram As Action(Of String)
+
+    ''' <summary>The tree node of the angajament shown; its <c>ProgramGresit</c> decides whether the ribbon button exists.</summary>
+    Private _info As AngajamentTreeInfo
+
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of DdfInfo)), Task(Of DdfInfo)),
                    Optional session As SessionContext = Nothing,
-                   Optional executaComanda As Action(Of DdfComanda) = Nothing)
+                   Optional executaComanda As Action(Of DdfComanda) = Nothing,
+                   Optional reparaProgram As Action(Of String) = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
+        _reparaProgram = reparaProgram
         ' Slice 0078-08: no new row while a document is still opening in Adobe (AdobeOpenGate).
         AdobeOpenGate.LockWhileOpening(tree)
         _apiClient = apiClient
@@ -386,8 +402,54 @@ Public Class DdfView
         End Try
     End Sub
 
+    ' ── The button of the view in the ribbon (slice 0114-27) ─────────────────────────────────
+
+    ''' <summary>Raised when what the ribbon button shows has changed (the window asks again).</summary>
+    Public Event RibbonStateChanged As EventHandler Implements IViewRibbon.RibbonStateChanged
+
+    Public ReadOnly Property RibbonCaption As String Implements IViewRibbon.RibbonCaption
+        Get
+            Return "DDF"
+        End Get
+    End Property
+
+    Public ReadOnly Property RibbonKeys As IReadOnlyList(Of String) Implements IViewRibbon.RibbonKeys
+        Get
+            Return _ribbonKeys
+        End Get
+    End Property
+
+    ''' <summary>«Repară programul» exists only while the document's program is not the one of its indicators' SS (the same
+    ''' fact that paints the row of the main tree in its own red) and the host runs the repair.</summary>
+    Public Function RibbonButtonState(k_key As String) As ViewButtonState Implements IViewRibbon.RibbonButtonState
+        If Not String.Equals(k_key, KEY_REPARA_PROGRAM, StringComparison.Ordinal) Then
+            Throw New ArgumentException($"Buton de ribbon necunoscut pentru DDF: '{k_key}'.", NameOf(k_key))
+        End If
+        Return If(_reparaProgram IsNot Nothing AndAlso _info IsNot Nothing AndAlso _info.ProgramGresit IsNot Nothing,
+                  ViewButtonState.Enabled, ViewButtonState.Hidden)
+    End Function
+
+    Public Function RibbonButtonText(k_key As String) As String Implements IViewRibbon.RibbonButtonText
+        Return String.Empty
+    End Function
+
+    ''' <summary>A press on the button. UI boundary: logs and swallows.</summary>
+    Public Sub RunRibbonButton(k_key As String) Implements IViewRibbon.RunRibbonButton
+        Try
+            If Not String.Equals(k_key, KEY_REPARA_PROGRAM, StringComparison.Ordinal) Then
+                Throw New ArgumentException($"Buton de ribbon necunoscut pentru DDF: '{k_key}'.", NameOf(k_key))
+            End If
+            If _reparaProgram Is Nothing OrElse _info Is Nothing OrElse String.IsNullOrWhiteSpace(_info.CodAngajament) Then Return
+            _reparaProgram(_info.CodAngajament)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.RunRibbonButton", ex)
+        End Try
+    End Sub
+
     Public Sub SetContext(info As AngajamentTreeInfo) Implements IAngajamentView.SetContext
         Try
+            _info = info
+            RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)
             Dim cod As String = info?.CodAngajament
             If String.IsNullOrWhiteSpace(cod) Then
                 ClearAll()
@@ -772,8 +834,8 @@ Public Class DdfView
             Dim capturi As List(Of String) = Await DdfPdfGenerator.CapturileAsync(att, AddressOf CitesteCapturaAsync).ConfigureAwait(True)
             Dim antet As DdfAntet = If(data.AntetDeLucru(revizie.Iddf), _antet)
             Dim r As DdfSectionBInsert.Rezultat = Await DdfSectionBInsert.InsertAsync(
-                signedPath, DdfXmlBuilder.Context.FromSession(_session), antet, revizie, sb, capturi,
-                If(_session Is Nothing, String.Empty, _session.CodProgram)).ConfigureAwait(True)
+                signedPath, DdfXmlBuilder.Context.ForDocument(_session, antet), antet, revizie, sb, capturi,
+                If(antet?.Program, String.Empty)).ConfigureAwait(True)
             _inserariB(idrev) = New KeyValuePair(Of String, String)(revizie.PdfSha256, r.PdfPath)
 
             Dim text As String =
@@ -782,6 +844,13 @@ Public Class DdfView
                 "Semnați Secțiunea B: la semnare documentul se salvează pe server. Fără semnătură nu se salvează nimic."
             If r.CapturesInDocument < r.Captures Then
                 text &= vbCrLf & vbCrLf & $"ATENȚIE: din {r.Captures} capturi FOREXE, în document au intrat {r.CapturesInDocument}."
+            End If
+            ' Slice 0114-27: the program is critical. A document signed on an older interim carried a placeholder program in
+            ' section A; section B has the right one, so the two disagree and the operator must hear it.
+            If r.ProgramSectiuneaA.Length > 0 AndAlso Not DdfSectiuneaAReguli.AcelasiProgram(r.ProgramSectiuneaA, r.ProgramSectiuneaB) Then
+                text &= vbCrLf & vbCrLf & $"ATENȚIE: Secțiunea A semnată are programul {r.ProgramSectiuneaA}, iar Secțiunea B are " &
+                    $"programul {r.ProgramSectiuneaB} (cel al documentului). Programul din Secțiunea A nu se mai poate schimba pe un " &
+                    "document semnat; spuneți-mi dacă trebuie refăcută revizia."
             End If
             KBotMessage.Show(FindForm(), text, "Secțiunea B", MessageBoxButtons.OK, MessageBoxIcon.Information)
             OperatorLog.Write("DdfView.SectiuneaBInseratAsync", "Secțiunea B",

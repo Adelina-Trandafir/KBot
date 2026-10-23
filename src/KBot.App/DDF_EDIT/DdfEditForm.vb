@@ -240,7 +240,10 @@ Public Class DdfEditForm
                     cmbProgram.Items.Add(_draft.Program)
                     cmbProgram.SelectedIndex = cmbProgram.Items.Count - 1
                 Else
-                    cmbProgram.SelectedIndex = 0
+                    ' Slice 0114-27 (operator, 23.10.2026): nothing is chosen for the operator. An empty program stays empty
+                    ' (the old «first item» default is what put wrong programs in saved documents); the header reports it as
+                    ' missing and the save is refused until the operator picks one.
+                    cmbProgram.SelectedIndex = -1
                 End If
             End If
 
@@ -521,7 +524,7 @@ Public Class DdfEditForm
             End Try
 
             ' Slice 0081-09: the program -> SS map. Its failure is not hidden: section A cannot
-            ' choose a line's SS without it, and says so when «Adauga rand» is pressed.
+            ' pick a line's classification without it, and the status line says so.
             Try
                 Await AduSurseleProgramelorAsync().ConfigureAwait(True)
             Catch ex As Exception
@@ -768,7 +771,7 @@ Public Class DdfEditForm
             If previous IsNot Nothing AndAlso Not ReferenceEquals(previous, page) Then
                 DirectCast(previous, Control).Visible = False
             End If
-            ' «Adauga rand» / «Sterge randul» of section A live on the bottom row, beside «Salveaza», while that page shows.
+            ' The status line of section A lives on the bottom row, beside «Salveaza», while that page shows.
             Dim leaving As DdfEditSectiuneaAPage = TryCast(previous, DdfEditSectiuneaAPage)
             If leaving IsNot Nothing AndAlso Not ReferenceEquals(previous, page) Then leaving.DetachActions()
             Dim entering As DdfEditSectiuneaAPage = TryCast(page, DdfEditSectiuneaAPage)

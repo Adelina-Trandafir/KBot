@@ -372,7 +372,7 @@ Public NotInheritable Class VrcRunResult
             If k_first.RuleCode = "X04" Then
                 Dim k_codes = k_group.Select(Function(k_i) If(String.Equals(k_i.OriginalValue, "NULL", StringComparison.OrdinalIgnoreCase), "(fără cod fiscal)", k_i.OriginalValue)).
                                       Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-                k_sb.AppendLine($"- {k_first.TableName}: {k_group.Count():N0} {If(k_group.Count() = 1, "furnizor", "furnizori")} fără partener KBOT cu același cod fiscal ({String.Join(", ", k_codes.Take(10))}{If(k_codes.Count > 10, ", …", String.Empty)}). Documentele lor se transferă fără partener; codul fiscal rămâne scris pe document, ca să-i puteți lega mai târziu.")
+                k_sb.AppendLine($"- {k_first.TableName}: {k_group.Count():N0} referințe de furnizor fără cod fiscal utilizabil ({String.Join(", ", k_codes.Take(10))}{If(k_codes.Count > 10, ", …", String.Empty)}). Documentele se transferă cu CodPartener NULL; asocierea la eFactura cere completarea explicită a codului fiscal.")
                 Continue For
             End If
             If k_first.RuleCode = "N13" Then
