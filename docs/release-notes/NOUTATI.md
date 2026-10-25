@@ -6,7 +6,8 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
-## 1.1.2.9 (23.10.2026)
+## 1.1.3.0 (24.10.2026)
+<!-- release: utc=2026-10-24T08:25:26Z -->
 
 <!-- felii: 0081-13, 0097-05, 00EF-49, 0114-27, 0123-05, 0000-119, 0000-121, 0000-122 -->
 

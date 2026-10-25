@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>AVC.Migrator</RootNamespace>
+    <AssemblyName>AVC.Migrator</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- x64, NOT AnyCPU: the ACE provider is 64-bit only on this estate (same reason as KBot.Migrator). -->
+    <PlatformTarget>x64</PlatformTarget>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
+    <StartupObject>AVC.Migrator.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+    <Import Include="KBot.Theming" />
+  </ItemGroup>
+
+  <!-- Reads the AVACONT Access file (baza<year>.accdb) and writes the TZ_ tables of the unit database in MariaDB.
+       Separate executable, on the model of ADE.Migrator / VRC.Migrator: KBot.Migrator is NOT changed. Run order of
+       the estate: KBot.Migrator, then E-Factura, then AVC.Migrator. AccessProvider / AccessSchema / TargetServer /
+       SqlDumpWriter are reused from KBot.Migrator (public classes) rather than copied. -->
+  <ItemGroup>
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
+    <PackageReference Include="MySqlConnector" Version="2.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
+    <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
+    <ProjectReference Include="..\KBot.Migrator\KBot.Migrator.vbproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="My Project\Resources.Designer.vb">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="My Project\Resources.resx">
+      <CustomToolNamespace>My.Resources</CustomToolNamespace>
+      <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.vb</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

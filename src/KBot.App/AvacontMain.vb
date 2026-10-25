@@ -182,12 +182,18 @@ Public Class AvacontMain
                     _kbot.OpenSumarPartners()
                 Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program"
                     _kbot.RunViewRibbonButton(e.Key)
+                Case "plan_cont_solduri", "plan_cont_excel"
+                    ' Slice AV01-06: a button of the group of the PAGE on screen (the «Plan de conturi» window), not of a shell view.
+                    TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
                 Case "pagina_inchide"
                     CloseCurrent()
                 Case "istoric_versiuni"
                     _kbot.OpenRegistered(KbotForm.MachetaIstoricVersiuni, AddressOf _kbot.DeschideIstoricVersiuni)
+                Case "plan_cont"
+                    ' Slice AV01-04: the chart of accounts of a subunit (KbotForm.PlanCont.vb).
+                    _kbot.OpenRegistered(KbotForm.MachetaPlanCont, AddressOf _kbot.DeschidePlanCont)
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
@@ -419,12 +425,14 @@ Public Class AvacontMain
 
     ' Every button of the view group, with the view that owns it (the keys are the ones written in the designer).
     Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
-        "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program"}
+        "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program",
+        "plan_cont_solduri", "plan_cont_excel"}
 
     Private Sub UpdateViewGroup()
         Dim k_onShell As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell
         Dim k_sumar As Boolean = k_onShell AndAlso String.Equals(_kbot.ActiveViewKey, "sumar", StringComparison.Ordinal)
-        Dim k_view As IViewRibbon = If(k_onShell, _kbot.ActiveViewRibbon, Nothing)
+        ' A page that offers buttons (slice AV01-06: «Plan de conturi») speaks for itself; on the shell it is the view in front.
+        Dim k_view As IViewRibbon = If(k_onShell, _kbot.ActiveViewRibbon, TryCast(CurrentPage, IViewRibbon))
         Dim k_changed As Boolean
         For Each k_key As String In ViewGroupKeys
             Dim k_button As KBotRibbonButton = ribbon.FindButton(k_key)
@@ -455,6 +463,16 @@ Public Class AvacontMain
             k_changed = True
         End If
         If k_changed Then ribbon.InvalidateLayout()
+    End Sub
+
+    ' UI boundary (event of a page that has ribbon buttons): log and swallow. Only the page on screen owns the group.
+    Private Sub Page_RibbonStateChanged(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not ReferenceEquals(sender, CurrentPage) Then Return
+            UpdateViewGroup()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.Page_RibbonStateChanged", ex)
+        End Try
     End Sub
 
     ' UI boundary (event of the shell): log and swallow.
@@ -548,6 +566,8 @@ Public Class AvacontMain
         _pageBars(k_page) = k_bar
         AddHandler k_page.FormClosed, AddressOf Page_FormClosed
         AddHandler k_page.TextChanged, AddressOf PageTitleChanged
+        Dim k_ribbonPage As IViewRibbon = TryCast(k_page, IViewRibbon)
+        If k_ribbonPage IsNot Nothing Then AddHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
         If k_bar IsNot Nothing Then AddHandler k_bar.TextChanged, AddressOf PageTitleChanged
         _pages.Add(k_page)
         _page = k_page
@@ -836,6 +856,8 @@ Public Class AvacontMain
             If k_closed Is Nothing Then Return
             RemoveHandler k_closed.FormClosed, AddressOf Page_FormClosed
             RemoveHandler k_closed.TextChanged, AddressOf PageTitleChanged
+            Dim k_ribbonPage As IViewRibbon = TryCast(k_closed, IViewRibbon)
+            If k_ribbonPage IsNot Nothing Then RemoveHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
             Dim k_bar As KBotCaptionBar = Nothing
             If _pageBars.TryGetValue(k_closed, k_bar) Then
                 If k_bar IsNot Nothing Then RemoveHandler k_bar.TextChanged, AddressOf PageTitleChanged

@@ -23,6 +23,28 @@ Partial Public Class KbotForm
         Return capBar.GetSelectorKey(KBotCaptionBar.SelectorSector)
     End Function
 
+    ' The key of the «Toate» choice of the source selector: the same «*» the tree request sends for every source.
+    Private Const SS_TOATE As String = ApiClient.TreeAllSources
+
+    Private Function SsToate() As Boolean
+        Return String.Equals(SsAles(), SS_TOATE, StringComparison.Ordinal)
+    End Function
+
+    ''' <summary>
+    ''' Moves the source selector to «Toate» without raising its event (it stays visible) and tells the session,
+    ''' so the windows that follow the period hear it. The caller reloads the tree. No source choices = nothing to do.
+    ''' </summary>
+    Private Sub PuneSursaPeToate()
+        Try
+            If String.IsNullOrEmpty(SsAles()) Then Return
+            capBar.SetSelectorKey(KBotCaptionBar.SelectorSector, SS_TOATE)
+            ApplySelectedPeriod(persist:=False)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.PuneSursaPeToate", ex)
+            Throw
+        End Try
+    End Sub
+
     ''' <summary>
     ''' Fetches the year / SS / CodProgram catalogue of the current database and fills the
     ''' caption bar's selectors. The default year is the highest; the SS starts from LastSS (when
@@ -78,14 +100,25 @@ Partial Public Class KbotForm
 
             If ssList.Count = 0 Then
                 capBar.ClearSelector(KBotCaptionBar.SelectorSector)
-            Else
-                Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
-                capBar.SetSelectorItems(KBotCaptionBar.SelectorSector,
-                    ssList.Select(Function(s) New KeyValuePair(Of String, String)(s, s)),
-                    ssList(If(idx >= 0, idx, 0)))
+                Return
             End If
 
-            ApplySelectedPeriod(persist:=False)   ' the value already remembered is not saved again
+            Dim idx As Integer = If(String.IsNullOrEmpty(_session.LastSS), -1, ssList.IndexOf(_session.LastSS))
+            Dim k_concrete As String = ssList(If(idx >= 0, idx, 0))
+            ' «Toate» stays «Toate» across a year change; on the first read it is the choice when the tree is
+            ' sorted by date (that sort always showed every source). Otherwise LastSS / the first source.
+            Dim k_current As String = SsAles()
+            Dim k_toate As Boolean = String.Equals(k_current, SS_TOATE, StringComparison.Ordinal) OrElse
+                                     (String.IsNullOrEmpty(k_current) AndAlso AppSettings.Current.TreeSortIsDate)
+            Dim k_items As New List(Of KeyValuePair(Of String, String)) From {
+                New KeyValuePair(Of String, String)(SS_TOATE, "Toate")}
+            k_items.AddRange(ssList.Select(Function(k_ss) New KeyValuePair(Of String, String)(k_ss, k_ss)))
+            capBar.SetSelectorItems(KBotCaptionBar.SelectorSector, k_items, If(k_toate, SS_TOATE, k_concrete))
+
+            ' The session always holds a CONCRETE source and program of the year (the robot and the documents need
+            ' one); «Toate» only lifts the filter. Not saved as LastSS: the value already remembered stays.
+            Dim k_row As PeriodInfo = _periods.FirstOrDefault(Function(p) p.AN = an AndAlso p.SS = k_concrete)
+            If k_row IsNot Nothing Then _session.SetPeriod(an, k_concrete, k_row.CodProgram, k_toate)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.LoadSsForSelectedYear", ex)
             Throw
@@ -99,6 +132,14 @@ Partial Public Class KbotForm
             Dim ss As String = SsAles()
             If _periods Is Nothing OrElse Not anAles.HasValue OrElse String.IsNullOrEmpty(ss) Then Return
             Dim an As Integer = anAles.Value
+            If SsToate() Then
+                ' «Toate»: the concrete source and program stay (LoadSsForSelectedYear fixed them for this year);
+                ' the session only learns the list is not narrowed. Nothing is remembered as LastSS.
+                If Not String.IsNullOrEmpty(_session.SectorSursa) Then
+                    _session.SetPeriod(an, _session.SectorSursa, _session.CodProgram, k_toateSursele:=True)
+                End If
+                Return
+            End If
             Dim row As PeriodInfo = _periods.FirstOrDefault(Function(p) p.AN = an AndAlso p.SS = ss)
             If row Is Nothing Then Return
 
@@ -139,6 +180,9 @@ Partial Public Class KbotForm
                     capBar.SetSelectorKey(KBotCaptionBar.SelectorSector, e.Key)
                     ApplySelectedPeriod(persist:=True)
                     Await LoadTreeAsync()
+                Case KBotCaptionBar.SelectorSubunit
+                    ' Slice AV01-06: the «Plan de conturi» window moves the selector itself once the pick went through.
+                    OnSubunitPicked(e.Key)
             End Select
         Catch ex As Exception
             ' UI boundary: a handler cannot re-throw (it would bring the process down) -- log and swallow.

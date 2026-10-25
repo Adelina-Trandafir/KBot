@@ -25,12 +25,20 @@ Partial Class ParteneriForm
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn7 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn8 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn9 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         chkFaraActivitate = New CheckBox()
         txtCod = New KBotTextField()
         txtCodFiscal = New KBotTextField()
         txtAdresa = New KBotTextField()
         gridCoduri = New KBotDataView()
+        gridSolduri = New KBotDataView()
         btnSterge = New Button()
         btnRenunta = New Button()
         btnAdauga = New Button()
@@ -54,10 +62,12 @@ Partial Class ParteneriForm
         lblAdresa = New Label()
         chkAscuns = New CheckBox()
         lblCoduri = New Label()
+        lblSolduri = New Label()
         tlySubsol = New KBotTableLayoutPanel()
         btnIesire = New Button()
         lblStare = New Label()
         CType(gridCoduri, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridSolduri, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
@@ -203,6 +213,119 @@ Partial Class ParteneriForm
         gridCoduri.TabIndex = 16
         ' tips.SetToolTipHeader(gridCoduri, "Coduri angajament")
         ' tips.SetToolTipText(gridCoduri, "Codurile aparțin codului fiscal al furnizorului." & vbLf & "«Cod ang.» și «Cod ind.» alcătuiesc indicatorul; clasificația se arată din FOREXE, doar pentru citire." & vbLf & "«+» din subsol adaugă un rând; «✕» îl șterge. Totul se scrie la «Salvare».")
+        ' 
+        ' lblSolduri
+        ' 
+        tlyDetalii.SetColumnSpan(lblSolduri, 2)
+        lblSolduri.Dock = DockStyle.Fill
+        lblSolduri.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
+        lblSolduri.Location = New Point(0, 0)
+        lblSolduri.Margin = New Padding(0)
+        lblSolduri.Name = "lblSolduri"
+        lblSolduri.Size = New Size(819, 30)
+        lblSolduri.TabIndex = 17
+        lblSolduri.Text = "Solduri inițiale"
+        lblSolduri.TextAlign = ContentAlignment.BottomLeft
+        ' 
+        ' gridSolduri
+        ' 
+        gridSolduri.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridSolduri.BackColor = SystemColors.Window
+        gridSolduri.ColumnFillMode = KBotFillMode.FirstColumn
+        KBotDataColumn8.AggregateFormatString = Nothing
+        KBotDataColumn8.ColumnType = KBotColumnType.Combo
+        KBotDataColumn8.FormatString = Nothing
+        KBotDataColumn8.HeaderText = "Cont"
+        KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn8.Key = "cont"
+        KBotDataColumn8.OptionGroup = Nothing
+        KBotDataColumn8.Width = 300
+        KBotDataColumn9.AggregateFormatString = Nothing
+        KBotDataColumn9.DecimalPlaces = 2
+        KBotDataColumn9.Format = KBotFormat.Standard
+        KBotDataColumn9.FormatString = Nothing
+        KBotDataColumn9.HeaderText = "S.I. Debitor"
+        KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn9.Key = "sid"
+        KBotDataColumn9.OptionGroup = Nothing
+        KBotDataColumn9.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn9.ValueType = KBotValueType.Number
+        KBotDataColumn9.Width = 110
+        KBotDataColumn10.AggregateFormatString = Nothing
+        KBotDataColumn10.DecimalPlaces = 2
+        KBotDataColumn10.Format = KBotFormat.Standard
+        KBotDataColumn10.FormatString = Nothing
+        KBotDataColumn10.HeaderText = "S.I. Creditor"
+        KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn10.Key = "sic"
+        KBotDataColumn10.OptionGroup = Nothing
+        KBotDataColumn10.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn10.ValueType = KBotValueType.Number
+        KBotDataColumn10.Width = 110
+        KBotDataColumn11.AggregateFormatString = Nothing
+        KBotDataColumn11.DecimalPlaces = 2
+        KBotDataColumn11.Format = KBotFormat.Standard
+        KBotDataColumn11.FormatString = Nothing
+        KBotDataColumn11.HeaderText = "R.P. Debitor"
+        KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn11.Key = "rpd"
+        KBotDataColumn11.OptionGroup = Nothing
+        KBotDataColumn11.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn11.ValueType = KBotValueType.Number
+        KBotDataColumn11.Width = 110
+        KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.DecimalPlaces = 2
+        KBotDataColumn12.Format = KBotFormat.Standard
+        KBotDataColumn12.FormatString = Nothing
+        KBotDataColumn12.HeaderText = "R.P. Creditor"
+        KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn12.Key = "rpc"
+        KBotDataColumn12.OptionGroup = Nothing
+        KBotDataColumn12.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn12.ValueType = KBotValueType.Number
+        KBotDataColumn12.Width = 110
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.ColumnType = KBotColumnType.Button
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = ""
+        KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn13.Key = "sterge"
+        KBotDataColumn13.MinWidth = 34
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.Resizable = False
+        KBotDataColumn13.Width = 34
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "Id cont"
+        KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn14.Key = "id_cont"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.ReadOnly = True
+        KBotDataColumn14.Visible = KBotColumnVisibility.Hidden
+        gridSolduri.Columns.Add(KBotDataColumn8)
+        gridSolduri.Columns.Add(KBotDataColumn9)
+        gridSolduri.Columns.Add(KBotDataColumn10)
+        gridSolduri.Columns.Add(KBotDataColumn11)
+        gridSolduri.Columns.Add(KBotDataColumn12)
+        gridSolduri.Columns.Add(KBotDataColumn13)
+        gridSolduri.Columns.Add(KBotDataColumn14)
+        tlyDetalii.SetColumnSpan(gridSolduri, 2)
+        gridSolduri.Dock = DockStyle.Fill
+        gridSolduri.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
+        gridSolduri.FooterBackColor = SystemColors.Control
+        gridSolduri.FooterHeight = 24
+        gridSolduri.FooterRightIcon = My.Resources.Resources.plus_green
+        gridSolduri.FooterRightIconTooltip = "Adaugă un sold inițial" & vbLf & "Alegeți contul, apoi tastați sumele direct în tabel."
+        gridSolduri.FooterSeparatorColor = SystemColors.ActiveBorder
+        gridSolduri.FooterVisible = True
+        gridSolduri.HeaderHeight = 24
+        gridSolduri.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridSolduri.Location = New Point(0, 0)
+        gridSolduri.Margin = New Padding(0, 6, 0, 0)
+        gridSolduri.Name = "gridSolduri"
+        gridSolduri.RowHeight = 24
+        gridSolduri.Size = New Size(819, 150)
+        gridSolduri.TabIndex = 18
         ' 
         ' btnSterge
         ' 
@@ -394,11 +517,13 @@ Partial Class ParteneriForm
         tlyDetalii.Controls.Add(chkAscuns, 1, 6)
         tlyDetalii.Controls.Add(lblCoduri, 0, 7)
         tlyDetalii.Controls.Add(gridCoduri, 0, 8)
+        tlyDetalii.Controls.Add(lblSolduri, 0, 9)
+        tlyDetalii.Controls.Add(gridSolduri, 0, 10)
         tlyDetalii.Dock = DockStyle.Fill
         tlyDetalii.Location = New Point(593, 0)
         tlyDetalii.Margin = New Padding(0)
         tlyDetalii.Name = "tlyDetalii"
-        tlyDetalii.RowCount = 9
+        tlyDetalii.RowCount = 11
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 8F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 8F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 8F))
@@ -407,7 +532,9 @@ Partial Class ParteneriForm
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 8F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
         tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
-        tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 52F))
+        tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 26F))
+        tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
+        tlyDetalii.RowStyles.Add(New RowStyle(SizeType.Percent, 26F))
         tlyDetalii.Size = New Size(819, 674)
         tlyDetalii.TabIndex = 1
         ' 
@@ -601,6 +728,7 @@ Partial Class ParteneriForm
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Adăugare / editare parteneri"
         CType(gridCoduri, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridSolduri, ComponentModel.ISupportInitialize).EndInit()
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
@@ -639,6 +767,8 @@ Partial Class ParteneriForm
     Friend WithEvents chkAscuns As CheckBox
     Friend WithEvents lblCoduri As Label
     Friend WithEvents gridCoduri As KBotDataView
+    Friend WithEvents lblSolduri As Label
+    Friend WithEvents gridSolduri As KBotDataView
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
     Friend WithEvents btnIesire As Button
     Friend WithEvents lblStare As Label

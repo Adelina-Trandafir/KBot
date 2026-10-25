@@ -33,6 +33,13 @@ Public Class ParteneriForm
     Private Const ColId As String = "id"
     Private Const ColIdLeg As String = "id_leg"
     Private Const DeleteCaption As String = "✕"
+    ' Slice AV01-08: the balances grid (gridSolduri).
+    Private Const ColSCont As String = "cont"
+    Private Const ColSSid As String = "sid"
+    Private Const ColSSic As String = "sic"
+    Private Const ColSRpd As String = "rpd"
+    Private Const ColSRpc As String = "rpc"
+    Private Const ColSIdCont As String = "id_cont"
 
     Private ReadOnly _api As INomenclatoareApi
     Private ReadOnly _gate As ReauthGate
@@ -50,6 +57,17 @@ Public Class ParteneriForm
     Private _cfChecked As String = String.Empty
     ' The bank name last derived from the IBAN: while «Banca» still holds it, a new IBAN replaces it.
     Private _autoBanca As String = String.Empty
+    ' Slice AV01-08: the opening balances of the partner (the accounts API is Nothing = no balances section).
+    Private ReadOnly _conturiApi As IConturiApi
+    Private ReadOnly _session As SessionContext
+    Private _conturi As List(Of ContDisponibil)
+    Private _severalChapters As Boolean
+    Private ReadOnly _contByLabel As New Dictionary(Of String, ContDisponibil)(StringComparer.Ordinal)
+    Private _soldFilling As Boolean
+    ' True once the partner's balances are on screen (a failed read keeps the grid off, so an empty grid is never saved over the stored rows).
+    Private _soldReady As Boolean
+    Private _soldTouched As Boolean
+    Private _soldVersion As Integer
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -59,13 +77,19 @@ Public Class ParteneriForm
     End Sub
 
     ''' <param name="ss">The working sector-source; a new partner goes into its unit.</param>
-    Public Sub New(api As INomenclatoareApi, gate As ReauthGate, ss As String)
+    ''' <param name="conturiApi">The accounts API of the balances grid; Nothing = the window has no balances.</param>
+    ''' <param name="session">The working year of the balances.</param>
+    Public Sub New(api As INomenclatoareApi, gate As ReauthGate, ss As String,
+                   Optional conturiApi As IConturiApi = Nothing, Optional session As SessionContext = Nothing)
         ArgumentNullException.ThrowIfNull(api)
         ArgumentNullException.ThrowIfNull(gate)
         InitializeComponent()
         _api = api
         _gate = gate
         _ss = If(ss, String.Empty)
+        _conturiApi = conturiApi
+        _session = session
+        If conturiApi Is Nothing OrElse session Is Nothing Then HideSolduri()
     End Sub
 
     Private Sub ParteneriForm_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -205,6 +229,7 @@ Public Class ParteneriForm
             txtAdresa.Text = If(p?.Adresa, String.Empty)
             chkAscuns.Checked = p IsNot Nothing AndAlso p.Ascuns
             FillCodes(p)
+            ShowSolduri(p)
             tlyDetalii.Enabled = p IsNot Nothing
             UpdateCodesState()
         Finally
@@ -431,6 +456,240 @@ Public Class ParteneriForm
         End Try
     End Sub
 
+    ' ── Opening balances of the partner (slice AV01-08) ─────────────────────────
+
+    ' Without the accounts API the window has no balances section: its two rows take no room.
+    Private Sub HideSolduri()
+        tlyDetalii.RowStyles(9).Height = 0
+        tlyDetalii.RowStyles(10).Height = 0
+        lblSolduri.Visible = False
+        gridSolduri.Visible = False
+    End Sub
+
+    Private Function SoldAvailable() As Boolean
+        Return _conturiApi IsNot Nothing AndAlso _session IsNot Nothing
+    End Function
+
+    ' What the combo shows for an account: the symbol and the name, with the chapter when the unit has several subunits.
+    Private Function ContLabel(k_simbol As String, k_denumire As String, k_capitol As String) As String
+        Dim k_text As String = If(String.IsNullOrWhiteSpace(k_denumire), k_simbol, $"{k_simbol} — {k_denumire}")
+        Return If(_severalChapters, $"{k_text} ({k_capitol})", k_text)
+    End Function
+
+    ' The active accounts of every subunit, read once; they fill the list of the «Cont» column.
+    Private Async Function EnsureConturiAsync() As Task
+        If _conturi IsNot Nothing Then Return
+        Dim k_list As IReadOnlyList(Of ContDisponibil) = Await _gate.RunAsync(
+            Function() _conturiApi.GetConturiDisponibileAsync(CancellationToken.None)).ConfigureAwait(True)
+        If IsDisposed Then Return
+        _conturi = New List(Of ContDisponibil)(k_list)
+        _severalChapters = _conturi.Select(Function(k_c) k_c.Capitol).Distinct(StringComparer.Ordinal).Count() > 1
+        _contByLabel.Clear()
+        Dim k_items As New List(Of Object)()
+        For Each k_c As ContDisponibil In _conturi
+            Dim k_label As String = ContLabel(k_c.Simbol, k_c.Denumire, k_c.Capitol)
+            If _contByLabel.ContainsKey(k_label) Then Continue For
+            _contByLabel(k_label) = k_c
+            k_items.Add(k_label)
+        Next
+        gridSolduri.Column(ColSCont).ComboItems = k_items
+    End Function
+
+    ' UI boundary: shows the balances of the partner for the working year. A stale answer (another partner was picked meanwhile) is dropped.
+    Private Async Sub ShowSolduri(k_p As Partener)
+        Dim k_version As Integer = Interlocked.Increment(_soldVersion)
+        Try
+            _soldReady = False
+            _soldTouched = False
+            gridSolduri.Enabled = False
+            _soldFilling = True
+            Try
+                gridSolduri.ClearRows()
+            Finally
+                _soldFilling = False
+            End Try
+            If Not SoldAvailable() Then Return
+            lblSolduri.Text = If(k_p Is Nothing, "Solduri inițiale", $"Solduri inițiale — anul {_session.An.ToString(CultureInfo.InvariantCulture)}")
+            If k_p Is Nothing Then Return
+            Await EnsureConturiAsync().ConfigureAwait(True)
+            Dim k_rows As IReadOnlyList(Of SoldPartener) = New List(Of SoldPartener)()
+            If k_p.IdPartener.HasValue Then
+                Dim k_id As Integer = k_p.IdPartener.Value
+                Dim k_an As Integer = _session.An
+                k_rows = Await _gate.RunAsync(
+                    Function() _conturiApi.GetSolduriPartenerAsync(k_id, k_an, CancellationToken.None)).ConfigureAwait(True)
+            End If
+            If IsDisposed OrElse k_version <> _soldVersion Then Return
+            FillSolduri(k_rows)
+            _soldReady = True
+            gridSolduri.Enabled = True
+        Catch ex As ApiException
+            GlobalErrorLog.Write("ParteneriForm.ShowSolduri", ex)
+            If Not IsDisposed AndAlso k_version = _soldVersion Then SetStatus(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.ShowSolduri", ex)
+            If Not IsDisposed AndAlso k_version = _soldVersion Then SetStatus("Soldurile inițiale nu au putut fi încărcate. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
+    Private Sub FillSolduri(k_rows As IEnumerable(Of SoldPartener))
+        _soldFilling = True
+        gridSolduri.BeginUpdate()
+        Try
+            gridSolduri.ClearRows()
+            For Each k_s As SoldPartener In k_rows
+                Dim k_label As String = ContLabel(k_s.Simbol, k_s.Denumire, k_s.Capitol)
+                ' A balance kept on an account that is out of use is not in the list: it still shows, and keeps its account.
+                If Not _contByLabel.ContainsKey(k_label) Then
+                    _contByLabel(k_label) = New ContDisponibil() With {.IdCont = k_s.IdCont, .Simbol = k_s.Simbol, .Denumire = k_s.Denumire, .Capitol = k_s.Capitol}
+                End If
+                Dim k_row As KBotDataRow = gridSolduri.AddRow()
+                k_row(ColSIdCont) = k_s.IdCont
+                k_row(ColSCont) = k_label
+                k_row(ColSSid) = k_s.SoldDebitor
+                k_row(ColSSic) = k_s.SoldCreditor
+                k_row(ColSRpd) = k_s.RulajDebitor
+                k_row(ColSRpc) = k_s.RulajCreditor
+                k_row(ColDelete) = DeleteCaption
+            Next
+        Finally
+            gridSolduri.EndUpdate()
+            _soldFilling = False
+        End Try
+        gridSolduri.ClearDirty()
+    End Sub
+
+    ' An amount typed by the operator: empty = 0, two decimals, never negative.
+    Private Shared Function TryAmount(k_text As String, ByRef k_value As Decimal) As Boolean
+        Dim k_t As String = If(k_text, String.Empty).Trim()
+        If k_t.Length = 0 Then
+            k_value = 0D
+            Return True
+        End If
+        If Not Decimal.TryParse(k_t, NumberStyles.Number, CultureInfo.CurrentCulture, k_value) AndAlso
+           Not Decimal.TryParse(k_t, NumberStyles.Number, CultureInfo.InvariantCulture, k_value) Then Return False
+        k_value = Math.Round(k_value, 2, MidpointRounding.AwayFromZero)
+        Return k_value >= 0D
+    End Function
+
+    Private Shared Function CellAmount(k_cell As Object) As Decimal
+        If k_cell Is Nothing Then Return 0D
+        If TypeOf k_cell Is Decimal Then Return CDec(k_cell)
+        Dim k_v As Decimal
+        Return If(TryAmount(Convert.ToString(k_cell, CultureInfo.CurrentCulture), k_v), k_v, 0D)
+    End Function
+
+    Private Sub GridSolduri_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) Handles gridSolduri.CellValidating
+        Try
+            If _soldFilling Then Return
+            If String.Equals(e.ColumnKey, ColSCont, StringComparison.Ordinal) Then
+                Dim k_text As String = Convert.ToString(e.ProposedValue, CultureInfo.CurrentCulture).Trim()
+                If k_text.Length = 0 OrElse Not _contByLabel.ContainsKey(k_text) Then
+                    e.Cancel = True
+                    SetStatus("Alegeți un cont din listă.")
+                Else
+                    e.ProposedValue = k_text
+                    SetStatus(String.Empty)
+                End If
+                Return
+            End If
+            Dim k_value As Decimal
+            If TryAmount(Convert.ToString(e.ProposedValue, CultureInfo.CurrentCulture), k_value) Then
+                e.ProposedValue = k_value
+                SetStatus(String.Empty)
+            Else
+                e.Cancel = True
+                SetStatus("Introduceți o sumă: un număr, cel puțin zero.")
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.GridSolduri_CellValidating", ex)
+        End Try
+    End Sub
+
+    Private Sub GridSolduri_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) Handles gridSolduri.CellValueChanged
+        Try
+            If _soldFilling Then Return
+            If String.Equals(e.ColumnKey, ColSCont, StringComparison.Ordinal) Then
+                Dim k_account As ContDisponibil = Nothing
+                If _contByLabel.TryGetValue(Convert.ToString(e.NewValue, CultureInfo.CurrentCulture), k_account) Then
+                    _soldFilling = True
+                    Try
+                        gridSolduri.Rows(e.RowIndex)(ColSIdCont) = k_account.IdCont
+                    Finally
+                        _soldFilling = False
+                    End Try
+                End If
+            End If
+            _soldTouched = True
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.GridSolduri_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub GridSolduri_FooterRightIconClicked(sender As Object, e As EventArgs) Handles gridSolduri.FooterRightIconClicked
+        Try
+            If _current Is Nothing OrElse _busy OrElse Not _soldReady Then Return
+            If _conturi Is Nothing OrElse _conturi.Count = 0 Then
+                SetStatus("Planul de conturi nu are conturi active.")
+                Return
+            End If
+            If Not gridSolduri.CommitPendingEdit() Then Return
+            Dim k_row As KBotDataRow = gridSolduri.AddRow()
+            k_row(ColDelete) = DeleteCaption
+            k_row(ColSSid) = 0D
+            k_row(ColSSic) = 0D
+            k_row(ColSRpd) = 0D
+            k_row(ColSRpc) = 0D
+            k_row.IsDirty = True
+            _soldTouched = True
+            SetDirty(True)
+            Dim k_index As Integer = gridSolduri.RowCount - 1
+            gridSolduri.EnsureVisible(k_index)
+            gridSolduri.EditCell(ColSCont, k_index)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.GridSolduri_FooterRightIconClicked", ex)
+        End Try
+    End Sub
+
+    Private Sub GridSolduri_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridSolduri.ButtonClick
+        Try
+            If e.ColumnKey <> ColDelete OrElse _busy OrElse Not _soldReady Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridSolduri.RowCount Then Return
+            gridSolduri.RemoveRowAt(e.RowIndex)
+            _soldTouched = True
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.GridSolduri_ButtonClick", ex)
+        End Try
+    End Sub
+
+    ' The balances as the grid shows them; the first row without an account (or an account used twice) is reported and opened.
+    Private Function ReadSolduri(ByRef k_problem As String) As List(Of SoldPartener)
+        Dim k_list As New List(Of SoldPartener)()
+        Dim k_seen As New HashSet(Of Integer)()
+        For k_i As Integer = 0 To gridSolduri.RowCount - 1
+            Dim k_row As KBotDataRow = gridSolduri.Rows(k_i)
+            Dim k_label As String = Convert.ToString(k_row(ColSCont), CultureInfo.CurrentCulture).Trim()
+            Dim k_account As ContDisponibil = Nothing
+            If k_label.Length = 0 OrElse Not _contByLabel.TryGetValue(k_label, k_account) Then
+                k_problem = $"Soldurile inițiale, rândul {k_i + 1}: alegeți contul."
+            ElseIf Not k_seen.Add(k_account.IdCont) Then
+                k_problem = $"Soldurile inițiale, rândul {k_i + 1}: contul {k_account.Simbol} apare de două ori."
+            End If
+            If k_problem IsNot Nothing Then
+                gridSolduri.EnsureVisible(k_i)
+                gridSolduri.EditCell(ColSCont, k_i)
+                Return k_list
+            End If
+            k_list.Add(New SoldPartener() With {
+                .IdCont = k_account.IdCont, .Simbol = k_account.Simbol, .Denumire = k_account.Denumire, .Capitol = k_account.Capitol,
+                .SoldDebitor = CellAmount(k_row(ColSSid)), .SoldCreditor = CellAmount(k_row(ColSSic)),
+                .RulajDebitor = CellAmount(k_row(ColSRpd)), .RulajCreditor = CellAmount(k_row(ColSRpc))})
+        Next
+        Return k_list
+    End Function
+
     ' ── Buttons ─────────────────────────────────────────────────────────────────
 
     Private Async Sub BtnAdauga_Click(sender As Object, e As EventArgs) Handles btnAdauga.Click
@@ -518,6 +777,7 @@ Public Class ParteneriForm
         If _current Is Nothing OrElse _api Is Nothing Then Return True
         Try
             If Not gridCoduri.CommitPendingEdit() Then Return False
+            If Not gridSolduri.CommitPendingEdit() Then Return False
             Dim problem As String = Nothing
             Dim cf As String = NormalizeCf(txtCodFiscal.Text)
             ' A legacy duplicate (brought over from Access) stays savable while its code is unchanged.
@@ -537,6 +797,8 @@ Public Class ParteneriForm
                 txtDenumire.Focus()
             End If
             Dim codes As List(Of PartenerCod) = If(problem Is Nothing, ReadCodes(problem), Nothing)
+            ' Slice AV01-08: the balances are sent only when the operator touched them (and they were read well).
+            Dim solduri As List(Of SoldPartener) = If(problem Is Nothing AndAlso _soldReady AndAlso _soldTouched, ReadSolduri(problem), Nothing)
             If problem IsNot Nothing Then
                 KBotMessage.Show(Me, problem, "Salvare partener", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return False
@@ -560,6 +822,25 @@ Public Class ParteneriForm
                 If Not IsDisposed Then SetBusy(False, Nothing)
             End Try
             If IsDisposed Then Return True
+            If solduri IsNot Nothing Then
+                Dim k_an As Integer = _session.An
+                Try
+                    SetBusy(True, "Se salvează soldurile inițiale…")
+                    Await _gate.RunAsync(Function() _conturiApi.SaveSolduriPartenerAsync(id, k_an, solduri, CancellationToken.None)).ConfigureAwait(True)
+                Catch ex As ApiException
+                    GlobalErrorLog.Write("ParteneriForm.SaveAsync.Solduri", ex)
+                    If Not IsDisposed Then
+                        KBotMessage.Show(Me, "Partenerul a fost salvat, dar soldurile inițiale nu:" & vbLf & ex.Message,
+                                         "Salvare partener", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                        _dirty = False
+                        LoadCatalog(id)
+                    End If
+                    Return False
+                Finally
+                    If Not IsDisposed Then SetBusy(False, Nothing)
+                End Try
+                If IsDisposed Then Return True
+            End If
             _dirty = False
             LoadCatalog(id)
             Return True
@@ -679,6 +960,7 @@ Public Class ParteneriForm
                 c.BackColor = p.SurfaceAltColor
             Next
             lblCoduri.ForeColor = p.TextColor
+            lblSolduri.ForeColor = p.TextColor
             lblStare.ForeColor = p.TextDimColor
             ButtonStyles.ApplyPrimary(btnSalveaza, scheme)
             ButtonStyles.ApplySecondary(btnAdauga, scheme)

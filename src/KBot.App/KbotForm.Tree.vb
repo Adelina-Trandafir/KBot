@@ -57,10 +57,10 @@ Partial Public Class KbotForm
         ' year / SS of the title bar and the filtered tree would come out empty.
         Dim an As Integer = If(_grupaActiva Is Nothing, anCheie.Value, 0)
         capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, SectorSeVede())
-        ' Sorted by date the tree is a timeline of the whole year: every source, not only the
-        ' SS in the bar's selector (operator, 23.09.2026 -- slice 0777).
-        Dim ss As String = If(AppSettings.Current.TreeSortIsDate OrElse _grupaActiva IsNot Nothing,
-                              ApiClient.TreeAllSources, ssCheie)
+        ' The source is the selector's choice, whatever the sort (operator, 25.10.2026): «Toate» is «*» (every
+        ' source of the year), a concrete source narrows the tree to ITS angajamente, then sorted. A change of
+        ' sort puts the selector back on «Toate» (KbotForm.TreeOptions.vb). A chosen group spans every source.
+        Dim ss As String = If(_grupaActiva IsNot Nothing, ApiClient.TreeAllSources, ssCheie)
         busyBar.Running = True
         Try
             Dim ct As CancellationToken = CancellationToken.None

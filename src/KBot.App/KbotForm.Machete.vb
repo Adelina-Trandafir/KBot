@@ -27,6 +27,7 @@ Partial Public Class KbotForm
     Friend Const MachetaJurnal As String = "jurnal"
     Friend Const MachetaClasificatii As String = "clasificatii"
     Friend Const MachetaParteneri As String = "parteneri"
+    Friend Const MachetaPlanCont As String = "plan_cont"
     Friend Const MachetaDdfEdit As String = "ddf.edit"
     Friend Const MachetaOrdEdit As String = "ord.edit"
     Friend Const MachetaAsociere As String = "asociere"
@@ -53,6 +54,7 @@ Partial Public Class KbotForm
         k_registry.Register(New MachetaType(MachetaClasificatii, "Clasificații bugetare", "cells", Function(k_ref) OpenPage(AddressOf DeschideClasificatiile),
                                             Function(k_ref) If(k_ref.Arg("an").Length > 0, "Clasificații bugetare · " & k_ref.Arg("an"), "Clasificații bugetare")))
         k_registry.Register(New MachetaType(MachetaParteneri, "Parteneri", "binvoice", Function(k_ref) OpenPage(AddressOf DeschidePartenerii)))
+        k_registry.Register(New MachetaType(MachetaPlanCont, "Plan de conturi", "cells", Function(k_ref) OpenPage(AddressOf DeschidePlanCont)))
         k_registry.Register(New MachetaType(MachetaEFacturaVanzare, "E-Factura Vânzare", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFactura)))
         k_registry.Register(New MachetaType(MachetaEFacturaCumparare, "E-Factura Cumpărare", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFacturaCumparare)))
         k_registry.Register(New MachetaType(MachetaEFacturaReceptii, "E-Factura Recepții", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFacturaReceptii)))

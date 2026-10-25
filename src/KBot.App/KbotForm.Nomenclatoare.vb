@@ -170,7 +170,7 @@ Partial Public Class KbotForm
             Dim api As INomenclatoareApi = Nothing
             Dim gate As ReauthGate = Nothing
             If Not NomenclatoareContext("Parteneri", api, gate) Then Return
-            _parteneriForm = New ParteneriForm(api, gate, _session.SectorSursa)
+            _parteneriForm = New ParteneriForm(api, gate, _session.SectorSursa, TryCast(_apiClient, IConturiApi), _session)
             AddHandler _parteneriForm.FormClosed, Sub() _parteneriForm = Nothing
             If Not ShowMachetaPage(_parteneriForm, MachetaRef.Create(MachetaParteneri)) Then
                 _parteneriForm.Dispose()

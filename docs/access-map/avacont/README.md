@@ -88,3 +88,5 @@ felia de proiectare, cand se scriu tabelele. Urmeaza: proiectul de date (inclusi
 confirmarea ta, codul etapei 1.
 
 Intrebarile complete sunt la finalul fiecarei fise.
+
+- De facut (nu critic): interfata pentru adaugarea subunitatilor - [plan-interfata-subunitati](plan-interfata-subunitati.md).

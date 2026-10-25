@@ -27,7 +27,7 @@ La salvare:
 Mesajele ANAF: cod invalid, cod negăsit sau ANAF indisponibil.
 
 ## Lista și tabelul «Coduri angajament»
-<!-- slice: 0087, 0093, 0000-14, 0113, 0121-03 -->
+<!-- slice: 0087, 0093, 0000-14, 0113, 0121-03, AV01-08 -->
 
 - **Capul listei**: **lupa** caută după o parte din cod sau din denumire; bifa **«Ascunde partenerii
   fără activitate»** lasă doar partenerii care apar pe un document (DDF sau ORD).
@@ -40,5 +40,11 @@ Mesajele ANAF: cod invalid, cod negăsit sau ANAF indisponibil.
   ori. Cât timp codul fiscal nu e tastat (sau l-ai schimbat și nu ai salvat încă), tabelul e
   dezactivat, iar titlul lui spune ce lipsește. Ștergerea unui partener lasă codurile de
   angajament pe loc.
+- **«Solduri inițiale»** — tabelul de sub «Coduri angajament»: soldurile partenerului pe conturi, pentru anul de lucru
+  (titlul spune anul). Un rând are contul, soldul inițial debitor și creditor și rulajele cumulate debitor și creditor.
+  **«+»** din subsol adaugă un rând: alegi contul din listă (planul de conturi al tuturor subunităților, cu
+  denumirea lui; când sunt mai multe subunități apare și capitolul), apoi tastezi sumele direct în tabel; sumele
+  sunt numere cu două zecimale, cel puțin zero. **✕** scoate rândul. Un cont poate apărea o singură dată la un
+  partener. Tabelul se salvează odată cu partenerul, la **«Salvare»**.
 - **«Adăugare»**, **«Salvare»**, **«Ștergere»**, **«Renunță»** (anulează modificările nesalvate ale
   partenerului) — butoanele de jos. Macheta se închide cu **«Închide»** din ribbon sau cu Esc.

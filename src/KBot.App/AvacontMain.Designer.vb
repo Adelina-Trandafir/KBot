@@ -78,6 +78,9 @@ Partial Class AvacontMain
         Dim KBotRibbonGroup12 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton33 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton35 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton36 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton37 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton38 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -208,6 +211,18 @@ Partial Class AvacontMain
         KBotRibbonButton35.ToolTipHeader = "Repară programul documentului"
         KBotRibbonButton35.ToolTipText = "Programul din antetul DDF nu se potrivește cu SS-ul datelor salvate: indicatorii, rândurile reviziilor DDF și ale ordonanțărilor (SS 01A are programul 0000002510, orice alt SS 0000000000)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi; se schimbă doar programul din antetul DDF."
         KBotRibbonButton35.Visible = False
+        KBotRibbonButton37.Image = My.Resources.Resources.cells
+        KBotRibbonButton37.Key = "plan_cont_solduri"
+        KBotRibbonButton37.Text = "Afișează solduri inițiale"
+        KBotRibbonButton37.ToolTipHeader = "Solduri inițiale"
+        KBotRibbonButton37.ToolTipText = "Înlocuiește arborele cu un tabel în care tastați soldurile inițiale și rulajele cumulate ale tuturor conturilor."
+        KBotRibbonButton37.Visible = False
+        KBotRibbonButton38.Image = My.Resources.Resources.export
+        KBotRibbonButton38.Key = "plan_cont_excel"
+        KBotRibbonButton38.Text = "Exportă în Excel"
+        KBotRibbonButton38.ToolTipHeader = "Export în Excel"
+        KBotRibbonButton38.ToolTipText = "Salvează planul de conturi al subunității, cu soldurile inițiale și rulajele cumulate (debit apoi credit), cu două zecimale."
+        KBotRibbonButton38.Visible = False
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton7)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton8)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton9)
@@ -215,6 +230,8 @@ Partial Class AvacontMain
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton11)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton12)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton35)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton37)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton38)
         ribbon.SelectedTabIndex = 1
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1
@@ -228,8 +245,14 @@ Partial Class AvacontMain
         KBotRibbonButton14.Text = "Parteneri"
         KBotRibbonButton14.ToolTipHeader = "Parteneri"
         KBotRibbonButton14.ToolTipText = "Partenerii unității și codurile lor fiscale."
+        KBotRibbonButton36.Image = My.Resources.Resources.cells
+        KBotRibbonButton36.Key = "plan_cont"
+        KBotRibbonButton36.Text = "Plan de conturi"
+        KBotRibbonButton36.ToolTipHeader = "Plan de conturi"
+        KBotRibbonButton36.ToolTipText = "Conturile fiecărei subunități a unității și subunitățile însele."
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton13)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton14)
+        KBotRibbonGroup1.Buttons.Add(KBotRibbonButton36)
         KBotRibbonGroup1.Text = "Date"
         KBotRibbonButton15.Image = My.Resources.Resources.Folder_blue_24
         KBotRibbonButton15.Key = "jurnal"

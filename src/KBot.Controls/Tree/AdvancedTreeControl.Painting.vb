@@ -556,9 +556,17 @@ Partial Public Class AdvancedTreeControl
         Next
 
         If caseA Then
-            ' Case A: afișăm dreapta DOAR dacă încape complet după stânga
+            ' Case A: dreapta se aliniază la dreapta dacă încape după stânga; altfel (slice 0123-06)
+            ' nu dispare, ci se taie cu "..." la capătul drept, în spațiul rămas.
             Dim dynamicStart As Single = currentX + PaddingSeparatorGapPx
-            If dynamicStart + rightTotal > rightEdgeX Then Return ' nu încape — skip total
+            If dynamicStart + rightTotal > rightEdgeX Then
+                If rightParts.Count = 0 Then Return
+                Dim lastRightPart As RichTextPart = rightParts(rightParts.Count - 1)
+                Dim minWidth As Single = g.MeasureString("...", lastRightPart.Font, PointF.Empty, fmt).Width
+                If rightEdgeX - dynamicStart < minWidth Then Return ' nu încape nici "..."
+                DrawRichPartsInZone(g, rightParts, y, dynamicStart, rightEdgeX - dynamicStart, fmt)
+                Return
+            End If
             ' Right-aligned în spațiul rămas
             DrawRichPartsSimple(g, rightParts, y, rightEdgeX - rightTotal, fmt)
         Else

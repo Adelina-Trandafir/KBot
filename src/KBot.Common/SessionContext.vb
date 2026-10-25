@@ -23,6 +23,20 @@ Public Class SessionContext
     ' Nothing). MainForm îl folosește pentru a preselecta SS-ul; nu e o valoare de lucru.
     Public Property LastSS As String
 
+    ''' <summary>
+    ''' True = the «Toate» choice of the source selector is in force: every source of the unit, not one.
+    ''' <see cref="SectorSursa"/> and <see cref="CodProgram"/> then keep the last concrete source (the
+    ''' robot and the documents still need a real program); read this flag to know the list is not narrowed.
+    ''' </summary>
+    Public Property ToateSursele As Boolean
+
+    ''' <summary>
+    ''' App-wide message: the year, the source or the «Toate» choice changed. Raised on the thread that
+    ''' called <see cref="SetPeriod"/> (the UI thread); every window that follows the period listens to
+    ''' this one event, not to the selector of the main window. A handler must not throw.
+    ''' </summary>
+    Public Event PeriodChanged As EventHandler(Of PeriodChangedEventArgs)
+
     ' Token-ul bearer opac emis de server la login. Este SINGURA credențială pe
     ' care clientul o deține după fluxul de login; ApiClient îl trimite per-request
     ' (Authorization: Bearer). Golit de Clear / la deconectare.
@@ -59,10 +73,19 @@ Public Class SessionContext
     ''' <summary>
     ''' Fixează perioada de lucru (an + SS + CodProgram), aleasă pe MainForm din catalog.
     ''' </summary>
-    Public Sub SetPeriod(an As Integer, ss As String, codProgram As String)
-        Me.An = an
-        Me.SectorSursa = ss
-        Me.CodProgram = codProgram
+    ''' <param name="k_toateSursele">True = the «Toate» choice: <paramref name="k_ss"/> and <paramref name="k_codProgram"/>
+    ''' stay the concrete source's, the list is not narrowed to it.</param>
+    ''' <remarks>Raises <see cref="PeriodChanged"/> only when the year, the source, the program or the flag differ.</remarks>
+    Public Sub SetPeriod(k_an As Integer, k_ss As String, k_codProgram As String, Optional k_toateSursele As Boolean = False)
+        Dim k_changed As Boolean = Me.An <> k_an OrElse
+                                   Not String.Equals(Me.SectorSursa, k_ss, StringComparison.Ordinal) OrElse
+                                   Not String.Equals(Me.CodProgram, k_codProgram, StringComparison.Ordinal) OrElse
+                                   Me.ToateSursele <> k_toateSursele
+        Me.An = k_an
+        Me.SectorSursa = k_ss
+        Me.CodProgram = k_codProgram
+        Me.ToateSursele = k_toateSursele
+        If k_changed Then RaiseEvent PeriodChanged(Me, New PeriodChangedEventArgs(k_an, k_ss, k_codProgram, k_toateSursele))
     End Sub
 
     ''' <summary>Golește contextul (deconectare / închidere).</summary>
@@ -76,6 +99,25 @@ Public Class SessionContext
         Me.An = 0
         Me.SectorSursa = String.Empty
         Me.CodProgram = String.Empty
+        Me.ToateSursele = False
         Me.LastSS = Nothing
+    End Sub
+End Class
+
+''' <summary>The period now in force on the session (see <see cref="SessionContext.PeriodChanged"/>). POCO.</summary>
+Public NotInheritable Class PeriodChangedEventArgs
+    Inherits EventArgs
+
+    Public ReadOnly Property An As Integer
+    Public ReadOnly Property SectorSursa As String
+    Public ReadOnly Property CodProgram As String
+    ''' <summary>True = «Toate»: <see cref="SectorSursa"/> is only the last concrete source, not a filter.</summary>
+    Public ReadOnly Property ToateSursele As Boolean
+
+    Public Sub New(k_an As Integer, k_sectorSursa As String, k_codProgram As String, k_toateSursele As Boolean)
+        Me.An = k_an
+        Me.SectorSursa = k_sectorSursa
+        Me.CodProgram = k_codProgram
+        Me.ToateSursele = k_toateSursele
     End Sub
 End Class

@@ -146,10 +146,10 @@ part: year
 Anul pentru care lucrezi. Un clic pe el arată anii unității; schimbarea lui reîncarcă lista de angajamente și toate ecranele.
 
 ## Bara de titlu › Sursa și sectorul
-<!-- slice: 0001, 0086, 0097-03 -->
+<!-- slice: 0001, 0086, 0097-03, 0097-06 -->
 target: KbotForm.capBar
 part: ss
-Sursa și sectorul (de exemplu 02A) din anul ales. Ultima alegere se ține minte pentru data viitoare. Cât lista e sortată după dată, alegerea se ascunde: lista cuprinde atunci toate sursele anului.
+Sursa și sectorul (de exemplu 02A) din anul ales. Ultima sursă aleasă se ține minte pentru data viitoare. Alegerea «Toate» arată în listă toate sursele anului; la schimbarea sortării listei, alegerea trece singură pe «Toate».
 
 ## Bara de titlu › Temă
 <!-- slice: 0028-09, 0036, 0000-23 -->

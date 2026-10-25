@@ -56,7 +56,7 @@ Ferestrele mici (o alegere, o confirmare, alegerea unui fișier), consola FOREXE
 interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
 
 ## Lista angajamentelor
-<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01, 0114-05, 0000-89, 0114-11, 0114-12, 0114-13, 0000-90, 0114-26, 0000-120, 0114-27, 0000-121 -->
+<!-- slice: 0009, 0777, 0777-02, 0034, 0080-03, 0095-02, 0078-08, 0098, 0000-31, 0101, 0109, 0008-02, 000T-12, 0092-01, 0000-68, 0113, 0113-01, 0114-05, 0000-89, 0114-11, 0114-12, 0114-13, 0000-90, 0114-26, 0000-120, 0114-27, 0000-121, 0097-06 -->
 
 - Clic pe un angajament îl selectează; vederea din dreapta se umple cu datele lui. Cât Adobe încă
   deschide un document (în Fundamentare, Ordonanțare sau Note corecție), lista nu primește alt
@@ -65,7 +65,7 @@ interne» și fereastra de ajutor deschisă cu F1 sunt tot ferestre separate.
   ale arborilor și tabelelor: [Arborii și tabelele](topic:contabil.liste).
 - **Rotița** din capul listei alege sortarea și ce coloane se văd (cod, surse, dată).
 - Meniul rotiței are și rândul **«Grupe»**, **doar cât există cel puțin o grupă**: alegi o grupă ca să vezi în listă doar angajamentele ei (vezi mai jos «Grupele de angajamente»). Grupele se fac din ribbon, cu **«Editează grupe»**.
-- Când lista e sortată după **data creării**, ea cuprinde toate sursele anului, așa că alegerea **Sursă/Sector** din bara de titlu se ascunde; reapare la sortarea după nume.
+- La fiecare schimbare a sortării (după **nume** sau după **data creării**), alegerea **Sursă/Sector** din bara de titlu trece pe **«Toate»** (lista cuprinde toate sursele anului) și rămâne la vedere. Dacă alegi apoi o sursă anume, lista arată doar angajamentele ei, în ordinea sortării alese.
 - Iconița **din dreapta, jos** (și textul «Actualizează» de lângă ea) deschide un meniu mic, deasupra ei, cu două rânduri:
   **«Descarcă angajamente NOI»** aduce din FOREXE lista angajamentelor — cele noi se adaugă, cele existente rămân cum sunt
   — [Lista de angajamente](topic:contabil.forexe.lista); **«Actualizează angajamente VRAC»** deschide fereastra în care bifezi
@@ -145,12 +145,13 @@ O vedere apare doar dacă angajamentul selectat are date de acel fel; altfel but
 Alege în listă alt angajament sau rezolvă condiția și butonul apare singur. Turul ghidat al ferestrei (din «?») îți arată și vederile care lipsesc acum, cu o notă care spune că le vezi doar pentru tur.
 
 ## Anul și sursa/sectorul
-<!-- slice: 0097-03 -->
+<!-- slice: 0097-03, 0097-06 -->
 
 În **bara de titlu**, după unitate, sunt două liste: **An Date** (anul de lucru) și **Sursă/Sector**
 (de exemplu 02A). Un clic pe ele arată alegerile; schimbarea oricăreia reîncarcă lista de
-angajamente și toate ecranele. Sursa/sectorul se ține minte pentru data viitoare. Când lista de
-angajamente e sortată după dată, **Sursă/Sector** nu se vede.
+angajamente și toate ecranele. Lista **Sursă/Sector** are și alegerea **«Toate»**: lista de
+angajamente cuprinde atunci toate sursele anului. O sursă anume se ține minte pentru data viitoare;
+«Toate» nu. La schimbarea sortării listei, alegerea trece singură pe «Toate».
 
 ## Unitatea de lucru
 <!-- slice: 0097, 0113 -->

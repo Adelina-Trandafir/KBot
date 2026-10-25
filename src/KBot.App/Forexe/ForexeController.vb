@@ -323,10 +323,10 @@ Partial Public NotInheritable Class ForexeController
             IntraInLucru()
             Try
                 RaporteazaStare("Descarc lista de angajamente...")
-                ' Tree sorted by date = the source selector is hidden and the tree shows every source
-                ' of the year, so the list is not narrowed to one source either (operator, 02.10.2026).
-                Dim toateSursele As Boolean = AppSettings.Current.TreeSortIsDate
-                If toateSursele Then RaporteazaStare("Lista pe toate sursele unității (arbore sortat după dată).")
+                ' The source selector on «Toate» = the tree shows every source of the unit, so the list is
+                ' not narrowed to one source either (operator, 02.10.2026; the choice is the selector's since 25.10.2026).
+                Dim toateSursele As Boolean = _session.ToateSursele
+                If toateSursele Then RaporteazaStare("Lista pe toate sursele unității (sursa aleasă: Toate).")
                 Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session, toateSursele)
                 jurnal.NoteRequest(job)
                 Dim rezultat As JobResult = Await RunOrReplayAsync(job, String.Empty)

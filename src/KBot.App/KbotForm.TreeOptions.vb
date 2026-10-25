@@ -17,10 +17,11 @@ Imports KBot.Domain
 ''' The menu and the KBOT tab of the application settings page write the same keys, and the shell
 ''' follows <see cref="AppSettings.Changed"/>, so a change made on either side shows at once.</para>
 '''
-''' <para><b>The two sorts show different rows.</b> By name = the SS chosen in the combo; by
-''' date = EVERY source of the year (<c>ss=*</c>, operator 23.09.2026). So a change of sort
-''' reloads from the server; a change of column only re-lays. The selected node comes back
-''' where it was when it is still in the list (<c>PopulateTree</c> re-selects it).</para>
+''' <para><b>The source is the combo's, under both sorts</b> (operator, 25.10.2026): «Toate» = every
+''' source of the year (<c>ss=*</c>), a concrete source = only its angajamente. A change of sort puts
+''' the combo on «Toate» (it stays visible) and reloads from the server; a change of column only
+''' re-lays. The selected node comes back where it was when it is still in the list
+''' (<c>PopulateTree</c> re-selects it).</para>
 ''' </summary>
 Partial Public Class KbotForm
 
@@ -50,11 +51,11 @@ Partial Public Class KbotForm
     Private _appliedSurseWidth As Integer?
 
     ''' <summary>
-    ''' The sector selector of the title bar: shown only when the tree is sorted by name and no group is
-    ''' chosen (by date and by group the tree shows every source).
+    ''' The sector selector of the title bar: shown unless a group is chosen (a group spans every source).
+    ''' Under both sorts it stays visible; a change of sort puts it on «Toate» (operator, 25.10.2026).
     ''' </summary>
     Private Function SectorSeVede() As Boolean
-        Return Not AppSettings.Current.TreeSortIsDate AndAlso _grupaActiva Is Nothing
+        Return _grupaActiva Is Nothing
     End Function
 
     ''' <summary>Called once from Load: columns as the store says, then follow its changes.</summary>
@@ -89,7 +90,6 @@ Partial Public Class KbotForm
     Private Sub ApplyTreeOptionsFromStore()
         Try
             Dim s As AppSettings = AppSettings.Current
-            ' By date the tree shows every source of the year, so the SS choice means nothing.
             capBar.SetSelectorShown(KBotCaptionBar.SelectorSector, SectorSeVede())
             Dim sortChanged As Boolean = Not Nullable.Equals(_appliedSortIsDate, s.TreeSortIsDate)
             Dim colsChanged As Boolean = Not Nullable.Equals(_appliedShowCod, s.TreeShowCod) OrElse
@@ -104,9 +104,11 @@ Partial Public Class KbotForm
             _appliedDescending = s.TreeSortDescending
 
             If sortChanged AndAlso _treeRows IsNot Nothing Then
-                ' The two sorts do not show the same rows: by date = every source of the
-                ' year, by name = the SS in the combo. So a change of sort asks the server
-                ' again; the selected node stays selected if it is still in the list.
+                ' A new sort starts from every source: the source selector goes to «Toate» (it stays
+                ' visible) and the tree asks the server again; the operator may then pick one source and
+                ' get only its angajamente, in the new order. The selected node stays selected if it is
+                ' still in the list.
+                PuneSursaPeToate()
                 ReincarcaArboreleDupaSortare()
             ElseIf directionChanged AndAlso _treeRows IsNot Nothing Then
                 ' Same rows, other direction: re-laid from the kept rows, selection kept.

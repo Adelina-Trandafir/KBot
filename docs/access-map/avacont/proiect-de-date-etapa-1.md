@@ -3,36 +3,38 @@
 PROPUNERE, doar document: nicio tabela creata, niciun DDL rulat, niciun cod. Bazat pe fisele din acest folder si pe
 deciziile operatorului din `README.md`. Marcaj: VERIFICAT = citit intr-un fisier/schema; PROPUNERE = alegerea mea, de
 confirmat; DE VERIFICAT = nu am citit inca.
-Conventii (CLAUDE.md): MariaDB `utf8mb3_general_ci`, nume ASCII, DDL doar in `sql/` (il aplica operatorul), tabelele noi se
-inregistreaza in `PYTHON/routes/schema_sync/schema_common.py`, stergere = `RESTRICT`, fara cascada pe date contabile.
+Conventii (CLAUDE.md): MariaDB `utf8mb3_general_ci`, nume ASCII, DDL doar in `sql/` (il aplica operatorul), tabelele noi merg in `AVACONT_SURSA` si le creeaza sincronizarea de schema
+(nu se inregistreaza nicaieri: verificat in `schema_diff._tables`, AV01-04), stergere = `RESTRICT`, fara cascada pe date contabile.
+Etapa 1 are acum cod pentru `TZ_Subunitati`, `TZ_PlanCont`, `TZ_SoldInitial`: vezi `sql/AVACONT/Configurari/PlanCont/AV01_04_conturi_sursa.sql`.
 
 ## 1. Unde stau datele (VERIFICAT)
 
 - Baza **unitatii** (DC, ex. `000_DEMO`): `FX_*`, `EF_*`, `VC_*`, `AD_*`, `Parteneri`, `Clasificatii*`, `Unitati` (un rand =
   un context SS+An). Aici merg toate tabelele contabile, cu prefix **`TZ_`** (decis). `An` numai pe datele care depind de an.
 - `AVACONT_COMUN` (nomenclatoare comune): `DefaClsfE/F/V`, `DefaSursaSector`, `Roluri`, `Roluri_Operatii`, `Sectiuni`...
-- **Lipsa:** `DefaCont` si `DefaClase` NU sunt in `AVACONT_COMUN.sql` (dump 16.10.2026). Operatorul spune ca nomenclatoarele se
-  trag din COMUN: daca au fost adaugate dupa dump, refa dump-ul; altfel se creeaza (sectiunea 2). Date: `DefaClase` din
-  `tabledata/DefaClase.csv` (8 randuri), `DefaCont` din `baza2026.accdb` (991 randuri; nu e in `tabledata`).
+- **`DefaCont` si `DefaClase` EXISTA acum in `AVACONT_COMUN`** (VERIFICAT pe dump-urile reimprospatate de operator la 24.10.2026;
+  nu se mai creeaza). Forma reala difera de cea din Access: `DefaCont(Simbol int PK, DENUMIRE tinytext, TIP char(1), CLSFF tinyint,
+  CLSFE tinyint)`, 818 randuri, toate cu cod de 7 cifre (Access avea 991, inclusiv grupe de 3 cifre, si bifele `Sector`, `Sursa`,
+  `Vizibil`, care aici lipsesc). `TIP`: A=Activ, B=Bifunctional, P=Pasiv (A 378, B 108, P 332). `DefaClase(Clasa int, Denumire)`, 8 randuri,
+  fara cheie primara.
 
 ## 2. AVACONT_COMUN - tabele noi (PROPUNERE)
 
 | Tabel | Coloane | Nota |
 |---|---|---|
-| `DefaClase` | `Clasa` char(1) PK, `Denumire` varchar(60) | 8 randuri |
-| `DefaCont` | `Cont` varchar(7) PK, `Denumire`, `Tip` char(1) NULL, `ArePeSector`, `AreSursa`, `AreClsfF`, `AreClsfE` tinyint, `Vizibil` tinyint | din Access; cele 4 bife spun din ce se compune simbolul |
+| `DefaClase`, `DefaCont` | EXISTA deja (vezi sectiunea 1) | nimic de creat. Optional: cheie primara pe `DefaClase.Clasa` |
 | `Roluri` (+ randuri) | `AV_STERGE_NC`, `AV_STERGE_CLSF` cu `Sectiune = 'AV'` (sectiunea `AV` exista deja) | drepturile din decizia «drept de rol»; operatia in `Roluri_Operatii` |
 
 ## 3. Baza unitatii - tabele noi (PROPUNERE, prefix `TZ_`)
 
 **TZ_Subunitati** - `IdSubunitate` PK, `Denumire`, `Capitol` varchar(5) (`65.01`), `SursaSector` varchar(3) FK
-`DefaSursaSector` (`01A`, `02E`...), `ZecimaleSalarii` tinyint (0/2: inlocuieste bifa `Zec2`), `Activ`. Unic pe `Capitol`.
+`DefaSursaSector` (`01A`, `02E`...), `ZecimaleSalarii` tinyint (0/2: inlocuieste bifa `Zec2`), `Activ`. Capitolul se repeta doar intre o subunitate si copiii ei (regula tinuta de ruta de salvare, comutator in `capitol_familie.py`; indexul unic a fost scos prin AV01_04e); `Denumire` ramane unica.
 Subunitate = alta unitate subordonata cu contabilitatea ei (decis); capitolul si SS vin din ea (65.01=01A, 65.02=02A,
 65.10=02E, 65.11=01A). **O unitate fara subunitati are una implicita**, ca sa nu existe chei nule. **DECIS (operator, 23.10.2026):
 `TZ_Subunitati` este SEPARAT de `VC_Subunitati` (VERCON) si FARA nicio legatura intre ele** (fara cheie straina, fara coloana
 comuna, fara sincronizare). `VC_Subunitati` ramane neatins.
 
-**TZ_PlanCont** (**pe subunitate - CONFIRMAT de operator, 23.10.2026**; un cont apartine unei singure subunitati) - `IdCont` PK, `IdSubunitate` FK, `Cont` FK `DefaCont`, `Analitic` varchar(10) NULL, `ClsfF`, `ClsfE` NULL,
+**TZ_PlanCont** (**pe subunitate - CONFIRMAT de operator, 23.10.2026**; un cont apartine unei singure subunitati) - `IdCont` PK, `IdSubunitate` FK, `Cont` int(11) FK `AVACONT_COMUN.DefaCont.Simbol` (FK intre baze exista deja: `Clasificatii` -> `DefaArticol`), `Analitic` varchar(10) NULL, `ClsfF`, `ClsfE` NULL,
 `SimbolCont` varchar(50) (compus: cont + sector + sursa + [ClsfF] + [ClsfE] + [.analitic]; unic pe subunitate), `Denumire`,
 `FelCont` char(1) (A/B/P), `Extra` tinyint, `Activ`. Fara `SID/SIC/RPC/RPD` (solduri separate), fara `ContLung`, fara `Expr1`/`TipCont`.
 Fara `An`: planul nu depinde de exercitiu; un cont iesit din uz se marcheaza `Activ = 0`. Stergere BLOCATA daca e folosit in
@@ -49,10 +51,11 @@ sau e in sabloane; schimbarea `Cod` blocata daca are operatii (propunere, lipses
 `FelOP` varchar(50) NULL, `Cheie` varchar(30) NULL (cheia clasificatiei `65.01.XX.XX.57.02.02`, doar cand sablonul e legat de o
 clasificatie), `Tip` char(1) (A/C/M, **pastrat ca in Access pana se afla sensul lui M**), `Activ`.
 **TZ_SablonLinie** - `IdLinie` PK, `IdSablon` FK, `Forma` varchar(5) (subcapitol), `Explicatie`, `ContDebit`, `ContCredit`
-(varchar(7), FK `DefaCont`: DOAR contul de baza, decis), `PartDebitMod`/`PartCreditMod` enum(`NIMIC`,`OPERATIE`,`FIX`),
+(int(11), FK `AVACONT_COMUN.DefaCont.Simbol`: DOAR contul de baza, decis), `PartDebitMod`/`PartCreditMod` enum(`NIMIC`,`OPERATIE`,`FIX`),
 `IdPartDebit`/`IdPartCredit` FK `Parteneri` NULL (obligatoriu cand mod = `FIX`), `Ordonantare`, `PA`, `Chelt` tinyint, `Simpla`
 smallint NULL. `Chelt` = «cheltuiala efectiva» (decis, ramane). Contul complet se compune la folosire din cont de baza +
-sector/sursa ale subunitatii + clasificatia operatiei (regula `MakeCont`, fisa OCI A1, dupa bifele din `DefaCont`).
+sector/sursa ale subunitatii + clasificatia operatiei (regula `MakeCont`, fisa OCI A1). In `DefaCont` raman doar bifele `CLSFF` si `CLSFE`
+(cont cu clasificatie functionala / economica); sector si sursa se presupun ale TUTUROR conturilor (lipsesc bifele din Access) - DE CONFIRMAT.
 Fara `IdClsf` concret pe linie (se rezolva la folosire), fara `XXX`.
 
 **TZ_SablonSalarii** (articol) - `IdArticol` PK, `IdSubunitate` FK (capitol din subunitate), `Clasificatie` varchar(12)
@@ -74,7 +77,9 @@ Se aduc la modelul clasificatiilor normale doar partile care lipsesc:
   `Clasificatii_Rectificari`: `Trim` double, `IdUnitate` adaugat, unic pe (`IdClsfV`, `IdUnitate`, `Data`, `Document`). DE VERIFICAT
   inainte de ALTER: tabela e goala? (e in schema din 09.09.2026, probabil nefolosita.)
 - Fereastra: copie a `ClasificatiiForm` (arbore + buget pe versiuni + rectificari), cu modificare si stergere ca la cheltuieli.
-- Nomenclatorul `DefaClsfV` (1404 randuri, `tabledata/DefaClsfV.csv`; coloana `CV` = `VN`: sens DE LAMURIT) exista deja in COMUN.
+- Nomenclatorul `DefaClsfV` e extins (AV01-03, rulat de operator, VERIFICAT pe dump 24.10.2026): `Capitol`/`Subcapitol`/`Paragraf` generate +
+  `Tip` (`VN` venituri / `CH` cheltuieli); 1430 randuri: VN 1085, CH 341, fara Tip 4 (`140310`, `141310`, `333400` = venituri; `630000` = cheltuieli,
+  dupa denumire). Fereastra de venituri filtreaza pe `Tip = 'VN'`.
 
 ## 5. Setari si drepturi
 
@@ -100,7 +105,8 @@ view in `KBot.App\Views\`, buton in ribbon (tab Configurari), ajutor `0000-NN`, 
 
 ## 8. Ce NU stiu inca (DE VERIFICAT / DE CONFIRMAT)
 
-- `Tip = M` la antetul de sablon; `DefaNote.Tip` (1/2/4) si `Simpla`; coloana `CV` din `DefaClsfV`.
+- `Tip = M` la antetul de sablon; `DefaNote.Tip` (1/2/4) si `Simpla`.
+- Sector si sursa la TOATE conturile din `DefaCont` (bifele din Access lipsesc) - de confirmat; 818 vs 991 de randuri (gruparile de 3 cifre au disparut?).
 - `ParteneriForm`/0121-0123: impun cod fiscal? (conditioneaza analiticele fara CF).
 - (Rezolvat) planul de conturi pe subunitate; `TZ_Subunitati` fara legatura cu `VC_Subunitati`.
 - Daca `DefaCont`/`DefaClase` exista deja in COMUN dupa 16.10.2026.
