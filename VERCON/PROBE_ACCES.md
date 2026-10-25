@@ -1,10 +1,18 @@
-# VERCON — probe de acces și audit (SLICE-VC04-05)
+# VERCON — catalogul probelor de acces, browser și fluxuri
+
+Consolidare D001-04, 24.10.2026. Identificatorii scenariilor, așteptările, rezultatele și proveniența sunt păstrate pe matrice. Accesul a fost parțial probat la 11.10; browserul și fluxurile VC07 de mai jos rămân planificate/neexecutate. Reviziile ulterioare ale produsului se citesc din contracte/workloguri, fără a rescrie retroactiv scenariile sau a certifica probe prin această reorganizare.
+
+[Acces și audit](#probe-acces) · [Browser și UI](#probe-browser) · [Fluxuri VC07](#probe-vc07)
+
+<a id="probe-acces"></a>
+
+## VERCON — probe de acces și audit (SLICE-VC04-05)
 
 Stare: **PARȚIAL EXECUTAT** (11.10.2026). Probele de apel direct au fost rulate pe launcherul de preview (port 5054, utilizatori `preview` și `altul`, ttl 20 s); celelalte rămân goale. Preview-ul nu validează conturi, roluri sau MariaDB reale. Conturile și drepturile reale se validează separat de preview (preview-ul are un utilizator care deține toate operațiile).
 
 Preview: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`. Ocuparea din preview expiră în 20 s fără heartbeat. Al doilea utilizator: `/vercon/preview/user/altul` (cookie, deci un alt profil de browser); al doilea tab al aceluiași utilizator: deschizi pagina încă o dată.
 
-## Ocupare exclusivă (VC04-04)
+### Ocupare exclusivă (VC04-04)
 
 | # | Scenariu | Așteptat | Rezultat |
 |---|---|---|---|
@@ -17,7 +25,7 @@ Preview: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`. 
 | L7 | B încearcă să preia cu `takeover=true` pe ocuparea lui A (apel direct) | refuzat `GESTIUNE_OCCUPIED` (preluarea e doar pentru același utilizator) | OK (apel direct, preview) |
 | L8 | cerere veche a fostului titular după preluare | refuzată `LOCK_LOST`, fără efect | OK (apel direct, preview) |
 
-## Operații, tip și context (VC04-01/02)
+### Operații, tip și context (VC04-01/02)
 
 | # | Scenariu | Așteptat | Rezultat |
 |---|---|---|---|
@@ -30,7 +38,7 @@ Preview: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`. 
 | A7 | eroare la citirea drepturilor (tabel lipsă / baza oprită) | acces închis (403/500), niciodată deschis | — |
 | A8 | utilizator fără niciun rol VR | `context` → 403; nicio gestiune vizibilă | — |
 
-## Repository (VC04-02)
+### Repository (VC04-02)
 
 | # | Scenariu | Așteptat | Rezultat |
 |---|---|---|---|
@@ -39,16 +47,16 @@ Preview: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`. 
 | R3 | `insert` cu `GestiuneId` în valori | `ScopeError` (contextul îl pune serverul) | — |
 | R4 | tabel în afara `tables.py` | `ScopeError` | — |
 
-## Audit (VC04-05)
+### Audit (VC04-05)
 
 Rândurile din jurnal au `outcome=` din: `success`, `refused` (o regulă a spus nu), `busy` (ocupat de altul), `rollback`, `commit`, `unknown` (răspuns pierdut). Doar `success`, `refused`, `busy` și `failed` sunt emise acum de garda comună; `rollback`/`commit`/`unknown` sunt funcții pregătite în `diagnostics.py` și le folosesc rutele de scriere din VC06.
 
-## Server (după aplicare)
+### Server (după aplicare)
 
 - `sql/VC04_01_roluri_vr.sql` pe `AVACONT_COMUN` (după AD10_01 și AD10_03), apoi acordarea manuală a rolurilor.
 - `sql/VC04_03_privilegii_migrator.sql` (șablon) — contul migratorului, un DC pe rând; verificarea `SHOW GRANTS` din fișier.
 
-## Rezultate rulate (11.10.2026, apeluri directe pe preview)
+### Rezultate rulate (11.10.2026, apeluri directe pe preview)
 
 **Peste 40 de apeluri; toate au ieșit cum era așteptat, după o corectură.** Prima rundă a scos două defecte reale, reparate și reluate:
 
@@ -58,3 +66,116 @@ Rândurile din jurnal au `outcome=` din: `success`, `refused` (o regulă a spus 
 Verificate suplimentar: bon de consum pe OI, listă de alimente pe Materiale, bon de predare pe Materiale și închidere an pe MF sunt refuzate (`FORM_NOT_AVAILABLE`), iar bon de consum pe Materiale se deschide; NIR are coloanele de mijloc fix numai pe MF; gestiunea ocupată arată formularele de editare dezactivate și Rapoartele active; formular necunoscut → 404; tip schimbat pe gestiune goală → 200, pe gestiune cu date → `TYPE_LOCKED`; salvare cu jeton curent → salvat, aceeași cheie → repetată (revizie 2), revizie veche → `CONFLICT`, jeton vechi sau al altuia → `LOCK_LOST`.
 
 **Neprobate încă:** A2/A7/A8 (roluri reale, eroarea citirii drepturilor), R1–R4 (repository, fără ecran), L4 la închiderea efectivă a filei, heartbeat-ul automat din pagină, tot ce ține de MariaDB (`SqlLockStore`).
+
+<a id="probe-browser"></a>
+
+## VERCON — matricea de probe in browser (SLICE-VC02-05)
+
+Stare: **PLANIFICAT / NEEXECUTAT**. Nicio probă de mai jos nu a fost rulată; nu există măsurători. Coloana „Rezultat" se completează doar după o rulare reală pe `VERCON/tools/preview.py` (port 5053). Nu declar performanța din implementare.
+
+Pornire: `PYTHON\.venv\Scripts\python.exe VERCON\tools\preview.py --port 5053`, apoi `http://127.0.0.1:5053/vercon`. DC-uri: `/vercon/preview/unit/preview` și `preview2`. Simulare răspuns pierdut la salvare: adaugă `?simulate=lose-response` în adresa paginii.
+
+### Context (VC02-01)
+
+| # | Scenariu | Așteptat | Rezultat |
+|---|---|---|---|
+| C1 | DC `preview2` (o subunitate, o gestiune) | subunitate, gestiune și an alese singure | — |
+| C2 | DC `preview`, subunitatea A1: „Magazie materiale" și „Magazie materiale 2" | două gestiuni distincte, ani proprii | — |
+| C3 | schimbi anul pe OI/MF | rămâne aceeași gestiune; bara spune „filtru an" | — |
+| C4 | schimbi anul pe Materiale/Alimente | bara spune „exercițiu" | — |
+| C5 | schimbi subunitatea cu draft nemodificat / modificat | fără întrebare / întrebare „Rămân aici / Renunț" | — |
+| C6 | alegi rapid două gestiuni la rând | rămâne contextul ultimei alegeri | — |
+
+### Meniu și capabilități (VC02-02)
+
+| # | Scenariu | Așteptat | Rezultat |
+|---|---|---|---|
+| M1 | OI și MF | fără Bon de consum, Retur, Listă alimente, Închidere an; cu predare/transfer/casare | — |
+| M2 | Alimente („Bucătărie", ocupată de alt utilizator) | formularele de editare dezactivate cu motiv; Rapoarte active | — |
+| M3 | apel direct `/api/vercon/forms/bc/open?...` pe gestiune OI | 403 `FORM_NOT_AVAILABLE` | — |
+| M4 | NIR pe MF | coloane nr. inventar, data intrării, durată; pe Materiale nu | — |
+| M5 | „Gestiune nouă (goală)" | selectorul de tip activ; după schimbare rămâne activ (tot goală) | — |
+| M6 | gestiune cu date | selectorul de tip dezactivat; `POST /api/vercon/gestiune/type` → 409 `TYPE_LOCKED` | — |
+
+### Editare (VC02-03) și salvare (VC02-04)
+
+| # | Scenariu | Așteptat | Rezultat |
+|---|---|---|---|
+| E1 | text cu apostrof și diacritice | păstrat exact | — |
+| E2 | `1.234,56`, `12,5`, `0`, gol | `1234.56`, `12.5`, `0`, NULL (obligatoriu → eroare) | — |
+| E3 | dată `5.3.2026` | devine `05.03.2026` | — |
+| E4 | preț `-1` | „cel puțin 0" | — |
+| E5 | multe linii, scroll, ștergere linie din mijloc | valorile celorlalte rămân | — |
+| S1 | dublu Enter | o singură cerere, o singură revizie | — |
+| S2 | `?simulate=lose-response` | stare nesigură; „Verifică salvarea" → „fusese aplicată"; nicio dublură | — |
+| S3 | salvare cu revizie veche | conflict; datele rămân în formular | — |
+| S4 | sesiune expirată | mesaj; datele rămân | — |
+| S5 | schimbi contextul în timpul salvării | răspunsul e ignorat („stale") | — |
+
+### Corecții UI din 12.10.2026 — probe planificate
+
+Contract: [FLUXURI_UI](FLUXURI_UI.md). Neexecutate în aplicație; inspecția PNG nu înlocuiește probele browser.
+
+| # | Scenariu | Așteptat | Rezultat |
+|---|---|---|---|
+| U1 | NIR/BC/listă/BP/BT/BS: consultare → Adaugă/Modifică → Salvează/Renunță | Arbore în dreapta numai în consultare, revine la succes/Renunță; selecție restaurată | — |
+| U2 | Eroare/conflict/răspuns pierdut la salvare | Arbore ascuns, draft păstrat, reconciliere înainte de revenire | — |
+| U3 | NIR MF și Materiale; căutare produs | O singură grilă, coloane MF doar la MF; combobox cu căutare la tastare | — |
+| U4 | Valoare factură manuală/necompletată; prag N01 | Câmp activ; lipsă → sumă; regula N01/N02 și exact 1 leu păstrate | — |
+| U5 | Arbore NIR, hover/focus pe frunză | Furnizor → dată → nr. factură+total; ⋯ accesibil la tastatură | — |
+| U6 | ListaAlimente consultare/editor | Rezumate porții și feluri DGV identice vizual cu NIR; arbore în dreapta formatat ca NIR/BC/BP; fără Alimente necesare | — |
+| U7 | Popup BC: bon liber/asociat altei liste/altă gestiune | Numai BC eligibile Alimente curentă; selecție în draft | — |
+| U8 | Adaugă două BC-uri; Renunță în popup/listă; scoate o asociere | Alegerea adaugă rând fără înlocuirea celorlalte; Renunță în popup păstrează draftul, Renunță la listă restabilește setul salvat; BC-ul scos nu e anulat | — |
+| U9 | Salvează lista cu un BC din set devenit neeligibil/revizie veche | Revalidarea tuturor BC-urilor; atomicitate listă/mese/set de legături, fără salvare parțială; zero BC noi/resalvate, zero consum suplimentar | — |
+| U10 | BP/BT/BS consultare/editor | Fără Perioada/Deținători/Efect/Istoric; arbore familie numai în consultare; Adaugă prezent | — |
+| U11 | Predare: cont de intrare | Conturi în care au intrat produsele; produse disponibile în contul ales | — |
+| U12 | Transfer/casare: schimbă predătorul | Numai produsele sursei; liniile incompatibile nu se reinterpretează; casare fără Primitor | — |
+| U13 | Rapoarte/SFP OI/MF | Arborele multianual rămâne | — |
+| U14 | NIR vs BC/porții/feluri/BC asociate/BP/BT/BS | Aceeași densitate/tipografie/borduri/editoare compacte; fără padding mare; Adaugă rând în footer (dezactivat în consultare), totaluri pe coloane | — |
+| U15 | Lista cu BC 780,0000 și 660,0000; listă 1.440,0000; apoi scoate al doilea | Două rânduri, TOTAL BC 1.440,0000, diferență 0,0000; după scoatere total 780,0000 și diferență 660,0000, fără stoc modificat | — |
+| U16 | Încearcă același BC de două ori; două liste aleg simultan același BC | Fără dublare în draft/total; salvarea concurentă refuză asocierea la altă listă; draft păstrat | — |
+| U17 | Persistă/reîncarcă o listă cu două BC-uri | Ambele legături rămân; IdLista nu este unic în legături; FK de context și unicitatea perechii protejate | — |
+
+### Generale
+
+| # | Scenariu | Rezultat |
+|---|---|---|
+| G1 | desktop 1280, mobil 375 (fără scroll orizontal pe pagină) | — |
+| G2 | tastatură: Tab prin selectoare, meniu, câmpuri; Enter salvează | — |
+| G3 | temă luminoasă / întunecată | — |
+| G4 | 10 deschideri/închideri de formular: număr de listeners/timere constant | — |
+| G5 | 2.000 de linii: timp de desenare și memorie măsurate | — |
+| G6 | consolă fără erori; nicio resursă rămasă după `pagehide` | — |
+
+### Ajutor
+
+Ajutorul explicit pe flux și gestiune **nu este scris**: mecanismul existent al ADECHIT (`js/adechit/help.js`) nu a fost încă legat de VERCON. Rămâne de făcut după ce fluxurile sunt stabile (VC06+).
+
+<a id="probe-vc07"></a>
+
+## VERCON — matricea de verificare VC07-05 (flux → rezultat)
+
+Stare: **PLANIFICAT, NEEXECUTAT** (12.10.2026). Nimic din aceasta matrice nu a fost rulat; toate scenariile OI/MF/Retetar sunt **sintetice** (bazele reale nu au retururi, casari, transferuri, predari OI — F6), deci nu sunt paritate pe productie. Ruleaza pe `000_DEMO`, cu o gestiune de fiecare tip si doua gestiuni de acelasi tip.
+
+| # | Tip | Flux | Rezultat asteptat |
+|---|---|---|---|
+| 1 | Materiale | recepție NIR → BC → retur BR → storno FCS | stoc = intrari + retur − iesiri − storno; BC peste stoc refuzat; retur peste cantitatea bonului refuzat; storno peste cantitatea receptiei refuzat |
+| 2 | Materiale | NIR cu TVA mixta, valoare factura 0 / 0,99 / 1,00 / 1,01 diferenta | total = suma liniilor (0 si 1,01), antet pastrat (0,99 si 1,00); TVA o singura data |
+| 3 | Materiale | editare NIR cu storno; anulare BC cu retur | refuzate (HAS_STORNO / HAS_RETUR) pana se anuleaza dependenta |
+| 4 | Alimente | NIR → BC (separat) → lista cu 2 BC-uri → salvare | lista, mesele, feluri, 2 legaturi intr-o tranzactie; BC-ul nu se resalveaza; stocul nu scade a doua oara |
+| 5 | Alimente | adauga la lista un BC deja in alta lista / anulat | refuz, nicio legatura partiala, draftul ramane |
+| 6 | Alimente | scoate un BC din lista (⋮), salveaza; anuleaza lista | BC-ul ramane neatins si liber; la anulare toate bonurile se elibereaza |
+| 7 | Alimente | modifica un BC legat de lista | refuzat (LINKED_LIST) |
+| 8 | Alimente | masa absenta / porții 0 / NULL | valoare masa 0, lista se salveaza; fara impartire invalida |
+| 9 | OI | NIR → BP → BT → BS | stoc magazie scade la BP (prin BC); detinerea: BP +, BT +/− net zero, BS −; casare 2 × 100 → −2 buc / −200 lei, pret pozitiv |
+| 10 | OI | transfer peste ce detine predatorul / lot al altui detinator / inainte de intrarea lotului | refuzat pe linia respectiva |
+| 11 | OI | editare/anulare BP din care s-a transferat | refuzat (HAS_OUTPUTS); dupa anularea transferului — permis, detinerea revine |
+| 12 | OI | doua BP cu aceeasi cifra de IDBP in istoric (import) si un transfer nou | id-urile noi sunt peste orice id folosit; loturile nu se amesteca |
+| 13 | MF | NIR MF 3 active → BP → registru MF | 3 variante + 3 randuri ProduseM; evidenta arata detinatorul; valoare lunara = total/DNF |
+| 14 | MF | modifica DNF/DF in registru cu revizie veche | CONFLICT; cu revizie corecta — valoare lunara recalculata |
+| 15 | toate | apel direct al functiilor straine tipului (BC pe OI, BP pe Materiale, lista pe MF, registru MF pe OI) | refuzat de server (403), meniul nu le afiseaza |
+| 16 | toate | eroare provocata la ultima linie / la registru | rollback complet: niciun antet, linie sau rand de registru ramas |
+| 17 | toate | doi utilizatori pe aceeasi gestiune (si pe ani diferiti) | al doilea blocat inainte de acces |
+| 18 | toate | an inchis (Materiale/Alimente) | scrierea refuzata prin apel direct (PERIOD_CLOSED); consultarea merge |
+
+Nu sunt acoperite: rapoartele si amortizarea (VC08), retetarul (`VC_Retetar`, model neclar, 0 randuri), corectiile istorice pe an inchis (D05).

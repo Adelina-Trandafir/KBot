@@ -1,8 +1,10 @@
 # SLICE-0008 — Tree data API (`GET /api/forexe/tree`) + `MainForm.LoadTree`
 
 Plan: `PLAN_TreeDataApi.md` (saved to this folder as part of this slice — it existed only
-in chat before). Supersedes `docs/HANDOFF_TreeDataApi.md`.
+in chat before). Supersedes the earlier TreeDataApi handoff.
 Date: 2026-07-15.
+
+> Documentation note, D001-03 (24.10.2026): the superseded handoff and the two old plan-pointer files were retired after their unique notes were absorbed into the plans beside this worklog. Paths in the historical Files touched table below describe the 0008 change, not current navigation targets.
 
 ## What changed and why
 

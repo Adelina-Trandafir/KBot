@@ -1,19 +1,12 @@
+<a id="slice-0069"></a>
+
 # SLICE 0069 — Umbra ferestrelor fără chenar (cu chenar de rezervă)
 
-**Data:** 19.09.2026
-**Cererea operatorului:** «on windows 10 (and maybe on 11 - i didn't test) there is no shadow
-under the forms so when a new form is opened over another they look bad. either implement a
-shadow or, if no shadow detected, and one can't be implemented, then show a border around the
-form. this should be done from the KbotThemedForm»
+**Data:** 19.09.2026 **Cererea operatorului:** «on windows 10 (and maybe on 11 - i didn't test) there is no shadow under the forms so when a new form is opened over another they look bad. either implement a shadow or, if no shadow detected, and one can't be implemented, then show a border around the form. this should be done from the KbotThemedForm»
 
 ## Ce s-a găsit
 
-Toate formularele K-BOT sunt `FormBorderStyle.None` (21 de `.Designer.vb`). Windows desenează
-umbră doar ferestrelor cu ramă; o fereastră fără ramă n-are nici umbră, nici margine. Pe
-Windows 11 `ThemeManager.Apply` cere colțuri rotunjite (`DWMWA_WINDOW_CORNER_PREFERENCE`), iar
-DWM aduce umbra odată cu ele; pe Windows 10 atributul nu există (eșec logat o dată, documentat
-în `NativeMethods.SetRoundedCorners`), deci fereastra rămânea pătrată ȘI fără umbră — exact ce a
-văzut operatorul.
+Toate formularele K-BOT sunt `FormBorderStyle.None` (21 de `.Designer.vb`). Windows desenează umbră doar ferestrelor cu ramă; o fereastră fără ramă n-are nici umbră, nici margine. Pe Windows 11 `ThemeManager.Apply` cere colțuri rotunjite (`DWMWA_WINDOW_CORNER_PREFERENCE`), iar DWM aduce umbra odată cu ele; pe Windows 10 atributul nu există (eșec logat o dată, documentat în `NativeMethods.SetRoundedCorners`), deci fereastra rămânea pătrată ȘI fără umbră — exact ce a văzut operatorul.
 
 ## Ce s-a schimbat și de ce
 

@@ -225,10 +225,4 @@ Stare: surse și DDL pregătit, fără teste, compilări sau operații pe baze.
 
 ### Clarificare ulterioară VC06-06 — conturi și destinații
 
-Implementare în surse, fără rulare: mai multe conturi ale aceleiași subunități
-formează un singur NIR. Numai subunitățile diferite produc NIR-uri distincte
-și afișarea forțată «auto». ValoareFC rămâne ținta totalului recepțiilor
-rezultate; selectarea mai multor conturi nu schimbă formulele de TVA sau
-regulile corecțiilor AUTO. Contul liniei se deduce din produs, iar contul unui
-produs cu mișcări devine nemodificabil pentru a păstra încadrarea istoricului.
-Reguli complete: [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+Gruparea conturilor/destinațiilor, contul derivat și blocarea produsului cu mișcări sunt în [contractul editorului](FACTURI_NIR_IMPLEMENTARE.md). Nu schimbă formulele TVA sau regulile AUTO; ValoareFC rămâne ținta totalului recepțiilor rezultate. Starea completării: implementare în surse, fără rulare.

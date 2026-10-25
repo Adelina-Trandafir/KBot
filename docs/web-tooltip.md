@@ -122,3 +122,13 @@ meniu și înlocuirea DOM-ului sub cursor nu eliberează blocarea.
 cu `data-kbot-tooltip="off"`. Adaptorul elimină în continuare atributele native
 `title`, dar nu generează tooltipuri în acea zonă, nici pentru ramuri încărcate
 ulterior. Celelalte controale și ceilalți arbori păstrează comportamentul lor.
+
+## Istoric și proveniență
+
+Cele trei etape din 20.10.2026 au fost confirmate TESTAT, RULAT, PUBLICAT de operator la 23.10.2026. Antetul inițial bold cu ℹ️ a devenit ulterior opțional și implicit oprit, inclusiv la normalizarea preferințelor vechi fără showHeader. Contractul de mai sus descrie rezultatul acestor etape.
+
+- Componenta inițială: fișiere noi PYTHON/static/js/components/tooltip/{tooltip-config.js,tooltip.js,tooltip-settings.js,tooltip.css}; integrare în portal/{messages.js,app.js,portal.js,apps-menu.js}, adechit/{app.js,payers.js}, vercon/application-menu.js și session/session-monitoring-ui.js, toate sub PYTHON/static/js/. Documentație: acest fișier și implementare_vercon_v2.md.
+- Preluarea title și oprirea pe mobil: noi tooltip-environment.js și tooltip-titles.js; ajustate tooltip.js, tooltip.css, tooltip-settings.js din aceeași componentă, adechit/{app.js,report-print.js}, portal/portal.js, vercon/app.js și PYTHON/routes/adechit/report_render.py.
+- Aspectul compact și excluderea nodurilor: tooltip-config.js, tooltip-settings.js, tooltip.js, tooltip-titles.js, tooltip.css și PYTHON/static/js/vercon/report-selection.js.
+
+Extensia fontului din 21.10.2026 (familie, puncte și culoare) are istoricul și limitele de publicare în [Intervenții web — Font tooltip](../PYTHON/docs/worklog/INTERVENTII_WEB_2026-10.md). Descrierea fontului compact de mai sus consemnează configurația din 20 octombrie; confirmarea din 23 octombrie a celor trei etape nu este extinsă implicit asupra intervenției de font.

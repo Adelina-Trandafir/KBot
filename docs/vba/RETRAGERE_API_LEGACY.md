@@ -2,6 +2,8 @@
 
 Acest ghid însoțește [planul de securitate](../PLAN_Securitate_API.md). Stare: cod pregătit pentru integrare; API-ul serverului și frontend-urile Access nu au fost modificate de acest pas de planificare.
 
+**Ordinea deciziilor:** pașii de retragere și stub-ul de mai jos provin din propunerea inițială. [Excepția operatorului din final](#excepție-decisă-de-operator-11102026-sincronizarea-clasificațiilor-și-a-partenerilor) prevalează exclusiv pentru cele cinci rute și funcțiile enumerate acolo, inclusiv `FX_CLS_Sync_To_KBot`: stub-ul de retragere nu se aplică funcției păstrate. Celelalte operații și vechea cheie se retrag în continuare. Ghidul consemnează decizii; consolidarea nu atestă importul VBA sau deployment-ul.
+
 ## Ce cod se pune în VBA
 
 **Nu există un modul care, prin simpla importare, să elimine toate apelurile HTTP existente.** Acestea pot fi în module, cod de formular/raport, macrocomenzi, Timer, AutoExec, Ribbon sau biblioteci. Un flag nou nu este consultat automat de vechile apeluri, iar ștergerea numai a header-ului API key păstrează cererile și produce erori.
@@ -34,7 +36,7 @@ Public Function FX_CLS_Sync_To_KBot(ByVal vIdUnitate As Long, ByVal vAn As Long,
 End Function
 ```
 
-La curățarea finală se șterg apelurile funcției din formulare și macrocomenzi, controlul de UI dacă nu mai are scop, apoi modulul stub. Aceeași regulă se aplică celorlalți entry points HTTP, cu semnăturile lor reale. Nu se returnează True/200, nu se ignoră eroarea și nu se confirmă o sincronizare care nu a avut loc.
+La curățarea finală se șterg apelurile funcției din formulare și macrocomenzi, controlul de UI dacă nu mai are scop, apoi modulul stub. Aceeași regulă se aplică celorlalți entry points HTTP, cu semnăturile lor reale. Fără `On Error Resume Next`; nu se returnează True/200, nu se ignoră eroarea și nu se confirmă o sincronizare care nu a avut loc.
 
 Pentru un handler exclusiv de trimitere, codul tranzitoriu al butonului poate fi:
 
@@ -55,7 +57,7 @@ Acest exemplu înlocuiește doar acțiunea butonului respectiv; nu blochează ap
 4. Verificarea procedurilor auxiliare, DLL-urilor și referințelor care pot face trimiterea indirect. Referințele la WinHTTP/MSXML se elimină numai dacă nu mai sunt folosite de funcționalitățile rămase; eliminarea unei referințe nu blochează CreateObject late-bound.
 5. Eliminarea separată a secretelor ANAF/tokenurilor dacă există în VBA. Un `Dictionary.Key` sau o cheie primară dintr-un tabel nu reprezintă acreditare și nu se șterge prin replace global.
 6. Debug → Compile, apoi testarea fluxurilor locale rămase. Reexport și verificarea apelanților, inclusiv macrocomenzi încorporate și query-uri care execută funcții. Verificarea efectivă a traficului în pornire și în operațiile vechi.
-7. Rebuild și distribuire ACCDE/MDE pentru toate frontend-urile, inclusiv lansatoare și variante de pe share. API-ul trebuie să refuze deja cheia veche, astfel încât versiunile vechi rămase pe calculatoare să nu poată accesa serverul.
+7. Rebuild și distribuire ACCDE/MDE pentru toate frontend-urile, inclusiv lansatoare și variante de pe share sau din pachetele active; versiunile vechi se elimină din aceste distribuții. API-ul trebuie să refuze deja cheia veche, astfel încât versiunile vechi rămase pe calculatoare să nu poată accesa serverul.
 
 În repository există numai două exporturi VBA relevante. Nu se poate declara «eliminat peste tot din VBA» fără sursele tuturor frontend-urilor folosite. Bazele ADECHIT prezente nu înlocuiesc inventarul frontend-ului AVACONT/FOREXE.
 
@@ -64,6 +66,8 @@ Acest exemplu înlocuiește doar acțiunea butonului respectiv; nu blochează ap
 `Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas` exportă fișiere JSON local; nu este în sine un client HTTP. Poate rămâne ca export local dacă este necesar. Conține totuși o parolă Access literală. Aceasta trebuie eliminată împreună cu orice valoare implicită echivalentă; parola se primește la rulare printr-un mecanism potrivit, fără păstrarea ei în sursă sau loguri. Migratorul .NET care consumă exportul trebuie adaptat la canalul administrativ nou, fără rutele HTTP cu cheie.
 
 ## Condiții de finalizare
+
+Criteriile de retragere de mai jos se citesc împreună cu excepția operatorului: se păstrează numai cele cinci trasee și acreditarea lor distinctă, cu limitele din final.
 
 - Nicio acreditare pentru API-ul Python în VBA sau în configurația lui.
 - Niciun traseu executabil către API-ul Python, direct sau prin helper/bibliotecă.

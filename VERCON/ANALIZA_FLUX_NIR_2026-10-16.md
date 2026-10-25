@@ -124,80 +124,23 @@ Aspecte de rezolvat în proiectare/implementare:
 - La editarea unui MF existent, `_write_receipt_line` păstrează identitatea variantei și nu îi actualizează produsul de bază, deși formularul trimite un produs editabil. Identitatea activului trebuie tratată explicit.
 - Sursa executabilă `stock_source.py:9` folosește `COALESCE(DataFc,Data)` atât pentru recepții, cât și pentru stornări. Comentariile/contractul nu sunt complet aliniate pentru data storno. Regula datei trebuie unificată între validare, previzualizare și rapoarte.
 
-## 3. Flux propus
+## 3. Proiectarea inițială a validării — reper 16.10.2026
 
-### 3.1. Principiul comun
+Propunerea folosea un singur motor pentru modificare, scoatere rând și anulare: mișcări existente fără efectul vechi al NIR + toate liniile ciornei la datele propuse. Se verifică fiecare variantă și fiecare dată, inclusiv ambele variante la schimbarea produsului/prețului, toate rândurile distincte (fără comprimarea celor identice), Decimal și precizia gestiunii, fără float/toleranțe arbitrare. Anularea are efect nou zero.
 
-Pentru modificare, eliminare de rând și anulare, folosim același motor care simulează documentul final:
+Consultarea arată document/stare/total/istoric; intrarea în modificare cere eligibilitate și motive (drept, perioadă, anulare, storno/dependențe active), păstrând documentul până la confirmare. Contextul nu mută NIR în altă subunitate/gestiune, iar schimbarea contului nu reinterpretează liniile incompatibile.
 
-```text
-mișcări existente fără efectul vechi al NIR-ului
-+ efectul tuturor liniilor din ciornă, la datele propuse
-= stoc rezultat pentru fiecare variantă și fiecare dată afectată
-```
+La părăsirea rândului: produs în contul ales, cantitate pozitivă, preț nenegativ, TVA existent și precizie validă; simularea întregii ciorne validează produs/cantitate/preț/TVA/date. Se păstrează ultima stare validă, cu mesaj concret și limită recalculată pentru ciorna curentă: exemplul proiectat era reducere la 50 bucăți refuzată pentru lipsă 10 la 10.01.2026, minim 60. Nu era o probă pe date. Liniile economice schimbate se recalculează; cele istorice nemodificate rămân exacte, inclusiv la editare numai de antet.
 
-Operația este permisă numai dacă stocul rezultat nu este negativ și sunt respectate cronologia număr–dată, dependențele și regulile de valori descrise mai jos. Anularea înseamnă că noul efect al NIR-ului este zero. Schimbarea produsului/prețului poate muta cantitatea între variante: se verifică atât varianta veche, cât și cea nouă.
+Propunerea MF prevedea o identitate de activ pe rând, cantitate 1 la intrări noi, inventar unic în gestiune și ciornă, DNF în clasificare și dată conform regulii explicite; identitatea existentă blocată, înlocuirea tratată ca eliminare+adăugare cu verificarea dependențelor. Era detaliere de proiectare, nu fapt deja implementat.
 
-Se însumează toate liniile distincte ale aceleiași variante; nu se elimină implicit rândurile identice și nu se verifică numai rândul activ. Calculul folosește valorile zecimale și precizia gestiunii, fără conversii prin numere binare sau toleranțe arbitrare.
+Scoaterea rândului nou afectează numai ciorna; un rând persistent se scoate după confirmare și simulare validă, cu refuz pentru stoc negativ (produs/dată/lipsă) sau activ dependent (lista documentelor). Persistă numai la Salvează; Renunță restaurează documentul.
 
-### 3.2. Consultare și intrare în modificare
+Salvarea: context/drept/ocupare/perioadă/revizie/dependențe active → antet și toate liniile (cel puțin una), număr/subnumăr liber excluzând documentul curent → calculul numai al valorilor schimbate și egalitatea exactă a liniilor noi cu ținta aferentă → variante/linii/antet/MF/audit atomic și recontrolul cronologiei. Refuzul face rollback și păstrează ciorna; succesul revine în consultare și selectează NIR. Răspunsul pierdut cere reconciliere înainte de declararea eșecului sau repetare, inclusiv la editare/anulare.
 
-1. Operatorul selectează NIR-ul și vede documentul, starea, totalul și istoricul.
-2. La Modifică, serverul comunică eligibilitatea și motivele blocajelor: drept, perioadă, anulare existentă, storno activ, documente OI/MF dependente.
-3. Dacă este eligibil, se creează ciorna. NIR-ul salvat rămâne intact până la salvarea confirmată.
-4. Câmpurile de identificare a contextului nu pot muta documentul într-o altă subunitate/gestiune. Schimbarea contului este refuzată când liniile nu îi aparțin; liniile nu sunt reinterpretate automat.
+Documentul salvat se anulează cu motiv și rămâne în istoric, fără efect în stoc; nu se portează ștergerea fizică ori eliminarea automată a stornărilor din Access. Storno activ și dependențele OI/MF valabile trebuie rezolvate explicit; simplul istoric anulat nu blochează. Se simulează toate variantele/datele, apoi anulare+audit atomic sau refuz cu document rămas activ.
 
-### 3.3. Adăugare și modificare de rând
-
-1. Produsul aparține contului ales, cantitatea este pozitivă, prețul este nenegativ, cota TVA există și valorile respectă precizia permisă.
-2. La părăsirea rândului se simulează întreaga ciornă. Pentru cantitate, produs, preț/TVA care schimbă varianta și datele cu efect asupra stocului, se reevaluează variantele afectate.
-3. O operație invalidă nu se validează în grilă; se păstrează ultima stare validă și valoarea propusă poate fi corectată.
-4. Mesajul trebuie să fie concret: „Nu poți reduce la 50 buc. Pe 10.01.2026 ar lipsi 10 buc. Cantitatea minimă pentru această modificare este 60 buc.” Limita se calculează pentru ciorna și datele curente, nu se memorează definitiv.
-5. Valorile calculate se actualizează pentru liniile economice modificate. Valorile istorice ale liniilor nemodificate se păstrează exact, inclusiv la o editare exclusiv de antet.
-
-Pentru MF propun o identitate de activ pe rând și cantitate 1 pentru intrări noi. Numărul de inventar este unic în gestiune și în ciornă; DNF respectă clasificarea, iar data intrării se validează după regula explicit stabilită. Schimbarea identității unui activ existent se blochează; înlocuirea lui se tratează ca scoatere a activului vechi și adăugare a unuia nou, cu verificarea dependențelor. Aceasta este o propunere de detaliere, nu o regulă deja implementată.
-
-### 3.4. Scoaterea unui rând
-
-| Situație | Acțiune propusă |
-|---|---|
-| Rând nou, nesalvat | Se scoate din ciornă; nu afectează baza |
-| Rând existent, efectul eliminării este valid | Confirmare, apoi scoatere din ciornă; persistare numai la Salvează |
-| Eliminarea lasă stoc negativ la o dată | Refuz cu produs, dată și cantitate lipsă |
-| Activ cu dependențe valabile | Refuz și listarea documentelor dependente |
-
-Renunță restabilește documentul salvat. Un rând eliminat din ciornă nu se șterge imediat din baza de date.
-
-### 3.5. Salvarea NIR-ului
-
-1. Serverul revalidează contextul, dreptul, ocuparea gestiunii, perioada, revizia și dependențele active.
-2. Validează antetul și toate liniile; nu acceptă document fără linii. Numărul/subnumărul trebuie să fie liber, excluzând documentul curent din controlul de duplicat.
-3. Calculează numai valorile economice care trebuie schimbate. Pentru documentele noi finalizate, noua cerință este egalitatea exactă dintre suma cu TVA a liniilor și valoarea declarată aferentă recepției. Nu este suficient să înlocuiască numai totalul din antet. La factura cu mai multe NIR-uri, ValoareFC este ținta întregii facturi, iar fiecare NIR are propria valoare repartizată. Detaliile sunt în completările de mai jos; migrarea păstrează valorile istorice fără recalculare.
-4. În aceeași tranzacție scrie variantele, liniile, antetul, datele MF și auditul, apoi verifică din nou cronologia stocului pentru toate variantele afectate.
-5. La refuz face rollback și păstrează ciorna pentru corectare. La succes revine în consultare și selectează NIR-ul salvat.
-6. Dacă se pierde răspunsul, reconciliază operația înainte să declare eșec sau să permită repetarea cu efect dublu. Protecția trebuie definită și pentru editare/anulare, nu doar pentru creare.
-
-### 3.6. Anularea întregului NIR
-
-Păstrăm decizia proiectului: documentul salvat se **anulează cu motiv**, rămâne în istoric și nu participă la stoc. Nu preluăm ștergerea fizică și ștergerea automată a stornărilor din Access.
-
-1. Se cere motivul anulării.
-2. Dacă există storno activ, operatorul primește lista lui și rezolvă explicit acea dependență înainte de anularea NIR-ului.
-3. Dacă există documente OI/MF dependente valabile, acestea blochează operația. Documentele anulate nu trebuie tratate ca dependențe active numai pentru că rândurile lor au rămas în istoric.
-4. Se simulează eliminarea efectului întregului NIR și se verifică toate variantele la toate datele afectate.
-5. Dacă este permisă, anularea și auditul se salvează atomic. Dacă nu, documentul rămâne activ și utilizatorul primește cauza exactă.
-
-### 3.7. Data efectului asupra stocului
-
-În implementarea actuală intrările folosesc data facturii (`DataFc`). Propun păstrarea acestei reguli în această etapă și afișarea ei clară în simulare. Pentru storno trebuie aliniate sursa executabilă și contractul: alegerea datei nu se schimbă tacit în cadrul refacerii validărilor.
-
-## 4. Ordinea inițială recomandată a implementării
-
-1. Motor comun de simulare a ciornei, bazat pe aceeași sursă de mișcări ca validarea finală.
-2. Validare la modificarea/scoaterea rândului și mesaje cu produs, dată, lipsă și dependențe.
-3. Păstrarea valorilor nemodificate din documentele migrate și corectarea controalelor MF/dependențelor anulate.
-4. Alinierea datei stornării, a previzualizării și a rapoartelor cu regula stabilită.
-5. Reconcilierea rezultatului necunoscut pentru creare, editare și anulare.
+La acel checkpoint, intrările foloseau DataFc; se propunea păstrarea regulii și afișarea ei în simulare. Data storno trebuia aliniată între sursa executabilă, contract, preview și rapoarte, fără schimbare tacită. Ordinea inițială era motor comun → validări de rând/mesaje → conservarea istoricului și regulile MF/dependențe → data storno → rezultatul necunoscut. Implementarea autorizată ulterior este în [VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md) și [contractul editorului](FACTURI_NIR_IMPLEMENTARE.md); propunerea nu certifică singură fiecare comportament.
 
 ## 5. Cerință: data NIR păstrează cronologia numerelor
 
@@ -282,104 +225,29 @@ Propun păstrarea plafonului de 1 leu pentru comanda automată de ajustare, ca p
 
 Preferința utilizatorului este păstrarea cotei reale. Varianta 0% rămâne o opțiune explicită de compatibilitate, dacă se alege păstrarea strictă a vechiului model de calcul. Nu se folosește automat drept soluție pentru lipsa preciziei sau pentru consumuri care blochează mutarea între variante: acestea sunt probleme independente de cotă. La migrare, rândurile deja ajustate la 0% se păstrează astfel; cota lor originală nu se poate deduce sigur.
 
-## 8. Factură comună, mai multe NIR-uri locale
+## 8. Modelul inițial de factură comună și migrarea — propuneri istorice
 
-### 8.1. Model recomandat
+**Înlocuit parțial în aceeași zi:** editorul separat de factură și NIR-ul per cont au fost respinse prin VC06-06-D01–D11. Contractul adoptat este [FACTURI_NIR_IMPLEMENTARE](FACTURI_NIR_IMPLEMENTARE.md): introducere în Adăugare NIR, mai multe conturi în aceeași destinație, împărțire numai între destinații. Celelalte idei de mai jos sunt păstrate ca justificare și cerințe de reconciliere, fără a le declara toate implementate.
 
-Separăm identitatea facturii furnizorului de documentele care introduc efectiv bunurile în fiecare destinație:
+Identitatea facturii furnizorului este comună în DC, separată de NIR-urile locale: VC_FACTURI (furnizor, număr original, dată, monedă, ValoareFC, stare/revizie), VC_FACTURI_LINII, VC_FACTURI_REPARTIZARI și legătura spre VC_NIR. Alimente/Materiale/OI/MF sunt gestiuni ale subunităților; se acoperă mai multe gestiuni/subunități în același DC, fără operații între baze DC. Fiecare NIR își păstrează număr/data/comisie/stare/revizie/drepturi și stoc/registru local; propunerea inițială de NIR pe subunitate+gestiune+cont nu este regula actuală.
 
-```text
-Factură de cumpărare, comună în DC
-  ├─ linii de factură și total declarat unic ValoareFC
-  └─ repartizări ale liniilor/cantităților/valorilor
-       ├─ NIR subunitatea A / Alimente / cont 1
-       ├─ NIR subunitatea A / Materiale / cont 2
-       ├─ NIR subunitatea B / Obiecte de inventar / cont 3
-       └─ NIR subunitatea B / MF / cont 4
-```
+O linie poate fi împărțită în cantități/valori pe mai multe destinații și recepții parțiale, inclusiv mai multe active MF, fără mapare 1:1 ori dublarea cantității active. Produsele locale se aleg în destinație; ID-urile nu sunt interschimbabile.
 
-În ierarhia actuală, Alimente/Materiale/OI/MF sunt tipuri de gestiuni dintr-o subunitate. Modelul acoperă atât mai multe asemenea gestiuni în aceeași subunitate, cât și subunități distincte din același DC. Nu presupune operații între baze DC diferite.
+Total cu TVA al unui NIR = valoarea repartizată lui; suma activă la finalizarea completă = ValoareFC introdus o singură dată. Exemplu: 1.000 lei = 200 Alimente + 300 Materiale + 500 MF, fără numărarea facturii de trei ori. În proiectul cu recepții parțiale, «în lucru / parțial / reconciliat» erau stări distincte, iar anularea unui NIR elibera numai partea lui, păstrând factura. Nu se absoarbe artificial restul nerepartizat în fiecare NIR. Corecția globală este făcută o dată, pe rânduri/destinații explicite, numai când diferența nu reprezintă bunuri încă nerecepționate. ZEC diferit nu autorizează pierderea resturilor; repartizarea trebuie să fie reprezentabilă, iar afișarea la două zecimale nu dovedește egalitatea la patru.
 
-Propun păstrarea unui NIR pe combinația subunitate + gestiune + cont/categorie, legat de factura comună. O factură poate avea mai multe asemenea NIR-uri și recepții în zile diferite. Fiecare NIR păstrează număr, dată, comisie, stare, revizie și drepturile contextului lui. Stocul și registrul MF/OI rămân locale. Modelul nu obligă la rescrierea tuturor bonurilor și rapoartelor într-un singur document cu contexte amestecate.
+Ecranul inițial propunea factura → alegerea destinațiilor/cantităților → NIR-uri rezultate și rest, cu cale simplă directă pentru o destinație; a fost înlocuit după deciziile utilizatorului. Principiile tranzacționale: ocuparea tuturor gestiunilor cerute în ordine stabilă și blocarea/revizia facturii, refuzul întregului lot la lipsă de acces, o tranzacție în DC; salvările locale succesive blochează factura pentru a preveni supra-alocarea. Modificarea datei/furnizorului/totalului comun după recepții cere analiza destinațiilor și a efectului datei asupra stocului, fără propagare tacită în perioade închise sau consumuri incompatibile. Storno/creditul furnizorului rămâne document distinct legat de factura inițială/stornările locale; stocul inițial nu primește factură fictivă.
 
-Entități conceptuale noi, nu DDL executat:
+### Proveniență și reconciliere fără reimport
 
-| Entitate | Rol |
-|---|---|
-| `VC_FACTURI` | Furnizor, număr original, dată, monedă, ValoareFC, stare și revizie; identitate comună în DC |
-| `VC_FACTURI_LINII` | Liniile economice ale facturii, fără a impune un singur cont sau produs local |
-| `VC_FACTURI_REPARTIZARI` | Cantitate/valoare de pe o linie de factură alocată unei destinații și legătura cu linia NIR rezultată |
-| Legătură nouă din `VC_NIR` | Referință la factura comună; antetele și liniile istorice își păstrează identitățile |
+- NIR-ul Access rămâne local, cu cont/număr/subnumăr/date/valori/variante/MF/stornări/proveniență. Neconcordanțele se păstrează cu diagnostic, fără schimbarea cantităților/cotelor/prețurilor. VC_ImportSources/VC_IdMap identifică sursa/importul și cheia documentului; IdIntrare singur se poate repeta în fișiere/subunități. Asocierea nu renumerotează și nu reimportă.
+- Access nu are identitate globală a facturii. Furnizor+număr+dată este candidat, nu dovadă de identitate/completitudine sau că antetul local conține totalul global. Nici numărul NIR, nici totalul egal nu sunt chei de factură.
+- Propunerea creează provizoriu fragment per NIR obișnuit, cu antetul sursă declarat numai pentru fragment. Gruparea candidată folosește furnizorul fiscal mapat, numărul original/normalizat conservator, data și moneda cunoscută, fără completarea necunoscutelor. Operatorul confirmă reunirea și totalul din factura furnizorului după importul celorlalte subunități.
+- Nu se însumează antetele locale, care pot repeta același total; se arată separat antetele și sumele liniilor. Liniile originale ale facturii reconstruite din fragmente sunt marcate ca atare, fără pretenția de a reproduce numărul/ordinea liniilor furnizorului. Rapoartele separă recepțiile certe de totalurile globale provizorii.
+- Stocurile inițiale rămân fără factură, legăturile locale NIR–storno rămân mapate. În VrcPartition.vb:83, contul antetului determina destinația, iar liniile contradictorii Alimente/Materiale erau conflict; factura comună nu îl transformă în repartizare automată. Nu se inventează numere sau împărțiri pentru istoricul contradictoriu.
+- Pentru date deja migrate, completarea este separată/reluabilă pe identitățile existente, cu markerul importului unic păstrat. Reunirea schimbă numai asocieri/metadate cu audit, fără mișcări/valori istorice rescrise.
 
-O linie de factură se poate repartiza în mai multe destinații și se poate recepționa parțial; nu se cere o corespondență 1:1 între linia facturii și linia NIR. Aceeași linie poate produce mai multe active MF. O legătură activă nu poate dubla aceeași cantitate recepționată.
+Ordinea revizuită a proiectării era modelul și sensul țintelor → fișiere DDL/adaptarea importului inclusiv date existente → cronologia/TVA derivat → corecția cu TVA real și efectul în variante/MF/rapoarte → simulare/atomicitate multi-context → migrare conservatoare/reconciliere/rezultat necunoscut. DDL exclusiv manual, fără creare automată în aplicație.
 
-### 8.2. Valorile și corecția
+## 9. Implementarea autorizată ulterior, 16.10.2026
 
-```text
-total cu TVA al liniilor unui NIR = valoarea repartizată acelui NIR
-suma valorilor repartizate și recepționate, la finalizarea completă = ValoareFC
-```
-
-ValoareFC se introduce o singură dată pe factura comună. În NIR se afișează distinct totalul întregii facturi și „Valoare aferentă acestui NIR”. Nu se compară fiecare NIR cu întreaga factură și nu se copiază integral ValoareFC pe toate recepțiile.
-
-Exemplu: factura este 1.000 lei; recepțiile repartizate sunt 200 lei Alimente, 300 lei Materiale și 500 lei MF. Totalurile NIR sunt 200, 300, 500, iar factura este numărată o singură dată cu 1.000 lei.
-
-Factura are stări de repartizare/recepție distincte: în lucru, parțial repartizată/recepționată și complet reconciliată. O recepție parțială validă nu obligă la corectarea artificială a diferenței față de factura întreagă. Numai la finalizarea completă se impune egalitatea globală. Anularea unui NIR păstrează factura, scoate cantitatea/valoarea lui din recepțiile active și readuce factura la starea corespunzătoare.
-
-Corecția finală se calculează la nivel de factură și se repartizează o singură dată pe rânduri/destinații explicite. NIR-urile locale preiau valorile corectate rezultate; fiecare nu încearcă separat să absoarbă întreaga diferență a facturii. Nu se corectează factura cât timp diferența reprezintă bunuri nerepartizate sau nerecepționate.
-
-Se folosesc valori zecimale exacte și o precizie monetară comună explicită. Gestiuni cu ZEC diferit nu justifică pierderea resturilor la însumare. Repartizarea trebuie să fie reprezentabilă în destinațiile alese; dacă nu este, se explică problema înainte de finalizare. Afișarea la două zecimale nu este o probă că valorile stocate la patru zecimale sunt egale.
-
-### 8.3. Ecranul și salvarea
-
-1. „Factură de cumpărare”: furnizor, număr, dată, valoare declarată și produsele din documentul furnizorului.
-2. Pentru fiecare linie se aleg subunitatea, gestiunea și contul, cu cantitatea repartizată. Produsele locale se aleg/mapază în destinație; ID-urile lor nu sunt interschimbabile între gestiuni.
-3. Pagina arată NIR-urile rezultate, cu număr/data și totalul fiecăruia, sumele repartizate/recepționate și restul facturii.
-4. Pentru cazul simplu, cu o singură destinație, ecranul poate păstra experiența actuală de introducere directă a NIR-ului și creează legătura la factură în spate.
-5. Recepțiile pot fi salvate local în etape. O operație care generează sau modifică simultan mai multe NIR-uri cere ocuparea tuturor gestiunilor afectate, în ordine stabilă, plus blocarea/revizia facturii. Lipsa accesului într-o destinație refuză întregul lot solicitat, fără salvare parțială tacită.
-6. În aceeași bază DC, lotul simultan se salvează într-o singură tranzacție. Salvările locale succesive verifică și blochează factura comună pentru a preveni supra-alocarea prin două sesiuni.
-7. Schimbarea datei/furnizorului/totalului comun după recepții cere analiza tuturor destinațiilor afectate. Modificarea datei facturii poate schimba și data de efect asupra stocului în contractul actual; nu se propagă tacit în perioade închise sau în NIR-uri cu consumuri incompatibile.
-
-O factură storno/credit se păstrează ca document furnizor distinct, legat de factura inițială și de stornările locale. Stocul inițial nu primește o factură furnizor fictivă.
-
-## 9. Migrarea din Access în acest model
-
-### 9.1. Ce se păstrează
-
-Fiecare NIR Access se importă în continuare ca un NIR local, cu același cont atribuit, număr/subnumăr, date, valori, variante, MF, stornări și proveniență. Nu se schimbă cantități, cote sau prețuri pentru a uniformiza modelul nou. Valorile migrate neconcordante rămân neconcordante, însoțite de diagnostic.
-
-Se reutilizează proveniența existentă `VC_ImportSources` și `VC_IdMap`: identitatea documentului sursă include sursa/importul și cheia NIR, nu numai `IdIntrare`, care poate fi repetat în alte fișiere/subunități. Asocierea la factura comună nu renumerotează NIR-urile și nu reimportă datele.
-
-### 9.2. Ce nu poate fi dedus sigur
-
-Access nu are o identitate globală de factură care să lege recepțiile din fișiere/gestiuni/subunități diferite. Coincidența furnizorului + numărului + datei este un candidat bun, dar nu dovedește identitatea documentului, completitudinea recepției sau dacă antetul local conține totalul întregii facturi ori numai al părții recepționate.
-
-De aceea propun:
-
-1. Pentru fiecare NIR obișnuit, se creează inițial o asociere provizorie de factură sau un fragment de factură din migrare. Totalul sursă este păstrat și etichetat ca valoare declarată a fragmentului; nu este afirmat automat ca total global confirmat.
-2. Se caută grupuri candidate pe furnizorul fiscal mapat, numărul original/normalizat conservator, data și moneda cunoscută. Datele lipsă sau ambigue nu se completează prin presupuneri. Numărul NIR și totalul egal nu sunt chei de identificare a facturii furnizorului.
-3. Operatorul confirmă reunirea fragmentelor într-o factură comună și totalul global din documentul furnizorului. Gruparea se poate face după import, când există și celelalte subunități, fără repetarea migrării.
-4. Nu se însumează automat antetele locale pentru a inventa ValoareFC: suma poate dubla un total de factură repetat în mai multe baze. Se afișează separat antetele sursă și sumele liniilor ca dovezi pentru reconciliere.
-5. Liniile NIR importate rămân fapte de recepție. Liniile originale ale facturii, care nu există separat în Access, se marchează reconstruite din fragmente; nu se afirmă că numărul sau ordinea lor coincide cu factura furnizorului.
-6. Pentru istoricul nereconciliat, rapoartele separă recepțiile certe de totalurile facturilor globale încă neconfirmate. O sumă provizorie nu se prezintă drept total sigur al facturilor.
-7. Stocurile inițiale rămân fără factură. Legăturile locale dintre NIR și stornări se păstrează prin mapările existente; reunirea facturilor nu le schimbă.
-
-În `VrcPartition.vb:83`, documentul este astăzi plasat după contul antetului, iar liniile din altă parte Alimente/Materiale sunt conflict de import. Modelul facturii comune permite reunirea NIR-urilor distincte, fără a transforma acest conflict în repartizare automată. Dacă se întâlnește un document istoric contradictoriu, se diagnostichează explicit; nu se împarte tacit și nu i se inventează alte numere.
-
-### 9.3. Tranziție pentru date deja migrate
-
-Asocierea factură–NIR se adaugă printr-o completare separată și reluabilă pe identitățile deja importate, nu prin reimportul subunității. Se păstrează markerul importului unic. Reunirea provizoriilor schimbă numai asocierile și metadatele de reconciliere, cu audit; nu rescrie mișcările sau valorile istorice.
-
-## 10. Ordinea revizuită a lucrărilor
-
-1. Stabilirea modelului factură comună → repartizări → NIR-uri locale și a sensului distinct ValoareFC / valoare NIR.
-2. Pregătirea fișierelor DDL și a adaptării migratorului, inclusiv completarea pentru importuri deja efectuate; DDL se execută exclusiv de utilizator, fără creare automată de schemă în aplicație.
-3. Cronologia număr–dată și selectorul TVA derivat din rânduri.
-4. Corecția din valoarea cu TVA, păstrând cota reală și modul de calcul, plus reflectarea valorilor finale în variante, MF și rapoarte.
-5. Simularea ciornei și validarea atomică a recepțiilor afectate, inclusiv ocuparea mai multor contexte.
-6. Migrarea conservatoare, reconcilierea explicită a fragmentelor și fluxul de rezultat necunoscut.
-
-## 11. Implementarea autorizată ulterior, 16.10.2026
-
-Utilizatorul a cerut implementarea și a adăugat blocarea rândurilor auto-calculate, cu ștergere/revenire în grupul original. Codul și DDL-ul pregătit sunt descrise în [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md). Starea este implementare în surse, fără execuție, compilare, teste, browser sau operații pe MariaDB. DDL-ul trebuie executat de utilizator și sincronizat înaintea folosirii fluxului nou.
-
+Utilizatorul a cerut implementarea și blocarea rândurilor AUTO, cu ștergere/revenire în grup. Codul și SQL-ul pregătit sunt descrise în [FACTURI_NIR_IMPLEMENTARE](FACTURI_NIR_IMPLEMENTARE.md), iar evoluția/probele în [VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md). Starea la predare: surse scrise, fără execuție/compilare/teste/browser/MariaDB; DDL pentru utilizator și sincronizare înaintea folosirii. D001-04 condensează propunerile; nu schimbă regulile sau starea prin presupunere.

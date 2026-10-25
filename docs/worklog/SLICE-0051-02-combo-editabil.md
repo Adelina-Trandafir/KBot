@@ -187,3 +187,7 @@ Niciun formular gazdă nu s-a atins. Cele opt `KBotComboBox`-uri existente răm�
 - **`AutoCompleteMode` / `AutoCompleteSource` rămân cele moștenite** — controlul nici nu le pune,
   nici nu li se opune. Nimeni nu le-a probat împreună cu `LimitToList`.
 - **Zero teste**, cerut explicit.
+
+## Historical wording from possible_future_directions (D001-29)
+
+The older closed entry attributed the native EDIT colours to WM_CTLCOLOREDIT sent to the parent, WinForms reflection back to the control, and Control.WmCtlColor using BackColor/ForeColor. That differs from the implementation explanation in §1/§2, which records the explicit WndProc response because the unmanaged EDIT was not reflected to a managed control. The original leftover txtComp/cmbComp question was subsequently handled by [0051-03](SLICE-0051-ddf-edit-form.md#slice-0051-03), without proving live saving.

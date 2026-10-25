@@ -25,7 +25,7 @@ a lucrului la ADECHIT solicitate de utilizator.
 - HELP: conținutul JSON actualizat pentru catalog și închidere anuală, cu referință
   `slice: ADE6-24` în metadatele blocurilor; imprimarea/PDF folosesc aceeași sursă.
 - Ghidul web, planul, README migratorului, indexul și stările au fost actualizate.
-  `STARE_LA_PAUZA.md` păstrează livrabilele, DDL-ul, fișierele de publicat și restanțele.
+  Punctul de reluare a fost absorbit în acest jurnal și în registrul ADE6, prin D001-04.
   AD12 avea deja AD12-01; următorul număr principal liber este corectat la AD13.
 
 ## Fișiere atinse
@@ -57,6 +57,14 @@ a lucrului la ADECHIT solicitate de utilizator.
 - Salvare/golire, erori de validare, conflict, grila PC/mobil și planul anual neprobate.
 - HELP/imprimare/PDF nu au fost deschise pentru verificare vizuală.
 - Acceptarea finală, paritatea Access și probele server rămân neconfirmate;
-  detaliile sunt în [punctul de reluare](../../ADECHIT/STARE_LA_PAUZA.md).
+  Acestea sunt limitele predării din 12.10.2026, închise prin confirmarea de mai sus.
 
 Următoarea subfelie de catalog: **ADE6-25**.
+
+## Predarea absorbită din punctul de reluare — D001-04
+
+Reper inițial: 12.10.2026, ADE6-24/25; acceptare finală confirmată de operator la 23.10.2026, inclusiv DDL, sincronizare, publicare, paritate financiară/M10 pe faze Access și ADE9-02/03 (proba completă și predarea). Nu este o probă nouă efectuată în D001-04. Emailul chitanțelor rămâne inactiv și este distinct de emailurile de autentificare ale portalului. Compensarea prin consiliu, SIIR, mesajele de business, exporturile condiționate și rapoartele consolidate nu aveau puncte deschise conform aceleiași confirmări; aceasta nu inventează detalii de implementare sau rezultate individuale.
+
+Ordinea predării: AD_09 numai în AVACONT_SURSA → sincronizarea celorlalte baze prin KBotAdmin → publicarea fișierelor din lista de mai sus și restart backend → probe educator nou/existent cu câmpuri goale, completare/golire, email/CNP invalid, reîncărcare și închidere anuală cu păstrarea contactelor. Fără remigrare; schimbarea numai a contactelor nu înlocuiește perioadele. Pentru deadlock se publică separat cele două module și HELP din [ADE6-25](SLICE-ADE6-25-deadlock-lock-row.md); proba consemnată în punctul de reluare era «Plătitori → Modifică grupa». Cauza exactă rămâne calificată în jurnalul tehnic.
+
+Punctul de reluare acoperea grupele/copiii/părinții/taxele/prezența (ADE6-24), încasările/anulările/restituirile și listare/PDF, ciclul lunar/anual, opt rapoarte și dispoziția de plată (ADE9-01), subunitățile/migrarea, portalul AD11-01…05 și ajutorul AD12-01. Toate aveau confirmarea de mai sus. Numerotarea AD10/AD11 a fost reutilizată istoric pentru obiective distincte: identificarea se face și după titlu, fără renumerotare. Numerele propuse atunci (ADE6-26, AD11-06, AD12-02, AD13) sunt istorice; continuarea folosește registrul actual.

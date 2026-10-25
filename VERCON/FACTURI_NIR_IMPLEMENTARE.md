@@ -27,7 +27,8 @@ blocat; unicul cont local nu împiedică alegerea altor destinații.
 
 Produs folosește ComboTree în celula DGV, cu conturile bifate ca rădăcini și
 produsele lor dedesubt. Căutarea se face prin tastare. Popupul este separat de
-zona decupată a grilei, are înălțime utilă minimă de 220 px și înălțime dorită
+zona decupată a grilei; focusul său și al căutării este recunoscut de DGV.
+Are înălțime utilă minimă de 220 px și înălțime dorită
 de 320 px; alege spațiul de sus când cel de jos este insuficient. Într-un
 viewport mai mic se limitează la spațiul disponibil și folosește scroll intern.
 Comisia este sub Data Facturii și ocupă coloanele facturii și NIR-ului.
@@ -54,7 +55,7 @@ multianual existent. Precizia și cotele TVA sunt cele ale destinației produsul
 
 Contul liniei se deduce prin Intrari → ProduseP → Produse → Masini. Nu se
 adaugă o coloană redundantă. Antetul păstrează IdMasina pentru un singur cont;
-pentru mai multe conturi este NULL. Consultarea listează conturile liniilor.
+pentru mai multe conturi este NULL. Consultarea și metadatele facturii listează conturile produselor liniilor.
 
 Contul produsului cu mișcări prin oricare variantă de preț, în orice an, este
 blocat în nomenclator și în server. Verificarea include mișcările anulate și
@@ -88,7 +89,8 @@ păstreze exact totalul global; valoarea altor NIR-uri nu este schimbată tacit.
 
 Cronologia numerelor și subnumerelor rămâne obligatorie la schimbarea datei;
 NIR-ul existent nu este mutat în altă serie anuală. Documentele anulate își
-păstrează poziția. Valorile istorice neschimbate sunt păstrate exact.
+păstrează poziția. Modificarea, scoaterea liniilor și anularea respectă
+dependențele și stocul. Valorile istorice neschimbate sunt păstrate exact.
 
 ## Migrare și schemă
 
@@ -111,10 +113,9 @@ VC_FACTURI, VC_FACTURI_LINII, VC_NIR_FACTURI, VC_FACTURI_REPARTIZARI și
 VC_NIR_CALCULE; NumarSub se adaugă dacă lipsește. Scrierea răspunde cu
 INVOICE_SCHEMA_REQUIRED dacă schema lipsește. Aplicația nu creează schema.
 
-AVACONT_SURSA de pe server este sursa unică de structură. Dump-urile sunt
-fotografii pentru analiză. VRC reutilizează KBot.Migrator.TargetSchema.Load
-și WriteOrder.Derive; import_map.json descrie conversia/remaparea sursei.
-Scriptul complet generat de schemă a fost eliminat anterior.
+Infrastructura comună de schemă/import (AVACONT_SURSA reală, dumpuri numai
+pentru analiză, TargetSchema.Load, WriteOrder.Derive și import_map.json fără
+script complet generat) este în [SCHEMA_VC](SCHEMA_VC.md#infrastructura-de-schemă-implementată-anterior).
 
 Clasificările MF folosesc AVACONT_COMUN.VC_ClasificariMF, administrat separat.
 DNF_MIN/DNF_MAX sunt ani convertiți în luni la validarea DNF; durata activului
@@ -142,3 +143,20 @@ rămâne în VC_ProduseM. Nu există catalog MF local nou.
   stilurile comune și poziționarea antetului.
 
 Contract autoritar: [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+
+## Ajustarea NIR-ului salvat — 19.10.2026 <a id="d001-12-ajustare"></a>
+
+Preluare D001-12, două etape **implementate în surse, nerulate**: numai design, fără teste/probe automate/vizuale, SQL/MariaDB sau schemă. Necesită publicarea Python/JS, apoi și CSS pentru explicații. Stările de la începutul documentului sunt repere ale etapelor lor; confirmările eFactura sunt cele din jurnalul asociat.
+
+- Diferența economic ajustabilă rămâne nenulă, de cel mult 1 leu, dar cere minimum 1 unitate eligibilă. Pentru un NIR salvat, serverul transmite minimul stocului variantei între intrare și ultima mișcare, plafonat la cantitatea liniei. BP OI/MF consumă prin BC de magazie; activul MF cu ieșiri/referințe active în registru rămâne integral protejat.
+- Simplul fapt că produsul are registru nu mai blochează tot NIR-ul: rămân protecția MF pe rând, simularea cronologică, blocajele anulării/NIR cu storno. Se separă exact 1 unitate, cu TVA real; restul păstrează prețul cu TVA și varianta inițială, inclusiv linia istorică. Liniile salvate nemodificate nu sunt recalculate în masă.
+- Se alege alt rând disponibil dacă selecția nu e eligibilă. La factura comună, serverul calculează/păstrează pentru salvare ținta NIR = total factură − liniile celorlalte recepții. Disponibilitatea butonului se actualizează și la tastarea valorii facturii; înaintea altei ajustări, AUTO existent se șterge cu revenire în grup.
+- Revizia UI ține butonul activ pentru orice diferență nenulă cunoscută, inclusiv peste 1 leu, fără produse sau cu AUTO existent: acestea se explică, nu dezactivează butonul. Fără diferență este disabled; protecția salvării în curs și eligibilitatea economică rămân.
+- Tooltip: valoare factură, total produse, diferență exactă, blocaje. Fără produs eligibil, enumeră pentru fiecare produs cantitatea liniei/disponibilă și motivul (ieșire/predare, stoc/cantitate sub 1, AUTO existent); explică și datele incomplete. La click, blocajele locale/erorile server apar în messageBox «Factura nu poate fi ajustată», cu detalii derulabile și cleanup la eliberarea contextului/paginii. Serverul dă detalii pe produs și valorile concrete ale plafonului, fără să aplice ajustări pentru diagnostic.
+
+Fișiere istorice (numele fără prefix continuă directorul precedent):
+
+| Etapă generală | Fișiere |
+|---|---|
+| 11 | PYTHON/routes/vercon/receipt_adjustment.py, receipt_rules.py, receipt_routes.py, receipt_distribution.py, receipts.py, receipt_mf_edit.py, documents.py; PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md. |
+| 12 | PYTHON/static/js/vercon/receipt-adjustment.js, docs.js, receipt-reconciliation.js; PYTHON/static/js/utils/confirm-box.js; PYTHON/static/css/vercon-receptie.css; PYTHON/routes/vercon/receipt_adjustment.py, receipt_rules.py, receipt_distribution.py; implementare_vercon_v2.md. |

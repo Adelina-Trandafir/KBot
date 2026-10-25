@@ -12,17 +12,11 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0010 | `KBotDataView` — owner-drawn unbound grid (Access continuous-form) | DONE (code) / **NO VISUAL VERDICT YET** | `SLICE-0010-01-…skeleton.md`, `-02-…virtualizare.md`, `-03-…tipuri-coloana.md`, `-04-…formatare-disable.md`, `-05-…input-selectie.md`, `-06-…editare.md`, `-07-…scroll-by-column.md` | Plan: pasted in-session (continuation plan supersedes the original where they disagree). Multi-pass. **0010-01 (skeleton):** models + enum, double-buffered `Control` implementing `IThemedControl`, theming cache + `ApplyTheme`, header + empty body, 4 child controls in Designer. **0010-02 (render+virtualize):** split into partials (`.Theming`/`.Layout`/`.Painting`), frozen + scrolling column bands, integer virtualization math, two-pass scrollbar sizing, Text + CheckBox cell painting, `CellFormatting`/`RowFormatting` plumbing with **reused** args, full palette→role mapping. **Decision:** kept in `KBot.Controls` + a `KBot.Theming` ProjectReference (no cycle) so it self-themes — the plan's "`KBotTheme` constants" don't exist (that's a ~9-slot Forexe façade). **0010-03 (column types):** Combo / OptionButton / Button / ProgressBar painting + `OptionGroup` exclusivity via `SetOptionValue`. **0010-04 (formatting+disable):** three-level effective-enabled (`IsCellEnabled`/`IsRowEnabled`, separate "probe" args so queries can't clobber an in-flight paint), disabled rendering across all six types, conditional formatting. **0010-05 (input+selection):** current cell + `SelectionChanged`, Access-style keyboard nav, click/double-click, toggle + button activation gated on `IsCellEnabled`, header-edge column resize. **0010-06 (editing):** floating Text/Combo editor, `CellValidating` (veto **and** value coercion), Esc discard, auto-commit on move/scroll, and the corrected `IsDirty` contract — API writes are *loading*, only operator edits/toggles dirty a row (`ClearDirty` added; 2 pass-01 tests deliberately rewritten). Virtualization proven **headlessly** (same painted-row count at 5,000 and 50,000 rows). 158 tests green. **Editing caught 2 real VB case-insensitivity bugs** where a parameter shadowed a same-named property and an unqualified assignment was a silent no-op: `ProposedValue` (commit always wrote Nothing) and — live since 0010-01 — `HeaderText`, meaning **every column header was Nothing**; both fixed with `Me.` + regression tests. ⚠️ **NOBODY HAS RUN THE VISUAL HARNESS for any of the six passes.** Scroll smoothness, the WinForms key→handler path, resize drag, floating-editor placement/focus and actual colours are all unverified — the blank-header bug shows exactly why that matters. Run: DevHarness → Controls/UI → «KBotDataView — virtualizare + temă (5.000 × 20)». **0010-07 (later add-on):** `ScrollByColumn` property — horizontal scroll snaps to column edges (direction-aware: a small step still advances a full column), covering thumb/arrows/wheel via one snap in the ValueChanged path; harness got a «Derulare pe coloană» checkbox. 7 tests. Next: Sumar slice consumes it read-only |
+| 0010 | `KBotDataView` — owner-drawn unbound grid (Access continuous-form) | DONE (code) / **NO VISUAL VERDICT YET** | [0010-01](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-01), [0010-02](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-02), [0010-03](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-03), [0010-04](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-04), [0010-05](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-05), [0010-06](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-06), [0010-07](../SLICE-0010-01-kbotdataview-skeleton.md#slice-0010-07) | Plan pasted in-session; continuation plan supersedes original where they disagree. Contract evolution, file lists and per-stage headless proof are in the consolidated worklog. Historical checkpoint: 158 solution tests after 06; 07 has its own Controls-only result and file-lock limitation. No visual verdict; Sumar was the next consumer. |
 
 ### Current focus
 
-- **Slice 0010 (`KBotDataView`) — all six passes landed, 158 tests green, 0 warnings.**
-  **The one open item is a human one:** nobody has run the visual harness yet. Please run
-  DevHarness (Debug start → «Nu») → Controls/UI → «KBotDataView — virtualizare + temă
-  (5.000 × 20)» and give it a Pass/Fail. That probe is the only way to confirm scroll
-  smoothness, keyboard/resize interaction, floating-editor placement and the actual colours —
-  and pass 06 found a bug (all column headers were `Nothing` since 0010-01) that no headless
-  test could have caught. After that: the **Sumar** slice, which consumes the grid read-only.
+- **0010 — historical checkpoint:** code landed; headless results and unresolved visual/input checks are in the [consolidated worklog](../SLICE-0010-01-kbotdataview-skeleton.md). Human harness verdict still unrecorded at this checkpoint; next was Sumar. Later slice-specific acceptance is not inferred here.
 
 ---
 
@@ -32,35 +26,17 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0011 | Sumar — endpoint + `SumarView` (prima vedere reală) | DONE (code) / **partially run on a live DB (0011-03)** / **NO VISUAL VERDICT** | `SLICE-0011-01-sumar-endpoint.md`, `SLICE-0011-02-sumar-view.md`, `SLICE-0011-03-sumar-join-clasificatii.md` | Plan: pasted in-session. Port of `qFX_MAIN_SUMAR` v1 → `GET /api/forexe/sumar?cod=…` (header hoisted once + one row per indicator), plus `SumarView` replacing `PlaceholderView` for the `sumar` key — **the first of the nine views that is real**, and the first consumer of `KBotDataView` (read-only). **The `Clsf` blocker was resolved by the operator supplying the real DDL, not by guessing:** `Clasificatii.Clsf` EXISTS as a STORED generated column `concat_ws('.',Capitol,Subcapitol,Articol,Alineat)` (indexed), so Branch A — select it directly. `Titlu = left(Articol,2)` explains Access's `Mid(Clsf,13,2)`. Port decisions: no SS filter, `ClasificatiiG`→`Clasificatii` / `ParteneriG`→`Parteneri`, all `IdUnitate` join predicates dropped, **`LEFT JOIN Clasificatii`** (was INNER — an indicator with no classification must still appear), `TotalReceptii = SUM(DIF)` not `Valoare`, `'Angajament nou.'` with the trailing period. Deliberate deviations: `COALESCE(...,0)` on the five totals, `cod` pushed into every aggregate (Access full-scanned per aggregate), deterministic `ORDER BY` added, `ROUND(,2)` kept on revizii/ordonanțări only. Client: `WithReauth` passed in specialized on `SumarInfo` so the 401 policy stays in the shell; snake_case stops at the wire DTOs; **stale-response guard** discards a superseded `cod`. 164 tests green, 0 warnings. **0011-03 (after the operator's live run) fixed three stacked defects in the query:** the join key WAS wrong (`FX_Indicatori.IdClsf` holds the Access id → matches `C.IdClsfAcc`, giving 0 rows against `C.IDClsf`); `IdUnitate` had been dropped from a SHARED nomenclator (67-row fan-out); and `Clasificatii` has real duplicates on `(IdClsfAcc, IdUnitate)` (still 50 rows with both predicates). Fix: `LEFT JOIN Clasificatii` → **scalar subquery with `LIMIT 1`**, `ORDER BY` moved to the output alias. **The same defect was found and fixed in `aggRev`/`Parteneri`, which the brief did not ask for** — there the join sat BEFORE the `GROUP BY`, so a duplicate partener multiplied `SUM(SA.ValCur)` and inflated `TotalRevizii` (a wrong money figure, not a blank column). 3 new tests incl. a general `len(rows) == indicator count` sentinel. ⚠️ **Still open:** (a) nobody has run `SumarView` on screen, and `KBotDataView`'s visual harness is STILL unrun; (b) the `Clasificatii` duplicates need triage — if the rows differ by `Sursa`/`Sector` then a join dimension is MISSING and `LIMIT 1` picks arbitrarily between two different classifications; if identical, they are data to clean |
+| 0011 | Sumar — endpoint, client și corecția fan-out-ului | DONE (code) / **partially run on a live DB (0011-03)** / **NO VISUAL VERDICT** | [0011-01](../SLICE-0011-01-sumar-endpoint.md#slice-0011-01); [0011-02](../SLICE-0011-01-sumar-endpoint.md#slice-0011-02); [0011-03](../SLICE-0011-01-sumar-endpoint.md#slice-0011-03) | Contractele și probele sunt în istoricul reunit; reviziile ulterioare sunt delimitate. |
 
 ### Current focus
 
-- **Next:** the remaining seven views are still `PlaceholderView` (Sumar landed in 0011,
-  Rezervări in 0014); Slice 0004's remaining Tier 1 items and the Slice 0003 VPS config
-  are still open and short.
-
-- **Slice 0011 (Sumar) — all three passes landed, 164 .NET tests green, 0 warnings.**
-  The join-key question is now ANSWERED on real data (0011-03): the key was wrong,
-  `IdUnitate` was missing, and the nomenclator has duplicates — all three fixed by
-  moving to scalar subqueries. Two things still need a human:
-  (1) rerun `test_forexe_sumar.py` on the host (18 tests now; they skip off-host) to
-  confirm the fix end-to-end and that all eleven touched tables exist;
-  (2) look at `SumarView` on screen — **it has still never been rendered**.
+- [Istoricul Sumar](../SLICE-0011-01-sumar-endpoint.md) păstrează probele și schimbările pe etapă, inclusiv precizările unice ale registrului.
 
 ### Open threads
 
-- **`Clasificatii` DDL is not in the repo.** Slice 0011 was blocked on it until the
-  operator pasted it by hand. It documents real contracts the code now depends on
-  (`Clsf`/`Titlu`/`SS` as STORED generated columns; FKs into `AVACONT_COMUN.Defa*`).
-  Add it to the repo so the next slice does not have to ask again.
-
-- ~~**MariaDB inverts Access's classification-id naming**~~ — SETTLED in 0011-03 on
-  real data: `FX_Indicatori.IdClsf` holds the **Access** id (matches `C.IdClsfAcc`).
-  Promoted to Locked decisions below.
+- Probele live/vizuale și întrebările rămân în etapele legate; consolidarea nu le închide. Triage-ul duplicatelor și alegerea arbitrară LIMIT 1 rămân în 03.
 
 ---
-
 ## Slice 0012
 
 ### Registry
@@ -108,23 +84,17 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0015 | Recepții — endpoint + `ReceptiiView` (a treia vedere reală) | 0015-01/02/03 DONE (code) / **NEVER RUN ON A LIVE DB** / **NO VISUAL VERDICT** | `SLICE-0015-01-receptii-view.md`, `SLICE-0015-02-receptii-root-tooltip.md`, `SLICE-0015-03-receptii-month-tree-revision.md` | Plan: `PLAN_ReceptiiView.md`. **0015-03 = revizuire operator (2026-07-22):** arbore pe **3 niveluri** (folder lună/an → recepție → antet, grupat pe DataR); LISTA **agregată la orice nivel** (click pe lună/recepție/antet → total Sum(DIF) + rând per clsf Sum(Valoare)); coloana „Descriere" = `Clasificatii.Denumire` (nou pe endpoint, drumul 0011-03) fiindcă agregă peste anteturi; **tooltip pe lună ȘI recepție** cu fereastra de plăți extinsă până la **prima recepție a lunii următoare** (nu ≤ MaxDataH). Api 48, App 39. `GET /api/forexe/receptii?cod=` (cititor brut: un rând per linie `FX_Receptii`, cu antet `H` + recepție `R` părinte, + array `plati` în același răspuns) + `ReceptiiView` (master/detail: arbore **2 niveluri** recepție→antet la stânga, grilă LISTA NrCrt/Descriere/Clsf/Valoare la dreapta) înlocuind `PlaceholderView` pentru `receptii`. **Cele trei furci ale planului sunt blocate din sursa Access, nu ghicite:** (1) arbore 2 niveluri (frunzele pe clsf din `Show_Receptii` sunt cod comentat — `AggregateRow`/`valAsoc` dormante); (2) LISTA condusă doar de antet (rând-total `Sum(DIF)` + rânduri per clsf `Sum(Valoare)`, din `qFX_MAIN_REC_LISTA_IND`); (3) un singur endpoint (nu tree/lista/tooltip separate). Clasificația: același drum ca Sumar 0011-03 (`FX_Indicatori`, `IdClsf`=id Access, subinterogare scalară `LIMIT 1` + `IdUnitate` păstrat la nomenclator, `LEFT JOIN` ca o linie să nu dispară). Iconițe GDI de stare (sus/jos/neutru, finding 5) tematizabile. Plasa 401 + stale-guard ca la Sumar/Rezervări. Api 42→48 (+6 GetReceptii), App 30→37 (+7 view), 15 teste Python host-only (skip off-host). **Devieri documentate:** chei de fir snake_case (nu PascalCase-ul schiței); coloana grilei „Descriere" = Descrierea ANTETULUI (`FX_Receptii_H.Descriere`, din `Nz([HH]![Descriere],…)`), nu a indicatorului; `sters_h` adăugat în rând pentru cumulul DIFH din tooltip (0015-02). ⚠️ **Deschis:** (a) `test_forexe_receptii.py` nerulat pe host; (b) `ReceptiiView` niciodată pe ecran; (c) **pass 0015-02 (tooltip de recepție `NewRootPlatiTooltip`) nefăcut** |
+| 0015 | Recepții — endpoint, tooltip și revizia lunară | 0015-01/02/03 DONE (code) / **NEVER RUN ON A LIVE DB** / **NO VISUAL VERDICT** | [0015-01](../SLICE-0015-01-receptii-view.md#slice-0015-01); [0015-02](../SLICE-0015-01-receptii-view.md#slice-0015-02); [0015-03](../SLICE-0015-01-receptii-view.md#slice-0015-03) | Contractele și probele sunt în istoricul reunit; reviziile ulterioare sunt delimitate. |
 
 ### Current focus
 
-- **Slice 0015 (Recepții) — pass 0015-01 landed, code green, 0 warnings; the third real
-  view.** The plan's three forks (tree depth, LISTA driver, single endpoint) were all
-  settled from the Access source, not guessed. Three human items: (1) run
-  `test_forexe_receptii.py` on the host (15 tests, skip off-host) — confirms the eight
-  tables/columns exist and the `FX_Indicatori` join yields a populated `Clsf` (blank on
-  every row ⇒ join key, same trap as 0011-03); (2) `ReceptiiView` has never been rendered
-  on screen; (3) 0015-02 tooltip + **0015-03 operator revision landed** (3-level month tree,
-  aggregated LISTA at any level, Descriere=Clasificatii.Denumire, month+receptie tooltip with
-  the plăți window extended to the next month's first receptie). Nothing in 0015 has been
-  rendered on screen or run on a live DB.
+- [Istoricul Recepții](../SLICE-0015-01-receptii-view.md) păstrează probele și schimbările pe etapă, inclusiv precizările unice ale registrului.
+
+### Open threads
+
+- Probele live/vizuale și întrebările rămân în etapele legate; consolidarea nu le închide. Ultima variantă de structură este 03, fără verdict vizual/live.
 
 ---
-
 ## Slice 0016
 
 ### Registry
@@ -141,34 +111,17 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0017 | Plăți — endpoint + `PlatiView` (a patra vedere reală) + `KBotDataView` totals row | 0017-01..04 DONE (code) / **0017-04 VĂZUT PE ECRAN ȘI ACCEPTAT 2026-08-13** (prima acceptare vizuală a vederii Plăți) / **NEVER RUN ON A LIVE DB** | `SLICE-0017-01-kbotdataview-totals-row.md`, `SLICE-0017-02-plati-endpoint.md`, `SLICE-0017-03-plati-view.md`, `SLICE-0017-04-plati-tree-doua-niveluri.md` | Plan: pasted in-session. Four passes: **01** `KBotDataView` pinned totals row; **02** server `GET /api/forexe/plati?cod=`; **03** `PlatiView`; **04** fix Rezervări «+» (one leaf, not all). **0017-03 (DONE):** a patra vedere reală (master/detail: arbore 3 niveluri `« TOATE PLĂȚILE »`/lună/zi/plată la stânga, grilă LISTA sus-dreapta cu rând de totaluri, panou extras bancar jos-dreapta) înlocuind `PlaceholderView` pentru `plati`. LISTA e **filtru, nu agregat** (click pe nod → exact rândurile lui). Panoul de detaliu e condus de selecția din grilă, din datele deja pe rând (fără al doilea apel). «+» pe EXACT o zi (cea mai veche cu `AreOrd=False`) + luna ei + nodurile de nivel 2 ne-ordonantate; nimic altundeva. Reînvie codul dormant Level=2 din Access. **Asumpții notate (fără sursă Access pentru lună/zi merjate):** iconița stării = orice `Incarcat`→sus / orice `Preluat`→jos / neutru; verde INCASARE doar când TOATE rândurile zilei/lunii sunt INCASARE (per-rând la nivel 2). «+» single-tint (Access nu are variantă verde pentru plăți). `PlatiInfo` (`PlataRow`/`ExtrasBancar`) + `GetPlatiAsync` + `PlatiIcons` (up/down/neutru/«+»/«toate») + events dormante `AdaugaOrdonantari(Cerut)`. Api 48→53 (+5), App 39→50 (+11), soluție 0 warnings. **0017-02 (DONE):** `GET /api/forexe/plati?cod=` (cititor brut, un rând per `FX_Plati`, cu extrasul bancar `FX_Extrase` purtat pe rând + `are_ord`). **Deviere de la SCHIȚA planului:** clasificația prin `FX_Indicatori` (join CodAI, PK→1:1) + subinterogare scalară `Clasificatii` pe `IdClsfAcc=I.IdClsf` `LIMIT 1` (drumul 0011-03), NU `p.IdClsf` — rezolvat de nota Step 0 a planului («match receptii.py»); se întorc și `clsf`/`denumire` (nomenclator) și `clsf_plata` (brut, fallback). `LEFT JOIN FX_Extrase` (nu INNER pe H ca Access) — o plată fără extras nu dispare. `are_ord` contra unui derivat `DISTINCT` (o plată pe mai multe linii de ordonantare nu duplică rândul). `ORDER BY Data_plata, IdPlataFX`. `data_doc` e TEXT (string brut, nu ISO). 15 teste Python host-only (skip off-host), inclusiv garda anti-fan-out `count(plati)==count(FX_Plati)`. Suite offline 75 passed / 13 skipped, py_compile curat. **0017-01 (DONE):** reusable totals band in `KBot.Controls`, NOT special-cased for Plăți. New `KBotAggregate {None,Sum,Count,Average}`; `KBotDataColumn.Aggregate`/`AggregateFormatString`; `KBotDataView.ShowTotalsRow`/`TotalsRowHeight`. Pinned band between body and h-scroll, header band styling (reused `_bHeaderBack`/`_pHeaderSep`/`_pHeaderBaseline`/`HeaderFont`), frozen + h-scroll layering mirrored from `DrawHeader`. Aggregates over ALL rows: Sum/Average skip Nothing+non-numeric, Average of nothing = empty (not 0/NaN), Count = rows with `HasValue` (not non-empty cells). NOT a row (excluded from RowCount/nav/hit-test/dirty). `ViewportHeight`+`UpdateScrollBars`+`WillVScrollBeVisible` all subtract the band; totals text participates in auto-size measurement (chosen, so a wide total can't ellipsize). **Deviation:** `AddRow` recompute is one step behind (cells set after AddRow returns), so the control's per-cell `Item` setter recomputes too; bulk loads via `KBotDataRow` inside Begin/EndUpdate recompute once at EndUpdate. Controls 120→134 tests (+14), 0 warnings. DevHarness got a «Rând de totaluri» checkbox. ⚠️ **Band never rendered on screen; `KBotDataView` visual harness STILL unrun** (open since 0010) — frozen alignment only smoke-tested headless. **0017-04 (DONE, VĂZUT PE ECRAN):** activarea vederii arunca `ArgumentException: Cheie de coloană duplicată: 'clsf'` — o trecere prin designer autorase toate cele cinci coloane, iar `BuildColumns()` le adăuga a doua oară; `BuildColumns` șters, designerul deține coloanele. Arborele a coborât de la patru straturi la **DOUĂ**: rădăcină lună → frunză ZI (toate plățile zilei într-un nod); `« TOATE PLĂȚILE »` și nodul per `IdPlataFX` au dispărut, LISTA rămâne filtru. Iconițele vin din `image_list` (`month` pe lună, `up`/`down` pe starea merjată a zilei); luna nu mai poartă stare și nu mai e verde (ca în Access: folder, nu stare). Lunile pornesc strânse **în afară de cea cu «+»** (abatere deliberată de la Access, cerință operator). ⚠️ **Defect găsit pe drum:** o regenerare a lui `InitializeComponent` prin designer ștersese cele zece apeluri `InitDetailPair`, deci panoul de detaliu ieșea GOL, tăcut — cablarea s-a mutat în `BuildDetailRows()` din constructor. `image_list` n-are încă cheile `neutru`/`plus` (cad pe GDI); `nrdoc`/`data` sunt `ValueType.DateTime` în designer dar `FillGrid` scrie șiruri în ele (probabil scăpare, lăsat neatins) |
+| 0017 | Plăți — endpoint + `PlatiView` (a patra vedere reală) + `KBotDataView` totals row | 0017-01..04 DONE (code) / **0017-04 VĂZUT PE ECRAN ȘI ACCEPTAT 2026-08-13** (prima acceptare vizuală a vederii Plăți) / **NEVER RUN ON A LIVE DB** | [Totaluri](../SLICE-0017-01-kbotdataview-totals-row.md); [02: endpoint](../SLICE-0017-02-plati-endpoint.md#slice-0017-02), [03: vedere](../SLICE-0017-02-plati-endpoint.md#slice-0017-03), [04: revizie](../SLICE-0017-02-plati-endpoint.md#slice-0017-04) | Contractul general este în 01; implementarea, arborele revizuit, probele și restanțele sunt în istoricul 02…04. |
 
 ### Current focus
 
-- **Slice 0017-04 (Plăți: arborele pe două niveluri) — DONE și VĂZUT PE ECRAN 2026-08-13.**
-  Prima acceptare vizuală a vederii Plăți. Trei lucruri merită scoase din ea. (1) **Designerul
-  Visual Studio a devenit a doua sursă de adevăr, iar codul nu știa asta** — trecerea operatorului
-  autorase cele cinci coloane ale grilei, `BuildColumns()` le adăuga a doua oară, și regula „fără
-  no-op tăcut" a transformat asta într-o excepție care dobora activarea vederii. Când designerul
-  autorează ceva, codul trebuie să înceteze să o facă. (2) **Ce scrii de mână în
-  `InitializeComponent` moare la primul dute-vino prin designer** — cele zece apeluri
-  `InitDetailPair` fuseseră șterse de o regenerare, iar panoul de detaliu ieșea gol fără nicio
-  eroare; cablarea stă acum în constructor. Aceeași capcană e de verificat în `IstoricView` și
-  `DdfView`, ale căror designere au fost regenerate în aceeași rundă (vezi Open threads).
-  (3) **Trei capcane de test, toate generale:** `Type.GetMethod` e sensibil la majuscule deși VB
-  nu e (o redenumire de handler a arătat exact ca un defect de vedere); `Throw failure` resetează
-  stiva și ascunde locul real al eșecului (`ExceptionDispatchInfo.Capture(...).Throw()` nu);
-  `ImageList.Images(i)` întoarce un `Bitmap` NOU la fiecare acces, deci `Assert.Same` nu poate
-  trece niciodată pe iconițe — comparația se face pe pixeli.
+- Reper 13.08.2026: [04 — arbore și acceptare vizuală pe date de test](../SLICE-0017-02-plati-endpoint.md#slice-0017-04). Nu extinde proba la baza reală sau la harnessul general de totaluri.
 
 ### Open threads
 
-- **„Fix Rezervări «+» (one leaf, not all)" a rămas fără număr.** Era planificat ca 0017-04, dar
-  operatorul a realocat 04 reveniri asupra arborelui de Plăți. Elementul **nu s-a făcut** și are
-  nevoie de un număr nou când se programează.
+- [Restanțele etapelor și reperele registrului](../SLICE-0017-02-plati-endpoint.md): rulare live, resurse/tipuri în designer, sortare și cablarea Istoric/DDF. Fixul Rezervări «+» rămâne nefăcut, fără număr după realocarea lui 04.
 
 ---
-
 ## Slice 0018
 
 ### Registry

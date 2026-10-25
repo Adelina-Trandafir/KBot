@@ -6,6 +6,8 @@ Actualizat: 11.10.2026, în urma auditului rutelor Python și a deciziilor utili
 
 ## Decizii acceptate
 
+**Ordinea deciziilor din 11.10.2026:** punctele 2–3 descriu planul inițial de retragere integrală. [Excepția ulterioară a operatorului](vba/RETRAGERE_API_LEGACY.md#excepție-decisă-de-operator-11102026-sincronizarea-clasificațiilor-și-a-partenerilor) păstrează exclusiv cinci rute pentru sincronizarea clasificațiilor și a partenerilor, cu `X-Access-Key` propriu. Ea prevalează pentru acele cinci rute și funcțiile lor VBA; nu reactivează vechea `X-Api-Key`, fallback-ul, administrarea sau celelalte rute retrase. Lista, cheia și limitele excepției au o singură sursă, în ghid. Sunt decizii documentate, fără confirmare nouă de deployment.
+
 1. Parola inițială poate autentifica utilizatorul numai pentru schimbarea obligatorie a parolei. Kbot.App nu deschide aplicația principală până la schimbarea reușită. Politica MariaDB rămâne activă.
 2. Toate rutele pentru vechiul VBA sunt retrase complet. Nu rămâne fallback pe X-Api-Key, nici opțiune de configurare care să reactiveze vechea cheie.
 3. VBA nu mai apelează API-ul Python și nu mai conține acreditări pentru el. Funcționalitățile vechi de sincronizare/trimitere se retrag sau se mută explicit în Kbot.App; nu se înlocuiește cheia VBA cu un bearer salvat în VBA.
@@ -51,6 +53,8 @@ Teste obligatorii: inițială vs parolă deja schimbată, cont cu mai multe unit
 
 ### Inventar și dependențe
 
+Secțiunea păstrează planul inițial; pentru cele cinci rute păstrate se aplică excepția legată mai sus. Cerința de 404/410 privește rutele retrase, iar vechea cheie comună rămâne revocată pentru toate intrările.
+
 Inventarul exact al handler-elor cu guard de cheie este în [security/legacy-route-inventory.json](security/legacy-route-inventory.json). Inventarul este o listă pentru retragere, nu o listă de URL-uri deja dezactivate.
 
 | Zonă legacy | Acțiune |
@@ -80,18 +84,9 @@ Inventarul exact al handler-elor cu guard de cheie este în [security/legacy-rou
 
 ## S3. Eliminarea apelurilor și a cheilor din VBA
 
-Ghidul și codul pregătit sunt în [vba/RETRAGERE_API_LEGACY.md](vba/RETRAGERE_API_LEGACY.md).
+Procedura, exemplele de refuz, exportul complet Access, inventarierea apelanților și secretelor, exportul offline JSON și distribuirea frontend-urilor au o singură sursă: [ghidul VBA](vba/RETRAGERE_API_LEGACY.md). Include limitele celor două exporturi din repo, lipsa unei eliminări automate, reexportul după curățare și lipsa dovezii prin simplă căutare textuală. Pentru funcțiile păstrate se aplică excepția operatorului din același ghid.
 
-- Eliminarea reală a clienților HTTP pentru API, helper-elor URL, constantelor și citirilor de chei din registru/tabele/fișiere, inclusiv setarea headerelor.
-- Eliminarea apelurilor de sincronizare din formulare, rapoarte, AutoExec, macrocomenzi, Timer, Ribbon și query-uri care apelează funcții VBA.
-- Pentru o tranziție care păstrează compilarea, stub-uri temporare cu aceleași semnături, care refuză explicit operația. Fără On Error Resume Next și fără succes fals. La final se șterg și stub-urile și apelanții lor.
-- Exportul integral al obiectelor Access este necesar pentru inventarul complet: în repo există doar două module VBA exportate, nu întregul frontend VBA AVACONT/FOREXE. Bazele ADECHIT din repo nu reprezintă automat frontend-ul vizat.
-- Modulul de export inclus nu elimină automat cod și nu dezactivează API-ul. Ajută la identificarea tuturor locurilor, inclusiv codul din formulare și macrocomenzile încorporate. Verificarea exportului se repetă după curățare.
-- Exportul offline JSON din mdl_FX_ExportSeed nu face el însuși apeluri HTTP și poate rămâne ca export local. Conține însă o parolă Access hardcodată: aceasta se elimină și se primește la rulare printr-un mecanism adecvat, fără literal/parolă implicită distribuită.
-- Inventarierea secretelor distincte (API key, client secret ANAF, token, parole). Nu se șterg arbitrar proprietăți Dictionary.Keys, primary keys sau toate șirurile care conțin cuvântul «key».
-- Recompilarea și redistribuirea tuturor frontend-urilor ACCDE/MDE; eliminarea versiunilor de frontend de pe share-uri și din pachetele active. Copiile utilizatorilor vechi sunt neutralizate și de retragerea server-side.
-
-Acceptare: compilare completă, execuție a fluxurilor rămase, inventar revizuit fără acces la API-ul Python sau acreditări pentru acesta și observație de trafic fără cereri către vechile intrări. O căutare textuală fără rezultate, singură, nu dovedește absența apelurilor construite dinamic sau făcute prin biblioteci externe.
+Acceptarea cere compilare completă, execuția fluxurilor rămase, inventar revizuit și observarea traficului: fără cereri/acreditări pentru intrările retrase, separat de cele cinci rute autorizate de excepție. Pașii server-side rămân în S2.
 
 ## S4. Celelalte fixuri din audit
 

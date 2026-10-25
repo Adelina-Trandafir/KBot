@@ -1,10 +1,6 @@
 # Plan: help assistant (search, "open it for me", tours, questions to the server)
 
-Hand-over plan, written 30.09.2026. **Built the same day as 0000-18…0000-22** (worklogs
-`docs/worklog/SLICE-0000-18-…` to `SLICE-0000-22-…`; what differs from this text is written there,
-e.g. the tour folders open inline in the list). All of it is help work, so every
-piece is a sub-slice `0000-NN` (next free number: `0000-18`). No generative model. No hosted-model
-option (that is deliberately out of scope for now).
+Hand-over plan, written 30.09.2026, implemented the same day as **0000-18…22**. The five stages now share [one historical worklog](worklog/SLICE-0000-18-cautare-pe-intrebari.md) with anchors per stage. This body retains the original proposal, including its original next-free number `0000-18` and task-time instructions; it is not a new execution instruction. Differences (for example inline tour folders, the chosen outbox, exact payload and later implementation limits) are recorded by stage there. Maintenance is in [HELP_SYSTEM](HELP_SYSTEM.md). No generative or hosted model was included; the later embedding proposal remains gated on real data.
 
 ## Read first
 - `CLAUDE.md`, `docs/worklog/CODE_WORKFLOW.md`, `docs/HELP_SYSTEM.md` (the update procedure and the

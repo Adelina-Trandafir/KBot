@@ -1,6 +1,6 @@
-# ADECHIT — decizii și probe încă necesare
+# ADECHIT — registrul deciziilor și probelor închise
 
-Actualizat: 09.10.2026, SLICE-ADE6-18 (registru inițial ADE0-03). Registru asociat [planului](PLAN_IMPLEMENTARE.md)
+Repere: 09.10.2026, SLICE-ADE6-18 (registru inițial ADE0-03); închidere confirmată 23.10.2026; consolidare D001-04, 24.10.2026. Registru asociat [planului](PLAN_IMPLEMENTARE.md)
 și [mapării](MAPARE_ACCESS_WEB.md). Nu este o listă de întrebări care oprește documentarea.
 La rezolvare se adaugă data, sursa răspunsului/probei și efectul asupra feliei, fără
 ștergerea constatării inițiale. Nicio opțiune de mai jos nu este considerată aprobată implicit.
@@ -9,24 +9,24 @@ La rezolvare se adaugă data, sursa răspunsului/probei și efectul asupra felie
 
 ## Neconcordanțe din Access
 
-| Cod | Constatare / dovadă necesară | Felii afectate | Când trebuie rezolvat |
-|---|---|---|---|
-| M01 | **DECIS 08.10.2026:** bonurile fiscale ies complet din flux. Tipul documentului in Plati: Chitanta = 2, Alte documente = 1. Ramurile de bon fiscal din interogari/formulare nu se portează. | ADE5-01, ADE8-01 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M02 | **DECIS 08.10.2026:** comportamentul VBA era greșit. Orice modificare a documentelor unei luni închise, inclusiv anularea, rescrie valorile situației salvate pentru copilul respectiv; prezența rămâne blocată. | ADE7-03, ADE8-01/03 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M03 | **DECIS 08.10.2026:** motivul anularii unei restituiri se salveaza. Anularea se face printr-o fereastra popup care cere OBLIGATORIU motivul; fara motiv anularea nu se executa. Importul nu inventeaza istoric. | ADE8-01 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M04 | **DECIS 08.10.2026:** se păstrează condiția din codul Access; data este refuzată numai dacă diferă și luna, și anul. | ADE8-01 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M05 | **DECIS 08.10.2026:** numai ultima lună închisă poate fi redeschisă; luna deschisă următoare se elimină. Mișcările ei rămân orfane, cu luna/anul de proveniență păstrate separat de data documentului, pentru reatașare la recreare. O setare per bază poate bloca operația când există mișcări, verificând atât luna redeschisă, cât și luna eliminată. | ADE7-01/02 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M06 | **DECIS 08.10.2026:** istoricul MutaCopil din Access NU se reproduce (logica veche era gresita). In loc: (1) jurnal automat si append-only per copil (AD_Platitori_Istoric: INTRARE/MUTARE/PLECARE/REVENIRE/IESIRE_DEFINITIVA/COMPENSARE, data, grupa veche/noua, utilizator), scris in aceeasi tranzactie cu schimbarea; (2) istoric al educatorilor per grupa: AD_Grupe_Educator (IDG, educator, de la/pana la); nivelul mica/mijlocie/mare NU se pastreaza (decis 08.10.2026, nu e relevant), deci nu exista AD_Grupe_An; la migrare istoricul se reconstruieste din AD_SS_Buget (Educator/Grupa/IDG pe luni inchise) si migrarea AFISEAZA lista educatorilor gasiti pe fiecare grupa pentru unirea variantelor INAINTE de scriere; aceeasi grupa continua de la un an la altul, nivelul nu urmeaza automat; o grupa poate fi inchisa (InchisaDinAn), ramane vizibila pentru perioadele anterioare, fara stergere fizica; (3) copil in prezenta unei singure grupe pe luna: cea in care se afla la inchiderea lunii, mutarea dupa inchidere se aplica de la luna deschisa urmatoare; (4) plecati: sold 0 iese din situatia lunii urmatoare, cu debit ramane in grupa speciala «Copii plecati» pana la plata (iese din luna urmatoare platii), cu credit ramane pana la compensare (AD_Compensare, hotarata de consiliu). Educatorul poate lipsi (NULL), fara date inventate. MutaCopil din Access este un tabel mort (gol): nu se importa nimic din el; jurnalul porneste din INTRARE/PLECARE (DataIntrare/DataIesire) si, pentru mutarile vechi, din schimbarile de grupa deduse din lunile consecutive AD_Prezenta, marcate «dedus din prezenta» (fara zi exacta). | ADE6-01/03 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M07 | **DECIS 08.10.2026:** celelalte variabile din sabloane nu intereseaza in etapa curenta; ramane doar [LA]. Ramurile de bon fiscal dispar (M01). | ADE3-02, ADE8-02 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M08 | **DECIS 08.10.2026:** rapoartele nu se fac acum; DocumenteAnulate amanat odata cu ADE9-01. | ADE9-01 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M09 | **CLARIFICAT 08.10.2026:** nu se cere nicio clarificare de la operator. Chitante/Plati_fact/FTP/Situatii salvate sunt ramuri vechi sau nexportate; raman in afara fluxului. Plati_fact/FTP tin de facturare, iar Situatii salvate de rpt_SitFin (rapoarte amanate). | ADE0, ADE9-01 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
-| M10 | Structurile linked nu conțin rândurile backendului | ADE3, ADE5, ADE7-03 | Rezolvat și implementat (confirmat de operator, 23.10.2026) |
+| Cod | Constatare și decizie consemnată | Felii afectate |
+|---|---|---|
+| M01 | **DECIS 08.10.2026:** bonurile fiscale ies complet din flux. Tipul documentului in Plati: Chitanta = 2, Alte documente = 1. Ramurile de bon fiscal din interogari/formulare nu se portează. | ADE5-01, ADE8-01 |
+| M02 | **DECIS 08.10.2026:** comportamentul VBA era greșit. Orice modificare a documentelor unei luni închise, inclusiv anularea, rescrie valorile situației salvate pentru copilul respectiv; prezența rămâne blocată. | ADE7-03, ADE8-01/03 |
+| M03 | **DECIS 08.10.2026:** motivul anularii unei restituiri se salveaza. Anularea se face printr-o fereastra popup care cere OBLIGATORIU motivul; fara motiv anularea nu se executa. Importul nu inventeaza istoric. | ADE8-01 |
+| M04 | **DECIS 08.10.2026:** se păstrează condiția din codul Access; data este refuzată numai dacă diferă și luna, și anul. | ADE8-01 |
+| M05 | **DECIS 08.10.2026:** numai ultima lună închisă poate fi redeschisă; luna deschisă următoare se elimină. Mișcările ei rămân orfane, cu luna/anul de proveniență păstrate separat de data documentului, pentru reatașare la recreare. O setare per bază poate bloca operația când există mișcări, verificând atât luna redeschisă, cât și luna eliminată. | ADE7-01/02 |
+| M06 | **DECIS 08.10.2026:** istoricul MutaCopil din Access NU se reproduce (logica veche era gresita). In loc: (1) jurnal automat si append-only per copil (AD_Platitori_Istoric: INTRARE/MUTARE/PLECARE/REVENIRE/IESIRE_DEFINITIVA/COMPENSARE, data, grupa veche/noua, utilizator), scris in aceeasi tranzactie cu schimbarea; (2) istoric al educatorilor per grupa: AD_Grupe_Educator (IDG, educator, de la/pana la); nivelul mica/mijlocie/mare NU se pastreaza (decis 08.10.2026, nu e relevant), deci nu exista AD_Grupe_An; la migrare istoricul se reconstruieste din AD_SS_Buget (Educator/Grupa/IDG pe luni inchise) si migrarea AFISEAZA lista educatorilor gasiti pe fiecare grupa pentru unirea variantelor INAINTE de scriere; aceeasi grupa continua de la un an la altul, nivelul nu urmeaza automat; o grupa poate fi inchisa (InchisaDinAn), ramane vizibila pentru perioadele anterioare, fara stergere fizica; (3) copil in prezenta unei singure grupe pe luna: cea in care se afla la inchiderea lunii, mutarea dupa inchidere se aplica de la luna deschisa urmatoare; (4) plecati: sold 0 iese din situatia lunii urmatoare, cu debit ramane in grupa speciala «Copii plecati» pana la plata (iese din luna urmatoare platii), cu credit ramane pana la compensare (AD_Compensare, hotarata de consiliu). Educatorul poate lipsi (NULL), fara date inventate. MutaCopil din Access este un tabel mort (gol): nu se importa nimic din el; jurnalul porneste din INTRARE/PLECARE (DataIntrare/DataIesire) si, pentru mutarile vechi, din schimbarile de grupa deduse din lunile consecutive AD_Prezenta, marcate «dedus din prezenta» (fara zi exacta). | ADE6-01/03 |
+| M07 | **DECIS 08.10.2026:** celelalte variabile din sabloane nu intereseaza in etapa curenta; ramane doar [LA]. Ramurile de bon fiscal dispar (M01). | ADE3-02, ADE8-02 |
+| M08 | **DECIS 08.10.2026:** rapoartele nu se fac acum; DocumenteAnulate amanat odata cu ADE9-01. | ADE9-01 |
+| M09 | **CLARIFICAT 08.10.2026:** nu se cere nicio clarificare de la operator. Chitante/Plati_fact/FTP/Situatii salvate sunt ramuri vechi sau nexportate; raman in afara fluxului. Plati_fact/FTP tin de facturare, iar Situatii salvate de rpt_SitFin (rapoarte amanate). | ADE0, ADE9-01 |
+| M10 | Structurile linked nu conțin rândurile backendului | ADE3, ADE5, ADE7-03 |
 
 Decizia utilizatorului din 07.10.2026 confirmă **încasarea după închidere cu actualizarea
 situației salvate și prezență blocată**. La 08.10.2026, M02 a fost extins explicit și la
 anulare și la orice altă modificare a documentelor lunii închise pentru copilul respectiv.
 
-## Date, infrastructură și întinderea funcțiilor
+## Date, infrastructură și întinderea funcțiilor — cerințele inițiale D01–D10
 
 | Cod | Ce lipsește / ce se stabilește | Responsabilitate și moment |
 |---|---|---|
@@ -41,7 +41,7 @@ anulare și la orice altă modificare a documentelor lunii închise pentru copil
 | D09 | Domeniul unicității numărului, serii reale, schimbare serie și reproducerea documentului emis | ADE3-02/ADE8-02; nu presupunem resetare anuală sau valori exemplu |
 | D10 | Rezultatele de pe Linux/MariaDB și printul fizic | Utilizatorul execută după predare; ADE9 consemnează separat de localhost:5050 |
 
-## Ce poate continua fără aceste răspunsuri
+## Ce putea continua fără răspunsuri — reperul inițial ADE0-03
 
 Scheletul, inventarul reutilizărilor, preview-ul și editorul de grilă pot fi construite
 cu date fictive. Validatorul de import și comparatorul pot fi pregătite cu fixture-uri.
@@ -53,30 +53,8 @@ drepturi pe server și nu s-a rezolvat implicit niciuna dintre necunoscutele de 
 
 ## Decizii finale ale threadului — 09.10.2026
 
-Sursa: instrucțiunile explicite ale utilizatorului; detaliile consolidate sunt în
-[UTILIZARE_WEB](UTILIZARE_WEB.md). Acestea înlocuiesc propunerile UI inițiale.
-
-- Grupe/Copii/Plătitori: liste read-only și editori modali după machete; Renunță
-  abandonează explicit, Escape/clic exterior nu închid fereastra.
-- DGV comun și pe mobil; filtre exclusiv Nume/Grupa, I fără filtru. I la
-  Platitori_sub este inversul Activ numai la afișare. Enter avansează între
-  celulele editabile, Escape anulează numai editorul; clic unic numai pe PC.
-- Mobil: ➡️ în Grupe/Copii înlocuiește apăsarea lungă; margini 10px și padding
-  interior 8px, rânduri +20%, scroll numai în tabel, butoane emoji în footer.
-- Taxe: DeLa/PanaLa lună/an, Activ checkbox, PanaLa automat la înlocuirea taxei
-  active. Datele migrate NULL nu blochează; numai taxa nouă necesită DeLa.
-  DDL suplimentar AD_04 după AD_03, executat.
-- Plătitorul nou este activ; ceilalți ai aceluiași copil devin inactivi atomic.
-  Activarea unuia existent aplică aceeași regulă. Nu curățăm global importul.
-- Verificat de utilizator (TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)).
-
-ADE6-07–17 sunt TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Deciziile de mai sus sunt închise;
-nu mai există fire deschise.
+Deciziile explicite ale utilizatorului pentru Grupe/Copii/Plătitori, modale, DGV PC/mobil, filtre, I/Activ, tastatură, taxe și activarea unică sunt întreținute în [UTILIZARE_WEB](UTILIZARE_WEB.md), care înlocuiește propunerile inițiale. AD_04 se aplică după AD_03 și este consemnat executat. Importul nu este curățat global. ADE6-07…17 și deciziile de mai sus sunt închise prin confirmarea operatorului din 23.10.2026 (TESTAT, RULAT, PUBLICAT), fără fire deschise.
 
 ### Completare explicită — ADE6-20
 
-Escape în celula activată la adăugare anulează rândul nou. Taxa salvată trebuie
-să aibă valoare >0 și explicație nevidă; începutul unui rând nou sau modificat
-trebuie să fie după ultimul început existent. La eroare: dialog Continuă editarea
-/ Anulează înregistrarea. Datele NULL deja migrate, nemodificate, rămân permise.
-TESTAT, RULAT, PUBLICAT; detalii în [ghid](UTILIZARE_WEB.md).
+[Taxe și perioade](UTILIZARE_WEB.md#taxe-și-perioade) păstrează exact excepția Escape pentru rândul nou, valoare >0/explicație, început ulterior, dialogul Continuă/Anulează și acceptarea datelor NULL migrate nemodificate. Aceeași confirmare din 23.10 se aplică acestei completări.

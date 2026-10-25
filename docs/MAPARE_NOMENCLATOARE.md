@@ -10,14 +10,13 @@
 > plan's or `MAPARE_ACCESS_MARIADB.md`'s assumption turned out wrong, it is named and
 > marked ⚠.
 
-Slice **0045**. Written 23.08.2026, revised the same day with the MariaDB schema.
+Slice **0045**. Discovery written 23.08.2026 and revised against that schema, with dated amendments below (including 0075-00, 22.09 and 12.10). This is a historical evidence/mapping document, not a statement that all findings or open questions still apply. The [0045 history](worklog/SLICE-0045-01-descoperire-nomenclatoare.md) and [state](worklog/state/KBOT_STATUS_0040-0049.md#slice-0045) hold the implementation chronology.
 
 ---
 
 ## Evidence
 
-**Access side** — `tools/AccdbSchemaDump/` (throwaway console spike, not in `KBot.sln`), run
-on this machine 23.08.2026:
+**Access side** — `tools/AccdbSchemaDump/` (throwaway console spike, not in `KBot.sln`), run on this machine 23.08.2026:
 
 | Dump | Source file | Size | Tables |
 |---|---|---:|---:|
@@ -25,14 +24,9 @@ on this machine 23.08.2026:
 | `artifacts/accdb-schema/baza2026.md` | `Avacont/Energetic ISJ/baza2026.accdb` | 3.784.704 B | 69 |
 | `artifacts/accdb-schema/FX_2026.md` | `Avacont/Forexe/FX_2026.accdb` | 2.678.784 B | 27 |
 
-**MariaDB side** — `MariaDB_Schema/000_DEMO.sql` (84.779 B, dated 22.08.2026). Real
-`CREATE TABLE` DDL for 54 tables. **Schema only: zero `INSERT` statements, zero views, zero
-triggers, zero stored routines.**
+**MariaDB side** — `MariaDB_Schema/000_DEMO.sql` (84.779 B, dated 22.08.2026). Real `CREATE TABLE` DDL for 54 tables. **Schema only: zero `INSERT` statements, zero views, zero triggers, zero stored routines.**
 
-⚠ **None of this is in git** — `artifacts/` (`.gitignore:66`), `Avacont/` and
-`/MariaDB_Schema` (`.gitignore:507`) are all ignored, and the dumps carry real partner names,
-IBANs and figures. Regenerate the Access side in one command from a checkout that has the
-files:
+⚠ **None of this is in git** — `artifacts/` (`.gitignore:66`), `Avacont/` and `/MariaDB_Schema` (`.gitignore:507`) are all ignored, and the dumps carry real partner names, IBANs and figures. Regenerate the Access side in one command from a checkout that has the files:
 
 ```bash
 dotnet run --project tools/AccdbSchemaDump -c Release -- artifacts/accdb-schema "Avacont/cale.accdb" - "Avacont/Energetic ISJ/baza2026.accdb" - "Avacont/Forexe/FX_2026.accdb" -
@@ -44,7 +38,7 @@ dotnet run --project tools/AccdbSchemaDump -c Release -- artifacts/accdb-schema 
 
 ## 0. Decisions taken (23.08.2026)
 
-Recorded so nobody re-derives them. Operator's answers to §9 of the first revision.
+Recorded so nobody re-derives them. Operator's answers to §9 of the first revision. Later answers for `ParteneriAng` and `Unitati` are in [0045-03](worklog/SLICE-0045-01-descoperire-nomenclatoare.md#slice-0045-03), as summarized in §10.
 
 | # | Question | Decision |
 |---|---|---|
@@ -52,26 +46,20 @@ Recorded so nobody re-derives them. Operator's answers to §9 of the first revis
 | D2 | Which units are transferred | **The operator picks the `IdUnitate`.** Not "every unit in the DC" — a selection on the form. This also disposes of the units with `CaleForexe = NULL` (`cai` 110, 114): if picked, they transfer their nomenclators and have no `FX_*` data |
 | D3 | `ParteneriSI` (52 rows, no target) | **Out.** Confirmed |
 | D4 | `FX_Salarii`, `FX_Receptii_Plati` | **Out of MariaDB's scope entirely.** `FX_Salarii` exists in neither the `.accdb` nor the schema. `FX_Receptii_Plati` **does** exist in both but is empty and abandoned — excluded completely from migration by correction C2 (26.08.2026, `docs/FUNDAMENT_Asociere_Receptii.md`); it was an early attempt to join a reception to a payment directly, made before the flow was understood. Drop both from the §6 write order. `FX_ORD_TBL.IDRP` pointed at `FX_Receptii_Plati` and is therefore **dead**, not merely orphaned: the column stays in the schema, unmapped and unwritten. ⚠ **`FX_ORD_TBL_REC` is NOT covered by this row** — correction C1 of the same date withdrew the claim that it is a relic. It migrates normally; see `KBot.Migrator/Transfer/TableMaps.vb` and `routes/migrare/tables.py` |
-| D5 | `ClasificatiiV` / `RectificariV` (venituri) | **Not in this slice** |
+| D5 | `ClasificatiiV` / `RectificariV` (venituri) | **Initial 0045 scope: not in this slice.** [0057 correction 8](worklog/SLICE-0057-forexe-lista-oprire-extrase.md#slice-0057-corectia-8) later adds both mappings under their new MariaDB names (09.09.2026). |
 | D6 | `Avacont/` untracked but not gitignored | **Done** — added to `.gitignore`, along with `/MariaDB_Schema` |
 | D7 | `000_DEMO` already holds rows; where does a run write? | **A brand-new empty database**, created from `AVACONT_SURSA` per plan §4. `000_DEMO` was only ever the schema template. **Option (A) is therefore safe** — nothing pre-exists to collide with, and the Access ids stay authoritative. F6 below is retained as the reason, not as a live hazard |
 | D8 | `Clasificatii` has no unique key for its upsert (§3.2) | **Insert-only, run exactly once.** No schema change. The tool **refuses to run** when the target's `Clasificatii` already holds rows for a selected unit, so a second run is impossible rather than silently duplicating |
 | D9 | `IdClsfAcc` is `NOT NULL` on `FX_DDF_REV_SA`/`_SB` (§9 #6) | **Write the Access `IdClsf` into it.** That is exactly what `IdClsfAcc` means on `Clasificatii`, so it stays consistent, needs no server change, and the column is being retired anyway |
 | D10 | MariaDB client library | **`MySqlConnector`** — MIT, actively maintained, genuinely async, drop-in for the ADO.NET interfaces |
 
-Confirmed by the schema rather than asked: **`AVACONT_SURSA` carries tables only** — the
-`000_DEMO` dump has no view, trigger or routine, so §4 step 3 of the plan (copy every table
-via `SHOW CREATE TABLE`) is sufficient. That was §11 Q5.
+Confirmed by the schema rather than asked: **`AVACONT_SURSA` carries tables only** — the `000_DEMO` dump has no view, trigger or routine, so §4 step 3 of the plan (copy every table via `SHOW CREATE TABLE`) is sufficient. That was §11 Q5.
 
 ### ⚠ What D7 costs: a fresh database starts with an empty `Unitati`
 
-`CREATE DATABASE` + `SHOW CREATE TABLE` copies **structure, not rows**. So on a brand-new
-database `Unitati` is empty — and `Clasificatii.IdUnitate`, `Clasificatii_Buget.IdUnitate`,
-`Parteneri.IdUnitate` and `FX_ORD_TBL.IdUnitate` all carry a foreign key into it (§7).
+`CREATE DATABASE` + `SHOW CREATE TABLE` copies **structure, not rows**. So on a brand-new database `Unitati` is empty — and `Clasificatii.IdUnitate`, `Clasificatii_Buget.IdUnitate`, `Parteneri.IdUnitate` and `FX_ORD_TBL.IdUnitate` all carry a foreign key into it (§7).
 
-**Nothing can be written at all until `Unitati` holds the selected units.** This is no longer
-a "check it first" nicety; it is a precondition of the very first INSERT. Every value it needs
-is available:
+**Nothing can be written at all until `Unitati` holds the selected units.** This is no longer a "check it first" nicety; it is a precondition of the very first INSERT. Every value it needs is available:
 
 | `Unitati` column | Source |
 |---|---|
@@ -84,22 +72,17 @@ is available:
 
 So the tool **can** populate it, and on D7's fresh-database path it has to. Confirm — §10 Q2.
 
-`AVACONT_COMUN` (§3.1) is the other half of the same problem and D7 does not touch it: it is a
-**separate database**, not created by the `AVACONT_SURSA` loop, and five of `Clasificatii`'s
-six foreign keys point into it. A fresh database still cannot accept one classification row
-until `AVACONT_COMUN` exists and is populated on that server.
+`AVACONT_COMUN` (§3.1) is the other half of the same problem and D7 does not touch it: it is a **separate database**, not created by the `AVACONT_SURSA` loop, and five of `Clasificatii`'s six foreign keys point into it. A fresh database still cannot accept one classification row until `AVACONT_COMUN` exists and is populated on that server.
 
 ---
 
 ## 1. Findings that change the plan
 
-Six. The first four came from the `.accdb` files, the last two from the schema, and the last
-one is the most serious thing in this document.
+Six. The first four came from the `.accdb` files, the last two from the schema, and the last one is the most serious thing in this document.
 
 ### F1 ⚠ `cale.accdb` holds none of the four nomenclators
 
-`PLAN_MigratorDirect.md` §12.2 Q1 assumed it carries `CAI`, `Parteneri`, `Clasificatii` and
-`Rectificari`. It carries **only the registry**:
+`PLAN_MigratorDirect.md` §12.2 Q1 assumed it carries `CAI`, `Parteneri`, `Clasificatii` and `Rectificari`. It carries **only the registry**:
 
 ```
 BurseColoane  BurseFoi  cai  K  LEGUNIT  TC  tmpBurse  tmpBurseBanci  TRACE  TRACE_S  Ver
@@ -109,27 +92,21 @@ BurseColoane  BurseFoi  cai  K  LEGUNIT  TC  tmpBurse  tmpBurseBanci  TRACE  TRA
 
 ### F2 ⚠ The nomenclators live in a **per-unit** file, one per `IdUnitate`
 
-`Clasificatii` (54 rows), `Parteneri` (75), `Rectificari` (0) are in
-`Avacont/Energetic ISJ/baza2026.accdb`. `cai` points at it: row `IdUnitate = 76` has
-`CaleUnitate = .\ENERGETIC ISJ` and `FullPath = .\ENERGETIC ISJ\baza2026.accdb`.
+`Clasificatii` (54 rows), `Parteneri` (75), `Rectificari` (0) are in `Avacont/Energetic ISJ/baza2026.accdb`. `cai` points at it: row `IdUnitate = 76` has `CaleUnitate = .\ENERGETIC ISJ` and `FullPath = .\ENERGETIC ISJ\baza2026.accdb`.
 
-So it is **one `baza<year>.accdb` per `IdUnitate`**, opened in turn — driven by `cai`, filtered
-by the operator's selection (D2). `cai` lists 13 for DC `000_DEMO`.
+So it is **one `baza<year>.accdb` per `IdUnitate`**, opened in turn — driven by `cai`, filtered by the operator's selection (D2). `cai` lists 13 for DC `000_DEMO`.
+
+**Later ownership correction:** this per-unit-file finding concerns the nomenclators. [0045-07](worklog/SLICE-0045-01-descoperire-nomenclatoare.md#slice-0045-07) establishes that 11 of 13 registry rows share one FOREXE file and distinguishes a missing unit column, NULL and ownership through parents. The old “FX_* carries IdUnitate itself” summary below must be read with that correction; it is not permission to assign an unowned shared-file row to each selected unit.
 
 ### F3 ⚠ The nomenclator rows carry **no `IdUnitate` column**
 
-The answer to §12.2 Q5, and the opposite of what it expected ("Confirm only that Access
-`Clasificatii` carries `IdUnitate` …").
+The answer to §12.2 Q5, and the opposite of what it expected ("Confirm only that Access `Clasificatii` carries `IdUnitate` …").
 
-`Clasificatii`, `Parteneri` and `Rectificari` have **no `IdUnitate` column at all**. The unit
-is implied by the file.
+`Clasificatii`, `Parteneri` and `Rectificari` have **no `IdUnitate` column at all**. The unit is implied by the file.
 
-The `(IdClsfAcc, IdUnitate) ▸ IDClsf` map of `MAPARE_ACCESS_MARIADB.md` Rule 1 is still
-correct — but `IdUnitate` is **supplied by the loop** (the `cai` row whose file is open), not
-read off the row. Make that explicit in the code or someone will hunt for the column.
+The `(IdClsfAcc, IdUnitate) ▸ IDClsf` map of `MAPARE_ACCESS_MARIADB.md` Rule 1 is still correct — but `IdUnitate` is **supplied by the loop** (the `cai` row whose file is open), not read off the row. Make that explicit in the code or someone will hunt for the column.
 
-The `FX_*` side is unaffected: `FX_DDF_REV_SA`, `_SB` and `FX_ORD_TBL` **do** carry
-`IdUnitate` themselves.
+The `FX_*` side is unaffected: `FX_DDF_REV_SA`, `_SB` and `FX_ORD_TBL` **do** carry `IdUnitate` themselves.
 
 ### F4 The link is proven end to end on real rows
 
@@ -140,8 +117,7 @@ The `FX_*` side is unaffected: `FX_DDF_REV_SA`, `_SB` and `FX_ORD_TBL` **do** ca
 | that folder's `Clasificatii.IDClsf` | `92, 123, 128, 138, 141, 143, 158 …` | `baza2026.md` |
 | `FX_DDF_REV_SA.IdClsf` on those rows | `92, 123, 128, 138, 143, 145, 146, 154, 158` | `FX_2026.md` |
 
-Every `IdClsf` in the `FX_DDF_REV_SA` sample resolves to an `IDClsf` in that unit's
-`Clasificatii`. The plan's resolution path is right.
+Every `IdClsf` in the `FX_DDF_REV_SA` sample resolves to an `IDClsf` in that unit's `Clasificatii`. The plan's resolution path is right.
 
 ### F5 `IdClsfPY` is demonstrably stale — Rule 1 confirmed on data
 
@@ -151,8 +127,7 @@ Every `IdClsf` in the `FX_DDF_REV_SA` sample resolves to an `IDClsf` in that uni
 | `FX_2026.FX_DDF_REV_SA` (3 rows) | 123 | **1309** |
 | `FX_2026.FX_ORD_TBL` (5 rows) | 123 | **1309** |
 
-Same classification, two different "old server" ids. Matching on `IdClsfPY` would have
-mismatched silently.
+Same classification, two different "old server" ids. Matching on `IdClsfPY` would have mismatched silently.
 
 ### F6 ⚠⚠ `000_DEMO` is **not empty**, and this may be a re-sync rather than a first migration
 
@@ -174,9 +149,7 @@ Now line those up against the Access values:
 * Access `FX_ORD.IDORDP` = **117 … 123**, inside `FX_ORD`'s 1..133.
 * Access `FX_ORD_TBL.IDORDTBLP` = **430 … 444**, inside `FX_ORD_TBL`'s 1..890.
 
-Those are not stale ids from a decommissioned server. **They are live ids on this one.** This
-unit has already been synced into `000_DEMO`, and the Access file is carrying that sync's
-result back in its mirror columns.
+Those are not stale ids from a decommissioned server. **They are live ids on this one.** This unit has already been synced into `000_DEMO`, and the Access file is carrying that sync's result back in its mirror columns.
 
 Two consequences, both of which need a decision before any row is written:
 
@@ -195,8 +168,7 @@ This is §9 Q1 below, and nothing should be written until it is settled.
 
 ## 2. `cai` — the registry
 
-`cale.accdb` ▸ `cai`, 13 rows. No primary key; three non-unique indexes, all on `IdUnitate`.
-Read-only.
+`cale.accdb` ▸ `cai`, 13 rows. No primary key; three non-unique indexes, all on `IdUnitate`. Read-only.
 
 | # | Column | Type | Used |
 |---:|---|---|---|
@@ -227,22 +199,15 @@ Two traps before coding against it:
 
 ### §11 Q1 — is `cai.DC` the database name verbatim?
 
-**Yes, on the evidence available, but single-valued.** All 13 rows carry `DC = "000_DEMO"`,
-which is exactly the schema file's database name and the one used throughout the repo. There
-is no second DC in this registry to show whether any transformation applies. Confirmed for
-`000_DEMO`; re-check on the first registry listing two DCs. `FX_DDF.DC` and `FX_DDF_REV.DC`
-also read `000_DEMO` — a second, independent occurrence.
+**Yes, on the evidence available, but single-valued.** All 13 rows carry `DC = "000_DEMO"`, which is exactly the schema file's database name and the one used throughout the repo. There is no second DC in this registry to show whether any transformation applies. Confirmed for `000_DEMO`; re-check on the first registry listing two DCs. `FX_DDF.DC` and `FX_DDF_REV.DC` also read `000_DEMO` — a second, independent occurrence.
 
 ---
 
 ## 3. `Clasificatii`
 
-**Access** — `baza2026.accdb` ▸ `Clasificatii`, 54 rows, PK `IDClsf`. Non-unique indexes on
-Capitol / Subcapitol / Articol / Alineat.
+**Access** — `baza2026.accdb` ▸ `Clasificatii`, 54 rows, PK `IDClsf`. Non-unique indexes on Capitol / Subcapitol / Articol / Alineat.
 
-**MariaDB** — read from DDL. **Ten** columns are writable; **six** are
-`GENERATED ALWAYS … PERSISTENT` and **cannot appear in an INSERT at all**, and two are
-server-maintained timestamps.
+**MariaDB** — read from DDL. **Ten** columns are writable; **six** are `GENERATED ALWAYS … PERSISTENT` and **cannot appear in an INSERT at all**, and two are server-maintained timestamps.
 
 > **Slice 0075-00 moved `Sector`, `Sursa` and `SS` across that line.** They were three of the
 > nine generated columns and are written like any other now: `Sector varchar(2) NOT NULL
@@ -299,10 +264,7 @@ server-maintained timestamps.
 | `Clasificatii_ibfk_5` | `Articol` *(written)* | `AVACONT_COMUN.DefaArticol` |
 | `Clasificatii_ibfk_6` | `IdUnitate` | `Unitati` *(same database)* |
 
-So a classification row is rejected with `1452` unless the **computed** `ClsfE`, `ClsfF`,
-`Titlu`, `SS` and the **written** `Articol` all exist in `AVACONT_COMUN`'s dictionaries. Four
-of the five are values the migrator never writes and cannot inspect before the INSERT — they
-fall out of `concat`/`left`/`replace` over what it does write.
+So a classification row is rejected with `1452` unless the **computed** `ClsfE`, `ClsfF`, `Titlu`, `SS` and the **written** `Articol` all exist in `AVACONT_COMUN`'s dictionaries. Four of the five are values the migrator never writes and cannot inspect before the INSERT — they fall out of `concat`/`left`/`replace` over what it does write.
 
 Three things follow:
 
@@ -319,32 +281,19 @@ Three things follow:
    writer computes this rather than the server (`PYTHON/routes/clasificatii_ss.py`,
    `ClasificatieDerived`), but the foreign key still has the last word.
 
-Two corrections from the live server (22.09.2026), which §3.1 above still has wrong: there are
-**four** cross-database foreign keys, not five — `ClsfE` has **no** foreign key into
-`DefaClsfE` — and the caption column of all four dictionaries is **`Denumire`**.
+Two corrections from the live server (22.09.2026), which §3.1 above still has wrong: there are **four** cross-database foreign keys, not five — `ClsfE` has **no** foreign key into `DefaClsfE` — and the caption column of all four dictionaries is **`Denumire`**.
 
 ### 3.2 ⚠ No unique key on `(IdClsfAcc, IdUnitate)` — the upsert cannot match
 
-`Clasificatii` has exactly one unique index: `PRIMARY KEY (IDClsf)`. `IdClsfAcc` and
-`IdUnitate` each carry a **non-unique** `INDEX`, and there is no composite unique key over the
-pair.
+`Clasificatii` has exactly one unique index: `PRIMARY KEY (IDClsf)`. `IdClsfAcc` and `IdUnitate` each carry a **non-unique** `INDEX`, and there is no composite unique key over the pair.
 
-So `INSERT … ON DUPLICATE KEY UPDATE` — plan §7, "on every table" — **has nothing to match on
-for this table**. A second run inserts 54 more classifications with fresh `IDClsf` values, and
-the resolution map silently points at the newest copies. This is the one table in the set where
-the plan's upsert rule does not work as written.
+So `INSERT … ON DUPLICATE KEY UPDATE` — plan §7, "on every table" — **has nothing to match on for this table**. A second run inserts 54 more classifications with fresh `IDClsf` values, and the resolution map silently points at the newest copies. This is the one table in the set where the plan's upsert rule does not work as written.
 
-`Clasificatii_Buget` `(IdClsf, An)`, `Clasificatii_Rectificari` `(IdClsf, Data, Document)`,
-`Parteneri` `(IdUnitate, CodPartener)` and `Parteneri_Coduri` `(IdPartener, IdClsf)` all **do**
-have the unique key their upsert needs. Only `Clasificatii` does not. See §9 Q2.
+`Clasificatii_Buget` `(IdClsf, An)`, `Clasificatii_Rectificari` `(IdClsf, Data, Document)`, `Parteneri` `(IdUnitate, CodPartener)` and `Parteneri_Coduri` `(IdPartener, IdClsf)` all **do** have the unique key their upsert needs. Only `Clasificatii` does not. See §9 Q2.
 
 ### 3.3 Width narrowing — fits today, unenforced at source
 
-Access is `WChar(50)` on Capitol / Subcapitol / Articol and `WChar(50)` on Alineat; MariaDB is
-`varchar(5)`, `varchar(5)`, `varchar(5)`, `varchar(2)`. Every sample value fits exactly
-(`65.01`, `05.00`, `10.01`, `01`), but nothing on the Access side enforces it. Under strict
-mode an over-long value is `1406`, not a truncation. Check the widths in `Verifică` — the
-plan's §5.3 guard only covers *missing required* columns, not *too-wide* values.
+Access is `WChar(50)` on Capitol / Subcapitol / Articol and `WChar(50)` on Alineat; MariaDB is `varchar(5)`, `varchar(5)`, `varchar(5)`, `varchar(2)`. Every sample value fits exactly (`65.01`, `05.00`, `10.01`, `01`), but nothing on the Access side enforces it. Under strict mode an over-long value is `1406`, not a truncation. Check the widths in `Verifică` — the plan's §5.3 guard only covers *missing required* columns, not *too-wide* values.
 
 Same shape on `Denumire`: nullable in Access, **`NOT NULL`** on the target.
 
@@ -381,12 +330,9 @@ Upsert matches on `(IdClsf, An)`, both always present. Works.
 
 ## 5. `Clasificatii_Rectificari` — §12.2 Q3 answered
 
-**Access** — `baza2026.accdb` ▸ `Rectificari`, **0 rows**, PK `ID`, index on `IdClsf` plus
-Access's own relationship index `Clasificatii__IDClsf___Rectificari__IdClsf`.
+**Access** — `baza2026.accdb` ▸ `Rectificari`, **0 rows**, PK `ID`, index on `IdClsf` plus Access's own relationship index `Clasificatii__IDClsf___Rectificari__IdClsf`.
 
-**MariaDB** — `ID` `AUTO_INCREMENT` PK, `UNIQUE (IdClsf, Data, Document)`,
-`FK IdClsf → Clasificatii(IDClsf) ON DELETE RESTRICT`. **No `IdUnitate` column** — a
-rectification is scoped to a unit only through its classification.
+**MariaDB** — `ID` `AUTO_INCREMENT` PK, `UNIQUE (IdClsf, Data, Document)`, `FK IdClsf → Clasificatii(IDClsf) ON DELETE RESTRICT`. **No `IdUnitate` column** — a rectification is scoped to a unit only through its classification.
 
 | Access `Rectificari` | MariaDB | |
 |---|---|---|
@@ -401,10 +347,7 @@ rectification is scoped to a unit only through its classification.
 | ID | ✗ | Access PK. The target's `ID` is its own `AUTO_INCREMENT` |
 | DTQ, Esinc | ✗ | Access bookkeeping / sync flag |
 
-**Access columns with no target:** `ID`, `DTQ`, `Esinc` — all local bookkeeping.
-**Target columns with no source:** none. `DataAdugare` / `DataModificare` are server-side.
-**No `NOT NULL`-without-default column on the target at all** — every writable column is
-nullable, so the plan's §5.3 guard has nothing to catch here.
+**Access columns with no target:** `ID`, `DTQ`, `Esinc` — all local bookkeeping. **Target columns with no source:** none. `DataAdugare` / `DataModificare` are server-side. **No `NOT NULL`-without-default column on the target at all** — every writable column is nullable, so the plan's §5.3 guard has nothing to catch here.
 
 ⚠ Two cautions:
 
@@ -421,8 +364,7 @@ nullable, so the plan's §5.3 guard has nothing to catch here.
 
 **Access** — `baza2026.accdb` ▸ `Parteneri`, 75 rows, PK **`CodPartener`** (WChar(50)).
 
-**MariaDB** — `IdPartener` `AUTO_INCREMENT` PK, `UNIQUE (IdUnitate, CodPartener)`,
-`FK IdUnitate → Unitati ON DELETE CASCADE`.
+**MariaDB** — `IdPartener` `AUTO_INCREMENT` PK, `UNIQUE (IdUnitate, CodPartener)`, `FK IdUnitate → Unitati ON DELETE CASCADE`.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -443,17 +385,13 @@ nullable, so the plan's §5.3 guard has nothing to catch here.
 | ContPl, F8, F9, CodClient | ✗ | NULL/empty throughout. No target columns |
 | DTQ, Esinc | ✗ | Access bookkeeping / sync flag |
 
-⚠ Three id-shaped columns on one Access table — `IdPartener` (7605+), `IDPART` (1,2,3…) and
-the real key `CodPartener` (text `"001"`). Only `CodPartener` travels.
+⚠ Three id-shaped columns on one Access table — `IdPartener` (7605+), `IDPART` (1,2,3…) and the real key `CodPartener` (text `"001"`). Only `CodPartener` travels.
 
-Per `MAPARE_ACCESS_MARIADB.md` §5.2 this does **not** revive the `IdPartener` foreign keys on
-`FX_DDF_REV_SA` / `_SB` / `FX_ORD_TBL` — those still travel NULL unless you decide otherwise.
-Note the schema agrees they are all nullable, so NULL is accepted.
+Per `MAPARE_ACCESS_MARIADB.md` §5.2 this does **not** revive the `IdPartener` foreign keys on `FX_DDF_REV_SA` / `_SB` / `FX_ORD_TBL` — those still travel NULL unless you decide otherwise. Note the schema agrees they are all nullable, so NULL is accepted.
 
 ### 6.1 `ParteneriAng` ▸ `Parteneri_Coduri` — a fifth nomenclator nobody named
 
-Not in the plan, not in `MAPARE_ACCESS_MARIADB.md`, but both ends exist and line up.
-Access `ParteneriAng` 2 rows; target `AUTO_INCREMENT = 5`, so 4 rows already there.
+Not in the plan, not in `MAPARE_ACCESS_MARIADB.md`, but both ends exist and line up. Access `ParteneriAng` 2 rows; target `AUTO_INCREMENT = 5`, so 4 rows already there.
 
 | Access `ParteneriAng` | MariaDB `Parteneri_Coduri` | |
 |---|---|---|
@@ -465,9 +403,7 @@ Access `ParteneriAng` 2 rows; target `AUTO_INCREMENT = 5`, so 4 rows already the
 | — | IdPartener | the assigned `Parteneri.IdPartener`. `NOT NULL DEFAULT 0`, FK → `Parteneri` |
 | Id, Clsf, DTQ | ✗ | local key / derived code / bookkeeping |
 
-Upsert matches on `UNIQUE (IdPartener, IdClsf)`. It is the **only** table found where the
-target keeps `IdClsf` and `IdClsfAcc` side by side — everywhere else `IdClsfAcc` is being
-retired. **Still needs a scope decision** — §9 Q4.
+Upsert matches on `UNIQUE (IdPartener, IdClsf)`. It is the **only** table found where the target keeps `IdClsf` and `IdClsfAcc` side by side — everywhere else `IdClsfAcc` is being retired. **Scope was decided in 0045-03** — see §10 Q4.
 
 `ParteneriSI` is **out** (D3).
 
@@ -475,29 +411,9 @@ retired. **Still needs a scope decision** — §9 Q4.
 
 ## 7. `Unitati` — a precondition, not a target
 
-Read-only per `MAPARE_ACCESS_MARIADB.md` §2, and the schema shows why it matters anyway:
+**Initial discovery heading; amended by 0045-03:** the tool populates `Unitati` first. Column types, defaults, sources and the four dependent foreign keys are already listed under “What D7 costs” in §0; they are not repeated here. `IdUnitate` is not AUTO_INCREMENT, so a selected unit cannot appear by itself. `SursaSector varchar(3) NOT NULL` matches `cai.SURSA` (`01A`/`02A`/`02E`).
 
-```sql
-`IdUnitate` int(11) NOT NULL,          -- PK, NOT auto_increment
-`Detalii`     varchar(255) NOT NULL,
-`SursaSector` varchar(3)   NOT NULL,
-`An`          int(4)       NOT NULL,
-`Ascuns`      tinyint(4)   NOT NULL DEFAULT 0,
-```
-
-`Clasificatii.IdUnitate`, `Clasificatii_Buget.IdUnitate`, `Parteneri.IdUnitate` and
-`FX_ORD_TBL.IdUnitate` all have a foreign key into it. So **the selected unit's row must
-already exist in `Unitati`** or the very first nomenclator INSERT fails with `1452`. Nothing in
-the plan writes `Unitati`, and `IdUnitate` is not `AUTO_INCREMENT`, so it cannot appear by
-itself.
-
-`Verifică` should check the selected `IdUnitate` values against `Unitati` before anything else
-— it is the cheapest possible gate and it fires before a transaction is even opened. This is
-already flagged in `KBOT_STATUS.md` Current focus for slice 0044-04 pass 07, point (1);
-it now applies to the nomenclators too, one step earlier in the order.
-
-`SursaSector varchar(3) NOT NULL` matches `cai.SURSA` (`01A`/`02A`/`02E`) — useful if the row
-ever has to be created, which is §9 Q5.
+`Verifică` checks selected `IdUnitate` values before the first nomenclator write: the cheapest gate, before the transaction opens. The initial read-only/precondition proposal came from `MAPARE_ACCESS_MARIADB.md` §2 and `KBOT_STATUS.md` focus 0044-04 pass 07 point (1); without a prepared/populated row the first INSERT fails with 1452. The later scope decision is linked in §10 Q5.
 
 ---
 
@@ -517,8 +433,7 @@ ever has to be created, which is §9 Q5.
 | ClasificatiiV / RectificariV | 0 / 0 *(out, D5)* |
 | UNIT / LEGUNIT | 1 / 2 |
 
-Largest in the file, none in scope: `DefaCont` 991, `DefaClsfE` 905, `Credit` 576, `Debit`
-535, `Oper` 530, `PlanCont` 351.
+Largest in the file, none in scope: `DefaCont` 991, `DefaClsfE` 905, `Credit` 576, `Debit` 535, `Oper` 530, `PlanCont` 351.
 
 **`FX_2026.accdb`** (27 tables):
 
@@ -536,14 +451,11 @@ Largest in the file, none in scope: `DefaCont` 991, `DefaClsfE` 905, `Credit` 57
 | FX_Istoric | 701 | | FX_Receptii_RHR | 50 |
 | FX_Rezervari | 57 | | FX_DDF_REV_ATT/_PRT, FX_ORD_ATT, FX_Receptii_IMG, FX_Rezervarii_IMG, FX_Parteneri | 0 |
 
-~3.100 rows in scope for one unit. Batching at 500 is comfortable. The plan's figures
-(`FX_Istoric` 3246, `FX_Plati` 2744) belong to a different unit or vintage.
+~3.100 rows in scope for one unit. Batching at 500 is comfortable. The plan's figures (`FX_Istoric` 3246, `FX_Plati` 2744) belong to a different unit or vintage.
 
-⚠ **`FX_Salarii` and `FX_Receptii_Plati` exist in neither the `.accdb` nor the MariaDB
-schema.** Confirmed out (D4); drop positions 20 and 21 from the §6 write order.
-**`FX_ORD_PDF` does exist** in the schema — `MAPARE_ACCESS_MARIADB.md` §2 calls it "planned,
-does not exist yet". It is empty (`AUTO_INCREMENT = 1`) and has no Access counterpart, so it
-stays out of the transfer, but the parenthetical is stale.
+**Unamended discovery note:** the following absence claim conflicts with the later D4/C2 correction above, which records `FX_Receptii_Plati` as present but empty/abandoned. The row-count table also still labels `FX_ORD_TBL_REC` “out”; D4/C1 restores it to migration scope. These are dated observations, not new inspection of the excluded files.
+
+⚠ **`FX_Salarii` and `FX_Receptii_Plati` exist in neither the `.accdb` nor the MariaDB schema.** Confirmed out (D4); drop positions 20 and 21 from the §6 write order. **`FX_ORD_PDF` does exist** in the schema — `MAPARE_ACCESS_MARIADB.md` §2 calls it "planned, does not exist yet". It is empty (`AUTO_INCREMENT = 1`) and has no Access counterpart, so it stays out of the transfer, but the parenthetical is stale.
 
 ---
 
@@ -561,53 +473,24 @@ stays out of the transfer, but the parenthetical is stale.
 | 6 | §5: "**`IdClsfAcc` no longer blocks anything.** It was `NOT NULL` with no default on SA and SB; set to allow NULL on 22.08, so a run that stops sending it succeeds" | ⚠⚠ **False in this 22.08 schema.** `FX_DDF_REV_SA.IdClsfAcc` and `FX_DDF_REV_SB.IdClsfAcc` are both `int(11) NOT NULL`, **no default, not auto_increment** — so the plan's own §5.3 guard stops the run naming them. `FX_ORD_TBL.IdClsfAcc` *is* nullable ✓. Something must be written into SA and SB. See §10 Q3 |
 | 7 | §2: "`FX_ORD_PDF` (planned table, does not exist yet)" | It **exists** in the schema, empty. Still out of the transfer, but the note is stale |
 
-Also, not a contradiction: **ACE exposes no `ForeignKeys` collection** on any of the three
-`.accdb` files ("The requested collection (ForeignKeys) is not defined"); Access relationships
-are visible only as index names. The plan's §6 already derives the write order from the
-**target's** `information_schema.KEY_COLUMN_USAGE` — now the only option, and the schema
-confirms it is a rich source (`Clasificatii` alone carries six constraints, five of them
-cross-database).
+Also, not a contradiction: **ACE exposes no `ForeignKeys` collection** on any of the three `.accdb` files ("The requested collection (ForeignKeys) is not defined"); Access relationships are visible only as index names. The plan's §6 already derives the write order from the **target's** `information_schema.KEY_COLUMN_USAGE` — now the only option, and the schema confirms it is a rich source (`Clasificatii` alone carries six constraints, five of them cross-database).
 
 ---
 
 ## 10. Open questions — blocking the implementation pass
 
-Five. The first is new and outranks everything else.
+Original implementation questions, followed by their recorded answers; the initial heading and question numbers remain for traceability. The six questions supersede the old introductory count “Five”.
 
-**Q1 ⚠⚠ `000_DEMO` already holds this unit's data (F6). What should a run do?**
-Access `FX_ORD.IDORD` = 1..17 written into `IDORDP` lands on **existing rows** 1..17, and
-`ON DUPLICATE KEY UPDATE` overwrites them. Same for `FX_DDF.IDDF` = 33 and
-`FX_DDF_REV.IDREV` = 44..47. Option (A) in `MAPARE_ACCESS_MARIADB.md` §0 assumed a fresh
-database. Either (a) the target is emptied first and the Access ids are authoritative, (b) the
-transfer targets a genuinely new database and `000_DEMO` was only ever the schema template, or
-(c) option (A) is wrong for a populated target and the ids must be remapped. This also decides
-§11 Q4 (a database that already exists with rows — refuse or empty), because on `000_DEMO`
-the plan's §4 refusal fires on every table in scope.
+| Question | Original choice / concern | Recorded answer |
+|---|---|---|
+| Q1 — populated target | F6 gives the exact collision examples for DDF/ORD and the refusal on `000_DEMO`; the choices were emptying it, using a genuinely new target, or remapping IDs. This also answered the earlier §11 Q4 (refuse/empty existing data). | **D7:** genuinely new database from `AVACONT_SURSA`; `000_DEMO` served as schema template. F6 remains the historical reason. |
+| Q2 — classification upsert | §3.2: add uniqueness to `(IdClsfAcc, IdUnitate)`, or allow insert-only once? | **D8:** no schema change; insert-only and refuse selected-unit rows already present. |
+| Q3 — SA/SB required IdClsfAcc | §9 #6: write the Access IdClsf, or make the columns nullable as the old mapping claimed? | **D9:** write the Access IdClsf into IdClsfAcc. |
+| Q4 — ParteneriAng | §6.1 maps both ends, 2 sample rows, with ContBanca → ContBancar; initially undecided scope. | **[0045-03](worklog/SLICE-0045-01-descoperire-nomenclatoare.md#slice-0045-03): in scope**, raw Access IdClsf in IdClsfAcc and resolved ID in IdClsf. |
+| Q5 — Unitati | §0/§7: tool populates it, or operator prepares it? Related to the earlier §11 Q6 on new-DC user/grants. | **[0045-03](worklog/SLICE-0045-01-descoperire-nomenclatoare.md#slice-0045-03): tool populates Unitati**. This answer is not a new decision about users or grants. |
+| Q6 — client library | MySqlConnector or MySql.Data; recommendation was MySqlConnector/MIT, with no MariaDB client then in the solution. | **D10:** MySqlConnector. |
 
-**Q2 `Clasificatii` has no unique key on `(IdClsfAcc, IdUnitate)` (§3.2)** — so its upsert
-cannot match and a second run duplicates all 54 rows. Add the unique index to the schema, or
-accept that this table is insert-only and the run must be exactly once?
-
-**Q3 `FX_DDF_REV_SA.IdClsfAcc` / `_SB.IdClsfAcc` are `NOT NULL` with no default (§9 #6)**,
-contradicting `MAPARE_ACCESS_MARIADB.md` §5. The run cannot omit them. Write the Access
-`IdClsf` into them — which is exactly what `IdClsfAcc` means on `Clasificatii`, and would be
-consistent — or make the columns nullable as §5 says was already done?
-
-**Q4 `ParteneriAng` ▸ `Parteneri_Coduri` (§6.1) — in scope?** Both ends exist, map cleanly
-(`ContBanca` ▸ `ContBancar` is the only rename), and the target has the unique key its upsert
-needs. Only 2 rows in this unit's file.
-
-**Q5 `Unitati` (§7).** The selected unit's row must pre-exist or every nomenclator INSERT
-fails. Is populating `Unitati` in scope for this tool, or a precondition the operator arranges?
-This is the same question as §11 Q6 (creating the MariaDB user and grants for a new DC) —
-both are "who prepares the database before the transfer runs".
-
-**Q6 (unchanged) MariaDB client library** — `MySqlConnector` or `MySql.Data`? Recommendation
-stands: `MySqlConnector`, MIT, no licence question, nothing in the solution talks to MariaDB
-today.
-
-**Answered and closed:** §11 Q1 (`cai.DC` verbatim, §2), Q3 (the year — D1), Q5
-(`AVACONT_SURSA` carries tables only — no views, triggers or routines in the dump).
+Earlier §11 questions already closed in discovery: Q1 (`cai.DC` verbatim, §2, limited to one DC), Q3 (year, D1), Q5 (`AVACONT_SURSA` tables only in the dump, no views/triggers/routines). The labels refer to prior revisions, not to §11 below. Historical answers do not establish successful MariaDB execution; read the stage-specific limits in the linked worklog.
 
 ---
 
@@ -631,15 +514,9 @@ today.
 
 ## 12. Not a finding, but load-bearing: no password is needed
 
-`PLAN_MigratorDirect.md` §1/§3 and `KBOT_STATUS.md` slice 0044 both state the files are
-encrypted ("fișierele chiar sunt criptate cu `andreI` … deci niciun cititor pur-Python nu le
-deschide"). **All three files in `Avacont/` opened with `Microsoft.ACE.OLEDB.16.0` and no
-password.**
+`PLAN_MigratorDirect.md` §1/§3 and `KBOT_STATUS.md` slice 0044 both state the files are encrypted ("fișierele chiar sunt criptate cu `andreI` … deci niciun cititor pur-Python nu le deschide"). **All three files in `Avacont/` opened with `Microsoft.ACE.OLEDB.16.0` and no password.**
 
-The spike still builds the connection string with `OleDbConnectionStringBuilder` and still
-supports `Jet OLEDB:Database Password`, and the form must keep its password fields — the
-operator's own copies may be protected. But the "decrypt by hand in Access first" step of
-slice 0044 does not apply to these files.
+The spike still builds the connection string with `OleDbConnectionStringBuilder` and still supports `Jet OLEDB:Database Password`, and the form must keep its password fields — the operator's own copies may be protected. But the "decrypt by hand in Access first" step of slice 0044 does not apply to these files.
 
 This pass therefore also discharges the proof §12.1 asked for: **ACE 16.0 is registered 64-bit
 on this machine, an x64 `net8.0` build opens all three `.accdb` files, and the password

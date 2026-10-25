@@ -1,7 +1,7 @@
 # E-Factura in Avacont.accdb: how the pieces fit
 
 Read this first. It explains the shape of the e-invoice feature; the other files hold the detail
-(`forms/`, `data-model.md`, `queries.md`, `code.md`, `navigation.md`, `matrix.md`,
+(`forms/`, [forms catalog, navigation and access matrix](forms.md), `data-model.md`, `queries.md`, `code.md`,
 `external-dependencies.md`, `shared-tables.md`). Everything here was derived from the raw export in
 `Surse/RawExport`; statements marked *(inferred)* come from reading names and call patterns, not from
 running the app.

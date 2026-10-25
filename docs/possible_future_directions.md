@@ -101,21 +101,11 @@ the whole fix.**
 
 ---
 
-## `BIC` has no MariaDB successor
+<a id="bic-has-no-mariadb-successor"></a>
 
-*Found while writing slice 0049.*
+## BIC — initial diagnosis superseded in 0049-02
 
-`Incarca_DicBanci` reads a table called `BIC` (bank code → bank name) to fill
-`FX_ORD_PART.Banca`. That table exists nowhere in the migrated system: not in
-`MariaDB_Schema/000_DEMO.sql`, not in `FX_System_Export/TABLES`, and no Python route mentions
-it. It lived in the Access front-end.
-
-Slice 0049 probes for it (`information_schema`) and, when it is absent, leaves `Banca` empty
-and says so in a warning — the field is informative, not a foreign key, and inventing a
-second source for a bank name would be worse than leaving it blank.
-
-**To decide:** either migrate the `BIC` table into the unit databases (or into
-`AVACONT_COMUN`, since bank codes are not per-unit), or accept that `Banca` is typed by hand.
+The proposal to migrate BIC or type bank names manually came from the initial “missing table” diagnosis. [0049-02](worklog/SLICE-0049-ord-edit-form.md#slice-0049-02) corrects it: the operator located AVACONT_COMUN.BIC, the information_schema probe was then removed, and a failed SELECT / missing rights became the relevant case. The initial diagnosis and proposal remain in that history; live access and the SELECT grant were unverified.
 
 ---
 
@@ -145,23 +135,11 @@ Whether the two attachment mechanisms should be unified is a separate question.
 
 ---
 
-## ~~`KBotComboBox` cannot be editable~~ — CLOSED by slice 0051-02
+<a id="kbotcombobox-cannot-be-editable--closed-by-slice-0051-02"></a>
 
-*Found while writing slice 0051, closed by slice 0051-02.*
+## Editable combo — control delivered, DDF integration corrected
 
-`KBotComboBox` used to throw on any `DropDownStyle` other than `DropDownList`, so slice 0051
-had to spell the `Comp` field as two controls: a `KBotTextField` holding the authoritative
-value next to a `KBotComboBox` that only wrote into it.
-
-The premise turned out to be wrong. The native `EDIT` child **does** take our colours: a combo
-sends `WM_CTLCOLOREDIT` to its parent, WinForms reflects it back to the control, and
-`Control.WmCtlColor` answers with the control's own `BackColor` / `ForeColor`. So the control
-now has `Editable` and `LimitToList`, and only `DropDownStyle.Simple` still throws. See
-[Combo/KBotComboBox.md](../src/KBot.Controls/Combo/KBotComboBox.md).
-
-**What is left:** `DdfEditForm` still carries the `txtComp` + `cmbComp` pair from slice 0051.
-Collapsing it into one `Editable` combo touches the DDF save path, so it was left for whoever
-next opens that form — not swept in with the control change.
+[0051-02](worklog/SLICE-0051-02-combo-editabil.md) records Editable, LimitToList and the native EDIT theming; [0051-03](worklog/SLICE-0051-ddf-edit-form.md#slice-0051-03) later replaces the txtComp/cmbComp workaround and connects typed text to saving. The old draft’s attribution to WinForms reflection / Control.WmCtlColor is retained as a historical discrepancy in 0051-02; its implementation record describes the explicit WndProc response. Public contract: [KBotComboBox](../src/KBot.Controls/Combo/KBotComboBox.md). Live DDF saving remained unproven.
 
 ---
 
@@ -181,17 +159,11 @@ the operator until the portal answers) or as a queued job the way `ExcelJob` wor
 
 ---
 
-## `RezervariView` has no refresh entry point
+<a id="rezervariview-has-no-refresh-entry-point"></a>
 
-*Found while writing slice 0051.*
+## Rezervări refresh — concrete gap closed, common contract undecided
 
-After a DDF is saved, reservations change: `FX_Rezervari` rows are marked as used or released.
-`DdfView` reloads because it has `Reincarca`; `RezervariView` does not have one, so it shows
-stale rows until the operator reselects the angajament.
-
-**To decide:** give the views a common refresh contract (a small interface the shell can call
-on whatever view is showing) rather than adding one-off `Reincarca` methods per view as each
-write path lands.
+[0051](worklog/SLICE-0051-ddf-edit-form.md#slice-0051-baza), Known gaps, records Reincarca and DupaScriereaDdf after the save: the active view refreshes, an inactive one reloads on activation. The original stale-row problem is therefore recorded as closed. The broader proposal remains undecided: a common refresh interface for views instead of adding one-off methods for each write path.
 
 ---
 

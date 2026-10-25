@@ -1,27 +1,9 @@
-Here's the improved README.md file incorporating the new content while maintaining the existing structure and information:
-
-# Project Title
+# K-BOT
 
-## Description
-A brief description of the project, its purpose, and its main features.
+WinForms client and Flask API for K-BOT.
 
-## Installation
-Instructions on how to install the project, including prerequisites and setup steps.
-
-## Usage
-Examples and instructions on how to use the project effectively.
-
-## Guidance for release notes additions
-
-Release notes are written for end users and administrators. They should describe user-visible changes, bug fixes, and important notes for upgrading or configuration. Avoid internal implementation details, developer-only notes, or commit listings. Each release entry must follow the project format placed in `docs/release-notes/NOUTATI.md` with a top-level heading `## <version> (YYYY-MM-DD)` and a machine-readable UTC timestamp and worklog ids in HTML comment lines, followed by one change per line in Romanian.
-
-## Contributing
-Guidelines for contributing to the project, including coding standards and submission processes.
-
-## License
-Information about the project's license and any relevant legal details.
-
-## Contact
-Details on how to contact the project maintainers for support or inquiries.
-
-This revised README.md maintains the original structure while seamlessly integrating the new content about release notes.
+- Work rules: [AGENTS.md](AGENTS.md) and [CODE_WORKFLOW.md](docs/worklog/CODE_WORKFLOW.md).
+- Project status and slice registry: [KBOT_STATUS.md](docs/worklog/KBOT_STATUS.md).
+- Module status: [ADECHIT](ADECHIT_STATUS.md) and [VERCON](VERCON/VERCON_STATUS.md).
+- Help maintenance: [HELP_SYSTEM.md](docs/HELP_SYSTEM.md).
+- Release notes: [authoring procedure and format](docs/release-notes/README.md), [published notes](docs/release-notes/NOUTATI.md). Release entries describe user-visible changes and upgrade/configuration information for users and administrators, excluding internal implementation details and commit lists. The procedure defines the heading format, UTC timestamp, worklog markers and one Romanian change per line.

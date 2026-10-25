@@ -1,16 +1,14 @@
+<a id="slice-0063"></a>
+
 # SLICE 0063 — Formularul de login ține minte ultimul utilizator conectat
 
-**Data:** 15.09.2026
-**Cerut de operator:** «`LoginForm` nu salvează nicăieri ultimul utilizator conectat. Am
-nevoie să fie salvat local, ca utilizatorul să nu-și mai scrie numele de fiecare dată.»
+**Data:** 15.09.2026 **Cerut de operator:** «`LoginForm` nu salvează nicăieri ultimul utilizator conectat. Am nevoie să fie salvat local, ca utilizatorul să nu-și mai scrie numele de fiecare dată.»
 
 ---
 
 ## Ce s-a făcut
 
-**`KBot.Common\LastLoginStore.vb`** (nou). Un fișier JSON per utilizator Windows,
-`%APPDATA%\AVACONT\KBot\last_login.json`, în același folder cu `settings.json`
-(`SetariFoldere.DirectorSetari()`), cu exact două câmpuri: `Username` și `UnitDc`.
+**`KBot.Common\LastLoginStore.vb`** (nou). Un fișier JSON per utilizator Windows, `%APPDATA%\AVACONT\KBot\last_login.json`, în același folder cu `settings.json` (`SetariFoldere.DirectorSetari()`), cu exact două câmpuri: `Username` și `UnitDc`.
 
 * **Niciodată parola, niciodată token-ul.** API-ul magazinului nu le primește deloc, deci
   fișierul nu le poate conține. Testul `TheFile_NeverContainsAPassword` păzește asta.
@@ -32,8 +30,7 @@ nevoie să fie salvat local, ca utilizatorul să nu-și mai scrie numele de fiec
   `Try` propriu: un fișier de comoditate care nu se poate scrie nu are voie să strice un login
   care tocmai a reușit. `Save` a logat deja motivul.
 
-Unitatea ținută minte e o extensie mică a cererii («numele»), făcută fiindcă e același gest
-și același fișier: a doua întrebare a formularului e chiar «care unitate».
+Unitatea ținută minte e o extensie mică a cererii («numele»), făcută fiindcă e același gest și același fișier: a doua întrebare a formularului e chiar «care unitate».
 
 ## Fișiere atinse
 

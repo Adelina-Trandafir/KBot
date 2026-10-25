@@ -26,6 +26,7 @@
   ADECHIT sau expirarea sesiunii. Rutele vechi de ieșire directă/HTML rămân
   disponibile integrărilor existente.
 
+Antetul și meniul de aplicații VERCON sunt furnizate de adaptorul existent.
 Configurarea SQL/machetelor VERCON din KBotAdmin nu este modificată. Sursele
 datelor ADECHIT rămân constructorii existenți, cu situația salvată pentru lunile
 închise și calculul existent pentru luna deschisă. Nu există DDL sau seed nou.
@@ -78,3 +79,16 @@ Documentație actualizată: `ADECHIT/UTILIZARE_WEB.md`, `PYTHON/static/help/adec
 
 Aspectul și paginarea după trecerea la motorul comun nu sunt validate vizual.
 Nu s-a executat publicare, restart, commit, push sau acces la MariaDB/server.
+
+Reviziile comune din 19.10 privind Export Raport, integrarea totalului general, aspectul/omiterea lui și subtotalurile sunt păstrate o singură dată în [istoricul rapoartelor, etapele 8–10 și 17](SLICE-VC08-03-rapoarte-magazie-alimente.md#d001-11-rapoarte); acestea consemnau Confirmat 23.10. Limitele celorlalte probe din acest jurnal rămân distincte.
+
+## Antetul și meniul Export Raport — 19.10.2026 <a id="d001-12-antet-export"></a>
+
+Două revizii preluate prin D001-12, ambele **Confirmat 23.10**. Comenzile PDF ADECHIT/VERCON sunt în același antet cu informațiile, la dreapta, cu trecere pe rândul următor pe ecrane înguste; bara separată de deasupra PDF dispare. Meniul Export Raport se aliniază la stânga butonului și folosește rândurile drepte ale meniului comun, fără colțuri/borduri moștenite din dialog. PDF = 📕, Excel = 📗.
+
+Fișiere istorice (numele fără prefix continuă directorul precedent):
+
+| Etapă generală | Fișiere |
+|---|---|
+| 13 | PYTHON/static/js/reporting/report-dialog.js, pdf-preview.js; PYTHON/static/css/report-preview.css; implementare_vercon_v2.md. |
+| 14 | PYTHON/static/js/reporting/pdf-preview.js; PYTHON/static/css/report-preview.css; implementare_vercon_v2.md. |

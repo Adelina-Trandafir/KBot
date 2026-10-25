@@ -1,20 +1,22 @@
-# SLICE 0058 — Așezarea recepțiilor: cache la descărcare, buton de golire, tăcere pe dată, lag pe benzi
+# SLICE-0058 — Istoric cache, verificări, benzi și jurnal de asociere
 
-Șapte sesizări ale operatorului, toate din 09.09.2026, toate pe drumul
-«descărcare FOREXE ▸ propunere ▸ `AsociereForm` ▸ salvare».
+Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstrabile în cod, fără a dovedi că erau cazul operatorului; a doua adaugă jurnalul, iar nota despre mesajul „Recepția 247” arată că rularea live încă folosea codul anterior. Cazul nu este declarat rezolvat prin simpla existență a jurnalului. Probe cu jurnal pornit/oprit și blocuri de date sintetice rămân probe offline. Eliminarea semnului de dată din baza 0058 este amendamentul ulterior lui F13 din [fundament](../FUNDAMENT_Asociere_Receptii.md#f13).
+
+[0058-asociere](#slice-0058) · [0058-02](#slice-0058-02)
+
+<a id="slice-0058"></a>
+
+## SLICE 0058 — Așezarea recepțiilor: cache la descărcare, buton de golire, tăcere pe dată, lag pe benzi
+
+Șapte sesizări ale operatorului, toate din 09.09.2026, toate pe drumul «descărcare FOREXE ▸ propunere ▸ `AsociereForm` ▸ salvare».
 
 ---
 
-## 1. Datele descărcate rămân în memorie și se pot refolosi
+### 1. Datele descărcate rămân în memorie și se pot refolosi
 
-**Ce se întâmpla.** Fiecare apăsare pe iconița de descărcare pornea robotul de la
-zero — browser, token, tot fluxul, minute bune. Dar a doua apăsare pe același
-angajament e aproape întotdeauna o RELUARE (s-a închis formularul fără salvare, s-a
-greșit ceva la așezat), nu o cerere de date mai proaspete.
+**Ce se întâmpla.** Fiecare apăsare pe iconița de descărcare pornea robotul de la zero — browser, token, tot fluxul, minute bune. Dar a doua apăsare pe același angajament e aproape întotdeauna o RELUARE (s-a închis formularul fără salvare, s-a greșit ceva la așezat), nu o cerere de date mai proaspete.
 
-**Ce s-a făcut.** `WorkflowResultStore` ținea deja pachetele în memorie
-(`_ultimulNod`) — nu s-a inventat niciun cache nou, s-a folosit cel care exista.
-S-au adăugat:
+**Ce s-a făcut.** `WorkflowResultStore` ținea deja pachetele în memorie (`_ultimulNod`) — nu s-a inventat niciun cache nou, s-a folosit cel care exista. S-au adăugat:
 
 - `MomentLista` — când s-a descărcat lista (pachetele de nod își poartă singure
   `Moment`);
@@ -24,101 +26,57 @@ S-au adăugat:
   rând. Asta e «doar dacă sunt corect descărcate»: în depozit intră doar ce a raportat
   succes, iar un pachet fără rânduri nu se oferă fiindcă ingestia l-ar respinge oricum.
 
-`MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) și
-`IntreabaDacaRefolosescLista` (sincronizarea) pun întrebarea, cu ORA descărcării în ea —
-ăla e faptul din care operatorul poate hotărî. Da = din memorie, Nu = descărcare nouă.
-Dacă întrebarea însăși cade, se descarcă din nou; niciodată invers.
+`MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) și `IntreabaDacaRefolosescLista` (sincronizarea) pun întrebarea, cu ORA descărcării în ea — ăla e faptul din care operatorul poate hotărî. Da = din memorie, Nu = descărcare nouă. Dacă întrebarea însăși cade, se descarcă din nou; niciodată invers.
 
 Refolosirea e sigură prin construcție: contractul în două faze al ingestiei (felia
 0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar
 obiectul care ar fi ieșit dintr-o descărcare.
 
-`ForexeController.SpuneStare` e nou și public: fără el consola ar fi arătat o ingestie
-fără descărcarea ei.
+`ForexeController.SpuneStare` e nou și public: fără el consola ar fi arătat o ingestie fără descărcarea ei.
 
-## 2. Buton de golire a așezărilor pasului curent
+### 2. Buton de golire a așezărilor pasului curent
 
-`btnReseteaza` («Golește așezările»), vizibil DOAR în modul propunere — în editorul de
-oricând nu există «pas curent», iar un buton care ar desprinde tot ar fi o unealtă de
-stricat.
+`btnReseteaza` («Golește așezările»), vizibil DOAR în modul propunere — în editorul de oricând nu există «pas curent», iar un buton care ar desprinde tot ar fi o unealtă de stricat.
 
-Linia de despărțire nu e o listă ținută pe lângă, e `InstantaneuLegat.Blocat`: serverul
-îl pune `True` pe tot contextul (ce e deja scris în bază) și `False` pe exact mulțimea
-de decis în rularea asta — aceeași linie pe care o citesc și `NehotarateleCount`, și
-`DeciziiDin`. Deci butonul nu poate crede altceva decât restul formularului.
+Linia de despărțire nu e o listă ținută pe lângă, e `InstantaneuLegat.Blocat`: serverul îl pune `True` pe tot contextul (ce e deja scris în bază) și `False` pe exact mulțimea de decis în rularea asta — aceeași linie pe care o citesc și `NehotarateleCount`, și `DeciziiDin`. Deci butonul nu poate crede altceva decât restul formularului.
 
-Se golește la NEAȘEZAT, nu la sugestia automată: rostul e să șteargă tot ce s-a hotărât,
-iar o revenire la sugestie ar lăsa în urmă hotărâri pe care operatorul nu le-a luat. Cere
-confirmare — e o ștergere de muncă fără Undo.
+Se golește la NEAȘEZAT, nu la sugestia automată: rostul e să șteargă tot ce s-a hotărât, iar o revenire la sugestie ar lăsa în urmă hotărâri pe care operatorul nu le-a luat. Cere confirmare — e o ștergere de muncă fără Undo.
 
-## 3. Niciun avertisment despre data recepției — nicăieri
+### 3. Niciun avertisment despre data recepției — nicăieri
 
-F13 fusese retras ca veto pe 31.08.2026 și lăsat ca SEMN. Semnul se aprindea pe date
-perfect corecte (`DataR` e tastat pe site și sosește la miezul nopții, deci orice
-instantaneu din chiar ziua recepției ieșea «înainte de ea»), deci apărea pe rând după
-rând fără să spună nimic. Șters din:
+F13 fusese retras ca veto pe 31.08.2026 și lăsat ca SEMN. Semnul se aprindea pe date perfect corecte (`DataR` e tastat pe site și sosește la miezul nopții, deci orice instantaneu din chiar ziua recepției ieșea «înainte de ea»), deci apărea pe rând după rând fără să spună nimic. Șters din:
 
 - `AsociereForm.CaptionInstantaneu` (semnul de pe rând), `TooltipReceptie` (numărătoarea),
   `TooltipInstantaneu` (paragraful), plus funcția `EsteInainteDeDataReceptiei` cu totul;
 - `prelucrare_asociere.valideaza_plasarile` — blocul care scria în `avertismente`.
 
-Parametrul `rec` a ieșit din `CaptionInstantaneu` și `TooltipInstantaneu`: nu-l mai
-folosea nimeni.
+Parametrul `rec` a ieșit din `CaptionInstantaneu` și `TooltipInstantaneu`: nu-l mai folosea nimeni.
 
-## 4. «Recepția 235» nu exista nicăieri în listă
+### 4. «Recepția 235» nu exista nicăieri în listă
 
-**Ce s-a văzut.** `ApiException: Recepția 235: liniile ultimului instantaneu nu se
-potrivesc cu cele ale recepției.` — cu recepțiile puse corect, și cu un număr pe care
-operatorul nu-l găsea nicăieri.
+**Ce s-a văzut.** `ApiException: Recepția 235: liniile ultimului instantaneu nu se potrivesc cu cele ale recepției.` — cu recepțiile puse corect, și cu un număr pe care operatorul nu-l găsea nicăieri.
 
 **Două defecte, nu unul.**
 
-**(a) Numărul.** Același defect ca «Recepția 188 nu există pe acest angajament» din
-felia 0056: pe calea de ingestie, o recepție născută în rularea curentă își primește
-`IDRR` ÎNĂUNTRUL tranzacției, iar mesajele de validare îl scriau ca și cum ar fi un nume.
-`valideaza_plasarile` are acum `id_stabil`; `aplica_decizii` trece `False` și recepția se
-numește prin DATĂ și VALOARE — adică prin chiar textul rândului din formular
-(`CaptionReceptie`). Editorul de oricând trece implicit `True`: acolo `IDRR` e real.
+**(a) Numărul.** Același defect ca «Recepția 188 nu există pe acest angajament» din felia 0056: pe calea de ingestie, o recepție născută în rularea curentă își primește `IDRR` ÎNĂUNTRUL tranzacției, iar mesajele de validare îl scriau ca și cum ar fi un nume. `valideaza_plasarile` are acum `id_stabil`; `aplica_decizii` trece `False` și recepția se numește prin DATĂ și VALOARE — adică prin chiar textul rândului din formular (`CaptionReceptie`). Editorul de oricând trece implicit `True`: acolo `IDRR` e real.
 
-**(b) Refuzul însuși.** Comparația de capăt de lanț era o dicționar-comprehensiune pe
-`cod_indicator`, deci o recepție cu MAI MULTE linii pe același indicator (alt `CodAI`,
-alt `CodSSI`) păstra doar ULTIMA — iar cele două laturi, citite din tabele diferite cu
-ordini diferite, puteau păstra linii diferite. Refuza atunci o plasare perfect corectă.
-`_valori_pe_indicator` adună pe indicator (bine definit indiferent de ordine; totalul pe
-antet e deja verificat mai sus) și scoate zerourile (F16 spune că un indicator poate
-cădea la zero, iar el apare pe o latură și lipsește de pe cealaltă). Mesajul spune acum
-și CARE indicator nu se potrivește.
+**(b) Refuzul însuși.** Comparația de capăt de lanț era o dicționar-comprehensiune pe `cod_indicator`, deci o recepție cu MAI MULTE linii pe același indicator (alt `CodAI`, alt `CodSSI`) păstra doar ULTIMA — iar cele două laturi, citite din tabele diferite cu ordini diferite, puteau păstra linii diferite. Refuza atunci o plasare perfect corectă. `_valori_pe_indicator` adună pe indicator (bine definit indiferent de ordine; totalul pe antet e deja verificat mai sus) și scoate zerourile (F16 spune că un indicator poate cădea la zero, iar el apare pe o latură și lipsește de pe cealaltă). Mesajul spune acum și CARE indicator nu se potrivește.
 
-## 5. Arborii nu mai sar la primul rând după fiecare tragere
+### 5. Arborii nu mai sar la primul rând după fiecare tragere
 
-`AdvancedTreeControl.Clear` pune derularea la zero — pe drept, e o golire — iar
-`AsociereForm.Reconstruieste` golește și reumple amândoi arborii la fiecare tragere.
-Rezultatul: operatorul era aruncat înapoi la primul rând, adică departe de recepția pe
-care tocmai lucra.
+`AdvancedTreeControl.Clear` pune derularea la zero — pe drept, e o golire — iar `AsociereForm.Reconstruieste` golește și reumple amândoi arborii la fiecare tragere. Rezultatul: operatorul era aruncat înapoi la primul rând, adică departe de recepția pe care tocmai lucra.
 
-`AdvancedTreeControl.ScrollOffsetY` (nou) se citește înainte și se scrie după.
-`AutoScrollPosition` NU era destul: după `Clear` cursa barei e zero și abia următoarea
-pictare o reface, deci o scriere directă s-ar fi tăiat la zero — exact defectul.
-Setter-ul cheamă întâi `RefreshScrollVisibility()`. Selecția NU se ține minte: are
-înțelesul ei aici (hrănește grila și graficul) și se schimbă oricum prin tragere.
+`AdvancedTreeControl.ScrollOffsetY` (nou) se citește înainte și se scrie după. `AutoScrollPosition` NU era destul: după `Clear` cursa barei e zero și abia următoarea pictare o reface, deci o scriere directă s-ar fi tăiat la zero — exact defectul. Setter-ul cheamă întâi `RefreshScrollVisibility()`. Selecția NU se ține minte: are înțelesul ei aici (hrănește grila și graficul) și se schimbă oricum prin tragere.
 
-## 6. Recepțiile noi se văd altfel
+### 6. Recepțiile noi se văd altfel
 
-Toate rădăcinile erau aldine, deci aldinul singur nu deosebea nimic. Recepțiile născute
-de descărcarea curentă sunt acum **aldine + cursive**; cele venite de pe server rămân
-doar aldine. Semnul e `ReceptiePropusa.RandReceptie` — serverul îl pune EXACT pe
-recepțiile create în rularea curentă (felia 0056), Nothing pentru toate celelalte.
+Toate rădăcinile erau aldine, deci aldinul singur nu deosebea nimic. Recepțiile născute de descărcarea curentă sunt acum **aldine + cursive**; cele venite de pe server rămân doar aldine. Semnul e `ReceptiePropusa.RandReceptie` — serverul îl pune EXACT pe recepțiile create în rularea curentă (felia 0056), Nothing pentru toate celelalte.
 
-Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție NOUĂ, din
-descărcarea curentă»: numărul de acum nu e cel de după salvare (vezi §4a).
+Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție NOUĂ, din descărcarea curentă»: numărul de acum nu e cel de după salvare (vezi §4a).
 
-## 7. Lag pe machetele de distribuție
+### 7. Lag pe machetele de distribuție
 
-**Dubla tamponare era deja pornită** (`OptimizedDoubleBuffer` din constructor) și nu ea
-era problema. Costul stătea în DESEN, nu în pâlpâire: o suprafață cu douăzeci de benzi a
-câte douăzeci de marcaje construia și elibera peste o mie de `Pen` și `SolidBrush` la
-FIECARE repictare — iar o repictare se face de câte ori cursorul trece peste o bandă, un
-marcaj sau un reper.
+**Dubla tamponare era deja pornită** (`OptimizedDoubleBuffer` din constructor) și nu ea era problema. Costul stătea în DESEN, nu în pâlpâire: o suprafață cu douăzeci de benzi a câte douăzeci de marcaje construia și elibera peste o mie de `Pen` și `SolidBrush` la FIECARE repictare — iar o repictare se face de câte ori cursorul trece peste o bandă, un marcaj sau un reper.
 
 Ce s-a schimbat în `KBotLaneView`:
 
@@ -139,12 +97,11 @@ Ce s-a schimbat în `KBotLaneView`:
   două ori degeaba. Ieșirea devreme pe `_updateDepth > 0` curăță acum ea însăși
   suprafața, fiindcă nimeni n-o mai face în locul ei.
 
-Amândouă suprafețele beneficiază: sunt același control (`benzi` din `AsociereForm` și
-`benziMari` din `AsociereBenziForm`).
+Amândouă suprafețele beneficiază: sunt același control (`benzi` din `AsociereForm` și `benziMari` din `AsociereBenziForm`).
 
 ---
 
-## Fișiere atinse
+### Fișiere atinse
 
 **VB.NET**
 - `src/KBot.App/Forexe/AsociereForm.vb` — §2, §3, §5, §6
@@ -162,7 +119,7 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
 - `PYTHON/routes/forexe/asociere.py` — nota din antet
 - `PYTHON/tests/test_forexe_prelucrare_asociere.py`, `PYTHON/tests/test_forexe_asociere.py`
 
-## Rezultatele rulărilor
+### Rezultatele rulărilor
 
 - `dotnet build KBot.sln` — **0 erori, 0 avertismente**.
 - `dotnet build src\KBot.App\KBot.App.vbproj` (curat) — 0 erori, cele **7 `MSB3825`
@@ -171,7 +128,7 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
   Cinci teste noi în `test_forexe_prelucrare_asociere.py`; două rescrise acolo și unul în
   `test_forexe_asociere.py`, fiindcă pineau semnul F13 care tocmai a fost șters.
 
-## Ce NU s-a verificat
+### Ce NU s-a verificat
 
 - **Nimic nu s-a văzut pe ecran.** Nici formularul cu butonul nou, nici arborii care își
   țin derularea, nici cursivul recepțiilor noi, nici benzile după curățarea desenului.
@@ -188,3 +145,170 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
 - **Refolosirea din memorie n-a fost încercată.** Nicio sesiune FOREXE n-a fost deschisă
   în sesiunea asta.
 - Nimic nu s-a comis și nimic nu s-a împins (cerere explicită: «no git»).
+
+---
+
+<a id="slice-0058-02"></a>
+
+## SLICE 0058-02 — Jurnalul asocierii (`asociere.log`), cu întrerupător în `main.py`
+
+A doua trecere peste felia 0058. Prima a reparat două defecte ale verificării F15 (suma pe indicator, numele recepției) și a lăsat scris negru pe alb că **nu se știe dacă exact acela era cazul care refuza salvarea operatorului**. Rularea adevărată din 09.09.2026, ora 14:18, a răspuns: nu era.
+
+```
+2026-09-09 14:18:36,608 - WARNING - PRELUCRARE dc=000_DEMO cod=AAB2EF2MCP4
+decizii respinse: Recepția 247: liniile ultimului instantaneu nu se potrivesc cu
+cele ale recepției. Lanțul nu se închide.
+```
+
+Linia asta e tot ce lasă în urmă o salvare refuzată — și nu spune nici ce lanț s-a format, nici ce cifre s-a uitat serverul la ele, nici ce a vrut operatorul să facă. Felia asta scrie exact ce lipsea.
+
+> **Observație despre linia de mai sus, nu o reparație a acestei felii.** Mesajul zice
+> «Recepția 247», adică `id_stabil=True`. Pe drumul de ingestie 0058 §4 a pus
+> `id_stabil=False` chiar în aceeași zi, deci serverul care a scris linia **rula codul
+> de dinaintea feliei 0058**. Reparația de la §4 (suma pe indicator — două linii RHR pe
+> același indicator păstrau doar ultima și comparația cădea pe date corecte) **nu era
+> pe server când a apărut respingerea**. Se verifică după ce se împinge codul; până
+> atunci, cazul rămâne deschis.
+
+---
+
+### 1. Ce s-a făcut
+
+#### `PYTHON/utils/asociere_log.py` (nou)
+
+Un jurnal separat, construit după tiparul lui `utils/timing.py`: logger propriu (`kbot.asociere`), fișier propriu (`asociere.log`), handler propriu și `propagate = False`, deci **nicio linie nu ajunge în `api_server.log`**.
+
+Un **bloc pe cerere**, ținut în memorie și scris întreg la sfârșit — două cereri simultane nu-și pot amesteca liniile. Blocul poartă, în ordinea în care le face codul:
+
+| Parte | Ce conține |
+|---|---|
+| antetul | rută, `dc`, `user`, `cod`, `mod`, statusul HTTP, durata |
+| starea | amprenta ȘI cele opt numere din care s-a calculat |
+| tabloul | fiecare recepție cu sumele ei pe indicator; fiecare instantaneu cu liniile lui |
+| intenția | sugestiile trecerii automate, apoi fiecare hotărâre/comandă cu recepția în care se rezolvă |
+| lanțurile | fiecare lanț rezultat, în ordinea datei, exact cum îl văd regulile |
+| verdictele | F14 / F15 / F16, fiecare cu cifrele comparate — și cele care TREC, nu doar cea care refuză |
+| scrierea | ce s-a scris, sau că nu s-a scris nimic (rollback) |
+
+O respingere se scrie ca `RESPINS` acolo unde s-a întâmplat **și** se repetă la piciorul blocului, iar ultima linie a blocului e un `SUMAR` de o singură linie. Deci o zi întreagă se citește cu `grep RESPINS asociere.log` sau `grep SUMAR asociere.log`, fără blocuri în cale.
+
+Funcțiile publice: `set_enabled`, `enabled`, `traced` (decoratorul de rută), `note`, `section`, `line`, `table`, `refusal`, plus doi ajutori de formatare (`moment`, `sume_pe_indicator`). Toate se întorc pe prima linie când jurnalul e închis; `_write` e prins în `try/except`, ca un jurnal să nu poată strica niciodată o rută.
+
+#### Întrerupătorul
+
+`PYTHON/main.py`, sus de tot, deasupra tuturor celorlalte:
+
+```python
+ASOCIERE_LOG_ENABLED = True
+asociere_log.set_enabled(ASOCIERE_LOG_ENABLED)
+```
+
+`False` + repornirea serverului = nu se deschide niciun fișier și nu se construiește nicio linie. Ordinea în care se decide: **mediul întâi** (`KBOT_ASOCIERE=0`), apoi comutatorul din `main.py`, apoi `ASOCIERE_LOG_ENABLED` din `config.py`, apoi pornit.
+
+Mediul bate `main.py` **dinadins**: jumătate din suita de teste face `from main import app`, deci un comutator care ar fi bătut mediul ar fi aprins jurnalul în fiecare rulare de pytest. `tests/conftest.py` pune `KBOT_ASOCIERE=0` exact ca la cronometru.
+
+Fișierul se mută cu `KBOT_ASOCIERE_LOG` în mediu sau `ASOCIERE_LOG_PATH` în `config.py`. Se rotește la 10 MB, cu 5 copii — ca celelalte două jurnale.
+
+#### Unde s-au pus apelurile
+
+**`routes/forexe/prelucrare_asociere.py`** — inima asocierii, deci acolo e cea mai mare parte:
+
+- `amprenta` — cele opt numere, nu doar hash-ul: când două faze nu se potrivesc, singura
+  întrebare utilă e CARE dintre ele s-a mișcat.
+- `citeste_receptii` / `citeste_instantanee` / `citeste_instantanee_context` — tablourile,
+  ca tabele, cu sumele pe indicator pe fiecare rând.
+- `pas4c_automat` — candidații după sumă, apoi fiecare potrivire și fiecare ratare, pe
+  ture (tura 1 = de la nou la vechi, tura 2 = restul).
+- `verifica_acoperirea` — câte hotărâri pentru câte instantanee, câte lipsesc.
+- `materializeaza_reconstituite` — ce recepție se naște din ce lanț și din ce rânduri.
+- `valideaza_plasarile` — **partea care contează**: pentru fiecare lanț, recepția cu
+  sumele ei, tabelul lanțului întreg, apoi F14 / F16 pe fiecare instantaneu și F15 cu
+  **amândouă tablourile de valori scrise unul sub altul**. Trec și verdictele bune, nu
+  doar cel care refuză: «F15 trece» spune la fel de mult ca «F15 cade».
+- `aplica_decizii` — hotărârile ca tabel, ancorele pasului 4b, apoi «ce vrea să facă
+  rularea» rând cu rând, **inclusiv instantaneele deja legate pe care le trage în lanț**
+  (F15 și F16 se uită la lanțul întreg, deci o respingere poate veni dintr-un rând pe care
+  operatorul nu l-a atins — până acum asta nu se vedea de nicăieri).
+- `recalculeaza_final`, `marcheaza_reconstituirile_nesigure` — trecerile `Final`/`Partial`
+  și marcajul F28.
+
+**`routes/forexe/prelucrare.py`** — `@journal.traced("prelucrare")` sub `@timing.timed`, antetul (`dc`, `user`, `cod`, `mod`, rândurile sosite pe tabel), sfârșitul fiecărei căi: amprentă nepotrivită, alegere de unitate, decizii respinse, sarcină de nefolosit, eroare MariaDB, rollback-ul propunerii, commit-ul salvării.
+
+**`routes/forexe/asociere.py`** — `@journal.traced("asociere GET")` și `("asociere POST")`, tabloul citit cu blocajele lui, comenzile ca tabel (cu `IDRR` de acum lângă `IDRR` cerut), demarcarea `Sters`, numărătorile, și fiecare cale de refuz (instantaneu blocat, comandă invalidă, cădere).
+
+---
+
+### 2. Cum arată
+
+Bloc adevărat, scos dintr-o rulare de probă pe funcțiile pure (scriptul e temporar, nu e în depozit):
+
+```
+====================================================================================
+2026-09-09 17:32:30.932  rulare 1  [proba F15 pe linii]  status 200  0 ms
+  dc=000_DEMO  user=proba  cod=AAB2EF2MCP4  mod=salvare
+--- verificarea lanțurilor (1 recepții atinse; F15 = veto) -------------------------
+  recepția 247 (Recepția din 18.05.2026 · 1200.00) SumaAntet=1200.00  linii=AAB=1150.00
+  IDRH | rand | DataH      | Total   | stergere | linii
+  -----+------+------------+---------+----------+------------
+  9000 | 2    | 12.05.2026 | 900.00  | nu       | AAB=900.00
+  9001 | 3    | 20.05.2026 | 1200.00 | nu       | AAB=1200.00
+  F14 și F16 trec pe toate cele 2 instantanee ale lanțului
+  F15 pe linii: instantaneu AAB=1200.00
+                recepție    AAB=1150.00
+  F15 CADE pe linii: tablourile de mai sus nu sunt egale
+  RESPINS: Recepția din 18.05.2026 · 1200.00: liniile ultimului instantaneu nu se
+  potrivesc cu cele ale recepției (AAB: instantaneu 1200.00 / recepție 1150.00). ...
+--- ce a refuzat rularea -----------------------------------------------------------
+  RESPINS: ...
+SUMAR rulare=1 ruta=... status=200 ms=0 respingeri=1 dc=000_DEMO cod=AAB2EF2MCP4
+```
+
+(«status 200» fiindcă proba nu e o rută Flask, ci un apel direct: statusul se citește din răspunsul rutei, iar aici nu există unul. Într-o rulare adevărată ar scrie 400.)
+
+Pentru cazul din 14:18 asta ar fi arătat, dintr-o privire: ce recepție, ce lanț s-a format, care instantaneu a fost socotit ultimul, ce indicator nu se potrivea și cu cât.
+
+---
+
+### 3. Fișiere atinse
+
+- `PYTHON/utils/asociere_log.py` — **nou**, 316 rânduri.
+- `PYTHON/main.py` — importul, comutatorul `ASOCIERE_LOG_ENABLED` și predarea lui.
+- `PYTHON/routes/forexe/prelucrare_asociere.py` — importul + apelurile de jurnal
+  (niciun rând de logică schimbat; singurul cod nou care nu e jurnal e `_ca_text`,
+  un ajutor de formatare).
+- `PYTHON/routes/forexe/prelucrare.py` — decoratorul, antetul, capetele de drum.
+- `PYTHON/routes/forexe/asociere.py` — decoratoarele pe cele două rute, tabloul,
+  comenzile, capetele de drum.
+- `PYTHON/tests/conftest.py` — `KBOT_ASOCIERE=0`.
+
+---
+
+### 4. Rezultatele rulărilor
+
+- `PYTHON/.venv` suita întreagă, jurnalul ÎNCHIS (cum îl ține `conftest.py`) —
+  **514 trecute / 19 sărite / 0 picate**, neschimbat față de 0058.
+- Aceeași suită cu `KBOT_ASOCIERE=1` și `KBOT_ASOCIERE_LOG` într-un fișier temporar —
+  **514 trecute / 19 sărite / 0 picate**, iar fișierul s-a scris (57 KB). Asta acoperă
+  și drumul în care jurnalul e chemat FĂRĂ nicio rulare deschisă (testele cheamă
+  funcțiile pure direct): liniile ies neindentate, dar ies.
+- Rulare de probă pe `valideaza_plasarile` și `pas4c_automat` cu jurnalul pornit, cu
+  trei blocuri: F14 cade, F15 cade pe linii, lanț care se închide. Blocul de mai sus e
+  de acolo.
+
+---
+
+### 5. Ce NU s-a verificat
+
+- **Nicio cerere adevărată n-a trecut prin jurnal.** Nu s-a pornit serverul, nu s-a
+  atins baza vie, deci blocul complet — cu tabloul citit din MariaDB și cu antetul de
+  sesiune — n-a fost văzut niciodată. Ce s-a văzut e partea de verificare a lanțurilor,
+  pe date făcute de mână.
+- **Cazul operatorului din 14:18 rămâne nediagnosticat.** Jurnalul e unealta, nu
+  răspunsul. Ca să dea răspunsul trebuie: (1) împins codul pe server, (2) repornit
+  serverul cu `ASOCIERE_LOG_ENABLED = True`, (3) refăcută salvarea pe `AAB2EF2MCP4`,
+  (4) citit blocul.
+- **Nu s-a măsurat cât încetinește.** Un bloc de propunere pe un angajament mare are
+  câteva sute de rânduri; costul e o listă de șiruri în memorie plus o scriere la
+  sfârșit, dar nu e cronometrat. `forexe_timing.log` va arăta diferența dacă vreodată
+  contează.
+- **Nimic nu s-a comis și nimic nu s-a împins.**

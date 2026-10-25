@@ -8,7 +8,7 @@ pixel coordinate.
 
 ## 1. Layout is built from docked `TableLayoutPanel`s
 
-The form's body is a tree of `TableLayoutPanel`s (TLPs), each **docked**, never
+The form's body is a tree of the house [`KBotTableLayoutPanel`](../src/KBot.Controls/Table/KBotTableLayoutPanel.md) (TLPs; 0066), each **docked**, never
 positioned by absolute `Location`/`Size`. A form resizes and DPI-scales correctly
 only when every region is a docked TLP.
 
@@ -42,18 +42,9 @@ stable across themes, fonts and DPI.
 
 ## 3. Everything is flat so the theme can paint it
 
-`KBotTheme.ApplyTheme(Me)` walks the control tree and recolors it. Controls must
-be flat for that to look right:
+The shared colour/theming rules for custom K-BOT controls are maintained in [CONTROLS C1/C5](../src/KBot.Controls/CONTROLS.md#c1--colour-contract): theme defaults unless explicitly pinned; IThemedControl.ApplyTheme(scheme) paints from ThemeManager.Current.Palette. A control owning children implements IThemedControl so generic traversal does not repaint its internals.
 
-- Buttons: `FlatStyle = Flat`.
-- ComboBox: `FlatStyle = Flat`, `DropDownStyle = DropDownList`.
-- TextBox: `BorderStyle = FixedSingle`.
-- Accent colors that have no `KBotTheme.CLR_*` constant are applied in code from
-  theme-aware helpers (see `ApplyAccentColors` / `ClrError` in LoginForm), never
-  hard-coded per control in the Designer.
-
-Call order in `*_Load`: `KBotTheme.ApplyTheme(Me)` **first** (structural theming),
-then apply the code-side accent colors.
+Historical LoginForm pattern: KBotTheme.ApplyTheme(Me) walked the control tree; stock buttons and ComboBox used FlatStyle.Flat (ComboBox also DropDownList), TextBox used FixedSingle. Accents without KBotTheme.CLR_* came from theme-aware ApplyAccentColors/ClrError helpers, never per-control Designer literals. In *_Load the structural KBotTheme.ApplyTheme call preceded those accents. These legacy API names describe that example; they do not replace the shared contract for custom controls.
 
 ## 4. All procedures start with an UpperCase letter
 
@@ -101,13 +92,4 @@ property grid — not by `New`-ing it and configuring it in code-behind.
 
 ## 9. Every form and UserControl autoscales by DPI, never by font (slice 0066-02)
 
-`AutoScaleMode = Dpi` and `AutoScaleDimensions = (d, d)` where `d` is the dpi of the
-screen the file was last saved on (`96`, `120`, `144`). Visual Studio writes both when it
-saves, together with every coordinate in the file, so they always change as a pair.
-`AutoScaleMode.Font` is forbidden: it scales by the ratio of two INTEGER font metrics
-(1.29 x 1.47 at 150%, 0.86 x 0.93 at 100% with text at 99% -- measured), never the same on
-both axes and never `DeviceDpi / 96`, so the same window came out different at 100%, 125%
-and 150% and never matched the tree, the grid or the table beside it. With `Dpi` the
-platform multiplies every rectangle by exactly `DeviceDpi / d`; the operator's text size
-and the K-BOT scaling modes are one uniform zoom on top (`AppScaling.ApplyZoom`), applied
-to geometry and fonts with the same number.
+`AutoScaleMode = Dpi` and `AutoScaleDimensions = (d, d)`, where `d` is the dpi of the screen the file was last saved on (`96`, `120`, `144`). Visual Studio writes that stamp and every coordinate together; they change as a pair. `AutoScaleMode.Font` is forbidden: its integer-font-metric ratios differ by axis and DPI. The [0066-02 evidence](worklog/SLICE-0066-tabele-la-dpi-ca-arborele.md#slice-0066-02) keeps the exact measurements and the correction. Dpi uses `DeviceDpi / d`; `AppScaling.ApplyZoom` adds one uniform operator/text zoom to geometry and fonts.

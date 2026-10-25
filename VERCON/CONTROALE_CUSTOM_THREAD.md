@@ -60,6 +60,8 @@ Toate căile de mai jos sunt relative la `PYTHON/static`.
 
 - **Aspect per arbore** (14.10.2026, `css/treeview/treeview_items.css`): eticheta unui arbore ia fontul din tipografia aplicației (`--fs-base`, `--font-ui`) și NU mai ascultă bold, italic sau culoarea din jur și nici greutățile / culorile fixe de mai înainte (parinte 500, frunză, hover albastru). Fiecare arbore se configurează setând pe containerul lui variabilele (toate opționale): `--tv-font-family`, `--tv-font-size`, `--tv-font-weight`, `--tv-font-style`, `--tv-color`, `--tv-parent-weight`, `--tv-parent-color`, `--tv-leaf-color`, `--tv-hover-weight`, `--tv-hover-color`, `--tv-disabled-color`, `--tv-bold-weight` (pentru nodurile `is-bold`). Fără ele: text normal, culoarea `--ink`, fără schimbare la hover în afară de fundal. Părțile de căutare și breadcrumbs ale arborelui nu sunt încă pe variabile.
 
+- **Marginea vizibilă a nodului (15.10.2026):** în treeview-render.js/treeview_items.css indentarea trece din padding în marginea exterioară, inclusiv spațiul expanderului invizibil la frunze. API setează `--tv-node-start`; CSS păstrează 4 px interiori înaintea conținutului vizibil, limitați de marginea arborelui. Textul/bifele/expanderele nu se mută, dar hover/selecție/bara albastră pornesc la noua margine. Valabil comun inline/dropdown și tema dark, fără culori suprascrise de aplicație. Stare a intervenției: surse modificate, fără teste sau browser.
+
 ### Combobox
 
 - Constructor cu container, nu cu `<select>`: `new Combobox(container, options)`.
@@ -163,6 +165,7 @@ Actualizare 12.10.2026: CSS-ul VERCON/ADECHIT/PORTAL este separat în module cu 
 
 ### DataGrid — filtrare și salvare pe rând (15.10.2026)
 
+- Formatterul DGV ajunge și în motorul de filtrare, astfel încât checklistul folosește aceleași valori afișate. Callbackul opțional `filterValue` permite compararea etichetei Contului, păstrând ID-ul în date.
 - Indicatorul unui filtru activ este o pâlnie SVG care moștenește culoarea butonului; săgeata rămâne pentru coloanele fără filtru activ. Fontul butonului comun de filtrare este redus cu 2 pt. Iconul și popupul de filtrare sunt în `js/dgv/filtering.js`, separat de `datagrid.js` pentru dimensiunea modulelor.
 - Cu `newRowAlwaysVisible`, rândul gol recunoscut prin `isBlankRow(row)` și draftul nou în lucru sunt afișate la final, în afara filtrării, sortării și grupării datelor. Rândul gol nu furnizează valori pentru checklistul filtrului și nu intră în numărul de rânduri ori în totalurile footerului. Valorile goale ale înregistrărilor reale rămân filtrabile. `singleNewRow: true` oprește generarea unui al doilea rând gol cât timp există un draft nou în editare; implicit este `false`, păstrând comportamentul NIR.
 - `onRowLeave({ row, nextRow })` poate finaliza asincron un rând după verificarea `rowIssue` / `confirmRowIssue`; `false` oprește navigarea. Se aplică la mouse, tastatură și ieșirea focusului, nu doar la Enter. `suspendRowLeave()` poate amâna finalizarea cât timp un selector al rândului este deschis; selectorul CPV îl folosește pentru a permite completarea codului înainte de salvarea produsului.
@@ -190,6 +193,19 @@ variabile documentate în MD. NIR păstrează textul `--fs-ms` și iconul
 `--fs-lg`, cu aceeași carcasă de buton ca Produse. CSS-ul paginilor păstrează
 numai poziționarea și aceste variabile, fără duplicarea stilului butonului.
 Nu s-au rulat teste sau verificări, conform AGENTS.md.
+
+### Meniu — dimensiuni, animații și evoluție (15.10.2026)
+
+Implementare comună în `PYTHON/static/js/components/menu/menu.js` și `PYTHON/static/css/menu.css`, pentru toate aplicațiile care folosesc Menu. Starea etapelor de mai jos: surse modificate, fără teste sau probă în browser; cauza tranziției a fost identificată prin citirea codului.
+
+- `--hover-backcolor` (implicit `--sky-2`) controlează hoverul, butonul deschis și banda iconurilor. Banda își păstrează lățimea la etichete lungi; popupul preia variabilele CSS de la buton.
+- Popupurile barei pornesc de la marginea butonului, cu lățimea lui exterioară, minus retragerea pe fiecare latură `--reduce-by: 2px` (4 px total, configurabilă pe container). Textele lungi se împart pe rânduri; poziționarea este limitată la ecran. Alinierea inițială a centrelor iconurilor prin deplasarea popupului, apoi prin lățimea benzii, a fost înlocuită de banda fixă de 30 px din secțiunea următoare.
+- Fiecare element al barei acceptă `dropdownMinWidth` în pixeli, transmis la `openMenu` prin `--_menu-min-width`. Minima prevalează când depășește lățimea butonului, în limita ecranului; omiterea ei păstrează lățimea butonului și retragerea.
+- Dezvăluirea pornește după poziționare și măsurare, de la înălțime zero la cea a conținutului, în două cadre succesive; pentru deschiderea deasupra sensul este invers. Starea închisă are `transition: none`; tranziția este activată numai la dezvăluire. Aceasta repară inversarea prematură a tranziției dintre limita viewportului și zero, înainte de a ajunge sub înălțimea conținutului.
+- `--mn-reveal-duration` configurează durata, implicit 420 ms. Istoric: prima coborâre/clip-path dura 180 ms, înlocuită cu dezvăluire pe înălțime în 320 ms, apoi cu mecanismul de 420 ms. Inițial `prefers-reduced-motion` dezactiva animația; ulterior această dezactivare a fost scoasă explicit la cererea utilizatorului. Nu se aplică tacit regula inițială peste excepția ulterioară.
+- După deschidere se restabilește derularea. Curățarea urmărește sfârșitul tranziției și are temporizator de rezervă calculat din durata efectivă; închiderea anulează cadrele și temporizatorul.
+- Clickul pe alt dropdown al aceleiași bare transferă poziția, lățimea și înălțimea vizibile în 280 ms, fără scalarea textului. `pointerdown` păstrează popupul până la click pentru capturarea geometriei; schimbările rapide reiau mișcarea din poziția intermediară. Prima deschidere folosește dezvăluirea, iar închiderea curăță tranziția.
+- Configurația VERCON din `PYTHON/static/js/vercon/app.js`: Configurări a trecut de la minima 320 la 224 px (−30%); INTRARI are minima 260 px, IESIRI 224 px. Acestea sunt configurări de pagină, nu minime globale ale controlului.
 
 ### Meniu popup — bandă compactă pentru iconuri (15.10.2026)
 
@@ -219,3 +235,48 @@ varianta iconRight sunt păstrate. Implementarea este comună, în menu.js/CSS.
 Actualizare 15.10.2026: umbra dropdownurilor comune este vizibilă numai jos
 și în dreapta. CSS-ul folosește box-shadow 4px 4px 10px și clip-path cu
 extensie de 20 px doar pe aceste laturi, eliminând dispersia de sus/stânga.
+
+## Rezumatul selecției unice TreeView/ComboTree — 18.10.2026
+
+D001-09, istoric: **IMPLEMENTAT ÎN SURSE, NERULAT**. Numai design din surse; fără teste/build/verificări automate, browser/HTTP, MariaDB/SQL/DDL, schimbări de schemă/date, migrator, deploy/commit/push. Aspectul nu a fost probat în aplicație.
+
+<a id="d001-09-etapa-9"></a>
+
+### Combouri: denumirea selecției unice
+
+Controlul comun TreeView/ComboTree cu bife afișează denumirea elementului când există o singură selecție, inclusiv la autoselectarea contului unic și când controlul este dezactivat. Rezumatul cu numărul selecțiilor este folosit în continuare la selecții multiple. Câmpul intern rămâne gol pentru a păstra comportamentul de căutare al controlului.
+
+### Fișiere pe etapă
+
+Căi istorice; numele fără prefix continuă directorul precedent.
+
+| Etapă | Fișiere |
+|---|---|
+| 9 | PYTHON/static/js/components/treeview/treeview-checkable.js. |
+
+## Sortarea documentelor și căutarea ComboTree — 17–23.10.2026 <a id="d001-12-arbori"></a>
+
+Preluare D001-12, cu probe separate pe etapă.
+
+- **17.10, implementat fără teste/alte verificări ori DB:** rădăcinile furnizor/primitor la NIR/BC/retur/FCS sunt alfabetice românește, fără diferență de majuscule, la afișare/refresh și după încărcarea ramurii NIR. Ordinea internă a datelor/lunilor/documentelor se păstrează.
+- **20.10, Confirmat 23.10:** ComboTree activează includeDescendantsOnMatch în filtrarea TreeView comună. Potrivirea numelui/cuvintelor-cheie ale părintelui păstrează și deschide toată ramura, inclusiv variantele de preț; potrivirea doar a copilului păstrează copilul/strămoșii. Căutarea produsului BC permite astfel alegerea prețului. Folosește numai nodurile deja furnizate, fără reintroducerea produselor fără stoc; TreeView fără opțiune păstrează filtrarea lui.
+- **23.10, Confirmat 23.10:** nodurile de lună din lista de alimente, BC pe primitori, perioada stocurilor și rapoartelor au chei calendaristice explicite an/lună, independente de eticheta românească. Sens păstrat: descrescător documente/rapoarte, crescător stocuri. TOTI anii/Tot anul rămân înaintea perioadelor individuale; NIR și ceilalți arbori comuni aveau deja cheile. Celelalte etichete își păstrează ordinea.
+
+Fișiere istorice (numele fără prefix continuă directorul precedent):
+
+| Etapă generală | Fișiere |
+|---|---|
+| 8 | PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md. |
+| 16 | PYTHON/static/js/components/combotree/combotree.js; PYTHON/static/js/components/treeview/treeview-search.js; implementare_vercon_v2.md. |
+| 21 | PYTHON/static/js/vercon/{consumption-ui,lista,stock,report-period}.js; implementare_vercon_v2.md. Arborii NIR și ceilalți arbori comuni de documente au deja chei calendaristice explicite. Celelalte etichete își păstrează ordonarea existentă. |
+
+## Integrarea controalelor în 13/14.10.2026 <a id="d001-13-integrare"></a>
+
+Preluare D001-13; API-urile TextBox/CheckBox/TreeView/Combobox/Menu/ModalFrame/debug rămân descrise o singură dată în capitolele lor. Numai sintaxă JS verificată atunci, fără browser; testul de overhead al editorului DataGrid nu a fost făcut.
+
+- vercon.html/adechit.html încarcă CSS-urile TextBox/CheckBox înaintea aplicației. Au fost migrate field text/int/decimal în ui.js (numerele formularelor rămân la stânga), showErrors și Stoc inițial în docs.js, câte o bifă în reports.js/stock.js, numai text din payers.js. Au rămas intenționat editorul inline DataGrid până la proba de overhead, căutările nomenclatoare.js/datagrid.js, casetele ADECHIT/DataGrid și tel/email/date/checkbox din payers.js.
+- Grila folosește _requiredShown/_seen pentru a marca obligatorii goale numai după părăsire/validate; la acel reper numai VERCON avea coloane required în consumatorii căutați ADECHIT/Portal. showErrors nu mai aplică setError('') pe obligatorii goale, care ar șterge tooltipul validării. field.error.textContent este adaptorul culoare/tooltip folosit și de nomenclatoare.js/lista.js/editor.js; statusul de jos rămâne. --vc-required-back este eliminată în favoarea variabilelor comune de eroare.
+- Handlerul special al lipirii ,5 în numărul NIR rămâne în docs.js; cu allowCopyPaste oprit nu este atins până când câmpul activează opțiunea. Cursorul readOnly urmează mouseCursor (anterior era săgeată); disabled rămâne săgeată, conform API-ului TextBox.
+- DataGrid adaugă editGuard/onEditBlocked pentru refuzarea intrării în editare de către gazdă; headerLock NIR este în istoricul editorului. align:'center' folosește is-center, fără schimbarea antetului. Footer has-action permite acțiunii Adaugă rând să fie la stânga, text ~10px, fără centrarea primei coloane #. Comportamentul NIR/Esc/părăsire este cel documentat în DataGrid.
+- Riscurile rămase la prima deschidere: înălțime/chenar text VERCON, selectorul vechi .vc-field > input înlocuit prin .vc-field .tb__input; outline-ul de focus TextBox față de stilul plătitorilor ADECHIT; fontul câmpului moștenit, TextBox nesetând font. Acestea nu sunt confirmări vizuale.
+- Fișiere componente: js/components/textbox/textbox.js + css/textbox.css, js/components/checkbox/checkbox.js + css/checkbox.css, js/utils/field-format.js, reexport js/vercon/fields.js, js/vercon/ui.js/docs.js, js/dgv/editing.js/datagrid.js; variabile CSS în variables.css/portal-theme.css. Fișierele TreeView/Combobox și noile opțiuni sunt în contractele lor; sursele/integrările concrete NIR sunt în VC06-02.

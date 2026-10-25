@@ -27,3 +27,7 @@ The Administrator takes over, in «Adaugare NIR», the received invoices the acc
 - The total the editor checks (the sum of the lines with VAT against the invoice total) can differ by cents because of rounding per line; the editor's «Corectează la valoarea facturii» (up to 1 leu) is the way, as for a hand-typed NIR.
 - MF / OI: a NIR for them needs data the invoice does not have (classification, inventory number, holder); the Administrator completes it. Not exercised.
 - Accounts of a gestiune the current context does not offer (an MF/OI context offers only itself) are not ticked; the page says so.
+
+## Confirmare ulterioară — 23.10.2026
+
+Jurnalul general consemna TESTAT, RULAT, PUBLICAT, confirmat de operator. Secțiunile de mai sus păstrează probele și limitele predării din 21.10.2026; confirmarea globală nu descrie separat rezolvarea fiecărui caz amânat și nu este o rerulare în D001-04.

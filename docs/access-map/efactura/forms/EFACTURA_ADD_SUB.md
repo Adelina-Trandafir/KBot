@@ -1,12 +1,12 @@
 # Form `EFACTURA_ADD_SUB`
 
-Source: `Forms/EFACTURA_ADD_SUB.txt` (44,031 chars). Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
+Source: `Forms/EFACTURA_ADD_SUB.txt` (44,031 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
 
 | Property | Value |
 |---|---|
-| RecordSource | `SELECT tmpFacturaC.IdContinut, tmpFacturaC.IdFactura, tmpFacturaC.Continut, tmpFacturaC.Um, tmpFacturaC.Cant, tmpFacturaC.PU, tmpFacturaC.Valoare, tmpFacturaC.NrCrt, tmpFacturaC.Grup FROM tmpFacturaC; ` |
+| RecordSource | [SQL in Data](#data) |
 | NavigationButtons | NotDefault |
 | RecordSelectors | NotDefault |
 | DividingLines | NotDefault |
@@ -68,18 +68,11 @@ SELECT tmpFacturaC.IdContinut, tmpFacturaC.IdFactura, tmpFacturaC.Continut, tmpF
 
 ## Module-level declarations
 
-Form state kept in variables, constants, types and WithEvents helpers (the Access form class body before the first procedure).
-
-```vb
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-```
+Only the [common attribute prefix](../README.md#module-declarations); no additional module declarations.
 
 ## Event handlers and what they touch
 
-Reads/writes come from SQL text and recordset calls found in the procedure body; they are a lead for reading the code, not a proof (dynamic SQL built from variables is missed).
+See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 
 | Procedure | Bound to | Lines | Opens forms/reports | Reads | Writes | Calls (modules) | Classes | Local calls |
 |---|---|---|---|---|---|---|---|---|

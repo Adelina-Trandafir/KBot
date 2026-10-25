@@ -1,6 +1,6 @@
 # SLICE-0000-26 — the help for slice 0056-02
 
-Slice 0056-02 (`SLICE-0056-02-corecturi-la-descarcare.md`, operator, 01.10.2026) lets the
+Slice 0056-02 ([0056-02](SLICE-0056-tabloul-intreg.md#slice-0056-02), operator, 01.10.2026) lets the
 operator move old links while placing a download. This is the help for it, written in the same
 task, every changed section tagged `0056-02`.
 

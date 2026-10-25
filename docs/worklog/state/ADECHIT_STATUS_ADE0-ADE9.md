@@ -315,7 +315,7 @@ Plan: [ADE6 — pași, livrabile și acceptare](../../../ADECHIT/PLAN_IMPLEMENTA
   cu validare și păstrarea contactelor. Access nu conține coloanele: migratorul rămâne
   neschimbat, câmpurile noi rămân NULL la import. AD_09 se rulează numai pe AVACONT_SURSA;
   KBotAdmin sincronizează schemele unităților. HELP și documentația sunt actualizate.
-  Punctul de reluare: [STARE_LA_PAUZA](../../../ADECHIT/STARE_LA_PAUZA.md).
+  Predarea și ordinea de instalare: [ADE6-24](../SLICE-ADE6-24-educatori-email-cnp.md); corecția ulterioară: [ADE6-25](../SLICE-ADE6-25-deadlock-lock-row.md).
 - ADE6-23: mesajele de introducere/încărcare/salvare Plătitori eliminate;
   zona de mesaje este ascunsă implicit și apare numai la erori.
 - **ADE6-22:** listele de grupe/copii/plătitori/educatori se ordonează după

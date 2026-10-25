@@ -19,7 +19,7 @@ Stare: **IMPLEMENTAT_LOCAL**. Doar sintaxa verificata; **nimic rulat**, nimic va
 ## Extensie 18.10.2026 — documente migrate fara sursa
 
 Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Cererea operatorului: implementarea
-`VERCON/CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md`, sectiunile 3 si 3b.
+predării din 18.10.2026, secțiunile 3/3b, absorbite în acest jurnal și în [README VRC](../../VERCON/VRC.Migrator/README.md#predarea-online-din-18102026--absorbită-prin-d001-04) prin D001-04.
 
 ### Ce s-a schimbat si de ce
 
@@ -61,6 +61,58 @@ de sintaxa, browser, HTTP, SQL sau alte verificari automate. Nicio schema
 modificata si nicio creare automata de tabele. Nedeployat, neacceptat vizual.
 Anularea BR nu solicita sursa in codul existent; regulile de stoc raman
 aplicabile, inclusiv la anulare. Scenariile de acceptare, toate NERULATE,
-sunt descrise in intrarea din 18.10.2026 din `implementare_vercon_v2.md`.
+sunt păstrate în secțiunea de mai jos, absorbită din intrarea generală de la 18.10.2026.
 Decizia numerotarii OI/MF ramane operatorului. Modificarile sunt in arborele
 local de lucru; nu s-a facut commit sau push.
+
+## Detalii și criterii de acceptare absorbite în D001-04
+
+BR: POST /api/vercon/doc/br/<id>/link; «Bonul returnat» / «Asociază cu un bon de consum» numai în consultarea returului activ fără sursă. Răspunsul întoarce documentul/versiunea actualizată. La storno: GET /api/vercon/doc/storno/orphans și POST /api/vercon/doc/storno/orphans/<id>/link|cancel; lista are și UM, preț cu TVA și stare. Anularea orfanei păstrează motiv/utilizator/dată/audit și nu introduce mișcare în stoc. Nu se fac asocieri sau anulări automate.
+
+Criterii de acceptare pregatite, **TOATE NERULATE**:
+
+| Scenariu | Rezultat asteptat |
+| --- | --- |
+| BR fara `IdRetur`, consultare | Marcaj Fără bon sursă in lista si antet; alegerea BC disponibila numai cu drept si document activ. |
+| BR orfan, Modifica / PUT direct | Mesaj explicit de asociere prealabila, fara pierderea liniilor. |
+| Asociere BR cu BC potrivit | `IdRetur` completat, versiune +1, audit `br.link`; liniile, valorile si stocul neschimbate. |
+| BC fara produs sau cantitate ramasa insuficienta | Refuz la `source` cu toate produsele incompatibile; nicio modificare. Cantitatile mai multor linii ale aceleiasi variante sunt insumate. |
+| BR dupa asociere, Modifica | Editorul normal foloseste BC asociat si cantitatile eligibile. |
+| BR inainte/dupa asociere, Anuleaza | Fluxul obisnuit cu motiv si versiune, fara dependenta de existenta sursei; regulile existente de stoc raman aplicabile. |
+| Anularea BC cu retur asociat activ | Blocata de `_guard_dependents` pana la anularea returului. |
+| Lista storno fara receptie | Afiseaza liniile din context, cantitate, pret, data salvarii, stare; cele anulate raman vizibile si nu se pot lega. |
+| Legare storno de FCS potrivita | Legatura si versiunile cresc; audit; linia incepe sa conteze in stoc numai dupa commit. |
+| Storno: produs absent, depasire, sursa nevalida sau cronologie negativa | Refuz si rollback integral, inclusiv versiunea antetului. |
+| Anularea unei linii storno orfane | Motiv obligatoriu, `Anulat=1`, versiune +1 si audit; ramane in lista, fara efect in stoc. |
+| Context diferit, perioada inchisa, blocare lipsa, versiune veche | Refuz fara modificari. |
+| Raspuns pierdut la asociere/anulare orfana | Reia aceeasi cerere cu aceeasi cheie, fara dublarea efectului sau auditului. |
+
+
+La acel checkpoint, config.py, rapoartele, AGENTS și migratorul nu fuseseră modificate; fără modificări de subunități, IDM/IdMasinaP/IDBO, NumarSub ori CodFiscalSursa. Decizia OI/MF era încă deschisă atunci; confirmarea ulterioară și limitele remapării sunt în [REGISTRU_OI_MF](../../VERCON/REGISTRU_OI_MF.md).
+
+## FCS în pagină și numerotare comună — 17.10.2026
+
+Patru etape de surse, nerulate: fără teste, compilare, verificări automate, browser, SQL sau acces MariaDB/publicare. Python cere publicare/restart; schimbările numai JS/CSS cer publicarea lor. Acestea înlocuiesc editorul și contorul separat FCS descrise la 12.10; extensia pentru orfane de la 18.10 rămâne distinctă.
+
+- Adăugare/modificare în spațiul normal al recepțiilor, antet cu patru coloane; Recepția stornată și Comisie ocupă câte două. ComboTree grupează NIR-urile eligibile la Data FCS pe furnizori, în gestiunea curentă; la facturi repartizate sunt numai recepția/liniile locale.
+- DGV: Produs/UM/Cantitate/Preț/TVA %/Valoare/TVA/TOTAL, rând gol permanent, ComboTree și ștergere ca NIR. Sunt oferite numai variantele sursei cu stoc la Data FCS; preț/TVA din recepție. Stocarea rămâne Cant pozitiv/preț cu TVA în VC_IntrariStorno. Serverul limitează atât restul nestornat NIR, cât și stocul variantei la dată; FCS viitoare rezervă cantitatea sursei, documentul editat este exclus și cronologia integrală se validează la salvare.
+- În editare, arborele este înlocuit de mini fișa furnizorului/produsului la Data FCS, autorizate FCS. Fără preview; Renunță stânga/Salvează FCS dreapta. În consultare, adăugare în antetul arborelui, fără + Adaugă de jos.
+- NIR/FCS au numerotare anuală comună în gestiune, ABS(Numar)/NumarSub, cu anulatele ocupate. La inserare înaintea unui NIR/FCS ulterior se propune subnumăr liber, maximum două zecimale; data/unicitatea se revalidează sub lock tranzacțional. Și NIR ia FCS în calcul la numărul propus/limitele cronologice. FCS rămâne stocat cu număr negativ; NumarSub exista, fără schemă creată automat.
+- Produsul FCS exclude combinațiile produs/preț cu TVA deja în draft la fiecare deschidere; ștergerea/schimbarea rândului le eliberează, alt preț rămâne disponibil. Comparație exactă la patru zecimale, fără binar; celula și serverul refuză duplicatul chiar cu alt ID de variantă.
+- Listare fără acțiune este scoasă din NIR și meniul INTRARI. Ulterior, `docs.js/totals` se oprește la storno după totalurile DGV: fără comparație antet/linii sau mesaj de reconciliere, în consultare/adăugare/modificare; totalurile produselor și celelalte familii rămân.
+
+### Cache-ul comun al mini fișelor
+
+- NIR/FCS au cache numai în memoria instanței editorului, maximum 128 de fișe, evacuând cele folosite cel mai demult. Cheia include toți parametrii: context, dată, variantă ori produs/preț/TVA după familie. Fișa validă reapare imediat, cererile în curs sunt reutilizate, erorile nu se memorează; răspunsul după invalidare nu repopulează cache-ul. Fără localStorage/sessionStorage.
+- Invalidare la schimbarea ciornei/documentului/contextului, ieșire din editare inclusiv salvare și distrugere; schimbarea datei/prețului/variantei are altă cheie. Fișele sunt informative; stocul decisiv se revalidează în server la salvare.
+- Durata inițială fixă de două minute în JS este înlocuită de config.py la pornire: `VERCON_MINI_STOCK_CACHE_ENABLED=True`, `VERCON_MINI_STOCK_CACHE_SECONDS=120`. Activarea cere bool, durata întreg nenegativ; invalid = eroare explicită la pornire. False ori 0 dezactivează memorarea, deci revenirea pe rând recitește serverul; când e activ se păstrează limita/invalidările.
+- lookups expune numai aceste două valori publice, nu restul configurației. Editorul le aplică la încărcare și schimbarea contextului. config.py nu a fost citit/modificat; valorile au fost furnizate în conversație. `PYTHON/config_sesiune.example.py` anterior este eliminat la cererea utilizatorului pentru a nu fi publicat accidental; nu se creează alt exemplu. Sunt necesare setările și restartul Python.
+
+| Etapă | Fișiere (relative la grupul indicat) |
+|---|---|
+| Editor/stoc/numerotare | PYTHON/static/js/vercon/: docs.js, storno-editor.js, receipt-context.js; PYTHON/static/css/: vercon.css, vercon-storno.css; PYTHON/routes/vercon/: documents.py, storno_stock.py, doc_routes.py, receipt_context.py, receipt_number.py, receipt_rules.py |
+| Fără duplicate/cache inițial/Listare | PYTHON/static/js/vercon/: app.js, docs.js, storno-editor.js, receipt-context.js, statement-cache.js; PYTHON/routes/vercon/documents.py |
+| Cache configurabil | PYTHON/routes/vercon/: receipt_context.py, doc_routes.py; PYTHON/static/js/vercon/: docs.js, receipt-context.js, statement-cache.js; PYTHON/config_sesiune.example.py eliminat |
+| Fără reconciliere FCS | PYTHON/static/js/vercon/docs.js |
+
+Jurnalul general este evidența comună. Macheta raportului FCS și semnul afișării rămân în [VC08-03](SLICE-VC08-03-rapoarte-magazie-alimente.md#macheta-comună-fcs-apoi-semnul-de-afișare).

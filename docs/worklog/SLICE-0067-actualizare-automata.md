@@ -1,7 +1,14 @@
-# SLICE-0067 — Actualizarea automată a aplicației (server Flask + `push-update.ps1` + `KBot.Updater`)
+# SLICE-0067 / 01 — Istoricul actualizării și instalatorului
 
-**Data:** 18.09.2026
-**Cerere (operator):**
+Reunire documentară D001-25. Sistemul inițial din 18.09.2026 și instalatorul din 20.09.2026 păstrează hotărârile și probele lor. A doua trecere din 01 adaugă scrierea DisplayVersion și UAC pentru registru, înlocuind limita inițială că updaterul lasă registrul în urmă. Notele de versiune rămân în documentul distinct [0067-02](../release-notes/README.md#slice-0067-02). Acestea sunt repere istorice, fără publicare sau execuție nouă.
+
+[0067-actualizare](#slice-0067-baza) · [0067-01](#slice-0067-01)
+
+<a id="slice-0067-baza"></a>
+
+## SLICE-0067 — Actualizarea automată a aplicației (server Flask + `push-update.ps1` + `KBot.Updater`)
+
+**Data:** 18.09.2026 **Cerere (operator):**
 
 > i need a system to update the app whenever i make changes. this will be a new slice. we can use
 > the python server for the updates. i also need a ps which i will run when i consider a viable
@@ -14,7 +21,7 @@
 
 Numărul feliei: 0067 = «Next free» din STATUS.
 
-## 0. Hotărârile operatorului (întrebate, nu presupuse)
+### 0. Hotărârile operatorului (întrebate, nu presupuse)
 
 Toate cele de mai jos sunt răspunsuri date la întrebări explicite în 18.09.2026:
 
@@ -37,13 +44,11 @@ Toate cele de mai jos sunt răspunsuri date la întrebări explicite în 18.09.2
 | Folderul pe server | **`/root/AVACONT/updates`** = implicitul din cod (`config.UPDATE_DIR` îl poate muta) |
 | Protecția rutelor | **GET public, fără autentificare** — clientul n-are niciun secret înainte de login (`ApiOptions`: doar bearer), iar pachetul e chiar instalatorul |
 
-Un fapt care a schimbat o hotărâre pe drum: `ApiOptions.vb` spune că **nu mai există nicio cheie
-API client-side** (memoria despre `KBOT_API_KEY` era din designul vechi). De aici întrebarea
-despre protecția rutelor.
+Un fapt care a schimbat o hotărâre pe drum: `ApiOptions.vb` spune că **nu mai există nicio cheie API client-side** (memoria despre `KBOT_API_KEY` era din designul vechi). De aici întrebarea despre protecția rutelor.
 
-## 1. Ce s-a făcut și de ce
+### 1. Ce s-a făcut și de ce
 
-### 1.1 Server — `PYTHON/routes/update.py` (nou), înregistrat în `main.py`
+#### 1.1 Server — `PYTHON/routes/update.py` (nou), înregistrat în `main.py`
 
 Două rute **publice**:
 
@@ -55,11 +60,9 @@ Două rute **publice**:
   (Range merge), antete `X-KBot-Version` / `X-KBot-Sha256`; **500** `PACKAGE_MISSING` dacă
   `latest.json` arată spre un fișier absent.
 
-`UPDATE_DIR` = `getattr(config, "UPDATE_DIR", <PYTHON>/updates)`. `config.py` e doar pe server
-(nu se împinge), de aceea implicitul stă în cod. Fără cache: fișierul e mic și se recitește la
-fiecare cerere, deci un push se vede **fără restart**.
+`UPDATE_DIR` = `getattr(config, "UPDATE_DIR", <PYTHON>/updates)`. `config.py` e doar pe server (nu se împinge), de aceea implicitul stă în cod. Fără cache: fișierul e mic și se recitește la fiecare cerere, deci un push se vede **fără restart**.
 
-### 1.2 `push-update.ps1` (nou, la rădăcina soluției)
+#### 1.2 `push-update.ps1` (nou, la rădăcina soluției)
 
 `.\push-update.ps1 [-Mandatory] [-Notes "..."] [-SkipBuild] [-Force] [-SignThumbprint ...]`
 
@@ -78,11 +81,9 @@ fiecare cerere, deci un push se vede **fără restart**.
    versiune al cărei fișier nu e întreg.
 6. Verifică prin API că serverul răspunde cu versiunea și suma împinse.
 
-### 1.3 `KBot.Updater` (proiect nou în `src\`, în `KBot.sln`)
+#### 1.3 `KBot.Updater` (proiect nou în `src\`, în `KBot.sln`)
 
-WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât timp `C:\KBOT` se
-suprascrie). Publicat **single-file** de `publish-release.ps1` (pas nou 4c2) și pus lângă
-`KBot.App.exe`; semnat (a cincea confirmare SimplySign). Instalatorul Inno îl ia cu `*`.
+WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât timp `C:\KBOT` se suprascrie). Publicat **single-file** de `publish-release.ps1` (pas nou 4c2) și pus lângă `KBot.App.exe`; semnat (a cincea confirmare SimplySign). Instalatorul Inno îl ia cu `*`.
 
 - `UpdaterArgs` — linia de comandă (`--zip --target --wait --restart --sha256 --version
   --elevated`), validată; `ToArgumentList` pentru relansarea cu drepturi.
@@ -100,23 +101,15 @@ suprascrie). Publicat **single-file** de `publish-release.ps1` (pas nou 4c2) și
   `%TEMP%\KBot\updater.log`.
 - `app.manifest` — `asInvoker` (UAC doar unde chiar trebuie).
 
-### 1.4 `KBot.Domain\Update\` — `UpdateInfo`, `UpdateDecision`, `UpdatePolicy`
+#### 1.4 `KBot.Domain\Update\` — `UpdateInfo`, `UpdateDecision`, `UpdatePolicy`
 
-`UpdatePolicy.Decide(current, latest, minimum)` e **singura** comparație, pură: sub `minimum` →
-`Required`; sub `latest` → `Available`; altfel `UpToDate`. `Normalize` umple la patru părți —
-`System.Version` pune -1 pe partea lipsă, deci fără ea `"1.0.30" < "1.0.30.0"` și clientul ar fi
-fost trimis să instaleze exact versiunea pe care o are. Versiune care nu se parsează = excepție,
-nu «la zi».
+`UpdatePolicy.Decide(current, latest, minimum)` e **singura** comparație, pură: sub `minimum` → `Required`; sub `latest` → `Available`; altfel `UpToDate`. `Normalize` umple la patru părți — `System.Version` pune -1 pe partea lipsă, deci fără ea `"1.0.30" < "1.0.30.0"` și clientul ar fi fost trimis să instaleze exact versiunea pe care o are. Versiune care nu se parsează = excepție, nu «la zi».
 
-### 1.5 `KBot.Api` — `IUpdateApi` / `UpdateApi`
+#### 1.5 `KBot.Api` — `IUpdateApi` / `UpdateApi`
 
-`GetLatestAsync` (404 → `Nothing`, nu excepție; 200 cu chei lipsă → `LATEST_INVALID`) și
-`DownloadAsync(cale, shaAșteptat, progres, ct)`: **streaming** pe disc (nu se bufferizează 40 MB),
-SHA-256 calculat pe aceeași trecere, la nepotrivire fișierul se **șterge** și iese
-`ApiException(SHA_MISMATCH)` — un pachet corupt nu ajunge niciodată la updater. Niciun antet
-`Authorization` pe niciunul din apeluri.
+`GetLatestAsync` (404 → `Nothing`, nu excepție; 200 cu chei lipsă → `LATEST_INVALID`) și `DownloadAsync(cale, shaAșteptat, progres, ct)`: **streaming** pe disc (nu se bufferizează 40 MB), SHA-256 calculat pe aceeași trecere, la nepotrivire fișierul se **șterge** și iese `ApiException(SHA_MISMATCH)` — un pachet corupt nu ajunge niciodată la updater. Niciun antet `Authorization` pe niciunul din apeluri.
 
-### 1.6 `KBot.App\Update\` — `AppUpdateService`, `UpdateProgressForm`
+#### 1.6 `KBot.App\Update\` — `AppUpdateService`, `UpdateProgressForm`
 
 - `AppUpdateService.CurrentVersion` = `AssemblyFileVersion` al lui `KBot.App` (normalizat).
 - `CheckAsync` → decizie + info. `RunStartupCheck()` (sincron, înainte de bucla de mesaje):
@@ -137,46 +130,23 @@ SHA-256 calculat pe aceeași trecere, la nepotrivire fișierul se **șterge** ș
 - `Program.vb`: DI (`IUpdateApi`, `AppUpdateService`) + în ramura `#Else` (Release):
   `If ...RunStartupCheck() Then Return` **înaintea** lui `RunShellWithLogin`. Debug nu verifică.
 
-### 1.7 Ce s-a lăsat deliberat pentru DUPĂ acceptare (cererea operatorului)
+#### 1.7 Ce s-a lăsat deliberat pentru DUPĂ acceptare (cererea operatorului)
 
-**`KbotForm` și `LoginForm` nu s-au atins.** Butoanele «Caută actualizări» (în amândouă) se
-adaugă după ce operatorul acceptă restul; drumul e gata:
-`Await provider.GetRequiredService(Of AppUpdateService)().RunManualCheckAsync(Me)` → dacă
-întoarce `True`, formularul se închide (`Close()` pe shell; `DialogResult.Cancel` + `Close()` pe
-login).
+**`KbotForm` și `LoginForm` nu s-au atins.** Butoanele «Caută actualizări» (în amândouă) se adaugă după ce operatorul acceptă restul; drumul e gata: `Await provider.GetRequiredService(Of AppUpdateService)().RunManualCheckAsync(Me)` → dacă întoarce `True`, formularul se închide (`Close()` pe shell; `DialogResult.Cancel` + `Close()` pe login).
 
-## 2. Fișiere atinse
+### 2. Fișiere atinse
 
-**Noi:** `PYTHON/routes/update.py`, `PYTHON/tests/test_update_routes.py`, `push-update.ps1`,
-`src/KBot.Updater/{KBot.Updater.vbproj, app.manifest, Program.vb, UpdaterArgs.vb,
-UpdateApplier.vb, UpdaterLog.vb, UpdaterForm.vb, UpdaterForm.Designer.vb}`,
-`src/KBot.Domain/Update/{UpdateInfo.vb, UpdateDecision.vb, UpdatePolicy.vb}`,
-`src/KBot.Api/{IUpdateApi.vb, UpdateApi.vb}`,
-`src/KBot.App/Update/{AppUpdateService.vb, UpdateProgressForm.vb, UpdateProgressForm.Designer.vb}`,
-`tests/KBot.Updater.Tests/{KBot.Updater.Tests.vbproj, UpdaterArgsTests.vb, UpdateApplierTests.vb}`,
-`tests/KBot.Domain.Tests/UpdatePolicyTests.vb`, `tests/KBot.Api.Tests/UpdateApiTests.vb`.
+**Noi:** `PYTHON/routes/update.py`, `PYTHON/tests/test_update_routes.py`, `push-update.ps1`, `src/KBot.Updater/{KBot.Updater.vbproj, app.manifest, Program.vb, UpdaterArgs.vb, UpdateApplier.vb, UpdaterLog.vb, UpdaterForm.vb, UpdaterForm.Designer.vb}`, `src/KBot.Domain/Update/{UpdateInfo.vb, UpdateDecision.vb, UpdatePolicy.vb}`, `src/KBot.Api/{IUpdateApi.vb, UpdateApi.vb}`, `src/KBot.App/Update/{AppUpdateService.vb, UpdateProgressForm.vb, UpdateProgressForm.Designer.vb}`, `tests/KBot.Updater.Tests/{KBot.Updater.Tests.vbproj, UpdaterArgsTests.vb, UpdateApplierTests.vb}`, `tests/KBot.Domain.Tests/UpdatePolicyTests.vb`, `tests/KBot.Api.Tests/UpdateApiTests.vb`.
 
-**Modificate:** `PYTHON/main.py` (import + `register_blueprint(update_bp)`),
-`publish-release.ps1` (pas 4c2 updater single-file, semnare, raport), `src/KBot.App/Program.vb`
-(DI + poarta de pornire pe Release), `KBot.sln` (două proiecte), `.gitignore`
-(`/PYTHON/updates/`), `CLAUDE.md` (comanda + rândul din tabel), `docs/worklog/KBOT_STATUS.md`.
+**Modificate:** `PYTHON/main.py` (import + `register_blueprint(update_bp)`), `publish-release.ps1` (pas 4c2 updater single-file, semnare, raport), `src/KBot.App/Program.vb` (DI + poarta de pornire pe Release), `KBot.sln` (două proiecte), `.gitignore` (`/PYTHON/updates/`), `CLAUDE.md` (comanda + rândul din tabel), `docs/worklog/KBOT_STATUS.md`.
 
-## 3. Rezultatele testelor
+### 3. Rezultatele testelor
 
-**NICIUN TEST N-A FOST RULAT ȘI NICIUN PROIECT DE TESTE N-A FOST CONSTRUIT** (cerere explicită,
-repetată: «NO FUCKING TESTS»). Testele sunt scrise, atât: 16 funcții în Python, una parametrizată cu 10 cazuri (contractul JSON, fiecare
-fel în care `latest.json` poate fi stricat, descărcarea cu antete, Range, zip-slip, seam-ul de
-config), 8 `UpdatePolicyTests`, 9 `UpdateApiTests` (rute, fără `Authorization`, 404 → Nothing,
-SHA greșit = fără fișier), 6 `UpdaterArgsTests`, 14 `UpdateApplierTests` (zip-uri reale în temp:
-folderul de sus, `Logs\`, fișierele în plus păstrate, zip-slip, fișier blocat → reîncercare →
-eșec numit / reușită când se eliberează).
+**NICIUN TEST N-A FOST RULAT ȘI NICIUN PROIECT DE TESTE N-A FOST CONSTRUIT** (cerere explicită, repetată: «NO FUCKING TESTS»). Testele sunt scrise, atât: 16 funcții în Python, una parametrizată cu 10 cazuri (contractul JSON, fiecare fel în care `latest.json` poate fi stricat, descărcarea cu antete, Range, zip-slip, seam-ul de config), 8 `UpdatePolicyTests`, 9 `UpdateApiTests` (rute, fără `Authorization`, 404 → Nothing, SHA greșit = fără fișier), 6 `UpdaterArgsTests`, 14 `UpdateApplierTests` (zip-uri reale în temp: folderul de sus, `Logs\`, fișierele în plus păstrate, zip-slip, fișier blocat → reîncercare → eșec numit / reușită când se eliberează).
 
-**Build:** `src\KBot.Updater` **0 erori, 0 avertismente**; `src\KBot.Api` **0/0**;
-`src\KBot.App` **0 erori, 0 avertismente** (prima încercare a picat DOAR la copierea în `bin\`,
-aplicația rula sub Visual Studio). `dotnet build KBot.sln` NU s-a rulat (soluția conține
-proiectele de teste). Python: verificare de sintaxă (`ast.parse`) pe ambele fișiere; suita nu.
+**Build:** `src\KBot.Updater` **0 erori, 0 avertismente**; `src\KBot.Api` **0/0**; `src\KBot.App` **0 erori, 0 avertismente** (prima încercare a picat DOAR la copierea în `bin\`, aplicația rula sub Visual Studio). `dotnet build KBot.sln` NU s-a rulat (soluția conține proiectele de teste). Python: verificare de sintaxă (`ast.parse`) pe ambele fișiere; suita nu.
 
-## 4. Neverificat / amânat
+### 4. Neverificat / amânat
 
 - **Nimic n-a rulat cap la cap**: niciun push real, nicio descărcare, niciun updater pornit,
   nimic pe ecran (nici `UpdateProgressForm`, nici `UpdaterForm` — nici măcar `DrawToBitmap`).
@@ -199,3 +169,122 @@ proiectele de teste). Python: verificare de sintaxă (`ast.parse`) pe ambele fi�
   foarte lentă 40 MB pot depăși 100 s — de mărit dacă se vede pe teren.
 - Memoriile `kbot-versioning-manifest` / `kbot-setup-sfx` vorbesc de `KBOT_API_KEY` care nu mai
   există în client — de corectat la o trecere de consolidare.
+
+---
+
+<a id="slice-0067-01"></a>
+
+## SLICE 0067-01 — Instalatorul Inno: detectează versiunea instalată, permite doar actualizări, actualizează cu regulile sistemului de actualizare
+
+**Data:** 20.09.2026 **Cererea operatorului:** «the inno installer must detect if a version of kbot is already installed and if so, only allow upgrades. if the version being installed is older than what's on the pc, it shouldn't allow the install. also, when upgrading, use logic from the update system (`src\KBot.App\Update\`)»
+
+### Presupuneri declarate
+
+- **Numărul feliei: 0067-01** — instalatorul Inno n-are rând propriu în STATUS (a intrat cu
+  commit-ul `a15cc7c`, fără felie); cererea e o a doua trecere peste sistemul de actualizare (0067),
+  al cărui contract îl copiază. «Next free» rămâne 0073.
+- **Aceeași versiune ≠ actualizare.** Cererea spune «only allow upgrades»; interactiv, operatorul
+  e totuși ÎNTREBAT dacă rescrie aceeași versiune (o reparație e un lucru legitim, iar un instalator
+  refăcut fără bump ar fi altfel de neinstalat); în mod silențios (`/SILENT`, `/VERYSILENT`)
+  regula strictă se aplică și aceeași versiune e refuzată.
+- **Versiunea care contează e `FileVersion` din `KBot.App.exe` instalat**, nu `DisplayVersion`
+  din registru: `KBot.Updater` rescrie fișierele fără să atingă «Programe și caracteristici», deci
+  registrul rămâne în urmă după prima actualizare automată. Registrul e doar rezervă, pentru un
+  folder înregistrat al cărui exe a dispărut.
+- **Versiune instalată care nu se poate citi** (exe fără resursă de versiune ȘI registru gol) =
+  «nu e instalat» → instalare proaspătă peste folder. Un build real K-BOT poartă întotdeauna
+  `FileVersion`, deci cazul e teoretic; se scrie în jurnalul Setup-ului.
+
+### Ce s-a schimbat și de ce
+
+Un singur fișier: `tools\KBotInstaller\KBot.iss`.
+
+#### 1. Detectarea instalării existente (`DetectInstalled`)
+
+Ordinea: (a) exe-ul din folderul înregistrat (`InstallLocation` din cheia de dezinstalare `HKLM\…\Uninstall\{AppId}_is1`, vederea pe 64 de biți, apoi pe 32); (b) exe-ul din `C:\KBOT` (instalările de dinaintea instalatorului Inno — SFX-ul — n-au cheie în registru; **exact cazul acestui PC**: nicio cheie, `C:\KBOT\KBot.App.exe` = 1.0.19.0); (c) `DisplayVersion` din registru. Sursa («exe» / «registry») se scrie în jurnalul Setup-ului.
+
+#### 2. Compararea — oglinda lui `UpdatePolicy`
+
+`TryParseVersion` taie «a.b.c.d» în cel mult patru părți numerice și **umple lipsurile cu 0** (`UpdatePolicy.Normalize`: altfel «1.0.31» < «1.0.31.0»), apoi `PackVersionComponents` + `ComparePackedVersion` (Inno 6.1+; scriptul cere 6.5+). Pachetul mai vechi → **refuzat** (`InitializeSetup` întoarce False, caseta spune versiunile și folderul; drumul spre versiunea veche = dezinstalare din «Programe și caracteristici», spus pe nume). Egal → întrebare (implicit «Nu»). Mai nou → actualizare. `AppVersion` care nu se parsează = `RaiseException` (defect de build, nu de operator).
+
+#### 3. Actualizarea cu regulile lui `UpdateApplier`
+
+| Regula updater-ului | În instalator |
+|---|---|
+| `Logs\` nu se atinge niciodată (`PreservedFolders`) | `Excludes: "\Logs\*"` pe `[Files]`; folderul vine gol din `[Dirs]` (`_keep.txt` din staging nu se mai copiază) |
+| Se scriu doar fișierele din pachet; nimic din folder nu se șterge (`Asociere\`, `WorkflowResults\`, `Extrase\`, `kbot_paths.json` supraviețuiesc) | comportamentul implicit Inno (fără `[InstallDelete]`), acum scris în comentariu ca regulă; `[UninstallDelete]` pentru `Logs\` rămâne — e dezinstalare, nu actualizare |
+| Ținta e folderul aplicației, fără întrebare | `DisableDirPage=auto` (pagina de folder doar la prima instalare) + `DirEdit` fixat pe folderul găsit în `InitializeWizard` (acoperă și cazul fără registru) |
+| Așteaptă închiderea aplicației | `CloseApplications=yes` (era deja) |
+| Textul ofertei spune ce urmează | `WelcomeLabel2` rescris la actualizare: versiunea instalată → cea nouă, «se înlocuiesc doar fișierele din pachet, jurnalele (Logs\) și datele locale rămân neatinse, nimic nu se șterge» |
+
+`AppId` a devenit `#define MyAppId` ca `[Code]` să citească aceeași cheie de dezinstalare pe care o scrie `[Setup]`; `DefaultDirName` la fel (`MyDefaultDir`).
+
+**Capcană ISPP găsită la compilare:** o linie de cod Pascal care ÎNCEPE cu `#13#10` e citită de preprocesor ca directivă («Unknown preprocessor directive»); `#13#10` stă mereu în continuarea unei linii.
+
+#### 4. A doua trecere (aceeași zi): updater-ul scrie și `DisplayVersion`
+
+Cererea: «make the updater write DisplayVersion too». `src\KBot.Updater\InstallRegistry.vb` (nou):
+
+- **Găsește intrarea** `HKLM\…\Uninstall\{AppId}_is1` (vederea pe 64, apoi pe 32) și o atinge
+  DOAR dacă `InstallLocation` e chiar folderul actualizat (`SameFolder`: fără majuscule, fără
+  bara finală) — o a doua copie a aplicației, pusă cu mâna în alt folder, nu rescrie versiunea
+  instalării înregistrate.
+- **Scrie** `DisplayVersion`, `VersionMajor`/`VersionMinor` (DWORD, ca Inno) și sufixul de
+  versiune din `DisplayName` («K-BOT 1.0.30.0» → «K-BOT 1.0.31.0»; un nume care nu se termină cu
+  versiunea veche rămâne neatins — nu se ghicește niciun nume).
+- **Versiunea scrisă = `FileVersion` din `KBot.App.exe` proaspăt aplicat** (același număr pe
+  care îl compară instalatorul), cu `--version` doar ca rezervă.
+- **Drepturi.** HKLM cere administrator. `UpdaterForm` pasul 3 cere acum relansarea prin UAC și
+  când doar intrarea din registru nu e scriibilă (`InstallRegistry.NeedsElevation`). Diferența
+  față de folderul nescriibil: dacă operatorul REFUZĂ promptul și folderul e scriibil,
+  fișierele se actualizează oricum și doar intrarea rămâne în urmă (jurnal). Iar o eroare la
+  scrierea în registru după ce fișierele au fost aplicate **nu e fatală** — fișierele SUNT
+  actualizate, o casetă de eroare ar minți.
+- Consecință de spus: pe un PC obișnuit (utilizator cu UAC), **fiecare actualizare automată va
+  cere o dată confirmarea UAC** dacă aplicația a fost instalată prin Setup. Fără cheie în
+  registru (SFX-ul vechi, copie de mână) nu se cere nimic.
+- `KBot.Updater` `FileVersion` 1.0.0.0 → **1.0.1.0**. Capcana VB de umbrire: parametrul
+  `version` a ascuns `System.Version` (`Version.TryParse` → BC30456); redenumit `newVersion`.
+
+### Fișiere atinse
+
+- `tools/KBotInstaller/KBot.iss` — antet, `MyAppId`/`MyDefaultDir`, `DisableDirPage=auto`,
+  `[Dirs]`, `Excludes`, secțiunea `[Code]` (`TryParseVersion`, `ExeVersionIn`, `ReadRegString`,
+  `DetectInstalled`, `CheckInstalledVersion`, `InitializeSetup` rescris, `InitializeWizard` nou).
+- `src/KBot.Updater/InstallRegistry.vb` (nou), `src/KBot.Updater/UpdaterForm.vb` (pașii 3 și
+  4b), `src/KBot.Updater/KBot.Updater.vbproj` (FileVersion 1.0.1.0).
+- `tests/KBot.Updater.Tests/InstallRegistryTests.vb` (nou; doar părțile pure — HKLM nu se atinge
+  din teste).
+- `docs/worklog/SLICE-0067-01-instalator-doar-actualizari.md` (acesta), `docs/worklog/KBOT_STATUS.md`.
+
+### Rezultatele testelor
+
+- **Compilare ISCC (Inno Setup 6.7.1) reușită** pe un folder de staging fictiv (3 fișiere +
+  `Logs\_keep.txt`), `/DAppVersion=1.0.31.0`: zero erori; lista de compresie confirmă că
+  `Logs\_keep.txt` NU intră în pachet. Exe-ul rezultat s-a șters cu folderul temporar.
+- `dotnet build src\KBot.Updater -c Release`: **0 erori, 0 avertismente**.
+- Testele scrise, **nerulate**; proiectul de teste neconstruit.
+- `publish-release.ps1` NErulat (nu s-a construit niciun pachet real).
+- Niciun Setup și niciun updater **nu s-a rulat** pe acest PC (ar fi scris în `C:\KBOT` / HKLM).
+
+### Neverificat / amânat
+
+- **Nimic văzut pe ecran**: nici refuzul de downgrade, nici întrebarea de reinstalare, nici textul
+  de bun venit al actualizării, nici sărirea paginii de folder. Primul pachet real de verificat:
+  (1) instalare peste `C:\KBOT` 1.0.19.0 fără registru → trebuie să spună «1.0.19.0 → 1.0.31.0»,
+  CU pagina de folder (fără cheie în registru `auto` o arată, preumplută cu `C:\KBOT`); (2) apoi
+  un Setup mai vechi peste → refuz, iar de data asta fără pagina de folder (cheia există);
+  (3) același → întrebare.
+- **Scrierea în registru a updater-ului e nevăzută**: nici promptul UAC pentru intrare, nici
+  refuzul lui (fișiere da, intrare nu), nici valorile în «Programe și caracteristici». De citit
+  `Logs\updater.log` la prima actualizare reală («registry: DisplayVersion … -> …»). Instalările
+  cu updater-ul 1.0.0.0 rămân cu registrul vechi până la prima actualizare cu 1.0.1.0 (care îl
+  corectează, fiindcă scrie versiunea de pe disc, nu diferența).
+- **`SuppressibleMsgBox` în mod silențios** întoarce implicitul: downgrade = refuz (bine), aceeași
+  versiune = refuz (regula strictă). Nevăzut.
+- Componenta `migrare` deselectată la actualizare NU șterge `Migrare\` vechi (regula «nimic nu se
+  șterge»); nu se semnalează operatorului.
+
+## Reper de predare din registru
+
+Focusul consemna «nimic comis» pentru implementarea inițială și «comis» pentru 01; sunt stări la reperul lor, nu afirmații despre indexul Git de astăzi. Butoanele din KbotForm/LoginForm erau amânate până la acceptarea operatorului, iar primul push/restart rămânea de făcut.

@@ -1,11 +1,13 @@
 # PLAN — Tree data API (`qFX_MAIN_TREE`) — Slice 0008
 
 > **STATUS: IMPLEMENTED (2026-07-15).** See `SLICE-0008-tree-data-api.md` for what was
-> actually built, and for the two points where this plan was **wrong** and got corrected
-> (the "query 1 `WHERE`" instruction, and gating via `.Visible`). This file is kept as the
+> actually built, and for the points where this plan was **wrong** and got corrected
+> (query provenance, avoiding a join to FX_DDF, and gating via SetItemEnabled rather than Visible). This file is kept as the
 > contract of record; where it and the worklog disagree, **the worklog wins**.
 >
-> This plan supersedes `docs/HANDOFF_TreeDataApi.md`. It was written in chat and had no
+> This plan supersedes the earlier TreeDataApi handoff, retired in D001-03. Its adopted
+> decisions and the distinction between the three similarly named queries are retained in
+> [SLICE-0008](SLICE-0008-tree-data-api.md). This plan was written in chat and had no
 > on-disk copy until slice 0008 saved it here — the same losing-the-doc problem the
 > "Definition of done" section below warns about.
 

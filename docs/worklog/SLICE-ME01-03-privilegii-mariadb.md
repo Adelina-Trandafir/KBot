@@ -90,3 +90,5 @@ Documentație primară consultată pentru design:
 Separarea helperelor și comenzilor de conturi din `admin_cli.py` păstrează
 modulele sub limita de aproximativ 1000 de linii. DTO-urile existente acceptă
 răspunsurile cu metadate suplimentare `sql_privileges`.
+
+Completare de trasabilitate D001-11, preluată din jurnalul general: `RightsForm.Designer.vb` rezervă spațiu pentru explicația rolului Contabil. Explicația accesului SQL și raportarea salvării/rollback-ului incert sunt contractele de mai sus.

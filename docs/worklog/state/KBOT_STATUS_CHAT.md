@@ -1,7 +1,7 @@
 # K-BOT — STATUS, slice CHAT (chatul comun în K-BOT.app)
 
 Chatul comun al aplicațiilor web (VERCON / ADECHIT / site) adus în K-BOT.app: robotul din colțul paginii «Acasă» și balonul cu
-mesaje care iese din el. Felii CHAT-01…07 = partea web, în `PYTHON/docs/worklog`; de la CHAT-08 = K-BOT.app, în `docs/worklog`.
+mesaje care iese din el. CHAT-01…09 web sunt în [proiectul și istoricul web](../../../PYTHON/docs/chat/PROIECT.md#istoricul-livrării-web--jurnale-absorbite-în-d001-04), consolidat în D001-04. CHAT-08/09 desktop sunt intervenții distincte, în `docs/worklog`, identificate prin titlu și platformă; numerele istorice nu sunt schimbate.
 
 ## Registry row
 

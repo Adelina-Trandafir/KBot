@@ -1,167 +1,28 @@
 # PLAN_AutoProvisioning.md — self-service unit database creation (public web page)
 
-**Slice 0075** (see `KBOT_STATUS.md`; the plan was drafted as 0073, which the Recorder slice
-already holds). Worklogs: `docs/worklog/SLICE-0075-0N-*.md`, one per pass.
-Read `CODE_WORKFLOW.md` and `CLAUDE.md` before starting.
+**Slice 0075** (see `KBOT_STATUS.md`; the plan was drafted as 0073, which the Recorder slice already holds). Worklogs: `docs/worklog/SLICE-0075-0N-*.md`, one per pass. Read `CODE_WORKFLOW.md` and `CLAUDE.md` before starting.
 
-Replaces the operator's manual Navicat work: a new unit fills in a public page, the operator
-approves with one click, and the server creates the database, the registry rows, the
-classifications and the MariaDB user.
+Replaces the operator's manual Navicat work: a new unit fills in a public page, the operator approves with one click, and the server creates the database, the registry rows, the classifications and the MariaDB user.
 
-Every fact below is marked **VERIFIED** (seen in the repo) or **UNVERIFIED** (to confirm in
-Step 0). If this plan and the code disagree, the code wins — say so, do not follow the plan
-into a false claim. **§0 (Step 0 findings, 22.09.2026) overrides every later section where
-they differ.**
+Every fact below is marked **VERIFIED** (seen in the repo) or **UNVERIFIED** (to confirm in Step 0). If this plan and the code disagree, the code wins — say so, do not follow the plan into a false claim. **§0 (Step 0 findings, 22.09.2026) overrides every later section where they differ.**
 
 ---
 
 ## 0.0 START HERE — state on 22.09.2026, end of day
 
-**Passes 0075-00 to 0075-05 are done.** *(Updated 23.09.2026.)* The 0075-03 job HAS run on
-the live server (request 1 ▸ `111_TRND`). The operator's approval page, `/operator` (0075-05),
-is written and verified against a stub only — see §7 "BUILT IN 0075-05". The command line
-`python -m scripts.aproba_cerere <id>` stays as the fallback. **Closed by the operator on
-23.09.2026:** the page deployed and working, §9 check 7 passed, and 0075-06 done on the server
-(details not recorded in this plan). Before the first run the operator must apply `sql/0075_03_provizionare.sql` (it
-also drops the template's `_w` columns below) and add `DB_CONFIG_PROVIZIONARE` to `config.py`.
-**The job has never run**: its first run, and the first run of every undo path, is on the
-live server.
+Historical checkpoint, updated 23.09.2026: passes 0075-00…05 were delivered. The provisioning job ran live on request 1 → 111_TRND after two fully unwound failures; the operator subsequently confirmed deployment of /operator, §9 check 7 and 0075-06. Individual rights changes and every possible undo path are not documented as exercised. The command line remains the fallback. The earlier “never run” and “stub only” statements in the stage records precede these confirmations.
 
-### The schema is now readable — `MariaDB_Schema/`
+Implementation history and its limits: [00 — classification columns](worklog/SLICE-0075-00-clasificatii-sursa-scrisa.md), [01 — registration/ANAF/e-mail](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-01), [02 — names/dictionaries/request](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-02), [03 — provisioning and live attempts](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-03), [04 — public page](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-04), [05 — operator approval](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-05). The journals also hold the former handoff details, examples, findings, deployment notes and unresolved questions.
 
-The operator dumped the three live schemas on 22.09.2026, 19:21, from the K-BOT server
-(`89.33.25.34:3306`, MariaDB 10.11.14): `AVACONT_COMUN.sql` (23 tables), `AVACONT_SURSA.sql`
-(44), `000_DEMO.sql` (43).
+Schema reference at this checkpoint: the operator dumped AVACONT_COMUN (23 tables), AVACONT_SURSA (44), 000_DEMO (43), on 22.09.2026 at 19:21 from 89.33.25.34:3306 / MariaDB 10.11.14. MariaDB_Schema is gitignored (.gitignore:507), available only on the operator’s disk; it describes shapes, whereas the old sql/*.sql files explain meanings and can have drifted. The settled shapes and template-only _w scaffolding are recorded in the journals, without reopening the dumps here. Why the template first refused remains unrecorded.
 
-**These files are the truth about shapes. `sql/*.sql` in the repo is not** — those are the
-old hand-written DDLs and they have drifted. Read `MariaDB_Schema/` before assuming any
-column, key or foreign key.
-
-WARNING: **the folder is gitignored** (`.gitignore:507`). It exists on the operator's disk
-only, it will not arrive with a clone, and a new thread must read it from disk rather than
-expect it in git.
-
-**What it settled immediately:**
-
-- `DefaSursaSector` has **`SursaSector` PK, `Sursa`, `Sectorul`, `Denumire`** — so the
-  caption column 0075-02 could not name **is** `Denumire`, and `nomenclatoare.read_sursasector`
-  finds it on its first try. That unknown is closed.
-- **`FX_Inregistrari` exists on the server** — the operator ran `sql/0075_fx_inregistrari.sql`.
-  `AUTO_INCREMENT = 1`, so no request has been filed yet. Shape matches what was written,
-  `CHECK (json_valid(Payload))` included.
-- `DefaClsfE` **has** a primary key on `ClsfE`; `DefaClsfF` has **none** and its `ClsfF` is
-  nullable with a non-unique index. The `GROUP BY` in `nomenclatoare.py` was right for F and
-  is merely harmless for E.
-- `Clasificatii` carries **four** foreign keys into `AVACONT_COMUN` (`DefaArticol`,
-  `DefaClsfF`, `DefaSS`, `DefaTitlu`) plus the local `Clasificatii__Unitati`. **There is no
-  FK on `ClsfE`** — confirming F13. So the fifteen unusable E codes die on `Articol`/`Titlu`,
-  which is exactly what `nomenclatoare.py` joins on. The filter is aimed at the right thing.
-- **`CAI` has no `ix_CAI_IdUnitate`.** `sql/avacont_comun_login.sql` was corrected in 0075-02
-  to show one; the server does not have it. The rest of that correction holds: `IdCai` is the
-  AUTO_INCREMENT PK (now at 96), `IdUnitate` is a plain non-unique column with no index at
-  all — which makes §5.6's `GET_LOCK` before `MAX(IdUnitate)+1` more necessary, not less.
-- **Two different tables are called `Unitati`** and they share no column.
-  `AVACONT_COMUN.Unitati` is `(DC PK, NumeUnitate, CF)` — the login registry.
-  `<unit>.Unitati` is `(IdUnitate PK, Detalii, SursaSector, An, CodProgram, Ascuns, …)` — the
-  local one `Clasificatii.IdUnitate` points at. 0075-03 writes **both**, and they are not the
-  same row in two places.
-
-### Leftover work columns on the template — for 0075-03
-
-`AVACONT_SURSA.Clasificatii` still has **`Sector_w`, `Sursa_w`, `SS_w`**, the work columns
-0075-00's script added. `000_DEMO.Clasificatii` does **not** have them — it is otherwise
-column-for-column identical. So the unit databases came through clean and only the template
-kept the scaffolding.
-
-That matters because §5.6 step 1 builds a new unit database by cloning `AVACONT_SURSA`:
-every unit created from today on would inherit three dead columns no other unit database
-has. Drop them on the template before 0075-03 runs for real:
-
-```sql
-ALTER TABLE `AVACONT_SURSA`.`Clasificatii`
-  DROP COLUMN `Sector_w`, DROP COLUMN `Sursa_w`, DROP COLUMN `SS_w`;
-```
-
-This is also most of the answer to the question 0075-00 left open (why three virtual columns
-had to be dropped by hand): the hand work was on the template, and the seven unit databases
-needed none. Why the template refused is still not captured.
-
-### What is written, and what has never run
-
-`PYTHON/routes/inregistrare/` holds the whole applicant side: the pre-auth store, the ANAF v9
-client, the nomenclator reads, the name algorithm, the request check and the
-`FX_Inregistrari` write. Seven routes. Worklogs:
-`SLICE-0075-01-inregistrare-preauth-anaf-cod.md`, `SLICE-0075-02-nomenclatoare-nume-cerere.md`.
-
-**Nothing has been started.** No route has been called, on any server. The only real contact
-with the live system so far is the operator's own work: the 0075-00 migration, running
-`sql/0075_fx_inregistrari.sql`, one `curl` to ANAF and these schema dumps.
-
-Decisions from 0075-01 and 0075-02 that override the sections below:
-
-- **The token is minted by `/anaf`, not by `/cod`.** §4 and §5.1 contradicted each other;
-  the operator settled it. The note carries `cf` and `anaf` from step 1, because
-  `FX_Inregistrari.DenumireAnaf` must be the server's own copy — the applicant is allowed
-  to edit `Denumire`, and §7's approval page compares the two.
-- **ANAF v9 has no `cod` field.** Verified against a real answer: two top-level keys,
-  `found` and `notFound`. The Access check `cod <> "200"` does not port; "not found" is
-  `found` empty. The `<html>` check does port, unchanged.
-- **The service account can read `mysql.user`** on the K-BOT server (checked on the
-  machine: 10 accounts). §5.3's e-mail check works as written.
-- **The free-number check compares the NUMBER, not the whole name** — see §5.4.
-- **`cerere.MAX_ROWS = 50 000`** is a ceiling the plan does not ask for. Added deliberately:
-  without it, all the leaves of both trees times all fourteen sources is 531 × 686 × 14, five
-  million rows queued from an anonymous form. One constant, move it if it is wrong.
-- **No pytest files**, by operator decision. §8 no longer asks for them. The cost is
-  stated in the worklog: these passes have zero automated coverage, and it will be felt most
-  in 0075-03, where the compensation chain is the only thing between a half-failed run and a
-  half-built unit.
-
-**Still to add to `config.py` on the VPS** (all have working defaults, or their absence is
-reported rather than fatal, so the server starts without them):
-`ANAF_TVA_URL = "https://webservicesp.anaf.ro/api/PlatitorTvaRest/v9/tva"` (CONFIRMED by the
-operator, 22.09.2026 — v9 on this path shape, not the v6-style
-`/PlatitorTvaRest/api/v6/ws/tva` Access uses), `ANAF_TIMEOUT = 15`, `OPERATOR_EMAIL`.
-Until `OPERATOR_EMAIL` is set, every request is recorded but nobody is told (the answer says
-so: `operator_anuntat: false`).
-
-### What 0075-04 has to work with
-
-- nginx needs no change: a single `location /` proxies everything to gunicorn on
-  `127.0.0.1:5009` (F9 closed).
-- The JS components are complete in `JS_COMPONENTS/` — including the four pieces F2 first
-  reported missing (`listener-tracker/`, `utils/z-max.js`, `utils/css.js`,
-  `css/treeview/*` + `css/combobox.css`). They import **two levels up**
-  (`../../listener-tracker/…`), so the layout must be `static/js/components/<name>/` with the
-  shared folders at `static/js/` (D1: use them as they are, do not edit their imports).
-  **Done in 0075-04**: copied to `PYTHON/static/js/` in exactly that layout. That copy is what
-  the page loads; `JS_COMPONENTS/` stays the original and out of the commit.
-- The tree has **no checkbox mode** — D21 adds an opt-in one (`checkable: true`, tri-state,
-  result = checked leaves). SectorSursa is a plain checkbox list, not a tree.
-- The seven routes the page talks to are all written and documented in
-  `PYTHON/routes/inregistrare/README.md`, reason codes included.
-
----
-
-**Pass 0075-00 is applied.** `Clasificatii.Sector`, `Sursa` and `SS` are written columns on
-the K-BOT server, the six other generated columns are untouched, and the updated writers
-(`routes/clasificatii_ss.py`, `clasificatii.py`, `nomenclatoare.py`) are on the VPS with
-gunicorn restarted. Run by the operator; the developer has no server access. The schema dumps
-confirm all of it. Two things the run left behind: the `_w` work columns on the template (see
-above), and no record of why the template refused the first attempt. Everything else about
-`scripts/clasificatii_sursa.py` (backup, snapshot, verification against it) is unexercised on
-a table with rows, since the template is empty.
-
-**Not started, and separate: 0075-06** (§13) — the rights of the accounts that already exist.
-The grants were read on 22.09.2026 and are less bad than first reported; see §13. It does not
-block any other pass.
+Before the first live run, the prerequisites were sql/0075_03_provizionare.sql and DB_CONFIG_PROVIZIONARE; config also needed ANAF_TVA_URL, ANAF_TIMEOUT and OPERATOR_EMAIL (defaults or nonfatal absence). URL v9 in §5.2 was confirmed by the operator on 22.09.2026. The table below keeps initial findings; later decisions D24–D29 and the linked stages override superseded role, tree, source-pair and execution descriptions.
 
 ---
 
 ## 0. Step 0 findings (22.09.2026) — read before anything else
 
-Everything here was read from files in the repo or from the live server output the operator
-pasted. Decisions D20–D23 were taken by the operator the same day.
+Everything here was read from files in the repo or from the live server output the operator pasted. Decisions D20–D23 were taken by the operator the same day.
 
 | # | Finding | Consequence |
 |---|---|---|
@@ -181,8 +42,7 @@ pasted. Decisions D20–D23 were taken by the operator the same day.
 | F12 | `mailer.py` has one hard-coded message (`send_password_code`) | New `send_*` functions in the same file for the registration mails |
 | F13 | Migrator: `ClasificatieDerived` replicates the nine generated columns; `TableMaps` notes «Nine target columns are GENERATED»; `Verifier` gates five dictionaries (incl. `DefaClsfE`, which has no FK on the server — harmless) | §12 applies as written |
 
-Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one legacy
-`_Contabil` account (step 7 of §5.6), the nginx `server` block, and the four missing JS pieces.
+Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one legacy `_Contabil` account (step 7 of §5.6), the nginx `server` block, and the four missing JS pieces.
 
 ---
 
@@ -300,11 +160,9 @@ Still to obtain from the operator: `SHOW GRANTS` for one e-mail account and one 
 
 ## 4. The page — `https://kbot.avatarsoft.ro/inregistrare` (wizard, Romanian UI)
 
-One HTML page + one JS module, served as static files by Flask, using the vendored tree
-(checkbox mode, D21) and combobox in `PYTHON/static/js/`. No external CDN.
+One HTML page + one JS module, served as static files by Flask, using the vendored tree (checkbox mode, D21) and combobox in `PYTHON/static/js/`. No external CDN.
 
-Six screens, as built in 0075-04 — the operator moved **Denumire** onto screen 1 and turned
-**SectorSursa** into two comboboxes on 22.09.2026, after the first version was on screen:
+Six screens, as built in 0075-04 — the operator moved **Denumire** onto screen 1 and turned **SectorSursa** into two comboboxes on 22.09.2026, after the first version was on screen:
 
 | Step | Screen | Server call |
 |---|---|---|
@@ -315,12 +173,7 @@ Six screens, as built in 0075-04 — the operator moved **Denumire** onto screen
 | 5 | **An** (combobox: current year, current-1) + summary → «Trimite cererea» | `POST /api/inregistrare/cerere` |
 | 6 | «Cererea a fost trimisă. Veți primi un e-mail după aprobare.» | — |
 
-Steps 2–5 are only reachable with the registration token, which **step 1 hands out** on a
-successful ANAF lookup; every call after it carries the token in the `X-Registration-Token`
-header. *(This line used to say "from step 2" and contradicted §5.1, whose note holds `cf` and
-`anaf` — step-1 data. Settled by the operator, 22.09.2026, and implemented in 0075-01: the
-server must own the ANAF name, because the applicant may edit `Denumire` and §7 shows the two
-side by side.)*
+Steps 2–5 are only reachable with the registration token, which **step 1 hands out** on a successful ANAF lookup; every call after it carries the token in the `X-Registration-Token` header. *(This line used to say "from step 2" and contradicted §5.1, whose note holds `cf` and `anaf` — step-1 data. Settled by the operator, 22.09.2026, and implemented in 0075-01: the server must own the ANAF name, because the applicant may edit `Denumire` and §7 shows the two side by side.)*
 
 ### 4.1 Tree building (client side, from the flat list)
 
@@ -332,37 +185,19 @@ side by side.)*
   no `xxyy00` row exists (it then shows its two digits alone)
 - a level-1 group with no name at all is dropped with everything under it (D14, second half)
 
-Group names come from the rows above or, for ClsfE, from `DefaTitlu` / `DefaArticol` (`grupuri`
-in the `/clasificatii` answer): the ClsfE query's join on `DefaArticol` drops every `xx0000` row,
-because `xx.00` is not an article — so under the old rules ClsfE had no roots and showed nothing.
+Group names come from the rows above or, for ClsfE, from `DefaTitlu` / `DefaArticol` (`grupuri` in the `/clasificatii` answer): the ClsfE query's join on `DefaArticol` drops every `xx0000` row, because `xx.00` is not an article — so under the old rules ClsfE had no roots and showed nothing.
 
-**ClsfF: only leaves have a checkbox**; a node with children opens and closes. **ClsfE: a title
-(level 1) has no box and only opens; an article with children (level 2) has a tri-state box that
-ticks or clears its whole branch** (tree option `branchChecks`). What is sent = the ticked leaves —
-the same thing `cerere.py` calls selectable.
+**ClsfF: only leaves have a checkbox**; a node with children opens and closes. **ClsfE: a title (level 1) has no box and only opens; an article with children (level 2) has a tri-state box that ticks or clears its whole branch** (tree option `branchChecks`). What is sent = the ticked leaves — the same thing `cerere.py` calls selectable.
 
 ---
 
 ## 5. Server — new blueprint `routes/inregistrare/`
 
-All pre-auth routes: `LIMITER` per IP, parameterized SQL only, reason-coded JSON errors with literal
-diacritics, no swallowed exceptions.
+All pre-auth routes: `LIMITER` per IP, parameterized SQL only, reason-coded JSON errors with literal diacritics, no swallowed exceptions.
 
 ### 5.1 Pre-auth store
 
-Notes on the session store (F5): key = opaque registration token, `name = "register"`, value =
-`{email, cf, code_hash, attempts, verified, anaf}`, TTL 30 min. Memory and Redis behave the same.
-
-BUILT IN 0075-01, `routes/inregistrare/store.py`. Two points the text above leaves out and the
-code had to decide:
-
-- The token is minted by **`/anaf`** — `cf` and `anaf` are step-1 data and this note is where
-  they live. See the correction under §4.
-- The 30 minutes are **absolute**, from the ANAF lookup. Every write puts the note back with
-  what is LEFT, never a fresh half hour, so the window cannot be walked forward by asking for
-  code after code. The field is `expires_at` and it is set once.
-
-The stored value is plain JSON types only, because the Redis backend calls `json.dumps` on it.
+Notes on the session store (F5), name = register, key = the opaque token minted by /anaf (the correction under §4), value = {email, cf, code_hash, attempts, verified, anaf}, plain JSON types for Redis json.dumps. Memory and Redis share the contract. The 30-minute TTL is absolute from the ANAF lookup: expires_at is set once, every write restores only the remaining time. Implementation: [0075-01](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-01), routes/inregistrare/store.py.
 
 ### 5.2 ANAF proxy — `POST /api/inregistrare/anaf {cf}`
 
@@ -382,84 +217,31 @@ The stored value is plain JSON types only, because the Redis backend calls `json
   deja o bază de date. Contactați-ne pentru acces.» Checked here AND again at `/cerere` and at
   approval.
 
-### 5.3 E-mail verification — `/cod`, `/verifica`
+### 5.3 E-mail verification — /cod, /verifica
 
-Same rules as slice 0072 (6 digits, hash only, 10 min, ≤ 5 attempts, `compare_digest`). `/cod`
-also refuses an e-mail that already exists as a MariaDB user (`mysql.user`) or in
-`Unitati_Utilizatori`, with a message that does not reveal more than «adresa nu poate fi folosită».
+The 0072 rules apply: 6 digits, hash only, 10 minutes, ≤ 5 attempts, compare_digest. /cod refuses an address over 80 characters or already present in mysql.user or Unitati_Utilizatori, without revealing which list matched. A new code replaces the previous one; it cannot outlive the registration (expires_in reports the true duration), and changing the address clears verified. Machine reading on 22.09 confirmed the service account could read mysql.user (10 accounts); [0075-01](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-01) retains the proof and limits.
 
-BUILT IN 0075-01. **VERIFIED on the machine, 22.09.2026: the service account can read
-`mysql.user`** on the K-BOT server (10 accounts) — that was the one thing that could have
-forced a different shape. Also settled in the code: a code cannot outlive the registration
-that carries it (`expires_in` reports the true number), a new code replaces the previous one,
-and changing the address sets `verified` back to false — whoever proved the old inbox proved
-nothing about the new one. The address is refused above 80 characters here, on the screen where
-the applicant can still act on it, rather than as a `1406` at `/cerere`.
+### 5.4 DB name — GET /api/inregistrare/nume
 
-### 5.4 DB name — `GET /api/inregistrare/nume`
+SSSS: uppercase letters, diacritics folded through unicodedata NFD (comma-below and cedilla), first four consonants; fewer consonants are filled by vowels AEIOU in name order, fewer than four letters total are refused in Romanian. nn is the lowest free pair in 11..99 with no zero digit, absent from both SCHEMATA and CAI.DbName. The implemented reading compares the number: 1nn is free only when neither list contains a name starting 1nn_, even with different letters. This interpretation was made in 0075-02; it was not an explicit operator decision.
 
-`SSSS`: uppercase, diacritics folded (`Ș→S`, `Ț→T`, `Ă/Â→A`, `Î→I`), letters only, vowels
-`AEIOU` removed, first 4 of what remains. Fewer than 4 consonants (D12) → the missing positions
-are filled with the vowels, in the order they appear in the name. Fewer than 4 letters in total →
-refused with a Romanian message. `nn`: the lowest free pair in `11..99` with no zero digit,
-free meaning absent from both `information_schema.SCHEMATA` and `CAI.DbName`. The name is
-**re-computed at approval time**; the page value is only a preview.
-
-BUILT IN 0075-02, `routes/inregistrare/nume.py`. Two readings the text above leaves open, and
-what the code does:
-
-- **What is compared is the NUMBER, not the whole name.** "Absent from SCHEMATA and CAI"
-  does not say what is looked for there. Every existing row carries a distinct `NNN`, which
-  reads as a unit number rather than a disambiguator, so `1nn` counts as free only when *no*
-  name in either list starts with `1nn_`. Two units sharing `111` with different letters
-  would break that pattern. One line to change if the operator wants the looser rule.
-- **Diacritics are folded through `unicodedata`**, not a table of special cases: NFD splits a
-  letter from its marks and the marks are dropped. That covers comma-below *and* cedilla —
-  which matters, because ANAF sends cedilla — with no accented character in the source.
-
-Checked by direct call: `AVATAR SOFT SRL` ▸ `VTRS`, `LICEUL TEORETIC` ▸ `LCLT`,
-`Direcția de Asistență Socială` ▸ `DRCT`, `MUN. PLOIEŞTI` ▸ `MNPL`, `AEIOU` ▸ `AEIO`
-(no consonants at all), `ANA` ▸ refused. `/nume` says `previzualizare: true` in its own
-answer, so the page cannot mistake it for a promise.
+/nume returns previzualizare: true. The original plan recomputed the final name on approval; 0075-05 subsequently allows the operator to edit it and submits the confirmed name, validated by the same shape/free-number rules (§7). [0075-02](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-02) retains the direct-call examples and interpretation details.
 
 ### 5.5 Request — `POST /api/inregistrare/cerere`
 
-Validates everything again server-side (token verified, SS values exist in `DefaSursaSector`, every
-code exists in `DefaClsfF`/`DefaClsfE` and is a leaf, An in range). Writes one row in a new table
-`AVACONT_COMUN.FX_Inregistrari`:
+Validates everything again server-side (token verified, SS values exist in `DefaSursaSector`, every code exists in `DefaClsfF`/`DefaClsfE` and is a leaf, An in range). Writes one row in a new table `AVACONT_COMUN.FX_Inregistrari`:
 
-`IdCerere` PK AI · `Email` · `CF` · `DenumireAnaf` · `Denumire` · `An` · `Payload` JSON
-(SS list, F leaves, E leaves) · `Stare` (`InAsteptare` / `Aprobata` / `Respinsa` / `Esuata`) ·
-`DbName` (filled at approval) · `Motiv` · `DataCerere` · `DataDecizie` · `Decis` (operator) ·
-`IpAddress`.
+`IdCerere` PK AI · `Email` · `CF` · `DenumireAnaf` · `Denumire` · `An` · `Payload` JSON (SS list, F leaves, E leaves) · `Stare` (`InAsteptare` / `Aprobata` / `Respinsa` / `Esuata`) · `DbName` (filled at approval) · `Motiv` · `DataCerere` · `DataDecizie` · `Decis` (operator) · `IpAddress`.
 
 Then e-mails the operator that a request is waiting (address from `config.py`).
 
-BUILT IN 0075-02, `routes/inregistrare/cerere.py` + `sql/0075_fx_inregistrari.sql`. Four
-things the text above leaves out:
-
-- **"Is a leaf" cannot be answered from the code alone.** `xx0000` is a root and never
-  selectable; `xxyy00` is a level-1 node, selectable only when nothing hangs under it (real
-  data has `650500` and `590100`, level-1 codes nobody subdivided, and they are legitimate
-  rows); anything else is a leaf. So the check needs the whole dictionary, read at submission
-  — which is also what catches a code that has disappeared inside the thirty-minute window.
-- **`FX_Inregistrari` has no foreign keys, deliberately.** A request is correspondence, not a
-  unit: it exists before the database, the `CAI` row and the account do, it may end `Respinsa`
-  pointing at nothing, and a failed run must leave the row behind with its `Motiv` intact
-  rather than be cascaded away with the wreckage.
-- **The operator notice never fails the request.** No `OPERATOR_EMAIL`, or SMTP down, and the
-  row is still written: a warning goes to the log and the answer carries
-  `operator_anuntat: false`. Failing here would invite the applicant to send everything twice.
-- **`cerere.MAX_ROWS = 50 000`** — a ceiling this plan does not ask for. See §0.0.
-
-On success the registration note is discarded, so the same token cannot file a second request
-against an address it already proved.
+Implementation and rationale: [0075-02](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-02), cerere.py and sql/0075_fx_inregistrari.sql. The full dictionaries are read again at submission, including whether xxyy00 is a leaf (650500/590100 are legitimate unsplit cases), so disappeared codes are refused during the 30-minute window. FX_Inregistrari deliberately has no foreign keys: failed/rejected correspondence must survive cleanup of a unit. Missing OPERATOR_EMAIL or SMTP failure keeps the request, logs a warning and returns operator_anuntat: false. MAX_ROWS = 50,000 is an implementation ceiling added beyond the initial plan. Success discards the registration note, preventing a second request on the same proof.
 
 ### 5.6 Approval and provisioning (job + poll, like `schema_sync`)
 
-Runs under a **separate provisioning account** in `config.py` (`CREATE`, `CREATE USER`,
-`GRANT OPTION` — never the normal service account). Every step registers its compensation; any
-failure unwinds in reverse order, sets `Stare = Esuata` + `Motiv`, and reports it.
+The table is the initial plan. The implementation deviations below and [0075-03/05](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-03) govern the confirmed name, ALTER USER, mail failure, and the GRANT procedure introduced after the live failure; §13.1 records its definer dependency.
+
+Runs under a **separate provisioning account** in `config.py` (`CREATE`, `CREATE USER`, `GRANT OPTION` — never the normal service account). Every step registers its compensation; any failure unwinds in reverse order, sets `Stare = Esuata` + `Motiv`, and reports it.
 
 | # | Step | Compensation |
 |---|---|---|
@@ -473,9 +255,7 @@ failure unwinds in reverse order, sets `Stare = Esuata` + `Motiv`, and reports i
 | 7 | `CREATE USER '<email>'@'%' IDENTIFIED VIA mysql_native_password` with a random unusable password; `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON \`<db>\`.*` only (D18) — never the SU rights today's accounts carry (D26, §13); row in `Unitati_Utilizatori (UN, DC, Rol='Contabil')` (D23/D24) | `DROP USER` + delete the row |
 | 8 | E-mail the user a one-time link (24 h) to set the password → `SET PASSWORD` | — |
 
-BUILT IN 0075-03 (`routes/inregistrare/provizionare.py`, `randuri.py`, `parola.py`,
-`scripts/aproba_cerere.py`, `sql/0075_03_provizionare.sql`; worklog
-`SLICE-0075-03-provizionare.md`). Where it differs from the table above:
+BUILT IN 0075-03 (`routes/inregistrare/provizionare.py`, `randuri.py`, `parola.py`, `scripts/aproba_cerere.py`, `sql/0075_03_provizionare.sql`; worklog [0075-03](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-03)). Where it differs from the table above:
 
 - **Step 8 uses `ALTER USER`, not `SET PASSWORD`**, through the provisioning account —
   nobody knows the old (random) password, so the user cannot change their own. The link's
@@ -498,21 +278,15 @@ BUILT IN 0075-03 (`routes/inregistrare/provizionare.py`, `randuri.py`, `parola.p
 
 ### 6.1 Which rows
 
-Every checked F leaf × every checked E leaf × every chosen SS (D5). The count is shown on the
-summary screen before «Trimite cererea», and on the approval page — it can be large
-(e.g. 20 × 40 × 2 = 1 600 rows). Inserted with `executemany` in one transaction.
+Every checked F leaf × every checked E leaf × every chosen SS (D5). The count is shown on the summary screen before «Trimite cererea», and on the approval page — it can be large (e.g. 20 × 40 × 2 = 1 600 rows). Inserted with `executemany` in one transaction.
 
 ### 6.2 `Capitol` (D5)
 
-`Left(ClsfF,2) & "." & Left(SS,2)`, except `SS = "02E"` → `Left(ClsfF,2) & ".10"`. After §11
-`Sursa` is written explicitly (`Right(SS,1)`), so any of the 14 SS values round-trips.
+`Left(ClsfF,2) & "." & Left(SS,2)`, except `SS = "02E"` → `Left(ClsfF,2) & ".10"`. After §11 `Sursa` is written explicitly (`Right(SS,1)`), so any of the 14 SS values round-trips.
 
 ### 6.3 `Subcapitol`, `Articol`, `Alineat`, `Denumire`
 
-Split per §2a. Before the INSERT, every derived row is checked in memory against
-`DefaArticol`, `DefaClsfF`, `DefaTitlu`, `DefaSursaSector` (the same gate as the Migrator's
-`Verifier.CheckDictionary`), so a mismatch fails with a Romanian message, not a raw `1452`.
-`Denumire` = `DefaClsfE.Denumire`, trimmed, cut to 255. `IdClsfAcc` = 0.
+Split per §2a. Before the INSERT, every derived row is checked in memory against `DefaArticol`, `DefaClsfF`, `DefaTitlu`, `DefaSursaSector` (the same gate as the Migrator's `Verifier.CheckDictionary`), so a mismatch fails with a Romanian message, not a raw `1452`. `Denumire` = `DefaClsfE.Denumire`, trimmed, cut to 255. `IdClsfAcc` = 0.
 
 ---
 
@@ -528,18 +302,9 @@ An operator page (D10), behind operator login, on the same site:
 - «Respinge» → reason required, e-mailed to the requester.
 - A failed job (`Esuata`) shows `Motiv` and can be retried after the cause is fixed.
 
-~~UNVERIFIED: how operator login is gated~~ — DECIDED by the operator, 23.09.2026: the K-BOT
-password (a MariaDB login as the operator, like `LoginForm`), then a six-digit code mailed to
-the same address, and the address must be in `OPERATORI` in `config.py`. The session is a
-`STORE` note with its own header (`X-Operator-Token`), not the K-BOT bearer session.
+~~UNVERIFIED: how operator login is gated~~ — DECIDED by the operator, 23.09.2026: the K-BOT password (a MariaDB login as the operator, like `LoginForm`), then a six-digit code mailed to the same address, and the address must be in `OPERATORI` in `config.py`. The session is a `STORE` note with its own header (`X-Operator-Token`), not the K-BOT bearer session.
 
-BUILT IN 0075-05 (`routes/inregistrare/operator.py`, `static/operator.html`,
-`static/js/operator/`; worklog `SLICE-0075-05-pagina-operator.md`). Beyond the list above:
-**the operator can also edit the database name** before approving (operator, 23.09.2026),
-held to the computed name's rules — shape `1nn_SSSS`, a number no other database uses, a
-database that does not exist. The page sends the name on screen, so the job builds exactly
-what was confirmed. The approval runs as a thread polled by the page; an in-memory registry,
-safe only under the single gunicorn worker.
+BUILT IN 0075-05 (`routes/inregistrare/operator.py`, `static/operator.html`, `static/js/operator/`; worklog [0075-05](worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md#slice-0075-05)). Beyond the list above: **the operator can also edit the database name** before approving (operator, 23.09.2026), held to the computed name's rules — shape `1nn_SSSS`, a number no other database uses, a database that does not exist. The page sends the name on screen, so the job builds exactly what was confirmed. The approval runs as a thread polled by the page; an in-memory registry, safe only under the single gunicorn worker.
 
 ## 8. Passes
 
@@ -566,7 +331,7 @@ safe only under the single gunicorn worker.
    and `SHOW GRANTS` for them names **only** the new database.
 8. Build clean. ~~pytest all green or cleanly skipped~~ — there are no test files (operator
    decision, 22.09.2026), so every line of this checklist is a **hand** check on a live
-   server. Nothing on this list has been done yet.
+   server. This was initially an unexecuted checklist. The 23.09 operator confirmation in §0.0 explicitly closes deployment and check 7; outcomes of the other checks are not recorded individually.
 
 ## 10. Closed questions
 
@@ -581,18 +346,9 @@ Q1–Q11 closed 22.09.2026 → D14–D19 above.
 > GENERATED ALWAYS AS clause of `SS`».* A stored generated column here cannot be built out of
 > another column, so `SS` must be written — and `Sector`/`Sursa`, its two halves, follow.
 
-**Which columns, and which stay.** The eight generated columns are two different kinds of
-thing. Six (`Clsf`, `Titlu`, `ClsfSal`, `ClsfF`, `ClsfE`, `ClsfX`) are pure functions of
-`Capitol/Subcapitol/Articol/Alineat`, which every writer already supplies, and two of them
-carry foreign keys of their own. Generated, they **cannot** disagree with the base columns;
-written, an `UPDATE` that changes `Capitol` and forgets `ClsfF` yields a row that passes every
-foreign key and still lies. They stay generated. Only the three that genuinely cannot be
-computed — the source letter was never in the capitol — become written (decision 22.09.2026).
+**Which columns, and which stay.** The eight generated columns are two different kinds of thing. Six (`Clsf`, `Titlu`, `ClsfSal`, `ClsfF`, `ClsfE`, `ClsfX`) are pure functions of `Capitol/Subcapitol/Articol/Alineat`, which every writer already supplies, and two of them carry foreign keys of their own. Generated, they **cannot** disagree with the base columns; written, an `UPDATE` that changes `Capitol` and forgets `ClsfF` yields a row that passes every foreign key and still lies. They stay generated. Only the three that genuinely cannot be computed — the source letter was never in the capitol — become written (decision 22.09.2026).
 
-**Why not a plain `MODIFY`:** MySQL documents that a STORED generated column turned into a
-normal one keeps its values; for MariaDB 10.11 this is **UNVERIFIED**. The pass does not rely
-on it: it copies the values into plain columns first, so nothing depends on how the engine
-treats the conversion.
+**Why not a plain `MODIFY`:** MySQL documents that a STORED generated column turned into a normal one keeps its values; for MariaDB 10.11 this is **UNVERIFIED**. The pass does not rely on it: it copies the values into plain columns first, so nothing depends on how the engine treats the conversion.
 
 Per database — `AVACONT_SURSA` first (the template), then every `NNN_*` in `SCHEMATA`:
 
@@ -609,33 +365,17 @@ Per database — `AVACONT_SURSA` first (the template), then every `NNN_*` in `SC
    `SS` differ (`<=>`). Any difference → stop, report, restore that DB from step 1. Drop the
    snapshot only after it passes.
 
-**`SS` has no default, on purpose.** A writer that omits it fails with `1364`; one that
-invents a value fails with `1452`. Both loud. A default would let a wrong sector-source
-through quietly, which is the failure this pass exists to prevent.
+**`SS` has no default, on purpose.** A writer that omits it fails with `1364`; one that invents a value fails with `1452`. Both loud. A default would let a wrong sector-source through quietly, which is the failure this pass exists to prevent.
 
-**The deployment window.** After step 4 an `INSERT` without `SS` fails; before it, an `INSERT`
-*with* `SS` fails, because writing a generated column is an error. So the updated writers and
-this migration go out in the same maintenance window; between them, writes to `Clasificatii`
-fail and reads are unaffected. Those routes serve the Access/VBA sync, not continuous traffic
-— pick a quiet moment.
+**The deployment window.** After step 4 an `INSERT` without `SS` fails; before it, an `INSERT` *with* `SS` fails, because writing a generated column is an error. So the updated writers and this migration go out in the same maintenance window; between them, writes to `Clasificatii` fail and reads are unaffected. Those routes serve the Access/VBA sync, not continuous traffic — pick a quiet moment.
 
-Delivered as a standalone script with a dry-run mode that prints the DB list, row counts and
-per-database state, **not** through `proc_SchemaDiff_DDL`. `--clean-leftovers` clears what a
-failed run left behind, but only where all three columns are still generated — i.e. where
-nothing structural happened. `sql/AVACONT_SURSA.sql` updated to match.
+Delivered as a standalone script with a dry-run mode that prints the DB list, row counts and per-database state, **not** through `proc_SchemaDiff_DDL`. `--clean-leftovers` clears what a failed run left behind, but only where all three columns are still generated — i.e. where nothing structural happened. `sql/AVACONT_SURSA.sql` updated to match.
 
 ### 11.1 The writers
 
-`SS` written means six existing write sites must pass it or break. They all have only the
-capitol, so `PYTHON/routes/clasificatii_ss.py` holds the one rule they share —
-`ss_values(capitol, sursa=None) → (Sector, Sursa, SS)` — which **reproduces the old generated
-expression exactly** when called with a capitol alone. Those routes therefore behave as they
-always did; only new code (this slice's provisioning, the Migrator reading Access `Sursa`)
-passes a real source letter and reaches the other eleven `DefaSursaSector` values.
+`SS` written means six existing write sites must pass it or break. They all have only the capitol, so `PYTHON/routes/clasificatii_ss.py` holds the one rule they share — `ss_values(capitol, sursa=None) → (Sector, Sursa, SS)` — which **reproduces the old generated expression exactly** when called with a capitol alone. Those routes therefore behave as they always did; only new code (this slice's provisioning, the Migrator reading Access `Sursa`) passes a real source letter and reaches the other eleven `DefaSursaSector` values.
 
-Touched: `routes/clasificatii.py` (two INSERTs and the upsert — which also gains the three
-columns in its `ON DUPLICATE KEY UPDATE` list, because it can change `Capitol`) and
-`routes/nomenclatoare.py` (one INSERT).
+Touched: `routes/clasificatii.py` (two INSERTs and the upsert — which also gains the three columns in its `ON DUPLICATE KEY UPDATE` list, because it can change `Capitol`) and `routes/nomenclatoare.py` (one INSERT).
 
 ## 12. Migrator — `Clasificatii` flow
 
@@ -658,32 +398,15 @@ columns in its `ON DUPLICATE KEY UPDATE` list, because it can change `Capitol`) 
 - Tests: an Access row with Sursa `F` on capitol `xx01` lands as `01F`; a NULL Sursa lands as `A`;
   a `xx10` capitol lands as `E`; and the `TableMap` carries a mapping for each of the three.
 
-## 13. Existing accounts carry SU rights — a job of its own
+## 13. Existing-account privileges — initial report, corrected in §13.1
 
-Stated by the operator on 22.09.2026: **every account on the K-BOT server today has SU
-rights**, granted in a hurry. That is a live security problem, not a detail of this slice,
-and it is deliberately NOT folded into the provisioning job:
+The initial report of SU rights on every account was disproved by the grant reading in §13.1. Provisioning must still apply D18 to new accounts, never copy existing grants. Existing-account repair was separate 0075-06, one account at a time with grants recorded before replacement and a real login checked before the next account; §0.0 records the operator's completion on 23.09, without individual results.
 
-- Provisioning (§5.6 step 7) must not copy today's grants. It gives exactly what §D18 says,
-  on the new database only. That rule holds whatever the old accounts turn out to have.
-- Fixing the old accounts is a **separate pass** (proposed **0075-06**), because it can lock
-  a working operator out of a live system and must therefore be done with eyes on it, one
-  account at a time, with the old grant recorded before it is replaced.
-
-What it needs before a line is written, all from the server:
-
-```sql
-SELECT user, host, plugin FROM mysql.user ORDER BY user;
-SHOW GRANTS FOR '<each account>'@'%';
-SELECT UN, DC, Rol FROM AVACONT_COMUN.Unitati_Utilizatori ORDER BY UN;
-```
+Historical read-only inputs: SELECT user, host, plugin FROM mysql.user ORDER BY user; SHOW GRANTS FOR each account@%; SELECT UN, DC, Rol FROM AVACONT_COMUN.Unitati_Utilizatori ORDER BY UN. The findings and the definer dependency below remain relevant; no server command is authorized or executed by this editorial change.
 
 ### 13.1 What the grants actually say (read 22.09.2026 — VERIFIED)
 
-The e-mail accounts are **not** SU, contrary to the first report. Each has `USAGE ON *.*`
-globally — that is "may log in", no rights — plus privileges on exactly its own database:
-`scavatarsoft`▸`000_DEMO`, `gradipp35`▸`006_GR35`, `dorraaa1977`▸`014_SCSV`,
-`grigore_moisil2003`▸`027_SCGM`, `radubogdangeorge`▸`045_CTER`. That scoping is already right.
+The e-mail accounts are **not** SU, contrary to the first report. Each has `USAGE ON *.*` globally — that is "may log in", no rights — plus privileges on exactly its own database: `scavatarsoft`▸`000_DEMO`, `gradipp35`▸`006_GR35`, `dorraaa1977`▸`014_SCSV`, `grigore_moisil2003`▸`027_SCGM`, `radubogdangeorge`▸`045_CTER`. That scoping is already right.
 
 Three real problems remain, all narrower than "SU":
 
@@ -705,22 +428,11 @@ Two findings worth their own line:
 - **`030_SCTC` and `050_GRSA` have no account at all** — nobody can log into those two units.
   Intended or an oversight, unanswered.
 
-Shape of the fix: for each e-mail account, `REVOKE ALL PRIVILEGES, GRANT OPTION`, then
-`GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE` on each database that account has a
-`Unitati_Utilizatori` row for — plus whatever login itself needs, which `auth.py` decides (it
-reads `AVACONT_COMUN` through the SERVICE account, so probably nothing). The provisioning
-account of §5.6 is new and narrow. The legacy `NNN_XXXX_Contabil` / `_Administrator` accounts
-are dropped once nothing uses them (D26) — check `Jurnal` and the FOREXE fleet first.
+Shape of the fix: for each e-mail account, `REVOKE ALL PRIVILEGES, GRANT OPTION`, then `GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE` on each database that account has a `Unitati_Utilizatori` row for — plus whatever login itself needs, which `auth.py` decides (it reads `AVACONT_COMUN` through the SERVICE account, so probably nothing). The provisioning account of §5.6 is new and narrow. The legacy `NNN_XXXX_Contabil` / `_Administrator` accounts are dropped once nothing uses them (D26) — check `Jurnal` and the FOREXE fleet first.
 
-Every step is reversible from what was recorded, and one account is done and verified by a
-real login before the next is touched.
+The original repair procedure required each step to be recoverable from recorded grants and one account verified by real login before the next. Completion does not document the individual actions here.
 
-⚠ **Do not break provisioning while doing this (added 23.09.2026).** Step 7 of §5.6 hands a new
-user their rights through `AVACONT_COMUN.proc_Provizionare_Grant`, a `SQL SECURITY DEFINER`
-procedure whose **definer is `Admin`@`%`** — it runs with Admin's rights, and needs a definer
-holding global privileges `WITH GRANT OPTION` (see `sql/0075_03_02_grant_procedura.sql` for why a
-narrower grant cannot work). If this pass drops `Admin` or trims its global grants, recreate the
-procedure first under an account that keeps them, or every approval fails at step 7.
+⚠ **Do not break provisioning while doing this (added 23.09.2026).** Step 7 of §5.6 hands a new user their rights through `AVACONT_COMUN.proc_Provizionare_Grant`, a `SQL SECURITY DEFINER` procedure whose **definer is `Admin`@`%`** — it runs with Admin's rights, and needs a definer holding global privileges `WITH GRANT OPTION` (see `sql/0075_03_02_grant_procedura.sql` for why a narrower grant cannot work). If this pass drops `Admin` or trims its global grants, recreate the procedure first under an account that keeps them, or every approval fails at step 7.
 
 ## Standing rules
 

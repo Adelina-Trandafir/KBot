@@ -19,3 +19,7 @@ Plan: [`docs/EV_PLAN.md`](../EV_PLAN.md) (slice EV05). Reading and prefilling: V
 - **Open case (plan, section 4):** one of SEVERAL NIRs of a sending is cancelled while the others stay valid: the sending stays `PRELUATA` (valid NIRs exist) and does not come back. The plan proposed bringing it back and taking over only the lines left without a NIR; not built.
 - A NIR edited later (PUT) does not change the sending. A NIR cancelled in VERCON writes nothing in K-BOT's tables.
 - Taking over with the editor's «Stoc inițial» type is not blocked (the sending would close with a NIR of that type); the list is only offered from «Adăugare NIR».
+
+## Confirmare ulterioară — 23.10.2026
+
+Jurnalul general consemna TESTAT, RULAT, PUBLICAT, confirmat de operator. Secțiunile de mai sus păstrează probele și limitele predării din 21.10.2026; confirmarea globală nu descrie separat rezolvarea fiecărui caz amânat și nu este o rerulare în D001-04.

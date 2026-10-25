@@ -1,12 +1,12 @@
-# Form `EFACTURA_PDF`
+# PDF viewer forms: EFACTURA_PDF, MF_PDF_EF and Note_PDF_EF
 
-Source: `Forms/EFACTURA_PDF.txt` (14,813 chars). Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
+Shared properties, sections, WB control, declarations and handler map below apply to all three form records. Their distinct SQL, coordinates, callers and source identities are in Data. [Reading conventions](../README.md#form-page-conventions). Consolidated in D001-07; no Access form or raw export is changed.
 
 ## Form properties
 
 | Property | Value |
 |---|---|
-| RecordSource | `SELECT [TempVars]![CaleAvacont] & "\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WHERE (((EF.id_sol)=[forms]![EFACTURA_2025]![id_sol])); ` |
+| RecordSource | [Per-form SQL and geometry](#data) |
 | DefaultView | 0 |
 | PopUp | NotDefault |
 | Modal | NotDefault |
@@ -16,10 +16,6 @@ Source: `Forms/EFACTURA_PDF.txt` (14,813 chars). Units are twips (1 inch = 1440)
 | DividingLines | NotDefault |
 | ScrollBars | 0 |
 | Width | 6349 |
-| Left | 5616 |
-| Top | 3696 |
-| Right | 18900 |
-| Bottom | 9108 |
 | FitToScreen | 1 |
 | GridY | 10 |
 | TabularCharSet | 238 |
@@ -36,11 +32,43 @@ Form events wired: `OnClose` = VBA, `OnLoad` = VBA
 
 ## Data
 
-- RecordSource: 
+All three RecordSource queries read EF. Their paths, form references and export identities remain separate:
+
+<a id="efactura-pdf"></a>
+
+### Form `EFACTURA_PDF`
+
+Source: `Forms/EFACTURA_PDF.txt` (14,813 chars). Raw source: `Surse/RawExport/Forms/EFACTURA_PDF.txt`
+
+Window geometry (twips): Left=5616, Top=3696, Right=18900, Bottom=9108. Opened from: Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
+
 ```sql
 SELECT [TempVars]![CaleAvacont] & "\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WHERE (((EF.id_sol)=[forms]![EFACTURA_2025]![id_sol]));
 ```
-- Tables/queries behind the RecordSource: `EF`
+
+<a id="mf-pdf-ef"></a>
+
+### Form `MF_PDF_EF`
+
+Source: `Forms/MF_PDF_EF.txt` (14,831 chars). Raw source: `Surse/RawExport/Forms/MF_PDF_EF.txt`
+
+Window geometry (twips): Left=-2640, Top=3700, Right=16190, Bottom=14640. Opened from: `form:MF2019_Asoc_EF`
+
+```sql
+SELECT [TempVars]![CaleAvacont] & "\EFACTURA\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WHERE (((EF.id_sol)=[forms]![MF2019_Asoc_EF]![id_sol]));
+```
+
+<a id="note-pdf-ef"></a>
+
+### Form `Note_PDF_EF`
+
+Source: `Forms/Note_PDF_EF.txt` (14,822 chars). Raw source: `Surse/RawExport/Forms/Note_PDF_EF.txt`
+
+Window geometry (twips): Left=5610, Top=6610, Right=19870, Bottom=13890. Opened from: `form:Note_EFactura`
+
+```sql
+SELECT [TempVars]![CaleAvacont] & "\EFACTURA\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WHERE (((EF.id_sol)=[forms]![Note]![Note_EFactura]![id_sol]));
+```
 
 ## Controls
 
@@ -50,26 +78,14 @@ SELECT [TempVars]![CaleAvacont] & "\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WH
 
 ## Module-level declarations
 
-Form state kept in variables, constants, types and WithEvents helpers (the Access form class body before the first procedure).
-
-```vb
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
-```
+Only the [common attribute prefix](../README.md#module-declarations); no additional module declarations.
 
 ## Event handlers and what they touch
 
-Reads/writes come from SQL text and recordset calls found in the procedure body; they are a lead for reading the code, not a proof (dynamic SQL built from variables is missed).
+See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 
 | Procedure | Bound to | Lines | Opens forms/reports | Reads | Writes | Calls (modules) | Classes | Local calls |
 |---|---|---|---|---|---|---|---|---|
 | Form_Close | Form.OnClose | 9 |  |  |  |  |  | `Form_Load` |
 | Form_Load | Form.OnLoad | 3 |  |  |  |  |  |  |
 
-## Opened from
-
-Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_PDF.txt`

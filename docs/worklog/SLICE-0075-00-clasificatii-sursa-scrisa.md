@@ -183,3 +183,9 @@ rânduri**, fiindcă șablonul e gol.
   în `JS_COMPONENTS`. Atenție la felia 0075-04: importurile sunt `../../listener-tracker/…`, deci
   componentele trebuie servite din `static/js/components/<nume>/`, cu folderele comune în
   `static/js/`.
+
+## Repere unice din registrul 0075 (transfer D001-22)
+
+Pentru revizia 1, registrul enumera și opțiunile `--split-alter` / `--restore`, corecturile MAPARE_NOMENCLATOARE (patru chei străine încrucișate, nu cinci; câmpul de capțiune = Denumire), precum și necunoscutele istorice Rol=Contabil față de CO și CodProgram, soluționate ulterior prin D24/D25. Formularea veche «suitele nescrise pe disc dar nerulate» nu coincide cu lista fișierelor de teste din jurnal; ambele repere rămân istorice, fără concluzie nouă despre execuție.
+
+Focusul ulterior compara AVACONT_SURSA cu 000_DEMO: numai șablonul păstrase Sector_w/Sursa_w/SS_w, coloanele fiind altfel identice. Consemna că cele șapte baze de unitate trecuseră fără intervenție și numai șablonul ceruse muncă manuală; motivul refuzului șablonului rămânea nenotat. Cererea inițială de ștergere a coloanelor era o condiție înainte de provizionare; jurnalul 03 consemnează ulterior trecerea verificării și aprobarea reușită, fără executarea vreunui SQL prin această reorganizare.

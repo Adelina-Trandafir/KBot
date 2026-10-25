@@ -1,4 +1,4 @@
-# EV — Facturi primite (E-Factura) → VERCON (PLAN, nimic implementat)
+# EV — Facturi primite (E-Factura) → VERCON: plan istoric și actualizări de implementare
 
 Scris 20.10.2026, la cererea operatorului; rescris în aceeași zi cu deciziile operatorului. Ce e verificat (citit într-un
 fișier) și ce e presupus sunt marcate. Familia **EV** (propunere de nume, ca KE): partea K-BOT și partea Vercon se țin

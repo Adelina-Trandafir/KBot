@@ -1,6 +1,6 @@
 # Document de fundamentare (DDF) — SENDING from KBOT to forexecab
 
-**Status:** findings only, no code. Written 25.09.2026, revised the same day after operator review.
+**Status at the planning checkpoint:** findings only, no code; 25.09.2026, revised the same day after operator review. The original guide/workflow findings, D1–D9 and gaps remain here as dated history. [The sending plan](PLAN_DDF_Trimitere.md) records the later menu/split-action decisions; [0081 history](worklog/SLICE-0081-01-starea-reviziei.md) and [registry](worklog/state/KBOT_STATUS_0080-0089.md#slice-0081) record implementation and its limits. “Not built” below belongs to this checkpoint.
 **Sources:**
 - `Surse/GHID UTILIZARE_ALOP_V2.pdf` — the Ministry of Finance guide for the DDF under
   OMF 1140/2025. `p.NN` = the guide's page.
@@ -28,23 +28,17 @@ Within the sending flow, KBOT uses exactly two options of the form:
 | Section A, point 4 | **`Se stabilește ținând cont de:`** — the value table |
 | Section B | **`Propunerile de la secțiunea A au fost înregistrate în sistemul de control al angajamentelor după cum urmează:`** — the table filled from forexecab |
 
-Everything else on the form is out of scope and left at its default: the `rămâne în sumă de` option
-of point 4, point 5 beyond its default choice (2.3), Section B's `Nu s-au rezervat ...` option, and
-the header checkbox for legal obligations / third parties. Also out of scope: accounting and the
-Ordonantare de plata.
+Everything else on the form is out of scope and left at its default: the `rămâne în sumă de` option of point 4, point 5 beyond its default choice (2.3), Section B's `Nu s-au rezervat ...` option, and the header checkbox for legal obligations / third parties. Also out of scope: accounting and the Ordonantare de plata.
 
-Quoted labels are copied exactly as the operator sees them in forexecab or in the PDF form.
-Source marks: `GUIDE` = guide text, `SCREEN` = guide screenshot, `WFL` = workflow.
+Quoted labels are copied exactly as the operator sees them in forexecab or in the PDF form. Source marks: `GUIDE` = guide text, `SCREEN` = guide screenshot, `WFL` = workflow.
 
 ---
 
 ## 1. The flow (operator, 25.09.2026)
 
-At KBOT's clients the department and the person working in forexecab are **the same person**, so
-there are two roles: the **operator** and the **director** (Ordonator de credite).
+At KBOT's clients the department and the person working in forexecab are **the same person**, so there are two roles: the **operator** and the **director** (Ordonator de credite).
 
-Two PDFs per revision: an **interim** one (header + A, no B, no captures) and a **final** one
-(header + A + B + captures).
+Two PDFs per revision: an **interim** one (header + A, no B, no captures) and a **final** one (header + A + B + captures).
 
 ```
  OPERATOR in KBOT                          KBOT → forexecab (existing workflows)
@@ -85,7 +79,7 @@ Rules that follow from it:
   revision from step 1; the final PDF is built from them.
 - Director side: a simplified KBOT that lists the DDFs waiting for his signature (new piece, not
   designed yet).
-- **Golden rule: nobody changes an angajament in forexecab by hand — only KBOT does.**
+- The original golden rule is recorded once as D8 in §7.
 
 ---
 
@@ -126,16 +120,11 @@ Then `Validez antet și secțiunea A` and the Section A signature.
 
 ### 2.3 Point 5 — left at the default
 
-The validation button checks point 4 **and** point 5 (GUIDE p.28), so point 5 cannot be left
-empty. Every example in the guide ticks `în anul curent se anticipează emiterea a cel puțin unui
-angajament legal / ...` and under it `se sting în anul curent toate obligațiile de plată`.
-`DdfXmlBuilder.vb` already writes `Subform5/CheckBox5 = 1`, `CheckBox6 = 1`, next to
-`Subform41/CheckBox2 = 1` ("Se stabilește ținând cont de").
+The validation button checks point 4 **and** point 5 (GUIDE p.28), so point 5 cannot be left empty. Every example in the guide ticks `în anul curent se anticipează emiterea a cel puțin unui angajament legal / ...` and under it `se sting în anul curent toate obligațiile de plată`. `DdfXmlBuilder.vb` already writes `Subform5/CheckBox5 = 1`, `CheckBox6 = 1`, next to `Subform41/CheckBox2 = 1` ("Se stabilește ținând cont de").
 
 ### 2.4 Section B — option 1 (GUIDE p.11-13)
 
-Tick **`Propunerile de la secțiunea A au fost înregistrate în sistemul de control al angajamentelor
-după cum urmează:`**. One row per forexecab budget row, plus TOTAL:
+Tick **`Propunerile de la secțiunea A au fost înregistrate în sistemul de control al angajamentelor după cum urmează:`**. One row per forexecab budget row, plus TOTAL:
 
 | Col | Header | Source in forexecab |
 |-----|--------|---------------------|
@@ -152,13 +141,9 @@ după cum urmează:`**. One row per forexecab budget row, plus TOTAL:
 
 The "before" values can come from KBOT or from forexecab — they are always in sync (operator).
 
-`DdfXmlBuilder.vb` already writes this table: `SubformSectiuneaB/Table3` with `CheckBox9 = 1`
-(XFA), and `sectiuneaB` rows with `ckbx_secta_inreg_ctrl_ang = 1` (XML) — col 5/6/8/9 given,
-col 7/10 computed.
+`DdfXmlBuilder.vb` already writes this table: `SubformSectiuneaB/Table3` with `CheckBox9 = 1` (XFA), and `sectiuneaB` rows with `ckbx_secta_inreg_ctrl_ang = 1` (XML) — col 5/6/8/9 given, col 7/10 computed.
 
-**Captures** go under the table (form label `Captura de imagine/imagini din sistemul de control al
-angajamentelor bugetare este redată în rubrica de mai jos sau ca anexă la documentul de
-fundamentare`, SCREEN p.30, p.36). In the template:
+**Captures** go under the table (form label `Captura de imagine/imagini din sistemul de control al angajamentelor bugetare este redată în rubrica de mai jos sau ca anexă la documentul de fundamentare`, SCREEN p.30, p.36). In the template:
 
 ```
 SubformSectiuneaB
@@ -169,9 +154,7 @@ SubformSectiuneaB
         Cell1  xfa:contentType="image/png"   → the PNG as base64 text
 ```
 
-`DdfXmlBuilder.vb` does **not** write `Table4` yet — G5. Other Section B nodes
-(`Subform52/Subform522`: `CheckBox10`, `creditAngajament`, `creditBugetar`, `CheckBox11`,
-`CheckBox12`; `Subform521/Intrucit`) stay at 0.
+`DdfXmlBuilder.vb` does **not** write `Table4` yet — G5. Other Section B nodes (`Subform52/Subform522`: `CheckBox10`, `creditAngajament`, `creditBugetar`, `CheckBox11`, `CheckBox12`; `Subform521/Intrucit`) stay at 0.
 
 Then `Validez secțiunea B`, the signatures.
 
@@ -185,8 +168,7 @@ A.col6  =  B.col6  =  B.col9      (change)
 A.col7  =  B.col7  =  B.col10     (updated)
 ```
 
-Before sending a Rev ≥ 1, A.col5 must equal the current reserved value; if not, the revision is
-wrong and is not sent (GUIDE p.11-12: "va restitui documentul de fundamentare").
+Before sending a Rev ≥ 1, A.col5 must equal the current reserved value; if not, the revision is wrong and is not sent (GUIDE p.11-12: "va restitui documentul de fundamentare").
 
 ---
 
@@ -204,8 +186,7 @@ wrong and is not sent (GUIDE p.11-12: "va restitui documentul de fundamentare").
                       "În derulare"        [Reziliază] [Suspendă] [Transferă]
 ```
 
-One forexecab row = one (Program, Sursă, Indicator) = one row in A.4 and in B. forexecab assigns
-the row code. After a save: green `Confirmare — Succes Rândul angajamentului a fost salvat.`
+One forexecab row = one (Program, Sursă, Indicator) = one row in A.4 and in B. forexecab assigns the row code. After a save: green `Confirmare — Succes Rândul angajamentului a fost salvat.`
 
 ### 3.2 The sending workflows
 
@@ -232,8 +213,7 @@ ValoareNoua, Motiv}` (`Indicator_ang` starting with `!` = new row).
   **screenshot** → `Salvează` → reads the new row code.
 - Then the last `Istoric` row; at the end a **final screenshot**.
 
-The reason text sent to forexecab keeps the `(REV:n)` tag (e.g. `Incarcare rezervare definitiva
-(REV:7)`) — operator decision: whoever reads forexecab sees which revision made the change.
+The reason text sent to forexecab keeps the `(REV:n)` tag (e.g. `Incarcare rezervare definitiva (REV:7)`) — operator decision: whoever reads forexecab sees which revision made the change.
 
 ### 3.3 From the DDF to the workflow inputs
 
@@ -287,10 +267,7 @@ The angajament is already `În derulare`; the unpaid remainder is reserved on th
 
 ## 5. After the send
 
-Right after the workflows finish, the **existing import** runs for that angajament, **unchanged**.
-Because of the golden rule (only KBOT edits forexecab), everything new it brings for the
-angajament's reservations belongs to the revision just sent — nothing else could have made it.
-The `(REV:n)` tag in the reason text is there as well. No change to the import is needed or made.
+Right after the workflows finish, the **existing import** runs for that angajament, **unchanged**. Because of the golden rule (only KBOT edits forexecab), everything new it brings for the angajament's reservations belongs to the revision just sent — nothing else could have made it. The `(REV:n)` tag in the reason text is there as well. No change to the import is needed or made.
 
 ---
 
@@ -335,11 +312,4 @@ No open questions.
 
 ## 8. Summary
 
-1. **This work is the SENDING flow, KBOT → forexecab.** The import is done and stays as it is.
-2. **Per revision:** Section A in KBOT → interim PDF signed on A → the existing workflows act in
-   forexecab (`Creare Angajament` / `Incarca Rezervare` / `Definitivare_Derulare`) → KBOT fills
-   Section B and the captures → final PDF signed on A and B → the director signs.
-3. **A.4 and B match number for number**; B's "before" values are the current reserved values.
-4. **One forexecab row = one Program + SSI = one row in A.4 and in B.**
-5. **Already built:** the three workflows, and Section B's table in `DdfXmlBuilder.vb`.
-   **Missing:** G1-G3, G5, and the interim → send → final sequence with the director's step.
+The historical flow is in §1, exact A/B equality and row identity in §2.5/§3.1, the existing/missing pieces in §6, and the operator’s nine decisions in §7. Those definitions replace the duplicated summary; the later delivery is linked at the beginning.

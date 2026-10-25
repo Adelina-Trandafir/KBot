@@ -1,9 +1,14 @@
-# SLICE 0089 — Server journals in K-BOT, per user and per session
+# SLICE-0089 / 01 — Jurnalele serverului pe utilizator și sesiune
 
-**Date:** 28.09.2026. **Request (operator):** wire the Flask `api_server.log` and
-`forexe_timing.log` into the K-BOT journal page (`SetariJurnalView`, combo `CmbTipJurnal`),
-tied to the current user; show only the user's **last 3 sessions**, with an option for more;
-split the server journal into Error / Warning / Info.
+Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnalelor; 01 le condiționează ulterior de opțiunile avansate. Exportul pe zile deschise, selecția sesiunilor, rotațiile și limitele sunt păstrate. «done» din registru rămâne un statut istoric, fără a certifica rularea pe VPS sau aspectul paginii.
+
+[0089-jurnale](#slice-0089-baza) · [0089-01](#slice-0089-01)
+
+<a id="slice-0089-baza"></a>
+
+## SLICE 0089 — Server journals in K-BOT, per user and per session
+
+**Date:** 28.09.2026. **Request (operator):** wire the Flask `api_server.log` and `forexe_timing.log` into the K-BOT journal page (`SetariJurnalView`, combo `CmbTipJurnal`), tied to the current user; show only the user's **last 3 sessions**, with an option for more; split the server journal into Error / Warning / Info.
 
 **Operator corrections during the slice (same day):**
 1. `api_server.log` lines without `[forexe` are ignored — they belong to the old Access/VBA path;
@@ -12,17 +17,13 @@ split the server journal into Error / Warning / Info.
 4. the day bands of the grid show only the date (not «Ora: …»), and every day starts collapsed;
 5. «Exportă» exports only the expanded days; none expanded = nothing exported (29.09.2026).
 
-## The problem
+### The problem
 
-`api_server.log` lines carry the IP and (usually) the unit, never the user; `[forexe.ord_edit]
-genereaza: …` and traceback lines carry neither. Several operators of the same unit share an IP.
-So "the current user's lines" cannot be recovered from the existing file — each line has to
-be marked when it is written. The timing log already has `dc=` / `user=` on most blocks, but
-nothing that says which login they belong to.
+`api_server.log` lines carry the IP and (usually) the unit, never the user; `[forexe.ord_edit] genereaza: …` and traceback lines carry neither. Several operators of the same unit share an IP. So "the current user's lines" cannot be recovered from the existing file — each line has to be marked when it is written. The timing log already has `dc=` / `user=` on most blocks, but nothing that says which login they belong to.
 
-## What changed
+### What changed
 
-### Server (PYTHON)
+#### Server (PYTHON)
 - `utils/logger.py`: new `SessionTagFilter` on both root handlers. Every line written inside an
   authenticated request gets `{s=<token8> u=<user> dc=<db>} ` right after the IP
   (`%(session_tag)s` in the format; empty outside a session). Only the first 8 characters of
@@ -52,7 +53,7 @@ nothing that says which login they belong to.
   - Body: `text`, `truncated`, `sessions` (`session`, `dc`, `first`, `last`, `entries`,
     `errors`, `warnings`, newest first), `sessions_requested`, `server_time`.
 
-### Client
+#### Client
 - `KBot.Api/ApiClient.GetAsync(Of T)`: implemented (was `NotImplementedException`); bearer GET,
   case-insensitive JSON, non-2xx → `ApiException` with the server's `error`. No interface
   change, so no test double had to change. FileVersion 1.0.13.0 → 1.0.14.0.
@@ -89,19 +90,19 @@ nothing that says which login they belong to.
 - `KBot.Controls`: `KBotDataView.IsRowShown` added (+ `KBotDataView.md`). FileVersion
   1.54.0.0 → 1.55.0.0.
 
-## Files touched
+### Files touched
 - `PYTHON/utils/logger.py`, `PYTHON/utils/timing.py`, `PYTHON/routes/logs.py` (new), `PYTHON/main.py`
 - `src/KBot.Api/ApiClient.vb`, `src/KBot.Api/KBot.Api.vbproj`
 - `src/KBot.Common/Logging/LogFileLoader.vb`, `src/KBot.Common/Logging/Parsers/ForexeTimingParser.vb` (new), `src/KBot.Common/KBot.Common.vbproj`
 - `src/KBot.App/Setari/SetariJurnalView.vb`, `src/KBot.App/Setari/SetariJurnalView.Designer.vb`
 - `src/KBot.Controls/DataView/KBotDataView.Grouping.vb`, `src/KBot.Controls/DataView/KBotDataView.md`, `src/KBot.Controls/KBot.Controls.vbproj`
 
-## Test results
+### Test results
 - `dotnet build src/KBot.App/KBot.App.vbproj`: 0 errors, 0 warnings.
 - Python: `py_compile` of the four files OK.
 - No tests written or run (standing rule); the page was not opened on screen.
 
-## Unverified / deferred
+### Unverified / deferred
 - **Nothing before the deploy shows up.** Lines written before this server version have no
   session mark, so the server journals start empty and fill as the operator works.
 - After the deploy, VBA lines are only in `api_server_vba.log`; greps on the VPS must include it.
@@ -116,3 +117,37 @@ nothing that says which login they belong to.
 - Label widths in the filter row (64 / 76 px at 144 dpi) not checked on screen.
 - Sessions are keyed by the 8-character token prefix; two live tokens of one user sharing a
   prefix would merge (1 in 64^8).
+
+---
+
+<a id="slice-0089-01"></a>
+
+## SLICE-0089-01 — server journals only with «Opțiuni avansate» (operator request, 01.10.2026)
+
+### What changed and why
+Operator: the server journals are tied to the advanced options switch; with it off the user must not see the
+combo that picks the journal type.
+
+`SetariJurnalView`:
+- `PotrivesteTipuriCuClientul`: «Server FOREXE» / «Timpi FOREXE» are listed only with an `IApiClient` AND
+  `AppSettings.AdvancedOptions`; otherwise only «Jurnale locale» exists.
+- `ArataCombinatiileDeTip` (called from `Activated`): `CmbTipJurnal` and `cmbSesiuni` are hidden when the server
+  journals are off, and the first two columns of `tlyFilterActual` collapse to 0 so no gap is left. The designer
+  widths are remembered the first time they are collapsed and restored when the combos come back. It is only
+  called from `Activated` (not the constructor) so the widths are read after the DPI scaling.
+- The switch lives on another settings page, so it can only change while the journal page is away; activation
+  re-reads it. Switching it off while a server journal was selected falls back to «Jurnale locale» and reloads.
+
+### Assumption
+Read as a requirement («the server journals are connected to the advanced options checkbox, if false the combo is
+not visible»): the code did not have this link before. «Jurnale locale» stays available without the switch.
+
+### Files
+`src/KBot.App/Setari/SetariJurnalView.vb`; help `avansat/jurnale.md` (see 0000-35).
+
+### Test results
+`dotnet build src\KBot.App`: no compile errors. Nothing run on screen; the collapsed columns were not seen.
+
+## Repere unice din registrul 0089
+
+Înaintea folosirii erau cerute pe VPS utils/logger.py, utils/timing.py, routes/logs.py și main.py, cu repornire; nicio executare nu este făcută aici. Ajutorul pentru condiția avansată era `avansat.jurnale`, 0000-35.

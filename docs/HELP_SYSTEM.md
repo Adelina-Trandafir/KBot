@@ -13,9 +13,7 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 
 - **F1 anywhere** (any K-BOT window) opens the help window on the topic of the control under
   focus.
-- The **«?» button** on every caption bar (slice 0000-20) opens a **popup** under the button: a
-  search box, «Pe ecranul acesta» (the topic F1 would open), the guided tours of the windows on
-  screen (one folder per window when several have tours) and «Deschide ajutorul complet (F1)».
+- The **«?» button** on every caption bar opens a popup under the button: search, «Pe ecranul acesta», tours of that window and its views only (0000-27), and «Deschide ajutorul complet (F1)». The earlier multi-window folders are historical, in [0000-20](worklog/SLICE-0000-18-cautare-pe-intrebari.md#slice-0000-20) and the [0000-27 correction](worklog/SLICE-0000-23-tururi-pe-butoane-istoric-capturi-estompate.md#slice-0000-27).
   The **login window has no «?»** (slice 0097-02, operator: `LoginForm.capBar.ShowHelpButton =
   False`); F1 still works there.
 - The **«Ajutor» button** that slice 0114 pinned at the right of the ribbon is gone (slice 0114-02, help 0000-85, operator
@@ -73,7 +71,7 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
   0000-30) it is shown for the step, with a note, and its text says how to get it for real
   (`IKBotHelpReveal`, `HelpContent/README.md`). Names and rules: `HelpContent/README.md`, «Guided tours».
 - **The tutorial of the start** (slice 000T-13): `tutorial-pornire` («Primii pași în K-BOT»: the ribbon tabs, the ANAF token window, the list of angajamente, the right-hand buttons, the «Ce este nou» card) starts by itself when the main window (`AvacontMain`) is open and `KbotForm` has loaded its data (`KbotForm.PornesteTutorialulDePornire` -> `HelpService.StartOpeningTutorial`), while `AppSettings.ShowStartTutorial` is on. Not mandatory; its bubble carries the box «Nu mai arăta tutorialul de început». The setting goes off (`HelpService.OpeningTutorialSeen`) when it ends past its last step or with the box ticked; Setări › Aplicație › Generale turns it back on. It replaced the initial tour (0097-02: the tour `tur-fereastra` stays in the «?» list but never starts by itself) and the tutorial about the tutorials (000T-07). The main window answers the ribbon anchors / signals (`AvacontMain.Tutorial.vb`, `KBotRibbon.TabScreenBounds` / `RightEndScreenBounds` / `TabClicked`), and the tutorial veil now covers the whole main window, not only the hosted page (`TutorialRunner.RootWindow`). Renaming `tutorial-pornire` means changing `HelpService.OpeningTutorialId` too.
-- **Capture blur** (slice 0000-23, operator tool, NOT described in the help): the capture tool
+- **Capture blur** (implemented scope recorded in [0000-23](worklog/SLICE-0000-23-tururi-pe-butoane-istoric-capturi-estompate.md#slice-0000-23), operator tool, NOT described in the help; current project instructions still govern new screenshots): the capture tool
   blurs, on the frozen screen and before the operator chooses, the TEXT (never a whole bar or
   menu) of the login's user and unit, the other units' names, anything «RO» + digits, 13 digits in
   a row (CNP), e-mail addresses, Romanian phone numbers, and a fiscal code without «RO» but only in
@@ -276,7 +274,7 @@ JSON file each in `%APPDATA%\AVACONT\KBot\HelpOutbox\` and are sent in batches (
 at 10 waiting, at start, at exit). A question is written when a hit is used, when it is rated,
 and when the box is emptied or the popup / window closes; editing it after a click, a rating or a
 3-second pause starts a new one. The queries that read the log (no click, rated ≤ 2, most
-repeated, the «step 4» gate) are in `docs/worklog/SLICE-0000-21-intrebari-si-note.md`.
+repeated, the «step 4» gate) are in [etapa 0000-21](worklog/SLICE-0000-18-cautare-pe-intrebari.md#slice-0000-21).
 
 The help text says, in one sentence, that questions and ratings are sent without the name to
 improve the help, and asks for no personal data in the box (`contabil.ajutor`, `director`). Keep

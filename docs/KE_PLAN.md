@@ -1,4 +1,4 @@
-# KE — Facturi primite ↔ Recepții ↔ Plăți (PLAN, nimic implementat)
+# KE — Facturi primite ↔ Recepții ↔ Plăți: plan istoric și decizii adoptate
 
 Scris 16.10.2026, la cererea operatorului. Ce e verificat (citit într-un fișier) și ce e presupus sunt marcate.
 

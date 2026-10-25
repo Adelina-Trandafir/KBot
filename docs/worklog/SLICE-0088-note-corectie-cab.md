@@ -1,12 +1,8 @@
+<a id="slice-0088"></a>
+
 # SLICE 0088 — «Nota contabila corectie CAB» (F1135) for the ERRRRRRRRRR operations
 
-**Date:** 28.09.2026. **Request (operator):** the «Operațiuni necorectate» FOREXE shows after the
-login carry «ERRRRRRRRRR»: FOREXE could not attach those receipts to an angajament. The operator
-attaches each one to an existing angajament + indicator; K-BOT makes the F1135 note PDF, stores
-it in MariaDB and, on «Vrei să încarci NOTA DE CORECȚIE în CAB?», uploads it through
-https://forexe.mfinante.gov.ro/transmitere-documente-electronice (`linkdoc` + «Trimite»).
-Plus a «Note corecție» view on KbotForm (tree + grid + «Document» page: generate unless signed,
-download when signed).
+**Date:** 28.09.2026. **Request (operator):** the «Operațiuni necorectate» FOREXE shows after the login carry «ERRRRRRRRRR»: FOREXE could not attach those receipts to an angajament. The operator attaches each one to an existing angajament + indicator; K-BOT makes the F1135 note PDF, stores it in MariaDB and, on «Vrei să încarci NOTA DE CORECȚIE în CAB?», uploads it through https://forexe.mfinante.gov.ro/transmitere-documente-electronice (`linkdoc` + «Trimite»). Plus a «Note corecție» view on KbotForm (tree + grid + «Document» page: generate unless signed, download when signed).
 
 **Operator corrections during the slice (same day):**
 1. no message box when new operations are found — the window opens straight away;
@@ -16,6 +12,8 @@ download when signed).
 4. menu entry «Operațiuni necorelate» reopens the window; hidden when there is none; when there
    are, the entry and the «Meniu» button carry «(!)»;
 5. rows already in `FX_Operatiuni` are neither stored again nor shown again after a login.
+
+**Ordinea trecerilor din 28.09:** baza și corecțiile operatorului sunt urmate de 02 (check-ul semnăturilor), 03 (schema rămasă la prima formă), 04 (copii pending, răspuns și recipisă), 05 (număr pe rând, o notă/PDF pe număr, lot într-o tranzacție). Formularea inițială «toate rândurile = o notă» se citește împreună cu 05. Exemplele SQL sunt fișiere pentru operator; niciunul nu este executat în consolidare. Proba unui PDF cu o operațiune nu validează lotul ulterior sau Adobe.
 
 ## What changed
 
@@ -112,6 +110,8 @@ Views/NoteCab/* (new), Views/PendingPdfUploads.vb, Views/PdfSigningSession.vb}`.
   one inside «NOTA CAB 23.pdf» and the control sum 61647952 matched; that was the one-note/one-
   operation version, the multi-operation shape was not run.
 
+<a id="slice-0088-02"></a>
+
 ## 0088-02 (same day) — signed note refused: `CK_FX_PDF_SEMNATURI_DOC` failed (014_SCSV)
 - Cause: on 014_SCSV `FX_PDF_SEMNATURI` had the `IDNC` column but still the 0079 check
   («IDREV or IDORDP»), so every signature row with IDNC broke the check; the log shares the PDF's
@@ -120,6 +120,8 @@ Views/NoteCab/* (new), Views/PendingPdfUploads.vb, Views/PdfSigningSession.vb}`.
   three-way check + the FK in place, one statement at a time.
 - `pdf.py`: `_sign_log_accepts` — signature rows are written only when the table has the family's
   column AND the check names it; otherwise the PDF is saved and the rows are skipped (logged).
+
+<a id="slice-0088-03"></a>
 
 ## 0088-03 (same day) — FX_NoteCAB left in the first draft shape
 - The AVACONT_SURSA dump (28.09 14:18) shows `FX_NoteCAB` as in the FIRST draft of sql/0088 (the
@@ -131,6 +133,8 @@ Views/NoteCab/* (new), Views/PendingPdfUploads.vb, Views/PdfSigningSession.vb}`.
   strips the operation columns, keys and checks off `FX_NoteCAB`.
 - Rest of the dump matches the final DDL: FX_Operatiuni (CodAngajament, decimal Suma, index),
   FX_NoteCAB_PDF, FX_PDF_SEMNATURI (IDNC, three-way check, FK) — on AVACONT_SURSA 0088-02 is not needed.
+
+<a id="slice-0088-04"></a>
 
 ## 0088-04 (same day) — pending copies question, upload answer window, FOREXE receipt
 Operator: (a) «Documentul pentru care s-a trimis PDF-ul nu există» came back at every start;
@@ -166,6 +170,8 @@ button), otherwise «Validează documentul», which opens the window of (b).
   «INTERNT-…» or «index … digits» in it, else the operator types it. The JSON fields of category 1
   are assumed to be the bank statements' (`mesajTab.id / numeFisier / descriere / dataCreare`).
   The receipt is assumed to be a PDF (shown in Adobe).
+
+<a id="slice-0088-05"></a>
 
 ## 0088-05 (same day) — one note per number
 Operator: two ERR rows with different numbers were saved under one number (the number was one field

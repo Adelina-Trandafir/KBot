@@ -89,33 +89,6 @@ Acoperire: VC02-02/03/04/05, VC03-02 (cardinalitate), VC06-02/03/05, VC07-01/02/
 
 ## 7. Decizii NIR din 16.10.2026 — VC06-06
 
-Regulile autoritare sunt [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
-Factura se completează în ecranul Adăugare NIR. Butonul «Factură comună» și
-macheta separată din implementarea anterioară au fost eliminate din surse.
+Particularitățile editorului sunt întreținute în [FACTURI_NIR_IMPLEMENTARE](FACTURI_NIR_IMPLEMENTARE.md): ecran unic, conturi/destinații, numerotare, ComboTree și comisie. Deciziile și justificarea lor rămân [VC06-06-D01–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06); dimensiunile popupului din implementare nu devin valori impuse de decizie.
 
-1. Categorie/Cont este un arbore custom cu toate conturile DC-ului: rădăcini
-   subunitățile, frunze conturile cu checkbox. Destinația curentă este prima,
-   expandată; celelalte rădăcini sunt inițial restrânse. Unicul cont din DC este
-   selectat automat și controlul blocat. Existența unui singur cont doar în
-   destinația curentă nu blochează controlul.
-2. Mai multe conturi în aceeași subunitate produc un singur NIR; numărul rămâne
-   disponibil conform regulilor existente. Numai selectarea conturilor din
-   subunități diferite dezactivează numărul și afișează «auto». Numerele se alocă
-   la salvare pentru fiecare destinație, iar conturile aceleiași destinații
-   rămân în același NIR.
-3. În DGV, Produs folosește un ComboTree cu rădăcini conturile selectate și
-   produse dedesubt. Căutarea prin tastare rămâne disponibilă. Popupul are
-   înălțime minimă utilizabilă și scroll intern; se deschide în jos dacă încape,
-   altfel în sus, fără să fie tăiat de grilă. Nu este stabilită o înălțime în pixeli.
-4. Comisie se mută sub Data Facturii și ocupă două coloane, până la capătul
-   câmpului Data NIR.
-5. Contul rândului rezultă din produsul selectat și varianta sa, fără un câmp
-   nou de cont în linia persistentă. Dacă produsul are mișcări în oricare an,
-   editarea sa nu mai permite schimbarea contului; serverul aplică aceeași
-   restricție, independent de controlul din interfață.
-
-Această secțiune nu schimbă migrarea Access. Noul flux, ComboTree și blocarea
-contului sunt implementate în surse, fără rulare. Rădăcinile poartă contextul
-existent subunitate/gestiune; fiecare NIR se consultă și se modifică ulterior
-în destinația sa. Comisia se identifică prin aceiași patru membri în
-destinațiile alese; lipsa ei blochează întregul lot, fără creare automată.
+Starea acestei revizii: implementat în surse, fără rulare. Nu schimbă importul Access. N01/N02 din §2 este regula istorică din 12.10; pentru salvarea NIR-urilor noi se aplică egalitatea exactă adoptată la 16.10, conform [contractului de calcul](CONTRACT_CALCULE.md#revizie-16102026--factură-comună-și-corecție-nir-exactă). Pozițiile UI au evoluat ulterior în [istoricul VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#antet-nir-reconciliere-și-acțiuni--evoluție-în-surse-nerulată).

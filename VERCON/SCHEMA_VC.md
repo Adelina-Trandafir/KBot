@@ -2,24 +2,7 @@
 
 ## Clarificare model NIR — VC06-06, 16.10.2026
 
-Decizie documentată, **implementată în surse, fără rulare în această completare**: un NIR nou
-poate conține produse din mai multe conturi ale aceleiași subunități.
-Contul fiecărei linii este deja determinat prin `VC_Intrari.IdProdus` →
-`VC_ProduseP.IdProdus`, apoi `VC_ProduseP.ID` → `VC_Produse.ID`, apoi
-`VC_Produse.IdMasina` → `VC_Masini.IdMasina`, în contextul existent.
-Nu se adaugă o coloană de cont în `VC_Intrari`. `VC_NIR.IdMasina`, păstrat
-pentru istoricul importat, nu mai impune un singur cont tuturor liniilor
-unui document nou. Pentru un cont unic se păstrează acel cont; pentru mai
-multe conturi antetul este NULL, iar afișarea folosește produsele liniilor.
-
-Pentru a păstra încadrarea istorică prin această relație, contul unui produs
-cu mișcări în oricare variantă de preț și în orice an nu mai poate fi
-modificat în nomenclator. Restricția este implementată în interfață și
-în server. Fără mișcări, contul rămâne editabil. Nu se modifică migratorul
-pentru a inventa o încadrare suplimentară a liniilor: Access are deja un cont
-pe NIR și legăturile produselor se remapează la import.
-
-Detalii autoritare: [VC06-06-D09–D11](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
+Decizie documentată, implementată în surse fără rulare în această completare. Relația de cont este [VC06-06-D09](DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06): Intrari → ProduseP → Produse → Masini, cu contextul existent, fără coloană de cont nouă în VC_Intrari. VC_NIR.IdMasina păstrează contul unic, iar la mai multe conturi este NULL; consultarea deduce conturile din produse. Restricția produsului cu mișcări și importul neschimbat sunt D10–D11, cu detalii în [contractul editorului](FACTURI_NIR_IMPLEMENTARE.md#conturi-tva-și-auto).
 
 ## Infrastructura de schemă implementată anterior
 

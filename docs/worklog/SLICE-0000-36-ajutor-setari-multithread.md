@@ -1,6 +1,6 @@
 # SLICE-0000-36 — Help for slice 0100-02 («Descărcări multiple» is a server-controlled page) (operator request, 01.10.2026)
 
-Help work for feature slice **0100-02** (`SLICE-0100-02-setari-server-multithread.md`), branch `SLICE-0100-Multithreading`
+Help work for feature slice **0100-02** ([0100-02](SLICE-0100-multithreading-descarcari.md#slice-0100-02)), branch `SLICE-0100-Multithreading`
 (`master` was merged INTO this branch first, so the help engine of 0000-34 — the `redo:` / `why:` capture tags — is here;
 `master` itself was not touched). Tags: `<!-- slice: 0100-02 -->`.
 

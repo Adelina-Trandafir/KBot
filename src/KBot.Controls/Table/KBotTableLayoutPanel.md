@@ -11,12 +11,9 @@ logical model, the triggers, the runtime API), `.Fit.vb` (the surplus rule and
 `GetPreferredSize`).
 `TableLayoutPanel` · partial · Toolbox · `IThemedContainer`, `IDpiScaledControl`
 Conventions: [C1..C9](../CONTROLS.md).
-Status: **screen-verified 2026-09-18 through `DrawToBitmap`** (slice 0066-02: the 0062 and 0066
-benches at 150% under Automatic, Fixed100 = the 100% look and Manual 1.25 = the 125% look, all
-three the same picture at 2/3, 5/6 and 1; a 144-authored form untouched at 150% and exactly 2/3
-under Fixed100). Driven by hand on 2026-09-18 by the operator at 100/125/150% BEFORE 0066-02,
-which is what showed the forms themselves were not on the tree's ruler. Harness: `TableLayoutHarnessTest` (0066),
-`FormFitHarnessTest` (0062, the log-viewer filter row).
+Status: [historical evidence 0066/02](../../../docs/worklog/SLICE-0066-tabele-la-dpi-ca-arborele.md#slice-0066-02): off-screen `DrawToBitmap` at 150%, with simulated 100%/125% modes and a 144-authored form; real operator captures at 100/125/150% were BEFORE the correction. Exact dimensions, harness names and unverified paths are recorded there.
+
+Harness: `TableLayoutHarnessTest` (0066), `FormFitHarnessTest` (0062, log-viewer filter row).
 
 ## Every TableLayoutPanel in the solution is one of these
 Since 0066 no `.Designer.vb` in `src/` declares a plain `TableLayoutPanel` (35 designers,
@@ -99,7 +96,7 @@ native `CellBorderStyle` reserves; `None` is promoted to `Single` and refused af
 gap itself (1/2/3 px) is the platform's and is not scaled.
 
 ## Where it stops
-- Children's `Margin`s are the platform's: 1.43 x 1.67 at 150%, not 1.5. A cell whose
+- Children's `Margin`s belong to the platform. The old 1.43 x 1.67 measurement at 150% came from Font autoscaling; 0066-02 later changed the forms to Dpi, as recorded above. This is not a second table-owned margin scale. A cell whose
   margin must match a drawn measure exactly does not exist yet; if one appears, the margin
   belongs in the child, not here.
 - A table built in code and added to a form already on screen has no stamp of its own: its

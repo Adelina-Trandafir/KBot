@@ -46,3 +46,5 @@ Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Publicarea necesită JSON-urile, modulele JS/CSS și fișierele Python comune
 și specifice, plus repornirea serviciului web pentru noua rută PDF.
+
+Reperul din jurnalul general descria ajustările NIR de maximum 1 leu; este limita documentată în ajutorul acestei intervenții, fără extindere prin reorganizarea D001-04.

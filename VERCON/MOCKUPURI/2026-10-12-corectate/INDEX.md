@@ -32,7 +32,7 @@ Arborele documentelor salvate se ascunde în aceste stări. Reapare după salvar
 
 ## Fluxuri și reguli actualizate
 
-[FLUXURI_UI.md](../../FLUXURI_UI.md) este contractul detaliat al acestei revizii. Corecțiile sunt integrate în [PLAN](../../PLAN_IMPLEMENTARE.md), [DECIZII](../../DECIZII_DESCHISE.md), [MAPARE](../../MAPARE_ACCESS_WEB.md), [CONTRACT_CALCULE](../../CONTRACT_CALCULE.md), [PROBE_BROWSER](../../PROBE_BROWSER.md) și [STATUS](../../VERCON_STATUS.md).
+[FLUXURI_UI.md](../../FLUXURI_UI.md) este contractul detaliat al acestei revizii. Corecțiile sunt integrate în [PLAN](../../PLAN_IMPLEMENTARE.md), [DECIZII](../../DECIZII_DESCHISE.md), [MAPARE](../../MAPARE_ACCESS_WEB.md), [CONTRACT_CALCULE](../../CONTRACT_CALCULE.md), [PROBE_BROWSER](../../PROBE_ACCES.md#probe-browser) și [STATUS](../../VERCON_STATUS.md).
 
 Schimbarea principală față de prima propunere: BC se creează separat și se selectează din popup. Salvează lista nu generează/resalvează BC și nu repetă consumul. N01/N02 și pragul totalului NIR rămân păstrate; câmpul Valoare factură este editabil manual. Predarea pornește din contul de intrare; transferul/casarea folosesc produsele predătorului.
 

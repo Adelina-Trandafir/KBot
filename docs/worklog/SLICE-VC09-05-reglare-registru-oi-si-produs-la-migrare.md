@@ -51,3 +51,7 @@ Programul Access nu citește acele rânduri: ia primirile din `OI_Predare` (bon 
 - `VERCON/REGISTRU_OI_MF.md` încă descrie regula veche a primirii din registru.
 - Pozițiile de primire prin bon de transfer fără produs nu sunt completate de migrator; fereastra le tratează.
 - Baze protejate cu parolă din `C:\vercon` nu au fost citite.
+
+## Confirmare ulterioară consemnată în jurnalul general
+
+La 23.10.2026, operatorul a confirmat TESTAT, RULAT, PUBLICAT. Rezultatele locale și restanțele de mai sus descriu predarea din 21.10.2026; confirmarea nu inventează o nouă citire a datelor sau detalii individuale ale probelor. Fereastra continuă să fie deschisă explicit, nu automat.

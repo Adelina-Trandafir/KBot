@@ -1,6 +1,6 @@
 # Form `Mesaj_ANAF`
 
-Source: `Forms/Mesaj_ANAF.txt` (13,532 chars). Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
+Source: `Forms/Mesaj_ANAF.txt` (13,532 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
 
@@ -46,7 +46,7 @@ Form events wired: none
 
 ## Event handlers and what they touch
 
-Reads/writes come from SQL text and recordset calls found in the procedure body; they are a lead for reading the code, not a proof (dynamic SQL built from variables is missed).
+See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 
 | Procedure | Bound to | Lines | Opens forms/reports | Reads | Writes | Calls (modules) | Classes | Local calls |
 |---|---|---|---|---|---|---|---|---|

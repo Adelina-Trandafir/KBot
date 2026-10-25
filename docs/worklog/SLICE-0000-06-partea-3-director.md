@@ -31,7 +31,7 @@ to shoot on the director's PC and load the picture with «Încarcă».
 
 ## Source
 `src/KBot.App/Director/DirectorForm.vb` + `.Designer.vb` (operator strings, control names),
-`SLICE-0081-06-kbot-director.md`, `KBot.Domain/DdfRevisionState.vb` (state labels),
+[0081-06 — Director](SLICE-0081-01-starea-reviziei.md#slice-0081-06), `KBot.Domain/DdfRevisionState.vb` (state labels),
 `contabil/ddf/semnare.md` (shared signing behaviour).
 
 ## To check (operator)

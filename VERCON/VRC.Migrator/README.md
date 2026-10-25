@@ -41,6 +41,8 @@ făcute și nu schimbă asocierea manuală din web pentru orfani deja existenți
 Access rămâne nemodificat. Implementat în surse, fără teste/build/import;
 necesită recompilarea migratorului, fără modificarea schemei.
 
+Fișierele corecției storno din jurnalul general (absorbție D001-04): VrcRunner.Storno.vb indexează părinții, MigrateExercise filtrează înaintea cheii/conversiilor și actualizează SkippedRows/N15; UsedProducts include variantele exclusiv storno valide. import_map.json a pierdut orphan:null de pe IntrariStorno.IdIntrare; generatorul emite deja legătura normală. Au fost atinse și VrcRunner.vb, VrcRun.vb, VrcPlan.vb, VRC.Migrator.vbproj, README, CODEX_SCHIMBARI_MIGRATOR_2026-10-18 și VERCON_STATUS. Fără citire Access sau alte verificări pentru această corecție; statusul rămâne cel datat mai sus.
+
 ## Proveniență OI/MF după refacerea unui bon — 19.10.2026
 
 Versiune în surse: **0.3.9.0**, reguli `VC05-OI-ORIGIN-RECOVERY-2026-10-19`.
@@ -272,3 +274,11 @@ remapările documentelor, valorile, cantitățile și reconcilierea rămân exis
 Stare: modificare de surse, fără compilare, teste, importuri, acces MariaDB sau
 executare SQL. Executabilul din _VrcMigrator nu a fost regenerat.
 
+
+## Predarea online din 18.10.2026 — absorbită prin D001-04
+
+Documentul CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md, inițiat după 0.3.5.0, este retras; [VC06-04](../../docs/worklog/SLICE-VC06-04-br-si-fcs.md) păstrează cerințele BR/storno și probele nerulate, iar [REGISTRU_OI_MF](../REGISTRU_OI_MF.md) decizia de identitate/ToolVersion. Confirmarea OI/MF nu certifica restul cerințelor. Restricțiile acelei predări erau fără config.py, report_*/reports.js/report-*.js ori AGENTS (alte lucrări în curs); fără teste/build/server, CSS separat, cod fără diacritice în afara textelor UI, module sub aproximativ 1000 linii și progres consemnat în jurnal. Sunt restricții istorice de arie, fără autorizare de execuție acum.
+
+- Transfer multi-subunitate într-o singură tranzacție, câte VC_Subunitati + VC_Imports și ZEC pe subunitate; numele propus din cale.accdb, același tip de gestiune permis în subunități diferite. provider.py citea toate subunitățile active în arbore subunitate→gestiune→an, fără VC_Imports; nu necesita schimbare.
+- Retururile fără BC sursă rămân în balanță cu IdRetur NULL; VC_MigrationIssues: RuleCode=N12, Severity=CONVERSIE, FieldName=IdRetur, SourceKey=retur vechi, OriginalValue=BC dispărut. Exemplul tz_2026 Alimente Cantina: retururi 49/51/136 → BC lipsă 47/50/135. VC_Iesiri_H.IdRetur era deja nullable și fără FK, deci cerințele online nu cereau schemă nouă. Politica N15 pentru storno din 19.10 înlocuiește N12 numai pentru storno, fără a modifica retururile sau orfanii deja importați.
+- IDM și IdMasinaP referă VC_Masini; IdMasinaP este contul DIN care, IdMasina contul ÎN care. IDBO se remapează ca bonul de proveniență; semantica registrului este în contractul OI/MF. Nota inițială raporta rotunjire la 4 zecimale, Tip din MicDejun/Dejun/Cina→VC_FeluriMancare, fracția numărului→Numar+NumarSub, furnizor fără partener→IdPartener NULL+CodFiscalSursa; precizia/importul se citesc cu reviziile mai sus, fără alegerea tacită între versiunile istorice. NumarSub/CodFiscalSursa erau deja folosite în documents.py/receipts.py.

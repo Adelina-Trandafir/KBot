@@ -1,17 +1,16 @@
 # PLAN — Log viewer (slice 0031)
 
-Target file in the repo: `docs/PLAN_LogViewer.md`.
-Worklogs: `SLICE-0031-01-log-core.md`, `-02-server-logs.md`, `-03-chipbar.md`, `-04-log-viewer.md`.
+Target file in the repo: `docs/PLAN_LogViewer.md`. Worklogs: [01/04 — core and viewer](worklog/SLICE-0031-01-log-core.md), [03 — ChipBar](worklog/SLICE-0031-03-chipbar.md); 02 server logs was planned, not delivered at this checkpoint.
 
-Slice number **0031** was assigned by the operator. Confirm it against `KBOT_STATUS.md`
-("Next free slice number") before starting. If STATUS says something else, **stop and report**.
+Editorial navigation D001-28: the numbered body below remains the original version-2 specification, with its proposed contracts and acceptance checks. Implemented deviations/proofs are in the linked history. The shell option menu and launcher were later added by operator request in 04 despite the original scope exclusion; the original server proposal differs from the later [0089 user/session journals](worklog/SLICE-0089-jurnale-server-per-utilizator.md). This historical plan does not authorize tests, host access or deployment in the present task.
 
-**Version 2.** Revised after operator review: rotation now keeps history instead of clearing, and
-server-side logs are in scope with per-unit filtering enforced on the server.
+Slice number **0031** was assigned by the operator. Confirm it against `KBOT_STATUS.md` ("Next free slice number") before starting. If STATUS says something else, **stop and report**.
+
+**Version 2.** Revised after operator review: rotation now keeps history instead of clearing, and server-side logs are in scope with per-unit filtering enforced on the server.
 
 > **Note added when the plan was filed (slice 0031-01).** The plan text below is the operator's
 > version 2, stored verbatim so passes 02–04 can read it. Where pass 01 found the plan contradicted
-> the real source, the deviation is recorded in `docs/worklog/SLICE-0031-01-log-core.md` §"Abateri
+> the real source, the deviation is recorded in [0031-01](worklog/SLICE-0031-01-log-core.md#slice-0031-01) §"Abateri
 > de la plan" — it is NOT edited into the plan text here. Four matter for later passes:
 > **(A)** the "exactly three terminal sinks" line of §1.4 does not exist in `KBOT_STATUS.md`;
 > **(B)** the flat 30% parser probe of §5.5 misfires on block formats and was refined;
@@ -22,9 +21,7 @@ server-side logs are in scope with per-unit filtering enforced on the server.
 
 ## 0. Mandatory reads before touching anything
 
-`CODE_WORKFLOW.md` §1 applies in full. Read these verbatim first. Everything below was written from
-project-knowledge search, not from an editor, so **every "currently reads X" claim must be
-re-checked against the real file**.
+`CODE_WORKFLOW.md` §1 applies in full. Read these verbatim first. Everything below was written from project-knowledge search, not from an editor, so **every "currently reads X" claim must be re-checked against the real file**.
 
 VB.NET side:
 
@@ -52,14 +49,11 @@ Python side:
 
 ## 1. Corrections to the original brief
 
-Not silent deviations. Each is here because reading the real source showed the instruction was
-wrong, impossible, or incomplete.
+Not silent deviations. Each is here because reading the real source showed the instruction was wrong, impossible, or incomplete.
 
 ### 1.1 No new palette slots. The colours already exist.
 
-`ThemePalette.vb` already has `[Error]`, `Warning`, `Success`, `Text`, `TextDim`, `DisabledText`,
-and all three built-in schemes fill them. Adding `LogError` beside `Error` would be a second name
-for one colour in three schemes.
+`ThemePalette.vb` already has `[Error]`, `Warning`, `Success`, `Text`, `TextDim`, `DisabledText`, and all three built-in schemes fill them. Adding `LogError` beside `Error` would be a second name for one colour in three schemes.
 
 **Mapping only, zero changes to `KBot.Theming`:**
 
@@ -72,18 +66,15 @@ for one colour in three schemes.
 | Trace | `Palette.DisabledTextColor` |
 | Unknown | `Palette.TextDimColor` |
 
-Confirm the accessor names against the real file. If one does not exist, **stop and report** — do
-not invent it.
+Confirm the accessor names against the real file. If one does not exist, **stop and report** — do not invent it.
 
 ### 1.2 The 10 MB rule cannot live in the viewer.
 
-A viewer enforces a size limit only when someone opens it, which is exactly when it does not
-matter. The check runs in the writers, before every append. See §4.3.
+A viewer enforces a size limit only when someone opens it, which is exactly when it does not matter. The check runs in the writers, before every append. See §4.3.
 
 ### 1.3 Rotation keeps history. It does not clear. (Revised)
 
-The first version of this plan cleared the file at 10 MB, as instructed, and flagged that this
-destroys history. The operator rejected that.
+The first version of this plan cleared the file at 10 MB, as instructed, and flagged that this destroys history. The operator rejected that.
 
 `utils/logger.py` on the VPS already solves this, and has since before this slice existed:
 
@@ -91,25 +82,17 @@ destroys history. The operator rejected that.
 RotatingFileHandler('api_server.log', maxBytes=10*1024*1024, backupCount=5)
 ```
 
-The client copies that policy exactly — **10 MB, five generations** — so there is one rule across
-both halves of the system instead of two. See §4.3.
+The client copies that policy exactly — **10 MB, five generations** — so there is one rule across both halves of the system instead of two. See §4.3.
 
 ### 1.4 `TreeLogger` becomes terminal sinks 4 and 5 — a documented rule change.
 
-`KBOT_STATUS.md` says there are **exactly three** permitted non-rethrowing terminal sinks.
-`TreeLogger.Write` has a bare `Catch` commented "Eșec silențios la scriere", and `TreeLogger.Init`
-swallows its Temp fallback. Both violate the no-swallowed-exceptions rule as written.
+`KBOT_STATUS.md` says there are **exactly three** permitted non-rethrowing terminal sinks. `TreeLogger.Write` has a bare `Catch` commented "Eșec silențios la scriere", and `TreeLogger.Init` swallows its Temp fallback. Both violate the no-swallowed-exceptions rule as written.
 
-They cannot be made to rethrow: `AdvancedTreeControl` calls them from paint and layout paths, and a
-throw out of a log write inside `OnPaint` takes the process down. Fix them the way `GlobalErrorLog`
-and `AdobeHostLog` already work — `Trace.WriteLine`, no rethrow — and update the "exactly three"
-line in `KBOT_STATUS.md` **in the same commit**. Do not leave STATUS saying three while the code
-has five.
+They cannot be made to rethrow: `AdvancedTreeControl` calls them from paint and layout paths, and a throw out of a log write inside `OnPaint` takes the process down. Fix them the way `GlobalErrorLog` and `AdobeHostLog` already work — `Trace.WriteLine`, no rethrow — and update the "exactly three" line in `KBOT_STATUS.md` **in the same commit**. Do not leave STATUS saying three while the code has five.
 
 ### 1.5 Server logs are in scope, and the Python logger is redesigned. (Revised)
 
-Original scope excluded them. The operator wants every error visible, filtered per unit **on the
-server**. That is not a viewer feature — it is a change to how the API logs. See §6.
+Original scope excluded them. The operator wants every error visible, filtered per unit **on the server**. That is not a viewer feature — it is a change to how the API logs. See §6.
 
 ---
 
@@ -154,8 +137,7 @@ Verify each format against its writer before writing a parser. Do not trust this
 | `<AppDir>\Logs\test_adobe_rhp.log` | slice 0023 probe | timestamped, appended. Confirm the prefix in the 0023 source. |
 | `<BaseDirectory>\log_{treeId}.txt` | `TreeLogger` | `[HH:mm:ss.fff] [12.345s] [LEVEL] [source] message`. **Time only, no date.** Moves to `Logs\` in this slice. |
 
-Three timestamp shapes and one multi-line format. That is the actual problem; the grid is the easy
-half.
+Three timestamp shapes and one multi-line format. That is the actual problem; the grid is the easy half.
 
 ---
 
@@ -171,9 +153,7 @@ Public Module LogPaths
 End Module
 ```
 
-One place that answers "where do logs live". `GlobalErrorLog`, `AdobeHostLog`, `RunLogger` and
-`TreeLogger` all call it. No behaviour change for the first three — confirm the path they compute
-today is identical before editing.
+One place that answers "where do logs live". `GlobalErrorLog`, `AdobeHostLog`, `RunLogger` and `TreeLogger` all call it. No behaviour change for the first three — confirm the path they compute today is identical before editing.
 
 ### 4.2 `TreeLogger`
 
@@ -204,9 +184,7 @@ Called **before** every append. Same policy as Python's `RotatingFileHandler`, d
 
 Worst case per family is 60 MB, bounded and predictable.
 
-Wire it into `GlobalErrorLog.Write`, `AdobeHostLog.Write`, `TreeLogger.Write` and the `RunLogger`
-constructor. Per-run files rarely reach 10 MB, but a runaway loop in a test would, and the guard
-costs one `FileInfo.Length`.
+Wire it into `GlobalErrorLog.Write`, `AdobeHostLog.Write`, `TreeLogger.Write` and the `RunLogger` constructor. Per-run files rarely reach 10 MB, but a runaway loop in a test would, and the guard costs one `FileInfo.Length`.
 
 **Do not** put the check in the viewer. The viewer reports sizes; it does not enforce them.
 
@@ -218,8 +196,7 @@ Everything here is pure and headless-testable.
 
 ### 5.1 `KBotLogLevel`
 
-`Unknown, Trace, Debug, Info, Warn, Error` — in that order, so a minimum-level comparison is a
-plain `>=` if it is ever wanted.
+`Unknown, Trace, Debug, Info, Warn, Error` — in that order, so a minimum-level comparison is a plain `>=` if it is ever wanted.
 
 ### 5.2 `LogEntry`
 
@@ -255,8 +232,7 @@ Public Interface ILogEntryParser
 End Interface
 ```
 
-One question only: does this line start a new entry, and if so what are its fields? Continuation is
-the loader's job.
+One question only: does this line start a new entry, and if so what are its fields? Continuation is the loader's job.
 
 - `HarnessErrorParser` — the `==== ts  [source] ====` banner; level always `Error` (that file only
   ever receives exceptions); the `ex.ToString()` lines that follow are continuation.
@@ -290,8 +266,7 @@ the loader's job.
 
 Pure class, same shape as `IstoricFilter`. Read that file before writing this one.
 
-Criteria: `Files As ISet(Of String)`, `Levels As ISet(Of KBotLogLevel)`, `Text As String`,
-`From As Date?`, `To As Date?`.
+Criteria: `Files As ISet(Of String)`, `Levels As ISet(Of KBotLogLevel)`, `Text As String`, `From As Date?`, `To As Date?`.
 
 - Text: `IndexOf(..., StringComparison.OrdinalIgnoreCase)` against `Raw`, so a search hits inside a
   stack trace. Empty text matches everything. **No diacritic folding** — "sters" will not find
@@ -311,8 +286,7 @@ Criteria: `Files As ISet(Of String)`, `Levels As ISet(Of KBotLogLevel)`, `Text A
 
 ### 6.1 The problem with what exists
 
-`utils/logger.py` attaches a `RotatingFileHandler('api_server.log', ...)` to the **root** logger,
-plus a `StreamHandler`. Three consequences:
+`utils/logger.py` attaches a `RotatingFileHandler('api_server.log', ...)` to the **root** logger, plus a `StreamHandler`. Three consequences:
 
 1. **One flat file for every unit.** There is no way to hand an operator only their own lines.
 2. **The path is relative**, so the file lands in whatever directory Gunicorn was started in.
@@ -339,15 +313,9 @@ The project's own convention is one database per unit, keyed by `DC`. Logging fo
 2026-08-13T14:22:31.123+03:00 - ERROR - 000_DEMO - 86.120.4.11 - forexe_tree DB error: ...
 ```
 
-Set the formatter's `default_time_format` / converter so `asctime` carries the offset. The `dc`
-field is written even though the file is already per-unit: it survives a file being moved, renamed
-or concatenated, and it makes `api_common.log` readable.
+Set the formatter's `default_time_format` / converter so `asctime` carries the offset. The `dc` field is written even though the file is already per-unit: it survives a file being moved, renamed or concatenated, and it makes `api_common.log` readable.
 
-**Routing.** A `logging.Handler` subclass resolves the DC per record and dispatches to a lazily
-created `RotatingFileHandler` per DC, cached in a dict. This is safe because the project enforces a
-**single Gunicorn worker** — two processes appending to and rotating the same file is exactly the
-race this avoids. If that guarantee ever changes, this design must be revisited; write that in the
-worklog.
+**Routing.** A `logging.Handler` subclass resolves the DC per record and dispatches to a lazily created `RotatingFileHandler` per DC, cached in a dict. This is safe because the project enforces a **single Gunicorn worker** — two processes appending to and rotating the same file is exactly the race this avoids. If that guarantee ever changes, this design must be revisited; write that in the worklog.
 
 **Where the DC comes from**, in order:
 
@@ -356,9 +324,7 @@ worklog.
 2. `g.session.db_name`, when a session exists (confirm the attribute in `session_store.py`);
 3. `"common"`.
 
-A `DcFilter`, alongside the existing `RequestIPFilter`, sets `record.dc`. Both filters must be
-attached to every handler, and both must tolerate no request context — `has_request_context()` is
-already the pattern in `RequestIPFilter`; copy it.
+A `DcFilter`, alongside the existing `RequestIPFilter`, sets `record.dc`. Both filters must be attached to every handler, and both must tolerate no request context — `has_request_context()` is already the pattern in `RequestIPFilter`; copy it.
 
 ### 6.3 The catch-all error handler (`main.py`)
 
@@ -369,18 +335,13 @@ def _log_unhandled(err):
     return jsonify({"error": "Eroare internă. Consultați jurnalul serverului."}), 500
 ```
 
-Literal diacritics, `ensure_ascii=False` already set globally. Re-raise or pass through
-`HTTPException` unchanged so 404 and 405 keep their status codes — an errorhandler that turns every
-404 into a 500 is a classic and is worse than the gap it fixes. Confirm the exact form against the
-Flask version in use.
+Literal diacritics, `ensure_ascii=False` already set globally. Re-raise or pass through `HTTPException` unchanged so 404 and 405 keep their status codes — an errorhandler that turns every 404 into a 500 is a classic and is worse than the gap it fixes. Confirm the exact form against the Flask version in use.
 
 Without this, "all errors visible" is false, and the viewer would show a hole rather than an error.
 
 ### 6.4 The endpoints
 
-Both `@require_session`. Both **derive the filename from `g.session.db_name`** — the caller never
-supplies a name or a path. There is no allowlist to get wrong: an operator cannot address another
-unit's file because no code path exists that would let them name one.
+Both `@require_session`. Both **derive the filename from `g.session.db_name`** — the caller never supplies a name or a path. There is no allowlist to get wrong: an operator cannot address another unit's file because no code path exists that would let them name one.
 
 - `GET /api/logs/files` → `{"files": [{"name": "api_000_DEMO.log", "generation": 0,
   "size_bytes": 812345, "modified": "<ISO+offset>"}], "server_time": "<ISO+offset>"}`.
@@ -391,23 +352,15 @@ unit's file because no code path exists that would let them name one.
   `max_bytes` is clamped to 5 MB server-side regardless of what the client asks for. Default 512 KB.
   Reads the last N bytes by seeking, never `read()` on the whole file.
 
-`api_common.log` is **not** reachable through these endpoints — see the open question in §13. It
-holds startup records and pre-auth failures across all units; a route error always has a session and
-therefore lands in the unit's own file.
+`api_common.log` is **not** reachable through these endpoints — see the open question in §13. It holds startup records and pre-auth failures across all units; a route error always has a session and therefore lands in the unit's own file.
 
-Client half: `GetLogFilesAsync` / `GetLogTailAsync` on `ApiClient` + `IApiClient`, following the
-existing call pattern including `WithReauth`. Read `ApiClient.vb` first and copy the shape.
+Client half: `GetLogFilesAsync` / `GetLogTailAsync` on `ApiClient` + `IApiClient`, following the existing call pattern including `WithReauth`. Read `ApiClient.vb` first and copy the shape.
 
 ### 6.5 Gunicorn's own output
 
-Everything above concerns records the Flask app produces. Gunicorn produces its own, and today they
-go to stderr and end up only in the systemd journal: worker start-up and shutdown, worker crashes,
-and — critically — any traceback raised **before** the app's logger exists, such as an import error
-or a bad `config.py`. Those are the errors that matter most and are currently the hardest to see.
+Everything above concerns records the Flask app produces. Gunicorn produces its own, and today they go to stderr and end up only in the systemd journal: worker start-up and shutdown, worker crashes, and — critically — any traceback raised **before** the app's logger exists, such as an import error or a bad `config.py`. Those are the errors that matter most and are currently the hardest to see.
 
-Create **`gunicorn.conf.py`** in the app root. Gunicorn reads `./gunicorn.conf.py` from its working
-directory by default; verify that against the installed Gunicorn version rather than assuming, and
-if the systemd unit needs `--config` added, say so in the worklog and give the exact line to change.
+Create **`gunicorn.conf.py`** in the app root. Gunicorn reads `./gunicorn.conf.py` from its working directory by default; verify that against the installed Gunicorn version rather than assuming, and if the systemd unit needs `--config` added, say so in the worklog and give the exact line to change.
 
 ```python
 errorlog   = "<LOG_DIR>/gunicorn_error.log"
@@ -416,46 +369,21 @@ loglevel   = "info"
 capture_output = True     # worker stdout/stderr into errorlog
 ```
 
-`capture_output = True` is the point of the exercise: it sends anything written straight to
-stdout/stderr — a bare `print`, a traceback at import time — into the error log file instead of the
-journal.
+`capture_output = True` is the point of the exercise: it sends anything written straight to stdout/stderr — a bare `print`, a traceback at import time — into the error log file instead of the journal.
 
-**Consequence that must be handled, not discovered later.** `utils/logger.py` currently attaches a
-`StreamHandler` to the root logger. With `capture_output = True`, every line that handler writes is
-duplicated into `gunicorn_error.log`, which means per-unit records land in a shared file. Under
-Gunicorn, **do not attach the console handler**; keep it only when `main.py` is run directly for
-development. Gunicorn sets `SERVER_SOFTWARE` in the environment — check for it, and confirm that is
-true for the installed version before relying on it. If it is not, use an explicit environment
-variable set in the systemd unit instead of guessing.
+**Consequence that must be handled, not discovered later.** `utils/logger.py` currently attaches a `StreamHandler` to the root logger. With `capture_output = True`, every line that handler writes is duplicated into `gunicorn_error.log`, which means per-unit records land in a shared file. Under Gunicorn, **do not attach the console handler**; keep it only when `main.py` is run directly for development. Gunicorn sets `SERVER_SOFTWARE` in the environment — check for it, and confirm that is true for the installed version before relying on it. If it is not, use an explicit environment variable set in the systemd unit instead of guessing.
 
-**Rotation.** Gunicorn does not rotate its own files. Add `/etc/logrotate.d/kbot`. logrotate is the
-standard Ubuntu tool that renames a log file once a day (or once it passes a size), keeps a set
-number of old copies, and deletes the rest — the same idea as `RotatingFileHandler`, run by the
-system instead of by the application. It must send Gunicorn a `USR1` signal in the `postrotate`
-step: that tells Gunicorn to close and reopen its log files, so it keeps writing to the new file
-rather than to the renamed one. Match the app's policy — size 10 M, `rotate 5`, `missingok`,
-`notifempty`, `compress` optional. Put the exact file contents in the worklog; it is not in the repo
-and nobody will remember it in six months.
+**Rotation.** Gunicorn does not rotate its own files. Add `/etc/logrotate.d/kbot`. logrotate is the standard Ubuntu tool that renames a log file once a day (or once it passes a size), keeps a set number of old copies, and deletes the rest — the same idea as `RotatingFileHandler`, run by the system instead of by the application. It must send Gunicorn a `USR1` signal in the `postrotate` step: that tells Gunicorn to close and reopen its log files, so it keeps writing to the new file rather than to the renamed one. Match the app's policy — size 10 M, `rotate 5`, `missingok`, `notifempty`, `compress` optional. Put the exact file contents in the worklog; it is not in the repo and nobody will remember it in six months.
 
-**Exposure.** These two files carry records from every unit and from before any request context
-exists, so they cannot be filtered per unit without parsing a shared file — the leak-prone approach
-this design deliberately rejected in §6.2. They are therefore treated like `api_common.log`
-(§13.1): written, rotated, **not** exposed through the endpoints, read from the server when needed.
+**Exposure.** These two files carry records from every unit and from before any request context exists, so they cannot be filtered per unit without parsing a shared file — the leak-prone approach this design deliberately rejected in §6.2. They are therefore treated like `api_common.log` (§13.1): written, rotated, **not** exposed through the endpoints, read from the server when needed.
 
-**Deployment.** This part is not a code change alone; it needs a service restart and a logrotate
-file dropped on the box. It cannot be verified from the repo. List it as an explicit host step in
-the worklog, with the exact commands, and mark it unverified until the operator has run it.
+**Deployment.** This part is not a code change alone; it needs a service restart and a logrotate file dropped on the box. It cannot be verified from the repo. List it as an explicit host step in the worklog, with the exact commands, and mark it unverified until the operator has run it.
 
-**Adjacent, deliberately not absorbed:** slice 0004 has an open item to enforce a single Gunicorn
-worker through an `on_starting` guard, and `gunicorn.conf.py` is exactly where that guard belongs.
-Do **not** silently fold another slice's work into this one. Either the operator says to do it here,
-and both slice rows record that, or the worklog notes that the file now exists and the guard is a
-two-line follow-up.
+**Adjacent, deliberately not absorbed:** slice 0004 has an open item to enforce a single Gunicorn worker through an `on_starting` guard, and `gunicorn.conf.py` is exactly where that guard belongs. Do **not** silently fold another slice's work into this one. Either the operator says to do it here, and both slice rows record that, or the worklog notes that the file now exists and the guard is a two-line follow-up.
 
 ### 6.6 Clock correction
 
-The server's time comes back on every one of these responses as `server_time`, and the login
-response gains the same field. The client keeps `ServerClock.Offset`:
+The server's time comes back on every one of these responses as `server_time`, and the login response gains the same field. The client keeps `ServerClock.Offset`:
 
 - computed at login as `server_time - DateTimeOffset.UtcNow`, and refreshed from each logs response
   so a three-hour-old session does not display against a stale offset;
@@ -465,39 +393,27 @@ response gains the same field. The client keeps `ServerClock.Offset`:
   legacy lines only**. Use the parsed offset when the line has one; use `ServerClock.Offset` when it
   does not.
 
-Display rule: the grid's `Ora` column shows **every** entry in client local time, server entries
-converted. The detail pane shows the raw line **untouched**. The status bar states the offset when
-it is non-zero: `ceas server: +03:00`.
+Display rule: the grid's `Ora` column shows **every** entry in client local time, server entries converted. The detail pane shows the raw line **untouched**. The status bar states the offset when it is non-zero: `ceas server: +03:00`.
 
 ---
 
 ## 7. `KBotChipBar` — the one new control (pass 0031-03)
 
-Folder `src/KBot.Controls/ChipBar/`, per the README rule. Three files: `KBotChip.vb`,
-`KBotChipCollection.vb`, `KBotChipBar.vb`.
+Folder `src/KBot.Controls/ChipBar/`, per the README rule. Three files: `KBotChip.vb`, `KBotChipCollection.vb`, `KBotChipBar.vb`.
 
-**Copy `KBotNavList`'s decisions rather than reinventing them.** Read `KBotNavList.vb`,
-`KBotNavItem.vb` and `KBotNavItemCollection.vb` first; this is their multi-select sibling and should
-be recognisably the same code.
+**Copy `KBotNavList`'s decisions rather than reinventing them.** Read `KBotNavList.vb`, `KBotNavItem.vb` and `KBotNavItemCollection.vb` first; this is their multi-select sibling and should be recognisably the same code.
 
 ### 7.1 `KBotChip`
 
-Parameterless constructor (the collection dialog needs it) plus `New(key, text)`. Properties, each
-with `<Category("K-BOT")>` and a Romanian `<Description>`: `Key`, `Text`, `Checked`, `Count` (badge,
-0 = hidden), `Enabled`, `Visible`, `AccentOverride As Color` (`Color.Empty` = use the scheme accent).
+Parameterless constructor (the collection dialog needs it) plus `New(key, text)`. Properties, each with `<Category("K-BOT")>` and a Romanian `<Description>`: `Key`, `Text`, `Checked`, `Count` (badge, 0 = hidden), `Enabled`, `Visible`, `AccentOverride As Color` (`Color.Empty` = use the scheme accent).
 
-`AccentOverride` exists so the ERROR chip can be red and WARN amber. The **caller** passes
-`Palette.ErrorColor` / `Palette.WarningColor`; the control never names a colour. Say that in the
-property's description, and re-apply on theme change.
+`AccentOverride` exists so the ERROR chip can be red and WARN amber. The **caller** passes `Palette.ErrorColor` / `Palette.WarningColor`; the control never names a colour. Say that in the property's description, and re-apply on theme change.
 
-`Bounds` stays `Friend` — derived layout state, must not serialize, same reason as `KBotNavItem`.
-`ToString()` returns something readable in the collection dialog: `err — "Erori" [✓]`.
+`Bounds` stays `Friend` — derived layout state, must not serialize, same reason as `KBotNavItem`. `ToString()` returns something readable in the collection dialog: `err — "Erori" [✓]`.
 
 ### 7.2 `KBotChipCollection`
 
-`Inherits Collection(Of KBotChip)`, `Friend Owner As KBotChipBar`. Override `InsertItem` / `SetItem`
-/ `RemoveItem` / `ClearItems`: call the base, then `Owner?.InvalidateLayout()`. Reject `Nothing`.
-**Do not validate keys here** — the dialog inserts an empty chip the moment Add is pressed.
+`Inherits Collection(Of KBotChip)`, `Friend Owner As KBotChipBar`. Override `InsertItem` / `SetItem` / `RemoveItem` / `ClearItems`: call the base, then `Owner?.InvalidateLayout()`. Reject `Nothing`. **Do not validate keys here** — the dialog inserts an empty chip the moment Add is pressed.
 
 ### 7.3 `KBotChipBar`
 
@@ -534,8 +450,7 @@ property's description, and re-apply on theme change.
 
 ## 8. `LogViewerForm` — `src/KBot.App/Views/` (pass 0031-04)
 
-Inherits `KBotShellForm` (confirm the base class and its API; follow whatever structure it imposes
-rather than fighting it). **All controls declared in `LogViewerForm.Designer.vb`** — house rule.
+Inherits `KBotShellForm` (confirm the base class and its API; follow whatever structure it imposes rather than fighting it). **All controls declared in `LogViewerForm.Designer.vb`** — house rule.
 
 Layout, top to bottom:
 
@@ -575,18 +490,13 @@ Details:
 
 ### 8.1 `btnClear` — the destructive one
 
-**Local files only.** Server logs are never deleted from the client; the endpoints are read-only and
-stay that way.
+**Local files only.** Server logs are never deleted from the client; the endpoints are read-only and stay that way.
 
-A modal lists every local file with a checkbox, size and entry count, nothing ticked initially, then
-a confirmation naming exactly what will go and its total size. Two steps, because there is no undo.
+A modal lists every local file with a checkbox, size and entry count, nothing ticked initially, then a confirmation naming exactly what will go and its total size. Two steps, because there is no undo.
 
-Per file: `File.Delete`; on `IOException` (a file held open — the running harness log) fall back to
-truncating to zero. If both fail, report that file by name with the reason and continue with the
-rest. **Nothing fails silently.** Summarise per file, refresh, reload the current selection.
+Per file: `File.Delete`; on `IOException` (a file held open — the running harness log) fall back to truncating to zero. If both fail, report that file by name with the reason and continue with the rest. **Nothing fails silently.** Summarise per file, refresh, reload the current selection.
 
-The file the running process holds open is shown but **greyed and unticked**, labelled `în uz de
-rularea curentă`.
+The file the running process holds open is shown but **greyed and unticked**, labelled `în uz de rularea curentă`.
 
 ---
 
@@ -604,9 +514,7 @@ rularea curentă`.
 
 ## 10. Tests
 
-**Report real before/after counts from an actual run.** Do not carry numbers from this plan or an
-older worklog; that has already gone wrong once (slice 0025 §0.3). .NET tests run on the client
-machine after publish, results in `AppDir\Logs\test_*.log`.
+**Report real before/after counts from an actual run.** Do not carry numbers from this plan or an older worklog; that has already gone wrong once (slice 0025 §0.3). .NET tests run on the client machine after publish, results in `AppDir\Logs\test_*.log`.
 
 `KBot.Common.Tests`:
 
@@ -673,11 +581,9 @@ Python (`PYTHON/tests/test_logs.py`, host-only, skips off-host like the existing
 | 0031-01 | `LogPaths`, `LogRotation`, `LogFileReader`, parsers, `LogFileLoader`, `LogFilter`, `ServerClock`; the four writer changes; `TreeLogger` fixes; the STATUS terminal-sink correction; tests 1–11 | `SLICE-0031-01-log-core.md` |
 | 0031-02 | Python: `LOG_DIR`, per-DC routing handler, `DcFilter`, ISO format, catch-all error handler, `gunicorn.conf.py` + logrotate, both endpoints; `ApiClient` half; tests 19–20, 25–31 | `SLICE-0031-02-server-logs.md` |
 | 0031-03 | `KBotChipBar` + `KBotChip` + `KBotChipCollection`; tests 12–18 | `SLICE-0031-03-chipbar.md` |
-| 0031-04 | `LogViewerForm`, clear dialog, DevHarness wiring, harness test; tests 21–24 | `SLICE-0031-04-log-viewer.md` |
+| 0031-04 | `LogViewerForm`, clear dialog, DevHarness wiring, harness test; tests 21–24 | [0031-04](worklog/SLICE-0031-01-log-core.md#slice-0031-04) |
 
-Each pass commits and pushes on its own with its worklog and its `KBOT_STATUS.md` update. Do not
-batch them. 0031-02 touches production API behaviour — deploy it deliberately, not as a side effect
-of a client build.
+Each pass commits and pushes on its own with its worklog and its `KBOT_STATUS.md` update. Do not batch them. 0031-02 touches production API behaviour — deploy it deliberately, not as a side effect of a client build.
 
 ---
 

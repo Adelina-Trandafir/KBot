@@ -89,3 +89,13 @@ visitor could send them by hand to a route that trusts them. Today only `certifi
 - Not tried: Edge/Firefox, a certificate from DigiSign / Trans Sped (the one that worked was from certSIGN: confirmed by the operator; DigiSign and Trans Sped not tried), an expired one, the «Dezactivează» button, a user switched off, a phone (the removal of the buttons was only seen in emulation).
 - Only the main host's `k-bot.ro` address is allowed to call the certificate host (CORS); `www.k-bot.ro` redirects to it.
 - Renewal of the certificate of `cert.k-bot.ro` is certbot's timer; nginx is not reloaded by it unless a deploy hook exists (to check before 2027-01-03).
+
+## Așezarea autentificării comune — 21.10.2026 <a id="d001-12-certificat"></a>
+
+Preluare D001-12, **Confirmat 23.10**. În /portal, inclusiv /portal?next=%2Fvercon, Intră cu certificat digital este în stânga lui Continuă, pe același rând, aliniat la marginea stângă a selectorului Aplicația; separatorul sau este eliminat. Textele se pot împacheta la lățimi mici. Formularele de autentificare/cod permit derularea paginii sub 901px pentru acces la toate controalele când înălțimea este mică. Așezarea înlocuiește descrierea inițială «sub separator»; condițiile de autentificare și excluderea mobilă de mai sus nu sunt revizuite de această etapă.
+
+Fișiere istorice (numele fără prefix continuă directorul precedent):
+
+| Etapă generală | Fișiere |
+|---|---|
+| 19 | PYTHON/static/portal.html; PYTHON/static/css/portal-certificate.css, portal-signin.css; implementare_vercon_v2.md. |

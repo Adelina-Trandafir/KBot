@@ -7,6 +7,14 @@
 > reconstructed from the session where this plan was first written; treat every file path
 > and field name as **to be confirmed by reading the real file**, not as verified fact.
 
+## Historical handoff checkpoint (document dated 15.07.2026)
+
+The retired TreeDataApi handoff recorded Tier 1 as complete and pushed: rate limiting wired in both pre-auth endpoints, the single-worker guard intact, HTTPS-only ApiOptions with no KBOT_API_BASE_URL override, AppConfig retired and DownloadAction.ApiUrl deleted. KBot.Forexe still had no reference to KBot.Api. This is the handoff's historical statement, not a new validation or a reconciliation of dates with the reconstructed plan below.
+
+The pre-tree baseline recorded there was a clean build with Option Strict On and zero warnings; .NET 80 passed (Api 26, App 18, Theming 27, Common 7, Domain 1, LocalStore 1), Python offline 75 passed / 7 skipped / 0 failures or errors. The tree slice later recorded 75/8; see [SLICE-0008](SLICE-0008-tree-data-api.md).
+
+Historical offline-test trap: import config can succeed off-host because test_redis_session_store.py puts a fake config in sys.modules. Host-only gating must inspect the required attributes, not only whether the module imports; a clean skip does not validate a live database. These notes do not authorize running tests.
+
 ## Status of the four Tier 1 items
 
 1. **Brute-force rate limiter** on `/api/auth/units` + `/api/auth/login` — **DONE and

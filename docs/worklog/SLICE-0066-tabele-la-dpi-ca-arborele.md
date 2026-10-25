@@ -1,7 +1,8 @@
+<a id="slice-0066"></a>
+
 # SLICE-0066 — Toate tabelele din soluție sunt `KBotTableLayoutPanel`, cu măsurile și marginea calculate la DPI ca arborele și grila
 
-**Data:** 17.09.2026
-**Cerere (operator):**
+**Data:** 17.09.2026 **Cerere (operator):**
 
 > all the tablelayouts used throughout the entire solution must become custom tly with sizes
 > and paddings computed per dpi (just like in advanced tree or dgv). no git. not tests. also
@@ -11,20 +12,11 @@ Numărul feliei: 0066 = «Next free» din STATUS.
 
 ## 1. Ce era, de fapt, stricat
 
-`KBotTableLayoutPanel` exista din felia 0062, dar modelul lui de scară NU era al arborelui:
-ținea o fotografie a stilurilor **așa cum le lăsase autoscalarea WinForms** și o corecta doar
-sub `Fixed100`/`Manual`; sub `Automatic` — modul în care rulează operatorul — rămâneau numerele
-platformei. Iar numerele platformei sunt greșite pentru noi, și s-au MĂSURAT (sondă în afara
-soluției, monitor la 150%): autoscalarea pe font înmulțește stilurile Absolute și `Padding`-ul
-cu raportul a două înălțimi de font, **1,43 pe X și 1,67 pe Y**, nu cu 1,5 — și repetă
-înmulțirea peste valoarea CURENTĂ la fiecare schimbare de font. Un rând autorat la 40 ieșea 67;
-arborele de lângă el desena rândul de 22 la exact 33. Nu se aliniau niciodată.
+`KBotTableLayoutPanel` exista din felia 0062, dar modelul lui de scară NU era al arborelui: ținea o fotografie a stilurilor **așa cum le lăsase autoscalarea WinForms** și o corecta doar sub `Fixed100`/`Manual`; sub `Automatic` — modul în care rulează operatorul — rămâneau numerele platformei. Iar numerele platformei sunt greșite pentru noi, și s-au MĂSURAT (sondă în afara soluției, monitor la 150%): autoscalarea pe font înmulțește stilurile Absolute și `Padding`-ul cu raportul a două înălțimi de font, **1,43 pe X și 1,67 pe Y**, nu cu 1,5 — și repetă înmulțirea peste valoarea CURENTĂ la fiecare schimbare de font. Un rând autorat la 40 ieșea 67; arborele de lângă el desena rândul de 22 la exact 33. Nu se aliniau niciodată.
 
 ## 2. Modelul nou — cel al lui `AdvancedTreeControl.Dpi.vb` / `KBotDataView.Dpi.vb`
 
-Controlul e acum trei partiale în `KBot.Controls/Table/`: `KBotTableLayoutPanel.vb`
-(comutatoare, culori, grila din temă), `.Dpi.vb` (modelul logic, declanșatoarele, API-ul de
-rulare), `.Fit.vb` (regula surplusului din 0062 și `GetPreferredSize`).
+Controlul e acum trei partiale în `KBot.Controls/Table/`: `KBotTableLayoutPanel.vb` (comutatoare, culori, grila din temă), `.Dpi.vb` (modelul logic, declanșatoarele, API-ul de rulare), `.Fit.vb` (regula surplusului din 0062 și `GetPreferredSize`).
 
 - **Două valori pentru fiecare măsură.** AUTORATĂ = logică (px la 96 dpi): ce a scris
   designerul, ce întoarce `Padding`, ce citesc testele. LIVE = cea citită de motorul de
@@ -48,20 +40,11 @@ rulare), `.Fit.vb` (regula surplusului din 0062 și `GetPreferredSize`).
 - **Sub `ScaleAbsoluteStyles = False`** tabelul rămâne la pixelii logici (se desface și
   scalarea platformei) — ce face `Fixed100` pentru toată aplicația, disponibil per tabel.
 
-**API de rulare, tot în pixeli logici și idempotent:** `SetRowHeight`/`SetColumnWidth`
-(scrie măsura autorată, face stilul Absolute, ridică o strângere), `SetRowCollapsed`/
-`SetColumnCollapsed` + `IsRowCollapsed`/`IsColumnCollapsed` (0 păstrat peste orice trecere;
-un rând Percent/AutoSize refuză cu `ArgumentException`, C3), `RefitToTheme()` (toată trecerea
-la cerere), `ResetStyleBaseline()` rămâne ca portiță pentru cine scrie stilurile direct.
-Stilurile adăugate la rulare (numărul lor s-a schimbat) se citesc din valoarea live,
-DEscalate; cele neatinse își păstrează măsura logică.
+**API de rulare, tot în pixeli logici și idempotent:** `SetRowHeight`/`SetColumnWidth` (scrie măsura autorată, face stilul Absolute, ridică o strângere), `SetRowCollapsed`/ `SetColumnCollapsed` + `IsRowCollapsed`/`IsColumnCollapsed` (0 păstrat peste orice trecere; un rând Percent/AutoSize refuză cu `ArgumentException`, C3), `RefitToTheme()` (toată trecerea la cerere), `ResetStyleBaseline()` rămâne ca portiță pentru cine scrie stilurile direct. Stilurile adăugate la rulare (numărul lor s-a schimbat) se citesc din valoarea live, DEscalate; cele neatinse își păstrează măsura logică.
 
 ## 3. Ce a arătat bancul, și cele trei reguli de măsurare care au ieșit din el
 
-Bancul a fost desenat prin `DrawToBitmap` dintr-o gazdă de unică folosință (form cu
-`Opacity = 0`, `Show`, `PerformClick` pe butoane), pe monitorul de 150% cu textul la 110%
-(scara 1,65). Prima rulare a dat trei numere greșite, toate în FIT, nu în scară — toate cu
-aceeași formă: rândul/coloana nu putea să VINĂ ÎNAPOI.
+Bancul a fost desenat prin `DrawToBitmap` dintr-o gazdă de unică folosință (form cu `Opacity = 0`, `Show`, `PerformClick` pe butoane), pe monitorul de 150% cu textul la 110% (scara 1,65). Prima rulare a dat trei numere greșite, toate în FIT, nu în scară — toate cu aceeași formă: rândul/coloana nu putea să VINĂ ÎNAPOI.
 
 1. **Coloana gazdei de 300 ieșea 628.** `ThemeFormFit.ContentDemand` plimba arborele ca pe un
    container și îi aduna caseta de căutare, poziționată de el din propria mărime — ecoul
@@ -77,12 +60,7 @@ aceeași formă: rândul/coloana nu putea să VINĂ ÎNAPOI.
    text + cele două chenare, formula lui `ModernRenderer.FitHeightToPaddingAndText`; lățime 0
    când e întins.
 
-După cele trei: la 1,65 coloanele 90/180/12/110 → 149/297/20/182, rândurile 32/32/40/24 →
-53/53/66/40, marginea 8 → 13, coloana gazdei 300 → 495; sub Fix 100% (×1,10 din text)
-99/198/13/121, 43/43/44/30, 9, 330 — unde 43 și 30 sunt 35 + surplusul câmpului de text și
-26 + surplusul etichetei, exact regula din 0062; arborele cu `ItemHeight = 32` dă 53 = rândul 0
-al tabelului sub Automatic. Strângere rând/coloană, `SetRowHeight(0, 60) → 99`,
-`Padding = 24 → 40`, și înapoi: toate din sursa logică, nimic compus.
+După cele trei: la 1,65 coloanele 90/180/12/110 → 149/297/20/182, rândurile 32/32/40/24 → 53/53/66/40, marginea 8 → 13, coloana gazdei 300 → 495; sub Fix 100% (×1,10 din text) 99/198/13/121, 43/43/44/30, 9, 330 — unde 43 și 30 sunt 35 + surplusul câmpului de text și 26 + surplusul etichetei, exact regula din 0062; arborele cu `ItemHeight = 32` dă 53 = rândul 0 al tabelului sub Automatic. Strângere rând/coloană, `SetRowHeight(0, 60) → 99`, `Padding = 24 → 40`, și înapoi: toate din sursa logică, nimic compus.
 
 ## 4. Peste tot
 
@@ -105,17 +83,7 @@ al tabelului sub Automatic. Strângere rând/coloană, `SetRowHeight(0, 60) → 
 
 ## 5. Bancul de probă
 
-`KBot.DevHarness/Internal/TableLayoutHarnessForm` (+ `.Designer.vb`, toate controalele în
-designer) și `Tests/TableLayoutHarnessTest` («KBotTableLayoutPanel — măsuri la DPI ca arborele
-(0066)», Controls/UI, nedistructiv, fără conexiune). Pe ecran: butoanele de schemă, scara
-K-BOT (automată / fix 100% / manual × N, prin `AppScaling.Configure`, ca formularul de opțiuni)
-și cursorul de text; comutatoarele tabelului; strânge/desface rândul 3 și coloana 3,
-`SetRowHeight(0, 60|32)`, `Padding → 24|8`; un tabel-gazdă (coloană fixă 300 pentru arbore —
-tabel în tabel) cu tabelul-sondă în stânga și un `AdvancedTreeControl` cu `ItemHeight = 32`
-(același număr ca primele două rânduri) în dreapta. Citirea scrie în jurnal și pe fața
-tabelului: scara și modul, fiecare coloană/rând fix autorat → acum, marginea, coloana
-gazdei, și rândul arborelui față de rândul 0 al tabelului («= ACELAȘI» / «≠ DIFERIT»). Schema,
-modul de scalare și mărimea textului se pun înapoi la închidere.
+`KBot.DevHarness/Internal/TableLayoutHarnessForm` (+ `.Designer.vb`, toate controalele în designer) și `Tests/TableLayoutHarnessTest` («KBotTableLayoutPanel — măsuri la DPI ca arborele (0066)», Controls/UI, nedistructiv, fără conexiune). Pe ecran: butoanele de schemă, scara K-BOT (automată / fix 100% / manual × N, prin `AppScaling.Configure`, ca formularul de opțiuni) și cursorul de text; comutatoarele tabelului; strânge/desface rândul 3 și coloana 3, `SetRowHeight(0, 60|32)`, `Padding → 24|8`; un tabel-gazdă (coloană fixă 300 pentru arbore — tabel în tabel) cu tabelul-sondă în stânga și un `AdvancedTreeControl` cu `ItemHeight = 32` (același număr ca primele două rânduri) în dreapta. Citirea scrie în jurnal și pe fața tabelului: scara și modul, fiecare coloană/rând fix autorat → acum, marginea, coloana gazdei, și rândul arborelui față de rândul 0 al tabelului («= ACELAȘI» / «≠ DIFERIT»). Schema, modul de scalare și mărimea textului se pun înapoi la închidere.
 
 ## 6. Fișiere atinse
 
@@ -174,20 +142,15 @@ modul de scalare și mărimea textului se pun înapoi la închidere.
 
 ---
 
+<a id="slice-0066-02"></a>
+
 # 0066-02 — corectură: formularele se scalează la DPI, nu la font
 
-Operatorul a deschis bancul 0062 la 100%, 125% și 150% (18.09.2026) și a pus capturile una
-lângă alta: *«NONE OF THEM ARE EQUAL … on 100% scaling the tablelayout is huge»*. Are
-dreptate, și cauza nu era în tabel: felia 0066 pusese tabelul pe rigla arborelui, dar
-FORMULARUL din jurul lui nu era pe nicio riglă.
+Operatorul a deschis bancul 0062 la 100%, 125% și 150% (18.09.2026) și a pus capturile una lângă alta: *«NONE OF THEM ARE EQUAL … on 100% scaling the tablelayout is huge»*. Are dreptate, și cauza nu era în tabel: felia 0066 pusese tabelul pe rigla arborelui, dar FORMULARUL din jurul lui nu era pe nicio riglă.
 
 ## 1. Ce era stricat
 
-Toate cele 69 de formulare și vederi din `src/` erau `AutoScaleMode.Font`. Din sursa .NET 8
-(`ContainerControl.GetFontAutoScaleDimensions`): factorul e raportul a două metrici ÎNTREGI
-de font — `tmHeight` și lățimea medie rotunjită («intentional integer round off here for
-Win32 compat») — față de perechea ștampilată în designer. Cifrele din capturile operatorului
-(baza formularului 0062, autorat 1180×640 la 96 dpi cu (7, 15)):
+Toate cele 69 de formulare și vederi din `src/` erau `AutoScaleMode.Font`. Din sursa .NET 8 (`ContainerControl.GetFontAutoScaleDimensions`): factorul e raportul a două metrici ÎNTREGI de font — `tmHeight` și lățimea medie rotunjită («intentional integer round off here for Win32 compat») — față de perechea ștampilată în designer. Cifrele din capturile operatorului (baza formularului 0062, autorat 1180×640 la 96 dpi cu (7, 15)):
 
 | ecran | text | perechea măsurată | factorul platformei | `DeviceDpi/96` |
 |---|---|---|---|---|
@@ -195,16 +158,9 @@ Win32 compat») — față de perechea ștampilată în designer. Cifrele din ca
 | 125% | 100% | (8, 18) | **1,143 × 1,200** | 1,25 |
 | 150% | 99% | (9, 22) | **1,286 × 1,467** | 1,50 |
 
-Niciunul nu e `DeviceDpi/96`, niciunul nu e la fel pe cele două axe, și fiecare DPI dă alt
-raport — deci aceeași fereastră nu putea arăta la fel pe două ecrane. Arborele, grila și (de
-la 0066) tabelul desenau corect, la 1,00 / 1,25 / 1,50, și tocmai de aceea IEȘEAU din
-proporție: la 100% tabelul era la 1,00 într-un formular la 0,857 × 0,933 — «huge».
+Niciunul nu e `DeviceDpi/96`, niciunul nu e la fel pe cele două axe, și fiecare DPI dă alt raport — deci aceeași fereastră nu putea arăta la fel pe două ecrane. Arborele, grila și (de la 0066) tabelul desenau corect, la 1,00 / 1,25 / 1,50, și tocmai de aceea IEȘEAU din proporție: la 100% tabelul era la 1,00 într-un formular la 0,857 × 0,933 — «huge».
 
-Confirmat și cu o sondă separată (`scratchpad/probe`, aceeași fereastră autorată la 96 pe
-ecranul de 150%): `Font` (7, 15) → client 1686×1067 (1,43 × 1,67); `Dpi` (96, 96) → client
-1770×960 (1,50 × 1,50 exact), rând de tabel 32→48, umplutură 8→12, buton 100×30→150×45;
-schimbarea fontului sub `Dpi` nu mișcă nimic; `Control.Scale(1,1)` înmulțește uniform tot
-(client 1947×1056, rând 53, `MinimumSize` 1471×789) și se întoarce exact.
+Confirmat și cu o sondă separată (`scratchpad/probe`, aceeași fereastră autorată la 96 pe ecranul de 150%): `Font` (7, 15) → client 1686×1067 (1,43 × 1,67); `Dpi` (96, 96) → client 1770×960 (1,50 × 1,50 exact), rând de tabel 32→48, umplutură 8→12, buton 100×30→150×45; schimbarea fontului sub `Dpi` nu mișcă nimic; `Control.Scale(1,1)` înmulțește uniform tot (client 1947×1056, rând 53, `MinimumSize` 1471×789) și se întoarce exact.
 
 ## 2. Ce s-a schimbat
 
@@ -303,3 +259,7 @@ schimbarea fontului sub `Dpi` nu mișcă nimic; `Control.Scale(1,1)` înmulțeș
   (comentarii).
 - `src/KBot.DevHarness/Internal/FormFitHarnessForm.vb`, `TableLayoutHarnessForm.vb` (readout).
 - `docs/kbot-forms-ui-convention.md` §9, `CLAUDE.md` (regula Autoscale), `KBOT_STATUS.md`.
+
+## Reper unic din registru
+
+Focusul 0066-02 folosea numărătoarea «69 (+ 8 fără ștampilă)»; corpul etapei și lista fișierelor păstrează formulările/repartizarea lor. Consolidarea nu reinterpretează totalul și nu reface inventarul designerelor.

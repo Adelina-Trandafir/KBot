@@ -1,3 +1,5 @@
+<a id="slice-0086"></a>
+
 # SLICE-0086 — KbotForm split into partial classes + «Angajament nou» as primary button
 
 Operator request, 26.09.2026:
@@ -6,12 +8,11 @@ Operator request, 26.09.2026:
    none over ~500 lines.
 2. `btnAngajamentNou` gets the primary button theme.
 
+**Cronologie:** prima trecere păstrează DdfSend neatins, apoi trecerea 2 îl împarte. [0087](SLICE-0087-clasificatii-parteneri-meniu.md#slice-0087) înlocuiește ulterior butonul Angajament nou cu meniul primar. Numerele de fișiere/rânduri sunt măsurătorile acelui checkpoint.
+
 ## What changed and why
 
-**Split.** `KbotForm.vb` now holds only the fields, the constructor, the re-login net
-(`WithReauth`, `IsContextMismatch`, `ContextMismatchError`), `MainForm_Load` and
-`MainForm_Shown`. Everything else moved, unchanged in behaviour, into new partial files
-(`Partial Public Class KbotForm`), one per concern:
+**Split.** `KbotForm.vb` now holds only the fields, the constructor, the re-login net (`WithReauth`, `IsContextMismatch`, `ContextMismatchError`), `MainForm_Load` and `MainForm_Shown`. Everything else moved, unchanged in behaviour, into new partial files (`Partial Public Class KbotForm`), one per concern:
 
 | File | Lines | Contents |
 |------|------:|----------|
@@ -29,29 +30,17 @@ Operator request, 26.09.2026:
 | `KbotForm.Console.vb` | 172 | FOREXE console, history, connect (both), show-browser, `SincronizeazaAsync` |
 | `KbotForm.Chrome.vb` | 150 | `OnThemeChanged`, header/status paint, caption-bar options menu, `ShowLog` |
 
-The existing partials (`Browser`, `DdfSend`, `ForexeWatch`, `TreeOptions`,
-`UncorrectedOperations`) are untouched.
+The existing partials (`Browser`, `DdfSend`, `ForexeWatch`, `TreeOptions`, `UncorrectedOperations`) are untouched.
 
-**Rule 0 / English-only sweep of the moved code.** Every Romanian comment and XML doc in the
-moved code was rewritten in English without diacritics. Operator-visible strings
-(`KBotMessage.Show`, `ArgumentException` messages, menu captions, `SpuneStare`) are unchanged,
-diacritics included. No identifier was renamed except one local (`caleJurnal` → `logPath` in
-`MainForm_Load`). The two stacked `<summary>` blocks above `IntreabaDacaRefolosescLista` were
-separated, each now sits on its own function.
+**Rule 0 / English-only sweep of the moved code.** Every Romanian comment and XML doc in the moved code was rewritten in English without diacritics. Operator-visible strings (`KBotMessage.Show`, `ArgumentException` messages, menu captions, `SpuneStare`) are unchanged, diacritics included. No identifier was renamed except one local (`caleJurnal` → `logPath` in `MainForm_Load`). The two stacked `<summary>` blocks above `IntreabaDacaRefolosescLista` were separated, each now sits on its own function.
 
-**Dead commented-out code dropped:** the old header «Conectare» button wiring
-(`Forexe_StateChanged`, `ActualizeazaButonConectare`, the commented `OnFormClosed`, the
-commented `AddHandler` in Load and the commented `ButtonStyles.ApplyPrimary(btnConectare, …)`).
-The button no longer exists; connecting lives in the FOREXE footer band.
+**Dead commented-out code dropped:** the old header «Conectare» button wiring (`Forexe_StateChanged`, `ActualizeazaButonConectare`, the commented `OnFormClosed`, the commented `AddHandler` in Load and the commented `ButtonStyles.ApplyPrimary(btnConectare, …)`). The button no longer exists; connecting lives in the FOREXE footer band.
 
-**Primary button.** `KbotForm.Chrome.vb` `OnThemeChanged` calls
-`ButtonStyles.ApplyPrimary(btnAngajamentNou, scheme)`, so the button follows the accent colour of
-the active scheme (rounded under Modern) on every theme switch. The designer is not touched.
+**Primary button.** `KbotForm.Chrome.vb` `OnThemeChanged` calls `ButtonStyles.ApplyPrimary(btnAngajamentNou, scheme)`, so the button follows the accent colour of the active scheme (rounded under Modern) on every theme switch. The designer is not touched.
 
 ## Pass 2 (same day) — DdfSend split + partials nested in Solution Explorer
 
-**`KbotForm.DdfSend.vb` split** (558 lines, comments already English) by line ranges, no code
-retyped:
+**`KbotForm.DdfSend.vb` split** (558 lines, comments already English) by line ranges, no code retyped:
 
 | File | Lines | Contents |
 |------|------:|----------|
@@ -59,18 +48,14 @@ retyped:
 | `KbotForm.DdfSendMenu.vb` | 142 | Rezervari menu follow-ups: Definitiveaza / Deruleaza, final PDF, attachment read |
 | `KbotForm.DdfSendHelpers.vb` | 152 | send API, codes, captures, grids, fresh reads, `ArataReviziaAsync` |
 
-**Nesting.** Every partial of a form or control now has a
-`<Compile Update="…"><DependentUpon>Main.vb</DependentUpon></Compile>` entry, so Solution
-Explorer shows it as a leaf under the main file:
+**Nesting.** Every partial of a form or control now has a `<Compile Update="…"><DependentUpon>Main.vb</DependentUpon></Compile>` entry, so Solution Explorer shows it as a leaf under the main file:
 
 - `KBot.App.vbproj`: the 21 `KbotForm.*.vb` partials under `KbotForm.vb`.
 - `KBot.Controls.vbproj`: 56 partials — `AdvancedTreeControl` (26), `KBotDataView` (17),
   `KBotLaneView` (3), `CustomPopup` (3), `KBotRichTextEditor` (2), `KBotTableLayoutPanel` (2),
   `KBotCalendar`, `KBotCaptionBar`, `KBotChartView` (1 each).
 
-`*.Designer.vb` files are not listed (VS nests them already). Not touched, since they are not
-forms or controls: `ApiClient.*.vb` (KBot.Api), `WorkflowModels.*.vb` (KBot.Forexe) and the
-`_reference/KBOT_IPC.*.vb` snapshot (excluded from the build).
+`*.Designer.vb` files are not listed (VS nests them already). Not touched, since they are not forms or controls: `ApiClient.*.vb` (KBot.Api), `WorkflowModels.*.vb` (KBot.Forexe) and the `_reference/KBOT_IPC.*.vb` snapshot (excluded from the build).
 
 Build App (+ Controls): **0 warnings, 0 errors**. The nesting was not checked in Visual Studio.
 

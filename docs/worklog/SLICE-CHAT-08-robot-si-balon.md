@@ -2,7 +2,7 @@
 
 Data: 2026-10-21. Cerere operator: sistemul de chat din aplicațiile web să fie în K-BOT.app, legat vizual de imaginea K-BOT
 din colțul dreapta-jos al paginii «Acasă»; la mesaje noi robotul se mișcă, iar fereastra cu mesaje iese din el ca un balon.
-Felia CHAT-08 (CHAT-01…07 sunt ale chatului web și stau în `PYTHON/docs/worklog`); în help: `CHAT-08`. Continuarea: `SLICE-CHAT-09-raspuns-filtru-clic-afara.md`.
+Felia CHAT-08 desktop; CHAT-01…09 web sunt lucrări distincte în [proiectul și istoricul web](../../PYTHON/docs/chat/PROIECT.md), consolidate prin D001-04 fără renumerotare. În help: `CHAT-08`. Continuarea: `SLICE-CHAT-09-raspuns-filtru-clic-afara.md`.
 
 Alegerile operatorului (21.10.2026): animația este **desenată din cod** (nu un GIF); robotul și mesajele apar **doar pe pagina «Acasă»**.
 

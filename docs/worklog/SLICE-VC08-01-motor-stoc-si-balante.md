@@ -29,3 +29,11 @@ Cererea „asigură-te că nu se strică ceva” autorizează verificările loca
 - Fără aplicație reală/MariaDB. Integrarea pe date reale, concurența și salvarea completă rămân nevalidate; VC07-05 și comparatorul VC08-05 sunt separate.
 
 Următorul slice: **VC08-02 — motor amortizare**.
+
+## Separarea CSS — reperul 12.10.2026 <a id="d001-13-css"></a>
+
+Preluare D001-13. vercon.css/adechit.css/portal.css devin intrări cu importuri ordonate, păstrând exact secțiunile de bază/suprascrierile originale; controalele comune și rapoartele ADECHIT deja separate rămân la componente.
+
+- VERCON: structură/context/navigare, documente, nomenclatoare, lista de alimente, adaptoare controale, preview, responsive. ADECHIT: structură, ledger, rapoarte, controale, cataloage/formulare, anual, workspace, contacte. PORTAL: structură, extrase, clasificări, meniu, temă, angajamente, filtre, certificat, arbori, detalii documente, autentificare.
+- Regula din PYTHON/AGENTS.md: CSS separat de JS/HTML/Python, module pe responsabilități și CSS propriu al controalelor, aproximativ max 1000 linii/modul prin separare reală, fără comprimarea codului.
+- Proba cerută atunci reconstruia byte cu byte VERCON 15153, ADECHIT 34700, PORTAL 27148 bytes, în aceeași ordine. Importurile celor trei HTML-uri reale au fost încărcate în Chromium cu JS aplicațiilor oprit, fără resurse lipsă; intrările/selectori/valorile au rămas. Acestea completează probele CSS/stoc de mai sus, fără rularea aplicației reale/MariaDB. VC07-05 era PLANIFICAT la acest reper, continuarea VC08-02 și corective separate.

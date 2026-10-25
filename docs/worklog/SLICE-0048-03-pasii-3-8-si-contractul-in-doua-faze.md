@@ -1,5 +1,7 @@
 # SLICE-0048-03 — pașii 3–8 ai ingestiei FOREXE și contractul în două faze
 
+**Istoric al tranșei inițiale.** [Completarea 0048-03](SLICE-0048-03-completare.md) activează pasul 8, retrage F20/O3 și tolerarea Detaliu aplatizat; SQL/0049 ajunge la patru coloane. Interogarea din §5.3 este retrasă și nu se rulează. [0048-07](SLICE-0048-05-graficul-evolutiei.md#slice-0048-07) retrage ulterior F13 pe ambele căi; vetoul din descrierea de mai jos nu este contractul actual.
+
 A treia transă din felia 0048 (portarea conductei de ingestie FOREXE din Access VBA în API-ul
 Flask). Plan: `PLAN_ForexeIngestSteps3to8` peste `docs/PLAN_ForexeIngest.md`.
 Temeiul deciziilor: `docs/FUNDAMENT_Asociere_Receptii.md` — regulile `F1`…`F27` și deciziile
@@ -425,6 +427,8 @@ Ce livrează transa asta pentru regula de mai sus: `FX_Receptii_R.Sters` (steagu
 `FX_Receptii_H.EsteStergere` + `DataH` (data). Calculul nu e scris aici.
 
 ### 5.3 Interogarea de rulat pe gazdă pentru F20 / O3
+
+**RETRASĂ prin completarea 0048-03.** Se păstrează numai ca dovadă a ipotezei abandonate; nu se execută.
 
 ```sql
 SELECT H.IDRR, H.IDRH, H.DataH, H.Total, H.DIFH,

@@ -1,17 +1,22 @@
 # PLAN — Sending a DDF revision from KBOT to forexecab (G0-G6)
 
-**Status:** plan, no code. Written 25.09.2026.
-**Parent document:** `docs/FUNDAMENT_DocumentFundamentare_CAB.md` (the flow, the form, the decisions
-D1-D9). This plan builds what that document lists as missing.
-**Slice:** **0081**, sub-slices **0081-01 … 0081-06** (confirmed by the operator, 25.09.2026).
-**Scope reminder:** SENDING only. The import from forexecab is complete and correct and is
-**not touched** by any step of this plan — it is only *called*, unchanged (step 4).
+**Status:** historical plan written 25.09.2026, before implementation. Current recorded delivery and limits: [0081 registry](worklog/state/KBOT_STATUS_0080-0089.md#slice-0081). Editorial consolidation D001-04, 24.10.2026; no new execution.
 
-House rules that apply to every step: no tests run and no git (the operator does both); tests are
-written, never executed; `.wfl` files are edited in `src/KBot.Forexe/Workflows/Creare/`, never in
-`Surse/`; operator text in Romanian, code in English, no diacritics outside operator text.
+Later implementation stages (including the follow-ups after -06) are anchored in the [consolidated 0081 history](worklog/SLICE-0081-01-starea-reviziei.md); this plan retains the six-step planning structure.
+
+**Adopted corrections:** [0081-01](worklog/SLICE-0081-01-starea-reviziei.md) replaces the original derivation from Incarcat with `FX_DDF_REV.StareTrimitere` and defines `X-Semnatura: -` as the explicit reset marker (an empty header is refused). The original proposals below remain dated design history; use the worklog and registry for the delivered contract. **Parent document:** `docs/FUNDAMENT_DocumentFundamentare_CAB.md` (the flow, the form, the decisions D1-D9). This plan builds what that document lists as missing. **Slice:** **0081**, sub-slices **0081-01 … 0081-06** (confirmed by the operator, 25.09.2026). **Scope reminder:** SENDING only. The import from forexecab is complete and correct and is **not touched** by any step of this plan — it is only *called*, unchanged (step 4).
+
+Historical execution conventions, recorded once here: the operator runs tests and performs Git operations; task code may write tests but does not run them or build test projects. Workflow edits belong in `src/KBot.Forexe/Workflows/Creare/`, never `Surse/`; operator text is Romanian, code English with no diacritics outside operator text. Use KBotMessage.Show, Designer controls, theme colours and AutoScaleMode.Dpi; MariaDB_Schema is the local column reference. Each sub-slice ends with worklog + status. These task-time conventions do not instruct execution during documentary consolidation.
 
 ---
+
+## Handoff notes absorbed in D001-04
+
+The retired handoff `HANDOFF_0081_DDF_Trimitere.md` was written at the same planning checkpoint. Its fifteen decisions are in this plan and the parent document (D1–D9): only KBOT edits forexecab; an angajament belongs to its last DDF revision; the operator and forexecab person are the same. The form scope is A.4 «Se stabilește ținând cont de» and Section B option 1; point 5 retains the two default current-year ticks already written by DdfXmlBuilder.
+
+Read [CODE_WORKFLOW](worklog/CODE_WORKFLOW.md), the 0081 status, the parent document and this plan; use `Surse/GHID UTILIZARE_ALOP_V2.pdf` and `Surse/doc_fund_xdp.xml` (A1.0.08) only as needed. The execution conventions above also cover the absorbed handoff.
+
+Historical starting point: 0081-01, read DdfDraft.vb, DdfView.vb, its read route and routes/forexe/pdf.py before changing anything; reconcile mismatches and settle the signature-header question before implementation. The handoff asked for a report before 0081-02. The then-next-free 0082 is not a current allocation. G3 was already dropped by the approved menu/variant (a); see 0081-03.
 
 ## What already exists (read, 25.09.2026)
 
@@ -32,6 +37,8 @@ written, never executed; `.wfl` files are edited in `src/KBot.Forexe/Workflows/C
 
 ---
 
+<a id="revision-states"></a>
+
 ## The revision states (the backbone — G0)
 
 Derived, **no new column**: from `Incarcat` and `Semnatura` of `FX_DDF_REV`.
@@ -46,20 +53,11 @@ Derived, **no new column**: from `Incarcat` and `Semnatura` of `FX_DDF_REV`.
 | S4 | «Aprobat» | 1 | `A,B,Ordonator` | End of the flow |
 | S1x | «Trimitere întreruptă» | see step 4 | `A` | Resume the send (step 4, partial failure) |
 
-**S2a exists only for a new angajament (operator, 25.09.2026).** «Definitivează» / «Derulează»
-belong to the creation of an angajament. Every later reservation change — «Adaugă rezervare»,
-even one that adds new indicators — has **no** definitivare / derulare step: after its send it goes
-straight to the final PDF (S1 → S2b), no S2a.
+**S2a exists only for a new angajament (operator, 25.09.2026).** «Definitivează» / «Derulează» belong to the creation of an angajament. Every later reservation change — «Adaugă rezervare», even one that adds new indicators — has **no** definitivare / derulare step: after its send it goes straight to the final PDF (S1 → S2b), no S2a.
 
-**Why S2a exists (operator, 25.09.2026).** The interim PDF is partial precisely because the
-captures come later. The final PDF is generated only once every forexecab action of the revision
-is done (send + any «Definitivează» / «Derulează»), and it is then signed again from scratch: A, B,
-director. Nothing is ever added to a PDF after it is final.
+**Why S2a exists (operator, 25.09.2026).** The interim PDF is partial precisely because the captures come later. The final PDF is generated only once every forexecab action of the revision is done (send + any «Definitivează» / «Derulează»), and it is then signed again from scratch: A, B, director. Nothing is ever added to a PDF after it is final.
 
-Check before building: that uploading the **final** PDF (no signatures yet) resets `Semnatura` to
-empty. The PDF route only touches the column when `X-Semnatura` is present (`pdf.py` docstring), so
-the final upload must send it explicitly empty. **To verify in `pdf.py`** that an empty header
-writes `''` rather than being treated as absent.
+Check before building: that uploading the **final** PDF (no signatures yet) resets `Semnatura` to empty. The PDF route only touches the column when `X-Semnatura` is present (`pdf.py` docstring), so the final upload must send it explicitly empty. **To verify in `pdf.py`** that an empty header writes `''` rather than being treated as absent.
 
 ---
 
@@ -94,8 +92,7 @@ G4 is not in the list: it was closed (D6 — "before" values from KBOT or forexe
 
 ## 0081-02 — G6a: Section B not shown before the send
 
-**The operator's two options:** (1) create Section B only after forexecab answers, or (2) create it
-from the start but do not show it.
+**The operator's two options:** (1) create Section B only after forexecab answers, or (2) create it from the start but do not show it.
 
 **Recommendation: option (2).** Reasons, from the code:
 - Section B is **already** derived from A on every edit (`RecalculeazaSectiuneaB`), and by the rule
@@ -119,8 +116,7 @@ from the start but do not show it.
 
 ## 0081-03 — G1, G2, G3: the workflow edits
 
-Only `.wfl` files. Each needs **one live run on 000_DEMO** before it is trusted — selectors cannot
-be verified offline.
+Only `.wfl` files. Each needs **one live run on 000_DEMO** before it is trusted — selectors cannot be verified offline.
 
 **G1 — split `Definitivare_Derulare Angajament.wfl` into two actions, each with its capture.**
 Operator answer 3: the two state changes are separate buttons, so one workflow doing both no
@@ -152,8 +148,9 @@ why it was raised.
   waits for the `definitiv` input, which may not exist in that state. If so, `Inițial` →
   fill `inițial` only. This is a real hole today, not only a guide mismatch.
 
-**Done when.** The three files parse (the XML check used in slice 0076), and each branch has been
-run once on 000_DEMO by the operator.
+**Done when.** The three files parse (the XML check used in slice 0076), and each branch has been run once on 000_DEMO by the operator.
+
+<a id="send"></a>
 
 ## 0081-04 — G6b: THE SEND
 
@@ -194,10 +191,7 @@ the point of no return.
 - State S1x = «Trimitere întreruptă», with the list of what is and is not in forexecab, and one
   action: «Reia trimiterea».
 
-**Server side.** New route(s) under the DDF write path (`routes/forexe/ddf_edit.py` family, not the
-import): the POST of point 5, and the resume data. The `!` → real code swap must be checked
-against every table that stores the manual code — **to list from `MariaDB_Schema/` before writing
-SQL**.
+**Server side.** New route(s) under the DDF write path (`routes/forexe/ddf_edit.py` family, not the import): the POST of point 5, and the resume data. The `!` → real code swap must be checked against every table that stores the manual code — **to list from `MariaDB_Schema/` before writing SQL**.
 
 **Where the operator starts (operator, 25.09.2026).** Not the main KBOT tree — the
 **Rezervări** view:
@@ -233,16 +227,11 @@ SQL**.
 | any | a later revision still open (S0 / S1 / S1x) | nothing (finish it from the DDF) |
 | `Anulat` / `Reziliat` / `Suspendat` | — | nothing |
 
-So the menu never shows two options at once. «Generează PDF final» lives in this menu (it closes
-the new angajament's Rev 0), and it only appears once the angajament is `În derulare`. The icon is
-disabled when the menu would be empty.
+So the menu never shows two options at once. «Generează PDF final» lives in this menu (it closes the new angajament's Rev 0), and it only appears once the angajament is `În derulare`. The icon is disabled when the menu would be empty.
 
-Not covered, on purpose: an angajament that came from forexecab (not created in KBOT) and is still
-`Inițial` / `În definitivare` shows nothing — KBOT does not finish angajamente it did not create.
+Not covered, on purpose: an angajament that came from forexecab (not created in KBOT) and is still `Inițial` / `În definitivare` shows nothing — KBOT does not finish angajamente it did not create.
 
-**Done when.** A Rev 0 manual angajament and a Rev 1 change have gone S1 → S2a → S2b and S1 → S2b respectively on 000_DEMO,
-a run interrupted on purpose resumed without a second angajament, and «Definitivează» /
-«Derulează» each appear only in their state.
+**Done when.** A Rev 0 manual angajament and a Rev 1 change have gone S1 → S2a → S2b and S1 → S2b respectively on 000_DEMO, a run interrupted on purpose resumed without a second angajament, and «Definitivează» / «Derulează» each appear only in their state.
 
 ## 0081-05 — G5: captures into the PDF
 
@@ -254,15 +243,7 @@ SubformSectiuneaB/Subform51/Table4
   Row1 > Cell1 xfa:contentType="image/png"  = base64 of the PNG     (one per capture)
 ```
 
-(template: `Surse/doc_fund_xdp.xml`). Order = the order the workflows took them.
-**Decide:** captures in `Table4` only, or also as file attachments. Recommendation: `Table4` only —
-the form label says «în rubrica de mai jos **sau** ca anexă», and twice doubles the size.
-**To verify in `KBot.Xfa`** (`AdobeUtils.ProcessXmlNodes`): that it writes repeated `Row1` nodes
-and keeps the `xfa:contentType` attribute; today it fills by node name. If not, the fix is there.
-**Size.** A full-page PNG is a few hundred KB; base64 adds a third. Chunked storage (0078-05) takes
-it; to watch on the first real document.
-**Done when.** The final PDF opened in Adobe shows the captures under Section B; builder tests
-written (the `Table4` shape), not run.
+(template: `Surse/doc_fund_xdp.xml`). Order = the order the workflows took them. **Decide:** captures in `Table4` only, or also as file attachments. Recommendation: `Table4` only — the form label says «în rubrica de mai jos **sau** ca anexă», and twice doubles the size. **To verify in `KBot.Xfa`** (`AdobeUtils.ProcessXmlNodes`): that it writes repeated `Row1` nodes and keeps the `xfa:contentType` attribute; today it fills by node name. If not, the fix is there. **Size.** A full-page PNG is a few hundred KB; base64 adds a third. Chunked storage (0078-05) takes it; to watch on the first real document. **Done when.** The final PDF opened in Adobe shows the captures under Section B; builder tests written (the `Table4` shape), not run.
 
 ## 0081-06 — G0b: the director's KBOT
 
@@ -281,24 +262,15 @@ the upload writes `A,B,Ordonator` → S4. Nothing else — no tree, no FOREXE, n
 
 ## Operator answers (25.09.2026)
 
-1. **Slice 0081**, sub-slices -01 … -06.
-2. **Role value `Director`** — plain, in Romanian, in `Unitati_Utilizatori.Rol`. Like the
-   accountant (`Contabil`), a director works across **several units**, so the waiting list spans
-   several databases.
-3. **Definitivare / Derulare are NOT part of the send.** Separate actions on the **Rezervări tree
-   footer LEFT** icon, by the angajament's state (`Inițial` → «Definitivează», `În definitivare`
-   → «Derulează»), next to «Adaugă rezervare». A new angajament starts from a new **«Angajament
-   nou»** button on the main header, before «An». Both open `DdfEditForm` (create / add
-   reservation). See 0081-04.
-4. **No action after the final PDF.** The interim PDF is partial because the captures come later;
-   the final PDF is made after all forexecab actions of the revision and signed again from scratch
-   (A, B, director). Hence state S2a.
-5. **«Definitivează» / «Derulează» only for a NEW angajament.** Later reservation changes, even
-   with new indicators, have no such step and go straight to the final PDF.
-6. **The Rezervări footer LEFT is one icon with a menu** showing only the valid options.
-7. **Variant (a):** a new angajament's Rev 0 gets its final PDF only after «Derulează».
-   **One open revision at a time.** «Generează PDF final» is in the Rezervări menu. The menu
-   table is in 0081-04.
+Original answer numbers are retained; each points to its full rule above.
+
+1. **0081, -01…-06:** the confirmed slice/order is in “Order of work”.
+2. **Role `Director`**, plain Romanian in Unitati_Utilizatori.Rol; multi-unit/multi-database waiting list in 0081-06, like Contabil access.
+3. **Definitivare/Derulare are separate from sending:** the exact entry points, modes, header-before-An button and Rezervări footer are in [0081-04](#send).
+4. **No action after the final PDF:** captures first, then sign A/B/director from scratch; rationale and S2a in [revision states](#revision-states).
+5. **State actions only for a new angajament:** later changes, even new indicators, go directly to the final PDF ([0081-04](#send)).
+6. **One Rezervări footer-left icon with valid-option menu:** [menu rules](#send).
+7. **Variant (a), one open revision, final PDF after Derulează:** the full state/menu table is [in 0081-04](#send).
 
 ## Risks
 

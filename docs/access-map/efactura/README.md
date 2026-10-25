@@ -6,14 +6,12 @@ Relationship maps for rebuilding the E-Factura feature of Avacont.accdb in K-BOT
 | File | Answers |
 |---|---|
 | [00-overview.md](00-overview.md) | what the feature is, the two flows (received / issued invoices), storage map. **Start here.** |
-| [forms.md](forms.md) | the 21 forms in scope and the 7 outside forms they touch |
-| [forms/](forms/) | one page per form: properties, sections, every control with position / binding / events, handlers and what each touches |
-| [navigation.md](navigation.md) | who opens whom, what code and queries are the entry points |
+| [forms.md](forms.md) | the 21 forms, the 7 outside forms they touch, navigation entry points and form/table access markers |
+| [forms/](forms/) | form records: properties, sections, controls with position / binding / events and handler dependencies; three PDF viewers share a page |
 | [data-model.md](data-model.md) | the e-invoice tables: fields, indexes, relations, which database they live in, who reads / writes |
 | [shared-tables.md](shared-tables.md) | the tables from the wider system that the e-invoice screens read |
 | [queries.md](queries.md) | the 43 queries in scope: what they read / write, and their full SQL |
 | [code.md](code.md) | procedures of `mdl_EFactura`, `mdl_EFactura_Add`, `clsAnaf_Async`, `clsEF_element` and which UI handler reaches them |
-| [matrix.md](matrix.md) | form x table, R / W |
 | [external-dependencies.md](external-dependencies.md) | everything outside the scope these objects call (helpers, classes, forms, tables) |
 
 ## How it was made, and its limits
@@ -43,3 +41,30 @@ node tools\AccessMap\build-efactura.js <scratch>\graph.json Surse\RawExport docs
 Ignore everything named `in_lucru`, `old` or `copy` (and the `_` prefix: `_MF2019_Asoc_EF`, `_qNote_*`, `EF_F_inlucru`).
 The accounting part (booking, `Oper` / `Documente`, `EF_F` / `EF_P`, `Note` / `MF2019`) is not part of slice 00EF. The first
 slice of work is issued invoices (`EFACTURA_ADD`). See `docs/worklog/PLAN_00EF_EFactura.md`.
+
+## Form-page conventions
+
+These conventions apply to the 21 form records (19 pages after grouping the three PDF viewers); every record retains its source filename, source character count and raw-export path.
+
+Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
+
+The exact RecordSource SQL is kept once in the page's Data section; its properties row links there when it previously repeated the same SQL. Different SQL, bindings, controls and event rows are not deduplicated across forms.
+
+### Module declarations
+
+Form state is the variables, constants, types and WithEvents helpers in the Access class body before the first procedure. In the 20 form-class records that reference this section, the following exact attribute prefix occurs before any additional declarations:
+
+```vb
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+```
+
+A page saying "only the common attribute prefix" had no additional declarations in its export. Mesaj_ANAF did not have a module-declarations section; this convention does not invent one. Additional attributes, WithEvents fields, events and even source comments remain on their own form page.
+
+## Editorial consolidation — D001-07, 25.10.2026
+
+The three PDF viewers share EFACTURA_PDF.md: common controls/properties/handlers once, distinct SQL/geometry/callers and provenance per form. The forms catalog now also contains the navigation entry points and sparse form/table matrix, formerly in navigation.md and matrix.md. Their original heading anchors are retained. The graph's opens/subform edges are already represented by the corresponding catalog columns; the source graph was compared with those columns before removing the duplicate representation. Matrix markers retain their exact case and multiplicity.
+
+The initial extraction commands above remain provenance. The generator has not been changed or executed: running build-efactura.js would overwrite the editorial consolidation and recreate navigation.md/matrix.md, as well as the repeated form boilerplate. Adapting the generator is a separate code change; these Markdown changes do not authorize it.

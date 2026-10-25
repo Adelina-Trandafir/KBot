@@ -3,8 +3,9 @@
 > **Stare 20.10.2026:** ME02-01...08 sunt scrise si compilate; nimic nu a rulat pe server. Abateri de la plan: restaurarea e un **export SQL** pentru o baza zz_*
 > (fara incarcare automata pe server), iar "Istoric" este fereastra **Istoricul unui rand** din pagina "Copii locale", nu o pagina separata. Detalii in worklog-urile SLICE-ME02-*.
 
-Numar de felie: **ME02** (nu exista inca; ME01 are sub-felii pana la ME01-04). CODE_WORKFLOW cere sa nu inventez
-numere: presupun ME02, cu sub-felii ME02-01 ... ME02-08. Spune-mi daca vrei altul.
+Reper de numerotare initial: ME02 fusese presupus, cu 01…08, dupa ME01-04; registrul pastreaza explicit aceasta provenienta. Consolidarea D001-30 nu atribuie un numar nou acestei lucrari.
+
+**Reper ulterior, 21.10.2026:** [registrul](worklog/state/KBOT_STATUS_ME02.md) consemneaza confirmarea operatorului pentru primele doua copii locale, dupa corectia permisiunilor SFTP. Starea din 20.10 de mai sus precede acea confirmare; Verifica/export/istoric/curatare/stergere si mesajul de la deschidere nu sunt declarate incercate. [Istoricul 03…08](worklog/SLICE-ME02-03-format-si-motor.md) pastreaza reviziile; 01/02 sunt jurnale separate.
 
 ## Hotarari luate de operator
 - Copiile se fac pe PC-ul operatorului, spatiu suficient, ~cativa GB in total.
@@ -52,18 +53,8 @@ pe baze intr-o lista; coloana "Motiv" in grila. DTO-uri noi in `Dtos.vb`.
 Nota: dump-ul text de pe server ramane (e nevoie de el inaintea operatiilor distructive); noul format e separat.
 
 ## ME02-03 - Formatul si motorul (fara server)
-Document `docs/ME02_FORMAT.md` scris INTAI, apoi codul in `KBotAdmin/Backup/`.
-- Criptare standard din .NET: AES-256-GCM; cheia din parola prin PBKDF2-SHA256 (multe iteratii) + sub-chei HKDF (continut / nume).
-  Nu inventez cifru - formatul (containerul) e al nostru, criptografia nu.
-- Depozit: `store.kbk` (antet: versiune, sare, verificare parola), `o/xx/<nume>` obiecte, `s/<id>.snp` instantanee. Numele obiectelor =
-  hash cu cheie (HMAC) al continutului: nu se vede ce contin, nu se pot confirma continuturi cunoscute; acelasi continut = un singur obiect.
-- Un tabel e impartit in **pagini pe intervale de cheie primara** (chei compuse = tupluri). O pagina = randuri tipate + blob-uri,
-  comprimata si criptata. Un instantaneu = pentru fiecare baza, schema (DDL) + lista de pagini pe tabel + metadate (momentul, motivul,
-  manual/periodic, ceasul serverului). Pagina nemodificata = acelasi obiect, nu ocupa loc nou. PDF-urile semnate se salveaza o singura data.
-- Cheia pentru rulari automate: parola din managerul de parole; pe PC, cheia derivata se pastreaza protejata cu DPAPI (legata de contul
-  Windows) - **de confirmat**. Fara parola nu se recupereaza nimic.
-- Cod: scriere/citire de obiecte, instantanee, verificare ("Verifica": decripteaza tot, recalculeaza numele, cauta stricaciuni). Fara
-  rulare pe server in aceasta felie.
+
+[ME02_FORMAT](ME02_FORMAT.md) este specificatia scrisa inaintea codului din KBotAdmin/Backup: criptografie .NET standard, pagini pe intervale de chei (inclusiv compuse), obiecte deduplicate si instantanee complete cu DDL, metadate si blob-uri. PDF-urile semnate se pastreaza o singura data. Scrierea/citirea, verificarea integritatii si implementarea sunt in [03](worklog/SLICE-ME02-03-format-si-motor.md#slice-me02-03). Propunerea initiala DPAPI era de confirmat; hotararea ulterioara din 20.10 pastreaza cheia pe PC (cont Windows), iar parola din manager ramane recuperarea unica. Comportamentul la restart/schimbarea parolei Windows ramanea neprobat.
 
 ## ME02-04 - Verbele de server, doar citire
 Fisier nou `routes/admin_cli/admin_snapshot.py` + inregistrare in `admin_cli.py`. **O singura comanda pe baza**, cu o tranzactie
@@ -76,6 +67,8 @@ saptamana**, fiindca data modificarii e un indiciu, nu o dovada. Stergerile se v
 Eu nu public fisierul pe server - il trimiti tu.
 
 ## ME02-05 - Rulare periodica
+
+Propunerea initiala de mai jos este inlocuita de [corectiile operatorului din 20.10](worklog/SLICE-ME02-03-format-si-motor.md#slice-me02-05): fara copie automata de noapte in interfata, reamintire la deschiderea KBotAdmin; codul headless ramane neexpus.
 `KBotAdmin.exe --backup` (fara fereastra, iese cu cod de eroare), pornit de Windows Task Scheduler; un buton in KBotAdmin inregistreaza
 sarcina (tu apesi). Daca PC-ul era oprit, ruleaza la prima ocazie. Lacat pe rulare (nu doua deodata), jurnal in `Logs\`, motiv "periodic".
 Avertisment in KBotAdmin daca ultima copie reusita e mai veche de N zile. Cheia SSH fara parola, ca azi pentru publicare.
@@ -91,6 +84,8 @@ Pagina noua in KBotAdmin: baza -> axa timpului cu copii (data, manual/periodic, 
 -> script de restaurare. Limita onesta: istoricul e la fel de fin ca frecventa copiilor (zilnic = nu vezi ce s-a schimbat intre doua rulari).
 
 ## ME02-08 - Retentie si curatare
+
+[Implementarea si hotararea ulterioara](worklog/SLICE-ME02-03-format-si-motor.md#slice-me02-08) pastreaza manualele fara limita, sterse doar de mana; regulile periodice initiale raman pentru codul periodic neexpus.
 Pastrare de ex. 14 zilnice / 8 saptamanale / 12 lunare (reglabil), apoi stergerea obiectelor la care nu mai trimite niciun instantaneu.
 Cu avertisment si previzualizare ("se elibereaza X MB") inainte de curatare.
 

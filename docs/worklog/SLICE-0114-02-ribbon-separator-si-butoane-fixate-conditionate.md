@@ -3,7 +3,7 @@
 Sub-slice of 0114 (the slice that made `KBotRibbon`), asked by the operator: (1) remove the «Ajutor» button from the ribbon;
 (2) while the «Sumar» view is on screen a new button «Asociaza parteneri» and a separator appear before «Inchide», and go away
 when the view is no longer on screen; the system will be reused, so the control changes if it has to. The Sumar side is
-`SLICE-0084-04-asociere-parteneri-pe-ribbon.md`.
+[SLICE-0084-04](SLICE-0084-02-asociere-parteneri-sumar.md#slice-0084-04).
 
 ## What changed and why
 1. **Control** (`KBot.Controls/Ribbon`): `KBotRibbonButton.SeparatorBefore` (designer property, default False) + derived

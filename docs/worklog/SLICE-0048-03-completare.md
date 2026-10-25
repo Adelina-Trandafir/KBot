@@ -506,3 +506,7 @@ numește. Asta e chiar de dorit — e o schimbare în FOREXE, și trebuie aflat�
   retragere. `DIFH` nu poate răspunde la întrebarea aceea, fiindcă se calculează după asociere.
 - **Nu mai căutați `PLAN_ForexeIngestSteps3to8.md`.** Nu există, nu a fost comis niciodată, și tot ce
   a decis și mai contează e în fundament sau în comentariile codului — vezi corecția C5.
+
+### Notă de reluare absorbită din registru (D001-04)
+
+La data acestei tranșe, lipsa celor patru coloane din SQL/0049 afecta și GET /api/forexe/receptii, care selectează R.Reconstituit și R.ReconstituitNesigur, nu numai ingestia. Necesitatea aplicării manuale a scriptului nu înseamnă că a fost aplicat sau că există autorizare de execuție în reorganizarea documentară.

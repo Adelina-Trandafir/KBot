@@ -1,6 +1,6 @@
 # Form `Note_EFactura`
 
-Source: `Forms/Note_EFactura.txt` (42,108 chars). Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
+Source: `Forms/Note_EFactura.txt` (42,108 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
 
@@ -70,19 +70,15 @@ Form events wired: `OnLoad` = VBA
 
 ## Module-level declarations
 
-Form state kept in variables, constants, types and WithEvents helpers (the Access form class body before the first procedure).
+The [common attribute prefix](../README.md#module-declarations) precedes the declarations below.
 
 ```vb
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = False
 Public initIDEFT As Variant
 ```
 
 ## Event handlers and what they touch
 
-Reads/writes come from SQL text and recordset calls found in the procedure body; they are a lead for reading the code, not a proof (dynamic SQL built from variables is missed).
+See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 
 | Procedure | Bound to | Lines | Opens forms/reports | Reads | Writes | Calls (modules) | Classes | Local calls |
 |---|---|---|---|---|---|---|---|---|

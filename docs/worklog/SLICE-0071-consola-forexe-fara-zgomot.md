@@ -1,15 +1,12 @@
+<a id="slice-0071"></a>
+
 # SLICE 0071 — Consola FOREXE fără zgomot: doar `<Log>` și erorile în Release
 
-**Data:** 19.09.2026
-**Cererea operatorului:** «why is there so much noise in the forexe logger? … also, i need that
-when the app is in release mode only the LOG action will appear and the ERRORS. the rest are
-only for debug mode or if a certain flag is activated. record somewhere the name of the flag,
-because it will be used in a future slice. this is a new slice. no tests. no git»
+**Data:** 19.09.2026 **Cererea operatorului:** «why is there so much noise in the forexe logger? … also, i need that when the app is in release mode only the LOG action will appear and the ERRORS. the rest are only for debug mode or if a certain flag is activated. record somewhere the name of the flag, because it will be used in a future slice. this is a new slice. no tests. no git»
 
 ## Ce s-a găsit
 
-Jurnalul lipit de operator (o conectare cu certificat indisponibil) avea 33 de linii, din
-care operatorul avea nevoie de 3. Două surse de zgomot, diferite:
+Jurnalul lipit de operator (o conectare cu certificat indisponibil) avea 33 de linii, din care operatorul avea nevoie de 3. Două surse de zgomot, diferite:
 
 1. **Aceeași eroare scrisă de CINCI ori.** Propoziția «FOREXE a respins autentificarea…»
    apărea: (a) în `ExecuteAuthClickAsync` (`LogError` chiar înainte de `Throw`); (b) în
@@ -76,11 +73,7 @@ Aceeași conectare eșuată, în Release, va arăta acum:
 
 ### Tot în acest arbore de lucru, fără felie (cerere «no slice»)
 
-Santinelele de eșec de pe `<AuthClick>` (`failUrl` / `failSelector` / `failMessage`;
-`RaceAuthWaitsAsync` în `WorkflowExecutor.Actions.AuthClick.vb`; «Conectare» le poartă pentru
-`**/vdesk/hangup.php3**` și `table#main_table.logout_page`). Jurnalul de mai sus le arată
-funcționând: verdictul a venit la o secundă după click, nu după cele 120 s de `authTimeout`.
-Documentate în `Surse/SURSA_FOREXE/Helpers/wfl_help.md` (singurul loc cu atributele tag-urilor).
+Santinelele de eșec de pe `<AuthClick>` (`failUrl` / `failSelector` / `failMessage`; `RaceAuthWaitsAsync` în `WorkflowExecutor.Actions.AuthClick.vb`; «Conectare» le poartă pentru `**/vdesk/hangup.php3**` și `table#main_table.logout_page`). Jurnalul de mai sus le arată funcționând: verdictul a venit la o secundă după click, nu după cele 120 s de `authTimeout`. Documentate în `Surse/SURSA_FOREXE/Helpers/wfl_help.md` (singurul loc cu atributele tag-urilor).
 
 ## Fișiere atinse
 
@@ -113,10 +106,11 @@ Documentate în `Surse/SURSA_FOREXE/Helpers/wfl_help.md` (singurul loc cu atribu
 - **Numele steagului pentru felia viitoare: `RichTextBoxLogger.VerboseLogging`** (Shared,
   `KBot.Forexe/Helpers/RichTextBoxLogger.vb`). Notat și în Open threads din STATUS.
 
+<a id="slice-0071-02"></a>
+
 ## Corecție 0071-02 — în Release robotul îngheța după «Deschid fereastra de autentificare» (19.09.2026)
 
-**Semnalat de operator:** «something is wrong. in release the browser doesn't navigate to the
-authpage so the failsafe is never triggered.»
+**Semnalat de operator:** «something is wrong. in release the browser doesn't navigate to the authpage so the failsafe is never triggered.»
 
 **Ce spun jurnalele** (`src\KBot.App\bin\Release\net8.0-windows\Logs\`, nefiltrate):
 - `Log_20260919_180148.txt`: conectarea a eșuat corect, santinela a vorbit la o secundă după click.
@@ -125,17 +119,7 @@ authpage so the failsafe is never triggered.»
   oricum, fără filtru — **nu mai apare**. Deci firul executorului s-a oprit ÎNTRE cele două, adică
   în `LogStep`, înainte de click. Browserul nu «nu navighează»: nimeni n-a mai apucat să dea click.
 
-**Cauza:** o capcană WinForms scoasă la iveală de filtru. Consola e construită ascunsă
-(`MainForm.EnsureConsole`), deci `RichTextBox`-ul ei **n-are handle** până la prima deschidere.
-`Control.InvokeRequired` răspunde **False cât timp nu există handle**, așa că prima linie afișată
-creează handle-ul PE FIRUL CARE O SCRIE. Până acum prima linie era mereu «Lansare browser…», scrisă
-de `ForexeRunner.RunAsync` pe firul UI (înainte de primul `Await Task.Run`), deci handle-ul se năștea
-unde trebuie. În Release, cu filtrul, prima linie afișată e `<Log>Încep workflow FOREXEBUG`, scrisă
-din executor pe un fir din pool → handle-ul se naște pe firul acela → următoarea linie afișată
-(«Deschid fereastra…», alt fir din pool după `Await`) face `Invoke` către un fir care nu pompează
-mesaje → blocat pentru totdeauna. Rularea de la 18:01 a mers pentru că atunci consola era deja
-deschisă (handle pe firul UI). În Debug nu se vede pentru că acolo TOATE liniile se afișează, deci
-prima e tot cea de pe firul UI.
+**Cauza:** o capcană WinForms scoasă la iveală de filtru. Consola e construită ascunsă (`MainForm.EnsureConsole`), deci `RichTextBox`-ul ei **n-are handle** până la prima deschidere. `Control.InvokeRequired` răspunde **False cât timp nu există handle**, așa că prima linie afișată creează handle-ul PE FIRUL CARE O SCRIE. Până acum prima linie era mereu «Lansare browser…», scrisă de `ForexeRunner.RunAsync` pe firul UI (înainte de primul `Await Task.Run`), deci handle-ul se năștea unde trebuie. În Release, cu filtrul, prima linie afișată e `<Log>Încep workflow FOREXEBUG`, scrisă din executor pe un fir din pool → handle-ul se naște pe firul acela → următoarea linie afișată («Deschid fereastra…», alt fir din pool după `Await`) face `Invoke` către un fir care nu pompează mesaje → blocat pentru totdeauna. Rularea de la 18:01 a mers pentru că atunci consola era deja deschisă (handle pe firul UI). În Debug nu se vede pentru că acolo TOATE liniile se afișează, deci prima e tot cea de pe firul UI.
 
 **Ce s-a schimbat (`RichTextBoxLogger`):**
 - `UiReady()` = cutia există, nu e dispusă **și are handle**. Toate atingerile UI (`WriteInternal`,
@@ -146,8 +130,7 @@ prima e tot cea de pe firul UI.
   o recreare de handle.
 - `Clear()` fără handle golește doar bufferul, apoi continuă cu ștergerea fișierului ca înainte.
 
-**Rezultate:** `dotnet build` pe `src\KBot.Forexe` (Debug + Release), `src\KBot.DevHarness`,
-`src\KBot.App`: **0 erori, 0 avertismente**. Nimic rulat, nimic pe ecran, nimic comis.
+**Rezultate:** `dotnet build` pe `src\KBot.Forexe` (Debug + Release), `src\KBot.DevHarness`, `src\KBot.App`: **0 erori, 0 avertismente**. Nimic rulat, nimic pe ecran, nimic comis.
 
 **Neverificat:** drumul reparat n-a fost văzut pe un build Release cu consola închisă — exact
 scenariul de la 18:04/18:09; de refăcut de operator. Rămâne în picioare și `Application.DoEvents()`

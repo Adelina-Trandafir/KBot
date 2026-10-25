@@ -1,3 +1,5 @@
+<a id="slice-0087"></a>
+
 # SLICE-0087 — «Clasificații bugetare», «Parteneri», KBotDropDownMenu, header menu
 
 Operator request, 26.09.2026:
@@ -13,6 +15,8 @@ Operator request, 26.09.2026:
    per-item height / icon / formatted text, items edited as a collection in the designer.
 4. The new windows and «Angajament nou» reached from that menu, opened by a button that replaces
    `btnAngajamentNou`.
+
+**Amendamente ulterioare ale grilei de buget:** [0102/0108](SLICE-0102-buget-pe-versiuni.md) introduc versiunile datate și apoi totalul anual. Descrierea inițială de aici (un rând / bugetul anual) rămâne checkpointul 0087, cu probele sale.
 
 ## What changed and why
 

@@ -12,6 +12,12 @@ before starting.
 > Everything marked "confirm in Step 0" must be read from the real file before editing —
 > do not treat it as verified.
 
+## Historical delivery checkpoint
+
+Slice 0006 was delivered against its eleven-item checklist. The earlier handoff recorded KBotShellForm, KBotNavList with six view keys, lazy creation through CreateView, selection state in AngajamentTreeInfo, An/SS from /api/auth/periods and btnSinc through WithReauth. MainForm_Load kept an empty list and logged a warning when no real tree source existed; it did not silently substitute sample data.
+
+The delivered constructor had five parameters: forexeRunner, session, apiClient, authApi, loginFactory. The four-parameter expectations below are historical. Slice 0008 then added Indicatori, Istoric, Revizii and Partener: ten views, with Sumar always enabled and each of the nine Are flags gating one other view. The query/POCO corrections and implementation are in [SLICE-0008](SLICE-0008-tree-data-api.md); they supersede the original single-query gate below.
+
 ## What this slice is (and is not)
 
 MainForm is the equivalent of the Access form `frmFX_MAIN` **only**. The `Meniu` hub stays

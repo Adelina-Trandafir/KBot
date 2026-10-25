@@ -23,3 +23,39 @@ Descoperit in Access (`QBC.sql`, `QBP.sql`): **un produs apartine unui cont (cat
 - Nomenclatorul Produse cere acum categoria (contul) produsului.
 - Stocul ramane calculat pe varianta: fiindca o varianta apartine unui singur cont, stocul pe varianta **este** stocul pe cont. Ramane o diferenta fata de Access doar pentru istoric inconsistent (un BC cu alt cont decat al produsului): Access nu l-ar fi scazut din stocul contului, noi il scadem.
 - Nerulat; doar sintaxa verificata.
+
+## Editor BC și mini fișe — 17.10.2026
+
+Două etape în surse, nerulate: numai citiri/design, fără teste, browser, verificări automate, SQL, acces MariaDB sau publicare. Prima cere publicarea surselor și restart Python; a doua publicarea JS/CSS.
+
+- Arbore Primitor → lună, etichetă data/număr și valoare dreapta la două zecimale; ID-uri stabile, ramura documentului selectat se deschide după salvare/anulare. ActionAddButton în antet, fără + Adaugă de jos.
+- Adăugare/modificare în pagina curentă: Primitor Combobox cu tastare/săgeată, Categorie ComboTree cu un cont al gestiunii. Primul rând Primitor/Categorie/Număr/Data, Explicații pe primele trei coloane ale rândului doi. Renunță stânga/Salvează bonul dreapta, fără preview de ciornă; documentele salvate păstrează preview.
+- DGV ca NIR, rând nou permanent/ignorarea golurilor la salvare, fără Adaugă rând în footer; Produs Combobox cu tastare și focus în Cantitate după alegere. Disponibil precede Cantitate, citit informativ la data bonului.
+- Inițial numai modificarea excludea BC salvat. Corecția ulterioară face **aceeași excludere în consultare și modificare**, ca disponibilul să coincidă; adăugarea nu exclude document salvat. Celelalte consumuri/retururi rămân.
+- Lateral în editare: fișa gestionarului și mini fișa produsului de pe rând. Gestionar = ultimele 12 BC/retururi salvate, neanulate, din context/exercițiu până la data bonului și totalul net BC − retururi. Fișa produsului folosește serviciul de stoc și [cache-ul comun configurabil](SLICE-VC06-04-br-si-fcs.md#cache-ul-comun-al-mini-fișelor). Nicio fișă nu include ciorna; noile citiri cer drept BC și contextul serverului.
+- Comboboxurile VERCON (câmp/opțiuni) au `--vc-combobox-font-size` cu 1 px sub anterior, păstrând diferența desktop/mic. NIR/FCS/BC au `--vc-mini-statement-font-size=calc(var(--fs-sm) - 1pt)`, același font UI pentru antet/identitate/note/tabel/mesaje/total.
+- Mini tabelele au layout fix, coloane explicite dată/cifre, Document/Factură primește restul; text pe un rând, elipsă și tooltip complet. Numai vscroll, cu spațiul scrollbarului rezervat, fără lățire orizontală.
+- Pe desktop antetele NIR/BC au aceeași înălțime minimă pentru trei rânduri și două intervale de 12 px. BC folosește primele două rânduri; spațiul rămas mărește fișa gestionarului până la începutul DGV. Responsive-ul mic rămâne.
+
+Fișiere: prima etapă `PYTHON/static/js/vercon/{docs,consumption-ui,receipt-context}.js`, `PYTHON/static/css/{vercon,vercon-consumption}.css`, `PYTHON/routes/vercon/{receipt_context,doc_routes}.py`; corecția `docs.js`/`receipt-context.js` și `PYTHON/static/css/{vercon-controls,vercon-documente-layout,vercon-receipt-context}.css`; ambele actualizau jurnalul general.
+
+## Revizii BC — 20/23.10.2026 <a id="d001-12-bc"></a>
+
+Preluare D001-12; toate cele patru etape erau **Confirmat 23.10**, distinct de nerularea implementărilor anterioare.
+
+- La adăugare se propune editabil următorul număr din seria BC/contor: simplă citire, fără rezervare/scriere. Salvarea verifică manualul și actualizează contorul în tranzacție; numărul se reverifică la părăsire, fără subnumere NIR/FCS.
+- Produs devine TreeCombo produs → variante cu preț/stoc, limitat la cont și stoc pozitiv la data bonului minus celelalte rânduri din ciornă. Modificarea/consultarea exclud BC salvat curent. Încărcările sunt legate de document/dată, cele depășite ignorate; alegerea e blocată până există stocul. Data se poate schimba/reîncărca înaintea primului produs; după primul, câmpul și calendarul sunt dezactivate până se scot toate produsele. Cantitatea se confruntă cu disponibilul ciornei, pe lângă validarea exactă a serverului.
+- Panoul Stoc produs înlocuiește Fișa de magazie: identitate, dată, preț, total intrări/ieșiri și disponibil în UM. Cantități exacte pe întreg istoricul variantei până la data bonului, numai mișcări salvate neanulate, excluzând BC curent în editare; fără limitare la 20/an și fără ciorna în totalurile istorice. Popupul BC împarte etichetele pe rânduri, fără hscroll; clasa este opțională prin DGV, CSS numai BC.
+- Asocierea cu lista nu mai interzice singură editarea BC: după linii/total și validarea stocului, ValoareBon se recalculează din toate BC active ale listei și DEP = ValoareLista − ValoareBon. Versiunea și auditul listei sunt în aceeași tranzacție; eroarea anulează tot, mesele/valoarea listei rămân. Mesajul confirmă recalcularea economiilor/depășirilor.
+- Editare/anulare numai ultimul BC activ, respectiv ultima listă activă, separat pe familie/context subunitate–gestiune–exercițiu. Ordinea istorică: dată, apoi ID descrescător în aceeași zi; anulatele nu contează, precedentul devine ultimul după anulare. Schimbarea datei ultimului nu îl poate muta înaintea precedentului. Lista recalculată trebuie să fie și ea ultima activă. Anularea BC legat cere încă scoatere din listă/anularea listei; retururile active protejează sursa, fără ștergere fizică. API-ul transmite blocaj/motiv, UI dezactivează Modifică/Anulează la anterioare și explică la deschidere; serverul aplică regula sub lock-ul tranzacțional existent. Descrierea istorică a ordinii nu înlocuiește AGENTS actual.
+- Primitor unic la adăugare: completat în ciornă, control disabled; mai multe opțiuni = manual. La modificare, numai dacă existentul coincide cu unica opțiune sau lipsește; istoricul diferit nu se înlocuiește.
+- Antetul BC final din 23.10 are trei rânduri/două coloane: Primitor | Număr BC; Cont | Data; Explicații pe toată lățimea. Eticheta Cont în toate mărimile; folosește integral cele trei rânduri rezervate. Sub 800px rămân două coloane și ordinea din document.
+
+Fișiere istorice (numele fără prefix continuă directorul precedent):
+
+| Etapă generală | Fișiere |
+|---|---|
+| 15 | PYTHON/routes/vercon/consumption_number.py (nou), consumption_stock.py (nou), doc_routes.py, receipt_context.py; PYTHON/static/js/vercon/ consumption-editor.js (nou), consumption-ui.js, document-number.js, docs.js, receipt-context.js; PYTHON/static/js/dgv/editing.js; PYTHON/static/css/vercon-consumption.css; implementare_vercon_v2.md. |
+| 17 | PYTHON/routes/vercon/document_order.py (nou), food_list_recalculation.py (nou), documents.py, lista.py, doc_routes.py; PYTHON/static/js/vercon/docs.js, lista.js; implementare_vercon_v2.md. |
+| 18 | PYTHON/static/js/vercon/docs.js; implementare_vercon_v2.md. |
+| 28 | css/vercon-consumption.css, js/vercon/docs.js. |

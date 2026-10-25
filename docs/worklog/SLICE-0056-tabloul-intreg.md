@@ -1,44 +1,40 @@
-# SLICE 0056 — tabloul întreg al propunerii: ancora recepțiilor noi și contextul care lipsea
+# SLICE-0056 / 02 — Contextul propunerii și corectarea legăturilor vechi
 
-## De ce
+Reunire documentară D001-27. Varianta inițială introduce rand_receptie și contextul blocat; 02 înlocuiește blocarea generală prin regula ordonanțării și admite corecții ale rândurilor vechi prin idrh, cu acoperire obligatorie doar pentru rândurile de așezat. F15 rămâne veto când se adaugă, avertisment când o recepție numai pierde instantanee. Ancorele, compatibilitatea, probele și limitele sunt păstrate pe etapă.
 
-Prima salvare adevărată a contractului în două faze, pe calculatorul cu FOREXE, pe 08.09.2026.
-Descărcarea a mers, propunerea a venit, formularul s-a deschis, operatorul a așezat — și
-salvarea a fost refuzată:
+[0056-tabloul](#slice-0056-baza) · [0056-02](#slice-0056-02)
+
+<a id="slice-0056-baza"></a>
+
+## SLICE 0056 — tabloul întreg al propunerii: ancora recepțiilor noi și contextul care lipsea
+
+### De ce
+
+Prima salvare adevărată a contractului în două faze, pe calculatorul cu FOREXE, pe 08.09.2026. Descărcarea a mers, propunerea a venit, formularul s-a deschis, operatorul a așezat — și salvarea a fost refuzată:
 
 ```
 2026-09-08 06:37:26,801 - WARNING - PRELUCRARE dc=000_DEMO cod=AAB2MAACHXB
     decizii respinse: Recepția 188 nu există pe acest angajament.
 ```
 
-Operatorul a renunțat («am apăsat pe renunță»), a deschis editorul de oricând ca să se uite —
-ultimele trei rânduri din jurnal, `sumar` / `receptii` / `asociere` — și a spus ce a văzut:
+Operatorul a renunțat («am apăsat pe renunță»), a deschis editorul de oricând ca să se uite — ultimele trei rânduri din jurnal, `sumar` / `receptii` / `asociere` — și a spus ce a văzut:
 
 > receptiile vechi NU mai vin in macheta de asociere! ele trebuie sa vina TOATE impreuna cu
 > cele noi - nu doar cele noi. si se vor salva DOAR cele modificate sau noi - NU TOATE din nou!
 
-**Sunt două defecte, și amândouă sunt ale tabloului pe care îl trimite faza întâi.** Al doilea
-îl explică pe primul: dacă pe ecran nu se vede decât ce a adus descărcarea asta, atunci fiecare
-tragere a operatorului a căzut, prin construcție, pe o recepție nou-nouță — adică exact pe
-categoria de recepții al cărei număr nu supraviețuiește până la salvare.
+**Sunt două defecte, și amândouă sunt ale tabloului pe care îl trimite faza întâi.** Al doilea îl explică pe primul: dacă pe ecran nu se vede decât ce a adus descărcarea asta, atunci fiecare tragere a operatorului a căzut, prin construcție, pe o recepție nou-nouță — adică exact pe categoria de recepții al cărei număr nu supraviețuiește până la salvare.
 
 ---
 
-## Defectul 1 — `IDRR`-ul din propunere nu e un nume
+### Defectul 1 — `IDRR`-ul din propunere nu e un nume
 
-### Ce se întâmplă
+#### Ce se întâmplă
 
-`step4b_receptii_prelucrare` inserează în `FX_Receptii_R` recepțiile din `ListaReceptii` care nu
-se potrivesc cu niciun rând existent, și ia `cursor.lastrowid` ca `IDRR`. Faza «propunere» face
-asta **înăuntrul tranzacției pe care o derulează apoi înapoi, necondiționat** — asta e chiar
-contractul. Dar:
+`step4b_receptii_prelucrare` inserează în `FX_Receptii_R` recepțiile din `ListaReceptii` care nu se potrivesc cu niciun rând existent, și ia `cursor.lastrowid` ca `IDRR`. Faza «propunere» face asta **înăuntrul tranzacției pe care o derulează apoi înapoi, necondiționat** — asta e chiar contractul. Dar:
 
 > **Contorul `AUTO_INCREMENT` al InnoDB NU se derulează înapoi cu tranzacția.**
 
-Deci recepția care în propunere s-a numit 188 se naște, la salvare, cu alt număr. Decizia care o
-numea prin `idrr` cade la `_tinta`, cu mesajul de mai sus. Și cade **de fiecare dată** când
-descărcarea aduce o recepție nouă — nu e un caz-limită, e drumul obișnuit al unei prime
-descărcări.
+Deci recepția care în propunere s-a numit 188 se naște, la salvare, cu alt număr. Decizia care o numea prin `idrr` cade la `_tinta`, cu mesajul de mai sus. Și cade **de fiecare dată** când descărcarea aduce o recepție nouă — nu e un caz-limită, e drumul obișnuit al unei prime descărcări.
 
 Fișierul își spunea singur regula, la instantanee, și nu o aplicase și la recepții:
 
@@ -46,15 +42,11 @@ Fișierul își spunea singur regula, la instantanee, și nu o aplicase și la r
 > intorc identice, dar indicele e stabil prin constructie, fiindca AMBELE faze poarta acelasi
 > payload.»
 
-Instantaneele erau ancorate pe `rand_istoric`, indicele rândului în `TabelIstoric` (F24).
-Recepțiile — nu. Recepțiile *reconstituite* aveau deja tratamentul corect (eticheta
-`receptie_noua`, fiindcă nu există încă); recepțiile *descărcate* au căzut între cele două
-cazuri.
+Instantaneele erau ancorate pe `rand_istoric`, indicele rândului în `TabelIstoric` (F24). Recepțiile — nu. Recepțiile *reconstituite* aveau deja tratamentul corect (eticheta `receptie_noua`, fiindcă nu există încă); recepțiile *descărcate* au căzut între cele două cazuri.
 
-### Ce s-a schimbat
+#### Ce s-a schimbat
 
-**O a treia țintă a unei decizii: `rand_receptie`** — indicele rândului în `ListaReceptii`.
-Același raționament ca F24, aplicat celeilalte jumătăți a problemei.
+**O a treia țintă a unei decizii: `rand_receptie`** — indicele rândului în `ListaReceptii`. Același raționament ca F24, aplicat celeilalte jumătăți a problemei.
 
 | recepția | numele ei pe fir | de ce |
 |---|---|---|
@@ -62,28 +54,19 @@ Același raționament ca F24, aplicat celeilalte jumătăți a problemei.
 | **născută de rularea asta** | **`rand_receptie`** | `IDRR`-ul ei moare la derularea înapoi |
 | reconstituită (F26) | `receptie_noua` | nu există nicăieri încă |
 
-Serverul cere **exact una** dintre cele trei pentru `asociat` / `stergere`, niciuna pentru
-`ignorat`, doar eticheta pentru `reconstituire` — 400 la orice altă combinație, ca înainte.
+Serverul cere **exact una** dintre cele trei pentru `asociat` / `stergere`, niciuna pentru `ignorat`, doar eticheta pentru `reconstituire` — 400 la orice altă combinație, ca înainte.
 
-`step4b_receptii_prelucrare` întoarce acum și **ancorele**: `{indice în ListaReceptii → IDRR}`,
-doar pentru rândurile a căror recepție s-a născut în rularea curentă. «Născută acum» se măsoară
-**pe IDRR, nu pe ramura care a rulat**: două rânduri de payload din aceeași zi se potrivesc pe
-același rând, deci al doilea poate ajunge, prin potrivire, pe o recepție pe care primul tocmai a
-inserat-o — și `IDRR`-ul ei e la fel de trecător. E scris ca test.
+`step4b_receptii_prelucrare` întoarce acum și **ancorele**: `{indice în ListaReceptii → IDRR}`, doar pentru rândurile a căror recepție s-a născut în rularea curentă. «Născută acum» se măsoară **pe IDRR, nu pe ramura care a rulat**: două rânduri de payload din aceeași zi se potrivesc pe același rând, deci al doilea poate ajunge, prin potrivire, pe o recepție pe care primul tocmai a inserat-o — și `IDRR`-ul ei e la fel de trecător. E scris ca test.
 
-Clientul nu alege: `AsociereForm.DeciziiDin` primește acum **și recepțiile** (parametru
-OBLIGATORIU, nu opțional — aici s-a greșit o dată, iar un implicit tăcut ar reînvia greșeala) și
-pune `RandReceptie` dacă recepția are unul, `Idrr` altfel. Niciodată amândouă.
+Clientul nu alege: `AsociereForm.DeciziiDin` primește acum **și recepțiile** (parametru OBLIGATORIU, nu opțional — aici s-a greșit o dată, iar un implicit tăcut ar reînvia greșeala) și pune `RandReceptie` dacă recepția are unul, `Idrr` altfel. Niciodată amândouă.
 
 ---
 
-## Defectul 2 — propunerea arăta doar jumătate din tablou
+### Defectul 2 — propunerea arăta doar jumătate din tablou
 
-### Ce se întâmplă
+#### Ce se întâmplă
 
-`_INSTANTANEE_SQL` din calea de ingestie selectează `IDRR IS NULL AND Sters = 0`: **doar
-rândurile de așezat**. Recepțiile veneau toate (`FROM FX_Receptii_R WHERE CodAngajament = %s`,
-fără filtru) — dar goale, fiindcă lanțul lor era deja legat și deci absent din tablou.
+`_INSTANTANEE_SQL` din calea de ingestie selectează `IDRR IS NULL AND Sters = 0`: **doar rândurile de așezat**. Recepțiile veneau toate (`FROM FX_Receptii_R WHERE CodAngajament = %s`, fără filtru) — dar goale, fiindcă lanțul lor era deja legat și deci absent din tablou.
 
 Ce vede operatorul dintr-o recepție cu lanț de lungime zero:
 
@@ -94,12 +77,9 @@ Ce vede operatorul dintr-o recepție cu lanț de lungime zero:
 
 Adică exact «recepțiile vechi nu mai vin». Erau acolo; povestea lor nu era.
 
-**Și nu e doar aspect.** Serverul își dă deja vetourile F15 / F16 **pe lanțul întreg** —
-`aplica_decizii` citește din bază instantaneele deja asociate ale acelorași recepții înainte de
-`valideaza_plasarile`, tocmai fiindcă «lanțul» înseamnă tot lanțul. Până la felia asta,
-formularul era singurul care nu vedea ce vede vetoul care îl refuză.
+**Și nu e doar aspect.** Serverul își dă deja vetourile F15 / F16 **pe lanțul întreg** — `aplica_decizii` citește din bază instantaneele deja asociate ale acelorași recepții înainte de `valideaza_plasarile`, tocmai fiindcă «lanțul» înseamnă tot lanțul. Până la felia asta, formularul era singurul care nu vedea ce vede vetoul care îl refuză.
 
-### Ce s-a schimbat
+#### Ce s-a schimbat
 
 Propunerea poartă acum, pe lângă rândurile de decis:
 
@@ -111,17 +91,9 @@ Propunerea poartă acum, pe lângă rândurile de decis:
   plată e diferența dintre o cifră corectă și una greșită, tăcut și pentru totdeauna (F12).
   Reperele trebuie să fie pe ecran **când** se așază, nu abia după.
 
-**Complement, nu al doilea filtru.** `citeste_instantanee_context` întoarce tot ce NU e în
-mulțimea de decis, calculat pe `IDRH` în Python. Așa nu poate exista un rând pe care să nu-l ia
-niciuna dintre cele două liste — nici măcar cel lăsat afară fiindcă rândul lui de istoric nu e în
-descărcarea asta (până acum dispărea de pe ecran cu totul, rămânând doar într-un avertisment).
+**Complement, nu al doilea filtru.** `citeste_instantanee_context` întoarce tot ce NU e în mulțimea de decis, calculat pe `IDRH` în Python. Așa nu poate exista un rând pe care să nu-l ia niciuna dintre cele două liste — nici măcar cel lăsat afară fiindcă rândul lui de istoric nu e în descărcarea asta (până acum dispărea de pe ecran cu totul, rămânând doar într-un avertisment).
 
-**Se arată, nu se mișcă.** Toate ies cu `blocat = True`. Nu e o alegere de aspect: acoperirea
-cerută de `verifica_acoperirea` e exact mulțimea de decis, iar o decizie pentru un rând din afara
-ei e respinsă cu 400 — și pe drept, altfel fiecare descărcare ar rescrie tăcut legături vechi.
-Asta e chiar a doua jumătate a cerinței operatorului: **«se vor salva DOAR cele modificate sau noi
-— NU TOATE din nou!»** Corectarea unei legături vechi rămâne treaba editorului de oricând, care e
-la un clic distanță și există exact pentru asta.
+**Se arată, nu se mișcă.** Toate ies cu `blocat = True`. Nu e o alegere de aspect: acoperirea cerută de `verifica_acoperirea` e exact mulțimea de decis, iar o decizie pentru un rând din afara ei e respinsă cu 400 — și pe drept, altfel fiecare descărcare ar rescrie tăcut legături vechi. Asta e chiar a doua jumătate a cerinței operatorului: **«se vor salva DOAR cele modificate sau noi — NU TOATE din nou!»** Corectarea unei legături vechi rămâne treaba editorului de oricând, care e la un clic distanță și există exact pentru asta.
 
 Motivul afișat spune care dintre cele două cazuri e:
 
@@ -130,16 +102,9 @@ Motivul afișat spune care dintre cele două cazuri e:
 | are legătură (`IDRR`) | «Legătura este deja scrisă. Se corectează în editorul de asociere…» |
 | n-are (`IDRR` gol) | «Rândul lui de istoric nu este în această descărcare…» |
 
-**Formularul n-a avut nevoie de cod nou ca să le arate cum trebuie.** `Blocat` era deja onorat în
-toate cele șase locuri: lacătul din arbore, culoarea stinsă, stilul marcajului de pe bandă,
-pornirea tragerii din arbore, pornirea tragerii de pe bandă și meniul contextual.
+**Formularul n-a avut nevoie de cod nou ca să le arate cum trebuie.** `Blocat` era deja onorat în toate cele șase locuri: lacătul din arbore, culoarea stinsă, stilul marcajului de pe bandă, pornirea tragerii din arbore, pornirea tragerii de pe bandă și meniul contextual.
 
-**Chei negative, ca să nu se ciocnească două numerotări.** Un rând de decis e ancorat pe indicele
-lui (0, 1, 2…), unul de context pe `IDRH`, cheia reală. Amândouă ajung în `_pozitie` și în
-dicționarele de rânduri ale formularului, unde `IDRH = 5` și indicele `5` ar fi același lucru.
-`AsociereStare.DinPropunere` păstrează deci contextul ca `-IDRH`: negarea e reversibilă (`IDRH`
-pornește de la 1, e cheie primară Access), nu poate atinge un indice, și spune dintr-o privire că
-rândul nu poartă o hotărâre.
+**Chei negative, ca să nu se ciocnească două numerotări.** Un rând de decis e ancorat pe indicele lui (0, 1, 2…), unul de context pe `IDRH`, cheia reală. Amândouă ajung în `_pozitie` și în dicționarele de rânduri ale formularului, unde `IDRH = 5` și indicele `5` ar fi același lucru. `AsociereStare.DinPropunere` păstrează deci contextul ca `-IDRH`: negarea e reversibilă (`IDRH` pornește de la 1, e cheie primară Access), nu poate atinge un indice, și spune dintr-o privire că rândul nu poartă o hotărâre.
 
 Două locuri au trebuit să învețe să sară peste ele:
 
@@ -149,7 +114,7 @@ Două locuri au trebuit să învețe să sară peste ele:
 
 ---
 
-## Fișiere atinse
+### Fișiere atinse
 
 | fișier | ce |
 |---|---|
@@ -163,7 +128,7 @@ Două locuri au trebuit să învețe să sară peste ele:
 | `src/KBot.Api/ApiClient.vb` | `CitesteReceptie` / `CitesteInstantaneuLegat` / `CitestePlata` — cititori comuni celor două rute; `CatreFir` pune a treia țintă |
 | `src/KBot.App/Forexe/AsociereForm.vb` | `DeciziiDin` primește recepțiile și sare peste context; `NehotarateleCount` la fel |
 
-## Verde
+### Verde
 
 * `PYTHON`: **485 trecute / 15 sărite** (linia de plecare a feliei: 472 / 15). Cele **13 teste
   noi** acoperă ancorele pasului 4b (inclusiv rândul care aterizează pe recepția născută de
@@ -182,11 +147,9 @@ Două locuri au trebuit să învețe să sară peste ele:
   plecare măsurată în felia 0055, aceleași roșii de `EtichetaRevizie` (DDF), pe care felia asta
   nu le atinge.
 
-## Ce NU e verificat
+### Ce NU e verificat
 
-**Nimic din felia asta n-a rulat pe calculatorul cu FOREXE.** Aici nu există nici aplicația
-FOREXE, nici baza MariaDB — dovada rămâne că data viitoare salvarea trece, nu că testele sunt
-verzi.
+**Nimic din felia asta n-a rulat pe calculatorul cu FOREXE.** Aici nu există nici aplicația FOREXE, nici baza MariaDB — dovada rămâne că data viitoare salvarea trece, nu că testele sunt verzi.
 
 Anume:
 
@@ -198,7 +161,7 @@ Anume:
   recepția 188 nu se afla în `citeste_receptii` la salvare, și faptul că propunerea o listase) —
   dar n-a fost observat direct pe baza operatorului.
 
-## Ce rămâne deschis
+### Ce rămâne deschis
 
 * **Reconstituirea (`receptie_noua`) tot nu se poate cere din formular.** Un lanț F26 rămâne
   neasezabil în modul propunere. Nimic din datele operatorului nu pare să ceară asta acum (niciun
@@ -209,3 +172,102 @@ Anume:
 * Antetul benzii «Neașezate (N)» numără și rândurile de context neașezate, în timp ce notificarea
   numără doar pe cele de hotărât. Cele două cifre pot să difere; lacătul explică de ce, dar nu e
   aceeași cifră.
+
+---
+
+<a id="slice-0056-02"></a>
+
+## SLICE-0056-02 — old links can be corrected while placing a download
+
+Operator, 01.10.2026: «I need to be able to edit ANY reception when new data is downloaded, as long as there is no ordonantare for it. Now, when I download new data, it does not let me change the old receptions — the ones that already exist — and I do not want that.»
+
+Slice number: recorded as the second pass of 0056 («Tabloul întreg al propunerii»), the slice that brought the already written snapshots (the "context") into the proposal and froze all of them. **Assumed, not asked** — renumber if it belongs elsewhere.
+
+### What was wrong (read from the code and from the operator's `asociere.log`)
+
+In proposal mode every snapshot written before the download arrived with `blocat = True`, whatever the ordonantari said (`citeste_instantanee_context`, and again in `AsociereStare.DinPropunere`). The reason given at the time: the server asks for a decision on exactly the rows to place, and a decision for any other row was refused.
+
+The pasted log (014_SCSV, AAB2HFBEEAF, run 9) shows what that costs. The download moved the value 1723.58 onto reception 33, where snapshot 63 (398.39, placed earlier) is the newest. The two snapshots to place (61, 62, 1723.58) belong on 33, but with 63 still on it the chain ends on 398.39, F15 refuses the save, and 63 could not be moved from this window. The download could not be saved at all without closing the window and going through the anytime editor first.
+
+### What changed
+
+**The rule is now the same in both modes: a link is frozen only by an ordonantare** (the existing rule of `asociere.citeste_blocaje`: an ordonantare line on the angajament dated on or after the snapshot's day).
+
+Server (`PYTHON/routes/forexe/`):
+
+- `prelucrare_asociere.citeste_instantanee_context`: `blocat` is no longer True for all. A
+  placed row is blocked only by `blocaje`; an unplaced one is free; a row born in the current
+  run that is not in the set to place (no history row, or a duplicate) stays blocked with
+  `MOTIV_FARA_ISTORIC`, because its IDRH does not survive the rollback of phase one.
+  `MOTIV_CONTEXT` is removed.
+- `citeste_idrh_scrise` (new): the IDRHs of the angajament BEFORE the steps write anything,
+  read in both phases. Only these can be named by IDRH.
+- A third anchor, `("idrh", n)`, next to `rand_istoric` (F24) and `idh` (F34): a decision that
+  carries `idrh` is a CORRECTION of a snapshot written before this run.
+  `normalizeaza_decizii` asks for exactly one of the three and allows `desprins` only on a
+  correction (`ACTIUNE_DESPRINS` moved here; `asociere.py` imports it).
+- `verifica_corecturile` (new): the row must be a context row, once, with a matching `data_h`,
+  and not blocked — checked again at save, since an ordonantare may appear after the proposal.
+  No coverage: for an old link silence means «leave it as it is».
+- `aplica_decizii`: coverage is asked only for the rows to place; labels, chains and writes
+  treat both kinds alike. The reception a corrected row LEAVES is touched too (chain checked,
+  `Final`/`Partial` redone, `Sters` taken off when it lost its deletion row). `desprins` and
+  `ignorat` on a correction also clear `EsteStergere`. New counter `asocieri.desprins`.
+- `valideaza_plasarile(f15_doar_semn=...)`: on a reception that only LOSES snapshots in this
+  save F15 warns instead of refusing — the anytime editor's reason: a chain whose last snapshot
+  was taken off does not close by definition. A reception that gains a snapshot keeps the veto.
+- `prelucrare.py`: reads `idrh_scrise` before the steps; in the save phase reads the context
+  only when a correction came.
+- Journal (`asociere.log`): the context table has a `blocat` column and the reasons; the save
+  writes «corecturi: N», and for each one where the row was.
+
+Client:
+
+- `KBot.Domain`: `InstantaneuLegat.Context` (row written before the download; key `-IDRH`);
+  `DinPropunere` keeps the server's `Blocat`; `DecizieAsociere.Idrh` (the third anchor).
+- `KBot.Api`: `PostPrelucrareDecizie.idrh`; `CatreFir` sends exactly one anchor and allows
+  `Desprins` only with it. **`IApiClient` is unchanged** (the corrections travel in the same
+  `decizii` list).
+- `AsociereForm`: `DeciziiDin` sends a correction for every context row the operator changed
+  and nothing for an untouched one; `NehotarateDin` skips context rows (no decision owed);
+  «Golește așezările» puts moved old links back to the server's state and its question says so.
+  Nothing else: every drag / menu / lock check already read `Blocat`.
+
+Compatibility: an old client against the new server still marks all context rows blocked (its own `DinPropunere`); a new client against the old server gets them all blocked from the server.
+
+### Files touched
+
+- `PYTHON/routes/forexe/prelucrare_asociere.py`, `prelucrare.py`, `asociere.py`
+- `src/KBot.Domain/AsociereStare.vb`, `AsociereInfo.vb`, `KBot.Domain.vbproj` (1.2.7.0 → 1.2.8.0)
+- `src/KBot.Api/ApiClient.vb`, `UpsertAngajamenteRequest.vb`, `KBot.Api.vbproj` (1.0.15.0 → 1.0.16.0)
+- `src/KBot.App/Forexe/AsociereForm.vb`
+- help: see `SLICE-0000-26-ajutor-pentru-0056-02.md`
+
+### Test results
+
+- `dotnet build src/KBot.App/KBot.App.vbproj` (output to a scratch folder, K-BOT was running and
+  locked `bin\Debug`): **0 warnings, 0 errors**.
+- The three Python files parse (`ast.parse`); nothing was imported or run.
+- **No tests were run and none were written** (operator: «nu testa»). The app was not started.
+
+### Left unverified or deferred
+
+- **Never run**: no proposal, no save, no window. The whole change is read from the code.
+- **Tests that describe the old behaviour and will fail until updated** (not touched):
+  - `PYTHON/tests/test_forexe_prelucrare_asociere.py` — the three `citeste_instantanee_context`
+    calls (new required argument `idrh_scrise`; «all blocked» no longer true);
+  - `PYTHON/tests/test_forexe_prelucrare_route.py` — the scripted cursor does not know the new
+    `SELECT IDRH FROM FX_Receptii_H WHERE CodAngajament` read;
+  - `tests/KBot.Domain.Tests/AsociereStareDinPropunereTests.vb` and the `Blocat` assertions in
+    `tests/KBot.App.Tests/AsociereFormTests.vb` / `AsociereDeciziiTests.vb`, where they expect
+    every context row blocked.
+- **The server files must reach the VPS** together with the client; until then the new client
+  behaves as before (all old links blocked).
+- The fingerprint (`amprenta`) does not see a link MOVED by another session between the proposal
+  and the save (it counts rows, not targets). Same limit as in the anytime editor; the blocking
+  rule itself is re-checked at save.
+- The two warnings of `citeste_instantanee` («... nu pot fi așezate din descărcare. Se rezolvă în
+  editorul de asociere») are unchanged, although such rows written before the run can now be
+  placed in this window. Wording left for the operator to decide.
+- Ties on `DataH` between an old and a new snapshot on a reception started in the window are
+  ordered by the form on `-IDRH`, by the server on `IDRH`. Not expected in real data.

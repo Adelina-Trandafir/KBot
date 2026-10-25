@@ -1,3 +1,5 @@
+<a id="slice-0061"></a>
+
 # SLICE 0061 — selecție multiplă în arbore, ecran de lucru curat, și locul dat de ceas
 
 Cinci cereri ale operatorului din 10.09.2026, două pe control și trei pe `AsociereForm`:
@@ -18,8 +20,7 @@ Cinci cereri ale operatorului din 10.09.2026, două pe control și trei pe `Asoc
 
 ### A. Grupul de rânduri (`KBot.Controls/Tree`)
 
-`AdvancedTreeControl.MultiSelect.vb` — partială nouă. Implicit **stins**, deci cele nouă
-vederi care folosesc deja arborele nu capătă niciun comportament nou.
+`AdvancedTreeControl.MultiSelect.vb` — partială nouă. Implicit **stins**, deci cele nouă vederi care folosesc deja arborele nu capătă niciun comportament nou.
 
 - **O singură rădăcină.** Un grup nu trece peste două rădăcini. Arborele nu e o listă plată:
   rădăcinile lui sunt lucrurile însele (o recepție, coșul), iar un grup întins peste două ar
@@ -49,21 +50,11 @@ vederi care folosesc deja arborele nu capătă niciun comportament nou.
 
 ### B. Unde ar cădea rândul (`AdvancedTreeControl.DropPreview.vb`)
 
-Cererea (5), și e o cerință despre adevăr: în lanțul unei recepții locul unui instantaneu
-**nu se alege**, îl dă `DataH`. Chenarul de pe rândul de sub cursor spunea deci ceva fals.
+Cererea (5), și e o cerință despre adevăr: în lanțul unei recepții locul unui instantaneu **nu se alege**, îl dă `DataH`. Chenarul de pe rândul de sub cursor spunea deci ceva fals.
 
-`SetDropPreview(root, ghosts)` / `ClearDropPreview()`, cu `TreeDropGhost(index, caption)`.
-Rădăcina se aprinde ÎNTREAGĂ (chenar punctat + văl subțire, în `DragHighlightColor`) și în ea
-apar rânduri-fantomă pe pozițiile primite. **Pozițiile le calculează GAZDA**, în șirul
-REZULTAT: ordinea aparține datelor, iar arborele nu știe nimic despre `DataH` — aceeași
-împărțire ca la vetourile tragerii (arborele arată, gazda hotărăște).
+`SetDropPreview(root, ghosts)` / `ClearDropPreview()`, cu `TreeDropGhost(index, caption)`. Rădăcina se aprinde ÎNTREAGĂ (chenar punctat + văl subțire, în `DragHighlightColor`) și în ea apar rânduri-fantomă pe pozițiile primite. **Pozițiile le calculează GAZDA**, în șirul REZULTAT: ordinea aparține datelor, iar arborele nu știe nimic despre `DataH` — aceeași împărțire ca la vetourile tragerii (arborele arată, gazda hotărăște).
 
-Fantomele sunt `TreeItem`-uri adevărate (`IsDropGhost = True`) băgate în `Children`-ul
-rădăcinii, ca să treacă prin aceeași pictură, aceeași derulare și aceeași măsurătoare ca
-restul; o pictură separată «pe deasupra» s-ar fi despărțit de rânduri la prima schimbare de
-înălțime sau de derulare. Ies toate pe un singur drum, `ClearDropPreview`, chemat din
-`CancelDrag` (aruncare, ESC, pierderea ferestrei) și din `OnDragLeave`. Un `DragOver` care
-cade pe o fantomă e raportat gazdei ca fiind pe părintele ei.
+Fantomele sunt `TreeItem`-uri adevărate (`IsDropGhost = True`) băgate în `Children`-ul rădăcinii, ca să treacă prin aceeași pictură, aceeași derulare și aceeași măsurătoare ca restul; o pictură separată «pe deasupra» s-ar fi despărțit de rânduri la prima schimbare de înălțime sau de derulare. Ies toate pe un singur drum, `ClearDropPreview`, chemat din `CancelDrag` (aruncare, ESC, pierderea ferestrei) și din `OnDragLeave`. Un `DragOver` care cade pe o fantomă e raportat gazdei ca fiind pe părintele ei.
 
 ### C. `AsociereForm` — ecran de lucru, grafice în fereastra lor
 
@@ -157,6 +148,8 @@ cade pe o fantomă e raportat gazdei ca fiind pe părintele ei.
   e lung și locul cade sub marginea de jos, se vede doar rădăcina aprinsă.
 ---
 
+<a id="slice-0061-02"></a>
+
 # 0061-02 — urmarea din 10.09.2026: arborele în fereastra graficelor, și graficul rezervărilor
 
 Doua cereri, amandoua despre acelasi lucru — un grafic fara arborele lui nu e de niciun folos:
@@ -168,10 +161,7 @@ Doua cereri, amandoua despre acelasi lucru — un grafic fara arborele lui nu e 
 
 ## A. `GraficeAsociereForm` împrumută acum ȘI arborele
 
-Fereastra deschisă de « Grafice și benzi » avea graficul, dar graficul se desface pe recepția
-ALEASĂ — iar alegerea se face în arbore, care rămăsese în formularul de dedesubt, sub o
-fereastră modală. Se vedea deci ce fusese ales înainte de apăsarea butonului, și atât; scria
-chiar pe suprafața goală «Alege o recepție în stânga», și nu exista nicio stânga.
+Fereastra deschisă de « Grafice și benzi » avea graficul, dar graficul se desface pe recepția ALEASĂ — iar alegerea se face în arbore, care rămăsese în formularul de dedesubt, sub o fereastră modală. Se vedea deci ce fusese ales înainte de apăsarea butonului, și atât; scria chiar pe suprafața goală «Alege o recepție în stânga», și nu exista nicio stânga.
 
 - `pnlCard` are acum un `SplitContainer` (`splitGrafice`): **stânga = `treeLant`, dreapta =
   `pnlGrafice`**. Amandoua panourile sunt GOALE în designer — amandoua controalele vin
@@ -192,27 +182,18 @@ chiar pe suprafața goală «Alege o recepție în stânga», și nu exista nici
 
 ## B. `GraficRezervariForm` — graficul rezervărilor, din antetul arborelui
 
-Slotul din dreapta antetului era liber în `RezervariView` (în `ReceptiiView` acolo stă editorul
-de legături). Acum ține iconița de grafic și deschide o fereastră redimensionabilă
-(`KBotShellForm`) cu două file:
+Slotul din dreapta antetului era liber în `RezervariView` (în `ReceptiiView` acolo stă editorul de legături). Acum ține iconița de grafic și deschide o fereastră redimensionabilă (`KBotShellForm`) cu două file:
 
 - **Evoluția** — cât era rezervat, zi de zi: suma alergătoare a lui `R_Valoare`, în TREPTE
   (`LineMode.Step`), fiindcă o rezervare ține cât ține și sare când vine operația următoare;
   desenată în pantă, linia ar fi spus despre fiecare zi dintre ele o sumă care n-a existat.
 - **Pe luni** — chiar totalurile scrise pe folderele de lună din arbore, luna cu luna.
 
-Amandoua se desfac din ACELEAȘI rânduri pe care le arată arborele — nicio a treia cifră care să
-nu se poată regăsi acolo. Rândurile intră O DATĂ, prin constructor: o a doua cerere de rețea ar fi
-putut răspunde altceva decât scrie în arborele de sub fereastră. Fără angajament ales și fără
-rezervări sunt două motive diferite de a nu deschide nimic, și se spun separat, prin
-`KBotMessage`.
+Amandoua se desfac din ACELEAȘI rânduri pe care le arată arborele — nicio a treia cifră care să nu se poată regăsi acolo. Rândurile intră O DATĂ, prin constructor: o a doua cerere de rețea ar fi putut răspunde altceva decât scrie în arborele de sub fereastră. Fără angajament ales și fără rezervări sunt două motive diferite de a nu deschide nimic, și se spun separat, prin `KBotMessage`.
 
-**Graficul e al ferestrei**, nu împrumutat ca la asociere: acolo suprafața exista deja în
-formularul de lucru, aici nu exista niciun grafic al rezervărilor de împrumutat.
+**Graficul e al ferestrei**, nu împrumutat ca la asociere: acolo suprafața exista deja în formularul de lucru, aici nu exista niciun grafic al rezervărilor de împrumutat.
 
-⚠ **Lunile negative NU se înroșesc**, deși rândul lor din arbore se înroșește. Încercat și scos:
-`PointColor` vopsește și SEGMENTUL CARE PLEACĂ din punct, deci o lună negativă făcea roșie
-urcarea către luna următoare — spunea roșu exact despre partea care creștea.
+⚠ **Lunile negative NU se înroșesc**, deși rândul lor din arbore se înroșește. Încercat și scos: `PointColor` vopsește și SEGMENTUL CARE PLEACĂ din punct, deci o lună negativă făcea roșie urcarea către luna următoare — spunea roșu exact despre partea care creștea.
 
 ## Fișiere atinse
 
@@ -247,3 +228,7 @@ urcarea către luna următoare — spunea roșu exact despre partea care crește
 - ⚠ Fereastra graficelor asocierii a rămas **MODALĂ** (nota din 0061 stă în picioare): cât e
   deschisă, în arborele împrumutat se poate ALEGE, dar nu se poate trage nimic în celălalt
   arbore — el a rămas dincolo, în formular.
+
+## Reper de trasabilitate din registru
+
+Registrul caracteriza grupul și `Fantomele` drept primele două funcții pure ușor de acoperit, alături de `InstantaneeleAlese` și `AplicaComandaPeGrup` în lista fără teste noi. Aceasta este evaluarea istorică a registrului, nu o suită scrisă/rulată acum.
