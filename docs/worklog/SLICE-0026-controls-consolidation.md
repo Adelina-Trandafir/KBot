@@ -8,9 +8,7 @@ Cerere de operator, fără plan prealabil:
 > «they must be grouped logically. all stuff for dgv in the same folder. all for treeview in
 > the same folder, all for adobe viewer in the same folder... and so on»
 
-Felie pur structurală: **niciun comportament nu s-a schimbat**. Zero modificări de logică în
-vreun control — doar mutări de fișiere, calificări de tip și lărgirea a exact două puncte de
-acces din motorul de teme.
+Felie pur structurală: **niciun comportament nu s-a schimbat**. Zero modificări de logică în vreun control — doar mutări de fișiere, calificări de tip și lărgirea a exact două puncte de acces din motorul de teme.
 
 ---
 
@@ -35,12 +33,9 @@ Toate prin `git mv`, deci istoricul se urmărește:
 | `KBotNotice.vb` | `KBot.Controls/Notice/` |
 | `KBotTextField.vb` | `KBot.Controls/TextField/` |
 
-Enum-urile călătoresc cu controlul lor: `KBotNavOrientation`/`KBotNavAlign`/`KBotNavCorner`/
-`KBotNavCollapseState` sunt în `NavList/KBotNavList.vb`, `NoticeKind` în `Notice/KBotNotice.vb`.
+Enum-urile călătoresc cu controlul lor: `KBotNavOrientation`/`KBotNavAlign`/`KBotNavCorner`/ `KBotNavCollapseState` sunt în `NavList/KBotNavList.vb`, `NoticeKind` în `Notice/KBotNotice.vb`.
 
-În `KBot.Theming` au rămas: `ThemeManager`, `ThemePalette`, `ThemeScheme`, `ThemeStyleOptions`,
-`ThemeStore`, `BuiltInSchemes`, `ColorHex`, `ButtonStyles`, `ModernRenderer`, `IThemedControl`,
-`ThemeShapes`, `KBotDesignTime`, `Interop/NativeMethods` și cele două form-uri de bază.
+În `KBot.Theming` au rămas: `ThemeManager`, `ThemePalette`, `ThemeScheme`, `ThemeStyleOptions`, `ThemeStore`, `BuiltInSchemes`, `ColorHex`, `ButtonStyles`, `ModernRenderer`, `IThemedControl`, `ThemeShapes`, `KBotDesignTime`, `Interop/NativeMethods` și cele două form-uri de bază.
 
 ### 2.2 Regruparea a ceea ce era deja în `KBot.Controls`
 
@@ -57,44 +52,20 @@ Proiectul avea 40+ fișiere în rădăcină. Acum:
 
 ## 3. Ce a trebuit lărgit în `KBot.Theming` (și de ce exact atât)
 
-Controalele mutate au trecut într-un **alt assembly**, deci membrii `Friend` de care se
-sprijineau au devenit invizibili. Două puncte, ambele minime:
+Controalele mutate au trecut într-un **alt assembly**, deci membrii `Friend` de care se sprijineau au devenit invizibili. Două puncte, ambele minime:
 
-1. **`ThemeShapes`** `Friend Module` → `Public Module`, iar `ScaleDpi`/`RoundedRect`/`Blend`
-   `Friend` → `Public`. Modulul e folosit ȘI de ce a rămas în motor (`ModernRenderer`,
-   `KBotShellForm`), deci **nu putea fi mutat** în `KBot.Controls` — trebuia expus.
-   (Nota din `SLICE-0010-01` — «`ThemeShapes` e `Friend`, deci invizibil din `KBot.Controls`;
-   am replicat» — descrie situația de dinainte de felia asta.)
-2. **`Interop/NativeMethods`** `Friend Module` → `Public Module`, dar **numai `DragMove` a
-   rămas `Public`**: `SetTitleBarDark`, `SetRoundedCorners`, `ApplyMinMaxInfo` și
-   `ApplyWindowTheme` au fost coborâte `Public` → `Friend`, fiindcă sunt consumate exclusiv
-   din `KBot.Theming` (`ThemeManager` și `KBotShellForm`). Suprafața publică nouă a modulului
-   e deci **un singur membru**, cel cerut de `KBotCaptionBar`. Constantele `WM_*`/`HT*` și
-   structurile `NativePoint`/`MINMAXINFO` rămân `Friend`.
+1. **`ThemeShapes`** `Friend Module` → `Public Module`, iar `ScaleDpi`/`RoundedRect`/`Blend` `Friend` → `Public`. Modulul e folosit ȘI de ce a rămas în motor (`ModernRenderer`, `KBotShellForm`), deci **nu putea fi mutat** în `KBot.Controls` — trebuia expus. (Nota din `SLICE-0010-01` — «`ThemeShapes` e `Friend`, deci invizibil din `KBot.Controls`; am replicat» — descrie situația de dinainte de felia asta.)
+2. **`Interop/NativeMethods`** `Friend Module` → `Public Module`, dar **numai `DragMove` a rămas `Public`**: `SetTitleBarDark`, `SetRoundedCorners`, `ApplyMinMaxInfo` și `ApplyWindowTheme` au fost coborâte `Public` → `Friend`, fiindcă sunt consumate exclusiv din `KBot.Theming` (`ThemeManager` și `KBotShellForm`). Suprafața publică nouă a modulului e deci **un singur membru**, cel cerut de `KBotCaptionBar`. Constantele `WM_*`/`HT*` și structurile `NativePoint`/`MINMAXINFO` rămân `Friend`.
 
 `KBotDesignTime` era deja `Public` (lărgit la felia 0025 exact din același motiv).
 
 ## 4. Actualizări la apelanți
 
-- `MainForm.Designer.vb`, `LoginForm.Designer.vb`, `InternalInfoForm.Designer.vb`,
-  `DdfView.Designer.vb` — tipurile calificate `KBot.Theming.KBotX` → `KBot.Controls.KBotX`.
-- **Capcană reală, prinsă de compilator:** forma scurtă `Controls.KBotNavCorner` **nu
-  compilează** într-un fișier de designer de formular — `Controls` se leagă mai întâi de
-  proprietatea moștenită `Control.ControlCollection`, iar eroarea e
-  `BC30456: 'KBotNavCorner' is not a member of 'Control.ControlCollection'`. Vechiul
-  `Theming.X` nu avea coliziunea asta. De aceea **tot ce vine din `KBot.Controls` în cele
-  patru fișiere de designer se scrie CALIFICAT COMPLET** (`KBot.Controls.KBotNavItem`).
-  Ciudățenia care merge totuși: `New Controls.KBotDataView()` (context `New`) — există de
-  dinainte în vederile existente și a fost lăsat neatins, dar forma corectă e cea calificată.
-- `LoginForm.vb` — `NoticeKind.Error` → `KBot.Controls.NoticeKind.Error`. Un `Imports
-  KBot.Controls` la începutul fișierului **NU merge**: face `Write` ambiguu între
-  `KBot.Common.GlobalErrorLog.Write` și `KBot.Controls.AdobeHostLog.Write` (ambele module).
+- `MainForm.Designer.vb`, `LoginForm.Designer.vb`, `InternalInfoForm.Designer.vb`, `DdfView.Designer.vb` — tipurile calificate `KBot.Theming.KBotX` → `KBot.Controls.KBotX`.
+- **Capcană reală, prinsă de compilator:** forma scurtă `Controls.KBotNavCorner` **nu compilează** într-un fișier de designer de formular — `Controls` se leagă mai întâi de proprietatea moștenită `Control.ControlCollection`, iar eroarea e `BC30456: 'KBotNavCorner' is not a member of 'Control.ControlCollection'`. Vechiul `Theming.X` nu avea coliziunea asta. De aceea **tot ce vine din `KBot.Controls` în cele patru fișiere de designer se scrie CALIFICAT COMPLET** (`KBot.Controls.KBotNavItem`). Ciudățenia care merge totuși: `New Controls.KBotDataView()` (context `New`) — există de dinainte în vederile existente și a fost lăsat neatins, dar forma corectă e cea calificată.
+- `LoginForm.vb` — `NoticeKind.Error` → `KBot.Controls.NoticeKind.Error`. Un `Imports KBot.Controls` la începutul fișierului **NU merge**: face `Write` ambiguu între `KBot.Common.GlobalErrorLog.Write` și `KBot.Controls.AdobeHostLog.Write` (ambele module).
 - `tests/KBot.App.Tests/MainFormNavItemsTests.vb` — `Imports KBot.Controls` adăugat.
-- Testele `KBotNavListTests.vb` (20), `KBotNavListSelectionTests.vb` (4) și
-  `KBotNavListCollapseTests.vb` (25) mutate din `KBot.Theming.Tests` în `KBot.Controls.Tests`.
-  `KBot.Controls.Tests` **nu** a avut nevoie de `DisableTestParallelization` (spre deosebire
-  de `KBot.Theming.Tests`): verificat prin grep că niciun test de acolo nu atinge starea
-  statică `ThemeManager`/`ThemeStore`.
+- Testele `KBotNavListTests.vb` (20), `KBotNavListSelectionTests.vb` (4) și `KBotNavListCollapseTests.vb` (25) mutate din `KBot.Theming.Tests` în `KBot.Controls.Tests`. `KBot.Controls.Tests` **nu** a avut nevoie de `DisableTestParallelization` (spre deosebire de `KBot.Theming.Tests`): verificat prin grep că niciun test de acolo nu atinge starea statică `ThemeManager`/`ThemeStore`.
 
 ## 5. Fișiere atinse
 
@@ -119,11 +90,6 @@ dotnet build KBot.sln   →  0 erori / 0 avertismente
 dotnet test  KBot.sln   →  812 passed / 0 failed / 0 skipped
 ```
 
-Aceleași 812 teste ca înainte de felie, redistribuite: `KBot.Theming.Tests` 76 → **27**,
-`KBot.Controls.Tests` 286 → **335**.
+Aceleași 812 teste ca înainte de felie, redistribuite: `KBot.Theming.Tests` 76 → **27**, `KBot.Controls.Tests` 286 → **335**.
 
-⚠️ **Ce NU s-a verificat.** Nimic nu s-a deschis în designer-ul Visual Studio după mutare.
-Riscul specific al feliei: `MainForm`/`LoginForm`/`DdfView` conțin controale acum dintr-un alt
-assembly, iar Toolbox-ul și cache-ul de design-time al VS trebuie să le regăsească sub numele
-nou (`KBot.Controls.*`). Firele (a)–(j) din felia 0025 rămân toate deschise — felia asta nu a
-încercat să închidă niciunul.
+⚠️ **Ce NU s-a verificat.** Nimic nu s-a deschis în designer-ul Visual Studio după mutare. Riscul specific al feliei: `MainForm`/`LoginForm`/`DdfView` conțin controale acum dintr-un alt assembly, iar Toolbox-ul și cache-ul de design-time al VS trebuie să le regăsească sub numele nou (`KBot.Controls.*`). Firele (a)–(j) din felia 0025 rămân toate deschise — felia asta nu a încercat să închidă niciunul.

@@ -10,11 +10,8 @@ Patru jurnale din 15–18.09.2026 sunt reunite integral. Ordinea contează: 0062
 
 **Data:** 15.09.2026 **Cerute de operator** (două propoziții):
 
-1. «`ReceptiiH` își pierde `IDRH` și `IDRR` în Access; la migrare rândurile ajung pe MariaDB,
-   dar `Receptii_H` n-are `IDRR` în niciun câmp, așa că serverul spune că NU sunt recepții de
-   încărcat — dar sunt, doar că nu-s legate de `Receptii_R` (`IDRR IS NULL`).»
-2. «Am nevoie de o cale, în vederea Recepții sau în `IstoricView`, să refac toate rândurile care
-   lipsesc din `Receptii` sau `Receptii_H`, după `IDH`.»
+1. «`ReceptiiH` își pierde `IDRH` și `IDRR` în Access; la migrare rândurile ajung pe MariaDB, dar `Receptii_H` n-are `IDRR` în niciun câmp, așa că serverul spune că NU sunt recepții de încărcat — dar sunt, doar că nu-s legate de `Receptii_R` (`IDRR IS NULL`).»
+2. «Am nevoie de o cale, în vederea Recepții sau în `IstoricView`, să refac toate rândurile care lipsesc din `Receptii` sau `Receptii_H`, după `IDH`.»
 
 S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) și tot acolo sunt deja editorul de legături (antet) și reîmprospătarea (subsol dreapta). `IstoricView` rămâne read-only, cum e declarată.
 
@@ -40,17 +37,9 @@ S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) �
 
 `routes/forexe/receptii_refacere.py`, `refa_receptii(cursor, cod, aplica)`. Aceeași plimbare ca 4a, cu trei deosebiri, toate deliberate:
 
-* **Peste rândurile `Prelucrat = 1`**, nu `= 0`. Cele neprelucrate aparțin următoarei
-  descărcări; 4a le va construi atunci și NU verifică `IDH`-ul, deci dacă le-am construi și
-  aici ar ieși două H pentru același rând de istoric.
-* **Scrie numai ce lipsește.** Antet: dacă există deja un H cu acel `IDH`, i se refolosește
-  `IDRH`-ul; altfel se inserează cu `_H_INSERT_SQL` din 4a (`IDRR NULL`, `NrCrt` continuă de la
-  maxim, `EsteStergere` din descriere). Linie: lipsește după `IDH` ▸ `_REC_INSERT_SQL`; există
-  dar `IDRH IS NULL` (orfană) ▸ `UPDATE FX_Receptii SET IDRH = %s` — relegată, nu dublată;
-  există și e legată ▸ nu se atinge.
-* **Nu ridică pentru un indicator lipsă.** 4a ridică `ValueError` (o ingestie nu are voie să
-  continue cu o linie fără indicator). La refacere, o asemenea linie ar opri tot angajamentul;
-  se sare, se numără în `linii_sarite` și se spune în `avertismente`.
+* **Peste rândurile `Prelucrat = 1`**, nu `= 0`. Cele neprelucrate aparțin următoarei descărcări; 4a le va construi atunci și NU verifică `IDH`-ul, deci dacă le-am construi și aici ar ieși două H pentru același rând de istoric.
+* **Scrie numai ce lipsește.** Antet: dacă există deja un H cu acel `IDH`, i se refolosește `IDRH`-ul; altfel se inserează cu `_H_INSERT_SQL` din 4a (`IDRR NULL`, `NrCrt` continuă de la maxim, `EsteStergere` din descriere). Linie: lipsește după `IDH` ▸ `_REC_INSERT_SQL`; există dar `IDRH IS NULL` (orfană) ▸ `UPDATE FX_Receptii SET IDRH = %s` — relegată, nu dublată; există și e legată ▸ nu se atinge.
+* **Nu ridică pentru un indicator lipsă.** 4a ridică `ValueError` (o ingestie nu are voie să continue cu o linie fără indicator). La refacere, o asemenea linie ar opri tot angajamentul; se sare, se numără în `linii_sarite` și se spune în `avertismente`.
 
 Trei lucruri se **semnalează** fără să se înghită: liniile rămase fără antet la sfârșit (tamponul nevidat), liniile sărite, și anteturile existente care au linii cu `IDH NULL` (la ele nu se poate judeca ce lipsește, deci liniile lor nu se ating și se spune de ce).
 
@@ -70,21 +59,9 @@ A doua cerere a operatorului din aceeași zi: «trebuie să le pot face pe toate
 
 #### 2.3 Clientul
 
-* `IApiClient.RebuildReceptiiAsync(cod, apply, ct)` ▸ `ReceptiiRebuildResult` (POCO nou în
-  `KBot.Domain`, cu `NothingToDo`). DTO-urile `PostReceptiiRefacereRequest/Response` în
-  `UpsertAngajamenteRequest.vb`, lângă celelalte.
-* `ReceptiiView`: al treilea callback opțional, `rebuildMissing As Action(Of String)`, legat de
-  **iconița din STÂNGA subsolului** arborelui (`FooterLeftIcon = database`, slot liber până
-  acum — butonul de strângere nu e pornit în vederea asta, deci nu-i ia colțul). Fără callback
-  iconița se stinge, ca celelalte două.
-* `MainForm.RebuildReceptiiFromIstoric(cod)`: proba ▸ dacă nu lipsește nimic, o spune și se
-  oprește ▸ altfel întreabă cu cifrele reale (câte anteturi, câte linii, câte orfane) și cu
-  avertizarea că anteturile refăcute vor apărea în dosarul «Instantanee neașezate» ▸ la Da,
-  scrierea ▸ raportul (scrise / relegate / recepții recalculate / semnalări) ▸
-  `LoadTreeAsync(pastreazaSelectia:=True)`, ca după editorul de legături: steagurile `Are*`
-  ale nodului se pot schimba, iar reîncărcarea împinge singură contextul nou în vedere.
-  Trăiește în shell din motivul obișnuit: plasa de re-autentificare pe o formă de răspuns
-  proprie, iar `WithReauth` e privat acolo.
+* `IApiClient.RebuildReceptiiAsync(cod, apply, ct)` ▸ `ReceptiiRebuildResult` (POCO nou în `KBot.Domain`, cu `NothingToDo`). DTO-urile `PostReceptiiRefacereRequest/Response` în `UpsertAngajamenteRequest.vb`, lângă celelalte.
+* `ReceptiiView`: al treilea callback opțional, `rebuildMissing As Action(Of String)`, legat de **iconița din STÂNGA subsolului** arborelui (`FooterLeftIcon = database`, slot liber până acum — butonul de strângere nu e pornit în vederea asta, deci nu-i ia colțul). Fără callback iconița se stinge, ca celelalte două.
+* `MainForm.RebuildReceptiiFromIstoric(cod)`: proba ▸ dacă nu lipsește nimic, o spune și se oprește ▸ altfel întreabă cu cifrele reale (câte anteturi, câte linii, câte orfane) și cu avertizarea că anteturile refăcute vor apărea în dosarul «Instantanee neașezate» ▸ la Da, scrierea ▸ raportul (scrise / relegate / recepții recalculate / semnalări) ▸ `LoadTreeAsync(pastreazaSelectia:=True)`, ca după editorul de legături: steagurile `Are*` ale nodului se pot schimba, iar reîncărcarea împinge singură contextul nou în vedere. Trăiește în shell din motivul obișnuit: plasa de re-autentificare pe o formă de răspuns proprie, iar `WithReauth` e privat acolo.
 
 #### 2.4 Drumul operatorului
 
@@ -110,42 +87,28 @@ Recepții ▸ angajamentul ▸ iconița din stânga subsolului ▸ Da ▸ antetu
 - `src/KBot.Api/KBot.Api.vbproj` — FileVersion 1.0.5.0 ▸ 1.0.6.0
 - `src/KBot.Domain/ReceptiiInfo.vb` — documentarea convenției `Idrr = 0`
 - `src/KBot.Domain/KBot.Domain.vbproj` — FileVersion 1.2.0.0 ▸ 1.2.1.0
-- `src/KBot.App/Views/ReceptiiView.vb` / `.Designer.vb` — dosarul neașezatelor, iconița și
-  handler-ul din stânga subsolului, `UNPLACED_KEY`
+- `src/KBot.App/Views/ReceptiiView.vb` / `.Designer.vb` — dosarul neașezatelor, iconița și handler-ul din stânga subsolului, `UNPLACED_KEY`
 - `src/KBot.App/KbotForm.vb` — `RebuildReceptiiFromIstoric`, `WarningsParagraph`, cablarea
 - `src/KBot.App/KBot.App.vbproj` — FileVersion 1.0.29.0 ▸ 1.0.30.0
-- `tests/KBot.App.Tests/ReceptiiViewTests.vb` — 5 teste noi (dosar, click, doar-neașezate,
-  iconița pornită/stinsă, click ▸ shell); stub-ul `RebuildReceptiiAsync` în toate cele 9
-  implementări false ale lui `IApiClient` din `tests/KBot.App.Tests`
+- `tests/KBot.App.Tests/ReceptiiViewTests.vb` — 5 teste noi (dosar, click, doar-neașezate, iconița pornită/stinsă, click ▸ shell); stub-ul `RebuildReceptiiAsync` în toate cele 9 implementări false ale lui `IApiClient` din `tests/KBot.App.Tests`
 
 Restul arborelui de lucru (`KbotForm.Designer.vb`, `KBot.Migrator/*`, `KBot.Theming/*`, `FormFit*`, `Surse/SURSA_XFA_WRITTER/` etc.) era deja modificat/neurmărit la începutul sesiunii — **nu e al acestei felii**.
 
 ### Rezultate
 
 - `PYTHON`: `pytest tests` — **535 trecute / 26 sărite (toate host-only / env), 0 eșuate** (21 noi). **Niciun test n-a atins serverul sau vreo bază**: cursoare false și `executa_refacerea` înlocuit.
-- `dotnet build KBot.sln --no-incremental` — **0 erori**; avertismentele `MSB3825` (`.resx` /
-  `BinaryFormatter`) sunt PREEXISTENTE.
+- `dotnet build KBot.sln --no-incremental` — **0 erori**; avertismentele `MSB3825` (`.resx` / `BinaryFormatter`) sunt PREEXISTENTE.
 - `dotnet test tests/KBot.Common.Tests` — 94 trecute (vezi și felia 0063).
 - `dotnet test tests/KBot.App.Tests` — vezi §«Ce NU s-a făcut» dacă rezultatul lipsește de aici.
 
 ### Ce NU s-a făcut, și trebuie spus
 
-- **Nimic nu a rulat pe o bază vie.** Interogarea H-rădăcină, ruta de refacere și
-  recalcularea DIF n-au atins MariaDB; `test_forexe_receptii.py` (host-only) nu s-a putut rula
-  aici. Că `Prelucrat = 1` acoperă chiar rândurile migrate din Access e **dedus** din
-  `FX_Istoric_Actualizeaza_Rezolvat` (setează `Prelucrat = True` după prelucrare), nu
-  observat pe datele operatorului.
-- **Nimic nu s-a văzut pe ecran.** Dosarul «Instantanee neașezate», iconița `database` din
-  stânga subsolului și cele trei casete ale shell-ului sunt verificate doar prin teste
-  headless / prin compilare.
+- **Nimic nu a rulat pe o bază vie.** Interogarea H-rădăcină, ruta de refacere și recalcularea DIF n-au atins MariaDB; `test_forexe_receptii.py` (host-only) nu s-a putut rula aici. Că `Prelucrat = 1` acoperă chiar rândurile migrate din Access e **dedus** din `FX_Istoric_Actualizeaza_Rezolvat` (setează `Prelucrat = True` după prelucrare), nu observat pe datele operatorului.
+- **Nimic nu s-a văzut pe ecran.** Dosarul «Instantanee neașezate», iconița `database` din stânga subsolului și cele trei casete ale shell-ului sunt verificate doar prin teste headless / prin compilare.
 - **Nu s-a atins `IstoricView`** (varianta a doua din cerere): decizie de plasare, nu lipsă.
-- **Liniile legate de un H GREȘIT** (există după `IDH`, `IDRH` nenul, dar alt antet decât cel
-  dedus din istoric) nu se ating și nu se semnalează. N-a fost în cerere; ar fi o judecată
-  peste o legătură pe care cineva a făcut-o.
-- **Anteturile duplicate pe același `IDH`** (dacă o migrare repetată le-a produs) nu se
-  detectează: `h_dupa_idh` reține ultimul citit.
-- **Nimic nu s-a comis** — arborele de lucru conține WIP străin de felia asta; comiterea
-  selectivă e a operatorului.
+- **Liniile legate de un H GREȘIT** (există după `IDH`, `IDRH` nenul, dar alt antet decât cel dedus din istoric) nu se ating și nu se semnalează. N-a fost în cerere; ar fi o judecată peste o legătură pe care cineva a făcut-o.
+- **Anteturile duplicate pe același `IDH`** (dacă o migrare repetată le-a produs) nu se detectează: `h_dupa_idh` reține ultimul citit.
+- **Nimic nu s-a comis** — arborele de lucru conține WIP străin de felia asta; comiterea selectivă e a operatorului.
 
 ---
 
@@ -171,13 +134,8 @@ Nu era un defect al vetoului, ci al datelor de sub el. Vetoul rămâne.
 
 **`PYTHON/routes/forexe/prelucrare_helpers.py`** — `este_linie_receptie(rand)` (nou): un rând de istoric care nu e antet e LINIE dacă are `Val_Receptie <> 0` **sau** numește un indicator (`CodAI` nevid). Un rând cu zero fără indicator se sare, ca înainte; un rând cu valoare al cărui indicator lipsește din `FX_Indicatori` ridică în continuare aceeași eroare. Criteriul trăiește o singură dată, fiindcă îl folosesc două plimbări care trebuie să fie de acord:
 
-* **`prelucrare_pasi.step4a_populeaza_receptii`** — `elif este_linie_receptie(r)` în locul lui
-  `elif float(r["Val_Receptie"] or 0) != 0`. Linia cu zero se scrie cu `Valoare = 0`,
-  `ValoareOrig = 0`, hash-ul calculat pe 0, `TipIntern` după aceeași regulă.
-* **`receptii_refacere.refa_receptii`** (felia 0062) — aceeași înlocuire. Prin asta refacerea
-  devine și **umplerea înapoi** pentru F31: liniile cu zero pe care ingestiile de dinainte le-au
-  aruncat sunt «lipsă după `IDH`», se inserează sub antetul lor existent, iar `DIF`/`DIFC` ale
-  lanțului atins se recalculează (`step4d_calculeaza_dif`).
+* **`prelucrare_pasi.step4a_populeaza_receptii`** — `elif este_linie_receptie(r)` în locul lui `elif float(r["Val_Receptie"] or 0) != 0`. Linia cu zero se scrie cu `Valoare = 0`, `ValoareOrig = 0`, hash-ul calculat pe 0, `TipIntern` după aceeași regulă.
+* **`receptii_refacere.refa_receptii`** (felia 0062) — aceeași înlocuire. Prin asta refacerea devine și **umplerea înapoi** pentru F31: liniile cu zero pe care ingestiile de dinainte le-au aruncat sunt «lipsă după `IDH`», se inserează sub antetul lor existent, iar `DIF`/`DIFC` ale lanțului atins se recalculează (`step4d_calculeaza_dif`).
 
 **`docs/FUNDAMENT_Asociere_Receptii.md`** — **F31** adăugat, cu sursa VBA și motivul.
 
@@ -185,17 +143,10 @@ Nu era un defect al vetoului, ci al datelor de sub el. Vetoul rămâne.
 
 ### 3. Ce se schimbă în rest, prin construcție
 
-* **`SUM(DIF)` coboară acum odată cu indicatorul.** Înainte, un indicator cu 100 în H1 și 0 în
-  H2 lăsa în `FX_Receptii` doar linia lui H1 (`DIF = 100`); acum H2 are linia cu 0 și
-  `DIF = -100`, deci `Sumar.TotalReceptii` și `qFX_ORD_REC_ANT` (care adună `DIF`) dau valoarea
-  reală. Access avea același defect — nu se copiază.
-* **Recepțiile reconstituite** (F26) își primesc `RHR` din ultimul instantaneu cu linii, deci
-  vor avea și rânduri cu 0 — exact cum le are o recepție descărcată de pe site.
-* **F15** compară liniile cu zerourile deja scoase pe amândouă laturile (`_valori_pe_indicator`,
-  felia 0058), deci nu vede nicio diferență.
-* **Vederea Recepții** arată un rând per linie `FX_Receptii`: sub un antet vor apărea și liniile
-  cu 0. E adevărul instantaneului; dacă operatorul le vrea ascunse, e un filtru de afișare,
-  nu unul de ingestie.
+* **`SUM(DIF)` coboară acum odată cu indicatorul.** Înainte, un indicator cu 100 în H1 și 0 în H2 lăsa în `FX_Receptii` doar linia lui H1 (`DIF = 100`); acum H2 are linia cu 0 și `DIF = -100`, deci `Sumar.TotalReceptii` și `qFX_ORD_REC_ANT` (care adună `DIF`) dau valoarea reală. Access avea același defect — nu se copiază.
+* **Recepțiile reconstituite** (F26) își primesc `RHR` din ultimul instantaneu cu linii, deci vor avea și rânduri cu 0 — exact cum le are o recepție descărcată de pe site.
+* **F15** compară liniile cu zerourile deja scoase pe amândouă laturile (`_valori_pe_indicator`, felia 0058), deci nu vede nicio diferență.
+* **Vederea Recepții** arată un rând per linie `FX_Receptii`: sub un antet vor apărea și liniile cu 0. E adevărul instantaneului; dacă operatorul le vrea ascunse, e un filtru de afișare, nu unul de ingestie.
 * Pasul 4c (trecerea automată) potrivește doar pe `Total` — neatins.
 
 ### 4. Fișiere atinse
@@ -212,25 +163,16 @@ Nu era un defect al vetoului, ci al datelor de sub el. Vetoul rămâne.
 
 ### 5. Rezultatele testelor
 
-* PYTHON (`.venv`): suita întreagă **538 trecute / 26 sărite / 0 picate** (de la 535/26;
-  +3 teste noi). Cele patru fișiere direct atinse: 138 trecute.
-* `dotnet build src\KBot.App\KBot.App.vbproj`: **0 erori, 0 avertismente** (schimbare de
-  comentariu, dar s-a compilat).
+* PYTHON (`.venv`): suita întreagă **538 trecute / 26 sărite / 0 picate** (de la 535/26; +3 teste noi). Cele patru fișiere direct atinse: 138 trecute.
+* `dotnet build src\KBot.App\KBot.App.vbproj`: **0 erori, 0 avertismente** (schimbare de comentariu, dar s-a compilat).
 * Suitele VB.NET nu s-au rulat — nicio linie de cod VB nu s-a schimbat.
 
 ### 6. Ce rămâne neverificat / de făcut de operator
 
-* **Nimic n-a rulat pe MariaDB.** Că site-ul trimite într-adevăr rândul cu `Suma receptie: 0 RON`
-  pentru indicatorul nemișcat e afirmația operatorului (F31 `OPERATOR`), nu un rând citit
-  de mine din `FX_Istoric`. Dacă rândul cu zero lipsește din istoric, atunci nu are de unde
-  veni și nici refacerea nu-l poate inventa.
-* **Datele deja ingerate NU se repară singure.** Pentru angajamentele descărcate înainte de
-  azi, operatorul trebuie să apese **«Refacere din istoric»** (vederea Recepții, felia 0062) — pe
-  angajamentul cu pricina sau pe toată baza; proba (`aplica = false`) arată întâi câte linii ar
-  adăuga. Abia după aceea `MotivulRefuzului` vede și indicatorii cu zero pe lanțurile vechi.
+* **Nimic n-a rulat pe MariaDB.** Că site-ul trimite într-adevăr rândul cu `Suma receptie: 0 RON` pentru indicatorul nemișcat e afirmația operatorului (F31 `OPERATOR`), nu un rând citit de mine din `FX_Istoric`. Dacă rândul cu zero lipsește din istoric, atunci nu are de unde veni și nici refacerea nu-l poate inventa.
+* **Datele deja ingerate NU se repară singure.** Pentru angajamentele descărcate înainte de azi, operatorul trebuie să apese **«Refacere din istoric»** (vederea Recepții, felia 0062) — pe angajamentul cu pricina sau pe toată baza; proba (`aplica = false`) arată întâi câte linii ar adăuga. Abia după aceea `MotivulRefuzului` vede și indicatorii cu zero pe lanțurile vechi.
 * Zerourile în vederea Recepții nu s-au văzut pe ecran.
-* Rândurile 0062 și 0063 lipsesc încă din registrul `KBOT_STATUS.md` (worklog-urile lor există,
-  necomise); s-a adăugat doar rândul 0064 și s-a mutat numărul liber la 0065.
+* Rândurile 0062 și 0063 lipsesc încă din registrul `KBOT_STATUS.md` (worklog-urile lor există, necomise); s-a adăugat doar rândul 0064 și s-a mutat numărul liber la 0065.
 
 ---
 
@@ -257,12 +199,8 @@ Editorul de oricând (`routes/forexe/asociere.py`) ancorează instantaneele pe `
 Singurul antet fără linii care E instantaneu: rândul de ștergere (F21). Rămâne.
 
 **Criteriul, o singură dată** (`prelucrare_helpers.py`):
-* `is_header_only_snapshot(este_stergere, line_rows_seen)` — pentru cele două plimbări peste
-  istoric. Numără RÂNDURILE-LINIE văzute de la antetul precedent, nu liniile construite: o linie
-  cu indicator necunoscut în `FX_Indicatori` (refacerea o sare și o spune) tot face antetul un
-  instantaneu adevărat, ca ancora să rămână și linia să se poată atașa la o refacere ulterioară.
-* `SNAPSHOT_COUNTS_SQL` — predicatul de citire: `(COALESCE(H.EsteStergere,0) <> 0 OR EXISTS
-  (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH))`, cu tabelul aliasat `H`.
+* `is_header_only_snapshot(este_stergere, line_rows_seen)` — pentru cele două plimbări peste istoric. Numără RÂNDURILE-LINIE văzute de la antetul precedent, nu liniile construite: o linie cu indicator necunoscut în `FX_Indicatori` (refacerea o sare și o spune) tot face antetul un instantaneu adevărat, ca ancora să rămână și linia să se poată atașa la o refacere ulterioară.
+* `SNAPSHOT_COUNTS_SQL` — predicatul de citire: `(COALESCE(H.EsteStergere,0) <> 0 OR EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH))`, cu tabelul aliasat `H`.
 
 **Unde se aplică:**
 
@@ -283,39 +221,18 @@ Singurul antet fără linii care E instantaneu: rândul de ștergere (F21). Răm
 
 ### 3. Teste
 
-* `test_forexe_asociere.py` (+2): `citeste_instantanee` din editor poartă `rand_istoric == idrh`
-  și trece prin `valideaza_plasarile`; **cap la cap** — lanț de DOUĂ instantanee, se desprinde
-  unul, POST-ul ajunge la commit (200). Amândouă **verificate că pică fără fix** (aliasul scos
-  temporar: `KeyError: 'rand_istoric'`, respectiv 500 — exact eroarea operatorului). Cu un
-  singur instantaneu lanțul rezultat e gol și defectul nu se vedea — de-asta două. Falsul
-  `FakeConnection` a învățat `UPDATE`, `_H_LANT_SQL` și `_RECONSTITUITE_SQL`; dispecerizarea
-  pe prefix deosebește acum `_BLOCAJE_SQL` de `_INSTANTANEE_SQL` (ambele încep cu `SELECT H.IDRH`)
-  după ` AS ord_h`.
-* `test_forexe_prelucrare_pasi.py` (+4): antetul fără linii nu produce H; antetul gol nu fură
-  liniile antetului următor și nu consumă `NrCrt`; criteriul scutește ștergerea; **paza**: toate
-  cele opt citiri ale lui `FX_Receptii_H` conțin `SNAPSHOT_COUNTS_SQL`. Două teste vechi aveau ca
-  fixtură incidentală chiar un antet fără linii — au primit o linie; cel cu «zero fără indicator»
-  asertează acum că singura linie scrisă e cea reală.
-* `test_forexe_receptii_refacere.py` (+2): antetul gol nici nu se inserează, nici nu se numără
-  «lipsă», și e numit în avertismente; unul deja în bază rămâne neatins și e numit cu IDRH.
-  Cheia moartă `SELECT IDRH, Total FROM FX_Receptii_H` din falsul cursor actualizată la forma
-  nouă (dispecerul cade pe `[]` pentru prefixe necunoscute, deci era inertă, dar mințea).
+* `test_forexe_asociere.py` (+2): `citeste_instantanee` din editor poartă `rand_istoric == idrh` și trece prin `valideaza_plasarile`; **cap la cap** — lanț de DOUĂ instantanee, se desprinde unul, POST-ul ajunge la commit (200). Amândouă **verificate că pică fără fix** (aliasul scos temporar: `KeyError: 'rand_istoric'`, respectiv 500 — exact eroarea operatorului). Cu un singur instantaneu lanțul rezultat e gol și defectul nu se vedea — de-asta două. Falsul `FakeConnection` a învățat `UPDATE`, `_H_LANT_SQL` și `_RECONSTITUITE_SQL`; dispecerizarea pe prefix deosebește acum `_BLOCAJE_SQL` de `_INSTANTANEE_SQL` (ambele încep cu `SELECT H.IDRH`) după ` AS ord_h`.
+* `test_forexe_prelucrare_pasi.py` (+4): antetul fără linii nu produce H; antetul gol nu fură liniile antetului următor și nu consumă `NrCrt`; criteriul scutește ștergerea; **paza**: toate cele opt citiri ale lui `FX_Receptii_H` conțin `SNAPSHOT_COUNTS_SQL`. Două teste vechi aveau ca fixtură incidentală chiar un antet fără linii — au primit o linie; cel cu «zero fără indicator» asertează acum că singura linie scrisă e cea reală.
+* `test_forexe_receptii_refacere.py` (+2): antetul gol nici nu se inserează, nici nu se numără «lipsă», și e numit în avertismente; unul deja în bază rămâne neatins și e numit cu IDRH. Cheia moartă `SELECT IDRH, Total FROM FX_Receptii_H` din falsul cursor actualizată la forma nouă (dispecerul cade pe `[]` pentru prefixe necunoscute, deci era inertă, dar mințea).
 
 PYTHON (`.venv`, `KBOT_ASOCIERE=0`): suita întreagă **546 trecute / 26 sărite / 0 picate** (de la 538/26; +8 teste).
 
 ### 4. Ce rămâne neverificat
 
-* **Nimic n-a rulat pe MariaDB.** Că `EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH)`
-  e ieftin pe volumul real nu s-a măsurat; `FX_Receptii.IDRH` e FK, deci ar trebui indexat.
-* **Salvarea din AsociereForm nu s-a apăsat pe ecran** după fix; drumul e acoperit cap la cap
-  doar de testul cu falsul de conexiune.
-* **Antetele goale deja în bază rămân în `FX_Receptii_H`**, nevăzute. Nu se șterg: un
-  `DELETE` ar trebui să se uite la `FX_ORD.IDRH` și la orice altceva îi ține cheia. Refacerea
-  le numește în avertismente, ca operatorul să știe că sunt.
-* **Instantaneele ingerate înainte de F31 ale căror singure linii erau zerouri** arată, în
-  `FX_Receptii`, exact ca un antet gol și sunt ascunse de același filtru până la «Refacere din
-  istoric» — reparația pe care 0064 o cerea deja. Până n-o apasă operatorul, pe angajamentele
-  vechi pot lipsi din editor instantanee reale «fără schimbare».
+* **Nimic n-a rulat pe MariaDB.** Că `EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH)` e ieftin pe volumul real nu s-a măsurat; `FX_Receptii.IDRH` e FK, deci ar trebui indexat.
+* **Salvarea din AsociereForm nu s-a apăsat pe ecran** după fix; drumul e acoperit cap la cap doar de testul cu falsul de conexiune.
+* **Antetele goale deja în bază rămân în `FX_Receptii_H`**, nevăzute. Nu se șterg: un `DELETE` ar trebui să se uite la `FX_ORD.IDRH` și la orice altceva îi ține cheia. Refacerea le numește în avertismente, ca operatorul să știe că sunt.
+* **Instantaneele ingerate înainte de F31 ale căror singure linii erau zerouri** arată, în `FX_Receptii`, exact ca un antet gol și sunt ascunse de același filtru până la «Refacere din istoric» — reparația pe care 0064 o cerea deja. Până n-o apasă operatorul, pe angajamentele vechi pot lipsi din editor instantanee reale «fără schimbare».
 
 ---
 
@@ -370,13 +287,9 @@ Pe fir (`receptii.py`): `descriere_r` (`R.Descriere`) și `este_stergere` (`COAL
 
 * candidații din coș: neașezate, neblocate, nemarcate «fără schimbare», nu rânduri de ștergere;
 * recepțiile: cele neșterse pe site;
-* valoarea rotunjită la ban; se ia o pereche NUMAI când valoarea apare pe un singur instantaneu
-  din coș ȘI pe o singură recepție (`SumaAntet`). Valoarea nu e cheie (F5) — de aceea unicitatea
-  pe amândouă laturile, nu potrivirea: șapte recepții de 4.235 cu două instantanee de 4.235 nu
-  se ating;
+* valoarea rotunjită la ban; se ia o pereche NUMAI când valoarea apare pe un singur instantaneu din coș ȘI pe o singură recepție (`SumaAntet`). Valoarea nu e cheie (F5) — de aceea unicitatea pe amândouă laturile, nu potrivirea: șapte recepții de 4.235 cu două instantanee de 4.235 nu se ating;
 * vetourile F14/F16 se aplică prin `MotivulRefuzului`, ca la o tragere;
-* rezultatul e o MUTARE LOCALĂ (`_pozitie`), nesalvată: intră în `Comenzi()`, se vede în arbore,
-  se poate trage înapoi. Banda spune câte s-au așezat (`TextAsezareAutomata`) și cere verificarea.
+* rezultatul e o MUTARE LOCALĂ (`_pozitie`), nesalvată: intră în `Comenzi()`, se vede în arbore, se poate trage înapoi. Banda spune câte s-au așezat (`TextAsezareAutomata`) și cere verificarea.
 
 ### 4. Fișiere atinse
 
@@ -395,27 +308,14 @@ Neatinse deliberat: `ord_edit._SQL_REC_ANT` (rămâne `SUM(DIF)`, ca în Access 
 
 ### 5. Verificări
 
-* `dotnet build src\KBot.App\KBot.App.vbproj`: **0 erori, 0 avertismente** (cele MSB3825 din
-  `.resx` sunt de dinainte). `tests\KBot.App.Tests` **compilează**.
-* PYTHON (`.venv`, `KBOT_ASOCIERE=0`): `test_forexe_asociere.py`, `test_forexe_receptii.py`,
-  `test_forexe_prelucrare_pasi.py` — **69 trecute / 1 sărit**. Suita întreagă NU a rulat
-  («fără teste»).
+* `dotnet build src\KBot.App\KBot.App.vbproj`: **0 erori, 0 avertismente** (cele MSB3825 din `.resx` sunt de dinainte). `tests\KBot.App.Tests` **compilează**.
+* PYTHON (`.venv`, `KBOT_ASOCIERE=0`): `test_forexe_asociere.py`, `test_forexe_receptii.py`, `test_forexe_prelucrare_pasi.py` — **69 trecute / 1 sărit**. Suita întreagă NU a rulat («fără teste»).
 
 ### 6. Neverificat / amânat
 
-* **Nimic pe ecran, nimic pe MariaDB.** Arborele pe trei niveluri, rândul «Descriere» din
-  tooltip și banda «așezate automat» nu s-au văzut nici prin `DrawToBitmap`.
-* **Testele VB din `ReceptiiViewTests.vb` NU s-au actualizat** (cerere «fără teste»): compilează,
-  dar cele care numără `t.Items` (acum 1 rădăcină + dosar) sau așteaptă cumulul din `DIFH`
-  (Februarie: 3.480,43 -> 6.344,55 cu regula ultimului antet) vor pica la rulare. Tot așa
-  `AsociereFormTests.vb`: `StandardStare` are H31 = 200 unic față de R2 = 200 unic, deci se așază
-  singur la încărcare — `FaraNiciOSchimbare_NuPleacaNicioComanda` și
-  `Incarcarea_AsazaFiecareInstantaneuUndeIlAreServerul` vor pica; `StareCuNeasezatInaintePlatii`
-  la fel (H31 = 250 unic, R2 = 250 unic). Fixturile trebuie mutate pe valori nepotrivite, cu
-  teste noi pentru așezarea automată — de făcut într-o rundă cu teste.
-* Datele operatorului: `IDRH 242` rămâne cu `DIFH NULL` până la prima salvare din editor pe
-  angajament, o reîmprospătare sau o refacere; vederea Recepții e corectă și așa (nu mai citește
-  `DIFH`), ordonanțarea NU (citește `DIF`).
+* **Nimic pe ecran, nimic pe MariaDB.** Arborele pe trei niveluri, rândul «Descriere» din tooltip și banda «așezate automat» nu s-au văzut nici prin `DrawToBitmap`.
+* **Testele VB din `ReceptiiViewTests.vb` NU s-au actualizat** (cerere «fără teste»): compilează, dar cele care numără `t.Items` (acum 1 rădăcină + dosar) sau așteaptă cumulul din `DIFH` (Februarie: 3.480,43 -> 6.344,55 cu regula ultimului antet) vor pica la rulare. Tot așa `AsociereFormTests.vb`: `StandardStare` are H31 = 200 unic față de R2 = 200 unic, deci se așază singur la încărcare — `FaraNiciOSchimbare_NuPleacaNicioComanda` și `Incarcarea_AsazaFiecareInstantaneuUndeIlAreServerul` vor pica; `StareCuNeasezatInaintePlatii` la fel (H31 = 250 unic, R2 = 250 unic). Fixturile trebuie mutate pe valori nepotrivite, cu teste noi pentru așezarea automată — de făcut într-o rundă cu teste.
+* Datele operatorului: `IDRH 242` rămâne cu `DIFH NULL` până la prima salvare din editor pe angajament, o reîmprospătare sau o refacere; vederea Recepții e corectă și așa (nu mai citește `DIFH`), ordonanțarea NU (citește `DIF`).
 * Nimic comis («fără git»).
 
 ---
@@ -430,60 +330,24 @@ Neatinse deliberat: `ord_edit._SQL_REC_ANT` (rămâne `SUM(DIF)`, ca în Access 
 
 Descărcarea `AAB2KPRT2EB` (workflow `PrelucrareCompletaReverse`) a salvat cu avertismentul «1 instantanee neasociate nu au rândul lor de istoric în această descărcare și nu pot fi rezolvate acum». Două cauze, una peste alta:
 
-1. **Ancora F24 nu acoperă rândurile vechi sub fluxul REVERSE.** `citeste_instantanee` punea un
-   instantaneu neașezat în tabloul de decis DOAR dacă `IDH`-ul lui era în `TabelIstoric` din
-   sarcina utilă (indicele rândului e ancora deciziei). Dar `adlop - Prelucrare Completa
-   Reverse.wfl` merge înapoi prin paginile de istoric și se oprește la `DATA_IESIRE`
-   (`exitIfCellEquals`, `startFromLast` în `WorkflowExecutor.Actions.ScrapeTable.vb`), deci
-   `TabelIstoric` e o DIFERENȚĂ, nu istoricul întreg — presupunerea din docstring-ul pasului 3a
-   («FOREXE trimite istoricul intreg la fiecare descarcare») era adevărată doar la prima
-   descărcare. Orice instantaneu rămas neașezat dintr-o rulare mai veche era, prin construcție,
-   de nerezolvat din descărcare; editorul de oricând îl vedea fiindcă ancorează pe `IDRH`.
-2. **Un rând de istoric cu `Prelucrat = 0` care nu a fost inserat de rularea curentă nu era
-   marcat niciodată.** Interogarea operatorului a arătat rândul `IDH 5786` (recepția 27.07.2026)
-   cu `Prelucrat = 0`, restul 1 — venit pe altă cale (migrare). Pasul 4a îl citea la fiecare
-   descărcare și îi năștea un `FX_Receptii_H` nou, neașezat (`FX_Receptii_H: 2` în mesaj, cu un
-   singur antet în payload), iar cauza 1 îl făcea de neașezat din descărcare.
+1. **Ancora F24 nu acoperă rândurile vechi sub fluxul REVERSE.** `citeste_instantanee` punea un instantaneu neașezat în tabloul de decis DOAR dacă `IDH`-ul lui era în `TabelIstoric` din sarcina utilă (indicele rândului e ancora deciziei). Dar `adlop - Prelucrare Completa Reverse.wfl` merge înapoi prin paginile de istoric și se oprește la `DATA_IESIRE` (`exitIfCellEquals`, `startFromLast` în `WorkflowExecutor.Actions.ScrapeTable.vb`), deci `TabelIstoric` e o DIFERENȚĂ, nu istoricul întreg — presupunerea din docstring-ul pasului 3a («FOREXE trimite istoricul intreg la fiecare descarcare») era adevărată doar la prima descărcare. Orice instantaneu rămas neașezat dintr-o rulare mai veche era, prin construcție, de nerezolvat din descărcare; editorul de oricând îl vedea fiindcă ancorează pe `IDRH`.
+2. **Un rând de istoric cu `Prelucrat = 0` care nu a fost inserat de rularea curentă nu era marcat niciodată.** Interogarea operatorului a arătat rândul `IDH 5786` (recepția 27.07.2026) cu `Prelucrat = 0`, restul 1 — venit pe altă cale (migrare). Pasul 4a îl citea la fiecare descărcare și îi năștea un `FX_Receptii_H` nou, neașezat (`FX_Receptii_H: 2` în mesaj, cu un singur antet în payload), iar cauza 1 îl făcea de neașezat din descărcare.
 
 ### Ce s-a schimbat și de ce
 
 #### Server (`PYTHON/routes/forexe/`)
 
-- **`prelucrare_pasi.py` — F33.** `step4a_populeaza_receptii` întoarce acum
-  `(antete, ids_consumate)`: nu mai scrie un antet al cărui `IDH` are deja `FX_Receptii_H`
-  (`_H_EXISTA_IDH_SQL`; liniile din tampon se aruncă, nu se toarnă a doua oară) și raportează
-  fiecare rând consumat (antete scrise, antete sărite F32/F33, liniile turnate sub un antet).
-  Liniile rămase fără antet la sfârșit NU sunt consumate. `step7_actualizeaza_rezolvat` primește
-  `ids_noi ∪ ids_consumate` (`prelucrare.py`). Docstring-ul pasului 3a corectat.
-- **`prelucrare_asociere.py` — F34.** `ancora(x)` / `ancora_text(a)`: numele unui instantaneu e
-  `("rand", indice)` când rândul de istoric e în payload, altfel `("idh", FX_Istoric.ID)`.
-  `citeste_instantanee` nu mai lasă afară rândurile fără indice — le pune cu
-  `rand_istoric = None` și `idh`; rămân afară (numărate, avertizate) doar cele fără `IDH` și
-  dublurile pe același `IDH` (resturi F33). `normalizeaza_decizii` cere exact una dintre
-  `rand_istoric` și `idh` (`null` = absent). `verifica_acoperirea`, `materializeaza_reconstituite`,
-  `aplica_decizii` cheiază pe ancoră; jurnalul arată «rândul 3» / «istoric 5786». Membrii de lanț
-  deja legați nu mai poartă `rand_istoric = -1`, ci `None`. `MOTIV_FARA_ISTORIC` rescris pentru
-  cele două cazuri rămase.
-- **`prelucrare.py`.** Propunerea trimite pe fiecare instantaneu `rand_istoric` (sau `null`),
-  `idh` și `idrh` (id-ul fazei întâi — DOAR cheia dicționarelor formularului, nu se trimite
-  înapoi).
-- Editorul de oricând (`asociere.py`) NU s-a schimbat: aliasul `rand_istoric = idrh` dă aceeași
-  ancoră pe ambele laturi.
+- **`prelucrare_pasi.py` — F33.** `step4a_populeaza_receptii` întoarce acum `(antete, ids_consumate)`: nu mai scrie un antet al cărui `IDH` are deja `FX_Receptii_H` (`_H_EXISTA_IDH_SQL`; liniile din tampon se aruncă, nu se toarnă a doua oară) și raportează fiecare rând consumat (antete scrise, antete sărite F32/F33, liniile turnate sub un antet). Liniile rămase fără antet la sfârșit NU sunt consumate. `step7_actualizeaza_rezolvat` primește `ids_noi ∪ ids_consumate` (`prelucrare.py`). Docstring-ul pasului 3a corectat.
+- **`prelucrare_asociere.py` — F34.** `ancora(x)` / `ancora_text(a)`: numele unui instantaneu e `("rand", indice)` când rândul de istoric e în payload, altfel `("idh", FX_Istoric.ID)`. `citeste_instantanee` nu mai lasă afară rândurile fără indice — le pune cu `rand_istoric = None` și `idh`; rămân afară (numărate, avertizate) doar cele fără `IDH` și dublurile pe același `IDH` (resturi F33). `normalizeaza_decizii` cere exact una dintre `rand_istoric` și `idh` (`null` = absent). `verifica_acoperirea`, `materializeaza_reconstituite`, `aplica_decizii` cheiază pe ancoră; jurnalul arată «rândul 3» / «istoric 5786». Membrii de lanț deja legați nu mai poartă `rand_istoric = -1`, ci `None`. `MOTIV_FARA_ISTORIC` rescris pentru cele două cazuri rămase.
+- **`prelucrare.py`.** Propunerea trimite pe fiecare instantaneu `rand_istoric` (sau `null`), `idh` și `idrh` (id-ul fazei întâi — DOAR cheia dicționarelor formularului, nu se trimite înapoi).
+- Editorul de oricând (`asociere.py`) NU s-a schimbat: aliasul `rand_istoric = idrh` dă aceeași ancoră pe ambele laturi.
 
 #### Client
 
-- **`KBot.Domain/AsociereInfo.vb`.** `AncoraAsociere.Cheie/Text`; `InstantaneuPropus.RandIstoric`
-  devine `Integer?`, plus `Idh`, `Idrh`, `Ancora()`; `DecizieAsociere.RandIstoric` devine
-  `Integer?`, plus `Idh As Integer?`, `Ancora()`; `AsociereDosar.EsteComplet` compară ancore.
-- **`KBot.Domain/AsociereStare.vb`.** `InstantaneuLegat.RandIstoric As Integer?`.
-  `DinPropunere`: cheia rândurilor de decis e `IDRH`-ul propunerii (pozitiv, unic), contextul
-  rămâne `-IDRH`; ancora călătorește separat pe `RandIstoric` / `Idh`. Până acum cheia ERA
-  indicele, ceea ce nu lăsa loc pentru un al doilea fel de ancoră.
-- **`KBot.Api/UpsertAngajamenteRequest.vb`, `ApiClient.vb`.** DTO-urile poartă
-  `rand_istoric?` / `idh?` (decizie) și `rand_istoric?` / `idh?` / `idrh?` (propunere);
-  `CatreFir` trimite exact una dintre ele (`_jsonFaraNull` omite pe cea nepusă).
-- **`KBot.App/Forexe/AsociereForm.vb`.** `DeciziiDin` citește ancora din
-  `inst.RandIstoric` / `inst.Idh`, nu din cheie; mesajul «nu are nicio hotărâre» numește ancora.
+- **`KBot.Domain/AsociereInfo.vb`.** `AncoraAsociere.Cheie/Text`; `InstantaneuPropus.RandIstoric` devine `Integer?`, plus `Idh`, `Idrh`, `Ancora()`; `DecizieAsociere.RandIstoric` devine `Integer?`, plus `Idh As Integer?`, `Ancora()`; `AsociereDosar.EsteComplet` compară ancore.
+- **`KBot.Domain/AsociereStare.vb`.** `InstantaneuLegat.RandIstoric As Integer?`. `DinPropunere`: cheia rândurilor de decis e `IDRH`-ul propunerii (pozitiv, unic), contextul rămâne `-IDRH`; ancora călătorește separat pe `RandIstoric` / `Idh`. Până acum cheia ERA indicele, ceea ce nu lăsa loc pentru un al doilea fel de ancoră.
+- **`KBot.Api/UpsertAngajamenteRequest.vb`, `ApiClient.vb`.** DTO-urile poartă `rand_istoric?` / `idh?` (decizie) și `rand_istoric?` / `idh?` / `idrh?` (propunere); `CatreFir` trimite exact una dintre ele (`_jsonFaraNull` omite pe cea nepusă).
+- **`KBot.App/Forexe/AsociereForm.vb`.** `DeciziiDin` citește ancora din `inst.RandIstoric` / `inst.Idh`, nu din cheie; mesajul «nu are nicio hotărâre» numește ancora.
 
 #### Documente
 
@@ -495,31 +359,16 @@ Descărcarea `AAB2KPRT2EB` (workflow `PrelucrareCompletaReverse`) a salvat cu av
 
 ### Teste
 
-- **Scrise, nu rulate** (regula casei: nicio suită nu se rulează și nu se construiește).
-  Python: 3 teste noi pe 4a (F33: antet cu instantaneu existent, tamponul nu se scurge în antetul
-  următor, liniile fără antet nu se consumă) + cele existente adaptate la tuplul întors; 8 teste
-  noi pe ancoră (`ancora`, forma deciziei, acoperire prin `idh`, `citeste_instantanee` pe cazul
-  real 5786/6253, dubluri, fără IDH). VB: `AsociereDeciziiTests` (+2), `AsociereStareDinPropunereTests`
-  (cheie ≠ ancoră, +1), `AsociereApiClientTests` (+1, decizia a 5-a prin `idh`).
-- `dotnet build src\KBot.App\KBot.App.vbproj -c Debug`: **0 erori, 0 avertismente BC** (doar
-  cele 7 `MSB3825` preexistente). Modulele Python s-au importat și `ancora` /
-  `normalizeaza_decizii` / `verifica_acoperirea` s-au exercitat de mână pe cazul 5786.
+- **Scrise, nu rulate** (regula casei: nicio suită nu se rulează și nu se construiește). Python: 3 teste noi pe 4a (F33: antet cu instantaneu existent, tamponul nu se scurge în antetul următor, liniile fără antet nu se consumă) + cele existente adaptate la tuplul întors; 8 teste noi pe ancoră (`ancora`, forma deciziei, acoperire prin `idh`, `citeste_instantanee` pe cazul real 5786/6253, dubluri, fără IDH). VB: `AsociereDeciziiTests` (+2), `AsociereStareDinPropunereTests` (cheie ≠ ancoră, +1), `AsociereApiClientTests` (+1, decizia a 5-a prin `idh`).
+- `dotnet build src\KBot.App\KBot.App.vbproj -c Debug`: **0 erori, 0 avertismente BC** (doar cele 7 `MSB3825` preexistente). Modulele Python s-au importat și `ancora` / `normalizeaza_decizii` / `verifica_acoperirea` s-au exercitat de mână pe cazul 5786.
 
 ### Neverificat / amânat
 
-- Proiectele de test VB nu s-au construit (regulă); modificările din ele sunt mecanice
-  (`.Value`, câmpuri noi în obiecte), dar necompilate aici.
-- Nimic rulat cap la cap și nimic pe ecran. Prima descărcare reală după felia asta ar trebui
-  să arate, pe `AAB2KPRT2EB`: `FX_Receptii_H: 0` (antetul 5786 sărit F33), rândul 5786 marcat
-  `Prelucrat = 1`, și niciun avertisment despre istoric.
-- **Dublurile deja născute** înainte de felie (două `FX_Receptii_H` pe același `IDH`, dacă
-  există în alte angajamente) rămân în bază; ingestia le lasă afară cu avertisment, editorul le
-  vede. O curățare ar trebui să atingă `FX_ORD.IDRH` — nu s-a scris.
-- Un dosar de asociere (`AsociereStore`) salvat cu forma veche a propunerii (fără `idrh`/`idh`)
-  ar da chei 0 la `DinPropunere`; amprenta îl respinge oricum la salvare.
-- Liniile de recepție inserate în rularea curentă fără antet sunt în continuare marcate
-  `Prelucrat = 1` prin `ids_noi` (purtare veche, contrazisă de comentariul din 4a); nu s-a atins,
-  fiindcă REVERSE nu desparte niciodată o secundă.
+- Proiectele de test VB nu s-au construit (regulă); modificările din ele sunt mecanice (`.Value`, câmpuri noi în obiecte), dar necompilate aici.
+- Nimic rulat cap la cap și nimic pe ecran. Prima descărcare reală după felia asta ar trebui să arate, pe `AAB2KPRT2EB`: `FX_Receptii_H: 0` (antetul 5786 sărit F33), rândul 5786 marcat `Prelucrat = 1`, și niciun avertisment despre istoric.
+- **Dublurile deja născute** înainte de felie (două `FX_Receptii_H` pe același `IDH`, dacă există în alte angajamente) rămân în bază; ingestia le lasă afară cu avertisment, editorul le vede. O curățare ar trebui să atingă `FX_ORD.IDRH` — nu s-a scris.
+- Un dosar de asociere (`AsociereStore`) salvat cu forma veche a propunerii (fără `idrh`/`idh`) ar da chei 0 la `DinPropunere`; amprenta îl respinge oricum la salvare.
+- Liniile de recepție inserate în rularea curentă fără antet sunt în continuare marcate `Prelucrat = 1` prin `ids_noi` (purtare veche, contrazisă de comentariul din 4a); nu s-a atins, fiindcă REVERSE nu desparte niciodată o secundă.
 
 ## Repere unice din registru
 

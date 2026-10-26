@@ -135,10 +135,8 @@ The route map was dumped from a bare `Flask()` to prove three things: `GET /api/
 
 This trips every DDF query and is written down again because getting it wrong silently returns the wrong rows:
 
-* `FX_DDF_REV_SA.IdClsf` / `FX_DDF_REV_SB.IdClsf` = the **MariaDB** primary key
-  `Clasificatii.IDClsf`.
-* `FX_Indicatori.IdClsf`, `FX_Rezervari.IdClsf`, `FX_Receptii.IdClsf` = the **Access** id,
-  which matches `Clasificatii.IdClsfAcc`.
+* `FX_DDF_REV_SA.IdClsf` / `FX_DDF_REV_SB.IdClsf` = the **MariaDB** primary key `Clasificatii.IDClsf`.
+* `FX_Indicatori.IdClsf`, `FX_Rezervari.IdClsf`, `FX_Receptii.IdClsf` = the **Access** id, which matches `Clasificatii.IdClsfAcc`.
 
 So the generation queries join `Clasificatii C ON C.IdClsfAcc = I.IdClsf AND C.IdUnitate = I.IdUnitate`, while the draft reads join on `C.IDClsf`.
 
@@ -148,27 +146,13 @@ So the generation queries join `Clasificatii C ON C.IdClsfAcc = I.IdClsf AND C.I
 
 Each of these is a place where the port does **not** do what the Access original did. They are choices, not accidents.
 
-1. **Validation checks every row.** `msgEroare` in Access examined only the first row of each
-   section before returning. The port checks all of them and lists every reason at once.
-2. **Deleting a document releases every revision's reservations.** The Access
-   `FX_Stergere_DDF` released only the reservations of one revision, leaving the rest of the
-   document's reservations marked as used against a document that no longer existed. The port
-   releases all of them. This is a bug fix, and if the old behaviour was load-bearing
-   somewhere it will show up here first.
-3. **The source of the generated lines is chosen from the data** (decision D5) rather than
-   from a form's state as Access did. `_alege_sursa()` looks at what actually exists —
-   reservations or indicators — and **refuses loudly, naming both conditions**, when it
-   cannot tell. It never guesses.
-4. **The `IdUnitate` predicate is kept** in the generation queries. Access omitted it in
-   places; `Clasificatii` and the other nomenclature tables are unit-scoped, so omitting it
-   returns another unit's rows on a multi-unit database.
-5. **The `PrtScr` filter was not ported.** It filtered the Access screen; it has no meaning
-   in the K-BOT editor.
-6. **Section B copies the partner from section A.** Access wrote `NULL` there. The B rows are
-   derived from the A rows, and a derived row with no partner cannot be reconciled afterwards.
-7. **The earliest-date, lowest-operation-type selection rule** in `_SQL_GEN_REZERVARI` is in
-   the Access query and was omitted from the plan; it is ported, because dropping it changes
-   which reservation row wins.
+1. **Validation checks every row.** `msgEroare` in Access examined only the first row of each section before returning. The port checks all of them and lists every reason at once.
+2. **Deleting a document releases every revision's reservations.** The Access `FX_Stergere_DDF` released only the reservations of one revision, leaving the rest of the document's reservations marked as used against a document that no longer existed. The port releases all of them. This is a bug fix, and if the old behaviour was load-bearing somewhere it will show up here first.
+3. **The source of the generated lines is chosen from the data** (decision D5) rather than from a form's state as Access did. `_alege_sursa()` looks at what actually exists — reservations or indicators — and **refuses loudly, naming both conditions**, when it cannot tell. It never guesses.
+4. **The `IdUnitate` predicate is kept** in the generation queries. Access omitted it in places; `Clasificatii` and the other nomenclature tables are unit-scoped, so omitting it returns another unit's rows on a multi-unit database.
+5. **The `PrtScr` filter was not ported.** It filtered the Access screen; it has no meaning in the K-BOT editor.
+6. **Section B copies the partner from section A.** Access wrote `NULL` there. The B rows are derived from the A rows, and a derived row with no partner cannot be reconciled afterwards.
+7. **The earliest-date, lowest-operation-type selection rule** in `_SQL_GEN_REZERVARI` is in the Access query and was omitted from the plan; it is ported, because dropping it changes which reservation row wins.
 
 #### 3.3 Writing
 
@@ -228,13 +212,8 @@ The operator's rule, and it narrows decision D8: section A is still the only gri
 
 How it is decided (`DdfDraft.DinRezervari`, in the domain so the client and any later caller read one copy of the rule):
 
-* `sursa` from the server — `_alege_sursa`'s answer, decision D5 — is now carried into the
-  domain instead of being dropped at the wire. `"rezervari"` locks the grid.
-* That alone is not enough: `GET /draft/{iddf}/{idrev}` answers `"existent"` for EVERY
-  revision read back, whatever it was generated from, so a REOPENED document would have looked
-  editable. What survives the round trip is `GrpIdrz`, the `IDRZ` list a line was generated
-  from, empty on a line that came from `FX_Istoric` or that the operator added. Any line
-  carrying one locks the grid too.
+* `sursa` from the server — `_alege_sursa`'s answer, decision D5 — is now carried into the domain instead of being dropped at the wire. `"rezervari"` locks the grid.
+* That alone is not enough: `GET /draft/{iddf}/{idrev}` answers `"existent"` for EVERY revision read back, whatever it was generated from, so a REOPENED document would have looked editable. What survives the round trip is `GrpIdrz`, the `IDRZ` list a line was generated from, empty on a line that came from `FX_Istoric` or that the operator added. Any line carrying one locks the grid too.
 
 What the lock does, in `DdfEditSectiuneaAPage.AplicaModulDeEditare`: `grd.ReadOnlyGrid`, both buttons off, the Partener cell shut regardless of `PartAng`, the classification list not even fetched (no round trip for a list nothing can use), and the classification column switched from `Combo` to `Text` — a chevron that opens nothing is the same silent no-op as a button that does nothing. That last one is why `AplicaModulDeEditare` runs BEFORE the fill: a column's type only moves while the grid has no rows.
 
@@ -246,13 +225,9 @@ The toolbar buttons are 30x30, and the icon set the operator binds is whatever s
 
 Three details that are not obvious:
 
-* The picture is fitted inside what the flat border and `ButtonPadding` leave, not inside the
-  whole button — otherwise a `Stretch` would slide under its own border.
-* A disabled toolbar (`Editabil = False`, a read-only description) greys the picture through an
-  `ImageAttributes` colour matrix. `ControlPaint.DrawImageDisabled` draws at natural size only,
-  which is no use once the point is that the size changed.
-* `Tile` shifts the brush to the content box's origin; without it the pattern starts at the
-  CONTROL's origin and the first tile is cut by the border instead of sitting against it.
+* The picture is fitted inside what the flat border and `ButtonPadding` leave, not inside the whole button — otherwise a `Stretch` would slide under its own border.
+* A disabled toolbar (`Editabil = False`, a read-only description) greys the picture through an `ImageAttributes` colour matrix. `ControlPaint.DrawImageDisabled` draws at natural size only, which is no use once the point is that the size changed.
+* `Tile` shifts the brush to the content box's origin; without it the pattern starts at the CONTROL's origin and the first tile is cut by the border instead of sitting against it.
 
 The lettered glyphs (B / I / U / A / ▨ / ▴ / ▾) are TEXT and are untouched: with no picture bound there is nothing to lay out.
 
@@ -342,20 +317,10 @@ While auditing diacritics, an over-broad pass de-accented ~400 **pre-existing** 
 
 Everything that needs a running system:
 
-* **No SQL statement in this slice has ever executed.** They were written from a
-  structure-only dump with no sample rows.
-* The two `sql/0051_*.sql` files have not been applied to any database. Until
-  `FX_DDF_REV_ATT_IMG` exists, every attachment route fails.
+* **No SQL statement in this slice has ever executed.** They were written from a structure-only dump with no sample rows.
+* The two `sql/0051_*.sql` files have not been applied to any database. Until `FX_DDF_REV_ATT_IMG` exists, every attachment route fails.
 * No route has served a request. No response shape has been observed on the wire.
-* `DdfEditForm` has never been shown on screen. Layout, DPI behaviour, theming and tab order
-  are unverified by eye. **That now includes the `+` trigger on the reservations tree: the
-  click path was never exercised against a server, so neither `POST /genereaza` nor the
-  editor it opens has been seen to work from there.** The three grids of §4.5 / §4.6 ARE the
-  exception: they were rendered off-screen with `DrawToBitmap` on a themed host form and
-  looked at — headers, alignment, the two-decimal money format, the footer sums, the greyed
-  buttons and the status line of a locked section A, and the chevron present on an editable
-  classification column and absent on a locked one. That is the columns and the lock; it is
-  not the form around them.
+* `DdfEditForm` has never been shown on screen. Layout, DPI behaviour, theming and tab order are unverified by eye. **That now includes the `+` trigger on the reservations tree: the click path was never exercised against a server, so neither `POST /genereaza` nor the editor it opens has been seen to work from there.** The three grids of §4.5 / §4.6 ARE the exception: they were rendered off-screen with `DrawToBitmap` on a themed host form and looked at — headers, alignment, the two-decimal money format, the footer sums, the greyed buttons and the status line of a locked section A, and the chevron present on an editable classification column and absent on a locked one. That is the columns and the lock; it is not the form around them.
 * `KBotRichTextEditor` has never been rendered.
 * The number lock has never been contended by two clients.
 * No document produced by this slice has been rendered as a signed XFA.
@@ -364,13 +329,8 @@ Everything that needs a running system:
 
 ### 7. Known gaps
 
-* ~~`RezervariView` does not refresh after a save.~~ **Closed.** It has a `Reincarca()` that
-  goes through the same `LoadAsync` a normal selection uses, and `DupaScriereaDdf` calls it.
-  Only the ACTIVE view is refreshed — `ActivateView` calls `SetContext` on every activation,
-  so an inactive one reloads by itself when the operator switches to it.
-* **`IDdfForexeUpload`** (plan §10.4) exists as an interface with one method and a
-  `NotImplementedException` implementation. The FOREXE portal run belongs to a later slice;
-  the seam exists so it is not retro-fitted into the save handler.
+* ~~`RezervariView` does not refresh after a save.~~ **Closed.** It has a `Reincarca()` that goes through the same `LoadAsync` a normal selection uses, and `DupaScriereaDdf` calls it. Only the ACTIVE view is refreshed — `ActivateView` calls `SetContext` on every activation, so an inactive one reloads by itself when the operator switches to it.
+* **`IDdfForexeUpload`** (plan §10.4) exists as an interface with one method and a `NotImplementedException` implementation. The FOREXE portal run belongs to a later slice; the seam exists so it is not retro-fitted into the save handler.
 * **`KBotComboBox` cannot be editable** — see §2.2.
 * The nine `IApiClient` test doubles have stubbed the new members, not covered them.
 
@@ -387,11 +347,7 @@ Steps 1 and 2 must come first: without `FX_NumberLock` no document can be number
 
 ### 9. Read this before the first live run
 
-The first live run is the first time any of this SQL executes. Run it on a copy, with one
-document, and check: the CUAL and revision numbers allocated; that `Desc_Lunga` and
-`Desc_Lunga_ANSI` both carry the text; that section B was written from section A; that a
-deleted revision released exactly its own reservations; and that a deleted document released
-all of them.
+The first live run is the first time any of this SQL executes. Run it on a copy, with one document, and check: the CUAL and revision numbers allocated; that `Desc_Lunga` and `Desc_Lunga_ANSI` both carry the text; that section B was written from section A; that a deleted revision released exactly its own reservations; and that a deleted document released all of them.
 
 ---
 
@@ -449,18 +405,12 @@ Paginile sunt cazul celălalt și de aceea acolo se scrie: `ThemeManager.Travers
 
 Două urmări, nu una:
 
-1. **Aspectul.** Exact ce a semnalat operatorul. Nicio grilă din `OrdEditForm` nu folosește
-   `Enabled = False`; toate spun `ReadOnly = True`.
-2. **Funcțional.** Cele cinci coloane pe care clasa le declară EDITABILE (clasificația,
-   elementul de fundamentare, parametrii, partenerul, valoarea curentă) erau și ele inerte, deci
-   deblocarea din `AplicaModulDeEditare` — pentru un DDF construit manual — nu putea debloca
-   nimic. Rândurile 1005–1018 din `KBotDataColumn.vb`: `Enabled` bate `ReadOnly`, iar
-   `KBotDataView.EsteCelulaActiva` iese pe `Not col.Enabled` înainte de orice altceva.
+1. **Aspectul.** Exact ce a semnalat operatorul. Nicio grilă din `OrdEditForm` nu folosește `Enabled = False`; toate spun `ReadOnly = True`.
+2. **Funcțional.** Cele cinci coloane pe care clasa le declară EDITABILE (clasificația, elementul de fundamentare, parametrii, partenerul, valoarea curentă) erau și ele inerte, deci deblocarea din `AplicaModulDeEditare` — pentru un DDF construit manual — nu putea debloca nimic. Rândurile 1005–1018 din `KBotDataColumn.vb`: `Enabled` bate `ReadOnly`, iar `KBotDataView.EsteCelulaActiva` iese pe `Not col.Enabled` înainte de orice altceva.
 
 Toate cele zece linii au fost scoase. Refuzul editării rămâne unde îi e locul și unde era deja:
 
-- pe coloană, `ReadOnly = True` pentru cele derivate (`clsf`, `buget`, `val_rec`, `val_prec`,
-  `val_tot`) — neatins;
+- pe coloană, `ReadOnly = True` pentru cele derivate (`clsf`, `buget`, `val_rec`, `val_prec`, `val_tot`) — neatins;
 - pe grilă, `grd.ReadOnlyGrid` pentru un document generat din rezervări — neatins;
 - pe celula `cod_partener`, poarta din `AplicaGateulPartenerului` — neatins, tot prin `ReadOnly`.
 
@@ -474,17 +424,10 @@ Niciunul dintre cele trei nu atinge pictura. Regula e scrisă acum în capul des
 
 Felia 0051-02 a făcut combo-ul tastabil (`Editable = True`, `LimitToList = False`) și a lăsat scris la «rămas»: perechea `txtComp` + `cmbComp` din `DdfEditForm` așteaptă strângerea. Între timp `txtComp` a dispărut din designer, dar **codul care lega valoarea nu s-a mutat pe combo** — au rămas doar cinci linii comentate. Consecințele, toate în același sens:
 
-- `_draft.Comp` se scria **numai** din `CmbComp_SelectedIndexChanged`, adică numai la alegerea
-  din listă. Un compartiment TASTAT nu ajungea niciodată în schiță, iar `MotiveDeRefuz` refuza
-  salvarea cu «Compartimentul lipsește» pentru un câmp pe care operatorul îl vedea completat.
-- Când lista venea goală de pe server — starea NORMALĂ pe o unitate fără documente anterioare,
-  fiindcă nu există nomenclator de compartimente în MariaDB — `IncarcaListeleAsync` făcea
-  `cmbComp.Enabled = False`, adică stingea singura cale de intrare rămasă. Pe o bază proaspătă
-  documentul nu se putea salva deloc. Același lucru pe ramura `Catch`.
-- La încărcare, `cmbComp.SelectedItem = _draft.Comp`: pentru o valoare care nu e în listă — cazul
-  frecvent — atribuirea e un no-op tăcut, deci compartimentul documentului dispărea din antet.
-- Sfatul de pe ecran spunea «Alegerea unuia îl scrie în caseta din stânga» și «Scrie
-  compartimentul în caseta din stânga». Nu mai există nicio casetă în stânga.
+- `_draft.Comp` se scria **numai** din `CmbComp_SelectedIndexChanged`, adică numai la alegerea din listă. Un compartiment TASTAT nu ajungea niciodată în schiță, iar `MotiveDeRefuz` refuza salvarea cu «Compartimentul lipsește» pentru un câmp pe care operatorul îl vedea completat.
+- Când lista venea goală de pe server — starea NORMALĂ pe o unitate fără documente anterioare, fiindcă nu există nomenclator de compartimente în MariaDB — `IncarcaListeleAsync` făcea `cmbComp.Enabled = False`, adică stingea singura cale de intrare rămasă. Pe o bază proaspătă documentul nu se putea salva deloc. Același lucru pe ramura `Catch`.
+- La încărcare, `cmbComp.SelectedItem = _draft.Comp`: pentru o valoare care nu e în listă — cazul frecvent — atribuirea e un no-op tăcut, deci compartimentul documentului dispărea din antet.
+- Sfatul de pe ecran spunea «Alegerea unuia îl scrie în caseta din stânga» și «Scrie compartimentul în caseta din stânga». Nu mai există nicio casetă în stânga.
 
 Acum: un `PreiaCompartimentul()` cheamă `cmbComp.CommitText()` (idempotent, exact pentru asta a fost scris în 0051-02) și pune `cmbComp.Text.Trim()` în schiță. Se cheamă din `cmbComp.Leave` și din nou din `BtnSalveaza_Click`, fiindcă operatorul poate apăsa butonul fără să iasă din câmp. `SelectedIndexChanged` rămâne, ca alegerea din listă să se vadă în schiță pe loc. Câmpul **rămâne aprins** când lista e goală sau când cererea eșuează — se schimbă doar sfatul. Reumplerea listei golește caseta, deci textul curent se pune înapoi, sub `_seIncarca`.
 
@@ -550,23 +493,9 @@ Nicio versiune de proiect n-a fost urcată: `KBot.App` n-are `FileVersion` propr
 
 ### 6. Rămas neverificat / amânat
 
-- **`DdfEditForm` tot n-a fost văzut pe ecran** — nici în aplicație, nici în designerul VS, nici
-  prin `DrawToBitmap`. Toate afirmațiile despre aspect (butoane rotunjite pe `Modern`, grilă
-  nestinsă, secțiunea B la aceeași scară cu A) sunt citite din cod, **nu văzute**. Asta e
-  verificarea care lipsește și e cea care contează cel mai mult pentru o rundă despre aspect.
-- **Nimic n-a rulat pe MariaDB sau pe serverul Python** — nici de data asta. Calea corectată a
-  compartimentului (tastare ⇒ `_draft.Comp` ⇒ POST) **n-a fost probată cu un server adevărat**;
-  e citită din cod și din contractul lui `KBotComboBox.CommitText` descris în 0051-02.
-- **Zero teste noi.** Ce s-a schimbat aici e în cea mai mare parte designer și pictură; singurul
-  lucru testabil ieftin — compartimentul tastat — cere un `DdfEditForm` construit cu un
-  `IApiClient` fals și un `DdfEditReauth`, adică o schelă pe care felia n-o are. **Merită scrisă**
-  și e cel mai bun candidat pentru runda următoare.
-- **Cele 13 teste picate de pe ramură rămân picate.** Sunt din alte felii (`DdfView`,
-  `IstoricView`, `XfaXmlPreview`, parserul XFA, iconițele din `MainForm`) și n-au fost atinse aici,
-  ca să nu se amestece o rundă de aspect cu remedieri fără legătură.
-- **`AplicaModulDeEditare` lasă `lblStare` cu mesajul de blocare** dacă aceeași instanță de pagină
-  primește pe rând un document blocat și apoi unul liber: mesajul se rescrie abia la
-  `ReimprospateazaCombo`. Astăzi formularul e modal și pornește o pagină nouă de fiecare dată,
-  deci nu se vede. Consemnat, nu remediat.
-- **`Dim _salariiArFiFostEditabil`** din `AplicaEnablement` rămâne o variabilă scrisă și necitită,
-  ținută intenționat de felia 0051 ca urmă a regulii din Access. Lăsată cum era.
+- **`DdfEditForm` tot n-a fost văzut pe ecran** — nici în aplicație, nici în designerul VS, nici prin `DrawToBitmap`. Toate afirmațiile despre aspect (butoane rotunjite pe `Modern`, grilă nestinsă, secțiunea B la aceeași scară cu A) sunt citite din cod, **nu văzute**. Asta e verificarea care lipsește și e cea care contează cel mai mult pentru o rundă despre aspect.
+- **Nimic n-a rulat pe MariaDB sau pe serverul Python** — nici de data asta. Calea corectată a compartimentului (tastare ⇒ `_draft.Comp` ⇒ POST) **n-a fost probată cu un server adevărat**; e citită din cod și din contractul lui `KBotComboBox.CommitText` descris în 0051-02.
+- **Zero teste noi.** Ce s-a schimbat aici e în cea mai mare parte designer și pictură; singurul lucru testabil ieftin — compartimentul tastat — cere un `DdfEditForm` construit cu un `IApiClient` fals și un `DdfEditReauth`, adică o schelă pe care felia n-o are. **Merită scrisă** și e cel mai bun candidat pentru runda următoare.
+- **Cele 13 teste picate de pe ramură rămân picate.** Sunt din alte felii (`DdfView`, `IstoricView`, `XfaXmlPreview`, parserul XFA, iconițele din `MainForm`) și n-au fost atinse aici, ca să nu se amestece o rundă de aspect cu remedieri fără legătură.
+- **`AplicaModulDeEditare` lasă `lblStare` cu mesajul de blocare** dacă aceeași instanță de pagină primește pe rând un document blocat și apoi unul liber: mesajul se rescrie abia la `ReimprospateazaCombo`. Astăzi formularul e modal și pornește o pagină nouă de fiecare dată, deci nu se vede. Consemnat, nu remediat.
+- **`Dim _salariiArFiFostEditabil`** din `AplicaEnablement` rămâne o variabilă scrisă și necitită, ținută intenționat de felia 0051 ca urmă a regulii din Access. Lăsată cum era.

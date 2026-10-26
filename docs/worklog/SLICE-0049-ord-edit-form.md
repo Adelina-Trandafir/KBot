@@ -34,22 +34,12 @@ Dacă o încărcare cade **după** o salvare reușită, ordonanțarea **rămâne
 
 Citite din DDL (`MariaDB_Schema/000_DEMO.sql`), nu deduse din nume:
 
-1. **Toate legăturile merg pe cheia «…P»** (`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDATTP`,
-   `IDORDDOCP`). Omonimele fără «P» sunt id-uri Access păstrate. Un port literal al join-ului
-   Access `FX_ORD_TBL.IDORDPART = FX_ORD_PART.IDORDPART` ar lega cheia greșită.
+1. **Toate legăturile merg pe cheia «…P»** (`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDATTP`, `IDORDDOCP`). Omonimele fără «P» sunt id-uri Access păstrate. Un port literal al join-ului Access `FX_ORD_TBL.IDORDPART = FX_ORD_PART.IDORDPART` ar lega cheia greșită.
 2. `FX_ORD_TBL_REC` se leagă **deja** pe `IDORDTBLP` (FK real, `ON DELETE CASCADE`).
-3. `FX_ORD.IDORD` și `FX_ORD.CUAL` sunt `varchar(255)`, în timp ce `FX_DDF.CUAL` e `int(11)` —
-   CUAL-ul copiat din DDF se convertește la text.
-4. `FX_ORD_TBL` are **șase chei străine**, dintre care `IdClsf` (cu `DEFAULT 0` **și** cheie
-   străină) și `CodAI` opresc tranzacția pe date proaste. De aceea se validează **pe nume**,
-   înainte de primul INSERT, cu mesaj care numește linia.
-5. **Inversiunea `IdClsf`:** pe `FX_ORD_TBL`, MariaDB `IdClsf` e cheia străină către
-   `Clasificatii` iar `IdClsfAcc` ține id-ul Access — INVERS față de `FX_Indicatori`. În Access
-   se numeau `IdClsfPY` (global) și `IdClsf` (Access).
-6. `ClasificatiiG` / `ParteneriG` nu există; `FX_ORD_ATT` nu are coloană `Nume`. Și, deși
-   `IdUnitate` e relicvă pe restul tabelelor `FX_`, pe `FX_ORD_TBL` e **NOT NULL cu cheie
-   străină**, deci TREBUIE scris — se ia din `FX_Indicatori.IdUnitate`, exact ca în
-   `qFX_ORD_BASE`.
+3. `FX_ORD.IDORD` și `FX_ORD.CUAL` sunt `varchar(255)`, în timp ce `FX_DDF.CUAL` e `int(11)` — CUAL-ul copiat din DDF se convertește la text.
+4. `FX_ORD_TBL` are **șase chei străine**, dintre care `IdClsf` (cu `DEFAULT 0` **și** cheie străină) și `CodAI` opresc tranzacția pe date proaste. De aceea se validează **pe nume**, înainte de primul INSERT, cu mesaj care numește linia.
+5. **Inversiunea `IdClsf`:** pe `FX_ORD_TBL`, MariaDB `IdClsf` e cheia străină către `Clasificatii` iar `IdClsfAcc` ține id-ul Access — INVERS față de `FX_Indicatori`. În Access se numeau `IdClsfPY` (global) și `IdClsf` (Access).
+6. `ClasificatiiG` / `ParteneriG` nu există; `FX_ORD_ATT` nu are coloană `Nume`. Și, deși `IdUnitate` e relicvă pe restul tabelelor `FX_`, pe `FX_ORD_TBL` e **NOT NULL cu cheie străină**, deci TREBUIE scris — se ia din `FX_Indicatori.IdUnitate`, exact ca în `qFX_ORD_BASE`.
 
 #### 1.4 Deciziile de traducere care nu erau în plan
 
@@ -92,13 +82,8 @@ Comentariile si documentatia XML din fisierele noi au fost scrise intai in roman
 
 S-a facut deci o trecere de curatare, cu doua garantii:
 
-* transliterarea atinge **doar partea de comentariu** a fiecarui rand, gasita scanand in
-  afara literalilor de sir — deci sirurile pe care le VEDE operatorul (etichete, mesaje,
-  tooltip-uri, `Text`-ul butoanelor) si-au pastrat diacriticele reale, cum cere aceeasi regula;
-* pe fisierele PREEXISTENTE (`ApiClient.vb`, `IApiClient.vb`, `OrdView.vb`, `MainForm.vb`) s-au
-  maturat **doar randurile adaugate de felia asta**, identificate din `git diff`. Comentariile
-  care erau acolo dinainte nu sunt treaba acestei felii; maturarea lor ar fi umflat diff-ul cu
-  sute de randuri fara legatura.
+* transliterarea atinge **doar partea de comentariu** a fiecarui rand, gasita scanand in afara literalilor de sir — deci sirurile pe care le VEDE operatorul (etichete, mesaje, tooltip-uri, `Text`-ul butoanelor) si-au pastrat diacriticele reale, cum cere aceeasi regula;
+* pe fisierele PREEXISTENTE (`ApiClient.vb`, `IApiClient.vb`, `OrdView.vb`, `MainForm.vb`) s-au maturat **doar randurile adaugate de felia asta**, identificate din `git diff`. Comentariile care erau acolo dinainte nu sunt treaba acestei felii; maturarea lor ar fi umflat diff-ul cu sute de randuri fara legatura.
 
 Verificat dupa: **0 randuri de comentariu cu diacritice** in cele 14 fisiere noi si **0** pe randurile adaugate in cele 4 preexistente; sirurile operator-facing si-au pastrat diacriticele (verificat prin numarare: 18 in `OrdEditForm.Designer.vb`, 13 in `OrdBeneficiariPage.Designer.vb`, 9 in `OrdZiuaForm.Designer.vb`, 31 in `OrdEditForm.vb`).
 
@@ -112,13 +97,8 @@ Verificat dupa: **0 randuri de comentariu cu diacritice** in cele 14 fisiere noi
 
 #### Schema
 
-* **NOU** `sql/0049_ord_att_img.sql` — `FX_ORD_ATT_IMG`, modelată pe `FX_ORD_PDF`: un rând per
-  atașament, SHA-256, `ON DELETE CASCADE`. Conține proba de tip a cheii părinte, proba «are
-  vreo unitate rânduri în `FX_ORD_ATT`?», și **varianta pentru `AVACONT_SURSA` fără
-  `AUTO_INCREMENT`** (scutirea din felia 0048-01 §3.1 se aplică integral).
-* `MariaDB_Schema/000_DEMO.sql` — aceeași tabelă, adăugată după `FX_ORD_ATT`.
-  **Notă:** `MariaDB_Schema/` este în `.gitignore` (copie locală de referință), deci
-  modificarea NU intră în commit. Artefactul din depozit este fișierul `sql/`.
+* **NOU** `sql/0049_ord_att_img.sql` — `FX_ORD_ATT_IMG`, modelată pe `FX_ORD_PDF`: un rând per atașament, SHA-256, `ON DELETE CASCADE`. Conține proba de tip a cheii părinte, proba «are vreo unitate rânduri în `FX_ORD_ATT`?», și **varianta pentru `AVACONT_SURSA` fără `AUTO_INCREMENT`** (scutirea din felia 0048-01 §3.1 se aplică integral).
+* `MariaDB_Schema/000_DEMO.sql` — aceeași tabelă, adăugată după `FX_ORD_ATT`. **Notă:** `MariaDB_Schema/` este în `.gitignore` (copie locală de referință), deci modificarea NU intră în commit. Artefactul din depozit este fișierul `sql/`.
 
 #### Server (Python)
 
@@ -140,31 +120,24 @@ Verificat dupa: **0 randuri de comentariu cu diacritice** in cele 14 fisiere noi
 #### Client — contract și domeniu
 
 * **NOU** `src/KBot.Api/OrdEditContract.vb` — DTO-urile de pe fir, snake_case verbatim.
-* **NOU** `src/KBot.Domain/OrdDraft.vb` — `OrdDraft`, `OrdDraftPart`, `OrdDraftLinie`,
-  `OrdDraftRec`, `OrdDraftDoc`, `OrdDraftAtt`, plus `OrdSaveRezultat`,
-  `OrdStergereRezultat`, `OrdZiCandidat`, `OrdZileInfo`.
+* **NOU** `src/KBot.Domain/OrdDraft.vb` — `OrdDraft`, `OrdDraftPart`, `OrdDraftLinie`, `OrdDraftRec`, `OrdDraftDoc`, `OrdDraftAtt`, plus `OrdSaveRezultat`, `OrdStergereRezultat`, `OrdZiCandidat`, `OrdZileInfo`.
 * `src/KBot.Api/IApiClient.vb` + `ApiClient.vb` — opt metode noi.
 
 #### Client — formulare
 
 * **NOU** `src/KBot.App/Views/Ord/IOrdEditPage.vb` — contractul paginilor de editare.
-* **NOU** `OrdEditForm.vb` + `.Designer.vb` — `KBotShellForm`, modal, bandă de antet, trei
-  pagini leneșe, salvează/renunță.
+* **NOU** `OrdEditForm.vb` + `.Designer.vb` — `KBotShellForm`, modal, bandă de antet, trei pagini leneșe, salvează/renunță.
 * **NOU** `OrdBeneficiariPage.vb` + `.Designer.vb` — `frmFX_ORD_PART` + `frmFX_ORD_TBL`.
 * **NOU** `OrdDocumentePage.vb` + `.Designer.vb` — `frmFX_ORD_DOC` + `_BENE` + `_TXT` + `_ATT`.
 * **NOU** `OrdAtasamentePage.vb` + `.Designer.vb` — `frmFX_ORD_PRTSCR` + `_BENE` + `_S`.
 * **NOU** `OrdZiuaForm.vb` + `.Designer.vb` — dialogul care cere ziua.
 * **NOU** `OrdComanda.vb` — cele patru comenzi, ca valori.
-* `src/KBot.App/Views/OrdView.vb` — patru puncte de intrare (buton de subsol + meniu
-  contextual), `Reincarca(idordp)`, re-selecția documentului salvat. Calea de CITIRE nu s-a
-  atins.
+* `src/KBot.App/Views/OrdView.vb` — patru puncte de intrare (buton de subsol + meniu contextual), `Reincarca(idordp)`, re-selecția documentului salvat. Calea de CITIRE nu s-a atins.
 * `src/KBot.App/MainForm.vb` — `ExecutaComandaOrd` și cele patru operațiuni, cu `WithReauth`.
 
 #### Teste
 
-* Nouă dubluri `IApiClient` din `tests/KBot.App.Tests/` — cioturi
-  `Throw New NotSupportedException()` pentru cele opt metode noi. **Niciun test nou** (cerința
-  operatorului).
+* Nouă dubluri `IApiClient` din `tests/KBot.App.Tests/` — cioturi `Throw New NotSupportedException()` pentru cele opt metode noi. **Niciun test nou** (cerința operatorului).
 
 ---
 
@@ -210,78 +183,35 @@ Toate șase familii sunt DDF / Istoric / XFA — nimic de-a face cu ORD.
 
 #### Neverificat — nimic nu a atins o bază vie
 
-1. **Nicio rută nu a rulat pe MariaDB.** Toate cele opt sunt scrise, înregistrate și
-   `py_compile`-curate, dar niciun SELECT și niciun INSERT n-a atins date reale. Prima rulare
-   pe mașina operatorului trebuie să scrie rezultatele în
-   `<AppDir>\Logs\test_<timestamp>.log`.
-2. **La prima salvare reală: `MAX(IDORDP)` înainte și `AUTO_INCREMENT` după, per tabelă** —
-   aceeași verificare pe care a cerut-o felia 0048-01. Codul ridică zgomotos dacă
-   `lastrowid = 0` după un INSERT (înseamnă că acea coloană și-a pierdut `AUTO_INCREMENT`), dar
-   asta se vede abia la rulare.
-3. **`sql/0049_ord_att_img.sql` nu s-a rulat nicăieri.** Tipul cheii părinte
-   (`FX_ORD_ATT.IDORDATTP`, `int(11)`) e citit din dump-ul demo, nu confirmat pe o bază de
-   producție. Proba e scrisă în fișier.
-4. **Niciun formular nu s-a deschis** — nici pe ecran, nici în designerul Visual Studio.
-   Aspectul celor cinci formulare noi este PROIECTAT, nu văzut. Aceeași situație ca la
-   `AsociereForm` (felia 0048-04).
-5. **`AVACONT_SURSA` nu s-a atins** — varianta fără `AUTO_INCREMENT` e scrisă în fișierul SQL,
-   comentată, gata de rulat.
-6. **Avertismentul de 25 de parteneri** se calculează corect după sursă, dar n-a fost văzut
-   declanșându-se pe date reale.
+1. **Nicio rută nu a rulat pe MariaDB.** Toate cele opt sunt scrise, înregistrate și `py_compile`-curate, dar niciun SELECT și niciun INSERT n-a atins date reale. Prima rulare pe mașina operatorului trebuie să scrie rezultatele în `<AppDir>\Logs\test_<timestamp>.log`.
+2. **La prima salvare reală: `MAX(IDORDP)` înainte și `AUTO_INCREMENT` după, per tabelă** — aceeași verificare pe care a cerut-o felia 0048-01. Codul ridică zgomotos dacă `lastrowid = 0` după un INSERT (înseamnă că acea coloană și-a pierdut `AUTO_INCREMENT`), dar asta se vede abia la rulare.
+3. **`sql/0049_ord_att_img.sql` nu s-a rulat nicăieri.** Tipul cheii părinte (`FX_ORD_ATT.IDORDATTP`, `int(11)`) e citit din dump-ul demo, nu confirmat pe o bază de producție. Proba e scrisă în fișier.
+4. **Niciun formular nu s-a deschis** — nici pe ecran, nici în designerul Visual Studio. Aspectul celor cinci formulare noi este PROIECTAT, nu văzut. Aceeași situație ca la `AsociereForm` (felia 0048-04).
+5. **`AVACONT_SURSA` nu s-a atins** — varianta fără `AUTO_INCREMENT` e scrisă în fișierul SQL, comentată, gata de rulat.
+6. **Avertismentul de 25 de parteneri** se calculează corect după sursă, dar n-a fost văzut declanșându-se pe date reale.
 
 #### Portat deliberat cu defectul lui
 
-7. **`Incarca_Explicatii_Incasari` filtrează pe `CodContract = 'ERRRRRRRRRR'`**, deci
-   dicționarul iese **întotdeauna gol** și fiecare încasare primește «LIPSA EXPLICATIE» /
-   «INCASARE». Arată a santinelă de depanare uitată în cod. S-a portat fidel (aceeași decizie
-   ca D18 din felia 0048-01: portează defectul, consemnează-l, nu-l repara pe tăcute), dar
-   izolat într-o constantă numită — `EXPLICATII_FILTRU_CODCONTRACT` — ca să fie vizibil și
-   reparabil cu o linie. Consemnat și în `docs/possible_future_directions.md`.
+7. **`Incarca_Explicatii_Incasari` filtrează pe `CodContract = 'ERRRRRRRRRR'`**, deci dicționarul iese **întotdeauna gol** și fiecare încasare primește «LIPSA EXPLICATIE» / «INCASARE». Arată a santinelă de depanare uitată în cod. S-a portat fidel (aceeași decizie ca D18 din felia 0048-01: portează defectul, consemnează-l, nu-l repara pe tăcute), dar izolat într-o constantă numită — `EXPLICATII_FILTRU_CODCONTRACT` — ca să fie vizibil și reparabil cu o linie. Consemnat și în `docs/possible_future_directions.md`.
 
 #### Neportat, cu motiv
 
-8. **`btnClsf` din `frmFX_ORD_TBL`.** În tot exportul Access nu există niciun `btnClsf_Click`;
-   singura lui apariție e în `PositionElements`, o funcție al cărei prim rând e
-   `Exit Function`. Un buton fără comportament ar fi exact no-op-ul tăcut interzis de regulile
-   casei. Coloana `Clasificație` e read-only: clasificația, `CodSSI` și `CodAI` vin din plata
-   pe care o acoperă linia și trebuie să rămână în acord (altfel cheile străine resping
-   salvarea).
-9. **`hwndAccess` / `hwndForm` / `WebBrowser0` din `frmFX_ORD_PRTSCR`.** Instalație de
-   găzduire a ferestrelor Access: un `WebBrowser` reparentat prin `SetParent`, ca să se poată
-   face zoom și panoramare pe o imagine base64. În WinForms previzualizarea e un `PictureBox`
-   cu `SizeMode = Zoom` — nu există nimic de reparentat.
-10. **`Incarca_MaxPKs`.** Exista ca să pre-aloce autonumere Access. Cheile vin din
-    `AUTO_INCREMENT`, la salvare.
-11. **Generarea PDF-ului ORD (XFA)** — rămâne afară (D12). Stocarea există deja
-    (`FX_ORD_PDF` + rutele din `pdf.py`); lipsește doar scriitorul, care își are felia lui.
-    NU s-a adăugat un buton «Generează» care să nu facă nimic.
+8. **`btnClsf` din `frmFX_ORD_TBL`.** În tot exportul Access nu există niciun `btnClsf_Click`; singura lui apariție e în `PositionElements`, o funcție al cărei prim rând e `Exit Function`. Un buton fără comportament ar fi exact no-op-ul tăcut interzis de regulile casei. Coloana `Clasificație` e read-only: clasificația, `CodSSI` și `CodAI` vin din plata pe care o acoperă linia și trebuie să rămână în acord (altfel cheile străine resping salvarea).
+9. **`hwndAccess` / `hwndForm` / `WebBrowser0` din `frmFX_ORD_PRTSCR`.** Instalație de găzduire a ferestrelor Access: un `WebBrowser` reparentat prin `SetParent`, ca să se poată face zoom și panoramare pe o imagine base64. În WinForms previzualizarea e un `PictureBox` cu `SizeMode = Zoom` — nu există nimic de reparentat.
+10. **`Incarca_MaxPKs`.** Exista ca să pre-aloce autonumere Access. Cheile vin din `AUTO_INCREMENT`, la salvare.
+11. **Generarea PDF-ului ORD (XFA)** — rămâne afară (D12). Stocarea există deja (`FX_ORD_PDF` + rutele din `pdf.py`); lipsește doar scriitorul, care își are felia lui. NU s-a adăugat un buton «Generează» care să nu facă nimic.
 
 #### Limite cunoscute ale implementării
 
-12. **Tabela `BIC` nu există în MariaDB.** `Incarca_DicBanci` o citea din front-end-ul Access.
-    Ruta o probează prin `information_schema` și, când lipsește, lasă `Banca` gol și emite un
-    avertisment. Nu s-a inventat o a doua sursă pentru numele băncii.
-13. **Alegătorul de partener (`cboCodPartener`) arată doar partenerii DEJA prezenți pe liniile
-    beneficiarului.** Nomenclatorul întreg — Access: `RowSource` peste `Parteneri` cu
-    `CodPartener <> 'XXX'`, `IdPartener <> 0`, `CodFiscal <> ''` — ar cere o rută de citire pe
-    care felia asta nu o are. Cele trei condiții sunt gata rescrise fără `Nz()` pentru ziua în
-    care ruta apare.
-14. **`FX_ORD_ATT_IMG` se probează la citirea draftului.** Pe o bază pe care fișierul SQL n-a
-    fost încă rulat, metadatele imaginilor lipsesc în loc să cadă tot formularul — același
-    tipar ca proba `FX_ORD.CalePDF` din `ord.py`.
-15. **Coloanele editabile din grila liniilor sunt `Valoare` și `Explicație`.** `Rămas` se
-    RECALCULEAZĂ la fiecare schimbare de valoare, după formula din `Adauga_Ord_Tbl`
-    (`Round(recepții − plăți anterioare − valoare, 2)`) — două cifre care spun același lucru nu
-    au voie să se poată contrazice pe ecran. Dacă operatorul se aștepta să poată edita mai
-    mult, se lărgește; vezi și punctul despre `Explicatie` din
-    `docs/possible_future_directions.md`.
+12. **Tabela `BIC` nu există în MariaDB.** `Incarca_DicBanci` o citea din front-end-ul Access. Ruta o probează prin `information_schema` și, când lipsește, lasă `Banca` gol și emite un avertisment. Nu s-a inventat o a doua sursă pentru numele băncii.
+13. **Alegătorul de partener (`cboCodPartener`) arată doar partenerii DEJA prezenți pe liniile beneficiarului.** Nomenclatorul întreg — Access: `RowSource` peste `Parteneri` cu `CodPartener <> 'XXX'`, `IdPartener <> 0`, `CodFiscal <> ''` — ar cere o rută de citire pe care felia asta nu o are. Cele trei condiții sunt gata rescrise fără `Nz()` pentru ziua în care ruta apare.
+14. **`FX_ORD_ATT_IMG` se probează la citirea draftului.** Pe o bază pe care fișierul SQL n-a fost încă rulat, metadatele imaginilor lipsesc în loc să cadă tot formularul — același tipar ca proba `FX_ORD.CalePDF` din `ord.py`.
+15. **Coloanele editabile din grila liniilor sunt `Valoare` și `Explicație`.** `Rămas` se RECALCULEAZĂ la fiecare schimbare de valoare, după formula din `Adauga_Ord_Tbl` (`Round(recepții − plăți anterioare − valoare, 2)`) — două cifre care spun același lucru nu au voie să se poată contrazice pe ecran. Dacă operatorul se aștepta să poată edita mai mult, se lărgește; vezi și punctul despre `Explicatie` din `docs/possible_future_directions.md`.
 
 #### Amânat, scris în `docs/possible_future_directions.md`
 
-16. **Resetarea pe an a lui `FX_ORD.NrORD` și `FX_DDF.CUAL`** — felie proprie, fiindcă
-    atinge și DDF-ul și fiindcă cere o decizie despre ce an guvernează.
-17. **Dacă limita de 25 de parteneri mai are rost** acum că interogarea rulează pe MariaDB.
-    Limita NU s-a schimbat.
+16. **Resetarea pe an a lui `FX_ORD.NrORD` și `FX_DDF.CUAL`** — felie proprie, fiindcă atinge și DDF-ul și fiindcă cere o decizie despre ce an guvernează.
+17. **Dacă limita de 25 de parteneri mai are rost** acum că interogarea rulează pe MariaDB. Limita NU s-a schimbat.
 18. **Dacă `FX_ORD.CUAL` (varchar) ține vreodată altceva decât CUAL-ul întreg al DDF-ului.**
 19. **Dacă `Explicatie` e vreodată editată de operator sau doar calculată.**
 
@@ -337,11 +267,8 @@ Cele patru comenzi ale feliei 0049 fuseseră croite pentru singurul apelant de a
 
 Deci `OrdComanda` a căpătat patru câmpuri — `Ziua`, `IdPlataFx`, `Luna`, `An` — și două funcții de construcție numite după ce înseamnă (`DinPlati`, `LotPeLuna`). Constructorul vechi a rămas neatins, deci **`OrdView` nu s-a modificat deloc**. În shell:
 
-* `AdaugaOrdonantareAsync` primește `ziCeruta`; `Nothing` = **întreabă operatorul**, ca până
-  acum. Nu s-a mutat dialogul din shell în vedere și nu s-a duplicat — ziua fie vine gata, fie
-  se cere, în același loc.
-* `GenereazaInLotAsync` primește `luna` / `an` și le trimite mai departe la
-  `GET /api/forexe/ord/zile`, care le acceptă de la felia 0049.
+* `AdaugaOrdonantareAsync` primește `ziCeruta`; `Nothing` = **întreabă operatorul**, ca până acum. Nu s-a mutat dialogul din shell în vedere și nu s-a duplicat — ziua fie vine gata, fie se cere, în același loc.
+* `GenereazaInLotAsync` primește `luna` / `an` și le trimite mai departe la `GET /api/forexe/ord/zile`, care le acceptă de la felia 0049.
 
 #### 1.3 `vIdPlataFX = -1` — de ce comanda de zi pleacă mereu fără plată anume
 
@@ -363,15 +290,9 @@ Asta contează acum, fiindcă abia acum butonul FACE ceva: verificat în `Advanc
 
 Access rula, după fiecare din cele două ramuri, `RefreshTreeQuery` și (pe ramura de lot) `fxPlati.RefreshPlati CodAngajament, True`. Cele trei puncte de reîmprospătare de dinainte, împrăștiate prin `MainForm`, s-au strâns într-o metodă — `DupaScriereaOrdonantarii` — care face trei lucruri:
 
-1. **vederea ORD**, dacă e cea activă, pe documentul scris (comportamentul feliei 0049,
-   nemodificat);
-2. **vederea PLĂȚI**, dacă a fost vreodată deschisă, **chiar dacă nu e cea activă**. Motivul e
-   ascuțit: plățile acoperite tocmai au încetat să fie neordonanțate, deci «+»-ul stă pe o zi
-   greșită și iconițele de stare mint. Lăsată nereîmprospătată, ar minți TĂCUT până la
-   următoarea schimbare de angajament — iar operatorul ar apăsa a doua oară «+» pe o zi deja
-   ordonanțată;
-3. **poarta vederilor**: prima ordonanțare a unui angajament îi aprinde `AreORD`, deci intrarea
-   «ord» din navigație trebuie să apară.
+1. **vederea ORD**, dacă e cea activă, pe documentul scris (comportamentul feliei 0049, nemodificat);
+2. **vederea PLĂȚI**, dacă a fost vreodată deschisă, **chiar dacă nu e cea activă**. Motivul e ascuțit: plățile acoperite tocmai au încetat să fie neordonanțate, deci «+»-ul stă pe o zi greșită și iconițele de stare mint. Lăsată nereîmprospătată, ar minți TĂCUT până la următoarea schimbare de angajament — iar operatorul ar apăsa a doua oară «+» pe o zi deja ordonanțată;
+3. **poarta vederilor**: prima ordonanțare a unui angajament îi aprinde `AreORD`, deci intrarea «ord» din navigație trebuie să apară.
 
 **Punctul 3 se face LOCAL, nu prin re-citirea arborelui mare — și asta e o abatere conștientă de la Access.** `RefreshTreeQuery` avea acolo un cost neglijabil; aici, `LoadTreeAsync` ▸ `PopulateTree` **golește selecția** (`_currentInfo = Nothing`, `ApplyViewGating(Nothing)`) și aruncă operatorul înapoi pe «sumar» — exact în clipa de după ce și-a salvat documentul. Deci se ridică flagul pe `AngajamentTreeInfo`-ul din mână și se re-aplică poarta; valoarea adevărată vine oricum de la server la următoarea schimbare de an/SS sau descărcare.
 
@@ -385,26 +306,18 @@ Metoda **nu rearuncă**: scrierea a reușit deja, iar o excepție la reîmprosp�
 
 Trei fișiere, toate în `KBot.App`. **Zero fișiere noi, zero rute, zero SQL, zero schimbări de contract.**
 
-* `src/KBot.App/Views/Ord/OrdComanda.vb` — patru câmpuri opționale (`Ziua`, `IdPlataFx`,
-  `Luna`, `An`), un constructor privat și cele două funcții de construcție `DinPlati` /
-  `LotPeLuna`. Constructorul public existent, neatins.
+* `src/KBot.App/Views/Ord/OrdComanda.vb` — patru câmpuri opționale (`Ziua`, `IdPlataFx`, `Luna`, `An`), un constructor privat și cele două funcții de construcție `DinPlati` / `LotPeLuna`. Constructorul public existent, neatins.
 * `src/KBot.App/Views/PlatiView.vb` —
-  * al treilea parametru **opțional** al constructorului: acțiunea `OrdComanda` a shell-ului
-    (`Nothing` = gazdă fără shell, cum sunt testele; atunci rămân doar evenimentele);
+  * al treilea parametru **opțional** al constructorului: acțiunea `OrdComanda` a shell-ului (`Nothing` = gazdă fără shell, cum sunt testele; atunci rămân doar evenimentele);
   * `Reincarca()` public — portul lui `fxPlati.RefreshPlati`;
   * `Tree_RightIconClicked` traduce nivelul în comandă, **după** ce ridică evenimentul brut;
-  * `PrimaDataDin(rows)` înlocuiește `DayOf(rows(0))`: scanează rândurile până găsește una cu
-    dată, în loc să se bazeze pe primul rând și să cadă tăcut pe `Date.MinValue` când acela
-    n-are. Un `Date.MinValue` trimis ca zi ar fi ajuns la server ca o cerere validă pentru anul 1.
+  * `PrimaDataDin(rows)` înlocuiește `DayOf(rows(0))`: scanează rândurile până găsește una cu dată, în loc să se bazeze pe primul rând și să cadă tăcut pe `Date.MinValue` când acela n-are. Un `Date.MinValue` trimis ca zi ar fi ajuns la server ca o cerere validă pentru anul 1.
   * `DayOf` a fost ȘTERS (rămăsese fără apelant), cu o notă la locul lui.
 * `src/KBot.App/MainForm.vb` —
-  * `CreateView("plati")` dă vederii `AddressOf ExecutaComandaOrd`, **aceeași** acțiune pe care
-    o primește `OrdView` — o singură politică de re-login, un singur loc unde se deschide
-    editorul;
+  * `CreateView("plati")` dă vederii `AddressOf ExecutaComandaOrd`, **aceeași** acțiune pe care o primește `OrdView` — o singură politică de re-login, un singur loc unde se deschide editorul;
   * `ExecutaComandaOrd` trece mai departe cele patru câmpuri noi;
   * `AdaugaOrdonantareAsync` / `GenereazaInLotAsync` au căpătat parametrii opționali;
-  * `DupaScriereaOrdonantarii` + `NumeLuna` (nume de lună în română, doar pentru mesajele
-    lotului), iar cele trei reîmprospătări de dinainte cheamă acum metoda.
+  * `DupaScriereaOrdonantarii` + `NumeLuna` (nume de lună în română, doar pentru mesajele lotului), iar cele trei reîmprospătări de dinainte cheamă acum metoda.
 
 #### Regula 0 — fără diacritice în cod
 
@@ -416,34 +329,18 @@ Comentariile ADĂUGATE de felia asta sunt în română **fără** diacritice; ș
 
 ### 3. Ce a rămas neverificat
 
-1. **Nimic nu a rulat pe MariaDB.** Cele două rute chemate (`POST /api/forexe/ord/genereaza`,
-   `GET /api/forexe/ord/zile`) sunt scrise de felia 0049 și rămân, ca atunci, **nerulate pe date
-   reale**. Felia asta doar le cheamă din al doilea loc.
-2. **«+»-ul n-a fost apăsat.** Traseul clic ▸ comandă ▸ rută ▸ editor n-a fost parcurs de un
-   mouse adevărat. `OrdEditForm` rămâne, ca după 0049, **niciodată deschis pe ecran**.
-3. **Lotul pe lună n-a fost văzut rulând.** În special: dacă o lună are multe zile, bucla
-   afișează busy-bar-ul dar **nu are contor per zi** — un lot lung arată identic cu unul blocat.
-   `clsMeter`-ul Access-ului nu are succesor. Se vede abia la prima rulare reală.
-4. **Avertismentul de 25 de parteneri** ajunge acum pe calea de zi (unde `id_plata_fx` lipsește
-   întotdeauna), dar tot n-a fost văzut declanșându-se.
-5. **Reîmprospătarea vederii de Plăți după lot n-a fost observată.** `Reincarca()` reface arborele
-   și **golește grila** (`LoadAsync` ▸ `FillGrid` se face abia la următorul clic pe un nod) —
-   comportament identic cu o schimbare de angajament, dar nevăzut.
+1. **Nimic nu a rulat pe MariaDB.** Cele două rute chemate (`POST /api/forexe/ord/genereaza`, `GET /api/forexe/ord/zile`) sunt scrise de felia 0049 și rămân, ca atunci, **nerulate pe date reale**. Felia asta doar le cheamă din al doilea loc.
+2. **«+»-ul n-a fost apăsat.** Traseul clic ▸ comandă ▸ rută ▸ editor n-a fost parcurs de un mouse adevărat. `OrdEditForm` rămâne, ca după 0049, **niciodată deschis pe ecran**.
+3. **Lotul pe lună n-a fost văzut rulând.** În special: dacă o lună are multe zile, bucla afișează busy-bar-ul dar **nu are contor per zi** — un lot lung arată identic cu unul blocat. `clsMeter`-ul Access-ului nu are succesor. Se vede abia la prima rulare reală.
+4. **Avertismentul de 25 de parteneri** ajunge acum pe calea de zi (unde `id_plata_fx` lipsește întotdeauna), dar tot n-a fost văzut declanșându-se.
+5. **Reîmprospătarea vederii de Plăți după lot n-a fost observată.** `Reincarca()` reface arborele și **golește grila** (`LoadAsync` ▸ `FillGrid` se face abia la următorul clic pe un nod) — comportament identic cu o schimbare de angajament, dar nevăzut.
 
 ### 4. Neportat deliberat
 
-6. **Nivelul de plată individuală din arbore.** Vezi §1.3: e o decizie a feliei 0017, nu o
-   scăpare a acesteia. Drumul e pregătit până la rută.
-7. **`Contor_Zile_Luna` ca număr afișat înainte de confirmare.** Serverul întoarce deja
-   `TotalEstimat` pe `GET /ord/zile`, iar confirmarea lotului îl arată — nu s-a mai portat a doua
-   socoteală în client.
-8. **`FX_Sterge_Ordonantari` (ștergerea în lot, pe o zi întreagă)** rămâne unde a pus-o felia
-   0049: pe meniul contextual al arborelui de ORD, o ordonanțare o dată. `Popup_Commands`
-   ramura `"ORD_DEL"` de nivel 0 aduna id-urile copiilor și le ștergea în bloc; asta ține de
-   arborele de ordonanțări, nu de cel de plăți, deci nu intră în felia asta.
-9. **`Case "ADD_ORD": Stop`** din `Popup_Commands` — în Access ramura aia e literalmente un
-   `Stop` cu apelul comentat după el (`FX_Adaugare_ORD_Din_Receptie`). Funcția nu există în
-   export. Nu s-a inventat.
+6. **Nivelul de plată individuală din arbore.** Vezi §1.3: e o decizie a feliei 0017, nu o scăpare a acesteia. Drumul e pregătit până la rută.
+7. **`Contor_Zile_Luna` ca număr afișat înainte de confirmare.** Serverul întoarce deja `TotalEstimat` pe `GET /ord/zile`, iar confirmarea lotului îl arată — nu s-a mai portat a doua socoteală în client.
+8. **`FX_Sterge_Ordonantari` (ștergerea în lot, pe o zi întreagă)** rămâne unde a pus-o felia 0049: pe meniul contextual al arborelui de ORD, o ordonanțare o dată. `Popup_Commands` ramura `"ORD_DEL"` de nivel 0 aduna id-urile copiilor și le ștergea în bloc; asta ține de arborele de ordonanțări, nu de cel de plăți, deci nu intră în felia asta.
+9. **`Case "ADD_ORD": Stop`** din `Popup_Commands` — în Access ramura aia e literalmente un `Stop` cu apelul comentat după el (`FX_Adaugare_ORD_Din_Receptie`). Funcția nu există în export. Nu s-a inventat.
 
 ---
 
@@ -492,8 +389,7 @@ adică pe rândul sintetic «< TOȚI BENEFICIARII >» **și pe toată ramura «g
 
 `PartenerulCurent()` are acum **două surse, în ordine**:
 
-1. lista din stânga, când ea numește un beneficiar (bifa stinsă, rând nesintetic) — calea de
-   până acum, neschimbată;
+1. lista din stânga, când ea numește un beneficiar (bifa stinsă, rând nesintetic) — calea de până acum, neschimbată;
 2. altfel, beneficiarul **liniei selectate** în grilă (`OrdDraftLinie.CheiePart`).
 
 Ca să se și miște, `grdLinii.SelectionChanged` cheamă `ActualizeazaAntetBeneficiar()`. Când lista din stânga numește deja un beneficiar, recalculul dă același răspuns, deci ramura veche nu se schimbă la nimic.
@@ -501,9 +397,7 @@ Ca să se și miște, `grdLinii.SelectionChanged` cheamă `ActualizeazaAntetBene
 Două urmări au trebuit tratate, fiindcă beneficiarul editat nu mai e neapărat rândul pe care stă cursorul din stânga:
 
 - rescrierea numelui în lista din stânga **caută rândul după cheie**, nu-l mai ia pe cel curent;
-- pe ramura «clasificații» coloana a doua a grilei arată IBAN-ul, deci editarea lui `ContIBAN`
-  rescrie acum și celulele liniilor acelui beneficiar — două locuri care arată același lucru nu
-  au voie să se poată contrazice pe ecran (aceeași regulă ca la «Ramas» în felia 0049).
+- pe ramura «clasificații» coloana a doua a grilei arată IBAN-ul, deci editarea lui `ContIBAN` rescrie acum și celulele liniilor acelui beneficiar — două locuri care arată același lucru nu au voie să se poată contrazice pe ecran (aceeași regulă ca la «Ramas» în felia 0049).
 
 **Fișier:** `src/KBot.App/Views/Ord/OrdBeneficiariPage.vb`.
 
@@ -560,12 +454,10 @@ deci un rând fără legătură nu apare la niciun beneficiar. «ALL beneficiari
 
 Ambele pagini («Documente justificative» și «Atașamente») lucrează acum cu **grupuri**: un grup = un rând pe ecran, iar rândul din grilă poartă în `Tag` **lista** rândurilor de date pe care le reprezintă.
 
-- **pe un beneficiar** — cele fără legătură ȘI ale lui, fiecare într-un grup de unul singur
-  (comportamentul de până acum, neschimbat);
+- **pe un beneficiar** — cele fără legătură ȘI ale lui, fiecare într-un grup de unul singur (comportamentul de până acum, neschimbat);
 - **pe rândul sintetic** — două înțelesuri de «comun», amândouă arătate:
   1. rândurile fără legătură de beneficiar (cum le ținea Access);
-  2. rândurile care există, cu aceeași valoare, la **fiecare** beneficiar, strânse într-un
-     singur rând pe ecran.
+  2. rândurile care există, cu aceeași valoare, la **fiecare** beneficiar, strânse într-un singur rând pe ecran.
 
 Cheia de valoare e `DocJust + NumeDoc + TipDoc` la documente (exact cele trei coloane pe care le grupa interogarea Access) și `NumeFisier + Sha256 + Dimensiune` la atașamente.
 
@@ -630,23 +522,11 @@ Niciun `.Designer.vb` n-a fost atins: niciun control nou, nicio proprietate de a
 
 ### Rămâne neverificat / amânat
 
-1. **⚠ Nimic nu s-a văzut pe ecran.** Cele trei pagini n-au fost deschise nici la rulare, nici în
-   designerul Visual Studio — la fel ca în 0049 și 0049-01. Culorile butoanelor sunt cerute prin
-   `ButtonStyles`, dar n-au fost PRIVITE sub cele trei scheme.
-2. **⚠ `AVACONT_COMUN`.`BIC` n-a fost interogată.** Existența tabelei e spusă de operator, nu
-   citită de aici; numele coloanelor (`Cod`, `Banca`) vin din VBA. Prima rulare pe o bază vie e
-   proba. Dacă tabela stă acolo dar contul K-BOT n-are drept pe ea, generarea merge înainte cu un
-   avertisment — pe drumul adăugat în felia asta, netestat.
-3. **⚠ Regruparea «comun după valoare» n-a fost văzută pe date reale.** Pe date generate,
-   documentele sunt explicații de linie, deci DIFERITE de la un beneficiar la altul: rândul
-   sintetic va fi, cel mai probabil, tot gol până când operatorul adaugă ceva pe el. Asta E
-   comportamentul cerut («arată ce au toți»), dar merită văzut o dată alături de operator, ca
-   să nu fie luat drept aceeași grilă goală de dinainte.
-4. **Fără teste noi**, ca în 0049 și 0049-01 (cerința operatorului). `GrupuriVizibile` e o funcție
-   pură peste `OrdDraft` și s-ar putea proba fără interfață, dacă se cere mai târziu.
-5. **Neatins, deliberat:** pagina «Fișiere» și bifele de selecție multiplă din editor (amânate
-   încă din 0049), generarea PDF a ordonanțării (rămâne fratele DDF-ului) și `routes/ord/*`
-   (clientul Access legacy).
+1. **⚠ Nimic nu s-a văzut pe ecran.** Cele trei pagini n-au fost deschise nici la rulare, nici în designerul Visual Studio — la fel ca în 0049 și 0049-01. Culorile butoanelor sunt cerute prin `ButtonStyles`, dar n-au fost PRIVITE sub cele trei scheme.
+2. **⚠ `AVACONT_COMUN`.`BIC` n-a fost interogată.** Existența tabelei e spusă de operator, nu citită de aici; numele coloanelor (`Cod`, `Banca`) vin din VBA. Prima rulare pe o bază vie e proba. Dacă tabela stă acolo dar contul K-BOT n-are drept pe ea, generarea merge înainte cu un avertisment — pe drumul adăugat în felia asta, netestat.
+3. **⚠ Regruparea «comun după valoare» n-a fost văzută pe date reale.** Pe date generate, documentele sunt explicații de linie, deci DIFERITE de la un beneficiar la altul: rândul sintetic va fi, cel mai probabil, tot gol până când operatorul adaugă ceva pe el. Asta E comportamentul cerut («arată ce au toți»), dar merită văzut o dată alături de operator, ca să nu fie luat drept aceeași grilă goală de dinainte.
+4. **Fără teste noi**, ca în 0049 și 0049-01 (cerința operatorului). `GrupuriVizibile` e o funcție pură peste `OrdDraft` și s-ar putea proba fără interfață, dacă se cere mai târziu.
+5. **Neatins, deliberat:** pagina «Fișiere» și bifele de selecție multiplă din editor (amânate încă din 0049), generarea PDF a ordonanțării (rămâne fratele DDF-ului) și `routes/ord/*` (clientul Access legacy).
 
 ---
 
@@ -669,14 +549,9 @@ Gruparea o făcuse deja pasul de mai sus: un rând de ecran de pe «< TOȚI BENE
 
 `KBotDataView` avea deja `ReadOnlyGrid` (proprietate de designer, folosită de grila beneficiarilor și de cea a fișierelor), deci nu s-a scris niciun mecanism nou:
 
-- `OrdDocumentePage.ReumpleListele` pune `grdText.ReadOnlyGrid = (_cheieBene = 0)`.
-  `grdFisiere` era oricum doar-citire — numele și extensia vin din fișierul ales, nu de la tastatură.
+- `OrdDocumentePage.ReumpleListele` pune `grdText.ReadOnlyGrid = (_cheieBene = 0)`. `grdFisiere` era oricum doar-citire — numele și extensia vin din fișierul ales, nu de la tastatură.
 - `OrdAtasamentePage.ReumpleLista` pune la fel `grdAtasamente.ReadOnlyGrid`.
-- Ca doar-citirea să nu pară o grilă stricată, titlul primește un sufix cât ține rândul sintetic:
-  «Documente justificative (text)  ·  rânduri comune (doar citire)». Titlurile din designer se
-  păstrează în constructor (`_titluText` / `_titluFisiere` / `_titluLista`) și se pun la loc
-  neschimbate când se alege un beneficiar — nu se rescriu cu constante, ca să nu se desincronizeze
-  de `.Designer.vb`.
+- Ca doar-citirea să nu pară o grilă stricată, titlul primește un sufix cât ține rândul sintetic: «Documente justificative (text)  ·  rânduri comune (doar citire)». Titlurile din designer se păstrează în constructor (`_titluText` / `_titluFisiere` / `_titluLista`) și se pun la loc neschimbate când se alege un beneficiar — nu se rescriu cu constante, ca să nu se desincronizeze de `.Designer.vb`.
 
 #### Adăugarea rămâne deschisă — deci textul se cere în dialog
 
@@ -706,9 +581,7 @@ Rândurile REALE aruncate la salvare se șterg prin `_sterge_absentii`, deci ră
 
 ### Ce NU s-a atins
 
-- **Atașamentele n-au primit regula de unicitate.** Cerința vorbește despre «Documente
-  Justificative»; două capturi identice la același beneficiar rămân posibile. Fan-out-ul lor nu e
-  un duplicat — unicitatea e *per beneficiar*, iar acolo e câte o copie de fiecare.
+- **Atașamentele n-au primit regula de unicitate.** Cerința vorbește despre «Documente Justificative»; două capturi identice la același beneficiar rămân posibile. Fan-out-ul lor nu e un duplicat — unicitatea e *per beneficiar*, iar acolo e câte o copie de fiecare.
 - `EsteText` a rămas ce e (proba de validare a lui `btnSav`), ca în pasul de mai sus.
 
 ### Fișiere atinse (runda a doua)
@@ -728,15 +601,9 @@ Rândurile REALE aruncate la salvare se șterg prin `_sterge_absentii`, deci ră
 
 ### Rămâne neverificat (runda a doua)
 
-1. **⚠ Tot nimic nu s-a văzut pe ecran.** `OrdTextForm` e un formular NOU care n-a fost deschis
-   niciodată — nici la rulare, nici în designerul Visual Studio. Așezarea lui e scrisă la 96 dpi
-   după tiparul lui `OrdZiuaForm`, dar n-a fost privită.
-2. **⚠ Doar-citirea n-a fost probată la mână.** `ReadOnlyGrid` e proprietatea grilei, iar
-   `KBotDataView.Editing` o citește la începutul editării; comutarea ei în timpul vieții
-   controlului n-a fost încercată pe ecran.
-3. **⚠ Aruncarea duplicatelor la salvare ȘTERGE rânduri reale** din ordonanțările vechi, prin
-   cascada obișnuită. E ce s-a cerut, dar prima salvare a unei ordonanțări vechi cu duplicate n-a
-   fost făcută pe o bază vie.
+1. **⚠ Tot nimic nu s-a văzut pe ecran.** `OrdTextForm` e un formular NOU care n-a fost deschis niciodată — nici la rulare, nici în designerul Visual Studio. Așezarea lui e scrisă la 96 dpi după tiparul lui `OrdZiuaForm`, dar n-a fost privită.
+2. **⚠ Doar-citirea n-a fost probată la mână.** `ReadOnlyGrid` e proprietatea grilei, iar `KBotDataView.Editing` o citește la începutul editării; comutarea ei în timpul vieții controlului n-a fost încercată pe ecran.
+3. **⚠ Aruncarea duplicatelor la salvare ȘTERGE rânduri reale** din ordonanțările vechi, prin cascada obișnuită. E ce s-a cerut, dar prima salvare a unei ordonanțări vechi cu duplicate n-a fost făcută pe o bază vie.
 4. **Fără teste noi**, ca în tot restul feliei.
 
 ---
@@ -810,8 +677,7 @@ Ca să nu se citească drept număr, cifra își poartă cuvântul în text — 
 
 ### Ce NU s-a atins
 
-- **`OrdVizualizarePage`** (vederea 0033, doar-citire) își păstrează «<TOȚI BENEFICIARII>».
-  Acolo e o intrare de combo, nu un rând de grilă, iar cererea vorbea despre editor.
+- **`OrdVizualizarePage`** (vederea 0033, doar-citire) își păstrează «<TOȚI BENEFICIARII>». Acolo e o intrare de combo, nu un rând de grilă, iar cererea vorbea despre editor.
 - **Alocarea numărului la salvare.** Neschimbată, dinadins.
 - **Regula de unicitate a documentelor** (runda a doua). Neatinsă.
 
@@ -835,12 +701,9 @@ Ca să nu se citească drept număr, cifra își poartă cuvântul în text — 
 
 ### Rămâne neverificat (runda a treia)
 
-1. **⚠ Tot nimic nu s-a văzut pe ecran.** Banda strânsă la 0, eticheta cu «probabil N» și
-   grilele fără rândul sintetic n-au fost privite — nici la rulare, nici în designer.
-2. **⚠ Ruta `ord/nr-urmator` n-a fost chemată pe o bază vie.** `MAX(NrORD) + 1` e aceeași
-   formulă cu cea din salvare, dar răspunsul n-a fost văzut.
-3. **⚠ Dreptul pe `AVACONT_COMUN`.`BIC` n-a fost verificat.** Dacă numele băncilor tot lipsesc,
-   `GRANT SELECT` e pasul următor — pe server, nu în cod.
+1. **⚠ Tot nimic nu s-a văzut pe ecran.** Banda strânsă la 0, eticheta cu «probabil N» și grilele fără rândul sintetic n-au fost privite — nici la rulare, nici în designer.
+2. **⚠ Ruta `ord/nr-urmator` n-a fost chemată pe o bază vie.** `MAX(NrORD) + 1` e aceeași formulă cu cea din salvare, dar răspunsul n-a fost văzut.
+3. **⚠ Dreptul pe `AVACONT_COMUN`.`BIC` n-a fost verificat.** Dacă numele băncilor tot lipsesc, `GRANT SELECT` e pasul următor — pe server, nu în cod.
 4. **Fără teste noi**, ca în tot restul feliei.
 
 <a id="rezultate-0049-02"></a>

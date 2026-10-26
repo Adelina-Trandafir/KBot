@@ -16,9 +16,7 @@ Trei reguli au condus toată implementarea, fiindcă un PDF semnat digital trebu
 2. **SHA-256 verificat la amândouă capetele, în amândouă sensurile.** La încărcare serverul recalculează suma peste corpul primit și respinge cu 400 la nepotrivire (nu scrie nimic); la descărcare trimite suma stocată ca `ETag`, iar clientul o recalculează peste octeții primiți și refuză să scrie cache-ul dacă nu corespunde.
 3. **Concurență optimistă.** `X-Sha-Precedent` poartă suma pe care clientul a văzut-o ultima dată (`-` = «cred că nu există rând»). Dacă rândul de pe server are altă sumă → 409, nu se scrie nimic. Nicio semnătură a altcuiva nu se suprascrie tăcut.
 
-Decizii de plan reținute ca atare: se stochează **doar semnate** (cele nesemnate sunt artefacte derivate, se regenerează local), **fără istoric** (cheie unică → re-semnarea înlocuiește rândul),
-**fără coloană `Semnat`** (existența rândului ESTE semnalul), **`LONGBLOB` nu `MEDIUMBLOB`**
-(plafonul de 16 MB al lui MEDIUMBLOB cade exact pe estimarea maximă), **fără compresie de blob** în v1.
+Decizii de plan reținute ca atare: se stochează **doar semnate** (cele nesemnate sunt artefacte derivate, se regenerează local), **fără istoric** (cheie unică → re-semnarea înlocuiește rândul), **fără coloană `Semnat`** (existența rândului ESTE semnalul), **`LONGBLOB` nu `MEDIUMBLOB`** (plafonul de 16 MB al lui MEDIUMBLOB cade exact pe estimarea maximă), **fără compresie de blob** în v1.
 
 Zona nesemnată e nouă și separată: `<AppDir>\TempPdf\`, golită la fiecare pornire. Regula „temporar, șters la fiecare deschidere" trăiește **exclusiv** acolo — cache-ul semnat nu se golește niciodată în bloc, se înlocuiește doar când suma nu mai corespunde.
 
@@ -104,9 +102,7 @@ Proiectele de test atinse (rulate individual, NU pe soluție — regula casei de
 | `KBot.App.Tests` | 148 passed / **13 failed** |
 | `KBot.Domain.Tests` | 14 passed / **3 failed** |
 
-**Cele 17 căderi sunt PREEXISTENTE, nu ale acestei felii.** Verificat empiric, nu presupus: cu
-modificările puse la o parte (`git stash`), aceleași proiecte dau **exact aceleași cifre** (13 / 1 / 3). Cauza majorității e `RevizieRow.EtichetaRevizie`, comentat într-o felie anterioară (`Return $"{data}" '$"{numar} - {data}"`) fără ca testele să fie actualizate; restul sunt în `DdfXfaParser`, `XfaXmlPreview`, `MainFormNavItems` și `IstoricView`.
-**Nu s-au atins** — sunt o datorie separată, care merită propria felie.
+**Cele 17 căderi sunt PREEXISTENTE, nu ale acestei felii.** Verificat empiric, nu presupus: cu modificările puse la o parte (`git stash`), aceleași proiecte dau **exact aceleași cifre** (13 / 1 / 3). Cauza majorității e `RevizieRow.EtichetaRevizie`, comentat într-o felie anterioară (`Return $"{data}" '$"{numar} - {data}"`) fără ca testele să fie actualizate; restul sunt în `DdfXfaParser`, `XfaXmlPreview`, `MainFormNavItems` și `IstoricView`. **Nu s-au atins** — sunt o datorie separată, care merită propria felie.
 
 Teste noi: **niciunul**. Regula casei spune „fără teste automate implicit"; candidatul real (matricea sumă/concurență pe rutele PUT) cere confirmarea explicită a Adelinei înainte să fie scris.
 

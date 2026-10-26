@@ -1,6 +1,6 @@
 # SLICE-0095-02 / 0096 — Intrări și moduri de afișare Extrase
 
-Două etape din 29.09.2026 ale aceleiași suprafețe Extrase, cu probele și limitele păstrate. 0095-02 este separat de [0095 — rădăcina Istoric](SLICE-0095-istoric-tree-root.md). Aceste descrieri păstrează amplasarea comenzilor la data implementării.
+Două etape din 29.09.2026 ale aceleiași suprafețe Extrase, cu probele și limitele păstrate. 0095-02 este separat de [0095 — rădăcina Istoric](SLICE-0022-01-istoric-endpoint.md#slice-0095). Aceste descrieri păstrează amplasarea comenzilor la data implementării.
 
 - [0095-02 — subsol, fereastră și meniu](#slice-0095-02)
 - [0096 — cele două moduri de afișare](#slice-0096)
@@ -9,7 +9,7 @@ Două etape din 29.09.2026 ale aceleiași suprafețe Extrase, cu probele și lim
 
 ## SLICE-0095-02 - Extrase back on the tree footer, «Extrase de cont» in the menu, btnMeniu follows navViews
 
-Operator request, 29.09.2026 ("this is slice 95"). Slice 0095 already held the Istoric root node (`SLICE-0095-istoric-tree-root.md`), so this pass is recorded as 0095-02.
+Operator request, 29.09.2026 ("this is slice 95"). Slice 0095 already held the Istoric root node ([0095](SLICE-0022-01-istoric-endpoint.md#slice-0095)), so this pass is recorded as 0095-02.
 
 1. The left icon of the main tree's footer downloads the SNM bank statements directly again (as in slice 0057), instead of opening the «Extrase de cont» window (0080-03).
 2. The «Extrase de cont» window is opened from «Meniu → Extrase».

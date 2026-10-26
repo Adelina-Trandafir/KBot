@@ -50,14 +50,8 @@ Un cod nu poate trăi mai mult decât înregistrarea care îl poartă, iar `expi
 
 #### Cele două verificări în bază
 
-- `/anaf` refuză un CF care are deja bază (**D11**), căutat în `CAI` **și** în
-  `AVACONT_COMUN.Unitati` — F0 a arătat că listele nu coincid, iar oricare dintre ele e motiv
-  de refuz. Codurile sunt ținute și goale și cu prefix `RO`, deci se întreabă **ambele
-  grafii** — așa comparația rămâne pe o coloană indexată, fără `REPLACE()` în jurul ei.
-- `/cod` refuză o adresă care e deja cont MariaDB **sau** apare deja în
-  `Unitati_Utilizatori`, cu un mesaj care nu spune unui străin care dintre cele două a fost.
-  Contul MariaDB contează fiindcă pasul 7 al provizionării ar pica la `CREATE USER` **după**
-  ce baza e deja construită.
+- `/anaf` refuză un CF care are deja bază (**D11**), căutat în `CAI` **și** în `AVACONT_COMUN.Unitati` — F0 a arătat că listele nu coincid, iar oricare dintre ele e motiv de refuz. Codurile sunt ținute și goale și cu prefix `RO`, deci se întreabă **ambele grafii** — așa comparația rămâne pe o coloană indexată, fără `REPLACE()` în jurul ei.
+- `/cod` refuză o adresă care e deja cont MariaDB **sau** apare deja în `Unitati_Utilizatori`, cu un mesaj care nu spune unui străin care dintre cele două a fost. Contul MariaDB contează fiindcă pasul 7 al provizionării ar pica la `CREATE USER` **după** ce baza e deja construită.
 
 **Verificat pe mașină (22.09.2026):** contul de serviciu din `DB_CONFIG_NEW` chiar poate citi `mysql.user` pe serverul K-BOT (`SELECT COUNT(*)` ▸ 10 conturi). Era singurul lucru care ar fi putut obliga la altă formă a verificării.
 
@@ -96,34 +90,18 @@ ANAF_TIMEOUT = 15
 ### Rezultatele testelor
 
 - `ast.parse` pe toate fișierele atinse: **curat** (6/6).
-- Regula 0 verificată prin căutare: în `.py` diacriticele apar **numai** în mesajele
-  românești pentru solicitant; niciun identificator, comentariu sau cheie JSON nu le poartă.
-- **Nu s-a scris niciun fișier de test.** Decizia operatorului, 22.09.2026: «no pytest files,
-  i don't use them anyway». Planul §8 cerea pytest la această trecere; §8 a fost corectat ca
-  să nu mai mintă. Consecința, spusă apăsat: **acoperirea acestei treceri e zero** — nimic nu
-  demonstrează automat limitele codului, numărătoarea încercărilor sau desfacerea ferestrei.
-- **Nicio rută nu a fost pornită.** Nimic de aici nu a atins un Flask viu, un MariaDB sau
-  ANAF. Singurul lucru atins de-adevăratelea pe 22.09.2026 a fost apelul ANAF făcut de mână,
-  de operator, de pe VPS (`curl`), al cărui răspuns e transcris în `anaf.py`.
+- Regula 0 verificată prin căutare: în `.py` diacriticele apar **numai** în mesajele românești pentru solicitant; niciun identificator, comentariu sau cheie JSON nu le poartă.
+- **Nu s-a scris niciun fișier de test.** Decizia operatorului, 22.09.2026: «no pytest files, i don't use them anyway». Planul §8 cerea pytest la această trecere; §8 a fost corectat ca să nu mai mintă. Consecința, spusă apăsat: **acoperirea acestei treceri e zero** — nimic nu demonstrează automat limitele codului, numărătoarea încercărilor sau desfacerea ferestrei.
+- **Nicio rută nu a fost pornită.** Nimic de aici nu a atins un Flask viu, un MariaDB sau ANAF. Singurul lucru atins de-adevăratelea pe 22.09.2026 a fost apelul ANAF făcut de mână, de operator, de pe VPS (`curl`), al cărui răspuns e transcris în `anaf.py`.
 
 ### Neverificat / amânat
 
-- **Forma căii URL.** Access-ul cheamă `/PlatitorTvaRest/api/v6/ws/tva`; aici e
-  `/api/PlatitorTvaRest/v9/tva`. Operatorul a ales v9 și apelul lui de probă a răspuns, dar
-  **nu s-a notat pe care dintre cele două căi l-a făcut**. Dacă e cealaltă, se schimbă
-  `ANAF_TVA_URL` pe VPS, fără cod.
-- **Limita de apeluri a ANAF pe v9** rămâne necunoscută (planul o marca deja UNVERIFIED). Un
-  apel per înregistrare e mult sub orice cifră publicată; numărul în sine n-a fost confirmat.
-- **`AnafIncomplete`** (ANAF găsește codul dar nu dă denumire) e o ramură **teoretică** — nu
-  s-a văzut niciodată. Există fiindcă `Denumire` e `NOT NULL` mai departe în flux.
-- **Limitatorul e în proces, la un singur worker** (vezi avertismentul din `ratelimit.py`).
-  Pe o pagină publică asta contează mai mult decât pe login: o repornire de gunicorn redă
-  atacatorului cele 5/30 încercări. Nu e nou și nu blochează nimic, dar acum e expus spre
-  internet.
-- **Nota de înregistrare nu e legată de IP.** Cine fură token-ul preia înregistrarea. Are 30
-  de minute de viață și nu duce la nimic fără cutia poștală, dar merită spus.
-- Rămâne din 0075-00: de ce cele trei coloane virtuale de pe `AVACONT_SURSA.Clasificatii` au
-  trebuit șterse de mână, și dacă cele șapte baze de unitate au trecut curat.
+- **Forma căii URL.** Access-ul cheamă `/PlatitorTvaRest/api/v6/ws/tva`; aici e `/api/PlatitorTvaRest/v9/tva`. Operatorul a ales v9 și apelul lui de probă a răspuns, dar **nu s-a notat pe care dintre cele două căi l-a făcut**. Dacă e cealaltă, se schimbă `ANAF_TVA_URL` pe VPS, fără cod.
+- **Limita de apeluri a ANAF pe v9** rămâne necunoscută (planul o marca deja UNVERIFIED). Un apel per înregistrare e mult sub orice cifră publicată; numărul în sine n-a fost confirmat.
+- **`AnafIncomplete`** (ANAF găsește codul dar nu dă denumire) e o ramură **teoretică** — nu s-a văzut niciodată. Există fiindcă `Denumire` e `NOT NULL` mai departe în flux.
+- **Limitatorul e în proces, la un singur worker** (vezi avertismentul din `ratelimit.py`). Pe o pagină publică asta contează mai mult decât pe login: o repornire de gunicorn redă atacatorului cele 5/30 încercări. Nu e nou și nu blochează nimic, dar acum e expus spre internet.
+- **Nota de înregistrare nu e legată de IP.** Cine fură token-ul preia înregistrarea. Are 30 de minute de viață și nu duce la nimic fără cutia poștală, dar merită spus.
+- Rămâne din 0075-00: de ce cele trei coloane virtuale de pe `AVACONT_SURSA.Clasificatii` au trebuit șterse de mână, și dacă cele șapte baze de unitate au trecut curat.
 
 ---
 
@@ -207,10 +185,7 @@ Operatorul a spus (22.09.2026) că DDL-urile din depozit sunt din schema veche �
 ### Rezultatele testelor
 
 - `ast.parse` pe toate fișierele Python atinse: **curat** (5/5).
-- **Regula 0 verificată prin AST**, nu prin căutare: s-au adunat intervalele de linii ale
-  tuturor literalilor de tip șir din cele șapte fișiere ale feliei și s-a căutat orice
-  diacritică **în afara** lor ▸ **zero**. `nume.py` și `nomenclatoare.py` n-au nicio
-  diacritică deloc; cele 15 linii din `cerere.py` sunt toate mesaje pentru solicitant.
+- **Regula 0 verificată prin AST**, nu prin căutare: s-au adunat intervalele de linii ale tuturor literalilor de tip șir din cele șapte fișiere ale feliei și s-a căutat orice diacritică **în afara** lor ▸ **zero**. `nume.py` și `nomenclatoare.py` n-au nicio diacritică deloc; cele 15 linii din `cerere.py` sunt toate mesaje pentru solicitant.
 - Algoritmul numelui verificat prin apel direct (valorile de mai sus).
 - **Fără fișiere de test** (decizia operatorului). Acoperire automată: **zero**.
 - **Nicio rută n-a fost pornită.** Nimic n-a atins un Flask viu, un MariaDB sau ANAF.
@@ -219,36 +194,18 @@ Operatorul a spus (22.09.2026) că DDL-urile din depozit sunt din schema veche �
 
 Operatorul a pus în `MariaDB_Schema/` cele trei scheme luate de pe serverul K-BOT (19:21, MariaDB 10.11.14). Folderul e **în `.gitignore`**, deci trăiește numai pe discul lui. Ce a schimbat pentru trecerea asta:
 
-- **`DefaSursaSector` e `(SursaSector PK, Sursa, Sectorul, Denumire)`** — necunoscuta de mai jos
-  e închisă, `read_sursasector` găsește `Denumire` din prima. Căutarea de captiune rămâne în
-  cod: nu costă nimic și nu se mai uită de ce e acolo.
-- **`FX_Inregistrari` e pe server** — scriptul a fost rulat. `AUTO_INCREMENT = 1`, deci nicio
-  cerere încă. Forma e cea scrisă, cu `CHECK (json_valid(Payload))` cu tot.
-- **`Clasificatii` chiar nu are cheie străină pe `ClsfE`** — patru spre `AVACONT_COMUN`
-  (`DefaArticol`, `DefaClsfF`, `DefaSS`, `DefaTitlu`) plus `Clasificatii__Unitati`, locală.
-  Deci cele 15 coduri neinserabile mor pe `Articol`/`Titlu`, exact unde `nomenclatoare.py` face
-  join. Filtrul e îndreptat unde trebuie.
-- **`DefaClsfE` ARE cheie primară pe `ClsfE`; `DefaClsfF` nu are niciuna** — `GROUP BY`-ul era
-  necesar pentru F și e doar nevătămător pentru E.
-- ⚠ **`CAI` nu are niciun index pe `IdUnitate`.** `ix_CAI_IdUnitate`, pe care trecerea asta l-a
-  adăugat în `sql/avacont_comun_login.sql`, **nu există pe server**. Restul corecturii ține:
-  `IdCai` e cheia AUTO_INCREMENT (la 96). Lipsa oricărui index face `GET_LOCK`-ul din §5.6 și
-  mai necesar. Corectat în plan §2a; fișierul din `sql/` rămâne referință de înțelesuri.
-- ⚠ **Pentru 0075-03:** `AVACONT_SURSA.Clasificatii` încă poartă `Sector_w`, `Sursa_w`, `SS_w`
-  de la 0075-00; `000_DEMO` nu le are. Cum §5.6 face baza nouă clonând șablonul, orice unitate
-  creată de acum ar moșteni trei coloane moarte. De șters pe șablon.
+- **`DefaSursaSector` e `(SursaSector PK, Sursa, Sectorul, Denumire)`** — necunoscuta de mai jos e închisă, `read_sursasector` găsește `Denumire` din prima. Căutarea de captiune rămâne în cod: nu costă nimic și nu se mai uită de ce e acolo.
+- **`FX_Inregistrari` e pe server** — scriptul a fost rulat. `AUTO_INCREMENT = 1`, deci nicio cerere încă. Forma e cea scrisă, cu `CHECK (json_valid(Payload))` cu tot.
+- **`Clasificatii` chiar nu are cheie străină pe `ClsfE`** — patru spre `AVACONT_COMUN` (`DefaArticol`, `DefaClsfF`, `DefaSS`, `DefaTitlu`) plus `Clasificatii__Unitati`, locală. Deci cele 15 coduri neinserabile mor pe `Articol`/`Titlu`, exact unde `nomenclatoare.py` face join. Filtrul e îndreptat unde trebuie.
+- **`DefaClsfE` ARE cheie primară pe `ClsfE`; `DefaClsfF` nu are niciuna** — `GROUP BY`-ul era necesar pentru F și e doar nevătămător pentru E.
+- ⚠ **`CAI` nu are niciun index pe `IdUnitate`.** `ix_CAI_IdUnitate`, pe care trecerea asta l-a adăugat în `sql/avacont_comun_login.sql`, **nu există pe server**. Restul corecturii ține: `IdCai` e cheia AUTO_INCREMENT (la 96). Lipsa oricărui index face `GET_LOCK`-ul din §5.6 și mai necesar. Corectat în plan §2a; fișierul din `sql/` rămâne referință de înțelesuri.
+- ⚠ **Pentru 0075-03:** `AVACONT_SURSA.Clasificatii` încă poartă `Sector_w`, `Sursa_w`, `SS_w` de la 0075-00; `000_DEMO` nu le are. Cum §5.6 face baza nouă clonând șablonul, orice unitate creată de acum ar moșteni trei coloane moarte. De șters pe șablon.
 
 ### Neverificat / amânat
-- **Numărătorile din §2a nu au fost re-numărate** (52/531 la F, 25/317/686 la E, cele 15
-  coduri E neinserabile). Codul nu depinde de ele — filtrul e join-ul, nu o listă — dar
-  numerele din comentarii vin din plan, nu dintr-o citire proprie.
-- **`Payload` se scrie, nu se citește încă.** Cine îl va citi e pagina de aprobare (0075-05)
-  și jobul de provizionare (0075-03); forma `{"ss","f","e"}` n-a fost exersată de niciun
-  cititor.
-- **`OPERATOR_EMAIL` nu e încă în `config.py`** pe VPS, deci până e pus, `operator_anuntat`
-  va fi `false` la fiecare cerere. Nu blochează nimic — cererea se scrie oricum.
-- Rămâne din 0075-00: de ce cele trei coloane virtuale de pe `AVACONT_SURSA.Clasificatii` au
-  trebuit șterse de mână, și dacă cele șapte baze de unitate au trecut curat.
+- **Numărătorile din §2a nu au fost re-numărate** (52/531 la F, 25/317/686 la E, cele 15 coduri E neinserabile). Codul nu depinde de ele — filtrul e join-ul, nu o listă — dar numerele din comentarii vin din plan, nu dintr-o citire proprie.
+- **`Payload` se scrie, nu se citește încă.** Cine îl va citi e pagina de aprobare (0075-05) și jobul de provizionare (0075-03); forma `{"ss","f","e"}` n-a fost exersată de niciun cititor.
+- **`OPERATOR_EMAIL` nu e încă în `config.py`** pe VPS, deci până e pus, `operator_anuntat` va fi `false` la fiecare cerere. Nu blochează nimic — cererea se scrie oricum.
+- Rămâne din 0075-00: de ce cele trei coloane virtuale de pe `AVACONT_SURSA.Clasificatii` au trebuit șterse de mână, și dacă cele șapte baze de unitate au trecut curat.
 
 ---
 
@@ -278,26 +235,14 @@ Orice eșec: anulările rulează **de la ultima la prima**; una care pică **nu*
 
 Alegeri care nu stau scrise în plan:
 
-- **E-mailul de la pasul 8 nu desface nimic.** Unitatea e gata și corectă; un server de e-mail
-  căzut nu e motiv s-o dărâmi. Răspunsul spune `link_trimis: false`, iar linia de comandă
-  tipărește linkul ca să poată fi dat de mână.
-- **O singură aprobare odată pe tot serverul** — `GET_LOCK('kbot_provizionare')` pe o conexiune
-  ținută toată rularea. Merge și între linia de comandă și pagina din 0075-05, și se eliberează
-  singur dacă procesul moare. Fără stare nouă (`InLucru`) care ar putea rămâne agățată.
-- **După ce ia lacătul `cai_idunitate`, conexiunea începe o tranzacție nouă** înainte de
-  `MAX(IdUnitate)`: un instantaneu mai vechi ar fi citit un maxim pe care altă rulare îl
-  depășise deja.
-- **Refuzul verificărilor marchează și el `Esuata`** (după ce cererea s-a încărcat), ca pagina
-  din 0075-05 să arate motivul. Excepție: o cerere care nu era aprobabilă (deja `Aprobata`,
-  `Respinsa`) nu e atinsă.
+- **E-mailul de la pasul 8 nu desface nimic.** Unitatea e gata și corectă; un server de e-mail căzut nu e motiv s-o dărâmi. Răspunsul spune `link_trimis: false`, iar linia de comandă tipărește linkul ca să poată fi dat de mână.
+- **O singură aprobare odată pe tot serverul** — `GET_LOCK('kbot_provizionare')` pe o conexiune ținută toată rularea. Merge și între linia de comandă și pagina din 0075-05, și se eliberează singur dacă procesul moare. Fără stare nouă (`InLucru`) care ar putea rămâne agățată.
+- **După ce ia lacătul `cai_idunitate`, conexiunea începe o tranzacție nouă** înainte de `MAX(IdUnitate)`: un instantaneu mai vechi ar fi citit un maxim pe care altă rulare îl depășise deja.
+- **Refuzul verificărilor marchează și el `Esuata`** (după ce cererea s-a încărcat), ca pagina din 0075-05 să arate motivul. Excepție: o cerere care nu era aprobabilă (deja `Aprobata`, `Respinsa`) nu e atinsă.
 - **Numai numele de forma `1nn_SSSS` se pot șterge** — ultima pază din `_drop_database`.
-- **E-mailul devine nume de cont**, deci forma lui e restrânsă la `[A-Za-z0-9._%+-]@…`. Pagina
-  acceptă mai mult (de ex. un apostrof); o astfel de cerere e refuzată la aprobare, cu motiv.
-- **Declanșatorii, procedurile și evenimentele nu se copiază.** Șablonul n-are niciunul (dump-ul
-  din 22.09.2026); dacă apare unul, jobul refuză în loc să facă o bază căreia îi lipsește ceva.
-- **View-urile pierd `DEFINER`** (crearea unui view pe numele altui cont cere `SUPER`) și devin
-  ale contului de provizionare, cu `SQL SECURITY DEFINER` neschimbat. Șablonul n-are azi niciun
-  view, deci deocamdată nu contează.
+- **E-mailul devine nume de cont**, deci forma lui e restrânsă la `[A-Za-z0-9._%+-]@…`. Pagina acceptă mai mult (de ex. un apostrof); o astfel de cerere e refuzată la aprobare, cu motiv.
+- **Declanșatorii, procedurile și evenimentele nu se copiază.** Șablonul n-are niciunul (dump-ul din 22.09.2026); dacă apare unul, jobul refuză în loc să facă o bază căreia îi lipsește ceva.
+- **View-urile pierd `DEFINER`** (crearea unui view pe numele altui cont cere `SUPER`) și devin ale contului de provizionare, cu `SQL SECURITY DEFINER` neschimbat. Șablonul n-are azi niciun view, deci deocamdată nu contează.
 
 #### Rândurile — `routes/inregistrare/randuri.py`
 
@@ -354,55 +299,25 @@ A doua încercare (tot 23.09.2026) a picat la pasul 7 cu `1644 proc_Provizionare
 
 **Fără fișiere de test** (decizia operatorului). Ce s-a verificat, fără server:
 
-- `ast.parse` pe cele șapte fișiere Python atinse; toate modulele noi **se importă** (`routes.
-  inregistrare.inregistrare`, `provizionare`, `randuri`, `scripts.aproba_cerere`).
-- **Regula 0**, cu `tokenize`: diacriticele apar numai în literali de tip șir (mesaje pentru
-  operator și solicitant), niciodată în nume sau comentarii.
-- **Constructorul de rânduri, apel direct** cu nomenclatoare inventate: 4 surse-sector × 2 F × 2
-  E ▸ 16 rânduri; `01A` ▸ `65.01`, `02E` ▸ `65.10`/`02`/`E`, `03A` ▸ `65.03`, `02C` ▸ `65.02`/`C`;
-  `650402`/`200104` ▸ `04.02`, `20.01`, `04` (forma din §2a); denumirea de 300 de caractere ▸
-  255. Cu coduri rele ▸ un singur refuz care le numește pe toate cinci (sursă, F, E, articol,
-  titlu). `CodProgram`: `01A` ▸ `0000002510`, `02E` ▸ `0000000000`, suprascrierea `03A` ia
-  loc; o suprascriere pentru `02E` absentă din cerere ▸ refuzată.
-- Expresiile regulate: `AUTO_INCREMENT=17` scos, `DEFINER=`…`@`…`` scos, `111_VTRS` acceptat
-  de paza de ștergere, `000_DEMO` refuzat.
-- **Pagina `/parola` în browser**, pe un ciot care servește fișierele adevărate cu aceleași
-  antete CSP și mimează cele două rute: linkul valid ▸ formularul cu unitatea și adresa mascată,
-  iar `#…` dispare din bara de adrese; parolă scurtă ▸ mesaj; parole diferite ▸ mesaj; bună ▸
-  ecranul final; același link a doua oară ▸ «Linkul nu mai este valabil»; token greșit ▸ la fel;
-  fără token ▸ «Linkul este incomplet». În jurnalul ciotului token-ul apare **numai** în corpul
-  POST-urilor, niciodată într-un `GET`. Pe telefon (375 px) cardul stă la 16 px de margini,
-  fără derulare orizontală.
+- `ast.parse` pe cele șapte fișiere Python atinse; toate modulele noi **se importă** (`routes. inregistrare.inregistrare`, `provizionare`, `randuri`, `scripts.aproba_cerere`).
+- **Regula 0**, cu `tokenize`: diacriticele apar numai în literali de tip șir (mesaje pentru operator și solicitant), niciodată în nume sau comentarii.
+- **Constructorul de rânduri, apel direct** cu nomenclatoare inventate: 4 surse-sector × 2 F × 2 E ▸ 16 rânduri; `01A` ▸ `65.01`, `02E` ▸ `65.10`/`02`/`E`, `03A` ▸ `65.03`, `02C` ▸ `65.02`/`C`; `650402`/`200104` ▸ `04.02`, `20.01`, `04` (forma din §2a); denumirea de 300 de caractere ▸
+  255. Cu coduri rele ▸ un singur refuz care le numește pe toate cinci (sursă, F, E, articol, titlu). `CodProgram`: `01A` ▸ `0000002510`, `02E` ▸ `0000000000`, suprascrierea `03A` ia loc; o suprascriere pentru `02E` absentă din cerere ▸ refuzată.
+- Expresiile regulate: `AUTO_INCREMENT=17` scos, `DEFINER=`…`@`…`` scos, `111_VTRS` acceptat de paza de ștergere, `000_DEMO` refuzat.
+- **Pagina `/parola` în browser**, pe un ciot care servește fișierele adevărate cu aceleași antete CSP și mimează cele două rute: linkul valid ▸ formularul cu unitatea și adresa mascată, iar `#…` dispare din bara de adrese; parolă scurtă ▸ mesaj; parole diferite ▸ mesaj; bună ▸ ecranul final; același link a doua oară ▸ «Linkul nu mai este valabil»; token greșit ▸ la fel; fără token ▸ «Linkul este incomplet». În jurnalul ciotului token-ul apare **numai** în corpul POST-urilor, niciodată într-un `GET`. Pe telefon (375 px) cardul stă la 16 px de margini, fără derulare orizontală.
 
 ### Neverificat / amânat
 
-- ⚠ **Jobul n-a rulat niciodată.** Niciun pas și nicio anulare n-au atins un MariaDB. Prima lor
-  rulare e pe serverul adevărat — de aceea `--plan` întâi, pe o cerere de probă.
-- **Contul există pe server** (operator, 23.09.2026): `kbot_provizionare@localhost`, iar
-  `SHOW GRANTS` arată exact cele 14 drepturi din `sql/0075_03_provizionare.sql`, nimic în plus
-  sau în minus. Socket-ul este `/run/mysqld/mysqld.sock`, confirmat.
-- **Primul `--plan` pe server** (operator, 23.09.2026, cererea 1): contul se conectează prin
-  socket și citește tot ce-i trebuie; verificările trec (deci și coloanele `*_w` au fost scoase
-  de pe șablon); `111_TRND`, `IdUnitate` 201–203 (MAX din `CAI` = 200), 44 de tabele / 0 view-uri,
-  3 surse-sector × 2 F × 30 E = 180 de rânduri, `CodProgram` după D25. **Pașii care scriu n-au
-  rulat încă.** Pe VPS scriptul merge numai cu `/root/AVACONT/.venv/bin/python3`.
-- **Drepturile contului de provizionare au fost acordate, dar nu folosite încă.** Cele mai
-  nesigure: (1) ~~infirmat pe server, vezi «Prima aprobare»~~ că `GRANT … WITH GRANT OPTION` pe tiparul `1__\_____` îi dă voie să acorde
-  drepturi pe o bază creată după grant; (2) că `information_schema.TRIGGERS/ROUTINES/EVENTS` îi
-  arată ce e pe șablon fără drepturi pe acele obiecte — dacă nu, verificarea trece pe lângă ele.
-  Dacă (1) pică, pasul 7 pică, iar rularea se desface: e sigur, doar supărător.
-- **Tiparul `1__\_____` prinde și vechiul `101_CCDP`.** Jobul nu șterge decât ce a creat în
-  aceeași rulare, dar contul ar avea drepturi pe el.
-- **`CAI.CF`** se scrie ca în cerere (numai cifre). Rândurile vechi au ambele forme; verificarea
-  D11 le caută pe amândouă, deci nu contează pentru duplicare.
-- **`Unitati.Detalii`** din baza nouă = denumirea unității (ce afișează `AlegereUnitateForm`).
-  Dedus din cod, nu dintr-o regulă scrisă.
-- **Refuzul («Respinge») și pagina de aprobare** sunt 0075-05. Jurnalul (`Jurnal`) nu primește
-  încă nimic de la provizionare.
-- **Conturile legacy** `NNN_XXXX_Contabil` nu se mai creează (D26); nimic nu se scrie pe serverul
-  vechi (D8).
-- `.claude/launch.json` pornește ciotul din scratchpad-ul **acestei** sesiuni; calea moare odată
-  cu ea (la fel ca intrarea lăsată de 0075-04).
+- ⚠ **Jobul n-a rulat niciodată.** Niciun pas și nicio anulare n-au atins un MariaDB. Prima lor rulare e pe serverul adevărat — de aceea `--plan` întâi, pe o cerere de probă.
+- **Contul există pe server** (operator, 23.09.2026): `kbot_provizionare@localhost`, iar `SHOW GRANTS` arată exact cele 14 drepturi din `sql/0075_03_provizionare.sql`, nimic în plus sau în minus. Socket-ul este `/run/mysqld/mysqld.sock`, confirmat.
+- **Primul `--plan` pe server** (operator, 23.09.2026, cererea 1): contul se conectează prin socket și citește tot ce-i trebuie; verificările trec (deci și coloanele `*_w` au fost scoase de pe șablon); `111_TRND`, `IdUnitate` 201–203 (MAX din `CAI` = 200), 44 de tabele / 0 view-uri, 3 surse-sector × 2 F × 30 E = 180 de rânduri, `CodProgram` după D25. **Pașii care scriu n-au rulat încă.** Pe VPS scriptul merge numai cu `/root/AVACONT/.venv/bin/python3`.
+- **Drepturile contului de provizionare au fost acordate, dar nu folosite încă.** Cele mai nesigure: (1) ~~infirmat pe server, vezi «Prima aprobare»~~ că `GRANT … WITH GRANT OPTION` pe tiparul `1__\_____` îi dă voie să acorde drepturi pe o bază creată după grant; (2) că `information_schema.TRIGGERS/ROUTINES/EVENTS` îi arată ce e pe șablon fără drepturi pe acele obiecte — dacă nu, verificarea trece pe lângă ele. Dacă (1) pică, pasul 7 pică, iar rularea se desface: e sigur, doar supărător.
+- **Tiparul `1__\_____` prinde și vechiul `101_CCDP`.** Jobul nu șterge decât ce a creat în aceeași rulare, dar contul ar avea drepturi pe el.
+- **`CAI.CF`** se scrie ca în cerere (numai cifre). Rândurile vechi au ambele forme; verificarea D11 le caută pe amândouă, deci nu contează pentru duplicare.
+- **`Unitati.Detalii`** din baza nouă = denumirea unității (ce afișează `AlegereUnitateForm`). Dedus din cod, nu dintr-o regulă scrisă.
+- **Refuzul («Respinge») și pagina de aprobare** sunt 0075-05. Jurnalul (`Jurnal`) nu primește încă nimic de la provizionare.
+- **Conturile legacy** `NNN_XXXX_Contabil` nu se mai creează (D26); nimic nu se scrie pe serverul vechi (D8).
+- `.claude/launch.json` pornește ciotul din scratchpad-ul **acestei** sesiuni; calea moare odată cu ea (la fel ca intrarea lăsată de 0075-04).
 
 ---
 
@@ -424,12 +339,8 @@ Toate cele 27 de importuri relative au fost urmărite fișier cu fișier: niciun
 
 **Două divergențe față de original**, ambele în arbore și ambele comentate la fața locului:
 
-- `escapeHtml` scapă și `"` și `'`. Textul ajunge și în atribute (`data-text="…"`,
-  `data-path='…'`), iar captiunile vin din nomenclator: o ghilimea în captiune ar fi rupt
-  atributul. Pagina e publică, deci asta nu e cosmetică.
-- `getComputedTreeHeight` măsoară orice rând randat când nu găsește o frunză. La prima
-  deschidere toate rădăcinile sunt strânse, nu există frunză pe ecran, iar rezerva de 24px
-  tăia lista.
+- `escapeHtml` scapă și `"` și `'`. Textul ajunge și în atribute (`data-text="…"`, `data-path='…'`), iar captiunile vin din nomenclator: o ghilimea în captiune ar fi rupt atributul. Pagina e publică, deci asta nu e cosmetică.
+- `getComputedTreeHeight` măsoară orice rând randat când nu găsește o frunză. La prima deschidere toate rădăcinile sunt strânse, nu există frunză pe ecran, iar rezerva de 24px tăia lista.
 
 #### Modul «bifabil» al arborelui (D21)
 
@@ -457,41 +368,18 @@ Vrăjitorul are deci șase ecrane, nu șapte: **1** Date Unitate · **2** E-mail
 
 #### Restul
 
-- **Token-ul** merge în antetul `X-Registration-Token`, pus de `api.js` la toate cele șapte
-  rute. Orice refuz `TOKEN_*` reia de la ecranul 1 cu mesajul serverului.
-- **Ceasul** de 30 de minute stă în antet, devine chihlimbar la ultimele 5 minute, iar la zero
-  reia înregistrarea. Nu e o măsură de siguranță — expirarea adevărată e a serverului.
-- **Refuzurile lui `/cerere`** se întorc la ecranul care le poate repara (`STEP_FOR_REASON`);
-  `*_NECUNOSCUT` reîncarcă și lista despre care e vorba.
-- **CSP** pe pagină: `script-src 'self'`, `style-src 'self' 'unsafe-inline'` (arborele scrie
-  atribute `style` în linie), `frame-ancestors 'none'`, plus `nosniff` și `Referrer-Policy:
-  same-origin`.
-- Mesajele pentru solicitant sunt singurele locuri cu diacritice; codul și comentariile sunt
-  în engleză, fără diacritice (Regula 0).
+- **Token-ul** merge în antetul `X-Registration-Token`, pus de `api.js` la toate cele șapte rute. Orice refuz `TOKEN_*` reia de la ecranul 1 cu mesajul serverului.
+- **Ceasul** de 30 de minute stă în antet, devine chihlimbar la ultimele 5 minute, iar la zero reia înregistrarea. Nu e o măsură de siguranță — expirarea adevărată e a serverului.
+- **Refuzurile lui `/cerere`** se întorc la ecranul care le poate repara (`STEP_FOR_REASON`); `*_NECUNOSCUT` reîncarcă și lista despre care e vorba.
+- **CSP** pe pagină: `script-src 'self'`, `style-src 'self' 'unsafe-inline'` (arborele scrie atribute `style` în linie), `frame-ancestors 'none'`, plus `nosniff` și `Referrer-Policy: same-origin`.
+- Mesajele pentru solicitant sunt singurele locuri cu diacritice; codul și comentariile sunt în engleză, fără diacritice (Regula 0).
 
 #### A doua rundă de schimbări (operator, 22.09.2026, după încercarea pe server)
 
-- **Denumirea (D27)**: numai litere (și cu diacritice), cifre, `_`, spații și virgule;
-  spațiile repetate devin unul. Pagina **scoate** restul pe măsură ce se tastează sau se
-  lipește (cursorul rămâne pe loc) și tot așa curăță numele venit de la ANAF înainte să-l
-  arate — `ŞCOALA  GIMNAZIALĂ NR. 5 "ION CREANGĂ" - PLOIEŞTI` ▸ `ŞCOALA GIMNAZIALĂ NR 5 ION
-  CREANGĂ PLOIEŞTI`. Serverul (`nume.py`, folosit de `/nume` și `/cerere`) doar **refuză**, cu
-  `DENUMIRE_CARACTERE_INTERZISE`. În JS nu merge `\w`: acolo e numai ASCII și ar fi scos toate
-  diacriticele, deci pagina folosește `\p{L}\p{N}`, iar Python-ul `\w` (care e Unicode).
-- **Surse (D29)**: perechea din cele două combo-uri se pune cu «Adaugă» într-o listă, de unde
-  se poate scoate; oricâte perechi. O pereche fără rând în `DefaSursaSector` e refuzată la
-  «Adaugă»; o pereche aleasă și neadăugată se adaugă singură la «Continuă» (și e refuzată tot
-  acolo dacă n-are rând). Aceeași pereche de două ori ▸ «este deja în listă».
-- **Arborii (D28)**: trei niveluri de câte două cifre, la F și la E, dar cu reguli de bifare
-  diferite. **F**: căsuța stă numai pe ultimul nivel; un nod cu copii doar se deschide.
-  **E**: titlul (nivelul 1) n-are căsuță și doar se deschide; articolul cu copii (nivelul 2)
-  are căsuță tri-stare care bifează toată ramura. Opțiunea nouă a arborelui: `branchChecks`
-  (fals la F, adevărat la E); nivelul de sus n-are niciodată căsuță. Se trimit tot frunzele.
-- **ClsfE era gol pe server.** Cauza: join-ul pe `DefaArticol` din `nomenclatoare.py` aruncă
-  toate rândurile `xx0000` (`xx.00` nu e articol), iar vechiul `tree-builder.js` arunca orice
-  frunză fără rădăcină ▸ nimic. Acum `/clasificatii` întoarce și `grupuri` — numele titlurilor
-  din `DefaTitlu` și ale articolelor din `DefaArticol` —, iar arborele nu mai depinde de rândul
-  `xx0000`. Cauza e dedusă din cod și din date, **nu văzută pe server**.
+- **Denumirea (D27)**: numai litere (și cu diacritice), cifre, `_`, spații și virgule; spațiile repetate devin unul. Pagina **scoate** restul pe măsură ce se tastează sau se lipește (cursorul rămâne pe loc) și tot așa curăță numele venit de la ANAF înainte să-l arate — `ŞCOALA  GIMNAZIALĂ NR. 5 "ION CREANGĂ" - PLOIEŞTI` ▸ `ŞCOALA GIMNAZIALĂ NR 5 ION CREANGĂ PLOIEŞTI`. Serverul (`nume.py`, folosit de `/nume` și `/cerere`) doar **refuză**, cu `DENUMIRE_CARACTERE_INTERZISE`. În JS nu merge `\w`: acolo e numai ASCII și ar fi scos toate diacriticele, deci pagina folosește `\p{L}\p{N}`, iar Python-ul `\w` (care e Unicode).
+- **Surse (D29)**: perechea din cele două combo-uri se pune cu «Adaugă» într-o listă, de unde se poate scoate; oricâte perechi. O pereche fără rând în `DefaSursaSector` e refuzată la «Adaugă»; o pereche aleasă și neadăugată se adaugă singură la «Continuă» (și e refuzată tot acolo dacă n-are rând). Aceeași pereche de două ori ▸ «este deja în listă».
+- **Arborii (D28)**: trei niveluri de câte două cifre, la F și la E, dar cu reguli de bifare diferite. **F**: căsuța stă numai pe ultimul nivel; un nod cu copii doar se deschide. **E**: titlul (nivelul 1) n-are căsuță și doar se deschide; articolul cu copii (nivelul 2) are căsuță tri-stare care bifează toată ramura. Opțiunea nouă a arborelui: `branchChecks` (fals la F, adevărat la E); nivelul de sus n-are niciodată căsuță. Se trimit tot frunzele.
+- **ClsfE era gol pe server.** Cauza: join-ul pe `DefaArticol` din `nomenclatoare.py` aruncă toate rândurile `xx0000` (`xx.00` nu e articol), iar vechiul `tree-builder.js` arunca orice frunză fără rădăcină ▸ nimic. Acum `/clasificatii` întoarce și `grupuri` — numele titlurilor din `DefaTitlu` și ale articolelor din `DefaArticol` —, iar arborele nu mai depinde de rândul `xx0000`. Cauza e dedusă din cod și din date, **nu văzută pe server**.
 
 ### Fișiere atinse
 
@@ -518,64 +406,29 @@ Vrăjitorul are deci șase ecrane, nu șapte: **1** Date Unitate · **2** E-mail
 
 Verificat **în browser**, pe un ciot din biblioteca standard care servește fișierele **adevărate** din `PYTHON/static` cu aceleași antete și mimează cele șapte rute (în scratchpad-ul sesiunii: `inregistrare_stub.py`; `.claude/launch.json` îl pornește pe `8765`). Nimic nu a atins Flask-ul adevărat, MariaDB sau ANAF.
 
-- Ecranul 1: zero erori în consolă, CSP curat; cod inexistent ▸ mesaj ANAF; cod cu bază
-  existentă ▸ `CF_EXISTS`; fișa ANAF și ceasul apar; **denumire din care nu ies patru litere ▸
-  oprit pe loc** («Denumirea unității trebuie să conțină cel puțin patru litere»), corectată ▸
-  trece la 2. Nicăieri numele bazei.
+- Ecranul 1: zero erori în consolă, CSP curat; cod inexistent ▸ mesaj ANAF; cod cu bază existentă ▸ `CF_EXISTS`; fișa ANAF și ceasul apar; **denumire din care nu ies patru litere ▸ oprit pe loc** («Denumirea unității trebuie să conțină cel puțin patru litere»), corectată ▸ trece la 2. Nicăieri numele bazei.
 - Ecranul 2: cod greșit ▸ mesaj; cod bun ▸ trece singur la 3.
-- Ecranul 3: «Continuă» fără sursă ▸ «Alegeți sursa»; cu sursă, fără sector ▸ «Alegeți
-  sectorul»; lista sectoarelor se filtrează (`01` ▸ A, D, E, F, G); `03` își alege singur
-  sectorul; la schimbarea sursei alegerea veche cade (02C ▸ sursa 01 ▸ sectorul gol).
-- Ecranul 4: arborii se construiesc după §4.1 (6 și 9 frunze pe datele ciotului); bifarea unei
-  rădăcini bifează cele 4 frunze de sub ea; tri-starea, căutarea cu evidențiere și captiunea
-  lungă tăiată cu `title` — toate bune; nota «va crea 4 clasificații (funcționale ×
-  economice)».
-- Ecranul 5: rezumatul are 7 rânduri, **fără** rândul bazei de date; anul se alege; trimiterea
-  ▸ ecranul de confirmare cu numărul cererii.
-- Corpul trimis la `/cerere`, citit din jurnalul ciotului: numai frunze, o singură pereche ▸
-  `{"denumire":"…","an":2026,"sursasector":["01E"],"clsf_f":["650201","650202","650301","650500"],"clsf_e":["590100"]}`.
-- **O eroare găsită și reparată la ultima trecere:** ecranul de confirmare nu are casetă de
-  mesaje, iar `clearMessage` o cerea oricum ▸ excepție în consolă la fiecare trimitere
-  reușită, prinsă de `catch`-ul trimiterii, care lăsa în urmă un mesaj de eroare pe ecranul 5
-  (invizibil, fiindcă ecranul tocmai se ascunsese). Acum cele două ajutoare trec peste un
-  ecran fără casetă. Verificat după reparare: consola curată, niciun mesaj rămas pe ecranul 5.
+- Ecranul 3: «Continuă» fără sursă ▸ «Alegeți sursa»; cu sursă, fără sector ▸ «Alegeți sectorul»; lista sectoarelor se filtrează (`01` ▸ A, D, E, F, G); `03` își alege singur sectorul; la schimbarea sursei alegerea veche cade (02C ▸ sursa 01 ▸ sectorul gol).
+- Ecranul 4: arborii se construiesc după §4.1 (6 și 9 frunze pe datele ciotului); bifarea unei rădăcini bifează cele 4 frunze de sub ea; tri-starea, căutarea cu evidențiere și captiunea lungă tăiată cu `title` — toate bune; nota «va crea 4 clasificații (funcționale × economice)».
+- Ecranul 5: rezumatul are 7 rânduri, **fără** rândul bazei de date; anul se alege; trimiterea ▸ ecranul de confirmare cu numărul cererii.
+- Corpul trimis la `/cerere`, citit din jurnalul ciotului: numai frunze, o singură pereche ▸ `{"denumire":"…","an":2026,"sursasector":["01E"],"clsf_f":["650201","650202","650301","650500"],"clsf_e":["590100"]}`.
+- **O eroare găsită și reparată la ultima trecere:** ecranul de confirmare nu are casetă de mesaje, iar `clearMessage` o cerea oricum ▸ excepție în consolă la fiecare trimitere reușită, prinsă de `catch`-ul trimiterii, care lăsa în urmă un mesaj de eroare pe ecranul 5 (invizibil, fiindcă ecranul tocmai se ascunsese). Acum cele două ajutoare trec peste un ecran fără casetă. Verificat după reparare: consola curată, niciun mesaj rămas pe ecranul 5.
 - Expirarea (ciot: 25 de secunde pe CF `222`) ▸ reia de la ecranul 1 cu mesajul serverului.
-- Pe telefon (375×812): fără derulare pe orizontală; pe ecran îngust rămân numerele pașilor,
-  fără etichete (titlul cardului spune oricum unde ești).
-- **A doua rundă, tot pe ciot** (E fără rânduri `xx0000`, ca pe server, plus `grupuri`):
-  numele ANAF curățat; tastarea reală a `"`, `-`, `.`, `!`, `@` ▸ scoase, spațiile triple ▸
-  unul, cursorul pe loc; ecranul 3: «Continuă» cu lista goală ▸ «Adăugați cel puțin o
-  sursă-sector», «Adaugă» fără sursă ▸ «Alegeți sursa», 01E adăugat, 03A ales singur și
-  adăugat, 01E a doua oară ▸ refuzat, 03A eliminat, 02C ales și neadăugat ▸ intră la
-  «Continuă»; E ▸ 10 frunze pe trei niveluri, `10`/`20`/`59` fără căsuță, bifarea lui
-  `2001` ▸ cele 4 frunze de sub el, debifarea uneia ▸ `2001` parțial, `200200` și `590100`
-  frunze pe nivelul 2, clic pe numele unui titlu ▸ doar se deschide; F ▸ 6 frunze, `6503` fără nume ▸ «03»,
-  `700101` fără rădăcină ▸ lipsă. Corpul trimis: `"sursasector":["01E","02C"]`,
-  `"clsf_f":["650301","650500"]`, `"clsf_e":["200101","200130","200200"]`. Consola curată;
-  telefonul la 375px fără derulare orizontală.
+- Pe telefon (375×812): fără derulare pe orizontală; pe ecran îngust rămân numerele pașilor, fără etichete (titlul cardului spune oricum unde ești).
+- **A doua rundă, tot pe ciot** (E fără rânduri `xx0000`, ca pe server, plus `grupuri`): numele ANAF curățat; tastarea reală a `"`, `-`, `.`, `!`, `@` ▸ scoase, spațiile triple ▸ unul, cursorul pe loc; ecranul 3: «Continuă» cu lista goală ▸ «Adăugați cel puțin o sursă-sector», «Adaugă» fără sursă ▸ «Alegeți sursa», 01E adăugat, 03A ales singur și adăugat, 01E a doua oară ▸ refuzat, 03A eliminat, 02C ales și neadăugat ▸ intră la «Continuă»; E ▸ 10 frunze pe trei niveluri, `10`/`20`/`59` fără căsuță, bifarea lui `2001` ▸ cele 4 frunze de sub el, debifarea uneia ▸ `2001` parțial, `200200` și `590100` frunze pe nivelul 2, clic pe numele unui titlu ▸ doar se deschide; F ▸ 6 frunze, `6503` fără nume ▸ «03», `700101` fără rădăcină ▸ lipsă. Corpul trimis: `"sursasector":["01E","02C"]`, `"clsf_f":["650301","650500"]`, `"clsf_e":["200101","200130","200200"]`. Consola curată; telefonul la 375px fără derulare orizontală.
 - **Fără fișiere de test** (decizia operatorului). Acoperire automată: **zero**.
 
 ### Neverificat / amânat
 
-- **Nimic nu a rulat pe Flask-ul adevărat.** Rutele au fost exersate numai prin ciot, deci
-  potrivirea paginii cu serverul e verificată pe contract, nu pe server viu.
-- **Perechea sursă-sector fără rând în tabelă** nu a putut fi provocată din interfață (ambele
-  liste vin din aceleași rânduri), deci refuzul cerut de operator e verificat prin citirea
-  codului, nu exersat. Cele două refuzuri vecine (fără sursă / fără sector) sunt exersate.
-- **Numele grupurilor de nivel 2 la F lipsesc aproape toate**: `DefaClsfF` are un singur rând
-  `xxyy00` (§2a), deci subcapitolele se văd doar ca două cifre («04»). Pentru ele nu există
-  nicio tabelă de nume.
-- **Căutarea din arbore** caută în etichete, iar etichetele au acum doar cele două cifre ale
-  nivelului — `650101` întreg nu se mai găsește, «Învățământ» da.
-- **Scoaterea caracterelor lipește cuvinte**: `S.C.X` ▸ `SCX`, `DRAGU-BRĂTULEȘTI` ▸
-  `DRAGUBRĂTULEȘTI`. Așa a cerut operatorul («removed»); dacă se vrea spațiu în loc, e o
-  singură linie în `tidyName`.
+- **Nimic nu a rulat pe Flask-ul adevărat.** Rutele au fost exersate numai prin ciot, deci potrivirea paginii cu serverul e verificată pe contract, nu pe server viu.
+- **Perechea sursă-sector fără rând în tabelă** nu a putut fi provocată din interfață (ambele liste vin din aceleași rânduri), deci refuzul cerut de operator e verificat prin citirea codului, nu exersat. Cele două refuzuri vecine (fără sursă / fără sector) sunt exersate.
+- **Numele grupurilor de nivel 2 la F lipsesc aproape toate**: `DefaClsfF` are un singur rând `xxyy00` (§2a), deci subcapitolele se văd doar ca două cifre («04»). Pentru ele nu există nicio tabelă de nume.
+- **Căutarea din arbore** caută în etichete, iar etichetele au acum doar cele două cifre ale nivelului — `650101` întreg nu se mai găsește, «Învățământ» da.
+- **Scoaterea caracterelor lipește cuvinte**: `S.C.X` ▸ `SCX`, `DRAGU-BRĂTULEȘTI` ▸ `DRAGUBRĂTULEȘTI`. Așa a cerut operatorul («removed»); dacă se vrea spațiu în loc, e o singură linie în `tidyName`.
 - `debugMode` al arborelui e `true` în componentă (zgomot în consolă pe o pagină publică).
-- Fișierele statice se servesc **fără amprentă de versiune**: după o actualizare, un browser
-  poate rămâne pe JS vechi până i se golește cache-ul.
+- Fișierele statice se servesc **fără amprentă de versiune**: după o actualizare, un browser poate rămâne pe JS vechi până i se golește cache-ul.
 - «Contactați-ne» (mesajul de la `CF_EXISTS`) nu are pe pagină niciun telefon sau e-mail.
-- `.claude/launch.json` e nou în arbore și pornește ciotul din scratchpad-ul **acestei**
-  sesiuni; calea moare odată cu sesiunea.
+- `.claude/launch.json` e nou în arbore și pornește ciotul din scratchpad-ul **acestei** sesiuni; calea moare odată cu sesiunea.
 
 ---
 
@@ -587,10 +440,8 @@ Data: 23.09.2026. Plan: `docs/PLAN_AutoProvisioning.md` §7, D10, D25. Cerută d
 
 ### Decizii (operator, 23.09.2026)
 
-- **Autentificare: parola K-BOT + cod pe e-mail**, iar adresa trebuie să fie în `OPERATORI`
-  din `config.py`. Închide întrebarea lăsată deschisă de plan la §7 («Decide in 0075-05»).
-- **Numele bazei se poate schimba pe pagină înainte de aprobare**, pe lângă `CodProgram`
-  (D25). Ținut la aceleași reguli ca numele calculat — vezi mai jos de ce nu e o regulă de stil.
+- **Autentificare: parola K-BOT + cod pe e-mail**, iar adresa trebuie să fie în `OPERATORI` din `config.py`. Închide întrebarea lăsată deschisă de plan la §7 («Decide in 0075-05»).
+- **Numele bazei se poate schimba pe pagină înainte de aprobare**, pe lângă `CodProgram` (D25). Ținut la aceleași reguli ca numele calculat — vezi mai jos de ce nu e o regulă de stil.
 
 ### Ce s-a construit
 
@@ -628,27 +479,15 @@ Totul ajunge în `Jurnal`: `OPERATOR_LOGIN`, `OPERATOR_AUTH_FAIL`, `OPERATOR_DEN
 
 ### Verificat
 
-- Importurile (blueprint cu 12 reguli), Regula 0 prin `tokenize` pe cele cinci fișiere
-  Python și pe comentariile JS/CSS: **zero** diacritice în afara textelor pentru ecran.
-  (`import main` pică local numai pe `pandas`, lipsă din venv — fără legătură.)
-- **În browser, pe un ciot** care montează `operator_bp` și `operator.html` **adevărate**,
-  cu baza, e-mailul, `plan/approve/reject/link_nou` mimate:
-  parolă greșită / bună, cod greșit / bun, filtrele și numerele lor, detaliul (tabelul SS cu
-  `IdUnitate ≈` și `CodProgram`, codurile F/E), numele cu formă greșită (oprit pe pagină),
-  numărul ocupat (refuzul serverului, «Aprobă» dezactivat, reactivat la o editare), numele
-  propriu `115_TRND` acceptat, **corpul ajuns la job: `115_TRND` și `02E=ABC123`, exact ce s-a
-  tastat**, jobul urmărit până la capăt, cererea redeschisă ca `Aprobata`; cererea eșuată
-  cu motivul și refuzul planului; textul ANAF cu `<b>` afișat ca text; respingerea (motiv prea
-  scurt, apoi reușită); linkul nou cu e-mail picat (linkul pe pagină); ieșirea; un token mort
-  la reîncărcare ▸ înapoi la autentificare cu «Sesiunea a expirat».
+- Importurile (blueprint cu 12 reguli), Regula 0 prin `tokenize` pe cele cinci fișiere Python și pe comentariile JS/CSS: **zero** diacritice în afara textelor pentru ecran. (`import main` pică local numai pe `pandas`, lipsă din venv — fără legătură.)
+- **În browser, pe un ciot** care montează `operator_bp` și `operator.html` **adevărate**, cu baza, e-mailul, `plan/approve/reject/link_nou` mimate: parolă greșită / bună, cod greșit / bun, filtrele și numerele lor, detaliul (tabelul SS cu `IdUnitate ≈` și `CodProgram`, codurile F/E), numele cu formă greșită (oprit pe pagină), numărul ocupat (refuzul serverului, «Aprobă» dezactivat, reactivat la o editare), numele propriu `115_TRND` acceptat, **corpul ajuns la job: `115_TRND` și `02E=ABC123`, exact ce s-a tastat**, jobul urmărit până la capăt, cererea redeschisă ca `Aprobata`; cererea eșuată cu motivul și refuzul planului; textul ANAF cu `<b>` afișat ca text; respingerea (motiv prea scurt, apoi reușită); linkul nou cu e-mail picat (linkul pe pagină); ieșirea; un token mort la reîncărcare ▸ înapoi la autentificare cu «Sesiunea a expirat».
 - Telefonul la 375 px: nimic nu iese din pagină; tabelele se derulează în cutia lor.
 
 ### NU e verificat
 
 - **Nimic viu**: nicio rută n-a atins un Flask pe VPS, un MariaDB sau SMTP-ul adevărat.
 - Firul de aprobare sub gunicorn `gthread` (în ciot a rulat sub serverul Flask).
-- ⚠ **O repornire a gunicorn în timpul unei aprobări** omoară firul fără anulare. Același
-  risc îl are linia de comandă la Ctrl+C; nu e nou, dar pagina îl face mai ușor de atins.
+- ⚠ **O repornire a gunicorn în timpul unei aprobări** omoară firul fără anulare. Același risc îl are linia de comandă la Ctrl+C; nu e nou, dar pagina îl face mai ușor de atins.
 - `RedisSessionStore` cu notele operatorului (numai backend-ul `memory` e folosit azi).
 
 ### Pe server (23.09.2026)

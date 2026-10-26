@@ -2,8 +2,7 @@
 
 ## What changed and why
 
-Ajutorul urmează schimbarea din [000T-13](SLICE-000T-13-tutorial-pornire.md): la pornire K-BOT nu mai arată turul ferestrei principale și tutorialul «Ce sunt tutorialele»,
-ci tutorialul «Primii pași în K-BOT», cu o singură bifă în Setări › Aplicație › Generale.
+Ajutorul urmează schimbarea din [000T-13](SLICE-000T-07-tutorial-initial.md#slice-000t-13): la pornire K-BOT nu mai arată turul ferestrei principale și tutorialul «Ce sunt tutorialele», ci tutorialul «Primii pași în K-BOT», cu o singură bifă în Setări › Aplicație › Generale.
 
 - `contabil/ajutor.md`: «Tururile ghidate» (turul nu mai pornește singur) și «Tutorialul de început» (rescrisă: cei 11 pași, «Mă opresc», caseta de pe bulă, cum se oprește / pornește).
 - `contabil/setari.md`: rândul grupului «Fereastra principală» și bifa «Arată tutorialul de început la pornirea K-BOT» (bifa turului a plecat).

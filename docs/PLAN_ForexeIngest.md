@@ -2,7 +2,7 @@
 
 **Slice: 0048** (confirmed against `KBOT_STATUS.md`, which recorded *Next free slice number: 0048*). Sub-slices follow the numbered steps of §7 (`SLICE-0048-01-…` and so on).
 
-**Historical baseline.** This plan records the initial brief and subsequent amendments; its implementation state is in [0048](worklog/state/KBOT_STATUS_0040-0049.md#slice-0048). Sections not amended below describe the original design, not a current API specification. The implemented two-phase contract and later corrections are in [0048-03](worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md) and its [completion](worklog/SLICE-0048-03-completare.md).
+**Historical baseline.** This plan records the initial brief and subsequent amendments; its implementation state is in [0048](worklog/state/KBOT_STATUS_0040-0049.md#slice-0048). Sections not amended below describe the original design, not a current API specification. The implemented two-phase contract and later corrections are in [0048-03](worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md) and its [completion](worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md#slice-0048-03-completare).
 
 **What this replaced at the start.** Then `ForexeController.DownloadNodeAsync` runs the *Prelucrare Completă* workflow and saves the result to `<AppDir>\WorkflowResults\*.json` and nothing else. There is no ingest. Everything the Access VBA did with that result — parsing, deduplicating, deriving recepții / rezervări / plăți, writing them — has to exist again, this time on the server.
 

@@ -70,8 +70,7 @@ Clientul nu alege: `AsociereForm.DeciziiDin` primește acum **și recepțiile** 
 
 Ce vede operatorul dintr-o recepție cu lanț de lungime zero:
 
-* în **grafic** — nimic: `ConstruiesteGraficAngajament` are `If lant.Count = 0 Then Continue For`,
-  iar graficul e **vederea implicită** a formularului;
+* în **grafic** — nimic: `ConstruiesteGraficAngajament` are `If lant.Count = 0 Then Continue For`, iar graficul e **vederea implicită** a formularului;
 * pe **bandă** — o bandă goală, fără marcaje;
 * în **arbore** — un rând fără nimic sub el.
 
@@ -83,13 +82,8 @@ Adică exact «recepțiile vechi nu mai vin». Erau acolo; povestea lor nu era.
 
 Propunerea poartă acum, pe lângă rândurile de decis:
 
-* **`instantanee_asezate`** — restul instantaneelor angajamentului, în aceeași formă ca cele ale
-  editorului de oricând (aceleași DTO-uri, ca să nu existe două conversii care alunecă una față
-  de alta);
-* **`plati`** — plățile angajamentului. §1.3 din fundament: fiecare ordonanțare citește totalul
-  recepției **așa cum stătea la data plății**, deci partea pe care cade un instantaneu față de o
-  plată e diferența dintre o cifră corectă și una greșită, tăcut și pentru totdeauna (F12).
-  Reperele trebuie să fie pe ecran **când** se așază, nu abia după.
+* **`instantanee_asezate`** — restul instantaneelor angajamentului, în aceeași formă ca cele ale editorului de oricând (aceleași DTO-uri, ca să nu existe două conversii care alunecă una față de alta);
+* **`plati`** — plățile angajamentului. §1.3 din fundament: fiecare ordonanțare citește totalul recepției **așa cum stătea la data plății**, deci partea pe care cade un instantaneu față de o plată e diferența dintre o cifră corectă și una greșită, tăcut și pentru totdeauna (F12). Reperele trebuie să fie pe ecran **când** se așază, nu abia după.
 
 **Complement, nu al doilea filtru.** `citeste_instantanee_context` întoarce tot ce NU e în mulțimea de decis, calculat pe `IDRH` în Python. Așa nu poate exista un rând pe care să nu-l ia niciuna dintre cele două liste — nici măcar cel lăsat afară fiindcă rândul lui de istoric nu e în descărcarea asta (până acum dispărea de pe ecran cu totul, rămânând doar într-un avertisment).
 
@@ -109,8 +103,7 @@ Motivul afișat spune care dintre cele două cazuri e:
 Două locuri au trebuit să învețe să sară peste ele:
 
 * `DeciziiDin` — altfel ar fi trimis decizii respinse cu 400;
-* `NehotarateleCount` — altfel un singur rând de context neașezat ar fi stins butonul de salvare
-  **pentru totdeauna**, fiindcă nimic nu-l poate așeza.
+* `NehotarateleCount` — altfel un singur rând de context neașezat ar fi stins butonul de salvare **pentru totdeauna**, fiindcă nimic nu-l poate așeza.
 
 ---
 
@@ -130,22 +123,10 @@ Două locuri au trebuit să învețe să sară peste ele:
 
 ### Verde
 
-* `PYTHON`: **485 trecute / 15 sărite** (linia de plecare a feliei: 472 / 15). Cele **13 teste
-  noi** acoperă ancorele pasului 4b (inclusiv rândul care aterizează pe recepția născută de
-  rândul dinaintea lui), forma cu trei ținte a unei decizii, rezolvarea prin ancoră în
-  `aplica_decizii`, refuzul zgomotos al unui indice care n-a creat nimic, faptul că un `idrr`
-  inexistent cade în continuare la fel, și complementul din `citeste_instantanee_context` cu
-  ambele motive.
-* `dotnet build src\KBot.App\KBot.App.vbproj` — **0 erori**. Cele 7 avertismente sunt `MSB3825`
-  pe `.resx`-uri neatinse de felia asta (`DdfEditDescrierePage`, `AsociereForm`, `DdfView`,
-  `OrdView`, `PlatiView`, `ReceptiiView`, `RezervariView`), preexistente și raportate ca atare și
-  în feliile 0049 / 0054.
-* `KBot.App.Tests` — **222 trecute / 13 picate / 235**. Linia de plecare era 217 / 13 / 230:
-  aceleași 13 roșii, aceleași nume (DDF / Istoric / XFA / MainFormNavItems), plus **5 teste noi**
-  verzi.
-* `KBot.Api.Tests` **94 / 95** și `KBot.Domain.Tests` **28 / 31** — **identice** cu linia de
-  plecare măsurată în felia 0055, aceleași roșii de `EtichetaRevizie` (DDF), pe care felia asta
-  nu le atinge.
+* `PYTHON`: **485 trecute / 15 sărite** (linia de plecare a feliei: 472 / 15). Cele **13 teste noi** acoperă ancorele pasului 4b (inclusiv rândul care aterizează pe recepția născută de rândul dinaintea lui), forma cu trei ținte a unei decizii, rezolvarea prin ancoră în `aplica_decizii`, refuzul zgomotos al unui indice care n-a creat nimic, faptul că un `idrr` inexistent cade în continuare la fel, și complementul din `citeste_instantanee_context` cu ambele motive.
+* `dotnet build src\KBot.App\KBot.App.vbproj` — **0 erori**. Cele 7 avertismente sunt `MSB3825` pe `.resx`-uri neatinse de felia asta (`DdfEditDescrierePage`, `AsociereForm`, `DdfView`, `OrdView`, `PlatiView`, `ReceptiiView`, `RezervariView`), preexistente și raportate ca atare și în feliile 0049 / 0054.
+* `KBot.App.Tests` — **222 trecute / 13 picate / 235**. Linia de plecare era 217 / 13 / 230: aceleași 13 roșii, aceleași nume (DDF / Istoric / XFA / MainFormNavItems), plus **5 teste noi** verzi.
+* `KBot.Api.Tests` **94 / 95** și `KBot.Domain.Tests` **28 / 31** — **identice** cu linia de plecare măsurată în felia 0055, aceleași roșii de `EtichetaRevizie` (DDF), pe care felia asta nu le atinge.
 
 ### Ce NU e verificat
 
@@ -154,24 +135,14 @@ Două locuri au trebuit să învețe să sară peste ele:
 Anume:
 
 * niciun `POST /api/forexe/prelucrare` real n-a purtat `rand_receptie`;
-* contextul n-a fost văzut pe ecran: lacătele, benzile pline, liniile vechi din grafic și
-  reperele de plată în timpul ingestiei sunt deduse din cod, nu privite;
-* `AUTO_INCREMENT` care nu se derulează înapoi este **comportamentul documentat al InnoDB** și e
-  singura explicație care se potrivește cu toate cele trei dovezi (mesajul rutei, faptul că
-  recepția 188 nu se afla în `citeste_receptii` la salvare, și faptul că propunerea o listase) —
-  dar n-a fost observat direct pe baza operatorului.
+* contextul n-a fost văzut pe ecran: lacătele, benzile pline, liniile vechi din grafic și reperele de plată în timpul ingestiei sunt deduse din cod, nu privite;
+* `AUTO_INCREMENT` care nu se derulează înapoi este **comportamentul documentat al InnoDB** și e singura explicație care se potrivește cu toate cele trei dovezi (mesajul rutei, faptul că recepția 188 nu se afla în `citeste_receptii` la salvare, și faptul că propunerea o listase) — dar n-a fost observat direct pe baza operatorului.
 
 ### Ce rămâne deschis
 
-* **Reconstituirea (`receptie_noua`) tot nu se poate cere din formular.** Un lanț F26 rămâne
-  neasezabil în modul propunere. Nimic din datele operatorului nu pare să ceară asta acum (niciun
-  lanț nu se termină cu o recepție dispărută din `ListaReceptii`), dar rămâne o gaură cunoscută.
-* **Mutarea unei legături vechi în timpul ingestiei** — deliberat nu se poate; e treaba editorului
-  de oricând. Dacă operatorul o cere acolo, e o felie separată, fiindcă schimbă contractul de
-  acoperire al rutei.
-* Antetul benzii «Neașezate (N)» numără și rândurile de context neașezate, în timp ce notificarea
-  numără doar pe cele de hotărât. Cele două cifre pot să difere; lacătul explică de ce, dar nu e
-  aceeași cifră.
+* **Reconstituirea (`receptie_noua`) tot nu se poate cere din formular.** Un lanț F26 rămâne neasezabil în modul propunere. Nimic din datele operatorului nu pare să ceară asta acum (niciun lanț nu se termină cu o recepție dispărută din `ListaReceptii`), dar rămâne o gaură cunoscută.
+* **Mutarea unei legături vechi în timpul ingestiei** — deliberat nu se poate; e treaba editorului de oricând. Dacă operatorul o cere acolo, e o felie separată, fiindcă schimbă contractul de acoperire al rutei.
+* Antetul benzii «Neașezate (N)» numără și rândurile de context neașezate, în timp ce notificarea numără doar pe cele de hotărât. Cele două cifre pot să difere; lacătul explică de ce, dar nu e aceeași cifră.
 
 ---
 
@@ -195,43 +166,20 @@ The pasted log (014_SCSV, AAB2HFBEEAF, run 9) shows what that costs. The downloa
 
 Server (`PYTHON/routes/forexe/`):
 
-- `prelucrare_asociere.citeste_instantanee_context`: `blocat` is no longer True for all. A
-  placed row is blocked only by `blocaje`; an unplaced one is free; a row born in the current
-  run that is not in the set to place (no history row, or a duplicate) stays blocked with
-  `MOTIV_FARA_ISTORIC`, because its IDRH does not survive the rollback of phase one.
-  `MOTIV_CONTEXT` is removed.
-- `citeste_idrh_scrise` (new): the IDRHs of the angajament BEFORE the steps write anything,
-  read in both phases. Only these can be named by IDRH.
-- A third anchor, `("idrh", n)`, next to `rand_istoric` (F24) and `idh` (F34): a decision that
-  carries `idrh` is a CORRECTION of a snapshot written before this run.
-  `normalizeaza_decizii` asks for exactly one of the three and allows `desprins` only on a
-  correction (`ACTIUNE_DESPRINS` moved here; `asociere.py` imports it).
-- `verifica_corecturile` (new): the row must be a context row, once, with a matching `data_h`,
-  and not blocked — checked again at save, since an ordonantare may appear after the proposal.
-  No coverage: for an old link silence means «leave it as it is».
-- `aplica_decizii`: coverage is asked only for the rows to place; labels, chains and writes
-  treat both kinds alike. The reception a corrected row LEAVES is touched too (chain checked,
-  `Final`/`Partial` redone, `Sters` taken off when it lost its deletion row). `desprins` and
-  `ignorat` on a correction also clear `EsteStergere`. New counter `asocieri.desprins`.
-- `valideaza_plasarile(f15_doar_semn=...)`: on a reception that only LOSES snapshots in this
-  save F15 warns instead of refusing — the anytime editor's reason: a chain whose last snapshot
-  was taken off does not close by definition. A reception that gains a snapshot keeps the veto.
-- `prelucrare.py`: reads `idrh_scrise` before the steps; in the save phase reads the context
-  only when a correction came.
-- Journal (`asociere.log`): the context table has a `blocat` column and the reasons; the save
-  writes «corecturi: N», and for each one where the row was.
+- `prelucrare_asociere.citeste_instantanee_context`: `blocat` is no longer True for all. A placed row is blocked only by `blocaje`; an unplaced one is free; a row born in the current run that is not in the set to place (no history row, or a duplicate) stays blocked with `MOTIV_FARA_ISTORIC`, because its IDRH does not survive the rollback of phase one. `MOTIV_CONTEXT` is removed.
+- `citeste_idrh_scrise` (new): the IDRHs of the angajament BEFORE the steps write anything, read in both phases. Only these can be named by IDRH.
+- A third anchor, `("idrh", n)`, next to `rand_istoric` (F24) and `idh` (F34): a decision that carries `idrh` is a CORRECTION of a snapshot written before this run. `normalizeaza_decizii` asks for exactly one of the three and allows `desprins` only on a correction (`ACTIUNE_DESPRINS` moved here; `asociere.py` imports it).
+- `verifica_corecturile` (new): the row must be a context row, once, with a matching `data_h`, and not blocked — checked again at save, since an ordonantare may appear after the proposal. No coverage: for an old link silence means «leave it as it is».
+- `aplica_decizii`: coverage is asked only for the rows to place; labels, chains and writes treat both kinds alike. The reception a corrected row LEAVES is touched too (chain checked, `Final`/`Partial` redone, `Sters` taken off when it lost its deletion row). `desprins` and `ignorat` on a correction also clear `EsteStergere`. New counter `asocieri.desprins`.
+- `valideaza_plasarile(f15_doar_semn=...)`: on a reception that only LOSES snapshots in this save F15 warns instead of refusing — the anytime editor's reason: a chain whose last snapshot was taken off does not close by definition. A reception that gains a snapshot keeps the veto.
+- `prelucrare.py`: reads `idrh_scrise` before the steps; in the save phase reads the context only when a correction came.
+- Journal (`asociere.log`): the context table has a `blocat` column and the reasons; the save writes «corecturi: N», and for each one where the row was.
 
 Client:
 
-- `KBot.Domain`: `InstantaneuLegat.Context` (row written before the download; key `-IDRH`);
-  `DinPropunere` keeps the server's `Blocat`; `DecizieAsociere.Idrh` (the third anchor).
-- `KBot.Api`: `PostPrelucrareDecizie.idrh`; `CatreFir` sends exactly one anchor and allows
-  `Desprins` only with it. **`IApiClient` is unchanged** (the corrections travel in the same
-  `decizii` list).
-- `AsociereForm`: `DeciziiDin` sends a correction for every context row the operator changed
-  and nothing for an untouched one; `NehotarateDin` skips context rows (no decision owed);
-  «Golește așezările» puts moved old links back to the server's state and its question says so.
-  Nothing else: every drag / menu / lock check already read `Blocat`.
+- `KBot.Domain`: `InstantaneuLegat.Context` (row written before the download; key `-IDRH`); `DinPropunere` keeps the server's `Blocat`; `DecizieAsociere.Idrh` (the third anchor).
+- `KBot.Api`: `PostPrelucrareDecizie.idrh`; `CatreFir` sends exactly one anchor and allows `Desprins` only with it. **`IApiClient` is unchanged** (the corrections travel in the same `decizii` list).
+- `AsociereForm`: `DeciziiDin` sends a correction for every context row the operator changed and nothing for an untouched one; `NehotarateDin` skips context rows (no decision owed); «Golește așezările» puts moved old links back to the server's state and its question says so. Nothing else: every drag / menu / lock check already read `Blocat`.
 
 Compatibility: an old client against the new server still marks all context rows blocked (its own `DinPropunere`); a new client against the old server gets them all blocked from the server.
 
@@ -241,12 +189,11 @@ Compatibility: an old client against the new server still marks all context rows
 - `src/KBot.Domain/AsociereStare.vb`, `AsociereInfo.vb`, `KBot.Domain.vbproj` (1.2.7.0 → 1.2.8.0)
 - `src/KBot.Api/ApiClient.vb`, `UpsertAngajamenteRequest.vb`, `KBot.Api.vbproj` (1.0.15.0 → 1.0.16.0)
 - `src/KBot.App/Forexe/AsociereForm.vb`
-- help: see `SLICE-0000-26-ajutor-pentru-0056-02.md`
+- help: see [0000-26](#slice-0000-26)
 
 ### Test results
 
-- `dotnet build src/KBot.App/KBot.App.vbproj` (output to a scratch folder, K-BOT was running and
-  locked `bin\Debug`): **0 warnings, 0 errors**.
+- `dotnet build src/KBot.App/KBot.App.vbproj` (output to a scratch folder, K-BOT was running and locked `bin\Debug`): **0 warnings, 0 errors**.
 - The three Python files parse (`ast.parse`); nothing was imported or run.
 - **No tests were run and none were written** (operator: «nu testa»). The app was not started.
 
@@ -254,20 +201,52 @@ Compatibility: an old client against the new server still marks all context rows
 
 - **Never run**: no proposal, no save, no window. The whole change is read from the code.
 - **Tests that describe the old behaviour and will fail until updated** (not touched):
-  - `PYTHON/tests/test_forexe_prelucrare_asociere.py` — the three `citeste_instantanee_context`
-    calls (new required argument `idrh_scrise`; «all blocked» no longer true);
-  - `PYTHON/tests/test_forexe_prelucrare_route.py` — the scripted cursor does not know the new
-    `SELECT IDRH FROM FX_Receptii_H WHERE CodAngajament` read;
-  - `tests/KBot.Domain.Tests/AsociereStareDinPropunereTests.vb` and the `Blocat` assertions in
-    `tests/KBot.App.Tests/AsociereFormTests.vb` / `AsociereDeciziiTests.vb`, where they expect
-    every context row blocked.
-- **The server files must reach the VPS** together with the client; until then the new client
-  behaves as before (all old links blocked).
-- The fingerprint (`amprenta`) does not see a link MOVED by another session between the proposal
-  and the save (it counts rows, not targets). Same limit as in the anytime editor; the blocking
-  rule itself is re-checked at save.
-- The two warnings of `citeste_instantanee` («... nu pot fi așezate din descărcare. Se rezolvă în
-  editorul de asociere») are unchanged, although such rows written before the run can now be
-  placed in this window. Wording left for the operator to decide.
-- Ties on `DataH` between an old and a new snapshot on a reception started in the window are
-  ordered by the form on `-IDRH`, by the server on `IDRH`. Not expected in real data.
+  - `PYTHON/tests/test_forexe_prelucrare_asociere.py` — the three `citeste_instantanee_context` calls (new required argument `idrh_scrise`; «all blocked» no longer true);
+  - `PYTHON/tests/test_forexe_prelucrare_route.py` — the scripted cursor does not know the new `SELECT IDRH FROM FX_Receptii_H WHERE CodAngajament` read;
+  - `tests/KBot.Domain.Tests/AsociereStareDinPropunereTests.vb` and the `Blocat` assertions in `tests/KBot.App.Tests/AsociereFormTests.vb` / `AsociereDeciziiTests.vb`, where they expect every context row blocked.
+- **The server files must reach the VPS** together with the client; until then the new client behaves as before (all old links blocked).
+- The fingerprint (`amprenta`) does not see a link MOVED by another session between the proposal and the save (it counts rows, not targets). Same limit as in the anytime editor; the blocking rule itself is re-checked at save.
+- The two warnings of `citeste_instantanee` («... nu pot fi așezate din descărcare. Se rezolvă în editorul de asociere») are unchanged, although such rows written before the run can now be placed in this window. Wording left for the operator to decide.
+- Ties on `DataH` between an old and a new snapshot on a reception started in the window are ordered by the form on `-IDRH`, by the server on `IDRH`. Not expected in real data.
+
+---
+
+Consolidare documentară D002-18: jurnalul ajutorului scris în aceeași sarcină cu 0056-02 este păstrat mai jos ca etapă distinctă. Textul ajutorului și verificarea sa nu certifică salvarea reală rămasă neprobată.
+
+<a id="slice-0000-26"></a>
+
+## SLICE-0000-26 — the help for slice 0056-02
+
+Slice 0056-02 ([0056-02](SLICE-0056-tabloul-intreg.md#slice-0056-02), operator, 01.10.2026) lets the operator move old links while placing a download. This is the help for it, written in the same task, every changed section tagged `0056-02`.
+
+### What changed and why
+
+| Topic / tour | What |
+|--------------|------|
+| `contabil.asocieri.cazuri` | «Legături blocate» rewritten: only an ordonantare (dated on the snapshot's day or later) blocks, a payment does not, and the rule is the same after a download. «După o descărcare: salvare sau renunțare»: old links can be corrected in the same window, only the moved ones are written, why it matters («Lanțul nu se închide»), the warning instead of a refusal when a reception only loses a snapshot, what «Golește așezările» does with moved old links |
+| `contabil.asocieri.fereastra` | the sentence about a blocked snapshot (ordonantare only; everything else can be moved, also after a download); the «Salvează legăturile» and «Golește așezările» rows of the buttons table |
+| `tur-receptii` | step «Arbore › Asocieri»: the blocking sentence no longer mentions payments |
+
+The «or a payment» wording was stale since 18.09.2026 (payments stopped blocking); corrected here because the same sentences had to be rewritten.
+
+Left out on purpose (HELP_SYSTEM §5): anchors, how the corrections travel to the server, the journal.
+
+### Files touched
+
+- `src/KBot.App/HelpContent/contabil/asocieri/cazuri.md`, `fereastra.md`
+- `src/KBot.App/HelpContent/tours/tur-receptii.md`
+- `help-version.txt` stays `2026-10-01`
+
+### Test results
+
+- `tools\HelpCheck\Check-Help.ps1 -Coverage`: «No errors.», 48 topics, 17 tours, 57 capture tags. Coverage names only `RobotQueueForm` (0098, already in the open threads).
+- `dotnet build src/KBot.App/KBot.App.vbproj`: **0 warnings, 0 errors**.
+- Nothing seen on screen.
+
+### Capturi de refăcut / noi
+
+- None. The window looks the same; after a download fewer rows carry the lock.
+
+### De citit de operator
+
+- `contabil.asocieri.cazuri`, «După o descărcare»: the sentence «K-BOT salvează și te avertizează după salvare; nu refuză» describes the server rule as written (a reception that only loses snapshots); it was not seen on a real save.

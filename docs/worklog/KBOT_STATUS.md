@@ -1,37 +1,23 @@
 # K-BOT — STATUS (single source of truth)
 
-This file is the one place that says what is done, what is in progress, and what is next.
-Three people rely on it: the developer, Claude (chat), and Code (Claude Code / Codex).
-Keep it current. If reality and this file disagree, fix this file in the same commit.
+This file is the one place that says what is done, what is in progress, and what is next. Three people rely on it: the developer, Claude (chat), and Code (Claude Code / Codex). Keep it current. If reality and this file disagree, fix this file in the same commit.
 
-**ADECHIT:** its separate registry is [ADECHIT_STATUS](../../ADECHIT_STATUS.md);
-the current PC/mobile, DataGrid and catalog rules are in
-[UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md). ADE numbering is separate from K-BOT.
+**ADECHIT:** its separate registry is [ADECHIT_STATUS](../../ADECHIT_STATUS.md); the current PC/mobile, DataGrid and catalog rules are in [UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md). ADE numbering is separate from K-BOT.
 
-**VERCON:** its separate registry is [VERCON_STATUS](../../VERCON/VERCON_STATUS.md) (slices
-VC00–VC09, worklogs `SLICE-VCxx-yy-*.md` here). 11.10.2026: SLICE-VC00-01…05 done as documents
+**VERCON:** its separate registry is [VERCON_STATUS](../../VERCON/VERCON_STATUS.md) (slices VC00–VC09, worklogs `SLICE-VCxx-yy-*.md` here). 11.10.2026: SLICE-VC00-01…05 done as documents
 + local generators (nothing validated on the server, no code/DDL yet). VC numbering is separate from K-BOT.
 
-**Rule:** every task also produces a worklog in `docs/worklog/` (see
-`docs/worklog/CODE_WORKFLOW.md`). This STATUS file is the summary; the worklog is the detail.
+**Rule:** every task also produces a worklog in `docs/worklog/` (see `docs/worklog/CODE_WORKFLOW.md`). This STATUS file is the summary; the worklog is the detail.
 
-**How this file is split (since 28.09.2026).** This file holds only what is needed every
-time: the slice index, the next free number, the cross-cutting notes and the locked
-decisions. Everything recorded about a slice (its full registry row, its «Current focus»
-notes, its «Open threads» notes) lives in `state/KBOT_STATUS_<tens>.md`, ten slices per file
-(`0080-0089` holds 0080…0089). Work the operator asks for OUTSIDE the slice system lives in
-`state/KBOT_STATUS_SLICELESS.md`.
+**How this file is split (since 28.09.2026).** This file holds only what is needed every time: the slice index, the next free number, the cross-cutting notes and the locked decisions. Everything recorded about a slice (its full registry row, its «Current focus» notes, its «Open threads» notes) lives in `state/KBOT_STATUS_<tens>.md`, ten slices per file (`0080-0089` holds 0080…0089). Work the operator asks for OUTSIDE the slice system lives in `state/KBOT_STATUS_SLICELESS.md`.
 
-**Reading rule:** read this file first, then open ONLY the `state/` files the task needs,
-through the links in the index below. Never read all of `state/` "to be safe".
+**Reading rule:** read this file first, then open ONLY the `state/` files the task needs, through the links in the index below. Never read all of `state/` "to be safe".
 
 ---
 
 ## Slice registry
 
-Numbers are permanent once assigned. A slice done in several passes keeps one number and
-gets sub-numbered worklogs (`SLICE-0007-01-…`, `SLICE-0007-02-…`). The **next free slice
-number** is recorded at the bottom of this section — bump it when you assign a new one.
+Numbers are permanent once assigned. A slice done in several passes keeps one number and gets sub-numbered worklogs (`SLICE-0007-01-…`, `SLICE-0007-02-…`). The **next free slice number** is recorded at the bottom of this section — bump it when you assign a new one.
 
 > The numbers below are a starting proposal. Confirm or renumber them once, then treat
 > them as fixed. Felia 1 (auth) is the only one anchored by history; the rest are assigned
@@ -169,6 +155,7 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0073 | Recorder: mod de vizualizare, meniu plutitor în pagină, urmărirea operațiunilor FOREXE                                   | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0067-01 | Instalatorul Inno: detectează versiunea instalată, permite doar actualizări, actualizează cu regulile sistemului de act… | GATA pe cod                                   | [0060-0069](state/KBOT_STATUS_0060-0069.md) |
 |       0067-02 | Notele de versiune: la fiecare `publish-release` / `push-update`, un asistent AI (Copilot din VS sau Claude) scrie în română ce s-a schimbat (`docs/release-notes/NOUTATI.md`), trimis ca `notes` (cererea operatorului, 01.10.2026) | GATA pe scripturi (parsate, publicarea nerulată) | [0060-0069](state/KBOT_STATUS_0060-0069.md) |
+|       0067-03 | «Caută actualizări» poate reinstala ultimul pachet chiar dacă versiunea nu e mai mare (doar din Setări; cererea operatorului, 26.10.2026) | GATA pe cod (nerulat cap la cap) | [0060-0069](state/KBOT_STATUS_0060-0069.md) |
 |          0074 | Vederea «Browser FOREXE» în shell: pagina andocată, arborele ↔ pagina                                                    | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0075-05 | Înregistrare publică: pagina operatorului                                                                                | GATA pe cod / verificat în browser pe un cio… | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0075-03 | Înregistrare publică: aprobarea — jobul de provizionare                                                                  | GATA pe cod / jobul n-a rulat niciodată — ni… | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
@@ -182,19 +169,19 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |       0777-02 | Arbore: subliniat pentru descărcatele din sesiune; fără fereastra de recepții la actualizări multiple; coada se închide singură | GATA pe cod, build curat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0078 | Semnarea DDF / ORD în vizualizatorul Adobe din K-BOT (absoarbe 0021)                                                     | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-03 | Jurnal de diagnostic exhaustiv pentru vizualizatorul ActiveX                                                             | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-04 | Secțiunea B după A pe DDF: sesiunea de semnare refăcută când suma de pe server se schimbă + proba pe banc             | PROBAT pe banc A→B→Ordonator; erori JS în vizualizator | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-05 | Fereastra găzduită fără poziționare / ascundere (Ctrl+H) + proba ordinii «Salvare ca» → scriere → încărcare  | GATA pe cod, nerulat (+ §8: acțiune unică ActiveX→fereastră, opțiune «ecran întreg la închidere») | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-04 | Secțiunea B după A pe DDF: diagnostic și probă pe banc | PROBAT pe banc A→B→Ordonator; erori JS în vizualizator | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-05 | Fereastra Adobe găzduită: Ctrl+H și ordinea salvării | GATA pe cod, nerulat (+ §8: acțiune unică ActiveX→fereastră, opțiune «ecran întreg la închidere») | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-06 | Secțiunea B inserată în DDF-ul semnat pe A, în fluxul real (angajament nou)                | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-07 | Fereastra Adobe găzduită care se mărește singură: urmărită și readusă la panou              | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-08 | Arborele blocat cât Adobe încă deschide documentul (semnal de la Adobe, nu cronometru)        | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-09 | Întrebarea Adobe «salvați modificările?» la închiderea documentului: capcana rămâne pornită cât se închide și răspunde «Nu» (fără salvare) (cererea operatorului, 01.10.2026) | GATA pe cod, nerulat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-07 | Fereastra Adobe găzduită care se mărește singură | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-08 | Arborele blocat cât Adobe deschide documentul | GATA pe cod, nerulat                          | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-09 | Întrebarea Adobe la închidere: răspuns Nu | GATA pe cod, nerulat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0078-10 | Opțiunea «Adobe pornește în interfața clasică» înapoi în Setări ▸ Documente (cererea operatorului, 01.10.2026): pune `bEnableAv2=0` la deschiderea unui PDF, restaurează la închiderea K-BOT | GATA pe cod, nerulat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-11 | Procesele Adobe pornite de K-BOT nu mai rămân fantome după închidere: `AdobeProcessRegistry` (pid + ora de pornire; WM_CLOSE, răgaz 1,5 s, apoi kill pe arbore) (cererea operatorului, 03.10.2026) | GATA pe cod, nerulat; presupunere: fantomele sunt copii ai K-BOT | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-13 | «Replace existing file?» recunoscută și pe Acrobat vechi (fereastra găzduită) + F8 (bara din dreapta) trimis cu Ctrl+H / Ctrl+2; nimic pe ActiveX (cererea operatorului, 06.10.2026) | GATA pe cod, nerulat; ajutor neactualizat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-12 | Fereastra găzduită cu un Adobe VECHI (< 2024, Acrobat DC / 2020): monitorul erorilor JS (`AdobeScriptMonitor`, evenimentul `ScriptAlertSeen`, sumar pe document în jurnal, trace) + banc propriu `OldAdobeHostHarnessForm` în DevHarness ▸ «Adobe/PDF» (cererea operatorului, 06.10.2026) | GATA pe cod (build Controls + App + teste: 0 erori, 0 avertismente); **bancul nerulat, teste scrise dar nerulate**; în jurnalul real: confirmarea «Replace existing file?» nerecunoscută pe Acrobat 19.12 (nereparată) | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-14 | Avertisment la pornire când Adobe e mai vechi de 2025: pe Acrobat Pro 2020 (crăpat) formularul DDF dă erori de permisiuni la semnare, pe Reader gratuit 2025+ nu; mesaj Da/Nu «Nu mai primești acest avertisment» + comutator în Setări ▸ Aplicație (cererea operatorului, 06.10.2026) | GATA pe cod, nerulat; build de reconfirmat; ajutor în `setari.md` (tag 0078-14) | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-15 | Vizualizatorul ActiveX (AcroPDF) refăcut de la zero: încărcare prin `src`, mărimea retrimisă când Adobe se naște 0×0, Ctrl+H verificat, capcana «Salvare ca»; vechiul `AcroPdfSurface` șters; acțiune unică ▸ ActiveX implicit (06–07.10.2026; partea din 06.10 commit-uită ca SLICELESS) | GATA pe cod, probat pe banca ActiveX; **Ctrl+S automat după semnătură NU merge**; ajutor neactualizat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
-|       0078-16 | Banca ActiveX ▸ vizualizatorul jurnalului: butonul «Pe culoare…» deschide arborele din stânga ca *lane-uri* (`KBotLaneView`): rădăcină = culoar, frunză = o schimbare, axa = ora cu milisecunde, fără dată (cererea operatorului, 07.10.2026) | GATA pe cod (build App: 0 erori, 0 avertismente), **nerulat pe ecran**; DEBUG-only, fără ajutor | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-11 | Procesele Adobe pornite de K-BOT: închidere și fantome | GATA pe cod, nerulat; presupunere: fantomele sunt copii ai K-BOT | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-13 | Adobe găzduit: confirmarea suprascrierii pe Acrobat vechi și F8 | GATA pe cod, nerulat; ajutor neactualizat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-12 | Adobe găzduit anterior lui 2024: monitor JS și banc | GATA pe cod (build Controls + App + teste: 0 erori, 0 avertismente); **bancul nerulat, teste scrise dar nerulate**; în jurnalul real: confirmarea «Replace existing file?» nerecunoscută pe Acrobat 19.12 (nereparată) | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-14 | Avertisment la pornire când Adobe e mai vechi de 2025 | GATA pe cod, nerulat; build de reconfirmat; ajutor în `setari.md` (tag 0078-14) | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-15 | Vizualizatorul ActiveX refăcut de la zero (06–07.10.2026) | GATA pe cod, probat pe banca ActiveX; **Ctrl+S automat după semnătură NU merge**; ajutor neactualizat | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
+|       0078-16 | Vizualizatorul jurnalului ActiveX: arborele din stânga pe culoare | GATA pe cod (build App: 0 erori, 0 avertismente), **nerulat pe ecran**; DEBUG-only, fără ajutor | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |          0079 | Jurnalul semnăturilor (FX_PDF_SEMNATURI)                                                                                 | GATA pe cod                                   | [0070-0079](state/KBOT_STATUS_0070-0079.md) |
 |       0080-01 | `IdClsf` = `Clasificatii.IDClsf` pe șapte tabele FX\_ + `FX_Extrase.DataDoc` → DATE                                      | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
 |       0080-02 | Vederea «Extrase» + pagina «Setări → Extrase»                                                                            | GATA pe cod                                   | [0080-0089](state/KBOT_STATUS_0080-0089.md) |
@@ -328,30 +315,17 @@ _Full rows, focus notes and open threads per slice live in `state/` (see the ind
 |          0121 | **Legături furnizor <-> angajament pe COD FISCAL** (PLAN, 19.10.2026): `Parteneri` rămâne pe unitate, legăturile noi (angajament, indicatori) merg pe CodFiscal normalizat în două tabele noi; Migrator cu raport, fereastra «Parteneri», cârlige la asociere, pagina «Recepții» (sub-felii 0121-01..06) | 0121-01 (schema) scris, NERULAT; 0121-02 (Migrator), 0121-03 («Parteneri») 0121-04 (cârlige) și 0121-05 (pagina «Recepții») construite, netestate; 0121-07 (interogare unică de copiere a datelor vechi) scrisă; rămâne 0121-06 (închidere) | [0120-0129](state/KBOT_STATUS_0120-0129.md) |
 |          0122 | **Partenerul doar pe COD FISCAL, fără IdPartener/CodPartener** (ANALIZĂ, 20.10.2026): se rupe dependența `FX_DDF_REV_SA/SB`, `FX_ORD_TBL`, `VC_NIR` de `Parteneri.IdPartener` (în afara migrării din Access); sub-felii 0122-01..07 (codul fiscal intră în `CodPartener`, `VC_NIR` primește coloana) | plan hotărât; 0122-01 (DDL + interogări unice) rulat curat pe o bază; 0122-02 (server DDF/ORD) și 0122-03 (cititorii) construite, netestate | [0120-0129](state/KBOT_STATUS_0120-0129.md) |
 |          0123 | **VERCON si ADECHIT RAPOARTE IN K-BOT.app (felia operatorului, 21.10.2026)**: doua file noi in ribbon (VERCON cu «Trimite la Vercon» mutat, ADECHIT), rapoartele calculate tot de server, in pagini native K-BOT cu PDF si Excel; fara resturi pe server | 0123-01 (filele, podul bearer, curatarea snapshoturilor, pagina ADECHIT Rapoarte; ajutor 0000-119) GATA pe cod (build curat), **server nedeployat, nimic rulat sau vazut**; 0123-02 (VERCON Rapoarte: pagina cu Subunitate / Gestiune / An, combo-arbore cu luni, arbore de selectie cu ramuri la cerere, Listare PDF, Export Excel; ajutor contabil/vercon-rapoarte) GATA pe cod (build curat), **server nedeployat, nimic rulat sau vazut**; 0123-06 (arborele: textul din dreapta care nu incape se taie cu «...», nu dispare; KBot.Controls 1.69) GATA pe cod (build curat), **nevazut pe ecran** | [0120-0129](state/KBOT_STATUS_0120-0129.md) |
-|          D001 | **Curățarea documentației** (24.10.2026), familie `SLICE-Dnnn-nn`: eliminare redundanțe cu păstrarea logicii | D001-01…86 aplicate local: consolidare documentară, surse unice și predări absorbite; fără teste sau commit/push | [D000-D009](state/KBOT_STATUS_D000-D009.md) |
+|          D001 | **Curățarea documentației** (24.10.2026), familie `SLICE-Dnnn-nn`: eliminare redundanțe cu păstrarea logicii | D001-01…99 aplicate local: consolidare documentară, surse unice și predări absorbite; fără teste sau commit/push | [D000-D009](state/KBOT_STATUS_D000-D009.md) |
+|          D002 | **Curățarea documentației — continuare după D001-99** | D002-01…23 aplicate local; numai documentație, fără teste sau commit/push | [D000-D009](state/KBOT_STATUS_D000-D009.md#slice-d002) |
 |          ME01 | **KBotAdmin (program desktop PRIVAT al proprietarului, 10.10.2026; NU se livrează clienților NICIODATĂ)**: arbore de baze + arbore de conturi, pagini: comenzi, diferență de schemă, sincronizare, drepturi pe conturi (ADECHIT: anulare documente, editare lună închisă), loguri colorate, jurnal activitate, vizite, server, copii, cereri de conturi noi (înlocuiește pagina web `/operator`, ștearsă), interogări unice cu istoric, resetare login, Clonare DEMO (ME01-04: golește 000_DEMO și clonează o altă bază în el, păstrând CF-ul și DC-ul lui 000_DEMO), Publicare (trimiterea de fișiere din AvacontPush); ME01-05: ribbon cu 5 file, un singur arbore baze→conturi, pornire maximizată; paginile web de administrare scoase; temă Classic fixă; systray. Doar prin SSH, fără port de bază deschis; jumătatea de server în `PYTHON/routes/admin_cli/` | GATA și folosit de proprietar (publish local `_Admin` prin `publish-admin.ps1`); după orice schimbare în `routes/admin_cli`: push PYTHON; rolul AD_EDIT_INCHISA de creat | [ME01](state/KBOT_STATUS_ME01.md) |
 |          ME02 | **Copii locale criptate ale bazelor de unitate, cu istoric (cererea operatorului, 20.10.2026; planul în `docs/ME02_PLAN.md`; numărul ME02 e presupus)**: ME02-01 data creării/modificării pe tabelele care nu o au (fișier SQL generat, nerulat); ME02-02 copia manuală pe toate bazele fără `000_DEMO`, cu motiv obligatoriu | ME02-01…08 scrise; registrul consemnează confirmarea operatorului din 21.10.2026 pentru primele două copii locale după corecția SFTP. Verifică/export/istoric/curățare/ștergere și mesajul de deschidere rămân neîncercate; SQL 01 este separat. Reper documentar D001-30 | [ME02](state/KBOT_STATUS_ME02.md) |
 |          CHAT | **CHATUL COMUN ÎN K-BOT.app (felia operatorului, 21.10.2026; CHAT-01…09 web = [istoric Python](../../PYTHON/docs/chat/PROIECT.md), separat de CHAT-08/09 desktop)**: robotul din colțul paginii «Acasă» se leagănă și poartă un număr roșu la mesaje necitite, un clic deschide balonul cu mesaje (CHAT-08); răspuns la mesaj, filtrul V/A/K, închidere la clic în afară (CHAT-09) | GATA pe cod (build curat), **nimic văzut pe ecran, serverul neurcat** | [CHAT](state/KBOT_STATUS_CHAT.md) |
 
 Work outside the slice system: [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
-**Next free slice number: 0124.** (0021 — semnarea DDF — a fost absorbită de felia 0078.)
-⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în
-comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate),
-amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara
-încă «Next free: 0038». Felia 0040 a luat următorul număr liber REAL; rândurile 0038/0039 rămân de
-completat de cine le-a făcut.
-(0031: jurnalele 01/03/04 sunt disponibile; 02 era încă planificată la reperul lor. [Starea și limitele](state/KBOT_STATUS_0030-0039.md#slice-0031), navigare D001-28.)
-(0032 = sub-paginile DDF, în lucru în arborele de lucru la data feliei 0033.)
+**Next free slice number: 0124.** (0021 — semnarea DDF — a fost absorbită de felia 0078.) ⚠️ **Registrul are o gaură: 0038 și 0039 lipsesc.** Codul din `KBot.Controls/Tree` se referă în comentarii la «felia 0038» (culoarea/grosimea separatorilor) și «felia 0039» (marginile scalate), amândouă vizibile în arborele de lucru, dar niciuna n-are rând aici, iar linia de mai sus declara încă «Next free: 0038». Felia 0040 a luat următorul număr liber REAL; rândurile 0038/0039 rămân de completat de cine le-a făcut. (0031: jurnalele 01/03/04 sunt disponibile; 02 era încă planificată la reperul lor. [Starea și limitele](state/KBOT_STATUS_0030-0039.md#slice-0031), navigare D001-28.) (0032 = sub-paginile DDF, în lucru în arborele de lucru la data feliei 0033.)
 
-**Sinkuri terminale ne-rearuncătoare — sunt CINCI, nu trei.** Planul feliei 0031 §1.4 cerea
-corectarea, aici, a unei linii care ar fi spus «exact trei». Linia aceea **nu a existat niciodată în
-acest fișier** (căutată în tot `docs/`); singura formulare a regulii stă în `CLAUDE.md:43` și nu
-numără nimic. Situația reală, ca să nu mai fie nevoie de căutare data viitoare:
-`GlobalErrorLog.Write`, `AdobeHostLog.Write`, `DevHarnessForm.HandleUiError` (scrierea în runlog),
-plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele două **nu pot** rearunca:
-`AdvancedTreeControl` le cheamă din căi de desenare, iar o excepție dintr-o scriere de jurnal în
-`OnPaint` omoară procesul. Toate cinci scriu motivul pe `Trace` — niciunul nu înghite tăcut.
+**Sinkuri terminale ne-rearuncătoare — sunt CINCI, nu trei.** Planul feliei 0031 §1.4 cerea corectarea, aici, a unei linii care ar fi spus «exact trei». Linia aceea **nu a existat niciodată în acest fișier** (căutată în tot `docs/`); singura formulare a regulii stă în `CLAUDE.md:43` și nu numără nimic. Situația reală, ca să nu mai fie nevoie de căutare data viitoare: `GlobalErrorLog.Write`, `AdobeHostLog.Write`, `DevHarnessForm.HandleUiError` (scrierea în runlog), plus, din felia 0031-01, `TreeLogger.Write` și `TreeLogger.Init`. Ultimele două **nu pot** rearunca: `AdvancedTreeControl` le cheamă din căi de desenare, iar o excepție dintr-o scriere de jurnal în `OnPaint` omoară procesul. Toate cinci scriu motivul pe `Trace` — niciunul nu înghite tăcut.
 
 ---
 
@@ -377,71 +351,31 @@ Notele curente și restanțele fiecărei felii sunt în registrul ei `state/KBOT
 
 ## Open threads (not yet scheduled)
 
-- Each slice's open threads are in its `state/KBOT_STATUS_*.md` file, under «Open threads».
-  Threads that belong to no single slice (server housekeeping, DDL gaps, in-process dicts,
-  the 11 red tests, code shipped without a slice…) are in
-  [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
+- Each slice's open threads are in its `state/KBOT_STATUS_*.md` file, under «Open threads». Threads that belong to no single slice (server housekeeping, DDL gaps, in-process dicts, the 11 red tests, code shipped without a slice…) are in [KBOT_STATUS_SLICELESS.md](state/KBOT_STATUS_SLICELESS.md).
 
 ## Locked decisions (do not relitigate without a note here)
 
-- **HELP = slice 0000, permanently** (operator, 30.09.2026). All work on the interactive help and
-  the manual (engine, capture tool, topics under `src/KBot.App/HelpContent/`, screenshots, guided
-  tours, manual export) is recorded as a sub-slice `0000-NN` in
-  [state/KBOT_STATUS_0000-0009.md](state/KBOT_STATUS_0000-0009.md), worklog `SLICE-0000-NN-*.md`.
-  Never give help work a new slice number. A feature slice that changes a screen should also say
-  which help topic / capture tag it makes stale («Ajutor de actualizat» in the 0000 Open threads).
-  Maintainer guide + update procedure: `docs/HELP_SYSTEM.md`.
+- **HELP = slice 0000, permanently** (operator, 30.09.2026). All work on the interactive help and the manual (engine, capture tool, topics under `src/KBot.App/HelpContent/`, screenshots, guided tours, manual export) is recorded as a sub-slice `0000-NN` in [state/KBOT_STATUS_0000-0009.md](state/KBOT_STATUS_0000-0009.md), worklog `SLICE-0000-NN-*.md`. Never give help work a new slice number. A feature slice that changes a screen should also say which help topic / capture tag it makes stale («Ajutor de actualizat» in the 0000 Open threads). Maintainer guide + update procedure: `docs/HELP_SYSTEM.md`.
 
-- **Clasificația pe tabelele FX\_: `IdClsf` = `Clasificatii.IDClsf` (cheia MariaDB)** (felia 0080-01,
-  24.09.2026). Nu mai există tabel FX\_ care să țină id-ul Access în `IdClsf`; legăturile se fac pe
-  `C.IDClsf = X.IdClsf`. Cele șapte tabele convertite NU țin o copie a id-ului Access (operatorul:
-  «I don't want to keep IdClsfAcc in those tables»); el stă doar în `Clasificatii.IdClsfAcc`.
-  Marcajul unei tabele convertite = comentariul `Clasificatii.IDClsf (0080-01)` pe `IdClsf`.
-- **Id-ul Access al clasificației stă DOAR în `Clasificatii.IdClsfAcc`** (felia 0080-04,
-  25.09.2026, operatorul: «Clasificatii ... should be the source of truth»). Niciun alt tabel nu
-  are coloana `IdClsfAcc`; cine are nevoie de id-ul Access îl citește prin `IdClsf`.
+- **Clasificația pe tabelele FX\_: `IdClsf` = `Clasificatii.IDClsf` (cheia MariaDB)** (felia 0080-01, 24.09.2026). Nu mai există tabel FX\_ care să țină id-ul Access în `IdClsf`; legăturile se fac pe `C.IDClsf = X.IdClsf`. Cele șapte tabele convertite NU țin o copie a id-ului Access (operatorul: «I don't want to keep IdClsfAcc in those tables»); el stă doar în `Clasificatii.IdClsfAcc`. Marcajul unei tabele convertite = comentariul `Clasificatii.IDClsf (0080-01)` pe `IdClsf`.
+- **Id-ul Access al clasificației stă DOAR în `Clasificatii.IdClsfAcc`** (felia 0080-04, 25.09.2026, operatorul: «Clasificatii ... should be the source of truth»). Niciun alt tabel nu are coloana `IdClsfAcc`; cine are nevoie de id-ul Access îl citește prin `IdClsf`.
 
 - Single-worker Gunicorn stays; `on_starting` guard refuses `workers > 1`.
-- Under Redis: TTL counts down to the 30-min absolute cap (no slide); the 20-min idle
-  window is enforced in-app from `expires_at`; operator password is never written to Redis;
-  keys namespaced `kbot:sess:` in K-BOT's own DB; never FLUSHDB/FLUSHALL (shared Redis).
-- Static API key kept ONLY for the legacy FOREXE fleet on shared routes; eliminated for
-  K-BOT.
-- **Două servere MariaDB, alese după CINE cheamă ruta** (2026-08-25). `DB_CONFIG` =
-  serverul vechi, unde clienții Access/VBA scriu în continuare; `DB_CONFIG_NEW` = serverul
-  K-BOT, unde trăiește tot ce face `KBot.App`. Regula practică e garda rutei: `X-Api-Key`
-  (`require_api_key`) → vechi, prin `utils.database.get_db_connection`; token bearer
-  (`require_session`) → nou, prin `utils.database.get_kbot_connection`. Adică
-  `routes/auth/*` și `routes/forexe/*` fără `seed.py`. Aceleași conturi pe ambele mașini
-  (AVACONT, Admin, loginurile operatorilor) — diferă doar adresa.
-  - **Excepția, deliberată:** `routes/migrare/*` și `routes/schema_sync/*` sunt rute cu
-    `X-Api-Key` care serveau `KBot.Migrator`, dar **rămân pe `DB_CONFIG` și nu se ating** —
-    jumătatea Python a migrării nu mai e folosită, `KBot.Migrator` face acea treabă singur,
-    în VB.NET, către adresa din `migrator-settings.json`.
-  - `db_reader` (contul read-only pentru tabelele de login) **există doar pe serverul
-    vechi**. Pe cel nou citirile din `AVACONT_COMUN` merg prin contul de serviciu
-    (`get_kbot_comun_connection`); `READER_DB_CONFIG` rămâne în `config.py`, nefolosit,
-    ca drumul înapoi să fie o singură funcție dacă se creează contul și acolo.
+- Under Redis: TTL counts down to the 30-min absolute cap (no slide); the 20-min idle window is enforced in-app from `expires_at`; operator password is never written to Redis; keys namespaced `kbot:sess:` in K-BOT's own DB; never FLUSHDB/FLUSHALL (shared Redis).
+- Static API key kept ONLY for the legacy FOREXE fleet on shared routes; eliminated for K-BOT.
+- **Două servere MariaDB, alese după CINE cheamă ruta** (2026-08-25). `DB_CONFIG` = serverul vechi, unde clienții Access/VBA scriu în continuare; `DB_CONFIG_NEW` = serverul K-BOT, unde trăiește tot ce face `KBot.App`. Regula practică e garda rutei: `X-Api-Key` (`require_api_key`) → vechi, prin `utils.database.get_db_connection`; token bearer (`require_session`) → nou, prin `utils.database.get_kbot_connection`. Adică `routes/auth/*` și `routes/forexe/*` fără `seed.py`. Aceleași conturi pe ambele mașini (AVACONT, Admin, loginurile operatorilor) — diferă doar adresa.
+  - **Excepția, deliberată:** `routes/migrare/*` și `routes/schema_sync/*` sunt rute cu `X-Api-Key` care serveau `KBot.Migrator`, dar **rămân pe `DB_CONFIG` și nu se ating** — jumătatea Python a migrării nu mai e folosită, `KBot.Migrator` face acea treabă singur, în VB.NET, către adresa din `migrator-settings.json`.
+  - `db_reader` (contul read-only pentru tabelele de login) **există doar pe serverul vechi**. Pe cel nou citirile din `AVACONT_COMUN` merg prin contul de serviciu (`get_kbot_comun_connection`); `READER_DB_CONFIG` rămâne în `config.py`, nefolosit, ca drumul înapoi să fie o singură funcție dacă se creează contul și acolo.
 - **Predicatul IdUnitate rămâne pe nomenclatoarele partajate**, precum Clasificatii și Parteneri; regula eliminării lui se referă la tabelele FX_. Pentru valori numai de afișare, subinterogarea scalară LIMIT 1 evită multiplicarea indicatorilor prin duplicate. [0011-03](SLICE-0011-01-sumar-endpoint.md#slice-0011-03) păstrează măsurătorile 29/25 → 0/67/50, cele opt unități și limitele alegerii arbitrare.
 - **Convențiile cheilor nu înlocuiesc identificarea cheii reale.** Clasificatii.IDClsf = PK MariaDB, IdClsfAcc = id Access păstrat; în familia ORD, sufixul P este PK MariaDB. Constatarea din 18.07.2026 că FX_Indicatori.IdClsf ținea id Access precede contractul 0080 de mai sus. Nu se aplică simultan ca două reguli actuale. Delimitare documentară D001-26; scripturile 0080 nu sunt declarate rulate prin această notă.
 - **La analiza unui join, numără rândurile înainte și după.** Zero potriviri sau mai multe rânduri decât tabelul din stânga indică defectul, nu o particularitate de date; cele trei rulări pierdute din 0011 sunt documentate în istoricul legat.
-- **Migrarea `FX_` NU recreează schema (varianta A, nedistructivă).** Tabelele există
-  deja în MariaDB cu DDL curat; `POST /api/forexe/seed/schema` rămâne în cod pentru o
-  bază complet goală, dar **utilitarul de migrare nu îl apelează** — face
-  `DROP TABLE IF EXISTS` înainte de un `CREATE` derivat din tipurile DAO ale Access-ului
-  (`LONGTEXT` pentru orice tip necunoscut, `VARCHAR(255)` implicit), deci ar înlocui o
-  schemă bună cu una mai slabă, peste date reale. Lista de coloane se citește în schimb
-  din destinație, cu `GET /api/forexe/seed/columns` (slice 0012-01).
+- **Migrarea `FX_` NU recreează schema (varianta A, nedistructivă).** Tabelele există deja în MariaDB cu DDL curat; `POST /api/forexe/seed/schema` rămâne în cod pentru o bază complet goală, dar **utilitarul de migrare nu îl apelează** — face `DROP TABLE IF EXISTS` înainte de un `CREATE` derivat din tipurile DAO ale Access-ului (`LONGTEXT` pentru orice tip necunoscut, `VARCHAR(255)` implicit), deci ar înlocui o schemă bună cu una mai slabă, peste date reale. Lista de coloane se citește în schimb din destinație, cu `GET /api/forexe/seed/columns` (slice 0012-01).
 
 ---
 
 ## How to update this file
 
-- When a slice changes state, edit its full row and notes in its `state/KBOT_STATUS_<tens>.md`
-  file, AND its short line in the index above (name, status in a few words, link).
-- When you assign a new slice, add a line to the index, add a `## Slice NNNN` section
-  (Registry / Current focus / Open threads) to the right `state/` file (create the file when
-  a new group of ten starts, e.g. `KBOT_STATUS_0090-0099.md`), and bump "Next free slice number".
+- When a slice changes state, edit its full row and notes in its `state/KBOT_STATUS_<tens>.md` file, AND its short line in the index above (name, status in a few words, link).
+- When you assign a new slice, add a line to the index, add a `## Slice NNNN` section (Registry / Current focus / Open threads) to the right `state/` file (create the file when a new group of ten starts, e.g. `KBOT_STATUS_0090-0099.md`), and bump "Next free slice number".
 - Work the operator asks for without a slice number goes to `state/KBOT_STATUS_SLICELESS.md`.
-- Only rules that apply to EVERY task (locked decisions, cross-cutting notes) belong in this
-  file. Keep it small: that is the reason it was split.
+- Only rules that apply to EVERY task (locked decisions, cross-cutting notes) belong in this file. Keep it small: that is the reason it was split.

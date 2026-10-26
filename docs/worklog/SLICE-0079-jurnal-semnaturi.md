@@ -4,8 +4,7 @@
 
 ## 1. Cererea
 
-«Pe MariaDB să salvez pentru fiecare semnătură momentul, locul (IP-ul și eventual locul fizic
-după IP), informațiile calculatorului și contul conectat.»
+«Pe MariaDB să salvez pentru fiecare semnătură momentul, locul (IP-ul și eventual locul fizic după IP), informațiile calculatorului și contul conectat.»
 
 Deciziile operatorului (23.09.2026):
 
@@ -28,27 +27,17 @@ Deciziile operatorului (23.09.2026):
 | `IpPublic` | serverul — adresa cererii (ProxyFix) |
 | `IpLocal`, `NumeCalculator`, `UtilizatorWindows`, `SistemOperare`, `VersiuneKbot` | calculatorul operatorului |
 
-**Doar semnăturile NOI.** Câmpurile deja semnate când documentul a fost deschis sunt ale altcuiva;
-dacă ar fi trimise din nou, ar primi contul, IP-ul și calculatorul operatorului de acum.
-`SignatureRecords.Added` scade din fișierul salvat mulțimea de câmpuri citită la pornirea
-sesiunii de semnare. Copia păstrată în `PdfDeIncarcat` își ține propriile înregistrări în
-`.json` (reîncercarea are loc mai târziu, când nimeni nu mai știe cum arăta fișierul înainte).
+**Doar semnăturile NOI.** Câmpurile deja semnate când documentul a fost deschis sunt ale altcuiva; dacă ar fi trimise din nou, ar primi contul, IP-ul și calculatorul operatorului de acum. `SignatureRecords.Added` scade din fișierul salvat mulțimea de câmpuri citită la pornirea sesiunii de semnare. Copia păstrată în `PdfDeIncarcat` își ține propriile înregistrări în `.json` (reîncercarea are loc mai târziu, când nimeni nu mai știe cum arăta fișierul înainte).
 
-**Fără dubluri.** Serverul sare peste un rând pe care îl are deja (același document, câmp și dată
-a semnăturii), deci o reîncercare după un răspuns pierdut nu dublează nimic.
+**Fără dubluri.** Serverul sare peste un rând pe care îl are deja (același document, câmp și dată a semnăturii), deci o reîncercare după un răspuns pierdut nu dublează nimic.
 
 **Aceeași tranzacție** ca PDF-ul și `Semnatura`: nu există PDF încărcat fără înregistrarea lui.
 
-**Semnatar și dată:** `PdfPKCS7.SignName` (sau CN-ul certificatului); data = marca de timp a
-autorității, dacă există, altfel ceasul semnatarului (`/M`). Se trimit cu fus orar; serverul le
-scrie în ora lui locală, ca toate coloanele `NOW()`.
+**Semnatar și dată:** `PdfPKCS7.SignName` (sau CN-ul certificatului); data = marca de timp a autorității, dacă există, altfel ceasul semnatarului (`/M`). Se trimit cu fus orar; serverul le scrie în ora lui locală, ca toate coloanele `NOW()`.
 
-**Pe fir:** `X-Semnaturi` (lista) și `X-Statie` (calculatorul) — base64 de JSON UTF-8, fiindcă un
-antet HTTP poartă doar ASCII, iar numele semnatarului poate avea diacritice. Răspunsul PUT are în
-plus `semnaturi_inregistrate`.
+**Pe fir:** `X-Semnaturi` (lista) și `X-Statie` (calculatorul) — base64 de JSON UTF-8, fiindcă un antet HTTP poartă doar ASCII, iar numele semnatarului poate avea diacritice. Răspunsul PUT are în plus `semnaturi_inregistrate`.
 
-**Ordinea e liberă:** ruta sondează tabelul la fiecare încărcare. Până rulează DDL-ul pe o bază,
-încărcarea merge ca în 0078, iar înregistrările sunt doar trecute în jurnal ca sărite.
+**Ordinea e liberă:** ruta sondează tabelul la fiecare încărcare. Până rulează DDL-ul pe o bază, încărcarea merge ca în 0078, iar înregistrările sunt doar trecute în jurnal ca sărite.
 
 ## 3. Fișiere
 
@@ -77,9 +66,7 @@ FileVersion: neschimbate față de 0078 — aceleași proiecte, încă necomise 
 
 1. `sql/0079_fx_pdf_semnaturi.sql` pe `AVACONT_SURSA` și pe fiecare bază de unitate.
 2. `PYTHON/routes/forexe/pdf.py` pe VPS, repornire gunicorn.
-3. Pe banc: semnați un câmp nou și încărcați. Bancul arată semnatarul și data fiecărui câmp.
-   Apoi `SELECT * FROM FX_PDF_SEMNATURI ORDER BY IdSemnatura DESC` — un rând pentru câmpul nou,
-   niciunul pentru câmpurile semnate dinainte.
+3. Pe banc: semnați un câmp nou și încărcați. Bancul arată semnatarul și data fiecărui câmp. Apoi `SELECT * FROM FX_PDF_SEMNATURI ORDER BY IdSemnatura DESC` — un rând pentru câmpul nou, niciunul pentru câmpurile semnate dinainte.
 
 ## 6. Neverificat
 

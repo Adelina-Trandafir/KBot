@@ -101,4 +101,4 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0037 | `KBotDataView` — coloana care se întinde poate fi ORICARE (`SpecificColumn` + `FillColumnKey`) | DONE (code) / **nevăzut pe ecran, FĂRĂ TESTE (cerute sărite)** | [0037](../SLICE-0037-dataview-fill-specific-column.md) | Contractele, raționamentul, probele și limitele sunt în jurnal; starea este a etapei istorice. |
+| 0037 | `KBotDataView` — coloana care se întinde poate fi ORICARE (`SpecificColumn` + `FillColumnKey`) | DONE (code) / **nevăzut pe ecran, FĂRĂ TESTE (cerute sărite)** | [0037](../SLICE-0013-column-sizing.md#slice-0037) | Contractele, raționamentul, probele și limitele sunt în jurnal; starea este a etapei istorice. |

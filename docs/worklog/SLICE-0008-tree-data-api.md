@@ -1,27 +1,22 @@
 # SLICE-0008 — Tree data API (`GET /api/forexe/tree`) + `MainForm.LoadTree`
 
-Plan: `PLAN_TreeDataApi.md` (saved to this folder as part of this slice — it existed only
-in chat before). Supersedes the earlier TreeDataApi handoff.
-Date: 2026-07-15.
+Consolidare documentară D002-03: [0008 — baza](#slice-0008) și [0009 — amendamentul filtrului SS](#slice-0009) păstrează datele, contractele, probele și restanțele inițiale. 0009 nu reimplementează clientul deja livrat; adaugă excepția angajamentelor fără indicatori și probele clientului. Limitele inițiale rămân istorice; 0008-02 (grupe) și 0008-03 (HeaderClick) rămân separate.
+
+<a id="slice-0008"></a>
+
+Plan: `PLAN_TreeDataApi.md` (saved to this folder as part of this slice — it existed only in chat before). Supersedes the earlier TreeDataApi handoff. Date: 2026-07-15.
 
 > Documentation note, D001-03 (24.10.2026): the superseded handoff and the two old plan-pointer files were retired after their unique notes were absorbed into the plans beside this worklog. Paths in the historical Files touched table below describe the 0008 change, not current navigation targets.
 
 ## What changed and why
 
-The tree is what unblocks every MainForm view: until now `MainForm` loaded a flat list
-from `GET /api/forexe/angajamente`, which carries no `Are*` flags, so no view could know
-whether it had data. This slice adds the real endpoint, the corrected POCO, and the
-gating.
+The tree is what unblocks every MainForm view: until now `MainForm` loaded a flat list from `GET /api/forexe/angajamente`, which carries no `Are*` flags, so no view could know whether it had data. This slice adds the real endpoint, the corrected POCO, and the gating.
 
 ### Step 0 — what the mandatory reads showed
 
-The plan said the two source queries were "in this chat's history". They were not (fresh
-session), so everything below was read from the **repo** export at
-`FX_System_Export/QUERIES/` — *not* from `C:\AVACONT\FX_System_Export`. Nobody has
-confirmed the repo copy matches live Access; that remains unverified (see below).
+The plan said the two source queries were "in this chat's history". They were not (fresh session), so everything below was read from the **repo** export at `FX_System_Export/QUERIES/` — *not* from `C:\AVACONT\FX_System_Export`. Nobody has confirmed the repo copy matches live Access; that remains unverified (see below).
 
-The single most useful finding: **the plan's contract is a composite of two different
-Access queries, and reading only one of them makes the plan look wrong.**
+The single most useful finding: **the plan's contract is a composite of two different Access queries, and reading only one of them makes the plan look wrong.**
 
 | Query | Carries | Lacks |
 |---|---|---|
@@ -29,82 +24,32 @@ Access queries, and reading only one of them makes the plan look wrong.**
 | `qFX_MAIN_TREE_DESCRIERE` (row-source; node population via `mdl_FX_PopulareTree.Angajamente_SQL`) | `CodAngajament, IDDF, DataCreare, DataDefinitivare, Descriere, Stare, Incarcat, Preluat, Salarii, Surse` | the flags |
 | `qFX_MAIN_TREE_DATA` ("sort by date" variant) | `Salarii, ASCUNS, Surse`, and the Anulat/Suspendat/Ascuns `WHERE` | `IDDF`, `DataDefinitivare`, the flags |
 
-The plan's column list = `_DESCRIERE` ∪ `ASCUNS`; its flags = `qFX_MAIN_TREE`. Under that
-reading the plan's "Corrections" hold, and the handoff is the document that was wrong.
+The plan's column list = `_DESCRIERE` ∪ `ASCUNS`; its flags = `qFX_MAIN_TREE`. Under that reading the plan's "Corrections" hold, and the handoff is the document that was wrong.
 
 Read-by-read:
 
-- **`Salarii` — the plan is right, restored.** It is a real `FX_Angajamente` column
-  (Boolean, `TABLES/FX_Angajamente.md:18`) *and* a real row-source column in `_DESCRIERE`.
-  The POCO's old comment called it "deprecated" citing commit `22a2ec4`, but that commit
-  removed it from the **angajamente list path** — a different path. Both facts are true at
-  once; the list route still does not return it, and this tree route does.
-- **`ArePartener` — the plan is right, `FX_DDF.PartAng` used.** `FX_DDF` has both
-  `PartAng` (Boolean) and `CodPartener` (Text) (`TABLES/FX_DDF.md`). Access wrote
-  `Not IsNull([CODPARTENER])`, which binds to `FX_DDF.CodPartener` (the only table in the
-  join with that column). The two are near-equivalent — `frmFX_DDF` enables `CodPartener`
-  only when `PartAng` is ticked (`frmFX_DDF.md:453,580`) and validation makes a partener
-  mandatory when `PartAng` (`frmFX_DDF.md:701`) — but `PartAng` is the clean yes/no.
-- **`db_name` needed no decision.** The session already carries it
-  (`session_store.py:59`; `auth.py:359` does `dc = g.session.db_name`), so the route reads
-  `g.session.db_name` and takes no base parameter. A token therefore cannot target another
-  database — strictly better than the list route, which accepts `db_name` from the query.
-- **`AreDDF` needs no join.** `IDDF` is a column on `FX_Angajamente` itself (both DDLs),
-  so `a.IDDF IS NOT NULL` is the whole answer, exactly as the plan says.
-- **`AngajamentTreeInfo` was well-documented but built on the wrong single query** — it
-  had `IDORD` and no `Salarii`/`ASCUNS`/`Surse`. Rewritten.
-- **`MainForm`** — `WithReauth(Of T)` preserved and reused; `LoadAngajamenteAsync` was the
-  stopgap the tree replaces.
+- **`Salarii` — the plan is right, restored.** It is a real `FX_Angajamente` column (Boolean, `TABLES/FX_Angajamente.md:18`) *and* a real row-source column in `_DESCRIERE`. The POCO's old comment called it "deprecated" citing commit `22a2ec4`, but that commit removed it from the **angajamente list path** — a different path. Both facts are true at once; the list route still does not return it, and this tree route does.
+- **`ArePartener` — the plan is right, `FX_DDF.PartAng` used.** `FX_DDF` has both `PartAng` (Boolean) and `CodPartener` (Text) (`TABLES/FX_DDF.md`). Access wrote `Not IsNull([CODPARTENER])`, which binds to `FX_DDF.CodPartener` (the only table in the join with that column). The two are near-equivalent — `frmFX_DDF` enables `CodPartener` only when `PartAng` is ticked (`frmFX_DDF.md:453,580`) and validation makes a partener mandatory when `PartAng` (`frmFX_DDF.md:701`) — but `PartAng` is the clean yes/no.
+- **`db_name` needed no decision.** The session already carries it (`session_store.py:59`; `auth.py:359` does `dc = g.session.db_name`), so the route reads `g.session.db_name` and takes no base parameter. A token therefore cannot target another database — strictly better than the list route, which accepts `db_name` from the query.
+- **`AreDDF` needs no join.** `IDDF` is a column on `FX_Angajamente` itself (both DDLs), so `a.IDDF IS NOT NULL` is the whole answer, exactly as the plan says.
+- **`AngajamentTreeInfo` was well-documented but built on the wrong single query** — it had `IDORD` and no `Salarii`/`ASCUNS`/`Surse`. Rewritten.
+- **`MainForm`** — `WithReauth(Of T)` preserved and reused; `LoadAngajamenteAsync` was the stopgap the tree replaces.
 
 ### Three corrections to the plan (recorded so nobody re-derives them)
 
-1. *"Confirm the exact predicate against query 1's `WHERE`"* — **impossible as written.**
-   `qFX_MAIN_TREE` has **no `WHERE` clause at all**, and `_DESCRIERE`'s `WHERE` is a unit
-   filter (`Nz([FI]![IdUnitate],0)=75`) plus a `DC='000_DEMO'` orphan branch. The
-   Anulat/Suspendat/Ascuns exclusion is real but lives in `qFX_MAIN_TREE_DATA.md:7` and
-   `mdl_FX_PopulareTree.md:253`:
-   `((InStr(1,[Stare],'Anulat')>0) Or (InStr(1,[Stare],'Suspendat')>0) Or [Ascuns]) = False`.
-   Implemented from those, as `NOT LIKE '%Anulat%' AND NOT LIKE '%Suspendat%'`
-   (`utf8mb4_general_ci` is case-insensitive, so `LIKE` mirrors Access `InStr` with no
-   extra functions). Note Access bundles `Ascuns` into the *same* exclusion; the plan
-   splits it into the separate `include_hidden` switch, which is what got built.
-2. *"`IDDF` is nullable → `LEFT JOIN FX_DDF`"* — **no join was used.** `ArePartener` and
-   `AreOrd` are self-contained `EXISTS` on `FX_DDF` instead. A `LEFT JOIN FX_DDF` would
-   duplicate the angajament row if two DDF rows ever shared a `CodAngajament` — the plan
-   asserts 1-to-at-most-1, but nothing in the schema enforces it, and a `GROUP BY`
-   containing `d.IDDF` would not have collapsed the duplicate anyway. With no join,
-   "one row per `CodAngajament`" follows from the primary key and needs no `GROUP BY`.
-   `IDDF` itself comes from `FX_Angajamente.IDDF`, so the join bought nothing.
-3. *"Wire the flags to `.Visible`"* — **`KBotNavList` has no visibility concept**, only
-   `SetItemEnabled`. Per operator decision, gating uses `SetItemEnabled`: a disabled item
-   is unclickable, unhoverable and skipped by keyboard nav (`KBotNavList.vb:246,270,293`),
-   so an empty view is genuinely unreachable — just greyed rather than hidden. Real
-   hide/show would need `SetItemVisible` in `KBot.Theming` (deferred).
+1. *"Confirm the exact predicate against query 1's `WHERE`"* — **impossible as written.** `qFX_MAIN_TREE` has **no `WHERE` clause at all**, and `_DESCRIERE`'s `WHERE` is a unit filter (`Nz([FI]![IdUnitate],0)=75`) plus a `DC='000_DEMO'` orphan branch. The Anulat/Suspendat/Ascuns exclusion is real but lives in `qFX_MAIN_TREE_DATA.md:7` and `mdl_FX_PopulareTree.md:253`: `((InStr(1,[Stare],'Anulat')>0) Or (InStr(1,[Stare],'Suspendat')>0) Or [Ascuns]) = False`. Implemented from those, as `NOT LIKE '%Anulat%' AND NOT LIKE '%Suspendat%'` (`utf8mb4_general_ci` is case-insensitive, so `LIKE` mirrors Access `InStr` with no extra functions). Note Access bundles `Ascuns` into the *same* exclusion; the plan splits it into the separate `include_hidden` switch, which is what got built.
+2. *"`IDDF` is nullable → `LEFT JOIN FX_DDF`"* — **no join was used.** `ArePartener` and `AreOrd` are self-contained `EXISTS` on `FX_DDF` instead. A `LEFT JOIN FX_DDF` would duplicate the angajament row if two DDF rows ever shared a `CodAngajament` — the plan asserts 1-to-at-most-1, but nothing in the schema enforces it, and a `GROUP BY` containing `d.IDDF` would not have collapsed the duplicate anyway. With no join, "one row per `CodAngajament`" follows from the primary key and needs no `GROUP BY`. `IDDF` itself comes from `FX_Angajamente.IDDF`, so the join bought nothing.
+3. *"Wire the flags to `.Visible`"* — **`KBotNavList` has no visibility concept**, only `SetItemEnabled`. Per operator decision, gating uses `SetItemEnabled`: a disabled item is unclickable, unhoverable and skipped by keyboard nav (`KBotNavList.vb:246,270,293`), so an empty view is genuinely unreachable — just greyed rather than hidden. Real hide/show would need `SetItemVisible` in `KBot.Theming` (deferred).
 
 ### Server
 
-`PYTHON/routes/forexe/tree.py` — new `GET /api/forexe/tree`, `@require_session`,
-parameters `an`, `ss`, `include_hidden` (no `id_unitate`, no `db_name`). Nine flags as
-correlated `EXISTS` per the plan (cost is a non-issue at a few hundred rows); `Surse` via
-`GROUP_CONCAT(DISTINCT i.SS SEPARATOR ';')` replacing Access `ConcatRelated`. Fully
-parameterized (3 placeholders). Responses go out through a local `_json_utf8` helper
-(`ensure_ascii=False`) so `Descriere`/`Stare` diacritics stay literal UTF-8. A DB error
-returns a reason-coded 500 body, never an empty tree.
+`PYTHON/routes/forexe/tree.py` — new `GET /api/forexe/tree`, `@require_session`, parameters `an`, `ss`, `include_hidden` (no `id_unitate`, no `db_name`). Nine flags as correlated `EXISTS` per the plan (cost is a non-issue at a few hundred rows); `Surse` via `GROUP_CONCAT(DISTINCT i.SS SEPARATOR ';')` replacing Access `ConcatRelated`. Fully parameterized (3 placeholders). Responses go out through a local `_json_utf8` helper (`ensure_ascii=False`) so `Descriere`/`Stare` diacritics stay literal UTF-8. A DB error returns a reason-coded 500 body, never an empty tree.
 
 ### Client
 
-- `AngajamentTreeInfo` rewritten: plan's columns + nine flags + `Salarii`/`Ascuns`/`Surse`;
-  `IDORD` dropped (with it, the `First()`/arbitrary-pick problem disappears); `IdUnitate`
-  absent. Provenance comment now names a real source per field.
-- `IApiClient.GetTreeAsync` + `ApiClient.GetTreeAsync` + `GetTreeResponse`/`GetTreeRow`
-  wire DTOs, mirroring `GetAngajamenteAsync` (hard-fail on non-2xx; 401 flows to
-  `WithReauth`, no retry here).
-- `MainForm`: `LoadTreeAsync` replaces `LoadAngajamenteAsync` on the load path;
-  `PopulateTree` binds rows; `ApplyViewGating` maps each flag to its nav item; An/SS
-  changes re-query; `btnOpt` toggles `include_hidden` and reloads. Four nav items added
-  (`indicatori`, `istoric`, `revizii`, `partener`) as `PlaceholderView`s so all nine flags
-  gate something — previously only five of nine had anywhere to land. `sumar` has no flag
-  and stays always enabled; if the active view closes, selection falls back to `sumar`.
+- `AngajamentTreeInfo` rewritten: plan's columns + nine flags + `Salarii`/`Ascuns`/`Surse`; `IDORD` dropped (with it, the `First()`/arbitrary-pick problem disappears); `IdUnitate` absent. Provenance comment now names a real source per field.
+- `IApiClient.GetTreeAsync` + `ApiClient.GetTreeAsync` + `GetTreeResponse`/`GetTreeRow` wire DTOs, mirroring `GetAngajamenteAsync` (hard-fail on non-2xx; 401 flows to `WithReauth`, no retry here).
+- `MainForm`: `LoadTreeAsync` replaces `LoadAngajamenteAsync` on the load path; `PopulateTree` binds rows; `ApplyViewGating` maps each flag to its nav item; An/SS changes re-query; `btnOpt` toggles `include_hidden` and reloads. Four nav items added (`indicatori`, `istoric`, `revizii`, `partener`) as `PlaceholderView`s so all nine flags gate something — previously only five of nine had anywhere to land. `sumar` has no flag and stays always enabled; if the active view closes, selection falls back to `sumar`.
 
 ## Files touched
 
@@ -127,43 +72,112 @@ returns a reason-coded 500 body, never an empty tree.
 ## Test results
 
 - `dotnet build KBot.sln` — **succeeded, 0 warnings, 0 errors**, `Option Strict On`.
-- `dotnet test KBot.sln` — **80 passed, 0 failed** (Api 26, App 18, Theming 27, Common 7,
-  Domain 1, LocalStore 1) — baseline held.
-- `PYTHON` offline (`.venv`, `python -m pytest -q`) — **75 passed, 8 skipped, 0 fail/error**
-  (was 75/7: the new host-only module is the extra skip, which is correct off-host).
-- Route registration verified explicitly with a stubbed `config`: `GET /api/forexe/tree`
-  is on the URL map alongside the two existing forexe rules; `_SQL` carries exactly 3
-  `%s` placeholders and keeps its `%%`-escaped `LIKE` literals.
+- `dotnet test KBot.sln` — **80 passed, 0 failed** (Api 26, App 18, Theming 27, Common 7, Domain 1, LocalStore 1) — baseline held.
+- `PYTHON` offline (`.venv`, `python -m pytest -q`) — **75 passed, 8 skipped, 0 fail/error** (was 75/7: the new host-only module is the extra skip, which is correct off-host).
+- Route registration verified explicitly with a stubbed `config`: `GET /api/forexe/tree` is on the URL map alongside the two existing forexe rules; `_SQL` carries exactly 3 `%s` placeholders and keeps its `%%`-escaped `LIKE` literals.
 
 ## Anything left unverified or deferred
 
 **Unverified (no access from a dev station — needs a host run):**
 
-1. **Nothing in this slice has touched a real database.** All 12 tree tests are host-only
-   and skipped here. Verification checklist items 1–5 and 7–8 are therefore **unverified**;
-   `tests/test_forexe_tree.py` is written to answer 1–5 and 8 when run on the host.
-2. **The four flag tables were confirmed by the operator, not by me.** `FX_DDF`, `FX_ORD`,
-   `FX_DDF_REV_SA`, `FX_Receptii_H` have **no MariaDB DDL anywhere in the repo** —
-   `DDL_FX_ListaAngajamente.sql` creates only `FX_Angajamente`, `FX_Indicatori`,
-   `FX_Istoric`, `FX_Rezervari`, `FX_Plati`. The operator states all four exist live; the
-   endpoint hard-fails if any does not. Worth adding their DDL to the repo.
-3. **`ASCUNS` likewise** — operator-confirmed. The repo contradicts itself:
-   `DDL_FX_ListaAngajamente.sql:42` has the column, `docs/FX_Angajamente.sql` does not.
-   (The shipped `GET /angajamente` already selects `FA.ASCUNS`, which corroborates it.)
-4. **The Access export is the repo copy**, not `C:\AVACONT\FX_System_Export`, and nobody
-   has confirmed it matches the live Access file.
-5. **`FX_DDF.SS` exists but is unused here.** The SS filter goes through `FX_Indicatori.SS`
-   per the plan; whether a DDF on another SS should affect the tree was not asked.
+1. **Nothing in this slice has touched a real database.** All 12 tree tests are host-only and skipped here. Verification checklist items 1–5 and 7–8 are therefore **unverified**; `tests/test_forexe_tree.py` is written to answer 1–5 and 8 when run on the host.
+2. **The four flag tables were confirmed by the operator, not by me.** `FX_DDF`, `FX_ORD`, `FX_DDF_REV_SA`, `FX_Receptii_H` have **no MariaDB DDL anywhere in the repo** — `DDL_FX_ListaAngajamente.sql` creates only `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`, `FX_Rezervari`, `FX_Plati`. The operator states all four exist live; the endpoint hard-fails if any does not. Worth adding their DDL to the repo.
+3. **`ASCUNS` likewise** — operator-confirmed. The repo contradicts itself: `DDL_FX_ListaAngajamente.sql:42` has the column, `docs/FX_Angajamente.sql` does not. (The shipped `GET /angajamente` already selects `FA.ASCUNS`, which corroborates it.)
+4. **The Access export is the repo copy**, not `C:\AVACONT\FX_System_Export`, and nobody has confirmed it matches the live Access file.
+5. **`FX_DDF.SS` exists but is unused here.** The SS filter goes through `FX_Indicatori.SS` per the plan; whether a DDF on another SS should affect the tree was not asked.
 
 **Deferred:**
 
 - `SetItemVisible` on `KBotNavList` (real hide/show instead of grey-out).
 - The nine real views — all still `PlaceholderView`.
 - `btnSort` tree sorting and `btnIstoric` remain placeholder `MsgBox` stubs.
-- `GET /api/forexe/angajamente` and `GetAngajamenteAsync` are now **unused by MainForm**
-  but kept (route, client method and their tests) — no caller was removed. Retire in a
-  later slice if nothing else picks them up.
+- `GET /api/forexe/angajamente` and `GetAngajamenteAsync` are now **unused by MainForm** but kept (route, client method and their tests) — no caller was removed. Retire in a later slice if nothing else picks them up.
 - `AdvancedTreeControl` / ComboBox theming retrofit (pre-existing).
-- The tree is still a flat list (`ConfigureListMode`), not a nested tree; `ParentKey` /
-  `TipNod` / `CodIndicator` / `CodAi` / `IdPartener` stay unset — Access set those from the
-  node level in `mcTree_Click`, and nesting was not in this slice's contract.
+- The tree is still a flat list (`ConfigureListMode`), not a nested tree; `ParentKey` / `TipNod` / `CodIndicator` / `CodAi` / `IdPartener` stay unset — Access set those from the node level in `mcTree_Click`, and nesting was not in this slice's contract.
+
+---
+
+<a id="slice-0009"></a>
+
+## SLICE-0009 — `MainForm.LoadTree` (client half) + tree orphan-escape (0008 amendment)
+
+Spec: the SLICE-0009 brief in chat. Date: 2026-07-17. Supersedes nothing; amends `SLICE-0008-tree-data-api.md` (Part A below).
+
+### The headline: most of this slice was already shipped by 0008
+
+The 0009 brief was written against a tree state that no longer existed. It asks to add `GetTreeResponse`/`GetTreeRow` (Part B), `ApiClient.GetTreeAsync` + `IApiClient` (Part C), and a live `MainForm.LoadTree` with gating and period-driven reload (Part D). **Slice 0008 already built all of that** — see `SLICE-0008-tree-data-api.md` §Client. The mandatory reads confirmed it before touching anything:
+
+- `UpsertAngajamenteRequest.vb` already carries `GetTreeResponse` / `GetTreeRow`.
+- `ApiClient.GetTreeAsync` + the `IApiClient` declaration already exist.
+- `MainForm` already has `LoadTreeAsync`, `PopulateTree`, `ApplyViewGating` (all nine flags), An/SS re-query, and `btnOpt` → `include_hidden` reload. There is no `PopulateAngajamenteList`, no `BuildTreeInfo`, no `#If DEBUG` sample, and the tree does **not** use the `Angajament` model / `GetAngajamenteAsync` — the brief's starting state.
+
+So the genuinely-unshipped work was: **Part A (the orphan escape, which 0008 did not have)** and the **client-side `GetTreeAsync` tests (0008 shipped the method with no dedicated tests — its count was "Api 26"; this slice brings it to 30)**.
+
+Rather than churn working, committed code to match the brief's exact letter, the two architectural choices 0008 made — which already satisfy the brief's *goals* — were kept:
+
+1. **Mapping lives in the client, not in a `MainForm.BuildTreeInfo`.** `ApiClient.GetTreeAsync` returns `IReadOnlyList(Of AngajamentTreeInfo)`, mapping every field (incl. the `AreOrd` JSON → `AreORD` POCO bridge) itself. This keeps the wire DTO out of `MainForm` entirely, which is cleaner than the brief's `GetTreeResponse`-in-the- form shape. The mapping assertions the brief wanted on `BuildTreeInfo` are covered by `GetTree_Deserializes_AllFields_AndNineFlags` instead.
+2. **No `token` parameter on `GetTreeAsync`.** The brief signature threads `token` through; the codebase reads the bearer from the `SessionContext` singleton per-request (this is pinned by the existing `ApiClient_ReadsTokenAtCallTime_NotAtConstruction` H1 regression guard). Adding a `token` param would contradict that pattern, so it was not added.
+3. **`GetTreeRow.IDDF` is `Long?`, not the brief's `Integer?`.** `AngajamentTreeInfo.IDDF` is `Long?`, so `Long?` on the wire DTO means a straight `.IDDF = r.IDDF` with no `CLng` conversion — one fewer place to get a cast wrong, and no overflow risk. The brief's `Integer?` → `Long?` conversion was mirroring `GetAngajamenteRow.IDDF As Integer?`; here the cleaner `Long?`-throughout was kept. `System.Text.Json` deserializes the JSON integer straight into `Long?`.
+
+### Part A — server orphan escape (`PYTHON/routes/forexe/tree.py`)
+
+The 0008 `_WHERE` filtered SS with a bare `EXISTS (… i.SS = %s)`. That hides a freshly created angajament that has **zero** indicators (rows only in `FX_Angajamente`, not yet downloaded from FOREXE) — it has no SS, so a strict SS `EXISTS` drops it. Legacy kept such rows via a separate UNION ALL orphan branch in `qFX_MAIN_TREE_DESCRIERE` / `qFX_MAIN_TREE_DATA`. Mirrored here:
+
+```sql
+AND (
+    EXISTS (SELECT 1 FROM FX_Indicatori i
+            WHERE i.CodAngajament = a.CodAngajament AND i.SS = %s)
+    OR NOT EXISTS (SELECT 1 FROM FX_Indicatori i
+                   WHERE i.CodAngajament = a.CodAngajament)
+)
+```
+
+The SS filter now narrows **only** angajamente that actually have indicators; orphans always pass. Exactly one `%s` in the block (unchanged position), so the bind tuple stays `(an, ss, include_hidden)` — `cursor.execute(_SQL, (an, ss, include_hidden))` untouched. `_SQL` still carries exactly 3 `%s` (year, ss, include_hidden); the `%%`-escaped `LIKE` literals in the Anulat/Suspendat clauses are not placeholders. The rationale is recorded in the file's `_WHERE` comment.
+
+#### Server tests (`PYTHON/tests/test_forexe_tree.py`)
+
+`demo_rows` extended with two codes and a per-code SS map (was: one indicator on `SS` for every code):
+
+- **`TREEO`** — DataCreare in AN, ASCUNS=0, Stare `În derulare`, **no `FX_Indicatori` rows** → orphan.
+- **`TREEX`** — same but its only indicator is under `99Z` (a different SS).
+
+New tests:
+
+- `test_orphan_no_indicators_is_shown` — `TREEO` appears (the escape works).
+- `test_indicators_all_other_ss_is_hidden` — `TREEX` does **not** appear (the SS filter still filters; pinned so nobody later "fixes" the escape into an OR that lets everything through).
+- `test_null_datacreare_is_always_returned` — re-checked, unaffected: `TREEN` still matches (indicator on `SS`, DataCreare NULL); under `an=AN-50` `TREEN` stays, `TREE1` drops (year filter), and the two new rows are irrelevant to its assertions.
+
+Off-host these still skip (host-only module, no `config.py`); the module collects clean.
+
+### Part B/C/D — verified present, nothing rebuilt
+
+Confirmed by read that 0008 satisfies the brief's goals (all fields mapped, `Angajament` model retired from the tree path, load triggered after a period is chosen — `LoadTreeAsync` runs on `MainForm_Load` and on every An/SS `SelectedIndexChanged`, which is the `SetPeriod`-precondition wiring the brief asked for). The brief's `bold = Not IsNullOrEmpty(row.Surse)` is functionally identical to 0008's `node.Bold = info.AreIndicatori` (a row has indicators iff `Surse` is non-empty — both derive from `FX_Indicatori`), so it was left as-is.
+
+#### Client tests added (`tests/KBot.Api.Tests/ApiClientTests.vb`)
+
+Filling 0008's gap — `GetTreeAsync` had no dedicated tests:
+
+- `GetTree_BuildsUrl_SendsBearer_EscapesSs` — path `/api/forexe/tree`, `an`, `ss` with a space → `ss=02%20A` (proves `Uri.EscapeDataString`), `include_hidden=1`, `Bearer` header.
+- `GetTree_IncludeHiddenFalse_SetsZero` — `include_hidden=0`.
+- `GetTree_Deserializes_AllFields_AndNineFlags` — a full row maps to `AngajamentTreeInfo` with `IDDF As Long?`, `DataCreare`/`DataDefinitivare`, `Salarii`/`Ascuns`/`Surse`, and all nine flags 1:1 including the `AreOrd` → `AreORD` bridge.
+- `GetTree_Non2xx_ThrowsWithStatus` — 500 → `ApiException(500)`.
+
+### Files touched
+
+| File | Change |
+|---|---|
+| `PYTHON/routes/forexe/tree.py` | `_WHERE` orphan escape + rationale comment |
+| `PYTHON/tests/test_forexe_tree.py` | fixture (`TREEO`/`TREEX`, per-code SS) + 2 tests |
+| `tests/KBot.Api.Tests/ApiClientTests.vb` | 4 `GetTreeAsync` tests |
+| `docs/worklog/SLICE-0009-maintree-loadtree.md` | this worklog |
+| `docs/worklog/KBOT_STATUS.md` | 0008 amended, 0009 row, next free → 0010 |
+
+### Test results
+
+- `dotnet test tests/KBot.Api.Tests` — **30 passed, 0 failed** (was 26; +4 new).
+- `PYTHON` offline (`.venv`, `pytest -q tests/test_forexe_tree.py`) — **1 skipped** (host-only, expected off a Flask host; module collects clean).
+
+### Unverified / deferred
+
+- **Part A has not run against a real database.** Like all of 0008's tree work, the two new orphan tests are host-only and skip here. They answer "orphan visible / other-SS hidden" when run on the Flask host.
+- Everything in 0008's "unverified/deferred" list still stands: no live DB run, missing MariaDB DDL for four flag tables, contradictory `FX_Angajamente` DDLs, `SetItemVisible` on `KBotNavList`, the nine real views, `btnSort`/`btnIstoric` stubs, the tree still a flat list (`ConfigureListMode`), and `GET /api/forexe/angajamente` + `GetAngajamenteAsync` remaining tree-unused (kept, no caller removed).

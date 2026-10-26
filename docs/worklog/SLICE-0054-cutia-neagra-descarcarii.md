@@ -49,8 +49,7 @@ Deci: **descărcarea nu e stricată, e neterminată.** Pachetul ajunge pe disc �
 
 Felia 0054 nu leagă ingestia. Face lucrul care lipsea ca să se poată **vedea de la distanță ce a adus robotul**: o cutie neagră a descărcătorului, fiindcă rularea s-a făcut pe alt calculator (cel cu tokenul și cu FOREXE), iar aici nu se poate reproduce nimic.
 
-1. **`ForexeRunDump` (clasă nouă)** — un folder per încercare de descărcare, sub
-   `<WorkflowResults>\Runs\<stamp>_<operatie>_<cod>\`:
+1. **`ForexeRunDump` (clasă nouă)** — un folder per încercare de descărcare, sub `<WorkflowResults>\Runs\<stamp>_<operatie>_<cod>\`:
 
    | Fișier | Ce ține |
    |---|---|
@@ -60,68 +59,37 @@ Felia 0054 nu leagă ingestia. Face lucrul care lipsea ca să se poată **vedea 
    | `mapped.json` | forma mapată, când apelantul a ajuns până acolo |
    | `forexe.log` | jurnalul întreg al lucrării, din `JobHistoryManager` |
 
-   Se scrie **oricum s-ar termina**: reușit, workflow eșuat, tabel lipsă, ocupat, fără sesiune,
-   excepție. Asta e toată ideea — `WorkflowResultStore` scrie doar calea fericită, deci exact
-   rularea care n-a adus nimic era și cea care nu lăsa nimic în urmă.
+   Se scrie **oricum s-ar termina**: reușit, workflow eșuat, tabel lipsă, ocupat, fără sesiune, excepție. Asta e toată ideea — `WorkflowResultStore` scrie doar calea fericită, deci exact rularea care n-a adus nimic era și cea care nu lăsa nimic în urmă.
 
-2. **`ForexeController.DownloadNodeAsync` / `DownloadListaAsync`** — deschid jurnalul înainte de
-   orice ieșire și îl scriu pe fiecare ramură. Cele două ieșiri mute de dinainte
-   (`If _busy Then Return Nothing`, sesiune nedeschisă) **spun acum de ce** pe consolă, în loc
-   să pară că nu s-a apăsat nimic.
+2. **`ForexeController.DownloadNodeAsync` / `DownloadListaAsync`** — deschid jurnalul înainte de orice ieșire și îl scriu pe fiecare ramură. Cele două ieșiri mute de dinainte (`If _busy Then Return Nothing`, sesiune nedeschisă) **spun acum de ce** pe consolă, în loc să pară că nu s-a apăsat nimic.
 
-3. **Calea folderului se anunță pe consolă** după fiecare descărcare (`ScrieJurnal`), tocmai ca
-   operatorul să nu fie nevoit să-l caute. Dacă scrierea jurnalului eșuează, se spune și asta —
-   un jurnal lipsă nu are voie să treacă neobservat.
+3. **Calea folderului se anunță pe consolă** după fiecare descărcare (`ScrieJurnal`), tocmai ca operatorul să nu fie nevoit să-l caute. Dacă scrierea jurnalului eșuează, se spune și asta — un jurnal lipsă nu are voie să treacă neobservat.
 
-4. **Descărcarea unui nod spune acum negru pe alb unde se oprește robotul:** «descărcarea s-a
-   încheiat — pachetul e local; urmează ingestia». Un flux care raportează numai succes, când de
-   fapt s-a oprit la jumătatea drumului, e mai rău decât unul care eșuează. *(În felia asta
-   linia suna «scrierea pe server nu e încă legată de acest buton», fiindcă atunci chiar nu era.
-   Felia 0055 a legat-o și a rescris linia.)*
+4. **Descărcarea unui nod spune acum negru pe alb unde se oprește robotul:** «descărcarea s-a încheiat — pachetul e local; urmează ingestia». Un flux care raportează numai succes, când de fapt s-a oprit la jumătatea drumului, e mai rău decât unul care eșuează. *(În felia asta linia suna «scrierea pe server nu e încă legată de acest buton», fiindcă atunci chiar nu era. Felia 0055 a legat-o și a rescris linia.)*
 
 Politica de erori a cutiei negre: `Save` loghează și întoarce `Nothing` în loc să arunce. Un diagnostic stricat nu are voie să omoare descărcarea pe care o descrie; eșecul nu e înghițit — merge în `GlobalErrorLog` **și** pe consola operatorului.
 
 ### Fișiere atinse
 
 - `src/KBot.App/Forexe/ForexeRunDump.vb` — **nou** (`ForexeRunDump` + POCO-ul `ForexeRunInfo`).
-- `src/KBot.App/Forexe/ForexeController.vb` — jurnalul pe toate ramurile celor două descărcări,
-  plus ajutorul `ScrieJurnal`.
+- `src/KBot.App/Forexe/ForexeController.vb` — jurnalul pe toate ramurile celor două descărcări, plus ajutorul `ScrieJurnal`.
 - `tests/KBot.App.Tests/ForexeRunDumpTests.vb` — **nou**, 5 teste.
 - `docs/worklog/KBOT_STATUS.md` — rândul 0054, numărul liber următor, firul deschis.
 
 ### Rezultate de test
 
-- `dotnet build src\KBot.App\KBot.App.vbproj -c Debug` → **0 erori**, 7 avertismente, toate
-  `MSB3825` **preexistente** pe `.resx`-uri (aceleași 7 pe care le numără și rândul 0053).
-- `dotnet test tests\KBot.App.Tests` → **204 trecute / 13 picate / 217 total**. Cele 13 roșii
-  stau toate în fișiere neatinse de felia asta (`DdfXfaParserTests`, `XfaXmlPreviewTests`,
-  `MainFormNavItemsTests`, `DdfViewTests`, `IstoricViewTests`) și au același număr pe care
-  rândul 0048-09 îl consemnează drept preexistent. **Linia de plecare NU a fost măsurată în
-  această sesiune** — suita nu s-a rulat înainte de schimbare, deci «13 preexistente» e citit
-  din STATUS, nu verificat aici.
+- `dotnet build src\KBot.App\KBot.App.vbproj -c Debug` → **0 erori**, 7 avertismente, toate `MSB3825` **preexistente** pe `.resx`-uri (aceleași 7 pe care le numără și rândul 0053).
+- `dotnet test tests\KBot.App.Tests` → **204 trecute / 13 picate / 217 total**. Cele 13 roșii stau toate în fișiere neatinse de felia asta (`DdfXfaParserTests`, `XfaXmlPreviewTests`, `MainFormNavItemsTests`, `DdfViewTests`, `IstoricViewTests`) și au același număr pe care rândul 0048-09 îl consemnează drept preexistent. **Linia de plecare NU a fost măsurată în această sesiune** — suita nu s-a rulat înainte de schimbare, deci «13 preexistente» e citit din STATUS, nu verificat aici.
 - `dotnet test tests\KBot.App.Tests --filter ForexeRunDump` → **5 trecute / 0 picate**.
 - Nu s-a rulat `dotnet test KBot.sln` (regula casei: bancul DevHarness deschide ferestre reale).
 
 ### Ce rămâne neverificat / amânat
 
-- ⚠ **Cutia neagră nu a fost văzută pe un calculator cu FOREXE.** Testele o scriu și o citesc de
-  pe disc, dar niciun folder n-a fost produs de un robot adevărat — rularea care a pornit felia
-  s-a făcut pe alt calculator, la care nu există acces de aici. Prima rulare reală rămâne de
-  făcut acolo, iar folderul `Runs\` de trimis înapoi.
-- ✅ **Ingestia a fost legată în felia 0055** ([etapa 0055](#slice-0055)), imediat după.
-  Felia asta doar a făcut lipsa vizibilă și a spus-o pe consolă. Linia care anunța «datele au
-  rămas LOCAL» a rămas la locul ei: descărcarea chiar se oprește acolo, iar ingestia pornește
-  din shell, pe rândul următor.
-- ⚠ **Nota din STATUS despre «`sql/0049` neaplicat» (rândurile 0048-03 / 0048-04) trimite la un
-  fișier care nu există.** În `sql/` sunt `0049_ord_att_img.sql` și `0049_receptii_stergere.sql`,
-  niciunul al ingestiei; migrarea ingestiei e `sql/0048_alegeri_unitate.sql`. **Dacă e aplicată
-  pe server nu se poate spune de aici** — nu s-a atins nicio bază. De verificat înainte de
-  legarea ingestiei, altfel prima cerere adevărată va cădea pe o tabelă lipsă.
-- Nimic nu curăță `Runs\`. Un folder per descărcare crește la nesfârșit; dacă devine o problemă,
-  tăierea celor mai vechi e o felie separată (aceeași decizie ca `MaxHistory` din
-  `JobHistoryManager`).
-- Cutia neagră **nu** ține și răspunsurile HTTP ale vederilor (sumar / rezervări / recepții /
-  plăți). Dacă va fi nevoie și de ele, e o adăugare, nu o rescriere.
+- ⚠ **Cutia neagră nu a fost văzută pe un calculator cu FOREXE.** Testele o scriu și o citesc de pe disc, dar niciun folder n-a fost produs de un robot adevărat — rularea care a pornit felia s-a făcut pe alt calculator, la care nu există acces de aici. Prima rulare reală rămâne de făcut acolo, iar folderul `Runs\` de trimis înapoi.
+- ✅ **Ingestia a fost legată în felia 0055** ([etapa 0055](#slice-0055)), imediat după. Felia asta doar a făcut lipsa vizibilă și a spus-o pe consolă. Linia care anunța «datele au rămas LOCAL» a rămas la locul ei: descărcarea chiar se oprește acolo, iar ingestia pornește din shell, pe rândul următor.
+- ⚠ **Nota din STATUS despre «`sql/0049` neaplicat» (rândurile 0048-03 / 0048-04) trimite la un fișier care nu există.** În `sql/` sunt `0049_ord_att_img.sql` și `0049_receptii_stergere.sql`, niciunul al ingestiei; migrarea ingestiei e `sql/0048_alegeri_unitate.sql`. **Dacă e aplicată pe server nu se poate spune de aici** — nu s-a atins nicio bază. De verificat înainte de legarea ingestiei, altfel prima cerere adevărată va cădea pe o tabelă lipsă.
+- Nimic nu curăță `Runs\`. Un folder per descărcare crește la nesfârșit; dacă devine o problemă, tăierea celor mai vechi e o felie separată (aceeași decizie ca `MaxHistory` din `JobHistoryManager`).
+- Cutia neagră **nu** ține și răspunsurile HTTP ale vederilor (sumar / rezervări / recepții / plăți). Dacă va fi nevoie și de ele, e o adăugare, nu o rescriere.
 
 ---
 
@@ -174,59 +142,31 @@ Pachetul se ține în viață între faze și se **retrimite neschimbat**, împr
 ### Fișiere atinse
 
 - `src/KBot.Domain/AsociereStare.vb` — `DinPropunere` (nou).
-- `src/KBot.App/Forexe/AsociereForm.vb` — al doilea constructor, `ModAsociere`, ramurile de
-  încărcare / aprindere a butonului / salvare / închidere, `NehotarateleCount`, `DeciziiDin`,
-  `SalveazaPropunereaAsync`, `TextDupaSalvare`.
+- `src/KBot.App/Forexe/AsociereForm.vb` — al doilea constructor, `ModAsociere`, ramurile de încărcare / aprindere a butonului / salvare / închidere, `NehotarateleCount`, `DeciziiDin`, `SalveazaPropunereaAsync`, `TextDupaSalvare`.
 - `src/KBot.App/KBOT.vb` — `DuLaIngestieAsync` + capătul lui `Tree_RightIconClicked`.
-- `src/KBot.Api/IApiClient.vb`, `src/KBot.Api/ApiClient.vb` — retragerea lui
-  `TrimitePrelucrareAsync`.
-- `src/KBot.App/Forexe/PrelucrareCoordinator.vb` — retragerea lui `TrimiteAsync` (în locul ei, o
-  notă care spune de ce nu se mai poate trimite într-o singură fază) și `SalveazaAsync` (nou).
+- `src/KBot.Api/IApiClient.vb`, `src/KBot.Api/ApiClient.vb` — retragerea lui `TrimitePrelucrareAsync`.
+- `src/KBot.App/Forexe/PrelucrareCoordinator.vb` — retragerea lui `TrimiteAsync` (în locul ei, o notă care spune de ce nu se mai poate trimite într-o singură fază) și `SalveazaAsync` (nou).
 - `tests/KBot.Domain.Tests/AsociereStareDinPropunereTests.vb` — **nou**, 8 teste.
 - `tests/KBot.App.Tests/AsociereDeciziiTests.vb` — **nou**, 9 teste.
 - `tests/KBot.App.Tests/PrelucrareCoordinatorTests.vb` — **+4 teste** pentru bucla fazei a doua.
-- `tests/KBot.Api.Tests/PrelucrareApiClientTests.vb`, `tests/KBot.App.Tests/PrelucrareCoordinatorTests.vb`
-  — mutate pe `CerePropunereAsync`; **niciun caz pierdut**, fiindcă bucla de întrebări e aceeași.
+- `tests/KBot.Api.Tests/PrelucrareApiClientTests.vb`, `tests/KBot.App.Tests/PrelucrareCoordinatorTests.vb` — mutate pe `CerePropunereAsync`; **niciun caz pierdut**, fiindcă bucla de întrebări e aceeași.
 - Opt fișiere de teste cu clienți falși — stub-ul metodei retrase, șters.
 
 ### Rezultate de test
 
 - `dotnet build KBot.sln` → **0 erori** (avertismentele `MSB3825` preexistente pe `.resx`).
-- `KBot.App.Tests` → **217 trecute / 13 picate / 230**. Cele 13 roșii sunt aceleași dinaintea
-  feliei (Ddf / Istoric / Xfa / MainFormNavItems), în fișiere neatinse aici; linia de plecare
-  măsurată în această sesiune, după felia 0054, era 204/217 — deci cele **13 teste noi de aici trec
-  toate** și nu s-a stricat nimic.
-- `KBot.Domain.Tests` → **28 trecute / 3 picate / 31**. Cele 3 roșii sunt
-  `DdfInfoTests.EtichetaRevizie_*`. **Preexistente, și se poate dovedi:** `DdfInfo.vb`,
-  `DdfInfoTests.vb` sunt identice cu HEAD (`git status` gol pe ele), iar eticheta de revizie nu
-  atinge nimic din felia asta.
-- `KBot.Api.Tests` → **94 trecute / 1 picat / 95**. Roșul e
-  `ApiClientTests.GetDdf_FormatsRevisionLabel_WithSpacePadding_Not_Zeroes` — același defect ca
-  cele trei de mai sus (eticheta DDF spune `18.01.2026` în loc de `  0 - 18.01.2026`), în fișier
-  identic cu HEAD.
+- `KBot.App.Tests` → **217 trecute / 13 picate / 230**. Cele 13 roșii sunt aceleași dinaintea feliei (Ddf / Istoric / Xfa / MainFormNavItems), în fișiere neatinse aici; linia de plecare măsurată în această sesiune, după felia 0054, era 204/217 — deci cele **13 teste noi de aici trec toate** și nu s-a stricat nimic.
+- `KBot.Domain.Tests` → **28 trecute / 3 picate / 31**. Cele 3 roșii sunt `DdfInfoTests.EtichetaRevizie_*`. **Preexistente, și se poate dovedi:** `DdfInfo.vb`, `DdfInfoTests.vb` sunt identice cu HEAD (`git status` gol pe ele), iar eticheta de revizie nu atinge nimic din felia asta.
+- `KBot.Api.Tests` → **94 trecute / 1 picat / 95**. Roșul e `ApiClientTests.GetDdf_FormatsRevisionLabel_WithSpacePadding_Not_Zeroes` — același defect ca cele trei de mai sus (eticheta DDF spune `18.01.2026` în loc de `  0 - 18.01.2026`), în fișier identic cu HEAD.
 - Nu s-a rulat `dotnet test KBot.sln` (regula casei: bancul DevHarness deschide ferestre reale).
 
 ### Ce rămâne neverificat / amânat
 
-- ⚠⚠ **Nimic din felia asta n-a atins un server viu și nu s-a văzut pe ecran.** Formularul în
-  modul propunere n-a fost desenat nici cu `DrawToBitmap`, iar drumul întreg — descărcare ▸
-  propunere ▸ așezare ▸ salvare — n-a rulat niciodată cap-coadă. Calculatorul cu FOREXE și cu
-  tokenul e altul; aici nu se poate reproduce.
-- ⚠ **RECONSTITUIREA nu se poate cere din formular.** `ActiuneAsociere.Reconstituire` și
-  `receptie_noua` există în amândouă contractele, dar editorul nu a avut niciodată o comandă
-  care să le producă — nici înainte, în modul de oricând. În modul propunere lipsa doare mai
-  tare: un instantaneu al unei recepții create ȘI șterse înainte ca K-BOT să fi descărcat vreodată
-  angajamentul (F26) nu are unde fi așezat, iar «ignorat» ar fi un răspuns greșit (scrie
-  `Sters = 1`). Până la o comandă de «recepție nouă», un asemenea rând **blochează salvarea**.
-  Nu s-a introdus aici ca să nu se adauge o formă nouă de UI nevăzută pe ecran în aceeași felie.
-- ⚠ **Plățile lipsesc din tabloul de propunere** (propunerea nu le poartă), deci reperele de
-  plată nu apar pe benzi și în grafic în timpul ingestiei. Apar după salvare, în editorul de
-  oricând. Dacă se dovedește că operatorului îi trebuie acolo, e o adăugare pe rută, nu o
-  rescriere aici.
-- ⚠ **`sql/0048_alegeri_unitate.sql`**: operatorul confirmă că e aplicată pe server, și în sursă
-  și în baza de lucru. Nu s-a verificat din repo — nu s-a atins nicio bază de aici.
-- După salvare formularul NU se reîncarcă în modul de oricând: propunerea e consumată, iar o a
-  doua citire ar cere celălalt mod. Corecturile se fac redeschizând editorul de oricând.
+- ⚠⚠ **Nimic din felia asta n-a atins un server viu și nu s-a văzut pe ecran.** Formularul în modul propunere n-a fost desenat nici cu `DrawToBitmap`, iar drumul întreg — descărcare ▸ propunere ▸ așezare ▸ salvare — n-a rulat niciodată cap-coadă. Calculatorul cu FOREXE și cu tokenul e altul; aici nu se poate reproduce.
+- ⚠ **RECONSTITUIREA nu se poate cere din formular.** `ActiuneAsociere.Reconstituire` și `receptie_noua` există în amândouă contractele, dar editorul nu a avut niciodată o comandă care să le producă — nici înainte, în modul de oricând. În modul propunere lipsa doare mai tare: un instantaneu al unei recepții create ȘI șterse înainte ca K-BOT să fi descărcat vreodată angajamentul (F26) nu are unde fi așezat, iar «ignorat» ar fi un răspuns greșit (scrie `Sters = 1`). Până la o comandă de «recepție nouă», un asemenea rând **blochează salvarea**. Nu s-a introdus aici ca să nu se adauge o formă nouă de UI nevăzută pe ecran în aceeași felie.
+- ⚠ **Plățile lipsesc din tabloul de propunere** (propunerea nu le poartă), deci reperele de plată nu apar pe benzi și în grafic în timpul ingestiei. Apar după salvare, în editorul de oricând. Dacă se dovedește că operatorului îi trebuie acolo, e o adăugare pe rută, nu o rescriere aici.
+- ⚠ **`sql/0048_alegeri_unitate.sql`**: operatorul confirmă că e aplicată pe server, și în sursă și în baza de lucru. Nu s-a verificat din repo — nu s-a atins nicio bază de aici.
+- După salvare formularul NU se reîncarcă în modul de oricând: propunerea e consumată, iar o a doua citire ar cere celălalt mod. Corecturile se fac redeschizând editorul de oricând.
 
 ### Corectură după PRIMA rulare adevărată (08.09.2026)
 
@@ -240,23 +180,13 @@ Defectul e al feliei 0055: idiomul a fost copiat de la linia 1567 fără a obser
 
 - `src/KBot.App/KBOT.vb` — `DuLaIngestieAsync` (tokenul) + nota de la declarația lui `_cts`.
 - `dotnet build src\KBot.App\KBot.App.vbproj -c Debug` → **0 erori, 0 avertismente**.
-- `dotnet test tests\KBot.App.Tests` → **217 trecute / 13 picate / 230** — neschimbat față de
-  măsurătoarea de dinainte de corectură, aceleași 13 roșii preexistente.
+- `dotnet test tests\KBot.App.Tests` → **217 trecute / 13 picate / 230** — neschimbat față de măsurătoarea de dinainte de corectură, aceleași 13 roșii preexistente.
 
 **Nu e acoperit de un test.** Câmpul se citește dintr-un `MainForm` construit, iar suita nu construiește shell-ul. Dovada rămâne cea de mai sus: o singură atribuire, într-un alt flux.
 
 #### Ce se știe despre pachetul acela, din datele trimise de operator
 
-Citit din istoricul descărcat, ca să se știe la ce se uită operatorul la prima propunere reușită:
-istoricul începe la 30.05.2026 (workflow REVERSE), deci cele patru recepții din ianuarie–martie
-nu au niciun instantaneu — normal, `verifica_acoperirea` cere acoperire pentru instantanee, nu
-pentru recepții. Rândurile de «Salvare receptie» formează lanțuri, nu recepții separate:
-`28.344,13` ▸ `28.152,13` ▸ `26.298,13` și `2.663,42` ▸ `1.429,42` sunt aceeași recepție
-micșorată de încasări (−192, −1.854, respectiv −414/−181/−639), iar numai ultima valoare apare
-în `ListaReceptii`. Exact cazul F9: trecerea automată poate așeza doar ULTIMUL instantaneu, deci
-verigile dinainte ajung la operator. **Niciun lanț nu pare să ceară o reconstituire** — nicio
-recepție creată ȘI dispărută complet —, deci golul de la «recepție nouă» nu ar trebui să
-blocheze salvarea acestui angajament. Dedus din date, **neverificat împotriva serverului.**
+Citit din istoricul descărcat, ca să se știe la ce se uită operatorul la prima propunere reușită: istoricul începe la 30.05.2026 (workflow REVERSE), deci cele patru recepții din ianuarie–martie nu au niciun instantaneu — normal, `verifica_acoperirea` cere acoperire pentru instantanee, nu pentru recepții. Rândurile de «Salvare receptie» formează lanțuri, nu recepții separate: `28.344,13` ▸ `28.152,13` ▸ `26.298,13` și `2.663,42` ▸ `1.429,42` sunt aceeași recepție micșorată de încasări (−192, −1.854, respectiv −414/−181/−639), iar numai ultima valoare apare în `ListaReceptii`. Exact cazul F9: trecerea automată poate așeza doar ULTIMUL instantaneu, deci verigile dinainte ajung la operator. **Niciun lanț nu pare să ceară o reconstituire** — nicio recepție creată ȘI dispărută complet —, deci golul de la «recepție nouă» nu ar trebui să blocheze salvarea acestui angajament. Dedus din date, **neverificat împotriva serverului.**
 
 ## Repere unice păstrate din registru
 
