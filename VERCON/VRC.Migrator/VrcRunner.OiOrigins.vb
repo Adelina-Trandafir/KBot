@@ -13,11 +13,17 @@ Partial Friend NotInheritable Class VrcRunner
         Private ReadOnly _receipts As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
         Private ReadOnly _errors As New Dictionary(Of String, String)(StringComparer.Ordinal)
         Private ReadOnly _replacements As New Dictionary(Of String, String)(StringComparer.Ordinal)
+        ''' <summary>Write-off positions saved with a positive quantity: position -> (quantity in Access, quantity written, sentence for the report).</summary>
+        Private ReadOnly _flipped As New Dictionary(Of String, (Original As Decimal, Fixed As Decimal, Text As String))(StringComparer.Ordinal)
+        ''' <summary>Day of each document (family|label), the earliest of its active lines.</summary>
+        Private ReadOnly _dates As New Dictionary(Of String, Date)(StringComparer.Ordinal)
+        Private _balanceChecked As Boolean
 
         Public Sub New(k_rows As List(Of Dictionary(Of String, Object)), k_bp As List(Of Dictionary(Of String, Object)),
                        k_bt As List(Of Dictionary(Of String, Object)), k_bs As List(Of Dictionary(Of String, Object)))
             ' Clone before correcting links. Neither the Access file nor the original dictionaries are changed.
             _rows = k_rows.Select(Function(k_r) New Dictionary(Of String, Object)(k_r, StringComparer.OrdinalIgnoreCase)).ToList()
+            FlipWrongSignWriteOffs()
             AddDocuments("IDBP", k_bp)
             AddDocuments("IDBT", k_bt)
             AddDocuments("IDBC", k_bs)
@@ -139,6 +145,13 @@ Partial Friend NotInheritable Class VrcRunner
                 Dim k_annulled As Object = Nothing
                 If k_row.TryGetValue("Anulat", k_annulled) AndAlso VrcConvert.ToDecimal(k_annulled).GetValueOrDefault() <> 0D Then Continue For
                 AddRow(_documents, DocumentKey(k_family, k_label, k_row), k_row)
+                Dim k_dayValue As Object = Nothing
+                Dim k_dayField As String = If(k_family = "IDBP", "DATABP", If(k_family = "IDBT", "DATABT", "DATABC"))
+                If k_row.TryGetValue(k_dayField, k_dayValue) AndAlso k_dayValue IsNot Nothing AndAlso Not TypeOf k_dayValue Is DBNull Then
+                    Dim k_day As Date = Convert.ToDateTime(k_dayValue, CultureInfo.InvariantCulture).Date
+                    Dim k_known As Date
+                    If Not _dates.TryGetValue(k_family & "|" & k_label, k_known) OrElse k_day < k_known Then _dates(k_family & "|" & k_label) = k_day
+                End If
             Next
         End Sub
 
@@ -242,6 +255,115 @@ Partial Friend NotInheritable Class VrcRunner
             Next
         End Sub
 
+        ''' <summary>
+        ''' A write-off position (bon de casare) saved with a POSITIVE quantity is a wrong sign of the old program: the quantity (and its value)
+        ''' is multiplied by -1, in the copy only. Done only when the same document / product / price has no correct (negative) position;
+        ''' otherwise the positive ones may be real and are left alone.
+        ''' </summary>
+        Private Sub FlipWrongSignWriteOffs()
+            Dim k_correct As New HashSet(Of String)(StringComparer.Ordinal)
+            For Each k_row In _rows
+                If Family(k_row) = "IDBC" AndAlso OiLabel(k_row("IDBC")).Length > 0 AndAlso Quantity(k_row) <= 0D Then
+                    k_correct.Add(DocumentKey("IDBC", OiLabel(k_row("IDBC")), k_row))
+                End If
+            Next
+            For Each k_row In _rows
+                If Family(k_row) <> "IDBC" OrElse Quantity(k_row) <= 0D Then Continue For
+                Dim k_label = OiLabel(k_row("IDBC"))
+                If k_label.Length = 0 OrElse k_correct.Contains(DocumentKey("IDBC", k_label, k_row)) Then Continue For
+                Dim k_original = Quantity(k_row)
+                k_row("Cant") = -k_original
+                Dim k_valueRaw As Object = Nothing
+                If k_row.TryGetValue("ValoareCUTVA", k_valueRaw) Then
+                    Dim k_value = VrcConvert.ToDecimal(k_valueRaw)
+                    If k_value.HasValue AndAlso k_value.Value > 0D Then k_row("ValoareCUTVA") = -k_value.Value
+                End If
+                _flipped(VrcConvert.KeyText(k_row("IDOI"))) = (k_original, -k_original,
+                    $"Bonul de casare nr. {k_label}, produsul {VrcConvert.KeyText(k_row("IdProdus"))}: cantitatea {k_original.ToString("G29", CultureInfo.InvariantCulture)} a devenit {(-k_original).ToString("G29", CultureInfo.InvariantCulture)}.")
+            Next
+        End Sub
+
+        ''' <summary>The sentence for a position whose sign was changed, or empty.</summary>
+        Public Function FlippedText(k_position As String) As String
+            Dim k_flip As (Original As Decimal, Fixed As Decimal, Text As String) = Nothing
+            Return If(_flipped.TryGetValue(k_position, k_flip), k_flip.Text, String.Empty)
+        End Function
+
+        Public Function FlippedOriginal(k_position As String) As String
+            Dim k_flip As (Original As Decimal, Fixed As Decimal, Text As String) = Nothing
+            Return If(_flipped.TryGetValue(k_position, k_flip), k_flip.Original.ToString("G29", CultureInfo.InvariantCulture), String.Empty)
+        End Function
+
+        Public Function FlippedFixed(k_position As String) As String
+            Dim k_flip As (Original As Decimal, Fixed As Decimal, Text As String) = Nothing
+            Return If(_flipped.TryGetValue(k_position, k_flip), k_flip.Fixed.ToString("G29", CultureInfo.InvariantCulture), String.Empty)
+        End Function
+
+        ''' <summary>
+        ''' After the sign change: every batch (holder, origin bon, product, price, account) that a changed position takes from is followed day by day, the way the
+        ''' online application checks its register. A batch that goes below zero is returned with a sentence for the report. Answered once per source.
+        ''' </summary>
+        Public Function NegativeBalancesAfterFlip() As List(Of (Position As String, Balance As Decimal, Text As String))
+            Dim k_result As New List(Of (Position As String, Balance As Decimal, Text As String))()
+            If _balanceChecked Then Return k_result
+            _balanceChecked = True
+            If _flipped.Count = 0 Then Return k_result
+            Dim k_events As New Dictionary(Of String, List(Of (EventDay As Date, Order As Integer, Amount As Decimal)))(StringComparer.Ordinal)
+            Dim k_touched As New Dictionary(Of String, String)(StringComparer.Ordinal)
+            Dim k_order As Integer = 0
+            For Each k_row In _rows
+                k_order += 1
+                Dim k_family = Family(k_row)
+                If k_family.Length = 0 Then Continue For
+                Dim k_amount = Quantity(k_row)
+                If k_amount = 0D Then Continue For
+                Dim k_label = OiLabel(k_row(k_family))
+                If k_label.Length = 0 Then Continue For
+                Dim k_originFamily As String, k_originLabel As String
+                If k_amount > 0D Then
+                    k_originFamily = k_family
+                    k_originLabel = k_label
+                Else
+                    k_originLabel = OiLabel(k_row("IDBO"))
+                    If k_originLabel.Length = 0 Then Continue For
+                    Dim k_inBp = _labels("IDBP").Contains(k_originLabel), k_inBt = _labels("IDBT").Contains(k_originLabel)
+                    If k_inBp = k_inBt Then Continue For ' unknown or ambiguous origin: reported elsewhere
+                    k_originFamily = If(k_inBp, "IDBP", "IDBT")
+                End If
+                Dim k_day As Date
+                _dates.TryGetValue(k_family & "|" & k_label, k_day)
+                Dim k_key = OiLabel(k_row("IDC_PTC")) & "|" & k_originFamily & "|" & k_originLabel & "|" & VrcConvert.KeyText(k_row("IdProdus")) & "|" &
+                            Price(k_row) & "|" & OiLabel(k_row("IDM"))
+                If Not k_events.ContainsKey(k_key) Then k_events(k_key) = New List(Of (EventDay As Date, Order As Integer, Amount As Decimal))()
+                k_events(k_key).Add((k_day, k_order, k_amount))
+                Dim k_position = VrcConvert.KeyText(k_row("IDOI"))
+                If _flipped.ContainsKey(k_position) AndAlso Not k_touched.ContainsKey(k_key) Then k_touched(k_key) = k_position
+            Next
+            For Each k_pair In k_touched.OrderBy(Function(k_t) k_t.Key, StringComparer.Ordinal)
+                Dim k_list = k_events(k_pair.Key)
+                Dim k_running As Decimal = 0D, k_lowest As Decimal = 0D
+                Dim k_firstNegative As Date? = Nothing
+                For Each k_dayGroup In k_list.GroupBy(Function(k_e) k_e.EventDay).OrderBy(Function(k_g) k_g.Key)
+                    k_running += k_dayGroup.Sum(Function(k_e) k_e.Amount)
+                    If k_running < k_lowest Then k_lowest = k_running
+                    If k_running < 0D AndAlso Not k_firstNegative.HasValue Then k_firstNegative = k_dayGroup.Key
+                Next
+                If k_lowest >= 0D Then Continue For
+                Dim k_parts = k_pair.Key.Split("|"c)
+                Dim k_received = k_list.Where(Function(k_e) k_e.Amount > 0D).Sum(Function(k_e) k_e.Amount)
+                Dim k_taken = -k_list.Where(Function(k_e) k_e.Amount < 0D).Sum(Function(k_e) k_e.Amount)
+                Dim k_dayText As String = If(k_firstNegative.HasValue AndAlso k_firstNegative.Value > Date.MinValue, k_firstNegative.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "o dată necunoscută")
+                k_result.Add((k_pair.Value, k_running,
+                    $"Produsul {k_parts(3)} (preț {k_parts(4)}, cont {k_parts(5)}, deținător {k_parts(0)}), primit pe {DocName(k_parts(1))} nr. {k_parts(2)}: primit {k_received.ToString("G29", CultureInfo.InvariantCulture)}, scos {k_taken.ToString("G29", CultureInfo.InvariantCulture)}, sold {k_running.ToString("G29", CultureInfo.InvariantCulture)}; devine negativ pe {k_dayText}."))
+            Next
+            Return k_result
+        End Function
+
+        Private Shared Function Price(k_row As Dictionary(Of String, Object)) As String
+            Dim k_price = VrcConvert.ToDecimal(k_row("PUTVA"))
+            Return If(k_price.HasValue, k_price.GetValueOrDefault().ToString("G29", CultureInfo.InvariantCulture), "NULL")
+        End Function
+
         Public ReadOnly Property Rows As List(Of Dictionary(Of String, Object))
             Get
                 Return _rows
@@ -284,6 +406,15 @@ Partial Friend NotInheritable Class VrcRunner
                 AddIssue(k_source, "OI_Produse", k_key, "IdProdus", "N17", "AVERTIZARE", "NULL", "NULL",
                          "Poziția de primire din registru nu are produs și bonul nu arată o singură variantă sigură. Se transferă fără produs; o reglați din VERCON, butonul «Reglare registru OI» din paginile bonurilor.")
             End If
+            Dim k_flipText = k_resolver.FlippedText(k_key)
+            If k_flipText.Length > 0 Then
+                AddIssue(k_source, "OI_Produse", k_key, "Cant", "N18", "CONVERSIE", k_resolver.FlippedOriginal(k_key), k_resolver.FlippedFixed(k_key), k_flipText)
+            End If
+            For Each k_negative In k_resolver.NegativeBalancesAfterFlip()
+                AddIssue(k_source, "OI_Produse", k_negative.Position, "Cant", "X18", "AVERTIZARE",
+                         k_negative.Balance.ToString("G29", CultureInfo.InvariantCulture), String.Empty,
+                         If(k_negative.Text.Length > 480, k_negative.Text.Substring(0, 480), k_negative.Text))
+            Next
             If k_family.Length > 0 Then
                 AddIssue(k_source, "OI_Produse", k_key, "IDBO", "N14", "CONVERSIE", OiLabel(k_original("IDBO")),
                          k_family & "=" & OiLabel(k_row("IDBO")) & " (sursă)",

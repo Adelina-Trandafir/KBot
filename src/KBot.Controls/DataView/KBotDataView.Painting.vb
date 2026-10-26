@@ -512,7 +512,9 @@ Partial Class KBotDataView
                 ' unless a handler replaced it), then the column header, e.g. a "Detalii" column
                 ' with the same button on every row -- but not when a picture is set. Slice 0085-02:
                 ' placement, face colour, padding, picture and font come from the column.
-                DrawButtonCell(g, col, cellRect, ButtonCaptionFor(col, _cellArgs.Text), _cellArgs.Font, enabled)
+                If Not _cellArgs.HideButton Then
+                    DrawButtonCell(g, col, cellRect, ButtonCaptionFor(col, _cellArgs.Text), _cellArgs.Font, enabled)
+                End If
             Case KBotColumnType.ProgressBar
                 DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
             Case KBotColumnType.Combo

@@ -164,18 +164,40 @@ Public NotInheritable Class TableMaps
         ' sql/AVACONT_SURSA.sql in the repository still shows AUTO_INCREMENT: the server
         ' was changed, the local dump was not.
         '
-        ' No IdUnitate anywhere: in Access the table held the WHOLE directorate's revenue
-        ' classifications, and the target keeps it that way. The nomenclator loop still
-        ' runs once per unit file, so the file that holds the rows writes them and the
-        ' others find an empty table - the operator: only one Access database has data
-        ' here. The upsert makes that repetition harmless; PRIMARY KEY (IdClsfV) is a real
-        ' unique key, so unlike Clasificatii (D8) this one does NOT need InsertOnly.
+        ' Slice AV01-12: the table has no IdUnitate (the classification is not a unit's), but it now
+        ' belongs to a SECTOR+SOURCE: SS, which Access never had, is the sector+source of the unit
+        ' whose file the row comes from (the same value Unitati.SursaSector gets), so the page of
+        ' the «Clasificatii» window finds it under the source of the title bar. The nomenclator
+        ' loop still runs once per unit file, so the file that holds the rows writes them and the
+        ' others find an empty table - the operator: only one Access database has data here. The
+        ' upsert makes that repetition harmless; PRIMARY KEY (IdClsfV) is a real unique key, so
+        ' unlike Clasificatii (D8) this one does NOT need InsertOnly. Trim1..4 (the yearly
+        ' budget) also travel here, into the table's own old columns, which nothing reads any
+        ' more: the budget that counts is the next table.
         maps.Add(New TableMap("ClasificatiiV", "Clasificatii_Venituri", SourceFile.UnitFile).
-            WithNote("Fostul «ClasificatiiV», 1=1 cu tabela Access. «IdClsfV»-ul Access " &
-                     "călătorește NESCHIMBAT: e cheia pe care o arată «FX_Extrase_H.IdClsfV» " &
-                     "și cheia străină a rectificărilor de venituri. Fără «IdUnitate» - " &
-                     "tabela ține clasificațiile întregii direcții. Un singur fișier Access " &
-                     "are rânduri."))
+            Add(ColumnMapping.FromUnitSursaSector("SS")).
+            WithNote("Fostul «ClasificatiiV». «IdClsfV»-ul Access călătorește NESCHIMBAT: e " &
+                     "cheia pe care o arată «FX_Extrase_H.IdClsfV» și cheia străină a " &
+                     "bugetului și a rectificărilor de venituri. «SS» (sursa-sector) vine din " &
+                     "unitatea al cărei fișier se citește: o clasificație aparține unei surse. " &
+                     "Un singur fișier Access are rânduri."))
+
+        ' --- Clasificatii_Venituri_Buget -------------------------------------------
+        ' Same Access table, second target (as Clasificatii -> Clasificatii_Buget): Trim1..4 are the
+        ' yearly budget of a classification, and in the target it belongs to a UNIT and a YEAR, one
+        ' version per start date. The Access IdClsfV travels as the key (see above), so it is NOT
+        ' resolved; the unit is the file's. A version from 01.01 of the year, as the window starts
+        ' the first version of a year. TOTAL is GENERATED. Like the expenses budget, every row is
+        ' written (a classification without amounts gets a version of zeros).
+        maps.Add(New TableMap("ClasificatiiV", "Clasificatii_Venituri_Buget", SourceFile.UnitFile).
+            Add(ColumnMapping.FromUnit("IdUnitate")).
+            Add(ColumnMapping.FromConstant("An", TransferYear)).
+            Add(ColumnMapping.FromConstant("DataInceput", New Date(TransferYear, 1, 1))).
+            Exclude("Capitol", "Subcapitol", "Paragraf", "Denumire").
+            WithNote("Buget de venituri, pe unitate și an (slice AV01-11): Trim1..4 din " &
+                     "«ClasificatiiV», o versiune de la 01.01." & CStr(TransferYear) &
+                     ". «IdClsfV»-ul Access e cheia clasificației, deci nu se rezolvă."))
+        ' (TransferYear is an Integer constant: its text is the same in every culture.)
 
         ' --- Clasificatii_Venituri_Rectificari --------------------------------------
         ' Access RectificariV, renamed the same day. 1=1 with Access as well, so again a
@@ -195,7 +217,11 @@ Public NotInheritable Class TableMaps
         ' there the target has no such column, here it does. It is DEFAULT NOW() on the
         ' server, but a migrated row carries the Access value - a DEFAULT only applies to
         ' a column the INSERT leaves out, and this one names it.
+        '
+        ' Slice AV01-11: the correction belongs to a UNIT (the table gained IdUnitate, unique on
+        ' classification + unit + date + document); the unit is the file's.
         maps.Add(New TableMap("RectificariV", "Clasificatii_Venituri_Rectificari", SourceFile.UnitFile).
+            Add(ColumnMapping.FromUnit("IdUnitate")).
             WithNote("Fostul «RectificariV», 1=1 cu tabela Access. «ID»-ul Access " &
                      "călătorește - spre deosebire de «Clasificatii_Rectificari», aici nu " &
                      "există altă cheie unică, deci fără el fiecare rulare ar dubla " &

@@ -1,10 +1,8 @@
 # KBot.Controls — control docs index
 
-One `.md` per control, next to its code. Each doc states what the control CAN do and
-where it stops. Read the doc first; open the `.vb` only for the part you must change.
+One `.md` per control, next to its code. Each doc states what the control CAN do and where it stops. Read the doc first; open the `.vb` only for the part you must change.
 
-Conventions shared by every control are written ONCE here as `C1..C9`. A control doc
-lists only its exceptions.
+Conventions shared by every control are written ONCE here as `C1..C9`. A control doc lists only its exceptions.
 
 ## Index
 
@@ -14,6 +12,7 @@ lists only its exceptions.
 | `KBotDataView` | [DataView/KBotDataView.md](DataView/KBotDataView.md) | Owner-drawn virtualized grid, unbound, group/filter/sort/aggregate |
 | `KBotChartView` | [Chart/KBotChartView.md](Chart/KBotChartView.md) | Time chart + single-select tab band |
 | `KBotLaneView` | [Lane/KBotLaneView.md](Lane/KBotLaneView.md) | Placement surface: dated markers on draggable lanes, one time axis |
+| `KBotGraphView` | [Graph/KBotGraphView.md](Graph/KBotGraphView.md) | Map of dots and links: zoom, pan, hover fades all but the neighbours; positions set by the host (layout helper included) |
 | `KBotNavList` | [NavList/KBotNavList.md](NavList/KBotNavList.md) | Sidebar / toolbar of keyed buttons, 3-state collapse, flyout |
 | `CustomPopup` | [Popup/CustomPopup.md](Popup/CustomPopup.md) | Themed context menu window (icons, mnemonics, sliders) |
 | `KBotHelpPopup` | [Popup/KBotHelpPopup.md](Popup/KBotHelpPopup.md) | The help's «?» popup + the search panel and list it shares with the help window (fed by the app) |
@@ -45,55 +44,31 @@ lists only its exceptions.
 Folder layout, reference direction and what does NOT belong here: [README.md](README.md).
 
 ## C1 — colour contract
-`Color.Empty` (and `Nothing` for `Font`/`Image`/`Size`) = "take it from the active theme".
-Anything set explicitly wins and keeps winning across scheme switches. Many controls also
-expose `Effective*` read-only properties = the value actually painted.
+`Color.Empty` (and `Nothing` for `Font`/`Image`/`Size`) = "take it from the active theme". Anything set explicitly wins and keeps winning across scheme switches. Many controls also expose `Effective*` read-only properties = the value actually painted.
 
 ## C2 — pixel metrics
-Every public pixel number is a LOGICAL pixel at 96 dpi. Scaling happens at paint/layout
-time from `DeviceDpi / 96` (`ThemeShapes.ScaleDpi`). Public getters stay logical — never
-write a scaled value back into a public property or the next load scales it again.
-Fonts are in points and scale themselves.
-A number the designer serialized into a `AutoScaleMode.Dpi` form is in the dpi of the surface
-it was saved on (`AutoScaleDimensions`); a control that keeps such numbers logical converts
-them ONCE, at its first snapshot, from the nearest container's stamp -- see
-`KBotTableLayoutPanel.DesignDpi` (0066-02). Never from `DeviceDpi`: that is the screen, not
-the designer.
+Every public pixel number is a LOGICAL pixel at 96 dpi. Scaling happens at paint/layout time from `DeviceDpi / 96` (`ThemeShapes.ScaleDpi`). Public getters stay logical — never write a scaled value back into a public property or the next load scales it again. Fonts are in points and scale themselves. A number the designer serialized into a `AutoScaleMode.Dpi` form is in the dpi of the surface it was saved on (`AutoScaleDimensions`); a control that keeps such numbers logical converts them ONCE, at its first snapshot, from the nearest container's stamp -- see `KBotTableLayoutPanel.DesignDpi` (0066-02). Never from `DeviceDpi`: that is the screen, not the designer.
 
 ## C3 — no silent no-ops
-Empty key, duplicate key, unknown key → `ArgumentException`. Impossible state (collapse a
-non-collapsible bar, open an empty popup) → `InvalidOperationException`. Out-of-range
-numeric values are CLAMPED, not thrown.
+Empty key, duplicate key, unknown key → `ArgumentException`. Impossible state (collapse a non-collapsible bar, open an empty popup) → `InvalidOperationException`. Out-of-range numeric values are CLAMPED, not thrown.
 
 ## C4 — designer serialization
-Every settable `Color`/`Font`/`Size`/`Padding`/`Image` has `ShouldSerializeX` + `ResetX`,
-including inherited `BackColor`/`ForeColor`/`Font`, answered from the control's own
-"operator pinned it" flag. A freshly dropped control must emit ZERO property lines into
-the host `.Designer.vb`. Verify with `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)`.
+Every settable `Color`/`Font`/`Size`/`Padding`/`Image` has `ShouldSerializeX` + `ResetX`, including inherited `BackColor`/`ForeColor`/`Font`, answered from the control's own "operator pinned it" flag. A freshly dropped control must emit ZERO property lines into the host `.Designer.vb`. Verify with `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)`.
 
 ## C5 — theming
-Controls implement `IThemedControl`; `ApplyTheme(scheme)` repaints from
-`ThemeManager.Current.Palette`. A control that owns child controls MUST implement it —
-otherwise `ThemeManager.Traverse` recurses into the children and repaints them with the
-generic per-type rules.
+Controls implement `IThemedControl`; `ApplyTheme(scheme)` repaints from `ThemeManager.Current.Palette`. A control that owns child controls MUST implement it — otherwise `ThemeManager.Traverse` recurses into the children and repaints them with the generic per-type rules.
 
 ## C6 — design time
-Under `KBotDesignTime.IsDesignTime`: timers do not run, nothing is logged, DPI scaling is
-skipped (the VS surface is 96 dpi, so authoring at 150% is fine), and collection validation
-is suspended between `BeginInit`/`EndInit`.
+Under `KBotDesignTime.IsDesignTime`: timers do not run, nothing is logged, DPI scaling is skipped (the VS surface is 96 dpi, so authoring at 150% is fine), and collection validation is suspended between `BeginInit`/`EndInit`.
 
 ## C7 — errors
-UI boundaries (`OnPaint`, mouse/key handlers, timer ticks) log to `GlobalErrorLog` and
-swallow. Risky/boundary methods (I/O, interop, parsing) log and re-throw.
+UI boundaries (`OnPaint`, mouse/key handlers, timer ticks) log to `GlobalErrorLog` and swallow. Risky/boundary methods (I/O, interop, parsing) log and re-throw.
 
 ## C8 — hover labels
-Always `KBotToolTip`, never `System.Windows.Forms.ToolTip`. Real child controls get
-`SetToolTipText`/`SetToolTipHeader`; regions WE paint (header/footer icons, chart markers)
-call `KBotToolTip.ShowAt` / `HideNow` from their own hover tracking.
+Always `KBotToolTip`, never `System.Windows.Forms.ToolTip`. Real child controls get `SetToolTipText`/`SetToolTipHeader`; regions WE paint (header/footer icons, chart markers) call `KBotToolTip.ShowAt` / `HideNow` from their own hover tracking.
 
 ## C9 — language
-Identifiers, comments and doc text are ASCII English. Romanian, with diacritics, only in
-strings the operator reads on screen.
+Identifiers, comments and doc text are ASCII English. Romanian, with diacritics, only in strings the operator reads on screen.
 
 ## Status vocabulary used in the docs
 - **screen-verified** — rendered and signed off on screen.

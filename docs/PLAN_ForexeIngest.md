@@ -23,20 +23,14 @@
 - `MODULES/mdl_FX_Tasks_Receive_DWN.md` — the orchestrator and steps 1, 2, 4, 5
 - `MODULES/mdl_FX_Istoric.md` — steps 3a–3e and `FX_Istoric_Populeaza_Receptii`
 - `MODULES/mdl_FX_Rezervari.md` — `FX_Istoric_Populeaza_Rezervari`, `FX_Rezervari_Asocieaza_IDREV`
-- `MODULES/mdl_FX_Receptii.md` — `FX_Receptii_Proceseaza`, `Receptii_Prelucrare`,
-  `TMP_Asociaza_Receptii_Istoric`, `AsociazaFinal`, `FX_CalculeazaDIF_Receptii_Tmp`,
-  `FX_Incarca_Receptii_Temporare`, `FX_Salveaza_Receptii_Temporare`
+- `MODULES/mdl_FX_Receptii.md` — `FX_Receptii_Proceseaza`, `Receptii_Prelucrare`, `TMP_Asociaza_Receptii_Istoric`, `AsociazaFinal`, `FX_CalculeazaDIF_Receptii_Tmp`, `FX_Incarca_Receptii_Temporare`, `FX_Salveaza_Receptii_Temporare`
 - `MODULES/mdl_FX_Plati.md` — `FX_Istoric_Populeaza_Plati_Incasari`
 - `MODULES/mdl_FX_Helpers.md` — all hash and parsing helpers
-- `QUERIES/qFX_ISTORIC_REZ_INIT.md`, `QUERIES/qFX_ISTORIC_REZ.md`,
-  `QUERIES/qFX_ISTORIC_REZ_UPDATE_IDREV.md`
+- `QUERIES/qFX_ISTORIC_REZ_INIT.md`, `QUERIES/qFX_ISTORIC_REZ.md`, `QUERIES/qFX_ISTORIC_REZ_UPDATE_IDREV.md`
 
 **Python — the house shape**
-- `routes/forexe/__init__.py` (blueprint + import order), `routes/forexe/angajamente.py` (the only
-  existing write route — copy its shape), `routes/forexe/istoric.py` and `routes/forexe/receptii.py`
-  (they read what this route writes; the contract must match)
-- `routes/auth/guard.py`, `routes/auth/session_store.py` — **read these to find out where a route
-  gets `db_name` and `IdUnitate`. Do not invent a new parameter.**
+- `routes/forexe/__init__.py` (blueprint + import order), `routes/forexe/angajamente.py` (the only existing write route — copy its shape), `routes/forexe/istoric.py` and `routes/forexe/receptii.py` (they read what this route writes; the contract must match)
+- `routes/auth/guard.py`, `routes/auth/session_store.py` — **read these to find out where a route gets `db_name` and `IdUnitate`. Do not invent a new parameter.**
 - `utils/database.py`, `routes/admin.py` (`_validate_db_name`)
 
 **VB.NET**
@@ -193,25 +187,16 @@ This is safe because **nothing edits these columns.** They are primary keys whos
 
 Two things must be true in the code, and both belong in the worklog:
 
-1. The exemption is a **named list of `(table, column)` pairs**, written out in full, with a
-   comment pointing at this section — not a rule like "skip anything auto-increment", which would
-   quietly swallow a real difference somewhere else.
-2. It covers the **whole column**, not just the `AUTO_INCREMENT` attribute. The consequence is
-   worth stating plainly: if anyone ever deliberately changes one of these seven columns in
-   `AVACONT_SURSA` — a type change, a width change — it will **not** propagate, and the
-   divergence will not be reported. The exemption list is the place someone will have to look.
-   That is an accepted cost, not an oversight.
+1. The exemption is a **named list of `(table, column)` pairs**, written out in full, with a comment pointing at this section — not a rule like "skip anything auto-increment", which would quietly swallow a real difference somewhere else.
+2. It covers the **whole column**, not just the `AUTO_INCREMENT` attribute. The consequence is worth stating plainly: if anyone ever deliberately changes one of these seven columns in `AVACONT_SURSA` — a type change, a width change — it will **not** propagate, and the divergence will not be reported. The exemption list is the place someone will have to look. That is an accepted cost, not an oversight.
 
 The named exemption list is exactly the seven `(Table, Key)` pairs in the §3 table; it is not a general AUTO_INCREMENT rule.
 
 ### 3.3 Notes for the migrator's worklog
 
-- InnoDB sets the counter from `MAX(key) + 1` when the column becomes auto-increment. **Verify it
-  once**, on the first database, with `SHOW TABLE STATUS` — do not code around it, but do not
-  assume it either.
+- InnoDB sets the counter from `MAX(key) + 1` when the column becomes auto-increment. **Verify it once**, on the first database, with `SHOW TABLE STATUS` — do not code around it, but do not assume it either.
 - Report per table: rows, `MAX(key)` before, `AUTO_INCREMENT` value after.
-- The `ALTER` must refuse to run on a database whose transfer has not completed and verified.
-  Running it early is the exact failure this section exists to prevent.
+- The `ALTER` must refuse to run on a database whose transfer has not completed and verified. Running it early is the exact failure this section exists to prevent.
 
 **Until this lands**, the ingest cannot insert. Do not build a MAX+1 fallback into the Python — a fallback that exists will be used, and then two ways of allocating keys have to be kept correct forever. If the ingest has to be exercised before the migrator step exists, apply the `ALTER` statements by hand on the test database and say so in the worklog.
 
@@ -237,16 +222,8 @@ FX_Angajamente                         (no FK)
 
 Two traps:
 
-1. **`FX_Istoric.CodAI` has a foreign key into `FX_Indicatori`.** A history row whose indicator
-   does not exist yet cannot be written with that `CodAI` set. This is why indicators come before
-   history in the VBA, and the order is not negotiable. `CodAI` is nullable, so a row genuinely
-   without an indicator travels with NULL — but a *missing* indicator is an error, not a NULL.
-   Raise. (House rule: no silent fallback.)
-2. **`FX_Rezervari.IDREV` has a foreign key into `FX_DDF_REV`.** The VBA takes `IDREV` from the
-   parsed Observații (`REV:x`). If that revision does not exist in `FX_DDF_REV`, the insert fails
-   with error 1452 and takes the whole transaction with it. Decide explicitly: write NULL and
-   record a warning, or raise. **Recommendation: write NULL, count it, return it as a warning** —
-   `FX_Rezervari_Asocieaza_IDREV` (step 3e) exists precisely to fill that link later.
+1. **`FX_Istoric.CodAI` has a foreign key into `FX_Indicatori`.** A history row whose indicator does not exist yet cannot be written with that `CodAI` set. This is why indicators come before history in the VBA, and the order is not negotiable. `CodAI` is nullable, so a row genuinely without an indicator travels with NULL — but a *missing* indicator is an error, not a NULL. Raise. (House rule: no silent fallback.)
+2. **`FX_Rezervari.IDREV` has a foreign key into `FX_DDF_REV`.** The VBA takes `IDREV` from the parsed Observații (`REV:x`). If that revision does not exist in `FX_DDF_REV`, the insert fails with error 1452 and takes the whole transaction with it. Decide explicitly: write NULL and record a warning, or raise. **Recommendation: write NULL, count it, return it as a warning** — `FX_Rezervari_Asocieaza_IDREV` (step 3e) exists precisely to fill that link later.
 
 ---
 
@@ -286,22 +263,16 @@ In Access this never arose — each unit had its own `baza<year>.accdb`, so the 
 1. Build `SS` and `ClsfSal` from `Sector_Sursa_Indicator` (§5.2).
 2. Look the pair up in `Clasificatii` **for this database**. This is needed for `IdClsf` anyway.
 3. `FX_Indicatori.IdClsf` ← the matched row's **`IdClsfAcc`** (D7).
-4. `FX_Indicatori.IdUnitate` ← the matched row's **`IdUnitate`**. The nomenclator is per-unit, so
-   the row already carries the answer; nothing else has to be consulted.
-5. `CodProgram` ← `Unitati.CodProgram` **keyed on that `IdUnitate`**. This is the value the VBA
-   held in the global `globCodProgram` and writes into `FX_Plati.Program` (step 5).
+4. `FX_Indicatori.IdUnitate` ← the matched row's **`IdUnitate`**. The nomenclator is per-unit, so the row already carries the answer; nothing else has to be consulted.
+5. `CodProgram` ← `Unitati.CodProgram` **keyed on that `IdUnitate`**. This is the value the VBA held in the global `globCodProgram` and writes into `FX_Plati.Program` (step 5).
 
 **The invariant this rests on, stated by the operator:** within one database, `(SS, ClsfSal)` identifies exactly one `IdUnitate`.
 
 **So the query must assert it, not assume it.** Do **not** use `LIMIT 1` here — that is the pattern the *read* routes use for display, where picking either duplicate is harmless. Here a wrong pick attaches an indicator to the wrong subunit, and nothing surfaces until someone reads a report months later. Instead:
 
 - Select all matching rows for `(SS, ClsfSal)`.
-- The nomenclator does contain real duplicates (there is no unique key on
-  `(IdClsfAcc, IdUnitate)` — `MAPARE_NOMENCLATOARE.md` §3.2). Several matching rows are therefore
-  **fine as long as they agree on `(IdClsfAcc, IdUnitate)`**; only `IDClsf` differs between them,
-  and `IDClsf` is not written here.
-- Rows that **disagree** on `IdClsfAcc` or `IdUnitate` break the invariant: raise, naming the
-  angajament, the indicator, the `(SS, ClsfSal)` pair and every candidate `IdUnitate`.
+- The nomenclator does contain real duplicates (there is no unique key on `(IdClsfAcc, IdUnitate)` — `MAPARE_NOMENCLATOARE.md` §3.2). Several matching rows are therefore **fine as long as they agree on `(IdClsfAcc, IdUnitate)`**; only `IDClsf` differs between them, and `IDClsf` is not written here.
+- Rows that **disagree** on `IdClsfAcc` or `IdUnitate` break the invariant: raise, naming the angajament, the indicator, the `(SS, ClsfSal)` pair and every candidate `IdUnitate`.
 - No match at all: raise, same detail.
 
 Naming note (Rule 4): Access spells the column `SectorSursa`, MariaDB spells it `SursaSector`. Neither is a typo; both are real.
@@ -326,15 +297,10 @@ Columns: `Timp` (`10/02/2026 22:45:23`), `Utilizator`, `Descriere`, `Observatii`
 
 ### 5.6 Formats
 
-- Money: Romanian — `819.500,00` (thousands `.`, decimal `,`). Also bare (`210`, `3.587`). Port
-  `ParseAmount`; do not use `float(x)`.
+- Money: Romanian — `819.500,00` (thousands `.`, decimal `,`). Also bare (`210`, `3.587`). Port `ParseAmount`; do not use `float(x)`.
 - Dates in table cells: `dd/MM/yyyy` and `dd/MM/yyyy HH:mm:ss`. Port `ParseDataZZLLAAAA`.
-- **Dates inside payment Observații are English:** `Feb 16, 2026 12:00:00 AM`. Port
-  `ParseEnglishDate`. Parse with an explicit month-name table, **not** with the machine locale.
-- Diacritics are real UTF-8 throughout (`În derulare`, `Valoare recepţii`). Responses use
-  `ensure_ascii=False`, per house rule. Note `recepţii` in the sample uses U+0163 (t-cedilla), not
-  U+021B (t-comma) — string comparisons against FOREXE text must not assume one form. Where the
-  VBA compared such text, keep its exact comparison.
+- **Dates inside payment Observații are English:** `Feb 16, 2026 12:00:00 AM`. Port `ParseEnglishDate`. Parse with an explicit month-name table, **not** with the machine locale.
+- Diacritics are real UTF-8 throughout (`În derulare`, `Valoare recepţii`). Responses use `ensure_ascii=False`, per house rule. Note `recepţii` in the sample uses U+0163 (t-cedilla), not U+021B (t-comma) — string comparisons against FOREXE text must not assume one form. Where the VBA compared such text, keep its exact comparison.
 
 ---
 
@@ -452,20 +418,15 @@ This function is pure text parsing and it is the most detail-dense thing in the 
 
 The two Access saved queries are the source and both are in the export:
 
-- `qFX_ISTORIC_REZ_INIT` — `TipRand = 'Rez_Definitiva'`, `EInitiala = True`,
-  `R_Valoare = Val_AngLeg`
-- `qFX_ISTORIC_REZ` — `TipRand = 'Rez_Influenta'`, `R_Valoare = Val_Rezervare_Dif`,
-  `EMicsorare = (dif < 0)`, `EMarire = (dif > 0)`, plus `R_Anterioara`
+- `qFX_ISTORIC_REZ_INIT` — `TipRand = 'Rez_Definitiva'`, `EInitiala = True`, `R_Valoare = Val_AngLeg`
+- `qFX_ISTORIC_REZ` — `TipRand = 'Rez_Influenta'`, `R_Valoare = Val_Rezervare_Dif`, `EMicsorare = (dif < 0)`, `EMarire = (dif > 0)`, plus `R_Anterioara`
 
 Both are `FX_Indicatori INNER JOIN FX_Istoric ON CodAI`, both filter `FX_Istoric.ID NOT IN (SELECT IDH FROM FX_Rezervari)` — that `NOT IN` is what makes the step idempotent, keep it — and both order by `CDate(Format(DataFX,"Short Date"))` then `Clsf`.
 
 Two translation notes:
 
 - `CDate(Format([DataFX],"Short Date"))` = truncate to the day. In MariaDB: `DATE(DataFX)`.
-- Both join `ClasificatiiG` (an Access query) purely for the `Clsf` sort key. On MariaDB use
-  `Clasificatii` with the **scalar-subquery + `LIMIT 1`** pattern the read routes already use —
-  the nomenclator has real duplicates on `(IdClsfAcc, IdUnitate)` and a join would multiply rows.
-  Do not invent a new join shape; copy the one in `routes/forexe/receptii.py`.
+- Both join `ClasificatiiG` (an Access query) purely for the `Clsf` sort key. On MariaDB use `Clasificatii` with the **scalar-subquery + `LIMIT 1`** pattern the read routes already use — the nomenclator has real duplicates on `(IdClsfAcc, IdUnitate)` and a join would multiply rows. Do not invent a new join shape; copy the one in `routes/forexe/receptii.py`.
 
 Sets `are.Rezervari`.
 
@@ -477,22 +438,15 @@ The largest step, and the one that changes shape most (D3).
 
 **4a — `FX_Istoric_Populeaza_Receptii`.** Walks the unprocessed history rows in `ID` order and builds two things from them:
 
-- a row whose Observații contain `(activ:true)` is a **header** → `FX_Receptii_H`
-  (`IDH`, `NrCrt` = MAX+1 per angajament, `DataH` = `DataFX`, `Total` = `Val_Receptie`,
-  `Descriere` = the text between `Receptie: ` and `,`);
-- a row with `Val_Receptie <> 0` is a **line** → accumulated into a buffer, flushed into
-  `FX_Receptii` when the next header appears. Each line carries `IDH`, `IdClsf`, `CodSSI`, `Clsf`,
-  `IdUnitate`, `CodAI`, `CodIndicator`, `Data`, `Valoare`, `ValoareOrig`, `HASH`
-  (`FX_Receptii_Istoric_GetIndent`) and `TipIntern` = `VECHI`/`NOU` depending on whether the
-  indicator was already seen.
+- a row whose Observații contain `(activ:true)` is a **header** → `FX_Receptii_H` (`IDH`, `NrCrt` = MAX+1 per angajament, `DataH` = `DataFX`, `Total` = `Val_Receptie`, `Descriere` = the text between `Receptie: ` and `,`);
+- a row with `Val_Receptie <> 0` is a **line** → accumulated into a buffer, flushed into `FX_Receptii` when the next header appears. Each line carries `IDH`, `IdClsf`, `CodSSI`, `Clsf`, `IdUnitate`, `CodAI`, `CodIndicator`, `Data`, `Valoare`, `ValoareOrig`, `HASH` (`FX_Receptii_Istoric_GetIndent`) and `TipIntern` = `VECHI`/`NOU` depending on whether the indicator was already seen.
 
 An indicator that is not in `FX_Indicatori` raises — keep that. Sets `are.ReceptiiH`, `are.Receptii`.
 
 **4b — `Receptii_Prelucrare`.** Compares the incoming `ListaReceptii_results` against what is already stored, per the header hash (`FX_Receptii_H_GetHashIdent` over `CodAngajament`, `DataH` formatted `yyyy-mm-dd`, `TipReceptie`, `DescriereReceptie`):
 
 - hash present and the sum matches → skip
-- hash present and the sum differs → update `FX_Receptii_R` / `FX_Receptii_RHR`, and demote any
-  existing `Final` on that reception
+- hash present and the sum differs → update `FX_Receptii_R` / `FX_Receptii_RHR`, and demote any existing `Final` on that reception
 - hash absent → insert `FX_Receptii_R` + `FX_Receptii_RHR` from the nested `Detaliu`
 
 In Access this ran against temp tables; here it runs against the live tables inside the transaction. The **rules** do not change; only the tables they read do. Read the real function.
@@ -513,17 +467,11 @@ From each Observație, using `ExtractObsValue`: `Rand:` → indicator, `document
 
 Rules to keep exactly:
 
-- **Deduplicate on `Referinta_TREZOR`**, seeded from the payments already stored for this
-  angajament. The VBA builds that set up front and adds to it as it goes.
-- Missing `Rand:` or `IdTrezor:` → skip the row and log it (this one *is* a skip, not an error —
-  it is what the VBA does).
+- **Deduplicate on `Referinta_TREZOR`**, seeded from the payments already stored for this angajament. The VBA builds that set up front and adds to it as it goes.
+- Missing `Rand:` or `IdTrezor:` → skip the row and log it (this one *is* a skip, not an error — it is what the VBA does).
 - An unparseable date → skip.
-- `Tip` = `INCASARE` when the amount is negative, otherwise `PLATA`; those two set
-  `are.Incasari` / `are.Plati`.
-- `Preluat = True`. `Program` came from the VBA global `globCodProgram`; here it is
-  `Unitati.CodProgram` for the indicator's own `IdUnitate`, reached through the classification
-  (§5.2a). Since every payment already resolves its indicator in `FX_Indicatori`, take
-  `IdUnitate` from that row rather than resolving the classification a second time.
+- `Tip` = `INCASARE` when the amount is negative, otherwise `PLATA`; those two set `are.Incasari` / `are.Plati`.
+- `Preluat = True`. `Program` came from the VBA global `globCodProgram`; here it is `Unitati.CodProgram` for the indicator's own `IdUnitate`, reached through the classification (§5.2a). Since every payment already resolves its indicator in `FX_Indicatori`, take `IdUnitate` from that row rather than resolving the classification a second time.
 - An indicator not found in `FX_Indicatori` raises.
 
 ### Step 6 — *(absorbed)*
@@ -601,12 +549,9 @@ Small. `ForexeController.DownloadNodeAsync` currently ends at `_store.SalveazaNo
 - `IApiClient` / `ApiClient`: `Function TrimitePrelucrareAsync(rezultat As PrelucrareRezultat, ct As CancellationToken) As Task(Of PrelucrareRaspuns)`
 - New POCO `PrelucrareRaspuns` in `KBot.Domain` mirroring §6.
 - Wrap in the shell's `WithReauth(Of T)` — this is an authenticated call like any other.
-- **Keep the local JSON dump.** It is the only evidence of what was sent when something goes wrong,
-  and it costs nothing.
-- On failure: the local file stays, the operator is told in Romanian, nothing is retried
-  automatically. A resend command can come later.
-- On success: refresh the affected views using the `are` flags — that is exactly what
-  `FX_Angajament_Are` was for in Access.
+- **Keep the local JSON dump.** It is the only evidence of what was sent when something goes wrong, and it costs nothing.
+- On failure: the local file stays, the operator is told in Romanian, nothing is retried automatically. A resend command can come later.
+- On success: refresh the affected views using the `are` flags — that is exactly what `FX_Angajament_Are` was for in Access.
 
 And the `.wfl` change from D11: restore `TipReceptie,CodIndicator` to `collectFields` in `adlop - Prelucrare Completa.wfl`. Diff the two files afterwards and confirm the only remaining differences are the timeouts (15s vs 5s) and the history paging direction.
 
@@ -618,21 +563,13 @@ Original test brief, not a report of executed tests. Item 4 predates amended D4 
 
 Python, host-only where they need a database (same skip pattern as `test_forexe_ddf.py`):
 
-1. Each parsing helper against strings taken from the real payload — `ParseAmount("819.500,00")`,
-   `ParseEnglishDate("Feb 16, 2026 12:00:00 AM")`, `ExtractObsValue` on the payment line quoted in
-   §7 step 5, `FX_ExtractCodIndicator` on a `Rand contract:` line.
-2. **Idempotence (D13):** post the sample payload twice; the second run writes zero rows and
-   returns the same `are` flags. This is the single most valuable test in the set.
-3. **Rollback:** force a failure in step 5 (an indicator that does not exist) and assert nothing
-   from steps 1–4 survives.
-4. **Unassociated header (D4):** a payload where a header cannot be matched → the header exists
-   with `IDRR IS NULL`, the run returns 200, and `antete_neasociate` names it.
-5. **Hash compatibility (§8):** the match-rate check against migrated data. A *finding* test — it
-   reports, it does not fail.
+1. Each parsing helper against strings taken from the real payload — `ParseAmount("819.500,00")`, `ParseEnglishDate("Feb 16, 2026 12:00:00 AM")`, `ExtractObsValue` on the payment line quoted in §7 step 5, `FX_ExtractCodIndicator` on a `Rand contract:` line.
+2. **Idempotence (D13):** post the sample payload twice; the second run writes zero rows and returns the same `are` flags. This is the single most valuable test in the set.
+3. **Rollback:** force a failure in step 5 (an indicator that does not exist) and assert nothing from steps 1–4 survives.
+4. **Unassociated header (D4):** a payload where a header cannot be matched → the header exists with `IDRR IS NULL`, the run returns 200, and `antete_neasociate` names it.
+5. **Hash compatibility (§8):** the match-rate check against migrated data. A *finding* test — it reports, it does not fail.
 6. `FX_Rezervari.IDREV` pointing at a non-existent revision → NULL plus a warning, not a 1452.
-7. **The `(SS, ClsfSal)` invariant (§5.2a):** count the pairs in the live `Clasificatii` that match
-   more than one row, and how many of those disagree on `IdUnitate`. A *finding* test — it reports,
-   it does not fail. If any disagree, D16 is wrong and the run must stop and report.
+7. **The `(SS, ClsfSal)` invariant (§5.2a):** count the pairs in the live `Clasificatii` that match more than one row, and how many of those disagree on `IdUnitate`. A *finding* test — it reports, it does not fail. If any disagree, D16 is wrong and the run must stop and report.
 
 .NET: the serialization of `PrelucrareRezultat` to the request body, and the parsing of the response — the existing `ApiClient` test pattern covers both.
 
@@ -644,17 +581,12 @@ Report **real** counts. Do not copy numbers from another worklog.
 
 Original completion checklist, retained as history rather than instructions to run tests, alter schemas, commit or push during documentation cleanup.
 
-1. `AUTO_INCREMENT` step exists in `KBot.Migrator`, runs only after a verified transfer, and is
-   **not** applied to `AVACONT_SURSA` (§3.1). The seven-pair exemption list exists in
-   `routes/schema_sync/` with the comment §3.2 asks for.
-2. `routes/forexe/prelucrare.py` implements all seven steps in one transaction, comments
-   throughout in English at the level §0 asks for.
+1. `AUTO_INCREMENT` step exists in `KBot.Migrator`, runs only after a verified transfer, and is **not** applied to `AVACONT_SURSA` (§3.1). The seven-pair exemption list exists in `routes/schema_sync/` with the comment §3.2 asks for.
+2. `routes/forexe/prelucrare.py` implements all seven steps in one transaction, comments throughout in English at the level §0 asks for.
 3. `.wfl` fixed (D11) and the two files diffed.
 4. Client sends and handles the response; local JSON dump retained.
-5. Python suite green or cleanly skipped, 0 fail/error. .NET build 0 errors, 0 new warnings,
-   `Option Strict On`. Full .NET suite green, real counts reported.
-6. Worklog at `docs/worklog/SLICE-0048-…md` with the four mandatory sections: what changed and why
-   · files touched · test results · anything left unverified or deferred.
+5. Python suite green or cleanly skipped, 0 fail/error. .NET build 0 errors, 0 new warnings, `Option Strict On`. Full .NET suite green, real counts reported.
+6. Worklog at `docs/worklog/SLICE-0048-…md` with the four mandatory sections: what changed and why · files touched · test results · anything left unverified or deferred.
 7. `KBOT_STATUS.md` updated — slice row, next free number, open threads.
 8. Code, worklog and STATUS committed together and pushed.
 9. No swallowed exceptions introduced.
@@ -665,33 +597,20 @@ Original completion checklist, retained as history rather than instructions to r
 
 - `frmFX_DUBII` and its four subforms (D4) — the association UI is slice **0048-04**.
 - `FX_Receptii_Plati` (D5b) — dead, and excluded from migration entirely.
-- `FX_ORD_TBL_REC` is **no longer out of scope** (D5a / C1). It migrates; writing it belongs to the
-  ORD slice, not to this one.
+- `FX_ORD_TBL_REC` is **no longer out of scope** (D5a / C1). It migrates; writing it belongs to the ORD slice, not to this one.
 - `FX_Angajament_Resetare_Valori_Forexe` as an operator command.
-- The upload direction — `mdl_FX_Tasks_Receive_UPL` (CreareAngajament, definitivare, încărcare
-  rezervări). Different workflows, different plan.
-- `FX_Extrase` / SNM — **EXCEPT the two statements of step 8** (`FX_Indicatori_Actualizare_Extrase`),
-  amended 26.08.2026. Those two fill `FX_Extrase.CodAI` from `FX_Plati` on the treasury reference and
-  are step 8 of this very pipeline: they were never optional, and D-G says so. They run unconditionally,
-  in order, inside the same transaction as steps 1–7. Everything else about `FX_Extrase` — reading it,
-  writing any other column, the SNM side — stays out of scope.
+- The upload direction — `mdl_FX_Tasks_Receive_UPL` (CreareAngajament, definitivare, încărcare rezervări). Different workflows, different plan.
+- `FX_Extrase` / SNM — **EXCEPT the two statements of step 8** (`FX_Indicatori_Actualizare_Extrase`), amended 26.08.2026. Those two fill `FX_Extrase.CodAI` from `FX_Plati` on the treasury reference and are step 8 of this very pipeline: they were never optional, and D-G says so. They run unconditionally, in order, inside the same transaction as steps 1–7. Everything else about `FX_Extrase` — reading it, writing any other column, the SNM side — stays out of scope.
 - Batch ingest of many angajamente in one call. One angajament, one POST.
 
 ## 13. Open items to carry into the worklog
 
-1. **Settled (D16, §5.2a).** Both come through the classification. What remains is a *finding*:
-   report how many `(SS, ClsfSal)` pairs matched more than one `Clasificatii` row on real data,
-   and whether any of those disagreed on `IdUnitate` — i.e. whether the operator's invariant holds
-   on the live nomenclator. A test that reports, not one that fails.
+1. **Settled (D16, §5.2a).** Both come through the classification. What remains is a *finding*: report how many `(SS, ClsfSal)` pairs matched more than one `Clasificatii` row on real data, and whether any of those disagreed on `IdUnitate` — i.e. whether the operator's invariant holds on the live nomenclator. A test that reports, not one that fails.
 2. Whether `DataInceputDerulare` has a column at all (§7 step 1).
-3. ~~Whether `FX_Indicatori_Actualizare_Extrase` is live or dead (§7 step 8).~~ **CLOSED
-   26.08.2026.** It is live and it is ported (slice 0048-03-completare). Two statements, in order,
-   unconditional, in-transaction; row counts reported under `FX_Extrase`; §12 amended above. The
-   warning that used to say it had not run is deleted, along with the test that pinned it.
+3. ~~Whether `FX_Indicatori_Actualizare_Extrase` is live or dead (§7 step 8).~~ **CLOSED 26.08.2026.** It is live and it is ported (slice 0048-03-completare). Two statements, in order, unconditional, in-transaction; row counts reported under `FX_Extrase`; §12 amended above. The warning that used to say it had not run is deleted, along with the test that pinned it.
 4. The hash match rate against migrated data (§8).
 5. Whether InnoDB set the auto-increment counters correctly on the first database (§3.3).
-6. `FX_Istoric.Val_Receptie_T` — present on MariaDB, not obviously written by any of the ported
-   functions. Find out who writes it, or record that nobody does.
+6. `FX_Istoric.Val_Receptie_T` — present on MariaDB, not obviously written by any of the ported functions. Find out who writes it, or record that nobody does.
 
 ---
 

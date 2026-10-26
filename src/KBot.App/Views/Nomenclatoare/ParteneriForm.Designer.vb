@@ -33,7 +33,6 @@ Partial Class ParteneriForm
         Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
-        chkFaraActivitate = New CheckBox()
         txtCod = New KBotTextField()
         txtCodFiscal = New KBotTextField()
         txtAdresa = New KBotTextField()
@@ -49,7 +48,6 @@ Partial Class ParteneriForm
         tlyBody = New KBotTableLayoutPanel()
         tlyLeft = New KBotTableLayoutPanel()
         tree = New AdvancedTreeControl()
-        flowFiltre = New FlowLayoutPanel()
         tlyDetalii = New KBotTableLayoutPanel()
         lblCod = New Label()
         lblCodFiscal = New Label()
@@ -72,22 +70,9 @@ Partial Class ParteneriForm
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
         tlyLeft.SuspendLayout()
-        flowFiltre.SuspendLayout()
         tlyDetalii.SuspendLayout()
         tlySubsol.SuspendLayout()
         SuspendLayout()
-        ' 
-        ' chkFaraActivitate
-        ' 
-        chkFaraActivitate.AutoSize = True
-        chkFaraActivitate.FlatStyle = FlatStyle.Flat
-        chkFaraActivitate.Location = New Point(0, 12)
-        chkFaraActivitate.Margin = New Padding(0, 12, 0, 0)
-        chkFaraActivitate.Name = "chkFaraActivitate"
-        chkFaraActivitate.Size = New Size(274, 26)
-        chkFaraActivitate.TabIndex = 0
-        chkFaraActivitate.Text = "Ascunde partenerii fără activitate"
-        tips.SetToolTipText(chkFaraActivitate, "Ascunde partenerii care nu apar pe niciun document (DDF sau ORD).")
         ' 
         ' txtCod
         ' 
@@ -453,26 +438,27 @@ Partial Class ParteneriForm
         tlyLeft.ColumnCount = 1
         tlyLeft.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyLeft.Controls.Add(tree, 0, 0)
-        tlyLeft.Controls.Add(flowFiltre, 0, 1)
         tlyLeft.Dock = DockStyle.Fill
         tlyLeft.Location = New Point(0, 0)
         tlyLeft.Margin = New Padding(0, 0, 15, 0)
         tlyLeft.Name = "tlyLeft"
-        tlyLeft.RowCount = 2
+        tlyLeft.RowCount = 1
         tlyLeft.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Absolute, 51F))
         tlyLeft.Size = New Size(578, 674)
         tlyLeft.TabIndex = 0
         ' 
         ' tree
         ' 
         tree.BorderColor = SystemColors.ActiveBorder
+        tree.ClickOnKeyNavigation = True
         tree.Dock = DockStyle.Fill
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " PARTENERI"
         tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
+        tree.HeaderRightIcon = My.Resources.Resources.settings__1_
+        tree.HeaderRightIconTooltip = "Opțiunile listei:" & vbLf & "arată partenerii fără activitate, cu sold inițial sau cu angajamente."
         tree.HeaderVisible = True
         tree.Location = New Point(0, 0)
         tree.Margin = New Padding(0)
@@ -483,19 +469,8 @@ Partial Class ParteneriForm
         tree.SearchSeparatorColor = SystemColors.ActiveBorder
         tree.SearchSeparatorWidth = 2
         tree.SearchShow = True
-        tree.Size = New Size(578, 623)
+        tree.Size = New Size(578, 674)
         tree.TabIndex = 0
-        ' 
-        ' flowFiltre
-        ' 
-        flowFiltre.Controls.Add(chkFaraActivitate)
-        flowFiltre.Dock = DockStyle.Fill
-        flowFiltre.Location = New Point(0, 623)
-        flowFiltre.Margin = New Padding(0)
-        flowFiltre.Name = "flowFiltre"
-        flowFiltre.Size = New Size(578, 51)
-        flowFiltre.TabIndex = 1
-        flowFiltre.WrapContents = False
         ' 
         ' tlyDetalii
         ' 
@@ -733,8 +708,6 @@ Partial Class ParteneriForm
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
         tlyLeft.ResumeLayout(False)
-        flowFiltre.ResumeLayout(False)
-        flowFiltre.PerformLayout()
         tlyDetalii.ResumeLayout(False)
         tlyDetalii.PerformLayout()
         tlySubsol.ResumeLayout(False)
@@ -749,8 +722,6 @@ Partial Class ParteneriForm
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents tlyLeft As KBotTableLayoutPanel
     Friend WithEvents tree As AdvancedTreeControl
-    Friend WithEvents flowFiltre As FlowLayoutPanel
-    Friend WithEvents chkFaraActivitate As CheckBox
     Friend WithEvents tlyDetalii As KBotTableLayoutPanel
     Friend WithEvents lblCod As Label
     Friend WithEvents txtCod As KBotTextField

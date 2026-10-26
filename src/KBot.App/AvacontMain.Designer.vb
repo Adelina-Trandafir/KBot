@@ -81,6 +81,7 @@ Partial Class AvacontMain
         Dim KBotRibbonButton36 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton37 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton38 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton39 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -237,9 +238,9 @@ Partial Class AvacontMain
         ribbon.TabIndex = 1
         KBotRibbonButton13.Image = My.Resources.Resources.cells
         KBotRibbonButton13.Key = "clasificatii"
-        KBotRibbonButton13.Text = "Clasificații bugetare"
-        KBotRibbonButton13.ToolTipHeader = "Clasificații bugetare"
-        KBotRibbonButton13.ToolTipText = "Clasificațiile bugetare ale anului selectat."
+        KBotRibbonButton13.Text = "Clasificații"
+        KBotRibbonButton13.ToolTipHeader = "Clasificații"
+        KBotRibbonButton13.ToolTipText = "Clasificațiile de cheltuieli și de venituri ale anului selectat."
         KBotRibbonButton14.Image = My.Resources.Resources.binvoice
         KBotRibbonButton14.Key = "parteneri"
         KBotRibbonButton14.Text = "Parteneri"
@@ -249,10 +250,16 @@ Partial Class AvacontMain
         KBotRibbonButton36.Key = "plan_cont"
         KBotRibbonButton36.Text = "Plan de conturi"
         KBotRibbonButton36.ToolTipHeader = "Plan de conturi"
+        KBotRibbonButton39.Image = My.Resources.Resources.folder_open
+        KBotRibbonButton39.Key = "jurnale"
+        KBotRibbonButton39.Text = "Jurnale"
+        KBotRibbonButton39.ToolTipHeader = "Jurnale"
+        KBotRibbonButton39.ToolTipText = "Jurnalele contabile ale unității: cod și denumire."
         KBotRibbonButton36.ToolTipText = "Conturile fiecărei subunități a unității și subunitățile însele."
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton13)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton14)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton36)
+        KBotRibbonGroup1.Buttons.Add(KBotRibbonButton39)
         KBotRibbonGroup1.Text = "Date"
         KBotRibbonButton15.Image = My.Resources.Resources.Folder_blue_24
         KBotRibbonButton15.Key = "jurnal"

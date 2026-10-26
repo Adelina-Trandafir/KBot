@@ -4,15 +4,11 @@
 > control) is indexed in [CONTROLS.md](CONTROLS.md). The shared conventions `C1..C9` live
 > there too, so each control doc lists only its own exceptions.
 
-**Toate controalele K-BOT trăiesc aici.** Nu există control K-BOT în alt proiect: nici în
-`KBot.Theming` (acolo a rămas doar motorul de teme plus form-urile de bază), nici în
-`KBot.App`.
+**Toate controalele K-BOT trăiesc aici.** Nu există control K-BOT în alt proiect: nici în `KBot.Theming` (acolo a rămas doar motorul de teme plus form-urile de bază), nici în `KBot.App`.
 
 ## Regula de organizare
 
-Fiecare **familie de control** are folderul ei, iar în folder intră controlul ÎMPREUNĂ cu
-tot ce ține de el — enum-uri, colecții, `EventArgs`, modele, form-uri ajutătoare. Gruparea
-e logică (după control), nu după felul fișierului.
+Fiecare **familie de control** are folderul ei, iar în folder intră controlul ÎMPREUNĂ cu tot ce ține de el — enum-uri, colecții, `EventArgs`, modele, form-uri ajutătoare. Gruparea e logică (după control), nu după felul fișierului.
 
 | Folder | Conține |
 |---|---|
@@ -34,35 +30,21 @@ e logică (după control), nu după felul fișierului.
 | `Label/` | `KBotLabel` — eticheta cu chenar propriu (culoare + grosime + rază). `BorderStyle` moștenit e ascuns și refuzat: cele trei valori native se desenează în culorile SISTEMULUI |
 | `ToolTip/` | `KBotToolTip` (componenta `IExtenderProvider`), `KBotToolTipContent`, `KBotToolTipStyle` + `KBotToolTipBand`/`KBotToolTipSeparator`, `KBotToolTipWindow` (fereastra) și `KBotRichText` (motorul de text îmbogățit: analiză, așezare, desen — pur, măsurabil fără ecran) |
 | `Chart/` | `KBotChartView` (+ partial-ul `.Painting`) — graficul de timp desenat de noi, cu banda SINGLE-SELECT de butoane pe post de tabcontrol; `KBotChartSeries`/`KBotChartSeriesCollection`, `KBotChartPoint`/`KBotChartPointCollection`, `KBotChartTab`/`KBotChartTabCollection`, enum-urile `KBotChartMarkerStyle`/`KBotChartTabAlign`/`KBotChartValueAxisMode`. Singurul folder scris integral în engleză, inclusiv numele categoriilor din grila de proprietăți (felia 0048-05) |
+| `Graph/` | `KBotGraphView` (+ partial `.Painting`) — map of dots and links drawn by us (zoom, pan, hover fades all but the neighbours); `KBotGraphNode`/`KBotGraphEdge`; `KBotGraphLayout` (deterministic cluster + force layout, no UI). Written in English like `Chart/` (KBotAdmin "Istoric md" page) |
 
-Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului
-(acolo rămân doar `AssemblyInfo.vb`, `.vbproj` și acest README).
+Un control nou => un folder nou. Nu se adaugă fișiere de control în rădăcina proiectului (acolo rămân doar `AssemblyInfo.vb`, `.vbproj` și acest README).
 
 ## Referințe
 
-Sensul e `KBot.Controls → KBot.Theming`, niciodată invers — `KBot.Theming` NU referă
-proiectul ăsta, altfel s-ar face ciclu. De aceea ce-i trebuie unui control din motor e
-expus `Public` acolo: `ThemeManager`/`ThemePalette`, `IThemedControl`, `ThemeShapes`
-(`ScaleDpi`/`RoundedRect`/`Blend`), `KBotDesignTime` și `NativeMethods.DragMove`.
+Sensul e `KBot.Controls → KBot.Theming`, niciodată invers — `KBot.Theming` NU referă proiectul ăsta, altfel s-ar face ciclu. De aceea ce-i trebuie unui control din motor e expus `Public` acolo: `ThemeManager`/`ThemePalette`, `IThemedControl`, `ThemeShapes` (`ScaleDpi`/`RoundedRect`/`Blend`), `KBotDesignTime` și `NativeMethods.DragMove`.
 
 `KBot.Common` e referit doar pentru `GlobalErrorLog` (sink-ul global de erori).
 
 ## Ce NU intră aici
 
-- **`KBotThemedForm` / `KBotShellForm`** — sunt form-uri de bază, nu controale; stau în
-  `KBot.Theming`, lângă motorul de teme. Nu se confundă cu ferestrele-ajutor ale unui control
-  (`KBotNavFlyout`, `TreeNodeFlyout`, `CustomPopup`): acelea moștenesc `Form` fiindcă au nevoie
-  de HWND propriu, dar aparțin controlului lor și stau în folderul familiei.
-- **Vederile din `KBot.App\Views\`** (`SumarView`, `IstoricView`, `DdfView`,
-  `DdfFileBrowser`, `XfaXmlPreview`, `ReaderHostPreview`, `PlaceholderView`) — sunt ecrane
-  ale aplicației: implementează `IAngajamentView` și cheamă API-ul. Mutate aici, ar trage
-  `KBot.Api`/`KBot.Forexe`/`KBot.Xfa` într-o bibliotecă de UI care trebuie să rămână frunză.
+- **`KBotThemedForm` / `KBotShellForm`** — sunt form-uri de bază, nu controale; stau în `KBot.Theming`, lângă motorul de teme. Nu se confundă cu ferestrele-ajutor ale unui control (`KBotNavFlyout`, `TreeNodeFlyout`, `CustomPopup`): acelea moștenesc `Form` fiindcă au nevoie de HWND propriu, dar aparțin controlului lor și stau în folderul familiei.
+- **Vederile din `KBot.App\Views\`** (`SumarView`, `IstoricView`, `DdfView`, `DdfFileBrowser`, `XfaXmlPreview`, `ReaderHostPreview`, `PlaceholderView`) — sunt ecrane ale aplicației: implementează `IAngajamentView` și cheamă API-ul. Mutate aici, ar trage `KBot.Api`/`KBot.Forexe`/`KBot.Xfa` într-o bibliotecă de UI care trebuie să rămână frunză.
 
 ## Note istorice
 
-`AdvancedTreeControl` e importat din TREEVIEW_VBA cu podul Access tăiat (forma-gazdă
-`Tree.vb`, `TrimiteMesajAccess`, `ProcesareComandaAccess`, argumentele `/frm /acc /idt /log`,
-API-ul pe string-uri `SET_CHECKBOX||NodeID||State`). A rămas controlul reutilizabil cu
-evenimentele native (`NodeChecked`, `NodeRadioSelected`, `RightIconClicked`,
-`SearchFinished`) consumate direct. Rămâne **ne-tematizat** — shell-ul îi împinge culorile
-prin proprietăți publice; convenția `IThemedControl` se aplică restului controalelor.
+`AdvancedTreeControl` e importat din TREEVIEW_VBA cu podul Access tăiat (forma-gazdă `Tree.vb`, `TrimiteMesajAccess`, `ProcesareComandaAccess`, argumentele `/frm /acc /idt /log`, API-ul pe string-uri `SET_CHECKBOX||NodeID||State`). A rămas controlul reutilizabil cu evenimentele native (`NodeChecked`, `NodeRadioSelected`, `RightIconClicked`, `SearchFinished`) consumate direct. Rămâne **ne-tematizat** — shell-ul îi împinge culorile prin proprietăți publice; convenția `IThemedControl` se aplică restului controalelor.

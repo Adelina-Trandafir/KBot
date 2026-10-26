@@ -29,12 +29,12 @@ Lotul cuprinde 21 de treceri: jurnale VERCON/Python, statusuri ADECHIT/VERCON/00
 | VC08-17 | [VC08-17](SLICE-VC08-17-fisa-magazie-selectie-multipla.md) |
 | VC06-11 | [VC06-11](SLICE-VC06-11-efactura-asociere-nir-partiala.md) |
 | VC06-12 | [VC06-12](SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md) |
-| VC06-13 / VC07-08 | [VC06-13](SLICE-VC06-13-efactura-dgv-cantitati-automate.md); [VC07-08](SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md) |
-| VC06-14 | [VC06-14](SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md) |
+| VC06-13 / VC07-08 | [VC06-13](SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-13); [VC07-08](SLICE-VC07-07-lista-butoane-actiuni.md#slice-vc07-08) |
+| VC06-14 | [VC06-14](SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-14) |
 | VC08-18 | [VC08-18](SLICE-VC08-18-status-intre-actiuni.md) |
 | VC06-15 | [VC06-15](SLICE-VC06-15-efactura-informare-inactive.md) |
-| VC06-16 | [VC06-16](SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md) |
-| VC06-17 | [VC06-17](SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md) |
+| VC06-16 | [VC06-16](SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-16) |
+| VC06-17 | [VC06-17](SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-17) |
 | VC08-19 | [VC08-19](SLICE-VC08-19-mesaje-dialog-comun.md) |
 
 ### A doua trecere — intervenții din 19 și 21 octombrie

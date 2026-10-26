@@ -1,96 +1,42 @@
 # SLICE-VC06-11 — Asociere NIR manual cu eFactura — 23.10.2026
 
-Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
+Stare comună VC06-11/13/14/16/17: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
+
+Evoluția aceluiași dialog de asociere: bază tranzacțională și propuneri → cantități/grile → drag and drop/memorare → protecția NIR și PDF → selector automat. Fiecare etapă își păstrează limitele și fișierele; VC06-12 (gruparea arborelui) și VC06-15 (informarea/vizibilitatea globală) rămân separate.
+
+<a id="slice-vc06-11"></a>
 
 ## Utilizare
 
-Într-un NIR de cumpărare salvat, neanulat, opțiunea «⋮ → Asociază eFactura…»
-din meniul acelui NIR în arbore deschide facturile active trimise de contabil
-cu data facturii din NIR. Opțiunea a fost mutată din footer în popup.
-Serverul cere și același CUI. Numărul facturii nu este criteriu de asociere,
-nici la selecție, nici la salvare sau la calculul valabilității alocărilor;
-seria și spațiile pot diferi. NIR-ul trebuie deschis în contextul
-gestiunii și exercițiului său, cu drept de recepție, ocupare și perioadă
-deschisă. Pentru alte NIR-uri se schimbă contextul în mod normal.
+Într-un NIR de cumpărare salvat, neanulat, opțiunea «⋮ → Asociază eFactura…» din meniul acelui NIR în arbore deschide facturile active trimise de contabil cu data facturii din NIR. Opțiunea a fost mutată din footer în popup. Serverul cere și același CUI. Numărul facturii nu este criteriu de asociere, nici la selecție, nici la salvare sau la calculul valabilității alocărilor; seria și spațiile pot diferi. NIR-ul trebuie deschis în contextul gestiunii și exercițiului său, cu drept de recepție, ocupare și perioadă deschisă. Pentru alte NIR-uri se schimbă contextul în mod normal.
 
-Două liste alfabetice românești prezintă produse NIR și poziții eFactura,
-CPV, UM, cantitate și rest. Se trage un rând NIR peste poziția eFactura;
-alternativ se selectează cele două rânduri și se apasă butonul de asociere.
-Perechile se editează sau se elimină înainte de salvare. Cantitățile sunt
-independente pe cele două documente, pentru conversii explicite de UM.
-Calculele din UI folosesc BigInt la patru zecimale, serverul Decimal.
+Două liste alfabetice românești prezintă produse NIR și poziții eFactura, CPV, UM, cantitate și rest. Se trage un rând NIR peste poziția eFactura; alternativ se selectează cele două rânduri și se apasă butonul de asociere. Perechile se editează sau se elimină înainte de salvare. Cantitățile sunt independente pe cele două documente, pentru conversii explicite de UM. Calculele din UI folosesc BigInt la patru zecimale, serverul Decimal.
 
-O poziție poate fi împărțită între rânduri și NIR-uri, inclusiv în subunități
-diferite. Asocierea înlocuiește numai perechile NIR-ului curent pentru
-trimiterea aleasă. Celelalte NIR-uri, afișate cu subunitate/gestiune/număr/data,
-își păstrează alocările. În etapa inițială nu se modificau NIR-uri, facturi interne VC_FACTURI,
-produse, prețuri sau mișcări de stoc. Excepția ulterioară pentru CPV este
-consemnată în corecțiile din 23.10 de mai jos.
+O poziție poate fi împărțită între rânduri și NIR-uri, inclusiv în subunități diferite. Asocierea înlocuiește numai perechile NIR-ului curent pentru trimiterea aleasă. Celelalte NIR-uri, afișate cu subunitate/gestiune/număr/data, își păstrează alocările. În etapa inițială nu se modificau NIR-uri, facturi interne VC_FACTURI, produse, prețuri sau mișcări de stoc. Excepția ulterioară pentru CPV este consemnată în corecțiile din 23.10 de mai jos.
 
 ## Propuneri și memorare
 
-Se reutilizează întâi o denumire memorată univoc pentru CUI/gestiune,
-apoi CPV-ul exact normalizat la opt cifre. O contradicție între două CPV-uri
-nu este rezolvată automat prin memorie. La CPV-uri sau produse repetate se
-compară și cantitățile disponibile. O propunere se face numai dacă perechea
-este univocă în ambele sensuri și UM coincide. Nu se folosesc potriviri
-aproximative de nume; ambiguitățile și UM diferite se rezolvă manual.
+Se reutilizează întâi o denumire memorată univoc pentru CUI/gestiune, apoi CPV-ul exact normalizat la opt cifre. O contradicție între două CPV-uri nu este rezolvată automat prin memorie. La CPV-uri sau produse repetate se compară și cantitățile disponibile. O propunere se face numai dacă perechea este univocă în ambele sensuri și UM coincide. Nu se folosesc potriviri aproximative de nume; ambiguitățile și UM diferite se rezolvă manual.
 
-Toate propunerile sunt ciorne până la salvare. Bifa de memorare a fost
-eliminată ulterior pentru compactarea dialogului. Memoria se completează
-implicit numai pentru perechile realizate prin drag and drop sau editate
-manual, la salvarea lor. Propunerile și asocierile din butoane nu produc
-singure memorie. Corespondența păstrează: CUI,
-denumirea normalizată eFactura, produsul identificat în gestiune, ambele
-denumiri, utilizatorul și data. Identitatea produsului rămâne stabilă la
-redenumire. Mai multe produse memorate pentru același nume nu sunt alese
-arbitrar. Eliminarea unei alocări nu șterge istoricul denumirilor memorate.
+Toate propunerile sunt ciorne până la salvare. Bifa de memorare a fost eliminată ulterior pentru compactarea dialogului. Memoria se completează implicit numai pentru perechile realizate prin drag and drop sau editate manual, la salvarea lor. Propunerile și asocierile din butoane nu produc singure memorie. Corespondența păstrează: CUI, denumirea normalizată eFactura, produsul identificat în gestiune, ambele denumiri, utilizatorul și data. Identitatea produsului rămâne stabilă la redenumire. Mai multe produse memorate pentru același nume nu sunt alese arbitrar. Eliminarea unei alocări nu șterge istoricul denumirilor memorate.
 
 ## Tranzacții și compatibilitate
 
-Scrierea folosește ocuparea contextului, blocarea gestiunii, revizia NIR și
-blocarea facturii/trimiterii, comună cu retragerea contabilului. Recalculează
-bugetele tuturor NIR-urilor în aceeași tranzacție și refuză depășirile pe
-ambele documente. Cheia de cerere permite reluarea aceleiași salvări după un
-răspuns pierdut. Auditul păstrează perechile, cantitățile și memorarea.
+Scrierea folosește ocuparea contextului, blocarea gestiunii, revizia NIR și blocarea facturii/trimiterii, comună cu retragerea contabilului. Recalculează bugetele tuturor NIR-urilor în aceeași tranzacție și refuză depășirile pe ambele documente. Cheia de cerere permite reluarea aceleiași salvări după un răspuns pierdut. Auditul păstrează perechile, cantitățile și memorarea.
 
-Starea efectivă este TRIMISA / PARTIALA / PRELUATA, ultima numai când toate
-cantitățile facturii sunt acoperite. În baza veche se stochează în continuare
-TRIMISA/PRELUATA; PARTIALA se calculează identic pentru VERCON și K-BOT.
-Factura parțială nu poate fi retrasă/returnată și conturile ei propuse nu
-se pot schimba până la eliminarea asocierilor active.
+Starea efectivă este TRIMISA / PARTIALA / PRELUATA, ultima numai când toate cantitățile facturii sunt acoperite. În baza veche se stochează în continuare TRIMISA/PRELUATA; PARTIALA se calculează identic pentru VERCON și K-BOT. Factura parțială nu poate fi retrasă/returnată și conturile ei propuse nu se pot schimba până la eliminarea asocierilor active.
 
-Asocierea reține revizia NIR. Orice editare ulterioară a NIR-ului invalidează
-asocierile acelei revizii, care trebuie reconfirmate în dialog; anularea sau
-dispariția documentului eliberează și ele cantitățile. Revizia monotonă
-împiedică reactivarea unor alocări vechi dacă se revine ulterior la aceleași
-cantități. NIR-urile deja legate integral prin vechiul flux nu se convertesc
-automat. Pentru o trimitere trecută pe alocări, restul se recepționează prin
-NIR manual urmat de asociere, nu prin fluxul vechi de preluare integrală.
+Asocierea reține revizia NIR. Orice editare ulterioară a NIR-ului invalidează asocierile acelei revizii, care trebuie reconfirmate în dialog; anularea sau dispariția documentului eliberează și ele cantitățile. Revizia monotonă împiedică reactivarea unor alocări vechi dacă se revine ulterior la aceleași cantități. NIR-urile deja legate integral prin vechiul flux nu se convertesc automat. Pentru o trimitere trecută pe alocări, restul se recepționează prin NIR manual urmat de asociere, nu prin fluxul vechi de preluare integrală.
 
 ## Instalare și fișiere
 
-Utilizatorul execută manual `sql/EV_02_vercon_asocieri_partiale.sql` pe
-AVACONT_SURSA și sincronizează structura în DC-uri, după EV_01. Sunt trei
-tabele locale noi, cu identificatori uppercase: EF_VERCON_ASOCIERI,
-EF_VERCON_ALOCARI, EF_VERCON_CORELARI. Nu este SQL pentru AVACONT_COMUN.
-Aplicația nu creează schema; opțiunea răspunde EF_ASSOC_SCHEMA_REQUIRED
-dacă aceasta lipsește. Fluxul vechi continuă să funcționeze fără schema nouă.
+Utilizatorul execută manual `sql/EV_02_vercon_asocieri_partiale.sql` pe AVACONT_SURSA și sincronizează structura în DC-uri, după EV_01. Sunt trei tabele locale noi, cu identificatori uppercase: EF_VERCON_ASOCIERI, EF_VERCON_ALOCARI, EF_VERCON_CORELARI. Nu este SQL pentru AVACONT_COMUN. Aplicația nu creează schema; opțiunea răspunde EF_ASSOC_SCHEMA_REQUIRED dacă aceasta lipsește. Fluxul vechi continuă să funcționeze fără schema nouă.
 
-Fișiere noi: scriptul SQL; PYTHON/utils/vercon_efactura.py;
-PYTHON/routes/vercon/efactura_association.py;
-PYTHON/static/js/vercon/efactura-association.js și efactura-match.js.
+Fișiere noi: scriptul SQL; PYTHON/utils/vercon_efactura.py; PYTHON/routes/vercon/efactura_association.py; PYTHON/static/js/vercon/efactura-association.js și efactura-match.js.
 
-Integrare: PYTHON/routes/vercon/{doc_routes,efactura_queue}.py;
-PYTHON/routes/efactura/primite_vercon.py;
-PYTHON/static/js/vercon/{docs,efactura-intake}.js;
-PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json;
-src/KBot.Domain/EFacturaVercon.vb;
-src/KBot.EFactura/Forms/VerconForm.vb; implementare_vercon_v2.md.
+Integrare: PYTHON/routes/vercon/{doc_routes,efactura_queue}.py; PYTHON/routes/efactura/primite_vercon.py; PYTHON/static/js/vercon/{docs,efactura-intake}.js; PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json; src/KBot.Domain/EFacturaVercon.vb; src/KBot.EFactura/Forms/VerconForm.vb; implementare_vercon_v2.md.
 
-Publicare necesară: modulele Python/JS/CSS/help împreună, repornirea
-serviciului web, reîncărcarea paginii și recompilarea K-BOT pentru textul
-stării parțiale. Nu s-a făcut publicare sau execuție SQL în această lucrare.
+Publicare necesară: modulele Python/JS/CSS/help împreună, repornirea serviciului web, reîncărcarea paginii și recompilarea K-BOT pentru textul stării parțiale. Nu s-a făcut publicare sau execuție SQL în această lucrare.
 
 ## Limită istorică a corecției criteriilor
 
@@ -117,3 +63,85 @@ Fișiere istorice (numele fără prefix continuă directorul precedent):
 | 22 | PYTHON/routes/vercon/efactura_product_cpv.py (nou); PYTHON/routes/vercon/efactura_association.py; PYTHON/static/help/vercon.json; implementare_vercon_v2.md. |
 | 23 | PYTHON/routes/vercon/efactura_association.py; PYTHON/static/js/vercon/efactura-match.js; PYTHON/static/help/vercon.json; implementare_vercon_v2.md. |
 | 24 | PYTHON/utils/vercon_efactura.py; PYTHON/routes/vercon/{efactura_association,efactura_queue}.py; PYTHON/static/js/vercon/efactura-association.js; PYTHON/static/help/vercon.json; implementare_vercon_v2.md. |
+
+<a id="slice-vc06-13"></a>
+
+## SLICE-VC06-13 — eFactura: DGV și cantități automate la asocierea NIR — 23.10.2026
+
+### Asocierea NIR/eFactura
+
+Tabelul HTML al perechilor a fost înlocuit cu DataGrid-ul comun, prin același adaptor grid/column folosit la NIR, BC și bonuri. Cantitățile se editează în celule. Opțiunea de eliminare este în meniul ⋮ al rândului. Grila păstrează sortarea aleasă și lățimile la schimbarea perechilor; ordinea inițială este după denumirile produselor în română, cu cantități comparate numeric. Etichetele includ UM, dar cheile de sortare ale produselor sunt denumirile.
+
+La drag and drop sau la asociere prin buton, ambele cantități se completează cu minimul disponibil în NIR și eFactura, inclusiv când UM diferă textual, ca KG/KGM. Nu se deduce un factor de conversie; utilizatorul poate ajusta separat cele două cantități. La confirmarea celulei se validează valori pozitive, maximum patru zecimale și restul documentului corespunzător, scăzând toate celelalte perechi. Serverul păstrează verificarea tranzacțională a resturilor dintre toate NIR-urile.
+
+Celula activă se confirmă înainte de salvare, asociere nouă, propuneri sau eliminare. Un edit invalid împiedică salvarea. Grila este ocupată în timpul cererii și este distrusă la închiderea dialogului. Stilurile butoanelor mari ale dialogului sunt limitate la acțiunile dialogului, fără a afecta butoanele și editorii DGV.
+
+### SQL și livrare
+
+Cele trei declarații din sql/EV_02_vercon_asocieri_partiale.sql au acum CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci, conform precizării utilizatorului. Nu este necesară schimbarea structurii pentru DGV/cantități; nu s-a executat SQL și nu s-au modificat baze de date.
+
+Fișiere: PYTHON/static/js/vercon/efactura-association-grid.js (nou), efactura-association.js; PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json; sql/EV_02_vercon_asocieri_partiale.sql; implementare_vercon_v2.md; acest jurnal.
+
+Publicare necesară: modulele JS și CSS/help împreună, apoi reîncărcarea paginii. Scriptul SQL rămâne numai pentru execuție manuală de către utilizator, la instalarea structurii.
+
+<a id="slice-vc06-14"></a>
+
+## SLICE-VC06-14 — eFactura: grile sursă, țintă vizibilă și memorare implicită — 23.10.2026
+
+Eliminate complet din dialog paragraful vc-efi__hint și eticheta/bifa vc-efi__remember. Cele două butoane de asociere/propunere sunt pe rândul selectorului facturii, după «Deschide factura». Selectorul cedează din lățime; bara nu se înfășoară pe mai multe rânduri la îngustarea ecranului.
+
+Ambele liste de sus folosesc DataGrid-ul comun NIR/BC, cu denumire, CPV, UM, cantitate și rest. Tabelul din stânga are butonul ↕️ pe rând; acesta deschide alegerea unei poziții eFactura cu rest. Modelul provine din ADECHIT Prezență: actionColumn/pickGroupFor și wireChildDrop din app.js.
+
+Drag and drop folosește rowFromNode și evenimentele comune DGV. Rândul eFactura aflat sub cursor este marcat cu is-drop-target, fundal colorat și contur punctat. Nu se acceptă antete, zone goale, poziții fără rest sau drag extern. Evidențierea se curăță la ieșire, drop, dragend, reîncărcare, ocupare ori închidere. Identificarea țintei urmărește rândul real al DGV, inclusiv după sortare, filtrare și virtualizare.
+
+Pozițiile eFactura cu cantitatea integral asociată dispar imediat din lista de sus. Produsele NIR cu rest zero dispar și ele. Perechile rămân în grila asocierilor, pentru editare/eliminare. Reducerea sau eliminarea unei alocări reintroduce automat rândurile cu rest pozitiv. Se păstrează filtrele, lățimile, sensul de sortare ales și selecția dacă rândul mai este vizibil.
+
+Memorarea denumirilor nu mai folosește un flag global pentru toată factura. Fiecare pereche are în cerere learn=true numai după drag and drop ori editare manuală a cantității. Propunerile automate, butonul de propuneri, butonul de asociere a selecțiilor și butonul ↕️ nu marchează perechea pentru memorie; o editare manuală ulterioară o poate marca. Serverul memorează numai perechile marcate, în tranzacția «Salvează asocierile», și le include în audit. Nu se introduc în memorie propuneri doar pentru că alte rânduri au fost editate. Eliminarea unei perechi înainte de salvare îi elimină și marcajul; nu se șterge istoricul denumirilor deja memorate.
+
+Fișiere: PYTHON/static/js/vercon/efactura-source-grids.js (nou), efactura-association.js, efactura-association-grid.js; PYTHON/routes/vercon/efactura_association.py; PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json; docs/worklog/VERCON-2026-10-23-efactura-asociere-nir-partiala.md; implementare_vercon_v2.md; acest jurnal.
+
+Nu necesită DDL sau schimbări de schemă. Publicare: serverul Python și modulele JS/CSS/help împreună, repornirea serviciului web și reîncărcarea paginii. Structura existentă rămâne utf8mb3/utf8mb3_general_ci; nu s-a executat SQL.
+
+<a id="slice-vc06-16"></a>
+
+## SLICE-VC06-16 — eFactura: overflow, NIR asociat protejat și afișare PDF — 23.10.2026
+
+### Dimensiunile dialogului
+
+Antetele DGV au padding orizontal de 22 px pe fiecare parte. Coloanele de acțiuni _move/_action au 40 px și nu aveau headerAction; paddingul le făcea mai late decât cei 40 px calculați. Astfel apărea scroll orizontal în DGV-ul NIR gol și în grila asocierilor. Paddingul și gap-ul acestor antete sunt acum zero, numai în dialogul de asociere. Nu s-a ascuns overflow-ul grilelor și nu s-a schimbat componenta DGV comună.
+
+ComboBox-ul era limitat la max-width:300px din stylesheetul comun. Selectorul facturii are acum o bază flexibilă de 460 px și max-width:none, limitat la acest dialog; se poate restrânge pe ecrane înguste.
+
+### NIR-urile asociate
+
+efactura_receipts.py calculează metadatele pentru lotul de NIR-uri al unei ramuri: asocieri integrale din fluxul vechi și alocări parțiale valabile din fluxul nou. Datele sunt în contextul subunitate/gestiune/exercițiu. Asocierile expirate sau eliminate nu blochează NIR-ul. Fără tabelele eFactura existente, citirea documentelor continuă fără aceste metadate.
+
+Lista lazy, lista generală și documentul deschis primesc has_efactura, lista facturilor asociate și edit_locked/edit_message. Nodurile sunt bold italic, inclusiv valoarea. Rendererul TreeView acceptă opțional italic; stilul este limitat la NIR. După salvarea/eliminarea asocierilor se reîncarcă documentul și ramurile deschise, păstrând gruparea și selecția.
+
+Modifică este dezactivat atât în popup, cât și în bara documentului. _guard_dependents refuză și pe server editarea NIR-ului asociat cu EF_NIR_LOCKED, înainte de calcul sau scriere; acoperă și validarea ciornei. Asocierea poate fi corectată/eliminată prin dialogul existent. Regula anulării documentelor nu este schimbată.
+
+### Afișarea facturii
+
+Meniul unui NIR asociat oferă «Afișează eFactura». Se deschide factura originală în vizualizatorul PDF comun, reutilizând primite.pdf_anaf și XML-ul salvat. PDF-ul este randat de serviciul ANAF existent. Dacă sunt mai multe facturi, utilizatorul alege din lista ordonată după furnizor/data/număr.
+
+GET /api/vercon/doc/nir/<nir>/efactura/<invoice>/pdf cere sesiunea și drepturile VERCON existente, validează contextul și verifică asocierea activă a facturii cu acel NIR. Nu permite accesul la altă factură prin înlocuirea ID-ului în URL. Erorile XML/ANAF sunt transmise prin protocolul VERCON; nu s-a făcut nicio cerere ANAF în această lucrare.
+
+Fișiere noi: PYTHON/routes/vercon/efactura_receipts.py; PYTHON/static/js/vercon/efactura-view.js. Integrare: PYTHON/utils/vercon_efactura.py; PYTHON/routes/vercon/{receipt_tree,invoices,documents,doc_routes,receipt_distribution}.py; PYTHON/static/js/vercon/{docs,document-tree-order}.js; PYTHON/static/js/components/treeview/treeview-render.js; PYTHON/static/css/{vercon-efactura,vercon-document-tree}.css; PYTHON/static/help/vercon.json; implementare_vercon_v2.md; acest jurnal.
+
+Fără DDL nou sau execuție SQL. Publicare: Python/JS/CSS/help și rendererul TreeView împreună, repornirea serviciului și reîncărcarea paginii.
+
+<a id="slice-vc06-17"></a>
+
+## SLICE-VC06-17 — eFactura: ComboBox custom și încărcare automată — 23.10.2026
+
+Selectorul nativ select a fost înlocuit cu Combobox-ul comun, configurat dropDownStyle=simple, cu etichetă accesibilă și dropdown în dialog. Poate afișa toate cele 500 de opțiuni oferite de API. Cheile de sortare sunt explicit furnizorul, data și numărul facturii ca text, independent de ID.
+
+Eliminat butonul «Deschide factura». După încărcarea listei se selectează și se citește automat prima factură potrivită. API-ul listei acceptă filtrul opțional partner, rezolvat la CUI-ul normalizat al partenerului NIR; se păstrează filtrul de dată. Numărul nu este criteriu de asociere. Facturile preluate integral prin fluxul vechi, care nu pot fi convertite în alocări, nu sunt oferite pentru acest dialog.
+
+Selectarea altei opțiuni în ComboBox încarcă automat pozițiile. Se confirmă celula în editare și se protejează ciorna nesalvată; dacă utilizatorul renunță la schimbare sau editul este invalid, ComboBox revine la factura curentă. În timpul scrierii ori al unui răspuns neconfirmat selectorul rămâne blocat. O citire eșuată se poate relua prin reselectarea facturii. Controlul și dropdownul sunt distruse la închiderea dialogului.
+
+Butoanele sunt acum «🔗 Asociaza», apoi «💡 Propune», cu descrierile lungi în title. Bara conține numai ComboBox-ul și aceste două acțiuni.
+
+Fișiere: PYTHON/static/js/vercon/efactura-association.js; PYTHON/routes/vercon/efactura_queue.py; PYTHON/static/css/vercon-efactura.css; PYTHON/static/help/vercon.json; implementare_vercon_v2.md; acest jurnal.
+
+Fără DDL nou sau execuție SQL. Publicare: Python/JS/CSS/help împreună, repornirea serviciului web și reîncărcarea paginii.

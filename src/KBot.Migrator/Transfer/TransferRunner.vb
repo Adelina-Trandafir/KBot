@@ -525,6 +525,10 @@ Public NotInheritable Class TransferRunner
                 Case ColumnSourceKind.UnitId
                     values(mapping.TargetColumn) = RowUnit(map, verdict, mapping.TargetColumn)
 
+                Case ColumnSourceKind.UnitSursaSector
+                    Dim k_unitId = RowUnit(map, verdict, mapping.TargetColumn)
+                    values(mapping.TargetColumn) = _request.Units.First(Function(k_u) k_u.IdUnitate = k_unitId).Sursa.Trim().ToUpperInvariant()
+
                 Case ColumnSourceKind.Constant
                     values(mapping.TargetColumn) = If(mapping.ConstantValue, DBNull.Value)
 

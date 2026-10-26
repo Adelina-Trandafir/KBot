@@ -2,11 +2,8 @@
 
 **Status at the planning checkpoint:** findings only, no code; 25.09.2026, revised the same day after operator review. The original guide/workflow findings, D1–D9 and gaps remain here as dated history. [The sending plan](PLAN_DDF_Trimitere.md) records the later menu/split-action decisions; [0081 history](worklog/SLICE-0081-01-starea-reviziei.md) and [registry](worklog/state/KBOT_STATUS_0080-0089.md#slice-0081) record implementation and its limits. “Not built” below belongs to this checkpoint.
 **Sources:**
-- `Surse/GHID UTILIZARE_ALOP_V2.pdf` — the Ministry of Finance guide for the DDF under
-  OMF 1140/2025. `p.NN` = the guide's page.
-- The FOREXEBUG workflows in `src/KBot.Forexe/Workflows/Creare/`:
-  `adlop - Creare Angajament.wfl` (identical copy in `Surse/`),
-  `adlop - Definitivare_Derulare Angajament.wfl`, `adlop - Incarca Rezervare.wfl`.
+- `Surse/GHID UTILIZARE_ALOP_V2.pdf` — the Ministry of Finance guide for the DDF under OMF 1140/2025. `p.NN` = the guide's page.
+- The FOREXEBUG workflows in `src/KBot.Forexe/Workflows/Creare/`: `adlop - Creare Angajament.wfl` (identical copy in `Surse/`), `adlop - Definitivare_Derulare Angajament.wfl`, `adlop - Incarca Rezervare.wfl`.
 - The DDF template `Surse/doc_fund_xdp.xml` (`A1.0.08`) and `src/KBot.App/Views/Ddf/DdfXmlBuilder.vb`.
 
 ---
@@ -70,15 +67,10 @@ Two PDFs per revision: an **interim** one (header + A, no B, no captures) and a 
 ```
 
 Rules that follow from it:
-- **When is it a new revision.** While only Semnătura A is placed, the same revision is edited (new
-  interim PDF, signed again). Once the revision is sent to forexecab and fully signed, any further
-  change of values is a **new revision**. Step 4 is the point of no return.
-- The interim PDF is a working copy; its A signature does not carry over — A is signed again on the
-  final PDF.
-- The revision's values (header, A.4, B rows, CodAngajament, captures) are stored in KBOT per
-  revision from step 1; the final PDF is built from them.
-- Director side: a simplified KBOT that lists the DDFs waiting for his signature (new piece, not
-  designed yet).
+- **When is it a new revision.** While only Semnătura A is placed, the same revision is edited (new interim PDF, signed again). Once the revision is sent to forexecab and fully signed, any further change of values is a **new revision**. Step 4 is the point of no return.
+- The interim PDF is a working copy; its A signature does not carry over — A is signed again on the final PDF.
+- The revision's values (header, A.4, B rows, CodAngajament, captures) are stored in KBOT per revision from step 1; the final PDF is built from them.
+- Director side: a simplified KBOT that lists the DDFs waiting for his signature (new piece, not designed yet).
 - The original golden rule is recorded once as D8 in §7.
 
 ---
@@ -190,27 +182,17 @@ One forexecab row = one (Program, Sursă, Indicator) = one row in A.4 and in B. 
 
 ### 3.2 The sending workflows
 
-**`Creare Angajament`** — new angajament (Rev 0).
-Inputs: `DESCRIERE_ANGAJAMENT`; rows `{Cheie, Clasificatia, CodProgram, Sursa, CB_INITIAL}`.
+**`Creare Angajament`** — new angajament (Rev 0). Inputs: `DESCRIERE_ANGAJAMENT`; rows `{Cheie, Clasificatia, CodProgram, Sursa, CB_INITIAL}`.
 - `Angajament nou` → description → `Adaugă angajament` (the whole header form).
-- Per row: Program, Sursa, Indicator, types `creditBugRezervatInitialAnCurent` = `CB_INITIAL`
-  (forexecab fills `Credit de angajament rezervat` itself); reads CA/CB Total/Limită/Disponibil;
-  **screenshot of the filled row**; `Salvează și continuă` (or `Salvează` on the last row).
+- Per row: Program, Sursa, Indicator, types `creditBugRezervatInitialAnCurent` = `CB_INITIAL` (forexecab fills `Credit de angajament rezervat` itself); reads CA/CB Total/Limită/Disponibil; **screenshot of the filled row**; `Salvează și continuă` (or `Salvează` on the last row).
 - **Final screenshot**, reads `CodAng_Final`, scrapes the grid (`TabelIndicatori`).
 
-**`Definitivare_Derulare Angajament`** — `Inițial` → `În derulare`.
-Inputs: `COD_ANGAJAMENT`, `MOTIV_DEFINITIVARE`.
-- Scrapes the grid first; `Definitivează`; per row copies CB inițial into
-  `creditBugRezervatDefinitivAnCurent` → **screenshot** → `Salvează`; `În derulare`; reads the
-  state and scrapes the final grid.
+**`Definitivare_Derulare Angajament`** — `Inițial` → `În derulare`. Inputs: `COD_ANGAJAMENT`, `MOTIV_DEFINITIVARE`.
+- Scrapes the grid first; `Definitivează`; per row copies CB inițial into `creditBugRezervatDefinitivAnCurent` → **screenshot** → `Salvează`; `În derulare`; reads the state and scrapes the final grid.
 
-**`Incarca Rezervare`** — change or add rows on an existing angajament (Rev ≥ 1).
-Inputs: `COD_ANGAJAMENT`; rows `{Cheie, Indicator_ang, ClsfSal, Clasificatia, CodProgram, Sursa,
-ValoareNoua, Motiv}` (`Indicator_ang` starting with `!` = new row).
-- Existing row: eye → `creditBugRezervatDefinitivAnCurent` = `ValoareNoua` → **screenshot** →
-  `Salvează` → motiv → `Continuă` → re-reads the row.
-- New row: `Adaugă` → Program / Sursa / Indicator → `creditBugRezervatDefinitivAnCurent` →
-  **screenshot** → `Salvează` → reads the new row code.
+**`Incarca Rezervare`** — change or add rows on an existing angajament (Rev ≥ 1). Inputs: `COD_ANGAJAMENT`; rows `{Cheie, Indicator_ang, ClsfSal, Clasificatia, CodProgram, Sursa, ValoareNoua, Motiv}` (`Indicator_ang` starting with `!` = new row).
+- Existing row: eye → `creditBugRezervatDefinitivAnCurent` = `ValoareNoua` → **screenshot** → `Salvează` → motiv → `Continuă` → re-reads the row.
+- New row: `Adaugă` → Program / Sursa / Indicator → `creditBugRezervatDefinitivAnCurent` → **screenshot** → `Salvează` → reads the new row code.
 - Then the last `Istoric` row; at the end a **final screenshot**.
 
 The reason text sent to forexecab keeps the `(REV:n)` tag (e.g. `Incarcare rezervare definitiva (REV:7)`) — operator decision: whoever reads forexecab sees which revision made the change.
@@ -260,8 +242,7 @@ The reason text sent to forexecab keeps the `(REV:n)` tag (e.g. `Incarcare rezer
 The angajament is already `În derulare`; the unpaid remainder is reserved on this year's budget.
 - Rev 0 of a new DDF; A.4: col5 = 0, col6 = col7 = remaining unpaid.
 - `Incarca Rezervare`, existing row, `ValoareNoua` = remaining unpaid.
-- B: col5 = col6 = col7 = 0 (no CA reserved), col8 = 0, col9 = col10 = remaining unpaid.
-  **Only the CB side moves** (SCREEN p.30).
+- B: col5 = col6 = col7 = 0 (no CA reserved), col8 = 0, col9 = col10 = remaining unpaid. **Only the CB side moves** (SCREEN p.30).
 
 ---
 

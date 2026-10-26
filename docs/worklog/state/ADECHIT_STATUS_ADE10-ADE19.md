@@ -17,12 +17,13 @@ Subunități în același DC (plan: [plan_subunitati.md](../../../ADECHIT/plan_s
 | SLICE-ADE10-04 | Selectorul „Subunitate", comutarea per filă cu reîncărcare | TESTAT, RULAT, PUBLICAT | [Interfață](../SLICE-AD10-01-schema-subunitati.md#slice-ADE10-04) |
 | SLICE-ADE10-06 | Corecturi după review: snapshot înainte de blocare, reverificare completă în migrator, comutare fără pierderi, reconciliere, amprente vechi, acces pe utilizator, sincronizare PK | TESTAT, RULAT, PUBLICAT | [ADE10-02…05](../SLICE-AD10-01-schema-subunitati.md#slice-ADE10-02) |
 | SLICE-ADE10-07 | ADE.Migrator: copii reconstituiți din SS_Buget (Platitori + Platitori_sub), fereastra «Chitanțe dublate…» cu numere editabile, reverificare după fiecare schimbare și regula «taie cifra miilor» | TESTAT, RULAT, PUBLICAT | [Migrator](../SLICE-ADE5-04-ade-migrator.md#slice-ADE10-07) |
+| SLICE-ADE10-08 | Chitanțe pe ani școlari: cheie `uq_Sub_Serie_An_Numar` (AD_13, coloană calculată `AnScolar`), dubluri căutate doar în același an școlar, o singură constatare + jurnal rapid în ADE.Migrator, casetă de resetare a numerotării la închiderea anuală | Cod făcut, build ADE.Migrator curat; NETESTAT, NERULAT, AD_13 NEAPLICAT | [ADE10-08](../SLICE-ADE10-08-chitante-an-scolar.md) |
 | SLICE-ADE10-05 | Predarea: ordinea SQL/publicare, probele utilizatorului, deciziile luate | TESTAT, RULAT, PUBLICAT | [Predare](../SLICE-AD10-01-schema-subunitati.md#slice-ADE10-05) |
 | SLICE-AD10-11 | Subunitatea pe rapoarte și zilele lucrătoare pe luni; corecturi 404, coloană Stare și libere suplimentare | TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026) | [AD10-11](../SLICE-AD10-11-zile-lucratoare-subunitate-rapoarte.md) |
 
 ### Current focus
 
-- Checkpointul inițial consemna implementarea locală și predarea probelor către utilizator conform ADE10-05; confirmarea ulterioară este din 23.10.2026. Următoarea subfelie ADE10 consemnată în acel checkpoint: **ADE10-08**. Fișierul AD10-11 este indexat cu identificatorul său existent, fără renumerotare.
+- Checkpointul inițial consemna implementarea locală și predarea probelor către utilizator conform ADE10-05; confirmarea ulterioară este din 23.10.2026. Subfelia **ADE10-08** (chitanțe pe ani școlari) a fost luată la 26.10.2026; următoarea liberă este **ADE10-09**. Deschis în ADE10-08: la 26.10.2026 sincronizarea a șters cheia veche în 24 de baze, dar nu a putut crea cheia nouă (sincronizarea nu adăuga coloane calculate; corectat în `schema_diff.py`, neverificat) — după ce `schema_diff.py` ajunge pe server, se reia sincronizarea; fereastra anuală neverificată pe ecran. Fișierul AD10-11 este indexat cu identificatorul său existent, fără renumerotare.
 
 ### Open threads
 
@@ -87,3 +88,42 @@ Ajutor ADECHIT, o singură sursă pentru fereastră, imprimare și PDF.
 
 - Citirea textului de către operator, aspectul PC/mobil, imprimarea și PDF-ul: confirmate
   de operator, 23.10.2026.
+
+## Slice AD13
+
+Încărcarea extraselor bancare în ADECHIT, înaintea asocierii cu copiii.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD13-01 | Fereastra «Încărcare extrase bancare»: PDF-uri/folder cu deduplicare și căsuță de e-mail IMAP cu parolă criptată pe server; cititor PDF portat din K-BOT; import comun cu FOREXE (importa_extrase); tabele AD_EXTRASE_EMAIL, AD_EXTRASE_INCARCARI; ajutor actualizat | COD SCRIS, compilat sintactic; nimic rulat sau văzut | [Încărcare](../SLICE-AD13-01-incarcare-extrase.md) |
+
+### Current focus
+
+- Următoarea subfelie liberă: **AD13-02**.
+
+### Open threads
+
+- De făcut de operator: sql/AD_14_extrase_incarcare.sql în fiecare bază ADECHIT; pachetul cryptography + cheia ADE_MAIL_KEY pe server; publicarea fișierelor din worklog; probe cu PDF-uri reale și cu o căsuță Gmail/Yahoo (neprobate).
+- Aspectul ferestrei, PC/mobil și tema întunecată: nevăzut.
+
+## Slice AD14
+
+Închiderea lunii cu schimbarea taxei active.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD14-01 | Fereastra «Închidere lună» (modală, fundal estompat) în locul confirmării simple: tabelul de taxe cu taxa activă prima, «Adaugă taxă» care poziționează tabelul pe rândul nou (devine activ, celelalte se opresc), «Închide luna» / «Renunță»; ajutor + UTILIZARE_WEB actualizate | COD SCRIS, compilat sintactic (node --check); nimic rulat sau văzut | [Fereastra de închidere](../SLICE-AD14-01-inchidere-luna-taxa.md) |
+
+### Current focus
+
+- Următoarea subfelie liberă: **AD14-02**.
+
+### Open threads
+
+- Neprobat de operator: aspectul ferestrei (PC/mobil, tema întunecată), «Adaugă taxă» în fereastră, închiderea după schimbarea taxei, «Renunță»/Escape.
+- Fără DDL, fără fișiere Python modificate: se publică numai fișierele web din worklog.
+- Închiderea lunii august folosește în continuare fereastra anuală, fără selecția taxei (de decis dacă se dorește și acolo).

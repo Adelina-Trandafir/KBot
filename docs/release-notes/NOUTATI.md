@@ -9,7 +9,7 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 ## 1.1.3.0 (24.10.2026)
 <!-- release: utc=2026-10-24T08:25:26Z -->
 
-<!-- felii: 0081-13, 0097-05, 00EF-49, 0114-27, 0123-05, 0000-119, 0000-121, 0000-122 -->
+<!-- felii: 0081-13, 0097-05, 00EF-49, 0114-27, 0123-05, AV01-04, AV01-06, 0000-119, 0000-121, 0000-122, 0000-123, 0000-124, 00EF-50, 0000-129, 0067-03, 00EF-51, 00EF-52 -->
 
 - DDF: programul vine din SS-ul indicatorilor (01A = 0000002510, altfel 0000000000); un angajament manual nou n-are program.
 - Fara program, DDF-ul nu se salveaza si nu se trimite; cele salvate gresit se repara cu «Repara programul» (ribbon).
@@ -20,7 +20,13 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - «Trimite la Vercon»: «Cont pentru toate liniile» pune acelasi cont peste tot; se bifeaza un singur furnizor.
 - Filele VERCON si ADECHIT apar doar daca unitatea are date.
 - O setare salvata se aplica si fara optiuni avansate; bifa de reafisare a autentificarii nu se mai intoarce pe bifat.
-- Ajutor: subiecte noi despre programul DDF si contul pentru toate liniile.
+- «Plan de conturi» (Configurari > Date): planul urmeaza sursa din bara de titlu; cu mai multe subunitati, lista «Subunitate».
+- In «Plan de conturi», «Afiseaza solduri initiale» si «Exporta in Excel» sunt in ribbon; conturile inactive, in optiunile arborelui.
+- Facturi de vanzare, «Continut»: tabelul are mereu un rand gol la sfarsit; «Linie noua» a disparut. Fiecare linie are «Duplica» si «Sterge»; Tab trece prin Um, Cant, PU si apoi pe randul urmator.
+- Facturi de vanzare: butoanele din josul ferestrei («Renunta», «Modifica», «Adauga», «Salveaza») arata si pictograma, si textul.
+- «Cauta actualizari» (Setari): daca aveti deja ultima versiune, puteti totusi descarca din nou pachetul de pe server si actualiza cu el.
+- Facturi de vanzare, «Cont emitent (IBAN)»: lista arata conturile unitatii; un cont nou scris acolo se adauga la «Conturi Unitate» la salvare.
+- Ajutor: subiecte noi despre programul DDF, contul pentru toate liniile, «Plan de conturi» si noua intrebare de la actualizare.
 
 ## 1.1.2.7 (21.10.2026)
 <!-- release: utc=2026-10-23T08:09:17Z -->

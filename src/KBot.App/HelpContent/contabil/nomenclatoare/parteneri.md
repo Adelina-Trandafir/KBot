@@ -27,10 +27,13 @@ La salvare:
 Mesajele ANAF: cod invalid, cod negăsit sau ANAF indisponibil.
 
 ## Lista și tabelul «Coduri angajament»
-<!-- slice: 0087, 0093, 0000-14, 0113, 0121-03, AV01-08 -->
+<!-- slice: 0087, 0093, 0000-14, 0113, 0121-03, AV01-08, AV01-10 -->
 
-- **Capul listei**: **lupa** caută după o parte din cod sau din denumire; bifa **«Ascunde partenerii
-  fără activitate»** lasă doar partenerii care apar pe un document (DDF sau ORD).
+- **Capul listei**: **lupa** caută după o parte din cod sau din denumire. Lista arată partenerii care apar pe un document (DDF sau
+  ORD); **iconița din dreapta capului** deschide un meniu cu trei alegeri, care adaugă în listă și alți parteneri: **«Arată partenerii
+  fără activitate»**, **«Arată partenerii cu sold inițial»** (cei care au un sold inițial în anul de lucru) și **«Arată partenerii cu
+  angajamente»** (cei care au coduri de angajament). Partenerul deschis rămâne mereu în listă. Cu **săgețile** de la tastatură treci de
+  la un partener la altul, ca la clic.
 - **«Coduri angajament»** — tabelul de sub datele partenerului: angajamentele furnizorului, legate de
   **codul lui fiscal** (le vezi la fel oricând furnizorul apare cu același cod fiscal). Un rând are
   clasificația (doar de citit, vine din FOREXE), cont bancar asociat, cod angajament și cod

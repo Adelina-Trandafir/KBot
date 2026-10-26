@@ -91,129 +91,73 @@ Quote these by number.
 
 ### The shape of the data
 
-<a id="f1"></a> **F1.** `FX_Receptii_R` + `FX_Receptii_RHR` hold each reception's **current** state, one `RHR` row
-per indicator. — `VERIFIED`: schemas in `FX_System_Export/TABLES/`; write path in
-`Receptii_Prelucrare`.
+<a id="f1"></a> **F1.** `FX_Receptii_R` + `FX_Receptii_RHR` hold each reception's **current** state, one `RHR` row per indicator. — `VERIFIED`: schemas in `FX_System_Export/TABLES/`; write path in `Receptii_Prelucrare`.
 
-<a id="f2"></a> **F2.** `FX_Receptii_H` + `FX_Receptii` hold **one dated snapshot** of some reception. — `VERIFIED`:
-same sources plus `FX_Istoric_Populeaza_Receptii`. `DataH` is when the edit happened, `Total` is the whole reception value at that instant, and the `FX_Receptii` rows are its per-indicator breakdown.
+<a id="f2"></a> **F2.** `FX_Receptii_H` + `FX_Receptii` hold **one dated snapshot** of some reception. — `VERIFIED`: same sources plus `FX_Istoric_Populeaza_Receptii`. `DataH` is when the edit happened, `Total` is the whole reception value at that instant, and the `FX_Receptii` rows are its per-indicator breakdown.
 
-<a id="f3"></a> **F3.** Istoric values are **absolute, not deltas**, and each block ends with a summing row over
-**every** indicator in the reception. — `OPERATOR`, 26.08.2026.
+<a id="f3"></a> **F3.** Istoric values are **absolute, not deltas**, and each block ends with a summing row over **every** indicator in the reception. — `OPERATOR`, 26.08.2026.
 
 <a id="f4"></a> **F4.** Istoric **never names the reception**. — `OPERATOR`, 26.08.2026.
 
 <a id="f5"></a> **F5.** Value is not a key: several receptions can carry the same amount. — `OPERATOR`.
 
-<a id="f6"></a> **F6.** **Initial date explanation, amended by [F29](#f29):** date is not a key: `DataH` is the system clock at edit time, `DataR` the creation date. —
-`OPERATOR`.
+<a id="f6"></a> **F6.** **Initial date explanation, amended by [F29](#f29):** date is not a key: `DataH` is the system clock at edit time, `DataR` the creation date. — `OPERATOR`.
 
-<a id="f7"></a> **F7.** A save that changes nothing still produces a complete snapshot with identical values. —
-`OPERATOR`, 26.08.2026.
+<a id="f7"></a> **F7.** A save that changes nothing still produces a complete snapshot with identical values. — `OPERATOR`, 26.08.2026.
 
-<a id="f8"></a> **F8.** **Initial identity reading, amended by [F25](#f25):** reception identity **between downloads** (incoming ▸ stored) is keyed on the day, through
-`FX_Receptii_H_GetHashIdent`. This is a different problem from F4 and it does have a key. —
-`VERIFIED`: `Receptii_Prelucrare`.
+<a id="f8"></a> **F8.** **Initial identity reading, amended by [F25](#f25):** reception identity **between downloads** (incoming ▸ stored) is keyed on the day, through `FX_Receptii_H_GetHashIdent`. This is a different problem from F4 and it does have a key. — `VERIFIED`: `Receptii_Prelucrare`.
 
 ### What follows
 
-<a id="f9"></a> **F9.** The automatic pass can only place the **last** snapshot of a chain. — `DERIVED` from
-`TMP_Asociaza_Receptii_Istoric`, both runs plus `dicRFolosite`. The pass compares `H.Total` with the reception’s current `R.SumaAntet`, walks both sides newest-first and consumes each reception at most once.
+<a id="f9"></a> **F9.** The automatic pass can only place the **last** snapshot of a chain. — `DERIVED` from `TMP_Asociaza_Receptii_Istoric`, both runs plus `dicRFolosite`. The pass compares `H.Total` with the reception’s current `R.SumaAntet`, walks both sides newest-first and consumes each reception at most once.
 
-<a id="f10"></a> **F10.** Operator workload is roughly *(snapshots) − (receptions)* per angajament. The form is a
-primary step, not an exception dialog. — `DERIVED` from F9.
+<a id="f10"></a> **F10.** Operator workload is roughly *(snapshots) − (receptions)* per angajament. The form is a primary step, not an exception dialog. — `DERIVED` from F9.
 
-<a id="f11"></a> **F11.** With F7 in play, two snapshots can both equal a reception's current total, and a no-op
-snapshot matching two receptions goes to whichever the pass reaches first, silently. — `DERIVED`
-from F5 + F7 + F9.
+<a id="f11"></a> **F11.** With F7 in play, two snapshots can both equal a reception's current total, and a no-op snapshot matching two receptions goes to whichever the pass reaches first, silently. — `DERIVED` from F5 + F7 + F9.
 
-<a id="f12"></a> **F12.** A wrong association is **silent and permanent**. It corrupts `TotalReceptii` / `PlatiAnt` /
-`Ramas` for every payment after that date and nothing compares the figures against anything. —
-`DERIVED` from §1.3.
+<a id="f12"></a> **F12.** A wrong association is **silent and permanent**. It corrupts `TotalReceptii` / `PlatiAnt` / `Ramas` for every payment after that date and nothing compares the figures against anything. — `DERIVED` from §1.3.
 
 ### Constraints the form enforces
 
-<a id="f13"></a> **F13.** ~~**Date veto.** A reception whose `DataR` is later than a snapshot's `DataH` cannot own
-it. **Full timestamp**, not truncated to the day.~~ **WITHDRAWN 31.08.2026.** `DataR` is an
-ordinary editable field typed by the operator on the site, not a creation timestamp, and
-`FX_Receptii_R` has no creation timestamp at all (F29). A veto built on a typed field can refuse a
-correct placement, and on the ingest path that is a deadlock in exactly the situation F10 says must
-never deadlock — the operator is stuck on a reception the form gives them no way to repair.
+<a id="f13"></a> **F13.** ~~**Date veto.** A reception whose `DataR` is later than a snapshot's `DataH` cannot own it. **Full timestamp**, not truncated to the day.~~ **WITHDRAWN 31.08.2026.** `DataR` is an ordinary editable field typed by the operator on the site, not a creation timestamp, and `FX_Receptii_R` has no creation timestamp at all (F29). A veto built on a typed field can refuse a correct placement, and on the ingest path that is a deadlock in exactly the situation F10 says must never deadlock — the operator is stuck on a reception the form gives them no way to repair.
 
 **The comparison survives as a SIGN only**, never as a refusal, on both the ingest path and the editor. The "full timestamp, not day granularity" wording goes with it: comparing a system-clock `DataH` against a hand-typed midnight was never a real comparison, and as a sign it would light up on every snapshot saved on the reception's own date. The sign is measured **on the day**. — `OPERATOR`, 31.08.2026.
 
 **Later amendment, 09.09.2026:** [0058](worklog/SLICE-0058-asociere-cache-si-lag.md#slice-0058) removes the sign as well, from the client captions/tooltips and server warnings. The day-level sign above records the 31.08 checkpoint, not a display requirement after 0058.
 
-<a id="f14"></a> **F14.** **Indicator subset.** A snapshot naming an indicator absent from the reception's current
-`RHR` cannot belong to it. Implement as a veto; do not rely on it — most angajamente carry one
-indicator. — `OPERATOR`, 26.08.2026.
+<a id="f14"></a> **F14.** **Indicator subset.** A snapshot naming an indicator absent from the reception's current `RHR` cannot belong to it. Implement as a veto; do not rely on it — most angajamente carry one indicator. — `OPERATOR`, 26.08.2026.
 
-<a id="f15"></a> **F15.** **Chain end.** The latest snapshot by `DataH` must equal the reception's `SumaAntet` and its
-lines must equal the `RHR` rows. Shown per reception as a visible mark. Deliberately worded "the
-latest by date", not "exactly one that matches" — see F11. Does not apply to a chain terminated by a
-deletion (F21). — `OPERATOR`, 26.08.2026.
-**AMENDED 08.10.2026 — a zero line is not a line.** The lines are compared starting from the
-reception: only an indicator the reception really carries (`RHR` sum per indicator, zeroes dropped
-by `_valori_pe_indicator`) can fail the chain. An indicator with a value on the snapshot and 0.00
-(no line) on the reception does **not** refuse (case: «AA4: instantaneu 369.00 / recepție 0.00»,
-reception 19.03.2026 · 3000.00, `AAB2MN2DC25`, `018_GRRS`). The error is a reception line > 0 that
-differs from, or is missing on, the snapshot. The total check (`Total` = `SumaAntet`) is unchanged.
-Done in `prelucrare_asociere.py` (`valideaza_plasarile`, the «F15 pe linii» block). — `OPERATOR`,
-08.10.2026.
+<a id="f15"></a> **F15.** **Chain end.** The latest snapshot by `DataH` must equal the reception's `SumaAntet` and its lines must equal the `RHR` rows. Shown per reception as a visible mark. Deliberately worded "the latest by date", not "exactly one that matches" — see F11. Does not apply to a chain terminated by a deletion (F21). — `OPERATOR`, 26.08.2026. **AMENDED 08.10.2026 — a zero line is not a line.** The lines are compared starting from the reception: only an indicator the reception really carries (`RHR` sum per indicator, zeroes dropped by `_valori_pe_indicator`) can fail the chain. An indicator with a value on the snapshot and 0.00 (no line) on the reception does **not** refuse (case: «AA4: instantaneu 369.00 / recepție 0.00», reception 19.03.2026 · 3000.00, `AAB2MN2DC25`, `018_GRRS`). The error is a reception line > 0 that differs from, or is missing on, the snapshot. The total check (`Total` = `SumaAntet`) is unchanged. Done in `prelucrare_asociere.py` (`valideaza_plasarile`, the «F15 pe linii» block). — `OPERATOR`, 08.10.2026.
 
-<a id="f16"></a> **F16.** **Sets only grow.** Along one chain ordered by `DataH`, each snapshot's indicator set must
-contain the previous one's. — `OPERATOR`, 26.08.2026.
+<a id="f16"></a> **F16.** **Sets only grow.** Along one chain ordered by `DataH`, each snapshot's indicator set must contain the previous one's. — `OPERATOR`, 26.08.2026.
 
 ### What the form shows and offers
 
-<a id="f17"></a> **F17.** **AMENDED 26.08.2026.** A snapshot equal to the latest snapshot already in a reception's
-chain is **shown as such, and nothing more**. Without the note the operator sees duplicate numbers
-and assumes an error; with it, they can decide.
+<a id="f17"></a> **F17.** **AMENDED 26.08.2026.** A snapshot equal to the latest snapshot already in a reception's chain is **shown as such, and nothing more**. Without the note the operator sees duplicate numbers and assumes an error; with it, they can decide.
 
 There is **no automatic no-op classification, at any point.** Two blocks carrying the same numbers may be a save that changed nothing, or may be a real edit on a *different* reception that happens to hold the same amount — the machine cannot tell the two apart, and the operator can. "Identical to the previous snapshot in this chain" is therefore information on the form, computed live from the chain the operator has currently built and recomputed on every drag. It never writes anything and it never sets a marker.
 
 The marker itself is an **operator action**: `FX_Receptii_H.Sters`, which already exists in the base schema and which the Access form (`frmFX_DUBII_LISTA_HN`) set through a checkbox — clearing `DIFH`/`DIFHC` on the header and `DIF`/`DIFC` on the lines when ticked, and gating the save (`frmFX_DUBII.btnSav_Click` refuses while any snapshot has `TmpIDRecR IS NULL AND Sters=False`). Not to be confused with `FX_Receptii_R.Sters`, which D-L defines as "this reception was deleted on the site" — a different fact on a different table. — `DERIVED` from F7; amendment `OPERATOR`, 26.08.2026.
 
-<a id="f18"></a> **F18.** Automatically placed snapshots are **marked as automatic**, because under F11 the automatic
-pass can be wrong rather than merely incomplete. — `DERIVED` from F11.
+<a id="f18"></a> **F18.** Automatically placed snapshots are **marked as automatic**, because under F11 the automatic pass can be wrong rather than merely incomplete. — `DERIVED` from F11.
 
-<a id="f19"></a> **F19.** ~~A reception deleted on the site leaves its snapshots with no possible home.~~
-**WITHDRAWN 26.08.2026, then PARTIALLY REINSTATED as F26.** A deletion cannot exist without a prior
-creation, so the reception's earlier snapshots are already in `FX_Receptii_H` — *provided K-BOT
-downloaded before the deletion*. Where it did not, the chain genuinely has no home and is
-reconstructed. See F21 and F26.
+<a id="f19"></a> **F19.** ~~A reception deleted on the site leaves its snapshots with no possible home.~~ **WITHDRAWN 26.08.2026, then PARTIALLY REINSTATED as F26.** A deletion cannot exist without a prior creation, so the reception's earlier snapshots are already in `FX_Receptii_H` — *provided K-BOT downloaded before the deletion*. Where it did not, the chain genuinely has no home and is reconstructed. See F21 and F26.
 
-<a id="f20"></a> **F20.** ~~`DIFH = 0` may mark a no-op save. Suggested by `tmpFX_Receptii_H` rows 414/415 (same
-reception, both 1723,58, one minute apart) and 417/418 (both 441,74, one minute apart), each pair
-showing the full amount then 0.~~ **WITHDRAWN 26.08.2026.**
+<a id="f20"></a> **F20.** ~~`DIFH = 0` may mark a no-op save. Suggested by `tmpFX_Receptii_H` rows 414/415 (same reception, both 1723,58, one minute apart) and 417/418 (both 441,74, one minute apart), each pair showing the full amount then 0.~~ **WITHDRAWN 26.08.2026.**
 
 `DIFH` is not something FOREXE sends. It is computed locally, by us, in `FX_CalculeazaDIF_Receptii_Tmp`, **after** a snapshot has been associated with a reception — step 4d, which Access calls only from 4c onward. At the moment a no-change judgement would be needed, `DIFH` does not exist yet, so it cannot inform that judgement.
 
 Withdrawn on the reasoning, not on a measurement: **no query against live data is owed**, and O3 is closed by the withdrawal. Nothing in the pipeline reads `DIFH` to decide anything; the display use in Recepții (slice 0015-02) is a legitimate consumer of a computed figure, not a classification. See the amended F17 for what replaces it.
 
-<a id="f21"></a> **F21.** A history row with `Descriere = "Stergere receptie"` (exact spelling, no diacritics) is a
-**deletion**. It carries `(activ:true)` and no per-indicator rows, so it becomes an ordinary
-snapshot — specifically, the **last** snapshot in its reception's chain. Its `DataH` is the deletion
-date, its `Total` the reception's value at deletion. — `OPERATOR`, 26.08.2026.
+<a id="f21"></a> **F21.** A history row with `Descriere = "Stergere receptie"` (exact spelling, no diacritics) is a **deletion**. It carries `(activ:true)` and no per-indicator rows, so it becomes an ordinary snapshot — specifically, the **last** snapshot in its reception's chain. Its `DataH` is the deletion date, its `Total` the reception's value at deletion. — `OPERATOR`, 26.08.2026.
 
-<a id="f22"></a> **F22.** A deleted reception counts toward the receptions total for payments made **before** its
-deletion date and stops counting after. It is hidden from the Recepții tree. — `OPERATOR`,
-26.08.2026.
+<a id="f22"></a> **F22.** A deleted reception counts toward the receptions total for payments made **before** its deletion date and stops counting after. It is hidden from the Recepții tree. — `OPERATOR`, 26.08.2026.
 
-<a id="f23"></a> **F23.** ~~`FX_Receptii_H.IDH` appears to be the FOREXE history row id.~~ **WITHDRAWN 26.08.2026.**
-`IDH` in every table is a foreign key into `FX_Istoric`, and `FX_Istoric.ID` is a **local** key — one
-of the seven the parent plan §3 turns into `AUTO_INCREMENT`. The non-contiguous sample values are
-gaps in a local sequence, not site-side ids. — `OPERATOR`, 26.08.2026.
+<a id="f23"></a> **F23.** ~~`FX_Receptii_H.IDH` appears to be the FOREXE history row id.~~ **WITHDRAWN 26.08.2026.** `IDH` in every table is a foreign key into `FX_Istoric`, and `FX_Istoric.ID` is a **local** key — one of the seven the parent plan §3 turns into `AUTO_INCREMENT`. The non-contiguous sample values are gaps in a local sequence, not site-side ids. — `OPERATOR`, 26.08.2026.
 
-<a id="f24"></a> **F24.** A snapshot's durable identity across the two phases is **the position of its history row in
-the `TabelIstoric` payload**, not any database key. Both phases carry the same payload, so the index
-is stable by construction and survives the proposal's rollback. `DataFX` travels alongside and is
-checked on arrival, so a stale decisions file fails loudly rather than associating the wrong row. —
-`DERIVED` from F23's withdrawal.
+<a id="f24"></a> **F24.** A snapshot's durable identity across the two phases is **the position of its history row in the `TabelIstoric` payload**, not any database key. Both phases carry the same payload, so the index is stable by construction and survives the proposal's rollback. `DataFX` travels alongside and is checked on arrival, so a stale decisions file fails loudly rather than associating the wrong row. — `DERIVED` from F23's withdrawal.
 
-<a id="f25"></a> **F25.** **AMENDED 31.08.2026 — the match key is named correctly now.** Step 4b **never matches an
-incoming payload reception against a stored reception with `Sters = 1`.** A deleted reception cannot
-reappear in `ListaReceptii`, so an apparent match is a collision. The rule itself stands unchanged.
+<a id="f25"></a> **F25.** **AMENDED 31.08.2026 — the match key is named correctly now.** Step 4b **never matches an incoming payload reception against a stored reception with `Sters = 1`.** A deleted reception cannot reappear in `ListaReceptii`, so an apparent match is a collision. The rule itself stands unchanged.
 
 What was wrong was the key. This document (and the reading it came from) said 4b matches on the header hash. **It does not.** Verified in the real `Receptii_Prelucrare`, supplied by the operator on 31.08.2026:
 
@@ -223,116 +167,27 @@ rsTmpR_Snap.FindFirst "CLng(DataR)=" & CLng(dtDataR)
 
 `sHashIdent` is computed by `ObtineDateHeader` and **stored** in `tmpFX_Receptii_R!HASH` on insert, but it is **never read for matching**. The match key is `CLng(DataR)` — day granularity, `FindFirst`, first hit wins. That is why F25 matters at all: without it, a reception created on the same calendar day as a deleted one would be re-matched onto it and silently overwritten with another reception's values. — `VERIFIED` in `Receptii_Prelucrare`; `OPERATOR`, 26.08.2026 and 31.08.2026.
 
-<a id="f26"></a> **F26.** A reception created **and** deleted before K-BOT first downloaded the angajament has no
-`FX_Receptii_R` row: its whole history arrives at once and `ListaReceptii` does not contain it. Its
-chain is **reconstructed** from its own snapshots — the operator groups them in the form, the commit
-path materialises the reception. Field derivations in `PLAN_ForexeIngestSteps3to8.md` §4c-bis. Marked
-`Reconstituit = 1` alongside `Sters = 1`; the two are different facts and are not collapsed. —
-`OPERATOR`, 26.08.2026. Partially reinstates F19, which was withdrawn on the grounds that a deletion
-implies a prior creation — true on the site, true locally only if K-BOT saw the reception first.
+<a id="f26"></a> **F26.** A reception created **and** deleted before K-BOT first downloaded the angajament has no `FX_Receptii_R` row: its whole history arrives at once and `ListaReceptii` does not contain it. Its chain is **reconstructed** from its own snapshots — the operator groups them in the form, the commit path materialises the reception. Field derivations in `PLAN_ForexeIngestSteps3to8.md` §4c-bis. Marked `Reconstituit = 1` alongside `Sters = 1`; the two are different facts and are not collapsed. — `OPERATOR`, 26.08.2026. Partially reinstates F19, which was withdrawn on the grounds that a deletion implies a prior creation — true on the site, true locally only if K-BOT saw the reception first.
 
-<a id="f27"></a> **F27.** Where **two** receptions were both created and deleted before the first download, their
-snapshots are indistinguishable except by amount and indicator, and the operator's grouping cannot be
-verified by the machine. F14, F16 and the one-deletion-per-chain rule are guards, not a proof. —
-`DERIVED` from F26.
+<a id="f27"></a> **F27.** Where **two** receptions were both created and deleted before the first download, their snapshots are indistinguishable except by amount and indicator, and the operator's grouping cannot be verified by the machine. F14, F16 and the one-deletion-per-chain rule are guards, not a proof. — `DERIVED` from F26.
 
-<a id="f28"></a> **F28.** Where two or more receptions on one angajament are reconstructed, **all of them carry
-`ReconstituitNesigur = 1`**; the flag records that the grouping was constrained by F14/F16 (and, until 31.08.2026, by F13) but
-not verified. It is set at commit, counting the receptions with `Reconstituit = 1` after the run —
-existing ones included, because two reconstructions made in two different sessions are exactly as
-indistinguishable as two made in one. It is **never cleared**: a later run that happens to see only
-one reconstruction does not make the earlier grouping any more provable than it was when it was made.
-The commit response names the affected receptions, and the Recepții tree marks them. — `OPERATOR`,
-26.08.2026. Records in the data the limit F27 states, so a total that does not add up months later
-can be traced back to a grouping that was a judgement rather than a check.
+<a id="f28"></a> **F28.** Where two or more receptions on one angajament are reconstructed, **all of them carry `ReconstituitNesigur = 1`**; the flag records that the grouping was constrained by F14/F16 (and, until 31.08.2026, by F13) but not verified. It is set at commit, counting the receptions with `Reconstituit = 1` after the run — existing ones included, because two reconstructions made in two different sessions are exactly as indistinguishable as two made in one. It is **never cleared**: a later run that happens to see only one reconstruction does not make the earlier grouping any more provable than it was when it was made. The commit response names the affected receptions, and the Recepții tree marks them. — `OPERATOR`, 26.08.2026. Records in the data the limit F27 states, so a total that does not add up months later can be traced back to a grouping that was a judgement rather than a check.
 
-<a id="f29"></a> **F29.** `FX_Receptii_R.DataR` is **operator-editable, including after creation**, and
-`FX_Receptii_R` carries no creation timestamp. The table is
-`IDRR, NRCRT, CodAngajament, Tip, DataR, SumaAntet, Descriere, HASH, TipReceptie, Incarcat, Preluat`
-— there is no such column anywhere in it, and the sample rows carry `dd.MM.yyyy` with no time
-component, which is what a typed date looks like. **No rule may treat `DataR` as a fact about when
-the reception came into existence.** — `OPERATOR`, 31.08.2026; `VERIFIED` against
-`MariaDB_Schema/000_DEMO.sql` and `FX_System_Export/TABLES/FX_Receptii_R.md`.
+<a id="f29"></a> **F29.** `FX_Receptii_R.DataR` is **operator-editable, including after creation**, and `FX_Receptii_R` carries no creation timestamp. The table is `IDRR, NRCRT, CodAngajament, Tip, DataR, SumaAntet, Descriere, HASH, TipReceptie, Incarcat, Preluat` — there is no such column anywhere in it, and the sample rows carry `dd.MM.yyyy` with no time component, which is what a typed date looks like. **No rule may treat `DataR` as a fact about when the reception came into existence.** — `OPERATOR`, 31.08.2026; `VERIFIED` against `MariaDB_Schema/000_DEMO.sql` and `FX_System_Export/TABLES/FX_Receptii_R.md`.
 
-<a id="f30"></a> **F30.** **A known hazard, recorded and deliberately NOT fixed.** Because step 4b matches on
-`CLng(DataR)` with `FindFirst` (F25), **two receptions carrying the same `DataR` collide on every
-download after the first**: both incoming receptions find the same stored row, the second overwrites
-the first's `SumaAntet` and `RHR` values, and no second row is inserted. On the *first* download both
-are inserted, which is how such pairs come to exist — `AAB2HFBEEAF` rows 268 and 269 in the sample
-data are both dated 16.01.2026, and they even share an identical `HASH`, so the hash would not
-discriminate either.
+<a id="f30"></a> **F30.** **A known hazard, recorded and deliberately NOT fixed.** Because step 4b matches on `CLng(DataR)` with `FindFirst` (F25), **two receptions carrying the same `DataR` collide on every download after the first**: both incoming receptions find the same stored row, the second overwrites the first's `SumaAntet` and `RHR` values, and no second row is inserted. On the *first* download both are inserted, which is how such pairs come to exist — `AAB2HFBEEAF` rows 268 and 269 in the sample data are both dated 16.01.2026, and they even share an identical `HASH`, so the hash would not discriminate either.
 
 Editing `DataR` on the site (F29) produces the mirror failure: the key moves, 4b no longer recognises the reception, and a duplicate is inserted while the original keeps its chain.
 
 The operator states he has never seen the `DataR` edit happen in practice, and that the same-day behaviour is "not right all the time, but mostly works". **Recorded, deliberately not fixed here.** If a duplicate or a silently overwritten reception ever appears after a download, this is the first place to look. — `VERIFIED` in `Receptii_Prelucrare`; `OPERATOR`, 31.08.2026.
 
-<a id="f31"></a> **F31.** **A snapshot's zero-valued lines are lines, and are kept.** The site emits a
-`Suma receptie: 0 RON` row for an indicator of the reception that did not move (or fell to zero)
-in that save; it is not an error, it is the indicator being named at zero. `FX_Istoric_Populeaza_
-Receptii` in Access kept only `Val_Receptie <> 0` (`mdl_FX_Istoric.md` line 623), and the port
-(step 4a) followed it — so the indicator **disappeared from `FX_Receptii`** while `RHR` still
-carried it, and F16 ("sets only grow") refused a correct placement with *«Instantaneul pierde
-indicatorii…»*. F14 and F16 rest on the sets in `FX_Receptii`, so the ingest must not throw part of
-the set away: a non-header history row that **names an indicator** (`CodAI`) is a line whatever its
-value (`prelucrare_helpers.este_linie_receptie`, shared by step 4a and the rebuild route). Rows
-ingested before 17.09.2026 lack those lines; **«Refacere din istoric»** (slice 0062) puts them back,
-since it sees them as missing by `IDH`. Side effect, wanted: `SUM(DIF)` on a line now comes down when
-the indicator falls to zero. — `OPERATOR`, 17.09.2026; `VERIFIED` in `mdl_FX_Istoric.md` and
-`prelucrare_pasi.step4a_populeaza_receptii`.
+<a id="f31"></a> **F31.** **A snapshot's zero-valued lines are lines, and are kept.** The site emits a `Suma receptie: 0 RON` row for an indicator of the reception that did not move (or fell to zero) in that save; it is not an error, it is the indicator being named at zero. `FX_Istoric_Populeaza_ Receptii` in Access kept only `Val_Receptie <> 0` (`mdl_FX_Istoric.md` line 623), and the port (step 4a) followed it — so the indicator **disappeared from `FX_Receptii`** while `RHR` still carried it, and F16 ("sets only grow") refused a correct placement with *«Instantaneul pierde indicatorii…»*. F14 and F16 rest on the sets in `FX_Receptii`, so the ingest must not throw part of the set away: a non-header history row that **names an indicator** (`CodAI`) is a line whatever its value (`prelucrare_helpers.este_linie_receptie`, shared by step 4a and the rebuild route). Rows ingested before 17.09.2026 lack those lines; **«Refacere din istoric»** (slice 0062) puts them back, since it sees them as missing by `IDH`. Side effect, wanted: `SUM(DIF)` on a line now comes down when the indicator falls to zero. — `OPERATOR`, 17.09.2026; `VERIFIED` in `mdl_FX_Istoric.md` and `prelucrare_pasi.step4a_populeaza_receptii`.
 
-<a id="f32"></a> **F32.** **A header with only the total row — no indicator line — is not a snapshot and is
-ignored everywhere.** The operator found rows in `FX_Istoric` where a reception header
-(`(activ:true)`, with a `Total`) is preceded by no per-indicator row at all. That is not a state a
-reception can be in — with F31 even a save that changed nothing names every indicator, at zero —
-so they are errors left by the old Access app, and they carry nothing: no indicator set for
-F14/F16, no line for `DIF`, no truth for `Final`/`Partial`. They are therefore left out
-**everywhere, by one criterion**: step 4a and «Refacere din istoric» do not write an
-`FX_Receptii_H` for such a header (`prelucrare_helpers.is_header_only_snapshot`), and every
-reader of `FX_Receptii_H` — the association editor, the ingest proposal and its context, the
-chain members F15/F16 judge, `recalculeaza_final`, `DIFH`, the Recepții tree, the `AreReceptii`
-flag — filters with `prelucrare_helpers.SNAPSHOT_COUNTS_SQL` (*not a deletion, and has at least
-one `FX_Receptii` line*). The **deletion row is the one exemption** (F21): it never has lines
-and it IS the last snapshot of its chain. A header whose only line row names an indicator
-unknown to `FX_Indicatori` is NOT the F32 case: the line row exists, so the rebuild still
-writes the header and the line can attach once the indicator does. Rows already in the base
-stay there (a delete would have to reach `FX_ORD.IDRH`), unseen; the rebuild names them.
-Consequence to know: a snapshot ingested **before F31** whose only lines were zeros has no
-`FX_Receptii` line either, and is hidden by the same filter until «Refacere din istoric» puts
-its zero lines back — the repair F31 already requires. — `OPERATOR`, 17.09.2026; `VERIFIED` in
-`prelucrare_pasi.step4a_populeaza_receptii` and `receptii_refacere.refa_receptii`.
+<a id="f32"></a> **F32.** **A header with only the total row — no indicator line — is not a snapshot and is ignored everywhere.** The operator found rows in `FX_Istoric` where a reception header (`(activ:true)`, with a `Total`) is preceded by no per-indicator row at all. That is not a state a reception can be in — with F31 even a save that changed nothing names every indicator, at zero — so they are errors left by the old Access app, and they carry nothing: no indicator set for F14/F16, no line for `DIF`, no truth for `Final`/`Partial`. They are therefore left out **everywhere, by one criterion**: step 4a and «Refacere din istoric» do not write an `FX_Receptii_H` for such a header (`prelucrare_helpers.is_header_only_snapshot`), and every reader of `FX_Receptii_H` — the association editor, the ingest proposal and its context, the chain members F15/F16 judge, `recalculeaza_final`, `DIFH`, the Recepții tree, the `AreReceptii` flag — filters with `prelucrare_helpers.SNAPSHOT_COUNTS_SQL` (*not a deletion, and has at least one `FX_Receptii` line*). The **deletion row is the one exemption** (F21): it never has lines and it IS the last snapshot of its chain. A header whose only line row names an indicator unknown to `FX_Indicatori` is NOT the F32 case: the line row exists, so the rebuild still writes the header and the line can attach once the indicator does. Rows already in the base stay there (a delete would have to reach `FX_ORD.IDRH`), unseen; the rebuild names them. Consequence to know: a snapshot ingested **before F31** whose only lines were zeros has no `FX_Receptii` line either, and is hidden by the same filter until «Refacere din istoric» puts its zero lines back — the repair F31 already requires. — `OPERATOR`, 17.09.2026; `VERIFIED` in `prelucrare_pasi.step4a_populeaza_receptii` and `receptii_refacere.refa_receptii`.
 
-<a id="f33"></a> **F33.** **A history row is consumed once, whoever put it there.** Step 4a reads `FX_Istoric`
-rows at `Prelucrat = 0`, but step 7 marked only the rows the SAME run had inserted. A row that
-reached the table with the flag down by another road — migration from Access, in the case that
-surfaced it (`AAB2KPRT2EB`, history row 5786, the 27.07.2026 reception) — was therefore read on
-every download, and every download built a NEW, unplaced `FX_Receptii_H` for it, which F34 then
-made impossible to place from the download. Two guards, both required: step 4a does not write a
-header whose `IDH` already has a snapshot (the check «Refacere din istoric» already made), and
-step 7 marks every row 4a consumed — headers written, headers skipped, lines poured under a
-header — not only the inserted ones. Lines still waiting for their header at the end of the pass
-are not consumed; they belong to the next run. Duplicates already born before the fix stay in the
-base (a delete would have to reach `FX_ORD.IDRH`); the ingest leaves them out by name (F34) and
-the anytime editor sees each by its `IDRH`. — `OPERATOR`, 18.09.2026 (query over `FX_Receptii_H ⋈
-FX_Istoric`); `VERIFIED` in `prelucrare_pasi.step4a_populeaza_receptii` / `_ruleaza_pasii`.
+<a id="f33"></a> **F33.** **A history row is consumed once, whoever put it there.** Step 4a reads `FX_Istoric` rows at `Prelucrat = 0`, but step 7 marked only the rows the SAME run had inserted. A row that reached the table with the flag down by another road — migration from Access, in the case that surfaced it (`AAB2KPRT2EB`, history row 5786, the 27.07.2026 reception) — was therefore read on every download, and every download built a NEW, unplaced `FX_Receptii_H` for it, which F34 then made impossible to place from the download. Two guards, both required: step 4a does not write a header whose `IDH` already has a snapshot (the check «Refacere din istoric» already made), and step 7 marks every row 4a consumed — headers written, headers skipped, lines poured under a header — not only the inserted ones. Lines still waiting for their header at the end of the pass are not consumed; they belong to the next run. Duplicates already born before the fix stay in the base (a delete would have to reach `FX_ORD.IDRH`); the ingest leaves them out by name (F34) and the anytime editor sees each by its `IDRH`. — `OPERATOR`, 18.09.2026 (query over `FX_Receptii_H ⋈ FX_Istoric`); `VERIFIED` in `prelucrare_pasi.step4a_populeaza_receptii` / `_ruleaza_pasii`.
 
-<a id="f34"></a> **F34.** **A snapshot whose history row is not in the download is anchored on `FX_Istoric.ID`.**
-F24 anchors a decision on the INDEX of the snapshot's history row in `TabelIstoric`, because the
-ids handed out in the proposal vanish on the rollback. That rested on «FOREXE sends the whole
-history on every download», which is true only for the first one: `Prelucrare Completa Reverse`
-walks the history pages backwards and stops at `DATA_IESIRE`, the last row already at home, so
-`TabelIstoric` is a difference. Any snapshot left unplaced by an earlier run — the normal result
-of F9/F10, not an exception — had no index, was dropped from the proposal with a warning, and
-could only ever be placed in the anytime editor. The anchor is now one of two names, never both:
-`rand_istoric` when the row is in the payload (F24, unchanged, and the only name for a snapshot
-born in this run), else `idh` — the row's `FX_Istoric.ID`, stable across the two phases because
-the row existed before the run and the fingerprint guarantees `FX_Istoric` did not move. The
-server refuses a decision carrying neither or both, and a snapshot with no `IDH`, or sharing its
-`IDH` with another unplaced snapshot (an F33 leftover), still stays out, counted, for the editor.
-The proposal also carries `idrh` — the phase-one id — as the form's dictionary key only: unique
-while the proposal lives, never sent back. Pair on the wire: `prelucrare_asociere.ancora()` ↔
-`AncoraAsociere` (KBot.Domain). — `VERIFIED` in `WorkflowExecutor.Actions.ScrapeTable.vb`
-(`exitIfCellEquals`, `startFromLast`), `adlop - Prelucrare Completa Reverse.wfl` §4,
-`prelucrare_asociere.citeste_instantanee`.
+<a id="f34"></a> **F34.** **A snapshot whose history row is not in the download is anchored on `FX_Istoric.ID`.** F24 anchors a decision on the INDEX of the snapshot's history row in `TabelIstoric`, because the ids handed out in the proposal vanish on the rollback. That rested on «FOREXE sends the whole history on every download», which is true only for the first one: `Prelucrare Completa Reverse` walks the history pages backwards and stops at `DATA_IESIRE`, the last row already at home, so `TabelIstoric` is a difference. Any snapshot left unplaced by an earlier run — the normal result of F9/F10, not an exception — had no index, was dropped from the proposal with a warning, and could only ever be placed in the anytime editor. The anchor is now one of two names, never both: `rand_istoric` when the row is in the payload (F24, unchanged, and the only name for a snapshot born in this run), else `idh` — the row's `FX_Istoric.ID`, stable across the two phases because the row existed before the run and the fingerprint guarantees `FX_Istoric` did not move. The server refuses a decision carrying neither or both, and a snapshot with no `IDH`, or sharing its `IDH` with another unplaced snapshot (an F33 leftover), still stays out, counted, for the editor. The proposal also carries `idrh` — the phase-one id — as the form's dictionary key only: unique while the proposal lives, never sent back. Pair on the wire: `prelucrare_asociere.ancora()` ↔ `AncoraAsociere` (KBot.Domain). — `VERIFIED` in `WorkflowExecutor.Actions.ScrapeTable.vb` (`exitIfCellEquals`, `startFromLast`), `adlop - Prelucrare Completa Reverse.wfl` §4, `prelucrare_asociere.citeste_instantanee`.
 
 ---
 
@@ -346,11 +201,7 @@ while the proposal lives, never sent back. Pair on the wire: `prelucrare_asocier
 It links a payment to the ordonanțare line that consumed it. Three places carry the wrong version:
 
 1. `docs/PLAN_ForexeIngest.md` §2 D5 — the `FX_ORD_TBL_REC` half is withdrawn.
-2. The migrator exclusion list (locked decisions, slice 0046) — remove it; it migrates normally.
-   **DONE** — slice 0048-03 (`db0e71d`), completed in slice 0048-03-completare: off the exclusion
-   list in `KBot.Migrator/Transfer/TableMaps.vb`, mapped there and in `routes/migrare/tables.py`
-   (selection kind `BY_ORD_TBL`), and written after both its parents — pinned offline by
-   `test_fx_ord_tbl_rec_is_written_after_both_its_parents`.
+2. The migrator exclusion list (locked decisions, slice 0046) — remove it; it migrates normally. **DONE** — slice 0048-03 (`db0e71d`), completed in slice 0048-03-completare: off the exclusion list in `KBot.Migrator/Transfer/TableMaps.vb`, mapped there and in `routes/migrare/tables.py` (selection kind `BY_ORD_TBL`), and written after both its parents — pinned offline by `test_fx_ord_tbl_rec_is_written_after_both_its_parents`.
 3. Any text describing `FX_ORD_TBL.IDRP` as untouched on the strength of D5.
 
 Schema, read from `000_DEMO.sql`:
@@ -401,69 +252,35 @@ Two document corrections were asked for on 26.08.2026 and **could not be applied
 
 # Part 4 — Decisions, 26.08.2026
 
-<a id="d-a"></a> **D-A. The form ships inside slice 0048.** There must never be a build where the ingest can produce
-unplaced snapshots with nowhere to resolve them. Slice shape: **0048-03** = steps 3–8 plus the
-two-phase contract, coordinator deliberately not wired; **0048-04** = drag support in
-`AdvancedTreeControl`, the form, and the wiring, together.
+<a id="d-a"></a> **D-A. The form ships inside slice 0048.** There must never be a build where the ingest can produce unplaced snapshots with nowhere to resolve them. Slice shape: **0048-03** = steps 3–8 plus the two-phase contract, coordinator deliberately not wired; **0048-04** = drag support in `AdvancedTreeControl`, the form, and the wiring, together.
 
-<a id="d-b"></a> **D-B. Two-phase ingest.** Phase one runs the whole pipeline in a transaction, **rolls it back**, and
-returns the proposed picture with everything unresolved. The client saves that plus the operator's
-decisions to a local file. Phase two re-sends payload and decisions; the server runs it once more and
-commits. Nothing reaches the database until acceptance. Same shape as the 409 `ALEGERE_UNITATE`
-round trip already working in 0048-02.
+<a id="d-b"></a> **D-B. Two-phase ingest.** Phase one runs the whole pipeline in a transaction, **rolls it back**, and returns the proposed picture with everything unresolved. The client saves that plus the operator's decisions to a local file. Phase two re-sends payload and decisions; the server runs it once more and commits. Nothing reaches the database until acceptance. Same shape as the 409 `ALEGERE_UNITATE` round trip already working in 0048-02.
 
-<a id="d-c"></a> **D-C. Local decisions file survives restarts.** `<AppDir>\Asociere\<cod>.json`, holding the proposal
-and the decisions. Deleted once the server confirms, or when the operator abandons the run.
+<a id="d-c"></a> **D-C. Local decisions file survives restarts.** `<AppDir>\Asociere\<cod>.json`, holding the proposal and the decisions. Deleted once the server confirms, or when the operator abandons the run.
 
-<a id="d-d"></a> **D-D. Refusal discards the run.** Closing the form with anything unresolved asks for confirmation.
-On yes, nothing is sent and the local file is deleted. On no, the form stays open. Under D-B this is
-free: there is nothing to undo.
+<a id="d-d"></a> **D-D. Refusal discards the run.** Closing the form with anything unresolved asks for confirmation. On yes, nothing is sent and the local file is deleted. On no, the form stays open. Under D-B this is free: there is nothing to undo.
 
 <a id="d-e"></a> **D-E. `FX_Rezervari.IDREV`** absent from `FX_DDF_REV` ▸ write NULL and warn. Should never happen.
 
-<a id="d-f"></a> **D-F. Every snapshot from every run is in play** — first download or later ones. None are left
-untouched.
+<a id="d-f"></a> **D-F. Every snapshot from every run is in play** — first download or later ones. None are left untouched.
 
 <a id="d-g"></a> **D-G. Step 8** (`FX_Indicatori_Actualizare_Extrase`) is ported.
 
 <a id="d-h"></a> **D-H. One save at the end**, not per action.
 
-<a id="d-i"></a> **D-I. Modal**, opened from a button in `ReceptiiView`, and automatically when a proposal comes back
-with anything unresolved.
+<a id="d-i"></a> **D-I. Modal**, opened from a button in `ReceptiiView`, and automatically when a proposal comes back with anything unresolved.
 
 <a id="d-j"></a> **D-J. Unassociate is per snapshot.** Reception roots are not draggable.
 
-<a id="d-k"></a> **D-K. Drag is built into `AdvancedTreeControl`**, not bespoke in the view. **The following date-veto wording is historical and was withdrawn by [F13](#f13).** The date veto arrives as
-a drop-validation veto rather than being buried in drop handling.
+<a id="d-k"></a> **D-K. Drag is built into `AdvancedTreeControl`**, not bespoke in the view. **The following date-veto wording is historical and was withdrawn by [F13](#f13).** The date veto arrives as a drop-validation veto rather than being buried in drop handling.
 
-<a id="d-l"></a> **D-L. Schema.** `FX_Receptii_R` gains `Sters tinyint(1) NOT NULL DEFAULT 0` and
-`Reconstituit tinyint(1) NOT NULL DEFAULT 0`. `FX_Receptii_H` gains `EsteStergere tinyint(1)`. No
-deletion-date column — F21 makes `DataH` the date. Applied to `AVACONT_SURSA` as well: new defaulted
-columns the migration never writes.
+<a id="d-l"></a> **D-L. Schema.** `FX_Receptii_R` gains `Sters tinyint(1) NOT NULL DEFAULT 0` and `Reconstituit tinyint(1) NOT NULL DEFAULT 0`. `FX_Receptii_H` gains `EsteStergere tinyint(1)`. No deletion-date column — F21 makes `DataH` the date. Applied to `AVACONT_SURSA` as well: new defaulted columns the migration never writes.
 
-<a id="d-n"></a> **D-N. Structure travels.** Values arriving from the site keep their shape end to end. A list stays
-a list, including lists inside lists. Nothing is flattened to text at any point in the chain. The
-nested columns are read off the workflow definitions, not guessed: a `ForEachVar` whose
-`collectFields` names a field that an inner `ScrapeTable` also writes with `saveTo` produces a nested
-cell. Across all six `.wfl` files that is exactly two — `ListaReceptii.Detaliu` and
-`TabelIndicatori.BugetIndicator`. `ForexeRunner.TryParseTable` no longer flattens, the request body
-carries real JSON arrays, and the server **rejects** a flattened string instead of tolerating it. —
-`OPERATOR`, 26.08.2026.
+<a id="d-n"></a> **D-N. Structure travels.** Values arriving from the site keep their shape end to end. A list stays a list, including lists inside lists. Nothing is flattened to text at any point in the chain. The nested columns are read off the workflow definitions, not guessed: a `ForEachVar` whose `collectFields` names a field that an inner `ScrapeTable` also writes with `saveTo` produces a nested cell. Across all six `.wfl` files that is exactly two — `ListaReceptii.Detaliu` and `TabelIndicatori.BugetIndicator`. `ForexeRunner.TryParseTable` no longer flattens, the request body carries real JSON arrays, and the server **rejects** a flattened string instead of tolerating it. — `OPERATOR`, 26.08.2026.
 
-<a id="d-o"></a> **D-O. Paths belong to the operator.** Every folder the application writes to is configurable at
-runtime, from `%APPDATA%\\AVACONT\\KBot\\settings.json`, one entry per folder.
-`KBot.Common.KBotPaths` is the only place a path is resolved. Defaults preserve today's behaviour
-exactly. A missing file, missing key or blank value gives the default; a relative value resolves
-against the application directory; a configured folder that does not exist is created at startup; a
-configured folder that cannot be written **stops the application with a Romanian message naming the
-setting and the path** — never a silent fall back to the default, because an operator who set a path
-and got the old one anyway has been lied to. Every value is validated at startup, so a bad path
-fails on launch rather than halfway through an ingest. — `OPERATOR`, 26.08.2026.
+<a id="d-o"></a> **D-O. Paths belong to the operator.** Every folder the application writes to is configurable at runtime, from `%APPDATA%\\AVACONT\\KBot\\settings.json`, one entry per folder. `KBot.Common.KBotPaths` is the only place a path is resolved. Defaults preserve today's behaviour exactly. A missing file, missing key or blank value gives the default; a relative value resolves against the application directory; a configured folder that does not exist is created at startup; a configured folder that cannot be written **stops the application with a Romanian message naming the setting and the path** — never a silent fall back to the default, because an operator who set a path and got the old one anyway has been lied to. Every value is validated at startup, so a bad path fails on launch rather than halfway through an ingest. — `OPERATOR`, 26.08.2026.
 
-<a id="d-m"></a> **D-M. Reconstructed receptions are built** (F26). The form offers "starts a reception that no longer
-exists" as a fourth action on a snapshot; the operator drags the rest of the chain onto it, ending
-with its deletion row; the commit path materialises it. Same drag, same vetoes, same chain rules — no
-new concept for the operator to learn.
+<a id="d-m"></a> **D-M. Reconstructed receptions are built** (F26). The form offers "starts a reception that no longer exists" as a fourth action on a snapshot; the operator drags the rest of the chain onto it, ending with its deletion row; the commit path materialises it. Same drag, same vetoes, same chain rules — no new concept for the operator to learn.
 
 ---
 
@@ -490,71 +307,21 @@ new concept for the operator to learn.
 
 Reasoning in §1.8. Sources are marked as in the rest of the document.
 
-<a id="f35"></a> **F35 — The working value of a snapshot may be corrected by the operator; what FOREXE said is kept.**
-`OPERATOR` 06.10.2026: FOREXE's history can carry a wrong total on a header, so K-BOT cannot rely on
-it 100%; the user gets the right to give the history the correct value.
+<a id="f35"></a> **F35 — The working value of a snapshot may be corrected by the operator; what FOREXE said is kept.** `OPERATOR` 06.10.2026: FOREXE's history can carry a wrong total on a header, so K-BOT cannot rely on it 100%; the user gets the right to give the history the correct value.
 
-* **Two columns per value, both already in the schema.** `FX_Receptii_H.Total` / `TotalOrig` and
-  `FX_Receptii.Valoare` / `ValoareOrig`. `Total` and `Valoare` are the WORKING values — the ones every
-  reader already uses (tree, grid, chain check, DIF, ordonantare, DDF totals) — so no reader changes.
-  The `*Orig` columns keep what FOREXE said and never change after the row is born. A row is
-  «corrected» when the working value differs from its original. `VERIFIED` (06.10.2026): nothing in
-  `PYTHON/routes` writes `Total` or `Valoare` after the insert; only `DIFH`/`DIF`, `IDRR`, `Sters`.
-  Access used the same pair (`mdl_FX_Helpers.FX_Actualizeaza_Date_Tabele`: `SET TotalOrig = Total
-  WHERE TotalOrig IS NULL`); K-BOT wrote `ValoareOrig` at birth but never `TotalOrig`.
-* **Who / when / why**, three columns on the HEADER only (`CorectatDe`, `CorectatLa`,
-  `CorectatMotiv`; `sql/0111_01_sursa.sql`): one save is one header plus its lines, so the header carries
-  the audit of the whole correction. The reason is required (at most 500 characters).
-* **`FX_Istoric` is never touched.** It is the evidence of what FOREXE said. A correction cannot
-  provoke a new download: the history rows are deduplicated on their raw text (`Timp`, `Utilizator`,
-  `Descriere`, `Observatii`; `get_hash_for_row_istoric`), a row already processed (`Prelucrat = 1`) is
-  never parsed again, and the robot stops reading at `DATA_IESIRE`, the newest `DataFX` already known.
-  `VERIFIED` in the code, not run on a live base. One consequence: the rebuild from history
-  (`receptii_refacere.py`) writes only what is MISSING; a header that was deleted and rebuilt is born
-  again with the figure of the history row and without the correction.
-* **HASH.** The header hash is made of the angajament, `DataH`, `TipReceptie` and `Descriere` — not of
-  `Total`. The line hash is made of angajament, indicator, date, classification and `Valoare` at birth;
-  it is written to `FX_Receptii.HASH` and read by nobody (no `SELECT` of it in `PYTHON/routes` or
-  `src/**/*.vb`; no unique index on `FX_Receptii` or `FX_Receptii_H`; the only unique `HASH` is
-  `FX_Istoric.HASH`, from the raw text). A correction therefore leaves it as it was and does NOT
-  recompute it. `VERIFIED` 06.10.2026.
-* **The rules, all on the server** (`asociere.py`, `plan_correction` / `post_correction`, route
-  `POST /api/forexe/asociere/corectie`):
+* **Two columns per value, both already in the schema.** `FX_Receptii_H.Total` / `TotalOrig` and `FX_Receptii.Valoare` / `ValoareOrig`. `Total` and `Valoare` are the WORKING values — the ones every reader already uses (tree, grid, chain check, DIF, ordonantare, DDF totals) — so no reader changes. The `*Orig` columns keep what FOREXE said and never change after the row is born. A row is «corrected» when the working value differs from its original. `VERIFIED` (06.10.2026): nothing in `PYTHON/routes` writes `Total` or `Valoare` after the insert; only `DIFH`/`DIF`, `IDRR`, `Sters`. Access used the same pair (`mdl_FX_Helpers.FX_Actualizeaza_Date_Tabele`: `SET TotalOrig = Total WHERE TotalOrig IS NULL`); K-BOT wrote `ValoareOrig` at birth but never `TotalOrig`.
+* **Who / when / why**, three columns on the HEADER only (`CorectatDe`, `CorectatLa`, `CorectatMotiv`; `sql/0111_01_sursa.sql`): one save is one header plus its lines, so the header carries the audit of the whole correction. The reason is required (at most 500 characters).
+* **`FX_Istoric` is never touched.** It is the evidence of what FOREXE said. A correction cannot provoke a new download: the history rows are deduplicated on their raw text (`Timp`, `Utilizator`, `Descriere`, `Observatii`; `get_hash_for_row_istoric`), a row already processed (`Prelucrat = 1`) is never parsed again, and the robot stops reading at `DATA_IESIRE`, the newest `DataFX` already known. `VERIFIED` in the code, not run on a live base. One consequence: the rebuild from history (`receptii_refacere.py`) writes only what is MISSING; a header that was deleted and rebuilt is born again with the figure of the history row and without the correction.
+* **HASH.** The header hash is made of the angajament, `DataH`, `TipReceptie` and `Descriere` — not of `Total`. The line hash is made of angajament, indicator, date, classification and `Valoare` at birth; it is written to `FX_Receptii.HASH` and read by nobody (no `SELECT` of it in `PYTHON/routes` or `src/**/*.vb`; no unique index on `FX_Receptii` or `FX_Receptii_H`; the only unique `HASH` is `FX_Istoric.HASH`, from the raw text). A correction therefore leaves it as it was and does NOT recompute it. `VERIFIED` 06.10.2026.
+* **The rules, all on the server** (`asociere.py`, `plan_correction` / `post_correction`, route `POST /api/forexe/asociere/corectie`):
   1. a reason is required;
-  2. the corrected `Total` must equal the sum of the corrected lines to two decimals — a BLOCKING
-     error (400), not a warning (`OPERATOR` 06.10.2026). Header and lines are saved together, all or
-     nothing, so the rule is checked on the state AFTER the save, and an angajament whose other
-     snapshots are already inconsistent does not stop an unrelated correction;
-  3. a PLACED snapshot that the ordonantare rule freezes cannot be corrected (409
-     `INSTANTANEU_BLOCAT`), the same rule as for its link: an ordonantare read its total (§1.3).
-     An unplaced snapshot can. `ASSUMPTION` — the operator has not yet said whether the rule applies
-     to values; it is one line to lift;
+  2. the corrected `Total` must equal the sum of the corrected lines to two decimals — a BLOCKING error (400), not a warning (`OPERATOR` 06.10.2026). Header and lines are saved together, all or nothing, so the rule is checked on the state AFTER the save, and an angajament whose other snapshots are already inconsistent does not stop an unrelated correction;
+  3. a PLACED snapshot that the ordonantare rule freezes cannot be corrected (409 `INSTANTANEU_BLOCAT`), the same rule as for its link: an ordonantare read its total (§1.3). An unplaced snapshot can. `ASSUMPTION` — the operator has not yet said whether the rule applies to values; it is one line to lift;
   4. the deletion row has no value of its own to correct;
-  5. the client sends the values it SAW; if the base holds others, nothing is written (409
-     `STARE_MODIFICATA`, the code of a stale fingerprint);
-  6. for a placed snapshot step 4d runs again in the same transaction — `DIFH` / `DIF` are stored and
-     the ordonantare sums `DIF`; for an unplaced one there is no chain and nothing to recompute;
-  7. the originals are filled FIRST, only where still `NULL`, so the figure FOREXE gave is never lost
-     whatever the one-time query has or has not done.
-* **At birth.** `_H_INSERT_SQL` / `_H_INSERT_CU_ID_SQL` (`prelucrare_pasi.py`) write `TotalOrig` equal
-  to `Total` (the expression `Total` in the value list, so no caller's parameters change). The rows
-  that exist are filled by the one-time query `sql/0111_02_interogare_unica.sql`. Counted on 06.10.2026
-  on the 18 databases of the operator: no row has an original that differs from its working value, so
-  nothing shows as «corrected» before anyone corrects anything.
-* **In the form.** Context menu of a snapshot › «Corectează valoarea…» (anytime editor only, not on a
-  frozen snapshot, not on the deletion row): `CorectieValoareForm`. The correction is saved at once and
-  the window reloads; a snapshot with a corrected value reads `[corectat]` in the tree and its tooltip
-  says what FOREXE gave and who / when / why corrected it.
-* **In the download window** (same day, second pass). The operator hit the case there: the snapshot with
-  the wrong 0 cannot be dropped on its reception (the values differ) and the download cannot be saved
-  before every snapshot has a decision. The snapshots of a download are NOT in the base while the
-  operator decides (phase one rolls back), so the correction is kept in the window, shown on the
-  snapshot, and travels with the DECISION that names the snapshot (`corectie`: total, reason, lines named
-  by INDICATOR because a line born in this run has no key yet). Phase two writes it FIRST
-  (`asociere.apply_download_corrections`, same `plan_correction` rules), re-reads the snapshots, and only
-  then checks and applies the placements, so F14 / F15 / F16 see the corrected figures. Only snapshots the
-  download brought; an older one (`instantanee_asezate`) is corrected in the anytime editor. Giving up
-  the download gives up the correction.
-* **`UNVERIFIED`**: nothing ran against a live MariaDB. In particular that a value list may read a
-  column set earlier in the same list (`TotalOrig` ← `Total`) is MariaDB's documented behaviour, not
-  something run here.
+  5. the client sends the values it SAW; if the base holds others, nothing is written (409 `STARE_MODIFICATA`, the code of a stale fingerprint);
+  6. for a placed snapshot step 4d runs again in the same transaction — `DIFH` / `DIF` are stored and the ordonantare sums `DIF`; for an unplaced one there is no chain and nothing to recompute;
+  7. the originals are filled FIRST, only where still `NULL`, so the figure FOREXE gave is never lost whatever the one-time query has or has not done.
+* **At birth.** `_H_INSERT_SQL` / `_H_INSERT_CU_ID_SQL` (`prelucrare_pasi.py`) write `TotalOrig` equal to `Total` (the expression `Total` in the value list, so no caller's parameters change). The rows that exist are filled by the one-time query `sql/0111_02_interogare_unica.sql`. Counted on 06.10.2026 on the 18 databases of the operator: no row has an original that differs from its working value, so nothing shows as «corrected» before anyone corrects anything.
+* **In the form.** Context menu of a snapshot › «Corectează valoarea…» (anytime editor only, not on a frozen snapshot, not on the deletion row): `CorectieValoareForm`. The correction is saved at once and the window reloads; a snapshot with a corrected value reads `[corectat]` in the tree and its tooltip says what FOREXE gave and who / when / why corrected it.
+* **In the download window** (same day, second pass). The operator hit the case there: the snapshot with the wrong 0 cannot be dropped on its reception (the values differ) and the download cannot be saved before every snapshot has a decision. The snapshots of a download are NOT in the base while the operator decides (phase one rolls back), so the correction is kept in the window, shown on the snapshot, and travels with the DECISION that names the snapshot (`corectie`: total, reason, lines named by INDICATOR because a line born in this run has no key yet). Phase two writes it FIRST (`asociere.apply_download_corrections`, same `plan_correction` rules), re-reads the snapshots, and only then checks and applies the placements, so F14 / F15 / F16 see the corrected figures. Only snapshots the download brought; an older one (`instantanee_asezate`) is corrected in the anytime editor. Giving up the download gives up the correction.
+* **`UNVERIFIED`**: nothing ran against a live MariaDB. In particular that a value list may read a column set earlier in the same list (`TotalOrig` ← `Total`) is MariaDB's documented behaviour, not something run here.

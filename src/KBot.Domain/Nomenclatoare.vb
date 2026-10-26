@@ -30,6 +30,22 @@ Public NotInheritable Class Clasificatie
 End Class
 
 ''' <summary>
+''' A sector-source that has CHILD subunits (slice AV01-11). A child has the same source as its parent, so it works on the parent's classifications and budget:
+''' nothing is blocked, the windows only tell the operator that the work goes straight into the parent's data.
+''' </summary>
+Public NotInheritable Class ChildSourceInfo
+    ''' <summary>The parent subunit's name (several names joined by «, »).</summary>
+    Public Property Parinte As String = String.Empty
+    Public Property Copii As New List(Of String)()
+
+    ''' <summary>The sentence the classification windows show for the source <paramref name="k_ss"/> (operator text).</summary>
+    Public Function NoteFor(k_ss As String) As String
+        Return $"Sursa {k_ss} are subunități copil ({String.Join(", ", Copii)}): clasificațiile și bugetul sunt ale părintelui ({Parinte}) " &
+               "și se lucrează direct în ele."
+    End Function
+End Class
+
+''' <summary>
 ''' Every classification of the database plus the names of the upper tree levels, which are not
 ''' stored in <c>Clasificatii</c> (they come from the AVACONT_COMUN dictionaries).
 ''' </summary>
@@ -43,6 +59,8 @@ Public NotInheritable Class ClasificatiiCatalog
     Public Property ArticolNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
     ''' <summary>Sector-source names: «02A» -&gt; name.</summary>
     Public Property SsNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
+    ''' <summary>Slice AV01-11: the sector-sources that have child subunits («02A» -&gt; parent + children); empty when none or when the database has no subunits yet.</summary>
+    Public Property ChildSources As New Dictionary(Of String, ChildSourceInfo)(StringComparer.Ordinal)
 End Class
 
 ''' <summary>The four quarters of a budget version or of a correction. Nothing = empty cell.</summary>

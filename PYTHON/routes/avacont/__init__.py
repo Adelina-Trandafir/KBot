@@ -28,3 +28,10 @@ from .configurari.plan_cont import conturi  # noqa: E402,F401
 from .configurari.plan_cont import solduri  # noqa: E402,F401
 #   solduri_parteneri.py -> GET /api/avacont/parteneri/conturi, GET/POST /api/avacont/parteneri/solduri  (TZ_SoldInitial with a partner; slice AV01-08)
 from .configurari.plan_cont import solduri_parteneri  # noqa: E402,F401
+# configurari/jurnale/  (slice AV01-09; sql/AVACONT/Configurari/Jurnale/AV01_09_jurnale.sql)
+#   jurnale.py    -> GET/POST /api/avacont/jurnale                                          (TZ_Jurnale)
+from .configurari.jurnale import jurnale  # noqa: E402,F401
+# configurari/clasificatii_venituri/  (slice AV01-11; sql/AVACONT/Configurari/ClasificatiiVenituri/AV01_11_clasificatii_venituri_buget.sql)
+#   clasificatii_venituri.py -> GET /api/avacont/clasificatii-venituri (+ /nomenclator, /sumar, /<id>/buget), POST /adauga, POST /<id>/buget
+#                               (Clasificatii_Venituri, Clasificatii_Venituri_Buget, Clasificatii_Venituri_Rectificari)
+from .configurari.clasificatii_venituri import clasificatii_venituri  # noqa: E402,F401

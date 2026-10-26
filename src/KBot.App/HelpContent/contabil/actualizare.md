@@ -26,10 +26,15 @@ Dacă serverul nu răspunde (fără internet, de exemplu), K-BOT pornește oricu
 la pornirea următoare.
 
 ## Oricând: «Caută actualizări»
-<!-- slice: 0067, 0072 -->
+<!-- slice: 0067, 0072, 0067-03 -->
 
 În **Setări › Informații**, butonul **«Caută actualizări»** face aceeași verificare pe loc și
 spune de fiecare dată rezultatul, inclusiv «Aveți ultima versiune».
+
+Când ai deja ultima versiune, K-BOT te întreabă dacă vrei totuși să descarci din nou pachetul de
+pe server și să actualizezi cu el. **«Da»** îl descarcă, închide K-BOT, îl actualizează și îl
+pornește din nou; **«Nu»** nu schimbă nimic. Merită când ți s-a spus că pachetul a fost corectat
+fără ca numărul versiunii să se schimbe. Întrebarea apare doar de aici, niciodată la pornire.
 
 ## Descărcarea
 <!-- slice: 0067, 0067-01 -->

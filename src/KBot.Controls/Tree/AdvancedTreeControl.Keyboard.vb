@@ -1,6 +1,25 @@
-﻿Partial Public Class AdvancedTreeControl
+﻿Imports System.ComponentModel
+
+Partial Public Class AdvancedTreeControl
 
     Private _keyNavPending As Boolean = False
+
+    ' Switch (slice 0123-06): by default the arrow / Page / Home / End keys only move the
+    ' selection and the host hears nothing until Enter. On = every move raises NodeMouseUp on
+    ' the node reached, as a click would. Holding a key down repeats it, so one event per step.
+    Private _clickOnKeyNavigation As Boolean = False
+    <Category("K-BOT")>
+    <Description("Fiecare mutare cu tastele (sageti, PageUp/PageDown, Home/End) ridica si NodeMouseUp pe nodul ajuns, " &
+                 "ca un click. Implicit False: tastele doar muta selectia, click-ul vine la Enter.")>
+    <DefaultValue(False)>
+    Public Property ClickOnKeyNavigation As Boolean
+        Get
+            Return _clickOnKeyNavigation
+        End Get
+        Set(k_value As Boolean)
+            _clickOnKeyNavigation = k_value
+        End Set
+    End Property
 
     ' ── IsInputKey ─────────────────────────────────────────────────────────────
     ' Fără asta, Form-ul consumă Up/Down/Left/Right/PgUp/PgDn/Home/End ca
@@ -141,6 +160,12 @@
             ' _keyNavPending = True doar dacă selecția s-a schimbat efectiv
             If Not Object.ReferenceEquals(pSelectedItem, prevItem) Then
                 _keyNavPending = True
+                ' Slice 0123-06: with the switch on, every move also acts as a click on the node
+                ' it lands on (the same NodeMouseUp the mouse and Enter raise).
+                If _clickOnKeyNavigation AndAlso pSelectedItem IsNot Nothing Then
+                    RaiseEvent NodeMouseUp(pSelectedItem, New MouseEventArgs(MouseButtons.Left, 1, 0, 0, 0))
+                    pOldSelectedItem = pSelectedItem
+                End If
             End If
         End If
       Catch ex As Exception

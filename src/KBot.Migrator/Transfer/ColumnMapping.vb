@@ -70,6 +70,11 @@ Public Enum ColumnSourceKind
     ''' extrase download. The Access values of the three columns are not read.
     ''' </summary>
     ExtrasHeaderRule = 9
+    ''' <summary>
+    ''' The sector+source (<c>cai.SURSA</c>, the same value <c>Unitati.SursaSector</c> gets) of THIS row's own unit: for a table that belongs to a source and has
+    ''' no such column in Access (<c>Clasificatii_Venituri.SS</c>, slice AV01-12). The unit is found like for <see cref="UnitId"/>.
+    ''' </summary>
+    UnitSursaSector = 10
 End Enum
 
 ''' <summary>
@@ -137,6 +142,11 @@ Public NotInheritable Class ColumnMapping
                                  accessColumn, Nothing, blocking)
     End Function
 
+    ''' <summary>The sector+source of the row's unit (see <see cref="ColumnSourceKind.UnitSursaSector"/>).</summary>
+    Public Shared Function FromUnitSursaSector(targetColumn As String) As ColumnMapping
+        Return New ColumnMapping(targetColumn, ColumnSourceKind.UnitSursaSector, Nothing, Nothing, False)
+    End Function
+
     Public Shared Function AlwaysNull(targetColumn As String) As ColumnMapping
         Return New ColumnMapping(targetColumn, ColumnSourceKind.ForcedNull, Nothing, Nothing, False)
     End Function
@@ -164,6 +174,8 @@ Public NotInheritable Class ColumnMapping
                 Return $"{AccessColumn} -> {TargetColumn}"
             Case ColumnSourceKind.UnitId
                 Return $"(unitate) -> {TargetColumn}"
+            Case ColumnSourceKind.UnitSursaSector
+                Return $"(sursa-sector a unitatii) -> {TargetColumn}"
             Case ColumnSourceKind.Constant
                 Return $"(constanta {ConstantValue}) -> {TargetColumn}"
             Case ColumnSourceKind.ResolvedClasificatie

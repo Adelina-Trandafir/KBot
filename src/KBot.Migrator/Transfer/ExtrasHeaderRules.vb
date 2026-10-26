@@ -24,7 +24,7 @@ Imports MySqlConnector
 ''' <item><c>IdClsf</c> = <c>Clasificatii.IDClsf</c> of that unit with that ClsfSal (the
 ''' lowest one, with a warning, when there are several).</item>
 ''' <item>No such row ▸ <c>IdClsfV</c> = <c>Clasificatii_Venituri</c> on
-''' Capitol + SubCapitol + Paragraf = ClsfSal (no unit filter: the table has none).</item>
+''' Capitol + SubCapitol + Paragraf = ClsfSal, on the SS of the account (a revenue classification belongs to a source).</item>
 ''' </list>
 ''' <para>
 ''' Nothing here stops the run - the download does not either. A miss leaves the column
@@ -54,7 +54,7 @@ Public NotInheritable Class ExtrasHeaderRules
     Private _unitBySs As Dictionary(Of String, Integer)
     ''' <summary>IdUnitate ▸ (ClsfSal ▸ IDClsf), loaded per unit.</summary>
     Private ReadOnly _clsfByUnit As New Dictionary(Of Integer, Dictionary(Of String, Integer))()
-    ''' <summary>Capitol+SubCapitol+Paragraf ▸ IdClsfV, or Nothing when the table is missing.</summary>
+    ''' <summary>SS|Capitol+SubCapitol+Paragraf ▸ IdClsfV, or Nothing when the table is missing.</summary>
     Private _clsfV As Dictionary(Of String, Integer)
     Private _clsfVLoaded As Boolean
 
@@ -134,6 +134,7 @@ Public NotInheritable Class ExtrasHeaderRules
             codIban = If(codIban, String.Empty).Trim()
 
             Dim unit As Integer? = Nothing
+            Dim k_sursa As String = Nothing
             If _ssBySss IsNot Nothing AndAlso cont.Length > 0 Then
                 Dim prefix = SourcePrefix(cont)
                 Dim ss As String = Nothing
@@ -144,6 +145,7 @@ Public NotInheritable Class ExtrasHeaderRules
                     Dim found As Integer
                     If _unitBySs.TryGetValue(ss, found) Then
                         unit = found
+                        k_sursa = ss
                     Else
                         Warn($"Sursa-sector «{ss}» (contul {cont}) nu are nicio unitate în «Unitati».")
                     End If
@@ -157,7 +159,7 @@ Public NotInheritable Class ExtrasHeaderRules
             Dim idClsfV As Integer? = Nothing
             If unit.HasValue AndAlso clsfSal.Length > 0 Then
                 idClsf = ClsfFor(unit.Value, clsfSal)
-                If Not idClsf.HasValue Then idClsfV = ClsfVFor(clsfSal)
+                If Not idClsf.HasValue Then idClsfV = ClsfVFor(k_sursa, clsfSal)
             End If
 
             If unit.HasValue Then WithUnit += 1 Else WithoutUnit += 1
@@ -245,18 +247,20 @@ Public NotInheritable Class ExtrasHeaderRules
         Return Nothing
     End Function
 
-    Private Function ClsfVFor(clsfSal As String) As Integer?
+    ' A revenue classification belongs to a sector+source, so the key is the source of the header's account
+    ' plus the code (the same code can exist on two sources).
+    Private Function ClsfVFor(k_sursa As String, clsfSal As String) As Integer?
         If Not _clsfVLoaded Then
             _clsfVLoaded = True
             Try
                 _clsfV = New Dictionary(Of String, Integer)(StringComparer.Ordinal)
                 Using cmd = Command(
-                    "SELECT CONCAT_WS('', Capitol, SubCapitol, Paragraf), IdClsfV FROM `Clasificatii_Venituri`")
+                    "SELECT SS, CONCAT_WS('', Capitol, SubCapitol, Paragraf), IdClsfV FROM `Clasificatii_Venituri`")
                     Using reader = cmd.ExecuteReader()
                         While reader.Read()
-                            Dim key = Verifier.AsText(reader.GetValue(0))
+                            Dim key = ClsfVKey(Verifier.AsText(reader.GetValue(0)), Verifier.AsText(reader.GetValue(1)))
                             If Not _clsfV.ContainsKey(key) Then
-                                _clsfV(key) = Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture)
+                                _clsfV(key) = Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture)
                             End If
                         End While
                     End Using
@@ -268,10 +272,14 @@ Public NotInheritable Class ExtrasHeaderRules
             End Try
         End If
 
-        If _clsfV Is Nothing Then Return Nothing
+        If _clsfV Is Nothing OrElse String.IsNullOrEmpty(k_sursa) Then Return Nothing
         Dim found As Integer
-        If _clsfV.TryGetValue(clsfSal, found) Then Return found
+        If _clsfV.TryGetValue(ClsfVKey(k_sursa, clsfSal), found) Then Return found
         Return Nothing
+    End Function
+
+    Private Shared Function ClsfVKey(k_sursa As String, k_code As String) As String
+        Return k_sursa.ToUpperInvariant() & "|" & k_code
     End Function
 
     Private Function Command(sql As String) As MySqlCommand

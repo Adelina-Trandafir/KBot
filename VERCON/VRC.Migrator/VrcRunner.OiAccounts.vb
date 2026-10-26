@@ -8,6 +8,10 @@ Partial Friend NotInheritable Class VrcRunner
     Private NotInheritable Class OiAccounts
         Private ReadOnly _receipts As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
         Private ReadOnly _documents As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
+        ''' <summary>Same positions as _documents, grouped without the quantity: the register splits one document line into one position per origin bon.</summary>
+        Private ReadOnly _documentGroups As New Dictionary(Of String, List(Of Dictionary(Of String, Object)))(StringComparer.Ordinal)
+        ''' <summary>Write-off positions saved with a positive quantity (wrong sign), by the same group key.</summary>
+        Private ReadOnly _wrongSign As New HashSet(Of String)(StringComparer.Ordinal)
         Private ReadOnly _cache As New Dictionary(Of String, String)(StringComparer.Ordinal)
         Private ReadOnly _active As New HashSet(Of String)(StringComparer.Ordinal)
 
@@ -23,6 +27,11 @@ Partial Friend NotInheritable Class VrcRunner
                     Dim k_docKey = DocumentKey(k_family, k_row)
                     If Not _documents.ContainsKey(k_docKey) Then _documents(k_docKey) = New List(Of Dictionary(Of String, Object))()
                     _documents(k_docKey).Add(k_row)
+                    Dim k_groupKey = DocumentGroupKey(k_family, k_row)
+                    If Not _documentGroups.ContainsKey(k_groupKey) Then _documentGroups(k_groupKey) = New List(Of Dictionary(Of String, Object))()
+                    _documentGroups(k_groupKey).Add(k_row)
+                ElseIf k_family = "IDBC" AndAlso k_q > 0D Then
+                    _wrongSign.Add(DocumentGroupKey(k_family, k_row))
                 End If
                 If k_q <= 0D Then Continue For
                 Dim k_document = OiLabel(k_row("IDBT"))
@@ -77,6 +86,11 @@ Partial Friend NotInheritable Class VrcRunner
             Return k_family & "|" & ReceiptKey(OiLabel(k_row(k_family)), k_row) & "|" & k_quantity
         End Function
 
+        ''' <summary>Document + product + price, without the quantity.</summary>
+        Private Shared Function DocumentGroupKey(k_family As String, k_row As Dictionary(Of String, Object)) As String
+            Return k_family & "|" & ReceiptKey(OiLabel(k_row(k_family)), k_row)
+        End Function
+
         Public Function Account(k_row As Dictionary(Of String, Object)) As String
             Dim k_position = VrcConvert.KeyText(k_row("IDOI"))
             If k_position.Length = 0 Then Throw New InvalidOperationException("O poziție din OI_Produse nu are număr (coloana IDOI goală).")
@@ -116,7 +130,14 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_document = OiLabel(k_row(k_family)), k_product = VrcConvert.KeyText(k_row("IdProdus"))
             Dim k_candidates As List(Of Dictionary(Of String, Object)) = Nothing
             If Not _documents.TryGetValue(DocumentKey(k_family, k_row), k_candidates) Then
-                Throw New InvalidOperationException($"{DocName(k_family)} nr. {k_document}, produsul {k_product}: în OI_Produse nu există poziția care corespunde acestei linii (același produs, același preț, aceeași cantitate), deci nu se știe contul.")
+                ' No single position holds the whole quantity: the register keeps one position per origin bon, so take them all.
+                ' Any account that is the same on every position of the group is the line's account, whatever the split.
+                If Not _documentGroups.TryGetValue(DocumentGroupKey(k_family, k_row), k_candidates) Then
+                    If _wrongSign.Contains(DocumentGroupKey(k_family, k_row)) Then
+                        Throw New InvalidOperationException($"{DocName(k_family)} nr. {k_document}, produsul {k_product}: în OI_Produse poziția acestei linii există, dar are cantitatea cu semn pozitiv; la o casare cantitatea trebuie să fie negativă. Corectați semnul cantității în OI_Produse.")
+                    End If
+                    Throw New InvalidOperationException($"{DocName(k_family)} nr. {k_document}, produsul {k_product}: în OI_Produse nu există poziția care corespunde acestei linii (același produs, același preț), deci nu se știe contul.")
+                End If
             End If
             Dim k_accounts = k_candidates.Select(Function(k_r) Account(k_r)).Distinct(StringComparer.Ordinal).ToList()
             If k_accounts.Count <> 1 Then

@@ -98,6 +98,7 @@ Partial Class PlanContConturiView
         ' 
         tree.BackColor = SystemColors.Window
         tree.BorderColor = SystemColors.ActiveBorder
+        tree.ClickOnKeyNavigation = True
         tree.Dock = DockStyle.Fill
         tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " CONTURI"

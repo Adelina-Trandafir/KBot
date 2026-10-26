@@ -92,9 +92,9 @@ K-BOT nu salvează până nu ai: un client ales, o dată, un cont emitent și ce
 **«Modificare»** (la fel ca **«Modifică factura»** din meniul facturii) deblochează o ciornă pentru schimbări (apoi «Salvare» sau «Renunță»). **Data** se poate schimba la o factură nouă și la **ultima factură a seriei**, dar nu mai veche decât factura dinainte; la celelalte facturi ea rămâne cea de la salvare. **«Ștergere»** șterge o ciornă, dar numai dacă are **ultimul număr al seriei** — altfel ar rămâne un număr lipsă; o factură trimisă la ANAF nu se șterge.
 
 ## Vederea Generale
-<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-13, 00EF-16, 0000-58, 0000-60 -->
+<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-13, 00EF-16, 0000-58, 0000-60, 00EF-52, 0000-130 -->
 
-Numărul facturii, **Data facturii** (scrisă sau aleasă din calendar; se schimbă doar la o factură nouă sau la ultima factură a seriei, și nu înainte de factura anterioară), **Tip factură** (380 — factură; 384 — factură corectată; îl pune K-BOT), **Stare**, **Comentarii factură** (cel mult 255 de caractere), **Ref. comandă (BT-13)** (cel mult 30), **Cont emitent (IBAN)** — contul în care se plătește **această factură**; lista oferă mai întâi **conturile unității** (din fereastra «Conturi Unitate»), apoi pe cele folosite pe facturile anterioare; poți și scrie altul. O factură nouă începe cu singurul cont al unității, dacă unitatea are unul singur — și **TOTAL FACTURĂ**, care se adună singur din linii. Sub ele, K-BOT scrie în cuvinte situația facturii (ciornă, acceptată, motivul unui refuz, ce stornează).
+Numărul facturii, **Data facturii** (scrisă sau aleasă din calendar; se schimbă doar la o factură nouă sau la ultima factură a seriei, și nu înainte de factura anterioară), **Tip factură** (380 — factură; 384 — factură corectată; îl pune K-BOT), **Stare**, **Comentarii factură** (cel mult 255 de caractere), **Ref. comandă (BT-13)** (cel mult 30), **Cont emitent (IBAN)** — contul în care se plătește **această factură**; lista oferă **conturile unității** (din fereastra «Conturi Unitate»); poți și scrie un cont nou, care se adaugă la conturile unității când salvezi factura. O factură nouă începe cu singurul cont al unității, dacă unitatea are unul singur — și **TOTAL FACTURĂ**, care se adună singur din linii. Sub ele, K-BOT scrie în cuvinte situația facturii (ciornă, acceptată, motivul unui refuz, ce stornează).
 
 ## Vederea Cumpărător
 <!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-15 -->
@@ -127,14 +127,16 @@ Datele unității care emite facturile (aceleași pe toate facturile) se țin î
 Conturile bancare ale unității sunt în fereastra **«Conturi Unitate»**, alături în ribbon (**Configurări › Unitate**) — vezi [Conturile unității emitente](topic:contabil.efactura.conturi).
 
 ## Vederea Conținut
-<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-16, 0000-60, 0114-23, 0000-94 -->
+<!-- slice: 00EF-08, 0000-55, 00EF-09, 0000-57, 00EF-16, 0000-60, 0114-23, 0000-94, 00EF-50, 0000-129, 00EF-51 -->
 
 Liniile facturii sunt într-un tabel în care scrii direct: **Nr**, **Conținut**, **Um**, **Cant**, **PU** și **Valoare**. 
 
-- **«Linie nouă»** adaugă o linie la sfârșit, cu unitatea **XPP** (bucată) și cantitatea 1;
+- cât scrii sau modifici factura, tabelul se termină cu un **rând gol**: scrie în el și devine o linie nouă, cu unitatea **XPP** (bucată) și cantitatea 1, iar dedesubt apare alt rând gol;
+- **Tab** trece de la **Conținut** la **Um**, apoi la **Cant**, apoi la **PU**, iar după **PU** pe rândul următor (ca **Enter**);
 - **Um** se alege din lista unităților de măsură (tastează codul sau o parte din nume); dacă lista nu se poate citi, scrii codul de mână;
 - **Cant** poate avea cel mult 3 zecimale, **PU** cel mult 4; se scriu cu virgulă sau cu punct;
 - **Valoare** se calculează singură (cantitate × preț, 2 zecimale) și nu se scrie;
+- **«❐»** de pe un rând copiază linia la sfârșitul tabelului și te duce în **Conținutul** copiei, ca s-o schimbi;
 - **«✕»** de pe un rând șterge linia; totalul din subsolul tabelului și din vederea **Generale** se actualizează;
 - sub tabel, în subsolul vederii, este bifa **«Atașează factura originală»** (înainte avea o vedere a ei, «Atașamente», scoasă): alegerea se păstrează pe factură și se schimbă doar cât factura este o ciornă deschisă pentru modificare. Când este bifată, la trimiterea la ANAF (și la o corecție) K-BOT întocmește factura PDF în formatul clasic și o atașează în fișierul electronic; fără bifă nu se atașează nimic.
 

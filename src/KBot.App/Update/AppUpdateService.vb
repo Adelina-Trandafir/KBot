@@ -250,13 +250,22 @@ Public NotInheritable Class AppUpdateService
     Private Function Offer(owner As IWin32Window, check As CheckResult, manual As Boolean) As Boolean
         Select Case check.Decision
             Case UpdateDecision.UpToDate
-                If manual Then
-                    Dim text As String = If(check.Info Is Nothing,
-                        "Serverul nu a publicat nicio actualizare. Aveți versiunea " & check.Current.ToString() & ".",
-                        "Aveți ultima versiune (" & check.Current.ToString() & ").")
-                    KBotMessage.Show(owner, text, CAPTION, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                If Not manual Then Return False
+                If check.Info Is Nothing Then
+                    KBotMessage.Show(owner, "Serverul nu a publicat nicio actualizare. Aveți versiunea " & check.Current.ToString() & ".",
+                                     CAPTION, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Return False
                 End If
-                Return False
+                ' Slice 0067-03: only from the button, never at startup. The package on the server is
+                ' re-downloaded and applied over the installation even though its version is not newer
+                ' (small fixes published with «Bump None»). The updater itself does not compare versions.
+                Dim k_again As DialogResult = KBotMessage.Show(owner,
+                    "Aveți ultima versiune (" & check.Current.ToString() & ")." & Environment.NewLine & Environment.NewLine &
+                    "Doriți totuși să descărcați din nou pachetul de pe server (versiunea " & check.Info.Version & ") și să actualizați cu el? " &
+                    "Aplicația se închide, se actualizează și pornește din nou.",
+                    CAPTION, MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                If k_again <> DialogResult.Yes Then Return False
+                Return DownloadAndHandOver(owner, check, mandatory:=False)
 
             Case UpdateDecision.Available
                 If Not AskOffer(owner, check, mandatory:=False) Then Return False

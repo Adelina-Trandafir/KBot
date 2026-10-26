@@ -1,5 +1,5 @@
 ' The «Sincronizare» page (slice ME01): runs the server's schema_sync on the chosen database or on all of
-' them, as AvacontPush does, and shows its progress line by line. All controls are declared HERE;
+' them, as AvacontPush does, and shows its progress line by line. Two buttons: «Verifică diferențe» (preview) and «Sincronizează». All controls are declared HERE;
 ' coordinates are in the 96 dpi the page was authored at.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class SyncView
@@ -22,9 +22,7 @@ Partial Class SyncView
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
-        cmbMode = New KBotComboBox()
-        chkView = New KBotCheckBox()
-        chkDestructive = New KBotCheckBox()
+        btnCheck = New KBotButton()
         btnRun = New KBotButton()
         lblTarget = New Label()
         logBox = New KBotLogBox()
@@ -63,16 +61,12 @@ Partial Class SyncView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 5
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 230F))
+        tlyBar.ColumnCount = 3
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190F))
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 230F))
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 170F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyBar.Controls.Add(cmbMode, 0, 0)
-        tlyBar.Controls.Add(chkView, 1, 0)
-        tlyBar.Controls.Add(chkDestructive, 2, 0)
-        tlyBar.Controls.Add(btnRun, 3, 0)
+        tlyBar.Controls.Add(btnCheck, 0, 0)
+        tlyBar.Controls.Add(btnRun, 1, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -82,57 +76,30 @@ Partial Class SyncView
         tlyBar.Size = New Size(884, 44)
         tlyBar.TabIndex = 0
         '
-        ' cmbMode
+        ' btnCheck
         '
-        cmbMode.Dock = DockStyle.Fill
-        cmbMode.Location = New Point(0, 0)
-        cmbMode.Margin = New Padding(0, 4, 8, 8)
-        cmbMode.Name = "cmbMode"
-        cmbMode.Size = New Size(222, 32)
-        cmbMode.TabIndex = 0
-        tips.SetToolTipHeader(cmbMode, "Modul")
-        tips.SetToolTipText(cmbMode, "<b>SAFE</b>: adaugă ce lipsește (tabele, coloane, indexuri) și repară collation-ul." & vbLf & "<b>FORCE</b>: aduce și modificările și ștergerile.")
-        '
-        ' chkView
-        '
-        chkView.Checked = True
-        chkView.CheckState = CheckState.Checked
-        chkView.Dock = DockStyle.Fill
-        chkView.Location = New Point(230, 0)
-        chkView.Margin = New Padding(0)
-        chkView.Name = "chkView"
-        chkView.Size = New Size(190, 44)
-        chkView.TabIndex = 1
-        chkView.Text = "Doar previzualizare"
-        tips.SetToolTipHeader(chkView, "Doar previzualizare")
-        tips.SetToolTipText(chkView, "Bifat: se calculează și se arată planul, dar nu se execută nimic." & vbLf & "Debifați pentru a executa.")
-        chkView.UseVisualStyleBackColor = True
-        '
-        ' chkDestructive
-        '
-        chkDestructive.Dock = DockStyle.Fill
-        chkDestructive.Location = New Point(420, 0)
-        chkDestructive.Margin = New Padding(0)
-        chkDestructive.Name = "chkDestructive"
-        chkDestructive.Size = New Size(230, 44)
-        chkDestructive.TabIndex = 2
-        chkDestructive.Text = "Permite operații distructive"
-        tips.SetToolTipHeader(chkDestructive, "Operații distructive")
-        tips.SetToolTipText(chkDestructive, "Fără bifă, un plan cu ștergeri sau modificări de date este REFUZAT în întregime." & vbLf & "Cu bifă, serverul face întâi o copie a bazei, apoi execută.")
-        chkDestructive.UseVisualStyleBackColor = True
+        btnCheck.Dock = DockStyle.Fill
+        btnCheck.Location = New Point(0, 0)
+        btnCheck.Margin = New Padding(0, 2, 8, 6)
+        btnCheck.Name = "btnCheck"
+        btnCheck.Size = New Size(182, 36)
+        btnCheck.TabIndex = 0
+        btnCheck.Text = "Verifică diferențe"
+        tips.SetToolTipHeader(btnCheck, "Verifică diferențe")
+        tips.SetToolTipText(btnCheck, "Calculează și arată planul complet (adăugări, modificări, ștergeri), dar nu execută nimic.")
         '
         ' btnRun
         '
         btnRun.Dock = DockStyle.Fill
-        btnRun.Location = New Point(650, 0)
+        btnRun.Location = New Point(190, 0)
         btnRun.Margin = New Padding(0, 2, 6, 6)
         btnRun.Name = "btnRun"
         btnRun.Primary = True
-        btnRun.Size = New Size(144, 36)
-        btnRun.TabIndex = 3
-        btnRun.Text = "Pornește"
-        tips.SetToolTipHeader(btnRun, "Pornește")
-        tips.SetToolTipText(btnRun, "Rulează schema_sync pe server, pe baza aleasă sau pe toate." & vbLf & "O singură sincronizare rulează odată.")
+        btnRun.Size = New Size(164, 36)
+        btnRun.TabIndex = 1
+        btnRun.Text = "Sincronizează"
+        tips.SetToolTipHeader(btnRun, "Sincronizează")
+        tips.SetToolTipText(btnRun, "Execută sincronizarea pe baza aleasă sau pe toate." & vbLf & "Dacă planul conține operații distructive, se cere o a doua confirmare." & vbLf & "O singură sincronizare rulează odată.")
         '
         ' lblTarget
         '
@@ -233,9 +200,7 @@ Partial Class SyncView
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyBar As KBotTableLayoutPanel
-    Friend WithEvents cmbMode As KBotComboBox
-    Friend WithEvents chkView As KBotCheckBox
-    Friend WithEvents chkDestructive As KBotCheckBox
+    Friend WithEvents btnCheck As KBotButton
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents lblTarget As Label
     Friend WithEvents logBox As KBotLogBox

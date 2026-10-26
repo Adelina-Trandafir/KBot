@@ -634,7 +634,7 @@ Partial Class VrcMigratorForm
         tipVrc.SetToolTipHeader(btnSterge, "Șterge rândul")
         tipVrc.SetToolTipText(btnSterge, "Scoate din listă fișierul de pe rândul curent (cel selectat). Citirea și planul de pe ecran se golesc; apăsați din nou «Citește bifatele». Nu șterge nimic de pe disc.")
         tipVrc.SetToolTipHeader(btnGoleste, "Golește lista")
-        tipVrc.SetToolTipText(btnGoleste, "Scoate toate fișierele din listă, împreună cu citirea și planul de pe ecran. DC-ul, subunitatea și datele serverului rămân. Nu șterge nimic de pe disc.")
+        tipVrc.SetToolTipText(btnGoleste, "Scoate toate fișierele din listă, împreună cu citirea și planul de pe ecran. DC-ul, denumirile subunităților din plan, partenerii pregătiți și datele serverului rămân. Nu șterge nimic de pe disc.")
         tipVrc.SetToolTipHeader(btnAdauga, "Adaugă baza de date")
         tipVrc.SetToolTipText(btnAdauga, "Alegeți unul sau mai multe fișiere Access, din orice folder (de exemplu Alimente, Materiale, OI sau MF, fiecare în folderul lui), și le adaugă în listă. Fișierele deja în listă rămân; puteți folosi toate bazele sau numai unele.")
         tipVrc.SetToolTipHeader(btnCiteste, "Citește bifatele")

@@ -32,14 +32,14 @@ fereastra principală.
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
-<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120, 0081-13 -->
+<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120, 0081-13, AV01-13 -->
 
 Tabelul din **Secțiunea A** se completează direct în el. La sfârșitul tabelului este mereu **un rând gol**: aici începi un rând nou.
 
 - **Rând nou**: în rândul gol, deschizi lista din celula **Clasificație** și alegi clasificația. Rândul se adaugă singur, iar dedesubt apare un nou rând gol. Cât timp antetul unui angajament nou nu e complet (programul, compartimentul, obiectul și, dacă e cazul, partenerul), celula rămâne blocată, iar sub tabel scrie ce lipsește.
 - **Lista de clasificații** arată doar clasificațiile **programului** ales în antet, grupate pe sursă; fiecare grup se poate strânge sau desfășura. Clasificațiile deja folosite în angajament apar primele, iar cele deja puse în Secțiunea A nu mai apar. Poți și să tastezi cifrele clasificației, ca să o găsești mai repede.
 - **Ce se completează singur** după alegere: bugetul, recepțiile, disponibilul (buget − recepții), valoarea precedentă și valoarea rămasă se văd imediat în rând. **Element fundamentare** (obligatoriu) primește denumirea clasificației, dar îl poți rescrie. Codul indicatorului este al clasificației, dacă angajamentul îl are deja; altfel se face unul nou, «!» + trei caractere.
-- **Valoarea curentă**: după alegerea clasificației, cursorul trece direct pe ea. Este obligatorie și diferită de 0. Pe rândurile aduse automat din rezervări, **bugetul** este cel pe care îl avea clasificația la data reviziei, din «Clasificații bugetare» (totalul versiunii în vigoare plus rectificările), nu cel de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar de azi și un mesaj te anunță. Pe un rând adăugat de tine, bugetul rămâne creditul bugetar de azi.
+- **Valoarea curentă**: după alegerea clasificației, cursorul trece direct pe ea. Este obligatorie și diferită de 0. Pe rândurile aduse automat din rezervări, **bugetul** este cel pe care îl avea clasificația la data reviziei, din «Clasificații cheltuieli» (totalul versiunii în vigoare plus rectificările), nu cel de azi din FOREXE. Dacă la data aceea clasificația nu are buget, se folosește creditul bugetar de azi și un mesaj te anunță. Pe un rând adăugat de tine, bugetul rămâne creditul bugetar de azi.
 - **Altă clasificație** pe un rând existent: deschizi lista din celula **Clasificație** a rândului și alegi alta.
 - **✕** de la capătul rândului îl scoate din tabel, după o confirmare; rândul pereche din Secțiunea B dispare odată cu el.
 

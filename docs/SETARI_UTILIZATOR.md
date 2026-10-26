@@ -33,8 +33,7 @@ Cheie text JSON: **`AdobeViewerMode`**, în fișierul comun descris la început.
 Implicit: **`Auto`**.
 
 * cheie **lipsă** sau șir **gol** → `Auto`, fără avertisment (lipsa e starea normală, nu o greșeală);
-* valoare **nerecunoscută** (de exemplu `turbo`) → `Auto`, **plus** o linie de avertisment în
-  `<AppDir>\Logs\adobe_preview.log` care numește cheia și valoarea găsită.
+* valoare **nerecunoscută** (de exemplu `turbo`) → `Auto`, **plus** o linie de avertisment în `<AppDir>\Logs\adobe_preview.log` care numește cheia și valoarea găsită.
 
 Nu există caz în care o setare greșită să împiedice deschiderea unui document.
 
@@ -104,15 +103,11 @@ Pe **ambele** profiluri se ascunde, în plus, fereastra plutitoare a Adobe (clas
 Apelurile Windows care rezultă, în ordinea în care se petrec (toate în `src\KBot.Controls\Adobe\AdobeNativeMethods.vb`):
 
 1. `Process.Start` pe executabilul Adobe, cu argumentele profilului;
-2. `EnumWindows` + `GetClassName` + `GetWindowText` — se caută fereastra Adobe al cărei titlu conține
-   numele fișierului, cu un timp de așteptare de 8 secunde;
-3. `GetWindowLongPtr` / `SetWindowLongPtr` — se curăță stilurile `WS_CAPTION`, `WS_THICKFRAME`,
-   `WS_POPUP`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` și se adaugă `WS_CHILD`;
+2. `EnumWindows` + `GetClassName` + `GetWindowText` — se caută fereastra Adobe al cărei titlu conține numele fișierului, cu un timp de așteptare de 8 secunde;
+3. `GetWindowLongPtr` / `SetWindowLongPtr` — se curăță stilurile `WS_CAPTION`, `WS_THICKFRAME`, `WS_POPUP`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` și se adaugă `WS_CHILD`;
 4. `SetParent` — fereastra devine copil al panoului K-BOT;
-5. `GetWindow` (`GW_CHILD` / `GW_HWNDNEXT`) + `GetWindowRect` + `MapWindowPoints` — se parcurge
-   arborele de ferestre pentru detecție;
-6. `MoveWindow` + `SetWindowPos` + `RedrawWindow` — se așază fereastra la dreptunghiul calculat și e
-   forțată să se redeseneze (fără acest ultim pas rămâne **nevăzută**);
+5. `GetWindow` (`GW_CHILD` / `GW_HWNDNEXT`) + `GetWindowRect` + `MapWindowPoints` — se parcurge arborele de ferestre pentru detecție;
+6. `MoveWindow` + `SetWindowPos` + `RedrawWindow` — se așază fereastra la dreptunghiul calculat și e forțată să se redeseneze (fără acest ultim pas rămâne **nevăzută**);
 7. `ShowWindow(SW_HIDE)` — doar pe ferestrele plutitoare acceptate de filtru;
 8. la închidere: se pun la loc stilul și părintele original (`SetWindowLongPtr` + `SetParent`).
 
@@ -183,24 +178,12 @@ Folderul în care K-BOT caută (recursiv) PDF-urile DDF ale unui angajament și 
 
 ## 5. Limitări cunoscute și dependența de versiune
 
-* **Geometria a fost măsurată pe Acrobat 26.1.21771.0.** Numerele (230 / 152 / −130) sunt valabile
-  pentru acea versiune și pentru interfața ei. **Un update Adobe le poate invalida** — simptomul
-  tipic este o bandă de unelte reapărută sau o fâșie goală pe margine.
-* **Locul în care se măsoară valori noi este bancul de probă**, nu codul aplicației:
-  `AdobeReaderHarnessForm` (DevHarness → categoria Adobe). Acolo se deschide un PDF, se ajustează
-  decuparea și poziția până arată corect, apoi se salvează starea ca fișier JSON. Numerele din acel
-  fișier se trec în `AdobeViewerProfiles` (`src\KBot.Controls\Adobe\AdobeViewerProfile.vb`).
-  Valorile sunt fixate de teste, deci o modificare greșită pică la `dotnet test`.
-* **Marcajele de detecție sunt și ele dependente de versiune.** Dacă Adobe redenumește
-  `AVTaskPaneHostView` sau `AV2DockableTabStripView`, detecția va spune «nerecunoscut», va cădea pe
-  profilul clasic și va scrie arborele complet de ferestre în jurnal — exact ce trebuie ca marcajele
-  să fie actualizate.
-* **Mărirea/micșorarea paginii.** Fereastra găzduită este, prin construcție, mai mare decât panoul,
-  deci o potrivire „pe lățime" din Adobe se raportează la lățimea mărită, nu la cea vizibilă.
-* **Tastatura și focusul** peste granița de proces nu se comportă ca la un control nativ. E o
-  limitare cunoscută a mecanismului, nu o defecțiune de configurare.
-* **Nu semnați un document cât timp fila «Document» ține o fereastră Adobe găzduită** — semnarea
-  pornește Adobe într-un alt mod, peste același proces.
+* **Geometria a fost măsurată pe Acrobat 26.1.21771.0.** Numerele (230 / 152 / −130) sunt valabile pentru acea versiune și pentru interfața ei. **Un update Adobe le poate invalida** — simptomul tipic este o bandă de unelte reapărută sau o fâșie goală pe margine.
+* **Locul în care se măsoară valori noi este bancul de probă**, nu codul aplicației: `AdobeReaderHarnessForm` (DevHarness → categoria Adobe). Acolo se deschide un PDF, se ajustează decuparea și poziția până arată corect, apoi se salvează starea ca fișier JSON. Numerele din acel fișier se trec în `AdobeViewerProfiles` (`src\KBot.Controls\Adobe\AdobeViewerProfile.vb`). Valorile sunt fixate de teste, deci o modificare greșită pică la `dotnet test`.
+* **Marcajele de detecție sunt și ele dependente de versiune.** Dacă Adobe redenumește `AVTaskPaneHostView` sau `AV2DockableTabStripView`, detecția va spune «nerecunoscut», va cădea pe profilul clasic și va scrie arborele complet de ferestre în jurnal — exact ce trebuie ca marcajele să fie actualizate.
+* **Mărirea/micșorarea paginii.** Fereastra găzduită este, prin construcție, mai mare decât panoul, deci o potrivire „pe lățime" din Adobe se raportează la lățimea mărită, nu la cea vizibilă.
+* **Tastatura și focusul** peste granița de proces nu se comportă ca la un control nativ. E o limitare cunoscută a mecanismului, nu o defecțiune de configurare.
+* **Nu semnați un document cât timp fila «Document» ține o fereastră Adobe găzduită** — semnarea pornește Adobe într-un alt mod, peste același proces.
 
 ---
 
@@ -249,15 +232,8 @@ O valoare nerecunoscută la `AdobeDetachMode` / `ExcelRibbon` cade pe implicit c
 
 ### 6.2 Schimbarea parolei — doi factori
 
-1. Operatorul scrie **parola actuală** și apasă «Trimite codul pe e-mail». Serverul o verifică (un login
-   MariaDB ca operatorul, exact ca la autentificare) și trimite un **cod de 6 cifre** pe adresa
-   operatorului — numele de utilizator ESTE e-mailul. Codul e valabil 10 minute, o singură dată, cel mult
-   5 încercări greșite.
-2. Operatorul scrie codul, parola nouă (minimum 8 caractere, diferită de cea actuală) și confirmarea, apoi
-   «Schimbă parola». Serverul schimbă parola pe serverul K-BOT (`SET PASSWORD` pe conexiunea
-   operatorului — fără niciun privilegiu al contului de serviciu) și, **cu bună-credință**, pe serverul
-   vechi (Access). Dacă serverul vechi nu a putut fi actualizat, fereastra o spune: acolo rămâne parola
-   veche până o aliniază un administrator.
+1. Operatorul scrie **parola actuală** și apasă «Trimite codul pe e-mail». Serverul o verifică (un login MariaDB ca operatorul, exact ca la autentificare) și trimite un **cod de 6 cifre** pe adresa operatorului — numele de utilizator ESTE e-mailul. Codul e valabil 10 minute, o singură dată, cel mult 5 încercări greșite.
+2. Operatorul scrie codul, parola nouă (minimum 8 caractere, diferită de cea actuală) și confirmarea, apoi «Schimbă parola». Serverul schimbă parola pe serverul K-BOT (`SET PASSWORD` pe conexiunea operatorului — fără niciun privilegiu al contului de serviciu) și, **cu bună-credință**, pe serverul vechi (Access). Dacă serverul vechi nu a putut fi actualizat, fereastra o spune: acolo rămâne parola veche până o aliniază un administrator.
 
 Nimic despre parole nu rămâne pe calculatorul operatorului. Pe server, trimiterea e-mailului cere `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` în `config.py` (sau ca variabile de mediu cu aceleași nume); fără `SMTP_HOST`, butonul răspunde «Trimiterea e-mailului nu este configurată pe server». Rute: `POST /api/auth/password/code`, `POST /api/auth/password/change` (`PYTHON\routes\auth\auth.py`, `mailer.py`).
 
@@ -296,40 +272,30 @@ Pozele nu conțin niciodată meniul K-BOT, vălul sau modul întunecat. Restul �
 
 **Drumul unei poze.** Se scrie pe disc, în `<AppDir>\Capturi\<cod angajament>\`, și stă acolo până când descărcarea și preluarea au scris în K-BOT înregistrarea de care se leagă. Apoi pleacă pe server, pe numărul pe care marcajul K-BOT l-a pus în pagină — «(IDREV: n)» pentru rezervări, «(IDRH: n; IDR: m)» pentru recepții — și se așază pe rândul căruia îi aparține: `FX_Rezervarii_IMG` (rezervarea) sau `FX_Receptii_IMG` (recepția). De acolo:
 
-- **revizia** generată din rezervări le ia singură și le pune ca atașamente `PrtScr = 1`, adică
-  exact rândurile pe care le desenează Table4 din PDF-ul final;
-- **ordonanțarea** nouă se deschide cu ultima pereche de poze ale angajamentului deja atașată (le
-  puteți șterge în editor — sunt o propunere).
+- **revizia** generată din rezervări le ia singură și le pune ca atașamente `PrtScr = 1`, adică exact rândurile pe care le desenează Table4 din PDF-ul final;
+- **ordonanțarea** nouă se deschide cu ultima pereche de poze ale angajamentului deja atașată (le puteți șterge în editor — sunt o propunere).
 
 O poză fără număr, sau pe care serverul n-o poate așeza, **rămâne pe disc** și vi se spune în consolă: o dovadă nu se aruncă în tăcere. Pozele sunt JPEG (calitate 70): stau într-un PDF semnat, unde un PNG de pagină întreagă costă de câteva ori mai mult pentru cifre care se citesc la fel. Aceleași două poze le face și robotul când trimite singur revizia («Poza_Inainte» la început, «Poza_Final» la sfârșit).
 
 ### 7.3 Cât lucrează robotul
 
-- fereastra browserului e **închisă pentru operator** (`EnableWindow`): clicul și tastele nu ajung în
-  pagină; robotul, care vorbește prin protocolul de depanare, nu e afectat;
+- fereastra browserului e **închisă pentru operator** (`EnableWindow`): clicul și tastele nu ajung în pagină; robotul, care vorbește prin protocolul de depanare, nu e afectat;
 - pagina e **încețoșată** și un cartonaș în mijloc spune «K-BOT lucrează în FOREXE: <numele lucrării>»
-  + «Vă rugăm așteptați»; o navigare din mijlocul lucrării vine deja încețoșată, iar o re-randare Ajax
-  Wicket nu o ridică (§7.5);
+  + «Vă rugăm așteptați»; o navigare din mijlocul lucrării vine deja încețoșată, iar o re-randare Ajax Wicket nu o ridică (§7.5);
 - meniul K-BOT din pagină e ascuns, urmărirea operațiunilor e suspendată.
 
 Totul se ridică singur la sfârșitul lucrării.
 
 ### 7.4 Ce mai face scriptul
 
-- **Salvare fără modificări**: la formularele de rezervare (`input[name^='tableContainer:']`) și de
-  recepție (`form.form-horizontal input[name$=':valoare']`) valorile se fotografiază când apare
-  formularul; un clic pe butonul de salvare — sau Enter într-un câmp — cu aceleași valori e oprit și un
-  mesaj blocant cere «NU salvați! Apăsați «Renunță»». Butoanele din `.modal-dialog` («Da» / «Nu» din
-  întrebarea de renunțare) trec întotdeauna. Mesajul se închide cu «Am înțeles», Esc sau Enter.
+- **Salvare fără modificări**: la formularele de rezervare (`input[name^='tableContainer:']`) și de recepție (`form.form-horizontal input[name$=':valoare']`) valorile se fotografiază când apare formularul; un clic pe butonul de salvare — sau Enter într-un câmp — cu aceleași valori e oprit și un mesaj blocant cere «NU salvați! Apăsați «Renunță»». Butoanele din `.modal-dialog` («Da» / «Nu» din întrebarea de renunțare) trec întotdeauna. Mesajul se închide cu «Am înțeles», Esc sau Enter.
 - **«Renunță»** apăsat oriunde încheie operațiunea urmărită fără descărcare.
 - **Rezervare modificată** → se descarcă doar rezervările; **recepție** → doar recepțiile.
 - **Istoric**: după citirea istoricului, fluxurile apasă «Înapoi».
 - **Instrumentele pentru dezvoltatori** stau închise dacă `ForexeDevToolsAllowed` e `false`.
-- **Mod întunecat**: cu o schemă K-BOT întunecată pagina e inversată (`html { filter: invert(1)
-  hue-rotate(180deg) }`, imaginile și elementele K-BOT inversate înapoi); urmează tema pe loc.
+- **Mod întunecat**: cu o schemă K-BOT întunecată pagina e inversată (`html { filter: invert(1) hue-rotate(180deg) }`, imaginile și elementele K-BOT inversate înapoi); urmează tema pe loc.
 - Meniul K-BOT plutitor se **strânge / desface** din butonul ▾/▸ din rândul titlului (ținut minte).
-- Fereastra andocată e **verificată** după fiecare andocare / redimensionare (imediat și încă de 5 ori
-  în 1,6 s) și pusă la loc dacă s-a mutat: bara de adrese nu trebuie să se vadă.
+- Fereastra andocată e **verificată** după fiecare andocare / redimensionare (imediat și încă de 5 ori în 1,6 s) și pusă la loc dacă s-a mutat: bara de adrese nu trebuie să se vadă.
 
 ### 7.5 Când intră stilurile și cum rămân (21.09.2026, felia 0073-01)
 
@@ -337,15 +303,8 @@ Tot ce scrie scriptul în pagină stă în două elemente `<style>` (regulile + 
 
 Acum:
 
-- foile intră **în clipa în care apare `<html>`** (un observator pe document), cu mult înainte de prima
-  afișare; la `DOMContentLoaded` se verifică din nou, și dacă ar fi intrat abia atunci consola K-BOT
-  spune o singură dată «stilurile paginii au intrat abia la încărcarea completă» — mesaj care NU
-  trebuie să apară;
-- după **fiecare apel Ajax Wicket** (`/ajax/call/complete`, `/dom/node/added`; pe Wicket vechi
-  `registerPostCallHandler`) și la **orice schimbare pe `<html>` (clasa) sau în `<head>` (copiii)** foile,
-  clasa, vălul și starea ascunsă a meniului K-BOT se repun pe loc, nu la următoarea bătaie; tot atunci se
-  recalculează foaia regulilor, ca regulile legate de o pagină (§7.1, «Pagina») să vină și să plece cu
-  adresa;
+- foile intră **în clipa în care apare `<html>`** (un observator pe document), cu mult înainte de prima afișare; la `DOMContentLoaded` se verifică din nou, și dacă ar fi intrat abia atunci consola K-BOT spune o singură dată «stilurile paginii au intrat abia la încărcarea completă» — mesaj care NU trebuie să apară;
+- după **fiecare apel Ajax Wicket** (`/ajax/call/complete`, `/dom/node/added`; pe Wicket vechi `registerPostCallHandler`) și la **orice schimbare pe `<html>` (clasa) sau în `<head>` (copiii)** foile, clasa, vălul și starea ascunsă a meniului K-BOT se repun pe loc, nu la următoarea bătaie; tot atunci se recalculează foaia regulilor, ca regulile legate de o pagină (§7.1, «Pagina») să vină și să plece cu adresa;
 - bătaia de 2 s rămâne doar ca ultimă plasă.
 
 Nimic pe partea .NET nu s-a schimbat pentru asta.

@@ -57,8 +57,7 @@ Trei reguli scrise în ea:
 
 #### (d) Suprascrierea schemelor built-in
 
-`ThemeManager.AvailableSchemes` nu mai concatenează orbește. Un fișier cu numele unei scheme built-in o **înlocuiește**, păstrându-i poziția în listă. Regula veche ar fi produs două rânduri «Modern» în meniul de teme, iar `ResolveByName` — care întoarce primul potrivit — ar fi ales mereu pe cel
-**NEeditat**: salvarea ar fi părut că nu face nimic.
+`ThemeManager.AvailableSchemes` nu mai concatenează orbește. Un fișier cu numele unei scheme built-in o **înlocuiește**, păstrându-i poziția în listă. Regula veche ar fi produs două rânduri «Modern» în meniul de teme, iar `ResolveByName` — care întoarce primul potrivit — ar fi ales mereu pe cel **NEeditat**: salvarea ar fi părut că nu face nimic.
 
 `ThemeStore` a primit `SaveScheme` / `DeleteScheme` / `SchemeFilePath` și — important — **toate scrierile în `theme.json` trec acum prin citire-modificare-scriere**: schema activă și scalarea stau în același fișier și se scriu din locuri diferite, deci fără asta una ar fi ștears-o pe cealaltă. Un `theme.json` vechi, fără câmpurile noi, primește implicitele.
 
@@ -119,22 +118,17 @@ Trecere peste felia 0036, cerută imediat după ea: «se poate prelua și scalar
 
 ### Cum funcționează (și de ce așa)
 
-**Mărirea nu redimensionează controale cu mâna — o face platforma.** Toate formularele sunt
-`AutoScaleMode.Font`. Când li se schimbă fontul, WinForms rulează singur `PerformAutoScale` și rescalează dreptunghiurile copiilor. Deci e destul să scriem fontul formularului (din baza lui) ca să crească și literele, și controalele. Peste asta, factorul intră și în `AppScaling.FactorFor`, ca măsurile pe care le desenăm NOI (rândul din arbore și din grilă, constantele din pictură) să crească în același pas — altfel textul ar crește într-un rând care nu crește, adică fix defectul reparat în 0035.
+**Mărirea nu redimensionează controale cu mâna — o face platforma.** Toate formularele sunt `AutoScaleMode.Font`. Când li se schimbă fontul, WinForms rulează singur `PerformAutoScale` și rescalează dreptunghiurile copiilor. Deci e destul să scriem fontul formularului (din baza lui) ca să crească și literele, și controalele. Peste asta, factorul intră și în `AppScaling.FactorFor`, ca măsurile pe care le desenăm NOI (rândul din arbore și din grilă, constantele din pictură) să crească în același pas — altfel textul ar crește într-un rând care nu crește, adică fix defectul reparat în 0035.
 
 Cele două scări se **înmulțesc**, nu se aleg: la 150% pe ecran cu textul pus pe 125%, un rând trebuie să fie de 1,875 ori cel de la 96 dpi.
 
-**`FontBaseline`** (modul nou) ține fontul de la 100% pentru fiecare control, ca înmulțirea să
-pornească mereu din același loc. Nu se refolosește `DesignerBaseline`: acela există ca să PUNĂ LA LOC fontul din designer — exact ce face «Colorat» — deci mărirea sprijinită pe el ar fi dispărut tăcut pe o singură schemă. Se ating doar formularele și controalele cu font PROPRIU; unul care moștenește fontul ambiental nu se atinge, fiindcă scriindu-i-l l-am fixa și l-am rupe de formular pentru totdeauna (crește oricum, prin moștenire).
+**`FontBaseline`** (modul nou) ține fontul de la 100% pentru fiecare control, ca înmulțirea să pornească mereu din același loc. Nu se refolosește `DesignerBaseline`: acela există ca să PUNĂ LA LOC fontul din designer — exact ce face «Colorat» — deci mărirea sprijinită pe el ar fi dispărut tăcut pe o singură schemă. Se ating doar formularele și controalele cu font PROPRIU; unul care moștenește fontul ambiental nu se atinge, fiindcă scriindu-i-l l-am fixa și l-am rupe de formular pentru totdeauna (crește oricum, prin moștenire).
 
 Ordinea în `ThemeManager.Apply`: tema întâi, mărirea **la sfârșit**. Invers, `ApplyBaseFont` și restaurarea «Colorat» ar fi șters mărirea.
 
 #### Bugul prins de un test, nu de ochi
 
-Prima formă a lui `FontBaseline` **ghicea** dacă tema rescrisese fontul, comparând REFERINȚA obiectului scris de noi cu cea de pe control. Nu ține pe un `Form`: fiindcă formularele sunt `AutoScaleMode.Font`, scrierea fontului declanșează `PerformAutoScale`, iar autoscalarea își face
-**propria** instanță de `Font` — deci obiectul de pe control nu mai era niciodată cel scris de noi,
-**tocmai în cazul care contează**. Baza se muta la fiecare pas și mărimile se compuneau: 10 → 15 →
-**30** în loc de 20.
+Prima formă a lui `FontBaseline` **ghicea** dacă tema rescrisese fontul, comparând REFERINȚA obiectului scris de noi cu cea de pe control. Nu ține pe un `Form`: fiindcă formularele sunt `AutoScaleMode.Font`, scrierea fontului declanșează `PerformAutoScale`, iar autoscalarea își face **propria** instanță de `Font` — deci obiectul de pe control nu mai era niciodată cel scris de noi, **tocmai în cazul care contează**. Baza se muta la fiecare pas și mărimile se compuneau: 10 → 15 → **30** în loc de 20.
 
 Leacul nu e o comparație mai deșteaptă, ci renunțarea la ghicit: cele două locuri care scriu fonturi peste ale noastre — `ThemeManager.ApplyBaseFont` și `DesignerBaseline.Restore` — cheamă acum `FontBaseline.Rebase`. Semnal explicit, care nu depinde de ce face WinForms în interior.
 
@@ -218,19 +212,13 @@ Diagnosticul contează pentru viitor: **orice** handler de meniu care mută fere
 
 ### Ce s-a schimbat
 
-**Un al doilea eveniment, cu o împărțire clară a muncii.** `SliderValueChanged` rămâne, la fiecare
-pas, pentru ce e IEFTIN (cifra de pe șină, desenată de meniu). Nou: `SliderValueCommitted`, ridicat
-**o singură dată, la sfârșitul gestului** — ridicarea butonului de mouse sau a tastei — și doar dacă
-valoarea chiar s-a schimbat față de începutul gestului (o apăsare care n-a mișcat nimic nu e o comandă). Acolo se pune lucrul greu. Cele două suprafețe consumatoare au trecut pe el.
+**Un al doilea eveniment, cu o împărțire clară a muncii.** `SliderValueChanged` rămâne, la fiecare pas, pentru ce e IEFTIN (cifra de pe șină, desenată de meniu). Nou: `SliderValueCommitted`, ridicat **o singură dată, la sfârșitul gestului** — ridicarea butonului de mouse sau a tastei — și doar dacă valoarea chiar s-a schimbat față de începutul gestului (o apăsare care n-a mișcat nimic nu e o comandă). Acolo se pune lucrul greu. Cele două suprafețe consumatoare au trecut pe el.
 
-**Tastatura are propriul gest.** Săgețile se REPETĂ cât ții tasta apăsată, deci predarea la fiecare
-apăsare ar fi comandat lucrul greu de zeci de ori — exact ce făcea mouse-ul. `OnKeyUp` încheie gestul; apăsările dintre timp doar mută valoarea.
+**Tastatura are propriul gest.** Săgețile se REPETĂ cât ții tasta apăsată, deci predarea la fiecare apăsare ar fi comandat lucrul greu de zeci de ori — exact ce făcea mouse-ul. `OnKeyUp` încheie gestul; apăsările dintre timp doar mută valoarea.
 
-**Garda de `Deactivate`.** Cât ține predarea, meniul nu se mai închide pe pierderea activării:
-aceea vine din propria comandă, nu dintr-un clic al operatorului. După predare își ia activarea înapoi, ca să rămână folosibil pentru pasul următor. Steagul se coboară într-un `Finally` — lăsat ridicat de o excepție, meniul n-ar mai putea fi închis printr-un clic în afară și ar părea agățat pe ecran.
+**Garda de `Deactivate`.** Cât ține predarea, meniul nu se mai închide pe pierderea activării: aceea vine din propria comandă, nu dintr-un clic al operatorului. După predare își ia activarea înapoi, ca să rămână folosibil pentru pasul următor. Steagul se coboară într-un `Finally` — lăsat ridicat de o excepție, meniul n-ar mai putea fi închis printr-un clic în afară și ar părea agățat pe ecran.
 
-**`TrackBar`-ul din fereastra de opțiuni** a primit aceeași regulă (`MouseUp` / `KeyUp` / `Leave`),
-din al doilea motiv: fereastra de opțiuni se rescala pe ea însăși în timpul tragerii, deci cursorul se plimba sub deget. Eticheta cu procentul rămâne live.
+**`TrackBar`-ul din fereastra de opțiuni** a primit aceeași regulă (`MouseUp` / `KeyUp` / `Leave`), din al doilea motiv: fereastra de opțiuni se rescala pe ea însăși în timpul tragerii, deci cursorul se plimba sub deget. Eticheta cu procentul rămâne live.
 
 ### Fișiere atinse
 

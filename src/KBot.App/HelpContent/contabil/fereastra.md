@@ -7,14 +7,14 @@ parent: contabil
 screens: AvacontMain, KbotForm.tree, KbotForm.capBar, KbotForm.navViews, KbotForm.btnInfo, InternalInfoForm, GrupeForm
 keywords: grupe, grupa, alias, culoare grupa, arbore, lista angajamente, lista angajamentelor, vederi, bara de jos, cautare, unitate, schimba unitatea, alta unitate, fereastra marita, tot ecranul, maximizat, la pornire, macheta, machete, pagina, pagini, ferestre, inchide macheta
 ---
-<!-- slice: 0006, 0086, 0097-03, 0113, 0114, 0115 -->
+<!-- slice: 0006, 0086, 0097-03, 0113, 0114, 0115, AV01-13 -->
 K-BOT lucrează într-o singură **fereastră principală**:
 
 | Zona | Ce este |
 |------|---------|
 | **Sus** | bara de titlu cu **unitatea** (sau alegerea ei), **anul** și **sursa/sectorul**; sub ea **ribbonul**, cu toate comenzile — [Ribbonul](topic:contabil.ribbon) |
 | **Stânga** | **panoul lateral**: machetele deschise, acțiunile recente, informații, erorile — [Panoul lateral](topic:contabil.panou) |
-| **Restul** | **pagina** pe care lucrezi: «Acasă» la pornire ([Pagina «Acasă»](topic:contabil.acasa)), **lista angajamentelor** sau o altă machetă (Extrase de cont, Clasificații, un editor, Setări…) |
+| **Restul** | **pagina** pe care lucrezi: «Acasă» la pornire ([Pagina «Acasă»](topic:contabil.acasa)), **lista angajamentelor** sau o altă machetă (Extrase de cont, Clasificații cheltuieli, un editor, Setări…) |
 
 **Lista angajamentelor** (Angajamente › Navigare › «Lista angajamentelor» în ribbon) are, la rândul ei, patru zone:
 
@@ -28,11 +28,11 @@ K-BOT lucrează într-o singură **fereastră principală**:
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
 ## Pagini și ferestre
-<!-- slice: 0113, 0114, 0113-01, 0114-20, 0000-92 -->
+<!-- slice: 0113, 0114, 0113-01, 0114-20, 0000-92, AV01-13 -->
 
 K-BOT are două feluri de machete.
 
-**Pagini** — Extrase de cont, Clasificații bugetare, Parteneri, Setări, Jurnal activitate, Istoric versiuni, Ajutor,
+**Pagini** — Extrase de cont, Clasificații cheltuieli, Parteneri, Setări, Jurnal activitate, Istoric versiuni, Ajutor,
 E-Factura Vânzare și Cumpărare. Se deschid **în fereastra principală**, în locul paginii de pe ecran, cu titlul în bara de
 titlu a ferestrei, și **rămân deschise** cât timp nu le închizi: dacă deschizi alta, prima se ascunde, cu tot ce ai
 scris în ea, și revine când o ceri din nou (din ribbon sau din **Machete deschise** din panoul lateral).
@@ -154,7 +154,7 @@ angajamente cuprinde atunci toate sursele anului. O sursă anume se ține minte 
 «Toate» nu. La schimbarea sortării listei, alegerea trece singură pe «Toate».
 
 ## Unitatea de lucru
-<!-- slice: 0097, 0113 -->
+<!-- slice: 0097, 0113, AV01-13 -->
 
 Bara de titlu arată unitatea pe care lucrezi: «K-BOT — Numele unității».
 
@@ -179,7 +179,7 @@ Schimbarea **nu se poate face**:
 - spre o unitate pe care ai rolul **«Director»** — ea se deschide în fereastra de semnare, după o
   conectare nouă.
 
-> O machetă deschisă (Extrase de cont, Clasificații bugetare…) nu se schimbă singură: închide-o
+> O machetă deschisă (Extrase de cont, Clasificații cheltuieli…) nu se schimbă singură: închide-o
 > și deschide-o din nou după ce ai trecut pe altă unitate.
 
 ## Comenzile: ribbonul

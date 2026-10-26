@@ -4,8 +4,7 @@
 
 Operator request, 26.09.2026:
 
-1. `KbotForm.vb` is monolithic (2766 lines). Split it into public partial classes by logic,
-   none over ~500 lines.
+1. `KbotForm.vb` is monolithic (2766 lines). Split it into public partial classes by logic, none over ~500 lines.
 2. `btnAngajamentNou` gets the primary button theme.
 
 **Cronologie:** prima trecere păstrează DdfSend neatins, apoi trecerea 2 îl împarte. [0087](SLICE-0087-clasificatii-parteneri-meniu.md#slice-0087) înlocuiește ulterior butonul Angajament nou cu meniul primar. Numerele de fișiere/rânduri sunt măsurătorile acelui checkpoint.
@@ -51,9 +50,7 @@ The existing partials (`Browser`, `DdfSend`, `ForexeWatch`, `TreeOptions`, `Unco
 **Nesting.** Every partial of a form or control now has a `<Compile Update="…"><DependentUpon>Main.vb</DependentUpon></Compile>` entry, so Solution Explorer shows it as a leaf under the main file:
 
 - `KBot.App.vbproj`: the 21 `KbotForm.*.vb` partials under `KbotForm.vb`.
-- `KBot.Controls.vbproj`: 56 partials — `AdvancedTreeControl` (26), `KBotDataView` (17),
-  `KBotLaneView` (3), `CustomPopup` (3), `KBotRichTextEditor` (2), `KBotTableLayoutPanel` (2),
-  `KBotCalendar`, `KBotCaptionBar`, `KBotChartView` (1 each).
+- `KBot.Controls.vbproj`: 56 partials — `AdvancedTreeControl` (26), `KBotDataView` (17), `KBotLaneView` (3), `CustomPopup` (3), `KBotRichTextEditor` (2), `KBotTableLayoutPanel` (2), `KBotCalendar`, `KBotCaptionBar`, `KBotChartView` (1 each).
 
 `*.Designer.vb` files are not listed (VS nests them already). Not touched, since they are not forms or controls: `ApiClient.*.vb` (KBot.Api), `WorkflowModels.*.vb` (KBot.Forexe) and the `_reference/KBOT_IPC.*.vb` snapshot (excluded from the build).
 
@@ -63,16 +60,13 @@ Build App (+ Controls): **0 warnings, 0 errors**. The nesting was not checked in
 
 - `src/KBot.App/KbotForm.vb` (rewritten, 2766 → 266 lines)
 - new: `src/KBot.App/KbotForm.{Periods,Views,Tree,Receptii,Ord,Ddf,DdfDelete,Extrase,Download,Ingest,Console,Chrome}.vb`
-- pass 2: `src/KBot.App/KbotForm.DdfSend.vb` (trimmed), new `KbotForm.DdfSendMenu.vb` /
-  `KbotForm.DdfSendHelpers.vb`, `src/KBot.App/KBot.App.vbproj`, `src/KBot.Controls/KBot.Controls.vbproj`
+- pass 2: `src/KBot.App/KbotForm.DdfSend.vb` (trimmed), new `KbotForm.DdfSendMenu.vb` / `KbotForm.DdfSendHelpers.vb`, `src/KBot.App/KBot.App.vbproj`, `src/KBot.Controls/KBot.Controls.vbproj`
 - `docs/worklog/KBOT_STATUS.md`, this file
 
 ## Test results
 
 - `dotnet build src\KBot.App\KBot.App.vbproj`: **0 warnings, 0 errors**.
-- Method inventory: 79 method declarations across the 13 files, no duplicates (a method
-  lost in the move would have been caught by the build if referenced; the `Handles` ones were
-  counted by hand against the original).
+- Method inventory: 79 method declarations across the 13 files, no duplicates (a method lost in the move would have been caught by the build if referenced; the `Handles` ones were counted by hand against the original).
 - No test written or run (operator: no tests). Not seen on screen.
 
 ## Left unverified or deferred

@@ -20,11 +20,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
    - **Machete deschise** (0116): istoricul registrului de machete, doar din sesiunea curenta; clic pe un rand o deschide din nou; randurile nu au ora;
    - **Actiuni recente** (0117): scrierile pe server ale operatorului;
    - **Informatii** (randuri pe doua linii): Operator, Rol, Baza si perioada, FOREXE (Conectat / Neconectat, cu certificatul; verde / portocaliu), Activitate robot, Token E-Factura (starea tokenului ANAF, cu culoare dupa zilele ramase), Versiunea K-BOT;
-   - **Erori din sesiune**: ultimele 10 erori ale rularii curente (`GlobalErrorLog.RecentErrors`, evenimentul `Written`, clasa `SessionErrorEntry`); clic pe una arata detaliul intr-o caseta.
-   Panoul se strange la o banda ingusta cu pictogramele sectiunilor (butonul din bara lui de sus; clic pe o
-   pictograma il desface; `AppSettings.HomeSidebarCollapsed`); latimea desfacuta 203 (Designer). Rotita deruleaza
-   cand sectiunile nu incap. Nimic nu se interogheaza periodic: robotul prin evenimentele controlerului, erorile prin
-   `Written`, machetele prin `History.Changed`, tokenul la fiecare reimprospatare a panoului.
+   - **Erori din sesiune**: ultimele 10 erori ale rularii curente (`GlobalErrorLog.RecentErrors`, evenimentul `Written`, clasa `SessionErrorEntry`); clic pe una arata detaliul intr-o caseta. Panoul se strange la o banda ingusta cu pictogramele sectiunilor (butonul din bara lui de sus; clic pe o pictograma il desface; `AppSettings.HomeSidebarCollapsed`); latimea desfacuta 203 (Designer). Rotita deruleaza cand sectiunile nu incap. Nimic nu se interogheaza periodic: robotul prin evenimentele controlerului, erorile prin `Written`, machetele prin `History.Changed`, tokenul la fiecare reimprospatare a panoului.
 3. `ButtonStyles.ApplyTransparent` (KBot.Theming): buton fara corp, pentru o bara (butonul cardului «Ce este nou»). Singura schimbare adusa in `ButtonStyles.vb`; varianta portocalie de test NU (vezi 0114).
 
 ### Fisiere

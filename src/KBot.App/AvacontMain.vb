@@ -194,6 +194,9 @@ Public Class AvacontMain
                 Case "plan_cont"
                     ' Slice AV01-04: the chart of accounts of a subunit (KbotForm.PlanCont.vb).
                     _kbot.OpenRegistered(KbotForm.MachetaPlanCont, AddressOf _kbot.DeschidePlanCont)
+                Case "jurnale"
+                    ' Slice AV01-09: the journals of the unit, a small modal window (KbotForm.Jurnale.vb).
+                    _kbot.DeschideJurnale()
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))

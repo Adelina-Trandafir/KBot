@@ -1,10 +1,6 @@
 # SLICE-0035 — `KBotToolTip` (control nou) + scalarea la DPI a arborelui și a grilei + etichete în română
 
-**Data:** 2026-08-15
-**Stare:** cod verde (`dotnet build KBot.sln` — 0 erori, 5 avertismente `MSB3825` **preexistente**).
-`KBot.Controls.Tests`: **831 verzi, 0 roșii** (suita EXISTENTĂ, rulată ca plasă de siguranță — ea a și prins greșeala descrisă în §2b).
-**Fără teste noi, fără commit** — cerute explicit așa.
-⚠️ **Nicio suprafață n-a fost privită pe ecran.** Tot ce urmează e verificat de compilator, nu de ochi.
+**Data:** 2026-08-15 **Stare:** cod verde (`dotnet build KBot.sln` — 0 erori, 5 avertismente `MSB3825` **preexistente**). `KBot.Controls.Tests`: **831 verzi, 0 roșii** (suita EXISTENTĂ, rulată ca plasă de siguranță — ea a și prins greșeala descrisă în §2b). **Fără teste noi, fără commit** — cerute explicit așa. ⚠️ **Nicio suprafață n-a fost privită pe ecran.** Tot ce urmează e verificat de compilator, nu de ochi.
 
 Reper ulterior: [0036](SLICE-0036-theme-options-scaling.md#slice-0036) centralizează factorul în AppScaling și oferă DpiUnaware ca opțiune explicită, cu costurile consemnate. Descrierea DeviceDpi / 96 de mai jos rămâne etapa inițială. [0040](SLICE-0040-tree-scaling-sweep.md) extinde folosirea măsurilor scalate în arbore.
 
@@ -29,8 +25,7 @@ Un control desenat de noi are două feluri de măsuri:
 
 De aici, exact ce se vedea: la 100%, un rând de 28 px cu litere de ~12 px — mult aer degeaba; la 150%, aceleași 28 px cu litere de ~18 px — „arată mai bine", fiindcă textul a crescut până la măsura rândului. La 175% ar fi început să nu mai încapă. Nu era o alegere de aspect: era **o măsură care lipsea**.
 
-**A face aplicația surdă la scalare (`HighDpiMode.DpiUnaware`) ar înrăutăți lucrurile:** Windows ar
-randa totul la 96 dpi și ar întinde imaginea ca pe un bitmap. Proporțiile s-ar potrivi, dar TOT textul ar fi neclar pe orice ecran peste 100% — inclusiv la 150%, unde operatorul lucrează. Se păstrează `PerMonitorV2` (vezi `Program.Main`) și se repară măsurile.
+**A face aplicația surdă la scalare (`HighDpiMode.DpiUnaware`) ar înrăutăți lucrurile:** Windows ar randa totul la 96 dpi și ar întinde imaginea ca pe un bitmap. Proporțiile s-ar potrivi, dar TOT textul ar fi neclar pe orice ecran peste 100% — inclusiv la 150%, unde operatorul lucrează. Se păstrează `PerMonitorV2` (vezi `Program.Main`) și se repară măsurile.
 
 ### Leacul, care e cel al platformei
 
@@ -39,8 +34,7 @@ WinForms cheamă `Control.ScaleControl(factor, specified)` pe fiecare copil:
 - la autoscalarea formularului (`AutoScaleMode.Font`, ce are fiecare formular K-BOT), și
 - la fiecare schimbare de DPI, fiindcă aplicația e `PerMonitorV2`.
 
-Un control obișnuit își scalează acolo `Bounds`/`Padding`. Fișierele noi `AdvancedTreeControl.Dpi.vb` și `KBotDataView.Dpi.vb` suprascriu `ScaleControl` și scalează, în plus,
-**măsurile noastre**. Nimic de chemat din gazdă, nimic de ținut minte.
+Un control obișnuit își scalează acolo `Bounds`/`Padding`. Fișierele noi `AdvancedTreeControl.Dpi.vb` și `KBotDataView.Dpi.vb` suprascriu `ScaleControl` și scalează, în plus, **măsurile noastre**. Nimic de chemat din gazdă, nimic de ținut minte.
 
 ### Perechea logic / scalat — și de ce nu se putea altfel
 
@@ -53,11 +47,9 @@ Fiecare măsură are acum două valori:
 
 Dacă getter-ul ar întoarce valoarea scalată, designerul ar reciti 33 acolo unde s-a scris 22 și ar îngheța 33 — iar la următoarea deschidere s-ar scala încă o dată. E **aceeași capcană** pe care o descrie regula casei despre `ShouldSerialize` (valoarea rezolvată care se citește pentru totdeauna ca alegere a operatorului), doar că pe numere în loc de culori.
 
-**La design time nu se scalează nimic** (`KBotDesignTime.IsDesignTime`): suprafața Visual Studio
-desenează la 96 dpi, deci acolo se vede chiar valoarea tastată.
+**La design time nu se scalează nimic** (`KBotDesignTime.IsDesignTime`): suprafața Visual Studio desenează la 96 dpi, deci acolo se vede chiar valoarea tastată.
 
-**Răspunsul la «trebuie să proiectez la 100%?»: nu.** Designerul lucrează la 96 dpi indiferent de
-scalarea ecranului fizic, iar valorile scrise acolo sunt logice prin definiție. Se poate proiecta liniștit la 150%.
+**Răspunsul la «trebuie să proiectez la 100%?»: nu.** Designerul lucrează la 96 dpi indiferent de scalarea ecranului fizic, iar valorile scrise acolo sunt logice prin definiție. Se poate proiecta liniștit la 150%.
 
 ### Ce s-a atins efectiv
 
@@ -128,11 +120,9 @@ Stilul e o **valoare**, nu o componentă. `KBotToolTip` are un stil implicit (`S
 
 Butoanele din antete nu sunt controale, sunt zone pictate: `System.Windows.Forms.ToolTip` n-are ce extinde. De aceea `KBotToolTip` are `ShowAt(owner, content, screenPos)` / `HideNow()`, chemate din funcțiile care urmăreau deja survolarea.
 
-**Arbore** (`AdvancedTreeControl.ButtonTips.vb`) — proprietăți multilinie (editor `MultilineStringEditor`):
-`HeaderSearchIconTooltip`, `HeaderRightIconTooltip`, `FooterLeftIconTooltip`, `FooterRightIconTooltip`, `CollapseButtonTooltip`, `ExpandButtonTooltip`, plus `ButtonTooltip` (componenta, îmbrăcabilă din grila de proprietăți). Butonul de strângere are **două** texte, fiindcă are două înțelesuri; un singur text ar minți jumătate din timp. Legături: `UpdateHeaderButtonHover`, `HandleFooterMouseMove`, `ClearButtonHover`, `HandleFooterMouseLeave`.
+**Arbore** (`AdvancedTreeControl.ButtonTips.vb`) — proprietăți multilinie (editor `MultilineStringEditor`): `HeaderSearchIconTooltip`, `HeaderRightIconTooltip`, `FooterLeftIconTooltip`, `FooterRightIconTooltip`, `CollapseButtonTooltip`, `ExpandButtonTooltip`, plus `ButtonTooltip` (componenta, îmbrăcabilă din grila de proprietăți). Butonul de strângere are **două** texte, fiindcă are două înțelesuri; un singur text ar minți jumătate din timp. Legături: `UpdateHeaderButtonHover`, `HandleFooterMouseMove`, `ClearButtonHover`, `HandleFooterMouseLeave`.
 
-**Grilă** (`KBotDataView.ButtonTips.vb` + trei proprietăți noi pe `KBotDataColumn`):
-`KBotDataColumn.HeaderTooltip` / `HeaderRightIconTooltip` / `FilterIconTooltip`, plus, pe grilă, `FilterIconTooltip` (comună — filtrul face același lucru pe orice coloană), `CollapseButtonTooltip`, `ExpandButtonTooltip` și `ButtonTooltip`. Prioritatea la survolare: **filtru > pictogramă > titlu**, scrisă o singură dată în `RefreshHeaderTip`. Legături: `UpdateHeaderIconHover`, `ClearHeaderIconHover`, `HandleFooterMouseMove`/`Leave` din `.Collapse`.
+**Grilă** (`KBotDataView.ButtonTips.vb` + trei proprietăți noi pe `KBotDataColumn`): `KBotDataColumn.HeaderTooltip` / `HeaderRightIconTooltip` / `FilterIconTooltip`, plus, pe grilă, `FilterIconTooltip` (comună — filtrul face același lucru pe orice coloană), `CollapseButtonTooltip`, `ExpandButtonTooltip` și `ButtonTooltip`. Prioritatea la survolare: **filtru > pictogramă > titlu**, scrisă o singură dată în `RefreshHeaderTip`. Legături: `UpdateHeaderIconHover`, `ClearHeaderIconHover`, `HandleFooterMouseMove`/`Leave` din `.Collapse`.
 
 O cheie de buton repetată nu reprogramează apariția — altfel fiecare pixel de mișcare peste același buton ar reporni întârzierea și eticheta n-ar ieși niciodată.
 
@@ -155,11 +145,9 @@ Arborii din `MainForm`, `DdfView`, `OrdView`, `PlatiView`, `ReceptiiView`, `Reze
 
 ## 6. Fișiere atinse
 
-**Nou:**
-`src/KBot.Controls/ToolTip/KBotRichText.vb`, `KBotToolTipStyle.vb`, `KBotToolTipWindow.vb`, `KBotToolTip.vb`; `src/KBot.Controls/Tree/AdvancedTreeControl.Dpi.vb`, `.ButtonTips.vb`; `src/KBot.Controls/DataView/KBotDataView.Dpi.vb`, `.ButtonTips.vb`.
+**Nou:** `src/KBot.Controls/ToolTip/KBotRichText.vb`, `KBotToolTipStyle.vb`, `KBotToolTipWindow.vb`, `KBotToolTip.vb`; `src/KBot.Controls/Tree/AdvancedTreeControl.Dpi.vb`, `.ButtonTips.vb`; `src/KBot.Controls/DataView/KBotDataView.Dpi.vb`, `.ButtonTips.vb`.
 
-**Modificat:** `AdvancedTreeControl.{vb,Properties,ButtonHover,Footer,Painting,Overrides,
-NodeInspector,Keyboard,Search}.vb`; `KBotDataView.{vb,Layout,Grouping,Grouping.Painting,HeaderIcons, FilterIcon,Collapse,AutoSize,Input,Painting,Editing,Tooltip,Theming,Designer}.vb`; `KBotDataColumn.vb`; `KBotDataColumnCollection.vb`; cele 12 `.Designer.vb` din `KBot.App` de mai sus
+**Modificat:** `AdvancedTreeControl.{vb,Properties,ButtonHover,Footer,Painting,Overrides, NodeInspector,Keyboard,Search}.vb`; `KBotDataView.{vb,Layout,Grouping,Grouping.Painting,HeaderIcons, FilterIcon,Collapse,AutoSize,Input,Painting,Editing,Tooltip,Theming,Designer}.vb`; `KBotDataColumn.vb`; `KBotDataColumnCollection.vb`; cele 12 `.Designer.vb` din `KBot.App` de mai sus
 + arborii vederilor.
 
 ---

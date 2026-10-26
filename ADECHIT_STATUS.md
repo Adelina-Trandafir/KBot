@@ -61,9 +61,11 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-ADE10 | Subunități în același DC: schemă, API, migrator, selector | ADE10-01–05 TESTAT, RULAT, PUBLICAT | [ADE10](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ade10) |
 | SLICE-AD11 | Portal părinți: autentificare CNP/cod/OTP, dashboard, fișă cont print/PDF | AD11-05 TESTAT, RULAT, PUBLICAT — copil + părinte într-un formular, linkuri în eroarea de email, dublu clic, mesaj „similare” | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad11) |
 | SLICE-AD12 | Ajutor ADECHIT: buton «?», cuprins + text formatat, imprimare, PDF | AD12-01 TESTAT, RULAT, PUBLICAT; conținut actualizat în ADE6-24 | [AD12](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad12) |
+| SLICE-AD13 | Încărcare extrase bancare: fișiere/folder și e-mail (IMAP), cu deduplicare | AD13-01 cod scris, compilat sintactic; SQL nerulat, nimic rulat sau văzut | [AD13](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad13) |
 | SLICE-AD11 | Anulare document în taburile de încasări, cu motiv obligatoriu | AD11-01 TESTAT, RULAT, PUBLICAT | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ad11) |
+| SLICE-AD14 | Închiderea lunii cu schimbarea taxei active | AD14-01 cod scris, compilat sintactic; nimic rulat sau văzut | [AD14](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad14) |
 
-**Următorul număr liber de felie: SLICE-AD13**.
+**Următorul număr liber de felie: SLICE-AD15**.
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); toate
 feliile de mai sus sunt implementate, testate, rulate și publicate (confirmat de operator, 23.10.2026).
 ADE0–ADE9 sunt alocate prin acest plan. Subfeliile planificate și următoarele numere libere

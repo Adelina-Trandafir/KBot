@@ -166,10 +166,11 @@ Public Class RequestsView
         k_sb.AppendLine("Cerută la:   " & k_d.RequestedOn & "   de la IP " & k_d.Ip)
         If k_d.DecidedOn <> String.Empty Then k_sb.AppendLine("Decisă la:   " & k_d.DecidedOn & "   de " & k_d.DecidedBy)
         If k_d.DbName <> String.Empty Then k_sb.AppendLine("Baza:        " & k_d.DbName)
-        If k_d.Reason <> String.Empty Then k_sb.AppendLine("Motiv:       " & k_d.Reason)
+        If k_d.Reason <> String.Empty AndAlso k_d.State <> "Esuata" Then k_sb.AppendLine("Motiv:       " & k_d.Reason)
         If k_d.State = "Aprobata" Then
             k_sb.AppendLine("Link parolă:  " & If(k_d.LinkActive, If(k_d.LinkValid, "activ", "expirat"), "nu există"))
         End If
+        If k_d.State = "Esuata" Then AppendFailure(k_sb, k_d.Reason)
         k_sb.AppendLine()
         k_sb.AppendLine("Surse-sectoare cerute (" & k_d.Ss.Count.ToString(CultureInfo.InvariantCulture) & "): " & String.Join(", ", k_d.Ss.Select(Function(k_c) k_c.Cod & " " & k_c.Name)))
         k_sb.AppendLine("Clasificații F (" & k_d.F.Count.ToString(CultureInfo.InvariantCulture) & "), E (" & k_d.E.Count.ToString(CultureInfo.InvariantCulture) & ")  =>  " &
@@ -186,7 +187,68 @@ Public Class RequestsView
         For Each k_line As String In k_plan.Lines
             k_sb.AppendLine(k_line)
         Next
-        If Not k_plan.Ok Then k_sb.AppendLine("REFUZAT: " & k_plan.Problem)
+        If Not k_plan.Ok Then
+            k_sb.AppendLine()
+            k_sb.AppendLine("!! REVALIDARE: CEREREA NU POATE FI APROBATĂ ÎNCĂ")
+            AppendWrapped(k_sb, "   ", k_plan.Problem)
+        Else
+            k_sb.AppendLine()
+            k_sb.AppendLine("OK la revalidare: toate verificările trec; se poate apăsa «Aprobă».")
+        End If
+    End Sub
+
+    ''' <summary>
+    ''' The reason a failed approval stored («Eșuat la pasul N · nume: eroare | NU s-a putut anula: ...»)
+    ''' laid out as step, error and what was left behind, instead of one long line.
+    ''' </summary>
+    Private Shared Sub AppendFailure(k_sb As StringBuilder, k_reason As String)
+        k_sb.AppendLine()
+        k_sb.AppendLine("== CE A OPRIT CEREREA ==")
+        If k_reason = String.Empty Then
+            k_sb.AppendLine("Serverul nu a păstrat un motiv.")
+            Return
+        End If
+        Dim k_left As String = String.Empty
+        Dim k_cut As Integer = k_reason.IndexOf(" | ", StringComparison.Ordinal)
+        If k_cut >= 0 Then
+            k_left = k_reason.Substring(k_cut + 3)
+            k_reason = k_reason.Substring(0, k_cut)
+        End If
+        Const k_prefix As String = "Eșuat la pasul "
+        If k_reason.StartsWith(k_prefix, StringComparison.Ordinal) Then
+            Dim k_rest As String = k_reason.Substring(k_prefix.Length)
+            Dim k_colon As Integer = k_rest.IndexOf(": ", StringComparison.Ordinal)
+            If k_colon > 0 Then
+                k_sb.AppendLine("Pasul:   " & k_rest.Substring(0, k_colon))
+                k_sb.AppendLine("Eroarea:")
+                AppendWrapped(k_sb, "   ", k_rest.Substring(k_colon + 2))
+            Else
+                AppendWrapped(k_sb, "   ", k_rest)
+            End If
+        Else
+            AppendWrapped(k_sb, "   ", k_reason)
+        End If
+        If k_left <> String.Empty Then
+            k_sb.AppendLine("Rămas de curățat (de mână):")
+            AppendWrapped(k_sb, "   ", k_left)
+        End If
+        k_sb.AppendLine("Apăsați «Revalidează» după ce ați corectat cauza.")
+    End Sub
+
+    ''' <summary>Word-wraps at 100 columns so a long server message reads without sideways scrolling.</summary>
+    Private Shared Sub AppendWrapped(k_sb As StringBuilder, k_indent As String, k_text As String)
+        Const k_width As Integer = 100
+        Dim k_line As New StringBuilder(k_indent)
+        For Each k_word As String In k_text.Split({" "c}, StringSplitOptions.RemoveEmptyEntries)
+            If k_line.Length > k_indent.Length AndAlso k_line.Length + 1 + k_word.Length > k_width Then
+                k_sb.AppendLine(k_line.ToString())
+                k_line.Clear()
+                k_line.Append(k_indent)
+            End If
+            If k_line.Length > k_indent.Length Then k_line.Append(" "c)
+            k_line.Append(k_word)
+        Next
+        If k_line.Length > k_indent.Length Then k_sb.AppendLine(k_line.ToString())
     End Sub
 
     ' ------------------------------------------------------------------
@@ -217,7 +279,9 @@ Public Class RequestsView
                     _detail.Plan = k_plan
                     txtDetail.Text = Describe(_detail)
                     SetButtons(True)
-                    _context.Say(If(k_plan.Ok, "Planul e bun.", "Planul e refuzat: " & k_plan.Problem))
+                    _context.Say(If(k_plan.Ok,
+                                    If(_detail.State = "Esuata", "Revalidat: cauza eșecului nu se mai vede, cererea poate fi aprobată din nou.", "Planul e bun."),
+                                    "Revalidare: cererea tot nu poate fi aprobată. " & k_plan.Problem))
                 End Function)
         Catch ex As Exception
             GlobalErrorLog.Write("RequestsView.BtnPlan_Click", ex)

@@ -45,16 +45,10 @@ target: FacturiForm.navDetaliu
 wait: tab:continut
 Deschide vederea <b>Conținut</b>.
 
-## Linie nouă
-<!-- slice: 00EF-13, 0000-58 -->
-target: FacturiForm.btnLinieNoua
-wait: click
-Apasă <b>«Linie nouă»</b>: se adaugă o linie cu unitatea XPP (bucată) și cantitatea 1.
-
 ## Completează linia
-<!-- slice: 00EF-13, 0000-58, 000T-13 -->
+<!-- slice: 00EF-13, 0000-58, 000T-13, 00EF-50, 0000-129 -->
 target: FacturiForm.gridLinii
-Scrie direct în tabel: <b>Conținut</b> (ce vinzi), <b>Um</b> (unitatea de măsură, din listă), <b>Cant</b> și <b>PU</b> (prețul). <b>Valoarea</b> se calculează singură. Poți adăuga câte linii ai nevoie. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
+Scrie direct în <b>rândul gol</b> de la sfârșitul tabelului: <b>Conținut</b> (ce vinzi), <b>Um</b> (unitatea de măsură, din listă; implicit XPP, bucată), <b>Cant</b> (implicit 1) și <b>PU</b> (prețul). <b>Valoarea</b> se calculează singură. Sub linie apare alt rând gol, așa că poți adăuga câte linii ai nevoie; <b>«❐»</b> copiază o linie, <b>«✕»</b> o șterge. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Generale
 <!-- slice: 00EF-13, 0000-58 -->
@@ -63,10 +57,10 @@ wait: tab:generale
 Deschide vederea <b>Generale</b>.
 
 ## Cont emitent
-<!-- slice: 00EF-13, 0000-58 -->
+<!-- slice: 00EF-13, 0000-58, 00EF-52, 0000-130 -->
 target: FacturiForm.cmbContPlata
 wait: changed
-Alege <b>contul emitent (IBAN)</b> în care se plătește factura; implicit e cel al ultimei facturi. Poți scrie și altul.<BR>
+Alege <b>contul emitent (IBAN)</b> în care se plătește factura; implicit e cel al ultimei facturi. Poți scrie și un cont nou: se adaugă la conturile unității când salvezi factura.<BR>
 <mark>Aici verifici și data facturii, comentariile și referința comenzii (opționale).</mark>
 
 ## Salvare

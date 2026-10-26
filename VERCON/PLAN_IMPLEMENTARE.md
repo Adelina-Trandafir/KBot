@@ -313,15 +313,7 @@ Utilitar Windows separat în `VERCON/VRC.Migrator`, cu executabil **`VRC.Migrato
 
 Manifestul canonic include `PlanVersion`, `RuleVersion`, contract numeric, surse/hashuri, profilurile schema, contextul țintă pentru fiecare sursă, dispoziția fiecărui tabel, mapările/opțiunile și deciziile. Hashul planului include transformările și contextul, nu doar fișierul. Parole/tokenuri și rânduri personale nu intră în manifestul public.
 
-**Decizie OI/MF confirmată la 18.10.2026:** ID-urile interne P/T/C sunt
-alocate dintr-o secvență comună pe gestiune, separat de numerele afișate ale
-bonurilor. `OI_Produse.IDBC` identifică bonul curent pentru toate familiile;
-`IDBP`/`IDBT` marchează predarea/transferul, iar `IDBO` este proveniența BP/BT
-numai la transfer/casare. Documentele și toate referințele lor reutilizează
-aceeași mapare. [Contract și compatibilitate VBA](REGISTRU_OI_MF.md).
-`VC_Imports.ToolVersion` păstrează versiunea executabilului, iar identificatorul
-complet al regulilor rămâne în rezumat și în manifest/hash; aceste corecții
-nu necesită schimbarea schemei și nu repară retroactiv date deja migrate.
+**Decizie OI/MF confirmată la 18.10.2026:** ID-urile interne P/T/C sunt alocate dintr-o secvență comună pe gestiune, separat de numerele afișate ale bonurilor. `OI_Produse.IDBC` identifică bonul curent pentru toate familiile; `IDBP`/`IDBT` marchează predarea/transferul, iar `IDBO` este proveniența BP/BT numai la transfer/casare. Documentele și toate referințele lor reutilizează aceeași mapare. [Contract și compatibilitate VBA](REGISTRU_OI_MF.md). `VC_Imports.ToolVersion` păstrează versiunea executabilului, iar identificatorul complet al regulilor rămâne în rezumat și în manifest/hash; aceste corecții nu necesită schimbarea schemei și nu repară retroactiv date deja migrate.
 
 ### Transfer unic pe subunitate și atomicitate
 
@@ -409,33 +401,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC00-01 — inventarul și mediul de referință
 
-**Pași:** inventariază sursele subunității (bazele multianuale MF/OI și toate bazele anuale Materiale/Alimente), frontendul și TZ_SCHEMA; hashes/schema/obiecte incluse. Obiectele Coduri/e-Factura/DBS/clsDatabase sunt marcate direct excluse. Metadatele SFP și FORMS/REPORTS se folosesc pentru reguli/schițe; nu se construiește un mediu de compatibilitate ori reparare Access. Eventuala referință dinamică pentru fluxurile incluse folosește numai o copie izolată.
-
-**Livrabile:** manifest și inventar cu dispoziția fiecărui obiect; listă de lipsuri și impact funcțional. **Acceptare:** fiecare obiect este clasificat o singură dată în inventarul lui; sursele de date efective sunt identificate; lipsurile nu sunt prezentate ca funcții portate. Lipsa unui mediu Access executabil poate permite analiza, dar blochează validarea dinamică dependentă.
+**Pași:** inventariază sursele subunității (bazele multianuale MF/OI și toate bazele anuale Materiale/Alimente), frontendul și TZ_SCHEMA; hashes/schema/obiecte incluse. Obiectele Coduri/e-Factura/DBS/clsDatabase sunt marcate direct excluse. Metadatele SFP și FORMS/REPORTS se folosesc pentru reguli/schițe; nu se construiește un mediu de compatibilitate ori reparare Access. Eventuala referință dinamică pentru fluxurile incluse folosește numai o copie izolată. **Livrabile:** manifest și inventar cu dispoziția fiecărui obiect; listă de lipsuri și impact funcțional. **Acceptare:** fiecare obiect este clasificat o singură dată în inventarul lui; sursele de date efective sunt identificate; lipsurile nu sunt prezentate ca funcții portate. Lipsa unui mediu Access executabil poate permite analiza, dar blochează validarea dinamică dependentă.
 
 ### SLICE-VC00-02 — dicționarul de date și FK
 
-**Pași:** mapare tabel/câmp/tip/NULL/default/PK/index/FK → țintă și conversie; transcrie 29 relații TZ_SCHEMA, separă legăturile logice și profilează abaterile de versiune din toate bazele. Distinge ID de linie de ID de grup OI, zero/sentinel valid, ID random semnat, tabele fără PK.
-
-**Livrabile:** dicționar complet și graf al importului, plus matrice FK/cascade sursă→țintă. **Acceptare:** toate cele 26 relații business au tratament explicit; niciun FK spre IDBP/IDBT/IDBC presupus unic și nicio pierdere de câmp necunoscut prin reader.
+**Pași:** mapare tabel/câmp/tip/NULL/default/PK/index/FK → țintă și conversie; transcrie 29 relații TZ_SCHEMA, separă legăturile logice și profilează abaterile de versiune din toate bazele. Distinge ID de linie de ID de grup OI, zero/sentinel valid, ID random semnat, tabele fără PK. **Livrabile:** dicționar complet și graf al importului, plus matrice FK/cascade sursă→țintă. **Acceptare:** toate cele 26 relații business au tratament explicit; niciun FK spre IDBP/IDBT/IDBC presupus unic și nicio pierdere de câmp necunoscut prin reader.
 
 ### SLICE-VC00-03 — contractele de calcul și datele etalon
 
-**Pași:** urmărește numai fluxurile actuale QBC/QFCS/QSFP, Balanta22/IA, OI/MF/amortizare și fișa furnizor; extrage parametri/semne, N01/N02 cu TVA pe linie, INT/scară și precizia subunității. Codul care folosește Coduri/vechiul sistem este ignorat complet. Creează exemple pentru retur/transfer/casare, preț negativ refuzat și pragul strict 1 leu.
-
-**Livrabile:** CONTRACT_CALCULE și rezultate așteptate conform regulilor confirmate. **Acceptare:** fiecare formulă inclusă are sursă și oracle; N07–N09 sunt corectate/demonstrate, N01/N02 respectă TVA și pragul, nicio probă sau implementare pentru sistemul Coduri.
+**Pași:** urmărește numai fluxurile actuale QBC/QFCS/QSFP, Balanta22/IA, OI/MF/amortizare și fișa furnizor; extrage parametri/semne, N01/N02 cu TVA pe linie, INT/scară și precizia subunității. Codul care folosește Coduri/vechiul sistem este ignorat complet. Creează exemple pentru retur/transfer/casare, preț negativ refuzat și pragul strict 1 leu. **Livrabile:** CONTRACT_CALCULE și rezultate așteptate conform regulilor confirmate. **Acceptare:** fiecare formulă inclusă are sursă și oracle; N07–N09 sunt corectate/demonstrate, N01/N02 respectă TVA și pragul, nicio probă sau implementare pentru sistemul Coduri.
 
 ### SLICE-VC00-04 — matricea machetelor și rapoartelor
 
-**Pași:** mapează formularele/rapoartele incluse la tipuri/capabilități/drepturi/queries, urmărind SFP.MODEL și șabloanele de gestiune. Excluderile Coduri/e-Factura/DBS/clsDatabase nu se reanalizează. Pentru fiecare familie inclusă realizează schițe din proprietățile/controlurile/coloanele/secțiunile FORMS și REPORTS: context, selecții, antet, grilă, totaluri, comenzi și grupare/listare. Produce variante FC normal/MF, BC, BR/FCS, OI predare/transfer/casare, ListaAlimente, nomenclatoare, SFP și rapoarte comune/specifice.
-
-**Livrabile:** MAPARE_ACCESS_WEB, RAPOARTE și `VERCON/SCHITE/INDEX.md` cu PNG-uri mici lizibile și legături la obiectele/controlurile sursă. Dimensiunile și ordinea din export sunt repere; adaptările web/mobil și elementele nerecuperabile se marchează explicit. **Acceptare:** fiecare familie inclusă are schiță, câmpurile/coloanele/grupările esențiale pot fi urmărite în export, OI/MF nu expun BC, Alimente are ListaAlimente și FC MF are extensia corectă. Imaginile nu reprezintă funcționalitate implementată.
+**Pași:** mapează formularele/rapoartele incluse la tipuri/capabilități/drepturi/queries, urmărind SFP.MODEL și șabloanele de gestiune. Excluderile Coduri/e-Factura/DBS/clsDatabase nu se reanalizează. Pentru fiecare familie inclusă realizează schițe din proprietățile/controlurile/coloanele/secțiunile FORMS și REPORTS: context, selecții, antet, grilă, totaluri, comenzi și grupare/listare. Produce variante FC normal/MF, BC, BR/FCS, OI predare/transfer/casare, ListaAlimente, nomenclatoare, SFP și rapoarte comune/specifice. **Livrabile:** MAPARE_ACCESS_WEB, RAPOARTE și `VERCON/SCHITE/INDEX.md` cu PNG-uri mici lizibile și legături la obiectele/controlurile sursă. Dimensiunile și ordinea din export sunt repere; adaptările web/mobil și elementele nerecuperabile se marchează explicit. **Acceptare:** fiecare familie inclusă are schiță, câmpurile/coloanele/grupările esențiale pot fi urmărite în export, OI/MF nu expun BC, Alimente are ListaAlimente și FC MF are extensia corectă. Imaginile nu reprezintă funcționalitate implementată.
 
 ### SLICE-VC00-05 — deciziile și planul executabil
 
-**Pași:** înregistrează D01–D12, rezultatul sau investigația necesară, dependențele și criteriile de activare. Fixează sursele autoritative și structura worklog/status; actualizează documentația incremental.
-
-**Livrabile:** registru decizii și backlog stabil. **Acceptare:** deciziile utilizatorului sunt distincte de propunerile modelului; fiecare implementare blocată de o decizie este identificată, iar activitatea independentă poate continua. Planul curent este livrabil documentar, nu dovada executării VC00-01–04.
+**Pași:** înregistrează D01–D12, rezultatul sau investigația necesară, dependențele și criteriile de activare. Fixează sursele autoritative și structura worklog/status; actualizează documentația incremental. **Livrabile:** registru decizii și backlog stabil. **Acceptare:** deciziile utilizatorului sunt distincte de propunerile modelului; fiecare implementare blocată de o decizie este identificată, iar activitatea independentă poate continua. Planul curent este livrabil documentar, nu dovada executării VC00-01–04.
 
 ## Slice VC01 — infrastructură web și sisteme comune
 
@@ -443,33 +425,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC01-01 — pachetul VERCON și publicarea
 
-**Pași:** creează pachetul/rutele propuse, rezolvă fișierul gol vercon.py, înregistrează blueprint și secțiunea VR în portal fără coliziuni. Inspectează manifestul AvacontPush/LocalRoot/excluderile; nu publică automat întreg repo-ul.
-
-**Livrabile:** schelet importabil și manifest de publicare local. **Acceptare:** importul fără MariaDB nu produce scrieri/conexiuni; toate fișierele executabile au o singură sursă/destinație; baze/exporturi/secrete nu intră în static ori upload.
+**Pași:** creează pachetul/rutele propuse, rezolvă fișierul gol vercon.py, înregistrează blueprint și secțiunea VR în portal fără coliziuni. Inspectează manifestul AvacontPush/LocalRoot/excluderile; nu publică automat întreg repo-ul. **Livrabile:** schelet importabil și manifest de publicare local. **Acceptare:** importul fără MariaDB nu produce scrieri/conexiuni; toate fișierele executabile au o singură sursă/destinație; baze/exporturi/secrete nu intră în static ori upload.
 
 ### SLICE-VC01-02 — pagina și ciclul de viață
 
-**Pași:** reutilizează portal/teme/meniuri/EventBus/ListenerTracker/registrul instanțelor; inițializare/cleanup pentru toate componentele și stări încărcare/gol/eroare/expirat.
-
-**Livrabile:** pagină de bază și matrice sistem→import→inițializare→utilizare→cleanup→probă. **Acceptare:** deschidere/închidere repetată și schimbarea contextului nu cresc nejustificat listeners/timere; erorile folosesc mecanismul comun.
+**Pași:** reutilizează portal/teme/meniuri/EventBus/ListenerTracker/registrul instanțelor; inițializare/cleanup pentru toate componentele și stări încărcare/gol/eroare/expirat. **Livrabile:** pagină de bază și matrice sistem→import→inițializare→utilizare→cleanup→probă. **Acceptare:** deschidere/închidere repetată și schimbarea contextului nu cresc nejustificat listeners/timere; erorile folosesc mecanismul comun.
 
 ### SLICE-VC01-03 — adaptarea sesiunii, logului și conexiunilor
 
-**Pași:** leagă contextul portal la logger/timing/repository; fabrici conexiuni și correlation ID. Verifică retry-ul, erorile și închiderea resurselor. Nu introduce pool/sesiune/auth paralele.
-
-**Livrabile:** adaptoare și convenții diagnostice. **Acceptare:** refuz și eroare pot fi urmărite pe utilizator/context/operație fără parole ori date personale complete; scrierea nu este repetată de db_retry.
+**Pași:** leagă contextul portal la logger/timing/repository; fabrici conexiuni și correlation ID. Verifică retry-ul, erorile și închiderea resurselor. Nu introduce pool/sesiune/auth paralele. **Livrabile:** adaptoare și convenții diagnostice. **Acceptare:** refuz și eroare pot fi urmărite pe utilizator/context/operație fără parole ori date personale complete; scrierea nu este repetată de db_retry.
 
 ### SLICE-VC01-04 — preview reproductibil
 
-**Pași:** launcher local cu adapter fictiv, două DC-uri, două subunități, gestiuni MF/OI/Alimente/Materiale și ani deschiși/închiși. Baze izolate/reset, fără config de producție la import.
-
-**Livrabile:** comanda reală după implementare, reset și fixture-uri. **Acceptare:** zero conexiuni externe; port ocupat explicat; producția refuză fără sesiune indiferent de preview. SQLite/mock nu certifică FK/INT/ocuparea exclusivă MariaDB.
+**Pași:** launcher local cu adapter fictiv, două DC-uri, două subunități, gestiuni MF/OI/Alimente/Materiale și ani deschiși/închiși. Baze izolate/reset, fără config de producție la import. **Livrabile:** comanda reală după implementare, reset și fixture-uri. **Acceptare:** zero conexiuni externe; port ocupat explicat; producția refuză fără sesiune indiferent de preview. SQLite/mock nu certifică FK/INT/ocuparea exclusivă MariaDB.
 
 ### SLICE-VC01-05 — integrarea documentelor și schemelor
 
-**Pași:** integrează viewer/print/export, preferințe comune și schema sync; documentează extensiile VC și actualizarea separatei baze comune. Verifică regresia ADE/portal.
-
-**Livrabile:** adapter documente și plan de propagare schema/publicare. **Acceptare:** raportul deschis din VERCON păstrează contextul; preferințele ADE sunt intacte; AVACONT_COMUN nu este țintă automată de schema sync.
+**Pași:** integrează viewer/print/export, preferințe comune și schema sync; documentează extensiile VC și actualizarea separatei baze comune. Verifică regresia ADE/portal. **Livrabile:** adapter documente și plan de propagare schema/publicare. **Acceptare:** raportul deschis din VERCON păstrează contextul; preferințele ADE sunt intacte; AVACONT_COMUN nu este țintă automată de schema sync.
 
 ## Slice VC02 — context și interfață de lucru
 
@@ -477,33 +449,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC02-01 — alegerea DC/subunității/gestiunii/anului
 
-**Pași:** selectoare în cascadă, context permanent vizibil, endpoint context și versiune selecție; verifică autoselecția unei singure opțiuni și tipurile multiple. Păstrează/abandonează explicit draftul la tranziție.
-
-**Livrabile:** selector complet și contract context. **Acceptare:** două gestiuni Materiale în aceeași subunitate sunt distincte; alegerea unui an nu mută un activ în altă gestiune; un răspuns vechi nu intră în context nou.
+**Pași:** selectoare în cascadă, context permanent vizibil, endpoint context și versiune selecție; verifică autoselecția unei singure opțiuni și tipurile multiple. Păstrează/abandonează explicit draftul la tranziție. **Livrabile:** selector complet și contract context. **Acceptare:** două gestiuni Materiale în aceeași subunitate sunt distincte; alegerea unui an nu mută un activ în altă gestiune; un răspuns vechi nu intră în context nou.
 
 ### SLICE-VC02-02 — meniuri, capabilități și coloane
 
-**Pași:** construiește meniul din tip+drepturi+stare și ocuparea exclusivă; FC comun cu extensie MF, OI comun OI/MF, ListaAlimente numai Alimente. Tipul este editabil numai pentru baza/evidența nouă fără date; după populare, controlul și API-ul îl blochează. UI pornește de la schițele VC00-04.
-
-**Livrabile:** matrice implementată UI/API. **Acceptare:** BC nu apare pentru OI/MF și un apel direct este refuzat; coloanele/duratele MF nu sunt aplicate gestiunii Alimente prin preferințe salvate.
+**Pași:** construiește meniul din tip+drepturi+stare și ocuparea exclusivă; FC comun cu extensie MF, OI comun OI/MF, ListaAlimente numai Alimente. Tipul este editabil numai pentru baza/evidența nouă fără date; după populare, controlul și API-ul îl blochează. UI pornește de la schițele VC00-04. **Livrabile:** matrice implementată UI/API. **Acceptare:** BC nu apare pentru OI/MF și un apel direct este refuzat; coloanele/duratele MF nu sunt aplicate gestiunii Alimente prin preferințe salvate.
 
 ### SLICE-VC02-03 — editare în grila comună
 
-**Pași:** contract per coloană/editor/parse/format/validare, reutilizare controale, cheie stabilă rând și draft independent de DOM reciclat. Totalurile/read-only nu sunt editabile.
-
-**Livrabile:** editori și formulare de antet/linii funcționale pe fixture. **Acceptare:** apostrof/diacritice, virgula zecimală, NULL și 0, date locale, combobox/date custom, scroll și focus sunt păstrate; nu se pierde draftul la virtualizare.
+**Pași:** contract per coloană/editor/parse/format/validare, reutilizare controale, cheie stabilă rând și draft independent de DOM reciclat. Totalurile/read-only nu sunt editabile. **Livrabile:** editori și formulare de antet/linii funcționale pe fixture. **Acceptare:** apostrof/diacritice, virgula zecimală, NULL și 0, date locale, combobox/date custom, scroll și focus sunt păstrate; nu se pierde draftul la virtualizare.
 
 ### SLICE-VC02-04 — salvare, conflict și sesiune expirată
 
-**Pași:** conectează callbackurile asincrone la contractul revizie+RequestKey/context; distinge saved/error/conflict/unknown. Invalidările refreshului și răspunsurile lente sunt corelate cu selecția.
-
-**Livrabile:** protocol JS de salvare și diagnostic pe linie/câmp. **Acceptare:** dublu Enter nu dublează documentul; timeoutul nu invită la o nouă cheie înainte de reconciliere; eroarea/sesiunea expirată păstrează datele editate.
+**Pași:** conectează callbackurile asincrone la contractul revizie+RequestKey/context; distinge saved/error/conflict/unknown. Invalidările refreshului și răspunsurile lente sunt corelate cu selecția. **Livrabile:** protocol JS de salvare și diagnostic pe linie/câmp. **Acceptare:** dublu Enter nu dublează documentul; timeoutul nu invită la o nouă cheie înainte de reconciliere; eroarea/sesiunea expirată păstrează datele editate.
 
 ### SLICE-VC02-05 — probe browser și ajutor
 
-**Pași:** scenarii desktop/mobil/tastatură/teme/ferestre/grile, schimbarea contextului, date mari și deschideri repetate. Ajutor explicit pe flux și gestiune, folosind mecanismul existent.
-
-**Livrabile:** matrice de probe efective și ajutor. **Acceptare:** toate combinațiile tip/context au traseul cerut; fără erori consolă sau resurse rămase; performanța este măsurată, nu declarată din implementare.
+**Pași:** scenarii desktop/mobil/tastatură/teme/ferestre/grile, schimbarea contextului, date mari și deschideri repetate. Ajutor explicit pe flux și gestiune, folosind mecanismul existent. **Livrabile:** matrice de probe efective și ajutor. **Acceptare:** toate combinațiile tip/context au traseul cerut; fără erori consolă sau resurse rămase; performanța este măsurată, nu declarată din implementare.
 
 ## Slice VC03 — schema VC și contractele persistente
 
@@ -511,33 +473,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC03-01 — ierarhia și politica anuală
 
-**Pași:** modelează ierarhia, tipul imuabil după populare, precizia pe subunitate și ocuparea pe DC+subunitate+gestiune fără an. MF/OI au istoric unic și filtru anual; Materiale/Alimente au exercițiile provenite din toate tz_aaaa, incluse în același transfer al subunității. Definește AnEvidenta vs DataDocument și soldurile fără dublare.
-
-**Livrabile:** model logic și schema de context. **Acceptare:** surse cu date din ani multipli și mai multe gestiuni/tipuri în același DC sunt reprezentabile fără baze/tabele separate pe gestiune.
+**Pași:** modelează ierarhia, tipul imuabil după populare, precizia pe subunitate și ocuparea pe DC+subunitate+gestiune fără an. MF/OI au istoric unic și filtru anual; Materiale/Alimente au exercițiile provenite din toate tz_aaaa, incluse în același transfer al subunității. Definește AnEvidenta vs DataDocument și soldurile fără dublare. **Livrabile:** model logic și schema de context. **Acceptare:** surse cu date din ani multipli și mai multe gestiuni/tipuri în același DC sunt reprezentabile fără baze/tabele separate pe gestiune.
 
 ### SLICE-VC03-02 — tabelele business, tipurile și FK
 
-**Pași:** dicționar final INT/scară/domeniu/NULL/lungimi, chei generate/numere și FK business valide. Include invariantul preț >=0, totalul N01/N02 și scara separată de numărul de zecimale configurabil pe subunitate. Introduce chei de context/indexuri/politica de ștergere fără modificarea schemei Access. Pentru LegBCLA aplică decizia din 12.10.2026 revizia 2: o listă are mai multe BC-uri; înlocuiește unicitatea contextuală IdLista cu index neunic, protejează perechea listă–BC și atribuirea unui BC unei singure liste. Generatorul, DDL și diagrama trebuie aliniate împreună; importul semnalează istoricul incompatibil fără deduplicare tacită.
-
-**Livrabile:** DDL propus `sql/VC_01_schema.sql` și diagramă relații. **Acceptare:** toate tabelele proprii încep VC_; legătura între gestiuni e refuzată de FK și API; operațiile business nu pot pierde istoricul prin ștergerea unui nomenclator; aceeași listă persistă două BC-uri distincte, fără duplicate sau asocierea concurentă a unui BC la altă listă.
+**Pași:** dicționar final INT/scară/domeniu/NULL/lungimi, chei generate/numere și FK business valide. Include invariantul preț >=0, totalul N01/N02 și scara separată de numărul de zecimale configurabil pe subunitate. Introduce chei de context/indexuri/politica de ștergere fără modificarea schemei Access. Pentru LegBCLA aplică decizia din 12.10.2026 revizia 2: o listă are mai multe BC-uri; înlocuiește unicitatea contextuală IdLista cu index neunic, protejează perechea listă–BC și atribuirea unui BC unei singure liste. Generatorul, DDL și diagrama trebuie aliniate împreună; importul semnalează istoricul incompatibil fără deduplicare tacită. **Livrabile:** DDL propus `sql/VC_01_schema.sql` și diagramă relații. **Acceptare:** toate tabelele proprii încep VC_; legătura între gestiuni e refuzată de FK și API; operațiile business nu pot pierde istoricul prin ștergerea unui nomenclator; aceeași listă persistă două BC-uri distincte, fără duplicate sau asocierea concurentă a unui BC la altă listă.
 
 ### SLICE-VC03-03 — importuri, audit și idempotency
 
-**Pași:** modelează VC_Imports cu unicitate pe subunitate (DC implicit în baza țintă), toate sursele/mapările lotului unic, probleme/conversii și audit. Distinge markerul migrare unică de RequestKey al comenzilor web. ContextLock păstrează titular/sesiune/jeton/reînnoire pentru exclusivitate; document/grup OI și linie rămân identități distincte.
-
-**Livrabile:** DDL registre/ocupare și contract diagnostic. **Acceptare:** aceleași ID-uri din surse diferite se remapează; al doilea transfer pentru subunitate este interzis indiferent de hash; markerul este atomic cu toate gestiunile; al doilea titular nu poate ocupa aceeași gestiune.
+**Pași:** modelează VC_Imports cu unicitate pe subunitate (DC implicit în baza țintă), toate sursele/mapările lotului unic, probleme/conversii și audit. Distinge markerul migrare unică de RequestKey al comenzilor web. ContextLock păstrează titular/sesiune/jeton/reînnoire pentru exclusivitate; document/grup OI și linie rămân identități distincte. **Livrabile:** DDL registre/ocupare și contract diagnostic. **Acceptare:** aceleași ID-uri din surse diferite se remapează; al doilea transfer pentru subunitate este interzis indiferent de hash; markerul este atomic cu toate gestiunile; al doilea titular nu poate ocupa aceeași gestiune.
 
 ### SLICE-VC03-04 — configurare, numerotare și date comune
 
-**Pași:** mapează UNIT/cale/Setari/NR și semnatarii, cu zecimale configurabile pe SubunitId, fără DC global sau Zec diferit implicit pentru fiecare gestiune. Dacă sursele subunității au ZEC diferit, planul consemnează alegerea comună și conversiile. Contoare/reference comune/ACL după contract.
-
-**Livrabile:** maparea configurării și script separat de roluri/date comune dacă necesar. **Acceptare:** două gestiuni cu același număr istoric nu se contopesc; lipsa adresei comune este diagnosticată; importul nu rescrie numele/seria facturilor celorlalte module.
+**Pași:** mapează UNIT/cale/Setari/NR și semnatarii, cu zecimale configurabile pe SubunitId, fără DC global sau Zec diferit implicit pentru fiecare gestiune. Dacă sursele subunității au ZEC diferit, planul consemnează alegerea comună și conversiile. Contoare/reference comune/ACL după contract. **Livrabile:** maparea configurării și script separat de roluri/date comune dacă necesar. **Acceptare:** două gestiuni cu același număr istoric nu se contopesc; lipsa adresei comune este diagnosticată; importul nu rescrie numele/seria facturilor celorlalte module.
 
 ### SLICE-VC03-05 — aplicare, sincronizare și probă MariaDB
 
-**Pași:** preflight, backup verificat, ordine scripturi/upgrade, impact schema sync AVACONT_SURSA→DC și restaurare în caz de DDL parțial. Verifică pe MariaDB de test, prin workflow-ul disponibil.
-
-**Livrabile:** instrucțiuni și rezultate MariaDB pentru INT/scală/overflow, preț >=0, FK, ocupare exclusivă, unicitate migrare/subunitate și tip imuabil. **Acceptare:** upgrade DDL repetat detectat, eroarea nu avansează versiunea; regulile sunt dovedite pe motorul țintă. Acestea sunt verificări MariaDB, nu compatibilitate sau modificare Access.
+**Pași:** preflight, backup verificat, ordine scripturi/upgrade, impact schema sync AVACONT_SURSA→DC și restaurare în caz de DDL parțial. Verifică pe MariaDB de test, prin workflow-ul disponibil. **Livrabile:** instrucțiuni și rezultate MariaDB pentru INT/scală/overflow, preț >=0, FK, ocupare exclusivă, unicitate migrare/subunitate și tip imuabil. **Acceptare:** upgrade DDL repetat detectat, eroarea nu avansează versiunea; regulile sunt dovedite pe motorul țintă. Acestea sunt verificări MariaDB, nu compatibilitate sau modificare Access.
 
 ## Slice VC04 — drepturi și izolare
 
@@ -545,33 +497,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC04-01 — matricea operațiilor VR
 
-**Pași:** mapează roluri comune la citire, nomenclatoare, recepție, consum, retur/storno, OI predare/transfer/casare, MF, alimente, rapoarte/export, import/reconciliere/activare, setări, închidere/redeschidere. Tipul limitează operațiile chiar dacă rolul le permite.
-
-**Livrabile:** matrice operație→rută→rol→tip→stare și SQL granturi pentru utilizator. **Acceptare:** niciun rol nou nu primește implicit toate operațiile; operațiile provin din Roluri_Operatii, nu dintr-un câmp Roluri presupus suficient.
+**Pași:** mapează roluri comune la citire, nomenclatoare, recepție, consum, retur/storno, OI predare/transfer/casare, MF, alimente, rapoarte/export, import/reconciliere/activare, setări, închidere/redeschidere. Tipul limitează operațiile chiar dacă rolul le permite. **Livrabile:** matrice operație→rută→rol→tip→stare și SQL granturi pentru utilizator. **Acceptare:** niciun rol nou nu primește implicit toate operațiile; operațiile provin din Roluri_Operatii, nu dintr-un câmp Roluri presupus suficient.
 
 ### SLICE-VC04-02 — guard și repository cu context verificat
 
-**Pași:** validează DC din sesiune, subunitate/gestiune/an pe server și revizia contextului; repository limitează toate queries. Permisiunile și protecțiile comune pentru scrieri sunt reutilizate; ID-ul trimis singur nu autorizează.
-
-**Livrabile:** guard și contract repository. **Acceptare:** citire/scriere/PDF/export/job pe altă gestiune sunt refuzate; lipsa tabelului drepturilor/eroarea verificării nu deschide accesul.
+**Pași:** validează DC din sesiune, subunitate/gestiune/an pe server și revizia contextului; repository limitează toate queries. Permisiunile și protecțiile comune pentru scrieri sunt reutilizate; ID-ul trimis singur nu autorizează. **Livrabile:** guard și contract repository. **Acceptare:** citire/scriere/PDF/export/job pe altă gestiune sunt refuzate; lipsa tabelului drepturilor/eroarea verificării nu deschide accesul.
 
 ### SLICE-VC04-03 — ACL locale și contul migratorului
 
-**Pași:** aplică D07 pentru restricții locale, fără conturi/parole duplicate; separă privilegii API business, citire rapoarte, migrator și DDL. Migratorul direct MariaDB validează ținta și are numai granturile necesare.
-
-**Livrabile:** ACL și instrucțiuni privilegii/revocare. **Acceptare:** contul de import nu poate modifica arbitrar AVACONT_COMUN sau alte module; ACL absentă are comportament definit și testat, fără copiere implicită a regulii ADE.
+**Pași:** aplică D07 pentru restricții locale, fără conturi/parole duplicate; separă privilegii API business, citire rapoarte, migrator și DDL. Migratorul direct MariaDB validează ținta și are numai granturile necesare. **Livrabile:** ACL și instrucțiuni privilegii/revocare. **Acceptare:** contul de import nu poate modifica arbitrar AVACONT_COMUN sau alte module; ACL absentă are comportament definit și testat, fără copiere implicită a regulii ADE.
 
 ### SLICE-VC04-04 — ocupare exclusivă, cache, drafturi și joburi
 
-**Pași:** ocupare atomică pe DC+subunitate+gestiune pentru un singur utilizator, titular+session+jeton, heartbeat/eliberare/expirare/recuperare. Citește și scrie numai cu ocupare validă, inclusiv rapoarte și joburi. Definește tratamentul taburilor aceluiași utilizator și blocarea cererii vechi după expirare/preluare. Migratorul rezervă toate gestiunile subunității. Cache/drafturi sunt contextualizate, fără TmpFact global.
-
-**Livrabile:** serviciu de ocupare, diagnostic „ocupat”, convenții și invalidări. **Acceptare:** al doilea utilizator nu intră în aceeași gestiune nici pe alt an; gestiuni distincte permit titulari diferiți. Expirarea/preluarea nu permite scrieri ale vechiului titular; închiderea anului folosește aceeași exclusivitate, fără sistem paralel pentru T24.
+**Pași:** ocupare atomică pe DC+subunitate+gestiune pentru un singur utilizator, titular+session+jeton, heartbeat/eliberare/expirare/recuperare. Citește și scrie numai cu ocupare validă, inclusiv rapoarte și joburi. Definește tratamentul taburilor aceluiași utilizator și blocarea cererii vechi după expirare/preluare. Migratorul rezervă toate gestiunile subunității. Cache/drafturi sunt contextualizate, fără TmpFact global. **Livrabile:** serviciu de ocupare, diagnostic „ocupat”, convenții și invalidări. **Acceptare:** al doilea utilizator nu intră în aceeași gestiune nici pe alt an; gestiuni distincte permit titulari diferiți. Expirarea/preluarea nu permite scrieri ale vechiului titular; închiderea anului folosește aceeași exclusivitate, fără sistem paralel pentru T24.
 
 ### SLICE-VC04-05 — probe de acces și audit
 
-**Pași:** fiecare operație permis/refuzat, inclusiv ocupare simultană, alt an în aceeași gestiune, expirare/heartbeat/preluare, apel API/PDF direct, revocare și sesiune veche. Auditul distinge ocupat, refuz, rollback, commit și necunoscut.
-
-**Livrabile:** rezultate fixture/API și instrucțiuni server. **Acceptare:** fiecare refuz așteptat este dovedit fără efecte business; conturile/granturile reale sunt validate separat de mock.
+**Pași:** fiecare operație permis/refuzat, inclusiv ocupare simultană, alt an în aceeași gestiune, expirare/heartbeat/preluare, apel API/PDF direct, revocare și sesiune veche. Auditul distinge ocupat, refuz, rollback, commit și necunoscut. **Livrabile:** rezultate fixture/API și instrucțiuni server. **Acceptare:** fiecare refuz așteptat este dovedit fără efecte business; conturile/granturile reale sunt validate separat de mock.
 
 ## Slice VC05 — VRC.Migrator și reconcilierea importului
 
@@ -579,57 +521,39 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC05-01 — reader și profilare fără scriere
 
-**Pași:** proiect Windows VRC și reader read-only pentru toate sursele incluse în lotul unic, cu resurse eliberate, fără VBA/DBS/clsDatabase sau modificarea Access. Citește câmpurile business necesare și raportează lipsurile; nu construiește compatibilitate cu versiuni ale aplicației vechi. Verifică inventarul complet MF/OI multianual și Materiale/Alimente anual, linked tables și motorul de citire.
-
-**Livrabile:** VRC.Migrator.exe cu Citește și raport profilare. **Acceptare:** hashes/schema/date ale originalelor nu sunt modificate de reader; o bază fără Ver rămâne fără Ver; câmpurile absente sunt raportate diferit de NULL. Doar Access pe 64 de biți (decis 12.10.2026).
+**Pași:** proiect Windows VRC și reader read-only pentru toate sursele incluse în lotul unic, cu resurse eliberate, fără VBA/DBS/clsDatabase sau modificarea Access. Citește câmpurile business necesare și raportează lipsurile; nu construiește compatibilitate cu versiuni ale aplicației vechi. Verifică inventarul complet MF/OI multianual și Materiale/Alimente anual, linked tables și motorul de citire. **Livrabile:** VRC.Migrator.exe cu Citește și raport profilare. **Acceptare:** hashes/schema/date ale originalelor nu sunt modificate de reader; o bază fără Ver rămâne fără Ver; câmpurile absente sunt raportate diferit de NULL. Doar Access pe 64 de biți (decis 12.10.2026).
 
 ### SLICE-VC05-02 — planul și formularul de asociere
 
-**Pași:** manifest al tuturor surselor subunității, DC/subunitate și asocierea fiecărei surse la gestiune/tip/an după organizarea confirmată. Precizie comună aleasă pe subunitate, conversii INT și N01/N02. UI ADE: Citește/Testează/Migrează/Oprește/jurnal; markerul migrare existent blochează definitiv Migrează, chiar pentru un fișier nou. Schimbarea planului înainte de transfer cere retestare.
-
-**Livrabile:** plan complet exportabil și UI cu motive concrete de blocare. **Acceptare:** toate gestiunile/anii intră împreună în singurul lot; o sursă lipsă e diagnosticată înainte de transfer; N01/N02 normalizează totalul în plan/țintă, păstrând originalul fără a scrie în Access. Specificul importat nu se schimbă după populare.
+**Pași:** manifest al tuturor surselor subunității, DC/subunitate și asocierea fiecărei surse la gestiune/tip/an după organizarea confirmată. Precizie comună aleasă pe subunitate, conversii INT și N01/N02. UI ADE: Citește/Testează/Migrează/Oprește/jurnal; markerul migrare existent blochează definitiv Migrează, chiar pentru un fișier nou. Schimbarea planului înainte de transfer cere retestare. **Livrabile:** plan complet exportabil și UI cu motive concrete de blocare. **Acceptare:** toate gestiunile/anii intră împreună în singurul lot; o sursă lipsă e diagnosticată înainte de transfer; N01/N02 normalizează totalul în plan/țintă, păstrând originalul fără a scrie în Access. Specificul importat nu se schimbă după populare.
 
 ### SLICE-VC05-03 — writer atomic și maparea cheilor
 
-**Pași:** preflight/schema/țintă/marker reverificate, rezervare întreagă subunitate, ID generate și remapare surse în ordinea grafului, conversii INT/scară/preț >=0/N01/N02, solduri anuale fără dublare. Tranzacție ori staging cu publicare atomică a **tuturor gestiunilor lotului unic**, fără commit business independent pe gestiune.
-
-**Livrabile:** writer parametrizat și diagnostic transfer unic. **Acceptare:** ID-uri locale remapate fără coliziuni, alte subunități intacte; eroarea în orice gestiune nu publică parțial subunitatea; registrul OI și soldurile nu sunt dublate. Markerul migrare împiedică orice import ulterior. Fără DDL, corecții sursă/comune sau compatibilitate VBA.
+**Pași:** preflight/schema/țintă/marker reverificate, rezervare întreagă subunitate, ID generate și remapare surse în ordinea grafului, conversii INT/scară/preț >=0/N01/N02, solduri anuale fără dublare. Tranzacție ori staging cu publicare atomică a **tuturor gestiunilor lotului unic**, fără commit business independent pe gestiune. **Livrabile:** writer parametrizat și diagnostic transfer unic. **Acceptare:** ID-uri locale remapate fără coliziuni, alte subunități intacte; eroarea în orice gestiune nu publică parțial subunitatea; registrul OI și soldurile nu sunt dublate. Markerul migrare împiedică orice import ulterior. Fără DDL, corecții sursă/comune sau compatibilitate VBA.
 
 ### SLICE-VC05-04 — oprire, jurnal și diagnostic al rezultatului
 
-**Pași:** cancel înainte de commit, rollback explicit pentru lotul complet, COMMIT necunoscut verificat prin markerul DC+subunitate și manifest; progres/sursă/gestiune fără promisiune de commit parțial. Logurile sunt pe DC/subunitate/lot și UI se închide numai după eliberarea resurselor/ocupării.
-
-**Livrabile:** stări UI/jurnal și instrument read-only de diagnostic. **Acceptare:** oprirea nu produce migrare parțială; COMMIT trimis nu este pretins anulat; răspunsul pierdut cere verificarea transferului existent, nu inserarea din nou. Un lot confirmat închide definitiv migrarea acelei subunități.
+**Pași:** cancel înainte de commit, rollback explicit pentru lotul complet, COMMIT necunoscut verificat prin markerul DC+subunitate și manifest; progres/sursă/gestiune fără promisiune de commit parțial. Logurile sunt pe DC/subunitate/lot și UI se închide numai după eliberarea resurselor/ocupării. **Livrabile:** stări UI/jurnal și instrument read-only de diagnostic. **Acceptare:** oprirea nu produce migrare parțială; COMMIT trimis nu este pretins anulat; răspunsul pierdut cere verificarea transferului existent, nu inserarea din nou. Un lot confirmat închide definitiv migrarea acelei subunități.
 
 ### SLICE-VC05-05 — reconciliere și probe complete de migrare
 
-**Pași:** compară sursa cu ținta după transformările aprobate, INT/scară, zecimale pe subunitate, TVA per rând și N01/N02; chei/rânduri/NULL/FK/solduri. Verifică refuzul oricărei noi migrări după markerul unic, chiar cu fișier redenumit/modificat ori alt an. Testează întreruperea lotului, proveniența originalelor și o diferență introdusă deliberat. Nu implementează flux de reimport/compatibilitate.
-
-**Livrabile:** raport pe subunitate/lot/sursă/gestiune, README VRC și pachet de probă. **Acceptare:** zero pierderi/diferențe neexplicate după regulile aprobate, N01/N02 vizibile în proveniență și nicio gestiune publicată separat; VBA nu mai este folosită după transfer. Validarea rapoartelor web se închide în VC08-05.
+**Pași:** compară sursa cu ținta după transformările aprobate, INT/scară, zecimale pe subunitate, TVA per rând și N01/N02; chei/rânduri/NULL/FK/solduri. Verifică refuzul oricărei noi migrări după markerul unic, chiar cu fișier redenumit/modificat ori alt an. Testează întreruperea lotului, proveniența originalelor și o diferență introdusă deliberat. Nu implementează flux de reimport/compatibilitate. **Livrabile:** raport pe subunitate/lot/sursă/gestiune, README VRC și pachet de probă. **Acceptare:** zero pierderi/diferențe neexplicate după regulile aprobate, N01/N02 vizibile în proveniență și nicio gestiune publicată separat; VBA nu mai este folosită după transfer. Validarea rapoartelor web se închide în VC08-05.
 
 ### SLICE-VC05-06 — parteneri din ANAF pentru furnizorii fără partener
 
-**Pași:** pentru fiecare cod fiscal din Access fără partener cu același cod fiscal în `Parteneri` din DC, cerere ANAF (v9), apoi fereastra «Parteneri ANAF»: denumire și adresă de la ANAF, bifarea per furnizor a sursei-sector (una sau mai multe). Un cod fiscal = un partener în DC; `IdUnitate` = cea mai mică unitate dintre SS bifate; `CodPartener` = următorul număr liber din acel SS. Furnizorii fără cod fiscal sau negăsiți rămân fără partener.
-
-**Livrabile:** `VrcAnaf`, fereastra de parteneri, `KBotDataView.HeaderClick` (SLICE-0008-03). **Acceptare:** partenerii creați apar în `Parteneri` cu datele ANAF, iar NIR-urile lor se leagă de ei.
+**Pași:** pentru fiecare cod fiscal din Access fără partener cu același cod fiscal în `Parteneri` din DC, cerere ANAF (v9), apoi fereastra «Parteneri ANAF»: denumire și adresă de la ANAF, bifarea per furnizor a sursei-sector (una sau mai multe). Un cod fiscal = un partener în DC; `IdUnitate` = cea mai mică unitate dintre SS bifate; `CodPartener` = următorul număr liber din acel SS. Furnizorii fără cod fiscal sau negăsiți rămân fără partener. **Livrabile:** `VrcAnaf`, fereastra de parteneri, `KBotDataView.HeaderClick` (SLICE-0008-03). **Acceptare:** partenerii creați apar în `Parteneri` cu datele ANAF, iar NIR-urile lor se leagă de ei.
 
 ### SLICE-VC05-07 — partenerii din ANAF în aceeași tranzacție cu transferul
 
-**Pași:** fereastra doar pregătește lista; «Migrează» o scrie în `Parteneri` pe tranzacția transferului, înainte de potrivirea NIR-urilor cu partenerii.
-
-**Livrabile:** `VrcPartnerStore.AddInTransaction`, secțiunea de raport. **Acceptare:** un transfer eșuat, oprit sau cu diferențe de reconciliere nu lasă niciun partener nou.
+**Pași:** fereastra doar pregătește lista; «Migrează» o scrie în `Parteneri` pe tranzacția transferului, înainte de potrivirea NIR-urilor cu partenerii. **Livrabile:** `VrcPartnerStore.AddInTransaction`, secțiunea de raport. **Acceptare:** un transfer eșuat, oprit sau cu diferențe de reconciliere nu lasă niciun partener nou.
 
 ### SLICE-VC05-08 — coloana `Parteneri.Provenienta`
 
-**Pași:** coloană nulabilă: `MIGRARE_VERCON`, `manual`, `avacont`; gol = migrare_kbot. DDL întâi pe `AVACONT_SURSA` și sincronizare, apoi codul rutelor.
-
-**Livrabile:** `sql/Parteneri_Provenienta.sql`, rutele `/api/parteneri/syncdb`, `/upsert` și `parteneri_edit.py`, VRC.Migrator. **Acceptare:** rândurile existente nu se schimbă; fiecare cale de inserare scrie valoarea ei.
+**Pași:** coloană nulabilă: `MIGRARE_VERCON`, `manual`, `avacont`; gol = migrare_kbot. DDL întâi pe `AVACONT_SURSA` și sincronizare, apoi codul rutelor. **Livrabile:** `sql/Parteneri_Provenienta.sql`, rutele `/api/parteneri/syncdb`, `/upsert` și `parteneri_edit.py`, VRC.Migrator. **Acceptare:** rândurile existente nu se schimbă; fiecare cale de inserare scrie valoarea ei.
 
 ### SLICE-VC05-09 — rezultatul transferului și aranjarea butoanelor
 
-**Pași:** verde închis la succes, portocaliu la rollback, roșu la eroare critică; propoziția rezultatului în prima linie a raportului; «Citește bifatele» sub «Alege folder».
-
-**Livrabile:** `VrcMigratorForm`, `VrcRunResult.Verdict`. **Acceptare:** rezultatul se deosebește dintr-o privire, fără a citi tot raportul.
+**Pași:** verde închis la succes, portocaliu la rollback, roșu la eroare critică; propoziția rezultatului în prima linie a raportului; «Citește bifatele» sub «Alege folder». **Livrabile:** `VrcMigratorForm`, `VrcRunResult.Verdict`. **Acceptare:** rezultatul se deosebește dintr-o privire, fără a citi tot raportul.
 
 ## Slice VC06 — nomenclatoare și documente comune
 
@@ -637,33 +561,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC06-01 — nomenclatoare și configurarea gestiunii
 
-**Pași:** produse, variante, categorii/conturi Masini, furnizori, clienți/deținători, UM/CPV/TVA/comisii, gestionari și setări după mapare. Inactivare în locul pierderii istoricului, revizie și validare comună, numere/code texte păstrate.
-
-**Livrabile:** API/ecrane grilă/selectoare și ajutor. **Acceptare:** schimbarea nomenclatorului nu rescrie cantitatea/prețul/emitentul documentului istoric; variantele și produsele sunt identități separate; aceeași denumire din altă gestiune nu este deduplicată automat.
+**Pași:** produse, variante, categorii/conturi Masini, furnizori, clienți/deținători, UM/CPV/TVA/comisii, gestionari și setări după mapare. Inactivare în locul pierderii istoricului, revizie și validare comună, numere/code texte păstrate. **Livrabile:** API/ecrane grilă/selectoare și ajutor. **Acceptare:** schimbarea nomenclatorului nu rescrie cantitatea/prețul/emitentul documentului istoric; variantele și produsele sunt identități separate; aceeași denumire din altă gestiune nu este deduplicată automat.
 
 ### SLICE-VC06-02 — FC/NIR, inclusiv extensia MF
 
-**Pași:** selectare/document nou/editare, furnizor/comisie, toate liniile și TVA individuală, total declarat/calculat după N01/N02, preț >=0, INT/scară și zecimale ale subunității. MF: COD/inventar/data/durate/ProduseM; toate efectele în tranzacție cu ocupare exclusivă validă.
-
-**Livrabile:** recepție completă și listare NIR salvat. **Acceptare:** antet 0 sau abs(H−S)>1 → S; exact 1 și antet nenul → H; TVA mixtă/zero/already-included nu este dublată. Preț negativ/document fără linii refuzat; rollback la ultima linie/MF. Numărul de zecimale nu este fixat la 2.
+**Pași:** selectare/document nou/editare, furnizor/comisie, toate liniile și TVA individuală, total declarat/calculat după N01/N02, preț >=0, INT/scară și zecimale ale subunității. MF: COD/inventar/data/durate/ProduseM; toate efectele în tranzacție cu ocupare exclusivă validă. **Livrabile:** recepție completă și listare NIR salvat. **Acceptare:** antet 0 sau abs(H−S)>1 → S; exact 1 și antet nenul → H; TVA mixtă/zero/already-included nu este dublată. Preț negativ/document fără linii refuzat; rollback la ultima linie/MF. Numărul de zecimale nu este fixat la 2.
 
 ### SLICE-VC06-03 — BC și controlul disponibilului
 
-**Pași:** alegere produse/variante la dată, draft curent exclus din istoricul aceluiași document, calcul disponibil, revizie, lock și validare la salvare, editare/anulare în limitele D05. Destinat gestiunilor fără MF/OI, inclusiv circuitului Alimente.
-
-**Livrabile:** BC/stoc/operații atomice. **Acceptare:** al doilea utilizator e blocat înainte de acces, inclusiv pe alt an; titularul validează disponibilul la precizia subunității și aplică N02/INT/preț >=0. La precizie 4, 1,0040 nu este permis pe 1,0000; storno ulterior nu schimbă disponibilul istoric.
+**Pași:** alegere produse/variante la dată, draft curent exclus din istoricul aceluiași document, calcul disponibil, revizie, lock și validare la salvare, editare/anulare în limitele D05. Destinat gestiunilor fără MF/OI, inclusiv circuitului Alimente. **Livrabile:** BC/stoc/operații atomice. **Acceptare:** al doilea utilizator e blocat înainte de acces, inclusiv pe alt an; titularul validează disponibilul la precizia subunității și aplică N02/INT/preț >=0. La precizie 4, 1,0040 nu este permis pe 1,0000; storno ulterior nu schimbă disponibilul istoric.
 
 ### SLICE-VC06-04 — BR și FCS
 
-**Pași:** documente referite/cantități eligibile, preț document/preț variantă, antet/linii/legături atomice, tratament retur/storno parțial și multiplu. Decide efectul la dată și capabilitățile pe MF/OI după D04/D10.
-
-**Livrabile:** retur/storno și rapoarte. **Acceptare:** cantitate peste permis sau alt context refuzat; preț >=0 inclusiv storno, fracțiunea existentă este reprezentată pe INT/scară și nu inventată din NULL/Long. Semnul reversării aparține mișcării; eroarea nu lasă document parțial.
+**Pași:** documente referite/cantități eligibile, preț document/preț variantă, antet/linii/legături atomice, tratament retur/storno parțial și multiplu. Decide efectul la dată și capabilitățile pe MF/OI după D04/D10. **Livrabile:** retur/storno și rapoarte. **Acceptare:** cantitate peste permis sau alt context refuzat; preț >=0 inclusiv storno, fracțiunea existentă este reprezentată pe INT/scară și nu inventată din NULL/Long. Semnul reversării aparține mișcării; eroarea nu lasă document parțial.
 
 ### SLICE-VC06-05 — editare, anulare și traseul documentului
 
-**Pași:** stări/revizii/listare/anulare, documente legate și regula anului închis; verifică efectul editării/ștergerii asupra LegBCLA, OI și MF. Auditul arată valorile înainte/după și motivul fără a distribui date personale în loggerul general.
-
-**Livrabile:** operații de corecție și istoric document. **Acceptare:** ștergerea BC legat nu lasă lista fără relație; revizie veche produce conflict; document închis nu este editabil prin apel API direct. NIR/BC/retur/storno au același protocol și succes numai după commit.
+**Pași:** stări/revizii/listare/anulare, documente legate și regula anului închis; verifică efectul editării/ștergerii asupra LegBCLA, OI și MF. Auditul arată valorile înainte/după și motivul fără a distribui date personale în loggerul general. **Livrabile:** operații de corecție și istoric document. **Acceptare:** ștergerea BC legat nu lasă lista fără relație; revizie veche produce conflict; document închis nu este editabil prin apel API direct. NIR/BC/retur/storno au același protocol și succes numai după commit.
 
 ### SLICE-VC06-06 — facturi comune, corecții NIR și schemă unică
 
@@ -681,33 +595,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC07-01 — ListaAlimente și rețetar
 
-**Pași:** LABC/ListaAlimente, mese MicDejun/Dejun/Cina, porții/beneficiari/feluri, rețetar, costuri și consum asociat. BC se creează separat. O listă are mai multe BC-uri, afișate într-un DGV identic vizual cu NIR: un rând per BC, valoare pe rând, TOTAL BC în footer, valoare listă și diferență față de suma BC-urilor. Adaugă rând din footer deschide popupul cu arbore de bonuri din gestiunea Alimente curentă neasociate altei liste; alegerea adaugă, nu înlocuiește setul. Fără duplicate; ⋮ scoate numai asocierea din draft. Salvarea antetului/meselor/întregului set LegBCLA este atomică, cu revalidarea fiecărui BC; nu generează/resalvează bonuri și nu repetă consumul. DGV-uri NIR compacte pentru rezumate și feluri, fără padding mare/carduri în celule și fără Alimente necesare. Arborele listelor în dreapta, formatat ca NIR/BC/BP, se ascunde în editor. Vezi FLUXURI_UI, corecțiile din 12.10.2026 revizia 2; aliniază cardinalitatea țintă VC03-02 înainte de implementare.
-
-**Livrabile:** flux complet listă nouă/editare/listare/legare/dezlegare autorizată. **Acceptare:** 127 liste istorice Alimente din profilul DETECTIE sunt păstrate și reconciliate când se folosește același snapshot; o eroare între listă și bon nu lasă legături parțiale. Se testează masă absentă/porții 0/NULL și schimbare rețetă fără recalcul tacit al istoricului.
+**Pași:** LABC/ListaAlimente, mese MicDejun/Dejun/Cina, porții/beneficiari/feluri, rețetar, costuri și consum asociat. BC se creează separat. O listă are mai multe BC-uri, afișate într-un DGV identic vizual cu NIR: un rând per BC, valoare pe rând, TOTAL BC în footer, valoare listă și diferență față de suma BC-urilor. Adaugă rând din footer deschide popupul cu arbore de bonuri din gestiunea Alimente curentă neasociate altei liste; alegerea adaugă, nu înlocuiește setul. Fără duplicate; ⋮ scoate numai asocierea din draft. Salvarea antetului/meselor/întregului set LegBCLA este atomică, cu revalidarea fiecărui BC; nu generează/resalvează bonuri și nu repetă consumul. DGV-uri NIR compacte pentru rezumate și feluri, fără padding mare/carduri în celule și fără Alimente necesare. Arborele listelor în dreapta, formatat ca NIR/BC/BP, se ascunde în editor. Vezi FLUXURI_UI, corecțiile din 12.10.2026 revizia 2; aliniază cardinalitatea țintă VC03-02 înainte de implementare. **Livrabile:** flux complet listă nouă/editare/listare/legare/dezlegare autorizată. **Acceptare:** 127 liste istorice Alimente din profilul DETECTIE sunt păstrate și reconciliate când se folosește același snapshot; o eroare între listă și bon nu lasă legături parțiale. Se testează masă absentă/porții 0/NULL și schimbare rețetă fără recalcul tacit al istoricului.
 
 ### SLICE-VC07-02 — OI predare și registrul deținătorului
 
-**Pași:** predare la deținător, legătura consum/predare/registru, cod inventar după tip; identitatea documentului și liniilor și istoricul la dată. Aceleași machete și pentru MF, cu capabilități distincte.
-
-**Livrabile:** OI_Predare și fișa deținător/produs. **Acceptare:** predarea scade stocul de magazie și crește deținerea fără dublarea consumului prin însumarea registrelor; IDBP repetat între linii se importă și se operează corect; altă gestiune este refuzată.
+**Pași:** predare la deținător, legătura consum/predare/registru, cod inventar după tip; identitatea documentului și liniilor și istoricul la dată. Aceleași machete și pentru MF, cu capabilități distincte. **Livrabile:** OI_Predare și fișa deținător/produs. **Acceptare:** predarea scade stocul de magazie și crește deținerea fără dublarea consumului prin însumarea registrelor; IDBP repetat între linii se importă și se operează corect; altă gestiune este refuzată.
 
 ### SLICE-VC07-03 — OI transfer și casare
 
-**Pași:** vechi/nou deținător, document/linii/registru, minus+plus atomice la transfer, casare și sold eligibil. Date capete interval, stare an și revizie; nu confunda IDBC OI cu BC.IdBonConsum.
-
-**Livrabile:** OI_Transfer/OI_Casare și documente listabile. **Acceptare:** transfer net zero, solduri corecte; casarea 2×100 scade 2 bucăți/200 lei, inclusiv capetele intervalului. Prețul rămâne pozitiv/zero și orice preț negativ e refuzat; semnele mișcării nu schimbă această invariantă. Titular exclusiv și cantitate eligibilă reverificate.
+**Pași:** vechi/nou deținător, document/linii/registru, minus+plus atomice la transfer, casare și sold eligibil. Date capete interval, stare an și revizie; nu confunda IDBC OI cu BC.IdBonConsum. **Livrabile:** OI_Transfer/OI_Casare și documente listabile. **Acceptare:** transfer net zero, solduri corecte; casarea 2×100 scade 2 bucăți/200 lei, inclusiv capetele intervalului. Prețul rămâne pozitiv/zero și orice preț negativ e refuzat; semnele mișcării nu schimbă această invariantă. Titular exclusiv și cantitate eligibilă reverificate.
 
 ### SLICE-VC07-04 — evidența MF și continuitatea activului
 
-**Pași:** ProduseM, cod inventar, dată intrare, DNF/DF/valoare lunară, asocierea celor două câmpuri istorice ValoareLuna/ValoareLunara; istoric schimbări, deținător și casare. Nu suprascrie datele anilor închiși prin modificarea variantei curente.
-
-**Livrabile:** evidență MF, extensii FC și documente OI. **Acceptare:** activul păstrează identitatea în istoricul multianual unic, fără copiere/reimport pe an; datele amortizării sunt diagnosticate și valorile codificate INT/scară. Cele 12 rânduri ProduseM observate nu sunt confundate cu intrările/ieșirile.
+**Pași:** ProduseM, cod inventar, dată intrare, DNF/DF/valoare lunară, asocierea celor două câmpuri istorice ValoareLuna/ValoareLunara; istoric schimbări, deținător și casare. Nu suprascrie datele anilor închiși prin modificarea variantei curente. **Livrabile:** evidență MF, extensii FC și documente OI. **Acceptare:** activul păstrează identitatea în istoricul multianual unic, fără copiere/reimport pe an; datele amortizării sunt diagnosticate și valorile codificate INT/scară. Cele 12 rânduri ProduseM observate nu sunt confundate cu intrările/ieșirile.
 
 ### SLICE-VC07-05 — verificarea end-to-end pe tipuri
 
-**Pași:** recepție→consum/listă ori predare→transfer/casare→retur/storno eligibil→raport, pentru fiecare tip și două gestiuni de același tip. Rulează și scenarii de rollback la actualizarea registrelor, nu doar API de antet.
-
-**Livrabile:** matrice flux/rezultat și ajutor pentru specific. **Acceptare:** niciun efect dublat între stoc/OI/MF/Alimente; meniurile corespund tipului și API refuză funcțiile străine; scenariile fără date reale sunt marcate sintetice, nu paritate pe producție.
+**Pași:** recepție→consum/listă ori predare→transfer/casare→retur/storno eligibil→raport, pentru fiecare tip și două gestiuni de același tip. Rulează și scenarii de rollback la actualizarea registrelor, nu doar API de antet. **Livrabile:** matrice flux/rezultat și ajutor pentru specific. **Acceptare:** niciun efect dublat între stoc/OI/MF/Alimente; meniurile corespund tipului și API refuză funcțiile străine; scenariile fără date reale sunt marcate sintetice, nu paritate pe producție.
 
 ## Slice VC08 — calcule, rapoarte și închidere an
 
@@ -715,35 +619,25 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC08-01 — motorul stocului și balanțelor
 
-**Pași:** implementare fără Forms/TempVars, filtre context pe toate ramurile, sold la dată/interval, produs/variantă/furnizor/categorie și disponibil draft. Corectează explicit N07–N09 în comparația etalon.
-
-**Livrabile:** servicii de stoc, fișă și balanță cu contract comun UI/validare/raport. **Acceptare:** SI+rulaje=SF pe fiecare variantă și deținător unde aplicabil; mutarea între furnizori/produse resetează soldul corect; schimbarea filtrelor nu scoate mișcări necesare soldului inițial. Egalitatea generală nu maschează diferențe locale.
+**Pași:** implementare fără Forms/TempVars, filtre context pe toate ramurile, sold la dată/interval, produs/variantă/furnizor/categorie și disponibil draft. Corectează explicit N07–N09 în comparația etalon. **Livrabile:** servicii de stoc, fișă și balanță cu contract comun UI/validare/raport. **Acceptare:** SI+rulaje=SF pe fiecare variantă și deținător unde aplicabil; mutarea între furnizori/produse resetează soldul corect; schimbarea filtrelor nu scoate mișcări necesare soldului inițial. Egalitatea generală nu maschează diferențe locale.
 
 ### SLICE-VC08-02 — motorul amortizării
 
-**Pași:** implementează calendar/durate/rest ultima lună/DF conform contractului, rolul ValoareLuna/ValoareLunara, efectul datei intrării/predării/casării. Detectează multiplicarea prin JOIN când activul are mai multe intrări/predări.
-
-**Livrabile:** amortizare reproductibilă la dată, fără modificarea istoricului. **Acceptare:** ultima lună închide restul conform regulii, durata 0/NULL nu provoacă divizare invalidă, transferul nu resetează arbitrar amortizarea; rezultatele pe activ sunt comparate, nu doar totalul MF.
+**Pași:** implementează calendar/durate/rest ultima lună/DF conform contractului, rolul ValoareLuna/ValoareLunara, efectul datei intrării/predării/casării. Detectează multiplicarea prin JOIN când activul are mai multe intrări/predări. **Livrabile:** amortizare reproductibilă la dată, fără modificarea istoricului. **Acceptare:** ultima lună închide restul conform regulii, durata 0/NULL nu provoacă divizare invalidă, transferul nu resetează arbitrar amortizarea; rezultatele pe activ sunt comparate, nu doar totalul MF.
 
 ### SLICE-VC08-03 — catalogul și generarea tuturor rapoartelor incluse
 
-**Pași:** aplică întâi excluderile confirmate asupra inventarului de 61 rapoarte; cele care folosesc Coduri/e-Factura nu se portează și nu se investighează suplimentar. Pentru cele incluse, mapează comun/specific/subreport, MODEL/TIP/query/parametri/câmpuri/sortare/grupare/totaluri și schițele VC00-04. PDF/listare/XLS au precizia subunității și valori INT decodificate după contract.
-
-**Livrabile:** catalog RAPOARTE, generatoare și exemple verificate vizual, cu drepturi server. **Acceptare:** numere/rânduri/totaluri corecte, fără coloane lipsă sau text tăiat; rapoartele OI/MF/Alimente nu apar la alt tip. Funcția comună nu presupune că toate variantele de balanță sunt interschimbabile.
+**Pași:** aplică întâi excluderile confirmate asupra inventarului de 61 rapoarte; cele care folosesc Coduri/e-Factura nu se portează și nu se investighează suplimentar. Pentru cele incluse, mapează comun/specific/subreport, MODEL/TIP/query/parametri/câmpuri/sortare/grupare/totaluri și schițele VC00-04. PDF/listare/XLS au precizia subunității și valori INT decodificate după contract. **Livrabile:** catalog RAPOARTE, generatoare și exemple verificate vizual, cu drepturi server. **Acceptare:** numere/rânduri/totaluri corecte, fără coloane lipsă sau text tăiat; rapoartele OI/MF/Alimente nu apar la alt tip. Funcția comună nu presupune că toate variantele de balanță sunt interschimbabile.
 
 **Acoperire minimă de verificat:** NIR/NIR_Storno/NIR_SFP; Bon_Consum/BonRetur; fișe magazie/produs/furnizor; balanțe produse și variante BF/AFB; centralizatoare BC/conturi/furnizori/consumuri; inventare; toate familiile OI_Bon/centralizator/fișă/registru/inventar; MF_Bon/Balanta/inventar/Amortizare; ListaAlimente2015 cu subreports mese; comenzi și referate/plan achiziții/situații intrări/stoc final. Lista exactă și eventualele excluderi justificate sunt în VC00-04, nu se limitează la această enumerare pe familii.
 
 ### SLICE-VC08-04 — închiderea și redeschiderea anului
 
-**Pași:** folosește ocuparea exclusivă deja implementată în VC04-04; validează titularul/anul/documentele și soldurile. Materiale/Alimente: închidere și solduri de deschidere ale exercițiului următor. MF/OI: păstrează baza/evidența multianuală, cu calcul/snapshot la dată fără copierea tuturor activelor într-o altă bază. Redeschiderea și efectele ulterioare urmează D05.
-
-**Livrabile:** IA web/AnnualClosings/raport înainte-după. **Acceptare:** al doilea operator e refuzat prin T12; nu se codează mecanism paralel de închidere concurentă. Eroarea/cererea repetată a titularului nu dublează reportarea, soldurile se reconciliază și MF/OI rămân istoric unic. Niciun import Access ulterior nu este necesar.
+**Pași:** folosește ocuparea exclusivă deja implementată în VC04-04; validează titularul/anul/documentele și soldurile. Materiale/Alimente: închidere și solduri de deschidere ale exercițiului următor. MF/OI: păstrează baza/evidența multianuală, cu calcul/snapshot la dată fără copierea tuturor activelor într-o altă bază. Redeschiderea și efectele ulterioare urmează D05. **Livrabile:** IA web/AnnualClosings/raport înainte-după. **Acceptare:** al doilea operator e refuzat prin T12; nu se codează mecanism paralel de închidere concurentă. Eroarea/cererea repetată a titularului nu dublează reportarea, soldurile se reconciliază și MF/OI rămân istoric unic. Niciun import Access ulterior nu este necesar.
 
 ### SLICE-VC08-05 — comparator Access/import/web
 
-**Pași:** compară trei straturi: sursa stocată, ținta importată, rezultatul calculat web. Utilizează documente reale pe copii și cazurile sintetice, toleranțe pe câmp/raport, inclusiv NULL și limite interval; urmărește fiecare diferență intenționată a motorului.
-
-**Livrabile:** raport paritate pe gestiune/an/document/produs/deținător/activ/raport, cazuri reproduse și decizii. **Acceptare:** zero diferențe neexplicate și corecțiile cunoscute sunt demonstrate; raportul care moștenește defectul Access nu este acceptat doar pentru „egalitate”. Paritatea pe exemple nu este etichetată audit legal/fiscal complet.
+**Pași:** compară trei straturi: sursa stocată, ținta importată, rezultatul calculat web. Utilizează documente reale pe copii și cazurile sintetice, toleranțe pe câmp/raport, inclusiv NULL și limite interval; urmărește fiecare diferență intenționată a motorului. **Livrabile:** raport paritate pe gestiune/an/document/produs/deținător/activ/raport, cazuri reproduse și decizii. **Acceptare:** zero diferențe neexplicate și corecțiile cunoscute sunt demonstrate; raportul care moștenește defectul Access nu este acceptat doar pentru „egalitate”. Paritatea pe exemple nu este etichetată audit legal/fiscal complet.
 
 ## Slice VC09 — integrare finală, basculare și predare
 
@@ -751,33 +645,23 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC09-01 — verificarea scopului și funcțiilor auxiliare incluse
 
-**Pași:** verifică numai funcțiile auxiliare incluse pentru gestiune: exporturi/șabloane/fișiere rapoarte și ajutor. Confirmă că nu există rute/readere/writere/UI pentru e-Factura, Coduri, DBS/clsDatabase și compatibilitate VBA. Nu inventariază în detaliu, recuperează ori integrează EF/EFS/EFT/XML/tokenuri. Integrarea Kbot.Efactura rămâne în afara taskului actual.
-
-**Livrabile:** matrice scop/excluderi și funcțiile auxiliare de gestiune incluse. **Acceptare:** excluderile nu au cod/date de migrare și nu blochează predarea; ajutorul/rapoartele folosite sunt disponibile. Nu se declară e-Factura implementată în această portare.
+**Pași:** verifică numai funcțiile auxiliare incluse pentru gestiune: exporturi/șabloane/fișiere rapoarte și ajutor. Confirmă că nu există rute/readere/writere/UI pentru e-Factura, Coduri, DBS/clsDatabase și compatibilitate VBA. Nu inventariază în detaliu, recuperează ori integrează EF/EFS/EFT/XML/tokenuri. Integrarea Kbot.Efactura rămâne în afara taskului actual. **Livrabile:** matrice scop/excluderi și funcțiile auxiliare de gestiune incluse. **Acceptare:** excluderile nu au cod/date de migrare și nu blochează predarea; ajutorul/rapoartele folosite sunt disponibile. Nu se declară e-Factura implementată în această portare.
 
 ### SLICE-VC09-02 — backup, restaurare și operare
 
-**Pași:** plan backup DC+config comun relevant+registre+documente, înainte de import/DDL/închidere; probă de restaurare într-o țintă separată și verificare integritate/hashuri. Retenție/acces/monitorizare operațională după infrastructura existentă.
-
-**Livrabile:** procedură de backup/restaurare și rezultate reale. **Acceptare:** restaurarea reconstituie relații/solduri/registre și documente, nu doar un fișier prezent; logurile și sursele rămân protejate; nu se presupune consistența copiei DB în timpul scrierii fără metoda potrivită.
+**Pași:** plan backup DC+config comun relevant+registre+documente, înainte de import/DDL/închidere; probă de restaurare într-o țintă separată și verificare integritate/hashuri. Retenție/acces/monitorizare operațională după infrastructura existentă. **Livrabile:** procedură de backup/restaurare și rezultate reale. **Acceptare:** restaurarea reconstituie relații/solduri/registre și documente, nu doar un fișier prezent; logurile și sursele rămân protejate; nu se presupune consistența copiei DB în timpul scrierii fără metoda potrivită.
 
 ### SLICE-VC09-03 — performanță și regresie
 
-**Pași:** date/volum reprezentativ, paginare/queries/indexuri/rapoarte; ocupare exclusivă la același context și utilizatori simultani numai pe gestiuni distincte. Probe Linux/MariaDB/portal/ADE/schema sync/publicare, fără compatibilitate VBA.
-
-**Livrabile:** măsurători și corecții motivate, matrice regresie. **Acceptare:** latențe/praguri sunt stabilite din măsurători și necesitățile utilizării; raport mare nu blochează inutil toate gestiunile; fără schimbări arbitrare ale workerilor/infrastructurii live.
+**Pași:** date/volum reprezentativ, paginare/queries/indexuri/rapoarte; ocupare exclusivă la același context și utilizatori simultani numai pe gestiuni distincte. Probe Linux/MariaDB/portal/ADE/schema sync/publicare, fără compatibilitate VBA. **Livrabile:** măsurători și corecții motivate, matrice regresie. **Acceptare:** latențe/praguri sunt stabilite din măsurători și necesitățile utilizării; raport mare nu blochează inutil toate gestiunile; fără schimbări arbitrare ale workerilor/infrastructurii live.
 
 ### SLICE-VC09-04 — migrarea finală și bascularea
 
-**Pași:** probă înaintea basculării pe țintă de test separată, rezolvarea problemelor, oprire scrieri VBA și snapshot final complet pentru subunitate. Testează și transferă **o singură dată toate gestiunile/anii**, reconciliază, înregistrează markerul unic și activează web. Din momentul migrării VBA nu mai este folosită; problemele ulterioare se rezolvă în web/backup, fără reimport sau revenire la exploatare VBA.
-
-**Livrabile:** checklist și rezultat pe DC+subunitate cu toate gestiunile/sursele. **Acceptare:** nu există funcționare paralelă, import suplimentar sau compatibilitate cu VBA; markerul unic blochează o nouă migrare. Restaurarea web păstrează markerul/proveniența și nu pierde documentele noi; sursele rămân arhivă read-only, nu aplicație operațională.
+**Pași:** probă înaintea basculării pe țintă de test separată, rezolvarea problemelor, oprire scrieri VBA și snapshot final complet pentru subunitate. Testează și transferă **o singură dată toate gestiunile/anii**, reconciliază, înregistrează markerul unic și activează web. Din momentul migrării VBA nu mai este folosită; problemele ulterioare se rezolvă în web/backup, fără reimport sau revenire la exploatare VBA. **Livrabile:** checklist și rezultat pe DC+subunitate cu toate gestiunile/sursele. **Acceptare:** nu există funcționare paralelă, import suplimentar sau compatibilitate cu VBA; markerul unic blochează o nouă migrare. Restaurarea web păstrează markerul/proveniența și nu pierde documentele noi; sursele rămân arhivă read-only, nu aplicație operațională.
 
 ### SLICE-VC09-05 — predarea și acceptarea
 
-**Pași:** manual utilizare pe tip, README VRC.Migrator, SQL/publicare/backup, status și worklogs, exemple/cazuri de eroare, inventarul funcțiilor incluse/reportate și deciziile. Închide acceptarea cu rezultatele efective ale utilizatorului.
-
-**Livrabile:** pachet complet reviewabil și matrice criteriu→dovadă→stare. **Acceptare:** toate gestiunile incluse au migrare reconciliată, funcții/rapoarte validate și drepturi verificate; limitele rămase sunt exacte. Cod scris, build, test local, publicare, DDL server și acceptare utilizator sunt consemnate separat.
+**Pași:** manual utilizare pe tip, README VRC.Migrator, SQL/publicare/backup, status și worklogs, exemple/cazuri de eroare, inventarul funcțiilor incluse/reportate și deciziile. Închide acceptarea cu rezultatele efective ale utilizatorului. **Livrabile:** pachet complet reviewabil și matrice criteriu→dovadă→stare. **Acceptare:** toate gestiunile incluse au migrare reconciliată, funcții/rapoarte validate și drepturi verificate; limitele rămase sunt exacte. Cod scris, build, test local, publicare, DDL server și acceptare utilizator sunt consemnate separat.
 
 ## Probe obligatorii și trasabilitate
 

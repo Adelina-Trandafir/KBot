@@ -39,6 +39,9 @@ Partial Class MainForm
         Dim rbAudit As KBotRibbonButton = New KBotRibbonButton()
         Dim rbVizite As KBotRibbonButton = New KBotRibbonButton()
         Dim rbServer As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbIstoricMd As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbSchemaGraf As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbSchemaIstoric As KBotRibbonButton = New KBotRibbonButton()
         Dim rbCopii As KBotRibbonButton = New KBotRibbonButton()
         Dim rbCopiiLocale As KBotRibbonButton = New KBotRibbonButton()
         Dim rbPublicare As KBotRibbonButton = New KBotRibbonButton()
@@ -51,6 +54,7 @@ Partial Class MainForm
         Dim rgCereri As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgJurnale As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgServer As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgProiect As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgPeServer As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgPeCalculator As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgFisiere As KBotRibbonGroup = New KBotRibbonGroup()
@@ -94,6 +98,9 @@ Partial Class MainForm
         viewVerconReports = New VerconReportsView()
         viewDemo = New DemoCloneView()
         viewLocalBackup = New LocalBackupView()
+        viewMdHistory = New MdHistoryView()
+        viewSchemaGraph = New SchemaGraphView()
+        viewSchemaHistory = New SchemaHistoryView()
         CType(navMode, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
@@ -131,6 +138,7 @@ Partial Class MainForm
         capBar.Name = "capBar"
         capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
+        capBar.OnCloseMinimizeToTray = True
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
         capBar.ShowThemeButton = False
@@ -253,8 +261,28 @@ Partial Class MainForm
         rbServer.ToolTipText = "Disc, memorie, certificat, servicii."
         rgServer.Buttons.Add(rbServer)
         rgServer.Text = "Server"
+        rbIstoricMd.Image = AdminIcons.Get("md_history")
+        rbIstoricMd.Key = "istoric-md"
+        rbIstoricMd.Text = "Istoric md"
+        rbIstoricMd.ToolTipHeader = "Istoric md"
+        rbIstoricMd.ToolTipText = "Cum a evoluat proiectul, doar din fișierele md: cronologie pe felii și graf al legăturilor, cu un cursor de timp."
+        rgProiect.Buttons.Add(rbIstoricMd)
+        rbSchemaGraf.Image = AdminIcons.Get("database")
+        rbSchemaGraf.Key = "schema-graf"
+        rbSchemaGraf.Text = "Schema bazelor"
+        rbSchemaGraf.ToolTipHeader = "Schema bazelor"
+        rbSchemaGraf.ToolTipText = "Tabelele schemelor SURSA și COMUN ca graf, cu cheile străine drept linii (din dump-urile din MariaDB_Schema)."
+        rgProiect.Buttons.Add(rbSchemaGraf)
+        rbSchemaIstoric.Image = AdminIcons.Get("sync")
+        rbSchemaIstoric.Key = "schema-istoric"
+        rbSchemaIstoric.Text = "Evoluția schemei"
+        rbSchemaIstoric.ToolTipHeader = "Evoluția schemei"
+        rbSchemaIstoric.ToolTipText = "Ce a schimbat sincronizarea schemei într-o bază, în timp: un rând pe tabel, un punct pe instrucțiune DDL (jurnalul schema_diff_log din dump-ul COMUN)."
+        rgProiect.Buttons.Add(rbSchemaIstoric)
+        rgProiect.Text = "Proiect"
         rtMonitorizare.Groups.Add(rgJurnale)
         rtMonitorizare.Groups.Add(rgServer)
+        rtMonitorizare.Groups.Add(rgProiect)
         rtMonitorizare.Text = "Monitorizare"
         rbCopii.Image = AdminIcons.Get("backup_server")
         rbCopii.Key = "copii"
@@ -463,6 +491,15 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewVerconReports)
         pnlViews.Controls.Add(viewDemo)
         pnlViews.Controls.Add(viewLocalBackup)
+        pnlViews.Controls.Add(viewMdHistory)
+        pnlViews.Controls.Add(viewSchemaGraph)
+        pnlViews.Controls.Add(viewSchemaHistory)
+        viewSchemaHistory.Dock = DockStyle.Fill
+        viewSchemaHistory.Visible = False
+        viewSchemaGraph.Dock = DockStyle.Fill
+        viewSchemaGraph.Visible = False
+        viewMdHistory.Dock = DockStyle.Fill
+        viewMdHistory.Visible = False
         viewLocalBackup.Dock = DockStyle.Fill
         viewLocalBackup.Visible = False
         viewDemo.Dock = DockStyle.Fill
@@ -680,4 +717,7 @@ Partial Class MainForm
     Friend WithEvents viewVerconReports As VerconReportsView
     Friend WithEvents viewDemo As DemoCloneView
     Friend WithEvents viewLocalBackup As LocalBackupView
+    Friend WithEvents viewMdHistory As MdHistoryView
+    Friend WithEvents viewSchemaGraph As SchemaGraphView
+    Friend WithEvents viewSchemaHistory As SchemaHistoryView
 End Class

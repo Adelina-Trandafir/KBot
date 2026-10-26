@@ -121,7 +121,7 @@ Partial Public Class FacturiForm
 
     ' ── The invoice's payment account ───────────────────────────────────────────
 
-    ''' <summary>The accounts already used on the unit's invoices, newest first, offered by the «Cont emitent» combo.</summary>
+    ''' <summary>The unit's own accounts (the ones «Conturi Unitate» edits), offered by the «Cont emitent» combo (slice 00EF-52).</summary>
     Private Sub FillContPlata()
         Dim k_was As Boolean = _loading
         _loading = True
@@ -133,15 +133,36 @@ Partial Public Class FacturiForm
                 Dim k_own As String = k_c.Cont.Trim()
                 If k_own.Length > 0 AndAlso k_seen.Add(k_own) Then cmbContPlata.Items.Add(k_own)
             Next
-            For Each k_f As EFacturaFactura In _facturi
-                Dim k_account As String = k_f.ContPlata.Trim()
-                If k_account.Length > 0 AndAlso k_seen.Add(k_account) Then cmbContPlata.Items.Add(k_account)
-            Next
             cmbContPlata.Text = k_text
         Finally
             _loading = k_was
         End Try
     End Sub
+
+    ''' <summary>
+    ''' An account typed in «Cont emitent» that the unit does not have yet joins the unit's accounts (the list «Conturi Unitate» edits);
+    ''' the combo offers it from then on. Returns the account as the server keeps it (upper case, no spaces). A failure (e.g. an IBAN the
+    ''' server refuses) is thrown to the caller, which shows it.
+    ''' </summary>
+    Private Async Function EnsureUnitAccountAsync(k_account As String) As Task(Of String)
+        Try
+            Dim k_clean As String = New String(k_account.Where(Function(x) Not Char.IsWhiteSpace(x)).ToArray()).ToUpperInvariant()
+            If k_clean.Length = 0 OrElse _conturi.Any(Function(x) String.Equals(x.Cont.Trim(), k_clean, StringComparison.OrdinalIgnoreCase)) Then
+                Return k_clean
+            End If
+            Dim k_send As List(Of EFacturaCont) = _conturi.Select(Function(x) New EFacturaCont() With {.Cont = x.Cont.Trim()}).ToList()
+            k_send.Add(New EFacturaCont() With {.Cont = k_clean})
+            Dim k_saved As List(Of EFacturaCont) = Await _gate.RunAsync(
+                Function() _api.SaveConturiAsync(k_send, _cts.Token)).ConfigureAwait(True)
+            If IsDisposed Then Return k_clean
+            _conturi = k_saved
+            FillContPlata()
+            Return k_clean
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.EnsureUnitAccountAsync", ex)
+            Throw
+        End Try
+    End Function
 
     ''' <summary>The account of the newest invoice: a new invoice starts from it (the operator may change it).</summary>
     Private Function DefaultContPlata() As String

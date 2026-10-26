@@ -77,7 +77,7 @@ un filtru: tabelul nu arată toate rândurile.
 iconița din **capul coloanei de bife** bifează tot; încă un clic debifează tot.
 
 ## Butoanele fiecărei vederi
-<!-- slice: 0000-14 -->
+<!-- slice: 0000-14, AV01-13 -->
 
 | Vedere / fereastră | Unde sunt descrise |
 |--------------------|--------------------|
@@ -89,4 +89,4 @@ iconița din **capul coloanei de bife** bifează tot; încă un clic debifează 
 | Ordonanțare | [Ordonanțare](topic:contabil.vederi.ord) |
 | Fundamentare | [Documentul de fundamentare](topic:contabil.ddf) |
 | Note corecție | [Note de corecție](topic:contabil.notecab) |
-| Clasificații, Parteneri | [Nomenclatoare](topic:contabil.nomenclatoare) |
+| Clasificații cheltuieli, Parteneri | [Nomenclatoare](topic:contabil.nomenclatoare) |

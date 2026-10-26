@@ -15,12 +15,12 @@ dreapta, jos, e semnul K-BOT, prin care ajungi la [Discuții](topic:contabil.aca
 <!-- capture: acasa | caption: Pagina «Acasă», cu cardul «Ce este nou», panoul lateral și ribbonul | prepare: Închideți machetele deschise cu «Închide» din ribbon până ajungeți pe pagina «Acasă». Lăsați cardul «Ce este nou» desfăcut și panoul lateral desfăcut. -->
 
 ## De la «Acasă» la lucru
-<!-- slice: 0113, 0114 -->
+<!-- slice: 0113, 0114, AV01-13 -->
 
 - **Lista angajamentelor** (arborele, vederile și banda FOREXE) o deschizi din ribbon: **Angajamente › Navigare ›
   «Lista angajamentelor»**. Ea se deschide singură și când alegi «Angajament nou», «Creează în FOREXE» sau
   «Operațiuni necorelate» — [Fereastra principală](topic:contabil.fereastra).
-- Orice altă machetă (Extrase, Clasificații, Parteneri, E-Factura, Setări…) se deschide tot din ribbon, ca pagină a
+- Orice altă machetă (Extrase, Clasificații cheltuieli, Parteneri, E-Factura, Setări…) se deschide tot din ribbon, ca pagină a
   ferestrei principale.
 - Înapoi la «Acasă» ajungi cu butonul **«Închide»** din dreapta ribbonului: din lista angajamentelor te întoarce aici,
   fără să piardă ce ai ales în ea. Pe pagina «Acasă» butonul «Închide» nu există; K-BOT se închide din **X**-ul

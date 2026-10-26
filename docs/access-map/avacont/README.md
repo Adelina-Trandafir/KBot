@@ -8,7 +8,7 @@ intrebari. Marcaj in fise: VERIFICAT = citit intr-un fisier numit; PRESUPUS = de
 |---|---|---|---|
 | [conturi-plan-de-conturi](conturi-plan-de-conturi.md) | Conturi | lipseste | PORT |
 | [jurnale](jurnale.md) | Jurnale | lipseste | PORT (mic) |
-| [clasificatii-venituri](clasificatii-venituri.md) | Clasificatii Venituri | tabele exista, fereastra lipseste | PORT |
+| [clasificatii-venituri](clasificatii-venituri.md) | Clasificatii Venituri | **INCHIS 26.10.2026** (AV01-11 / AV01-12: pagina «Venituri» din fereastra «Clasificatii», pe sursa din bara de titlu) | PORTAT |
 | [sablon-operatii-oci](sablon-operatii-oci.md) | Sablon materiale / servicii / diverse | lipseste | PORT, proiectat nou (logica da, mecanismul nu) |
 | [sablon-operatii-ocs](sablon-operatii-ocs.md) | Sablon operatii salarii | lipseste | PORT, proiectat nou; **nu se salveaza articol fara minim un rand PC** |
 | [setari-implicite-si-bife](setari-implicite-si-bife.md) | Configurari Avacont + 4 bife | partial (E-Factura, date unitate exista) | pagina «Avacont» in Setari > Aplicatie, nu formular separat |

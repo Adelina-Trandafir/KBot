@@ -240,7 +240,9 @@ Public Class PlanContConturiView
 
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
-            If pNode Is Nothing OrElse pNode Is _currentNode OrElse TryCast(pNode.Tag, ContPlan) Is Nothing Then Return
+            ' Only a REAL account answers: a node with no child nodes (never the level: classes, base accounts and classifications are parents).
+            ' The tree raises this on a key move too (ClickOnKeyNavigation), so a parent reached with the arrows is ignored here.
+            If pNode Is Nothing OrElse pNode Is _currentNode OrElse pNode.Children.Count > 0 OrElse TryCast(pNode.Tag, ContPlan) Is Nothing Then Return
             ChangeSelection(pNode, _currentNode)
         Catch ex As Exception
             GlobalErrorLog.Write("PlanContConturiView.Tree_NodeMouseUp", ex)

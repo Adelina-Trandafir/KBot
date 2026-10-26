@@ -6,47 +6,25 @@ Eticheta: **dovada** = masurat pe bazele reale; **sursa** = citit in cod/interog
 
 ## 1. Stocare DECIMAL — decizie 14.10.2026
 
-Această revizie înlocuiește stocarea INT scalată. Codul și DDL-ul sunt pregătite;
-nu s-au executat modificări pe server, compilări sau teste. Utilizatorul a confirmat
-că vechea migrare VERCON există numai în demo și poate fi golită, apoi reluată.
+Această revizie înlocuiește stocarea INT scalată. Codul și DDL-ul sunt pregătite; nu s-au executat modificări pe server, compilări sau teste. Utilizatorul a confirmat că vechea migrare VERCON există numai în demo și poate fi golită, apoi reluată.
 
 ### 1.1 Reguli
 
-1. Cantitățile, prețurile, valorile de linie/document, sumele TVA și soldul SI_LA
-   sunt valori directe `DECIMAL(20,4)`, uniform în EF și VC. Cheile, numerele de
-   document, contoarele și duratele rămân întregi.
-2. `Scara=4` desemnează precizia fixă de stocare. Nu se mai înmulțesc sau împart
-   valori cu `10^Scara`. Exemplu: 12,3456 se scrie ca 12,3456.
-3. `Zec` / `NR.ZEC` păstrează rolul de precizie a afișării și calculelor documentelor
-   noi; nu reduce precizia stocării și nu modifică valorile documentelor existente.
-4. Migrarea copiază valorile direct, normalizând numai zgomotul binar al Access
-   Double. VRC refuză valori reale cu peste 4 zecimale sau în afara capacității
-   DECIMAL(20,4). KBot raportează eventuala rotunjire la 4 zecimale. VRC nu
-   recalculează totaluri, TVA, prețuri sau cantități și nu corectează semne; antetele
-   0/NULL și diferențele față de linii se păstrează. Numerotarea actuală rămâne.
-5. Calculele noi rotunjesc la `Zec` conform regulii existente HALF_EVEN; afișarea
-   folosește HALF_UP. Agregările nu rotunjesc fiecare termen pentru afișare.
-6. Cota `VC_TVA.TVA` este fracție decimală directă: 0,21 pentru 21%, fără x10000.
-   EF.CotaTVA rămâne procentul exprimat în unitatea sa existentă (21 pentru 21%).
-7. Aritmetica din aplicație folosește Decimal, niciodată float pentru sume.
-   API transportă valorile ca text zecimal exact; SQL și rapoartele citesc valori directe.
-8. Limita unui câmp este `abs(v) < 10^16`, cu maximum 4 zecimale. Nu se mai aplică
-   limita INT de 214.748,3647 la patru zecimale.
-9. Nulabilitatea și valorile implicite se păstrează. Semnele originale sunt acceptate
-   la migrare; validarea documentelor noi din web este separată.
-10. Denumirea internă a clasei `VALOARE-INT` rămâne pentru compatibilitatea
-    exporturilor de schemă; tipul efectiv și conversia sunt acum DECIMAL.
-11. Cele două migratoare cer schema DECIMAL(20,4) înainte de scriere. Nu creează
-    și nu modifică automat tabele sau coloane.
+1. Cantitățile, prețurile, valorile de linie/document, sumele TVA și soldul SI_LA sunt valori directe `DECIMAL(20,4)`, uniform în EF și VC. Cheile, numerele de document, contoarele și duratele rămân întregi.
+2. `Scara=4` desemnează precizia fixă de stocare. Nu se mai înmulțesc sau împart valori cu `10^Scara`. Exemplu: 12,3456 se scrie ca 12,3456.
+3. `Zec` / `NR.ZEC` păstrează rolul de precizie a afișării și calculelor documentelor noi; nu reduce precizia stocării și nu modifică valorile documentelor existente.
+4. Migrarea copiază valorile direct, normalizând numai zgomotul binar al Access Double. VRC refuză valori reale cu peste 4 zecimale sau în afara capacității DECIMAL(20,4). KBot raportează eventuala rotunjire la 4 zecimale. VRC nu recalculează totaluri, TVA, prețuri sau cantități și nu corectează semne; antetele 0/NULL și diferențele față de linii se păstrează. Numerotarea actuală rămâne.
+5. Calculele noi rotunjesc la `Zec` conform regulii existente HALF_EVEN; afișarea folosește HALF_UP. Agregările nu rotunjesc fiecare termen pentru afișare.
+6. Cota `VC_TVA.TVA` este fracție decimală directă: 0,21 pentru 21%, fără x10000. EF.CotaTVA rămâne procentul exprimat în unitatea sa existentă (21 pentru 21%).
+7. Aritmetica din aplicație folosește Decimal, niciodată float pentru sume. API transportă valorile ca text zecimal exact; SQL și rapoartele citesc valori directe.
+8. Limita unui câmp este `abs(v) < 10^16`, cu maximum 4 zecimale. Nu se mai aplică limita INT de 214.748,3647 la patru zecimale.
+9. Nulabilitatea și valorile implicite se păstrează. Semnele originale sunt acceptate la migrare; validarea documentelor noi din web este separată.
+10. Denumirea internă a clasei `VALOARE-INT` rămâne pentru compatibilitatea exporturilor de schemă; tipul efectiv și conversia sunt acum DECIMAL.
+11. Cele două migratoare cer schema DECIMAL(20,4) înainte de scriere. Nu creează și nu modifică automat tabele sau coloane.
 
 ### 1.2 Aplicare în demo
 
-Ordinea: `sql/VC_DEMO_golire_pentru_decimal.sql` (numai datele VC din 000_DEMO),
-`sql/VC_precizie_valori_4_zecimale.sql` și `sql/00EF_24_primite_linii_precizie.sql`
-(pe AVACONT_SURSA), sincronizarea structurii către DC-uri, versiuni noi ale
-migratoarelor și aplicației web, reimport VERCON. Nu este necesară rescalarea
-vechilor date demo deoarece sunt golite. Interogările și tabelele se păstrează.
-ALTER-ul VC nu se aplică peste coeficienți existenți într-o bază cu date păstrate.
+Ordinea: `sql/VC_DEMO_golire_pentru_decimal.sql` (numai datele VC din 000_DEMO), `sql/VC_precizie_valori_4_zecimale.sql` și `sql/00EF_24_primite_linii_precizie.sql` (pe AVACONT_SURSA), sincronizarea structurii către DC-uri, versiuni noi ale migratoarelor și aplicației web, reimport VERCON. Nu este necesară rescalarea vechilor date demo deoarece sunt golite. Interogările și tabelele se păstrează. ALTER-ul VC nu se aplică peste coeficienți existenți într-o bază cu date păstrate.
 
 ## 2. Linia si totalul documentului (N01/N02/TVA)
 
@@ -208,20 +186,11 @@ Revizie finală migrare 14.10.2026: exemplele și măsurătorile istorice N01/N0
 
 ## Revizie 16.10.2026 — factură comună și corecție NIR exactă
 
-Cerință aprobată: pentru NIR-urile noi, diferența față de valoarea declarată nu
-se acceptă doar în antet. Suma liniilor trebuie egalată exact. Corecția automată
-(de cel mult 1 leu) păstrează TVA real prin calcul invers din brut, identificat
-prin existența metadatelor în VC_NIR_CALCULE. Această regulă înlocuiește N01/N02 pentru salvarea NIR-urilor noi;
-nu recalculează importurile istorice și nu schimbă aici regulile celorlalte bonuri.
+Cerință aprobată: pentru NIR-urile noi, diferența față de valoarea declarată nu se acceptă doar în antet. Suma liniilor trebuie egalată exact. Corecția automată (de cel mult 1 leu) păstrează TVA real prin calcul invers din brut, identificat prin existența metadatelor în VC_NIR_CALCULE. Această regulă înlocuiește N01/N02 pentru salvarea NIR-urilor noi; nu recalculează importurile istorice și nu schimbă aici regulile celorlalte bonuri.
 
-Rândurile AUTO sunt nemodificabile; singura operație este ștergerea cu revenirea
-cantității în grupul original, recalculare și simularea stocului pentru ambele
-variante. La o factură comună, fiecare NIR se egalează cu propria valoare
-repartizată; la finalizarea completă, totalul recepțiilor active este ValoareFC.
-Antetele Access nu sunt însumate automat ca total global de factură.
+Rândurile AUTO sunt nemodificabile; singura operație este ștergerea cu revenirea cantității în grupul original, recalculare și simularea stocului pentru ambele variante. La o factură comună, fiecare NIR se egalează cu propria valoare repartizată; la finalizarea completă, totalul recepțiilor active este ValoareFC. Antetele Access nu sunt însumate automat ca total global de factură.
 
-Implementare și activare: [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md).
-Stare: surse și DDL pregătit, fără teste, compilări sau operații pe baze.
+Implementare și activare: [FACTURI_NIR_IMPLEMENTARE.md](FACTURI_NIR_IMPLEMENTARE.md). Stare: surse și DDL pregătit, fără teste, compilări sau operații pe baze.
 
 ### Clarificare ulterioară VC06-06 — conturi și destinații
 

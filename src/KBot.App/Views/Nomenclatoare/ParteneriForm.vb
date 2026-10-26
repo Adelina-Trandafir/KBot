@@ -68,6 +68,15 @@ Public Class ParteneriForm
     Private _soldReady As Boolean
     Private _soldTouched As Boolean
     Private _soldVersion As Integer
+    ' The three choices of the popup of the list header (slice AV01-09). The list always has the partners that appear on a document (DDF / ORD);
+    ' each choice ADDS a kind: the ones without activity, the ones with an opening balance this year, the ones with commitment codes.
+    Private _showNoActivity As Boolean
+    Private _showWithSold As Boolean
+    Private _showWithCodes As Boolean
+    Private _withSold As New HashSet(Of Integer)()
+    Private Const MenuNoActivity As String = "fara_activitate"
+    Private Const MenuWithSold As String = "cu_sold"
+    Private Const MenuWithCodes As String = "cu_angajamente"
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -114,6 +123,8 @@ Public Class ParteneriForm
                 Function() _api.GetParteneriAsync(CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return
             _catalog = catalog
+            Await ReadWithSoldAsync().ConfigureAwait(True)
+            If IsDisposed Then Return
             BuildTree(selectId)
             Dim selected As Partener = If(selectId.HasValue,
                 catalog.Partners.FirstOrDefault(Function(p) Nullable.Equals(p.IdPartener, selectId)), Nothing)
@@ -130,6 +141,22 @@ Public Class ParteneriForm
         End Try
     End Sub
 
+    ' The partners with an opening balance this year, for the «cu sold inițial» choice. A failed read leaves the choice empty and says so (the list itself still loads).
+    Private Async Function ReadWithSoldAsync() As Task
+        _withSold.Clear()
+        If Not SoldAvailable() Then Return
+        Try
+            Dim k_an As Integer = _session.An
+            Dim k_ids As IReadOnlyList(Of Integer) = Await _gate.RunAsync(
+                Function() _conturiApi.GetParteneriCuSolduriAsync(k_an, CancellationToken.None)).ConfigureAwait(True)
+            If IsDisposed Then Return
+            _withSold = New HashSet(Of Integer)(k_ids)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.ReadWithSoldAsync", ex)
+            If Not IsDisposed Then SetStatus("Partenerii cu sold inițial nu au putut fi aflați. Detalii în jurnalul de erori.")
+        End Try
+    End Function
+
     Private Sub BuildTree(selectId As Integer?)
         tree.Clear()
         _currentNode = Nothing
@@ -138,7 +165,7 @@ Public Class ParteneriForm
         Dim severalUnits As Boolean = _catalog.Partners.Select(Function(p) p.Ss).Distinct(StringComparer.Ordinal).Count() > 1
         Dim shown As Integer = 0
         For Each p As Partener In _catalog.Partners.OrderBy(Function(x) x.Denumire, StringComparer.CurrentCultureIgnoreCase)
-            If Not p.Activ AndAlso chkFaraActivitate.Checked Then Continue For
+            If Not IsListed(p, selectId) Then Continue For
             Dim name As String = Escape(p.Denumire)
             If severalUnits Then name &= $" ({p.Ss})"
             Dim node As AdvancedTreeControl.TreeItem = tree.AddItem(
@@ -163,11 +190,50 @@ Public Class ParteneriForm
         Return If(text, String.Empty).Replace("<", "‹").Replace(">", "›").Replace("~~~", "~ ~ ~")
     End Function
 
-    Private Sub Filters_CheckedChanged(sender As Object, e As EventArgs) Handles chkFaraActivitate.CheckedChanged
+    ' Is the partner in the list? The ones on a document always are; the popup of the header adds the other kinds. The partner being shown (just
+    ' saved, or picked) never disappears under the operator.
+    Private Function IsListed(k_p As Partener, k_selectId As Integer?) As Boolean
+        If k_p.Activ OrElse _showNoActivity Then Return True
+        If k_selectId.HasValue AndAlso Nullable.Equals(k_p.IdPartener, k_selectId) Then Return True
+        If _showWithCodes AndAlso k_p.Coduri.Count > 0 Then Return True
+        Return _showWithSold AndAlso k_p.IdPartener.HasValue AndAlso _withSold.Contains(k_p.IdPartener.Value)
+    End Function
+
+    ' The icon of the list header opens the menu of the three kinds. A second press on the icon closes it (the press already did, so without
+    ' the guard it would reopen at once).
+    Private Sub Tree_HeaderRightIconClicked(e As MouseEventArgs) Handles tree.HeaderRightIconClicked
         Try
+            If CustomPopup.ClosedJustNow Then Return
+            Dim k_anchor As Rectangle = tree.HeaderRightIconRect
+            If k_anchor.IsEmpty Then Return
+            Dim k_rows As New List(Of CustomPopupItem) From {
+                New CustomPopupItem(MenuNoActivity, "Arată partenerii fără &activitate") With {.Checked = _showNoActivity},
+                New CustomPopupItem(MenuWithSold, "Arată partenerii cu &sold inițial") With {.Checked = _showWithSold},
+                New CustomPopupItem(MenuWithCodes, "Arată partenerii cu a&ngajamente") With {.Checked = _showWithCodes}}
+            ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
+            Dim k_menu As New CustomPopup(k_rows)
+            AddHandler k_menu.ItemClicked, AddressOf TreeMenu_ItemClicked
+            k_menu.ShowBelow(tree, k_anchor)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.Tree_HeaderRightIconClicked", ex)
+        End Try
+    End Sub
+
+    Private Sub TreeMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
+        Try
+            Select Case e.Item.Key
+                Case MenuNoActivity
+                    _showNoActivity = Not _showNoActivity
+                Case MenuWithSold
+                    _showWithSold = Not _showWithSold
+                Case MenuWithCodes
+                    _showWithCodes = Not _showWithCodes
+                Case Else
+                    Return
+            End Select
             BuildTree(_current?.IdPartener)
         Catch ex As Exception
-            GlobalErrorLog.Write("ParteneriForm.Filters_CheckedChanged", ex)
+            GlobalErrorLog.Write("ParteneriForm.TreeMenu_ItemClicked", ex)
         End Try
     End Sub
 
@@ -956,7 +1022,7 @@ Public Class ParteneriForm
             Dim p As ThemePalette = scheme.Palette
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = p.BorderColor
-            For Each c As Control In {tlyMain, pnlCard, tlyBody, tlyLeft, flowFiltre, tlyDetalii, tlySubsol}
+            For Each c As Control In {tlyMain, pnlCard, tlyBody, tlyLeft, tlyDetalii, tlySubsol}
                 c.BackColor = p.SurfaceAltColor
             Next
             lblCoduri.ForeColor = p.TextColor

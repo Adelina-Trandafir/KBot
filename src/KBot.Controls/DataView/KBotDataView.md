@@ -161,8 +161,9 @@ was, so nothing is lost. Off = the editors behave like plain text boxes again.
 (next row, same column); `NextEditableCell` walks the row field by field and drops to the
 first editable field of the next row when it runs out. Enter pressed IN an editor reopens
 the editor on the cell it lands on (a whole table fills in without the mouse); Enter on the
-grid only moves. Tab / Shift+Tab are unchanged: next / previous ENABLED column, editable or
-not.
+grid only moves. Tab / Shift+Tab from an editor: next / previous ENABLED column, editable or
+not -- unless `TabKeyMode = NextEditableCell` (`KBotTabKeyMode`, slice 00EF-51), which makes Tab walk the editable cells like
+Enter does in `NextEditableCell` mode (after the last one: the first editable field of the next row) and Shift+Tab step back to the previous editable cell. Without an open editor Tab is unchanged.
 
 ### The editor looks like the cell (slice 0085)
 A single click on an editable cell starts editing with the whole text selected (a click in
@@ -196,6 +197,8 @@ Files: `KBotCheckBoxMode.vb`, `Events/KBotRowCheckedEventArgs.vb`, `KBotDataView
 list (`KBotComboBox.ItemPicked`: click or Enter in the list), not when he leaves the cell. Typing is unchanged.
 `KBotCellFormattingEventArgs.ReadOnlyCell` (default False): the handler raises it for ONE cell that must look normal (not greyed, unlike `Enabled = False`) but
 open no editor; `CanEdit` asks through `IsCellReadOnly(colKey, rowIndex)`. A click still selects the cell.
+`KBotCellFormattingEventArgs.HideButton` (default False, slice 00EF-50): on a `Button` column the handler raises it for ONE cell that must show no button at all (no face, caption or
+picture -- the cell looks empty, e.g. the spare row of a grid). Paint only: the host ignores the `ButtonClick` itself.
 
 ### The combo editor (slice 0094)
 The combo editor is a `KBotComboBox` in cell editor mode (no frame, no arrow, free height), placed

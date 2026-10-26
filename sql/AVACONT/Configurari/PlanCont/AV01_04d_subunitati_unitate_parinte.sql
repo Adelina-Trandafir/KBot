@@ -18,7 +18,7 @@ ALTER TABLE `AVACONT_SURSA`.`TZ_Subunitati`
   ADD COLUMN IF NOT EXISTS `IdSubunitateParinte` int(11) NULL DEFAULT NULL COMMENT 'Parent subunit: classifications and budget are read from it (Access cai.IdUnitateParinte)' AFTER `IdUnitateAccess`,
   ADD UNIQUE INDEX IF NOT EXISTS `UK_TZ_Subunitati_UnitateAccess`(`IdUnitateAccess` ASC) USING BTREE,
   ADD INDEX IF NOT EXISTS `IX_TZ_Subunitati_Parinte`(`IdSubunitateParinte` ASC) USING BTREE,
-  ADD CONSTRAINT IF NOT EXISTS `TZ_Subunitati__Parinte` FOREIGN KEY (`IdSubunitateParinte`) REFERENCES `TZ_Subunitati` (`IdSubunitate`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+  ADD CONSTRAINT `TZ_Subunitati__Parinte` FOREIGN KEY (`IdSubunitateParinte`) REFERENCES `TZ_Subunitati` (`IdSubunitate`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
 -- Check (read only):
 -- SHOW CREATE TABLE `AVACONT_SURSA`.`TZ_Subunitati`;

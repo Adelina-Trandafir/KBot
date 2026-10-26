@@ -31,7 +31,7 @@ revin.
 <!-- capture: panou-lateral-strans | caption: Panoul lateral strâns la banda cu pictograme | prepare: Strângeți panoul lateral cu butonul din partea lui de jos. După captură, desfaceți-l la loc. | redo: 2026-10-17 12:00 | why: 0115-01: butonul a coborât jos -->
 
 ## Machete deschise
-<!-- slice: 0116, 0113-01, 0115-01 -->
+<!-- slice: 0116, 0113-01, 0115-01, AV01-13 -->
 
 Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
 
@@ -42,7 +42,7 @@ Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
 - când lista e plină, ies din ea cele **închise**, începând cu cea închisă de cel mai mult timp, ca machetele deschise
   să rămână vizibile cât mai mult.
 
-În listă apar paginile din ribbon (Extrase de cont, Clasificații bugetare, Setări…) și **lista angajamentelor**.
+În listă apar paginile din ribbon (Extrase de cont, Clasificații cheltuieli, Setări…) și **lista angajamentelor**.
 **Vederile unui angajament** (Sumar, Rezervări…) **nu apar**, și nici **ferestrele care cer un răspuns** (editoarele DDF și
 de ordonanțare, Asocieri, Operațiuni necorelate, graficul rezervărilor, Grupele).
 

@@ -26,14 +26,9 @@ Nicio linie de Python nu s-a atins.
 
 Trei lucruri ies gratis din alegerea asta:
 
-- **Recepția dispare singură** când pleacă de pe ea și ultimul instantaneu — nu «rămâne
-  goală» și nu trebuie ștearsă de nimeni.
-- **Toate suprafețele o văd fără să știe de ea**: arborele din stânga, graficul, benzile
-  și țintele de tragere citesc acum `Receptiile()` (server + pornite aici) în loc de
-  `_stare.Receptii`. Cheia de nod e `R:-1`, cheia de serie `R-1`, iar `IdrrDinCheie` le
-  citește ca pe oricare altele.
-- **`_stare` rămâne neatins**, adică rămâne adevărul de pe server, cu care se compară ce
-  s-a schimbat.
+- **Recepția dispare singură** când pleacă de pe ea și ultimul instantaneu — nu «rămâne goală» și nu trebuie ștearsă de nimeni.
+- **Toate suprafețele o văd fără să știe de ea**: arborele din stânga, graficul, benzile și țintele de tragere citesc acum `Receptiile()` (server + pornite aici) în loc de `_stare.Receptii`. Cheia de nod e `R:-1`, cheia de serie `R-1`, iar `IdrrDinCheie` le citește ca pe oricare altele.
+- **`_stare` rămâne neatins**, adică rămâne adevărul de pe server, cu care se compară ce s-a schimbat.
 
 Cifrele rândului se **recalculează** din lanț la fiecare mutare, fiindcă exact așa le va scrie serverul: `DataR` = momentul celui mai vechi instantaneu, `SumaAntet` = totalul rândului de ștergere. Un rând care ar arăta altceva decât ce se va scrie ar fi singura minciună de pe ecran.
 
@@ -73,16 +68,8 @@ Alegerea declarantului se face o singură dată, în afara buclei, tocmai fiindc
 
 Formularul a fost desenat cu `DrawToBitmap` peste un tablou nascocit (trei stări: recepție nouă cu un instantaneu, cu două, și închisă cu rândul de ștergere). Amândouă defectele de mai jos treceau de toate testele.
 
-1. **Semnul lung de pe rând ștergea rândul.** Prima variantă scria pe rândul-recepție și
-   ce îi mai lipsește («— lipsește rândul de ștergere»). Partea din dreapta a rândului e
-   aliniată la dreapta, iar când nu încape, arborele o lasă **nedesenată cu totul**: a
-   dispărut și suma, și numărul de instantanee. Rândul poartă acum doar
-   `[recepție nouă]`; propoziția s-a mutat în tooltip și în banda de mesaje, care au loc
-   pentru ea.
-2. **Avertismentul rămânea pe ecran după ce problema se rezolva.** Banda se scria la
-   fiecare reconstruire, dar nu se ștergea niciodată. Se ia jos acum doar dacă tot noi
-   l-am pus (`_avertismentReceptiiNoi`) — un `Clear` necondiționat ar fi șters și
-   «legăturile au fost salvate», care vine tocmai după o reîncărcare.
+1. **Semnul lung de pe rând ștergea rândul.** Prima variantă scria pe rândul-recepție și ce îi mai lipsește («— lipsește rândul de ștergere»). Partea din dreapta a rândului e aliniată la dreapta, iar când nu încape, arborele o lasă **nedesenată cu totul**: a dispărut și suma, și numărul de instantanee. Rândul poartă acum doar `[recepție nouă]`; propoziția s-a mutat în tooltip și în banda de mesaje, care au loc pentru ea.
+2. **Avertismentul rămânea pe ecran după ce problema se rezolva.** Banda se scria la fiecare reconstruire, dar nu se ștergea niciodată. Se ia jos acum doar dacă tot noi l-am pus (`_avertismentReceptiiNoi`) — un `Clear` necondiționat ar fi șters și «legăturile au fost salvate», care vine tocmai după o reîncărcare.
 
 ---
 
@@ -116,16 +103,10 @@ Nimic în `KBot.Domain`, `KBot.Api` sau `PYTHON/` — contractul era deja acolo.
 
 ## 8. Ce a rămas neverificat
 
-- **Nu s-a salvat nimic pe o bază vie.** Serverul nu s-a pornit. Că lanțul
-  `reconstituire` + `stergere` cu aceeași etichetă e ce așteaptă
-  `verifica_etichetele` / `materializeaza_receptiile_reconstituite` e citit din codul
-  Python, nu observat pe o rulare.
+- **Nu s-a salvat nimic pe o bază vie.** Serverul nu s-a pornit. Că lanțul `reconstituire` + `stergere` cu aceeași etichetă e ce așteaptă `verifica_etichetele` / `materializeaza_receptiile_reconstituite` e citit din codul Python, nu observat pe o rulare.
 - **Nu s-a rulat suita PYTHON** — n-a fost atins niciun fișier Python.
-- **Fereastra mare de benzi** (`AsociereBenziForm`) arată recepțiile noi și primește
-  trageri pe ele (împrumută aceiași trei tratatori), dar **nu s-a văzut pe ecran** în
-  sesiunea asta, și nu are niciun gest de creare — recepția se pornește doar din arbore.
-- **Modul propunere nu s-a văzut pe ecran** deloc; drumul lui e acoperit numai de testele
-  pe `DeciziiDin`. Capturile sunt toate din modul de oricând.
+- **Fereastra mare de benzi** (`AsociereBenziForm`) arată recepțiile noi și primește trageri pe ele (împrumută aceiași trei tratatori), dar **nu s-a văzut pe ecran** în sesiunea asta, și nu are niciun gest de creare — recepția se pornește doar din arbore.
+- **Modul propunere nu s-a văzut pe ecran** deloc; drumul lui e acoperit numai de testele pe `DeciziiDin`. Capturile sunt toate din modul de oricând.
 - `KBotLaneView` tot **nu are niciun test** (semnalat și de felia 0058).
 
 ---
@@ -142,32 +123,18 @@ Are dreptate, și taie o întrebare pe care prima variantă o punea degeaba.
 
 O recepție ajunge să fie pornită de aici DOAR fiindcă a fost creată și ștearsă pe site înainte de prima descărcare (F26). Dacă n-ar fi fost ștearsă, ar fi venit în `ListaReceptii` ca toate celelalte și n-ar fi avut ce căuta în coș. Deci «e asta rândul de ștergere?» n-are decât un răspuns: **ultimul instantaneu al lanțului**.
 
-- `_stergereNoua` ține IDRH-urile care închid lanțurile pornite aici — tot o proiecție a
-  lui `_pozitie`, refăcută în aceeași trecere cu `_receptiiNoi`.
-- `EsteStergere` are acum două regimuri: pe o recepție de la server citește steagul
-  operatorului (acolo recepția poate fi încă vie, iar mașina nu poate ghici), pe una
-  pornită aici citește capătul lanțului și **ignoră** `_stergere`. Un steag rămas de pe o
-  așezare anterioară ar fi arătat pe ecran un rând de ștergere pe care firul nu-l trimite.
-- În meniul unui instantaneu de pe o recepție pornită aici nu se mai oferă «Este rândul de
-  ștergere» — o intrare care nu schimbă nimic e mai rea decât niciuna.
-- `Comenzi` și `DeciziiDin` iau amândouă capetele din aceeași ordonare (`CapeteLant`:
-  `Declara` = primul, `Inchide` = ultimul), nu din dicționarul de ștergeri.
-- Din cele patru verificări dinainte de salvare **a rămas una**: lanțul are nevoie de cel
-  puțin două instantanee. Celelalte trei (zero ștergeri, două ștergeri, ștergerea la
-  mijloc) nu se mai pot întâmpla de când capetele se citesc, nu se marchează.
+- `_stergereNoua` ține IDRH-urile care închid lanțurile pornite aici — tot o proiecție a lui `_pozitie`, refăcută în aceeași trecere cu `_receptiiNoi`.
+- `EsteStergere` are acum două regimuri: pe o recepție de la server citește steagul operatorului (acolo recepția poate fi încă vie, iar mașina nu poate ghici), pe una pornită aici citește capătul lanțului și **ignoră** `_stergere`. Un steag rămas de pe o așezare anterioară ar fi arătat pe ecran un rând de ștergere pe care firul nu-l trimite.
+- În meniul unui instantaneu de pe o recepție pornită aici nu se mai oferă «Este rândul de ștergere» — o intrare care nu schimbă nimic e mai rea decât niciuna.
+- `Comenzi` și `DeciziiDin` iau amândouă capetele din aceeași ordonare (`CapeteLant`: `Declara` = primul, `Inchide` = ultimul), nu din dicționarul de ștergeri.
+- Din cele patru verificări dinainte de salvare **a rămas una**: lanțul are nevoie de cel puțin două instantanee. Celelalte trei (zero ștergeri, două ștergeri, ștergerea la mijloc) nu se mai pot întâmpla de când capetele se citesc, nu se marchează.
 
 ## 2. «În mesaj»
 
-- Rândul-recepție poartă `[nouă, ștearsă]` în loc de `[recepție nouă]`. Un singur semn,
-  deși recepția are și `Sters`, și `Reconstituit`: trei scrise unul după altul ar spune
-  același lucru de trei ori și ar umple partea din dreapta a rândului, care se pierde
-  întreagă când nu încape (vezi §5 mai sus).
-- Proiecția poartă acum `Sters = True` și `Reconstituit = True`, fiindcă exact așa o scrie
-  `_R_INSERT_RECONST_SQL`. Rândul de pe ecran arată ce se va scrie.
-- Tooltipul spune deschis «se va scrie ca recepție ȘTEARSĂ și reconstituită — o recepție
-  de aici există tocmai fiindcă a fost ștearsă», și că ultimul instantaneu e ștergerea ei.
-- Suma se citește «Valoarea la ștergere», nu «Valoare acum»: «acum» ar fi o minciună
-  pentru o recepție care nu mai există.
+- Rândul-recepție poartă `[nouă, ștearsă]` în loc de `[recepție nouă]`. Un singur semn, deși recepția are și `Sters`, și `Reconstituit`: trei scrise unul după altul ar spune același lucru de trei ori și ar umple partea din dreapta a rândului, care se pierde întreagă când nu încape (vezi §5 mai sus).
+- Proiecția poartă acum `Sters = True` și `Reconstituit = True`, fiindcă exact așa o scrie `_R_INSERT_RECONST_SQL`. Rândul de pe ecran arată ce se va scrie.
+- Tooltipul spune deschis «se va scrie ca recepție ȘTEARSĂ și reconstituită — o recepție de aici există tocmai fiindcă a fost ștearsă», și că ultimul instantaneu e ștergerea ei.
+- Suma se citește «Valoarea la ștergere», nu «Valoare acum»: «acum» ar fi o minciună pentru o recepție care nu mai există.
 
 ## 3. «Și în culoare»
 
@@ -181,8 +148,7 @@ Aceeași nuanță pentru ORICE recepție ștearsă, nu doar pentru cele pornite 
 
 Două locuri unde nu era, amândouă din același `> 0` care nu lăsa niciodată un IDRR negativ să treacă:
 
-- `SincronizeazaCulorile` colora rândul-recepție cu culoarea liniei din grafic doar pentru
-  `idrr > 0` — recepția pornită aici era singura al cărei rând nu se lega de linia lui.
+- `SincronizeazaCulorile` colora rândul-recepție cu culoarea liniei din grafic doar pentru `idrr > 0` — recepția pornită aici era singura al cărei rând nu se lega de linia lui.
 - `AplicaCulorileBenzii` la fel, pentru bandă.
 
 Amândouă sunt acum `<> 0`. `ValoareaLa` (deci și totalul din grafic, și reperele plăților) cădea deja corect la zero după ștergere, fiindcă citește `EsteStergere`.
@@ -203,11 +169,7 @@ Amândouă sunt acum `<> 0`. `ValoareaLa` (deci și totalul din grafic, și repe
 | `--filter ~Asociere` | **47 trecute / 0 picate** |
 | `tests\KBot.App.Tests` (întreg) | 241 trecute / **13 picate** — exact cele preexistente (DDF/revizii/Istoric) |
 
-Văzut pe ecran (`DrawToBitmap`, 1500×950, modul de oricând): recepție nouă cu un
-instantaneu (bandă de avertisment, salvare stinsă), cu două, cu trei și închisă, plus fila
-«Tot angajamentul» — acolo se vede și rândul verde legat de linia lui verde, cu fondul de
-recepție ștearsă peste. **Modul propunere tot nu s-a văzut pe ecran**, și tot **nu s-a
-salvat nimic pe o bază vie**.
+Văzut pe ecran (`DrawToBitmap`, 1500×950, modul de oricând): recepție nouă cu un instantaneu (bandă de avertisment, salvare stinsă), cu două, cu trei și închisă, plus fila «Tot angajamentul» — acolo se vede și rândul verde legat de linia lui verde, cu fondul de recepție ștearsă peste. **Modul propunere tot nu s-a văzut pe ecran**, și tot **nu s-a salvat nimic pe o bază vie**.
 
 ## Reper din focusul registrului
 

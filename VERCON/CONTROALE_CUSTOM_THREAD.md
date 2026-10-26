@@ -114,7 +114,7 @@ Creat 13.10.2026. `new CheckBox(container, options)` adaugă `<label class="cb">
 ### Menu (bara și popup-ul)
 
 - `js/components/menu/menu.js` + `css/menu.css` (14.10.2026): controlul unic de meniu al aplicațiilor web, în două forme cu același aspect. Mărimile vin din `typography.css` (`--fs-nav` pentru bară = `--fs-xl`, `--fs-menu` pentru popup), culorile din tema paginii; fiecare meniu se reglează cu `--mn-*` pe container (`--mn-font-size`, `--mn-font-family`, `--mn-item-padding`, `--mn-active-color`, `--mn-active-back`, `--mn-gap`, `--mn-popup-font-size`, `--mn-accent`).
-- **Popup:** `openMenu(anchor, entries, options)` → `close()`; `closeMenu()`. Intrare `{ key, icon, label, on / checked, disabled, reason, rule, run }` (`reason` = tooltip la intrare dezactivată; `rule: true` = linie despărțitoare înainte). Opțiuni `{ label, align, up, below, checkable, iconRight, onSelect(entry), onBeforeSelect(entry) (false anulează, meniul rămâne deschis), onOpen, onClose }`. `adechit/menu.js` doar re-exportă controlul, deci importurile vechi merg neschimbate; noul aspect are clasele `kmenu-popup*` (nu `ade-receipt-menu`).
+- **Popup:** `openMenu(anchor, entries, options)` → `close()`; `closeMenu()`. Intrare `{ key, icon, label, on / checked, disabled, reason, rule, run }` (`reason` = tooltip la intrare dezactivată; `rule: true` = linie despărțitoare înainte). Opțiuni `{ label, align, up, below, checkable, iconRight, onSelect(entry), onBeforeSelect(entry) (false anulează, meniul rămâne deschis), onOpen, onClose }`. `adechit/menu.js` doar re-exportă controlul, deci importurile vechi merg neschimbate; noul aspect are clasele `kmenu-popup*` (nu `ade-receipt-menu`). Un singur popup activ; `closeMenu()` îl închide global. Navigare cu săgeți și Escape.
 - **Bară:** `new Menu(container, { items, active, label, onSelect, onBeforeSelect })`; element `{ key, label, icon, group, enabled, reason, children, run }` (`children` = popup care se deschide din buton; `group` = elemente grupate). Metode `setItems`, `setActive`, `setEnabled`, `setBusy`, `destroy`. Elementul activ (sau părintele copilului activ) are `aria-current="true"`. Folosită la bara de operații din VERCON (`vercon/app.js`, `paintMenu`); acolo «Nomenclatoare» și «Factură Cumpărare (NIR)» sunt elemente cu `children`.
 - **Nemigrate încă:** meniul propriu al ADECHIT (`adechit/app.js` ~r.662, clasa veche `ade-receipt-menu`, de aceea `app-menu.css` rămâne), `portal/menu.js` (`createMenu`), meniul de context al DataGrid (`_openMenu`).
 
@@ -126,7 +126,6 @@ Creat 13.10.2026. `new CheckBox(container, options)` adaugă `<label class="cb">
 
 ### Meniuri, dialoguri, PDF
 
-- `openMenu(anchor, entries, options)` cu intrări `{ icon, label, on, disabled, rule, run }`; opțiuni `label`, `align`, `up`, `checkable`, `iconRight`, `below`. Un singur popup activ; funcția întoarce închiderea, iar `closeMenu()` îl închide global. Navigare cu săgeți și Escape.
 - `confirmBox(text, options)` → `Promise<boolean>`; `reasonBox(text, options)` → motiv fără spații marginale sau `null`; `pickBox(title, [{ value, label }], options)` → valoare sau `null`. Renunță este în stânga; confirmarea în dreapta. Motivul obligatoriu blochează confirmarea când e gol.
 - `createPdfView(container)` → `{ open(ArrayBuffer | Uint8Array), clear() }`; clear eliberează documentul. PDF.js este o dependență vendor, nu un control nou de rescris. Viewerul este pentru citire.
 - `js/adechit/reports.js: outputReport` este helperul separat pentru fereastra HTML de listare/descărcarea PDF și XLSX; `js/vercon/documents.js: createDocuments` îi adaugă contextul VERCON. Previzualizarea în viewer și descărcarea sunt funcții distincte.
@@ -177,22 +176,7 @@ Stare: modificări de sursă; fără teste sau verificări executate, conform AG
 
 ### ActionAddButton — buton comun de adăugare (15.10.2026)
 
-`js/components/action-add-button/action-add-button.js` exportă `ActionAddButton`;
-stylesheet-ul și documentația completă sunt lângă el: `action-add-button.css`
-și `ActionAddButton.md`. `new ActionAddButton(containerOrNull, { icon: '➕', label,
-iconPosition, title, ariaLabel, disabled, className, onClick })` creează un
-buton nativ accesibil prin `.element`. API: `setEnabled`, `setIcon`,
-`setLabel`, `destroy`. Iconul este decorativ, iar butonul are tooltip și nume
-accesibil. Listener-ele sunt eliminate la demontare.
-
-Stil unic pentru Produse și Adaugă NIR: 44 px lățime în varianta doar icon,
-40 px înălțime, cursor pointer, hover cu fundal și bordură, focus vizibil,
-stare disabled. `--action-add-button-font-size` controlează textul și
-`--action-add-button-icon-size` iconul; dimensiunile și culorile au la rândul lor
-variabile documentate în MD. NIR păstrează textul `--fs-ms` și iconul
-`--fs-lg`, cu aceeași carcasă de buton ca Produse. CSS-ul paginilor păstrează
-numai poziționarea și aceste variabile, fără duplicarea stilului butonului.
-Nu s-au rulat teste sau verificări, conform AGENTS.md.
+Contractul, API-ul, dimensiunile și integrarea în Produse/Adaugă NIR sunt întreținute în [ActionAddButton](../PYTHON/static/js/components/action-add-button/ActionAddButton.md). CSS-ul paginilor păstrează numai poziționarea și variabilele explicite; fără duplicarea stilului butonului. Stare la 15.10.2026: implementare în surse, fără teste sau verificări executate, conform AGENTS.md.
 
 ### Meniu — dimensiuni, animații și evoluție (15.10.2026)
 
@@ -209,32 +193,15 @@ Implementare comună în `PYTHON/static/js/components/menu/menu.js` și `PYTHON/
 
 ### Meniu popup — bandă compactă pentru iconuri (15.10.2026)
 
-Submeniurile barei folosesc aceeași bandă colorată de 30 px ca popupurile
-obișnuite (de exemplu Afișare produse). Iconurile sunt centrate în bandă
-prin CSS. Controlul nu mai calculează lățimea benzii după poziția iconului
-butonului părinte. Se păstrează poziționarea popupului sub buton, dimensiunile
-și animațiile existente; iconRight plasează aceeași bandă în dreapta.
-Implementare: js/components/menu/menu.js și css/menu.css.
+Submeniurile barei folosesc aceeași bandă colorată de 30 px ca popupurile obișnuite (de exemplu Afișare produse). Iconurile sunt centrate în bandă prin CSS. Controlul nu mai calculează lățimea benzii după poziția iconului butonului părinte. Se păstrează poziționarea popupului sub buton, dimensiunile și animațiile existente; iconRight plasează aceeași bandă în dreapta. Implementare: js/components/menu/menu.js și css/menu.css.
 
 ### Meniu — chenar comun pentru butonul deschis și popup (15.10.2026)
 
-Butonul barei cu aria-haspopup="menu" și aria-expanded="true" are chenar
-de 1 px în culoarea --line, colțuri superioare de 3 px și latura de jos
-deschisă, ca popupul să pară continuarea sa. Chenarul este desenat prin
-pseudo-element, fără schimbarea dimensiunilor butonului; sublinierea de
-selecție este ascunsă cât timp dropdownul este deschis și revine la închidere.
+Butonul barei cu aria-haspopup="menu" și aria-expanded="true" are chenar de 1 px în culoarea --line, colțuri superioare de 3 px și latura de jos deschisă, ca popupul să pară continuarea sa. Chenarul este desenat prin pseudo-element, fără schimbarea dimensiunilor butonului; sublinierea de selecție este ascunsă cât timp dropdownul este deschis și revine la închidere.
 
-Popupurile barei ating marginea de jos a butonului inclusiv fără icon.
-Clasa kmenu-popup--joined întrerupe linia superioară numai pe segmentul
-comun cu butonul; restul chenarului este păstrat. Segmentul este calculat
-în coordonatele popupului prin variabilele interne --_menu-join-start/end.
-Se aplică numai popupurilor deschise imediat sub buton, fără up/below și
-fără deplasare verticală impusă de marginea ecranului. Banda compactă și
-varianta iconRight sunt păstrate. Implementarea este comună, în menu.js/CSS.
+Popupurile barei ating marginea de jos a butonului inclusiv fără icon. Clasa kmenu-popup--joined întrerupe linia superioară numai pe segmentul comun cu butonul; restul chenarului este păstrat. Segmentul este calculat în coordonatele popupului prin variabilele interne --_menu-join-start/end. Se aplică numai popupurilor deschise imediat sub buton, fără up/below și fără deplasare verticală impusă de marginea ecranului. Banda compactă și varianta iconRight sunt păstrate. Implementarea este comună, în menu.js/CSS.
 
-Actualizare 15.10.2026: umbra dropdownurilor comune este vizibilă numai jos
-și în dreapta. CSS-ul folosește box-shadow 4px 4px 10px și clip-path cu
-extensie de 20 px doar pe aceste laturi, eliminând dispersia de sus/stânga.
+Actualizare 15.10.2026: umbra dropdownurilor comune este vizibilă numai jos și în dreapta. CSS-ul folosește box-shadow 4px 4px 10px și clip-path cu extensie de 20 px doar pe aceste laturi, eliminând dispersia de sus/stânga.
 
 ## Rezumatul selecției unice TreeView/ComboTree — 18.10.2026
 

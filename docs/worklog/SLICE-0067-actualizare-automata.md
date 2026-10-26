@@ -288,3 +288,33 @@ Cererea: «make the updater write DisplayVersion too». `src\KBot.Updater\Instal
 ## Reper de predare din registru
 
 Focusul consemna «nimic comis» pentru implementarea inițială și «comis» pentru 01; sunt stări la reperul lor, nu afirmații despre indexul Git de astăzi. Butoanele din KbotForm/LoginForm erau amânate până la acceptarea operatorului, iar primul push/restart rămânea de făcut.
+
+---
+
+<a id="slice-0067-03"></a>
+
+## SLICE 0067-03 — «Caută actualizări» poate reinstala ultimul pachet chiar daca versiunea nu e mai mare
+
+**Data:** 26.10.2026 **Cererea operatorului:** mici modificari publicate fara cresterea versiunii (pentru un singur utilizator); utilizatorul sa poata trage ultimul pachet din Setari chiar daca nu e mai nou. Operatorul a confirmat ca ceilalti primesc modificarile la urmatoarea lor actualizare normala.
+
+### Ce s-a schimbat si de ce
+
+Un fisier de cod: `src\KBot.App\Update\AppUpdateService.vb`, `Offer`, ramura `UpToDate`.
+Pe apel manual (butonul din Setari), cand serverul are un pachet (`Info` nu e `Nothing`) dar versiunea lui nu e mai mare, mesajul «Aveti ultima versiune» devine o intrebare Da/Nu. «Da» ruleaza `DownloadAndHandOver` cu `Info`-ul primit (aceeasi cale ca la o actualizare optionala). La pornire nimic nu se schimba. `KBot.Updater` nu compara versiuni, deci n-a fost atins. Daca serverul nu a publicat nimic, mesajul ramane cel vechi.
+
+Ajutor: `HelpContent\contabil\actualizare.md`, sectiunea «Oricând: Caută actualizări» (tag `0067-03`).
+
+### Fisiere atinse
+
+- `src\KBot.App\Update\AppUpdateService.vb`
+- `src\KBot.App\HelpContent\contabil\actualizare.md`
+
+### Rezultate
+
+`dotnet build src\KBot.App\KBot.App.vbproj -c Debug`: 0 erori, 0 avertismente. Niciun test, nimic rulat pe ecran.
+
+### Nerulat / amanat
+
+- Fluxul cap la cap (buton -> intrebare -> descarcare -> updater -> repornire) nu a fost rulat.
+- Daca serverul are o versiune MAI VECHE decat cea locala, intrebarea ofera in continuare pachetul serverului (textul numeste versiunea serverului); nu exista o avertizare separata de «downgrade».
+- `FileVersion` din `KBot.App.vbproj` nu a fost crescut.

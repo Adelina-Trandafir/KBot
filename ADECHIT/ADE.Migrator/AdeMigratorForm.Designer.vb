@@ -39,7 +39,7 @@ Partial Class AdeMigratorForm
     Friend WithEvents tlpActiune As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
-    Friend WithEvents btnChitante As System.Windows.Forms.Button
+    Friend WithEvents btnGoleste As System.Windows.Forms.Button
     Friend WithEvents btnStop As System.Windows.Forms.Button
     Friend WithEvents lblMigrationState As System.Windows.Forms.Label
     Friend WithEvents grpLog As System.Windows.Forms.GroupBox
@@ -111,7 +111,7 @@ Partial Class AdeMigratorForm
         tlpActiune = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblRezumat = New System.Windows.Forms.Label()
         btnMigreaza = New System.Windows.Forms.Button()
-        btnChitante = New System.Windows.Forms.Button()
+        btnGoleste = New System.Windows.Forms.Button()
         tlpJos = New Global.KBot.Controls.KBotTableLayoutPanel()
         grpTabele = New System.Windows.Forms.GroupBox()
         dgvTabele = New KBot.Controls.KBotDataView()
@@ -392,11 +392,11 @@ Partial Class AdeMigratorForm
         '
         tlpActiune.ColumnCount = 4
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190.0F))
+        tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
         tlpActiune.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130.0F))
         tlpActiune.Controls.Add(lblRezumat, 0, 0)
-        tlpActiune.Controls.Add(btnChitante, 1, 0)
+        tlpActiune.Controls.Add(btnGoleste, 1, 0)
         tlpActiune.Controls.Add(btnMigreaza, 2, 0)
         tlpActiune.Controls.Add(btnStop, 3, 0)
         tlpActiune.Controls.Add(lblMigrationState, 0, 1)
@@ -416,14 +416,13 @@ Partial Class AdeMigratorForm
         lblRezumat.Text = "Alegeți fișierul Access și apăsați «Citește»."
         lblRezumat.TextAlign = ContentAlignment.MiddleLeft
         '
-        ' btnChitante
+        ' btnGoleste
         '
-        btnChitante.Dock = DockStyle.Fill
-        btnChitante.Enabled = False
-        btnChitante.Name = "btnChitante"
-        btnChitante.TabIndex = 3
-        btnChitante.Text = "Chitanțe dublate…"
-        btnChitante.UseVisualStyleBackColor = True
+        btnGoleste.Dock = DockStyle.Fill
+        btnGoleste.Name = "btnGoleste"
+        btnGoleste.TabIndex = 4
+        btnGoleste.Text = "Golește date"
+        btnGoleste.UseVisualStyleBackColor = True
         '
         ' btnMigreaza
         '
@@ -676,8 +675,8 @@ Partial Class AdeMigratorForm
         tipAde.SetToolTipHeader(chkChildCnpIsParent, "CNP-ul părintelui din Access")
         tipAde.SetToolTipText(chkChildCnpIsParent, "Dacă CNP-ul copilului din Access aparține părintelui, copiază Platitori.CNP în CNP_Platitor pentru plătitorii asociați. După schimbare, apăsați «Testează».")
         tipAde.SetToolTipText(btnTesteaza, "Verifică parola, baza cu numele DC-ului și dacă tabelele AD_ sunt create și goale.")
-        tipAde.SetToolTipHeader(btnChitante, "Chitanțe dublate")
-        tipAde.SetToolTipText(btnChitante, "Se activează când planul găsește chitanțe cu aceeași serie și același număr. Deschide o listă în care schimbați numerele de mână sau aplicați regula pentru cele mai vechi. Access-ul nu este modificat.")
+        tipAde.SetToolTipHeader(btnGoleste, "Golește date")
+        tipAde.SetToolTipText(btnGoleste, "Scoate din memorie tot ce s-a citit și ce ați schimbat pentru fișierul ales: citirea din Access, planul, bifele de grupe, educatorii, rezultatul verificării serverului și jurnalul de pe ecran. Rămân fișierul ales, DC-ul, subunitatea și datele serverului. Nu șterge nimic de pe disc, din Access sau de pe server.")
         tipAde.SetToolTipHeader(btnMigreaza, "Migrează")
         tipAde.SetToolTipText(btnMigreaza, "Scrie planul verificat într-o singură tranzacție. Motivele blocării sunt afișate lângă buton și în jurnal.")
         '

@@ -21,7 +21,7 @@
     <OptionCompare>Binary</OptionCompare>
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <ApplicationIcon>KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -75,6 +75,7 @@
     <EmbeddedResource Include="..\src\KBot.App\Resources\save_32.png" LogicalName="icon.backup_server" />
     <EmbeddedResource Include="..\src\KBot.App\Resources\folder_open.png" LogicalName="icon.backup_local" />
     <EmbeddedResource Include="..\src\KBot.App\Resources\ef_iesiri.png" LogicalName="icon.publish" />
+    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Brick-link.32.png" LogicalName="icon.md_history" />
   </ItemGroup>
 
   <ItemGroup>

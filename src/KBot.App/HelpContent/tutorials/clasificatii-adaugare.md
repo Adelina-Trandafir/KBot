@@ -9,39 +9,39 @@ host-key: clasificatii-adaugare
 <!-- slice: 000T-10 -->
 
 ## Deschide meniul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, AV01-13 -->
 target: KbotForm.btnMeniu
 wait: click
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
 Apasă butonul <b>MENIU</b>.
 
 ## Nomenclatoare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, AV01-13 -->
 anchor: menu.nomenclatoare
 allow: KbotForm.btnMeniu
 wait: anchor:menu.clasificatii
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
 Treci cu mausul peste <b>«Nomenclatoare»</b> sau apasă-l: se deschide lista lui.
 
-## Clasificații bugetare
-<!-- slice: 000T-10 -->
+## Clasificații cheltuieli
+<!-- slice: 000T-10, AV01-13 -->
 anchor: menu.clasificatii
 allow: KbotForm.btnMeniu
 wait: opens:ClasificatiiForm
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
-Alege <b>«Clasificații bugetare»</b>.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+Alege <b>«Clasificații cheltuieli»</b>.
 
 ## Arborele de clasificații
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.tree
+target: ClasificatiiBugetView.tree
 Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifele de sub arbore
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.tlyBife
+target: ClasificatiiBugetView.tlyBife
 optional: yes
 why: Bifele sunt doar filtre ale arborelui; nu schimbă nimic în date.
 <b>«Arată toate clasificațiile»</b> bifat: arborele arată toate clasificațiile configurate; debifat: doar cele cu mișcare în an (un trimestru de buget sau de rectificare diferit de zero).<BR>
@@ -49,7 +49,7 @@ why: Bifele sunt doar filtre ale arborelui; nu schimbă nimic în date.
 
 ## Iconița «+» din subsolul arborelui
 <!-- slice: 000T-10 -->
-target: ClasificatiiForm.tree
+target: ClasificatiiBugetView.tree
 part: footer.right
 wait: opens:ClasificatiiAddForm
 Apasă <b>«+»</b> din subsolul arborelui, cel de lângă «Adaugă clasificații». Se deschide fereastra de adăugare.

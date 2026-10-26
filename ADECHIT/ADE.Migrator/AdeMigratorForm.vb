@@ -66,8 +66,12 @@ Public Class AdeMigratorForm
     Private _lastMigrationState As String = String.Empty
     Private _targetCheckError As String = String.Empty
     Private _initializing As Boolean = True
-    ''' <summary>The receipt numbers the operator changed, per IDC in Access; cleared when another file is read.</summary>
-    Private _receiptEdits As New Dictionary(Of Integer, Integer)()
+    ''' <summary>Longest single entry written to the log box, in characters.</summary>
+    Private Const MaxEntryChars As Integer = 4000
+    ''' <summary>Longest text the log box keeps before the oldest half is dropped.</summary>
+    Private Const MaxLogChars As Integer = 400000
+    ''' <summary>How many findings or reasons are written one by one to the log box.</summary>
+    Private Const MaxLoggedFindings As Integer = 20
 
     Public Sub New()
         InitializeComponent()
@@ -200,10 +204,24 @@ Public Class AdeMigratorForm
     End Sub
 
     ''' <summary>Keep session diagnostics visible without replacing the shared error logger.</summary>
-    Private Sub AppendLog(level As String, message As String)
+    ''' <summary>
+    ''' The box is a RichTextBox: every append costs more as the text grows, so one entry is cut at <see cref="MaxEntryChars"/> and the
+    ''' whole text at <see cref="MaxLogChars"/> (the oldest lines go first). Thousands of findings must not make writing slow.
+    ''' Pass k_whole = True for text the operator asked to see in full (the common error log tail).
+    ''' </summary>
+    Private Sub AppendLog(level As String, message As String, Optional k_whole As Boolean = False)
         If _initializing AndAlso level = "STARE MIGRARE" Then Return
         If rtbLog Is Nothing OrElse rtbLog.IsDisposed Then Return
-        rtbLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {level}: {message}" & Environment.NewLine)
+        Dim k_text = message
+        If Not k_whole AndAlso k_text.Length > MaxEntryChars Then
+            k_text = k_text.Substring(0, MaxEntryChars) & $"… (încă {k_text.Length - MaxEntryChars} caractere nescrise aici)"
+        End If
+        If rtbLog.TextLength + k_text.Length > MaxLogChars Then
+            Dim k_keep = Math.Max(0, MaxLogChars \ 2 - k_text.Length)
+            Dim k_old = rtbLog.Text
+            rtbLog.Text = If(k_keep > 0 AndAlso k_old.Length > k_keep, "… (liniile mai vechi au fost scoase din această casetă)" & Environment.NewLine & k_old.Substring(k_old.Length - k_keep), String.Empty)
+        End If
+        rtbLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {level}: {k_text}" & Environment.NewLine)
         rtbLog.SelectionStart = rtbLog.TextLength
         rtbLog.ScrollToCaret()
     End Sub
@@ -230,7 +248,7 @@ Public Class AdeMigratorForm
             Using reader As New StreamReader(stream, Encoding.UTF8)
                 ' Discard a partial first line when the byte window starts inside an entry.
                 If truncated Then reader.ReadLine()
-                AppendLog("JURNAL COMUN", reader.ReadToEnd())
+                AppendLog("JURNAL COMUN", reader.ReadToEnd(), True)
             End Using
         End Using
     End Sub
@@ -275,7 +293,6 @@ Public Class AdeMigratorForm
                 _plan = Nothing
                 _targetProblems = Nothing
                 _targetCounts = Nothing
-                _receiptEdits.Clear()
                 _source = Await Task.Run(Function() AdeSource.Read(k_path))
                 _settings.LastFile = k_path
                 SavePreferences()
@@ -381,27 +398,43 @@ Public Class AdeMigratorForm
         _targetProblems = Nothing
         _targetCounts = Nothing
         RefreshMigrateButton()
-        _plan = AdePlan.Build(_source, ReadEducators(), ReadGroupTypes(), chkChildCnpIsParent.Checked, _receiptEdits)
+        _plan = AdePlan.Build(_source, ReadEducators(), ReadGroupTypes(), chkChildCnpIsParent.Checked)
         _targetProblems = Nothing
         ShowPlan()
-        For Each finding In _plan.Findings
-            AppendLog(If(finding.Blocking, "BLOCAJ ACCESS", "OBSERVAȚIE"), finding.Text)
+        For Each k_finding In _plan.Findings.Take(MaxLoggedFindings)
+            AppendLog(If(k_finding.Blocking, "BLOCAJ ACCESS", "OBSERVAȚIE"), k_finding.Text)
         Next
+        If _plan.Findings.Count > MaxLoggedFindings Then
+            AppendLog("INFO", $"Încă {_plan.Findings.Count - MaxLoggedFindings} constatări nu sunt scrise aici; lista completă este în «Conversii și constatări».")
+        End If
         RefreshMigrateButton()
     End Sub
 
-    ''' <summary>The window where the numbers of doubled receipts are changed by hand; the plan is rebuilt with the new numbers.</summary>
-    Private Sub BtnChitante_Click(sender As Object, e As EventArgs) Handles btnChitante.Click
-        If _busy OrElse _source Is Nothing OrElse _plan Is Nothing Then Return
+    ''' <summary>
+    ''' «Golește date»: everything held in memory for the chosen file is dropped: the reading, the plan,
+    ''' the group and educator choices, the server check and the log on screen. The file, DC, subunit and server fields stay. Nothing is deleted
+    ''' on disk, in Access or on the server.
+    ''' </summary>
+    Private Sub BtnGoleste_Click(sender As Object, e As EventArgs) Handles btnGoleste.Click
+        If _busy Then Return
         Try
-            Using k_form As New AdeReceiptsForm(_plan.Receipts, _receiptEdits)
-                If k_form.ShowDialog(Me) <> DialogResult.OK Then Return
-                _receiptEdits = k_form.Edits
-            End Using
-            RebuildPlan()
-            Say($"Numere de chitanțe schimbate: {_receiptEdits.Count}. Planul a fost refăcut; apăsați «Testează» înainte de migrare.")
+            _source = Nothing
+            _plan = Nothing
+            _targetProblems = Nothing
+            _targetCounts = Nothing
+            _targetCheckError = String.Empty
+            _lastMigrationState = String.Empty
+            dgvTabele.ClearRows()
+            dgvEducatori.ClearRows()
+            dgvGrupe.ClearRows()
+            rtbConversii.Clear()
+            rtbLog.Clear()
+            lblStareServer.Text = "Netestat"
+            lblRezumat.Text = "Datele au fost golite. Apăsați «Citește» pentru a citi din nou fișierul Access."
+            RefreshMigrateButton()
+            Say("Memoria a fost golită pentru fișierul ales: citirea, planul, alegerile de grupe și educatori, verificarea serverului.")
         Catch ex As Exception
-            ShowOperationError("AdeMigratorForm.Receipts", "Refacerea planului după schimbarea numerelor de chitanțe a eșuat.", ex)
+            ShowOperationError("AdeMigratorForm.Clear", "Golirea datelor a eșuat.", ex)
         End Try
     End Sub
 
@@ -581,13 +614,15 @@ Public Class AdeMigratorForm
             reasons.AddRange(_targetProblems)
         End If
         btnMigreaza.Enabled = reasons.Count = 0
-        btnChitante.Enabled = Not _busy AndAlso _plan IsNot Nothing AndAlso AdeReceiptNumbers.Duplicated(_plan.Receipts).Count > 0
+        btnGoleste.Enabled = Not _busy AndAlso _source IsNot Nothing
         Dim state = If(reasons.Count = 0, "Migrarea poate porni.", "Migrare blocată: " & reasons(0))
         If reasons.Count > 1 Then state &= $" Mai sunt {reasons.Count - 1} motive; vedeți jurnalul de mai jos."
         lblMigrationState.Text = state
         If state <> _lastMigrationState Then
             _lastMigrationState = state
-            AppendLog("STARE MIGRARE", If(reasons.Count = 0, state, String.Join(Environment.NewLine, reasons)))
+            ' Only the first few reasons: the list can be as long as the findings, and it is written at every state change.
+            AppendLog("STARE MIGRARE", If(reasons.Count = 0, state, String.Join(Environment.NewLine, reasons.Take(MaxLoggedFindings)) &
+                      If(reasons.Count > MaxLoggedFindings, Environment.NewLine & $"… și încă {reasons.Count - MaxLoggedFindings} motive.", String.Empty)))
         End If
     End Sub
 

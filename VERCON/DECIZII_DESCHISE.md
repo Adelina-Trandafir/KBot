@@ -105,18 +105,11 @@ Sursa: raportul de profilare pe `tz_2025` / `tz_2026` (047_GR47). Toate mesajele
 
 ### Revizie 14.10.2026 — migrare fără recalcularea valorilor
 
-Decizie utilizator: VRC copiază valorile din Access, chiar dacă antetul nu corespunde
-liniilor. Aceasta înlocuiește regulile istorice N01/N02 de corectare la migrare și
-regulile de inversare a semnelor. Totalurile 0/NULL, prețurile și cantitățile negative
-rămân în sursă și în țintă identice. Diferențele sunt doar raportate. Numerotarea după
-ultimul număr real rămâne explicit neschimbată; calculele documentelor noi din web
-rămân în codul aplicației și nu sunt aplicate datelor migrate.
+Decizie utilizator: VRC copiază valorile din Access, chiar dacă antetul nu corespunde liniilor. Aceasta înlocuiește regulile istorice N01/N02 de corectare la migrare și regulile de inversare a semnelor. Totalurile 0/NULL, prețurile și cantitățile negative rămân în sursă și în țintă identice. Diferențele sunt doar raportate. Numerotarea după ultimul număr real rămâne explicit neschimbată; calculele documentelor noi din web rămân în codul aplicației și nu sunt aplicate datelor migrate.
 
 ## G. Decizii NIR și contul produsului — 16.10.2026, SLICE-VC06-06
 
-Sursa: cerințele și clarificările explicite ale utilizatorului din threadul
-VC06-06. Nu sunt propuneri ale modelului. Implementarea a fost autorizată și
-scrisă în surse în același slice, fără teste, build, browser sau SQL executate.
+Sursa: cerințele și clarificările explicite ale utilizatorului din threadul VC06-06. Nu sunt propuneri ale modelului. Implementarea a fost autorizată și scrisă în surse în același slice, fără teste, build, browser sau SQL executate.
 
 | ID | Temă | Decizie aprobată |
 |---|---|---|
@@ -132,15 +125,7 @@ scrisă în surse în același slice, fără teste, build, browser sau SQL execu
 | VC06-06-D10 | Istoric produs | Dacă un produs are mișcări prin oricare variantă de preț, în orice an, contul său nu mai poate fi modificat. Fără mișcări, contul rămâne editabil. Restricția se aplică în interfață și obligatoriu în server, inclusiv la apel API direct. Celelalte câmpuri păstrează regulile lor de editare. |
 | VC06-06-D11 | Migrare Access | În sursa Access un NIR are un singur cont din unitatea respectivă. Pentru aceste decizii nu se schimbă migratorul, nu se copiază contul antetului în linii și nu se implementează în import noul model de introducere. Remaparea existentă produs/preț/document este suficientă. NIR-urile, numerele și valorile sursă rămân păstrate. |
 
-Consecință implementată: validarea NIR nu mai obligă toate
-produsele să aparțină unui singur cont din antet. Conturile documentului se
-deduc din produsele liniilor; contul unic din antetul istoric nu limitează un
-NIR nou cu mai multe conturi. Blocarea modificării contului produsului cu
-mișcare protejează încadrarea istorică fără duplicarea contului în document.
+Consecință implementată: validarea NIR nu mai obligă toate produsele să aparțină unui singur cont din antet. Conturile documentului se deduc din produsele liniilor; contul unic din antetul istoric nu limitează un NIR nou cu mai multe conturi. Blocarea modificării contului produsului cu mișcare protejează încadrarea istorică fără duplicarea contului în document.
 
-Ținta ValoareFC, TVA real, cronologia, disponibilul și regulile AUTO decise
-anterior rămân aplicabile. Editorul folosește `receipt-allocation.js` și
-ComboTree, iar salvarea atomică folosește `receipt_distribution.py` și
-`receipt_destinations.py`. Trasabilitate: [worklog VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md)
-și [fluxul UI](FLUXURI_UI.md#7-decizii-nir-din-16102026--vc06-06).
+Ținta ValoareFC, TVA real, cronologia, disponibilul și regulile AUTO decise anterior rămân aplicabile. Editorul folosește `receipt-allocation.js` și ComboTree, iar salvarea atomică folosește `receipt_distribution.py` și `receipt_destinations.py`. Trasabilitate: [worklog VC06-06](../docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md) și [fluxul UI](FLUXURI_UI.md#7-decizii-nir-din-16102026--vc06-06).
 

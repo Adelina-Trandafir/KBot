@@ -49,6 +49,7 @@ Partial Class KBotDataView
 
     Private _arrowKeyEditing As Boolean = True
     Private _enterKeyMode As KBotEnterKeyMode = KBotEnterKeyMode.NextRow
+    Private _tabKeyMode As KBotTabKeyMode = KBotTabKeyMode.NextColumn
 
     Private Const EM_SETMARGINS As Integer = &HD3
     Private Const EC_LEFTMARGIN As Integer = &H1
@@ -113,6 +114,25 @@ Partial Class KBotDataView
                 Throw New ArgumentException("Unknown Enter key mode: " & value.ToString(), NameOf(value))
             End If
             _enterKeyMode = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Where Tab goes from an open editor (slice 00EF-51): the next column (default) or the next EDITABLE cell of the row, falling to
+    ''' the first editable field of the next row after the last one. See <see cref="KBotTabKeyMode"/>.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Where Tab goes from an editor: the next column, or the next editable cell (then the next row).")>
+    <DefaultValue(KBotTabKeyMode.NextColumn)>
+    Public Property TabKeyMode As KBotTabKeyMode
+        Get
+            Return _tabKeyMode
+        End Get
+        Set(value As KBotTabKeyMode)
+            If Not [Enum].IsDefined(GetType(KBotTabKeyMode), value) Then
+                Throw New ArgumentException("Unknown Tab key mode: " & value.ToString(), NameOf(value))
+            End If
+            _tabKeyMode = value
         End Set
     End Property
 
@@ -579,7 +599,15 @@ Partial Class KBotDataView
                     e.SuppressKeyPress = True
                 Case Keys.Tab
                     Dim shift As Boolean = (e.Modifiers And Keys.Shift) = Keys.Shift
-                    If CommitEdit() Then MoveColumn(If(shift, -1, 1))
+                    If CommitEdit() Then
+                        If _tabKeyMode <> KBotTabKeyMode.NextEditableCell Then
+                            MoveColumn(If(shift, -1, 1))
+                        ElseIf shift Then
+                            MoveEditableColumn(-1)
+                        Else
+                            MoveToNextEditableCell(True)
+                        End If
+                    End If
                     e.Handled = True
                     e.SuppressKeyPress = True
                 Case Keys.Up, Keys.Down
@@ -704,27 +732,33 @@ Partial Class KBotDataView
     ''' </summary>
     Private Sub MoveAfterEnter(reopen As Boolean)
         If _enterKeyMode = KBotEnterKeyMode.NextEditableCell Then
-            Dim nextCol As KBotDataColumn = NextEditableColumn(_currentColumnKey, 1, _currentRowIndex)
-            If nextCol IsNot Nothing Then
-                SetCurrentCell(_currentRowIndex, nextCol.Key)
-                If reopen Then ReopenEditorAtCurrentCell()
-                Return
-            End If
-
-            ' End of row: go down and take the next row's first editable field. If the row did
-            ' not change (we were on the last one), do not go back to the start of the same row --
-            ' that would overwrite what was just filled in.
-            Dim oldRow As Integer = _currentRowIndex
-            MoveRow(1)
-            If _currentRowIndex <> oldRow Then
-                Dim firstCol As KBotDataColumn = NextEditableColumn(Nothing, 1, _currentRowIndex)
-                If firstCol IsNot Nothing Then SetCurrentCell(_currentRowIndex, firstCol.Key)
-            End If
-            If reopen Then ReopenEditorAtCurrentCell()
+            MoveToNextEditableCell(reopen)
             Return
         End If
 
         MoveRow(1)                                   ' the Access continuous-form feel
+        If reopen Then ReopenEditorAtCurrentCell()
+    End Sub
+
+    ' The next editable cell of the row; after the last one, the first editable field of the next row (shared by Enter in
+    ' NextEditableCell mode and Tab in KBotTabKeyMode.NextEditableCell).
+    Private Sub MoveToNextEditableCell(reopen As Boolean)
+        Dim nextCol As KBotDataColumn = NextEditableColumn(_currentColumnKey, 1, _currentRowIndex)
+        If nextCol IsNot Nothing Then
+            SetCurrentCell(_currentRowIndex, nextCol.Key)
+            If reopen Then ReopenEditorAtCurrentCell()
+            Return
+        End If
+
+        ' End of row: go down and take the next row's first editable field. If the row did
+        ' not change (we were on the last one), do not go back to the start of the same row --
+        ' that would overwrite what was just filled in.
+        Dim oldRow As Integer = _currentRowIndex
+        MoveRow(1)
+        If _currentRowIndex <> oldRow Then
+            Dim firstCol As KBotDataColumn = NextEditableColumn(Nothing, 1, _currentRowIndex)
+            If firstCol IsNot Nothing Then SetCurrentCell(_currentRowIndex, firstCol.Key)
+        End If
         If reopen Then ReopenEditorAtCurrentCell()
     End Sub
 

@@ -13,6 +13,9 @@ Imports KBot.Theming
 ' Slice 00EF-08 -- the «Conținut» tab: the lines of the invoice in a grid typed straight into (Access EFACTURA_ADD_SUB), with
 ' the unit of measure chosen from the common UN/ECE list. The value of a line (quantity x price, two decimals) is shown as
 ' the operator types; the server computes it again on save and its figure is the one that counts.
+' Slice 00EF-50: while the invoice is being typed the grid ends with ONE SPARE ROW (Tag SpareTag, no button shown): typing in any of
+' its cells turns it into a line (unit XPP, quantity 1, price 0 unless typed) and a fresh spare row appears below. There is no
+' "Linie noua" button any more; each line has "duplicate" (a copy at the end, the cursor in its "Continut") and "delete".
 Partial Public Class FacturiForm
 
     Private Const ColNr As String = "nr"
@@ -22,7 +25,9 @@ Partial Public Class FacturiForm
     Private Const ColPu As String = "pu"
     Private Const ColValoare As String = "valoare"
     Private Const ColSterge As String = "sterge"
+    Private Const ColDuplica As String = "duplica"
     Private Const DeleteCaption As String = "✕"
+    Private Const DuplicateCaption As String = "❐"
     ' The unit Access put on a new line (def="XPP" in EFACTURA_ADD_SUB): UN/ECE «bucată».
     Private Const DefaultUm As String = "XPP"
 
@@ -42,6 +47,9 @@ Partial Public Class FacturiForm
     End Class
 
     Private _um As New List(Of UmChoice)()
+
+    ' The Tag of the spare row at the end of the grid (a real new line has Tag Nothing, so Nothing cannot mark it).
+    Private Shared ReadOnly SpareTag As New Object()
 
     ' ── Units of measure ────────────────────────────────────────────────────────
 
@@ -93,6 +101,7 @@ Partial Public Class FacturiForm
                 k_row(ColCant) = k_l.Cant
                 k_row(ColPu) = k_l.PU
                 k_row(ColValoare) = k_l.Valoare
+                k_row(ColDuplica) = DuplicateCaption
                 k_row(ColSterge) = DeleteCaption
             Next
         Finally
@@ -104,13 +113,14 @@ Partial Public Class FacturiForm
 
     ''' <summary>The lines as the grid shows them, or Nothing after telling the operator what is wrong (the row is opened).</summary>
     Private Function ReadLines() As List(Of EFacturaLinie)
-        If gridLinii.RowCount = 0 Then
-            Problem("Factura trebuie să aibă cel puțin o linie (vederea «Conținut»).", ViewContinut, btnLinieNoua)
+        If RealLineCount() = 0 Then
+            Problem("Factura trebuie să aibă cel puțin o linie (vederea «Conținut»).", ViewContinut, gridLinii)
             Return Nothing
         End If
         Dim k_lines As New List(Of EFacturaLinie)()
         For k_i As Integer = 0 To gridLinii.RowCount - 1
             Dim k_row As KBotDataRow = gridLinii.Rows(k_i)
+            If IsSpare(k_row) Then Continue For
             Dim k_content As String = Convert.ToString(k_row(ColContinut), CultureInfo.CurrentCulture)?.Trim()
             Dim k_um As String = UmCode(k_row(ColUm))
             If String.IsNullOrEmpty(k_content) Then
@@ -133,6 +143,52 @@ Partial Public Class FacturiForm
         Next
         Return k_lines
     End Function
+
+    ' ── The spare row ───────────────────────────────────────────────────────────
+
+    Private Shared Function IsSpare(k_row As KBotDataRow) As Boolean
+        Return k_row IsNot Nothing AndAlso ReferenceEquals(k_row.Tag, SpareTag)
+    End Function
+
+    ''' <summary>The lines of the invoice, without the spare row.</summary>
+    Private Function RealLineCount() As Integer
+        Dim k_count As Integer = gridLinii.RowCount
+        If k_count > 0 AndAlso IsSpare(gridLinii.Rows(k_count - 1)) Then k_count -= 1
+        Return k_count
+    End Function
+
+    ''' <summary>The grid ends with the spare row while the invoice is typed or modified, and has none while it is only shown.</summary>
+    Private Sub ApplySpareLine(k_edit As Boolean)
+        Dim k_last As Integer = gridLinii.RowCount - 1
+        Dim k_has As Boolean = k_last >= 0 AndAlso IsSpare(gridLinii.Rows(k_last))
+        If k_edit = k_has Then Return
+        If k_has Then
+            gridLinii.RemoveRowAt(k_last)
+        Else
+            AddSpareRow()
+        End If
+    End Sub
+
+    Private Sub AddSpareRow()
+        Dim k_row As KBotDataRow = gridLinii.AddRow()
+        k_row.Tag = SpareTag
+    End Sub
+
+    ''' <summary>The spare row was typed into: it becomes a line (the cells not typed get their defaults) and a new spare row follows it.</summary>
+    Private Sub PromoteSpareLine(k_row As KBotDataRow, k_columnKey As String)
+        Dim k_typed As String = Convert.ToString(k_row(k_columnKey), CultureInfo.CurrentCulture)
+        If String.IsNullOrWhiteSpace(k_typed) Then Return
+        k_row(ColNr) = NextLineNumber()
+        If k_row(ColUm) Is Nothing Then k_row(ColUm) = UmFor(DefaultUm)
+        If k_row(ColCant) Is Nothing Then k_row(ColCant) = 1D
+        If k_row(ColPu) Is Nothing Then k_row(ColPu) = 0D
+        k_row(ColValoare) = Math.Round(AsDecimal(k_row(ColCant)) * AsDecimal(k_row(ColPu)), 2, MidpointRounding.AwayFromZero)
+        k_row(ColDuplica) = DuplicateCaption
+        k_row(ColSterge) = DeleteCaption
+        k_row.Tag = Nothing
+        k_row.IsDirty = True
+        AddSpareRow()
+    End Sub
 
     Private Sub LineProblem(k_text As String, k_rowIndex As Integer, k_column As String)
         SelectView(ViewContinut)
@@ -229,6 +285,10 @@ Partial Public Class FacturiForm
     Private Sub GridLinii_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) Handles gridLinii.CellValueChanged
         Try
             If _loading OrElse _mode = EditMode.Viewing Then Return
+            If e.RowIndex >= 0 AndAlso e.RowIndex < gridLinii.RowCount AndAlso IsSpare(gridLinii.Rows(e.RowIndex)) Then
+                PromoteSpareLine(gridLinii.Rows(e.RowIndex), e.ColumnKey)
+                If IsSpare(gridLinii.Rows(e.RowIndex)) Then Return
+            End If
             If e.ColumnKey = ColCant OrElse e.ColumnKey = ColPu Then
                 Dim k_row As KBotDataRow = gridLinii.Rows(e.RowIndex)
                 k_row(ColValoare) = Math.Round(AsDecimal(k_row(ColCant)) * AsDecimal(k_row(ColPu)), 2, MidpointRounding.AwayFromZero)
@@ -241,44 +301,75 @@ Partial Public Class FacturiForm
         End Try
     End Sub
 
-    Private Sub BtnLinieNoua_Click(sender As Object, e As EventArgs) Handles btnLinieNoua.Click
+    ''' <summary>The spare row shows no button; its «Continut» carries a hint.</summary>
+    Private Sub GridLinii_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles gridLinii.CellFormatting
         Try
-            If _busy OrElse _mode = EditMode.Viewing Then Return
-            If Not gridLinii.CommitPendingEdit() Then Return
-            Dim k_row As KBotDataRow = gridLinii.AddRow()
-            k_row(ColNr) = NextLineNumber()
-            k_row(ColContinut) = String.Empty
-            k_row(ColUm) = UmFor(DefaultUm)
-            k_row(ColCant) = 1D
-            k_row(ColPu) = 0D
-            k_row(ColValoare) = 0D
-            k_row(ColSterge) = DeleteCaption
-            k_row.IsDirty = True
-            SetDirty(True)
-            UpdateTotal()
-            Dim k_index As Integer = gridLinii.RowCount - 1
-            gridLinii.EnsureVisible(k_index)
-            gridLinii.EditCell(ColContinut, k_index)
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridLinii.RowCount Then Return
+            If Not IsSpare(gridLinii.Rows(e.RowIndex)) Then Return
+            Select Case e.ColumnKey
+                Case ColDuplica, ColSterge
+                    e.HideButton = True
+                Case ColContinut
+                    If String.IsNullOrEmpty(e.Text) Then
+                        e.Text = "Scrieți aici conținutul unei linii noi…"
+                        e.ForeColor = ThemeManager.Current.Palette.TextDimColor
+                    End If
+            End Select
         Catch ex As Exception
-            GlobalErrorLog.Write("FacturiForm.BtnLinieNoua_Click", ex)
+            GlobalErrorLog.Write("FacturiForm.GridLinii_CellFormatting", ex)
         End Try
     End Sub
 
     ' The line number after the highest numeric one already there (migrated invoices may carry any text).
     Private Function NextLineNumber() As String
         Dim k_max As Integer = 0
-        For k_i As Integer = 0 To gridLinii.RowCount - 1
+        For k_i As Integer = 0 To RealLineCount() - 1
             Dim k_n As Integer
             If Integer.TryParse(Convert.ToString(gridLinii.Rows(k_i)(ColNr), CultureInfo.InvariantCulture), NumberStyles.None,
                                 CultureInfo.InvariantCulture, k_n) Then k_max = Math.Max(k_max, k_n)
         Next
-        Return (Math.Max(k_max, gridLinii.RowCount) + 1).ToString(CultureInfo.InvariantCulture)
+        Return (Math.Max(k_max, RealLineCount()) + 1).ToString(CultureInfo.InvariantCulture)
     End Function
+
+    ''' <summary>A copy of a line goes at the end of the lines (above the spare row) and the cursor opens its «Continut».</summary>
+    Private Sub DuplicateLine(k_rowIndex As Integer)
+        If Not gridLinii.CommitPendingEdit() Then Return
+        Dim k_source As KBotDataRow = gridLinii.Rows(k_rowIndex)
+        Dim k_nr As String = NextLineNumber()
+        Dim k_content As Object = k_source(ColContinut)
+        Dim k_um As Object = k_source(ColUm)
+        Dim k_cant As Object = k_source(ColCant)
+        Dim k_pu As Object = k_source(ColPu)
+        Dim k_value As Object = k_source(ColValoare)
+        ' The grid only appends: the spare row steps aside, the copy takes its place, a new spare row follows.
+        gridLinii.RemoveRowAt(gridLinii.RowCount - 1)
+        Dim k_row As KBotDataRow = gridLinii.AddRow()
+        k_row(ColNr) = k_nr
+        k_row(ColContinut) = k_content
+        k_row(ColUm) = k_um
+        k_row(ColCant) = k_cant
+        k_row(ColPu) = k_pu
+        k_row(ColValoare) = k_value
+        k_row(ColDuplica) = DuplicateCaption
+        k_row(ColSterge) = DeleteCaption
+        k_row.IsDirty = True
+        AddSpareRow()
+        SetDirty(True)
+        UpdateTotal()
+        Dim k_index As Integer = gridLinii.RowCount - 2
+        gridLinii.EnsureVisible(k_index)
+        gridLinii.EditCell(ColContinut, k_index)
+    End Sub
 
     Private Sub GridLinii_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridLinii.ButtonClick
         Try
-            If e.ColumnKey <> ColSterge OrElse _busy OrElse _mode = EditMode.Viewing Then Return
+            If (e.ColumnKey <> ColSterge AndAlso e.ColumnKey <> ColDuplica) OrElse _busy OrElse _mode = EditMode.Viewing Then Return
             If e.RowIndex < 0 OrElse e.RowIndex >= gridLinii.RowCount Then Return
+            If IsSpare(gridLinii.Rows(e.RowIndex)) Then Return
+            If e.ColumnKey = ColDuplica Then
+                DuplicateLine(e.RowIndex)
+                Return
+            End If
             gridLinii.RemoveRowAt(e.RowIndex)
             UpdateTotal()
             SetDirty(True)

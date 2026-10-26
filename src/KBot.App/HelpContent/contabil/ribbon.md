@@ -16,11 +16,11 @@ etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul cone
 <!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butonul «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. | redo: 2026-10-17 21:00 | why: 0114-15/16: grupul vederii poate avea mai multe butoane (Rezervari, Receptii); 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
 
 ## Filele și butoanele
-<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119 -->
+<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, AV01-13 -->
 
 | Fila | Grupul | Butoanele |
 |------|--------|-----------|
-| **Configurări** | Date | **Clasificații bugetare**, **Parteneri**, **Plan de conturi** — [Nomenclatoare](topic:contabil.nomenclatoare) |
+| **Configurări** | Date | **Clasificații**, **Parteneri**, **Plan de conturi** — [Nomenclatoare](topic:contabil.nomenclatoare) |
 | | Configurare | **Jurnal activitate** — **apare doar cât e pornit în Setări › Aplicație** — [Jurnal activitate](topic:contabil.jurnal); **Configurare K-BOT** — [Setări și aspect](topic:contabil.setari); **Istoric versiuni** — [Actualizarea K-BOT](topic:contabil.actualizare) |
 | | Unitate | **Conturi Unitate** — [Conturile unității emitente](topic:contabil.efactura.conturi); **Date Unitate** — datele unității ca emitent de facturi |
 | **Angajamente** | Navigare | **Lista angajamentelor** — arborele de angajamente cu vederile lor — [Fereastra principală](topic:contabil.fereastra) |
@@ -53,7 +53,7 @@ Ca să desfaci ribbonul la loc, dă **dublu clic** pe o filă sau clic pe **săg
 Pe un ecran mic ribbonul poate ocupa prea mult. În **Setări › Aplicație** bifezi **«Panglica din fereastra principală e compactă (iconițe și text mai mici)»**: butoanele au iconițe și text mai mici, rândurile sunt mai strânse și ribbonul ia mai puțin din înălțimea ferestrei. Se aplică imediat, fără repornire; debifat, ribbonul are mărimea obișnuită — [Setări](topic:contabil.setari).
 
 ## Butoanele din dreapta: «Închide» și cele ale paginii
-<!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85, 0114-15, 0114-16, 0000-91 -->
+<!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85, 0114-15, 0114-16, 0000-91, AV01-13 -->
 
 Butoanele din dreapta ribbonului stau pe **orice filă**, și cu ribbonul strâns. Ajutorul nu mai are buton aici: îl deschizi cu **F1** sau cu **?** din bara de titlu — [Ajutorul](topic:contabil.ajutor).
 
@@ -62,7 +62,7 @@ Butoanele din dreapta ribbonului stau pe **orice filă**, și cu ribbonul strân
   - **Sumar** — **«Asociază parteneri»** (stins, gri, când angajamentul n-are document de fundamentare) — [Vederea «Sumar»](topic:contabil.vederi.sumar);
   - **Rezervări** — **«Grafice»**, butonul documentului de fundamentare (își schimbă numele: «Adaugă rezervare», «Definitivează», «Derulează» sau «Generează PDF final»; apare doar când are ce face) și **«Repară...»** (apare doar când angajamentul are rezervări greșite) — [Vederea «Rezervări»](topic:contabil.vederi.rezervari);
   - **Recepții** — **«Asociază recepții»** și **«Reface din istoric...»** (apare doar când angajamentul are recepții cu lanțul neînchis) — [Vederea «Recepții»](topic:contabil.vederi.receptii).
-- **«Închide»** — închide **macheta de pe ecran** (Extrase de cont, Clasificații, un editor, Setări…). Dacă ai
+- **«Închide»** — închide **macheta de pe ecran** (Extrase de cont, Clasificații cheltuieli, un editor, Setări…). Dacă ai
   modificări nesalvate, macheta te întreabă, ca înainte. Din **lista angajamentelor** te întoarce la
   [«Acasă»](topic:contabil.acasa), fără să piardă angajamentul și vederea alese. Pe pagina «Acasă» butonul nu
   există: **K-BOT se închide doar din X-ul ferestrei**, din dreapta sus.
@@ -70,7 +70,7 @@ Butoanele din dreapta ribbonului stau pe **orice filă**, și cu ribbonul strân
 Tasta **Esc** închide macheta, la fel ca înainte.
 
 ## Unde găsești ce era în MENIU
-<!-- slice: 0114, 0118, 0119 -->
+<!-- slice: 0114, 0118, 0119, AV01-13 -->
 
 | Înainte | Acum, în ribbon |
 |---------|-----------------|
@@ -78,7 +78,7 @@ Tasta **Esc** închide macheta, la fel ca înainte.
 | MENIU › Adăugare angajamente... › Creează angajament în FOREXE | Angajamente › Adăugare › **Creează în FOREXE** |
 | MENIU › (!) Operațiuni necorelate | Angajamente › Verificări › **Operațiuni necorelate** |
 | MENIU › Extrase | Extrase › Documente › **Extrase** |
-| MENIU › Nomenclatoare › Clasificații bugetare / Parteneri | Configurări › Date |
+| MENIU › Nomenclatoare › Clasificații cheltuieli / Parteneri | Configurări › Date |
 | pictograma din stânga a arborelui › descarcă extrasele | grupul din dreapta al ribbonului › **Descarcă extrase** (cât e pe ecran lista angajamentelor sau «Extrase de cont») |
 | MENIU › E-Factura | E-Factura › E-Factura › **Vânzare** |
 | MENIU › Jurnal activitate | Configurări › Configurare › **Jurnal activitate** |

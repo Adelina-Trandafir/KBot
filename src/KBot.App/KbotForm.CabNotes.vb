@@ -150,7 +150,7 @@ Partial Public Class KbotForm
         RaiseEvent MenuStateChanged(Me, EventArgs.Empty)   ' the ribbon in AvacontMain follows (KbotForm.Host.vb)
         tips.SetToolTipText(btnMeniu, If(count > 0,
             $"Există {count} operațiuni «ERRRRRRRRRR» din FOREXE necorelate cu un angajament: Meniu → «Operațiuni necorelate».",
-            "Adăugarea angajamentelor, extrasele, clasificațiile bugetare și partenerii."))
+            "Adăugarea angajamentelor, extrasele, clasificațiile de cheltuieli și partenerii."))
     End Sub
 
     ''' <summary>

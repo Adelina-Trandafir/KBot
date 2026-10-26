@@ -4,8 +4,7 @@ Scris înainte de cod (ME02-03). Fișierele de cod: `KBotAdmin/Backup/`. Serveru
 
 ## Scop
 
-O copie a unei baze de unitate pe PC-ul operatorului, **criptată**, care ocupă loc doar pentru ce s-a schimbat de la copia
-precedentă, și din care se poate reconstitui oricare dintre momentele copiate („time-machine”).
+O copie a unei baze de unitate pe PC-ul operatorului, **criptată**, care ocupă loc doar pentru ce s-a schimbat de la copia precedentă, și din care se poate reconstitui oricare dintre momentele copiate („time-machine”).
 
 ## Criptografia (standard, nimic inventat)
 
@@ -17,8 +16,7 @@ precedentă, și din care se poate reconstitui oricare dintre momentele copiate 
 | Denumirea obiectelor | HMAC-SHA256(`kbk1-name`, conținutul necomprimat), 64 hex. Același conținut = același nume = un singur fișier; din nume nu se poate confirma un conținut cunoscut |
 | Compresie | Brotli (rapid) înaintea criptării; dacă nu câștigă, octeții rămân așa (un octet de semn: 0 = brut, 1 = brotli) |
 
-Cine are dosarul dar nu parola vede: câte fișiere sunt, cât de mari, când au fost scrise. Nu vede nume de baze, de tabele sau de câmpuri.
-**Fără parolă nu se recuperează nimic.** Parola se ține în managerul de parole.
+Cine are dosarul dar nu parola vede: câte fișiere sunt, cât de mari, când au fost scrise. Nu vede nume de baze, de tabele sau de câmpuri. **Fără parolă nu se recuperează nimic.** Parola se ține în managerul de parole.
 
 ## Dosarul
 
@@ -28,8 +26,7 @@ Cine are dosarul dar nu parola vede: câte fișiere sunt, cât de mari, când au
 <rădăcină>/s/<32 hex>.snp       instantanee: 0x02 | nonce | text criptat | tag   (numele e aleator)
 ```
 
-Scrierea e atomică (fișier temporar în același dosar, apoi mutare). Obiectele se scriu întâi, instantaneul **ultimul**: o oprire la mijloc lasă
-doar obiecte fără stăpân (curățate la retenție), niciodată un instantaneu cu obiecte lipsă.
+Scrierea e atomică (fișier temporar în același dosar, apoi mutare). Obiectele se scriu întâi, instantaneul **ultimul**: o oprire la mijloc lasă doar obiecte fără stăpân (curățate la retenție), niciodată un instantaneu cu obiecte lipsă.
 
 ## Un instantaneu (manifest)
 
@@ -44,35 +41,27 @@ Text JSON, comprimat și criptat. O copie a unei baze:
   "stats":{ "pages_new":N, "pages_same":N, "bytes_new":N, "rows":N, "seconds":N } }
 ```
 
-- **Pagina** = un interval de chei primare `(hi paginii dinainte, hi]`; prima are `lo = null`, ultima `hi = null`; intervalele se ating și acoperă tot
-  spațiul de chei. Obiectul paginii e lista de rânduri (JSON, fiecare valoare text sau `null`; coloanele binare în base64), în ordinea coloanelor din `cols`.
-  Coloanele generate nu se salvează (le recalculează baza).
-- **`sum` / `full`** = valori de control calculate de baza de date pe intervalul paginii (număr de rânduri și două XOR-uri de MD5 pe rând). `sum` e cea
-  rapidă; `full` numără și conținutul coloanelor mari (PDF, imagini) prin MD5, nu doar prin lungime. În tabelele fără coloane mari sunt identice.
+- **Pagina** = un interval de chei primare `(hi paginii dinainte, hi]`; prima are `lo = null`, ultima `hi = null`; intervalele se ating și acoperă tot spațiul de chei. Obiectul paginii e lista de rânduri (JSON, fiecare valoare text sau `null`; coloanele binare în base64), în ordinea coloanelor din `cols`. Coloanele generate nu se salvează (le recalculează baza).
+- **`sum` / `full`** = valori de control calculate de baza de date pe intervalul paginii (număr de rânduri și două XOR-uri de MD5 pe rând). `sum` e cea rapidă; `full` numără și conținutul coloanelor mari (PDF, imagini) prin MD5, nu doar prin lungime. În tabelele fără coloane mari sunt identice.
 - Tabela fără cheie primară (sau cu cheie binară) = o singură pagină cu `lo = hi = null`.
 
 ## Cum se alege ce se citește
 
-La fiecare rulare clientul trimite serverului paginile copiei precedente (intervalele și valorile de control; fișier temporar în `backup/` de pe server, șters după citire).
-Serverul, într-o singură tranzacție cu instantaneu consistent (`START TRANSACTION WITH CONSISTENT SNAPSHOT`, ca `--single-transaction`):
+La fiecare rulare clientul trimite serverului paginile copiei precedente (intervalele și valorile de control; fișier temporar în `backup/` de pe server, șters după citire). Serverul, într-o singură tranzacție cu instantaneu consistent (`START TRANSACTION WITH CONSISTENT SNAPSHOT`, ca `--single-transaction`):
 
 1. recalculează valoarea de control pe fiecare interval; dacă e la fel, răspunde doar cu descrierea paginii (`same`), fără să citească rândurile;
 2. dacă diferă (rând nou, schimbat, șters), citește intervalul din nou și îl taie în pagini noi (500 de rânduri sau 4 MB), care ajung în obiecte noi;
 3. paginile nemodificate arată în noul instantaneu către **aceleași obiecte**: de aici economia de spațiu.
 
-Modul `full` (o dată pe săptămână) compară `full` în loc de `sum`, ca să prindă un fișier înlocuit cu unul de aceeași lungime fără ca „data modificării” să se schimbe.
-Data modificării (ON UPDATE sau `DataModif`) e doar un ajutor pentru a nu citi PDF-urile zilnic; nu e singura apărare.
+Modul `full` (o dată pe săptămână) compară `full` în loc de `sum`, ca să prindă un fișier înlocuit cu unul de aceeași lungime fără ca „data modificării” să se schimbe. Data modificării (ON UPDATE sau `DataModif`) e doar un ajutor pentru a nu citi PDF-urile zilnic; nu e singura apărare.
 
 ## Ce înseamnă „istoric”
 
-Un instantaneu e complet: din el se reface baza așa cum era în clipa citirii. Istoricul unei înregistrări = aceeași cheie în instantaneele succesive.
-**Granularitatea e cea a copiilor** (de ex. zilnic): ce s-a întâmplat între două rulări nu se vede.
+Un instantaneu e complet: din el se reface baza așa cum era în clipa citirii. Istoricul unei înregistrări = aceeași cheie în instantaneele succesive. **Granularitatea e cea a copiilor** (de ex. zilnic): ce s-a întâmplat între două rulări nu se vede.
 
 ## Ore
 
-`started` / `finished` poartă ora PC-ului cu offset (ISO 8601). `server_time` e ora serverului, UTC, fără offset scris (politica din `PYTHON/docs/TIMEZONES.md`). Valorile de control ale paginilor
-se calculează pe sesiuni MariaDB fixate pe UTC, deci nu se schimbă la trecerea la ora de vară. Coloanele noi din ME02-01 (`DataAdaugare` etc.) se completează cu ora sesiunii care scrie:
-UTC pentru aplicația de pe server; clienții care își păstrează propriul fus (Access) pot scrie altă oră. Copiile nu se bazează pe aceste ore.
+`started` / `finished` poartă ora PC-ului cu offset (ISO 8601). `server_time` e ora serverului, UTC, fără offset scris (politica din `PYTHON/docs/TIMEZONES.md`). Valorile de control ale paginilor se calculează pe sesiuni MariaDB fixate pe UTC, deci nu se schimbă la trecerea la ora de vară. Coloanele noi din ME02-01 (`DataAdaugare` etc.) se completează cu ora sesiunii care scrie: UTC pentru aplicația de pe server; clienții care își păstrează propriul fus (Access) pot scrie altă oră. Copiile nu se bazează pe aceste ore.
 
 ## Limite cunoscute
 

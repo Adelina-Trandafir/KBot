@@ -13,6 +13,7 @@ Public Class MainForm
     Private Const AllKey As String = "*ALL*"
     Private Const DbTagPrefix As String = "db|"
     Private Const AccountTagPrefix As String = "acc|"
+    Private Const DailyBackupReason As String = "Backup zilnic automat"
     Private Const UserTagPrefix As String = "usr|"
 
     Private ReadOnly _client As AdminClient
@@ -51,6 +52,9 @@ Public Class MainForm
         _views("vercon-reports") = viewVerconReports
         _views("demo") = viewDemo
         _views("copii-locale") = viewLocalBackup
+        _views("istoric-md") = viewMdHistory
+        _views("schema-graf") = viewSchemaGraph
+        _views("schema-istoric") = viewSchemaHistory
         For Each k_view As Control In _views.Values
             DirectCast(k_view, IAdminView).Attach(_context)
         Next
@@ -81,14 +85,38 @@ Public Class MainForm
         End If
     End Sub
 
+    ''' <summary>The window state the form had before it was minimized (the X button minimizes into the tray).</summary>
+    Private _lastState As FormWindowState = FormWindowState.Normal
+
+    Protected Overrides Sub OnResize(e As EventArgs)
+        MyBase.OnResize(e)
+        If WindowState <> FormWindowState.Minimized Then _lastState = WindowState
+    End Sub
+
+    ''' <summary>
+    ''' A real close (taskbar menu «Close», Alt+F4, the tray's «Închide», Windows shutting down): the program ends. The X button of the
+    ''' caption bar never gets here, it minimizes into the tray (<see cref="CapBar_MinimizedToTray"/>).
+    ''' </summary>
     Protected Overrides Sub OnFormClosing(e As FormClosingEventArgs)
         MyBase.OnFormClosing(e)
         Try
-            ' The X button and Alt+F4 only hide the window; Windows shutting down, or the tray's «Închide», really close it.
-            If e.Cancel OrElse _exiting OrElse e.CloseReason <> CloseReason.UserClosing Then Return
-            e.Cancel = True
+            If e.Cancel OrElse _exiting Then Return
+            If e.CloseReason = CloseReason.UserClosing AndAlso busy.Running AndAlso
+               Not UiRun.Confirm("O operație rulează încă pe server. Închid programul oricum?", "KBotAdmin") Then
+                e.Cancel = True
+                Return
+            End If
+            notify.Visible = False
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.OnFormClosing", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The caption bar's X minimized the window: it leaves the screen and the taskbar and lives on in the tray.</summary>
+    Private Sub CapBar_MinimizedToTray(k_sender As Object, e As EventArgs) Handles capBar.MinimizedToTray
+        Try
             TrayLog.BeginClose(Me, "before hide")
-            Dim k_area As Rectangle = Bounds
+            Dim k_area As Rectangle = Screen.FromControl(Me).Bounds
             Hide()
             TrayLog.Snapshot(Me, "after Hide")
             ShowInTaskbar = False
@@ -103,7 +131,7 @@ Public Class MainForm
                 notify.ShowBalloonTip(2500, "KBotAdmin", "Rulează în zona de notificări. Clic pe iconiță pentru meniu.", ToolTipIcon.Info)
             End If
         Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.OnFormClosing", ex)
+            GlobalErrorLog.Write("MainForm.CapBar_MinimizedToTray", ex)
         End Try
     End Sub
 
@@ -194,7 +222,7 @@ Public Class MainForm
             TrayLog.Write("----- ShowFromTray")
             ShowInTaskbar = True
             Show()
-            If WindowState = FormWindowState.Minimized Then WindowState = FormWindowState.Normal
+            If WindowState = FormWindowState.Minimized Then WindowState = _lastState
             Activate()
             BringToFront()
             TrayLog.Snapshot(Me, "after ShowFromTray")
@@ -246,6 +274,8 @@ Public Class MainForm
     ''' </summary>
     Private Async Function RemindLocalBackupAsync() As Task
         Try
+            ' A dump made by today's sync is already a backup of the day: no message.
+            If Await SyncBackupMadeTodayAsync() Then Return
             Dim k_settings As AdminSettings = _client.Settings
             Dim k_text As String
             Dim k_canRun As Boolean = True
@@ -275,10 +305,29 @@ Public Class MainForm
             End If
             If Not UiRun.Confirm(k_text, "Copie locală") Then Return
             Await ShowViewAsync("copii-locale")
-            If k_canRun Then Await viewLocalBackup.RunNowAsync()
+            If k_canRun Then Await viewLocalBackup.RunNowAsync(DailyBackupReason)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.RemindLocalBackupAsync", ex)
         End Try
+    End Function
+
+    ''' <summary>
+    ''' True when the server already holds a dump made TODAY by a schema sync: a «copie» file modified today with no reason in the
+    ''' journal (the dumps made by hand in «Copii» always carry one). A failed check is logged and counts as «none», so the reminder still shows.
+    ''' </summary>
+    Private Async Function SyncBackupMadeTodayAsync() As Task(Of Boolean)
+        Try
+            Dim k_result As BackupsResult = Await _context.Client.CallAsync(Of BackupsResult)("backups", "--db", "ALL")
+            For Each k_file As BackupFile In k_result.Files
+                If Not String.Equals(k_file.Kind, "copie", StringComparison.Ordinal) OrElse Not String.IsNullOrWhiteSpace(k_file.Reason) Then Continue For
+                Dim k_modified As DateTime
+                If DateTime.TryParse(k_file.Modified, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal Or DateTimeStyles.AdjustToUniversal, k_modified) AndAlso
+                   k_modified.ToLocalTime().Date = DateTime.Today Then Return True
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.SyncBackupMadeTodayAsync", ex)
+        End Try
+        Return False
     End Function
 
     Protected Overrides Sub OnThemeChanged()

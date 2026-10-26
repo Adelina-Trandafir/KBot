@@ -32,6 +32,7 @@ Erorile merg in `Logs\harness_errors.log`; la fiecare lansare jurnalul anterior 
 |---|---|---|
 | Plan de conturi (cu solduri initiale) | `PlanCont` din fisierul fiecarei unitati bifate | `TZ_PlanCont` (subunitatea fiecarei unitati) + `TZ_SoldInitial` (anul 2026, debit inainte de credit; rulajele NU se migreaza) |
 | Solduri initiale pe parteneri (AV01-08) | `ParteneriSI` din fisierul fiecarei unitati bifate | `TZ_SoldInitial` cu `IdPartener` (anul 2026; doar SID / SIC; contul se gaseste prin simbolul compus din `PlanCont`, partenerul prin `Parteneri` pe unitate + cod) |
+| Jurnale (AV01-09, AV01-10) | `Jurnale` (`CodJurnal`, `DenumireJurnal`) din fisierul fiecarei unitati bifate | `TZ_Jurnale` (un singur tabel pe baza unitatii; fiecare jurnal ia sectorul si sursa subunitatii unitatii lui, deci pasul cere «Subunitati»; se reunesc dupa sector+sursa si cod, litere mari; la acelasi cod cu denumiri diferite ramane prima denumire) |
 
 Pasul «Solduri initiale pe parteneri» are nevoie de «Plan de conturi» (aceeasi rulare sau una anterioara) si de partenerii mutati de KBot.Migrator. Un sold al carui cont sau partener lipseste din tinta NU se scrie si este numit in verificare (ATENTIE); celelalte se scriu.
 

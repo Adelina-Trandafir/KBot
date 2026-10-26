@@ -80,7 +80,7 @@ Partial Class LocalBackupView
         tlyBar.ColumnCount = 9
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 112F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 128F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 108F))
@@ -135,10 +135,10 @@ Partial Class LocalBackupView
         btnRun.Margin = New Padding(0, 2, 6, 6)
         btnRun.Name = "btnRun"
         btnRun.Primary = True
-        btnRun.Size = New Size(106, 36)
+        btnRun.Size = New Size(122, 36)
         btnRun.TabIndex = 2
-        btnRun.Text = "Copie acum"
-        tips.SetToolTipHeader(btnRun, "Copie locală acum")
+        btnRun.Text = "Salvează acum"
+        tips.SetToolTipHeader(btnRun, "Salvează acum")
         tips.SetToolTipText(btnRun, "Citește de pe server baza aleasă în stânga (sau toate bazele de unitate, fără 000_DEMO) și scrie în dosar doar ce s-a schimbat de la copia precedentă. Cere un motiv.")
         '
         ' btnVerify

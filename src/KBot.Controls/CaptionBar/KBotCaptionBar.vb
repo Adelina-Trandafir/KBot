@@ -34,6 +34,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private _showMinimize As Boolean = False
     Private _showClose As Boolean = True
     Private _showMaximize As Boolean = False
+    Private _onCloseMinimizeToTray As Boolean = False
     Private _hoverClose As Boolean = False
     Private _hoverMin As Boolean = False
     Private _hoverMax As Boolean = False
@@ -107,6 +108,25 @@ Partial Public NotInheritable Class KBotCaptionBar
             Invalidate()
         End Set
     End Property
+
+    ''' <summary>
+    ''' True = the close button (X) does not close the form: it minimizes it and raises <see cref="MinimizedToTray"/>, so the
+    ''' host can send the window to the tray. FormClosing never runs for the click; closing from the taskbar still closes.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Dacă este True, butonul de închidere (X) nu închide formularul: îl minimizează și ridică MinimizedToTray, ca fereastra să meargă în tray. Implicit False.")>
+    <DefaultValue(False)>
+    Public Property OnCloseMinimizeToTray As Boolean
+        Get
+            Return _onCloseMinimizeToTray
+        End Get
+        Set(value As Boolean)
+            _onCloseMinimizeToTray = value
+        End Set
+    End Property
+
+    ''' <summary>Raised after the X button minimized the form because <see cref="OnCloseMinimizeToTray"/> is on.</summary>
+    Public Event MinimizedToTray As EventHandler
 
     ''' <summary>
     ''' Arată și butonul de maximizare/restaurare (implicit ascuns — dialogurile gen
@@ -687,7 +707,12 @@ Partial Public NotInheritable Class KBotCaptionBar
             Dim f As Form = FindForm()
             If f Is Nothing Then Return
             If CloseRect().Contains(e.Location) Then
-                f.Close()
+                If _onCloseMinimizeToTray Then
+                    f.WindowState = FormWindowState.Minimized
+                    RaiseEvent MinimizedToTray(Me, EventArgs.Empty)
+                Else
+                    f.Close()
+                End If
             ElseIf _showMaximize AndAlso MaxRect().Contains(e.Location) Then
                 ToggleMaximize()
             ElseIf _showMinimize AndAlso MinRect().Contains(e.Location) Then

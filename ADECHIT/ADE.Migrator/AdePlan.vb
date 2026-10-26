@@ -47,8 +47,6 @@ Public NotInheritable Class AdePlan
     ''' <summary>The conversions applied, one line each, for the operator to read.</summary>
     Public ReadOnly Property Notes As New List(Of String)()
     Public ReadOnly Property ReceiptConfig As AdeReceiptConfig
-    ''' <summary>Every receipt with the number Access gave it, before any change of the operator.</summary>
-    Public ReadOnly Property Receipts As New List(Of AdeReceipt)()
 
     Public ReadOnly Property HasBlocking As Boolean
         Get
@@ -64,18 +62,15 @@ Public NotInheritable Class AdePlan
 
     ''' <param name="k_educators">The names the operator settled on, per (group, text in Access). A text that is not in
     ''' the dictionary is split by the default rule.</param>
-    ''' <param name="k_receiptNumbers">The receipt numbers the operator changed, per IDC in Access (see <see cref="AdeReceiptNumbers"/>).</param>
     Public Shared Function Build(k_source As AdeSource, k_educators As IDictionary(Of (Integer, String), String),
                                  Optional k_groupTypes As IDictionary(Of Integer, Boolean) = Nothing,
-                                 Optional k_childCnpIsParent As Boolean = False,
-                                 Optional k_receiptNumbers As IDictionary(Of Integer, Integer) = Nothing) As AdePlan
+                                 Optional k_childCnpIsParent As Boolean = False) As AdePlan
         Try
             Dim k_plan As New AdePlan(k_source.ReceiptConfig)
             Dim k_excluded = AdeErroneousData.Build(k_source, k_plan)
             k_plan.ConvertTables(k_source, k_excluded)
             k_plan.ReconstructPayers()
-            k_plan.ApplyReceiptNumbers(k_receiptNumbers)
-            k_plan.CheckReceiptNumbers()
+            k_plan.ApplySubNumbers()
             k_plan.FixLinks()
             k_plan.SetGroupTypes(k_groupTypes)
             k_plan.FillDerived(k_source)
@@ -235,57 +230,37 @@ Public NotInheritable Class AdePlan
         Return k_row
     End Function
 
-    ''' <summary>Keeps the numbers Access gave (for the correction window), then applies the operator's changes.</summary>
-    Private Sub ApplyReceiptNumbers(k_numbers As IDictionary(Of Integer, Integer))
+    ''' <summary>
+    ''' Receipts with the same series and number in the same school year get a sub-number (751, 751,1), the way NIR numbers do in VERCON:
+    ''' the newest keeps the number alone, the older ones get ,1 ,2 … oldest first. The number from Access is never changed and nothing blocks.
+    ''' All of it is ONE note: with thousands of repeats a line per number floods the log and the screen.
+    ''' </summary>
+    Private Sub ApplySubNumbers()
         Dim k_rows = Find("Chitante").Rows
+        Dim k_receipts As New List(Of AdeReceipt)()
         For Each k_row In k_rows
+            ' NumarSub is NOT NULL in the database: Access has none, so every receipt gets 0 unless it is one of a repeated number.
+            k_row("NumarSub") = 0
             If k_row("IDC") Is Nothing Then Continue For
-            Receipts.Add(New AdeReceipt(CInt(k_row("IDC")), If(k_row("IDPL") Is Nothing, CType(Nothing, Integer?), CInt(k_row("IDPL"))),
-                                        If(k_row("Data") Is Nothing, CType(Nothing, DateTime?), CDate(k_row("Data"))), TryCast(k_row("Serie"), String),
-                                        If(k_row("Numar") Is Nothing, CType(Nothing, Integer?), CInt(k_row("Numar"))),
-                                        k_row("Anulata") IsNot Nothing AndAlso CBool(k_row("Anulata"))))
+            k_receipts.Add(New AdeReceipt(CInt(k_row("IDC")), If(k_row("Data") Is Nothing, CType(Nothing, DateTime?), CDate(k_row("Data"))), TryCast(k_row("Serie"), String),
+                                          If(k_row("Numar") Is Nothing, CType(Nothing, Integer?), CInt(k_row("Numar")))))
         Next
-        If k_numbers Is Nothing OrElse k_numbers.Count = 0 Then Return
-        Dim k_changed As Integer = 0
+        Dim k_undated = k_receipts.Where(Function(k_r) k_r.Series IsNot Nothing AndAlso k_r.Number.HasValue AndAlso Not k_r.SchoolYear.HasValue).Count()
+        If k_undated > 0 Then
+            Notes.Add($"Chitante: {k_undated} chitanțe fără dată; nu se poate stabili anul școlar și nu intră în verificarea numerelor repetate.")
+        End If
+        Dim k_result = AdeReceiptNumbers.AssignSubNumbers(k_receipts)
+        If k_result.RepeatedNumbers = 0 Then Return
         For Each k_row In k_rows
-            Dim k_new As Integer
-            If k_row("IDC") IsNot Nothing AndAlso k_numbers.TryGetValue(CInt(k_row("IDC")), k_new) AndAlso Not Object.Equals(k_row("Numar"), k_new) Then
-                k_row("Numar") = k_new
-                k_changed += 1
-            End If
+            Dim k_sub As Integer
+            If k_row("IDC") IsNot Nothing AndAlso k_result.Subs.TryGetValue(CInt(k_row("IDC")), k_sub) Then k_row("NumarSub") = k_sub
         Next
-        If k_changed > 0 Then Notes.Add($"Chitante: {k_changed} numere schimbate de dumneavoastră în fereastra «Chitanțe dublate»; în Access rămân cele vechi.")
-    End Sub
-
-    ''' <summary>Exact duplicate receipt numbers must be resolved before the subunit-wide unique key is written.</summary>
-    Private Sub CheckReceiptNumbers()
-        Dim k_series As New Dictionary(Of String, Dictionary(Of Integer, List(Of Dictionary(Of String, Object))))(StringComparer.Ordinal)
-        For Each k_row In Find("Chitante").Rows
-            Dim k_serie = TryCast(k_row("Serie"), String)
-            ' A SQL unique key permits repeats when any component is NULL.
-            If k_serie Is Nothing OrElse k_row("Numar") Is Nothing Then Continue For
-            Dim k_number = CInt(k_row("Numar"))
-            Dim k_numbers As Dictionary(Of Integer, List(Of Dictionary(Of String, Object))) = Nothing
-            If Not k_series.TryGetValue(k_serie, k_numbers) Then
-                k_numbers = New Dictionary(Of Integer, List(Of Dictionary(Of String, Object)))()
-                k_series.Add(k_serie, k_numbers)
-            End If
-            Dim k_rows As List(Of Dictionary(Of String, Object)) = Nothing
-            If Not k_numbers.TryGetValue(k_number, k_rows) Then
-                k_rows = New List(Of Dictionary(Of String, Object))()
-                k_numbers.Add(k_number, k_rows)
-            End If
-            k_rows.Add(k_row)
-        Next
-        For Each k_serie In k_series
-            For Each k_number In k_serie.Value
-                If k_number.Value.Count < 2 Then Continue For
-                Dim k_examples = k_number.Value.Take(10).Select(
-                    Function(r) $"IDC={r("IDC")}, IDPL={r("IDPL")}, Data={Convert.ToString(r("Data"), CultureInfo.InvariantCulture)}")
-                Block($"Chitante: seria «{k_serie.Key}», numărul {k_number.Key} apare pe {k_number.Value.Count} rânduri din aceeași subunitate " &
-                      $"(ex.: {String.Join("; ", k_examples)}). Baza de date cere o singură chitanță pentru fiecare serie și număr, inclusiv pentru chitanțe anulate și din ani diferiți. Schimbați numerele din butonul «Chitanțe dublate…» sau corectați sursa.")
-            Next
-        Next
+        Notes.Add($"Chitante: {k_result.RepeatedNumbers} numere apar de mai multe ori în același an școlar (septembrie–august); {k_result.Subs.Count} chitanțe, cele mai vechi din fiecare grup, " &
+                  $"au primit sub-număr (de exemplu 751 și 751,1), iar cea mai nouă din grup a rămas fără. Numerele din Access nu se schimbă; sub-numărul este în AD_Chitante.NumarSub. " &
+                  $"Ex.: {String.Join("; ", k_result.Examples)}.")
+        If k_result.Skipped > 0 Then
+            Block($"Chitante: {k_result.Skipped} chitanțe nu au găsit un sub-număr liber (un număr apare de peste 100 de ori în același an școlar). Corectați sursa.")
+        End If
     End Sub
 
     ' ---- 2. links that point nowhere -------------------------------------------------------------------------------

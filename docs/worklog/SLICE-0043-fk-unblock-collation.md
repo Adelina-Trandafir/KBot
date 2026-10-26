@@ -5,10 +5,8 @@
 <a id="slice-0043"></a>
 
 **Data:** 2026-08-20
-**Fișiere:** `PYTHON/routes/schema_sync/schema_diff.py`,
-`PYTHON/routes/schema_sync/README.md`, `PYTHON/routes/schema_sync/__init__.py` (nou, gol)
-**Stare:** DONE — **verificat pe un server MariaDB 10.3.32 real**, cu o bază de
-test construită instrucțiune cu instrucțiune. Nu pe baza de producție.
+**Fișiere:** `PYTHON/routes/schema_sync/schema_diff.py`, `PYTHON/routes/schema_sync/README.md`, `PYTHON/routes/schema_sync/__init__.py` (nou, gol)
+**Stare:** DONE — **verificat pe un server MariaDB 10.3.32 real**, cu o bază de test construită instrucțiune cu instrucțiune. Nu pe baza de producție.
 
 ---
 
@@ -26,8 +24,7 @@ Două `FK CREATE`, zero `FK DROP`.
 
 ## 2. Verdictul: ipoteza A era cea corectă
 
-**Codul emitea corect și ștergerea, și recrearea.** Ce se stricase era baza de
-test. Fusese construită ca un singur lot `mariadb`, clientul se oprește la prima eroare, iar lotul murise înainte de a ajunge la `ADD CONSTRAINT` — deci ținta nu avea **nicio** cheie străină. Neexistând nimic de desfăcut, `_unblock_collation` tăcea, pe bună dreptate; cele două `FK CREATE` veneau din comparația obișnuită din `_foreign_keys` (`t is None` → creează), nu din pasul de deblocare.
+**Codul emitea corect și ștergerea, și recrearea.** Ce se stricase era baza de test. Fusese construită ca un singur lot `mariadb`, clientul se oprește la prima eroare, iar lotul murise înainte de a ajunge la `ADD CONSTRAINT` — deci ținta nu avea **nicio** cheie străină. Neexistând nimic de desfăcut, `_unblock_collation` tăcea, pe bună dreptate; cele două `FK CREATE` veneau din comparația obișnuită din `_foreign_keys` (`t is None` → creează), nu din pasul de deblocare.
 
 Ipoteza B (`_fk_blocks` ratează partea referită) — **infirmată**. Sondă pe 10.3.32: `information_schema.KEY_COLUMN_USAGE.REFERENCED_TABLE_SCHEMA` întoarce exact numele bazei (`probe_db`), deci `fk.ref_schema == self.db` chiar se declanșează.
 
@@ -70,8 +67,7 @@ Server: **MariaDB 10.3.32** (aceeași versiune ca serverul de producție), ridic
 
 Copia de siguranță cu `mysqldump` s-a făcut și s-a verificat pe disc în rularea distructivă; confirmarea tastată `DA` a fost cerută.
 
-**Chei străine la final:** 3 în `AVACONT_SURSA`, 3 în `000_demo`, identice după
-rescrierea referinței proprii; **niciuna** nu arată spre `AVACONT_SURSA`.
+**Chei străine la final:** 3 în `AVACONT_SURSA`, 3 în `000_demo`, identice după rescrierea referinței proprii; **niciuna** nu arată spre `AVACONT_SURSA`.
 
 **Diacritice**, după conversia `utf8mb4` → `utf8` a coloanei `Denumire`:
 
@@ -189,8 +185,7 @@ Eroarea era a verificării de integritate adăugate la pasul 0043-01. Aliasul `c
 
 Reprodus local pe 10.3.32 în ambele variante — coloana lipsă pe partea copilului (`c.IdPartener`, cazul operatorului) și pe partea părintelui (`p.Cod`).
 
-**Corecția:** verificarea datelor rulează numai dacă ambele capete au deja
-toate coloanele cerute. Când nu le au, nu se poate răspunde la întrebare, deci nu se pune. Cheia se creează atunci fără verificare prealabilă; dacă datele nu se potrivesc, eșecul apare la execuție, cu 1452, și se scrie în jurnal.
+**Corecția:** verificarea datelor rulează numai dacă ambele capete au deja toate coloanele cerute. Când nu le au, nu se poate răspunde la întrebare, deci nu se pune. Cheia se creează atunci fără verificare prealabilă; dacă datele nu se potrivesc, eșecul apare la execuție, cu 1452, și se scrie în jurnal.
 
 Verificarea prezenței se face din schemele deja citite în memorie (fără interogare în plus), iar coloanele schemelor externe (`AVACONT_COMUN`) se citesc o dată și se țin în `_ext_columns` — aceleași câteva tabele-părinte erau întrebate iar și iar.
 
@@ -198,8 +193,7 @@ Verificarea prezenței se face din schemele deja citite în memorie (fără inte
 
 Ordinea din `generate()` era: golește rândurile neexecutate, apoi compară, apoi scrie. Comparația a crăpat între golire și scriere, deci tabelul a rămas gol — cele 693 de rânduri vechi șterse, cele noi niciodată scrise. Nu s-a pierdut nimic de neînlocuit (se regenerează), dar operatorul rămâne fără nimic de citit exact când are mai multă nevoie.
 
-**Corecția:** comparația se face întâi; golirea, abia după ce există ceva de
-pus în loc.
+**Corecția:** comparația se face întâi; golirea, abia după ce există ceva de pus în loc.
 
 ## Mesaje de eroare care spun unde să te uiți
 

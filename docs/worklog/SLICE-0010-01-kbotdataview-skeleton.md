@@ -8,9 +8,7 @@ Consolidare documentară D001-08 (25.10.2026): toate cele șapte intervenții 00
 
 <a id="slice-0010-01"></a>
 
-Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată de date, virtualizată — widget-ul de listă partajat pentru vederile K-BOT. Această trecere livrează
-**scheletul** definit în planul pasului `0010-01`: proiect + bază de control double-buffered,
-modelele coloană/rând, enum-ul de tip, cache-ul de temă + `ApplyTheme`, și pictarea antetului + a corpului gol, tematizat. **Fără date randate** (rândurile vin în 0010-02).
+Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată de date, virtualizată — widget-ul de listă partajat pentru vederile K-BOT. Această trecere livrează **scheletul** definit în planul pasului `0010-01`: proiect + bază de control double-buffered, modelele coloană/rând, enum-ul de tip, cache-ul de temă + `ApplyTheme`, și pictarea antetului + a corpului gol, tematizat. **Fără date randate** (rândurile vin în 0010-02).
 
 ## Ce s-a schimbat și de ce
 
@@ -77,8 +75,7 @@ Trei zone: **antet** (sus), **bandă înghețată** (stânga, primele `FrozenCol
 #### Virtualizare (înălțime fixă => aritmetică întreagă)
 - `firstVisibleRow = vScrollOffset \ RowHeight`
 - `visibleCount = (ViewportHeight \ RowHeight) + 2`
-- `RowTop(i) = HeaderHeight + i * RowHeight - vScrollOffset`
-Se pictează DOAR intervalul vizibil; costul unei pictări nu depinde de `RowCount`.
+- `RowTop(i) = HeaderHeight + i * RowHeight - vScrollOffset` Se pictează DOAR intervalul vizibil; costul unei pictări nu depinde de `RowCount`.
 
 #### Scrollbar-uri
 `UpdateScrollBars` evaluează în **două treceri** (bara verticală mănâncă lățime, cea orizontală înălțime — se influențează reciproc). Semantica WinForms respectată: `Maximum = conținut - 1`, `LargeChange = fereastra`, valoarea utilă maximă = `Maximum - LargeChange + 1`; `Value` se clamp-ează la micșorarea conținutului. Bara orizontală derulează **doar banda ne-înghețată**. `UpdateLayout` are gardă de reintrare (`_inLayout`), fiindcă schimbarea vizibilității unei bare declanșează layout. Rotița mouse-ului: vertical; `Shift`+rotiță: orizontal.
@@ -127,9 +124,7 @@ Implementată conform tabelului din plan: antet = `SurfaceAlt`/`Text`/`Border`/`
 
 ## SLICE-0010-03 — KBotDataView: restul tipurilor de coloană
 
-A treia trecere din slice-ul 0010. Completează cele șase tipuri de coloană: peste **Text** și
-**CheckBox** (livrate în 0010-02) se adaugă **Combo**, **OptionButton**, **Button** și
-**ProgressBar**, plus semantica de date a grupurilor de opțiuni.
+A treia trecere din slice-ul 0010. Completează cele șase tipuri de coloană: peste **Text** și **CheckBox** (livrate în 0010-02) se adaugă **Combo**, **OptionButton**, **Button** și **ProgressBar**, plus semantica de date a grupurilor de opțiuni.
 
 ### Ce s-a schimbat și de ce
 
@@ -290,8 +285,7 @@ Ultima trecere din slice-ul 0010 — motivul pentru care grila e NELEGATĂ de da
 #### Semantica `IsDirty` — CONTRACT SCHIMBAT față de 0010-01
 Planul cere explicit: „murdar” = **editat de operator**, nu „scris programatic”. Prin urmare `KBotDataRow.Item` **nu mai** ridică `IsDirty` (nici `KBotDataView.Item`) — scrierea prin API e ÎNCĂRCARE de date. Steagul se ridică doar la: commit de editare, comutare de bifă, selectare de opțiune. `GetDirtyRows()` întoarce deci exact rândurile atinse de operator, iar `ClearDirty()` (nou, la nivel de grilă) + `KBotDataRow.MarkClean()` (per rând) resetează baseline-ul după încărcare sau după trimiterea modificărilor la server.
 
-**Două teste din 0010-01 au fost rescrise** ca să reflecte noul contract
-(`Row_SetStoresWithoutMarkingDirty`, `Item_GetSetThroughControl_DoesNotDirtyTheRow`) — schimbare deliberată, nu o „reparare” a testelor ca să treacă.
+**Două teste din 0010-01 au fost rescrise** ca să reflecte noul contract (`Row_SetStoresWithoutMarkingDirty`, `Item_GetSetThroughControl_DoesNotDirtyTheRow`) — schimbare deliberată, nu o „reparare” a testelor ca să treacă.
 
 ### Două bug-uri REALE prinse aici (aceeași capcană VB)
 
@@ -356,10 +350,7 @@ Adăugare cerută după închiderea slice-ului 0010: o proprietate `ScrollByColu
 
 - `dotnet build src/KBot.Controls` și `src/KBot.DevHarness` — **0 warnings / 0 errors**.
 - `KBot.Controls.Tests` — **111 passed / 0 failed** (12 pentru `ScrollByColumn`: 7 direcționale
-  + 5 pentru tragerea thumb-ului — liberă în timpul tragerii, „nearest” la eliberare, inertă
-  când proprietatea e off, iar săgețile rămân direcționale după eliberare). Tragerea se
-  simulează prin `BeginHorizontalThumbDrag`/`EndHorizontalThumbDrag` (Friend) — evenimentul
-  `Scroll` nu se poate ridica headless.
+  + 5 pentru tragerea thumb-ului — liberă în timpul tragerii, „nearest” la eliberare, inertă când proprietatea e off, iar săgețile rămân direcționale după eliberare). Tragerea se simulează prin `BeginHorizontalThumbDrag`/`EndHorizontalThumbDrag` (Friend) — evenimentul `Scroll` nu se poate ridica headless.
 - Grila de test e fixată pe dimensionare MANUALĂ (`AutoSizeColumnsMode = None`, `ColumnFillMode = None`) ca marginile de coloană să fie deterministe (5 × 100px => marginile 0/100/200/300/400, maximul util 300). Acoperit: implicit = pixel; creștere => marginea următoare; scădere => marginea precedentă; un pas mic tot avansează o coloană; alinierea nu depășește maximul util; activarea aliniază offset-ul curent; o poziție deja pe margine nu se mișcă.
 
 ### Notă de mediu

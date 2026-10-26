@@ -50,6 +50,9 @@ Public Interface IConturiApi
     ''' <summary>The active accounts of every subunit: the list a partner's balances are put on (slice AV01-08).</summary>
     Function GetConturiDisponibileAsync(ct As CancellationToken) As Task(Of IReadOnlyList(Of ContDisponibil))
 
+    ''' <summary>The numbers of the partners that have a balance row in a year (the partner list can show them, slice AV01-09).</summary>
+    Function GetParteneriCuSolduriAsync(k_an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Integer))
+
     ''' <summary>The balances of one partner for a year (slice AV01-08).</summary>
     Function GetSolduriPartenerAsync(k_idPartener As Integer, k_an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of SoldPartener))
 

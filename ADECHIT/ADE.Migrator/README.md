@@ -1,13 +1,31 @@
 # ADE.Migrator — utilizare
 
+<!-- slice: ADE10-08 -->
+
+**Chitanțe pe ani școlari și jurnal rapid.** Dublurile se caută numai în interiorul aceluiași an școlar; același număr în
+ani diferiți nu mai blochează migrarea (cheia nouă, AD_13). Caseta «Jurnal de operații și erori» taie o intrare la 4000 de
+caractere, scrie cel mult 20 de constatări una câte una (restul sunt în «Conversii și constatări») și își scoate liniile cele
+mai vechi peste 400000 de caractere, ca să nu încetinească când sunt mii de constatări. Butonul **Încarcă logul erorilor**
+rămâne necenzurat. Build curat; NETESTAT, NERULAT. În bazele unităților, sincronizarea de structură adaugă coloana
+`AnScolar` și creează cheia nouă (cere `schema_diff.py` corectat pe server).
+
+**Chitanțe cu același număr în același an școlar: sub-numere automate, «Golește date» (ADE10-08).** Planul dă singur un sub-număr
+chitanțelor cu aceeași serie și același număr în același an școlar (septembrie–august), ca la NIR-urile din VERCON: cea mai nouă din grup
+rămâne fără sub-număr, cele mai vechi primesc ,1 ,2 … (751, 751,1, 751,2). Numărul din Access nu se schimbă, deci nu e nimic de
+salvat separat; în bază sub-numărul e `AD_Chitante.NumarSub` (în sutimi: 10, 20, …). Situația **nu mai blochează** migrarea: apare o
+singură notă în «Conversii și constatări» (câte numere, câte chitanțe, 5 exemple); singurul blocaj rămas e un număr care apare de peste
+100 de ori în același an școlar. Fereastra «Chitanțe dublate…» a fost scoasă. Cheia din bază este (subunitate, serie, an școlar, număr,
+sub-număr). Sub-numerele le dă numai migratorul: aplicația web emite numai numere întregi și le arată **numai în Registrul de casă și
+în Fișa debitor**. Coloana `NumarSub` și cheia nouă vin din `sql/AD_13_02_chitante_numar_original.sql` (numai în AVACONT_SURSA,
+apoi sincronizare); **Testează** refuză baza fără ea. Butonul **Golește date** scoate din memorie citirea, planul, bifele de grupe,
+educatorii, verificarea serverului și jurnalul de pe ecran; rămân fișierul, DC-ul, subunitatea și serverul; nu șterge nimic din Access,
+de pe disc sau de pe server. Build curat; NETESTAT, NERULAT.
+
 <!-- slice: ADE10-07 -->
 
 **Chitanțe dublate și copii lipsă (ADE10-07).** Un copil din `SS_Buget.IDP` care nu mai există în `Platitori` este reconstituit din ultima
 situație lunară (nume, CNP, grupă, plecat) și primește un rând în `Platitori_sub` cu numele copilului; nota apare în conversii.
-Butonul **Chitanțe dublate…** (activ când planul găsește chitanțe cu aceeași serie și același număr) deschide o listă în care
-schimbați numărul de mână; după fiecare schimbare lista se verifică din nou. **Taie cifra miilor la cele mai vechi** schimbă toate
-chitanțele dintr-un grup în afară de cea mai nouă (1234 → 234), numai dacă numărul nou e liber. **Gata** refă planul; apoi
-repetați Testează. Access-ul nu se modifică. Numărul chitanței este întreg în baza de date, deci un sufix «.1» nu se poate scrie.
+(ADE10-07: fereastra «Chitanțe dublate…» și regula «taie cifra miilor» au fost scoase în ADE10-08; vezi mai sus.)
 Build curat; TESTAT, RULAT, PUBLICAT.
 
 <!-- slice: ADE5-05 -->
@@ -33,18 +51,15 @@ tabelul și numărul lor apar în plan și în rezultatul importului.
 DDL: `sql/AD_12_date_eronate.sql` se aplică **numai în AVACONT_SURSA**, apoi
 utilizatorul propagă structura prin **KBotAdmin**. Migratorul nu creează tabelul.
 
-Sincronizarea structurii nu copiază rândul de inițializare `AD_Lock.ID=0`, necesar
-pentru blocarea comună a portalului. Dacă lipsește, **Testează** semnalează acest
-lucru. Utilizatorul execută separat `sql/AD_12_lock_portal_seed.sql` în baza
-destinație (adaptează `USE` pentru DC-ul respectiv), apoi repetă **Testează**.
-Acesta este doar un seed pentru blocare; nu înlocuiește inițializarea datelor
-portalului din `AD_08_02_interogare_unica.sql` pentru baze cu date existente.
+Sincronizarea structurii nu copiază rândul de inițializare `AD_Lock.ID=0` (blocarea comună a portalului).
+Importul îl creează singur în tranzacția lui, dacă lipsește; nu mai este nimic de rulat manual.
+Pentru baze cu date existente, inițializarea datelor portalului rămâne în `AD_08_02_interogare_unica.sql`.
 
-Planul semnalează și chitanțele cu aceeași serie identică și același număr,
-afișând ID-urile Access (`IDC`, `IDPL`) și datele pentru identificarea dublurilor.
-Indexul `uq_Sub_Serie_Numar` impune unicitatea în întreaga subunitate, inclusiv
-între ani diferiți și pentru chitanțe anulate. Aceste dubluri nu intră în regula
-de arhivare pentru corespondențe lipsă și trebuie rezolvate separat în sursă.
+Chitanțele cu aceeași serie și același număr în același an școlar (septembrie–august) primesc automat sub-număr, vezi ADE10-08 mai sus.
+Indexul `uq_Sub_Serie_An_Numar` (`sql/AD_13_chitante_an_scolar.sql` și `sql/AD_13_02_chitante_numar_original.sql`) impune unicitatea pe
+subunitate, serie, an școlar, număr și sub-număr, chitanțele anulate incluse; același număr în ani școlari diferiți este permis, fiindcă
+numerotarea poate reîncepe în septembrie. Anul școlar este coloana calculată `AnScolar` (din `Data`); migratorul nu o scrie. O chitanță
+fără dată nu intră în verificare (notă în plan). **AD_13 și AD_13_02 se aplică înainte de Testează.**
 
 <!-- slice: ADE6-24 -->
 Emailul și CNP-ul educatorilor (`AD_Grupe_Educator.EMail/CNP`) sunt opționale și

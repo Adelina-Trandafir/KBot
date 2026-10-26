@@ -18,31 +18,12 @@ One row per `FX_Plati` record, each carrying its bank statement (`FX_Extrase`) a
 
 ### Decisions taken / deviations from the plan
 
-- **Classification via `FX_Indicatori` (the 0011-03 path), NOT the plan skeleton's
-  `p.IdClsf`.** The plan's SQL skeleton keys `Clasificatii` directly on `p.IdClsf`
-  (`WHERE c.<clsf_pk> = p.IdClsf`), but the plan's own Step 0 note says *"match whatever
-  sumar.py / receptii.py already do."* Those go **P → `FX_Indicatori` (join on `CodAI`, its PK
-  → 1:1, no fan-out) → `Clasificatii` scalar subquery on `IdClsfAcc = I.IdClsf AND IdUnitate =
-  I.IdUnitate` with `LIMIT 1`**, because `FX_Indicatori.IdClsf` is the *verified* Access id
-  (STATUS Locked decision) and `FX_Plati.IdClsf`'s direction is unverified. This is a genuine
-  deviation from the plan's literal SQL, resolved by the plan's Step 0 instruction. The row
-  returns **both** `clsf`/`denumire` (nomenclator) and `clsf_plata` (raw `FX_Plati.Clsf`); the
-  client falls back to `clsf_plata` when `clsf` is empty.
-- **`LEFT JOIN FX_Extrase`, not the Access `FX_Extrase_H INNER JOIN FX_Extrase`.** The Access
-  detail query inner-joins the statement header but selects nothing from it; an inner join would
-  drop a payment whose extras row has no header. Left join keeps the payment (detail pane shows
-  its empty state).
-- **`are_ord` against a `DISTINCT` derived table** (`SELECT DISTINCT IdPlataFX FROM
-  FX_ORD_TBL_REC`), so a payment on several ordonanțare lines cannot duplicate the payment row.
-  Tested explicitly (`test_are_ord_not_duplicated_by_multiple_ord_lines`).
-- **`ORDER BY P.Data_plata, P.IdPlataFX`** — the client relies on it for month/day/leaf order
-  and for picking the *oldest* un-ordonanțat day (the «+»). `IdPlataFX` is the stable tiebreaker.
-- **`data_doc` passed as a raw string, not ISO.** `FX_Extrase.DataDoc` is a `varchar` in the
-  schema (not a date), so `_iso` would mangle it — it goes through untouched. `Data_plata` /
-  `DataBanca` are real `DATETIME` → date-only ISO (the tree groups on the day).
-- **Money coalesced to `0.0` server-side** (`suma`, `suma_debit`, `suma_credit`), booleans as
-  real booleans, `ensure_ascii=False`. A DB error returns a reason-coded 500 with a Romanian
-  message, never an empty list.
+- **Classification via `FX_Indicatori` (the 0011-03 path), NOT the plan skeleton's `p.IdClsf`.** The plan's SQL skeleton keys `Clasificatii` directly on `p.IdClsf` (`WHERE c.<clsf_pk> = p.IdClsf`), but the plan's own Step 0 note says *"match whatever sumar.py / receptii.py already do."* Those go **P → `FX_Indicatori` (join on `CodAI`, its PK → 1:1, no fan-out) → `Clasificatii` scalar subquery on `IdClsfAcc = I.IdClsf AND IdUnitate = I.IdUnitate` with `LIMIT 1`**, because `FX_Indicatori.IdClsf` is the *verified* Access id (STATUS Locked decision) and `FX_Plati.IdClsf`'s direction is unverified. This is a genuine deviation from the plan's literal SQL, resolved by the plan's Step 0 instruction. The row returns **both** `clsf`/`denumire` (nomenclator) and `clsf_plata` (raw `FX_Plati.Clsf`); the client falls back to `clsf_plata` when `clsf` is empty.
+- **`LEFT JOIN FX_Extrase`, not the Access `FX_Extrase_H INNER JOIN FX_Extrase`.** The Access detail query inner-joins the statement header but selects nothing from it; an inner join would drop a payment whose extras row has no header. Left join keeps the payment (detail pane shows its empty state).
+- **`are_ord` against a `DISTINCT` derived table** (`SELECT DISTINCT IdPlataFX FROM FX_ORD_TBL_REC`), so a payment on several ordonanțare lines cannot duplicate the payment row. Tested explicitly (`test_are_ord_not_duplicated_by_multiple_ord_lines`).
+- **`ORDER BY P.Data_plata, P.IdPlataFX`** — the client relies on it for month/day/leaf order and for picking the *oldest* un-ordonanțat day (the «+»). `IdPlataFX` is the stable tiebreaker.
+- **`data_doc` passed as a raw string, not ISO.** `FX_Extrase.DataDoc` is a `varchar` in the schema (not a date), so `_iso` would mangle it — it goes through untouched. `Data_plata` / `DataBanca` are real `DATETIME` → date-only ISO (the tree groups on the day).
+- **Money coalesced to `0.0` server-side** (`suma`, `suma_debit`, `suma_credit`), booleans as real booleans, `ensure_ascii=False`. A DB error returns a reason-coded 500 with a Romanian message, never an empty list.
 
 ### Files touched
 
@@ -53,19 +34,12 @@ One row per `FX_Plati` record, each carrying its bank statement (`FX_Extrase`) a
 ### Test results
 
 - `py_compile` clean on `plati.py`, `__init__.py`, `test_forexe_plati.py`.
-- Full offline Python suite: **75 passed, 13 skipped**, 0 fail/error. `test_forexe_plati.py`
-  skips off-host at collection (no `config.py`), as designed.
+- Full offline Python suite: **75 passed, 13 skipped**, 0 fail/error. `test_forexe_plati.py` skips off-host at collection (no `config.py`), as designed.
 
 ### Left unverified / deferred
 
-- **The endpoint has never touched a live database.** All 15 tests are host-only and skip
-  off-host. Run `python -m pytest tests/test_forexe_plati.py` on the Flask host to confirm the
-  seven tables/columns exist and that the `FX_Indicatori` join yields a populated `clsf` — if
-  `clsf` comes back blank on every row, the cause is the join key, not the view (the 0011-03
-  trap), and `clsf_plata` is the fallback.
-- **`FX_Extrase` 1:1 with `Referinta` is an operator statement, not a schema constraint.** The
-  guard is `test_row_count_equals_fx_plati_count` (returned rows == `COUNT(*)` from `FX_Plati`);
-  if it fails on real data, the `LEFT JOIN FX_Extrase` is fanning out and needs a de-dup.
+- **The endpoint has never touched a live database.** All 15 tests are host-only and skip off-host. Run `python -m pytest tests/test_forexe_plati.py` on the Flask host to confirm the seven tables/columns exist and that the `FX_Indicatori` join yields a populated `clsf` — if `clsf` comes back blank on every row, the cause is the join key, not the view (the 0011-03 trap), and `clsf_plata` is the fallback.
+- **`FX_Extrase` 1:1 with `Referinta` is an operator statement, not a schema constraint.** The guard is `test_row_count_equals_fx_plati_count` (returned rows == `COUNT(*)` from `FX_Plati`); if it fails on real data, the `LEFT JOIN FX_Extrase` is fanning out and needs a de-dup.
 
 ---
 
@@ -79,70 +53,39 @@ Pass 3 of slice 0017 (Plăți). The fourth real view — after Sumar (0011), Rez
 
 A master/detail view: an `AdvancedTreeControl` on the left, a `KBotDataView` LISTA top-right, and a bank-statement detail pane bottom-right. Read-only. Data comes from `GET /api/forexe/plati` through the shell's 401 net (`WithReauth(Of PlatiInfo)`) with the `_requestedCod` stale-guard.
 
-- **Tree — three levels.** `« TOATE PLĂȚILE »` root (Σ over all rows, collapsed, first) →
-  month roots (one per year/month, chronological, Σ month) → day leaves (one per calendar day,
-  **all** rows of that day merged into one node, Σ day) → payment nodes (one per `IdPlataFX`,
-  caption = `NrOP` falling back to `ReferintaTrezor`, value = `Suma`). This revives the dormant
-  Access `Level = 2` handlers (`Show_Plati` only built two levels).
-- **LISTA — filter, not aggregate.** Selecting any node shows exactly its rows (ALL → every
-  row; month → month rows; day → day rows; payment → that one row). Columns: Clasificație
-  (Count), Plătitor, Nr. doc, Data plății, Suma (Sum, `ro-RO` money, right-aligned). Totals row
-  on (`ShowTotalsRow = True` from pass 01). `clsf` falls back to `clsf_plata` (`ClsfEfectiv`);
-  Plătitor comes from the row's extras (`platitor_nume`), matching the Access LISTA.
-- **Detail pane — bank statement.** Driven by the grid's row-selection event, from data already
-  on the row (no second network call). Ten read-only labelled fields. No extras (`Idfxe` null)
-  → `Fără extras bancar asociat.`; no grid row selected → `Selectați o plată.`
-- **The «+» — exactly one day.** The earliest `DataPlata` day containing a row with
-  `AreOrd = False` is marked, and only: that day leaf, its parent month root (Access:
-  `cLeaf.ParentNode.IconRight = "Plus"`), and each level-2 node under that day whose row has
-  `AreOrd = False`. Nothing else, ever. Right-icon clicks raise dormant events
-  (`AdaugaOrdonantariCerut` level 0, `AdaugaOrdonantareCerut` levels 1/2), no subscriber.
+- **Tree — three levels.** `« TOATE PLĂȚILE »` root (Σ over all rows, collapsed, first) → month roots (one per year/month, chronological, Σ month) → day leaves (one per calendar day, **all** rows of that day merged into one node, Σ day) → payment nodes (one per `IdPlataFX`, caption = `NrOP` falling back to `ReferintaTrezor`, value = `Suma`). This revives the dormant Access `Level = 2` handlers (`Show_Plati` only built two levels).
+- **LISTA — filter, not aggregate.** Selecting any node shows exactly its rows (ALL → every row; month → month rows; day → day rows; payment → that one row). Columns: Clasificație (Count), Plătitor, Nr. doc, Data plății, Suma (Sum, `ro-RO` money, right-aligned). Totals row on (`ShowTotalsRow = True` from pass 01). `clsf` falls back to `clsf_plata` (`ClsfEfectiv`); Plătitor comes from the row's extras (`platitor_nume`), matching the Access LISTA.
+- **Detail pane — bank statement.** Driven by the grid's row-selection event, from data already on the row (no second network call). Ten read-only labelled fields. No extras (`Idfxe` null) → `Fără extras bancar asociat.`; no grid row selected → `Selectați o plată.`
+- **The «+» — exactly one day.** The earliest `DataPlata` day containing a row with `AreOrd = False` is marked, and only: that day leaf, its parent month root (Access: `cLeaf.ParentNode.IconRight = "Plus"`), and each level-2 node under that day whose row has `AreOrd = False`. Nothing else, ever. Right-icon clicks raise dormant events (`AdaugaOrdonantariCerut` level 0, `AdaugaOrdonantareCerut` levels 1/2), no subscriber.
 
 ### Decisions / assumptions (flagged as the plan requires)
 
-- **Day/month state icon (no Access source — assumption):** *any* row `Incarcat` → up; else
-  *any* row `Preluat` → down; else neutral. Per-row level-2 nodes use the Access rule directly.
-- **Day/month INCASARE colouring (assumption):** green (from `palette.SuccessColor`, not
-  `RGB(0,100,0)`) only when *every* row of the day/month is INCASARE. Per-row level-2 nodes are
-  green iff that row is INCASARE (Access per-row). The Access source only colours the per-row
-  leaf; month/day merged colouring is the operator interpretation, stated here.
-- **Months get a state icon and can be green** — the plan's icon assumption names "month roots",
-  so months carry the merged state icon; I extended the same all-INCASARE colour rule to months
-  for consistency (Access never colours roots, so this is additive — stated).
-- **Plăți «+» has no green variant** (unlike Rezervări) — Access uses only `"Plus"` for Plăți.
-  `PlatiIcons.PlusIcon` is single-tint (accent).
+- **Day/month state icon (no Access source — assumption):** *any* row `Incarcat` → up; else *any* row `Preluat` → down; else neutral. Per-row level-2 nodes use the Access rule directly.
+- **Day/month INCASARE colouring (assumption):** green (from `palette.SuccessColor`, not `RGB(0,100,0)`) only when *every* row of the day/month is INCASARE. Per-row level-2 nodes are green iff that row is INCASARE (Access per-row). The Access source only colours the per-row leaf; month/day merged colouring is the operator interpretation, stated here.
+- **Months get a state icon and can be green** — the plan's icon assumption names "month roots", so months carry the merged state icon; I extended the same all-INCASARE colour rule to months for consistency (Access never colours roots, so this is additive — stated).
+- **Plăți «+» has no green variant** (unlike Rezervări) — Access uses only `"Plus"` for Plăți. `PlatiIcons.PlusIcon` is single-tint (accent).
 
 ### Files touched
 
-- `src/KBot.Domain/PlatiInfo.vb` — **new**: `PlataRow`, `ExtrasBancar`, `PlatiInfo`, with
-  `ClsfEfectiv` / `EtichetaPlata` / `EsteIncasare` helpers.
+- `src/KBot.Domain/PlatiInfo.vb` — **new**: `PlataRow`, `ExtrasBancar`, `PlatiInfo`, with `ClsfEfectiv` / `EtichetaPlata` / `EsteIncasare` helpers.
 - `src/KBot.Api/UpsertAngajamenteRequest.vb` — `GetPlatiResponse` / `GetPlataRow` (flat extras).
 - `src/KBot.Api/IApiClient.vb` — `GetPlatiAsync`.
-- `src/KBot.Api/ApiClient.vb` — implementation (escaped URL; flat extras folded into a nested
-  `ExtrasBancar`, Nothing when `idfxe` is null).
+- `src/KBot.Api/ApiClient.vb` — implementation (escaped URL; flat extras folded into a nested `ExtrasBancar`, Nothing when `idfxe` is null).
 - `src/KBot.App/PlatiIcons.vb` — **new** GDI icons (up / down / neutral / «+» / «toate»).
-- `src/KBot.App/Views/PlatiView.Designer.vb` — **new** (outer split + inner split + detail
-  TableLayoutPanel; all controls declared here).
+- `src/KBot.App/Views/PlatiView.Designer.vb` — **new** (outer split + inner split + detail TableLayoutPanel; all controls declared here).
 - `src/KBot.App/Views/PlatiView.vb` — **new** view logic + `LunaAnEventArgs` / `PlataOrdEventArgs`.
 - `src/KBot.App/MainForm.vb` — `CreateView("plati")` → `PlatiView`.
-- Tests: `GetPlatiAsync` stub added to the three App `FakeApiClient`s;
-  `tests/KBot.Api.Tests/ApiClientTests.vb` (+5 GetPlati); `tests/KBot.App.Tests/PlatiViewTests.vb`
-  (**new**, 11).
+- Tests: `GetPlatiAsync` stub added to the three App `FakeApiClient`s; `tests/KBot.Api.Tests/ApiClientTests.vb` (+5 GetPlati); `tests/KBot.App.Tests/PlatiViewTests.vb` (**new**, 11).
 
 ### Test results
 
-- Full solution: **build 0 warnings / 0 errors**; all test projects green — Api 48→53 (+5),
-  App 39→50 (+11), Controls 134, Theming 27, Common 7, Domain 1, LocalStore 1.
+- Full solution: **build 0 warnings / 0 errors**; all test projects green — Api 48→53 (+5), App 39→50 (+11), Controls 134, Theming 27, Common 7, Domain 1, LocalStore 1.
 
 ### Left unverified / deferred
 
-- **`PlatiView` has never been rendered on screen**, like every view before it, and
-  `KBotDataView`'s visual harness (incl. the new pass-01 totals band) is **still unrun**. Run
-  DevHarness before trusting the paint, especially the totals band and the tree icons/colours.
-- The endpoint (pass 02) has not touched a live database; if `clsf` comes back blank the fallback
-  `clsf_plata` fills the column, but the join key is the 0011-03 trap to check.
-- The ordonanțare workflow itself is out of scope — the `«+»` events are raised and nothing
-  listens (dormant, as in Access this slice).
+- **`PlatiView` has never been rendered on screen**, like every view before it, and `KBotDataView`'s visual harness (incl. the new pass-01 totals band) is **still unrun**. Run DevHarness before trusting the paint, especially the totals band and the tree icons/colours.
+- The endpoint (pass 02) has not touched a live database; if `clsf` comes back blank the fallback `clsf_plata` fills the column, but the join key is the 0011-03 trap to check.
+- The ordonanțare workflow itself is out of scope — the `«+»` events are raised and nothing listens (dormant, as in Access this slice).
 
 ---
 
@@ -175,8 +118,7 @@ O trecere prin designerul Visual Studio autorase **toate cele cinci coloane** al
 Arborele avea patru straturi (`« TOATE PLĂȚILE »` → lună → zi → plată). Acum are două:
 
 - **rădăcină = luna** (`m_<an*100+lună>`, etichetă `MonthLabel`, Σ lună);
-- **frunză = ziua** (`d_yyyyMMdd`, etichetă `dd.MM.yyyy`, Σ zi), care strânge **toate** plățile
-  zilei într-un singur nod.
+- **frunză = ziua** (`d_yyyyMMdd`, etichetă `dd.MM.yyyy`, Σ zi), care strânge **toate** plățile zilei într-un singur nod.
 
 Rădăcina `« TOATE PLĂȚILE »` și nodul per plată (`IdPlataFX`) au dispărut. Fiecare nod poartă în `Tag` rândurile lui, deci LISTA rămâne **filtru, nu agregat**: click pe o zi cu două plăți arată două rânduri.
 
@@ -186,11 +128,8 @@ Consecință pe evenimente: `Tree_RightIconClicked` a pierdut `Case 2`. Nivelul 
 
 Designerul poartă un `ImageList` numit `image_list`, legat prin `tree.NodeImages`, cu trei chei: `month`, `up`, `down`. Nodurile se desenează din ele:
 
-- **luna** → `month` (folderul). Luna **nu mai** poartă iconiță de stare și **nu mai** e colorată
-  verde — oglindește Access, unde rădăcina de lună era `FolderClosed`/`FolderOpen`, nu o stare.
-- **ziua** → starea **merjată** a plăților ei: orice `Incarcat` → `up`, altfel orice `Preluat` →
-  `down`, altfel neutru. Merjarea e a noastră, nu a Access-ului: Access desena starea per plată,
-  dar frunza noastră e ziua.
+- **luna** → `month` (folderul). Luna **nu mai** poartă iconiță de stare și **nu mai** e colorată verde — oglindește Access, unde rădăcina de lună era `FolderClosed`/`FolderOpen`, nu o stare.
+- **ziua** → starea **merjată** a plăților ei: orice `Incarcat` → `up`, altfel orice `Preluat` → `down`, altfel neutru. Merjarea e a noastră, nu a Access-ului: Access desena starea per plată, dar frunza noastră e ziua.
 
 Verdele INCASARE stă pe zi și doar când **toate** plățile ei sunt încasări (o zi mixtă nu e verde). Cheile `neutru` și `plus` **nu există încă** în `image_list`, deci acele două cad pe formele GDI din `PlatiIcons`, care se re-tintează pe paletă.
 
@@ -217,22 +156,13 @@ Cablarea s-a mutat într-un `BuildDetailRows()` chemat din constructor, unde des
 
 - `dotnet build KBot.sln` — **0 erori, 0 avertismente**.
 - `dotnet test --filter FullyQualifiedName~Plati` — **16/16 verzi**.
-- Teste noi: `Tree_TwoLevels_MonthThenDay`, `Months_Collapsed_ExceptTheOneCarryingPlus`,
-  `Months_AllCollapsed_WhenNoPlusAnywhere`, `NodeIcons_ComeFromTheDesignerImageList`,
-  `IncasareColouring_MixedDay_IsNotGreen`.
+- Teste noi: `Tree_TwoLevels_MonthThenDay`, `Months_Collapsed_ExceptTheOneCarryingPlus`, `Months_AllCollapsed_WhenNoPlusAnywhere`, `NodeIcons_ComeFromTheDesignerImageList`, `IncasareColouring_MixedDay_IsNotGreen`.
 
 Trei capcane de test, notate fiindcă sunt generale:
 
-1. **`Type.GetMethod` e sensibil la majuscule, VB nu.** `ClickNode` căuta prin reflexie
-   `"tree_NodeMouseUp"`, dar handler-ul fusese redenumit `Tree_NodeMouseUp` → `m` era `Nothing`
-   → `NullReferenceException` care arăta ca un defect de vedere. Acum cu `BindingFlags.IgnoreCase`
-   plus un mesaj explicit dacă tot nu-l găsește.
-2. **`Throw failure` resetează stiva.** `RunSta` re-arunca excepția din firul STA cu `Throw
-   failure`, deci fiecare eșec raporta linia din `RunSta`, nu locul real. Acum prin
-   `ExceptionDispatchInfo.Capture(...).Throw()`.
-3. **`ImageList.Images(i)` întoarce un `Bitmap` NOU la fiecare acces**, deci `Assert.Same` nu
-   poate trece niciodată pe iconițele din listă. Comparația se face pe pixeli (`SamePixels`),
-   plus o aserțiune că `up` și `down` chiar diferă — altfel testul ar trece degeaba.
+1. **`Type.GetMethod` e sensibil la majuscule, VB nu.** `ClickNode` căuta prin reflexie `"tree_NodeMouseUp"`, dar handler-ul fusese redenumit `Tree_NodeMouseUp` → `m` era `Nothing` → `NullReferenceException` care arăta ca un defect de vedere. Acum cu `BindingFlags.IgnoreCase` plus un mesaj explicit dacă tot nu-l găsește.
+2. **`Throw failure` resetează stiva.** `RunSta` re-arunca excepția din firul STA cu `Throw failure`, deci fiecare eșec raporta linia din `RunSta`, nu locul real. Acum prin `ExceptionDispatchInfo.Capture(...).Throw()`.
+3. **`ImageList.Images(i)` întoarce un `Bitmap` NOU la fiecare acces**, deci `Assert.Same` nu poate trece niciodată pe iconițele din listă. Comparația se face pe pixeli (`SamePixels`), plus o aserțiune că `up` și `down` chiar diferă — altfel testul ar trece degeaba.
 
 ### Verificare vizuală
 
@@ -241,13 +171,9 @@ Trei capcane de test, notate fiindcă sunt generale:
 ### Rămas nefăcut / de verificat
 
 - **Plăți n-a rulat niciodată pe o bază de date reală** — `GET /api/forexe/plati` neverificat live.
-- **`image_list` n-are cheile `neutru` și `plus`**; ambele cad pe formele GDI. De adăugat dacă
-  operatorul le vrea din resurse.
-- **`nrdoc` și `data` sunt `ValueType.DateTime` în designer**, dar `FillGrid` scrie **șiruri** în
-  ele (`r.NrOP`, `ShortDate(...)`). `NrOP` ca dată pare o scăpare de copy-paste la trecerea prin
-  designer. Lăsate neatinse — sunt valori autorate, deci alegerea operatorului.
-- **„fix Rezervări «+» (one leaf, not all)"**, planificat în STATUS ca 0017-04, **nu s-a făcut**
-  și a rămas fără număr, fiindcă 04 a fost realocat aici. Are nevoie de un număr nou.
+- **`image_list` n-are cheile `neutru` și `plus`**; ambele cad pe formele GDI. De adăugat dacă operatorul le vrea din resurse.
+- **`nrdoc` și `data` sunt `ValueType.DateTime` în designer**, dar `FillGrid` scrie **șiruri** în ele (`r.NrOP`, `ShortDate(...)`). `NrOP` ca dată pare o scăpare de copy-paste la trecerea prin designer. Lăsate neatinse — sunt valori autorate, deci alegerea operatorului.
+- **„fix Rezervări «+» (one leaf, not all)"**, planificat în STATUS ca 0017-04, **nu s-a făcut** și a rămas fără număr, fiindcă 04 a fost realocat aici. Are nevoie de un număr nou.
 - Butoanele de sortare din arbore sunt tot un `MsgBox` de rezervă (moștenit din 0022).
 
 ## Repere unice din registrul 0017

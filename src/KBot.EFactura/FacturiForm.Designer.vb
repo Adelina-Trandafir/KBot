@@ -72,56 +72,76 @@ Partial Class FacturiForm
         ' 
         btnRenunta.Dock = System.Windows.Forms.DockStyle.Fill
         btnRenunta.Enabled = False
+        btnRenunta.AutoSize = True
+        btnRenunta.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly
         btnRenunta.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         btnRenunta.Image = My.Resources.Resources.undo
         btnRenunta.Location = New System.Drawing.Point(0, 0)
         btnRenunta.Margin = New System.Windows.Forms.Padding(0)
         btnRenunta.Name = "btnRenunta"
-        btnRenunta.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnRenunta.MaximumSize = New System.Drawing.Size(0, 50)
+        btnRenunta.Padding = New System.Windows.Forms.Padding(14, 4, 14, 4)
         btnRenunta.Size = New System.Drawing.Size(50, 50)
+        btnRenunta.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         btnRenunta.TabIndex = 4
         tips.SetToolTipText(btnRenunta, "Renunță la modificările nesalvate ale facturii.")
+        btnRenunta.Text = "Renunță"
         btnRenunta.UseVisualStyleBackColor = True
         ' 
         ' btnModifica
         ' 
         btnModifica.Enabled = False
+        btnModifica.AutoSize = True
+        btnModifica.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly
         btnModifica.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         btnModifica.Image = My.Resources.Resources.edit_fact
         btnModifica.Location = New System.Drawing.Point(802, 0)
         btnModifica.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
         btnModifica.Name = "btnModifica"
-        btnModifica.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnModifica.MaximumSize = New System.Drawing.Size(0, 50)
+        btnModifica.Padding = New System.Windows.Forms.Padding(14, 4, 14, 4)
         btnModifica.Size = New System.Drawing.Size(50, 50)
+        btnModifica.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         btnModifica.TabIndex = 5
         tips.SetToolTipText(btnModifica, "Deblochează factura aleasă pentru modificare. Se modifică doar o ciornă (netrimisă la ANAF).")
+        btnModifica.Text = "Modifică"
         btnModifica.UseVisualStyleBackColor = True
         ' 
         ' btnAdauga
         ' 
+        btnAdauga.AutoSize = True
+        btnAdauga.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly
         btnAdauga.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         btnAdauga.Image = My.Resources.Resources.add_fact
         btnAdauga.Location = New System.Drawing.Point(860, 0)
         btnAdauga.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
         btnAdauga.Name = "btnAdauga"
-        btnAdauga.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnAdauga.MaximumSize = New System.Drawing.Size(0, 50)
+        btnAdauga.Padding = New System.Windows.Forms.Padding(14, 4, 14, 4)
         btnAdauga.Size = New System.Drawing.Size(50, 50)
+        btnAdauga.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         btnAdauga.TabIndex = 6
         tips.SetToolTipText(btnAdauga, "Începe o factură nouă. Seria și numărul se dau la salvare.")
+        btnAdauga.Text = "Adaugă"
         btnAdauga.UseVisualStyleBackColor = True
         ' 
         ' btnSalveaza
         ' 
         btnSalveaza.Enabled = False
+        btnSalveaza.AutoSize = True
+        btnSalveaza.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly
         btnSalveaza.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         btnSalveaza.Image = My.Resources.Resources.save_32
         btnSalveaza.Location = New System.Drawing.Point(918, 0)
         btnSalveaza.Margin = New System.Windows.Forms.Padding(0, 0, 8, 0)
         btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnSalveaza.MaximumSize = New System.Drawing.Size(0, 50)
+        btnSalveaza.Padding = New System.Windows.Forms.Padding(14, 4, 14, 4)
         btnSalveaza.Size = New System.Drawing.Size(50, 50)
+        btnSalveaza.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         btnSalveaza.TabIndex = 7
         tips.SetToolTipText(btnSalveaza, "Scrie factura și liniile ei în baza de date (nu o trimite la ANAF).")
+        btnSalveaza.Text = "Salvează"
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
         ' mnuUnitate
@@ -440,13 +460,17 @@ Partial Class FacturiForm
         ' btnIesire
         ' 
         btnIesire.Dock = System.Windows.Forms.DockStyle.Fill
+        btnIesire.AutoSize = True
+        btnIesire.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowOnly
         btnIesire.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         btnIesire.Image = My.Resources.Resources.exit_door
         btnIesire.Location = New System.Drawing.Point(8, 0)
         btnIesire.Margin = New System.Windows.Forms.Padding(8, 0, 0, 0)
         btnIesire.Name = "btnIesire"
-        btnIesire.Padding = New System.Windows.Forms.Padding(30, 4, 30, 4)
+        btnIesire.MaximumSize = New System.Drawing.Size(0, 50)
+        btnIesire.Padding = New System.Windows.Forms.Padding(14, 4, 14, 4)
         btnIesire.Size = New System.Drawing.Size(50, 50)
+        btnIesire.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText
         btnIesire.TabIndex = 0
         btnIesire.Text = "Ieșire"
         btnIesire.UseVisualStyleBackColor = True

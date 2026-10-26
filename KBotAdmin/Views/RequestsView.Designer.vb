@@ -360,9 +360,9 @@ Partial Class RequestsView
         btnPlan.Name = "btnPlan"
         btnPlan.Size = New Size(160, 36)
         btnPlan.TabIndex = 4
-        btnPlan.Text = "Verifică din nou"
-        tips.SetToolTipHeader(btnPlan, "Verifică din nou")
-        tips.SetToolTipText(btnPlan, "Recalculează planul cu numele și CodProgram din dreapta. Nu scrie nimic.")
+        btnPlan.Text = "Revalidează"
+        tips.SetToolTipHeader(btnPlan, "Revalidează")
+        tips.SetToolTipText(btnPlan, "Rulează din nou toate verificările cererii (inclusiv drepturile contului de provizionare), cu numele și CodProgram de lângă." & vbLf & "Pentru o cerere eșuată: arată dacă cauza a dispărut. Nu scrie nimic.")
         '
         ' txtDetail
         '

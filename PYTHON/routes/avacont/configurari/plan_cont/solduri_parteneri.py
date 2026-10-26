@@ -9,6 +9,9 @@ account of the chart of ANY subunit of the unit (the partner window lists them a
         -> 200 { "conturi": [ { "idcont", "simbol", "denumire", "capitol", "subunitate" } ] }
         The ACTIVE accounts of every subunit, for the account list of the partner's balances grid.
 
+    GET  /api/avacont/parteneri/cu-solduri?an=<year>
+        -> 200 { "parteneri": [ idpartener, ... ] }   the partners that have at least one balance row in that year (the list of the partner window offers them).
+
     GET  /api/avacont/parteneri/solduri?partener=<id>&an=<year>
         -> 200 { "solduri": [ { "idcont", "simbol", "denumire", "capitol", "sold_debitor", "sold_creditor", "rulaj_debitor", "rulaj_creditor" } ] }
         The partner's rows of that year (inactive accounts too: a stored balance is never hidden).
@@ -53,6 +56,30 @@ def get_conturi_parteneri():
     except Exception as e:
         logger.error("[avacont.solduri_parteneri] conturi %s: %s", db_name, e, exc_info=True)
         return json_utf8({"error": f"Eroare la citirea conturilor: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+@avacont_bp.route("/api/avacont/parteneri/cu-solduri", methods=["GET"])
+@require_session
+def get_parteneri_cu_solduri():
+    """The ids of the partners that have a balance row in one year."""
+    an = request.args.get("an", type=int)
+    if an is None:
+        return json_utf8({"error": "Anul este obligatoriu."}, 400)
+    db_name = g.session.db_name
+    conn = None
+    try:
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT IdPartener FROM TZ_SoldInitial WHERE An = %s AND IdPartener IS NOT NULL", (an,))
+        lista = [int(r[0]) for r in cursor.fetchall()]
+        logger.info("[avacont.solduri_parteneri] %s: %s, %s parteneri cu solduri", db_name, an, len(lista))
+        return json_utf8({"parteneri": lista}, 200)
+    except Exception as e:
+        logger.error("[avacont.solduri_parteneri] cu-solduri %s: %s", db_name, e, exc_info=True)
+        return json_utf8({"error": f"Eroare la citirea partenerilor cu solduri: {e}"}, 500)
     finally:
         if conn is not None:
             conn.close()

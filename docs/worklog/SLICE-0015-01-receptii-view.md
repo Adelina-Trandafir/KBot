@@ -20,46 +20,19 @@ Construit ca Rezervări (0014): un singur endpoint cititor brut, `WithReauth(Of 
 
 #### Decizii cheie (din sursa Access, nu ghicite)
 
-- **Arbore 2 niveluri, NU 3.** `qFX_MAIN_REC_TREE` = `R INNER JOIN H ON IDRR`, coloane R+H.
-  În `frmFX_MAIN_REC.Show_Receptii` linia care ar umple frunzele pe clsf (`AggregateRow
-  nodeAgg, Mid(RC!clsf,7), …`) e **comentată**, împreună cu acumularea `valAsoc`. Deci
-  frunzele pe clsf și tabelele-tooltip de nod/frunză sunt dormante — replicăm arborele viu
-  pe 2 niveluri. Nicio frunză pe clsf.
-- **Detaliul clsf trăiește în LISTA, nu în arbore** (`qFX_MAIN_REC_LISTA_IND`): un
-  `UNION ALL` de un rând-total sintetic (`IDR=-1`, `Valoare = Sum(FX_Receptii.DIF)` pe
-  antet) + rânduri per clsf (`Sum(Valoare)` grupat pe clsf, cu `FX_Indicatori.NrCrt` +
-  eticheta clasificației). LISTA e condusă de **selecția unui antet**; pe rădăcină se
-  **golește** grila (Access conduce LISTA doar la nivel de antet — `mcTree_Click` cu
-  `IDRH=-1`).
-- **Iconița rădăcinii reflectă starea** (finding 5): `Incarcat` → „sus", altfel `Preluat`
-  → „jos", altfel „neutru" (Access `REV_SUS`/`REV_JOS`/`REV_NOT`). Anteturile n-au iconiță.
-- **Clasificația — același drum ca Sumar 0011-03**, NU se reghicește: prin `FX_Indicatori`
-  (`LEFT JOIN` pe `CodAI`), `Clsf` prin **subinterogare scalară `LIMIT 1`** cheiată pe
-  `I.IdClsf` (= id Access) + `I.IdUnitate` (nomenclatorul are duplicate reale → un join ar
-  fan-out-a). `NrCrt` = `FX_Indicatori.NrCrt`.
-- **`LEFT JOIN FX_Receptii`** (nu INNER): un antet fără linii nu are voie să dispară din
-  arbore (qFX_MAIN_REC_TREE nu depinde de FX_Receptii). Vine cu un rând având `idr` NULL;
-  clientul îl ține în arbore, iar grila lui arată doar randul-total.
-- **Un singur endpoint** întoarce `receptii` + `plati` într-un răspuns; clientul modelează
-  arborele, LISTA (și, în 0015-02, tooltip-ul). `plati` (`qFX_MAIN_REC_TT_PLATI`:
-  `Data_plata, Suma WHERE CodAngajament=cod`, fără alt filtru — confirmat în export) e
-  trimis deja din 0015-01 ca jumătatea de client să fie **un singur apel**.
+- **Arbore 2 niveluri, NU 3.** `qFX_MAIN_REC_TREE` = `R INNER JOIN H ON IDRR`, coloane R+H. În `frmFX_MAIN_REC.Show_Receptii` linia care ar umple frunzele pe clsf (`AggregateRow nodeAgg, Mid(RC!clsf,7), …`) e **comentată**, împreună cu acumularea `valAsoc`. Deci frunzele pe clsf și tabelele-tooltip de nod/frunză sunt dormante — replicăm arborele viu pe 2 niveluri. Nicio frunză pe clsf.
+- **Detaliul clsf trăiește în LISTA, nu în arbore** (`qFX_MAIN_REC_LISTA_IND`): un `UNION ALL` de un rând-total sintetic (`IDR=-1`, `Valoare = Sum(FX_Receptii.DIF)` pe antet) + rânduri per clsf (`Sum(Valoare)` grupat pe clsf, cu `FX_Indicatori.NrCrt` + eticheta clasificației). LISTA e condusă de **selecția unui antet**; pe rădăcină se **golește** grila (Access conduce LISTA doar la nivel de antet — `mcTree_Click` cu `IDRH=-1`).
+- **Iconița rădăcinii reflectă starea** (finding 5): `Incarcat` → „sus", altfel `Preluat` → „jos", altfel „neutru" (Access `REV_SUS`/`REV_JOS`/`REV_NOT`). Anteturile n-au iconiță.
+- **Clasificația — același drum ca Sumar 0011-03**, NU se reghicește: prin `FX_Indicatori` (`LEFT JOIN` pe `CodAI`), `Clsf` prin **subinterogare scalară `LIMIT 1`** cheiată pe `I.IdClsf` (= id Access) + `I.IdUnitate` (nomenclatorul are duplicate reale → un join ar fan-out-a). `NrCrt` = `FX_Indicatori.NrCrt`.
+- **`LEFT JOIN FX_Receptii`** (nu INNER): un antet fără linii nu are voie să dispară din arbore (qFX_MAIN_REC_TREE nu depinde de FX_Receptii). Vine cu un rând având `idr` NULL; clientul îl ține în arbore, iar grila lui arată doar randul-total.
+- **Un singur endpoint** întoarce `receptii` + `plati` într-un răspuns; clientul modelează arborele, LISTA (și, în 0015-02, tooltip-ul). `plati` (`qFX_MAIN_REC_TT_PLATI`: `Data_plata, Suma WHERE CodAngajament=cod`, fără alt filtru — confirmat în export) e trimis deja din 0015-01 ca jumătatea de client să fie **un singur apel**.
 
 #### Devieri față de schița planului (documentate)
 
-- **Chei de fir snake_case**, nu PascalCase-ul din schița JSON a planului — pentru
-  consistență cu `/sumar` și `/rezervari` (același `PropertyNamingPolicy=Nothing`,
-  „snake_case se oprește la fir").
-- **Coloana „Descriere" a grilei = Descrierea ANTETULUI** (`FX_Receptii_H.Descriere`),
-  „Toți indicatorii" pe randul-total. Planul spunea vag „Descriere from the indicator";
-  sursa citată (`qFX_MAIN_REC_LISTA_IND`: `Nz([HH]![Descriere],'Toți indicatorii')`, HH =
-  FX_Receptii_H) arată clar că e descrierea antetului. Am purtat `descriere_h` în rând.
-- **Am adăugat `sters_h` în rând** (antetul), pentru cumulul DIFH din tooltip-ul 0015-02
-  (`qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, deși arborele NU filtrează Sters). E o
-  coloană brută, nu pre-modelare; se trimite din 0015-01 ca 0015-02 să nu ceară alt câmp.
-- **Randul-total al grilei apare PRIMUL** (decizie blocată a planului), deși Access îl
-  împinge la coadă cu trucul `Nz(HH.DataH, #12/31/2100#)`. Restul grupurilor: pe NrCrt
-  (DataH e constant pe un antet).
+- **Chei de fir snake_case**, nu PascalCase-ul din schița JSON a planului — pentru consistență cu `/sumar` și `/rezervari` (același `PropertyNamingPolicy=Nothing`, „snake_case se oprește la fir").
+- **Coloana „Descriere" a grilei = Descrierea ANTETULUI** (`FX_Receptii_H.Descriere`), „Toți indicatorii" pe randul-total. Planul spunea vag „Descriere from the indicator"; sursa citată (`qFX_MAIN_REC_LISTA_IND`: `Nz([HH]![Descriere],'Toți indicatorii')`, HH = FX_Receptii_H) arată clar că e descrierea antetului. Am purtat `descriere_h` în rând.
+- **Am adăugat `sters_h` în rând** (antetul), pentru cumulul DIFH din tooltip-ul 0015-02 (`qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, deși arborele NU filtrează Sters). E o coloană brută, nu pre-modelare; se trimite din 0015-01 ca 0015-02 să nu ceară alt câmp.
+- **Randul-total al grilei apare PRIMUL** (decizie blocată a planului), deși Access îl împinge la coadă cu trucul `Nz(HH.DataH, #12/31/2100#)`. Restul grupurilor: pe NrCrt (DataH e constant pe un antet).
 
 ### Fișiere atinse
 
@@ -83,25 +56,15 @@ Construit ca Rezervări (0014): un singur endpoint cititor brut, `WithReauth(Of 
 
 ### Rezultate teste
 
-- **.NET:** `dotnet build KBot.sln` — **0 warnings, 0 errors**. `dotnet test KBot.sln` —
-  **tot verde**: Api 48 (was 42, +6), App 37 (was 30, +7), Controls 111, Theming 27,
-  Common 7, Domain 1, LocalStore 1.
-- **Python:** `test_forexe_receptii.py` — **1 skipped off-host** (host-only, ca surorile);
-  `py_compile` pe rută + `__init__` + test — OK.
+- **.NET:** `dotnet build KBot.sln` — **0 warnings, 0 errors**. `dotnet test KBot.sln` — **tot verde**: Api 48 (was 42, +6), App 37 (was 30, +7), Controls 111, Theming 27, Common 7, Domain 1, LocalStore 1.
+- **Python:** `test_forexe_receptii.py` — **1 skipped off-host** (host-only, ca surorile); `py_compile` pe rută + `__init__` + test — OK.
 
 ### Neverificat / amânat (Open threads)
 
-- **Endpoint-ul NU a atins niciodată o bază reală.** `test_forexe_receptii.py` skip
-  off-host; trebuie rulat pe VPS (confirmă că cele opt tabele/coloane există și că join-ul
-  prin `FX_Indicatori` dă `Clsf` populat — blank pe fiecare rând ⇒ cheia de join, nu
-  vederea, aceeași capcană ca 0011-03).
-- **`ReceptiiView` n-a fost randat niciodată pe ecran** (+ harness-ul `KBotDataView` STILL
-  unrun). Nu s-au verificat vizual: iconițele de stare, captions-urile arborelui,
-  golirea/reumplerea LISTA la click, formatul banilor.
-- **Tooltip-ul de recepție (`NewRootPlatiTooltip`) = pass 0015-02** — nefăcut în această
-  pasă. `receptii.py` trimite deja `plati` + `difh`/`sters_h`, deci nu va cere alt endpoint.
-- Workflow-urile `bModRel` („modificare legături") și crearea de ordonanțări NU sunt în
-  scope — felii ulterioare, dacă vreodată.
+- **Endpoint-ul NU a atins niciodată o bază reală.** `test_forexe_receptii.py` skip off-host; trebuie rulat pe VPS (confirmă că cele opt tabele/coloane există și că join-ul prin `FX_Indicatori` dă `Clsf` populat — blank pe fiecare rând ⇒ cheia de join, nu vederea, aceeași capcană ca 0011-03).
+- **`ReceptiiView` n-a fost randat niciodată pe ecran** (+ harness-ul `KBotDataView` STILL unrun). Nu s-au verificat vizual: iconițele de stare, captions-urile arborelui, golirea/reumplerea LISTA la click, formatul banilor.
+- **Tooltip-ul de recepție (`NewRootPlatiTooltip`) = pass 0015-02** — nefăcut în această pasă. `receptii.py` trimite deja `plati` + `difh`/`sters_h`, deci nu va cere alt endpoint.
+- Workflow-urile `bModRel` („modificare legături") și crearea de ordonanțări NU sunt în scope — felii ulterioare, dacă vreodată.
 
 ---
 
@@ -128,18 +91,10 @@ Per recepție (`IDRR`), în ordinea `DataR`, un tabel cu patru rânduri:
 
 #### Fidelitate față de sursă (finding 3, verificat în export)
 
-- **`difhCum`**: `DIFH` e per antet, deci se însumează **anteturile DISTINCTE** ale
-  recepției (o dată per `IDRH`), apoi se cumulează pe recepții în ordinea `DataR`.
-  **Anteturile șterse sunt EXCLUSE** — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`,
-  deși arborele (qFX_MAIN_REC_TREE) NU filtrează Sters. De aceea `sters_h` a fost purtat
-  în rând din 0015-01.
-- **`platiCum`**: cumulativ, **fără limită inferioară** — toate plățile cu `DataPlata ≤
-  MaxDataH` al recepției curente (`MaxDataH` = max `DataH` pe anteturile recepției).
-  Sursa plăților (`qFX_MAIN_REC_TT_PLATI`) nu filtrează nimic în plus.
-- **`valAsoc` NU e folosit** — linia care l-ar acumula (`sAsocR`) e comentată în Access;
-  `NewRootPlatiTooltip` are doar patru rânduri și ignoră `asocCum`.
-- Anteturile și grila NU primesc tooltip în această pasă (tabelele de nod/frunză sunt
-  dormante în Access).
+- **`difhCum`**: `DIFH` e per antet, deci se însumează **anteturile DISTINCTE** ale recepției (o dată per `IDRH`), apoi se cumulează pe recepții în ordinea `DataR`. **Anteturile șterse sunt EXCLUSE** — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, deși arborele (qFX_MAIN_REC_TREE) NU filtrează Sters. De aceea `sters_h` a fost purtat în rând din 0015-01.
+- **`platiCum`**: cumulativ, **fără limită inferioară** — toate plățile cu `DataPlata ≤ MaxDataH` al recepției curente (`MaxDataH` = max `DataH` pe anteturile recepției). Sursa plăților (`qFX_MAIN_REC_TT_PLATI`) nu filtrează nimic în plus.
+- **`valAsoc` NU e folosit** — linia care l-ar acumula (`sAsocR`) e comentată în Access; `NewRootPlatiTooltip` are doar patru rânduri și ignoră `asocCum`.
+- Anteturile și grila NU primesc tooltip în această pasă (tabelele de nod/frunză sunt dormante în Access).
 
 #### Cum e randat
 
@@ -158,19 +113,13 @@ Nu există endpoint nou: totul se calculează din `_rows` + `_plati` deja încă
 
 ### Rezultate teste
 
-- **.NET:** `dotnet build KBot.sln` — **0 warnings, 0 errors**. `dotnet test KBot.sln` —
-  **tot verde**: App 37→**39** (+2 tooltip), Api 48, Controls 111, Theming 27, Common 7,
-  Domain 1, LocalStore 1.
-- **Python:** neschimbat (pass 02 nu atinge serverul); `test_forexe_receptii.py` skip
-  off-host.
+- **.NET:** `dotnet build KBot.sln` — **0 warnings, 0 errors**. `dotnet test KBot.sln` — **tot verde**: App 37→**39** (+2 tooltip), Api 48, Controls 111, Theming 27, Common 7, Domain 1, LocalStore 1.
+- **Python:** neschimbat (pass 02 nu atinge serverul); `test_forexe_receptii.py` skip off-host.
 
 ### Neverificat / amânat (Open threads)
 
-- **Tooltip-ul n-a fost văzut pe ecran.** Shaping-ul (cumul, semn, culoare) e testat
-  headless, dar randarea reală a tabelului (`TooltipPopup`) + declanșarea pe hover pe
-  rădăcină nu au fost verificate vizual — la fel ca tot restul lui 0015 și `KBotDataView`.
-- **Endpoint-ul tot n-a atins o bază reală** (vezi 0015-01): cifrele din tooltip depind de
-  `DIFH`/`Sters`/`Data_plata` reale, nereproduse numeric offline.
+- **Tooltip-ul n-a fost văzut pe ecran.** Shaping-ul (cumul, semn, culoare) e testat headless, dar randarea reală a tabelului (`TooltipPopup`) + declanșarea pe hover pe rădăcină nu au fost verificate vizual — la fel ca tot restul lui 0015 și `KBotDataView`.
+- **Endpoint-ul tot n-a atins o bază reală** (vezi 0015-01): cifrele din tooltip depind de `DIFH`/`Sters`/`Data_plata` reale, nereproduse numeric offline.
 - `bModRel` („modificare legături") + crearea de ordonanțări rămân în afara scope-ului.
 
 ---
@@ -187,16 +136,9 @@ Nu există endpoint nou: totul se calculează din `_rows` + `_plati` deja încă
 
 Operatorul a cerut trei modificări după ce a văzut structura din 0015-01/02:
 
-1. **Arbore pe 3 niveluri** (era 2): **folder lună/an** (rădăcină, grupat pe `DataR`,
-   nume românești ca la Rezervări: „Ianuarie/2026") → **recepție** (IDRR, iconiță de stare
-   sus/jos/neutru) → **antet** (IDRH). Totalul de pe folderul de lună = suma `SumaAntet` pe
-   recepțiile distincte ale lunii.
-2. **LISTA agregată la ORICE nivel.** Click pe lună / recepție / antet umple grila cu
-   agregatul rândurilor nodului: un rând-total „Toți indicatorii" (`Sum(DIF)`) + un rând per
-   clasificație (`Sum(Valoare)`). Nu mai există „click pe rădăcină golește grila".
-3. **Tooltip de reconciliere pe LUNĂ și pe RECEPȚIE.** Fereastra de plăți se întinde acum
-   până la **prima recepție a lunii URMĂTOARE** (nu ≤ `MaxDataH` al recepției), ca plățile
-   dintre antet și luna următoare să conteze la luna curentă. Ultima lună → toate plățile.
+1. **Arbore pe 3 niveluri** (era 2): **folder lună/an** (rădăcină, grupat pe `DataR`, nume românești ca la Rezervări: „Ianuarie/2026") → **recepție** (IDRR, iconiță de stare sus/jos/neutru) → **antet** (IDRH). Totalul de pe folderul de lună = suma `SumaAntet` pe recepțiile distincte ale lunii.
+2. **LISTA agregată la ORICE nivel.** Click pe lună / recepție / antet umple grila cu agregatul rândurilor nodului: un rând-total „Toți indicatorii" (`Sum(DIF)`) + un rând per clasificație (`Sum(Valoare)`). Nu mai există „click pe rădăcină golește grila".
+3. **Tooltip de reconciliere pe LUNĂ și pe RECEPȚIE.** Fereastra de plăți se întinde acum până la **prima recepție a lunii URMĂTOARE** (nu ≤ `MaxDataH` al recepției), ca plățile dintre antet și luna următoare să conteze la luna curentă. Ultima lună → toate plățile.
 
 #### Decizie explicită (aprobată de operator): coloana „Descriere" = Denumirea clasificației
 
@@ -204,15 +146,9 @@ Pentru că grila agregă acum peste mai multe anteturi (a căror descriere difer
 
 #### Semantica tooltip-ului (per lună, cronologic pe DataR)
 
-- `difhCum` = sumă rulantă a `Sum(DIFH)` pe recepție (anteturi DISTINCTE, EXCLUZÂND cele
-  șterse — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`). **Recepția** = cumul până la ea;
-  **luna** = cumul până la ULTIMA recepție a lunii.
-- `platiCum(lună M)` = `Sum(Suma)` peste plăți cu `DataPlata < DataR`-ul primei recepții din
-  luna următoare (barieră exclusivă). Toate recepțiile aceleiași luni împart aceeași
-  fereastră. Ultima lună → toate plățile.
-- `Diferență = difhCum − platiCum`, roșu dacă <0, albastru dacă >0. Randat ca `<table>` XML
-  pe `TreeItem.Tooltip` (folderul de lună are eticheta „Lună"/„Ianuarie/2026", recepția
-  „Data recepție"/dată).
+- `difhCum` = sumă rulantă a `Sum(DIFH)` pe recepție (anteturi DISTINCTE, EXCLUZÂND cele șterse — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`). **Recepția** = cumul până la ea; **luna** = cumul până la ULTIMA recepție a lunii.
+- `platiCum(lună M)` = `Sum(Suma)` peste plăți cu `DataPlata < DataR`-ul primei recepții din luna următoare (barieră exclusivă). Toate recepțiile aceleiași luni împart aceeași fereastră. Ultima lună → toate plățile.
+- `Diferență = difhCum − platiCum`, roșu dacă <0, albastru dacă >0. Randat ca `<table>` XML pe `TreeItem.Tooltip` (folderul de lună are eticheta „Lună"/„Ianuarie/2026", recepția „Data recepție"/dată).
 
 **Efectul fix-ului:** înainte, o plată din 25.01 (după antetul din 19.01) nu se număra la recepția din Ianuarie (fereastra se oprea la `MaxDataH`), deci Diferența arăta ~valoarea recepției. Acum acea plată intră în fereastra lunii Ianuarie (e înainte de prima recepție din Februarie), deci Diferența reflectă golul real recepții−plăți.
 
@@ -231,19 +167,14 @@ Pentru că grila agregă acum peste mai multe anteturi (a căror descriere difer
 
 ### Rezultate teste
 
-- **.NET:** `dotnet build KBot.sln` — **0 warnings**. `dotnet test KBot.sln` — **tot verde**:
-  App 39, Api 48, Controls 111, Theming 27, Common 7, Domain 1, LocalStore 1.
+- **.NET:** `dotnet build KBot.sln` — **0 warnings**. `dotnet test KBot.sln` — **tot verde**: App 39, Api 48, Controls 111, Theming 27, Common 7, Domain 1, LocalStore 1.
 - **Python:** `test_forexe_receptii.py` — **1 skipped off-host** (host-only); `py_compile` OK.
 
 ### Neverificat / amânat (Open threads)
 
-- **Endpoint-ul tot n-a atins o bază reală**; `denumire` (nouă subinterogare) și cifrele
-  tooltip-ului nu au fost verificate pe date reale.
-- **Nimic din 0015 n-a fost văzut pe ecran** — arborele pe 3 niveluri, iconițele, LISTA
-  agregată la click și tabelele-tooltip pe lună/recepție sunt testate doar headless.
-- Decizia „Descriere = Denumire clasificație" e aprobată de operator, dar neverificată
-  vizual; dacă preferă gol pe randurile per-clsf, e o schimbare de o linie în
-  `FillGridFromRows`.
+- **Endpoint-ul tot n-a atins o bază reală**; `denumire` (nouă subinterogare) și cifrele tooltip-ului nu au fost verificate pe date reale.
+- **Nimic din 0015 n-a fost văzut pe ecran** — arborele pe 3 niveluri, iconițele, LISTA agregată la click și tabelele-tooltip pe lună/recepție sunt testate doar headless.
+- Decizia „Descriere = Denumire clasificație" e aprobată de operator, dar neverificată vizual; dacă preferă gol pe randurile per-clsf, e o schimbare de o linie în `FillGridFromRows`.
 
 ## Repere ale registrului 0015
 

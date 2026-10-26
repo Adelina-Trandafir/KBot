@@ -148,7 +148,7 @@ Partial Class KbotForm
         btnMeniu.Text = "  MENIU"
         btnMeniu.TextImageRelation = TextImageRelation.ImageBeforeText
         tips.SetToolTipHeader(btnMeniu, "Meniu")
-        tips.SetToolTipText(btnMeniu, "Adăugarea angajamentelor, extrasele, clasificațiile bugetare și partenerii.")
+        tips.SetToolTipText(btnMeniu, "Adăugarea angajamentelor, extrasele, clasificațiile de cheltuieli și partenerii.")
         btnMeniu.UseVisualStyleBackColor = True
         ' 
         ' menuNou
@@ -168,7 +168,7 @@ Partial Class KbotForm
         KBotMenuItem4.Image = My.Resources.Resources.folder_open
         KBotMenuItem5.Image = My.Resources.Resources.cells
         KBotMenuItem5.Key = "clasificatii"
-        KBotMenuItem5.Text = "Clasificații bugetare"
+        KBotMenuItem5.Text = "Clasificații cheltuieli"
         KBotMenuItem6.Image = My.Resources.Resources.binvoice
         KBotMenuItem6.Key = "parteneri"
         KBotMenuItem6.Text = "Parteneri"

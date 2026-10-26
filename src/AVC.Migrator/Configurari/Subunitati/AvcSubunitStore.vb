@@ -31,15 +31,18 @@ End Class
 ''' <summary>The subunit a ported Access unit went into.</summary>
 Friend NotInheritable Class AvcSubunitRef
 
-    Public Sub New(k_id As Integer, k_denumire As String, k_capitol As String)
+    Public Sub New(k_id As Integer, k_denumire As String, k_capitol As String, Optional k_sursaSector As String = "")
         IdSubunitate = k_id
         Denumire = k_denumire
         Capitol = k_capitol
+        SursaSector = k_sursaSector
     End Sub
 
     Public ReadOnly Property IdSubunitate As Integer
     Public ReadOnly Property Denumire As String
     Public ReadOnly Property Capitol As String
+    ''' <summary>Sector + source of the subunit (01A ...): the one the journals of its unit get.</summary>
+    Public ReadOnly Property SursaSector As String
 
 End Class
 
@@ -118,10 +121,10 @@ Friend NotInheritable Class AvcSubunitStore
         Try
             Dim k_result As New Dictionary(Of Integer, AvcSubunitRef)()
             Using k_cmd As New MySqlCommand(
-                "SELECT `IdUnitateAccess`, `IdSubunitate`, `Denumire`, `Capitol` FROM `TZ_Subunitati` WHERE `IdUnitateAccess` IS NOT NULL", k_cn, k_transaction)
+                "SELECT `IdUnitateAccess`, `IdSubunitate`, `Denumire`, `Capitol`, `SursaSector` FROM `TZ_Subunitati` WHERE `IdUnitateAccess` IS NOT NULL", k_cn, k_transaction)
                 Using k_reader = k_cmd.ExecuteReader()
                     While k_reader.Read()
-                        k_result(k_reader.GetInt32(0)) = New AvcSubunitRef(k_reader.GetInt32(1), k_reader.GetString(2), k_reader.GetString(3))
+                        k_result(k_reader.GetInt32(0)) = New AvcSubunitRef(k_reader.GetInt32(1), k_reader.GetString(2), k_reader.GetString(3), k_reader.GetString(4))
                     End While
                 End Using
             End Using

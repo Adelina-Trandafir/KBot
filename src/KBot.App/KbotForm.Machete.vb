@@ -51,8 +51,8 @@ Partial Public Class KbotForm
         k_registry.Register(New MachetaType(MachetaGrupe, "Grupe de angajamente", "folder_open", Function(k_ref) OpenPage(AddressOf DeschideEditorulGrupe), Nothing, False))
         k_registry.Register(New MachetaType(MachetaSetari, "Configurare K-BOT", "settings", Function(k_ref) OpenPage(AddressOf ShowSettings)))
         k_registry.Register(New MachetaType(MachetaJurnal, "Jurnal activitate", "folder", Function(k_ref) OpenPage(AddressOf ShowLog)))
-        k_registry.Register(New MachetaType(MachetaClasificatii, "Clasificații bugetare", "cells", Function(k_ref) OpenPage(AddressOf DeschideClasificatiile),
-                                            Function(k_ref) If(k_ref.Arg("an").Length > 0, "Clasificații bugetare · " & k_ref.Arg("an"), "Clasificații bugetare")))
+        k_registry.Register(New MachetaType(MachetaClasificatii, "Clasificații cheltuieli", "cells", Function(k_ref) OpenPage(AddressOf DeschideClasificatiile),
+                                            Function(k_ref) If(k_ref.Arg("an").Length > 0, "Clasificații cheltuieli · " & k_ref.Arg("an"), "Clasificații cheltuieli")))
         k_registry.Register(New MachetaType(MachetaParteneri, "Parteneri", "binvoice", Function(k_ref) OpenPage(AddressOf DeschidePartenerii)))
         k_registry.Register(New MachetaType(MachetaPlanCont, "Plan de conturi", "cells", Function(k_ref) OpenPage(AddressOf DeschidePlanCont)))
         k_registry.Register(New MachetaType(MachetaEFacturaVanzare, "E-Factura Vânzare", "binvoice", Function(k_ref) OpenPage(AddressOf DeschideEFactura)))

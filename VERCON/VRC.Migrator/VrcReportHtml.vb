@@ -27,7 +27,8 @@ Friend NotInheritable Class VrcReportHtml
                                End Function, RegexOptions.IgnoreCase Or RegexOptions.Singleline)
         k_body = k_body.Replace("<h2>BLOCAJE", "<h2 class=""blocking"">BLOCAJE").
                         Replace("<h2>AVERTIZĂRI", "<h2 class=""warning"">AVERTIZĂRI").
-                        Replace("<h2>SERVER — gata", "<h2 class=""success"">SERVER — gata")
+                        Replace("<h2>SERVER — gata", "<h2 class=""success"">SERVER — gata").
+                        Replace("<h2>Casări cu semn corectat", "<h2 class=""success"">Casări cu semn corectat")
 
         Dim k_palette = KBot.Theming.ThemeManager.Current.Palette
         Dim k_css As String

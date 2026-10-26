@@ -5,6 +5,8 @@ that belong to no single slice. New sliceless work is recorded HERE.
 
 ## Current focus (sliceless)
 
+- **No slice (operator, 26.10.2026) - KBotAdmin page «Istoric md» + new control `KBotGraphView`.** How the project evolved, read only from the .md files: a lane per slice (`KBotLaneView`) and a graph of files and links with a time cursor. `KBotAdmin/Docs/MdCorpus.vb`, `Views/MdHistoryView*`, `KBot.Controls/Graph/*`. Builds clean; nothing run on screen; layout constants are first guesses. See `SLICELESS-istoric-md.md`.
+
 - **No slice (operator, 23.10.2026) - VERCON online: window «Parteneri dublati» (same name, different fiscal code) with merge.** `routes/vercon/supplier_merge.py` + `utils/vercon_suppliers.duplicate_key` + `static/js/vercon/supplier-duplicates.js`; opens once when Intrari opens and from `Intrari > Parteneri dublati...`; merge rewrites `VC_NIR` / `VC_FACTURI` `CodPartener` DC-wide and hides the merged `Parteneri`. Import + `node --check` only, SQL never run; help section added to `static/help/vercon.json`. See `../SLICELESS-vercon-parteneri-dublati.md`.
 
 - **No slice (operator, 22.10.2026) - POST /api/tools/upload on its own key.** `_guard_upload()` in `routes/legacy_updater.py` (`LEGACY_UPLOAD_KEY` from the server config.py, header `X-Upload-Key`, no fallback to `API_KEY`); publisher is `AvacontUpdater` (not `Avacont_Uploader`), key in its git-ignored `secrets.vb`. py_compile + clean build only; operator must add the key to the server config.py by hand and upload the file. See `../SLICELESS-ef2-get-ef-token-inapoi.md` part 2.

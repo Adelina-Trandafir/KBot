@@ -18,19 +18,14 @@ Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstr
 
 **Ce s-a făcut.** `WorkflowResultStore` ținea deja pachetele în memorie (`_ultimulNod`) — nu s-a inventat niciun cache nou, s-a folosit cel care exista. S-au adăugat:
 
-- `MomentLista` — când s-a descărcat lista (pachetele de nod își poartă singure
-  `Moment`);
-- `NumaraRanduri(pachet)` — rânduri, nu tabele (fluxul întoarce cele cinci tabele ale
-  lui și când toate sunt goale, deci `Tabele.Count` ar răspunde 5 pe un pachet gol);
-- `PachetBunDeRefolosit(cod)` — pachetul, DAR numai dacă e bun: există și are măcar un
-  rând. Asta e «doar dacă sunt corect descărcate»: în depozit intră doar ce a raportat
-  succes, iar un pachet fără rânduri nu se oferă fiindcă ingestia l-ar respinge oricum.
+- `MomentLista` — când s-a descărcat lista (pachetele de nod își poartă singure `Moment`);
+- `NumaraRanduri(pachet)` — rânduri, nu tabele (fluxul întoarce cele cinci tabele ale lui și când toate sunt goale, deci `Tabele.Count` ar răspunde 5 pe un pachet gol);
+- `PachetBunDeRefolosit(cod)` — pachetul, DAR numai dacă e bun: există și are măcar un rând. Asta e «doar dacă sunt corect descărcate»: în depozit intră doar ce a raportat succes, iar un pachet fără rânduri nu se oferă fiindcă ingestia l-ar respinge oricum.
 
 `MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) și `IntreabaDacaRefolosescLista` (sincronizarea) pun întrebarea, cu ORA descărcării în ea — ăla e faptul din care operatorul poate hotărî. Da = din memorie, Nu = descărcare nouă. Dacă întrebarea însăși cade, se descarcă din nou; niciodată invers.
 
 Refolosirea e sigură prin construcție: contractul în două faze al ingestiei (felia
-0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar
-obiectul care ar fi ieșit dintr-o descărcare.
+0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar obiectul care ar fi ieșit dintr-o descărcare.
 
 `ForexeController.SpuneStare` e nou și public: fără el consola ar fi arătat o ingestie fără descărcarea ei.
 
@@ -46,8 +41,7 @@ Se golește la NEAȘEZAT, nu la sugestia automată: rostul e să șteargă tot c
 
 F13 fusese retras ca veto pe 31.08.2026 și lăsat ca SEMN. Semnul se aprindea pe date perfect corecte (`DataR` e tastat pe site și sosește la miezul nopții, deci orice instantaneu din chiar ziua recepției ieșea «înainte de ea»), deci apărea pe rând după rând fără să spună nimic. Șters din:
 
-- `AsociereForm.CaptionInstantaneu` (semnul de pe rând), `TooltipReceptie` (numărătoarea),
-  `TooltipInstantaneu` (paragraful), plus funcția `EsteInainteDeDataReceptiei` cu totul;
+- `AsociereForm.CaptionInstantaneu` (semnul de pe rând), `TooltipReceptie` (numărătoarea), `TooltipInstantaneu` (paragraful), plus funcția `EsteInainteDeDataReceptiei` cu totul;
 - `prelucrare_asociere.valideaza_plasarile` — blocul care scria în `avertismente`.
 
 Parametrul `rec` a ieșit din `CaptionInstantaneu` și `TooltipInstantaneu`: nu-l mai folosea nimeni.
@@ -80,22 +74,11 @@ Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție N
 
 Ce s-a schimbat în `KBotLaneView`:
 
-- **Obiecte GDI+ de lucru**, reutilizate în loc de alocate: `_fillBrush`, `_backBrush`,
-  `_edgePen`, `_detailPen`. Patru, nu unul, fiindcă unele forme se desenează cât timp
-  alta e încă pregătită. Toți trec prin `ScratchPen`/`ScratchBrush`, care rescriu FIECARE
-  proprietate — o capătă rotundă sau un stil punctat rămas de la forma dinainte ar fi un
-  defect care iese la iveală trei forme mai încolo, în altă metodă.
-- **`KBotLane.PlottedInOrder`**: marcajele desenate, deja sortate pe X, umplute de pasul
-  de așezare. Înainte, `DrawLaneSegments` construia și sorta o listă PE BANDĂ, PE
-  REPICTARE.
-- **`_px1` / `_px2` / `_px3`**, cele trei grosimi scalate la DPI, calculate cu așezarea:
-  `ScaleDpi` era chemat de patru-cinci ori pe marcaj pentru trei numere care nu se pot
-  schimba între două marcaje.
+- **Obiecte GDI+ de lucru**, reutilizate în loc de alocate: `_fillBrush`, `_backBrush`, `_edgePen`, `_detailPen`. Patru, nu unul, fiindcă unele forme se desenează cât timp alta e încă pregătită. Toți trec prin `ScratchPen`/`ScratchBrush`, care rescriu FIECARE proprietate — o capătă rotundă sau un stil punctat rămas de la forma dinainte ar fi un defect care iese la iveală trei forme mai încolo, în altă metodă.
+- **`KBotLane.PlottedInOrder`**: marcajele desenate, deja sortate pe X, umplute de pasul de așezare. Înainte, `DrawLaneSegments` construia și sorta o listă PE BANDĂ, PE REPICTARE.
+- **`_px1` / `_px2` / `_px3`**, cele trei grosimi scalate la DPI, calculate cu așezarea: `ScaleDpi` era chemat de patru-cinci ori pe marcaj pentru trei numere care nu se pot schimba între două marcaje.
 - **`EffectivePlotBackColor()` citit o dată** pe pictare, nu de două-trei ori pe marcaj.
-- **`ControlStyles.Opaque`**: fără el WinForms ștergea tot dreptunghiul înainte de
-  `OnPaint`, iar `OnPaint` începe cu `g.Clear(BackColor)` — aceeași suprafață umplută de
-  două ori degeaba. Ieșirea devreme pe `_updateDepth > 0` curăță acum ea însăși
-  suprafața, fiindcă nimeni n-o mai face în locul ei.
+- **`ControlStyles.Opaque`**: fără el WinForms ștergea tot dreptunghiul înainte de `OnPaint`, iar `OnPaint` începe cu `g.Clear(BackColor)` — aceeași suprafață umplută de două ori degeaba. Ieșirea devreme pe `_updateDepth > 0` curăță acum ea însăși suprafața, fiindcă nimeni n-o mai face în locul ei.
 
 Amândouă suprafețele beneficiază: sunt același control (`benzi` din `AsociereForm` și `benziMari` din `AsociereBenziForm`).
 
@@ -122,28 +105,15 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
 ### Rezultatele rulărilor
 
 - `dotnet build KBot.sln` — **0 erori, 0 avertismente**.
-- `dotnet build src\KBot.App\KBot.App.vbproj` (curat) — 0 erori, cele **7 `MSB3825`
-  preexistente** pe `.resx`.
-- `PYTHON/.venv` suita întreagă — **514 trecute / 19 sărite / 0 picate** (de la 509).
-  Cinci teste noi în `test_forexe_prelucrare_asociere.py`; două rescrise acolo și unul în
-  `test_forexe_asociere.py`, fiindcă pineau semnul F13 care tocmai a fost șters.
+- `dotnet build src\KBot.App\KBot.App.vbproj` (curat) — 0 erori, cele **7 `MSB3825` preexistente** pe `.resx`.
+- `PYTHON/.venv` suita întreagă — **514 trecute / 19 sărite / 0 picate** (de la 509). Cinci teste noi în `test_forexe_prelucrare_asociere.py`; două rescrise acolo și unul în `test_forexe_asociere.py`, fiindcă pineau semnul F13 care tocmai a fost șters.
 
 ### Ce NU s-a verificat
 
-- **Nimic nu s-a văzut pe ecran.** Nici formularul cu butonul nou, nici arborii care își
-  țin derularea, nici cursivul recepțiilor noi, nici benzile după curățarea desenului.
-  Câștigul de viteză e ARGUMENTAT din cod (alocări per repictare), **nu măsurat** — nu
-  există niciun cronometru pus pe `OnPaint` și nicio rulare pe calculatorul operatorului.
-- **`KBotLaneView` nu are NICIUN test.** `tests/KBot.Controls.Tests` nu conține niciun
-  fișier de bandă, deci refactorizarea desenului n-are plasă de siguranță în afară de
-  compilare. Suitele VB.NET nu s-au rulat în sesiunea asta (cerere explicită a
-  operatorului: «no tests»).
-- **Nimic n-a plecat spre serverul viu.** Repararea de la §4 (suma pe indicator, numele
-  recepției) e verificată doar pe funcții pure; nicio salvare adevărată n-a trecut prin
-  ea, deci nu se știe încă dacă exact ăsta era cazul care refuza salvarea operatorului —
-  se știe doar că e un caz care refuza, și că mesajul numea o recepție de negăsit.
-- **Refolosirea din memorie n-a fost încercată.** Nicio sesiune FOREXE n-a fost deschisă
-  în sesiunea asta.
+- **Nimic nu s-a văzut pe ecran.** Nici formularul cu butonul nou, nici arborii care își țin derularea, nici cursivul recepțiilor noi, nici benzile după curățarea desenului. Câștigul de viteză e ARGUMENTAT din cod (alocări per repictare), **nu măsurat** — nu există niciun cronometru pus pe `OnPaint` și nicio rulare pe calculatorul operatorului.
+- **`KBotLaneView` nu are NICIUN test.** `tests/KBot.Controls.Tests` nu conține niciun fișier de bandă, deci refactorizarea desenului n-are plasă de siguranță în afară de compilare. Suitele VB.NET nu s-au rulat în sesiunea asta (cerere explicită a operatorului: «no tests»).
+- **Nimic n-a plecat spre serverul viu.** Repararea de la §4 (suma pe indicator, numele recepției) e verificată doar pe funcții pure; nicio salvare adevărată n-a trecut prin ea, deci nu se știe încă dacă exact ăsta era cazul care refuza salvarea operatorului — se știe doar că e un caz care refuza, și că mesajul numea o recepție de negăsit.
+- **Refolosirea din memorie n-a fost încercată.** Nicio sesiune FOREXE n-a fost deschisă în sesiunea asta.
 - Nimic nu s-a comis și nimic nu s-a împins (cerere explicită: «no git»).
 
 ---
@@ -213,24 +183,14 @@ Fișierul se mută cu `KBOT_ASOCIERE_LOG` în mediu sau `ASOCIERE_LOG_PATH` în 
 
 **`routes/forexe/prelucrare_asociere.py`** — inima asocierii, deci acolo e cea mai mare parte:
 
-- `amprenta` — cele opt numere, nu doar hash-ul: când două faze nu se potrivesc, singura
-  întrebare utilă e CARE dintre ele s-a mișcat.
-- `citeste_receptii` / `citeste_instantanee` / `citeste_instantanee_context` — tablourile,
-  ca tabele, cu sumele pe indicator pe fiecare rând.
-- `pas4c_automat` — candidații după sumă, apoi fiecare potrivire și fiecare ratare, pe
-  ture (tura 1 = de la nou la vechi, tura 2 = restul).
+- `amprenta` — cele opt numere, nu doar hash-ul: când două faze nu se potrivesc, singura întrebare utilă e CARE dintre ele s-a mișcat.
+- `citeste_receptii` / `citeste_instantanee` / `citeste_instantanee_context` — tablourile, ca tabele, cu sumele pe indicator pe fiecare rând.
+- `pas4c_automat` — candidații după sumă, apoi fiecare potrivire și fiecare ratare, pe ture (tura 1 = de la nou la vechi, tura 2 = restul).
 - `verifica_acoperirea` — câte hotărâri pentru câte instantanee, câte lipsesc.
 - `materializeaza_reconstituite` — ce recepție se naște din ce lanț și din ce rânduri.
-- `valideaza_plasarile` — **partea care contează**: pentru fiecare lanț, recepția cu
-  sumele ei, tabelul lanțului întreg, apoi F14 / F16 pe fiecare instantaneu și F15 cu
-  **amândouă tablourile de valori scrise unul sub altul**. Trec și verdictele bune, nu
-  doar cel care refuză: «F15 trece» spune la fel de mult ca «F15 cade».
-- `aplica_decizii` — hotărârile ca tabel, ancorele pasului 4b, apoi «ce vrea să facă
-  rularea» rând cu rând, **inclusiv instantaneele deja legate pe care le trage în lanț**
-  (F15 și F16 se uită la lanțul întreg, deci o respingere poate veni dintr-un rând pe care
-  operatorul nu l-a atins — până acum asta nu se vedea de nicăieri).
-- `recalculeaza_final`, `marcheaza_reconstituirile_nesigure` — trecerile `Final`/`Partial`
-  și marcajul F28.
+- `valideaza_plasarile` — **partea care contează**: pentru fiecare lanț, recepția cu sumele ei, tabelul lanțului întreg, apoi F14 / F16 pe fiecare instantaneu și F15 cu **amândouă tablourile de valori scrise unul sub altul**. Trec și verdictele bune, nu doar cel care refuză: «F15 trece» spune la fel de mult ca «F15 cade».
+- `aplica_decizii` — hotărârile ca tabel, ancorele pasului 4b, apoi «ce vrea să facă rularea» rând cu rând, **inclusiv instantaneele deja legate pe care le trage în lanț** (F15 și F16 se uită la lanțul întreg, deci o respingere poate veni dintr-un rând pe care operatorul nu l-a atins — până acum asta nu se vedea de nicăieri).
+- `recalculeaza_final`, `marcheaza_reconstituirile_nesigure` — trecerile `Final`/`Partial` și marcajul F28.
 
 **`routes/forexe/prelucrare.py`** — `@journal.traced("prelucrare")` sub `@timing.timed`, antetul (`dc`, `user`, `cod`, `mod`, rândurile sosite pe tabel), sfârșitul fiecărei căi: amprentă nepotrivită, alegere de unitate, decizii respinse, sarcină de nefolosit, eroare MariaDB, rollback-ul propunerii, commit-ul salvării.
 
@@ -273,42 +233,24 @@ Pentru cazul din 14:18 asta ar fi arătat, dintr-o privire: ce recepție, ce lan
 
 - `PYTHON/utils/asociere_log.py` — **nou**, 316 rânduri.
 - `PYTHON/main.py` — importul, comutatorul `ASOCIERE_LOG_ENABLED` și predarea lui.
-- `PYTHON/routes/forexe/prelucrare_asociere.py` — importul + apelurile de jurnal
-  (niciun rând de logică schimbat; singurul cod nou care nu e jurnal e `_ca_text`,
-  un ajutor de formatare).
+- `PYTHON/routes/forexe/prelucrare_asociere.py` — importul + apelurile de jurnal (niciun rând de logică schimbat; singurul cod nou care nu e jurnal e `_ca_text`, un ajutor de formatare).
 - `PYTHON/routes/forexe/prelucrare.py` — decoratorul, antetul, capetele de drum.
-- `PYTHON/routes/forexe/asociere.py` — decoratoarele pe cele două rute, tabloul,
-  comenzile, capetele de drum.
+- `PYTHON/routes/forexe/asociere.py` — decoratoarele pe cele două rute, tabloul, comenzile, capetele de drum.
 - `PYTHON/tests/conftest.py` — `KBOT_ASOCIERE=0`.
 
 ---
 
 ### 4. Rezultatele rulărilor
 
-- `PYTHON/.venv` suita întreagă, jurnalul ÎNCHIS (cum îl ține `conftest.py`) —
-  **514 trecute / 19 sărite / 0 picate**, neschimbat față de 0058.
-- Aceeași suită cu `KBOT_ASOCIERE=1` și `KBOT_ASOCIERE_LOG` într-un fișier temporar —
-  **514 trecute / 19 sărite / 0 picate**, iar fișierul s-a scris (57 KB). Asta acoperă
-  și drumul în care jurnalul e chemat FĂRĂ nicio rulare deschisă (testele cheamă
-  funcțiile pure direct): liniile ies neindentate, dar ies.
-- Rulare de probă pe `valideaza_plasarile` și `pas4c_automat` cu jurnalul pornit, cu
-  trei blocuri: F14 cade, F15 cade pe linii, lanț care se închide. Blocul de mai sus e
-  de acolo.
+- `PYTHON/.venv` suita întreagă, jurnalul ÎNCHIS (cum îl ține `conftest.py`) — **514 trecute / 19 sărite / 0 picate**, neschimbat față de 0058.
+- Aceeași suită cu `KBOT_ASOCIERE=1` și `KBOT_ASOCIERE_LOG` într-un fișier temporar — **514 trecute / 19 sărite / 0 picate**, iar fișierul s-a scris (57 KB). Asta acoperă și drumul în care jurnalul e chemat FĂRĂ nicio rulare deschisă (testele cheamă funcțiile pure direct): liniile ies neindentate, dar ies.
+- Rulare de probă pe `valideaza_plasarile` și `pas4c_automat` cu jurnalul pornit, cu trei blocuri: F14 cade, F15 cade pe linii, lanț care se închide. Blocul de mai sus e de acolo.
 
 ---
 
 ### 5. Ce NU s-a verificat
 
-- **Nicio cerere adevărată n-a trecut prin jurnal.** Nu s-a pornit serverul, nu s-a
-  atins baza vie, deci blocul complet — cu tabloul citit din MariaDB și cu antetul de
-  sesiune — n-a fost văzut niciodată. Ce s-a văzut e partea de verificare a lanțurilor,
-  pe date făcute de mână.
-- **Cazul operatorului din 14:18 rămâne nediagnosticat.** Jurnalul e unealta, nu
-  răspunsul. Ca să dea răspunsul trebuie: (1) împins codul pe server, (2) repornit
-  serverul cu `ASOCIERE_LOG_ENABLED = True`, (3) refăcută salvarea pe `AAB2EF2MCP4`,
-  (4) citit blocul.
-- **Nu s-a măsurat cât încetinește.** Un bloc de propunere pe un angajament mare are
-  câteva sute de rânduri; costul e o listă de șiruri în memorie plus o scriere la
-  sfârșit, dar nu e cronometrat. `forexe_timing.log` va arăta diferența dacă vreodată
-  contează.
+- **Nicio cerere adevărată n-a trecut prin jurnal.** Nu s-a pornit serverul, nu s-a atins baza vie, deci blocul complet — cu tabloul citit din MariaDB și cu antetul de sesiune — n-a fost văzut niciodată. Ce s-a văzut e partea de verificare a lanțurilor, pe date făcute de mână.
+- **Cazul operatorului din 14:18 rămâne nediagnosticat.** Jurnalul e unealta, nu răspunsul. Ca să dea răspunsul trebuie: (1) împins codul pe server, (2) repornit serverul cu `ASOCIERE_LOG_ENABLED = True`, (3) refăcută salvarea pe `AAB2EF2MCP4`, (4) citit blocul.
+- **Nu s-a măsurat cât încetinește.** Un bloc de propunere pe un angajament mare are câteva sute de rânduri; costul e o listă de șiruri în memorie plus o scriere la sfârșit, dar nu e cronometrat. `forexe_timing.log` va arăta diferența dacă vreodată contează.
 - **Nimic nu s-a comis și nimic nu s-a împins.**

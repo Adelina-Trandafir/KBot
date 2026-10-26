@@ -39,9 +39,15 @@ Partial Public Class ApiClient
         Public Property ss As Dictionary(Of String, String)
     End Class
 
+    Private NotInheritable Class ClsfChildSourceWire
+        Public Property parinte As String
+        Public Property copii As List(Of String)
+    End Class
+
     Private NotInheritable Class ClsfTreeResponse
         Public Property items As List(Of ClsfItemWire)
         Public Property names As ClsfNamesWire
+        Public Property subunitati_copil As Dictionary(Of String, ClsfChildSourceWire)
     End Class
 
     Private NotInheritable Class CorrectionWire
@@ -221,6 +227,13 @@ Partial Public Class ApiClient
                 CopyNames(payload.names.subcapitol, result.SubcapitolNames)
                 CopyNames(payload.names.articol, result.ArticolNames)
                 CopyNames(payload.names.ss, result.SsNames)
+            End If
+            If payload.subunitati_copil IsNot Nothing Then
+                For Each pair In payload.subunitati_copil
+                    result.ChildSources(pair.Key) = New ChildSourceInfo() With {
+                        .Parinte = If(pair.Value?.parinte, String.Empty),
+                        .Copii = If(pair.Value?.copii, New List(Of String)())}
+                Next
             End If
             Return result
         Catch ex As ApiException

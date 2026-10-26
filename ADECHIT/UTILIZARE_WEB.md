@@ -245,6 +245,22 @@ ca sfârșit luna anterioară noului început; modificările se salvează atomic
 editarea, utilizarea sau importul lor și nu se inventează perioade istorice.
 Numai taxele noi create prin catalog necesită DeLa. IDV istoric rămâne păstrat.
 
+## Închiderea lunii cu schimbarea taxei — AD14-01
+
+<!-- slice: AD14-01 -->
+
+Lacătul unei luni deschise (altele decât august) deschide fereastra «Închidere lună»,
+modală, cu fundalul estompat ca la mesaje; confirmarea simplă a fost înlocuită.
+Fereastra arată taxa activă (cea cu care se deschide luna următoare) și tabelul de
+taxe, cu taxa activă pe primul rând și fără sortare implicită. «Adaugă taxă» creează
+rândul nou (activ, începând cu luna care se deschide sau cu luna de după ultimul
+început) și poziționează tabelul pe el; taxa activă anterioară devine inactivă și
+primește sfârșitul. Se refolosesc regulile și validările din Taxe (aceeași salvare
+`/api/adechit/catalog-save`). «Închide luna» salvează modificările de taxe, apoi
+închide luna; «Renunță» / Escape lasă luna deschisă și abandonează modificările.
+Dacă lista de taxe nu se încarcă, luna nu poate fi închisă din fereastră.
+Închiderea lui august păstrează fereastra anuală, fără selecția taxei.
+
 ## Închidere anuală — ADE7-04
 
 <!-- slice: ADE7-04 -->
@@ -273,6 +289,11 @@ Dacă se modifică numai contactele, perioadele existente nu sunt înlocuite.
 „Adaugă grupă”, sub arbore, creează o grupă în planul noului an. Salvarea este
 refuzată dacă numele nu este unic, lipsește un educator sau lipsește un copil
 care rămâne. O grupă nouă fără copii poate fi eliminată din plan.
+
+Sub tabele apare (când subunitatea are serie de chitanțe) caseta **„Reia numerotarea chitanțelor în noul
+an școlar”**, nebifată implicit. Bifată, seria rămâne, iar următoarea chitanță primește numărul din „Prima
+chitanță din septembrie” (1 propus). Nebifată, numerotarea continuă. Numărul unei chitanțe este unic pe serie
+și an școlar (septembrie–august), deci același număr poate reapărea în anul următor. Cere AD_13 aplicat.
 
 „Renunță” abandonează planul. „Închide august și deschide septembrie” salvează
 atomic situația din august cu datele vechi, aplică planul și creează septembrie.
@@ -422,3 +443,14 @@ luni inchise raman blocate pentru toti. Situatia salvata a copilului se rescrie
 pe loc (valoarea contractului si soldul), iar soldul initial al lunii deschise
 se recalculeaza singur din luna inchisa. Dreptul il da sau il retrage proprietarul
 sistemului, pe cont, din programul de administrare.
+
+<!-- slice: AD13-01 -->
+## Încărcarea extraselor bancare
+
+**Meniu → Încărcare extrase bancare** aduce extrasele în unitate înaintea asocierii cu copiii (necesită drepturile
+**Încasare** și **Catalog**). Se pot alege fișiere PDF sau un folder întreg, ori se poate citi căsuța de e-mail a unității
+(**Setări e-mail…**: server IMAP, adresă, parolă de aplicație, dosar, expeditor opțional, textul din numele atașamentului,
+data de început). Parola se păstrează criptat pe server și se poate schimba oricând; dacă se schimbă serverul sau adresa,
+se introduce din nou. **Verifică e-mailul acum** citește doar mesajele noi și nu modifică nimic în căsuță.
+Un extras nu se încarcă de două ori (același fișier, același extras sub alt nume, operațiuni deja existente);
+tabelul **Ultimele încărcări** arată starea fiecărui fișier. Butonul **Asociază plăți cu extrase…** deschide asocierea existentă.

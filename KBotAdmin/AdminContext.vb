@@ -134,10 +134,10 @@ Public Module UiRun
         End Try
     End Function
 
-    ''' <summary>A yes/no question; the answer is True only on «Da» (default button is «Nu»).</summary>
-    Public Function Confirm(k_text As String, k_caption As String) As Boolean
+    ''' <summary>A yes/no question; the answer is True only on «Da». The default button is «Nu» unless <paramref name="k_defaultYes"/>.</summary>
+    Public Function Confirm(k_text As String, k_caption As String, Optional k_defaultYes As Boolean = False) As Boolean
         Return KBotMessage.Show(k_text, k_caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question,
-                                MessageBoxDefaultButton.Button2) = DialogResult.Yes
+                                If(k_defaultYes, MessageBoxDefaultButton.Button1, MessageBoxDefaultButton.Button2)) = DialogResult.Yes
     End Function
 
     Public Function FormatBytes(k_bytes As Long) As String

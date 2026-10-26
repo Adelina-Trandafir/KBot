@@ -26,6 +26,8 @@ Friend NotInheritable Class AvcKinds
     Public Const PARTENER_LIPSA As String = "PARTENER_LIPSA"
     ''' <summary>The account of a balance is not in <c>TZ_PlanCont</c>.</summary>
     Public Const CONT_LIPSA As String = "CONT_LIPSA"
+    ''' <summary>Journals the target would refuse, or that need a look.</summary>
+    Public Const JURNAL_INVALID As String = "JURNAL_INVALID"
 End Class
 
 ''' <summary>How many rows a step wrote into one table.</summary>

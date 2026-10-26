@@ -2,11 +2,9 @@
 
 Scris 16.10.2026, la cererea operatorului. Ce e verificat (citit într-un fișier) și ce e presupus sunt marcate.
 
-**Stare (16.10.2026, după implementare):** KE01…KE07 sunt în cod; KE08 (plăți) nu e pornit. Detalii, ce e nerulat și ce rămâne
-de verificat: [`docs/worklog/state/KBOT_STATUS_KE.md`](worklog/state/KBOT_STATUS_KE.md) și worklogurile `SLICE-KEnn-*.md`. Restul documentului este planul de dinainte de implementare; unde codul diferă, hotărăște codul (de ex. fluxul de modificare caută recepția după dată + sumă + marcaj, nu după `RangZi`).
+**Stare (16.10.2026, după implementare):** KE01…KE07 sunt în cod; KE08 (plăți) nu e pornit. Detalii, ce e nerulat și ce rămâne de verificat: [`docs/worklog/state/KBOT_STATUS_KE.md`](worklog/state/KBOT_STATUS_KE.md) și worklogurile `SLICE-KEnn-*.md`. Restul documentului este planul de dinainte de implementare; unde codul diferă, hotărăște codul (de ex. fluxul de modificare caută recepția după dată + sumă + marcaj, nu după `RangZi`).
 
-**Decizie 16.10.2026 (recepții în aceeași zi):** K-BOT nu interzice a doua recepție în aceeași zi pe un angajament. Ce scrie K-BOT poartă
-marcajul `(IDRH; IDR)`, care îl identifică, deci ziua nu contează; departajarea după `RangZi` nu se construiește (rămâne doar pentru recepții vechi, fără marcaj, dacă va fi nevoie). Blocarea este **opțională**: setarea «La o factură primită, nu permite a doua recepție nouă în aceeași zi» din «Setări» › «Aplicație» (oprită implicit), verificată în fereastra «Recepție nouă».
+**Decizie 16.10.2026 (recepții în aceeași zi):** K-BOT nu interzice a doua recepție în aceeași zi pe un angajament. Ce scrie K-BOT poartă marcajul `(IDRH; IDR)`, care îl identifică, deci ziua nu contează; departajarea după `RangZi` nu se construiește (rămâne doar pentru recepții vechi, fără marcaj, dacă va fi nevoie). Blocarea este **opțională**: setarea «La o factură primită, nu permite a doua recepție nouă în aceeași zi» din «Setări» › «Aplicație» (oprită implicit), verificată în fereastra «Recepție nouă».
 
 Felia **KE** e o familie nouă, în K-BOT (nu registru separat ca VC / ADE): rânduri în indexul din `docs/worklog/KBOT_STATUS.md`, detalii într-un fișier propriu din `docs/worklog/state/` (`KBOT_STATUS_KE.md`, ca `KBOT_STATUS_SLICELESS.md`), worklog-uri `SLICE-KEnn-…`. Numerotare KE01, KE02… Combină E-Factura cu Recepțiile și Plățile, dar rămâne K-BOT.
 
@@ -23,10 +21,7 @@ Legarea de **plăți** și ordinele de plată vin după (KE08). Acum doar factur
 
 ## 2. Reguli fixate de operator (16.10.2026)
 
-1. **O factură are de regulă o singură clasificație, dar nu e garantat: fiecare linie a facturii aparține unei clasificații.** Alocarea se face pe linie / clasificație, nu pe factura întreagă.
-1b. **Recepția se face cu valoarea CU TVA (suma de plată).** Valoarea unei linii pentru recepție =
-   baza liniei + TVA-ul ei; suma pe clasificație = suma valorilor cu TVA ale liniilor ei. Restul
-   facturii se calculează față de `Total` (suma de plată), nu față de `Valoare` (baza).
+1. **O factură are de regulă o singură clasificație, dar nu e garantat: fiecare linie a facturii aparține unei clasificații.** Alocarea se face pe linie / clasificație, nu pe factura întreagă. 1b. **Recepția se face cu valoarea CU TVA (suma de plată).** Valoarea unei linii pentru recepție = baza liniei + TVA-ul ei; suma pe clasificație = suma valorilor cu TVA ale liniilor ei. Restul facturii se calculează față de `Total` (suma de plată), nu față de `Valoare` (baza).
 2. **Clasificația recepției vine din `FX_Indicatori`.** Este obligatoriu ca ea să existe acolo *înaintea* recepției (legea). Clasificațiile ajung în `FX_Indicatori` printr-o **revizie nouă de rezervare**, încărcată în FOREXE (`Incarca Rezervare`, indicator `!NOU`) — calea din slice 0081.
 3. **Un furnizor poate avea mai multe angajamente.** Dacă factura nu are niciun angajament asociat furnizorului, operatorul poate **alege un angajament** direct.
 4. **Storno = o recepție normală cu semn negativ.** După salvarea unei recepții cu semn negativ (nouă sau modificată), diferența dintre recepții și `FX_Plati` crește. Nu există regulă separată.
@@ -52,8 +47,7 @@ Legarea de **plăți** și ordinele de plată vin după (KE08). Acum doar factur
 | Adăugare recepție în FOREXE | `Workflows/Creare/adlop - Rezervare si Receptie.wfl`, liniile 80–113 | tab «Recepții» → «Adaugă» → tip, dată, descriere, valoare pe fiecare indicator (după «Sector - Sursa - Indicator») → captură → «Salvează». **Nu așteaptă mesajul de reușită.** Nu e în `WorkflowCatalog`, nu rulează din K-BOT, nu e verificat. Primele 78 de linii fac rezervare, nu intră în KE |
 | Modificare recepție | `Receptie Editata.wfl` (doar citire, ochiul rândului) | formularul de scriere = același ca «Adaugă» (operatorul), dar fără flux înregistrat |
 
-**Tipul recepției:** «Avans», «Partial», «Final» (preselectat «Final») — HTML-ul `select` dat de operator.
-Mesajul de succes: același element ca la orice salvare corectă (operatorul).
+**Tipul recepției:** «Avans», «Partial», «Final» (preselectat «Final») — HTML-ul `select` dat de operator. Mesajul de succes: același element ca la orice salvare corectă (operatorul).
 
 ## 4. Model de date (KE01)
 
@@ -75,8 +69,7 @@ Plus două coloane noi pe `EF_PrimiteLinii`:
 - `IdClsf` — alegerea operatorului pe linie, NULL = nealeasă;
 - `CotaTVA` — cota liniei, citită din XML-ul facturii (`InvoiceLine/Item/ClassifiedTaxCategory/Percent`, presupus, de verificat pe cele 3 XML-uri reale din 00EF-17). Cititorul UBL (`primite_ubl.py`) nu o păstrează azi; facturile deja sincronizate trebuie recitite din XML-ul stocat (vederea «XML Factura» arată că XML-ul se păstrează).
 
-**Valoarea unei linii cu TVA** (`ValoareCuTVA`) se calculează pe server, nu se stochează:
-`Valoare × (1 + CotaTVA / 100)`, rotunjită la 2 zecimale pe linie. Diferența de rotunjire față de TVA-ul facturii pe cota respectivă (`EF_PrimiteTVA.TVA`) se pune pe ultima linie a cotei, ca suma pe cote să iasă exact și suma totală să fie `Total`. **Exemplu verificat pe XML-ul Digi** (`FDB26 78290032`, 06.10.2026): linia 1.1 are baza 53,31, linia 1.2 are baza 10,66, ambele la 21%; TVA-ul facturii e 13,43, iar `Total` 77,40. Pe linie: 53,31 + 11,20 = 64,51 și 10,66 + 2,24 = 12,90, adică 77,41, cu un ban peste. Regula de mai sus mută banul pe ultima linie: 12,89. Rezultat: 64,51 + 12,89 = 77,40 = `Total`. Cele două linii au același CPV (64200000-8), dar CPV nu este clasificația bugetară: aceasta o alege operatorul pe linie (KE02).
+**Valoarea unei linii cu TVA** (`ValoareCuTVA`) se calculează pe server, nu se stochează: `Valoare × (1 + CotaTVA / 100)`, rotunjită la 2 zecimale pe linie. Diferența de rotunjire față de TVA-ul facturii pe cota respectivă (`EF_PrimiteTVA.TVA`) se pune pe ultima linie a cotei, ca suma pe cote să iasă exact și suma totală să fie `Total`. **Exemplu verificat pe XML-ul Digi** (`FDB26 78290032`, 06.10.2026): linia 1.1 are baza 53,31, linia 1.2 are baza 10,66, ambele la 21%; TVA-ul facturii e 13,43, iar `Total` 77,40. Pe linie: 53,31 + 11,20 = 64,51 și 10,66 + 2,24 = 12,90, adică 77,41, cu un ban peste. Regula de mai sus mută banul pe ultima linie: 12,89. Rezultat: 64,51 + 12,89 = 77,40 = `Total`. Cele două linii au același CPV (64200000-8), dar CPV nu este clasificația bugetară: aceasta o alege operatorul pe linie (KE02).
 
 Dacă o linie nu are cotă în XML: se folosește singura cotă a facturii, iar dacă sunt mai multe, TVA-ul cotelor se împarte proporțional cu baza și linia se marchează «cotă dedusă» în interfață.
 

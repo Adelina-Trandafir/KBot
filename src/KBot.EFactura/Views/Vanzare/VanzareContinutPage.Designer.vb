@@ -25,62 +25,31 @@ Partial Class VanzareContinutPage
         Dim KBotDataColumn10 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyContinut = New KBotTableLayoutPanel()
-        tlyLinii = New KBotTableLayoutPanel()
-        btnLinieNoua = New System.Windows.Forms.Button()
         chkAtasament = New System.Windows.Forms.CheckBox()
         gridLinii = New KBotDataView()
         CType(gridLinii, System.ComponentModel.ISupportInitialize).BeginInit()
         tlyContinut.SuspendLayout()
-        tlyLinii.SuspendLayout()
         SuspendLayout()
         '
         ' tlyContinut
         '
         tlyContinut.ColumnCount = 1
         tlyContinut.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        tlyContinut.Controls.Add(tlyLinii, 0, 0)
-        tlyContinut.Controls.Add(gridLinii, 0, 1)
-        tlyContinut.Controls.Add(chkAtasament, 0, 2)
+        tlyContinut.Controls.Add(gridLinii, 0, 0)
+        tlyContinut.Controls.Add(chkAtasament, 0, 1)
         tlyContinut.Dock = System.Windows.Forms.DockStyle.Fill
         tlyContinut.Location = New System.Drawing.Point(3, 3)
         tlyContinut.Margin = New System.Windows.Forms.Padding(0)
         tlyContinut.Name = "tlyContinut"
         tlyContinut.Padding = New System.Windows.Forms.Padding(8)
-        tlyContinut.RowCount = 3
-        tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 42.0!))
+        tlyContinut.RowCount = 2
         tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         tlyContinut.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 34.0!))
         tlyContinut.Size = New System.Drawing.Size(743, 556)
         tlyContinut.TabIndex = 0
-        '
-        ' tlyLinii
-        '
-        tlyLinii.ColumnCount = 2
-        tlyLinii.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.AutoSize))
-        tlyLinii.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyLinii.Controls.Add(btnLinieNoua, 0, 0)
-        tlyLinii.Dock = System.Windows.Forms.DockStyle.Fill
-        tlyLinii.Margin = New System.Windows.Forms.Padding(0)
-        tlyLinii.Name = "tlyLinii"
-        tlyLinii.Size = New System.Drawing.Size(727, 42)
-        tlyLinii.RowCount = 1
-        tlyLinii.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyLinii.TabIndex = 0
-        '
-        ' btnLinieNoua
-        '
-        btnLinieNoua.Anchor = System.Windows.Forms.AnchorStyles.Left
-        btnLinieNoua.AutoSize = True
-        btnLinieNoua.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        btnLinieNoua.Margin = New System.Windows.Forms.Padding(0)
-        btnLinieNoua.Name = "btnLinieNoua"
-        btnLinieNoua.Padding = New System.Windows.Forms.Padding(14, 2, 14, 2)
-        btnLinieNoua.TabIndex = 0
-        btnLinieNoua.Text = "Linie nouă"
-        tips.SetToolTipText(btnLinieNoua, "Adaugă o linie la sfârșitul facturii; se completează direct în tabel (unitatea de măsură implicită este XPP, bucată).")
-        btnLinieNoua.UseVisualStyleBackColor = True
         '
         ' chkAtasament: the footer of the view («Atașamente» is no longer a view of its own)
         '
@@ -89,7 +58,7 @@ Partial Class VanzareContinutPage
         chkAtasament.FlatStyle = System.Windows.Forms.FlatStyle.Flat
         chkAtasament.Margin = New System.Windows.Forms.Padding(0)
         chkAtasament.Name = "chkAtasament"
-        chkAtasament.TabIndex = 2
+        chkAtasament.TabIndex = 1
         chkAtasament.Text = "Atașează factura originală"
         tips.SetToolTipText(chkAtasament, "Alegerea se păstrează pe factură. Se modifică doar cât timp factura este o ciornă (netrimisă).")
         '
@@ -98,6 +67,7 @@ Partial Class VanzareContinutPage
         gridLinii.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridLinii.ColumnFillMode = KBotFillMode.SpecificColumn
         gridLinii.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
+        gridLinii.TabKeyMode = KBotTabKeyMode.NextEditableCell
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Nr"
@@ -157,15 +127,29 @@ Partial Class VanzareContinutPage
         KBotDataColumn11.ValueType = KBotValueType.Number
         KBotDataColumn11.Width = 100
         KBotDataColumn12.AggregateFormatString = Nothing
+        KBotDataColumn12.ButtonBorders = KBotBorderSides.None
+        KBotDataColumn12.ButtonMargin = New System.Windows.Forms.Padding(0)
         KBotDataColumn12.ColumnType = KBotColumnType.Button
         KBotDataColumn12.FormatString = Nothing
         KBotDataColumn12.HeaderText = ""
         KBotDataColumn12.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleLeft
-        KBotDataColumn12.Key = "sterge"
+        KBotDataColumn12.Key = "duplica"
         KBotDataColumn12.MinWidth = 34
         KBotDataColumn12.OptionGroup = Nothing
         KBotDataColumn12.Resizable = False
         KBotDataColumn12.Width = 34
+        KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.ButtonBorders = KBotBorderSides.None
+        KBotDataColumn13.ButtonMargin = New System.Windows.Forms.Padding(0)
+        KBotDataColumn13.ColumnType = KBotColumnType.Button
+        KBotDataColumn13.FormatString = Nothing
+        KBotDataColumn13.HeaderText = ""
+        KBotDataColumn13.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        KBotDataColumn13.Key = "sterge"
+        KBotDataColumn13.MinWidth = 34
+        KBotDataColumn13.OptionGroup = Nothing
+        KBotDataColumn13.Resizable = False
+        KBotDataColumn13.Width = 34
         gridLinii.Columns.Add(KBotDataColumn6)
         gridLinii.Columns.Add(KBotDataColumn7)
         gridLinii.Columns.Add(KBotDataColumn8)
@@ -173,17 +157,18 @@ Partial Class VanzareContinutPage
         gridLinii.Columns.Add(KBotDataColumn10)
         gridLinii.Columns.Add(KBotDataColumn11)
         gridLinii.Columns.Add(KBotDataColumn12)
+        gridLinii.Columns.Add(KBotDataColumn13)
         gridLinii.Dock = System.Windows.Forms.DockStyle.Fill
         gridLinii.FillColumnKey = "continut"
         gridLinii.FooterCaption = "TOTAL FACTURĂ"
         gridLinii.FooterVisible = True
-        gridLinii.Location = New System.Drawing.Point(8, 50)
+        gridLinii.Location = New System.Drawing.Point(8, 8)
         gridLinii.Margin = New System.Windows.Forms.Padding(0)
         gridLinii.Name = "gridLinii"
-        gridLinii.Size = New System.Drawing.Size(727, 498)
-        gridLinii.TabIndex = 1
+        gridLinii.Size = New System.Drawing.Size(727, 506)
+        gridLinii.TabIndex = 0
         ' tips.SetToolTipHeader(gridLinii, "Conținutul facturii")
-        ' tips.SetToolTipText(gridLinii, "Cantitatea și prețul se scriu direct în tabel; valoarea liniei se calculează. «✕» șterge linia. Totul se scrie la «Salvare».")
+        ' tips.SetToolTipText(gridLinii, "Cantitatea și prețul se scriu direct în tabel; valoarea liniei se calculează. «❐» duplică linia, «✕» o șterge. Totul se scrie la «Salvare».")
         '
         ' VanzareContinutPage
         '
@@ -195,15 +180,11 @@ Partial Class VanzareContinutPage
         Size = New System.Drawing.Size(757, 526)
         CType(gridLinii, System.ComponentModel.ISupportInitialize).EndInit()
         tlyContinut.ResumeLayout(False)
-        tlyLinii.ResumeLayout(False)
-        tlyLinii.PerformLayout()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyContinut As KBotTableLayoutPanel
-    Friend WithEvents tlyLinii As KBotTableLayoutPanel
-    Friend WithEvents btnLinieNoua As System.Windows.Forms.Button
     Friend WithEvents gridLinii As KBotDataView
     Friend WithEvents chkAtasament As System.Windows.Forms.CheckBox
 End Class

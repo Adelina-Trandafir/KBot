@@ -2,6 +2,8 @@
 
 Convenție editorială (D001-04): marcajul **Confirmat 23.10** abreviază exclusiv «TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)». Se aplică numai intrării care poartă marcajul; nu confirmă alte intervenții, limitări sau cazuri individuale. Stările locale/nerulate și confirmările ulterioare din workloguri rămân distincte.
 
+Titlurile cu legătură trimit la istoricul tematic: comportament, evoluție, reguli, fișiere, ordinea aplicării, proveniență, probe și limite ale etapei. Titlul și data rămân în poziția cronologică inițială; confirmările aparțin numai etapelor indicate în destinație. Consolidările NIR din 16.10 sunt cele preluate prin D001-04, iar nomenclatoarele din 15.10 prin D001-05.
+
 ## Actualizare 19.10.2026 — loading imediat și blocarea generărilor simultane (ADE9-07)
 
 Loading-ul, blocarea per pagină, erorile, fișierele și publicarea comună sunt în [ADE9-07](docs/worklog/SLICE-ADE9-01-rapoarte.md#slice-ADE9-07). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
@@ -129,13 +131,6 @@ Detalii: [istoric consolidat](docs/worklog/SLICE-VC08-01-motor-stoc-si-balante.m
 
 Rescrierea inițială încheiată local: 12.10.2026. Toate ecranele existente din tabel au fost rescrise fără teste, build sau rularea aplicației în acea etapă. Verificările solicitate ulterior pentru CSS și VC08-01 sunt consemnate mai sus. IMPLEMENTAT_LOCAL nu certifică integrarea pe date reale.
 
-
----
-
-Început: 12.10.2026. Cerință: rescrierea tuturor ecranelor VERCON deja existente în `PYTHON/static`, după mockupurile v2 și folosind controalele custom comune. Referințe: `VERCON/FLUXURI_UI.md`, `VERCON/CONTROALE_CUSTOM_THREAD.md`, `VERCON/MOCKUPURI/2026-10-12-corectate-v2/INDEX.md`.
-
-Rescrierea inițială încheiată local: 12.10.2026. Toate ecranele existente din tabel au fost rescrise fără teste, build sau rularea aplicației în acea etapă. Verificările solicitate ulterior pentru CSS și VC08-01 sunt consemnate mai sus. IMPLEMENTAT_LOCAL nu certifică integrarea pe date reale.
-
 ## Reguli pentru continuarea în alt chat
 
 - Se lucrează în checkoutul curent. Nu se execută teste, build, verificări de sintaxă sau aplicația fără cererea explicită a utilizatorului. Citirea codului și proiectarea sunt permise.
@@ -255,79 +250,43 @@ Minima Configurări 224 px și transferul geometriei în 280 ms: [Menu](VERCON/C
 
 ### Meniu INTRARI / IESIRI pentru alimente și materiale
 
-Detalii: [gruparea istorică](docs/worklog/SLICE-VC02-02-meniuri-capabilitati-coloane.md#d001-13-meniu), consolidată prin D001-13.
+Detalii: [gruparea istorică](docs/worklog/SLICE-VC02-01-alegerea-contextului.md#d001-13-meniu), consolidată prin D001-13.
 
-### NIR — editare în pagină și fișe în locul arborelui de furnizori
+### [NIR — editare în pagină și fișe în locul arborelui de furnizori](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026)
 
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026).
+### [Fișe NIR — spațiul de sus recuperat și afișare cu două zecimale](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026)
 
-### Fișe NIR — spațiul de sus recuperat și afișare cu două zecimale
+### [Fișe NIR — eliminarea notelor de subsol](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026)
 
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026).
+### [Fișe NIR — etichetă total și cele mai noi înregistrări primele](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026)
 
-### Fișe NIR — eliminarea notelor de subsol
+### [Fișe NIR — totalurile în benzile albastre de jos](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026)
 
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026).
+### [TreeView comun — evidențiere de la începutul vizibil al nodului](VERCON/CONTROALE_CUSTOM_THREAD.md#treeview)
 
-### Fișe NIR — etichetă total și cele mai noi înregistrări primele
+### [2026-10-15 — Nomenclatoare în DGV, Baza de date, Comisii și feluri din TIP](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026).
+### [2026-10-15 — Produse: grilă pe 70%, istoric prețuri și arbore de fișe de magazie](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-### Fișe NIR — totalurile în benzile albastre de jos
+### [2026-10-15 — Produse: prețuri numai din NIR, produse folosite și selector CPV lazy](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#fișe-nir-și-editare-în-pagină--15102026).
+### [2026-10-15 — Selecție până la marginea arborelui și CPV în ModalFrame](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-### TreeView comun — evidențiere de la începutul vizibil al nodului
+### [2026-10-15 — Caption comun ModalFrame și descrierea CPV curent](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Comportament, evoluție și limite: [detalii](VERCON/CONTROALE_CUSTOM_THREAD.md#treeview).
+### [2026-10-15 — Filtrare DGV comună și adăugare produse pe rând](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-### 2026-10-15 — Nomenclatoare în DGV, Baza de date, Comisii și feluri din TIP
+### [2026-10-15 — Aspect buton Adaugă produs](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
+### [2026-10-15 — Componentă comună ActionAddButton pentru Produse și NIR](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-### 2026-10-15 — Produse: grilă pe 70%, istoric prețuri și arbore de fișe de magazie
+### [2026-10-15 — Denumire specifică ActionAddButton](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
+### [2026-10-15 — Buton NIR doar cu icon](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-### 2026-10-15 — Produse: prețuri numai din NIR, produse folosite și selector CPV lazy
+### [2026-10-15 — Padding condiționat pentru titlul arborelui](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Selecție până la marginea arborelui și CPV în ModalFrame
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Caption comun ModalFrame și descrierea CPV curent
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Filtrare DGV comună și adăugare produse pe rând
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Aspect buton Adaugă produs
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Componentă comună ActionAddButton pentru Produse și NIR
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Denumire specifică ActionAddButton
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Buton NIR doar cu icon
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Padding condiționat pentru titlul arborelui
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
-
-### 2026-10-15 — Corecție latură padding titlu cu buton
-
-Evoluție și limite: [nomenclatoare, 15.10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05).
+### [2026-10-15 — Corecție latură padding titlu cu buton](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#evoluția-nomenclatoarelor--15102026-preluată-prin-d001-05)
 
 ### 2026-10-15 — Bandă colorată uniformă în submeniuri
 
@@ -341,101 +300,53 @@ Joncțiune, condiții și fișiere: [chenarul comun](VERCON/CONTROALE_CUSTOM_THR
 
 Valori și fișier CSS: [umbra comună](VERCON/CONTROALE_CUSTOM_THREAD.md#meniu--chenar-comun-pentru-butonul-deschis-și-popup-15102026). Stare istorică: surse modificate, nerulat.
 
-### 2026-10-16 — Factură comună, validări NIR și corecții automate nemodificabile
+### [2026-10-16 — Factură comună, validări NIR și corecții automate nemodificabile](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — Separarea clasificărilor MF de schema facturilor](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — Separarea clasificărilor MF de schema facturilor
+### [2026-10-16 — Sursă unică pentru schema MariaDB și infrastructură comună de import](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — Calcul invers NIR identificat prin existența metadatelor](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — Sursă unică pentru schema MariaDB și infrastructură comună de import
+### [2026-10-16 — Grupare în SLICE-VC06-06 și pregătire staging](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — SQL manual pentru repetarea migrării pe 000_DEMO](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — Calcul invers NIR identificat prin existența metadatelor
+### [2026-10-16 — VC06-06, decizii pentru NIR cu mai multe conturi](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — VC06-06, implementarea editorului NIR pe mai multe conturi](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — Grupare în SLICE-VC06-06 și pregătire staging
+### [2026-10-16 — ComboTree în DGV: căutare suprapusă și selecție NIR](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — Pagină locală de probă pentru DGV + ComboTree](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — SQL manual pentru repetarea migrării pe 000_DEMO
+### [2026-10-16 — ComboTree: tastatură și focus automat în Cantitate](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — ComboTree: corecții după proba utilizatorului în browser](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — VC06-06, decizii pentru NIR cu mai multe conturi
+### [2026-10-16 — DGV: aspectul și formatul celulei păstrate la editare](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — DGV: eliminarea conturului negru de focus](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — VC06-06, implementarea editorului NIR pe mai multe conturi
+### [2026-10-16 — NIR: ValoareFC și butonul de corecție în antet](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — NIR: rânduri corectate, antet și bară de acțiuni](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — ComboTree în DGV: căutare suprapusă și selecție NIR
+### [2026-10-16 — NIR: Stoc inițial în titlu și butoane cu lățimi egale](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — VERCON: efect unitar pentru butoane](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — Pagină locală de probă pentru DGV + ComboTree
+### [2026-10-16 — ComboTree: Tab din căutare către controlul următor](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — NIR: acțiuni integrate, selecție furnizor și total corectat](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-### 2026-10-16 — ComboTree: tastatură și focus automat în Cantitate
+### [2026-10-16 — VERCON: meniuri fără conturul comun la hover](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-17 — NIR: factură cumulată și păstrarea secțiunii la schimbarea gestiunii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#factură-cumulată-și-schimbarea-secțiunii--17102026)
 
-### 2026-10-16 — ComboTree: corecții după proba utilizatorului în browser
+### [2026-10-16 — NIR: Comisie sub Categorie și salvare după editarea celulei](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — DGV: aspectul și formatul celulei păstrate la editare
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — DGV: eliminarea conturului negru de focus
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — NIR: ValoareFC și butonul de corecție în antet
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — NIR: rânduri corectate, antet și bară de acțiuni
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — NIR: Stoc inițial în titlu și butoane cu lățimi egale
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — VERCON: efect unitar pentru butoane
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — ComboTree: Tab din căutare către controlul următor
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — NIR: acțiuni integrate, selecție furnizor și total corectat
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — VERCON: meniuri fără conturul comun la hover
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-17 — NIR: factură cumulată și păstrarea secțiunii la schimbarea gestiunii
-
-Comportament, evoluție și limite: [detalii](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#factură-cumulată-și-schimbarea-secțiunii--17102026).
-
-### 2026-10-16 — NIR: Comisie sub Categorie și salvare după editarea celulei
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
-
-### 2026-10-16 — NIR: lista Comisie la lățimea casetei
-
-Detaliile și starea etapei sunt în [VC06-06 — istoric din jurnalul general](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026).
+### [2026-10-16 — NIR: lista Comisie la lățimea casetei](docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md#etapele-din-jurnalul-general-absorbite-prin-d001-04--16102026)
 
 ### 2026-10-17 — Sesiune: avertizări custom, ieșire fără confirmare și probă locală
 
@@ -469,85 +380,47 @@ Contractul rezultat: [Resursele rapoartelor](PYTHON/reports/vercon/README.md). D
 
 Contractul rezultat: [Resursele rapoartelor](PYTHON/reports/vercon/README.md). Diagnosticul, variantele înlocuite, fișierele și limitele etapei: [istoric VC08-03](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#istoric-rapoarte-din-17102026--absorbit-prin-d001-04).
 
-### 2026-10-17 — FCS: formular în ecranul normal și stoc la data documentului
-
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026).
+### [2026-10-17 — FCS: formular în ecranul normal și stoc la data documentului](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026)
 
 ### 2026-10-17 — Sesiune web configurabilă, reînnoită la refresh
 
 Detalii: [revizia 7](docs/worklog/SLICE-VC01-03-sesiune-log-conexiuni.md#d001-12-sesiune), consolidate prin D001-12.
 
-### 2026-10-17 — FCS fără selecții repetate, cache mini fișe și eliminare Listare NIR
+### [2026-10-17 — FCS fără selecții repetate, cache mini fișe și eliminare Listare NIR](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026)
 
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026).
+### [2026-10-17 — Cache mini fișe de magazie configurabil în config.py](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026)
 
-### 2026-10-17 — Cache mini fișe de magazie configurabil în config.py
+### [2026-10-17 — FCS fără comparație între valoarea din antet și totalul liniilor](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026)
 
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026).
+### [2026-10-17 — Bonuri de consum: arbore, editare în pagină și mini fișe](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md#editor-bc-și-mini-fișe--17102026)
 
-### 2026-10-17 — FCS fără comparație între valoarea din antet și totalul liniilor
+### [2026-10-17 — BC: disponibil consecvent, fonturi și spațiul mini fișelor](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md#editor-bc-și-mini-fișe--17102026)
 
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026).
+### [2026-10-17 — Lista de alimente: antet, mese și arbore](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-### 2026-10-17 — Bonuri de consum: arbore, editare în pagină și mini fișe
+### [2026-10-17 — Lista de alimente: derulare orizontală și bara de editare](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md#editor-bc-și-mini-fișe--17102026).
+### [2026-10-17 — Lista de alimente: totaluri compacte și tipografie](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-### 2026-10-17 — BC: disponibil consecvent, fonturi și spațiul mini fișelor
+### [2026-10-17 — Lista de alimente: Număr și Data mai înguste](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-Reguli, fișiere, corecții și limite: [istoricul editorului](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md#editor-bc-și-mini-fișe--17102026).
+### [2026-10-17 — Lista de alimente: economii și depășiri anterioare](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-### 2026-10-17 — Lista de alimente: antet, mese și arbore
+### [2026-10-17 — Lista de alimente: recapitulare pe cinci coloane](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
+### [2026-10-17 — Lista de alimente: recapitularea în interiorul antetului](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-### 2026-10-17 — Lista de alimente: derulare orizontală și bara de editare
+### [2026-10-17 — Lista de alimente: editori FELUL și Explicații](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026)
 
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
+### [2026-10-17 — Raport Lista de alimente: antet și recapitulare](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026)
 
-### 2026-10-17 — Lista de alimente: totaluri compacte și tipografie
+### [2026-10-17 — Server local VERCON cu date demonstrative](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026)
 
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
+### [2026-10-17 — Raport Lista de alimente: tabel compact și semnături la bază](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026)
 
-### 2026-10-17 — Lista de alimente: Număr și Data mai înguste
+### [2026-10-17 — Raport Lista de alimente: grilă pentru pix și delimitări antet](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026)
 
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
-
-### 2026-10-17 — Lista de alimente: economii și depășiri anterioare
-
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
-
-### 2026-10-17 — Lista de alimente: recapitulare pe cinci coloane
-
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
-
-### 2026-10-17 — Lista de alimente: recapitularea în interiorul antetului
-
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
-
-### 2026-10-17 — Lista de alimente: editori FELUL și Explicații
-
-Evoluție, reguli, fișiere și limite: [Lista de alimente, 17.10](docs/worklog/SLICE-VC07-01-lista-alimente.md#evoluție-ui-și-solduri--17102026).
-
-### 2026-10-17 — Raport Lista de alimente: antet și recapitulare
-
-Machetă, fișiere, proveniență și probe distincte: [Lista de alimente, 17.10](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026).
-
-### 2026-10-17 — Server local VERCON cu date demonstrative
-
-Machetă, fișiere, proveniență și probe distincte: [Lista de alimente, 17.10](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026).
-
-### 2026-10-17 — Raport Lista de alimente: tabel compact și semnături la bază
-
-Machetă, fișiere, proveniență și probe distincte: [Lista de alimente, 17.10](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026).
-
-### 2026-10-17 — Raport Lista de alimente: grilă pentru pix și delimitări antet
-
-Machetă, fișiere, proveniență și probe distincte: [Lista de alimente, 17.10](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026).
-
-### 2026-10-17 — Raport Lista de alimente: linii uniforme și footer în prima secțiune
-
-Machetă, fișiere, proveniență și probe distincte: [Lista de alimente, 17.10](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026).
+### [2026-10-17 — Raport Lista de alimente: linii uniforme și footer în prima secțiune](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#lista-de-alimente--machetă-și-probe-demo-17102026)
 
 ### 2026-10-17 — Rapoarte: antet VERCON cu meniu, document și dată
 
@@ -557,9 +430,7 @@ Detalii: [reviziile rapoartelor, etapa 1](docs/worklog/SLICE-VC08-03-rapoarte-ma
 
 Detalii: [revizia 8](VERCON/CONTROALE_CUSTOM_THREAD.md#d001-12-arbori), consolidate prin D001-12.
 
-### 2026-10-17 — Obiecte de inventar: conturi multiple, BP/BT/BS și rapoarte
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md).
+### [2026-10-17 — Obiecte de inventar: conturi multiple, BP/BT/BS și rapoarte](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md)
 
 ### 2026-10-18 — Rapoarte: ComboTree perioadă, limite DI/DSF și ramuri inițiale
 
@@ -577,9 +448,7 @@ Detalii: [reviziile rapoartelor, etapa 4](docs/worklog/SLICE-VC08-03-rapoarte-ma
 
 Detalii: [revizia 9](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md#d001-12-diagnostic-oi), consolidate prin D001-12.
 
-### 2026-10-18 — VC06-04: retururi si linii storno migrate fara sursa
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](docs/worklog/SLICE-VC06-04-br-si-fcs.md).
+### [2026-10-18 — VC06-04: retururi si linii storno migrate fara sursa](docs/worklog/SLICE-VC06-04-br-si-fcs.md)
 
 ### 2026-10-18 — OI: versiunea listei ca text și jurnalizare după serializare
 
@@ -653,25 +522,17 @@ Detalii, fișiere și limite de probă: [etapa 16](docs/worklog/SLICE-VC07-OI-co
 
 Detalii, fișiere și limite de probă: [etapa 17](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md#d001-09-etapa-17), consolidate prin D001-09.
 
-### 2026-10-18 — Identitate comună P/T/C și semantica registrului OI/MF
+### [2026-10-18 — Identitate comună P/T/C și semantica registrului OI/MF](VERCON/REGISTRU_OI_MF.md)
 
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
-
-### 2026-10-18 — Alinierea completă a aplicației la registrul OI/MF
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
+### [2026-10-18 — Alinierea completă a aplicației la registrul OI/MF](VERCON/REGISTRU_OI_MF.md)
 
 ### 2026-10-18 — Bonuri PTC: editare ca la BC și mini-fișe TC
 
 Detalii, fișiere și limite de probă: [etapa 18](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md#d001-09-etapa-18), consolidate prin D001-09.
 
-### 2026-10-18 — Migrator: valoare compactă pentru VC_Imports.ToolVersion
+### [2026-10-18 — Migrator: valoare compactă pentru VC_Imports.ToolVersion](VERCON/REGISTRU_OI_MF.md)
 
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
-
-### 2026-10-18 — Documentarea contractului OI/MF și a corecției ToolVersion
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
+### [2026-10-18 — Documentarea contractului OI/MF și a corecției ToolVersion](VERCON/REGISTRU_OI_MF.md)
 
 ### 2026-10-18 — Bon transfer: Primitor și Predător diferiți
 
@@ -681,33 +542,21 @@ Detalii, fișiere și limite de probă: [etapa 19](docs/worklog/SLICE-VC07-OI-co
 
 Detalii, fișiere și limite de probă: [etapa 20](docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md#d001-09-etapa-20), consolidate prin D001-09.
 
-### 2026-10-18 — Diagnostic disponibil BT pentru produs predat și casat
+### [2026-10-18 — Diagnostic disponibil BT pentru produs predat și casat](VERCON/REGISTRU_OI_MF.md)
 
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
+### [2026-10-18 — Cauza confirmată a disponibilului BP 27 / BS 5](VERCON/REGISTRU_OI_MF.md)
 
-### 2026-10-18 — Cauza confirmată a disponibilului BP 27 / BS 5
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
-
-### 2026-10-18 — Cont OI/MF moștenit din BP până la casare, în aplicație și migrator
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
+### [2026-10-18 — Cont OI/MF moștenit din BP până la casare, în aplicație și migrator](VERCON/REGISTRU_OI_MF.md)
 
 ### 2026-10-19 — Amortizare în arborele Rapoarte / Mijloace fixe
 
 Detalii: [reviziile rapoartelor, etapa 5](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#d001-11-rapoarte), consolidate prin D001-11.
 
-### 2026-10-19 — Migrator: recuperare univocă IDBO după refacerea unui bon
+### [2026-10-19 — Migrator: recuperare univocă IDBO după refacerea unui bon](VERCON/REGISTRU_OI_MF.md)
 
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/REGISTRU_OI_MF.md).
+### [2026-10-19 — Migrator: IntrariStorno fără NIR storno părinte, ignorat NON BLOCKING](VERCON/VRC.Migrator/README.md)
 
-### 2026-10-19 — Migrator: IntrariStorno fără NIR storno părinte, ignorat NON BLOCKING
-
-Regulile, evoluția, fișierele și limitele acestei etape: [documentul tematic](VERCON/VRC.Migrator/README.md).
-
-### 2026-10-19 — ME01-03: drepturi reale MariaDB din KBotAdmin
-
-Istoricul, fișierele și starea consemnată: [ME01-03](docs/worklog/SLICE-ME01-03-privilegii-mariadb.md).
+### [2026-10-19 — ME01-03: drepturi reale MariaDB din KBotAdmin](docs/worklog/SLICE-ME01-03-privilegii-mariadb.md)
 
 ### 2026-10-19 — Balanță: produse alfabetic, pagină pe cont și filtrare fără mișcări
 
@@ -725,25 +574,15 @@ Detalii: [revizia 11](VERCON/FACTURI_NIR_IMPLEMENTARE.md#d001-12-ajustare), cons
 
 Detalii: [revizia 12](VERCON/FACTURI_NIR_IMPLEMENTARE.md#d001-12-ajustare), consolidate prin D001-12.
 
-### 2026-10-19 — Zoom comun în bara de meniu VERCON / ADECHIT
+### [2026-10-19 — Zoom comun în bara de meniu VERCON / ADECHIT](docs/worklog/SLICE-VC08-10-zoom-meniu-vercon-adechit.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-10](docs/worklog/SLICE-VC08-10-zoom-meniu-vercon-adechit.md).
+### [2026-10-19 — NIR: valoare factură introdusă din numpad pe tastatură română](docs/worklog/SLICE-VC08-06-nir-valoare-factura-numpad.md)
 
-### 2026-10-19 — NIR: valoare factură introdusă din numpad pe tastatură română
+### [2026-10-19 — Toate rapoartele: antet unitate/subunitate, fără DC](docs/worklog/SLICE-VC08-07-antet-comun-rapoarte-fara-dc.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-06](docs/worklog/SLICE-VC08-06-nir-valoare-factura-numpad.md).
+### [2026-10-19 — Meniu VERCON: ADECHIT ca referință vizuală](docs/worklog/SLICE-VC08-08-meniu-aspect-adechit.md)
 
-### 2026-10-19 — Toate rapoartele: antet unitate/subunitate, fără DC
-
-Istoricul, fișierele și starea consemnată: [VC08-07](docs/worklog/SLICE-VC08-07-antet-comun-rapoarte-fara-dc.md).
-
-### 2026-10-19 — Meniu VERCON: ADECHIT ca referință vizuală
-
-Istoricul, fișierele și starea consemnată: [VC08-08](docs/worklog/SLICE-VC08-08-meniu-aspect-adechit.md).
-
-### 2026-10-19 — Intrări/Ieșiri: grupare în două niveluri și lazy fără redraw global
-
-Istoricul, fișierele și starea consemnată: [VC08-09](docs/worklog/SLICE-VC08-09-arbori-documente-doua-niveluri-lazy.md).
+### [2026-10-19 — Intrări/Ieșiri: grupare în două niveluri și lazy fără redraw global](docs/worklog/SLICE-VC08-09-arbori-documente-doua-niveluri-lazy.md)
 
 ### 2026-10-19 — Aspectul bifelor din TreeView / ComboTree
 
@@ -825,25 +664,15 @@ Detalii: [reviziile rapoartelor, etapa 18](docs/worklog/SLICE-VC08-03-rapoarte-m
 
 Detalii: [reviziile rapoartelor, etapa 19](docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md#d001-11-rapoarte), consolidate prin D001-11.
 
-### 2026-10-20 — Simplificare meniu rapoarte Mijloace Fixe
+### [2026-10-20 — Simplificare meniu rapoarte Mijloace Fixe](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
+### [2026-10-20 — Arbori Selectare date specifici rapoartelor MF](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-### 2026-10-20 — Arbori Selectare date specifici rapoartelor MF
+### [2026-10-20 — MF/OI fără selector de an și perioade de raportare până azi](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
+### [2026-10-20 — Ani descrescători și expandare după ultimul an cu date](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-### 2026-10-20 — MF/OI fără selector de an și perioade de raportare până azi
-
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
-
-### 2026-10-20 — Ani descrescători și expandare după ultimul an cu date
-
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
-
-### 2026-10-20 — Corecție compatibilitate expandare an curent
-
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
+### [2026-10-20 — Corecție compatibilitate expandare an curent](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
 ### 2026-10-20 — BC: număr propus, produse cu stoc și sumar produs
 
@@ -861,29 +690,17 @@ Detalii: [revizia 17](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.
 
 Detalii: [revizia 18](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md#d001-12-bc), consolidate prin D001-12.
 
-### 2026-10-20 — VERCON: schimbarea perioadei direct peste raport
+### [2026-10-20 — VERCON: schimbarea perioadei direct peste raport](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
+### [2026-10-20 — Perioade rapoarte: luni descrescătoare până la ultima mișcare](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-### 2026-10-20 — Perioade rapoarte: luni descrescătoare până la ultima mișcare
+### [2026-10-20 — Dropdown perioadă egal cu lățimea casetei combo](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026)
 
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
+### [2026-10-20 — Tooltip comun configurabil pentru ADECHIT, K-BOT și VERCON](docs/web-tooltip.md#istoric-și-proveniență)
 
-### 2026-10-20 — Dropdown perioadă egal cu lățimea casetei combo
+### [2026-10-20 — Tooltipuri din title; proba butoanelor RAPOARTE și oprire pe mobil](docs/web-tooltip.md#istoric-și-proveniență)
 
-Reguli, fișiere și confirmarea istorică: [MF și perioade, 20.10](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md#rapoarte-mf-și-perioade--20102026).
-
-### 2026-10-20 — Tooltip comun configurabil pentru ADECHIT, K-BOT și VERCON
-
-Contractul, evoluția celor trei etape, fișierele și confirmarea operatorului: [Tooltip comun](docs/web-tooltip.md#istoric-și-proveniență).
-
-### 2026-10-20 — Tooltipuri din title; proba butoanelor RAPOARTE și oprire pe mobil
-
-Contractul, evoluția celor trei etape, fișierele și confirmarea operatorului: [Tooltip comun](docs/web-tooltip.md#istoric-și-proveniență).
-
-### 2026-10-20 — Tooltip compact, antet opțional și oprire pe nodurile Selectare date
-
-Contractul, evoluția celor trei etape, fișierele și confirmarea operatorului: [Tooltip comun](docs/web-tooltip.md#istoric-și-proveniență).
+### [2026-10-20 — Tooltip compact, antet opțional și oprire pe nodurile Selectare date](docs/web-tooltip.md#istoric-și-proveniență)
 
 ### 2026-10-20 — UTC pentru momentele tehnice ale serverului AVACONT
 
@@ -909,21 +726,13 @@ Testul existent al semnăturilor PDF a fost adaptat conversiei UTC explicite.
 
 Stare: **Confirmat 23.10**.
 
-### 2026-10-21 — VC09-01: Ajutor VERCON după modelul ADECHIT și chat în ambele ghiduri
+### [2026-10-21 — VC09-01: Ajutor VERCON după modelul ADECHIT și chat în ambele ghiduri](docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md)
 
-Istoricul, fișierele și starea consemnată: [VC09-01](docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md).
+### [2026-10-21 — VC09-02: Capturi anonimizate în help, CPV/clasificări MF și timer](docs/worklog/SLICE-VC09-02-capturi-ajutor.md)
 
-### 2026-10-21 — VC09-02: Capturi anonimizate în help, CPV/clasificări MF și timer
+### [2026-10-21 — VC09-03: Simplificare Gestionari, Rapoarte și totaluri în copaci](docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md)
 
-Istoricul, fișierele și starea consemnată: [VC09-02](docs/worklog/SLICE-VC09-02-capturi-ajutor.md).
-
-### 2026-10-21 — VC09-03: Simplificare Gestionari, Rapoarte și totaluri în copaci
-
-Istoricul, fișierele și starea consemnată: [VC09-03](docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md).
-
-### 2026-10-21 — VC09-04: Help și capturi după publicarea interfeței
-
-Istoricul, fișierele și starea consemnată: [VC09-04](docs/worklog/SLICE-VC09-04-help-dupa-publicarea-interfetei.md).
+### [2026-10-21 — VC09-04: Help și capturi după publicarea interfeței](docs/worklog/SLICE-VC09-04-help-dupa-publicarea-interfetei.md)
 
 ### 2026-10-21 — VC06-07 / VC06-08: NIR din facturile primite prin e-Factura
 
@@ -933,85 +742,51 @@ Istoricul, fișierele și starea consemnată: [VC06-07](docs/worklog/SLICE-VC06-
 
 Detalii: [revizia 19](docs/worklog/SLICE-0110-04-portal-certificat.md#d001-12-certificat), consolidate prin D001-12.
 
-### 2026-10-21 — SLICE-VC09-05: Reglare registru OI (VERCON) și produs completat la migrare
+### [2026-10-21 — SLICE-VC09-05: Reglare registru OI (VERCON) și produs completat la migrare](docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md)
 
-Istoricul, fișierele și starea consemnată: [VC09-05](docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md).
+### [2026-10-23 — VC08-11: Rapoarte OI: două niveluri și selecție ca la MF](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md)
 
-### 2026-10-23 — VC08-11: Rapoarte OI: două niveluri și selecție ca la MF
+### [2026-10-23 — VC08-12: Antet comun bonuri P/T/C și Consum](docs/worklog/SLICE-VC08-12-antet-comun-bonuri.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-11](docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md).
+### [2026-10-23 — VC08-13: Corecții balanță OI, bonuri și selecție pe primitor](docs/worklog/SLICE-VC08-13-corectii-balanta-oi-bonuri-primitori.md)
 
-### 2026-10-23 — VC08-12: Antet comun bonuri P/T/C și Consum
+### [2026-10-23 — VC08-14: HTTP 500 la generare: parametrii cererii suprascriși](docs/worklog/SLICE-VC08-14-generare-http-500-parametri.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-12](docs/worklog/SLICE-VC08-12-antet-comun-bonuri.md).
+### [2026-10-23 — VC07-06: Numărul copiilor în orice listă din ultima lună](docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md)
 
-### 2026-10-23 — VC08-13: Corecții balanță OI, bonuri și selecție pe primitor
+### [2026-10-23 — VC06-09: BC din luna activă, stoc protejat și istoric cu motiv](docs/worklog/SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-13](docs/worklog/SLICE-VC08-13-corectii-balanta-oi-bonuri-primitori.md).
-
-### 2026-10-23 — VC08-14: HTTP 500 la generare: parametrii cererii suprascriși
-
-Istoricul, fișierele și starea consemnată: [VC08-14](docs/worklog/SLICE-VC08-14-generare-http-500-parametri.md).
-
-### 2026-10-23 — VC07-06: Numărul copiilor în orice listă din ultima lună
-
-Istoricul, fișierele și starea consemnată: [VC07-06](docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md).
-
-### 2026-10-23 — VC06-09: BC din luna activă, stoc protejat și istoric cu motiv
-
-Istoricul, fișierele și starea consemnată: [VC06-09](docs/worklog/SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md).
-
-### 2026-10-23 — VC07-07: Lista Alimente: ordinea și alinierea butoanelor
-
-Istoricul, fișierele și starea consemnată: [VC07-07](docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md).
+### [2026-10-23 — VC07-07: Lista Alimente: ordinea și alinierea butoanelor](docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md)
 
 ### 2026-10-23 — VC08-15 / VC06-10: Tooltipuri arbori și salvarea comisiilor la ieșirea de pe rând
 
 Istoricul, fișierele și starea consemnată: [VC08-15](docs/worklog/SLICE-VC08-15-tooltip-arbori.md); [VC06-10](docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md).
 
-### 2026-10-23 — VC08-16: Ordonare după tip și evaluarea prețurilor istorice
+### [2026-10-23 — VC08-16: Ordonare după tip și evaluarea prețurilor istorice](docs/worklog/SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-16](docs/worklog/SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md).
+### [2026-10-23 — VC08-17: Fișa de magazie: selecție multiplă și pagini separate](docs/worklog/SLICE-VC08-17-fisa-magazie-selectie-multipla.md)
 
-### 2026-10-23 — VC08-17: Fișa de magazie: selecție multiplă și pagini separate
+### [2026-10-23 — VC06-11: Asociere NIR manual cu eFactura, parțial și drag and drop](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md)
 
-Istoricul, fișierele și starea consemnată: [VC08-17](docs/worklog/SLICE-VC08-17-fisa-magazie-selectie-multipla.md).
-
-### 2026-10-23 — VC06-11: Asociere NIR manual cu eFactura, parțial și drag and drop
-
-Istoricul, fișierele și starea consemnată: [VC06-11](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md).
-
-### 2026-10-23 — VC06-12: NIR: asociere în popup și grupare inițială pe furnizori
-
-Istoricul, fișierele și starea consemnată: [VC06-12](docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md).
+### [2026-10-23 — VC06-12: NIR: asociere în popup și grupare inițială pe furnizori](docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md)
 
 ### 2026-10-23 — VC06-13 / VC07-08: Asociere eFactura în DGV, cantități automate și listă compactă
 
-Istoricul, fișierele și starea consemnată: [VC06-13](docs/worklog/SLICE-VC06-13-efactura-dgv-cantitati-automate.md); [VC07-08](docs/worklog/SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md).
+Istoricul, fișierele și starea consemnată: [VC06-13](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-13); [VC07-08](docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md#slice-vc07-08).
 
-### 2026-10-23 — VC06-14: eFactura: DGV-uri sursă și memorare implicită manuală
+### [2026-10-23 — VC06-14: eFactura: DGV-uri sursă și memorare implicită manuală](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-14)
 
-Istoricul, fișierele și starea consemnată: [VC06-14](docs/worklog/SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md).
+### [2026-10-23 — VC08-18: status între acțiuni, elipsis și tooltip custom](docs/worklog/SLICE-VC08-18-status-intre-actiuni.md)
 
-### 2026-10-23 — VC08-18: status între acțiuni, elipsis și tooltip custom
-
-Istoricul, fișierele și starea consemnată: [VC08-18](docs/worklog/SLICE-VC08-18-status-intre-actiuni.md).
-
-### 2026-10-23 — VC06-15: facturi eFactura inactive global și informare în gestiune
-
-Istoricul, fișierele și starea consemnată: [VC06-15](docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md).
+### [2026-10-23 — VC06-15: facturi eFactura inactive global și informare în gestiune](docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md)
 
 ### 2026-10-23 — eFactura: mesajul de stare între butoanele footerului
 
 Detalii: [revizia 20](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#d001-12-efactura), consolidate prin D001-12.
 
-### 2026-10-23 — VC06-16: eFactura: scroll corectat, NIR protejat și afișare factură
+### [2026-10-23 — VC06-16: eFactura: scroll corectat, NIR protejat și afișare factură](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-16)
 
-Istoricul, fișierele și starea consemnată: [VC06-16](docs/worklog/SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md).
-
-### 2026-10-23 — VC06-17: eFactura: ComboBox custom și încărcare automată
-
-Istoricul, fișierele și starea consemnată: [VC06-17](docs/worklog/SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md).
+### [2026-10-23 — VC06-17: eFactura: ComboBox custom și încărcare automată](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-17)
 
 ### 2026-10-23 — Luni în arbori: ordonare calendaristică explicită
 
@@ -1021,9 +796,7 @@ Detalii: [revizia 21](VERCON/CONTROALE_CUSTOM_THREAD.md#d001-12-arbori), consoli
 
 Detalii: [revizia 22](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#d001-12-efactura), consolidate prin D001-12.
 
-### 2026-10-23 — VC08-19: mesaje în dialogul comun; eliminare vc-message
-
-Istoricul, fișierele și starea consemnată: [VC08-19](docs/worklog/SLICE-VC08-19-mesaje-dialog-comun.md).
+### [2026-10-23 — VC08-19: mesaje în dialogul comun; eliminare vc-message](docs/worklog/SLICE-VC08-19-mesaje-dialog-comun.md)
 
 ### 2026-10-23 — eFactura: diagnostic furnizor/dată și propuneri KG/KGM
 
@@ -1033,29 +806,17 @@ Detalii: [revizia 23](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.
 
 Detalii: [revizia 24](docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#d001-12-efactura), consolidate prin D001-12.
 
-### 2026-10-23 — VC06-18: VERCON ONLINE: o singură identitate fiscală a furnizorului
+### [2026-10-23 — VC06-18: VERCON ONLINE: o singură identitate fiscală a furnizorului](docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md)
 
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC06-18](docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md).
+### [2026-10-23 — VC03-07: VERCON: migrare fiscală din KBotAdmin / Interogări unice](docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md)
 
-### 2026-10-23 — VC03-07: VERCON: migrare fiscală din KBotAdmin / Interogări unice
+### [2026-10-23 — VC03-08: diagnostic NIR_FARA_CF după rularea utilizatorului](docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md#slice-vc03-08)
 
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC03-07](docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md).
+### [2026-10-23 — VC03-09: migrare VERCON CF v2: documentele istorice fără CF nu blochează baza](docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md#slice-vc03-09)
 
-### 2026-10-23 — VC03-08: diagnostic NIR_FARA_CF după rularea utilizatorului
+### [2026-10-23 — VC03-10: migrare CF v3: ignoră partenerii Ascuns=1](docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md#slice-vc03-10)
 
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC03-08](docs/worklog/SLICE-VC03-08-diagnostic-nir-fara-cf.md).
-
-### 2026-10-23 — VC03-09: migrare VERCON CF v2: documentele istorice fără CF nu blochează baza
-
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC03-09](docs/worklog/SLICE-VC03-09-migrare-cf-v2-documente-istorice-fara-cf.md).
-
-### 2026-10-23 — VC03-10: migrare CF v3: ignoră partenerii Ascuns=1
-
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC03-10](docs/worklog/SLICE-VC03-10-migrare-cf-v3-parteneri-ascunsi.md).
-
-### 2026-10-23 — VC05-11: VRC.Migrator: aceeași identitate fiscală ca VERCON online
-
-Detaliile implementării, fișierele, ordinea aplicării și starea consemnată sunt păstrate în [worklogul VC05-11](docs/worklog/SLICE-VC05-11-vrc-migrator-identitate-fiscala.md).
+### [2026-10-23 — VC05-11: VRC.Migrator: aceeași identitate fiscală ca VERCON online](docs/worklog/SLICE-VC05-11-vrc-migrator-identitate-fiscala.md)
 
 ## 23.10.2026 — text care urmează lățimea ferestrei (panou de test)
 

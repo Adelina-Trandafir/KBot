@@ -79,74 +79,43 @@ G4 is not in the list: it was closed (D6 — "before" values from KBOT or forexe
 
 ## 0081-01 — G0a: the revision state
 
-**What.** One function that turns (`Incarcat`, `Semnatura`) into S0-S4, used everywhere.
-**Where.**
+**What.** One function that turns (`Incarcat`, `Semnatura`) into S0-S4, used everywhere. **Where.**
 - `KBot.Domain`: an enum + a pure function (easy to test, no I/O).
-- `DdfView.vb`: show the state per revision. Not on the arrow icon — that now means the sign of the
-  total (`StareOf`, comment at line ~897 says a separate visual sign is needed) — so a second
-  marker: a right-side icon or a column «Stare».
-- The GET that feeds `DdfView` must already carry `Incarcat` and `Semnatura`; **to verify**, add
-  them to the route's SELECT if missing (a read-only addition to the DDF read route — that route
-  belongs to the DDF view, not to the import).
-**Done when.** Each revision in the DDF view shows its state; tests on the pure function (not run).
+- `DdfView.vb`: show the state per revision. Not on the arrow icon — that now means the sign of the total (`StareOf`, comment at line ~897 says a separate visual sign is needed) — so a second marker: a right-side icon or a column «Stare».
+- The GET that feeds `DdfView` must already carry `Incarcat` and `Semnatura`; **to verify**, add them to the route's SELECT if missing (a read-only addition to the DDF read route — that route belongs to the DDF view, not to the import). **Done when.** Each revision in the DDF view shows its state; tests on the pure function (not run).
 
 ## 0081-02 — G6a: Section B not shown before the send
 
 **The operator's two options:** (1) create Section B only after forexecab answers, or (2) create it from the start but do not show it.
 
 **Recommendation: option (2).** Reasons, from the code:
-- Section B is **already** derived from A on every edit (`RecalculeazaSectiuneaB`), and by the rule
-  A = B its numbers are right before the send. Building it later would mean removing working code
-  and re-adding it.
-- What forexecab returns that A does not know is only: the real `CodAngajament` (manual `!` code),
-  the row codes (`Indicator ang`), and the captures. Those are filled in at the send (0081-04).
-- The numbers returned by forexecab become a **check**, not a source: if the grid after the send
-  differs from the derived B, the send stops with a message (a sync fault, D6).
+- Section B is **already** derived from A on every edit (`RecalculeazaSectiuneaB`), and by the rule A = B its numbers are right before the send. Building it later would mean removing working code and re-adding it.
+- What forexecab returns that A does not know is only: the real `CodAngajament` (manual `!` code), the row codes (`Indicator ang`), and the captures. Those are filled in at the send (0081-04).
+- The numbers returned by forexecab become a **check**, not a source: if the grid after the send differs from the derived B, the send stops with a message (a sync fault, D6).
 
 **What changes.**
 - Entry points (see 0081-04, «Where the operator starts»): the «Angajament nou» header button opens `DdfEditForm` in **create** mode; the Rezervări footer «Adaugă rezervare» opens it in **add-reservation** mode. The draft already carries `Nou`, `RevizieNoua` and `Manual`; read how `DdfEditForm.AplicaEnablement` and the draft endpoints (`/ddf/genereaza`, `/ddf/draft`) produce those today before adding anything.
-- `DdfEditForm`: the «Secțiunea B» nav item is hidden while the revision is in S0/S1; visible,
-  read-only, from S2a on. (`navSub` items are built in the designer — hide by key at run time, the
-  same way pages are activated.)
-- `DdfXmlBuilder`: an **interim** mode — no `Table3` rows, `CheckBox9 = 0`, no `Table4`. The final
-  mode is today's output (+ `Table4`, step 0081-05).
-- Where the interim PDF is generated (the DDF view / editor action that calls the builder): choose
-  the mode from the state.
-**Done when.** A new DDF / new revision never shows Section B, on screen or in the interim PDF.
+- `DdfEditForm`: the «Secțiunea B» nav item is hidden while the revision is in S0/S1; visible, read-only, from S2a on. (`navSub` items are built in the designer — hide by key at run time, the same way pages are activated.)
+- `DdfXmlBuilder`: an **interim** mode — no `Table3` rows, `CheckBox9 = 0`, no `Table4`. The final mode is today's output (+ `Table4`, step 0081-05).
+- Where the interim PDF is generated (the DDF view / editor action that calls the builder): choose the mode from the state. **Done when.** A new DDF / new revision never shows Section B, on screen or in the interim PDF.
 
 ## 0081-03 — G1, G2, G3: the workflow edits
 
 Only `.wfl` files. Each needs **one live run on 000_DEMO** before it is trusted — selectors cannot be verified offline.
 
-**G1 — split `Definitivare_Derulare Angajament.wfl` into two actions, each with its capture.**
-Operator answer 3: the two state changes are separate buttons, so one workflow doing both no
-longer fits.
-- `adlop - Definitivare Angajament.wfl` = today's SECȚIUNEA 1-6 (search, grid, «Definitivează»,
-  per row CB inițial → CB definitiv), then `<Screenshot SaveTo="Poza_Definitivare"/>` after the
-  last `WaitFor li.tab0.active`.
-- `adlop - Derulare Angajament.wfl` = search + `Modificare` + today's SECȚIUNEA 7-8 («În
-  derulare»), then `<Screenshot SaveTo="Poza_Derulare"/>` after the success toast.
+**G1 — split `Definitivare_Derulare Angajament.wfl` into two actions, each with its capture.** Operator answer 3: the two state changes are separate buttons, so one workflow doing both no longer fits.
+- `adlop - Definitivare Angajament.wfl` = today's SECȚIUNEA 1-6 (search, grid, «Definitivează», per row CB inițial → CB definitiv), then `<Screenshot SaveTo="Poza_Definitivare"/>` after the last `WaitFor li.tab0.active`.
+- `adlop - Derulare Angajament.wfl` = search + `Modificare` + today's SECȚIUNEA 7-8 («În derulare»), then `<Screenshot SaveTo="Poza_Derulare"/>` after the success toast.
 - Keep the original file untouched until both new ones have run live (then retire it).
 
-**G2 — `Incarca Rezervare.wfl`: «Informații complete contract» for carried-over amounts (S3 of
-the parent document).**
-- New optional variable `{{CAPTURA_INFO_COMPLETE|false}}`. When true, at the end: click
-  `Afișează informații complete` → wait for `Informații complete contract` → `<Screenshot
-  SaveTo="Poza_InfoComplete"/>` → `Înapoi`.
+**G2 — `Incarca Rezervare.wfl`: «Informații complete contract» for carried-over amounts (S3 of the parent document).**
+- New optional variable `{{CAPTURA_INFO_COMPLETE|false}}`. When true, at the end: click `Afișează informații complete` → wait for `Informații complete contract` → `<Screenshot SaveTo="Poza_InfoComplete"/>` → `Înapoi`.
 - KBOT sets it true when the DDF is a Rev 0 for an angajament that is already `În derulare`.
 
-**G3 — `Incarca Rezervare.wfl`: both `inițial` and `definitiv` while `În definitivare`.**
-**DROPPED (25.09.2026).** The approved menu table (0081-04) offers «Adaugă rezervare» only on
-angajamente `În derulare`, and a new angajament cannot close its Rev 0 before «Derulează»
-(variant (a)). So `Incarca Rezervare` always meets `În derulare`, where only `definitiv` exists —
-which is what the workflow already does. Nothing to build; the text below is kept as the record of
-why it was raised.
+**G3 — `Incarca Rezervare.wfl`: both `inițial` and `definitiv` while `În definitivare`.** **DROPPED (25.09.2026).** The approved menu table (0081-04) offers «Adaugă rezervare» only on angajamente `În derulare`, and a new angajament cannot close its Rev 0 before «Derulează» (variant (a)). So `Incarca Rezervare` always meets `În derulare`, where only `definitiv` exists — which is what the workflow already does. Nothing to build; the text below is kept as the record of why it was raised.
 - Read the state label first (`.well.well-small span.label`, as `Definitivare_Derulare` does).
-- `În definitivare`: fill `creditBugRezervatInitialAnCurent` **and** `creditBugRezervatDefinitivAnCurent`
-  with `ValoareNoua` (the guide, SCREEN p.41).
-- **Also to check live:** an angajament still `Inițial` (created, never definitivat) — the workflow
-  waits for the `definitiv` input, which may not exist in that state. If so, `Inițial` →
-  fill `inițial` only. This is a real hole today, not only a guide mismatch.
+- `În definitivare`: fill `creditBugRezervatInitialAnCurent` **and** `creditBugRezervatDefinitivAnCurent` with `ValoareNoua` (the guide, SCREEN p.41).
+- **Also to check live:** an angajament still `Inițial` (created, never definitivat) — the workflow waits for the `definitiv` input, which may not exist in that state. If so, `Inițial` → fill `inițial` only. This is a real hole today, not only a guide mismatch.
 
 **Done when.** The three files parse (the XML check used in slice 0076), and each branch has been run once on 000_DEMO by the operator.
 
@@ -165,57 +134,30 @@ The core step. Button «Trimite în FOREXE», enabled only in state S1.
    | Rev ≥ 1, or Rev 0 on an existing angajament | `Incarca Rezervare` | `{Cheie, Indicator_ang (or "!NOU" for a new SSI), ClsfSal, Clasificatia, CodProgram, Sursa, ValoareNoua = A.col7, Motiv}` |
 
    `Motiv` / `MOTIV_DEFINITIVARE` = A.2 + ` (REV:<n>)` (D9).
-2. Run them through `ForexeController` / `ForexeRunner` (the same road as the existing
-   downloads). The browser stays docked (slice 0070).
+2. Run them through `ForexeController` / `ForexeRunner` (the same road as the existing downloads). The browser stays docked (slice 0070).
 3. Collect: `CodAng_Final` / row codes, `TabelIndicatori[Finali]`, every `Poza_*`.
-4. **Check** the grid against the derived Section B, per SSI. A difference → stop, message, state
-   S1x.
-5. One server POST, one transaction: real `CodAngajament` replaces the `!` code everywhere the DDF
-   carries it (header, revision, A and B lines, attachments); row codes into B; captures stored
-   as `PrtScr = 1` attachments; `Incarcat = 1`.
+4. **Check** the grid against the derived Section B, per SSI. A difference → stop, message, state S1x.
+5. One server POST, one transaction: real `CodAngajament` replaces the `!` code everywhere the DDF carries it (header, revision, A and B lines, attachments); row codes into B; captures stored as `PrtScr = 1` attachments; `Incarcat = 1`.
 6. Run the **existing import** for that angajament, unchanged (parent document §5).
-7. **New angajament (Rev 0 from «Angajament nou»):** state S2a. No final PDF yet: the operator
-   goes on with «Definitivează» and «Derulează» from the Rezervări menu, and only then «Generează
-   PDF final» (variant (a) — see the menu table). **Any other send** (Rev ≥ 1, or Rev 0 on
-   an existing angajament): no S2a — the final PDF is generated right away. Either way: final PDF
-   (0081-05 adds the captures), uploaded with an empty `X-Semnatura` → S2b → opened in the signing
-   viewer.
+7. **New angajament (Rev 0 from «Angajament nou»):** state S2a. No final PDF yet: the operator goes on with «Definitivează» and «Derulează» from the Rezervări menu, and only then «Generează PDF final» (variant (a) — see the menu table). **Any other send** (Rev ≥ 1, or Rev 0 on an existing angajament): no S2a — the final PDF is generated right away. Either way: final PDF (0081-05 adds the captures), uploaded with an empty `X-Semnatura` → S2b → opened in the signing viewer.
 
-**Partial failure — the dangerous case.** forexecab may be changed halfway. The revision is past
-the point of no return.
-- `Creare Angajament` must **never run twice** for one revision — a second run creates a second
-  angajament. As soon as the angajament header exists, its code is saved on the revision (the
-  workflow already reads it after every row: `CodAng_<Cheie>`). A resume continues with
-  `Incarca Rezervare` for the rows not yet in the grid (`!NOU`).
+**Partial failure — the dangerous case.** forexecab may be changed halfway. The revision is past the point of no return.
+- `Creare Angajament` must **never run twice** for one revision — a second run creates a second angajament. As soon as the angajament header exists, its code is saved on the revision (the workflow already reads it after every row: `CodAng_<Cheie>`). A resume continues with `Incarca Rezervare` for the rows not yet in the grid (`!NOU`).
 - `Incarca Rezervare` on an existing row is safe to repeat (it sets a value, it does not add).
-- State S1x = «Trimitere întreruptă», with the list of what is and is not in forexecab, and one
-  action: «Reia trimiterea».
+- State S1x = «Trimitere întreruptă», with the list of what is and is not in forexecab, and one action: «Reia trimiterea».
 
 **Server side.** New route(s) under the DDF write path (`routes/forexe/ddf_edit.py` family, not the import): the POST of point 5, and the resume data. The `!` → real code swap must be checked against every table that stores the manual code — **to list from `MariaDB_Schema/` before writing SQL**.
 
-**Where the operator starts (operator, 25.09.2026).** Not the main KBOT tree — the
-**Rezervări** view:
-- **New angajament:** a new button **«Angajament nou»** on the main form's header, top left,
-  **before «An»** (`KbotForm` `tlyHeader`, `lblAn` is today in column 1). It opens `DdfEditForm`
-  in **create** mode (manual `!` angajament, Rev 0).
-- **Existing angajament with at least one reservation (the initial one):** the **Rezervări tree
-  footer LEFT** icon (`RezervariView`; free today — the right one is refresh). It offers
-  **«Adaugă rezervare»**, which opens `DdfEditForm` in **manual add-reservation** mode (a new
-  revision), and, by the angajament's state, **«Definitivează»** (`Inițial`) or **«Derulează»**
-  (`În definitivare`).
-- **One footer icon opening a `CustomPopup` menu** with the valid options only (operator,
-  25.09.2026 — the pattern already used by the main form's options menu).
-- «Definitivează» / «Derulează» exist **only for a new angajament**: offered only while the
-  angajament's Rev 0 (created from «Angajament nou») is in **S2a**; their capture joins that
-  revision. Never for later reservation changes, even with new indicators (operator,
-  25.09.2026).
+**Where the operator starts (operator, 25.09.2026).** Not the main KBOT tree — the **Rezervări** view:
+- **New angajament:** a new button **«Angajament nou»** on the main form's header, top left, **before «An»** (`KbotForm` `tlyHeader`, `lblAn` is today in column 1). It opens `DdfEditForm` in **create** mode (manual `!` angajament, Rev 0).
+- **Existing angajament with at least one reservation (the initial one):** the **Rezervări tree footer LEFT** icon (`RezervariView`; free today — the right one is refresh). It offers **«Adaugă rezervare»**, which opens `DdfEditForm` in **manual add-reservation** mode (a new revision), and, by the angajament's state, **«Definitivează»** (`Inițial`) or **«Derulează»** (`În definitivare`).
+- **One footer icon opening a `CustomPopup` menu** with the valid options only (operator, 25.09.2026 — the pattern already used by the main form's options menu).
+- «Definitivează» / «Derulează» exist **only for a new angajament**: offered only while the angajament's Rev 0 (created from «Angajament nou») is in **S2a**; their capture joins that revision. Never for later reservation changes, even with new indicators (operator, 25.09.2026).
 - The main KBOT tree footer (its left icon = «Extrase de cont») is **not** touched.
 
 **The Rezervări footer menu — what it shows (operator, 25.09.2026).** Two rules decide it:
-- **One open revision at a time.** While a revision of the angajament has no final PDF yet
-  (S0, S1, S1x, S2a), no other revision can be started.
-- **Variant (a):** a new angajament's Rev 0 can get its final PDF **only after «Derulează»** —
-  so a new angajament can never be left `Inițial` / `În definitivare` with a closed Rev 0.
+- **One open revision at a time.** While a revision of the angajament has no final PDF yet (S0, S1, S1x, S2a), no other revision can be started.
+- **Variant (a):** a new angajament's Rev 0 can get its final PDF **only after «Derulează»** — so a new angajament can never be left `Inițial` / `În definitivare` with a closed Rev 0.
 
 | Angajament (forexecab) | Last revision | Menu |
 |------------------------|---------------|------|
@@ -247,16 +189,10 @@ SubformSectiuneaB/Subform51/Table4
 
 ## 0081-06 — G0b: the director's KBOT
 
-**What.** A simplified entry for the Ordonator: on login, «Aveți N documente de fundamentare de
-semnat»; a list of revisions in state S3; open one → the existing signing viewer (0078) → sign →
-the upload writes `A,B,Ordonator` → S4. Nothing else — no tree, no FOREXE, no editing.
-**Where.**
+**What.** A simplified entry for the Ordonator: on login, «Aveți N documente de fundamentare de semnat»; a list of revisions in state S3; open one → the existing signing viewer (0078) → sign → the upload writes `A,B,Ordonator` → S4. Nothing else — no tree, no FOREXE, no editing. **Where.**
 - Login decides the shell from `SessionContext.Role` = `Director`.
-- A server GET: revisions with `Incarcat = 1` and `Semnatura` = `A,B` (without `Ordonator`),
-  **across every unit the director has access to** (as the accountant's multi-unit access works —
-  read how `Contabil` spans units before writing it).
-- A small form (`KBotShellForm`), list + open, reusing the signing session.
-**Done when.** A director login sees only its waiting list and can sign one document end to end.
+- A server GET: revisions with `Incarcat = 1` and `Semnatura` = `A,B` (without `Ordonator`), **across every unit the director has access to** (as the accountant's multi-unit access works — read how `Contabil` spans units before writing it).
+- A small form (`KBotShellForm`), list + open, reusing the signing session. **Done when.** A director login sees only its waiting list and can sign one document end to end.
 
 ---
 

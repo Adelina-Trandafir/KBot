@@ -367,11 +367,12 @@ Public Class FacturiForm
 
     Private Sub ApplyMode()
         Dim k_edit As Boolean = _mode <> EditMode.Viewing
-        For Each k_c As Control In New Control() {txtComentarii, txtRef, chkAtasament, cmbContPlata, btnLinieNoua}
+        For Each k_c As Control In New Control() {txtComentarii, txtRef, chkAtasament, cmbContPlata}
             k_c.Enabled = k_edit
         Next
         dtpData.Enabled = DateEditable()
         gridLinii.ReadOnlyGrid = Not k_edit
+        ApplySpareLine(k_edit)
         ApplyClientMode(k_edit)
         btnAdauga.Enabled = Not _busy AndAlso _furnizor IsNot Nothing
         btnModifica.Enabled = Not _busy AndAlso _mode = EditMode.Viewing AndAlso _current IsNot Nothing AndAlso _current.PoateModifica
@@ -609,6 +610,9 @@ Public Class FacturiForm
             SetBusy(True, "Se salvează factura…")
             Dim k_saved As EFacturaFactura
             Try
+                ' An account new to the unit joins the unit's accounts first (slice 00EF-52); the invoice keeps it as the server wrote it.
+                k_request.ContPlata = Await EnsureUnitAccountAsync(k_request.ContPlata).ConfigureAwait(True)
+                If IsDisposed Then Return True
                 k_saved = Await _gate.RunAsync(Function() _api.SaveFacturaAsync(k_request, _cts.Token)).ConfigureAwait(True)
                 If IsDisposed Then Return True
                 _current = k_saved

@@ -92,7 +92,7 @@ Public Class LocalBackupView
                     Return
                 End If
                 If Not BackupStore.Exists(k_root) Then
-                    ShowEmpty("În " & k_root & " nu există încă o copie locală. Prima «Copie acum» o creează (cere o parolă nouă).")
+                    ShowEmpty("În " & k_root & " nu există încă o copie locală. Prima «Salvează acum» o creează (cere o parolă nouă).")
                     Return
                 End If
                 Dim k_store As BackupStore = If(k_mayAsk, BackupAccess.EnsureStore(_context, Me), OpenSilently())
@@ -227,8 +227,11 @@ Public Class LocalBackupView
         End Try
     End Sub
 
-    ''' <summary>The same as pressing «Copie acum» (the main window calls it from the reminder shown at start-up).</summary>
-    Public Async Function RunNowAsync() As Task
+    ''' <summary>
+    ''' The same as pressing «Salvează acum» (the main window calls it from the reminder shown at start-up). Without a fixed reason the reason is asked and required. With <paramref name="k_fixedReason"/>
+    ''' the reason is not asked: that text is used for every database.
+    ''' </summary>
+    Public Async Function RunNowAsync(Optional k_fixedReason As String = Nothing) As Task
         Try
             Dim k_dbs As List(Of String) = If(_context.IsAll, CopyableDatabases(), New List(Of String) From {_context.SelectedDb})
             If k_dbs.Count = 0 Then
@@ -241,13 +244,17 @@ Public Class LocalBackupView
                 "Citesc de pe server cele " & k_dbs.Count.ToString(CultureInfo.InvariantCulture) & " baze de unitate (fără " & DemoDatabase & ") și scriu în copiile locale doar ce s-a schimbat. Scrieți motivul copiei, același pentru toate:",
                 "Citesc de pe server baza " & k_dbs(0) & " și scriu în copiile locale doar ce s-a schimbat. Scrieți motivul copiei:")
             Dim k_reason As String = String.Empty
-            Using k_form As New ReasonForm(k_prompt, "Copie locală", "Fă copia",
-                                           "Pornește copia locală acum. Motivul se păstrează în copie, lângă dată.",
-                                           "Între 5 și 2000 de caractere. Apare în coloana Motiv.",
-                                           "Scrieți motivul copiei (cel puțin 5 caractere).")
-                If k_form.ShowDialog(Me) <> DialogResult.OK Then Return
-                k_reason = k_form.Reason
-            End Using
+            If k_fixedReason IsNot Nothing Then
+                k_reason = k_fixedReason
+            Else
+                Using k_form As New ReasonForm(k_prompt, "Copie locală", "Fă copia",
+                                               "Pornește copia locală acum. Motivul se păstrează în copie, lângă dată.",
+                                               "Între 5 și 2000 de caractere. Apare în coloana Motiv.",
+                                               "Scrieți motivul copiei (cel puțin 5 caractere).")
+                    If k_form.ShowDialog(Me) <> DialogResult.OK Then Return
+                    k_reason = k_form.Reason
+                End Using
+            End If
             Dim k_results As List(Of BackupRunResult) = Nothing
             Await UiRun.Guard("LocalBackupView.BtnRun_Click", _context,
                 Async Function()

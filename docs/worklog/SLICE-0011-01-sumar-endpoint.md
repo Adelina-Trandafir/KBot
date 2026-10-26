@@ -47,8 +47,7 @@ Deci se selectează **direct** `C.Clsf` — nicio compunere în SQL, nicio inven
 
 Cele două lovituri, în ordine:
 
-1. `aggOrd` a fost scris `R.IDORDTBL = T.IDORDTBL` (portare literală din Access).
-   Corect: **`R.IDORDTBLP = T.IDORDTBLP`**. Corectat de operator după prima rulare.
+1. `aggOrd` a fost scris `R.IDORDTBL = T.IDORDTBL` (portare literală din Access). Corect: **`R.IDORDTBLP = T.IDORDTBLP`**. Corectat de operator după prima rulare.
 2. Cheia spre `Clasificatii` — vezi secțiunea următoare.
 
 **Urmează vederea ORD, care lucrează NUMAI cu familia `FX_ORD`.** Regula de mai sus e prima verificare de făcut la fiecare join de acolo. Convenția e notată și în capul lui `sumar.py`, ca să fie sub ochi la următoarea portare.
@@ -77,13 +76,10 @@ Un port literal al lui `I.IdClsf = C.IdClsf` ar fi putut lega cheia greșită ș
 ### Deciziile portării (din plan, §2)
 
 1. **Fără filtru SS** — sumarul arată toți indicatorii angajamentului.
-2. `ClasificatiiG` → `Clasificatii`, `ParteneriG` → `Parteneri` (nu există tabele „G").
-   `Parteneri.DenumirePartener` confirmat în `routes/parteneri.py:146`.
+2. `ClasificatiiG` → `Clasificatii`, `ParteneriG` → `Parteneri` (nu există tabele „G"). `Parteneri.DenumirePartener` confirmat în `routes/parteneri.py:146`.
 3. Toate predicatele de join pe `IdUnitate` eliminate (o bază = o unitate).
-4. **`LEFT JOIN Clasificatii`** (era INNER) — un indicator fără clasificație rămâne în
-   grilă, cu `Clsf` gol. Are test dedicat; e motivul principal al feliei.
-5. `TotalReceptii = SUM(FX_Receptii.DIF)` — delta, **nu** `Valoare`. Testul pune
-   deliberat `Valoare` diferit de `DIF`, ca o „reparație" spre `Valoare` să pice.
+4. **`LEFT JOIN Clasificatii`** (era INNER) — un indicator fără clasificație rămâne în grilă, cu `Clsf` gol. Are test dedicat; e motivul principal al feliei.
+5. `TotalReceptii = SUM(FX_Receptii.DIF)` — delta, **nu** `Valoare`. Testul pune deliberat `Valoare` diferit de `DIF`, ca o „reparație" spre `Valoare` să pice.
 6. `INNER JOIN FX_Istoric ... WHERE Descriere = 'Angajament nou.'` — cu **punct final**.
 7. `cod` obligatoriu; lipsă/gol → 400 în română.
 
@@ -101,16 +97,9 @@ Un port literal al lui `I.IdClsf = C.IdClsf` ar fi putut lega cheia greșită ș
 
 Prima rulare live a feliei a produs trei corecții — toate în cod scris de mine, toate raportate de operator:
 
-1. **`aggOrd`: `R.IDORDTBL = T.IDORDTBL` → `R.IDORDTBLP = T.IDORDTBLP`.** Vezi
-   secțiunea „convenția cheilor" de mai sus. Portare literală din Access = cheia
-   greșită.
-2. **Fixture-ul folosea `IdUnitate = 0` hardcodat.** `Clasificatii` are
-   `FOREIGN KEY (IdUnitate) -> Unitati`, deci insertul pica pe o eroare de
-   constrângere, nu pe una de logică. Acum se citește din `Unitati`
-   (48 pe această bază, dar **se citește, nu se presupune**), iar curățarea folosește
-   ACELAȘI id, ca fixture-ul să nu atingă niciodată rândurile altei unități.
-3. **`aggOrd` a primit filtrul suplimentar `T.CodAngajament = %s`** (opțiunea 3 din
-   brief), cu join-ul exterior pe `CodAI` păstrat — granulația nu se schimbă.
+1. **`aggOrd`: `R.IDORDTBL = T.IDORDTBL` → `R.IDORDTBLP = T.IDORDTBLP`.** Vezi secțiunea „convenția cheilor" de mai sus. Portare literală din Access = cheia greșită.
+2. **Fixture-ul folosea `IdUnitate = 0` hardcodat.** `Clasificatii` are `FOREIGN KEY (IdUnitate) -> Unitati`, deci insertul pica pe o eroare de constrângere, nu pe una de logică. Acum se citește din `Unitati` (48 pe această bază, dar **se citește, nu se presupune**), iar curățarea folosește ACELAȘI id, ca fixture-ul să nu atingă niciodată rândurile altei unități.
+3. **`aggOrd` a primit filtrul suplimentar `T.CodAngajament = %s`** (opțiunea 3 din brief), cu join-ul exterior pe `CodAI` păstrat — granulația nu se schimbă.
 
 Notă adăugată în fixture: valorile clasificației de test **nu sunt arbitrare**. `Clasificatii` are FK-uri către `AVACONT_COMUN.Defa*` **pe coloanele GENERATE** (`Titlu`, `Articol`, `ClsfE`, `ClsfF`, `SS`), deci combinația Capitol/Subcapitol/ Articol/Alineat trebuie să existe în nomenclatoare. S-a ales una reală, luată din `FX_System_Export/TABLES/FX_Receptii.md:54`.
 
@@ -122,28 +111,11 @@ Cele 15 teste noi din `test_forexe_sumar.py` sunt **host-only și s-au SĂRIT** 
 
 ### Rămâne NEVERIFICAT / amânat
 
-1. **Nimic din felia asta nu a atins o bază reală.** Toate testele sunt host-only și
-   se sar în afara gazdei. Aceeași situație ca feliile 0008/0009.
-2. **Cheia de join spre `Clasificatii` (`I.IdClsf = C.IDClsf`) este o DECIZIE, nu un
-   fapt verificat.** E convenția documentată a tabelelor `FX_` din MariaDB, dar nimeni
-   nu a confirmat ce ține efectiv `FX_Indicatori.IdClsf` pe date reale. **Primul lucru
-   de verificat la prima rulare live:** dacă `clsf` iese gol pe TOATE rândurile,
-   cheia corectă e `C.IdClsfAcc` — se schimbă DOAR în `_SQL` din `sumar.py`.
-   `LEFT JOIN`-ul face ca greșeala să fie vizibilă (coloană goală), nu tăcută
-   (rânduri dispărute).
-3. **Nicio rută din `routes/forexe/` nu scrie `FX_Indicatori.IdClsf`** (verificat prin
-   grep). Coloana e populată de push-ul Access, nu de robotul FOREXE. Dacă migrarea
-   `FX_` nu a rulat, `IdClsf` poate fi `NULL`/`0` și `Clsf` va fi gol legitim.
-4. **Existența tabelelor NU a fost verificată** (`SHOW TABLES` cere o bază live).
-   Sumarul atinge unsprezece: `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`,
-   `FX_Rezervari`, `FX_Receptii`, `FX_Plati`, `FX_DDF_REV_SA`, `FX_ORD_TBL`,
-   `FX_ORD_TBL_REC`, `Clasificatii`, `Parteneri`. `KBOT_STATUS.md` notează deja că
-   **nu există DDL în repo pentru `FX_DDF_REV_SA` și familia `FX_ORD`**, deși
-   operatorul confirmă că există live. Un endpoint corect peste tabele goale întoarce
-   `rows: []` — **aceea nu e o eroare a feliei**, e migrarea care nu a rulat.
-5. Presupunerea „exact un rând `FX_Istoric` cu `Descriere = 'Angajament nou.'` per
-   angajament" e confirmată de operator, nu de o constrângere din schemă. Dacă apar
-   două, `INNER JOIN`-ul dublează rândurile sumarului.
+1. **Nimic din felia asta nu a atins o bază reală.** Toate testele sunt host-only și se sar în afara gazdei. Aceeași situație ca feliile 0008/0009.
+2. **Cheia de join spre `Clasificatii` (`I.IdClsf = C.IDClsf`) este o DECIZIE, nu un fapt verificat.** E convenția documentată a tabelelor `FX_` din MariaDB, dar nimeni nu a confirmat ce ține efectiv `FX_Indicatori.IdClsf` pe date reale. **Primul lucru de verificat la prima rulare live:** dacă `clsf` iese gol pe TOATE rândurile, cheia corectă e `C.IdClsfAcc` — se schimbă DOAR în `_SQL` din `sumar.py`. `LEFT JOIN`-ul face ca greșeala să fie vizibilă (coloană goală), nu tăcută (rânduri dispărute).
+3. **Nicio rută din `routes/forexe/` nu scrie `FX_Indicatori.IdClsf`** (verificat prin grep). Coloana e populată de push-ul Access, nu de robotul FOREXE. Dacă migrarea `FX_` nu a rulat, `IdClsf` poate fi `NULL`/`0` și `Clsf` va fi gol legitim.
+4. **Existența tabelelor NU a fost verificată** (`SHOW TABLES` cere o bază live). Sumarul atinge unsprezece: `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`, `FX_Rezervari`, `FX_Receptii`, `FX_Plati`, `FX_DDF_REV_SA`, `FX_ORD_TBL`, `FX_ORD_TBL_REC`, `Clasificatii`, `Parteneri`. `KBOT_STATUS.md` notează deja că **nu există DDL în repo pentru `FX_DDF_REV_SA` și familia `FX_ORD`**, deși operatorul confirmă că există live. Un endpoint corect peste tabele goale întoarce `rows: []` — **aceea nu e o eroare a feliei**, e migrarea care nu a rulat.
+5. Presupunerea „exact un rând `FX_Istoric` cu `Descriere = 'Angajament nou.'` per angajament" e confirmată de operator, nu de o constrângere din schemă. Dacă apar două, `INNER JOIN`-ul dublează rândurile sumarului.
 
 ---
 
@@ -203,21 +175,10 @@ Cele 4 teste `SumarViewTests` rulează pe un fir STA (crearea unui `UserControl`
 
 ### Rămâne NEVERIFICAT / amânat
 
-1. **NU s-a rulat niciodată vizual.** `SumarView` nu a fost văzut pe ecran de nimeni:
-   nici așezarea antetului, nici lățimile coloanelor, nici culorile, nici coloana
-   îngheațată la derulare orizontală. Moștenește și avertismentul feliei 0010 —
-   **harness-ul vizual al lui `KBotDataView` tot nu a fost rulat**, iar pasul 0010-06
-   a găsit un bug (toate anteturile de coloană erau `Nothing`) pe care niciun test
-   headless nu l-ar fi prins.
-2. **NU s-a rulat împotriva unei baze reale** — vezi `SLICE-0011-01`, punctele 1–5.
-   În special: dacă `clsf` iese gol pe toate rândurile, cauza e cheia de join din
-   endpoint, nu vederea.
-3. Starea goală acoperă grila cu o etichetă; **antetul rămâne vizibil** cu datele
-   angajamentului chiar dacă nu are indicatori. Alegere deliberată (operatorul vrea
-   să vadă ce angajament e selectat), dar neconfirmată cu operatorul.
-4. Nu există indicator de „ocupat" în timpul aducerii datelor — se arată doar textul
-   «Se încarcă sumarul…» în locul grilei. Shell-ul are un `KBotBusyBar`, dar vederile
-   nu au acces la el; de reevaluat dacă apelurile se dovedesc lente.
+1. **NU s-a rulat niciodată vizual.** `SumarView` nu a fost văzut pe ecran de nimeni: nici așezarea antetului, nici lățimile coloanelor, nici culorile, nici coloana îngheațată la derulare orizontală. Moștenește și avertismentul feliei 0010 — **harness-ul vizual al lui `KBotDataView` tot nu a fost rulat**, iar pasul 0010-06 a găsit un bug (toate anteturile de coloană erau `Nothing`) pe care niciun test headless nu l-ar fi prins.
+2. **NU s-a rulat împotriva unei baze reale** — vezi `SLICE-0011-01`, punctele 1–5. În special: dacă `clsf` iese gol pe toate rândurile, cauza e cheia de join din endpoint, nu vederea.
+3. Starea goală acoperă grila cu o etichetă; **antetul rămâne vizibil** cu datele angajamentului chiar dacă nu are indicatori. Alegere deliberată (operatorul vrea să vadă ce angajament e selectat), dar neconfirmată cu operatorul.
+4. Nu există indicator de „ocupat" în timpul aducerii datelor — se arată doar textul «Se încarcă sumarul…» în locul grilei. Shell-ul are un `KBotBusyBar`, dar vederile nu au acces la el; de reevaluat dacă apelurile se dovedesc lente.
 5. Celelalte opt vederi rămân `PlaceholderView`.
 
 ---
@@ -244,14 +205,9 @@ JOIN ... ON I.IdClsf = C.IdClsfAcc AND I.IdUnitate = C.IdUnitate  -->  50   (fan
 
 Trei defecte suprapuse, toate în cod scris în 0011-01:
 
-1. **Cheie greșită.** `FX_Indicatori.IdClsf` ține **id-ul Access**, deci se potrivește
-   cu `Clasificatii.IdClsfAcc`, nu cu `Clasificatii.IDClsf` (PK MariaDB). Zero
-   potriviri ⇒ `Clsf` gol pe fiecare rând în producție.
-2. **`IdUnitate` scos greșit.** `Clasificatii` din baza per-unitate conține **8
-   unități** (48, 75, 76, 121, 123, 135, 136, 157). Regula „drop `IdUnitate`" se
-   aplică tabelelor `FX_`, **nu nomenclatoarelor**.
-3. **Duplicate în nomenclator.** Chiar cu ambele predicate corecte rămâne fan-out ×2:
-   `(75,79)`, `(75,84)`, `(75,90)`, `(75,92)`, `(75,93)` — fiecare de două ori.
+1. **Cheie greșită.** `FX_Indicatori.IdClsf` ține **id-ul Access**, deci se potrivește cu `Clasificatii.IdClsfAcc`, nu cu `Clasificatii.IDClsf` (PK MariaDB). Zero potriviri ⇒ `Clsf` gol pe fiecare rând în producție.
+2. **`IdUnitate` scos greșit.** `Clasificatii` din baza per-unitate conține **8 unități** (48, 75, 76, 121, 123, 135, 136, 157). Regula „drop `IdUnitate`" se aplică tabelelor `FX_`, **nu nomenclatoarelor**.
+3. **Duplicate în nomenclator.** Chiar cu ambele predicate corecte rămâne fan-out ×2: `(75,79)`, `(75,84)`, `(75,90)`, `(75,92)`, `(75,93)` — fiecare de două ori.
 
 ### Fixul
 
@@ -316,26 +272,16 @@ Ultimul e deliberat mai larg decât brief-ul: defectul a apărut de trei ori pe 
 
 **Convenții de denumire, ambele confirmate pe schema vie:**
 
-- `Clasificatii`: `IDClsf` = PK MariaDB, `IdClsfAcc` = id Access păstrat.
-  **DAR `FX_Indicatori.IdClsf` ține id-ul Access — nu urmează convenția.**
-  Numele coloanei nu e o dovadă.
-- Familia `FX_ORD`: sufix „P" = PK MariaDB (`IDORDTBLP`), fără „P" = id Access
-  (`IDORDTBL`).
+- `Clasificatii`: `IDClsf` = PK MariaDB, `IdClsfAcc` = id Access păstrat. **DAR `FX_Indicatori.IdClsf` ține id-ul Access — nu urmează convenția.** Numele coloanei nu e o dovadă.
+- Familia `FX_ORD`: sufix „P" = PK MariaDB (`IDORDTBLP`), fără „P" = id Access (`IDORDTBL`).
 
 **Concluzie operațională, mai utilă decât ambele tabele:** nu deduce cheia din numele coloanei — **numără rândurile înainte și după join**. Un join care întoarce `0` sau mai multe rânduri decât tabelul din stânga e un defect, nu o particularitate a datelor. Cele trei rulări pierdute pe felia asta ar fi fost prinse de un singur `COUNT(*)`.
 
 ### Rămâne NEVERIFICAT / fire deschise
 
-1. **Nu am rulat pe date reale** — testele host se sar pe stație. Cifrele din acest
-   worklog sunt măsurate de operator, nu de mine.
-2. **Duplicatele din `Clasificatii`** (fir deschis, nu blochează felia): de verificat
-   dacă rândurile diferă prin `Sursa`/`Sector` — caz în care **lipsește o dimensiune
-   din join** și `LIMIT 1` alege arbitrar între două clasificații diferite — sau sunt
-   identice, caz în care sunt date de curățat. `LIMIT 1` e corect pentru al doilea caz
-   și doar *acceptabil* pentru primul.
-3. `MIN(...)` peste subinterogarea `Parteneri` păstrează semantica Access, dar dacă un
-   `CodPartener` are mai mulți parteneri pe aceeași unitate, `LIMIT 1` alege arbitrar.
-   Nu s-a observat așa ceva; nu a fost verificat.
+1. **Nu am rulat pe date reale** — testele host se sar pe stație. Cifrele din acest worklog sunt măsurate de operator, nu de mine.
+2. **Duplicatele din `Clasificatii`** (fir deschis, nu blochează felia): de verificat dacă rândurile diferă prin `Sursa`/`Sector` — caz în care **lipsește o dimensiune din join** și `LIMIT 1` alege arbitrar între două clasificații diferite — sau sunt identice, caz în care sunt date de curățat. `LIMIT 1` e corect pentru al doilea caz și doar *acceptabil* pentru primul.
+3. `MIN(...)` peste subinterogarea `Parteneri` păstrează semantica Access, dar dacă un `CodPartener` are mai mulți parteneri pe aceeași unitate, `LIMIT 1` alege arbitrar. Nu s-a observat așa ceva; nu a fost verificat.
 
 ## Repere unice din registrul 0011
 

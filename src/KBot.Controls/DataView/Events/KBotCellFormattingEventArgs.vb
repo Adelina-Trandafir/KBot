@@ -56,6 +56,13 @@ Public NotInheritable Class KBotCellFormattingEventArgs
     Public Property ReadOnlyCell As Boolean
 
     ''' <summary>
+    ''' A <see cref="KBotColumnType.Button"/> cell draws nothing at all (no face, no caption, no picture): the cell looks empty, like a
+    ''' cell of any other column. Default False; the handler may raise it for ONE cell (e.g. the spare row of a grid). It only changes
+    ''' what is painted -- the host must still ignore a <c>ButtonClick</c> on that cell.
+    ''' </summary>
+    Public Property HideButton As Boolean
+
+    ''' <summary>
     ''' Culoarea bordurilor acestei celule (slice 0085-03). Implicit: cea a coloanei
     ''' (<see cref="KBotDataColumn.CellBorderColor"/>); <c>Color.Empty</c> = culoarea liniilor de
     ''' grila din tema.
@@ -86,6 +93,7 @@ Public NotInheritable Class KBotCellFormattingEventArgs
         Me.Alignment = alignment
         Me.Enabled = enabled
         Me.ReadOnlyCell = False
+        Me.HideButton = False
     End Sub
 
 End Class

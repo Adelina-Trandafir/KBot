@@ -45,6 +45,13 @@ Public NotInheritable Class VrcSettings
     Public Property LastFolder As String = String.Empty
     Public Property Files As New List(Of VrcSavedFile)()
     Public Property PlanRows As New List(Of VrcSavedPlanRow)()
+    ''' <summary>Partners prepared from ANAF (with the sector-sources ticked for each), by DC (see <see cref="DcKey"/>): they survive a new list of files and a new run.</summary>
+    Public Property PreparedPartners As New Dictionary(Of String, List(Of VrcNewPartner))()
+
+    ''' <summary>The key of a DC in <see cref="PreparedPartners"/>: trimmed, upper case.</summary>
+    Public Shared Function DcKey(k_dc As String) As String
+        Return If(k_dc, String.Empty).Trim().ToUpperInvariant()
+    End Function
 
     Private Shared Function FilePath() As String
         Return Path.Combine(AppContext.BaseDirectory, FileName)

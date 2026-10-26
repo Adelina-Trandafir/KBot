@@ -34,6 +34,10 @@ Partial Public Class ApiClient
         Public Property rulaj_creditor As Double
     End Class
 
+    Private NotInheritable Class ParteneriCuSolduriResponse
+        Public Property parteneri As List(Of Integer)
+    End Class
+
     Private NotInheritable Class SolduriPartenerResponse
         Public Property solduri As List(Of SoldPartenerWire)
     End Class
@@ -67,6 +71,23 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetConturiDisponibileAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetParteneriCuSolduriAsync(k_an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of Integer)) _
+        Implements IConturiApi.GetParteneriCuSolduriAsync
+        Try
+            Dim k_resp As String = Await SendNomenclatoareAsync(
+                HttpMethod.Get, $"{AvacontRoot}/parteneri/cu-solduri?an={k_an.ToString(CultureInfo.InvariantCulture)}",
+                Nothing, "citirea partenerilor cu solduri", ct).ConfigureAwait(False)
+            Dim k_payload As ParteneriCuSolduriResponse = JsonSerializer.Deserialize(Of ParteneriCuSolduriResponse)(k_resp, _json)
+            If k_payload Is Nothing OrElse k_payload.parteneri Is Nothing Then Return New List(Of Integer)()
+            Return k_payload.parteneri
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetParteneriCuSolduriAsync", ex)
             Throw
         End Try
     End Function

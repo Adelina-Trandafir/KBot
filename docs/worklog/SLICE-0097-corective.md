@@ -85,9 +85,7 @@ Nine operator requests in one message. Answers given by the operator before the 
 
 ## SLICE-0097-02 — Corective updates, second pass (operator request, 01.10.2026)
 
-Seven operator requests (six in one message, the seventh added while the work was running). Answers given by the operator before the code (01.10.2026): point 5 means the login window must
-**not** have the «?» button (F1 stays); the work is recorded as **0097-02** (not a new slice).
-The help for it is `SLICE-0000-25`.
+Seven operator requests (six in one message, the seventh added while the work was running). Answers given by the operator before the code (01.10.2026): point 5 means the login window must **not** have the «?» button (F1 stays); the work is recorded as **0097-02** (not a new slice). The help for it is `SLICE-0000-25`.
 
 ### What changed and why
 
@@ -95,9 +93,7 @@ The help for it is `SLICE-0000-25`.
 - `AppSettings.ShowInitialTour` (default **True**). After `KbotForm` has loaded its data (`MainForm_Load`, last step, posted with `BeginInvoke`) it calls `HelpService.StartInitialTour()`: the tour `tur-fereastra` (`HelpService.InitialTourId`) runs when the setting is on and the login reads the tour's part (a director never gets it; the DevHarness window without a session never gets it).
 - It runs **at every start** until:
   1. it was **seen to the end** («Gata» on the last step, or the last steps skipped because their parts are not on screen) — counted however the tour was started (by itself or from «?»);
-  2. the operator ticks **«Nu mai arăta turul inițial»** and closes the tour.
-  Both write `ShowInitialTour = False` (`HelpService.InitialTourSeen`, called by
-  `HelpTourRunner.Finish`). Closing without the box leaves it on.
+  2. the operator ticks **«Nu mai arăta turul inițial»** and closes the tour. Both write `ShowInitialTour = False` (`HelpService.InitialTourSeen`, called by `HelpTourRunner.Finish`). Closing without the box leaves it on.
 - **Where the box is** (the operator left the place open): on the tour bubble itself, its own row between the text and the buttons (`HelpTourBubble.chkNuMaiArata`), shown only on the automatic tour (`ShowNeverAgain`). The button row has no room for it at 440 px, hence a row of its own; `FitToText` counts it.
 - The way back: **Setări › Aplicație › Generale** «Arată turul ferestrei principale la pornirea K-BOT» (`chkTurInitial`), which also follows `AppSettings.Changed` (it unticks itself when the tour ends with the settings window open).
 
@@ -222,8 +218,7 @@ Cererea operatorului, 19.10.2026. (Numărul 0097-04 e ales de mine, urmând dup�
 
 Pe unele calculatoare fereastra de autentificare nu arăta bifa «Ține minte parola până la repornirea calculatorului», deși în Setări era bifată. Cauza (din `app_settings.json` de pe un astfel de PC): `"AdvancedOptions": false` — `AppSettings.RememberPasswordInEffect` cerea opțiunile avansate pornite, iar bifa din Setări era ascunsă fără ele.
 
-Regula nouă (operator): starea bifei rămâne cea stabilită, indiferent de opțiunile avansate;
-**doar schimbarea ei** cere opțiunile avansate.
+Regula nouă (operator): starea bifei rămâne cea stabilită, indiferent de opțiunile avansate; **doar schimbarea ei** cere opțiunile avansate.
 
 - `AppSettings.RememberPasswordInEffect` = `RememberPasswordOption` (implicit `True`).
 - Setări › Autentificare: bifa «Arată în fereastra de autentificare bifa …» e mereu vizibilă, dezactivată (`Enabled = False`) fără opțiunile avansate. «Uită parola memorată» rămâne doar cu avansate.

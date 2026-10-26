@@ -6,17 +6,10 @@
 
 **Checkpoint istoric:** [0076](SLICE-0073-recorder-meniu-plutitor-urmarire.md#slice-0076) corectează ulterior tăierea ambelor tabele `ListaReceptii` și `ListaReceptii_results`, adaugă fluxurile browser fără preambul și oprirea REVERSE fără istoric local. Comutatorul inițial constant al bifelor este ulterior descris ca setare în [ghidul operatorului](../SETARI_UTILIZATOR.md). Textul de mai jos păstrează cererea/implementarea inițială și limitele ei. **Cerute de operator** (patru propoziții, în ordinea în care le-a scris):
 
-1. La salvarea asocierilor, dacă totul e ok, se închide macheta de asocieri și se dă refresh
-   la datele pentru nodul selectat din MainForm — **dar nodul rămâne selectat**.
-2. Dacă nu există nimic în coșul de neasociate, macheta **nu se mai afișează deloc**: se
-   salvează direct și se dă refresh la arbore, tot cu nodul păstrat.
-3. La refresh pe nod: un formular cu grila proprie (prima coloană bifabilă) care lasă
-   operatorul să aleagă **ce recepții** vrea reîmprospătate, plus un `.wfl` care să suporte
-   opțiunea. Macheta pornește cu toate bifate, dar cu un **parametru de aplicație**
-   configurabil pe viitor.
-4. Workflow-uri care fac refresh **doar pe rezervări** sau **doar pe recepții**, legate de
-   butonul din dreapta subsolului arborelui din vederile lor. Cel de recepții deschide și el
-   macheta de selecție.
+1. La salvarea asocierilor, dacă totul e ok, se închide macheta de asocieri și se dă refresh la datele pentru nodul selectat din MainForm — **dar nodul rămâne selectat**.
+2. Dacă nu există nimic în coșul de neasociate, macheta **nu se mai afișează deloc**: se salvează direct și se dă refresh la arbore, tot cu nodul păstrat.
+3. La refresh pe nod: un formular cu grila proprie (prima coloană bifabilă) care lasă operatorul să aleagă **ce recepții** vrea reîmprospătate, plus un `.wfl` care să suporte opțiunea. Macheta pornește cu toate bifate, dar cu un **parametru de aplicație** configurabil pe viitor.
+4. Workflow-uri care fac refresh **doar pe rezervări** sau **doar pe recepții**, legate de butonul din dreapta subsolului arborelui din vederile lor. Cel de recepții deschide și el macheta de selecție.
 
 **Cerut explicit:** «nu testa. nu git» — nicio suită nu s-a rulat și nimic nu s-a comis.
 
@@ -123,66 +116,31 @@ Două fișiere `.wfl` NOI, compuse din secțiunile fișierului complet — acele
 **Modificat**
 - `src/KBot.Common/FeatureSwitches.vb` — `ReceptiiBifateLaDeschidere`
 - `src/KBot.Common/KBot.Common.vbproj` — FileVersion 1.5.0.0 ▸ 1.5.1.0
-- `src/KBot.Forexe/WorkflowCatalog.vb` — cele două fișiere noi, `VarReceptiiSarite`,
-  `DataReceptieFormat`, `ListaDatelorSarite`, cele două liste de tabele
-- `src/KBot.Forexe/JobBuilder.vb` — `receptiiSarite` pe cele două constructoare existente,
-  `BuildReceptiiAngajament`, `BuildRezervariAngajament`, `PuneReceptiileSarite`
-- `src/KBot.Forexe/KBot.Forexe.vbproj` — cele două `.wfl` noi în `CopyToOutputDirectory`;
-  FileVersion 1.0.9.0 ▸ 1.0.10.0
+- `src/KBot.Forexe/WorkflowCatalog.vb` — cele două fișiere noi, `VarReceptiiSarite`, `DataReceptieFormat`, `ListaDatelorSarite`, cele două liste de tabele
+- `src/KBot.Forexe/JobBuilder.vb` — `receptiiSarite` pe cele două constructoare existente, `BuildReceptiiAngajament`, `BuildRezervariAngajament`, `PuneReceptiileSarite`
+- `src/KBot.Forexe/KBot.Forexe.vbproj` — cele două `.wfl` noi în `CopyToOutputDirectory`; FileVersion 1.0.9.0 ▸ 1.0.10.0
 - `src/KBot.Forexe/Workflows/adlop - Prelucrare Completa.wfl` și `… Reverse.wfl` — garda
-- `src/KBot.App/Forexe/AsociereForm.vb` — `SpuneSiInchide`, `NehotarateDin`,
-  `TextDupaSalvare` ▸ Friend
-- `src/KBot.App/Forexe/WorkflowResultStore.vb` — `SalveazaPartial`, `FaraReceptiileSarite`,
-  `EDeSarit`
-- `src/KBot.App/Forexe/ForexeController.vb` — `receptiiSarite` pe `DownloadNodeAsync`,
-  `DownloadReceptiiAsync`, `DownloadRezervariAsync`, `DescarcaPartialAsync`
-- `src/KBot.App/KBOT.vb` — `LoadTreeAsync`/`PopulateTree` cu selecția păstrată,
-  `SalveazaFaraMachetaAsync`, `AlegeReceptiileDeSaritAsync`, `ReimprospateazaReceptii`,
-  `ReimprospateazaRezervari`, `AratEsecul`, cele două vederi primesc callback-ul
-- `src/KBot.App/Views/ReceptiiView.vb` / `.Designer.vb`,
-  `src/KBot.App/Views/RezervariView.vb` / `.Designer.vb`
+- `src/KBot.App/Forexe/AsociereForm.vb` — `SpuneSiInchide`, `NehotarateDin`, `TextDupaSalvare` ▸ Friend
+- `src/KBot.App/Forexe/WorkflowResultStore.vb` — `SalveazaPartial`, `FaraReceptiileSarite`, `EDeSarit`
+- `src/KBot.App/Forexe/ForexeController.vb` — `receptiiSarite` pe `DownloadNodeAsync`, `DownloadReceptiiAsync`, `DownloadRezervariAsync`, `DescarcaPartialAsync`
+- `src/KBot.App/KBOT.vb` — `LoadTreeAsync`/`PopulateTree` cu selecția păstrată, `SalveazaFaraMachetaAsync`, `AlegeReceptiileDeSaritAsync`, `ReimprospateazaReceptii`, `ReimprospateazaRezervari`, `AratEsecul`, cele două vederi primesc callback-ul
+- `src/KBot.App/Views/ReceptiiView.vb` / `.Designer.vb`, `src/KBot.App/Views/RezervariView.vb` / `.Designer.vb`
 
 `src/KBot.App/Program.vb`, `src/KBot.App/KBot.App.vbproj`, `src/KBot.App/SingleInstance.vb`, `My Project/*` și `Surse/SURSA_XFA_WRITTER/` erau deja modificate/neurmărite la începutul sesiunii — **nu sunt ale acestei felii**.
 
 ## Rezultate
 
-- `dotnet build KBot.sln` — **0 erori**, 7 avertismente `MSB3825` PREEXISTENTE (`.resx` /
-  `BinaryFormatter`).
+- `dotnet build KBot.sln` — **0 erori**, 7 avertismente `MSB3825` PREEXISTENTE (`.resx` / `BinaryFormatter`).
 - XML-ul tuturor celor 8 `.wfl` — bine format (`ElementTree.parse`).
 
 ## Ce NU s-a făcut, și trebuie spus
 
-- **Nicio suită de teste n-a fost rulată** (cerere explicită: «nu testa»). Nu există niciun test
-  nou pentru `FaraReceptiileSarite`, `NehotarateDin`, `SelectieReceptiiForm.Grupeaza` /
-  `ZileDeSarit` / `ZileAmestecate` — toate cinci sunt scrise anume ca funcții pure sau `Shared`,
-  cu tabloul pe parametri, tocmai ca să se poată verifica fără să se deschidă o fereastră.
-  **Sunt de scris.**
+- **Nicio suită de teste n-a fost rulată** (cerere explicită: «nu testa»). Nu există niciun test nou pentru `FaraReceptiileSarite`, `NehotarateDin`, `SelectieReceptiiForm.Grupeaza` / `ZileDeSarit` / `ZileAmestecate` — toate cinci sunt scrise anume ca funcții pure sau `Shared`, cu tabloul pe parametri, tocmai ca să se poată verifica fără să se deschidă o fereastră. **Sunt de scris.**
 - **Nimic nu s-a comis** (cerere explicită: «nu git»).
-- **NIMIC NU S-A VĂZUT PE ECRAN.** `SelectieReceptiiForm` n-a fost desenată nici măcar cu
-  `DrawToBitmap`; lățimile de coloană, textul antetului și așezarea celor patru butoane sunt
-  **presupuse**, nu verificate.
-- **NICIUN WORKFLOW NOU N-A RULAT.** Cele două fișiere parțiale și garda `IfVar` n-au atins
-  niciodată FOREXE. În particular sunt NEVERIFICATE: că `[[R.Data]]` sosește chiar în formatul
-  `zz/ll/aaaa` pe care îl construiește `ListaDatelorSarite` (dedus din
-  `fx_receptii_parse_ro_date`, care sparge după «/» și cere trei bucăți — dar nimeni n-a citit
-  un `R.Data` real); că `SetInternalVar` chiar acoperă valoarea din iterația precedentă în
-  `BuildCollectedRow`; și că secțiunile 1 și 2 pornesc corect una fără cealaltă (fiecare începe
-  cu propriul `Click` pe tab, dar asta e citit din fișier, nu văzut pe site).
-- **NICIO CERERE N-A AJUNS PE O BAZĂ VIE.** Că un pachet fără `TabelIstoric` (recepții) sau fără
-  `ListaReceptii` (rezervări) trece prin ingestie e **dedus din codul rutei**
-  (`tabele.get(...) or []`), nu observat. La fel salvarea cu listă de decizii GOALĂ: din
-  `verifica_acoperirea` reiese că o mulțime goală e acoperită, dar n-a plecat niciodată una.
-- **Reîmprospătarea rezervărilor citește istoricul ÎNAINTE, nu în REVERSE**, deci e mai lentă
-  decât ar putea fi pe un angajament cu istoric lung. Deliberat: varianta REVERSE are nevoie de
-  `DATA_IESIRE`, iar o dată lipsă ar face oprirea (`exitIfCellEquals`) să se potrivească cu
-  PRIMUL rând — iar fluxul se poate cere și pe un angajament fără istoric local. O a doua
-  variantă, ca perechea prelucrării complete, e **de făcut**.
-- **Fișierele complete au fost MODIFICATE, nu duplicate.** Cererea spunea «un wfl nou care să
-  suporte această nouă opțiune». Un al treilea și un al patrulea fișier de 14 KB care trebuie
-  ținute în pas cu primele două e chiar felul în care se rupe D11; garda e inertă când variabila
-  e goală, deci comportamentul de dinainte e neschimbat. Cele două fișiere NOI cerute la punctul
-  4 există. **De confirmat cu operatorul** dacă voia totuși variante separate.
+- **NIMIC NU S-A VĂZUT PE ECRAN.** `SelectieReceptiiForm` n-a fost desenată nici măcar cu `DrawToBitmap`; lățimile de coloană, textul antetului și așezarea celor patru butoane sunt **presupuse**, nu verificate.
+- **NICIUN WORKFLOW NOU N-A RULAT.** Cele două fișiere parțiale și garda `IfVar` n-au atins niciodată FOREXE. În particular sunt NEVERIFICATE: că `[[R.Data]]` sosește chiar în formatul `zz/ll/aaaa` pe care îl construiește `ListaDatelorSarite` (dedus din `fx_receptii_parse_ro_date`, care sparge după «/» și cere trei bucăți — dar nimeni n-a citit un `R.Data` real); că `SetInternalVar` chiar acoperă valoarea din iterația precedentă în `BuildCollectedRow`; și că secțiunile 1 și 2 pornesc corect una fără cealaltă (fiecare începe cu propriul `Click` pe tab, dar asta e citit din fișier, nu văzut pe site).
+- **NICIO CERERE N-A AJUNS PE O BAZĂ VIE.** Că un pachet fără `TabelIstoric` (recepții) sau fără `ListaReceptii` (rezervări) trece prin ingestie e **dedus din codul rutei** (`tabele.get(...) or []`), nu observat. La fel salvarea cu listă de decizii GOALĂ: din `verifica_acoperirea` reiese că o mulțime goală e acoperită, dar n-a plecat niciodată una.
+- **Reîmprospătarea rezervărilor citește istoricul ÎNAINTE, nu în REVERSE**, deci e mai lentă decât ar putea fi pe un angajament cu istoric lung. Deliberat: varianta REVERSE are nevoie de `DATA_IESIRE`, iar o dată lipsă ar face oprirea (`exitIfCellEquals`) să se potrivească cu PRIMUL rând — iar fluxul se poate cere și pe un angajament fără istoric local. O a doua variantă, ca perechea prelucrării complete, e **de făcut**.
+- **Fișierele complete au fost MODIFICATE, nu duplicate.** Cererea spunea «un wfl nou care să suporte această nouă opțiune». Un al treilea și un al patrulea fișier de 14 KB care trebuie ținute în pas cu primele două e chiar felul în care se rupe D11; garda e inertă când variabila e goală, deci comportamentul de dinainte e neschimbat. Cele două fișiere NOI cerute la punctul 4 există. **De confirmat cu operatorul** dacă voia totuși variante separate.
 - `ReceptiiView.Reincarca` nu mai e chemată de nicăieri (vezi §3).
-- **Două recepții în aceeași zi** nu se pot deosebi pe fir (§4). Se descarcă amândouă, și
-  macheta spune asta — dar e o limită reală a identității «recepție = dată», nu un lucru de
-  reparat aici.
+- **Două recepții în aceeași zi** nu se pot deosebi pe fir (§4). Se descarcă amândouă, și macheta spune asta — dar e o limită reală a identității «recepție = dată», nu un lucru de reparat aici.

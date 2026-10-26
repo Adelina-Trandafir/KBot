@@ -3,113 +3,118 @@ Imports System.Globalization
 ''' <summary>One receipt of the plan, with the number it has in Access.</summary>
 Public NotInheritable Class AdeReceipt
 
-    Public Sub New(k_id As Integer, k_paymentId As Integer?, k_issuedOn As DateTime?, k_series As String, k_number As Integer?, k_cancelled As Boolean)
+    Public Sub New(k_id As Integer, k_issuedOn As DateTime?, k_series As String, k_number As Integer?, Optional k_subNumber As Integer = 0)
         Id = k_id
-        PaymentId = k_paymentId
         IssuedOn = k_issuedOn
         Series = k_series
         Number = k_number
-        Cancelled = k_cancelled
+        SubNumber = k_subNumber
     End Sub
 
     ''' <summary>IDC in Access.</summary>
     Public ReadOnly Property Id As Integer
-    ''' <summary>IDPL in Access.</summary>
-    Public ReadOnly Property PaymentId As Integer?
     Public ReadOnly Property IssuedOn As DateTime?
     Public ReadOnly Property Series As String
-    ''' <summary>The number as Access has it (the operator's edits live apart, in a dictionary).</summary>
+    ''' <summary>The number as Access has it; the migration never changes it.</summary>
     Public ReadOnly Property Number As Integer?
-    Public ReadOnly Property Cancelled As Boolean
+    ''' <summary>Access has no sub-number: 0 for a receipt read from Access.</summary>
+    Public ReadOnly Property SubNumber As Integer
+
+    ''' <summary>The school year the receipt belongs to (see <see cref="AdeReceiptNumbers.SchoolYearOf"/>); Nothing without a date.</summary>
+    Public ReadOnly Property SchoolYear As Integer?
+        Get
+            Return AdeReceiptNumbers.SchoolYearOf(IssuedOn)
+        End Get
+    End Property
+
+End Class
+
+''' <summary>What <see cref="AdeReceiptNumbers.AssignSubNumbers"/> decided.</summary>
+Public NotInheritable Class AdeSubNumbering
+
+    ''' <summary>Sub-number in hundredths, like VC_NIR.NumarSub (10 prints as «,1»), per IDC in Access; receipts that keep no sub-number are absent.</summary>
+    Public ReadOnly Property Subs As New Dictionary(Of Integer, Integer)()
+    ''' <summary>How many (series, school year, number) were found more than once.</summary>
+    Public Property RepeatedNumbers As Integer
+    ''' <summary>Receipts that found no free sub-number (more than 100 receipts with one number in one school year): the migration is blocked for them.</summary>
+    Public Property Skipped As Integer
+    ''' <summary>A few repeated numbers, written for the operator.</summary>
+    Public ReadOnly Property Examples As New List(Of String)()
 
 End Class
 
 ''' <summary>
-''' Receipt numbers that repeat inside one series. The target key <c>uq_Sub_Serie_Numar</c> allows each (series, number) once per
-''' subunit, cancelled receipts and other years included, so every repeat has to get another number before the write.
-''' The number column is a whole number: a suffix such as «1234.1» does not fit it.
+''' Receipt numbers that repeat inside one series AND one school year (September to August). The target key <c>uq_Sub_Serie_An_Numar</c>
+''' (sql/AD_13) is (subunit, series, school year, number, sub-number), cancelled receipts included. The same number in another school
+''' year is fine, because the numbering starts again every September. Inside one school year the repeats get a sub-number (751 and 751,1
+''' are two numbers), the way NIR numbers do in VERCON; the number from Access is never changed.
 ''' </summary>
 Public NotInheritable Class AdeReceiptNumbers
 
     Private Sub New()
     End Sub
 
-    ''' <summary>The number a receipt will have: the operator's edit, else the one from Access.</summary>
-    Public Shared Function Current(k_receipt As AdeReceipt, k_edits As IDictionary(Of Integer, Integer)) As Integer?
-        Dim k_value As Integer
-        If k_edits IsNot Nothing AndAlso k_edits.TryGetValue(k_receipt.Id, k_value) Then Return k_value
-        Return k_receipt.Number
+    ''' <summary>The year in which the school year of a date began: September 2026 to August 2027 is 2026. Mirrors AD_Chitante.AnScolar.</summary>
+    Public Shared Function SchoolYearOf(k_date As DateTime?) As Integer?
+        If Not k_date.HasValue Then Return Nothing
+        Return If(k_date.Value.Month < 9, k_date.Value.Year - 1, k_date.Value.Year)
     End Function
 
-    Public Shared Function GroupKey(k_series As String, k_number As Integer) As String
-        Return k_series & "|" & k_number.ToString(CultureInfo.InvariantCulture)
+    ''' <summary>True when the target key covers the receipt: SQL keys ignore rows with a NULL part (series, school year or number).</summary>
+    Public Shared Function InKey(k_receipt As AdeReceipt) As Boolean
+        Return k_receipt.Series IsNot Nothing AndAlso k_receipt.SchoolYear.HasValue AndAlso k_receipt.Number.HasValue
     End Function
 
-    ''' <summary>Receipts with a series and a number, grouped by (series, number) as they will be written.</summary>
-    Public Shared Function Groups(k_receipts As IEnumerable(Of AdeReceipt), k_edits As IDictionary(Of Integer, Integer)) As Dictionary(Of String, List(Of AdeReceipt))
+    ''' <summary>Receipts grouped by (series, school year, number, sub-number) as they will be written.</summary>
+    Public Shared Function Groups(k_receipts As IEnumerable(Of AdeReceipt)) As Dictionary(Of String, List(Of AdeReceipt))
         Dim k_groups As New Dictionary(Of String, List(Of AdeReceipt))(StringComparer.Ordinal)
         For Each k_receipt In k_receipts
-            Dim k_number = Current(k_receipt, k_edits)
-            ' A SQL unique key permits repeats when any component is NULL.
-            If k_receipt.Series Is Nothing OrElse Not k_number.HasValue Then Continue For
-            Dim k_key = GroupKey(k_receipt.Series, k_number.Value)
+            If Not InKey(k_receipt) Then Continue For
+            Dim k_key = k_receipt.Series & "|" & k_receipt.SchoolYear.Value.ToString(CultureInfo.InvariantCulture) & "|" &
+                        k_receipt.Number.Value.ToString(CultureInfo.InvariantCulture) & "|" & k_receipt.SubNumber.ToString(CultureInfo.InvariantCulture)
             If Not k_groups.ContainsKey(k_key) Then k_groups(k_key) = New List(Of AdeReceipt)()
             k_groups(k_key).Add(k_receipt)
         Next
         Return k_groups
     End Function
 
-    ''' <summary>The receipts that share their number in Access (no edits applied): the rows the correction window lists.</summary>
-    Public Shared Function Duplicated(k_receipts As IEnumerable(Of AdeReceipt)) As List(Of AdeReceipt)
-        Return Groups(k_receipts, Nothing).Where(Function(k_pair) k_pair.Value.Count > 1).
-            SelectMany(Function(k_pair) k_pair.Value).
-            OrderBy(Function(k_r) k_r.Series, StringComparer.Ordinal).ThenBy(Function(k_r) k_r.Number).
-            ThenBy(Function(k_r) If(k_r.IssuedOn, DateTime.MinValue)).ThenBy(Function(k_r) k_r.Id).ToList()
-    End Function
-
-    ''' <summary>What the window says about a receipt after the edits so far.</summary>
-    Public Shared Function Status(k_receipt As AdeReceipt, k_groups As Dictionary(Of String, List(Of AdeReceipt)), k_edits As IDictionary(Of Integer, Integer)) As String
-        Dim k_number = Current(k_receipt, k_edits)
-        If k_receipt.Series Is Nothing OrElse Not k_number.HasValue Then Return "Fără serie sau număr"
-        Dim k_group = k_groups(GroupKey(k_receipt.Series, k_number.Value))
-        If k_group.Count > 1 Then
-            Return "Încă în dublu cu IDC " & String.Join(", ", k_group.Where(Function(k_r) k_r.Id <> k_receipt.Id).Select(Function(k_r) k_r.Id))
-        End If
-        Return If(k_edits IsNot Nothing AndAlso k_edits.ContainsKey(k_receipt.Id), "Schimbat", "Rezolvat (nu mai este dublu)")
-    End Function
-
-    ''' <summary>The thousands digit taken out: 1234 → 234, 19387 → 1387. Nothing below 1000 or when the result would be 0.</summary>
-    Public Shared Function StripThousands(k_number As Integer) As Integer?
-        If k_number < 1000 Then Return Nothing
-        Dim k_result As Integer = (k_number \ 10000) * 1000 + (k_number Mod 1000)
-        Return If(k_result > 0, CType(k_result, Integer?), Nothing)
+    ''' <summary>The sub-numbers tried for a number, in order: ,1 ,2 … ,9 (10, 20 … 90 hundredths), then ,01 ,02 … ,99 without the tenths already tried.</summary>
+    Private Shared Function SubCandidates() As List(Of Integer)
+        Dim k_list As New List(Of Integer)()
+        For k_tenth As Integer = 1 To 9
+            k_list.Add(k_tenth * 10)
+        Next
+        For k_hundredth As Integer = 1 To 99
+            If k_hundredth Mod 10 <> 0 Then k_list.Add(k_hundredth)
+        Next
+        Return k_list
     End Function
 
     ''' <summary>
-    ''' In every set of repeated numbers, all but the newest receipt (by date, then IDC) lose their thousands digit, when the new
-    ''' number is free in the series. A receipt that cannot be changed that way is counted and left as it is.
+    ''' In every set of receipts with the same series, school year and number: the NEWEST receipt (by date, then IDC) keeps the number
+    ''' without a sub-number, the older ones keep the number and get ,1 ,2 … oldest first. Nothing is written here; the plan applies the result.
     ''' </summary>
-    Public Shared Function ApplyOlderRule(k_receipts As IEnumerable(Of AdeReceipt), k_edits As IDictionary(Of Integer, Integer)) As (Changed As Integer, Skipped As Integer)
-        Dim k_changed As Integer = 0
-        Dim k_skipped As Integer = 0
-        Dim k_groups = Groups(k_receipts, k_edits)
-        Dim k_taken As New HashSet(Of String)(k_groups.Keys, StringComparer.Ordinal)
-        For Each k_pair In k_groups.OrderBy(Function(k_p) k_p.Key, StringComparer.Ordinal)
+    Public Shared Function AssignSubNumbers(k_receipts As IEnumerable(Of AdeReceipt)) As AdeSubNumbering
+        Dim k_result As New AdeSubNumbering()
+        Dim k_candidates = SubCandidates()
+        For Each k_pair In Groups(k_receipts).OrderBy(Function(k_p) k_p.Key, StringComparer.Ordinal)
             If k_pair.Value.Count < 2 Then Continue For
+            k_result.RepeatedNumbers += 1
             Dim k_ordered = k_pair.Value.OrderBy(Function(k_r) If(k_r.IssuedOn, DateTime.MinValue)).ThenBy(Function(k_r) k_r.Id).ToList()
             For k_index As Integer = 0 To k_ordered.Count - 2
-                Dim k_receipt = k_ordered(k_index)
-                Dim k_new = StripThousands(Current(k_receipt, k_edits).Value)
-                If Not k_new.HasValue OrElse k_taken.Contains(GroupKey(k_receipt.Series, k_new.Value)) Then
-                    k_skipped += 1
-                    Continue For
+                If k_index < k_candidates.Count Then
+                    k_result.Subs(k_ordered(k_index).Id) = k_candidates(k_index)
+                Else
+                    k_result.Skipped += 1
                 End If
-                k_edits(k_receipt.Id) = k_new.Value
-                k_taken.Add(GroupKey(k_receipt.Series, k_new.Value))
-                k_changed += 1
             Next
+            If k_result.Examples.Count < 5 Then
+                Dim k_first = k_ordered(0)
+                k_result.Examples.Add($"seria «{k_first.Series}», numărul {k_first.Number}, anul școlar {k_first.SchoolYear}/{k_first.SchoolYear + 1}, " &
+                                      $"{k_ordered.Count} chitanțe (IDC {String.Join(", ", k_ordered.Take(4).Select(Function(k_r) k_r.Id))}{If(k_ordered.Count > 4, ", …", String.Empty)})")
+            End If
         Next
-        Return (k_changed, k_skipped)
+        Return k_result
     End Function
 
 End Class

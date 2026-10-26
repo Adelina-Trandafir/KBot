@@ -1,123 +1,53 @@
 # Adobe viewer family — AdobeReaderHost + AcroPdfViewer
 
-Two ways to show a PDF inside a K-BOT panel. Neither is a designer control: both take a
-host `Control` (or `IHostSurface`) and a `log` callback, and both are `IDisposable`.
+Two ways to show a PDF inside a K-BOT panel. Neither is a designer control: both take a host `Control` (or `IHostSurface`) and a `log` callback, and both are `IDisposable`.
 
-`Adobe/` — 27 files. Conventions: [C1..C9](../CONTROLS.md).
-Status: logic unit-tested (`Adobe*Tests` + `FakeNativeWindows`); the real hosting path only
-proves itself on a machine with Adobe installed. Harness: `AdobeReaderSwitchesTest`.
-**Debug the real path from `bin\…\Logs\adobe_preview.log`, not from theory** — Adobe
-ignores `/n` and hands documents to an already-running instance, so windows must be matched
-by TITLE, not by PID.
+`Adobe/` — 27 files. Conventions: [C1..C9](../CONTROLS.md). Status: logic unit-tested (`Adobe*Tests` + `FakeNativeWindows`); the real hosting path only proves itself on a machine with Adobe installed. Harness: `AdobeReaderSwitchesTest`. **Debug the real path from `bin\…\Logs\adobe_preview.log`, not from theory** — Adobe ignores `/n` and hands documents to an already-running instance, so windows must be matched by TITLE, not by PID.
 
 ## AdobeReaderHost — reparent the real Adobe window
 Launches Adobe, finds its top-level window and makes it a child of the host panel.
 - `New(hostPanel, log)` or `New(host As IHostSurface, log, …)`
 - `ShowDocumentAsync(pdfPath) As Task(Of AdobeHostResult)`
 - `Relayout()`, `Detach()`, `Dispose()`
-- `NewInstanceMode: AdobeNewInstanceMode = Auto` (Auto = «/n»), `ReadModeEnabled = True`,
-  `Options: AdobeHostOptions`
+- `NewInstanceMode: AdobeNewInstanceMode = Auto` (Auto = «/n»), `ReadModeEnabled = True`, `Options: AdobeHostOptions`
 - `HostedWindow`, `HostedPid`, `IsHosting`, `IsSaving` (read-only)
-- **Slice 0078-05:** the window FILLS the panel — no profile, no clipping / offset, no `/A`
-  parameters, no floating-badge watcher (they stayed in the operator's own Adobe after K-BOT
-  closed). The toolbars are hidden by Adobe's Read Mode: Ctrl+H sent once when the page is laid
-  out, K-BOT is in the foreground and no script-alert burst is running.
-- **Slice 0078-12 (script windows + older Adobe):** `ScriptMonitor` (`AdobeScriptMonitor`: the script
-  windows of the document hosted now — error alerts K-BOT pressed OK on, the form's own messages left to the
-  operator, the JavaScript Debugger console — counted per document, `Summary()`), the event `ScriptAlertSeen`
-  (`AdobeScriptAlert`, raised by `AdobeSaveTrap.ScriptAlertSeen`), `AdobeProduct` (`AdobeProductInfo`:
-  exe + file version, `IsBefore2024` = major < 24). The working log gets `Adobe: …` at every launch and
-  `Mesaje de script Adobe la deschidere: …` when the document is ready. Trace to `acropdf_trace.log` (source
-  `AdobeReaderHost`) only while `AcroPdfTraceLog.SwitchedOn`. Bench for the older Adobe:
-  `OldAdobeHostHarnessForm` (KBot.App, DevHarness ▸ «Adobe/PDF», Debug only).
+- **Slice 0078-05:** the window FILLS the panel — no profile, no clipping / offset, no `/A` parameters, no floating-badge watcher (they stayed in the operator's own Adobe after K-BOT closed). The toolbars are hidden by Adobe's Read Mode: Ctrl+H sent once when the page is laid out, K-BOT is in the foreground and no script-alert burst is running.
+- **Slice 0078-12 (script windows + older Adobe):** `ScriptMonitor` (`AdobeScriptMonitor`: the script windows of the document hosted now — error alerts K-BOT pressed OK on, the form's own messages left to the operator, the JavaScript Debugger console — counted per document, `Summary()`), the event `ScriptAlertSeen` (`AdobeScriptAlert`, raised by `AdobeSaveTrap.ScriptAlertSeen`), `AdobeProduct` (`AdobeProductInfo`: exe + file version, `IsBefore2024` = major < 24). The working log gets `Adobe: …` at every launch and `Mesaje de script Adobe la deschidere: …` when the document is ready. Trace to `acropdf_trace.log` (source `AdobeReaderHost`) only while `AcroPdfTraceLog.SwitchedOn`. Bench for the older Adobe: `OldAdobeHostHarnessForm` (KBot.App, DevHarness ▸ «Adobe/PDF», Debug only).
 - `AdobeReaderHost.ResolveAdobePath()` (Shared)
-- `AdobeHostStatus` = `Hosted` `AdobeMissing` `LaunchFailed` `WindowNotFound` `Superseded`
-  `Failed`; `AdobeHostResult` carries `Status`, `Message` (Romanian, operator-ready, empty
-  on success), `Choice`, `ElapsedMs`, `Match`, `Succeeded`.
-- `AdobeHostOptions`: `DetachMode` (`AdobeDetachMode`, default `KillProcess`),
-  `UseCreationHook = False`, `CaptureDelayMs = 0`, `FindTimeoutMs`, `FindPollMs = 30`,
-  `RedrawDelayMs`, `CloseGraceMs = 1500`, `ExtraArgs`, `Clone()`, `Describe()`.
+- `AdobeHostStatus` = `Hosted` `AdobeMissing` `LaunchFailed` `WindowNotFound` `Superseded` `Failed`; `AdobeHostResult` carries `Status`, `Message` (Romanian, operator-ready, empty on success), `Choice`, `ElapsedMs`, `Match`, `Succeeded`.
+- `AdobeHostOptions`: `DetachMode` (`AdobeDetachMode`, default `KillProcess`), `UseCreationHook = False`, `CaptureDelayMs = 0`, `FindTimeoutMs`, `FindPollMs = 30`, `RedrawDelayMs`, `CloseGraceMs = 1500`, `ExtraArgs`, `Clone()`, `Describe()`.
 
 ## AcroPdfViewer — the AcroPDF ActiveX (slice 0078-15)
-Rebuilt from zero on 06-07.10.2026; the old `AcroPdfSurface` was removed on 07.10.2026 (what it did:
-`docs/worklog/SLICE-0078-15-vizualizator-activex-refacut.md`).
-- `New(hostPanel, log)`, `IsAvailable`, `LoadedPath`,
-  `ShowDocumentAsync(pdfPath) As Task(Of AcroPdfResult)` (synchronous inside), `Clear()` (destroys the control),
-  `Dispose()`; the control is also released on the form's `FormClosed`.
-- `LoadThroughSrc = True` (the document goes in through `src` = `file:///…`; False = `LoadFile`),
-  `PrimerPath` (switched off in code), `DetailedWatch` (False = the small WinEvent watch, writes nothing; True =
-  the big one, every window event to `Logsactivex_check.log`), `FitWidthAfterReadMode` (Ctrl+2 after Ctrl+H).
-- Fixes, all driven by window events (no timer): Adobe's window born 0x0 gets the control's rectangle again
-  (`AcroPdfHost.ResendRectangle`, `IOleInPlaceObject.SetObjectRects`, max. 3); Ctrl+H when `AVPageView` is visible
-  with a size, verified (task pane + tab strip hidden) and re-sent once after >= 700 ms if the document header is
-  still there.
-- Signing: `SaveTrapEnabled`, `DocumentSaved`, `SaveTrapFailed`, `OwnerPids()`, `IsOnScreen()` (the same
-  `AdobeSaveTrap` as the hosted window); `SaveAfterSignatureEnabled` + `RequestSave()` + `SaveKeysSent` /
-  `SaveNotSent` (Ctrl+S after a signature, optional, NOT working yet).
-- `AcroPdfStatus` = `Shown` `NotRegistered` `FileMissing` `Failed`; `AcroPdfResult` adds
-  `Collapsed` (always True now: kept for the callers' shape).
-- `AcroPdfDetector.ResolveClsid()` / `NormaliseClsid(clsid)`; `AcroPdfHost` is the low-level
-  wrapper (`LoadFile`, `LoadThroughSrc`, `ResendRectangle`, `ApplyChrome`, `Clear`, `TryReadVersion`).
+Rebuilt from zero on 06-07.10.2026; the old `AcroPdfSurface` was removed on 07.10.2026 (what it did: `docs/worklog/SLICE-0078-15-vizualizator-activex-refacut.md`).
+- `New(hostPanel, log)`, `IsAvailable`, `LoadedPath`, `ShowDocumentAsync(pdfPath) As Task(Of AcroPdfResult)` (synchronous inside), `Clear()` (destroys the control), `Dispose()`; the control is also released on the form's `FormClosed`.
+- `LoadThroughSrc = True` (the document goes in through `src` = `file:///…`; False = `LoadFile`), `PrimerPath` (switched off in code), `DetailedWatch` (False = the small WinEvent watch, writes nothing; True = the big one, every window event to `Logsactivex_check.log`), `FitWidthAfterReadMode` (Ctrl+2 after Ctrl+H).
+- Fixes, all driven by window events (no timer): Adobe's window born 0x0 gets the control's rectangle again (`AcroPdfHost.ResendRectangle`, `IOleInPlaceObject.SetObjectRects`, max. 3); Ctrl+H when `AVPageView` is visible with a size, verified (task pane + tab strip hidden) and re-sent once after >= 700 ms if the document header is still there.
+- Signing: `SaveTrapEnabled`, `DocumentSaved`, `SaveTrapFailed`, `OwnerPids()`, `IsOnScreen()` (the same `AdobeSaveTrap` as the hosted window); `SaveAfterSignatureEnabled` + `RequestSave()` + `SaveKeysSent` / `SaveNotSent` (Ctrl+S after a signature, optional, NOT working yet).
+- `AcroPdfStatus` = `Shown` `NotRegistered` `FileMissing` `Failed`; `AcroPdfResult` adds `Collapsed` (always True now: kept for the callers' shape).
+- `AcroPdfDetector.ResolveClsid()` / `NormaliseClsid(clsid)`; `AcroPdfHost` is the low-level wrapper (`LoadFile`, `LoadThroughSrc`, `ResendRectangle`, `ApplyChrome`, `Clear`, `TryReadVersion`).
 
 ## Profiles and UI detection (DevHarness bench only since slice 0078-05)
-Adobe's classic and modern UIs need different window offsets and clipping. Only the DevHarness
-measuring bench (`AdobeReaderHarnessForm`) still uses these; the shipping host does not.
-- `AdobeUiDetector.Detect(nodes)` → `AdobeUiDetection` (`Generation`, `Evidence`,
-  `Ambiguous`, `Describe()`), fed by `AdobeWindowProbe.Walk(...)` / `RhpCandidate(...)`.
-- `AdobeViewerProfile`: `NewInstance`, `NoSplash`, `OpenParameters`, `ClipEnabled`,
-  `ClipRight`, `ClipTop`, `Dx/Dy/Dw/Dh`, `HidePopups`, `WithNewInstance(mode)`.
-- `AdobeViewerProfiles.Modern` / `.Classic` / `.For(generation)` /
-  `.Resolve(mode, detection)` → `AdobeProfileChoice` (`Profile`, `Mode`, `Detected`,
-  `Mismatch`).
-- `AdobeViewerMode` (Auto / forced), `AdobePreviewEngine` (which of the two surfaces),
-  `AdobeNewInstanceMode`. Persisted through `AdobeViewerSettings`
-  (`Parse*` / `*ToText` / `*Label` / `Current*` / `Persist`), each read returning an
-  `AdobeSettingRead(Of T)` with a `Warning` for an unreadable stored value.
+Adobe's classic and modern UIs need different window offsets and clipping. Only the DevHarness measuring bench (`AdobeReaderHarnessForm`) still uses these; the shipping host does not.
+- `AdobeUiDetector.Detect(nodes)` → `AdobeUiDetection` (`Generation`, `Evidence`, `Ambiguous`, `Describe()`), fed by `AdobeWindowProbe.Walk(...)` / `RhpCandidate(...)`.
+- `AdobeViewerProfile`: `NewInstance`, `NoSplash`, `OpenParameters`, `ClipEnabled`, `ClipRight`, `ClipTop`, `Dx/Dy/Dw/Dh`, `HidePopups`, `WithNewInstance(mode)`.
+- `AdobeViewerProfiles.Modern` / `.Classic` / `.For(generation)` / `.Resolve(mode, detection)` → `AdobeProfileChoice` (`Profile`, `Mode`, `Detected`, `Mismatch`).
+- `AdobeViewerMode` (Auto / forced), `AdobePreviewEngine` (which of the two surfaces), `AdobeNewInstanceMode`. Persisted through `AdobeViewerSettings` (`Parse*` / `*ToText` / `*Label` / `Current*` / `Persist`), each read returning an `AdobeSettingRead(Of T)` with a `Warning` for an unreadable stored value.
 
 ## Supporting pieces
-- `AdobeWindowHosting` (Shared): `BuildArguments`, `FindReaderWindow`,
-  `IsAdobeWindowClass`, `AdobeProcessIds`, `AttachAsChild`, `Place`, `NudgeRedraw`,
-  `RectInParent`, `Hide`, `Show`, `ClickCentre`, `OwnerPid`, `IsAlive`, `IsVisible`,
-  `FocusWindow`, `KillPid`.
-- `AdobeWindowCapture` — `Find(launchedPid, baseName, …)` → `AdobeCaptureResult`
-  (`AdobeCaptureMatch`; `ByTitle` means a FOREIGN instance was adopted), `ChildStyle`,
-  `AttachAsChild`, `Reveal`.
-- `AdobeHostGeometry.Compute(hostSize, profile)`, `HostedWindowGeometry.Offset/IsNeutral`,
-  `MoveOutcome` + classifier; `HideOutcome` + `HideOutcomeClassifier` +
-  `HideAttemptSummary`.
-- `AdobePopupWatcher` + `AdobePopupFilter.Evaluate(className, ownerPid, …)` →
-  `AdobePopupVerdict` — hides Adobe's own dialogs while hosted.
-- `AdobeCreationHook` — WinEvent hook that hides windows as they are created
-  (`Install(pid)`, `Remove`, `HiddenCount`).
+- `AdobeWindowHosting` (Shared): `BuildArguments`, `FindReaderWindow`, `IsAdobeWindowClass`, `AdobeProcessIds`, `AttachAsChild`, `Place`, `NudgeRedraw`, `RectInParent`, `Hide`, `Show`, `ClickCentre`, `OwnerPid`, `IsAlive`, `IsVisible`, `FocusWindow`, `KillPid`.
+- `AdobeWindowCapture` — `Find(launchedPid, baseName, …)` → `AdobeCaptureResult` (`AdobeCaptureMatch`; `ByTitle` means a FOREIGN instance was adopted), `ChildStyle`, `AttachAsChild`, `Reveal`.
+- `AdobeHostGeometry.Compute(hostSize, profile)`, `HostedWindowGeometry.Offset/IsNeutral`, `MoveOutcome` + classifier; `HideOutcome` + `HideOutcomeClassifier` + `HideAttemptSummary`.
+- `AdobePopupWatcher` + `AdobePopupFilter.Evaluate(className, ownerPid, …)` → `AdobePopupVerdict` — hides Adobe's own dialogs while hosted.
+- `AdobeCreationHook` — WinEvent hook that hides windows as they are created (`Install(pid)`, `Remove`, `HiddenCount`).
 - `AdobeWindowTeardown.Run(...)` → `AdobeTeardownOutcome` (`AdobeTeardownAction`).
-- Registry: `IRegistryAccess` / `WinRegistryAccess`, `RegistrySnapshotSet`
-  (`Capture` / `Snapshots` / `RestoreAll`), `RegistryValueSnapshot` (+ `RegPresence`),
-  `AdobeRegistryConstants`, `AdobeHiveResolver.Resolve(...)` → `AdobeHiveResolution`
-  (which HKCU hive: Reader vs Acrobat).
-- Seams for testing: `INativeWindows` / `Win32Windows`, `IAdobeLauncher` /
-  `ProcessAdobeLauncher`, `IHostSurface` / `ControlHostSurface`, `AdobeNativeMethods`,
-  `AdobeHostLog.Write`.
+- Registry: `IRegistryAccess` / `WinRegistryAccess`, `RegistrySnapshotSet` (`Capture` / `Snapshots` / `RestoreAll`), `RegistryValueSnapshot` (+ `RegPresence`), `AdobeRegistryConstants`, `AdobeHiveResolver.Resolve(...)` → `AdobeHiveResolution` (which HKCU hive: Reader vs Acrobat).
+- Seams for testing: `INativeWindows` / `Win32Windows`, `IAdobeLauncher` / `ProcessAdobeLauncher`, `IHostSurface` / `ControlHostSurface`, `AdobeNativeMethods`, `AdobeHostLog.Write`.
 
 ## Limits
-- Needs Adobe Reader/Acrobat installed (`AdobeMissing`) or the AcroPDF ActiveX registered
-  (`NotRegistered`). No fallback renderer ships here.
-- Reparenting a foreign process's window is inherently fragile: an Adobe update that changes
-  window classes, titles or chrome breaks the profile offsets. Profiles exist precisely
-  because two generations already needed different numbers.
-- `AdobeCaptureMatch.ByTitle` = the window was adopted, not created by us. Detaching it may
-  affect a document the operator opened themselves; `DetachMode` decides.
-- Registry writes (chrome/pane collapsing) are per-user HKCU and are captured/restored
-  through `RegistrySnapshotSet` — a crash between capture and restore leaves them changed.
-- Async: `ShowDocumentAsync` can return `Superseded` when a newer document was requested
-  while it waited. Do not assume the last call won.
-- **Signing happens INSIDE the hosted window** (slice 0078; replaces the old rule «never sign
-  while a `ReaderHostPreview` holds a window»). With `SaveTrapEnabled = True` the host arms
-  `AdobeSaveTrap`: every file dialog of the hosted Adobe is moved off screen, filled with the
-  hosted document's own path (read back and compared), saved, and the «replace?» prompt owned by
-  that dialog is answered Yes. Any doubt cancels the dialog and raises `SaveTrapFailed`; the
-  dialog is never left to the operator. `DocumentSaved` fires after the dialog closes.
-  `Detach()` waits up to 5 s for a pressed Save before tearing Adobe down.
-  `AdobePrefs.EnsureStandardSaveDialog()` sets `bToggleCustomSaveExperience = 1` (UNVERIFIED name)
-  so Acrobat DC shows the standard Windows dialog, not its cloud «Save As» screen; it is called
-  only when a signing session starts.
+- Needs Adobe Reader/Acrobat installed (`AdobeMissing`) or the AcroPDF ActiveX registered (`NotRegistered`). No fallback renderer ships here.
+- Reparenting a foreign process's window is inherently fragile: an Adobe update that changes window classes, titles or chrome breaks the profile offsets. Profiles exist precisely because two generations already needed different numbers.
+- `AdobeCaptureMatch.ByTitle` = the window was adopted, not created by us. Detaching it may affect a document the operator opened themselves; `DetachMode` decides.
+- Registry writes (chrome/pane collapsing) are per-user HKCU and are captured/restored through `RegistrySnapshotSet` — a crash between capture and restore leaves them changed.
+- Async: `ShowDocumentAsync` can return `Superseded` when a newer document was requested while it waited. Do not assume the last call won.
+- **Signing happens INSIDE the hosted window** (slice 0078; replaces the old rule «never sign while a `ReaderHostPreview` holds a window»). With `SaveTrapEnabled = True` the host arms `AdobeSaveTrap`: every file dialog of the hosted Adobe is moved off screen, filled with the hosted document's own path (read back and compared), saved, and the «replace?» prompt owned by that dialog is answered Yes. Any doubt cancels the dialog and raises `SaveTrapFailed`; the dialog is never left to the operator. `DocumentSaved` fires after the dialog closes. `Detach()` waits up to 5 s for a pressed Save before tearing Adobe down. `AdobePrefs.EnsureStandardSaveDialog()` sets `bToggleCustomSaveExperience = 1` (UNVERIFIED name) so Acrobat DC shows the standard Windows dialog, not its cloud «Save As» screen; it is called only when a signing session starts.
 - Nothing here is themed: the hosted surface is Adobe's own UI.

@@ -76,6 +76,28 @@ Public NotInheritable Class AdeWriter
         End Try
     End Function
 
+    ''' <summary>The server keeps one month per (Luna, Anul) in a subunit; Access can hold two rows for the same month.</summary>
+    Private Shared Function DuplicateMonths(k_plan As AdePlan) As List(Of String)
+        Dim k_messages As New List(Of String)()
+        Dim k_months = k_plan.Tables.FirstOrDefault(Function(t) t.Table.Name = "LunaD")
+        If k_months Is Nothing Then Return k_messages
+        Dim k_attendance = k_plan.Tables.FirstOrDefault(Function(t) t.Table.Name = "Prezenta")
+        Dim k_groups = k_months.Rows.Where(Function(r) r("IDL") IsNot Nothing AndAlso r("Luna") IsNot Nothing AndAlso r("Anul") IsNot Nothing) _
+            .GroupBy(Function(r) (CInt(r("Luna")), CInt(r("Anul")))).Where(Function(g) g.Count() > 1)
+        For Each k_group In k_groups
+            Dim k_lines = k_group.OrderBy(Function(r) CInt(r("IDL"))).Select(
+                Function(r)
+                    Dim k_id = CInt(r("IDL"))
+                    Dim k_count = If(k_attendance Is Nothing, 0, k_attendance.Rows.Where(Function(p) p("IDL") IsNot Nothing AndAlso CInt(p("IDL")) = k_id).Count())
+                    Dim k_closed = If(r.ContainsKey("Inchisa") AndAlso r("Inchisa") IsNot Nothing AndAlso Convert.ToBoolean(r("Inchisa"), CultureInfo.InvariantCulture), "închisă", "deschisă")
+                    Return $"IDL {k_id} ({k_closed}, {k_count} rânduri de prezență)"
+                End Function)
+            k_messages.Add($"În Access, luna {k_group.Key.Item1:00}/{k_group.Key.Item2} apare de {k_group.Count()} ori: {String.Join("; ", k_lines)}. " &
+                           "Serverul păstrează o singură lună pentru fiecare lună și an. Corectați în fișierul Access, apoi citiți din nou fișierul.")
+        Next
+        Return k_messages
+    End Function
+
     Private Shared Function TableExists(k_cn As MySqlConnection, k_tableName As String) As Boolean
         Using k_cmd As New MySqlCommand("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=@t", k_cn)
             k_cmd.Parameters.AddWithValue("@t", k_tableName)
@@ -95,6 +117,7 @@ Public NotInheritable Class AdeWriter
                 Return k_found
             End If
             If k_subunit.Trim().Length > 100 Then k_found.Add("Denumirea subunității poate avea cel mult 100 de caractere.")
+            k_found.AddRange(DuplicateMonths(k_plan))
             If Not k_server.DatabaseNames().Contains(k_dc, StringComparer.OrdinalIgnoreCase) Then
                 k_found.Add($"Pe server nu există baza «{k_dc}» (DC-ul din Access).")
                 Return k_found
@@ -140,10 +163,6 @@ Public NotInheritable Class AdeWriter
                     Next
                 Next
                 If Not k_schemaReady Then Return k_found
-
-                Using k_parentLock As New MySqlCommand("SELECT ID FROM AD_Lock WHERE ID=0", k_cn)
-                    If k_parentLock.ExecuteScalar() Is Nothing Then k_found.Add(MissingParentLockMessage(k_dc))
-                End Using
 
                 ' The destination subunit: an existing one must be active and completely empty.
                 Dim k_existing = FindSubunit(k_cn, Nothing, k_subunit.Trim())
@@ -201,12 +220,6 @@ Public NotInheritable Class AdeWriter
         Return k_names
     End Function
 
-    Private Shared Function MissingParentLockMessage(k_dc As String) As String
-        Return $"În baza «{k_dc}» lipsește rândul AD_Lock cu ID=0 (blocarea comună a portalului). " &
-            "Sincronizarea schemei nu adaugă datele de inițializare. Executați manual sql/AD_12_lock_portal_seed.sql " &
-            "în baza destinație indicată, apoi apăsați «Testează»."
-    End Function
-
     ''' <summary>Writes the whole plan in one transaction. Returns committed counts, or Nothing when stopped before COMMIT.</summary>
     Public Shared Function Write(k_server As TargetServer, k_dc As String, k_source As AdeSource, k_plan As AdePlan,
                                  k_subunit As String, k_progress As IProgress(Of String), k_cancel As CancellationToken,
@@ -234,8 +247,13 @@ Public NotInheritable Class AdeWriter
                         Dim k_commitAttempted = False
                         Try
                             If RollbackIfStopped(k_tx, k_cancel, k_dump) Then Return Nothing
+                            ' The schema sync copies no rows, so a new destination has no portal lock row yet: same statement the web app uses.
+                            Using k_parentCreate As New MySqlCommand("INSERT INTO AD_Lock (ID) VALUES (0) ON DUPLICATE KEY UPDATE ID=ID", k_cn, k_tx)
+                                RecordCommand(k_dump, "AD_Lock", k_parentCreate)
+                                k_parentCreate.ExecuteNonQuery()
+                            End Using
                             Using k_parentLock As New MySqlCommand("SELECT ID FROM AD_Lock WHERE ID=0 FOR UPDATE", k_cn, k_tx)
-                                If k_parentLock.ExecuteScalar() Is Nothing Then Throw New InvalidOperationException(MissingParentLockMessage(k_dc))
+                                k_parentLock.ExecuteScalar()
                             End Using
                             Dim k_subunitId = EnsureSubunit(k_cn, k_tx, k_subunitName, k_plan, k_dump, k_progress)
                             Dim k_maps As New Dictionary(Of String, Dictionary(Of Long, Long))(StringComparer.OrdinalIgnoreCase)

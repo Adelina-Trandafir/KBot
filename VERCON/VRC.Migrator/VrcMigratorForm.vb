@@ -24,8 +24,10 @@ Public Class VrcMigratorForm
     Private _cts As CancellationTokenSource = Nothing
     Private _logPath As String = String.Empty
     Private _committed As Boolean
-    ''' <summary>Partners prepared from ANAF; inserted by «Migrează» inside the transfer transaction. Dropped when other files are chosen or read.</summary>
+    ''' <summary>Partners prepared from ANAF; inserted by «Migrează» inside the transfer transaction. Kept between runs (per DC); dropped only after a confirmed COMMIT.</summary>
     Private _prepared As New List(Of VrcNewPartner)()
+    ''' <summary>The DC the list in <see cref="_prepared"/> belongs to.</summary>
+    Private _preparedDc As String = String.Empty
     ''' <summary>What is remembered from one run to the next (server, files, DC, Subunitate, plan rows); never the password.</summary>
     Private _settings As New VrcSettings()
     ''' <summary>The rows of the VERCON table «cale» (subunit proposals); empty until «Încarcă cale…» or a remembered cale.accdb is loaded.</summary>
@@ -49,6 +51,7 @@ Public Class VrcMigratorForm
                 ofdBaze.InitialDirectory = _settings.LastFolder
             End If
             LoadRememberedCale()
+            UsePreparedOf(_settings.Dc)
             RestoreFiles()
         Catch ex As Exception
             GlobalErrorLog.Write("VrcMigratorForm.Load", ex)
@@ -178,7 +181,7 @@ Public Class VrcMigratorForm
 
     ''' <summary>The plan, profiles and report belong to the files read; a changed file list drops them.</summary>
     Private Sub ResetAfterFileListChange()
-        _prepared.Clear()
+        ' The prepared partners and the plan choices stay: they are saved by the caller (before the list changes) and by SaveWorkState.
         _profiles.Clear()
         _chosen.Clear()
         dgvPlan.ClearRows()
@@ -263,6 +266,8 @@ Public Class VrcMigratorForm
     Private Sub SaveWorkState()
         Try
             SyncSelection()
+            SyncPreparedWithDc()
+            StorePrepared()
             _settings.Files = _files.Select(Function(k_f) New VrcSavedFile() With {.Path = k_f.Path, .Selected = k_f.Selected}).ToList()
             _settings.Dc = txtDc.Text.Trim()
             ' Plan rows are merged by (file, proposed type): rows of files not in the grid now stay, so a file taken out and put back keeps its choices.
@@ -283,9 +288,40 @@ Public Class VrcMigratorForm
         End Try
     End Sub
 
+    ''' <summary>The prepared partners of a DC come back from the settings (the same list object: the plan and the partners window share it).</summary>
+    Private Sub UsePreparedOf(k_dc As String)
+        Dim k_saved As List(Of VrcNewPartner) = Nothing
+        _prepared.Clear()
+        If _settings.PreparedPartners.TryGetValue(VrcSettings.DcKey(k_dc), k_saved) Then _prepared.AddRange(k_saved)
+        _preparedDc = k_dc.Trim()
+    End Sub
+
+    ''' <summary>When the DC field changed, the list goes to its old DC and the list of the new DC is taken (a list made before any DC was known joins the first DC).</summary>
+    Private Sub SyncPreparedWithDc()
+        Dim k_dc As String = txtDc.Text.Trim()
+        If VrcSettings.DcKey(k_dc) = VrcSettings.DcKey(_preparedDc) Then Return
+        If VrcSettings.DcKey(_preparedDc).Length = 0 Then
+            _preparedDc = k_dc
+        Else
+            StorePrepared()
+            UsePreparedOf(k_dc)
+        End If
+    End Sub
+
+    Private Sub StorePrepared()
+        Dim k_key As String = VrcSettings.DcKey(_preparedDc)
+        If k_key.Length = 0 Then Return
+        If _prepared.Count > 0 Then
+            _settings.PreparedPartners(k_key) = New List(Of VrcNewPartner)(_prepared)
+        Else
+            _settings.PreparedPartners.Remove(k_key)
+        End If
+    End Sub
+
     Private Sub LoadFolder()
         Try
             If fbdFolder.ShowDialog(Me) <> DialogResult.OK Then Return
+            SaveWorkState()   ' the subunit names typed in the plan are kept before the list changes
             Dim k_ignored As New List(Of String)()
             _files = VrcSourceFile.Scan(fbdFolder.SelectedPath, k_ignored)
             _settings.LastFolder = fbdFolder.SelectedPath
@@ -305,7 +341,7 @@ Public Class VrcMigratorForm
     Private Sub btnAdauga_Click(sender As Object, e As EventArgs) Handles btnAdauga.Click
         Try
             If ofdBaze.ShowDialog(Me) <> DialogResult.OK Then Return
-            SyncSelection()   ' keep the ticks the operator already changed
+            SaveWorkState()   ' keep the ticks and the plan choices the operator already changed
             Dim k_known As New HashSet(Of String)(_files.Select(Function(k_f) k_f.Path), StringComparer.OrdinalIgnoreCase)
             Dim k_skipped As New List(Of String)()
             Dim k_added As Integer = 0
@@ -394,7 +430,7 @@ Public Class VrcMigratorForm
                 SetState(_state, "Alegeți întâi rândul de scos din listă.")
                 Return
             End If
-            SyncSelection()   ' keep the ticks of the other rows
+            SaveWorkState()   ' keep the ticks of the other rows and the plan choices typed so far
             Dim k_name As String = _files(k_index).FileName
             _files.RemoveAt(k_index)
             ResetAfterFileListChange()
@@ -405,9 +441,11 @@ Public Class VrcMigratorForm
         End Try
     End Sub
 
-    ''' <summary>«Golește lista»: the file list, the reading, the plan and the report on screen are dropped. DC, Subunitate, the server and the remembered plan choices stay.</summary>
+    ''' <summary>«Golește lista»: the file list, the reading, the plan and the report on screen are dropped. DC, Subunitate, the server, the remembered plan choices and the prepared partners stay.</summary>
     Private Sub btnGoleste_Click(sender As Object, e As EventArgs) Handles btnGoleste.Click
         Try
+            ' Saved first: the plan grid is emptied below, and what the operator typed in it (subunit names) must reach the settings file before.
+            SaveWorkState()
             _files = New List(Of VrcSourceFile)()
             ResetAfterFileListChange()
             SetState(VrcRunState.Unread, "Lista de baze este goală. Alegeți un folder sau adăugați baze de date.")
@@ -426,12 +464,12 @@ Public Class VrcMigratorForm
                 SetState(_state, "Bifați cel puțin un fișier.")
                 Return
             End If
+            SaveWorkState()   ' the plan grid is rebuilt below: what was typed in it is saved first
             _busy = True
             UpdateButtons()
             rtbRaport.Clear()
             Dim k_progress As Action(Of String) = Sub(k_text) BeginInvoke(Sub() lblStare.Text = k_text)
             _profiles = Await Task.Run(Function() k_chosen.Select(Function(k_f) VrcProfiler.Profile(k_f, k_progress)).ToList())
-            _prepared.Clear()
             _chosen = k_chosen
             _lastReport = VrcReport.ToMarkdown(_profiles)
             rtbRaport.Text = _lastReport
@@ -675,6 +713,7 @@ Public Class VrcMigratorForm
             Dim k_server = BuildServer()
             Using k_form As New VrcPartnersForm(k_server, k_plan)
                 k_form.ShowDialog(Me)
+                SaveWorkState()   ' the prepared partners are remembered for the next run
                 RememberServer()
                 lblStare.Text = $"{k_form.PreparedCount} parteneri pregătiți din ANAF: se scriu în {k_plan.Dc} la «Migrează», în aceeași tranzacție cu transferul. Apăsați «Testează» ca să vedeți avertismentul actualizat."
             End Using
@@ -714,7 +753,11 @@ Public Class VrcMigratorForm
             _lastReport = k_report
             ShowReport(k_report, k_result.State)
             SaveRunFiles(k_report)
-            If k_result.State = VrcRunState.CommitConfirmed Then _committed = True
+            If k_result.State = VrcRunState.CommitConfirmed Then
+                _committed = True
+                _prepared.Clear()   ' they are in Parteneri now
+                SaveWorkState()
+            End If
             SetState(k_result.State, k_result.Message)
             If k_result.State = VrcRunState.ResultUnknown Then
                 KBotMessage.Show(Me, k_result.Message, "Rezultat necunoscut", MessageBoxButtons.OK, MessageBoxIcon.Warning)

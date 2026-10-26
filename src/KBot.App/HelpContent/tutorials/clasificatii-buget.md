@@ -9,46 +9,46 @@ host-key: clasificatii-buget
 <!-- slice: 000T-10 -->
 
 ## Deschide meniul
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, AV01-13 -->
 target: KbotForm.btnMeniu
 wait: click
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
 Apasă butonul <b>MENIU</b>.
 
 ## Nomenclatoare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, AV01-13 -->
 anchor: menu.nomenclatoare
 allow: KbotForm.btnMeniu
 wait: anchor:menu.clasificatii
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
 Treci cu mausul peste <b>«Nomenclatoare»</b> sau apasă-l: se deschide lista lui.
 
-## Clasificații bugetare
-<!-- slice: 000T-10 -->
+## Clasificații cheltuieli
+<!-- slice: 000T-10, AV01-13 -->
 anchor: menu.clasificatii
 allow: KbotForm.btnMeniu
 wait: opens:ClasificatiiForm
 optional: yes
-why: Dacă fereastra «Clasificații bugetare» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
-Alege <b>«Clasificații bugetare»</b>.
+why: Dacă fereastra «Clasificații cheltuieli» e deja deschisă, nu mai ai nevoie de pașii de deschidere.
+Alege <b>«Clasificații cheltuieli»</b>.
 
 ## Alege o clasificație
 <!-- slice: 000T-10 -->
-target: ClasificatiiForm.tree
+target: ClasificatiiBugetView.tree
 wait: select
 Alege din arbore un <b>Alineat</b> (ultimul nivel).<BR>
 <mark>La un nod de mai sus bugetul se vede doar ca rezumat, fără rânduri de completat: ultimul buget al fiecărei clasificații de sub nod și totalul rectificărilor.</mark>
 
 ## Versiunile de buget
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.gridBuget
+target: ClasificatiiBugetView.gridBuget
 Fiecare rând este <b>bugetul de la data din «Început» încolo</b>, pe cele patru trimestre. Documentul de fundamentare citește bugetul de la data revizuirii. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă o versiune
 <!-- slice: 000T-10 -->
-target: ClasificatiiForm.gridBuget
+target: ClasificatiiBugetView.gridBuget
 part: footer.right
 wait: click
 Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl completezi direct în tabel.<BR>
@@ -56,12 +56,12 @@ Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl comp
 
 ## Completează rândul
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.gridBuget
+target: ClasificatiiBugetView.gridBuget
 Completează data din <b>«Început»</b> și cele <b>patru trimestre</b>, apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Editează sau șterge o versiune
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.gridBuget
+target: ClasificatiiBugetView.gridBuget
 optional: yes
 why: Treci peste pas dacă nu ai de modificat o versiune existentă.
 Ca să <b>modifici</b> o versiune existentă, scrie peste valorile din rând. <b>«✕»</b> de pe rând o șterge.<BR>
@@ -69,18 +69,18 @@ Ca să <b>modifici</b> o versiune existentă, scrie peste valorile din rând. <b
 
 ## Bugetul în vigoare
 <!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiForm.gridTotal
+target: ClasificatiiBugetView.gridTotal
 Rândul acesta arată <b>ultimul buget</b> (cel cu data cea mai nouă) plus <b>toate rectificările</b>, pe trimestre. Se actualizează pe măsură ce completezi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează
 <!-- slice: 000T-10 -->
-target: ClasificatiiForm.btnSalveaza
+target: ClasificatiiBugetView.btnSalveaza
 wait: click
 Apasă <b>«Salvează»</b>. Se scriu în baza de date versiunile de buget și rectificările clasificației alese.
 
 ## Verifică bugetul față de FOREXE
 <!-- slice: 000T-10 -->
-target: ClasificatiiForm.btnVerifica
+target: ClasificatiiBugetView.btnVerifica
 wait: click
 optional: yes
 why: Verificarea e doar o comparație; nu schimbă nimic în date.

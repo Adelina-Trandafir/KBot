@@ -1,8 +1,7 @@
 # SLICE-0042 — Migrarea tabelelor `FX_` din Access în MariaDB
 
 **Data:** 2026-08-19
-**Felia:** 0042 (numărul liber următor din registru — planul spunea „de atribuit de Adelina";
-`KBOT_STATUS.md` declara 0042 ca următorul liber, deci l-am luat pe acela. Dacă vrei alt număr, redenumește fișierul și rândul din registru.)
+**Felia:** 0042 (numărul liber următor din registru — planul spunea „de atribuit de Adelina"; `KBOT_STATUS.md` declara 0042 ca următorul liber, deci l-am luat pe acela. Dacă vrei alt număr, redenumește fișierul și rândul din registru.)
 **Plan:** lipit în sesiune.
 
 ---
@@ -32,13 +31,11 @@ Două lucruri prinse la scris, care ar fi produs JSON invalid:
 
 ### Partea B — Flask (`PYTHON/routes/forexe/seed.py`), strict aditiv
 
-**`mode` pe `/seed/rows`.** Ruta scria dintotdeauna `ON DUPLICATE KEY UPDATE <toate
-coloanele>`, adică Access suprascrie MariaDB — exact opusul deciziei 3. Câmpul nou e opțional și implicit `"overwrite"`, deci apelanții existenți nu se schimbă. `"insert_missing"` emite `ON DUPLICATE KEY UPDATE <prima coloană> = <prima coloană>`, o auto-atribuire fără efect.
+**`mode` pe `/seed/rows`.** Ruta scria dintotdeauna `ON DUPLICATE KEY UPDATE <toate coloanele>`, adică Access suprascrie MariaDB — exact opusul deciziei 3. Câmpul nou e opțional și implicit `"overwrite"`, deci apelanții existenți nu se schimbă. `"insert_missing"` emite `ON DUPLICATE KEY UPDATE <prima coloană> = <prima coloană>`, o auto-atribuire fără efect.
 
 Auto-atribuirea, și **nu** `INSERT IGNORE`: `IGNORE` degradează la avertisment și erorile de tip, trunchierile și violările de constrângere, adică ar înghiți eșecuri reale. Forma aleasă suprimă exclusiv cazul cheii duplicate. Sub ea `rowcount` e 1 pe rând inserat și 0 pe duplicat sărit, deci răspunsul poartă `inserted` și `skipped` exacte. `truncate_first` împreună cu `insert_missing` → `400`: golești tabelul și apoi ceri să nu suprascrii nimic.
 
-**`GET|POST /seed/ids`**, read-only. Allow-list **proprie și îngustă** —
-`{("FX_DDF","IDDF"), ("FX_DDF_REV","IDREV")}` — nu `ALLOWED_TABLES`, fiindcă ruta citește tocmai tabelele pe care seed-ul are interzis să le scrie. Valorile sunt întregi și intră în SQL doar parametrizate; identificatorii vin exclusiv din perechea de mai sus. Varianta POST există pentru loturi prea mari pentru un URL. Garda rămâne `@require_api_key`, mesajele românești cu diacritice reale, `ensure_ascii=False`.
+**`GET|POST /seed/ids`**, read-only. Allow-list **proprie și îngustă** — `{("FX_DDF","IDDF"), ("FX_DDF_REV","IDREV")}` — nu `ALLOWED_TABLES`, fiindcă ruta citește tocmai tabelele pe care seed-ul are interzis să le scrie. Valorile sunt întregi și intră în SQL doar parametrizate; identificatorii vin exclusiv din perechea de mai sus. Varianta POST există pentru loturi prea mari pentru un URL. Garda rămâne `@require_api_key`, mesajele românești cu diacritice reale, `ensure_ascii=False`.
 
 O abatere conștientă de la `/columns`: acolo un tabel inexistent întoarce `200` cu listă goală, fiindcă lista goală e un răspuns cu sens. Aici întoarce **500 cu mesaj explicit**, nu `200` cu «toate lipsesc» — alea două sunt diagnostice complet diferite, iar al doilea ar minți.
 

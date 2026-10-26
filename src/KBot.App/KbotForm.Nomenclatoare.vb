@@ -146,8 +146,9 @@ Partial Public Class KbotForm
             End If
             Dim api As INomenclatoareApi = Nothing
             Dim gate As ReauthGate = Nothing
-            If Not NomenclatoareContext("Clasificații bugetare", api, gate) Then Return
-            _clasificatiiForm = New ClasificatiiForm(api, gate, _session.An)
+            If Not NomenclatoareContext("Clasificații cheltuieli", api, gate) Then Return
+            ' Slice AV01-11: the window has a «Buget» page and a «Venituri» page; the second needs the revenue API and the session (year + source of the title bar).
+            _clasificatiiForm = New ClasificatiiForm(api, TryCast(_apiClient, IClasificatiiVenituriApi), gate, _session)
             AddHandler _clasificatiiForm.FormClosed, Sub() _clasificatiiForm = Nothing
             If Not ShowMachetaPage(_clasificatiiForm, MachetaRef.Create(MachetaClasificatii, "an", _session.An.ToString(Globalization.CultureInfo.InvariantCulture))) Then
                 _clasificatiiForm.Dispose()   ' another page refused to close: stay where we are
@@ -156,7 +157,7 @@ Partial Public Class KbotForm
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideClasificatiile", ex)
             KBotMessage.Show(Me, "Fereastra clasificațiilor nu a putut fi deschisă. Detalii în jurnalul de erori.",
-                             "Clasificații bugetare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                             "Clasificații cheltuieli", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 

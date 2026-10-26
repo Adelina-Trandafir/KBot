@@ -16,10 +16,11 @@ Fereastra se deschide la fel ca [Parteneri](topic:contabil.nomenclatoare.partene
 Are două vederi, una câte una: **conturile** (arbore și câmpurile contului) și **soldurile inițiale** (un tabel). Trecerea de la una la
 alta se face cu un buton din ribbon, în grupul din dreapta (vezi mai jos).
 
-<!-- slice: AV01-07 -->
+<!-- slice: AV01-07, AV01-10 -->
 Mesajele ferestrei (o atenționare sau o eroare) apar într-o **casetă colorată** deasupra conținutului,
 ca în ordonanțarea de plată: galben pentru o atenționare, roșu pentru o eroare. Nu arată indicații de lucru. Când nu e nimic de spus,
-caseta nu se vede și nu ocupă loc.
+caseta nu se vede și nu ocupă loc. În arborele de conturi, **săgețile** de la tastatură deschid contul la care ajungi, ca un clic; pe un nod
+de grupare (clasă, cont de bază, clasificație) nu se întâmplă nimic.
 
 ## Subunitatea
 <!-- slice: AV01-04, AV01-06 -->

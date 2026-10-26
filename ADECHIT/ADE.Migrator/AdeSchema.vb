@@ -84,7 +84,7 @@ Public NotInheritable Class AdeSchema
         New AdeTable("Prezenta", "IDZ", I("IDZ"), I("IDP"), I("IDL"), I("IDV"), I("IDG"), I("ZilePrezenta"), D("ValoareContract"), I("ValoareTotala")),
         New AdeTable("Plati", "IDPL", I("IDPL"), I("IDP"), I("IDZ"), I("IDS"), I("IDL"), T("Data"), I("Plata"), I("TIP"), B("Anulata"),
                      B("Valid"), S("Motivul"), I("OriginMonth"), I("OriginYear")),
-        New AdeTable("Chitante", "IDC", I("IDC"), I("IDPL"), T("Data"), S("Serie", 50), I("Numar"), S("Explicatie"), B("Anulata"), I("IDL")),
+        New AdeTable("Chitante", "IDC", I("IDC"), I("IDPL"), T("Data"), S("Serie", 50), I("Numar"), S("Explicatie"), B("Anulata"), I("IDL"), I("NumarSub")),
         New AdeTable("AlteDoc", "IDA", I("IDA"), I("IDPL"), S("NrDoc"), T("DataDoc"), B("Anulata"), I("IDL"), S("Explicatie")),
         New AdeTable("Retur", "IDR", I("IDR"), I("IDP"), I("IDZ"), I("IDL"), I("IDS"), T("Data"), S("Explicatie"), B("Anulat"), S("NrDoc"),
                      D("Suma"), I("OriginMonth"), I("OriginYear")),

@@ -182,6 +182,7 @@ Public NotInheritable Class VrcRunResult
             k_sb.AppendLine()
         End If
 
+        AppendSignCheck(k_sb)
         AppendInformative(k_sb)
         If k_groups.Count = 0 AndAlso Issues.Count = 0 Then k_sb.AppendLine("Nicio constatare.")
         Return k_sb.ToString()
@@ -278,6 +279,11 @@ Public NotInheritable Class VrcRunResult
                                    New List(Of String)())
                 Dim k_originText As String = If(k_origins.Count = 0, String.Empty,
                     $" Bonuri de origine în cauză: {String.Join(", ", k_origins.Take(15))}{If(k_origins.Count > 15, ", …", String.Empty)}.")
+                If Not String.Equals(k_field, "IDBO", StringComparison.OrdinalIgnoreCase) Then
+                    Return ($"{k_table}: liniile nu se potrivesc cu pozițiile din registrul OI",
+                            $"{k_rows} din {k_table} nu se potrivesc cu nicio poziție din OI_Produse (același bon, același produs, același preț), deci migratorul nu poate stabili în ce cont erau obiectele. Motivul exact este scris la fiecare rând de mai jos.",
+                            "Deschideți OI_Produse și căutați pozițiile bonului și produsului de pe rândurile de mai jos; verificați produsul, prețul și semnul cantității.")
+                End If
                 Return ($"{k_table}: nu se poate afla contul obiectelor scoase",
                         $"{k_rows} din {k_table} sunt scoateri (transfer sau casare) la care migratorul nu a putut afla în ce cont se afla obiectul. Contul se ia de la primirea inițială (linia din bonul de predare cu același produs), urmărind înapoi bonurile de origine; aici lanțul se rupe.{k_originText} Motivul exact este scris la fiecare rând de mai jos.",
                         "Deschideți în Access tabelul OI_Predare și căutați bonul de mai sus (coloana IDBP = numărul bonului): trebuie să aibă o linie cu același produs ca poziția scoasă. Dacă produsul de pe poziția scoasă (OI_Produse, coloana IdProdus) sau cel de pe bon este greșit, corectați-l. Dacă bonul de origine este de fapt un transfer, căutați-l în OI_Transfer.")
@@ -312,9 +318,48 @@ Public NotInheritable Class VrcRunResult
         End Select
     End Function
 
+    ''' <summary>
+    ''' Write-offs saved with a positive quantity are corrected by the transfer (x -1). This section says which, and whether the correction
+    ''' leaves any batch below zero (checked day by day). The heading decides the colour of the HTML report: success or warning.
+    ''' </summary>
+    Private Sub AppendSignCheck(k_sb As StringBuilder)
+        Dim k_flips = Issues.Where(Function(k_i) k_i.RuleCode = "N18").ToList()
+        If k_flips.Count = 0 Then Return
+        Dim k_negative = Issues.Where(Function(k_i) k_i.RuleCode = "X18").ToList()
+        k_sb.AppendLine(If(k_negative.Count = 0, "## Casări cu semn corectat — stocul rămâne în ordine",
+                           "## AVERTIZĂRI — stoc negativ după corectarea semnului la casări"))
+        k_sb.AppendLine()
+        k_sb.AppendLine($"{Cases(k_flips.Count)} din OI_Produse ({k_flips.Select(Function(k_i) k_i.Justification.Split(","c)(0)).Distinct().Count()} bonuri de casare) aveau cantitatea scrisă cu plus, deși o casare scade stocul. " &
+                        "Migratorul înmulțește cantitatea (și valoarea) cu -1, numai în transfer; fișierele Access rămân neatinse.")
+        k_sb.AppendLine()
+        If k_negative.Count = 0 Then
+            k_sb.AppendLine("**Verificare stoc:** după schimbare, niciun lot de obiecte nu ajunge pe minus (fiecare lot afectat a fost urmărit zi cu zi, în ordinea datelor bonurilor).")
+        Else
+            k_sb.AppendLine($"**ATENȚIE — {k_negative.Count:N0} {If(k_negative.Count = 1, "lot ajunge", "loturi ajung")} pe minus după schimbarea semnului.** Transferul nu este blocat, dar casările de mai jos scot mai mult decât s-a primit:")
+            k_sb.AppendLine()
+            For Each k_issue In k_negative.Take(25)
+                k_sb.AppendLine("- " & k_issue.Justification)
+            Next
+            If k_negative.Count > 25 Then k_sb.AppendLine($"- … și încă {k_negative.Count - 25:N0}")
+            k_sb.AppendLine()
+            k_sb.AppendLine("**Ce faceți:** verificați casările acestor loturi în Access. Fie cantitatea pozitivă era o intrare reală (atunci semnul nu trebuia schimbat), fie lipsește o primire sau este scrisă prea mică.")
+        End If
+        k_sb.AppendLine()
+        k_sb.AppendLine("Pozițiile schimbate:")
+        k_sb.AppendLine()
+        For Each k_file In k_flips.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+            k_sb.AppendLine($"- `{k_file.Key}` ({Cases(k_file.Count())}){FolderLink(k_file.Key)}")
+            For Each k_i In k_file.Take(8)
+                k_sb.AppendLine("    - " & k_i.Justification)
+            Next
+            If k_file.Count() > 8 Then k_sb.AppendLine($"    - … și încă {k_file.Count() - 8:N0}")
+        Next
+        k_sb.AppendLine()
+    End Sub
+
     ''' <summary>What the transfer does by itself or notes without blocking: short lines, one per kind. Nothing here asks the operator to act.</summary>
     Private Sub AppendInformative(k_sb As StringBuilder)
-        Dim k_info = Issues.Where(Function(k_i) k_i.Severity <> "BLOCAJ").ToList()
+        Dim k_info = Issues.Where(Function(k_i) k_i.Severity <> "BLOCAJ" AndAlso k_i.RuleCode <> "N18" AndAlso k_i.RuleCode <> "X18").ToList()
         If k_info.Count = 0 Then Return
         k_sb.AppendLine("## Doar de informare (nu blochează și nu cer nimic)")
         k_sb.AppendLine()

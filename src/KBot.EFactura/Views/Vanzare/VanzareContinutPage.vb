@@ -21,8 +21,6 @@ Public Class VanzareContinutPage
             Dim k_palette As ThemePalette = k_scheme.Palette
             BackColor = k_palette.SurfaceAltColor
             tlyContinut.BackColor = k_palette.SurfaceAltColor
-            tlyLinii.BackColor = k_palette.SurfaceAltColor
-            ButtonStyles.ApplySecondary(btnLinieNoua, k_scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("VanzareContinutPage.ApplyTheme", ex)
         End Try
