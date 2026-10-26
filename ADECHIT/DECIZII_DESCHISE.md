@@ -1,9 +1,6 @@
 # ADECHIT — registrul deciziilor și probelor închise
 
-Repere: 09.10.2026, SLICE-ADE6-18 (registru inițial ADE0-03); închidere confirmată 23.10.2026; consolidare D001-04, 24.10.2026. Registru asociat [planului](PLAN_IMPLEMENTARE.md)
-și [mapării](MAPARE_ACCESS_WEB.md). Nu este o listă de întrebări care oprește documentarea.
-La rezolvare se adaugă data, sursa răspunsului/probei și efectul asupra feliei, fără
-ștergerea constatării inițiale. Nicio opțiune de mai jos nu este considerată aprobată implicit.
+Repere: 09.10.2026, SLICE-ADE6-18 (registru inițial ADE0-03); închidere confirmată 23.10.2026; consolidare D001-04, 24.10.2026. Registru asociat [planului](PLAN_IMPLEMENTARE.md) și [mapării](MAPARE_ACCESS_WEB.md). Nu este o listă de întrebări care oprește documentarea. La rezolvare se adaugă data, sursa răspunsului/probei și efectul asupra feliei, fără ștergerea constatării inițiale. Nicio opțiune de mai jos nu este considerată aprobată implicit.
 
 **Actualizat 23.10.2026: operatorul a confirmat că toate deciziile și probele din acest registru sunt rezolvate; nu mai există puncte deschise.**
 
@@ -22,9 +19,7 @@ La rezolvare se adaugă data, sursa răspunsului/probei și efectul asupra felie
 | M09 | **CLARIFICAT 08.10.2026:** nu se cere nicio clarificare de la operator. Chitante/Plati_fact/FTP/Situatii salvate sunt ramuri vechi sau nexportate; raman in afara fluxului. Plati_fact/FTP tin de facturare, iar Situatii salvate de rpt_SitFin (rapoarte amanate). | ADE0, ADE9-01 |
 | M10 | Structurile linked nu conțin rândurile backendului | ADE3, ADE5, ADE7-03 |
 
-Decizia utilizatorului din 07.10.2026 confirmă **încasarea după închidere cu actualizarea
-situației salvate și prezență blocată**. La 08.10.2026, M02 a fost extins explicit și la
-anulare și la orice altă modificare a documentelor lunii închise pentru copilul respectiv.
+Decizia utilizatorului din 07.10.2026 confirmă **încasarea după închidere cu actualizarea situației salvate și prezență blocată**. La 08.10.2026, M02 a fost extins explicit și la anulare și la orice altă modificare a documentelor lunii închise pentru copilul respectiv.
 
 ## Date, infrastructură și întinderea funcțiilor — cerințele inițiale D01–D10
 
@@ -43,13 +38,9 @@ anulare și la orice altă modificare a documentelor lunii închise pentru copil
 
 ## Ce putea continua fără răspunsuri — reperul inițial ADE0-03
 
-Scheletul, inventarul reutilizărilor, preview-ul și editorul de grilă pot fi construite
-cu date fictive. Validatorul de import și comparatorul pot fi pregătite cu fixture-uri.
-SQL-ul poate fi proiectat cu ținte declarate ca neconfirmate, fără a-l prezenta drept
-gata de executat. Funcțiile afectate de M01–M10 nu se declară conforme înaintea probei/deciziei.
+Scheletul, inventarul reutilizărilor, preview-ul și editorul de grilă pot fi construite cu date fictive. Validatorul de import și comparatorul pot fi pregătite cu fixture-uri. SQL-ul poate fi proiectat cu ținte declarate ca neconfirmate, fără a-l prezenta drept gata de executat. Funcțiile afectate de M01–M10 nu se declară conforme înaintea probei/deciziei.
 
-În intervenția ADE0-03 s-a documentat planul și acest registru. Nu s-au cerut sau acordat
-drepturi pe server și nu s-a rezolvat implicit niciuna dintre necunoscutele de mai sus.
+În intervenția ADE0-03 s-a documentat planul și acest registru. Nu s-au cerut sau acordat drepturi pe server și nu s-a rezolvat implicit niciuna dintre necunoscutele de mai sus.
 
 ## Decizii finale ale threadului — 09.10.2026
 

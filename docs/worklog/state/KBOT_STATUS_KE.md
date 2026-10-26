@@ -1,49 +1,43 @@
 # K-BOT — STATUS, slice family KE (received invoices <-> receptions <-> payments)
 
-Plan: [`docs/KE_PLAN.md`](../../KE_PLAN.md). KE is a family inside K-BOT, like 00EF (it joins E-Factura with Receptii and, later, Plati). Numbering KE01, KE02, ...
-Operator request 16.10.2026. Everything below is code and text only: **the SQL was not run, the server not deployed, nothing run against the
-live site or seen on screen, no test written or run.**
+Plan: [`docs/KE_PLAN.md`](../../KE_PLAN.md). KE is a family inside K-BOT, like 00EF (it joins E-Factura with Receptii and, later, Plati). Numbering KE01, KE02, ... Operator request 16.10.2026. **Initial checkpoint (16.10.2026, KE01…KE07)** — code and text only: **the SQL was not run, the server not deployed, nothing run against the live site or seen on screen, no test written or run.**
+
+Etapele ulterioare își păstrează propriile probe și limite. Interfața inițială din checklistul de mai jos este istorică: 00EF-39 mută clasificațiile în legare, KE09 schimbă formatul și oprirea la eroare, KE11/KE12 refac interfața.
 
 ## Registry
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| KE01 | Data model, amounts with VAT, server routes, client contract | GATA pe cod (build curat, SQL nerulat, server nedeployat) | `SLICE-KE01-modelul-legaturii-si-calculele.md` | `EF_PrimiteReceptii`, `EF_PrimiteLinii.IdClsf` / `CotaTVA` (`sql/KE_01_primite_receptii.sql`); `primite_ke.py`, `primite_ke_routes.py`; `EFacturaKe.vb`, `ApiClient.EFactura.Ke.vb`. Every write: role `Contabil`, checked on the server. |
-| KE01-02 | Diagnostic: everything about one angajament in one table | GATA pe cod, **SQL nerulat** | `SLICE-KE01-02-fisa-angajament.md` | `sql/KE_01_02_fisa_angajament.sql`: `AVACONT_COMUN.FX_FisaAngajament(db, cod)`; `DIAG` rows first (indicator vs Clasificatii, invoice line vs indicator, reception value per classification, links), then every table as JSON. |
-| KE02 | The angajament and the classification of each line | GATA pe cod | `SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | `KeClasificariForm`, `KeAngajamentForm`; two new columns in «Continut». |
-| KE03 | The «Receptii» view of an invoice | GATA pe cod | `SLICE-KE03-vederea-receptii.md` | `PrimiteReceptiiPage`, `PrimiteView.Receptii.vb`. |
-| KE04 | Link to an existing reception | GATA pe cod | `SLICE-KE04-legare-de-receptie-existenta.md` | `KeLegaForm` (mode «existenta»), `verifica` / `leaga`. |
-| KE05 | The robot adds a reception («Receptie Noua») | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE05-robotul-si-receptie-noua-in-forexe.md` | `Receptie Noua.wfl`, `IKeRobot`, `KbotForm.KeRobot.vb`; confirmation by `.alert.alert-success`, read-back as the check only when it is missing. |
-| KE06 | «Receptie noua» from an invoice | GATA pe cod, nerulat | `SLICE-KE06-receptie-noua-din-factura.md` | marker `(IDRH; IDR)` reserved and written in the description; the links are written only after the save is confirmed. |
-| KE07 | «Modifica receptia» | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE07-modificarea-unei-receptii.md` | `Receptie Modificata.wfl`: candidates by date + total, checked by the marker; nothing is saved when none matches. |
-| KE09 | Reception amounts/date independent of Windows + the site's error box | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE09-receptie-noua-format-site-si-eroare.md` | `DdfSendInputs.CulturaSite` (no user overrides), date typed `zz.ll.aaaa`, `MesajEroare` from `.alert.alert-error`; K-BOT shows the CAB-xxxx text and links nothing. |
-| KE10 | One new reception for several ticked invoices | GATA pe cod, nerulat, nevazut | `SLICE-KE10-o-receptie-noua-pentru-mai-multe-facturi.md` | button «Recepție nouă» in `PrimiteListaPage`; `PrimiteView.ReceptieMultipla.vb`; `KeLegaForm.FixeazaReceptiaNoua` (replaced by KE11: one window for all the ticked invoices). |
-| KE11 | The reception window rebuilt on the operator's mock-up: ticked invoices (tree), grouped lines with «Recepționată», angajamente grid with an empty row, data + amounts; one window for one or several invoices | GATA pe cod (build curat), **nevazut pe ecran**, nerulat | `SLICE-KE11-fereastra-receptiei-dupa-macheta.md` | `KeLegaForm` rewritten, `KeLegaFactura`, `PrimiteView.LinkManyAsync` (the three kinds of link + KE10 in one routine); «Ca la prima linie» / «Alt angajament…» removed. Decisions to confirm in the worklog (meaning of «Elimină asociere»). Group-row combo NOT done. Help 0000-101. |
-| KE12 | The reception window becomes a PAGE of the ribbon (E-Factura, «Recepții», after «Cumpărare», separator after it); mode chosen in the page; the work moved from `PrimiteView` into it; footer buttons of the «Recepții» view and the list's «Recepție nouă» removed | GATA pe cod (build curat), **nevazut pe ecran**, nerulat | `SLICE-KE12-receptii-pagina-in-ribbon.md` | `KeLegaForm` = page (`KBotShellForm`), `CommitAsync`; ribbon `SeparatorAfter`; machete `efactura_receptii`. «Scoate legătura» has no button now. Help 0000-102. |
-| KE12-02 | Tree of the page «Recepții»: search in the header, closed start, no tick on the supplier, newest first, invoices with value 0 left out | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-02-copac-cautare-si-ordine.md` | `KeLegaForm` tree; help 0000-103. |
-| KE12-03 | Tick boxes built into `KBotDataView` (`CheckBoxes` None / All / RowsOnly, `RowChecked`) and used for the products of the page «Recepții»: a cleared line has «Recepționată» 0 and locked | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-03-dgv-casete-de-bifat.md` | `KBotDataView.CheckBoxes.vb`; `KeLegaForm` (`gridLinii`); help 0000-104. |
-| KE12-04 | The view «Recepții» of a received invoice (Facturi Cumpărare and the view «E-Factura» of an angajament) shows the reception form instead of the table of links: without the choice of the invoice, and without the choice of the angajament in the view of an angajament | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-04-formularul-receptiei-in-vederi.md` | `KeLegaForm` (`Embed`, `ShowInvoice`, `Committed`); `PrimiteReceptiiPage`, `PrimiteView.Receptii.vb`, `EFacturaView`; help 0000-105. |
-| KE13 | The tree of the page «Recepții»: ALL the received invoices (the ones a reception covers are ticked, locked, dim; right click: «Desface asocierea»); options icon in the header with «Arată facturile asociate» (only the linked ones); total in the footer (hides the half row the viewport cut at the bottom) | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE13-arborele-receptiilor-toate-facturile.md` | `KeLegaForm` (`StyleLeaf`, `RefreshTree`, `BeginUnlink`), `AdvancedTreeControl` (`TreeItem.CheckLocked`), resource `settings`; uses the existing `RemoveKeLegaturaAsync`. Help 0000-108. |
-| KE14 | Page «Recepții»: an angajament with linked receptions cannot be taken off the list (button hidden); a press on a resolved invoice shows it read-only (products, only its reception, amounts) with «Elimină asociere» in the footer; the right-click menu of the tree is gone | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE14-factura-rezolvata-in-pagina-receptii.md` | `KeLegaForm` (`BeginView`, `EnterViewing`, `LeaveViewing`, `AngItem.Linked`). Help 0000-109. |
-| KE15 | Page «Recepții»: «Recepționată» read in the operator's regional format (a dot user's «77.49» was read as 7749); notices show sums in that format; the «not enough rest» message names the classifications where the reception DOES have rest | GATA pe cod (build curat), **nevazut pe ecran**; cauza raportului «rest 0,00» doar din cod | `SLICE-KE15-sume-in-formatul-ferestrei-si-rest-receptie.md` | `KeLegaForm` (`ReadNumber`, `Fmt`, `ReceptionFitProblem`). Help 0000-111. |
-| KE16 | Page «Recepții»: a button on a supplier of the tree (on hover) opens a modal that PROPOSES the link of the supplier's unlinked invoices to receptions, 1 invoice = 1 whole reception (value equal; ties by reception date = invoice date .. +2 days); the accountant ticks and presses «Leagă»; all written or none | GATA pe cod (build curat, Python compilat), **server nedeployat, nerulat pe date, nevazut pe ecran** | `SLICE-KE16-propuneri-legare-in-bloc.md` | `primite_ke_propuneri.py` (+ 2 routes), `KePropuneriForm`, `KeLegaForm` (`StyleSupplier`, `Tree_RightIconClicked`), `FacturaIcons.Link`. Help 0000-112. |
-| KE17 | «Propuneri» window of KE16: per invoice the angajament (list when several), a written sum «Recepție» (partial allowed, a reception may serve several invoices while its rest lasts), the receptions table in two groups (same value / not fully associated) with «Rămas»; the server answers with all receptions with rest, `aplica` takes IdClsf + Suma and re-checks | GATA pe cod (build curat, Python compilat), **server nedeployat, nerulat pe date, nevazut pe ecran** | `SLICE-KE17-propuneri-angajament-suma-si-grupuri.md` | `primite_ke_propuneri.py`, `EFacturaKe.vb`, `ApiClient.EFactura.Ke.vb`, `KePropuneriForm`. Lifts the KE16 «no partial reception». Help 0000-115. |
+| KE01 | Model, TVA, rute și contract | GATA pe cod (build curat, SQL nerulat, server nedeployat) | `SLICE-KE01-modelul-legaturii-si-calculele.md` | — |
+| KE01-02 | Fișa diagnostică a angajamentului | GATA pe cod, **SQL nerulat** | `SLICE-KE01-02-fisa-angajament.md` | — |
+| KE02 | Angajament și clasificații pe linii | GATA pe cod | `SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | — |
+| KE03 | Vederea Recepții | GATA pe cod | `SLICE-KE02-angajament-si-clasificatii-pe-linii.md#slice-KE03` | — |
+| KE04 | Legare la recepție existentă | GATA pe cod | `SLICE-KE04-legare-de-receptie-existenta.md` | — |
+| KE05 | Robot: recepție nouă | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE05-robotul-si-receptie-noua-in-forexe.md` | — |
+| KE06 | Recepție nouă din factură | GATA pe cod, nerulat | `SLICE-KE04-legare-de-receptie-existenta.md#slice-KE06` | — |
+| KE07 | Modificarea recepției | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE04-legare-de-receptie-existenta.md#slice-KE07` | — |
+| KE09 | Formate FOREXE și eroarea la salvare | GATA pe cod, **workflow nerulat pe site** | `SLICE-KE05-robotul-si-receptie-noua-in-forexe.md#slice-KE09` | — |
+| KE10 | Recepție comună mai multor facturi | GATA pe cod, nerulat, nevazut | `SLICE-KE04-legare-de-receptie-existenta.md#slice-KE10` | — |
+| KE11 | Fereastra comună după machetă și corecțiile ei | GATA pe cod (build curat), **nevazut pe ecran**, nerulat | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE11` | — |
+| KE12 | Pagina Recepții din ribbon | GATA pe cod (build curat), **nevazut pe ecran**, nerulat | `SLICE-KE12-receptii-pagina-in-ribbon.md` | — |
+| KE12-02 | Arbore, disponibil pe zi, navigare și corecții 05…07 | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE12-02` | — |
+| KE12-03 | Casete de bifat în KBotDataView | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-03-dgv-casete-de-bifat.md` | — |
+| KE12-04 | Formular încorporat în vederile facturii | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE12-04` | — |
+| KE13 | Toate facturile și blocarea celor acoperite | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE13` | — |
+| KE14 | Vizualizare doar citire și eliminarea asocierii | GATA pe cod (build curat), **nevazut pe ecran** | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE14` | — |
+| KE15 | Format regional și restul pe clasificație | GATA pe cod (build curat), **nevazut pe ecran**; cauza inițial dedusă din cod, apoi confirmată prin FX_FisaAngajament în actualizarea din 19.10 | `SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE15` | — |
+| KE16 | Propuneri de legare în bloc și context furnizor | GATA pe cod (build curat, Python compilat), **server nedeployat, nerulat pe date, nevazut pe ecran** | `SLICE-KE16-propuneri-legare-in-bloc.md` | — |
+| KE17 | Propuneri: angajament, sume parțiale și grupuri | GATA pe cod (build curat, Python compilat), **server nedeployat, nerulat pe date, nevazut pe ecran** | `SLICE-KE16-propuneri-legare-in-bloc.md#slice-KE17` | — |
 | KE08 | Payments and payment orders | **NEPORNIT** | — | The plan leaves it for after KE01-KE07 (the payment will tie to the reception, `FX_Receptii.SumaPlatita` already exists). |
 
-## Current focus
+## Initial readiness checkpoint — 16.10.2026
 
-- **KE01..KE07 are in code (16.10.2026).** To see them work, in this order: (1) run `sql/KE_01_primite_receptii.sql` on `AVACONT_SURSA` and sync it to the unit
-  databases, deploy the server; (2) log in as a `Contabil`, open an invoice of a supplier that has a DDF, «Receptii» > «Clasificatii pe linii...» >
-  «Leaga de receptie...» (touches nothing in FOREXE); (3) only then, on a TEST angajament and with the dry run on, «Receptie noua...» and
-  «Modifica receptia...» (the two workflows were never run on the real site).
-- Decisions of the operator (16.10.2026), all in the plan: amounts WITH VAT; storno = a normal reception with a negative sign; the classification
-  comes from `FX_Indicatori` and must exist before the reception (else a new reservation revision first); one supplier may have several angajamente
-  (the accountant may pick any); default reception type «Final»; only the role `Contabil` writes; no «draft» step.
+- **KE01..KE07 are in code (16.10.2026).** To see them work, in this order: (1) run `sql/KE_01_primite_receptii.sql` on `AVACONT_SURSA` and sync it to the unit databases, deploy the server; (2) log in as a `Contabil`, open an invoice of a supplier that has a DDF, «Receptii» > «Clasificatii pe linii...» > «Leaga de receptie...» (touches nothing in FOREXE); (3) only then, on a TEST angajament and with the dry run on, «Receptie noua...» and «Modifica receptia...» (the two workflows were never run on the real site).
+- Decisions of the operator (16.10.2026), all in the plan: amounts WITH VAT; storno = a normal reception with a negative sign; the classification comes from `FX_Indicatori` and must exist before the reception (else a new reservation revision first); one supplier may have several angajamente (the accountant may pick any); default reception type «Final»; only the role `Contabil` writes; no «draft» step.
 
-## Open threads
+## Open threads from the initial checkpoint
 
-- The two workflows (`Receptie Noua`, `Receptie Modificata`) must be run once on a test angajament: selectors, the value format of the indicator
-  field (assumed «1.380,00»), a possible confirmation after «Salveaza», the success element.
+- The two workflows (`Receptie Noua`, `Receptie Modificata`) must be run once on a test angajament: selectors, the value format of the indicator field (assumed «1.380,00»), a possible confirmation after «Salveaza», the success element.
 - Reception pictures for the ALOP file (guide p.21-22) are not taken by the robot (only by the hand-made path).
 - Two receptions of one day with the same total and no K-BOT marker cannot be told apart by the site's list (the first is taken); the `RangZi` tie-break of the plan was not built (operator 16.10.2026: the marker `(IDRH; IDR)` identifies what K-BOT writes, the day does not matter; `RangZi` is already stamped by the download if it is ever needed for old receptions).
 - KE06: «one reception per day on an angajament» is an OPTIONAL setting (`KeBlockSameDayReception`, off by default, «Setari > Aplicatie»), checked in `KeLegaForm`.

@@ -1,7 +1,6 @@
 # SLICE-ADE0-02 — contractul calculelor ADECHIT
 
-Referință obligatorie: [mdl_Situatie](ACCESS_SOURCES/Modules/mdl_Situatie.bas.txt),
-interogările și tipurile Access asociate. Data analizei: 07.10.2026.
+Referință obligatorie: [mdl_Situatie](ACCESS_SOURCES/Modules/mdl_Situatie.bas.txt), interogările și tipurile Access asociate. Data analizei: 07.10.2026.
 **Acesta este un contract extras static, nu o implementare și nu o probă de paritate.**
 Nu schimbăm formulele. Necunoscutele se verifică pe rezultate Access înainte de acceptare.
 
@@ -15,11 +14,7 @@ Nu schimbăm formulele. Necunoscutele se verifică pe rezultate Access înainte 
 | CalculSituatieDebitori_Buget | Nu s-a găsit apel extern în export | Variantă păstrată ca referință, nu amestecată cu 2021 |
 | PreiaDetalii | Numai varianta anterioară | Include și BonuriF, spre deosebire de qExplicatie din 2021 |
 
-Semnătura 2021 primește `grp`, `sav`, `tIDL`. Corpul **nu folosește grp sau tIDL**.
-Luna efectivă este `Forms!Prezenta!IDL`; grupa este `Forms!Prezenta!IDG`, selectată numai
-când `sav=False` și `Forms!Prezenta!Rapoarte!TGP=False`. La `sav=True` grupa este `*`.
-API-ul web va primi contextul explicit, validat pe sesiune/unitate, fără dependențe de UI
-în serviciul de calcul. Nu va interpreta automat argumentul tIDL ca luna de calcul.
+Semnătura 2021 primește `grp`, `sav`, `tIDL`. Corpul **nu folosește grp sau tIDL**. Luna efectivă este `Forms!Prezenta!IDL`; grupa este `Forms!Prezenta!IDG`, selectată numai când `sav=False` și `Forms!Prezenta!Rapoarte!TGP=False`. La `sav=True` grupa este `*`. API-ul web va primi contextul explicit, validat pe sesiune/unitate, fără dependențe de UI în serviciul de calcul. Nu va interpreta automat argumentul tIDL ca luna de calcul.
 
 ## 2. Ordinea exactă a fazelor
 
@@ -37,28 +32,18 @@ API-ul web va primi contextul explicit, validat pe sesiune/unitate, fără depen
 | 9 | [Salvare_Lunara](ACCESS_SOURCES/queries/Salvare_Lunara.sql), numai sav=True | INSERT în SS_Buget |
 | 10 | CommitTrans / rezultat True | Pe eroare: Rollback / rezultat False |
 
-În web rezultatele intermediare sunt izolate per cerere/conexiune; nu golim un tabel
-comun tuturor utilizatorilor. Păstrăm fazele și efectul conversiilor la fiecare scriere.
-Salvare_Lunara este append fără filtru de deduplicare în SQL; API-ul va avea protecție
-la executarea dublă a închiderii, fără dublarea snapshoturilor.
+În web rezultatele intermediare sunt izolate per cerere/conexiune; nu golim un tabel comun tuturor utilizatorilor. Păstrăm fazele și efectul conversiilor la fiecare scriere. Salvare_Lunara este append fără filtru de deduplicare în SQL; API-ul va avea protecție la executarea dublă a închiderii, fără dublarea snapshoturilor.
 
 ## 3. qPrezenta — populația și sumele lunii
 
-- Populația pornește de la Prezenta, legată de Platitori, LunaD și **Grupe prin Prezenta.IDG**.
-  Nu se filtrează Plecat=False; Plecat este copiat în rezultat. O persoană fără rând
-  Prezenta în luna cerută nu apare automat în situație, chiar dacă are sold anterior.
+- Populația pornește de la Prezenta, legată de Platitori, LunaD și **Grupe prin Prezenta.IDG**. Nu se filtrează Plecat=False; Plecat este copiat în rezultat. O persoană fără rând Prezenta în luna cerută nu apare automat în situație, chiar dacă are sold anterior.
 - `xPlati = SELECT * FROM Plati WHERE Anulata=False`, legat prin IDZ.
 - `Plata = SUM(IIf(TIP="2" AND Anulata=False, xPlati.Plata, 0))`.
-- `Plati = SUM(IIf(TIP<>"2", xPlati.Plata, 0))`. Nu presupunem TIP=1 pentru toate
-  datele istorice; NULL nu este automat echivalent cu „diferit de 2”.
-- Retur: întâi SUM(Suma) pe `(IDP, IDZ, IDL, Anulat)` cu Anulat=False, apoi legare numai
-  prin IDZ și `CDbl(Nz(Suma,0))`. Acest retur nu este însumat încă o dată peste plăți.
-- ValoareContract și ValoareTotala se citesc din Prezenta; funcția nu recalculează
-  taxele și nu aplică reduceri. Numele/grupa/educatorul vin din rândurile legate acum.
-- Agregarea și gruparea exacte rămân cele din SQL; eventuale IDZ inconsistente sau
-  joinuri care multiplică rândurile se raportează la migrare, nu se ascund prin DISTINCT.
-- Filtrul folosește LIKE pe grupă și IDL; în web reprezentăm explicit „toate grupele”
-  și luna aleasă, fără a primi expresii SQL de la browser.
+- `Plati = SUM(IIf(TIP<>"2", xPlati.Plata, 0))`. Nu presupunem TIP=1 pentru toate datele istorice; NULL nu este automat echivalent cu „diferit de 2”.
+- Retur: întâi SUM(Suma) pe `(IDP, IDZ, IDL, Anulat)` cu Anulat=False, apoi legare numai prin IDZ și `CDbl(Nz(Suma,0))`. Acest retur nu este însumat încă o dată peste plăți.
+- ValoareContract și ValoareTotala se citesc din Prezenta; funcția nu recalculează taxele și nu aplică reduceri. Numele/grupa/educatorul vin din rândurile legate acum.
+- Agregarea și gruparea exacte rămân cele din SQL; eventuale IDZ inconsistente sau joinuri care multiplică rândurile se raportează la migrare, nu se ascund prin DISTINCT.
+- Filtrul folosește LIKE pe grupă și IDL; în web reprezentăm explicit „toate grupele” și luna aleasă, fără a primi expresii SQL de la browser.
 
 ## 4. qSolduri și Update_Solduri
 
@@ -74,19 +59,13 @@ SID = B dacă B > 0, altfel 0
 SIC = abs(B) dacă B < 0, altfel 0
 ```
 
-UNION ALL și agregarea pe IDP preced RIGHT JOIN la Platitori. qSolduri aplică Nz
-componentelor, astfel încât și persoanele fără mișcare primesc rezultatul zero.
-Nu se folosesc ValoareTotala, SS_Buget sau COMP pentru acest sold istoric.
+UNION ALL și agregarea pe IDP preced RIGHT JOIN la Platitori. qSolduri aplică Nz componentelor, astfel încât și persoanele fără mișcare primesc rezultatul zero. Nu se folosesc ValoareTotala, SS_Buget sau COMP pentru acest sold istoric.
 
-Update_Solduri atribuie `SoldInitial=Nz(Solduri_Lunare.Sold,0)`, SID și SIC din tabelul
-intermediar către câmpurile țintei. **Solduri_Lunare are Double, iar ținta are Long**
-pentru SoldInitial/SID/SIC. Conversia de aici precedă calculele următoare.
+Update_Solduri atribuie `SoldInitial=Nz(Solduri_Lunare.Sold,0)`, SID și SIC din tabelul intermediar către câmpurile țintei. **Solduri_Lunare are Double, iar ținta are Long** pentru SoldInitial/SID/SIC. Conversia de aici precedă calculele următoare.
 
 ## 5. Update_Situatie și corecția finală
 
-Notație pe rândul Situatie_buget: `V=ValoareContract`, `A=Plata+Plati`.
-Expresiile de mai jos descriu ramurile pentru valori numerice nenule; nu autorizează
-înlocuirea propagării NULL din IIf/Add cu zero unde sursa nu are Nz.
+Notație pe rândul Situatie_buget: `V=ValoareContract`, `A=Plata+Plati`. Expresiile de mai jos descriu ramurile pentru valori numerice nenule; nu autorizează înlocuirea propagării NULL din IIf/Add cu zero unde sursa nu are Nz.
 
 ```text
 C0 = dacă SID > 0: 0
@@ -110,9 +89,7 @@ SFD = dacă F > 0: F, altfel 0
 SFC = dacă F < 0: abs(F), altfel 0
 ```
 
-Compensare citește SFD în **același UPDATE care îi atribuie noul SFD**. Nu presupunem
-ordinea evaluării ACE și nu traducem într-un UPDATE MariaDB mizând pe aceeași ordine.
-Urmează încă o operație, după scrierea și conversia SFD:
+Compensare citește SFD în **același UPDATE care îi atribuie noul SFD**. Nu presupunem ordinea evaluării ACE și nu traducem într-un UPDATE MariaDB mizând pe aceeași ordine. Urmează încă o operație, după scrierea și conversia SFD:
 
 ```text
 Update_Compensare:
@@ -120,38 +97,25 @@ Compensare = dacă SFD > 0 și Compensare > 0: SIC
              altfel: Compensare
 ```
 
-Nu plafonăm suplimentar Compensare la SIC, nu eliminăm această etapă și nu schimbăm
-Anticipat într-o formulă alternativă de sold. O simplificare matematică trebuie să
-treacă și cazurile de NULL, conversie și rotunjire, nu doar numere întregi pozitive.
+Nu plafonăm suplimentar Compensare la SIC, nu eliminăm această etapă și nu schimbăm Anticipat într-o formulă alternativă de sold. O simplificare matematică trebuie să treacă și cazurile de NULL, conversie și rotunjire, nu doar numere întregi pozitive.
 
 ## 6. Detalii și snapshot
 
 qExplicatie produce, cu UNION ALL:
 
-- `Ch:` + Numar, din Plati/Chitante, filtrând **Plati.Anulata=False**, nu separat
-  Chitante.Anulata; filtrează Plati.IDL la luna aleasă.
-- Primele două caractere din FelDoc + `.` + NrDoc, din Plati/AlteDoc, tot cu filtrul
-  de anulare al plății și luna plății.
+- `Ch:` + Numar, din Plati/Chitante, filtrând **Plati.Anulata=False**, nu separat Chitante.Anulata; filtrează Plati.IDL la luna aleasă.
+- Primele două caractere din FelDoc + `.` + NrDoc, din Plati/AlteDoc, tot cu filtrul de anulare al plății și luna plății.
 - `Re: ` + `Nz(NrDoc,'Fără nr.')`, din Retur cu Anulat=False și IDL selectat.
 
-ConcatRelated ignoră NULL, păstrează șirurile vide și separă cu `;`. Apelul nu transmite
-ORDER BY; qExplicatie ordonează doar pe IDZ. Ordinea documentelor în interiorul aceluiași
-IDZ nu este garantată de sursă. Nu pretindem o ordine alfabetică/numerică implicită.
-Rândurile fără explicații nu sunt atinse de INNER JOIN din Update_detalii.
+ConcatRelated ignoră NULL, păstrează șirurile vide și separă cu `;`. Apelul nu transmite ORDER BY; qExplicatie ordonează doar pe IDZ. Ordinea documentelor în interiorul aceluiași IDZ nu este garantată de sursă. Nu pretindem o ordine alfabetică/numerică implicită. Rândurile fără explicații nu sunt atinse de INNER JOIN din Update_detalii.
 
-Salvare_Lunara copiază 25 de câmpuri în SS_Buget, inclusiv valorile istorice Nume/CNP,
-Grupa/Educator, Plecat și Detalii. Nu copiază SoldInitial; acesta nu există în schema
-SS_Buget exportată. `Restanta` este copiată, deși lanțul 2021 nu îi atribuie explicit
-o valoare și tabela de lucru are default 0.
+Salvare_Lunara copiază 25 de câmpuri în SS_Buget, inclusiv valorile istorice Nume/CNP, Grupa/Educator, Plecat și Detalii. Nu copiază SoldInitial; acesta nu există în schema SS_Buget exportată. `Restanta` este copiată, deși lanțul 2021 nu îi atribuie explicit o valoare și tabela de lucru are default 0.
 
-PreiaDateSalvate golește rezultatul de lucru și copiază snapshoturile cu IDL exact,
-plus filtrul IDG dacă TGP=False. Nu recalculează după numele sau taxele actuale.
+PreiaDateSalvate golește rezultatul de lucru și copiază snapshoturile cu IDL exact, plus filtrul IDG dacă TGP=False. Nu recalculează după numele sau taxele actuale.
 
 ## 7. Încasări după închidere — confirmat de utilizator
 
-Permise în condițiile temporale ale Access, cu prezența blocată. Salvările Plati_*
-adună suma în câmpul corespunzător al SS_Buget: Plata / Plati / Retur.
-Apoi aplică C0 de mai sus, Anticipat și:
+Permise în condițiile temporale ale Access, cu prezența blocată. Salvările Plati_* adună suma în câmpul corespunzător al SS_Buget: Plata / Plati / Retur. Apoi aplică C0 de mai sus, Anticipat și:
 
 ```text
 F_snapshot = (SID − SIC) + ValoareContract − (Plata + Plati − Nz(Retur,0))
@@ -160,27 +124,15 @@ SFC = dacă F_snapshot < 0: abs(F_snapshot), altfel 0
 dacă Compensare > 0 și SIC > 0 și SFD > 0: Compensare = SIC
 ```
 
-Diferență de păstrat: aici formula pornește din SID−SIC, nu SoldInitial, și are Nz
-numai pentru Retur. Detalii se extinde cu `;Ch:`, `;VI:` sau `;Re:` + număr,
-deci textul nu este identic cu regenerarea qExplicatie pentru alte documente.
-Nu există în aceste blocuri atribuire nouă pentru ValoareTotala sau Restanta.
-La anulare nu am găsit actualizarea SS_Buget; cazul M02 din mapare este decis (08.10.2026).
+Diferență de păstrat: aici formula pornește din SID−SIC, nu SoldInitial, și are Nz numai pentru Retur. Detalii se extinde cu `;Ch:`, `;VI:` sau `;Re:` + număr, deci textul nu este identic cu regenerarea qExplicatie pentru alte documente. Nu există în aceste blocuri atribuire nouă pentru ValoareTotala sau Restanta. La anulare nu am găsit actualizarea SS_Buget; cazul M02 din mapare este decis (08.10.2026).
 
 ## 8. Ciclul lunar și variantele vechi
 
-În Prezenta.InchideLuna, IDL curent este marcat închis, apoi calculul 2021 salvează
-luna din formular; DeschideLuna creează luna următoare și preia copiii Plecat=False,
-cu setul Activ din ValoriTaxe și ZilePrezenta/ZileAbsenta=0. `tIDL=IDL-1` este doar
-o valoare transmisă nefolosită în funcția 2021. Condiția `tIDL<>0` există totuși în apelant.
+În Prezenta.InchideLuna, IDL curent este marcat închis, apoi calculul 2021 salvează luna din formular; DeschideLuna creează luna următoare și preia copiii Plecat=False, cu setul Activ din ValoriTaxe și ZilePrezenta/ZileAbsenta=0. `tIDL=IDL-1` este doar o valoare transmisă nefolosită în funcția 2021. Condiția `tIDL<>0` există totuși în apelant.
 
-Redeschiderea din arbore permite numai `MAX(LunaD.IDL)-1` și șterge Prezenta și LunaD
-pentru IDL+1, plus snapshotul lunii redeschise. Relațiile cascade pot extinde efectele
-ștergerii. Redeschiderea din Luni.bINC diferă (ultima lună, șterge snapshot IDL-1).
-Până la validarea traseului folosit, acestea nu se unifică într-o comandă web distructivă.
+Redeschiderea din arbore permite numai `MAX(LunaD.IDL)-1` și șterge Prezenta și LunaD pentru IDL+1, plus snapshotul lunii redeschise. Relațiile cascade pot extinde efectele ștergerii. Redeschiderea din Luni.bINC diferă (ultima lună, șterge snapshot IDL-1). Până la validarea traseului folosit, acestea nu se unifică într-o comandă web distructivă.
 
-Varianta CalculSituatieDebitori_Buget citește SQL din tabelul SQL, ID=1; în ramura sav
-nu filtrează plățile anulate, iar retururile nu sunt filtrate după Anulat în calculele
-sale istorice. Nu este echivalentă cu 2021. Conținutul SQL/ID=1 nu este exportat ca date.
+Varianta CalculSituatieDebitori_Buget citește SQL din tabelul SQL, ID=1; în ramura sav nu filtrează plățile anulate, iar retururile nu sunt filtrate după Anulat în calculele sale istorice. Nu este echivalentă cu 2021. Conținutul SQL/ID=1 nu este exportat ca date.
 
 ## 9. Conversii care fac parte din paritate
 
@@ -195,17 +147,11 @@ sale istorice. Nu este echivalentă cu 2021. Conținutul SQL/ID=1 nu este export
 | SS_Buget.SID/SIC/ValoareTotala/Plati/Retur/SFD/SFC | Long |
 | Retur.Suma și Chitante.Valoare | Double |
 
-Referințe: [Situatie_buget](ACCESS_SOURCES/tables/Situatie_buget.md),
-[Solduri_Lunare](ACCESS_SOURCES/tables/Solduri_Lunare.md),
-[SS_Buget](ACCESS_SOURCES/tables/SS_Buget.md), [Plati](ACCESS_SOURCES/tables/Plati.md).
-Nu presupunem că afișarea fără zecimale dovedește absența zecimalelor în date.
-Nu alegem DECIMAL/ROUND/trunchiere ca înlocuitor al conversiilor ACE fără probe.
-Conversia CInt din UI și conversia Long la stocare sunt două operații distincte.
+Referințe: [Situatie_buget](ACCESS_SOURCES/tables/Situatie_buget.md), [Solduri_Lunare](ACCESS_SOURCES/tables/Solduri_Lunare.md), [SS_Buget](ACCESS_SOURCES/tables/SS_Buget.md), [Plati](ACCESS_SOURCES/tables/Plati.md). Nu presupunem că afișarea fără zecimale dovedește absența zecimalelor în date. Nu alegem DECIMAL/ROUND/trunchiere ca înlocuitor al conversiilor ACE fără probe. Conversia CInt din UI și conversia Long la stocare sunt două operații distincte.
 
 ## 10. Setul de referință necesar pentru acceptare
 
-Pe o copie de date furnizată de utilizator se colectează intrările și rezultatele
-intermediare după fiecare query, plus SS_Buget și rapoartele. Codex nu accesează serverul.
+Pe o copie de date furnizată de utilizator se colectează intrările și rezultatele intermediare după fiecare query, plus SS_Buget și rapoartele. Codex nu accesează serverul.
 
 | Caz | Ce trebuie comparat |
 |---|---|
@@ -224,21 +170,14 @@ intermediare după fiecare query, plus SS_Buget și rapoartele. Codex nu accesea
 | Explicații goale/NULL, mai multe documente | Separatori, text și ordinea nedeterminată |
 | Repetarea închiderii / două cereri simultane | Un singur rezultat persistent și niciun cache împărțit |
 
-Acceptare: zero diferențe numerice neexplicate și nicio modificare de regulă ascunsă.
-Exemplele calculate numai în Python nu înlocuiesc rezultatele de referință Access.
+Acceptare: zero diferențe numerice neexplicate și nicio modificare de regulă ascunsă. Exemplele calculate numai în Python nu înlocuiesc rezultatele de referință Access.
 
 ## Actualizare de context — 09.10.2026, ADE6-18
 
-[Regulile finale ale cataloagelor](UTILIZARE_WEB.md) completează interfața și
-persistența, fără să declare formulele de mai sus validate prin paritate:
+[Regulile finale ale cataloagelor](UTILIZARE_WEB.md) completează interfața și persistența, fără să declare formulele de mai sus validate prin paritate:
 
-- DeLa/PanaLa din catalogul taxelor sunt perioade lunare nullable la migrare.
-  Importul păstrează IDV istoric și nu înlocuiește taxa veche cu taxa activă nouă.
-- Activarea unui plătitor dezactivează ceilalți ai aceluiași copil; afișarea I
-  inversată nu schimbă sensul lui Activ în date sau documentele deja emise.
-- M06 este decis: mutarea individuală păstrează lunile închise și scrie jurnalul;
-  educatorii au perioade, iar copiii plecați cu sold rămân în grupa specială.
-  Transferul lot și compensarea: implementate, TESTAT, RULAT, PUBLICAT.
+- DeLa/PanaLa din catalogul taxelor sunt perioade lunare nullable la migrare. Importul păstrează IDV istoric și nu înlocuiește taxa veche cu taxa activă nouă.
+- Activarea unui plătitor dezactivează ceilalți ai aceluiași copil; afișarea I inversată nu schimbă sensul lui Activ în date sau documentele deja emise.
+- M06 este decis: mutarea individuală păstrează lunile închise și scrie jurnalul; educatorii au perioade, iar copiii plecați cu sold rămân în grupa specială. Transferul lot și compensarea: implementate, TESTAT, RULAT, PUBLICAT.
 
-ADE6-07–17 sunt TESTAT, RULAT, PUBLICAT. Datele și rezultatele
-intermediare Access necesare parității, precum și validarea MariaDB/server: confirmate de operator, 23.10.2026.
+ADE6-07–17 sunt TESTAT, RULAT, PUBLICAT. Datele și rezultatele intermediare Access necesare parității, precum și validarea MariaDB/server: confirmate de operator, 23.10.2026.

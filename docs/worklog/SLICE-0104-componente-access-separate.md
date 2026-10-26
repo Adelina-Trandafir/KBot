@@ -1,7 +1,10 @@
 # SLICE-0104 — Componentele Access separate de aplicația principală; pachet «cu Access» / «fără Access»
 
-Cererea operatorului (02.10.2026): Migratorul și comunicarea cu Access interesează DOAR clienții care folosesc și
-aplicația Access (VBA). Pachetul pentru clienții noi trebuie să le lipsească; cel pentru clienții cu Access le păstrează.
+[Separare](#slice-0104) · [Setări Access](#slice-0104-02) · [Defect la închidere](#inchidere-defect) · [Remediere și confirmarea operatorului](#inchidere-remediere). Checkpointurile „nerulat” preced confirmările din 03.10.2026; acestea nu certifică publicarea, actualizările reale, Migratorul sau «Trimite în Access».
+
+<a id="slice-0104"></a>
+
+Cererea operatorului (02.10.2026): Migratorul și comunicarea cu Access interesează DOAR clienții care folosesc și aplicația Access (VBA). Pachetul pentru clienții noi trebuie să le lipsească; cel pentru clienții cu Access le păstrează.
 
 ## What changed and why
 
@@ -60,15 +63,7 @@ aplicația Access (VBA). Pachetul pentru clienții noi trebuie să le lipsească
 
 ## Files touched
 
-PYTHON: `routes/access.py` (nou), `routes/update.py`, `main.py`.
-SQL: `sql/0104_setari_access.sql`, `sql/0104_setari_access_toate_bazele.sql` (noi).
-KBot.Common: `AccessBridge.vb` (nou: `IAccessBridge`, `AccessSendResult`, `AccessBridge`, `AccessFeature`), `ClientProfile.vb` (nou),
-`ServerSettings.vb` (`Access`), `KBot.Common.vbproj` (FileVersion).
-KBot.Api: `IAccessTypeApi.vb`, `AccessTypeApi.vb` (noi), `IUpdateApi.vb`, `UpdateApi.vb`.
-KBot.Access (proiect nou, în `KBot.sln`): `KBot.Access.vbproj`, `AccessBridgeImpl.vb`, `AccessBudgetSender.vb` (mutat din `KBot.App/Views/Nomenclatoare/`).
-KBot.App: `KBot.App.vbproj`, `Program.vb`, `LoginForm.vb` + `.Designer.vb` (`tmrAccess`), `Update/AppUpdateService.vb`,
-`Update/UpdateProgressForm.vb`, `Setari/SetariInfoView.vb`, `Views/Nomenclatoare/ClasificatiiForm.vb`.
-Scripturi: `publish-release.ps1`, `push-update.ps1`, `tools/KBotInstaller/KBot.iss`.
+PYTHON: `routes/access.py` (nou), `routes/update.py`, `main.py`. SQL: `sql/0104_setari_access.sql`, `sql/0104_setari_access_toate_bazele.sql` (noi). KBot.Common: `AccessBridge.vb` (nou: `IAccessBridge`, `AccessSendResult`, `AccessBridge`, `AccessFeature`), `ClientProfile.vb` (nou), `ServerSettings.vb` (`Access`), `KBot.Common.vbproj` (FileVersion). KBot.Api: `IAccessTypeApi.vb`, `AccessTypeApi.vb` (noi), `IUpdateApi.vb`, `UpdateApi.vb`. KBot.Access (proiect nou, în `KBot.sln`): `KBot.Access.vbproj`, `AccessBridgeImpl.vb`, `AccessBudgetSender.vb` (mutat din `KBot.App/Views/Nomenclatoare/`). KBot.App: `KBot.App.vbproj`, `Program.vb`, `LoginForm.vb` + `.Designer.vb` (`tmrAccess`), `Update/AppUpdateService.vb`, `Update/UpdateProgressForm.vb`, `Setari/SetariInfoView.vb`, `Views/Nomenclatoare/ClasificatiiForm.vb`. Scripturi: `publish-release.ps1`, `push-update.ps1`, `tools/KBotInstaller/KBot.iss`.
 
 ## Test results (verificat vs presupus)
 
@@ -102,6 +97,8 @@ Scripturi: `publish-release.ps1`, `push-update.ps1`, `tools/KBotInstaller/KBot.i
 
 ---
 
+<a id="slice-0104-02"></a>
+
 # SLICE-0104-02 — pagina «Access» în Setări; calea către `cale.accdb` din setări (02.10.2026)
 
 ## What changed and why
@@ -120,9 +117,7 @@ Scripturi: `publish-release.ps1`, `push-update.ps1`, `tools/KBotInstaller/KBot.i
    (registrul ține anul ca text; un parametru tipat ar ghici). Citirea merge pe fundal; o eroare se spune pe pagină, nu se aruncă.
 
 ## Files touched
-`KBot.Common/AppSettings.vb`, `KBot.Common/AccessBridge.vb`; `KBot.Access/AccessBudgetSender.vb`, `AccessBridgeImpl.vb`;
-`KBot.App/Setari/SetariAccessView.vb` + `.Designer.vb` (noi), `SetariForm.vb` + `.Designer.vb`; `KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb`.
-Ajutor / `NOUTATI.md`: neatinse, din cerința operatorului.
+`KBot.Common/AppSettings.vb`, `KBot.Common/AccessBridge.vb`; `KBot.Access/AccessBudgetSender.vb`, `AccessBridgeImpl.vb`; `KBot.App/Setari/SetariAccessView.vb` + `.Designer.vb` (noi), `SetariForm.vb` + `.Designer.vb`; `KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb`. Ajutor / `NOUTATI.md`: neatinse, din cerința operatorului.
 
 ## Test results
 - **Verificat:** `dotnet build src/KBot.App` (Debug, trage și `KBot.Access`) — 0 erori, 0 avertismente.
@@ -133,6 +128,8 @@ Ajutor / `NOUTATI.md`: neatinse, din cerința operatorului.
 - Pagina nu se actualizează singură când se schimbă anul / sursa cât timp e deschisă: «Reîncarcă» sau reintrarea pe pagină.
 - Coloanele grilei sunt cele opt cunoscute; o coloană în plus din `cai` nu se vede (grilele se declară în designer).
 - Un pachet «fără Access» nu are pagina deloc (nu are componenta); `AppSettings.AccessRegistryPath` rămâne totuși în `app_settings.json`, nefolosit.
+
+<a id="inchidere-defect"></a>
 
 ## 0104-02 finding — crash when K-BOT exits after the Access driver was used (03.10.2026)
 
@@ -148,6 +145,8 @@ Ajutor / `NOUTATI.md`: neatinse, din cerința operatorului.
 - **Not known:** whether a client with the standalone Access Database Engine (not Click-to-Run) crashes the same way.
 - **Option proposed:** end the process with `TerminateProcess` after K-BOT has finished its own shutdown, only when the Access driver was used (skips the Office detach).
   Not implemented yet.
+
+<a id="inchidere-remediere"></a>
 
 ## 0104-02 — the exit workaround and the test form (03.10.2026, after the finding above)
 
@@ -169,3 +168,5 @@ Ajutor / `NOUTATI.md`: neatinse, din cerința operatorului.
   Also verified the same way (`cdb_full_100120.log`): the full application, login, «Setări ▸ Access» opened (driver loaded), window closed -- no access violation, no crash event,
   nothing new in `harness_errors.log`.
   `KBot.Migrator` now calls `FastExit` too (`Program.vb`, `Finally`); built, **not run**. «Trimite în Access» not exercised.
+
+Reper suplimentar din registrul 0104: rămân de încercat pachetul `_noaccess` pe un PC curat (fără `Migrare\` și butonul «Trimite în Access»), o actualizare reală pentru fiecare categorie și absența fișierului mutat `AccessBudgetSender.vb` la vechea cale. Aceste probe nu sunt acoperite de confirmarea închiderii aplicației.

@@ -109,7 +109,7 @@ Livrat documentar: inventar 155 obiecte, matricea operațiilor, model persistent
 lanțul 2021 cu opt interogări, conversii și cazuri de referință; M01–M10 identificate.
 Acceptare documentară: fiecare obiect inventariat o dată, șapte cache-uri excluse,
 surse legate. Paritatea în execuție nu este demonstrată prin inspecție statică.
-Istoric: [worklog](../docs/worklog/SLICE-ADE0-02-mapare-access-web.md).
+Istoric: [worklog](../docs/worklog/SLICE-ADE0-01-plan-initial.md#slice-ADE0-02).
 
 ### SLICE-ADE0-03 — documentarea tuturor feliilor
 
@@ -352,83 +352,48 @@ componentelor KBot.Migrator, educatori pe perioade și istoric dedus.
 Build verificat; utilitarul și mapările: TESTAT, RULAT, PUBLICAT.
 Detalii: [worklog ADE5-04](../docs/worklog/SLICE-ADE5-04-ade-migrator.md).
 
+Confirmarea operatorului din 23.10.2026 (TESTAT, RULAT, PUBLICAT) și toate amendamentele migratorului sunt păstrate în [istoricul comun](../docs/worklog/SLICE-ADE5-04-ade-migrator.md); [utilizarea și jurnalele](ADE.Migrator/README.md) rămân în ghidul utilitarului. Următoarea subfelie după 14: ADE5-15.
+
 ### SLICE-ADE5-05 — oprire, jurnal și verificare invalidată la schimbarea intrărilor
 
-Implementat: oprirea scrierii înainte de COMMIT, așteptarea eliberării
-conexiunilor la închidere, progres pe tabel, SqlDumpWriter comun, hash MDB și
-reverificarea destinației. Schimbarea intrărilor cere o nouă verificare.
-Rezultatul COMMIT necunoscut este raportat fără promisiunea unei baze neschimbate.
-Build verificat; scenariile UI/MariaDB: TESTAT, RULAT, PUBLICAT. Continuare: ADE5-06.
-[Worklog](../docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md),
-[utilizare](ADE.Migrator/README.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-05).
 
 ### SLICE-ADE5-06 — jurnal în formular și motivele blocării
 
-Implementat: jurnal de operații/excepții în formular, încărcarea logului comun,
-starea permanentă a butonului și păstrarea erorii verificării. Preferințele locale
-nu blochează verificarea dacă nu pot fi salvate. Logul existent indică un timeout;
-conectarea și activarea după verificarea reală: TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-06-migrator-log-formular.md).
-Continuare: ADE5-07.
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-06).
 
 ### SLICE-ADE5-07 — DC destinație editabil
 
-Implementat: DC propus din Access într-o casetă editabilă; modificarea cere
-o nouă verificare. Verificarea, scrierea și chitanțele folosesc DC-ul ales, iar jurnalul
-păstrează separat identitatea sursei. Build curat; TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-07-migrator-dc-editabil.md).
-Următoarea subfelie liberă: ADE5-10.
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-07).
 
 ### SLICE-ADE5-08 — Alegerea grupei de plecați
 
-Migratorul bifează automat grupele al căror nume conține «pleca», fără diferență
-între litere mari/mici. Utilizatorul poate schimba bifa; alegerea se aplică înainte
-de construirea istoricului. Mai multe grupe bifate blochează verificarea/scrierea.
-Compilare reușită; TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-08-grupa-plecati.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-08).
 
 ### SLICE-ADE5-09 — CNP-ul copilului folosit și la părinte
 
-Opțiune implicit nebifată «CNP Copil = CNP Părinte»: la transfer copiază
-Platitori.CNP din Access în CNP_Platitor pentru plătitorii asociați prin IDP.
-Valorile goale nu suprascriu. Schimbarea opțiunii invalidează verificarea.
-Compilare reușită; transferul: TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-09-cnp-parinte.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-09).
 
 ### SLICE-ADE5-10 — log nou la lansare
 
-Logul comun anterior este arhivat, iar rularea începe cu un fișier nou și caseta
-goală. Încărcarea logului în formular este numai manuală. Erorile de pornire
-rămân raportate. Build curat; arhivarea/interfața: TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-10-log-nou-pornire.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-10).
 
 ### SLICE-ADE5-11 — CNP lipsă ca NULL
 
-Marcajele `FARA CNP` și `-1` devin SQL NULL în câmpurile CNP/CNP_Platitor,
-inclusiv în SS_Buget, înainte de copierea către părinte. Recunoașterea ignoră
-spațiile marginale și majusculele; restul valorilor se păstrează ca text.
-Conversiile sunt numărate în plan. Migrare: TESTAT, RULAT, PUBLICAT.
-[Worklog](../docs/worklog/SLICE-ADE5-11-cnp-lipsa-null.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-11).
+
 ### SLICE-ADE5-12 — referințe la taxe inexistente ca NULL
 
-LunaD.IDV și Prezenta.IDV fără corespondent în ValoriTaxe se importă ca NULL,
-cu numărul conversiilor în plan, fără blocaj și fără ștergerea rândurilor sursă.
-Referințele existente se păstrează și se remapează normal.
-[Worklog](../docs/worklog/SLICE-ADE5-12-taxe-lipsa-null.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-12).
+
 ### SLICE-ADE5-13 — cheile rândurilor generate
 
-Writerul citește cheia sursă pentru mapare numai din tabelele Access.
-Rândurile generate Grupe_Educator și Platitori_Istoric primesc IDGE/IDI de la
-MariaDB; nu mai apare KeyNotFoundException la căutarea cheii inexistente în plan.
-[Worklog](../docs/worklog/SLICE-ADE5-13-chei-randuri-generate.md).
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-13).
+
 ### SLICE-ADE5-14 — oprire fără excepție de anulare
 
-Oprirea solicitată verifică IsCancellationRequested, face rollback explicit
-în tranzacție și întoarce Nothing; formularul afișează oprirea fără a o confunda
-cu succesul. Erorile reale continuă să fie propagate. După trimiterea COMMIT,
-oprirea nu anulează importul.
-[Worklog](../docs/worklog/SLICE-ADE5-14-oprire-fara-exceptie.md).
-Următoarea subfelie liberă: ADE5-15.
+[Implementare, probe și limite](../docs/worklog/SLICE-ADE5-04-ade-migrator.md#slice-ADE5-14).
+
 
 ## Slice ADE6
 

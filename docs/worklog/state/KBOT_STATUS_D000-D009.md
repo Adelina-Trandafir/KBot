@@ -51,9 +51,50 @@ Familie `SLICE-Dnnn-nn`, stabilită de utilizator la 24.10.2026; separată de re
 | D001-43 | ComboBox într-un istoric; Note CAB și parțialele cu revizii explicite, registre scurte | Aplicat local; fără teste, commit sau push | [D001-43](../SLICE-D001-43-combo-si-istorice-desktop-cab.md) |
 | D001-44 | Două planuri cu paragrafe continue; conținut și structură integral păstrate | Aplicat local; fără teste, commit sau push | [D001-44](../SLICE-D001-44-paragrafe-continue-in-planuri.md) |
 | D001-45 | Bugete 0102/0108 reunite; 0109 absorbit în istoricul actualizării angajamentelor | Aplicat local; fără teste, commit sau push | [D001-45](../SLICE-D001-45-bugete-versiuni-si-actualizare-in-coada.md) |
+| D001-46 | 0105/0107 pe tema bugetului, 0106/0107 pe clic dreapta; Access cu confirmări delimitate | Aplicat local; fără teste, commit sau push | [D001-46](../SLICE-D001-46-istoric-bugete-arbore-si-access.md) |
+| D001-47 | 0097 într-un istoric cu șase etape; avansate și «Toate» delimitate cronologic | Aplicat local; fără teste, commit sau push | [D001-47](../SLICE-D001-47-corecturi-autentificare-si-perioade.md) |
+| D001-48 | Trei istorice pentru coadă, Extrase și partenerii DDF; revizii și limite delimitate | Aplicat local; fără teste, commit sau push | [D001-48](../SLICE-D001-48-coada-extrase-si-parteneri-ddf.md) |
+| D001-49 | Șase jurnale ajutor buget reunite; capturi, amendamente și lipsa 0000-42 delimitate | Aplicat local; fără teste, commit sau push | [D001-49](../SLICE-D001-49-istoric-ajutor-bugete.md) |
+| D001-50 | 19 etape ribbon reunite; rezultate/limite comune și trasabilitate ajutor păstrate | Aplicat local; fără teste, commit sau push | [D001-50](../SLICE-D001-50-ribbon-control-grupuri-si-comenzi.md) |
+| D001-51 | Pagini/modale și E-Factura grupate; compactul în istoria ribbonului, două ancore 0114-24 | Aplicat local; fără teste, commit sau push | [D001-51](../SLICE-D001-51-pagini-modale-si-corectii-efactura.md) |
+| D001-52 | Zece jurnale ajutor în două istorice; propuneri și loturi de capturi păstrate | Aplicat local; fără teste, commit sau push | [D001-52](../SLICE-D001-52-ajutor-ribbon-pagini-si-ferestre.md) |
+| D001-53 | Panoul și ajutorul reunite; registre, acțiuni, Jurnal/Istoric și E-Factura delimitate | Aplicat local; fără teste, commit sau push | [D001-53](../SLICE-D001-53-panou-lateral-si-machete-auxiliare.md) |
+| D001-54 | Pagina publică și autentificarea portalului în două istorice, cu probe delimitate | Aplicat local; fără teste, commit sau push | [D001-54](../SLICE-D001-54-pagina-publica-si-autentificare-portal.md) |
+| D001-55 | Vizualizare și administrare în două istorice; grila și cercetarea distincte | Aplicat local; fără teste, commit sau push | [D001-55](../SLICE-D001-55-portal-vizualizare-si-administrare.md) |
+| D001-56 | 0121: plan și șase etape reunite, cu dependențe și închidere condiționată | Aplicat local; fără teste, commit sau push | [D001-56](../SLICE-D001-56-furnizori-angajamente-dupa-codfiscal.md) |
+| D001-57 | 0122: analiză și patru etape reunite; confirmări pe o bază și ascundere delimitate | Aplicat local; fără teste, commit sau push | [D001-57](../SLICE-D001-57-identitate-furnizor-si-conversie-coduri.md) |
+| D001-58 | 0036 reunit; tooltip, umplere și DPI cu registre fără explicațiile repetate | Aplicat local; fără teste, commit sau push | [D001-58](../SLICE-D001-58-tema-scalare-si-controale.md) |
+| D001-59 | Istoric 0046/47 reunit; PDF, export și schema_sync cu registre scurte | Aplicat local; fără teste, commit sau push | [D001-59](../SLICE-D001-59-pdf-migrare-si-poarta-parintelui.md) |
+| D001-60 | E-Factura 01…05 în două istorice; plan cu amendamentele UM/token/autorizare | Aplicat local; fără teste, commit sau push | [D001-60](../SLICE-D001-60-efactura-model-import-si-token.md) |
+| D001-61 | Opt etape în trei istorice: server, emitere și datele unității; amendamente datate | Aplicat local; fără teste, commit sau push | [D001-61](../SLICE-D001-61-efactura-server-emisie-si-date-unitate.md) |
+| D001-62 | Șapte etape de facturi primite în două istorice, cu proba mesajelor delimitată | Aplicat local; fără teste, commit sau push | [D001-62](../SLICE-D001-62-efactura-primite-server-si-client.md) |
+| D001-63 | Zece etape primite în istoricele server/ecrane/popup, cu amendamente explicite | Aplicat local; fără teste, commit sau push | [D001-63](../SLICE-D001-63-efactura-primite-evolutie-si-popup.md) |
+| D001-64 | 20 de jurnale ajutor E-Factura în două istorice; coliziunea 0000-61 delimitată | Aplicat local; fără teste, commit sau push | [D001-64](../SLICE-D001-64-ajutor-efactura-emise-si-primite.md) |
+| D001-65 | 6 istorice integrate; net 5 fișiere retrase cu jurnalul lotului; limitele SQL, server, UI și incidentul Access păstrate | Aplicat local; fără teste, commit sau push | [D001-65](../SLICE-D001-65-efactura-lista-access-si-trimitere-vercon.md) |
+| D001-66 | Amendamente reunite în 3 istorice existente; 8 fișiere retrase, cu limitele etapelor păstrate | Aplicat local; fără teste, commit sau push | [D001-66](../SLICE-D001-66-ajutor-efactura-lista-si-vercon.md) |
+| D001-67 | KE03/06/07/09/10 și 00EF-39 integrate; checkpoint comun păstrat în KE01 | Aplicat local; fără teste, commit sau push | [D001-67](../SLICE-D001-67-receptii-model-clasificatii-legare-si-robot.md) |
+| D001-68 | 7 istorice integrate; registrul KE scurtat cu stările păstrate; fără execuții | Aplicat local; fără teste, commit sau push | [D001-68](../SLICE-D001-68-receptii-pagina-propuneri-si-checkpointuri.md) |
+| D001-69 | 13 jurnale retrase în istoricul 0000-83; capturile și verificările istorice păstrate | Aplicat local; fără teste, commit sau push | [D001-69](../SLICE-D001-69-ajutor-receptii-pagina-si-propuneri.md) |
+| D001-70 | 4 istorice retrase; confirmarea operatorului, limitele reparației și documentele semnate păstrate | Aplicat local; fără teste, commit sau push | [D001-70](../SLICE-D001-70-reparare-rezervari-program-si-ajutor.md) |
+| D001-71 | 2 istorice mari compactate; probele și corecțiile Adobe păstrate integral | Aplicat local; fără teste, commit sau push | [D001-71](../SLICE-D001-71-adobe-istorice-compactare-paragrafe.md) |
+| D001-72 | 2 istorice de controale compactate; fără schimbări de logică sau execuții | Aplicat local; fără teste, commit sau push | [D001-72](../SLICE-D001-72-designer-navlist-si-arbore-compactare.md) |
+| D001-73 | 2 istorice mari de migrare compactate; toate contractele și limitele păstrate | Aplicat local; fără teste, commit sau push | [D001-73](../SLICE-D001-73-migrare-http-si-directa-compactare.md) |
+| D001-74 | Istoricul 0070/0074 integrat în 0053; urmărirea paginii păstrată separat | Aplicat local; fără teste, commit sau push | [D001-74](../SLICE-D001-74-recorder-gazde-browser-si-urmarire.md) |
+| D001-75 | 2 istorice DataView compactate; toate contractele, etapele și probele păstrate | Aplicat local; fără teste, commit sau push | [D001-75](../SLICE-D001-75-dataview-contracte-si-filtrare-compactare.md) |
+| D001-76 | 13 jurnale retrase în două istorice; planul repetitiv scurtat, confirmările păstrate | Aplicat local; fără teste, commit sau push | [D001-76](../SLICE-D001-76-adechit-migrator-istoric-si-plan.md) |
+| D001-77 | 20 jurnale integrate; registrele păstrează confirmările, probele și numerotarea | Aplicat local; fără teste, commit sau push | [D001-77](../SLICE-D001-77-adechit-cataloage-prezenta-si-taxe.md) |
+| D001-78 | 14 istorice retrase; confirmări, drepturi, rapoarte și ancore VERCON păstrate | Aplicat local; fără teste, commit sau push | [D001-78](../SLICE-D001-78-adechit-ciclu-incasari-si-rapoarte.md) |
+| D001-79 | Portal AD11-01…05 într-un jurnal; ghid cu domeniile de validare distincte | Aplicat local; fără teste, commit sau push | [D001-79](../SLICE-D001-79-portal-parinti.md) |
+| D001-80 | Pagina/preview ADE1 și editarea ADE2 consolidate separat; checkpointul inițial păstrat | Aplicat local; fără teste, commit sau push | [D001-80](../SLICE-D001-80-pagina-preview-editare.md) |
+| D001-81 | Subunități: cinci etape într-un jurnal, ancore și trimiteri reparate | Aplicat local; fără teste, commit sau push | [D001-81](../SLICE-D001-81-subunitati-schema-api-predare.md) |
+| D001-82 | KBotAdmin: patru etape UI într-un jurnal; privilegii și clonare distincte | Aplicat local; fără teste, commit sau push | [D001-82](../SLICE-D001-82-kbotadmin-interfata-si-stari.md) |
+| D001-83 | Plan subunități compactat; drepturi/zile/ajutor păstrate distinct; AD10-11 indexat | Aplicat local; fără teste, commit sau push | [D001-83](../SLICE-D001-83-adechit-plan-si-continuari.md) |
+| D001-84 | ADE0: nouă etape în trei istorice, cronologie și decizii păstrate | Aplicat local; fără teste, commit sau push | [D001-84](../SLICE-D001-84-adechit-analiza-si-decizii.md) |
+| D001-85 | Contracte ADE distincte; inventar grupat după tratament identic, cu toate cele 155 de obiecte | Aplicat local; fără teste, commit sau push | [D001-85](../SLICE-D001-85-adechit-contracte-si-inventar.md) |
+| D001-86 | ME02: paragrafe compacte, cu etapele și operațiile neprobate păstrate | Aplicat local; fără teste, commit sau push | [D001-86](../SLICE-D001-86-copii-locale-istorice-compacte.md) |
 
 ### Continuare
 
 Se continuă consolidarea jurnalelor și statusurilor, inclusiv informația unică din jurnalul general VERCON; regulile, excepțiile și stările istorice se păstrează. Detaliile fiecărui lot sunt în worklog.
 
-Următoarea subfelie: **SLICE-D001-46**. Următorul număr principal documentar liber: **D002**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie: **SLICE-D001-87**. Următorul număr principal documentar liber: **D002**. Registrul numeric K-BOT rămâne neschimbat.

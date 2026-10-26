@@ -4,15 +4,15 @@ Convenție editorială (D001-04): marcajul **Confirmat 23.10** abreviază exclus
 
 ## Actualizare 19.10.2026 — loading imediat și blocarea generărilor simultane (ADE9-07)
 
-Loading-ul, blocarea per pagină, erorile, fișierele și publicarea comună sunt în [ADE9-07](docs/worklog/SLICE-ADE9-07-rapoarte-loading-blocare.md). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
+Loading-ul, blocarea per pagină, erorile, fișierele și publicarea comună sunt în [ADE9-07](docs/worklog/SLICE-ADE9-01-rapoarte.md#slice-ADE9-07). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
 
 ## Actualizare 19.10.2026 — feedback comun al butoanelor VERCON/ADECHIT (ADE9-06)
 
-Contractul efectelor, excepțiile pentru controalele integrate și fișierele de publicat împreună sunt în [ADE9-06](docs/worklog/SLICE-ADE9-06-butoane-stil-vercon.md). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
+Contractul efectelor, excepțiile pentru controalele integrate și fișierele de publicat împreună sunt în [ADE9-06](docs/worklog/SLICE-ADE9-01-rapoarte.md#slice-ADE9-06). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
 
 ## Actualizare 19.10.2026 — motor și previzualizare de rapoarte comune cu ADECHIT (ADE9-05)
 
-Motorul, adaptoarele VERCON/ADECHIT, limitele configurărilor și predarea sunt în [ADE9-05](docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md); API-ul comun este în [reporting/README](PYTHON/reporting/README.md). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
+Motorul, adaptoarele VERCON/ADECHIT, limitele configurărilor și predarea sunt în [ADE9-05](docs/worklog/SLICE-ADE9-01-rapoarte.md#slice-ADE9-05); API-ul comun este în [reporting/README](PYTHON/reporting/README.md). Stare consemnată: TESTAT, RULAT, PUBLICAT, confirmat de operator la 23.10.2026.
 
 ## Actualizare 19.10.2026 — Rapoarte: conturi direct în selecție și Selectează TOATE
 
@@ -763,7 +763,7 @@ Stare: **Confirmat 23.10**.
 
 ### 2026-10-19 — Butoanele rapoartelor în antet
 
-Detalii: [revizia 13](docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md#d001-12-antet-export), consolidate prin D001-12.
+Detalii: [revizia 13](docs/worklog/SLICE-ADE9-01-rapoarte.md#d001-12-antet-export), consolidate prin D001-12.
 
 ### 2026-10-19 — Tipografie uniformă în antetul rapoartelor
 
@@ -779,7 +779,7 @@ Detalii: [reviziile rapoartelor, etapa 8](docs/worklog/SLICE-VC08-03-rapoarte-ma
 
 ### 2026-10-19 — Aliniere și aspect meniu Export Raport
 
-Detalii: [revizia 14](docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md#d001-12-antet-export), consolidate prin D001-12.
+Detalii: [revizia 14](docs/worklog/SLICE-ADE9-01-rapoarte.md#d001-12-antet-export), consolidate prin D001-12.
 
 ### 2026-10-19 — Total general integrat în tabel, comun tuturor rapoartelor
 

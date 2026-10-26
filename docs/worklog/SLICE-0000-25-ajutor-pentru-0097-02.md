@@ -1,6 +1,6 @@
 # SLICE-0000-25 — the help for slice 0097-02
 
-The second pass of the corrective slice (`SLICE-0097-02-corective.md`, operator, 01.10.2026)
+The second pass of the corrective slice ([0097-02](SLICE-0097-corective.md#slice-0097-02), operator, 01.10.2026)
 changed what the operator sees in seven places. This is the help for them, written in the same
 task (rule of 30.09.2026), every section tagged `0097-02`.
 

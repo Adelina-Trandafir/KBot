@@ -1,8 +1,6 @@
 # K-BOT — STATUS, felia ME02 (copii locale criptate, cu istoric / «time-machine»)
 
-Cererea operatorului, 20.10.2026: copii periodice, **pe PC-ul ei**, ale bazelor de pe server, într-un format propriu (conținutul nu se vede),
-cu posibilitatea unui istoric pe momente. Doar bazele de unitate (nu `AVACONT_COMUN`, `AVACONT_SURSA`, `000_DEMO`). Planul: [ME02_PLAN.md](../../ME02_PLAN.md).
-Numărul ME02 este o presupunere a mea (nu exista), nu o hotărâre a operatorului.
+Cererea operatorului, 20.10.2026: copii periodice, **pe PC-ul ei**, ale bazelor de pe server, într-un format propriu (conținutul nu se vede), cu posibilitatea unui istoric pe momente. Doar bazele de unitate (nu `AVACONT_COMUN`, `AVACONT_SURSA`, `000_DEMO`). Planul: [ME02_PLAN.md](../../ME02_PLAN.md). Numărul ME02 este o presupunere a mea (nu exista), nu o hotărâre a operatorului.
 
 ## Registry rows
 
@@ -19,23 +17,17 @@ Numărul ME02 este o presupunere a mea (nu exista), nu o hotărâre a operatorul
 
 ## Hotărâri ale operatorului, 20.10.2026 (după predare)
 
-Cheia copiilor se păstrează pe PC (DPAPI; aplicația nu pleacă de pe acest calculator). **Nu** se face copie automată de noapte: la deschiderea KBotAdmin, dacă azi nu există
-copie locală, programul întreabă dacă se face acum. Copiile făcute de mână se păstrează fără limită de timp și se șterg doar de mână («Șterge»). Regulile 14 zile / 8 săptămâni /
-12 luni rămân (se aplică doar copiilor „periodic”, care nu mai apar). Cele de mai jos (ME02-05, -08) sunt corectate în acest sens.
-`PYTHON/docs/TIMEZONES.md` (orele serverului în UTC) a fost citit: verbele mele nu depind de fus (valorile de control nu folosesc ore salvate cu fus); `admin_backup.py` și `admin_snapshot.py`
-au fost deja trecute pe `utils.clock` de cealaltă lucrare; lista «Copii server» arată acum ora PC-ului.
+Cheia copiilor se păstrează pe PC (DPAPI; aplicația nu pleacă de pe acest calculator). **Nu** se face copie automată de noapte: la deschiderea KBotAdmin, dacă azi nu există copie locală, programul întreabă dacă se face acum. Copiile făcute de mână se păstrează fără limită de timp și se șterg doar de mână («Șterge»). Regulile 14 zile / 8 săptămâni / 12 luni rămân (se aplică doar copiilor „periodic”, care nu mai apar). Cele de mai jos (ME02-05, -08) sunt corectate în acest sens. `PYTHON/docs/TIMEZONES.md` (orele serverului în UTC) a fost citit: verbele mele nu depind de fus (valorile de control nu folosesc ore salvate cu fus); `admin_backup.py` și `admin_snapshot.py` au fost deja trecute pe `utils.clock` de cealaltă lucrare; lista «Copii server» arată acum ora PC-ului.
 
 ## Închis (operator, 21.10.2026)
 
-Operatorul a încercat pagina «Copii locale» pe serverul real după corecția permisiunilor SFTP (`ChangePermissions(…, 600)`): prima copie și a doua (cu lista copiei precedente trimisă serverului) merg, spune ea.
-Felia e dată ca închisă. Rămân neîncercate de ea, din câte știu eu: Verifică, Export SQL, Istoricul unui rând, Curăță, Șterge și mesajul de la deschidere; nimic din ele n-a fost executat de mine.
+Operatorul a încercat pagina «Copii locale» pe serverul real după corecția permisiunilor SFTP (`ChangePermissions(…, 600)`): prima copie și a doua (cu lista copiei precedente trimisă serverului) merg, spune ea. Felia e dată ca închisă. Rămân neîncercate de ea, din câte știu eu: Verifică, Export SQL, Istoricul unui rând, Curăță, Șterge și mesajul de la deschidere; nimic din ele n-a fost executat de mine.
 
 ## Idee amânată (operator, 21.10.2026): copii locale pe PC-urile userilor
 
 Ideea: o copie a bazei unității pe fiecare PC de user, cel mult una pe zi la deschiderea programului, cu păstrare 7 zile / câte una pe lună / câte una pe an, pe care operatorul o poate citi și restaura cu o aplicație proprie.
 **RENUNȚAT pentru acum, rămâne pe viitor.** Ce ar cere (analizat, nepornit): o rută nouă de server care citește baza unității userului (programul K-BOT nu are acces direct la bază, doar prin API), motorul mutat din KBotAdmin
-într-o parte comună (KBotAdmin nu are voie la clienți) cu doar scrierea la clienți, criptare cu cheie dublă (PC-ul doar încuie, operatorul descuie) ca userul să nu poată citi copiile, timp lung de cerere la Gunicorn și limitare,
-rută legată de unitate și scrisă în Jurnal, mesajul de la deschidere, ajutorul K-BOT (0000-NN) și notele de versiune. Restaurarea doar în bază de probă. Nu se face nimic din asta până nu se reia.
+într-o parte comună (KBotAdmin nu are voie la clienți) cu doar scrierea la clienți, criptare cu cheie dublă (PC-ul doar încuie, operatorul descuie) ca userul să nu poată citi copiile, timp lung de cerere la Gunicorn și limitare, rută legată de unitate și scrisă în Jurnal, mesajul de la deschidere, ajutorul K-BOT (0000-NN) și notele de versiune. Restaurarea doar în bază de probă. Nu se face nimic din asta până nu se reia.
 
 ## Open threads
 

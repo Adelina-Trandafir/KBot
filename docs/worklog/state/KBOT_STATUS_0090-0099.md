@@ -76,8 +76,8 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0094 | **`KBotComboBox` rescris pe `Control` (nu mai moștenește `ComboBox`) și folosit ca editor de combo în `KBotDataView` (cererea operatorului, 29.09.2026)** — fără `DataSource`/`DisplayMember` (elementele în `Items`, afișate prin `CaptionSelector` sau `ToString()`); textul tastat într-o casetă fără chenar așezată ca textul pictat (rețeta 0085); O SINGURĂ listă: săgeata o deschide cu toate elementele, tastarea (`FindAsYouType`) cu cele potrivite; se închide la un clic în afara ei; bară de derulare trasă cu mouse-ul. În grilă: editorul de combo stă pe o linie, centrat ca editorul de text, peste textul celulei; săgeata celulei (pictată de grilă) deschide lista sub celulă; textul liber rămâne la `CellValidating` | GATA pe cod (build Controls/App/Migrator/Theming/Updater **0 / 0**) / **nevăzut pe ecran, fără teste** | `SLICE-0094-combo-own-control-grid-editor.md` | 14 fișiere Designer curățate de liniile ComboBox (`DrawMode`, `DropDownStyle`, `FlatStyle`, `IntegralHeight`, `ItemHeight`, `FormattingEnabled`). An/SS și unitatea de la login: `Items` în loc de `DataSource`. Controls 1.57.0.0, DevHarness 1.0.29.0. |
-| 0094-02 | **Editorul DDF: pagina «Parteneri» (cererea operatorului, 01.10.2026)** — `DdfEditForm` primește a cincea pagină, «Parteneri», aliniată la dreapta în bara de pagini (`KBotNavAlign.Far`), cu toți partenerii asociați documentului (`DdfEditPartnersPage` + lista comună `DdfPartnersView`). Combo-ul din antet rămâne și rămâne partenerul PRINCIPAL (majoritatea documentelor au doar unul): îl alegi → devine primul rând al listei («Principal»), schimbarea lui îl înlocuiește pe cel de dinainte, debifarea «Partener asociat» îl scoate; ceilalți rămân. Salvarea trimite lista întreagă și serverul face `FX_DDF_Parteneri` să corespundă (pasul 3b al tranzacției); citirea reviziei / generarea o aduc, iar «Adaugă rezervare» o copiază. Doar partenerul principal se scrie pe rândurile din A și B. | GATA pe cod (build curat, nerulat, nevăzut; SQL-ul și serverul nedeployate) | `SLICE-0094-02-ddfedit-pagina-parteneri.md` | Tabela, rutele și controlul comun: 0084/02. Ajutor + turul editorului: 0000-28. |
-| 0094-03 | **Editorul DDF: pagina «Parteneri» legată de bifa «Partener asociat» (corectiv, 04.10.2026)** — doar în `DdfEditForm`: fila e vizibilă doar când `PartAng` e bifat (la deschidere și la fiecare schimbare a bifei); dacă era fila deschisă și bifa se șterge, editorul trece la «Secțiunea A». Ajutorul (`editor.md`, `tur-ddf-editor.md`) etichetat 0094-03. | GATA pe cod (build curat, nevăzut) | `SLICE-0094-03-ddfedit-parteneri-legata-de-bifa.md` | Partenerii non-principali rămân în document și se salvează chiar dacă fila e ascunsă (de decis). |
+| 0094-02 | Editor DDF — partener principal și listă asociată | GATA pe cod (build curat, nerulat, nevăzut; SQL-ul și serverul nedeployate) | [0094-02](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-02) | Tabela/rutele/controlul: 0084-02; ajutor 0000-28. Contracte și ordine în jurnal. |
+| 0094-03 | Editor DDF — fila Parteneri urmează bifa | GATA pe cod (build curat, nevăzut) | [0094-03](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-03) | Partenerii non-principali ascunși rămân salvați; decizia este deschisă. |
 
 ### Current focus
 
@@ -95,7 +95,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 - **0094 — cod rămas fără folosință:** ajutoarele pentru EDIT-ul nativ din
   `KBot.Theming/Interop/NativeMethods.vb` (`GetComboEditBounds`, `SetComboEditMargins`,
   `SetComboEditBounds`, `GetComboEditTextTop`, `GetComboEditLineHeight`, `ApplyControlColors`).
-- **0094-02 — nimic văzut pe ecran și nimic deployat.** Ordinea: `sql/0084_02_fx_ddf_parteneri.sql` pe toate bazele de unitate (+ `AVACONT_SURSA`), apoi `ddf_parteneri.py`, `ddf_edit.py`, `__init__.py` pe VPS. Până la DDL, o salvare care adaugă un AL DOILEA partener e refuzată cu numele fișierului; cu partenerul principal singur merge ca înainte. Neverificat: alinierea la dreapta a intrării din bara de pagini la alte DPI-uri și culorile paginii în temă.
+- **0094-02:** [ordine de instalare și probe UI](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-02); nimic văzut/deployat la checkpoint.
 - **0094 — diferențe de comportament:** rotița peste un combo ÎNCHIS nu mai schimbă selecția;
   `Items.Clear()` pe un combo editabil păstrează textul tastat.
 
@@ -108,12 +108,11 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0095 | **Istoric: nod rădăcină «Tot istoricul» (cererea operatorului, 29.09.2026)** — arborele Istoric are acum un nivel rădăcină, ca celelalte arbori (Extrase: «Toate extrasele»); lunile stau sub el, zilele sub luni. Clic pe rădăcină = ce face vederea la încărcare: toate filtrele golite, toate rândurile FX_Istoric ale angajamentului | GATA pe cod (build KBot.App **0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0095-istoric-tree-root.md` | Doar `IstoricView.vb`: `NodPerioada.Tot()` + `EsteTot`. Numărul din dreapta rădăcinii = toate rândurile, inclusiv cele fără dată (până acum fără nod în arbore). Clicul pe rădăcină renunță și la intervalul cerut de FOREXE (0073). FileVersion KBot.App nebumped (îl cere `push-update.ps1`). |
-| 0095-02 | **Extrase: iconița din stânga subsolului arborelui descarcă din nou direct extrasele SNM; fereastra «Extrase de cont» se deschide din «Meniu → Extrase» (nemodală, una singură); `btnMeniu` ia lățimea lui `navViews` când bara se strânge (doar iconița) (cererea operatorului, 29.09.2026)** | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0095-02-extrase-menu-footer-meniu-width.md` | Operatorul a numit-o «slice 95», deja ocupată de Istoric → sub-pas 0095-02. `KbotForm.Extrase.vb` (subsol + `DeschideExtrasele`), `KbotForm.Nomenclatoare.vb` (meniu + lățime), `KbotForm.CabNotes.vb` (`_menuMarked`), intrarea de meniu din Designer (a operatorului). Coloana 0 din `tlyHeader` urmează bara abia după prima strângere. FileVersion KBot.App nebumped. |
+| 0095-02 | Extrase — subsolul, fereastra și lățimea meniului | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | [0095-02](../SLICE-0096-extrase-display-menu.md#slice-0095-02) | Subpas separat de Istoric 0095; ipoteze, limite și FileVersion în jurnal. |
 
 ### Open threads
 
-- **0095-02 — nevăzut pe ecran.** Butonul strâns (doar iconiță), alinierea la 1px după
-  desfășurare (239 vs 240 logic); tooltipul lui `btnMeniu` nu pomenește Extrasele.
+- **0095-02:** [butonul strâns, alinierea și tooltipul](../SLICE-0096-extrase-display-menu.md#slice-0095-02); nevăzute.
 
 ---
 
@@ -123,12 +122,11 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0096 | **Extrase: meniu de afișare în antetul arborelui (cererea operatorului, 29.09.2026)** — iconița de setări din dreapta antetului arborelui (vederea Extrase și fereastra «Extrase de cont») deschide două rânduri: «Arată antet + operații» (ca până acum) și «Arată operații + detalii» (sus operațiunile FX_Extrase ale perioadei alese în arbore, jos detaliul celei selectate; «Data bancă» primește grupare doar în acest mod, «Plătitor» și «CUI» filtrare + grupare) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0096-extrase-display-menu.md` | Doar `ExtrasePanel.vb` + o iconiță/tooltip în `ExtrasePanel.Designer.vb`. Presupuneri: «Data» = `o_data_banca`; gruparea e OFERITĂ în meniul coloanei, nu aplicată automat; alegerea nu se salvează în `AppSettings`. FileVersion KBot.App nebumped. |
+| 0096 | Extrase — antet/operații sau operații/detalii | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | [0096](../SLICE-0096-extrase-display-menu.md#slice-0096) | Ipotezele privind data, gruparea și păstrarea alegerii sunt în etapă. |
 
 ### Open threads
 
-- **0096 — nevăzut pe ecran.** De confirmat cu operatorul: gruparea pe dată oferită vs. aplicată
-  automat la intrarea în mod; dacă alegerea modului trebuie ținută minte între sesiuni.
+- **0096:** [ipotezele de afișare și alegere a modului](../SLICE-0096-extrase-display-menu.md#slice-0096); de confirmat cu operatorul.
 
 ---
 
@@ -138,34 +136,17 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0097 | **Corecturi (cererea operatorului, 30.09.2026)** — ORD/DDF: fără mesaj după ștergere (doar `mesaje_operator.log`); rădăcini «Toate ordonanțările» / «Toate reviziile»; ștergere pe lună și pe toate (refuzată dacă e ceva semnat); document cu măcar o semnătură = fără meniu (DDF: rămâne doar «Trimite»). KbotForm: eticheta barei strânse măsurată ca la desen (DPI); «Note corecție» doar cu note (`AreNoteCab`). Bara de titlu: selector de unitate (≥ 2 unități, `/api/auth/my-units` + `/api/auth/switch-unit`). Setări → Autentificare: reafișarea ferestrei de autentificare (oprire doar cu opțiuni avansate; 10–60 min altfel) + reautentificare tăcută. Login: «Ține minte parola până la repornirea calculatorului» (doar cu opțiuni avansate; DPAPI în cheie HKCU volatilă) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste; server nedeployat** | `SLICE-0097-corective.md` | Server: `routes/forexe/tree.py` + `routes/auth/auth.py` (gitignored) de copiat pe VPS. Cauza etichetei înguste = ipoteză (nereprodusă). La schimbarea unității sesiunea FOREXE se închide singură (refuz doar cu o operație FOREXE în curs și pe unități cu rol «Director»). FileVersion-urile nebumped. |
-| 0097-02 | **Corecturi, a doua trecere (cererea operatorului, 01.10.2026)** — (1) turul ferestrei principale pornește singur la fiecare pornire, până e văzut până la capăt sau se bifează «Nu mai arăta turul inițial» pe bula lui (`AppSettings.ShowInitialTour`, `HelpService.StartInitialTour`; revenire din Setări › Aplicație); (2) în pagina FOREXE, întrebările «Sunteți sigur...?» fără nimic de completat primesc singure «Da» (`ForexeWatch.js` §15; doar cât lucrează operatorul); (3) MENIU: dosarul «Adăugare angajamente...» = «Angajament nou» + «Creează angajament în FOREXE» (deselectează arborele, deschide vederea «Browser FOREXE», rulează `adlop - Angajament Nou.wfl` până la formularul gol; pagina predată pe formular pornește urmărirea «Angajament nou»); (4) mini-meniul K-BOT din pagină după `AppSettings.ForexeShowPageMenu` (Setări › FOREXE); (5) fereastra de conectare fără «?»; (6) `AppSettings.StartMaximized` (Setări › Aplicație): fereastra principală pornește mărită; (7) recepție nouă pe o dată care are deja recepție: întrebare Da / Nu în pagină, datele citite din lista de pe pagină (`ForexeWatch.js` §17) | GATA pe cod (build KBot.App **0 avertismente, 0 erori**; `node --check` pe script) / **nerulat, nevăzut pe ecran, fără teste** | `SLICE-0097-02-corective.md` | Ajutorul: 0000-25. KBot.Common 1.5.9.0, KBot.Forexe 1.0.19.0; KBot.App la `push-update.ps1`. Ferestrele de confirmare FOREXE și câmpul datei n-au fost văzute: regulile sunt scrise din ce spune deja depozitul despre ele. |
-| 0097-03 | **An și Sursă/Sector în bara de titlu (cererea operatorului, 01.10.2026)** — `KBotCaptionBar` are trei selectoare pictate pe nume (`unit`, `year`, `ss`; `KBotCaptionBar.Selectors.vb` înlocuiește `UnitSelector.vb`); `cboAn` / `cboSs` / `lblAn` / `lblSs` scoase din `KbotForm` (`tlyHeader` = MENIU + operator); `KbotForm.Periods.vb` citește și scrie bara; selectorul «Sursă/Sector» se ascunde la sortarea după dată; fără perioade, selectoarele lipsesc din bară (înainte: combo dezactivat) | GATA pe cod (build **0 avertismente, 0 erori**) / **nevăzut pe ecran**, nimic rulat | `SLICE-0097-03-an-si-sector-in-bara-de-titlu.md` | Ajutor: 0000-33. Captura `fereastra-zone` de refăcut; fără tooltip pe selectoare. |
-| 0097-04 | **«Ține minte parola» fără opțiuni avansate (cererea operatorului, 19.10.2026)** — `AppSettings.RememberPasswordInEffect` = `RememberPasswordOption` (implicit bifat); bifa din Setări › Autentificare e mereu vizibilă, dezactivată fără avansate (doar schimbarea cere avansate). Ajutor: `autentificare.md`, `setari.md`. Worklog: `SLICE-0097-04-bifa-tine-minte-parola-fara-avansat.md` | GATA pe cod (build curat, netestat, nevăzut) |
-| 0097-05 | **Opțiunile avansate doar permit schimbarea, nu blochează aplicarea (cererea operatorului, 23.10.2026)** — `AppSettings.ReloginPromptInEffect` = `ReloginPrompt` (bifa «Reafișează fereastra de autentificare…» nu mai e forțată pe «bifat» fără avansate); `ReloginMinutesInEffect` fără limitare 10..60 (lista din Setări conține mereu valoarea în vigoare); `KbotForm.HelpCaptureModeOn` = `HelpCaptureMode`. Ajutor: `setari.md`. Worklog: `SLICE-0097-05-avansate-doar-permit-schimbarea.md` | GATA pe cod (build curat, netestat, nevăzut) |
-| 0097-06 | **Sursa «Toate» în bara de titlu + mesaj de perioadă pe tot aplicația (cererea operatorului, 25.10.2026)** — selectorul Sursă/Sector are «Toate» (cheia `*`) și nu se mai ascunde la sortare (doar cât e aleasă o grupă); la schimbarea sortării (nume sau dată) trece pe «Toate» și arborele se reîncarcă, iar o sursă aleasă după aceea aduce doar angajamentele ei; `SessionContext.PeriodChanged` + `ToateSursele` (sesiunea păstrează sursa și programul concrete; «Toate» nu se salvează ca `LastSS`); `ForexeController` întreabă `ToateSursele`. Ajutor: `fereastra.md`, `tur-fereastra.md`, `forexe/lista.md`. Worklog: `SLICE-0097-06-sursa-toate-si-mesaj-perioada.md` | GATA pe cod (build curat, netestat, nevăzut) |
+| 0097 | Corecturi inițiale: meniuri, unități și autentificare | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste; server nedeployat** | [0097](../SLICE-0097-corective.md#slice-0097) | Regulile inițiale pentru avansate sunt amendate în 0097-04/05; probele și limitele rămân pe etapă. |
+| 0097-02 | A doua trecere: tur, browser și recepție pe aceeași dată | GATA pe cod (build KBot.App **0 avertismente, 0 erori**; `node --check` pe script) / **nerulat, nevăzut pe ecran, fără teste** | [0097-02](../SLICE-0097-corective.md#slice-0097-02) | Contracte, ajutor, probe și limite în etapa legată. |
+| 0097-03 | Anul și Sursă/Sector în bara de titlu | GATA pe cod (build **0 avertismente, 0 erori**) / **nevăzut pe ecran**, nimic rulat | [0097-03](../SLICE-0097-corective.md#slice-0097-03) | Regula de ascundere la sortare este amendată în 0097-06; ajutor 0000-33, captura restantă în jurnal. |
+| 0097-04 | Parola memorată: aplicare independentă de avansate | GATA pe cod (build curat, netestat, nevăzut) | [0097-04](../SLICE-0097-corective.md#slice-0097-04) | Contracte, ajutor, probe și limite în etapa legată. |
+| 0097-05 | Avansatele permit schimbarea setărilor salvate | GATA pe cod (build curat, netestat, nevăzut) | [0097-05](../SLICE-0097-corective.md#slice-0097-05) | Contracte, ajutor, probe și limite în etapa legată. |
+| 0097-06 | Sursa «Toate» și evenimentul global de perioadă | GATA pe cod (build curat, netestat, nevăzut) | [0097-06](../SLICE-0097-corective.md#slice-0097-06) | Contracte, ajutor, probe și limite în etapa legată. |
 
 ### Open threads
 
-- **0097 — de deployat pe VPS:** `tree.py` (`AreNoteCab`) și `auth.py` (`my-units`, `switch-unit`).
-  Fără ele vederea «Note corecție» nu mai apare deloc, iar selectorul de unitate nu apare.
-- **0097 — `PYTHON/tests/test_forexe_tree.py`** trebuie adus la al 23-lea câmp și la interogarea
-  `information_schema` (neatins: fără teste).
-- **0097 — eticheta barei strânse:** ipoteză (măsurare pe DC-ul ferestrei + `WM_DPICHANGED`);
-  de confirmat pe 100% / 125%.
-- **0097 — schimbarea unității:** ferestrele secundare deschise nu se închid; deconectarea FOREXE
-  de la schimbare (`IForexeDisconnect`) nerulată — vederea «Browser FOREXE» andocată, nevăzută.
-- **0097-02 — nimic rulat.** De văzut pe ecran: turul la pornire + bifa de pe bulă, dosarul din
-  MENIU, cele două pagini de Setări, pornirea mărită, bara ferestrei de conectare.
-- **0097-02 — întrebările de confirmare FOREXE (punctul 2):** regula (`.modal` + «sigur» + fără
-  câmpuri + buton de «da» și de «nu») e scrisă fără ca ferestrele reale să fi fost văzute. De
-  verificat pe un PC de client: fiecare fereastră confirmată lasă pe consolă linia `[Urmărire]
-  întrebare FOREXE confirmată de K-BOT …`; una care rămâne pe ecran = regula trebuie lărgită.
-- **0097-02 — recepția pe aceeași dată (punctul 7):** întrebarea de la «Salvează» e sigură; cea de
-  la ieșirea din câmpul datei depinde de evenimentele pe care le dă selectorul de dată FOREXE
-  (nevăzut). Doar recepții NOI; o listă de recepții paginată s-ar citi doar cât e pe pagină.
-- **0097-02 — `adlop - Angajament Nou.wfl` nerulat**; «Creează angajament în FOREXE» nu trece prin
-  coada robotului (ca ceilalți apelanți direcți ai vederii «Browser FOREXE», vezi 0098).
+- **0097:** [server, testul vechi, eticheta DPI și schimbarea unității](../SLICE-0097-corective.md#slice-0097); încă neîncercate la checkpoint.
+- **0097-02:** [probele vizuale, confirmările și recepția pe aceeași dată](../SLICE-0097-corective.md#slice-0097-02); workflow-ul nou nerulat și apelul direct din afara cozii sunt consemnate acolo.
 
 ---
 
@@ -175,24 +156,17 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0098 | **Coada robotului + poarta serverului (cererea operatorului, 30.09.2026)** — cât rulează robotul FOREXE nicio cerere nu pleacă spre / nu vine de la server (`ServerGate` + `ServerGateHandler` pe `HttpClient`; cererile AȘTEAPTĂ, nu sunt refuzate; timeout-ul numărat după poartă; trec doar Excel, marcajul și actualizarea). Toate operațiile care pornesc robotul din shell merg printr-o coadă unică (`RobotQueue`): în ordinea clicurilor, una câte una, cu ingestia și fereastra «Asociere» în aceeași sarcină (deci niciodată două «Asociere»); dubluri refuzate; operațiunea prinsă în pagina FOREXE intră în fața cozii. Fereastra «Coada robotului» (pauză / scoate / golește / oprește curenta) + butonul «Coadă N» din subsol. `LoadTreeAsync` citește selecția DUPĂ cerere | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | `SLICE-0098-robot-queue-server-gate.md` | Vederile așteaptă pe durata unei descărcări (regula cerută). Ajutorul neactualizat (vezi 0000). FileVersion-urile nebumped. |
+| 0098 | Coada robotului și poarta serverului — inițial | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | [0098](../SLICE-0098-robot-queue-server-gate.md#slice-0098) | Blocarea citirilor este înlocuită în 0098-02; ajutorul și versiunile la checkpoint sunt în jurnal. |
 
 ### Open threads
 
-- **0098 — nimic rulat:** poarta, ordinea cozii, fereastra, butonul din subsol — toate nevăzute.
-- **0098 — vederile așteaptă:** rezolvat în 0098-02 (citirile trec, doar scrierile sunt ținute).
-- **0098-02 — bancul cozii nerulat** (DevHarness → FOREXE).
-- **0098 — fereastra cozii e dezactivată** cât stă deschisă o casetă modală a sarcinii curente
-  («Asociere»); pauza / scoaterea nu se pot apăsa atunci.
-- **0098 — apelanții direcți** (Conectare, vederea «Browser FOREXE») nu trec prin coadă; coada îi
-  așteaptă înaintea fiecărei sarcini, dar o suprapunere în primele secunde ale unei sarcini tot dă
-  «Rulează deja o operație FOREXE».
+- **0098/02:** [poarta, ordinea, fereastra, modalele și apelanții direcți](../SLICE-0098-robot-queue-server-gate.md); nimic rulat/văzut la checkpoint. Bancul 02 rămâne nerulat; numai scrierile sunt ținute după amendament.
 
 ### 0098-02
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0098-02 | **Citirile trec poarta + bancul cozii (cererea operatorului, 30.09.2026)** — fereastra cozii se deschide singură DOAR peste o acțiune FOREXE (`RobotQueue.ActionCount`); `ServerGate.IsRead`: GET / HEAD / OPTIONS trec mereu, doar scrierile așteaptă cât rulează robotul (vederile nu mai îngheață pe durata unei descărcări). DevHarness → FOREXE: «Coada robotului + poarta serverului (FOREXE și server simulate)» — coada, poarta, controlerul și fereastra cozii REALE peste un robot simulat (`FakeForexeRunner`, răspunsuri în forma «Prelucrare Completa») și un server simulat (`FakeServerHandler`); scenarii: la rând, dublură, operațiune în față, robot în afara cozii, GET / POST manual, «Asociere» simulată, eșec, oprire | GATA pe cod (build Debug + Release **0 avertismente, 0 erori**) / **bancul nerulat** | `SLICE-0098-02-reads-pass-queue-bench.md` | Bancul scrie fișierele obișnuite ale descărcării pe codurile PROBA-*; «Asociere» simulată = casetă KBotMessage (ajunge și în `mesaje_operator.log`). |
+| 0098-02 | Citirile trec, banc simulat și deschidere peste o acțiune | GATA pe cod (build Debug + Release **0 avertismente, 0 erori**) / **bancul nerulat** | [0098-02](../SLICE-0098-robot-queue-server-gate.md#slice-0098-02) | Bancul scrie fișiere PROBA-* și mesaje [SIMULARE]; nu a fost rulat. |
 
 ---
 

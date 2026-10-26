@@ -5,40 +5,29 @@ Operator request, 10.10.2026: an administration program for the OWNER only. Desk
 
 ## Registry row
 
-| Slice | What | Status |
-|---|---|---|
-| ME01 | KBotAdmin: databases tree (minus AVACONT_SURSA / AVACONT_COMUN), accounts tree, pages (commands, schema difference, sync, rights per account, coloured logs, activity journal, visits, server, backups with SQL viewer, new-account requests, one-time queries with history, login reset, Publicare = the file push of AvacontPush); server half `PYTHON/routes/admin_cli/`; ADECHIT rights per account; web pages `/operator` and `/portal` Administrare removed; Classic theme fixed; tray; icon | DONE and in use by the operator (11.10.2026): publish, logs, backups, one-time queries, file push exercised; approval of requests, ADECHIT rights and the schema sync destructive path still unverified here. |
+| Slice | What | Status | Worklog |
+|---|---|---|---|
+| ME01 | KBotAdmin: databases tree (minus AVACONT_SURSA / AVACONT_COMUN), accounts tree, pages (commands, schema difference, sync, rights per account, coloured logs, activity journal, visits, server, backups with SQL viewer, new-account requests, one-time queries with history, login reset, Publicare = the file push of AvacontPush); server half `PYTHON/routes/admin_cli/`; ADECHIT rights per account; web pages `/operator` and `/portal` Administrare removed; Classic theme fixed; tray; icon | DONE and in use by the operator (11.10.2026): publish, logs, backups, one-time queries, file push exercised; approval of requests, ADECHIT rights and the schema sync destructive path still unverified here. | [ME01](../SLICE-ME01-admin-desktop.md#slice-ME01) |
+| ME01-02 | Machete verticale pentru drepturi ADECHIT/VERCON | 12.10.2026: compilat curat; nerulat | [ME01-02](../SLICE-ME01-admin-desktop.md#slice-ME01-02) |
+| ME01-03 | Politica și sincronizarea privilegiilor MariaDB | 19.10.2026: implementat în surse; nerulat, fără build/teste/SQL | [ME01-03](../SLICE-ME01-03-privilegii-mariadb.md) |
+| ME01-04 | Clonare DEMO cu identitatea destinației păstrată | 20.10.2026: compilat curat; nerulat pe server | [ME01-04](../SLICE-ME01-04-clonare-demo.md) |
+| ME01-05 | Ribbon, ButtonFit, KBotSqlBox și ajustări vizuale | 20.10.2026: compilat curat; nerulat | [ME01-05](../SLICE-ME01-admin-desktop.md#slice-ME01-05) |
+| ME01-06 | Arbore cu bife și două moduri, KBotCheckBox, diagnostic tray | Compilat curat la 20.10; completări până la 21.10 nerulate pe ecran; bife încă nefolosite de pagini | [ME01-06](../SLICE-ME01-admin-desktop.md#slice-ME01-06) |
 
 ## Current focus
 
 - Written 10-11.10.2026. Builds clean (`KBotAdmin\KBotAdmin.vbproj`, `KBot.Controls`, `KBot.Theming` 1.14.0.0). The operator runs it from `_Admin\` (`publish-admin.ps1`).
 - Deploy after any change to `PYTHON/routes/admin_cli/`: push `PYTHON/` with AvacontPush (or the Publicare page) and restart the service.
-- Fixed on 11.10.2026 after use: a dropped SSH session ("Nu există conexiune la server") is now reconnected (+ keep-alive);
-  untimed gunicorn log lines no longer share the file time; confirmations no longer hide behind the main window.
+- Fixed on 11.10.2026 after use: a dropped SSH session ("Nu există conexiune la server") is now reconnected (+ keep-alive); untimed gunicorn log lines no longer share the file time; confirmations no longer hide behind the main window.
 
 ## Open threads
 
-- **Role to create on the server:** `AD_EDIT_INCHISA` (operation `edit_closed`). KBotAdmin shows a button on the rights
-  page when it is missing; or run `sql/ME01_01_rol_editare_luna_inchisa.sql`.
-- **ADECHIT checks not exercised:** `save_attendance` in a closed month (last closed only, snapshot rewritten with the new
-  days / contract value / balance), the per-account cancel right (the `AllowCancelDocuments` setting is no longer read),
-  the web grid (`app.js` `canEditDays`, `canCancelDocument`). `PYTHON/tests` not touched and not run (may still carry the
-  old `CANCEL_OFF` expectation). `ADECHIT/tools/preview.py` still seeds `AllowCancelDocuments` (harmless, now unused);
-  the preview user needs the `cancel` operation to see the cancel button.
-- **Approving a request** (`request-approve`) runs `provizionare.approve` from a command line under root, with the same
-  server-wide lock as before; it needs a quiet moment (do not restart gunicorn while it runs). Never run on a real request yet.
-- **Not built (deliberately):** restoring a backup into a scratch database, forced closing of sessions, password reset /
-  account locking at MariaDB level. The portal admin page and `/operator` were removed.
+- **Role to create on the server:** `AD_EDIT_INCHISA` (operation `edit_closed`). KBotAdmin shows a button on the rights page when it is missing; or run `sql/ME01_01_rol_editare_luna_inchisa.sql`.
+- **ADECHIT checks not exercised:** `save_attendance` in a closed month (last closed only, snapshot rewritten with the new days / contract value / balance), the per-account cancel right (the `AllowCancelDocuments` setting is no longer read), the web grid (`app.js` `canEditDays`, `canCancelDocument`). `PYTHON/tests` not touched and not run (may still carry the old `CANCEL_OFF` expectation). `ADECHIT/tools/preview.py` still seeds `AllowCancelDocuments` (harmless, now unused); the preview user needs the `cancel` operation to see the cancel button.
+- **Approving a request** (`request-approve`) runs `provizionare.approve` from a command line under root, with the same server-wide lock as before; it needs a quiet moment (do not restart gunicorn while it runs). Never run on a real request yet.
+- **Not built (deliberately):** restoring a backup into a scratch database, forced closing of sessions, password reset / account locking at MariaDB level. The portal admin page and `/operator` were removed.
 - Host-key pinning: first connect asks to remember the fingerprint (`admin_settings.json`, git-ignored).
 - Backups: `backups --db` filters by name (dumps) / by text (schema plans); `backup-text` returns the first 2 MB of one file. The one-time history (`once-history`) reads the `Interogari_Unice` ledger of AVACONT_SURSA and of every unit.
 - Logs page: `access.log` is read only on request (last 6 MB) and is not part of «all files» (4xx would swamp the counts).
-- `PYTHON/tests` and `ADECHIT/tools/preview.py` still untouched (see ADECHIT note above).
 - Help: none (KBotAdmin is not for clients). `KBot.Controls` gained `KBotLogBox` (FileVersion 1.65.0.0); no K-BOT window changed.
 
-- **ME01-02 (12.10.2026):** drepturile ADECHIT si VERCON nu mai sunt coloane in DGV; doua butoane deschid RightsForm (DGV cu drepturile unul sub altul, Explicatie + Bifa, click pe titlul Bifei = bifeaza/debifeaza tot). Compilat curat, nerulat. [worklog](../SLICE-ME01-02-drepturi-adechit-vercon-macheta.md)
-
-- **ME01-04 (20.10.2026):** pagina nouă «Clonare DEMO»: golește 000_DEMO și clonează în el baza aleasă în arbore; DC devine 000_DEMO peste tot, codul fiscal al sursei devine cel al lui 000_DEMO (EF_Furnizor.CodFiscal păstrat din 000_DEMO). Copie de siguranță întâi, apoi totul într-o singură tranzacție. Server: `routes/admin_cli/admin_demo.py` (verbele `demo-clone-plan`, `demo-clone`) — de împins cu PYTHON. Compilat curat (KBotAdmin, 0 avertismente), NERULAT pe server. [worklog](../SLICE-ME01-04-clonare-demo.md)
-
-- **ME01-05 (20.10.2026):** ribbon în loc de bara de navigare (5 file, iconițe din stocul K-BOT), pornește maximizat, un singur arbore (baze → conturile lor), «Diferență» scoasă, explicație sub rezultatul comenzilor, butoanele de drepturi care deschid ferestre mutate în ribbon, butoane cu tot textul (`ButtonFit`), antete Loguri/Jurnal la aceeași înălțime, bazele lipsă ascunse la sincronizare, `KBotSqlBox` pentru SQL-ul rapoartelor VERCON. Compilat curat (0 avertismente), NERULAT. [worklog](../SLICE-ME01-05-ribbon-si-ajustari-vizuale.md)
-
-- **ME01-06 (20.10.2026):** bară «Baze de date» / «Utilizatori» lipită deasupra arborelui (utilizatorii ca rădăcini în al doilea mod), bife pe rânduri, fără titlu, «Selectează tot» dedesubt; `KBotCheckBox` nou în `KBot.Controls`; caseta «Ce face» din Comenzi dublă ca înălțime, font +2 pt. Compilat curat, NERULAT; bifele nu sunt folosite încă de nicio pagină. [worklog](../SLICE-ME01-06-arbore-cu-bife-si-moduri.md)

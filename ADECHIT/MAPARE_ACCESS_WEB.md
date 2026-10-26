@@ -1,38 +1,16 @@
 # SLICE-ADE0-02 — maparea Access → web
 
-Data: 07.10.2026. Analiză statică a exportului, fără rulare Access sau MariaDB.
-Deciziile proiectului: [ADECHIT_STATUS](../ADECHIT_STATUS.md).
-Calculele: [contractul de paritate](CONTRACT_CALCULE.md).
-Actualizare web 09.10.2026, ADE6-18: [regulile finale](UTILIZARE_WEB.md) și
-[deciziile aprobate](DECIZII_DESCHISE.md) completează analiza statică inițială.
-Constatările despre Access de mai jos nu sunt instrucțiuni de implementare noi.
-Acoperirea obiectelor: [inventarul complet](INVENTAR_OBIECTE.md).
+Data: 07.10.2026. Analiză statică a exportului, fără rulare Access sau MariaDB. Deciziile proiectului: [ADECHIT_STATUS](../ADECHIT_STATUS.md). Calculele: [contractul de paritate](CONTRACT_CALCULE.md). Actualizare web 09.10.2026, ADE6-18: [regulile finale](UTILIZARE_WEB.md) și [deciziile aprobate](DECIZII_DESCHISE.md) completează analiza statică inițială. Constatările despre Access de mai jos nu sunt instrucțiuni de implementare noi. Acoperirea obiectelor: [inventarul complet](INVENTAR_OBIECTE.md).
 
-„Apel găsit” înseamnă că există cod sau legătură de formular în export, nu că traseul
-a fost executat în această analiză. „Fără apel găsit” nu dovedește că un obiect este
-inutil: meniurile/configurările externe și deschiderea manuală nu sunt complet vizibile.
-Nicio constatare de aici nu autorizează ștergerea datelor originale.
+„Apel găsit” înseamnă că există cod sau legătură de formular în export, nu că traseul a fost executat în această analiză. „Fără apel găsit” nu dovedește că un obiect este inutil: meniurile/configurările externe și deschiderea manuală nu sunt complet vizibile. Nicio constatare de aici nu autorizează ștergerea datelor originale.
 
 ## 1. Intrarea și navigarea
 
-- [Autoexec](ACCESS_SOURCES/Macros/Autoexec.txt) deschide formularul ADECHIT când
-  funcția `autoexec()` întoarce True. Conținutul funcției și al ribbonului încărcat
-  din afara traseului inspectat nu este considerat verificat integral.
-- [ADECHIT.INTRARE_Click](ACCESS_SOURCES/Forms/ADECHIT.txt) selectează fișierul unității,
-  reface legăturile de tabele, pornește mecanisme de backup și o corecție RunOnce.
-  Web folosește alegerea unității și conexiunile existente; nu reproduce linkarea MDB,
-  backupul FTP din client sau corecția istorică automată „Copii plecati 2021”.
-- [basRibbonCallbacks](ACCESS_SOURCES/Modules/basRibbonCallbacks.bas.txt) conține
-  deschideri către Platitori2016, Prezenta, Config_Taxe, Config_Unit și Config_Mail.
-  Ultimele două nu devin automat pagini web: datele unității se refolosesc, mailul
-  de business rămâne de stabilit; mailul de autentificare comun rămâne reutilizat.
-- [Prezenta](ACCESS_SOURCES/Forms/Prezenta.txt) găzduiește Luni, Grupe_PR,
-  Prezenta_sub_buget, Plati_chitante, Rapoarte și subTreeView. Schimbarea filei
-  folosește `IncarcaPlati` din [mdl_2020](ACCESS_SOURCES/Modules/mdl_2020.bas.txt):
-  0 = chitanțe, 1 = alte documente, 2 = restituiri.
-- `IncarcaPrezenta` din [mdl_Popup](ACCESS_SOURCES/Modules/mdl_Popup.bas.txt) alege
-  Prezenta_sub_buget sau Prezenta_sub prin CFGs/XX/Platitor. Web reține fluxul relevant
-  fără reducerile excluse, nu copiază automat toate ramurile configurabile.
+- [Autoexec](ACCESS_SOURCES/Macros/Autoexec.txt) deschide formularul ADECHIT când funcția `autoexec()` întoarce True. Conținutul funcției și al ribbonului încărcat din afara traseului inspectat nu este considerat verificat integral.
+- [ADECHIT.INTRARE_Click](ACCESS_SOURCES/Forms/ADECHIT.txt) selectează fișierul unității, reface legăturile de tabele, pornește mecanisme de backup și o corecție RunOnce. Web folosește alegerea unității și conexiunile existente; nu reproduce linkarea MDB, backupul FTP din client sau corecția istorică automată „Copii plecati 2021”.
+- [basRibbonCallbacks](ACCESS_SOURCES/Modules/basRibbonCallbacks.bas.txt) conține deschideri către Platitori2016, Prezenta, Config_Taxe, Config_Unit și Config_Mail. Ultimele două nu devin automat pagini web: datele unității se refolosesc, mailul de business rămâne de stabilit; mailul de autentificare comun rămâne reutilizat.
+- [Prezenta](ACCESS_SOURCES/Forms/Prezenta.txt) găzduiește Luni, Grupe_PR, Prezenta_sub_buget, Plati_chitante, Rapoarte și subTreeView. Schimbarea filei folosește `IncarcaPlati` din [mdl_2020](ACCESS_SOURCES/Modules/mdl_2020.bas.txt): 0 = chitanțe, 1 = alte documente, 2 = restituiri.
+- `IncarcaPrezenta` din [mdl_Popup](ACCESS_SOURCES/Modules/mdl_Popup.bas.txt) alege Prezenta_sub_buget sau Prezenta_sub prin CFGs/XX/Platitor. Web reține fluxul relevant fără reducerile excluse, nu copiază automat toate ramurile configurabile.
 
 ## 2. Matricea operațiilor incluse
 
@@ -54,8 +32,7 @@ Nicio constatare de aici nu autorizează ștergerea datelor originale.
 | Rapoarte.FC_Click / mdl_2020.FisaCont | AddFisaCont + sold cumulativ pe IDP/Data | FisaCont, rezultat derivat | Fișă calculată la cerere |
 | Rapoarte.Registru_Click / bRapBanca_Click / DA_Click / FD_Click | RegCasa, RaportBanca, DocumenteAnulate, familia FisaDebitor_* | Fără scriere business în aceste deschideri | Rapoarte ADE, după rezolvarea dependențelor legacy |
 
-Formularele din tabel sunt în [Forms](ACCESS_SOURCES/Forms), iar interogările în
-[queries](ACCESS_SOURCES/queries). Numele procedurilor identifică exact traseul citit.
+Formularele din tabel sunt în [Forms](ACCESS_SOURCES/Forms), iar interogările în [queries](ACCESS_SOURCES/queries). Numele procedurilor identifică exact traseul citit.
 
 ## 3. Reguli de lucru confirmate în cod
 
@@ -69,50 +46,28 @@ ValoareTotala = ValoareTotala_anterioară
                − ZilePrezenta.OldValue × TaxaZilnica + ValoareContract
 ```
 
-La afișarea unei luni deschise, `IncarcaPrezenta` reconstruiește:
-`ValoareTotala = ValoareContract + SID + Retur − Platita − SIC`, folosind SitLunara.
-Aceasta este o valoare afișată în cache; nu o confundăm automat cu valoarea persistentă
-Prezenta.ValoareTotala citită de qPrezenta. Salvarea copiază cache-ul în Prezenta.
+La afișarea unei luni deschise, `IncarcaPrezenta` reconstruiește: `ValoareTotala = ValoareContract + SID + Retur − Platita − SIC`, folosind SitLunara. Aceasta este o valoare afișată în cache; nu o confundăm automat cu valoarea persistentă Prezenta.ValoareTotala citită de qPrezenta. Salvarea copiază cache-ul în Prezenta.
 
-Salvarea caută rândul prin `(IDP, IDL, IDG)`, nu doar `(IDP, IDL)`. Nu impunem o
-unicitate mai strictă înainte de verificarea datelor de transfer. Perioadele detaliate
-din Prezenta_sub sunt accesibile prin DatePicker, dar nu sunt necesare motorului 2021;
-necesitatea UI-ului de calendar detaliat rămâne distinctă de editarea numărului de zile.
+Salvarea caută rândul prin `(IDP, IDL, IDG)`, nu doar `(IDP, IDL)`. Nu impunem o unicitate mai strictă înainte de verificarea datelor de transfer. Perioadele detaliate din Prezenta_sub sunt accesibile prin DatePicker, dar nu sunt necesare motorului 2021; necesitatea UI-ului de calendar detaliat rămâne distinctă de editarea numărului de zile.
 
-`Work_Days` exclude sâmbătă/duminică prin șiruri `Sat`/`Sun`, fără calendar de sărbători.
-Comportamentul pe instalarea Access depinde de localizare; nu introducem tacit un
-calendar de sărbători sau alt număr de zile la portare.
+`Work_Days` exclude sâmbătă/duminică prin șiruri `Sat`/`Sun`, fără calendar de sărbători. Comportamentul pe instalarea Access depinde de localizare; nu introducem tacit un calendar de sărbători sau alt număr de zile la portare.
 
 ### Lună închisă — decizie a utilizatorului, 07.10.2026
 
 **Păstrăm încasările într-o lună închisă, cu actualizarea situației salvate.
 Prezența rămâne blocată.** Aceasta corectează formularea prea generală din planul inițial.
 
-Cele trei formulare Plati_chitante / Plati_Alte / Plati_Retur refuză inserarea/anularea
-când `IDL_selectat + 1 < DMax("IDL", "Prezenta")`. Referința este **Prezenta**, nu
-LunaD și nici data calculatorului. Mesajul spune „luna prezentă sau anterioară”.
-Maparea temporală a IDL trebuie păstrată/verificată la migrare.
+Cele trei formulare Plati_chitante / Plati_Alte / Plati_Retur refuză inserarea/anularea când `IDL_selectat + 1 < DMax("IDL", "Prezenta")`. Referința este **Prezenta**, nu LunaD și nici data calculatorului. Mesajul spune „luna prezentă sau anterioară”. Maparea temporală a IDL trebuie păstrată/verificată la migrare.
 
-La salvare, fiecare modifică snapshotul SS_Buget identificat prin IDZ:
-chitanță → Plata, alt document → Plati, restituire → Retur; recalculează compensarea,
-anticipatul și soldurile și adaugă explicația documentului. Formulele sunt în
-[contract](CONTRACT_CALCULE.md). Nu este permisă editarea generală a snapshotului în grilă.
+La salvare, fiecare modifică snapshotul SS_Buget identificat prin IDZ: chitanță → Plata, alt document → Plati, restituire → Retur; recalculează compensarea, anticipatul și soldurile și adaugă explicația documentului. Formulele sunt în [contract](CONTRACT_CALCULE.md). Nu este permisă editarea generală a snapshotului în grilă.
 
 ### Numerotare și explicație chitanță
 
-Fluxul inclus `Plati_chitante` citește CFGs/Numar la inserare și scrie `Numar+1` la
-salvare. **Pe acest flux, configurația este următorul număr de utilizat.** Citirea
-veche nu filtrează `f`, scrierea filtrează `f='CH'`; importul cerut de utilizator
-selectează explicit CH și raportează duplicate/lipsuri.
+Fluxul inclus `Plati_chitante` citește CFGs/Numar la inserare și scrie `Numar+1` la salvare. **Pe acest flux, configurația este următorul număr de utilizat.** Citirea veche nu filtrează `f`, scrierea filtrează `f='CH'`; importul cerut de utilizator selectează explicit CH și raportează duplicate/lipsuri.
 
-`Chitante_bun` și `Plati` au alt mecanism de numerotare. Nu îl amestecăm cu cel curent.
-Seria și numărul se iau din date; nu introducem GR40/783 sau fallbackul „Serie” ca seed.
-La migrare se compară configurația cu numerele existente, fără „reparare” automată.
+`Chitante_bun` și `Plati` au alt mecanism de numerotare. Nu îl amestecăm cu cel curent. Seria și numărul se iau din date; nu introducem GR40/783 sau fallbackul „Serie” ca seed. La migrare se compară configurația cu numerele existente, fără „reparare” automată.
 
-Explicația se generează prin `fMail2021`, care citește qVariabile și substituie
-17 marcaje, inclusiv `[LA] = fluna(Luna) + '/' + Anul`. `[LA]` nu este câmpul numeric
-LunaD.LA de forma MMYYYY. Textul de restanță poate fi „Achitat restanta”. Substituția
-nu înseamnă că trebuie activat sistemul de trimitere email al aplicației vechi.
+Explicația se generează prin `fMail2021`, care citește qVariabile și substituie 17 marcaje, inclusiv `[LA] = fluna(Luna) + '/' + Anul`. `[LA]` nu este câmpul numeric LunaD.LA de forma MMYYYY. Textul de restanță poate fi „Achitat restanta”. Substituția nu înseamnă că trebuie activat sistemul de trimitere email al aplicației vechi.
 
 ## 4. Modelul persistent propus
 
@@ -137,29 +92,16 @@ Mapare pentru ADE3, **nu DDL aprobat sau executat**:
 | CFGs, numai CH | AVACONT_COMUN.Unitati_Chitante | Asociere DC; serie, următorul număr, șablon explicație |
 | Unitati | Sistemul comun existent | Nu creăm un duplicat AD_Unitati; nu suprascriem datele comune la import |
 
-Cheile Access nu se renumerotează independent. Alegerea păstrării lor sau a unei mapări
-la chei noi trebuie să mențină toate relațiile și ordinea IDL. Relațiile declarate sunt
-în [relationships.md](ACCESS_SOURCES/relationships.md). De exemplu, relația LunaD→Plati
-este exportată fără integritate referențială; legătura pe IDS a plății apare în cod,
-fără a presupune că toate FK-urile există în Access. Verificăm orfanii înainte de DDL/import.
+Cheile Access nu se renumerotează independent. Alegerea păstrării lor sau a unei mapări la chei noi trebuie să mențină toate relațiile și ordinea IDL. Relațiile declarate sunt în [relationships.md](ACCESS_SOURCES/relationships.md). De exemplu, relația LunaD→Plati este exportată fără integritate referențială; legătura pe IDS a plății apare în cod, fără a presupune că toate FK-urile există în Access. Verificăm orfanii înainte de DDL/import.
 
 ## 5. Rapoarte și funcții suplimentare
 
-- Incluse ca flux identificat: cele trei SituatieDebitori_buget*, Chitanta,
-  Dispozitie plata, RegistruCasa, RaportBanca, DocumenteAnulate și FisaCont/FisaCont_s.
-- Familia FisaDebitor este accesibilă din Rapoarte, dar include bonuri și reduceri în
-  interogări vechi. Adaptarea conținutului trebuie separată de motorul de sold 2021.
-- FisaCont folosește debitul din ValoareContract, creditul din Plati.Plata,
-  returul ca debit, SI la 01.01.2001 și transferurile cu valoare zero. Soldul este cumulativ
-  pe persoană, în ordinea IDP/Data; ordinea în aceeași zi nu este determinată complet.
-- COMP/COMP_C/COMP_D reprezintă compensare între persoane, distinctă de coloana
-  Compensare din mdl_Situatie. Formularul scrie COMP, dar lanțul 2021 **nu citește COMP**.
-  Nu există apel de deschidere găsit în traseele inspectate. Nu îl adăugăm implicit în motor.
-- SIIR este accesibil din Platitori2016; importă Excel prin IMPXLS și scrie Grupe,
-  Platitori, Platitori_sub. Portarea acestui import operațional rămâne de stabilit,
-  separat de migrarea inițială ADE5.
-- Mail/TrimitereCalup, exporturile Excel/PDF și variantele vechi rămân inventariate;
-  existența lor în export nu echivalează cu includerea integrală în prima versiune web.
+- Incluse ca flux identificat: cele trei SituatieDebitori_buget*, Chitanta, Dispozitie plata, RegistruCasa, RaportBanca, DocumenteAnulate și FisaCont/FisaCont_s.
+- Familia FisaDebitor este accesibilă din Rapoarte, dar include bonuri și reduceri în interogări vechi. Adaptarea conținutului trebuie separată de motorul de sold 2021.
+- FisaCont folosește debitul din ValoareContract, creditul din Plati.Plata, returul ca debit, SI la 01.01.2001 și transferurile cu valoare zero. Soldul este cumulativ pe persoană, în ordinea IDP/Data; ordinea în aceeași zi nu este determinată complet.
+- COMP/COMP_C/COMP_D reprezintă compensare între persoane, distinctă de coloana Compensare din mdl_Situatie. Formularul scrie COMP, dar lanțul 2021 **nu citește COMP**. Nu există apel de deschidere găsit în traseele inspectate. Nu îl adăugăm implicit în motor.
+- SIIR este accesibil din Platitori2016; importă Excel prin IMPXLS și scrie Grupe, Platitori, Platitori_sub. Portarea acestui import operațional rămâne de stabilit, separat de migrarea inițială ADE5.
+- Mail/TrimitereCalup, exporturile Excel/PDF și variantele vechi rămân inventariate; existența lor în export nu echivalează cu includerea integrală în prima versiune web.
 
 ## 6. Neconcordanțe de rezolvat înaintea implementării dependente
 
@@ -176,13 +118,8 @@ fără a presupune că toate FK-urile există în Access. Verificăm orfanii în
 | M09 | Formularele vechi referă Chitante/Plati_fact/FTP, fără obiect cu acel nume în export; rpt_SitFin referă Situatii salvate absent | Ramuri incomplet exportate/vechi, nu surse validate pentru noul flux |
 | M10 | Unitati, SS_Buget și alte tabele sunt linked către MDB extern | Exportul de structură nu livrează rândurile; migrarea trebuie să primească datele reale ale backendului |
 
-Niciuna dintre aceste constatări nu blochează scheletul comun sau editorul de grilă.
-Blochează însă declararea parității finale a funcției dependente până la clarificare/probă.
+Niciuna dintre aceste constatări nu blochează scheletul comun sau editorul de grilă. Blochează însă declararea parității finale a funcției dependente până la clarificare/probă.
 
 ## 7. Ce se poate face în continuare
 
-ADE1 poate începe pe date fictive, folosind sistemele comune și localhost:5050.
-ADE2 poate implementa editarea fără server real. Pentru ADE3/ADE5/ADE7 sunt necesare:
-datele Access reale relevante (inclusiv CFGs), identificarea bazei/unității țintă și
-rezultatele Access pentru cazurile din contract. Utilizatorul face push, rulează SQL
-și probează serverul; nu s-au efectuat asemenea operații în ADE0-02.
+ADE1 poate începe pe date fictive, folosind sistemele comune și localhost:5050. ADE2 poate implementa editarea fără server real. Pentru ADE3/ADE5/ADE7 sunt necesare: datele Access reale relevante (inclusiv CFGs), identificarea bazei/unității țintă și rezultatele Access pentru cazurile din contract. Utilizatorul face push, rulează SQL și probează serverul; nu s-au efectuat asemenea operații în ADE0-02.

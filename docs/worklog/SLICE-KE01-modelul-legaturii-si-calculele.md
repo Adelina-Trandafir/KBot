@@ -12,7 +12,9 @@ Operator request (16.10.2026): link the received e-invoices to receptions and, l
 ## Files touched
 `sql/KE_01_primite_receptii.sql`, `PYTHON/routes/efactura/primite_ubl.py`, `primite.py`, `primite_ke.py`, `primite_ke_routes.py`, `__init__.py`, `src/KBot.Domain/EFacturaKe.vb`, `src/KBot.Api/ApiClient.EFactura.Ke.vb`, `IEFacturaApi.vb`.
 
-## Test results
+Acest checkpoint comun de validare și condițiile SQL/server/interfață de mai jos se aplică etapelor KE01…KE07 din 16.10.2026. Corecția de ecran din KE02 și incidentul FOREXE din KE09 sunt probe ulterioare, cu limite proprii, nu confirmări generale ale fluxului.
+
+## Test results <a id="checkpoint-16-10"></a>
 `dotnet build` of `KBot.Api`, `KBot.EFactura`, `KBot.Forexe` and `KBot.App`: 0 errors, 0 warnings; `py_compile` of the changed Python files: ok; the two new workflows parse as XML. **Nothing was run against a live database, the live site or on screen, and no test was written or run** (operator rule: no tests).
 
 ## Unverified / deferred

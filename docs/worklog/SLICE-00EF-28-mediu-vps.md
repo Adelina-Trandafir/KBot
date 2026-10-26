@@ -38,3 +38,7 @@ Nothing in the repo code. Status notes only: the prerequisites listed as open in
 
 `docs/worklog/SLICE-00EF-28-mediu-vps.md` (new), `PLAN_00EF_EFactura.md`,
 `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md`. No code, no tests. (First logged as sliceless; moved to 00EF-28 on 15.10.2026, operator: all E-Factura work sits in an EF slice.)
+
+## Delimitarea probei de mesaje din 00EF-17
+
+[00EF-17](SLICE-00EF-17-primite-server.md#slice-00EF-17) consemnează separat citirea a patru mesaje primite reale la 09.10, cu un token de probă și fără bază de date. Acea probă nu confirmă fluxul aplicației pe MariaDB sau emiterea unei facturi reale (încărcare, stare, zip) menționate mai sus ca neîncercate. Cele două consemnări își păstrează aria.

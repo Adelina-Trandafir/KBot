@@ -12,11 +12,11 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0070 | Browser numai andocat și corecția tastaturii | GATA pe cod (`dotnet build` pe `src\KBot.Forexe`, `src\KBot.App`, `src\KBot.DevHarness`: **0 erori, 0 avertismente** în afara `MSB3825` preexistent) / **NIMIC RULAT, NIMIC PE ECRAN, NICIO SUITĂ, NIMIC COMIS** (cerere explicită: «no git. no tests!») | [0070](../SLICE-0070-browserul-doar-andocat.md#slice-0070) | Detalii, revizii, fișiere, probe și limite în etapa legată. |
+| 0070 | Browser numai andocat și corecția tastaturii | GATA pe cod (`dotnet build` pe `src\KBot.Forexe`, `src\KBot.App`, `src\KBot.DevHarness`: **0 erori, 0 avertismente** în afara `MSB3825` preexistent) / **NIMIC RULAT, NIMIC PE ECRAN, NICIO SUITĂ, NIMIC COMIS** (cerere explicită: «no git. no tests!») | [0070](../SLICE-0053-recorder.md#slice-0070) | Detalii, revizii, fișiere, probe și limite în etapa legată. |
 
 ### Current focus
 
-- [Detalii și restanțe 0070](../SLICE-0070-browserul-doar-andocat.md#slice-0070); starea istorică a probei rămâne în registru.
+- [Detalii și restanțe 0070](../SLICE-0053-recorder.md#slice-0070); starea istorică a probei rămâne în registru.
 
 ---
 
@@ -75,11 +75,11 @@ Jurnalul detaliat este rezolvat în 0072 și nu schimbă fișierul-jurnal/istori
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0074 | Vederea browserului și selecția în ambele sensuri | GATA pe cod (`dotnet build` pe `src\KBot.Forexe`, `src\KBot.App` `--no-incremental`, `src\KBot.DevHarness`: **0 erori, 0 avertismente**; `node --check` valid) / **văzut pe ecran** prin `DrawToBitmap`: vederea neconectată și conectată-cu-andocare-refuzată / **NIMIC nu a atins un browser adevărat sau CABWeb; nicio suită rulată** | [0074](../SLICE-0070-browserul-doar-andocat.md#slice-0074) | Detalii, revizii, fișiere, probe și limite în etapa legată. |
+| 0074 | Vederea browserului și selecția în ambele sensuri | GATA pe cod (`dotnet build` pe `src\KBot.Forexe`, `src\KBot.App` `--no-incremental`, `src\KBot.DevHarness`: **0 erori, 0 avertismente**; `node --check` valid) / **văzut pe ecran** prin `DrawToBitmap`: vederea neconectată și conectată-cu-andocare-refuzată / **NIMIC nu a atins un browser adevărat sau CABWeb; nicio suită rulată** | [0074](../SLICE-0053-recorder.md#slice-0074) | Detalii, revizii, fișiere, probe și limite în etapa legată. |
 
 ### Current focus
 
-- [Detalii și restanțe 0074](../SLICE-0070-browserul-doar-andocat.md#slice-0074); starea istorică a probei rămâne în registru.
+- [Detalii și restanțe 0074](../SLICE-0053-recorder.md#slice-0074); starea istorică a probei rămâne în registru.
 
 ---
 

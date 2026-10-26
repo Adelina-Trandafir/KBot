@@ -124,7 +124,7 @@ removed: a popup is not a page, so it has no place in the history of opened mach
 ## SLICE-0084-04 - «Asociaza parteneri»: out of the Sumar view, into the ribbon (16.10.2026) <a id="slice-0084-04"></a>
 
 Operator request: the button leaves the Sumar view; it is a ribbon button that exists only while «Sumar» is on screen
-(control part: `SLICE-0114-02-ribbon-separator-si-butoane-fixate-conditionate.md`). Follows 0084-03 (the popup).
+(control part: [0114-02](SLICE-0114-ribbon.md#slice-0114-02)). Follows 0084-03 (the popup).
 
 ### What changed and why
 - `SumarView`: `btnPartners` removed (code, designer, theming, and the 5th column of the header table that only held it).

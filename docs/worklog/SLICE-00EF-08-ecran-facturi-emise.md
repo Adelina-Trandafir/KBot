@@ -1,75 +1,124 @@
-# SLICE-00EF-08 - Screen «E-Factura — facturi emise» (EFACTURA_ADD in K-BOT) (code written, builds clean, NEVER RUN, never seen on screen)
+# SLICE-00EF-08 / 09 / 16 — Emiterea facturilor în aplicație
 
-Slice 00EF (operator, 06.10.2026; «Pornește cu 00EF-08 acum», 07.10.2026). The window the operator did not find: the menu entry
-«E-Factura» opened only the ANAF token window (00EF-05); the invoice screen of Access (`EFACTURA_ADD` + `EFACTURA_ADD_FACTURI`,
-`EFACTURA_CLIENTI`, `EFACTURA_VANZATOR`, `EFACTURA_ADD_SUB`, `EFACTURA_UM`) did not exist. Sending to ANAF is 00EF-09, not here.
+Istoric 06–09.10.2026. 09 înlocuiește lista și TabControl cu arbore/vederi și introduce trimiterea/stornarea; 16 adaugă dialogul de corecție 384, anul/lunile și PDF-ul atașat. 13/14 mută separat datele unității în baza comună. Amplasarea comenzilor și dispariția ulterioară a filtrului de luni/vederii Atașamente sunt în [0114-19…24](SLICE-0114-19-efactura-vanzare-fara-luna-si-randuri-taiate.md); corpurile de mai jos păstrează checkpointurile inițiale. Proba mediului 28 nu confirmă trimiterea reală a unei facturi.
 
-## What changed and why
-- **New window `FacturiForm`** (`src/KBot.EFactura/Views/`, `KBotShellForm`, all controls in `FacturiForm.Designer.vb`, code split in four
-  partials): the list of the unit's issued invoices on the left (`KBotDataView`: Număr, Data, Client, Total, Stare; newest first; column
-  filters; refused rows in the error colour, sent-but-unconfirmed ones in the warning colour) and the chosen invoice on the right in five
-  tabs, as in Access:
-  - **Generale** - number, date (`KBotDatePicker`), type (380 / 384, server-owned, read only), state, comments (255), order reference BT-13 (30), total;
-    a line of words about the invoice's situation (draft, accepted, why ANAF refused it, which invoice a storno cancels).
-  - **Cumpărător** - combo of the unit's customers + the fields of `EF_Clienti` (CNP tick, «RO» prefix, fiscal code, name, county, city, sector,
-    address, IBAN, bank). A customer is saved on its OWN («Salvează clientul», straight to the database; «Client nou», «Șterge clientul») and the
-    invoice keeps only its id, as in Access. An invoice is not saved while the customer's fields hold unsaved changes.
-  - **Vânzător** - the invoice's payment account («Cont emitent», a combo of the accounts already used, typed ones allowed) and the unit's issuer
-    data (`GET/PUT /furnizor`) with their own «Modifică / Salvează / Renunță» buttons and Access's warning sentence. A unit with no issuer data
-    opens straight on this tab and cannot add invoices until they are saved. `AfiseazaPrimiteNoi` (received invoices, a later slice) is carried
-    through unchanged so a save does not reset it.
+- [00EF-08](#slice-00EF-08)
+- [00EF-09](#slice-00EF-09)
+- [00EF-16](#slice-00EF-16)
+
+## SLICE-00EF-08 - Screen «E-Factura — facturi emise» (EFACTURA_ADD in K-BOT) (code written, builds clean, NEVER RUN, never seen on screen) <a id="slice-00EF-08"></a>
+
+Slice 00EF (operator, 06.10.2026; «Pornește cu 00EF-08 acum», 07.10.2026). The window the operator did not find: the menu entry «E-Factura» opened only the ANAF token window (00EF-05); the invoice screen of Access (`EFACTURA_ADD` + `EFACTURA_ADD_FACTURI`, `EFACTURA_CLIENTI`, `EFACTURA_VANZATOR`, `EFACTURA_ADD_SUB`, `EFACTURA_UM`) did not exist. Sending to ANAF is 00EF-09, not here.
+
+### What changed and why
+- **New window `FacturiForm`** (`src/KBot.EFactura/Views/`, `KBotShellForm`, all controls in `FacturiForm.Designer.vb`, code split in four partials): the list of the unit's issued invoices on the left (`KBotDataView`: Număr, Data, Client, Total, Stare; newest first; column filters; refused rows in the error colour, sent-but-unconfirmed ones in the warning colour) and the chosen invoice on the right in five tabs, as in Access:
+  - **Generale** - number, date (`KBotDatePicker`), type (380 / 384, server-owned, read only), state, comments (255), order reference BT-13 (30), total; a line of words about the invoice's situation (draft, accepted, why ANAF refused it, which invoice a storno cancels).
+  - **Cumpărător** - combo of the unit's customers + the fields of `EF_Clienti` (CNP tick, «RO» prefix, fiscal code, name, county, city, sector, address, IBAN, bank). A customer is saved on its OWN («Salvează clientul», straight to the database; «Client nou», «Șterge clientul») and the invoice keeps only its id, as in Access. An invoice is not saved while the customer's fields hold unsaved changes.
+  - **Vânzător** - the invoice's payment account («Cont emitent», a combo of the accounts already used, typed ones allowed) and the unit's issuer data (`GET/PUT /furnizor`) with their own «Modifică / Salvează / Renunță» buttons and Access's warning sentence. A unit with no issuer data opens straight on this tab and cannot add invoices until they are saved. `AfiseazaPrimiteNoi` (received invoices, a later slice) is carried through unchanged so a save does not reset it.
   - **Atașamente** - the «Atașează factura originală» tick (stored on the invoice).
-  - **Conținut** - the lines in a `KBotDataView` typed into: Nr (read only), Conținut, Um (combo of the UN/ECE list, «COD — explanation», default XPP as in
-    Access), Cant (3 decimals), PU (4), Valoare (computed as the operator types, half-up, the server's figure is the one stored), «✕» per line, footer
-    total, «Linie nouă» button.
+  - **Conținut** - the lines in a `KBotDataView` typed into: Nr (read only), Conținut, Um (combo of the UN/ECE list, «COD — explanation», default XPP as in Access), Cant (3 decimals), PU (4), Valoare (computed as the operator types, half-up, the server's figure is the one stored), «✕» per line, footer total, «Linie nouă» button.
 - **Footer**: «Ieșire», status line, «Token ANAF» (opens the 00EF-05 `TokenForm` as a dialog), «Ștergere», «Renunță», «Modificare», «Adăugare», «Salvare».
-- **What may be done with an invoice comes from the server** (`poate_modifica`, `poate_sterge`, `stare`), never from a rule in the window:
-  only a draft is modified; delete = a draft with the last number of its series; the others are shown read-only. New invoice: series and number are
-  the server's, shown as «provizoriu» until the save.
-- **`KBot.Api`**: `IEFacturaApi` extended + new `ApiClient.EFactura.Facturi.vb` (issuer, units of measure, customers, invoices: list, detail, next number,
-  save = POST/PUT, delete). Wire names exactly the server's (`factura_routes.py`, case sensitive). FileVersion 1.0.20.0 → 1.0.21.0.
-- **`KBot.Domain`**: `EFacturaFacturi.vb` (`EFacturaFurnizor`, `EFacturaClient`, `EFacturaUm`, `EFacturaLinie`, `EFacturaFactura`, `EFacturaStare`,
-  `EFacturaNumarUrmator`). FileVersion 1.2.12.0 → 1.2.13.0. **`KBot.EFactura`** FileVersion 1.0.0.0 → 1.1.0.0.
+- **What may be done with an invoice comes from the server** (`poate_modifica`, `poate_sterge`, `stare`), never from a rule in the window: only a draft is modified; delete = a draft with the last number of its series; the others are shown read-only. New invoice: series and number are the server's, shown as «provizoriu» until the save.
+- **`KBot.Api`**: `IEFacturaApi` extended + new `ApiClient.EFactura.Facturi.vb` (issuer, units of measure, customers, invoices: list, detail, next number, save = POST/PUT, delete). Wire names exactly the server's (`factura_routes.py`, case sensitive). FileVersion 1.0.20.0 → 1.0.21.0.
+- **`KBot.Domain`**: `EFacturaFacturi.vb` (`EFacturaFurnizor`, `EFacturaClient`, `EFacturaUm`, `EFacturaLinie`, `EFacturaFactura`, `EFacturaStare`, `EFacturaNumarUrmator`). FileVersion 1.2.12.0 → 1.2.13.0. **`KBot.EFactura`** FileVersion 1.0.0.0 → 1.1.0.0.
 - **`KBot.App`**: `KbotForm.EFactura.vb` now opens `FacturiForm` (same one-at-a-time, modeless rule); App FileVersion NOT bumped here (`push-update.ps1` asks).
-- **Help** `0000-55` (see `SLICE-0000-55-ajutor-facturi-emise.md`): topic `contabil.efactura` rewritten around the new window, MENIU row and main-window tour text.
+- **Help** `0000-55` (see [0000-55](SLICE-0000-54-ajutor-efactura.md#slice-0000-55)): topic `contabil.efactura` rewritten around the new window, MENIU row and main-window tour text.
 
-## Decisions taken here (state them, change if wrong)
+### Decisions taken here (state them, change if wrong)
 - **Customers are saved separately from the invoice**, as in Access (its customer subform had its own Salvează). The alternative (one save for both) was not chosen.
 - **«Modificare» is a separate step** (Access had bMod) and the fields are disabled otherwise; an unchanged edit does not ask on leaving.
-- **The list is the unit's last 500 invoices** (the server default), filtered by the grid's column filters; there is no year selector or search box (the
-  routes have `an=` and `q=`; the API methods take them, the window passes nothing).
-- **Per-customer county and issuer county are a fixed list of the 41 counties + București** (the same codes the server accepts, `validare.COUNTIES`),
-  carried in the window; Access read them from its `Jud` table. A code that is not in the list (migrated data) is kept, not lost.
-- **Unit of measure**: from the server list; a typed code that is not in the list is refused; when the list cannot be read any typed code is accepted
-  (a warning notice says so). Default XPP (Access `def="XPP"`).
+- **The list is the unit's last 500 invoices** (the server default), filtered by the grid's column filters; there is no year selector or search box (the routes have `an=` and `q=`; the API methods take them, the window passes nothing).
+- **Per-customer county and issuer county are a fixed list of the 41 counties + București** (the same codes the server accepts, `validare.COUNTIES`), carried in the window; Access read them from its `Jud` table. A code that is not in the list (migrated data) is kept, not lost.
+- **Unit of measure**: from the server list; a typed code that is not in the list is refused; when the list cannot be read any typed code is accepted (a warning notice says so). Default XPP (Access `def="XPP"`).
 - **Number input**: comma or point as the decimal mark, never a thousands separator («1.234» is 1.234).
 - **The «Cont emitent» of a new invoice** starts as the account of the newest invoice (Access had no such default that I read; unverified what it did).
 - **Line numbers** (`NrCrt`): kept as they are; a new line gets the highest numeric one + 1.
 
-## Files touched
-New: `src/KBot.EFactura/Views/FacturiForm.{vb,Designer.vb}`, `FacturiForm.{Client,Furnizor,Linii}.vb`, `src/KBot.Api/ApiClient.EFactura.Facturi.vb`,
-`src/KBot.Domain/EFacturaFacturi.vb`, this file. Edited: `src/KBot.Api/IEFacturaApi.vb`, the three `.vbproj` FileVersions,
-`src/KBot.App/KbotForm.EFactura.vb`, help files (see 0000-55), `PLAN_00EF_EFactura.md`, `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md`.
+### Files touched
+New: `src/KBot.EFactura/Views/FacturiForm.{vb,Designer.vb}`, `FacturiForm.{Client,Furnizor,Linii}.vb`, `src/KBot.Api/ApiClient.EFactura.Facturi.vb`, `src/KBot.Domain/EFacturaFacturi.vb`, this file. Edited: `src/KBot.Api/IEFacturaApi.vb`, the three `.vbproj` FileVersions, `src/KBot.App/KbotForm.EFactura.vb`, help files (see 0000-55), `PLAN_00EF_EFactura.md`, `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md`.
 
-## Test results
-`dotnet build` of `KBot.Api`, `KBot.EFactura` and `KBot.App` (Debug): **0 errors, 0 warnings**. `Check-Help.ps1 -Coverage`: the only errors left
-are the old ones in `tutorials\ordonantare-din-plata.md` and the «slice 0000-55 is not in KBOT_STATUS.md» ones, cleared by the status rows written
-with this file. **No test code written and no test run** (standing rule), the app was not started: **never run, never seen on screen**.
+### Test results
+`dotnet build` of `KBot.Api`, `KBot.EFactura` and `KBot.App` (Debug): **0 errors, 0 warnings**. `Check-Help.ps1 -Coverage`: the only errors left are the old ones in `tutorials\ordonantare-din-plata.md` and the «slice 0000-55 is not in KBOT_STATUS.md» ones, cleared by the status rows written with this file. **No test code written and no test run** (standing rule), the app was not started: **never run, never seen on screen**.
 
-## Unverified / deferred
-- **Everything on screen**: the layout of the five tabs (row heights, wrapping of the long labels, the 38/62 split, the list columns), the theme and DPI
-  behaviour, the designer was never opened in Visual Studio. Designer coordinates are written at 96 dpi (`AutoScaleDimensions = 96,96`).
-- **Everything against a server**: the routes of 00EF-06 are not deployed (the operator reports only the token refresh works), the DDL of 00EF-02 +
-  00EF-06 has not been run, `EF_UM` has no rows. Until then the window shows the server's error in the yellow/red notice at the top of the right side
-  (route missing, or «Tabelele E-Factura ale unității lipsesc sau sunt vechi. Rulați …»). Nothing here was exercised against real data.
-- **KBotDataView details assumed from its doc**: Number cells hold `Decimal` and format with `DecimalPlaces`; `CellValidating` may rewrite
-  `ProposedValue` to a `Decimal` / list object; the footer sum of `valoare` shows; `RowFormatting` colours a row; setting `CurrentRowIndex` raises
-  `SelectionChanged` (the window ignores it while it fills the list). The Um column holds 2113 combo entries (find as you type): speed not seen.
-- `KBotComboBox` (Editable + LimitToList) for customer / county: typing, `Text` setter selecting the matching item, and `TextChanged` on the account combo
-  firing on typing are assumed from `KBotComboBox.md`; if the last one does not, the account change would not mark the invoice as changed.
+### Unverified / deferred
+- **Everything on screen**: the layout of the five tabs (row heights, wrapping of the long labels, the 38/62 split, the list columns), the theme and DPI behaviour, the designer was never opened in Visual Studio. Designer coordinates are written at 96 dpi (`AutoScaleDimensions = 96,96`).
+- **Everything against a server**: the routes of 00EF-06 are not deployed (the operator reports only the token refresh works), the DDL of 00EF-02 + 00EF-06 has not been run, `EF_UM` has no rows. Until then the window shows the server's error in the yellow/red notice at the top of the right side (route missing, or «Tabelele E-Factura ale unității lipsesc sau sunt vechi. Rulați …»). Nothing here was exercised against real data.
+- **KBotDataView details assumed from its doc**: Number cells hold `Decimal` and format with `DecimalPlaces`; `CellValidating` may rewrite `ProposedValue` to a `Decimal` / list object; the footer sum of `valoare` shows; `RowFormatting` colours a row; setting `CurrentRowIndex` raises `SelectionChanged` (the window ignores it while it fills the list). The Um column holds 2113 combo entries (find as you type): speed not seen.
+- `KBotComboBox` (Editable + LimitToList) for customer / county: typing, `Text` setter selecting the matching item, and `TextChanged` on the account combo firing on typing are assumed from `KBotComboBox.md`; if the last one does not, the account change would not mark the invoice as changed.
 - **IBAN picker of Access (`EFACTURA_PickIBAN`, accounts from `Clasificatii`)**: not rebuilt; the account is a combo of the accounts used before, or typed.
-- **«Atașează factura originală»**: stored, but `ubl.py` / `trimitere.py` do not read `AtasamentOriginal`; whether and how the original is attached is
-  an open question for 00EF-09.
-- **What the window does NOT do (00EF-09)**: generate / validate / send, check the state at ANAF, correct (384) or cancel (storno) an accepted invoice,
-  download the answer. The server has the routes; the buttons and the confirmations are the next slice.
+- **«Atașează factura originală»**: stored, but `ubl.py` / `trimitere.py` do not read `AtasamentOriginal`; whether and how the original is attached is an open question for 00EF-09.
+- **What the window does NOT do (00EF-09)**: generate / validate / send, check the state at ANAF, correct (384) or cancel (storno) an accepted invoice, download the answer. The server has the routes; the buttons and the confirmations are the next slice.
 - A start-up notice about the token ending soon is still not built (open since 00EF-05).
+
+## SLICE-00EF-09 - Invoice tree, invoice menu, views bar and the send flow in the UI (code written; NEVER RUN, never seen on screen; NOT BUILT since the pages were split into controls) <a id="slice-00EF-09"></a>
+
+Slice 00EF (operator, 07.10.2026, three requests after 00EF-08):
+
+1. The list of invoices becomes a TREE: the clients are the roots, their invoices the leaves. Left icon of a leaf = its state: not sent = white/grey, in progress = orange, accepted = green, refused = red.
+2. Every leaf gets a RIGHT icon, visible on hover (as the angajamente tree of `KbotForm`), that opens a popup menu: send to ANAF (not uploaded) / validate (uploaded, in progress) / show the ANAF error (refused) / — / classic invoice (accepted) / ANAF invoice (accepted) / — / storno in ANAF (accepted) / modify (not uploaded). On the LAST invoice the date may be modified too (not older than the last existing invoice); on the others it may not.
+3. The TabControl is wrong: use the horizontal nav (as `DdfView`), each tab becomes a VIEW of the invoice. The PDF (classic invoice, ANAF invoice, the ANAF error — which comes as XML, so it is turned into a PDF) are views in the same bar, using the embedded PDF of `DdfDocumentPage`.
+
+This is also the «send flow in the UI» the plan called 00EF-09.
+
+### What changed and why
+- **Tree** (`FacturiForm.Arbore.vb`, new; `tree` = `AdvancedTreeControl`, declared in the Designer): roots = clients (alphabetical, total of their invoices on the right), leaves = invoices (newest first, «SERIE_NR · dd.MM.yyyy», total, «· stornare» when it cancels another). The state dot is drawn by `FacturaIcons` from the palette (grey hollow ring / orange / green / red; rebuilt on a theme change). The «three dots» right icon uses `ShowRightIconOnHover`. A click on a leaf shows it (asks first about unsaved changes); the tree is locked while Adobe opens a document (`AdobeOpenGate.LockWhileOpening`, as the DDF tree). The header search icon is drawn too (the tree's own search band). The old `KBotDataView` list and its column filters are gone.
+- **Invoice menu** (`CustomPopup`, `ShowAt` the icon; items by state, separators between groups, see `FacturiForm.Arbore.vb`): pressing the icon first SHOWS that invoice (the menu needs the server's flags: `PoateModifica`, `PoateStorna`), then opens the menu where the icon is. «Modifică factura» is the same code as the «Modificare» button (`BeginEdit`).
+- **Views bar** (`navDetaliu` = `KBotNavList`, horizontal, same settings as the DDF one): Generale, Cumpărător, Vânzător, Atașamente, Conținut + «Factură PDF», «Factură ANAF», «Eroare ANAF». **Every view is a page of its own** (operator's rule, 07.10.2026, after a first version that kept the pages as panels of the window): a UserControl with its OWN `.Designer.vb`, all of them in `src/KBot.EFactura/Views/Vanzare/` (the purchase invoices, when they come, go in `Views/Cumparare/`). The eight views: `VanzareGeneralePage`, `VanzareCumparatorPage`, `VanzareVanzatorPage`, `VanzareAtasamentePage`, `VanzareContinutPage`, `VanzareFacturaPdfPage`, `VanzareFacturaAnafPage`, `VanzareEroareAnafPage` (the last three inherit `VanzarePdfPage`, which only holds the shared viewer plumbing). The window's designer declares the eight pages (`pgGenerale` … `pgEroare`, in `pnlPages`); `FacturiForm.Pdf.vb`: `SelectView` / `ShowPage` shows one at a time. The three document views are visible by state (PDF + ANAF: accepted; error: refused; none while an invoice is typed), EACH with its own embedded viewer. The pages theme themselves (`IThemedContainer`).
+  - **Shortcut to confirm:** the logic of the invoice (what is shown, saved, validated, what the buttons do) stayed in `FacturiForm` (the Client / Furnizor / Linii partials, unchanged). It reaches the page controls through `FacturiForm.Pagini.vb`: one `Private WithEvents` name per control the code uses, pointed at the page's control by `BindPages` (called right after `InitializeComponent`), so every `Handles` clause kept working as it was. The pages own the controls and the look, not the behaviour. Moving the behaviour into the pages is a further step, not done.
+- **PDF viewer**: `IFacturaPdfViewer` (KBot.EFactura) + `Views\EFactura\Vanzare\FacturaPdfViewer.vb` (KBot.App) wraps `ReaderHostPreview`, the surface of `DdfDocumentPage` (KBot.EFactura cannot reference KBot.App, so `KbotForm.EFactura.vb` passes a factory). One viewer per document page, made the first time that view opens (Adobe does not start with the window). Files go to `TempPdfStore` (work area, emptied at start). No signing session, no print-count target.
+  - «Factură PDF»: `FacturaPdf.WriteInvoice` (iTextSharp, Arial embedded from the Windows fonts, Helvetica fallback) — issuer, customer, lines, total, account, order reference, comments; RON, no VAT (as the XML says).
+  - «Eroare ANAF»: `FacturaPdf.WriteError` from `EroareAnaf`. **The XML of ANAF's error report is already read by the server when it checks the state** (`anaf_api.error_messages`, 00EF-07) and the reasons are stored as text with the invoice; the PDF is made from that text (reasons one under the other). The raw XML is not kept.
+  - «Factură ANAF»: new route `GET /api/efactura/facturi/<id>/pdf-anaf` (`trimitere.pdf_anaf`, `anaf_api.factura_din_zip` + `pdf_din_xml`): downloads the accepted file from ANAF, takes the invoice XML out of the zip and has ANAF draw it (`https://webservicesp.anaf.ro/prod/FCTEL/rest/transformare/FACT1/DA`, `FCN` for a credit note, no token). **Not verified against the live service** (the address and the `DA` flag are from ANAF's published description, not tried).
+- **Send flow** (`FacturiForm.Trimitere.vb`): «Trimite factura în ANAF» = confirm → `POST /trimite` (server: own checks, ANAF validator, upload; a refusal lists the findings, `ApiClient.BuildEFacturaException`) → 2.5 s wait → `POST /verifica` once (the flow of the VBA, as the operator decided 06.10.2026) → notice: green accepted / red refused with the reason / yellow in progress. «Validează la ANAF» = the same check alone, repeatable. `TOKEN_NECESAR` points at the «Token ANAF» button.
+- **Storno**: confirm → next number/date from `numar-urmator` → `POST /storno` with a copy of the invoice (same customer, account, comments, lines, date = today or the newest invoice's date) → the storno is SENT at once (same send flow) → the replacement stays a draft: notice «Factura nouă … (ciornă) este pregătită».
+- **Date rule** (server + window): `facturi.py` — a new invoice, a storno and a changed date may not be dated before the newest invoice of the series (`DATA_PREA_VECHE`); the date of a draft changes only while it is the LAST of its series (`DATA_BLOCATA`); the detail carries `poate_modifica_data` and `data_minima` (the date of the invoice just before it), `numar-urmator` carries `data_minima`. The window: `dtpData` is enabled only when allowed, `MinDate` set from the server, status line says why the date is locked.
+- **`KBot.Api`**: `IEFacturaApi` + `ApiClient.EFactura.Trimitere.vb` (`SendFacturaAsync`, `VerifyFacturaAsync`, `StornoFacturaAsync`, `GetAnafPdfAsync`); `SendEFacturaAsync` errors now carry the lines of `constatari` / `mesaje`; byte download `SendEFacturaBytesAsync`. FileVersion 1.0.21.0 → 1.0.22.0. **`KBot.Domain`**: `EFacturaTrimitere`, `EFacturaVerificare`, `EFacturaStornare`, `EFacturaRezultat`, new facts on `EFacturaFactura` / `EFacturaNumarUrmator`. FileVersion 1.2.13.0 → 1.2.14.0. **`KBot.EFactura`**: iTextSharp 5.5.13.3 (+ `NoWarn NU1701`, as `KBot.Xfa`); FileVersion 1.1.0.0 → 1.2.0.0. `KBot.App` FileVersion NOT bumped here (`push-update.ps1` asks).
+- **Help** 0000-57 (see [0000-57](SLICE-0000-54-ajutor-efactura.md#slice-0000-57)).
+
+### Decisions taken here (state them, change if wrong)
+- «Modifică factura» is offered for a DRAFT that is not a storno (what the server calls `poate_modifica`). I read «daca nu e incarcata» as «not uploaded»; an ACCEPTED invoice is still corrected only through the server's type-384 resend (comments and order reference) — that has NO screen yet. A REFUSED invoice has no way out (the server refuses to modify or resend it, 00EF-06/07 open thread).
+- The storno is sent automatically after it is created (after one confirmation that says so). If the send fails the storno stays a draft and is sent from its menu.
+- Pressing the right icon of an invoice first opens that invoice (asking about unsaved changes), then the menu. While the open invoice is being typed the menu does not open (status line says why).
+- Roots (clients) have no right icon and no menu.
+- The date is limited by `MinDate` only when the shown date is not already older than the limit (a date from before the rule stays as it is).
+
+### Files touched
+New: everything of the sales window now lives in `src/KBot.EFactura/Views/Vanzare/` (the window's files were MOVED there from `Views/`: `FacturiForm*.vb`, `FacturiForm*.resx`, `FacturaIcons.vb`, `FacturaPdf.vb`, `IFacturaPdfViewer.vb`); there: `FacturiForm.Arbore.vb`, `FacturiForm.Trimitere.vb`, `FacturiForm.Pdf.vb`, `FacturiForm.Pagini.vb`, the eight pages (`Vanzare*Page.vb` + `.Designer.vb`) and `VanzarePdfPage`; `src/KBot.Api/ApiClient.EFactura.Trimitere.vb`; `src/KBot.App/Views/EFactura/Vanzare/FacturaPdfViewer.vb`; this file. The class names did not change (no `Namespace` blocks), so `KbotForm.EFactura.vb` is untouched. `TokenForm`, `ConturiForm`, `CertificatePickerForm` stay in `Views/` (not specific to sales). Edited: `src/KBot.EFactura/Views/FacturiForm.vb` (rewritten), `FacturiForm.Designer.vb` (list + tabs → tree + nav + pages), `FacturiForm.Furnizor.vb` / `FacturiForm.Linii.vb` (`SelectView`), `KBot.EFactura.vbproj`; `src/KBot.Api/IEFacturaApi.vb`, `ApiClient.EFactura.vb`, `ApiClient.EFactura.Facturi.vb`, `KBot.Api.vbproj`; `src/KBot.Domain/EFacturaFacturi.vb`, `KBot.Domain.vbproj`; `src/KBot.App/KbotForm.EFactura.vb`; `PYTHON/routes/efactura/{facturi,facturi_store,anaf_api,trimitere,trimitere_routes}.py`; help `contabil/efactura/index.md`; status files, `PLAN_00EF_EFactura.md`. Another session worked on `FacturiForm.Designer.vb`, `FacturiForm.Furnizor.vb`, `IEFacturaApi.vb`, `facturi*.py` at the same time (slice 00EF-12, the unit's accounts): its parts were kept; the two builds were checked together.
+
+### Test results
+Before the pages were split into controls: `dotnet build` of `KBot.EFactura` and `KBot.App` (Debug): 0 errors, 0 warnings. **After the split (page designers generated by script from the old designer, `FacturiForm.Pagini.vb`, the folder move): NOT built** (the operator builds). `py_compile`-level syntax check (`ast.parse`) of the five changed Python files: clean. **No test code written and no test run** (standing rule), the app was not started, no route called, nothing sent to ANAF: **never run, never seen on screen**.
+
+### Unverified / deferred
+- **Everything on screen**: the nav bar width with the three extra items, the tree (the «~~~» total column, the dot and the hover icon, indentation, collapsed/expanded roots, the search band with the drawn magnifier), the menu position, the PDF viewer inside `pgPdf` (Adobe opening, Dock Fill with the hidden note label), DPI/theme. Designer written by hand at 96 dpi, never opened in Visual Studio.
+- **The «Factură ANAF» route against the live ANAF service** (address, the `DA` flag, whether `FACT1` accepts a signed invoice file, the answer format). Until it works the view shows ANAF's / the server's message inside the viewer.
+- The right-icon press and the left-button release that follows: handled with a flag (`_iconDown`); if the popup swallows the release the next press clears it (`NodeMouseDown`). Untried.
+- The send, the 2.5 s wait and the single check are untried at ANAF; so is the storno (two numbers taken, the first sent).
+- Server deployed? NO: routes `00EF-06/07` + this slice's changes (`pdf-anaf`, the date rule, `poate_modifica_data`, `data_minima`) must be on the VPS, and the DDL run (see 00EF-08 open thread); an old server answers without the new fields (the date then stays editable on the window side only for a new invoice).
+- A start-up notice about the token ending soon is still not built (open since 00EF-05).
+
+## SLICE-00EF-16 — «Cont emitent» din lista unitatii, corectia 384, anul din K-BOT + filtru pe luni, PDF atasat <a id="slice-00EF-16"></a>
+
+Operator request, 09.10.2026, answering the open threads of 00EF-13.
+
+### What changed and why
+1. **«Cont emitent»** (`cmbContPlata`) now offers FIRST the unit's own IBANs (`GET /furnizor/conturi`, kept in `_conturi`), then the accounts of earlier invoices; a new invoice starts from the only own account when the unit has one. The list is read once with the invoices and again after «Conturi Unitate» closes.
+2. **«Corectează factura (tip 384)»** is a new menu item for an ACCEPTED invoice that is not a storno (`poate_corecta`, already on the server). New dialog `CorectieForm` (comment + order reference), then the send goes through the existing `POST /facturi/<id>/trimite` with `corectie` and the usual wait + state read. «Modifică factura» is unchanged: drafts only, never a 384 (the server already refuses anything else).
+3. **Year and months**: `FacturiForm` takes the year of the session (`SessionContext.An`) and asks the server for that year only (`an=`; the server now defaults the limit to 2000 when `an` is given, so a year is not cut at 500). Above the tree a combo «Toate lunile» + 12 months filters the tree on the client. No search box (not wanted).
+4. **«Atașează factura originală»** is now honoured: `FacturaPdf.WriteInvoice` draws the classic PDF on the PC, the bytes travel in the send body (`atasament_pdf`, base64), `trimitere._attachment` checks them (flag on the invoice, `%PDF`, <= 3 MB) and `ubl.build(attachment_pdf=...)` writes BG-24 (`cac:AdditionalDocumentReference` / `cac:Attachment` / `cbc:EmbeddedDocumentBinaryObject`, `mimeCode="application/pdf"`) right after `cac:OrderReference`. An invoice with the flag cannot be sent without the PDF (error `ATASAMENT_LIPSA`). Applies to a first send, a storno send and a correction.
+5. County + city from ANAF («Preia de la ANAF») were already done in 00EF-14 (`adresa_anaf.py`: ISO county code, Bucharest -> `B` + `SECTOR1..6`); nothing new here. Note: the form is `SECTOR1`, no dash, as CIUS-RO asks and `validare.py` checks.
+6. Received invoices left for a new slice (operator).
+
+### Files touched
+`PYTHON/routes/efactura/{ubl,trimitere,trimitere_routes,factura_routes}.py`, `src/KBot.Domain/EFacturaFacturi.vb` (`PoateCorecta`), `src/KBot.Api/{IEFacturaApi,ApiClient.EFactura.Facturi,ApiClient.EFactura.Trimitere}.vb` (`SendFacturaAsync` gained the PDF parameter, new `SendCorectieAsync`), `src/KBot.EFactura/{FacturiForm.vb,.Designer.vb,.Arbore.vb,.Furnizor.vb,.Trimitere.vb}`, `Views/Vanzare/VanzareGeneralePage.Designer.vb` (tooltip), new `Forms/CorectieForm.{vb,Designer.vb}`, `src/KBot.App/KbotForm.EFactura.vb` (passes the year), help `contabil/efactura/index.md` (0000-60).
+
+### Test results
+`dotnet build src\KBot.App\KBot.App.vbproj`: 0 warnings, 0 errors. One scratch run of `ubl.build` with an attachment and of `trimitere._attachment` in the venv (XML element order and the three outcomes looked right) — a scratch check, no test written. Nothing else run: no server deployed, no route called, no ANAF call, no window opened.
+
+### Unverified / deferred
+- **Never seen on screen**: the month combo above the tree (`pnlArbore`/`cmbLuna`, 37 px), `CorectieForm` layout.
+- **Server not deployed**: `ubl.py`, `trimitere.py`, `trimitere_routes.py`, `factura_routes.py` must go to the VPS + restart; a new client against the old server sends `atasament_pdf` and gets «CAMP_NEPERMIS».
+- ANAF may refuse the attachment element (a real upload was never tried); the validator route `facturi.py` (`xml`/`valideaza`) still builds the XML WITHOUT the PDF.
+- The classic PDF of a correction is drawn from the stored comment, not the new one.
+- The invoice list is by year only; a new invoice dated outside the K-BOT year is not in the tree after saving.
+- A refused invoice still has no way out (waiting for the operator's decision).
+- Received invoices: new slice.
