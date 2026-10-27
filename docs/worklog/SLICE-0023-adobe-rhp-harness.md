@@ -78,8 +78,7 @@ For each of: classic Reader DC, and the modern ("new Acrobat") UI —
 
 Continues slice **0023**; the number was NOT changed and the previous worklog ([SLICE-0023-adobe-rhp-harness.md](#slice-0023-pas-1)) stays as it is. Plan: pasted in-session ("PLAN — Adobe harness: scenario files + resizable docked layout").
 
-**No new RHP lever was added in this pass.** Everything that existed keeps working exactly as it
-did; it became scriptable and resizable.
+**No new RHP lever was added in this pass.** Everything that existed keeps working exactly as it did; it became scriptable and resizable.
 
 ### What changed and why
 
@@ -195,10 +194,7 @@ Three defects, all now closed:
    HKLM\...\FeatureLockDown\cServices\bToggleAdobeDocumentServices = 1
    ```
 
-   Still active — almost certainly why the pane is now zero-sized (services suppressed, nothing
-   for the pane to host). **The harness did not revert it and this pass does not revert it either**
-   — it is an elevated write on the operator's machine; the bench now offers one-click revert and
-   refuses to pretend the state is clean.
+   Still active — almost certainly why the pane is now zero-sized (services suppressed, nothing for the pane to host). **The harness did not revert it and this pass does not revert it either** — it is an elevated write on the operator's machine; the bench now offers one-click revert and refuses to pretend the state is clean.
 
 ### §1 `userPrefs` values are applied literally
 
@@ -273,8 +269,7 @@ Tests cover §6 exactly: intent parsing (int/string/null/absent, unsupported kin
 
 Continues slice **0023**. Previous worklogs ([SLICE-0023-adobe-rhp-harness.md](#slice-0023-pas-1), [SLICE-0023-adobe-harness-config-layout.md](#slice-0023-pas-2), [SLICE-0023-adobe-harness-fixes.md](#slice-0023-pas-4)) stand as written.
 
-**No new RHP lever.** Pass 4 made the SCENARIO path honest; this pass makes the MANUAL path honest
-and widens what "clean baseline" means.
+**No new RHP lever.** Pass 4 made the SCENARIO path honest; this pass makes the MANUAL path honest and widens what "clean baseline" means.
 
 ### §0 Why — three findings from the first clean run
 
@@ -317,8 +312,7 @@ Ele vor apărea ca stare de pornire la următoarea rulare.
 
 `BaselineOrigin` (`MachinePolicy` / `UserPreference`) on `PolicyReading`, and a new `ReadUserRhpState()` reading `bExpandRHPInViewer`, `bRHPSticky`, `aDefaultRHPViewMode_L` from BOTH `AVGeneral` hives. A neutral machine has all three **absent**. `ReadBaselineState()` = policies + preferences and feeds the pre-scenario check; `ReadPolicyState()` stays HKLM-only because the revert path uses it to verify the elevated import, and an HKCU value must not make that verification fail.
 
-**`bEnableAv2` is deliberately NOT part of the baseline.** It selects the classic/modern viewer,
-which is the thing under test — counting it as contamination would make every scenario that sets it block itself on the next run.
+**`bEnableAv2` is deliberately NOT part of the baseline.** It selects the classic/modern viewer, which is the thing under test — counting it as contamination would make every scenario that sets it block itself on the next run.
 
 Warn/block texts are origin-aware: each active value is tagged `[HKLM politică]` / `[HKCU preferință]`, each consequence is stated only when that kind is present, and each cleanup route is named for its own origin — elevated revert for the policy, «șterge» + «Aplică și repornește Adobe» for the preferences. The machine-state summary counts both: `politici HKLM active: 0 · preferințe RHP în HKCU: 2  ⚠ bază de pornire CONTAMINATĂ`.
 
@@ -354,8 +348,7 @@ Continues slice **0023**. Previous worklogs stand as written.
 
 This pass was first built as **«Mută ferestre copil»** — `SetWindowPos` on individual Adobe child windows (`AVSplitterView`) targeted by window text, with an origin store keyed by text and a timer re-imposing the move because Adobe recomputes its layout and puts its children back.
 
-**That was the wrong mechanism.** The operator's correction: the position belongs on the **main PDF
-window** — the one the bench hosts — *just like the right and top properties*, not on specific child windows. Reworked accordingly; the child-move engine, the origin store, the reapply timer and the `moveChildren` step are gone, not layered over.
+**That was the wrong mechanism.** The operator's correction: the position belongs on the **main PDF window** — the one the bench hosts — *just like the right and top properties*, not on specific child windows. Reworked accordingly; the child-move engine, the origin store, the reapply timer and the `moveChildren` step are gone, not layered over.
 
 The rework is also markedly smaller, which is the tell that it was the right shape all along: one rectangle, no probing, no timer, no coordinate bookkeeping per child.
 
@@ -372,8 +365,7 @@ and they **compose** with it: the clip produces the base rectangle, the deltas s
 
 Negative `dx`/`dy` pull the window left/up so the band at that edge leaves the panel's visible area; `dw`/`dh` grow it back over the opposite edge so no empty strip is left behind. Width and height are floored at 1 — a zero-sized window would vanish with no way back except a relaunch.
 
-**Because everything flows through `HostedBounds()`, a delta is re-applied for free** by
-`LayoutHostedWindow`, `NudgeRedraw`, the resize/splitter debounce and every relaunch. Nothing has to re-impose it, which is exactly why the child-window version needed a timer and this one does not. The deltas deliberately survive `ClearHostState`: they describe where the *next* hosted window should go, like the clip settings.
+**Because everything flows through `HostedBounds()`, a delta is re-applied for free** by `LayoutHostedWindow`, `NudgeRedraw`, the resize/splitter debounce and every relaunch. Nothing has to re-impose it, which is exactly why the child-window version needed a timer and this one does not. The deltas deliberately survive `ClearHostState`: they describe where the *next* hosted window should go, like the clip settings.
 
 ### §2 The section
 

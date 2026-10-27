@@ -1,7 +1,6 @@
 # SLICELESS - Security plan: new system next to the legacy one (11.10.2026)
 
-Plan: `docs/PLAN_Securitate_API.md`. Operator decision in chat: build everything, **delete nothing legacy
-until the operator has tested both systems**. Help recorded as 0000-67.
+Plan: `docs/PLAN_Securitate_API.md`. Operator decision in chat: build everything, **delete nothing legacy until the operator has tested both systems**. Help recorded as 0000-67.
 
 ## What changed and why
 

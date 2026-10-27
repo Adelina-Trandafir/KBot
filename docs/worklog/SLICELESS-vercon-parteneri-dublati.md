@@ -2,39 +2,24 @@
 
 ## What changed and why
 
-The same firm existed twice under two fiscal codes (Miralics: 28022254 and 280222254), which splits its receipts and
-invoices. A window now lists such partners and merges them into one fiscal code.
+The same firm existed twice under two fiscal codes (Miralics: 28022254 and 280222254), which splits its receipts and invoices. A window now lists such partners and merges them into one fiscal code.
 
-- **Duplicates** = same name after removing spaces, accents, punctuation, a leading SC / S.C. and a trailing
-  SRL / S.R.L. / SRL-D / SA / SNC / SCS / SCA / PFA / II (`utils/vercon_suppliers.duplicate_key`), with different fiscal
-  codes. Partners without a fiscal code are ignored (the partner view already skips them).
-- **Merge** (`POST /api/vercon/suppliers/merge`, one transaction): `VC_NIR.CodPartener` (+ `FurnizorV`) and
-  `VC_FACTURI.CodPartener` of the whole DC move to the kept code, `Version` / `VERSION` are bumped (an editor holding an
-  old copy gets a conflict), the merged `Parteneri` rows get `Ascuns = 1` (never deleted: FOREXE keeps its references).
-  Audit line `supplier.merge`; idempotent through the request key. Needs the `receptie` right and the gestiune lock.
-- **Window** opens once per page when an Intrari form (NIR / Storno) opens, only for users who may merge and only when
-  duplicates exist; always from `Intrari > Parteneri dublati...`. After a merge the open form reloads.
-- «Factura interna» (Codex's wording) = the common invoice `VC_FACTURI`, linked to NIRs by `VC_NIR_FACTURI`; the UI calls
-  it «factura comuna». Both tables carry the supplier code, so the merge rewrites both. Where several invoices end up with
-  the same number and date the answer says so (`invoice_twins`); they are NOT auto-merged (use the existing invoice merge).
+- **Duplicates** = same name after removing spaces, accents, punctuation, a leading SC / S.C. and a trailing SRL / S.R.L. / SRL-D / SA / SNC / SCS / SCA / PFA / II (`utils/vercon_suppliers.duplicate_key`), with different fiscal codes. Partners without a fiscal code are ignored (the partner view already skips them).
+- **Merge** (`POST /api/vercon/suppliers/merge`, one transaction): `VC_NIR.CodPartener` (+ `FurnizorV`) and `VC_FACTURI.CodPartener` of the whole DC move to the kept code, `Version` / `VERSION` are bumped (an editor holding an old copy gets a conflict), the merged `Parteneri` rows get `Ascuns = 1` (never deleted: FOREXE keeps its references). Audit line `supplier.merge`; idempotent through the request key. Needs the `receptie` right and the gestiune lock.
+- **Window** opens once per page when an Intrari form (NIR / Storno) opens, only for users who may merge and only when duplicates exist; always from `Intrari > Parteneri dublati...`. After a merge the open form reloads.
+- «Factura interna» (Codex's wording) = the common invoice `VC_FACTURI`, linked to NIRs by `VC_NIR_FACTURI`; the UI calls it «factura comuna». Both tables carry the supplier code, so the merge rewrites both. Where several invoices end up with the same number and date the answer says so (`invoice_twins`); they are NOT auto-merged (use the existing invoice merge).
 
 ## Files touched
 
-`PYTHON/utils/vercon_suppliers.py` (duplicate_key), `PYTHON/routes/vercon/supplier_merge.py` (new),
-`PYTHON/routes/vercon/doc_routes.py` (register), `PYTHON/static/js/vercon/supplier-duplicates.js` (new),
-`PYTHON/static/js/vercon/app.js` (offer + menu entry), `PYTHON/static/css/vercon-supplier-duplicates.css` (new) and
-`vercon.css` (import), `PYTHON/static/help/vercon.json` (section «Parteneri dublati»).
+`PYTHON/utils/vercon_suppliers.py` (duplicate_key), `PYTHON/routes/vercon/supplier_merge.py` (new), `PYTHON/routes/vercon/doc_routes.py` (register), `PYTHON/static/js/vercon/supplier-duplicates.js` (new), `PYTHON/static/js/vercon/app.js` (offer + menu entry), `PYTHON/static/css/vercon-supplier-duplicates.css` (new) and `vercon.css` (import), `PYTHON/static/help/vercon.json` (section «Parteneri dublati»).
 
 ## Test results
 
-Only `import` of the Python modules, `node --check` of both JS files and a manual run of `duplicate_key` on sample names
-(S.C. MIRALICS S.R.L. / SC Miralics SRL / MIRALICS S.R.L.-D -> `miralics`). No test code, nothing run against a database or
-on screen (operator rule).
+Only `import` of the Python modules, `node --check` of both JS files and a manual run of `duplicate_key` on sample names (S.C. MIRALICS S.R.L. / SC Miralics SRL / MIRALICS S.R.L.-D -> `miralics`). No test code, nothing run against a database or on screen (operator rule).
 
 ## Unverified / deferred
 
-- SQL never run on a real DC database; the `UPDATE`s assume `VC_NIR.FurnizorV`, `VC_NIR.Version`, `VC_FACTURI.VERSION`
-  (all read from existing code).
+- SQL never run on a real DC database; the `UPDATE`s assume `VC_NIR.FurnizorV`, `VC_NIR.Version`, `VC_FACTURI.VERSION` (all read from existing code).
 - Closed exercises are rewritten too (the point is to repair history); audited, not blocked.
 - No "these are different firms" memory: the window will list a legitimate pair again until one is renamed.
 - E-invoices whose CUI is the hidden code no longer match a partner (matching uses active partners only).

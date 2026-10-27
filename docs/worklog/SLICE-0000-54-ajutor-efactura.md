@@ -1,5 +1,7 @@
 # SLICE-0000-54…60 — Ajutorul autorizării, emiterii și datelor unității
 
+Reper comun 0000-55/56/57/58: 07.10.2026; toate invocă regula din CLAUDE.md că orice schimbare vizibilă se consemnează în ajutor cu numărul feliei. Fișierul CLAUDE.md nu a fost accesat; se centralizează numai atribuirea deja scrisă în aceste patru etape.
+
 În 17.10, 94 mută atașamentul în vederea Conținut și retrage vederea separată Atașamente; capturile anterioare pot rămâne în urmă.
 
 Șase etape 54/55/56/57/58/60 din 06–09.10.2026. Tokenul devine subiect propriu, lista devine arbore, iar trimiterea/corecția și datele unității apar în etape ulterioare. „Nu se trimite încă”, „preluare ANAF o singură dată” și amplasarea comenzilor sunt checkpointuri amendate în istoricele [emiterii](SLICE-00EF-08-ecran-facturi-emise.md) și [unității](SLICE-00EF-13-date-unitate.md). Capturile, etichetele și rezultatele rămân pe etapă; ajutorul runtime nu se modifică.
@@ -35,8 +37,6 @@ New: `HelpContent/contabil/efactura/index.md`, this file. Edited: `HelpContent/c
 
 ## SLICE-0000-55 - Ajutor pentru 00EF-08: fereastra «E-Factura — facturi emise» <a id="slice-0000-55"></a>
 
-Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the help, with its slice number). 07.10.2026.
-
 ### What changed and why
 - `contabil/efactura/index.md` rewritten around the new window: «Lista facturilor» (columns, states, colours), «O factură nouă» (steps, what K-BOT refuses to save, Renunță, Modificare, Ștergere), one section per tab (Generale, Cumpărător, Vânzător, Atașamente, Conținut) and «Tokenul ANAF» (the old token sections, now reached from the «Token ANAF» button). Title `E-Factura: facturile emise și tokenul ANAF`; `screens:` now `FacturiForm, TokenForm, CertificatePickerForm`; keywords widened (factură, client, vânzător, cont emitent, IBAN, unitate de măsură, ciornă ...). Tags `00EF-08, 0000-55`.
 - `contabil/fereastra.md` (row «E-Factura» of MENIU) and `tours/tur-fereastra.md` (step «Butonul MENIU»): the entry no longer opens the token window.
@@ -57,7 +57,7 @@ Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the he
 
 ## SLICE-0000-56 - Ajutor pentru 00EF-12 si pentru token: conturile unitatii emitente, obtinerea / reinnoirea tokenului <a id="slice-0000-56"></a>
 
-Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the help, with its slice number). 07.10.2026. Help only: no tutorial (operator's request).
+Help only: no tutorial (operator's request).
 
 ### What changed and why
 - **New topic `contabil.efactura.conturi`** (`contabil/efactura/conturi.md`): the window «E-Factura — conturile unității» (opened by «Conturile unității…» in the «Vânzător» tab): what the two columns show (the bank is filled by K-BOT from the bank code inside the IBAN, «— banca nu este în listă —» when unknown), «Cont nou», «✕», «Salvează», «Închide» with the unsaved-rows question, what is refused (empty row, wrong IBAN, repeated account, more than 50), the «tables missing» message. Tags `00EF-12, 0000-56`; `screens: ConturiForm, FacturiForm.btnVConturi`; capture tag `conturi-unitate`.
@@ -77,8 +77,6 @@ Nothing was run for this step (operator: no build, no tests, no git). `Check-Hel
 - Text only; the windows were never seen on screen.
 
 ## SLICE-0000-57 - Ajutor pentru 00EF-09: arborele facturilor, meniul facturii, vederile cu document <a id="slice-0000-57"></a>
-
-Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the help, with its slice number). 07.10.2026.
 
 ### What changed and why
 - `contabil/efactura/index.md`:
@@ -106,7 +104,7 @@ Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the he
 
 ## SLICE-0000-58 - Ajutor pentru 00EF-13: fereastra «Date Unitate» <a id="slice-0000-58"></a>
 
-Help sub-slice (CLAUDE.md: any change to what the operator sees goes into the help, with its slice number). 07.10.2026. Text only.
+Text only.
 
 ### What changed and why
 - `contabil/efactura/index.md`: the view «Vânzător» is gone; new section **«Date unitate»** (the K button of the title bar and its menu, the window «Date Unitate», its fields, the phone format, the series and first number that lock after the first invoice, «Salvează» / «Ieșire», «Preia de la ANAF» that works once; the accounts window «Conturi Unitate» from the same menu); «Vederea Generale» gains **Cont emitent (IBAN)**; the list of views in «Arborele facturilor» and step 4 of «O factură nouă» updated; keywords (`vanzator` → `date unitate`); `screens:` = `FacturiForm, DateUnitateForm`; tags `00EF-13, 0000-58` on every touched section; capture tag `date-unitate` (new).

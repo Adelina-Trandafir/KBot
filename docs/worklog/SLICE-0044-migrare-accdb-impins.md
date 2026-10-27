@@ -11,10 +11,7 @@ Evoluția se citește cronologic: baza folosea cale.accdb/rutare și insert-if-a
 
 ## SLICE-0044 — Migrarea prin fișier `.accdb` împins pe server <a id="slice-0044-baza"></a>
 
-**Data:** 2026-08-20
-**Felia:** 0044 (următorul număr liber din registru).
-**Înlocuiește:** lanțul feliei 0042 (VBA scrie JSON → `KBot.Migrator` citește fișierele →
-rutele de seed).
+**Data:** 2026-08-20 **Felia:** 0044 (următorul număr liber din registru). **Înlocuiește:** lanțul feliei 0042 (VBA scrie JSON → `KBot.Migrator` citește fișierele → rutele de seed).
 
 ### Ce s-a schimbat și de ce
 
@@ -49,8 +46,7 @@ Planul de pornire spunea «`pip install pyaccdb`». Verificat pe index:
 | `migrare.py` | blueprintul: opt rute, gardă `X-Api-Key` |
 | `README.md` | pasul din Access + instalarea pe Linux |
 
-**Regulile vin din țintă, nu din Access.** MariaDB e cea care acceptă sau refuză rândul,
-deci `information_schema` e singura sursă onestă pentru tip, lungime, nulabilitate și chei străine. Tipul dedus de `mdb-schema` nu decide nimic; servește doar la raportarea coloanelor care există în Access și lipsesc din țintă.
+**Regulile vin din țintă, nu din Access.** MariaDB e cea care acceptă sau refuză rândul, deci `information_schema` e singura sursă onestă pentru tip, lungime, nulabilitate și chei străine. Tipul dedus de `mdb-schema` nu decide nimic; servește doar la raportarea coloanelor care există în Access și lipsesc din țintă.
 
 **Cele două clase de constatări** sunt tot mecanismul celor două butoane:
 
@@ -95,8 +91,7 @@ Din .NET nu se referă în continuare **niciun** driver Access — nici OleDb, n
 - `src/KBot.Migrator/Program.vb`, `KBot.Migrator.vbproj`
 - `docs/worklog/KBOT_STATUS.md`
 
-**Neatins, dar de acum nelegat:** `src/KBot.Migrator/{ExportArtifacts,Routing,Run}/`,
-`Api/SeedApiClient.vb`, `Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas`, `POST /api/forexe/seed/*`.
+**Neatins, dar de acum nelegat:** `src/KBot.Migrator/{ExportArtifacts,Routing,Run}/`, `Api/SeedApiClient.vb`, `Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas`, `POST /api/forexe/seed/*`.
 
 ### Rezultatele testelor
 
@@ -123,9 +118,7 @@ Patru cereri ale operatorului, toate pe lanțul de migrare al feliei 0044.
 
 #### 1. `cale.accdb` nu mai există nicăieri
 
-Tabelul `[Cai]` din `cale.accdb` spunea `IdUnitate → DC`. Aceeași pereche e
-**în fișierul FOREXE însuși** — verificat în exportul Access
-(`C:\AVACONT\FX_System_Export\TABLES`):
+Tabelul `[Cai]` din `cale.accdb` spunea `IdUnitate → DC`. Aceeași pereche e **în fișierul FOREXE însuși** — verificat în exportul Access (`C:\AVACONT\FX_System_Export\TABLES`):
 
 * `FX_Angajamente` are **și** `IdUnitate`, **și** `DC` (ex.: `75 → 045_CTER`);
 * `FX_Indicatori` are `IdUnitate` lângă `CodAngajament`, deci completează angajamentele al căror rând n-are unitate.
@@ -210,8 +203,7 @@ Potrivirea Access ▸ MariaDB era, până acum, **numele**, fără litere mari/m
 
 Deci corelația corectă e încrucișată: Access `IdClsf` ▸ MariaDB `IdClsfAcc`, și Access `IdClsfPY` ▸ MariaDB `IdClsf`. Regulile stau în `tables.COLUMN_RENAMES`, iar `tables.default_rename_map()` le aplică **doar acolo unde ținta chiar are coloana pe care o numesc** — un tabel al cărui echivalent MariaDB n-a căpătat niciodată `IdClsfAcc` rămâne cu potrivirea simplă după nume, exact cum era. (În exportul Access, `IdClsfPY` apare pe `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `FX_DDF_REV_PRT` și `FX_ORD_TBL`; `IdClsf` singur apare pe încă opt tabele migrate.)
 
-**Operatorul poate schimba corelația oricărei coloane**, nu doar a acestor
-două — asta a și cerut. Drumul complet:
+**Operatorul poate schimba corelația oricărei coloane**, nu doar a acestor două — asta a și cerut. Drumul complet:
 
 * `POST /api/migrare/tabele` întoarce acum, pe fiecare tabel, `coloane_tinta` (numele de pe MariaDB) și, pe fiecare coloană, `tinta` — corelația propusă;
 * migratorul le arată în fila nouă și le lasă schimbate rând cu rând;
@@ -225,18 +217,13 @@ Trei lucruri refuzate explicit, în loc de tăcute:
 * **două coloane din Access corelate cu aceeași coloană de pe MariaDB opresc totul**: 400 la `POST /api/migrare/analiza` (`_corelatii_cerute`), `ValidationError` în `column_rename_map`, `ExecuteError` la scriere. Una dintre valori s-ar pierde, și nu se poate spune care;
 * o țintă vidă înseamnă «coloana asta nu călătorește» — același înțeles ca bifa stinsă din lista de coloane, nu un al doilea mecanism.
 
-**Rutarea nu e atinsă de nimic din toate astea.** Ea citește rândul cu numele
-lui din Access (`IdUnitate`, `DC`, `CodAngajament`), înainte de orice corelație — `with_target_names` face o COPIE, rândul original rămâne al rutării.
+**Rutarea nu e atinsă de nimic din toate astea.** Ea citește rândul cu numele lui din Access (`IdUnitate`, `DC`, `CodAngajament`), înainte de orice corelație — `with_target_names` face o COPIE, rândul original rămâne al rutării.
 
 #### 2. Fila nouă, și toate grilele trecute pe `KBotDataView`
 
-`dgvConstatari` nu mai stă andocat direct pe formular: locul din dreapta e acum un `TabControl` cu două file — **«Constatări»** (grila de dinainte) și
-**«Corelații coloane»** (grila nouă). Amândouă descriu tabelul ales în lista
-din stânga, ca și lista de coloane.
+`dgvConstatari` nu mai stă andocat direct pe formular: locul din dreapta e acum un `TabControl` cu două file — **«Constatări»** (grila de dinainte) și **«Corelații coloane»** (grila nouă). Amândouă descriu tabelul ales în lista din stânga, ca și lista de coloane.
 
-Grila de corelații are patru coloane: coloana din Access, **«Se scrie în (MariaDB)»** (combo cu coloanele țintei plus `(nu se scrie)`), **«Propus de server»** (reperul față de care se vede ce a schimbat operatorul) și
-**«Stare»** (`cheie primară` / `coloană debifată` / `fără pereche` /
-`schimbată de tine` / `corelare încrucișată`).
+Grila de corelații are patru coloane: coloana din Access, **«Se scrie în (MariaDB)»** (combo cu coloanele țintei plus `(nu se scrie)`), **«Propus de server»** (reperul față de care se vede ce a schimbat operatorul) și **«Stare»** (`cheie primară` / `coloană debifată` / `fără pereche` / `schimbată de tine` / `corelare încrucișată`).
 
 Cele patru grile ale formularului — `dgvTabele`, `dgvColoane`, `dgvConstatari`, `dgvCorelatii` — sunt acum `KBot.Controls.KBotDataView`, nu `DataGridView`, **cu toate coloanele și proprietățile scrise în `.Designer.vb`** (regula casei). Ce s-a schimbat odată cu ele:
 
@@ -248,9 +235,7 @@ Cele patru grile ale formularului — `dgvTabele`, `dgvColoane`, `dgvConstatari`
 
 #### 3. RULE 0 — diacriticele afară din cod
 
-Corelațiile au plecat cu `coloane_țintă`, `țintă` și `corelații` drept nume de câmpuri JSON, plus `corelații` / `_corelații_cerute` drept identificatori Python. Regula 0 a proiectului spune altceva, iar acum e scrisă în `CLAUDE.md`:
-**fără diacritice nicăieri în cod; singura excepție e textul pe care operatorul
-îl citește pe ecran.**
+Corelațiile au plecat cu `coloane_țintă`, `țintă` și `corelații` drept nume de câmpuri JSON, plus `corelații` / `_corelații_cerute` drept identificatori Python. Regula 0 a proiectului spune altceva, iar acum e scrisă în `CLAUDE.md`: **fără diacritice nicăieri în cod; singura excepție e textul pe care operatorul îl citește pe ecran.**
 
 De aici a ieșit o măturare a întregului modul, nu doar a coloanelor noi — contractul de sârmă purta diacritice de dinainte, iar el se schimbă pe amândouă capetele deodată (nimic n-a rulat vreodată live, deci n-a fost nimic de rupt):
 
@@ -273,8 +258,7 @@ Felurile de constatare și clasele au trecut și ele la ASCII, deși se scriu li
 
 Toate trec prin constantele din `validate.py` (`F_*`, `BLOCANT`, `FORTABIL`) și prin `CLASS_OF`, deci n-a fost niciun literal răzleț de urmărit; singura comparație pe partea .NET, `Constatare.EsteBlocanta`, arată acum spre `BLOCANT`.
 
-**Ce NU s-a atins:** doar șirurile pe care le vede operatorul ca PROPOZIȚII —
-mesaje, etichete, sfaturi, `.resx`, liniile de jurnal, câmpul `error` al API-ului, și valorile scrise în celule de migrator (`lipsește`, `LIPSEȘTE`, `cheie primară`, `corelare încrucișată`…), care nu pleacă nicăieri pe sârmă. Restul depozitului (`KBot.Controls` și celelalte proiecte) încă poartă comentarii cu diacritice de dinainte de regulă — o măturare separată.
+**Ce NU s-a atins:** doar șirurile pe care le vede operatorul ca PROPOZIȚII — mesaje, etichete, sfaturi, `.resx`, liniile de jurnal, câmpul `error` al API-ului, și valorile scrise în celule de migrator (`lipsește`, `LIPSEȘTE`, `cheie primară`, `corelare încrucișată`…), care nu pleacă nicăieri pe sârmă. Restul depozitului (`KBot.Controls` și celelalte proiecte) încă poartă comentarii cu diacritice de dinainte de regulă — o măturare separată.
 
 ### Ce NU s-a făcut
 
@@ -299,9 +283,7 @@ mesaje, etichete, sfaturi, `.resx`, liniile de jurnal, câmpul `error` al API-ul
 
 ## SLICE-0044-04 — coloane obligatorii apărate · dosarul de instrucțiuni SQL <a id="slice-0044-04"></a>
 
-**Data:** 2026-08-21
-**Domeniu:** doar server (`PYTHON/routes/migrare/`) + o cheie nouă în `config.py` pe VPS.
-`src/KBot.Migrator/` **neatins** — nimic din felia asta nu ajunge pe ecran.
+**Data:** 2026-08-21 **Domeniu:** doar server (`PYTHON/routes/migrare/`) + o cheie nouă în `config.py` pe VPS. `src/KBot.Migrator/` **neatins** — nimic din felia asta nu ajunge pe ecran.
 
 ### 1. Ce s-a schimbat și de ce
 
@@ -316,16 +298,13 @@ if chosen_cols is not None and target_name not in chosen_cols:  # (b) bifa
     continue
 ```
 
-`chosen_columns_of()` apăra cheia primară de (b) (`chosen.update(pk_columns)`).
-**Nimic nu o apăra de (a).** `MigratorForm.CorelatiiAlese` trimite harta de
-corelații ÎNTREAGĂ pentru fiecare tabel bifat, inclusiv `""` pentru coloanele fără țintă; `column_rename_map` citea `""` ca «nu călătorește» și făcea `rename.pop(key)`. O cheie primară — sau orice coloană `NOT NULL` fără valoare implicită — putea deci să dispară din instrucțiune.
+`chosen_columns_of()` apăra cheia primară de (b) (`chosen.update(pk_columns)`). **Nimic nu o apăra de (a).** `MigratorForm.CorelatiiAlese` trimite harta de corelații ÎNTREAGĂ pentru fiecare tabel bifat, inclusiv `""` pentru coloanele fără țintă; `column_rename_map` citea `""` ca «nu călătorește» și făcea `rename.pop(key)`. O cheie primară — sau orice coloană `NOT NULL` fără valoare implicită — putea deci să dispară din instrucțiune.
 
 MariaDB răspunde atunci `1364 (HY000): Field '<col>' doesn't have a default value` — eroare despre **lista de coloane**, nu despre valori (un NULL într-o coloană `NOT NULL` ar fi 1048, altă eroare). Ăsta e eșecul observat pe `FX_Angajamente` / `CodAngajament` pe 2026-08-21.
 
 #### 1.2 `TargetSchema` — ce s-a găsit acolo (cerut explicit de plan)
 
-**Interogarea selecta deja `IS_NULLABLE`, `COLUMN_DEFAULT` și `EXTRA`.** Pasul
-§1.1 al planului a fost aproape un no-op. Forma exactă a `meta`-ului pe coloană, înainte de felia asta:
+**Interogarea selecta deja `IS_NULLABLE`, `COLUMN_DEFAULT` și `EXTRA`.** Pasul §1.1 al planului a fost aproape un no-op. Forma exactă a `meta`-ului pe coloană, înainte de felia asta:
 
 | cheie | din ce | ce ține |
 |---|---|---|
@@ -339,8 +318,7 @@ MariaDB răspunde atunci `1364 (HY000): Field '<col>' doesn't have a default val
 | `auto` | `'auto_increment' in EXTRA` | bool |
 | `cheie` | `COLUMN_KEY` | `PRI` / `MUL` / … |
 
-**Singura adăugare:** cheia `extra` — `EXTRA` brut, litere mici. `auto` răspundea
-la o singură întrebare din `EXTRA`; `is_required` are nevoie și de celelalte (coloane generate, expresii `on update`). Nicio cheie existentă n-a fost redenumită sau schimbată — `check_value()` și `_row_is_blocked()` le citesc.
+**Singura adăugare:** cheia `extra` — `EXTRA` brut, litere mici. `auto` răspundea la o singură întrebare din `EXTRA`; `is_required` are nevoie și de celelalte (coloane generate, expresii `on update`). Nicio cheie existentă n-a fost redenumită sau schimbată — `check_value()` și `_row_is_blocked()` le citesc.
 
 #### 1.3 `is_required` + apărarea în trei locuri
 
@@ -407,8 +385,7 @@ _CONVERTER = MySQLConverter()
 out = _CONVERTER.quote(_CONVERTER.escape(_CONVERTER.to_mysql(value)))
 ```
 
-**Lanțul verificat pe versiunea instalată** (`mysql-connector-python 9.7.0`, în
-`PYTHON/.venv`), nu presupus. Ce dă, măsurat:
+**Lanțul verificat pe versiunea instalată** (`mysql-connector-python 9.7.0`, în `PYTHON/.venv`), nu presupus. Ce dă, măsurat:
 
 | valoare | rezultat |
 |---|---|
@@ -424,8 +401,7 @@ out = _CONVERTER.quote(_CONVERTER.escape(_CONVERTER.to_mysql(value)))
 
 `MySQLConverter` e Python curat și nu cere conexiune, deci merge oricare ar fi tipul de conexiune (serverul rulează extensia C, a cărei conexiune nu expune un converter la fel). Importul e păzit ca `storage.config`, ca modulele pure să rămână importabile pe o stație fără driver.
 
-**`bytes` sunt singurul lucru scris de mână**, ca literal `0x…`: quoting-ul
-driverului pentru ele e octet brut, care n-are ce căuta într-un fișier text UTF-8. Un tip pe care converterul îl refuză nu capătă un escape inventat: se scrie `/* VALOARE NEREPREZENTABILĂ: <tip> */`, iar coloana și cheia rândului ajung în `_99_final.txt`, la «Observații». Instrucțiunea chiar trimisă nu e atinsă — doar consemnarea ei.
+**`bytes` sunt singurul lucru scris de mână**, ca literal `0x…`: quoting-ul driverului pentru ele e octet brut, care n-are ce căuta într-un fișier text UTF-8. Un tip pe care converterul îl refuză nu capătă un escape inventat: se scrie `/* VALOARE NEREPREZENTABILĂ: <tip> */`, iar coloana și cheia rândului ajung în `_99_final.txt`, la «Observații». Instrucțiunea chiar trimisă nu e atinsă — doar consemnarea ei.
 
 #### 1.8 Legarea
 
@@ -454,16 +430,13 @@ Orice linie cu ceva **după** dimensiune nu se potrivea, iar coloana era scoasă
 
 Deci exact **coloanele cu dimensiune care sunt `NOT NULL`** dispăreau — `varchar(n)`, `numeric(p,s)`, `text(n)`. `CodAngajament` e `varchar(50)` și e cheia primară a lui `FX_Angajamente`, deci `NOT NULL`: lipsea din grilă, lipsea din `access_columns`, deci nu intra niciodată în `INSERT`, deci 1364. Un tip fără dimensiune scăpa doar fiindcă clasa de caractere înghițea constrângerea în tip.
 
-**Reparat** prin despărțirea a ceea ce trebuie să fie strict de ceea ce e
-best-effort: `_COL_RE` potrivește acum **doar numele** (între accente grave) plus restul liniei; `_CONSTRAINT_RE` curăță de la coadă constrângerile (`NOT NULL`, `NULL`, `AUTO_INCREMENT`, `PRIMARY KEY`, `UNIQUE`, `DEFAULT …`, `COMMENT …`), iar `_TYPE_RE` citește tipul și dimensiunea din ce rămâne.
+**Reparat** prin despărțirea a ceea ce trebuie să fie strict de ceea ce e best-effort: `_COL_RE` potrivește acum **doar numele** (între accente grave) plus restul liniei; `_CONSTRAINT_RE` curăță de la coadă constrângerile (`NOT NULL`, `NULL`, `AUTO_INCREMENT`, `PRIMARY KEY`, `UNIQUE`, `DEFAULT …`, `COMMENT …`), iar `_TYPE_RE` citește tipul și dimensiunea din ce rămâne.
 
-**Regula care contează:** o coloană nu se pierde NICIODATĂ pentru că nu i s-a
-putut citi tipul. Tipul de acolo nu decide nimic — validarea îl ia din MariaDB, care e cea care acceptă sau refuză rândul — pe când un nume lipsă schimbă tăcut `INSERT`-ul. Un tip necitit dă `tip = ""` și coloana rămâne.
+**Regula care contează:** o coloană nu se pierde NICIODATĂ pentru că nu i s-a putut citi tipul. Tipul de acolo nu decide nimic — validarea îl ia din MariaDB, care e cea care acceptă sau refuză rândul — pe când un nume lipsă schimbă tăcut `INSERT`-ul. Un tip necitit dă `tip = ""` și coloana rămâne.
 
 Parsarea a ieșit din `columns()` în `parse_columns(text)` / `_parse_column(line)`, funcții pure de text, ca să poată fi testate fără mdbtools, fără `.accdb` și fără server.
 
-**Neverificat, spus limpede:** nu am putut rula `mdb-schema` (nu e pe stația
-Windows și nu există ieșire capturată în depozit), deci **nu am confirmat pe octeți că tokenul de după dimensiune este chiar `NOT NULL`**. Ce E verificat, cu măsurătoare pe expresia veche: orice text după `(dimensiune)` făcea linia să nu se potrivească, iar coloana se pierdea. Reparația nu depinde de care e tokenul — parserul păstrează acum coloana oricare ar fi el.
+**Neverificat, spus limpede:** nu am putut rula `mdb-schema` (nu e pe stația Windows și nu există ieșire capturată în depozit), deci **nu am confirmat pe octeți că tokenul de după dimensiune este chiar `NOT NULL`**. Ce E verificat, cu măsurătoare pe expresia veche: orice text după `(dimensiune)` făcea linia să nu se potrivească, iar coloana se pierdea. Reparația nu depinde de care e tokenul — parserul păstrează acum coloana oricare ar fi el.
 
 #### Teste noi
 
@@ -484,8 +457,7 @@ value: '04/28/26 15:28:03' for column `000_DEMO`.`FX_Angajamente`.`DTQ` at row 1
 
 Aceeași boală ca la §1.9, cu un etaj mai jos. `validate._DATE_FORMATS` conținea DEJA `"%m/%d/%y %H:%M:%S"`, deci analiza **accepta** valoarea — o convertea ca s-o judece — dar scrierea trimitea **șirul original**. Un verificator care convertește ca să judece, lângă un scriitor care nu convertește, e un verificator care minte.
 
-**`PYTHON/routes/migrare/parser.py`**, modul nou: singurul loc care traduce, și
-îl cheamă **amândouă** — `validate.analyze()` și `execute.run()`, în același punct al buclei, imediat după `with_target_names`. Ce s-a măsurat e ce pleacă.
+**`PYTHON/routes/migrare/parser.py`**, modul nou: singurul loc care traduce, și îl cheamă **amândouă** — `validate.analyze()` și `execute.run()`, în același punct al buclei, imediat după `with_target_names`. Ce s-a măsurat e ce pleacă.
 
 **Ținta decide.** Forma o dă tipul coloanei MariaDB; Access e doar proveniența.
 
@@ -497,8 +469,7 @@ Aceeași boală ca la §1.9, cu un etaj mai jos. `validate._DATE_FORMATS` conți
 | text gol într-o coloană ne-text | `NULL` |
 | dată întreagă spre o coloană `time` | `15:28:03` |
 
-**Nu inventează.** Ce nu poate citi trece **neschimbat**, ca `check_value` să-l
-raporteze drept `TIP` — constatare blocantă. Un zero pus în locul unei valori necitite e mai rău decât o rulare oprită. (`31/02/2026` și `nu e o dată` ies exact așa, verificat.)
+**Nu inventează.** Ce nu poate citi trece **neschimbat**, ca `check_value` să-l raporteze drept `TIP` — constatare blocantă. Un zero pus în locul unei valori necitite e mai rău decât o rulare oprită. (`31/02/2026` și `nu e o dată` ies exact așa, verificat.)
 
 Trei decizii luate anume, fiindcă ghicitul aici strică date:
 
@@ -506,8 +477,7 @@ Trei decizii luate anume, fiindcă ghicitul aici strică date:
 2. **Fără separator de mii** — informație de la operator (2026-08-21): Access nu scrie separator de mii nici când coloana are format de afișare, fiindcă formatul e cum se ARATĂ valoarea, nu cum se păstrează. Deci `,` = separator zecimal, punct. Prima variantă pe care o scrisesem avea o euristică „separatorul cel mai din dreapta e cel zecimal"; a fost **scoasă** — era invenție. Un șir cu amândoi separatorii sau cu spațiu între cifre rămâne neatins: nu poate veni din Access, deci nu există citire sigură a lui `1.234,56`.
 3. **Ziua/luna când sunt amândouă ≤ 12** — an din 2 cifre cu `/` → **luna prima** (formatul propriu al lui mdbtools, `%m/%d/%y`, și mdbtools ne produce rândurile); an din 4 cifre cu `/` → **ziua prima**; `.` sau `-` → **ziua prima**. Cele două reguli sunt constante sus în `parser.py`. **Fiecare** dată ambiguă intră în `_02_parsare.log` cu citirea aleasă — auditabilă, nu de crezut pe cuvânt. Separatorul e **capturat** de expresie (`(?P=sep)`), nu căutat după aceea: `.` și `/` se citesc diferit, deci a ghici care a fost înseamnă a ghici ziua și luna.
 
-**Un defect al meu, prins la verificare:** prima versiune identifica anul cu
-`c > 31`, ceea ce arunca **toți anii din două cifre** — adică exact formatul raportat. Al treilea număr e anul, punct; pivotul e 70 (sub → 2000, de la 70 → 1900), ca la POSIX și MariaDB.
+**Un defect al meu, prins la verificare:** prima versiune identifica anul cu `c > 31`, ceea ce arunca **toți anii din două cifre** — adică exact formatul raportat. Al treilea număr e anul, punct; pivotul e 70 (sub → 2000, de la 70 → 1900), ca la POSIX și MariaDB.
 
 #### `_02_parsare.log`
 
@@ -524,8 +494,7 @@ CodAngajament=AN-2026-0001 | Activ | -1 → 1 (Access folosește -1 pentru «da�
   FX_Angajamente.Activ: 1  …
 ```
 
-**Numai ce s-a schimbat.** O valoare trecută neatinsă n-are ce spune, iar scrisul
-tuturor celulelor ar face fișierul de neconsultat exact pentru cel care caută o conversie greșită. `_99_final.txt` capătă o linie cu totalul conversiilor și cu câte au fost ambigue. `flush` pe lot, ca restul dosarului; păzit de același `_guard`, deci nici jurnalul de parsare nu poate rupe migrarea. Analiza NU scrie în dosar (decizia rămâne), dar spune pe tabel, în jurnalul lucrării, câte valori a adus la formă și câte date au fost ambigue.
+**Numai ce s-a schimbat.** O valoare trecută neatinsă n-are ce spune, iar scrisul tuturor celulelor ar face fișierul de neconsultat exact pentru cel care caută o conversie greșită. `_99_final.txt` capătă o linie cu totalul conversiilor și cu câte au fost ambigue. `flush` pe lot, ca restul dosarului; păzit de același `_guard`, deci nici jurnalul de parsare nu poate rupe migrarea. Analiza NU scrie în dosar (decizia rămâne), dar spune pe tabel, în jurnalul lucrării, câte valori a adus la formă și câte date au fost ambigue.
 
 #### Jurnalizarea erorilor (cerută explicit)
 
@@ -533,8 +502,7 @@ tuturor celulelor ar face fișierul de neconsultat exact pentru cel care caută 
 * `routing._key_rows()` înghițea un `AccdbError` în jurnalul LUCRĂRII (care trăiește două ore) fără să-l pună în jurnalul SERVERULUI. Acum face amândouă.
 * `parser.parse_value()` prinde orice și loghează cu `logger.exception`, apoi întoarce valoarea neatinsă: parsarea nu poate omorî migrarea.
 
-**Ce am lăsat anume nelogat, și de ce:** predicatele `_as_int` / `_as_decimal` /
-`_as_float` / `_as_datetime` din `validate.py` și `routing.py`, `parser._number_from_text` și `parser._valid`. Alea nu sunt erori, sunt întrebări — «e numărul ăsta un întreg?». Ele răspund `None` pentru fiecare celulă care nu e un număr, iar asta e chiar mecanismul prin care `check_value` produce constatarea. Logate, ar scrie o linie per celulă neconformă — milioane de linii care ar îneca erorile adevărate. La fel cele trei `except ImportError` (`config`, `mysql.connector`): sunt sonde de capabilitate, documentate, iar `logger` nici nu e configurat la momentul importului.
+**Ce am lăsat anume nelogat, și de ce:** predicatele `_as_int` / `_as_decimal` / `_as_float` / `_as_datetime` din `validate.py` și `routing.py`, `parser._number_from_text` și `parser._valid`. Alea nu sunt erori, sunt întrebări — «e numărul ăsta un întreg?». Ele răspund `None` pentru fiecare celulă care nu e un număr, iar asta e chiar mecanismul prin care `check_value` produce constatarea. Logate, ar scrie o linie per celulă neconformă — milioane de linii care ar îneca erorile adevărate. La fel cele trei `except ImportError` (`config`, `mysql.connector`): sunt sonde de capabilitate, documentate, iar `logger` nici nu e configurat la momentul importului.
 
 #### Teste noi
 
@@ -542,8 +510,7 @@ tuturor celulelor ar face fișierul de neconsultat exact pentru cel care caută 
 
 ### 1.11 Pasul 07 — cheile străine: ordinea de scriere, familia ORD, orfanii
 
-Adăugat după eșecul `FX_Rezervari` de pe 21.08 (`1452`, `FX_Rezervari__FX_DDF_REV`) și după recitirea schemei `000_DEMO` reîmprospătate:
-**55 de tabele, 95 de chei străine**.
+Adăugat după eșecul `FX_Rezervari` de pe 21.08 (`1452`, `FX_Rezervari__FX_DDF_REV`) și după recitirea schemei `000_DEMO` reîmprospătate: **55 de tabele, 95 de chei străine**.
 
 #### Schema se mișcă — nu se mai scrie de mână ce spune ea deja
 
@@ -553,15 +520,13 @@ Copia veche de `000_DEMO.sql` arăta `FX_Rezervari` **fără nicio cheie străin
 
 O cheie străină cere rândul părinte **prezent la INSERT**. Golirea părintelui întâi, în «Înlocuiește tot», nu relaxează nimic: face eșecul **sigur**, nu îl evită. `FX_Istoric` scrisese 3246 de rânduri cu o secundă mai devreme, cu propria lui coloană `IDREV`, numai fiindcă `FX_Istoric.IDREV` **nu poartă** constrângere.
 
-Printre cele 27 de tabele migrate, ordinea veche din `tables.ALL` încălca
-**exact una** dintre cele 95 de constrângeri:
+Printre cele 27 de tabele migrate, ordinea veche din `tables.ALL` încălca **exact una** dintre cele 95 de constrângeri:
 
 ```
 poziția 4  FX_Rezervari.IDREV -> FX_DDF_REV  (scris pe poziția 14)
 ```
 
-**Ordinea implicită nouă** mută `FX_DDF` și `FX_DDF_REV` pe pozițiile 3 și 4.
-Nimic altceva nu se mută. `FX_DDF` are nevoie doar de `FX_Angajamente`, care rămâne primul; `FX_DDF_REV` doar de `FX_DDF`.
+**Ordinea implicită nouă** mută `FX_DDF` și `FX_DDF_REV` pe pozițiile 3 și 4. Nimic altceva nu se mută. `FX_DDF` are nevoie doar de `FX_Angajamente`, care rămâne primul; `FX_DDF_REV` doar de `FX_DDF`.
 
 ```
  1 FX_Angajamente     10 FX_Receptii         19 FX_ORD
@@ -590,13 +555,11 @@ Confirmat de operator (22.08). Pe MariaDB cheile familiei sunt coloanele cu `P` 
 
 Cinci corelații noi în `tables.COLUMN_RENAMES`, lângă perechea `IdClsf`: `IDORD→IDORDP`, `IDORDPART→IDORDPARTP`, `IDORDTBL→IDORDTBLP`, `IDORDDOC→IDORDDOCP`, `IDORDATT→IDORDATTP`. Regula veche de siguranță e neschimbată: o corelație se aplică **doar unde ținta chiar are coloana pe care o numește**, deci fiecare atinge exact tabelul ei.
 
-**O reparație pe care planul o cerea implicit și pe care mecanismul n-o avea:**
-`default_rename_map` **eliberează acum potrivirea după nume pe care o înlocuiește**. Fără asta, Access `IDORD` și Access `IDORDP` ajungeau amândouă pe `IDORDP`, iar `insert_columns` oprea totul cu «două coloane din Access corelate cu aceeași coloană». Așa se împlinește promisiunea planului că **cele 144 de zerouri (`IDORDP` în Access, măsurat 144/144) nu mai călătoresc deloc**: coloana rămâne pur și simplu necorelată. Coloana care e ea însăși SURSA unei corelații e lăsată în pace — `IdClsf` e și revendicat (de `IdClsfPY`), și redenumit (în `IdClsfAcc`), iar o ștergere naivă i-ar fi anulat propria regulă. Efect secundar, corect și verificat: pe un tabel al cărui MariaDB are `IdClsf` dar nu și `IdClsfAcc`, Access `IdClsf` rămâne acum **necorelat** în loc să se ciocnească de `IdClsfPY` pe aceeași țintă.
+**O reparație pe care planul o cerea implicit și pe care mecanismul n-o avea:** `default_rename_map` **eliberează acum potrivirea după nume pe care o înlocuiește**. Fără asta, Access `IDORD` și Access `IDORDP` ajungeau amândouă pe `IDORDP`, iar `insert_columns` oprea totul cu «două coloane din Access corelate cu aceeași coloană». Așa se împlinește promisiunea planului că **cele 144 de zerouri (`IDORDP` în Access, măsurat 144/144) nu mai călătoresc deloc**: coloana rămâne pur și simplu necorelată. Coloana care e ea însăși SURSA unei corelații e lăsată în pace — `IdClsf` e și revendicat (de `IdClsfPY`), și redenumit (în `IdClsfAcc`), iar o ștergere naivă i-ar fi anulat propria regulă. Efect secundar, corect și verificat: pe un tabel al cărui MariaDB are `IdClsf` dar nu și `IdClsfAcc`, Access `IdClsf` rămâne acum **necorelat** în loc să se ciocnească de `IdClsfPY` pe aceeași țintă.
 
 `SeedTable.primary_key` al celor cinci tabele devine numele **țintei** (`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDDOCP`, `IDORDATTP`). Cu asta începe să funcționeze upsert-ul lui `FX_ORD`: până acum `tables.py` declara cheia `IDORD`, cea de pe MariaDB e `IDORDP`, iar `IDORD` n-are index unic — deci a doua rulare «Adaugă/actualizează» ar fi inserat din nou toate cele 38 de ordine în loc să le actualizeze.
 
-**`key_column` NU s-a schimbat** (verificat pe diff: fiecare valoare e
-neatinsă). Rutarea citește rândul cu numele lui din **Access**, înaintea oricărei corelații. Planul avertiza că ăsta e locul cel mai probabil de defect tăcut, și chiar era unul: `TableSelector.primary_key_of` citea `table.primary_key` **dintr-un rând Access**. Cu cheia mutată pe numele țintei, ar fi raportat fiecare rând ORD sub coloana Access `IDORDP` — adică `0`, pe toate. De aceea `SeedTable` a căpătat **`access_key`** (implicit egal cu `primary_key`), iar `primary_key_of` citește de acolo.
+**`key_column` NU s-a schimbat** (verificat pe diff: fiecare valoare e neatinsă). Rutarea citește rândul cu numele lui din **Access**, înaintea oricărei corelații. Planul avertiza că ăsta e locul cel mai probabil de defect tăcut, și chiar era unul: `TableSelector.primary_key_of` citea `table.primary_key` **dintr-un rând Access**. Cu cheia mutată pe numele țintei, ar fi raportat fiecare rând ORD sub coloana Access `IDORDP` — adică `0`, pe toate. De aceea `SeedTable` a căpătat **`access_key`** (implicit egal cu `primary_key`), iar `primary_key_of` citește de acolo.
 
 Al doilea loc cu aceeași boală, găsit tot așa: în `migrare.tabele_fisier`, steagul «cheie» al grilei de coloane compara numele **Access** cu cheia primară a **țintei**. Pe familia ORD ar fi bifat exact coloana greșită — cea care în Access e numai zerouri. Se judecă acum pe **ținta corelației**.
 
@@ -609,13 +572,9 @@ Decizia operatorului (22.08), care înlocuiește convenția «se sare rândul» 
 
 Un **`0`** e orfan oriunde cheia părintelui e `AUTO_INCREMENT`: un asemenea rând nu poate exista. Ca să știe asta, `TargetSchema` mai face o trecere prin `information_schema.COLUMNS` pentru tabelele către care **arată** cheile — inclusiv cele din afara setului migrat, ale căror coloane nu se încarcă altfel (`referenced` + `referenced_is_auto`). Necunoscut răspunde `False`: nu inventăm un orfan. (Măsurat pe `FX_Rezervari.IDREV`: 125 NULL, 0 zerouri, 34 reale — deci după (a) asta ar trebui să atingă puține rânduri sau niciunul, dar regula trebuie să existe.)
 
-Pe partea de scriere, `execute._null_orphans(row, nullable)` golește valorile
-**înainte** ca rândul să fie judecat (coloana acceptă NULL, deci trece de
-`check_value` pe propriile ei condiții) și întoarce coloanele golite; numărarea se face **abia după** `_row_is_blocked`, altfel un rând sărit din alt motiv ar fi raportat drept «scris cu coloana golită», ceea ce ar fi o minciună.
+Pe partea de scriere, `execute._null_orphans(row, nullable)` golește valorile **înainte** ca rândul să fie judecat (coloana acceptă NULL, deci trece de `check_value` pe propriile ei condiții) și întoarce coloanele golite; numărarea se face **abia după** `_row_is_blocked`, altfel un rând sărit din alt motiv ar fi raportat drept «scris cu coloana golită», ceea ce ar fi o minciună.
 
-`Report.add` a căpătat un `count` (implicit 1): cheile străine adună valori
-**distincte**, dar operatorul are nevoie să citească pe câte **rânduri** apare
-fiecare. Exemplul rămâne cheia primului rând, cea pe care merită s-o caute. `report.null_fk` e geamănul lui `report.missing_fk` și cele două nu se suprapun niciodată.
+`Report.add` a căpătat un `count` (implicit 1): cheile străine adună valori **distincte**, dar operatorul are nevoie să citească pe câte **rânduri** apare fiecare. Exemplul rămâne cheia primului rând, cea pe care merită s-o caute. `report.null_fk` e geamănul lui `report.missing_fk` și cele două nu se suprapun niciodată.
 
 #### (d) Cheile străine din afara setului migrat
 
@@ -628,8 +587,7 @@ FX_DDF_REV_PRT  IdClsf -> Clasificatii
 FX_ORD_TBL      IdPartener -> Parteneri   IdClsf -> Clasificatii   IdUnitate -> Unitati
 ```
 
-**Nu a fost nevoie de cod nou.** `_check_foreign_keys` întreabă ținta pentru
-FIECARE cheie străină a tabelului, oricare ar fi părintele; `incoming` (rândurile scrise în aceeași rulare) e pur și simplu `None` pentru ele, fiindcă nu există «se va scrie în rularea asta» de adăugat. Ce s-a schimbat pentru ele e regula de la (c): `FX_ORD_TBL.IdClsf` acceptă NULL, deci o clasificație nepotrivită devine NULL — rândul supraviețuiește, legătura nu, și **apare în raport**, nu doar într-o linie de jurnal. Aici trebuie să fie corectă perechea `IdClsf`/`IdClsfPY`; e următorul `1452` care așteaptă.
+**Nu a fost nevoie de cod nou.** `_check_foreign_keys` întreabă ținta pentru FIECARE cheie străină a tabelului, oricare ar fi părintele; `incoming` (rândurile scrise în aceeași rulare) e pur și simplu `None` pentru ele, fiindcă nu există «se va scrie în rularea asta» de adăugat. Ce s-a schimbat pentru ele e regula de la (c): `FX_ORD_TBL.IdClsf` acceptă NULL, deci o clasificație nepotrivită devine NULL — rândul supraviețuiește, legătura nu, și **apare în raport**, nu doar într-o linie de jurnal. Aici trebuie să fie corectă perechea `IdClsf`/`IdClsfPY`; e următorul `1452` care așteaptă.
 
 #### (e) `FX_ORD_TBL.IdUnitate`
 

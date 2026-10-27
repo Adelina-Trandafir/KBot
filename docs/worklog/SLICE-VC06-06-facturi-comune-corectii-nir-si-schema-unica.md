@@ -2,10 +2,7 @@
 
 Data: 16.10.2026. Stare: **IMPLEMENTAT_LOCAL, FĂRĂ EXECUȚIE**.
 
-Slice-ul include implementarea noului editor NIR aprobată ulterior în același
-thread: [VC06-06-D01–D11](../../VERCON/DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06).
-Documentația și sursele descriu acum același flux. Macheta separată de factură
-respinsă de utilizator a fost eliminată.
+Slice-ul include implementarea noului editor NIR aprobată ulterior în același thread: [VC06-06-D01–D11](../../VERCON/DECIZII_DESCHISE.md#g-decizii-nir-și-contul-produsului--16102026-slice-vc06-06). Documentația și sursele descriu acum același flux. Macheta separată de factură respinsă de utilizator a fost eliminată.
 
 ## Comportament implementat în surse
 
@@ -14,38 +11,19 @@ Contractele sunt întreținute o singură dată: [editor NIR](../../VERCON/FACTU
 ## Livrabile
 
 - Backend nou: `receipt_destinations.py`, `receipt_distribution.py`.
-- Integrare backend: `doc_routes.py`, `documents.py`, `receipts.py`, `invoices.py`,
-  `nomenclatoare.py`, `nomenclator_usage.py`; mecanismele anterioare de calcul,
-  AUTO, cronologie și facturi rămân reutilizate.
-- Frontend: `receipt-allocation.js`, `docs.js`, `receipt-context.js`,
-  `nomenclator-grid.js`, ComboTree comun, integrarea în `dgv/editing.js` și
-  inițializarea TreeView în containere încă neatașate paginii.
-- CSS: `combotree/combotree.css`, `vercon-receipt-destinations.css`, `vercon.css`.
-  Eliminate `js/vercon/invoices.js` și `css/vercon-invoices.css`.
-- Livrările anterioare ale slice-ului: adaptările VRC/Migrator pentru schema
-  reală, ordinea FK și fragmentele provizorii; SQL incremental manual
-  [VC_FACTURI_NIR_20261016.sql](../../sql/VC_FACTURI_NIR_20261016.sql).
-- Documentație aliniată: DECIZII_DESCHISE, FLUXURI_UI, PLAN_IMPLEMENTARE,
-  VERCON_STATUS, SCHEMA_VC, CONTRACT_CALCULE, ANALIZA_FLUX_NIR_2026-10-16,
-  FACTURI_NIR_IMPLEMENTARE, README VRC.Migrator și implementare_vercon_v2.
+- Integrare backend: `doc_routes.py`, `documents.py`, `receipts.py`, `invoices.py`, `nomenclatoare.py`, `nomenclator_usage.py`; mecanismele anterioare de calcul, AUTO, cronologie și facturi rămân reutilizate.
+- Frontend: `receipt-allocation.js`, `docs.js`, `receipt-context.js`, `nomenclator-grid.js`, ComboTree comun, integrarea în `dgv/editing.js` și inițializarea TreeView în containere încă neatașate paginii.
+- CSS: `combotree/combotree.css`, `vercon-receipt-destinations.css`, `vercon.css`. Eliminate `js/vercon/invoices.js` și `css/vercon-invoices.css`.
+- Livrările anterioare ale slice-ului: adaptările VRC/Migrator pentru schema reală, ordinea FK și fragmentele provizorii; SQL incremental manual [VC_FACTURI_NIR_20261016.sql](../../sql/VC_FACTURI_NIR_20261016.sql).
+- Documentație aliniată: DECIZII_DESCHISE, FLUXURI_UI, PLAN_IMPLEMENTARE, VERCON_STATUS, SCHEMA_VC, CONTRACT_CALCULE, ANALIZA_FLUX_NIR_2026-10-16, FACTURI_NIR_IMPLEMENTARE, README VRC.Migrator și implementare_vercon_v2.
 
 ## Activare și limitele consemnării
 
-Utilizatorul aplică DDL-ul facturilor pe AVACONT_SURSA și sincronizează schema
-în DC-uri. Noul editor și blocarea contului nu cer un DDL suplimentar.
-Aplicația și VRC nu creează/repară schema automat. Nu s-a pregătit un script
-pentru eliminarea coloanei redundante, deoarece utilizatorul a confirmat că
-nu aplicase încă DDL-ul. VRC 0.2.1.0 include KBot.Migrator 1.19.0.0.
+Utilizatorul aplică DDL-ul facturilor pe AVACONT_SURSA și sincronizează schema în DC-uri. Noul editor și blocarea contului nu cer un DDL suplimentar. Aplicația și VRC nu creează/repară schema automat. Nu s-a pregătit un script pentru eliminarea coloanei redundante, deoarece utilizatorul a confirmat că nu aplicase încă DDL-ul. VRC 0.2.1.0 include KBot.Migrator 1.19.0.0.
 
-Fluxul este în RON. Comisia trebuie să existe cu aceiași membri în destinațiile
-alese; aplicația nu creează nomenclatoare sau exerciții automat. Fiecare NIR
-rezultat se consultă/modifică în contextul său. API-ul de facturi istorice și
-reconciliere rămâne disponibil, fără vechiul ecran respins.
+Fluxul este în RON. Comisia trebuie să existe cu aceiași membri în destinațiile alese; aplicația nu creează nomenclatoare sau exerciții automat. Fiecare NIR rezultat se consultă/modifică în contextul său. API-ul de facturi istorice și reconciliere rămâne disponibil, fără vechiul ecran respins.
 
-Nu s-au rulat teste, build, browser, verificări automate sau SQL. Nu s-au
-modificat baze, nu s-a făcut publicare sau commit. Citirea surselor pentru
-proiectare nu certifică funcționarea în mediul utilizatorului. Modificările
-fără legătură din KBot.App și directoarele Surse nu fac parte din acest slice.
+Nu s-au rulat teste, build, browser, verificări automate sau SQL. Nu s-au modificat baze, nu s-a făcut publicare sau commit. Citirea surselor pentru proiectare nu certifică funcționarea în mediul utilizatorului. Modificările fără legătură din KBot.App și directoarele Surse nu fac parte din acest slice.
 
 ## Etapele din jurnalul general absorbite prin D001-04 — 16.10.2026
 
@@ -53,13 +31,11 @@ Aceste note păstrează evoluția din același thread, inclusiv variantele retra
 
 ### Calcul, factură și schemă
 
-1. **Prima implementare FC/NIR:** separarea documents → receipts și motor comun de simulare/validare fără variante scrise la preview; cronologie (Numar,NumarSub) în seria anuală, poziții anulate păstrate, fără mutare în alt an; TVA comun derivat, ascuns pentru cote mixte, propagare blocată de AUTO. Corecție inversă cu TVA real, maximum 1 leu și egalitate exactă; origine/cantitate/preț inițial persistate. Tokenuri opace STORE pentru rânduri noi/reveniri, legate de DC/utilizator/context/document, fără cheie de configurare nouă. Editare/anulare cu cerere repetabilă și ciornă păstrată la rezultat necunoscut; dependențele OI/MF anulate nu blochează numai prin existența istorică. Liniile istorice nemodificate nu se recalculează la editarea antetului.
-   Ecranul inițial «Factură comună» oferea recepții locale în etape, bugete de cantitate/valoare, reconciliere/reunire explicită; receive-batch atomic folosea token/revizie per destinație, lockuri ordonate și READ COMMITTED după blocarea facturii. Ecranul a fost respins și eliminat ulterior; API-ul istoric a rămas. VRC păstra fragmente provizorii/antete/mapare și asociere reluabilă fără reimport. Fluxul era RON, catalogul DNF numai dacă exista în sursa profilată; corecțiile Access la TVA 0% nu primeau retroactiv AUTO, fără dovadă a originii.
+1. **Prima implementare FC/NIR:** separarea documents → receipts și motor comun de simulare/validare fără variante scrise la preview; cronologie (Numar,NumarSub) în seria anuală, poziții anulate păstrate, fără mutare în alt an; TVA comun derivat, ascuns pentru cote mixte, propagare blocată de AUTO. Corecție inversă cu TVA real, maximum 1 leu și egalitate exactă; origine/cantitate/preț inițial persistate. Tokenuri opace STORE pentru rânduri noi/reveniri, legate de DC/utilizator/context/document, fără cheie de configurare nouă. Editare/anulare cu cerere repetabilă și ciornă păstrată la rezultat necunoscut; dependențele OI/MF anulate nu blochează numai prin existența istorică. Liniile istorice nemodificate nu se recalculează la editarea antetului. Ecranul inițial «Factură comună» oferea recepții locale în etape, bugete de cantitate/valoare, reconciliere/reunire explicită; receive-batch atomic folosea token/revizie per destinație, lockuri ordonate și READ COMMITTED după blocarea facturii. Ecranul a fost respins și eliminat ulterior; API-ul istoric a rămas. VRC păstra fragmente provizorii/antete/mapare și asociere reluabilă fără reimport. Fluxul era RON, catalogul DNF numai dacă exista în sursa profilată; corecțiile Access la TVA 0% nu primeau retroactiv AUTO, fără dovadă a originii.
 
 2. **Clasificări MF:** utilizatorul a anunțat AVACONT_COMUN.VC_ClasificariMF; VC_MF_CLASIFICARI local a fost scos din DDL, cerințele Python/VRC și importul Access. VC_ProduseM rămâne registrul activelor. După exportul comun furnizat de operator, receipts valida Cod=VC_Produse.CC și transforma anii în luni; limitele NULL ori clasificarea neasociată nu inventează interval. Catalogul comun este numai citit.
 
-3. **Schema și importul:** TargetSchema.Load citește schema reală DC la Testează și înaintea tranzacției; AVACONT_SURSA live rămâne referința sincronizării, dumpul local nu este sursa migratorului. SchemaProblems verifică tabele/coloane necesare, obligatorii fără implicit/mapare, generate, AUTO_INCREMENT și DECIMAL(20,4), reutilizând coloanele scrierii. WriteOrder.Derive folosește FK reale + dependențe Access, păstrează overloadul vechi și verifică fazele nomenclatoare/documente. NULL/text sunt validate după metadatele reale; identitatea generată se citește fără presupunere RowId sau nume de cheie Access.
-   target_schema.json/VrcTargetSchema au devenit import_map.json/VrcImportMap (identitate sursă, conversii/remapare, fără cache al nulabilității); expected_schema.json rămâne sursa Access. Eliminate sql/VC_AVACONT_SURSA.sql, tools/ddl.js și tables_01/tables_03.sql; tools/import_map.js emite mapare/domenii/diagramă, fără SQL. VC_Golire.sql rămâne listă istorică fixă, fără regenerare sau rol de schemă. VRC 0.2.0.0 cere biblioteca KBot.Migrator 1.19.0.0 cu overloadul nou; AssemblyVersion stabil.
+3. **Schema și importul:** TargetSchema.Load citește schema reală DC la Testează și înaintea tranzacției; AVACONT_SURSA live rămâne referința sincronizării, dumpul local nu este sursa migratorului. SchemaProblems verifică tabele/coloane necesare, obligatorii fără implicit/mapare, generate, AUTO_INCREMENT și DECIMAL(20,4), reutilizând coloanele scrierii. WriteOrder.Derive folosește FK reale + dependențe Access, păstrează overloadul vechi și verifică fazele nomenclatoare/documente. NULL/text sunt validate după metadatele reale; identitatea generată se citește fără presupunere RowId sau nume de cheie Access. target_schema.json/VrcTargetSchema au devenit import_map.json/VrcImportMap (identitate sursă, conversii/remapare, fără cache al nulabilității); expected_schema.json rămâne sursa Access. Eliminate sql/VC_AVACONT_SURSA.sql, tools/ddl.js și tables_01/tables_03.sql; tools/import_map.js emite mapare/domenii/diagramă, fără SQL. VC_Golire.sql rămâne listă istorică fixă, fără regenerare sau rol de schemă. VRC 0.2.0.0 cere biblioteca KBot.Migrator 1.19.0.0 cu overloadul nou; AssemblyVersion stabil.
 
 4. **Metadatele calculului invers:** existența VC_NIR_CALCULE indică GROSS, păstrând TOTAL_BRUT, PRET_INITIAL, ORIGINE_JSON. write_calculation nu mai scrie un mod redundant; citirea selectează explicit ID linie + cele trei valori și derivă calc_mode=GROSS. Semnarea/blocarea/revenirea AUTO păstrează API-ul. DDL și cerințele VRC nu mai includ coloana; VRC devine 0.2.1.0. Fără script de eliminare, fiindcă operatorul confirmase că DDL nu fusese încă aplicat.
 

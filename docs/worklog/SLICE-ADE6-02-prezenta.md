@@ -1,5 +1,7 @@
 # SLICE-ADE6 — Prezență, context și încărcare lazy
 
+Repere comune pentru etapele indicate: 09.10.2026 — ADE6-08, ADE6-09, ADE6-22; 12.10.2026 — ADE6-26. Fiecare are starea TESTAT, RULAT, PUBLICAT, confirmată de operator la 23.10.2026; probele și limitele inițiale rămân în secțiunile lor.
+
 02/04 introduc editarea prezenței și workspace-ul. 08/09 adaptează bara și mesajele pe mobil; 21 amână încărcările până la selecție, 22 deschide numai ultimul an, iar 26 colapsează anul selectat anterior la alegerea unei luni din alt an. Deschiderea manuală a unui an nu schimbă selecția. Probele 9 API, 18 API și 3 JS și limitele browser/server sunt păstrate separat.
 
 Nota comună Rezolvat din 04/21/26: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Descrierile inițiale de predare sunt istorice; regulile operative sunt în [ghid](../../ADECHIT/UTILIZARE_WEB.md), inclusiv excepția ulterioară de editare a ultimei luni închise prin dreptul ME01.
@@ -36,12 +38,9 @@ Situația lunară afișează copilul, SID/SIC, prezența, valorile și mișcări
 
 ### Neverificat sau amânat
 
-
 Operația nu este probată pe MariaDB. Transferul rămâne blocat de M06.
 
 ## SLICE-ADE6-08 — bara de selecție numai pe mobil <a id="slice-ADE6-08"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbare
 
@@ -56,8 +55,6 @@ PYTHON/static/css/adechit.css, PYTHON/static/adechit.html, indexul și statusul 
 Modificări locale, fără commit/publicare. Utilizatorul publică prin AvacontPush. Nu există SQL nou. Următoarea subfelie: ADE6-09.
 
 ## SLICE-ADE6-09 — mobil fără rândul de mesaje <a id="slice-ADE6-09"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 La cererea utilizatorului, ade-notice-row este ascuns pe mobil (max-width 980px). Grila ade-main nu mai rezervă cei 24px ai mesajului. Primul rând al zonei de lucru este bara comboboxurilor. Afișarea pe PC rămâne cea existentă.
 
@@ -92,12 +89,9 @@ Testele au fost rulate înainte de citirea preferinței proiectului de a lăsa t
 
 ### Neverificat și predare
 
-
 Publicarea prin AvacontPush și restartul backendului aparțin utilizatorului. Se publică cele 7 fișiere runtime enumerate mai sus. Nu există DDL nou, commit, push sau restart din chat. Verificarea vizuală PC/mobil și MariaDB rămâne utilizatorului. Următoarea subfelie liberă: ADE6-22.
 
 ## SLICE-ADE6-22 — Ordonare după denumire și ultimul an deschis <a id="slice-ADE6-22"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
@@ -120,8 +114,6 @@ Fără schimbare API, DDL, commit, push sau restart executat din chat. Următoar
 
 ## SLICE-ADE6-26 — Colapsarea anului selectat anterior <a id="slice-ADE6-26"></a>
 
-12.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Ce s-a schimbat și de ce
 
 La alegerea unei luni din alt an în arborele LUNA / ANUL, ramura anului selectat anterior se colapsează, iar ramura anului noii luni rămâne extinsă. Prima alegere folosește drept an anterior anul deschis automat la pornire. Schimbarea între luni ale aceluiași an păstrează ramurile existente. Extinderea manuală a unui an pentru consultare nu colapsează anul selectat.
@@ -140,6 +132,5 @@ Logica este în chooseMonth, înaintea sincronizării selecției și încărcăr
 Nu s-au rulat teste, verificări de sintaxă, server sau browser. Starea este TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Neverificat și predare
-
 
 Utilizatorul publică PYTHON/static/js/adechit/app.js prin AvacontPush și probează prima alegere din alt an, trecerea între ani și păstrarea ramurii noii luni după salvare/reîncărcare. Fără SQL, publicare, commit sau push executate din chat. Următoarea subfelie liberă: ADE6-27.

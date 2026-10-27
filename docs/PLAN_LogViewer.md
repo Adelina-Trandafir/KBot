@@ -31,10 +31,8 @@ VB.NET side:
 - `src/KBot.Controls/Tree/TreeLogger.vb`
 - `src/KBot.DevHarness/RunLogger.vb`, `DevHarnessForm.vb`, `DevHarnessForm.Designer.vb`
 - `src/KBot.Theming/ThemePalette.vb`, `BuiltInSchemes.vb`, `ThemeManager.vb`
-- `src/KBot.Controls/NavList/KBotNavList.vb`, `KBotNavItem.vb`, `KBotNavItemCollection.vb`
-  (the new control in §7 copies this design deliberately — read it before writing it)
-- `src/KBot.Controls/DataView/KBotDataView.vb` + `Events/KBotRowFormattingEventArgs.vb` +
-  `Events/KBotCellFormattingEventArgs.vb`
+- `src/KBot.Controls/NavList/KBotNavList.vb`, `KBotNavItem.vb`, `KBotNavItemCollection.vb` (the new control in §7 copies this design deliberately — read it before writing it)
+- `src/KBot.Controls/DataView/KBotDataView.vb` + `Events/KBotRowFormattingEventArgs.vb` + `Events/KBotCellFormattingEventArgs.vb`
 - `src/KBot.App/Views/IstoricView.vb` (the filter-engine-plus-view pattern this slice reuses)
 - `src/KBot.Api/ApiClient.vb` + `IApiClient.vb` (how a call is added; the `WithReauth` pattern)
 - `src/KBot.Controls/README.md` (folder-per-control-family rule)
@@ -100,27 +98,19 @@ Original scope excluded them. The operator wants every error visible, filtered p
 
 **In:**
 
-- A themed log viewer form: file list, level chips, text search, date range, grid, detail pane,
-  copy / export / open folder / clear.
+- A themed log viewer form: file list, level chips, text search, date range, grid, detail pane, copy / export / open folder / clear.
 - One new control, `KBotChipBar`.
 - A pure, WinForms-free core in `KBot.Common`: paths, rotation, reading, parsing, filtering.
 - Rotation with five generations at 10 MB, enforced in every writer.
 - `TreeLogger` moved into the same `Logs\` folder as everything else.
-- **Server side:** per-unit log files, a DC-aware logging filter, a catch-all error handler so
-  uncaught exceptions reach the log file, Gunicorn's own output redirected into files, two read
-  endpoints, and a server clock reading.
+- **Server side:** per-unit log files, a DC-aware logging filter, a catch-all error handler so uncaught exceptions reach the log file, Gunicorn's own output redirected into files, two read endpoints, and a server clock reading.
 
 **Out — do not build, do not scaffold:**
 
-- **nginx logs.** They live under `/var/log/nginx`, owned by root or `www-data`, and reading them
-  needs a group membership or an ACL on the directory — a change to the box, not to app code. Record
-  in the worklog what it would take; do not do it here.
-- Live tailing (`FileSystemWatcher` / polling). The reader is written so it can be added; nothing
-  more.
-- A `MainForm` nav entry. The form opens from DevHarness in this slice and must not depend on
-  anything DevHarness-only, so wiring it into the shell later is a two-line change.
-- Deleting logs as a side effect of anything. The only deletion path is the operator pressing clear
-  and confirming.
+- **nginx logs.** They live under `/var/log/nginx`, owned by root or `www-data`, and reading them needs a group membership or an ACL on the directory — a change to the box, not to app code. Record in the worklog what it would take; do not do it here.
+- Live tailing (`FileSystemWatcher` / polling). The reader is written so it can be added; nothing more.
+- A `MainForm` nav entry. The form opens from DevHarness in this slice and must not depend on anything DevHarness-only, so wiring it into the shell later is a two-line change.
+- Deleting logs as a side effect of anything. The only deletion path is the operator pressing clear and confirming.
 - Writing to server logs from the client. The endpoints are read-only.
 
 ---
@@ -157,8 +147,7 @@ One place that answers "where do logs live". `GlobalErrorLog`, `AdobeHostLog`, `
 
 ### 4.2 `TreeLogger`
 
-- Write to `LogPaths.EnsureLogsDirectory()`, not `AppDomain.CurrentDomain.BaseDirectory`.
-  Filename `log_{treeId}.txt` unchanged. Keep the existing optional path override if callers use it.
+- Write to `LogPaths.EnsureLogsDirectory()`, not `AppDomain.CurrentDomain.BaseDirectory`. Filename `log_{treeId}.txt` unchanged. Keep the existing optional path override if callers use it.
 - Keep the Temp fallback in `Init`, but write the reason to `Trace` instead of swallowing.
 - Terminal sinks per §1.4.
 
@@ -175,12 +164,9 @@ End Module
 Called **before** every append. Same policy as Python's `RotatingFileHandler`, deliberately:
 
 1. File missing, or `Length <= maxBytes` → return False, touch nothing.
-2. Over the limit → delete `<file>.5`, rename `.4`→`.5`, `.3`→`.4`, `.2`→`.3`, `.1`→`.2`,
-   `<file>`→`.1`, then let the caller create a fresh live file. Return True.
+2. Over the limit → delete `<file>.5`, rename `.4`→`.5`, `.3`→`.4`, `.2`→`.3`, `.1`→`.2`, `<file>`→`.1`, then let the caller create a fresh live file. Return True.
 3. Renames only. Never read-and-rewrite — the cost must not depend on file size.
-4. Any failure at any step → **do not throw, do not delete anything else**. Write the reason to
-   `Trace` and return False, so the append that triggered the check still happens. A rotation
-   problem must never cost the line that caused it.
+4. Any failure at any step → **do not throw, do not delete anything else**. Write the reason to `Trace` and return False, so the append that triggered the check still happens. A rotation problem must never cost the line that caused it.
 
 Worst case per family is 60 MB, bounded and predictable.
 
@@ -215,11 +201,8 @@ Immutable after construction where practical.
 
 ### 5.3 `LogFileReader`
 
-- Open with `FileShare.ReadWrite`. `RunLogger` holds its file open with `AutoFlush`; a reader that
-  does not allow write-sharing fails on the current run's log. This is the common case, not an edge
-  case.
-- Read the **last 5 MB**: seek to `Max(0, Length - 5MB)`, discard through the first newline so a
-  half-line never reaches the parser, skip a BOM at offset 0.
+- Open with `FileShare.ReadWrite`. `RunLogger` holds its file open with `AutoFlush`; a reader that does not allow write-sharing fails on the current run's log. This is the common case, not an edge case.
+- Read the **last 5 MB**: seek to `Max(0, Length - 5MB)`, discard through the first newline so a half-line never reaches the parser, skip a BOM at offset 0.
 - Return the text plus `WasTruncated As Boolean` and `FileLengthBytes As Long`.
 - UTF-8 decoding.
 
@@ -234,33 +217,19 @@ End Interface
 
 One question only: does this line start a new entry, and if so what are its fields? Continuation is the loader's job.
 
-- `HarnessErrorParser` — the `==== ts  [source] ====` banner; level always `Error` (that file only
-  ever receives exceptions); the `ex.ToString()` lines that follow are continuation.
-- `AdobeHostParser` — `yyyy-MM-dd HH:mm:ss.fff  message`, level `Info`. Confirm the separator in
-  `AdobeHostLog.Write`.
-- `TreeLoggerParser` — `[HH:mm:ss.fff] [12.345s] [LEVEL] [source] message`. **Time only**: take the
-  date from the file's `LastWriteTime`. If times run backwards across midnight, leave later entries
-  on the same date rather than guessing, and say so in the worklog.
-- `RunLogParser` — the harness run file. `EROARE [` starts an `Error` entry whose `ex.ToString()`
-  follows as continuation. Read `DevHarnessForm.RunTestsAsync` for the real per-test result lines
-  before deciding which map to `Warn` and which to `Info`. Do not guess at markers you have not seen.
-- `ApiServerParser` — the server format defined in §6.2. Both the new ISO form and the legacy form,
-  because the file on disk today is the legacy one.
+- `HarnessErrorParser` — the `==== ts  [source] ====` banner; level always `Error` (that file only ever receives exceptions); the `ex.ToString()` lines that follow are continuation.
+- `AdobeHostParser` — `yyyy-MM-dd HH:mm:ss.fff  message`, level `Info`. Confirm the separator in `AdobeHostLog.Write`.
+- `TreeLoggerParser` — `[HH:mm:ss.fff] [12.345s] [LEVEL] [source] message`. **Time only**: take the date from the file's `LastWriteTime`. If times run backwards across midnight, leave later entries on the same date rather than guessing, and say so in the worklog.
+- `RunLogParser` — the harness run file. `EROARE [` starts an `Error` entry whose `ex.ToString()` follows as continuation. Read `DevHarnessForm.RunTestsAsync` for the real per-test result lines before deciding which map to `Warn` and which to `Info`. Do not guess at markers you have not seen.
+- `ApiServerParser` — the server format defined in §6.2. Both the new ISO form and the legacy form, because the file on disk today is the legacy one.
 - `FallbackParser` — every line is its own `Info` entry with no timestamp. Never fails.
 
 ### 5.5 `LogFileLoader` — parser selection and continuation
 
-- Pick a parser by file-name pattern (`harness_errors.log`, `adobe_preview.log`, `test_*.log`,
-  `log_*.txt`, `api_*.log`).
-- **Then verify the guess.** Run it over the first 50 non-blank lines; if fewer than 30% are
-  recognised as headers, fall back to trying every parser per line, and record which parser actually
-  won. A silently wrong guess produces a viewer full of `Unknown` rows and no error — the failure
-  mode that wastes an afternoon.
-- Continuation: a line no parser recognises as a header is appended to the previous entry's `Raw`
-  (and to `Message` only if `Message` is empty). With no previous entry it becomes its own entry,
-  `Level = Unknown`, `Timestamp = Nothing`. Blank lines are continuation and never start an entry.
-- Afterwards, entries with `Timestamp = Nothing` inherit the preceding entry's timestamp. Return
-  how many inherited and how many are still `Nothing` — the filter needs both (§5.6).
+- Pick a parser by file-name pattern (`harness_errors.log`, `adobe_preview.log`, `test_*.log`, `log_*.txt`, `api_*.log`).
+- **Then verify the guess.** Run it over the first 50 non-blank lines; if fewer than 30% are recognised as headers, fall back to trying every parser per line, and record which parser actually won. A silently wrong guess produces a viewer full of `Unknown` rows and no error — the failure mode that wastes an afternoon.
+- Continuation: a line no parser recognises as a header is appended to the previous entry's `Raw` (and to `Message` only if `Message` is empty). With no previous entry it becomes its own entry, `Level = Unknown`, `Timestamp = Nothing`. Blank lines are continuation and never start an entry.
+- Afterwards, entries with `Timestamp = Nothing` inherit the preceding entry's timestamp. Return how many inherited and how many are still `Nothing` — the filter needs both (§5.6).
 
 ### 5.6 `LogFilter`
 
@@ -268,16 +237,9 @@ Pure class, same shape as `IstoricFilter`. Read that file before writing this on
 
 Criteria: `Files As ISet(Of String)`, `Levels As ISet(Of KBotLogLevel)`, `Text As String`, `From As Date?`, `To As Date?`.
 
-- Text: `IndexOf(..., StringComparison.OrdinalIgnoreCase)` against `Raw`, so a search hits inside a
-  stack trace. Empty text matches everything. **No diacritic folding** — "sters" will not find
-  "șters". Record that as a known limitation.
-- Empty `Levels` / `Files` = show nothing, and the chip bar guarantees at least one chip stays
-  ticked (`MinimumRequiredChecked = 1`). Pin it with a test either way; a filter that silently
-  empties the grid is a bug report waiting to happen.
-- `From`/`To` inclusive, compared on the **corrected** timestamp (§6.6). An entry still holding
-  `Nothing` is excluded when either bound is set, and the count of such exclusions is returned so
-  the status bar can say `… · 3 intrări fără dată, excluse de filtrul de timp`. Silent exclusion is
-  not acceptable.
+- Text: `IndexOf(..., StringComparison.OrdinalIgnoreCase)` against `Raw`, so a search hits inside a stack trace. Empty text matches everything. **No diacritic folding** — "sters" will not find "șters". Record that as a known limitation.
+- Empty `Levels` / `Files` = show nothing, and the chip bar guarantees at least one chip stays ticked (`MinimumRequiredChecked = 1`). Pin it with a test either way; a filter that silently empties the grid is a bug report waiting to happen.
+- `From`/`To` inclusive, compared on the **corrected** timestamp (§6.6). An entry still holding `Nothing` is excluded when either bound is set, and the count of such exclusions is returned so the status bar can say `… · 3 intrări fără dată, excluse de filtrul de timp`. Silent exclusion is not acceptable.
 - Returns kept entries plus counts. No side effects, no UI types.
 
 ---
@@ -289,22 +251,16 @@ Criteria: `Files As ISet(Of String)`, `Levels As ISet(Of KBotLogLevel)`, `Text A
 `utils/logger.py` attaches a `RotatingFileHandler('api_server.log', ...)` to the **root** logger, plus a `StreamHandler`. Three consequences:
 
 1. **One flat file for every unit.** There is no way to hand an operator only their own lines.
-2. **The path is relative**, so the file lands in whatever directory Gunicorn was started in.
-   Code must confirm the real location on the VPS before anything else.
-3. **Uncaught exceptions never reach the file.** Flask handles them and the traceback goes out
-   through the console handler, which under Gunicorn is stderr, which systemd captures in the
-   journal. The file that the viewer would read is missing precisely the crashes.
+2. **The path is relative**, so the file lands in whatever directory Gunicorn was started in. Code must confirm the real location on the VPS before anything else.
+3. **Uncaught exceptions never reach the file.** Flask handles them and the traceback goes out through the console handler, which under Gunicorn is stderr, which systemd captures in the journal. The file that the viewer would read is missing precisely the crashes.
 
 ### 6.2 One file per unit, mirroring one database per unit
 
 The project's own convention is one database per unit, keyed by `DC`. Logging follows it.
 
 - `<LOG_DIR>/api_<DC>.log`, plus `.1`–`.5` archives, `maxBytes=10*1024*1024`, `backupCount=5`.
-- `<LOG_DIR>/api_common.log` for records with no unit: startup, the route table, pre-auth failures,
-  rate-limiter blocks.
-- `LOG_DIR` becomes an **absolute** path in `config.py`, chosen by Code per §13.2. The existing
-  `api_server.log` is left exactly where it is — not moved, not renamed, not deleted, not exposed
-  (§13.3). The per-unit files start empty.
+- `<LOG_DIR>/api_common.log` for records with no unit: startup, the route table, pre-auth failures, rate-limiter blocks.
+- `LOG_DIR` becomes an **absolute** path in `config.py`, chosen by Code per §13.2. The existing `api_server.log` is left exactly where it is — not moved, not renamed, not deleted, not exposed (§13.3). The per-unit files start empty.
 
 **Format** (both handlers), ISO 8601 with a real UTC offset so no guessing is ever needed:
 
@@ -319,8 +275,7 @@ Set the formatter's `default_time_format` / converter so `asctime` carries the o
 
 **Where the DC comes from**, in order:
 
-1. an explicit `extra={"dc": ...}` on the log call — used by `auth.py`, which knows the target DC
-   at login before any session exists;
+1. an explicit `extra={"dc": ...}` on the log call — used by `auth.py`, which knows the target DC at login before any session exists;
 2. `g.session.db_name`, when a session exists (confirm the attribute in `session_store.py`);
 3. `"common"`.
 
@@ -343,14 +298,8 @@ Without this, "all errors visible" is false, and the viewer would show a hole ra
 
 Both `@require_session`. Both **derive the filename from `g.session.db_name`** — the caller never supplies a name or a path. There is no allowlist to get wrong: an operator cannot address another unit's file because no code path exists that would let them name one.
 
-- `GET /api/logs/files` → `{"files": [{"name": "api_000_DEMO.log", "generation": 0,
-  "size_bytes": 812345, "modified": "<ISO+offset>"}], "server_time": "<ISO+offset>"}`.
-  Only the caller's unit. Generations 0–5.
-- `GET /api/logs/tail?generation=<0..5>&max_bytes=<n>` → `{"text": "...", "truncated": true,
-  "size_bytes": ..., "server_time": "<ISO+offset>"}`.
-  `generation` is an int 0–5, validated; anything else is a 400 with a Romanian message.
-  `max_bytes` is clamped to 5 MB server-side regardless of what the client asks for. Default 512 KB.
-  Reads the last N bytes by seeking, never `read()` on the whole file.
+- `GET /api/logs/files` → `{"files": [{"name": "api_000_DEMO.log", "generation": 0, "size_bytes": 812345, "modified": "<ISO+offset>"}], "server_time": "<ISO+offset>"}`. Only the caller's unit. Generations 0–5.
+- `GET /api/logs/tail?generation=<0..5>&max_bytes=<n>` → `{"text": "...", "truncated": true, "size_bytes": ..., "server_time": "<ISO+offset>"}`. `generation` is an int 0–5, validated; anything else is a 400 with a Romanian message. `max_bytes` is clamped to 5 MB server-side regardless of what the client asks for. Default 512 KB. Reads the last N bytes by seeking, never `read()` on the whole file.
 
 `api_common.log` is **not** reachable through these endpoints — see the open question in §13. It holds startup records and pre-auth failures across all units; a route error always has a session and therefore lands in the unit's own file.
 
@@ -385,13 +334,9 @@ capture_output = True     # worker stdout/stderr into errorlog
 
 The server's time comes back on every one of these responses as `server_time`, and the login response gains the same field. The client keeps `ServerClock.Offset`:
 
-- computed at login as `server_time - DateTimeOffset.UtcNow`, and refreshed from each logs response
-  so a three-hour-old session does not display against a stale offset;
-- round-trip is not compensated (half the RTT is the error bound, sub-second on this link, and
-  pretending to more precision than that would be dishonest);
-- new server lines carry their own offset in the timestamp, so **the correction is a fallback for
-  legacy lines only**. Use the parsed offset when the line has one; use `ServerClock.Offset` when it
-  does not.
+- computed at login as `server_time - DateTimeOffset.UtcNow`, and refreshed from each logs response so a three-hour-old session does not display against a stale offset;
+- round-trip is not compensated (half the RTT is the error bound, sub-second on this link, and pretending to more precision than that would be dishonest);
+- new server lines carry their own offset in the timestamp, so **the correction is a fallback for legacy lines only**. Use the parsed offset when the line has one; use `ServerClock.Offset` when it does not.
 
 Display rule: the grid's `Ora` column shows **every** entry in client local time, server entries converted. The detail pane shows the raw line **untouched**. The status bar states the offset when it is non-zero: `ceas server: +03:00`.
 
@@ -419,32 +364,17 @@ Parameterless constructor (the collection dialog needs it) plus `New(key, text)`
 
 - `<ToolboxItem(True)>`, `<DefaultProperty("Chips")>`, `<DefaultEvent("CheckedChanged")>`.
 - `Inherits Control`, `Implements IThemedControl`, `Implements ISupportInitialize`.
-- Same `SetStyle` set as `KBotNavList`: `UserPaint Or AllPaintingInWmPaint Or
-  OptimizedDoubleBuffer Or ResizeRedraw Or Selectable`. `TabStop = True`.
+- Same `SetStyle` set as `KBotNavList`: `UserPaint Or AllPaintingInWmPaint Or OptimizedDoubleBuffer Or ResizeRedraw Or Selectable`. `TabStop = True`.
 - `Chips` with `<DesignerSerializationVisibility(Content)>`.
-- Layout: horizontal flow, wraps to a second row. Chip width = `TextRenderer.MeasureText` + padding
-  (+ badge). Heights and paddings DPI-scaled through `ThemeShapes.ScaleDpi`. Public `ChipHeight`,
-  `ChipPadding`, `ChipSpacing`, `ChipCornerRadius`.
-- Painting: unchecked = `ButtonBack` / `ButtonText` / `ButtonBorder`; hover = `ButtonHover`;
-  checked = `AccentOverride` if set else `Accent`, text `AccentText`; disabled `DisabledText`.
-  Cache brushes and pens, rebuild in `ApplyTheme` as `KBotDataView.RebuildThemeResources` does,
-  dispose in `Dispose(disposing)`.
-- API: `AddChip(key, text)`, `AddChip(key, text, checked)`, `SetChecked`, `IsChecked`,
-  `SetChipEnabled`, `SetChipVisible`, `SetBadge`, `CheckedKeys As IReadOnlyList(Of String)`,
-  `CheckAll`, `UncheckAll`.
-- Errors, house rule, no silent no-ops: empty key, duplicate key, unknown key → `ArgumentException`
-  with Romanian messages and literal diacritics.
-- Events: `CheckedChanged(chipKey)` on **real change only**, plus `ChipClicked`. A programmatic
-  `SetChecked` to the value already held raises nothing.
-- Input: click toggles; `Left`/`Right` move focus, `Space` toggles; override `IsInputKey` for all
-  three or the form eats them. Skip invisible and disabled chips.
-- `MinimumRequiredChecked As Integer` (default 0). At 1, unticking the last checked chip is refused
-  — a no-op with a brief flash, not an exception; this is a mouse gesture, not an API call.
-- Every `OnPaint` / `OnKeyDown` / `OnMouseDown` body routes through `GlobalErrorLog.Write`, guarded
-  by `KBotDesignTime.IsDesignTime(Me)`. Copy the exact pattern from `KBotNavList`.
-- `BeginInit`/`EndInit`: suspend layout and key validation between them; validate and apply
-  `Checked` at `EndInit`, skipping validation at design time and showing the 2px red border instead,
-  as `KBotNavList` does.
+- Layout: horizontal flow, wraps to a second row. Chip width = `TextRenderer.MeasureText` + padding (+ badge). Heights and paddings DPI-scaled through `ThemeShapes.ScaleDpi`. Public `ChipHeight`, `ChipPadding`, `ChipSpacing`, `ChipCornerRadius`.
+- Painting: unchecked = `ButtonBack` / `ButtonText` / `ButtonBorder`; hover = `ButtonHover`; checked = `AccentOverride` if set else `Accent`, text `AccentText`; disabled `DisabledText`. Cache brushes and pens, rebuild in `ApplyTheme` as `KBotDataView.RebuildThemeResources` does, dispose in `Dispose(disposing)`.
+- API: `AddChip(key, text)`, `AddChip(key, text, checked)`, `SetChecked`, `IsChecked`, `SetChipEnabled`, `SetChipVisible`, `SetBadge`, `CheckedKeys As IReadOnlyList(Of String)`, `CheckAll`, `UncheckAll`.
+- Errors, house rule, no silent no-ops: empty key, duplicate key, unknown key → `ArgumentException` with Romanian messages and literal diacritics.
+- Events: `CheckedChanged(chipKey)` on **real change only**, plus `ChipClicked`. A programmatic `SetChecked` to the value already held raises nothing.
+- Input: click toggles; `Left`/`Right` move focus, `Space` toggles; override `IsInputKey` for all three or the form eats them. Skip invisible and disabled chips.
+- `MinimumRequiredChecked As Integer` (default 0). At 1, unticking the last checked chip is refused — a no-op with a brief flash, not an exception; this is a mouse gesture, not an API call.
+- Every `OnPaint` / `OnKeyDown` / `OnMouseDown` body routes through `GlobalErrorLog.Write`, guarded by `KBotDesignTime.IsDesignTime(Me)`. Copy the exact pattern from `KBotNavList`.
+- `BeginInit`/`EndInit`: suspend layout and key validation between them; validate and apply `Checked` at `EndInit`, skipping validation at design time and showing the 2px red border instead, as `KBotNavList` does.
 
 ---
 
@@ -455,8 +385,7 @@ Inherits `KBotShellForm` (confirm the base class and its API; follow whatever st
 Layout, top to bottom:
 
 1. `KBotCaptionBar` — title `Jurnale`.
-2. Filter strip: `chipLevels As KBotChipBar` (`MinimumRequiredChecked = 1`), `txtSearch As
-   KBotTextField`, `txtFrom` / `txtTo As KBotTextField` (`dd.MM.yyyy`), `btnRefresh`.
+2. Filter strip: `chipLevels As KBotChipBar` (`MinimumRequiredChecked = 1`), `txtSearch As KBotTextField`, `txtFrom` / `txtTo As KBotTextField` (`dd.MM.yyyy`), `btnRefresh`.
 3. Body split: left `navFiles As KBotNavList` (vertical), right the grid.
 4. Detail pane below the grid: read-only multiline `TextBox`, `Consolas`, showing `LogEntry.Raw`.
 5. Action row: `btnCopy`, `btnExport`, `btnOpenFolder`, `btnClear`.
@@ -464,28 +393,14 @@ Layout, top to bottom:
 
 Details:
 
-- **`navFiles`** has two groups separated by a `KBotNavList` separator: `Local` (every `*.log`,
-  `*.log.1`–`.5` and `log_*.txt` under `LogPaths.LogsDirectory()`, archives labelled `arhivă`) and
-  `Server` (from `GET /api/logs/files`). A `Toate fișierele` item is pinned first and merges
-  everything, sorted on corrected timestamps, entries without one kept in file order at the end.
-  Badge = entry count. Within a group, newest modified first.
-- **Server items load on demand**, when selected — not at form open. If the call fails, the server
-  group shows the error in a `KBotNotice` and the local files keep working. A dead API must not take
-  the viewer down with it.
-- **Grid columns** (`KBotDataView`): `Ora` (frozen, `dd.MM HH:mm:ss.fff`), `Nivel`, `Sursă`
-  (`local` / `server`), `Fișier`, `Detaliu` (the `[source]` bracket or client IP), `Mesaj` (last,
-  fills). Row `Tag` holds the `LogEntry`.
-- **Row colouring** through the existing `RowFormatting` event and the §1.1 mapping. Do not touch
-  `KBotDataView`. The args instance is **reused** — the handler must not retain it.
-- **Loading is off the UI thread.** `BusyBar` on, read/fetch and parse on a background thread,
-  marshal back, `BeginUpdate`/`EndUpdate` around the fill. Filtering is in-memory and synchronous and
-  must never re-read a file or re-issue a request.
+- **`navFiles`** has two groups separated by a `KBotNavList` separator: `Local` (every `*.log`, `*.log.1`–`.5` and `log_*.txt` under `LogPaths.LogsDirectory()`, archives labelled `arhivă`) and `Server` (from `GET /api/logs/files`). A `Toate fișierele` item is pinned first and merges everything, sorted on corrected timestamps, entries without one kept in file order at the end. Badge = entry count. Within a group, newest modified first.
+- **Server items load on demand**, when selected — not at form open. If the call fails, the server group shows the error in a `KBotNotice` and the local files keep working. A dead API must not take the viewer down with it.
+- **Grid columns** (`KBotDataView`): `Ora` (frozen, `dd.MM HH:mm:ss.fff`), `Nivel`, `Sursă` (`local` / `server`), `Fișier`, `Detaliu` (the `[source]` bracket or client IP), `Mesaj` (last, fills). Row `Tag` holds the `LogEntry`.
+- **Row colouring** through the existing `RowFormatting` event and the §1.1 mapping. Do not touch `KBotDataView`. The args instance is **reused** — the handler must not retain it.
+- **Loading is off the UI thread.** `BusyBar` on, read/fetch and parse on a background thread, marshal back, `BeginUpdate`/`EndUpdate` around the fill. Filtering is in-memory and synchronous and must never re-read a file or re-issue a request.
 - **Search debounce**: 250 ms timer, not `TextChanged` straight into a re-filter.
-- **Status label**: `1.482 intrări · 96 afișate · 3,4 MB · ultimii 5 MB · ceas server +03:00 ·
-  3 fără dată, excluse`.
-- **`btnCopy`**: the selected row's `Raw`, or the whole filtered set when nothing is selected.
-  **`btnExport`**: `SaveFileDialog`, filtered entries' `Raw`, UTF-8 with BOM.
-  **`btnOpenFolder`**: `Process.Start` on `explorer.exe` with the logs directory.
+- **Status label**: `1.482 intrări · 96 afișate · 3,4 MB · ultimii 5 MB · ceas server +03:00 · 3 fără dată, excluse`.
+- **`btnCopy`**: the selected row's `Raw`, or the whole filtered set when nothing is selected. **`btnExport`**: `SaveFileDialog`, filtered entries' `Raw`, UTF-8 with BOM. **`btnOpenFolder`**: `Process.Start` on `explorer.exe` with the logs directory.
 - **Empty state**: no files, or nothing after filtering, gets a `KBotNotice`, not a blank grid.
 
 ### 8.1 `btnClear` — the destructive one
@@ -502,13 +417,9 @@ The file the running process holds open is shown but **greyed and unticked**, la
 
 ## 9. DevHarness wiring
 
-- A `Jurnale` button on `DevHarnessForm` (declared in the `.Designer.vb`) opening `LogViewerForm`
-  non-modally.
-- An `IHarnessTest` in `Controls/UI` that opens the viewer and asks for a human verdict — copy
-  `ThemeGalleryTest` exactly (OK → Passed, Cancel → Failed, closed → Skipped).
-- `LogViewerForm` lives in `KBot.App`, so Release keeps it and a `MainForm` nav entry later costs
-  two lines. Confirm no DevHarness reference leaks into `KBot.App` in Release — the
-  Debug-conditioned `ProjectReference` stays exactly as it is.
+- A `Jurnale` button on `DevHarnessForm` (declared in the `.Designer.vb`) opening `LogViewerForm` non-modally.
+- An `IHarnessTest` in `Controls/UI` that opens the viewer and asks for a human verdict — copy `ThemeGalleryTest` exactly (OK → Passed, Cancel → Failed, closed → Skipped).
+- `LogViewerForm` lives in `KBot.App`, so Release keeps it and a `MainForm` nav entry later costs two lines. Confirm no DevHarness reference leaks into `KBot.App` in Release — the Debug-conditioned `ProjectReference` stays exactly as it is.
 
 ---
 
@@ -522,15 +433,11 @@ The file the running process holds open is shown but **greyed and unticked**, la
 2. `HarnessErrorParser`: banner + five stack lines → **one** entry whose `Raw` holds all six.
 3. An unrecognised leading line with no previous entry → its own `Unknown` entry, not a crash.
 4. `TreeLoggerParser`: time-only stamp combined with the file date; the midnight case documented.
-5. Parser mis-guess: adobe-format content in a file named `harness_errors.log` → low header-match
-   rate detected, winning parser reported.
+5. Parser mis-guess: adobe-format content in a file named `harness_errors.log` → low header-match rate detected, winning parser reported.
 6. `ApiServerParser`: the ISO-with-offset form **and** the legacy form, both to the right level.
 7. `LogFileReader`: oversized file → truncated flag, first partial line dropped, BOM skipped.
-8. `LogFileReader` against a file held open by a live `StreamWriter` with `AutoFlush` → reads fine.
-   This is the `RunLogger` case and the one a careless `File.ReadAllText` breaks.
-9. `LogRotation`: over limit → `.1`…`.5` shift, oldest dropped, live file recreated empty, `True`;
-   under limit → byte-identical, `False`; a locked file → `False`, no throw, no data lost;
-   `backupCount` respected exactly (never a sixth generation).
+8. `LogFileReader` against a file held open by a live `StreamWriter` with `AutoFlush` → reads fine. This is the `RunLogger` case and the one a careless `File.ReadAllText` breaks.
+9. `LogRotation`: over limit → `.1`…`.5` shift, oldest dropped, live file recreated empty, `True`; under limit → byte-identical, `False`; a locked file → `False`, no throw, no data lost; `backupCount` respected exactly (never a sixth generation).
 10. `LogFilter`: each axis alone; two combined; empty-set semantics as decided; the
     timestamp-less exclusion count.
 11. `ServerClock`: offset arithmetic; a line carrying its own offset ignores the clock offset; a
@@ -589,43 +496,29 @@ Each pass commits and pushes on its own with its worklog and its `KBOT_STATUS.md
 
 ## 12. Definition of done (per pass)
 
-1. `dotnet build -c Debug` and `-c Release`: 0 errors, 0 new warnings, `Option Strict On`.
-   Python: offline suite green or cleanly skipped, 0 fail/error.
+1. `dotnet build -c Debug` and `-c Release`: 0 errors, 0 new warnings, `Option Strict On`. Python: offline suite green or cleanly skipped, 0 fail/error.
 2. Full .NET suite green; real counts reported.
-3. Worklog at `docs/worklog/SLICE-0031-0X-….md` with the four mandatory sections: what changed and
-   why · files touched · test results · anything left unverified or deferred.
+3. Worklog at `docs/worklog/SLICE-0031-0X-….md` with the four mandatory sections: what changed and why · files touched · test results · anything left unverified or deferred.
 4. `KBOT_STATUS.md` updated — slice row, next free number, and (pass 01) the terminal-sink count.
 5. Code, worklog and STATUS committed together and pushed.
-6. No swallowed exceptions introduced. The only new non-rethrowing sinks are the two in
-   `TreeLogger`, and they are documented.
+6. No swallowed exceptions introduced. The only new non-rethrowing sinks are the two in `TreeLogger`, and they are documented.
 
 ---
 
 ## 13. Operator decisions (settled — do not re-open)
 
-1. **`api_common.log` is written but not exposed.** It is read later, from the server, by whatever
-   means the operator chooses. No endpoint, no role check, no client surface in this slice. Write
-   it, rotate it like the rest, and leave it alone.
-2. **`LOG_DIR` is Code's call.** Confirm on the VPS where `api_server.log` lands today, pick a
-   sensible absolute path (owned by the service account, outside the code tree so a deploy cannot
-   wipe it), put it in `config.py`, and record the choice and the reasoning in the worklog.
-3. **Start fresh.** The existing `api_server.log` and its `.1`–`.5` archives stay exactly where they
-   are, untouched and unexposed. Nothing is migrated, renamed or deleted. The per-unit files begin
-   empty. Say so in the worklog so nobody later mistakes the old file for a bug.
+1. **`api_common.log` is written but not exposed.** It is read later, from the server, by whatever means the operator chooses. No endpoint, no role check, no client surface in this slice. Write it, rotate it like the rest, and leave it alone.
+2. **`LOG_DIR` is Code's call.** Confirm on the VPS where `api_server.log` lands today, pick a sensible absolute path (owned by the service account, outside the code tree so a deploy cannot wipe it), put it in `config.py`, and record the choice and the reasoning in the worklog.
+3. **Start fresh.** The existing `api_server.log` and its `.1`–`.5` archives stay exactly where they are, untouched and unexposed. Nothing is migrated, renamed or deleted. The per-unit files begin empty. Say so in the worklog so nobody later mistakes the old file for a bug.
 
 ---
 
 ## 14. Known limitations — put these in the worklog, do not quietly fix them
 
-- No visual verdict until the operator runs the harness test. Chip layout, wrapping, level colours
-  in all three schemes, the detail pane: all unseen.
-- `KBotChipBar` has not been round-tripped through the real Visual Studio designer. Slice 0025 hit
-  exactly this wall; the programmatic `BeginInit`/`EndInit` test is the closest available proof and
-  is not the same thing. Say so plainly.
+- No visual verdict until the operator runs the harness test. Chip layout, wrapping, level colours in all three schemes, the detail pane: all unseen.
+- `KBotChipBar` has not been round-tripped through the real Visual Studio designer. Slice 0025 hit exactly this wall; the programmatic `BeginInit`/`EndInit` test is the closest available proof and is not the same thing. Say so plainly.
 - Search is not diacritic-insensitive.
 - `TreeLogger`'s time-only stamps mean an entry's date is inferred from the file, not recorded.
-- Per-unit routing is safe **because a single Gunicorn worker is enforced**. If that ever changes,
-  two processes rotating one file is a real race.
-- nginx logs remain invisible. Gunicorn output reaches files but is not exposed through the
-  endpoints — it is read from the server, like `api_common.log`.
+- Per-unit routing is safe **because a single Gunicorn worker is enforced**. If that ever changes, two processes rotating one file is a real race.
+- nginx logs remain invisible. Gunicorn output reaches files but is not exposed through the endpoints — it is read from the server, like `api_common.log`.
 - Server log retention is 60 MB per unit. With many units, watch the disk.

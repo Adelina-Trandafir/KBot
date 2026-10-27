@@ -29,6 +29,6 @@ Grilele urmează NIR: celule contigue, borduri subțiri, text și rânduri compa
 
 DGV-ul BC-urilor are câte un rând per bon, fără duplicate. Exemplul folosește 780,0000 + 660,0000 = 1.440,0000 lei; valoarea listei este 1.440,0000 lei și diferența 0,0000. Adăugarea nu înlocuiește bonurile alese, scoaterea unui rând nu anulează BC-ul. Salvarea tratează lista/mesele/setul de legături atomic și nu repetă consumul.
 
-[Fluxuri UI](../../FLUXURI_UI.md) · [Plan](../../PLAN_IMPLEMENTARE.md) · [Calcule](../../CONTRACT_CALCULE.md) · [Cardinalitate țintă și limita DDL](../../SCHEMA_VC.md) · [Probe planificate](../../PROBE_ACCES.md#probe-browser) · [Worklog](../../../docs/worklog/SLICE-VC00-07-corectii-mockupuri-v2.md).
+[Fluxuri UI](../../FLUXURI_UI.md) · [Plan](../../PLAN_IMPLEMENTARE.md) · [Calcule](../../CONTRACT_CALCULE.md) · [Cardinalitate țintă și limita DDL](../../SCHEMA_VC.md) · [Probe planificate](../../PROBE_ACCES.md#probe-browser) · [Worklog](../../../docs/worklog/SLICE-VC00-06-corectii-mockupuri-si-fluxuri.md#slice-vc00-07).
 
 Mockupuri și documentație, nu modificarea aplicației. Date fictive, stil ADECHIT/Portal. Imagini editate cu **image_gen integrat**; [prompturi](prompts.json), [corecții de verificare](prompts-verificare.json), [proveniență](manifest.json). [Arhiva ZIP](../vercon-mockupuri-corectate-v2-2026-10-12.zip).

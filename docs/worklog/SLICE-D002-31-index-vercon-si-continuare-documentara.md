@@ -2,249 +2,187 @@
 
 26.10.2026. Aplicat local; numai Markdown autorizat, lectură/comparație documentară și Git, fără teste, builduri, verificatoare, aplicații, SQL, commit sau push. Excluderi și stage selectiv: [registrul D002](state/KBOT_STATUS_D000-D009.md#slice-d002). Cumulurile includ costul acestui jurnal și al registrelor; continuările sunt checkpointuri istorice.
 
-<a id="slice-d002-31"></a>
-
-## SLICE-D002-31 — Trimiteri directe în indexul istoric VERCON
+## SLICE-D002-31 — Trimiteri directe în indexul istoric VERCON <a id="slice-d002-31"></a>
 
 Jurnalul general este citit integral, în cinci părți fără trunchiere. Retras un bloc duplicat identic despre rescrierea din 12.10; 117 trimiteri simple trec în titluri, cu sensul editorial comun explicit. Cele 245 de titluri își păstrează textul afișat, nivelul, ordinea și ancorele derivate; cele 228 de destinații rămân identice și în aceeași ordine. Intrările cu mai multe surse, detalii unice sau numere de revizie rămân distincte. Nu se mută și nu se extind confirmările istorice.
 
 Fișiere: `implementare_vercon_v2.md` (239 rânduri eliminate), acest jurnal, `state/KBOT_STATUS_D000-D009.md` (un rând adăugat) și rândul D002 din `KBOT_STATUS.md` (fără diferență de rânduri). Modificările independente ale utilizatorului rămân în afara stage-ului propriu. Bilanț: **0 fișiere retrase, un jurnal adăugat; 225 rânduri mai puțin**. Cumul D001-01…99 + D002-01…31: **381 fișiere și 18634 rânduri mai puțin**. Continuare **SLICE-D002-32**.
 
-<a id="slice-d002-32"></a>
-
-## SLICE-D002-32 — Filtrare și migrare istorică compacte
+## SLICE-D002-32 — Filtrare și migrare istorică compacte <a id="slice-d002-32"></a>
 
 0030, 0042 și 0043 sunt citite integral și compactate separat, fără diferență pe cuvinte (marcajele repetate de citat sunt reunite). Se păstrează aplicarea imediată distinctă a sortării/grupării, baza autorată ThemeTableFit, exportul JSON fără pierderi și respinsele pe DC. În 0043, proba locală inițială, raportul pe 22 de baze și reproducerile locale rămân distincte; cazurile 1072/1090 rămân nereparate. 0040 este citit integral și păstrat fără modificări: era deja compact.
 
 Fișiere: `SLICE-0030-filter-popup-file-si-grupare.md` (65 rânduri eliminate), `SLICE-0042-migrare-fx-access.md` (3), `SLICE-0043-fk-unblock-collation.md` (6), acest jurnal și cele două registre D002; registrul detaliat adaugă un rând, indexul general păstrează numărul de rânduri. Bilanț: **0 fișiere retrase sau adăugate; 63 rânduri mai puțin**. Cumul D001-01…99 + D002-01…32: **381 fișiere și 18697 rânduri mai puțin**. Continuare **SLICE-D002-33**.
 
-<a id="slice-d002-33"></a>
-
-## SLICE-D002-33 — Grupare, editare și nomenclatoare compacte
+## SLICE-D002-33 — Grupare, editare și nomenclatoare compacte <a id="slice-d002-33"></a>
 
 Cele patru documente sunt citite integral și compactate separat, fără diferență pe cuvinte. 0029 păstrează cele trei numerotări, precedența grupării, efectele distincte ale filtrării/strângerii și limita grupării pe text afișat. 0085 păstrează schimbarea cursor → selectare integrală, culorile și bordurile revizuite succesiv, capturile off-screen și limitele DPI. 0086 păstrează împărțirea DdfSend numai în trecerea 2; 0087 păstrează propriile probe și diferența față de bugetele datate ulterioare. Nimic nu devine confirmare nouă.
 
 Fișiere: `SLICE-0029-01-kbotdataview-grupare.md` (80 rânduri eliminate), `SLICE-0085-dataview-editor-matches-cell.md` (83), `SLICE-0086-kbotform-partials-primary-button.md` (6), `SLICE-0087-clasificatii-parteneri-meniu.md` (43), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase sau adăugate; 201 rânduri mai puțin**. Cumul D001-01…99 + D002-01…33: **381 fișiere și 18898 rânduri mai puțin**. Continuare **SLICE-D002-34**.
 
-<a id="slice-d002-34"></a>
-
-## SLICE-D002-34 — Note CAB și jurnale pe sesiune compacte
+## SLICE-D002-34 — Note CAB și jurnale pe sesiune compacte <a id="slice-d002-34"></a>
 
 Documentele sunt citite integral, fără trunchiere; numai continuările se reunesc, fără diferență pe cuvinte. 0088 păstrează cele cinci etape, corecțiile schemei, recipisa și lotul atomic ulterior, distinct de singura probă PDF inițială. 0089 păstrează filtrarea per utilizator/sesiune, rotațiile, exportul numai pe zile deschise și condiția avansată ulterioară. 0097 păstrează amendamentele autentificării și selectorului «Toate», fără a confirma ipotezele sau interfața. Nicio comandă istorică nu este executată.
 
 Fișiere: `SLICE-0097-corective.md` (5 rânduri eliminate), `SLICE-0088-note-corectie-cab.md` (98 rânduri eliminate), `SLICE-0089-jurnale-server-per-utilizator.md` (56 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase sau adăugate; 148 rânduri mai puțin**. Cumul D001-01…99 + D002-01…34: **381 fișiere și 19046 rânduri mai puțin**. Continuare **SLICE-D002-35**.
 
-<a id="slice-d002-35"></a>
-
-## SLICE-D002-35 — DPI, umbre și consola FOREXE compacte
+## SLICE-D002-35 — DPI, umbre și consola FOREXE compacte <a id="slice-d002-35"></a>
 
 Cele trei istorice sunt citite integral și compactate separat, fără diferență pe cuvinte. 0066 păstrează scara logică/live, formulele DPI, măsurătorile inițiale și corecția ulterioară Font → Dpi, fără a reconcilia artificial numărătorile 69/+8. Proba umbrei pe Windows 11 nu devine probă pe Windows 10. 0071 păstrează filtrarea numai a consolei, presupunerea LogValue și remedierea ulterioară a handle-ului creat pe firul greșit; scenariul Release rămâne nevăzut.
 
 Fișiere: `SLICE-0066-tabele-la-dpi-ca-arborele.md` (123 rânduri eliminate), `SLICE-0069-umbra-ferestrelor-fara-chenar.md` (32 rânduri eliminate), `SLICE-0071-consola-forexe-fara-zgomot.md` (47 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase sau adăugate; 191 rânduri mai puțin**. Cumul D001-01…99 + D002-01…35: **381 fișiere și 19237 rânduri mai puțin**. Continuare **SLICE-D002-36**.
 
-<a id="slice-d002-36"></a>
-
-## SLICE-D002-36 — Arbore și asociere istorică compacte
+## SLICE-D002-36 — Arbore și asociere istorică compacte <a id="slice-d002-36"></a>
 
 Cele patru documente sunt citite integral și compactate separat, fără diferență pe cuvinte. 0777 păstrează înlocuirea «cele mai noi întâi» prin sens configurabil, data din istoric și limitele coloanelor; 02 păstrează semnele temporare și sarcinile abandonate. 0058 păstrează cazul live nediagnosticat și observația că serverul folosea codul anterior; 0059 păstrează reconstituirea cu IDRR negativ, declararea inițială și corecția ulterioară a ștergerii. Capturile de oricând nu confirmă propunerea sau salvarea pe MariaDB.
 
 Fișiere: `SLICE-0777-optiuni-arbore-angajamente.md` (57 rânduri eliminate), `SLICE-0777-02-arbore-subliniat-coada.md` (9 rânduri eliminate), `SLICE-0058-asociere-cache-si-lag.md` (58 rânduri eliminate), `SLICE-0059-asociere-receptie-noua-din-cos.md` (38 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase sau adăugate; 151 rânduri mai puțin**. Cumul D001-01…99 + D002-01…36: **381 fișiere și 19388 rânduri mai puțin**. Continuare **SLICE-D002-37**.
 
-<a id="slice-d002-37"></a>
-
-## SLICE-D002-37 — Istoricul recent D002-28…30 reunit
+## SLICE-D002-37 — Istoricul recent D002-28…30 reunit <a id="slice-d002-37"></a>
 
 Cele trei jurnale sunt recitite integral și absorbite în istoricul 23 existent. Data, domeniul, legenda și limitele identice rămân enunțate o singură dată; titlurile, toate inventarele, cumulurile și continuările istorice sunt păstrate. Titlul comun actualizat păstrează ancora anterioară explicit, iar cele trei trimiteri din registru indică ancorele loturilor. Căutarea documentară în domeniul autorizat nu arată alte trimiteri active la căile retrase. Costul consemnării face acest lot să adauge două rânduri net, în schimb retrage trei fișiere.
 
-Fișiere: `SLICE-D002-28-istoric-loturi-recente-23-27.md` (22 rânduri eliminate), `SLICE-D002-29-reimprospatare-partiala-si-limite-istorice.md` (18 rânduri eliminate), `SLICE-D002-30-tooltip-dpi-si-cursor-tema-compacte.md` (19 rânduri eliminate), `SLICE-D002-23-istoric-recent-si-predare-documentara.md` (-50 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; -2 rânduri mai puțin**. Cumul D001-01…99 + D002-01…37: **384 fișiere și 19386 rânduri mai puțin**. Continuare **SLICE-D002-38**.
+Fișiere: `SLICE-D002-28-istoric-loturi-recente-23-27.md` (22 rânduri eliminate), `SLICE-D002-29-reimprospatare-partiala-si-limite-istorice.md` (18 rânduri eliminate), `SLICE-D002-30-tooltip-dpi-si-cursor-tema-compacte.md` (19 rânduri eliminate), `SLICE-D002-23-istoric-recent-si-predare-documentara.md` (50 rânduri adăugate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; 2 rânduri în plus**. Cumul D001-01…99 + D002-01…37: **384 fișiere și 19386 rânduri mai puțin**. Continuare **SLICE-D002-38**.
 
-<a id="slice-d002-38"></a>
-
-## SLICE-D002-38 — Sumar, Recepții, Plăți și totaluri compacte
+## SLICE-D002-38 — Sumar, Recepții, Plăți și totaluri compacte <a id="slice-d002-38"></a>
 
 Documentele sunt citite integral, separat și fără trunchiere; continuările sunt reunite fără diferență pe cuvinte. 0011 păstrează deciziile de join, cele trei numărători și corecția ulterioară, delimitate de contractul 0080. 0015 păstrează trecerea de la două la trei niveluri, LISTA agregată și fereastra exclusivă până la prima recepție a lunii următoare. 0017 păstrează înlocuirea arborelui, corecțiile designerului și acceptarea vizuală numai pe date de test din 13.08. Totalurile rămân un contract separat, cu Count, Sum și Average distincte.
 
 Fișiere: `SLICE-0011-01-sumar-endpoint.md` (54 rânduri eliminate), `SLICE-0015-01-receptii-view.md` (69 rânduri eliminate), `SLICE-0017-02-plati-endpoint.md` (74 rânduri eliminate), `SLICE-0017-01-kbotdataview-totals-row.md` (49 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 235 rânduri mai puțin**. Cumul D001-01…99 + D002-01…38: **384 fișiere și 19621 rânduri mai puțin**. Continuare **SLICE-D002-39**.
 
-<a id="slice-d002-39"></a>
-
-## SLICE-D002-39 — Ghiduri Redis, setări și amânări compacte
+## SLICE-D002-39 — Ghiduri Redis, setări și amânări compacte <a id="slice-d002-39"></a>
 
 Cele trei documente sunt citite integral; SETARI_UTILIZATOR în două părți fără trunchiere. Se reunesc numai continuările, fără diferență pe cuvinte. Redis păstrează backendul implicit, garda single-worker, spațiul de chei și limitele expirării; comenzile rămân exemple neexecutate. Amânările păstrează separat deciziile deschise și corecțiile legate de BIC/combo/refresh. Ghidul setărilor păstrează profilurile Adobe măsurate la 04.08, delimitarea față de gazda ulterioară și regulile FOREXE. PLAN_Securitate_API este citit integral și păstrat: era deja compact, cu excepția celor cinci rute delimitată.
 
 Fișiere: `docs/kbot-redis-sessions.md` (20 rânduri eliminate), `docs/possible_future_directions.md` (60 rânduri eliminate), `docs/SETARI_UTILIZATOR.md` (41 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 110 rânduri mai puțin**. Cumul D001-01…99 + D002-01…39: **384 fișiere și 19731 rânduri mai puțin**. Continuare **SLICE-D002-40**.
 
-<a id="slice-d002-40"></a>
-
-## SLICE-D002-40 — Planul help și selecția certificatului compacte
+## SLICE-D002-40 — Planul help și selecția certificatului compacte <a id="slice-d002-40"></a>
 
 Ambele documente sunt citite integral și compactate separat, fără diferență pe cuvinte. Planul rămâne propunerea din 30.09, delimitată de implementarea 0000-18…22: datele anonime, outbox-ul, retenția, excepția jurnalului web și condiția modelului ulterior sunt păstrate. Ghidul Playwright păstrează versiunile consemnate, politica certificatului, egalitatea referințelor și pașii de instalare ca text neexecutat. PLAN_TreeDataApi și PLAN_MainForm_Scaffolding sunt citite integral și păstrate fără modificări: paragrafele erau deja compacte, cu abaterile istorice delimitate.
 
 Fișiere: `docs/PLAN_help_assistant.md` (80 rânduri eliminate), `docs/playwright-certificate-autoselect.md` (26 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 95 rânduri mai puțin**. Cumul D001-01…99 + D002-01…40: **384 fișiere și 19826 rânduri mai puțin**. Continuare **SLICE-D002-41**.
 
-<a id="slice-d002-41"></a>
-
-## SLICE-D002-41 — Corecția valorilor și caseta de mesaj compacte
+## SLICE-D002-41 — Corecția valorilor și caseta de mesaj compacte <a id="slice-d002-41"></a>
 
 Ambele istorice sunt citite integral și compactate separat, fără diferență pe cuvinte. 0111 păstrează diferența corecției imediate din editor față de corecția locală a descărcării, ordinea fazei a doua, copiile liniilor și limitele originalelor. 0112 păstrează evoluția catalogului, butonul suplimentar, închiderea și înlocuirea mesajelor de trimitere prin feedback tăcut; primul 500 real nu devine succes al trimiterii. 0120 și 0110-05 sunt citite integral și păstrate fără modificări: erau deja compacte și separau checkpointurile inițiale de extensiile ulterioare.
 
 Fișiere: `docs/worklog/SLICE-0111-01-corectie-valoare-instantaneu.md` (74 rânduri eliminate), `docs/worklog/SLICE-0112-caseta-mesaj-kbot-si-catalog.md` (75 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 138 rânduri mai puțin**. Cumul D001-01…99 + D002-01…41: **384 fișiere și 19964 rânduri mai puțin**. Continuare **SLICE-D002-42**.
 
-<a id="slice-d002-42"></a>
-
-## SLICE-D002-42 — Planul și formatul copiilor locale compacte
+## SLICE-D002-42 — Planul și formatul copiilor locale compacte <a id="slice-d002-42"></a>
 
 Ambele documente sunt citite integral și compactate separat, fără diferență pe cuvinte. Se păstrează KDF/HKDF, nonce/tag/AAD, paginile și valorile de control, instantaneul scris ultimul, fusurile și limitele. Planul inițial de restaurare/programare/retenție rămâne delimitat de exportul SQL, reamintirea la deschidere și codul periodic neexpus. Confirmarea operatorului din 21.10 rămâne numai pentru primele două copii, fără extindere la verificare, export, istoric sau curățare. Nicio operație de backup sau SQL nu se execută.
 
 Fișiere: `docs/ME02_FORMAT.md` (11 rânduri eliminate), `docs/ME02_PLAN.md` (41 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 41 rânduri mai puțin**. Cumul D001-01…99 + D002-01…42: **384 fișiere și 20005 rânduri mai puțin**. Continuare **SLICE-D002-43**.
 
-<a id="slice-d002-43"></a>
-
-## SLICE-D002-43 — Descrieri de subfelii și stare comună fără reluări
+## SLICE-D002-43 — Descrieri de subfelii și stare comună fără reluări <a id="slice-d002-43"></a>
 
 PLAN_IMPLEMENTARE VERCON este citit integral în cinci părți fără trunchiere. În 54 descrieri, Pași/Livrabile/Acceptare devin un singur paragraf, păstrând etichetele, ordinea, titlurile și ancorele; este reunit și paragraful OI/MF. Cuvintele planului rămân identice, inclusiv propunerile inițiale înlocuite ulterior, cele 34 de scenarii și extensia NIR din 16.10. În registrul D001, cele 99 de stări identice sunt centralizate într-un enunț comun (două rânduri adăugate); rezultatele și legăturile fiecărui lot rămân distincte. Nu se atribuie implementare sau probe noi.
 
 Fișiere: `VERCON/PLAN_IMPLEMENTARE.md` (116 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 103 rânduri mai puțin**. Cumul D001-01…99 + D002-01…43: **384 fișiere și 20108 rânduri mai puțin**. Continuare **SLICE-D002-44**.
 
-<a id="slice-d002-44"></a>
-
-## SLICE-D002-44 — Un singur istoric pentru DDL-ul inițial VERCON
+## SLICE-D002-44 — Un singur istoric pentru DDL-ul inițial VERCON <a id="slice-d002-44"></a>
 
 Cele patru jurnale sunt citite integral și reunite în 01 deoarece descriu părți ale aceluiași sql/VC_AVACONT_SURSA.sql, nu doar fiindcă au prefix comun. Starea identică este enunțată o singură dată; ierarhia, tabelele business, auditul/importul, numerotarea, abaterile FK și corecția schema sync rămân pe etapă. Titlurile și patru ancore de subfelie sunt păstrate; cele patru legături din registrul VERCON sunt reparate. O trimitere datată delimitează retragerea ulterioară a DDL-ului complet/generatorului din 16.10. VC03-05 este citit integral și păstrat separat: procedura și cele 13 probe au alt rol. Lotul retrage trei fișiere și adaugă opt rânduri net cu consemnarea.
 
-Fișiere: `docs/worklog/SLICE-VC03-01-ierarhia-si-politica-anuala.md` (-28 rânduri eliminate), `docs/worklog/SLICE-VC03-02-tabelele-business-tipuri-fk.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC03-03-importuri-audit-idempotency.md` (10 rânduri eliminate), `docs/worklog/SLICE-VC03-04-configurare-numerotare-date-comune.md` (10 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; -8 rânduri mai puțin**. Cumul D001-01…99 + D002-01…44: **387 fișiere și 20100 rânduri mai puțin**. Continuare **SLICE-D002-45**.
+Fișiere: `docs/worklog/SLICE-VC03-01-ierarhia-si-politica-anuala.md` (28 rânduri adăugate), `docs/worklog/SLICE-VC03-02-tabelele-business-tipuri-fk.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC03-03-importuri-audit-idempotency.md` (10 rânduri eliminate), `docs/worklog/SLICE-VC03-04-configurare-numerotare-date-comune.md` (10 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; 8 rânduri în plus**. Cumul D001-01…99 + D002-01…44: **387 fișiere și 20100 rânduri mai puțin**. Continuare **SLICE-D002-45**.
 
-<a id="slice-d002-45"></a>
-
-## SLICE-D002-45 — Contracte desktop compacte, fără schimbări de API
+## SLICE-D002-45 — Contracte desktop compacte, fără schimbări de API <a id="slice-d002-45"></a>
 
 Cele cinci documente sunt citite integral și compactate separat, fără diferență pe cuvinte. Se păstrează formulele tabelului, limitele designerului, meniul fără activare, tastatura, selectoarele, selecția multiplă și previzualizarea tragerii, scara/scrollul și limitele tooltipurilor. Dovezile off-screen nu devin probe pe ecran sau teste noi. Sunt editate doar fișierele Markdown; modificările independente din KBotCaptionBar.vb și AdvancedTreeControl.Keyboard.vb rămân neatinse și în afara stage-ului.
 
 Fișiere: `src/KBot.Controls/Table/KBotTableLayoutPanel.md` (55 rânduri eliminate), `src/KBot.Controls/Menu/KBotDropDownMenu.md` (25 rânduri eliminate), `src/KBot.Controls/CaptionBar/KBotCaptionBar.md` (16 rânduri eliminate), `src/KBot.Controls/NavList/KBotNavList.md` (19 rânduri eliminate), `src/KBot.Controls/Tree/AdvancedTreeControl.md` (132 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 236 rânduri mai puțin**. Cumul D001-01…99 + D002-01…45: **387 fișiere și 20336 rânduri mai puțin**. Continuare **SLICE-D002-46**.
 
-<a id="slice-d002-46"></a>
-
-## SLICE-D002-46 — Selectoare, tooltipuri, grafice și mesaje compacte
+## SLICE-D002-46 — Selectoare, tooltipuri, grafice și mesaje compacte <a id="slice-d002-46"></a>
 
 Cele șase documente sunt citite integral și compactate separat, fără diferență pe cuvinte la reunirea continuărilor. Se păstrează unicul dropdown și editarea combo, grupurile/căutarea/masca, identitatea conținutului tooltipului, timpul real și segmentele graficelor/benzilor, butoanele și catalogul mesajelor. Singura clarificare de text marchează limita inițială «plain text only» ca înlocuită de HTML-ul simplu din 0112-03, deja descris mai sus și în jurnalul 0112 citit integral. Nu se schimbă API-uri, ordinea datelor, surse sau rezultate de probe.
 
 Fișiere: `src/KBot.Controls/Combo/KBotComboBox.md` (68 rânduri eliminate), `src/KBot.Controls/ToolTip/KBotToolTip.md` (35 rânduri eliminate), `src/KBot.Controls/Lane/KBotLaneView.md` (77 rânduri eliminate), `src/KBot.Controls/Chart/KBotChartView.md` (66 rânduri eliminate), `src/KBot.Controls/Button/KBotButton.md` (3 rânduri eliminate), `src/KBot.Controls/MessageBox/KBotMessageBox.md` (42 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 280 rânduri mai puțin**. Cumul D001-01…99 + D002-01…46: **387 fișiere și 20616 rânduri mai puțin**. Continuare **SLICE-D002-47**.
 
-<a id="slice-d002-47"></a>
-
-## SLICE-D002-47 — Convenții, calendare și câmpuri text compacte
+## SLICE-D002-47 — Convenții, calendare și câmpuri text compacte <a id="slice-d002-47"></a>
 
 Cele șase documente sunt citite integral și compactate separat, fără diferență pe cuvinte. Se păstrează indexul și convențiile C1…C9, direcția referințelor, granițele proiectului și notele istorice. Calendarul rămâne suprafață de zi, iar DatePicker păstrează ora ascunsă, parse-ul, layoutul și TopMost-ul popupului; sunt păstrate paddings, DPI, masca, focusul și scrollul textului. Nu se modifică reguli de implementare, surse sau probe; documentația DataView cu modificări străine rămâne exclusă.
 
 Fișiere: `src/KBot.Controls/CONTROLS.md` (26 rânduri eliminate), `src/KBot.Controls/README.md` (19 rânduri eliminate), `src/KBot.Controls/Calendar/KBotCalendar.md` (33 rânduri eliminate), `src/KBot.Controls/Calendar/KBotDatePicker.md` (75 rânduri eliminate), `src/KBot.Controls/TextField/KBotTextField.md` (11 rânduri eliminate), `src/KBot.Controls/TextField/KBotTextBox.md` (25 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 178 rânduri mai puțin**. Cumul D001-01…99 + D002-01…47: **387 fișiere și 20794 rânduri mai puțin**. Continuare **SLICE-D002-48**.
 
-<a id="slice-d002-48"></a>
-
-## SLICE-D002-48 — Contracte popup, derulare și text formatat
+## SLICE-D002-48 — Contracte popup, derulare și text formatat <a id="slice-d002-48"></a>
 
 Reunite numai continuările de paragraf și de listă în șapte contracte citite integral. Au rămas neschimbate cuvintele, formulele de derulare, proprietatea resurselor, limitele istorice și etapele ulterioare pentru popup, RichText și selecția chipurilor.
 
 Fișiere: `src/KBot.Controls/Popup/CustomPopup.md` (41 rânduri eliminate), `src/KBot.Controls/Popup/KBotHelpPopup.md` (30 rânduri eliminate), `src/KBot.Controls/Scroll/KBotScrollBar.md` (12 rânduri eliminate), `src/KBot.Controls/RichText/KBotRichTextEditor.md` (85 rânduri eliminate), `src/KBot.Controls/RichText/KBotHtmlLabel.md` (14 rânduri eliminate), `src/KBot.Controls/RichText/KBotLogBox.md` (6 rânduri eliminate), `src/KBot.Controls/ChipBar/KBotChipBar.md` (13 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 190 rânduri mai puțin**. Cumul D001-01…99 + D002-01…48: **387 fișiere și 20984 rânduri mai puțin**. Continuare **SLICE-D002-49**.
 
-<a id="slice-d002-49"></a>
-
-## SLICE-D002-49 — Găzduire documente, editoare de temă și controale mici
+## SLICE-D002-49 — Găzduire documente, editoare de temă și controale mici <a id="slice-d002-49"></a>
 
 Lectură integrală și reunirea continuărilor în contractele Adobe/Office, în cele două editoare de temă și în patru controale mici. Comparația textuală nu schimbă cuvintele; rămân toate măsurătorile și corecțiile istorice, limitele neconfirmate, regulile de închidere și proprietatea setărilor Office. Cele două editoare de temă rămân documente distincte, deoarece editează obiecte diferite.
 
 Fișiere: `src/KBot.Controls/Adobe/AdobeReaderHost.md` (70 rânduri eliminate), `src/KBot.Controls/Office/OfficeDocumentHost.md` (136 rânduri eliminate), `src/KBot.Controls/ThemeOptions/ThemeOptionsForm.md` (32 rânduri eliminate), `src/KBot.Controls/ThemeEditor/ThemeEditorForm.md` (21 rânduri eliminate), `src/KBot.Controls/Progress/KBotProgressBar.md` (5 rânduri eliminate), `src/KBot.Controls/Notice/KBotNotice.md` (4 rânduri eliminate), `src/KBot.Controls/Label/KBotLabel.md` (7 rânduri eliminate), `src/KBot.Controls/BusyBar/KBotBusyBar.md` (3 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 267 rânduri mai puțin**. Cumul D001-01…99 + D002-01…49: **387 fișiere și 21251 rânduri mai puțin**. Continuare **SLICE-D002-50**.
 
-<a id="slice-d002-50"></a>
-
-## SLICE-D002-50 — Harta controalelor VERCON și registrul deciziilor
+## SLICE-D002-50 — Harta controalelor VERCON și registrul deciziilor <a id="slice-d002-50"></a>
 
 Harta controalelor și registrul deciziilor au fost citite integral. API-ul openMenu duplicat a fost reunit în secțiunea Menu, păstrând toate câmpurile/opțiunile, închiderea globală, limita unui popup activ și navigarea cu săgeți/Escape. Restul modificărilor reunesc continuări fără schimbarea cuvintelor. Deciziile inițiale de migrare și revizia din 14.10 care le înlocuiește rămân etape distincte. Schema VC, catalogul probelor și analiza VBA au fost citite și păstrate fără schimbări de conținut.
 
 Fișiere: `VERCON/CONTROALE_CUSTOM_THREAD.md` (31 rânduri eliminate), `VERCON/DECIZII_DESCHISE.md` (15 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 35 rânduri mai puțin**. Cumul D001-01…99 + D002-01…50: **387 fișiere și 21286 rânduri mai puțin**. Continuare **SLICE-D002-51**.
 
-<a id="slice-d002-51"></a>
-
-## SLICE-D002-51 — Istoric comun al limitei de acces VERCON
+## SLICE-D002-51 — Istoric comun al limitei de acces VERCON <a id="slice-d002-51"></a>
 
 Cele cinci jurnale descriu aceeași limită de acces: rol/operație, context verificat, ocupare exclusivă, privilegiile migratorului și proba acestor controale. Au fost reunite în VC04-01, cu ancore pentru fiecare etapă. Declarația identică de stare a primelor patru etape apare o singură dată; planificarea și rularea parțială din VC04-05 rămân explicite și nu certifică roluri/MariaDB reale. Cele patru trimiteri din VERCON_STATUS indică secțiunile noi. Consolidarea reduce numărul de fișiere; ancorele și explicația comună adaugă rânduri net.
 
-Fișiere: `docs/worklog/SLICE-VC04-01-matricea-operatiilor-vr.md` (-52 rânduri eliminate), `docs/worklog/SLICE-VC04-02-guard-si-repository-cu-context.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC04-03-acl-locale-si-contul-migratorului.md` (10 rânduri eliminate), `docs/worklog/SLICE-VC04-04-ocupare-exclusiva-cache-drafturi.md` (12 rânduri eliminate), `docs/worklog/SLICE-VC04-05-probe-de-acces-si-audit.md` (9 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **4 fișiere retrase, fără fișiere adăugate; -21 rânduri mai puțin**. Cumul D001-01…99 + D002-01…51: **391 fișiere și 21265 rânduri mai puțin**. Continuare **SLICE-D002-52**.
+Fișiere: `docs/worklog/SLICE-VC04-01-matricea-operatiilor-vr.md` (52 rânduri adăugate), `docs/worklog/SLICE-VC04-02-guard-si-repository-cu-context.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC04-03-acl-locale-si-contul-migratorului.md` (10 rânduri eliminate), `docs/worklog/SLICE-VC04-04-ocupare-exclusiva-cache-drafturi.md` (12 rânduri eliminate), `docs/worklog/SLICE-VC04-05-probe-de-acces-si-audit.md` (9 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **4 fișiere retrase, fără fișiere adăugate; 21 rânduri în plus**. Cumul D001-01…99 + D002-01…51: **391 fișiere și 21265 rânduri mai puțin**. Continuare **SLICE-D002-52**.
 
-<a id="slice-d002-52"></a>
-
-## SLICE-D002-52 — Tooltip web și convenția formularelor
+## SLICE-D002-52 — Tooltip web și convenția formularelor <a id="slice-d002-52"></a>
 
 Reunite numai continuările de paragraf/listă în ghidul tooltipului web și convenția formularelor, după lectura integrală. Comparația păstrează cuvintele, blocurile de cod, formulele DPI și titlurile. Confirmarea din 23.10 pentru cele trei etape tooltip rămâne distinctă de extensia ulterioară a fontului.
 
 Fișiere: `docs/web-tooltip.md` (72 rânduri eliminate), `docs/kbot-forms-ui-convention.md` (33 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 94 rânduri mai puțin**. Cumul D001-01…99 + D002-01…52: **391 fișiere și 21359 rânduri mai puțin**. Continuare **SLICE-D002-53**.
 
-<a id="slice-d002-53"></a>
-
-## SLICE-D002-53 — Ghid help, analiza ORD și API XFA
+## SLICE-D002-53 — Ghid help, analiza ORD și API XFA <a id="slice-d002-53"></a>
 
 Lectură integrală și compactarea continuărilor în ghidul de mentenanță help, analiza formularului ORD și README-ul XFA. Ghidul este documentație tehnică autorizată, nu ajutor runtime. Rămân toate condițiile, opțiunile, formulele de scor, fragmentele de cod, semnăturile și probele operatorului; comenzile documentate nu au fost executate.
 
 Fișiere: `docs/HELP_SYSTEM.md` (136 rânduri eliminate), `docs/FUNDAMENT_Ordonantare_CAB.md` (44 rânduri eliminate), `src/KBot.Xfa/README.md` (13 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 182 rânduri mai puțin**. Cumul D001-01…99 + D002-01…53: **391 fișiere și 21541 rânduri mai puțin**. Continuare **SLICE-D002-54**.
 
-<a id="slice-d002-54"></a>
-
-## SLICE-D002-54 — Fundamentul și planul istoric al trimiterii DDF
+## SLICE-D002-54 — Fundamentul și planul istoric al trimiterii DDF <a id="slice-d002-54"></a>
 
 Fundamentul și planul DDF au fost citite integral și rămân documente distincte: primul păstrează analiza formularului și scenariile, al doilea ordinea istorică G0–G6. Compactarea nu schimbă cuvintele, tabelele, XML-ul sau diagramele text. Propunerea inițială pentru resetarea semnăturii și corecția adoptată menționată în antet nu sunt confundate; comenzile și probele documentate nu au fost executate.
 
 Fișiere: `docs/FUNDAMENT_DocumentFundamentare_CAB.md` (19 rânduri eliminate), `docs/PLAN_DDF_Trimitere.md` (64 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 72 rânduri mai puțin**. Cumul D001-01…99 + D002-01…54: **391 fișiere și 21613 rânduri mai puțin**. Continuare **SLICE-D002-55**.
 
-<a id="slice-d002-55"></a>
-
-## SLICE-D002-55 — Plan FOREXE și două istorice desktop
+## SLICE-D002-55 — Plan FOREXE și două istorice desktop <a id="slice-d002-55"></a>
 
 Planul FOREXE a fost citit integral, inclusiv anexa; compactarea nu schimbă cuvintele, codul, SQL-ul ilustrativ sau tabelele. Rămân distincte proiectarea inițială, contractul în două faze și extinderea ulterioară a listelor de chei. În istoricele 0010 și 0115 au fost reunite doar continuările rămase; schimbările IsDirty, alinierea thumb-ului și plasarea panoului lateral păstrează reviziile și limitele lor. Istoricele 0116…19 și cele de autentificare/vizualizare portal citite sunt deja compacte și nu au fost modificate.
 
 Fișiere: `docs/PLAN_ForexeIngest.md` (81 rânduri eliminate), `docs/worklog/SLICE-0010-01-kbotdataview-skeleton.md` (9 rânduri eliminate), `docs/worklog/SLICE-0115-acasa-panou-lateral.md` (4 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 83 rânduri mai puțin**. Cumul D001-01…99 + D002-01…55: **391 fișiere și 21696 rânduri mai puțin**. Continuare **SLICE-D002-56**.
 
-<a id="slice-d002-56"></a>
-
-## SLICE-D002-56 — Ciclul paginii VERCON într-un istoric
+## SLICE-D002-56 — Ciclul paginii VERCON într-un istoric <a id="slice-d002-56"></a>
 
 Etapele aceluiași ciclu al paginii au fost citite integral și reunite în VC02-01: selectarea contextului, capabilități, editarea draftului și protocolul salvării. Starea inițială identică a etapelor 01…04 este enunțată o singură dată; modificările ulterioare de meniu/context și matricea browser neexecutată rămân distincte. Ancorele d001-13-meniu și celelalte ancore existente sunt păstrate, cu ancore noi pentru fiecare etapă. Trimiterile din registrul VERCON, jurnalul general și istoricul NIR au fost actualizate; inventarele istorice plain text nu sunt rescrise. Ancorele și introducerea adaugă rânduri, în schimb sunt retrase patru fișiere.
 
-Fișiere: `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` (-57 rânduri eliminate), `docs/worklog/SLICE-VC02-02-meniuri-capabilitati-coloane.md` (19 rânduri eliminate), `docs/worklog/SLICE-VC02-03-editare-in-grila.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC02-04-salvare-conflict-sesiune.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC02-05-probe-browser-si-ajutor.md` (6 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **4 fișiere retrase, fără fișiere adăugate; -21 rânduri mai puțin**. Cumul D001-01…99 + D002-01…56: **395 fișiere și 21675 rânduri mai puțin**. Continuare **SLICE-D002-57**.
+Fișiere: `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` (57 rânduri adăugate), `docs/worklog/SLICE-VC02-02-meniuri-capabilitati-coloane.md` (19 rânduri eliminate), `docs/worklog/SLICE-VC02-03-editare-in-grila.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC02-04-salvare-conflict-sesiune.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC02-05-probe-browser-si-ajutor.md` (6 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **4 fișiere retrase, fără fișiere adăugate; 21 rânduri în plus**. Cumul D001-01…99 + D002-01…56: **395 fișiere și 21675 rânduri mai puțin**. Continuare **SLICE-D002-57**.
 
-<a id="slice-d002-57"></a>
-
-## SLICE-D002-57 — Migrarea fiscală prin KBotAdmin: diagnostic și versiunile V2/V3
+## SLICE-D002-57 — Migrarea fiscală prin KBotAdmin: diagnostic și versiunile V2/V3 <a id="slice-d002-57"></a>
 
 Cele patru jurnale au fost citite integral și reunite în VC03-07 deoarece urmăresc aceeași migrare prin Interogări unice: garda inițială, diagnosticul pe șapte baze, V2 și V3. Data/proveniența identică apare o singură dată. Sunt păstrate rezultatele de 200 NIR/36 indicii textuale, normalizarea, numele și hash-urile distincte, rollback-ul pe contradicții și limitele privind lipsa CF/partenerii ascunși. V2 confirmat de operator și V3 pregătit/neexecutat de asistent păstrează formulările lor, fără extinderea confirmărilor. Șase trimiteri din cele două registre VERCON au fost reparate; inventarele istorice rămân.
 
-Fișiere: `docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md` (-15 rânduri eliminate), `docs/worklog/SLICE-VC03-08-diagnostic-nir-fara-cf.md` (29 rânduri eliminate), `docs/worklog/SLICE-VC03-09-migrare-cf-v2-documente-istorice-fara-cf.md` (47 rânduri eliminate), `docs/worklog/SLICE-VC03-10-migrare-cf-v3-parteneri-ascunsi.md` (26 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; 76 rânduri mai puțin**. Cumul D001-01…99 + D002-01…57: **398 fișiere și 21751 rânduri mai puțin**. Continuare **SLICE-D002-58**.
+Fișiere: `docs/worklog/SLICE-VC03-07-migrare-fiscala-kbotadmin-interogari-unice.md` (15 rânduri adăugate), `docs/worklog/SLICE-VC03-08-diagnostic-nir-fara-cf.md` (29 rânduri eliminate), `docs/worklog/SLICE-VC03-09-migrare-cf-v2-documente-istorice-fara-cf.md` (47 rânduri eliminate), `docs/worklog/SLICE-VC03-10-migrare-cf-v3-parteneri-ascunsi.md` (26 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **3 fișiere retrase, fără fișiere adăugate; 76 rânduri mai puțin**. Cumul D001-01…99 + D002-01…57: **398 fișiere și 21751 rânduri mai puțin**. Continuare **SLICE-D002-58**.
 
-<a id="slice-d002-58"></a>
-
-## SLICE-D002-58 — Ghid VRC și istoricele identității fiscale
+## SLICE-D002-58 — Ghid VRC și istoricele identității fiscale <a id="slice-d002-58"></a>
 
 Lectură integrală și compactarea continuărilor din ghidul VRC, istoricul multi-folder/subunitate, alinierea fiscală a importului și contractul fiscal online. Au rămas distincte componentele online/import și toate reviziile, versiunile, conversiile, avertismentele și limitele de probă. Jurnalele 05-08/09 au fost citite și păstrate fără schimbări. Comparația documentară păstrează cuvintele; nu s-au executat comenzile din ghid.
 
 Fișiere: `VERCON/VRC.Migrator/README.md` (136 rânduri eliminate), `docs/worklog/SLICE-VC05-10-adauga-baza-date-mai-multe-foldere.md` (31 rânduri eliminate), `docs/worklog/SLICE-VC05-11-vrc-migrator-identitate-fiscala.md` (28 rânduri eliminate), `docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md` (51 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 235 rânduri mai puțin**. Cumul D001-01…99 + D002-01…58: **398 fișiere și 21986 rânduri mai puțin**. Continuare **SLICE-D002-59**.
 
-<a id="slice-d002-59"></a>
-
-## SLICE-D002-59 — Contracte VERCON: registru OI/MF, editor NIR și calcule
+## SLICE-D002-59 — Contracte VERCON: registru OI/MF, editor NIR și calcule <a id="slice-d002-59"></a>
 
 Cele trei contracte au fost citite integral. Au fost reunite doar continuările, cu diferență nulă pe cuvinte și blocurile de cod/tabele păstrate. Identitatea bonului și proveniența, regula contului și recuperarea, limitele ajustării NIR, TVA/AUTO și înlocuirea N01/N02 rămân etape explicite; concluziile de design nu devin rezultate de rulare.
 
 Fișiere: `VERCON/REGISTRU_OI_MF.md` (118 rânduri eliminate), `VERCON/FACTURI_NIR_IMPLEMENTARE.md` (85 rânduri eliminate), `VERCON/CONTRACT_CALCULE.md` (31 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 223 rânduri mai puțin**. Cumul D001-01…99 + D002-01…59: **398 fișiere și 22209 rânduri mai puțin**. Continuare **SLICE-D002-60**.
 
-<a id="slice-d002-60"></a>
-
-## SLICE-D002-60 — Contract unic pentru ActionAddButton
+## SLICE-D002-60 — Contract unic pentru ActionAddButton <a id="slice-d002-60"></a>
 
 Harta controalelor și contractul componentei au fost citite integral. API-ul, opțiunile și dimensiunile repetate din hartă sunt înlocuite cu trimiterea la contractul care le conține deja, inclusiv variabilele NIR. Titlul/ancora și starea din 15.10 rămân, la fel regula CSS de pagină. Contractul componentei a fost compactat fără schimbarea cuvintelor. Analiza fluxului NIR a fost citită integral și păstrată: era deja compactă.
 
 Fișiere: `PYTHON/static/js/components/action-add-button/ActionAddButton.md` (19 rânduri eliminate), `VERCON/CONTROALE_CUSTOM_THREAD.md` (2 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat). Bilanț: **0 fișiere retrase, fără fișiere adăugate; 10 rânduri mai puțin**. Cumul D001-01…99 + D002-01…60: **398 fișiere și 22219 rânduri mai puțin**. Continuare **SLICE-D002-61**.
 
-<a id="slice-d002-61"></a>
-
-## SLICE-D002-61 — Inventar și bilanț pe un singur paragraf în jurnalul propriu
+## SLICE-D002-61 — Inventar și bilanț pe un singur paragraf în jurnalul propriu <a id="slice-d002-61"></a>
 
 Jurnalul D002-31…60 a fost recitit integral în trei părți. Inventarul și bilanțul fiecărui lot sunt acum în același paragraf, fără schimbarea cuvintelor, a numerelor sau a titlurilor/ancorelor. Datele istorice și continuările rămân checkpointuri, nu starea curentă. Această operație reduce și costul documentării propriei curățări.
 
@@ -252,19 +190,15 @@ Fișiere: `docs/worklog/SLICE-D002-31-index-vercon-si-continuare-documentara.md`
 
 Bilanț: **0 fișiere retrase, fără fișiere adăugate; 49 rânduri mai puțin**. Cumul D001-01…99 + D002-01…61: **398 fișiere și 22268 rânduri mai puțin**. Continuare **SLICE-D002-62**.
 
-<a id="slice-d002-62"></a>
-
-## SLICE-D002-62 — Istoricul dialogului de asociere NIR–eFactura
+## SLICE-D002-62 — Istoricul dialogului de asociere NIR–eFactura <a id="slice-d002-62"></a>
 
 Jurnalele au fost citite integral. În 06-11 sunt reunite reviziile aceluiași dialog 13/14/16/17: grile/cantități, drag and drop și memorare, protecție NIR/PDF, selector automat. Confirmarea identică din 23.10 este comună; fișierele, limitele locale și înlocuirile butoanelor rămân pe etapă. Gruparea arborelui (12), informarea/vizibilitatea globală (15) și reglarea OI (09-05) păstrează documente separate. Cele 12 trimiteri din registrele/jurnalul VERCON și D001-04 indică ancorele noilor secțiuni; inventarele istorice nu sunt rescrise. Conform precizării utilizatorului, stage-ul modificărilor rămase se face numai la final.
 
-Fișiere: `docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md` (-28 rânduri eliminate), `docs/worklog/SLICE-VC06-13-efactura-dgv-cantitati-automate.md` (42 rânduri eliminate), `docs/worklog/SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md` (48 rânduri eliminate), `docs/worklog/SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md` (61 rânduri eliminate), `docs/worklog/SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md` (33 rânduri eliminate), `docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md` (35 rânduri eliminate), `docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md` (18 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat).
+Fișiere: `docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md` (28 rânduri adăugate), `docs/worklog/SLICE-VC06-13-efactura-dgv-cantitati-automate.md` (42 rânduri eliminate), `docs/worklog/SLICE-VC06-14-efactura-grile-surse-drop-si-memorare-implicita.md` (48 rânduri eliminate), `docs/worklog/SLICE-VC06-16-efactura-scroll-arbore-blocare-si-pdf.md` (61 rânduri eliminate), `docs/worklog/SLICE-VC06-17-efactura-combo-custom-incarcare-automata.md` (33 rânduri eliminate), `docs/worklog/SLICE-VC06-12-nir-popup-asociere-si-grupare-furnizori.md` (11 rânduri eliminate), `docs/worklog/SLICE-VC06-15-efactura-informare-inactive.md` (35 rânduri eliminate), `docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md` (18 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat).
 
 Bilanț: **4 fișiere retrase, fără fișiere adăugate; 209 rânduri mai puțin**. Cumul D001-01…99 + D002-01…62: **402 fișiere și 22477 rânduri mai puțin**. Continuare **SLICE-D002-63**.
 
-<a id="slice-d002-63"></a>
-
-## SLICE-D002-63 — Fundamentul asocierii recepțiilor și predarea continuării
+## SLICE-D002-63 — Fundamentul asocierii recepțiilor și predarea continuării <a id="slice-d002-63"></a>
 
 Fundamentul asocierii a fost citit integral în patru părți, iar planurile KE/EV integral și separat. Au fost reunite continuările inclusiv în paragrafele cu ancoră inline, fără schimbarea cuvintelor. Toate ancorele F1–F35/D-A…O, sursele, exemplele, formulele, retragerile și corecțiile rămân; F13 retras și eliminarea semnului din 0058 nu sunt confundate, nici propunerea inițială cu implementarea. Planurile KE/EV păstrează propriile limite și trasee. Cele două ghiduri tools/localhost citite sunt deja compacte și rămân neschimbate. Bilanțul include șase rânduri de predare curentă și registrele; stage se face la final, conform utilizatorului.
 
@@ -278,9 +212,7 @@ Bilanț: **0 fișiere retrase, fără fișiere adăugate; 227 rânduri mai puți
 
 Continuare: **SLICE-D002-64**; nu există un candidat citit și rămas în lucru. Citește starea Git actuală și rândurile recente D002; utilizatorul lucrează în paralel. Stage numai la final, pe căi Markdown proprii explicite și patch selectiv pentru D002 în indexul comun; fără commit/push sau teste. Modificările independente 00EF/AV/0123, registrele lor, 0067/0096/0098 și toate sursele rămân în afara stage-ului curățării. Excluderile din registru rămân valabile. Un index.lock gol a reapărut repetat; utilizatorul a confirmat lipsa unei operații Git, dar aplicația rula în debug. Nu opri aplicația/Visual Studio; o operație Git activă se tratează separat de un lock gol rămas.
 
-<a id="slice-d002-64"></a>
-
-## SLICE-D002-64 — Rapoarte, ordonare și mesaje VERCON: istorice compacte
+## SLICE-D002-64 — Rapoarte, ordonare și mesaje VERCON: istorice compacte <a id="slice-d002-64"></a>
 
 Lectură integrală și compactarea continuărilor în 13 jurnale distincte. Sunt păstrate structura OI/MF și perioadele, antetele PDF/Excel, calculele balanței și prețurile istorice, diferența HTTP 400 nereprodus/corecție 500 identificată în surse, tastatura numpad, geometria zoomului și distincția notificări/tooltipuri/status. Confirmările operatorului din 23.10 nu sunt transformate în probe locale noi. Istoricul administrării portalului și cele trei jurnale ME01 au fost citite integral și păstrate fără modificări: sunt deja compacte. Nicio comandă operațională documentată nu a fost executată.
 
@@ -288,13 +220,11 @@ Fișiere: `docs/worklog/SLICE-VC08-06-nir-valoare-factura-numpad.md` (15 rândur
 
 Bilanț: **0 fișiere retrase, fără fișiere adăugate; 250 rânduri mai puțin**. Cumul D001-01…99 + D002-01…64: **402 fișiere și 22954 rânduri mai puțin**. Continuare **SLICE-D002-65**.
 
-<a id="slice-d002-65"></a>
-
-## SLICE-D002-65 — Bara listei de alimente și predarea continuării
+## SLICE-D002-65 — Bara listei de alimente și predarea continuării <a id="slice-d002-65"></a>
 
 Cele trei jurnale au fost citite integral. Etapele aceleiași bare a listei, 07 și 08, sunt reunite cu ancore și confirmare comună; mesajele operațiilor, starea de perioadă închisă și eliminarea mesajului permanent rămân distincte. Cele trei trimiteri active au fost reparate. Regula porțiilor din ultima lună și formulele Decimal/DEP sunt păstrate separat în 06. Compactarea continuărilor nu schimbă cuvintele. Istoricele motoarelor de stoc/amortizare VC08-01/02 și README KBotAdmin au fost citite integral și păstrate: sunt deja compacte. Costul de mai jos include și șase rânduri pentru predarea actualizată; stage numai la final.
 
-Fișiere: `docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md` (21 rânduri eliminate), `docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md` (-7 rânduri eliminate), `docs/worklog/SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md` (24 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat).
+Fișiere: `docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md` (21 rânduri eliminate), `docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md` (7 rânduri adăugate), `docs/worklog/SLICE-VC07-08-lista-alimente-fara-mesaj-permanent.md` (24 rânduri eliminate), `VERCON/VERCON_STATUS.md` (0 rânduri eliminate), `implementare_vercon_v2.md` (0 rânduri eliminate), `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate), acest jurnal și cele două registre D002 (un rând nou în cel detaliat).
 
 Bilanț: **1 fișiere retrase, fără fișiere adăugate; 21 rânduri mai puțin**. Cumul D001-01…99 + D002-01…65: **403 fișiere și 22975 rânduri mai puțin**. Continuare **SLICE-D002-66**.
 
@@ -303,3 +233,219 @@ Bilanț: **1 fișiere retrase, fără fișiere adăugate; 21 rânduri mai puțin
 26.10.2026. Reluare explicită după pragul de 90%, până la epuizarea usage-ului. D002-64…65 adaugă **1 fișier și 271 rânduri eliminate net**. Cumul: **403 fișiere și 22975 rânduri mai puțin net**, inclusiv consemnările și această predare; curățarea întregului proiect nu este terminată.
 
 Continuare: **SLICE-D002-66**. Nu există candidat rămas în lucru. Numai documentația autorizată, cu excluderile și limitele deja consemnate; fără teste/build/verificatoare/aplicații/SQL, commit sau push. Stage se face numai la final, pe căi proprii explicite și numai rândul D002 din indexul comun. Modificările independente ale utilizatorului rămân neatinse. Au fost citite fără modificări istoricul 0110-09/11, cele trei jurnale ME01, motoarele VC08-01/02, README KBotAdmin și ghidurile tools/localhost; sunt deja compacte. Reia întâi starea Git și usage-ul real; utilizatorul lucrează în paralel.
+
+## Continuare documentară — 27.10.2026
+
+Pentru loturile acestei continuări, inventarele enumeră documentele de fond; fiecare lot include și consemnarea din acest jurnal, rândul nou din registrul D002 și actualizarea rândului D002 din indexul general. Bilanțurile sunt nete, cu aceste costuri incluse; cumulurile și indicațiile de continuare sunt checkpointuri istorice.
+
+## SLICE-D002-66 — Ajutor VERCON: corecția interfeței și capturile în același istoric <a id="slice-d002-66"></a>
+
+Patru jurnale citite integral. Etapa VC09-04 este absorbită în VC09-03, fiind actualizarea documentară a aceleiași corecții Gestionari/Rapoarte/sume. Titlurile și ancora noii etape păstrează cronologia; cele două trimiteri active sunt reparate. Jurnalele 01/02 rămân distincte și au numai continuările reunite. Confirmarea operatorului din 23.10 pentru interfață nu se extinde la capturile din 04, actualizate local și nepublicate. Mascarea opacă este păstrată ca fapt istoric; imaginile și helpul runtime nu sunt modificate.
+
+Fișiere: `docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md` (22 rânduri eliminate); `docs/worklog/SLICE-VC09-02-capturi-ajutor.md` (36 rânduri eliminate); `docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md` (11 rânduri adăugate); `docs/worklog/SLICE-VC09-04-help-dupa-publicarea-interfetei.md` (28 rânduri eliminate); `implementare_vercon_v2.md` (0 rânduri eliminate); `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **66 rânduri mai puțin net**; cumul **404 fișiere și 23041 rânduri mai puțin net**. Continuare **SLICE-D002-67**.
+
+## SLICE-D002-67 — Pachetul, pagina și sesiunea VERCON într-un istoric <a id="slice-d002-67"></a>
+
+Cele cinci jurnale VC01 au fost citite integral. Etapele 01/02/03 sunt reunite deoarece urmăresc înregistrarea aceluiași blueprint, pagina, înlocuirea status prin context și garda/sesiunea lui. Starea inițială identică a 02/03 este enunțată o singură dată; proba izolată din 17.10, limitele logoutului și configurarea/reînnoirea ulterioară rămân distincte. Preview-ul reproductibil și integrarea documentelor 04/05 păstrează fișiere separate. Ancora d001-12-sesiune și titlurile rămân; cele patru trimiteri active din status și jurnalul general sunt reparate. Inventarul istoric din D001-07 rămâne proveniență.
+
+Fișiere: `docs/worklog/SLICE-VC01-01-pachetul-vercon.md` (47 rânduri adăugate); `docs/worklog/SLICE-VC01-02-pagina-si-ciclul-de-viata.md` (12 rânduri eliminate); `docs/worklog/SLICE-VC01-03-sesiune-log-conexiuni.md` (31 rânduri eliminate); `VERCON/VERCON_STATUS.md` (0 rânduri eliminate); `implementare_vercon_v2.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **13 rânduri în plus net**; cumul **406 fișiere și 23028 rânduri mai puțin net**. Continuare **SLICE-D002-68**.
+
+## SLICE-D002-68 — Tranzacția de migrare și revizia partenerilor ANAF <a id="slice-d002-68"></a>
+
+Jurnalele 05-01…07 au fost citite integral. Oprirea/diagnosticul și reconcilierea 04/05 sunt absorbite în scriitorul 03, înaintea reviziilor ulterioare ale acestuia: urmăresc aceeași tranzacție, COMMIT-ul și rezultatul ei. Etapa ANAF 07 este absorbită separat în 06, ca înlocuire a scrierii directe prin pregătire și inserare în tranzacția transferului. Stările inițiale, raportul operatorului pe 000_DEMO, rollback-ul neprovocat și celelalte limite rămân pe etape. Readerul și planul 01/02 rămân separate. Trei trimiteri din registrul VERCON sunt reparate; titlurile, formulele și reviziile INT→DECIMAL/copiere sunt păstrate.
+
+Fișiere: `docs/worklog/SLICE-VC05-03-writer-atomic-si-maparea-cheilor.md` (31 rânduri adăugate); `docs/worklog/SLICE-VC05-04-oprire-jurnal-si-diagnostic.md` (12 rânduri eliminate); `docs/worklog/SLICE-VC05-05-reconciliere-si-raport.md` (13 rânduri eliminate); `docs/worklog/SLICE-VC05-06-parteneri-din-anaf.md` (21 rânduri adăugate); `docs/worklog/SLICE-VC05-07-parteneri-in-tranzactia-transferului.md` (18 rânduri eliminate); `VERCON/VERCON_STATUS.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **18 rânduri în plus net**; cumul **409 fișiere și 23010 rânduri mai puțin net**. Continuare **SLICE-D002-69**.
+
+## SLICE-D002-69 — Istorice OI, salvarea comisiilor și arborii lazy compacte <a id="slice-d002-69"></a>
+
+Cele trei jurnale sunt citite integral și compactate separat prin reunirea continuărilor, cu aceleași cuvinte. Rămân loturile/conturile și valorile istorice OI, reviziile succesive ale editorului și ordonării, salvarea comisiei numai la ieșirea de pe rând și mecanismul incremental/lazy. Nu sunt extinse confirmările operatorului și nu se atribuie probe noi. Istoricul rapoartelor VC08-03 a fost citit integral în părți și păstrat: este deja compact, cu probele demo și etapele confirmate delimitate.
+
+Fișiere: `docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md` (56 rânduri eliminate); `docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md` (8 rânduri eliminate); `docs/worklog/SLICE-VC08-09-arbori-documente-doua-niveluri-lazy.md` (29 rânduri eliminate); consemnare și registre conform notei comune. **84 rânduri mai puțin net**; cumul **409 fișiere și 23094 rânduri mai puțin net**. Continuare **SLICE-D002-70**.
+
+## SLICE-D002-70 — Preluarea e-Facturii și salvarea nomenclatoarelor cu istorii complete <a id="slice-d002-70"></a>
+
+Etapele 07/08 citite integral sunt reunite în jurnalul aceleiași cozi eFactura: lista/completarea, returnarea și închiderea în tranzacția NIR. Confirmarea identică din 23.10 este comună; sintaxa corectată, cazurile amânate și anularea numai a unei părți din NIR-uri rămân explicite. Revizia 10 a salvării comisiilor este absorbită separat în istoricul nomenclatoarelor 01, citit integral inclusiv partea recitită după trunchiere. Șase trimiteri active din cele trei indexuri sunt reparate; inventarele istorice rămân. Noile secțiuni păstrează titlurile și au ancore proprii. Nu se schimbă helpul runtime sau sursele.
+
+Fișiere: `docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md` (26 rânduri adăugate); `docs/worklog/SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md` (25 rânduri eliminate); `docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md` (18 rânduri adăugate); `docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md` (15 rânduri eliminate); `VERCON/VERCON_STATUS.md` (0 rânduri eliminate); `implementare_vercon_v2.md` (0 rânduri eliminate); `docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **13 rânduri în plus net**; cumul **411 fișiere și 23081 rânduri mai puțin net**. Continuare **SLICE-D002-71**.
+
+## SLICE-D002-71 — Reviziile acelorași mockupuri VERCON într-un istoric <a id="slice-d002-71"></a>
+
+Jurnalele 00-06 și 00-07 citite integral sunt reunite: revizia a doua continuă explicit același set de corecții vizuale NIR/BC/listă/OI. Titlurile, proveniența diferită a cerințelor, cele două seturi și limitările probelor rămân distincte; exemplul 780 + 660 = 1440 și lipsa obligativității egalității sunt păstrate. Sunt reparate cele trei trimiteri din status și indexul v2, fără schimbarea imaginilor, manifestelor sau arhivelor. Istoricele VC00-01…05 citite sunt deja compacte și rămân separate: inventarul, dicționarul, etaloanele, schițele și deciziile au roluri diferite.
+
+Fișiere: `docs/worklog/SLICE-VC00-06-corectii-mockupuri-si-fluxuri.md` (25 rânduri adăugate); `docs/worklog/SLICE-VC00-07-corectii-mockupuri-v2.md` (22 rânduri eliminate); `VERCON/VERCON_STATUS.md` (0 rânduri eliminate); `VERCON/MOCKUPURI/2026-10-12-corectate-v2/INDEX.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **12 rânduri în plus net**; cumul **412 fișiere și 23069 rânduri mai puțin net**. Continuare **SLICE-D002-72**.
+
+## SLICE-D002-72 — Chatul desktop: robotul, mesajele și continuarea într-un istoric <a id="slice-d002-72"></a>
+
+Cele două jurnale și registrul CHAT sunt citite integral. Etapa 09 continuă explicit balonul și serviciul desktop 08; este absorbită cu titlul păstrat și ancora proprie. Continuările de paragraf/listă sunt reunite. Limita doar Acasă, identitatea presupusă a contului, lipsa mesajelor reale și a publicării serverului, probele de compilare și toate limitele DPI/clic/modal rămân pe etapă. Registrul păstrează numerele și distincția desktop/web, adăugând trimiteri directe la cele două secțiuni. Comenzile istorice nu sunt executate.
+
+Fișiere: `docs/worklog/SLICE-CHAT-08-robot-si-balon.md` (8 rânduri adăugate); `docs/worklog/SLICE-CHAT-09-raspuns-filtru-clic-afara.md` (38 rânduri eliminate); `docs/worklog/state/KBOT_STATUS_CHAT.md` (2 rânduri eliminate); consemnare și registre conform notei comune. **23 rânduri mai puțin net**; cumul **413 fișiere și 23092 rânduri mai puțin net**. Continuare **SLICE-D002-73**.
+
+## SLICE-D002-73 — Chitanțe pe an școlar și închidere lunară: istorice compacte <a id="slice-d002-73"></a>
+
+Ambele jurnale sunt citite integral și păstrate separat. Se reunesc numai continuările, cu cuvintele, SQL-ul descris și listele neschimbate. Rămân alternativele de numerotare respinse, subnumerele, incidentul sincronizării pe 24 de baze, lipsa verificării remedierii și ordinea publicării. Închiderea lunii păstrează explicit cele două cereri neatomice și excluderea lunii august. Stările de la fiecare moment nu devin rezultate actuale; nu s-a executat nicio comandă din jurnale.
+
+Fișiere: `docs/worklog/SLICE-ADE10-08-chitante-an-scolar.md` (26 rânduri eliminate); `docs/worklog/SLICE-AD14-01-inchidere-luna-taxa.md` (10 rânduri eliminate); consemnare și registre conform notei comune. **27 rânduri mai puțin net**; cumul **413 fișiere și 23119 rânduri mai puțin net**. Continuare **SLICE-D002-74**.
+
+## SLICE-D002-74 — Date și confirmări repetate centralizate în trei istorice ADE6 <a id="slice-d002-74"></a>
+
+Cele trei istorice ADE6 sunt citite integral, în părți pentru cataloage și prezență. Enunțurile autonome identice de stare sunt centralizate în fiecare fișier cu data exactă și enumerarea etapelor cărora li se aplică. Confirmările inline, cele cu rezultate suplimentare și nota Rezolvat rămân distincte. Nu se schimbă titluri, ancore, succesiunea etapelor, formule sau inventare. Sunt reunite și liniile goale multiple rămase după absorbțiile anterioare. Probele API/JS și limitele inițiale nu sunt transformate în confirmări noi.
+
+Fișiere: `docs/worklog/SLICE-ADE6-01-cataloage.md` (19 rânduri eliminate); `docs/worklog/SLICE-ADE6-02-prezenta.md` (9 rânduri eliminate); `docs/worklog/SLICE-ADE6-15-taxe-perioade.md` (4 rânduri eliminate); consemnare și registre conform notei comune. **23 rânduri mai puțin net**; cumul **413 fișiere și 23142 rânduri mai puțin net**. Continuare **SLICE-D002-75**.
+
+## SLICE-D002-75 — Planul ADECHIT cu paragrafe continue <a id="slice-d002-75"></a>
+
+Planul de 596 de rânduri este citit integral în cinci părți, apoi sunt reunite continuările de paragraf și listă. Cuvintele, titlurile, ancorele, tabelele, sursele și toate criteriile de acceptare sunt păstrate. Checkpointul din 09.10, confirmările ulterioare și propunerile inițiale pentru schema, numerotare, drepturi, transfer și redeschidere nu sunt actualizate prin deducție. Nu se rulează verificările sau comenzile descrise. Istoricul paginii/previewului ADE1 citit integral este deja compact și rămâne nemodificat.
+
+Fișiere: `ADECHIT/PLAN_IMPLEMENTARE.md` (302 rânduri eliminate); consemnare și registre conform notei comune. **293 rânduri mai puțin net**; cumul **413 fișiere și 23435 rânduri mai puțin net**. Continuare **SLICE-D002-76**.
+
+## SLICE-D002-76 — Ghidul ADE.Migrator cu paragrafe compacte <a id="slice-d002-76"></a>
+
+README-ul de utilizare este citit integral în două părți. Sunt reunite numai continuările, cu aceleași cuvinte, opțiuni, praguri, ținte SQL și marcaje de slice. Rămân istoricul subnumerelor, blocajele pe anii ficși 2025/2026, arhiva datelor excluse, invalidarea verificării, COMMIT/rollback și rezultatul necunoscut, precum și limitele publicării. Comenzile și SQL-ul rămân instrucțiuni neexecutate în curățare. Portalul părinților și registrul deciziilor citite integral sunt deja compacte și rămân neschimbate.
+
+Fișiere: `ADECHIT/ADE.Migrator/README.md` (115 rânduri eliminate); consemnare și registre conform notei comune. **106 rânduri mai puțin net**; cumul **413 fișiere și 23541 rânduri mai puțin net**. Continuare **SLICE-D002-77**.
+
+## SLICE-D002-77 — Ghidul web ADECHIT compact, cu formulele distincte păstrate <a id="slice-d002-77"></a>
+
+Ghidul extern și contractul numeric sunt citite integral în părți și păstrate separat. Reunirea continuărilor nu schimbă cuvintele, marcajele de slice, titlurile/ancorele, tabelele sau blocurile de formule. Rămân excepția ultimei luni închise, regulile PC/mobil, taxele nullable, închiderea lunară/anuală, numerotarea și condițiile portalului. Contractul păstrează conversiile ACE, NULL și diferența soldului recalculat față de snapshot; confirmările istorice nu devin probe noi. Nu se modifică helpul JSON încorporat, codul sau SQL-ul.
+
+Fișiere: `ADECHIT/UTILIZARE_WEB.md` (257 rânduri eliminate); `ADECHIT/CONTRACT_CALCULE.md` (2 rânduri eliminate); consemnare și registre conform notei comune. **250 rânduri mai puțin net**; cumul **413 fișiere și 23791 rânduri mai puțin net**. Continuare **SLICE-D002-78**.
+
+## SLICE-D002-78 — Șase istorice SLICELESS compacte, fără renumerotare <a id="slice-d002-78"></a>
+
+Toate cele șase jurnale sunt citite integral și compactate separat, fără schimbarea cuvintelor. Rămân diagnosticul Wicket neconfirmat prin rulare, etapele succesive ale partenerilor dublați, restaurarea temporară a rutei EF2 după retragere, cheia distinctă de publicare, pachetul driver și limitele reanalizării. Istoricul securității păstrează tranziția, retragerea și limitele ulterioare, cu toate probele datate. Comenzile/DDL și pașii operatorului nu sunt executați; fișierele de release, sursele și documentația testelor nu sunt modificate. Jurnalele 0SEO și Istoric md citite sunt deja compacte și rămân neschimbate.
+
+Fișiere: `docs/worklog/SLICELESS-lista-sursa-asociere-denumire-wicket.md` (26 rânduri eliminate); `docs/worklog/SLICELESS-vercon-parteneri-dublati.md` (15 rânduri eliminate); `docs/worklog/SLICELESS-ef2-get-ef-token-inapoi.md` (23 rânduri eliminate); `docs/worklog/SLICELESS-update-driver-package.md` (15 rânduri eliminate); `docs/worklog/SLICELESS-rezervari-reanaliza.md` (9 rânduri eliminate); `docs/worklog/SLICELESS-securitate-api.md` (1 rânduri eliminate); consemnare și registre conform notei comune. **80 rânduri mai puțin net**; cumul **413 fișiere și 23871 rânduri mai puțin net**. Continuare **SLICE-D002-79**.
+
+## SLICE-D002-79 — Resursele rapoartelor VERCON documentate compact <a id="slice-d002-79"></a>
+
+README-ul tehnic al resurselor este citit integral în două părți. Se reunesc doar continuările, păstrând toate cuvintele, exemplele, marcajul ADE9-07 și titlurile. Sunt păstrate aliasurile SELECT, publicarea resurselor/fonturilor, protecția configurărilor, snapshoturile, calculele OI/BC, istoricul recalculărilor, antetele și regula semnelor FCS. Limitele locale și eroarea 400 nereprodusă rămân explicite. Interogările SQL și celelalte resurse nu sunt modificate sau executate.
+
+Fișiere: `PYTHON/reports/vercon/README.md` (162 rânduri eliminate); consemnare și registre conform notei comune. **153 rânduri mai puțin net**; cumul **413 fișiere și 24024 rânduri mai puțin net**. Continuare **SLICE-D002-80**.
+
+## SLICE-D002-80 — Ghidul sincronizării structurii compact <a id="slice-d002-80"></a>
+
+Ghidul este citit integral, cu recitirea separată a părților lipsă după ieșirea comună trunchiată. Se reunesc numai continuările de paragraf/listă; cuvintele, tabelele, ordinea operațiilor și blocurile de comandă/SQL sunt păstrate. Rămân cele patru defecte reproduse în 20.08, limita SAFE, excepțiile bazelor comune, refuzul distructiv, copia/restaurarea manuală, blocajele FK și amendamentul coloanelor generate din 26.10. Descrierile istorice de autorizare și rezultate nu sunt actualizate prin deducție. Nicio comandă sau operație de schemă nu se execută.
+
+Fișiere: `PYTHON/routes/schema_sync/README.md` (153 rânduri eliminate); consemnare și registre conform notei comune. **144 rânduri mai puțin net**; cumul **413 fișiere și 24168 rânduri mai puțin net**. Continuare **SLICE-D002-81**.
+
+## SLICE-D002-81 — Migrare și înregistrare: ghiduri tehnice compacte separat <a id="slice-d002-81"></a>
+
+Ambele README-uri sunt citite integral, cu recitirea separată a părților lipsă după trunchiere. Compactarea continuărilor păstrează cuvintele, blocurile de cod, tabelele și toate cazurile de rutare/corelare/parsare. Migrarea păstrează deciziile privind cheile ORD, NULL/orfani, blocajele și dosarul SQL distinct de rezultatul tranzacției. Înregistrarea păstrează propunerile inițiale, retragerea paginii operator în ME01, aprobarea reală și compensările probate/neprobate. Nu se extind dovezile sau se actualizează tehnic rutele; comenzile de instalare, SQL, publicare și restart nu sunt executate.
+
+Fișiere: `PYTHON/routes/migrare/README.md` (232 rânduri eliminate); `PYTHON/routes/inregistrare/README.md` (105 rânduri eliminate); consemnare și registre conform notei comune. **328 rânduri mai puțin net**; cumul **413 fișiere și 24496 rânduri mai puțin net**. Continuare **SLICE-D002-82**.
+
+## SLICE-D002-82 — Workflow compact și ancore inline în jurnalul propriu <a id="slice-d002-82"></a>
+
+CODE_WORKFLOW este citit integral și compactat numai prin reunirea continuărilor; regulile, ordinea și listele rămân, iar instrucțiunile explicite ale utilizatorului continuă să prevaleze asupra cerințelor generale de teste/commit/push. În jurnalul D002, citit integral pe părți și completat în această continuare, ancorele existente sunt mutate pe rândul titlului lor, fără schimbarea valorii, a textului titlului, inventarelor sau bilanțurilor. O delimitare datată 27.10 separă loturile 66 și următoarele de reperele din 26.10. Planul Tier1 citit integral este deja compact și rămâne neschimbat.
+
+Fișiere: `docs/worklog/CODE_WORKFLOW.md` (24 rânduri eliminate); `docs/worklog/SLICE-D002-31-index-vercon-si-continuare-documentara.md` (100 rânduri eliminate); consemnare și registre conform notei comune. **115 rânduri mai puțin net**; cumul **413 fișiere și 24611 rânduri mai puțin net**. Continuare **SLICE-D002-83**.
+
+## SLICE-D002-83 — Planul provizionării compact și reguli comune prin trimitere <a id="slice-d002-83"></a>
+
+Planul este citit integral în patru părți. Continuările sunt reunite, păstrând tabelele, deciziile D1–D29, probele și cronologia. Patru reguli comune repetate (lectura fișierului real, excepții, limba cod/UI, commit cu worklog/status) trimit la CODE_WORKFLOW citit integral și care le conține; SQL parametrizat/identificatori validați, VERIFIED/UNVERIFIED și lipsa accesului live rămân explicit în plan. Suprapunerea din §0/§2/§2a și amendamentele nu sunt șterse: au proveniențe și autoritate diferite. Comenzile, granturile și publicarea nu sunt executate.
+
+Fișiere: `docs/PLAN_AutoProvisioning.md` (88 rânduri eliminate); consemnare și registre conform notei comune. **79 rânduri mai puțin net**; cumul **413 fișiere și 24690 rânduri mai puțin net**. Continuare **SLICE-D002-84**.
+
+## SLICE-D002-84 — Planul jurnalelor și checkpointul E-Factura compacte <a id="slice-d002-84"></a>
+
+Ambele planuri sunt citite integral, cu recitiri separate după trunchierea lecturii comune. Se reunesc numai continuările, cu aceleași cuvinte, exemple, contracte și tabele. Planul LogViewer păstrează versiunea 2, abaterile istorice, rotația, parsarea, ora, izolarea jurnalelor și scenariile de acceptare neexecutate. Planul 00EF păstrează ordinea inițială a autorizării și revizia ei, separarea secretelor, obiectele confirmate și limitele ANAF/unități. Nu sunt modificate surse sau configurații; testele, comenzile de server și publicarea descrise nu sunt executate.
+
+Fișiere: `docs/PLAN_LogViewer.md` (107 rânduri eliminate); `docs/worklog/PLAN_00EF_EFactura.md` (3 rânduri eliminate); consemnare și registre conform notei comune. **101 rânduri mai puțin net**; cumul **413 fișiere și 24791 rânduri mai puțin net**. Continuare **SLICE-D002-85**.
+
+## SLICE-D002-85 — Ghidul AvacontPush și jurnalul filelor ADECHIT compacte <a id="slice-d002-85"></a>
+
+Ambele documente sunt citite integral și compactate separat, fără schimbarea cuvintelor. README-ul păstrează ordinea alegerii cheii SSH, pinningul, selecția fișierelor, confirmarea distructivă, registrul interogărilor și limitele .pushignore. Jurnalul 0000-119 păstrează capturile restante, lipsa probei vizuale și domeniul verificării help istorice. Nu se execută scanare, publicare, sincronizare sau verificatoare. Istoricul 0000-116…118/122 citit integral este deja compact și rămâne neschimbat; helpul încorporat și fișierele de release nu sunt modificate.
+
+Fișiere: `AvacontPush/README.md` (82 rânduri eliminate); `docs/worklog/SLICE-0000-119-ajutor-adechit-rapoarte.md` (2 rânduri eliminate); consemnare și registre conform notei comune. **75 rânduri mai puțin net**; cumul **413 fișiere și 24866 rânduri mai puțin net**. Continuare **SLICE-D002-86**.
+
+## SLICE-D002-86 — Rapoarte comune, import FOREXE și preview public: README-uri compacte <a id="slice-d002-86"></a>
+
+Cele trei README-uri sunt citite integral și compactate separat prin reunirea continuărilor. Se păstrează cuvintele, exemplele, comenzile și titlurile. Raportarea comună păstrează lățimile configurate, snapshoturile și blocarea pregătirii per pagină; FOREXE păstrează distincția librărie/import/stub; SitePreview păstrează datele fictive, excluderea de la deploy și opțiunile localhost/LAN. Nu se pornește preview-ul și nu se execută import/publicare sau comenzi. README-ul editorului FOREXE și cel al uneltelor VERCON citite sunt deja compacte, fără modificări.
+
+Fișiere: `PYTHON/reporting/README.md` (30 rânduri eliminate); `src/KBot.Forexe/README.md` (4 rânduri eliminate); `tools/SitePreview/README.md` (6 rânduri eliminate); consemnare și registre conform notei comune. **31 rânduri mai puțin net**; cumul **413 fișiere și 24897 rânduri mai puțin net**. Continuare **SLICE-D002-87**.
+
+## SLICE-D002-87 — Registrul OI inițial reunit și extinderea orfanelor compactă <a id="slice-d002-87"></a>
+
+Jurnalele OI 07-02/03 sunt citite integral și reunite pe modelul comun al registrului: predare, transfer, casare, loturi și efectele lor. Starea inițială identică apare o singură dată cu domeniul explicit; titlurile, corecția contului de intrare, semnele și limitele inițiale rămân. Trimiterea din status este reparată. Separat, 06-04 citit integral este compactat numai prin reunirea continuărilor, păstrând recuperarea BR/FCS fără sursă, criteriile nerulate, numerotarea și cache-ul configurabil. Nu se amestecă starea din 12.10 cu reviziile din 17/18.10 sau cu probe noi.
+
+Fișiere: `docs/worklog/SLICE-VC07-02-oi-predare-si-registrul-detinatorului.md` (18 rânduri adăugate); `docs/worklog/SLICE-VC07-03-oi-transfer-si-casare.md` (15 rânduri eliminate); `docs/worklog/SLICE-VC06-04-br-si-fcs.md` (27 rânduri eliminate); `VERCON/VERCON_STATUS.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **15 rânduri mai puțin net**; cumul **414 fișiere și 24912 rânduri mai puțin net**. Continuare **SLICE-D002-88**.
+
+## SLICE-D002-88 — Contractul DataView compact, cu API-ul actual păstrat <a id="slice-d002-88"></a>
+
+Contractul este citit integral în două părți; Git nu arăta modificări preexistente pentru el în această reluare. Sunt reunite numai continuările, cu toate cuvintele și titlurile păstrate. Rămân API-ul coloanelor/butoanelor, datele reale ale filtrării/grupării, virtualizarea, navigarea din editor, TabKeyMode, bifele, combo-ul grupelor și HideButton, precum și geometria DPI/tooltip. Mențiunile despre testele istorice și lipsa probelor vizuale nu devin verificări noi. Nu se modifică sursele sau contractele celorlalte controale.
+
+Fișiere: `src/KBot.Controls/DataView/KBotDataView.md` (171 rânduri eliminate); consemnare și registre conform notei comune. **162 rânduri mai puțin net**; cumul **414 fișiere și 25074 rânduri mai puțin net**. Continuare **SLICE-D002-89**.
+
+## SLICE-D002-89 — Patru istorice help compacte, cu restanțele păstrate <a id="slice-d002-89"></a>
+
+Cele patru jurnale sunt citite integral și păstrate separat; numai continuările sunt reunite, fără schimbarea cuvintelor sau titlurilor. Rămân schimbările 0097-02, meniul Jurnal/Configurare, jurnalul server condiționat și pagina Descărcări multiple controlată de unitate. Inventarele, numărătorile, etichetele, capturile restante și limitele tutorialelor neverificate sunt păstrate. Cele trei jurnale 0000-13…15, 16 și 17 citite sunt deja compacte și rămân nemodificate. Ajutorul încorporat, imaginile și verificatoarele nu sunt modificate sau executate.
+
+Fișiere: `docs/worklog/SLICE-0000-25-ajutor-pentru-0097-02.md` (18 rânduri eliminate); `docs/worklog/SLICE-0000-29-meniu-jurnal-setari.md` (17 rânduri eliminate); `docs/worklog/SLICE-0000-35-ajutor-jurnale-server-avansat.md` (2 rânduri eliminate); `docs/worklog/SLICE-0000-36-ajutor-setari-multithread.md` (13 rânduri eliminate); consemnare și registre conform notei comune. **41 rânduri mai puțin net**; cumul **414 fișiere și 25115 rânduri mai puțin net**. Continuare **SLICE-D002-90**.
+
+## SLICE-D002-90 — Lanțuri, documente lunare și clic dreapta: istorice help compacte <a id="slice-d002-90"></a>
+
+Cele patru jurnale sunt citite integral și compactate separat, fără diferență pe cuvinte. Sunt păstrate distinct semnalarea lanțurilor, pagina Documente, predarea întârziată a 0000-39 și corecția erorilor vechi din 0000-43. Capturile lipsă nu devin realizate, iar textele deduse din cod nu devin probe vizuale. Mențiunile despre 0000-42 fără jurnal/tag și ferestrele fără topic rămân la checkpointul lor. Nu se execută checkerul sau buildurile și nu se modifică helpul ori notele de release.
+
+Fișiere: `docs/worklog/SLICE-0000-37-ajutor-lanturi-neinchise.md` (12 rânduri eliminate); `docs/worklog/SLICE-0000-38-ajutor-documente-pe-luna.md` (11 rânduri eliminate); `docs/worklog/SLICE-0000-39-ajutor-lista-sursa-si-denumire-asocieri.md` (7 rânduri eliminate); `docs/worklog/SLICE-0000-43-ajutor-clic-dreapta-ddf-ord.md` (16 rânduri eliminate); consemnare și registre conform notei comune. **37 rânduri mai puțin net**; cumul **414 fișiere și 25152 rânduri mai puțin net**. Continuare **SLICE-D002-91**.
+
+## SLICE-D002-91 — Tutorialele și tutorialul inițial într-un istoric help <a id="slice-d002-91"></a>
+
+Cele cinci jurnale sunt citite integral. 0000-51 este absorbit în 50, ca extensie a aceleiași documentări a tutorialelor în Ajutor/Setări; data, titlul, etichetele și ancora nouă păstrează proveniența. Trimiterea din registrul 0000 este reparată numai pentru 51. Jurnalele 48 (coadă), 52 (portal) și 53 (corecția valorii) rămân separate și sunt compactate prin reunirea continuărilor, fără schimbarea cuvintelor. Capturile lipsă/de refăcut și limitele ferestrelor/tururilor nerulate rămân. Nu se modifică fișierele help, imaginile sau release-urile și nu se rulează checkerul.
+
+Fișiere: `docs/worklog/SLICE-0000-48-ajutor-descarcari-multiple-rand-pe-angajament.md` (8 rânduri eliminate); `docs/worklog/SLICE-0000-50-ajutor-tutoriale.md` (15 rânduri adăugate); `docs/worklog/SLICE-0000-51-ajutor-tutorial-initial.md` (30 rânduri eliminate); `docs/worklog/SLICE-0000-52-ajutor-acces-online.md` (5 rânduri eliminate); `docs/worklog/SLICE-0000-53-ajutor-corectare-valoare.md` (26 rânduri eliminate); `docs/worklog/state/KBOT_STATUS_0000-0009.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **45 rânduri mai puțin net**; cumul **415 fișiere și 25197 rânduri mai puțin net**. Continuare **SLICE-D002-92**.
+
+## SLICE-D002-92 — Două continuări help absorbite în istoriile lor tematice <a id="slice-d002-92"></a>
+
+0000-107 citit integral continuă tutorialele din 50/51 și este absorbit acolo, cu data și ancora proprie. 0000-68 citit integral precede cronologic previzualizarea și reparațiile din 110/120/121; este integrat înaintea lor, cu etichete și capturi restante. Cele trei trimiteri active din registrul 0000 și jurnalul 0092-01 sunt reparate; inventarul istoric D002 rămâne proveniență. Jurnalul mesajelor 59 citit integral este compactat separat. Regula de oprire a tutorialului, faptele vechi de diagnostic și stările de nerulare rămân. Nu se schimbă helpul încorporat și nu se execută checkerul sau capturi.
+
+Fișiere: `docs/worklog/SLICE-0000-50-ajutor-tutoriale.md` (24 rânduri adăugate); `docs/worklog/SLICE-0000-107-ajutor-tutorial-pornire.md` (21 rânduri eliminate); `docs/worklog/SLICE-0000-68-ajutor-rezervari-istoric.md` (14 rânduri eliminate); `docs/worklog/SLICE-0000-110-ajutor-repara-rezervari-fereastra.md` (11 rânduri adăugate); `docs/worklog/SLICE-0000-59-ajutor-mesaje-kbot.md` (5 rânduri eliminate); `docs/worklog/state/KBOT_STATUS_0000-0009.md` (0 rânduri eliminate); `docs/worklog/SLICE-0092-01-rezervari-gresite-sterge-luna.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **4 rânduri în plus net**; cumul **417 fișiere și 25193 rânduri mai puțin net**. Continuare **SLICE-D002-93**.
+
+## SLICE-D002-93 — Revizia popupului de asociere și proveniența comună a ajutorului emis <a id="slice-d002-93"></a>
+
+0000-28 și 84 sunt citite integral și reunite: 84 revizuiește explicit deschiderea Asociază parteneri din Sumar și turul documentate în 28. Regula DDF/Parteneri din același checkpoint rămâne distinctă. Titlul reviziei și ancora ei sunt păstrate, iar registrul repară trimiterea. Separat, istoricul 54 citit integral centralizează aceeași dată și aceeași atribuire a regulii de ajutor numai pentru 55/56/57/58; excepția fără tutorial din 56 și text-only din 58 rămân la etapă. CLAUDE.md nu este citit sau modificat. Capturile și probele istorice nu sunt extinse.
+
+Fișiere: `docs/worklog/SLICE-0000-28-ajutor-si-tur-ddf-editor.md` (4 rânduri adăugate); `docs/worklog/SLICE-0000-84-ajutor-asociere-parteneri-popup.md` (18 rânduri eliminate); `docs/worklog/SLICE-0000-54-ajutor-efactura.md` (2 rânduri eliminate); `docs/worklog/state/KBOT_STATUS_0000-0009.md` (0 rânduri eliminate); consemnare și registre conform notei comune. **7 rânduri mai puțin net**; cumul **418 fișiere și 25200 rânduri mai puțin net**. Continuare **SLICE-D002-94**.
+
+## SLICE-D002-94 — Convenția orelor și ghidul SSH compacte separat <a id="slice-d002-94"></a>
+
+Reunite exclusiv continuările paragrafelor și listelor din două ghiduri independente, citite integral. UTC tehnic vs date calendaristice, offseturile istorice, limitele de publicare și conversie, locațiile copiilor cheilor, pașii de recuperare și precauțiile SSH rămân integral. Blocurile de comenzi și tabelele sunt păstrate; nicio comandă documentată nu a fost executată. Nu se citește material de chei și nu se schimbă fișiere de release.
+
+Fișiere: `PYTHON/docs/TIMEZONES.md` (36 rânduri eliminate); `PYTHON/ssh_key_storing.md` (23 rânduri eliminate); consemnare și registre conform notei comune. **50 rânduri mai puțin net**; cumul **418 fișiere și 25250 rânduri mai puțin net**. Continuare **SLICE-D002-95**.
+
+## SLICE-D002-95 — Ghidurile preview fără repetarea rândurilor de paragraf <a id="slice-d002-95"></a>
+
+Compactate separat ghidurile mediilor locale VERCON și DGV/ComboTree, citite integral. Se păstrează porturile, ordinea pașilor, timpii sesiunii, numerele exemplului și limitările față de tranzacțiile/drepturile bazei reale. Nu se contopesc mediile și nu se pornește niciun server sau probă. Comenzile din blocurile de cod rămân neschimbate.
+
+Fișiere: `tools/VerconPreview/README.md` (15 rânduri eliminate); `tools/ComboTreePreview/README.md` (19 rânduri eliminate); consemnare și registre conform notei comune. **25 rânduri mai puțin net**; cumul **418 fișiere și 25275 rânduri mai puțin net**. Continuare **SLICE-D002-96**.
+
+<a id="slice-d002-96"></a>
+
+## SLICE-D002-96 — Consemnări proprii fără formule editoriale repetate
+
+Centralizată convenția de calcul/inventar pentru continuarea din 27.10 și păstrate toate valorile istorice, căile și continuările. Valorile negative sunt exprimate explicit ca rânduri adăugate/în plus, fără schimbarea numerelor. Ancorele separate ale loturilor recente trec pe rândurile titlurilor, cu aceleași identificatoare. Căutarea trimiterilor la cele 15 fișiere retrase în această continuare arată numai inventare istorice în domeniul autorizat; acestea rămân proveniență.
+
+Fișiere: `docs/worklog/SLICE-D002-31-index-vercon-si-continuare-documentara.md` (26 rânduri eliminate); acest jurnal și cele două registre D002. Bilanțul include consemnarea și registrele. **17 rânduri mai puțin net**; cumul **418 fișiere și 25292 rânduri mai puțin net**. Continuare **SLICE-D002-97**.
+
+<a id="slice-d002-97"></a>
+
+## SLICE-D002-97 — Confirmările comune ale planificării și migratorului ADE
+
+Citite integral istoricele ADE0-01…05 și ADE5-04…14/ADE10-07, inclusiv porțiunile inițial trunchiate. Data fiecărei etape și confirmarea identică din 23.10 sunt centralizate cu listă explicită de domeniu; ADE5-08/09 și ADE10-07 nu primesc implicit această stare. Probele locale, lipsa probelor inițiale, observațiile operatorului, parolele menționate istoric și toate excepțiile/conversiile rămân în locurile lor. Nu se accesează MDB, chei, server sau procese.
+
+Fișiere: `docs/worklog/SLICE-ADE5-04-ade-migrator.md` (20 rânduri eliminate); `docs/worklog/SLICE-ADE0-01-plan-initial.md` (4 rânduri eliminate); acest jurnal și cele două registre D002. Bilanțul include consemnarea și registrele. **12 rânduri mai puțin net**; cumul **418 fișiere și 25304 rânduri mai puțin net**. Continuare **SLICE-D002-98**.
+
+<a id="slice-d002-98"></a>
+
+## SLICE-D002-98 — Asocierea extraselor: macheta și istoricul plătitorilor reunite
+
+Absorbite în descrierea asocierii cele două ajustări ale aceleiași ferestre din 13.10, cu titlurile/ancorele păstrate și data/confirmarea din 23.10 atribuită numai notei sale. Dimensiunile, filtrele, BIC, legătura fără prezență și regulile lotului rămân distincte. Încărcarea PDF/IMAP din 26.10 este compactată separat; AD13-01 de încărcare și identificatorii istorici 02/03 nu sunt renumerotați. Căutarea documentară nu a găsit trimiteri la cele două căi retrase; registrul cu următoarea subfelie de încărcare AD13-02 rămâne neschimbat.
+
+Fișiere: `docs/worklog/SLICE-AD13-extrase-asocieri-copii.md` (-8 rânduri eliminate); `docs/worklog/SLICE-AD13-02-compactare-fereastra-extrase.md` (73 rânduri eliminate); `docs/worklog/SLICE-AD13-03-istoric-platitori-banca.md` (25 rânduri eliminate); `docs/worklog/SLICE-AD13-01-incarcare-extrase.md` (21 rânduri eliminate); acest jurnal și cele două registre D002. Bilanțul include consemnarea și registrele. **102 rânduri mai puțin net**; cumul **420 fișiere și 25406 rânduri mai puțin net**. Continuare **SLICE-D002-99**.
+
+<a id="slice-d002-99"></a>
+
+## SLICE-D002-99 — Istoricele NIR și BC fără continuări fragmentate
+
+Compactate separat cele două jurnale citite integral, inclusiv bucata lipsă din lectura inițială NIR. Rămân contractul adoptat față de variantele retrase, probele exclusiv din pagina izolată, pragul de reconciliere și limitele ulterioare ale serverului oprit; BC păstrează cronologia stocului, exemplul 6/3/1/1 și auditul atomic, distinct de confirmarea operatorului. Fără diferențe de cuvinte prin compactare. După D002-99 se continuă cu D003-01, pentru formatul obligatoriu al slice-urilor.
+
+Fișiere: `docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md` (24 rânduri eliminate); `docs/worklog/SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md` (37 rânduri eliminate); acest jurnal și cele două registre D002. Bilanțul include consemnarea și registrele. **52 rânduri mai puțin net**; cumul **420 fișiere și 25458 rânduri mai puțin net**. Continuare **SLICE-D003-01**.

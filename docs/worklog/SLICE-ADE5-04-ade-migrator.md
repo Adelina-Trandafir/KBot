@@ -1,5 +1,7 @@
 # SLICE-ADE5-04…14 și ADE10-07 — Migratorul direct ADECHIT
 
+Repere comune: 08.10.2026 — ADE5-04; 09.10.2026 — ADE5-05, ADE5-06, ADE5-07, ADE5-10…14. Aceste etape au starea TESTAT, RULAT, PUBLICAT, confirmată de operator la 23.10.2026. Probele și limitele inițiale rămân în secțiunile lor; această atribuire nu este extinsă asupra ADE5-08/09 sau ADE10-07.
+
 04 introduce utilitarul; 05 adaugă oprirea și jurnalul, 06 explică blocajele, 07 separă DC sursă/destinație, 08/09 aleg grupa și copierea CNP, 10 înlocuiește încărcarea automată a logului cu una manuală, 11/12 tratează explicit NULL, 13 corectează cheile generate, iar 14 înlocuiește excepția de anulare cu rezultat distinct după rollback confirmat. ADE10-07 reconstituie copiii lipsă și corectează în plan numerele chitanțelor, fără schimbarea MDB sau DDL.
 
 Nota comună de închidere din ADE5-04/05/06/07 și ADE10-07: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Descrierile inițiale „nerulat” și listele de predare de mai jos rămân checkpointurile de la implementare, urmate de această confirmare; nu sunt probe executate în consolidarea documentară. Planul de la ADE5-07 indica următoarea subfelie liberă ADE5-10, iar checkpointul ADE5-14 indica ADE5-15.
@@ -19,7 +21,7 @@ Nota comună de închidere din ADE5-04/05/06/07 și ADE10-07: *Rezolvat: operato
 
 ## SLICE-ADE5-04 — ADE.Migrator: migrare directă din baza Access ADECHIT în MariaDB <a id="slice-ADE5-04"></a>
 
-Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Build curat, zero avertismente.
+Build curat, zero avertismente.
 
 ### Ce s-a făcut și de ce
 
@@ -54,7 +56,6 @@ Un utilitar nou, în stilul lui KBot.Migrator, care înlocuiește calea extract 
 
 ### Neverificat sau amânat
 
-
 - Nimic nu a fost rulat: nici citirea, nici planul, nici scrierea pe MariaDB. Planul (în special educatorii pe perioade și mutările deduse) trebuie privit pe datele reale înainte de prima migrare.
 - Lipsesc: oprirea unei scrieri în curs (e o tranzacție, dar fără buton), jurnal SQL, ecran de progres pe tabel.
 - Mapările mari de verificat: `AD_SS_Buget.Luna` (text în MariaDB, valoarea din Access convertită la text), lungimile coloanelor text, `Plata` (întreg) față de valorile zecimale din Access.
@@ -62,8 +63,6 @@ Un utilitar nou, în stilul lui KBot.Migrator, care înlocuiește calea extract 
 - Fără schimbări vizibile pentru operatorul K-BOT: utilitarul nu face parte din aplicație; nu există pagini de ajutor de actualizat. Nimic comis sau trimis în git.
 
 ## SLICE-ADE5-05 — oprire, jurnal SQL și invalidarea verificării în ADE.Migrator <a id="slice-ADE5-05"></a>
-
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
@@ -92,7 +91,6 @@ Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2
 
 ### Neverificat și amânat
 
-
 - Utilizatorul probează citirea MDB, educatorii, blocajele, invalidarea verificării, oprirea înainte de COMMIT, închiderea în lucru și interpretarea jurnalelor.
 - Scrierea efectivă, rollback-ul, pierderea conexiunii în COMMIT și reconcilierea pe MariaDB rămân neverificate. Verificarea tabelelor goale nu este o blocare concurentă a destinației; nu se rulează două migratoare sau scrieri web simultan pe aceeași bază.
 - Citirea MDB și verificarea conexiunii nu sunt anulabile în această subfelie.
@@ -100,8 +98,6 @@ Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2
 - Numele proiectului și executabilului rămâne ADE.Migrator. Nu s-a schimbat distribuția.
 
 ## SLICE-ADE5-06 — jurnalul erorilor și motivele blocării în formular <a id="slice-ADE5-06"></a>
-
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
@@ -126,12 +122,9 @@ AdeMigratorForm.vb, AdeMigratorForm.Designer.vb și README.md din ADECHIT/ADE.Mi
 
 ### Neverificat și amânat
 
-
 Utilizatorul redeschide executabilul actualizat, verifică jurnalul și reîncearcă conectarea cu gazda/portul corecte. Accesul la server, cauza timeout-ului și activarea butonului după o verificare reală reușită rămân de probat de utilizator. Identificatorii românești existenți nu sunt redenumiți în această corecție. Fără commit sau publicare în această intervenție.
 
 ## SLICE-ADE5-07 — DC destinație editabil <a id="slice-ADE5-07"></a>
-
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbare și motiv
 
@@ -148,7 +141,6 @@ ADECHIT/ADE.Migrator/AdeMigratorForm.vb, AdeMigratorForm.Designer.vb, AdeWriter.
 Build: dotnet build ADECHIT/ADE.Migrator/ADE.Migrator.vbproj --no-restore --verbosity minimal -m:1 reușit, 0 erori, 0 avertismente. Inspecție statică a apelurilor care folosesc DC-ul. Fără teste automate, rulare UI, conexiuni MariaDB, DDL sau publicare.
 
 ### Rămâne de probat
-
 
 Utilizatorul verifică editarea DC, invalidarea butonului, Testează pe noua destinație și jurnalul importului. Schema și regulile de tabel gol rămân obligatorii.
 
@@ -178,8 +170,6 @@ Următoarea subfelie liberă: ADE5-10.
 
 ## SLICE-ADE5-10 — log nou și formular gol la pornire <a id="slice-ADE5-10"></a>
 
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Schimbare și motiv
 
 La cererea utilizatorului, Program pregătește un log de erori nou înainte de inițializarea aplicației. Fișierul anterior este mutat într-o arhivă cu dată/oră și GUID în același dosar; nu este șters. GlobalErrorLog continuă să folosească harness_errors.log. Eșecul pregătirii propagă eroarea spre limita Program.Main.
@@ -196,8 +186,6 @@ Build serial al proiectului ADE.Migrator: 0 erori, 0 avertismente. Arhivarea și
 
 ## SLICE-ADE5-11 — CNP lipsă importat ca NULL <a id="slice-ADE5-11"></a>
 
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Schimbare
 
 La cererea utilizatorului, ADE.Migrator transformă marcajele `FARA CNP` și `-1` în `Nothing`, transmis de writer ca `DBNull.Value` (SQL NULL). Se aplică numai câmpurilor CNP/CNP_Platitor: Platitori, Platitori_sub și SS_Buget. Comparația ignoră spațiile marginale și majusculele; alte valori se păstrează exact, ca text. Conversia precedă CopyParentCnp, iar numărătorile apar în notele planului, fără afișarea CNP-urilor reale. Sursele MDB și datele deja importate nu sunt modificate.
@@ -213,8 +201,6 @@ Verificare statică: câmpurile permit NULL în exportul local 000_DEMO; Convert
 
 ## SLICE-ADE5-12 — referințe la taxe lipsă importate ca NULL <a id="slice-ADE5-12"></a>
 
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Schimbare
 
 La cererea utilizatorului, LunaD.IDV și Prezenta.IDV intră în lista explicită DanglingAllowed. FixLinks transformă în Nothing numai referințele fără părinte în ValoriTaxe, inclusiv 0 dacă nu există taxa cu IDV=0. Planul afișează numărătorile ca observații, nu ca blocaje. Rândurile și valorile de business se păstrează; referințele existente sunt remapate de writer. SQL primește DBNull.Value.
@@ -228,8 +214,6 @@ Build în `bin/Debug/cnp-null`: 0 erori, 0 avertismente (include și ADE5-11). D
 
 ## SLICE-ADE5-13 — cheile rândurilor generate în writer <a id="slice-ADE5-13"></a>
 
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Problemă și corecție
 
 Utilizatorul a raportat KeyNotFoundException pentru IDGE în InsertRows. BuildEducators/BuildHistory construiesc rânduri fără IDGE/IDI, cu SourceRows=-1; cheile sunt alocate de MariaDB. Writerul citea cheia înainte de a verifica SourceRows, deci verificarea ulterioară nu împiedica excepția.
@@ -241,8 +225,6 @@ Citirea cheii și adăugarea în hartă sunt acum în interiorul condiției Sour
 AdeWriter.vb, README.md, ADECHIT_STATUS.md, PLAN_IMPLEMENTARE.md și registrul ADE0–ADE9. Build în `bin/Debug/generated-keys`: 0 erori, 0 avertismente. Verificare statică a ambelor tipuri de rânduri generate; fără teste automate, probe vizuale, migrare sau acces la server. Utilizatorul folosește executabilul nou și verifică rollback-ul rulării eșuate înainte de reluare.
 
 ## SLICE-ADE5-14 — oprire normală fără excepție în debugger <a id="slice-ADE5-14"></a>
-
-Data: 09.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbare
 
@@ -265,8 +247,7 @@ Două blocaje frecvente la migrare nu aveau altă ieșire decât corectarea surs
 1. **`SS_Buget.IDP` arată către un copil care nu mai există în `Platitori`** (ex.: 1154). Acum planul reconstituie copilul din situațiile lunare: numele, CNP-ul, grupa și «plecat» din ULTIMA situație (după an, apoi IDL), plus un rând în `Platitori_sub` (doar numele copilului, fără adresă sau contact: Access nu le păstrează în `SS_Buget`). Apare o notă cu IDP-urile reconstituite. Pentru acest pas nu există opțiune: se aplică întotdeauna. Efect lateral dorit: `Prezenta`, `Plati` etc. care arătau către același IDP găsesc acum părintele.
 2. **Chitanțe cu aceeași serie și același număr** (cheia `uq_Sub_Serie_Numar`). Butonul nou **«Chitanțe dublate…»** (activ când există dubluri) deschide o fereastră cu lista chitanțelor în dublu: numărul se schimbă de mână în coloana «Număr nou», iar după fiecare schimbare toată lista se verifică din nou («Încă în dublu cu IDC …», «Schimbat», «Rezolvat»). Butonul **«Taie cifra miilor la cele mai vechi»**: în fiecare grup de numere identice, toate în afară de cea mai nouă (după dată, apoi IDC) pierd cifra miilor (1234 → 234; 19387 → 1387), numai dacă numărul nou este liber în serie; celelalte rămân și sunt numărate. **«Anulează schimbările»** pune numerele din Access la loc. **«Gata»** refă planul cu numerele schimbate (nu și Access-ul), apoi trebuie repetat «Testează». Numerele schimbate sunt uitate la o nouă citire a MDB-ului.
 
-**Regula «adaugă .1» NU s-a făcut:** `AD_Chitante.Numar` este `int(11)`, deci «1234.1» nu încape; ar cere o coloană nouă
-(de ex. `NumarSub`, ca la NIR în VERCON), cheia unică extinsă și schimbări în aplicația web (afișare, căutare, următorul număr). Nu am făcut DDL.
+**Regula «adaugă .1» NU s-a făcut:** `AD_Chitante.Numar` este `int(11)`, deci «1234.1» nu încape; ar cere o coloană nouă (de ex. `NumarSub`, ca la NIR în VERCON), cheia unică extinsă și schimbări în aplicația web (afișare, căutare, următorul număr). Nu am făcut DDL.
 
 ### Fișiere
 
@@ -277,7 +258,6 @@ Două blocaje frecvente la migrare nu aveau altă ieșire decât corectarea surs
 `dotnet build ADECHIT/ADE.Migrator/ADE.Migrator.vbproj`: reușit, 0 avertismente, 0 erori. Fără teste, fără rularea migratorului, fără deschiderea ferestrei (Designer-ul scris de mână, niciodată deschis în Visual Studio), fără MariaDB.
 
 ### Nerezolvat / neverificat
-
 
 - Fereastra nu a fost văzută pe ecran; aspectul coloanelor, comportamentul editării în `KBotDataView` și butonul nou din `tlpActiune` rămân de probat.
 - Copiii reconstituiți primesc `SI = 0` și fără `DataIntrare`; `Platitori_sub.Activ` = nu «plecat». De confirmat dacă e bine.

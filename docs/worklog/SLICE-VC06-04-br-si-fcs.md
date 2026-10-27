@@ -18,32 +18,14 @@ Stare: **IMPLEMENTAT_LOCAL**. Doar sintaxa verificata; **nimic rulat**, nimic va
 
 ## Extensie 18.10.2026 — documente migrate fara sursa
 
-Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Cererea operatorului: implementarea
-predării din 18.10.2026, secțiunile 3/3b, absorbite în acest jurnal și în [README VRC](../../VERCON/VRC.Migrator/README.md#predarea-online-din-18102026--absorbită-prin-d001-04) prin D001-04.
+Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Cererea operatorului: implementarea predării din 18.10.2026, secțiunile 3/3b, absorbite în acest jurnal și în [README VRC](../../VERCON/VRC.Migrator/README.md#predarea-online-din-18102026--absorbită-prin-d001-04) prin D001-04.
 
 ### Ce s-a schimbat si de ce
 
-- BR cu `IdRetur IS NULL`: indicator explicit in lista si antet; alegerea BC
-  este disponibila in consultare doar pentru returul activ fara sursa.
-  Actiunea dedicata valideaza fiecare varianta si suma cantitatilor sale fata
-  de `return_eligible(..., exclude=doc_id)`. Refuzurile sunt in romana, la
-  campul `source`, cu lista produselor incompatibile. Asocierea modifica
-  numai `IdRetur` si `Version`, cu audit `br.link`, fara controlul cronologiei
-  stocului. Modificarea obisnuita cere explicit asocierea prealabila.
-- FCS: lista liniilor `VC_IntrariStorno.IdIntrare IS NULL`, inclusiv cele
-  anulate, cu produs, cantitate, pret si data salvarii. Asocierea individuala
-  cere o FCS neanulata din acelasi context, cu receptie sursa valida, si
-  verifica disponibilul prin regulile storno existente. Cantitatile deja
-  legate de FCS aleasa sunt incluse in consumul disponibilului. Se pastreaza
-  cantitatea si pretul liniei migrate. Versiunile liniei si antetului cresc;
-  se aplica `check_timeline` si audit `storno.link` in aceeasi tranzactie.
-  Anularea separata a liniei orfane cere motiv si lasa linia vizibila.
-- Rutele pastreaza drepturile BR/FCS, contextul rezolvat de server, tokenul
-  blocarii si perioada deschisa. Cheia cererii permite reluarea aceleiasi
-  operatii dupa pierderea raspunsului. UI blocheaza schimbarea contextului
-  cat timp operatia este in curs sau rezultatul ramane neconfirmat.
-- Ajutorul web explica ambele fluxuri si avertizeaza asupra coliziunilor
-  identificatorilor OI migrati. Numerotarea OI nu a fost schimbata.
+- BR cu `IdRetur IS NULL`: indicator explicit in lista si antet; alegerea BC este disponibila in consultare doar pentru returul activ fara sursa. Actiunea dedicata valideaza fiecare varianta si suma cantitatilor sale fata de `return_eligible(..., exclude=doc_id)`. Refuzurile sunt in romana, la campul `source`, cu lista produselor incompatibile. Asocierea modifica numai `IdRetur` si `Version`, cu audit `br.link`, fara controlul cronologiei stocului. Modificarea obisnuita cere explicit asocierea prealabila.
+- FCS: lista liniilor `VC_IntrariStorno.IdIntrare IS NULL`, inclusiv cele anulate, cu produs, cantitate, pret si data salvarii. Asocierea individuala cere o FCS neanulata din acelasi context, cu receptie sursa valida, si verifica disponibilul prin regulile storno existente. Cantitatile deja legate de FCS aleasa sunt incluse in consumul disponibilului. Se pastreaza cantitatea si pretul liniei migrate. Versiunile liniei si antetului cresc; se aplica `check_timeline` si audit `storno.link` in aceeasi tranzactie. Anularea separata a liniei orfane cere motiv si lasa linia vizibila.
+- Rutele pastreaza drepturile BR/FCS, contextul rezolvat de server, tokenul blocarii si perioada deschisa. Cheia cererii permite reluarea aceleiasi operatii dupa pierderea raspunsului. UI blocheaza schimbarea contextului cat timp operatia este in curs sau rezultatul ramane neconfirmat.
+- Ajutorul web explica ambele fluxuri si avertizeaza asupra coliziunilor identificatorilor OI migrati. Numerotarea OI nu a fost schimbata.
 
 ### Fisiere atinse
 
@@ -54,16 +36,7 @@ predării din 18.10.2026, secțiunile 3/3b, absorbite în acest jurnal și în [
 
 ### Rezultate si limite
 
-Doar analiza de design a surselor si a integrarii cu protocolul/repository-ul
-existente; structura coloanelor a fost citita din dumpul local
-`MariaDB_Schema/AVACONT_SURSA.sql`. Nu s-au rulat teste, compilari, verificari
-de sintaxa, browser, HTTP, SQL sau alte verificari automate. Nicio schema
-modificata si nicio creare automata de tabele. Nedeployat, neacceptat vizual.
-Anularea BR nu solicita sursa in codul existent; regulile de stoc raman
-aplicabile, inclusiv la anulare. Scenariile de acceptare, toate NERULATE,
-sunt păstrate în secțiunea de mai jos, absorbită din intrarea generală de la 18.10.2026.
-Decizia numerotarii OI/MF ramane operatorului. Modificarile sunt in arborele
-local de lucru; nu s-a facut commit sau push.
+Doar analiza de design a surselor si a integrarii cu protocolul/repository-ul existente; structura coloanelor a fost citita din dumpul local `MariaDB_Schema/AVACONT_SURSA.sql`. Nu s-au rulat teste, compilari, verificari de sintaxa, browser, HTTP, SQL sau alte verificari automate. Nicio schema modificata si nicio creare automata de tabele. Nedeployat, neacceptat vizual. Anularea BR nu solicita sursa in codul existent; regulile de stoc raman aplicabile, inclusiv la anulare. Scenariile de acceptare, toate NERULATE, sunt păstrate în secțiunea de mai jos, absorbită din intrarea generală de la 18.10.2026. Decizia numerotarii OI/MF ramane operatorului. Modificarile sunt in arborele local de lucru; nu s-a facut commit sau push.
 
 ## Detalii și criterii de acceptare absorbite în D001-04
 

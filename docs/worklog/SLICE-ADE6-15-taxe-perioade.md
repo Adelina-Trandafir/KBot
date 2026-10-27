@@ -1,5 +1,7 @@
 # SLICE-ADE6 — Taxe, perioade și validarea rândurilor
 
+Repere comune pentru etapele indicate: 09.10.2026 — ADE6-15, ADE6-19, ADE6-20. Fiecare are starea TESTAT, RULAT, PUBLICAT, confirmată de operator la 23.10.2026; probele și limitele inițiale rămân în secțiunile lor.
+
 15 păstrează perioadele lună/an și excepția taxelor migrate fără date; 19 restrânge lățimea ferestrei, iar 20 extinde Escape la întregul rând nou înainte de prima confirmare și întărește validarea. După prima celulă confirmată, Escape anulează numai celula. Anularea unui draft reface taxa anterior activă. Regula pentru educatorii noi din 20 rămâne parte a aceleiași extensii DataGrid; [catalogul](SLICE-ADE6-01-cataloage.md) o folosește.
 
 - [ADE6-15](#slice-ADE6-15)
@@ -7,8 +9,6 @@
 - [ADE6-20](#slice-ADE6-20)
 
 ## SLICE-ADE6-15 — taxe cu perioade lună/an <a id="slice-ADE6-15"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbări
 
@@ -37,15 +37,11 @@ Preview-ul trebuie repornit: initializerul său existent adaugă câmpurile null
 
 ## SLICE-ADE6-19 — formular Taxe compact <a id="slice-ADE6-19"></a>
 
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 Formularul Taxe are lățime maximă 744px în loc de 1120px: aproximativ 34% mai mic, calculat din cele cinci coloane DGV (710px), paddingurile laterale (32px) și bordurile ferestrei (2px). Limita 96vw păstrează adaptarea la ecrane înguste. Regula CSS este limitată la #ade-catalog, fără modificarea altor editori.
 
 Fișier publicabil: PYTHON/static/css/adechit.css. Documentația actualizată: ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul detaliat ADE0–ADE9. Fără teste sau verificări vizuale, conform instrucțiunii utilizatorului. Fără SQL, commit sau publicare. Următoarea subfelie liberă: ADE6-20.
 
 ## SLICE-ADE6-20 — Escape pe rând nou și validarea taxelor <a id="slice-ADE6-20"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 DataGrid comun oferă beginNewRowEdit(row, key, onCancelRow): Escape în editorul activat la adăugare anulează întregul rând prin callbackul paginii. După prima confirmare, Escape păstrează comportamentul obișnuit: anulează doar celula. Am conectat toate adăugările cu activare automată ale DGV din ADE: Taxe și perioadele educatorilor. Nu se șterg înregistrări deja persistate prin Escape.
 

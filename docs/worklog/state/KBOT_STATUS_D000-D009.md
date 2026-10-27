@@ -183,11 +183,65 @@ Starea comună tuturor loturilor D002: aplicat local; fără teste, commit sau p
 | D002-63 | Regulile F1–F35 și planurile KE/EV compacte; inventare, bilanț și predare pentru D002-64. | [D002-63](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-63) |
 | D002-64 | 13 jurnale compactate separat, cu antete, formule, ordonare și probele locale/operator păstrate. | [D002-64](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-64) |
 | D002-65 | VC07-08 absorbit în istoricul barei VC07-07; porțiile din VC07-06 rămân separate; predare D002-66. | [D002-65](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-65) |
+| D002-66 | Corecția și capturile VC09-03/04 reunite; ghidul inițial și capturile 01/02 compacte, cu stările distincte. | [D002-66](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-66) |
+| D002-67 | VC01-01/02/03 reunite pe blueprint–pagină–sesiune; preview-ul și integrarea documentelor rămân separate. | [D002-67](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-67) |
+| D002-68 | VC05-04/05 absorbite în tranzacția 03; ANAF 07 în 06, cu confirmarea demo și limitele neprobate distincte. | [D002-68](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-68) |
+| D002-69 | OI, comisii și arbori lazy compacte separat; formule, revizii, confirmări și limite păstrate. | [D002-69](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-69) |
+| D002-70 | Preluarea și închiderea eFacturii 07/08 reunite; revizia comisiilor 10 integrată în nomenclatoare. | [D002-70](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-70) |
+| D002-71 | Revizia mockupurilor 00-07 absorbită în 00-06, cu seturile, proveniența cerințelor și limitele păstrate. | [D002-71](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-71) |
+| D002-72 | CHAT-09 absorbit în istoricul desktop 08; registrul leagă etapele, fără amestec cu chatul web. | [D002-72](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-72) |
+| D002-73 | Două jurnale recente compacte separat; incidentul sincronizării și limita tranzacțională a închiderii păstrate. | [D002-73](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-73) |
+| D002-74 | Trei istorice ADE6 cu date/confirmări autonome centralizate pe etapele exacte; conținutul și ancorele păstrate. | [D002-74](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-74) |
+| D002-75 | Planul ADECHIT compactat fără schimbarea cuvintelor, criteriilor, surselor sau checkpointurilor. | [D002-75](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-75) |
+| D002-76 | README ADE.Migrator compactat; opțiuni, praguri, cronologie și instrucțiuni păstrate integral. | [D002-76](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-76) |
+| D002-77 | Ghidul web extern și contractul numeric compacte separat; excepții, formule, marcaje și confirmări păstrate. | [D002-77](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-77) |
+| D002-78 | Șase jurnale SLICELESS compacte separat, cu diagnostice, decizii, excepții și cronologia păstrate. | [D002-78](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-78) |
+| D002-79 | README-ul tehnic al rapoartelor VERCON compactat, cu formulele, machetele și limitele de probă păstrate. | [D002-79](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-79) |
+| D002-80 | README schema_sync compactat, cu ordinea DDL, excepțiile, dovezile și limitele istorice păstrate. | [D002-80](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-80) |
+| D002-81 | Ghidurile migrare/inregistrare compacte separat, cu decizii, exemple, probe și limite istorice păstrate. | [D002-81](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-81) |
+| D002-82 | Workflow compact; ancorele D002 pe rândurile titlurilor și continuarea din 27.10 delimitată explicit. | [D002-82](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-82) |
+| D002-83 | Planul AutoProvisioning compact; patru reguli repetate trimit la workflow, cu regulile specifice păstrate. | [D002-83](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-83) |
+| D002-84 | Două planuri compacte separat, cu contractele propuse, abaterile și checkpointurile istorice păstrate. | [D002-84](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-84) |
+| D002-85 | README AvacontPush și jurnalul 0000-119 compacte separat; opțiuni, excepții și limite păstrate. | [D002-85](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-85) |
+| D002-86 | Trei README-uri compacte separat, cu opțiunile și limitele sistemelor comune/preview păstrate. | [D002-86](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-86) |
+| D002-87 | Transferul/casarea OI 07-03 absorbite în registrul 07-02; istoricul BR/FCS compactat separat. | [D002-87](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-87) |
+| D002-88 | Contractul DataView compactat fără schimbarea API-ului, regulilor, etapelor sau dovezilor istorice. | [D002-88](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-88) |
+| D002-89 | Jurnalele 0000-25/29/35/36 compacte separat, cu etichete, capturi restante, numărători și limite păstrate. | [D002-89](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-89) |
+| D002-90 | Jurnalele 0000-37/38/39/43 compacte separat, cu cronologia corecțiilor și limitele probelor păstrate. | [D002-90](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-90) |
+| D002-91 | 0000-51 absorbit în istoricul tutorialelor 50; 48/52/53 compacte separat, cu stările și capturile restante păstrate. | [D002-91](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-91) |
+| D002-92 | 0000-107 absorbit în tutoriale, 68 în istoricul reparării; mesajele 59 compacte, cu trimiterile reparate. | [D002-92](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-92) |
+| D002-93 | 0000-84 absorbit în istoricul Sumar/DDF 28; data și atribuirea comună 55…58 centralizate în 54. | [D002-93](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-93) |
+| D002-94 | Ghidurile TIMEZONES și SSH compacte separat, cu excepții, comenzi și limitele istorice păstrate. | [D002-94](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-94) |
+| D002-95 | Două ghiduri preview compacte separat; porturi, pași, limite și exemple păstrate, fără rulare. | [D002-95](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-95) |
+| D002-96 | Nota comună de bilanț, exprimarea adăugărilor și ancorele compacte păstrează toate checkpointurile. | [D002-96](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-96) |
+| D002-97 | Confirmările identice centralizate în două istorice ADE, cu datele și domeniile explicite. | [D002-97](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-97) |
+| D002-98 | Ajustările asocierii AD13-02/03 reunite; încărcarea PDF/IMAP compactată separat, fără renumerotare. | [D002-98](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-98) |
+| D002-99 | Istoricele NIR/BC compacte separat, cu probele, formulele, cronologia și auditul păstrate. | [D002-99](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-99) |
 
 ### Continuare
 
 Predare documentară 26.10.2026: loturile D001-87…99 și D002-01…23 continuă implementarea; curățarea proiectului nu este terminată. Modificările independente din indexurile comune și din 0067/registrul 0060 rămân în afara stage-ului curățării. Bilanțul final al acestui chat este în D002-23; continuarea citește întâi starea Git actuală, deoarece utilizatorul lucrează în paralel.
 
-Predarea curentă este în [D002-65](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-65): D002-31…65 aplicate, cumul 403 fișiere și 22975 rânduri mai puțin net; curățarea nu este terminată. Stage numai la final, conform precizării utilizatorului; detaliile și limitele fiecărui lot rămân în worklog.
+Progres curent: [D002-99](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-99); cumul 420 fișiere și 25458 rânduri mai puțin net. Curățarea nu este terminată. Stage numai la final; detaliile și limitele fiecărui lot rămân în worklog.
 
-Următoarea subfelie: **SLICE-D002-66**. Următorul număr principal documentar liber: **D003**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie: **SLICE-D003-01**. Următorul număr principal documentar liber: **D003**. Registrul numeric K-BOT rămâne neschimbat.
+
+## Slice D003
+
+Continuare după D002-99, în același domeniu. Stare comună: aplicat local; numai documentație, fără teste, commit sau push.
+
+| Subfelie | Rezultat | Jurnal |
+|---|---|---|
+| D003-01 | Istoricele bancului RHP și gazdei Adobe compacte separat; toate reviziile și probele păstrate. | [D003-01](../SLICE-D003-01-continuare-documentara.md#slice-d003-01) |
+| D003-02 | Istoricul Designer/NavList compactat, cu ancore, formule, corecții și limite istorice păstrate. | [D003-02](../SLICE-D003-01-continuare-documentara.md#slice-d003-02) |
+| D003-03 | Istoricul 0100/0109 compact, cu permisiuni, coadă, taburi, timeouturi și probe distincte. | [D003-03](../SLICE-D003-01-continuare-documentara.md#slice-d003-03) |
+| D003-04 | Istoricele Setări și urmărire FOREXE compacte, cu reguli, excepții și probe păstrate pe etapă. | [D003-04](../SLICE-D003-01-continuare-documentara.md#slice-d003-04) |
+| D003-05 | Istoricul HTTP 0044 compact, cu conversii, corelații, reguli FK și probe istorice păstrate. | [D003-05](../SLICE-D003-01-continuare-documentara.md#slice-d003-05) |
+| D003-06 | Ierarhia etapelor absorbite corectată, ancore compacte și conținutul istoric păstrat. | [D003-06](../SLICE-D003-01-continuare-documentara.md#slice-d003-06) |
+| D003-07 | Predare, bilanț propriu fără rândurile independente și stage selectiv realizat. | [D003-07](../SLICE-D003-01-continuare-documentara.md#slice-d003-07) |
+
+### Continuare D003
+
+Progres curent D003: [D003-07](../SLICE-D003-01-continuare-documentara.md#slice-d003-07); cumul 419 fișiere și 25906 rânduri mai puțin net. Curățarea nu este terminată; modificările proprii sunt în stage selectiv, fără commit/push.
+
+Următoarea subfelie D003: **SLICE-D003-08**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.

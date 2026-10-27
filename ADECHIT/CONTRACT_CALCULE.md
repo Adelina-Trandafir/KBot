@@ -1,8 +1,6 @@
 # SLICE-ADE0-02 — contractul calculelor ADECHIT
 
-Referință obligatorie: [mdl_Situatie](ACCESS_SOURCES/Modules/mdl_Situatie.bas.txt), interogările și tipurile Access asociate. Data analizei: 07.10.2026.
-**Acesta este un contract extras static, nu o implementare și nu o probă de paritate.**
-Nu schimbăm formulele. Necunoscutele se verifică pe rezultate Access înainte de acceptare.
+Referință obligatorie: [mdl_Situatie](ACCESS_SOURCES/Modules/mdl_Situatie.bas.txt), interogările și tipurile Access asociate. Data analizei: 07.10.2026. **Acesta este un contract extras static, nu o implementare și nu o probă de paritate.** Nu schimbăm formulele. Necunoscutele se verifică pe rezultate Access înainte de acceptare.
 
 ## 1. Procedurile și apelanții
 

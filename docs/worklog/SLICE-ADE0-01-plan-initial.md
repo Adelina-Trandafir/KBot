@@ -1,5 +1,7 @@
 # SLICE-ADE0-01…05 — Planificare, mapare și reguli ADECHIT
 
+Repere comune: 07.10.2026 — ADE0-01/02; 08.10.2026 — ADE0-03…05. Starea TESTAT, RULAT, PUBLICAT a fiecăreia a fost confirmată de operator la 23.10.2026; domeniul documentar și limitele implementării rămân cele de mai jos.
+
 Etape documentare din 07–08.10.2026, în ordinea lor, cu livrabilele și limitele inițiale păstrate. Confirmarea comună a rubricilor de nevalidat/amânat din ADE0-01…05: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Planul inițial nu constituie singur dovada implementării ADE1–ADE9.
 
 - [ADE0-01](#slice-ADE0-01)
@@ -10,7 +12,7 @@ Etape documentare din 07–08.10.2026, în ordinea lor, cu livrabilele și limit
 
 ## SLICE-ADE0-01 — planul inițial ADECHIT <a id="slice-ADE0-01"></a>
 
-Data: 07.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026), numai documentație.
+Numai documentație. 
 
 ### Ce s-a schimbat și de ce
 
@@ -43,8 +45,6 @@ Codex scrie și verifică local pe localhost:5050; utilizatorul publică prin Av
 - Nu a fost citit sau modificat niciun fișier Claude.md.
 
 ## SLICE-ADE0-02 — mapare Access → web și contractul calculelor <a id="slice-ADE0-02"></a>
-
-Data: 07.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
@@ -81,7 +81,7 @@ Următoarea lucrare planificată: ADE1-01, integrarea cu proiectul și sistemele
 
 ## SLICE-ADE0-03 — documentarea tuturor feliilor ADECHIT <a id="slice-ADE0-03"></a>
 
-Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026). Cerere: documentarea tuturor feliilor, cu oprire la final. Implementarea ADE1–ADE9 nu a fost începută.
+Cerere: documentarea tuturor feliilor, cu oprire la final. Implementarea ADE1–ADE9 nu a fost începută.
 
 ### Ce s-a schimbat și de ce
 
@@ -109,8 +109,6 @@ Lucrul se oprește la finalul documentării/verificării, conform cererii utiliz
 
 ## SLICE-ADE0-04 — adoptarea regulilor proiectului <a id="slice-ADE0-04"></a>
 
-Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Ce s-a schimbat și de ce
 
 La cererea explicită a utilizatorului, au fost adoptate cele 15 reguli din lista filtrată: 1, 2, 4, 5, 6, 9, 10, 11, 12, 17, 22, 28, 29, 30, 31. Numerotarea este păstrată. Regulile specifice VB.NET/WinForms nu au fost încorporate. Regulile adoptate sunt persistent accesibile din indexul citit înaintea lucrului ADECHIT.
@@ -132,8 +130,6 @@ Compararea regulilor salvate cu lista aprobată și verificarea legăturilor loc
 Nu s-a auditat sau rescris codul existent pentru conformitate în această intervenție. Nu s-au modificat sursele Access, implementarea, configurările serverului sau fișiere Claude.md. Fără commit, push sau acces Linux/MariaDB.
 
 ## SLICE-ADE0-05 — sursa reală Access și procesele MSACCESS <a id="slice-ADE0-05"></a>
-
-Data: 08.10.2026. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 

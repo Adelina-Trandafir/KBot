@@ -350,7 +350,7 @@ Valori și fișier CSS: [umbra comună](VERCON/CONTROALE_CUSTOM_THREAD.md#meniu-
 
 ### 2026-10-17 — Sesiune: avertizări custom, ieșire fără confirmare și probă locală
 
-Detalii: [revizia 6](docs/worklog/SLICE-VC01-03-sesiune-log-conexiuni.md#d001-12-sesiune), consolidate prin D001-12.
+Detalii: [revizia 6](docs/worklog/SLICE-VC01-01-pachetul-vercon.md#d001-12-sesiune), consolidate prin D001-12.
 
 ### 2026-10-17 — Previzualizare: resurse de raport omise la publicare
 
@@ -384,7 +384,7 @@ Contractul rezultat: [Resursele rapoartelor](PYTHON/reports/vercon/README.md). D
 
 ### 2026-10-17 — Sesiune web configurabilă, reînnoită la refresh
 
-Detalii: [revizia 7](docs/worklog/SLICE-VC01-03-sesiune-log-conexiuni.md#d001-12-sesiune), consolidate prin D001-12.
+Detalii: [revizia 7](docs/worklog/SLICE-VC01-01-pachetul-vercon.md#d001-12-sesiune), consolidate prin D001-12.
 
 ### [2026-10-17 — FCS fără selecții repetate, cache mini fișe și eliminare Listare NIR](docs/worklog/SLICE-VC06-04-br-si-fcs.md#fcs-în-pagină-și-numerotare-comună--17102026)
 
@@ -732,11 +732,11 @@ Stare: **Confirmat 23.10**.
 
 ### [2026-10-21 — VC09-03: Simplificare Gestionari, Rapoarte și totaluri în copaci](docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md)
 
-### [2026-10-21 — VC09-04: Help și capturi după publicarea interfeței](docs/worklog/SLICE-VC09-04-help-dupa-publicarea-interfetei.md)
+### [2026-10-21 — VC09-04: Help și capturi după publicarea interfeței](docs/worklog/SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md#slice-vc09-04)
 
 ### 2026-10-21 — VC06-07 / VC06-08: NIR din facturile primite prin e-Factura
 
-Istoricul, fișierele și starea consemnată: [VC06-07](docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md); [VC06-08](docs/worklog/SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md).
+Istoricul, fișierele și starea consemnată: [VC06-07](docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md); [VC06-08](docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md#slice-vc06-08).
 
 ### 2026-10-21 — Portal: conectare cu certificat lângă Continuă
 
@@ -760,7 +760,7 @@ Detalii: [revizia 19](docs/worklog/SLICE-0110-04-portal-certificat.md#d001-12-ce
 
 ### 2026-10-23 — VC08-15 / VC06-10: Tooltipuri arbori și salvarea comisiilor la ieșirea de pe rând
 
-Istoricul, fișierele și starea consemnată: [VC08-15](docs/worklog/SLICE-VC08-15-tooltip-arbori.md); [VC06-10](docs/worklog/SLICE-VC06-10-comisii-salvare-rand.md).
+Istoricul, fișierele și starea consemnată: [VC08-15](docs/worklog/SLICE-VC08-15-tooltip-arbori.md); [VC06-10](docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#slice-vc06-10).
 
 ### [2026-10-23 — VC08-16: Ordonare după tip și evaluarea prețurilor istorice](docs/worklog/SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md)
 

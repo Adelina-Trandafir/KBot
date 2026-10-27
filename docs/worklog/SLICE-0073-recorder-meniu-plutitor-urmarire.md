@@ -6,9 +6,7 @@ Gazdele și andocarea sunt în [0053/0070/0074](SLICE-0053-recorder.md). Legarea
 
 [0073-recorder](#slice-0073) · [0073-01](#slice-0073-01) · [0076-editari](#slice-0076)
 
-<a id="slice-0073"></a>
-
-## SLICE 0073 — Recorder: mod de vizualizare, meniu plutitor în pagină, urmărirea operațiunilor FOREXE
+## SLICE 0073 — Recorder: mod de vizualizare, meniu plutitor în pagină, urmărirea operațiunilor FOREXE <a id="slice-0073"></a>
 
 **Data:** 21.09.2026 **Cererea operatorului:** «1. two options when showing it (1. default - no recording - splitmain.panel2 should be hidden, 2 - recording - panel2 should be visible; 2. all the buttons in the panel 2 must have defaultbutton from theme applied; 3. if possible i need a popup float menu inserted into the browser which will be always visible for the user in the browser and which will have zoom in / zoom out options. also, when certain buttons in the browser are clicked it must start a kind of recording which will send the data back to kbot.app.forexe … when the user, for instance, creates a new Angajament in the ForexeCab app, my app will instantly know it and when he finishes pressing a certain button, all the info will be sent back to kbot and saved to the server - just like when downloading from forexecab. it, then, should start a new window getting the history from that angajament for the selected timeframe (when the user made the first click until it pressed that button)» — completat: «it must be able to do it for: modificare rezervare, adaugare/modificare receptie si creeare anagament (simplu sau multiplu)» și «citeste wfl-urile de aici: Workflows\Creare. Lipseste DOAR modificare receptie. o sa ramana TODO dupa ce ii aflu fluxul.»
 
@@ -67,9 +65,7 @@ Gazdele și andocarea sunt în [0053/0070/0074](SLICE-0053-recorder.md). Legarea
 - Ceasurile: ±2 minute e o presupunere; dacă istoricul iese gol în fereastră, «Tot istoricul» arată totul, iar marja se poate mări.
 - Nu există încă un fișier de reguli editabil de operator — regulile stau în `ForexeWatch.js`.
 
-<a id="slice-0073-01"></a>
-
-## SLICE 0073-01 — Foile de stil ale paginii FOREXE intră înainte de prima afișare și rezistă re-randărilor Wicket
+## SLICE 0073-01 — Foile de stil ale paginii FOREXE intră înainte de prima afișare și rezistă re-randărilor Wicket <a id="slice-0073-01"></a>
 
 **Data:** 21.09.2026 **Fișier:** `src/KBot.Forexe/Services/JavaScripts/ForexeWatch.js` (singurul atins)
 
@@ -142,12 +138,9 @@ Nimic pe partea .NET: `SetWatchSuspendedAsync` / `ApplyWatchConfigAsync` / ridic
 
 **Build:** `dotnet build src\KBot.App\KBot.App.vbproj --no-incremental`: 0 erori, 0 avertismente. `node --check` valid. Nicio suită rulată (regula casei).
 
-**De știut:** regulile implicite intră în listă doar la prima pornire sau la «Implicite» (care
-înlocuiește lista), deci pe un `app_settings.json` deja salvat regula nouă NU apare singură: ori «Implicite» + «Salvează și aplică», ori «Regulă nouă…» cu cele patru câmpuri de mai sus. Selectorul e CSS, deci nu poate cere textul «Înapoi»; dacă în același `span.nav.nav-tabs` mai stă un `btn-default`, selectorul trebuie strâmtat de mână (neverificat pe pagina reală).
+**De știut:** regulile implicite intră în listă doar la prima pornire sau la «Implicite» (care înlocuiește lista), deci pe un `app_settings.json` deja salvat regula nouă NU apare singură: ori «Implicite» + «Salvează și aplică», ori «Regulă nouă…» cu cele patru câmpuri de mai sus. Selectorul e CSS, deci nu poate cere textul «Înapoi»; dacă în același `span.nav.nav-tabs` mai stă un `btn-default`, selectorul trebuie strâmtat de mână (neverificat pe pagina reală).
 
-<a id="slice-0076"></a>
-
-## SLICE 0076 — Editările din «Browser FOREXE»: recepția salvată, rezervările ținute în memorie, marcajele de id
+## SLICE 0076 — Editările din «Browser FOREXE»: recepția salvată, rezervările ținute în memorie, marcajele de id <a id="slice-0076"></a>
 
 **Data:** 23.09.2026 **Cererea operatorului (rezumat):**
 
@@ -205,9 +198,7 @@ Răspunsurile operatorului la cele trei întrebări puse înainte de scris: **(a
 ### Fișiere atinse
 
 - `src/KBot.Forexe/Workflows/adlop - Receptie Editata.wfl` (nou), `adlop - Rezervari Editate.wfl` (nou), `adlop - Receptii Angajament.wfl` (preambul pus la loc), `KBot.Forexe.vbproj` (copiere
-  + 1.0.12 ▸ **1.0.13**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `ForexeRunner.vb`,
-  `Executor/WorkflowExecutor.Watch.vb`, `Models/ForexeWatchEvent.vb`,
-  `Services/JavaScripts/ForexeWatch.js`
+  + 1.0.12 ▸ **1.0.13**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `ForexeRunner.vb`, `Executor/WorkflowExecutor.Watch.vb`, `Models/ForexeWatchEvent.vb`, `Services/JavaScripts/ForexeWatch.js`
 - `src/KBot.Api/IMarcajApi.vb` (nou), `ApiClient.Marcaj.vb` (nou), `KBot.Api.vbproj` (1.0.6 ▸ **1.0.7**)
 - `src/KBot.App/Program.vb`, `Forexe/ForexeController.vb`, `Forexe/WorkflowResultStore.vb`, `KbotForm.ForexeWatch.vb`, `KBot.App.vbproj` (1.0.36.5 ▸ **1.0.37.0**)
 - `PYTHON/routes/forexe/marcaj.py` (nou), `__init__.py`, `prelucrare_helpers.py`, `prelucrare_pasi.py`, `ddf_edit.py`

@@ -24,7 +24,7 @@ Lotul cuprinde 21 de treceri: jurnale VERCON/Python, statusuri ADECHIT/VERCON/00
 | VC07-06 | [VC07-06](SLICE-VC07-06-copii-liste-ultima-luna.md) |
 | VC06-09 | [VC06-09](SLICE-VC06-09-bc-luna-activa-stoc-si-istoric.md) |
 | VC07-07 | [VC07-07](SLICE-VC07-07-lista-butoane-actiuni.md) |
-| VC08-15 / VC06-10 | [VC08-15](SLICE-VC08-15-tooltip-arbori.md); [VC06-10](SLICE-VC06-10-comisii-salvare-rand.md) |
+| VC08-15 / VC06-10 | [VC08-15](SLICE-VC08-15-tooltip-arbori.md); [VC06-10](SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md#slice-vc06-10) |
 | VC08-16 | [VC08-16](SLICE-VC08-16-ordonare-tipuri-si-preturi-istorice.md) |
 | VC08-17 | [VC08-17](SLICE-VC08-17-fisa-magazie-selectie-multipla.md) |
 | VC06-11 | [VC06-11](SLICE-VC06-11-efactura-asociere-nir-partiala.md) |
@@ -48,8 +48,8 @@ Lotul cuprinde 21 de treceri: jurnale VERCON/Python, statusuri ADECHIT/VERCON/00
 - [VC09-01](SLICE-VC09-01-ajutor-vercon-si-chat.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
 - [VC09-02](SLICE-VC09-02-capturi-ajutor.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
 - [VC09-03](SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
-- [VC09-04](SLICE-VC09-04-help-dupa-publicarea-interfetei.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
-- [VC06-07](SLICE-VC06-07-nir-din-efactura-lista-si-completare.md) / [VC06-08](SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
+- [VC09-04](SLICE-VC09-03-simplificare-gestionari-rapoarte-copaci.md#slice-vc09-04): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
+- [VC06-07](SLICE-VC06-07-nir-din-efactura-lista-si-completare.md) / [VC06-08](SLICE-VC06-07-nir-din-efactura-lista-si-completare.md#slice-vc06-08): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
 - [VC09-05](SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md): detaliile sunt păstrate în worklog; titlul jurnalului general rămâne.
 
 Confirmările ulterioare din 23.10 pentru VC09-05 și VC06-07/08 sunt transferate în worklogurile lor, separat de probele locale din 21.10; cazurile amânate nu sunt declarate individual rezolvate prin deducție. VC09-04 păstrează excepția ACTUALIZAT LOCAL, NEPUBLICAT. Reperul limitei de ajustare NIR din ajutor este păstrat în VC09-01.

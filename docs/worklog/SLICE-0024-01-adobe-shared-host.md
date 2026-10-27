@@ -50,8 +50,7 @@ The brief's §2: *do not reimplement the harness primitives*. Clip, move, child 
 | `AdobeReaderHost.vb` | the engine pass 02 drives; the bench does **not** use it (see §3) |
 | `AdobeHostLog.vb` | `<AppDir>\Logs\adobe_preview.log` — decisions, not exceptions |
 
-**The two copies had already drifted, which is the evidence that §2 is right.** The harness stripped
-`WS_SYSMENU` / `WS_MINIMIZEBOX` / `WS_MAXIMIZEBOX` and called `NudgeRedraw`; `ReaderHostPreview` did neither. The same PDF therefore behaved differently in the bench and in the app, and the app's copy carried the older, worse behaviour — the reparented window can stay **invisible** until an unrelated layout change without the nudge. One implementation now; the harness's stricter version won.
+**The two copies had already drifted, which is the evidence that §2 is right.** The harness stripped `WS_SYSMENU` / `WS_MINIMIZEBOX` / `WS_MAXIMIZEBOX` and called `NudgeRedraw`; `ReaderHostPreview` did neither. The same PDF therefore behaved differently in the bench and in the app, and the app's copy carried the older, worse behaviour — the reparented window can stay **invisible** until an unrelated layout change without the nudge. One implementation now; the harness's stricter version won.
 
 ### §2 The two profiles are transcriptions, not proposals
 
@@ -66,14 +65,11 @@ Carried across as written, and flagged rather than "fixed":
 
 ### §3 What the harness now shares — and what it deliberately does not
 
-The bench calls `AdobeWindowHosting` / `AdobeWindowProbe` / `AdobeHostGeometry` / `MoveOutcomeClassifier` / `HideOutcomeClassifier`. Its own `WalkChildren`, `ChildWindowItem`, `FindReaderWindow`, `ResolveAdobePath`, `ReadAppPath`, `KillPid`, `BuildArguments` body, `ChildRectInParent` body, `HostWindow` body, `LayoutHostedWindow` body, `NudgeRedraw` body and the
-**entire 145-line Win32 interop block** are gone. `MoveOutcome.vb` and `HideOutcome.vb` were deleted
-from `src\KBot.DevHarness\Internal\Adobe\`.
+The bench calls `AdobeWindowHosting` / `AdobeWindowProbe` / `AdobeHostGeometry` / `MoveOutcomeClassifier` / `HideOutcomeClassifier`. Its own `WalkChildren`, `ChildWindowItem`, `FindReaderWindow`, `ResolveAdobePath`, `ReadAppPath`, `KillPid`, `BuildArguments` body, `ChildRectInParent` body, `HostWindow` body, `LayoutHostedWindow` body, `NudgeRedraw` body and the **entire 145-line Win32 interop block** are gone. `MoveOutcome.vb` and `HideOutcome.vb` were deleted from `src\KBot.DevHarness\Internal\Adobe\`.
 
 It does **not** use `AdobeReaderHost` (the orchestrator). That was a deliberate call: the bench drives clip and move live from spinners, runs `launch` and `waitForEmbed` as separate scenario steps, force-kills Adobe by PID and keeps a generation counter — none of which the preview wants. Folding those into the shared engine would have made the shared engine worse and the bench's behaviour harder to keep identical. The primitives are shared; the orchestration is not, and there is no duplicated primitive left to drift.
 
-**One behaviour was added to the bench, and only one:** `ProbeChildren` now also logs
-`Mod detectat: …`. It changes nothing it does — it is a log line, and it is the line that will let new Adobe builds be diagnosed on the bench.
+**One behaviour was added to the bench, and only one:** `ProbeChildren` now also logs `Mod detectat: …`. It changes nothing it does — it is a log line, and it is the line that will let new Adobe builds be diagnosed on the bench.
 
 The popup watcher is **off by default** (`AdobeReaderHost.PopupWatchEnabled = False`) precisely so the bench keeps behaving exactly as it did; pass 02 turns it on for the preview only.
 
@@ -101,19 +97,15 @@ Two additions, both deliberate:
 
 ### Files touched
 
-**New** — `src\KBot.Controls\Adobe\{AdobeNativeMethods, AdobeHostGeometry, AdobeHideOutcome,
-AdobeWindowProbe, AdobeUiDetector, AdobeViewerProfile, AdobeViewerSettings, AdobePopupFilter, AdobePopupWatcher, AdobeWindowHosting, AdobeReaderHost, AdobeHostLog}.vb`
+**New** — `src\KBot.Controls\Adobe\{AdobeNativeMethods, AdobeHostGeometry, AdobeHideOutcome, AdobeWindowProbe, AdobeUiDetector, AdobeViewerProfile, AdobeViewerSettings, AdobePopupFilter, AdobePopupWatcher, AdobeWindowHosting, AdobeReaderHost, AdobeHostLog}.vb`
 
 **Deleted** — `src\KBot.DevHarness\Internal\Adobe\{MoveOutcome, HideOutcome}.vb`
 
-**Modified** — `src\KBot.Common\KBotPaths.vb` (two settings + `Save`),
-`src\KBot.DevHarness\Internal\AdobeReaderHarnessForm.vb` (refactored onto the shared code; −139 lines net), `src\KBot.DevHarness\Internal\Adobe\HarnessScenario.vb` (+`Imports KBot.Controls`), `tests\KBot.DevHarness.Tests\{MoveWindowTests, HarnessTruthTests}.vb` (+`Imports KBot.Controls`, assertions untouched), `KBot.DevHarness.Tests.vbproj` (Fixtures copy rule).
+**Modified** — `src\KBot.Common\KBotPaths.vb` (two settings + `Save`), `src\KBot.DevHarness\Internal\AdobeReaderHarnessForm.vb` (refactored onto the shared code; −139 lines net), `src\KBot.DevHarness\Internal\Adobe\HarnessScenario.vb` (+`Imports KBot.Controls`), `tests\KBot.DevHarness.Tests\{MoveWindowTests, HarnessTruthTests}.vb` (+`Imports KBot.Controls`, assertions untouched), `KBot.DevHarness.Tests.vbproj` (Fixtures copy rule).
 
-**New tests** — `tests\KBot.Controls.Tests\{AdobeViewerProfileTests, AdobeUiDetectorTests,
-AdobePopupFilterTests, AdobeViewerSettingsTests}.vb`, `tests\KBot.DevHarness.Tests\BenchStateRegressionTests.vb`, `tests\KBot.DevHarness.Tests\Fixtures\bench_state_{modern_20260804_2006, classic_20260804_2010}.json`
+**New tests** — `tests\KBot.Controls.Tests\{AdobeViewerProfileTests, AdobeUiDetectorTests, AdobePopupFilterTests, AdobeViewerSettingsTests}.vb`, `tests\KBot.DevHarness.Tests\BenchStateRegressionTests.vb`, `tests\KBot.DevHarness.Tests\Fixtures\bench_state_{modern_20260804_2006, classic_20260804_2010}.json`
 
-**Versions** — `KBot.Common` 1.1.0.0 → 1.2.0.0, `KBot.Controls` 1.0.0.0 → 1.1.0.0,
-`KBot.DevHarness` 1.0.6.0 → 1.0.7.0.
+**Versions** — `KBot.Common` 1.1.0.0 → 1.2.0.0, `KBot.Controls` 1.0.0.0 → 1.1.0.0, `KBot.DevHarness` 1.0.6.0 → 1.0.7.0.
 
 ### Test results
 
@@ -161,8 +153,7 @@ The band lives on the **«Document»** page rather than in a settings dialog bec
 
 Both combos are backed by `AdobeModeItem` / `AdobeNewInstanceItem` wrappers instead of raw strings — reading the selection must never mean comparing UI text. A change **persists both settings** (they describe the same host; saving one and leaving the other is how a file ends up disagreeing with the panel) and then calls `ReaderHostPreview.ReapplySettings`, which re-applies the geometry to the document already on screen.
 
-**A limit stated rather than hidden:** geometry re-applies immediately; the launch flags (`/n`,
-`/s`, `/A`) cannot — you cannot change the command line of a process that is already running. They take effect on the next document. That is in the log line, in the code comment and in §2.5 of the operator document.
+**A limit stated rather than hidden:** geometry re-applies immediately; the launch flags (`/n`, `/s`, `/A`) cannot — you cannot change the command line of a process that is already running. They take effect on the next document. That is in the log line, in the code comment and in §2.5 of the operator document.
 
 `_suppressAdobeComboEvent` guards the population: filling a ComboBox raises `SelectedIndexChanged`, so without it merely **opening** the view would overwrite the stored setting with whatever landed in the list first. There is a test for exactly that.
 
@@ -170,9 +161,7 @@ When `KBotPaths.Save` fails (read-only install folder), the setting still applie
 
 ### §3 The documentation (brief §7)
 
-There was **no** user-facing settings document under `docs\` — checked: the six files there are plans, a handoff, a Redis note, a Playwright note and the forms convention. So
-**`docs\SETARI_UTILIZATOR.md` is new and this is its first entry**, in Romanian with real
-diacritics, covering all six required points per setting plus the limitations section: the measured geometry, the Acrobat build it was measured on (26.1.21771.0), the fact that an Adobe update can invalidate it, and that `AdobeReaderHarnessForm` is where new values get measured.
+There was **no** user-facing settings document under `docs\` — checked: the six files there are plans, a handoff, a Redis note, a Playwright note and the forms convention. So **`docs\SETARI_UTILIZATOR.md` is new and this is its first entry**, in Romanian with real diacritics, covering all six required points per setting plus the limitations section: the measured geometry, the Acrobat build it was measured on (26.1.21771.0), the fact that an Adobe update can invalidate it, and that `AdobeReaderHarnessForm` is where new values get measured.
 
 It documents a third setting too — `DdfPdfRoot`, which already existed since 0020-04 and had no operator-facing description anywhere.
 
@@ -227,11 +216,9 @@ The brief predates slices **0024-01** and **0024-02**, which landed the shared A
 
 Brief §3.3 says capture must `skip unless pid = ourPid`. **This shipped broken and had to be fixed after the operator ran it.** Both the mistake and the correction are recorded here because the evidence only exists in a log, not in the repository.
 
-**First attempt (wrong).** Knowing the modern profile launches without `/n`, capture was written as
-PID-first with a title fallback permitted *only when the launch profile omitted `/n`*. Under Auto or Classic — which do pass `/n` — the fallback was off, so capture searched our own PID only.
+**First attempt (wrong).** Knowing the modern profile launches without `/n`, capture was written as PID-first with a title fallback permitted *only when the launch profile omitted `/n`*. Under Auto or Classic — which do pass `/n` — the fallback was off, so capture searched our own PID only.
 
-**What the operator saw:** the Adobe window never became a child of the panel and stayed on screen
-as a floating, taskbar-listed window.
+**What the operator saw:** the Adobe window never became a child of the panel and stayed on screen as a floating, taskbar-listed window.
 
 **Why.** From their `adobe_preview.log`, on *every single launch*:
 
@@ -241,13 +228,11 @@ ATENȚIE: fereastra încorporată (PID 25168) NU a fost creată de K-BOT (am por
 
 Adobe is effectively single-instance and hands the document to an already-running copy **even when `/n` is passed — it ignores the switch**. So our launched process routinely owns no window at all, PID-strict capture found nothing, returned `WindowNotFound`, and the real window was simply left alone. Gating on what we *asked for* (`/n`) rather than what actually happens was the error.
 
-**The fix.** The **document title is required** and the **PID is only a preference**: it decides
-whether the match is labelled `ByPid` or `ByTitle` and nothing more. A foreign window is always accepted. Nothing is lost by this, because the protection against ending someone else's process lives in `AdobeWindowTeardown` and its launched-PID set — capture never needed to be strict for that to hold.
+**The fix.** The **document title is required** and the **PID is only a preference**: it decides whether the match is labelled `ByPid` or `ByTitle` and nothing more. A foreign window is always accepted. Nothing is lost by this, because the protection against ending someone else's process lives in `AdobeWindowTeardown` and its launched-PID set — capture never needed to be strict for that to hold.
 
 The title requirement also closes a second hole the first attempt opened: Adobe creates several top-level windows per process sharing the `Acrobat` class prefix, and `EnumWindows` returns them in Z-order, so PID + class alone could grab a **helper window** — hide it, reparent it, and leave the real frame floating. The document name in the title is what tells them apart.
 
-**The tests were complicit and have been fixed too.** The original test #4 used a fake desktop with
-exactly one Acrobat-class window per PID, so it could not distinguish the right window from the first one; and one test actively asserted that a foreign window must be *refused*. Three new tests now pin the real behaviour: a foreign window is taken (with the log evidence quoted in the test), a helper window listed first is skipped in favour of the titled frame, and a different document's window in our own process is ignored.
+**The tests were complicit and have been fixed too.** The original test #4 used a fake desktop with exactly one Acrobat-class window per PID, so it could not distinguish the right window from the first one; and one test actively asserted that a foreign window must be *refused*. Three new tests now pin the real behaviour: a foreign window is taken (with the log evidence quoted in the test), a helper window listed first is skipped in favour of the titled frame, and a different document's window in our own process is ignored.
 
 ### §2 What changed
 
@@ -296,8 +281,7 @@ Adobe is effectively single-instance, and the AcroPDF control is served by that 
 
 Recorded because two plausible-looking theories were wrong and cost time: the failing file sits under a path containing a **space** while both working files are under `C:\AVACONT\…`, and it is a dynamic XFA form. Both facts are true, **and neither is the cause.** The same-document collision explains all four data points; the other two explain two each by coincidence.
 
-**Consequence for any future design.** The window-hosting surface and an AcroPDF surface **cannot
-show the same document at the same time**. If AcroPDF ever replaces window hosting, it replaces it entirely — the two cannot run side by side on one document, so there is no gradual migration in which both are live. That does not change §11: there is still no shipping dependency on AcroPDF.
+**Consequence for any future design.** The window-hosting surface and an AcroPDF surface **cannot show the same document at the same time**. If AcroPDF ever replaces window hosting, it replaces it entirely — the two cannot run side by side on one document, so there is no gradual migration in which both are live. That does not change §11: there is still no shipping dependency on AcroPDF.
 
 The bench now warns when the two collide, so the next person meets a log line instead of a grey rectangle. Confirmed afterwards by the operator: **`ORD_009.pdf` renders normally in the control once it is not simultaneously hosted.** The collision was the whole of it.
 
@@ -325,8 +309,7 @@ The operator reached a state they describe as perfect — nothing visible until 
 | `AVExpandCollapseButtonView` (right, x=1872) | `27x297 vis=1` | **`27x227 vis=0`** |
 | `AVSplitationPageView` (the document) | `x=67, w=1805` | **`x=0, w=1899` — the whole panel** |
 
-**The perfect state is not a mode Adobe offers. It is three windows being invisible**, after which
-the document view widens to the full panel *by itself* — nothing has to be resized. That makes it reproducible with `ShowWindow`, which is exactly the `hideChildren` lever slice 0023 already built, pointed at the ActiveX control instead of the hosted window. `btnAcroHideChrome` does that, and classifies each window BEFORE touching it so «already hidden» and «zero-sized» cannot be reported as success — pass 4's lesson, applied before the same mistake could be repeated.
+**The perfect state is not a mode Adobe offers. It is three windows being invisible**, after which the document view widens to the full panel *by itself* — nothing has to be resized. That makes it reproducible with `ShowWindow`, which is exactly the `hideChildren` lever slice 0023 already built, pointed at the ActiveX control instead of the hosted window. `btnAcroHideChrome` does that, and classifies each window BEFORE touching it so «already hidden» and «zero-sized» cannot be reported as success — pass 4's lesson, applied before the same mistake could be repeated.
 
 #### Correction: hiding is not collapsing, and the click IS the answer
 
@@ -337,9 +320,7 @@ after ShowWindow(SW_HIDE)   AVDockableTabStripView 67x697 vis=0, document x=67 w
 the state actually wanted   AVDockableTabStripView  0x697 vis=0, document x=0  w=859
 ```
 
-Hiding leaves the **width**, so Adobe never re-lays-out. Adobe's own collapse sets the width to zero
-**and moves the siblings**. `vis=0` was a consequence, not the mechanism — reading the correlation as
-the cause is what produced a useless button.
+Hiding leaves the **width**, so Adobe never re-lays-out. Adobe's own collapse sets the width to zero **and moves the siblings**. `vis=0` was a consequence, not the mechanism — reading the correlation as the cause is what produced a useless button.
 
 **Pressing Adobe's own button works.** Measured 05.08.2026 21:18:35:
 
@@ -350,20 +331,17 @@ După click: bandă 0x697, document la x=0 lățime 859 (panou 886)   REUȘIT
 
 A posted `WM_LBUTTONDOWN`/`WM_LBUTTONUP` on `AVExpandCollapseButtonView` makes Adobe do its own layout, which is the only version guaranteed to be self-consistent. The button toggles, so it is only pressed when the strip is actually expanded.
 
-**And the state persists across documents in the same Acrobat process** — at 19:22 the strip was
-already `0x697` before anything was clicked, after two loads. So this has to succeed **once per session**, not per document, which is much cheaper than the hosted-window case where every embed needs its hides re-applied.
+**And the state persists across documents in the same Acrobat process** — at 19:22 the strip was already `0x697` before anything was clicked, after two loads. So this has to succeed **once per session**, not per document, which is much cheaper than the hosted-window case where every embed needs its hides re-applied.
 
 #### The grey first document: Adobe postpones its first layout
 
 Reported symptom: the first document of a session stays grey until the operator clicks in the panel; afterwards it never recurs. The probe says exactly why — right after the first `LoadFile`, **26 of 28 child windows are zero-sized** and the tab strip is `0x0`. After a click it drops to 18 with real rectangles.
 
-**Zero on BOTH axes is «not laid out», not «collapsed»** — a genuinely collapsed strip is `0x697`.
-That distinction cost a run: the collapse button saw `0x0`, reported «deja colapsată» and refused to press. Both states have width 0 and only the height tells them apart.
+**Zero on BOTH axes is «not laid out», not «collapsed»** — a genuinely collapsed strip is `0x697`. That distinction cost a run: the collapse button saw `0x0`, reported «deja colapsată» and refused to press. Both states have width 0 and only the height tells them apart.
 
 `WakeAcroLayout` escalates cheapest-first — focus, then a size change, then a synthetic click into `AVDocumentMainView` — and **logs which step worked**. It runs automatically after each `LoadFile`, guarded by `IsAcroLayoutDegenerate` so a healthy layout is never touched.
 
-**Answered on the next run: the SIZE CHANGE is what does it.** Twice, at 21:27:15 and 21:27:35 —
-`REZOLVAT cu schimbarea de dimensiune`. Focus alone is not enough, and the synthetic click into the document is never reached. So the automatic wake costs one focus call and one one-pixel resize, and never has to touch the document.
+**Answered on the next run: the SIZE CHANGE is what does it.** Twice, at 21:27:15 and 21:27:35 — `REZOLVAT cu schimbarea de dimensiune`. Focus alone is not enough, and the synthetic click into the document is never reached. So the automatic wake costs one focus call and one one-pixel resize, and never has to touch the document.
 
 #### The floating bar (Adobe's HUD)
 
@@ -388,19 +366,15 @@ Per §11, nothing in `KBot.App` depends on any of this.
 
 ### Files touched
 
-**New** — `src\KBot.Controls\Adobe\{INativeWindows, IAdobeLauncher, IHostSurface, AdobeHostOptions,
-AdobeWindowCapture, AdobeWindowTeardown, AdobeCreationHook}.vb`, `src\KBot.App\Views\Ddf\AdobeUiPreference.vb`, `src\KBot.DevHarness\Internal\Adobe\AcroPdfHost.vb`, `tests\KBot.Controls.Tests\{FakeNativeWindows, AdobeWindowCaptureTests, AdobeWindowTeardownTests, AdobeReaderHostTests}.vb`, `tests\KBot.DevHarness.Tests\HarnessScenarioHostingTests.vb`
+**New** — `src\KBot.Controls\Adobe\{INativeWindows, IAdobeLauncher, IHostSurface, AdobeHostOptions, AdobeWindowCapture, AdobeWindowTeardown, AdobeCreationHook}.vb`, `src\KBot.App\Views\Ddf\AdobeUiPreference.vb`, `src\KBot.DevHarness\Internal\Adobe\AcroPdfHost.vb`, `tests\KBot.Controls.Tests\{FakeNativeWindows, AdobeWindowCaptureTests, AdobeWindowTeardownTests, AdobeReaderHostTests}.vb`, `tests\KBot.DevHarness.Tests\HarnessScenarioHostingTests.vb`
 
 **Moved** — the six registry files listed above, `KBot.DevHarness` → `KBot.Controls`
 
-**Modified** — `AdobeReaderHost.vb` (capture/teardown/options/launched-PID set),
-`AdobeWindowHosting.vb` (`RestoreStandalone` **deleted**; `FindReaderWindow` delegates to the new capture; `BuildArguments` extras overload), `AdobeNativeMethods.vb` (`PostMessage`, `WM_CLOSE`, `SetWinEventHook`, `UnhookWinEvent`), `ReaderHostPreview.vb` + `.Designer.vb`, `AdobeReaderHarnessForm.vb` + `.Designer.vb`, `HarnessScenario.vb`, `RegistryWriteVerifier.vb`, `FakeRegistryAccess.vb`, `AdobeHarnessLayoutTests.vb`, `KBot.DevHarness.Tests.vbproj` (project-wide `<Import Include="KBot.Controls" />`)
+**Modified** — `AdobeReaderHost.vb` (capture/teardown/options/launched-PID set), `AdobeWindowHosting.vb` (`RestoreStandalone` **deleted**; `FindReaderWindow` delegates to the new capture; `BuildArguments` extras overload), `AdobeNativeMethods.vb` (`PostMessage`, `WM_CLOSE`, `SetWinEventHook`, `UnhookWinEvent`), `ReaderHostPreview.vb` + `.Designer.vb`, `AdobeReaderHarnessForm.vb` + `.Designer.vb`, `HarnessScenario.vb`, `RegistryWriteVerifier.vb`, `FakeRegistryAccess.vb`, `AdobeHarnessLayoutTests.vb`, `KBot.DevHarness.Tests.vbproj` (project-wide `<Import Include="KBot.Controls" />`)
 
-**Modified (build hygiene)** — `KBot.Xfa.vbproj`, `KBot.App.vbproj`, `KBot.Xfa.Tests.vbproj`,
-`KBot.App.Tests.vbproj`: NU1701 suppression, see the test-results section.
+**Modified (build hygiene)** — `KBot.Xfa.vbproj`, `KBot.App.vbproj`, `KBot.Xfa.Tests.vbproj`, `KBot.App.Tests.vbproj`: NU1701 suppression, see the test-results section.
 
-**Versions** — `KBot.Controls` 1.1.0.0 → 1.2.0.0, `KBot.App` 1.0.4.0 → 1.0.5.0,
-`KBot.DevHarness` 1.0.7.0 → 1.0.8.0. `KBot.Common` **unchanged** — it was not touched. `KBot.Xfa` **not bumped**: only its .vbproj warning settings changed, not a single line of its code.
+**Versions** — `KBot.Controls` 1.1.0.0 → 1.2.0.0, `KBot.App` 1.0.4.0 → 1.0.5.0, `KBot.DevHarness` 1.0.7.0 → 1.0.8.0. `KBot.Common` **unchanged** — it was not touched. `KBot.Xfa` **not bumped**: only its .vbproj warning settings changed, not a single line of its code.
 
 ### Test results
 
@@ -409,8 +383,7 @@ AdobeWindowCapture, AdobeWindowTeardown, AdobeCreationHook}.vb`, `src\KBot.App\V
 
 All nine tests the brief's §9 asks for exist:
 
-1. no Adobe → `AdobeMissing`, **nothing started** · 2. the style mask clears all six bits and sets
-`WS_CHILD` · 3. capture ignores a foreign PID even when class *and* title match · 4. **capture accepts an invisible window** (the flash regression) · 5. a newer generation supersedes the older, which returns `Superseded` and kills **only its own** process · 6. mode A never kills a PID it did not launch · 7. mode B falls back to A after `CloseGraceMs` · 8. **teardown never calls `SetParent` back and never restores the style** — asserted for *both* modes, since this is the exact defect ·
+1. no Adobe → `AdobeMissing`, **nothing started** · 2. the style mask clears all six bits and sets `WS_CHILD` · 3. capture ignores a foreign PID even when class *and* title match · 4. **capture accepts an invisible window** (the flash regression) · 5. a newer generation supersedes the older, which returns `Superseded` and kills **only its own** process · 6. mode A never kills a PID it did not launch · 7. mode B falls back to A after `CloseGraceMs` · 8. **teardown never calls `SetParent` back and never restores the style** — asserted for *both* modes, since this is the exact defect ·
 9. `hosting` round-trips and a scenario file without the section still loads.
 
 One existing test was updated rather than worked around: `AllTwelveSections_ArePresent_InOrder` became `AllFourteenSections_ArePresent_InOrder`. It is a real guard on section order and it caught the change, which is what it is for.

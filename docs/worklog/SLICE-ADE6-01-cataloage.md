@@ -1,5 +1,7 @@
 # SLICE-ADE6 — Cataloage, liste și editori
 
+Repere comune pentru etapele indicate: 09.10.2026 — ADE6-06, ADE6-07, ADE6-10, ADE6-11, ADE6-12, ADE6-13, ADE6-14, ADE6-16, ADE6-17. Fiecare are starea TESTAT, RULAT, PUBLICAT, confirmată de operator la 23.10.2026; probele și limitele inițiale rămân în secțiunile lor.
+
 01 păstrează descrierea inițială CRUD (inclusiv delegații, eliminați ulterior din model conform planului ADE0-07). 05 are ferestrele inițiale cu editare în celule; 06 le înlocuiește cu trei liste și editori separați, păstrând Taxe editabil. 10 introduce navigarea mobilă prin apăsare lungă, înlocuită în 12 de butonul explicit; 13 adaugă marginea exterioară. 11 definește I ca inversul Activ numai la afișare; 14 și 16 corectează filtrele și lățimile. 17 aplică activarea unică la salvarea plătitorului copilului vizat; 23 elimină mesajul permanent, iar 24 adaugă contactele educatorilor și predarea absorbită. Ghidul [UTILIZARE_WEB](../../ADECHIT/UTILIZARE_WEB.md) rămâne contractul de utilizare, iar [prezența](SLICE-ADE6-02-prezenta.md), [taxele](SLICE-ADE6-15-taxe-perioade.md) și [deadlockul](SLICE-ADE6-25-deadlock-lock-row.md) au istorice distincte.
 
 Nota comună Rezolvat din 05/06/24: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Limitele inițiale și rezultatele locale rămân în etapa lor; această confirmare nu este o probă nouă a consolidării.
@@ -48,7 +50,6 @@ Din antet se deschid două ferestre modale. Fundalul este inert, Escape și clic
 
 ### Neverificat sau amânat
 
-
 Nu s-au executat SQL remote, publicare, validare MariaDB sau probe Access. Nu se schimbă schema bazei. Transferurile/plecările și configurarea unității nu fac parte din această lucrare. Browserul poate închide un tab după confirmare; fereastra modală nu poate garanta păstrarea datelor după închiderea browserului. Modificările sunt locale, necomise; fișierele ADE aveau deja modificări ample necomise.
 
 ### Predare pentru server
@@ -56,8 +57,6 @@ Nu s-au executat SQL remote, publicare, validare MariaDB sau probe Access. Nu se
 Publicați cele șase fișiere de implementare enumerate mai sus prin AvacontPush, împreună cu lucrările ADE anterioare necesare. Nu există script SQL nou pentru ADE6-05. După restartul API, verificați deschiderea ambelor ferestre, editarea/adăugarea unui plătitor și a unei taxe, salvarea, reîncărcarea și păstrarea editărilor la conflict.
 
 ## SLICE-ADE6-06 — machete Plătitori, grupe și copii <a id="slice-ADE6-06"></a>
-
-Data: 09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
@@ -88,7 +87,6 @@ Mutarea individuală a copilului scrie istoricul și modifică numai prezențele
 
 ### Neverificat și amânat
 
-
 Exportul local MariaDB_Schema nu conține tabele AD_. Întrebarea privind schema serverului rămâne fără răspuns. Implementarea locală folosește AD_03 aprobat în ADE0-07; nu afirmăm că baza live corespunde. Nu am accesat MariaDB/Linux și nu am schimbat sursele Access. Transferul lot, compensarea, înlocuirea endpointului legacy /transfer și paritatea integrală Access rămân în feliile lor. Importerul Python legacy rămâne pentru preview-ul vechi; migrarea AD_03 folosește ADE.Migrator. Nu există SQL nou în această intervenție.
 
 ### Predare și publicare
@@ -96,8 +94,6 @@ Exportul local MariaDB_Schema nu conține tabele AD_. Întrebarea privind schema
 Lucrarea rămâne locală, împreună cu modificările preexistente; nu am creat commit și nu am publicat. Prin AvacontPush trebuie predate modulele ADECHIT Python/JS/CSS/HTML și componentele comune enumerate mai sus. Instrumentele preview/testele nu sunt runtime server. Înaintea probei pe server trebuie confirmată schema finală AD_03 (Grupe_Educator, Platitori_Istoric, Telefon, Tip și InchisaDinAn); nu se rulează AD_01 peste AD_03. Nu există script suplimentar de ordonat pentru această felie. Pe server se probează încărcarea listelor, salvarea celor trei formulare, validarea CNP, perioadele educatorilor, PL numai din editor, drepturile și refuzul conflictelor, apoi Taxe. Următoarea subfelie liberă: ADE6-07.
 
 ## SLICE-ADE6-07 — editare DGV și formulare compacte <a id="slice-ADE6-07"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbări și motiv
 
@@ -123,8 +119,6 @@ Modificările sunt locale, fără commit/publicare. Fișierele runtime enumerate
 
 ## SLICE-ADE6-10 — Plătitori mobil <a id="slice-ADE6-10"></a>
 
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 ### Schimbări
 
 Pe mobil, dialogul Plătitori ocupă 100vw și 100dvh, fără margini/padding lateral. Antetul și footerul rămân pe loc; un singur tabel ocupă restul înălțimii. Listele nu mai sunt stivuite într-un container cu scroll. Derularea este numai în tabel. Mesajul informativ este ascuns; erorile de încărcare rămân afișabile controlat.
@@ -145,8 +139,6 @@ Nu au fost rulate teste sau probe de browser/vizuale, conform preferinței utili
 
 ## SLICE-ADE6-11 — coloane I <a id="slice-ADE6-11"></a>
 
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 Toate coloanele checkbox de stare din listele Grupe/Copii/Plătitori au titlul I, de la închis, pe PC și mobil. Coloanele folosesc filter:false în DataGrid comun, deci nu au buton/săgeată de filtrare și nici comandă de filtrare în meniul coloanei.
 
 La Grupe bifa reflectă închiderea grupei, la Copii reflectă Plecat. La Platitori_sub se calculează numai pentru afișare Closed = !Boolean(Activ): activ → nebifat, inactiv → bifat. Nu se inversează valoarea stocată în Activ și nu se schimbă semantica checkboxului Activ din editor. Bifele listelor rămân read-only.
@@ -154,8 +146,6 @@ La Grupe bifa reflectă închiderea grupei, la Copii reflectă Plecat. La Platit
 Fișiere: PYTHON/static/js/adechit/payers.js, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau probe vizuale, conform cerinței utilizatorului. Fără modificări backend/schema/date, fără SQL, commit sau publicare. Fișierele statice se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-12.
 
 ## SLICE-ADE6-12 — deschidere explicită pe mobil <a id="slice-ADE6-12"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Schimbări
 
@@ -171,15 +161,11 @@ PYTHON/static/js/dgv/datagrid.js, css/dgv.css, js/adechit/payers.js, catalogs.js
 
 ## SLICE-ADE6-13 — margine exterioară pe mobil <a id="slice-ADE6-13"></a>
 
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 Clarificarea utilizatorului cere spațiu între fereastră și marginile ecranului, păstrând paddingul interior deja implementat. Dialogul Plătitori mobil are acum margin:10px și lățime/înălțime egală cu viewportul minus 20px. Se folosește dvh pentru înălțimea disponibilă, cu fallback vh. Paddingul interior de 8px se păstrează.
 
 Fișiere: PYTHON/static/css/adechit.css, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform preferinței utilizatorului. Modificare locală, fără backend/SQL, commit sau publicare. Fișierele statice se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-14.
 
 ## SLICE-ADE6-14 — filtre și culori DGV <a id="slice-ADE6-14"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Filtrarea coloanelor rămâne exclusiv pentru Nume și Grupa, în toate DGV ADE, în ambele moduri PC/mobil. CNP, I, Educatori, datele, valorile numerice, coloana de navigare și coloanele Taxe nu permit filtrare. Coloanele mobile nu mai suprascriu în bloc filter:false și păstrează filtrul denumirii. Componentele comune din alte aplicații nu își schimbă filtrarea.
 
@@ -189,8 +175,6 @@ Fișiere: PYTHON/static/js/adechit/payers.js, catalogs.js, app.js, css/adechit.c
 
 ## SLICE-ADE6-16 — lățimi DGV fără depășire accidentală <a id="slice-ADE6-16"></a>
 
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
-
 Utilizatorul a raportat scroll orizontal în toate cele trei liste Plătitori pe PC. În componenta comună, DGV avea width:100% plus borduri (content-box), iar lățimea disponibilă folosea offsetWidth întreg, care poate rotunji în sus la zoom.
 
 Rootul și benzile header/footer folosesc border-box; containerul de scroll poate scădea în flex fără min-size implicit. Lățimea coloanelor este limitată la spațiul interior real, calculat din clientWidth și getBoundingClientRect minus borduri și scrollbarul existent. Dacă este anticipat un scrollbar vertical, se rezervă numai lățimea încă neocupată. Rezultatul este rotunjit în jos pentru a evita depășirile fracționare. Nu am ascuns scrollbarul orizontal ca soluție pe PC; rămâne disponibil când coloanele sunt efectiv mai late decât spațiul disponibil.
@@ -198,8 +182,6 @@ Rootul și benzile header/footer folosesc border-box; containerul de scroll poat
 Fișiere: PYTHON/static/css/dgv.css, js/dgv/datagrid.js, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform instrucțiunilor. Fără backend/schema/date/SQL, commit sau publicare. Fișierele statice comune se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-17.
 
 ## SLICE-ADE6-17 — plătitor activ unic per copil <a id="slice-ADE6-17"></a>
-
-09.10.2026. TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 La crearea prin catalog a unui Platitori_sub, API forțează Activ=True și dezactivează ceilalți plătitori activi cu același IDP. La salvarea unui plătitor existent activ, ceilalți plătitori ai copilului sunt dezactivați în același mod. Nu sunt afectate persoanele asociate altor copii. Un plătitor existent poate fi dezactivat explicit.
 
@@ -250,7 +232,6 @@ Următoarea subfelie liberă: ADE6-24.
 - Nu s-au rulat teste automate, probe UI sau conectări MariaDB; testarea funcțională rămâne la utilizator, conform preferinței proiectului. Sintaxa nu validează fluxul.
 
 ### Neverificat / amânat
-
 
 - DDL nerulat, KBotAdmin/publicare/restart neexecutate din chat.
 - Salvare/golire, erori de validare, conflict, grila PC/mobil și planul anual neprobate.
